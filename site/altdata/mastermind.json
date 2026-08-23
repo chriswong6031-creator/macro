@@ -1,7 +1,7 @@
 {
   "schema": "altdata.mastermind.v1",
   "as_of": "2026-08-23",
-  "generated_utc": "2026-08-23T00:20:59.137713+00:00",
+  "generated_utc": "2026-08-23T01:05:12.470518+00:00",
   "contract": "Actionable alt-data axis for the Mastermind bot. Each signal: signal_score 0-100 (composite of weighted convergence + brain conviction + price confirm \u2212 extension), action \u2208 {ACCUMULATE,WATCH,AVOID}, direction \u2208 {long,short,neutral}, source \u2208 {brain,deterministic}. The bot sizes through its OWN risk framework; this is an input, not an order. Brain calls are graded vs SPY (see calibration). An extended name is never ACCUMULATE. trump_linked / affiliations flag actor ties. rolling_over names (off_high\u2264\u221215% AND 20d<0 AND below 50dma) appear in broken_signals only \u2014 crowd attention, NOT entries. entry_tier (T1/T2/T3) = validated confluence buy gate signal.",
   "regime_read": "The strongest measured convergence is concentrated in AI/cloud demand, aerospace policy exposure, and selected event-driven situations, but several scores rely partly on affiliation or sentiment rather than hard capital-flow evidence. With no completed outcomes in the track record, conviction remains modest and only non-extended names qualify for accumulation.",
   "brain_present": true,
@@ -21,22 +21,73 @@
     "note": "No theses scored yet \u2014 the track record begins once the first check-by dates pass. Keep conviction modest until it does."
   },
   "n_signals": 88,
-  "n_broken": 27,
+  "n_broken": 28,
   "signals": [
     {
-      "ticker": "MSFT",
-      "signal_score": 89,
+      "ticker": "MU",
+      "signal_score": 82,
       "conviction": "medium",
       "action": "ACCUMULATE",
       "direction": "long",
       "source": "brain",
-      "weighted_score": 1.95,
+      "weighted_score": 1.85,
       "convergence_score": 5,
+      "channels": [
+        "affiliation",
+        "cnbc_pick",
+        "insider_mspr",
+        "patent_cluster",
+        "stocktwits_bull"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": 1.9,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": false,
+      "off_high_252": -20.3,
+      "ret_20d": 5.0,
+      "above_50dma": true,
+      "entry_tier": null,
+      "affiliations": [
+        {
+          "actor": "Ro Khanna",
+          "rel": "AFFILIATES_WITH",
+          "kind": "politician"
+        }
+      ],
+      "n_affiliated_actors": 1,
+      "thesis": "Insider-purchase intensity and a substantial patent cluster provide firmer signals than sentiment alone [insider_mspr] [patent_cluster]. Government-grant acceleration in the supplied metrics supports domestic semiconductor investment, while the Ro Khanna affiliation adds a policy-network link [gov_grant] [actor:Ro Khanna]. Bullish social sentiment is supportive but receives less weight [stocktwits_bull].",
+      "second_order": [
+        "Semiconductor equipment \u2014 memory capacity and technology investment require fabrication tools",
+        "Advanced packaging \u2014 AI-oriented memory growth increases packaging complexity",
+        "Data-center servers \u2014 stronger memory investment points to sustained compute-system demand"
+      ],
+      "falsifier": {
+        "text": "Memory pricing and end-demand deteriorate despite continued patents, grants, and insider activity.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "MU",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 70
+        }
+      },
+      "clamped": null
+    },
+    {
+      "ticker": "MSFT",
+      "signal_score": 80,
+      "conviction": "medium",
+      "action": "ACCUMULATE",
+      "direction": "long",
+      "source": "brain",
+      "weighted_score": 1.6,
+      "convergence_score": 4,
       "channels": [
         "affiliation",
         "app_demand",
         "github_momentum",
-        "hf_model_momentum",
         "patent_cluster"
       ],
       "trump_linked": false,
@@ -76,57 +127,6 @@
           "op": "<",
           "threshold": -0.05,
           "horizon_d": 60
-        }
-      },
-      "clamped": null
-    },
-    {
-      "ticker": "MU",
-      "signal_score": 74,
-      "conviction": "medium",
-      "action": "ACCUMULATE",
-      "direction": "long",
-      "source": "brain",
-      "weighted_score": 1.6,
-      "convergence_score": 4,
-      "channels": [
-        "affiliation",
-        "insider_mspr",
-        "patent_cluster",
-        "stocktwits_bull"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": 1.9,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": false,
-      "off_high_252": -20.3,
-      "ret_20d": 5.0,
-      "above_50dma": true,
-      "entry_tier": null,
-      "affiliations": [
-        {
-          "actor": "Ro Khanna",
-          "rel": "AFFILIATES_WITH",
-          "kind": "politician"
-        }
-      ],
-      "n_affiliated_actors": 1,
-      "thesis": "Insider-purchase intensity and a substantial patent cluster provide firmer signals than sentiment alone [insider_mspr] [patent_cluster]. Government-grant acceleration in the supplied metrics supports domestic semiconductor investment, while the Ro Khanna affiliation adds a policy-network link [gov_grant] [actor:Ro Khanna]. Bullish social sentiment is supportive but receives less weight [stocktwits_bull].",
-      "second_order": [
-        "Semiconductor equipment \u2014 memory capacity and technology investment require fabrication tools",
-        "Advanced packaging \u2014 AI-oriented memory growth increases packaging complexity",
-        "Data-center servers \u2014 stronger memory investment points to sustained compute-system demand"
-      ],
-      "falsifier": {
-        "text": "Memory pricing and end-demand deteriorate despite continued patents, grants, and insider activity.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "MU",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 70
         }
       },
       "clamped": null
@@ -509,36 +509,6 @@
       "clamped": null
     },
     {
-      "ticker": "SRE",
-      "signal_score": 40,
-      "conviction": "medium",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 1.25,
-      "convergence_score": 3,
-      "channels": [
-        "activist_13d",
-        "insider_mspr",
-        "trump"
-      ],
-      "trump_linked": true,
-      "rs_vs_spy_60d": null,
-      "no_price_data": true,
-      "extended": false,
-      "rolling_over": false,
-      "off_high_252": null,
-      "ret_20d": null,
-      "above_50dma": null,
-      "entry_tier": null,
-      "affiliations": [],
-      "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
       "ticker": "UBER",
       "signal_score": 40,
       "conviction": "medium",
@@ -849,6 +819,35 @@
       "clamped": null
     },
     {
+      "ticker": "PRGO",
+      "signal_score": 32,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 0.7,
+      "convergence_score": 2,
+      "channels": [
+        "special_situation",
+        "trump"
+      ],
+      "trump_linked": true,
+      "rs_vs_spy_60d": 28.7,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": false,
+      "off_high_252": -38.2,
+      "ret_20d": 41.2,
+      "above_50dma": true,
+      "entry_tier": null,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
       "ticker": "LTH",
       "signal_score": 31,
       "conviction": "medium",
@@ -956,35 +955,6 @@
       "rolling_over": false,
       "off_high_252": -0.6,
       "ret_20d": 14.4,
-      "above_50dma": true,
-      "entry_tier": null,
-      "affiliations": [],
-      "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
-      "ticker": "IP",
-      "signal_score": 31,
-      "conviction": "medium",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 0.7,
-      "convergence_score": 2,
-      "channels": [
-        "special_situation",
-        "trump"
-      ],
-      "trump_linked": true,
-      "rs_vs_spy_60d": 27.1,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": false,
-      "off_high_252": -12.6,
-      "ret_20d": -0.5,
       "above_50dma": true,
       "entry_tier": null,
       "affiliations": [],
@@ -1113,6 +1083,35 @@
       "rolling_over": false,
       "off_high_252": -14.6,
       "ret_20d": 2.8,
+      "above_50dma": true,
+      "entry_tier": null,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "CSCO",
+      "signal_score": 30,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 0.9,
+      "convergence_score": 2,
+      "channels": [
+        "cnbc_pick",
+        "unusual_options"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": 2.9,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": false,
+      "off_high_252": -4.4,
+      "ret_20d": 10.8,
       "above_50dma": true,
       "entry_tier": null,
       "affiliations": [],
@@ -1657,6 +1656,35 @@
       "clamped": null
     },
     {
+      "ticker": "WMT",
+      "signal_score": 18,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 0.7,
+      "convergence_score": 2,
+      "channels": [
+        "app_demand",
+        "lobbying"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": -14.6,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": true,
+      "off_high_252": -22.5,
+      "ret_20d": -5.0,
+      "above_50dma": false,
+      "entry_tier": null,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
       "ticker": "STLD",
       "signal_score": 18,
       "conviction": "medium",
@@ -1705,35 +1733,6 @@
       "rolling_over": true,
       "off_high_252": -20.0,
       "ret_20d": -5.0,
-      "above_50dma": false,
-      "entry_tier": null,
-      "affiliations": [],
-      "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
-      "ticker": "WMT",
-      "signal_score": 17,
-      "conviction": "medium",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 0.7,
-      "convergence_score": 2,
-      "channels": [
-        "app_demand",
-        "lobbying"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": -14.8,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": true,
-      "off_high_252": -22.7,
-      "ret_20d": -5.3,
       "above_50dma": false,
       "entry_tier": null,
       "affiliations": [],
@@ -1913,6 +1912,35 @@
       "rolling_over": true,
       "off_high_252": -32.6,
       "ret_20d": -14.8,
+      "above_50dma": false,
+      "entry_tier": null,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "RBA",
+      "signal_score": 10,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 0.5,
+      "convergence_score": 2,
+      "channels": [
+        "short_squeeze",
+        "special_situation"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": -18.6,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": true,
+      "off_high_252": -26.7,
+      "ret_20d": -22.0,
       "above_50dma": false,
       "entry_tier": null,
       "affiliations": [],

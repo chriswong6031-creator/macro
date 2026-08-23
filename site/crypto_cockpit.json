@@ -2,17 +2,17 @@
   "schema": "crypto.cockpit/v1",
   "contract_phase": "w0",
   "display_only": true,
-  "as_of": "2026-08-21",
-  "generated_at": "2026-08-23T01:31:23+00:00",
+  "as_of": "2026-08-22",
+  "generated_at": "2026-08-23T02:07:57+00:00",
   "hero": {
     "asset": "BTC-USD",
-    "price": 78304.72,
-    "change_24h_pct": 7.25,
+    "price": 77018.08,
+    "change_24h_pct": -1.67,
     "stance_en": "STRONG RISK-ON",
     "stance_zh": "强烈偏多",
-    "summary_en": "The big picture reads strongly risk-on. Support comes from momentum and the pace of the move; the drag comes from futures positioning and US buyers. Day-to-day direction is a coin flip — watch the dip-risk read below.",
-    "summary_zh": "大方向明显偏多。支撑来自动量与涨跌节奏；拖累来自期货持仓与美国买盘。未来几天的涨跌仍近乎抛硬币——先看下方的回撤风险读数。",
-    "master_score": 46,
+    "summary_en": "The big picture reads strongly risk-on. Support comes from momentum and the pace of the move; the drag comes from futures positioning and the market cycle. Day-to-day direction is a coin flip — watch the dip-risk read below.",
+    "summary_zh": "大方向明显偏多。支撑来自动量与涨跌节奏；拖累来自期货持仓与所处周期。未来几天的涨跌仍近乎抛硬币——先看下方的回撤风险读数。",
+    "master_score": 50,
     "exposure_pct": 100,
     "gate_active": false
   },
@@ -134,9 +134,9 @@
           "label_en": "Coinbase premium",
           "label_zh": "Coinbase 溢价",
           "source": "master.board.premium",
-          "state_en": "Overheated or absent",
-          "state_zh": "过热或缺位",
-          "tone": "bear",
+          "state_en": "Healthy demand",
+          "state_zh": "健康需求",
+          "tone": "bull",
           "grade": "EXTREMES"
         }
       ]
@@ -153,7 +153,7 @@
         "state_en": "Low",
         "state_zh": "低",
         "tone": "bull",
-        "as_of": "2026-08-21"
+        "as_of": "2026-08-22"
       },
       "spark_source": "signals.oi_mcap_ratio",
       "receipt_members": [
@@ -200,9 +200,9 @@
           "label_en": "Miner economics",
           "label_zh": "矿工经济",
           "source": "master.board.miner",
-          "state_en": "Capitulation (bottoming)",
-          "state_zh": "投降（筑底）",
-          "tone": "bull",
+          "state_en": "Neutral",
+          "state_zh": "中性",
+          "tone": "neutral",
           "grade": "NEW"
         },
         {

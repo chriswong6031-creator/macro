@@ -1,6 +1,6 @@
 {
   "date": "2026-08-21",
-  "generated_utc": "2026-08-23 00:23",
+  "generated_utc": "2026-08-23 01:07",
   "business_cycle": {
     "available": true,
     "asof": "2026-08-31",
@@ -4205,11 +4205,11 @@
       "vix_term": 0.8178378440238334,
       "vix_term_state": "contango (calm)",
       "vix_term_lead_lag": "coincident",
-      "skew": 143.23,
-      "skew_pctile": 0.35813492063492064,
-      "stock_bond_corr": 0.45393756486598685,
+      "skew": 143.9,
+      "skew_pctile": 0.3948412698412698,
+      "stock_bond_corr": 0.4539375648659864,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 1.0323594883108478,
+      "roro": 1.0314463374268623,
       "roro_state": "risk-on",
       "vol_target_scalar": 0.9337005021532296,
       "news_sentiment": 0.02815118432044983,
@@ -4291,7 +4291,7 @@
       "vix_term": 0.8178378440238334,
       "breadth_div": false,
       "spy_high_prox": 0.9843677249661156,
-      "breadth_above200_pctile": 0.8650793650793651,
+      "breadth_above200_pctile": 0.8670634920634921,
       "credit_widen": false,
       "hy_oas_chg_21d_bp": -2.0,
       "hy_oas_chg_21d_bp_exact": -2.0,
@@ -4353,7 +4353,7 @@
   "fear_euphoria": {
     "fe_score": 99,
     "band": "Euphoria",
-    "roro": 1.0323594883108478,
+    "roro": 1.0314463374268623,
     "roro_state": "risk-on",
     "legs": [
       {
@@ -4376,8 +4376,8 @@
         "key": "skew",
         "name_en": "SKEW (tail pricing)",
         "name_zh": "SKEW \u5c3e\u90e8\u5b9a\u4ef7",
-        "value": 0.302,
-        "pct": 57,
+        "value": 0.183,
+        "pct": 53,
         "lean": "risk-on"
       },
       {
@@ -4400,16 +4400,16 @@
         "key": "copper_gold",
         "name_en": "Copper/Gold",
         "name_zh": "\u94dc\uff0f\u91d1 \u6bd4",
-        "value": 0.783,
-        "pct": 90,
+        "value": 0.867,
+        "pct": 91,
         "lean": "risk-on"
       },
       {
         "key": "dxy",
         "name_en": "Dollar (20d %\u0394)",
         "name_zh": "\u7f8e\u5143\uff0820\u65e5 %\u53d8\u52a8\uff09",
-        "value": 2.051,
-        "pct": 96,
+        "value": 2.079,
+        "pct": 97,
         "lean": "risk-on"
       }
     ],
@@ -5327,7 +5327,7 @@
     ],
     "n_legs_qualifying": 11,
     "as_of": "2026-08-21",
-    "generated_utc": "2026-08-22T22:44:46Z",
+    "generated_utc": "2026-08-23T00:04:58Z",
     "disclaimer_en": "Sentiment context only \u2014 display-only composite of public market indicators. Never scored, never feeds the regime engine, no forward claim. Greed/fear readings are not contrarian signals without regime context.",
     "disclaimer_zh": "\u4ec5\u4e3a\u60c5\u7eea\u53c2\u8003 \u2014 \u516c\u5f00\u5e02\u573a\u6307\u6807\u7684\u4ec5\u5c55\u793a\u5408\u6210\u3002\u4e0d\u8ba1\u5206\uff0c\u4e0d\u8fdb\u5165\u5468\u671f\u5f15\u64ce\uff0c\u65e0\u524d\u77bb\u6027\u5224\u65ad\u3002\u8d2a\u5a6a/\u6050\u60e7\u8bfb\u6570\u82e5\u65e0\u5468\u671f\u80cc\u666f\uff0c\u4e0d\u6784\u6210\u53cd\u5411\u4fe1\u53f7\u3002"
   },
@@ -5948,7 +5948,7 @@
       }
     ],
     "as_of": "2026-08-21",
-    "generated_utc": "2026-08-22T22:44:47Z",
+    "generated_utc": "2026-08-23T00:04:59Z",
     "n_young": 0,
     "disclaimer_en": "Display-only context \u2014 volatility surface indicators from public CBOE / Yahoo data. Never scored, no forward claim. These chips describe the current vol environment; they do not predict direction.",
     "disclaimer_zh": "\u4ec5\u4f9b\u5c55\u793a\u7684\u80cc\u666f \u2014 \u6765\u81ea\u516c\u5f00 CBOE / Yahoo \u6570\u636e\u7684\u6ce2\u52a8\u7387\u66f2\u9762\u6307\u6807\u3002\u4e0d\u8ba1\u5206\uff0c\u65e0\u524d\u77bb\u5224\u65ad\u3002\u8fd9\u4e9b\u82af\u7247\u63cf\u8ff0\u5f53\u524d\u6ce2\u52a8\u7387\u73af\u5883\uff0c\u4e0d\u9884\u6d4b\u65b9\u5411\u3002"
@@ -6216,32 +6216,32 @@
     {
       "ticker": "GC=F",
       "name": "Gold",
-      "price": 4661.6,
+      "price": 4624.1,
       "above50": true,
       "above200": true,
-      "pct_vs_50dma": 11.9,
-      "pct_vs_200dma": 3.5,
-      "rsi14": 75.0,
+      "pct_vs_50dma": 11.0,
+      "pct_vs_200dma": 2.7,
+      "rsi14": 73.0,
       "macd_pos": true,
-      "off_52w_high_pct": -12.3,
+      "off_52w_high_pct": -13.1,
       "season_this": "Aug: +2.5% avg, up 73% of years (n=26)",
       "season_this_zh": "8\u6708\uff1a\u5e73\u5747 +2.5%\uff0c73% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-      "mom_60d_pct": 7.5
+      "mom_60d_pct": 6.6
     },
     {
       "ticker": "CL=F",
       "name": "Crude Oil",
-      "price": 86.64,
+      "price": 87.06,
       "above50": true,
       "above200": true,
-      "pct_vs_50dma": 10.0,
-      "pct_vs_200dma": 10.9,
-      "rsi14": 59.0,
+      "pct_vs_50dma": 10.5,
+      "pct_vs_200dma": 11.4,
+      "rsi14": 60.0,
       "macd_pos": true,
-      "off_52w_high_pct": -23.3,
+      "off_52w_high_pct": -22.9,
       "season_this": "Aug: -0.7% avg, up 50% of years (n=26)",
       "season_this_zh": "8\u6708\uff1a\u5e73\u5747 -0.7%\uff0c50% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-      "mom_60d_pct": -4.3
+      "mom_60d_pct": -3.8
     },
     {
       "ticker": "HG=F",
@@ -6256,19 +6256,19 @@
       "off_52w_high_pct": -1.8,
       "season_this": "Aug: -1.0% avg, up 42% of years (n=26)",
       "season_this_zh": "8\u6708\uff1a\u5e73\u5747 -1.0%\uff0c42% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-      "mom_60d_pct": 5.1
+      "mom_60d_pct": 5.0
     },
     {
       "ticker": "DX-Y.NYB",
       "name": "US Dollar",
-      "price": 98.84,
+      "price": 98.8,
       "above50": false,
       "above200": false,
-      "pct_vs_50dma": -1.7,
+      "pct_vs_50dma": -1.8,
       "pct_vs_200dma": -0.4,
       "rsi14": 29.0,
       "macd_pos": false,
-      "off_52w_high_pct": -2.7,
+      "off_52w_high_pct": -2.8,
       "season_this": "Aug: +0.1% avg, up 48% of years (n=56)",
       "season_this_zh": "8\u6708\uff1a\u5e73\u5747 +0.1%\uff0c48% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=56\uff09",
       "mom_60d_pct": -0.6
