@@ -13,7 +13,7 @@ state_before: >
 changed:
   - path: agentos/workstreams/WS-CHAIRMAN-CONTROL-ROOM.md
     what: >
-      Added ASD-F0, ASD-A0A1, ASD-A2 and ASD-A3 waves under the existing workstream; broadened the
+      Added ASD-F0, ASD-A0A1, ASD-A2, ASD-A3 and ASD-A4 waves under the existing workstream; broadened the
       Chairman coordination objective from navigation-only to navigation plus bounded already-active
       Sol↔Fable dialogue; preserved H0/P0B completion laws and generic Wake/P1 separation.
   - path: agentos/decisions/DEC-CHAIRMAN-CONTROL-ROOM-ACTIVE-SESSION-DIALOGUE-F0-ACCEPTED.md
