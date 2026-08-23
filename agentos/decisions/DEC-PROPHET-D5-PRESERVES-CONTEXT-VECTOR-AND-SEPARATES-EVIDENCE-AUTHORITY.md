@@ -67,7 +67,7 @@ affects:
   - "engine/us_context_vector.py (no D5 v1 mutation)"
   - "future prophet.intelligence_vector/v1 implementation"
 confidence: high
-reversibility: moderate
+reversibility: easy
 decided_by: Sol, Chairman-authorized MAS-122 Cell F owner
 decided_at: 2026-08-22
 ---
