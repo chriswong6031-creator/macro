@@ -132,6 +132,7 @@ def test_store_absent_fence_blocks_and_writes_nothing(store, monkeypatch):
 
     monkeypatch.setattr(msd, "enabled", boom)
     monkeypatch.setattr(msd, "latest_available", boom)
+    monkeypatch.setattr(msd, "probe_available", boom)
     monkeypatch.setattr(msd, "fetch_aggs", boom)
 
     assert msd.run_incremental() == {"blocked": "store_absent"}
@@ -186,7 +187,9 @@ def test_capped_run_fetches_the_tip_before_the_interior_backlog(store, monkeypat
         return _day_frame(d)
 
     monkeypatch.setattr(msd, "enabled", lambda: True)
-    monkeypatch.setattr(msd, "latest_available", lambda *a, **k: date(2026, 6, 24))
+    monkeypatch.setattr(msd, "probe_available", lambda *a, **k: type("P", (), {
+        "available_date": date(2026, 6, 24), "reason": "available", "detail": "",
+    })())
     monkeypatch.setattr(msd, "fetch_aggs", fake_fetch)
 
     msd.run_incremental(max_days=8, pace_s=0)
@@ -208,7 +211,9 @@ def test_uncapped_run_still_covers_the_whole_backlog(store, monkeypatch):
         return _day_frame(d)
 
     monkeypatch.setattr(msd, "enabled", lambda: True)
-    monkeypatch.setattr(msd, "latest_available", lambda *a, **k: date(2026, 6, 24))
+    monkeypatch.setattr(msd, "probe_available", lambda *a, **k: type("P", (), {
+        "available_date": date(2026, 6, 24), "reason": "available", "detail": "",
+    })())
     monkeypatch.setattr(msd, "fetch_aggs", fake_fetch)
 
     r = msd.run_incremental(max_days=None, pace_s=0)
@@ -251,6 +256,47 @@ def test_blocked_off_lane_stays_silent_and_still_raises(store, monkeypatch, caps
     with pytest.raises(RuntimeError):
         msd.MassiveStockDayAdapter().fetch()
     assert "::" not in capsys.readouterr().out
+
+
+def test_incremental_propagates_probe_reason_not_no_entitled_date(store, monkeypatch):
+    monkeypatch.setattr(msd, "_MIN_STORE_FILES", 1)
+    _tiny_parquet("SPY")
+    _seed_state(["2026-08-18"])
+    monkeypatch.setattr(msd, "enabled", lambda: True)
+
+    class Probe:
+        available_date = None
+        reason = "authorization_or_entitlement_failure"
+        detail = "HTTP 403 403"
+
+    monkeypatch.setattr(msd, "probe_available", lambda *a, **k: Probe())
+    monkeypatch.setattr(msd, "fetch_aggs", lambda *a, **k: (_ for _ in ()).throw(
+        AssertionError("must not fetch after a failed probe")))
+    result = msd.run_incremental()
+    assert result["blocked"] == "authorization_or_entitlement_failure"
+    assert result["blocked_detail"] == "HTTP 403 403"
+    assert "no_entitled_date" not in result.values()
+
+
+def test_adapter_raises_sanitized_probe_reason(store, monkeypatch, capsys):
+    monkeypatch.setattr(msd, "_MIN_STORE_FILES", 1)
+    _tiny_parquet("SPY")
+    _seed_state(["2026-08-18"])
+    monkeypatch.setattr(msd, "enabled", lambda: True)
+
+    class Probe:
+        available_date = None
+        reason = "upstream_file_absent"
+        detail = "8 object(s) not published"
+
+    monkeypatch.setattr(msd, "probe_available", lambda *a, **k: Probe())
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    with pytest.raises(RuntimeError, match=r"massive_stock_day: upstream_file_absent"):
+        msd.MassiveStockDayAdapter().fetch()
+    lines = [ln for ln in capsys.readouterr().out.splitlines() if ln.startswith("::")]
+    assert len(lines) == 1
+    assert "upstream_file_absent" in lines[0]
+    assert "no_entitled_date" not in lines[0]
 
 
 # --- manifest: the recent-window continuity figure --------------------------
