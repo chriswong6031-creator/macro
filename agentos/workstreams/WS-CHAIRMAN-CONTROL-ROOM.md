@@ -69,6 +69,15 @@ waves:
       Prove one already-active, already-commissioned Sol↔Fable project thread can carry ACK,
       decision request, ruling, progress and result frames without Chairman copy/paste while
       GitHub/Agent OS/Executive OS remain the authoritative systems of record.
+  - id: ASD-A4
+    title: Read-only Control Room dialogue-attention projection
+    status: todo
+    depends_on: [ASD-A3, H0, P0B]
+    next_action: >
+      Only after the Control Room P0/H0 journey and ASD-A3 are independently accepted, project
+      read-only `awaiting_sol`, `awaiting_fable`, `returned` and `transport_degraded` from current
+      bounded Slack history into the Control Room. Store no inbox/attention/cursor state and add
+      no sending to the Control Room surface.
 decisions:
   - DEC:CHAIRMAN-CONTROL-ROOM-P0-ARCHITECTURE-ACCEPTED
   - DEC:CHAIRMAN-CONTROL-ROOM-ACTIVE-SESSION-DIALOGUE-F0-ACCEPTED
@@ -102,6 +111,7 @@ landmines:
   - "ASD is only for already-active, already-commissioned Sol/Fable sessions bound to one immutable commission thread. Generic find/assign/wake/resume stays outside this wave."
   - "MMX/AGENT_DIALOGUE_V1 history reconciliation must remain bounded and storeless; do not add a cursor DB, inbox, queue, replay ledger or mutable dialogue state store."
   - "F0 merge did not authorize A0/A1 implementation. Every implementation release needs fresh Sol collision/authority review against current protected Mastermind and Agent OS."
+  - "ASD-A4 is a derived read-only consumer only after both the Control Room P0/H0 journey and ASD-A3 are accepted; it may not become a stored attention inbox or a Control Room send path."
 do_not_redo:
   - "Do not create a Session OS, task database, tmux lifecycle registry, second Executive service, mutable seat inbox or new active-build compiler."
   - "Reuse Mastermind control_plane.executive_inbox, control_plane.ceo_boot_packet and Macro scripts/build_project_active_build_map.py."
@@ -116,7 +126,7 @@ next_action: >
   Run two independent continuations without conflating their completion laws: (1) relaunch and
   verify the persistent Chairman :8787 Control Room from merged H0/current Macro root for MAS-114;
   and (2) commission ASD-A0A1 only against current protected Mastermind to build the hermetic
-  storeless active-session relay. Keep MAS-113/P0B and generic Wake/P1 nonterminal.
+  storeless active-session relay. Keep MAS-113/P0B, ASD-A4 and generic Wake/P1 nonterminal.
 ---
 
 ## Capability state
@@ -167,6 +177,8 @@ no-secret/no-canonical-write behavior and named degraded-source rendering.
    that failure honestly; it does not solve the Macro-side performance root cause.
 4. No Agent Relay or real `MMX/AGENT_DIALOGUE_V1` exchange exists yet. `#agent-dispatch` transport
    presence and the Sol connector path do not prove Fable-side active-session dialogue.
+5. No ASD-A4 dialogue-attention projection exists; it is held until both Control Room P0/H0 and
+   the real ASD-A3 project canary are independently accepted.
 
 ## Completion boundary
 
@@ -174,5 +186,6 @@ MAS-114 reaches Done only after the persistent :8787 process is verified on merg
 Macro input. MAS-113 remains nonterminal until P0B proves the vendor-supported managed-seat Open Sol
 journey with zero cross-seat fallback, zero message send, zero managed-environment state mutation,
 and required restart/failure proof. ASD becomes built only after A0/A1 implementation is accepted;
-it becomes `PROVEN_LIVE` only after a real already-active Sol↔Fable project dialogue canary. None of
-those conditions authorizes generic Wake/P1 by itself.
+it becomes `PROVEN_LIVE` only after a real already-active Sol↔Fable project dialogue canary. A4 is
+only a later derived read-only Control Room consumer. None of those conditions authorizes generic
+Wake/P1 by itself.
