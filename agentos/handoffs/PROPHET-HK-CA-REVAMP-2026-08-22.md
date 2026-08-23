@@ -104,19 +104,39 @@ verified:
   - claim: receipt reaches the sentinel via git
     command: asia-close.yml commit step does `git add data/ site/`; `git check-ignore data/prophet_shadow/hk_discovery_receipt.json` -> not ignored; daily.yml unstage sweep + cache restores inspected
     result: committed by asia lane; no daily-side write or cache-restore vector into data/prophet_shadow/
-unverified:
-  - claim: first prospective production receipt (real HK asia-close session)
-    what_would_verify: >
-      Next HK session 2026-08-24: asia-close run writes
-      data/prophet_shadow/hk_discovery.parquet rows (or a lawful zero with
-      registry_state wrote_n_rows n=0) + fresh hk_discovery_receipt.json,
-      committed to main; hk_standouts.json unchanged in structure; HK page
-      normal. THIS session stays alive to verify (Sol stop condition).
-  - claim: CA non-invocation on a real nightly
-    what_would_verify: >
-      First post-merge daily.yml CA pass logs
-      registry_state=no_challenger_for_market and creates no CA shadow file
-      attributable to the HK registration.
+  - claim: first prospective production receipt (VERIFIED 2026-08-23,
+      landed a session earlier than forecast)
+    command: >
+      Saturday 08-22 asia-close (09:53Z) processed HK session 2026-08-21 on
+      the merged #6226 code; main commit 48ff25191c08. Verified from
+      origin/main bytes: hk_discovery.parquet = 139 rows, market=HK only,
+      session_date=2026-08-21, challenger_definition=hk_discovery_v1,
+      deterministic "+"-joined origins (6/7 fired; leadership lawful zero),
+      availability across 5 states incl. UNAVAILABLE_DATA
+      missing_inputs(gate_verdict) and 6 ENTRY_OPEN, visible_to_user=False +
+      published_authority=False everywhere, first_seen_at prospective;
+      receipt JSON registry_state="wrote_n_rows n=139", challenger_failures
+      empty. site/factordata/hk_standouts.json as_of=2026-08-21, structure
+      unchanged, zero shadow tokens.
+    result: >
+      PASS. Note: this receipt predates the #6227 fail-closed repair merge
+      (13:04Z) — no contamination (production supplies all three
+      availability flags; only the omitted-flag default was defective) and
+      the repair is live before the next HK session (08-24).
+  - claim: CA non-invocation on a real nightly (VERIFIED 2026-08-23)
+    command: >
+      First post-merge daily.yml run 32603557988 (head fa73271632a7), engine
+      job 97120339605 log line "INFO board_shadow(CA):
+      registry_state=no_challenger_registered"; zero hk_discovery tokens in
+      the CA lane; git ls-tree origin/main data/prophet_shadow/ shows only
+      the two HK files.
+    result: >
+      PASS — the whole-registry-empty rung, not no_challenger_for_market:
+      daily's CA pass runs in a separate PROCESS where build_hk_library's
+      registration block never executes, so the registry is empty there by
+      construction. Same non-invocation guarantee; the per-market
+      no_challenger_for_market rung is exercised by K-D7 in-process.
+unverified: []
 unresolved:
   - >
     F11 (latent): the registration closure is never cleared from the
@@ -128,8 +148,9 @@ unresolved:
     writes "as_of" while flow/darkpool specs use "asof") — reproduced with
     this diff reverted; NOT attributable to this wave; not repaired here.
 next_actions:
-  - "2026-08-24 (this session): verify first production receipt + CA non-invocation proof; flip wave to done in a records-closure commit; report to Sol with merge SHA + receipts."
-  - "Next lawful wave after receipt: HK-NATIVE-INTEL (Wave 6, family registry) — needs its own commissioning."
+  - "DONE 2026-08-23: production receipt + CA non-invocation verified (see verified:); wave flipped to done in this records-closure commit; final report to Sol filed."
+  - "Next lawful wave: HK-NATIVE-INTEL (Wave 6, family registry) — needs its own commissioning."
+  - "Optional follow-up for the next HK session (08-24): confirm the first receipt written by the post-#6227 fail-closed code (behavioral no-op in production, but it closes the loop on the repair)."
 do_not_redo:
   - All shadow-contract and #6212-correction do_not_redo entries remain binding (PROPHET-HK-CA-REVAMP-2026-08-21.md).
   - Do not register the receipt in check_surface_freshness._ARTIFACTS (ops paging spine — DEC:PROPHET-SHADOW-FRESHNESS-RECEIPT-NOT-A-SURFACE).

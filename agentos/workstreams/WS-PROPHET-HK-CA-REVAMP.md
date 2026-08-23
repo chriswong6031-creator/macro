@@ -205,7 +205,7 @@ waves:
       reviewer MERGE-BLOCKED with D1-D10, all repaired and re-killed.
   - id: hk-discovery
     title: HK candidate-recall shadow
-    status: in_progress
+    status: done
     depends_on: [shadow-contract]
     detail: >
       HK-DISCOVERY-SHADOW (Sol commission 2026-08-22): first real challenger
@@ -230,9 +230,30 @@ waves:
       session clock, warn-only, deliberately NOT in _ARTIFACTS (zero-authority
       store must not page ops). Opus adversarial round MERGE-BLOCKED with
       F1-F13; all adjudicated + repaired (R1-R11), 120 targeted tests green,
-      5 executed mutation arms. PENDING: merge + first prospective production
-      receipt (next HK session 2026-08-24) + CA non-invocation proof on the
-      first post-merge nightly.
+      6 executed mutation arms. CLOSED 2026-08-23 with production receipts:
+      merged 82dc19ff6bbf (#6226) + Sol fail-closed repair 882636757d24
+      (#6227, both bytes-verified on origin/main, proof runs SUCCESS). First
+      prospective production receipt landed EARLY — Saturday 08-22 asia-close
+      (09:53Z, main commit 48ff25191c08) for HK session 2026-08-21: 139 rows,
+      market=HK only, challenger_definition=hk_discovery_v1, deterministic
+      "+"-joined origins in canonical order (6/7 origins fired; leadership a
+      lawful zero this session), availability across 5 states incl. honest
+      UNAVAILABLE_DATA missing_inputs(gate_verdict) and 6 ENTRY_OPEN,
+      visible_to_user=False + published_authority=False on every row,
+      first_seen_at prospective (09:53Z, pre-outcome); fresh receipt JSON
+      registry_state "wrote_n_rows n=139", zero challenger_failures. That
+      receipt predates the #6227 repair merge (13:04Z) — no contamination
+      (production supplies all three availability flags; only the
+      omitted-flag default was defective), and the repair is live before the
+      next HK session (08-24). CA non-invocation proven on the first
+      post-merge daily (run 32603557988, engine job 97120339605): log line
+      "board_shadow(CA): registry_state=no_challenger_registered"
+      (whole-registry-empty rung — the CA nightly is a separate process where
+      build_hk_library's registration never executes; the per-market
+      no_challenger_for_market rung is exercised in-process by K-D7), zero
+      hk_discovery tokens in the CA lane, no CA file under
+      data/prophet_shadow/ on main. site/factordata/hk_standouts.json
+      structure unchanged (as_of=2026-08-21, no shadow tokens).
   - id: hk-intel
     title: HK native intelligence adapters
     status: todo
@@ -258,14 +279,11 @@ waves:
     status: todo
     depends_on: [hk-race, ca-race]
 next_action: >
-  HK-DISCOVERY-SHADOW shipped 2026-08-22 (wave entry): after merge, verify
-  the first prospective production receipt on the next HK asia-close session
-  (2026-08-24 — hk_discovery.parquet rows + fresh hk_discovery_receipt.json,
-  HK-only) and the CA non-invocation proof on the first post-merge nightly
-  (registry_state=no_challenger_for_market, no CA shadow file from the HK
-  registration), then flip the wave to done with the receipt. Next lawful
-  waves after that: hk-intel (depends on hk-discovery), ca-intel, ca-pit —
-  each needs its own commissioning decision. Standing follow-up: ≈2026-08-26
+  hk-discovery CLOSED 2026-08-23 with production receipts (wave entry).
+  Next lawful waves: hk-intel (HK-NATIVE-INTEL, depends on hk-discovery),
+  ca-intel, ca-pit — each needs its own commissioning decision. Optional
+  08-24 follow-up: confirm the first receipt written by the post-#6227
+  fail-closed code. Standing follow-up: ≈2026-08-26
   verify the CA board-ledger-era-empty warning self-cleared (ledger-era wave
   entry); if it persists once gradable current-era rows exist, investigate —
   never silence.
