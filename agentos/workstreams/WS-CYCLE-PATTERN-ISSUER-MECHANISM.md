@@ -580,10 +580,10 @@ waves:
       IMCE-A5C item 7/8 — TOL beginning-quarter-backlog cancellation
       sensitivity PRIOR-YEAR extraction + Sol equality-ruling pin
     status: awaiting_ci
-    pr: PENDING
+    pr: 6307
     depends_on: [A5A]
     next_action: >
-      DRAFT PR open, not merged; commissioning session adjudicates and
+      DRAFT PR #6307 open, not merged; commissioning session adjudicates and
       merges. Extraction-only, closes the named A5 gap: "TOL sensitivity
       prior-year comparator not extracted by A5A" (this file's own
       next_action above). engine/company_intelligence/issuer_profiles.py's
