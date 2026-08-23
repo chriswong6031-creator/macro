@@ -4,9 +4,18 @@
 **Wave:** P0-A1  
 **Authority:** research / source-only; no rank, gate, size, candidate origination, Prophet, Radar, Fusion, execution or trade authority
 
+> **P0-A1R supersession pointer (2026-08-22):** This #6117-era contract remains
+> historical provenance. Resumed P0-A1R selection, sampling, 04d authority, quarantine,
+> owner consumption, and stop law are controlled by
+> `DISLOCATION_P0_A1R_SOURCE_LAW_AMENDMENT_2026-08-22.md` and
+> `DEC:DISLOCATION-P0-A1R-SOURCE-LAW-RECONCILIATION`. Do not silently rewrite the
+> historical claims below or treat them as P0-A1R authority.
+
 ## Binding freeze
 
-This contract freezes candidate *selection law* before any price join. It does not freeze event classification. A search hit is not an economic episode.
+This contract recorded #6117 candidate *selection law* before any price join. It does
+not freeze event classification. A search hit is not an economic episode. Its P0-A1R
+supersession is explicit above.
 
 Executable freeze sources, in precedence order:
 

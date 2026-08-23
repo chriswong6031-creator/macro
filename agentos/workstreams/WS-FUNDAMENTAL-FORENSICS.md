@@ -18,10 +18,12 @@ discoveries:
   - DSC:FF-1-PER-ISSUER-CENSUS-EXCEEDS-90M
   - DSC:FF-1-SEC-BULK-ARCHIVE-EXCEEDS-1GIB
   - DSC:FF-1-Q3-2026-MASTER-INDEX-CANARY
+  - DSC:FF-1R-RECOVERY-PLAN-EPOCH-IS-FROZEN
 decisions:
   - DEC:FF-1-UNIVERSE-CENSUS-IS-PARQUET-DERIVED
   - DEC:FF-1-BROAD-DISCOVERY-USES-EDGAR-INDEXES
   - DEC:FF-1-RECOVERY-NOT-COMMISSIONED
+  - DEC:FF-1R-BOUNDED-JULY-RECOVERY
   - DEC:FF-1-ACCESSION-PREFIX-IS-TRANSMITTER
   - DEC:FF-1-PRIOR-COMPLETE-FAILS-CLOSED
 owns_paths:
@@ -32,6 +34,7 @@ owns_paths:
   - templates/fundamental_forensics.css
   - contracts/fundamental_forensics_health.schema.json
   - contracts/fundamental_forensics_broad_sec_run.schema.json
+  - contracts/fundamental_forensics_broad_sec_recovery_plan.schema.json
   - contracts/fundamental_forensics_broad_sec_issuer_manifest.schema.json
   - collectors/edgar_forensics.py
   - scripts/run_fundamental_forensics_broad_sec.py
@@ -73,14 +76,15 @@ waves:
       publication. This closes current-quarter discovery only.
   - id: FF-1R
     title: July recovery engine
-    status: todo
+    status: in_progress
     depends_on: [FF-1P2R]
     next_action: >
-      NOT_STARTED / NOT_COMMISSIONED. A separate Sol-approved FF-1R recovery
-      plan must select the affected population before any Submissions or
-      Company Facts acquisition. Starting fact from
-      DSC:FF-1-Q3-2026-MASTER-INDEX-CANARY is 2,560 relevant rows / 2,541
-      canonical CIKs with filed_on >= 2026-07-12. Do not dispatch recovery.
+      BUILT_NOT_PROVEN / HOLD-FOR-SOL. The commissioned engine freezes
+      recovery_from=2026-07-12T11:23:15Z plus the current sha-verified
+      latest-complete anchor, its index snapshot and relevant-set identity,
+      then advances a compact cursor through deterministic bounded tranches of
+      at most 64 CIKs. Complete review/CI before a Sol release; do not dispatch
+      recovery, previous-quarter reconciliation, or FF-2.
   - id: FF-2
     title: Broad workbench rebuild from the FF-1 source plane
     status: todo
@@ -110,6 +114,8 @@ landmines:
   - "Accession[:10] is the transmitting filer/agent CIK, not the subject issuer. Bind row CIK to path CIK; require accession shape only. Live canary: MSFT 0000789019 / 0001193125-26-323660 (DEC:FF-1-ACCESSION-PREFIX-IS-TRANSMITTER)."
   - "A sha-verified latest-complete missing index-discovery state is corrupt prior, not bootstrap (DEC:FF-1-PRIOR-COMPLETE-FAILS-CLOSED)."
   - "Previous-quarter weekly reconciliation is SPEC_ONLY / NOT_BUILT. Current-quarter rebuilt-index corrections are implemented; FF-1 is not globally correction-safe yet."
+  - "FF-1R freezes one recovery plan from the sha-verified latest-complete anchor and its EDGAR snapshot. A later current-quarter poll or mutable index must not change that plan. Every recovery tranche is at most 64 selected CIKs; historical Submissions shards are date-span-selected, bounded, and never an all-shard crawl."
+  - "A partial FF-1R tranche may write immutable observations, receipts and its compact continuation, but never latest-complete. Only a backlog-zero final composition may advance latest-complete, and it must preserve newer current-incremental evidence."
 do_not_redo:
   - "Do not modify FF-0 (app/forensics.py, engine/fundamental_forensics/health.py, templates/fundamental_forensics*, site/fundamental_forensics*, scripts/build_fundamental_forensics.py)."
   - "Do not start FF-2: no workbench rebuild, detectors, findings publish, Prophet/Neural Web, attested-history, or Calcbench."
@@ -130,12 +136,13 @@ do_not_redo:
   - "Do not require accession[:10] == subject CIK. That rejects agent-filed rows and fails the live master index."
   - "Do not bootstrap from a sha-verified latest-complete that lacks a well-formed index block."
   - "Do not move the 03:15 UTC schedule merely because submissions.zip rebuilds around 03:00 ET. Q3 master.zip Last-Modified was 02:02 UTC."
+  - "Do not make recovery chase a live index, materialize a full pending-CIK list in continuation, refetch already committed CIKs, or use all historical filings.files shards. FF-1R binds a frozen plan and advances its compact cursor only after an issuer outcome is durable."
 next_action: >
   FF-1P2R current-quarter EDGAR-index discovery is PROVEN_LIVE. FF-1 remains
-  PARTIAL / in progress. FF-1R is NOT_STARTED / NOT_COMMISSIONED;
-  previous-quarter weekly reconciliation is SPEC_ONLY / NOT_BUILT; FF-2 is
-  FORBIDDEN / NOT_STARTED. Await a separate Sol commission before any next
-  capability.
+  PARTIAL / in progress. FF-1R bounded July recovery is BUILT_NOT_PROVEN /
+  HOLD-FOR-SOL: finish exact-head review and CI, then await an explicit Sol
+  release before any production dispatch. Previous-quarter weekly
+  reconciliation is SPEC_ONLY / NOT_BUILT; FF-2 is FORBIDDEN / NOT_STARTED.
 ---
 
 ## Context
@@ -159,9 +166,13 @@ census architecture remains retired.
 current-quarter index-driven discovery only
 (`DEC:FF-1-RECOVERY-NOT-COMMISSIONED`). Run A `32604043860` established the
 2,841-name canonical baseline; Run B `32605564919` proved the quiet
-incremental path without issuer fanout. `mode=recovery` still fail-closes with
-`recovery_plan_required` before any SEC call or Research R2 write. FF-1R
-(July recovery engine) is NOT_BUILT; the measured starting fact is 2,560
-relevant rows / 2,541 unique canonical CIKs with `filed_on >= 2026-07-12`.
-Previous-quarter weekly reconciliation remains SPEC_ONLY / NOT_BUILT. Do not
-mark FF-1 done. FF-2 remains forbidden.
+incremental path without issuer fanout. Before this successor, `mode=recovery`
+failed closed with `recovery_plan_required` before any SEC call or Research R2
+write. FF-1R (July recovery engine) is now locally built but not proven or production
+commissioned. It is bound to `recovery_from=2026-07-12T11:23:15Z`, freezes a
+sha-verified latest-complete/index-snapshot plan before issuer network access,
+and processes no more than 64 selected CIKs per tranche through a compact
+cursor. Historical shards are only date-span-selected and bounded. Partial
+tranches never advance latest-complete; final recovery composition preserves
+newer incremental evidence. Previous-quarter weekly reconciliation remains
+SPEC_ONLY / NOT_BUILT. Do not mark FF-1 done. FF-2 remains forbidden.
