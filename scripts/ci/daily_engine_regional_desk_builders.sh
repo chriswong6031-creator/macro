@@ -161,6 +161,13 @@ cl_misc() {
   # ledger + truth registry, so it runs AFTER cycle_pattern_live (sequential
   # within cl_misc — same ordering guarantee as the live-view step above).
   brun cycle_pattern_state "CPI NW adapter (build_cycle_pattern_state)" scripts.build_cycle_pattern_state
+  # IMCE A5B: registered prospective forward capture. DAILY-ONLY — the sole
+  # nightly advancer of data/cycle_pattern/imce_prospective_observation_v1.jsonl
+  # (never the three-hour company-intelligence workflow, which only publishes
+  # the source event_workspace.v1 objects this step reads). Runs after the
+  # other cycle_pattern steps (family grouping) and before `measurement`,
+  # which reads this ledger for its compact accrual/status projection.
+  brun cycle_pattern_imce_prospective "IMCE A5B prospective capture (build_cycle_pattern_imce_prospective)" scripts.build_cycle_pattern_imce_prospective
   # Stock seasonality calendar clock (research/STOCK_SEASONALITY_LANE2_DESIGN_SPEC.md).
   # DAILY-ONLY and LAST in cl_misc: the 2645-window family and its independent
   # circular year-shift null (B=2000, raw + market-neutral) are the heavy leg, and
@@ -208,7 +215,7 @@ wait
 # check_builder_failstreaks, which globs *.rc and so catches a >=2-night
 # streak regardless of ORDER) — but a FIRST failure still passed silently,
 # with no log and no step-summary line for the TXI W1 chain tracker.
-ORDER="commodities spr forex bonds crossasset transmission transmission_chains discovery gex_board vol_regime market_structure event_windows darkpool options_flow flow_desk options_skew options_ivspread options_dislocation options_screener options_entry intraday_flow baskets baskets_snapshot theme_graph theme_graph_guard subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics basket_washout rotation_events rebalance_pulse methodology nasdaq_internals seasonality reports research_vault cycle sectorcyc countrycyc markets measurement sync_gauge policy_intent policy_watch special index_changes cycle_pattern_live cycle_pattern_state stock_seasonality stock_seasonality_page biopharma_seasonality seasonality_shadow program_watch stage_analysis stage_analysis_page top_maturation winner_health_page"
+ORDER="commodities spr forex bonds crossasset transmission transmission_chains discovery gex_board vol_regime market_structure event_windows darkpool options_flow flow_desk options_skew options_ivspread options_dislocation options_screener options_entry intraday_flow baskets baskets_snapshot theme_graph theme_graph_guard subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics basket_washout rotation_events rebalance_pulse methodology nasdaq_internals seasonality reports research_vault cycle sectorcyc countrycyc markets measurement sync_gauge policy_intent policy_watch special index_changes cycle_pattern_live cycle_pattern_state cycle_pattern_imce_prospective stock_seasonality stock_seasonality_page biopharma_seasonality seasonality_shadow program_watch stage_analysis stage_analysis_page top_maturation winner_health_page"
 echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
 for slug in $ORDER; do
   [ -f "$ART/$slug.log" ] || continue

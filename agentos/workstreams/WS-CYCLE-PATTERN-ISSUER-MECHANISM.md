@@ -288,12 +288,14 @@ waves:
       honestly open per R6.
   - id: A5A
     title: IMCE-A5A — event-workspace publication generalization (DHI/PHM/KBH/TOL results events through the existing event_workspace.v1 path; source truth only)
-    status: awaiting_ci
+    status: done
+    pr: 6270
     depends_on: [A4]
     next_action: >
-      BUILT — DRAFT PR open, pending the commissioning session's review and
-      merge (this record will not say "done" until that PR lands on
-      origin/main; update the status/commit hash then). Ran the registered
+      DONE — MERGED. PR #6270 landed as
+      5b8ca994de05345d3cea514c46c27611bfe496d1 (verified as this session's
+      origin/main ancestor pin via `git merge-base --is-ancestor`; A5B below
+      branches from this exact commit). Ran the registered
       homebuilder v0 experiment's SOURCE PLANE — nothing else —
       through the existing Company Intelligence event_workspace.v1 publication
       lane: no new source/event/document store, no new scheduler, no copied
@@ -333,6 +335,87 @@ waves:
       the diff — every new fixture/test is labelled historical/reconstruction.
       LEN/NVR are NOT added this wave (Sol: LEN outside v0; NVR separate
       stratum). Next gate: A5B (not yet scoped by this wave).
+  - id: A5B
+    title: IMCE-A5B — registered prospective forward capture (decision-time M_t/R_t/C_t observation ledger; zero outcome fields)
+    status: awaiting_ci
+    depends_on: [A5A]
+    next_action: >
+      BUILT — DRAFT PR open, branched from fresh origin/main pinned to the
+      A5A merge SHA 5b8ca994de05345d3cea514c46c27611bfe496d1 (this record
+      will not say "done" until that PR lands on origin/main; update
+      status/pr/commit hash then). One new bounded module
+      engine/cycle_pattern/imce_prospective.py (append-only JSONL,
+      activation/observation/correction row kinds, content-addressed
+      observation_id, first-observation-wins keying on
+      (event_id, decision_cutoff), strict activation-law fencing that also
+      binds contributing-issuer states, an outcome-field blacklist assertion,
+      and a reconstruction/production write-path law enforced bidirectionally
+      so tests can never touch the production ledger). M_t implements
+      research/imce/IMCE_A4P_ORDER_SOFTNESS_STATE_CONSTRUCTION_V1.md
+      verbatim (sign-only §2 lookup table, §3.1 ≥2-contributor pooling floor
+      with any tie typed MIXED, 4/4→cohort / 2-3→named_subset / <2→
+      NOT_RECONSTRUCTABLE label rule) reusing A5A's own extracted facts
+      (fact_net_orders_current/prior_year, fact_cancellation_rate_current/
+      prior_year/denominator, plus TOL's beginning-quarter-backlog
+      sensitivity fact) — zero new threshold/model/issuer logic. TOL's §1b
+      mandatory sensitivity diagnostic is honestly NOT_RECONSTRUCTABLE this
+      wave (A5A's source plane extracts only the current-period backlog
+      figure, no prior-year comparator under that basis — a source-coverage
+      gap, never an imputed one). R_t reuses engine.htf_durability's
+      _biweekly_close + engine.technicals.macd_hist (classic 12/26/9),
+      PIT-bounded via engine.session_digest.session_window_et session-close
+      admissibility, reading the ticker's house-canonical plane via
+      engine.stock_identity.plane.primary_planes() (all four issuers resolve
+      to baskets_ohlcv_v1 — none are on the deeper stocks_tr_v1 plane — no
+      fallback across planes; the forbidden strings "2W-FRI"/"_resample_
+      weekly" are pinned absent by test). C_t captures Treasury CMT as an
+      honest typed absence (GO_LIMITED authorizes persistence but this repo
+      has no first-party Daily Treasury Par Yield Curve fetcher/store yet —
+      building one is new collector infrastructure, deferred rather than
+      improvised); PMMS held/never persisted, FRED/ALFRED/NAR excluded,
+      matching the registered contract's rights table exactly. Nightly
+      wiring: one step (build_cycle_pattern_imce_prospective) added to
+      daily.yml's cl_misc band via scripts/ci/daily_engine_regional_desk_builders.sh
+      (+ its ORDER string) and the matching config/dag.yml cl_misc block
+      ONLY (not render.yml's/engine-render.yml's separate cl_misc blocks,
+      which deliberately omit every other DAILY-ONLY forward-ledger writer
+      in this family) — verified by `pytest tests/test_dag_conformance.py`
+      (48 passed). The builder discovers candidate events via
+      engine.company_intelligence.events.canonical_event_id over a bounded
+      lookback window and reads them through the SAME public-origin reader
+      scripts.refresh_event_workspaces.load_prior_workspace A5A already
+      established — no new store, no second reader implementation. Consumer:
+      scripts/build_measurement.py gained build_imce_prospective_projection()
+      (registration state, activation timestamp, last decision cutoff,
+      per-issuer observation counts, cohort/named_subset/NOT_RECONSTRUCTABLE
+      counts, outcomes = fenced / 0 always) rendered as a new below-the-fold
+      subpanel in templates/measurement.html.j2 reusing the existing
+      Evidence-Gap panel's eg-* component set (no new visual language),
+      bilingual EN/ZH. No allowlist edit needed in
+      scripts/check_cycle_pattern_authority.py — both new files match its
+      existing scripts.build_cycle_pattern_/engine.cycle_pattern. prefixes.
+      New tests (tests/test_imce_prospective.py, 57 cases): activation
+      idempotence; first-observation-wins + duplicate no-op; correction
+      append with byte-exact original-packet immutability; activation-law
+      fencing + bidirectional reconstruction/production path enforcement;
+      the full order_softness lookup table + missing-never-zero +
+      no-state-carry-forward; the pooling floor/tie/label truth table; the
+      outcome-field blacklist over every declared token; PIT bar
+      admissibility against the REAL committed data/baskets/ohlcv/*.parquet
+      files (no network); the measurement projection rebuilding purely from
+      a reconstruction-mode ledger; and the cycle-pattern authority guard's
+      own selftest plus a direct scan of both new files. The production
+      ledger path is never created by this wave — this session verified
+      `data/cycle_pattern/imce_prospective_observation_v1.jsonl` does not
+      exist after the full test run; per frozen spec item 15 the file is
+      left for the first real nightly run to create (never pre-seeded empty
+      in git), because manufacturing even an empty pre-activation file risks
+      being read as a production timestamp before any real nightly has run.
+      Proof classification: BUILT_NOT_PROVEN, honestly — no real
+      post-activation earnings event can exist before the first post-merge
+      nightly; this wave does not backfill or manufacture one. Next gate:
+      whatever the commissioning session names after reviewing this draft
+      (a real post-activation observation is the natural A5B proof event).
 next_action: >
   Sol's FOURTH GATE (A4P.1) closes the five escalations the third gate left
   open with the returns: (1) AG14 cohort-label question SETTLED by R2's

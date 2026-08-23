@@ -908,6 +908,15 @@ lanes:
             - scripts.build_index_changes
             - scripts.build_cycle_pattern_live
             - scripts.build_cycle_pattern_state
+            # IMCE A5B: registered prospective forward capture. DAILY-ONLY —
+            # the sole nightly advancer of
+            # data/cycle_pattern/imce_prospective_observation_v1.jsonl (never
+            # the three-hour company-intelligence workflow, which only
+            # publishes the source event_workspace.v1 objects this step
+            # reads). Grouped after the other cycle_pattern steps, before
+            # build_measurement (which reads this ledger for its compact
+            # accrual/status projection).
+            - scripts.build_cycle_pattern_imce_prospective
             # Stock seasonality calendar clock. DAILY-ONLY on purpose: the window
             # family (2645 windows) and its independent circular year-shift null
             # (B=2000, on the raw AND the market-neutral panel) are the heavy leg,
