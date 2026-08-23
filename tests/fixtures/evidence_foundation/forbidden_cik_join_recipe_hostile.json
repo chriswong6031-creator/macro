@@ -1,7 +1,7 @@
 {
   "schema": "evidence_foundation.recipe.v1",
   "version": "1.0.0",
-  "recipe_id": "erp_1ed1f9418f95d34361717fc7091cc5f301d18d8e710e6b9b19f4bc6f4060c28a",
+  "recipe_id": "erp_e98b1e3a36c9e9686863923b06f1e5ed57591a4f666dadfcec3eaed9ce4574ba",
   "recipe_name": "security_state.v1.evidence",
   "consumer": {
     "workstream": "WS:MARKET-OS",
@@ -61,12 +61,12 @@
       "block_key": "theme_context",
       "requirement": "optional",
       "allowed_owner_stores": [
-        "theme_graph.evidence"
+        "theme_graph.edge_belief"
       ],
       "allowed_object_classes": [
-        "world_observation"
+        "system_belief"
       ],
-      "evidence_class": "fact",
+      "evidence_class": "deterministic",
       "minimum_references": 1,
       "maximum_references": 2,
       "on_absent": "degrade",

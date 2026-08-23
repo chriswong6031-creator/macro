@@ -7,40 +7,40 @@
       "kind": "reference",
       "expected": "valid",
       "expected_violations": [],
-      "size_bytes": 2985,
-      "sha256": "e76e2c2ab1210c4b5ab66e8745d8c0d2e226e9edf46a89761b028538373df81f"
+      "size_bytes": 3366,
+      "sha256": "b3cbca366eeec8c6d66b9fce49e0878d2e511aa63eaff87bcc7d039d6ebcbe65"
     },
     {
       "file": "theme_graph_shared_upstream_valid.json",
       "kind": "reference",
       "expected": "valid",
       "expected_violations": [],
-      "size_bytes": 3856,
-      "sha256": "df0b321109ec8394dfe2ae5032d36655e94b7900cf5b0d3d4d7741a47685ad22"
+      "size_bytes": 4227,
+      "sha256": "3424370078fb8adeab8e56f9e89c5b51184225ac01ecb46a53b8f92b9155e968"
     },
     {
       "file": "theme_graph_conflicting_valid.json",
       "kind": "reference",
       "expected": "valid",
       "expected_violations": [],
-      "size_bytes": 4760,
-      "sha256": "448580a48f374266007850d0cea937768139483cc3517b66b9e952e0cc0b0abf"
+      "size_bytes": 5131,
+      "sha256": "ed413361be584dea1c1d0b474471d1c8c5f9d1df5763109e902589b402726947"
     },
     {
       "file": "qledger_claim_valid.json",
       "kind": "reference",
       "expected": "valid",
       "expected_violations": [],
-      "size_bytes": 3094,
-      "sha256": "fc3b242b9f9fe90b88ea442e1a4ea8037f2ba22978246af82d88c803081b1ba2"
+      "size_bytes": 3031,
+      "sha256": "2c58180aa57c9c5ca6cabb316544229a17de3b5ea91206e8122f4b46ceca7b55"
     },
     {
       "file": "rights_blocked_reference_valid.json",
       "kind": "reference",
       "expected": "valid",
       "expected_violations": [],
-      "size_bytes": 3238,
-      "sha256": "4e5274b1c4269be1eb729a16514169fd202e0dbcda3a62a04021518994a93d75"
+      "size_bytes": 3254,
+      "sha256": "e068146a5c50afcfc4534794d3719641f2c9e16c55b6f0707a6b2f5ded14b28f"
     },
     {
       "file": "aapl_earnings_change_block_valid.json",
@@ -55,48 +55,48 @@
       "kind": "block",
       "expected": "valid",
       "expected_violations": [],
-      "size_bytes": 3072,
-      "sha256": "cc8bc4d19f1fb4a798fe5257c848cb26b5f63fd8123fe37b4991f06e1d4ff177"
+      "size_bytes": 3077,
+      "sha256": "d22ea2b14b48ee8e8f28ab676ac838232f76db2ab630272368c08a9b73ad512d"
     },
     {
       "file": "aapl_theme_context_block_valid.json",
       "kind": "block",
       "expected": "valid",
       "expected_violations": [],
-      "size_bytes": 2716,
-      "sha256": "d2ed4ddc11582bb3aa1cbdb09328faf38af37f7bb73d249e7c08b1421c70d52a"
+      "size_bytes": 3255,
+      "sha256": "94985db98b5eea8e7bc2dd37c84e74c8753b33fd3c19942f17b1c827ae37720a"
     },
     {
       "file": "aapl_forward_context_block_valid.json",
       "kind": "block",
       "expected": "valid",
       "expected_violations": [],
-      "size_bytes": 3039,
-      "sha256": "3c9eb6dcfc73dd120ce5cd13915ea6650b2574a7e9ab4cd21919d51a50c9b246"
+      "size_bytes": 3041,
+      "sha256": "54364537a417504145652365dccf1e63b0931bc3dc62a88f50710e3e4d0936ca"
     },
     {
       "file": "shared_upstream_block_valid.json",
       "kind": "block",
       "expected": "valid",
       "expected_violations": [],
-      "size_bytes": 3943,
-      "sha256": "861215ac7543025687fcce5dad0b56041d6b347ffbdd3a7016b860e5caf297d2"
+      "size_bytes": 4997,
+      "sha256": "db3b24fd181a526f1a06868598f8003e14882f3947e1ba2d9f4b74cc5fef558d"
     },
     {
       "file": "conflicting_observations_block_valid.json",
       "kind": "block",
       "expected": "valid",
       "expected_violations": [],
-      "size_bytes": 4083,
-      "sha256": "98e912d8bae6f7a0d725ec77d19632d15dd0f3ada99982872d4153721dc9f58f"
+      "size_bytes": 5137,
+      "sha256": "d6843edaac97ab6571ce55044601344dc2b827f5e41ee9ce34c46439faa15fc3"
     },
     {
       "file": "rights_blocked_block_valid.json",
       "kind": "block",
       "expected": "valid",
       "expected_violations": [],
-      "size_bytes": 3040,
-      "sha256": "2e5d4c042383df492ded62bf006e9430c03f06695e097bbbecfb8607717b1ab4"
+      "size_bytes": 3042,
+      "sha256": "a490ffbdb6cfbb88701d7aef27ea6470e5152c9c0ea45d9d763eea8ea1a1856f"
     },
     {
       "file": "corrected_context_block_valid.json",
@@ -113,16 +113,16 @@
       "expected_violations": [
         "block_evidence_class_masquerade"
       ],
-      "size_bytes": 3038,
-      "sha256": "4b2e6fadb6ba95827d4b009c6ba5ab28adf2d194214cdf487ee0f8b1c4977cb9"
+      "size_bytes": 3040,
+      "sha256": "370dd499a456dcc4bbef7fcf0fd01b7f229cfafa529678a1f6262b8b632195bd"
     },
     {
       "file": "aapl_security_state_recipe_valid.json",
       "kind": "recipe",
       "expected": "valid",
       "expected_violations": [],
-      "size_bytes": 5489,
-      "sha256": "d4ed4dfe815f3869aa266d27723ce071e19c9f67f31d3804eb073aac64e0609a"
+      "size_bytes": 5497,
+      "sha256": "6c384c9a70a187f7f688ea5054e01a173c67e206becf3caa1c83c112d4692252"
     },
     {
       "file": "forbidden_cik_join_recipe_hostile.json",
@@ -131,16 +131,16 @@
       "expected_violations": [
         "recipe_identity_join_forbidden:0"
       ],
-      "size_bytes": 5458,
-      "sha256": "57cd72d5f7d48bd69ebca54d0328e726d69063a0040c43b5514bab5bba044193"
+      "size_bytes": 5466,
+      "sha256": "5a8712ef170d62da8adfe300cbdfba1ba73074c01a400921da74fec7e89b3c58"
     },
     {
       "file": "aapl_security_state_compilation_expected.json",
       "kind": "receipt",
       "expected": "valid",
       "expected_violations": [],
-      "size_bytes": 1111,
-      "sha256": "15b733a4b4b0941d624ba01f14c0c4ca2467030944d1a7bba3985a1a26f1c2ec"
+      "size_bytes": 979,
+      "sha256": "d130c344a1fd42f9a2e9235156bad55950ea35928bda4988bbef5d98e6275730"
     }
   ]
 }

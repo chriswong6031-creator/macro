@@ -327,18 +327,17 @@ EXPECTED_NATIVE_IDENTITY_GRAMMARS = {
 }
 
 EXPECTED_SUBJECT_NATIVE_PARITY = {
-    "theme_graph.evidence": {"theme_node": {"kind": "unbound"}},
+    "theme_graph.evidence": {
+        "theme_evidence_id": {"kind": "native_field_equal", "field": "evidence_id"}
+    },
     "theme_graph.edge_belief": {
         "theme_node": {"kind": "theme_edge_endpoint", "field": "edge_id"}
     },
     "fif.raw_occurrence": {
-        "issuer_id": {"kind": "unbound"},
-        "cik": {"kind": "unbound"},
-        "accession": {"kind": "unbound"},
+        "fif_occurrence_id": {"kind": "native_field_equal", "field": "occurrence_id"}
     },
     "fif.packet": {
-        "issuer_id": {"kind": "unbound"},
-        "cik": {"kind": "unbound"},
+        "fif_packet_id": {"kind": "native_field_equal", "field": "packet_id"}
     },
     "earnings.workspace_generation": {
         "cik": {"kind": "earnings_event_cik_equal", "field": "event_id"}
@@ -349,14 +348,13 @@ EXPECTED_SUBJECT_NATIVE_PARITY = {
         "accession": {"kind": "native_field_equal", "field": "accession"},
     },
     "institutional_13f.catalog_generation": {
-        "institutional_manager_cik": {"kind": "unbound"},
-        "cik": {"kind": "unbound"},
-        "cusip": {"kind": "unbound"},
+        "institutional_catalog_generation_id": {
+            "kind": "native_field_equal",
+            "field": "generation_id",
+        }
     },
     "govrev.event.v2": {
-        "award_key": {"kind": "unbound"},
-        "notice_id": {"kind": "unbound"},
-        "cik": {"kind": "unbound"},
+        "govrev_event_id": {"kind": "native_field_equal", "field": "event_id"}
     },
     "biocatalyst.current_source_snapshot": {
         "nct": {"kind": "native_field_equal", "field": "nct_id"}
@@ -368,14 +366,13 @@ EXPECTED_SUBJECT_NATIVE_PARITY = {
         "chain_id": {"kind": "native_field_equal", "field": "chain"}
     },
     "qledger.claim": {
-        "claim_id": {"kind": "native_field_equal", "field": "claim_id"},
-        "security_id": {"kind": "unbound"},
-        "listing_key": {"kind": "unbound"},
+        "claim_id": {"kind": "native_field_equal", "field": "claim_id"}
     },
     "market_memory.outcome_record": {
-        "mm_subject": {"kind": "unbound"},
-        "security_id": {"kind": "unbound"},
-        "listing_key": {"kind": "unbound"},
+        "mm_outcome_record_id": {
+            "kind": "native_field_equal",
+            "field": "outcome_record_id",
+        }
     },
 }
 
@@ -453,6 +450,12 @@ VALID_SUBJECT_VALUES = {
     "mm_subject": "mmsecurity_" + "a" * 64,
     "institutional_manager_cik": "0000320193",
     "cusip": "037833100",
+    "theme_evidence_id": "ev:" + "a" * 16,
+    "fif_occurrence_id": "rawfact_" + "a" * 64,
+    "fif_packet_id": "fip_" + "a" * 24,
+    "institutional_catalog_generation_id": "i13fgen_" + "a" * 64,
+    "govrev_event_id": "govawd-fixture",
+    "mm_outcome_record_id": "mmoutcome_" + "a" * 64,
 }
 
 
@@ -634,6 +637,18 @@ def test_vocabulary_refuses_missing_schema_identity_type_clock_and_synapse_bindi
     with pytest.raises(EvidenceFoundationError, match="vocabulary_synapse_asof_unbound"):
         load_vocabulary(path)
 
+    subject_unbound = deepcopy(vocabulary)
+    subject_unbound["owner_stores"]["qledger.claim"]["subject_native_parity"] = {
+        "claim_id": {"kind": "unbound"}
+    }
+    path = tmp_path / "subject-unbound.json"
+    path.write_text(json.dumps(subject_unbound), encoding="utf-8")
+    with pytest.raises(
+        EvidenceFoundationError,
+        match="vocabulary_owner_subject_native_parity_invalid:qledger.claim:claim_id",
+    ):
+        load_vocabulary(path)
+
 
 def test_every_owner_reader_symbol_is_callable_and_kind_is_honest(vocabulary: dict) -> None:
     for name, owner in vocabulary["owner_stores"].items():
@@ -703,6 +718,12 @@ def test_owner_vocabulary_is_bound_to_current_source_contracts(vocabulary: dict)
         assert owner["native_identity_grammars"] == EXPECTED_NATIVE_IDENTITY_GRAMMARS[name]
         assert owner["subject_native_parity"] == EXPECTED_SUBJECT_NATIVE_PARITY[name]
         assert set(owner["subject_native_parity"]) == set(owner["subject_key_types"])
+        for subject_type, parity in owner["subject_native_parity"].items():
+            assert parity["kind"] != "unbound", name
+            if parity["kind"] == "native_field_equal":
+                assert vocabulary["subject_key_grammars"][subject_type] == owner[
+                    "native_identity_grammars"
+                ][parity["field"]], name
 
     assert owners["theme_graph.evidence"]["native_identity_fields"] == list(EVIDENCE_KEY)
     assert owners["theme_graph.edge_belief"]["native_identity_fields"] == list(EDGE_KEY)
@@ -1016,9 +1037,9 @@ def test_subject_cik_rejects_ticker_after_pointer_and_reference_id_recompute(
 @pytest.mark.parametrize(
     ("fixture_name", "hostile_key", "key_type"),
     [
-        ("qledger_claim_valid.json", "AAPL", "security_id"),
-        ("fif_packet_valid.json", "AAPL", "issuer_id"),
-        ("theme_graph_evidence_valid.json", "AAPL", "theme_node"),
+        ("qledger_claim_valid.json", "AAPL", "claim_id"),
+        ("fif_packet_valid.json", "AAPL", "fif_packet_id"),
+        ("duplicate_corroboration_hostile.json", "AAPL", "theme_evidence_id"),
     ],
 )
 def test_structured_subject_types_reject_ticker_labels_after_rehash_through_both_apis(
@@ -1049,15 +1070,29 @@ def test_earnings_subject_cik_must_equal_the_native_event_cik_after_rehash() -> 
 @pytest.mark.parametrize(
     ("owner_name", "subject_type", "hostile_key"),
     [
+        ("theme_graph.evidence", "theme_evidence_id", "ev:" + "b" * 16),
         ("theme_graph.edge_belief", "theme_node", "co:us:MSFT"),
+        ("fif.raw_occurrence", "fif_occurrence_id", "rawfact_" + "b" * 64),
+        ("fif.packet", "fif_packet_id", "fip_" + "b" * 24),
         ("earnings.workspace_generation", "cik", "0001067983"),
         ("institutional_13f.raw_receipt", "institutional_manager_cik", "0001067983"),
         ("institutional_13f.raw_receipt", "cik", "0001067983"),
         ("institutional_13f.raw_receipt", "accession", "0001067983-26-000001"),
+        (
+            "institutional_13f.catalog_generation",
+            "institutional_catalog_generation_id",
+            "i13fgen_" + "b" * 64,
+        ),
+        ("govrev.event.v2", "govrev_event_id", "govawd-fixture-other"),
         ("biocatalyst.current_source_snapshot", "nct", "NCT00000002"),
         ("biocatalyst.history_source_snapshot", "nct", "NCT00000002"),
         ("txi.episode_transition", "chain_id", "other_chain"),
         ("qledger.claim", "claim_id", "b" * 16),
+        (
+            "market_memory.outcome_record",
+            "mm_outcome_record_id",
+            "mmoutcome_" + "b" * 64,
+        ),
     ],
 )
 def test_every_bound_subject_native_identity_rule_kills_valid_but_different_values(

@@ -1,7 +1,7 @@
 {
   "schema": "evidence_foundation.reference.v1",
   "version": "1.0.0",
-  "reference_id": "efr_806a5363324bf97d5d0e5141402819282b7eea979fd1316b6e0557530c066f04",
+  "reference_id": "efr_cfe2ff76eaf1b6780fdf397d34b94e3ddcbe05c40e2db316aa30c509aacbdfbc",
   "object_class": "world_observation",
   "owner_store": "theme_graph.evidence",
   "native_identity": {
@@ -14,8 +14,8 @@
   },
   "coverage_class": "append_only_bitemporal",
   "subject": {
-    "key_type": "theme_node",
-    "key": "theme:ai-infrastructure"
+    "key_type": "theme_evidence_id",
+    "key": "ev:3333333333333333"
   },
   "secondary_subjects": [],
   "clocks": [

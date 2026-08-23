@@ -33,7 +33,9 @@ changed:
       capability, object classes, subject-key grammars, native clocks, honest
       accessors, pointer templates, and existing Synapse `asof_field` or explicit
       null. Earnings uses the native generation parser; the scalar/no-I/O Data OS
-      lookup is not misrepresented as a native-object reader.
+      lookup is not misrepresented as a native-object reader. Successful `unbound`
+      subject parity is abolished: each owner admits only a value proven by its
+      native identity, otherwise only the native object ID is exposed.
   - path: "contracts/evidence_foundation/block.v1.schema.json"
     what: >
       Adds the closed EvidenceBlock consumer-projection contract: named job and
@@ -53,9 +55,11 @@ changed:
       clock and denominator validation, correction-recompile receipts, lawful-join
       validation, exact owner identity/coverage/replay enforcement, FIF historical
       replay cutoffs, cited-reference/typed-relation-derived Block claims, and an
-      in-memory recipe compiler that executes exact subject-value joins and persists
-      nothing. Every public validator loads the validated repository vocabulary and
-      exposes no caller-supplied vocabulary authority.
+      in-memory recipe compiler that executes exact canonical subject-value binding,
+      treats join triples as declarations rather than proof, excludes optional
+      identity-unresolved blocks, refuses required identity-unresolved blocks, and
+      persists nothing. Every public validator loads the validated repository
+      vocabulary and exposes no caller-supplied vocabulary authority.
   - path: "tests/fixtures/evidence_foundation/"
     what: >
       Retains eight byte-receipted reference fixtures after adding rights/freshness/
@@ -64,10 +68,11 @@ changed:
       hostile forbidden CIK join, AAPL recipe, and exact compilation receipt.
   - path: "tests/test_evidence_foundation_product_contract.py"
     what: >
-      Proves all authenticated-rider product laws, the four-owner AAPL composition,
-      source-valid native identities, canonical-vocabulary rebind refusal, derived
-      Block claims/map identity, exact Recipe outputs/rules, required adverse effects,
-      and mixed-security refusal.
+      Proves all authenticated-rider product laws, the four-owner AAPL fail-closed
+      composition, source-valid native owner-row projections, canonical-vocabulary
+      rebind refusal, derived Block claims/map identity, exact Recipe outputs/rules,
+      required adverse effects, and same-native valid-different QLedger/FIF/Theme
+      refusal through Ref, Block, and Recipe.
   - path: "tests/test_evidence_foundation_contract.py"
     what: >
       Proves the exact 13-owner schema, identity and subject grammar/native parity,
@@ -115,36 +120,42 @@ verified:
       a22bf70db5ee4794ee56caefbc4c355e894d5d40..origin/main; git merge --no-edit
       origin/main; git merge-base --is-ancestor origin/main HEAD
     result: >
-      Current Macro main is 8c0608652652d4d81f177c8c315db638975ae2cd and is an
-      ancestor of the candidate. Its final K1-relevant movement adds the immutable
+      Macro main 8c0608652652d4d81f177c8c315db638975ae2cd is an ancestor of the
+      candidate. Its final K1-relevant movement adds the immutable
       Earnings workspace manifest v2 predecessor chain and its Neural Web CI test;
       WORKSPACE_SCHEMA, WORKSPACE_KEYS, event/generation identity grammars, native
       workspace identity, and its three registered clocks remain unchanged. The
       shared legacy-jobs path was integrated normally rather than waived as churn.
+      A final bounded fetch observed fbdf22a38d5cfd5f0d575236e59ddf7b7e8e728a;
+      its delta is confined to volatile marketing/metabolism/research-vault/
+      White House data and PR #6319 remains MERGEABLE/CLEAN, so anti-livelock law
+      leaves the tested candidate unchanged.
   - claim: Reference and authenticated product contracts pass their focused tests.
     command: >
       python3 -m pytest -q
       tests/test_evidence_foundation_contract.py
       tests/test_evidence_foundation_product_contract.py
     result: >
-      The integrated combined suite passed 111 tests, including the Git-backed
+      The integrated combined suite passed 123 tests, including the Git-backed
       no-store inventory assertion, all hostile source-identity/coverage/replay
       mutations, attacker-vocabulary refusal, rehashed Block laundering and map-key
       substitution, exact Recipe outputs/rules, required rights/conflict effects,
-      and mixed AAPL/MSFT subject composition. The run emitted only three unrelated
-      pytest temp-directory cleanup warnings.
+      and same-native valid-different QLedger/FIF/Theme Ref/Block/Recipe rejection.
+      The run emitted only three unrelated pytest temp-directory cleanup warnings.
   - claim: Current native owner regressions remain green after rider integration.
     command: >
       python3 -m pytest -q tests/test_dataos_identity.py
       tests/test_theme_graph_contracts.py tests/test_fundamental_forensics_raw_ledger.py
+      tests/test_fundamental_forensics_financial_intelligence_packet.py
       tests/test_company_intelligence_event_workspace.py
       tests/test_company_intelligence_workspace_chain.py
       tests/test_institutional_13f_catalog.py tests/test_government_revenue_award_events.py
       tests/test_biocatalyst_protocols.py tests/test_clinicaltrials_history.py
-      tests/test_transmission_chains.py tests/test_qledger_evidence_clock.py
+      tests/test_transmission_chains.py tests/test_qledger.py
+      tests/test_qledger_evidence_clock.py
       tests/test_market_memory.py
     result: >
-      After full-checkout materialization restored the committed Bio fixtures, 584
+      After full-checkout materialization restored the committed Bio fixtures, 657
       passed and 1 skipped. The four warnings were three unrelated temporary-directory
       cleanup warnings plus one upstream Starlette deprecation warning. The configured
       sparse profile was then restored without heavy-tree dirt.
@@ -160,7 +171,8 @@ verified:
       --pack-count 12 --validate-only
     result: >
       Contract delta reports 0 introduced and 0 inherited findings against
-      8c0608652652. All 202 legacy jobs validate; pack 5 selects 18 jobs including
+      3abc5e99ef25; the later final-main movement is disjoint volatile data. All 202
+      legacy jobs validate; pack 5 selects 18 jobs including
       signal-contract. The workflow edit is an explicit CI-authority addition and
       does not create a new job.
   - claim: The direct four-owner fixture composition is measured and adverse to a store.
@@ -168,9 +180,10 @@ verified:
       100-iteration perf_counter_ns harness loading the Earnings, FIF, Theme Graph,
       and QLedger fixture outputs and calling compile_recipe()
     result: >
-      Darwin arm64 / Python 3.14.7: p50 164.737 ms, p95 174.757 ms, max
-      185.944 ms; receipt PARTIAL / dominant unknown; 4 included, 0 excluded;
-      owner_payloads_persisted=false. No named requirement fails that an index cures.
+      Darwin arm64 / Python 3.14.7: p50 164.225 ms, p95 168.261 ms, max
+      224.977 ms; receipt REFUSED / identity_unresolved; 0 included, 4 excluded,
+      4 identity-unresolved; owner_payloads_persisted=false. A pointer index cannot
+      supply the absent validated cross-type identity bridge.
   - claim: K1 starts no product/runtime/persistence wave and carries no authority.
     command: >
       changed-path inventory plus schemas/fixture authority assertions and
@@ -193,9 +206,9 @@ unresolved:
     A fresh exact-head reviewer must PASS the integrated K1 candidate before it is
     returned to Sol. Green tests or a merge commit cannot substitute for that review.
   - >
-    The four-owner golden receipt is explicitly PARTIAL / unknown freshness because
-    no canonical owner freshness policy was found. A pointer index would preserve
-    that unknown; B1A must not relabel it current.
+    The four-owner golden receipt is explicitly REFUSED / identity_unresolved because
+    K1 supplies no validated owner-native cross-type identity bridge. A pointer index
+    would preserve that proof gap; B1A must not treat join declarations as resolution.
   - >
     Exact-head full CI and lawful HOLD-FOR-SOL state must be attached to the final
     pushed commit before this handoff is terminal.
@@ -210,7 +223,7 @@ next_actions:
 do_not_redo:
   - Do not open another K1 lane or workstream; PR #6319 owns K1.
   - Do not build a physical pointer store from the existence of B1 alone.
-  - Do not invent an owner freshness policy or hide the golden PARTIAL state.
+  - Do not invent an identity bridge or freshness policy, and do not hide the golden REFUSED state.
   - Do not use symbol-directory + cik_map for CIK/security binding.
   - Do not count shared-upstream refs as independent corroboration.
   - Do not present derived/model/forward objects as world observations.
@@ -233,9 +246,9 @@ discoveries: []
 # K1 authenticated-rider completion return point
 
 K1 now freezes all three required contracts and the AAPL direct-owner composition
-receipt. The persistence ruling is NO_BUILD_DIRECT_READERS_SUFFICIENT: the named
-four-owner fixture job compiles with explicit partial freshness, and no requirement
-failed that a physical index cures.
+receipt. The persistence ruling is NO_BUILD_DIRECT_READERS_SUFFICIENT for owner access:
+the named four-owner fixture job refuses without a validated cross-type identity
+bridge, and a physical pointer index cannot cure that semantic proof gap.
 
 Stop at PARKED / HOLD-FOR-SOL only after a fresh exact-head reviewer passes and the
 exact-head checks conclude. Sol then reviews this packet; no dependent product or

@@ -1,30 +1,32 @@
 {
   "schema": "evidence_foundation.recipe_compilation_receipt.v1",
   "version": "1.0.0",
-  "recipe_id": "erp_b47b1ec809c500a4560615eff2c5eeb90f38fc103785028df5135d8bdf7177a9",
+  "recipe_id": "erp_b12bbad372daf7a9484a7e5f59a10f17cb4f13cb652de0b0eba1d58a74707c0a",
   "consumer": {
     "workstream": "WS:MARKET-OS",
     "job": "build security_state.v1 for AAPL",
     "output_contract": "security_state.v1"
   },
-  "state": "partial",
-  "dominant_degradation": "unknown",
-  "block_ids": [
-    "ebl_956ab221cc7f7b5ec38c81c005d6c32af5d07c37b98250184d2dffe45d09ef1d",
-    "ebl_c72d0e82e618be57675f82c6b0beacb04db9d03678e0b85100de24e585bf756a",
-    "ebl_c564c6baa427742fb1f59eb1b76c9d727089bd55478c1bcefc3c8ed552983879",
-    "ebl_eb80b8270c2e64d0d34a2bac03b09ff2f3c150b5ed89e41251f9b7b5030db0c5"
-  ],
+  "state": "refused",
+  "dominant_degradation": "identity_unresolved",
+  "block_ids": [],
   "missing_required_blocks": [],
   "missing_optional_blocks": [],
+  "identity_unresolved_blocks": [
+    "earnings_change",
+    "fundamental_context",
+    "theme_context",
+    "forward_context"
+  ],
   "denominator": {
     "total": 4,
-    "included": 4,
-    "excluded": 0,
+    "included": 0,
+    "excluded": 4,
     "missing": 0,
     "stale": 0,
     "rights_blocked": 0,
-    "fallback": 0
+    "fallback": 0,
+    "identity_unresolved": 4
   },
   "owner_payloads_persisted": false,
   "authority": {

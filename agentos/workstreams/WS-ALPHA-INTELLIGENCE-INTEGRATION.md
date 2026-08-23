@@ -99,7 +99,15 @@ landmines:
     refusing, and subject joins did not execute exact values. The current repair binds
     structured subject/native identities, Block coverage/dependence/conflict/correction,
     reference-map keys, exact Recipe outputs/rules, and AAPL subject values through
-    rehashed hostile kills. K1 stays in_progress until a fresh exact-head review passes
+    rehashed hostile kills. A fifth exact-head review of 9747c906 then showed that
+    QLedger, FIF, and Theme still admitted valid-different subjects through successful
+    `unbound` parity, and that recipe join prose could still unlock composition without
+    an owner-native resolution object. The current repair abolishes successful
+    `unbound` parity across all 13 owners, exposes only native claim/packet/occurrence/
+    evidence/generation/event/outcome IDs where the pointer cannot prove an entity,
+    migrates the golden Theme leg to a subject-bearing edge belief, and refuses or
+    excludes every cross-type leg lacking validated resolution proof. K1 stays
+    in_progress until a fresh exact-head review passes
     and Sol accepts. Current main's #6325 authenticated-MO double-dispatch receipt
     authenticates this Ref/Block/Recipe rider on the sole #6319 lane; it does not
     authorize a separate K1-B, B1A, runtime, store, or dependent wave."
@@ -180,9 +188,9 @@ next_action: >
   return packet at
   research/evidence_mesh/K1_EVIDENCE_FOUNDATION_CONTRACT_FREEZE_2026-08-23.md.
   After reviewer PASS, Sol rules ACCEPT or names exact amendments. The named
-  four-owner AAPL fixture
-  composition has no measured requirement failure that a pointer index cures, so
-  owner access remains owner-bound and no store/index was built. Do not start K2,
+  four-owner AAPL fixture input validates but the recipe honestly refuses without a
+  validated cross-type identity bridge. A pointer index cannot cure that proof gap,
+  so owner access remains owner-bound and no store/index was built. Do not start K2,
   K3, K4, K5, B1A, K2-B, D5-EARNINGS, runtime, or any dependent wave before Sol
   accepts K1.
 ---

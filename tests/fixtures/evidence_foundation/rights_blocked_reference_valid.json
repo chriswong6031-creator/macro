@@ -1,7 +1,7 @@
 {
   "schema": "evidence_foundation.reference.v1",
   "version": "1.0.0",
-  "reference_id": "efr_0d89e42910775ba8b7d9928abe67512152f4aa8f91f865642da061b4fa49a7c7",
+  "reference_id": "efr_7af53457fc7ab5ebcb8b79d09ebb97b28ebed800704294cafa78fb5e40217a58",
   "object_class": "derived_view",
   "owner_store": "fif.packet",
   "native_identity": {
@@ -24,8 +24,8 @@
   },
   "authority_class": "deterministic",
   "subject": {
-    "key_type": "issuer_id",
-    "key": "ISS:US-XNAS-AAPL"
+    "key_type": "fif_packet_id",
+    "key": "fip_666666666666666666666666"
   },
   "secondary_subjects": [],
   "clocks": [

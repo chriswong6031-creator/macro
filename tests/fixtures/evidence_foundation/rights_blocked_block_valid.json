@@ -1,7 +1,7 @@
 {
   "schema": "evidence_foundation.block.v1",
   "version": "1.0.0",
-  "evidence_block_id": "ebl_6445ef809de7e5dacf458c8723df960f5f13593f1b543f8bc21fe9a4aa13ebfb",
+  "evidence_block_id": "ebl_5b38c508f9787fa7da59fbbadb86742a7edfc716b758ed7530d692277fcbc46f",
   "block_key": "rights_blocked_example",
   "consumer": {
     "workstream": "WS:MARKET-OS",
@@ -14,7 +14,7 @@
     "state": "rights_blocked"
   },
   "reference_ids": [
-    "efr_0d89e42910775ba8b7d9928abe67512152f4aa8f91f865642da061b4fa49a7c7"
+    "efr_7af53457fc7ab5ebcb8b79d09ebb97b28ebed800704294cafa78fb5e40217a58"
   ],
   "owner_stores": [
     "fif.packet"
@@ -27,7 +27,7 @@
     "collapsed": false,
     "entries": [
       {
-      "reference_id": "efr_0d89e42910775ba8b7d9928abe67512152f4aa8f91f865642da061b4fa49a7c7",
+        "reference_id": "efr_7af53457fc7ab5ebcb8b79d09ebb97b28ebed800704294cafa78fb5e40217a58",
         "class": "source_published",
         "field": "query.source_event_cutoff",
         "value_state": "unknown",
@@ -35,7 +35,7 @@
         "grain": "datetime"
       },
       {
-        "reference_id": "efr_0d89e42910775ba8b7d9928abe67512152f4aa8f91f865642da061b4fa49a7c7",
+        "reference_id": "efr_7af53457fc7ab5ebcb8b79d09ebb97b28ebed800704294cafa78fb5e40217a58",
         "class": "system_recorded",
         "field": "query.system_recorded_cutoff",
         "value_state": "unknown",
@@ -43,7 +43,7 @@
         "grain": "datetime"
       },
       {
-        "reference_id": "efr_0d89e42910775ba8b7d9928abe67512152f4aa8f91f865642da061b4fa49a7c7",
+        "reference_id": "efr_7af53457fc7ab5ebcb8b79d09ebb97b28ebed800704294cafa78fb5e40217a58",
         "class": "system_recorded",
         "field": "governance.governance_recorded_at",
         "value_state": "unknown",
@@ -51,7 +51,7 @@
         "grain": "datetime"
       },
       {
-        "reference_id": "efr_0d89e42910775ba8b7d9928abe67512152f4aa8f91f865642da061b4fa49a7c7",
+        "reference_id": "efr_7af53457fc7ab5ebcb8b79d09ebb97b28ebed800704294cafa78fb5e40217a58",
         "class": "belief_or_build",
         "field": "built_at",
         "value_state": "unknown",

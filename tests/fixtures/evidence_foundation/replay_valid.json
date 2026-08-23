@@ -1,7 +1,7 @@
 {
   "schema": "evidence_foundation.reference.v1",
   "version": "1.0.0",
-  "reference_id": "efr_c5a06ef19581a414479a4fd68c9f47f1c76d7ddfedb432c037fab2ef34c4c2c8",
+  "reference_id": "efr_1fc0ba3a966342494da48573e88593658898bc9ae9e27a9291f0e9f002f09e32",
   "object_class": "world_observation",
   "owner_store": "fif.raw_occurrence",
   "native_identity": {
@@ -14,19 +14,10 @@
   },
   "coverage_class": "record_history_complete",
   "subject": {
-    "key_type": "issuer_id",
-    "key": "ISS:US-XNAS-AAPL"
+    "key_type": "fif_occurrence_id",
+    "key": "rawfact_5555555555555555555555555555555555555555555555555555555555555555"
   },
-  "secondary_subjects": [
-    {
-      "key_type": "cik",
-      "key": "0000320193"
-    },
-    {
-      "key_type": "accession",
-      "key": "0000320193-26-000018"
-    }
-  ],
+  "secondary_subjects": [],
   "clocks": [
     {
       "class": "source_published",

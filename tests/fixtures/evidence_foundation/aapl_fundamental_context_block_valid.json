@@ -1,7 +1,7 @@
 {
   "schema": "evidence_foundation.block.v1",
   "version": "1.0.0",
-  "evidence_block_id": "ebl_c72d0e82e618be57675f82c6b0beacb04db9d03678e0b85100de24e585bf756a",
+  "evidence_block_id": "ebl_a310cd9ca88c2c6af855ff92d1aeb838ea4d649abb1c2fde941bea80850e75d7",
   "block_key": "fundamental_context",
   "consumer": {
     "workstream": "WS:MARKET-OS",
@@ -14,7 +14,7 @@
     "state": "partial"
   },
   "reference_ids": [
-    "efr_6da9808a66cb090df04c75c3902192ac1b747d99daf968a5d7c703c7c4c22be1"
+    "efr_03e123a603931388eaa9298b7ea4e89f69df8efdc831312976dc4e8a02d0bde6"
   ],
   "owner_stores": [
     "fif.packet"
@@ -27,35 +27,35 @@
     "collapsed": false,
     "entries": [
       {
-        "reference_id": "efr_6da9808a66cb090df04c75c3902192ac1b747d99daf968a5d7c703c7c4c22be1",
+        "reference_id": "efr_03e123a603931388eaa9298b7ea4e89f69df8efdc831312976dc4e8a02d0bde6",
         "class": "source_published",
         "field": "query.source_event_cutoff",
         "value_state": "known",
-        "value": "2026-07-30T23:00:00Z",
+        "value": "2025-12-31T23:59:59.000000Z",
         "grain": "datetime"
       },
       {
-        "reference_id": "efr_6da9808a66cb090df04c75c3902192ac1b747d99daf968a5d7c703c7c4c22be1",
+        "reference_id": "efr_03e123a603931388eaa9298b7ea4e89f69df8efdc831312976dc4e8a02d0bde6",
         "class": "system_recorded",
         "field": "query.system_recorded_cutoff",
         "value_state": "known",
-        "value": "2026-07-31T02:00:00Z",
+        "value": "2026-08-05T12:00:02.000000Z",
         "grain": "datetime"
       },
       {
-        "reference_id": "efr_6da9808a66cb090df04c75c3902192ac1b747d99daf968a5d7c703c7c4c22be1",
+        "reference_id": "efr_03e123a603931388eaa9298b7ea4e89f69df8efdc831312976dc4e8a02d0bde6",
         "class": "system_recorded",
         "field": "governance.governance_recorded_at",
         "value_state": "known",
-        "value": "2026-07-31T01:30:00Z",
+        "value": "2026-08-05T12:00:02.000000Z",
         "grain": "datetime"
       },
       {
-        "reference_id": "efr_6da9808a66cb090df04c75c3902192ac1b747d99daf968a5d7c703c7c4c22be1",
+        "reference_id": "efr_03e123a603931388eaa9298b7ea4e89f69df8efdc831312976dc4e8a02d0bde6",
         "class": "belief_or_build",
         "field": "built_at",
-        "value_state": "known",
-        "value": "2026-08-22T18:00:00Z",
+        "value_state": "unknown",
+        "value": null,
         "grain": "datetime"
       }
     ]

@@ -24,7 +24,8 @@ canonical bytes. K1 does not pretend a parser or materializer is a physical read
   fail-closed surface for refs, blocks, and recipes. Its semantic passes enforce exact
   owner schema, identity type and source-backed value grammar, coverage/replay
   capability, pointer and clock bindings, lossless block clocks, denominator receipts,
-  authority/object-class separation, correction recompilation, lawful identity joins,
+  authority/object-class separation, correction recompilation, lawful identity-join
+  declarations that never substitute for resolution proof,
   ordered required/optional blocks, v1 automatic-effect refusal, append/supersede
   lineage, and replay lookahead refusal. Public validation always uses the validated
   repository vocabulary and accepts no caller-supplied vocabulary authority.
@@ -45,7 +46,11 @@ changing a native clock binding requires v2.
    listing/security join is lawful only through the Earnings `company_identity.v1`
    PIT alias. Symbol-directory plus `cik_map` is not a listing-security binding.
    Every owner identity field and every subject-key type carries a source-backed
-   value grammar; matching the field label or scalar type is insufficient.
+   value grammar; matching the field label or scalar type is insufficient. Every
+   subject admitted by an owner is also bound to a value carried by that object's
+   native identity. When the pointer key cannot prove an issuer/security/node, the
+   reference exposes only the native object ID; there is no successful `unbound`
+   subject mode.
 3. **Every clock keeps its native name.** The seven classes are
    `world_valid`, `source_published`, `knowable`, `observed`, `system_recorded`,
    `belief_or_build`, and `review_due`. `vocabulary.v1.json` binds each class to exact
@@ -112,34 +117,44 @@ are materialized on every block.
 
 An `EvidenceRecipe` orders required and optional block specs for one consumer output.
 Each spec freezes allowed owner stores, object classes, evidence class, reference
-cardinality, absence behavior, and output mappings. Identity joins must exactly match
-the owner-approved vocabulary. In particular, CIK-to-security/listing joins use only
-the Earnings `company_identity.v1` PIT alias; the dated symbol-directory plus
-`cik_map` route fails closed.
+cardinality, absence behavior, and output mappings. Identity-join declarations must
+exactly match the owner-approved vocabulary. A declaration names the only lawful
+future bridge; it is not itself a resolution receipt. In particular,
+CIK-to-security/listing joins may use only the Earnings `company_identity.v1` PIT
+alias, and Theme-node-to-security joins may use only a validated Theme Graph identity
+resolution row. The dated symbol-directory plus `cik_map` route fails closed.
 
 The recipe freezes required refusal/degradation rules, deterministic dedup rules,
 non-automatic dependence relations, denominator/dominant-degradation laws,
 correction recompilation, confidence receipts, and no owner-payload copying.
 `compile_recipe()` operates only on caller-supplied owner-reader results and returns an
 in-memory `recipe_compilation_receipt.v1`; it persists no ref, block, owner payload, or
-consumer output.
+consumer output. In v1 the compile input has no validated bridge-object slot, so only
+a reference carrying the exact canonical subject instance can enter composition.
+Native-only or cross-type subjects are `identity_unresolved`: optional blocks are
+excluded and degrade, while required blocks refuse. Caller-authored join triples can
+never make them look resolved.
 
 ## AAPL golden composition
 
 `aapl_security_state_recipe_valid.json` composes four owner families for the bounded
-Market OS B1 candidate job: Earnings `event_workspace.v1` (required), a fixture-only
-FIF packet, Theme Graph evidence, and a QLedger forward claim. The QLedger leg remains
-model authority and cannot be presented as fact. The golden receipt is `PARTIAL` with
-dominant `unknown` freshness because K1 found no lawful owner freshness policy to
-invent. All four legs and all native clocks are present, no owner payload is copied,
-and no required block is absent.
+Market OS B1 candidate job: Earnings `event_workspace.v1` (required), a source-valid
+fixture-only FIF packet, a subject-bearing Theme Graph edge belief, and a constructed
+QLedger owner claim. The QLedger leg remains model authority and cannot be presented
+as fact. The golden receipt is honestly `REFUSED / identity_unresolved`: all four
+owner objects and their native clocks are present, but none carries the recipe's
+canonical Data OS security ID and K1 has no validated bridge object in its compile
+input. The denominator therefore records 0 included / 4 excluded /
+4 identity-unresolved; no owner payload is copied.
 
 The measured local fixture-reader/validation composition baseline (Darwin arm64,
-Python 3.14.7, 100 iterations) was p50 164.737 ms, p95 174.757 ms, max 185.944 ms.
+Python 3.14.7, 100 iterations) was p50 164.225 ms, p95 168.261 ms, max 224.977 ms.
 This is a contract/fixture measurement, not a production owner-I/O SLA. No commission
-or current consumer names a latency requirement that it fails, and a pointer index
-would not cure the explicit unknown freshness policy. The K1 persistence verdict is
-therefore `NO_BUILD_DIRECT_READERS_SUFFICIENT`.
+or current consumer names a latency requirement that it fails. A pointer index would
+not turn an owner-native packet/claim/edge/event ID into a validated cross-type
+identity bridge, so it cannot cure the refusal. Under the commission's frozen binary
+store verdict, K1 therefore remains `NO_BUILD_DIRECT_READERS_SUFFICIENT` for owner
+access while explicitly refusing the composed consumer output.
 
 ## Identity and deterministic reference id
 
@@ -161,12 +176,13 @@ contract explicitly requires them to be known.
 
 ## Physical-store decision
 
-K1 found no authorized/committed PR or workstream that must list, in one query, native
-objects across at least three owner stores for one subject and whose direct owner-reader
-baseline fails a named requirement. The A0 Brain example is hypothetical. Current
-main's later #6325 packet names Market OS B1/AAPL as a candidate job, but explicitly
-keeps B1A `PREPARED_NOT_AUTHORIZED` and records no direct-reader failure. Therefore K1
-freezes contracts and fixtures only. A future store requires a committed consumer,
+K1 found no authorized/committed PR or workstream whose direct owner-reader baseline
+fails a named requirement that a physical pointer index can cure. The A0 Brain example
+is hypothetical. Current main's later #6325 packet names Market OS B1/AAPL as a
+candidate job, but explicitly keeps B1A `PREPARED_NOT_AUTHORIZED`. Its golden recipe
+now refuses because a validated cross-type identity bridge is absent; a pointer store
+would preserve that absence. Therefore K1 freezes contracts and fixtures only. A
+future store requires a committed consumer,
 measured failed requirement, Data OS persistence adjudication, a producer, owner
 program, native `asof_field`, freshness SLA, and `config/synapse.yml` registration
 before any path is minted.

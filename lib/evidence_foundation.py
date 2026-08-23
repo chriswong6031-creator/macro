@@ -327,9 +327,7 @@ def _validate_subject_native_rule(
             f"vocabulary_owner_subject_native_parity_invalid:{owner_name}:{subject_type}"
         )
     kind = rule.get("kind")
-    if kind == "unbound":
-        valid = set(rule) == {"kind"}
-    elif kind == "native_field_equal":
+    if kind == "native_field_equal":
         valid = (
             set(rule) == {"kind", "field"}
             and isinstance(rule.get("field"), str)
@@ -603,8 +601,6 @@ def _subject_native_parity_violation(
     if not isinstance(rule, Mapping):
         return f"subject_native_parity_rule_missing:{subject_type}"
     kind = rule.get("kind")
-    if kind == "unbound":
-        return None
     field = rule.get("field")
     native_value = native_identity.get(field) if isinstance(field, str) else None
     subject_value = subject.get("key")
@@ -1677,21 +1673,22 @@ def validate_recipe(recipe: Mapping[str, Any]) -> dict[str, Any]:
     return json.loads(json.dumps(recipe, allow_nan=False))
 
 
-def _recipe_bound_subjects(recipe: Mapping[str, Any]) -> set[tuple[str, str]]:
-    bound: set[tuple[str, str]] = set()
+def _recipe_declared_subjects(recipe: Mapping[str, Any]) -> set[tuple[str, str]]:
+    """Return recipe-declared identities; declarations are not resolution proof."""
+    declared: set[tuple[str, str]] = set()
     subject = recipe.get("subject_instance")
     if isinstance(subject, Mapping):
         key_type, key = subject.get("key_type"), subject.get("key")
         if isinstance(key_type, str) and isinstance(key, str):
-            bound.add((key_type, key))
+            declared.add((key_type, key))
     for join in recipe.get("identity_joins") or ():
         if not isinstance(join, Mapping):
             continue
         for type_field, key_field in (("from", "from_key"), ("to", "to_key")):
             key_type, key = join.get(type_field), join.get(key_field)
             if isinstance(key_type, str) and isinstance(key, str):
-                bound.add((key_type, key))
-    return bound
+                declared.add((key_type, key))
+    return declared
 
 
 def compile_recipe(
@@ -1702,11 +1699,17 @@ def compile_recipe(
 ) -> dict[str, Any]:
     """Compile a deterministic in-memory receipt; persist no owner fact or block."""
     validated_recipe = validate_recipe(recipe)
-    bound_subjects = _recipe_bound_subjects(validated_recipe)
+    declared_subjects = _recipe_declared_subjects(validated_recipe)
     bound_types = set(validated_recipe["subject_key_types"])
+    canonical_subject = (
+        str(validated_recipe["subject_instance"]["key_type"]),
+        str(validated_recipe["subject_instance"]["key"]),
+    )
     validated_blocks: dict[str, dict[str, Any]] = {}
+    unresolved_blocks: set[str] = set()
     for block in blocks:
         validated = validate_block(block, references=references)
+        block_is_bound = True
         for reference_id in validated["reference_ids"]:
             reference = references[reference_id]
             subjects = [reference.get("subject"), *(reference.get("secondary_subjects") or ())]
@@ -1716,18 +1719,23 @@ def compile_recipe(
                 if isinstance(subject, Mapping)
                 and subject.get("key_type") in bound_types
             }
-            if not relevant:
-                raise EvidenceFoundationError(
-                    f"compile_reference_subject_unbound:{reference_id}"
-                )
-            if not relevant <= bound_subjects:
+            if not relevant <= declared_subjects:
                 raise EvidenceFoundationError(
                     f"compile_reference_subject_mismatch:{reference_id}"
                 )
+            # A v1 identity-join declaration names the only lawful future bridge,
+            # but it is not itself a resolution receipt.  With no validated bridge
+            # object in this contract, only an exact owner-bound canonical subject
+            # can enter a composition.  This keeps native-only subjects useful as
+            # standalone refs/blocks without letting prose joins launder identity.
+            if canonical_subject not in relevant:
+                block_is_bound = False
         key = validated["block_key"]
         if key in validated_blocks:
             raise EvidenceFoundationError(f"compile_block_key_duplicate:{key}")
         validated_blocks[key] = validated
+        if not block_is_bound:
+            unresolved_blocks.add(key)
 
     recipe_block_keys = {spec["block_key"] for spec in validated_recipe["block_specs"]}
     for key in sorted(set(validated_blocks) - recipe_block_keys):
@@ -1739,9 +1747,17 @@ def compile_recipe(
     adverse_states: list[str] = []
     required_rights_blocked: list[str] = []
     required_conflicted: list[str] = []
+    identity_unresolved: list[str] = []
     denominator = {
         key: 0 for key in (
-            "total", "included", "excluded", "missing", "stale", "rights_blocked", "fallback"
+            "total",
+            "included",
+            "excluded",
+            "missing",
+            "stale",
+            "rights_blocked",
+            "fallback",
+            "identity_unresolved",
         )
     }
     for spec in sorted(validated_recipe["block_specs"], key=lambda item: item["order"]):
@@ -1770,8 +1786,21 @@ def compile_recipe(
             raise EvidenceFoundationError(f"compile_reference_count_out_of_bounds:{key}")
         if validated_recipe["consumer"]["output_contract"] not in block["permitted_consumers"]:
             raise EvidenceFoundationError(f"compile_consumer_not_permitted:{key}")
+        if key in unresolved_blocks:
+            count = block["coverage"]["total"]
+            denominator["total"] += count
+            denominator["excluded"] += count
+            denominator["missing"] += block["coverage"]["missing"]
+            denominator["stale"] += block["coverage"]["stale"]
+            denominator["rights_blocked"] += block["coverage"]["rights_blocked"]
+            denominator["fallback"] += block["coverage"]["fallback"]
+            denominator["identity_unresolved"] += count
+            identity_unresolved.append(key)
+            continue
         ordered_ids.append(block["evidence_block_id"])
         for field in denominator:
+            if field == "identity_unresolved":
+                continue
             denominator[field] += block["coverage"][field]
         if block["coverage"]["state"] != "complete":
             adverse_states.append(block["coverage"]["state"])
@@ -1781,21 +1810,38 @@ def compile_recipe(
             if block["coverage"]["state"] == "conflicted":
                 required_conflicted.append(key)
 
+    unresolved_required = [
+        spec["block_key"]
+        for spec in sorted(validated_recipe["block_specs"], key=lambda item: item["order"])
+        if spec["requirement"] == "required" and spec["block_key"] in unresolved_blocks
+    ]
+    unresolved_optional = [
+        spec["block_key"]
+        for spec in sorted(validated_recipe["block_specs"], key=lambda item: item["order"])
+        if spec["requirement"] == "optional" and spec["block_key"] in unresolved_blocks
+    ]
+
     if missing_required:
         state = "refused"
         dominant = "required_block_absent"
+    elif unresolved_required:
+        state = "refused"
+        dominant = "identity_unresolved"
     elif required_rights_blocked:
         state = "refused"
         dominant = "rights_blocked"
     elif required_conflicted:
         state = "abstained"
         dominant = "conflicted"
-    elif missing_optional or adverse_states:
+    elif missing_optional or unresolved_optional or adverse_states:
         state = "partial"
         severity = [
             "rights_blocked", "unavailable", "conflicted", "stale", "partial", "unknown", "corrected"
         ]
-        dominant = next((name for name in severity if name in adverse_states), "optional_block_absent")
+        dominant = next(
+            (name for name in severity if name in adverse_states),
+            "identity_unresolved" if unresolved_optional else "optional_block_absent",
+        )
     elif any(block["conflict_correction"]["state"] in {"corrected", "mixed"} for block in validated_blocks.values()):
         state = "corrected"
         dominant = "corrected"
@@ -1813,6 +1859,7 @@ def compile_recipe(
         "block_ids": ordered_ids,
         "missing_required_blocks": missing_required,
         "missing_optional_blocks": missing_optional,
+        "identity_unresolved_blocks": identity_unresolved,
         "denominator": denominator,
         "owner_payloads_persisted": False,
         "authority": dict(ALL_FALSE_AUTHORITY),

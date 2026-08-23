@@ -205,7 +205,13 @@
             "accession",
             "mm_subject",
             "institutional_manager_cik",
-            "cusip"
+            "cusip",
+            "theme_evidence_id",
+            "fif_occurrence_id",
+            "fif_packet_id",
+            "institutional_catalog_generation_id",
+            "govrev_event_id",
+            "mm_outcome_record_id"
           ]
         },
         "key": {"type": "string", "minLength": 1, "maxLength": 1024}

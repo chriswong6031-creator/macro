@@ -1,55 +1,50 @@
 {
   "schema": "evidence_foundation.reference.v1",
   "version": "1.0.0",
-  "reference_id": "efr_6da9808a66cb090df04c75c3902192ac1b747d99daf968a5d7c703c7c4c22be1",
+  "reference_id": "efr_03e123a603931388eaa9298b7ea4e89f69df8efdc831312976dc4e8a02d0bde6",
   "object_class": "derived_view",
   "owner_store": "fif.packet",
   "native_identity": {
-    "packet_id": "fip_0123456789abcdef01234567"
+    "packet_id": "fip_18e2f725f6ba20678d0612bb"
   },
   "native_schema": "financial_intelligence_packet.v1",
   "native_digest": {
     "state": "known",
-    "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+    "sha256": "18e2f725f6ba20678d0612bbbac25b44761271bf5dfd705bda41f852686588c7"
   },
   "coverage_class": "source_release_snapshot_only",
   "subject": {
-    "key_type": "issuer_id",
-    "key": "ISS:US-XNAS-AAPL"
+    "key_type": "fif_packet_id",
+    "key": "fip_18e2f725f6ba20678d0612bb"
   },
-  "secondary_subjects": [
-    {
-      "key_type": "cik",
-      "key": "0000320193"
-    }
-  ],
+  "secondary_subjects": [],
   "clocks": [
     {
       "class": "source_published",
       "field": "query.source_event_cutoff",
       "value_state": "known",
-      "value": "2026-07-30T23:00:00Z",
+      "value": "2025-12-31T23:59:59.000000Z",
       "grain": "datetime"
     },
     {
       "class": "system_recorded",
       "field": "query.system_recorded_cutoff",
       "value_state": "known",
-      "value": "2026-07-31T02:00:00Z",
+      "value": "2026-08-05T12:00:02.000000Z",
       "grain": "datetime"
     },
     {
       "class": "system_recorded",
       "field": "governance.governance_recorded_at",
       "value_state": "known",
-      "value": "2026-07-31T01:30:00Z",
+      "value": "2026-08-05T12:00:02.000000Z",
       "grain": "datetime"
     },
     {
       "class": "belief_or_build",
       "field": "built_at",
-      "value_state": "known",
-      "value": "2026-08-22T18:00:00Z",
+      "value_state": "unknown",
+      "value": null,
       "grain": "datetime"
     }
   ],
@@ -57,7 +52,7 @@
     "pointer_only": true,
     "body_embedded": false,
     "owner_reader": "engine.fundamental_forensics.financial_intelligence_packet.validate_packet_semantics",
-    "pointer": "financial-packet://packet_id=fip_0123456789abcdef01234567",
+    "pointer": "financial-packet://packet_id=fip_18e2f725f6ba20678d0612bb",
     "owner_reader_kind": "parser"
   },
   "relations": [],

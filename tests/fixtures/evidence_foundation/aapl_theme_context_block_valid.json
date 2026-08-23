@@ -1,7 +1,7 @@
 {
   "schema": "evidence_foundation.block.v1",
   "version": "1.0.0",
-  "evidence_block_id": "ebl_c564c6baa427742fb1f59eb1b76c9d727089bd55478c1bcefc3c8ed552983879",
+  "evidence_block_id": "ebl_f82300de6e03f11d5568621d3a31ce6fcee592b5679d681ff8311ba30207b075",
   "block_key": "theme_context",
   "consumer": {
     "workstream": "WS:MARKET-OS",
@@ -10,40 +10,56 @@
   },
   "supported_claim": {
     "kind": "claim",
-    "text": "The AAPL thematic relation leg is backed by owner-native Theme Graph evidence.",
+    "text": "The AAPL thematic relation leg is backed by one owner-native Theme Graph edge belief.",
     "state": "partial"
   },
   "reference_ids": [
-    "efr_07c07c4bdc9c1fa680439700df35bf74836cb29ce443ae644f04079df26658a8"
+    "efr_c5a0444802fa2ed354a7324be6dc5bb17b81cd205d44ee49465be43db5e36011"
   ],
   "owner_stores": [
-    "theme_graph.evidence"
+    "theme_graph.edge_belief"
   ],
   "object_classes": [
-    "world_observation"
+    "system_belief"
   ],
-  "evidence_class": "fact",
+  "evidence_class": "deterministic",
   "clock_summary": {
     "collapsed": false,
     "entries": [
       {
-      "reference_id": "efr_07c07c4bdc9c1fa680439700df35bf74836cb29ce443ae644f04079df26658a8",
-        "class": "source_published",
-        "field": "published_at",
-        "value_state": "known",
-        "value": "2026-07-30",
-        "grain": "date"
-      },
-      {
-        "reference_id": "efr_07c07c4bdc9c1fa680439700df35bf74836cb29ce443ae644f04079df26658a8",
+        "reference_id": "efr_c5a0444802fa2ed354a7324be6dc5bb17b81cd205d44ee49465be43db5e36011",
         "class": "world_valid",
-        "field": "effective_at",
+        "field": "valid_from",
         "value_state": "known",
         "value": "2026-07-30",
         "grain": "date"
       },
       {
-        "reference_id": "efr_07c07c4bdc9c1fa680439700df35bf74836cb29ce443ae644f04079df26658a8",
+        "reference_id": "efr_c5a0444802fa2ed354a7324be6dc5bb17b81cd205d44ee49465be43db5e36011",
+        "class": "world_valid",
+        "field": "valid_to",
+        "value_state": "unknown",
+        "value": null,
+        "grain": "date"
+      },
+      {
+        "reference_id": "efr_c5a0444802fa2ed354a7324be6dc5bb17b81cd205d44ee49465be43db5e36011",
+        "class": "source_published",
+        "field": "evidence_time",
+        "value_state": "known",
+        "value": "2026-07-30",
+        "grain": "date"
+      },
+      {
+        "reference_id": "efr_c5a0444802fa2ed354a7324be6dc5bb17b81cd205d44ee49465be43db5e36011",
+        "class": "belief_or_build",
+        "field": "belief_time",
+        "value_state": "known",
+        "value": "2026-07-31",
+        "grain": "date"
+      },
+      {
+        "reference_id": "efr_c5a0444802fa2ed354a7324be6dc5bb17b81cd205d44ee49465be43db5e36011",
         "class": "belief_or_build",
         "field": "computed_at",
         "value_state": "known",

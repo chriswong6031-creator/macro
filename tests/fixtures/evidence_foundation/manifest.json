@@ -4,8 +4,8 @@
     {
       "file": "fif_packet_valid.json",
       "expected": "valid",
-      "size_bytes": 3366,
-      "sha256": "67fbc793f042506b288740b23e38cc3eab193d2376d77d22e6ef0465de3e29ce",
+      "size_bytes": 3321,
+      "sha256": "3d0efbeac47394749ce8519f3113bde7acb07aae7fee2cb188464826ccdae2e4",
       "proves": "FIF financial packet pointer"
     },
     {
@@ -18,8 +18,8 @@
     {
       "file": "duplicate_corroboration_hostile.json",
       "expected": "invalid",
-      "size_bytes": 3834,
-      "sha256": "c4fa9f31224dece1e90ca66e329baf5714be55868e373d34eb474355543baa86",
+      "size_bytes": 3837,
+      "sha256": "a15c83f41d2265c75c3bbaafe8ecca00437c15bcccaf5f3ca3121f9e0ec2b7f6",
       "proves": "corroboration cannot auto-net or fake source independence"
     },
     {
@@ -32,15 +32,15 @@
     {
       "file": "replay_valid.json",
       "expected": "valid",
-      "size_bytes": 3784,
-      "sha256": "985b4408ad78c126fd90fb9e6cbeb1a0f05b85de89a1ea2a8b907f16e61461aa",
+      "size_bytes": 3702,
+      "sha256": "2d6e098ce51de3367969776e83102cb053b15064864f594d16ad15dd1141a978",
       "proves": "historical replay with typed cutoffs and reproducibility"
     },
     {
       "file": "replay_lookahead_hostile.json",
       "expected": "invalid",
-      "size_bytes": 3704,
-      "sha256": "4d0d591084be1fafeb916823720cf5e0605b56726160c90ee1c37784ca941ad3",
+      "size_bytes": 3702,
+      "sha256": "bf5a0977b48eea5effe175499fcb6cab8a1f30ad78566e6f2fc5383c1e7086d0",
       "proves": "source clock beyond replay cutoff is refused"
     },
     {

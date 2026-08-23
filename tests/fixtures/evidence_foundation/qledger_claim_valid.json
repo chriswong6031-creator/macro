@@ -1,16 +1,16 @@
 {
   "schema": "evidence_foundation.reference.v1",
   "version": "1.0.0",
-  "reference_id": "efr_b33cc25403fa45eafdc1edeb786fa95aa3d7e1d0a387ef3eb653a00bc1be173d",
+  "reference_id": "efr_33b285dfa313d7aeeca2752cf7fa8a6f36a924372ceb7b9e635bdcc231104d62",
   "object_class": "forward_claim",
   "owner_store": "qledger.claim",
   "native_identity": {
-    "claim_id": "5555555555555555"
+    "claim_id": "52e99c4f5b019da5"
   },
   "native_schema": "data/qledger/claims.jsonl#stored_claim",
   "native_digest": {
-    "state": "known",
-    "sha256": "5555555555555555555555555555555555555555555555555555555555555555"
+    "state": "unknown",
+    "sha256": null
   },
   "coverage_class": "prospective_only",
   "freshness": {
@@ -24,8 +24,8 @@
   },
   "authority_class": "model",
   "subject": {
-    "key_type": "security_id",
-    "key": "SEC:US-XNAS-AAPL"
+    "key_type": "claim_id",
+    "key": "52e99c4f5b019da5"
   },
   "secondary_subjects": [],
   "clocks": [
@@ -63,7 +63,7 @@
     "body_embedded": false,
     "owner_reader": "engine.qledger.load_claims",
     "owner_reader_kind": "collection",
-    "pointer": "data/qledger/claims.jsonl#claim_id=5555555555555555"
+    "pointer": "data/qledger/claims.jsonl#claim_id=52e99c4f5b019da5"
   },
   "relations": [],
   "missingness": {

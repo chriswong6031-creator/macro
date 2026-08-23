@@ -1,16 +1,17 @@
 {
   "schema": "evidence_foundation.reference.v1",
   "version": "1.0.0",
-  "reference_id": "efr_07c07c4bdc9c1fa680439700df35bf74836cb29ce443ae644f04079df26658a8",
-  "object_class": "world_observation",
-  "owner_store": "theme_graph.evidence",
+  "reference_id": "efr_c5a0444802fa2ed354a7324be6dc5bb17b81cd205d44ee49465be43db5e36011",
+  "object_class": "system_belief",
+  "owner_store": "theme_graph.edge_belief",
   "native_identity": {
-    "evidence_id": "ev:3333333333333333"
+    "edge_id": "member_of:co:us:AAPL->basket:baskets:ai-infrastructure@2026-07-30",
+    "belief_time": "2026-07-31"
   },
-  "native_schema": "theme_graph.evidence.v1",
+  "native_schema": "theme_graph.edges.v1",
   "native_digest": {
-    "state": "known",
-    "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+    "state": "unknown",
+    "sha256": null
   },
   "coverage_class": "append_only_bitemporal",
   "freshness": {
@@ -22,7 +23,7 @@
     "state": "permitted",
     "policy_id": null
   },
-  "authority_class": "fact",
+  "authority_class": "deterministic",
   "subject": {
     "key_type": "theme_node",
     "key": "co:us:AAPL"
@@ -30,17 +31,31 @@
   "secondary_subjects": [],
   "clocks": [
     {
-      "class": "source_published",
-      "field": "published_at",
+      "class": "world_valid",
+      "field": "valid_from",
       "value_state": "known",
       "value": "2026-07-30",
       "grain": "date"
     },
     {
       "class": "world_valid",
-      "field": "effective_at",
+      "field": "valid_to",
+      "value_state": "unknown",
+      "value": null,
+      "grain": "date"
+    },
+    {
+      "class": "source_published",
+      "field": "evidence_time",
       "value_state": "known",
       "value": "2026-07-30",
+      "grain": "date"
+    },
+    {
+      "class": "belief_or_build",
+      "field": "belief_time",
+      "value_state": "known",
+      "value": "2026-07-31",
       "grain": "date"
     },
     {
@@ -54,9 +69,9 @@
   "provenance": {
     "pointer_only": true,
     "body_embedded": false,
-    "owner_reader": "engine.theme_graph.store.read_evidence",
+    "owner_reader": "engine.theme_graph.store.read_edges",
     "owner_reader_kind": "collection",
-    "pointer": "data/theme_graph/evidence.parquet#evidence_id=ev:3333333333333333"
+    "pointer": "data/theme_graph/edges.parquet#edge_id=member_of:co:us:AAPL->basket:baskets:ai-infrastructure@2026-07-30&belief_time=2026-07-31"
   },
   "relations": [],
   "missingness": {

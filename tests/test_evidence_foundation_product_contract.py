@@ -14,6 +14,7 @@ from lib.evidence_foundation import (
     EvidenceFoundationError,
     combined_block_violations,
     combined_recipe_violations,
+    combined_violations,
     compile_recipe,
     compute_block_id,
     compute_recipe_id,
@@ -213,24 +214,32 @@ def test_product_validation_surface_cannot_rebind_the_canonical_vocabulary() -> 
         )
 
 
-def test_golden_aapl_security_state_recipe_compiles_from_four_owner_fixture_reads() -> None:
+def test_golden_aapl_security_state_recipe_refuses_unverified_cross_type_joins() -> None:
     references = _references()
     recipe = _json("aapl_security_state_recipe_valid.json")
     blocks = _golden_blocks()
     receipt = compile_recipe(recipe, blocks=blocks, references=references)
     assert receipt == _json("aapl_security_state_compilation_expected.json")
-    assert receipt["state"] == "partial"
-    assert receipt["dominant_degradation"] == "unknown"
+    assert receipt["state"] == "refused"
+    assert receipt["dominant_degradation"] == "identity_unresolved"
+    assert receipt["block_ids"] == []
     assert receipt["missing_required_blocks"] == []
     assert receipt["missing_optional_blocks"] == []
+    assert receipt["identity_unresolved_blocks"] == [
+        "earnings_change",
+        "fundamental_context",
+        "theme_context",
+        "forward_context",
+    ]
     assert receipt["denominator"] == {
         "total": 4,
-        "included": 4,
-        "excluded": 0,
+        "included": 0,
+        "excluded": 4,
         "missing": 0,
         "stale": 0,
         "rights_blocked": 0,
         "fallback": 0,
+        "identity_unresolved": 4,
     }
     assert receipt["owner_payloads_persisted"] is False
     assert receipt["authority"] == ALL_FALSE_AUTHORITY
@@ -246,8 +255,112 @@ def test_golden_aapl_security_state_recipe_compiles_from_four_owner_fixture_read
     } == {
         "earnings.workspace_generation",
         "fif.packet",
-        "theme_graph.evidence",
+        "theme_graph.edge_belief",
         "qledger.claim",
+    }
+
+
+def test_golden_native_output_fixtures_project_actual_owner_rows(monkeypatch) -> None:
+    from engine import qledger
+    from engine.fundamental_forensics.financial_intelligence_packet import (
+        validate_packet_semantics,
+    )
+    from engine.theme_graph.materialize import edge_id_for
+    from engine.theme_graph.store import EDGE_COLUMNS, EDGE_KEY
+
+    packet = json.loads(
+        (
+            ROOT
+            / "tests/fixtures/fundamental_forensics/expected_financial_intelligence_packet_v1.json"
+        ).read_text(encoding="utf-8")
+    )
+    validate_packet_semantics(packet)
+    fif_ref = _json("fif_packet_valid.json")
+    assert fif_ref["native_identity"] == {"packet_id": packet["packet_id"]}
+    assert fif_ref["native_digest"] == {
+        "state": "known",
+        "sha256": packet["content_sha256"],
+    }
+    assert fif_ref["subject"] == {
+        "key_type": "fif_packet_id",
+        "key": packet["packet_id"],
+    }
+    fif_clocks = {row["field"]: row["value"] for row in fif_ref["clocks"]}
+    assert fif_clocks == {
+        "query.source_event_cutoff": packet["query"]["source_event_cutoff"],
+        "query.system_recorded_cutoff": packet["query"]["system_recorded_cutoff"],
+        "governance.governance_recorded_at": packet["governance"][
+            "governance_recorded_at"
+        ],
+        "built_at": packet.get("built_at"),
+    }
+
+    monkeypatch.setattr(qledger, "_now_iso", lambda: "2026-08-23T12:00:00Z")
+    monkeypatch.setattr(
+        qledger,
+        "_regime_stamp_for_asof",
+        lambda asof: {"vector_asof": asof},
+    )
+    claim = qledger.make_claim(
+        desk="market_os",
+        asof="2026-08-23",
+        scope_type="entity",
+        scope_key="AAPL",
+        direction=1,
+        horizon_d=21,
+        timestamp_quality="DISCLOSURE_DATE",
+        subject_level=227.76,
+        bench="SPY",
+        bench_level=645.30,
+        falsifier="fixture falsifier",
+        check_by="2026-09-30",
+    )
+    stored_claim = qledger._prepare_claim(claim)
+    assert stored_claim["status"] == qledger.STATUS_OPEN
+    qledger_ref = _json("qledger_claim_valid.json")
+    assert qledger_ref["native_identity"] == {
+        "claim_id": stored_claim["claim_id"]
+    }
+    assert qledger_ref["subject"] == {
+        "key_type": "claim_id",
+        "key": stored_claim["claim_id"],
+    }
+    qledger_clocks = {row["field"]: row["value"] for row in qledger_ref["clocks"]}
+    assert qledger_clocks == {
+        field: stored_claim[field]
+        for field in ("asof", "vector_asof", "timestamp", "check_by")
+    }
+
+    edge_ref = _json("theme_graph_evidence_valid.json")
+    edge_id = edge_id_for(
+        "MEMBER_OF",
+        "co:us:AAPL",
+        "basket:baskets:ai-infrastructure",
+        "2026-07-30",
+    )
+    owner_row = {field: None for field in EDGE_COLUMNS}
+    owner_row.update(
+        edge_id=edge_id,
+        type="MEMBER_OF",
+        src="co:us:AAPL",
+        dst="basket:baskets:ai-infrastructure",
+        valid_from="2026-07-30",
+        evidence_time="2026-07-30",
+        belief_time="2026-07-31",
+        computed_at="2026-07-31T00:15:00Z",
+    )
+    assert tuple(owner_row[field] for field in EDGE_KEY) == (
+        edge_ref["native_identity"]["edge_id"],
+        edge_ref["native_identity"]["belief_time"],
+    )
+    assert edge_ref["subject"] == {
+        "key_type": "theme_node",
+        "key": owner_row["src"],
+    }
+    edge_clocks = {row["field"]: row["value"] for row in edge_ref["clocks"]}
+    assert edge_clocks == {
+        field: owner_row[field]
+        for field in ("valid_from", "valid_to", "evidence_time", "belief_time", "computed_at")
     }
 
 
@@ -272,10 +385,10 @@ def test_direct_fixture_reader_composition_baseline_is_measured_not_self_certifi
     assert len(samples) == 25
     assert min(samples) > 0
     # K1 records the measurement but imposes no invented pass/fail latency budget.
-    assert _json("aapl_security_state_compilation_expected.json")["state"] == "partial"
+    assert _json("aapl_security_state_compilation_expected.json")["state"] == "refused"
 
 
-def test_required_absence_refuses_and_optional_absence_is_explicit_partial() -> None:
+def test_golden_absence_receipts_remain_explicit_beside_identity_refusal() -> None:
     references = _references()
     recipe = _json("aapl_security_state_recipe_valid.json")
     blocks = _golden_blocks()
@@ -289,12 +402,13 @@ def test_required_absence_refuses_and_optional_absence_is_explicit_partial() -> 
     assert required_absent["missing_required_blocks"] == ["earnings_change"]
     assert required_absent["denominator"] == {
         "total": 4,
-        "included": 3,
-        "excluded": 1,
+        "included": 0,
+        "excluded": 4,
         "missing": 1,
         "stale": 0,
         "rights_blocked": 0,
         "fallback": 0,
+        "identity_unresolved": 3,
     }
 
     optional_absent = compile_recipe(
@@ -302,17 +416,90 @@ def test_required_absence_refuses_and_optional_absence_is_explicit_partial() -> 
         blocks=[block for block in blocks if block["block_key"] != "forward_context"],
         references=references,
     )
-    assert optional_absent["state"] == "partial"
-    assert optional_absent["dominant_degradation"] == "unknown"
+    assert optional_absent["state"] == "refused"
+    assert optional_absent["dominant_degradation"] == "identity_unresolved"
     assert optional_absent["missing_optional_blocks"] == ["forward_context"]
+    assert optional_absent["identity_unresolved_blocks"] == [
+        "earnings_change",
+        "fundamental_context",
+        "theme_context",
+    ]
     assert optional_absent["denominator"] == {
         "total": 4,
-        "included": 3,
+        "included": 0,
+        "excluded": 4,
+        "missing": 1,
+        "stale": 0,
+        "rights_blocked": 0,
+        "fallback": 0,
+        "identity_unresolved": 3,
+    }
+
+
+def test_bound_optional_absence_is_an_explicit_partial_receipt() -> None:
+    block = _json("aapl_theme_context_block_valid.json")
+    recipe = deepcopy(_json("aapl_security_state_recipe_valid.json"))
+    recipe["recipe_name"] = "test.bound_optional_absence"
+    recipe["subject_instance"] = {
+        "key_type": "theme_node",
+        "key": "co:us:AAPL",
+    }
+    recipe["subject_key_types"] = ["theme_node"]
+    recipe["identity_joins"] = []
+    recipe["block_specs"] = [
+        {
+            "order": 1,
+            "block_key": "theme_context",
+            "requirement": "required",
+            "allowed_owner_stores": ["theme_graph.edge_belief"],
+            "allowed_object_classes": ["system_belief"],
+            "evidence_class": "deterministic",
+            "minimum_references": 1,
+            "maximum_references": 1,
+            "on_absent": "refuse",
+            "output_fields": ["opportunity.theme_context"],
+        },
+        {
+            "order": 2,
+            "block_key": "second_theme_context",
+            "requirement": "optional",
+            "allowed_owner_stores": ["theme_graph.edge_belief"],
+            "allowed_object_classes": ["system_belief"],
+            "evidence_class": "deterministic",
+            "minimum_references": 1,
+            "maximum_references": 1,
+            "on_absent": "degrade",
+            "output_fields": ["opportunity.second_theme_context"],
+        },
+    ]
+    recipe["output_mappings"] = [
+        {
+            "output_field": "opportunity.theme_context",
+            "block_key": "theme_context",
+            "when_unavailable": "refuse",
+        },
+        {
+            "output_field": "opportunity.second_theme_context",
+            "block_key": "second_theme_context",
+            "when_unavailable": "explicit_unavailable",
+        },
+    ]
+    recipe["recipe_id"] = compute_recipe_id(recipe)
+    receipt = compile_recipe(recipe, blocks=[block], references=_references())
+    assert receipt["state"] == "partial"
+    assert receipt["dominant_degradation"] == "unknown"
+    assert receipt["block_ids"] == [block["evidence_block_id"]]
+    assert receipt["missing_optional_blocks"] == ["second_theme_context"]
+    assert receipt["identity_unresolved_blocks"] == []
+    assert receipt["denominator"] == {
+        "total": 2,
+        "included": 1,
         "excluded": 1,
         "missing": 1,
         "stale": 0,
         "rights_blocked": 0,
         "fallback": 0,
+        "identity_unresolved": 0,
     }
 
 
@@ -396,8 +583,8 @@ def test_present_required_rights_blocked_block_refuses() -> None:
     block = _json("rights_blocked_block_valid.json")
     recipe = _single_required_recipe(
         block,
-        subject_type="issuer_id",
-        subject_key="ISS:US-XNAS-AAPL",
+        subject_type="fif_packet_id",
+        subject_key="fip_666666666666666666666666",
         output_field="state.financial_context",
     )
     receipt = compile_recipe(recipe, blocks=[block], references=_references())
@@ -418,32 +605,92 @@ def test_present_required_conflicted_block_follows_declared_abstention() -> None
     assert receipt["dominant_degradation"] == "conflicted"
 
 
-def test_recipe_compiler_executes_subject_value_joins_and_refuses_mixed_security() -> None:
+@pytest.mark.parametrize(
+    ("fixture_name", "block_name", "hostile_subject_key", "output_field"),
+    [
+        (
+            "qledger_claim_valid.json",
+            "aapl_forward_context_block_valid.json",
+            "b" * 16,
+            "opportunity.forward_context",
+        ),
+        (
+            "fif_packet_valid.json",
+            "aapl_fundamental_context_block_valid.json",
+            "fip_" + "b" * 24,
+            "state.financial_context",
+        ),
+        (
+            "theme_graph_evidence_valid.json",
+            "aapl_theme_context_block_valid.json",
+            "co:us:MSFT",
+            "opportunity.theme_context",
+        ),
+    ],
+)
+def test_same_native_object_valid_different_subject_fails_ref_block_and_recipe(
+    fixture_name: str,
+    block_name: str,
+    hostile_subject_key: str,
+    output_field: str,
+) -> None:
     references = _references()
-    original = _json("qledger_claim_valid.json")
-    msft = deepcopy(original)
-    msft["subject"]["key"] = "SEC:US-XNAS-MSFT"
-    msft["reference_id"] = compute_reference_id(msft)
-    assert validate_reference(msft) == msft
-    references.pop(original["reference_id"])
-    references[msft["reference_id"]] = msft
+    original = _json(fixture_name)
+    hostile = deepcopy(original)
+    hostile["subject"]["key"] = hostile_subject_key
+    hostile["reference_id"] = compute_reference_id(hostile)
+    subject_type = hostile["subject"]["key_type"]
+    mismatch = f"subject_0_subject_native_identity_mismatch:{subject_type}"
+    with pytest.raises(EvidenceFoundationError, match=mismatch):
+        validate_reference(hostile)
 
-    forward = _retarget_single_reference(
-        _json("aapl_forward_context_block_valid.json"), msft
+    references.pop(original["reference_id"])
+    references[hostile["reference_id"]] = hostile
+    block = _retarget_single_reference(_json(block_name), hostile)
+    assert f"block_reference_invalid:{hostile['reference_id']}" in combined_block_violations(
+        block, references=references
     )
-    assert validate_block(forward, references=references) == forward
-    blocks = [
-        block
-        for block in _golden_blocks()
-        if block["block_key"] != "forward_context"
-    ]
-    blocks.append(forward)
-    with pytest.raises(EvidenceFoundationError, match="compile_reference_subject_mismatch"):
+    with pytest.raises(EvidenceFoundationError, match="block_reference_invalid"):
+        validate_block(block, references=references)
+
+    coherent_recipe = _single_required_recipe(
+        block,
+        subject_type=subject_type,
+        subject_key=hostile_subject_key,
+        output_field=output_field,
+    )
+    assert validate_recipe(coherent_recipe) == coherent_recipe
+    with pytest.raises(EvidenceFoundationError, match="block_reference_invalid"):
         compile_recipe(
-            _json("aapl_security_state_recipe_valid.json"),
-            blocks=blocks,
+            coherent_recipe,
+            blocks=[block],
             references=references,
         )
+
+
+@pytest.mark.parametrize(
+    ("fixture_name", "hostile_subject"),
+    [
+        (
+            "qledger_claim_valid.json",
+            {"key_type": "security_id", "key": "SEC:US-XNAS-MSFT"},
+        ),
+        (
+            "fif_packet_valid.json",
+            {"key_type": "issuer_id", "key": "ISS:US-XNAS-MSFT"},
+        ),
+    ],
+)
+def test_owner_native_ids_cannot_be_retyped_as_unverified_dataos_subjects(
+    fixture_name: str,
+    hostile_subject: dict[str, str],
+) -> None:
+    hostile = _json(fixture_name)
+    hostile["subject"] = hostile_subject
+    hostile["reference_id"] = compute_reference_id(hostile)
+    assert "subject_0_not_owned" in combined_violations(hostile)
+    with pytest.raises(EvidenceFoundationError, match="subject_0_not_owned"):
+        validate_reference(hostile)
 
 
 def test_forward_claim_cannot_masquerade_as_fact() -> None:

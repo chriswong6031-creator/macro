@@ -1,7 +1,7 @@
 {
   "schema": "evidence_foundation.block.v1",
   "version": "1.0.0",
-  "evidence_block_id": "ebl_057a804b783ca9074b8c869b9fa4d1822b33ea00947aab28f9dc070b9a05b72d",
+  "evidence_block_id": "ebl_d32272acedb9c9b8efe8202f9e088a7daa6c2543f172f82bea86faab3a3cb86f",
   "block_key": "conflict_example",
   "consumer": {
     "workstream": "WS:MARKET-OS",
@@ -14,37 +14,53 @@
     "state": "conflicted"
   },
   "reference_ids": [
-    "efr_07c07c4bdc9c1fa680439700df35bf74836cb29ce443ae644f04079df26658a8",
-    "efr_b9d4cd132bfab1d2d3e7358c2fee75d6b2bd5600600532e1dc6279dd77282548"
+    "efr_c5a0444802fa2ed354a7324be6dc5bb17b81cd205d44ee49465be43db5e36011",
+    "efr_927bf2ddbf6980bb8f26755ea03766e9a24b7add4b5b7a8b1336f7cdcca86558"
   ],
   "owner_stores": [
-    "theme_graph.evidence"
+    "theme_graph.edge_belief"
   ],
   "object_classes": [
-    "world_observation"
+    "system_belief"
   ],
-  "evidence_class": "fact",
+  "evidence_class": "deterministic",
   "clock_summary": {
     "collapsed": false,
     "entries": [
       {
-      "reference_id": "efr_07c07c4bdc9c1fa680439700df35bf74836cb29ce443ae644f04079df26658a8",
-        "class": "source_published",
-        "field": "published_at",
-        "value_state": "known",
-        "value": "2026-07-30",
-        "grain": "date"
-      },
-      {
-        "reference_id": "efr_07c07c4bdc9c1fa680439700df35bf74836cb29ce443ae644f04079df26658a8",
+        "reference_id": "efr_c5a0444802fa2ed354a7324be6dc5bb17b81cd205d44ee49465be43db5e36011",
         "class": "world_valid",
-        "field": "effective_at",
+        "field": "valid_from",
         "value_state": "known",
         "value": "2026-07-30",
         "grain": "date"
       },
       {
-        "reference_id": "efr_07c07c4bdc9c1fa680439700df35bf74836cb29ce443ae644f04079df26658a8",
+        "reference_id": "efr_c5a0444802fa2ed354a7324be6dc5bb17b81cd205d44ee49465be43db5e36011",
+        "class": "world_valid",
+        "field": "valid_to",
+        "value_state": "unknown",
+        "value": null,
+        "grain": "date"
+      },
+      {
+        "reference_id": "efr_c5a0444802fa2ed354a7324be6dc5bb17b81cd205d44ee49465be43db5e36011",
+        "class": "source_published",
+        "field": "evidence_time",
+        "value_state": "known",
+        "value": "2026-07-30",
+        "grain": "date"
+      },
+      {
+        "reference_id": "efr_c5a0444802fa2ed354a7324be6dc5bb17b81cd205d44ee49465be43db5e36011",
+        "class": "belief_or_build",
+        "field": "belief_time",
+        "value_state": "known",
+        "value": "2026-07-31",
+        "grain": "date"
+      },
+      {
+        "reference_id": "efr_c5a0444802fa2ed354a7324be6dc5bb17b81cd205d44ee49465be43db5e36011",
         "class": "belief_or_build",
         "field": "computed_at",
         "value_state": "known",
@@ -52,27 +68,43 @@
         "grain": "datetime"
       },
       {
-        "reference_id": "efr_b9d4cd132bfab1d2d3e7358c2fee75d6b2bd5600600532e1dc6279dd77282548",
-        "class": "source_published",
-        "field": "published_at",
-        "value_state": "known",
-        "value": "2026-07-30",
-        "grain": "date"
-      },
-      {
-        "reference_id": "efr_b9d4cd132bfab1d2d3e7358c2fee75d6b2bd5600600532e1dc6279dd77282548",
+        "reference_id": "efr_927bf2ddbf6980bb8f26755ea03766e9a24b7add4b5b7a8b1336f7cdcca86558",
         "class": "world_valid",
-        "field": "effective_at",
+        "field": "valid_from",
         "value_state": "known",
         "value": "2026-07-30",
         "grain": "date"
       },
       {
-        "reference_id": "efr_b9d4cd132bfab1d2d3e7358c2fee75d6b2bd5600600532e1dc6279dd77282548",
+        "reference_id": "efr_927bf2ddbf6980bb8f26755ea03766e9a24b7add4b5b7a8b1336f7cdcca86558",
+        "class": "world_valid",
+        "field": "valid_to",
+        "value_state": "unknown",
+        "value": null,
+        "grain": "date"
+      },
+      {
+        "reference_id": "efr_927bf2ddbf6980bb8f26755ea03766e9a24b7add4b5b7a8b1336f7cdcca86558",
+        "class": "source_published",
+        "field": "evidence_time",
+        "value_state": "known",
+        "value": "2026-07-30",
+        "grain": "date"
+      },
+      {
+        "reference_id": "efr_927bf2ddbf6980bb8f26755ea03766e9a24b7add4b5b7a8b1336f7cdcca86558",
+        "class": "belief_or_build",
+        "field": "belief_time",
+        "value_state": "known",
+        "value": "2026-08-02",
+        "grain": "date"
+      },
+      {
+        "reference_id": "efr_927bf2ddbf6980bb8f26755ea03766e9a24b7add4b5b7a8b1336f7cdcca86558",
         "class": "belief_or_build",
         "field": "computed_at",
         "value_state": "known",
-        "value": "2026-07-31T00:17:00Z",
+        "value": "2026-08-02T00:17:00Z",
         "grain": "datetime"
       }
     ]
@@ -102,8 +134,8 @@
       {
         "kind": "shared_upstream",
         "reference_ids": [
-          "efr_07c07c4bdc9c1fa680439700df35bf74836cb29ce443ae644f04079df26658a8",
-          "efr_b9d4cd132bfab1d2d3e7358c2fee75d6b2bd5600600532e1dc6279dd77282548"
+          "efr_c5a0444802fa2ed354a7324be6dc5bb17b81cd205d44ee49465be43db5e36011",
+          "efr_927bf2ddbf6980bb8f26755ea03766e9a24b7add4b5b7a8b1336f7cdcca86558"
         ],
         "deterministic_key": null
       }
@@ -112,8 +144,8 @@
   "conflict_correction": {
     "state": "conflicted",
     "reference_ids": [
-      "efr_07c07c4bdc9c1fa680439700df35bf74836cb29ce443ae644f04079df26658a8",
-      "efr_b9d4cd132bfab1d2d3e7358c2fee75d6b2bd5600600532e1dc6279dd77282548"
+      "efr_c5a0444802fa2ed354a7324be6dc5bb17b81cd205d44ee49465be43db5e36011",
+      "efr_927bf2ddbf6980bb8f26755ea03766e9a24b7add4b5b7a8b1336f7cdcca86558"
     ]
   },
   "next_observable": {
