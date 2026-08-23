@@ -112,10 +112,11 @@ verified:
       a22bf70db5ee4794ee56caefbc4c355e894d5d40..origin/main; git merge --no-edit
       origin/main; git merge-base --is-ancestor origin/main HEAD
     result: >
-      Current Macro main is f53f8e77b360ae0b1c413c2e9e666ebedfa30fa0 and is an
+      Current Macro main is ded469f674e208f439586a7ec881eb2d4dba7e2c and is an
       ancestor of the candidate. Its post-a22 movement is limited to CCR Agent OS,
       press-wire cursor, metabolism/immune receipts, and VEND-0 research-vault
-      packet paths; no K1 owner contract, accessor, schema, or clock source moved.
+      packet and SEO audit data paths; no K1 owner contract, accessor, schema, or
+      clock source moved.
   - claim: Reference and authenticated product contracts pass their focused tests.
     command: >
       python3 -m pytest -q
@@ -152,7 +153,7 @@ verified:
       --pack-count 12 --validate-only
     result: >
       Contract delta reports 0 introduced and 0 inherited findings against
-      f53f8e77b360. All 202 legacy jobs validate; pack 5 selects 18 jobs including
+      ded469f674e2. All 202 legacy jobs validate; pack 5 selects 18 jobs including
       signal-contract. The workflow edit is an explicit CI-authority addition and
       does not create a new job.
   - claim: The direct four-owner fixture composition is measured and adverse to a store.
