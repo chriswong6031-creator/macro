@@ -14,11 +14,20 @@ class: build
 blast_radius: user_facing
 ambiguity: specified
 blocked_by:
-  - "Live canonical parquet has 2837 issuers; merged MAX_UNIVERSE_ISSUERS=2500 fail-closed the first scheduled incremental (run 32097495749, universe_invalid). Repair raises the bind cap to 4000. Do not resume July recovery until that repair is on main."
+  - "Production incremental 32116597760 cancelled at the 90-minute job budget on the 2837-issuer per-issuer census. FF-1 is not PROVEN_LIVE. Do not start FF-2."
+  - "FF-1P2R current-quarter index discovery on PR #5898 is BUILT_NOT_PROVEN, awaiting Sol review / production commissioning. #5898 does not perform production recovery. Accession-prefix==subject-CIK (Sol ruling 7 literal) is recorded as a Fable deviation: DEC:FF-1-ACCESSION-PREFIX-IS-TRANSMITTER."
+  - "FF-1R July recovery engine is NOT_BUILT. Live Q3 index candidates are 2560 rows / 2541 unique CIKs. Do not start FF-1R from this PR."
 discoveries:
   - DSC:FF-1-LIVE-UNIVERSE-EXCEEDS-2500
+  - DSC:FF-1-PER-ISSUER-CENSUS-EXCEEDS-90M
+  - DSC:FF-1-SEC-BULK-ARCHIVE-EXCEEDS-1GIB
+  - DSC:FF-1-Q3-2026-MASTER-INDEX-CANARY
 decisions:
   - DEC:FF-1-UNIVERSE-BIND-CAP-4000
+  - DEC:FF-1-BROAD-DISCOVERY-USES-EDGAR-INDEXES
+  - DEC:FF-1-RECOVERY-NOT-COMMISSIONED
+  - DEC:FF-1-ACCESSION-PREFIX-IS-TRANSMITTER
+  - DEC:FF-1-PRIOR-COMPLETE-FAILS-CLOSED
 owns_paths:
   - engine/fundamental_forensics/
   - app/forensics.py
@@ -28,11 +37,13 @@ owns_paths:
   - contracts/fundamental_forensics_health.schema.json
   - contracts/fundamental_forensics_broad_sec_run.schema.json
   - contracts/fundamental_forensics_broad_sec_issuer_manifest.schema.json
+  - collectors/edgar_forensics.py
   - scripts/run_fundamental_forensics_broad_sec.py
   - .github/workflows/filing-forensics-broad-sec.yml
   - tests/test_fundamental_forensics_health.py
   - tests/test_fundamental_forensics_broad_sec.py
   - tests/test_filing_forensics_broad_sec_lane.py
+  - tests/test_fundamental_forensics_edgar_index.py
 waves:
   - id: FF-0
     title: Freshness truth and visible degradation
@@ -42,7 +53,13 @@ waves:
     title: Incremental Broad SEC Source Plane
     status: in_progress
     depends_on: [FF-0]
-    pr: [5820]
+    pr: [5820, 5864, 5898]
+    next_action: FF-1P2R is BUILT_NOT_PROVEN on PR #5898; current-quarter discovery only; Fable implemented Sol kernel minus the unimplementable accession[:10]==subject-CIK bind; awaiting Sol review / production commissioning.
+  - id: FF-1R
+    title: July recovery engine
+    status: todo
+    depends_on: [FF-1]
+    next_action: NOT_BUILT. Starting fact from DSC:FF-1-Q3-2026-MASTER-INDEX-CANARY — 2560 relevant rows / 2541 unique canonical CIKs with filed_on >= 2026-07-12. Do not start now.
   - id: FF-2
     title: Broad workbench rebuild from the FF-1 source plane
     status: todo
@@ -55,10 +72,18 @@ landmines:
   - "Session worktrees are sparse by default. Never write into omitted data/ — that truncates the committed artifact."
   - "FF-1 object identity is SHA-256 of exact SEC bytes. Poll clocks must not enter that identity. Company Facts is a current observed snapshot, never as-of poll_started_at."
   - "recorded_at must not default to poll_started_at. Submissions and Company Facts each carry their own retrieved_at stamped after exact bytes. poll_completed_at is sampled only after issuer attempts conclude."
-  - "Empty-store recovery establishes a Submissions baseline for every observed issuer. Company Facts is only for a genuine recovery_delta / new accession versus the cumulative ledger. filings.recent removal is not a new filing."
+  - "An empty FF-1 index snapshot makes incremental a discovery baseline: persist the current-quarter relevant set, emit a complete census, and fetch zero per-issuer Submissions or Company Facts. Do not treat quarter-to-date index rows as new events on that first run."
   - "Partial polls may persist successful issuer evidence but must not advance latest-complete. Scheduled lane exits non-zero on partial. latest-complete is a compact pointer and commits last."
   - "FF-1 shares concurrency group filing-forensics-sec with Wave-2. Do not give it a second group."
   - "Live data/edgar/fundamentals.parquet can exceed an outdated MAX_UNIVERSE_ISSUERS. Measure unique issuer count against the cap before dispatching recovery. Do not shrink the parquet to fit the cap."
+  - "Broad FF-1 discovery is the official EDGAR full-index master ZIP. Do not fan 2837 data.sec.gov requests. Do not download submissions.zip nightly. Wave-2 stays per-issuer/realtime. Never purge fundamental_forensics/broad-sec/v1/."
+  - "A cancelled 90-minute run may have admitted valid immutable objects with no latest-complete. Index baseline may become canonical while those objects remain. Reconcile issuer latest pointers only when an issuer is affected; do not infer emptiness from list_prefix."
+  - "Index HTTP Last-Modified, archive_retrieved_at, and index_latest_filed_on are never sec_accepted_at. Acceptance comes only from per-issuer Submissions."
+  - "Index state is quarter-scoped. Do not treat Q3 rows missing from a Q4 baseline as mass corrections."
+  - "latest-complete.json is the sole processed authority. Do not ship indexes/quarters/<q>/latest.json as a second mutable pointer. Unresolved PIT/unevaluable NEW index events must not advance latest-complete."
+  - "Accession[:10] is the transmitting filer/agent CIK, not the subject issuer. Bind row CIK to path CIK; require accession shape only. Live canary: MSFT 0000789019 / 0001193125-26-323660 (DEC:FF-1-ACCESSION-PREFIX-IS-TRANSMITTER)."
+  - "A sha-verified latest-complete missing index-discovery state is corrupt prior, not bootstrap (DEC:FF-1-PRIOR-COMPLETE-FAILS-CLOSED)."
+  - "Previous-quarter weekly reconciliation is SPEC_ONLY / NOT_BUILT. Current-quarter rebuilt-index corrections are implemented; FF-1 is not globally correction-safe yet."
 do_not_redo:
   - "Do not modify FF-0 (app/forensics.py, engine/fundamental_forensics/health.py, templates/fundamental_forensics*, site/fundamental_forensics*, scripts/build_fundamental_forensics.py)."
   - "Do not start FF-2: no workbench rebuild, detectors, findings publish, Prophet/Neural Web, attested-history, or Calcbench."
@@ -69,20 +94,49 @@ do_not_redo:
   - "Do not write the full run receipt into latest-observation.json or latest-complete.json; those pointers are 16KiB."
   - "Do not relabel generated_at or public_summary generated_at as a build, composition, or publication clock."
   - "Do not treat PR #5820 merge as production proof. The first scheduled incremental failed universe_invalid."
-  - "Do not dispatch July recovery while the live parquet exceeds the bind cap on main."
+  - "Do not dispatch July recovery from PR #5898. mode=recovery fail-closes with recovery_plan_required until FF-1R. Live Q3 index implies 2560 rows / 2541 unique CIKs after 2026-07-12."
+  - "Do not ship recovery that fetches Submissions for every pending CIK before selecting Company Facts. That 8→5→2 shape is not accepted architecture."
   - "Do not raise MAX_AFFECTED_ISSUERS or the Company Facts byte budget to finish recovery in one run."
-next_action: Sol accepted MAX_UNIVERSE_ISSUERS=4000. Squash-merge #5864 once required CI/fences are green on the current head. FF-1 remains blocked and not PROVEN_LIVE until production commissioning finishes. FF-2 remains forbidden.
+  - "Do not raise timeout-minutes to finish the 2837-issuer census. Do not treat PR #5864 merge as production proof."
+  - "Do not purge fundamental_forensics/broad-sec/v1/ after a cancelled run."
+  - "Do not ingest companyfacts.zip. Do not change Wave-2."
+  - "Do not authorize or freeze a submissions.zip compressed maximum. Live Content-Length was 1558585919. Sol rejected a 2 GiB bound."
+  - "Do not require accession[:10] == subject CIK. That rejects agent-filed rows and fails the live master index."
+  - "Do not bootstrap from a sha-verified latest-complete that lacks a well-formed index block."
+  - "Do not move the 03:15 UTC schedule merely because submissions.zip rebuilds around 03:00 ET. Q3 master.zip Last-Modified was 02:02 UTC."
+next_action: Return PR #5898 to Sol unmerged. FF-1P2R is BUILT_NOT_PROVEN (current-quarter discovery). Recorded deviation DEC:FF-1-ACCESSION-PREFIX-IS-TRANSMITTER. FF-1R is NOT_BUILT. Prior-quarter weekly reconciliation is NOT_BUILT. Do not merge, do not dispatch incremental or recovery, do not start FF-2.
+needs_ceo:
+  question: >
+    Ruling 7 required accession[:10] == subject CIK. Live EDGAR accessions are
+    prefixed with the transmitting agent. May #5898 ship with row==path bind
+    plus accession shape only?
+  options:
+    - Keep Fable's production-safe remainder (recommended).
+    - Restore the three-identity equality and accept that production polls fail on agent-filed 10-Ks.
+  recommendation: Keep row==path plus accession shape; do not require accession prefix == subject CIK.
+  by_when: 2026-08-22
 ---
 
 ## Context
 
 FF-0 is closed live (operator-signed production smoke, all five checks PASS,
-PR #5794). FF-1 is the incremental broad SEC source plane: poll Submissions for
-every issuer in `data/edgar/fundamentals.parquet`, admit exact bytes into
-`fundamental_forensics/broad-sec/v1/`, and fetch Company Facts only when
-relevant periodic filing state changes. It does not rebuild broad FF state.
+PR #5794). FF-1 is the incremental broad SEC source plane. Discovery is the
+official EDGAR full-index master ZIP; per-CIK Submissions and selective
+Company Facts run only for affected canonical issuers
+(`DEC:FF-1-BROAD-DISCOVERY-USES-EDGAR-INDEXES`).
 
-PR #5820 merged (`cd064848298063faac82059f71daf24bdd4112a2`). The first
-scheduled incremental (run 32097495749) failed `universe_invalid` because the
-live parquet has 2837 issuers and the merged cap was 2500. FF-1 is not
-PROVEN_LIVE. July recovery has not started.
+PR #5820 merged (`cd064848298063faac82059f71daf24bdd4112a2`). PR #5864
+merged the 4000 bind-cap repair (`4f59f720a0a1459a11a7bd131e41833c38cbe0d4`).
+The first scheduled incremental (run 32097495749) failed `universe_invalid`.
+The first incremental after the cap raise (run 32116597760) cancelled at the
+90-minute job timeout on the per-issuer census and emitted no receipt. The
+submissions.zip canary declared 1.45 GiB and was correctly stopped. FF-1 is
+not PROVEN_LIVE.
+
+#5898 owns current-quarter index-driven discovery only
+(`DEC:FF-1-RECOVERY-NOT-COMMISSIONED`). `mode=recovery` fail-closes with
+`recovery_plan_required` before any SEC call or Research R2 write. FF-1R
+(July recovery engine) is NOT_BUILT; the measured starting fact is 2560
+relevant rows / 2541 unique canonical CIKs with `filed_on >= 2026-07-12`.
+Previous-quarter weekly reconciliation remains SPEC_ONLY / NOT_BUILT.
+Do not mark FF-1 done. FF-2 remains forbidden.

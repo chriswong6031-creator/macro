@@ -23,12 +23,14 @@ class _FakeR2:
         self.objects: dict[str, bytes] = {}
         self.metadata: dict[str, dict[str, str]] = {}
         self.puts: list[str] = []
+        self.gets: list[str] = []
 
     @staticmethod
     def _etag(body: bytes) -> str:
         return '"' + sha256_bytes(body)[:32] + '"'
 
     def get_object(self, *, Bucket: str, Key: str):  # noqa: N803
+        self.gets.append(Key)
         if Key not in self.objects:
             raise RuntimeError("missing")
         body = self.objects[Key]
@@ -61,6 +63,11 @@ class _FakeR2:
         self.objects[key] = body
         self.metadata[key] = dict(kwargs.get("Metadata") or {})
         self.puts.append(key)
+
+
+def _story_object_gets(fake: _FakeR2) -> list[str]:
+    prefix = f"{story_publisher.PREFIX}/objects/"
+    return [key for key in fake.gets if key.startswith(prefix)]
 
 
 def _body(*, guidance: str = "For the full year, we expect revenue of 500 million and an operating margin of 20%.") -> dict:
@@ -182,7 +189,7 @@ def test_refresh_publishes_a_verified_projection_then_exact_root_is_noop(tmp_pat
         story_publisher.audit_remote_generation(s3=fake, bucket="bucket")
 
 
-def test_refresh_hydrates_prior_lineage_and_compiles_a_source_correction(tmp_path: Path) -> None:
+def test_refresh_hydrates_only_the_corrected_prior_packet_and_compiles_source_correction(tmp_path: Path) -> None:
     evidence = tmp_path / "evidence-source"
     first = _write_evidence(evidence, _body(), generated_at="2026-02-01T00:00:00Z")
     fake = _FakeR2()
@@ -196,7 +203,11 @@ def test_refresh_hydrates_prior_lineage_and_compiles_a_source_correction(tmp_pat
         generated_at="2026-02-02T00:00:00Z",
     )
     _seed_evidence(fake, evidence, corrected)
+    fake.gets.clear()
     assert refresh_module.refresh(tmp_path / "run-two", promote=True, s3=fake, bucket="bucket") == 0
+    assert _story_object_gets(fake) == [
+        f"{story_publisher.PREFIX}/{first_marker['packets']['AAPL/2026Q1']['object_key']}"
+    ]
     corrected_marker, corrected_packet = _public_packet(fake)
     assert corrected_marker["parent_generation_id"] == first_marker["generation_id"]
     assert corrected_packet["story"]["story_id"] == first_packet["story"]["story_id"]
@@ -277,11 +288,14 @@ def _write_evidence_many(root: Path, bodies: list[dict], *, generated_at: str) -
     return manifest
 
 
-def test_refresh_projects_newest_new_events_first_across_bounded_runs(tmp_path: Path) -> None:
-    """A large evidence delta must advance the public catalog over several runs.
+def test_refresh_projects_newest_new_events_first_without_rehydrating_unchanged_story_objects(tmp_path: Path) -> None:
+    """A bounded recovery run must scale with its delta, not the lifetime catalog.
 
-    Newest-first is load-bearing for recovery: historical backfill must not
-    starve the post-freeze calls that visitors can actually see.
+    This is the production failure from August 2026: the old "bounded" worker
+    added at most 500 events but first downloaded and parsed every old packet,
+    so 6,000 packets already consumed ~18 minutes and corpus growth recreated
+    the timeout.  Unchanged parent receipts are immutable and must be reused
+    without an R2 object GET; the daily public audit remains the full replay.
     """
     evidence = tmp_path / "evidence-source"
     manifest = _write_evidence_many(
@@ -307,6 +321,7 @@ def test_refresh_projects_newest_new_events_first_across_bounded_runs(tmp_path: 
     assert set(first["packets"]) == {"NEW/2026Q2"}
     assert first["evidence_root"]["generation_id"] == manifest["generation_id"]
 
+    fake.gets.clear()
     assert refresh_module.refresh(
         tmp_path / "run-two",
         promote=True,
@@ -317,7 +332,11 @@ def test_refresh_projects_newest_new_events_first_across_bounded_runs(tmp_path: 
     second = json.loads(fake.objects[f"{story_publisher.PREFIX}/manifest.json"])
     assert set(second["packets"]) == {"NEW/2026Q2", "MID/2026Q2"}
     assert second["parent_generation_id"] == first["generation_id"]
+    assert _story_object_gets(fake) == []
+    first_object = first["packets"]["NEW/2026Q2"]["object_key"]
+    assert not (tmp_path / "run-two" / "output" / first_object).exists()
 
+    fake.gets.clear()
     assert refresh_module.refresh(
         tmp_path / "run-three",
         promote=True,
@@ -327,6 +346,7 @@ def test_refresh_projects_newest_new_events_first_across_bounded_runs(tmp_path: 
     ) == 0
     third = json.loads(fake.objects[f"{story_publisher.PREFIX}/manifest.json"])
     assert set(third["packets"]) == {"NEW/2026Q2", "MID/2026Q2", "OLD/2026Q1"}
+    assert _story_object_gets(fake) == []
 
     fake.puts.clear()
     assert refresh_module.refresh(
@@ -337,5 +357,15 @@ def test_refresh_projects_newest_new_events_first_across_bounded_runs(tmp_path: 
         max_new_events=1,
     ) == 0
     assert fake.puts == []
+
+    # The optimization is hourly-only. The canonical remote audit still reads
+    # and validates every immutable story object after catch-up is complete.
+    fake.gets.clear()
+    assert story_publisher.audit_remote_generation(s3=fake, bucket="bucket")["packet_count"] == 3
+    expected_story_objects = {
+        f"{story_publisher.PREFIX}/{receipt['object_key']}"
+        for receipt in third["files"].values()
+    }
+    assert expected_story_objects.issubset(set(_story_object_gets(fake)))
 
 

@@ -1415,6 +1415,41 @@ jobs:
       - name: access boundary (Caddyfile public matchers <-> site_access.yml policy)
         run: python -m pytest tests/test_regwall_json_gate.py -q
 
+  lens-tap-boundary:
+    if: ${{ false }}
+    gate: code
+    # theme.js's lens opens on `focusin`, and in sheet mode show() mounts a
+    # full-viewport .lens-scrim. When the focused element is a control NESTED
+    # inside the tip wrapper, that scrim lands between mousedown and mouseup, the
+    # browser retargets the click to <body>, and the control's own handler never
+    # runs — measured on 29 live instances across /us_stocks, /canada and /bonds
+    # (PR #6262). The lens's CLICK handler has always carved nested controls out,
+    # but that carve-out is unreachable here because no click survives the scrim,
+    # so the invariant has to be pinned on the focusin path itself.
+    #
+    # Owns the SUBJECT, not just the file: `templates/theme.js` is where the lens
+    # lives and `site/theme.js` is the baked copy browsers actually load, so a fix
+    # that lands in one and not the other must start this job. Deliberately NOT
+    # `scope: exclusive` — this suite reads shipped source text and asserts on it,
+    # and there is no curated import closure to keep in step.
+    #
+    # Hermetic: reads two files and regexes them. pytest is the whole dependency
+    # line — no jinja, no engine import, no network.
+    paths:
+      - "templates/theme.js"
+      - "site/theme.js"
+      - "tests/test_lens_nested_control_taps.py"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest
+      - name: lens must not steal a tap from a control nested in a tip wrapper
+        run: python -m pytest tests/test_lens_nested_control_taps.py -q
+
   cycles-payload-split:
     if: ${{ false }}
     gate: code
@@ -2051,8 +2086,9 @@ jobs:
       # tests/test_fundamental_forensics_financial_intelligence_packet_r3.py rides
       # the same step (FIF-1R3 semantic closure): against-input, revision
       # vocabulary, entity identity, bounded graph validation. No new job.
-      # tests/test_fundamental_forensics_broad_sec.py and
-      # tests/test_filing_forensics_broad_sec_lane.py ride this step (FF-1):
+      # tests/test_fundamental_forensics_broad_sec.py,
+      # tests/test_filing_forensics_broad_sec_lane.py, and
+      # tests/test_fundamental_forensics_edgar_index.py ride this step (FF-1):
       # incremental broad SEC source plane. LocalStore tests need pandas/pyarrow/
       # jsonschema/pyyaml/requests, already on this install line. No new job.
       # tests/test_canada_canonical_board.py (CA-TRUTH, PR #5926) rides next to
@@ -2152,6 +2188,7 @@ jobs:
           tests/test_edgar_forensics_collector.py
           tests/test_fundamental_forensics_broad_sec.py
           tests/test_filing_forensics_broad_sec_lane.py
+          tests/test_fundamental_forensics_edgar_index.py
           tests/test_context_api.py
           tests/test_finra_knowable.py
           tests/test_t0_indicator.py
