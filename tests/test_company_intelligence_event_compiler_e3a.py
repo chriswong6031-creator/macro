@@ -9,7 +9,9 @@ Frozen source SHAs (load-bearing — any divergence must STOP the eval):
 
 Gold:
   Path:   research/earnings_intelligence/e3/gold/aapl_fy2026_q3_qa_gold.json
-  SHA256: 6b1100b148396db9a29974da5bc6e0cc55e5534185e50e061fe3635d429ed761
+  SHA256: fc6df84d2a8d0d96475ce697ba92ffdd071d5c283b8daee97c1b3381382fa42c
+  Schema: aapl_fy2026_q3_qa_gold.v2
+  Supersedes v1: 6b1100b148396db9a29974da5bc6e0cc55e5534185e50e061fe3635d429ed761
 
 Taxonomy:
   version: qa_topic.v1
@@ -33,7 +35,8 @@ FROZEN_EXHIBIT_SHA = "070abd6a9cdb7070e546d24ffcbc41c65450d939c6f88f189cb18ec711
 FROZEN_TRANSCRIPT_SHA = "a8ff5d03e875fef5604791edbf625186c447af049e6e02f55bb89c68c7cc9f9f"
 
 GOLD_PATH = REPO_ROOT / "research/earnings_intelligence/e3/gold/aapl_fy2026_q3_qa_gold.json"
-GOLD_SHA256 = "6b1100b148396db9a29974da5bc6e0cc55e5534185e50e061fe3635d429ed761"
+GOLD_SHA256 = "fc6df84d2a8d0d96475ce697ba92ffdd071d5c283b8daee97c1b3381382fa42c"
+SUPERSEDED_GOLD_SHA_V1 = "6b1100b148396db9a29974da5bc6e0cc55e5534185e50e061fe3635d429ed761"
 
 TAXONOMY_VERSION = "qa_topic.v1"
 TAXONOMY_HASH = "a928ca72ab2e91bda74bd1e69021e08a5234e501f095610e623655db7e323b5e"
@@ -96,7 +99,8 @@ def gold() -> dict:
 
 
 def test_gold_schema(gold):
-    assert gold["schema"] == "aapl_fy2026_q3_qa_gold.v1"
+    assert gold["schema"] == "aapl_fy2026_q3_qa_gold.v2"
+    assert gold["supersedes"]["gold_sha256"] == SUPERSEDED_GOLD_SHA_V1
 
 
 def test_gold_exchange_count(gold):
@@ -197,6 +201,31 @@ def test_gold_respondents_not_collapsed(gold):
     names = {r["name"] for r in ex5["respondents"]}
     assert "Tim Cook" in names, "Exchange 5: Tim Cook missing from respondents"
     assert "John Ternus" in names, "Exchange 5: John Ternus missing from respondents"
+
+
+def test_gold_exchange_0_preserves_two_tim_answer_turns(gold):
+    """Kevan 34/35 → Tim 36/37 → analyst 38 → Tim 39/40 is two Tim turns."""
+    ex0 = gold["exchanges"][0]
+    names = [r["name"] for r in ex0["respondents"]]
+    assert names == ["Kevan Parekh", "Tim Cook", "Tim Cook"]
+    assert [r["span_indexes"] for r in ex0["respondents"]] == [[0, 1], [2, 3], [4, 5]]
+    assert [s["segment_index"] for s in ex0["answer_spans"]] == [34, 35, 36, 37, 39, 40]
+    assert ex0["answer_spans"][2]["speaker"] == "Tim Cook"
+    assert ex0["answer_spans"][4]["speaker"] == "Tim Cook"
+
+
+def test_gold_respondents_are_answer_turns_not_unique_speakers(gold):
+    """respondents[] partitions answer_spans; same speaker may repeat after a follow-up."""
+    for ex in gold["exchanges"]:
+        n_ans = len(ex["answer_spans"])
+        seen: list[int] = []
+        for resp in ex["respondents"]:
+            seen.extend(resp["span_indexes"])
+        assert seen == list(range(n_ans)), (
+            f"Exchange {ex['ordinal']}: respondents do not partition answer_spans "
+            f"({seen} vs {list(range(n_ans))})"
+        )
+    assert sum(len(ex["respondents"]) for ex in gold["exchanges"]) == 26
 
 
 def test_gold_no_overlay_14(gold):
@@ -354,8 +383,11 @@ def test_score_attempt_cross_event_detected():
     attempt = ModelAttempt(provider="test", model="test", status="ok", candidates=[cand])
     score = score_attempt(attempt, gold, segs)
     assert score["cross_event_rejected"] == 1
-    assert score["hard_gates"]["cross_event"] == 1
+    assert score["accepted_cross_event"] == 0
+    assert score["hard_gates"]["accepted_cross_event"] == 0
+    assert score["hard_gates"]["cross_event"] == 0
     assert score["accepted_count"] == 0
+    assert score["hard_gates"]["status"] == "NOT_EXERCISED"
     assert score["exchange_boundary_quality"]["tp"] == 0
 
 
@@ -397,8 +429,9 @@ def test_gold_exchange_5_has_john_ternus():
     respondent_names = [r["name"] for r in ex["respondents"]]
     assert "John Ternus" in respondent_names
     assert "Tim Cook" in respondent_names
-    # Verify they are separate entries (not collapsed)
-    assert len(respondent_names) == 2
+    assert respondent_names[-1] == "John Ternus"
+    assert respondent_names.count("John Ternus") == 1
+    assert len(respondent_names) == 5
 
 
 def test_gold_all_seven_questioners(gold):
@@ -443,12 +476,15 @@ def test_adjudication_receipt_dual_session():
     receipt = json.loads(path.read_bytes())
     assert receipt["adjudication_method"] == "dual_session"
     assert receipt["gold_sha256"] == GOLD_SHA256
-    assert receipt["gold_correction"] is False
+    assert receipt["gold_correction"] is True
+    assert receipt["pass_b"]["pass_kind"] == "independent_pre_inference_dual_adjudication"
     assert receipt["pass_a"]["boundary_segments"] == EXPECTED_OPERATOR_INTRO_SEGMENTS
     assert receipt["pass_b"]["boundary_segments"] == EXPECTED_OPERATOR_INTRO_SEGMENTS
     assert receipt["reconciliation"]["boundaries_agree"] is True
+    assert receipt["reconciliation"]["respondents_law"] == "answer_turn"
     assert receipt["reconciliation"]["john_ternus_role"]["pinned"] == "CEO"
     assert receipt["source"]["assumed_from_handoff"] is False
+    assert receipt["reconciliation"]["superseded_gold_sha256"] == SUPERSEDED_GOLD_SHA_V1
 
 
 def test_qwen_resolves_worker_override_before_yaml(monkeypatch):
@@ -633,3 +669,140 @@ def test_hardcoded_false_green_cannot_return():
     assert empty["hard_gates"]["all_pass"] is not True
     assert empty["source_span_replay_success_pct"] != 100.0
     assert empty["accepted_count"] == 0
+
+
+def test_rejected_unsupported_is_not_accepted_unsupported(gold):
+    """A validator rejection is not an accepted-object hard-gate violation."""
+    from engine.company_intelligence.e3_shadow_compiler import (
+        ModelAttempt, load_transcript_segments, score_attempt, validate_candidates,
+    )
+    segs = load_transcript_segments(REPO_ROOT)
+    cand = _gold_cand(gold, ordinal=0)
+    mutated = [{"text": "", "speaker": "x", "role": "y"} for _ in range(108)]
+    validated = validate_candidates([cand], mutated)
+    assert validated["unsupported_rejected"] == 1
+    assert validated["accepted_unsupported"] == 0
+    assert validated["accepted_count"] == 0
+    attempt = ModelAttempt(provider="t", model="t", status="ok", candidates=[cand])
+    score = score_attempt(attempt, gold, mutated)
+    assert score["unsupported_rejected"] == 1
+    assert score["accepted_unsupported"] == 0
+    assert score["hard_gates"]["accepted_unsupported"] == 0
+    assert score["hard_gates"]["status"] == "NOT_EXERCISED"
+
+
+def test_run_e3a_eval_hermetic_end_to_end(monkeypatch, tmp_path):
+    """Full run_e3a_eval path through telemetry + receipt write.
+
+    Must fail against 3cadd220 (_bounded_telemetry_proof use-before-assignment).
+    """
+    import engine.company_intelligence.e3_shadow_compiler as e3
+
+    live = {
+        "available": True,
+        "reader": "engine.neuralweb.company_intelligence_reader.read_event_workspace",
+        "generation_id": e3.PINNED_GENERATION_ID,
+        "workspace_sha256": e3.PINNED_WORKSPACE_SHA,
+        "workspace_url": None,
+        "marker_url": None,
+        "release_source_sha256": e3.FROZEN_EXHIBIT_SHA,
+        "transcript_source_sha256": e3.FROZEN_TRANSCRIPT_SHA,
+        "matches_frozen_fixtures": True,
+        "assumed_from_handoff": False,
+        "note": None,
+    }
+    monkeypatch.setattr(e3, "verify_live_workspace_shas", lambda: live)
+
+    qwen = e3.ModelAttempt(
+        provider="openai_compat",
+        model="qwen3.5:9b",
+        status="ok",
+        endpoint_class="loopback",
+        base_url_source="earnings_worker_plist",
+        est_cost_usd=0.0,
+        preflight={"status": "ok", "endpoint_class": "loopback"},
+    )
+    gold = json.loads(GOLD_PATH.read_bytes())
+    haiku = e3.ModelAttempt(
+        provider="oauth",
+        model="claude-haiku-4-5",
+        status="ok",
+        is_comparator=True,
+        candidates=[e3.gold_exchange_to_candidate(gold["exchanges"][0])],
+        input_tokens=12,
+        output_tokens=8,
+        est_cost_usd=0.01,
+        comparator_note="benchmark-only",
+        preflight={"comparator_freeze": {"status": "frozen"}},
+    )
+    monkeypatch.setattr(e3, "_attempt_qwen", lambda prompt, root: qwen)
+    monkeypatch.setattr(e3, "_attempt_comparator", lambda prompt, root, run_id="": haiku)
+    monkeypatch.setattr(
+        e3,
+        "freeze_comparator_choice",
+        lambda root, run_id="": {
+            "freeze": {"status": "frozen", "model": "claude-haiku-4-5", "providers": []},
+            "providers": [],
+            "cfg": {},
+        },
+    )
+    monkeypatch.setattr(e3, "ledger_attempt", lambda *a, **k: None)
+
+    receipt_path = tmp_path / "eval_receipt.json"
+    monkeypatch.setattr(e3, "EVAL_RECEIPT_PATH", receipt_path)
+
+    def _shards(run_id: str, repo_root: Path) -> dict[str, str]:
+        health = tmp_path / f"provider_health_{run_id}.jsonl"
+        health.write_text("", encoding="utf-8")
+        return {
+            "ai_costs_shard": f"e3a-test-{run_id}",
+            "provider_health_path": str(health),
+        }
+
+    monkeypatch.setattr(e3, "_enable_eval_shards", _shards)
+
+    receipt = e3.run_e3a_eval(REPO_ROOT)
+    assert receipt_path.is_file(), "eval receipt must be written"
+    bindings = receipt.get("bindings") or receipt
+    for key in (
+        "git_head",
+        "compiler_sha256",
+        "system_prompt_sha256",
+        "gold_sha256",
+        "taxonomy_hash",
+        "run_id",
+    ):
+        assert bindings.get(key), f"receipt missing binding {key}"
+    assert receipt["bindings"]["gold_sha256"] == hashlib.sha256(
+        GOLD_PATH.read_bytes()
+    ).hexdigest()
+    proof = receipt["telemetry_proof"]
+    assert proof["lane"] == "earnings_event_compiler"
+    assert receipt["model_attempts"]["qwen"]["n_candidates"] == 0
+    assert receipt["model_attempts"]["comparator"]["n_candidates"] == 1
+    assert receipt["summary"]["e3b_auto_unlocked"] is False
+
+
+def test_local_qwen_cost_is_zero_not_unpriced(tmp_path, monkeypatch):
+    """Loopback Ollama transport is local/free $0.00, not an unpriced metered call."""
+    monkeypatch.delenv("AI_COSTS_SHARD", raising=False)
+    from engine.company_intelligence.e3_shadow_compiler import (
+        ModelAttempt, ledger_attempt,
+    )
+    attempt = ModelAttempt(
+        provider="openai_compat",
+        model="qwen3.5:9b",
+        endpoint_class="loopback",
+        status="ok",
+        est_cost_usd=0.0,
+        input_tokens=10,
+        output_tokens=2,
+    )
+    ledger_attempt(attempt, tmp_path, "abc123")
+    ledger = tmp_path / "data/ai_costs/usage.jsonl"
+    row = json.loads(ledger.read_text(encoding="utf-8").splitlines()[0])
+    assert row["est_cost_usd"] == 0.0
+    assert row["cost_basis"] == "local"
+    assert row["provider"] == "openai_compat"
+    assert row["cycle_id"] == "abc123"
+    assert row["lane"] == "earnings_event_compiler"

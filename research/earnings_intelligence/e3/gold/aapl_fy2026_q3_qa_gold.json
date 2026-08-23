@@ -1,8 +1,8 @@
 {
-  "schema": "aapl_fy2026_q3_qa_gold.v1",
-  "frozen_at": "2026-08-22T16:27:00Z",
+  "schema": "aapl_fy2026_q3_qa_gold.v2",
+  "frozen_at": "2026-08-23T02:30:00Z",
   "adjudication_method": "dual_session",
-  "adjudication_note": "Operator-delimited boundary method: 7 exchanges per Operator 'go ahead' intros at segs 32,42,52,63,76,84,97. Sub-turn count ~24 management speaking turns nested as respondents[]. No overlay 14. Tim Cook and John Ternus/Kevan Parekh not collapsed.",
+  "adjudication_note": "Operator-delimited boundary method unchanged: 7 exchanges at Operator 'go ahead' intros 32,42,52,63,76,84,97. respondents[] corrected to one element per management answer-turn in source order (qa_exchange.v1). Same speaker may occupy more than one turn. Exchange 0 preserves two Tim Cook turns split by analyst follow-up 38. Boundaries and topics unchanged. v1 SHA 6b1100b148396db9a29974da5bc6e0cc55e5534185e50e061fe3635d429ed761 is superseded calibration gold.",
   "source_package": {
     "event_id": "evt_cik0000320193_2026q3_results",
     "live_generation_id": "f709a0a6ec514282d5769e7d",
@@ -27,7 +27,7 @@
       }
     ],
     "sha_divergence_check": "pass",
-    "sha_divergence_note": "Fixture SHAs match frozen spec values. Live workspace source_sha256 values in sources[] are derived from fixture SHAs by event_workspace_build.py. Cannot directly read R2 workspace from sparse worktree; workspace_object_sha256 = dbd50e5c30e8a031f844e02362ffd53b25e3230e75eeef19bf3825543cb81197 as pre-stated in E3-A handoff.",
+    "sha_divergence_note": "AAPL calibration remains bound to these exact source SHAs. A later current-marker generation must not silently rewrite this historical gold. Live E2 workspace f709a0a6ec514282d5769e7d was read through read_event_workspace; release and transcript source SHAs match the frozen fixtures (assumed_from_handoff=false).",
     "transcript_segments_total": 108,
     "transcript_schema": "mastermind.tx/v1",
     "transcript_ticker": "AAPL",
@@ -56,11 +56,11 @@
     "drop_rationale": "geography not needed: EU/China story covered by regulation; capital_structure superseded by capital_allocation for this exchange set."
   },
   "scoring_method": {
-    "exchange_boundary_quality": "Exact ordinal match on 7 operator-delimited boundaries (ordinal 0-6). Gold uses Operator-intro segment method (segs 32,42,52,63,76,84,97). Precision = TP/(TP+FP), Recall = TP/(TP+FN) where TP = model boundary matches gold boundary (same operator-intro segment_index ±0). No partial credit.",
+    "exchange_boundary_quality": "Exact ordinal match on 7 operator-delimited boundaries (ordinal 0-6). Gold uses Operator-intro segment method (segs 32,42,52,63,76,84,97). Precision = TP/(TP+FP), Recall = TP/(TP+FN) where TP = model boundary matches gold boundary (same operator-intro segment_index \u00b10). No partial credit.",
     "source_span_replay_success": "Percent of accepted model spans where segment_index, start_byte, end_byte locate a unique byte range in the transcript fixture. Computed by loading fixture, extracting segment[segment_index].text.encode()[start_byte:end_byte], and verifying non-empty and hash-matching.",
     "unsupported_candidate_rate": "Count of model candidates rejected because the proposed span text cannot be located at the stated locator in the source fixture. Rate = rejected_unsupported / total_candidates.",
     "cross_event_contamination": "Count of accepted model outputs referencing event_id or document_id not matching the AAPL FY2026 Q3 frozen source package.",
-    "topic_label_agreement": "For each matched exchange: Jaccard similarity J = |gold_topics ∩ model_topics| / |gold_topics ∪ model_topics|. Mean J across matched exchanges. Requires exact enum membership per taxonomy_version.",
+    "topic_label_agreement": "For each matched exchange: Jaccard similarity J = |gold_topics \u2229 model_topics| / |gold_topics \u222a model_topics|. Mean J across matched exchanges. Requires exact enum membership per taxonomy_version.",
     "identity_role_availability": "For each exchange: (a) questioner name match (exact string after strip), (b) questioner affiliation match, (c) all gold respondent names present in model respondents (ordered check). Availability = matches / gold fields.",
     "invalid_schema_rate": "Count of accepted model outputs failing schema validation (missing required fields, unknown enum values, non-string types). Rate = invalid_accepted / total_accepted.",
     "qwen_success_rate": "Fraction of Qwen calls returning valid JSON candidate set (not degraded/timeout).",
@@ -71,7 +71,7 @@
   "usefulness_bar": {
     "decision": "refusal",
     "numeric_threshold": null,
-    "written_refusal": "N=7 is too small to support a statistically defensible numeric precision/recall or F1 threshold. A single boundary error changes recall by 14.3% (1/7). Any numeric bar (e.g. 0.90) would be theatrical — the confidence interval on a proportion with N=7 spans the majority of [0,1]. The evaluation instead measures all §10.2 metrics and reports against the already-frozen hard safety gates: accepted_unsupported=0, cross_event=0, span_replay=100%_of_accepted, invalid_schema=0_accepted. The decision on whether to grant E3-B production authority based on qualitative metrics and measured outputs is returned to Sol per freeze §10.1 step 8.",
+    "written_refusal": "N=7 is too small to support a statistically defensible numeric precision/recall or F1 threshold. A single boundary error changes recall by 14.3% (1/7). Any numeric bar (e.g. 0.90) would be theatrical \u2014 the confidence interval on a proportion with N=7 spans the majority of [0,1]. The evaluation instead measures all \u00a710.2 metrics and reports against the already-frozen hard safety gates: accepted_unsupported=0, cross_event=0, span_replay=100%_of_accepted, invalid_schema=0_accepted. The decision on whether to grant E3-B production authority based on qualitative metrics and measured outputs is returned to Sol per freeze \u00a710.1 step 8.",
     "return_to_sol": true,
     "hard_gates_frozen": {
       "accepted_unsupported": 0,
@@ -83,7 +83,7 @@
   "source_available_at": {
     "issuer_release": null,
     "clock_state": "unknown",
-    "note": "Transcript source_available_at is issuer/provider transcript publication availability, never conference/call time. Native availability timestamp for tx:AAPL/2026Q3 is not held in this evaluation. clock_state=unknown per freeze §3."
+    "note": "Transcript source_available_at is issuer/provider transcript publication availability, never conference/call time. Native availability timestamp for tx:AAPL/2026Q3 is not held in this evaluation. clock_state=unknown per freeze \u00a73."
   },
   "qa_exchange_count": 7,
   "segment_census": {
@@ -226,7 +226,14 @@
           "identity_state": "source_supported",
           "span_indexes": [
             2,
-            3,
+            3
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "source_supported",
+          "span_indexes": [
             4,
             5
           ]
@@ -345,10 +352,7 @@
           "role": "CEO",
           "identity_state": "source_supported",
           "span_indexes": [
-            0,
-            2,
-            3,
-            4
+            0
           ]
         },
         {
@@ -357,6 +361,23 @@
           "identity_state": "source_supported",
           "span_indexes": [
             1
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "source_supported",
+          "span_indexes": [
+            2,
+            3
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "source_supported",
+          "span_indexes": [
+            4
           ]
         }
       ],
@@ -484,9 +505,7 @@
           "identity_state": "source_supported",
           "span_indexes": [
             0,
-            1,
-            3,
-            4
+            1
           ]
         },
         {
@@ -495,6 +514,22 @@
           "identity_state": "source_supported",
           "span_indexes": [
             2
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "source_supported",
+          "span_indexes": [
+            3
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "source_supported",
+          "span_indexes": [
+            4
           ]
         }
       ],
@@ -639,7 +674,14 @@
           "role": "CEO",
           "identity_state": "source_supported",
           "span_indexes": [
-            0,
+            0
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "source_supported",
+          "span_indexes": [
             1
           ]
         },
@@ -651,7 +693,14 @@
             2,
             3,
             4,
-            5,
+            5
+          ]
+        },
+        {
+          "name": "Kevan Parekh",
+          "role": "CFO",
+          "identity_state": "source_supported",
+          "span_indexes": [
             6
           ]
         }
@@ -752,8 +801,22 @@
           "role": "CEO",
           "identity_state": "source_supported",
           "span_indexes": [
-            0,
-            1,
+            0
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "source_supported",
+          "span_indexes": [
+            1
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "source_supported",
+          "span_indexes": [
             2
           ]
         }
@@ -899,9 +962,30 @@
           "role": "CEO",
           "identity_state": "source_supported",
           "span_indexes": [
-            0,
-            1,
-            2,
+            0
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "source_supported",
+          "span_indexes": [
+            1
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "source_supported",
+          "span_indexes": [
+            2
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "source_supported",
+          "span_indexes": [
             3
           ]
         },
@@ -1029,8 +1113,7 @@
           "identity_state": "source_supported",
           "span_indexes": [
             0,
-            1,
-            4
+            1
           ]
         },
         {
@@ -1041,13 +1124,26 @@
             2,
             3
           ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "source_supported",
+          "span_indexes": [
+            4
+          ]
         }
       ],
       "topics": [
         "regulation",
         "costs_supply"
       ],
-      "adjudication_notes": "Q1: Siri AI EU DMA compliance, China regulatory rollout hurdles (regulation). Q2: gross margin sequential decline 48.1%->46.5% — memory cost driver, FX contribution, non-memory component offsets (costs_supply)."
+      "adjudication_notes": "Q1: Siri AI EU DMA compliance, China regulatory rollout hurdles (regulation). Q2: gross margin sequential decline 48.1%->46.5% \u2014 memory cost driver, FX contribution, non-memory component offsets (costs_supply)."
     }
-  ]
+  ],
+  "supersedes": {
+    "schema": "aapl_fy2026_q3_qa_gold.v1",
+    "gold_sha256": "6b1100b148396db9a29974da5bc6e0cc55e5534185e50e061fe3635d429ed761",
+    "reason": "qa_exchange.v1.respondents[] is one element per management answer-turn, not one element per unique speaker. v1 collapsed follow-up-split turns."
+  }
 }

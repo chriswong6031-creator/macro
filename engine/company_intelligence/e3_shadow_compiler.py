@@ -16,6 +16,7 @@ import hashlib
 import json
 import os
 import plistlib
+import subprocess
 import time
 import urllib.error
 import urllib.request
@@ -45,7 +46,8 @@ ADJUDICATION_RECEIPT_PATH = Path(
 )
 
 LANE = "earnings_event_compiler"
-FROZEN_GOLD_SHA = "6b1100b148396db9a29974da5bc6e0cc55e5534185e50e061fe3635d429ed761"
+SUPERSEDED_GOLD_SHA_V1 = "6b1100b148396db9a29974da5bc6e0cc55e5534185e50e061fe3635d429ed761"
+FROZEN_GOLD_SHA = "fc6df84d2a8d0d96475ce697ba92ffdd071d5c283b8daee97c1b3381382fa42c"
 TAXONOMY_VERSION = "qa_topic.v1"
 TAXONOMY_HASH = "a928ca72ab2e91bda74bd1e69021e08a5234e501f095610e623655db7e323b5e"
 CLOSED_TAXONOMY = frozenset({
@@ -389,13 +391,16 @@ def validate_candidates(candidates: list[Any], segments: list[dict]) -> dict[str
         "valid_candidates": [v["candidate"] for v in valid],
         "rejected_candidates": rejected,
         "accepted_count": len(valid),
-        "accepted_unsupported": reason_counts["span_replay_rejected"],
-        "accepted_span_replay_count": accepted_span_replay_count,
+        "unsupported_rejected": reason_counts["span_replay_rejected"],
         "invalid_schema_rejected": reason_counts["invalid_schema_rejected"],
         "unknown_topic_rejected": reason_counts["unknown_topic_rejected"],
         "out_of_range_rejected": reason_counts["out_of_range_rejected"],
         "cross_event_rejected": reason_counts["cross_event_rejected"],
         "span_replay_rejected": reason_counts["span_replay_rejected"],
+        "accepted_unsupported": 0,
+        "accepted_cross_event": 0,
+        "invalid_schema_accepted": 0,
+        "accepted_span_replay_count": accepted_span_replay_count,
         "valid_with_bound": valid,
     }
 
@@ -441,16 +446,20 @@ def score_attempt(
             "identity_role_availability": None,
             "invalid_schema_rate": None,
             "accepted_count": 0,
-            "accepted_unsupported": 0,
-            "accepted_span_replay_count": 0,
+            "unsupported_rejected": 0,
             "invalid_schema_rejected": 0,
             "cross_event_rejected": 0,
+            "accepted_unsupported": 0,
+            "accepted_cross_event": 0,
+            "invalid_schema_accepted": 0,
+            "accepted_span_replay_count": 0,
             "valid_candidates": [],
             "rejected_candidates": [],
             "rejection_reason": None,
             "hard_gates": {
                 "status": "NOT_EXERCISED",
                 "accepted_unsupported": 0,
+                "accepted_cross_event": 0,
                 "cross_event": 0,
                 "span_replay_of_accepted": "NOT_EXERCISED",
                 "invalid_schema_accepted": 0,
@@ -556,16 +565,26 @@ def score_attempt(
         (100.0 * validated["accepted_span_replay_count"] / accepted) if accepted else None
     )
     unsupported_rate = (
-        validated["accepted_unsupported"] / n_candidates if n_candidates else None
+        validated["unsupported_rejected"] / n_candidates if n_candidates else None
     )
     invalid_rate = (
         validated["invalid_schema_rejected"] / n_candidates if n_candidates else None
     )
-    gates_pass = (
-        accepted > 0
-        and validated["accepted_unsupported"] == 0
-        and validated["accepted_span_replay_count"] == accepted
-    )
+    if accepted == 0:
+        gates_status = "NOT_EXERCISED"
+        gates_pass = False
+        span_replay_gate = "NOT_EXERCISED"
+    else:
+        gates_pass = (
+            validated["accepted_unsupported"] == 0
+            and validated["accepted_cross_event"] == 0
+            and validated["invalid_schema_accepted"] == 0
+            and validated["accepted_span_replay_count"] == accepted
+        )
+        gates_status = "PASS" if gates_pass else "FAIL"
+        span_replay_gate = (
+            f"{replay_pct:.1f}% ({accepted} accepted)" if replay_pct is not None else "n/a"
+        )
     return {
         "n_gold_exchanges": n_gold,
         "n_model_candidates": n_candidates,
@@ -579,30 +598,32 @@ def score_attempt(
         },
         "source_span_replay_success_pct": replay_pct,
         "unsupported_candidate_rate": unsupported_rate,
-        "cross_event_contamination_accepted": 0,
+        "cross_event_contamination_accepted": validated["accepted_cross_event"],
         "topic_label_agreement_mean_jaccard": (
             sum(jaccards) / len(jaccards) if jaccards else None
         ),
         "identity_role_availability": identity,
         "invalid_schema_rate": invalid_rate,
         "accepted_count": accepted,
-        "accepted_unsupported": validated["accepted_unsupported"],
-        "accepted_span_replay_count": validated["accepted_span_replay_count"],
+        "unsupported_rejected": validated["unsupported_rejected"],
         "invalid_schema_rejected": validated["invalid_schema_rejected"],
         "cross_event_rejected": validated["cross_event_rejected"],
+        "accepted_unsupported": validated["accepted_unsupported"],
+        "accepted_cross_event": validated["accepted_cross_event"],
+        "invalid_schema_accepted": validated["invalid_schema_accepted"],
+        "accepted_span_replay_count": validated["accepted_span_replay_count"],
         "valid_candidates": valid,
         "rejected_candidates": validated["rejected_candidates"],
         "rejection_reason": [
             r["rejection_reason"] for r in validated["rejected_candidates"]
         ],
         "hard_gates": {
-            "status": "PASS" if gates_pass else "FAIL",
+            "status": gates_status,
             "accepted_unsupported": validated["accepted_unsupported"],
-            "cross_event": validated["cross_event_rejected"],
-            "span_replay_of_accepted": (
-                f"{replay_pct:.1f}% ({accepted} accepted)" if replay_pct is not None else "n/a"
-            ),
-            "invalid_schema_accepted": 0,
+            "accepted_cross_event": validated["accepted_cross_event"],
+            "cross_event": validated["accepted_cross_event"],
+            "span_replay_of_accepted": span_replay_gate,
+            "invalid_schema_accepted": validated["invalid_schema_accepted"],
             "all_pass": gates_pass,
         },
         "per_exchange": per_exchange,
@@ -740,23 +761,38 @@ def _record_health(*, rung: str, ok: bool, latency_ms: float, model: str, error_
 
 
 def ledger_attempt(attempt: ModelAttempt, root: Path, run_id: str) -> None:
-    """Write one ai_costs row per attempt. Cost may be 0 for local Qwen."""
+    """Write one ai_costs row per attempt.
+
+    Local Ollama transport stays openai_compat; cost_basis is local/free $0.00,
+    never an unpriced metered call.
+    """
     try:
         from lib.ai_costs import record_usage
 
+        local = attempt.endpoint_class in {"loopback", "private_lan"}
+        if local:
+            cost_basis = "local"
+            est_cost = 0.0
+        else:
+            cost_basis = "metered"
+            est_cost = attempt.est_cost_usd
+        note = (
+            f"comparator=True {attempt.comparator_note}" if attempt.is_comparator
+            else "qwen_first_rung"
+        )
+        if local:
+            note = f"{note} transport=openai_compat cost_basis=local"
         record_usage(
             lane=LANE,
             provider=attempt.provider,
             model=attempt.model,
             input_tokens=attempt.input_tokens,
             output_tokens=attempt.output_tokens,
-            est_cost_usd=attempt.est_cost_usd if attempt.est_cost_usd else None,
+            est_cost_usd=est_cost,
+            cost_basis=cost_basis,
             cycle_id=run_id,
             stage="e3a_shadow_eval",
-            note=(
-                f"comparator=True {attempt.comparator_note}" if attempt.is_comparator
-                else "qwen_first_rung"
-            ),
+            note=note,
             root=root,
         )
     except Exception as exc:  # noqa: BLE001
@@ -858,6 +894,8 @@ def _attempt_qwen(user_prompt: str, repo_root: Path) -> ModelAttempt:
                 latency_ms=attempt.latency_ms,
                 model=attempt.model,
             )
+            if attempt.endpoint_class in {"loopback", "private_lan"}:
+                attempt.est_cost_usd = 0.0
     except Exception as exc:  # noqa: BLE001
         attempt.latency_ms = (time.monotonic() - t0) * 1000
         attempt.status = "provider_unavailable"
@@ -872,7 +910,7 @@ def _attempt_qwen(user_prompt: str, repo_root: Path) -> ModelAttempt:
     return attempt
 
 
-def freeze_comparator_choice(repo_root: Path) -> dict[str, Any]:
+def freeze_comparator_choice(repo_root: Path, run_id: str = "") -> dict[str, Any]:
     """Freeze provider/model before the first successful comparator inference."""
     import yaml
     from engine.llm_auth import build_providers
@@ -882,6 +920,8 @@ def freeze_comparator_choice(repo_root: Path) -> dict[str, Any]:
     cfg = dict(cfg)
     cfg["usage_lane"] = LANE
     cfg["usage_stage"] = "e3a_shadow_comparator"
+    if run_id:
+        cfg["usage_cycle_id"] = run_id
     cfg["codex_provider"] = False
     cfg["provider_order"] = ["oauth", "anthropic"]
     cfg["opus_model"] = FROZEN_COMPARATOR_MODEL
@@ -897,12 +937,13 @@ def freeze_comparator_choice(repo_root: Path) -> dict[str, Any]:
         "provider": "oauth" if oauth else ("anthropic" if anthropic_rungs else None),
         "available_rungs": [p.get("name") for p in chosen_rungs],
         "n_oauth_rungs": len(oauth),
+        "usage_cycle_id": run_id,
         "status": "frozen" if chosen_rungs else "unresolved_environment_blocker",
     }
     return {"freeze": freeze, "providers": chosen_rungs, "cfg": cfg}
 
 
-def _attempt_comparator(user_prompt: str, repo_root: Path) -> ModelAttempt:
+def _attempt_comparator(user_prompt: str, repo_root: Path, run_id: str = "") -> ModelAttempt:
     """Stronger comparator via the existing llm_auth plane. Never raises."""
     attempt = ModelAttempt(
         provider="unresolved",
@@ -918,7 +959,7 @@ def _attempt_comparator(user_prompt: str, repo_root: Path) -> ModelAttempt:
     try:
         from engine.llm_auth import make_call
 
-        choice = freeze_comparator_choice(repo_root)
+        choice = freeze_comparator_choice(repo_root, run_id=run_id)
         freeze = choice["freeze"]
         attempt.preflight = {"comparator_freeze": freeze}
         if freeze["status"] != "frozen":
@@ -940,6 +981,8 @@ def _attempt_comparator(user_prompt: str, repo_root: Path) -> ModelAttempt:
         for prov in choice["providers"]:
             prov["usage_lane"] = LANE
             prov["usage_stage"] = "e3a_shadow_comparator"
+            if run_id:
+                prov["usage_cycle_id"] = run_id
 
         def call_fn(client: Any, model: str) -> tuple[str | None, str | None, Any]:
             resp = client.messages.create(
@@ -1031,10 +1074,23 @@ def _parse_candidates(raw: str) -> list[dict]:
 
 def _bounded_telemetry_proof(repo_root: Path, shard_info: dict[str, str]) -> dict[str, Any]:
     """Preserve bounded eval proof without committing global JSONL merges."""
+    health_rel = shard_info.get("provider_health_path") or ""
+    health_path = Path(health_rel) if health_rel else None
+    if health_path is not None and not health_path.is_absolute():
+        health_path = repo_root / health_path
+
+    def _rel(path: Path | None, given: str) -> str:
+        if path is None:
+            return given
+        try:
+            return str(path.relative_to(repo_root))
+        except ValueError:
+            return given or str(path)
+
     proof: dict[str, Any] = {
         "lane": LANE,
         "ai_costs_shard": shard_info.get("ai_costs_shard"),
-        "provider_health_path": str(health_path.relative_to(repo_root)),
+        "provider_health_path": _rel(health_path, health_rel),
         "ai_costs_rows": [],
         "provider_health_rows": [],
     }
@@ -1053,16 +1109,13 @@ def _bounded_telemetry_proof(repo_root: Path, shard_info: dict[str, str]) -> dic
                 k: row.get(k)
                 for k in (
                     "ts", "lane", "provider", "model", "input_tokens",
-                    "output_tokens", "est_cost_usd", "stage", "note", "cycle_id",
+                    "output_tokens", "est_cost_usd", "cost_basis", "stage",
+                    "note", "cycle_id",
                 )
             })
         proof["ai_costs_rows"] = rows
         proof["ai_costs_shard_file"] = str(shard_file.relative_to(repo_root))
-    health_rel = shard_info.get("provider_health_path") or ""
-    health_path = Path(health_rel)
-    if not health_path.is_absolute():
-        health_path = repo_root / health_path
-    if health_path.is_file():
+    if health_path is not None and health_path.is_file():
         rows = []
         for line in health_path.read_text(encoding="utf-8").splitlines():
             if not line.strip():
@@ -1080,6 +1133,40 @@ def _bounded_telemetry_proof(repo_root: Path, shard_info: dict[str, str]) -> dic
             })
         proof["provider_health_rows"] = rows
     return proof
+
+
+def _git_head(repo_root: Path) -> str:
+    result = subprocess.run(
+        ["git", "-C", str(repo_root), "rev-parse", "HEAD"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return (result.stdout or "").strip()
+
+
+def eval_bindings(
+    repo_root: Path,
+    *,
+    gold_sha: str,
+    taxonomy_hash: str,
+    run_id: str,
+) -> dict[str, str]:
+    """Bind a receipt to the exact code, prompt, gold, and source that produced it."""
+    compiler_path = Path(__file__).resolve()
+    return {
+        "git_head": _git_head(repo_root),
+        "compiler_sha256": hashlib.sha256(compiler_path.read_bytes()).hexdigest(),
+        "system_prompt_sha256": hashlib.sha256(SYSTEM_PROMPT.encode("utf-8")).hexdigest(),
+        "gold_sha256": gold_sha,
+        "taxonomy_hash": taxonomy_hash,
+        "exhibit_sha256": FROZEN_EXHIBIT_SHA,
+        "transcript_sha256": FROZEN_TRANSCRIPT_SHA,
+        "workspace_sha256": PINNED_WORKSPACE_SHA,
+        "generation_id": PINNED_GENERATION_ID,
+        "run_id": run_id,
+        "superseded_gold_sha256_v1": SUPERSEDED_GOLD_SHA_V1,
+    }
 
 
 def _enable_eval_shards(run_id: str, repo_root: Path) -> dict[str, str]:
@@ -1146,11 +1233,22 @@ def run_e3a_eval(repo_root: Path | None = None) -> dict:
     if gold_sha != FROZEN_GOLD_SHA:
         raise RuntimeError(f"Gold SHA changed unexpectedly: {gold_sha}")
     gold = json.loads(gold_bytes)
+    taxonomy_hash = str(gold.get("taxonomy", {}).get("hash") or TAXONOMY_HASH)
+    bindings = eval_bindings(
+        repo_root,
+        gold_sha=gold_sha,
+        taxonomy_hash=taxonomy_hash,
+        run_id=run_id,
+    )
+    receipt["bindings"] = bindings
+    receipt.update(bindings)
     receipt["steps"]["gold_loaded"] = {
         "gold_path": str(GOLD_PATH),
         "gold_sha256": gold_sha,
+        "gold_schema": gold.get("schema"),
+        "superseded_gold_sha256_v1": SUPERSEDED_GOLD_SHA_V1,
         "taxonomy_version": gold.get("taxonomy", {}).get("version"),
-        "taxonomy_hash": gold.get("taxonomy", {}).get("hash"),
+        "taxonomy_hash": taxonomy_hash,
         "exchange_count": gold.get("qa_exchange_count"),
         "usefulness_bar_decision": gold.get("usefulness_bar", {}).get("decision"),
         "gold_labels_withheld_during_inference": True,
@@ -1187,16 +1285,21 @@ def run_e3a_eval(repo_root: Path | None = None) -> dict:
         "input_tokens": qwen_attempt.input_tokens,
         "output_tokens": qwen_attempt.output_tokens,
         "est_cost_usd": qwen_attempt.est_cost_usd,
+        "cost_basis": (
+            "local" if qwen_attempt.endpoint_class in {"loopback", "private_lan"}
+            else "metered"
+        ),
+        "transport": "openai_compat",
         "gold_labels_seen": False,
     }
     ledger_attempt(qwen_attempt, repo_root, run_id)
 
     print("[e3_shadow_compiler] Freezing comparator, then attempting llm_auth...")
-    comp_choice = freeze_comparator_choice(repo_root)
+    comp_choice = freeze_comparator_choice(repo_root, run_id=run_id)
     receipt["steps"]["comparator_freeze"] = {
         k: v for k, v in comp_choice["freeze"].items() if k != "providers"
     }
-    comp_attempt = _attempt_comparator(user_prompt, repo_root)
+    comp_attempt = _attempt_comparator(user_prompt, repo_root, run_id=run_id)
     receipt["model_attempts"]["comparator"] = {
         "provider": comp_attempt.provider,
         "model": comp_attempt.model,
@@ -1239,9 +1342,11 @@ def run_e3a_eval(repo_root: Path | None = None) -> dict:
         "event_workspace_v1_advanced": False,
         "r2_written": False,
         "note": (
-            "Measured E3-A R1 packet. Pre-inference usefulness decision remains "
-            "the frozen N=7 refusal, so this returns to Sol regardless of scores. "
-            "E3-B stays locked."
+            "Measured E3-A R2 packet. Gold v2 re-frozen for answer-turn "
+            "respondents[] before this inference. Pre-inference usefulness "
+            "decision remains the frozen N=7 refusal, so this returns to Sol "
+            "regardless of scores. Full-transcript Qwen is not promoted. "
+            "Haiku is benchmark-only. E3-B stays locked."
         ),
     }
     receipt["telemetry_proof"] = _bounded_telemetry_proof(repo_root, shard_info)
