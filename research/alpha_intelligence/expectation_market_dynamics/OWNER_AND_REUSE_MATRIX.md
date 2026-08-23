@@ -11,7 +11,8 @@ grants replacement authority.
 
 | concern | canonical owner / lane | K3E reuse rule | forbidden duplicate |
 |---|---|---|---|
-| analyst expectation observations | existing revisions owner lane | extend in `SRC-A1`; K3E consumes later | third generic analyst-history store |
+| analyst expectation observations | `collectors/equity_revisions.py` in the existing revisions owner lane | `SRC-A1` adds the named additive raw artifacts under `data/revisions/`; K3E consumes later | third generic analyst-history store |
+| price targets / recommendation snapshots | `collectors/yf_analyst.py` | remains its price-target/rating lane; it is not the raw prospective EPS/revenue owner | diverting EPS/revenue expectation accrual into `yf_analyst.py` |
 | common `ExpectationBaseline` semantics | MAS-119 | wait for MAS-119 for shared cross-domain envelope | universal K3E expectation schema |
 | family-specific incorporation science | MAS-118 | consume later as separate object where accepted | universal `gap_score` or family rewrite |
 | earnings event facts / clocks | WS:EARNINGS-INTELLIGENCE-OS and WS:EARNINGS-EVENT-INTELLIGENCE-COMPILER | read canonical event and Q&A objects | second earnings event store |
@@ -33,3 +34,20 @@ grants replacement authority.
    execution or private-user state.
 4. K3E may not become a workaround around `DNR:KILL-FUSED-COMPOSITE` or
    `DNR:KILL-LIQUIDITY-SHOCK-REVERSAL-CLASSIFIER`.
+
+## SRC-A1 physical-owner amendment (K3E-0R)
+
+The source owner is not a choice left to the builder:
+
+- `collectors/equity_revisions.py` owns prospective EPS/revenue observation
+  collection. `collectors/yf_analyst.py` continues to own price-target and rating
+  snapshots only.
+- The additive physical owner is `data/revisions/`. Its canonical SRC-A1
+  artifacts are `expectation_observations.parquet` and
+  `expectation_attempts.parquet`.
+- `latest.parquet`, `history.parquet`, and `engine/theme_revisions.py` retain
+  their current revision-breadth/live-score semantics. SRC-A1 neither renames,
+  rewrites, nor makes them its historical source of truth.
+- The two additive parquet artifacts are source-owner records, not a K3E store,
+  `ExpectationBaseline`, ranker, identity plane, residual plane, event plane,
+  lifecycle plane, evaluation plane, or publication plane.
