@@ -378,30 +378,51 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
     if mode == "maintenance_exception" and ws != "NONE": add("R032", {"portfolio_mode":mode,"workstream":ws or "NONE"})
     if agentos["state"] == "PRESENT" and ws and ws != "NONE" and mode in {"tracked","architecture_candidate"} and ws not in {r.get("key") for r in agentos.get("workstreams",[])}:
         add("R030", {"workstream":ws})
-    if linear and linear != "NONE":
-        if lsnap["state"] != "PRESENT": add("R035", {"linear":linear,"snapshot_state":lsnap["state"]})
-        else:
-            rows = [r for r in lsnap.get("issues",[]) if r.get("id") == linear]
-            if not rows: add("R034", {"linear":linear})
-            elif any(r.get("target_role") == "UNKNOWN" for r in rows): add("R026", {"required_targets":[linear],"target_roles":[r.get("target_role") for r in rows]})
-            else:
-                declared = [r for r in rows if r.get("target_role") == "DECLARED"]
-                if len(declared) != 1: add("R027", {"declared":linear,"roles":sorted(r.get("target_role") for r in rows),"targets":[linear]})
-                for r in rows:
-                    allowed = manifest["classification"]["mode_to_issue_types"].get(mode,[]) if r.get("target_role") == "DECLARED" else manifest["classification"]["target_role_to_issue_types"].get(r.get("target_role"),[])
-                    if r.get("issue_type") not in allowed: add("R028", {"issue_type":r.get("issue_type","UNKNOWN"),"portfolio_mode":mode or "UNKNOWN","target_role":r.get("target_role","UNKNOWN")})
-                if mode in {"tracked","architecture_candidate"} and ws not in {None,"NONE"} and declared and declared[0].get("workstream_key") != ws:
-                    add("R036", {"bound_workstream":declared[0].get("workstream_key"),"declared_workstream":ws,"linear":linear})
-                if mode == "creates_workstream" and declared and declared[0].get("workstream_key") not in {None, ws}:
-                    add("R036", {"bound_workstream":declared[0].get("workstream_key"),"declared_workstream":ws,"linear":linear})
     branch_targets = _issue_ids(observation["pull_request"].get("branch", ""))
     title_targets = _issue_ids(observation["pull_request"].get("title", ""))
     body_targets = sorted({issue for issue, _, _ in body_relationships})
+    native_targets = sorted({r.get("issue_id") for r in native.get("relationships", []) if isinstance(r.get("issue_id"), str)})
+    target_ids = sorted(set(([linear] if linear and linear != "NONE" else []) + branch_targets + title_targets + body_targets + native_targets))
+    roles_by_target: dict[str, list[str]] = {}
+    rows_by_target: dict[str, list[dict[str, Any]]] = {}
     if linear and linear != "NONE":
-        if branch_targets and any(x != linear for x in branch_targets): add("R050", {"branch_targets":branch_targets,"declared":linear})
-        competing = sorted({x for x in title_targets + body_targets if x != linear})
+        if lsnap["state"] != "PRESENT":
+            add("R035", {"linear":linear,"snapshot_state":lsnap["state"]})
+        else:
+            for target in target_ids:
+                rows = [r for r in lsnap.get("issues",[]) if r.get("id") == target]
+                rows_by_target[target] = rows
+                roles_by_target[target] = sorted(r.get("target_role", "UNKNOWN") for r in rows)
+                if target == linear and not rows:
+                    add("R034", {"linear":linear})
+                    continue
+                if target != linear and (not rows or "UNKNOWN" in roles_by_target[target]):
+                    add("R026", {"required_targets":[target],"target_roles":roles_by_target[target] or ["UNKNOWN"]})
+                    continue
+                if target == linear and "UNKNOWN" in roles_by_target[target]:
+                    add("R026", {"required_targets":[target],"target_roles":roles_by_target[target]})
+                    continue
+                declared = [r for r in rows if r.get("target_role") == "DECLARED"]
+                if target == linear and len(declared) != 1:
+                    add("R027", {"declared":linear,"roles":roles_by_target[target],"targets":[target]})
+                for r in rows:
+                    allowed = manifest["classification"]["mode_to_issue_types"].get(mode,[]) if r.get("target_role") == "DECLARED" else manifest["classification"]["target_role_to_issue_types"].get(r.get("target_role"),[])
+                    if r.get("issue_type") not in allowed:
+                        add("R028", {"issue_type":r.get("issue_type","UNKNOWN"),"portfolio_mode":mode or "UNKNOWN","target_role":r.get("target_role","UNKNOWN")})
+                if target == linear and mode in {"tracked","architecture_candidate"} and ws not in {None,"NONE"} and declared and declared[0].get("workstream_key") != ws:
+                    add("R036", {"bound_workstream":declared[0].get("workstream_key"),"declared_workstream":ws,"linear":linear})
+                if target == linear and mode == "creates_workstream" and declared and declared[0].get("workstream_key") not in {None, ws}:
+                    add("R036", {"bound_workstream":declared[0].get("workstream_key"),"declared_workstream":ws,"linear":linear})
+    if linear and linear != "NONE":
+        suppressed = {(r.get("issue_id"), r.get("source")) for r in native.get("relationships", []) if r.get("state") == "SUPPRESSED"}
+        def competes(target: str, source: str) -> bool:
+            return target != linear and (target, source) not in suppressed and "DECLARED" in roles_by_target.get(target, [])
+        bad_branch = [x for x in branch_targets if competes(x, "BRANCH")]
+        if bad_branch: add("R050", {"branch_targets":bad_branch,"declared":linear})
+        competing = sorted({x for x in title_targets if competes(x, "TITLE")} | {x for x in body_targets if competes(x, "BODY")})
         if competing: add("R051", {"body_targets":body_targets,"declared":linear,"title_targets":title_targets})
-        if len(set(branch_targets + title_targets + body_targets + [linear])) > 1: add("R039", {"declared":linear,"targets":sorted(set(branch_targets + title_targets + body_targets + [linear]))})
+        declared_targets = sorted({linear} | {x for x in branch_targets if competes(x, "BRANCH")} | {x for x in title_targets if competes(x, "TITLE")} | {x for x in body_targets if competes(x, "BODY")} | {x for x in native_targets if competes(x, "ADAPTER")})
+        if len(declared_targets) > 1: add("R039", {"declared":linear,"targets":declared_targets})
     if canonical and tuple([mode,authority,completion]) not in {tuple(x) for x in manifest["authority_completion_allowlist"]}: add("R040", {"authority":authority,"completion":completion,"portfolio_mode":mode})
     if paths["state"] != "PRESENT": add("R043", {"snapshot_state":paths["state"]})
     if ownership["state"] != "PRESENT": add("R042", {"paths":[],"snapshot_state":ownership["state"]})
@@ -426,27 +447,32 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
         if paths["state"] == "PRESENT" and ws and not any(r.get("path") == f"agentos/workstreams/{ws}.md" and r.get("change_type") in {"ADDED","MODIFIED"} for r in paths.get("paths", [])):
             add("R037", {"paths":[text_digest(r.get("path","")) for r in paths.get("paths",[])],"workstream":ws})
     completion_rows: list[dict[str, Any]] = []
-    if native["state"] in {"PARTIAL", "UNAVAILABLE"} and linear and linear != "NONE": add("R054", {"linear":linear,"snapshot_state":native["state"]})
-    elif linear and linear != "NONE":
-        rels = [r for r in native.get("relationships", []) if r.get("issue_id") == linear]
-        active = [r for r in rels if r.get("state") == "PRESENT"]
-        eligible = [r for r in active if r.get("completion_transition") == "ELIGIBLE"]
-        kinds = {r.get("kind") for r in active}
-        ambiguous = native["state"] == "CONTRADICTORY" or len({r.get("completion_transition") for r in active}) > 1
-        if ambiguous:
-            add("R055", {"diagnostics":native.get("diagnostics", []),"linear":linear,"relationships":[canonical_digest(r) for r in rels]})
-        effect = "AMBIGUOUS" if ambiguous else ("COMPLETION_CAPABLE" if eligible else ("NON_CLOSING" if active else "NONE"))
-        declared_rows = [r for r in lsnap.get("issues", []) if r.get("id") == linear and r.get("target_role") == "DECLARED"] if lsnap["state"] == "PRESENT" else []
-        stop_law = declared_rows[0].get("stop_law") if declared_rows else None
-        consistency = "INDETERMINATE" if native["state"] != "PRESENT" or ambiguous else ("MISMATCH" if ((completion == "merge-is-done" and effect != "COMPLETION_CAPABLE") or (completion in {"built-not-proven","proof-required","acceptance-required"} and effect == "COMPLETION_CAPABLE")) else "MATCH")
-        completion_rows.append({"issue_id":linear,"effect":effect,"declared_completion":completion,"stop_law":stop_law,"consistency":consistency})
-        if completion == "merge-is-done" and not eligible:
-            add("R056", {"completion":completion,"effect":"NONE" if not rels else "NON_CLOSING","stop_law":"UNKNOWN","target":linear,"target_role":"DECLARED"})
-        if completion in {"built-not-proven","proof-required","acceptance-required","records-only"} and eligible:
-            add("R056", {"completion":completion,"effect":"COMPLETION_CAPABLE","stop_law":"UNKNOWN","target":linear,"target_role":"DECLARED"})
-        if lsnap["state"] == "PRESENT":
-            if completion == "merge-is-done" and declared_rows and declared_rows[0].get("stop_law") in {"PROOF","ACCEPTANCE"}:
-                add("R053", {"completion":completion,"linear":linear,"stop_law":declared_rows[0]["stop_law"]})
+    if native["state"] in {"PARTIAL", "UNAVAILABLE"}:
+        for target in target_ids:
+            add("R054", {"linear":target,"snapshot_state":native["state"]})
+            row = next((r for r in rows_by_target.get(target, []) if r.get("target_role") == "DECLARED"), None)
+            completion_rows.append({"issue_id":target,"effect":"UNKNOWN","declared_completion":completion if target == linear else None,"stop_law":row.get("stop_law") if row else None,"consistency":"INDETERMINATE"})
+    else:
+        for target in target_ids:
+            rels = [r for r in native.get("relationships", []) if r.get("issue_id") == target]
+            active = [r for r in rels if r.get("state") == "PRESENT"]
+            eligible = [r for r in active if r.get("completion_transition") == "ELIGIBLE"]
+            ambiguous = native["state"] == "CONTRADICTORY" or len({r.get("completion_transition") for r in active}) > 1
+            effect = "AMBIGUOUS" if ambiguous else ("COMPLETION_CAPABLE" if eligible else ("NON_CLOSING" if active else "NONE"))
+            role = next((r.get("target_role") for r in rows_by_target.get(target, []) if r.get("target_role") != "UNKNOWN"), "UNKNOWN")
+            declared_row = next((r for r in rows_by_target.get(target, []) if r.get("target_role") == "DECLARED"), None)
+            stop_law = declared_row.get("stop_law") if declared_row else None
+            declared_completion = completion if target == linear else None
+            records_exception = target == linear and completion == "records-only" and stop_law == "RECORDS_ONLY" and ownership["state"] == "PRESENT" and all(r.get("resolution") == "EXACT" for r in ownership.get("resolutions", []))
+            mismatch = (target == linear and completion == "merge-is-done" and effect != "COMPLETION_CAPABLE") or (effect == "COMPLETION_CAPABLE" and ((target != linear) or (completion in {"built-not-proven","proof-required","acceptance-required"}) or (completion == "records-only" and not records_exception)))
+            consistency = "INDETERMINATE" if ambiguous or native["state"] != "PRESENT" else ("MISMATCH" if mismatch else "MATCH")
+            completion_rows.append({"issue_id":target,"effect":effect,"declared_completion":declared_completion,"stop_law":stop_law,"consistency":consistency})
+            if ambiguous:
+                add("R055", {"diagnostics":native.get("diagnostics", []),"linear":target,"relationships":[canonical_digest(r) for r in rels]})
+            if mismatch:
+                add("R056", {"completion":completion,"effect":effect,"stop_law":stop_law or "UNKNOWN","target":target,"target_role":role})
+            if target == linear and completion == "merge-is-done" and stop_law in {"PROOF","ACCEPTANCE"}:
+                add("R053", {"completion":completion,"linear":linear,"stop_law":stop_law})
     for sname, snap in (("AUTHORING_EPOCH",epoch),("CHANGED_PATHS",paths),("AGENTOS",agentos),("LINEAR",lsnap),("PATH_OWNERSHIP",ownership),("NATIVE_LINKAGE",native)):
         if snap["state"] == "CONTRADICTORY": findings.append(_finding(rules, "R061", {"diagnostics":snap.get("diagnostics",[]),"snapshot":sname}, component=sname))
     # Grounding mismatches are semantic (valid observation, refused metadata), not an exit-2 route.
