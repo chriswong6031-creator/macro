@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-23T14:12:54.872784+00:00",
-  "count": 1691,
+  "generated_at": "2026-08-23T15:11:08.211165+00:00",
+  "count": 1694,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -29,6 +29,7 @@
     "Deutsche Bank",
     "DoubleLine",
     "Dragon Capital",
+    "Eastspring",
     "Fidelity",
     "Franklin",
     "GMO",
@@ -85,6 +86,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-xckjnt7knxj-a3da8e",
+      "title": "Investment bulletin weekly week 33",
+      "institution": "Eastspring",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T14:51:52Z",
+      "summary_points": [
+        "**US Inflation Moderation & Fed Policy Shift**: Core CPI (2.5% YoY) and core PPI (4.2% YoY) slowdown reduced Sept FOMC rate hike probability to 29%, steepening Treasury curve via term premium shift.",
+        "**AI Capex as Structural Portfolio Driver**: AI infrastructure spending revisions fuel S&P 500 earnings beat (4/5 companies) and shift allocations toward AI beneficiaries, underpinning Korea/Singapore/Malaysia Q2 GDP outperformance.",
+        "**Extreme Japan Yield Volatility Risk**: Japan 10Y yield 1Y change at 85.20% signals critical fixed-income volatility risk amid divergent equity flows.",
+        "**Divergent Equity Performance Confirms Capital Allocation**: S&P 500 +20.36% vs.",
+        "Nikkei 225 +61.11% highlights concentrated capital flow toward AI-exposed markets (Singapore, Japan, US, Taiwan, Korea) with strongest earnings revisions."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-fkwg03orkqd-7a785b",
       "title": "MS Savone Global Reflections 22 Aug 2026",
@@ -1474,6 +1496,48 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-rv8dwge4xay-bd89ce",
+      "title": "Private debt",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:16:12Z",
+      "summary_points": [
+        "**AI Infrastructure Financing Theme**: Private lenders mobilized $500bn for AI infrastructure (NVIDIA/blue-chip asset managers), with GPU financing as key theme; sponsor-backed deals declined but healthcare/professional services led as resilient categories.",
+        "**Market Bifurcation & Return Outlook**: Upper-middle-market (senior-secured, sponsor-backed) shows resilience vs.",
+        "lower-middle-market stress; base-case returns at 5.4% (upside 7.6%, downside -13.0%) under UBS CIO scenarios.",
+        "**Fundraising Weakness & Capital Flow Pressure**: 1Q26 fundraising at 17% of 2025 total (30% below 2025), driven by anticipated rate cuts, tight spreads, and rising defaults in lower-middle-market vintages.",
+        "**Private Debt Risk Factors**: Critical structural risks include illiquidity, lack of control, limited disclosure, blind pool exposure, uncertain cash flows, and leverage usage."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-svcdtndk19q-aaec16",
+      "title": "Hedge funds",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:16:09Z",
+      "summary_points": [
+        "**Geopolitical & Energy Shock**: Middle East tensions triggered sharp energy price spikes, broadening global bond yields and pressuring tech stocks amid AI reassessment, while global equities remained flat—critical macro risk impacting multiple asset classes.",
+        "**Strategy Divergence**: Less directional strategies (equity market neutral, relative value) outperformed directional ones (equity hedge -1.8%, event driven -0.7%) due to market reversals, highlighting active risk management resilience during volatility.",
+        "**Equity Hedge Positioning Crisis**: Equity hedge strategies declined 1.8% amid momentum reversal, crowded tech positions, and alpha at second-worst monthly level since 2010; third-largest de-grossing episode led to US net leverage recovery to 58% by mid-August.",
+        "**Credit Selectivity Imperative**: Rising CMBS delinquencies (office) and distressed loan ratios necessitate strict selectivity in structured credit (ABS carry, CLOs positive), while discretionary macro underperformed due to developed market rate reversals.",
+        "**Critical Risk Exposure**: Illiquidity, lack of disclosure, and blind pool risk emerged as top portfolio threats amid stretched positioning, low credit spreads, and market reversals hindering trend-following strategies."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
