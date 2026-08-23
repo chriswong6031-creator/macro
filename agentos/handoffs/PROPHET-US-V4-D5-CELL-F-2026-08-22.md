@@ -40,11 +40,12 @@ verified:
   - {claim: "Entry Radar episode is not B1", command: "engine/entry_radar/live_ledger.py: mastermind.live_entry_episode.v1 is detector/variant/first_armed_at operational state, not the durable V4 candidate identity"}
   - {claim: "E1 canonical baseline reconciled rather than invented", command: "ARCHITECTURE_FREEZE §10: deterministic measured-family/member transform, capped contributions, raw+conservative priority, rank inside availability lane, no learned rank before gauntlet; Fusion registry supplies PIT/coverage/staleness/anti-double-count law"}
   - {claim: "Theme contradiction resolved", command: "Cell F amendment A3 + canonical D1/Wave/Owner/WS records: until canonical ThemeState + lawful adapter exist, no theme.theme_state family envelope is emitted; readiness may accrue outside evidence_families[] only"}
+  - {claim: "Current Earnings compiler owner law does not create Prophet evidence authority", command: "Current-main WS:EARNINGS-EVENT-INTELLIGENCE-COMPILER records E3-A as a completed calibration/negative-method experiment; full-transcript Qwen structural extraction is not promoted, Haiku remains benchmark-only, topic adjudication is UNRESOLVED/PASS_A_REFERENCE_ONLY, E3-B live qa_exchanges remains locked, and accepted compiler intelligence must extend the existing canonical event_workspace.v1 rather than create a FIF/Prophet fork. Future Cell F may consume only owner-accepted canonical event_workspace fields, never E3-A shadow/rejected/model-only artifacts."}
 
 unresolved:
   - "BLOCKING: V4 A1 acceptance/adoption remains the prerequisite to V4 B1 under the canonical V4 wave graph."
   - "BLOCKING AFTER A1: V4 B1 must implement and prove the canonical prophet.candidate_episode/v1. Cell F does not own that lifecycle wave and must not mint a surrogate."
-  - "After B1, Cell F may implement exactly one Earnings thin-adapter vertical from event_workspace.v1 into D5 and one existing read-only Prophet Lab episode-detail projection."
+  - "After B1, Cell F may implement exactly one Earnings thin-adapter vertical from owner-accepted canonical event_workspace.v1 fields into D5 and one existing read-only Prophet Lab episode-detail projection. E3-A shadow/model/rejected outputs are not eligible source truth; E3-B is still locked and is not a Cell F prerequisite unless the future adapter explicitly requires qa_exchanges."
   - "Theme adapter READINESS may still be accruing externally, but there is NO D5 Theme family envelope until canonical GMI ThemeState and a lawful D5 adapter exist; legacy Context Vector theme_score is never the fallback."
   - "Options correction-safe historical replay remains gated by its owner's later evidence-receipt/correction work."
   - "E1 remains NOT BUILT. The deterministic baseline in the Cell F research amendment is a recommendation/acceptance boundary only; any runtime member/weight/transform/ranking mutation belongs to the E1 + Conditional Fusion owner wave and its promotion gates."
@@ -58,7 +59,7 @@ next_actions:
   - "V4 owner: complete A1 acceptance-by-adoption under the existing Availability/outage acceptance contract; only after A1 acceptance may B1 begin."
   - "Then V4 owner: build/land/prove canonical prophet.candidate_episode/v1 B1 without changing D5 semantics or creating a second lifecycle."
   - "Cell F resume trigger: B1 real episode exists on current main with owner-issued episode_id + decision/tradability identity."
-  - "On resume: re-run cold-start/collision checks, then build only Earnings event_workspace -> thin D5 adapter -> read-only Prophet Lab consumer, with tests for missingness, rights, corrections, dependence and all-false authority."
+  - "On resume: re-run cold-start/collision checks, then build only owner-accepted canonical Earnings event_workspace -> thin D5 adapter -> read-only Prophet Lab consumer, with tests for missingness, rights, corrections, dependence and all-false authority."
   - "Stop after that one vertical is production-proven; do not fan out to other families in the same PR."
 
 do_not_redo:
@@ -72,6 +73,7 @@ do_not_redo:
   - "Do not backfill later corrections into the decision-time observation."
   - "Do not manufacture all six trajectory dimensions for every family."
   - "Do not edit Fusion rank logic or deterministic ENTRY_OPEN in Cell F."
+  - "Do not treat E3-A Earnings compiler shadow/model/rejected outputs, unresolved topic labels, or benchmark-only Haiku output as canonical Earnings evidence."
 
 danger_areas:
   - "Context Snapshot generic flattening previously leaked entitlement-gated forensics bodies into a committed parquet; any D5 adapter that spreads owner dicts/lists reintroduces that class of failure."
@@ -88,4 +90,4 @@ The candidate-level research compositions and deterministic E1 baseline are acce
 
 Exact continuation sequence: `V4 A1 acceptance/adoption → canonical V4-B1 candidate episode → Cell F Earnings thin adapter`.
 
-Cell F does nothing to D5 runtime until A1 has been accepted/adopted and the V4 owner lands a real canonical `prophet.candidate_episode/v1`. Then reopen this handoff and the Cell F contract, recheck current main/Fusion/specialist owners, and implement only the single Earnings thin-adapter vertical.
+Cell F does nothing to D5 runtime until A1 has been accepted/adopted and the V4 owner lands a real canonical `prophet.candidate_episode/v1`. Then reopen this handoff and the Cell F contract, recheck current main/Fusion/specialist owners, and implement only the single owner-accepted canonical Earnings thin-adapter vertical.
