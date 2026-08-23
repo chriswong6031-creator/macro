@@ -135,7 +135,10 @@ console.log(JSON.stringify({
   subtype: hooks.labelPair('subtype', 'effectiveness_notice'),
   classification: hooks.labelPair('classification', 'deferred_linkage'),
   change: hooks.labelPair('change', 'effectiveness_notice_observed'),
-  unknown: hooks.labelPair('subtype', 'unknown_future_token')
+  unknown: hooks.labelPair('subtype', 'unknown_future_token'),
+  coverageCurrent: hooks.coverageNotice({ freshness: 'fresh', horizon_state: 'current' }),
+  coverageLagging: hooks.coverageNotice({ freshness: 'stale', horizon_state: 'lagging' }),
+  coverageUnavailable: hooks.coverageNotice({ freshness: 'unknown', horizon_state: 'unavailable' })
 }));
 '''
     result = subprocess.run(
@@ -185,6 +188,18 @@ def test_recent_filter_uses_a_projection_as_of_clock_with_a_fixed_thirty_day_win
     assert "projectionAsOf()" in js
     assert "isRecentObserved(observedAt(latestFor(item)), projectionAsOf())" in js
     assert "Observed in 30 days" in html
+
+
+def test_freshness_indicator_never_calls_stale_or_unavailable_horizons_current() -> None:
+    hooks = _runtime_hooks()
+    if not hooks:
+        return
+    assert hooks["coverageCurrent"]["kind"] == "fresh"
+    assert hooks["coverageCurrent"]["en"] == "Observed filing coverage is current"
+    assert hooks["coverageLagging"]["kind"] == "degraded"
+    assert "behind latest SEC filings" in hooks["coverageLagging"]["en"]
+    assert hooks["coverageUnavailable"]["kind"] == "degraded"
+    assert hooks["coverageUnavailable"]["en"] == "Observed filing freshness is unavailable"
 
 
 def test_event_labels_are_explicitly_bilingual_with_a_safe_generic_fallback() -> None:

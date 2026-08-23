@@ -1,6 +1,6 @@
 {
 "AAWW": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -27,7 +27,7 @@
 "reason": "acquisition"
 },
 "ABMD": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -52,7 +52,7 @@
 "reason": "acquisition"
 },
 "ACOR": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": "0000950170-24-039674",
 "bankruptcy_date": "2024-04-02",
 "items_seen": [
@@ -79,7 +79,7 @@
 "reason": "bankruptcy"
 },
 "AET": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -104,7 +104,7 @@
 "reason": "acquisition"
 },
 "AGTI": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -128,7 +128,7 @@
 "reason": "acquisition"
 },
 "ALXN": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -154,7 +154,7 @@
 "reason": "acquisition"
 },
 "AMAG": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -182,7 +182,7 @@
 "reason": "acquisition"
 },
 "AMCX": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -204,11 +204,11 @@
 "9.01"
 ],
 "method": "none",
-"n_8k": 149,
+"n_8k": 147,
 "reason": "unknown"
 },
 "AMWD": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -236,7 +236,7 @@
 "reason": "acquisition"
 },
 "ANDW": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -260,7 +260,7 @@
 "reason": "unknown"
 },
 "ANGI": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -282,11 +282,11 @@
 "9.01"
 ],
 "method": "8k_item_5.01",
-"n_8k": 101,
+"n_8k": 102,
 "reason": "acquisition"
 },
 "ANR": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": "0001301063-15-000052",
 "bankruptcy_date": "2015-08-03",
 "items_seen": [
@@ -314,7 +314,7 @@
 "reason": "bankruptcy"
 },
 "ANSS": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -340,7 +340,7 @@
 "reason": "acquisition"
 },
 "ANTM": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -360,7 +360,7 @@
 "reason": "acquisition"
 },
 "AOL": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -388,7 +388,7 @@
 "reason": "acquisition"
 },
 "APCC": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -407,7 +407,7 @@
 "reason": "acquisition"
 },
 "APLS": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -433,7 +433,7 @@
 "reason": "acquisition"
 },
 "ARG": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -458,7 +458,7 @@
 "reason": "acquisition"
 },
 "ASIX": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -477,11 +477,11 @@
 "9.01"
 ],
 "method": "none",
-"n_8k": 82,
+"n_8k": 84,
 "reason": "unknown"
 },
 "ATML": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -510,7 +510,7 @@
 "reason": "acquisition"
 },
 "ATNI": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -531,7 +531,7 @@
 "reason": "unknown"
 },
 "ATVI": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -557,7 +557,7 @@
 "reason": "acquisition"
 },
 "ATW": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -581,7 +581,7 @@
 "reason": "acquisition"
 },
 "AVD": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -604,21 +604,20 @@
 "reason": "unknown"
 },
 "B": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
 "1.01",
-"6.02",
 "8.01",
 "9.01"
 ],
 "method": "none",
-"n_8k": 41,
+"n_8k": 15,
 "reason": "unknown"
 },
 "BBBY": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": "0001193125-23-111754",
 "bankruptcy_date": "2023-04-24",
 "items_seen": [
@@ -645,7 +644,7 @@
 "reason": "bankruptcy"
 },
 "BCR": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -669,7 +668,7 @@
 "reason": "acquisition"
 },
 "BGEN": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [],
@@ -678,7 +677,7 @@
 "reason": "unknown"
 },
 "BGG": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": "0000014195-20-000046",
 "bankruptcy_date": "2020-07-20",
 "items_seen": [
@@ -706,7 +705,7 @@
 "reason": "bankruptcy"
 },
 "BGS": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -731,7 +730,7 @@
 "reason": "unknown"
 },
 "BIVV": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -755,7 +754,7 @@
 "reason": "acquisition"
 },
 "BLMN": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -778,7 +777,7 @@
 "reason": "unknown"
 },
 "BMC": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -803,7 +802,7 @@
 "reason": "acquisition"
 },
 "BOBE": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -831,7 +830,7 @@
 "reason": "acquisition"
 },
 "BOOM": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -853,11 +852,11 @@
 "9.01"
 ],
 "method": "none",
-"n_8k": 191,
+"n_8k": 192,
 "reason": "unknown"
 },
 "BRCD": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -884,7 +883,7 @@
 "reason": "acquisition"
 },
 "BRCM": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -909,7 +908,7 @@
 "reason": "acquisition"
 },
 "BRKL": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -931,7 +930,7 @@
 "reason": "acquisition"
 },
 "BWLD": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -955,7 +954,7 @@
 "reason": "acquisition"
 },
 "CAMP": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": "0000950170-24-067683",
 "bankruptcy_date": "2024-06-03",
 "items_seen": [
@@ -984,7 +983,7 @@
 "reason": "bankruptcy"
 },
 "CATO": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -1007,7 +1006,7 @@
 "reason": "acquisition"
 },
 "CBSS": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -1025,7 +1024,7 @@
 "reason": "unknown"
 },
 "CDK": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -1053,7 +1052,7 @@
 "reason": "acquisition"
 },
 "CDMO": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -1079,7 +1078,7 @@
 "reason": "acquisition"
 },
 "CERN": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -1102,7 +1101,7 @@
 "reason": "acquisition"
 },
 "CEVA": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -1125,7 +1124,7 @@
 "reason": "unknown"
 },
 "CHCT": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -1142,11 +1141,11 @@
 "9.01"
 ],
 "method": "none",
-"n_8k": 112,
+"n_8k": 113,
 "reason": "unknown"
 },
 "CHUY": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -1401,7 +1400,7 @@
 "reason": "acquisition"
 },
 "CTL": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -2037,7 +2036,7 @@
 "reason": "acquisition"
 },
 "ETFC": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -2193,7 +2192,7 @@
 "reason": "unknown"
 },
 "FLIR": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -3759,8 +3758,184 @@
 "n_8k": 218,
 "reason": "unknown"
 },
+"MFE": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"2.05",
+"3.01",
+"3.03",
+"4.02",
+"5.01",
+"5.02",
+"5.03",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "8k_item_5.01",
+"n_8k": 170,
+"reason": "acquisition"
+},
+"MGLN": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"3.01",
+"3.02",
+"3.03",
+"5.01",
+"5.02",
+"5.03",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "8k_item_5.01",
+"n_8k": 213,
+"reason": "acquisition"
+},
+"MLAB": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"2.06",
+"4.01",
+"5.02",
+"5.03",
+"5.05",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "none",
+"n_8k": 185,
+"reason": "unknown"
+},
+"MODV": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": "0001437749-25-027478",
+"bankruptcy_date": "2025-08-21",
+"items_seen": [
+"1.01",
+"1.02",
+"1.03",
+"2.01",
+"2.02",
+"2.03",
+"2.04",
+"3.01",
+"3.02",
+"3.03",
+"5.01",
+"5.02",
+"5.03",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "8k_item_1.03",
+"n_8k": 254,
+"reason": "bankruptcy"
+},
+"MOLX": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"2.01",
+"2.02",
+"2.03",
+"2.05",
+"3.01",
+"3.03",
+"4.02",
+"5.01",
+"5.02",
+"5.03",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "8k_item_5.01",
+"n_8k": 64,
+"reason": "acquisition"
+},
+"MOV": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"2.05",
+"4.02",
+"5.02",
+"5.03",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "none",
+"n_8k": 102,
+"reason": "unknown"
+},
+"MRO": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"2.06",
+"3.01",
+"3.03",
+"5.01",
+"5.02",
+"5.03",
+"5.04",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "8k_item_5.01",
+"n_8k": 175,
+"reason": "acquisition"
+},
 "MXIM": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -3782,8 +3957,103 @@
 "n_8k": 73,
 "reason": "acquisition"
 },
+"MYE": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"2.05",
+"2.06",
+"4.01",
+"5.02",
+"5.03",
+"5.05",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "none",
+"n_8k": 189,
+"reason": "unknown"
+},
+"MYGN": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"2.01",
+"2.02",
+"2.03",
+"3.02",
+"5.02",
+"5.03",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "none",
+"n_8k": 129,
+"reason": "unknown"
+},
+"NARI": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"3.01",
+"3.03",
+"5.01",
+"5.02",
+"5.03",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "8k_item_5.01",
+"n_8k": 50,
+"reason": "acquisition"
+},
+"NATI": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"2.05",
+"3.01",
+"3.03",
+"5.01",
+"5.02",
+"5.03",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "8k_item_5.01",
+"n_8k": 99,
+"reason": "acquisition"
+},
 "NBL": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -3808,8 +4078,1025 @@
 "n_8k": 148,
 "reason": "acquisition"
 },
+"NBR": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"2.04",
+"3.01",
+"3.02",
+"3.03",
+"5.02",
+"5.03",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "none",
+"n_8k": 263,
+"reason": "unknown"
+},
+"NFB": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"2.05",
+"5.02",
+"5.04",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "none",
+"n_8k": 188,
+"reason": "unknown"
+},
+"NFX": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"2.05",
+"3.01",
+"3.03",
+"5.01",
+"5.02",
+"5.03",
+"5.04",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "8k_item_5.01",
+"n_8k": 133,
+"reason": "acquisition"
+},
+"NKTR": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"2.05",
+"2.06",
+"3.01",
+"3.02",
+"5.02",
+"5.03",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "none",
+"n_8k": 163,
+"reason": "unknown"
+},
+"NSI": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [],
+"method": "none",
+"n_8k": 14,
+"reason": "unknown"
+},
+"NTGR": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"2.01",
+"2.02",
+"5.02",
+"5.03",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "none",
+"n_8k": 79,
+"reason": "unknown"
+},
+"NTUS": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"2.04",
+"2.05",
+"3.01",
+"3.02",
+"3.03",
+"4.01",
+"5.01",
+"5.02",
+"5.03",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "8k_item_5.01",
+"n_8k": 207,
+"reason": "acquisition"
+},
+"NUVA": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"3.01",
+"3.02",
+"3.03",
+"5.01",
+"5.02",
+"5.03",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "8k_item_5.01",
+"n_8k": 180,
+"reason": "acquisition"
+},
+"NVLS": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"2.05",
+"2.06",
+"3.01",
+"3.02",
+"3.03",
+"5.01",
+"5.02",
+"5.03",
+"5.04",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "8k_item_5.01",
+"n_8k": 101,
+"reason": "acquisition"
+},
+"NVRI": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"3.01",
+"3.03",
+"4.01",
+"5.01",
+"5.02",
+"5.03",
+"5.04",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "8k_item_5.01",
+"n_8k": 142,
+"reason": "acquisition"
+},
+"NXGN": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"2.05",
+"2.06",
+"3.01",
+"3.02",
+"3.03",
+"4.01",
+"5.01",
+"5.02",
+"5.03",
+"5.07",
+"5.08",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "8k_item_5.01",
+"n_8k": 180,
+"reason": "acquisition"
+},
+"NXTL": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"3.02",
+"4.02",
+"5.03",
+"8.01",
+"9.01"
+],
+"method": "none",
+"n_8k": 135,
+"reason": "unknown"
+},
+"NYX": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"3.01",
+"3.02",
+"3.03",
+"5.01",
+"5.02",
+"5.03",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "8k_item_5.01",
+"n_8k": 129,
+"reason": "acquisition"
+},
+"OA": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"2.04",
+"2.06",
+"3.01",
+"3.03",
+"4.01",
+"4.02",
+"5.01",
+"5.02",
+"5.03",
+"5.05",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "8k_item_5.01",
+"n_8k": 119,
+"reason": "acquisition"
+},
+"OFIX": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"3.01",
+"3.03",
+"4.02",
+"5.02",
+"5.03",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "none",
+"n_8k": 185,
+"reason": "unknown"
+},
+"ORGO": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"2.04",
+"3.01",
+"3.02",
+"3.03",
+"4.01",
+"5.01",
+"5.02",
+"5.03",
+"5.07",
+"5.08",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "8k_item_5.01",
+"n_8k": 110,
+"reason": "acquisition"
+},
+"OSPN": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"2.01",
+"2.02",
+"2.03",
+"2.05",
+"2.06",
+"5.02",
+"5.03",
+"5.05",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "none",
+"n_8k": 162,
+"reason": "unknown"
+},
+"OSUR": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"1.05",
+"2.01",
+"2.02",
+"4.01",
+"5.02",
+"5.03",
+"5.05",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "none",
+"n_8k": 200,
+"reason": "unknown"
+},
+"PACW": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"3.01",
+"3.02",
+"3.03",
+"5.01",
+"5.02",
+"5.03",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "8k_item_5.01",
+"n_8k": 154,
+"reason": "acquisition"
+},
+"PCP": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"2.05",
+"2.06",
+"3.01",
+"3.03",
+"4.01",
+"5.01",
+"5.02",
+"5.03",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "8k_item_5.01",
+"n_8k": 113,
+"reason": "acquisition"
+},
+"PDCO": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"2.04",
+"2.06",
+"3.01",
+"3.03",
+"5.01",
+"5.02",
+"5.03",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "8k_item_5.01",
+"n_8k": 147,
+"reason": "acquisition"
+},
+"PETM": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"3.01",
+"3.03",
+"5.01",
+"5.02",
+"5.03",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "8k_item_5.01",
+"n_8k": 74,
+"reason": "acquisition"
+},
+"PGTI": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"2.05",
+"3.01",
+"3.03",
+"4.01",
+"5.01",
+"5.02",
+"5.03",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "8k_item_5.01",
+"n_8k": 215,
+"reason": "acquisition"
+},
+"PLCE": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"2.01",
+"2.02",
+"2.03",
+"2.05",
+"4.01",
+"5.01",
+"5.02",
+"5.03",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "8k_item_5.01",
+"n_8k": 152,
+"reason": "acquisition"
+},
+"PLCM": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"2.05",
+"3.01",
+"3.03",
+"5.01",
+"5.02",
+"5.03",
+"5.05",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "8k_item_5.01",
+"n_8k": 124,
+"reason": "acquisition"
+},
+"PRFT": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"3.01",
+"3.02",
+"3.03",
+"4.01",
+"4.02",
+"5.01",
+"5.02",
+"5.03",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "8k_item_5.01",
+"n_8k": 171,
+"reason": "acquisition"
+},
+"PRXL": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"2.04",
+"2.05",
+"3.01",
+"3.02",
+"3.03",
+"5.01",
+"5.02",
+"5.03",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "8k_item_5.01",
+"n_8k": 157,
+"reason": "acquisition"
+},
+"PSFT": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.02",
+"3.03",
+"5.01",
+"5.02",
+"5.03",
+"5.04",
+"8.01",
+"9.01"
+],
+"method": "8k_item_5.01",
+"n_8k": 53,
+"reason": "acquisition"
+},
+"PXP": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"2.04",
+"3.01",
+"3.02",
+"3.03",
+"5.01",
+"5.02",
+"5.03",
+"5.04",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "8k_item_5.01",
+"n_8k": 217,
+"reason": "acquisition"
+},
+"QCP": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.03",
+"3.01",
+"3.03",
+"5.01",
+"5.02",
+"5.03",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "8k_item_5.01",
+"n_8k": 34,
+"reason": "acquisition"
+},
+"QEP": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"3.01",
+"3.03",
+"4.01",
+"5.01",
+"5.02",
+"5.03",
+"5.04",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "8k_item_5.01",
+"n_8k": 105,
+"reason": "acquisition"
+},
+"QLGC": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"2.05",
+"2.06",
+"3.01",
+"3.03",
+"5.01",
+"5.02",
+"5.03",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "8k_item_5.01",
+"n_8k": 159,
+"reason": "acquisition"
+},
+"QURE": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"2.05",
+"4.01",
+"5.02",
+"5.03",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "none",
+"n_8k": 152,
+"reason": "unknown"
+},
+"RAI": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"2.04",
+"3.01",
+"3.02",
+"3.03",
+"5.01",
+"5.02",
+"5.03",
+"5.04",
+"5.05",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "8k_item_5.01",
+"n_8k": 108,
+"reason": "acquisition"
+},
+"REGI": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"3.01",
+"3.02",
+"3.03",
+"4.02",
+"5.01",
+"5.02",
+"5.03",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "8k_item_5.01",
+"n_8k": 148,
+"reason": "acquisition"
+},
+"RGNX": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.02",
+"2.03",
+"5.02",
+"5.03",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "none",
+"n_8k": 114,
+"reason": "unknown"
+},
+"RGP": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"2.05",
+"3.02",
+"4.01",
+"5.01",
+"5.02",
+"5.03",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "8k_item_5.01",
+"n_8k": 205,
+"reason": "acquisition"
+},
+"RGS": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"2.05",
+"2.06",
+"3.01",
+"3.02",
+"3.03",
+"4.01",
+"4.02",
+"5.02",
+"5.03",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "none",
+"n_8k": 166,
+"reason": "unknown"
+},
+"RHT": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"2.01",
+"2.02",
+"2.03",
+"2.04",
+"3.01",
+"3.02",
+"3.03",
+"5.01",
+"5.02",
+"5.03",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "8k_item_5.01",
+"n_8k": 111,
+"reason": "acquisition"
+},
+"RILY": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"1.02",
+"1.05",
+"2.01",
+"2.02",
+"2.03",
+"2.06",
+"3.01",
+"3.02",
+"3.03",
+"4.01",
+"4.02",
+"5.02",
+"5.03",
+"5.05",
+"5.07",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "none",
+"n_8k": 141,
+"reason": "unknown"
+},
+"RMAX": {
+"at": "2026-08-22T14:32:55.444656+00:00",
+"bankruptcy_accession": null,
+"bankruptcy_date": null,
+"items_seen": [
+"1.01",
+"2.01",
+"2.02",
+"2.03",
+"2.05",
+"3.01",
+"3.02",
+"4.01",
+"5.02",
+"5.03",
+"5.05",
+"5.07",
+"5.08",
+"7.01",
+"8.01",
+"9.01"
+],
+"method": "none",
+"n_8k": 147,
+"reason": "unknown"
+},
 "RTN": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -3832,7 +5119,7 @@
 "reason": "acquisition"
 },
 "TIF": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -3858,7 +5145,7 @@
 "reason": "acquisition"
 },
 "VAR": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -3883,7 +5170,7 @@
 "reason": "acquisition"
 },
 "WLTW": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [
@@ -3899,11 +5186,11 @@
 "9.01"
 ],
 "method": "seed",
-"n_8k": 51,
+"n_8k": 52,
 "reason": "acquisition"
 },
 "XLNX": {
-"at": "2026-07-18T14:58:12.326984+00:00",
+"at": "2026-08-22T14:32:55.444656+00:00",
 "bankruptcy_accession": null,
 "bankruptcy_date": null,
 "items_seen": [

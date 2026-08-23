@@ -87,8 +87,8 @@ def _reversed_rank_fn(calls: list[dict]) -> dict:
     }
 
 
-def _register_adversarial(definition: str = "adv_challenger_v1") -> None:
-    bs.register_challenger(definition, rank_fn=_reversed_rank_fn)
+def _register_adversarial(definition: str = "adv_challenger_v1", market: str = "CA") -> None:
+    bs.register_challenger(market, definition, rank_fn=_reversed_rank_fn)
 
 
 def _lane_a_frame(market: str) -> pd.DataFrame | None:
@@ -174,7 +174,7 @@ def test_k1_ca_zero_authority_breach_and_non_vacuity(tmp_path, monkeypatch):
         return _reversed_rank_fn(calls)
 
     hostile_artifact, hostile_board = _run(
-        absent=False, register=lambda: bs.register_challenger("hostile_v1", rank_fn=_hostile_rank_fn)
+        absent=False, register=lambda: bs.register_challenger("CA", "hostile_v1", rank_fn=_hostile_rank_fn)
     )
 
     assert empty_artifact == baseline_artifact == adv_artifact == hostile_artifact
@@ -240,7 +240,7 @@ def test_k1_hk_zero_authority_byte_identity(monkeypatch):
         inner_calls[0]["ticker"] = "HACKED"  # attempt to mutate the writer's population
         return _reversed_rank_fn(inner_calls)
 
-    bs.register_challenger("hostile_v1", rank_fn=_hostile_rank_fn)
+    bs.register_challenger("HK", "hostile_v1", rank_fn=_hostile_rank_fn)
     result = bs.write_shadow(calls, market="HK", asof="2026-08-21")
     assert result["written"] > 0  # POSITIVE CONTROL
 
@@ -249,23 +249,52 @@ def test_k1_hk_zero_authority_byte_identity(monkeypatch):
     assert out["buy"][0]["ticker"] == "AAA", "buys must never be touched — it never shared identity with calls"
 
 
+def _offenders_for_market(changed: set[str], market: str) -> list[str]:
+    """D3 (MAJOR, m2 fence was market-blind): the write-surface fence
+    predicate. A changed path is lawful ONLY if it lies under
+    data/prophet_shadow/ AND its basename belongs to THIS market (starts
+    with ``<market.lower()>_``) — the pre-fix fence checked only the
+    prophet_shadow/ prefix, so a CA pass that also wrote
+    hk_discovery.parquet (reviewer probe G2) passed green. Factored out so
+    the market-scoping logic itself is directly, unit-testably killable
+    (see test_write_surface_fence_trips_on_a_foreign_market_file below),
+    independent of whether write_shadow itself ever actually produces a
+    foreign-market write today."""
+    prefix = f"{market.lower()}_"
+    offenders: list[str] = []
+    for p in sorted(changed):
+        if p == "prophet_shadow":
+            continue
+        if not p.startswith("prophet_shadow/"):
+            offenders.append(p)
+            continue
+        if not Path(p).name.startswith(prefix):
+            offenders.append(p)
+    return offenders
+
+
 def test_write_surface_fence_only_data_prophet_shadow_is_touched(tmp_path, monkeypatch):
-    """m2 (M5, review round 2): the REAL F1/K1 load-bearing kill. Snapshots
-    every file under the tmp data root before and after a positive-control
+    """m2 (M5, review round 2) + D3 market-scoping repair. Snapshots every
+    file under the tmp data root before and after a positive-control
     write_shadow pass and asserts every path CREATED or MODIFIED lies under
-    data/prophet_shadow/. This closes the residual channel the review proved
-    live: neither K1's byte-identity harness (which only compares the
-    PUBLISHED artifact + board_ledger's own store, and — per the corrected
-    docstrings above — cannot even see an aliasing violation in the CA/HK
-    object graphs as they actually exist) nor K6's static string fence (which
-    only catches the literal 'prophet_shadow', not an arbitrary stray write)
-    would notice a writer that also emits, say,
-    `pd.DataFrame(...).to_parquet(data/hk_pick_lab/x.parquet)` — a write
-    entirely outside this module's own two lanes.
+    data/prophet_shadow/ AND belongs to the market under test. This closes
+    the residual channel the review proved live: neither K1's byte-identity
+    harness (which only compares the PUBLISHED artifact + board_ledger's own
+    store, and — per the corrected docstrings above — cannot even see an
+    aliasing violation in the CA/HK object graphs as they actually exist)
+    nor K6's static string fence (which only catches the literal
+    'prophet_shadow', not an arbitrary stray write) would notice a writer
+    that also emits, say, `pd.DataFrame(...).to_parquet(data/hk_pick_lab/x.parquet)`
+    — a write entirely outside this module's own two lanes. D3 additionally
+    closes the market-blind gap the m2 fence itself had: a CA pass writing
+    into `data/prophet_shadow/hk_discovery.parquet` (reviewer probe G2) used
+    to pass this fence green because that path still starts with
+    `prophet_shadow/`.
 
     MUTATION THIS KILLS: adding any write inside write_shadow/_write_lane_a/
     _write_lane_b/_merge_write_lane_a/_merge_write_lane_b that targets a path
-    outside data/prophet_shadow/.
+    outside data/prophet_shadow/, OR that targets a foreign-market file
+    inside data/prophet_shadow/ (e.g. a CA pass touching hk_*.parquet).
     """
     data_root = tmp_path / "data"
     monkeypatch.setattr(config, "data_dir", lambda: data_root)
@@ -292,14 +321,90 @@ def test_write_surface_fence_only_data_prophet_shadow_is_touched(tmp_path, monke
     after = _snapshot()
 
     changed = {p for p in (set(before) | set(after)) if before.get(p) != after.get(p)}
-    offenders = sorted(p for p in changed if not (p == "prophet_shadow" or p.startswith("prophet_shadow/")))
+    offenders = _offenders_for_market(changed, "CA")
     assert not offenders, (
-        f"write_shadow touched path(s) outside data/prophet_shadow/: {offenders}"
+        f"write_shadow touched path(s) outside CA's own data/prophet_shadow/ files: {offenders}"
     )
     # Sanity: the positive control DID write something under prophet_shadow/,
     # so this is not passing merely because nothing happened on disk.
     assert any(p.startswith("prophet_shadow/") for p in changed), (
         "positive control: the write must actually touch data/prophet_shadow/"
+    )
+
+
+def test_write_surface_fence_trips_on_a_foreign_market_file():
+    """D3 executed kill (reviewer probe G2 shape): a CA pass whose changed-file
+    set includes a foreign-market file under prophet_shadow/ (e.g.
+    hk_discovery.parquet) must be flagged as an offender by the fence
+    predicate, not waved through. The pre-fix predicate
+    (`not p.startswith('prophet_shadow/')`) would have passed this shape
+    green — it only ever checked the directory prefix, never which market
+    the file belongs to."""
+    changed = {
+        "prophet_shadow/ca_rank_pairs.parquet",
+        "prophet_shadow/hk_discovery.parquet",  # foreign-market file — must trip the fence
+    }
+    offenders = _offenders_for_market(changed, "CA")
+    assert offenders == ["prophet_shadow/hk_discovery.parquet"]
+
+    # Mirror: an HK pass must equally reject a foreign CA file, and a
+    # same-market file must never be flagged.
+    offenders_hk = _offenders_for_market(
+        {"prophet_shadow/hk_discovery.parquet", "prophet_shadow/ca_rank_pairs.parquet"}, "HK",
+    )
+    assert offenders_hk == ["prophet_shadow/ca_rank_pairs.parquet"]
+
+
+def test_write_surface_fence_only_data_prophet_shadow_is_touched_hk(tmp_path, monkeypatch):
+    """R8 (F8, build commission): the HK arm of the REAL snapshot write-surface
+    fence — mirrors test_write_surface_fence_only_data_prophet_shadow_is_touched
+    above (CA, Lane A) but exercises HK's Lane B DISCOVERY write (the
+    hk_discovery_v1 registration + its receipt), a path the CA arm above never
+    touches at all. Same before/after filesystem snapshot technique: every
+    path CREATED or MODIFIED by a real write_shadow(market="HK") pass must lie
+    under data/prophet_shadow/ and carry the hk_ market prefix.
+
+    This is the REAL fence R8 asks for — unlike
+    test_write_surface_fence_accepts_the_hk_discovery_receipt_path below
+    (fixed by this same commission to stop claiming it is this test), the
+    `changed` set here comes from an actual before/after directory walk, never
+    a hand-written literal.
+
+    MUTATION THIS KILLS: adding any write inside the HK discovery path
+    (_write_lane_b / _merge_write_lane_b / _write_discovery_receipt) that
+    targets a path outside data/prophet_shadow/, or a foreign-market
+    (ca_-prefixed) file.
+    """
+    data_root = tmp_path / "data"
+    monkeypatch.setattr(config, "data_dir", lambda: data_root)
+    _lane_on(monkeypatch, "HK")
+
+    def _snapshot() -> dict[str, tuple[int, int]]:
+        if not data_root.exists():
+            return {}
+        return {
+            str(p.relative_to(data_root)): (p.stat().st_mtime_ns, p.stat().st_size)
+            for p in data_root.rglob("*") if p.is_file()
+        }
+
+    before = _snapshot()
+    bs.register_challenger("HK", "hk_discovery_v1", discovery_fn=_discovery_fn_ok)
+    result = bs.write_shadow([], market="HK", asof="2026-08-21")
+    assert result["written"] > 0  # POSITIVE CONTROL
+    after = _snapshot()
+
+    changed = {p for p in (set(before) | set(after)) if before.get(p) != after.get(p)}
+    offenders = _offenders_for_market(changed, "HK")
+    assert not offenders, (
+        f"write_shadow(HK) touched path(s) outside HK's own data/prophet_shadow/ "
+        f"files: {offenders}"
+    )
+    assert any(p.startswith("prophet_shadow/") for p in changed), (
+        "positive control: the write must actually touch data/prophet_shadow/"
+    )
+    assert "prophet_shadow/hk_discovery_receipt.json" in changed, (
+        "a real HK pass writes the receipt too — this fence must see it, not "
+        "just the Lane B parquet"
     )
 
 
@@ -320,7 +425,7 @@ def test_k2_population_is_never_reoriginated_from_the_challenger(monkeypatch):
         base["ZZZ_OFFLIST"] = {"score_raw": 999.0, "score_conservative": 999.0}
         return base
 
-    bs.register_challenger("offlist_v1", rank_fn=_rank_fn)
+    bs.register_challenger("CA", "offlist_v1", rank_fn=_rank_fn)
     result = bs.write_shadow(calls, market="CA", asof="2026-08-21")
     assert result["written"] > 0  # POSITIVE CONTROL
 
@@ -562,7 +667,7 @@ def test_k5_missing_challenger_score_is_null_not_zero(monkeypatch):
             "BBB": {"score_raw": 3.0, "score_conservative": 2.5},
         }
 
-    bs.register_challenger("partial_v1", rank_fn=_partial_rank_fn)
+    bs.register_challenger("CA", "partial_v1", rank_fn=_partial_rank_fn)
     result = bs.write_shadow(calls, market="CA", asof="2026-08-21")
     assert result["written"] > 0  # POSITIVE CONTROL
 
@@ -619,6 +724,13 @@ _K6_FORMS: dict[str, re.Pattern] = {
     # `prophet_shadow.score` — the same label above, but backtick-wrapped
     # prose in prophet_bridge.py's docstring rather than a quoted string.
     "bridge_prose_attribute": re.compile(r"`prophet_shadow\.score`"),
+    # hk-discovery wave: scripts/check_surface_freshness.py's ONE reviewed
+    # reference — a module-level path CONSTANT naming the additive
+    # hk_discovery_receipt.json (never the Lane A/B stores themselves), the
+    # contract §4 "surface-freshness absent-vs-stale vocabulary" wiring.
+    "freshness_receipt_path": re.compile(
+        r'"data/prophet_shadow/hk_discovery_receipt\.json"'
+    ),
 }
 
 #: {file: (allowed form names, reason)} — PER-FILE, not global: a file may
@@ -678,6 +790,41 @@ _K6_PREEXISTING_UNRELATED_FILES: dict[str, tuple[tuple[str, ...], str]] = {
     )),
 }
 
+#: {file: (allowed form names, reason)} — files whose 'prophet_shadow'
+#: occurrence is NOT pre-existing/unrelated (unlike every entry in
+#: _K6_PREEXISTING_UNRELATED_FILES above): it is a REVIEWED READER this
+#: contract itself sanctions, added and audited as part of THIS wave.
+#: Re-filed here out of _K6_PREEXISTING_UNRELATED_FILES (build commission
+#: R10/F13) — that dict's own name/docstring claims "pre-existing,
+#: unrelated" code, which this file's occurrence never was: it is
+#: scripts/check_surface_freshness.py's own sanctioned, contract-cited read
+#: of engine/board_shadow.py's additive receipt, filed under the same name
+#: as genuinely unrelated pre-existing collisions was itself a mis-filing.
+#: Merged into the same fence below via _K6_ALL_ALLOWLISTED_FILES — the
+#: per-file pinned-token-form mechanism (M2's fix) is unchanged; only the
+#: bookkeeping of WHICH dict a file's entry lives in changed.
+_K6_REVIEWED_READER_FILES: dict[str, tuple[tuple[str, ...], str]] = {
+    "scripts/check_surface_freshness.py": (("freshness_receipt_path",), (
+        "hk-discovery wave (WS:PROPHET-HK-CA-REVAMP): the sanctioned "
+        "surface-freshness reader of engine/board_shadow.py's OWN additive "
+        "hk_discovery_receipt.json — contract §4's 'when a challenger "
+        "registers, the store paths get wired into the surface-freshness "
+        "absent-vs-stale vocabulary' clause names exactly this. It never "
+        "reads the Lane A/B parquet stores themselves, so it is not the "
+        "production-reader leak K6 exists to catch."
+    )),
+}
+
+#: The fence's actual per-file lookup — every file excused from the raw K6
+#: walk, regardless of WHY (pre-existing-unrelated vs. reviewed-reader). Never
+#: read _K6_PREEXISTING_UNRELATED_FILES or _K6_REVIEWED_READER_FILES directly
+#: at the scan site below; this union is the one source of truth for "is this
+#: file excused, and under which forms".
+_K6_ALL_ALLOWLISTED_FILES: dict[str, tuple[tuple[str, ...], str]] = {
+    **_K6_PREEXISTING_UNRELATED_FILES,
+    **_K6_REVIEWED_READER_FILES,
+}
+
 
 def _k6_unclassified_occurrences(text: str, allowed_forms: tuple[str, ...]) -> list[str]:
     """Every raw 'prophet_shadow' occurrence in `text` whose position is not
@@ -721,6 +868,12 @@ def test_k6_prophet_shadow_literal_is_confined_to_its_own_module_and_tests():
     maskable: delete one legitimate occurrence, add a differently-shaped
     dangerous one, net count unchanged), so a NEW occurrence whose shape
     matches none of that file's declared forms still fails loudly.
+    scripts/check_surface_freshness.py is excused too, but is filed
+    separately in _K6_REVIEWED_READER_FILES (build commission R10/F13): it is
+    a REVIEWED READER this contract itself sanctions, not a pre-existing
+    coincidence, so it does not belong in the "pre-existing, unrelated" dict
+    above. Both dicts merge into _K6_ALL_ALLOWLISTED_FILES, which is what the
+    scan below actually reads.
 
     MUTATION THIS KILLS: any production module importing
     engine.board_shadow / referencing 'prophet_shadow' by name (e.g. a
@@ -753,8 +906,8 @@ def test_k6_prophet_shadow_literal_is_confined_to_its_own_module_and_tests():
                 continue  # binary/unreadable files carry no source-level leak
             if "prophet_shadow" not in text:
                 continue
-            if rel in _K6_PREEXISTING_UNRELATED_FILES:
-                allowed_forms, _reason = _K6_PREEXISTING_UNRELATED_FILES[rel]
+            if rel in _K6_ALL_ALLOWLISTED_FILES:
+                allowed_forms, _reason = _K6_ALL_ALLOWLISTED_FILES[rel]
                 unclassified = _k6_unclassified_occurrences(text, allowed_forms)
                 if unclassified:
                     offenders.append(
@@ -821,7 +974,7 @@ def test_k8a_session_date_must_equal_current_asof(monkeypatch):
     mismatched_session_date = (today - dt.timedelta(days=1)).isoformat()
     rows = [{"session_date": mismatched_session_date, "security_ref_raw": "AAA",
               "candidate_origin": "test"}]
-    bs.register_challenger("disc_v1", discovery_fn=_discovery_fn_factory(rows))
+    bs.register_challenger("CA", "disc_v1", discovery_fn=_discovery_fn_factory(rows))
     result = bs.write_shadow([], market="CA", asof=asof)
     frame = _lane_b_frame("CA")
     assert frame is None or frame.empty
@@ -839,7 +992,7 @@ def test_k8a_positive_control_matching_asof_writes(monkeypatch):
     today = dt.datetime.now(dt.timezone.utc).date().isoformat()
     rows = [{"session_date": today, "security_ref_raw": "AAA",
               "candidate_origin": "test"}]
-    bs.register_challenger("disc_v1", discovery_fn=_discovery_fn_factory(rows))
+    bs.register_challenger("CA", "disc_v1", discovery_fn=_discovery_fn_factory(rows))
     result = bs.write_shadow([], market="CA", asof=today)
     assert result["written"] > 0
     frame = _lane_b_frame("CA")
@@ -854,7 +1007,7 @@ def test_k8b_wall_clock_settle_fence(monkeypatch):
     stale_asof = "2020-01-01"
     _lane_on(monkeypatch, "CA")
     rows = [{"session_date": stale_asof, "security_ref_raw": "AAA", "candidate_origin": "test"}]
-    bs.register_challenger("disc_v1", discovery_fn=_discovery_fn_factory(rows))
+    bs.register_challenger("CA", "disc_v1", discovery_fn=_discovery_fn_factory(rows))
     result = bs.write_shadow([], market="CA", asof=stale_asof)
     assert result["written"] == 0
     frame = _lane_b_frame("CA")
@@ -869,13 +1022,13 @@ def test_k8c_behind_the_head_is_refused(monkeypatch):
     newer = today.isoformat()
     older = (today - dt.timedelta(days=1)).isoformat()
 
-    bs.register_challenger("disc_v1", discovery_fn=_discovery_fn_factory(
+    bs.register_challenger("CA", "disc_v1", discovery_fn=_discovery_fn_factory(
         [{"session_date": newer, "security_ref_raw": "AAA", "candidate_origin": "test"}]))
     result = bs.write_shadow([], market="CA", asof=newer)
     assert result["written"] > 0  # POSITIVE CONTROL — establishes the head
 
     bs.CHALLENGER_REGISTRY.clear()
-    bs.register_challenger("disc_v1", discovery_fn=_discovery_fn_factory(
+    bs.register_challenger("CA", "disc_v1", discovery_fn=_discovery_fn_factory(
         [{"session_date": older, "security_ref_raw": "BBB", "candidate_origin": "test"}]))
     result2 = bs.write_shadow([], market="CA", asof=older)
     assert result2["written"] == 0
@@ -913,7 +1066,7 @@ def test_k9_ref_collision_is_counted_and_kept(monkeypatch):
         {"session_date": today, "security_ref_raw": " AAA", "candidate_origin": "a"},
         {"session_date": today, "security_ref_raw": "AAA ", "candidate_origin": "b"},
     ]
-    bs.register_challenger("disc_v1", discovery_fn=_discovery_fn_factory(rows))
+    bs.register_challenger("CA", "disc_v1", discovery_fn=_discovery_fn_factory(rows))
     result = bs.write_shadow([], market="CA", asof=today)
     assert result["written"] > 0  # POSITIVE CONTROL
     frame = _lane_b_frame("CA")
@@ -930,7 +1083,7 @@ def test_k9_ref_collision_is_counted_and_kept(monkeypatch):
     bs.CHALLENGER_REGISTRY.clear()
     monkeypatch.setattr(bs, "canonical_ref", _strip_canonicalizer)
     tomorrow = (dt.datetime.now(dt.timezone.utc).date() + dt.timedelta(days=1)).isoformat()
-    bs.register_challenger("disc_v1", discovery_fn=_discovery_fn_factory(
+    bs.register_challenger("CA", "disc_v1", discovery_fn=_discovery_fn_factory(
         [{"session_date": tomorrow, "security_ref_raw": "ZZZ", "candidate_origin": "z"}]))
     result2 = bs.write_shadow([], market="CA", asof=tomorrow)
     assert result2["written"] > 0
@@ -954,7 +1107,7 @@ def test_k9_non_colliding_refs_stay_separate(monkeypatch):
         {"session_date": today, "security_ref_raw": "AAA", "candidate_origin": "a"},
         {"session_date": today, "security_ref_raw": "BBB", "candidate_origin": "b"},
     ]
-    bs.register_challenger("disc_v1", discovery_fn=_discovery_fn_factory(rows))
+    bs.register_challenger("CA", "disc_v1", discovery_fn=_discovery_fn_factory(rows))
     bs.write_shadow([], market="CA", asof=today)
     frame = _lane_b_frame("CA")
     assert set(frame["security_ref"]) == {"AAA", "BBB"}
@@ -991,7 +1144,7 @@ def test_k10_coverage_denominator_is_population_n_only(monkeypatch):
     def _rank_fn(_calls):
         return {"AAA": {"score_raw": 1.0}, "BBB": {"score_raw": 2.0}}  # 2 of 4 scored
 
-    bs.register_challenger("cov_v1", rank_fn=_rank_fn)
+    bs.register_challenger("CA", "cov_v1", rank_fn=_rank_fn)
     result = bs.write_shadow(calls, market="CA", asof="2026-08-21")
     assert result["written"] > 0  # POSITIVE CONTROL
 
@@ -1111,7 +1264,7 @@ def test_k13_challenger_rank_is_dense_over_the_minted_population_with_nulls(monk
             "BBB": {"score_raw": 5.0},  # tie with AAA
         }
 
-    bs.register_challenger("dense_v1", rank_fn=_rank_fn)
+    bs.register_challenger("CA", "dense_v1", rank_fn=_rank_fn)
     result = bs.write_shadow(calls, market="CA", asof="2026-08-21")
     assert result["written"] > 0  # POSITIVE CONTROL
 
@@ -1140,7 +1293,7 @@ def test_k14_reobservation_never_advances_first_seen_at(monkeypatch):
     day1 = (today - dt.timedelta(days=1)).isoformat()
     day2 = today.isoformat()
 
-    bs.register_challenger("disc_v1", discovery_fn=_discovery_fn_factory(
+    bs.register_challenger("CA", "disc_v1", discovery_fn=_discovery_fn_factory(
         [{"session_date": day1, "security_ref_raw": "AAA", "candidate_origin": "a"}]))
     r1 = bs.write_shadow([], market="CA", asof=day1)
     assert r1["written"] > 0  # POSITIVE CONTROL
@@ -1148,7 +1301,7 @@ def test_k14_reobservation_never_advances_first_seen_at(monkeypatch):
     first_seen_day1 = frame1.loc[frame1["session_date"] == day1, "first_seen_at"].iloc[0]
 
     bs.CHALLENGER_REGISTRY.clear()
-    bs.register_challenger("disc_v1", discovery_fn=_discovery_fn_factory(
+    bs.register_challenger("CA", "disc_v1", discovery_fn=_discovery_fn_factory(
         [{"session_date": day2, "security_ref_raw": "AAA", "candidate_origin": "a"}]))
     r2 = bs.write_shadow([], market="CA", asof=day2)
     assert r2["written"] > 0
@@ -1190,7 +1343,7 @@ def test_k14_first_seen_at_is_a_true_min_under_clock_skew(monkeypatch, tmp_path)
     }])
     seed.to_parquet(path, index=False)
 
-    bs.register_challenger("disc_v1", discovery_fn=_discovery_fn_factory(
+    bs.register_challenger("CA", "disc_v1", discovery_fn=_discovery_fn_factory(
         [{"session_date": today, "security_ref_raw": "AAA", "candidate_origin": "a"}]))
     result = bs.write_shadow([], market="CA", asof=today)
     assert result["written"] > 0  # POSITIVE CONTROL
@@ -1204,6 +1357,487 @@ def test_k14_first_seen_at_is_a_true_min_under_clock_skew(monkeypatch, tmp_path)
         f"— got {written_first_seen!r}, which is not earlier than the seeded "
         f"future prior_min {future_first_seen!r}"
     )
+
+
+# ---------------------------------------------------------------------------
+# K15-K20 — market-scoped registration (post-merge Sol review correction,
+# 2026-08-21). CEO Sol's post-merge review of the shadow-contract wave
+# (merged fc5282f438fb, PR #6178) found CHALLENGER_REGISTRY keyed by
+# challenger_definition only and write_shadow(market) iterating EVERY
+# registration regardless of market — the first real registrant would have
+# executed in BOTH the HK and CA lanes. Zero production registrants existed
+# at merge, so no backward compatibility with the unscoped API was owed; the
+# repair keys the registry (market, challenger_definition) and adds the
+# market-selection seam _registrations_for(market). K15-K18 are the
+# isolation kills proper (each with a POSITIVE CONTROL per the standing
+# clause above); K19 is the executed mutation kill proving K15-K18 are
+# load-bearing; K20 pins the four-state registry_state ladder.
+# ---------------------------------------------------------------------------
+def test_k15_hk_only_discovery_challenger_is_invisible_to_ca(monkeypatch):
+    """K15: an HK-only discovery challenger, wrapped in a call-sentinel, must
+    be structurally incapable of executing during a CA write_shadow call —
+    the sentinel is never invoked and CA's Lane B store gains zero rows for
+    that definition. POSITIVE CONTROL: the same registration DOES fire, and
+    DOES write, under an HK call.
+
+    MUTATION THIS KILLS: a CHALLENGER_REGISTRY keyed by challenger_definition
+    alone (or write_shadow iterating the whole registry instead of
+    _registrations_for(market)) — the exact shape the merged wave shipped."""
+    today = dt.datetime.now(dt.timezone.utc).date().isoformat()
+    invocations: list[str] = []
+
+    def _sentinel_discovery(asof):
+        invocations.append(asof)
+        return [{"session_date": today, "security_ref_raw": "HKONLY", "candidate_origin": "hk"}]
+
+    bs.register_challenger("HK", "hk_only_disc_v1", discovery_fn=_sentinel_discovery)
+
+    # CA leg — the HK-only challenger must never fire, never write.
+    _lane_on(monkeypatch, "CA")
+    result_ca = bs.write_shadow([], market="CA", asof=today)
+    assert invocations == [], "an HK-only discovery_fn must never be invoked by a CA write_shadow call"
+    ca_frame = _lane_b_frame("CA")
+    assert ca_frame is None or ca_frame.empty
+    assert result_ca["registry_state"] == "no_challenger_for_market"
+    assert result_ca["written"] == 0
+
+    # POSITIVE CONTROL — the same registration fires for HK.
+    _lane_on(monkeypatch, "HK")
+    result_hk = bs.write_shadow([], market="HK", asof=today)
+    assert invocations == [today], "the HK-only discovery_fn must be invoked exactly once by the HK call"
+    hk_frame = _lane_b_frame("HK")
+    assert hk_frame is not None and len(hk_frame) == 1
+    assert result_hk["written"] > 0
+
+
+def test_k16_ca_only_discovery_challenger_is_invisible_to_hk(monkeypatch):
+    """K16: symmetric to K15 — a CA-only discovery challenger must be
+    structurally incapable of executing during an HK write_shadow call."""
+    today = dt.datetime.now(dt.timezone.utc).date().isoformat()
+    invocations: list[str] = []
+
+    def _sentinel_discovery(asof):
+        invocations.append(asof)
+        return [{"session_date": today, "security_ref_raw": "CAONLY", "candidate_origin": "ca"}]
+
+    bs.register_challenger("CA", "ca_only_disc_v1", discovery_fn=_sentinel_discovery)
+
+    # HK leg — the CA-only challenger must never fire, never write.
+    _lane_on(monkeypatch, "HK")
+    result_hk = bs.write_shadow([], market="HK", asof=today)
+    assert invocations == [], "a CA-only discovery_fn must never be invoked by an HK write_shadow call"
+    hk_frame = _lane_b_frame("HK")
+    assert hk_frame is None or hk_frame.empty
+    assert result_hk["registry_state"] == "no_challenger_for_market"
+    assert result_hk["written"] == 0
+
+    # POSITIVE CONTROL — the same registration fires for CA.
+    _lane_on(monkeypatch, "CA")
+    result_ca = bs.write_shadow([], market="CA", asof=today)
+    assert invocations == [today], "the CA-only discovery_fn must be invoked exactly once by the CA call"
+    ca_frame = _lane_b_frame("CA")
+    assert ca_frame is not None and len(ca_frame) == 1
+    assert result_ca["written"] > 0
+
+
+def test_k17_lane_a_rank_challenger_market_isolation(monkeypatch):
+    """K17: the same isolation as K15/K16, for Lane-A rank_fn challengers,
+    both directions with positive controls."""
+    calls = _population()
+    hk_invocations: list[str] = []
+    ca_invocations: list[str] = []
+
+    def _hk_only_rank_fn(inner_calls):
+        hk_invocations.append("called")
+        return _reversed_rank_fn(inner_calls)
+
+    def _ca_only_rank_fn(inner_calls):
+        ca_invocations.append("called")
+        return _reversed_rank_fn(inner_calls)
+
+    bs.register_challenger("HK", "hk_only_rank_v1", rank_fn=_hk_only_rank_fn)
+    bs.register_challenger("CA", "ca_only_rank_v1", rank_fn=_ca_only_rank_fn)
+
+    # CA leg — must invoke ONLY the CA-registered rank_fn.
+    _seed_board_ledger(monkeypatch, "CA", "2026-08-21", calls)
+    result_ca = bs.write_shadow(calls, market="CA", asof="2026-08-21")
+    assert hk_invocations == [], "an HK-only rank_fn must never be invoked by a CA write_shadow call"
+    assert ca_invocations == ["called"]
+    assert result_ca["written"] > 0  # POSITIVE CONTROL
+    ca_frame = _lane_a_frame("CA")
+    assert ca_frame is not None and set(ca_frame["challenger_definition"]) == {"ca_only_rank_v1"}
+
+    # HK leg (mirror) — must invoke ONLY the HK-registered rank_fn, and the
+    # CA-only rank_fn must not fire again either.
+    _seed_board_ledger(monkeypatch, "HK", "2026-08-21", calls)
+    result_hk = bs.write_shadow(calls, market="HK", asof="2026-08-21")
+    assert hk_invocations == ["called"]
+    assert ca_invocations == ["called"], "the CA-only rank_fn must not be invoked again by the HK call"
+    assert result_hk["written"] > 0  # POSITIVE CONTROL
+    hk_frame = _lane_a_frame("HK")
+    assert hk_frame is not None and set(hk_frame["challenger_definition"]) == {"hk_only_rank_v1"}
+
+
+def test_k18_simultaneous_hk_and_ca_registrations_stay_isolated(monkeypatch):
+    """K18: registering one HK challenger and one CA challenger SIMULTANEOUSLY
+    (a mixed Lane-A/Lane-B pair, unlike K17's same-lane-type mirror) must
+    still isolate — an HK pass executes only the HK definition (the CA
+    sentinel stays silent, and the HK stores carry only the HK definition),
+    and a CA pass executes only the CA definition (the HK rank_fn stays
+    silent, and the CA stores carry only the CA definition)."""
+    today = dt.datetime.now(dt.timezone.utc).date().isoformat()
+    hk_invocations: list[str] = []
+    ca_invocations: list[str] = []
+
+    def _hk_rank_fn(inner_calls):
+        hk_invocations.append("called")
+        return _reversed_rank_fn(inner_calls)
+
+    def _ca_discovery_fn(asof):
+        ca_invocations.append(asof)
+        return [{"session_date": today, "security_ref_raw": "CAONLY", "candidate_origin": "ca"}]
+
+    bs.register_challenger("HK", "hk_simul_v1", rank_fn=_hk_rank_fn)
+    bs.register_challenger("CA", "ca_simul_v1", discovery_fn=_ca_discovery_fn)
+
+    calls = _population()
+    _seed_board_ledger(monkeypatch, "HK", today, calls)
+    result_hk = bs.write_shadow(calls, market="HK", asof=today)
+    assert hk_invocations == ["called"]
+    assert ca_invocations == [], "the CA-registered discovery_fn must stay silent during the HK pass"
+    assert result_hk["written"] > 0  # POSITIVE CONTROL
+    hk_a_frame = _lane_a_frame("HK")
+    assert hk_a_frame is not None and set(hk_a_frame["challenger_definition"]) == {"hk_simul_v1"}
+    hk_b_frame = _lane_b_frame("HK")
+    assert hk_b_frame is None or hk_b_frame.empty, "the CA discovery challenger must not write into HK's Lane B store"
+
+    # D4 (K18 CA leg was unfalsifiable): the CA leg used to call write_shadow
+    # with `calls=[]`. Since `_write_lane_a` returns immediately when
+    # `population_n == 0` WITHOUT ever invoking `rank_fn` (see
+    # engine/board_shadow.py's `_write_lane_a`), a market-blind mutation of
+    # `_registrations_for` (K19's shape) would have made the CA pass ALSO
+    # select `hk_simul_v1`'s rank_fn — but with an empty calls list that
+    # rank_fn still never fires, so `hk_invocations == ["called"]` stayed
+    # true even under the mutation and this leg's isolation assertions could
+    # never fail. Passing the real, non-empty `calls` fixture (and seeding
+    # CA's own board_ledger row set, mirroring the HK leg above) makes the
+    # CA leg genuinely killable: under the mutation, `_write_lane_a` WOULD
+    # invoke `hk_simul_v1`'s rank_fn with a non-empty population.
+    _seed_board_ledger(monkeypatch, "CA", today, calls)
+    result_ca = bs.write_shadow(calls, market="CA", asof=today)
+    assert ca_invocations == [today]
+    assert hk_invocations == ["called"], "the HK rank_fn must not be invoked again by the CA pass"
+    assert result_ca["written"] > 0  # POSITIVE CONTROL
+    ca_b_frame = _lane_b_frame("CA")
+    assert ca_b_frame is not None and set(ca_b_frame["challenger_definition"]) == {"ca_simul_v1"}
+    ca_a_frame = _lane_a_frame("CA")
+    assert ca_a_frame is None or ca_a_frame.empty, "the HK rank_fn must not write into CA's Lane A store"
+
+
+def test_k19_mutated_market_filter_is_caught_by_the_isolation_kills(monkeypatch):
+    """K19 (executed mutation kill): simulates removal/bypass of the market
+    filter by monkeypatching _registrations_for to return every registered
+    definition regardless of market — the exact shape of the original merged
+    defect (a definition-only registry key with no market filter in
+    write_shadow at all) — and asserts the K15-style isolation assertions
+    then FAIL. Restores the real filter afterward and proves the suite is
+    green again: this is what proves K15-K18 are non-vacuous kills, not
+    decorative ones.
+
+    MUTATION APPLIED: bs._registrations_for patched to ignore its `market`
+    argument and return every registered definition, regardless of market.
+    """
+    today = dt.datetime.now(dt.timezone.utc).date().isoformat()
+    invocations: list[str] = []
+
+    def _sentinel_discovery(asof):
+        invocations.append(asof)
+        return [{"session_date": today, "security_ref_raw": "HKONLY", "candidate_origin": "hk"}]
+
+    bs.register_challenger("HK", "hk_only_disc_v1", discovery_fn=_sentinel_discovery)
+
+    real_registrations_for = bs._registrations_for
+
+    def _unscoped_registrations(_market):
+        # THE MUTATION: ignore `_market` entirely and hand back every
+        # registered (definition, spec) pair from the WHOLE registry — the
+        # exact shape of the original merged defect, where the registry was
+        # keyed by definition alone and write_shadow had no market filter.
+        return sorted(
+            ((d, spec) for (_mkt, d), spec in bs.CHALLENGER_REGISTRY.items()),
+            key=lambda pair: pair[0],
+        )
+
+    monkeypatch.setattr(bs, "_registrations_for", _unscoped_registrations)
+    _lane_on(monkeypatch, "CA")
+    bs.write_shadow([], market="CA", asof=today)
+
+    # THE MUTATION FIRES: the HK-only sentinel WAS invoked by a CA call, and
+    # a foreign row landed in CA's own store — exactly the cross-market
+    # execution the merged defect shipped, and exactly what K15's isolation
+    # assertions above would fail on.
+    ca_frame = _lane_b_frame("CA")
+    mutation_fired = bool(invocations) and ca_frame is not None and not ca_frame.empty
+    assert mutation_fired, (
+        "MUTATED _registrations_for (market-blind) must make the K15-style "
+        f"isolation assertions fail; instead nothing broke — invocations="
+        f"{invocations}, ca_frame present="
+        f"{ca_frame is not None and not ca_frame.empty}"
+    )
+    assert invocations == [today], "the HK-only sentinel must have fired under the mutation"
+    assert set(ca_frame["challenger_definition"]) == {"hk_only_disc_v1"}, (
+        "the foreign HK-only definition must have leaked into CA's own store under the mutation"
+    )
+
+    # RESTORE the real market filter and prove the isolation holds again —
+    # no new invocation, no new foreign row, and the correct distinguishable
+    # registry_state.
+    monkeypatch.setattr(bs, "_registrations_for", real_registrations_for)
+    result_restored = bs.write_shadow([], market="CA", asof=today)
+    assert invocations == [today], "restored: the HK-only sentinel must NOT fire again for a CA call"
+    assert result_restored["registry_state"] == "no_challenger_for_market"
+    ca_frame_after = _lane_b_frame("CA")
+    assert len(ca_frame_after) == 1, "restored: no additional foreign row may appear"
+
+
+def test_k20_registry_state_ladder_is_four_way_distinguishable(monkeypatch, caplog):
+    """K20: the four registry_state values are mutually distinguishable —
+    no_challenger_registered (globally empty registry), no_challenger_for_market
+    (registrations exist, none for this market), wrote_n_rows n=0 (this
+    market HAS a registration but it legitimately yields zero rows this
+    session — a lawful successful zero-row pass), and error. MUTATION THIS
+    KILLS: collapsing no_challenger_for_market into either of the other three
+    states anywhere in write_shadow's ladder.
+
+    D1 (MAJOR fix): the `error` state used to be asserted by injecting the
+    literal string "error" into the four-way `states` set rather than
+    executing the error path — a mutation collapsing the REAL `error` return
+    into another state would never have been caught (proven: collapsing
+    `error` into `no_challenger_registered` left this test green, see the
+    build packet's executed verification). `error` is now produced by
+    EXECUTION: registering a CA challenger, then monkeypatching
+    `bs._read_incumbent_positions` — the SUBSTRATE-level dependency D7
+    reserves `error` for — to raise, and asserting the resulting
+    `registry_state` is used in the set. D8: every state's actual
+    `registry_state=` log token is asserted present in caplog, fulfilling the
+    contract's per-state log-line requirement."""
+    today = dt.datetime.now(dt.timezone.utc).date().isoformat()
+
+    # State 1: globally empty registry.
+    _lane_on(monkeypatch, "CA")
+    with caplog.at_level("INFO"):
+        result_empty = bs.write_shadow([], market="CA", asof=today)
+    assert result_empty["registry_state"] == "no_challenger_registered"
+    assert result_empty["written"] == 0
+    assert "registry_state=no_challenger_registered" in caplog.text
+
+    # State 2: registry non-empty, but nothing registered for CA (HK-only).
+    caplog.clear()
+    bs.register_challenger("HK", "hk_only_v1", discovery_fn=_discovery_fn_factory([]))
+    with caplog.at_level("INFO"):
+        result_foreign = bs.write_shadow([], market="CA", asof=today)
+    assert result_foreign["registry_state"] == "no_challenger_for_market"
+    assert result_foreign["written"] == 0
+    assert "registry_state=no_challenger_for_market" in caplog.text
+
+    # State 3: CA now has its own registration, but it legitimately yields
+    # zero rows this session — distinct from both state 1 and state 2.
+    caplog.clear()
+    bs.register_challenger("CA", "ca_empty_v1", discovery_fn=_discovery_fn_factory([]))
+    with caplog.at_level("INFO"):
+        result_zero = bs.write_shadow([], market="CA", asof=today)
+    assert result_zero["registry_state"] == "wrote_n_rows n=0"
+    assert result_zero["written"] == 0
+    assert "registry_state=wrote_n_rows n=0" in caplog.text
+
+    # State 4 (D1 executed fix): produce `error` by EXECUTION, not by
+    # injecting the literal string. D7 reserves `error` for a SUBSTRATE-level
+    # failure (never a single challenger raising, which the per-registration
+    # try/except now absorbs as `challenger_failed` and continues) — so this
+    # monkeypatches `_read_incumbent_positions`, the substrate read outside
+    # every registration's own try/except, to raise.
+    def _boom_incumbent_read(_market, _date):
+        raise RuntimeError("substrate read exploded")
+
+    caplog.clear()
+    with monkeypatch.context() as m:
+        m.setattr(bs, "_read_incumbent_positions", _boom_incumbent_read)
+        with caplog.at_level("WARNING"):
+            result_error = bs.write_shadow(_population(), market="CA", asof=today)
+    assert result_error["registry_state"] == "error"
+    assert result_error["written"] == 0
+    assert "registry_state=error" in caplog.text
+
+    # Restored: the substrate read works again and CA's registrations still
+    # execute normally — the monkeypatch did not leave the module wedged.
+    result_restored = bs.write_shadow([], market="CA", asof=today)
+    assert result_restored["registry_state"] == "wrote_n_rows n=0"
+
+    states = {
+        result_empty["registry_state"],
+        result_foreign["registry_state"],
+        result_zero["registry_state"],
+        result_error["registry_state"],
+    }
+    assert len(states) == 4, f"registry_state ladder must be 4-way distinguishable, got {states}"
+
+
+def test_register_challenger_requires_market_and_fails_loud_on_unknown_market():
+    """Contract correction (2026-08-21): `market` is a required first
+    positional argument to register_challenger, and an unrecognised market
+    raises ValueError IMMEDIATELY at registration time (fail-loud, never a
+    silent no-op that would mis-lane a future registrant's writes).
+
+    MUTATION THIS KILLS: dropping the market validation (or accepting any
+    string silently instead of normalizing + checking against MARKETS)."""
+    with pytest.raises(TypeError):
+        bs.register_challenger("some_definition")  # market is required, no default
+
+    with pytest.raises(ValueError):
+        bs.register_challenger("US", "some_definition", rank_fn=lambda calls: {})
+
+    # Case-insensitive normalisation still succeeds and binds the LOWERCASE
+    # caller spelling to the normalised uppercase key.
+    bs.register_challenger("ca", "lowercase_market_v1", rank_fn=lambda calls: {})
+    assert ("CA", "lowercase_market_v1") in bs.CHALLENGER_REGISTRY
+
+
+def test_register_challenger_overwrite_logs_a_named_warning(caplog):
+    """D9 (nit): last-wins semantics are unchanged, but overwriting an
+    existing (market, definition) registration must log a warning naming the
+    key — a silent overwrite is exactly the shape a later registrant would
+    want visible."""
+    bs.register_challenger("CA", "dup_v1", rank_fn=lambda calls: {})
+    with caplog.at_level("WARNING"):
+        bs.register_challenger("CA", "dup_v1", rank_fn=lambda calls: {"OVERWRITTEN": {}})
+    assert any("dup_v1" in rec.message for rec in caplog.records)
+    assert bs.CHALLENGER_REGISTRY[("CA", "dup_v1")]["rank_fn"]([]) == {"OVERWRITTEN": {}}, (
+        "last registration wins"
+    )
+
+
+def test_cross_market_same_definition_string_is_independent(monkeypatch):
+    """D10: the same challenger_definition string registered independently for
+    HK and CA (distinct sentinel functions) must invoke ONLY its own market's
+    function, and each market's store must carry ONLY its own rows —
+    registering 'shared_def_v1' for both markets is not a collision because
+    the registry key is (market, definition), never definition alone."""
+    today = dt.datetime.now(dt.timezone.utc).date().isoformat()
+    hk_seen: list[str] = []
+    ca_seen: list[str] = []
+
+    def _hk_discovery(asof):
+        hk_seen.append(asof)
+        return [{"session_date": today, "security_ref_raw": "HKSHARED", "candidate_origin": "hk"}]
+
+    def _ca_discovery(asof):
+        ca_seen.append(asof)
+        return [{"session_date": today, "security_ref_raw": "CASHARED", "candidate_origin": "ca"}]
+
+    bs.register_challenger("HK", "shared_def_v1", discovery_fn=_hk_discovery)
+    bs.register_challenger("CA", "shared_def_v1", discovery_fn=_ca_discovery)
+    assert len(bs.CHALLENGER_REGISTRY) == 2, "same definition string for two markets is NOT a collision"
+
+    _lane_on(monkeypatch, "HK")
+    result_hk = bs.write_shadow([], market="HK", asof=today)
+    assert result_hk["written"] > 0  # POSITIVE CONTROL
+    assert hk_seen == [today]
+    assert ca_seen == [], "the CA-registered 'shared_def_v1' must not fire during the HK pass"
+
+    _lane_on(monkeypatch, "CA")
+    result_ca = bs.write_shadow([], market="CA", asof=today)
+    assert result_ca["written"] > 0  # POSITIVE CONTROL
+    assert ca_seen == [today]
+    assert hk_seen == [today], "the HK-registered 'shared_def_v1' must not fire again during the CA pass"
+
+    hk_frame = _lane_b_frame("HK")
+    ca_frame = _lane_b_frame("CA")
+    assert hk_frame is not None and set(hk_frame["security_ref"]) == {"HKSHARED"}
+    assert ca_frame is not None and set(ca_frame["security_ref"]) == {"CASHARED"}
+    assert set(hk_frame["challenger_definition"]) == {"shared_def_v1"}
+    assert set(ca_frame["challenger_definition"]) == {"shared_def_v1"}
+
+
+def test_malformed_registry_key_is_skipped_not_fatal(monkeypatch):
+    """D6: `_registrations_for` unpacked every CHALLENGER_REGISTRY key
+    unconditionally, so ONE malformed (non-2-tuple) key raised inside the
+    generator and — because `_registrations_for` is called from
+    write_shadow's OUTER try — flipped the ENTIRE pass to
+    registry_state=error for BOTH markets, even though the malformed key
+    belonged to neither. A bare string key is poked directly into the
+    registry (register_challenger itself only ever mints well-formed keys,
+    so this simulates the registry being corrupted by some other means) and
+    both markets must still run their own well-formed registrations
+    normally — never `error`.
+
+    MUTATION THIS KILLS: reverting `_registrations_for` to the unconditional
+    `for (mkt, d), spec in CHALLENGER_REGISTRY.items()` unpack."""
+    today = dt.datetime.now(dt.timezone.utc).date().isoformat()
+    bs.CHALLENGER_REGISTRY["not_a_tuple_key"] = {"rank_fn": None, "discovery_fn": None}
+    bs.register_challenger("CA", "ca_survivor_v1", discovery_fn=_discovery_fn_factory(
+        [{"session_date": today, "security_ref_raw": "SURVIVOR", "candidate_origin": "ca"}]))
+
+    _lane_on(monkeypatch, "CA")
+    result_ca = bs.write_shadow([], market="CA", asof=today)
+    assert result_ca["registry_state"] == "wrote_n_rows n=1", (
+        f"CA's own well-formed registration must still run: {result_ca}"
+    )
+    assert result_ca["written"] == 1
+
+    _lane_on(monkeypatch, "HK")
+    result_hk = bs.write_shadow([], market="HK", asof=today)
+    assert result_hk["registry_state"] == "no_challenger_for_market", (
+        f"HK must see the malformed key skipped, never flip to error: {result_hk}"
+    )
+
+
+def test_reentrant_write_shadow_call_is_refused_fail_soft(monkeypatch):
+    """D2(a): a challenger that calls write_shadow for the OTHER market
+    mid-pass (probe-G1 shape — the concrete reentrant hole the falsified
+    'structurally incapable' contract claim left open) must be refused
+    fail-soft by the module-level reentrancy guard: the inner call returns
+    registry_state=reentrant_refused, the other market's store gains ZERO
+    rows, and the other market's own registered challenger never fires.
+    POSITIVE CONTROL: the outer pass still writes, and — once the guard has
+    cleared — a normal, non-reentrant call for the other market still
+    executes its own registration and writes."""
+    today = dt.datetime.now(dt.timezone.utc).date().isoformat()
+    hk_invocations: list[str] = []
+    inner_results: list[dict] = []
+
+    def _hk_discovery_fn(asof):
+        hk_invocations.append(asof)
+        return [{"session_date": today, "security_ref_raw": "HKREENTRANT", "candidate_origin": "hk"}]
+
+    bs.register_challenger("HK", "hk_reentrant_target_v1", discovery_fn=_hk_discovery_fn)
+
+    def _reentrant_ca_discovery_fn(asof):
+        # THE PROBE-G1 SHAPE: a challenger calling write_shadow for the
+        # OTHER market from inside its own discovery_fn, mid-pass.
+        inner = bs.write_shadow([], market="HK", asof=asof)
+        inner_results.append(inner)
+        return [{"session_date": today, "security_ref_raw": "CAOUTER", "candidate_origin": "ca"}]
+
+    bs.register_challenger("CA", "ca_reentrant_v1", discovery_fn=_reentrant_ca_discovery_fn)
+
+    _lane_on(monkeypatch, "CA")
+    result = bs.write_shadow([], market="CA", asof=today)
+
+    assert result["written"] > 0  # POSITIVE CONTROL: the outer CA pass still writes
+    assert len(inner_results) == 1
+    assert inner_results[0]["registry_state"] == "reentrant_refused"
+    assert inner_results[0]["written"] == 0
+    assert hk_invocations == [], "HK's own registered challenger must never fire from inside the refused reentrant call"
+    hk_frame = _lane_b_frame("HK")
+    assert hk_frame is None or hk_frame.empty, "HK's store must gain zero rows from the refused reentrant call"
+
+    # POSITIVE CONTROL (guard clears cleanly): a normal, non-reentrant HK
+    # call after the outer pass has returned still executes HK's own
+    # registration and writes.
+    _lane_on(monkeypatch, "HK")
+    result_hk_normal = bs.write_shadow([], market="HK", asof=today)
+    assert result_hk_normal["written"] > 0
+    assert hk_invocations == [today]
 
 
 # ---------------------------------------------------------------------------
@@ -1245,7 +1879,7 @@ def test_off_lane_ca_is_a_fail_soft_no_op(monkeypatch):
 def test_off_lane_hk_is_a_fail_soft_no_op(monkeypatch):
     monkeypatch.delenv("COLLECT_LANE", raising=False)
     monkeypatch.delenv("CN_LANE", raising=False)
-    _register_adversarial()
+    _register_adversarial(market="HK")
     result = bs.write_shadow(_population(), market="HK", asof="2026-08-21")
     assert result["written"] == 0
     assert result["registry_state"] == "off_lane"
@@ -1275,7 +1909,7 @@ def test_write_shadow_never_raises_on_a_hostile_registered_challenger(monkeypatc
     def _boom(_calls):
         raise RuntimeError("boom")
 
-    bs.register_challenger("boom_v1", rank_fn=_boom)
+    bs.register_challenger("CA", "boom_v1", rank_fn=_boom)
     result = bs.write_shadow(_population(), market="CA", asof="2026-08-21")  # must not raise
     assert result["registry_state"].startswith("wrote_n_rows")
     frame = _lane_a_frame("CA")
@@ -1337,7 +1971,7 @@ def test_visible_and_published_literal_names_are_exempt_but_the_pattern_still_de
 def test_lane_b_carries_the_two_literal_false_columns(monkeypatch):
     _lane_on(monkeypatch, "CA")
     today = dt.datetime.now(dt.timezone.utc).date().isoformat()
-    bs.register_challenger("disc_v1", discovery_fn=_discovery_fn_factory(
+    bs.register_challenger("CA", "disc_v1", discovery_fn=_discovery_fn_factory(
         [{"session_date": today, "security_ref_raw": "AAA", "candidate_origin": "a"}]))
     bs.write_shadow([], market="CA", asof=today)
     frame = _lane_b_frame("CA")
@@ -1373,3 +2007,113 @@ def test_hk_shadow_call_is_textually_downstream_of_the_standouts_json_write():
         "hk_standouts.json write, never beside the upstream append_board site "
         "— that upstream placement is the named F1 contract breach"
     )
+
+
+# ---------------------------------------------------------------------------
+# hk-discovery wave — receipt emission (contract §4's deferred
+# surface-freshness wiring, activated by the hk_discovery_v1 registration).
+# ---------------------------------------------------------------------------
+def _discovery_fn_ok(asof_arg: str) -> list[dict]:
+    return [{
+        "session_date": asof_arg, "security_ref_raw": "AAA",
+        "candidate_origin": "washout_reclaim",
+        "availability_status": "WAIT_CONFLUENCE",
+        "availability_source": "hk_signal_gate",
+    }]
+
+
+def _receipt_path(market: str) -> Path:
+    return config.data_dir() / "prophet_shadow" / f"{market.lower()}_discovery_receipt.json"
+
+
+def test_discovery_receipt_written_on_a_successful_pass(monkeypatch):
+    _lane_on(monkeypatch, "HK")
+    bs.register_challenger("HK", "hk_discovery_v1", discovery_fn=_discovery_fn_ok)
+    result = bs.write_shadow([], market="HK", asof="2026-08-21")
+    assert result["written"] == 1  # POSITIVE CONTROL
+
+    path = _receipt_path("HK")
+    assert path.exists()
+    payload = json.loads(path.read_text())
+    assert payload["market"] == "HK"
+    assert payload["as_of"] == "2026-08-21"
+    assert payload["registry_state"] == "wrote_n_rows n=1"
+    assert payload["written"] == 1
+    assert payload["definitions"] == ["hk_discovery_v1"]
+    assert payload["challenger_failures"] == []
+    assert payload["stamped_at"]
+
+
+def test_discovery_receipt_not_written_when_the_market_has_no_registration(monkeypatch):
+    """A CA pass with only an HK registration must create NO CA receipt —
+    the receipt is written ONLY when _registrations_for(market) is non-empty
+    for THIS market's own call."""
+    _lane_on(monkeypatch, "CA")
+    bs.register_challenger("HK", "hk_discovery_v1", discovery_fn=_discovery_fn_ok)
+    result = bs.write_shadow([], market="CA", asof="2026-08-21")
+    assert result["registry_state"] == "no_challenger_for_market"
+    assert not _receipt_path("CA").exists()
+
+
+def test_discovery_receipt_written_on_the_error_path(monkeypatch):
+    """A substrate-level failure (below the per-registration boundary) still
+    owes a receipt — registry_state=error, with the true accumulated
+    `written` total."""
+    _lane_on(monkeypatch, "HK")
+    bs.register_challenger("HK", "hk_discovery_v1", discovery_fn=_discovery_fn_ok)
+
+    def _boom(*args, **kwargs):
+        raise RuntimeError("synthetic substrate failure")
+
+    monkeypatch.setattr(bs, "_read_incumbent_positions", _boom)
+    result = bs.write_shadow([], market="HK", asof="2026-08-21")
+    assert result["registry_state"] == "error"
+
+    path = _receipt_path("HK")
+    assert path.exists()
+    payload = json.loads(path.read_text())
+    assert payload["registry_state"] == "error"
+
+
+def test_discovery_receipt_names_a_per_registration_challenger_failure(monkeypatch):
+    """D7 semantics preserved: one registration raising does not flip the
+    whole pass to error, but the receipt NAMES the failure."""
+    _lane_on(monkeypatch, "HK")
+
+    def _boom_discovery(asof_arg):
+        raise RuntimeError("challenger exploded")
+
+    bs.register_challenger("HK", "hk_discovery_v1", discovery_fn=_boom_discovery)
+    result = bs.write_shadow([], market="HK", asof="2026-08-21")
+    assert result["registry_state"] == "wrote_n_rows n=0"
+
+    payload = json.loads(_receipt_path("HK").read_text())
+    assert payload["registry_state"] == "wrote_n_rows n=0"
+    assert len(payload["challenger_failures"]) == 1
+    assert payload["challenger_failures"][0]["definition"] == "hk_discovery_v1"
+    assert "challenger exploded" in payload["challenger_failures"][0]["error"]
+
+
+def test_write_surface_fence_accepts_the_hk_discovery_receipt_path(monkeypatch):
+    """R8 (F8, build commission) fix: this is a PREDICATE-ONLY check of
+    _offenders_for_market's market-prefix rule against the
+    hk_discovery_receipt.json shape (hk_ prefix), using hand-constructed
+    `changed` literals — the same pattern as
+    test_write_surface_fence_trips_on_a_foreign_market_file above. It is NOT
+    a real-write snapshot fence: the docstring previously claimed this
+    exercised the predicate "against a REAL receipt write", which overstated
+    what the assertions below actually check (they never look at the real
+    filesystem at all). test_write_surface_fence_only_data_prophet_shadow_
+    is_touched_hk is the actual real-snapshot fence for HK. The write_shadow
+    call here is kept only as a positive control proving the receipt path is
+    real and reachable, not as evidence for the offender-predicate assertions
+    below."""
+    _lane_on(monkeypatch, "HK")
+    bs.register_challenger("HK", "hk_discovery_v1", discovery_fn=_discovery_fn_ok)
+    result = bs.write_shadow([], market="HK", asof="2026-08-21")
+    assert result["written"] == 1  # POSITIVE CONTROL
+
+    changed = {"prophet_shadow/hk_discovery_receipt.json", "prophet_shadow/hk_discovery.parquet"}
+    assert _offenders_for_market(changed, "HK") == []
+    # Mirror: a CA pass must reject an HK-named receipt as a foreign file.
+    assert _offenders_for_market(changed, "CA") == list(sorted(changed))

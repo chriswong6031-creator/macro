@@ -4846,6 +4846,13 @@
       var cardStep = Math.max(1, parseInt(grid.getAttribute('data-showmore'), 10) || 12);
       var items = [].filter.call(grid.children, function (el) { return el.nodeType === 1; });
       var total = items.length;
+      // P0 #6185: group HEADINGS are grid children (the candidate board prints one per
+      // stage) but they are not records, so counting children would state a number no
+      // record kind on the page has. Paging still walks every child — a row stays a row —
+      // while the DISPLAYED count walks records only. Grids with no headings are
+      // unaffected: recTotal === total.
+      function isHd(el){ return el.hasAttribute('data-sm-heading'); }
+      var recTotal = items.filter(function (el) { return !isHd(el); }).length;
       // Live column count from the resolved grid tracks ("330px 330px 330px" → 3);
       // "none"/empty (not a grid / display:none, e.g. an inactive tab) falls back to 1.
       function colCount() {
@@ -4886,15 +4893,27 @@
             el.classList.add('sm-hidden'); el.classList.remove('sm-reveal'); el.style.animationDelay = '';
           }
         });
-        count.innerHTML = smBL('Showing <b>' + shown + '</b> of <b>' + total + '</b>',
-                               '已显示 <b>' + shown + '</b> / <b>' + total + '</b>');
+        var recShown = 0;
+        for (var _k = 0; _k < shown; _k++) { if (!isHd(items[_k])) recShown++; }
+        count.innerHTML = smBL('Showing <b>' + recShown + '</b> of <b>' + recTotal + '</b>',
+                               '已显示 <b>' + recShown + '</b> / <b>' + recTotal + '</b>');
         var remaining = total - shown;
         if (remaining > 0) {
           var next = Math.min(pageSize(), remaining);
+          // P0 #6185 (C4c): paging above (shown/target/remaining/pageSize, and the
+          // bar.style.display test below) stays in CHILD units — a row is a row, and
+          // the reveal must always land on a whole page. Only these two LABELS switch
+          // to record units, so they never disagree with the "Showing X of Y" count
+          // beside them (a "Show 15 more" that reveals 12 cards + 3 headings is the
+          // same mixed-unit defect item 3 names, just on the neighbouring control).
+          var nextTarget = Math.min((pages + 1) * pageSize(), total);
+          var nextRecs = 0;
+          for (var _m = shown; _m < nextTarget; _m++) { if (!isHd(items[_m])) nextRecs++; }
+          if (!nextRecs) nextRecs = next;   // never label a control "0"; unreachable while every heading is followed by its group
           more.className = 'sm-btn';
-          more.innerHTML = '<span class="sm-ic">▾</span>' + smBL('Show ' + next + ' more', '再显示 ' + next + ' 个');
+          more.innerHTML = '<span class="sm-ic">▾</span>' + smBL('Show ' + nextRecs + ' more', '再显示 ' + nextRecs + ' 个');
           all.style.display = '';
-          all.innerHTML = smBL('Show all ' + total, '全部显示 ' + total);
+          all.innerHTML = smBL('Show all ' + recTotal, '全部显示 ' + recTotal);
         } else {
           more.className = 'sm-btn sm-collapse';
           more.innerHTML = '<span class="sm-ic">▾</span>' + smBL('Show fewer', '收起');
@@ -5368,6 +5387,14 @@
   // match here would swallow those taps on touch. Rich-tier triggers opt in via the
   // .lens-q / .lens-term classes only.
   var SEL = '[data-tip-en], .lens-q, .lens-term';
+  // A focusable control NESTED INSIDE a tip container owns its own taps. The click
+  // handler has always honoured that; `nestedCtrl` is that same test, hoisted so the
+  // focusin handler below cannot drift from it.
+  var CTRL_SEL = 'button, a, input, select, textarea, label, [role="button"]';
+  function nestedCtrl(target, t) {
+    var ctrl = target && target.closest && target.closest(CTRL_SEL);
+    return !!(ctrl && ctrl !== t && t.contains(ctrl));
+  }
   var pop = null, scrim = null, cur = null, openTimer = 0, closeTimer = 0, scrollRaf = 0;
 
   var CSS =
@@ -5661,7 +5688,17 @@
   }, true);
   document.addEventListener('focusin', function (e) {
     var t = e.target && e.target.closest && e.target.closest(SEL);
-    if (t) show(t);
+    if (!t) return;
+    // Tapping a nested control FOCUSES it, and focusin bubbles up to the wrapper. In
+    // SHEET mode show() mounts a full-viewport .lens-scrim — mid-tap. mousedown has
+    // already landed on the control but mouseup then lands on the scrim, so the
+    // browser retargets the click to <body> and the control's own handler NEVER runs.
+    // The click carve-out below cannot save it, because no click survives to reach it.
+    // Gated on isSheet() because that is exactly when show() mounts the scrim: the
+    // floating card steals nothing, so keyboard focus still discloses the tip on every
+    // viewport that can safely show one. Keep this gate in step with show().
+    if (isSheet() && nestedCtrl(e.target, t)) return;
+    show(t);
   }, true);
   document.addEventListener('focusout', function (e) {
     var t = e.target && e.target.closest && e.target.closest(SEL);
@@ -5681,8 +5718,7 @@
     // of hijacking the tap (the old singleton's load-bearing contract). A nested
     // .lens-q can never reach here as ctrl !== t: closest(SEL) resolves the .lens-q
     // itself as the trigger from inside it.
-    var ctrl = e.target.closest('button, a, input, select, textarea, label, [role="button"]');
-    if (ctrl && ctrl !== t && t.contains(ctrl)) {
+    if (nestedCtrl(e.target, t)) {
       if (isOpen()) hide();
       return;
     }

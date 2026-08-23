@@ -185,10 +185,75 @@ waves:
       by registering a challenger with zero schema migration. Design DEC:
       DEC:PROPHET-HKCA-SHADOW-IS-A-SEPARATELY-KEYED-LANE. do_not_redo +
       danger_areas in agentos/handoffs/PROPHET-HK-CA-REVAMP-2026-08-21.md.
+      POST-MERGE SOL CORRECTION (2026-08-22, this wave's FINAL closure —
+      supersedes PR #6187's closure for the registration surface): Sol's
+      post-merge review found CHALLENGER_REGISTRY was keyed by definition
+      ALONE and write_shadow iterated every registration regardless of
+      market — the first real registrant would have executed in BOTH lanes.
+      Repaired in the market-scope PR (this record's amending PR): registry
+      re-keyed (market, definition); register_challenger(market, ...) with
+      fail-loud ValueError; _registrations_for(market) selection seam;
+      four-state POST-GATE registry_state ladder (+no_challenger_for_market;
+      reentrant_refused pre-gate); per-registration failure isolation with
+      truthful written counts; market-scoped write-surface fence; kills
+      K15-K20 + reentrancy/malformed-key/overwrite/cross-market-collision
+      tests (52 total), incl. TWO executed mutation arms (market-blind seam;
+      error-state collapse) proven to kill. Contract §4 rewritten
+      trust-bounded ("structurally incapable" was falsified by a
+      reentrant-challenger probe; registered challengers are trusted
+      reviewed code, not a security boundary). Adversarial round: Opus
+      reviewer MERGE-BLOCKED with D1-D10, all repaired and re-killed.
   - id: hk-discovery
     title: HK candidate-recall shadow
-    status: todo
+    status: done
     depends_on: [shadow-contract]
+    detail: >
+      HK-DISCOVERY-SHADOW (Sol commission 2026-08-22): first real challenger
+      hk_discovery_v1 registered via register_challenger("HK", ...,
+      discovery_fn=...) in build_hk_library, downstream of the
+      hk_standouts.json persist. Seven deterministic origins (washout_reclaim,
+      leadership, ripening [uncapped, cap=10**9], aged_turn [bare ran_admits],
+      blocked_signal [bare veto_admits + VETOED_MAX_SESSIONS staleness bound],
+      hk_native_onset(southbound), ah_dislocation [twin-only, missing≠zero]);
+      A-twin lead honestly ABSENT (censused not-present; no new alpha
+      machinery). First real availability read: 6-state fail-closed ladder,
+      read-availability explicit (placement/knife/extension whole-read
+      unavailable => never ENTRY_OPEN). Sol pre-settlement repair 2026-08-22:
+      the merged #6226 code defaulted OMITTED availability flags to available
+      (tests asserted the default) — repaired so ENTRY_OPEN requires all
+      three flags explicitly True; omitted/None fails closed to
+      UNAVAILABLE_DATA `…_unavailable(unstated)`; executed omission-mutation
+      arm kills four named tests. Freshness via per-market receipt
+      data/prophet_shadow/<mkt>_discovery_receipt.json written by write_shadow
+      only for markets with >=1 registration (lawful-zero distinguishable from
+      stale/error/absent); sole reader check_hk_discovery_freshness on the HK
+      session clock, warn-only, deliberately NOT in _ARTIFACTS (zero-authority
+      store must not page ops). Opus adversarial round MERGE-BLOCKED with
+      F1-F13; all adjudicated + repaired (R1-R11), 120 targeted tests green,
+      6 executed mutation arms. CLOSED 2026-08-23 with production receipts:
+      merged 82dc19ff6bbf (#6226) + Sol fail-closed repair 882636757d24
+      (#6227, both bytes-verified on origin/main, proof runs SUCCESS). First
+      prospective production receipt landed EARLY — Saturday 08-22 asia-close
+      (09:53Z, main commit 48ff25191c08) for HK session 2026-08-21: 139 rows,
+      market=HK only, challenger_definition=hk_discovery_v1, deterministic
+      "+"-joined origins in canonical order (6/7 origins fired; leadership a
+      lawful zero this session), availability across 5 states incl. honest
+      UNAVAILABLE_DATA missing_inputs(gate_verdict) and 6 ENTRY_OPEN,
+      visible_to_user=False + published_authority=False on every row,
+      first_seen_at prospective (09:53Z, pre-outcome); fresh receipt JSON
+      registry_state "wrote_n_rows n=139", zero challenger_failures. That
+      receipt predates the #6227 repair merge (13:04Z) — no contamination
+      (production supplies all three availability flags; only the
+      omitted-flag default was defective), and the repair is live before the
+      next HK session (08-24). CA non-invocation proven on the first
+      post-merge daily (run 32603557988, engine job 97120339605): log line
+      "board_shadow(CA): registry_state=no_challenger_registered"
+      (whole-registry-empty rung — the CA nightly is a separate process where
+      build_hk_library's registration never executes; the per-market
+      no_challenger_for_market rung is exercised in-process by K-D7), zero
+      hk_discovery tokens in the CA lane, no CA file under
+      data/prophet_shadow/ on main. site/factordata/hk_standouts.json
+      structure unchanged (as_of=2026-08-21, no shadow tokens).
   - id: hk-intel
     title: HK native intelligence adapters
     status: todo
@@ -214,14 +279,14 @@ waves:
     status: todo
     depends_on: [hk-race, ca-race]
 next_action: >
-  SHADOW-CONTRACT merged + verified fc5282f438fb 2026-08-21 (wave entry).
-  Next lawful waves per the graph: hk-discovery and ca-intel (both depend
-  only on shadow-contract) and ca-pit (depends on ledger-era) — each needs
-  its own commissioning decision; no challenger REGISTRATION before the
-  wave that owns it wires surface-freshness for the stores. Standing
-  follow-up: ≈2026-08-26 verify the CA board-ledger-era-empty warning
-  self-cleared (ledger-era wave entry); if it persists once gradable
-  current-era rows exist, investigate — never silence.
+  hk-discovery CLOSED 2026-08-23 with production receipts (wave entry).
+  Next lawful waves: hk-intel (HK-NATIVE-INTEL, depends on hk-discovery),
+  ca-intel, ca-pit — each needs its own commissioning decision. Optional
+  08-24 follow-up: confirm the first receipt written by the post-#6227
+  fail-closed code. Standing follow-up: ≈2026-08-26
+  verify the CA board-ledger-era-empty warning self-cleared (ledger-era wave
+  entry); if it persists once gradable current-era rows exist, investigate —
+  never silence.
 ---
 
 # HK + Canada Prophet revamp

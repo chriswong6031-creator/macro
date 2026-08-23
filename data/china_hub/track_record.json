@@ -1,9 +1,9 @@
 {
   "schema": "intel_hub.track_record.v1",
-  "as_of": "2026-08-21",
-  "generated_at": "2026-08-21T10:30:32.361548+00:00",
+  "as_of": "2026-08-23",
+  "generated_at": "2026-08-23T09:59:42.967880+00:00",
   "is_context_only": true,
-  "n_snapshots": 3721,
+  "n_snapshots": 3913,
   "horizons": {
     "5": {
       "n_matured": 548,
@@ -57,15 +57,15 @@
       "by_source": {},
       "by_regime": {},
       "coverage": {
-        "n_eligible": 3334,
+        "n_eligible": 3432,
         "n_matured": 548,
-        "coverage_pct": 16.44,
+        "coverage_pct": 15.97,
         "below_floor": true
       }
     },
     "10": {
       "n_matured": 488,
-      "opportunity_ic_pooled": 0.3008,
+      "opportunity_ic_pooled": 0.3009,
       "opportunity_ic_daily": {
         "mean_ic": 0.2131,
         "ic_vol": 0.3297,
@@ -79,7 +79,7 @@
         "hac_lags_requested": 10
       },
       "opportunity_ic": 0.2131,
-      "edge_ic_pooled": 0.2003,
+      "edge_ic_pooled": 0.2004,
       "by_stage": {
         "consensus": {
           "n": 12,
@@ -115,9 +115,9 @@
       "by_source": {},
       "by_regime": {},
       "coverage": {
-        "n_eligible": 3051,
+        "n_eligible": 3236,
         "n_matured": 488,
-        "coverage_pct": 15.99,
+        "coverage_pct": 15.08,
         "below_floor": true
       }
     },
@@ -137,7 +137,7 @@
         "hac_lags_requested": 21
       },
       "opportunity_ic": 0.3617,
-      "edge_ic_pooled": 0.4139,
+      "edge_ic_pooled": 0.4138,
       "by_stage": {
         "consensus": {
           "n": 10,
@@ -173,9 +173,9 @@
       "by_source": {},
       "by_regime": {},
       "coverage": {
-        "n_eligible": 2122,
+        "n_eligible": 2302,
         "n_matured": 327,
-        "coverage_pct": 15.41,
+        "coverage_pct": 14.21,
         "below_floor": true
       }
     },
@@ -212,34 +212,33 @@
   "accrual_gaps": {
     "approximate": true,
     "window_days": 30,
-    "n_expected": 23,
-    "n_present": 21,
+    "n_expected": 21,
+    "n_present": 20,
     "missing_dates": [
-      "2026-07-22",
       "2026-08-17"
     ],
-    "n_missing": 2,
+    "n_missing": 1,
     "note": "Expected dates are pandas business days \u2014 NYSE market holidays inside the window are counted as gaps, so this over-reports rather than under-reports.",
     "first_snapshot": "2026-07-07",
-    "last_snapshot": "2026-08-21"
+    "last_snapshot": "2026-08-23"
   },
   "coverage_pct": {
     "5": {
-      "n_eligible": 3334,
+      "n_eligible": 3432,
       "n_matured": 548,
-      "coverage_pct": 16.44,
+      "coverage_pct": 15.97,
       "below_floor": true
     },
     "10": {
-      "n_eligible": 3051,
+      "n_eligible": 3236,
       "n_matured": 488,
-      "coverage_pct": 15.99,
+      "coverage_pct": 15.08,
       "below_floor": true
     },
     "21": {
-      "n_eligible": 2122,
+      "n_eligible": 2302,
       "n_matured": 327,
-      "coverage_pct": 15.41,
+      "coverage_pct": 14.21,
       "below_floor": true
     },
     "63": {

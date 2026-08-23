@@ -118,15 +118,23 @@ documents the RULES; it does not maintain a second list.
   undefined, A2 §3 nit).
 
 **Row allowlists are least-privilege subsets of their status class** (CPI-H1
-ruling 8) is a NORMATIVE CONVENTION, not a hard rule — `consumer_matrix.yml`'s
-per-status `allowed_consumers` lists were never widened to include every
-narrow display token some pre-existing rows legitimately carry (e.g.
-CPI-008's `sync_gauge_display` on a `promoted_null` row). Machine tooling is
-ADVISORY only: `engine/cycle_pattern/consumer_authority.py`'s
-`advisory_class_subset_violations()` reports a non-fatal WARN for any row
-whose `allowed_consumers` exceeds its class's — never a hard fail. The 7
-known violations as of the CPI-H1 heal are escalated to Sol in
-`research/imce/IMCE_D1C_RELEASE_RECORD.md`, not resolved by this module.
+ruling 8) is now a HARD rule, not merely advisory:
+`set(row.allowed_consumers) <= set(status_class.allowed_consumers)` is
+machine-enforced by `engine/cycle_pattern/consumer_authority.py`'s
+`validate_consumer_vocabulary()` and raises `ConsumerAuthorityError` on any
+violation (CPI-H1.1, Sol adjudication 2026-08-21/22). The 7 rows escalated
+at the CPI-H1 heal (`research/imce/IMCE_D1C_RELEASE_RECORD.md`) — CPI-002,
+CPI-004, CPI-005, CPI-008, CPI-011, CPI-014, CPI-015 — were adjudicated as
+legitimate specialized display consumers, not leaks: `consumer_matrix.yml`'s
+`display` and `promoted_null` class `allowed_consumers` envelopes were the
+incomplete half (missing `risk_context_strip`, `hazard_cone_display`,
+`tripwire_context`, `cone_rendering`, `monitoring`, `mechanism_summary`,
+`hypothesis_generation` on `display`, and `sync_gauge_display` on
+`promoted_null`) and were amended to cover exactly those rows' pre-existing
+grants — no row's own `allowed_consumers` was widened. The former WARN-tier
+`advisory_class_subset_violations()` function is retired; its check was
+promoted into `validate_consumer_vocabulary()` rather than left standing as
+a second, parallel WARN path for the same invariant.
 
 See `config/cycle_pattern/consumer_matrix.yml` for the full canonical token
 list and per-status contracts, and `research/imce/IMCE_D1C_RELEASE_RECORD.md`

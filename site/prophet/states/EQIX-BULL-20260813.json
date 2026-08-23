@@ -1,36 +1,36 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "EQIX-BULL-20260813",
-  "asof": "2026-08-20",
+  "asof": "2026-08-22",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 63.6,
-  "raw_confidence": 63.6,
-  "delta_vs_base": 3.6,
+  "management_confidence": 58.2,
+  "raw_confidence": 55.4,
+  "delta_vs_base": -1.8,
   "recommended_action": "hold",
   "human_state": "Needs Follow-Through",
   "components": {
-    "validity": 100.0,
-    "progress": 7.8,
-    "pace": 95.0,
+    "validity": 89.3,
+    "progress": 0.0,
+    "pace": 81.1,
     "retention": 50.0,
-    "overlay": 67.0
+    "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.084,
-    "dist_to_t1_r": 1.416,
-    "dist_to_t2_r": 2.916,
-    "horizon_pct_used": 15.6,
-    "p1": 0.056,
-    "p2": 0.028,
+    "dist_to_stop_r": 0.92,
+    "dist_to_t1_r": 1.5,
+    "dist_to_t2_r": 3.0,
+    "horizon_pct_used": 20.0,
+    "p1": -0.0534,
+    "p2": -0.0267,
     "p3": null,
-    "move_r": 0.084,
+    "move_r": -0.08,
     "mfe_r": 0.227,
-    "mae_r": -0.0
+    "mae_r": -0.08
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Moving Away from Stop",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -40,11 +40,11 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 23.809985351562545,
-  "_mae": -0.019970703124954525,
+  "_mae": -8.409985351562455,
   "_max_p1": 0.15127536040892373,
   "_first_trigger_ts": "2026-08-17",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 7,
-  "tau": 0.1556
+  "days_elapsed": 9,
+  "tau": 0.2
 }

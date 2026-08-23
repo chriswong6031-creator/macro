@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github" / "workflows" / "fences.yml"
 CANARY_CONTRACT_PATH = ROOT / "tests" / "test_ci_canary_workflows.py"
 HOLD_SUITE_PATH = ROOT / "tests" / "test_ship_loop_hold_wrapper.py"
+LIVE_CHECK_STEP = "self-mod-fence live check (loop PR + immutable → BLOCKED)"
 
 
 def _document() -> dict:
@@ -76,17 +77,61 @@ def test_same_repo_fence_checkout_is_bounded_sparse_and_blob_filtered() -> None:
 
 def test_self_mod_live_check_uses_exact_synthetic_parents_and_fails_closed() -> None:
     job = _document()["jobs"]["fence-pack"]
-    live = _named_step(job, "self-mod-fence live check (loop PR + immutable → BLOCKED)")
+    live = _named_step(job, LIVE_CHECK_STEP)
     command = live["run"]
 
     assert 'git rev-list --parents -n 1 "$GITHUB_SHA"' in command
     assert "expected one synthetic merge with exactly two parents" in command
     assert 'MERGE_BASE=$(git merge-base "$TESTED_BASE_SHA" "$SUBJECT_HEAD_SHA")' in command
-    assert 'git log --format="%B" "$MERGE_BASE..$SUBJECT_HEAD_SHA"' in command
-    assert 'git diff --name-only "$MERGE_BASE" "$SUBJECT_HEAD_SHA"' in command
+    assert (
+        'git log --format="%B" "$MERGE_BASE..$SUBJECT_HEAD_SHA" '
+        '> "$TRAILERS_FILE"' in command
+    )
+    assert (
+        'git diff --name-only -z "$MERGE_BASE" "$SUBJECT_HEAD_SHA"' in command
+    )
     assert "could not establish exact PR ancestry inside the bounded checkout" in command
     assert "git fetch " not in command
     assert "origin/${{ github.base_ref" not in command
+
+
+def test_both_live_fences_use_only_bounded_file_handles() -> None:
+    """Pin the absence that closes #5898's pre-Python E2BIG failure.
+
+    The same-repository fast path and fork fallback used to reconstruct both
+    unbounded populations in shell variables and expand them into argv. A parser
+    unit test cannot catch that wiring regression, so assert the executable
+    workflow source itself never restores either retired shape.
+    """
+    document = _document()
+    commands = {
+        job_id: str(_named_step(document["jobs"][job_id], LIVE_CHECK_STEP)["run"])
+        for job_id in ("fence-pack", "fork-self-mod-fence")
+    }
+    for job_id, command in commands.items():
+        assert 'SELF_MOD_INPUT_DIR="$RUNNER_TEMP/self-mod-fence"' in command
+        assert '--write-files-file-from-nul "$FILES_FILE"' in command
+        assert '--files-file "$FILES_FILE"' in command
+        assert '--trailers-file "$TRAILERS_FILE"' in command
+        assert "git diff --name-only -z" in command
+        assert '> "$TRAILERS_FILE"' in command
+        assert "FILES=$(" not in command, job_id
+        assert "TRAILERS=$(" not in command, job_id
+        assert "--files $FILES" not in command, job_id
+        assert '--files "$FILES"' not in command, job_id
+        assert "--trailers $TRAILERS" not in command, job_id
+        assert '--trailers "$TRAILERS"' not in command, job_id
+        assert "GITHUB_ENV" not in command, job_id
+
+    fork = commands["fork-self-mod-fence"]
+    assert (
+        "git diff --name-only -z "
+        "origin/${{ github.base_ref || 'main' }}...HEAD" in fork
+    )
+    assert (
+        'git log --format="%B" '
+        "origin/${{ github.base_ref || 'main' }}..HEAD" in fork
+    )
 
 
 def test_self_mod_fence_suite_pins_checkout_contract() -> None:
@@ -111,7 +156,7 @@ def test_hosted_merge_control_canary_contract_executes_in_fast_fence() -> None:
 
 
 def test_hold_wrapper_regressions_execute_inside_the_fast_fence() -> None:
-    """Execute the canonical HOLD terminal-state regressions in required fences.
+    """Execute the canonical HOLD state regressions in required fences.
 
     ``audit_unrun_tests.py`` understands direct legacy-manifest ownership only, so
     the separate waiver records this intentional transitive fast-fence ownership.
@@ -136,11 +181,31 @@ def test_hold_wrapper_regressions_execute_inside_the_fast_fence() -> None:
         with pytest.MonkeyPatch.context() as monkeypatch:
             hold.test_lawful_concluded_green_hold_becomes_parked(monkeypatch, tmp_path)
         with pytest.MonkeyPatch.context() as monkeypatch:
-            hold.test_red_or_pending_hold_does_not_park(monkeypatch, tmp_path)
+            hold.test_lawful_sol_authority_branch_parks_after_unsafe_branch(
+                monkeypatch, tmp_path
+            )
+        with pytest.MonkeyPatch.context() as monkeypatch:
+            hold.test_lawful_sol_authority_branch_parks_before_first_unsafe_branch(
+                monkeypatch, tmp_path
+            )
+        with pytest.MonkeyPatch.context() as monkeypatch:
+            hold.test_unsafe_branch_hold_exception_is_sol_namespace_only(
+                monkeypatch, tmp_path
+            )
+        with pytest.MonkeyPatch.context() as monkeypatch:
+            hold.test_red_or_pending_claude_hold_does_not_park(monkeypatch, tmp_path)
+        with pytest.MonkeyPatch.context() as monkeypatch:
+            hold.test_pending_sol_hold_waits_before_first_unsafe_branch_remediation(
+                monkeypatch, tmp_path
+            )
+        with pytest.MonkeyPatch.context() as monkeypatch:
+            hold.test_red_sol_hold_repairs_check_without_branch_remediation(
+                monkeypatch, tmp_path
+            )
         with pytest.MonkeyPatch.context() as monkeypatch:
             hold.test_dirty_or_not_exactly_pushed_hold_does_not_park(monkeypatch, tmp_path)
         with pytest.MonkeyPatch.context() as monkeypatch:
-            hold.test_hold_probe_spends_no_github_quota_before_guard_has_reached_unmerged(
+            hold.test_hold_probe_spends_no_github_quota_outside_candidate_branches(
                 monkeypatch, tmp_path
             )
 

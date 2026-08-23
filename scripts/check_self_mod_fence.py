@@ -40,6 +40,15 @@ Usage:
         --files <file1> [<file2> ...] \\
         [--trailers <raw_trailer_text>]
 
+    python3 scripts/check_self_mod_fence.py \\
+        --branch <branch_name> \\
+        --files-file <changed-files.json> \\
+        --trailers-file <commit-messages.txt>
+
+    git diff --name-only -z <range> | \\
+        python3 scripts/check_self_mod_fence.py \\
+        --write-files-file-from-nul <changed-files.json>
+
     python3 scripts/check_self_mod_fence.py --selftest
     python3 scripts/check_self_mod_fence.py --print-planner-files
 
@@ -455,6 +464,64 @@ def read_ci_changed_files_file(path: str | None) -> tuple[str, list[str]]:
     return ("malformed", []) if status == "unset" else (status, paths)
 
 
+def write_ci_changed_files_file_from_nul(
+    path: str | None,
+    raw: bytes | None = None,
+) -> int:
+    """Write Git's NUL-delimited path stream in the canonical JSON transport.
+
+    ``git diff --name-only -z`` is the producer because NUL is the only Git path
+    separator that cannot collide with a legal pathname. The JSON array is the
+    already-canonical ``CI_CHANGED_FILES_FILE`` representation established after
+    run 31775693780; this helper does not create a second list protocol.
+
+    Only the output *path* crosses argv. The unbounded population is consumed
+    from stdin and remains file-backed all the way to the fence invocation.
+    """
+    if not path:
+        print(
+            "BLOCKED: changed-files output path is empty — fail-closed.",
+            file=sys.stderr,
+        )
+        return 1
+    try:
+        payload = sys.stdin.buffer.read() if raw is None else raw
+        if payload and not payload.endswith(b"\0"):
+            raise ValueError("Git path stream is not NUL-terminated")
+        encoded_paths = payload[:-1].split(b"\0") if payload else []
+        if any(not item for item in encoded_paths):
+            raise ValueError("Git path stream contains an empty pathname")
+        paths = [os.fsdecode(item) for item in encoded_paths]
+        destination = Path(path)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_text(
+            json.dumps(paths, ensure_ascii=True, separators=(",", ":")) + "\n",
+            encoding="utf-8",
+        )
+    except (OSError, ValueError) as exc:
+        print(
+            f"BLOCKED: could not encode changed files ({exc}) — fail-closed.",
+            file=sys.stderr,
+        )
+        return 1
+    return 0
+
+
+def read_trailers_file(path: str | None) -> tuple[str, str]:
+    """Read complete commit-message text from a bounded file handle.
+
+    An empty file is valid: a PR may have commits whose full messages contain no
+    trailer text. A configured but missing, unreadable, or non-UTF-8 file is a
+    broken transport and therefore malformed, never an implicit empty trailer.
+    """
+    if not path:
+        return "unset", ""
+    try:
+        return "ok", Path(path).read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return "malformed", ""
+
+
 def print_planner_files(raw: str | None = None) -> int:
     """CLI for the packed live-check shell. See module docstring for exit codes.
 
@@ -493,13 +560,38 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument(
         "--files",
         nargs="*",
-        default=[],
+        default=None,
         help="List of changed files (relative paths).",
     )
     ap.add_argument(
+        "--files-file",
+        default=None,
+        help=(
+            "Path to the canonical JSON changed-files array. The path is bounded; "
+            "the population never crosses argv."
+        ),
+    )
+    ap.add_argument(
         "--trailers",
-        default="",
+        default=None,
         help="Raw commit-trailer text from the PR's commits.",
+    )
+    ap.add_argument(
+        "--trailers-file",
+        default=None,
+        help=(
+            "Path to complete commit-message text. The path is bounded; the text "
+            "never crosses argv."
+        ),
+    )
+    ap.add_argument(
+        "--write-files-file-from-nul",
+        default=None,
+        metavar="PATH",
+        help=(
+            "Read a git --name-only -z stream from stdin and write the canonical "
+            "changed-files JSON array to PATH."
+        ),
     )
     ap.add_argument(
         "--selftest",
@@ -521,12 +613,59 @@ def main(argv: list[str] | None = None) -> int:
         return selftest()
     if args.print_planner_files:
         return print_planner_files()
+    if args.write_files_file_from_nul is not None:
+        return write_ci_changed_files_file_from_nul(args.write_files_file_from_nul)
+
+    if args.files_file is not None and args.files is not None:
+        print(
+            "BLOCKED: changed files were supplied both inline and by file — "
+            "ambiguous input, fail-closed.",
+            file=sys.stderr,
+        )
+        return 1
+    if args.files_file is not None:
+        files_status, changed_files = read_ci_changed_files_file(args.files_file)
+        if files_status != "ok" or not changed_files:
+            print(
+                "BLOCKED: changed-files file is missing, malformed, or empty — "
+                "fail-closed.",
+                file=sys.stderr,
+            )
+            return 1
+    else:
+        changed_files = args.files or []
+        if not changed_files:
+            print(
+                "BLOCKED: changed-file list is empty — unclassifiable, "
+                "fail-closed.",
+                file=sys.stderr,
+            )
+            return 1
+
+    if args.trailers_file is not None and args.trailers is not None:
+        print(
+            "BLOCKED: commit messages were supplied both inline and by file — "
+            "ambiguous input, fail-closed.",
+            file=sys.stderr,
+        )
+        return 1
+    if args.trailers_file is not None:
+        trailers_status, trailers_text = read_trailers_file(args.trailers_file)
+        if trailers_status != "ok":
+            print(
+                "BLOCKED: commit-message file is missing, unreadable, or invalid "
+                "UTF-8 — fail-closed.",
+                file=sys.stderr,
+            )
+            return 1
+    else:
+        trailers_text = args.trailers or ""
 
     # Fail-closed: if we can't even parse the arguments, block.
     exit_code, message = check(
         branch=args.branch,
-        changed_files=args.files or [],
-        trailers_text=args.trailers or "",
+        changed_files=changed_files,
+        trailers_text=trailers_text,
     )
 
     if exit_code != 0:

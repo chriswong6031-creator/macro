@@ -31,20 +31,13 @@ Design (CPI-H1 rulings, referenced by number below):
      any row-level grant (A2 finding F6).
   8. Row allowlists are least-privilege subsets of their status class.
 
-  Fable adjudication (2026-08-21, extending rulings 6+8): the neuralweb_context
-  check below is matrix-DRIVEN, not a hardcoded single-status allowlist — it
-  checks, for a row's actual status, whether that status's artifact_classes
-  entry in consumer_matrix.yml forbids neuralweb_context, and if so rejects a
-  row-level grant. Originally implemented as a promoted_null-only hardcoded
-  set (the only status A2's F6 enumerated); Fable adjudicated that the
-  identical defect exists one class over — the `candidates`/`retired`
-  classes also forbid neuralweb_context in the matrix, and a row of that
-  status granting it is the same "matrix wins" violation, not a different
-  rule. This is still a bounded, single-token check (not a general
-  row-allowed ⊆ class-allowed subset check for every token) — it only ever
-  fires for neuralweb_context, driven by whatever the matrix currently says
-  for that one token per class, so it self-updates if the matrix's per-class
-  forbids change and needs no further hardcoded edits here.
+  Fable adjudication (2026-08-21, extending rulings 6+8) originally added a
+  bounded, neuralweb_context-only class-conditional check here (matrix-
+  driven per-class forbid, not a hardcoded promoted_null-only set). CPI-H1.1
+  (below) SUPERSEDES that single-token mechanism with the general
+  row-allowed ⊆ class-allowed subset check — ruling 6's neuralweb_context
+  case is now just one instance of ruling 8's general invariant, not a
+  separate code path.
 
   Fable adjudication round 2 (2026-08-21, Opus red-team closure): HARD checks
   added — allowed_consumers may never contain a surfaces:money_path token
@@ -53,11 +46,26 @@ Design (CPI-H1 rulings, referenced by number below):
   matrix's own stated "disjoint lists" design principle). An unmapped/typo'd
   status now RAISES rather than silently returning an empty class-forbid set
   (_require_class_entry). allowed_consumers/forbidden_consumers are
-  type-validated as lists of strings. A NEW, separate WARN-tier (never
-  fatal) function — advisory_class_subset_violations() — reports
-  least-privilege (ruling 8) class-subset mismatches without hard-failing
-  them; see that function's docstring for why ruling 8 stays advisory rather
-  than joining the HARD checks above.
+  type-validated as lists of strings.
+
+  CPI-H1.1 (Sol adjudication, 2026-08-21/22, class-envelope closure):
+  ruling 8's least-privilege class-subset invariant —
+  set(row.allowed_consumers) <= set(status_class.allowed_consumers) — is now
+  HARD, not advisory. The 7 rows escalated at the CPI-H1 heal
+  (CPI-002/004/005/008/011/014/015, research/imce/IMCE_D1C_RELEASE_RECORD.md)
+  were adjudicated as legitimate specialized display consumers, not leaks —
+  the matrix's `display`/`promoted_null` class envelopes were the
+  incomplete half, and were amended in config/cycle_pattern/consumer_matrix.yml
+  to cover exactly those rows' pre-existing grants. The WARN-tier
+  `advisory_class_subset_violations()` function this module used to carry is
+  RETIRED — its check was promoted into validate_consumer_vocabulary() below
+  rather than left standing as a second, shadowing WARN path for the same
+  invariant. Both reuse call sites (engine/cycle_pattern/truths.py's
+  validate_truth() and scripts/check_cycle_pattern_authority.py's
+  scan_registry_vocabulary()) inherit the HARD check automatically because
+  both already route through validate_consumer_vocabulary()/
+  validate_registry() — no call-site logic change was needed there beyond
+  removing the now-dead separate advisory reporting path.
 """
 from __future__ import annotations
 
@@ -78,13 +86,6 @@ UNIVERSAL_MONEY_PATH_FORBIDS: frozenset[str] = frozenset({
     "sector_central_direction_score",
     "position_sizing",
 })
-
-# The specific token this module additionally cross-checks against each
-# row's status-class forbid (CPI-H1 ruling 6 / A2 finding F6, generalized by
-# Fable adjudication 2026-08-21 — see the module docstring). Kept as a named
-# constant rather than inlined so the intent ("this one token, matrix-driven,
-# per class") stays legible.
-_CLASS_CONDITIONAL_TOKEN = "neuralweb_context"
 
 
 class ConsumerAuthorityError(ValueError):
@@ -228,11 +229,15 @@ def validate_consumer_vocabulary(row: dict[str, Any], *, path: Path | None = Non
         tokens (CPI-H1 ruling 5);
       - a status with no matching consumer_matrix.yml artifact_classes
         entry (Fable adjudication, MINOR-1 — never a silent no-op);
-      - allowed_consumers containing neuralweb_context on a status whose
-        matrix artifact_classes entry forbids it (CPI-H1 ruling 6 / A2 F6,
-        generalized by Fable adjudication to every class the matrix names,
-        not just promoted_null — currently promoted_null, candidate,
-        retired, superseded).
+      - allowed_consumers containing any token outside the row's status
+        class's matrix allowed_consumers list (CPI-H1 ruling 8, promoted
+        from WARN-tier advisory to HARD by CPI-H1.1, Sol adjudication
+        2026-08-21/22). This is a general subset check — it supersedes and
+        subsumes the earlier neuralweb_context-only class-conditional check
+        (CPI-H1 ruling 6 / A2 F6): neuralweb_context on promoted_null/
+        candidate/retired/superseded fails the same way any other
+        out-of-class token would, because none of those classes list it in
+        their matrix allowed_consumers.
 
     Does NOT check required-field presence, enum validity, falsifiers, or
     evidence_refs — those remain engine/cycle_pattern/truths.py's
@@ -299,62 +304,40 @@ def validate_consumer_vocabulary(row: dict[str, Any], *, path: Path | None = Non
             f"required on every row (CPI-H1 ruling 5): {sorted(missing_universal)}"
         )
 
-    # class_forbidden_consumers raises ConsumerAuthorityError itself if
-    # `status` has no matching matrix class (MINOR-1) — never a silent
-    # vacuous empty-set that would disable the check below by accident.
-    class_forbidden = class_forbidden_consumers(status, path)
-    if _CLASS_CONDITIONAL_TOKEN in class_forbidden and _CLASS_CONDITIONAL_TOKEN in allowed:
+    # Least-privilege class-subset invariant (CPI-H1 ruling 8): a row's
+    # allowed_consumers must be a SUBSET of its status class's matrix
+    # allowed_consumers. Promoted from a WARN-tier advisory
+    # (advisory_class_subset_violations(), retired by this heal) to a HARD
+    # check by CPI-H1.1 (Sol adjudication, 2026-08-21/22) — see module
+    # docstring. class_allowed_consumers() raises ConsumerAuthorityError
+    # itself if `status` has no matching matrix class (MINOR-1), so an
+    # unmapped/typo'd status still fails loudly rather than vacuously here.
+    # This subsumes the former neuralweb_context-only class-conditional
+    # check: any class that forbids/omits a token from its own
+    # allowed_consumers now rejects a row-level grant of that token,
+    # uniformly, not just for neuralweb_context.
+    #
+    # NIT-2 (2026-08-22): this call is now the SOLE reachable path from
+    # validate_consumer_vocabulary() into _require_class_entry()'s unknown-
+    # status guard (MINOR-1) — nothing else in this function calls
+    # class_allowed_consumers()/class_forbidden_consumers(). A future
+    # refactor that removes or short-circuits this subset check must keep an
+    # equivalent call so an unmapped/typo'd status still raises rather than
+    # silently passing; TestUnknownStatusRaises in
+    # tests/test_cpi_h1_consumer_authority.py pins this behavior.
+    class_allowed = class_allowed_consumers(status, path)
+    extra = set(allowed) - class_allowed
+    if extra:
         raise ConsumerAuthorityError(
-            f"{tid}: status={status!r} rows may not grant {_CLASS_CONDITIONAL_TOKEN} in "
-            f"allowed_consumers — the matrix's {status} class forbid wins over "
-            f"any row-level grant (CPI-H1 ruling 6 / A2 finding F6; extended to "
-            f"non-promoted_null classes by Fable adjudication 2026-08-21)"
+            f"{tid}: status={status!r} row's allowed_consumers grants "
+            f"{sorted(extra)} outside the {status!r} class's matrix "
+            f"allowed_consumers {sorted(class_allowed)} (CPI-H1 ruling 8, "
+            f"promoted WARN->HARD by CPI-H1.1, Sol adjudication "
+            f"2026-08-21/22) — either the row is over-privileged for its "
+            f"status, or the class envelope in "
+            f"config/cycle_pattern/consumer_matrix.yml needs a reviewed "
+            f"amendment before this token can be granted"
         )
-
-
-def advisory_class_subset_violations(
-    rows: list[dict[str, Any]], *, path: Path | None = None
-) -> list[str]:
-    """WARN-tier (non-fatal) report: rows whose allowed_consumers exceeds
-    their status class's matrix allowed_consumers list.
-
-    ADVISORY ONLY (Fable adjudication, MAJOR-2, 2026-08-21) — least-privilege
-    (CPI-H1 ruling 8) is a normative convention, not machine-enforced here.
-    consumer_matrix.yml's per-status allowed_consumers were never widened to
-    include every narrow display token some pre-existing rows legitimately
-    carry (e.g. CPI-008's sync_gauge_display on a promoted_null row), so a
-    hard fail would either wrongly reject pre-existing, intentional rows or
-    force this module to make an unreviewed vocabulary-governance call it has
-    no authority to make. The known violations as of the CPI-H1 heal are
-    escalated to Sol in research/imce/IMCE_D1C_RELEASE_RECORD.md, not
-    resolved by this function — it exists so that list is mechanically
-    reproducible rather than hand-maintained prose.
-
-    Never raises: rows with type errors or unmapped statuses are silently
-    skipped here (validate_consumer_vocabulary is the authority on those —
-    this report only ever concerns itself with the class-subset question).
-    Returns advisory strings, one per violating row.
-    """
-    warnings: list[str] = []
-    for row in rows:
-        tid = row.get("truth_id", "?")
-        status = row.get("status", "?")
-        allowed = row.get("allowed_consumers")
-        if not isinstance(allowed, list) or not all(isinstance(t, str) for t in allowed):
-            continue
-        try:
-            class_allowed = class_allowed_consumers(status, path)
-        except ConsumerAuthorityError:
-            continue
-        extra = set(allowed) - class_allowed
-        if extra:
-            warnings.append(
-                f"{tid} (status={status}): allowed_consumers grants "
-                f"{sorted(extra)} not in the {status!r} class's matrix "
-                f"allowed_consumers {sorted(class_allowed)} — advisory only, "
-                f"see research/imce/IMCE_D1C_RELEASE_RECORD.md"
-            )
-    return warnings
 
 
 def validate_registry(rows: list[dict[str, Any]], *, path: Path | None = None) -> list[str]:

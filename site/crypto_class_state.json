@@ -2,7 +2,7 @@
   "schema": "crypto.class_state/v1",
   "tier": "display",
   "display_only": true,
-  "as_of": "2026-08-21",
+  "as_of": "2026-08-22",
   "market": {
     "stance": "Advancing, led by Bitcoin",
     "total_state": "Rising",
@@ -17,22 +17,22 @@
   },
   "heat": {
     "funding": "Balanced",
-    "open_interest": "Leverage normal",
-    "volatility": "Volatility compressed",
-    "altseason": "Alt participation broad"
+    "open_interest": "Leverage light",
+    "volatility": "Volatility normal",
+    "altseason": "Mixed participation"
   },
   "assets": {
     "ETH": {
       "trend": "Advancing",
       "risk": "Stressed",
       "relative": "Leading Bitcoin",
-      "coverage": "3,734 daily observations from Coinbase daily OHLCV."
+      "coverage": "3,735 daily observations from Coinbase daily OHLCV."
     },
     "SOL": {
       "trend": "Advancing",
       "risk": "Stressed",
       "relative": "Leading Bitcoin",
-      "coverage": "1,892 daily observations from Coinbase daily OHLCV."
+      "coverage": "1,893 daily observations from Coinbase daily OHLCV."
     }
   }
 }

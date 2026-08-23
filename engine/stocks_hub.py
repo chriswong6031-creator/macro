@@ -1005,7 +1005,28 @@ def _pw_help(payload: Mapping, base: Mapping | None) -> dict:
     }
 
 
+def _pw_href(ticker: str, linkable: frozenset[str] | None) -> str | None:
+    """`<TICKER>.html` when that dossier ships, else None.
+
+    The band reads `data/price_pressure/latest.json`, a PIT event ledger whose
+    universe is wider than the rendered one and deliberately so: an episode is
+    kept after its name leaves coverage or stops trading altogether, which is
+    exactly the ending the "Recently resolved" stratum exists to print. Filtering
+    those rows out would bias the record toward survivors — the resolved list is
+    the honesty check on the base rates directly above it.
+
+    So the row always survives and only the ANCHOR is conditional, the same
+    contract the peer cards, movers rows, crypto tiles and basket rows already
+    keep (lib/pages.rendered_ticker_pages, tests/test_rendered_ticker_links.py).
+    `None` links everything, for callers with no site tree to consult.
+    """
+    if linkable is None or ticker in linkable:
+        return f"{ticker}.html"
+    return None
+
+
 def pressure_band(payload: Mapping | None, *, board_asof: str | None = None,
+                  linkable: frozenset[str] | None = None,
                   max_open: int = PW_MAX_OPEN,
                   max_resolved: int = PW_MAX_RESOLVED) -> dict:
     """Shape the Pressure Watch band. Pure — no I/O, no clock, no network.
@@ -1018,6 +1039,10 @@ def pressure_band(payload: Mapping | None, *, board_asof: str | None = None,
     `board_asof` is the session the rest of the page is printing. The band goes
     back to warm-up when the artifact trails it by more than a working week, so
     the band can never quietly present month-old events beside today's boards.
+
+    `linkable` is the set of tickers that ship a `stocks/<TICKER>.html` dossier.
+    A row for a name outside it keeps every word it carries and loses only its
+    href (see `_pw_href`); None links every row.
     """
     warm = {
         "mode": "warmup",
@@ -1081,8 +1106,10 @@ def pressure_band(payload: Mapping | None, *, board_asof: str | None = None,
         mv_en, mv_zh = _pw_move_words(r)
         end_en, end_zh = _pw_terminal_words(r)
         fam = _PW_FAMILY.get(str(r.get("family") or ""))
+        _t = str(r["ticker"]).upper()
         resolved.append({
-            "t": str(r["ticker"]).upper(),
+            "t": _t,
+            "href": _pw_href(_t, linkable),
             "side": "up" if str(r.get("side")) == "up" else "down",
             "when_en": _pw_day(r.get("date")), "when_zh": _pw_day(r.get("date"), "zh"),
             "move_en": mv_en, "move_zh": mv_zh,
@@ -1098,8 +1125,10 @@ def pressure_band(payload: Mapping | None, *, board_asof: str | None = None,
         tip_en, tip_zh = _pw_row_tip(r)
         fam = _PW_FAMILY.get(str(r.get("family") or ""))
         chip = _pw_state_chip(r)
+        _t = str(r["ticker"]).upper()
         events.append({
-            "t": str(r["ticker"]).upper(),
+            "t": _t,
+            "href": _pw_href(_t, linkable),
             "side": "up" if str(r.get("side")) == "up" else "down",
             "when_en": _pw_day(r.get("date")), "when_zh": _pw_day(r.get("date"), "zh"),
             "move_en": mv_en, "move_zh": mv_zh,

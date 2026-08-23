@@ -797,8 +797,23 @@ def test_the_map_is_wired_to_no_scoring_prophet_or_route_path() -> None:
         for forbidden in ("prophet", "fastapi", "starlette", "requests", "neuralweb", "boto3"):
             assert forbidden not in lowered, line
 
-    # Nothing outside this lane's own test may import the reader: no Prophet
-    # path, no Neural Web path, no scoring path, and no route.
+    # No Prophet path, no Neural Web path, no scoring path. Consumers are an
+    # ALLOWLIST, not an open door: adding one is an authority act, so this stays
+    # an exact-equality assertion rather than a subset check.
+    #
+    # The Catalyst Radar (P1-1) is the first authorized product consumer. Three
+    # ratified sources specify it: the 2026-08-07 operator ruling, which admits
+    # the rows precisely so "a downstream reader can always tell 'this trial's
+    # sponsor IS the issuer' from 'this trial's sponsor is a subsidiary OF the
+    # issuer'"; DEC:BIOCATALYST-P1-FIRST-VERTICAL-MILESTONE-RADAR; and the
+    # architecture freeze §6, which resolves the issuer chip "through
+    # engine/biocatalyst/sponsor_identity.py **only for reviewed_admitted
+    # rows**" with a typed unresolved state for everything else.
+    #
+    # What the boundary still forbids is unchanged and is what the import scan
+    # above enforces: the reader itself imports no Prophet, FastAPI, Starlette,
+    # requests, Neural Web, or boto3. A consumer may read reviewed attribution;
+    # it may not turn this map into a scoring or selection input.
     referencing = sorted(
         path.relative_to(ROOT).as_posix()
         for directory in ("engine", "scripts", "app", "admin", "tests")
@@ -813,7 +828,11 @@ def test_the_map_is_wired_to_no_scoring_prophet_or_route_path() -> None:
             )
         )
     )
-    assert referencing == ["tests/test_biocatalyst_sponsor_ticker_map.py"], referencing
+    assert referencing == [
+        "app/biocatalyst.py",
+        "engine/biocatalyst/catalyst_events.py",
+        "tests/test_biocatalyst_sponsor_ticker_map.py",
+    ], referencing
 
 
 def test_the_config_is_yaml_the_repo_can_round_trip() -> None:

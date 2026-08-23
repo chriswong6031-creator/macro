@@ -280,18 +280,56 @@ def _load_visits_context() -> dict:
     grouped by sec_code, plus the plane's coverage_start and health record.
     Degrade-safe — an absent/corrupt store (or the module itself missing)
     reads as 'no_coverage', never a crash and never a false 'measured_no_event'.
+
+    P1-R3 (durable scoped key-exclusion recovery) additionally returns:
+      exception_codes     — sec_codes carrying >=1 OPEN coverage exception.
+      unscoped_exceptions — count of OPEN exceptions with no usable sec_code
+                             (a malformed row whose company could not be
+                             identified — a PLANE-wide, not company-scoped,
+                             gap).
+      exceptions_readable — False -> the ledger itself could not be read
+                             this build; _visit_block() then fails closed
+                             GLOBALLY (blocks measured_no_event for every
+                             name) rather than trusting an unreadable ledger
+                             to mean "no exceptions".
+    Absent keys (a caller/test building visit_ctx by hand without them) must
+    degrade to the normal empty state — see _visit_block()'s defaults below.
     """
     try:
         from collectors import china_visits as cv
     except Exception as e:  # noqa: BLE001
         log.debug("china_intel_hub: collectors.china_visits import failed (%s)", e)
+        # exceptions_readable=False, NOT True: the ledger provably could not
+        # be read on this path (the module that owns it never even
+        # imported) — "I could not look" must never report as "I looked and
+        # it is clean". Harmless TODAY only because coverage_start is also
+        # None here and _visit_block() short-circuits to no_coverage before
+        # it ever reaches the exception logic — but that is safety by
+        # accident, not by contract, and must not depend on staying that way.
         return {"by_code": {}, "coverage_start": None,
-                "health": {"status": "no_coverage", "detail": str(e)}}
+                "health": {"status": "no_coverage", "detail": str(e)},
+                "exception_codes": set(), "unscoped_exceptions": 0,
+                "exceptions_readable": False}
+    # FIX (correction, 2026-08-22): read_visits_strict(), NOT load_visits().
+    # load_visits() deliberately SWALLOWS a read error and always answers an
+    # EMPTY frame (its own docstring says so — write_visits() is where
+    # strictness lives). A present-but-UNREADABLE visits.parquet would
+    # otherwise be indistinguishable from a genuinely empty one: by_code
+    # stays {}, health.status can still read "ok" from a PRIOR successful
+    # run, coverage_start is set — and _visit_block() walks every A-share
+    # name straight to a false, clean measured_no_event over a tape that
+    # cannot currently be read at all. Product law cuts both ways: "a
+    # malformed key creates a coverage exception, not ... a permanent
+    # all-China outage" — but an UNREADABLE store must not create a clean
+    # all-China absence either.
+    visits_store_unreadable = False
     try:
-        df = cv.load_visits()
+        df = cv.read_visits_strict()
     except Exception as e:  # noqa: BLE001
-        log.debug("china_intel_hub: china_visits.load_visits() failed (%s)", e)
+        log.debug("china_intel_hub: china_visits.read_visits_strict() failed (%s)", e)
         df = None
+    if df is None:
+        visits_store_unreadable = True
     by_code: dict = {}
     if df is not None and not df.empty:
         for row in df.to_dict("records"):
@@ -314,7 +352,45 @@ def _load_visits_context() -> dict:
         health = cv.read_health()
     except Exception:  # noqa: BLE001
         health = {"status": "no_coverage", "detail": "health read failed"}
-    return {"by_code": by_code, "coverage_start": coverage_start, "health": health}
+    if visits_store_unreadable:
+        # Override whatever health.json says (it may still read "ok" from a
+        # PRIOR successful run — health.json and the tape it describes are
+        # two different files) — the tape itself cannot be read RIGHT NOW,
+        # so _visit_block()'s EXISTING source_failure branch must fire for
+        # EVERY name, exactly as it already does for an unreadable
+        # china_filings store one plane over.
+        health = {"status": "source_failure",
+                  "detail": "visits.parquet is present but unreadable"}
+
+    # P1-R3: OPEN coverage-exception scoping. A present-but-UNREADABLE
+    # ledger fails CLOSED (exceptions_readable=False), which _visit_block()
+    # then treats as an UNSCOPED, plane-wide condition — never as "no
+    # exceptions". sec_code is normalized with cv.is_unscoped_sec_code()/
+    # cv._fp_norm(), the SAME predicate refresh()'s own open_scoped/
+    # open_unscoped accounting uses, so the two can never diverge on what
+    # counts as scoped (in particular: a NaN-derived sec_code must count as
+    # UNSCOPED, never as a literal company code "nan").
+    exception_codes: set = set()
+    unscoped_exceptions = 0
+    exceptions_readable = True
+    try:
+        exc_df = cv.read_coverage_exceptions_strict()
+    except Exception as e:  # noqa: BLE001
+        log.debug("china_intel_hub: china_visits.read_coverage_exceptions_strict() failed (%s)", e)
+        exc_df = None
+    if exc_df is None:
+        exceptions_readable = False
+    elif not exc_df.empty and "status" in exc_df.columns:
+        open_exc = exc_df[exc_df["status"] == "open"]
+        for code in open_exc.get("sec_code", []):
+            if cv.is_unscoped_sec_code(code):
+                unscoped_exceptions += 1
+            else:
+                exception_codes.add(cv._fp_norm(code))
+
+    return {"by_code": by_code, "coverage_start": coverage_start, "health": health,
+            "exception_codes": exception_codes, "unscoped_exceptions": unscoped_exceptions,
+            "exceptions_readable": exceptions_readable}
 
 
 def _visit_block(ticker: str, visit_ctx: dict) -> dict:
@@ -330,6 +406,37 @@ def _visit_block(ticker: str, visit_ctx: dict) -> dict:
     it reads like a stale refusal instead of a clean "measured_no_event": a
     degraded upstream proves no absence. Rows present render normally either
     way — positive evidence from a degraded run is real evidence.
+
+    P1-R3: an OPEN coverage exception (durable, company-scoped memory for "we
+    observed source evidence relevant to this company but could not
+    canonically admit it") suppresses `measured_no_event` PER COMPANY
+    (`scoped = code in exception_codes`) or, when the excluded observation's
+    company could not even be identified, PLANE-WIDE (`unscoped =
+    unscoped_exceptions > 0 or not exceptions_readable` — an unreadable
+    ledger fails closed exactly like an unscoped exception, never like "no
+    exceptions"). This routes to the existing "not_yet_available" state
+    (already in the house ten-state taxonomy, already documented in
+    collectors/china_visits.py) rather than minting a new one. visit_ctx
+    keys absent entirely (a caller building the dict by hand without them)
+    degrade to the pre-P1-R3 behavior — no scoping, no coverage_exception.
+
+    NO-ROWS PRECEDENCE (FIX, correction 2026-08-22): the scoped/unscoped
+    coverage-exception branch is evaluated BEFORE the generic
+    "upstream_degraded" branch, not after — it is strictly MORE SPECIFIC.
+    "A visit filing was observed for this company but could not be read"
+    is actionable; "upstream was degraded" is the generic fallback, and it
+    is also FALSE ON THE FACTS for the ledger-present-but-unreadable cause
+    (nothing upstream degraded — a SIDECAR ledger was unreadable, transport
+    was fine). Both branches block measured_no_event identically, so no
+    absence authority is gained or lost by this ordering — only which
+    sentence renders. Final order for the no-rows branch: source_failure
+    (checked earlier, outside this block) -> no coverage_start (checked
+    earlier) -> stale -> scoped/unscoped coverage exception ->
+    upstream_degraded -> measured_no_event. Without this ordering, the
+    commission's four-category distinguishability requirement (transport
+    degraded / scoped unresolved / unscoped unresolved / clean measured
+    absence) would collapse two of the four into one whenever a same-run
+    upstream_degraded status AND an open exception coexist.
     """
     try:
         parsed = _ticker_to_sec_code(ticker)
@@ -340,6 +447,18 @@ def _visit_block(ticker: str, visit_ctx: dict) -> dict:
         coverage_start = visit_ctx.get("coverage_start")
         health = visit_ctx.get("health") or {}
         status = health.get("status")
+
+        # P1-R3 scoping inputs. Absent keys (pre-P1-R3 visit_ctx shape, still
+        # built by several existing tests/callers) degrade to "no scoping" —
+        # exception_codes empty, unscoped_exceptions 0, exceptions_readable
+        # True — never to a false global block.
+        exception_codes = visit_ctx.get("exception_codes") or set()
+        unscoped_exceptions = visit_ctx.get("unscoped_exceptions") or 0
+        exceptions_readable = visit_ctx.get("exceptions_readable", True)
+        if exceptions_readable is None:
+            exceptions_readable = True
+        scoped = code in exception_codes
+        unscoped = unscoped_exceptions > 0 or not exceptions_readable
 
         if status == "source_failure":
             return {"state": "source_failure",
@@ -369,6 +488,40 @@ def _visit_block(ticker: str, visit_ctx: dict) -> dict:
                         "detail": "visit-tape source has not refreshed recently — "
                                   "absence of visits cannot be confirmed right now",
                         "recent": [], "coverage_start": coverage_start}
+            # P1-R3 FIX (correction, 2026-08-22): the coverage-exception
+            # branch is evaluated BEFORE the generic upstream_degraded
+            # branch, not after — it is strictly MORE SPECIFIC. "A visit
+            # filing was observed for this company but could not be read"
+            # tells the reader something actionable; "upstream was
+            # degraded" is the generic fallback and is also FALSE ON THE
+            # FACTS for the ledger-unreadable cause (nothing upstream
+            # degraded — a SIDECAR ledger was unreadable, the source
+            # transport was fine). Both branches block measured_no_event
+            # identically, so no absence authority is gained or lost by
+            # this ordering — only which sentence renders. The commission's
+            # four-category distinguishability requirement (transport
+            # degraded / scoped unresolved / unscoped unresolved / clean
+            # measured absence) would otherwise collapse two of the four
+            # into one whenever a same-run cause AND an exception coexist.
+            if scoped or unscoped:
+                exc_scope = "company" if scoped else "plane"
+                return {"state": "not_yet_available",
+                        "detail": (
+                            "a visit filing was observed for this company but could "
+                            "not be read yet" if scoped else
+                            "some visit filings could not be read this cycle and the "
+                            "affected companies are unknown"
+                        ),
+                        "recent": [], "coverage_start": coverage_start,
+                        "coverage_exception": {
+                            "scope": exc_scope,
+                            # scoped: we only track SET membership (>= 1),
+                            # never a fabricated per-code count. unscoped:
+                            # the exact plane-wide count when known, else 0
+                            # (the state name — not this count — carries the
+                            # "we don't know" signal).
+                            "open": 1 if scoped else max(unscoped_exceptions, 0),
+                        }}
             if status == "upstream_degraded":
                 return {"state": "stale", "stale_days": stale_days,
                         "detail": "visit-tape upstream was degraded on the last "
@@ -399,7 +552,7 @@ def _visit_block(ticker: str, visit_ctx: dict) -> dict:
                 "first_seen_since_coverage_start":
                     bool(r.get("source_published_at") == earliest_ts and earliest_ts),
             })
-        return {
+        result = {
             "state": "stale" if stale else "ok",
             "stale_days": stale_days if stale else None,
             "detail": ("visit-tape source has not refreshed recently" if stale else None),
@@ -407,6 +560,14 @@ def _visit_block(ticker: str, visit_ctx: dict) -> dict:
             "n_total": len(rows),
             "coverage_start": coverage_start,
         }
+        # ROWS PRESENT (either scope): positive evidence is never hidden —
+        # completeness is simply not asserted alongside it.
+        if scoped or unscoped:
+            result["coverage_exception"] = {
+                "scope": "company" if scoped else "plane",
+                "open": 1 if scoped else max(unscoped_exceptions, 0),
+            }
+        return result
     except Exception as e:  # noqa: BLE001 — a visit-block failure must never sink a dossier
         log.debug("china_intel_hub: visit block failed for %s (%s)", ticker, e)
         return {"state": "source_failure", "detail": f"visit block error: {e}",

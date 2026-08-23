@@ -5,10 +5,12 @@ name: ci
 # that gates the Pages deploy in pages.yml.
 on:
   pull_request:
-    # The closed event starts a zero-runner replacement in the same concurrency
-    # group, cancelling a long CI pack when its PR merges or closes. Without it,
-    # auto-merged PRs kept both hosted runners busy for up to another hour.
-    types: [opened, synchronize, reopened, closed]
+    # Only proof-producing lifecycle events belong in semantic CI. A delayed
+    # `closed` event is not a causally ordered cancellation message: GitHub may
+    # deliver it after a later `reopened` event, and same-group pending runs are
+    # replaced regardless of cancel-in-progress. Abandoned-PR cleanup is a
+    # separate capability; it must never share this proof slot implicitly.
+    types: [opened, synchronize, reopened]
     branches: [main]
     paths:
       # Start on every repository path. The selector, not this event filter, owns
@@ -767,6 +769,8 @@ on:
       - "engine/neuralweb/market_memory.py"
       - "engine/neuralweb/market_memory_pit.py"
       - "engine/neuralweb/market_memory_sources.py"
+      - "engine/neuralweb/market_memory_source_kernel.py"
+      - "engine/neuralweb/market_memory_sources_spy.py"
       - "engine/neuralweb/market_memory_identity.py"
       - "engine/neuralweb/market_memory_identity_observation.py"
       - "engine/neuralweb/market_memory_identity_store.py"
@@ -834,13 +838,18 @@ on:
       - "config/market_memory_technical_price_basis.v1.json"
       - "config/market_memory_option_oi_source.v1.json"
       - "config/market_memory_spy_experience_registration.v1.json"
+      - "config/market_memory_spy_experience_registration.v2.json"
       - "scripts/collect_release_target_vintages.py"
       - "scripts/collect_release_cpi_official_truth.py"
       - "scripts/build_release_cpi_truth_parity.py"
       - "scripts/capture_market_memory_context.py"
       - "scripts/initialize_market_memory_w1a.py"
       - "scripts/ingest_market_memory_sources.py"
+      - "scripts/ingest_market_memory_sources_spy.py"
+      - "scripts/capture_market_memory_technicals_v2.py"
+      - "scripts/accrue_market_memory_spy_experience_v2.py"
       - "scripts/project_market_memory_context.py"
+      - "scripts/audit_options_market_memory_context.py"
       - "scripts/ingest_market_memory_identity.py"
       - "scripts/capture_market_memory_breadth.py"
       - "scripts/capture_market_memory_technicals.py"
@@ -852,8 +861,16 @@ on:
       - "data/regime/latest.json"
       - "app/deploy/macro-market-memory-source.service"
       - "app/deploy/macro-market-memory-source.timer"
+      - "app/deploy/macro-market-memory-source-spy-rest.service"
+      - "app/deploy/macro-market-memory-source-spy-rest.timer"
+      - "app/deploy/macro-market-memory-technicals-v2.service"
+      - "app/deploy/macro-market-memory-technicals-v2.timer"
+      - "app/deploy/macro-market-memory-experience-v2.service"
+      - "app/deploy/macro-market-memory-experience-v2.timer"
       - "app/deploy/macro-market-memory-context.service"
       - "app/deploy/macro-market-memory-context.timer"
+      - "app/deploy/macro-market-memory-options-context-audit.service"
+      - "app/deploy/macro-market-memory-options-context-audit.timer"
       - "app/deploy/macro-market-memory-identity.service"
       - "app/deploy/macro-market-memory-identity.timer"
       - "app/deploy/macro-market-memory-breadth.service"
@@ -862,6 +879,7 @@ on:
       - "app/deploy/macro-market-memory-technicals.timer"
       - "app/deploy/macro-market-memory-experience.service"
       - "app/deploy/macro-market-memory-experience.timer"
+      - "app/deploy/market-memory-spy-rest-prereqs.sh"
       - "app/deploy/market-memory-options-prereqs.sh"
       - "app/deploy/market-memory-options-unit-boundary.sh"
       - "app/deploy/market-memory-options-runtime-fence.sh"
@@ -879,6 +897,7 @@ on:
       - "tests/test_market_memory_pit.py"
       - "tests/test_market_memory_sources.py"
       - "tests/test_market_memory_source_deploy.py"
+      - "tests/test_market_memory_m0d_v2.py"
       - "tests/test_market_memory_identity.py"
       - "tests/test_market_memory_identity_observation.py"
       - "tests/test_market_memory_identity_store.py"
@@ -4220,10 +4239,20 @@ on:
       - "scripts/build_security_master.py"
       - "data/reference/**"
       # Job: dislocation-p0-a1-blind-harvest (.github/ci/legacy-jobs.yml).
-      # Two-halves: the suite AND the primitives it imports.
+      # Two-halves: every source-only suite AND the primitives they import.
       - "tests/test_dislocation_p0_a1_blind_harvest.py"
+      - "tests/test_dislocation_p0_a1r_*.py"
+      - "tests/test_dislocation_p0_source_*.py"
       - "scripts/research/dislocation_p0_a1_harvest.py"
       - "scripts/research/dislocation_p0_a1_lib.py"
+      - "scripts/research/dislocation_p0_a1r*.py"
+      - "scripts/research/dislocation_p0_source_*.py"
+      - "collectors/edgar_forensics.py"
+      - "collectors/sec_document_spine.py"
+      - "engine/fundamental_forensics/models.py"
+      - "engine/fundamental_forensics/sec_document_spine.py"
+      - "lib/__init__.py"
+      - "lib/config.py"
       - "research/dislocation_intelligence/**"
   workflow_dispatch:
     inputs:
@@ -4243,17 +4272,11 @@ concurrency:
   # — how that dedup survives WITHOUT killing a running proof is the 2026-08-09
   # block below.
   #
-  # A MERGED close is fenced into its own group (2026-07-28). The operator and
-  # sessions routinely squash-merge 0-8 minutes after opening while a pack run
-  # takes ~35, and the `closed` event landing in the live group cancelled the
-  # PR's own in-flight proof run — the merged head then carried `cancelled`
-  # packs FOREVER (PR #3867: merged at +3 min, both packs died, no verdict
-  # possible), which is how unproven merges stack up on main and every
-  # ship-loop session pins on the next full-CI dispatch. Measured 2026-07-28:
-  # 100 ci.yml runs in 8h, 6 successes, 67 cancelled/skipped. A close WITHOUT
-  # merge keeps the old behaviour — its packs are obsolete and cancelling them
-  # is pure savings; only a merge's evidence is worth finishing.
-  group: ci-${{ github.event.pull_request.number || github.ref }}${{ github.event.action == 'closed' && github.event.pull_request.merged && '-merged' || '' }}
+  # Proof-producing PR events share the candidate's PR-number slot, so a newer
+  # synchronize/reopen can replace obsolete proof for that candidate. `closed`
+  # is absent from the trigger above and therefore cannot occupy, replace, or
+  # cancel this slot when lifecycle delivery is out of order.
+  group: ci-${{ github.event.pull_request.number || github.ref }}
   # cancel-in-progress became EVENT-CONDITIONAL 2026-08-09, after the flat `true`
   # livelocked main's proof path fleet-wide (12 merge-blocked + 56 cap-deferred
   # pull requests; sweep run 31311549150 reported "0 main commit(s) classified …
@@ -4270,9 +4293,9 @@ concurrency:
   # the next proof dies too. The recovery lever WAS the disease.
   #
   # The fix keeps both behaviours because they belong to different events:
-  #   pull_request  -> true.  A newer push obsoletes the older packs; cancelling
-  #                    them is pure savings, and the merged-close fence above
-  #                    (2026-07-28, PR #3867) still decides which close cancels.
+  #   pull_request  -> true.  A newer proof-producing event obsoletes the older
+  #                    packs; cancelling them is pure savings. Closed events do
+  #                    not trigger this workflow and never enter the group.
   #   workflow_dispatch -> false.  A dispatch is an ORDER FOR EVIDENCE. Evidence
   #                    that is 44 minutes old is nearly evidence; discarding it
   #                    for an identical run that starts from zero is never right.
@@ -4303,9 +4326,6 @@ jobs:
   # weighting, runner fleet, dependency caching, and existing scope selection are
   # deliberately unchanged here.
   ci-plan:
-    # Same closed-event fence as `ci-pack` below: a closed PR needs only the
-    # workflow-level concurrency side effect above.
-    if: github.event.action != 'closed'
     name: ci-plan
     runs-on: ubuntu-latest
     # Planning loads one manifest and diffs one base; 30 minutes is a hang bound,
@@ -4509,9 +4529,6 @@ jobs:
           retention-days: 14
   ci-pack:
     needs: ci-plan
-    # A closed PR needs only the workflow-level concurrency side effect above.
-    # Skipping here cancels the obsolete pack without allocating a replacement.
-    #
     # The `has_work` clause is the Wave B addition, and it is safe only because
     # `has_work: false` is an AFFIRMATIVE planner proof that no legacy job is
     # selected. Every uncertainty widens instead: a planner exception, an unknown
@@ -4521,7 +4538,7 @@ jobs:
     # sweeper requires an affirmative pass, since absence of red is not a pass
     # (#4779), so a PR whose only packs were skipped would otherwise read unproven
     # and never merge.
-    if: github.event.action != 'closed' && needs.ci-plan.outputs.has_work == 'true'
+    if: needs.ci-plan.outputs.has_work == 'true'
     # The logical jobs in .github/ci/legacy-jobs.yml remain the reviewable
     # source of truth, but GitHub sees only this matrix. Twelve pack runners
     # execute every legacy run step against a clean working tree, sharing one
@@ -4877,18 +4894,12 @@ jobs:
   # the merge-on-green sweeper (scripts/merge_on_green.py) requires an affirmative
   # success on the head — absence of red is not a pass (#4779) — so a head whose
   # packs were all skipped would read `unproven` and never merge. `ci-gate` is the
-  # one name that publishes a real conclusion on every non-closed event, and it is
+  # one name that publishes a real conclusion on every workflow event, and it is
   # the name to point any future branch-protection rule at.
   ci-gate:
     # `always()` is what makes this job publish even when `ci-pack` was skipped or
     # failed — WITHOUT it the aggregate would vanish exactly when it is needed.
-    #
-    # `&& github.event.action != 'closed'` is not decoration and must not be
-    # dropped: `always()` alone would run this job on every merged-close event too,
-    # where `ci-plan` is fenced off and therefore SKIPPED, so PLAN_RESULT would be
-    # `skipped`, the first branch below would exit 1, and every merged PR in the
-    # repository would publish a red `ci-gate` — blocking the sweeper fleet-wide.
-    if: always() && github.event.action != 'closed'
+    if: always()
     name: ci-gate
     needs: [ci-plan, ci-pack, contract-delta]
     runs-on: ubuntu-latest

@@ -1688,11 +1688,13 @@ _OBSERVED_EPISODES_PER_SESSION = 402
 # has not arrived; an Actions annotation costs nobody anything and is visible on
 # every run.
 _OWNER_LEDGER_WARN_ROWS = 2_600
-# FAIL (~1 session out) asserts. Here a fleet-wide red is proportionate, and the
-# point is that it fires BEFORE the nightly `macro-market-memory-context` unit
-# starts crashing -- `scripts/project_market_memory_context.py` calls
-# `publish_live_audit` with no `try`/`except`, so the estate's alternative first
-# notice is a broken nightly on an unannounced date with zero lead time.
+# FAIL (~1 session out) used to assert and red the whole pack. That coupling
+# became unlawful once the overdue ledger started blocking W2C trusted-context
+# recovery: the Options audit is a distinct owner, and Sol forbade masking its
+# failure by widening 4,096 or by keeping it as a hidden prerequisite of
+# `macro-market-memory-context`. Crossing 3,600 now emits `::error` and requires
+# the preregistration-v2 workstream to exist. The representability wall remains
+# `_PINNED_OWNER_REFERENCE_CEILING` (4,096).
 _OWNER_LEDGER_FAIL_ROWS = 3_600
 # The byte dimension carries the same lead time as the row dimension, and it is
 # not decoration: `outcomes_h60.jsonl` runs ~1,985 B/row, so 4,096 rows is ~8.13
@@ -1711,6 +1713,9 @@ _OWNER_LEDGER_FAIL_BYTES = (
 _OWNER_LEDGER_BOUND_ADJUDICATION = (
     "research/options_estate/"
     "OPTIONS_CONTEXT_AUDIT_LEDGER_BOUND_ADJUDICATION_2026-08-13.md"
+)
+_OWNER_LEDGER_PREREG_V2_WORKSTREAM = (
+    "agentos/workstreams/WS-OPTIONS-CONTEXT-AUDIT-PREREG-V2.md"
 )
 _AUDITED_OWNER_LEDGERS = (
     "data/options_signal_episode/episodes.jsonl",
@@ -1734,24 +1739,20 @@ def _pinned_source_artifact_probe(**overrides: object) -> dict:
 def test_options_owner_ledgers_stay_clear_of_the_pinned_reference_ceiling(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """Warn three sessions out, fail one session out, never learn it from a crash.
+    """Warn three sessions out, error when overdue, refuse above 4,096.
 
     `data/options_signal_episode/episodes.jsonl` grows every nightly checkpoint and
     is never pruned, while `engine/options_market_memory_context.py` caps every
     bound source artifact at 4,096 `record_count` and 8 MiB. That engine file is
     byte-pinned by `research/options_estate/
     sparse_selector_preregistration_receipt_v1.json`, so the ceiling cannot be
-    raised as a buffer change -- it needs a preregistration v2, which is days of
-    chartered work. Without this test the estate's first notice is
-    `scripts/project_market_memory_context.py` calling `publish_live_audit` with no
-    `try`/`except`: the nightly `macro-market-memory-context` unit dies, main reds
-    fleet-wide, on an unannounced date, with a lead time of zero.
+    raised as a buffer change -- it needs a preregistration v2.
 
-    Both tiers are tripwires, not limits. Crossing one is not a defect in the
-    ledger -- the ledger is behaving correctly -- it is the signal that the v2
-    charter has to start. Raising a threshold to buy quiet buys nothing: 4,096 does
-    not move with it, and the only thing a higher tripwire changes is how little
-    warning the estate gets.
+    Crossing 3,600 is the overdue signal: emit `::error` and require
+    `WS:OPTIONS-CONTEXT-AUDIT-PREREG-V2`. It is not a defect of the ledger, and it
+    must not recouple the Options audit into trusted-context publication. The
+    representability wall remains 4,096. Raising either number to buy quiet
+    buys nothing.
     """
 
     repository_root = Path(__file__).resolve().parents[1]
@@ -1806,8 +1807,17 @@ def test_options_owner_ledgers_stay_clear_of_the_pinned_reference_ceiling(
         sessions = (_PINNED_OWNER_REFERENCE_CEILING - rows) / (
             _OBSERVED_EPISODES_PER_SESSION
         )
+        overdue = (
+            rows >= _OWNER_LEDGER_FAIL_ROWS or size >= _OWNER_LEDGER_FAIL_BYTES
+        )
+        kind = "error" if overdue else "warning"
+        title = (
+            "options-owner-ledger-overdue-pinned-ceiling"
+            if overdue
+            else "options-owner-ledger-nears-pinned-ceiling"
+        )
         annotations.append(
-            f"::warning title=options-owner-ledger-nears-pinned-ceiling::"
+            f"::{kind} title={title}::"
             f"{relative} holds {rows} rows / {size} bytes. The pinned ceilings in "
             f"engine/options_market_memory_context.py are "
             f"{_PINNED_OWNER_REFERENCE_CEILING} rows and "
@@ -1816,10 +1826,11 @@ def test_options_owner_ledgers_stay_clear_of_the_pinned_reference_ceiling(
             f"(~{sessions:.1f} sessions at the observed "
             f"{_OBSERVED_EPISODES_PER_SESSION}/session mint) and "
             f"{_PINNED_SOURCE_ARTIFACT_BYTE_CEILING - size} bytes of headroom. "
-            f"This suite fails hard at {_OWNER_LEDGER_FAIL_ROWS} rows / "
-            f"{_OWNER_LEDGER_FAIL_BYTES} bytes. The ceilings are byte-frozen by the "
-            "sparse-selector preregistration and can only be moved by a "
-            f"preregistration v2: see {_OWNER_LEDGER_BOUND_ADJUDICATION} section 7."
+            f"The 3,600-row / {_OWNER_LEDGER_FAIL_BYTES}-byte tripwire is the "
+            "overdue preregistration-v2 signal, not a reason to widen 4,096 or "
+            "window owners. See "
+            f"{_OWNER_LEDGER_BOUND_ADJUDICATION} section 7 and "
+            f"{_OWNER_LEDGER_PREREG_V2_WORKSTREAM}."
         )
     for line in annotations:
         # A bare print that STARTS the line, per CLAUDE.md and
@@ -1841,7 +1852,20 @@ def test_options_owner_ledgers_stay_clear_of_the_pinned_reference_ceiling(
         for line in emitted:
             print(line, flush=True)
 
-    # FAIL tier.
+    # FAIL tier: 3,600 is overdue (charter required). 4,096 is still the wall.
+    overdue = [
+        (relative, rows, size)
+        for relative, rows, size in measured
+        if rows >= _OWNER_LEDGER_FAIL_ROWS or size >= _OWNER_LEDGER_FAIL_BYTES
+    ]
+    if overdue:
+        workstream = repository_root / _OWNER_LEDGER_PREREG_V2_WORKSTREAM
+        assert workstream.is_file(), (
+            "the Options Context Audit 3,600-row tripwire is overdue; "
+            f"{_OWNER_LEDGER_PREREG_V2_WORKSTREAM} must exist. Do not widen "
+            "4,096, window owners, or recouple the audit into trusted context. "
+            f"See {_OWNER_LEDGER_BOUND_ADJUDICATION} section 7."
+        )
     for relative, rows, size in measured:
         sessions = (_PINNED_OWNER_REFERENCE_CEILING - rows) / (
             _OBSERVED_EPISODES_PER_SESSION
@@ -1854,24 +1878,21 @@ def test_options_owner_ledgers_stay_clear_of_the_pinned_reference_ceiling(
             f"(~{sessions:.1f} "
             f"sessions at the observed {_OBSERVED_EPISODES_PER_SESSION}/session "
             f"mint) and {_PINNED_SOURCE_ARTIFACT_BYTE_CEILING - size} bytes of "
-            "headroom. When they are crossed, "
-            "scripts/audit_options_market_memory_context.py fails, the nightly "
-            "macro-market-memory-context unit fails with it, and main goes red. "
-            "Raising this threshold does NOT buy headroom -- the pinned engine is "
-            "byte-frozen by research/options_estate/"
-            "sparse_selector_preregistration_receipt_v1.json, so lifting 4,096 is a "
-            "preregistration act, not a buffer change. The owning decision, "
-            "including why windowing the audited owner set is forbidden "
-            "(DNR:KILL-OPTIONS-CONTEXT-AUDIT-OWNER-EVICTION) and what a v2 has to "
-            f"charter, is {_OWNER_LEDGER_BOUND_ADJUDICATION} section 7."
+            "headroom. Crossing 4,096 is a v1 representability refusal in "
+            "scripts/audit_options_market_memory_context.py, owned by "
+            "macro-market-memory-options-context-audit.service, not by trusted "
+            "context. Raising 4,096 is a preregistration act, not a buffer "
+            "change (DNR:KILL-OPTIONS-CONTEXT-AUDIT-OWNER-EVICTION). See "
+            f"{_OWNER_LEDGER_BOUND_ADJUDICATION} section 7."
         )
-        assert rows < _OWNER_LEDGER_FAIL_ROWS, (
-            f"{relative} holds {rows} rows and has crossed the "
-            f"{_OWNER_LEDGER_FAIL_ROWS}-row hard tripwire. {detail}"
+        assert rows <= _PINNED_OWNER_REFERENCE_CEILING, (
+            f"{relative} holds {rows} rows and has crossed the pinned "
+            f"{_PINNED_OWNER_REFERENCE_CEILING}-row representability wall. {detail}"
         )
-        assert size < _OWNER_LEDGER_FAIL_BYTES, (
-            f"{relative} holds {size} bytes and has crossed the "
-            f"{_OWNER_LEDGER_FAIL_BYTES}-byte hard tripwire. {detail}"
+        assert size <= _PINNED_SOURCE_ARTIFACT_BYTE_CEILING, (
+            f"{relative} holds {size} bytes and has crossed the pinned "
+            f"{_PINNED_SOURCE_ARTIFACT_BYTE_CEILING}-byte representability wall. "
+            f"{detail}"
         )
 
 

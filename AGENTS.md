@@ -130,6 +130,18 @@ that believes the packet is wrong stops and escalates.
   session already sits in one, and otherwise mints a sparse tree under
   `.grok/worktrees/<name>/` with `git worktree add --no-checkout` (Claude's
   pre-checkout shape) so an AionUi session never materializes the heavy trees.
+  Warp/Oz has no SessionStart or WorktreeCreate event. `.warp/hooks/session_start_sparse.py`
+  plus `.agents/skills/macro-sparse-worktree` are the analog: a Warp session must
+  run the mint itself (the skill auto-discovers), then `cd` to the printed
+  `WORKSPACE=` path. The hook reuses only a carrier positively bound to the
+  current Warp conversation/task identity; terminal/session IDs are not proof.
+  Its branch/path use a SHA-256 digest of the complete identity, never the raw
+  value, and an identity-less start mints a collision-resistant carrier rather
+  than reusing `warp-session`. New carriers mint from freshly fetched
+  `origin/main` under `.warp/worktrees/<name>/` with `git worktree add
+  --no-checkout`; failed fetches and path/branch collisions fail closed without
+  taking over a foreign carrier. It never writes
+  `.session-worktree` into a git checkout.
   `auto` acts only on a linked worktree sitting under a session root
   (`.claude/worktrees/` and siblings — never the occupied primary, and never the
   operator's designated local root, which is itself a linked worktree), and preserves
@@ -335,7 +347,7 @@ are in where work happens and how large the context is.
 
 ## Definition of done
 
-DONE for a substantive, verified change is the full delivery chain, which is
+DONE for ordinary substantive, verified work is the full delivery chain, which is
 never abandoned partway and never handed back to the operator to finish:
 
 1. commit;
@@ -346,7 +358,7 @@ never abandoned partway and never handed back to the operator to finish:
 6. deploy or wait for the repository's normal deploy lane, then verify the change
    on the real live URL.
 
-**One session owns all six.** There is no earlier "worker done" state — the rule
+**One session owns all six for ordinary work.** There is no earlier "worker done" state — the rule
 that let a session terminate on an armed pull request was REMOVED by the project
 owner on 2026-08-12 ("ur the owner of this project so u keep it until its
 finished, no need for handoff"). It had turned an unfinished job into a
@@ -355,8 +367,18 @@ reported-complete one: a session declared itself done while its pull request sat
 Stopping at a local commit, at an open pull request, or at an armed-but-unmerged
 one is abandoned work, not delivered work.
 
+**The one non-merge terminal state is `PARKED / HOLD-FOR-SOL`.** It exists only when
+`DEC:SOL-HOLD-IS-A-MERGE-BARRIER` is fully satisfied: exact PR head pushed and local
+worktree clean; binding checks concluded green; PR DRAFT; no `merge-on-green` label;
+native auto-merge null; title/body/comment holds merge and names Sol as authority plus
+a Sol-controlled release condition. PARKED is terminal for the current session but is
+NOT SHIPPED, not deployed/live evidence, and not a retryable `SHIP LOOP BLOCKED` state.
+Report it once and stop. Do not poll, arm, mark ready, merge, or re-enter the ship loop
+until Sol changes or releases the hold. Ambiguous/incomplete hold state remains ordinary
+unfinished work and fails closed.
+
 `merge-on-green` remains available and is still the recommended way to get the
-merge PERFORMED — arming it means you do not have to run the merge yourself. It
+merge PERFORMED for ordinary work — arming it means you do not have to run the merge yourself. It
 is not a reason to stop: keep the session alive until the pull request is merged
 and the change is verified live. The only holds are an explicit operator request
 to hold, a genuine non-spurious failing check, or a real deployment blocker.
@@ -424,11 +446,14 @@ fail, `gh api repos/{owner}/{repo}/rulesets` is the FIRST diagnostic, and any
 deliberate freeze must ship a DEC record plus an expiry plan
 (research/PROPHET_OUTAGE_2026_08_17_POSTMORTEM.md).
 
-**ARM `merge-on-green`, THEN STAY.** After opening the pull request, run
+**ARM `merge-on-green`, THEN STAY.** After opening an ordinary pull request, run
 `gh pr edit <n> --add-label merge-on-green`.
-`.github/workflows/merge-on-green.yml` (GitHub-hosted `ubuntu-latest`, every 10 minutes,
-deliberately off every self-hosted render pool) squash-merges the
-pull request once every check has CONCLUDED clean, with the known-spurious
+**Current topology (2026-08-21): `.github/workflows/merge-on-green.yml` still runs on
+`[self-hosted, macOS, ARM64, merge-control]` on the M2; it is NOT yet GitHub-hosted.**
+W1-A's read-only hosted canary is merged, but production authority stays on the M2 until
+its required post-merge canary receipts accept W1-B. Do not reason from the planned hosted
+cutover as though it already happened. The sweeper runs every 10 minutes and squash-merges
+the pull request once every check has CONCLUDED clean, with the known-spurious
 `Workers Builds: macro` X excluded. A genuine red or a merge conflict gets the
 `merge-blocked` label plus ONE explanatory comment instead of a merge; the
 `merge-on-green` label stays armed, so a rerun that greens the head merges on the
@@ -437,20 +462,25 @@ next sweep.
 Arming it is a BACKSTOP that saves you the merge command — it is not an exit. The
 sweeper cannot fix a red, cannot resolve a conflict, and cannot verify the change
 live; those are yours, and you will not learn they are needed if you have already
-stopped. `ship_loop_guard.py` blocks a session whose pull request is armed but not
-merged, and NAMES the reds the sweeper would refuse, so the answer to "am I done"
-is always "is it merged". Merging by hand on concluded-green stays fully valid and
-is often faster than waiting a sweep. After any accidental fast merge, the
-surviving PR proof run is the merge's evidence — watch it to conclusion. `--admin`
-remains only for the spurious Workers X, docs-only pull requests that trigger no
-pack checks, and genuine wedges — never to outrun CI.
+stopped. For ordinary work, `ship_loop_guard.py` blocks a session whose pull request
+is armed but not merged, and NAMES the reds the sweeper would refuse, so the answer
+to "am I done" is "is it merged". A ratified `HOLD-FOR-SOL` is the explicit exception:
+its answer is `PARKED`, never `SHIPPED`, and the forbidden merge is not retried. Merging
+by hand on concluded-green stays fully valid and is often faster than waiting a sweep.
+After any accidental fast merge, the surviving PR proof run is the merge's evidence —
+watch it to conclusion. `--admin` remains only for the spurious Workers X, docs-only
+pull requests that trigger no pack checks, and genuine wedges — never to outrun CI.
 
 **A RECORDED HOLD IS A MERGE BARRIER (Sol 2026-08-19, #5974/#5953).** A hold stated in a
 PR's body or comments (HOLD-FOR-SOL / "do not merge") binds EVERY merge path — the sweeper,
 blanket-arming sessions, and manual merges alike — regardless of label state. Enforce it as
 state (no arming label, `autoMergeRequest` null, DRAFT, hold comment naming authority +
 release condition), and never arm a PR you did not open without grepping its
-title+body+comments for a hold. Conditional merge authority granted for one PR NEVER
+title+body+comments for a hold. Once that protocol is complete, the exact head is pushed
+and clean, and binding checks are green, the delivery state is `PARKED / HOLD-FOR-SOL`:
+terminal for the current session, not SHIPPED, and not a retryable blocker. Report once;
+do not poll, re-arm, mark ready, merge, or re-enter the ship loop until the holding authority
+changes or releases the hold. Conditional merge authority granted for one PR NEVER
 transfers to any other PR (`DEC:SOL-HOLD-IS-A-MERGE-BARRIER`).
 
 **DISARMING IS NEVER SILENT (PR #5291, 2026-08-11).** The sweeper never removes
@@ -508,8 +538,8 @@ dispatch is then the mercy kill, not a murder).
 
 ### Waiting on CI without jamming every other session
 
-Every session now waits out its own merge, so this is the ONLY thing restraining
-fleet-wide polling. Treat it as a hard rule, not as advice.
+Ordinary sessions wait out their own merge; a ratified PARKED hold does not poll at all. This
+is the ONLY thing restraining fleet-wide polling. Treat it as a hard rule, not as advice.
 
 `gh` authenticates as ONE account token, so GitHub REST's 5,000/hr `core` pool is a
 single bucket shared by every parallel session, the babysitter lane, and the hooks.
@@ -633,18 +663,21 @@ lanes, `prophet-rescue.yml` and `nightly-liveness.yml`, are themselves in the
 hook's protected set: killing a watchdog is worse than killing a bake, because it
 removes the only thing that would have noticed.
 
-The contract is actively enforced for Claude by the tracked `SessionStart` and
-`Stop` hook in `.claude/hooks/ship_loop_guard.py`. It snapshots pre-existing dirty
-files, then refuses a normal stop while session-created work is uncommitted,
-unpushed, unmerged, awaiting a render, or absent from production. `unmerged` is
-satisfied by an actually-MERGED pull request and by nothing else: an armed
-`merge-on-green` pull request blocks like any other unmerged one, and the block
-names the reds the sweeper would refuse so the session is told what to fix rather
-than merely that it may not leave. A red that is genuinely this head's files
-`ci_failed_unmerged`, which is deliberately an INTERNAL code (10 consecutive / 15
-total, not the external 2/3): the state this rule exists to prevent — alive
-session, armed pull request, red the sweeper will never merge, head still
-pushable — must not also be the cheapest state in the guard to leave.
+Claude enforces this contract with `.claude/hooks/ship_loop_guard.py` at SessionStart
+and `scripts/ship_loop_hold_wrapper.py` at Stop. The wrapper delegates every ordinary
+state to the canonical guard and only turns a fully lawful Sol hold into terminal
+`SHIP LOOP PARKED`. For ordinary work, the guard snapshots pre-existing dirty files,
+then refuses a normal stop while session-created work is uncommitted, unpushed,
+unmerged, awaiting a render, or absent from production. `unmerged` is satisfied by an
+actually-MERGED pull request and by nothing else; an armed `merge-on-green` pull request
+blocks like any other unmerged one. Codex must apply the same state machine semantically
+from this file: ordinary unmerged work is unfinished, while a fully ratified Sol hold is
+PARKED and must not be re-polled or merged.
+
+A red that is genuinely this head's files `ci_failed_unmerged`, which is deliberately an
+INTERNAL code (10 consecutive / 15 total, not the external 2/3): the state this rule
+exists to prevent — alive session, armed pull request, red the sweeper will never merge,
+head still pushable — must not also be the cheapest state in the guard to leave.
 The dirty snapshot judges only this checkout's own work. Untracked entries under
 another fleet's worktree roots (`.claude/worktrees/`, `.claire/worktrees/`,
 `.codex/worktrees/`, `.codex-worktrees/`) are excluded — a blocked session can neither commit another
@@ -653,17 +686,15 @@ LEAVES `git status`, whether committed or newly ignored, stops counting as
 outstanding. Both stay fail-closed: tracked content under those roots gates
 normally, and a tracked file the session deleted is still reported by git as
 ` D`, so it still blocks.
-Codex must follow the same chain directly from this file. A genuine repeated
-external blocker must be reported as `SHIP LOOP BLOCKED:` with concrete evidence;
-ordinary local cleanup, authentication setup, and waiting are not blockers.
-The CI gate is base-side-aware: a red on the merged head that provably pre-existed
-on main (same check failing on ≥2 independent concurrent PR heads pre-merge, or a
-green ci.yml run on a main descendant) is excluded by name rather than pinning the
-session forever; the operator lever for a healed base is
-`gh workflow run ci.yml --ref main` — one green dispatched run clears every pinned
-merge at once, but preflight for an in-flight baseline first (see the livelock
-note above: a re-dispatch cancels the very proof every pinned session is waiting
-on). Unknown or lone-sibling evidence stays `ci_failed` (fail-closed).
+A genuine repeated external blocker must be reported as `SHIP LOOP BLOCKED:` with
+concrete evidence; ordinary local cleanup, authentication setup, and waiting are not
+blockers. A lawful hold reports `SHIP LOOP PARKED:` instead. The CI gate remains
+base-side-aware: a red on the merged head that provably pre-existed on main (same check
+failing on ≥2 independent concurrent PR heads pre-merge, or a green ci.yml run on a main
+descendant) is excluded by name rather than pinning the session forever; the operator
+lever for a healed base is `gh workflow run ci.yml --ref main` — one green dispatched
+run clears every pinned merge at once, but preflight for an in-flight baseline first.
+Unknown or lone-sibling evidence stays `ci_failed` (fail-closed).
 
 An AUTHORITY-FROZEN merged head is no longer unclearable forever (2026-08-19,
 DEC-AUTHORITY-FREEZE-CLEARS-ON-DESCENDANT-BASELINE). A merged head whose semantic
@@ -685,20 +716,17 @@ files) were evaluated and REJECTED as clearing evidence: the fleet
 authenticates as one shared token, so any such marker is mintable by the
 session itself — self-excuse by construction.
 
-The PRE-merge path is base-side-aware too, and has to be: now that every session
-stays through its own merge, that path runs on EVERY Stop of EVERY armed session,
-which is exactly the population that inherits a red main. Before an armed head's
-red is called this session's defect, the guard asks whether main's own newest
-concluded `ci.yml`/`fences.yml` run is red on the same job NAME, and failing that
-whether the same name is red on ≥2 independent concurrent sibling heads. If either
-answers, the block is filed as `unmerged` naming MAIN as the cause and
-`gh workflow run ci.yml --ref main` (with the in-flight preflight) as the lever —
-never "fix the cause and re-run", which is how several sessions end up healing one
-pack in parallel, and two partial heals of one pack can never both go green.
-Fail-closed in the safe direction throughout: a stale proof, a lone sibling, an
-undated red, or any probe that raises excuses nothing and the red stays this
-session's, with the gap NAMED in the block. Nothing here releases anybody — both
-outcomes still block, only the advice changes.
+The PRE-merge path is base-side-aware too, and has to be: ordinary sessions stay through
+their own merge, so that path runs on every Stop of every armed ordinary session. Before an
+armed head's red is called this session's defect, the guard asks whether main's own newest
+concluded `ci.yml`/`fences.yml` run is red on the same job NAME, and failing that whether
+the same name is red on ≥2 independent concurrent sibling heads. If either answers, the
+block is filed as `unmerged` naming MAIN as the cause and `gh workflow run ci.yml --ref main`
+(with the in-flight preflight) as the lever — never "fix the cause and re-run", which is how
+several sessions end up healing one pack in parallel, and two partial heals of one pack can
+never both go green. A PARKED hold bypasses this polling path entirely until released.
+Fail-closed in the safe direction throughout: a stale proof, a lone sibling, an undated red,
+or any probe that raises excuses nothing and the red stays this session's, with the gap NAMED.
 
 An IN-FLIGHT covering render DEFERS rather than blocks (operator ruling
 2026-07-27): a queued or running render whose head covers this merge satisfies the

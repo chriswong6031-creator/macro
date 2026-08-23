@@ -1,23 +1,23 @@
 {
   "schema": "stock_desk.v1",
-  "as_of": "2026-08-21",
-  "scored_total": 136,
+  "as_of": "2026-08-23",
+  "scored_total": 139,
   "open": 63,
   "unscored_neutral": 160,
   "overall": {
-    "n": 136,
-    "hits": 94,
+    "n": 139,
+    "hits": 97,
     "misses": 42,
-    "hit_rate": 0.691,
-    "dir_accuracy": 0.434
+    "hit_rate": 0.698,
+    "dir_accuracy": 0.446
   },
   "by_lean": {
     "constructive": {
-      "n": 81,
-      "hits": 52,
+      "n": 82,
+      "hits": 53,
       "misses": 29,
-      "hit_rate": 0.642,
-      "dir_accuracy": 0.358
+      "hit_rate": 0.646,
+      "dir_accuracy": 0.366
     },
     "neutral": {
       "n": 0,
@@ -27,11 +27,11 @@
       "dir_accuracy": null
     },
     "cautious": {
-      "n": 54,
-      "hits": 42,
+      "n": 56,
+      "hits": 44,
       "misses": 12,
-      "hit_rate": 0.778,
-      "dir_accuracy": 0.556
+      "hit_rate": 0.786,
+      "dir_accuracy": 0.571
     },
     "avoid": {
       "n": 1,
@@ -50,11 +50,11 @@
       "dir_accuracy": 0.405
     },
     "medium": {
-      "n": 18,
-      "hits": 14,
+      "n": 21,
+      "hits": 17,
       "misses": 4,
-      "hit_rate": 0.778,
-      "dir_accuracy": 0.667
+      "hit_rate": 0.81,
+      "dir_accuracy": 0.714
     },
     "high": {
       "n": 2,
@@ -64,8 +64,35 @@
       "dir_accuracy": 0.0
     }
   },
-  "calibration_note": "136 leans scored, hit-rate 0.691 (directional accuracy 0.434). The no-skill base rate for these exact conditions is not yet measured \u2014 read the hit-rate as unbenchmarked, not as evidence of skill.",
+  "calibration_note": "139 leans scored, hit-rate 0.698 (directional accuracy 0.446). The no-skill base rate for these exact conditions is not yet measured \u2014 read the hit-rate as unbenchmarked, not as evidence of skill.",
   "recent": [
+    {
+      "id": "2026-07-24-WAB-2",
+      "ticker": "WAB",
+      "lean": "cautious",
+      "conviction": "medium",
+      "outcome": "hit",
+      "realized": -0.0526,
+      "check_by": "2026-08-21"
+    },
+    {
+      "id": "2026-07-24-STBA-3",
+      "ticker": "STBA",
+      "lean": "cautious",
+      "conviction": "medium",
+      "outcome": "hit",
+      "realized": -0.0635,
+      "check_by": "2026-08-21"
+    },
+    {
+      "id": "2026-07-24-GM-4",
+      "ticker": "GM",
+      "lean": "constructive",
+      "conviction": "medium",
+      "outcome": "hit",
+      "realized": 0.0278,
+      "check_by": "2026-08-21"
+    },
     {
       "id": "2026-06-25-CHD-2",
       "ticker": "CHD",
@@ -146,33 +173,6 @@
       "outcome": "hit",
       "realized": -0.0041,
       "check_by": "2026-08-20"
-    },
-    {
-      "id": "2026-07-08-APP-1",
-      "ticker": "APP",
-      "lean": "constructive",
-      "conviction": "low",
-      "outcome": "miss",
-      "realized": -0.4366,
-      "check_by": "2026-08-19"
-    },
-    {
-      "id": "2026-07-08-CLH-4",
-      "ticker": "CLH",
-      "lean": "constructive",
-      "conviction": "low",
-      "outcome": "hit",
-      "realized": 0.0489,
-      "check_by": "2026-08-19"
-    },
-    {
-      "id": "2026-07-22-LEA-2",
-      "ticker": "LEA",
-      "lean": "constructive",
-      "conviction": "low",
-      "outcome": "miss",
-      "realized": -0.1656,
-      "check_by": "2026-08-19"
     }
   ]
 }

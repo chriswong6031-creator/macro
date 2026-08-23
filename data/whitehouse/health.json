@@ -1,8 +1,8 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-08-21T15:48:18.596545+00:00",
-  "posts_seen": 8,
-  "seen_total": 128,
+  "as_of": "2026-08-23T11:34:15.941125+00:00",
+  "posts_seen": 6,
+  "seen_total": 129,
   "evaluated": 0,
   "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",

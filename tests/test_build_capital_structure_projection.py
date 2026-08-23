@@ -10,6 +10,7 @@ import pytest
 import requests
 
 from engine.capital_structure.projection import validate_projection_bundle
+from engine.capital_structure.ingestion_health import evaluate_health, write_health
 from engine.capital_structure.source_identity import manifest_id_for
 import scripts.build_capital_structure_projection as projection_builder
 from scripts.build_capital_structure_projection import build_from_disk
@@ -107,6 +108,10 @@ def _compiled_root(tmp_path: Path) -> Path:
     primary = _manifest(role="primary", parent_manifest_id=complete["manifest_id"])
     _write_ledger(source_ledger_path(root), [complete, primary])
     compile_from_disk(root=root, generated_at="2026-08-02T12:00:00Z")
+    write_health(
+        evaluate_health(root, generated_at="2026-08-02T12:00:01Z"),
+        root / "health.json",
+    )
     return root
 
 
@@ -166,6 +171,35 @@ def test_receipt_mismatch_preserves_both_prior_projection_files(tmp_path):
     assert public.read_bytes() == prior_public
 
 
+def test_health_generation_mismatch_fails_before_projection_promotion(tmp_path):
+    root = _compiled_root(tmp_path)
+    canonical = tmp_path / "out" / "projection.json"
+    public = tmp_path / "site" / "capital-structure-data" / "latest.json"
+    build_from_disk(
+        root=root,
+        canonical_path=canonical,
+        public_path=public,
+        generated_at="2026-08-02T13:00:00Z",
+    )
+    prior_canonical = canonical.read_bytes()
+    prior_public = public.read_bytes()
+
+    health_path = root / "health.json"
+    health = json.loads(health_path.read_text(encoding="utf-8"))
+    health["horizon"]["compiler_generation_id"] = "generation:cs:" + "d" * 24
+    health_path.write_text(json.dumps(health), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="does not bind verified generation"):
+        build_from_disk(
+            root=root,
+            canonical_path=canonical,
+            public_path=public,
+            generated_at="2026-08-02T14:00:00Z",
+        )
+    assert canonical.read_bytes() == prior_canonical
+    assert public.read_bytes() == prior_public
+
+
 def test_builder_rejects_same_canonical_and_public_target(tmp_path):
     root = _compiled_root(tmp_path)
     target = tmp_path / "projection.json"
@@ -178,27 +212,21 @@ def test_builder_rejects_same_canonical_and_public_target(tmp_path):
         )
 
 
-def test_missing_generation_publishes_explicit_unavailable_not_empty_green(tmp_path):
+def test_missing_generation_without_bound_health_refuses_publication(tmp_path):
     root = tmp_path / "capital_structure"
     root.mkdir()
     canonical = tmp_path / "out" / "projection.json"
     public = tmp_path / "site" / "capital-structure-data" / "latest.json"
 
-    summary = build_from_disk(
-        root=root,
-        canonical_path=canonical,
-        public_path=public,
-        generated_at="2026-08-02T13:00:00Z",
-    )
-
-    payload = json.loads(canonical.read_text(encoding="utf-8"))
-    validate_projection_bundle(payload)
-    assert summary["status"] == "unavailable"
-    assert payload["coverage"]["source_status"] == "missing"
-    assert payload["coverage"]["reason"] == "source_generation_missing"
-    assert payload["coverage"]["event_count"] == 0
-    assert payload["records"] == []
-    assert canonical.read_bytes() == public.read_bytes()
+    with pytest.raises(ValueError, match="health receipt is required"):
+        build_from_disk(
+            root=root,
+            canonical_path=canonical,
+            public_path=public,
+            generated_at="2026-08-02T13:00:00Z",
+        )
+    assert not canonical.exists()
+    assert not public.exists()
 
 
 def test_pair_promotion_rolls_both_targets_back_if_second_replace_fails(tmp_path, monkeypatch):

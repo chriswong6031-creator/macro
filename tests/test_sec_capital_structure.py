@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 import json
 import math
 from pathlib import Path
@@ -183,7 +183,13 @@ def test_form_index_policy_is_explicit_and_does_not_claim_broad_reconciliation()
     assert "S-8" not in sec.FORM_POLICY["wave1_discovery"]
     assert "424B2" in sec.FORM_POLICY["capital_relevant_declared_not_collected"]
     assert "424B2" not in sec.FORM_POLICY["wave1_discovery"]
-    assert sec.MAX_FILINGS_PER_RUN >= 200
+    assert sec.WORK_CLASS_RESERVATIONS == {
+        "LIVE_TAIL": 500,
+        "RECOVERY": 20,
+        "HISTORICAL_BACKFILL": 20,
+    }
+    assert sec.MAX_FILINGS_PER_RUN == 540
+    assert sec.MAX_FILINGS_PER_RUN == sum(sec.WORK_CLASS_RESERVATIONS.values())
 
 
 def test_form_index_rejects_html_malformed_and_header_only_responses():
@@ -738,6 +744,447 @@ def test_full_weighted_cycle_records_exact_per_lane_selection_counts():
     assert all(row["deferred_count"] >= 0 for row in receipt["lanes"])
 
 
+def _w2_coverage_sessions(end: date = date(2026, 8, 28), count: int = 20) -> pd.DataFrame:
+    sessions: list[dict] = []
+    current = end
+    while len(sessions) < count:
+        if current.weekday() < 5:
+            sessions.append({
+                "index_date": current.isoformat(), "status": "complete",
+                "policy_version": sec.FORM_POLICY["policy_version"],
+            })
+        current -= timedelta(days=1)
+    return pd.DataFrame(sessions)
+
+
+def _w2_row(accession: str, form: str, filing_date: str, *, first_seen: str) -> dict:
+    return {
+        "accession": accession, "cik": "0001234567", "form": form,
+        "collection_scope": sec.DISCOVERY_SCOPE_REGISTRATION,
+        "filing_date": filing_date, "_first_seen": first_seen,
+    }
+
+
+def test_work_class_reserves_protect_live_tail_and_preserve_lane_fairness():
+    """18k historical rows cannot consume the 500/20/20 W2B reservations."""
+    now = datetime(2026, 8, 28, 13, 0, tzinfo=timezone.utc)
+    live_forms = ["S-3", "EFFECT", "424B5", "1-A"]
+    old_rows = [
+        _w2_row(
+            f"historical-{index:05d}", live_forms[index % len(live_forms)], "2026-07-01",
+            first_seen="2026-07-01T11:00:00Z",
+        )
+        for index in range(18_000)
+    ]
+    live_rows = [
+        _w2_row(
+            f"live-{index:03d}", live_forms[index % len(live_forms)], "2026-08-28",
+            first_seen="2026-08-28T11:00:00Z",
+        )
+        for index in range(500)
+    ]
+    recovery_rows = [
+        _w2_row(
+            f"recovery-{index:03d}", live_forms[index % len(live_forms)], "2026-08-28",
+            first_seen="2026-08-27T11:00:00Z",
+        )
+        for index in range(30)
+    ]
+    attempts = pd.DataFrame([
+        {
+            "accession": row["accession"], "state": "transient_error",
+            "attempted_at": "2026-08-27T12:00:00Z",
+        }
+        for row in recovery_rows
+    ])
+
+    queue = select_retrieval_queue(
+        pd.DataFrame([*old_rows, *live_rows, *recovery_rows]),
+        have_complete=set(), max_filings=540, now=now,
+        coverage=_w2_coverage_sessions(), attempts=attempts,
+        current_run_arrivals={"live-000", "recovery-000"},
+    )
+    receipt = queue.attrs["retrieval_queue_receipt"]
+    classes = {row["work_class"]: row for row in receipt["work_classes"]}
+
+    assert len(queue) == 540
+    assert receipt["class_quota_slots"] == {
+        "LIVE_TAIL": 500, "RECOVERY": 20, "HISTORICAL_BACKFILL": 20,
+    }
+    assert {key: value["selected_count"] for key, value in classes.items()} == {
+        "LIVE_TAIL": 500, "RECOVERY": 20, "HISTORICAL_BACKFILL": 20,
+    }
+    assert classes["LIVE_TAIL"]["current_run_arrivals"] == 1
+    assert classes["RECOVERY"]["current_run_arrivals"] == 1
+    assert classes["RECOVERY"]["live_session_pending_count"] == 30
+    assert classes["RECOVERY"]["live_session_unserved_count"] == 10
+    assert classes["HISTORICAL_BACKFILL"]["selected_count"] == 20
+    assert receipt["live_tail_arrivals_current_run"] == 2
+    assert receipt["live_tail_effective_capacity"] == 500
+    assert receipt["live_tail_arrival_overflow"] == 0
+    assert receipt["live_tail_pending_before_selection"] == 530
+    assert receipt["live_tail_selected"] == 520
+    assert receipt["live_tail_unserved_after_selection"] == 10
+    # Every class runs the existing lane selector, rather than one global class
+    # sort silently returning to a prospectus-only backlog.
+    for work_class in sec.WORK_CLASS_ORDER:
+        selected_lanes = {
+            row["lane"] for row in classes[work_class]["lanes"]
+            if row["selected_count"]
+        }
+        assert {"registration", "state", "prospectus", "reg_a"} <= selected_lanes
+
+
+def test_one_current_effect_is_selected_ahead_of_eighteen_thousand_old_prospectuses():
+    now = datetime(2026, 8, 28, 13, 0, tzinfo=timezone.utc)
+    historical = [
+        _w2_row(
+            f"old-prospectus-{index:05d}", "424B5", "2026-07-01",
+            first_seen="2026-07-01T11:00:00Z",
+        )
+        for index in range(18_000)
+    ]
+    current = _w2_row(
+        "current-effect", "EFFECT", "2026-08-28",
+        first_seen="2026-08-28T11:00:00Z",
+    )
+
+    queue = select_retrieval_queue(
+        pd.DataFrame([*historical, current]),
+        have_complete=set(), max_filings=540, now=now,
+        coverage=_w2_coverage_sessions(), attempts=pd.DataFrame(),
+        current_run_arrivals={"current-effect"},
+    )
+    receipt = queue.attrs["retrieval_queue_receipt"]
+
+    assert "current-effect" in set(queue["accession"])
+    assert receipt["live_tail_arrivals_current_run"] == 1
+    assert receipt["live_tail_selected"] == 1
+    assert len(queue) == sec.MAX_FILINGS_PER_RUN
+
+
+def test_discovery_watermark_clock_belongs_to_the_newest_filing_date():
+    now = datetime(2026, 9, 2, 13, 0, tzinfo=timezone.utc)
+    rows = [
+        _w2_row(
+            "newest-filing", "S-3", "2026-08-28",
+            first_seen="2026-08-28T23:00:00Z",
+        ),
+        _w2_row(
+            "older-late-observation", "S-3", "2026-07-01",
+            first_seen="2026-09-01T23:00:00Z",
+        ),
+    ]
+    queue = select_retrieval_queue(
+        pd.DataFrame(rows), have_complete=set(), max_filings=2, now=now,
+        coverage=_w2_coverage_sessions(), attempts=pd.DataFrame(),
+    )
+    receipt = queue.attrs["retrieval_queue_receipt"]
+
+    assert receipt["latest_discovered_in_policy_filing_date"] == "2026-08-28"
+    assert receipt["latest_discovered_in_policy_observed_at"] == "2026-08-28T23:00:00Z"
+
+
+def test_live_tail_uses_newest_session_first_under_current_ledger_shaped_pressure():
+    """Five-session live debt cannot push the newest session behind the cap."""
+    now = datetime(2026, 8, 22, 13, 0, tzinfo=timezone.utc)
+    session_counts = {
+        "2026-08-14": 485,
+        "2026-08-17": 217,
+        "2026-08-18": 190,
+        "2026-08-19": 229,
+        "2026-08-20": 199,
+    }
+    live_rows = [
+        _w2_row(
+            f"live-{filing_date}-{index:03d}", "S-3", filing_date,
+            first_seen=f"{filing_date}T23:00:00Z",
+        )
+        for filing_date, count in session_counts.items()
+        for index in range(count)
+    ]
+    historical = [
+        _w2_row(
+            f"historical-{index:03d}", "S-3", "2026-07-01",
+            first_seen="2026-07-01T11:00:00Z",
+        )
+        for index in range(100)
+    ]
+    newest = {
+        row["accession"] for row in live_rows
+        if row["filing_date"] == "2026-08-20"
+    }
+    late_prior_session_arrivals = {
+        row["accession"] for row in live_rows
+        if row["filing_date"] == "2026-08-19"
+    }
+    late_prior_session_arrivals = set(sorted(late_prior_session_arrivals)[:10])
+
+    queue = select_retrieval_queue(
+        pd.DataFrame([*historical, *live_rows]),
+        have_complete=set(), max_filings=540, now=now,
+        coverage=_w2_coverage_sessions(end=date(2026, 8, 20)),
+        attempts=pd.DataFrame(),
+        current_run_arrivals=newest | late_prior_session_arrivals,
+    )
+    receipt = queue.attrs["retrieval_queue_receipt"]
+    selected_classes = queue.attrs["retrieval_work_classes_by_accession"]
+    selected_live = queue.loc[
+        queue["accession"].map(selected_classes).eq("LIVE_TAIL")
+    ]
+
+    assert len(selected_live) == 520  # 500 reserve + empty RECOVERY spill
+    assert newest <= set(selected_live["accession"])
+    assert receipt["latest_discovered_in_policy_filing_date"] == "2026-08-20"
+    assert receipt["live_tail_arrivals_current_run"] == 209
+    assert receipt["live_tail_arrival_overflow"] == 0
+
+
+def test_work_class_spill_is_deterministic_when_live_tail_is_empty_and_parked_is_excluded():
+    now = datetime(2026, 8, 28, 13, 0, tzinfo=timezone.utc)
+    rows = [
+        _w2_row(
+            f"historical-{index:05d}", "S-3", "2026-07-01",
+            first_seen="2026-07-01T11:00:00Z",
+        )
+        for index in range(18_000)
+    ]
+    rows.extend(
+        _w2_row(
+            f"recovery-{index:02d}", "EFFECT", "2026-08-28",
+            first_seen="2026-08-27T11:00:00Z",
+        )
+        for index in range(10)
+    )
+    attempts = pd.DataFrame([
+        {
+            "accession": f"recovery-{index:02d}", "state": "storage_deferred",
+            "attempted_at": "2026-08-27T12:00:00Z",
+        }
+        for index in range(10)
+    ])
+    parked = {"historical-00000"}
+
+    queue = select_retrieval_queue(
+        pd.DataFrame(rows), have_complete=set(), max_filings=540, now=now,
+        coverage=_w2_coverage_sessions(), attempts=attempts, parked=parked,
+    )
+    receipt = queue.attrs["retrieval_queue_receipt"]
+    classes = {row["work_class"]: row for row in receipt["work_classes"]}
+
+    assert len(queue) == 540
+    assert "historical-00000" not in set(queue["accession"])
+    assert classes["LIVE_TAIL"]["selected_count"] == 0
+    assert classes["RECOVERY"]["selected_count"] == 10
+    assert classes["HISTORICAL_BACKFILL"]["selected_count"] == 530
+    assert receipt["spill_transfers"] == [
+        {"donor": "LIVE_TAIL", "recipient": "HISTORICAL_BACKFILL", "slots": 500},
+        {"donor": "RECOVERY", "recipient": "HISTORICAL_BACKFILL", "slots": 10},
+    ]
+
+
+def test_work_class_spill_returns_empty_recovery_and_historical_capacity_to_live_tail():
+    now = datetime(2026, 8, 28, 13, 0, tzinfo=timezone.utc)
+    rows = [
+        _w2_row(
+            f"live-{index:03d}", "S-3", "2026-08-28",
+            first_seen="2026-08-28T11:00:00Z",
+        )
+        for index in range(600)
+    ]
+
+    queue = select_retrieval_queue(
+        pd.DataFrame(rows), have_complete=set(), max_filings=999, now=now,
+        coverage=_w2_coverage_sessions(), attempts=pd.DataFrame(),
+        current_run_arrivals={row["accession"] for row in rows},
+    )
+    receipt = queue.attrs["retrieval_queue_receipt"]
+    classes = {row["work_class"]: row for row in receipt["work_classes"]}
+
+    assert len(queue) == 540
+    assert classes["LIVE_TAIL"]["reserved_slots"] == 500
+    assert classes["LIVE_TAIL"]["spill_in_slots"] == 40
+    assert classes["LIVE_TAIL"]["selected_count"] == 540
+    assert receipt["live_tail_effective_capacity"] == 540
+    assert receipt["live_tail_arrival_overflow"] == 60
+    assert receipt["live_tail_pending_before_selection"] == 600
+    assert receipt["live_tail_selected"] == 540
+    assert receipt["live_tail_unserved_after_selection"] == 60
+    assert receipt["spill_transfers"] == [
+        {"donor": "RECOVERY", "recipient": "LIVE_TAIL", "slots": 20},
+        {"donor": "HISTORICAL_BACKFILL", "recipient": "LIVE_TAIL", "slots": 20},
+    ]
+
+
+def _w2b_lane_row(
+    accession: str, lane: str, filing_date: str, *, first_seen: str,
+) -> dict:
+    forms = {
+        "registration": "S-3",
+        "state": "EFFECT",
+        "prospectus": "424B5",
+        "reg_a": "1-A",
+        "issuer_current_report": "8-K",
+        "issuer_periodic": "10-Q",
+        "issuer_proxy": "DEF 14A",
+    }
+    row = _w2_row(
+        accession, forms[lane], filing_date, first_seen=first_seen,
+    )
+    if lane.startswith("issuer_"):
+        row["collection_scope"] = sec.DISCOVERY_SCOPE_RECONCILIATION
+    return row
+
+
+def _w2b_live_arrivals(count: int, *, filing_date: str = "2026-08-28") -> list[dict]:
+    """Build one observed-shaped seven-lane completed-session cohort."""
+    observed_max_lanes = [
+        *("issuer_periodic",) * 190,
+        *("issuer_current_report",) * 168,
+        *("prospectus",) * 82,
+        *("state",) * 19,
+        *("registration",) * 13,
+        *("issuer_proxy",) * 8,
+        *("reg_a",) * 5,
+    ]
+    lanes = [
+        observed_max_lanes[index % len(observed_max_lanes)]
+        for index in range(count)
+    ]
+    return [
+        _w2b_lane_row(
+            f"arrival-{count:03d}-{index:03d}", lane, filing_date,
+            first_seen=f"{filing_date}T11:00:00Z",
+        )
+        for index, lane in enumerate(lanes)
+    ]
+
+
+def test_w2b_485_arrivals_all_land_with_recovery_and_history_protected():
+    now = datetime(2026, 8, 28, 13, 0, tzinfo=timezone.utc)
+    arrivals = _w2b_live_arrivals(485)
+    recovery = [
+        _w2_row(
+            f"recovery-envelope-{index:03d}", "EFFECT", "2026-08-26",
+            first_seen="2026-08-26T11:00:00Z",
+        )
+        for index in range(20)
+    ]
+    historical = [
+        _w2_row(
+            f"historical-envelope-{index:05d}", "424B5", "2026-07-01",
+            first_seen="2026-07-01T11:00:00Z",
+        )
+        for index in range(2_000)
+    ]
+    attempts = pd.DataFrame([
+        {
+            "accession": row["accession"], "state": "transient_error",
+            "attempted_at": "2026-08-27T12:00:00Z",
+        }
+        for row in recovery
+    ])
+    arrival_ids = {row["accession"] for row in arrivals}
+
+    queue = select_retrieval_queue(
+        pd.DataFrame([*historical, *arrivals, *recovery]),
+        have_complete=set(), max_filings=540, now=now,
+        coverage=_w2_coverage_sessions(), attempts=attempts,
+        current_run_arrivals=arrival_ids,
+    )
+    receipt = queue.attrs["retrieval_queue_receipt"]
+    classes = {row["work_class"]: row for row in receipt["work_classes"]}
+
+    assert len(queue) == 540
+    assert arrival_ids <= set(queue["accession"])
+    assert receipt["class_quota_slots"] == {
+        "LIVE_TAIL": 485, "RECOVERY": 20, "HISTORICAL_BACKFILL": 35,
+    }
+    assert {name: row["selected_count"] for name, row in classes.items()} == {
+        "LIVE_TAIL": 485, "RECOVERY": 20, "HISTORICAL_BACKFILL": 35,
+    }
+    assert receipt["live_tail_arrivals_current_run"] == 485
+    assert receipt["live_tail_arrival_overflow"] == 0
+    assert {
+        lane["lane"] for lane in classes["LIVE_TAIL"]["lanes"]
+        if lane["selected_count"]
+    } == set(sec.RETRIEVAL_LANE_ORDER)
+
+
+def test_w2b_empty_recovery_spills_exactly_twenty_slots_to_live():
+    now = datetime(2026, 8, 28, 13, 0, tzinfo=timezone.utc)
+    arrivals = _w2b_live_arrivals(520)
+    historical = [
+        _w2_row(
+            f"historical-spill-{index:04d}", "424B5", "2026-07-01",
+            first_seen="2026-07-01T11:00:00Z",
+        )
+        for index in range(1_000)
+    ]
+    queue = select_retrieval_queue(
+        pd.DataFrame([*historical, *arrivals]), have_complete=set(),
+        max_filings=540, now=now, coverage=_w2_coverage_sessions(),
+        attempts=pd.DataFrame(),
+        current_run_arrivals={row["accession"] for row in arrivals},
+    )
+    receipt = queue.attrs["retrieval_queue_receipt"]
+
+    assert receipt["class_quota_slots"] == {
+        "LIVE_TAIL": 520, "RECOVERY": 0, "HISTORICAL_BACKFILL": 20,
+    }
+    assert receipt["spill_transfers"] == [
+        {"donor": "RECOVERY", "recipient": "LIVE_TAIL", "slots": 20},
+    ]
+    assert receipt["live_tail_arrival_overflow"] == 0
+    assert receipt["live_tail_unserved_after_selection"] == 0
+    assert len(queue) == 540
+
+
+@pytest.mark.parametrize(
+    ("arrivals", "overflow", "unserved"),
+    [(500, 0, 0), (501, 1, 1)],
+)
+def test_w2b_arrival_overflow_uses_current_arrivals_not_inherited_debt(
+    arrivals: int, overflow: int, unserved: int,
+):
+    now = datetime(2026, 8, 28, 13, 0, tzinfo=timezone.utc)
+    live = _w2b_live_arrivals(arrivals)
+    recovery = [
+        _w2_row(
+            f"recovery-overflow-{index:03d}", "EFFECT", "2026-08-26",
+            first_seen="2026-08-26T11:00:00Z",
+        )
+        for index in range(20)
+    ]
+    historical = [
+        _w2_row(
+            f"historical-overflow-{index:04d}", "424B5", "2026-07-01",
+            first_seen="2026-07-01T11:00:00Z",
+        )
+        for index in range(100)
+    ]
+    attempts = pd.DataFrame([
+        {
+            "accession": row["accession"], "state": "storage_deferred",
+            "attempted_at": "2026-08-27T12:00:00Z",
+        }
+        for row in recovery
+    ])
+    queue = select_retrieval_queue(
+        pd.DataFrame([*historical, *live, *recovery]), have_complete=set(),
+        max_filings=540, now=now, coverage=_w2_coverage_sessions(),
+        attempts=attempts,
+        current_run_arrivals={row["accession"] for row in live},
+    )
+    receipt = queue.attrs["retrieval_queue_receipt"]
+
+    assert len(queue) == 540
+    assert receipt["live_tail_effective_capacity"] == 500
+    assert receipt["live_tail_arrivals_current_run"] == arrivals
+    assert receipt["live_tail_arrival_overflow"] == overflow
+    assert receipt["live_tail_unserved_after_selection"] == unserved
+
+
 def test_reconciliation_row_without_registration_anchor_is_not_queue_eligible():
     queue = select_retrieval_queue(
         pd.DataFrame([{
@@ -998,6 +1445,7 @@ def test_adapter_materializes_discovery_coverage_verified_manifests_and_attempts
     manifests = pd.DataFrame(read_source_ledger(source_ledger_path(root)))
     attempts = pd.read_parquet(root / "retrieval_attempts.parquet")
     queue_receipt = json.loads((root / "retrieval_queue_receipt.json").read_text())
+    ingestion = json.loads((root / "ingestion_run.json").read_text())
     assert len(discovery) == 4
     assert coverage.iloc[0]["status"] == "complete"
     assert set(manifests["document"].map(lambda value: value["document_role"])) == {
@@ -1012,6 +1460,9 @@ def test_adapter_materializes_discovery_coverage_verified_manifests_and_attempts
     assert manifest_by_name["purchase.htm"][0]["media_type"] == "text/html"
     assert manifest_by_name["forms3.htm"][1]["eligibility"] == "eligible"
     assert attempts.iloc[0]["state"] == "stored"
+    assert attempts["work_class"].notna().all()
+    assert set(attempts["work_class"]) <= set(sec.WORK_CLASS_ORDER)
+    assert "LIVE_TAIL" in set(attempts["work_class"])
     assert set(attempts["retrieval_lane"]) == {
         "registration", "state", "prospectus", "reg_a"
     }
@@ -1021,6 +1472,26 @@ def test_adapter_materializes_discovery_coverage_verified_manifests_and_attempts
         sec.RETRIEVAL_LANE_ORDER
     )
     assert int(heartbeat.iloc[0]["retrieved"]) == 4
+    progress = {
+        row["work_class"]: row for row in ingestion["work_classes"]
+    }
+    assert set(progress) == set(sec.WORK_CLASS_ORDER)
+    for work_class in sec.WORK_CLASS_ORDER:
+        class_attempts = attempts.loc[attempts["work_class"].eq(work_class)]
+        assert progress[work_class] == {
+            "work_class": work_class,
+            "attempted_count": len(class_attempts),
+            "retrieved_count": int(class_attempts["state"].eq("stored").sum()),
+            "parser_deferred_count": int(
+                class_attempts["state"].eq("stored_parser_deferred").sum()
+            ),
+            "storage_deferred_count": int(
+                class_attempts["state"].eq("storage_deferred").sum()
+            ),
+            "transient_error_count": int(
+                class_attempts["state"].eq("transient_error").sum()
+            ),
+        }
 
     rerun = adapter.fetch()["sec_evidence__ingest"]
     assert len(pd.DataFrame(read_source_ledger(source_ledger_path(root)))) == len(manifests)
@@ -1177,6 +1648,12 @@ def test_storage_failure_records_retryable_attempt_and_emits_no_manifest(tmp_pat
     assert ingestion["verdict"] == "fail"
     assert ingestion["counters"]["selected"] >= 1
     assert ingestion["counters"]["manifested_sources"] == 0
+    progress = {
+        row["work_class"]: row for row in ingestion["work_classes"]
+    }
+    assert progress["LIVE_TAIL"]["attempted_count"] == 1
+    assert progress["LIVE_TAIL"]["retrieved_count"] == 0
+    assert progress["LIVE_TAIL"]["storage_deferred_count"] == 1
 
 
 class FailFirstWriteSourceStore:

@@ -224,6 +224,11 @@ def _check_root_fields(parsed: dict[str, Any], *, request_schema: str = _REQUEST
         raise FinancialQueryAdmissionError(400, "request contract violation")
 
 
+def admit_request_bytes(body: bytes) -> dict[str, Any]:
+    """Shared FIF transport admission: bounds, UTF-8, duplicate keys, no floats."""
+    return _admit_bytes(body)
+
+
 def admit_financial_request(
     body: bytes,
     *,
@@ -536,6 +541,7 @@ __all__ = [
     "FinancialQueryUnavailableError",
     "UnavailableFinancialQueryProvider",
     "admit_financial_request",
+    "admit_request_bytes",
     "execute_financial_query",
     "fip1_fixture_dataset",
     "validate_supplied_dataset",

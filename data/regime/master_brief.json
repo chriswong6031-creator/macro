@@ -2,9 +2,9 @@
   "schema": "master_brief.v2",
   "lens": "macro",
   "is_context_only": true,
-  "generated_at": "2026-08-21T04:10:09.480108+00:00",
+  "generated_at": "2026-08-23T04:27:16.761841+00:00",
   "model": "deepseek-v4-pro",
-  "state_asof": "2026-08-20",
+  "state_asof": "2026-08-21",
   "tldr": [],
   "summary": null,
   "regime_read": null,
@@ -49,9 +49,9 @@
       "key": "bonds",
       "label_en": "Bonds vs stocks",
       "label_zh": "\u503a\u80a1\u5173\u7cfb",
-      "value_en": "Mixed",
-      "value_zh": "\u597d\u574f\u53c2\u534a",
-      "tone": "neutral"
+      "value_en": "Agree",
+      "value_zh": "\u4e00\u81f4",
+      "tone": "good"
     },
     {
       "key": "credit",

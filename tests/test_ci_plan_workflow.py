@@ -8,7 +8,7 @@ conventional — and a convention in a 4,000-line YAML file is not a guard:
 
   * A PR may publish a SUBSET of `ci-pack-0..11`, so "all twelve are green" is no
     longer a question anything downstream can ask.  `ci-gate` is the one name that
-    concludes on every non-closed event, and `scripts/merge_on_green.py` requires an
+    concludes on every proof-producing event, and `scripts/merge_on_green.py` requires an
     AFFIRMATIVE success on the head — absence of red is not a pass (#4779).  Delete
     `ci-gate`, or let its no-work branch rot, and a proven-no-work PR reads
     `unproven` and never merges.  Nothing about that failure is visible in a diff.
@@ -113,14 +113,24 @@ def test_ci_plan_job_exists_and_publishes_bounded_identity_outputs() -> None:
     }
 
 
-def test_ci_plan_is_fenced_against_closed_events() -> None:
-    """A closed PR needs only the workflow-level concurrency side effect.
+def test_closed_lifecycle_events_cannot_enter_semantic_ci_concurrency() -> None:
+    """Out-of-order close delivery must be unable to replace a live proof slot.
 
-    Without the fence a merged-close event would allocate a planning runner whose
-    only product is a check nobody reads, and — worse — `ci-gate` is fenced the same
-    way, so the two conditions must agree or a close publishes half the graph.
+    GitHub replaces the pending member of a concurrency group even when
+    cancel-in-progress is false. The correctness boundary is therefore the trigger:
+    `closed` must not schedule this workflow at all. Open/sync/reopen remain the only
+    PR lifecycle events that can occupy the PR-number group.
     """
-    assert _job("ci-plan")["if"] == "github.event.action != 'closed'"
+    workflow = _workflow()
+    triggers = workflow.get("on") or workflow.get(True)
+    pull_request = triggers["pull_request"]
+    assert pull_request["types"] == ["opened", "synchronize", "reopened"]
+    assert "closed" not in pull_request["types"]
+    assert workflow["concurrency"] == {
+        "group": "ci-${{ github.event.pull_request.number || github.ref }}",
+        "cancel-in-progress": "${{ github.event_name != 'workflow_dispatch' }}",
+    }
+    assert "if" not in _job("ci-plan")
 
 
 def test_ci_plan_checks_out_full_history_for_the_base_diff() -> None:
@@ -257,16 +267,15 @@ def test_ci_pack_matrix_comes_from_the_plan_and_no_static_pack_list_remains() ->
 
 
 def test_ci_pack_is_gated_on_an_affirmative_has_work() -> None:
-    """The gate must be an explicit `== 'true'`, and the closed fence must survive.
+    """The gate must be an explicit `== 'true'`.
 
     `has_work` is a STRING output: a truthiness test would treat the literal
     `'false'` as true, and dropping the clause entirely would launch every pack the
-    plan proved unnecessary.  Dropping the `!= 'closed'` half instead re-opens the
-    2026-07-28 merged-close cancellation class this workflow already paid for once.
+    plan proved unnecessary. Closed events are excluded at the workflow trigger and
+    must not be smuggled back as an implicit cancellation mechanism.
     """
     condition = _job("ci-pack")["if"]
-    assert "needs.ci-plan.outputs.has_work == 'true'" in condition
-    assert "github.event.action != 'closed'" in condition
+    assert condition == "needs.ci-plan.outputs.has_work == 'true'"
 
 
 def test_ci_pack_passes_pack_count_twelve() -> None:
@@ -331,7 +340,7 @@ def test_folded_pack_commands_fold_to_one_line_and_carry_no_comment_marker() -> 
 
 
 def test_ci_gate_exists_needs_both_jobs_and_always_runs() -> None:
-    """`ci-gate` is the only check name that concludes on every non-closed event.
+    """`ci-gate` is the only check name that concludes on every workflow event.
 
     It must depend on ci-plan and ci-pack (a `needs` on `ci-plan` alone would let
     it conclude green while packs were still running) and it must be `always()`,
@@ -351,15 +360,9 @@ def test_ci_gate_exists_needs_both_jobs_and_always_runs() -> None:
     assert job["if"].startswith("always()")
 
 
-def test_ci_gate_is_fenced_against_closed_events() -> None:
-    """`always()` alone would publish a RED `ci-gate` on every merged close.
-
-    On a `closed` event `ci-plan` is fenced off and therefore SKIPPED, so
-    `PLAN_RESULT` is `skipped`, the first branch exits 1, and every merged PR in the
-    repository carries a red aggregate — which would block the merge-on-green
-    sweeper fleet-wide.  The fence is load-bearing, not symmetry.
-    """
-    assert _job("ci-gate")["if"] == "always() && github.event.action != 'closed'"
+def test_ci_gate_always_runs_for_every_triggered_event() -> None:
+    """Lifecycle exclusion belongs to the trigger, not job-level dead branches."""
+    assert _job("ci-gate")["if"] == "always()"
     assert _gate_step("reconcile complete semantic evidence")["continue-on-error"] is True
 
 

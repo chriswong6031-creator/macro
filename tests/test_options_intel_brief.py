@@ -21,11 +21,14 @@ second, easier implementation.
 from __future__ import annotations
 
 import glob
+import hashlib
 import json
 import math
+import shutil
 import sys
-from datetime import date, datetime, timezone
+from datetime import date, datetime, time as dt_time, timedelta, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import numpy as np
 import pandas as pd
@@ -168,6 +171,16 @@ def _wiggle(i: int, *, salt: int = 0, lo: float = 0.85, hi: float = 1.15) -> flo
     return float(seq[i % len(seq)])
 
 
+def _stable_symbol_salt(sym: str, *, mod: int = 1000) -> int:
+    """m10 (review round, 2026-08-22): a deterministic per-symbol salt that does
+    NOT depend on ``PYTHONHASHSEED`` -- ``abs(hash(sym)) % mod`` flakes under a
+    fixed non-default seed (verified: fails deterministically under seed 2),
+    since Python salts `str.__hash__` per-process by design. sha256 over the
+    symbol's own bytes is stable across processes/seeds."""
+    digest = hashlib.sha256(sym.encode("utf-8")).hexdigest()
+    return int(digest, 16) % mod
+
+
 def _typical_spec(*, spot: float = 100.0, base_iv: float = 0.30, oi_base: float = 100.0,
                    volume: float = 50.0, salt: int = 0):
     """A benign, non-degenerate per-session spec: enough variance that "today" lands at
@@ -227,25 +240,56 @@ def _build(panel_sessions: dict[str, pd.DataFrame], *, S: str, D: str, pending=N
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-@pytest.mark.needs_full_checkout("data")
 def test_00_fixture_dtypes_match_production():
-    """Test 13: fixtures are built through the production dtype schema — verified
-    against a REAL committed chains parquet, not assumed. The expiry-column dtype vs
-    session-string comparison is checked explicitly (house trap: never assume a
-    datetime64 column compares correctly against a plain ISO string without proof)."""
-    files = sorted(glob.glob(str(REPO_ROOT / "data/polygon_gex/chains/*.parquet")))
-    assert files, "no committed chain parquet found — cannot pin production dtypes"
-    real = pd.read_parquet(files[-1])
-    for col, expect in _REAL_DTYPES.items():
-        assert str(real[col].dtype) == expect, f"{col}: real={real[col].dtype} fixture-expects={expect}"
-    # explicit expiry-vs-string comparison proof (not assumed)
-    assert str(real["expiry"].dtype).startswith("datetime64")
-    cmp = real["expiry"] > "2020-01-01"
-    assert cmp.dtype == bool and cmp.all()
-
+    """Test 13: fixtures are built through the production dtype schema. M4
+    (review round, 2026-08-22): this used to read a REAL committed
+    ``data/polygon_gex/chains/*.parquet`` file to pin the schema against — that
+    estate is RETIRED by the AD-1T0 cutover (never nightly-refreshed again) and
+    absent-on-runner makes the comparison vacuous or wrong; this suite must
+    never read it again (``test_producer_never_reads_legacy_polygon_estate_or_gex_confirm``
+    enforces the producer side of that same law). The reference is
+    now ``_mk_chain``'s own declared schema (``_REAL_DTYPES``) — the
+    ``_assemble_chain_frame`` production-dtype pin lives in its own dedicated
+    test below (test_ad1t0_1i)."""
     fixture = _mk_chain(_symbol_rows("ZZZ", "2026-03-02"), session="2026-03-02")
     for col, expect in _REAL_DTYPES.items():
         assert str(fixture[col].dtype) == expect, f"fixture {col}: {fixture[col].dtype} != {expect}"
+    # explicit expiry-vs-string comparison proof (not assumed) -- house trap:
+    # never assume a datetime64 column compares correctly against a plain ISO
+    # string without proof.
+    assert str(fixture["expiry"].dtype).startswith("datetime64")
+    cmp = fixture["expiry"] > "2020-01-01"
+    assert cmp.dtype == bool and cmp.all()
+
+
+def test_ad1t0_1i_m4_assemble_chain_frame_dtype_pin_exact():
+    """M4 (review round): a dedicated dtype-pin test on ``_assemble_chain_frame``'s
+    OWN output — the actual production path this cutover ships, exact per spec
+    §B row 'dtypes': underlying category, strike_ticker str, expiry datetime64,
+    K/T/iv/delta/oi/volume/spot float32, is_call bool."""
+    eod = pd.DataFrame([{
+        "root": "ZZZ", "expiration": pd.Timestamp("2026-06-19"), "strike": 100.0,
+        "right": "C", "date": "2026-03-02", "volume": 10.0,
+    }])
+    oi = pd.DataFrame([{
+        "root": "ZZZ", "expiration": pd.Timestamp("2026-06-19"), "strike": 100.0,
+        "right": "C", "date": "2026-03-02", "open_interest": 50.0,
+    }])
+    greeks = pd.DataFrame([{
+        "root": "ZZZ", "expiration": pd.Timestamp("2026-06-19"), "strike": 100.0,
+        "right": "C", "date": "2026-03-02", "implied_vol": 0.30, "delta": 0.5,
+        "underlying_price": 100.0,
+    }])
+    real, _excluded, _rung1, _rates = producer._assemble_chain_frame(eod, oi, greeks, "2026-03-02", record_rungs={})
+    assert not real.empty, "fixture failed to produce any rows -- test is vacuous"
+
+    float32_cols = ["K", "T", "iv", "delta", "oi", "volume", "spot"]
+    for col in float32_cols:
+        assert str(real[col].dtype) == "float32", f"{col}: {real[col].dtype} != float32"
+    assert str(real["underlying"].dtype) == "category"
+    assert pd.api.types.is_string_dtype(real["strike_ticker"]), real["strike_ticker"].dtype
+    assert str(real["expiry"].dtype).startswith("datetime64")
+    assert str(real["is_call"].dtype) == "bool"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -709,6 +753,19 @@ def test_12_correction_placeholders_are_null_on_every_card():
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+@pytest.mark.skip(
+    reason="AD-1T0 cutover (2026-08-22, review round M4): data/polygon_gex/chains is "
+           "the RETIRED Polygon estate -- frozen, never nightly-refreshed again -- so "
+           "this calibration check (\"is CONFIG's MIN_HISTORY/MIN_CONTRACTS threshold "
+           "actually satisfiable by real-world data\") can no longer answer against a "
+           "live, representative population. The canonical ThetaData store is "
+           "host-bound (spec §G self-skip; never resolvable on a CI runner), so there "
+           "is no live store this suite can substitute. A synthetic fixture cannot "
+           "meaningfully replace it either -- synthetic data trivially satisfies any "
+           "chosen threshold, defeating the test's own purpose. Left explicitly "
+           "legacy-and-skipped rather than silently vacuous or asserting against stale "
+           "bytes (M4 must-fix)."
+)
 @pytest.mark.needs_full_checkout("data")
 def test_15_data_feasibility_law_against_real_store():
     files = sorted(glob.glob(str(REPO_ROOT / "data/polygon_gex/chains/*.parquet")))
@@ -1190,96 +1247,144 @@ def test_engine_imports_no_forbidden_plane():
         assert f"import {mod}" not in src and f"from {mod}" not in src
 
 
-def test_producer_uses_gex_confirm_read_only_not_forbidden_builders():
-    src = (REPO_ROOT / "scripts" / "build_options_intel_brief.py").read_text()
+def test_producer_never_reads_legacy_polygon_estate_or_gex_confirm():
+    """AD-1T0 cutover (2026-08-22, ``DEC:AD-OPTIONS-CANONICAL-SOURCE-THETADATA``):
+    the producer must no longer touch the legacy Polygon estate or gex_confirm
+    (§E hard-disable) at all, and must never fall back to the whole-store
+    ``chain()``/``make_chain_provider()`` convenience helpers (§A prohibition).
+    Checks actual code constructs (quoted path-literal segments, import/call
+    sites) in the code BODY, with the module's own docstring stripped first —
+    since that docstring legitimately DISCUSSES the retired estate and the
+    prohibited whole-store helpers by name (explaining why they are gone)."""
+    src_full = (REPO_ROOT / "scripts" / "build_options_intel_brief.py").read_text()
+    # Strip every docstring (module- AND function-level) before scanning — both
+    # legitimately DISCUSS the retired estate / prohibited helpers by name
+    # (explaining why they are gone); only ACTUAL code constructs are checked.
+    import ast as _ast
+    tree = _ast.parse(src_full)
+    doc_spans: list[tuple[int, int]] = []
+    for node in _ast.walk(tree):
+        if isinstance(node, (_ast.Module, _ast.FunctionDef, _ast.AsyncFunctionDef, _ast.ClassDef)):
+            body = getattr(node, "body", None)
+            if body and isinstance(body[0], _ast.Expr) and isinstance(body[0].value, _ast.Constant) \
+                    and isinstance(body[0].value.value, str):
+                doc_spans.append((body[0].lineno, body[0].end_lineno))
+    lines = src_full.splitlines(keepends=True)
+    for start, end in doc_spans:
+        for i in range(start - 1, end):
+            lines[i] = ""
+    src = "".join(lines)   # code body only, every docstring blanked out
+
     for forbidden in ("build_gex_board", "build_options_flow", "build_darkpool_desk",
                        "build_options_skew", "build_options_ivspread", "build_options_dislocation",
                        "build_options_prophet", "build_prophet", "grade_us_board",
-                       "options_signal_episode", "options_sparse_selector"):
-        assert forbidden not in src
-    assert "from engine import gex_confirm" in src or "from engine.gex_confirm" in src
+                       "options_signal_episode", "options_sparse_selector",
+                       "make_chain_provider", "thetadata_store.chain(",
+                       "from engine import gex_confirm", "from engine.gex_confirm",
+                       "CHAINS_DIR", "SUMMARY_GLOB", "GEX_JSON_GLOB"):
+        assert forbidden not in src, f"{forbidden!r} must not appear post-AD1T0 cutover"
+    for literal in ('"polygon_gex"', "'polygon_gex'", "summary_{sym}"):
+        assert literal not in src, f"legacy path literal {literal!r} must not appear post-AD1T0 cutover"
+    assert "resolve_thetadata_store" in src_full
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-# Sol review Blocks B1-B4 (PR #5872 REQUEST_CHANGES; commissioned fix, 2026-08-18).
+# AD-1T0 ThetaData cutover (2026-08-22, DEC:AD-OPTIONS-CANONICAL-SOURCE-THETADATA;
+# frozen spec research/AD1T0_THETADATA_CUTOVER_SPEC_2026-08-22.md). Supersedes the
+# Sol review Blocks B1-B4 (PR #5872, 2026-08-18) fixture family below — the fixture
+# now writes a synthetic ThetaData T1 store (eod/oi/greeks per-root year parquets)
+# instead of the legacy Polygon ``data/polygon_gex/`` estate.
 # ═════════════════════════════════════════════════════════════════════════════
 
 # ─────────────────────────────────────────────────────────────────────────────
-# B1 fixture — a tmp "repo" the REAL producer reads through its own module-level
-# path constants (monkeypatched), never a hand-rolled second I/O implementation
-# (house rule: synthetic harnesses run through the production builder).
+# B1 fixture — a tmp ThetaData store the REAL producer reads via
+# ``resolve_thetadata_store`` (monkeypatched), never a hand-rolled second I/O
+# implementation (house rule: synthetic harnesses run through the production
+# builder).
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def _gex_json_payload(asof: str, *, dist_to_flip_pct: float = 5.0) -> dict:
-    """A minimal but REAL-SHAPED site/gex/{SYM}.json payload that
-    ``engine.gex_confirm.assess`` turns into a deterministic "caution" verdict
-    (regime=long, 5% over the flip >= deep_flip_pct=3.0 -> score -1.0 <= caution_at)."""
-    return {
-        "meta": {"asof": asof},
-        "summary": {"tier": "core", "n_strikes": 50, "regime": "long",
-                    "dist_to_flip_pct": dist_to_flip_pct, "spot": 100.0, "gamma_flip": 95.0},
-    }
-
-
-def _write_fake_repo(tmp_path, monkeypatch, *, symbols: list[str], sessions: list[str],
-                      gex_json_asof: str | None = None, prophet_payload: dict | None = None):
-    """Build a tmp repo tree matching every path constant
-    ``scripts/build_options_intel_brief.py`` reads, and monkeypatch the producer module
-    to point at it — so ``producer.build()`` runs its REAL file I/O (hashing included)
-    against a small, fully-controlled store instead of a second, easier reimplementation.
+def _write_fake_thetadata_store(tmp_path, monkeypatch, *, symbols: list[str], sessions: list[str],
+                                 symbols_spec: dict | None = None,
+                                 prophet_payload: dict | None = None) -> Path:
+    """Build a tiny synthetic ThetaData T1 store — ``{store}/{tier}/{ROOT}/{YEAR}.
+    parquet`` for tier in (eod, oi, greeks), the real store layout documented in
+    ``engine/thetadata_store.py`` — and monkeypatch the producer to resolve it, so
+    ``producer.build()`` runs its REAL file I/O (identity serialization, PIT
+    mapping, receipt hashing) against a small, fully-controlled store rather than
+    a second, easier reimplementation. Reuses the existing ``_symbol_rows``
+    fixture generator (4 expiry bands x strike ladder x call/put, deterministic
+    non-degenerate variance via ``_typical_spec``/``_wiggle``) so every row's
+    (root, expiration, strike, right) identity is realistic and — via the shared
+    ``anchor`` — stable across sessions for ΔOI contract matching.
     """
-    chains_dir = tmp_path / "data" / "polygon_gex" / "chains"
-    chains_dir.mkdir(parents=True)
-    for s in sessions:
-        rows: list[dict] = []
+    store = tmp_path / "thetadata_store"
+    spec = symbols_spec or {sym: _typical_spec(salt=i) for i, sym in enumerate(symbols)}
+    anchor = sessions[0]
+
+    by_tier_root_year: dict[tuple[str, str, int], list[dict]] = {}
+
+    def _add(tier: str, root: str, year: int, row: dict) -> None:
+        by_tier_root_year.setdefault((tier, root, year), []).append(row)
+
+    for i, s in enumerate(sessions):
+        year = pd.Timestamp(s).year
         for sym in symbols:
-            rows.extend(_symbol_rows(sym, s, anchor=sessions[0]))
-        _mk_chain(rows, session=s).to_parquet(chains_dir / f"{s}.parquet")
+            kwargs = spec[sym](s, i)
+            kwargs.setdefault("anchor", anchor)
+            for r in _symbol_rows(sym, s, **kwargs):
+                right = "C" if r["is_call"] else "P"
+                ident = dict(root=sym, expiration=pd.Timestamp(r["expiry"]), strike=float(r["K"]),
+                             right=right, date=pd.Timestamp(s))
+                _add("eod", sym, year, {**ident, "volume": float(r["volume"])})
+                _add("oi", sym, year, {**ident, "open_interest": float(r["oi"])})
+                _add("greeks", sym, year, {**ident, "implied_vol": float(r["iv"]), "delta": float(r["delta"]),
+                                            "underlying_price": float(r["spot"])})
 
-    summary_dir = tmp_path / "data" / "polygon_gex"
-    for sym in symbols:
-        idx = pd.to_datetime(sessions)
-        spot_df = pd.DataFrame({"spot": [100.0 + i for i in range(len(sessions))]}, index=idx)
-        spot_df.to_parquet(summary_dir / f"summary_{sym}.parquet")
+    for (tier, root, year), rows in by_tier_root_year.items():
+        d = store / tier / root
+        d.mkdir(parents=True, exist_ok=True)
+        pd.DataFrame(rows).to_parquet(d / f"{year}.parquet")
 
-    gex_dir = tmp_path / "site" / "gex"
-    gex_dir.mkdir(parents=True)
-    for sym in symbols:
-        asof = gex_json_asof if gex_json_asof is not None else sessions[-1]
-        (gex_dir / f"{sym}.json").write_text(json.dumps(_gex_json_payload(asof)))
-
-    (tmp_path / "data" / "earnings").mkdir(parents=True)
-    (tmp_path / "data" / "options_flow").mkdir(parents=True)
     prophet_dir = tmp_path / "site" / "prophet"
-    prophet_dir.mkdir(parents=True)
+    prophet_dir.mkdir(parents=True, exist_ok=True)
     if prophet_payload is not None:
         (prophet_dir / "index.json").write_text(json.dumps(prophet_payload))
+    (tmp_path / "data" / "earnings").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "data" / "options_flow").mkdir(parents=True, exist_ok=True)
 
     monkeypatch.setattr(producer, "_REPO_ROOT", tmp_path)
-    monkeypatch.setattr(producer, "CHAINS_DIR", chains_dir)
-    monkeypatch.setattr(producer, "SUMMARY_GLOB", str(summary_dir / "summary_{sym}.parquet"))
-    monkeypatch.setattr(producer, "GEX_JSON_GLOB", str(gex_dir / "{sym}.json"))
     monkeypatch.setattr(producer, "EARNINGS_PATH", tmp_path / "data" / "earnings" / "earnings.parquet")
     monkeypatch.setattr(producer, "PROPHET_INDEX_PATH", prophet_dir / "index.json")
     monkeypatch.setattr(producer, "SIGNING_GATE_PATH", tmp_path / "data" / "options_flow" / "signing_gate.json")
+    monkeypatch.setattr(producer, "resolve_thetadata_store", lambda required=False, purpose="": store)
     # B2: default the canonical universe to exactly this fixture's symbols (100%
-    # coverage) so a B1/B3/B4 test with no OWN opinion on coverage doesn't trip
-    # INSUFFICIENT_COVERAGE against the real repo's ~375-name universe. Tests that
-    # exercise B2 itself (test_b2_4) re-patch this afterward.
+    # coverage) so a test with no OWN opinion on coverage doesn't trip
+    # INSUFFICIENT_COVERAGE. Tests exercising B2 itself (test_b2_4) re-patch this.
     monkeypatch.setattr(producer.options_universe, "gex_symbols", lambda: list(symbols))
-    # F2a: default the fail-closed probe's OWN config read to include_baskets=False
-    # so a test with no opinion on F2a never trips UNIVERSE_RESOLUTION_FAILED against
-    # the REAL repo config.yml (include_baskets: true, ~25 real anchors vs this
-    # fixture's handful of fake symbols — a false positive on every other test in
-    # this fixture family). Tests that exercise F2a itself re-patch this afterward.
+    # F2a: default the fail-closed probe's own config read to include_baskets=False
+    # so a test with no opinion on F2a never trips UNIVERSE_RESOLUTION_FAILED.
     monkeypatch.setattr(producer, "_gex_cfg", lambda: {"include_baskets": False})
-    return chains_dir, summary_dir, gex_dir
+    return store
 
 
 def _fake_repo_sessions(n: int = 14):
     sessions = _real_sessions(n)
     return sessions, sessions[-2], sessions[-1]   # sessions, S, D
+
+
+def _year_boundary_sessions(n: int = 16) -> list[str]:
+    """``n`` real NYSE sessions where ONLY the newest one falls in the NEXT
+    calendar year — every earlier session (all of history plus S) shares one
+    year, D alone sits in the other. Used to prove eod[D]/greeks[D] structurally
+    never influence the payload: corrupting D's (different) year file cannot
+    also corrupt S's or any history session's data (spec §B leak proof)."""
+    end = nc.last_session_on_or_before(date(2026, 1, 1))     # last 2025 session
+    end_next = nc.session_n_forward(end, 1)                   # first 2026 session
+    assert end.year == 2025 and end_next.year == 2026, "calendar assumption drifted"
+    start = nc.session_n_back(end, n - 2)
+    hist = [d.isoformat() for d in nc.sessions_between(start, end)]
+    return hist + [end_next.isoformat()]
 
 
 def _alpha_names(prefix: str, n: int) -> list[str]:
@@ -1297,80 +1402,82 @@ def _alpha_names(prefix: str, n: int) -> list[str]:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# B1 — receipt closure / source_manifest.
+# B1 — receipt closure / source_manifest (rewritten for the ThetaData store; the
+# gex_confirm-mutation tests are gone — §E hard-disables that domain entirely,
+# see the dedicated AD-1T0 test 6 below).
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def test_b1_1_mutating_consumed_summary_changes_payload_and_receipt(tmp_path, monkeypatch):
+def test_b1_1_mutating_consumed_s_session_moves_chains_s_and_receipt(tmp_path, monkeypatch):
     sessions, S, D = _fake_repo_sessions()
     symbols = [f"SYM{chr(65+i)}" for i in range(6)]
-    _write_fake_repo(tmp_path, monkeypatch, symbols=symbols, sessions=sessions)
+    store = _write_fake_thetadata_store(tmp_path, monkeypatch, symbols=symbols, sessions=sessions)
     p1 = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
 
-    # mutate the summary spot series of ONE consumed symbol (changes its RV -> v2)
-    summary_dir = tmp_path / "data" / "polygon_gex"
-    fp = summary_dir / f"summary_{symbols[0]}.parquet"
-    idx = pd.to_datetime(sessions)
-    mutated = pd.DataFrame({"spot": [50.0 + 3.0 * i for i in range(len(sessions))]}, index=idx)
-    mutated.to_parquet(fp)
+    fp = store / "eod" / symbols[0] / f"{pd.Timestamp(S).year}.parquet"
+    df = pd.read_parquet(fp)
+    mask = df["date"] == pd.Timestamp(S)
+    df.loc[mask, "volume"] = df.loc[mask, "volume"] * 3.0 + 17.0
+    df.to_parquet(fp)
     p2 = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
 
     assert p1["receipt_id"] != p2["receipt_id"]
-    assert p1["source_manifest"]["gex_summary"]["root"] != p2["source_manifest"]["gex_summary"]["root"]
-    assert p1["source_manifest"]["gex_summary"]["files"][str(fp.relative_to(tmp_path))] != \
-        p2["source_manifest"]["gex_summary"]["files"][str(fp.relative_to(tmp_path))]
+    chains_s_1 = next(r for r in p1["input_receipts"] if r["logical_source"] == "chains_S")
+    chains_s_2 = next(r for r in p2["input_receipts"] if r["logical_source"] == "chains_S")
+    assert chains_s_1["sha256"] != chains_s_2["sha256"]
+    assert p1["source_manifest"]["chains"]["root"] != p2["source_manifest"]["chains"]["root"]
 
 
-def test_b1_2_mutating_s_bound_gex_json_changes_context_and_receipt(tmp_path, monkeypatch):
+def test_b1_2_mutating_historical_session_moves_manifest_not_chains_s(tmp_path, monkeypatch):
+    """F1 closure (converted from the old Polygon-store test): a HISTORICAL
+    (< S, not D) session contributes to every history-dependent feature but must
+    still bind — mutating it moves ``chains_manifest``/``receipt_id`` even though
+    it never touches the ``chains_S`` composite (which binds only S's own three
+    tier digests)."""
     sessions, S, D = _fake_repo_sessions()
     symbols = [f"SYM{chr(65+i)}" for i in range(6)]
-    _write_fake_repo(tmp_path, monkeypatch, symbols=symbols, sessions=sessions, gex_json_asof=S)
+    store = _write_fake_thetadata_store(tmp_path, monkeypatch, symbols=symbols, sessions=sessions)
     p1 = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
 
-    gex_dir = tmp_path / "site" / "gex"
-    fp = gex_dir / f"{symbols[0]}.json"
-    fp.write_text(json.dumps(_gex_json_payload(S, dist_to_flip_pct=0.0)))  # long, shallow -> different verdict
+    historical = sorted(s for s in sessions if s < S)[0]
+    fp = store / "greeks" / symbols[0] / f"{pd.Timestamp(historical).year}.parquet"
+    df = pd.read_parquet(fp)
+    mask = df["date"] == pd.Timestamp(historical)
+    df.loc[mask, "underlying_price"] = df.loc[mask, "underlying_price"] * 2.5 + 40.0
+    df.to_parquet(fp)
     p2 = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
 
-    assert p1["receipt_id"] != p2["receipt_id"]
-    assert p1["source_manifest"]["gex_confirm"]["root"] != p2["source_manifest"]["gex_confirm"]["root"]
-
-    def verdict_of(payload, sym):
-        for c in payload["opportunities"] + payload["risk_warnings"]:
-            if c["symbol"] == sym:
-                return c["mechanics_context"]["gex_confirm_verdict"]
-        exemplar = payload.get("no_signal_exemplar")
-        if exemplar and exemplar["symbol"] == sym:
-            return exemplar["mechanics_context"]["gex_confirm_verdict"]
-        return "NOT_FOUND"
-
-    v1, v2 = verdict_of(p1, symbols[0]), verdict_of(p2, symbols[0])
-    assert v1 != "NOT_FOUND" and v2 != "NOT_FOUND"
-    assert v1 != v2, f"gex verdict unchanged across a genuinely different S-bound payload: {v1!r}"
+    assert p1["receipt_id"] != p2["receipt_id"], \
+        "F1 BLOCKER: mutating a historical (non-S/D) session moved the payload but not receipt_id"
+    chains_s_1 = next(r for r in p1["input_receipts"] if r["logical_source"] == "chains_S")
+    chains_s_2 = next(r for r in p2["input_receipts"] if r["logical_source"] == "chains_S")
+    assert chains_s_1["sha256"] == chains_s_2["sha256"], "a historical mutation must not move chains_S"
+    assert p1["source_manifest"]["chains"]["root"] != p2["source_manifest"]["chains"]["root"]
 
 
-def test_b1_3_unconsumed_gex_payload_never_touches_the_receipt(tmp_path, monkeypatch):
+def test_b1_3_rewriting_unconsumed_column_leaves_receipt_unchanged(tmp_path, monkeypatch):
     sessions, S, D = _fake_repo_sessions()
     symbols = [f"SYM{chr(65+i)}" for i in range(6)]
-    _write_fake_repo(tmp_path, monkeypatch, symbols=symbols, sessions=sessions)
-    # a gex json for a symbol OUTSIDE the universe/chain — never read by _load_gex_verdicts
-    # (which only ever iterates present_names, the chain[S] symbol set)
-    gex_dir = tmp_path / "site" / "gex"
-    (gex_dir / "GHOST.json").write_text(json.dumps(_gex_json_payload(S)))
+    store = _write_fake_thetadata_store(tmp_path, monkeypatch, symbols=symbols, sessions=sessions)
     p1 = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
 
-    (gex_dir / "GHOST.json").write_text(json.dumps(_gex_json_payload(S, dist_to_flip_pct=99.0)))
+    # Rewrite the SAME session's eod parquet with an extra, unconsumed column —
+    # the CONSUMED projection (root, expiration, strike, right, date, volume) is
+    # byte-identical, so the digest — and receipt_id — must not move.
+    fp = store / "eod" / symbols[0] / f"{pd.Timestamp(S).year}.parquet"
+    df = pd.read_parquet(fp)
+    df["count"] = 12345
+    df.to_parquet(fp)
     p2 = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
 
     assert p1["receipt_id"] == p2["receipt_id"]
     assert json.dumps(p1, sort_keys=True) == json.dumps(p2, sort_keys=True)
-    assert "GHOST" not in json.dumps(p1["source_manifest"])
 
 
 def test_b1_4_identical_rerun_is_a_byte_level_no_op(tmp_path, monkeypatch):
     sessions, S, D = _fake_repo_sessions()
     symbols = [f"SYM{chr(65+i)}" for i in range(6)]
-    _write_fake_repo(tmp_path, monkeypatch, symbols=symbols, sessions=sessions)
+    _write_fake_thetadata_store(tmp_path, monkeypatch, symbols=symbols, sessions=sessions)
     now = datetime(2026, 1, 1, tzinfo=timezone.utc)
     p1 = producer.build(now=now, ignore_staleness=True)
     out = tmp_path / "out.json"
@@ -1382,125 +1489,1227 @@ def test_b1_4_identical_rerun_is_a_byte_level_no_op(tmp_path, monkeypatch):
     assert out.read_bytes() == original_bytes and out.stat().st_mtime_ns == original_mtime
 
 
-def test_b1_5_manifest_enumerates_every_consumed_file_closure(tmp_path, monkeypatch):
-    """F7t rewrite (2026-08-18): a spy instruments file-OPEN level (``_load_chain``,
-    never just the hasher) so the closure claim actually covers what the producer
-    reads, not merely what it eventually hashes; a second spy on ``_sha256_file``
-    keeps the pre-existing gex_summary/gex_confirm closure check. The test FAILS if
-    a consumed path is left unbound anywhere in source_manifest — proven both by the
-    set-closure assertions below AND by literally replaying the F1 blocker attack
-    (mutating a HISTORICAL, non-S/D chain and requiring receipt_id to move)."""
+def test_b1_5_manifest_enumerates_every_load_session_and_D_oi_closure(tmp_path, monkeypatch):
+    """F1-closure analog for the ThetaData store: ``source_manifest.chains.files``
+    must carry exactly ``thetadata://{tier}/{session}`` for every (eod, oi,
+    greeks) tier of every materialised session <= S, PLUS ``thetadata://oi/{D}``
+    — never an eod/greeks entry for D (spec §B leak proof)."""
     sessions, S, D = _fake_repo_sessions()
     symbols = [f"SYM{chr(65+i)}" for i in range(6)]
-    chains_dir, summary_dir, gex_dir = _write_fake_repo(
-        tmp_path, monkeypatch, symbols=symbols, sessions=sessions, gex_json_asof=S)
-
-    opened_chains: list[Path] = []
-    real_load_chain = producer._load_chain
-
-    def spy_load_chain(session):
-        opened_chains.append(producer.CHAINS_DIR / f"{session}.parquet")
-        return real_load_chain(session)
-
-    monkeypatch.setattr(producer, "_load_chain", spy_load_chain)
-
-    hashed: list[Path] = []
-    real_hasher = producer._sha256_file
-
-    def spy_hash(path):
-        hashed.append(path)
-        return real_hasher(path)
-
-    monkeypatch.setattr(producer, "_sha256_file", spy_hash)
+    _write_fake_thetadata_store(tmp_path, monkeypatch, symbols=symbols, sessions=sessions)
     payload = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
 
-    # F1 closure: EVERY chain file the producer actually opened (S, D, and every
-    # historical session <= S used for d1/d3/Q_oi/skew history) must be bound into
-    # source_manifest.chains — this is the exact set the pre-fix attack exploited
-    # (a historical session was opened/scored but never bound anywhere).
-    opened_chain_relpaths = {str(p.relative_to(tmp_path)) for p in opened_chains}
-    assert opened_chain_relpaths, "fixture never opened a chain file — test is vacuous"
-    chains_manifest_files = set(payload["source_manifest"]["chains"]["files"].keys())
-    unbound = opened_chain_relpaths - chains_manifest_files
-    assert not unbound, f"chain file(s) opened but never bound into source_manifest.chains: {unbound}"
+    files = set(payload["source_manifest"]["chains"]["files"].keys())
+    assert files, "no chains files bound — test is vacuous"
+    load_sessions = sorted(s for s in sessions if s <= S)
+    for s in load_sessions:
+        for tier in ("eod", "oi", "greeks"):
+            assert f"thetadata://{tier}/{s}" in files
+    assert f"thetadata://oi/{D}" in files
+    assert f"thetadata://eod/{D}" not in files
+    assert f"thetadata://greeks/{D}" not in files
+    assert payload["source_manifest"]["chains"]["member_count"] == len(files)
 
-    expected_summary = {str((summary_dir / f"summary_{s}.parquet").relative_to(tmp_path)) for s in symbols}
-    expected_gex = {str((gex_dir / f"{s}.json").relative_to(tmp_path)) for s in symbols}
 
-    manifest_summary = set(payload["source_manifest"]["gex_summary"]["files"].keys())
-    manifest_gex = set(payload["source_manifest"]["gex_confirm"]["files"].keys())
-    assert manifest_summary == expected_summary
-    assert manifest_gex == expected_gex
+# ─────────────────────────────────────────────────────────────────────────────
+# AD-1T0 test 1 — §A identity serialization round-trip + exclusion paths.
+# ─────────────────────────────────────────────────────────────────────────────
 
-    hashed_summary = {str(p.relative_to(tmp_path)) for p in hashed if "summary_" in p.name}
-    hashed_gex = {str(p.relative_to(tmp_path)) for p in hashed
-                  if p.name.endswith(".json") and p.parent.name == "gex"}
-    assert hashed_summary == expected_summary
-    assert hashed_gex == expected_gex
-    assert payload["source_manifest"]["gex_summary"]["member_count"] == len(expected_summary)
-    assert payload["source_manifest"]["gex_confirm"]["member_count"] == len(expected_gex)
 
-    # Attack-1 replay (F1 blocker, converted from test_attack_receipt.py): mutate a
-    # HISTORICAL (< S, not D) chain — a session opened above but not S/D — and prove
-    # the closure is real by requiring receipt_id to actually move.
+def test_ad1t0_1_identity_serialization_round_trip_and_exclusion_paths():
+    import re
+    root = pd.Series(["SPY", "SPY", "SPY", "SPY", "BRK1"])
+    expiration = pd.Series([pd.Timestamp("2026-03-20")] * 5)
+    right = pd.Series(["C", "C", "P", "C", "C"])
+    strike = pd.Series([450.0, 450.0 + 5e-10, 450.123456, 123456.789, 100.0])
+    # row0: clean integral strike; row1: within 1e-6 tolerance (float noise); row2:
+    # integrality violation; row3: 8-digit width overflow; row4: nonstandard
+    # (digit-suffixed) root.
+    ticker, ok = producer._strike_ticker_and_ok(root, expiration, right, strike)
+
+    assert ticker.iloc[0] == "O:SPY260320C00450000"
+    assert ok.tolist() == [True, True, False, False, True]   # ok = integrality+width only
+
+    def _matches_standard(root_val: str, ticker_val: str) -> bool:
+        m = re.match(brief._STANDARD_TICKER_RE, ticker_val)
+        return bool(m) and m.group(1) == root_val
+
+    matched = [_matches_standard(r, t) for r, t in zip(root, ticker)]
+    # row0/row1 are lawful standard tickers; row2 (integrality violation, malformed
+    # field embeds a decimal point), row3 (width overflow, a 9-digit tail breaks the
+    # fixed-width regex), and row4 (digit-suffixed root, verbatim-embedded and
+    # therefore failing the letters-only root group) all fail the engine's own
+    # standard-ticker regex -- routed to the SAME adjusted/nonstandard exclusion
+    # path a genuinely adjusted OCC ticker takes, with zero adapter-side regex.
+    assert matched == [True, True, False, False, False]
+
+    # Feeding the malformed rows through the frozen engine exclusion path proves
+    # the round-trip end-to-end (not just against our own copy of the regex).
+    day = pd.DataFrame({
+        "underlying": pd.Series(["SPY", "SPY", "SPY", "SPY", "BRK1"]).astype("category"),
+        "strike_ticker": ticker.astype(str),
+    })
+    _kept, excluded_n = brief.contract_identity_split(day)
+    assert excluded_n == 3   # rows 2, 3, 4
+
+
+def test_ad1t0_1b_conflicting_duplicate_identity_excludes_whole_root_for_session():
+    eod = pd.DataFrame([
+        {"root": "AAA", "expiration": pd.Timestamp("2026-03-20"), "strike": 100.0, "right": "C",
+         "date": "2026-03-02", "volume": 10.0},
+        {"root": "AAA", "expiration": pd.Timestamp("2026-03-20"), "strike": 100.0, "right": "C",
+         "date": "2026-03-02", "volume": 99.0},   # CONFLICTING duplicate identity (differing volume)
+        {"root": "BBB", "expiration": pd.Timestamp("2026-03-20"), "strike": 100.0, "right": "C",
+         "date": "2026-03-02", "volume": 5.0},
+    ])
+    # BBB carries an oi[S] row so the B1 oi_baseline_absent exclusion (a root with
+    # eod rows but ZERO oi rows this session) never fires for it here -- this test
+    # isolates the identity-conflict exclusion path alone.
+    oi = pd.DataFrame([
+        {"root": "BBB", "expiration": pd.Timestamp("2026-03-20"), "strike": 100.0, "right": "C",
+         "date": "2026-03-02", "open_interest": 50.0},
+    ])
+    greeks = pd.DataFrame(columns=producer._GREEKS_COLS)
+    frame, excluded, _rung1, _rates = producer._assemble_chain_frame(eod, oi, greeks, "2026-03-02", record_rungs={})
+    assert excluded == {"conflicting_duplicate": {"AAA"}}
+    assert set(frame["underlying"].astype(str)) == {"BBB"}
+
+    # A byte-identical (full-row) duplicate is NOT a conflict -- ordinary dedup only.
+    eod_clean_dup = pd.concat([eod.iloc[[2]], eod.iloc[[2]]], ignore_index=True)
+    frame2, excluded2, _, _rates2 = producer._assemble_chain_frame(eod_clean_dup, oi, greeks, "2026-03-02", record_rungs={})
+    assert excluded2 == {}
+    assert len(frame2) == 1
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# BLOCKER B1 (review round, 2026-08-22) — a root with eod rows but ZERO oi rows
+# for a session has an ABSENT OI baseline, not a zero one. Three tests: the
+# flip demonstration (engine-level, proves the pre-fix defect), the unit-level
+# exclusion + diagnostic proof, and the "same for a historical session" proof.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_ad1t0_1c_b1_flip_demonstration_absent_baseline_vs_fabricated_zero():
+    """BLOCKER B1 flip-verification: a root with eod[s] rows but ZERO oi[s] rows
+    used to survive the pre-fix left merge with an all-NaN `oi` column; the
+    frozen engine's `doi_lean` (``engine/options_intel_brief.py::doi_lean``,
+    line ``d = (m["oi"].fillna(0) - m["oi_prev"].fillna(0)).clip(lower=0)``) then
+    treats the ABSENT baseline as a ZERO one, fabricating a lean purely from D's
+    raw OI split -- direction-bearing garbage, not a signal. Demonstrated with a
+    put-heavy book (D's OI concentrated in a put strike): the naive-zero-baseline
+    lean's SIGN is purely a function of which side of D's raw OI happens to be
+    larger, and flips the instant D's own book flips -- proving it carries no
+    information about the true (unknown) baseline at all."""
+    root = "PUTX"
+    next_session = "2026-03-03"
+
+    chain_next = pd.DataFrame({
+        "underlying": pd.Categorical([root, root]),
+        "strike_ticker": ["O:PUTX260320C00100000", "O:PUTX260320P00090000"],
+        "expiry": pd.to_datetime(["2026-03-20", "2026-03-20"]),
+        "is_call": [True, False],
+        "oi": pd.array([50.0, 500.0], dtype="float32"),   # put-heavy D book
+    })
+    # Pre-fix shape: PUTX survives the merge with oi=NaN on both legs (exactly
+    # what the pre-fix `_assemble_chain_frame` would have produced when oi_s has
+    # zero rows for this root) -- reproduced directly at the engine-input level.
+    chain_settled_buggy = pd.DataFrame({
+        "underlying": pd.Categorical([root, root]),
+        "strike_ticker": ["O:PUTX260320C00100000", "O:PUTX260320P00090000"],
+        "expiry": pd.to_datetime(["2026-03-20", "2026-03-20"]),
+        "oi": pd.array([np.nan, np.nan], dtype="float32"),
+    })
+    lean_buggy = brief.doi_lean(chain_settled_buggy, chain_next, next_session)
+    # d = (D's raw oi - 0).clip(lower=0) per contract -- put-heavy D book (call
+    # oi=50, put oi=500) fabricates a NEGATIVE (put-skewed) lean purely from D's
+    # own raw split, with NO true baseline ever consulted.
+    assert lean_buggy[root] < 0, "pre-fix: fabricated zero baseline reads raw D OI as the whole delta"
+
+    # Flip side with the SAME fixture, D's book reversed -- the fabricated-zero
+    # mechanism flips sign purely as a function of D's raw split, never the
+    # (nonexistent) true baseline.
+    chain_next_flipped = chain_next.assign(oi=pd.array([500.0, 50.0], dtype="float32"))
+    lean_buggy_flipped = brief.doi_lean(chain_settled_buggy, chain_next_flipped, next_session)
+    assert lean_buggy[root] < 0 and lean_buggy_flipped[root] > 0, \
+        "fabricated-zero-baseline sign is purely a function of D's raw OI split -- direction-bearing garbage"
+
+    # Post-fix: the producer's B1 fix excludes PUTX from chain[S] entirely
+    # (oi_baseline_absent) BEFORE it ever reaches doi_lean -- PUTX contributes
+    # NOTHING (never present in chain_settled at all), never a wrong-signed number.
+    chain_settled_fixed = chain_settled_buggy.iloc[0:0]
+    lean_fixed = brief.doi_lean(chain_settled_fixed, chain_next, next_session)
+    assert root not in lean_fixed, "post-fix: an absent OI baseline must never enter doi_lean at all"
+
+
+def test_ad1t0_1d_n3_oi_baseline_absent_root_excluded_from_frame_and_diagnostic():
+    eod = pd.DataFrame([
+        {"root": "AAA", "expiration": pd.Timestamp("2026-03-20"), "strike": 100.0, "right": "C",
+         "date": "2026-03-02", "volume": 10.0},
+        {"root": "BBB", "expiration": pd.Timestamp("2026-03-20"), "strike": 100.0, "right": "C",
+         "date": "2026-03-02", "volume": 5.0},
+    ])
+    oi = pd.DataFrame([   # AAA has ZERO oi rows this session (match_rate 0.0); BBB has one (match_rate 1.0).
+        {"root": "BBB", "expiration": pd.Timestamp("2026-03-20"), "strike": 100.0, "right": "C",
+         "date": "2026-03-02", "open_interest": 50.0},
+    ])
+    greeks = pd.DataFrame(columns=producer._GREEKS_COLS)
+    frame, excluded, _rung1, rates = producer._assemble_chain_frame(eod, oi, greeks, "2026-03-02", record_rungs={})
+    assert excluded == {"oi_baseline_absent": {"AAA"}}
+    assert rates["AAA"] == 0.0
+    assert set(frame["underlying"].astype(str)) == {"BBB"}, \
+        "a root with no oi[S] slice must not appear in chain[S]"
+
+    # Row-level eod\oi NaN->0 STILL applies for a root ABOVE the N3 per-contract
+    # coverage floor -- a new listing with no matching (expiration, strike,
+    # right) in oi is a true zero baseline, never excluded (only a root whose
+    # OVERALL match_rate < 0.60 is excluded). BBB gets 4 MORE matched contracts
+    # here (5 of 6 = 83% matched) so the single new listing doesn't itself pull
+    # the root below the floor -- isolating the row-level behavior from N3's
+    # root-level floor (a 1-of-2 fixture, as this test used pre-N3, would now
+    # correctly trip the floor itself; that is exactly N3's intended tightening,
+    # covered separately by test_ad1t0_1d2/1d3).
+    more_matched = [
+        {"root": "BBB", "expiration": pd.Timestamp("2026-03-20"), "strike": 100.0 + i, "right": "C",
+         "date": "2026-03-02", "volume": 1.0}
+        for i in range(1, 5)
+    ]
+    more_matched_oi = [
+        {"root": "BBB", "expiration": pd.Timestamp("2026-03-20"), "strike": 100.0 + i, "right": "C",
+         "date": "2026-03-02", "open_interest": 10.0}
+        for i in range(1, 5)
+    ]
+    eod2 = pd.concat([eod.iloc[[1]], pd.DataFrame(more_matched), pd.DataFrame([{
+        "root": "BBB", "expiration": pd.Timestamp("2026-06-19"), "strike": 200.0, "right": "P",
+        "date": "2026-03-02", "volume": 1.0,
+    }])], ignore_index=True)
+    oi2 = pd.concat([oi, pd.DataFrame(more_matched_oi)], ignore_index=True)
+    frame2, excluded2, _, rates2 = producer._assemble_chain_frame(eod2, oi2, greeks, "2026-03-02", record_rungs={})
+    assert excluded2 == {}, excluded2
+    assert "BBB" not in rates2
+    assert len(frame2) == 6
+    assert frame2["oi"].isna().sum() == 1   # the new listing keeps NaN (engine fills 0 downstream)
+
+
+def test_ad1t0_1e_b1_oi_baseline_absent_at_historical_session_flows_into_receipt(tmp_path, monkeypatch):
+    """"Same for a historical session": a root missing oi ONLY at a session
+    strictly before S must still be excluded (and counted) for THAT session,
+    without disturbing S's own present_names (S's own oi rows are untouched).
+
+    Needs a wide enough universe that dropping ONE root's oi at one session
+    does not ALSO trip the M1 symmetric 90% floor at the session level (which
+    would exclude the whole session from `F` before this test's root-level B1
+    check ever gets a chance to fire) -- 20 roots keeps 19/20 = 95% >= 90%.
+    """
+    sessions, S, D = _fake_repo_sessions()
+    symbols = [f"SYM{chr(65+i)}" for i in range(20)]
+    store = _write_fake_thetadata_store(tmp_path, monkeypatch, symbols=symbols, sessions=sessions)
+    baseline = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+    base_excl = next(r for r in baseline["input_receipts"] if r["logical_source"] == "identity_root_exclusions")
+    assert base_excl["state"] == "missing" and base_excl["member_count"] == 0
+
+    target_root = symbols[0]
     historical = sorted(s for s in sessions if s < S)[0]
-    df = pd.read_parquet(chains_dir / f"{historical}.parquet")
-    mask = df["underlying"].astype(str) == symbols[0]
-    df.loc[mask, "volume"] = (df.loc[mask, "volume"] * 100.0).astype("float32")
-    df.loc[mask, "oi"] = (df.loc[mask, "oi"] * 7.0).astype("float32")
-    df.to_parquet(chains_dir / f"{historical}.parquet")
-    payload2 = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
-    assert payload["receipt_id"] != payload2["receipt_id"], \
-        "F1 BLOCKER: mutating a historical (non-S/D) chain moved the payload but not receipt_id"
+    fp = store / "oi" / target_root / f"{pd.Timestamp(historical).year}.parquet"
+    df = pd.read_parquet(fp)
+    df = df[df["date"] != pd.Timestamp(historical)]
+    df.to_parquet(fp)
+
+    payload = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+    excl = next(r for r in payload["input_receipts"] if r["logical_source"] == "identity_root_exclusions")
+    assert excl["state"] == "ok"
+    assert excl["member_count"] >= 1
+    # S itself is untouched -- present_names count at S must be unaffected.
+    assert payload["eligibility"]["present"] == baseline["eligibility"]["present"]
 
 
-@pytest.mark.needs_full_checkout("data")
-def test_b1_6_real_build_sanity_full_fix_set_wired_together():
-    """"real-build sanity" (attack_realbuild.py converted): the FULL producer
-    against the REAL committed store, every fix from this wave wired together with
-    no crash and no contradiction — F1's three-domain manifest all bound and
-    non-degenerate, F4a's coverage predicate never lets a name self-certify
-    crowded via c1 alone on the real store's current (thin) same-day coverage,
-    F6's event_implied_move_pct genuinely differs from the card-level 5-session
-    figure, and F5's LEGS_BELOW_THRESHOLD text is the exact string a real
-    no_signal_exemplar renders."""
-    payload = producer.build(now=datetime.now(timezone.utc), ignore_staleness=True)
-    assert payload["as_of_session"] and payload["oi_counted_date"]
-    assert payload["receipt_id"]
+def test_ad1t0_1e2_should_fix_oi_baseline_absent_surfaced_legibly_in_run_block(tmp_path, monkeypatch):
+    """Verify-round 2 SHOULD-FIX (spec §A #7): the `oi_baseline_absent`
+    exclusion entries (root, reason, measured rate) are hashed into the
+    `identity_root_exclusions` receipt's sha256 (proven by test_ad1t0_1e above),
+    but cryptographic binding alone doesn't serve the operator's diagnostic
+    purpose -- they must ALSO be surfaced LEGIBLY (plain root/reason/rate, no
+    hash-cracking required) in the unhashed `_run` diagnostic block, alongside
+    `store_resolution`/`corrupt_files_by_tier`."""
+    sessions, S, D = _fake_repo_sessions()
+    symbols = [f"SYM{chr(65+i)}" for i in range(20)]
+    store = _write_fake_thetadata_store(tmp_path, monkeypatch, symbols=symbols, sessions=sessions)
+    baseline = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+    assert baseline["_run"]["oi_baseline_absent_exclusions"] == [], \
+        "no exclusions yet -- the legible list must be empty, not missing"
 
-    sm = payload["source_manifest"]
-    assert set(sm) == {"gex_summary", "gex_confirm", "chains"}
-    assert sm["chains"]["member_count"] > 0 and sm["chains"]["root"]
+    target_root = symbols[0]
+    historical = sorted(s for s in sessions if s < S)[0]
+    fp = store / "oi" / target_root / f"{pd.Timestamp(historical).year}.parquet"
+    df = pd.read_parquet(fp)
+    df = df[df["date"] != pd.Timestamp(historical)]
+    df.to_parquet(fp)
 
-    receipt_sources = {r["logical_source"] for r in payload["input_receipts"]}
-    assert {"chains_manifest", "universe_resolution"} <= receipt_sources
+    payload = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+    run_entries = payload["_run"]["oi_baseline_absent_exclusions"]
+    assert run_entries, "the excluded root must appear LEGIBLY in the unhashed _run block"
+    hit = next(e for e in run_entries if e["root"] == target_root and e["session"] == historical)
+    assert hit["reason"] == "oi_baseline_absent"
+    assert hit["rate"] == pytest.approx(0.0, abs=1e-9), "zero-row case -- measured match rate is 0.0"
 
-    for c in payload["risk_warnings"]:
-        assert c["crowding"] is not None
-        # c1 requires the coverage predicate; on the real store's current
-        # same-day tape it should never appear alone without genuine coverage --
-        # this assertion holds regardless of which sessions the real store adds.
-        fired = c["crowding"]["fired"]
-        assert fired, f"{c['symbol']}: crowding present but no legs fired"
+    # The hashed receipt is unaffected by (indeed drives) the legible addition --
+    # `_run` itself is excluded from receipt hashing (assigned strictly AFTER
+    # `receipt_id` is computed), so a run that changes ONLY `_run`'s content
+    # must never move `receipt_id`.
+    payload_same_run_diff = dict(payload)
+    payload_same_run_diff["_run"] = dict(payload["_run"], oi_baseline_absent_exclusions=[])
+    out = tmp_path / "options_intel_brief.json"
+    producer.write_json_atomic(out, payload)
+    assert producer._semantic_unchanged(out, payload_same_run_diff), \
+        "a differing `_run.oi_baseline_absent_exclusions` alone must never break the §7 semantic no-op"
 
-    for c in payload["event_board"]:
-        ev_move = c["event"]["event_implied_move_pct"]
-        card_move = c["market_implied_move_pct"]
-        if ev_move is not None and card_move is not None:
-            assert ev_move != card_move, \
-                f"{c['symbol']}: event_implied_move_pct collapsed onto the card-level figure"
 
+# ─────────────────────────────────────────────────────────────────────────────
+# N3 (verify round BLOCKER, spec §A #7 as amended) — the root-PRESENCE guard
+# above (B1) missed PER-CONTRACT absence: a root with exactly ONE surviving oi
+# row out of many contracts was scored "present" (oi_absent_roots = eod_roots -
+# oi_roots is empty whenever at least one oi row exists), so the other contracts
+# merged with a NaN baseline the frozen engine fills to a fabricated zero --
+# demonstrated live: Q_oi flipped +0.50 -> -0.89 through a root with 1 of 168
+# contracts matched. Replaced with a per-contract match-rate floor (0.60).
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_ad1t0_1d2_n3_per_contract_coverage_floor_excludes_one_surviving_row_root():
+    """N3 flip-verification (unit level): VICTIM has 168 distinct (expiration,
+    strike, right) contracts in eod[s] (the reviewer's exact reproduction
+    shape -- 4 expiry bands x 21 moneyness x 2 rights, the standard fixture
+    generator's own contract count) but only ONE has a matching oi[s] row --
+    match_rate = 1/168 ~= 0.006, far under the 0.60 floor -- excluded root-wide,
+    diagnostic rate recorded. HEALTHY (19 of 20 = 95% matched) stays IN with
+    ordinary row-level NaN->0 for its one unmatched contract, per the row-level
+    exclusion carve-out spec §A #7 preserves above the floor."""
+    session = "2026-03-02"
+
+    victim_rows = [
+        {"root": "VICTIM", "expiration": pd.Timestamp("2026-06-19") + pd.Timedelta(days=30 * band),
+         "strike": 100.0 + i, "right": right, "date": session, "volume": 10.0}
+        for band in range(4) for i in range(21) for right in ("C", "P")
+    ]
+    assert len(victim_rows) == 168, "test precondition: must reproduce the reviewer's exact 168-contract shape"
+    eod_victim = pd.DataFrame(victim_rows)
+    # Exactly ONE surviving oi row, matching victim_rows[0]'s identity.
+    matched = victim_rows[0]
+    oi_victim = pd.DataFrame([{
+        "root": matched["root"], "expiration": matched["expiration"], "strike": matched["strike"],
+        "right": matched["right"], "date": matched["date"], "open_interest": 500.0,
+    }])
+
+    healthy_rows = [
+        {"root": "HEALTHY", "expiration": pd.Timestamp("2026-06-19"), "strike": 100.0 + i,
+         "right": "C", "date": session, "volume": 5.0}
+        for i in range(20)
+    ]
+    eod_healthy = pd.DataFrame(healthy_rows)
+    oi_healthy = pd.DataFrame([
+        {"root": r["root"], "expiration": r["expiration"], "strike": r["strike"], "right": r["right"],
+         "date": r["date"], "open_interest": 50.0}
+        for r in healthy_rows[:19]   # 19 of 20 matched -- one genuine new listing (row-level NaN->0)
+    ])
+
+    eod = pd.concat([eod_victim, eod_healthy], ignore_index=True)
+    oi = pd.concat([oi_victim, oi_healthy], ignore_index=True)
+    greeks = pd.DataFrame(columns=producer._GREEKS_COLS)
+
+    frame, excluded, _rung1, rates = producer._assemble_chain_frame(eod, oi, greeks, session, record_rungs={})
+    assert excluded.get("oi_baseline_absent") == {"VICTIM"}, excluded
+    assert rates["VICTIM"] == pytest.approx(1 / 168, abs=1e-9)
+    assert round(rates["VICTIM"], 3) == pytest.approx(0.006, abs=0.001)
+
+    present_roots = set(frame["underlying"].astype(str))
+    assert "VICTIM" not in present_roots, "1-of-168-matched root must be excluded entirely"
+    assert "HEALTHY" in present_roots, "95%-matched root must stay in"
+    healthy_frame = frame[frame["underlying"].astype(str) == "HEALTHY"]
+    assert len(healthy_frame) == 20
+    assert healthy_frame["oi"].isna().sum() == 1, \
+        "the one unmatched HEALTHY contract keeps NaN (engine fills 0 downstream) -- row-level exclusion untouched"
+
+
+def test_ad1t0_1d3_n3_flip_demonstration_one_surviving_oi_row_fabricates_direction():
+    """N3 flip-verification (engine level, mirrors test_ad1t0_1c's B1 proof):
+    PRE-fix, the root-PRESENCE guard (``eod_roots - oi_roots``) finds VICTIM's
+    oi_roots non-empty (the one surviving row) and NEVER excludes it -- every
+    OTHER known contract merges with a NaN baseline ``doi_lean`` fills to a
+    fabricated zero. Demonstrated directly against the frozen (byte-unchanged)
+    engine: D's book lists several of VICTIM's KNOWN-but-baseline-absent
+    contracts, and the lean's sign is purely a function of which side of D's
+    raw split happens to be larger -- direction-bearing garbage, not a signal,
+    exactly like the reviewer's live +0.50 -> -0.89 flip. Post-fix, N3 excludes
+    VICTIM entirely before ``doi_lean`` ever sees it."""
+    root = "VICTIM"
+    next_session = "2026-03-03"
+
+    # 168 known contracts (84 calls C0..C83, 84 puts P0..P83); only P0 has a
+    # real (matched) baseline -- everything else is baseline-ABSENT (NaN).
+    tickers = [f"O:VICTIM260619C{i:08d}" for i in range(84)] + [f"O:VICTIM260619P{i:08d}" for i in range(84)]
+    oi_col = [np.nan] * 168
+    matched_ticker = "O:VICTIM260619P00000000"
+    oi_col[tickers.index(matched_ticker)] = 500.0   # the one surviving oi row
+    chain_settled_buggy = pd.DataFrame({
+        "underlying": pd.Categorical([root] * 168),
+        "strike_ticker": tickers,
+        "expiry": pd.to_datetime(["2026-06-19"] * 168),
+        "oi": pd.array(oi_col, dtype="float32"),
+    })
+
+    # D's book: 3 calls (baseline-absent) print D-oi=100 each, 1 put
+    # (baseline-absent, NOT the matched P0) prints D-oi=20 -- a call-skewed lean
+    # fabricated purely from D's own raw split.
+    d_tickers = ["O:VICTIM260619C00000000", "O:VICTIM260619C00000001",
+                 "O:VICTIM260619C00000002", "O:VICTIM260619P00000001"]
+    chain_next = pd.DataFrame({
+        "underlying": pd.Categorical([root] * 4),
+        "strike_ticker": d_tickers,
+        "expiry": pd.to_datetime(["2026-06-19"] * 4),
+        "is_call": [True, True, True, False],
+        "oi": pd.array([100.0, 100.0, 100.0, 20.0], dtype="float32"),
+    })
+    lean_buggy = brief.doi_lean(chain_settled_buggy, chain_next, next_session)
+    assert lean_buggy[root] > 0, "pre-fix: call-heavy D raw split, fabricated from baseline-absent contracts"
+
+    # Flip side -- reverse D's raw split; the fabricated-baseline mechanism
+    # flips sign purely as a function of D's own split, never a true baseline.
+    chain_next_flipped = chain_next.assign(oi=pd.array([10.0, 10.0, 10.0, 300.0], dtype="float32"))
+    lean_buggy_flipped = brief.doi_lean(chain_settled_buggy, chain_next_flipped, next_session)
+    assert lean_buggy_flipped[root] < 0, \
+        "fabricated-baseline sign is purely a function of D's raw OI split -- direction-bearing garbage"
+
+    # Post-fix: N3 excludes VICTIM entirely (match_rate 1/168 << 0.60 floor)
+    # before it ever reaches doi_lean.
+    chain_settled_fixed = chain_settled_buggy.iloc[0:0]
+    lean_fixed = brief.doi_lean(chain_settled_fixed, chain_next, next_session)
+    assert root not in lean_fixed, "post-fix: a per-contract-absent OI baseline must never enter doi_lean at all"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MAJOR M3 (review round) — right ∉ {C, P} after upper-casing routes to the
+# exclusion path, NEVER coerced to "P" (a forged, collision-prone put ticker).
+# Minors m1/m2 — non-finite / non-positive strike routes to the exclusion path,
+# never a crash, never a lawful-looking collision ticker.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_ad1t0_1f_m3_invalid_right_never_coerced_to_put():
+    root = pd.Series(["AAA", "AAA"])
+    expiration = pd.Series([pd.Timestamp("2026-03-20")] * 2)
+    right = pd.Series(["X", None])
+    strike = pd.Series([100.0, 100.0])
+    ticker, _ok = producer._strike_ticker_and_ok(root, expiration, right, strike)
+
+    import re
+    for t in ticker:
+        assert re.match(brief._STANDARD_TICKER_RE, t) is None, \
+            f"invalid right forged a lawful-looking ticker: {t!r}"
+
+    day = pd.DataFrame({"underlying": pd.Series(["AAA", "AAA"]).astype("category"),
+                         "strike_ticker": ticker.astype(str)})
+    _kept, excluded_n = brief.contract_identity_split(day)
+    assert excluded_n == 2
+
+    # No collision with a genuine put at the same (root, expiry, strike) -- the
+    # pre-fix bug coerced right='X' to "P", producing the SAME ticker as a real
+    # put and zeroing out Q_oi through the frozen merge.
+    real_put_ticker, _ = producer._strike_ticker_and_ok(
+        pd.Series(["AAA"]), pd.Series([pd.Timestamp("2026-03-20")]),
+        pd.Series(["P"]), pd.Series([100.0]))
+    assert ticker.iloc[0] != real_put_ticker.iloc[0]
+
+
+def test_ad1t0_1g_m1_m2_nonfinite_and_nonpositive_strike_excluded_never_crash():
+    root = pd.Series(["AAA"] * 4)
+    expiration = pd.Series([pd.Timestamp("2026-03-20")] * 4)
+    right = pd.Series(["C"] * 4)
+    strike = pd.Series([float("inf"), float("-inf"), float("nan"), 0.0])
+    ticker, ok = producer._strike_ticker_and_ok(root, expiration, right, strike)   # must not raise
+    assert ok.tolist() == [False, False, False, False]
+    import re
+    for t in ticker:
+        assert re.match(brief._STANDARD_TICKER_RE, t) is None
+
+    # A genuinely lawful positive strike alongside a non-finite one must be
+    # completely unaffected.
+    root2 = pd.Series(["AAA", "AAA"])
+    expiration2 = pd.Series([pd.Timestamp("2026-03-20")] * 2)
+    right2 = pd.Series(["C", "C"])
+    strike2 = pd.Series([float("inf"), 100.0])
+    ticker2, ok2 = producer._strike_ticker_and_ok(root2, expiration2, right2, strike2)
+    assert ok2.tolist() == [False, True]
+    assert ticker2.iloc[1] == "O:AAA260320C00100000"
+
+
+def test_ad1t0_1h_m3_digest_canonicalises_negative_zero():
+    row_pos = producer._canonical_row(["delta"], (0.0,))
+    row_neg = producer._canonical_row(["delta"], (-0.0,))
+    assert row_pos == row_neg
+    assert producer._canon_float(-0.0) == 0.0
+    assert producer._canon_float(float("nan")) is None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AD-1T0 test 2 — §C pair predicate role-safety across the three cadence cases,
+# incl. the 0.90 store-relative floors.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_ad1t0_2a_steady_cadence_uses_newest_consecutive_full_pair():
+    sessions = _real_sessions(6)
+    n_eod = pd.Series({s: 10 for s in sessions})
+    n_oi = pd.Series({s: 10 for s in sessions})
+    x = _session_n_forward(sessions[-1], 1)
+    n_eod[x], n_oi[x] = 0, 0   # X not admitted -- no OI printed yet for it
+    committed, F, _decision = producer._select_committed_sessions(sessions, n_eod, n_oi)
+    assert F == sessions and committed == sessions
+    S, D, pending = brief.select_settled_pair(committed, lambda d: _session_n_forward(d, 1))
+    assert (S, D) == (sessions[-2], sessions[-1])
+
+
+def test_ad1t0_2b_morning_cadence_admits_oi_only_frontier_as_D():
+    sessions = _real_sessions(6)
+    n_eod = pd.Series({s: 10 for s in sessions})
+    n_oi = pd.Series({s: 10 for s in sessions})
+    x = _session_n_forward(sessions[-1], 1)
+    n_eod[x] = 0            # EOD for X has not printed at all
+    n_oi[x] = 9             # OI for X HAS printed, clears the 0.90 store-relative floor
+    committed, F, _decision = producer._select_committed_sessions(sessions, n_eod, n_oi)
+    assert F == sessions
+    assert committed == sorted(sessions + [x])
+    S, D, pending = brief.select_settled_pair(committed, lambda d: _session_n_forward(d, 1))
+    assert (S, D) == (sessions[-1], x)   # X takes the D role, never S (role-safety)
+
+    # boundary: one OI row short of the 0.90 floor -> X is NOT admitted.
+    n_oi[x] = 8
+    committed_short, F_short, _decision2 = producer._select_committed_sessions(sessions, n_eod, n_oi)
+    assert x not in committed_short
+
+
+def test_ad1t0_2c_backfill_hole_excluded_from_both_roles():
+    sessions = _real_sessions(6)
+    n_eod = pd.Series({s: 10 for s in sessions})
+    n_oi = pd.Series({s: 10 for s in sessions})
+    hole = sessions[3]
+    n_oi[hole] = 2   # < 0.25 * 10 pathology floor -- an honest single-tier hole, not plaus(s)
+    committed, F, _decision = producer._select_committed_sessions(sessions, n_eod, n_oi)
+    assert hole not in F and hole not in committed
+    S, D, pending = brief.select_settled_pair(committed, lambda d: _session_n_forward(d, 1))
+    assert hole not in (S, D)
+    assert (S, D) == (sessions[4], sessions[5])   # the hole never binds S or D
+
+
+def test_ad1t0_2d_n4_plaus_and_s_role_balance_boundaries():
+    """N4 correction (verify round, REPLACES the old M1(a) SYMMETRIC 0.90
+    ``full()`` floor): ``plaus(s)`` -- HISTORY (F) membership -- is deliberately
+    LOOSER than the old symmetric floor; it only blocks the 3-vs-400-style
+    thinness pathology (0.25 floor) plus requires ``n_oi(s) >= 0.90*n_eod(s)``
+    (an OI-baseline-coverage precondition, unchanged from before). The STRICT
+    (near-)symmetric balance check applies ONLY to whichever session wants the
+    S role -- via demotion (tested at ``F`` level here since a single-session
+    candidate list demotes straight to empty), never via outright plaus()
+    rejection. All four spec-numeric boundaries are asserted."""
+    sessions = _real_sessions(6)
+    s = sessions[0]
+
+    # 3-eod-vs-400-oi pathology: plaus() itself rejects it outright
+    # (n_eod < 0.25*n_oi) -- never even reaches the S-role demotion step.
+    n_eod = pd.Series({s: 3}); n_oi = pd.Series({s: 400})
+    _committed, F, _decision = producer._select_committed_sessions([s], n_eod, n_oi)
+    assert s not in F, "a 3-root eod tier beside a 400-root oi tier must stay out of F (0.25 pathology floor)"
+
+    # Reverse (400 eod / 3 oi): plaus() ALSO rejects (n_oi < 0.90*n_eod -- no
+    # usable OI baseline at all, unchanged gate in both old and new code).
+    n_eod2 = pd.Series({s: 400}); n_oi2 = pd.Series({s: 3})
+    _committed2, F2, _decision2 = producer._select_committed_sessions([s], n_eod2, n_oi2)
+    assert s not in F2, "the reverse direction (400-root eod, 3-root oi) must ALSO disqualify"
+
+    # Exact 90% S-role balance boundary -- plaus AND balance both clear -> F
+    # retains it (it can legitimately take the S role).
+    n_eod3 = pd.Series({s: 90}); n_oi3 = pd.Series({s: 100})
+    _committed3, F3, _decision3 = producer._select_committed_sessions([s], n_eod3, n_oi3)
+    assert s in F3
+
+    # One row UNDER the 90% S-role balance boundary: plaus() ADMITS it (88%
+    # eod coverage clears the loose 0.25 floor easily -- it enters F initially)
+    # but the demotion loop then removes it since it cannot take the S role
+    # unbalanced, leaving F empty for this single-candidate list. The N4-
+    # corrected MECHANISM (admit-then-demote) differs from the old direct
+    # plaus/full rejection, but the final F membership matches for a lone
+    # candidate with no older session to fall back on.
+    n_eod4 = pd.Series({s: 89}); n_oi4 = pd.Series({s: 100})
+    _committed4, F4, _decision4 = producer._select_committed_sessions([s], n_eod4, n_oi4)
+    assert s not in F4, "unbalanced session must be demoted out of F, never take the S role"
+
+
+def test_ad1t0_2d2_n4_demoted_session_stays_x_eligible_and_s_never_moves():
+    """N4 flip-verify: a mid-capture partial eod[D] (<90% of oi[D]) is demoted
+    out of F -- never S -- but remains lawfully admissible as the OI-only
+    frontier X via its OWN oi coverage ('a demoted session is naturally the X
+    candidate when consecutive', spec §C); ``as_of_session`` must not move onto
+    it. Clean history (5 balanced sessions) plus one partial latest session so
+    F does not collapse to empty."""
+    sessions = _real_sessions(6)
+    hist = sessions[:-1]
+    latest = sessions[-1]
+    n_eod = pd.Series({s: 20 for s in hist})
+    n_oi = pd.Series({s: 20 for s in hist})
+    # latest: 17/20 eod present (85%), oi fully printed (20) -- plaus() admits
+    # (n_oi=20 >= 0.90*17=15.3; n_eod=17 >= 0.25*20=5) but the S-role balance
+    # check (17 >= 0.90*20=18?) fails -- demoted.
+    n_eod[latest] = 17
+    n_oi[latest] = 20
+    committed, F, decision = producer._select_committed_sessions(sessions, n_eod, n_oi)
+    assert latest not in F, "the partial-eod latest session must never take the S role"
+    assert F and max(F) == hist[-1]
+    assert latest in committed, "a demoted session must still be admitted as the OI-only frontier X"
+    assert latest in decision["counts"] and hist[-1] in decision["counts"], \
+        "N2: demoted session AND final max(F) must both be decision-critical counts"
+
+    S, D, pending = brief.select_settled_pair(committed, lambda d: _session_n_forward(d, 1))
+    assert S == hist[-1], "as_of_session must not move onto the demoted partial session"
+    assert D == latest
+
+
+def _uncapped_demote_shadow(F: list[str], balanced_map: dict[str, bool]) -> tuple[list[str], list[str]]:
+    """Shadow reimplementation of the PRE-FIX (round-2) UNCAPPED S-role demotion
+    loop -- never imported, the module no longer carries this shape -- purely
+    to prove, by direct comparison, both (a) the regression the
+    ``_S_ROLE_MAX_DEMOTIONS`` cap closes (systemic imbalance empties F
+    entirely) and (b) the cap's NON-interference below/at the cap (identical
+    result to the capped loop when the natural stop arrives first)."""
+    F = list(F)
+    demoted: list[str] = []
+    while F:
+        s_max = max(F)
+        if balanced_map[s_max]:
+            break
+        F.remove(s_max)
+        demoted.append(s_max)
+    return F, demoted
+
+
+def test_ad1t0_2d3_n4_carried_systemic_imbalance_caps_demotion_at_2():
+    """N4 CARRIED (verify round 2, MUST-FIX): the round-2 fix's own demotion
+    loop was itself UNBOUNDED. When eod trails oi at EVERY session --
+    including the NEWEST -- (a SYSTEMIC imbalance, not just a mid-capture
+    tail -- the shape a 48-root eod spine can produce, spec §H), every
+    candidate fails the S-role balance check and the old loop demoted its way
+    to an EMPTY F: nothing left to take the S role -> the same causeless
+    MIXED_VINTAGE (present=0, cov=None) blackout N4 originally set out to fix.
+    The round-2 regression tests (this file's prior 2d3/2d4) dodged this by
+    keeping the newest session balanced, so the loop never even executed.
+
+    Fixture: 20 roots, 6 real NYSE sessions, eod 17-of-20 (85%) at EVERY
+    session including the newest -- the reviewer's matrix shape.
+    ``_S_ROLE_MAX_DEMOTIONS`` (2) caps the loop: it stops after exactly 2
+    demotions and lets the newest still-plausible session take the S role
+    AS-IS (still unbalanced) -- a REAL, gradeable S/D pair, never a blackout.
+    (The resulting board-level INSUFFICIENT_COVERAGE grading is proven
+    end-to-end in ``test_ad1t0_2d6`` below.)"""
+    sessions = _real_sessions(6)
+
+    # Systemic imbalance: EVERY session (including the newest) is 17-of-20.
+    n_eod = pd.Series({s: 17 for s in sessions})
+    n_oi = pd.Series({s: 20 for s in sessions})
+
+    # Shadow check: the RETIRED uncapped loop empties F entirely -- the exact
+    # regression this fix closes.
+    balanced_map_shadow = {s: (17 >= 0.90 * 20) for s in sessions}   # False for every session
+    uncapped_F, uncapped_demoted = _uncapped_demote_shadow(list(sessions), balanced_map_shadow)
+    assert uncapped_F == [], "shadow check: the RETIRED uncapped loop empties F entirely (the N4-carried regression)"
+    assert len(uncapped_demoted) == 6
+
+    # New code (the actual module function) -- capped at 2.
+    committed, F, decision = producer._select_committed_sessions(sessions, n_eod, n_oi)
+    assert F == sessions[:4], "the cap must stop after exactly 2 demotions, keeping the 4 oldest sessions in F"
+    demoted_count = len(sessions) - len(F)
+    assert demoted_count == 2, f"expected exactly 2 demotions at the cap, got {demoted_count}"
+    assert sessions[-1] not in F and sessions[-2] not in F, "the two newest (demoted) sessions must be OUT of F"
+    assert max(F) == sessions[3], "the newest STILL-PLAUSIBLE session (post-cap) must take the S role AS-IS"
+
+    S, D, _pending = brief.select_settled_pair(committed, lambda d: _session_n_forward(d, 1))
+    assert (S, D) == (sessions[3], sessions[4]), \
+        "a REAL, gradeable lawful pair must be found -- never (None, None) MIXED_VINTAGE"
+    assert S in decision["counts"] and decision["counts"][S] == (17, 20), \
+        "the S session's own counts must be REAL numbers (17/20 = graded coverage), never a blackout"
+
+
+def test_ad1t0_2d4_n4_carried_systemic_imbalance_caps_demotion_at_2_scaled():
+    """Same construction as 2d3, scaled to 40 roots / 35 present (87.5%),
+    proving the cap-at-2 behavior is not an artifact of the specific 20-root
+    ratio."""
+    sessions = _real_sessions(6)
+    n_eod = pd.Series({s: 35 for s in sessions})
+    n_oi = pd.Series({s: 40 for s in sessions})
+
+    balanced_map_shadow = {s: (35 >= 0.90 * 40) for s in sessions}   # False for every session
+    uncapped_F, uncapped_demoted = _uncapped_demote_shadow(list(sessions), balanced_map_shadow)
+    assert uncapped_F == []
+    assert len(uncapped_demoted) == 6
+
+    committed, F, decision = producer._select_committed_sessions(sessions, n_eod, n_oi)
+    assert F == sessions[:4]
+    assert len(sessions) - len(F) == 2
+    assert max(F) == sessions[3]
+
+    S, D, _pending = brief.select_settled_pair(committed, lambda d: _session_n_forward(d, 1))
+    assert (S, D) == (sessions[3], sessions[4])
+    assert decision["counts"][S] == (35, 40)
+
+
+def test_ad1t0_2d5_n4_carried_cap_does_not_interfere_below_or_at_threshold():
+    """N4 carried (MUST-FIX, cap non-interference): the ``_S_ROLE_MAX_DEMOTIONS``
+    cap must never CHANGE behavior for a store whose demotion count would have
+    stopped at or below the cap ANYWAY (the ordinary mid-capture-frontier
+    shapes, not the systemic-imbalance pathology 2d3/2d4 exercise). Two
+    sub-cases, each cross-checked against the uncapped shadow loop for an
+    IDENTICAL result:
+
+    (a) only-latest lopsided -- exactly 1 demotion (well under the cap).
+    (b) last-two lopsided -- exactly 2 demotions, but the loop stops because
+        the THIRD-newest session is naturally balanced, not because the cap
+        forced it -- the cap number and the natural stop coincide by
+        construction, which is exactly the case that could hide a
+        cap-truncation bug if the cap fired one iteration early."""
+    sessions = _real_sessions(6)
+
+    # (a) only-latest lopsided: 5 balanced (20/20) + 1 lopsided latest (17/20).
+    n_eod_a = pd.Series({s: 20 for s in sessions[:-1]} | {sessions[-1]: 17})
+    n_oi_a = pd.Series({s: 20 for s in sessions})
+    balanced_a = {s: (int(n_eod_a[s]) >= 0.90 * int(n_oi_a[s])) for s in sessions}
+    uncapped_F_a, uncapped_demoted_a = _uncapped_demote_shadow(list(sessions), balanced_a)
+    committed_a, F_a, _decision_a = producer._select_committed_sessions(sessions, n_eod_a, n_oi_a)
+    assert F_a == uncapped_F_a == sessions[:-1], "1 demotion (< cap) must match the uncapped loop exactly"
+    assert len(uncapped_demoted_a) == 1
+    S_a, D_a, _p_a = brief.select_settled_pair(committed_a, lambda d: _session_n_forward(d, 1))
+    assert (S_a, D_a) == (sessions[-2], sessions[-1])
+
+    # (b) last-two lopsided: 4 balanced (20/20) + 2 lopsided newest (17/20 each).
+    n_eod_b = pd.Series({s: 20 for s in sessions[:-2]} | {sessions[-2]: 17, sessions[-1]: 17})
+    n_oi_b = pd.Series({s: 20 for s in sessions})
+    balanced_b = {s: (int(n_eod_b[s]) >= 0.90 * int(n_oi_b[s])) for s in sessions}
+    uncapped_F_b, uncapped_demoted_b = _uncapped_demote_shadow(list(sessions), balanced_b)
+    committed_b, F_b, _decision_b = producer._select_committed_sessions(sessions, n_eod_b, n_oi_b)
+    assert F_b == uncapped_F_b == sessions[:-2], \
+        "2 demotions landing EXACTLY at the cap must still match the uncapped loop (natural stop, not truncation)"
+    assert len(uncapped_demoted_b) == 2
+    S_b, D_b, _p_b = brief.select_settled_pair(committed_b, lambda d: _session_n_forward(d, 1))
+    assert (S_b, D_b) == (sessions[-3], sessions[-2]), "a demoted session (last-two case) is naturally the X pick"
+
+
+def test_ad1t0_2d6_n4_carried_systemic_imbalance_produces_graded_board_end_to_end(tmp_path, monkeypatch):
+    """N4 carried (MUST-FIX), end-to-end: a full ``producer.build()`` round-trip
+    over a synthetic ThetaData store whose eod tier trails its oi tier at
+    EVERY session (systemic imbalance, not just a mid-capture tail) must
+    produce a REAL, graded ``INSUFFICIENT_COVERAGE`` board -- present/coverage
+    numbers that are actual integers/floats, a real ``as_of_session`` /
+    ``oi_counted_date`` pair -- and must NEVER regress to the causeless
+    MIXED_VINTAGE (``board_reason == "MIXED_VINTAGE"``, ``as_of_session is
+    None``) blackout the uncapped round-2 loop would have produced.
+
+    Fixture: 20 letters-only roots, 14 real NYSE sessions (this file's usual
+    full-store fixture depth). 3 of the 20 roots NEVER print an eod row at
+    ALL across the whole store (oi/greeks intact) -- so every session in the
+    store reads 17-of-20 (85%) eod coverage, identically. Without the
+    ``_S_ROLE_MAX_DEMOTIONS`` cap, ALL 14 sessions fail the S-role balance
+    check and the old loop would empty F to nothing."""
+    sessions = _fake_repo_sessions(14)[0]
+    symbols = _alpha_names("SYM", 20)
+    store = _write_fake_thetadata_store(tmp_path, monkeypatch, symbols=symbols, sessions=sessions)
+
+    # Drop 3 roots' eod tier ENTIRELY (every year file, every session) -- oi and
+    # greeks stay intact for them, so n_oi(s) counts all 20 roots at every
+    # session while n_eod(s) counts only the remaining 17, at EVERY session.
+    dropped = symbols[-3:]
+    for sym in dropped:
+        eod_dir = store / "eod" / sym
+        if eod_dir.is_dir():
+            shutil.rmtree(eod_dir)
+
+    payload = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+
+    assert payload["board_reason"] != "MIXED_VINTAGE", \
+        "systemic 85% eod coverage must never black out the whole board"
+    assert payload["as_of_session"] is not None and payload["oi_counted_date"] is not None, \
+        "a real S/D pair must be selected -- never (None, None)"
+    assert payload["board_state"] == "INSUFFICIENT_COVERAGE", \
+        f"expected graded INSUFFICIENT_COVERAGE, got {payload['board_state']!r} ({payload['board_reason']!r})"
+    assert payload["eligibility"]["universe_count"] == 20
+    assert payload["eligibility"]["present"] == 17, "REAL present count (17-of-20), never 0"
+    assert payload["eligibility"]["source_coverage_pct"] == pytest.approx(17 / 20, abs=1e-4), \
+        "REAL coverage fraction, never None"
+
+    # Exactly 2 demotions occurred (the cap), verified via the session_presence
+    # receipt actually having fired (member_count > 0, real state).
+    pres = next(r for r in payload["input_receipts"] if r["logical_source"] == "session_presence")
+    assert pres["state"] == "ok" and pres["member_count"] > 0
+
+
+def _session_presence_sha(decision_info: dict[str, Any]) -> str:
+    """Replicates ``build()``'s own ``session_presence`` payload/hash formula
+    exactly (N2, spec §F) -- kept as a tiny standalone helper so the property
+    below can be exercised directly against ``_select_committed_sessions``
+    without a full store round-trip (a full producer.build() round-trip
+    necessarily also re-hashes the `chains_*` receipts from the SAME
+    n_eod/n_oi-producing row content, which would confound a receipt_id-level
+    assertion with an unrelated, expected data-content change)."""
+    payload = {
+        "decisions": decision_info["candidate_decisions"],
+        "counts": sorted(decision_info["counts"].items()),
+    }
+    return brief.sha256_of(payload)
+
+
+def test_ad1t0_2e_n2_session_presence_narrows_to_decision_critical_counts_unit():
+    """N2 (verify round, narrows the earlier M1(b) receipt): ``session_presence``
+    hashes (a) the ordered per-candidate (session, plaus_bool, balanced_bool)
+    decision tuples for EVERY candidate, plus (b) exact (n_eod, n_oi) counts for
+    ONLY the decision-critical sessions (final max(F), every demoted session,
+    the X candidate). Exercised directly against ``_select_committed_sessions``
+    (see ``_session_presence_sha`` above for why): a count drift on a
+    never-materialised candidate that flips NO decision boolean leaves the hash
+    UNCHANGED (the actual N2 fix); a drift that flips a decision (F membership,
+    demotion, or X admission) moves it."""
+    sessions = _real_sessions(8)
+    # A mid-history session (index 2, far from the tail/decision-critical
+    # positions) gets a harmless count drift: 20/20 -> 19/20. plaus (20>=0.9*19,
+    # 19>=0.25*20) and balanced (19>=0.9*20=18) are BOTH unchanged True/True.
+    non_critical = sessions[2]
+    n_eod = pd.Series({s: 20 for s in sessions})
+    n_oi = pd.Series({s: 20 for s in sessions})
+    _committed1, _F1, decision1 = producer._select_committed_sessions(sessions, n_eod, n_oi)
+    sha1 = _session_presence_sha(decision1)
+    assert non_critical not in decision1["counts"], \
+        "test precondition: the drifted session must not already be decision-critical"
+
+    n_eod_drift = n_eod.copy(); n_eod_drift[non_critical] = 19
+    _committed2, _F2, decision2 = producer._select_committed_sessions(sessions, n_eod_drift, n_oi)
+    sha2 = _session_presence_sha(decision2)
+    assert sha2 == sha1, \
+        "N2: a count drift that flips no decision boolean on a non-critical candidate must not move the hash"
+
+    # A drift that DOES flip a decision (push non_critical below the pathology
+    # floor entirely -- plaus flips True -> False) MUST move the hash.
+    n_eod_flip = n_eod.copy(); n_eod_flip[non_critical] = 2   # 2 < 0.25*20=5 -> plaus flips False
+    _committed3, _F3, decision3 = producer._select_committed_sessions(sessions, n_eod_flip, n_oi)
+    sha3 = _session_presence_sha(decision3)
+    assert sha3 != sha1, "N2: a drift that flips a decision boolean must move the hash"
+
+    # A drift AT a decision-critical session (the final max(F), here the
+    # newest/tail session) moves the hash even without flipping any boolean,
+    # since its exact counts are always bound in (M1's property, preserved).
+    tail = sessions[-1]
+    n_eod_tail = n_eod.copy(); n_eod_tail[tail] = 19   # still plaus/balanced True, but the COUNT itself moved
+    _committed4, _F4, decision4 = producer._select_committed_sessions(sessions, n_eod_tail, n_oi)
+    sha4 = _session_presence_sha(decision4)
+    assert tail in decision4["counts"], "test precondition: the tail session must be decision-critical (final max F)"
+    assert sha4 != sha1, "N2: the exact counts of a decision-critical session must still bind into the hash"
+
+
+def test_ad1t0_2e2_n2_session_presence_receipt_wired_end_to_end(tmp_path, monkeypatch):
+    """N2 wiring smoke test (store level): the ``session_presence`` receipt
+    round-trips through a real ``producer.build()`` call -- a byte rewrite that
+    preserves every row (reorder only) leaves it (and ``receipt_id``) unchanged;
+    a genuine D-dated row-population change (which also changes D's OWN
+    consumed chain content, so ``receipt_id`` moving is expected via BOTH the
+    `session_presence` AND the `chains_*` receipts) moves it."""
+    sessions, S, D = _fake_repo_sessions()
+    symbols = [f"SYM{chr(65+i)}" for i in range(6)]
+    store = _write_fake_thetadata_store(tmp_path, monkeypatch, symbols=symbols, sessions=sessions)
+    p1 = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+    pres1 = next(r for r in p1["input_receipts"] if r["logical_source"] == "session_presence")
+    assert pres1["state"] == "ok" and pres1["member_count"] > 0
+
+    # Byte-rewrite preserving counts (reorder rows only, same row/root count).
+    fp_d = store / "eod" / symbols[0] / f"{pd.Timestamp(D).year}.parquet"
+    df = pd.read_parquet(fp_d)
+    df = df.iloc[::-1].reset_index(drop=True)
+    df.to_parquet(fp_d)
+    p2 = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+    pres2 = next(r for r in p2["input_receipts"] if r["logical_source"] == "session_presence")
+    assert pres2["sha256"] == pres1["sha256"]
+    assert p1["receipt_id"] == p2["receipt_id"]
+
+    # A genuine D-dated eod ROW-POPULATION change (drop one root's D-eod rows
+    # entirely) changes n_eod(D) -- must move session_presence AND receipt_id.
+    for fp in (store / "eod" / symbols[0]).glob("*.parquet"):
+        df = pd.read_parquet(fp)
+        mask = df["date"] == pd.Timestamp(D)
+        if mask.any():
+            df = df[~mask]
+            df.to_parquet(fp)
+    p3 = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+    pres3 = next(r for r in p3["input_receipts"] if r["logical_source"] == "session_presence")
+    assert pres3["sha256"] != pres1["sha256"]
+    assert p3["receipt_id"] != p1["receipt_id"]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# BLOCKER B3 (review round, 2026-08-22) — the staleness anchor is
+# max(committed_sessions) EXACTLY, never `_latest_known_date`'s newest-EOD-date.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_ad1t0_2f_b3_staleness_anchor_is_max_committed_sessions_not_latest_eod(tmp_path, monkeypatch):
+    """On a Monday-morning build (eod through Friday, oi through Monday) the
+    pre-fix anchor drifted to Friday (the newest EOD-tier date), 77h stale by
+    Monday evening -- STALE_SOURCE with zero cards every Monday. The correct
+    anchor is Monday (the admitted OI-only frontier X), fresh."""
+    candidates = _real_sessions(80)
+    gap = None
+    for i in range(len(candidates) - 1):
+        a, b = candidates[i], candidates[i + 1]
+        if (date.fromisoformat(b) - date.fromisoformat(a)).days >= 3:
+            gap = (i, a, b)
+            break
+    assert gap is not None, "no multi-day calendar gap found in the sampled window -- test precondition failed"
+    i, fri, mon = gap
+    history = candidates[max(0, i - 30):i + 1]
+    sessions = history + [mon]
+    symbols = [f"SYM{chr(65+j)}" for j in range(6)]
+    store = _write_fake_thetadata_store(tmp_path, monkeypatch, symbols=symbols, sessions=sessions)
+
+    # Strip Monday's eod/greeks entirely -- the OI-only frontier X shape spec §C
+    # describes: eod[D] never printed yet, oi[D] has.
+    mon_year = pd.Timestamp(mon).year
+    for tier in ("eod", "greeks"):
+        for sym in symbols:
+            fp = store / tier / sym / f"{mon_year}.parquet"
+            if not fp.exists():
+                continue
+            df = pd.read_parquet(fp)
+            df = df[df["date"] != pd.Timestamp(mon)]
+            if df.empty:
+                fp.unlink()
+            else:
+                df.to_parquet(fp)
+
+    # `now` = Monday evening -- well within 36h of Monday's close+settle but a
+    # long way (>36h) past FRIDAY's close+settle -- the exact drift the review
+    # demonstrated.
+    now = datetime.combine(date.fromisoformat(mon), dt_time(20, 0),
+                            tzinfo=ZoneInfo("America/New_York")).astimezone(timezone.utc)
+    payload = producer.build(now=now, ignore_staleness=False)
+    assert payload["as_of_session"] == fri
+    assert payload["oi_counted_date"] == mon
+    assert payload["board_state"] != "STALE_SOURCE", (
+        f"B3 BLOCKER: anchor drifted to eod-only date; board={payload['board_state']}"
+    )
+
+    # Flip side: a GENUINELY stale store (now far beyond Monday's own
+    # close+36h) must still trip STALE_SOURCE -- the fix narrows the anchor, it
+    # must never blind the check entirely.
+    now_stale = now + timedelta(days=5)
+    payload_stale = producer.build(now=now_stale, ignore_staleness=False)
+    assert payload_stale["board_state"] == "STALE_SOURCE"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AD-1T0 test 3 — chain_next built from the OI tier ALONE; eod[D]/greeks[D]
+# VALUES never reach a scored frame (spec §B, corrected wording).
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_ad1t0_3_chain_next_is_oi_only_and_partial_eod_d_never_moves_s(tmp_path, monkeypatch):
+    """AD-1T0 test 3 (review round M1+M2(d) — REPLACES the old corrupt-bytes
+    proof, which asserted full byte-identical payloads after corrupting D's
+    eod/greeks year files. That assertion was itself the defect the review
+    caught: the amended §B leak barrier is a FILTERING guarantee, not a
+    never-opened one — session-presence counting legitimately reads D-dated eod
+    identity/date columns when they exist, and a genuine D-dated row-population
+    change CAN move `receipt_id` (via the new `session_presence` receipt, §F)
+    even though it can never move a VALUE into the scored frame. Two things are
+    asserted instead: (1) a PARTIAL eod[D] (1 of many roots, under the 90%
+    symmetric floor) never flips D into a full(D) session and never moves
+    `as_of_session` or `chain_next`'s shape (still OI-only, 5 columns); (2)
+    unreadable D-year bytes degrade gracefully (no crash) -- never asserted
+    byte-identical, since that claim was the pre-fix defect."""
+    sessions = _year_boundary_sessions(16)
+    S, D = sessions[-2], sessions[-1]   # D alone sits in the NEXT calendar year
+    symbols = [f"SYM{chr(65+i)}" for i in range(6)]
+    store = _write_fake_thetadata_store(tmp_path, monkeypatch, symbols=symbols, sessions=sessions)
+    p1 = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+    assert p1["as_of_session"] == S and p1["oi_counted_date"] == D
+
+    # (1) Strip eod[D] down to ONE root (of six) -- 1/6 = 16.7%, far under the
+    # 90% symmetric floor -- must never flip D into full(D) or move S. oi[D] is
+    # left untouched (full oi[D], per the spec §C description of this scenario).
+    d_year = pd.Timestamp(D).year
+    for sym in symbols[1:]:
+        fp = store / "eod" / sym / f"{d_year}.parquet"
+        if fp.exists():
+            df = pd.read_parquet(fp)
+            df = df[df["date"] != pd.Timestamp(D)]
+            if df.empty:
+                fp.unlink()
+            else:
+                df.to_parquet(fp)
+
+    p2 = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+    assert p2["as_of_session"] == S, "a partial (< 90%) eod[D] must never move as_of_session"
+    assert p2["oi_counted_date"] == D
+    cn = next(r for r in p2["input_receipts"] if r["logical_source"] == "chains_D")
+    assert cn["state"] == "ok"
+
+    # (2) Unreadable D-year bytes for EVERY root's eod/greeks tier must degrade
+    # gracefully -- no crash -- and S itself (a different calendar year here) is
+    # untouched.
+    for tier in ("eod", "greeks"):
+        for sym in symbols:
+            fp = store / tier / sym / f"{d_year}.parquet"
+            if fp.exists():
+                fp.write_bytes(b"not a parquet file at all")
+    p3 = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+    assert p3 is not None
+    assert p3["as_of_session"] == S
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AD-1T0 test 4 — §D spot ladder rungs 1 -> 2 -> 3, incl. adjusted-only + last-
+# index==s guards, and rung-3 coverage-gate accounting.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class _FakeResolved:
+    def __init__(self, *, ok: bool, adjusted, series, price_source: str | None = "unit_test"):
+        self.ok, self.adjusted, self.series, self.price_source = ok, adjusted, series, price_source
+
+
+def test_ad1t0_4a_spot_ladder_rungs_1_2_3(monkeypatch):
+    session = "2026-03-16"
+
+    # Rung 1: a finite positive greeks median wins outright, no ladder call at all.
+    assert producer._resolve_root_spot("AAA", session, 123.45) == (123.45, 1)
+
+    # Rung 2: rung-1 absent; an ADJUSTED close whose series ends exactly on `session`.
+    monkeypatch.setattr(producer.price_ladder, "resolve_close", lambda *a, **k: _FakeResolved(
+        ok=True, adjusted=True,
+        series=pd.Series([50.0, 51.5], index=pd.to_datetime(["2026-03-15", "2026-03-16"])),
+    ))
+    assert producer._resolve_root_spot("BBB", session, None) == (51.5, 2)
+
+    # Rung 2 REJECTED: adjusted series exists but its LAST index is not `session`
+    # (a stale rung-2 read must never be accepted -- no cache fall-through).
+    monkeypatch.setattr(producer.price_ladder, "resolve_close", lambda *a, **k: _FakeResolved(
+        ok=True, adjusted=True, series=pd.Series([50.0], index=pd.to_datetime(["2026-03-10"])),
+    ))
+    assert producer._resolve_root_spot("CCC", session, None) == (None, 3)
+
+    # Rung 2 REJECTED: adjusted is False (unadjusted-cache basis) even on the right date.
+    monkeypatch.setattr(producer.price_ladder, "resolve_close", lambda *a, **k: _FakeResolved(
+        ok=True, adjusted=False, series=pd.Series([50.0], index=pd.to_datetime(["2026-03-16"])),
+    ))
+    assert producer._resolve_root_spot("DDD", session, None) == (None, 3)
+
+    # Rung 1 non-finite / non-positive must NOT be accepted either.
+    monkeypatch.setattr(producer.price_ladder, "resolve_close", lambda *a, **k: _FakeResolved(
+        ok=False, adjusted=None, series=None,
+    ))
+    assert producer._resolve_root_spot("EEE", session, 0.0)[1] == 3
+    assert producer._resolve_root_spot("FFF", session, float("nan"))[1] == 3
+
+
+def test_ad1t0_4b_rung3_absent_spot_counts_against_source_coverage_gate(tmp_path, monkeypatch):
+    sessions, S, D = _fake_repo_sessions()
+    symbols = [f"SYM{chr(65+i)}" for i in range(6)]
+    store = _write_fake_thetadata_store(tmp_path, monkeypatch, symbols=symbols, sessions=sessions)
+    dropped = symbols[0]
+    for fp in (store / "greeks" / dropped).glob("*.parquet"):
+        fp.unlink()
+    monkeypatch.setattr(producer.price_ladder, "resolve_close",
+                         lambda *a, **k: _FakeResolved(ok=False, adjusted=None, series=None))
+
+    payload = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+    # 5/6 = 83.3% < SOURCE_COVERAGE_GATE (0.90) -- rung-3 absence counts against
+    # coverage, never against ELIGIBILITY_GATE (the per-name quality gate).
+    assert payload["board_state"] == "INSUFFICIENT_COVERAGE"
+    assert payload["eligibility"]["universe_count"] == 6
+    assert payload["eligibility"]["present"] == 5
+    assert payload["eligibility"]["source_coverage_pct"] == pytest.approx(5 / 6, abs=1e-4)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# BLOCKER B2 (review round, 2026-08-22) — the rung-2 spot receipt binds the
+# CONSUMED resolved close value, price_source tag, and series last index date.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_ad1t0_4c_b2_rung2_receipt_binds_the_consumed_close_value(tmp_path, monkeypatch):
+    """BLOCKER B2 flip-verification: the rung-2 spot receipt used to hash a
+    CONSTANT descriptor (``{"rung": 2, "asof": S, "symbol": sym}``) -- changing
+    the rung-2 close value left `receipt_id` UNCHANGED while the scored board
+    changed underneath it (demonstrated: identical receipt, different top card).
+    Fixed: every rung-2 symbol's consumed resolved close VALUE, `price_source`
+    tag, and series last-index date all bind into the hash."""
+    sessions, S, D = _fake_repo_sessions()
+    symbols = ["AAA", "BBB"]
+    store = _write_fake_thetadata_store(tmp_path / "store1", monkeypatch, symbols=symbols, sessions=sessions)
+    for fp in (store / "greeks" / "AAA").glob("*.parquet"):
+        fp.unlink()   # AAA never has a rung-1 median -> forced onto rung 2
+
+    close_value = {"v": 101.0}
+
+    def _fake_resolve_close(root, asof):
+        if root == "AAA":
+            return _FakeResolved(ok=True, adjusted=True, price_source="baskets_ohlcv",
+                                  series=pd.Series([close_value["v"]], index=pd.to_datetime([asof])))
+        return _FakeResolved(ok=False, adjusted=None, series=None)
+
+    monkeypatch.setattr(producer.price_ladder, "resolve_close", _fake_resolve_close)
+    p1 = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+    gs1 = p1["source_manifest"]["gex_summary"]["files"].get("priceladder://resolve_close/AAA")
+    assert gs1 is not None, "AAA never resolved via rung 2 -- fixture didn't reproduce the scenario"
+
+    close_value["v"] = 999.0   # mutate ONLY the rung-2 source close
+    p2 = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+    gs2 = p2["source_manifest"]["gex_summary"]["files"].get("priceladder://resolve_close/AAA")
+    assert gs2 is not None and gs2 != gs1, \
+        "B2 BLOCKER: mutating the rung-2 consumed close value must move its receipt hash"
+    assert p1["receipt_id"] != p2["receipt_id"]
+
+    # Rung-1<->rung-2 transition also moves it: with AAA's greeks intact (a
+    # normal fixture build), AAA resolves via rung 1 and the rung-2 manifest key
+    # must not exist at all.
+    _write_fake_thetadata_store(tmp_path / "store2", monkeypatch, symbols=symbols, sessions=sessions)
+    p3 = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+    assert "priceladder://resolve_close/AAA" not in (p3["source_manifest"]["gex_summary"]["files"] or {})
+    assert p3["receipt_id"] != p1["receipt_id"]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AD-1T0 test 5 — summary_spot sourced from greeks underlying_price history.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_ad1t0_5_summary_spot_sourced_from_greeks_underlying_price_history(tmp_path, monkeypatch):
+    sessions, S, D = _fake_repo_sessions()
+    symbols = ["AAA", "BBB"]
+    _write_fake_thetadata_store(tmp_path, monkeypatch, symbols=symbols, sessions=sessions)
+    payload = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+
+    sm = payload["source_manifest"]["gex_summary"]
+    assert sm["member_count"] > 0
+    assert any(k.startswith("thetadata://spot_history/") for k in sm["files"])
+    assert "polygon_gex" not in json.dumps(payload)
+    assert "summary_" not in json.dumps(payload["source_manifest"])
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AD-1T0 test 6 — GEX mechanics hard-absent (§E), even with a fresh-looking
+# site/gex/{SYM}.json sitting right where the legacy path would have read it.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_ad1t0_6_gex_mechanics_hard_absent_even_with_fresh_looking_json(tmp_path, monkeypatch):
+    sessions, S, D = _fake_repo_sessions()
+    symbols = [f"SYM{chr(65+i)}" for i in range(6)]
+    _write_fake_thetadata_store(tmp_path, monkeypatch, symbols=symbols, sessions=sessions)
+
+    gex_dir = tmp_path / "site" / "gex"
+    gex_dir.mkdir(parents=True, exist_ok=True)
+    (gex_dir / f"{symbols[0]}.json").write_text(json.dumps({
+        "meta": {"asof": S},
+        "summary": {"tier": "core", "n_strikes": 50, "regime": "long",
+                    "dist_to_flip_pct": 0.0, "spot": 100.0, "gamma_flip": 95.0},
+    }))
+
+    payload = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+    assert payload["source_manifest"]["gex_confirm"] == {"root": None, "member_count": 0, "files": {}}
+    all_cards = (payload["opportunities"] + payload["risk_warnings"]
+                 + payload["directional_watch"] + payload["event_board"])
+    for c in all_cards:
+        assert c["mechanics_context"]["gex_confirm_verdict"] is None
     ns = payload.get("no_signal_exemplar")
     if ns is not None:
-        reason = ns["no_signal_reason"]
-        assert reason["en"] in (
-            brief._NO_SIGNAL_REASON_EN["LEGS_BELOW_THRESHOLD"],
-            brief._NO_SIGNAL_REASON_EN["ONE_SIDED"] + " and activity is normal",
-            brief._NO_SIGNAL_REASON_EN["ONE_SIDED"],
-            brief._NO_SIGNAL_REASON_EN["DISAGREE"] + " and activity is normal",
-            brief._NO_SIGNAL_REASON_EN["DISAGREE"],
-            brief._NO_SIGNAL_REASON_EN["SALIENCE_FAIL"],
-        )
+        assert ns["mechanics_context"]["gex_confirm_verdict"] is None
+    assert "site/gex" not in json.dumps(payload)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AD-1T0 test 8 — off-host self-skip (§G): no resolvable store -> exit 0,
+# artifact bytes untouched, ::warning at line start.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_ad1t0_8_off_host_self_skip_leaves_artifact_untouched(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(producer, "resolve_thetadata_store", lambda **kw: None)
+    out_path = tmp_path / "options_intel_brief.json"
+    out_path.write_text('{"sentinel": true}')
+    original_bytes = out_path.read_bytes()
+
+    rc = producer.main(["--out", str(out_path)])
+    assert rc == 0
+    assert out_path.read_bytes() == original_bytes
+
+    captured = capsys.readouterr()
+    warning_lines = [ln for ln in captured.out.splitlines() if ln.startswith("::warning")]
+    assert warning_lines, "expected a ::warning at line start on off-host self-skip"
+
+    # build() itself returns None directly (the seam main() branches on).
+    assert producer.build() is None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Minor m5 — the `store_resolution` receipt hash binds the resolver SOURCE TAG
+# only, never the absolute path; the absolute path lives in the diagnostic
+# `_run` block only, excluded from `receipt_id` and from the §7 semantic no-op.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_ad1t0_9a_m5_store_resolution_hash_binds_source_tag_not_absolute_path(tmp_path, monkeypatch):
+    sessions, S, D = _fake_repo_sessions()
+    symbols = [f"SYM{chr(65+i)}" for i in range(6)]
+    store = _write_fake_thetadata_store(tmp_path, monkeypatch, symbols=symbols, sessions=sessions)
+    p1 = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+
+    # Simulate a host/path migration: same store CONTENTS at a different
+    # absolute path, same resolver source tag (`_store_source_label`'s
+    # "resolved" fallback, since this fixture's tmp store matches none of
+    # env/data_dir/ops-wt).
+    moved = tmp_path / "moved_store"
+    store.rename(moved)
+    monkeypatch.setattr(producer, "resolve_thetadata_store", lambda required=False, purpose="": moved)
+    p2 = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+
+    r1 = next(r for r in p1["input_receipts"] if r["logical_source"] == "store_resolution")
+    r2 = next(r for r in p2["input_receipts"] if r["logical_source"] == "store_resolution")
+    assert r1["sha256"] == r2["sha256"]
+    assert r1["path"] == r2["path"], "store_resolution `path` must be a stable logical URI, not the absolute path"
+    assert str(store) not in r1["path"] and str(moved) not in r2["path"]
+    assert p1["receipt_id"] == p2["receipt_id"], "a pure host/path migration must not churn receipt_id"
+
+    # The absolute resolved path is still recorded -- but only in the
+    # diagnostic `_run` block, excluded from receipt_id and the no-op compare.
+    assert p2["_run"]["store_resolution"]["resolved_path"] == str(moved)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Minor m6 — a corrupt/unreadable year parquet emits a line-start ::warning and
+# is visible in receipt state (store_resolution.corrupt_files), while the build
+# still degrades gracefully (no crash).
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_ad1t0_9b_m6_corrupt_year_file_warns_and_degrades_gracefully(tmp_path, monkeypatch, capsys):
+    sessions, S, D = _fake_repo_sessions()
+    symbols = [f"SYM{chr(65+i)}" for i in range(6)]
+    store = _write_fake_thetadata_store(tmp_path, monkeypatch, symbols=symbols, sessions=sessions)
+
+    historical = sorted(s for s in sessions if s < S)[0]
+    fp = store / "eod" / symbols[0] / f"{pd.Timestamp(historical).year}.parquet"
+    fp.write_bytes(b"not a parquet file at all")
+
+    capsys.readouterr()
+    payload = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
+    assert payload is not None   # degrades gracefully, never crashes
+
+    captured = capsys.readouterr()
+    warning_lines = [ln for ln in captured.out.splitlines() if ln.startswith("::warning")]
+    assert any("corrupt" in ln.lower() for ln in warning_lines), warning_lines
+
+    r = next(r for r in payload["input_receipts"] if r["logical_source"] == "store_resolution")
+    assert r.get("corrupt_files", 0) >= 1
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1564,7 +2773,7 @@ def test_b2_4_universe_membership_change_moves_the_denominator_no_historical_max
     historical-max fallback."""
     sessions, S, D = _fake_repo_sessions()
     symbols = [f"SYM{chr(65+i)}" for i in range(6)]
-    _write_fake_repo(tmp_path, monkeypatch, symbols=symbols, sessions=sessions)
+    _write_fake_thetadata_store(tmp_path, monkeypatch, symbols=symbols, sessions=sessions)
 
     monkeypatch.setattr(producer.options_universe, "gex_symbols", lambda: list(symbols))
     p_full = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
@@ -1603,7 +2812,7 @@ def test_b2_5_universe_resolution_failed_fails_closed_on_swallowed_basket_error(
     a real swallowed ``baskets_universe()`` exception produces."""
     sessions, S, D = _fake_repo_sessions()
     symbols = [f"SYM{chr(65+i)}" for i in range(6)]
-    _write_fake_repo(tmp_path, monkeypatch, symbols=symbols, sessions=sessions)
+    _write_fake_thetadata_store(tmp_path, monkeypatch, symbols=symbols, sessions=sessions)
 
     monkeypatch.setattr(producer, "_gex_cfg", lambda: {"include_baskets": True, "symbols": list(symbols)})
     monkeypatch.setattr(producer.options_universe, "gex_symbols", lambda: list(symbols))
@@ -1622,7 +2831,7 @@ def test_b2_6_universe_resolution_succeeds_when_baskets_actually_widen_it(tmp_pa
     degrades" regression."""
     sessions, S, D = _fake_repo_sessions()
     symbols = [f"SYM{chr(65+i)}" for i in range(6)]
-    _write_fake_repo(tmp_path, monkeypatch, symbols=symbols, sessions=sessions)
+    _write_fake_thetadata_store(tmp_path, monkeypatch, symbols=symbols, sessions=sessions)
 
     anchors = symbols[:2]
     monkeypatch.setattr(producer, "_gex_cfg", lambda: {"include_baskets": True, "symbols": anchors})
@@ -1988,7 +3197,7 @@ def test_f4a_thin_session_c1_none_through_the_real_pipeline():
     def _rows_for_session(s: str, i: int) -> list[dict]:
         rows: list[dict] = []
         for sym in names:
-            sym_rows = _symbol_rows(sym, s, spot=100.0, base_iv=0.30 * _wiggle(i, salt=abs(hash(sym)) % 1000),
+            sym_rows = _symbol_rows(sym, s, spot=100.0, base_iv=0.30 * _wiggle(i, salt=_stable_symbol_salt(sym)),
                                      oi_base=100.0, volume=50.0, anchor=sessions[0])
             ss = pd.Timestamp(s)
             for r in sym_rows:
@@ -2146,7 +3355,15 @@ def test_b4_7_producer_end_to_end_real_shaped_fixture_biib_class(tmp_path, monke
             _group("not_ready", ["WAIT"]),
         ],
     )
-    _write_fake_repo(tmp_path, monkeypatch, symbols=symbols, sessions=sessions, prophet_payload=prophet)
+    # Zero-variance per-session spec (mirrors the pre-cutover fixture's own
+    # unwiggled `_symbol_rows(sym, s, anchor=...)` call): this test only cares
+    # that the two-domain Prophet resolution is really wired end-to-end through
+    # the ThetaData producer, not about board composition under realistic
+    # variance -- a degenerate history keeps all three names' cards visible in
+    # the payload (never collapsed onto a single no_signal_exemplar draw).
+    zero_variance_spec = {sym: (lambda s, i: {}) for sym in symbols}
+    _write_fake_thetadata_store(tmp_path, monkeypatch, symbols=symbols, sessions=sessions,
+                                 symbols_spec=zero_variance_spec, prophet_payload=prophet)
     payload = producer.build(now=datetime(2026, 1, 1, tzinfo=timezone.utc), ignore_staleness=True)
 
     def prophet_of(sym):
@@ -2611,73 +3828,12 @@ def test_cd_6_fresh_until_reverts_to_family_life_when_c1_leg_vanishes():
     assert after > S     # returned to its family life, no longer crowd-shortened
 
 
-@pytest.mark.needs_full_checkout("data")
-def test_cd_7_real_store_recurrence_guard_2026_08_12(tmp_path, monkeypatch):
-    """Real-store recurrence guard, pinned to the debugger's exact exemplar
-    session (S=2026-08-12, D=2026-08-13) via a filtered CHAINS_DIR snapshot --
-    so this stays anchored to the known-defect session regardless of how much
-    the committed store grows later (``producer.build`` otherwise always picks
-    the NEWEST lawful pair). Asserts (a) the fired-crowding count the real
-    pipeline now produces is <=40 (post-fix expectation ~27: c2/c3 only -- this
-    session structurally has too few finite sd_share peers for c1 to fire at
-    all, an honest absence) and (b) that bound is corroborated by an
-    INDEPENDENT recomputation straight from `session_metrics`/`percentile_xs`
-    on the real chain (not a re-read of the artifact's own counters)."""
-    S, D = "2026-08-12", "2026-08-13"
-    real_chains = REPO_ROOT / "data" / "polygon_gex" / "chains"
-    s_file, d_file = real_chains / f"{S}.parquet", real_chains / f"{D}.parquet"
-    if not (s_file.exists() and d_file.exists()):
-        pytest.skip(f"real store no longer carries the {S}/{D} exemplar snapshots")
-
-    # producer.build() computes input-receipt paths via `fp.relative_to(_REPO_ROOT)`,
-    # so the pinned snapshot dir must live UNDER the repo root, not the system tmp
-    # dir pytest's own `tmp_path` fixture uses.
-    import shutil
-    import tempfile
-    scratch = Path(tempfile.mkdtemp(dir=REPO_ROOT, prefix=".cd7_scratch_"))
-    try:
-        pinned_dir = scratch / "chains"
-        pinned_dir.mkdir()
-        for f in sorted(real_chains.glob("*.parquet")):
-            if f.stem <= D:
-                (pinned_dir / f.name).symlink_to(f)
-        monkeypatch.setattr(producer, "CHAINS_DIR", pinned_dir)
-
-        payload = producer.build(now=datetime.now(timezone.utc), out_path=tmp_path / "artifact.json",
-                                  ignore_staleness=True)
-    finally:
-        shutil.rmtree(scratch, ignore_errors=True)
-    assert payload["as_of_session"] == S
-    assert payload["oi_counted_date"] == D
-
-    total_fired = len(payload["risk_warnings"]) + payload["risk_board_overflow"]
-
-    # Independent recomputation: straight from the engine primitives on the
-    # real S-day chain, not from re-reading the artifact.
-    day_S = pd.read_parquet(s_file)
-    metrics_S, _ = brief.session_metrics_and_exclusions(day_S)
-    sd_xs = {n: metrics_S[n]["sd_share"] for n in metrics_S}
-    finite_sd = [v for v in sd_xs.values() if v is not None]
-    c1_fired_recomputed = {
-        n for n in metrics_S
-        if (c1 := brief.percentile_xs(sd_xs, n)) is not None and c1 >= CONFIG["C1_TH"]
-    }
-    # the debugger's own exemplar (369/372 zero sd_share) -- fewer than
-    # MIN_HISTORY finite same-day-volume names this session, so c1 is an
-    # honest universe-wide absence, never a fired leg.
-    assert len(finite_sd) < CONFIG["MIN_HISTORY"]
-    assert c1_fired_recomputed == set()
-
-    # every card the real pipeline actually exposes must agree: none of them
-    # carry a fired c1 leg this session.
-    for grp in ("opportunities", "directional_watch", "event_board", "risk_warnings"):
-        for c in payload[grp]:
-            cw = c.get("crowding")
-            if cw is not None:
-                assert "c1" not in cw["fired"]
-
-    assert total_fired <= 40, (
-        f"post-fix crowding fire count {total_fired} exceeds the debugger's bound "
-        f"(expected ~27: c2/c3 only -- c1 is an honest absence this session, "
-        f"recomputed independently above)"
-    )
+## test_cd_7_real_store_recurrence_guard_2026_08_12 REMOVED (AD-1T0 cutover,
+## 2026-08-22): this test pinned the producer directly at the legacy Polygon
+## ``data/polygon_gex/chains`` estate via ``monkeypatch.setattr(producer,
+## "CHAINS_DIR", ...)``, an attribute the producer no longer has post-cutover
+## (it resolves a ThetaData store via ``resolve_thetadata_store()`` instead).
+## The underlying crowding-defect regression it guarded (c1 requires the
+## C1_XS_MIN_PRESENT_SHARE coverage predicate) is an ENGINE-level law, already
+## covered store-independently by ``test_cd_1``..``test_cd_6`` above and by the
+## AD-1T0 pair-selection/identity tests below — nothing here was AD-1T0-specific.

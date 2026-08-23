@@ -234,7 +234,7 @@ Prior session investment was given zero weight in these dispositions (handoff §
 
 ## 10. The 25 final questions (handoff §17)
 
-1. **Canonical EOD options source:** Polygon.io snapshot (`collectors/polygon_options.py`), massive.com OPRA aggregates for flow; Cboe adapter is legacy.
+1. **Canonical EOD options source:** ~~Polygon.io snapshot (`collectors/polygon_options.py`), massive.com OPRA aggregates for flow; Cboe adapter is legacy.~~ SUPERSEDED 2026-08-22 by the Chairman source ruling (`DEC:AD-OPTIONS-CANONICAL-SOURCE-THETADATA`): **ThetaData is the canonical Mastermind options-data source** (EOD chains, OI, Greeks/IV, trade+NBBO, Terminal intraday) — the T1 store on the M1 host via `engine.thetadata_store.resolve_thetadata_store()`. Massive/Polygon is a stock-data source only; the answer above stands as the accurate description of what AD-0 found at census time.
 2. **Current completed source session in production:** chains through 2026-08-14; settled/OI-complete session displayed 2026-08-13 (positions counted 08-14); off-exchange 2026-08-13.
 3. **Is the page using that session:** yes — and it says so on its face; the defect is cadence (weekend advance), not honesty (§1.1-1).
 4. **Useful before drill-down:** for orientation, yes; for decisions, no — the decision layer is absent (§5, §7).

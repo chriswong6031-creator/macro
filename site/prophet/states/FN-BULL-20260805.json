@@ -1,32 +1,32 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "FN-BULL-20260805",
-  "asof": "2026-08-20",
+  "asof": "2026-08-22",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
-  "management_confidence": 45.2,
-  "raw_confidence": 44.4,
-  "delta_vs_base": -14.8,
-  "recommended_action": null,
+  "management_confidence": 39.7,
+  "raw_confidence": 37.1,
+  "delta_vs_base": -20.3,
+  "recommended_action": "wait",
   "human_state": "Approaching Trigger",
   "components": {
-    "validity": 32.1,
+    "validity": 11.1,
     "progress": 0.0,
-    "pace": 58.8,
+    "pace": 46.9,
     "retention": 50.0,
     "overlay": 55.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.431,
+    "dist_to_stop_r": 0.216,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 28.9,
-    "p1": -0.3795,
-    "p2": -0.1897,
+    "horizon_pct_used": 33.3,
+    "p1": -0.5228,
+    "p2": -0.2614,
     "p3": null,
-    "move_r": -0.569,
+    "move_r": -0.784,
     "mfe_r": 0.0,
-    "mae_r": -0.569
+    "mae_r": -0.784
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
@@ -36,23 +36,15 @@
   "authority_tier": "display",
   "reliability": {
     "management_confidence": "display \u2014 no forward ledger has passed yet",
-    "recommended_action": "paused \u2014 no closing print since 2026-07-10; a stale price frame carries no current action authority",
+    "recommended_action": "display \u2014 narrate, not authoritative order",
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 0.0,
-  "_mae": -91.26999511718748,
+  "_mae": -125.7299865722656,
   "_max_p1": 0.0,
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 13,
-  "tau": 0.2889,
-  "price_frame": {
-    "state": "stale",
-    "last_close_date": "2026-07-10",
-    "run_asof": "2026-08-20",
-    "lag": 29,
-    "lag_basis": "business_days",
-    "max_lag": 3
-  }
+  "days_elapsed": 15,
+  "tau": 0.3333
 }

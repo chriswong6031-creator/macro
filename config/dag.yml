@@ -210,21 +210,26 @@ lanes:
           scoped decimal strings and exact cell spans, and fails on missing/mismatched bytes. It does not aggregate
           rows or create instruments, remaining capacity, risk, probability, ranking,
           sizing, entry, or Prophet authority.
-      - id: build_capital_structure_projection
-        module: scripts.build_capital_structure_projection
-        note: >
-          Offline deterministic observed-filing-state projection. It verifies the
-          event compiler's telemetry-last receipt before publishing a canonical JSON
-          artifact and byte-identical public twin. Context-only; unknown terms and
-          issuer-state capabilities remain explicitly unavailable.
       - id: check_capital_structure_health
         module: scripts.check_capital_structure_health
         note: >
           Fail-closed ingestion-truth gate. Distinguishes compiler generation time
-          (telemetry.as_of) from latest retained source freshness. Reds this job
-          when filings were selected but zero durable verified evidence progressed;
-          a proven empty/already-known queue is the only permitted zero-progress
-          non-fail. Collect stays green so the market plane is not frozen.
+          (telemetry.as_of) from the canonical discovered, retained, and compiled
+          filing horizons. Reds this job when filings were selected but zero durable
+          verified evidence progressed; a proven empty/already-known queue is the
+          only permitted zero-progress non-fail. Its generation-bound horizon feeds
+          the following projection without changing that ingestion verdict. Collect
+          stays green so the market plane is not frozen.
+      - id: build_capital_structure_projection
+        module: scripts.build_capital_structure_projection
+        note: >
+          Offline deterministic observed-filing-state projection. It verifies the
+          event compiler's telemetry-last receipt and requires the preceding health
+          artifact to bind the same generation before publishing one canonical JSON
+          payload and byte-identical public twin. Public freshness derives from the
+          discovery→retained→compiled horizon; compiler age remains separate
+          generation telemetry. Context-only; unknown terms and issuer-state
+          capabilities remain explicitly unavailable.
 
   # ── daily.yml / collect_tail ─────────────────────────────────────────────
   # 2026-07-14 collect split: the slow post-adapter accrual band (ThetaData
@@ -903,6 +908,15 @@ lanes:
             - scripts.build_index_changes
             - scripts.build_cycle_pattern_live
             - scripts.build_cycle_pattern_state
+            # IMCE A5B: registered prospective forward capture. DAILY-ONLY —
+            # the sole nightly advancer of
+            # data/cycle_pattern/imce_prospective_observation_v1.jsonl (never
+            # the three-hour company-intelligence workflow, which only
+            # publishes the source event_workspace.v1 objects this step
+            # reads). Grouped after the other cycle_pattern steps, before
+            # build_measurement (which reads this ledger for its compact
+            # accrual/status projection).
+            - scripts.build_cycle_pattern_imce_prospective
             # Stock seasonality calendar clock. DAILY-ONLY on purpose: the window
             # family (2645 windows) and its independent circular year-shift null
             # (B=2000, on the raw AND the market-neutral panel) are the heavy leg,
@@ -3285,14 +3299,15 @@ lanes:
         module: scripts.run_fundamental_forensics_broad_sec
         args: [--mode, incremental]
         note: >
-          FF-1 incremental broad SEC source plane. Polls Submissions for every
-          issuer in data/edgar/fundamentals.parquet, admits exact SEC bytes into
-          the private fundamental_forensics/broad-sec/v1/ prefix, and fetches
-          Company Facts only when relevant 10-K/10-Q (and existing 20-F/40-F)
-          filing state changes. Shares concurrency group filing-forensics-sec
-          with Wave-2. Schedule is incremental only; recovery is explicit
-          workflow_dispatch. A partial poll exits non-zero and does not advance
-          latest-complete. Off the render path; no workbench rebuild.
+          FF-1 incremental broad SEC source plane. Discovers relevant
+          10-K/10-Q (and existing 20-F/40-F) changes from the official EDGAR
+          full-index master ZIP, admits exact SEC bytes for affected issuers
+          into the private fundamental_forensics/broad-sec/v1/ prefix, and
+          fetches Company Facts only when relevant filing state changes.
+          Shares concurrency group filing-forensics-sec with Wave-2. Schedule
+          is incremental only; recovery is explicit workflow_dispatch. A
+          partial poll exits non-zero and does not advance latest-complete.
+          Off the render path; no workbench rebuild.
   # ── theta-ops launchd lane (NOT daily.yml / NOT any GHA workflow) ──────────
   # W2 SURFACE (RIC program): whole-market dealer-surface history.
   # Runs on the ops host (Mac Studio / theta-ops-wt worktree) via launchd agents.

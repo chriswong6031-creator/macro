@@ -343,6 +343,69 @@ def _append_only_guarded(d: str, local_size: int, remote_size: int | None) -> bo
     return d in _APPEND_ONLY_DIRS and remote_size is not None and local_size < remote_size
 
 
+def _walk_files(base: Path) -> list[Path]:
+    """Every file under `base`, DESCENDING THROUGH DIRECTORY SYMLINKS.
+
+    `Path.rglob("*")` does NOT follow directory symlinks, and the thetadata_eod
+    store on the m1 ops host is exactly that shape: the dataset root
+    (/Users/chriswong/theta-ops-wt/data/thetadata_eod) holds `_manifest.json` and
+    `_backfill_state.json` as real files, while the three tier dirs `eod/`, `oi/`
+    and `greeks/` are symlinks into /Volumes/STORAGE/macro-data/thetadata_eod/.
+    rglob therefore enumerated 2 files, `_uploadable` dropped the store manifest,
+    and `_data_dir_syncable` refused the whole dir every night —
+    "only 1 file(s) locally (< 100) — partial checkout, the parquet store is not
+    materialised here" in /tmp/thetadata_r2sync.stderr.log, nightly since at least
+    2026-08-08 (com.macro.thetadata-r2sync). The guard was RIGHT about what it was
+    shown; the enumeration was what lied to it, so the fix belongs here and the
+    floors stay exactly where they are — a real partial checkout has no tier
+    symlinks to follow and still counts 2 files.
+
+    Paths come back as LOGICAL paths under `base`, never resolved: the R2 key is
+    `p.relative_to(base)`, so resolving eod/SPY/2020.parquet to its /Volumes/…
+    target would both raise out of relative_to and rewrite every key.
+
+    Termination is guaranteed: a directory is walked at most once, keyed by
+    (st_dev, st_ino), so a symlink loop cannot spin forever. That also means an
+    aliased tree (two symlinks onto one real directory) is enumerated once rather
+    than uploaded twice under two keys — logged, never silent, because the skip
+    would otherwise be an invisible hole in a publish. Unreadable or broken
+    entries are skipped rather than raised: a partial enumeration is precisely
+    what the min-files/min-bytes guards downstream exist to refuse, and they can
+    only do that if they get a count.
+    """
+    out: list[Path] = []
+    seen: set[tuple[int, int]] = set()
+
+    def _first_visit(p: Path) -> bool:
+        """True when `p` is a reachable directory we have not walked yet."""
+        try:
+            st = p.stat()          # follows symlinks on purpose
+        except OSError as e:
+            log.warning("%s: not enumerable (%s) — skipped", p, e)
+            return False
+        ident = (st.st_dev, st.st_ino)
+        if ident in seen:
+            log.warning("%s: already enumerated via another path (symlink loop or "
+                        "aliased tree) — not walked again", p)
+            return False
+        seen.add(ident)
+        return True
+
+    def _onerror(err: OSError) -> None:
+        log.warning("%s: unreadable during walk (%s) — skipped",
+                    getattr(err, "filename", base), err)
+
+    _first_visit(base)
+    for dirpath, dirnames, filenames in os.walk(base, followlinks=True, onerror=_onerror):
+        here = Path(dirpath)
+        dirnames[:] = [n for n in dirnames if _first_visit(here / n)]
+        for n in filenames:
+            p = here / n
+            if p.is_file():        # drops broken symlinks (os.walk files them here)
+                out.append(p)
+    return out
+
+
 def _uploadable(d: str, base: Path, files: list[Path]) -> list[Path]:
     """The subset of `files` the delta pass may upload.
 
@@ -365,11 +428,23 @@ def _uploadable(d: str, base: Path, files: list[Path]) -> list[Path]:
     Nothing is lost: `_manifest_doc` embeds the collector doc under "store". fetch_r2
     already skips `_manifest.json` keys on the download leg for the mirror-image reason
     (it is a publish-side artifact) — this is the upload half of that same contract.
-    Site dirs have no collector manifest and are returned unfiltered."""
+    Site dirs have no collector manifest and are returned unfiltered.
+
+    (AD-1T1 §B/F15) `_writer.lock` (the T1 store's crash-safe advisory flock
+    file) is excluded the same way — it is local writer-coordination state,
+    never store content, and uploading it would let a stale lock byte ride to
+    R2 with no reader for it.
+
+    (RF9, R3) ANY `.tmp`-suffixed name is excluded too — a SIGKILL mid-write
+    (parquet `{YYYY}.parquet.tmp`, or `_manifest.json.tmp`/`_writer.lock.tmp`)
+    can leave one on disk between the sweep and the next publish; a half
+    written file is never legitimate store content."""
     if d not in _DATA_DIRS:
         return files
     store_manifest = base / "_manifest.json"
-    return [p for p in files if p != store_manifest]
+    writer_lock = base / "_writer.lock"
+    return [p for p in files
+           if p != store_manifest and p != writer_lock and not p.name.endswith(".tmp")]
 
 
 def _manifest_doc(d: str, base: Path, names: list[str]) -> dict:
@@ -443,7 +518,9 @@ def publish(dirs, dry_run: bool = False, workers: int = 32,
         # _uploadable drops a data-dir store's own _manifest.json: it is the collector's
         # doc, embedded under "store" by _manifest_doc, and its key belongs to the
         # publish-side file-list doc put at the end of the run.
-        files = _uploadable(d, base, [p for p in base.rglob("*") if p.is_file()])
+        # _walk_files, not rglob: the store's tier dirs are symlinks on the ops
+        # host and rglob does not descend through them (see _walk_files).
+        files = _uploadable(d, base, _walk_files(base))
         total = sum(p.stat().st_size for p in files) if d in _DATA_DIRS else None
         ok, why = _data_dir_syncable(d, len(files), total)
         if not ok:

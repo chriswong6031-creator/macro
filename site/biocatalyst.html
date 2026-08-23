@@ -52,7 +52,7 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="stylesheet" href="theme.css?v=f41f9a21">
-<link rel="stylesheet" href="biocatalyst.css?v=e36dc31f">
+<link rel="stylesheet" href="biocatalyst.css?v=712a3a77">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
 <link rel="preload" as="style" href="navigation-refresh.css?v=c299c324">
 </head>
@@ -329,8 +329,8 @@
         <h2 id="bci-filter-title"><span class="l-en">Monitor controls</span><span class="l-zh">监测控制</span></h2>
       </div>
       <div class="bci-mode-control" id="bci-mode-control" role="tablist" aria-label="Trial intelligence view" data-label-en="Trial intelligence view" data-label-zh="试验智能视图">
-        <button id="bci-mode-milestones" class="bci-mode is-active" type="button" role="tab" aria-selected="true" aria-controls="bci-queue-pane" tabindex="0" data-mode="milestones" data-label-en="Milestones" data-label-zh="里程碑">
-          <span class="l-en">Milestones</span><span class="l-zh">里程碑</span>
+        <button id="bci-mode-milestones" class="bci-mode is-active" type="button" role="tab" aria-selected="true" aria-controls="bci-queue-pane" tabindex="0" data-mode="milestones" data-label-en="Catalyst Radar — Trial Milestones" data-label-zh="催化雷达 — 试验里程碑">
+          <span class="l-en">Catalyst Radar — Trial Milestones</span><span class="l-zh">催化雷达 — 试验里程碑</span>
         </button>
         <button id="bci-mode-screen" class="bci-mode" type="button" role="tab" aria-selected="false" aria-controls="bci-queue-pane" tabindex="-1" data-mode="screen" data-label-en="Trial Screen" data-label-zh="试验筛选">
           <span class="l-en">Trial Screen</span><span class="l-zh">试验筛选</span>
@@ -358,8 +358,9 @@
       <label class="bci-control" id="bci-field-control" for="bci-field-filter">
         <span class="bci-control-label"><span class="l-en">Registry date</span><span class="l-zh">登记日期</span></span>
         <select id="bci-field-filter">
-          <option value="primary_completion" data-label-en="Primary completion" data-label-zh="主要完成" selected>Primary completion</option>
-          <option value="completion" data-label-en="Completion" data-label-zh="完成">Completion</option>
+          <option value="all" data-label-en="All milestones" data-label-zh="全部里程碑" selected>All milestones</option>
+          <option value="primary_completion" data-label-en="Primary completion" data-label-zh="主要完成">Primary completion</option>
+          <option value="completion" data-label-en="Study completion" data-label-zh="研究完成">Study completion</option>
         </select>
       </label>
       <label class="bci-control" id="bci-change-kind-control" for="bci-change-kind-filter" hidden>
@@ -468,7 +469,7 @@
       <header class="bci-queue-head">
         <div>
           <p class="bci-kicker" id="bci-queue-kicker"><span class="l-en">Registry-recorded dates</span><span class="l-zh">登记记录日期</span></p>
-          <h2 id="bci-queue-title"><span class="l-en">Milestone monitor</span><span class="l-zh">里程碑监测</span></h2>
+          <h2 id="bci-queue-title"><span class="l-en">Catalyst Radar — Trial Milestones</span><span class="l-zh">催化雷达 — 试验里程碑</span></h2>
           <p class="bci-queue-subtitle" id="bci-queue-subtitle"><span class="l-en">Connecting to the verified registry page…</span><span class="l-zh">正在连接已核验的登记页…</span></p>
         </div>
         <div class="bci-asof" id="bci-asof" aria-live="polite"></div>
@@ -496,14 +497,14 @@
       <div class="bci-chips" id="bci-query-chips" aria-label="Active query" data-label-en="Active query" data-label-zh="当前查询" hidden></div>
       <div class="bci-state-notice" id="bci-state-notice" role="status" aria-live="polite" hidden></div>
       <p class="bci-sr-only" id="bci-page-status" aria-live="polite"></p>
-      <div class="bci-queue" id="bci-queue" role="listbox" aria-label="Registry milestones" aria-busy="true">
+      <div class="bci-queue" id="bci-queue" role="listbox" aria-label="Trial milestones" aria-busy="true">
         <div class="bci-skeleton" aria-hidden="true"><span></span><span></span><span></span></div>
         <div class="bci-skeleton" aria-hidden="true"><span></span><span></span><span></span></div>
         <div class="bci-skeleton" aria-hidden="true"><span></span><span></span><span></span></div>
       </div>
       <p class="bci-panel-foot" id="bci-panel-foot" hidden></p>
       <div class="bci-queue-footer" id="bci-queue-footer" hidden>
-        <button class="bci-load-more" id="bci-load-more" type="button" aria-controls="bci-queue" data-label-en="Load more registry milestones" data-label-zh="加载更多登记里程碑">
+        <button class="bci-load-more" id="bci-load-more" type="button" aria-controls="bci-queue" data-label-en="Load more trial milestones" data-label-zh="加载更多试验里程碑">
           <span class="l-en">Load more</span><span class="l-zh">加载更多</span>
         </button>
       </div>
@@ -522,7 +523,7 @@
       <div class="bci-inspector-body" id="bci-inspector-body">
         <div class="bci-inspector-empty">
           <span class="bci-empty-orbit" aria-hidden="true"></span>
-          <p><span class="l-en">Choose a registry milestone to read the current trial record and its source receipt.</span><span class="l-zh">选择一项登记里程碑，查看当前试验记录及其来源凭证。</span></p>
+          <p><span class="l-en">Choose a trial milestone to read the current trial record and its source evidence.</span><span class="l-zh">选择一项试验里程碑，查看当前试验记录及其来源证据。</span></p>
         </div>
       </div>
     </aside>
@@ -530,7 +531,7 @@
 </main>
 
 <div class="bci-scrim" id="bci-scrim" hidden></div>
-<script src="theme.js?v=bca7d302" defer></script>
-<script src="biocatalyst.js?v=383c14b4" defer></script>
+<script src="theme.js?v=7ddb5b23" defer></script>
+<script src="biocatalyst.js?v=c35dac39" defer></script>
 </body>
 </html>

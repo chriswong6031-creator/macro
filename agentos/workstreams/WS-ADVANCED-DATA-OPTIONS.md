@@ -6,39 +6,13 @@ objective: >
   standalone anticipation and risk intelligence lobe with bounded Prophet confluence.
   Done = ranked, falsifiable, receipt-backed EOD signals with explicit no-signal/degraded
   states, production-proven per slice (AD-0…AD-15 per the committed recovery masterplan).
-status: blocked
+status: active
 program: options-intelligence
 repos: [macro]
 owner: coo-fable
 class: research
 blast_radius: reversible
 ambiguity: scoped
-blocked_by:
-  - >
-    Massive/Polygon option-chain snapshot entitlement is still absent on the linked
-    key after a claimed restoration. Post-entitlement commissioning census
-    2026-08-20T05:23:23Z: GET /v3/snapshot/options/{AAPL,SPY} returns HTTP 403
-    NOT_AUTHORIZED on BOTH api.polygon.io and api.massive.com, while AAPL stock
-    snapshot and news return 200 on the same key (MASSIVE_API_KEY). Production
-    adapter PolygonOptions.snapshot() on the mixed probe set
-    [SPY, QQQ, IWM, AG, CDE] returned 5/5 auth_or_entitlement_failure, 0 rows,
-    no production write. The 2026-08-19 scheduled capture wrote a FAILED health
-    receipt (coverage_pct=0.0, aborted_early). No repo change can restore this.
-    AD-1 stays BUILT_NOT_PROVEN / SOURCE_BLOCKED.
-needs_ceo:
-  question: >
-    Restore a rights-safe Massive Options Snapshot entitlement (daily OI + Greeks/IV)
-    on the linked production key, and confirm a BUSINESS/ENTERPRISE license or written
-    commercial grant covering Mastermind before AD-1 production commissioning?
-  options:
-    - "Restore Options Snapshot on the existing linked key under a business/enterprise grant, then wait for two scheduled healthy captures"
-    - "Replace the linked key with an already-entitled business-licensed key, then wait for two scheduled healthy captures"
-    - "Hold AD-1 dark and separately commission a Massive↔ThetaData parallel-source adjudication (not a silent swap)"
-  recommendation: >
-    Restore/rebind Options Snapshot on the existing account/key under a business
-    license. Do not attach a personal-use plan. Do not silently route AD-1 to ThetaData.
-    Do not ask a coding agent to "fix Polygon options."
-  by_when: 2026-08-21
 waves:
   - id: AD-0
     title: Recovery archaeology + production truth + AD-1 freeze
@@ -56,9 +30,10 @@ waves:
     depends_on: [AD-1P0]
     next_action: >
       Runtime MERGED (661ad5d291aa687bbb0c7a33e5b573c60a2b148f, 2026-08-19T13:25:26Z).
-      Production commissioning remains SOURCE-BLOCKED / BUILT_NOT_PROVEN until
-      entitlement restoration plus two consecutive healthy scheduled captures
-      (S then D, coverage_pct >= 0.90), then Sol production-acceptance review.
+      State = BUILT_NOT_PROVEN. Production proof now runs on the canonical
+      ThetaData source under wave AD-1T0 (DEC:AD-OPTIONS-CANONICAL-SOURCE-
+      THETADATA) — the prior Massive/Polygon entitlement condition is retired
+      and is not an AD dependency.
   - id: AD-1C0
     title: Source-failure durability (auth census, health receipt, first-writer quality)
     status: done
@@ -66,28 +41,72 @@ waves:
     depends_on: [AD-1]
     next_action: >
       Merged (d5ebb5d9b3db8c12deed7c267676cb38b6b348dc, 2026-08-19T16:04:26Z).
-      First post-merge scheduled capture DID run: data/polygon_gex_health/2026-08-19.json
-      session 2026-08-19 capture_instant 2026-08-20T01:00:18Z health=failed
-      coverage_pct=0.0 aborted_early 5/5 auth_or_entitlement_failure. That is not
-      capture S. Do not hand-write a receipt. Do not --force. After a live 200
-      entitlement, the next lawful scheduled run may replace this failed vintage.
+      Legacy source-hardening on the polygon_gex estate: remains merged
+      evidence/hardening but no longer gates AD-1 (Chairman source ruling
+      2026-08-22, DEC:AD-OPTIONS-CANONICAL-SOURCE-THETADATA).
   - id: AD-1C0.1
-    title: Source-clock integrity + security closure + production commissioning
-    status: in_progress
+    title: Source-clock integrity (capture lease) on the legacy estate
+    status: done
+    pr: 6080
     depends_on: [AD-1C0]
     next_action: >
-      Sol handoff 2026-08-20, three jobs. (A) Source-clock adjudication: census
-      measures the nightly accrual's real execution window (a normal collect crosses
-      midnight ET while the resolved session stays the prior NYSE session, so the
-      same-ET-day partial-replacement rule may refuse lawful repairs); Fable rules
-      Option A (earlier close-proximate capture point) vs Option B (bounded lawful
-      capture lease); any timing PR is held UNMERGED for Sol, no merge-on-green.
-      (B) Credential/vendor closure is OPERATOR-EXTERNAL: revoke/rotate the exposed
-      key, delete run 32077948964 logs, register the replacement as a real Actions
-      secret, restore the option-chain entitlement (probe 2026-08-20T08:09Z: chain
-      still 403, logs still served, no POLYGON/MASSIVE key in Actions secrets).
-      (C) Production commissioning BLOCKED_EXTERNAL until (B) closes; then two
-      consecutive healthy scheduled captures (S, D) and AD-1 end-to-end acceptance.
+      Merged (12467e2d5e9d333c13340a4fa216eb3924cd45fd, 2026-08-22T05:32:55Z,
+      Sol PASS 4991922630). Legacy source-clock hardening on the polygon_gex
+      estate: remains merged evidence/hardening but no longer gates AD-1.
+      Any Massive/Polygon credential-security cleanup is outside this Options
+      workstream and must not block AD-1.
+  - id: AD-1T0
+    title: ThetaData canonical options source cutover (Chairman ruling 2026-08-22)
+    status: done
+    depends_on: [AD-1]
+    next_action: >
+      Cutover DELIVERED 2026-08-22: producer consumes the canonical ThetaData
+      store via resolve_thetadata_store(); engine byte-unchanged; v1.2 frozen;
+      identity ruled on the source tuple (spec research/AD1T0_THETADATA_
+      CUTOVER_SPEC_2026-08-22.md); three adversarial review rounds, all
+      findings closed; committed artifact built on the m1 store (S=2026-08-19,
+      D=2026-08-20, receipt 637d0c60..., zero Polygon inputs). AD-1 stays
+      BUILT_NOT_PROVEN: the 0.90 coverage proof is structurally unreachable —
+      DSC:THETADATA-T1-SPINE-DAILY-REFRESH-IS-48-ROOTS (39/375 = 0.104 daily-
+      current). Diagnostic on the covered 39: 39/39 eligible, real boards —
+      the scoring pipeline is production-capable; the spine is the blocker.
+      Next: Sol decision on a spine-cadence wave (incremental refresh) +
+      store-host runner topology (RE-PIN RULE) / r2sync heal. Do not start
+      AD-2; do not shrink the universe.
+  - id: AD-1T1
+    title: Full-universe incremental ThetaData T1 cadence (Sol handoff 2026-08-22)
+    status: in_progress
+    pr: 6267
+    depends_on: [AD-1T0]
+    next_action: >
+      Implementation MERGED (Sol PASS 2026-08-23, release directive
+      ADVANCED_DATA_OPTIONS_AD1T1_RELEASE_AND_PRODUCTION_COMMISSIONING_
+      2026-08-23): PR 6267 squash-merged at accepted head cc2d90399bc4 ->
+      merge SHA 787787f93c8efaaf30b9cd3d32d9446596fa0925 (collision fence
+      clean; exact-head ci/fences green pre-merge; post-merge fences push
+      run green). M1 transition EXECUTED same day per runbook section 3a:
+      com.macro.thetadata-backfill booted out + plist removed + zero
+      orphans; com.macro.thetadata-daily bootstrapped from merge-SHA bytes
+      (7 files sha256-verified; streamed transfer because theta-ops-wt's
+      origin remote credential is dead — separate debt); weekend RunAtLoad
+      clean no-op proven (no receipt written); Terminal untouched (PID
+      10566, HTTP 200 before/after). State = BUILT_NOT_PROVEN, production
+      commissioning IN PROGRESS. Next: two consecutive normal healthy
+      scheduled sessions (D1 Mon 2026-08-24, D2 Tue 2026-08-25; forced=false,
+      status=healthy, ad_ready_coverage_pct >= 0.90, no deadline breach,
+      Terminal healthy, first fetching run oi_D_source=snapshot_open_
+      interest), then bounded production review + read-only AD diagnostic,
+      then return packet to Sol. NOTE-4 ruled NONBLOCKING (late-recovery
+      sentinel page is a real degraded-SLA alert — do not suppress).
+      No --force-run proof ever. AD-1T2/AD-2 stay CLOSED pending Sol.
+  - id: AD-1T2
+    title: Restore store-bearing M1 to the theta-m1 product workflow; commission AD-1 end to end
+    status: todo
+    depends_on: [AD-1T1]
+    next_action: >
+      NOT STARTED. Opens only after AD-1T1 is Sol-accepted and the T1 cadence
+      is production-proven (two consecutive normal scheduled sessions). Broken
+      R2 sync is not a prerequisite unless new evidence proves it necessary.
   - id: AD-2
     title: Evidence Receipts, Nulls, Lifecycle, Corrections
     status: todo
@@ -95,9 +114,19 @@ waves:
     next_action: CLOSED until AD-1 production acceptance. Do not start.
 landmines:
   - >-
+    The ThetaData Terminal license allows ONE terminal instance
+    (com.macro.theta-terminal on the M1 host). Never launch a second Terminal,
+    never copy the ~60GB T1 store between runners, and never mint a second
+    store path — engine/thetadata_store.resolve_thetadata_store() is THE
+    resolver, and it deliberately refuses the empty repo stub
+    (data/thetadata_eod/_manifest.json n_roots=0). An M2/GH runner must never
+    silently resolve the stub and publish NO_SIGNAL.
+  - >-
     The entire host-side intraday options launchd fleet (15 units incl. the sparse-selector
     canary) is NOT loaded on the Mac Studio as of 2026-08-17 (verified launchctl probes,
     AD-0 ledger §2.3). Do not treat in-repo plists under ops/launchd/ as running machinery.
+    Intraday options production/classification authority stays with Terminal — AD
+    authorizes no duplicate intraday collector.
   - >-
     Exactly one options-derived input reaches live Prophet rank: gex_confirm_verdict in C1
     fusion, lawful solely via DNR:KILL-POSITIONING-FUSION Amendment 1. Any wider fusion of
@@ -109,19 +138,19 @@ landmines:
     Historical/preregistered campaign and episode evidence is preserved append-only even
     where its runtime is retired (Sol review on #5830) — retirement never deletes evidence.
   - >-
-    HTTP 403 NOT_AUTHORIZED on /v3/snapshot/options/{symbol} is an account entitlement
-    failure. Do not change base URL, retries, thresholds, endpoint paths, or AD-1 scoring
-    to work around it. Polygon and Massive domains currently behave identically for this key.
-  - >-
-    Missing chain sessions 2026-08-14 / 2026-08-17 / 2026-08-18 are permanent (point-in-time
-    OI). Do not hand-write those parquet files. Do not backfill them from ThetaData without
-    a separate provenance/PIT ruling.
+    LEGACY (Massive/Polygon estate, no longer on the AD-1 path): HTTP 403
+    NOT_AUTHORIZED on /v3/snapshot/options/{symbol} is an account entitlement failure
+    on the legacy source; missing polygon_gex chain sessions 2026-08-14/17/18 are
+    permanent (point-in-time OI) — do not hand-write those parquet files, and do not
+    backfill the polygon_gex store from ThetaData (the stores keep separate identities).
   - >-
     Cboe delayed quote pages expressly prohibit automated extraction. Not an AD-1 fallback.
 decisions:
   - "DEC:AD-SIGNAL-VOCAB-RESTORES-SHORT"
   - "DEC:AD1-DIRECTION-AUTHORITY-SEPARATES-SALIENCE-MECHANICS-AND-DIRECTION"
   - "DEC:AD1C0-FIRST-WRITER-QUALITY-RULE"
+  - "DEC:AD1C01-CAPTURE-LEASE-REPLACES-SAME-DAY"
+  - "DEC:AD-OPTIONS-CANONICAL-SOURCE-THETADATA"
 discoveries:
   - "DSC:AD-OPTIONS-CHAIN-ENTITLEMENT-REGRESSION"
 do_not_redo:
@@ -130,35 +159,34 @@ do_not_redo:
     #5801) — reconciled with merge SHAs in the AD-0 ledger; #5711 is a closed duplicate of
     #5708; W1A-A/B modules are test-only with zero consumers.
   - >-
-    Do not re-derive the EOD source map: Polygon snapshot (POLYGON_API_KEY then
+    Do not re-derive the legacy EOD source map: Polygon snapshot (POLYGON_API_KEY then
     MASSIVE_API_KEY, ~18:30 ET, session-stamped) + massive.com OPRA aggs (NOT entitled
-    to trades_v1/quotes_v1) + FINRA CNMS/ATS keyless. AD-0 ledger §4.
+    to trades_v1/quotes_v1) + FINRA CNMS/ATS keyless. AD-0 ledger §4. That estate is
+    now legacy context (DEC:AD-OPTIONS-CANONICAL-SOURCE-THETADATA).
   - >-
     Do not resurrect darkpool direction labels (v2 null walk-forward + DNR:PSS-AF1) or the
     DOI/skew-decel families (killed).
   - >-
     Do not restart Polygon-vs-Massive domain-migration diagnosis. Re-proved
     2026-08-19T19:59:29Z and again 2026-08-20T05:23:23Z: both domains 403 on option
-    chains and 200 on stock/news with the same linked key.
+    chains and 200 on stock/news with the same linked key. Legacy context only —
+    restoration of that entitlement is no longer an AD objective.
   - >-
-    Do not treat an operator/CEO "entitlement restored" claim as live evidence.
-    Re-run the bounded 8-probe plus a no-write adapter snapshot this session.
-    2026-08-20 commissioning did that and still got 403.
-  - >-
-    Do not sweep 375 underlyings while the chain endpoint is 403. AD-1C0 short-circuits
-    after a mixed-class auth probe.
-  - >-
-    Do not silently route AD-1 to ThetaData. collectors/thetadata.py already implements
-    historical + snapshot OI, EOD chains, and Greeks/IV, and is NOT wired into
-    polygon_gex / options_intel_brief. That is a later Sol-commissioned parallel-source
-    adjudication, not this recovery.
+    SUPERSEDED 2026-08-22 (DEC:AD-OPTIONS-CANONICAL-SOURCE-THETADATA): the former
+    "do not silently route AD-1 to ThetaData" row guarded against a silent source
+    swap pending a Sol-commissioned adjudication. That adjudication is now the
+    Chairman source ruling: ThetaData IS the canonical options source and wave
+    AD-1T0 executes the cutover explicitly. What remains prohibited: a parallel
+    Massive-vs-ThetaData dual-truth store, and any second intraday collector.
   - >-
     Sparse selector / W1A is RESEARCH-ONLY. Do not resurrect before the AD-9 ruling.
 next_action: >
-  Owner restores/rebinds Massive Options Snapshot + daily OI + Greeks/IV on the
-  linked key under a business/enterprise license. Then the normal scheduled
-  nightly must produce two consecutive healthy captures (S then D, coverage_pct
-  >= 0.90, no --force). Only then run AD-1 production acceptance. AD-2 stays closed.
+  Execute wave AD-1T1 (full-universe incremental T1 cadence, Sol handoff
+  2026-08-22): benchmark one-day vendor throughput; extend the existing
+  one-session writer into the daily incremental maintainer; retire whole-year
+  DAILY refresh; return the bounded PR to Sol UNMERGED. AD-1 stays
+  BUILT_NOT_PROVEN until AD-1T2 restores the product workflow. Do not start
+  AD-1T2 or AD-2.
 artifacts:
   - research/ADVANCED_DATA_OPTIONS_EOD_DARK_POOL_INTELLIGENCE_OS_MASTERPLAN_2026-08-17.md
   - research/ADVANCED_DATA_OPTIONS_EOD_AD0_CURRENT_STATE_AND_CAPABILITY_LEDGER_2026-08-17.md
@@ -167,34 +195,32 @@ artifacts:
 
 ## Context
 
-AD-0 and AD-1P0 are done. AD-1 runtime is merged (PR #5872,
-`661ad5d291aa687bbb0c7a33e5b573c60a2b148f`, 2026-08-19T13:25:26Z). AD-1C0
-source-failure durability is merged (PR #5974,
-`d5ebb5d9b3db8c12deed7c267676cb38b6b348dc`, 2026-08-19T16:04:26Z).
+AD-0, AD-1P0, AD-1, AD-1C0, and AD-1C0.1 are done (merge SHAs in the wave rows).
+AD-1 state = BUILT_NOT_PROVEN.
 
-Production commissioning is SOURCE-BLOCKED. `site/options_intel_brief.json` is
-still `board_state=STALE_SOURCE`, `as_of_session=2026-08-12`,
-`oi_counted_date=2026-08-13`, empty opportunity/watch/event boards. The chain
-store newest vintage is `data/polygon_gex/chains/2026-08-13.parquet`. Sessions
-2026-08-14/17/18 are absent and must not be filled by hand.
+**Source authority (Chairman ruling 2026-08-22,
+DEC:AD-OPTIONS-CANONICAL-SOURCE-THETADATA): ThetaData is the canonical
+Mastermind options-data source** — EOD chains, open interest, Greeks/IV,
+trade + NBBO, and Terminal intraday. Massive/Polygon is a stock-data source,
+not an options source authority. The prior entitlement blocker and needs_ceo
+gate are retired; credential-security cleanup on the legacy key lives outside
+this workstream.
 
-AD-1C0 health machinery has now observed a scheduled run:
-`data/polygon_gex_health/2026-08-19.json` (`health=failed`, `coverage_pct=0.0`,
-`aborted_early`, 5/5 `auth_or_entitlement_failure` at
-`capture_instant` 2026-08-20T01:00:18Z). `run_status.json`
-`sources.polygon_gex_accrual` matches (`status=empty`, `health=failed`,
-`checked_at` 2026-08-20T01:02:45Z). That failed vintage is not capture S.
+The canonical T1 store lives on the M1 host
+(`/Users/chriswong/theta-ops-wt/data/thetadata_eod`, resolved ONLY via
+`engine.thetadata_store.resolve_thetadata_store()`), fed by the theta launchd
+lanes (`com.macro.theta-terminal`, `com.macro.thetadata-backfill`,
+`com.macro.thetadata-r2sync`, `com.macro.theta-staleness`). daily.yml pins
+ThetaData-consuming jobs to the theta-m1 runner labels.
 
-Post-entitlement commissioning census 2026-08-20T05:23:23Z on
-`origin/main` `e186f9f45c1bf0f55e774d836c7ee5df2fecccc7` re-proved CASE B
-after a claimed restoration: option-chain snapshot 403 NOT_AUTHORIZED on both
-vendor domains; stock snapshot and news 200. Production adapter dry-run on
-[SPY, QQQ, IWM, AG, CDE] also 5/5 `auth_or_entitlement_failure`, 0 rows, no
-write. Local key source name `MASSIVE_API_KEY` (POLYGON_API_KEY absent from
-local env). GitHub Actions has `POLYGON_API_KEY` (secret metadata still
-`updated_at` 2026-08-08T08:10:36Z); no `MASSIVE_API_KEY` Actions secret. The
-2026-08-08 capability manifest recorded `options_chain_snapshot` HTTP 200
-entitled with Greeks/IV/OI under `POLYGON_API_KEY`.
+The repo-local `data/thetadata_eod/` is an EMPTY STUB (`n_roots=0`) and must
+never be treated as production truth — the resolver refuses it by design.
 
-ThetaData remains a source-redundancy *candidate* only (`collectors/thetadata.py`,
-theta-ops lane, not on the AD-1 path).
+`site/options_intel_brief.json` is built from the canonical ThetaData store
+since AD-1T0 (PR #6253, merge a45ac6f58e63): honest
+`board_state=INSUFFICIENT_COVERAGE` at 39/375 = 0.104 source coverage. The
+coverage blocker is the T1 spine's 48-root daily refresh
+(DSC:THETADATA-T1-SPINE-DAILY-REFRESH-IS-48-ROOTS); AD-1T1 replaces that
+whole-year refresh with a full-universe one-session incremental maintainer —
+the ~19h full-universe estimate was a property of the whole-year re-pull
+design, not of one-day vendor throughput (Sol ruling, AD-1T1 handoff §0).

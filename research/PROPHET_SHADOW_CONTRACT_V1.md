@@ -237,14 +237,75 @@ the ordering stated per market because it differs (F1 — the draft's blanket
 - A refactor that hoists either call upstream of its market's artifact write is
   a contract breach even if bytes happen to match.
 
-The module holds a challenger registry that is EMPTY at merge — with no
-registered challenger the writer emits a `registry_state=no_challenger_registered`
-log line on every on-lane pass (an empty store must be distinguishable from a
-broken writer — F16; when a challenger registers, the store paths get wired
-into the surface-freshness absent-vs-stale vocabulary in that wave, and a
-populated pass logs `registry_state=wrote_n_rows n=<n>`). Registering a
+The module holds a challenger registry that is EMPTY at merge. The registry is
+keyed `(market, challenger_definition)` — a market-scoped tuple, not a bare
+`challenger_definition` string (post-merge Sol review correction, 2026-08-21;
+see the dated section below) — and `register_challenger(market, definition, *,
+rank_fn=None, discovery_fn=None)` takes `market` as a required first positional
+argument, normalizes it (`str(market).upper()`) and raises `ValueError`
+immediately if it does not resolve into `MARKETS`. Market binding is EXPLICIT
+and decided by the caller at registration time — a `rank_fn`/`discovery_fn`
+must NEVER decide market membership itself by inspecting tickers, board
+definitions, env vars, or other incidental state.
+
+`write_shadow(market)` selects ONLY that market's own registrations via the
+module-level seam `_registrations_for(market)`. **This claim is
+trust-bounded, not absolute** (round-2 post-build adversarial review, D2 —
+the original "an HK write is structurally incapable of executing or writing
+a CA-registered challenger, and vice versa" wording was FALSIFIED by a
+reentrant-challenger reproduction and is corrected here): the seam plus the
+`(market, definition)` key mean the substrate structurally never MIS-LANES a
+registration — `_registrations_for(market)` never SELECTS a foreign-market
+challenger's spec for a well-behaved caller, which is what K15-K19 prove. But
+a registered `rank_fn`/`discovery_fn` is TRUSTED, reviewed in-repo code, not
+a hostile input the registry is a security boundary against: nothing in the
+selection seam stops a registered function that itself calls `write_shadow`
+again — including for the OTHER market — from executing that other market's
+own registrations from inside its own call. A challenger that mutates
+`CHALLENGER_REGISTRY` directly, imports this module to call its private
+functions, or otherwise behaves as hostile code is a CODE-REVIEW matter for
+whoever reviews and merges that challenger, named as such — never a runtime
+guarantee this module can enforce against code it already trusted enough to
+register. One concrete reentrant shape is closed structurally rather than
+left to review alone: `write_shadow` refuses ANY reentrant call — for either
+market — with `registry_state=reentrant_refused`, fail-soft, via a
+module-level guard set for the duration of one top-level call (D2(a)); a
+challenger that calls `write_shadow` for the other market mid-pass gets that
+inner call refused rather than executed.
+
+The registry-state ladder is FOUR mutually distinguishable POST-GATE states,
+each with its own log line carrying a `registry_state=` token (corrected,
+D5 — the error path previously logged no such token; it does now). These are
+reached only after the market/asof/lane pre-gate checks (`unsupported_market`
+/ `no_asof` / `off_lane`) and the reentrancy check above have already passed
+— those pre-gate returns are unchanged by this ladder and carry no
+`registry_state=` requirement of their own:
+- `no_challenger_registered` — the registry is globally EMPTY (an empty store
+  must be distinguishable from a broken writer — F16).
+- `no_challenger_for_market` — the registry holds registrations, but NONE for
+  this call's market (a foreign-market registration must never be silently
+  treated as this market's own — the defect the 2026-08-21 correction
+  repairs).
+- `wrote_n_rows n=<n>` — this market has at least one registration; `n=0` is
+  a lawful successful zero-row pass (e.g. every registered
+  rank_fn/discovery_fn yielding nothing this session). **Semantics
+  (D7):** a SINGLE registered challenger raising — inside its own
+  `rank_fn`/`discovery_fn` call, or inside that one registration's own lane
+  write — does NOT flip the whole pass to `error`. It is caught by a
+  per-registration guard, logged as `challenger_failed definition=<d>`, and
+  skipped; the remaining registrations still run, and the pass still
+  concludes `wrote_n_rows n=<n>` where `<n>` is the TRUE accumulated count
+  from every registration that succeeded.
+- `error` — a SUBSTRATE-level failure below the per-registration boundary
+  (e.g. the incumbent-positions read itself exploding), never a single
+  challenger raising (fail-soft: log + skip, never raise into the build).
+  The returned `written` count on this path is the true accumulated total up
+  to the point of failure, not hardcoded to 0.
+
+When a challenger registers, the store paths get wired into the
+surface-freshness absent-vs-stale vocabulary in that wave. Registering a
 challenger later requires ZERO schema migration and ZERO production-builder
-surgery. The writer never raises into the build (fail-soft: log + skip).
+surgery.
 
 ## 5. Structural distinguishability
 
@@ -341,6 +402,32 @@ Additional kills (one named test each):
   K14 forward-clock (F14) — re-observing a name on a later session must not
      advance first_seen_at.
 
+Market-scoped registration kills (K15–K20, added by the post-merge Sol review
+correction, 2026-08-21 — see the dated section below):
+  K15 HK-only discovery isolation — an HK-only discovery_fn (call-sentinel)
+     must never be invoked, and must write zero rows, during a CA
+     write_shadow call; POSITIVE CONTROL: the same registration fires and
+     writes under HK.
+  K16 CA-only discovery isolation — symmetric mirror of K15.
+  K17 Lane-A rank_fn isolation — the same isolation as K15/K16 for rank_fn
+     challengers, both directions, with positive controls.
+  K18 simultaneous mixed-lane registration — one HK challenger and one CA
+     challenger registered AT THE SAME TIME (a mixed Lane-A/Lane-B pair): an
+     HK pass executes only the HK definition (the CA sentinel stays silent,
+     HK's stores carry only the HK definition), and a CA pass executes only
+     the CA definition (symmetrically).
+  K19 executed mutation kill — `_registrations_for` monkeypatched to ignore
+     its market argument and return every registered definition regardless
+     of market (the exact shape of the original merged defect) → the
+     K15-style isolation assertions must FAIL (the foreign challenger's
+     function actually executes) → restored → suite passes clean again.
+     Proves K15–K18 are non-vacuous, not decorative.
+  K20 registry-state ladder — with a foreign-market-only registration,
+     `write_shadow` returns `registry_state == "no_challenger_for_market"`
+     and `written == 0`, distinguishable from `no_challenger_registered`,
+     `error`, and `wrote_n_rows n=0` (the last produced via an own-market
+     challenger that legitimately yields nothing).
+
 Cross-store validator (F15): every Lane-A (date, ticker) exists in board_ledger
 with matching board_pos and board_definition — the compensating invariant for
 choosing a separately-keyed lane over the DEC's paired row.
@@ -397,3 +484,181 @@ exposed or documents a deliberate, reviewed departure from the literal text.
   this same reason (see the build packet's DEVIATIONS): a full end-to-end
   render of `compute_hk_standouts` against real `site/hkstockdata/` bytes,
   if ever added, would be the first test to actually need the marker.
+
+## Post-merge Sol review correction (2026-08-21): market-scoped registration
+
+CEO Sol's post-merge review of the shadow-contract wave (merged fc5282f438fb,
+PR #6178) found a defect the pre-merge adversarial review did not catch:
+`CHALLENGER_REGISTRY` was keyed by `challenger_definition` ALONE, and
+`write_shadow(market)` iterated `sorted(CHALLENGER_REGISTRY)` — every
+registration in the dict, regardless of which market it was meant for. The
+first real registrant would therefore have executed in BOTH the HK and CA
+lanes: an HK-only rank_fn or discovery_fn would have run (and written rows)
+during a CA build pass too, with no structural barrier stopping it. Zero
+production registrants existed at merge (the registry ships EMPTY by
+contract §4/§7), so no backward compatibility with the unscoped
+`register_challenger(definition, ...)` API was owed — this is a repair, not a
+migration.
+
+**Repair shape** (implemented in this correction PR, which carries this
+wave's FINAL closure — the shadow-contract wave's own closure record,
+PR #6187, is SUPERSEDED by this repair for the registration surface it
+touches):
+- `CHALLENGER_REGISTRY: dict[tuple[str, str], dict[str, Callable | None]]` —
+  keyed `(market, challenger_definition)`, one flat canonical dict (not
+  nested, not per-market modules).
+- `register_challenger(market, definition, *, rank_fn=None,
+  discovery_fn=None)` — `market` is a required first positional argument,
+  normalized (`str(market).upper()`) and validated against `MARKETS`
+  fail-loud (`ValueError`) at registration time, never fail-soft — a future
+  registrant that gets its market argument wrong must be told immediately,
+  not silently mis-lane its writes.
+- `_registrations_for(market)` — the module-level selection seam
+  `write_shadow` uses to learn which `(challenger_definition, spec)` pairs
+  apply to its own call. It is the SOLE authority on market scoping (it
+  returns the spec directly, not a bare name a second lookup would have to
+  re-derive market membership for) — the seam K19's executed mutation kill
+  targets.
+- The registry-state ladder grew a fourth state,
+  `no_challenger_for_market`, distinguishing "registrations exist, none for
+  THIS market" from the pre-existing `no_challenger_registered` (globally
+  empty), `wrote_n_rows n=<n>` (including the lawful `n=0` case), and
+  `error` states. See §4 above for the full ladder.
+- New executed kills K15–K20 (tests/test_board_shadow.py) prove the
+  isolation structurally, including K19's executed mutation kill: with
+  `_registrations_for` monkeypatched to ignore market scoping (the exact
+  shape of the original defect), the K15-style isolation assertions are
+  shown to genuinely FAIL — a foreign challenger's function actually
+  executes and writes into the wrong market's store — before the fix is
+  restored and the suite is shown green again. This is what proves the
+  isolation kills are non-vacuous rather than decorative.
+
+No storage layout, Lane A/B key, prospectivity law, board-ledger keep-FIRST
+identity, outcome denylist, or publication-isolation clause changed. The
+builder call sites in `scripts/build_canada.py` and
+`scripts/build_hk_library.py` are untouched (they call `write_shadow(calls,
+market=..., asof=...)`, which is unaffected by the registration-side repair).
+No challenger was registered in production as part of this correction — the
+registry remains EMPTY at merge, as it was before.
+
+## Wave HK-DISCOVERY-SHADOW (2026-08-22): first registered challenger + freshness activation
+
+This wave registers the FIRST production challenger and, per §4's deferred
+clause ("when a challenger registers, the store paths get wired into the
+surface-freshness absent-vs-stale vocabulary in that wave"), activates the
+freshness wiring. Nothing in §§1-7 is weakened; this section records the
+wave's additive contracts. The build survived an Opus adversarial review
+(MERGE-BLOCKED round with findings F1-F13, all adjudicated and repaired
+before ship — see the wave's Agent OS handoff for the ledger).
+
+### Registration
+
+- Exactly ONE challenger: `register_challenger("HK", "hk_discovery_v1",
+  discovery_fn=...)`, wired in `scripts/build_hk_library.py` inside
+  `compute_hk_standouts`, textually and causally BETWEEN the
+  `hk_standouts.json` persist and the existing fail-soft
+  `write_shadow(calls, market="HK", ...)` call. The market literal appears
+  only at this registration call. No CA registration, no Lane-A `rank_fn`,
+  and `FAMILY_REGISTRY` remains the empty tuple (families are Wave 6
+  HK-NATIVE-INTEL).
+- The discovery function is a pure closure over an explicitly assembled,
+  DEEP-COPIED evidence bundle of pre-cut structures (the §4 F1 non-aliasing
+  invariant applied to the Lane-B path): it takes no market, reads no env,
+  reads no published artifact, and consumes no board rank / composite-score
+  order / featured / published-membership field (source-fenced + permutation-
+  tested).
+
+### Candidate origination (deterministic origin ledger)
+
+A name is a candidate iff ≥1 origin predicate fires; `candidate_origin` is
+the "+"-joined list of firing origins in this FIXED canonical order, with
+deterministic sub-tokens in parens:
+
+1. `washout_reclaim` — 2W washout/reclaim state-map emergence
+   (`engine.cycles._tf_state`-derived map built in `compute_hk_standouts`).
+2. `leadership` — `engine.hk_leadership.compute()` membership (fixed
+   mega-cap cohort; the population limitation is honest and recorded).
+3. `ripening` — the UNCAPPED `hk_board_rank.build_ripening_rows` admission
+   (a second call with `cap=10**9, ready_cap=10**9`; the display call and
+   its caps are untouched; the uncapped kwargs are pinned by a named test).
+4. `aged_turn` — the bare `hk_board_rank.ran_admits` admission predicate
+   (probed identical to the display builder's; anchor/close-series drops are
+   display-only and deliberately NOT applied to the research population).
+5. `blocked_signal(<reason-slug>)` — the bare `hk_board_rank.veto_admits`
+   admission predicate PLUS the display builder's own staleness bound
+   (`VETOED_MAX_SESSIONS`): a veto older than the bound is no longer news
+   about this tape and does NOT re-mint a fresh observation each session
+   (adversarial-review finding F2 — unbounded stale-state accretion).
+6. `hk_native_onset(southbound)` — the per-name southbound signal fired
+   this session.
+7. `ah_dislocation` — `ah_value_signal` emergence for names WITH a
+   resolvable A/H twin only; a no-twin name never fires and never receives
+   a fabricated zero (missing ≠ zero).
+
+A-twin lead/read-through emergence (packet §10.2's eighth class) is
+DELIBERATELY ABSENT: censused NOT PRESENT in current code, and this wave
+invents no new alpha machinery. UI caps exist only in display lanes; the
+research population carries NO producer cap (executed mutation kill K-D1).
+
+### Availability (first real read — independent, fail-closed)
+
+Frozen enum: ENTRY_OPEN, WAIT_PULLBACK, WAIT_CONFLUENCE, RAN_DONT_CHASE,
+RIGHTS_BLOCKED, UNAVAILABLE_DATA. Fixed precedence: missing required inputs
+→ UNAVAILABLE_DATA (`missing_inputs(...)`); placement/rights flag →
+RIGHTS_BLOCKED; knife → WAIT_PULLBACK; ran/extension → RAN_DONT_CHASE; gate
+passed with every hygiene read AVAILABLE → ENTRY_OPEN; else
+WAIT_CONFLUENCE. Availability is computed from hygiene/entry reads invoked
+for the candidate set (never scraped from the buys loop) and shares no
+input with the origin predicates. Read-availability is explicit: when the
+placement gate, knife pass, or extension map is unavailable AS A WHOLE, a
+name that would otherwise be ENTRY_OPEN reports UNAVAILABLE_DATA with a
+source naming the unavailable read — unknown NEVER defaults to a pass.
+Correction (Sol pre-settlement review, 2026-08-22): the K-D4 arms as first
+merged closed this only for EXPLICIT `False` flags — an OMITTED flag
+defaulted to available, and two tests asserted that default on purpose. The
+repair wave makes ENTRY_OPEN reachable only when `plc_available`,
+`knife_available`, and `extension_available` are all explicitly present and
+affirmatively True; omitted/`None` fails closed to UNAVAILABLE_DATA with a
+`…_unavailable(unstated)` source (executed mutation kill: restoring the
+default fails four named tests). Known per-name blockers
+(RIGHTS_BLOCKED/WAIT_PULLBACK/RAN_DONT_CHASE/WAIT_CONFLUENCE) are not
+weakened by an absent flag. Per-name absence inside an available read is
+a genuine False. Availability preserves "interesting but wait": it is never
+buy authority.
+
+### Freshness receipt (absent-vs-stale vocabulary)
+
+Because Lane B is append-only, a lawful zero-candidate session leaves no
+trace in the parquet — store bytes alone cannot distinguish "healthy zero"
+from "stale". `write_shadow` therefore writes
+`data/prophet_shadow/<market>_discovery_receipt.json` (market-prefixed
+basename, inside the write-surface fence) on every POST-GATE pass for a
+market with ≥1 registration: `{market, as_of, registry_state, written,
+definitions, challenger_failures, stamped_at}`. Pre-gate refusals
+(off-lane/no-asof/unsupported/reentrant) write nothing; a market with zero
+registrations writes nothing (a CA pass with only the HK registration
+creates NO CA file — proven with the real registration, kill K-D7).
+Receipt write is best-effort fail-soft and does not alter D7 semantics;
+per-registration failures are named in `challenger_failures` while the pass
+still concludes `wrote_n_rows n=<true sibling count>`.
+
+`scripts/check_surface_freshness.check_hk_discovery_freshness()` is the
+SOLE reader: warn-only (exit 0), on the HK session clock
+(`lib.hk_calendar`), with DISTINCT line-start annotations for absent /
+stale (HK-session gap) / substrate `error` / non-empty
+`challenger_failures`, and SILENCE on a fresh zero-candidate receipt. The
+receipt is deliberately NOT in `_ARTIFACTS`: it must never join the
+first-class surface list, the SURFACE STALE escalation, or the ops paging
+spine (review finding F1 — a zero-authority research store may not page an
+operator). The receipt reaches the sentinel's checkout via the asia-close
+lane's `git add data/` commit; `daily.yml` neither writes nor
+cache-restores `data/prophet_shadow/`, so no W0b-class clobber vector
+exists today (re-check if a cache ever covers that directory).
+
+### Zero authority (unchanged)
+
+`hk_standouts.json` and every HK Brain input are byte/behavior unchanged:
+the registration block sits downstream of the persist, reads none of the
+published payload, and the display lanes keep their existing caps. The
+challenger writes only `data/prophet_shadow/hk_*`. `visible_to_user=False`
+and `published_authority=False` on every row.

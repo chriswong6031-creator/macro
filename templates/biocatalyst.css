@@ -265,6 +265,23 @@ html[data-theme="light"] body.bci-page { background: var(--bci-ruled), #e8ebf1; 
 .bci-observation-receipt { display: grid; align-content: space-between; justify-items: end; min-width: 118px; padding: 1px 0; color: var(--muted); font-family: var(--font-mono); font-size: 9px; font-variant-numeric: tabular-nums; line-height: 1.35; text-align: right; gap: 5px; }
 .bci-observation-receipt strong { color: var(--text); font-family: var(--font-ui); font-size: 12px; font-weight: 780; letter-spacing: -.02em; }
 
+/* Catalyst Radar — Trial Milestones (BioCatalyst P1-1). */
+.bci-radar-card { align-items: stretch; flex-shrink: 0; }
+.bci-radar-card .bci-trial-topline { flex-wrap: wrap; }
+.bci-radar-card .bci-trial-topline > * { flex-shrink: 0; }
+.bci-radar-group-title { margin: 18px 0 8px; padding: 0 2px; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+.bci-radar-group-title:first-child { margin-top: 2px; }
+.bci-phase-chip { display: inline-flex; max-width: 100%; overflow: hidden; padding: 2px 6px; border: 1px solid var(--bci-line); border-radius: 99px; color: var(--muted); font-size: 9px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.bci-issuer-chip { display: inline-flex; max-width: 100%; overflow: hidden; padding: 2px 6px; border-radius: 99px; font-size: 9px; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
+.bci-issuer-chip.is-resolved { border: 1px solid color-mix(in srgb, var(--bci-cyan) 30%, var(--bci-line)); color: var(--bci-cyan-strong); background: color-mix(in srgb, var(--bci-cyan) 8%, transparent); font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.bci-issuer-chip.is-unresolved { border: 1px dashed var(--bci-line-strong); color: var(--muted); background: transparent; }
+.bci-issuer-chip.is-parent { border-style: dashed; border-color: color-mix(in srgb, var(--bci-filed) 40%, var(--bci-line)); color: var(--bci-filed-strong); background: color-mix(in srgb, var(--bci-filed) 8%, transparent); }
+.bci-status-chip.is-paused { border-color: color-mix(in srgb, var(--warn) 34%, var(--bci-line)); color: color-mix(in srgb, var(--warn) 80%, var(--text)); background: color-mix(in srgb, var(--warn) 8%, transparent); }
+.bci-status-chip.is-inactive { border-color: color-mix(in srgb, var(--bci-redline) 34%, var(--bci-line)); color: color-mix(in srgb, var(--bci-redline) 78%, var(--text)); background: color-mix(in srgb, var(--bci-redline) 8%, transparent); }
+.bci-revision-chip { display: inline-flex; max-width: 100%; overflow: hidden; padding: 2px 6px; border: 1px solid color-mix(in srgb, var(--bci-filed) 40%, var(--bci-line)); border-radius: 99px; color: var(--bci-filed-strong); background: color-mix(in srgb, var(--bci-filed) 10%, transparent); font-size: 9px; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
+.bci-days-to-milestone { display: block; color: var(--muted); font-family: var(--font-ui); font-size: 9px; font-weight: 650; letter-spacing: 0; }
+.bci-radar-revision-section .bci-endpoint p { margin-top: 4px; }
+
 .bci-skeleton { min-height: 95px; padding: 16px; border: 1px solid var(--bci-line); border-radius: 13px; background: color-mix(in srgb, var(--panel2) 32%, transparent); }
 .bci-skeleton span { display: block; height: 10px; margin-bottom: 10px; border-radius: 999px; background: linear-gradient(90deg, color-mix(in srgb, var(--bci-line) 75%, transparent), color-mix(in srgb, var(--bci-cyan) 12%, transparent), color-mix(in srgb, var(--bci-line) 75%, transparent)); background-size: 220% 100%; animation: bci-shimmer 1.85s ease-in-out infinite; }
 .bci-skeleton span:nth-child(1) { width: 30%; }.bci-skeleton span:nth-child(2) { width: 84%; }.bci-skeleton span:nth-child(3) { width: 57%; margin-bottom: 0; }

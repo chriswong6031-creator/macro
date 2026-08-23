@@ -1,6 +1,22 @@
 {
  "status": "ok",
- "detail": "145 candidate row(s) this run",
- "last_attempt_utc": "2026-08-21T09:29:55.187926+00:00",
- "last_success_utc": "2026-08-21T09:29:55.187926+00:00"
+ "detail": "219 candidate row(s) this run",
+ "last_attempt_utc": "2026-08-23T09:07:33.022647+00:00",
+ "last_success_utc": "2026-08-23T09:07:33.022647+00:00",
+ "candidate_accounting": {
+  "eligible": 219,
+  "represented_downstream": 219,
+  "typed_exclusions": 0,
+  "exclusions_by_type": {},
+  "coverage_exceptions": {
+   "open": 0,
+   "open_scoped": 0,
+   "open_unscoped": 0,
+   "new_this_run": 0,
+   "reaffirmed_this_run": 0,
+   "resolved_this_run": 0,
+   "readable": true,
+   "boundary_persist_ok": true
+  }
+ }
 }

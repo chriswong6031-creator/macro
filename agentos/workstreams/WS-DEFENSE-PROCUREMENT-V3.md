@@ -103,7 +103,7 @@ waves:
     pr: [6123, 6173, 6192]
     depends_on: [D3]
     next_action: >
-      Done / SOL ACCEPTANCE PENDING — shipped under Sol's IRDM-only charter
+      Done — Sol accepted 2026-08-21. Shipped under Sol's IRDM-only charter
       in #6123 and provenance-hardened in #6173. D4P entitled production
       proof CLOSED 2026-08-21 on the real signed-in route
       government_revenue.html?mode=companies&item=company:IRDM. Production
@@ -138,10 +138,50 @@ waves:
       and workspace JSON each 401 authentication_required/locked; page 200
       exposes one hidden empty bridge host only. Return to Sol for final D4
       acceptance. D5 remains unauthorized and unstarted.
-  - id: D5
-    title: Program, mission, capability, and product graph
-    status: todo
+  - id: D5R
+    title: Program/mission/capability/product graph architecture freeze (research only)
+    status: done
     depends_on: [D4]
+    next_action: >
+      DONE — Sol ACCEPTED D5R 2026-08-23 (accepted chain = #6209 + #6219 +
+      #6247; authorization receipt = macro PR #6247 comment 5384728488).
+      D5R core architecture merged on #6209 and PASSED Sol review (D5R.1
+      six-repair consistency close merged on #6219). D5R.2 was the FINAL
+      CONTRACT-REPRESENTABILITY SEAL (Sol 2026-08-22): seventeen-key
+      top-level skeleton with reference JSON, program_capability_links,
+      program_event_links (exact event-identity+hash pointer; census at
+      D5R.2 time — NO Virginia Block VI v2 event existed on main 7e00f874;
+      historical fact, re-censused at D5 start),
+      review_coverage with the four-state derivation law, milestone
+      date/window XOR preimage, logical-id + revision law, frozen dossier
+      bundle + five-key program_link shapes, fixtures A-I with computed
+      sha12 ids, adversarial representability review to YES. Owner
+      adjudication and Virginia pilot remain frozen — do not reopen.
+      Handoffs:
+      agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-22-d5r1-docs-consistency.md,
+      agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-22-d5r2-representability-seal.md.
+  - id: D5
+    title: Program, mission, capability, and product graph (implementation)
+    status: done
+    depends_on: [D5R]
+    next_action: >
+      DONE (Sol acceptance pending) — full vertical shipped on PR 6312:
+      frozen contracts, program_ontology.py loader + derivations,
+      propose/curate admission with the evidence + conflict/override
+      lifecycles, REAL Virginia pilot admitted (graph
+      program-ontology:reviewed:2026-08-23:virginia-pilot, 14 admitted /
+      1 rejected / 6 coverage rows, all evidence byte-receipted),
+      program_dossier composer (gpd1-dcacffc7799b8448285bc19e) + site
+      twins on BOTH build paths, workspace program_link (IRDM P00032
+      derives the exact reviewed_none hostile-null shape), mode=programs
+      surface EN/ZH within the 296 KiB ratchet, T1-T17 gate-code battery
+      (181 passed). Opus adversarial review: 0 blockers, 2 high / 6
+      medium / 4 low — all repaired with named regression tests.
+      Production proof (entitled live route + /api/health checkout +
+      render coverage) executed by the D5 session post-merge; receipt in
+      the session's final Sol report. Handoff:
+      agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-23-d5-implementation.md.
+      D6+ remains UNAUTHORIZED.
 landmines:
   - "Live page is government_revenue.html (underscore). government-revenue.html 404s."
   - "Access (site_full / 401 locked) is independent of epistemics (display/context_only). Do not conflate them."
@@ -167,6 +207,8 @@ do_not_redo:
   - "Do not hand-advance the candidate ledger. Do not change recipient mappings to make counts nicer."
   - "Do not re-baseline. Do not revive an et_gate mutex."
 decisions:
+  - DEC:D5-OWNER-IS-GOVREV-ONTOLOGY-PLUS-COMPOSED-DOSSIER
+  - DEC:D5-PILOT-IS-VIRGINIA-CLASS-SSN
   - DEC:D0R-RED-TEAM-ADJUDICATION-2026-08-17
   - DEC:D11-AGENCY-CANONICALIZE-AND-SNAPSHOT-INHERIT
   - DEC:D11F-PIT-SAFE-AGENCY-FALLBACK
@@ -183,13 +225,17 @@ discoveries:
   - DSC:GOVREV-CANDIDATE-RADAR-STAYS-LOCKED-AFTER-SITE-FULL-200
   - DSC:GOVREV-AGENCY-STRINGIFY-IS-COLLECTOR-THEN-ACTION-OMIT
 next_action: >
-  Sol final D4 acceptance. D4P entitled production proof is CLOSED on the
-  real signed-in IRDM route after #6192 removed the live-discovered
-  score_overlay rendering defect; D4 is done / SOL ACCEPTANCE PENDING.
-  D5 is unauthorized and unstarted. #5424 is closed/superseded by
-  defense21-v1. Publisher-vintage alarm and fixture-freezing the D2/D3 law
-  suites out of the unrun-government-revenue holding pen remain separate
-  follow-ups — do not fold them into the D4 closeout.
+  D4 is done and Sol accepted (2026-08-21). D5R is done and Sol accepted
+  (2026-08-23; chain #6209 + #6219 + #6247, receipt PR #6247 comment
+  5384728488). D5 implementation is IN PROGRESS under explicit Sol
+  authorization — Virginia-class Program Dossier end to end (ontology →
+  dossier bundle → workspace program_link → mode=programs surface →
+  entitled browser proof), IRDM hostile null preserved, T1-T17
+  merge-gating. D6+ remains unauthorized. #5424 is closed/superseded by
+  defense21-v1.
+  Publisher-vintage alarm and fixture-freezing the D2/D3 law suites out of
+  the unrun-government-revenue holding pen remain separate follow-ups — do
+  not fold them into the D5R close.
 ---
 
 ## Context
@@ -216,4 +262,3 @@ manifest) / 62 queued / 0 unaccounted. P00032 stays DoD / DISA, obligation
 18416666.66, effective 2026-05-12, known_at 2026-08-12, late discovery, IRDM.
 Proof record:
 `agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-20-d2p-production-close.md`.
-D3 stays unauthorized pending Sol review.

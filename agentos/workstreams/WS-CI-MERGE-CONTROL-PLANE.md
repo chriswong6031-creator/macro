@@ -13,18 +13,28 @@ owner: coo-fable
 class: build
 blast_radius: reversible
 ambiguity: open
+discoveries:
+  - "DSC:CI-CHANGED-FILES-ENV-HAS-AN-EXECVE-CEILING"
+  - "DSC:GITHUB-CONCURRENCY-SUPERSEDES-PENDING"
+  - "DSC:PR-EVENT-DELIVERY-IS-NOT-CANDIDATE-IDENTITY"
+  - "DSC:CI-SELF-MOD-FENCE-ARGV-BYPASSES-BOUNDED-TRANSPORT"
 waves:
   - id: W-TRANSPORT
-    title: Bounded changed-files transport (E2BIG repair, PR 5578 incident)
-    status: awaiting_ci
+    title: Bounded changed-files transport across CI and self-mod fences
+    status: done
+    pr: [5608, 6223]
     note: >
-      Landed directly on main's architecture after both rewrite lineages
-      churned: the list rides the ci-changed-files artifact, its sha256 joins
-      plan_hash_payload so --expect-plan-sha pins it, children read
-      CI_CHANGED_FILES_FILE, and the CI_CHANGED_FILES_JSON env/output hops are
-      deleted. Evidence: DSC:CI-CHANGED-FILES-ENV-HAS-AN-EXECVE-CEILING;
-      E2BIG execve mutation regression in tests/test_ci_pack.py; wiring pins
-      in tests/test_ci_plan_workflow.py.
+      PR #5608 landed bounded planner-to-pack changed-file transport. PR #6223
+      merged as bc0a9cd896401fae7ec19a208b3a5017cc8d13a6 and moved both
+      same-repository and fork self-mod populations into files while
+      preserving exact ancestry/range proof. The original #5898 fences run
+      32546500471 failed before Python started with E2BIG. The authorized
+      tree-preserving #5898 refresh kept the reviewed tree, and fences run
+      32602516677 invoked the live checker through bounded file handles,
+      emitted the actual PASS policy verdict, and showed no E2BIG or exit 126.
+      #5898 then merged as 21f51a1ecfed778a738b048bd7e5efd30b1d9336;
+      current main contains both repairs. No policy weakening, parallel
+      transport, or separate runner path was introduced. W-TRANSPORT is done.
   - id: W-REWRITE
     title: Structural rewrite of planner/merge control plane
     status: in_progress
@@ -56,6 +66,22 @@ waves:
       ProofFreshness remain the governing contract. PR 5591 remains historical
       W-REWRITE archaeology only; completing this wave does not commission or
       complete W-REWRITE or any CI-speed/scoping wave.
+  - id: W-PR-EVENT-CAUSALITY
+    title: Candidate authority and lifecycle-event causality closure
+    status: done
+    pr: 6252
+    note: >
+      PR #6252 closed both causality races and merged as
+      27711c21665788bb9804b05b03a2587860679646. Candidate authority no
+      longer treats mutable same-ref live-base equality as candidate identity,
+      while semantic CI remains the sole exact synthetic-merge/base proof;
+      `closed` no longer enters the PR proof trigger or concurrency slot, so
+      only opened, synchronize, and reopened produce proof. Exact-head evidence
+      is semantic CI 32593286806, fences 32593286723, and ci-authority
+      32593286769, all successful on subject 004452e517ca277596008ab3623beca3f707fa33.
+      Current main contains the merge. No replacement cancellation service,
+      semantic-proof weakening, or Fundamental Forensics change was introduced.
+      Evidence: DSC:PR-EVENT-DELIVERY-IS-NOT-CANDIDATE-IDENTITY.
   - id: W-GATE-SPLIT
     title: Merge gate tests code against fixtures; data receipts post-nightly
     status: in_progress
@@ -101,7 +127,11 @@ waves:
       the data-gated workflow-yaml job (data-health lane); owners' follow-up,
       deliberately not absorbed.
 next_action: >
-  Verify contract-delta appears and behaves on the next few ordinary PRs
+  W-TRANSPORT and W-PR-EVENT-CAUSALITY are closed. Do not reopen either for a
+  new CI-speed, runner, branch-protection, or cancellation-system proposal.
+  Continue W-GATE-SPLIT and W-CONTRACT-DELTA only under their existing evidence
+  gates; W-REWRITE remains separately commissioned. Verify contract-delta
+  appears and behaves on the next few ordinary PRs
   (inherited-immune, catches introduced closure/unwired defects); confirm
   the armed backlog fully drains post-breaker-open (21 -> 17 within an hour
   of the 19:06Z green). Then W3 at >=72h from the W2 merge (~08-22):
@@ -112,8 +142,11 @@ next_action: >
 owns_paths:
   - ".github/workflows/ci.yml"
   - ".github/workflows/merge-on-green.yml"
+  - ".github/workflows/fences.yml"
+  - "scripts/ci_authority.py"
   - "scripts/run_ci_pack.py"
   - "scripts/merge_on_green.py"
+  - "scripts/check_self_mod_fence.py"
 ---
 
 The E2BIG incident model and receipts live in

@@ -1,31 +1,31 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "DAN-BULL-20260731",
-  "asof": "2026-08-20",
+  "asof": "2026-08-22",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 72.2,
-  "raw_confidence": 71.5,
-  "delta_vs_base": 12.2,
+  "management_confidence": 74.3,
+  "raw_confidence": 74.8,
+  "delta_vs_base": 14.3,
   "recommended_action": "hold",
   "human_state": "On Track",
   "components": {
     "validity": 100.0,
-    "progress": 31.6,
-    "pace": 91.2,
+    "progress": 41.1,
+    "pace": 92.8,
     "retention": 50.0,
-    "overlay": 64.0
+    "overlay": 67.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.54,
-    "dist_to_t1_r": 0.96,
-    "dist_to_t2_r": 2.46,
-    "horizon_pct_used": 28.9,
-    "p1": 0.3598,
-    "p2": 0.1799,
+    "dist_to_stop_r": 1.766,
+    "dist_to_t1_r": 0.734,
+    "dist_to_t2_r": 2.234,
+    "horizon_pct_used": 33.3,
+    "p1": 0.5109,
+    "p2": 0.2555,
     "p3": null,
-    "move_r": 0.54,
-    "mfe_r": 0.68,
+    "move_r": 0.766,
+    "mfe_r": 0.766,
     "mae_r": 0.0
   },
   "rr_ratio": 1.5,
@@ -39,12 +39,12 @@
     "recommended_action": "display \u2014 narrate, not authoritative order",
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
-  "_mfe": 2.9100003814697253,
+  "_mfe": 3.279999313354491,
   "_mae": 0.0,
-  "_max_p1": 0.45327108745634365,
+  "_max_p1": 0.5109033198371483,
   "_first_trigger_ts": "2026-08-12",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 13,
-  "tau": 0.2889
+  "days_elapsed": 15,
+  "tau": 0.3333
 }
