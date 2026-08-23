@@ -78,6 +78,9 @@ ZOOM_SWEEP_JSON = LANE_CROPS_B / "zoom_sweep.json"
 CONTRAST_TABLE_MD = LANE_CROPS_B / "CONTRAST_TABLE.md"
 CONTRAST_AUDIT_JSON = LANE_CROPS_B / "contrast_audit.json"
 HEATMAP_INK_JSON = BUILD_DIR / "heatmap_ink_audit.json"
+FIG_NAMING_JSON = BUILD_DIR / "fig_naming_audit.json"
+TREEMAP_LABELS_JSON = BUILD_DIR / "treemap_labels_audit.json"
+MOBILE_GEOMETRY_JSON = BUILD_DIR / "mobile_geometry_audit.json"
 
 SIZE_LIMIT = 6 * 1024 * 1024
 
@@ -231,6 +234,11 @@ def main() -> int:
     check_committed_contrast_audit()
     check_committed_heatmap_ink_audit()
 
+    # ── (m)/(n)/(o) Lane B responsive/a11y geometry artifacts ────────────
+    check_committed_fig_naming_audit()
+    check_committed_treemap_labels_audit()
+    check_committed_mobile_geometry_audit()
+
     return print_summary()
 
 
@@ -337,6 +345,122 @@ def check_committed_heatmap_ink_audit() -> None:
           f"{len(suspects)} parser-suspect, {len(unscored)} excluded-as-unmeasurable "
           f"(forbidden by COMMISSION.md B2-03; must be 0) "
           f"(reproduce with `<playwright-python> heatmap_ink_audit.py`)")
+
+
+def _load_audit(path: Path, name: str) -> dict | None:
+    """Shared loader for the committed browser-gate artifacts. A missing or
+    self-declared-error artifact is a FAILING check, never a skipped one."""
+    if not path.exists():
+        check(name, False, f"missing {path}")
+        return None
+    audit = json.loads(path.read_text(encoding="utf-8"))
+    if audit.get("error"):
+        check(name, False, f"audit reported an error: {audit['error']}")
+        return None
+    if not audit.get("cells"):
+        check(name, False, "audit recorded zero cells (empty sweep)")
+        return None
+    return audit
+
+
+def check_committed_fig_naming_audit() -> None:
+    """(m) B2-05 — every `.r3-fig` names its own figure at every width.
+
+    Consumes the committed `fig_naming_audit.json`. The gate is the artifact's
+    own per-cell failure list PLUS the census assertions re-derived here, so a
+    future edit that quietly drops figures out of the sweep cannot pass by
+    reporting "0 failures" over an empty population."""
+    name = "(m) B2-05 .r3-fig visible/AT naming by breakpoint (from committed artifact)"
+    audit = _load_audit(FIG_NAMING_JSON, name)
+    if audit is None:
+        return
+    cells = audit["cells"]
+    expected = audit.get("expected_census_per_cell", 0)
+    census_bad = [c for c in cells if c["census"] != expected or c["census"] == 0]
+    unnamed = sum(len(c["unnamed"]) for c in cells)
+    naked = sum(len(c["naked_visible"]) for c in cells)
+    doubled = sum(len(c["double_labelled"]) for c in cells)
+    proofs = [p for c in cells for p in c["proofs"]]
+    proofs_failed = [p for p in proofs if not p["pass"]]
+    failing = [c for c in cells if c["failures"]]
+    ok = (bool(cells) and expected > 0 and not census_bad and not unnamed
+          and not naked and not doubled and bool(proofs) and not proofs_failed
+          and not failing and audit.get("pass") is True)
+    check(name, ok,
+          f"{len(cells)} cells (1440/390/320 x EN/ZH, six views each), "
+          f"census {expected}/cell, {unnamed} valued figure(s) with no accessible name, "
+          f"{naked} painted figure(s) with no visible name at "
+          f"<={audit.get('mobile_breakpoint_px')}px, {doubled} double-labelled above the "
+          f"breakpoint, commissioned visible-label proofs "
+          f"{len(proofs) - len(proofs_failed)}/{len(proofs)} passing, "
+          f"{len(failing)} failing cell(s) "
+          f"(reproduce with `<playwright-python> fig_naming_audit.py`)")
+
+
+def check_committed_treemap_labels_audit() -> None:
+    """(n) B2-06 + B2-07 — painted-label collision and mobile-interaction census
+    for the candidate-owned treemap. Consumes `treemap_labels_audit.json`."""
+    name = "(n) B2-06/B2-07 treemap painted-label collision + tiny-tile census (from committed artifact)"
+    audit = _load_audit(TREEMAP_LABELS_JSON, name)
+    if audit is None:
+        return
+    cells = audit["cells"]
+    zero_census = [c for c in cells
+                   if not c.get("tiles") or not c.get("painted_labels")
+                   or not c.get("sector_names")]
+    overlaps = sum(len(c["overlaps"]) for c in cells)
+    interactive = sum(c.get("interactive_in_map") or 0 for c in cells)
+    subfloor = sum(len(c.get("sub_floor_interactive") or []) for c in cells)
+    failing = [c for c in cells if c["failures"]]
+    ok = (bool(cells) and not zero_census and not overlaps and not interactive
+          and not subfloor and not failing and audit.get("pass") is True)
+    check(name, ok,
+          f"{len(cells)} cells (320/390/820 x EN/ZH x dark/light), "
+          f"{sum(c['tiles'] or 0 for c in cells)} tiles and "
+          f"{sum(c['painted_labels'] or 0 for c in cells)} painted labels measured, "
+          f"{overlaps} cross-owner label overlap(s), {interactive} interactive element(s) "
+          f"inside the treemap, {subfloor} under the "
+          f"{audit.get('touch_floor_px')}px target floor, "
+          f"{len(zero_census)} cell(s) with an empty census, {len(failing)} failing cell(s) "
+          f"(reproduce with `<playwright-python> treemap_labels_audit.py`)")
+
+
+def check_committed_mobile_geometry_audit() -> None:
+    """(o) B2-10 + B2-11 (+ MAC1-002, PRC1R-001) — the mobile geometry relations.
+    Consumes `mobile_geometry_audit.json`."""
+    name = "(o) B2-10/B2-11 mobile ramp + headline-receipt flow geometry (from committed artifact)"
+    audit = _load_audit(MOBILE_GEOMETRY_JSON, name)
+    if audit is None:
+        return
+    cells = audit["cells"]
+    # B2-10 must be discriminating in BOTH directions: at least one cell where
+    # the ledge is a five-track row and the ramp IS painted, and at least one
+    # where it stacks and the ramp is NOT.
+    ramp_on = [c for c in cells if c["ramp"].get("tracks") == 5 and c["ramp"].get("ramp_painted")]
+    ramp_off = [c for c in cells if c["ramp"].get("tracks", 5) < 5 and not c["ramp"].get("ramp_painted")]
+    receipt_ok = [c for c in cells
+                  if (c["receipt"].get("on_last_line") or c["receipt"].get("after_last_line"))
+                  and c["receipt"].get("inside_content_box")
+                  and c["receipt"].get("inside_viewport")]
+    btn_census = sum(c.get("textbtn_census") or 0 for c in cells)
+    under_floor = sum(len(c.get("textbtn_under_floor") or []) for c in cells)
+    zh_shou_qi = audit.get("zh_shou_qi_controls_measured", 0)
+    aria_ok = [c for c in cells if c["aria"].get("aria_controls") == "r3-receipt"
+               and c["aria"].get("panel_present")]
+    failing = [c for c in cells if c["failures"]]
+    ok = (bool(cells) and bool(ramp_on) and bool(ramp_off)
+          and len(receipt_ok) == len(cells) and btn_census > 0 and not under_floor
+          and zh_shou_qi > 0 and len(aria_ok) == len(cells)
+          and not failing and audit.get("pass") is True)
+    check(name, ok,
+          f"{len(cells)} cells (1440/390/320 at 100% + 390/320 at 200% zoom, x EN/ZH); "
+          f"B2-10 ramp painted in {len(ramp_on)} five-track cell(s) and suppressed in "
+          f"{len(ramp_off)} stacked cell(s); B2-11 receipt flows with the final wrapped line in "
+          f"{len(receipt_ok)}/{len(cells)}; MAC1-002 {btn_census} .r3-textbtn measured "
+          f"({zh_shou_qi} ZH 收起), {under_floor} under the {audit.get('target_floor_px')}px floor; "
+          f"PRC1R-001 aria-controls resolved in {len(aria_ok)}/{len(cells)}; "
+          f"{len(failing)} failing cell(s) "
+          f"(reproduce with `<playwright-python> mobile_geometry_audit.py`)")
 
 
 def print_summary() -> int:

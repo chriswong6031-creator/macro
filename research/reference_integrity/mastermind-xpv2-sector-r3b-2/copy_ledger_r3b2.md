@@ -212,3 +212,68 @@ An error-red family was considered and rejected: `--act` does not participate in
 the ZH direction swap, so red under ZH would read as *up* — the same defect
 mirrored. No token was minted; `DESIGN_SYSTEM_SPEC.md:373` forbids one, and
 `--muted` is already the ink this block's own label, note and disclaimer carry.
+
+---
+
+# Lane B (responsive / a11y geometry) — appended 2026-08-23
+
+Fix packet items covered by this lane: **B2-05 · B2-06 · B2-07 · B2-10 · B2-11**,
+plus the orchestrator-adjudicated in-lane a11y closures **PRC1R-001**
+(`aria-controls`) and **MAC1-002** (ZH `收起` target floor). Lane A's rows above
+are unchanged; nothing in this section rewrites them.
+
+**Lane B minted no new vocabulary.** Every pair below is a string this artifact
+already renders in a column legend, moved so that it also reaches the reader the
+legend does not: the screen-reader user at every width, and the sighted phone
+user below 641px, where `@media (max-width:640px){ .r3-cols{display:none} }`
+removes the legend outright. A figure column's name is now carried by the figure
+itself (`.r3-figlab`, `shell.html`) — visually hidden while the legend is
+painted, a compact caption once it is gone. One node, two presentations: never
+absent from the accessible tree, never painted twice.
+
+**Line-number note (no Lane A row is rewritten).** Lane B's insertions moved the
+lines under two citations in the sections above. Lane A's rows stand as written;
+the current locations are `views/overview.html:796` for the B2-01 action-board
+column legend (cited above as `:766`) and the
+B2-04 `preFreezeNote()` (cited above as `:1340-1352`; the function now opens at
+`:1385` and its render site is `:1422`). Marker attributes
+(`data-r3b2="01"`, `data-r3b2="04"`) are the stable handles and are unchanged.
+
+Receipts: `build/lane_crops_b2/` (crops + `B2_LANE_B_RECEIPT.txt`),
+`build/fig_naming_audit.json`, `build/treemap_labels_audit.json`,
+`build/mobile_geometry_audit.json`.
+
+## 6 · B2-05 — the label travels with the figure
+
+| EN | ZH | site | provenance | note |
+|---|---|---|---|---|
+| `Strength` | `强度` | `build/views/overview.html:697` — `rowHTML()` per-row `.r3-figlab`, marker `data-r3b2="05"` | **relocated**, byte-identical to Lane A's B2-01 column header (now `overview.html:796`) | New SITE, not a new string. Asserted equal to the rendered header by `fig_naming_audit.py` (`label_mismatch` must be empty), so this producer path cannot acquire a second, softer synonym on the way to a phone. Rendered: `强度 76` / `STRENGTH 76` at 320 and 390. Values unchanged. |
+| `20d vs market` | `20日对比市场` | `build/views/overview.html:686` — `.r3-vh` inside `.r3-delta` | **relocated**, byte-identical to the same header's `<em>` second line | Visually hidden at EVERY width by design: two painted captions over one 74px column would breach the density budget and set the strength score competing with its own footnote. A signed percentage is self-evident to the eye and anonymous to a screen reader, so the name goes only where it is needed. Closes MAC1-001's second column. |
+| `Entry tier` | `入场层级` | `build/views/confluence.html:684` — `groupRow()` per-row `.r3-figlab`, marker `data-r3b2="05"` | **relocated**, byte-identical to the subsector list legend (`confluence.html:714`) | New site. An absent tier renders as absence and takes no caption. Closes MAC1-001's third column. |
+| `Conviction` | `综合把握` | `build/views/confluence.html:810` — `paintPicks()` per-row label | unchanged (R3B1-13) | **String untouched; carrier re-classed `.r3-vh` → `.r3-figlab`.** The pair was already correct and already per-row — it was simply never painted, at any width, so R3B1-13's commissioned label reached sighted mobile users nowhere (PRC1R-002) and VTC-006's bare `0.60` was fully reinstated at 390/320 (VTC1-001). Rendered visible at 320/390 in both languages over `0.60` and `0.54`. |
+
+**Valueless figures take no caption.** Overview sector rows carry no blended
+score (ledger #7); a caption over nothing is a name for a value that does not
+exist. `fig_naming_audit.py` counts them (4 per cell, asserted) rather than
+exempting them silently.
+
+## 7 · B2-06 / B2-07 / B2-10 / B2-11 / MAC1-002 / PRC1R-001 — no copy changed
+
+Recorded so a later seat does not go looking for rows that do not exist:
+
+- **B2-06** drops a sector header that cannot be painted inside its own section,
+  and its aggregate before that. No string is rewritten, abbreviated or
+  ellipsized — this system permits no cut on a primary name. Every dropped name
+  remains, in full, in the mandatory accessible table in the same view.
+- **B2-07** re-orders the Money heat band below 641px and makes the tiles
+  non-interactive. `Read the map as a table` / `以表格阅读该图` and
+  `Browse the names` / `浏览个股` are unchanged in wording and in DOM order.
+- **B2-10** removes `.r3-spread` where the ledge stops being a five-track row.
+  It carries no text of its own and is `aria-hidden="true"`; its accessible
+  equivalent has always been the cells, which all remain on screen.
+- **B2-11** changes one margin so the Overview hero receipt flows to the end of
+  the statement it governs. `How this works` / `原理说明` and the seasonal
+  producer chip are untouched.
+- **MAC1-002** floors `.r3-textbtn` on the inline axis. `Show fewer` / `收起` is
+  unchanged; only the box stopped being sized off the glyph count.
+- **PRC1R-001** adds `aria-controls="r3-receipt"`. No user-visible text.

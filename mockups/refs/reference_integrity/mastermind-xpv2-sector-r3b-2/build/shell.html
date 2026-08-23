@@ -440,6 +440,36 @@ html[data-theme="light"] .r3-board{ border-top-color:var(--c,var(--line)); }
   color:var(--muted); }
 .r3-cols > span:nth-child(2){ text-align:right; }
 @media (max-width:640px){ .r3-cols{ display:none; } }
+/* ── B2-05 · THE LABEL TRAVELS WITH THE FIGURE ───────────────────────────────
+   VTC1-001 / MAC1-001 / PRC1R-002 all name one mechanism: `.r3-cols` is the
+   only carrier of a figure column's name, it is `aria-hidden="true"` at every
+   width, and it is `display:none` at <=640 — so the name reached no assistive
+   user anywhere and no sighted user on a phone. The remedy is ONE node per
+   figure with TWO presentations, not two nodes:
+
+     >640px  the legend above paints the name, so `.r3-figlab` is the
+             visually-hidden twin — the screen reader gets "Strength 76", the
+             eye gets the column header, and nothing is labelled twice.
+     <=640px the legend is gone, so the SAME node un-hides as a compact
+             caption sitting directly over its own number.
+
+   A figure is therefore never a naked value — to the eye or to AT — at any
+   width, and the desktop composition is unchanged. The caption borrows the
+   `.r3-sub` register (micro / 700 / tracked / muted) so a mobile card reads as
+   two label->value pairs in one voice: name+kind left, name+figure right. */
+.r3-figlab{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden;
+  clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; border:0; }
+@media (max-width:640px){
+  .r3-figlab{ position:static; display:block; width:auto; height:auto; margin:0 0 1px;
+    padding:0; overflow:visible; clip:auto; clip-path:none; border:0;
+    font-size:var(--fs-micro); font-weight:700; letter-spacing:.07em; text-transform:uppercase;
+    line-height:1.25; color:var(--muted); }
+  /* ZH takes no latin tracking or caps transform — the same convention
+     `html[data-lang="zh"] .r3-ov-hmeta` already sets for this register. */
+  html[data-lang="zh"] .r3-figlab{ letter-spacing:0; text-transform:none; }
+  /* the figure cell is now a two-line stack; its number keeps the leading. */
+  .r3-fig{ line-height:1.25; }
+}
 /* the five graded-call inks — RESERVED.  Nothing outside .r3-ledge / an Action
    view's row stance may bind these. */
 .st-buy{ --c:var(--ink-up); } .st-soon{ --c:var(--ink-info); } .st-run{ --c:var(--ink-link); }
@@ -470,7 +500,12 @@ html[data-theme="light"] .r3-board{ border-top-color:var(--c,var(--line)); }
   transform:rotate(45deg); }
 .r3-sub{ display:block; margin-top:2px; font-size:var(--fs-micro); font-weight:600;
   letter-spacing:.07em; text-transform:uppercase; color:var(--muted); }
-.r3-fig{ text-align:right; font-size:var(--fs-md); font-weight:700;
+/* `position:relative` is the R3B1-09 lesson applied where B2-05 now puts a
+   second visually-hidden span: a 1px absolute name span whose containing block
+   is a distant ancestor resolves at the page's right edge and becomes the
+   classic one-pixel document overflow at severe zoom. The figure cell is now
+   that span's own containing block. */
+.r3-fig{ position:relative; text-align:right; font-size:var(--fs-md); font-weight:700;
   font-variant-numeric:tabular-nums; letter-spacing:-.01em; }
 .r3-why{ min-width:0; font-size:var(--fs-sm); color:var(--muted); line-height:1.4; }
 .r3-chev{ justify-self:end; width:7px; height:7px; border-right:1.6px solid var(--muted);

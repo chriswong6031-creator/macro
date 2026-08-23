@@ -1,0 +1,189 @@
+{
+  "schema": "mastermind.r3b2.fig_naming_audit.v1",
+  "candidate": "MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html",
+  "expected_census_per_cell": 18,
+  "expected_empty_per_cell": 4,
+  "mobile_breakpoint_px": 640,
+  "cells": [
+    {
+      "width": 1440,
+      "lang": "en",
+      "census": 18,
+      "valued": 14,
+      "empty": 4,
+      "unnamed": [],
+      "naked_visible": [],
+      "double_labelled": [],
+      "header_label": "Strength",
+      "overview_inline_labels": [
+        "Strength 20d vs market"
+      ],
+      "label_mismatch": [],
+      "proofs": [],
+      "failures": []
+    },
+    {
+      "width": 1440,
+      "lang": "zh",
+      "census": 18,
+      "valued": 14,
+      "empty": 4,
+      "unnamed": [],
+      "naked_visible": [],
+      "double_labelled": [],
+      "header_label": "强度",
+      "overview_inline_labels": [
+        "强度 20日对比市场"
+      ],
+      "label_mismatch": [],
+      "proofs": [],
+      "failures": []
+    },
+    {
+      "width": 390,
+      "lang": "en",
+      "census": 18,
+      "valued": 14,
+      "empty": 4,
+      "unnamed": [],
+      "naked_visible": [],
+      "double_labelled": [],
+      "header_label": "Strength",
+      "overview_inline_labels": [
+        "Strength 20d vs market"
+      ],
+      "label_mismatch": [],
+      "proofs": [
+        {
+          "view": "overview",
+          "label": "Strength",
+          "value": "76",
+          "pass": true
+        },
+        {
+          "view": "confluence",
+          "label": "Conviction",
+          "value": "0.60",
+          "pass": true
+        },
+        {
+          "view": "confluence",
+          "label": "Conviction",
+          "value": "0.54",
+          "pass": true
+        }
+      ],
+      "failures": []
+    },
+    {
+      "width": 390,
+      "lang": "zh",
+      "census": 18,
+      "valued": 14,
+      "empty": 4,
+      "unnamed": [],
+      "naked_visible": [],
+      "double_labelled": [],
+      "header_label": "强度",
+      "overview_inline_labels": [
+        "强度 20日对比市场"
+      ],
+      "label_mismatch": [],
+      "proofs": [
+        {
+          "view": "overview",
+          "label": "强度",
+          "value": "76",
+          "pass": true
+        },
+        {
+          "view": "confluence",
+          "label": "综合把握",
+          "value": "0.60",
+          "pass": true
+        },
+        {
+          "view": "confluence",
+          "label": "综合把握",
+          "value": "0.54",
+          "pass": true
+        }
+      ],
+      "failures": []
+    },
+    {
+      "width": 320,
+      "lang": "en",
+      "census": 18,
+      "valued": 14,
+      "empty": 4,
+      "unnamed": [],
+      "naked_visible": [],
+      "double_labelled": [],
+      "header_label": "Strength",
+      "overview_inline_labels": [
+        "Strength 20d vs market"
+      ],
+      "label_mismatch": [],
+      "proofs": [
+        {
+          "view": "overview",
+          "label": "Strength",
+          "value": "76",
+          "pass": true
+        },
+        {
+          "view": "confluence",
+          "label": "Conviction",
+          "value": "0.60",
+          "pass": true
+        },
+        {
+          "view": "confluence",
+          "label": "Conviction",
+          "value": "0.54",
+          "pass": true
+        }
+      ],
+      "failures": []
+    },
+    {
+      "width": 320,
+      "lang": "zh",
+      "census": 18,
+      "valued": 14,
+      "empty": 4,
+      "unnamed": [],
+      "naked_visible": [],
+      "double_labelled": [],
+      "header_label": "强度",
+      "overview_inline_labels": [
+        "强度 20日对比市场"
+      ],
+      "label_mismatch": [],
+      "proofs": [
+        {
+          "view": "overview",
+          "label": "强度",
+          "value": "76",
+          "pass": true
+        },
+        {
+          "view": "confluence",
+          "label": "综合把握",
+          "value": "0.60",
+          "pass": true
+        },
+        {
+          "view": "confluence",
+          "label": "综合把握",
+          "value": "0.54",
+          "pass": true
+        }
+      ],
+      "failures": []
+    }
+  ],
+  "failing_cells": [],
+  "pass": true
+}

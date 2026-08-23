@@ -299,7 +299,11 @@ html[data-lang="zh"] .r3-deskgrp h3{ letter-spacing:0; text-transform:none; }
   font-variant-numeric:tabular-nums; padding:5px 0; }
 .r3-deskwin{ margin-top:5px; font-size:var(--fs-micro); color:var(--muted); }
 .r3-deeper{ margin-top:var(--sp-6); }
-.r3-textbtn{ display:inline-flex; align-items:center; gap:7px; min-height:44px; padding:0;
+/* MAC1-002 — the inline-axis floor; see the fuller note on the twin
+   declaration in views/map.html. Both partials declare `.r3-textbtn` at
+   (0,1,0), so the floor is stated in both rather than left to source order. */
+.r3-textbtn{ display:inline-flex; align-items:center; justify-content:center; gap:7px;
+  min-height:44px; min-width:44px; padding:0;
   border:0; background:none; color:var(--ink-link,var(--link)); font-size:var(--fs-sm);
   font-weight:700; cursor:pointer; }
 .r3-textbtn::after{ content:""; width:6px; height:6px; flex:none;

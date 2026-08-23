@@ -1,0 +1,158 @@
+XPV2-SC-R3B.2 — Lane B (responsive / a11y geometry) visual receipt
+Captured 2026-08-23 against the built candidate
+  proposal/MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html
+  sha256 = 1b4eca29857d7531732cbee1688ac69385774065bc1793dcd7fb005855acfb41
+  (byte-identical across two consecutive build_reference.py runs)
+
+Method: headless Chromium via the Playwright venv, a FRESH browser context per
+capture cell (a page.screenshot() poisons setDeviceMetricsOverride for the rest
+of a session, so a shared context silently mis-sizes every later cell). Language
+set through REF.setLang(); theme through data-theme; the view activated by
+clicking its own .si-view-btn, never by writing the hash directly. 200% zoom is
+the house emulation used by zoom_sweep.py: a W-physical device at 200% lays out
+at W/2 CSS px with device_scale_factor 2.
+
+Machine receipts for the same states:
+  ../fig_naming_audit.json          (check (m))
+  ../treemap_labels_audit.json      (check (n))
+  ../mobile_geometry_audit.json     (check (o))
+
+
+B2-05 — VTC1-001 (blocker) / MAC1-001 / PRC1R-002
+  the label travels with the figure
+--------------------------------------------------------------------------
+05-overview-strength-390-dark-zh.png    "强度" over "76 +27.2%", "71", "70"
+05-overview-strength-320-dark-zh.png    same at 320 — the commissioned proof
+05-overview-strength-390-dark-en.png    "STRENGTH" over "76 +27.2%"
+05-overview-strength-1440-dark-en-DESKTOP-UNCHANGED.png
+                                        the .r3-cols legend does the naming and
+                                        NO row paints a caption: the desktop
+                                        composition is untouched and nothing is
+                                        labelled twice
+05-confluence-conviction-390-dark-en.png   "CONVICTION" over 0.60 / 0.54
+05-confluence-conviction-320-dark-en.png
+05-confluence-conviction-390-dark-zh.png   "综合把握" over 0.60 / 0.54
+05-confluence-conviction-320-dark-zh.png   the exact cell VTC-006 named and
+                                           VTC1-001 reinstated
+
+  Predecessor state, for contrast: at 390 and 320 the same rows painted a bare
+  "76+27.2%" and a bare "0.60" with no name anywhere, because the only carrier
+  was a legend that is aria-hidden at every width and display:none below 641px.
+
+
+B2-06 — VTC1-002  treemap sector labels stop colliding
+--------------------------------------------------------------------------
+06-treemap-320-dark-en.png   Technology / Healthcare / Industrials painted;
+                             "Communication Services" (143.7px painted inside a
+                             100.3px section) and "Consumer Cyclical" DROPPED
+                             rather than smeared across their neighbours
+06-treemap-390-dark-en.png   the VTC1-002 stress pair — "Communication Services"
+                             x "Healthcare", previously overlapping by 17.3px —
+                             now resolves with zero contact
+06-treemap-390-dark-zh.png   ZH names fit their own sections; nothing is dropped,
+                             which is what makes the gate a fit test and not a
+                             blanket mobile suppression
+
+  Every dropped name remains in full in the mandatory accessible table in the
+  same view. No name is cut, abbreviated or ellipsized anywhere.
+
+
+B2-07 — VTC1-003 / MAC1-003  the map is context; the list is the product
+--------------------------------------------------------------------------
+07-heatmap-band-390-dark-en.png   reading order top to bottom: as-of meta ->
+                                  "Read the map as a table" -> "Browse the names"
+                                  -> the map -> takeaway -> scale. A thumb meets
+                                  a tappable path to all 503 names BEFORE it
+                                  meets 495 untappable tiles.
+07-heatmap-band-320-dark-zh.png   the same recomposition in ZH at 320
+07-heatmap-band-820-dark-en-DESKTOP-UNCHANGED.png
+                                  above the breakpoint the hatches sit under the
+                                  map exactly as before
+
+  Tiles compute pointer-events:none at <=640, carry no href/tabindex/handler,
+  and the map is one role="img" — measured 0 interactive descendants in all 12
+  audit cells.
+
+
+B2-10 — VTC1-006  the ramp dies with the row it measures
+--------------------------------------------------------------------------
+10-ledge-desktop-ramp-1440-dark-en.png   five-track ledge, five ramp segments,
+                                         each under its own cell
+10-ledge-stacked-no-ramp-390-dark-en.png  2-up ledge, no ramp
+10-ledge-stacked-no-ramp-320-dark-zh.png  1-up ledge, no ramp
+
+  Suppression is asserted as a RELATION, not as a copied breakpoint: wherever
+  the ledge is not a five-track row the ramp must not be painted, and wherever
+  it is, it must be.
+
+
+B2-11 — VTC1-007  the receipt belongs to the whole statement
+--------------------------------------------------------------------------
+11-receipt-flow-320-dark-en.png          "?" after "context only" on the final
+                                         wrapped line
+11-receipt-flow-320-dark-zh.png          the failing cell: the sentence fills its
+                                         line, so the control drops to the next
+                                         one — now flush with the paragraph's own
+                                         text edge instead of at x=-1, off the
+                                         stage
+11-receipt-flow-390-zoom200-dark-en.png  200% zoom
+11-receipt-flow-390-zoom200-dark-zh.png  200% zoom
+11-receipt-flow-320-zoom200-dark-zh.png  200% zoom, three wrapped lines — the
+                                         control sits after 仅供参考 on the last
+
+  Measured on the INK (the control's 16px ring, i.e. its box midline), not on
+  the 44px hit box: the target is deliberately pulled by margin:-14px so it does
+  not inflate the line it sits in, so its box always straddles a neighbouring
+  line and box-top answers the wrong question.
+
+
+MAC1-002 — the ZH 收起 target floor
+--------------------------------------------------------------------------
+Measured, not cropped (mobile_geometry_audit.json): 36 painted .r3-textbtn
+across six views x five width/zoom cells x EN/ZH, with every disclosure toggled
+so the shorter toggled labels are actually in the DOM — 13 of them the ZH 收起
+the finding names. Zero under 44x44. EN twins are unchanged: they were already
+wider than the floor, and min-width only floors.
+
+
+PRC1R-001 — one disclosure target, one wiring
+--------------------------------------------------------------------------
+Measured, not cropped: [data-r3b1="02"] button.r3-rcpt now carries
+aria-controls="r3-receipt", #r3-receipt resolves, and 4 controls name it — this
+one plus the three R3B1-08 siblings that always did. Verified in all 10
+geometry-audit cells.
+
+
+DISCRIMINATION PROOF — "a guard true before the feature is not a guard"
+--------------------------------------------------------------------------
+COMMISSION.md R3B1-14 / §"Verification hardening": a check that cannot fail is
+not a check. Each of (m)/(n)/(o) was run against a deliberately reverted BUILT
+candidate (mutation applied in a scratch copy of the assembled HTML; the real
+proposal file was rebuilt from source afterwards and re-verified byte-identical
+at sha256 1b4eca29...). Each reproduces the ORIGINAL critic finding by name:
+
+  (m) remove the Overview per-row .r3-figlab
+      -> 6/6 cells RED. "3 painted figure(s) with no visible name at <=640" in
+         every mobile cell; "proof failed: Strength 76 on overview" /
+         "proof failed: 强度 76 on overview"; and the label-identity assertion
+         additionally fires ("inline label(s) ['20d vs market'] != column header
+         'Strength'"), because the delta's screen-reader name is then the only
+         label left on the row. This is VTC1-001 verbatim.
+
+  (n) disable the painted-width header gate entirely (predecessor behaviour)
+      -> 4/12 cells RED, and precisely the cells the critic measured:
+         320/en 2 overlaps, 390/en 1 overlap; ZH clean, because the ZH names fit.
+         This is VTC1-002 verbatim, down to the affected language.
+      NOTE, recorded rather than smoothed over: disabling only the CONTAINMENT
+      pass leaves the gate green, because the pairwise resolution catches the
+      same collision from the other side. Two independent mechanisms hold one
+      invariant. The assertion is on the invariant — zero painted overlaps —
+      never on either mechanism, which is why that partial revert does not read
+      as a false green.
+
+  (o) restore `margin-inline-start:-13px` on the Overview hero receipt
+      -> 1/10 cells RED: "320@100%/zh: receipt starts left of its own statement
+         (x=-1 vs content edge 12); receipt is clipped by the viewport (x=-1)".
+         One cell, one language, one width — which is exactly why VTC1-007 was
+         filed and exactly why an EN-only or desktop-only sweep would report
+         this surface clean.

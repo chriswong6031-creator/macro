@@ -90,6 +90,22 @@ html[data-lang="zh"] [data-view="overview"] .r3-ov-state{ letter-spacing:0; text
 [data-view="overview"] .r3-ov-season{ grid-column:1 / -1; margin-top:2px; padding-top:11px;
   border-top:1px solid color-mix(in srgb, var(--line) 60%, transparent);
   font-size:var(--fs-sm); color:var(--muted); line-height:1.5; }
+/* ── B2-11 · the receipt belongs to the whole statement (VTC1-007) ───────────
+   The `?` control is a 44x44 target wearing a 16px ring, and `margin:-14px
+   -13px` gives the optical rhythm back to the line it sits BETWEEN words on.
+   The inline-START half of that pull is only correct while the control is
+   mid-line. When the sentence fills its line and the control wraps — measured
+   at 320 ZH, where the note is one full line and the receipt drops below it —
+   the same -13px starts the control 13px OUTSIDE its own paragraph, at x=-1 on
+   a 320 viewport: the receipt reads as detached from the statement it governs
+   and is clipped by the stage edge.
+   The inline-start pull is therefore dropped for the receipt that terminates a
+   flowing sentence. It now behaves as the terminal mark of the text: it sits
+   after the last word where there is room, and where there is not it begins the
+   next line flush with the paragraph — after the FINAL wrapped line, inside the
+   content box, in every width/language/zoom cell. The inline-end pull is kept:
+   a trailing edge never starts a line. */
+[data-view="overview"] .r3-ov-season .r3-rcpt{ margin-inline-start:0; }
 
 /* ── R3B1-03 · the migration note ────────────────────────────────────────────
    `theme_context.migration.note_en/zh` is the producer's own statement of WHERE
@@ -661,10 +677,24 @@ function rowHTML(r){
     var p20 = '';
     if(r.perf_20d_rel != null){
       var v = r.perf_20d_rel * 100;
+      /* B2-05 · the delta keeps a name at EVERY width, but never a VISIBLE one:
+         two captions over one 74px column would blow the density budget and set
+         the strength score competing with its own footnote. A signed percentage
+         is self-evident to the eye and anonymous to a screen reader, so the name
+         goes where only the screen reader needs it. MAC1-001's second column. */
       p20 = '<span class="r3-delta ' + (v >= 0 ? 'up' : 'dn') + ' tnum">'
+          + '<span class="r3-vh">' + L('20d vs market', '20日对比市场') + ' </span>'
           + (v >= 0 ? '+' : '') + v.toFixed(1) + '%</span>';
     }
-    fig = sc + p20;
+    /* B2-05 · the label travels with the figure (shell.html `.r3-figlab`).
+       The customer term is Lane A's B2-01 label for this exact producer path
+       (`theme_intel.themes[].score` -> Strength / 强度, header at :766), stated
+       once per row so the mobile card carries the same word the desktop column
+       header carries — never a second, softer synonym.
+       An EMPTY cell gets no caption: sector rows carry no blended score
+       (ledger #7), and a caption over nothing is a name for a value that does
+       not exist. */
+    if(sc || p20) fig = '<span class="r3-figlab" data-r3b2="05">' + L('Strength', '强度') + '</span>' + sc + p20;
   }
   /* WHY: theme rows carry the producer's own reason prose; sector rows carry the
      qualitative stat pair (ledger #7 — sector rows have no blended score). Both
@@ -1129,8 +1159,16 @@ function paintContext(){
     + '~3 weeks by construction; suggested weights unchanged.';
   var cvZh = '仅为形态读数，非预测。\n'
     + '趋势动量排名以' + (tl.name_zh || tl.name || '') + '居首；设计上跳过最近约3周数据；建议权重不变。';
+  /* PRC1R-001 · one shared disclosure target, one wiring. This control opens the
+     same `div#r3-receipt` the three R3B1-08 Moving controls open, and each of
+     those names it with `aria-controls`. An `aria-expanded` with no
+     `aria-controls` is not invalid ARIA, so `aria_id_audit.py` cannot see it —
+     it audits references that EXIST, never references that are missing — which
+     is the exact blind spot R3B1-14 was commissioned to end. Named here so the
+     artifact wires one target one way. */
   var caveat = '<p class="r3-ov-caveat" data-r3b1="02">'
     + '<button class="r3-rcpt r3-rcpt--named" type="button" aria-expanded="false"'
+    + ' aria-controls="r3-receipt"'
     + ' data-tip-en="' + esc(cvEn) + '" data-tip-zh="' + esc(cvZh) + '">'
     + L('How this works', '原理说明') + '</button></p>';
 
@@ -1138,7 +1176,7 @@ function paintContext(){
     ? '<p class="r3-ov-days">' + L(l.days_in_state + ' days in', l.days_in_state + ' 天') + '</p>' : '';
   var fs = HND.factor_season;
   var season = (fs && fs.chip_en)
-    ? '<p class="r3-ov-season">' + L(esc(fs.chip_en), esc(fs.chip_zh || fs.chip_en))
+    ? '<p class="r3-ov-season" data-r3b2="11">' + L(esc(fs.chip_en), esc(fs.chip_zh || fs.chip_en))
       + '<button class="r3-rcpt" type="button" aria-expanded="false" data-tip-en="' + esc(fs.tip_en || '')
       + '" data-tip-zh="' + esc(fs.tip_zh || fs.tip_en || '') + '"><span class="r3-vh">'
       + L('Where this seasonal note comes from', '该季节性说明的来源') + '</span></button></p>'

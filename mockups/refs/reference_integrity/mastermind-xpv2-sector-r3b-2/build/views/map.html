@@ -348,7 +348,16 @@ html[data-lang="zh"] .r3-rmap-detail .r3-selcat{ letter-spacing:0; text-transfor
    opportunity; at 200% zoom on a 390 phone it is wider than the column. */
 .r3-note{ margin-top:var(--sp-3); font-size:var(--fs-sm); color:var(--muted); line-height:1.5;
   max-width:88ch; overflow-wrap:anywhere; }
-.r3-textbtn{ display:inline-flex; align-items:center; gap:7px; min-height:44px; padding:0;
+/* MAC1-002: the floor is on BOTH axes, not just the block axis. `min-height`
+   alone let the target shrink with the STRING: "Show fewer" clears 44 on its
+   own, "收起" is two glyphs and measured 39.0 x 44.0 at 320/390/820 — a
+   language-conditional target defect an EN-only sweep cannot see. `min-width`
+   sizes the box off the floor instead of off the glyph count; EN is untouched
+   because every EN twin is already wider. Declared in both partials that own
+   this component (moving.html carries the same rule) so concatenation order
+   cannot decide whether the floor exists. */
+.r3-textbtn{ display:inline-flex; align-items:center; justify-content:center; gap:7px;
+  min-height:44px; min-width:44px; padding:0;
   border:0; background:none; color:var(--ink-link,var(--link)); font-size:var(--fs-sm);
   font-weight:700; cursor:pointer; }
 .r3-textbtn::after{ content:""; width:6px; height:6px; flex:none;

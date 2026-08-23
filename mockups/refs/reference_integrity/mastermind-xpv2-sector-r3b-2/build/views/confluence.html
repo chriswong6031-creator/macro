@@ -93,6 +93,18 @@
   background:var(--line); border-bottom:1px solid var(--line); }
 [data-view="confluence"] .r3-spread i{ display:block; min-width:2px;
   background:color-mix(in srgb, var(--c) 62%, var(--panel)); }
+/* ── B2-10 · the ramp dies with the row it measures (VTC1-006) ───────────────
+   This bar is legible for exactly one reason: each segment sits UNDER the cell
+   it belongs to, so the strip is the shape of the row above it. At <=767px
+   shell.html re-lays the ledge as 2-up (and 1-up under 360), and the five
+   horizontal segments stop lining up with anything — a proportional encoding
+   whose reference frame has left the screen is decoration wearing a chart's
+   clothes. It is REMOVED there, not restyled and not replaced: the cells are
+   its accessible equivalent and they are all still on screen. Desktop is
+   unchanged. */
+@media (max-width:767px){
+  [data-view="confluence"] .r3-spread{ display:none; }
+}
 
 /* ── rows ───────────────────────────────────────────────────────────────────*/
 [data-view="confluence"] .r3-cols{ grid-template-columns:minmax(0,1.6fr) 74px minmax(0,1.25fr) 16px; }
@@ -333,7 +345,7 @@ html[data-lang="zh"] [data-view="confluence"] .cf-divs h4{ letter-spacing:0; tex
   <!-- ══ 2 · THE STATE LEDGE + ITS SELECTED LIST ══ -->
   <div class="r3-board st-buy" id="sc-app">
     <div class="r3-ledge-grid" role="tablist" id="cf-ledge" aria-label="Timing states"></div>
-    <div class="r3-spread" id="cf-spread" aria-hidden="true"></div>
+    <div class="r3-spread" id="cf-spread" aria-hidden="true" data-r3b2="10"></div>
     <p class="r3-board-foot" id="cf-foot"></p>
     <div id="cf-panel" role="tabpanel"></div>
   </div>
@@ -664,7 +676,13 @@ function groupRow(g){
   return '<button class="r3-row" type="button" data-key="' + esc(g.key) + '" aria-expanded="' + open + '">'
     + '<span class="r3-name">' + L(esc(g.label), esc(g.label_zh || g.label)) + relDot(g.reliability)
     + '<span class="r3-sub">' + sub + '</span></span>'
-    + '<span class="r3-fig tnum">' + (e.tier ? esc(e.tier) : '') + '</span>'
+    /* B2-05 / MAC1-001 · "T1" is the third naked figure column. Its customer
+       term is the one this list's own legend already prints — Entry tier /
+       入场层级 — carried per row so the name survives the <=640 breakpoint that
+       removes the legend. Absent tier renders as absence, uncaptioned. */
+    + '<span class="r3-fig tnum">'
+    + (e.tier ? '<span class="r3-figlab" data-r3b2="05">' + L('Entry tier', '入场层级') + '</span>' + esc(e.tier) : '')
+    + '</span>'
     + '<span class="r3-why">' + why + '</span>'
     + '<span class="r3-chev" aria-hidden="true"></span></button>';
 }
@@ -783,7 +801,14 @@ function paintPicks(){
     return '<a class="r3-row" data-ref-nav href="' + esc(stockHref(r.ticker)) + '">'
       + '<span class="r3-name"><span class="r3-mem-tk">' + esc(r.ticker) + '</span>'
       + '<span class="r3-sub">' + L(esc(r.subsector || ''), esc(r.subsector || '')) + '</span></span>'
-      + '<span class="r3-fig tnum"><span class="r3-vh">' + L('Conviction', '综合把握') + ' </span>'
+      /* B2-05 / VTC1-001 / PRC1R-002 · this row already carried the name, but
+         only as `.r3-vh` — 0x0 painted at every width, so R3B1-13's commissioned
+         "Conviction / 综合把握" reached a sighted phone reader nowhere and
+         VTC-006's unlabelled 0.xx was fully reinstated at 390/320. The same node
+         becomes `.r3-figlab`: identical AT behaviour above the breakpoint,
+         painted caption below it. */
+      + '<span class="r3-fig tnum"><span class="r3-figlab" data-r3b2="05">'
+      + L('Conviction', '综合把握') + ' </span>'
       + (r.combined_score == null ? '' : r.combined_score.toFixed(2)) + '</span>'
       + '<span class="r3-why">' + L('Its tier', '个股层级') + ' ' + esc(r.stock_tier || '–')
       + '<span aria-hidden="true"> · </span>' + L('vs sub 20d', '相对子行业20日') + ' ' + signed(r.vs_subsector_20d)
