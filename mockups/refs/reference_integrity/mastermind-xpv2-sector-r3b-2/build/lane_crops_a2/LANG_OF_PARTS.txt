@@ -1,9 +1,0 @@
-candidate: /Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/xpv2-sc-r3b-resume/mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/proposal/MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html
-rule: a visible text node under zh-CN with >=8 Latin word tokens AND >=5 lowercase running words is a finding
-
-document language under audit: 'zh-CN'
-visible text nodes scanned (six views, disclosures opened): 4281
-findings: 0
-
-
-RESULT: PASS

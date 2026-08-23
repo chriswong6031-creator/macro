@@ -16,16 +16,11 @@ Two findings share this component and one measurement rig:
       text overflows visibly, so the element's own rect is the SECTION's width
       and reports no collision at all.
 
-  VTC1-003 / MAC1-003 (B2-07) — the ~500 tiles must not be required individual
-      tap targets at <=640. The disposition taken is the critic's own smallest
-      remedy: below the breakpoint the map is context visualization and the two
-      large Browse/List escape hatches lead. This script asserts (a) the treemap
-      contains ZERO interactive descendants, (b) tiles compute
-      `pointer-events:none` at <=640, so it is a stated rule rather than an
-      accident of there being no handler today, and (c) both hatches are painted
-      ABOVE the map at <=640 and BELOW it above the breakpoint — the same
-      information reachable in the same view, led by the control that can
-      actually be tapped.
+  NOTE — old B2-07 WITHDRAWN (Sol FINAL CONTINUATION HANDOFF S4): MAC1-003
+      falsified the tiny-tap-target charge (WCAG 2.2 SC 2.5.8 spacing exception
+      satisfied). This script still REPORTS the treemap's tile pointer-events and
+      hatch presence, and still GATES on the natively-true zero-interactive
+      invariant, but asserts no pointer-events rule and no hatch reorder.
 
 Every census is asserted NONZERO before any "no failures" result is reported
 (COMMISSION.md §"Verification hardening": no check may pass over an empty
@@ -236,22 +231,13 @@ def main() -> int:
                                      f"{TOUCH_FLOOR}px target floor inside the treemap")
                     if r.get("tile_tabbable", 0) != 0:
                         fails.append(f"{r['tile_tabbable']} tile(s) in the tab order")
-                    if is_mobile and r.get("tile_pointer_events") != "none":
-                        fails.append(f"tiles compute pointer-events={r.get('tile_pointer_events')!r} "
-                                     f"at <={MOBILE_MAX} (expected 'none')")
+                    # Old B2-07 WITHDRAWN (Sol FINAL CONTINUATION HANDOFF S4; MAC1-003
+                    # falsified the tap-target charge). pointer-events / hatch-order
+                    # assertions removed; tile pointer-events + hatch presence remain
+                    # REPORTED figures only. The interactive-census gates above stay:
+                    # they assert the treemap's natively non-interactive state, which
+                    # is a fact of the artifact, not a B2-07 repair.
                     hatches = r.get("hatches", [])
-                    if len(hatches) != 2 or not all(h.get("present") for h in hatches):
-                        fails.append("both Browse/List escape hatches must be present")
-                    else:
-                        for h in hatches:
-                            if h["summary_h"] < 44.0:
-                                fails.append(f"{h['id']} summary {h['summary_h']}px < 44px floor")
-                            if is_mobile and h["y"] >= r["map_top"]:
-                                fails.append(f"{h['id']} does not lead the map at <={MOBILE_MAX} "
-                                             f"(hatch y={h['y']} vs map y={r['map_top']})")
-                            if not is_mobile and h["y"] <= r["map_top"]:
-                                fails.append(f"{h['id']} moved above the map above the breakpoint "
-                                             f"(desktop composition must be unchanged)")
 
                     cell = {
                         "width": width, "lang": lang, "theme": theme,

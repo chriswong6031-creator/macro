@@ -414,43 +414,6 @@ html[data-theme="light"] .si-view[data-view="money"] .b3d{ background:color-mix(
   .si-view[data-view="money"] .mny-tm{ min-height:380px; }
   .si-view[data-view="money"] .r3-disc summary{ min-height:48px; }
 }
-/* ── B2-07 · on a phone the map is CONTEXT and the list is the product ───────
-   VTC1-003 / MAC1-003: at 390 the treemap shrinks rather than recomposes — 495
-   tiles, ~485 of them unlabelled, every one under the coarse-pointer floor in
-   at least one dimension — and it sits ABOVE two large, well-made retrieval
-   controls that answer the same question properly. The critic's own reading of
-   this screen ("the weakest viewport") is the design brief: below 641px the map
-   stops pretending to be a control surface and the escape hatches lead.
-
-   Two moves, no new component:
-     · the tiles are made explicitly non-interactive. They carry no href, no
-       tabindex and no handler today, and the map is one `role="img"` — this
-       states that as a rule so it cannot drift back, and so the audit is
-       measuring an intention rather than an accident.
-     · the two disclosures are lifted above the map. Reading ORDER is untouched
-       (the DOM is unchanged, so a screen reader still meets the map's own
-       description, its takeaway and its scale before the tables) and so is the
-       focus order — these two summaries are the only focusable nodes in the
-       panel, and they stay adjacent to each other. What changes is what a thumb
-       reaches first. Above 640 nothing moves. */
-@media (max-width:640px){
-  .si-view[data-view="money"] .mny-heatbox{ display:flex; flex-direction:column; }
-  .si-view[data-view="money"] .mny-heatmeta{ order:0; }
-  .si-view[data-view="money"] .mny-alt{ order:1; margin-top:0; margin-bottom:var(--sp-3); }
-  /* `flex:none` keeps the JS-assigned mount height authoritative — §8.1's
-     mount-width law has a height twin: a flex item that shrinks under its own
-     assigned height re-lays the treemap after it was painted. */
-  .si-view[data-view="money"] .mny-tm{ order:2; flex:none; }
-  .si-view[data-view="money"] .mny-takeaway{ order:3; }
-  .si-view[data-view="money"] .mny-scale{ order:4; }
-  /* the lead pair reads as the primary path, not as an afterthought under a
-     picture: full-strength ink on the summary, and the map's own caption tier
-     unchanged below it. */
-  .si-view[data-view="money"] .mny-alt > summary{ color:var(--text); }
-  .si-view[data-view="money"] .hm-t,
-  .si-view[data-view="money"] .hm-sec,
-  .si-view[data-view="money"] .hm-sechd{ pointer-events:none; }
-}
 @media (max-width:359px){
   .si-view[data-view="money"] .mny-vcell,
   .si-view[data-view="money"] .mny-m,
@@ -552,7 +515,7 @@ html[data-theme="light"] .si-view[data-view="money"] .b3d{ background:color-mix(
       <h2><span class="l-en">Market heat — breadth &amp; cap-weighted moves</span><span class="l-zh">市场热度 — 宽度与市值加权涨跌</span></h2>
       <span class="r3-sec-sub"><span class="l-en">Coincident colour — display context, not a call</span><span class="l-zh">同步色 — 展示背景，非操作判断</span></span>
     </div>
-    <div class="r3-panel mny-heatbox" data-r3b2="07">
+    <div class="r3-panel mny-heatbox">
       <p class="mny-heatmeta" id="hm-meta"></p>
       <!-- §8.1 mount-width law: this box is NEVER inside a closed <details> or a
            display:none wrapper at activation. It is painted from the si:view event,

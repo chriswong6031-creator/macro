@@ -75,7 +75,14 @@ source comments are artifact bytes. It is replaced by the producer citation.
 
 ---
 
-## 2 · DA1-02 — the row-level reliability chip (in scope per orchestrator ruling §1.1)
+## 2 · B2-12 (was DA1-02) — the row-level reliability chip
+
+> RECONCILED 2026-08-23 per Sol FINAL CONTINUATION HANDOFF §5 B2-12: the canonical
+> low-reliability label is `Low confidence / 低置信度`; Lane A's earlier causal wording
+> (`Few live members — read with caution / 实时成分股很少 — 请谨慎解读`) is superseded —
+> causal copy is permitted only as an optional addition and Sol's stated default wins.
+> The producer-contract analysis below remains the audit trail for WHY the old 'thin'
+> word was unlawful.
 
 **Producer path:** `subsector_confluence.json → subsectors[].reliability`.
 
@@ -109,7 +116,7 @@ correct.
 
 | EN | ZH | site | provenance | note |
 |---|---|---|---|---|
-| `Few live members — read with caution` | `实时成分股很少 — 请谨慎解读` | `build/views/confluence.html:646-647` — `relDot()`, `.r3-vh` accessible name beside the `.r3-thin` dot, marker `data-r3b2="da102"` | bound-from-production (recomposed), `templates/subsectors.js:58` | **CHANGED from `Thin data — read with caution` / `数据稀疏 — 请谨慎解读`.** The word "thin"/"稀疏" is now used by the coverage sentence alone. `live` matches the sentence's own `enough live data to time` / `实时数据足够`; `成分股` is this build's established ZH for members (`confluence.html:687`). |
+| `Low confidence` | `低置信度` | `build/views/confluence.html:646-647` — `relDot()`, `.r3-vh` accessible name beside the `.r3-thin` dot, marker `data-r3b2="da102"` | bound-from-production (recomposed), `templates/subsectors.js:58` | **CHANGED from `Thin data — read with caution` / `数据稀疏 — 请谨慎解读`.** The word "thin"/"稀疏" is now used by the coverage sentence alone. `live` matches the sentence's own `enough live data to time` / `实时数据足够`; `成分股` is this build's established ZH for members (`confluence.html:687`). |
 
 **Kept, not reverted** (DA seat condition C2 explicitly asks for this): the
 promotion off production's EN-only `title=` to a bilingual accessible name, and
@@ -130,7 +137,16 @@ and the number beside it now say the same thing.
 
 ---
 
-## 3 · B2-04 — the pre-freeze note, ZH language of parts
+## 3 · B2-04 — WITHDRAWN (Sol FINAL CONTINUATION HANDOFF §4)
+
+> The candidate-authored ZH projection of `grader.pre_freeze_note` was WITHDRAWN:
+> English-only grader strings are upstream producer-owned (PRC1R-U02); the reference
+> may not mint producer translations. The projection, its `lang="en"` fallback rung,
+> and `lang_of_parts_audit.py` were removed in the reconciliation commit; the note
+> renders producer bytes verbatim again (predecessor behavior). The pairs below are
+> retained STRUCK-THROUGH as history only — they ship nowhere.
+
+### (withdrawn pairs — historical record)
 
 **Producer path:** `sector_central grader → grader.pre_freeze_note`
 (embedded fixture; rendered by `paintGrader()`).

@@ -382,9 +382,11 @@ def check_committed_fig_naming_audit() -> None:
 
 
 def check_committed_treemap_labels_audit() -> None:
-    """(n) B2-06 + B2-07 — painted-label collision and mobile-interaction census
-    for the candidate-owned treemap. Consumes `treemap_labels_audit.json`."""
-    name = "(n) B2-06/B2-07 treemap painted-label collision + tiny-tile census (from committed artifact)"
+    """(n) B2-06 — painted-label collision for the candidate-owned treemap
+    (old B2-07 withdrawn per Sol handoff S4; interactive census reported, and the
+    natively-true zero-interactive invariant still gates). Consumes
+    `treemap_labels_audit.json`."""
+    name = "(n) B2-06 treemap painted-label collision (+ reported interactive census) (from committed artifact)"
     audit = _load_audit(TREEMAP_LABELS_JSON, name)
     if audit is None:
         return
