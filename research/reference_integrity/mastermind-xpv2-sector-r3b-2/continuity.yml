@@ -1,0 +1,202 @@
+# XPV2-SC-R3B.2 continuity -- mechanically derived closure set over the nearest
+# predecessor mastermind-xpv2-sector-r3b-1 (Sol REVISE verdict, 2026-08-23): 25 open
+# items = 14 upheld_revise critic findings + 11 B2-* commission conditions. Generated
+# by scripts/check_reference_integrity.py --mandate (RIG S13.5), dispositioned by the
+# R3B.2 orchestrator. Rows start CARRIED_BLOCK at draft and are flipped to
+# RESOLVED_BY_CHANGE as lane evidence lands; prose identities are fully qualified as
+# mastermind-xpv2-sector-r3b-1::<role>::<id> per the commission.
+# Derived: python3 scripts/check_reference_integrity.py --mandate mastermind-xpv2-sector-r3b-2
+# Machine-complete closure set (RIG §13.5) — the WHOLE list, from the record.
+# Fill every disposition with one of CARRIED_BLOCK | OVERRIDDEN | RESOLVED_BY_CHANGE | SUPERSEDED
+# plus its mandatory fields.  <REQUIRED> is not a legal value: the checker
+# fires continuity-invalid-disposition until it is replaced.
+# Declared lineage (oldest → nearest): mastermind-xpv2-turn3-r2, mastermind-xpv2-sector-r3b, mastermind-xpv2-sector-r3b-1
+# The closure obligation runs against the NEAREST only: mastermind-xpv2-sector-r3b-1
+# Earlier entries are provenance — the chain is closed link by link.
+# 25 open item(s) derived from mastermind-xpv2-sector-r3b-1/verdict.yml.
+schema: mastermind.rig_continuity.v1
+reference_id: mastermind-xpv2-sector-r3b-2
+predecessors:
+- reference_id: mastermind-xpv2-sector-r3b-1
+  verdict: REVISE
+  source: on_disk
+  closure:
+  - id: VTC1-001
+    kind: blocker
+    disposition: CARRIED_BLOCK
+    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    predecessor_note: 'BLOCKER (sole basis of the Visual/Taste BLOCK): .r3-cols legends aria-hidden
+      + display:none <=640 kill the R3B1-13 label on mobile; 16/18 .r3-fig lack accessible
+      names at any width. Fix = B2-05.'
+  - id: VTC1-002
+    kind: blocker
+    disposition: CARRIED_BLOCK
+    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    predecessor_note: Treemap sector-group labels overlap at 320/390 (overlapX=17px); painted-width
+      gate covers tickers only. Fix = B2-06.
+  - id: VTC1-003
+    kind: blocker
+    disposition: CARRIED_BLOCK
+    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    predecessor_note: 503 treemap tap targets at 17px height on touch widths (cross-seat with
+      MAC1-003). Fix = B2-07.
+  - id: VTC1-004
+    kind: blocker
+    disposition: CARRIED_BLOCK
+    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    predecessor_note: Rank-scope note orphaned 1075px below the rank column it explains. Fix
+      = B2-08.
+  - id: VTC1-005
+    kind: blocker
+    disposition: CARRIED_BLOCK
+    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    predecessor_note: RECENTLY WRONG (LOGGED) rows bind reserved up-green ink. Fix = B2-09.
+  - id: VTC1-006
+    kind: blocker
+    disposition: CARRIED_BLOCK
+    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    predecessor_note: Five-segment horizontal ramp survives into the vertical mobile stack
+      where it maps to nothing. Fix = B2-10.
+  - id: VTC1-007
+    kind: blocker
+    disposition: CARRIED_BLOCK
+    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    predecessor_note: Overview headline receipt anchors to line 1 of a wrapped sentence. Fix
+      = B2-11.
+  - id: DA1-01
+    kind: blocker
+    disposition: CARRIED_BLOCK
+    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    predecessor_note: 'One producer field under two customer names; the R3B1-06 carve-out
+      premise is FALSE (DA seat condition C1 -- Sol now rules: Strength / 强度 everywhere for
+      theme_intel.themes[].score). Fix = B2-01 with producer-path->label uniqueness guard.'
+  - id: DA1-02
+    kind: blocker
+    disposition: CARRIED_BLOCK
+    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    predecessor_note: 'ORCHESTRATOR SCOPE RULING (disclosed for Sol review): one customer
+      word ''thin'' over two contradicting producer paths on one screen; candidate-owned promotion,
+      copy-only remedy per DA seat condition C2. Adjudicated IN scope as the bidirectional
+      face of B2-01''s one-measure-one-name law; closed by Lane A with the DA-recommended
+      chip re-label. If Sol rejects this reading, the closure reverts to a recorded residual.'
+  - id: MAC1-001
+    kind: blocker
+    disposition: CARRIED_BLOCK
+    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    predecessor_note: Two numeric board columns have no accessible label at any width and
+      no visible label below 641px -- same defect class as VTC1-001. Fix = B2-05.
+  - id: MAC1-002
+    kind: blocker
+    disposition: CARRIED_BLOCK
+    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    predecessor_note: ZH 收起 control 39.0px inline axis (language-conditional target defect;
+      sole sub-44 control in 3,624). Closed inside the B2-05/B2-07 a11y lane (one CSS min-width;
+      disclosed as an in-lane a11y repair, not new scope).
+  - id: PRC1R-001
+    kind: blocker
+    disposition: CARRIED_BLOCK
+    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    predecessor_note: 'R3B1-02 receipt button drives #r3-receipt with aria-expanded but no
+      aria-controls, unlike its three R3B1-08 siblings. Closed inside the B2-05 a11y lane
+      (one attribute; disclosed as an in-lane a11y repair, not new scope).'
+  - id: PRC1R-002
+    kind: blocker
+    disposition: CARRIED_BLOCK
+    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    predecessor_note: Conviction header display:none <=640px -- the commissioned label reaches
+      sighted mobile users nowhere. Same closure as VTC1-001 (B2-05).
+  - id: MAC1-003
+    kind: blocker
+    disposition: CARRIED_BLOCK
+    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    predecessor_note: 'OBSERVATION promoted by cross-seat convergence with VTC1-003: 503 browse-list
+      links at 17px height. Closed with B2-07''s touch-law treatment.'
+  - id: B2-01
+    kind: condition
+    disposition: CARRIED_BLOCK
+    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    predecessor_note: 'One producer measure, one customer term: trace every customer-visible
+      use of theme_intel.themes[].score; canonical label Strength / 强度 everywhere (the action-board
+      Score header included -- the carve-out is amended); remove copy claiming a separate
+      action-board producer field; build a producer-path->customer-label map failing when
+      one path maps to multiple terms without authority adjudication; mutation reverting one
+      occurrence to Score must yield a unique red. Source: DA1-01 + Sol core authority ruling.'
+  - id: B2-02
+    kind: condition
+    disposition: CARRIED_BLOCK
+    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    predecessor_note: 'Decoded emoji closure: remove the encoded chart emoji from Track record
+      (prefer plain Track record / 跟踪记录); harden the icon guard against literal emoji, decimal/hex
+      numeric entities, decoded DOM text, accessible names, and measurable generated content.
+      Source: Sol adjudication (lost-chat PRC finding, durable in the adjudication itself).'
+  - id: B2-03
+    kind: condition
+    disposition: CARRIED_BLOCK
+    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    predecessor_note: 'Candidate-owned heatmap readable ink (.hm-t bins, NOT the byte-verbatim
+      sc_flows fragment): per actual bin/theme/language determine effective painted background,
+      choose lawful foreground deterministically, require >=4.5:1 normal-text contrast, no
+      text-shadow as the compliance mechanism, preserve bin ordering; if unmeasurable, give
+      labels a measurable high-contrast substrate keeping the data color visible. Verifier
+      treats these cells as BLOCKING, never ''unmeasurable-excluded''. Source: mobile seat''s
+      440-cell unverified-axis disclosure + Sol adjudication.'
+  - id: B2-04
+    kind: condition
+    disposition: CARRIED_BLOCK
+    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    predecessor_note: 'ZH language-of-parts: the visible grader/pre-freeze note may not be
+      substantial English prose inside inherited zh-CN; prefer native ZH display projection
+      with identical governed meaning, else wrap raw English with lang=en identified as source-language
+      content; add a scanner for visible substantial Latin prose under ZH (tickers/acronyms/units
+      allowed). Source: Sol adjudication (lost-chat mobile finding, durable in the adjudication
+      itself).'
+  - id: B2-05
+    kind: condition
+    disposition: CARRIED_BLOCK
+    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    predecessor_note: 'Mobile figure labels (VTC1-001/MAC1-001/PRC1R-002): audit all 18 .r3-fig
+      instances; every figure has an accessible name at every width; desktop column header
+      may provide visual naming only while visible; at <=640 if .r3-cols disappears each figure
+      gains an inline visible label or the legend recomposes. Prove Overview Strength 76 /
+      强度 76 and Confluence Conviction / 综合把握 at 320/390 and meaningful AT names for all other
+      figure classes. In-lane a11y closures: PRC1R-001 aria-controls, MAC1-002 ZH 收起 44px
+      floor.'
+  - id: B2-06
+    kind: condition
+    disposition: CARRIED_BLOCK
+    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    predecessor_note: 'Treemap group-label fit at 320/390: no group/sector label overlap by
+      painted width (not character count); primary identity wins; secondary label may drop;
+      accessible/list equivalent retains full information. Source: VTC1-002.'
+  - id: B2-07
+    kind: condition
+    disposition: CARRIED_BLOCK
+    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    predecessor_note: 'Mobile heatmap interaction at <=640: 503 small tiles must not be required
+      individual tap targets; lead with the existing large Browse/List escape hatches or the
+      sector roll-up; any tile staying interactive meets the target floor; same information
+      reachable in the same view. Source: VTC1-003/MAC1-003.'
+  - id: B2-08
+    kind: condition
+    disposition: CARRIED_BLOCK
+    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    predecessor_note: 'Move Rank across all groups / native ZH twin into the immediate Map/Themes
+      rank label/header (two-line header pattern); drop the orphan note. Source: VTC1-004.'
+  - id: B2-09
+    kind: condition
+    disposition: CARRIED_BLOCK
+    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    predecessor_note: 'RECENTLY WRONG (LOGGED) uses neutral history/error ink, never reserved
+      up/positive/Buy color; token route. Source: VTC1-005.'
+  - id: B2-10
+    kind: condition
+    disposition: CARRIED_BLOCK
+    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    predecessor_note: 'Suppress the horizontal five-segment ramp when state cells stack vertically
+      and the ramp no longer maps to the cells; do not replace with decoration. Source: VTC1-006.'
+  - id: B2-11
+    kind: condition
+    disposition: CARRIED_BLOCK
+    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    predecessor_note: 'Flow-aware receipt placement so the Overview receipt belongs to the
+      whole wrapped statement; test 320/390 EN/ZH and large text. Source: VTC1-007.'
