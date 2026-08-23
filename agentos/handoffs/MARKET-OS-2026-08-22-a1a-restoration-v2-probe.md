@@ -197,7 +197,7 @@ danger_areas:
   - "Semantic-v2 and product-conformance hashes require fixed field names, field order, numeric normalization, and multiset sorting; a different JSON insertion order produces a false mismatch."
   - "Macro and Terminal expose different field casing and independent Watchlist representations; normalize only through the sealed product-specific canonicalizers."
   - "Timestamp regeneration can affect incidental product order, so the authoritative ordered-id seal remains a separate hard invariant during canonical restoration."
-prs: [6257, 6280]
+prs: [6257, 6280, 6284]
 decisions:
   - "DEC:MARKET-OS-A1A-RESTORATION-EQUALITY-EXCLUDES-SERVER-TIMESTAMPS"
 ---
