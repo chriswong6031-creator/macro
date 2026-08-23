@@ -10,6 +10,7 @@
     "07d7fb9060fe29fc241ff44bebc76c544622dfc8": "2026-08-22T12:17:43.273188+00:00",
     "09fa99051965cf9365d8ec98c6f5f7a0aaf63be8": "2026-08-22T17:02:05.528846+00:00",
     "0a1d198e05369461bc2b52920ee720088d593b70": "2026-08-22T20:42:26.993339+00:00",
+    "0a3a2460c67675023c7ae8e32cf343c62fd22bc0": "2026-08-23T07:58:19.221614+00:00",
     "0a3acbcb28ed175e0381406e8cc6d7c87940d92c": "2026-08-22T15:34:38.911619+00:00",
     "0bb342c7967684eebc9ecb3324b7a73b6876f9bd": "2026-08-22T09:03:26.295762+00:00",
     "0c63fa7ac5c3dd7a4ed2de771a10d9b7053bcdb9": "2026-08-22T23:40:35.692695+00:00",
@@ -59,7 +60,6 @@
     "306e400ac5a2f13bb2dfad8eb88726fa1e1b05fa": "2026-08-22T14:29:30.698914+00:00",
     "31794efe036958dc3b5a327c81019bff312140c2": "2026-08-22T22:35:34.703060+00:00",
     "31c56ea720bbb2efaad0cfb590e8f7ad4d28674e": "2026-08-22T09:36:54.325682+00:00",
-    "338c149ed7ed2987cbba59a869c2c91ab2449f15": "2026-08-22T07:39:52.259668+00:00",
     "3427244417208b13a8953c60e40285e7e0e49085": "2026-08-23T01:41:17.795798+00:00",
     "34c3a1e8295c38204ec5005e43d3b636443d9e4c": "2026-08-22T18:09:25.114670+00:00",
     "358e3be6eaaf97fbf8c69c5ca948b808d144ab5c": "2026-08-22T19:11:37.170503+00:00",
@@ -146,7 +146,6 @@
     "7c1ca36f129c7d0533c3cc5427e754fc8e5cf599": "2026-08-23T04:58:25.743589+00:00",
     "7c576e71b27df897eae8d6c891012299f9e95b33": "2026-08-22T17:02:05.528846+00:00",
     "7c79a781bdab7b354ed701c09f9ccf61d077f8bd": "2026-08-22T18:09:25.114670+00:00",
-    "7dc4e5dbf8a2d71f38d06b7d32b3a3e61de64161": "2026-08-22T07:39:52.259668+00:00",
     "7e50058588e354986bd79c50682719f17b571c31": "2026-08-22T17:02:05.528846+00:00",
     "7ea1acba2207d999371924e37e66dbc4ac15e817": "2026-08-22T17:50:46.860373+00:00",
     "80b10d490689cbae607dcd63809a596b802c4c2b": "2026-08-22T17:50:46.860373+00:00",
@@ -230,6 +229,7 @@
     "alpaca:61372332": "2026-08-23T06:54:09.712299+00:00",
     "alpaca:61372354": "2026-08-23T06:54:09.712299+00:00",
     "alpaca:61372372": "2026-08-23T07:29:07.139159+00:00",
+    "alpaca:61372393": "2026-08-23T07:58:19.221614+00:00",
     "b0eb7160a487da9e9315391686b3df1ee0e85088": "2026-08-22T12:17:43.273188+00:00",
     "b121d65119f9ef3cb4e36fecf1ef7c3e9bfa486a": "2026-08-22T18:09:25.114670+00:00",
     "b28b5833fe264ed4d6df32b17286ecc091e766b2": "2026-08-23T05:35:05.838290+00:00",
@@ -252,6 +252,7 @@
     "be1402da04ea51ad637f953fed60b94f99c0a79e": "2026-08-22T17:50:46.860373+00:00",
     "be377df75068b7ab82c80e99ca6cdfbfed22b107": "2026-08-23T03:38:01.605777+00:00",
     "be7de45db4cb871ee3c4d91bae181fb974145030": "2026-08-23T02:49:45.536404+00:00",
+    "bfede5acc37396f1bdc09fe800c050f8d85519a9": "2026-08-23T07:58:19.221614+00:00",
     "bff0af8f2459cbd5f6476507a813f19a4b4282be": "2026-08-22T19:11:37.170503+00:00",
     "c03c23a9239c79d9a6a62ae0fcbef703f7203219": "2026-08-22T18:09:25.114670+00:00",
     "c08e8fcaf8c300e4cc239c9d6fb7ff3631085e60": "2026-08-22T21:50:29.915812+00:00",
@@ -332,6 +333,19 @@
   "corroboration": {
     "claim:none:sec:technology": {
       "first_ts": "2026-08-23T07:29:07.139159+00:00",
+      "sources": [
+        "host:benzinga.com",
+        "host:investing.com"
+      ]
+    },
+    "head:iran says pakistans army chief to visit tehran on monday": {
+      "first_ts": "2026-08-23T07:58:19.221614+00:00",
+      "sources": [
+        "host:investing.com"
+      ]
+    },
+    "head:paramount california set for monday talks over 110 billion warner bros deal as m": {
+      "first_ts": "2026-08-23T07:58:19.221614+00:00",
       "sources": [
         "host:benzinga.com"
       ]
@@ -919,19 +933,19 @@
   },
   "providers": {
     "alpaca": {
-      "last_poll": "2026-08-23T07:29:07.139159+00:00",
+      "last_poll": "2026-08-23T07:58:19.221614+00:00",
       "primed_at": "2026-08-04T07:19:01.408847+00:00",
-      "since": "2026-08-23T07:08:20+00:00"
+      "since": "2026-08-23T07:38:16+00:00"
     },
     "cnn_truth_backfill": {
       "etag": "\"f0559db7dbb65316b83b76e8f17397c7-3\"",
       "fail_count": 0,
       "last_modified": "Sun, 23 Aug 2026 04:58:07 GMT",
-      "last_poll_ts": 1787468052.3886218
+      "last_poll_ts": 1787471902.193015
     },
     "trumpstruth": {
       "fail_count": 0,
-      "last_poll_ts": 1787470149.4937294
+      "last_poll_ts": 1787471901.8692923
     },
     "twitterapiio": {
       "cursors": {
@@ -1000,65 +1014,65 @@
   },
   "schema": "press_wire.cursors/v1",
   "transient_refusals": {},
-  "updated_at": "2026-08-23T07:29:07Z",
+  "updated_at": "2026-08-23T07:58:19Z",
   "wire": {
     "bea_news": {
       "etag": "W/\"d0e223fac24dd1:0\"",
       "fail_count": 0,
       "last_modified": "Tue, 04 Aug 2026 12:30:04 GMT",
-      "last_poll_ts": 1787470148.4207604
+      "last_poll_ts": 1787471900.5593424
     },
     "bls_news": {
       "etag": "\"07aaf967531dd1:0\"",
       "fail_count": 0,
       "last_modified": "Fri, 21 Aug 2026 14:01:40 GMT",
-      "last_poll_ts": 1787470148.2064998
+      "last_poll_ts": 1787471900.4419825
     },
     "cnbc_top": {
       "fail_count": 0,
-      "last_poll_ts": 1787470148.5899503
+      "last_poll_ts": 1787471900.8591225
     },
     "coindesk_rss": {
       "fail_count": 0,
-      "last_poll_ts": 1787470149.2454367
+      "last_poll_ts": 1787471901.703115
     },
     "cointelegraph_rss": {
       "fail_count": 0,
-      "last_modified": "Sun, 23 Aug 2026 07:27:42 GMT",
-      "last_poll_ts": 1787470149.4116254
+      "last_modified": "Sun, 23 Aug 2026 07:54:20 GMT",
+      "last_poll_ts": 1787471901.8106925
     },
     "fed_press": {
       "etag": "W/\"53636b83de30dd1:0\"",
       "fail_count": 0,
       "last_modified": "Thu, 20 Aug 2026 20:00:13 GMT",
-      "last_poll_ts": 1787470148.1380413
+      "last_poll_ts": 1787471900.3834724
     },
     "forexlive_news": {
-      "etag": "W/\"YfHF42i1o6yRIVme6i702KAkR7U\"",
+      "etag": "W/\"Xh2adFw2jjtLq9rae32AJgw6NFk\"",
       "fail_count": 0,
-      "last_poll_ts": 1787470148.9776566
+      "last_poll_ts": 1787471901.5407488
     },
     "investing_news": {
-      "etag": "W/\"1215-659b1a7694fe4\"",
+      "etag": "W/\"1228-659b23934e3d9\"",
       "fail_count": 0,
-      "last_modified": "Sun, 23 Aug 2026 07:16:53 GMT",
-      "last_poll_ts": 1787470149.1493387
+      "last_modified": "Sun, 23 Aug 2026 07:57:39 GMT",
+      "last_poll_ts": 1787471901.6245353
     },
     "marketwatch_top": {
-      "etag": "W/\"2114-0W3Ccb9u5v28DTfgADo4JK9LtmM\"",
+      "etag": "W/\"2114-hX1MFuWPmOThnVKFTFyKl2RFX7I\"",
       "fail_count": 0,
-      "last_poll_ts": 1787470148.6647189
+      "last_poll_ts": 1787471900.993897
     },
     "whitehouse_actions": {
       "etag": "\"393774828a07a184ce685a347792bc6c\"",
       "fail_count": 0,
       "last_modified": "Fri, 21 Aug 2026 21:35:04 GMT",
-      "last_poll_ts": 1787470148.460036
+      "last_poll_ts": 1787471900.8198056
     },
     "zerohedge_feed": {
       "fail_count": 0,
       "last_modified": "Sun, 23 Aug 2026 07:08:40 GMT",
-      "last_poll_ts": 1787470148.7871177
+      "last_poll_ts": 1787471901.0202858
     }
   },
   "wire_day_counts": {
