@@ -321,6 +321,12 @@ a { color: inherit; text-decoration: none; }
   .pw-row { grid-template-columns: 56px minmax(0, max-content) minmax(0, max-content); }
 }
 .pw-row:hover { background: var(--surf-hover); }
+/* An unlinked row renders as a span rather than an anchor: it must not promise
+   a click it cannot keep, so it drops the hover wash and the link colour on its
+   ticker. (A comment in a shipped style block is shipped bytes — keep markup
+   out of it, per the #6249 heal.) */
+span.pw-row:hover { background: none; }
+span.pw-row .pw-t { color: var(--text); }
 .pw-t { font-size: 12.5px; font-weight: 700; color: var(--ink-link, var(--link)); }
 .pw-mv { font-size: 12.5px; color: var(--text); }
 .pw-cmp { font-size: 12px; color: var(--muted); }
@@ -769,11 +775,14 @@ footer.foot { margin-top: 30px; padding-top: 14px; border-top: 1px solid var(--l
       <div class="pw-k">{{ t('Recently resolved', '近期已了结') }}</div>
       <div class="pw-rows">
         {%- for r in P.resolved %}
-        <a class="pw-row" href="{{ r.t }}.html">
+        {#- No dossier, no anchor — but the row keeps every word. An episode
+            outlives its name's coverage, and "stopped trading" is the ending
+            this stratum exists to print (engine/stocks_hub._pw_href). #}
+        {%- if r.href %}<a class="pw-row" href="{{ r.href }}">{% else %}<span class="pw-row">{% endif %}
           <span class="pw-t">{{ r.t }}</span>
           <span class="pw-mv">{{ t(r.move_en ~ ' · ' ~ r.when_en, r.move_zh ~ ' · ' ~ r.when_zh) }}</span>
           <span class="pw-end"><i class="pw-sw pw-s-{{ r.end_cls }}"></i>{{ t(r.end_en, r.end_zh) }}</span>
-        </a>
+        {%- if r.href %}</a>{% else %}</span>{% endif %}
         {%- endfor %}
       </div>
     </div>
@@ -786,7 +795,7 @@ footer.foot { margin-top: 30px; padding-top: 14px; border-top: 1px solid var(--l
         <em>{{ t(P.count_en, P.count_zh) }}</em></div>
       <div class="pw-rows">
         {%- for e in P.open %}
-        <a class="pw-row" href="{{ e.t }}.html">
+        {%- if e.href %}<a class="pw-row" href="{{ e.href }}">{% else %}<span class="pw-row">{% endif %}
           <span class="pw-t">{{ e.t }}</span>
           <span class="pw-mv">{{ t(e.move_en, e.move_zh) }}{% if e.cmp_en %}
             <span class="pw-cmp">· {{ t(e.cmp_en, e.cmp_zh) }}</span>{% endif %}</span>
@@ -794,7 +803,7 @@ footer.foot { margin-top: 30px; padding-top: 14px; border-top: 1px solid var(--l
             {%- if e.fam_en %}<span class="pw-chip" data-tip-en="{{ e.fam_tip_en }}" data-tip-zh="{{ e.fam_tip_zh }}">{{ t(e.fam_en, e.fam_zh) }}</span>{% endif %}
             {%- if e.state_en %}<span class="pw-chip pw-st"{% if e.tip_en %} data-tip-en="{{ e.tip_en }}" data-tip-zh="{{ e.tip_zh }}"{% endif %}>{{ t(e.state_en, e.state_zh) }}</span>{% endif %}
           </span>
-        </a>
+        {%- if e.href %}</a>{% else %}</span>{% endif %}
         {%- endfor %}
       </div>
     </div>

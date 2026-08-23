@@ -71,7 +71,21 @@ def _packet_body(
     return payload, body
 
 
-def _prior_catalog(root: Path, prior_manifest: object | None) -> tuple[dict[str, Mapping[str, Any]], dict[str, tuple[dict[str, Any], bytes]], dict[str, Any] | None]:
+def _prior_catalog(
+    root: Path,
+    prior_manifest: object | None,
+    *,
+    hydrate_keys: set[str] | None = None,
+) -> tuple[dict[str, Mapping[str, Any]], dict[str, tuple[dict[str, Any], bytes]], dict[str, Any] | None]:
+    """Return the prior catalog, hydrating packet bodies only when requested.
+
+    ``hydrate_keys=None`` preserves the historical full-store behavior used by
+    local full replays.  The hourly R2 projector passes the small set of source
+    corrections that actually need the prior packet body for correction
+    lineage; unchanged packets are receipt-reused directly from the verified
+    parent manifest.  That keeps catch-up work proportional to the delta rather
+    than to the lifetime corpus.
+    """
     if prior_manifest is None:
         marker_path = root / "manifest.json"
         if not marker_path.exists():
@@ -87,10 +101,12 @@ def _prior_catalog(root: Path, prior_manifest: object | None) -> tuple[dict[str,
         receipt = prior_manifest["files"].get(index["object_key"])
         if not isinstance(receipt, Mapping):
             raise ContractError("prior story packet receipt missing")
+        packets[str(key)] = index
+        if hydrate_keys is not None and str(key) not in hydrate_keys:
+            continue
         packet, body = _packet_body(root, receipt, policy=prior_policy)
         if packet["packet_id"] != index["packet_id"]:
             raise ContractError("prior story packet index id mismatch")
-        packets[str(key)] = index
         bodies[str(key)] = (packet, body)
     return packets, bodies, dict(prior_manifest)
 
@@ -124,22 +140,25 @@ def _index_packet(packet: Mapping[str, Any], receipt: Mapping[str, Any]) -> dict
     }
 
 
+def _indexed_packet(root: Path, manifest: Mapping[str, Any], key: str) -> dict[str, Any]:
+    """Load one packet and prove that its immutable body matches its index row."""
+    index = manifest["packets"][key]
+    receipt = manifest["files"][index["object_key"]]
+    packet, _body = _packet_body(root, receipt, policy=manifest["policy"]["snapshot"])
+    if (
+        packet["packet_id"] != index["packet_id"]
+        or event_key(packet["digest"]["event"]) != key
+        or packet["digest"]["source"]["body_sha256"] != index["source_sha256"]
+        or packet["story"]["story_id"] != index["story_id"]
+        or packet["story"]["story_revision_id"] != index["story_revision_id"]
+    ):
+        raise ContractError(f"story packet index mismatch for {key}")
+    return packet
+
+
 def _packets_for_manifest(root: Path, manifest: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
     """Load and index-check every packet named by one immutable marker."""
-    packets: dict[str, dict[str, Any]] = {}
-    for key, index in manifest["packets"].items():
-        receipt = manifest["files"][index["object_key"]]
-        packet, _body = _packet_body(root, receipt, policy=manifest["policy"]["snapshot"])
-        if (
-            packet["packet_id"] != index["packet_id"]
-            or event_key(packet["digest"]["event"]) != key
-            or packet["digest"]["source"]["body_sha256"] != index["source_sha256"]
-            or packet["story"]["story_id"] != index["story_id"]
-            or packet["story"]["story_revision_id"] != index["story_revision_id"]
-        ):
-            raise ContractError(f"story packet index mismatch for {key}")
-        packets[str(key)] = packet
-    return packets
+    return {str(key): _indexed_packet(root, manifest, str(key)) for key in manifest["packets"]}
 
 
 def _verify_lineage_transition(
@@ -233,6 +252,7 @@ def build_story_packet_generation(
     prior_manifest: object | None = None,
     prior_store_dir: str | Path | None = None,
     max_new_events: int | None = None,
+    prior_body_keys: set[str] | None = None,
 ) -> tuple[dict[str, Any], dict[str, bytes]]:
     """Build an immutable aggregate marker plus only newly needed packet bytes.
 
@@ -245,6 +265,13 @@ def build_story_packet_generation(
     add.  The hourly lane uses this so a multi-thousand-event catch-up advances
     over successive runs instead of trying to compile the whole delta at once.
     ``None`` keeps the historical compile-everything behaviour.
+
+    ``prior_body_keys`` is the set of prior packet bodies actually needed by a
+    bounded remote projection (normally source corrections only).  When it is
+    supplied, unchanged prior packets are copied by their already-validated
+    index + immutable receipt and never read from disk.  ``None`` retains the
+    full local-replay behavior for callers that intentionally hydrate the whole
+    store.
     """
     evidence_root = Path(evidence_dir)
     evidence_manifest = _canonical_marker(evidence_root / "manifest.json", label="evidence root marker")
@@ -257,7 +284,11 @@ def build_story_packet_generation(
         "snapshot": resolved_policy,
     }
     store_root = Path(prior_store_dir) if prior_store_dir is not None else evidence_root
-    prior_index, prior_bodies, prior = _prior_catalog(store_root, prior_manifest)
+    prior_index, prior_bodies, prior = _prior_catalog(
+        store_root,
+        prior_manifest,
+        hydrate_keys=prior_body_keys,
+    )
     current_keys = set(evidence_manifest["events"])
     if not set(prior_index) <= current_keys:
         missing = sorted(set(prior_index) - current_keys)
@@ -284,8 +315,6 @@ def build_story_packet_generation(
         source_sha = str(event["source_sha256"])
         prior_entry = prior_index.get(key)
         prior_packet: Mapping[str, Any] | None = None
-        packet: dict[str, Any]
-        body: bytes
         can_reuse = (
             prior_entry is not None
             and str(prior_entry["source_sha256"]) == source_sha
@@ -293,30 +322,38 @@ def build_story_packet_generation(
             and dict(prior["policy"]) == policy_ref
         )
         if can_reuse:
-            packet, body = prior_bodies[key]
-            # A packet's source receipts remain sufficient even when this
-            # aggregate marker advances because unrelated evidence arrived.
-            validate_story_packet(packet, policy=resolved_policy)
-        else:
-            _manifest, fact_pack, claim_graph, transcript = load_evidence_event(evidence_root, key=key, manifest=evidence_manifest)
-            if prior_entry is not None:
-                candidate = prior_bodies[key][0]
-                if str(prior_entry["source_sha256"]) != source_sha:
-                    prior_packet = candidate
-            packet = build_story_packet(
-                fact_pack,
-                claim_graph,
-                transcript,
-                evidence=evidence_receipts_from_manifest(evidence_manifest, key=key),
-                policy=resolved_policy,
-                prior_packet=prior_packet,
-                prior_policy=(
-                    prior["policy"]["snapshot"]
-                    if prior_packet is not None and prior is not None
-                    else None
-                ),
-            )
-            body = canonical_json_bytes(packet)
+            assert prior is not None and prior_entry is not None
+            prior_receipt = prior["files"].get(prior_entry["object_key"])
+            if not isinstance(prior_receipt, Mapping):
+                raise ContractError("prior story packet receipt missing")
+            packets[key] = dict(prior_entry)
+            files[str(prior_receipt["object_key"])] = dict(prior_receipt)
+            continue
+
+        _manifest, fact_pack, claim_graph, transcript = load_evidence_event(
+            evidence_root,
+            key=key,
+            manifest=evidence_manifest,
+        )
+        if prior_entry is not None and str(prior_entry["source_sha256"]) != source_sha:
+            candidate = prior_bodies.get(key)
+            if candidate is None:
+                raise ContractError(f"corrected source prior packet body was not hydrated: {key}")
+            prior_packet = candidate[0]
+        packet = build_story_packet(
+            fact_pack,
+            claim_graph,
+            transcript,
+            evidence=evidence_receipts_from_manifest(evidence_manifest, key=key),
+            policy=resolved_policy,
+            prior_packet=prior_packet,
+            prior_policy=(
+                prior["policy"]["snapshot"]
+                if prior_packet is not None and prior is not None
+                else None
+            ),
+        )
+        body = canonical_json_bytes(packet)
         receipt = _packet_file_receipt(packet, body)
         object_key = str(receipt["object_key"])
         previous_body = artifacts.get(object_key)
@@ -424,6 +461,7 @@ def write_story_packet_generation(
     policy: object | None = None,
     prior_manifest: object | None = None,
     max_new_events: int | None = None,
+    prior_body_keys: set[str] | None = None,
 ) -> tuple[Path, dict[str, Any]]:
     """Write immutable objects/generation, then atomically advance the marker."""
     root = Path(out_dir)
@@ -436,12 +474,106 @@ def write_story_packet_generation(
         prior_manifest=prior,
         prior_store_dir=root,
         max_new_events=max_new_events,
+        prior_body_keys=prior_body_keys,
     )
     for object_key, body in sorted(artifacts.items()):
         _write_immutable_object(root, object_key, body)
     _write_immutable_generation(root, manifest)
     _atomic_bytes(root / "manifest.json", canonical_json_bytes(manifest))
     return root / "generations" / str(manifest["generation_id"]), manifest
+
+
+def verify_story_packet_delta_store(
+    out_dir: str | Path,
+    manifest: Mapping[str, Any],
+    *,
+    prior_manifest: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Verify one bounded child generation without replaying unchanged objects.
+
+    The parent marker has already been read from its immutable R2 generation by
+    the refresh/publish boundary.  Under an unchanged promotion policy, an
+    unchanged source revision must therefore reuse the parent's index row and
+    file receipt byte-for-byte.  Only new/corrected packet objects need local
+    body verification; a correction additionally hydrates exactly its direct
+    parent packet so the historical story carried in ``prior`` is proven.
+
+    The daily remote audit deliberately remains the full-store verifier.  This
+    function is the hourly transition verifier, not a replacement for that
+    complete replay.
+    """
+    root = Path(out_dir)
+    try:
+        marker, marker_raw = _read_json_bytes(root / "manifest.json", label="story packet marker")
+        if marker_raw != canonical_json_bytes(marker) or dict(manifest) != marker:
+            raise ContractError("provided story packet manifest differs from canonical marker")
+        validate_story_packet_manifest(marker)
+        validate_story_packet_manifest(prior_manifest)
+        if marker["parent_generation_id"] != prior_manifest["generation_id"]:
+            raise ContractError("story packet child does not name the verified current root as parent")
+        if canonical_json_bytes(marker["policy"]) != canonical_json_bytes(prior_manifest["policy"]):
+            raise ContractError("bounded story packet transition cannot change promotion policy")
+        generation_id = str(marker["generation_id"])
+        immutable = (root / "generations" / generation_id / "manifest.json").read_bytes()
+        if immutable != marker_raw:
+            raise ContractError("immutable story packet manifest differs from marker")
+        parent_id = str(prior_manifest["generation_id"])
+        parent_bytes = (root / "generations" / parent_id / "manifest.json").read_bytes()
+        if parent_bytes != canonical_json_bytes(prior_manifest):
+            raise ContractError("local direct-parent manifest differs from verified parent")
+        if not set(prior_manifest["packets"]) <= set(marker["packets"]):
+            raise ContractError("story packet lineage shrank a packet catalog")
+
+        changed_current: dict[str, Mapping[str, Any]] = {}
+        changed_parent: dict[str, Mapping[str, Any]] = {}
+        for key, index in marker["packets"].items():
+            old_index = prior_manifest["packets"].get(key)
+            if old_index is not None and dict(index) == dict(old_index):
+                current_receipt = marker["files"].get(index["object_key"])
+                parent_receipt = prior_manifest["files"].get(old_index["object_key"])
+                if not isinstance(current_receipt, Mapping) or dict(current_receipt) != dict(parent_receipt):
+                    raise ContractError(f"unchanged story packet receipt churned: {key}")
+                continue
+            changed_current[str(key)] = _indexed_packet(root, marker, str(key))
+            if old_index is None:
+                continue
+            if old_index["source_sha256"] == index["source_sha256"]:
+                raise ContractError("unchanged source revision churned a story packet")
+            changed_parent[str(key)] = _indexed_packet(root, prior_manifest, str(key))
+
+        for key, old_index in prior_manifest["packets"].items():
+            current_index = marker["packets"][key]
+            if old_index["source_sha256"] == current_index["source_sha256"]:
+                if dict(old_index) != dict(current_index):
+                    raise ContractError("unchanged source revision churned a story packet")
+                continue
+            corrected = changed_current.get(str(key))
+            prior_packet = changed_parent.get(str(key))
+            if corrected is None or prior_packet is None:
+                raise ContractError("changed source revision lacks locally verified correction lineage")
+            prior = corrected.get("prior")
+            if not isinstance(prior, Mapping) or prior.get("packet_id") != old_index["packet_id"]:
+                raise ContractError("corrected packet does not bind its direct parent packet id")
+            if canonical_json_bytes(prior.get("story")) != canonical_json_bytes(prior_packet["story"]):
+                raise ContractError("corrected packet prior story differs from direct parent")
+
+        return {
+            "status": "ready",
+            "warnings": [],
+            "generation_id": generation_id,
+            "packet_count": len(marker["packets"]),
+            "evidence_generation_id": marker["evidence_root"]["generation_id"],
+            "verified_delta_packet_count": len(changed_current),
+        }
+    except Exception as exc:  # noqa: BLE001 - health is a non-throwing boundary.
+        return {
+            "status": "invalid",
+            "warnings": [f"story_packet_delta_store:{type(exc).__name__}:{exc}"],
+            "generation_id": None,
+            "packet_count": 0,
+            "evidence_generation_id": None,
+            "verified_delta_packet_count": 0,
+        }
 
 
 def verify_story_packet_store(
