@@ -90,6 +90,13 @@ verified:
       tests/test_ci_pack.py tests/test_ci_plan_workflow.py
     result: "167 passed; only three pytest temporary-directory cleanup warnings."
   - claim: >
+      The repaired manifest introduces no unowned import closure and leaves no
+      new pytest suite unwired against the exact original PR base.
+    command: >-
+      python3 scripts/check_contract_delta.py --base
+      468e3f0257dac41b2e7e90771c3de87640e1c3ee
+    result: "contract-delta: 0 introduced, 0 inherited (base 468e3f0257da)."
+  - claim: >
       The deterministic decision, BTC authority, Vector, asset and site-reference
       regression set passes in a full checkout on the refreshed branch.
     command: >-
