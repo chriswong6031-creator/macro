@@ -1090,6 +1090,81 @@ waves:
       sparse-checkout gained engine/neuralweb/__init__.py +
       company_intelligence_reader.py (requests was already an installed
       dep there — no new pip dependency).
+      ROUND 2 (Opus red-team verification, 2026-08-23, BLOCK: ten round-1
+      findings confirmed FIXED with mutant kills; remaining + new fixed on
+      the same branch/head). NEW-BLOCKER-16 (FROZEN FIX, two-phase
+      refresh()): a live verifier probe caught the single-pass per-ticker
+      loop publishing a triggering ticker's own first generation BEFORE a
+      LATER-ordered ticker had been carried forward at all (marker
+      generation 0 missing a ticker, only complete once that ticker was
+      later visited in the SAME cycle). refresh() now runs Phase 1
+      (discovery + an UNCONDITIONAL per-ticker carry-forward read, zero
+      writes, for ALL tickers) fully before Phase 2 (writes only, applying
+      each triggering ticker's ascending sequence atop the now-complete
+      base) — every promoted marker is therefore complete from its very
+      first write. New regression test
+      test_refresh_every_write_contains_every_resolved_ticker_before_any_write
+      is a proven mutant-kill: it FAILS against the pre-fix single-pass
+      code (asserts 2 == 1 generation dirs, first generation missing the
+      carried ticker) and passes against the fix.
+      MINOR-9 (real per-sequence lineage, frozen "strictly older"
+      predecessor lookup): discover_new_homebuilder_revisions now resolves
+      each row's predecessor via _nearest_older_revision — the nearest
+      timeline entry whose source_available_at is STRICTLY OLDER, never
+      "the chain's overall newest" (wrong for a genuine backfill, where a
+      newly-discovered row is chronologically OLDER than something already
+      represented). Two new proven mutant-kill tests in
+      tests/test_issuer_profiles_a5a.py
+      (test_backfilled_original_publishes_complete_never_a_newer_known_revision,
+      test_amendment_after_backfilled_original_walks_to_corrected_with_true_lineage)
+      both FAIL against a naive "timeline max by timestamp, no `before`
+      filter" mutant and pass against the real implementation; the second
+      test makes the wrong-lineage failure mode OBSERVABLE by giving a
+      temporally-invalid decoy the amendment's own real sha256, so a wrong
+      selection would silently leave the amendment "complete" instead of
+      "corrected".
+      NEW-MAJOR-17: the stale "10 R2 GETs/cycle" accepted-cost comment
+      above refresh()'s per-ticker loop is rewritten to describe the
+      two-phase architecture's real, larger GET cost (4 unconditional
+      carry-forward GETs/cycle, paid once regardless of how many revisions
+      Phase 2 replays).
+      NEW-MINOR-18 (raw marker byte hashing): current_marker_loader's
+      production default is now ci_reader.fetch_current_workspace_marker_raw
+      (new reader primitive returning (raw_bytes, parsed_dict) | None);
+      refresh()'s chain_previous_sha hashes the raw fetched bytes directly,
+      never a re-serialization via canonical_json_bytes — the now-dead
+      canonical_json_bytes import was removed from the script. Two new
+      reader-level tests in tests/test_company_intelligence_workspace_chain.py
+      prove the raw-bytes contract with a fixture body deliberately NOT
+      byte-identical to its own canonical re-serialization, plus the clean-
+      404 case.
+      MINOR-12/NEW-NIT-21/MINOR-17: acquire_and_build_homebuilder_workspace
+      is DELETED (dead once discovery became the sole per-ticker mechanism
+      — BLOCKER-2); its own direct unit test at
+      tests/test_issuer_profiles_a5a.py (test_fiscal_period_mismatch_refuses_rather_than_guesses)
+      is retargeted from the deleted function's (incorrect, since deleted)
+      RefreshError-raise expectation to discover_new_homebuilder_revisions'
+      real, frozen B4 skip-not-fail behavior (asserts an empty return list
+      plus the actual ::warning text) — the safety property (never mint a
+      guessed fiscal identity) is preserved, only the mechanism assertion
+      changed to match reality. The stale `real_acquire` local variable
+      name (three destructuring call sites + the one place it was actually
+      called) is renamed `real_discover` throughout
+      tests/test_issuer_profiles_a5a.py. refresh()'s own docstring is
+      corrected to describe true nearest-strictly-older lineage (not "the
+      revision immediately before it in the list") and the two-phase split.
+      FINAL VERIFICATION at the round-2 head: the six touched-module test
+      files together = 290 passed, 2 skipped (30.80s);
+      tests/test_gh_annotation_line_start.py run SEPARATELY (never folded
+      into the above per MINOR-12) = 4 passed (15.02s); combined seven-
+      suite total = 294 passed, 2 skipped, 0 failed. contract-delta --base
+      origin/main = 0 introduced, 0 inherited (base 25b961651882). agentos
+      validate = 0 errors (29 pre-existing warnings, unrelated to this PR).
+      test_issuer_profiles_a5a.py alone: 38 passed (was 36 — +2 MINOR-9
+      tests). test_refresh_event_workspaces.py alone: 36 passed (was 35 —
+      +1 BLOCKER-16 test). Still a DRAFT PR — never marked ready, armed
+      merge-on-green, or merged; the commissioning session owns
+      integration/merge.
 next_action: >
   Sol's FOURTH GATE (A4P.1) closes the five escalations the third gate left
   open with the returns: (1) AG14 cohort-label question SETTLED by R2's

@@ -313,31 +313,66 @@ def test_fiscal_period_for_report_date_uses_real_reportdate_values() -> None:
         assert stated == expect_end, name
 
 
-def test_fiscal_period_mismatch_refuses_rather_than_guesses(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_fiscal_period_mismatch_refuses_rather_than_guesses(capsys: pytest.CaptureFixture) -> None:
     """If the computed quarter end does NOT match the exhibit's own stated
-    period, the issuer is skipped for the run (typed/logged absence) — never
-    published under a guessed fiscal identity."""
-    import scripts.refresh_event_workspaces as refresh_mod
-    from scripts.refresh_event_workspaces import RefreshError
+    period, the row is SKIPPED (typed/logged absence, B4 skip != fail) —
+    never published under a guessed fiscal identity.
 
-    def fake_acquire_results_filing(*, cik, http_get):
+    NEW-NIT-21/MINOR-17 (Opus red-team verification round 2, 2026-08-23):
+    retargeted from the deleted acquire_and_build_homebuilder_workspace
+    (which hard-raised RefreshError on a mismatch) to the real production
+    call site, discover_new_homebuilder_revisions — whose actual, frozen
+    B4 behavior for a mismatched row is a per-row SKIP with a ::warning,
+    never a refusal of the whole run. The safety property this test
+    guards (never mint a guessed fiscal identity) is preserved; only the
+    mechanism assertion changes to match what B4 actually does."""
+    import json
+
+    from scripts.refresh_event_workspaces import discover_new_homebuilder_revisions
+
+    dhi_cik = DHI_ACCESSION.split("-", 1)[0]  # "0000882184"
+    archive_base = f"https://www.sec.gov/Archives/edgar/data/{int(dhi_cik)}/{DHI_ACCESSION.replace('-', '')}"
+    exhibit_name = "exhibit991.htm"
+
+    def http_get(url: str) -> tuple[int, bytes]:
+        if url == f"https://data.sec.gov/submissions/CIK{dhi_cik}.json":
+            return 200, json.dumps({
+                "cik": dhi_cik,
+                "filings": {"recent": {
+                    "accessionNumber": [DHI_ACCESSION],
+                    "filingDate": [DHI_REPORT_DATE],
+                    "acceptanceDateTime": [f"{DHI_REPORT_DATE}T16:05:00.000Z"],
+                    # A wrong reportDate that derives a DIFFERENT quarter end
+                    # than the real exhibit states (the real exhibit says
+                    # June 30 2026).
+                    "reportDate": ["2026-10-21"],
+                    "form": ["8-K"],
+                    "primaryDocument": ["primary.htm"],
+                    "items": ["2.02,9.01"],
+                }},
+            }).encode("utf-8")
+        if url == f"{archive_base}/{DHI_ACCESSION}-index-headers.html":
+            return 200, _headers_html(True).encode("utf-8")
+        if url == f"{archive_base}/{exhibit_name}":
+            return 200, DHI_EXHIBIT.read_text(encoding="utf-8").encode("utf-8")
+        return 404, b""
+
+    def fetch_index(_base: str) -> dict:
         return {
-            "cik": cik,
-            "accession": DHI_ACCESSION,
-            "form": "8-K",
-            "filing_date": DHI_REPORT_DATE,
-            "acceptance_datetime": f"{DHI_REPORT_DATE}T16:05:00Z",
-            # A wrong report_date that derives a DIFFERENT quarter end than
-            # the real exhibit states (real exhibit says June 30 2026).
-            "report_date": "2026-10-21",
-            "exhibit_url": "https://example/dhi.htm",
-            "exhibit_body": DHI_EXHIBIT.read_text(encoding="utf-8"),
-            "items": "2.02,9.01",
+            "schema": "mastermind.tx-index/v1", "symbols": {}, "revisions": {}, "dates": {},
+            "body_count": 0, "symbol_count": 0, "generated_at": "2026-01-01T00:00:00Z",
         }
 
-    monkeypatch.setattr(refresh_mod, "acquire_results_filing", fake_acquire_results_filing)
-    with pytest.raises(RefreshError, match="does not match"):
-        refresh_mod.acquire_and_build_homebuilder_workspace("DHI")
+    def fetch_body(_base: str, _ref) -> dict:  # pragma: no cover — never reached (row skipped first)
+        raise AssertionError("no transcript should be fetched for a skipped row")
+
+    revisions = discover_new_homebuilder_revisions(
+        "DHI", http_get=http_get, fetch_index=fetch_index, fetch_body_fn=fetch_body,
+        chain_state_loader=lambda event_id: [],
+    )
+    assert revisions == []
+    captured = capsys.readouterr()
+    assert "does not match the exhibit's own stated period end" in captured.out
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1015,6 +1050,84 @@ def test_source_sha_unchanged_stays_complete_not_corrected() -> None:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# MINOR-9 (Opus red-team verification round 2, 2026-08-23 — real per-
+# sequence lineage): _nearest_older_revision resolves a revision's true
+# predecessor from its OWN event timeline by TIMESTAMP, never from list
+# position or "whichever entry the chain last knew about" — the distinction
+# only shows up in a BACKFILL, where a newly-discovered row is
+# chronologically OLDER than something already chain-represented.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_backfilled_original_publishes_complete_never_a_newer_known_revision() -> None:
+    """A genuine BACKFILL: an original discovered AFTER its own (later)
+    amendment is already chain-represented. Its true predecessor is
+    NOTHING — an event can never have a prior that postdates it — so it
+    must publish "complete", never "corrected" against its own future
+    amendment. This is exactly what the pre-MINOR-9 "chain's overall
+    newest" heuristic would have gotten wrong."""
+    from scripts.refresh_event_workspaces import _nearest_older_revision, exhibit_source_sha256
+
+    original_accepted = "2026-07-21T16:05:00Z"
+    amendment_already_known = {
+        "source_available_at": "2026-07-22T12:00:00Z",  # AFTER the original
+        "workspace": _build_dhi_workspace(
+            exhibit_body=DHI_EXHIBIT.read_text(encoding="utf-8") + "\n<!-- amendment -->\n",
+            prior_source_sha256=None,
+        ),
+    }
+    prior_ws = _nearest_older_revision([amendment_already_known], before=original_accepted)
+    assert prior_ws is None, "an entry that POSTDATES the row being resolved must never be its predecessor"
+
+    original = _build_dhi_workspace(
+        exhibit_body=DHI_EXHIBIT.read_text(encoding="utf-8"),
+        prior_source_sha256=exhibit_source_sha256(prior_ws),
+    )
+    assert original["lifecycle"]["state"] == "complete"
+
+
+def test_amendment_after_backfilled_original_walks_to_corrected_with_true_lineage() -> None:
+    """Once the backfilled original above is itself chain-represented, a
+    genuinely NEWER amendment's own predecessor must resolve to THAT
+    backfilled original specifically — never a temporally-invalid decoy
+    that merely happens to sit later in the timeline list. Made
+    observable: the decoy is stamped AFTER the amendment itself (so a
+    picker that fails to filter by "before" would still wrongly select
+    it) and its own source_sha256 is deliberately set EQUAL to the
+    amendment's real fresh sha256 — if the decoy were wrongly chosen as
+    prior, the amendment would incorrectly resolve "complete" (unchanged
+    source) instead of "corrected"."""
+    from scripts.refresh_event_workspaces import _nearest_older_revision, exhibit_source_sha256
+
+    original_exhibit = DHI_EXHIBIT.read_text(encoding="utf-8")
+    amendment_exhibit = original_exhibit + "\n<!-- amendment restates a figure -->\n"
+
+    backfilled_original = _build_dhi_workspace(exhibit_body=original_exhibit, prior_source_sha256=None)
+    amendment_probe = _build_dhi_workspace(exhibit_body=amendment_exhibit, prior_source_sha256=None)
+
+    decoy = dict(backfilled_original)
+    decoy["sources"] = [dict(backfilled_original["sources"][0])]
+    decoy["sources"][0]["source_sha256"] = amendment_probe["_source_sha256"]
+
+    timeline = [
+        # AFTER the amendment's own acceptance below — must be excluded by
+        # the "strictly older than `before`" filter, not merely by being
+        # "farther" in some ranking.
+        {"source_available_at": "2026-07-25T00:00:00Z", "workspace": decoy},
+        {"source_available_at": "2026-07-21T16:05:00Z", "workspace": backfilled_original},
+    ]
+    amendment_accepted = "2026-07-23T00:00:00Z"
+    prior_ws = _nearest_older_revision(timeline, before=amendment_accepted)
+    assert prior_ws is backfilled_original, "the TRUE nearest-older predecessor, never the newer decoy"
+
+    amendment = _build_dhi_workspace(
+        exhibit_body=amendment_exhibit,
+        prior_source_sha256=exhibit_source_sha256(prior_ws),
+    )
+    assert amendment["lifecycle"]["state"] == "corrected"
+    assert amendment["_source_sha256"] != backfilled_original["_source_sha256"]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # (f) Multi-event generation + per-ticker alias selection, AAPL regression.
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -1394,7 +1507,7 @@ def test_carry_forward_lookup_failure_aborts_the_whole_refresh_then_recovers(
     import scripts.refresh_event_workspaces as refresh_mod
 
     (http_get, fetch_index, fetch_body, dhi_event_id, dhi_corrected,
-     dhi_published_1, gen1_id, real_acquire) = _publish_dhi_corrected_cycle_1(tmp_path, monkeypatch)
+     dhi_published_1, gen1_id, real_discover) = _publish_dhi_corrected_cycle_1(tmp_path, monkeypatch)
 
     def failing_carry_forward(ticker: str):
         if ticker == "DHI":
@@ -1444,7 +1557,7 @@ def test_carry_forward_lookup_bare_exception_also_aborts(
     import scripts.refresh_event_workspaces as refresh_mod
 
     (http_get, fetch_index, fetch_body, dhi_event_id, dhi_corrected,
-     dhi_published_1, gen1_id, real_acquire) = _publish_dhi_corrected_cycle_1(tmp_path, monkeypatch)
+     dhi_published_1, gen1_id, real_discover) = _publish_dhi_corrected_cycle_1(tmp_path, monkeypatch)
 
     def bare_exception_carry_forward(ticker: str):
         if ticker == "DHI":
@@ -1477,7 +1590,7 @@ def test_acquisition_failure_carries_forward_a_corrected_event_byte_identical(
     import scripts.refresh_event_workspaces as refresh_mod
 
     (http_get, fetch_index, fetch_body, dhi_event_id, dhi_corrected,
-     dhi_published_1, gen1_id, real_acquire) = _publish_dhi_corrected_cycle_1(tmp_path, monkeypatch)
+     dhi_published_1, gen1_id, real_discover) = _publish_dhi_corrected_cycle_1(tmp_path, monkeypatch)
 
     def carry_forward_succeeds(ticker: str):
         if ticker == "DHI":
@@ -1513,7 +1626,7 @@ def test_acquisition_failure_carries_forward_a_corrected_event_byte_identical(
     def stubbed_discover_cycle3(ticker: str, **kwargs):
         if ticker == "DHI":
             return [(dhi_event_id, dhi_corrected)]
-        return real_acquire(ticker, **kwargs)
+        return real_discover(ticker, **kwargs)
 
     monkeypatch.setattr(refresh_mod, "discover_new_homebuilder_revisions", stubbed_discover_cycle3)
     rc3 = refresh_mod.refresh(

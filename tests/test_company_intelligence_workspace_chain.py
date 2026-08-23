@@ -414,3 +414,55 @@ def test_refresh_script_prior_loaders_are_aliases_of_the_shared_reader() -> None
     # — it exists, but its body is one line calling the shared reader.
     assert refresh_mod._raw_load_prior_workspace is not None
     assert refresh_mod._PriorWorkspaceNotPublished is reader.WorkspaceChainNotPublished
+
+
+# ---------------------------------------------------------------------------
+# NEW-MINOR-18 (Opus red-team verification round 2, 2026-08-23): the chain
+# link's hash must be over the marker's own RAW bytes as fetched, never a
+# re-serialization of the parsed dict — re-serializing is not guaranteed
+# byte-identical to what R2 actually stores (key order, whitespace, a field
+# the reader silently drops) and would mint a chain link that never
+# verifies against the real object.
+# ---------------------------------------------------------------------------
+
+def test_fetch_current_workspace_marker_raw_returns_the_exact_fetched_bytes(monkeypatch) -> None:
+    parsed = {
+        "schema": MANIFEST_SCHEMA_V2, "generation_id": "d" * 24, "generated_at": "2026-07-30T16:30:00Z",
+        "authority": "context_only", "status": "ready", "event_count": 0, "files": {},
+        "previous_generation_id": None, "previous_manifest_sha256": None,
+    }
+    # Deliberately NOT canonical_json_bytes(parsed) — extra whitespace and a
+    # different key order than the canonical form, exactly the kind of
+    # byte-for-byte divergence a real R2 object can carry relative to any
+    # local re-serialization of its parsed contents.
+    non_canonical_body = (
+        b'{\n  "generation_id": "' + b"d" * 24 + b'",\n  "schema": "' + MANIFEST_SCHEMA_V2.encode() + b'",\n'
+        b'  "generated_at": "2026-07-30T16:30:00Z", "authority": "context_only", "status": "ready",\n'
+        b'  "event_count": 0, "files": {}, "previous_generation_id": null, "previous_manifest_sha256": null\n}\n'
+    )
+    assert non_canonical_body != canonical_json_bytes(parsed), "fixture must actually diverge from the canonical form"
+
+    def fake_fetch_bytes(url: str, *, limit: int, allow_404: bool = False) -> bytes | None:
+        assert url == f"{BASE}/event_workspaces/manifest.json"
+        return non_canonical_body
+
+    monkeypatch.setattr(reader, "_fetch_bytes", fake_fetch_bytes)
+    result = reader.fetch_current_workspace_marker_raw(base_url=BASE)
+    assert result is not None
+    raw_bytes, marker = result
+    # The RAW bytes returned are byte-IDENTICAL to what the server sent —
+    # never a re-serialization — so hashing them reproduces a hash a real
+    # verifier could check against the object's own stored bytes.
+    assert raw_bytes == non_canonical_body
+    assert sha256(raw_bytes).hexdigest() != sha256(canonical_json_bytes(parsed)).hexdigest()
+    assert marker["generation_id"] == "d" * 24
+
+    # The thin-wrapper contract: fetch_current_workspace_marker (still used
+    # wherever only the parsed dict is needed) returns just the parsed half.
+    assert reader.fetch_current_workspace_marker(base_url=BASE) == marker
+
+
+def test_fetch_current_workspace_marker_raw_clean_404_returns_none(monkeypatch) -> None:
+    monkeypatch.setattr(reader, "_fetch_bytes", lambda url, *, limit, allow_404=False: None)
+    assert reader.fetch_current_workspace_marker_raw(base_url=BASE) is None
+    assert reader.fetch_current_workspace_marker(base_url=BASE) is None

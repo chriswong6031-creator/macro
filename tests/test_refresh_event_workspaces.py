@@ -875,7 +875,12 @@ def test_discover_new_homebuilder_revisions_publishes_original_and_amendment_in_
         fetch_index=fetch_index,
         fetch_body_fn=fetch_body,
         # B2: nothing represented yet in the chain -- both accessions are new.
-        chain_state_loader=lambda event_id: (frozenset(), None),
+        # MINOR-9 (Opus red-team verification round 2, 2026-08-23): the real
+        # chain_state_loader contract is the FULL ordered timeline (a
+        # list[dict], per _event_known_revisions) — never the pre-MINOR-9
+        # "(represented_accessions, latest_workspace)" 2-tuple this stub
+        # used to return.
+        chain_state_loader=lambda event_id: [],
     )
     assert len(revisions) == 2
     (event_id_1, payload_1), (event_id_2, payload_2) = revisions
@@ -951,8 +956,15 @@ def test_discover_new_homebuilder_revisions_skips_already_represented_accessions
         fetch_index=fetch_index,
         fetch_body_fn=fetch_body,
         # The ORIGINAL accession is already represented; only the amendment
-        # is genuinely new.
-        chain_state_loader=lambda event_id: (frozenset({_DHI_ORIGINAL_ACCESSION}), None),
+        # is genuinely new. MINOR-9: chain_state_loader returns the FULL
+        # ordered timeline (list[dict]) — see the sibling test above.
+        chain_state_loader=lambda event_id: [{
+            "source_available_at": "2026-07-21T16:30:00Z",
+            "workspace": _stub_dhi_revision(
+                source_available_at="2026-07-21T16:30:00Z", source_sha256="a" * 64,
+                accession=_DHI_ORIGINAL_ACCESSION,
+            ),
+        }],
     )
     assert len(revisions) == 1
     _event_id, payload = revisions[0]
@@ -1053,6 +1065,57 @@ def test_refresh_publishes_original_and_amendment_as_two_chained_generations(tmp
     # original's generation_id as its predecessor.
     amendment_manifest = json.loads((tmp_path / "event_workspaces" / "generations" / final_marker["generation_id"] / "manifest.json").read_text(encoding="utf-8"))
     assert amendment_manifest["previous_generation_id"] == original_generation_id
+
+
+def test_refresh_every_write_contains_every_resolved_ticker_before_any_write(tmp_path: Path) -> None:
+    """NEW-BLOCKER-16 (Opus red-team verification round 2, 2026-08-23 —
+    FROZEN FIX): a live verifier probe caught the single-pass per-ticker
+    loop publishing a triggering ticker's own first chained write BEFORE a
+    LATER-ordered ticker (PHM comes after DHI in HOMEBUILDER_TICKERS) had
+    been carried forward into the running snapshot at all — marker
+    generation 0 had a lower event_count with PHM silently ABSENT, only
+    reaching the full count once PHM was later visited in the SAME cycle.
+    refresh() must now resolve EVERY ticker (Phase 1) before writing
+    ANYTHING (Phase 2), so DHI's own FIRST (and only) write this cycle
+    already contains PHM's carried-forward state — never a transiently-
+    incomplete nest, even for the very first generation minted."""
+    fake = _FakeR2()
+    dhi_event_id = "evt_cik0000882184_2026q3_results"
+    phm_event_id = "evt_cik0000822416_2026q2_results"
+    dhi_revision = _stub_dhi_revision(
+        source_available_at="2026-07-21T16:30:00Z", source_sha256="a" * 64,
+    )
+    phm_current = _stub_dhi_revision(
+        event_id=phm_event_id, source_available_at="2026-07-01T00:00:00Z", source_sha256="b" * 64,
+        accession="0000822416-26-000030",
+    )
+
+    def stub_discovery(ticker: str, **_kwargs) -> list[tuple[str, dict]]:
+        # DHI (first in HOMEBUILDER_TICKERS) is the ONLY triggering ticker
+        # this cycle — the exact shape the original probe caught.
+        if ticker == "DHI":
+            return [(dhi_event_id, dhi_revision)]
+        return []
+
+    def carry_forward(ticker: str):
+        return phm_current if ticker == "PHM" else None
+
+    assert _refresh(
+        tmp_path, fake, homebuilder_discovery=stub_discovery,
+        homebuilder_carry_forward_loader=carry_forward,
+    ) == 0
+
+    # Exactly ONE generation is written this cycle (DHI is the only ticker
+    # with a genuinely new revision) — assert its OWN manifest, at the
+    # moment of that single write, already names every resolved ticker.
+    all_generation_dirs = list((tmp_path / "event_workspaces" / "generations").iterdir())
+    assert len(all_generation_dirs) == 1
+    manifest = json.loads((all_generation_dirs[0] / "manifest.json").read_text(encoding="utf-8"))
+    assert set(manifest["files"]) == {
+        f"workspaces/{FLAGSHIP_EVENT_ID}.json",
+        f"workspaces/{dhi_event_id}.json",
+        f"workspaces/{phm_event_id}.json",
+    }
 
 
 def test_refresh_newest_already_represented_restores_current_state_without_a_new_write(tmp_path: Path) -> None:

@@ -259,6 +259,10 @@ def _load_snapshot(base_url: str) -> tuple[dict[str, Any], dict[str, str]]:
 
     marker_url = _object_url(base_url, "manifest.json")
     marker_body = _fetch_bytes(marker_url, limit=_MAX_MANIFEST_BYTES)
+    # NIT-21: this model-facing call never passes allow_404, so _fetch_bytes
+    # never returns None here — a 404 raises. Assert rather than silently
+    # trust the union type, so the None branch is honestly unreachable.
+    assert marker_body is not None
     marker = _json_object(marker_body, name="Company Intelligence marker")
     try:
         validate_manifest(marker)
@@ -268,6 +272,7 @@ def _load_snapshot(base_url: str) -> tuple[dict[str, Any], dict[str, str]]:
     generation_id = str(marker["generation_id"])
     immutable_url = _object_url(base_url, f"generations/{generation_id}/manifest.json")
     immutable_body = _fetch_bytes(immutable_url, limit=_MAX_MANIFEST_BYTES)
+    assert immutable_body is not None  # NIT-21: allow_404 never passed here
     immutable = _json_object(immutable_body, name="Company Intelligence immutable manifest")
     try:
         validate_manifest(immutable)
@@ -315,6 +320,7 @@ def _load_context(base_url: str, ticker: str) -> tuple[dict[str, Any], dict[str,
 
     company_url = _object_url(base_url, f"generations/{generation_id}/{relative}")
     body = _fetch_bytes(company_url, limit=_MAX_CONTEXT_BYTES)
+    assert body is not None  # NIT-21: allow_404 never passed here
     if len(body) != expected_bytes or sha256(body).hexdigest() != expected_hash:
         raise CompanyIntelligenceReadError("Company Intelligence context failed immutable receipt verification")
     context = _json_object(body, name="Company Intelligence context")
@@ -475,6 +481,7 @@ def _load_workspace_snapshot(base_url: str) -> tuple[dict[str, Any], dict[str, s
 
     marker_url = _object_url(base_url, f"{_EVENT_WORKSPACE_NEST}/manifest.json")
     marker_body = _fetch_bytes(marker_url, limit=_MAX_MANIFEST_BYTES)
+    assert marker_body is not None  # NIT-21: allow_404 never passed here
     marker = _json_object(marker_body, name="event workspace marker")
     try:
         ws.validate_workspace_manifest(marker)
@@ -486,6 +493,7 @@ def _load_workspace_snapshot(base_url: str) -> tuple[dict[str, Any], dict[str, s
         base_url, f"{_EVENT_WORKSPACE_NEST}/generations/{generation_id}/manifest.json"
     )
     immutable_body = _fetch_bytes(immutable_url, limit=_MAX_MANIFEST_BYTES)
+    assert immutable_body is not None  # NIT-21: allow_404 never passed here
     immutable = _json_object(immutable_body, name="event workspace immutable manifest")
     try:
         ws.validate_workspace_manifest(immutable)
@@ -544,6 +552,7 @@ def _load_event_workspace(base_url: str, event_id: str) -> tuple[dict[str, Any],
         base_url, f"{_EVENT_WORKSPACE_NEST}/generations/{generation_id}/{relative}"
     )
     body = _fetch_bytes(workspace_url, limit=_MAX_WORKSPACE_BYTES)
+    assert body is not None  # NIT-21: allow_404 never passed here
     if len(body) != expected_bytes or sha256(body).hexdigest() != expected_hash:
         raise CompanyIntelligenceReadError("event workspace failed immutable receipt verification")
     workspace = _json_object(body, name="event workspace")
@@ -909,19 +918,36 @@ def _workspace_object_url(base_url: str, relative_path: str) -> str:
     return _object_url(base_url, f"{_WORKSPACE_NEST_PREFIX}/{relative_path}")
 
 
-def fetch_current_workspace_marker(*, base_url: str | None = None) -> dict[str, Any] | None:
-    """The top-level ``event_workspaces/manifest.json`` marker, or ``None``
-    on a clean 404 (no nest has ever been published). Raises on any other
-    failure (network error, timeout, non-2xx, malformed JSON, non-object
-    body, unsafe origin) — a genuine fetch failure must never be read as
-    "no nest yet"."""
+def fetch_current_workspace_marker_raw(
+    *, base_url: str | None = None,
+) -> tuple[bytes, dict[str, Any]] | None:
+    """(raw_bytes, parsed_dict) for the top-level ``event_workspaces/
+    manifest.json`` marker, or ``None`` on a clean 404 (no nest has ever
+    been published). Raises on any other failure.
+
+    MINOR-18: callers that must hash EXACTLY what was fetched (e.g. a
+    producer computing a chain link's ``previous_manifest_sha256``) need
+    the RAW bytes — re-serializing the parsed dict via
+    ``canonical_json_bytes`` is not equivalent in general (see
+    :func:`read_event_source_revisions`'s own MINOR-10 fix, which applies
+    the identical discipline to predecessor-generation manifests)."""
     resolved = _public_base_url(base_url, require_public_host=False)
     url = _workspace_object_url(resolved, "manifest.json")
     body = _fetch_bytes(url, limit=_MAX_MANIFEST_BYTES, allow_404=True)
     if body is None:
         return None
     marker = _json_object(body, name="event workspace marker")
-    return marker
+    return body, marker
+
+
+def fetch_current_workspace_marker(*, base_url: str | None = None) -> dict[str, Any] | None:
+    """The top-level ``event_workspaces/manifest.json`` marker, or ``None``
+    on a clean 404 (no nest has ever been published). Raises on any other
+    failure (network error, timeout, non-2xx, malformed JSON, non-object
+    body, unsafe origin) — a genuine fetch failure must never be read as
+    "no nest yet"."""
+    result = fetch_current_workspace_marker_raw(base_url=base_url)
+    return result[1] if result is not None else None
 
 
 def fetch_generation_manifest(generation_id: str, *, base_url: str | None = None) -> dict[str, Any]:

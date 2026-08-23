@@ -47,7 +47,6 @@ from urllib.parse import urljoin
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from engine.company_intelligence.contracts import canonical_json_bytes
 from engine.company_intelligence.event_workspace import (
     AAPL_ACCESSION,
     AAPL_CALL_DATE,
@@ -712,66 +711,15 @@ def _stated_period_end(exhibit_body: str) -> date | None:
     return None
 
 
-def acquire_and_build_homebuilder_workspace(
-    ticker: str,
-    *,
-    http_get: HttpGet = _http_get,
-    tx_index_url: str = DEFAULT_TX_INDEX_URL,
-    fetch_index: FetchIndex = fetch_global_index,
-    fetch_body_fn: FetchBody = fetch_body,
-    prior_workspace_loader: Callable[[str], Mapping[str, Any] | None] = load_prior_workspace,
-) -> tuple[str, dict[str, Any]]:
-    """Acquire + build one homebuilder's workspace.  Raises on any failure.
-
-    The caller (``refresh``) is responsible for the fail-soft wrapping this
-    function deliberately does NOT do itself, so a direct call surfaces the
-    real error for tests and diagnostics.
-    """
-    issuer = issuer_for_ticker(ticker)
-    profile = profile_for_ticker(ticker)
-    if issuer is None or profile is None:
-        raise RefreshError(f"{ticker} has no registered A5A homebuilder identity/profile")
-    filing = acquire_results_filing(cik=issuer.cik, http_get=http_get)
-    fiscal_period = fiscal_period_for_report_date(filing["report_date"], issuer.fiscal_year_end_month)
-    # F1 cross-check: never mint an event on the discovery-derived quarter
-    # end alone.  The exhibit must state that SAME period itself, or this
-    # issuer is skipped for the run (typed/logged absence) rather than
-    # published under a guessed fiscal identity.
-    stated_end = _stated_period_end(str(filing["exhibit_body"]))
-    if stated_end != fiscal_period.calendar_end:
-        raise RefreshError(
-            f"{ticker}: computed fiscal quarter end {fiscal_period.calendar_end} does not match "
-            f"the exhibit's own stated period end ({stated_end!r}); refusing to mint a guessed "
-            "fiscal identity"
-        )
-    asof = date.fromisoformat(str(filing["filing_date"]))
-    event_id = canonical_event_id(issuer.company_id, fiscal_period)
-    pair = f"{ticker}/{fiscal_period.year}Q{fiscal_period.quarter}"
-    transcript, transcript_sha256 = acquire_transcript_for(
-        pair, tx_index_url, fetch_index=fetch_index, fetch_body_fn=fetch_body_fn, required=False,
-    )
-    prior = prior_workspace_loader(event_id)
-    source_clock = filing["acceptance_datetime"]
-    payload = build_event_workspace(
-        registry=production_registry(),
-        ticker=ticker,
-        asof=asof,
-        fiscal_period=fiscal_period,
-        exhibit_body=str(filing["exhibit_body"]),
-        filing={key: value for key, value in filing.items() if key != "exhibit_body"},
-        transcript=transcript,
-        transcript_sha256=transcript_sha256,
-        observed_at=source_clock,
-        source_available_at=source_clock,
-        collector_rows=None,
-        wire_record_found=False,
-        prior_source_sha256=exhibit_source_sha256(prior),
-        prior_lifecycle_state=prior_lifecycle_state(prior),
-        profile=profile,
-    )
-    if payload.get("event_id") != event_id:
-        raise RefreshError(f"{ticker} event_id drifted: {payload.get('event_id')}")
-    return event_id, payload
+# NIT-21/MINOR-17 (Opus red-team verification round 2, 2026-08-23): the
+# pre-A5C single-newest acquisition function (acquire_and_build_homebuilder_
+# workspace) is DELETED. It had no production caller once discover_new_
+# homebuilder_revisions became the sole per-ticker mechanism (BLOCKER-2),
+# and it still carried the two-clock violation (observed_at=source_clock)
+# fixed everywhere else — keeping it around, unused, would only mislead a
+# future session into resurrecting it. Its own unit test at
+# tests/test_issuer_profiles_a5a.py (which called this function directly)
+# was retargeted to discover_new_homebuilder_revisions in the same commit.
 
 
 # ---------------------------------------------------------------------------
@@ -854,17 +802,26 @@ def _resolve_exhibit_for_row(row: Mapping[str, Any], *, cik: str, http_get: Http
     }
 
 
-def _event_chain_state(
+def _event_known_revisions(
     event_id: str, *, base_url: str | None = None,
-) -> tuple[frozenset[str], Mapping[str, Any] | None]:
-    """(accessions already represented in event_id's known chain history,
-    the LATEST known workspace body for event_id, or None) — ONE shared
-    reader chain walk (D1/D3/B2). A genuine chain-integrity failure or any
-    other read failure is NEVER treated as "nothing represented" — it is
-    re-raised as ``PriorWorkspaceFetchFailed`` so the caller's existing
-    abort-the-whole-refresh discipline applies uniformly."""
+) -> list[dict[str, Any]]:
+    """ALL already-chain-represented revisions for *event_id*, OLDEST FIRST
+    (ONE shared reader chain walk, D1/D3/B2). MINOR-9 (Opus red-team
+    verification round 2, 2026-08-23): this deliberately returns the FULL
+    ordered timeline, not merely "the newest" — a newly-discovered row can
+    be a genuine BACKFILL (chronologically OLDER than what is already
+    chain-represented, e.g. an original whose accession only became
+    resolvable after its own amendment was already captured); finding that
+    row's TRUE prior revision requires searching the whole timeline for the
+    nearest entry strictly older than it, never assuming "the chain's
+    overall newest" is always the right predecessor.
+
+    A genuine chain-integrity failure or any other read failure is NEVER
+    treated as "nothing represented" — it is re-raised as
+    ``PriorWorkspaceFetchFailed`` so the caller's existing abort-the-whole-
+    refresh discipline applies uniformly."""
     try:
-        revisions = ci_reader.read_event_source_revisions(event_id, base_url=base_url)
+        return list(ci_reader.read_event_source_revisions(event_id, base_url=base_url))
     except Exception as exc:  # noqa: BLE001 - chain-state ambiguity must never read as "nothing represented"
         print(
             "::warning title=event-workspace-chain-read-failed::"
@@ -876,18 +833,40 @@ def _event_chain_state(
             f"{event_id}: chain read failed ({type(exc).__name__}: {exc})"
         ) from exc
 
-    accessions: set[str] = set()
-    latest_ws: Mapping[str, Any] | None = None
-    for revision in revisions:  # oldest -> newest
-        ws = revision.get("workspace") if isinstance(revision.get("workspace"), Mapping) else {}
-        for source in ws.get("sources") or []:
-            if isinstance(source, Mapping) and source.get("kind") == "issuer_release":
-                accession = (source.get("filing_key") or {}).get("accession")
-                if accession:
-                    accessions.add(str(accession))
-        if ws:
-            latest_ws = ws
-    return frozenset(accessions), latest_ws
+
+def _revision_accession(entry: Mapping[str, Any]) -> str | None:
+    """The SEC accession recorded on one chain-revision receipt's own
+    workspace body (the ``issuer_release`` source row), or None."""
+    ws = entry.get("workspace") if isinstance(entry.get("workspace"), Mapping) else {}
+    for source in ws.get("sources") or []:
+        if isinstance(source, Mapping) and source.get("kind") == "issuer_release":
+            accession = (source.get("filing_key") or {}).get("accession")
+            return str(accession) if accession else None
+    return None
+
+
+def _nearest_older_revision(
+    timeline: list[dict[str, Any]], *, before: str,
+) -> Mapping[str, Any] | None:
+    """MINOR-9: the entry in *timeline* with the LATEST ``source_available_at``
+    that is STRICTLY older than *before* — never the timeline's overall
+    newest entry, which may itself postdate *before* (a backfill scenario).
+    Returns the entry's own workspace body, or None when nothing in the
+    timeline precedes *before* at all (a genuine first-ever/backfilled-
+    original revision, which correctly gets prior_*=None and publishes
+    "complete")."""
+    best_entry: Mapping[str, Any] | None = None
+    best_avail: str | None = None
+    for entry in timeline:
+        avail = entry.get("source_available_at")
+        if not avail or str(avail) >= before:
+            continue
+        if best_avail is None or str(avail) > best_avail:
+            best_entry, best_avail = entry, str(avail)
+    if best_entry is None:
+        return None
+    ws = best_entry.get("workspace")
+    return ws if isinstance(ws, Mapping) else None
 
 
 def discover_new_homebuilder_revisions(
@@ -897,15 +876,16 @@ def discover_new_homebuilder_revisions(
     tx_index_url: str = DEFAULT_TX_INDEX_URL,
     fetch_index: FetchIndex = fetch_global_index,
     fetch_body_fn: FetchBody = fetch_body,
-    chain_state_loader: Callable[[str], tuple[frozenset[str], Mapping[str, Any] | None]] | None = None,
+    chain_state_loader: Callable[[str], list[dict[str, Any]]] | None = None,
     base_url: str | None = None,
 ) -> list[tuple[str, dict[str, Any]]]:
     """Every not-yet-represented qualifying source revision for *ticker*,
     resolved and bound to its OWN ``event_workspace`` payload, ASCENDING by
     SEC acceptance order (B1). An original + its own 8-K/A amendment
-    discovered in the SAME poll chain WITHIN this list itself — the
-    amendment is built atop the freshly-built original, not a stale network
-    read (B3).
+    discovered in the SAME poll chain WITHIN this list itself, each
+    revision's ``prior_*`` taken from the nearest STRICTLY OLDER entry in
+    its OWN event's timeline (MINOR-9) — never a stale "chain's overall
+    newest" read, which would be wrong for a genuine backfill.
 
     Raises ``RefreshError`` on a hard SEC submissions access failure (fail-
     soft — the caller's existing per-ticker carry-forward handles this).
@@ -921,12 +901,16 @@ def discover_new_homebuilder_revisions(
     if issuer is None or profile is None:
         raise RefreshError(f"{ticker} has no registered A5A homebuilder identity/profile")
 
-    loader = chain_state_loader or (lambda event_id: _event_chain_state(event_id, base_url=base_url))
+    loader = chain_state_loader or (lambda event_id: _event_known_revisions(event_id, base_url=base_url))
     candidates = _fetch_submissions_candidates(issuer.cik, http_get=http_get)
 
-    state: dict[str, tuple[frozenset[str], Mapping[str, Any] | None]] = {}
+    # event_id -> its own known+newly-built timeline this cycle (mutated as
+    # new revisions are built, so a LATER row for the same event this cycle
+    # correctly sees everything built so far as a candidate predecessor —
+    # B3/MINOR-9).
+    timelines: dict[str, list[dict[str, Any]]] = {}
     # MINOR-14: the chain's own newest-known-revision snapshot BEFORE this
-    # cycle mutates `state` with anything freshly discovered — the gap
+    # cycle mutates a timeline with anything freshly discovered — the gap
     # heuristic below compares against what the chain ALREADY had, not what
     # this run just added.
     original_chain_latest: dict[str, Mapping[str, Any] | None] = {}
@@ -948,12 +932,18 @@ def discover_new_homebuilder_revisions(
             continue
         event_id = canonical_event_id(issuer.company_id, fiscal_period)
 
-        if event_id not in state:
-            state[event_id] = loader(event_id)
-            original_chain_latest[event_id] = state[event_id][1]
-        represented, latest_ws = state[event_id]
+        if event_id not in timelines:
+            timelines[event_id] = loader(event_id)
+            original_chain_latest[event_id] = (
+                timelines[event_id][-1].get("workspace") if timelines[event_id] else None
+            )
+        timeline = timelines[event_id]
 
-        if row_accession in represented:
+        represented_accessions = {
+            accession for accession in (_revision_accession(entry) for entry in timeline)
+            if accession
+        }
+        if row_accession in represented_accessions:
             continue  # B2: already represented in the chain
 
         resolved_row = _resolve_exhibit_for_row(row, cik=issuer.cik, http_get=http_get)
@@ -984,6 +974,12 @@ def discover_new_homebuilder_revisions(
         # C2: a genuinely NEW/not-yet-represented revision is a first
         # observation — real wall-clock now, never the SEC acceptance clock.
         now = datetime.now(timezone.utc)
+        row_accepted = resolved_row["acceptance_datetime"]
+        # MINOR-9: the TRUE chronological predecessor — the newest entry
+        # (known OR already built this cycle) STRICTLY OLDER than THIS
+        # row's own source_available_at. A genuine backfill (nothing older
+        # exists yet) correctly gets prior_*=None and publishes "complete".
+        prior_ws = _nearest_older_revision(timeline, before=row_accepted)
         payload = build_event_workspace(
             registry=production_registry(),
             ticker=ticker,
@@ -994,38 +990,64 @@ def discover_new_homebuilder_revisions(
             transcript=transcript,
             transcript_sha256=transcript_sha256,
             observed_at=now,
-            source_available_at=resolved_row["acceptance_datetime"],
+            source_available_at=row_accepted,
             collector_rows=None,
             wire_record_found=False,
-            prior_source_sha256=exhibit_source_sha256(latest_ws),
-            prior_lifecycle_state=prior_lifecycle_state(latest_ws),
-            prior_observed_at=prior_observed_at(latest_ws),
+            prior_source_sha256=exhibit_source_sha256(prior_ws),
+            prior_lifecycle_state=prior_lifecycle_state(prior_ws),
+            prior_observed_at=prior_observed_at(prior_ws),
             profile=profile,
         )
         if payload.get("event_id") != event_id:
             raise RefreshError(f"{ticker} event_id drifted: {payload.get('event_id')}")
         results.append((event_id, payload))
-        # B3: a LATER row for the SAME event this cycle (its own 8-K/A)
-        # chains onto the revision JUST built, not the stale pre-cycle read.
-        state[event_id] = (represented | {row_accession}, payload)
+        # B3/MINOR-9: insert the freshly-built revision into this event's
+        # OWN timeline so a LATER row this cycle (its own later amendment,
+        # or another backfill) correctly considers it as a candidate
+        # predecessor too.
+        timeline.append({"source_available_at": row_accepted, "workspace": payload})
 
     # MINOR-14: discovery must not lose revisions SILENTLY. This SEC
     # "recent" window is a ROLLING one (B1's own scope note) — if the
     # chain's newest already-represented revision predates the OLDEST row
     # still visible in this poll, a genuine intervening revision may have
     # rolled off the window between nightly polls and is no longer
-    # discoverable through this mechanism at all. Log-only (ISO-8601 'Z'
-    # timestamps compare correctly as strings); never blocks publication of
-    # what WAS discovered this cycle.
+    # discoverable through this mechanism at all. Log-only.
+    #
+    # NAMED LIMITATION (MINOR-14 residual (ii)): this is a PARTIAL-ROLLOVER
+    # heuristic only. It can only compare the chain's newest known revision
+    # against the oldest row STILL visible in the CURRENT poll — a TOTAL
+    # rollover (every row that would have proven a gap has ALREADY scrolled
+    # off the "recent" window, leaving nothing in `candidates` to compare
+    # against) is undetectable BY CONSTRUCTION: there is no surviving
+    # evidence in this poll to raise the flag from. This limitation is not
+    # closed by this PR and must not be papered over with a false "covered"
+    # claim.
     if candidates:
-        oldest_visible_accepted = str(candidates[0].get("acceptanceDateTime") or "")
+        # MINOR-14 residual (i): normalize BOTH sides through the SAME
+        # _iso_z form before comparing — the raw SEC acceptanceDateTime
+        # carries milliseconds ("...T16:30:00.000Z") while chain-published
+        # source_available_at values are already millisecond-stripped
+        # ("...T16:30:00Z"); comparing the two AS RAW STRINGS is unsound
+        # (the "." sorts before "Z", so a raw-vs-normalized pair of the
+        # SAME instant can compare unequal/out-of-order).
+        try:
+            oldest_visible_accepted = _iso_z(candidates[0].get("acceptanceDateTime"))
+        except RefreshError:
+            oldest_visible_accepted = ""
         newest_chain_known: str | None = None
         for latest_ws in original_chain_latest.values():
             if not isinstance(latest_ws, Mapping):
                 continue
             src = (latest_ws.get("lifecycle") or {}).get("source_available_at")
-            if src and (newest_chain_known is None or str(src) > newest_chain_known):
-                newest_chain_known = str(src)
+            if not src:
+                continue
+            try:
+                normalized_src = _iso_z(src)
+            except RefreshError:
+                continue
+            if newest_chain_known is None or normalized_src > newest_chain_known:
+                newest_chain_known = normalized_src
         if oldest_visible_accepted and newest_chain_known and newest_chain_known < oldest_visible_accepted:
             print(
                 "::warning title=event-workspace-discovery-window::"
@@ -1033,7 +1055,8 @@ def discover_new_homebuilder_revisions(
                 f"(chain's newest known revision {newest_chain_known} precedes the oldest row "
                 f"still visible in this poll, {oldest_visible_accepted}) — an intervening "
                 "revision may have rolled off the SEC recent-filings window and would not be "
-                "discoverable through this mechanism",
+                "discoverable through this mechanism (partial-rollover heuristic only; a total "
+                "rollover leaves no evidence in this poll to detect)",
                 flush=True,
             )
 
@@ -1069,10 +1092,19 @@ def refresh(
     publish_generation: PublishFn = publish_event_workspaces,
     # IMCE A5C (frozen spec A2/B3): resolves the CURRENT top-level
     # event_workspaces marker (v1 or v2, or None on a genuinely fresh nest)
-    # so this cycle's generation(s) can chain onto it. Production default is
-    # the real R2 read; tests inject an explicit stub (a fresh sandboxed nest
-    # has no real predecessor to fetch — see tests/test_refresh_event_workspaces.py).
-    current_marker_loader: Callable[[], Mapping[str, Any] | None] = ci_reader.fetch_current_workspace_marker,
+    # so this cycle's generation(s) can chain onto it. NEW-MINOR-18 (Opus
+    # red-team verification round 2, 2026-08-23): returns the marker's own
+    # RAW bytes alongside the parsed dict, so chain_previous_sha is computed
+    # by hashing exactly what R2 actually stores — re-serializing the parsed
+    # dict via canonical_json_bytes and hashing THAT is not guaranteed
+    # byte-identical to the real object (key order, whitespace, a field this
+    # reader does not round-trip) and would silently mint a wrong hash link.
+    # Production default is the real R2 read; tests inject an explicit stub
+    # (a fresh sandboxed nest has no real predecessor to fetch — see
+    # tests/test_refresh_event_workspaces.py).
+    current_marker_loader: Callable[[], tuple[bytes, Mapping[str, Any]] | None] = (
+        ci_reader.fetch_current_workspace_marker_raw
+    ),
     # IMCE A5C (frozen spec B): per-ticker discovery of ALL not-yet-
     # represented qualifying revisions, ascending — including whatever
     # would be "the newest" (MINOR-13: the real signature is keyword-heavy,
@@ -1090,11 +1122,18 @@ def refresh(
     (B1/B2) — including the newest, which is no longer separately
     reacquired (BLOCKER-2) — publishing ONE nest generation per discovered
     revision, chained in ascending SEC acceptance order (B3); each
-    revision's ``prior_*`` continuity comes from the revision immediately
-    BEFORE it in that SAME ascending list (never a "latest chain state"
-    lookahead — MINOR-9's lineage fix lives inside
-    ``discover_new_homebuilder_revisions`` itself). The common case (0 or 1
-    total new revision this cycle across every issuer) collapses to exactly
+    revision's ``prior_*`` continuity is the NEAREST entry in its OWN
+    event's timeline that is strictly OLDER than it (never a stale "chain's
+    overall newest" lookahead, and never simply "the previous item in this
+    cycle's discovered list" either — a genuine BACKFILL can require
+    pointing further back, or at nothing at all — MINOR-9's lineage fix
+    lives inside ``discover_new_homebuilder_revisions`` itself). Resolution
+    and publication are two separate passes (NEW-BLOCKER-16): Phase 1
+    resolves EVERY ticker (discovery + carry-forward, zero writes) so the
+    running snapshot is a COMPLETE nest before Phase 2 writes a single
+    generation — no promoted marker can ever transiently omit a ticker
+    that simply hadn't been visited yet. The common case (0 or 1 total new
+    revision this cycle across every issuer) collapses Phase 2 to exactly
     one write+publish call, and the running snapshot always ends each
     ticker's slot at its OWN newest known revision (MAJOR-6).
     """
@@ -1189,13 +1228,28 @@ def refresh(
     #       and acquisition failed -> true skip, nothing to carry, and its
     #       absence next cycle correctly reads as first-publish.
     #
-    # Accepted-cost note (no code change, requested for the record): this
-    # abort surface is now roughly 10 R2 GETs/cycle across ~8 cycles/day.
-    # Each abort costs exactly one 3h cycle with the marker frozen on the
-    # last good generation. At realistic GET success rates that is on the
-    # order of one delayed cycle per days-to-weeks, not per night. A
-    # bounded retry on the prior-read GETs is a possible future reduction
-    # of that already-small residual — deliberately NOT added in this PR.
+    # Accepted-cost note (NEW-MAJOR-17, Opus red-team verification round 2,
+    # 2026-08-23 — supersedes the round-1 note this replaces, which
+    # predated the two-phase split below and undercounted its GETs): the
+    # two-phase design pays ONE homebuilder_carry_forward_loader GET per
+    # ticker (4 GETs/cycle, HOMEBUILDER_TICKERS) UNCONDITIONALLY in Phase 1
+    # — whether or not that ticker's own discovery found a new revision —
+    # to guarantee the base snapshot is complete before Phase 2 writes
+    # anything (this is exactly what closes NEW-BLOCKER-16: a triggering
+    # ticker's first write must never publish a nest that is silently
+    # missing a ticker Phase 1 simply hadn't reached yet). A quiet cycle
+    # (zero new revisions anywhere) now costs those 4 carry-forward GETs
+    # plus each ticker's own discovery GET (one SEC submissions call each)
+    # plus the flagship's fixed GETs — a real, deliberate increase over the
+    # single-pass code this replaces, paid once per cycle regardless of how
+    # many revisions Phase 2 later replays (Phase 1 runs exactly once). The
+    # abort-surface discipline is otherwise unchanged in shape: any one
+    # ticker's failed carry-forward read still aborts the WHOLE cycle
+    # (RefreshError, marker frozen on the last good generation) rather than
+    # risk silently dropping a corrected event, and one issuer's CDN blip
+    # delaying the whole cycle remains the accepted cost. A bounded retry
+    # on these reads is a possible future reduction — deliberately NOT
+    # added in this PR.
     workspaces: dict[str, dict[str, Any]] = {FLAGSHIP_EVENT_ID: payload}
     target = Path(out_dir) if out_dir is not None else Path("data/company_intelligence")
 
@@ -1203,16 +1257,22 @@ def refresh(
     # cycle's writes chain onto — the currently-published marker (v1 or v2),
     # or None only for a genuine first-ever generation of the nest.
     try:
-        current_marker = current_marker_loader()
+        current_marker_raw = current_marker_loader()
     except Exception as exc:  # noqa: BLE001 - a genuine failure to read the current marker must abort
         raise RefreshError(f"failed to read the current event workspace marker: {exc}") from exc
+    if current_marker_raw is not None:
+        current_marker_bytes, current_marker = current_marker_raw
+    else:
+        current_marker_bytes, current_marker = None, None
     original_current_generation_id = (
         str(current_marker.get("generation_id") or "") or None if current_marker is not None else None
     )
     chain_previous_id = original_current_generation_id
+    # NEW-MINOR-18: hash the marker's own RAW bytes — never a re-serialization
+    # of the parsed dict — so the chain link matches what R2 actually stores.
     chain_previous_sha = (
-        sha256(canonical_json_bytes(current_marker)).hexdigest()
-        if current_marker is not None and original_current_generation_id else None
+        sha256(current_marker_bytes).hexdigest()
+        if current_marker_bytes is not None and original_current_generation_id else None
     )
     # MINOR-9/MAJOR-6 (Opus red-team, 2026-08-23): the LAST workspaces
     # snapshot actually published this cycle, if any — the closing write
@@ -1221,20 +1281,33 @@ def refresh(
     # that a per-ticker chained write already published.
     last_published_snapshot: dict[str, dict[str, Any]] | None = None
 
-    # IMCE A5C discovery (frozen spec B1/B2/B3; BLOCKER-2/MAJOR-6/MINOR-9
-    # architecture): for each homebuilder, discovery is the SOLE per-ticker
-    # mechanism — it yields EVERY not-yet-represented qualifying revision,
-    # ascending, INCLUDING whatever would be "the newest" row (there is no
-    # separate re-acquisition of "the current" afterward). Each revision is
-    # published as its OWN chained generation, in order, so the running
-    # snapshot's slot for this ticker always ends at its own newest known
-    # revision (MAJOR-6) with true predecessor lineage carried hop-to-hop
-    # inside discover_new_homebuilder_revisions itself (MINOR-9). Marker-
-    # promotion choice (B3): promote once PER generation (immediately after
-    # each write), never batched to the end — every intermediate immutable
-    # generation is therefore always fully uploaded before any later marker
-    # references it.
+    # NEW-BLOCKER-16 (Opus red-team verification round 2, 2026-08-23 —
+    # FROZEN FIX, not open for redesign): refresh() resolves EVERY
+    # homebuilder ticker BEFORE writing anything, then publishes. The prior
+    # single-pass per-ticker loop wrote a triggering ticker's first
+    # generation before LATER tickers in HOMEBUILDER_TICKERS had been
+    # carried forward into `workspaces` at all — a live verifier probe
+    # caught exactly this: marker generation 0 (an earlier ticker's own
+    # first chained write) carried a lower event_count with a LATER ticker
+    # silently ABSENT, only reaching the full event_count once that later
+    # ticker was visited in the same cycle. A whole-nest snapshot with a
+    # member silently missing is indistinguishable downstream from "that
+    # ticker was never published" — exactly the failure mode NEW-4/NEW-8
+    # above exist to prevent, reintroduced here by loop ORDER rather than
+    # by a missing carry-forward call.
+    #
+    # PHASE 1 (resolution only, zero writes): for every ticker, run
+    # discovery + carry-forward exactly as before, but instead of writing
+    # immediately: (a) seed `workspaces[event_id]` with the ticker's
+    # CURRENT published state via an UNCONDITIONAL carry-forward read
+    # (whether or not discovery ALSO found new revisions — see the
+    # Accepted-cost note above), and (b) collect each triggering ticker's
+    # own ascending new-revision sequence into `sequences` for Phase 2 to
+    # replay. Every abort surface (chain-read failure, carry-forward
+    # failure) fires HERE, before any write — a Phase 1 abort leaves the
+    # marker completely untouched, same as before.
     discover = homebuilder_discovery or discover_new_homebuilder_revisions
+    sequences: dict[str, list[tuple[str, dict[str, Any]]]] = {}
     for ticker in HOMEBUILDER_TICKERS:
         try:
             new_revisions = discover(
@@ -1282,24 +1355,42 @@ def refresh(
                 log.info("%s event workspace skipped, no prior to carry (%s)", ticker, exc)
             continue
 
-        if not new_revisions:
-            # SEC reachable, genuinely nothing new this cycle — still carry
-            # the ticker's CURRENT published state into the running
-            # snapshot so it stays present in whatever gets written next.
-            try:
-                current_prior = homebuilder_carry_forward_loader(ticker)
-            except Exception as carry_exc:  # noqa: BLE001
-                raise RefreshError(
-                    f"{ticker}: carry-forward lookup for an unchanged ticker failed — refusing to "
-                    f"publish a nest that might silently drop a corrected event: {carry_exc}"
-                ) from carry_exc
-            if current_prior is not None:
-                current_event_id = str(current_prior.get("event_id") or "")
-                if current_event_id:
-                    workspaces[current_event_id] = dict(current_prior)
-            continue
+        # NEW-BLOCKER-16: this carry-forward read is UNCONDITIONAL — it
+        # runs whether new_revisions is empty OR non-empty, because a
+        # ticker WITH new revisions still needs its pre-cycle slot filled
+        # in `workspaces` in case an EARLIER-ordered ticker's Phase 2
+        # writes happen before this ticker's own Phase 2 turn. (When this
+        # ticker itself has new revisions, Phase 2 overwrites this seed
+        # before its own first write — the read is spent even so, to keep
+        # Phase 1's completeness guarantee independent of loop order.)
+        try:
+            current_prior = homebuilder_carry_forward_loader(ticker)
+        except Exception as carry_exc:  # noqa: BLE001
+            raise RefreshError(
+                f"{ticker}: carry-forward lookup for the Phase 1 base snapshot failed — refusing to "
+                f"publish a nest that might silently drop a corrected event: {carry_exc}"
+            ) from carry_exc
+        if current_prior is not None:
+            current_event_id = str(current_prior.get("event_id") or "")
+            if current_event_id:
+                workspaces[current_event_id] = dict(current_prior)
 
-        for event_id, hb_payload in new_revisions:
+        if new_revisions:
+            sequences[ticker] = new_revisions
+
+    # PHASE 2 (writes only): `workspaces` is now COMPLETE — every ticker
+    # already holds either its carried-forward current state (Phase 1
+    # above) or is about to have its own new revisions applied below.
+    # Publish each triggering ticker's ascending revisions as its own
+    # chained generation, in HOMEBUILDER_TICKERS order (B3: promote once
+    # PER generation, immediately after each write — every intermediate
+    # immutable generation is therefore always fully uploaded before any
+    # later marker references it). Because Phase 1 already seeded every
+    # OTHER ticker's slot, the very FIRST write below already contains a
+    # complete nest — no promoted marker can ever transiently omit a
+    # ticker Phase 1 has already resolved (NEW-BLOCKER-16).
+    for ticker in HOMEBUILDER_TICKERS:
+        for event_id, hb_payload in sequences.get(ticker, []):
             workspaces[event_id] = hb_payload
             generation_dir = write_workspace_generation(
                 target,
