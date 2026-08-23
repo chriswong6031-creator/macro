@@ -140,30 +140,42 @@ waves:
       acceptance. D5 remains unauthorized and unstarted.
   - id: D5R
     title: Program/mission/capability/product graph architecture freeze (research only)
-    status: in_progress
+    status: done
     depends_on: [D4]
     next_action: >
+      DONE — Sol ACCEPTED D5R 2026-08-23 (accepted chain = #6209 + #6219 +
+      #6247; authorization receipt = macro PR #6247 comment 5384728488).
       D5R core architecture merged on #6209 and PASSED Sol review (D5R.1
-      six-repair consistency close merged on #6219). D5R.2 is the FINAL
+      six-repair consistency close merged on #6219). D5R.2 was the FINAL
       CONTRACT-REPRESENTABILITY SEAL (Sol 2026-08-22): seventeen-key
       top-level skeleton with reference JSON, program_capability_links,
-      program_event_links (exact event-identity+hash pointer; census —
-      NO Virginia Block VI v2 event exists on main 7e00f874),
+      program_event_links (exact event-identity+hash pointer; census at
+      D5R.2 time — NO Virginia Block VI v2 event existed on main 7e00f874;
+      historical fact, re-censused at D5 start),
       review_coverage with the four-state derivation law, milestone
       date/window XOR preimage, logical-id + revision law, frozen dossier
-      bundle + five-key program_link shapes, fixtures A-H with computed
-      sha12 ids, adversarial representability review to YES. FINAL D5R
-      ACCEPTANCE still held by Sol. Owner adjudication and Virginia pilot
-      remain frozen — do not reopen. Handoffs:
+      bundle + five-key program_link shapes, fixtures A-I with computed
+      sha12 ids, adversarial representability review to YES. Owner
+      adjudication and Virginia pilot remain frozen — do not reopen.
+      Handoffs:
       agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-22-d5r1-docs-consistency.md,
       agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-22-d5r2-representability-seal.md.
   - id: D5
     title: Program, mission, capability, and product graph (implementation)
-    status: todo
+    status: in_progress
     depends_on: [D5R]
     next_action: >
-      UNAUTHORIZED. D5 implementation may not start until Sol accepts D5R and
-      explicitly authorizes D5. D6+ likewise unauthorized.
+      IN PROGRESS — Sol AUTHORIZED D5 implementation 2026-08-23 (receipt =
+      macro PR #6247 comment 5384728488). Mission: ship one independently
+      useful Virginia-class Program Dossier — reviewed
+      government_program_ontology.v1 → composed government_program_dossier.v1
+      → workspace program_link → real mode=programs GovRev surface →
+      entitled browser proof — with IRDM/P00032 as the live hostile null
+      (unresolved / not asserted) and D1-D4 truth unchanged. Source law:
+      research/defense_intelligence/DEFENSE_D5_PROGRAM_GRAPH_ARCHITECTURE_FREEZE.md
+      then the implementation handoff, then D5 DECs, then reference
+      composition/fixtures. T1-T17 land as merge-gating gate: code tests.
+      No page-budget ratchet raise (296 KiB). D6+ remains UNAUTHORIZED.
 landmines:
   - "Live page is government_revenue.html (underscore). government-revenue.html 404s."
   - "Access (site_full / 401 locked) is independent of epistemics (display/context_only). Do not conflate them."
@@ -207,11 +219,14 @@ discoveries:
   - DSC:GOVREV-CANDIDATE-RADAR-STAYS-LOCKED-AFTER-SITE-FULL-200
   - DSC:GOVREV-AGENCY-STRINGIFY-IS-COLLECTOR-THEN-ACTION-OMIT
 next_action: >
-  D4 is done and Sol accepted (2026-08-21). D5R (research/architecture
-  freeze only) is in progress under Sol authorization — owner architecture,
-  pilot, negative control, temporal semantics, experience composition, and
-  the D5 implementation handoff. D5 implementation and D6+ remain
-  unauthorized. #5424 is closed/superseded by defense21-v1.
+  D4 is done and Sol accepted (2026-08-21). D5R is done and Sol accepted
+  (2026-08-23; chain #6209 + #6219 + #6247, receipt PR #6247 comment
+  5384728488). D5 implementation is IN PROGRESS under explicit Sol
+  authorization — Virginia-class Program Dossier end to end (ontology →
+  dossier bundle → workspace program_link → mode=programs surface →
+  entitled browser proof), IRDM hostile null preserved, T1-T17
+  merge-gating. D6+ remains unauthorized. #5424 is closed/superseded by
+  defense21-v1.
   Publisher-vintage alarm and fixture-freezing the D2/D3 law suites out of
   the unrun-government-revenue holding pen remain separate follow-ups — do
   not fold them into the D5R close.
