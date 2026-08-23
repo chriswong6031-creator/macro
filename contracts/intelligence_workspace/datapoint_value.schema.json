@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermindx.ai/contracts/intelligence_workspace/datapoint_value.schema.json",
+  "title": "Intelligence Workspace datapoint value v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "registry_version", "registry_digest", "field_id", "entity",
+    "value", "status", "reason_code", "unit", "observed_at", "effective_at",
+    "as_of", "generated_at", "freshness", "quality", "source", "provenance",
+    "consumer_uses", "audience", "fact_fingerprint"
+  ],
+  "properties": {
+    "schema": {"const": "datapoint_value.v1"},
+    "registry_version": {"const": "1.0.0"},
+    "registry_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "field_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z0-9_]+)+$"},
+    "entity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "id"],
+      "properties": {
+        "type": {"enum": ["security", "industry"]},
+        "id": {"type": "string", "minLength": 1, "maxLength": 160}
+      }
+    },
+    "value": {
+      "oneOf": [
+        {"type": "null"},
+        {"type": "integer"},
+        {"type": "number", "not": {"type": "integer"}},
+        {"type": "string"},
+        {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+      ]
+    },
+    "status": {"enum": ["available", "unknown", "unavailable", "stale", "not_applicable", "rights_blocked"]},
+    "reason_code": {
+      "type": ["string", "null"],
+      "enum": [
+        null, "owner_missing", "owner_unavailable", "owner_degraded", "owner_stale",
+        "value_missing", "history_not_supported", "not_applicable", "rights_blocked",
+        "retired_entity",
+        "superseded_entity"
+      ]
+    },
+    "unit": {"type": "string", "pattern": "^(?:[a-z][a-z0-9_]{0,31}|[A-Z]{3})$"},
+    "observed_at": {"$ref": "#/$defs/nullableClock"},
+    "effective_at": {"$ref": "#/$defs/nullableClock"},
+    "as_of": {"$ref": "#/$defs/nullableClock"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "freshness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "policy"],
+      "properties": {
+        "state": {"enum": ["fresh", "stale", "unknown", "not_applicable"]},
+        "policy": {"const": "owner_native"}
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "issues"],
+      "properties": {
+        "state": {"enum": ["ok", "degraded", "unknown"]},
+        "issues": {
+          "type": "array",
+          "uniqueItems": true,
+          "maxItems": 32,
+          "items": {"type": "string", "pattern": "^[a-z][a-z0-9_.:-]{0,95}$"}
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_id", "owner", "license_class"],
+      "properties": {
+        "source_id": {"type": "string", "minLength": 1, "maxLength": 160},
+        "owner": {"type": "string", "minLength": 1, "maxLength": 96},
+        "license_class": {"type": "string", "minLength": 1, "maxLength": 64},
+        "dataset_id": {"type": ["string", "null"], "maxLength": 96},
+        "source_family": {"type": ["string", "null"], "maxLength": 96},
+        "delay": {"type": ["string", "null"], "maxLength": 64},
+        "artifact_id": {"type": ["string", "null"], "maxLength": 160}
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "owner_field_key"],
+      "properties": {
+        "kind": {"enum": ["owner_direct", "owner_derived", "owner_relation", "resolver_disposition"]},
+        "owner_field_key": {"type": "string", "minLength": 1, "maxLength": 64},
+        "formula_version": {"type": ["string", "null"], "maxLength": 96},
+        "field_lineage": {"type": ["string", "null"], "maxLength": 96},
+        "basis": {"type": ["string", "null"], "maxLength": 160},
+        "relationship": {"type": ["string", "null"], "maxLength": 96},
+        "owner_artifact": {"type": ["string", "null"], "maxLength": 512},
+        "alias_interpretation": {"type": ["string", "null"], "maxLength": 96}
+      }
+    },
+    "consumer_uses": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"enum": ["display", "query", "ai_fact", "alert_input", "context"]}
+    },
+    "audience": {"enum": ["internal", "subscriber"]},
+    "fact_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "available"}}, "required": ["status"]},
+      "then": {
+        "properties": {
+          "value": {"not": {"type": "null"}},
+          "reason_code": {"type": "null"}
+        }
+      },
+      "else": {
+        "properties": {
+          "value": {"type": "null"},
+          "reason_code": {"type": "string"}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"status": {"const": "rights_blocked"}}, "required": ["status"]},
+      "then": {"properties": {"reason_code": {"const": "rights_blocked"}}}
+    },
+    {
+      "if": {"properties": {"reason_code": {"const": "rights_blocked"}}, "required": ["reason_code"]},
+      "then": {"properties": {"status": {"const": "rights_blocked"}}}
+    },
+    {
+      "if": {"properties": {"status": {"const": "stale"}}, "required": ["status"]},
+      "then": {"properties": {"reason_code": {"const": "owner_stale"}}}
+    },
+    {
+      "if": {"properties": {"status": {"const": "not_applicable"}}, "required": ["status"]},
+      "then": {"properties": {"reason_code": {"const": "not_applicable"}}}
+    }
+  ],
+  "$defs": {
+    "nullableClock": {
+      "anyOf": [
+        {"type": "null"},
+        {"type": "string", "format": "date"},
+        {"type": "string", "format": "date-time"}
+      ]
+    }
+  }
+}
