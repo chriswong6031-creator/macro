@@ -1,0 +1,13 @@
+{
+  "schema": "evidence_foundation.fixture_manifest.v1",
+  "fixtures": [
+    {"file": "fif_packet_valid.json", "expected": "valid", "size_bytes": 2639, "sha256": "edda10ade34664c0506483798a314b0cbc534563178c24800bfc76acd3e172a4", "proves": "FIF financial packet pointer"},
+    {"file": "earnings_workspace_valid.json", "expected": "valid", "size_bytes": 2481, "sha256": "3f1beff0cd9fe03a6b2a3a66750c40fcbac7a1c00ce87078132ea1adeba81bf3", "proves": "Earnings event_workspace immutable generation"},
+    {"file": "duplicate_corroboration_hostile.json", "expected": "invalid", "size_bytes": 2897, "sha256": "abd9eaf4119b42217529becba4484ea78913b6ae6e638c677bb9ebfea876652c", "proves": "corroboration cannot auto-net or fake source independence"},
+    {"file": "correction_append_valid.json", "expected": "valid", "size_bytes": 3183, "sha256": "24db3f2617f7ffafce17266339dd54897382a630d5f56e4ad4848b7e6637d004", "proves": "append/supersede correction lineage"},
+    {"file": "replay_valid.json", "expected": "valid", "size_bytes": 2515, "sha256": "f83a02112dcc0171a57717dbc0899202315c028cef9214b6516a3ff1ba8b52ae", "proves": "historical replay with typed cutoffs and reproducibility"},
+    {"file": "replay_lookahead_hostile.json", "expected": "invalid", "size_bytes": 2431, "sha256": "e911a93cbc1c7a476d9e217f52a718245e582ee4b3d08255fa4fd0ffa5571a16", "proves": "source clock beyond replay cutoff is refused"},
+    {"file": "typed_missingness_valid.json", "expected": "valid", "size_bytes": 1899, "sha256": "40070b3895bf06d9394760a95908655f7f854c2c3faefce82c595ac932564d10", "proves": "unsupported is typed and never zero-filled"},
+    {"file": "authority_leak_hostile.json", "expected": "invalid", "size_bytes": 1947, "sha256": "1f62ce979d2743734e53cbd1492551a0bfb8b9b0f3b9378cc1bf9f9f90d41e50", "proves": "ENTRY_OPEN and every authority axis remain false"}
+  ]
+}

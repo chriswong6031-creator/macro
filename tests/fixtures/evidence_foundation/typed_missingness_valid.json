@@ -1,0 +1,41 @@
+{
+  "schema": "evidence_foundation.reference.v1",
+  "version": "1.0.0",
+  "reference_id": "efr_699a2a07f5762d8cb2ea019b8e7c037cd1eab349298e4ccd3abae13ac2bf535c",
+  "object_class": "forward_claim",
+  "owner_store": "qledger.claim",
+  "native_identity": {"claim_id": "0123456789abcdef"},
+  "native_schema": "qledger.claim.v1",
+  "native_digest": {"state": "unknown", "sha256": null},
+  "coverage_class": "prospective_only",
+  "subject": {"key_type": "claim_id", "key": "0123456789abcdef"},
+  "secondary_subjects": [],
+  "clocks": [
+    {"class": "belief_or_build", "field": "asof", "value_state": "known", "value": "2026-08-23", "grain": "date"}
+  ],
+  "provenance": {
+    "pointer_only": true,
+    "body_embedded": false,
+    "owner_reader": "engine.qledger.load_claims",
+    "pointer": "data/qledger/claims.jsonl#claim_id=0123456789abcdef"
+  },
+  "relations": [],
+  "missingness": {"state": "absent", "reason": "unsupported", "zero_substituted": false},
+  "correction": {"kind": "none", "predecessor_reference_ids": [], "clock_field": null, "append_only": true, "mutates_predecessor": false},
+  "replay": {
+    "mode": "live",
+    "cutoffs": {
+      "world_valid": {"state": "unknown", "value": null, "grain": "date"},
+      "source_published": {"state": "unknown", "value": null, "grain": "date"},
+      "knowable": {"state": "unknown", "value": null, "grain": "date"},
+      "observed": {"state": "unknown", "value": null, "grain": "date"},
+      "system_recorded": {"state": "unknown", "value": null, "grain": "date"},
+      "belief_or_build": {"state": "unknown", "value": null, "grain": "date"},
+      "review_due": {"state": "unknown", "value": null, "grain": "date"}
+    },
+    "code_revision": null,
+    "input_digest": null,
+    "vintage_state": "owner_native"
+  },
+  "authority": {"can_rank": false, "can_gate": false, "can_size": false, "can_originate": false, "can_open_entry": false}
+}

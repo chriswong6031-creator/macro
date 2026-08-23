@@ -686,6 +686,15 @@ jobs:
           tests/test_fundamental_forensics_detectors.py
           tests/test_fundamental_forensics_contract.py
           tests/test_fundamental_forensics_disclosure_bundle.py -q
+      # K1 Evidence Foundation is a pointer contract spanning owner-native FIF,
+      # Earnings, Theme Graph, Institutional 13F, GovRev, BioCatalyst, TXI, QLedger,
+      # Market Memory, and Data OS objects. It rides this existing contract job rather
+      # than creating a new job: the install line already supplies the complete import
+      # closure, and the suite resolves every declared owner reader on the checked-out
+      # base in addition to schema/fixture semantics. Appended after the FIF owner step
+      # so an owner regression is reported before an interoperability regression.
+      - name: K1 Evidence Foundation owner-binding and hostile-fixture contract
+        run: python -m pytest tests/test_evidence_foundation_contract.py -q
       # Four detector ids exist as byte-identical strings in THREE implementations
       # with three separate threshold stores: scripts/build_fundamental_forensics.py
       # (inline FRACTION literals, Filing Forensics workbench),
