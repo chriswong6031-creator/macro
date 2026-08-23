@@ -1,0 +1,487 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/government_revenue/government_program_ontology.v1.schema.json",
+  "title": "Government Program Ontology v1",
+  "description": "Reviewed, evidence-bound, point-in-time acquisition-domain ontology (program/capability/platform/role/milestone) plus the bounded program<->GovRev-event pointer relation. Display names are metadata only and can never be join keys. Frozen per DEFENSE_D5_PROGRAM_GRAPH_ARCHITECTURE_FREEZE.md SS3.0.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract", "schema_version", "graph_id", "graph_known_at", "graph_effective_at",
+    "authority", "evidence", "programs", "capabilities", "platforms",
+    "program_capability_links", "role_assertions", "milestones",
+    "program_event_links", "review_coverage", "conflicts", "overrides"
+  ],
+  "properties": {
+    "contract": {"const": "government_program_ontology.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "graph_id": {
+      "type": "string",
+      "pattern": "^program-ontology:(candidate|reviewed):\\d{4}-\\d{2}-\\d{2}:[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "graph_known_at": {"$ref": "#/$defs/strictDateTime"},
+    "graph_effective_at": {"$ref": "#/$defs/strictDateTime"},
+    "authority": {"$ref": "#/$defs/authority"},
+    "evidence": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/evidenceRow"}
+    },
+    "programs": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/program"}
+    },
+    "capabilities": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/capability"}
+    },
+    "platforms": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/platform"}
+    },
+    "program_capability_links": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/programCapabilityLink"}
+    },
+    "role_assertions": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/roleAssertion"}
+    },
+    "milestones": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/milestone"}
+    },
+    "program_event_links": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/programEventLink"}
+    },
+    "review_coverage": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/reviewCoverage"}
+    },
+    "conflicts": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/conflict"}
+    },
+    "overrides": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/override"}
+    }
+  },
+  "$defs": {
+    "strictDateTime": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\+00:00$"
+    },
+    "nullableStrictDateTime": {
+      "oneOf": [{"type": "null"}, {"$ref": "#/$defs/strictDateTime"}]
+    },
+    "fullDate": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "evidenceRefs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^ev:[0-9a-f]{12}$"}
+    },
+    "verificationState": {"enum": ["confirmed", "reviewed", "analyst_approved"]},
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tier", "context_only", "can_rank", "can_size", "can_gate",
+        "can_originate_signal", "can_add_candidates", "can_escalate"
+      ],
+      "properties": {
+        "tier": {"const": "display"},
+        "context_only": {"const": true},
+        "can_rank": {"const": false},
+        "can_size": {"const": false},
+        "can_gate": {"const": false},
+        "can_originate_signal": {"const": false},
+        "can_add_candidates": {"const": false},
+        "can_escalate": {"const": false}
+      }
+    },
+    "evidenceRow": {
+      "type": "object",
+      "required": [
+        "evidence_id", "evidence_class", "sha256", "source_url", "retrieved_from_url",
+        "retrieved_at", "known_at", "claim_scopes"
+      ],
+      "properties": {
+        "evidence_id": {"type": "string", "pattern": "^ev:[0-9a-f]{12}$"},
+        "evidence_class": {
+          "enum": [
+            "official_budget_exhibit", "official_acquisition_report",
+            "official_contract_announcement", "official_program_page",
+            "congressional_research", "issuer_disclosure"
+          ]
+        },
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "source_url": {"type": "string", "format": "uri"},
+        "retrieved_from_url": {"type": "string", "format": "uri"},
+        "retrieved_at": {"$ref": "#/$defs/strictDateTime"},
+        "known_at": {"$ref": "#/$defs/strictDateTime"},
+        "claim_scopes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "program_identity", "capability_need", "role", "milestone",
+              "program_capability_link", "program_event_link", "ownership_context"
+            ]
+          }
+        },
+        "pinned_issuer_host": {"type": "string", "minLength": 1},
+        "pinned_issuer_host_basis": {"type": "string", "minLength": 1}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"evidence_class": {"const": "issuer_disclosure"}}, "required": ["evidence_class"]},
+          "then": {
+            "required": ["pinned_issuer_host", "pinned_issuer_host_basis"],
+            "additionalProperties": false,
+            "properties": {
+              "evidence_id": true, "evidence_class": true, "sha256": true,
+              "source_url": true, "retrieved_from_url": true, "retrieved_at": true,
+              "known_at": true, "claim_scopes": true,
+              "pinned_issuer_host": true, "pinned_issuer_host_basis": true
+            }
+          },
+          "else": {
+            "additionalProperties": false,
+            "properties": {
+              "evidence_id": true, "evidence_class": true, "sha256": true,
+              "source_url": true, "retrieved_from_url": true, "retrieved_at": true,
+              "known_at": true, "claim_scopes": true
+            }
+          }
+        }
+      ]
+    },
+    "sourceIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["system", "native_identifier", "evidence_ref"],
+      "properties": {
+        "system": {
+          "enum": [
+            "p1_line_item", "rdte_pe", "sar_msar", "official_program_page",
+            "contract_announcement", "congressional_research"
+          ]
+        },
+        "native_identifier": {"type": "string", "minLength": 1},
+        "evidence_ref": {"type": "string", "pattern": "^ev:[0-9a-f]{12}$"}
+      }
+    },
+    "successionPair": {
+      "type": "object",
+      "properties": {
+        "predecessor_id": {"type": "string", "minLength": 1},
+        "succession_reason": {
+          "enum": ["renamed", "attribute_revision", "superseded_evidence", "restructured"]
+        }
+      }
+    },
+    "program": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id", "revision", "name", "aliases", "source_identities", "phase",
+        "sponsor_agency", "budget_program_keys", "verification_state",
+        "known_at", "valid_from", "valid_to", "evidence_refs"
+      ],
+      "properties": {
+        "id": {"type": "string", "pattern": "^acq-program:[a-z0-9-]+$"},
+        "revision": {"type": "integer", "minimum": 1},
+        "name": {"type": "string", "minLength": 1},
+        "aliases": {
+          "type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}
+        },
+        "source_identities": {
+          "type": "array", "items": {"$ref": "#/$defs/sourceIdentity"}
+        },
+        "phase": {
+          "enum": ["development", "production", "sustainment", "restructured", "terminated"]
+        },
+        "sponsor_agency": {"type": "string", "minLength": 1},
+        "budget_program_keys": {"type": "array", "maxItems": 0},
+        "verification_state": {"$ref": "#/$defs/verificationState"},
+        "known_at": {"$ref": "#/$defs/strictDateTime"},
+        "valid_from": {"$ref": "#/$defs/strictDateTime"},
+        "valid_to": {"$ref": "#/$defs/nullableStrictDateTime"},
+        "evidence_refs": {"$ref": "#/$defs/evidenceRefs"},
+        "predecessor_id": {"type": "string", "pattern": "^acq-program:[a-z0-9-]+$"},
+        "succession_reason": {
+          "enum": ["renamed", "attribute_revision", "superseded_evidence", "restructured"]
+        }
+      }
+    },
+    "capability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id", "revision", "name", "need_statement", "source_identities",
+        "verification_state", "known_at", "valid_from", "valid_to", "evidence_refs"
+      ],
+      "properties": {
+        "id": {"type": "string", "pattern": "^acq-capability:[a-z0-9-]+$"},
+        "revision": {"type": "integer", "minimum": 1},
+        "name": {"type": "string", "minLength": 1},
+        "need_statement": {"type": "string", "minLength": 1},
+        "source_identities": {
+          "type": "array", "items": {"$ref": "#/$defs/sourceIdentity"}
+        },
+        "verification_state": {"$ref": "#/$defs/verificationState"},
+        "known_at": {"$ref": "#/$defs/strictDateTime"},
+        "valid_from": {"$ref": "#/$defs/strictDateTime"},
+        "valid_to": {"$ref": "#/$defs/nullableStrictDateTime"},
+        "evidence_refs": {"$ref": "#/$defs/evidenceRefs"},
+        "predecessor_id": {"type": "string", "pattern": "^acq-capability:[a-z0-9-]+$"},
+        "succession_reason": {
+          "enum": ["renamed", "attribute_revision", "superseded_evidence", "restructured"]
+        }
+      }
+    },
+    "platform": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id", "revision", "name", "program_id", "variant_of", "source_identities",
+        "verification_state", "known_at", "valid_from", "valid_to", "evidence_refs"
+      ],
+      "properties": {
+        "id": {"type": "string", "pattern": "^platform:[a-z0-9-]+$"},
+        "revision": {"type": "integer", "minimum": 1},
+        "name": {"type": "string", "minLength": 1},
+        "program_id": {"type": "string", "pattern": "^acq-program:[a-z0-9-]+$"},
+        "variant_of": {
+          "oneOf": [{"type": "null"}, {"type": "string", "pattern": "^platform:[a-z0-9-]+$"}]
+        },
+        "source_identities": {
+          "type": "array", "items": {"$ref": "#/$defs/sourceIdentity"}
+        },
+        "verification_state": {"$ref": "#/$defs/verificationState"},
+        "known_at": {"$ref": "#/$defs/strictDateTime"},
+        "valid_from": {"$ref": "#/$defs/strictDateTime"},
+        "valid_to": {"$ref": "#/$defs/nullableStrictDateTime"},
+        "evidence_refs": {"$ref": "#/$defs/evidenceRefs"},
+        "predecessor_id": {"type": "string", "pattern": "^platform:[a-z0-9-]+$"},
+        "succession_reason": {
+          "enum": ["renamed", "attribute_revision", "superseded_evidence", "restructured"]
+        }
+      }
+    },
+    "programCapabilityLink": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "link_id", "revision", "program_id", "capability_id", "verification_state",
+        "known_at", "valid_from", "valid_to", "evidence_refs"
+      ],
+      "properties": {
+        "link_id": {"type": "string", "pattern": "^prog-cap:[0-9a-f]{12}$"},
+        "revision": {"type": "integer", "minimum": 1},
+        "program_id": {"type": "string", "pattern": "^acq-program:[a-z0-9-]+$"},
+        "capability_id": {"type": "string", "pattern": "^acq-capability:[a-z0-9-]+$"},
+        "verification_state": {"$ref": "#/$defs/verificationState"},
+        "known_at": {"$ref": "#/$defs/strictDateTime"},
+        "valid_from": {"$ref": "#/$defs/strictDateTime"},
+        "valid_to": {"$ref": "#/$defs/nullableStrictDateTime"},
+        "evidence_refs": {"$ref": "#/$defs/evidenceRefs"},
+        "predecessor_id": {"type": "string", "pattern": "^prog-cap:[0-9a-f]{12}$"},
+        "succession_reason": {"enum": ["superseded_evidence", "attribute_revision"]}
+      }
+    },
+    "roleAssertion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id", "revision", "program_id", "platform_id", "entity_id", "role",
+        "role_scope", "shared_scope", "single_document_dual_scope", "economic_weight",
+        "verification_state", "known_at", "valid_from", "valid_to", "evidence_refs"
+      ],
+      "properties": {
+        "id": {"type": "string", "pattern": "^prog-role:[0-9a-f]{12}$"},
+        "revision": {"type": "integer", "minimum": 1},
+        "program_id": {"type": "string", "pattern": "^acq-program:[a-z0-9-]+$"},
+        "platform_id": {
+          "oneOf": [{"type": "null"}, {"type": "string", "pattern": "^platform:[a-z0-9-]+$"}]
+        },
+        "entity_id": {"type": "string", "minLength": 1},
+        "role": {"enum": ["prime_contractor", "teaming_partner", "subcontractor", "supplier"]},
+        "role_scope": {"type": "string", "minLength": 1},
+        "shared_scope": {"type": "boolean"},
+        "single_document_dual_scope": {"type": "boolean"},
+        "economic_weight": {"const": null},
+        "verification_state": {"$ref": "#/$defs/verificationState"},
+        "known_at": {"$ref": "#/$defs/strictDateTime"},
+        "valid_from": {"$ref": "#/$defs/strictDateTime"},
+        "valid_to": {"$ref": "#/$defs/nullableStrictDateTime"},
+        "evidence_refs": {"$ref": "#/$defs/evidenceRefs"},
+        "predecessor_id": {"type": "string", "pattern": "^prog-role:[0-9a-f]{12}$"},
+        "succession_reason": {"enum": ["superseded_evidence", "attribute_revision"]}
+      }
+    },
+    "milestone": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id", "revision", "program_id", "kind", "title", "temporal_kind",
+        "verification_state", "known_at", "valid_from", "valid_to", "evidence_refs"
+      ],
+      "properties": {
+        "id": {"type": "string", "pattern": "^prog-milestone:[0-9a-f]{12}$"},
+        "revision": {"type": "integer", "minimum": 1},
+        "program_id": {"type": "string", "pattern": "^acq-program:[a-z0-9-]+$"},
+        "kind": {"enum": ["budget_event", "contract_event", "delivery_event", "review_event"]},
+        "title": {"type": "string", "minLength": 1},
+        "temporal_kind": {"enum": ["date", "window"]},
+        "date": {"$ref": "#/$defs/fullDate"},
+        "window": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["from", "to"],
+          "properties": {
+            "from": {"$ref": "#/$defs/fullDate"},
+            "to": {"$ref": "#/$defs/fullDate"}
+          }
+        },
+        "verification_state": {"$ref": "#/$defs/verificationState"},
+        "known_at": {"$ref": "#/$defs/strictDateTime"},
+        "valid_from": {"$ref": "#/$defs/strictDateTime"},
+        "valid_to": {"$ref": "#/$defs/nullableStrictDateTime"},
+        "evidence_refs": {"$ref": "#/$defs/evidenceRefs"},
+        "predecessor_id": {"type": "string", "pattern": "^prog-milestone:[0-9a-f]{12}$"},
+        "succession_reason": {"enum": ["superseded_evidence", "attribute_revision"]}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"temporal_kind": {"const": "date"}}, "required": ["temporal_kind"]},
+          "then": {"required": ["date"], "not": {"required": ["window"]}}
+        },
+        {
+          "if": {"properties": {"temporal_kind": {"const": "window"}}, "required": ["temporal_kind"]},
+          "then": {"required": ["window"], "not": {"required": ["date"]}}
+        }
+      ]
+    },
+    "programEventLink": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "link_id", "revision", "program_id", "event_contract", "event_id",
+        "event_source_identity_id", "event_source_identity_content_sha256",
+        "canonical_award_identity", "verification_state", "known_at", "valid_from",
+        "valid_to", "evidence_refs"
+      ],
+      "properties": {
+        "link_id": {"type": "string", "pattern": "^prog-event:[0-9a-f]{12}$"},
+        "revision": {"type": "integer", "minimum": 1},
+        "program_id": {"type": "string", "pattern": "^acq-program:[a-z0-9-]+$"},
+        "event_contract": {"const": "government_procurement_event.v2"},
+        "event_id": {"type": "string", "minLength": 1},
+        "event_source_identity_id": {"type": "string", "minLength": 1},
+        "event_source_identity_content_sha256": {"type": "string", "minLength": 1},
+        "canonical_award_identity": {"type": "string", "minLength": 1},
+        "verification_state": {"$ref": "#/$defs/verificationState"},
+        "known_at": {"$ref": "#/$defs/strictDateTime"},
+        "valid_from": {"$ref": "#/$defs/strictDateTime"},
+        "valid_to": {"$ref": "#/$defs/nullableStrictDateTime"},
+        "evidence_refs": {"$ref": "#/$defs/evidenceRefs"},
+        "predecessor_id": {"type": "string", "pattern": "^prog-event:[0-9a-f]{12}$"},
+        "succession_reason": {"enum": ["superseded_evidence", "attribute_revision"]}
+      }
+    },
+    "reviewCoverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "coverage_id", "scope", "subject_type", "subject_id", "known_at",
+        "worksheet_ref", "worksheet_sha256", "admitted_count"
+      ],
+      "properties": {
+        "coverage_id": {"type": "string", "pattern": "^rev-cov:[0-9a-f]{12}$"},
+        "scope": {
+          "enum": ["program_identity", "capability", "participants", "milestones", "program_event_link"]
+        },
+        "subject_type": {"enum": ["program", "award_event"]},
+        "subject_id": {"type": "string", "minLength": 1},
+        "known_at": {"$ref": "#/$defs/strictDateTime"},
+        "worksheet_ref": {"type": "string", "minLength": 1},
+        "worksheet_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "admitted_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "conflict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "conflict_id", "scope", "subject_type", "subject_id", "candidate_row_ids",
+        "reason_code", "verification_state", "known_at", "valid_from", "valid_to",
+        "evidence_refs"
+      ],
+      "properties": {
+        "conflict_id": {"type": "string", "pattern": "^conf:[0-9a-f]{12}$"},
+        "scope": {
+          "enum": ["program_identity", "capability", "participants", "milestones", "program_event_link"]
+        },
+        "subject_type": {"enum": ["program", "award_event"]},
+        "subject_id": {"type": "string", "minLength": 1},
+        "candidate_row_ids": {
+          "type": "array", "minItems": 2, "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "reason_code": {"enum": ["incompatible_claims", "multi_program_event_attribution"]},
+        "verification_state": {"$ref": "#/$defs/verificationState"},
+        "known_at": {"$ref": "#/$defs/strictDateTime"},
+        "valid_from": {"$ref": "#/$defs/strictDateTime"},
+        "valid_to": {"$ref": "#/$defs/nullableStrictDateTime"},
+        "evidence_refs": {"$ref": "#/$defs/evidenceRefs"}
+      }
+    },
+    "override": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "override_id", "action", "verification_state", "known_at", "valid_from",
+        "valid_to", "evidence_refs"
+      ],
+      "properties": {
+        "override_id": {"type": "string", "pattern": "^ovr:[0-9a-f]{12}$"},
+        "action": {"enum": ["retire_row", "block"]},
+        "target_row_id": {"type": "string", "minLength": 1},
+        "subject_type": {"enum": ["program", "award_event"]},
+        "subject_id": {"type": "string", "minLength": 1},
+        "verification_state": {"$ref": "#/$defs/verificationState"},
+        "known_at": {"$ref": "#/$defs/strictDateTime"},
+        "valid_from": {"$ref": "#/$defs/strictDateTime"},
+        "valid_to": {"$ref": "#/$defs/nullableStrictDateTime"},
+        "evidence_refs": {"$ref": "#/$defs/evidenceRefs"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"action": {"const": "retire_row"}}, "required": ["action"]},
+          "then": {"required": ["target_row_id"]}
+        },
+        {
+          "if": {"properties": {"action": {"const": "block"}}, "required": ["action"]},
+          "then": {"required": ["subject_type", "subject_id"]}
+        }
+      ]
+    }
+  }
+}

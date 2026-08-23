@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-23T09:17:04.686027+00:00",
-  "count": 1676,
+  "generated_at": "2026-08-23T12:16:09.081863+00:00",
+  "count": 1685,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -1140,6 +1140,25 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-1bcgmtszblz-c7386e",
+      "title": "Chinese economy",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:16:41Z",
+      "summary_points": [
+        "**Household deleveraging constrains consumption**: Household leverage fell to 56.2% of GDP (1H26), with mortgages and consumer loans contracting for five quarters—first decline in consumer loans since series began—directly limiting domestic demand.",
+        "**EV Sector Divergence & Deposit Shift**: EV exports grew at high double-digit pace (2023–2025), but domestic retail sales fell >10% y/y; household deposits dropped CNY 100bn (2026), with funds migrating to wealth management (17% of assets) and stocks (11%).",
+        "**Household Asset Allocation Shift**: 48% of mass-affluent households allocate to nonbank products (stocks 11%, VOFs 17%, insurance 6%), signaling systemic capital reallocation away from traditional banking toward alternatives."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-49qcqev5a8t-9873fb",
       "title": "Daily Europe",
       "institution": "UBS",
@@ -1160,6 +1179,64 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-4lftwzje8is-9ac4ac",
+      "title": "Asia Pacific equities",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:16:38Z",
+      "summary_points": [
+        "**AI Compute Demand**: Sustained AI infrastructure expansion drives supply-chain bottlenecks, benefiting Taiwan’s 67% semiconductor/20% hardware market; TSMC 2026 earnings and hyperscaler capex provide visibility.",
+        "**Valuation Attractiveness**: Elevated P/E (~20x) offset by 42%/37% earnings growth (2026/2027), yielding low PEG (0.5-0.6x), sustaining market rally despite semiconductor investor caution.",
+        "**Geopolitical Risk Moderation**: Taiwan Strait tensions moderated by semiconductor supply chain importance; key risk is uncertain hyper-scaler capex growth beyond 2027 (potential 10-15% decline)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-nfqrwbegeyo-513572",
+      "title": "High yield",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:16:36Z",
+      "summary_points": [
+        "**High Yield Outlook**: US/EUR HY yields at 7.5%/5.9% with tight spreads, resilient growth, low defaults (1.9%/1.3%), and high-single-digit total returns supported by elevated yields and market overestimation of policy rate path.",
+        "**Policy & Default Dynamics**: Central banks cautious on hikes (40-60bps expected), inflation data driving rate cuts; low default activity (1.9% US, 1.3% Euro) with 2% rise projected in 12 months.",
+        "**High Yield Fundamentals**: US HY leverage at 4.5x (below long-term avg), distress ratio low (4.4% US), quality improved (BBs 60% index), CCC exposure low (4% EUR) but CCC issuers face constrained finance (15% yield vs 8% coupon, 9.4x net leverage).",
+        "**Spread Targets & Risks**: ICE BofA US/Euro HY spread targets 250bps/240bps by June 2027; CCC maturities (USD 27bn) and geopolitical risks (Hormuz disruptions) could pressure spreads to 330bps/310bps in yield pressure scenario."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-eftcero5dbb-f6e239",
+      "title": "Emerging market equities",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:16:32Z",
+      "summary_points": [
+        "**EM Equities Target & Earnings Momentum**: MSCI EM target 1,920 by June 2027; 40% of index exceeded earnings expectations, 43% beat estimates, 57% aggregate YoY growth; Taiwan upgraded to Attractive on AI demand/consolidation.",
+        "**Regional Opportunities & Risks**: China (Attractive) and Taiwan (upgraded) lead earnings momentum; Latin America offers diversification at 14% discount; key risks: sustained dollar strength, AI investment disruption, Brazil election uncertainty.",
+        "**Upside/Downside Targets**: Upside target MSCI EM 2,050 (2027) driven by China fiscal support, AI monetization, foreign inflows; downside target 1,300 (2027) from global weakness, geopolitical tensions, delayed AI monetization."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-pwj5a7xohck-ed0149",
       "title": "Daily Asia",
       "institution": "UBS",
@@ -1171,6 +1248,107 @@
         "**UK Inflation Data**: CPI rose to 2.9% YoY (four-month high) post-13% energy cap, BoE forecasts inflation peaking at 3.2% later 2024, countering energy cost fears.",
         "**Fed Policy Focus**: July minutes prioritize inflation over intervention; rate hikes expected if inflation persists, with Treasury move timed ahead of 20-yr auction.",
         "**BoE Rate Path**: Hold rates at 3.75% until end-2026, then cut to 3.50% (Mar 2027) and 3.25% (June), with markets overpricing Eurozone tightening."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-yh4gylftcps-4416c9",
+      "title": "High grade",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:16:30Z",
+      "summary_points": [
+        "**High-grade bonds (AA+)**: Low default risk, elevated yields ensure positive total returns amid geopolitical risks and high asset valuations.",
+        "**US Fed Hold & 2-5yr Opportunity**: Fed likely holds (cool inflation, contained tariffs); 2-5yr segment offers best risk-reward vs.",
+        "market pricing of hikes.",
+        "**Eurozone Fiscal Discipline**: ECB June hike performative (soft economy); fiscal discipline supports EUR bonds.",
+        "**UK Fiscal Policy Risk**: Burnham's plans under scrutiny; profligate spending could drive higher yields and increase political uncertainty."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-v57hj9bjpwv-c16b5f",
+      "title": "Global equities",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:16:28Z",
+      "summary_points": [
+        "**Global Earnings Momentum**: 26% EPS growth this year (14% next) driven by robust earnings, AI adoption, and expansionary fiscal policies; outpacing price growth with MSCI AC World P/E near 10-year average (15% below Nov peak).",
+        "**AI Structural Investment**: 84% capex growth in AI infrastructure this year (33% next) amid hyperscaler monetization, creating a key structural trend despite tech sector competition risks.",
+        "**Geopolitical Risk Catalyst**: Strait of Hormuz reopening timing is critical; prolonged Middle East conflict risks energy disruptions and material global growth slowdown.",
+        "**Valuation-Driven Allocation**: \"Attractive\" tier prioritizes tech/cyclical sectors (consumer discretionary, banks) and structural themes (industrials, healthcare) where earnings growth outpaces price."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-rsgwmursz5w-6facca",
+      "title": "Treasury Inflation-Protected Securities",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:16:25Z",
+      "summary_points": [
+        "**Geopolitical Inflation Catalyst**: Middle East tensions pushed Brent crude to $90/barrel (vs $75 Aug), creating stagflationary pressure; TIPS benefit as real yields now positive (unlike 2022), unlike Russia-Ukraine exception.",
+        "**Inflation Policy Alignment**: Fed’s 2% target commitment and dovish reaction function support TIPS; TIPS outperform nominal Treasuries if inflation exceeds market expectations (current 10-yr breakeven at 2.3% below May peaks).",
+        "**Real Yield Valuation Shift**: Positive real yields (vs 2022 negative) and energy-driven 2.5% TIPS CPI rise create structural TIPS advantage; valuation hinges on sustained medium-term inflation from supply shocks.",
+        "**Scenario Risk Matrix**: Upside if inflation exceeds Fed target longer (vs nominal bonds); downside if growth scare accelerates inflation decline, widening risk premiums and negating TIPS carry."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-fcjctsgb13r-5c893c",
+      "title": "Private equity",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:16:24Z",
+      "summary_points": [
+        "**Private Equity Fundraising Momentum**: H126 fundraising exceeds 60% of FY25 target (USD 262B), with Asia Pacific leading (30% above FY25 level), driven by resilient macro fundamentals.",
+        "**Deal Activity Recovery**: Global PE deal count growth accelerated to 9% in Q2 2026 (from 6% previously), fueled by easing macro uncertainty and Fed rate cut expectations.",
+        "**Secondary Market Momentum**: Global secondary volumes up 15% vs 1H25, reflecting strong investor demand for liquidity, portfolio rebalancing, and defensive PE exposure.",
+        "**Venture Capital Thematic Shift**: VC diversification beyond tech/softw into healthcare/new energy amid AI disruption, policy scrutiny, and enterprise cost discipline risks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ploy2jr1uvn-623108",
+      "title": "Eurozone equities",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:16:23Z",
+      "summary_points": [
+        "**Eurozone Earnings Growth**: Forecast raised to 15% (2024-2027), confirmed by Q2 results (22% YoY, 11% excluding energy), driving index targets via 32% cumulative 2026-2027 growth.",
+        "**Strategic Allocation Focus**: Prioritize cyclical/structural growth in European banks, consumer discretionary, healthcare, industrials, IT, and Germany; luxury/lifestyles theme fueled by demographics and digitalization.",
+        "**Key Risk Factors**: Energy disruption risks triggering economic weakness/tighter policy; US-EU/EU-China trade wars and Chinese competition weigh on growth/valuations.",
+        "**Upside Catalysts**: EuroStoxx 50 2027 target (7,600) supported by AI/electrification/defense investment boom, German fiscal policy, Russia-Ukraine peace, and global policy shifts (lower-for-longer rates)."
       ],
       "tags": [],
       "tickers": [],

@@ -23,6 +23,7 @@ Thin wrapper:
 - `authority` — canonical FIF object `{"class":"context_only","display_only":true}`
 - `filing` — accession, form, primary document, SEC clocks, fixture-recorded clock
 - `package` — full member inventory with `stored` / `not_requested` plus digests
+- `related_event_ref` — optional. Present only when the golden package carries a stable cross-plane pointer to an existing Earnings `event_workspace.v1` event. Omitted entirely when absent (never `null`) so an AAPL 10-K response stays byte-identical. Allowed keys: `plane`, `event_id`, `relation`, `source_filing_distinction`. Never `generation_id`. Never copies Earnings payload.
 - `statements` — ordered trees
 - `coverage` — parser kind and fact/context counts
 - `delivery` — source/promotion truth only: committed golden fixture, `attested=false`, `production_issuer_service=false`. No second authority vocabulary.
@@ -30,7 +31,7 @@ Thin wrapper:
 ## Statement
 
 - `statement_type` / `role_uri` / `title`
-- `columns` — filing-native periods (duration or instant)
+- `columns` — filing-native periods (duration or instant). Column identity is the complete period (`kind` + `start` + `end`), not end date alone and not “newest N”. Quarterly tables may expose multiple duration families that share an end date. The `label` field may repeat an ISO date; it is not the disambiguator. Instant facts that sit inside duration columns do not define the column period.
 - `row_count` / `rows`
 
 ## Row

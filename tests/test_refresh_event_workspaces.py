@@ -22,9 +22,13 @@ from engine.earnings_transcript_intake import TranscriptRef, canonical_body_sha2
 from engine.neuralweb import company_intelligence_reader as reader
 from scripts.publish_company_intelligence_r2 import PUBLISH_CONFLICT, publish, publish_event_workspaces
 from scripts.refresh_event_workspaces import (
+    PriorWorkspaceFetchFailed,
     RefreshError,
     _parse_sgml_manifest,
+    _PriorWorkspaceNotPublished,
     _select_exhibit_99_1,
+    load_prior_workspace,
+    load_prior_workspace_for_ticker,
     refresh,
 )
 
@@ -196,6 +200,19 @@ def _refresh(tmp_path: Path, fake: _FakeR2, **kwargs):
         fetch_index=fetch_index,
         fetch_body_fn=fetch_body,
         prior_workspace=kwargs.get("prior_workspace"),
+        # NEW-4 fix (Opus red-team verification round 3, 2026-08-23): these
+        # tests are AAPL-flagship-focused and never stub homebuilder SEC
+        # responses at all, so every homebuilder acquisition fails here by
+        # construction — refresh() now looks up a carry-forward prior on
+        # every such failure, and the REAL default
+        # (load_prior_workspace_for_ticker) makes a genuine network call
+        # against production R2 ("No network." is this file's own law).
+        # Both homebuilder loaders default here to explicit offline stubs
+        # returning None (no prior — the pre-existing implicit behavior
+        # every test in this file already relies on); a test that wants to
+        # exercise carry-forward passes its own stub explicitly.
+        homebuilder_prior_workspace_loader=kwargs.get("homebuilder_prior_workspace_loader", lambda event_id: None),
+        homebuilder_carry_forward_loader=kwargs.get("homebuilder_carry_forward_loader", lambda ticker: None),
         publish_generation=lambda out_dir, dry_run=False: publish_event_workspaces(
             out_dir, dry_run=dry_run, s3=fake, bucket="bucket"
         ),
@@ -239,6 +256,351 @@ def test_source_sha_correction_advances_generation_and_lifecycle(tmp_path: Path)
     assert workspace["event_id"] == FLAGSHIP_EVENT_ID
     assert workspace["lifecycle"]["state"] == "corrected"
     assert fake.puts[-1][0] == WS_MARKER
+
+
+def test_corrected_lifecycle_state_is_sticky_across_an_unchanged_source_rebuild(tmp_path: Path) -> None:
+    """A5C BLOCKER-1 (Opus red-team, 2026-08-23): a corrected event must STAY
+    corrected in every later generation whose source hash is unchanged.
+    Before the fix, an unchanged-source rebuild after a correction silently
+    walked lifecycle.state back to "complete" (started -> complete only,
+    since prior_source_sha256 == the new sha) — a byte-different, spuriously
+    new generation that IMCE A5C's fail-closed gate would then read as
+    safe-original within one 3-hour republish cycle. After the fix, the
+    THIRD refresh (same mutated source as the correction, prior = the
+    corrected workspace) reproduces the corrected generation byte-for-byte:
+    same generation_id, lifecycle.state stays "corrected", zero new writes."""
+    fake = _FakeR2()
+    assert _refresh(tmp_path, fake) == 0
+    first = _marker(tmp_path)
+    prior = json.loads(
+        (tmp_path / "event_workspaces" / "generations" / first["generation_id"] / "workspaces" / f"{FLAGSHIP_EVENT_ID}.json").read_text(encoding="utf-8")
+    )
+    mutated = EXHIBIT.read_text(encoding="utf-8") + "\n<!-- source correction -->\n"
+    assert _refresh(tmp_path, fake, http_get=_http_get_factory(mutated), prior_workspace=prior) == 0
+    second = _marker(tmp_path)
+    assert second["generation_id"] != first["generation_id"]
+    second_workspace = json.loads(
+        (tmp_path / "event_workspaces" / "generations" / second["generation_id"] / "workspaces" / f"{FLAGSHIP_EVENT_ID}.json").read_text(encoding="utf-8")
+    )
+    assert second_workspace["lifecycle"]["state"] == "corrected"
+    puts_after_second = list(fake.puts)
+
+    # THIRD refresh: same (still-mutated) source, prior = the just-published
+    # corrected workspace. Before the fix this would re-derive "complete".
+    assert _refresh(tmp_path, fake, http_get=_http_get_factory(mutated), prior_workspace=second_workspace) == 0
+    third = _marker(tmp_path)
+    assert third["generation_id"] == second["generation_id"], "sticky-corrected rebuild must be byte-stable"
+    third_workspace = json.loads(
+        (tmp_path / "event_workspaces" / "generations" / third["generation_id"] / "workspaces" / f"{FLAGSHIP_EVENT_ID}.json").read_text(encoding="utf-8")
+    )
+    assert third_workspace["lifecycle"]["state"] == "corrected"
+    assert [key for key, _ in fake.puts[len(puts_after_second):]] == []
+
+
+# ---------------------------------------------------------------------------
+# NEW-1 (Opus red-team verification round 2, 2026-08-23): load_prior_workspace
+# was fail-soft on EVERY error — a clean 404 and a timeout/5xx/malformed-JSON
+# both returned None, so one transient HTTP failure on the prior read made
+# prior_lifecycle_state=None AND prior_source_sha256=None, walking the
+# rebuild started->complete and silently, PERMANENTLY erasing a sticky
+# "corrected" state (the de-corrected workspace becomes the new prior on the
+# next cycle). Fixed: load_prior_workspace now RAISES
+# PriorWorkspaceFetchFailed on a genuine fetch failure; only a clean
+# not-published 404 (_PriorWorkspaceNotPublished, internal) returns None.
+# ---------------------------------------------------------------------------
+
+def test_load_prior_workspace_raises_on_genuine_fetch_failure(capsys) -> None:
+    """Unit-level: any failure OTHER than a clean not-published 404 raises
+    PriorWorkspaceFetchFailed, never returns None, and emits a line-start
+    ::warning naming the event and the error class."""
+
+    def boom(event_id: str) -> dict:
+        raise TimeoutError("connection timed out")
+
+    with pytest.raises(PriorWorkspaceFetchFailed):
+        load_prior_workspace("evt_boom", fetch=boom)
+
+    out = capsys.readouterr().out
+    lines = out.splitlines()
+    assert any(line.startswith("::warning title=event-workspace-prior-fetch-failed::") for line in lines), out
+    warning_line = next(line for line in lines if line.startswith("::warning title=event-workspace-prior-fetch-failed::"))
+    assert "evt_boom" in warning_line
+    assert "TimeoutError" in warning_line
+
+
+def test_load_prior_workspace_returns_none_on_clean_not_published(capsys) -> None:
+    """Unit-level: a clean not-published disposition still returns None
+    (first-generation behavior unchanged) and emits NO fetch-failed warning."""
+
+    def not_found(event_id: str) -> dict:
+        raise _PriorWorkspaceNotPublished("manifest 404")
+
+    assert load_prior_workspace("evt_absent", fetch=not_found) is None
+    out = capsys.readouterr().out
+    assert "event-workspace-prior-fetch-failed" not in out
+
+
+def test_load_prior_workspace_returns_the_workspace_on_a_hit() -> None:
+    payload = {"event_id": "evt_x", "lifecycle": {"state": "complete"}}
+    assert load_prior_workspace("evt_x", fetch=lambda eid: payload) == payload
+
+
+class _FakeRequestsResponse:
+    def __init__(self, *, status_code: int, payload: object = None):
+        self.status_code = status_code
+        self._payload = payload
+
+    def raise_for_status(self) -> None:
+        if self.status_code >= 400 and self.status_code != 404:
+            raise RuntimeError(f"HTTP {self.status_code}")
+
+    def json(self) -> object:
+        return self._payload
+
+
+def test_load_prior_workspace_for_ticker_matches_by_company_id_scan(monkeypatch) -> None:
+    """NEW-4 (Opus red-team verification round 3, 2026-08-23): direct
+    unit-level proof that load_prior_workspace_for_ticker's own
+    generation-manifest scan works — it must find DHI's event via
+    parse_canonical_event_id's company_id, WITHOUT knowing this cycle's
+    fresh event_id at all, fetching only the ONE matching workspace body
+    (never the AAPL one), and return None for a ticker with no entry in
+    the current generation."""
+    base = "https://example.test/company_intelligence"
+    dhi_event_id = "evt_cik0000882184_2026q3_results"
+    aapl_event_id = FLAGSHIP_EVENT_ID
+    dhi_payload = {"event_id": dhi_event_id, "lifecycle": {"state": "corrected"}}
+    aapl_payload = {"event_id": aapl_event_id, "lifecycle": {"state": "complete"}}
+    gen_manifest = {
+        "files": {
+            f"workspaces/{aapl_event_id}.json": {"bytes": 10, "sha256": "a" * 64},
+            f"workspaces/{dhi_event_id}.json": {"bytes": 10, "sha256": "b" * 64},
+        },
+    }
+    fetched_workspace_urls: list[str] = []
+
+    def fake_get(url: str, *, headers=None, timeout=None):
+        if url == f"{base}/event_workspaces/manifest.json":
+            return _FakeRequestsResponse(status_code=200, payload={"generation_id": "GEN1"})
+        if url == f"{base}/event_workspaces/generations/GEN1/manifest.json":
+            return _FakeRequestsResponse(status_code=200, payload=gen_manifest)
+        if url == f"{base}/event_workspaces/generations/GEN1/workspaces/{dhi_event_id}.json":
+            fetched_workspace_urls.append(url)
+            return _FakeRequestsResponse(status_code=200, payload=dhi_payload)
+        if url == f"{base}/event_workspaces/generations/GEN1/workspaces/{aapl_event_id}.json":
+            fetched_workspace_urls.append(url)
+            return _FakeRequestsResponse(status_code=200, payload=aapl_payload)
+        raise AssertionError(f"unexpected URL: {url}")
+
+    monkeypatch.setattr("requests.get", fake_get)
+    result = load_prior_workspace_for_ticker("DHI", base_url=base)
+    assert result == dhi_payload
+    # Only DHI's own workspace body was ever fetched — never AAPL's, proving
+    # the scan reads the generation manifest's event_id list (cheap) and
+    # fetches ONLY the matched body (not every workspace in the generation).
+    assert fetched_workspace_urls == [f"{base}/event_workspaces/generations/GEN1/workspaces/{dhi_event_id}.json"]
+
+    # A ticker with no entry in the current generation returns None (never
+    # published yet, not a failure).
+    assert load_prior_workspace_for_ticker("PHM", base_url=base) is None
+
+
+def test_load_prior_workspace_for_ticker_raises_on_genuine_fetch_failure(monkeypatch, capsys) -> None:
+    def fake_get(url: str, *, headers=None, timeout=None):
+        raise TimeoutError("connection timed out")
+
+    monkeypatch.setattr("requests.get", fake_get)
+    with pytest.raises(PriorWorkspaceFetchFailed):
+        load_prior_workspace_for_ticker("DHI", base_url="https://example.test/company_intelligence")
+    out = capsys.readouterr().out
+    assert any(line.startswith("::warning title=event-workspace-prior-fetch-failed::") for line in out.splitlines())
+
+
+def test_load_prior_workspace_for_ticker_returns_none_when_no_generation_exists(monkeypatch) -> None:
+    def fake_get(url: str, *, headers=None, timeout=None):
+        return _FakeRequestsResponse(status_code=404)
+
+    monkeypatch.setattr("requests.get", fake_get)
+    assert load_prior_workspace_for_ticker("DHI", base_url="https://example.test/company_intelligence") is None
+
+
+# ---------------------------------------------------------------------------
+# NEW-6 (Opus red-team verification round 4, 2026-08-23): 8-case probe
+# table. write_workspace_generation uploads every workspace object, THEN
+# the generation's own manifest.json, and only THEN promotes the top-level
+# marker to point at it — so once the top-level marker names a
+# generation_id, that generation's manifest existing, being an object, and
+# carrying a "files" key are all GUARANTEED by the publish protocol unless
+# something is genuinely broken. None is correct ONLY for a clean
+# top-level marker 404 (no nest yet) and a well-formed files map with no
+# entry for this issuer; every other outcome below is an ANOMALY and must
+# raise PriorWorkspaceFetchFailed, never be read as "nothing to carry".
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("marker_behavior,gen_behavior,expected", [
+    ("404", None, "none"),                    # (i) clean top-level 404: no nest yet
+    ("error", None, "raise"),                  # marker read: genuine network failure
+    ("no_generation_id", None, "raise"),        # marker parses but carries no generation_id
+    ("ok", "404", "raise"),                     # (a) generation's own manifest 404s
+    ("ok", "error", "raise"),                   # generation manifest read: genuine network failure
+    ("ok", "not_mapping", "raise"),              # (b) generation manifest payload is not an object
+    ("ok", "no_files", "raise"),                 # (c) generation manifest carries no "files" key
+    ("ok", "no_match", "none"),                  # (ii) well-formed, no entry for this issuer
+], ids=[
+    "marker_404_no_nest_yet",
+    "marker_network_error",
+    "marker_missing_generation_id",
+    "gen_manifest_404",
+    "gen_manifest_network_error",
+    "gen_manifest_not_an_object",
+    "gen_manifest_missing_files_key",
+    "well_formed_no_entry_for_issuer",
+])
+def test_load_prior_workspace_for_ticker_probe_table(monkeypatch, capsys, marker_behavior, gen_behavior, expected):
+    base = "https://example.test/company_intelligence"
+
+    def fake_get(url: str, *, headers=None, timeout=None):
+        if url == f"{base}/event_workspaces/manifest.json":
+            if marker_behavior == "404":
+                return _FakeRequestsResponse(status_code=404)
+            if marker_behavior == "error":
+                raise TimeoutError("connection timed out")
+            if marker_behavior == "no_generation_id":
+                return _FakeRequestsResponse(status_code=200, payload={})
+            return _FakeRequestsResponse(status_code=200, payload={"generation_id": "GEN1"})
+        if url == f"{base}/event_workspaces/generations/GEN1/manifest.json":
+            if gen_behavior == "404":
+                return _FakeRequestsResponse(status_code=404)
+            if gen_behavior == "error":
+                raise TimeoutError("connection timed out")
+            if gen_behavior == "not_mapping":
+                return _FakeRequestsResponse(status_code=200, payload=["not", "a", "dict"])
+            if gen_behavior == "no_files":
+                return _FakeRequestsResponse(status_code=200, payload={"schema": "event_workspace_manifest.v1"})
+            if gen_behavior == "no_match":
+                return _FakeRequestsResponse(status_code=200, payload={
+                    "files": {f"workspaces/{FLAGSHIP_EVENT_ID}.json": {"bytes": 1, "sha256": "a" * 64}},
+                })
+            raise AssertionError(f"unhandled gen_behavior {gen_behavior!r}")
+        raise AssertionError(f"unexpected URL: {url}")
+
+    monkeypatch.setattr("requests.get", fake_get)
+    if expected == "none":
+        assert load_prior_workspace_for_ticker("DHI", base_url=base) is None
+    else:
+        with pytest.raises(PriorWorkspaceFetchFailed):
+            load_prior_workspace_for_ticker("DHI", base_url=base)
+        out = capsys.readouterr().out
+        assert any(line.startswith("::warning title=event-workspace-prior-fetch-failed::") for line in out.splitlines())
+
+
+def test_load_prior_workspace_for_ticker_selects_the_newest_fiscal_period_on_a_double_match(monkeypatch) -> None:
+    """NEW-7 (Opus red-team verification round 4, 2026-08-23): files
+    iterates in the manifest's own sorted-string key order, so a plain
+    first-match would pick the LEXICOGRAPHICALLY SMALLEST (= OLDEST fiscal
+    period) if the one-event-per-issuer invariant ever breaks. Two DHI
+    events (Q2 and Q3) coexist in one generation here — the newer (Q3)
+    must win, never the older (Q2) despite sorting first as a string."""
+    base = "https://example.test/company_intelligence"
+    dhi_q2_event_id = "evt_cik0000882184_2026q2_results"
+    dhi_q3_event_id = "evt_cik0000882184_2026q3_results"
+    dhi_q2_payload = {"event_id": dhi_q2_event_id, "lifecycle": {"state": "complete"}}
+    dhi_q3_payload = {"event_id": dhi_q3_event_id, "lifecycle": {"state": "corrected"}}
+    assert dhi_q2_event_id < dhi_q3_event_id, "fixture must sort Q2 first lexicographically"
+
+    def fake_get(url: str, *, headers=None, timeout=None):
+        if url == f"{base}/event_workspaces/manifest.json":
+            return _FakeRequestsResponse(status_code=200, payload={"generation_id": "GEN1"})
+        if url == f"{base}/event_workspaces/generations/GEN1/manifest.json":
+            return _FakeRequestsResponse(status_code=200, payload={"files": {
+                f"workspaces/{dhi_q2_event_id}.json": {"bytes": 1, "sha256": "a" * 64},
+                f"workspaces/{dhi_q3_event_id}.json": {"bytes": 1, "sha256": "b" * 64},
+            }})
+        if url == f"{base}/event_workspaces/generations/GEN1/workspaces/{dhi_q3_event_id}.json":
+            return _FakeRequestsResponse(status_code=200, payload=dhi_q3_payload)
+        if url == f"{base}/event_workspaces/generations/GEN1/workspaces/{dhi_q2_event_id}.json":
+            raise AssertionError("must never fetch the OLDER event's body")
+        raise AssertionError(f"unexpected URL: {url}")
+
+    monkeypatch.setattr("requests.get", fake_get)
+    assert load_prior_workspace_for_ticker("DHI", base_url=base) == dhi_q3_payload
+
+
+def test_prior_fetch_failure_never_erases_a_corrected_lifecycle_state(tmp_path: Path, capsys) -> None:
+    """(a) THE NAMED FALSIFIER (verifier's own words): prior loader RAISES
+    against an already-corrected event -> no publication for that event
+    this cycle, warning emitted, marker not advanced with a de-corrected
+    workspace. Exercised at the refresh() level via a callable prior_workspace
+    that raises PriorWorkspaceFetchFailed (simulating what load_prior_workspace
+    itself would raise after classifying a real network failure — the HTTP
+    disposition classification itself is unit-tested above)."""
+    fake = _FakeR2()
+    assert _refresh(tmp_path, fake) == 0
+    first = _marker(tmp_path)
+    prior = json.loads(
+        (tmp_path / "event_workspaces" / "generations" / first["generation_id"] / "workspaces" / f"{FLAGSHIP_EVENT_ID}.json").read_text(encoding="utf-8")
+    )
+    mutated = EXHIBIT.read_text(encoding="utf-8") + "\n<!-- source correction -->\n"
+    assert _refresh(tmp_path, fake, http_get=_http_get_factory(mutated), prior_workspace=prior) == 0
+    second = _marker(tmp_path)
+    assert second["generation_id"] != first["generation_id"]
+    second_workspace = json.loads(
+        (tmp_path / "event_workspaces" / "generations" / second["generation_id"] / "workspaces" / f"{FLAGSHIP_EVENT_ID}.json").read_text(encoding="utf-8")
+    )
+    assert second_workspace["lifecycle"]["state"] == "corrected"
+    puts_after_second = list(fake.puts)
+
+    # THIRD refresh: the prior loader RAISES (simulating a transient outage
+    # on the prior-workspace GET) instead of returning the corrected dict.
+    def failing_prior_loader() -> dict:
+        raise PriorWorkspaceFetchFailed("evt: simulated network timeout")
+
+    with pytest.raises(RefreshError):
+        _refresh(tmp_path, fake, http_get=_http_get_factory(mutated), prior_workspace=failing_prior_loader)
+
+    third = _marker(tmp_path)
+    assert third["generation_id"] == second["generation_id"], "marker must NOT advance with a de-corrected workspace"
+    assert [key for key, _ in fake.puts[len(puts_after_second):]] == [], "nothing new published this cycle"
+    third_workspace = json.loads(
+        (tmp_path / "event_workspaces" / "generations" / third["generation_id"] / "workspaces" / f"{FLAGSHIP_EVENT_ID}.json").read_text(encoding="utf-8")
+    )
+    assert third_workspace["lifecycle"]["state"] == "corrected", "the on-disk generation is unchanged, still corrected"
+
+
+def test_prior_loader_absent_proceeds_as_first_generation_exactly_as_today(tmp_path: Path) -> None:
+    """(b): a genuinely absent prior (not_published / None) still proceeds
+    as first-generation build — unchanged regression, exercised both via
+    load_prior_workspace's own disposition classification (unit-level,
+    above) and here at the refresh() level with no prior at all."""
+    fake = _FakeR2()
+    assert _refresh(tmp_path, fake, prior_workspace=None) == 0
+    marker = _marker(tmp_path)
+    assert marker["generation_id"]
+    workspace = json.loads(
+        (tmp_path / "event_workspaces" / "generations" / marker["generation_id"] / "workspaces" / f"{FLAGSHIP_EVENT_ID}.json").read_text(encoding="utf-8")
+    )
+    assert workspace["lifecycle"]["state"] == "complete"
+
+
+def test_flagship_prior_loader_raising_a_bare_exception_also_aborts(tmp_path: Path) -> None:
+    """NEW-5-PIN (Opus red-team verification round 4, 2026-08-23): the
+    uniform flagship handler (NEW-5, round 3) merged two except branches
+    into one so that NO exception of any type may mean first-generation —
+    but that merge was UNPINNED: reverting to the round-3 two-handler
+    shape (PriorWorkspaceFetchFailed -> abort, everything else -> fail-soft
+    None) left the full suite green, because nothing exercised a NON-
+    PriorWorkspaceFetchFailed exception from prior_workspace(). This pins
+    it: a bare RuntimeError (deliberately NOT PriorWorkspaceFetchFailed)
+    from the loader must still raise RefreshError and publish nothing."""
+    fake = _FakeR2()
+
+    def raising_prior_loader():
+        raise RuntimeError("simulated non-PriorWorkspaceFetchFailed failure")
+
+    with pytest.raises(RefreshError):
+        _refresh(tmp_path, fake, prior_workspace=raising_prior_loader)
+    assert not (tmp_path / "event_workspaces" / "manifest.json").exists()
+    assert fake.puts == []
 
 
 def test_missing_transcript_hash_does_not_move_marker(tmp_path: Path) -> None:

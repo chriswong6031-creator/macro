@@ -29,10 +29,10 @@
       {
         "key": "dxy",
         "label": "US Dollar (DXY)",
-        "z": -2.05,
+        "z": -2.08,
         "sign": -1,
         "risk": "on",
-        "level": 98.839
+        "level": 98.8
       },
       {
         "key": "vix",
@@ -53,7 +53,7 @@
       {
         "key": "copper_gold",
         "label": "Copper / Gold",
-        "z": -1.65,
+        "z": -1.53,
         "sign": 1.0,
         "risk": "off",
         "level": 0.0014
@@ -347,8 +347,8 @@
         "label": "Commodity / energy",
         "label_zh": "\u5927\u5b97/\u80fd\u6e90",
         "family": "inflation",
-        "projection": -0.48,
-        "strength": 0.48,
+        "projection": -0.44,
+        "strength": 0.44,
         "direction": "upstream disinflation \u2014 energy/materials basket & copper lead down"
       },
       {
@@ -356,8 +356,8 @@
         "label": "Global risk-on / risk-off",
         "label_zh": "\u5168\u7403\u98ce\u9669\u504f\u597d",
         "family": "risk",
-        "projection": -0.46,
-        "strength": 0.46,
+        "projection": -0.42,
+        "strength": 0.42,
         "direction": "global risk-OFF \u2014 S&P down, VIX & dollar up, EM/copper sold"
       },
       {
@@ -374,18 +374,9 @@
         "label": "US-rate repricing (via the peg)",
         "label_zh": "\u7f8e\u606f\u91cd\u5b9a\u4ef7\uff08\u7ecf\u8054\u6c47\uff09",
         "family": "rates",
-        "projection": -0.27,
-        "strength": 0.27,
+        "projection": -0.3,
+        "strength": 0.3,
         "direction": "US rates repricing lower \u2014 dollar & HIBOR down, the peg imports easing"
-      },
-      {
-        "driver": "china_spillover",
-        "label": "China stimulus spillover",
-        "label_zh": "\u4e2d\u56fd\u523a\u6fc0\u5916\u6ea2",
-        "family": "growth",
-        "projection": -0.04,
-        "strength": 0.04,
-        "direction": "China risk-off spilling into HK \u2014 H-shares & southbound lead down"
       },
       {
         "driver": "peg_funding_stress",
@@ -395,19 +386,28 @@
         "projection": -0.04,
         "strength": 0.04,
         "direction": "funding easing \u2014 HKD toward 7.75 strong-side, HIBOR down, Aggregate Balance refilled"
+      },
+      {
+        "driver": "china_spillover",
+        "label": "China stimulus spillover",
+        "label_zh": "\u4e2d\u56fd\u523a\u6fc0\u5916\u6ea2",
+        "family": "growth",
+        "projection": -0.03,
+        "strength": 0.03,
+        "direction": "China risk-off spilling into HK \u2014 H-shares & southbound lead down"
       }
     ],
     "note": "Deterministic HK cross-asset attribution \u2014 a regime READ, not a signal; never gates a score or the quad."
   },
   "conditions": {
     "roro": {
-      "roro": 0.494,
-      "roro_raw": 0.542,
+      "roro": 0.501,
+      "roro_raw": 0.551,
       "roro_state": "risk-on",
-      "hk_roro_copper_gold": 0.783,
+      "hk_roro_copper_gold": 0.867,
       "hk_roro_spy": 0.662,
       "hk_roro_vix": 0.926,
-      "hk_roro_dxy": 2.051,
+      "hk_roro_dxy": 2.079,
       "hk_roro_eem": 0.654,
       "hk_roro_usdcny": 0.578,
       "hk_roro_southbound": -1.227,
@@ -421,7 +421,7 @@
           "key": "copper_gold",
           "name_en": "Copper / Gold",
           "name_zh": "\u94dc\uff0f\u91d1 \u6bd4",
-          "value": 0.783,
+          "value": 0.867,
           "lean": "risk-on"
         },
         {
@@ -442,7 +442,7 @@
           "key": "dxy",
           "name_en": "US Dollar (20d)",
           "name_zh": "\u7f8e\u5143\uff0820\u65e5\uff09",
-          "value": 2.051,
+          "value": 2.079,
           "lean": "risk-on"
         },
         {
@@ -2164,7 +2164,7 @@
           0.446,
           0.242,
           0.31,
-          0.494
+          0.501
         ]
       },
       "recession": {
@@ -6904,7 +6904,7 @@
           87.1,
           69.4,
           76.2,
-          89.3
+          89.7
         ]
       }
     },
@@ -6912,18 +6912,18 @@
     "note": "display-only conditioning lens \u2014 RORO + uncalibrated slowdown/drawdown gauges; never feeds hk_axes / hk_regime / hk_playbook"
   },
   "fear_euphoria": {
-    "fe_score": 89,
-    "band": "Greed",
-    "band_zh": "\u8d2a\u5a6a",
-    "roro": 0.494,
+    "fe_score": 90,
+    "band": "Euphoria",
+    "band_zh": "\u6b23\u559c",
+    "roro": 0.501,
     "roro_state": "risk-on",
     "legs": [
       {
         "key": "copper_gold",
         "name_en": "Copper / Gold",
         "name_zh": "\u94dc\uff0f\u91d1 \u6bd4",
-        "value": 0.783,
-        "pct": 90,
+        "value": 0.867,
+        "pct": 91,
         "lean": "risk-on"
       },
       {
@@ -6946,8 +6946,8 @@
         "key": "dxy",
         "name_en": "US Dollar (20d)",
         "name_zh": "\u7f8e\u5143\uff0820\u65e5\uff09",
-        "value": 2.051,
-        "pct": 96,
+        "value": 2.079,
+        "pct": 97,
         "lean": "risk-on"
       },
       {
@@ -7095,8 +7095,8 @@
     {
       "rule": "fear_euphoria_extreme",
       "severity": "warn",
-      "message": "Sentiment reached the euphoria-caution band (89/100, Greed) \u2014 historically a caution zone; crowding is one-sided, not a forecast",
-      "message_zh": "\u60c5\u7eea\u8fdb\u5165\u6b23\u559c\u8b66\u60d5\u533a\uff0889/100\uff0c\u8d2a\u5a6a\uff09\u2014 \u5386\u53f2\u4e0a\u7684\u8b66\u60d5\u533a\uff1b\u62e5\u6324\u4e00\u8fb9\u5012\uff0c\u5e76\u975e\u9884\u6d4b",
+      "message": "Sentiment reached the euphoria-caution band (90/100, Euphoria) \u2014 historically a caution zone; crowding is one-sided, not a forecast",
+      "message_zh": "\u60c5\u7eea\u8fdb\u5165\u6b23\u559c\u8b66\u60d5\u533a\uff0890/100\uff0c\u6b23\u559c\uff09\u2014 \u5386\u53f2\u4e0a\u7684\u8b66\u60d5\u533a\uff1b\u62e5\u6324\u4e00\u8fb9\u5012\uff0c\u5e76\u975e\u9884\u6d4b",
       "icon": "\ud83e\udd75",
       "plain_en": "Sentiment hit EUPHORIA \u2014 caution",
       "plain_zh": "\u60c5\u7eea\u89e6\u53ca\u300c\u6b23\u559c\u300d\u2014 \u8b66\u60d5",
@@ -7110,8 +7110,8 @@
     {
       "rule": "hk_roro_flip_on",
       "severity": "info",
-      "message": "Cross-asset RORO crossed into RISK-ON (now +0.49, was +0.31) \u2014 HK risk appetite turned up",
-      "message_zh": "\u8de8\u8d44\u4ea7 RORO \u4e0a\u7a7f\u8fdb\u5165\u300c\u504f\u597d\u98ce\u9669\u300d\uff08\u73b0 +0.49\uff0c\u524d +0.31\uff09\u2014 \u9999\u6e2f\u98ce\u9669\u504f\u597d\u8f6c\u6696",
+      "message": "Cross-asset RORO crossed into RISK-ON (now +0.50, was +0.31) \u2014 HK risk appetite turned up",
+      "message_zh": "\u8de8\u8d44\u4ea7 RORO \u4e0a\u7a7f\u8fdb\u5165\u300c\u504f\u597d\u98ce\u9669\u300d\uff08\u73b0 +0.50\uff0c\u524d +0.31\uff09\u2014 \u9999\u6e2f\u98ce\u9669\u504f\u597d\u8f6c\u6696",
       "icon": "\ud83d\udfe2",
       "plain_en": "Cross-asset risk appetite turned ON",
       "plain_zh": "\u8de8\u8d44\u4ea7\u98ce\u9669\u504f\u597d\u8f6c\u300c\u5f00\u300d",
