@@ -448,8 +448,14 @@ def _entry_status_coverage(frame: pd.DataFrame) -> dict[str, Any]:
     else:
         reasons = pd.Series("undisclosed", index=frame.index, dtype="object")
 
-    not_applicable = frame["entry_status"].isna() & reasons.isin(
-        BOARD_ENTRY_STATUS_NOT_APPLICABLE_REASONS
+    # `lane_not_stamped` is an explicit by-design null for the RAN lane only. If the
+    # same reason somehow appears on a buy/laggard row, excluding it would hide a
+    # corrupted applicable record, so it remains in that lane's coverage denominator.
+    ran_lane = frame["lane"].astype(str).eq("ran") if "lane" in frame.columns else False
+    not_applicable = (
+        frame["entry_status"].isna()
+        & reasons.isin(BOARD_ENTRY_STATUS_NOT_APPLICABLE_REASONS)
+        & ran_lane
     )
     applicable = frame.loc[~not_applicable]
     applicable_reasons = reasons.loc[applicable.index]
