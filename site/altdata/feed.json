@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-08-22T23:35:41.513466+00:00",
-  "as_of": "2026-08-22",
+  "generated_utc": "2026-08-23T00:20:43.251491+00:00",
+  "as_of": "2026-08-23",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
   "note": "Deterministic alt-data signals + normalized event feed for the reasoning brain. Display/context-only \u2014 not a scored axis.",
@@ -6213,20 +6213,20 @@
         "top_agency": "Department of Homeland Security"
       },
       {
-        "ticker": "GD",
-        "total_usd": 79799821.0,
-        "contracts": 28,
-        "agencies": 8,
-        "accel_x": 4.39,
-        "top_agency": "Department of Homeland Security"
+        "ticker": "T",
+        "total_usd": 74503561.0,
+        "contracts": 7,
+        "agencies": 6,
+        "accel_x": 20.71,
+        "top_agency": "Department of Transportation"
       },
       {
-        "ticker": "T",
-        "total_usd": 76271857.0,
-        "contracts": 8,
-        "agencies": 6,
-        "accel_x": 41.69,
-        "top_agency": "Department of Transportation"
+        "ticker": "GD",
+        "total_usd": 66543360.0,
+        "contracts": 25,
+        "agencies": 7,
+        "accel_x": 2.12,
+        "top_agency": "Department of Homeland Security"
       },
       {
         "ticker": "TPC",
@@ -6238,19 +6238,11 @@
       },
       {
         "ticker": "ACM",
-        "total_usd": 59252836.0,
-        "contracts": 10,
+        "total_usd": 59180609.0,
+        "contracts": 9,
         "agencies": 5,
-        "accel_x": 3.44,
+        "accel_x": 3.42,
         "top_agency": "Department of Homeland Security"
-      },
-      {
-        "ticker": "TXT",
-        "total_usd": 53470752.0,
-        "contracts": 5,
-        "agencies": 4,
-        "accel_x": null,
-        "top_agency": "Department of the Interior"
       },
       {
         "ticker": "AMRK",
@@ -6270,35 +6262,19 @@
       },
       {
         "ticker": "CDW",
-        "total_usd": 21485182.0,
-        "contracts": 64,
+        "total_usd": 19101604.0,
+        "contracts": 59,
         "agencies": 6,
-        "accel_x": 0.68,
+        "accel_x": 0.56,
         "top_agency": "Department of Transportation"
       },
       {
         "ticker": "MCK",
-        "total_usd": 18675567.0,
-        "contracts": 129,
+        "total_usd": 18646383.0,
+        "contracts": 126,
         "agencies": 3,
-        "accel_x": 5.2,
+        "accel_x": 5.15,
         "top_agency": "Department of Justice"
-      },
-      {
-        "ticker": "BAH",
-        "total_usd": 16346967.0,
-        "contracts": 12,
-        "agencies": 6,
-        "accel_x": 9.88,
-        "top_agency": "Department of Health and Human Services"
-      },
-      {
-        "ticker": "F",
-        "total_usd": 16233362.0,
-        "contracts": 320,
-        "agencies": 1,
-        "accel_x": 1.14,
-        "top_agency": "General Services Administration"
       },
       {
         "ticker": "PSN",
@@ -6309,11 +6285,35 @@
         "top_agency": "Department of Energy"
       },
       {
-        "ticker": "IBM",
-        "total_usd": 15553044.0,
-        "contracts": 6,
-        "agencies": 5,
-        "accel_x": 1.77,
+        "ticker": "F",
+        "total_usd": 15580228.0,
+        "contracts": 309,
+        "agencies": 1,
+        "accel_x": 1.05,
+        "top_agency": "General Services Administration"
+      },
+      {
+        "ticker": "AXON",
+        "total_usd": 13983015.0,
+        "contracts": 14,
+        "agencies": 6,
+        "accel_x": 0.42,
+        "top_agency": "Department of Homeland Security"
+      },
+      {
+        "ticker": "BAH",
+        "total_usd": 13739584.0,
+        "contracts": 11,
+        "agencies": 6,
+        "accel_x": 3.22,
+        "top_agency": "Department of Health and Human Services"
+      },
+      {
+        "ticker": "GEO",
+        "total_usd": 12983184.0,
+        "contracts": 2,
+        "agencies": 1,
+        "accel_x": 0.33,
         "top_agency": "Department of Homeland Security"
       }
     ],
@@ -6455,7 +6455,7 @@
     "material_8k": [
       {
         "ticker": "NWS",
-        "count": 21,
+        "count": 20,
         "items": "8.01"
       },
       {
@@ -6474,11 +6474,6 @@
         "items": "1.01, 2.01, 2.03, 5.02, 7.01, 8.01"
       },
       {
-        "ticker": "QBTS",
-        "count": 6,
-        "items": "5.02, 7.01"
-      },
-      {
         "ticker": "BAX",
         "count": 5,
         "items": "1.01, 5.02, 7.01, 8.01"
@@ -6489,14 +6484,14 @@
         "items": "7.01, 8.01"
       },
       {
+        "ticker": "QBTS",
+        "count": 5,
+        "items": "5.02, 7.01"
+      },
+      {
         "ticker": "SWKS",
         "count": 5,
         "items": "1.01, 2.03, 8.01"
-      },
-      {
-        "ticker": "AXP",
-        "count": 4,
-        "items": "7.01, 8.01"
       },
       {
         "ticker": "CHTR",
@@ -6517,11 +6512,6 @@
         "ticker": "CTVA",
         "count": 4,
         "items": "1.01, 7.01, 8.01"
-      },
-      {
-        "ticker": "GLXY",
-        "count": 4,
-        "items": "1.01, 2.03, 5.02, 7.01, 8.01"
       },
       {
         "ticker": "MOS",
@@ -6547,6 +6537,11 @@
         "ticker": "AVB",
         "count": 3,
         "items": "2.01, 5.02, 7.01, 8.01"
+      },
+      {
+        "ticker": "AXP",
+        "count": 3,
+        "items": "7.01, 8.01"
       },
       {
         "ticker": "BEN",
@@ -6577,6 +6572,11 @@
         "ticker": "ECHO",
         "count": 3,
         "items": "2.01, 5.02, 7.01, 8.01"
+      },
+      {
+        "ticker": "EXE",
+        "count": 3,
+        "items": "7.01, 8.01"
       }
     ],
     "special_situations": [
@@ -25748,23 +25748,9 @@
       {
         "ticker": "VZ",
         "spend_usd": 3835000.0,
-        "filings": 17,
+        "filings": 16,
         "spike_x": null,
         "top_issue": "Telecommunications"
-      },
-      {
-        "ticker": "BMY",
-        "spend_usd": 3690000.0,
-        "filings": 10,
-        "spike_x": null,
-        "top_issue": "Pharmacy"
-      },
-      {
-        "ticker": "BA",
-        "spend_usd": 3330000.0,
-        "filings": 15,
-        "spike_x": null,
-        "top_issue": "Defense"
       },
       {
         "ticker": "MRK",
@@ -25802,13 +25788,6 @@
         "top_issue": "Health Issues"
       },
       {
-        "ticker": "UNH",
-        "spend_usd": 2610000.0,
-        "filings": 9,
-        "spike_x": null,
-        "top_issue": "Health Issues"
-      },
-      {
         "ticker": "GILD",
         "spend_usd": 2555000.0,
         "filings": 14,
@@ -25816,18 +25795,39 @@
         "top_issue": "Taxation/Internal Revenue Code"
       },
       {
-        "ticker": "PFE",
-        "spend_usd": 2500000.0,
-        "filings": 12,
-        "spike_x": null,
-        "top_issue": "Pharmacy"
-      },
-      {
         "ticker": "V",
         "spend_usd": 2360000.0,
-        "filings": 9,
+        "filings": 8,
         "spike_x": null,
-        "top_issue": "Banking"
+        "top_issue": "Financial Institutions/Investments/Securities"
+      },
+      {
+        "ticker": "QCOM",
+        "spend_usd": 2320000.0,
+        "filings": 10,
+        "spike_x": null,
+        "top_issue": "Copyright/Patent/Trademark"
+      },
+      {
+        "ticker": "CPNG",
+        "spend_usd": 2245000.0,
+        "filings": 7,
+        "spike_x": null,
+        "top_issue": "Economics/Economic Development"
+      },
+      {
+        "ticker": "HON",
+        "spend_usd": 2220000.0,
+        "filings": 11,
+        "spike_x": null,
+        "top_issue": "Defense"
+      },
+      {
+        "ticker": "TM",
+        "spend_usd": 2170500.0,
+        "filings": 5,
+        "spike_x": null,
+        "top_issue": "Transportation"
       }
     ],
     "offexchange": [
@@ -28518,168 +28518,168 @@
       {
         "ticker": "A",
         "next_date": "2026-08-26",
-        "days_to": 4,
+        "days_to": 3,
         "eps_forecast": 1.48,
         "last_surprise_pct": 6.4
       },
       {
         "ticker": "CRM",
         "next_date": "2026-08-26",
-        "days_to": 4,
+        "days_to": 3,
         "eps_forecast": 2.35,
         "last_surprise_pct": 32.6
       },
       {
         "ticker": "CRWD",
         "next_date": "2026-08-26",
-        "days_to": 4,
+        "days_to": 3,
         "eps_forecast": 0.05,
         "last_surprise_pct": 33.3
       },
       {
         "ticker": "NVDA",
         "next_date": "2026-08-26",
-        "days_to": 4,
+        "days_to": 3,
         "eps_forecast": 2.01,
         "last_surprise_pct": 10.0
       },
       {
         "ticker": "VEEV",
         "next_date": "2026-08-26",
-        "days_to": 4,
+        "days_to": 3,
         "eps_forecast": 1.62,
         "last_surprise_pct": 2.6
       },
       {
         "ticker": "DG",
         "next_date": "2026-08-27",
-        "days_to": 5,
+        "days_to": 4,
         "eps_forecast": 2.0,
         "last_surprise_pct": 5.8
       },
       {
         "ticker": "WDAY",
         "next_date": "2026-08-27",
-        "days_to": 5,
+        "days_to": 4,
         "eps_forecast": 1.26,
         "last_surprise_pct": -3.4
       },
       {
         "ticker": "ESTC",
         "next_date": "2026-08-27",
-        "days_to": 5,
+        "days_to": 4,
         "eps_forecast": null,
         "last_surprise_pct": 88.9
       },
       {
         "ticker": "SAIC",
         "next_date": "2026-08-31",
-        "days_to": 9,
+        "days_to": 8,
         "eps_forecast": 2.25,
         "last_surprise_pct": 42.9
       },
       {
         "ticker": "ASO",
         "next_date": "2026-09-01",
-        "days_to": 10,
+        "days_to": 9,
         "eps_forecast": 2.07,
         "last_surprise_pct": -3.6
       },
       {
         "ticker": "CRDO",
         "next_date": "2026-09-01",
-        "days_to": 10,
+        "days_to": 9,
         "eps_forecast": 0.91,
         "last_surprise_pct": 19.5
       },
       {
         "ticker": "DELL",
         "next_date": "2026-09-01",
-        "days_to": 10,
+        "days_to": 9,
         "eps_forecast": 4.63,
         "last_surprise_pct": 66.0
       },
       {
         "ticker": "MDB",
         "next_date": "2026-09-01",
-        "days_to": 10,
+        "days_to": 9,
         "eps_forecast": 0.08,
         "last_surprise_pct": -50.0
       },
       {
         "ticker": "GTLB",
         "next_date": "2026-09-01",
-        "days_to": 10,
+        "days_to": 9,
         "eps_forecast": null,
         "last_surprise_pct": 66.7
       },
       {
         "ticker": "AVGO",
         "next_date": "2026-09-02",
-        "days_to": 11,
+        "days_to": 10,
         "eps_forecast": 2.83,
         "last_surprise_pct": 7.4
       },
       {
         "ticker": "HPE",
         "next_date": "2026-09-02",
-        "days_to": 11,
+        "days_to": 10,
         "eps_forecast": 0.81,
         "last_surprise_pct": 52.3
       },
       {
         "ticker": "AI",
         "next_date": "2026-09-02",
-        "days_to": 11,
+        "days_to": 10,
         "eps_forecast": null,
         "last_surprise_pct": 2.7
       },
       {
         "ticker": "SNOW",
         "next_date": "2026-09-02",
-        "days_to": 11,
+        "days_to": 10,
         "eps_forecast": null,
         "last_surprise_pct": -18.6
       },
       {
         "ticker": "DOCU",
         "next_date": "2026-09-03",
-        "days_to": 12,
+        "days_to": 11,
         "eps_forecast": 0.44,
         "last_surprise_pct": 18.4
       },
       {
         "ticker": "GIII",
         "next_date": "2026-09-03",
-        "days_to": 12,
+        "days_to": 11,
         "eps_forecast": 0.25,
         "last_surprise_pct": 30.0
       },
       {
         "ticker": "PATH",
         "next_date": "2026-09-03",
-        "days_to": 12,
+        "days_to": 11,
         "eps_forecast": 0.04,
         "last_surprise_pct": 50.0
       },
       {
         "ticker": "ORCL",
         "next_date": "2026-09-08",
-        "days_to": 17,
+        "days_to": 16,
         "eps_forecast": 1.4,
         "last_surprise_pct": 13.3
       },
       {
         "ticker": "GME",
         "next_date": "2026-09-08",
-        "days_to": 17,
+        "days_to": 16,
         "eps_forecast": null,
         "last_surprise_pct": null
       },
       {
         "ticker": "ADBE",
         "next_date": "2026-09-10",
-        "days_to": 19,
+        "days_to": 18,
         "eps_forecast": 4.86,
         "last_surprise_pct": -3.4
       }
@@ -28785,7 +28785,7 @@
           "congress_cluster",
           "gov_contract_accel"
         ],
-        "why": "congress_cluster: 4 members net +5 \u00b7 gov_contract_accel: $76,271,857, 41.7x accel"
+        "why": "congress_cluster: 4 members net +5 \u00b7 gov_contract_accel: $74,503,561, 20.7x accel"
       },
       {
         "ticker": "AMD",
@@ -28861,18 +28861,6 @@
         "why": "13f_add: ONTARIO TEACHERS PENSION PLAN BOARD +$8,658,544,075 \u00b7 congress_cluster: 4 members net +8 \u00b7 special_situation: Acquisitions"
       },
       {
-        "ticker": "BA",
-        "score": 4,
-        "weighted_score": 1.35,
-        "channel_list": [
-          "gov_grant",
-          "lobbying",
-          "patent_cluster",
-          "stocktwits_bull"
-        ],
-        "why": "gov_grant: $7,820,571 federal grant/loan \u00b7 lobbying: $3,330,000 lobbied \u00b7 patent_cluster: 161 grants, 72 IPC classes \u00b7 stocktwits_bull: 69% bull \u00b7 197,131 watching"
-      },
-      {
         "ticker": "SRE",
         "score": 3,
         "weighted_score": 1.25,
@@ -28882,28 +28870,6 @@
           "trump"
         ],
         "why": "activist_13d: 13D activist campaign \u00b7 insider_mspr: MSPR 100.0 \u00b7 trump: SEMPRA"
-      },
-      {
-        "ticker": "TXT",
-        "score": 3,
-        "weighted_score": 1.2,
-        "channel_list": [
-          "gov_contract",
-          "insider_mspr",
-          "special_situation"
-        ],
-        "why": "gov_contract: $53,470,752 awarded \u00b7 insider_mspr: MSPR 60.7 \u00b7 special_situation: Spin-Offs"
-      },
-      {
-        "ticker": "PFE",
-        "score": 3,
-        "weighted_score": 1.2,
-        "channel_list": [
-          "clinical_phase3_start",
-          "fda_label_expansion",
-          "lobbying"
-        ],
-        "why": "clinical_phase3_start: 15 new Phase-3, 1 halt(s) \u00b7 fda_label_expansion: IBRANCE \u00b7 lobbying: $2,500,000 lobbied"
       },
       {
         "ticker": "BRK.B",
@@ -28924,17 +28890,6 @@
           "unusual_options"
         ],
         "why": "insider_mspr: MSPR 71.3 \u00b7 unusual_options: 4.65\u00d7 vol/OI, call-skew"
-      },
-      {
-        "ticker": "IBM",
-        "score": 3,
-        "weighted_score": 1.15,
-        "channel_list": [
-          "github_momentum",
-          "gov_contract",
-          "patent_cluster"
-        ],
-        "why": "github_momentum: +0.27% stars \u00b7 gov_contract: $15,553,044 awarded \u00b7 patent_cluster: 477 grants, 50 IPC classes"
       },
       {
         "ticker": "MU",
@@ -28966,7 +28921,7 @@
           "gov_contract_accel",
           "special_situation"
         ],
-        "why": "gov_contract_accel: $59,252,836, 3.4x accel \u00b7 special_situation: Strategic Reviews"
+        "why": "gov_contract_accel: $59,180,609, 3.4x accel \u00b7 special_situation: Strategic Reviews"
       },
       {
         "ticker": "MCK",
@@ -28976,7 +28931,18 @@
           "gov_contract_accel",
           "special_situation"
         ],
-        "why": "gov_contract_accel: $18,675,567, 5.2x accel \u00b7 special_situation: Divestitures"
+        "why": "gov_contract_accel: $18,646,383, 5.2x accel \u00b7 special_situation: Divestitures"
+      },
+      {
+        "ticker": "BA",
+        "score": 3,
+        "weighted_score": 1.05,
+        "channel_list": [
+          "gov_grant",
+          "patent_cluster",
+          "stocktwits_bull"
+        ],
+        "why": "gov_grant: $7,820,571 federal grant/loan \u00b7 patent_cluster: 161 grants, 72 IPC classes \u00b7 stocktwits_bull: 69% bull \u00b7 197,131 watching"
       },
       {
         "ticker": "CEG",
@@ -29050,6 +29016,37 @@
           "special_situation"
         ],
         "why": "analyst_upgrade_cluster: net upgrades +24 revision delta \u00b7 app_demand: 4.89\u2605 \u00d7 8,190,519 reviews \u00b7 special_situation: Strategic Reviews"
+      },
+      {
+        "ticker": "CAT",
+        "score": 2,
+        "weighted_score": 0.95,
+        "channel_list": [
+          "13f_add",
+          "insider_mspr"
+        ],
+        "why": "13f_add: Ascentis Wealth Management, LLC +$2,679,146,768 \u00b7 insider_mspr: MSPR 100.0"
+      },
+      {
+        "ticker": "QCOM",
+        "score": 3,
+        "weighted_score": 0.9,
+        "channel_list": [
+          "lobbying",
+          "patent_cluster",
+          "special_situation"
+        ],
+        "why": "lobbying: $2,320,000 lobbied \u00b7 patent_cluster: 791 grants, 43 IPC classes \u00b7 special_situation: Acquisitions"
+      },
+      {
+        "ticker": "NVS",
+        "score": 2,
+        "weighted_score": 0.9,
+        "channel_list": [
+          "clinical_phase3_start",
+          "fda_label_expansion"
+        ],
+        "why": "clinical_phase3_start: 8 new Phase-3, 4 halt(s) \u00b7 fda_label_expansion: PLUVICTO"
       }
     ]
   }
