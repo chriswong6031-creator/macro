@@ -224,8 +224,11 @@ def test_same_session_rerun_is_zero_vendor_calls(store, monkeypatch):
 
 
 def test_f12_s_suspect_non_session_flag(store, monkeypatch):
-    plan = {("eod", r, S_MID): _empty_df() for r in ["SPY", "QQQ", "AAPL"]}
-    _wire_daily(monkeypatch, store, t1=["SPY", "QQQ", "AAPL"], ad=["SPY", "QQQ", "AAPL"])
+    # 5 roots, all attempted + all vendor-empty: clears the N1 min-attempt
+    # floor (max(5, ceil(5% of 5))=5) with ratio 100% > 50%.
+    roots = ["SPY", "QQQ", "AAPL", "MSFT", "AMZN"]
+    plan = {("eod", r, S_MID): _empty_df() for r in roots}
+    _wire_daily(monkeypatch, store, t1=roots, ad=roots)
     fake = FakeTd(plan=plan)
     _install_fake_td(monkeypatch, fake)
     rc = topup._daily_main(workers=2, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
@@ -235,8 +238,9 @@ def test_f12_s_suspect_non_session_flag(store, monkeypatch):
 
 
 def test_f12_not_suspect_when_under_half_vendor_empty(store, monkeypatch):
-    plan = {("eod", "SPY", S_MID): _empty_df()}
-    _wire_daily(monkeypatch, store, t1=["SPY", "QQQ", "AAPL"], ad=["SPY", "QQQ", "AAPL"])
+    roots = ["SPY", "QQQ", "AAPL", "MSFT", "AMZN"]
+    plan = {("eod", "SPY", S_MID): _empty_df()}   # 1/5 = 20%, under the ratio bar
+    _wire_daily(monkeypatch, store, t1=roots, ad=roots)
     fake = FakeTd(plan=plan)
     _install_fake_td(monkeypatch, fake)
     topup._daily_main(workers=2, deadline_min=topup._DEFAULT_DEADLINE_MIN, forced=False,
@@ -248,36 +252,34 @@ def test_f12_not_suspect_when_under_half_vendor_empty(store, monkeypatch):
 # ── RF8 (R3): denominator = roots with an ACTUAL EOD[S] vendor attempt ─────
 def test_rf8_aggregate_denominator_excludes_already_present():
     """Direct flip test: the OLD denominator (all processed roots) would
-    have read 2/4=50% here — NOT over the >50% bar, so a real closure signal
-    would have been invisible. The FIXED denominator (only the 2 ROOTS
-    actually asked this run) reads 2/2=100%."""
-    results = {
-        "SPY": topup.RootResult(root="SPY", state="already_present", cells={
+    have read 5/10=50% here — NOT over the >50% bar, so a real closure
+    signal would have been invisible. The FIXED denominator (only the 5
+    ROOTS actually asked this run) reads 5/5=100%. 5 attempted also clears
+    the N1 min-attempt floor for a 10-root universe (max(5, ceil(0.05*10))=5)."""
+    results = {}
+    for i in range(5):
+        root = f"AP{i}"
+        results[root] = topup.RootResult(root=root, state="already_present", cells={
             "eod_S": "already_present", "oi_S": "already_present",
-            "oi_D": "already_present", "greeks_S": "already_present"}),
-        "QQQ": topup.RootResult(root="QQQ", state="already_present", cells={
-            "eod_S": "already_present", "oi_S": "already_present",
-            "oi_D": "already_present", "greeks_S": "already_present"}),
-        "AAPL": topup.RootResult(root="AAPL", state="vendor_empty", cells={
+            "oi_D": "already_present", "greeks_S": "already_present"})
+    for i in range(5):
+        root = f"VE{i}"
+        results[root] = topup.RootResult(root=root, state="vendor_empty", cells={
             "eod_S": "vendor_empty", "oi_S": "vendor_empty",
-            "oi_D": "vendor_empty", "greeks_S": "vendor_empty"}),
-        "MSFT": topup.RootResult(root="MSFT", state="vendor_empty", cells={
-            "eod_S": "vendor_empty", "oi_S": "vendor_empty",
-            "oi_D": "vendor_empty", "greeks_S": "vendor_empty"}),
-    }
+            "oi_D": "vendor_empty", "greeks_S": "vendor_empty"})
     agg = topup._aggregate_daily(results, list(results), list(results))
-    old_denominator_ratio = 2 / len(results)   # what the pre-RF8 code computed
+    old_denominator_ratio = 5 / len(results)   # what the pre-RF8 code computed
     assert not (old_denominator_ratio > topup._S_SUSPECT_VENDOR_EMPTY_FRACTION)
     assert agg["s_suspect_non_session"] is True
 
 
 def test_rf8_ladder_refire_fixture_end_to_end(store, monkeypatch):
-    """Same shape as above but through the real `_daily_main` pipeline: 2
+    """Same shape as above but through the real `_daily_main` pipeline: 5
     roots already fully present (a prior ladder rung already fetched them
-    today) + 2 freshly-attempted roots that come back EOD[S] vendor-empty
-    (an unlisted market closure)."""
-    already_present_roots = ["SPY", "QQQ"]
-    attempted_roots = ["AAPL", "MSFT"]
+    today) + 5 freshly-attempted roots that come back EOD[S] vendor-empty
+    (an unlisted market closure) — 5 attempted clears the N1 floor."""
+    already_present_roots = [f"AP{i}" for i in range(5)]
+    attempted_roots = [f"VE{i}" for i in range(5)]
     for root in already_present_roots:
         for tier, day in (("eod", S_MID), ("oi", S_MID), ("oi", D_MID), ("greeks", S_MID)):
             topup._merge_day(store, tier, root, day, _df(day))
@@ -290,6 +292,65 @@ def test_rf8_ladder_refire_fixture_end_to_end(store, monkeypatch):
                       now_fn=lambda: _et(2026, 8, 19, 16, 30))
     receipt = _manifest(store)["daily_refresh"]
     assert receipt["s_suspect_non_session"] is True
+
+
+# ── N1 (R3 verify-pass): minimum-attempt floor on the s_suspect ratio ──────
+def test_n1_reviewer_exact_19_plus_1_fixture_is_false():
+    """The exact reviewer-falsifying fixture: 19 roots already_present (a
+    ladder re-fire steady state) + 1 genuinely option-less root attempted
+    (vendor_empty). Pre-N1 this read eod_s_attempted=1, ratio=1/1=100% ->
+    a spurious True from a single root. The floor
+    (max(5, ceil(5% of t1_universe_count))) keeps a 1-root sample from
+    ever meaning anything."""
+    results = {}
+    for i in range(19):
+        root = f"AP{i}"
+        results[root] = topup.RootResult(root=root, state="already_present", cells={
+            "eod_S": "already_present", "oi_S": "already_present",
+            "oi_D": "already_present", "greeks_S": "already_present"})
+    results["ZZZZ"] = topup.RootResult(root="ZZZZ", state="vendor_empty", cells={
+        "eod_S": "vendor_empty", "oi_S": "vendor_empty",
+        "oi_D": "vendor_empty", "greeks_S": "vendor_empty"})
+    agg = topup._aggregate_daily(results, list(results), list(results))
+    assert agg["s_suspect_non_session"] is False
+
+
+def test_n1_genuine_closure_above_the_floor_is_true():
+    """A REAL closure with enough attempted roots to clear the floor still
+    flags correctly — N1's floor guards against noise, not against
+    detection. 15 already_present + 6 attempted (all vendor_empty): 6 >=
+    max(5, ceil(0.05*21))=5, ratio 100% > 50%."""
+    results = {}
+    for i in range(15):
+        root = f"AP{i}"
+        results[root] = topup.RootResult(root=root, state="already_present", cells={
+            "eod_S": "already_present", "oi_S": "already_present",
+            "oi_D": "already_present", "greeks_S": "already_present"})
+    for i in range(6):
+        root = f"VE{i}"
+        results[root] = topup.RootResult(root=root, state="vendor_empty", cells={
+            "eod_S": "vendor_empty", "oi_S": "vendor_empty",
+            "oi_D": "vendor_empty", "greeks_S": "vendor_empty"})
+    agg = topup._aggregate_daily(results, list(results), list(results))
+    assert agg["s_suspect_non_session"] is True
+
+
+def test_n1_floor_scales_with_universe_size():
+    """For a large universe, the 5% term can exceed the flat floor of 5 —
+    e.g. a 200-root universe needs >=10 attempted roots, not just 5."""
+    results = {}
+    for i in range(190):
+        root = f"AP{i}"
+        results[root] = topup.RootResult(root=root, state="already_present", cells={
+            "eod_S": "already_present", "oi_S": "already_present",
+            "oi_D": "already_present", "greeks_S": "already_present"})
+    for i in range(8):   # 8 attempted, all vendor_empty — 8 < ceil(0.05*198)=10
+        root = f"VE{i}"
+        results[root] = topup.RootResult(root=root, state="vendor_empty", cells={
+            "eod_S": "vendor_empty", "oi_S": "vendor_empty",
+            "oi_D": "vendor_empty", "greeks_S": "vendor_empty"})
+    agg = topup._aggregate_daily(results, list(results), list(results))
+    assert agg["s_suspect_non_session"] is False   # under the scaled floor
 
 
 def test_rf8_zero_attempts_is_false_never_divides_by_zero(store):
@@ -1108,11 +1169,16 @@ def test_sentinel_script_mentions_daily_refresh_and_session_date():
     assert "session_date" in text
 
 
-def _run_sentinel(*, now_utc_iso: str, manifest_d: str, tmp_path):
+def _run_sentinel(*, now_utc_iso: str, manifest_d: str, tmp_path,
+                  repo_root: str | None = None, cwd: str | None = None):
     """Invoke the REAL sentinel script (RF1, R3 — computed, not grep-only)
     with its test seams: SENTINEL_NOW_UTC overrides the wall clock, STORE
     points at a crafted tmp store, HEALTH_URL points at a closed port so the
-    terminal-health curl fails fast instead of a 6s timeout."""
+    terminal-health curl fails fast instead of a 6s timeout. `repo_root`
+    (N3) lets a test inject a broken REPO_ROOT to force the
+    `from lib import nyse_calendar` import to fail; `cwd` closes the loophole
+    where python's stdin-script sys.path[0] (the process cwd) would
+    otherwise still resolve `lib` regardless of REPO_ROOT."""
     store = tmp_path / "store"
     (store / "greeks" / "SPY").mkdir(parents=True)
     (store / "_manifest.json").write_text(json.dumps(
@@ -1126,13 +1192,15 @@ def _run_sentinel(*, now_utc_iso: str, manifest_d: str, tmp_path):
         "PATH": "/usr/bin:/bin:/usr/local/bin:/opt/homebrew/bin",
         "HOME": str(tmp_path),
     }
+    if repo_root is not None:
+        env["REPO_ROOT"] = repo_root
     # OUT_JSON/LOG are not env-overridable in the script (production paths
     # are the fixed /tmp files below) — read the script's real /tmp output;
     # safe here because the assertion is on daily_refresh_anchor_due, a pure
     # function of NOW/D that doesn't depend on any other concurrent writer.
     result = subprocess.run(
         ["bash", str(SENTINEL_SH), "--due-today"],
-        env=env, capture_output=True, text=True, timeout=30)
+        env=env, cwd=cwd, capture_output=True, text=True, timeout=30)
     assert result.returncode == 0, result.stderr
     return json.loads(Path("/tmp/theta_staleness.json").read_text())
 
@@ -1161,6 +1229,34 @@ def test_rf1_anchor_due_and_stale_alerts(tmp_path):
     assert verdict["daily_refresh_anchor_due"] is True
     assert verdict["level"] == "ALERT"
     assert any("daily_refresh.D stale" in r for r in verdict["reasons"])
+
+
+def test_n3_broken_calendar_import_alerts_regardless_of_anchor_due(tmp_path):
+    """(N3, R3 verify-pass) The pre-N3 shape left `anchor_due` at its False
+    default when the calendar import/eval itself raised, so the
+    `if anchor_due:` gate was never entered and the failure was invisible —
+    the same silent-dead-instrument class RF1 fixed for the threshold.
+    Inject a broken REPO_ROOT (and a cwd with no `lib/` package to close the
+    stdin-script sys.path[0]-is-cwd loophole) at a time that is NOT anchor-due
+    (morning fire) — this must STILL ALERT, proving the fix does not merely
+    ride along with the evening-fire case."""
+    isolated_cwd = tmp_path / "no_lib_here"
+    isolated_cwd.mkdir()
+    verdict = _run_sentinel(
+        now_utc_iso="2026-08-19T13:15:00+00:00",   # 09:15 ET — NOT due under a working calendar
+        manifest_d="2026-08-19", tmp_path=tmp_path,
+        repo_root=str(tmp_path / "nonexistent_repo_root"),
+        cwd=str(isolated_cwd))
+    assert verdict["daily_refresh_anchor_eval_failed"] is True
+    assert verdict["level"] == "ALERT"
+    assert any("staleness anchor cannot evaluate" in r for r in verdict["reasons"])
+
+
+def test_n3_working_calendar_import_does_not_report_eval_failed(tmp_path):
+    """Sanity converse: a WORKING import never sets the eval-failed flag."""
+    verdict = _run_sentinel(now_utc_iso="2026-08-19T13:15:00+00:00",
+                            manifest_d="2026-08-19", tmp_path=tmp_path)
+    assert verdict["daily_refresh_anchor_eval_failed"] is False
 
 
 def test_lock_refusal_writes_no_receipt(store, monkeypatch):

@@ -79,7 +79,10 @@ python -m scripts.topup_thetadata_day --daily [--workers N] [--deadline-min M] [
   daily run ensures the missed S cells by construction.)
 - `--workers` defaults to the frozen production count (§F); values above 6
   are rejected (hard vendor-safety cap).
-- `--deadline-min` (F2) defaults to 100; §B semantics.
+- `--deadline-min` (F2) defaults to 65 (RF7 — strictly under the 70-min
+  minimum fire-point spacing so a lock is never held into the next rung;
+  pinned by a test that parses the plist's actual fire points); §B
+  semantics.
 - `--force-run` bypasses the session/time gate for diagnostics ONLY and
   stamps `forced=true` in the health receipt. Scheduled invocations never
   pass it.

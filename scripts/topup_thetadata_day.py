@@ -69,6 +69,7 @@ import argparse
 import fcntl
 import json
 import logging
+import math
 import subprocess
 import sys
 import time as _time
@@ -104,6 +105,10 @@ _DEFAULT_DEADLINE_MIN = 65       # §F2
 _GATE_TIME_ET = _time_of_day(16, 10)
 _REPROBE_FETCH_FAILED_FRACTION = 0.25   # F5
 _S_SUSPECT_VENDOR_EMPTY_FRACTION = 0.50  # F12
+# (N1, R3 verify-pass) minimum EOD[S]-attempted-roots floor before the
+# s_suspect_non_session ratio means anything: max(5, ceil(5% of the T1
+# universe)). Below this, eod_s_attempted is too small a sample either way.
+_S_SUSPECT_MIN_ATTEMPT_FRACTION = 0.05
 
 WRITER_LOCK_NAME = "_writer.lock"
 
@@ -606,11 +611,20 @@ def _aggregate_daily(results: dict[str, RootResult], t1_universe: list[str],
     # asked). A cell that never even reached "eod_S" (root failed earlier)
     # is likewise not an attempt. Zero attempts => flag False (never divide
     # by zero, never guess).
+    #
+    # (N1, R3 verify-pass) RF8's fix over-corrected the OTHER direction: a
+    # TINY attempted set makes the ratio noisy the opposite way — falsified
+    # live: 19 already_present roots + 1 genuinely option-less root gives
+    # eod_s_attempted=1, eod_s_vendor_empty=1, ratio=1.0 (100%), a spurious
+    # flag from a SINGLE root. A minimum-attempt floor guards both directions
+    # at once: below the floor, the sample is too small to say anything about
+    # "is today a session" and the flag is False regardless of the ratio.
     eod_s_attempted = sum(1 for r in results.values()
                          if r.cells.get("eod_S") not in (None, "already_present"))
     eod_s_vendor_empty = sum(1 for r in results.values()
                              if r.cells.get("eod_S") == "vendor_empty")
-    s_suspect_non_session = (eod_s_attempted > 0
+    min_attempts_floor = max(5, math.ceil(_S_SUSPECT_MIN_ATTEMPT_FRACTION * len(t1_universe)))
+    s_suspect_non_session = (eod_s_attempted >= min_attempts_floor
                              and (eod_s_vendor_empty / eod_s_attempted
                                   > _S_SUSPECT_VENDOR_EMPTY_FRACTION))
 

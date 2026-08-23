@@ -47,10 +47,12 @@ PYTHON="/opt/homebrew/Caskroom/miniconda/base/bin/python"
 # AD-1T1 F8: repo root, for importing lib.nyse_calendar (session_date()) in
 # the anchor check below. Computed relative to this script's own location so
 # it resolves correctly wherever the ops-tree copy lives (see runbook).
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-# STORE/HEALTH_URL/SENTINEL_NOW_UTC are all env-overridable (`:-` defaults) —
-# purely a test seam for a computed (not grep-only) anchor test; production
-# invocation via launchd never sets them and gets the real values below.
+# REPO_ROOT/STORE/HEALTH_URL/SENTINEL_NOW_UTC are all env-overridable
+# (`:-` defaults) — purely a test seam (N3: injecting a broken REPO_ROOT is
+# how the fail-closed anchor-eval-failure path gets exercised without
+# actually deleting lib/nyse_calendar.py); production invocation via
+# launchd never sets any of them and gets the real values below.
+REPO_ROOT="${REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 STORE="${STORE:-/Users/chriswong/theta-ops-wt/data/thetadata_eod}"
 OUT_JSON="/tmp/theta_staleness.json"
 LOG="/tmp/theta_staleness.log"
@@ -160,6 +162,15 @@ except Exception as e:
     anchor_err = f"manifest read failed: {type(e).__name__}: {e}"
 
 anchor_due = False
+# (N3, R3 verify-pass) FAIL CLOSED. The old shape left `anchor_due` at its
+# False default when this try block itself raised (a broken REPO_ROOT, a
+# renamed/deleted lib.nyse_calendar, an import-time error) — so the
+# `if anchor_due:` gate below was NEVER entered and the failure was
+# invisible, the exact same silent-dead-instrument class RF1 fixed for the
+# threshold. `calendar_eval_failed` is tracked SEPARATELY so a broken
+# evaluator ALERTs unconditionally, never gated on whether it also
+# (successfully, which it didn't) decided the anchor was due.
+calendar_eval_failed = False
 try:
     sys.path.insert(0, os.environ.get("REPO_ROOT", ""))
     from lib import nyse_calendar
@@ -181,9 +192,13 @@ try:
     anchor_due = (nyse_calendar.is_session(now_et.date())
                  and now_et.time() >= dt.time(20, 0))
 except Exception as e:
+    calendar_eval_failed = True
     anchor_err = anchor_err or f"nyse_calendar import/eval failed: {type(e).__name__}: {e}"
 
-if anchor_due:
+if calendar_eval_failed:
+    level = "ALERT"
+    reasons.append(f"staleness anchor cannot evaluate: {anchor_err}")
+elif anchor_due:
     if anchor_err:
         level = "ALERT"
         reasons.append(f"daily_refresh anchor check failed: {anchor_err}")
@@ -204,6 +219,7 @@ verdict = {
     "daily_refresh_d": daily_refresh_d,
     "daily_refresh_expected": expected_session,
     "daily_refresh_anchor_due": anchor_due,
+    "daily_refresh_anchor_eval_failed": calendar_eval_failed,
     "reasons": reasons,
 }
 tmp = out_json + ".tmp"
