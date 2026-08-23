@@ -23,12 +23,13 @@
 # wave, per ADJUDICATIONS.md and COMMISSION.md S20/S2: "R3A is authority substrate ... any
 # candidate for [IMPROVE/RELOCATE/REMOVE] requires a new ruling first -- no implicit deletion."
 #
-# (Predecessor drafting-pass note about a PENDING frozen_sha removed at successor freeze.)
+# Frozen successor identity is bound to the immutable artifact commit below; the later
+# metadata-only in_review stamp does not alter any proposed artifact byte.
 schema: mastermind.rig_proposal.v1
 reference_id: mastermind-xpv2-sector-r3b-2
 
 proposed_artifact:
-  frozen_sha: "PENDING_FREEZE_R3B2_CANDIDATE"   # replaced with the real 40-hex R3B.2 freeze commit (from git log -1 --format=%H) in the same edit that flips status draft -> in_review
+  frozen_sha: "2a7d581ad7512918079f4e27c0a405417879ed76"
   paths:
     - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/proposal/MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html
     - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/proposal/BUILD_MANIFEST.json

@@ -13,11 +13,10 @@
 schema: mastermind.rig_manifest.v1
 reference_id: mastermind-xpv2-sector-r3b-2
 scope: full
-status: draft
-# The orchestrator flips status: draft -> in_review at successor freeze, once
-# proposed_artifact.frozen_sha and reference_files[].frozen_sha are the real 40-hex
-# successor commit SHA (taken from `git log -1 --format=%H`, never hand-expanded) and the
-# fresh evidence matrix lands (COMMISSION.md Evidence matrix + Stop condition).
+status: in_review
+# Frozen for Sol review at immutable artifact commit
+# 2a7d581ad7512918079f4e27c0a405417879ed76 after the fresh evidence matrix landed.
+# This metadata stamp does not change candidate, build, or evidence bytes.
 
 surface:
   route: sector_central.html
@@ -38,18 +37,16 @@ lineage:
   # 2026-08-23) produces the machine-complete 12-row closure set recorded in
   # continuity.yml. The R3A substrate remains authority substrate, not a RIG predecessor.
 
-reference_files:            # the successor reference artifact -- PLANNED paths, not yet frozen.
-  # PENDING_FREEZE_* placeholders are replaced with the real 40-hex commit SHA in the same
-  # edit that flips status: draft -> in_review.
+reference_files:            # the immutable successor reference artifact.
   - path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/proposal/MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html
-    frozen_sha: "PENDING_FREEZE_R3B2_CANDIDATE"
+    frozen_sha: "2a7d581ad7512918079f4e27c0a405417879ed76"
   - path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/proposal/BUILD_MANIFEST.json
-    frozen_sha: "PENDING_FREEZE_R3B2_CANDIDATE"
+    frozen_sha: "2a7d581ad7512918079f4e27c0a405417879ed76"
   - path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/
-    frozen_sha: "PENDING_FREEZE_R3B2_CANDIDATE"
+    frozen_sha: "2a7d581ad7512918079f4e27c0a405417879ed76"
     note: "source directory -- byte-identical copy of frozen R3B.1 at cycle start, then bounded final-set changes only: B2-01/05/06/08/09/10/11/12/13/14/15 plus discriminating guards; withdrawn old B2-02/03/04/07 bytes reverted"
   - path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/
-    frozen_sha: "PENDING_FREEZE_R3B2_CANDIDATE"
+    frozen_sha: "2a7d581ad7512918079f4e27c0a405417879ed76"
     note: "fresh 61-screenshot matrix plus hash-bound browser/programmatic receipts; exact file hashes in evidence/capture_manifest.json and evidence/EVIDENCE_INDEX.md; heatmap colour-field axis honestly UNMEASURED"
 
 files:
@@ -62,4 +59,4 @@ files:
   # verdict/approval: Sol's, post-critics. Never authored by this cycle.
 
 # lightweight: not applicable -- scope: full.
-# superseded: not applicable -- status: draft, no successor exists.
+# superseded: not applicable -- status: in_review, no successor exists.
