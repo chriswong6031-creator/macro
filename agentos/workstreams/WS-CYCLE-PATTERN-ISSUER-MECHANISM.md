@@ -649,8 +649,14 @@ next_action: >
   FY2026 Q3, ~late Sep 2026). Outcomes remain FENCED — the observation
   schema carries zero outcome fields by whitelist-tested construction.
   Named source-coverage gaps riding to Sol: TOL §1b sensitivity
-  prior-year comparator not extracted by A5A (sensitivity diagnostic
-  NOT_RECONSTRUCTABLE until a source-plane extension); Treasury CMT
+  prior-year comparator not extracted by A5A — CLOSED by PR #6307 (A5C,
+  DRAFT pending the commissioning session's merge): the source plane now
+  emits fact_cancellation_rate_beginning_backlog_sensitivity_prior_year
+  from the same row's prior-year cell, so
+  engine/cycle_pattern/imce_prospective.py:161's
+  TOL_SENSITIVITY_PRIOR_YEAR_FACT_ID lookup self-heals to a real value the
+  moment #6307 merges, zero consumption-side code change (see wave A5C
+  below for the receipt spans and conventions); Treasury CMT
   C_t leg typed-absent (GO_LIMITED permits persistence; no first-party
   fetcher exists yet — natural next increment); workspace vintage
   retrieval is latest-generation-only (re-extraction of a past event

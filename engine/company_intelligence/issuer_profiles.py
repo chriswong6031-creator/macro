@@ -1176,6 +1176,7 @@ def _tol_extract_release_facts(*, bound: BoundRelease, document_id: str, event_i
     backlog_basis = "quarterly cancellations as a percentage of beginning-quarter backlog (Toll Brothers sensitivity convention)"
     backlog_receipt = backlog_prior_receipt = None
     backlog_value = backlog_prior_value = None
+    backlog_prior_detail = "the prior-year beginning-quarter-backlog cancellation sensitivity measure is not present in Exhibit 99.1"
     if backlog_row is not None:
         backlog_basis = backlog_row[0].text
         cells = [cell for cell in backlog_row[1:] if cell.text.strip() not in ("", "%")]
@@ -1185,7 +1186,21 @@ def _tol_extract_release_facts(*, bound: BoundRelease, document_id: str, event_i
                 literal=cells[0].text,
             )
             backlog_value = cells[0].text if backlog_receipt is not None else None
-        if len(cells) >= 2:
+        # Red-team MINOR-2: the prior-year fact only fires on an
+        # UNAMBIGUOUS two-cell row shape (current + prior-year, exactly).
+        # This exhibit carries other blocks combining "three months" AND
+        # "nine months" columns in one row; a >=3-cell row of that shape
+        # would otherwise let cells[1] silently bind to a non-prior-year
+        # figure with a byte-exact-but-WRONG receipt. Any shape other than
+        # exactly 2 numeric cells is typed absence, never a guess. The
+        # current-quarter fact above keeps its existing `if cells:` (>=1)
+        # behavior, byte-identical to pre-PR main.
+        if len(cells) > 2:
+            backlog_prior_detail = (
+                f"the beginning-quarter-backlog row carries {len(cells)} numeric cells, an ambiguous "
+                "shape (expected exactly 2: current-quarter + prior-year)"
+            )
+        elif len(cells) == 2:
             # NO inference / NO substitution: the prior-year cell mints its
             # OWN receipt over its OWN span -- if it is absent or its literal
             # fails to replay, the prior-year fact goes typed-absent on its
@@ -1195,7 +1210,25 @@ def _tol_extract_release_facts(*, bound: BoundRelease, document_id: str, event_i
                 bound, search_start=cells[1].source_span.char_start, search_end=cells[1].source_span.char_end,
                 literal=cells[1].text,
             )
-            backlog_prior_value = cells[1].text if backlog_prior_receipt is not None else None
+            if backlog_prior_receipt is not None:
+                # Red-team MAJOR-1: guard the parse. A prior-year cell shaped
+                # "N/A", "(1)", or any other non-float literal must not raise
+                # -- an unhandled ValueError here would propagate out of
+                # extract_release_facts and kill the ENTIRE TOL workspace
+                # build on the nightly path. Unparseable ⇒ typed absence on
+                # its own terms; the current-quarter fact is unaffected
+                # either way (frozen spec item 2). This guard is scoped to
+                # ONLY the cell this PR newly reads -- the sibling rows'
+                # existing unguarded float() idiom (e.g. line below, and the
+                # current-quarter fact just above) is left byte-identical.
+                try:
+                    backlog_prior_value = float(cells[1].text)
+                except ValueError:
+                    backlog_prior_receipt = None
+                    backlog_prior_detail = (
+                        f"the prior-year beginning-quarter-backlog cell ({cells[1].text!r}) is not a "
+                        "parseable percentage"
+                    )
     facts.append(
         _fact_present(
             fact_id="fact_cancellation_rate_beginning_backlog_sensitivity", event_id=event_id,
@@ -1213,7 +1246,7 @@ def _tol_extract_release_facts(*, bound: BoundRelease, document_id: str, event_i
     facts.append(
         _fact_present(
             fact_id="fact_cancellation_rate_beginning_backlog_sensitivity_prior_year", event_id=event_id,
-            metric="cancellation_rate_sensitivity", value=float(backlog_prior_value), unit="percent",
+            metric="cancellation_rate_sensitivity", value=backlog_prior_value, unit="percent",
             period="prior_year_same_quarter", basis=backlog_basis, document_id=document_id, bound=bound,
             receipt=backlog_prior_receipt,
         )
@@ -1221,10 +1254,7 @@ def _tol_extract_release_facts(*, bound: BoundRelease, document_id: str, event_i
         else _fact_absent(
             fact_id="fact_cancellation_rate_beginning_backlog_sensitivity_prior_year", event_id=event_id,
             metric="cancellation_rate_sensitivity",
-            detail=(
-                "the prior-year beginning-quarter-backlog cancellation sensitivity measure is not present "
-                "in Exhibit 99.1"
-            ),
+            detail=backlog_prior_detail,
             document_id=document_id,
         )
     )
