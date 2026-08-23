@@ -1,0 +1,358 @@
+{
+  "authority": {
+    "can_add_candidates": false,
+    "can_escalate": false,
+    "can_gate": false,
+    "can_originate_signal": false,
+    "can_rank": false,
+    "can_size": false,
+    "context_only": true,
+    "tier": "display"
+  },
+  "capabilities": [
+    {
+      "evidence_refs": [
+        "ev:4f8d159388a7"
+      ],
+      "id": "acq-capability:undersea-warfare",
+      "known_at": "2026-08-22T08:00:00+00:00",
+      "name": "Undersea warfare",
+      "need_statement": "Attack-submarine force level below the Navy's stated force-structure goal.",
+      "revision": 1,
+      "source_identities": [
+        {
+          "evidence_ref": "ev:4f8d159388a7",
+          "native_identifier": "CRS RL32418",
+          "system": "congressional_research"
+        }
+      ],
+      "valid_from": "2025-03-28T00:00:00+00:00",
+      "valid_to": null,
+      "verification_state": "reviewed"
+    }
+  ],
+  "conflicts": [],
+  "contract": "government_program_ontology.v1",
+  "evidence": [
+    {
+      "claim_scopes": [
+        "program_identity"
+      ],
+      "evidence_class": "official_budget_exhibit",
+      "evidence_id": "ev:7e57bb71753d",
+      "known_at": "2026-08-22T08:00:00+00:00",
+      "retrieved_at": "2026-08-22T08:00:00+00:00",
+      "retrieved_from_url": "https://www.globalsecurity.org/military/library/budget/fy2011/navy-peds/scn_ba2_book.pdf",
+      "sha256": "7e57bb71753d1da0e289734b1c1b8b5cca7260be990d416d21542d00d99ea8c1",
+      "source_url": "https://www.secnav.navy.mil/fmc/fmb/Documents/11pres/SCN_BA2_BOOK.pdf"
+    },
+    {
+      "claim_scopes": [
+        "capability_need",
+        "milestone",
+        "program_capability_link",
+        "program_identity",
+        "role"
+      ],
+      "evidence_class": "congressional_research",
+      "evidence_id": "ev:4f8d159388a7",
+      "known_at": "2026-08-22T08:00:00+00:00",
+      "retrieved_at": "2026-08-22T08:00:00+00:00",
+      "retrieved_from_url": "https://www.everycrsreport.com/reports/RL32418.html",
+      "sha256": "4f8d159388a732c82699f11b2be27768d6f1e2dc1b561ecb3e688e21185c43ad",
+      "source_url": "https://crsreports.congress.gov/product/pdf/RL/RL32418"
+    },
+    {
+      "claim_scopes": [
+        "program_event_link",
+        "program_identity",
+        "role"
+      ],
+      "evidence_class": "official_contract_announcement",
+      "evidence_id": "ev:2f718fd13f51",
+      "known_at": "2026-08-22T08:00:00+00:00",
+      "retrieved_at": "2026-08-22T08:00:00+00:00",
+      "retrieved_from_url": "https://www.war.gov/News/Contracts/Contract/Article/example-2026-07-29/",
+      "sha256": "2f718fd13f51c621268a01f0cc1cff186281231acd0466f5a71af4d9385d77cd",
+      "source_url": "https://www.war.gov/News/Contracts/Contract/Article/example-2026-07-29/"
+    },
+    {
+      "claim_scopes": [
+        "program_identity",
+        "role"
+      ],
+      "evidence_class": "issuer_disclosure",
+      "evidence_id": "ev:31e47b3a83dd",
+      "known_at": "2026-08-22T08:00:00+00:00",
+      "pinned_issuer_host": "investors.bwxt.com",
+      "pinned_issuer_host_basis": "Host identified as BWX Technologies' investor-relations site in the issuer's own SEC filings.",
+      "retrieved_at": "2026-08-22T08:00:00+00:00",
+      "retrieved_from_url": "https://investors.bwxt.com/news/example-2025-02-19",
+      "sha256": "31e47b3a83dd03ded474b20a3d7640b997534efe6ff9622cd1630af24affc34e",
+      "source_url": "https://investors.bwxt.com/news/example-2025-02-19"
+    }
+  ],
+  "graph_effective_at": "2026-08-22T08:00:00+00:00",
+  "graph_id": "program-ontology:reviewed:2026-08-22:defense-d5-v1",
+  "graph_known_at": "2026-08-22T08:00:00+00:00",
+  "milestones": [
+    {
+      "evidence_refs": [
+        "ev:4f8d159388a7"
+      ],
+      "id": "prog-milestone:cd326e9ef033",
+      "kind": "delivery_event",
+      "known_at": "2026-08-22T08:00:00+00:00",
+      "program_id": "acq-program:virginia-class-ssn",
+      "revision": 1,
+      "temporal_kind": "window",
+      "title": "AUKUS Pillar 1 initial transfer window",
+      "valid_from": "2025-03-28T00:00:00+00:00",
+      "valid_to": null,
+      "verification_state": "reviewed",
+      "window": {
+        "from": "2030-01-01",
+        "to": "2032-12-31"
+      }
+    }
+  ],
+  "overrides": [],
+  "platforms": [
+    {
+      "evidence_refs": [
+        "ev:4f8d159388a7"
+      ],
+      "id": "platform:virginia-block-v",
+      "known_at": "2026-08-22T08:00:00+00:00",
+      "name": "Virginia Block V",
+      "program_id": "acq-program:virginia-class-ssn",
+      "revision": 1,
+      "source_identities": [
+        {
+          "evidence_ref": "ev:4f8d159388a7",
+          "native_identifier": "CRS RL32418 (Block V)",
+          "system": "congressional_research"
+        }
+      ],
+      "valid_from": "2019-12-02T00:00:00+00:00",
+      "valid_to": null,
+      "variant_of": null,
+      "verification_state": "reviewed"
+    },
+    {
+      "evidence_refs": [
+        "ev:2f718fd13f51"
+      ],
+      "id": "platform:virginia-block-vi",
+      "known_at": "2026-08-22T08:00:00+00:00",
+      "name": "Virginia Block VI",
+      "program_id": "acq-program:virginia-class-ssn",
+      "revision": 1,
+      "source_identities": [
+        {
+          "evidence_ref": "ev:2f718fd13f51",
+          "native_identifier": "Block VI construction award, 2026-07-29",
+          "system": "contract_announcement"
+        }
+      ],
+      "valid_from": "2026-07-29T00:00:00+00:00",
+      "valid_to": null,
+      "variant_of": "platform:virginia-block-v",
+      "verification_state": "reviewed"
+    }
+  ],
+  "program_capability_links": [
+    {
+      "capability_id": "acq-capability:undersea-warfare",
+      "evidence_refs": [
+        "ev:4f8d159388a7"
+      ],
+      "known_at": "2026-08-22T08:00:00+00:00",
+      "link_id": "prog-cap:6c61262a44f6",
+      "program_id": "acq-program:virginia-class-ssn",
+      "revision": 1,
+      "valid_from": "2010-01-26T00:00:00+00:00",
+      "valid_to": null,
+      "verification_state": "reviewed"
+    }
+  ],
+  "program_event_links": [
+    {
+      "canonical_award_identity": "generated:EXAMPLE_SYNTHETIC_AWARD",
+      "event_contract": "government_procurement_event.v2",
+      "event_id": "govws-0000000000000000example",
+      "event_source_identity_content_sha256": "a15b4df2ff5653b980308567a2ec051bf57db7793106eb64629f4197c54fd3ac",
+      "event_source_identity_id": "action:EXAMPLE_SYNTHETIC_0",
+      "evidence_refs": [
+        "ev:2f718fd13f51"
+      ],
+      "known_at": "2026-08-22T08:00:00+00:00",
+      "link_id": "prog-event:1b5c5cc8b33d",
+      "program_id": "acq-program:virginia-class-ssn",
+      "revision": 1,
+      "valid_from": "2026-07-29T00:00:00+00:00",
+      "valid_to": null,
+      "verification_state": "reviewed"
+    }
+  ],
+  "programs": [
+    {
+      "aliases": [
+        "SSN 774 class"
+      ],
+      "budget_program_keys": [],
+      "evidence_refs": [
+        "ev:7e57bb71753d"
+      ],
+      "id": "acq-program:virginia-class-ssn",
+      "known_at": "2026-08-22T08:00:00+00:00",
+      "name": "Virginia-class SSN",
+      "phase": "production",
+      "revision": 1,
+      "source_identities": [
+        {
+          "evidence_ref": "ev:7e57bb71753d",
+          "native_identifier": "1611N BA-02 Virginia Class Submarine",
+          "system": "p1_line_item"
+        }
+      ],
+      "sponsor_agency": "Department of the Navy",
+      "valid_from": "2010-01-26T00:00:00+00:00",
+      "valid_to": null,
+      "verification_state": "reviewed"
+    }
+  ],
+  "review_coverage": [
+    {
+      "admitted_count": 3,
+      "coverage_id": "rev-cov:8a2db413615f",
+      "known_at": "2026-08-22T08:00:00+00:00",
+      "scope": "program_identity",
+      "subject_id": "acq-program:virginia-class-ssn",
+      "subject_type": "program",
+      "worksheet_ref": "research/government_revenue/PROGRAM_ONTOLOGY_REVIEW_2026-08-22-example.json",
+      "worksheet_sha256": "283987ebaab45ea45aab5ad37ea07f1d9fc7b83364f7e9eebd0a04a0cf5adbd0"
+    },
+    {
+      "admitted_count": 1,
+      "coverage_id": "rev-cov:dd73e4e23d1f",
+      "known_at": "2026-08-22T08:00:00+00:00",
+      "scope": "capability",
+      "subject_id": "acq-program:virginia-class-ssn",
+      "subject_type": "program",
+      "worksheet_ref": "research/government_revenue/PROGRAM_ONTOLOGY_REVIEW_2026-08-22-example.json",
+      "worksheet_sha256": "283987ebaab45ea45aab5ad37ea07f1d9fc7b83364f7e9eebd0a04a0cf5adbd0"
+    },
+    {
+      "admitted_count": 3,
+      "coverage_id": "rev-cov:c2e7744ed876",
+      "known_at": "2026-08-22T08:00:00+00:00",
+      "scope": "participants",
+      "subject_id": "acq-program:virginia-class-ssn",
+      "subject_type": "program",
+      "worksheet_ref": "research/government_revenue/PROGRAM_ONTOLOGY_REVIEW_2026-08-22-example.json",
+      "worksheet_sha256": "283987ebaab45ea45aab5ad37ea07f1d9fc7b83364f7e9eebd0a04a0cf5adbd0"
+    },
+    {
+      "admitted_count": 1,
+      "coverage_id": "rev-cov:a798a82c83b6",
+      "known_at": "2026-08-22T08:00:00+00:00",
+      "scope": "milestones",
+      "subject_id": "acq-program:virginia-class-ssn",
+      "subject_type": "program",
+      "worksheet_ref": "research/government_revenue/PROGRAM_ONTOLOGY_REVIEW_2026-08-22-example.json",
+      "worksheet_sha256": "283987ebaab45ea45aab5ad37ea07f1d9fc7b83364f7e9eebd0a04a0cf5adbd0"
+    },
+    {
+      "admitted_count": 1,
+      "coverage_id": "rev-cov:61894f1b4417",
+      "known_at": "2026-08-22T08:00:00+00:00",
+      "scope": "program_event_link",
+      "subject_id": "acq-program:virginia-class-ssn",
+      "subject_type": "program",
+      "worksheet_ref": "research/government_revenue/PROGRAM_ONTOLOGY_REVIEW_2026-08-22-example.json",
+      "worksheet_sha256": "283987ebaab45ea45aab5ad37ea07f1d9fc7b83364f7e9eebd0a04a0cf5adbd0"
+    },
+    {
+      "admitted_count": 1,
+      "coverage_id": "rev-cov:1570e40418bb",
+      "known_at": "2026-08-22T08:00:00+00:00",
+      "scope": "program_event_link",
+      "subject_id": "govws-0000000000000000example",
+      "subject_type": "award_event",
+      "worksheet_ref": "research/government_revenue/PROGRAM_ONTOLOGY_REVIEW_2026-08-22-example.json",
+      "worksheet_sha256": "283987ebaab45ea45aab5ad37ea07f1d9fc7b83364f7e9eebd0a04a0cf5adbd0"
+    },
+    {
+      "admitted_count": 0,
+      "coverage_id": "rev-cov:1f312c8cddad",
+      "known_at": "2026-08-22T08:00:00+00:00",
+      "scope": "program_event_link",
+      "subject_id": "govws-a6c70850a9cbdce9fa3e7f3b",
+      "subject_type": "award_event",
+      "worksheet_ref": "research/government_revenue/PROGRAM_ONTOLOGY_REVIEW_2026-08-22-irdm-example.json",
+      "worksheet_sha256": "a4d0c6cbb8b75de2bfa92ba4ac86f16a615320a71e9e5e509cc6e062a08b764c"
+    }
+  ],
+  "role_assertions": [
+    {
+      "economic_weight": null,
+      "entity_id": "legal:gd:electric-boat-corp",
+      "evidence_refs": [
+        "ev:4f8d159388a7",
+        "ev:7e57bb71753d"
+      ],
+      "id": "prog-role:21c01a4ec620",
+      "known_at": "2026-08-22T08:00:00+00:00",
+      "platform_id": null,
+      "program_id": "acq-program:virginia-class-ssn",
+      "revision": 1,
+      "role": "prime_contractor",
+      "role_scope": "the program's prime contractor",
+      "shared_scope": false,
+      "single_document_dual_scope": false,
+      "valid_from": "2025-03-28T00:00:00+00:00",
+      "valid_to": null,
+      "verification_state": "reviewed"
+    },
+    {
+      "economic_weight": null,
+      "entity_id": "legal:hii:huntington-ingalls-inc",
+      "evidence_refs": [
+        "ev:4f8d159388a7"
+      ],
+      "id": "prog-role:4db1f7c7bfba",
+      "known_at": "2026-08-22T08:00:00+00:00",
+      "platform_id": null,
+      "program_id": "acq-program:virginia-class-ssn",
+      "revision": 1,
+      "role": "teaming_partner",
+      "role_scope": "joint construction of Virginia-class boats (~50-50 split)",
+      "shared_scope": false,
+      "single_document_dual_scope": true,
+      "valid_from": "2025-03-28T00:00:00+00:00",
+      "valid_to": null,
+      "verification_state": "reviewed"
+    },
+    {
+      "economic_weight": null,
+      "entity_id": "legal:bwxt:bwx-technologies-inc",
+      "evidence_refs": [
+        "ev:31e47b3a83dd"
+      ],
+      "id": "prog-role:1cc0b3429f99",
+      "known_at": "2026-08-22T08:00:00+00:00",
+      "platform_id": null,
+      "program_id": "acq-program:virginia-class-ssn",
+      "revision": 1,
+      "role": "supplier",
+      "role_scope": "naval nuclear reactor components",
+      "shared_scope": true,
+      "single_document_dual_scope": true,
+      "valid_from": "2025-02-19T00:00:00+00:00",
+      "valid_to": null,
+      "verification_state": "reviewed"
+    }
+  ],
+  "schema_version": "1.0.0"
+}

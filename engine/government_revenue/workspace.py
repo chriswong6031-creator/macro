@@ -1168,6 +1168,7 @@ def build_procurement_workspace(
     award_event_freshness: dict[str, Any] | None = None,
     vertical_links_by_ticker: dict[str, list[dict[str, Any]]] | None = None,
     budget_freshness: dict[str, Any] | None = None,
+    program_link_by_event_id: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Compose a deterministic v2 opportunity, recompete, and award workspace.
 
@@ -1219,6 +1220,25 @@ def build_procurement_workspace(
     events_available_before_cap = len(merged_events)
     events = merged_events[:MAX_WORKSPACE_EVENTS]
     events_truncated = max(0, events_available_before_cap - len(events))
+    # D5 `program_link` (freeze DEFENSE_D5_PROGRAM_GRAPH_ARCHITECTURE_FREEZE.md
+    # SS4): the workspace award view's single derived field. Emission only --
+    # the derivation itself lives in engine.government_revenue.program_ontology
+    # and is computed by the caller (scripts/build_government_revenue.py),
+    # never here. Attached only to `award_change` events -- the reviewed
+    # program_event_links[] relation admits no other kind.
+    if program_link_by_event_id is not None:
+        for event in events:
+            if event.get("kind") == "award_change":
+                event["program_link"] = program_link_by_event_id.get(
+                    event.get("event_id"),
+                    {
+                        "state": "source_unavailable",
+                        "reason_code": "ontology_unavailable",
+                        "program_id": None,
+                        "program_event_link_id": None,
+                        "ontology_graph_id": None,
+                    },
+                )
     mapped = sum(_mapping_class(event) != "unmapped" for event in events)
     opportunity_freshness = _freshness(
         opportunity_intelligence.get("freshness"),
