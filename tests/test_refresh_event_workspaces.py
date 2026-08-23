@@ -11,13 +11,17 @@ import pytest
 
 from engine.company_intelligence.event_workspace import (
     AAPL_ACCESSION,
+    AAPL_CALL_DATE,
     AAPL_CIK,
     FLAGSHIP_EVENT_ID,
     LIVE_CIE_ALIAS,
     LIVE_NARRATIVE_ALIAS,
     LIVE_PUBLIC_SLUG,
+    apple_registry,
+    flagship_fiscal_period,
     write_workspace_generation,
 )
+from engine.company_intelligence.event_workspace_build import build_event_workspace
 from engine.earnings_transcript_intake import TranscriptRef, canonical_body_sha256
 from engine.neuralweb import company_intelligence_reader as reader
 from scripts.publish_company_intelligence_r2 import PUBLISH_CONFLICT, publish, publish_event_workspaces
@@ -27,6 +31,7 @@ from scripts.refresh_event_workspaces import (
     _parse_sgml_manifest,
     _PriorWorkspaceNotPublished,
     _select_exhibit_99_1,
+    discover_new_homebuilder_revisions,
     load_prior_workspace,
     load_prior_workspace_for_ticker,
     refresh,
@@ -200,23 +205,30 @@ def _refresh(tmp_path: Path, fake: _FakeR2, **kwargs):
         fetch_index=fetch_index,
         fetch_body_fn=fetch_body,
         prior_workspace=kwargs.get("prior_workspace"),
-        # NEW-4 fix (Opus red-team verification round 3, 2026-08-23): these
-        # tests are AAPL-flagship-focused and never stub homebuilder SEC
-        # responses at all, so every homebuilder acquisition fails here by
-        # construction — refresh() now looks up a carry-forward prior on
-        # every such failure, and the REAL default
-        # (load_prior_workspace_for_ticker) makes a genuine network call
-        # against production R2 ("No network." is this file's own law).
-        # Both homebuilder loaders default here to explicit offline stubs
-        # returning None (no prior — the pre-existing implicit behavior
-        # every test in this file already relies on); a test that wants to
-        # exercise carry-forward passes its own stub explicitly.
-        homebuilder_prior_workspace_loader=kwargs.get("homebuilder_prior_workspace_loader", lambda event_id: None),
+        # NEW-4 fix (Opus red-team verification round 3, 2026-08-23),
+        # BLOCKER-2 architecture (2026-08-23): these tests are AAPL-
+        # flagship-focused and never stub homebuilder SEC responses at all,
+        # so every homebuilder discovery fails here by construction —
+        # refresh() now looks up a carry-forward prior on every such
+        # failure, and the REAL default (load_prior_workspace_for_ticker)
+        # makes a genuine network call against production R2 ("No
+        # network." is this file's own law). The carry-forward loader
+        # defaults here to an explicit offline stub returning None (no
+        # prior — the pre-existing implicit behavior every test in this
+        # file already relies on); a test that wants to exercise carry-
+        # forward passes its own stub explicitly.
         homebuilder_carry_forward_loader=kwargs.get("homebuilder_carry_forward_loader", lambda ticker: None),
         publish_generation=lambda out_dir, dry_run=False: publish_event_workspaces(
             out_dir, dry_run=dry_run, s3=fake, bucket="bucket"
         ),
         dry_run=kwargs.get("dry_run", False),
+        # IMCE A5C: this file's universe is a fresh sandboxed nest with no
+        # real predecessor to fetch (and "No network." is this file's own
+        # law — see the homebuilder loaders above) — default to "no
+        # predecessor, no additional discovered revisions" unless a test
+        # explicitly wants to exercise the chain/discovery machinery.
+        current_marker_loader=kwargs.get("current_marker_loader", lambda: None),
+        homebuilder_discovery=kwargs.get("homebuilder_discovery", lambda ticker, **_kw: []),
     )
 
 
@@ -225,13 +237,24 @@ def _marker(tmp_path: Path) -> dict:
 
 
 def test_same_source_revisions_are_semantic_noop(tmp_path: Path) -> None:
+    """IMCE A5C two-clock law (C3, first-observation persistence): the
+    second refresh passes the FIRST cycle's own published AAPL workspace as
+    ``prior_workspace`` (mirroring test_source_sha_correction_advances_
+    generation_and_lifecycle below) so observed_at is correctly carried
+    forward rather than re-stamped at the second call's wall-clock 'now' —
+    an unchanged source revision must reproduce the IDENTICAL generation,
+    never a merely-content-equal one with a drifted first-observation clock.
+    """
     fake = _FakeR2()
     assert _refresh(tmp_path, fake) == 0
     first = _marker(tmp_path)
     first_puts = list(fake.puts)
     assert first_puts[-1][0] == WS_MARKER
     assert V1_MARKER not in [key for key, _ in first_puts]
-    assert _refresh(tmp_path, fake) == 0
+    first_aapl_prior = json.loads(
+        (tmp_path / "event_workspaces" / "generations" / first["generation_id"] / "workspaces" / f"{FLAGSHIP_EVENT_ID}.json").read_text(encoding="utf-8")
+    )
+    assert _refresh(tmp_path, fake, prior_workspace=first_aapl_prior) == 0
     second = _marker(tmp_path)
     assert first["generation_id"] == second["generation_id"]
     assert first["generated_at"] == ACCEPTANCE
@@ -358,6 +381,28 @@ class _FakeRequestsResponse:
         return self._payload
 
 
+def _as_fetch_bytes(url_handler):
+    """MAJOR-7: the shared reader's producer-facing primitives now route
+    through the ONE hardened ``reader._fetch_bytes`` helper (context-
+    manager/streaming/allow_404 contract), not a plain ``requests.get``.
+    This adapts an existing (pre-MAJOR-7) ``url_handler(url) ->
+    _FakeRequestsResponse``-shaped test stub into ``_fetch_bytes``'s own
+    ``(url, *, limit, allow_404=False) -> bytes | None`` contract, so every
+    existing test below keeps its OWN url-routing logic byte-for-byte —
+    only the monkeypatch target and the response-to-bytes translation move.
+    """
+    def fake_fetch_bytes(url: str, *, limit: int, allow_404: bool = False) -> bytes | None:
+        response = url_handler(url)
+        if response.status_code == 404:
+            if allow_404:
+                return None
+            raise reader.CompanyIntelligenceReadError(f"404: {url}")
+        response.raise_for_status()
+        return json.dumps(response.json()).encode("utf-8")
+
+    return fake_fetch_bytes
+
+
 def test_load_prior_workspace_for_ticker_matches_by_company_id_scan(monkeypatch) -> None:
     """NEW-4 (Opus red-team verification round 3, 2026-08-23): direct
     unit-level proof that load_prior_workspace_for_ticker's own
@@ -392,7 +437,7 @@ def test_load_prior_workspace_for_ticker_matches_by_company_id_scan(monkeypatch)
             return _FakeRequestsResponse(status_code=200, payload=aapl_payload)
         raise AssertionError(f"unexpected URL: {url}")
 
-    monkeypatch.setattr("requests.get", fake_get)
+    monkeypatch.setattr(reader, "_fetch_bytes", _as_fetch_bytes(fake_get))
     result = load_prior_workspace_for_ticker("DHI", base_url=base)
     assert result == dhi_payload
     # Only DHI's own workspace body was ever fetched — never AAPL's, proving
@@ -409,7 +454,7 @@ def test_load_prior_workspace_for_ticker_raises_on_genuine_fetch_failure(monkeyp
     def fake_get(url: str, *, headers=None, timeout=None):
         raise TimeoutError("connection timed out")
 
-    monkeypatch.setattr("requests.get", fake_get)
+    monkeypatch.setattr(reader, "_fetch_bytes", _as_fetch_bytes(fake_get))
     with pytest.raises(PriorWorkspaceFetchFailed):
         load_prior_workspace_for_ticker("DHI", base_url="https://example.test/company_intelligence")
     out = capsys.readouterr().out
@@ -420,7 +465,7 @@ def test_load_prior_workspace_for_ticker_returns_none_when_no_generation_exists(
     def fake_get(url: str, *, headers=None, timeout=None):
         return _FakeRequestsResponse(status_code=404)
 
-    monkeypatch.setattr("requests.get", fake_get)
+    monkeypatch.setattr(reader, "_fetch_bytes", _as_fetch_bytes(fake_get))
     assert load_prior_workspace_for_ticker("DHI", base_url="https://example.test/company_intelligence") is None
 
 
@@ -484,7 +529,7 @@ def test_load_prior_workspace_for_ticker_probe_table(monkeypatch, capsys, marker
             raise AssertionError(f"unhandled gen_behavior {gen_behavior!r}")
         raise AssertionError(f"unexpected URL: {url}")
 
-    monkeypatch.setattr("requests.get", fake_get)
+    monkeypatch.setattr(reader, "_fetch_bytes", _as_fetch_bytes(fake_get))
     if expected == "none":
         assert load_prior_workspace_for_ticker("DHI", base_url=base) is None
     else:
@@ -522,7 +567,7 @@ def test_load_prior_workspace_for_ticker_selects_the_newest_fiscal_period_on_a_d
             raise AssertionError("must never fetch the OLDER event's body")
         raise AssertionError(f"unexpected URL: {url}")
 
-    monkeypatch.setattr("requests.get", fake_get)
+    monkeypatch.setattr(reader, "_fetch_bytes", _as_fetch_bytes(fake_get))
     assert load_prior_workspace_for_ticker("DHI", base_url=base) == dhi_q3_payload
 
 
@@ -756,3 +801,495 @@ def test_production_reader_observes_the_published_flagship(tmp_path: Path, monke
         assert result["event_id"] == FLAGSHIP_EVENT_ID
         assert result["authority"] == "context_only"
         assert result["receipt"]["generation_id"] == generation
+
+
+# ---------------------------------------------------------------------------
+# IMCE A5C discovery (frozen spec B) — ALL not-yet-represented qualifying
+# revisions, ascending SEC acceptance order, never only the newest.
+# ---------------------------------------------------------------------------
+
+_DHI_CIK = "0000882184"
+_DHI_EXHIBIT = FIXTURES / "dhi_fy2026q3_ex99_1.htm"
+_DHI_ORIGINAL_ACCESSION = "0000882184-26-000092"
+_DHI_AMENDMENT_ACCESSION = "0000882184-26-000093"
+_DHI_REPORT_DATE = "2026-07-21"
+
+
+def _dhi_archive_base(accession: str) -> str:
+    return f"https://www.sec.gov/Archives/edgar/data/{int(_DHI_CIK)}/{accession.replace('-', '')}"
+
+
+def test_discover_new_homebuilder_revisions_publishes_original_and_amendment_in_order() -> None:
+    """Mutation-kill (2): an original 8-K and its own 8-K/A amendment
+    discovered in ONE poll are BOTH resolved, ASCENDING by SEC acceptance
+    order — never only the newest (Sol item 3, "FORBIDDEN"). The amendment
+    chains onto the freshly-built original (B3): its own prior_source_sha256
+    is the original's sha, so it walks to lifecycle.state == "corrected"."""
+    original_exhibit = _DHI_EXHIBIT.read_text(encoding="utf-8")
+    amendment_exhibit = original_exhibit + "\n<!-- amendment restates a figure -->\n"
+    exhibit_name = "dhi-ex991.htm"
+
+    def http_get(url: str) -> tuple[int, bytes]:
+        if url == f"https://data.sec.gov/submissions/CIK{_DHI_CIK}.json":
+            return 200, json.dumps({
+                "cik": _DHI_CIK,
+                "filings": {"recent": {
+                    # Deliberately listed NEWEST FIRST (as EDGAR's own feed
+                    # order is not acceptance order) — discovery must still
+                    # process them ascending.
+                    "accessionNumber": [_DHI_AMENDMENT_ACCESSION, _DHI_ORIGINAL_ACCESSION],
+                    "filingDate": ["2026-07-22", "2026-07-21"],
+                    "acceptanceDateTime": ["2026-07-22T12:00:00.000Z", "2026-07-21T16:30:00.000Z"],
+                    "reportDate": [_DHI_REPORT_DATE, _DHI_REPORT_DATE],
+                    "form": ["8-K/A", "8-K"],
+                    "primaryDocument": ["a.htm", "b.htm"],
+                    "items": ["2.02", "2.02"],
+                }},
+            }).encode("utf-8")
+        for accession, body in (
+            (_DHI_ORIGINAL_ACCESSION, original_exhibit),
+            (_DHI_AMENDMENT_ACCESSION, amendment_exhibit),
+        ):
+            base = _dhi_archive_base(accession)
+            if url == f"{base}/{accession}-index-headers.html":
+                return 200, (
+                    "<HTML><BODY><PRE>&lt;DOCUMENT&gt;\n&lt;TYPE&gt;EX-99.1\n"
+                    f"&lt;FILENAME&gt;{exhibit_name}\n&lt;/DOCUMENT&gt;\n</PRE></BODY></HTML>"
+                ).encode("utf-8")
+            if url == f"{base}/{exhibit_name}":
+                return 200, body.encode("utf-8")
+        return 404, b""
+
+    def fetch_index(_base: str) -> dict:
+        return {
+            "schema": "mastermind.tx-index/v1", "symbols": {}, "revisions": {}, "dates": {},
+            "body_count": 0, "symbol_count": 0, "generated_at": "2026-01-01T00:00:00Z",
+        }
+
+    def fetch_body(_base: str, _ref) -> dict:  # pragma: no cover — never called (no transcript)
+        raise AssertionError("no transcript should be fetched in this test")
+
+    revisions = discover_new_homebuilder_revisions(
+        "DHI",
+        http_get=http_get,
+        fetch_index=fetch_index,
+        fetch_body_fn=fetch_body,
+        # B2: nothing represented yet in the chain -- both accessions are new.
+        # MINOR-9 (Opus red-team verification round 2, 2026-08-23): the real
+        # chain_state_loader contract is the FULL ordered timeline (a
+        # list[dict], per _event_known_revisions) — never the pre-MINOR-9
+        # "(represented_accessions, latest_workspace)" 2-tuple this stub
+        # used to return.
+        chain_state_loader=lambda event_id: [],
+    )
+    assert len(revisions) == 2
+    (event_id_1, payload_1), (event_id_2, payload_2) = revisions
+    assert event_id_1 == event_id_2  # same event, two revisions
+    # Ascending acceptance order: the ORIGINAL comes first.
+    accession_1 = payload_1["sources"][0]["filing_key"]["accession"]
+    accession_2 = payload_2["sources"][0]["filing_key"]["accession"]
+    assert accession_1 == _DHI_ORIGINAL_ACCESSION
+    assert accession_2 == _DHI_AMENDMENT_ACCESSION
+    # B3: the amendment chains onto the freshly-built original -- its
+    # source_sha256 differs (the exhibit bytes differ), so it correctly
+    # walks to "corrected".
+    assert payload_1["lifecycle"]["state"] == "complete"
+    assert payload_2["lifecycle"]["state"] == "corrected"
+    # BLOCKER-3/MAJOR-4 (homebuilder-path clock separation): a genuinely
+    # NEW revision's observed_at is the REAL wall-clock at discovery time —
+    # not silently equal to the SEC acceptance clock, for EITHER revision.
+    for payload, fixture_acceptance in (
+        (payload_1, "2026-07-21T16:30:00Z"), (payload_2, "2026-07-22T12:00:00Z"),
+    ):
+        assert payload["lifecycle"]["source_available_at"] == fixture_acceptance
+        assert payload["lifecycle"]["observed_at"] != fixture_acceptance
+        assert payload["lifecycle"]["observed_at"] > fixture_acceptance  # C4: never precedes it
+
+
+def test_discover_new_homebuilder_revisions_skips_already_represented_accessions() -> None:
+    """B2: an accession already present in the chain history is never
+    reprocessed — only the amendment (genuinely new) is returned."""
+    original_exhibit = _DHI_EXHIBIT.read_text(encoding="utf-8")
+    amendment_exhibit = original_exhibit + "\n<!-- amendment restates a figure -->\n"
+    exhibit_name = "dhi-ex991.htm"
+
+    def http_get(url: str) -> tuple[int, bytes]:
+        if url == f"https://data.sec.gov/submissions/CIK{_DHI_CIK}.json":
+            return 200, json.dumps({
+                "cik": _DHI_CIK,
+                "filings": {"recent": {
+                    "accessionNumber": [_DHI_AMENDMENT_ACCESSION, _DHI_ORIGINAL_ACCESSION],
+                    "filingDate": ["2026-07-22", "2026-07-21"],
+                    "acceptanceDateTime": ["2026-07-22T12:00:00.000Z", "2026-07-21T16:30:00.000Z"],
+                    "reportDate": [_DHI_REPORT_DATE, _DHI_REPORT_DATE],
+                    "form": ["8-K/A", "8-K"],
+                    "primaryDocument": ["a.htm", "b.htm"],
+                    "items": ["2.02", "2.02"],
+                }},
+            }).encode("utf-8")
+        for accession, body in (
+            (_DHI_ORIGINAL_ACCESSION, original_exhibit),
+            (_DHI_AMENDMENT_ACCESSION, amendment_exhibit),
+        ):
+            base = _dhi_archive_base(accession)
+            if url == f"{base}/{accession}-index-headers.html":
+                return 200, (
+                    "<HTML><BODY><PRE>&lt;DOCUMENT&gt;\n&lt;TYPE&gt;EX-99.1\n"
+                    f"&lt;FILENAME&gt;{exhibit_name}\n&lt;/DOCUMENT&gt;\n</PRE></BODY></HTML>"
+                ).encode("utf-8")
+            if url == f"{base}/{exhibit_name}":
+                return 200, body.encode("utf-8")
+        return 404, b""
+
+    def fetch_index(_base: str) -> dict:
+        return {
+            "schema": "mastermind.tx-index/v1", "symbols": {}, "revisions": {}, "dates": {},
+            "body_count": 0, "symbol_count": 0, "generated_at": "2026-01-01T00:00:00Z",
+        }
+
+    def fetch_body(_base: str, _ref) -> dict:  # pragma: no cover
+        raise AssertionError("no transcript should be fetched in this test")
+
+    revisions = discover_new_homebuilder_revisions(
+        "DHI",
+        http_get=http_get,
+        fetch_index=fetch_index,
+        fetch_body_fn=fetch_body,
+        # The ORIGINAL accession is already represented; only the amendment
+        # is genuinely new. MINOR-9: chain_state_loader returns the FULL
+        # ordered timeline (list[dict]) — see the sibling test above.
+        chain_state_loader=lambda event_id: [{
+            "source_available_at": "2026-07-21T16:30:00Z",
+            "workspace": _stub_dhi_revision(
+                source_available_at="2026-07-21T16:30:00Z", source_sha256="a" * 64,
+                accession=_DHI_ORIGINAL_ACCESSION,
+            ),
+        }],
+    )
+    assert len(revisions) == 1
+    _event_id, payload = revisions[0]
+    assert payload["sources"][0]["filing_key"]["accession"] == _DHI_AMENDMENT_ACCESSION
+
+
+# ---------------------------------------------------------------------------
+# MAJOR-5 (Opus red-team, 2026-08-23): refresh()-level multi-generation
+# chaining was previously untested — every test above hard-stubs discovery
+# off. These tests inject a real ``homebuilder_discovery`` stub returning
+# MULTIPLE new revisions and verify refresh() itself publishes them as
+# separate, correctly-chained, marker-last generations.
+# ---------------------------------------------------------------------------
+
+def _stub_dhi_revision(
+    *, event_id: str = "evt_cik0000882184_2026q3_results",
+    source_available_at: str, source_sha256: str, state: str = "complete",
+    accession: str = "0000882184-26-000092",
+) -> dict:
+    """A minimal, contract-valid event_workspace.v1 body for DHI — mirrors
+    tests/test_company_intelligence_workspace_chain.py's own ``_raw_workspace``
+    shape (only the keys validate_event_workspace/this module's own reads
+    care about are populated meaningfully)."""
+    return {
+        "schema": "event_workspace.v1",
+        "event_id": event_id,
+        "aliases": [],
+        "issuer": {"company_id": "cik:0000882184", "display_name": "D.R. Horton, Inc.", "listings": []},
+        "fiscal_period": {"year": 2026, "quarter": 3, "calendar_end": "2026-06-30"},
+        "lifecycle": {"state": state, "observed_at": source_available_at, "source_available_at": source_available_at},
+        "completeness": {},
+        "facts": [], "deltas": [], "guidance": [], "claims": [],
+        "sources": [{
+            "kind": "issuer_release", "document_id": "doc:1",
+            "filing_key": {"cik": "0000882184", "accession": accession},
+            "source_sha256": source_sha256, "form": "8-K", "url": None,
+            "receipt_state": "byte_replayed",
+        }],
+        "warnings": [],
+        "generation_id": "",
+        "generated_at": source_available_at,
+        "authority": "context_only",
+        "prophet_flags": {"may_rank": False, "may_size": False, "may_gate": False, "prophet_authority": False},
+        "claim_citations_pending": False,
+        "qa_exchanges": [],
+    }
+
+
+def test_refresh_publishes_original_and_amendment_as_two_chained_generations(tmp_path: Path) -> None:
+    fake = _FakeR2()
+    dhi_event_id = "evt_cik0000882184_2026q3_results"
+    original = _stub_dhi_revision(
+        source_available_at="2026-07-21T16:30:00Z", source_sha256="a" * 64,
+        accession="0000882184-26-000092",
+    )
+    amendment = _stub_dhi_revision(
+        source_available_at="2026-07-22T12:00:00Z", source_sha256="b" * 64, state="corrected",
+        accession="0000882184-26-000093",
+    )
+
+    def stub_discovery(ticker: str, **_kwargs) -> list[tuple[str, dict]]:
+        if ticker == "DHI":
+            return [(dhi_event_id, original), (dhi_event_id, amendment)]
+        return []
+
+    assert _refresh(tmp_path, fake, homebuilder_discovery=stub_discovery) == 0
+
+    marker_puts = [key for key, _ in fake.puts if key == WS_MARKER]
+    # marker-last across BOTH chained generations: one promotion per
+    # generation (B3's marker-promotion choice), never batched to one.
+    assert len(marker_puts) == 2
+
+    final_marker = _marker(tmp_path)
+    dhi_final = json.loads(
+        (tmp_path / "event_workspaces" / "generations" / final_marker["generation_id"]
+         / "workspaces" / f"{dhi_event_id}.json").read_text(encoding="utf-8")
+    )
+    # MAJOR-6: the final published generation leaves DHI at its NEWEST
+    # (amendment) revision — never regressed to the original.
+    assert dhi_final["lifecycle"]["state"] == "corrected"
+    assert dhi_final["sources"][0]["filing_key"]["accession"] == "0000882184-26-000093"
+
+    # BOTH immutable generations remain independently addressable (the
+    # original's own generation was never overwritten or skipped).
+    all_generation_dirs = sorted((tmp_path / "event_workspaces" / "generations").iterdir())
+    assert len(all_generation_dirs) == 2
+    original_generation_id = next(
+        gd.name for gd in all_generation_dirs if gd.name != final_marker["generation_id"]
+    )
+    dhi_original_recovered = json.loads(
+        (tmp_path / "event_workspaces" / "generations" / original_generation_id
+         / "workspaces" / f"{dhi_event_id}.json").read_text(encoding="utf-8")
+    )
+    assert dhi_original_recovered["lifecycle"]["state"] == "complete"
+    assert dhi_original_recovered["sources"][0]["filing_key"]["accession"] == "0000882184-26-000092"
+
+    # Chain bookkeeping: the amendment's own generation names the
+    # original's generation_id as its predecessor.
+    amendment_manifest = json.loads((tmp_path / "event_workspaces" / "generations" / final_marker["generation_id"] / "manifest.json").read_text(encoding="utf-8"))
+    assert amendment_manifest["previous_generation_id"] == original_generation_id
+
+
+def test_refresh_every_write_contains_every_resolved_ticker_before_any_write(tmp_path: Path) -> None:
+    """NEW-BLOCKER-16 (Opus red-team verification round 2, 2026-08-23 —
+    FROZEN FIX): a live verifier probe caught the single-pass per-ticker
+    loop publishing a triggering ticker's own first chained write BEFORE a
+    LATER-ordered ticker (PHM comes after DHI in HOMEBUILDER_TICKERS) had
+    been carried forward into the running snapshot at all — marker
+    generation 0 had a lower event_count with PHM silently ABSENT, only
+    reaching the full count once PHM was later visited in the SAME cycle.
+    refresh() must now resolve EVERY ticker (Phase 1) before writing
+    ANYTHING (Phase 2), so DHI's own FIRST (and only) write this cycle
+    already contains PHM's carried-forward state — never a transiently-
+    incomplete nest, even for the very first generation minted."""
+    fake = _FakeR2()
+    dhi_event_id = "evt_cik0000882184_2026q3_results"
+    phm_event_id = "evt_cik0000822416_2026q2_results"
+    dhi_revision = _stub_dhi_revision(
+        source_available_at="2026-07-21T16:30:00Z", source_sha256="a" * 64,
+    )
+    phm_current = _stub_dhi_revision(
+        event_id=phm_event_id, source_available_at="2026-07-01T00:00:00Z", source_sha256="b" * 64,
+        accession="0000822416-26-000030",
+    )
+
+    def stub_discovery(ticker: str, **_kwargs) -> list[tuple[str, dict]]:
+        # DHI (first in HOMEBUILDER_TICKERS) is the ONLY triggering ticker
+        # this cycle — the exact shape the original probe caught.
+        if ticker == "DHI":
+            return [(dhi_event_id, dhi_revision)]
+        return []
+
+    def carry_forward(ticker: str):
+        return phm_current if ticker == "PHM" else None
+
+    assert _refresh(
+        tmp_path, fake, homebuilder_discovery=stub_discovery,
+        homebuilder_carry_forward_loader=carry_forward,
+    ) == 0
+
+    # Exactly ONE generation is written this cycle (DHI is the only ticker
+    # with a genuinely new revision) — assert its OWN manifest, at the
+    # moment of that single write, already names every resolved ticker.
+    all_generation_dirs = list((tmp_path / "event_workspaces" / "generations").iterdir())
+    assert len(all_generation_dirs) == 1
+    manifest = json.loads((all_generation_dirs[0] / "manifest.json").read_text(encoding="utf-8"))
+    assert set(manifest["files"]) == {
+        f"workspaces/{FLAGSHIP_EVENT_ID}.json",
+        f"workspaces/{dhi_event_id}.json",
+        f"workspaces/{phm_event_id}.json",
+    }
+
+
+def test_refresh_chains_onto_the_marker_raw_bytes_hash_not_a_reserialization(tmp_path: Path) -> None:
+    """MINOR-23 (Opus red-team verification round 3, 2026-08-23): pins the
+    NEW-MINOR-18 raw-bytes producer hash at the refresh()-level seam, not
+    merely inside the reader primitive. current_marker_loader injects a
+    (raw_bytes, parsed) pair whose raw_bytes is deliberately NOT
+    canonical_json_bytes(parsed) — different whitespace/key order, exactly
+    the kind of byte-for-byte divergence a real R2 object can carry
+    relative to any local re-serialization of its own parsed contents.
+    refresh()'s minted generation must chain onto sha256(raw_bytes) — never
+    sha256(canonical_json_bytes(parsed))."""
+    from engine.company_intelligence.contracts import canonical_json_bytes
+    from engine.company_intelligence.event_workspace import MANIFEST_SCHEMA_V2
+
+    fake = _FakeR2()
+    parsed_marker = {
+        "schema": MANIFEST_SCHEMA_V2,
+        # An arbitrary, non-content-derived id: guarantees this cycle's
+        # freshly-built AAPL payload can never coincidentally reproduce it
+        # as a semantic no-op, so the closing write's no-op branch never
+        # fires and chain_previous_sha (this test's actual target) is what
+        # ends up in the minted manifest.
+        "generation_id": "f" * 24,
+        "generated_at": "2026-07-01T00:00:00Z",
+        "authority": "context_only", "status": "ready", "event_count": 0, "files": {},
+        "previous_generation_id": None, "previous_manifest_sha256": None,
+    }
+    non_canonical_raw_bytes = (
+        b'{\n  "generation_id": "' + b"f" * 24 + b'",\n  "schema": "' + MANIFEST_SCHEMA_V2.encode() + b'",\n'
+        b'  "generated_at": "2026-07-01T00:00:00Z", "authority": "context_only", "status": "ready",\n'
+        b'  "event_count": 0, "files": {}, "previous_generation_id": null, "previous_manifest_sha256": null\n}\n'
+    )
+    canonical_bytes_of_parsed = canonical_json_bytes(parsed_marker)
+    assert non_canonical_raw_bytes != canonical_bytes_of_parsed, "fixture must actually diverge from the canonical form"
+
+    assert _refresh(
+        tmp_path, fake,
+        current_marker_loader=lambda: (non_canonical_raw_bytes, parsed_marker),
+    ) == 0
+    marker = _marker(tmp_path)
+    minted_manifest = json.loads(
+        (tmp_path / "event_workspaces" / "generations" / marker["generation_id"] / "manifest.json")
+        .read_text(encoding="utf-8")
+    )
+    assert minted_manifest["previous_generation_id"] == "f" * 24
+    assert minted_manifest["previous_manifest_sha256"] == sha256(non_canonical_raw_bytes).hexdigest()
+    assert minted_manifest["previous_manifest_sha256"] != sha256(canonical_bytes_of_parsed).hexdigest()
+
+
+def test_refresh_newest_already_represented_restores_current_state_without_a_new_write(tmp_path: Path) -> None:
+    """B2 at the refresh() level: when discovery finds nothing new for a
+    ticker, its CURRENT published state is still carried into the running
+    snapshot (via the carry-forward loader) — no NEW generation is written
+    for that ticker alone, but its slot is never dropped."""
+    fake = _FakeR2()
+    dhi_event_id = "evt_cik0000882184_2026q3_results"
+    current_dhi = _stub_dhi_revision(
+        source_available_at="2026-07-21T16:30:00Z", source_sha256="a" * 64,
+    )
+
+    def no_new_revisions(ticker: str, **_kwargs) -> list[tuple[str, dict]]:
+        return []
+
+    assert _refresh(
+        tmp_path, fake, homebuilder_discovery=no_new_revisions,
+        homebuilder_carry_forward_loader=lambda ticker: current_dhi if ticker == "DHI" else None,
+    ) == 0
+    marker = _marker(tmp_path)
+    assert marker["event_count"] == 2
+    assert f"workspaces/{dhi_event_id}.json" in marker["files"]
+
+
+def test_refresh_mid_sequence_publish_failure_stops_before_any_out_of_order_write(tmp_path: Path) -> None:
+    """MAJOR-5: if the SECOND of three chained generations fails to
+    publish, refresh() must abort immediately — nothing after the failure
+    point publishes, and the marker stays at whatever the FIRST successful
+    write left it at (never skipping ahead to a later revision out of
+    order)."""
+    fake = _FakeR2()
+    dhi_event_id = "evt_cik0000882184_2026q3_results"
+    rev1 = _stub_dhi_revision(source_available_at="2026-05-01T00:00:00Z", source_sha256="a" * 64, accession="0000882184-26-000090")
+    rev2 = _stub_dhi_revision(source_available_at="2026-06-01T00:00:00Z", source_sha256="b" * 64, accession="0000882184-26-000091")
+    rev3 = _stub_dhi_revision(source_available_at="2026-07-01T00:00:00Z", source_sha256="c" * 64, accession="0000882184-26-000092")
+
+    def three_revisions(ticker: str, **_kwargs) -> list[tuple[str, dict]]:
+        if ticker == "DHI":
+            return [(dhi_event_id, rev1), (dhi_event_id, rev2), (dhi_event_id, rev3)]
+        return []
+
+    fetch_index, fetch_body, _tx_sha = _tx_fetchers()
+    publish_calls = {"n": 0}
+
+    def flaky_publish(out_dir, dry_run=False):
+        publish_calls["n"] += 1
+        if publish_calls["n"] == 2:
+            return 1  # a hard publish failure on the SECOND write
+        return publish_event_workspaces(out_dir, dry_run=dry_run, s3=fake, bucket="bucket")
+
+    with pytest.raises(RefreshError):
+        refresh(
+            tmp_path, out_dir=tmp_path, http_get=_http_get_factory(),
+            fetch_index=fetch_index, fetch_body_fn=fetch_body,
+            homebuilder_carry_forward_loader=lambda ticker: None,
+            publish_generation=flaky_publish,
+            current_marker_loader=lambda: None,
+            homebuilder_discovery=three_revisions,
+        )
+    # Exactly two publish attempts were made (the first succeeded, the
+    # second failed) — the third revision's write never happened.
+    assert publish_calls["n"] == 2
+    # The REMOTE marker (fake.remote_manifest — what is actually PUBLISHED;
+    # write_workspace_generation's own local scratch file is unconditionally
+    # overwritten by every attempt regardless of whether ITS publish
+    # succeeds, so it is not the right artifact to assert "what's live"
+    # against) still names the FIRST (successfully-published) revision —
+    # never rev2 (whose publish failed) or rev3 (never attempted).
+    assert fake.remote_manifest is not None
+    published_generation_id = fake.remote_manifest["generation_id"]
+    dhi_published = json.loads(
+        (tmp_path / "event_workspaces" / "generations" / published_generation_id
+         / "workspaces" / f"{dhi_event_id}.json").read_text(encoding="utf-8")
+    )
+    assert dhi_published["sources"][0]["filing_key"]["accession"] == "0000882184-26-000090"
+
+
+# ---------------------------------------------------------------------------
+# MINOR-11: a clock-injected no-prior semantic-no-op test — proves the
+# no-op is deterministic by CONSTRUCTION (an explicitly injected,
+# non-wall-clock observed_at carried forward via prior_observed_at), never
+# by two real refresh() calls happening to land in the same wall-clock
+# second. This is deliberately a DIRECT unit-level proof at
+# build_event_workspace's own seam (the mechanism refresh() relies on),
+# rather than a second full refresh() round-trip.
+# ---------------------------------------------------------------------------
+
+def test_semantic_noop_is_deterministic_by_injected_clock_not_same_second_luck() -> None:
+    exhibit_body = EXHIBIT.read_text(encoding="utf-8")
+    filing = {
+        "cik": AAPL_CIK, "accession": AAPL_ACCESSION, "form": "8-K",
+        "filing_date": "2026-07-30", "acceptance_datetime": ACCEPTANCE,
+        "report_date": "2026-06-27", "exhibit_url": EXHIBIT_URL,
+    }
+    tx, tx_sha = _transcript()
+    # Both deliberately fixed, non-"now" values, AFTER source_available_at
+    # (C4 requires observed_at >= source_available_at) but otherwise
+    # arbitrary — proving the no-op is clock-injection-driven, never
+    # "two wall-clock calls happened to land in the same second".
+    injected_observed_at = "2026-08-01T00:00:00Z"
+
+    first = build_event_workspace(
+        registry=apple_registry(), ticker="AAPL", asof=AAPL_CALL_DATE,
+        fiscal_period=flagship_fiscal_period(), exhibit_body=exhibit_body,
+        filing=filing, transcript=tx, transcript_sha256=tx_sha,
+        observed_at=injected_observed_at, source_available_at=ACCEPTANCE,
+        prior_source_sha256=None, prior_lifecycle_state=None, prior_observed_at=None,
+    )
+    # A SECOND build, requesting a DIFFERENT (also non-"now") observed_at,
+    # but with prior_source_sha256/prior_observed_at correctly carried
+    # forward from the first — C3 must ignore the freshly-REQUESTED clock
+    # entirely and reproduce the FIRST build's observed_at exactly.
+    second = build_event_workspace(
+        registry=apple_registry(), ticker="AAPL", asof=AAPL_CALL_DATE,
+        fiscal_period=flagship_fiscal_period(), exhibit_body=exhibit_body,
+        filing=filing, transcript=tx, transcript_sha256=tx_sha,
+        observed_at="2026-09-01T00:00:00Z", source_available_at=ACCEPTANCE,
+        prior_source_sha256=first["_source_sha256"],
+        prior_lifecycle_state=first["lifecycle"]["state"],
+        prior_observed_at=first["lifecycle"]["observed_at"],
+    )
+    assert second["lifecycle"]["observed_at"] == injected_observed_at == first["lifecycle"]["observed_at"]
+    # Content-address stability follows directly: byte-identical bodies
+    # (module content, excluding the generation_id/generated_at
+    # write_workspace_generation always re-stamps) prove the no-op holds.
+    def _content(payload: dict) -> dict:
+        return {k: v for k, v in payload.items() if k not in ("generation_id", "generated_at")}
+    assert _content(first) == _content(second)

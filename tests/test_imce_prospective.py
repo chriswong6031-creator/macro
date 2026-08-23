@@ -161,6 +161,62 @@ def _trigger_pooling_key(ws: dict) -> tuple[int, int]:
 
 
 # ---------------------------------------------------------------------------
+# IMCE A5C: builder-level tests that inject content into
+# ``_fetch_all_candidates``'s ``found`` map must ALSO stub
+# ``_load_event_revision_history`` — scripts.build_cycle_pattern_
+# imce_prospective.run() now walks each found candidate's OWN chain
+# (frozen spec D2(d)) via the shared reader BEFORE it can be observed/
+# corrected. Without an explicit stub, the real default
+# (engine.neuralweb.company_intelligence_reader.read_event_source_revisions)
+# would make a genuine network call against production R2 — this file's own
+# "No network." law. Every synthetic single-snapshot fixture here represents
+# an event whose chain has never accumulated a real correction, so a
+# single-revision history derived from that ONE workspace is the faithful
+# stub.
+# ---------------------------------------------------------------------------
+
+def _revision_entry(ws: dict) -> dict:
+    """One synthetic chain revision matching
+    engine.neuralweb.company_intelligence_reader.read_event_source_revisions's
+    own receipt shape, derived from a single already-built test workspace."""
+    lifecycle = ws.get("lifecycle") or {}
+    source = next((s for s in ws.get("sources") or [] if s.get("kind") == "issuer_release"), {})
+    return {
+        "generation_id": ws.get("generation_id"),
+        "source_sha256": source.get("source_sha256"),
+        "source_available_at": lifecycle.get("source_available_at"),
+        "observed_at": lifecycle.get("observed_at") or lifecycle.get("source_available_at"),
+        "lifecycle_state": lifecycle.get("state"),
+        "form": source.get("form"),
+        "workspace": ws,
+    }
+
+
+def _stub_revision_history(*workspaces: dict):
+    """A ``_load_event_revision_history`` stub mapping each workspace's own
+    event_id to a single-revision history."""
+    by_event = {ws["event_id"]: [_revision_entry(ws)] for ws in workspaces}
+
+    def loader(event_id: str) -> list[dict]:
+        return by_event.get(event_id, [])
+
+    return loader
+
+
+def _stub_revision_history_ordered(event_id: str, *ordered_workspaces: dict):
+    """A ``_load_event_revision_history`` stub for ONE event_id carrying
+    MULTIPLE ordered revisions (oldest first, as the caller supplies them)
+    — for eligibility/replay tests that need more than one source revision
+    of the same event."""
+    history = [_revision_entry(ws) for ws in ordered_workspaces]
+
+    def loader(candidate_event_id: str) -> list[dict]:
+        return history if candidate_event_id == event_id else []
+
+    return loader
+
+
+# ---------------------------------------------------------------------------
 # (a) activation record idempotence
 # ---------------------------------------------------------------------------
 
@@ -1303,6 +1359,7 @@ def test_a5c_builder_happy_path_appends_a_real_observation(monkeypatch, tmp_path
         return found, dispositions
 
     monkeypatch.setattr(b, "_fetch_all_candidates", fake_fetch_all_candidates)
+    monkeypatch.setattr(b, "_load_event_revision_history", _stub_revision_history(safe_ws))
     summary = b.run(production=True)
     assert summary["errors"] == []
     assert summary["n_observations_appended"] == 1
@@ -1349,6 +1406,7 @@ def test_a5c_refusal_does_not_defer_the_run_or_block_activation(monkeypatch, tmp
         return found, dispositions
 
     monkeypatch.setattr(b, "_fetch_all_candidates", fake_fetch_all_candidates)
+    monkeypatch.setattr(b, "_load_event_revision_history", _stub_revision_history(corrected_ws))
     summary = b.run(production=True)
     assert summary["deferred_fetch_failed"] == []
     assert summary["activated"] is True
@@ -1383,6 +1441,7 @@ def test_a5c_refusal_is_idempotent_across_reruns(monkeypatch, tmp_path):
         return found, dispositions
 
     monkeypatch.setattr(b, "_fetch_all_candidates", fake_fetch_all_candidates)
+    monkeypatch.setattr(b, "_load_event_revision_history", _stub_revision_history(corrected_ws))
     summary1 = b.run(production=True)
     rows_after_1 = m.load_rows(fake_prod)
     summary2 = b.run(production=True)
@@ -1477,6 +1536,7 @@ def test_a5c_builder_end_to_end_refuses_a_workspace_missing_its_form(monkeypatch
         return found, dispositions
 
     monkeypatch.setattr(b, "_fetch_all_candidates", fake_fetch_all_candidates)
+    monkeypatch.setattr(b, "_load_event_revision_history", _stub_revision_history(no_form_ws))
     summary = b.run(production=True)
     assert summary["errors"] == []
     assert summary["n_observations_appended"] == 0
@@ -1506,6 +1566,7 @@ def test_a5c_builder_end_to_end_refuses_a_workspace_missing_its_lifecycle_state(
         return found, dispositions
 
     monkeypatch.setattr(b, "_fetch_all_candidates", fake_fetch_all_candidates)
+    monkeypatch.setattr(b, "_load_event_revision_history", _stub_revision_history(no_state_ws))
     summary = b.run(production=True)
     assert summary["errors"] == []
     assert summary["n_observations_appended"] == 0
@@ -1521,3 +1582,280 @@ def test_a5c_frozen_schema_whitelist_unaffected():
     assert set(packet.keys()) == _FROZEN_TOP_LEVEL_KEYS
     assert set(packet["trigger"].keys()) == _FROZEN_TRIGGER_KEYS
     assert set(packet["m_t"].keys()) == _FROZEN_MT_KEYS
+
+
+# ---------------------------------------------------------------------------
+# IMCE A5C — E: eligibility-by-earliest-revision; F: ordered replay;
+# G: contributor selection walks the chain, never a future correction.
+# ---------------------------------------------------------------------------
+
+def test_e_post_activation_amendment_on_a_pre_activation_event_mints_nothing(monkeypatch, tmp_path):
+    """Mutation-kill (1): a post-activation 8-K/A on a pre-activation event
+    must NEVER mint an observation — the EARLIEST known revision decides
+    eligibility, permanently (E1/E2/E3), even though the discovered
+    "current" revision (the amendment) is itself post-activation."""
+    import scripts.build_cycle_pattern_imce_prospective as b
+
+    fake_prod = tmp_path / "fake_prod_e_eligibility.jsonl"
+    monkeypatch.setattr(m, "PRODUCTION_PATH", fake_prod)
+    monkeypatch.setattr("engine.cycle_pattern.imce_prospective.PRODUCTION_PATH", fake_prod)
+    m.ensure_activation(path=fake_prod, reconstruction=False, production=True,
+                         now=datetime(2020, 1, 1, tzinfo=timezone.utc))
+
+    original_ws = _mk_ws("DHI", cutoff="2019-06-01T00:00:00Z", net_orders_current=100, net_orders_prior=90,
+                          cancel_current=10.0, cancel_prior=12.0, generation_id="a" * 24)
+    amendment_ws = _mk_ws("DHI", cutoff="2026-05-01T00:00:00Z", net_orders_current=105, net_orders_prior=90,
+                           cancel_current=10.0, cancel_prior=12.0, generation_id="b" * 24, source_form="8-K/A")
+
+    def fake_fetch_all_candidates(today):
+        dispositions = {"DHI": {amendment_ws["event_id"]: "found"}, "PHM": {}, "KBH": {}, "TOL": {}}
+        found = {"DHI": [amendment_ws], "PHM": [], "KBH": [], "TOL": []}
+        return found, dispositions
+
+    monkeypatch.setattr(b, "_fetch_all_candidates", fake_fetch_all_candidates)
+    monkeypatch.setattr(
+        b, "_load_event_revision_history",
+        _stub_revision_history_ordered(original_ws["event_id"], original_ws, amendment_ws),
+    )
+    summary = b.run(production=True)
+    assert summary["errors"] == []
+    assert summary["n_observations_appended"] == 0
+    assert summary["n_observations_refused_unsafe_correction"] == 0
+    assert summary["n_corrections"] == 0
+    assert sum(1 for r in m.load_rows(fake_prod) if r["row_kind"] in ("observation", "correction")) == 0
+
+
+def test_e_eligibility_survives_an_inverted_chain_order(monkeypatch, tmp_path):
+    """BLOCKER-1 (Opus red-team, 2026-08-23): the chain walk's own return
+    order is a construction detail, not something eligibility may lean on.
+    The revision-history STUB here deliberately returns [amendment,
+    original] — newest first, inverted from the real chain-walk contract —
+    and eligibility must STILL correctly identify the TRUE earliest
+    (original, pre-activation) and refuse. A mutant that reads
+    revisions[0] instead of the source_available_at-sorted list dies here
+    (revisions[0] would be the POST-activation amendment, which would
+    incorrectly mint)."""
+    import scripts.build_cycle_pattern_imce_prospective as b
+
+    fake_prod = tmp_path / "fake_prod_e_inverted.jsonl"
+    monkeypatch.setattr(m, "PRODUCTION_PATH", fake_prod)
+    monkeypatch.setattr("engine.cycle_pattern.imce_prospective.PRODUCTION_PATH", fake_prod)
+    m.ensure_activation(path=fake_prod, reconstruction=False, production=True,
+                         now=datetime(2020, 1, 1, tzinfo=timezone.utc))
+
+    original_ws = _mk_ws("KBH", cutoff="2019-06-01T00:00:00Z", net_orders_current=100, net_orders_prior=90,
+                          cancel_current=10.0, cancel_prior=12.0, generation_id="a" * 24)
+    amendment_ws = _mk_ws("KBH", cutoff="2026-05-01T00:00:00Z", net_orders_current=105, net_orders_prior=90,
+                           cancel_current=10.0, cancel_prior=12.0, generation_id="b" * 24, source_form="8-K/A")
+
+    def fake_fetch_all_candidates(today):
+        dispositions = {"KBH": {amendment_ws["event_id"]: "found"}, "DHI": {}, "PHM": {}, "TOL": {}}
+        found = {"DHI": [], "PHM": [], "KBH": [amendment_ws], "TOL": []}
+        return found, dispositions
+
+    monkeypatch.setattr(b, "_fetch_all_candidates", fake_fetch_all_candidates)
+    # Deliberately INVERTED order: newest (amendment) first, oldest
+    # (original) second — the opposite of read_event_source_revisions's own
+    # oldest-first contract.
+    monkeypatch.setattr(
+        b, "_load_event_revision_history",
+        _stub_revision_history_ordered(original_ws["event_id"], amendment_ws, original_ws),
+    )
+    summary = b.run(production=True)
+    assert summary["errors"] == []
+    assert summary["n_observations_appended"] == 0
+    assert summary["n_observations_refused_unsafe_correction"] == 0
+    assert summary["n_corrections"] == 0
+    assert sum(1 for r in m.load_rows(fake_prod) if r["row_kind"] in ("observation", "correction")) == 0
+
+
+def test_f_packet_build_failure_on_the_anchor_revision_never_mints_from_a_later_one(monkeypatch, tmp_path):
+    """BLOCKER-1 (2nd fix): if the EARLIEST eligible revision's own packet
+    build fails, the loop must NEVER fall through and mint from a LATER
+    revision instead — the whole event is abandoned for this run (recorded
+    as an error), not silently re-anchored on a later cutoff."""
+    import scripts.build_cycle_pattern_imce_prospective as b
+
+    fake_prod = tmp_path / "fake_prod_f_anchor_failure.jsonl"
+    monkeypatch.setattr(m, "PRODUCTION_PATH", fake_prod)
+    monkeypatch.setattr("engine.cycle_pattern.imce_prospective.PRODUCTION_PATH", fake_prod)
+    m.ensure_activation(path=fake_prod, reconstruction=False, production=True,
+                         now=datetime(2020, 1, 1, tzinfo=timezone.utc))
+
+    # rev1 (earliest) carries NO fiscal_period.calendar_end -- this makes
+    # build_observation_packet raise (it requires calendar_end to compute
+    # the pooling key) so the "would-be anchor" mint fails. rev2 (later) is
+    # otherwise perfectly healthy and would happily mint if the loop
+    # incorrectly fell through to it.
+    rev1 = _mk_ws("PHM", cutoff="2026-03-01T00:00:00Z", net_orders_current=100, net_orders_prior=90,
+                  cancel_current=10.0, cancel_prior=12.0, generation_id="a" * 24, sha256hex="a" * 64)
+    rev1["fiscal_period"] = {**rev1["fiscal_period"], "calendar_end": None}
+    rev2 = _mk_ws("PHM", cutoff="2026-03-05T00:00:00Z", net_orders_current=105, net_orders_prior=90,
+                  cancel_current=10.0, cancel_prior=12.0, generation_id="b" * 24, sha256hex="b" * 64)
+
+    def fake_fetch_all_candidates(today):
+        dispositions = {"PHM": {rev2["event_id"]: "found"}, "DHI": {}, "KBH": {}, "TOL": {}}
+        found = {"DHI": [], "PHM": [rev2], "KBH": [], "TOL": []}
+        return found, dispositions
+
+    monkeypatch.setattr(b, "_fetch_all_candidates", fake_fetch_all_candidates)
+    monkeypatch.setattr(
+        b, "_load_event_revision_history",
+        _stub_revision_history_ordered(rev1["event_id"], rev1, rev2),
+    )
+    summary = b.run(production=True)
+    assert summary["n_observations_appended"] == 0
+    assert summary["n_corrections"] == 0
+    assert any("packet_build" in err for err in summary["errors"])
+    assert sum(1 for r in m.load_rows(fake_prod) if r["row_kind"] in ("observation", "correction")) == 0
+
+
+def test_e_post_activation_original_is_eligible_and_mints(monkeypatch, tmp_path):
+    """Regression pair to the test above: when the EARLIEST revision itself
+    is post-activation, the event is eligible and observes normally."""
+    import scripts.build_cycle_pattern_imce_prospective as b
+
+    fake_prod = tmp_path / "fake_prod_e_eligible.jsonl"
+    monkeypatch.setattr(m, "PRODUCTION_PATH", fake_prod)
+    monkeypatch.setattr("engine.cycle_pattern.imce_prospective.PRODUCTION_PATH", fake_prod)
+    m.ensure_activation(path=fake_prod, reconstruction=False, production=True,
+                         now=datetime(2020, 1, 1, tzinfo=timezone.utc))
+
+    safe_ws = _mk_ws("TOL", cutoff="2026-05-01T20:00:00Z", net_orders_current=30, net_orders_prior=28,
+                      cancel_current=5.0, cancel_prior=6.0)
+
+    def fake_fetch_all_candidates(today):
+        dispositions = {"TOL": {safe_ws["event_id"]: "found"}, "DHI": {}, "PHM": {}, "KBH": {}}
+        found = {"DHI": [], "PHM": [], "KBH": [], "TOL": [safe_ws]}
+        return found, dispositions
+
+    monkeypatch.setattr(b, "_fetch_all_candidates", fake_fetch_all_candidates)
+    monkeypatch.setattr(b, "_load_event_revision_history", _stub_revision_history(safe_ws))
+    summary = b.run(production=True)
+    assert summary["n_observations_appended"] == 1
+
+
+def test_g_contributor_never_uses_a_revision_whose_source_available_at_is_after_the_cutoff():
+    """Mutation-kill (5): a contributor's state at a trigger cutoff must be
+    the LATEST LAWFUL revision at-or-before that cutoff — never a later
+    (future-relative) correction used retrospectively."""
+    import scripts.build_cycle_pattern_imce_prospective as b
+
+    early_ws = _mk_ws("PHM", cutoff="2026-04-01T00:00:00Z", net_orders_current=10, net_orders_prior=9,
+                       cancel_current=5.0, cancel_prior=6.0)
+    late_ws = _mk_ws("PHM", cutoff="2026-06-01T00:00:00Z", net_orders_current=20, net_orders_prior=9,
+                      cancel_current=5.0, cancel_prior=6.0)
+    found = {"PHM": [late_ws]}
+    revision_histories = {late_ws["event_id"]: [_revision_entry(early_ws), _revision_entry(late_ws)]}
+
+    # Cutoff strictly between early and late -- only "early" is lawful.
+    selected = b._latest_contributor_revision_at_or_before(
+        "PHM", found, revision_histories, "2026-05-01T00:00:00Z",
+    )
+    assert selected is not None
+    assert selected["lifecycle"]["source_available_at"] == "2026-04-01T00:00:00Z"
+
+    # Cutoff BEFORE both -- nothing lawful.
+    assert b._latest_contributor_revision_at_or_before(
+        "PHM", found, revision_histories, "2026-01-01T00:00:00Z",
+    ) is None
+
+    # Cutoff AFTER both -- "late" IS <= this cutoff, so it is legitimately
+    # the latest LAWFUL revision (never used when it is AFTER the cutoff,
+    # exactly as the first assertion above proves).
+    selected2 = b._latest_contributor_revision_at_or_before(
+        "PHM", found, revision_histories, "2026-07-01T00:00:00Z",
+    )
+    assert selected2["lifecycle"]["source_available_at"] == "2026-06-01T00:00:00Z"
+
+
+def test_f_ordered_replay_mints_from_earliest_then_corrects_only_material_changes(monkeypatch, tmp_path):
+    """F1/F2/F3/F4: three revisions accumulated between nightlies — the
+    FIRST (earliest) mints THE observation with decision_cutoff pinned to
+    its OWN source_available_at; the second (materially different) becomes
+    an ordered correction; the third (cosmetic — same derived facts as the
+    second) produces NO correction noise. The correction supersedes the
+    ANCHOR observation, never a prior correction."""
+    import scripts.build_cycle_pattern_imce_prospective as b
+
+    fake_prod = tmp_path / "fake_prod_f_replay.jsonl"
+    monkeypatch.setattr(m, "PRODUCTION_PATH", fake_prod)
+    monkeypatch.setattr("engine.cycle_pattern.imce_prospective.PRODUCTION_PATH", fake_prod)
+    m.ensure_activation(path=fake_prod, reconstruction=False, production=True,
+                         now=datetime(2020, 1, 1, tzinfo=timezone.utc))
+
+    rev1 = _mk_ws("KBH", cutoff="2026-03-01T00:00:00Z", net_orders_current=100, net_orders_prior=90,
+                  cancel_current=10.0, cancel_prior=12.0, generation_id="a" * 24, sha256hex="a" * 64)
+    rev2 = _mk_ws("KBH", cutoff="2026-03-05T00:00:00Z", net_orders_current=200, net_orders_prior=90,
+                  cancel_current=10.0, cancel_prior=12.0, generation_id="b" * 24, sha256hex="b" * 64,
+                  lifecycle_state="corrected")
+    rev3 = _mk_ws("KBH", cutoff="2026-03-10T00:00:00Z", net_orders_current=200, net_orders_prior=90,
+                  cancel_current=10.0, cancel_prior=12.0, generation_id="c" * 24, sha256hex="c" * 64,
+                  lifecycle_state="corrected")  # cosmetic: SAME derived facts as rev2
+
+    def fake_fetch_all_candidates(today):
+        dispositions = {"KBH": {rev3["event_id"]: "found"}, "DHI": {}, "PHM": {}, "TOL": {}}
+        found = {"DHI": [], "PHM": [], "KBH": [rev3], "TOL": []}
+        return found, dispositions
+
+    monkeypatch.setattr(b, "_fetch_all_candidates", fake_fetch_all_candidates)
+    monkeypatch.setattr(
+        b, "_load_event_revision_history",
+        _stub_revision_history_ordered(rev1["event_id"], rev1, rev2, rev3),
+    )
+    summary = b.run(production=True)
+    assert summary["errors"] == []
+    assert summary["n_observations_appended"] == 1
+    assert summary["n_corrections"] == 1
+    rows = m.load_rows(fake_prod)
+    obs = [r for r in rows if r["row_kind"] == "observation"]
+    corr = [r for r in rows if r["row_kind"] == "correction"]
+    assert len(obs) == 1 and len(corr) == 1
+    assert obs[0]["trigger"]["decision_cutoff"] == "2026-03-01T00:00:00Z"
+    assert corr[0]["trigger"]["decision_cutoff"] == "2026-03-05T00:00:00Z"
+    assert corr[0]["supersedes_observation_id"] == obs[0]["observation_id"]
+
+    # A SECOND nightly run over the SAME (unchanged) revision history is
+    # fully idempotent — no new rows.
+    summary2 = b.run(production=True)
+    assert summary2["n_observations_appended"] == 0
+    assert summary2["n_corrections"] == 0
+    assert m.load_rows(fake_prod) == rows
+
+
+def test_tol_sensitivity_flow_through_when_both_facts_present_reconstruction_mode():
+    """WORLD STATE sweep item (i): the TOL PR #6307 extraction change means
+    _tol_sensitivity's prior-year lookup is now a REAL, resolvable fact once
+    the workspace carries the prior-year cell — this pins the CONSUMPTION
+    side end to end (extraction itself is issuer_profiles' own PR, untouched
+    here)."""
+    facts = [
+        _fact_present("fact_net_orders_current", 30),
+        _fact_present("fact_net_orders_prior_year", 28),
+        _fact_present("fact_cancellation_rate_current", 5.0),
+        _fact_present("fact_cancellation_rate_prior_year", 6.0),
+        _fact_present(
+            "fact_cancellation_rate_denominator", _DEFAULT_DENOMINATOR_TEXT["TOL"],
+            basis=_DEFAULT_DENOMINATOR_TEXT["TOL"],
+        ),
+        _fact_present(
+            "fact_cancellation_rate_beginning_backlog_sensitivity", 4.2,
+            basis="quarterly cancellations as a percentage of beginning-quarter backlog",
+        ),
+        _fact_present(
+            "fact_cancellation_rate_beginning_backlog_sensitivity_prior_year", 3.1,
+            basis="quarterly cancellations as a percentage of beginning-quarter backlog",
+        ),
+    ]
+    ws = _mk_ws("TOL", cutoff="2026-05-01T20:00:00Z", facts_override=facts)
+    state = m.per_issuer_state(
+        "TOL", ws, activation_started_at=ACTIVATION_TS, as_of_cutoff="2026-05-01T20:00:00Z",
+        trigger_pooling_key=_trigger_pooling_key(ws),
+    )
+    assert state["contributor_eligible"] is True
+    sensitivity = state["sensitivity"]
+    assert sensitivity["current_value"] == 4.2
+    assert sensitivity["prior_year_value"] == 3.1
+    assert sensitivity["prior_year_absence_reason"] is None
+    assert sensitivity["d_cancel_sensitivity"] == "+"
+    assert sensitivity["order_softness_sensitivity_basis"] == "MIXED"
