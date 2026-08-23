@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from scripts import prophet_flagship_voi_report as report_cli
 from engine.prophet_voi import HOLD_INTEGRITY, MEASURED, PROTECTED_OUTCOME
 
@@ -54,6 +56,13 @@ def test_qledger_clock_inventory_holds_on_filename_family_mismatch(tmp_path, mon
     assert got["outcome_files_opened"] is False
 
 
+def test_cli_rejects_arbitrary_w3_and_board_source_paths() -> None:
+    with pytest.raises(SystemExit):
+        report_cli._args(["--w3-status", "some/outcome.json"])
+    with pytest.raises(SystemExit):
+        report_cli._args(["--board-ledger", "some/protected.parquet"])
+
+
 def test_metadata_only_cli_proves_protected_w3_and_clock_without_board(
     tmp_path, monkeypatch, capsys
 ) -> None:
@@ -62,9 +71,10 @@ def test_metadata_only_cli_proves_protected_w3_and_clock_without_board(
     clock_dir = tmp_path / "clock"
     clock_dir.mkdir()
     (clock_dir / "demand_chain.json").write_text(json.dumps(_clock()), encoding="utf-8")
+    monkeypatch.setattr(report_cli, "DEFAULT_W3_STATUS", w3_path)
     monkeypatch.setattr(report_cli, "DEFAULT_QLEDGER_CLOCK_DIR", clock_dir)
 
-    rc = report_cli.main(["--w3-status", str(w3_path), "--no-board"])
+    rc = report_cli.main(["--no-board"])
     assert rc == 0
     payload = json.loads(capsys.readouterr().out)
     assert payload["promotion_authority"] is False
