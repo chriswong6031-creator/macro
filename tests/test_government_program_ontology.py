@@ -1146,12 +1146,42 @@ def test_workspace_build_procurement_workspace_attaches_program_link_to_award_ch
 
 # ---------------------------------------------------------------------------
 # End-to-end composer wiring smoke test (build_government_revenue.py)
+#
+# Deliberately does NOT import tests/test_build_government_revenue.py's own
+# ``_payload()`` helper: that module's top-level ``from scripts import
+# build_baskets, build_government_revenue`` pulls in the entire basket/
+# vol-regime engine as a transitive import closure (verified via
+# scripts.ci_scope_dependencies.suite_dependency_closure), which this
+# packet's curated `scope: exclusive` govrev-program-ontology CI job has no
+# business owning. A minimal local replica keeps this suite's true
+# dependency closure narrow and matching its declared `paths:`.
 # ---------------------------------------------------------------------------
+
+
+def _minimal_government_revenue_payload() -> dict:
+    from engine.government_revenue.workspace import build_procurement_workspace
+
+    return {
+        "schema_version": "company_government_revenue.v1",
+        "as_of": "2026-08-01",
+        "known_at": "2026-08-01T08:00:00Z",
+        "authority": {"tier": "display", "can_rank": False},
+        "coverage": {"entities_mapped": 1},
+        "market": {},
+        "procurement_workspace": build_procurement_workspace(
+            {"freshness": {"status": "ok"}},
+            [],
+            as_of="2026-08-01",
+            known_at="2026-08-01T08:00:00Z",
+            award_freshness={"status": "ok"},
+            award_event_freshness={"status": "unavailable"},
+        ),
+        "companies": [{"ticker": "LMT", "name": "Lockheed Martin", "metrics": {}}],
+    }
 
 
 def test_build_government_revenue_writes_d5_dossier_and_program_link_end_to_end(tmp_path):
     from scripts import build_government_revenue
-    from tests.test_build_government_revenue import _payload
 
     templates = tmp_path / "templates"
     templates.mkdir()
@@ -1161,7 +1191,7 @@ def test_build_government_revenue_writes_d5_dossier_and_program_link_end_to_end(
     )
 
     def _monkeypatched_build_payload(**_kwargs):
-        payload = _payload()
+        payload = _minimal_government_revenue_payload()
         events = payload["procurement_workspace"].get("events") or []
         for event in events:
             if event.get("kind") == "award_change":
@@ -1187,7 +1217,8 @@ def test_build_government_revenue_writes_d5_dossier_and_program_link_end_to_end(
 
     workspace_payload = json.loads((tmp_path / "data" / "government_revenue" / "workspace.json").read_text())
     award_change_events = [e for e in workspace_payload["events"] if e.get("kind") == "award_change"]
-    # The shared _payload() fixture carries no award_change rows; assert the
+    # The shared _minimal_government_revenue_payload() fixture carries no
+    # award_change rows; assert the
     # attachment behavior on whichever rows exist (may be an empty set), and
     # separately prove the derivation function itself against a real event
     # (already covered end-to-end by the workspace wiring test above).
@@ -1202,7 +1233,6 @@ def test_build_government_revenue_writes_d5_dossier_and_program_link_end_to_end(
 
 def test_build_government_revenue_composes_a_real_dossier_when_canonical_ontology_exists(tmp_path):
     from scripts import build_government_revenue
-    from tests.test_build_government_revenue import _payload
 
     templates = tmp_path / "templates"
     templates.mkdir()
@@ -1218,7 +1248,7 @@ def test_build_government_revenue_composes_a_real_dossier_when_canonical_ontolog
     import pytest as _pytest
     monkeypatch = _pytest.MonkeyPatch()
     try:
-        monkeypatch.setattr(build_government_revenue, "build_payload", lambda **_kwargs: _payload())
+        monkeypatch.setattr(build_government_revenue, "build_payload", lambda **_kwargs: _minimal_government_revenue_payload())
         build_government_revenue.build(tmp_path)
     finally:
         monkeypatch.undo()

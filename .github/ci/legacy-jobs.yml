@@ -8901,33 +8901,18 @@ jobs:
     # CI-wiring law — never `gate: data`, and never reading nightly-rewritten
     # site/government-revenue-data/ or data/government_revenue/ artifacts.
     #
-    # `scope: exclusive` (mirrors govrev-company-bridge immediately above):
-    # the suite's own cross-file imports (tests/test_government_revenue_award_events.py
-    # for a schema-valid v2 event fixture, tests/test_build_government_revenue.py
-    # for the shared payload fixture) are opaque to scope inference the same
-    # way that job's node subprocess call is, so the true dependency set is
-    # curated here explicitly rather than left to widen.
+    # Deliberately NOT `scope: exclusive`: unlike govrev-company-bridge (whose
+    # only import is a frozen fixture read as plain text), this suite imports
+    # engine/government_revenue/program_ontology.py's sibling modules AND
+    # scripts/build_government_revenue.py for the end-to-end composer-wiring
+    # smoke test, whose own transitive closure spans a large slice of the
+    # government_revenue engine (dossiers/idv/subaward/budget_program/
+    # candidates/metrics + their contracts). Curating that whole closure by
+    # hand would need constant upkeep as those modules evolve; automatic
+    # scope inference (the same machinery `scope: exclusive` opts OUT of)
+    # derives and keeps it current instead.
     if: ${{ false }}
     gate: code
-    scope: exclusive
-    paths:
-      - "contracts/government_revenue/government_program_ontology.v1.schema.json"
-      - "contracts/government_revenue/government_program_dossier.v1.schema.json"
-      - "engine/government_revenue/program_ontology.py"
-      - "engine/government_revenue/program_dossier.py"
-      - "engine/government_revenue/workspace.py"
-      - "engine/government_revenue/award_events.py"
-      - "engine/government_revenue/identity_atlas.py"
-      - "engine/government_revenue/entity_resolution.py"
-      - "scripts/propose_government_program_ontology.py"
-      - "scripts/curate_government_program_ontology.py"
-      - "scripts/build_government_revenue.py"
-      - "tests/fixtures/government_program_ontology/**"
-      - "tests/test_government_program_ontology.py"
-      - "tests/test_government_program_ontology_scripts.py"
-      - "tests/test_government_revenue_award_events.py"
-      - "tests/test_build_government_revenue.py"
-      - "research/defense_intelligence/evidence/fixtures/d5-representability-fixtures.json"
     timeout-minutes: 8
     runs-on: ubuntu-latest
     steps:
