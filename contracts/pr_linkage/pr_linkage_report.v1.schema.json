@@ -38,8 +38,7 @@
           "const": "mastermind.pr_linkage_rules.v1"
         },
         "ruleset_digest": {
-          "type": "string",
-          "pattern": "^[0-9a-f]{64}$"
+          "const": "41d5634a6ca6d4bbd993e728b73d839260452b24c891e556c59da52a184a1859"
         },
         "enforcement": {
           "const": "REPORT_ONLY"
@@ -61,37 +60,43 @@
               "type": [
                 "string",
                 "null"
-              ]
+              ],
+              "maxLength": 83
             },
             "linear": {
               "type": [
                 "string",
                 "null"
-              ]
+              ],
+              "maxLength": 13
             },
             "portfolio_mode": {
               "type": [
                 "string",
                 "null"
-              ]
+              ],
+              "maxLength": 80
             },
             "wave": {
               "type": [
                 "string",
                 "null"
-              ]
+              ],
+              "maxLength": 80
             },
             "authority": {
               "type": [
                 "string",
                 "null"
-              ]
+              ],
+              "maxLength": 80
             },
             "completion": {
               "type": [
                 "string",
                 "null"
-              ]
+              ],
+              "maxLength": 80
             },
             "authoring_state": {
               "enum": [
@@ -142,7 +147,8 @@
             ],
             "properties": {
               "issue_id": {
-                "type": "string"
+                "type": "string",
+                "pattern": "^MAS-[1-9][0-9]{0,8}$"
               },
               "effect": {
                 "enum": [
@@ -157,12 +163,18 @@
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "maxLength": 80
               },
               "stop_law": {
-                "type": [
-                  "string",
-                  "null"
+                "enum": [
+                  "MERGE",
+                  "BUILT_NOT_PROVEN",
+                  "PROOF",
+                  "ACCEPTANCE",
+                  "RECORDS_ONLY",
+                  "UNKNOWN",
+                  null
                 ]
               },
               "consistency": {
@@ -173,71 +185,3429 @@
                 ]
               }
             }
-          }
+          },
+          "uniqueItems": true
         },
         "unresolved_observation_classes": {
           "type": "array",
           "items": {
-            "type": "string"
+            "enum": [
+              "AUTHORING_EPOCH",
+              "CHANGED_PATHS",
+              "AGENTOS",
+              "LINEAR",
+              "PATH_OWNERSHIP",
+              "NATIVE_LINKAGE"
+            ]
           },
           "uniqueItems": true
         },
         "findings": {
           "type": "array",
           "items": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-              "code",
-              "rule_id",
-              "severity",
-              "location",
-              "evidence",
-              "remediation_code"
-            ],
-            "properties": {
-              "code": {
-                "pattern": "^[A-Z][A-Z0-9_]{2,127}$"
-              },
-              "rule_id": {
-                "pattern": "^R[0-9]{3}$"
-              },
-              "severity": {
-                "enum": [
-                  "ERROR",
-                  "PARTIAL",
-                  "WARNING",
-                  "NOTICE"
-                ]
-              },
-              "location": {
-                "pattern": "^(?:BODY:L[1-9][0-9]*:(?:Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion|RELATIONSHIP)|DECLARATION:(?:Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion|BLOCK)|SNAPSHOT:(?:AUTHORING_EPOCH|CHANGED_PATHS|AGENTOS|LINEAR|PATH_OWNERSHIP|NATIVE_LINKAGE)|RECEIPT:(?:OBSERVATION|BODY|CUTOVER|RULESET|AUTHORING_EPOCH|CHANGED_PATHS|AGENTOS|LINEAR|PATH_OWNERSHIP|NATIVE_LINKAGE)|TITLE|BRANCH|RULESET)$"
-              },
-              "evidence": {
+            "oneOf": [
+              {
                 "type": "object",
-                "propertyNames": {
-                  "enum": ["alias","authority","body_targets","bound_workstream","branch_targets","canonical","collisions","completion","component","declared","declared_workstream","diagnostics","effect","epoch","epoch_state","expected","field","issue_type","linear","location","locations","missing_fields","observed","path_classes","paths","portfolio_mode","reason","receipt","receipt_digest","relationships","required_targets","resolutions","roles","snapshot","snapshot_state","stop_law","target","target_role","target_roles","targets","title_targets","value","values","workstream"]
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "HEADER_MISSING"
+                  },
+                  "rule_id": {
+                    "const": "R001"
+                  },
+                  "severity": {
+                    "const": "ERROR"
+                  },
+                  "location": {
+                    "const": "DECLARATION:BLOCK"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "missing_fields"
+                    ],
+                    "properties": {
+                      "missing_fields": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                        },
+                        "uniqueItems": true
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "ADD_CANONICAL_HEADER"
+                  }
                 }
               },
-              "remediation_code": {
-                "type": "string"
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "HEADER_DUPLICATE"
+                  },
+                  "rule_id": {
+                    "const": "R002"
+                  },
+                  "severity": {
+                    "const": "ERROR"
+                  },
+                  "location": {
+                    "pattern": "^BODY:L[1-9][0-9]*:(?:Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion)$"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "field",
+                      "locations",
+                      "values"
+                    ],
+                    "properties": {
+                      "field": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      },
+                      "locations": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "pattern": "^(?:BODY:L[1-9][0-9]*:(?:Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion|RELATIONSHIP)|DECLARATION:(?:Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion|BLOCK)|SNAPSHOT:(?:AUTHORING_EPOCH|CHANGED_PATHS|AGENTOS|LINEAR|PATH_OWNERSHIP|NATIVE_LINKAGE)|RECEIPT:(?:OBSERVATION|BODY|CUTOVER|RULESET|AUTHORING_EPOCH|CHANGED_PATHS|AGENTOS|LINEAR|PATH_OWNERSHIP|NATIVE_LINKAGE)|TITLE|BRANCH|RULESET)$"
+                        },
+                        "uniqueItems": true
+                      },
+                      "values": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "prefix",
+                            "sha256"
+                          ],
+                          "properties": {
+                            "prefix": {
+                              "type": "string",
+                              "maxLength": 160
+                            },
+                            "sha256": {
+                              "type": "string",
+                              "pattern": "^[0-9a-f]{64}$"
+                            }
+                          }
+                        },
+                        "uniqueItems": true
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "REMOVE_DUPLICATE_FIELD"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "HEADER_AUTHORITY_ZONE_INVALID"
+                  },
+                  "rule_id": {
+                    "const": "R003"
+                  },
+                  "severity": {
+                    "const": "ERROR"
+                  },
+                  "location": {
+                    "pattern": "^(?:DECLARATION:BLOCK|BODY:L[1-9][0-9]*:(?:Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion|RELATIONSHIP))$"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "location",
+                      "reason"
+                    ],
+                    "properties": {
+                      "location": {
+                        "type": "string",
+                        "pattern": "^(?:BODY:L[1-9][0-9]*:(?:Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion|RELATIONSHIP)|DECLARATION:(?:Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion|BLOCK)|SNAPSHOT:(?:AUTHORING_EPOCH|CHANGED_PATHS|AGENTOS|LINEAR|PATH_OWNERSHIP|NATIVE_LINKAGE)|RECEIPT:(?:OBSERVATION|BODY|CUTOVER|RULESET|AUTHORING_EPOCH|CHANGED_PATHS|AGENTOS|LINEAR|PATH_OWNERSHIP|NATIVE_LINKAGE)|TITLE|BRANCH|RULESET)$"
+                      },
+                      "reason": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "REPAIR_AUTHORITY_ZONE"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "PLACEHOLDER_UNRESOLVED"
+                  },
+                  "rule_id": {
+                    "const": "R004"
+                  },
+                  "severity": {
+                    "const": "ERROR"
+                  },
+                  "location": {
+                    "pattern": "^BODY:L[1-9][0-9]*:(?:Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion)$"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "field",
+                      "location",
+                      "value"
+                    ],
+                    "properties": {
+                      "field": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      },
+                      "location": {
+                        "type": "string",
+                        "pattern": "^(?:BODY:L[1-9][0-9]*:(?:Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion|RELATIONSHIP)|DECLARATION:(?:Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion|BLOCK)|SNAPSHOT:(?:AUTHORING_EPOCH|CHANGED_PATHS|AGENTOS|LINEAR|PATH_OWNERSHIP|NATIVE_LINKAGE)|RECEIPT:(?:OBSERVATION|BODY|CUTOVER|RULESET|AUTHORING_EPOCH|CHANGED_PATHS|AGENTOS|LINEAR|PATH_OWNERSHIP|NATIVE_LINKAGE)|TITLE|BRANCH|RULESET)$"
+                      },
+                      "value": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "prefix",
+                          "sha256"
+                        ],
+                        "properties": {
+                          "prefix": {
+                            "type": "string",
+                            "maxLength": 160
+                          },
+                          "sha256": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{64}$"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "REPLACE_PLACEHOLDER"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "WORKSTREAM_ID_INVALID"
+                  },
+                  "rule_id": {
+                    "const": "R005"
+                  },
+                  "severity": {
+                    "const": "ERROR"
+                  },
+                  "location": {
+                    "pattern": "^BODY:L[1-9][0-9]*:Workstream$"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "location",
+                      "value"
+                    ],
+                    "properties": {
+                      "location": {
+                        "type": "string",
+                        "pattern": "^(?:BODY:L[1-9][0-9]*:(?:Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion|RELATIONSHIP)|DECLARATION:(?:Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion|BLOCK)|SNAPSHOT:(?:AUTHORING_EPOCH|CHANGED_PATHS|AGENTOS|LINEAR|PATH_OWNERSHIP|NATIVE_LINKAGE)|RECEIPT:(?:OBSERVATION|BODY|CUTOVER|RULESET|AUTHORING_EPOCH|CHANGED_PATHS|AGENTOS|LINEAR|PATH_OWNERSHIP|NATIVE_LINKAGE)|TITLE|BRANCH|RULESET)$"
+                      },
+                      "value": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "prefix",
+                          "sha256"
+                        ],
+                        "properties": {
+                          "prefix": {
+                            "type": "string",
+                            "maxLength": 160
+                          },
+                          "sha256": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{64}$"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "USE_EXACT_WORKSTREAM_ID"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "LINEAR_ID_INVALID"
+                  },
+                  "rule_id": {
+                    "const": "R006"
+                  },
+                  "severity": {
+                    "const": "ERROR"
+                  },
+                  "location": {
+                    "pattern": "^BODY:L[1-9][0-9]*:Linear$"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "location",
+                      "value"
+                    ],
+                    "properties": {
+                      "location": {
+                        "type": "string",
+                        "pattern": "^(?:BODY:L[1-9][0-9]*:(?:Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion|RELATIONSHIP)|DECLARATION:(?:Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion|BLOCK)|SNAPSHOT:(?:AUTHORING_EPOCH|CHANGED_PATHS|AGENTOS|LINEAR|PATH_OWNERSHIP|NATIVE_LINKAGE)|RECEIPT:(?:OBSERVATION|BODY|CUTOVER|RULESET|AUTHORING_EPOCH|CHANGED_PATHS|AGENTOS|LINEAR|PATH_OWNERSHIP|NATIVE_LINKAGE)|TITLE|BRANCH|RULESET)$"
+                      },
+                      "value": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "prefix",
+                          "sha256"
+                        ],
+                        "properties": {
+                          "prefix": {
+                            "type": "string",
+                            "maxLength": 160
+                          },
+                          "sha256": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{64}$"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "USE_EXACT_LINEAR_ID"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "WAVE_EMPTY"
+                  },
+                  "rule_id": {
+                    "const": "R007"
+                  },
+                  "severity": {
+                    "const": "ERROR"
+                  },
+                  "location": {
+                    "pattern": "^BODY:L[1-9][0-9]*:Wave$"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "location"
+                    ],
+                    "properties": {
+                      "location": {
+                        "type": "string",
+                        "pattern": "^(?:BODY:L[1-9][0-9]*:(?:Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion|RELATIONSHIP)|DECLARATION:(?:Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion|BLOCK)|SNAPSHOT:(?:AUTHORING_EPOCH|CHANGED_PATHS|AGENTOS|LINEAR|PATH_OWNERSHIP|NATIVE_LINKAGE)|RECEIPT:(?:OBSERVATION|BODY|CUTOVER|RULESET|AUTHORING_EPOCH|CHANGED_PATHS|AGENTOS|LINEAR|PATH_OWNERSHIP|NATIVE_LINKAGE)|TITLE|BRANCH|RULESET)$"
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "SET_BOUNDED_WAVE"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "WAVE_INVALID"
+                  },
+                  "rule_id": {
+                    "const": "R008"
+                  },
+                  "severity": {
+                    "const": "ERROR"
+                  },
+                  "location": {
+                    "pattern": "^BODY:L[1-9][0-9]*:Wave$"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "location",
+                      "value"
+                    ],
+                    "properties": {
+                      "location": {
+                        "type": "string",
+                        "pattern": "^(?:BODY:L[1-9][0-9]*:(?:Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion|RELATIONSHIP)|DECLARATION:(?:Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion|BLOCK)|SNAPSHOT:(?:AUTHORING_EPOCH|CHANGED_PATHS|AGENTOS|LINEAR|PATH_OWNERSHIP|NATIVE_LINKAGE)|RECEIPT:(?:OBSERVATION|BODY|CUTOVER|RULESET|AUTHORING_EPOCH|CHANGED_PATHS|AGENTOS|LINEAR|PATH_OWNERSHIP|NATIVE_LINKAGE)|TITLE|BRANCH|RULESET)$"
+                      },
+                      "value": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "prefix",
+                          "sha256"
+                        ],
+                        "properties": {
+                          "prefix": {
+                            "type": "string",
+                            "maxLength": 160
+                          },
+                          "sha256": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{64}$"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "SET_BOUNDED_WAVE"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "PORTFOLIO_MODE_INVALID"
+                  },
+                  "rule_id": {
+                    "const": "R009"
+                  },
+                  "severity": {
+                    "const": "ERROR"
+                  },
+                  "location": {
+                    "pattern": "^BODY:L[1-9][0-9]*:Portfolio-Mode$"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "location",
+                      "value"
+                    ],
+                    "properties": {
+                      "location": {
+                        "type": "string",
+                        "pattern": "^(?:BODY:L[1-9][0-9]*:(?:Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion|RELATIONSHIP)|DECLARATION:(?:Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion|BLOCK)|SNAPSHOT:(?:AUTHORING_EPOCH|CHANGED_PATHS|AGENTOS|LINEAR|PATH_OWNERSHIP|NATIVE_LINKAGE)|RECEIPT:(?:OBSERVATION|BODY|CUTOVER|RULESET|AUTHORING_EPOCH|CHANGED_PATHS|AGENTOS|LINEAR|PATH_OWNERSHIP|NATIVE_LINKAGE)|TITLE|BRANCH|RULESET)$"
+                      },
+                      "value": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "prefix",
+                          "sha256"
+                        ],
+                        "properties": {
+                          "prefix": {
+                            "type": "string",
+                            "maxLength": 160
+                          },
+                          "sha256": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{64}$"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "SET_CANONICAL_PORTFOLIO_MODE"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "PORTFOLIO_MODE_RESERVED"
+                  },
+                  "rule_id": {
+                    "const": "R010"
+                  },
+                  "severity": {
+                    "const": "ERROR"
+                  },
+                  "location": {
+                    "pattern": "^BODY:L[1-9][0-9]*:Portfolio-Mode$"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "location",
+                      "value"
+                    ],
+                    "properties": {
+                      "location": {
+                        "type": "string",
+                        "pattern": "^(?:BODY:L[1-9][0-9]*:(?:Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion|RELATIONSHIP)|DECLARATION:(?:Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion|BLOCK)|SNAPSHOT:(?:AUTHORING_EPOCH|CHANGED_PATHS|AGENTOS|LINEAR|PATH_OWNERSHIP|NATIVE_LINKAGE)|RECEIPT:(?:OBSERVATION|BODY|CUTOVER|RULESET|AUTHORING_EPOCH|CHANGED_PATHS|AGENTOS|LINEAR|PATH_OWNERSHIP|NATIVE_LINKAGE)|TITLE|BRANCH|RULESET)$"
+                      },
+                      "value": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "prefix",
+                          "sha256"
+                        ],
+                        "properties": {
+                          "prefix": {
+                            "type": "string",
+                            "maxLength": 160
+                          },
+                          "sha256": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{64}$"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "REMOVE_RESERVED_MODE"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "AUTHORITY_INVALID"
+                  },
+                  "rule_id": {
+                    "const": "R011"
+                  },
+                  "severity": {
+                    "const": "ERROR"
+                  },
+                  "location": {
+                    "pattern": "^BODY:L[1-9][0-9]*:Authority$"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "location",
+                      "value"
+                    ],
+                    "properties": {
+                      "location": {
+                        "type": "string",
+                        "pattern": "^(?:BODY:L[1-9][0-9]*:(?:Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion|RELATIONSHIP)|DECLARATION:(?:Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion|BLOCK)|SNAPSHOT:(?:AUTHORING_EPOCH|CHANGED_PATHS|AGENTOS|LINEAR|PATH_OWNERSHIP|NATIVE_LINKAGE)|RECEIPT:(?:OBSERVATION|BODY|CUTOVER|RULESET|AUTHORING_EPOCH|CHANGED_PATHS|AGENTOS|LINEAR|PATH_OWNERSHIP|NATIVE_LINKAGE)|TITLE|BRANCH|RULESET)$"
+                      },
+                      "value": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "prefix",
+                          "sha256"
+                        ],
+                        "properties": {
+                          "prefix": {
+                            "type": "string",
+                            "maxLength": 160
+                          },
+                          "sha256": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{64}$"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "SET_CANONICAL_AUTHORITY"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "COMPLETION_INVALID"
+                  },
+                  "rule_id": {
+                    "const": "R012"
+                  },
+                  "severity": {
+                    "const": "ERROR"
+                  },
+                  "location": {
+                    "pattern": "^BODY:L[1-9][0-9]*:Completion$"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "location",
+                      "value"
+                    ],
+                    "properties": {
+                      "location": {
+                        "type": "string",
+                        "pattern": "^(?:BODY:L[1-9][0-9]*:(?:Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion|RELATIONSHIP)|DECLARATION:(?:Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion|BLOCK)|SNAPSHOT:(?:AUTHORING_EPOCH|CHANGED_PATHS|AGENTOS|LINEAR|PATH_OWNERSHIP|NATIVE_LINKAGE)|RECEIPT:(?:OBSERVATION|BODY|CUTOVER|RULESET|AUTHORING_EPOCH|CHANGED_PATHS|AGENTOS|LINEAR|PATH_OWNERSHIP|NATIVE_LINKAGE)|TITLE|BRANCH|RULESET)$"
+                      },
+                      "value": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "prefix",
+                          "sha256"
+                        ],
+                        "properties": {
+                          "prefix": {
+                            "type": "string",
+                            "maxLength": 160
+                          },
+                          "sha256": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{64}$"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "SET_CANONICAL_COMPLETION"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "AUTHORING_SCHEMA_VERSION_MISMATCH"
+                  },
+                  "rule_id": {
+                    "const": "R020"
+                  },
+                  "severity": {
+                    "const": "ERROR"
+                  },
+                  "location": {
+                    "pattern": "^BODY:L[1-9][0-9]*:(?:Portfolio-Mode|Authority|Completion)$"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "epoch",
+                      "field",
+                      "value"
+                    ],
+                    "properties": {
+                      "epoch": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      },
+                      "field": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      },
+                      "value": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "prefix",
+                          "sha256"
+                        ],
+                        "properties": {
+                          "prefix": {
+                            "type": "string",
+                            "maxLength": 160
+                          },
+                          "sha256": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{64}$"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "MIGRATE_TO_V1"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "LEGACY_AUTHORING_ALIAS"
+                  },
+                  "rule_id": {
+                    "const": "R021"
+                  },
+                  "severity": {
+                    "const": "NOTICE"
+                  },
+                  "location": {
+                    "pattern": "^BODY:L[1-9][0-9]*:(?:Portfolio-Mode|Authority|Completion)$"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "alias",
+                      "canonical",
+                      "field",
+                      "receipt"
+                    ],
+                    "properties": {
+                      "alias": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      },
+                      "canonical": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      },
+                      "field": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      },
+                      "receipt": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "prefix",
+                          "sha256"
+                        ],
+                        "properties": {
+                          "prefix": {
+                            "type": "string",
+                            "maxLength": 160
+                          },
+                          "sha256": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{64}$"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "MIGRATE_TO_V1"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "AUTHORING_CUTOVER_RELATION_UNAVAILABLE"
+                  },
+                  "rule_id": {
+                    "const": "R022"
+                  },
+                  "severity": {
+                    "const": "PARTIAL"
+                  },
+                  "location": {
+                    "pattern": "^BODY:L[1-9][0-9]*:(?:Portfolio-Mode|Authority|Completion)$"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "epoch_state",
+                      "receipt_digest"
+                    ],
+                    "properties": {
+                      "epoch_state": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      },
+                      "receipt_digest": {
+                        "oneOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "SUPPLY_CUTOVER_RECEIPT"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "LINEAR_TARGET_ROLE_UNAVAILABLE"
+                  },
+                  "rule_id": {
+                    "const": "R026"
+                  },
+                  "severity": {
+                    "const": "PARTIAL"
+                  },
+                  "location": {
+                    "const": "SNAPSHOT:LINEAR"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "required_targets",
+                      "target_roles"
+                    ],
+                    "properties": {
+                      "required_targets": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                        },
+                        "uniqueItems": true
+                      },
+                      "target_roles": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                        },
+                        "uniqueItems": true
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "SUPPLY_COMPLETE_LINEAR_TARGET_ROLES"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "LINEAR_TARGET_ROLE_MISMATCH"
+                  },
+                  "rule_id": {
+                    "const": "R027"
+                  },
+                  "severity": {
+                    "const": "ERROR"
+                  },
+                  "location": {
+                    "const": "SNAPSHOT:LINEAR"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "declared",
+                      "roles",
+                      "targets"
+                    ],
+                    "properties": {
+                      "declared": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      },
+                      "roles": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                        },
+                        "uniqueItems": true
+                      },
+                      "targets": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                        },
+                        "uniqueItems": true
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "REPAIR_LINEAR_TARGET_ROLES"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "LINEAR_ISSUE_TYPE_MISMATCH"
+                  },
+                  "rule_id": {
+                    "const": "R028"
+                  },
+                  "severity": {
+                    "const": "ERROR"
+                  },
+                  "location": {
+                    "const": "SNAPSHOT:LINEAR"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "issue_type",
+                      "portfolio_mode",
+                      "target_role"
+                    ],
+                    "properties": {
+                      "issue_type": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      },
+                      "portfolio_mode": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      },
+                      "target_role": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "REPAIR_LINEAR_ISSUE_TYPE"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "LINEAR_REQUIRED_FOR_MODE"
+                  },
+                  "rule_id": {
+                    "const": "R029"
+                  },
+                  "severity": {
+                    "const": "ERROR"
+                  },
+                  "location": {
+                    "const": "DECLARATION:Linear"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "linear",
+                      "portfolio_mode"
+                    ],
+                    "properties": {
+                      "linear": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      },
+                      "portfolio_mode": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "SET_CONCRETE_LINEAR_ISSUE"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "WORKSTREAM_UNKNOWN"
+                  },
+                  "rule_id": {
+                    "const": "R030"
+                  },
+                  "severity": {
+                    "const": "ERROR"
+                  },
+                  "location": {
+                    "const": "DECLARATION:Workstream"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "workstream"
+                    ],
+                    "properties": {
+                      "workstream": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "USE_EXISTING_WORKSTREAM"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "WORKSTREAM_REQUIRED_FOR_TRACKED"
+                  },
+                  "rule_id": {
+                    "const": "R031"
+                  },
+                  "severity": {
+                    "const": "ERROR"
+                  },
+                  "location": {
+                    "const": "DECLARATION:Workstream"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "portfolio_mode",
+                      "workstream"
+                    ],
+                    "properties": {
+                      "portfolio_mode": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      },
+                      "workstream": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "SET_TRACKED_WORKSTREAM"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "WORKSTREAM_MUST_BE_NONE_FOR_EXCEPTION"
+                  },
+                  "rule_id": {
+                    "const": "R032"
+                  },
+                  "severity": {
+                    "const": "ERROR"
+                  },
+                  "location": {
+                    "const": "DECLARATION:Workstream"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "portfolio_mode",
+                      "workstream"
+                    ],
+                    "properties": {
+                      "portfolio_mode": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      },
+                      "workstream": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "SET_WORKSTREAM_NONE"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "AGENTOS_SNAPSHOT_UNAVAILABLE"
+                  },
+                  "rule_id": {
+                    "const": "R033"
+                  },
+                  "severity": {
+                    "const": "PARTIAL"
+                  },
+                  "location": {
+                    "const": "SNAPSHOT:AGENTOS"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "snapshot_state",
+                      "workstream"
+                    ],
+                    "properties": {
+                      "snapshot_state": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      },
+                      "workstream": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "SUPPLY_AGENTOS_SNAPSHOT"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "LINEAR_ISSUE_UNKNOWN"
+                  },
+                  "rule_id": {
+                    "const": "R034"
+                  },
+                  "severity": {
+                    "const": "ERROR"
+                  },
+                  "location": {
+                    "const": "SNAPSHOT:LINEAR"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "linear"
+                    ],
+                    "properties": {
+                      "linear": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "USE_EXISTING_LINEAR_ISSUE"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "LINEAR_SNAPSHOT_UNAVAILABLE"
+                  },
+                  "rule_id": {
+                    "const": "R035"
+                  },
+                  "severity": {
+                    "const": "PARTIAL"
+                  },
+                  "location": {
+                    "const": "SNAPSHOT:LINEAR"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "linear",
+                      "snapshot_state"
+                    ],
+                    "properties": {
+                      "linear": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      },
+                      "snapshot_state": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "SUPPLY_LINEAR_SNAPSHOT"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "LINEAR_PROJECT_WORKSTREAM_MISMATCH"
+                  },
+                  "rule_id": {
+                    "const": "R036"
+                  },
+                  "severity": {
+                    "const": "ERROR"
+                  },
+                  "location": {
+                    "const": "SNAPSHOT:LINEAR"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "bound_workstream",
+                      "declared_workstream",
+                      "linear"
+                    ],
+                    "properties": {
+                      "bound_workstream": {
+                        "oneOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "declared_workstream": {
+                        "oneOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "linear": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "REPAIR_LINEAR_BINDING"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "WORKSTREAM_CREATION_NO_WORKSTREAM_RECORD"
+                  },
+                  "rule_id": {
+                    "const": "R037"
+                  },
+                  "severity": {
+                    "const": "ERROR"
+                  },
+                  "location": {
+                    "const": "SNAPSHOT:CHANGED_PATHS"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "paths",
+                      "workstream"
+                    ],
+                    "properties": {
+                      "paths": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "prefix",
+                            "sha256"
+                          ],
+                          "properties": {
+                            "prefix": {
+                              "type": "string",
+                              "maxLength": 160
+                            },
+                            "sha256": {
+                              "type": "string",
+                              "pattern": "^[0-9a-f]{64}$"
+                            }
+                          }
+                        },
+                        "uniqueItems": true
+                      },
+                      "workstream": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "ADD_EXACT_WORKSTREAM_RECORD"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "WORKSTREAM_CREATION_KEY_COLLISION"
+                  },
+                  "rule_id": {
+                    "const": "R038"
+                  },
+                  "severity": {
+                    "const": "ERROR"
+                  },
+                  "location": {
+                    "const": "SNAPSHOT:AGENTOS"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "collisions",
+                      "workstream"
+                    ],
+                    "properties": {
+                      "collisions": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                        },
+                        "uniqueItems": true
+                      },
+                      "workstream": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "CHOOSE_UNIQUE_WORKSTREAM_KEY"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "MULTIPLE_PR_IDENTITIES"
+                  },
+                  "rule_id": {
+                    "const": "R039"
+                  },
+                  "severity": {
+                    "const": "ERROR"
+                  },
+                  "location": {
+                    "const": "DECLARATION:BLOCK"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "declared",
+                      "targets"
+                    ],
+                    "properties": {
+                      "declared": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      },
+                      "targets": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                        },
+                        "uniqueItems": true
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "RECONCILE_PR_IDENTITIES"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "AUTHORITY_COMPLETION_MISMATCH"
+                  },
+                  "rule_id": {
+                    "const": "R040"
+                  },
+                  "severity": {
+                    "const": "ERROR"
+                  },
+                  "location": {
+                    "const": "DECLARATION:BLOCK"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "authority",
+                      "completion",
+                      "portfolio_mode"
+                    ],
+                    "properties": {
+                      "authority": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      },
+                      "completion": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      },
+                      "portfolio_mode": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "USE_ALLOWED_AUTHORITY_COMPLETION"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "AUTHORITY_PATH_MISMATCH"
+                  },
+                  "rule_id": {
+                    "const": "R041"
+                  },
+                  "severity": {
+                    "const": "ERROR"
+                  },
+                  "location": {
+                    "const": "SNAPSHOT:PATH_OWNERSHIP"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "authority",
+                      "paths",
+                      "resolutions"
+                    ],
+                    "properties": {
+                      "authority": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      },
+                      "paths": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "prefix",
+                            "sha256"
+                          ],
+                          "properties": {
+                            "prefix": {
+                              "type": "string",
+                              "maxLength": 160
+                            },
+                            "sha256": {
+                              "type": "string",
+                              "pattern": "^[0-9a-f]{64}$"
+                            }
+                          }
+                        },
+                        "uniqueItems": true
+                      },
+                      "resolutions": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "prefix",
+                            "sha256"
+                          ],
+                          "properties": {
+                            "prefix": {
+                              "type": "string",
+                              "maxLength": 160
+                            },
+                            "sha256": {
+                              "type": "string",
+                              "pattern": "^[0-9a-f]{64}$"
+                            }
+                          }
+                        },
+                        "uniqueItems": true
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "RECONCILE_AUTHORITY_AND_PATHS"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "PATH_OWNERSHIP_SNAPSHOT_UNAVAILABLE"
+                  },
+                  "rule_id": {
+                    "const": "R042"
+                  },
+                  "severity": {
+                    "const": "PARTIAL"
+                  },
+                  "location": {
+                    "const": "SNAPSHOT:PATH_OWNERSHIP"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "paths",
+                      "snapshot_state"
+                    ],
+                    "properties": {
+                      "paths": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "prefix",
+                            "sha256"
+                          ],
+                          "properties": {
+                            "prefix": {
+                              "type": "string",
+                              "maxLength": 160
+                            },
+                            "sha256": {
+                              "type": "string",
+                              "pattern": "^[0-9a-f]{64}$"
+                            }
+                          }
+                        },
+                        "uniqueItems": true
+                      },
+                      "snapshot_state": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "SUPPLY_PATH_OWNERSHIP_SNAPSHOT"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "CHANGED_PATHS_UNAVAILABLE"
+                  },
+                  "rule_id": {
+                    "const": "R043"
+                  },
+                  "severity": {
+                    "const": "PARTIAL"
+                  },
+                  "location": {
+                    "const": "SNAPSHOT:CHANGED_PATHS"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "snapshot_state"
+                    ],
+                    "properties": {
+                      "snapshot_state": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "SUPPLY_CHANGED_PATHS"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "MAINTENANCE_EXCEPTION_UNBOUND"
+                  },
+                  "rule_id": {
+                    "const": "R044"
+                  },
+                  "severity": {
+                    "const": "ERROR"
+                  },
+                  "location": {
+                    "const": "SNAPSHOT:PATH_OWNERSHIP"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "authority",
+                      "linear",
+                      "paths"
+                    ],
+                    "properties": {
+                      "authority": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      },
+                      "linear": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      },
+                      "paths": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "prefix",
+                            "sha256"
+                          ],
+                          "properties": {
+                            "prefix": {
+                              "type": "string",
+                              "maxLength": 160
+                            },
+                            "sha256": {
+                              "type": "string",
+                              "pattern": "^[0-9a-f]{64}$"
+                            }
+                          }
+                        },
+                        "uniqueItems": true
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "BIND_MAINTENANCE_EXCEPTION"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "ARCHITECTURE_CANDIDATE_CLAIMS_AUTHORITY"
+                  },
+                  "rule_id": {
+                    "const": "R045"
+                  },
+                  "severity": {
+                    "const": "ERROR"
+                  },
+                  "location": {
+                    "const": "SNAPSHOT:PATH_OWNERSHIP"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "authority",
+                      "paths"
+                    ],
+                    "properties": {
+                      "authority": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      },
+                      "paths": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "prefix",
+                            "sha256"
+                          ],
+                          "properties": {
+                            "prefix": {
+                              "type": "string",
+                              "maxLength": 160
+                            },
+                            "sha256": {
+                              "type": "string",
+                              "pattern": "^[0-9a-f]{64}$"
+                            }
+                          }
+                        },
+                        "uniqueItems": true
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "REMOVE_CANDIDATE_EXECUTION_AUTHORITY"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "WORKSTREAM_CREATION_HIDDEN_IMPLEMENTATION"
+                  },
+                  "rule_id": {
+                    "const": "R046"
+                  },
+                  "severity": {
+                    "const": "ERROR"
+                  },
+                  "location": {
+                    "const": "SNAPSHOT:PATH_OWNERSHIP"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "path_classes",
+                      "paths"
+                    ],
+                    "properties": {
+                      "path_classes": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                        },
+                        "uniqueItems": true
+                      },
+                      "paths": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "prefix",
+                            "sha256"
+                          ],
+                          "properties": {
+                            "prefix": {
+                              "type": "string",
+                              "maxLength": 160
+                            },
+                            "sha256": {
+                              "type": "string",
+                              "pattern": "^[0-9a-f]{64}$"
+                            }
+                          }
+                        },
+                        "uniqueItems": true
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "SPLIT_WORKSTREAM_CREATION_FROM_BUILD"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "PATH_OWNERSHIP_UNMAPPED"
+                  },
+                  "rule_id": {
+                    "const": "R047"
+                  },
+                  "severity": {
+                    "const": "PARTIAL"
+                  },
+                  "location": {
+                    "const": "SNAPSHOT:PATH_OWNERSHIP"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "paths",
+                      "resolutions"
+                    ],
+                    "properties": {
+                      "paths": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "prefix",
+                            "sha256"
+                          ],
+                          "properties": {
+                            "prefix": {
+                              "type": "string",
+                              "maxLength": 160
+                            },
+                            "sha256": {
+                              "type": "string",
+                              "pattern": "^[0-9a-f]{64}$"
+                            }
+                          }
+                        },
+                        "uniqueItems": true
+                      },
+                      "resolutions": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "prefix",
+                            "sha256"
+                          ],
+                          "properties": {
+                            "prefix": {
+                              "type": "string",
+                              "maxLength": 160
+                            },
+                            "sha256": {
+                              "type": "string",
+                              "pattern": "^[0-9a-f]{64}$"
+                            }
+                          }
+                        },
+                        "uniqueItems": true
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "MAP_PATH_OWNERSHIP"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "BRANCH_LINEAR_MISMATCH"
+                  },
+                  "rule_id": {
+                    "const": "R050"
+                  },
+                  "severity": {
+                    "const": "ERROR"
+                  },
+                  "location": {
+                    "const": "BRANCH"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "branch_targets",
+                      "declared"
+                    ],
+                    "properties": {
+                      "branch_targets": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                        },
+                        "uniqueItems": true
+                      },
+                      "declared": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "RECONCILE_BRANCH_IDENTITY"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "TITLE_BODY_LINEAR_CONFLICT"
+                  },
+                  "rule_id": {
+                    "const": "R051"
+                  },
+                  "severity": {
+                    "const": "ERROR"
+                  },
+                  "location": {
+                    "const": "DECLARATION:BLOCK"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "body_targets",
+                      "declared",
+                      "title_targets"
+                    ],
+                    "properties": {
+                      "body_targets": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                        },
+                        "uniqueItems": true
+                      },
+                      "declared": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      },
+                      "title_targets": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                        },
+                        "uniqueItems": true
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "RECONCILE_TEXT_IDENTITIES"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "CLOSING_KEYWORD_FOR_NON_MERGE_DONE"
+                  },
+                  "rule_id": {
+                    "const": "R052"
+                  },
+                  "severity": {
+                    "const": "ERROR"
+                  },
+                  "location": {
+                    "pattern": "^BODY:L[1-9][0-9]*:RELATIONSHIP$"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "completion",
+                      "linear",
+                      "relationships"
+                    ],
+                    "properties": {
+                      "completion": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      },
+                      "linear": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      },
+                      "relationships": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "prefix",
+                            "sha256"
+                          ],
+                          "properties": {
+                            "prefix": {
+                              "type": "string",
+                              "maxLength": 160
+                            },
+                            "sha256": {
+                              "type": "string",
+                              "pattern": "^[0-9a-f]{64}$"
+                            }
+                          }
+                        },
+                        "uniqueItems": true
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "USE_NONCLOSING_RELATIONSHIP"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "MERGE_DONE_WITH_EXPLICIT_PROOF_GATE"
+                  },
+                  "rule_id": {
+                    "const": "R053"
+                  },
+                  "severity": {
+                    "const": "ERROR"
+                  },
+                  "location": {
+                    "const": "SNAPSHOT:LINEAR"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "completion",
+                      "linear",
+                      "stop_law"
+                    ],
+                    "properties": {
+                      "completion": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      },
+                      "linear": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      },
+                      "stop_law": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "SET_NONFINAL_COMPLETION"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "NATIVE_LINKAGE_SNAPSHOT_UNAVAILABLE"
+                  },
+                  "rule_id": {
+                    "const": "R054"
+                  },
+                  "severity": {
+                    "const": "PARTIAL"
+                  },
+                  "location": {
+                    "const": "SNAPSHOT:NATIVE_LINKAGE"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "linear",
+                      "snapshot_state"
+                    ],
+                    "properties": {
+                      "linear": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      },
+                      "snapshot_state": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "SUPPLY_NATIVE_LINKAGE_SNAPSHOT"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "NATIVE_RELATIONSHIP_AMBIGUOUS"
+                  },
+                  "rule_id": {
+                    "const": "R055"
+                  },
+                  "severity": {
+                    "const": "PARTIAL"
+                  },
+                  "location": {
+                    "const": "SNAPSHOT:NATIVE_LINKAGE"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "diagnostics",
+                      "linear",
+                      "relationships"
+                    ],
+                    "properties": {
+                      "diagnostics": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                        },
+                        "uniqueItems": true
+                      },
+                      "linear": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      },
+                      "relationships": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "prefix",
+                            "sha256"
+                          ],
+                          "properties": {
+                            "prefix": {
+                              "type": "string",
+                              "maxLength": 160
+                            },
+                            "sha256": {
+                              "type": "string",
+                              "pattern": "^[0-9a-f]{64}$"
+                            }
+                          }
+                        },
+                        "uniqueItems": true
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "RECONCILE_NATIVE_RELATIONSHIP"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "PORTFOLIO_LINKAGE_COMPLETION_MISMATCH"
+                  },
+                  "rule_id": {
+                    "const": "R056"
+                  },
+                  "severity": {
+                    "const": "ERROR"
+                  },
+                  "location": {
+                    "const": "SNAPSHOT:NATIVE_LINKAGE"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "completion",
+                      "effect",
+                      "stop_law",
+                      "target",
+                      "target_role"
+                    ],
+                    "properties": {
+                      "completion": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      },
+                      "effect": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      },
+                      "stop_law": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      },
+                      "target": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      },
+                      "target_role": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "REPAIR_COMPLETION_RELATIONSHIP"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "OBSERVATION_GROUNDING_MISMATCH"
+                  },
+                  "rule_id": {
+                    "const": "R060"
+                  },
+                  "severity": {
+                    "const": "ERROR"
+                  },
+                  "location": {
+                    "pattern": "^RECEIPT:(?:OBSERVATION|BODY|CUTOVER|RULESET|AUTHORING_EPOCH|CHANGED_PATHS|AGENTOS|LINEAR|PATH_OWNERSHIP|NATIVE_LINKAGE)$"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "component",
+                      "expected",
+                      "observed"
+                    ],
+                    "properties": {
+                      "component": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      },
+                      "expected": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "prefix",
+                          "sha256"
+                        ],
+                        "properties": {
+                          "prefix": {
+                            "type": "string",
+                            "maxLength": 160
+                          },
+                          "sha256": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{64}$"
+                          }
+                        }
+                      },
+                      "observed": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "prefix",
+                          "sha256"
+                        ],
+                        "properties": {
+                          "prefix": {
+                            "type": "string",
+                            "maxLength": 160
+                          },
+                          "sha256": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{64}$"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "REBUILD_IMMUTABLE_OBSERVATION"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "rule_id",
+                  "severity",
+                  "location",
+                  "evidence",
+                  "remediation_code"
+                ],
+                "properties": {
+                  "code": {
+                    "const": "SNAPSHOT_CONTRADICTION"
+                  },
+                  "rule_id": {
+                    "const": "R061"
+                  },
+                  "severity": {
+                    "const": "PARTIAL"
+                  },
+                  "location": {
+                    "pattern": "^SNAPSHOT:(?:AUTHORING_EPOCH|CHANGED_PATHS|AGENTOS|LINEAR|PATH_OWNERSHIP|NATIVE_LINKAGE)$"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "diagnostics",
+                      "snapshot"
+                    ],
+                    "properties": {
+                      "diagnostics": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                        },
+                        "uniqueItems": true
+                      },
+                      "snapshot": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                      }
+                    }
+                  },
+                  "remediation_code": {
+                    "const": "RECAPTURE_CONSISTENT_SNAPSHOT"
+                  }
+                }
+              }
+            ]
+          },
+          "maxItems": 512,
+          "allOf": [
+            {
+              "contains": {
+                "properties": {
+                  "rule_id": {
+                    "const": "R001"
+                  }
+                },
+                "required": [
+                  "rule_id"
+                ]
+              },
+              "minContains": 0,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {
+                  "rule_id": {
+                    "const": "R003"
+                  }
+                },
+                "required": [
+                  "rule_id"
+                ]
+              },
+              "minContains": 0,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {
+                  "rule_id": {
+                    "const": "R027"
+                  }
+                },
+                "required": [
+                  "rule_id"
+                ]
+              },
+              "minContains": 0,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {
+                  "rule_id": {
+                    "const": "R029"
+                  }
+                },
+                "required": [
+                  "rule_id"
+                ]
+              },
+              "minContains": 0,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {
+                  "rule_id": {
+                    "const": "R030"
+                  }
+                },
+                "required": [
+                  "rule_id"
+                ]
+              },
+              "minContains": 0,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {
+                  "rule_id": {
+                    "const": "R031"
+                  }
+                },
+                "required": [
+                  "rule_id"
+                ]
+              },
+              "minContains": 0,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {
+                  "rule_id": {
+                    "const": "R032"
+                  }
+                },
+                "required": [
+                  "rule_id"
+                ]
+              },
+              "minContains": 0,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {
+                  "rule_id": {
+                    "const": "R033"
+                  }
+                },
+                "required": [
+                  "rule_id"
+                ]
+              },
+              "minContains": 0,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {
+                  "rule_id": {
+                    "const": "R034"
+                  }
+                },
+                "required": [
+                  "rule_id"
+                ]
+              },
+              "minContains": 0,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {
+                  "rule_id": {
+                    "const": "R035"
+                  }
+                },
+                "required": [
+                  "rule_id"
+                ]
+              },
+              "minContains": 0,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {
+                  "rule_id": {
+                    "const": "R036"
+                  }
+                },
+                "required": [
+                  "rule_id"
+                ]
+              },
+              "minContains": 0,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {
+                  "rule_id": {
+                    "const": "R037"
+                  }
+                },
+                "required": [
+                  "rule_id"
+                ]
+              },
+              "minContains": 0,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {
+                  "rule_id": {
+                    "const": "R038"
+                  }
+                },
+                "required": [
+                  "rule_id"
+                ]
+              },
+              "minContains": 0,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {
+                  "rule_id": {
+                    "const": "R039"
+                  }
+                },
+                "required": [
+                  "rule_id"
+                ]
+              },
+              "minContains": 0,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {
+                  "rule_id": {
+                    "const": "R040"
+                  }
+                },
+                "required": [
+                  "rule_id"
+                ]
+              },
+              "minContains": 0,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {
+                  "rule_id": {
+                    "const": "R041"
+                  }
+                },
+                "required": [
+                  "rule_id"
+                ]
+              },
+              "minContains": 0,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {
+                  "rule_id": {
+                    "const": "R042"
+                  }
+                },
+                "required": [
+                  "rule_id"
+                ]
+              },
+              "minContains": 0,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {
+                  "rule_id": {
+                    "const": "R043"
+                  }
+                },
+                "required": [
+                  "rule_id"
+                ]
+              },
+              "minContains": 0,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {
+                  "rule_id": {
+                    "const": "R044"
+                  }
+                },
+                "required": [
+                  "rule_id"
+                ]
+              },
+              "minContains": 0,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {
+                  "rule_id": {
+                    "const": "R045"
+                  }
+                },
+                "required": [
+                  "rule_id"
+                ]
+              },
+              "minContains": 0,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {
+                  "rule_id": {
+                    "const": "R046"
+                  }
+                },
+                "required": [
+                  "rule_id"
+                ]
+              },
+              "minContains": 0,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {
+                  "rule_id": {
+                    "const": "R047"
+                  }
+                },
+                "required": [
+                  "rule_id"
+                ]
+              },
+              "minContains": 0,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {
+                  "rule_id": {
+                    "const": "R050"
+                  }
+                },
+                "required": [
+                  "rule_id"
+                ]
+              },
+              "minContains": 0,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {
+                  "rule_id": {
+                    "const": "R051"
+                  }
+                },
+                "required": [
+                  "rule_id"
+                ]
+              },
+              "minContains": 0,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {
+                  "rule_id": {
+                    "const": "R052"
+                  }
+                },
+                "required": [
+                  "rule_id"
+                ]
+              },
+              "minContains": 0,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {
+                  "rule_id": {
+                    "const": "R053"
+                  }
+                },
+                "required": [
+                  "rule_id"
+                ]
+              },
+              "minContains": 0,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {
+                  "rule_id": {
+                    "const": "R054"
+                  }
+                },
+                "required": [
+                  "rule_id"
+                ]
+              },
+              "minContains": 0,
+              "maxContains": 1
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "declaration": {
+                "properties": {
+                  "authoring_state": {
+                    "const": "LEGACY"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "classification": {
+                "const": "UNCLASSIFIED_LEGACY"
               }
             }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "declaration": {
+                "properties": {
+                  "authoring_state": {
+                    "enum": [
+                      "INVALID",
+                      "MISSING"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "classification": {
+                "const": "UNKNOWN"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "declaration": {
+                "properties": {
+                  "authoring_state": {
+                    "const": "CANONICAL"
+                  },
+                  "portfolio_mode": {
+                    "const": "tracked"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "classification": {
+                "const": "TRACKED"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "declaration": {
+                "properties": {
+                  "authoring_state": {
+                    "const": "CANONICAL"
+                  },
+                  "portfolio_mode": {
+                    "const": "maintenance_exception"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "classification": {
+                "const": "MAINTENANCE_EXCEPTION"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "declaration": {
+                "properties": {
+                  "authoring_state": {
+                    "const": "CANONICAL"
+                  },
+                  "portfolio_mode": {
+                    "const": "creates_workstream"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "classification": {
+                "const": "CREATES_WORKSTREAM"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "declaration": {
+                "properties": {
+                  "authoring_state": {
+                    "const": "CANONICAL"
+                  },
+                  "portfolio_mode": {
+                    "const": "architecture_candidate"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "classification": {
+                "const": "ARCHITECTURE_CANDIDATE"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "declaration": {
+                "properties": {"authoring_state": {"const": "CANONICAL"}}
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "declaration": {
+                "properties": {
+                  "portfolio_mode": {
+                    "enum": ["tracked", "maintenance_exception", "creates_workstream", "architecture_candidate"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "findings": {
+                "contains": {
+                  "properties": {"severity": {"const": "ERROR"}},
+                  "required": ["severity"]
+                }
+              }
+            }
+          },
+          "then": {"properties": {"verdict": {"const": "REFUSE_METADATA"}}}
+        },
+        {
+          "if": {
+            "allOf": [
+              {"not": {"properties": {"findings": {"contains": {"properties": {"severity": {"const": "ERROR"}}, "required": ["severity"]}}}}},
+              {"properties": {"findings": {"contains": {"properties": {"severity": {"const": "PARTIAL"}}, "required": ["severity"]}}}}
+            ]
+          },
+          "then": {"properties": {"verdict": {"const": "PARTIAL"}}}
+        },
+        {
+          "if": {
+            "allOf": [
+              {"not": {"properties": {"findings": {"contains": {"properties": {"severity": {"enum": ["ERROR", "PARTIAL"]}}, "required": ["severity"]}}}}},
+              {"properties": {"findings": {"minItems": 1}}}
+            ]
+          },
+          "then": {"properties": {"verdict": {"const": "WARN"}}}
+        },
+        {
+          "if": {"properties": {"findings": {"maxItems": 0}}},
+          "then": {"properties": {"verdict": {"const": "CONFORMANT"}}}
+        },
+        {
+          "if": {"properties": {"completeness": {"const": "UNAVAILABLE"}}},
+          "then": {"properties": {"declaration": {"properties": {"authoring_state": {"const": "MISSING"}}}}}
+        },
+        {
+          "if": {"properties": {"completeness": {"const": "COMPLETE"}}},
+          "then": {
+            "allOf": [
+              {"properties": {"declaration": {"properties": {"authoring_state": {"not": {"const": "MISSING"}}}}}},
+              {"properties": {"unresolved_observation_classes": {"maxItems": 0}}},
+              {"not": {"properties": {"findings": {"contains": {"properties": {"severity": {"const": "PARTIAL"}}, "required": ["severity"]}}}}}
+            ]
+          }
+        },
+        {
+          "if": {"properties": {"completeness": {"const": "DEGRADED"}}},
+          "then": {
+            "allOf": [
+              {"properties": {"declaration": {"properties": {"authoring_state": {"not": {"const": "MISSING"}}}}}},
+              {"anyOf": [
+                {"properties": {"unresolved_observation_classes": {"minItems": 1}}},
+                {"properties": {"findings": {"contains": {"properties": {"severity": {"const": "PARTIAL"}}, "required": ["severity"]}}}}
+              ]}
+            ]
+          }
+        },
+        {
+          "if": {"properties": {"declaration": {"properties": {"authoring_state": {"const": "MISSING"}}}}},
+          "then": {"properties": {"completeness": {"const": "UNAVAILABLE"}}}
         }
-      }
+      ]
     },
     "receipt": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["repository","pr_number","base_sha","head_sha","source_sha","body_sha256","observation_sha256","cutover_receipt_sha256","ruleset_digest","snapshot_digests","producer"],
+      "required": [
+        "observation_schema",
+        "repository",
+        "pr_number",
+        "base_sha",
+        "head_sha",
+        "source_sha",
+        "body_sha256",
+        "observation_sha256",
+        "cutover_receipt_sha256",
+        "ruleset_digest",
+        "snapshot_digests",
+        "producer"
+      ],
       "properties": {
-        "repository":{"type":"string","pattern":"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"},
-        "pr_number":{"type":"integer","minimum":1},
-        "base_sha":{"type":"string","pattern":"^[0-9a-f]{40}$"},"head_sha":{"type":"string","pattern":"^[0-9a-f]{40}$"},"source_sha":{"type":"string","pattern":"^[0-9a-f]{40}$"},
-        "body_sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},"observation_sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},"cutover_receipt_sha256":{"type":["string","null"],"pattern":"^[0-9a-f]{64}$"},"ruleset_digest":{"type":"string","pattern":"^[0-9a-f]{64}$"},
-        "snapshot_digests":{"type":"object","additionalProperties":false,"required":["authoring_epoch","changed_paths","agentos","linear","path_ownership","native_linkage"],"properties":{"authoring_epoch":{"type":"string","pattern":"^[0-9a-f]{64}$"},"changed_paths":{"type":"string","pattern":"^[0-9a-f]{64}$"},"agentos":{"type":"string","pattern":"^[0-9a-f]{64}$"},"linear":{"type":"string","pattern":"^[0-9a-f]{64}$"},"path_ownership":{"type":"string","pattern":"^[0-9a-f]{64}$"},"native_linkage":{"type":"string","pattern":"^[0-9a-f]{64}$"}}},
-        "producer":{"type":"string","minLength":1}
+        "observation_schema": {
+          "const": "mastermind.pr_linkage_observation.v1"
+        },
+        "repository": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+        },
+        "pr_number": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "base_sha": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "head_sha": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "source_sha": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "body_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "observation_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "cutover_receipt_sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "ruleset_digest": {
+          "const": "41d5634a6ca6d4bbd993e728b73d839260452b24c891e556c59da52a184a1859"
+        },
+        "snapshot_digests": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "authoring_epoch",
+            "changed_paths",
+            "agentos",
+            "linear",
+            "path_ownership",
+            "native_linkage"
+          ],
+          "properties": {
+            "authoring_epoch": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "changed_paths": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "agentos": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "linear": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "path_ownership": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "native_linkage": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          }
+        },
+        "producer": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     },
     "human": {
@@ -249,16 +3619,47 @@
       ],
       "properties": {
         "summary": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^(?:TRACKED|MAINTENANCE_EXCEPTION|CREATES_WORKSTREAM|ARCHITECTURE_CANDIDATE|UNCLASSIFIED_LEGACY|UNKNOWN)/(?:CONFORMANT|WARN|PARTIAL|REFUSE_METADATA)$"
         },
         "remediations": {
           "type": "array",
           "items": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "ADD_CANONICAL_HEADER", "ADD_EXACT_WORKSTREAM_RECORD", "BIND_MAINTENANCE_EXCEPTION",
+              "CHOOSE_UNIQUE_WORKSTREAM_KEY", "MAP_PATH_OWNERSHIP", "MIGRATE_TO_V1",
+              "REBUILD_IMMUTABLE_OBSERVATION", "RECAPTURE_CONSISTENT_SNAPSHOT",
+              "RECONCILE_AUTHORITY_AND_PATHS", "RECONCILE_BRANCH_IDENTITY",
+              "RECONCILE_NATIVE_RELATIONSHIP", "RECONCILE_PR_IDENTITIES",
+              "RECONCILE_TEXT_IDENTITIES", "REMOVE_CANDIDATE_EXECUTION_AUTHORITY",
+              "REMOVE_DUPLICATE_FIELD", "REMOVE_RESERVED_MODE", "REPAIR_AUTHORITY_ZONE",
+              "REPAIR_COMPLETION_RELATIONSHIP", "REPAIR_LINEAR_BINDING", "REPAIR_LINEAR_ISSUE_TYPE",
+              "REPAIR_LINEAR_TARGET_ROLES", "REPLACE_PLACEHOLDER", "SET_BOUNDED_WAVE",
+              "SET_CANONICAL_AUTHORITY", "SET_CANONICAL_COMPLETION", "SET_CANONICAL_PORTFOLIO_MODE",
+              "SET_CONCRETE_LINEAR_ISSUE", "SET_NONFINAL_COMPLETION", "SET_TRACKED_WORKSTREAM",
+              "SET_WORKSTREAM_NONE", "SPLIT_WORKSTREAM_CREATION_FROM_BUILD", "SUPPLY_AGENTOS_SNAPSHOT",
+              "SUPPLY_CHANGED_PATHS", "SUPPLY_COMPLETE_LINEAR_TARGET_ROLES", "SUPPLY_CUTOVER_RECEIPT",
+              "SUPPLY_LINEAR_SNAPSHOT", "SUPPLY_NATIVE_LINKAGE_SNAPSHOT", "SUPPLY_PATH_OWNERSHIP_SNAPSHOT",
+              "USE_ALLOWED_AUTHORITY_COMPLETION", "USE_EXACT_LINEAR_ID", "USE_EXACT_WORKSTREAM_ID",
+              "USE_EXISTING_LINEAR_ISSUE", "USE_EXISTING_WORKSTREAM", "USE_NONCLOSING_RELATIONSHIP"
+            ]
           },
           "uniqueItems": true
         }
       }
     }
-  }
+  },
+  "allOf": [
+    {"if":{"properties":{"semantic":{"properties":{"classification":{"const":"TRACKED"}}}}},"then":{"properties":{"human":{"properties":{"summary":{"pattern":"^TRACKED/"}}}}}},
+    {"if":{"properties":{"semantic":{"properties":{"classification":{"const":"MAINTENANCE_EXCEPTION"}}}}},"then":{"properties":{"human":{"properties":{"summary":{"pattern":"^MAINTENANCE_EXCEPTION/"}}}}}},
+    {"if":{"properties":{"semantic":{"properties":{"classification":{"const":"CREATES_WORKSTREAM"}}}}},"then":{"properties":{"human":{"properties":{"summary":{"pattern":"^CREATES_WORKSTREAM/"}}}}}},
+    {"if":{"properties":{"semantic":{"properties":{"classification":{"const":"ARCHITECTURE_CANDIDATE"}}}}},"then":{"properties":{"human":{"properties":{"summary":{"pattern":"^ARCHITECTURE_CANDIDATE/"}}}}}},
+    {"if":{"properties":{"semantic":{"properties":{"classification":{"const":"UNCLASSIFIED_LEGACY"}}}}},"then":{"properties":{"human":{"properties":{"summary":{"pattern":"^UNCLASSIFIED_LEGACY/"}}}}}},
+    {"if":{"properties":{"semantic":{"properties":{"classification":{"const":"UNKNOWN"}}}}},"then":{"properties":{"human":{"properties":{"summary":{"pattern":"^UNKNOWN/"}}}}}},
+    {"if":{"properties":{"semantic":{"properties":{"verdict":{"const":"CONFORMANT"}}}}},"then":{"properties":{"human":{"properties":{"summary":{"pattern":"/CONFORMANT$"}}}}}},
+    {"if":{"properties":{"semantic":{"properties":{"verdict":{"const":"WARN"}}}}},"then":{"properties":{"human":{"properties":{"summary":{"pattern":"/WARN$"}}}}}},
+    {"if":{"properties":{"semantic":{"properties":{"verdict":{"const":"PARTIAL"}}}}},"then":{"properties":{"human":{"properties":{"summary":{"pattern":"/PARTIAL$"}}}}}},
+    {"if":{"properties":{"semantic":{"properties":{"verdict":{"const":"REFUSE_METADATA"}}}}},"then":{"properties":{"human":{"properties":{"summary":{"pattern":"/REFUSE_METADATA$"}}}}}}
+  ]
 }

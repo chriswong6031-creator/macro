@@ -43,7 +43,9 @@ def case(rule):
     elif rule == "R020": body(o, Authority="Authority: runtime")
     elif rule == "R021":
         body(o, Authority="Authority: runtime"); o["authoring_epoch"].update(relation="PRE_CUTOVER", first_strict_pr_number=124, legacy_open_pr_numbers=[123])
-    elif rule == "R022": body(o, Authority="Authority: runtime"); o["authoring_epoch"]["state"] = "UNAVAILABLE"; o["authoring_epoch"]["relation"] = "UNKNOWN"; o["authoring_epoch"]["diagnostics"] = ["NO_RECEIPT"]
+    elif rule == "R022":
+        body(o, Authority="Authority: runtime")
+        o["authoring_epoch"].update(state="CONTRADICTORY", relation="UNKNOWN", diagnostics=["CONFLICTING_CUTOVER_RECEIPTS"])
     elif rule == "R026": o["pull_request"]["title"] = "MAS-99"; o["linear"]["issues"].append({"id":"MAS-99","target_role":"UNKNOWN","project_id":None,"workstream_key":None,"issue_type":"UNKNOWN","stop_law":"UNKNOWN"})
     elif rule == "R027": o["linear"]["issues"][0]["target_role"] = "SECONDARY"
     elif rule == "R028": o["linear"]["issues"][0]["issue_type"] = "UNKNOWN"
@@ -79,10 +81,10 @@ def case(rule):
     elif rule == "R052": o["pull_request"]["body"] += "\nFixes MAS-28"
     elif rule == "R053": mode(o, completion="merge-is-done"); o["linear"]["issues"][0]["stop_law"] = "PROOF"; o["native_linkage"]["relationships"] = [{"issue_id":"MAS-28","kind":"CLOSING","source":"BODY","state":"PRESENT","completion_transition":"ELIGIBLE"}]
     elif rule == "R054": o["native_linkage"]["state"] = "PARTIAL"; o["native_linkage"]["pagination_complete"] = False; o["native_linkage"]["diagnostics"] = ["STALE"]
-    elif rule == "R055": o["native_linkage"]["relationships"] = [{"issue_id":"MAS-28","kind":"CLOSING","source":"BODY","state":"PRESENT","completion_transition":"ELIGIBLE"},{"issue_id":"MAS-28","kind":"CONTRIBUTING","source":"ADAPTER","state":"PRESENT","completion_transition":"INELIGIBLE"}]
+    elif rule == "R055": o["native_linkage"].update(state="CONTRADICTORY", pagination_complete=False, diagnostics=["CONFLICT"], relationships=[{"issue_id":"MAS-28","kind":"CONTRIBUTING","source":"ADAPTER","state":"PRESENT","completion_transition":"INELIGIBLE"},{"issue_id":"MAS-28","kind":"CLOSING","source":"BODY","state":"PRESENT","completion_transition":"ELIGIBLE"}])
     elif rule == "R056": o["native_linkage"]["relationships"] = [{"issue_id":"MAS-28","kind":"CLOSING","source":"BODY","state":"PRESENT","completion_transition":"ELIGIBLE"}]
     elif rule == "R060": o["receipt"]["body_sha256"] = "0" * 64; return o
-    elif rule == "R061": o["agentos"]["state"] = "CONTRADICTORY"; o["agentos"]["diagnostics"] = ["CONFLICT"]
+    elif rule == "R061": o["agentos"].update(state="CONTRADICTORY", diagnostics=["CONFLICT"], workstreams=[{"key":"WS:AGENT-OS","waves":["A"]},{"key":"WS:AGENT-OS","waves":["B"]}])
     return finish(o)
 
 

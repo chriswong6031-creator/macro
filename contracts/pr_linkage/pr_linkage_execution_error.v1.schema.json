@@ -17,82 +17,575 @@
     "enforcement": {
       "const": "REPORT_ONLY"
     },
+    "error": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "code",
+            "component",
+            "reason_code",
+            "limit",
+            "observed"
+          ],
+          "properties": {
+            "code": {
+              "const": "INVALID_JSON"
+            },
+            "component": {
+              "const": "JSON"
+            },
+            "reason_code": {
+              "const": "INVALID_UTF8"
+            },
+            "limit": {
+              "type": "null"
+            },
+            "observed": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "code",
+            "component",
+            "reason_code",
+            "limit",
+            "observed"
+          ],
+          "properties": {
+            "code": {
+              "const": "INVALID_JSON"
+            },
+            "component": {
+              "const": "JSON"
+            },
+            "reason_code": {
+              "const": "INVALID_JSON"
+            },
+            "limit": {
+              "type": "null"
+            },
+            "observed": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "code",
+            "component",
+            "reason_code",
+            "limit",
+            "observed"
+          ],
+          "properties": {
+            "code": {
+              "const": "INVALID_JSON"
+            },
+            "component": {
+              "const": "JSON"
+            },
+            "reason_code": {
+              "const": "DUPLICATE_OBJECT_MEMBER"
+            },
+            "limit": {
+              "type": "null"
+            },
+            "observed": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "code",
+            "component",
+            "reason_code",
+            "limit",
+            "observed"
+          ],
+          "properties": {
+            "code": {
+              "const": "INVALID_OBSERVATION_SCHEMA"
+            },
+            "component": {
+              "const": "OBSERVATION"
+            },
+            "reason_code": {
+              "const": "UNKNOWN_KEY"
+            },
+            "limit": {
+              "type": "null"
+            },
+            "observed": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "code",
+            "component",
+            "reason_code",
+            "limit",
+            "observed"
+          ],
+          "properties": {
+            "code": {
+              "const": "INVALID_OBSERVATION_SCHEMA"
+            },
+            "component": {
+              "const": "OBSERVATION"
+            },
+            "reason_code": {
+              "const": "MISSING_KEY"
+            },
+            "limit": {
+              "type": "null"
+            },
+            "observed": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "code",
+            "component",
+            "reason_code",
+            "limit",
+            "observed"
+          ],
+          "properties": {
+            "code": {
+              "const": "INVALID_OBSERVATION_SCHEMA"
+            },
+            "component": {
+              "const": "OBSERVATION"
+            },
+            "reason_code": {
+              "const": "TYPE_MISMATCH"
+            },
+            "limit": {
+              "type": "null"
+            },
+            "observed": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "code",
+            "component",
+            "reason_code",
+            "limit",
+            "observed"
+          ],
+          "properties": {
+            "code": {
+              "const": "INVALID_OBSERVATION_SCHEMA"
+            },
+            "component": {
+              "const": "OBSERVATION"
+            },
+            "reason_code": {
+              "const": "INVALID_SNAPSHOT_STATE"
+            },
+            "limit": {
+              "type": "null"
+            },
+            "observed": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "code",
+            "component",
+            "reason_code",
+            "limit",
+            "observed"
+          ],
+          "properties": {
+            "code": {
+              "const": "INVALID_OBSERVATION_SCHEMA"
+            },
+            "component": {
+              "const": "OBSERVATION"
+            },
+            "reason_code": {
+              "const": "EPOCH_RECEIPT_RULESET_MISMATCH"
+            },
+            "limit": {
+              "type": "null"
+            },
+            "observed": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "code",
+            "component",
+            "reason_code",
+            "limit",
+            "observed"
+          ],
+          "properties": {
+            "code": {
+              "const": "INVALID_OBSERVATION_SCHEMA"
+            },
+            "component": {
+              "const": "PARSER"
+            },
+            "reason_code": {
+              "const": "INVALID_BODY_ENCODING"
+            },
+            "limit": {
+              "type": "null"
+            },
+            "observed": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "code",
+            "component",
+            "reason_code",
+            "limit",
+            "observed"
+          ],
+          "properties": {
+            "code": {
+              "const": "INPUT_RESOURCE_LIMIT_EXCEEDED"
+            },
+            "component": {
+              "const": "INPUT"
+            },
+            "reason_code": {
+              "const": "RESOURCE_LIMIT"
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "observed": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "code",
+            "component",
+            "reason_code",
+            "limit",
+            "observed"
+          ],
+          "properties": {
+            "code": {
+              "const": "UNSUPPORTED_RULESET"
+            },
+            "component": {
+              "const": "RULESET"
+            },
+            "reason_code": {
+              "const": "UNSUPPORTED_RULESET_ID"
+            },
+            "limit": {
+              "type": "null"
+            },
+            "observed": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "code",
+            "component",
+            "reason_code",
+            "limit",
+            "observed"
+          ],
+          "properties": {
+            "code": {
+              "const": "UNSUPPORTED_RULESET"
+            },
+            "component": {
+              "const": "RULESET"
+            },
+            "reason_code": {
+              "const": "RULESET_DIGEST_MISMATCH"
+            },
+            "limit": {
+              "type": "null"
+            },
+            "observed": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "code",
+            "component",
+            "reason_code",
+            "limit",
+            "observed"
+          ],
+          "properties": {
+            "code": {
+              "const": "INTERNAL_ERROR"
+            },
+            "component": {
+              "const": "INPUT"
+            },
+            "reason_code": {
+              "const": "INPUT_READ_FAILED"
+            },
+            "limit": {
+              "type": "null"
+            },
+            "observed": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "code",
+            "component",
+            "reason_code",
+            "limit",
+            "observed"
+          ],
+          "properties": {
+            "code": {
+              "const": "INTERNAL_ERROR"
+            },
+            "component": {
+              "const": "PARSER"
+            },
+            "reason_code": {
+              "const": "PARSER_INTERNAL_ERROR"
+            },
+            "limit": {
+              "type": "null"
+            },
+            "observed": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "code",
+            "component",
+            "reason_code",
+            "limit",
+            "observed"
+          ],
+          "properties": {
+            "code": {
+              "const": "INTERNAL_ERROR"
+            },
+            "component": {
+              "const": "EVALUATOR"
+            },
+            "reason_code": {
+              "const": "EVALUATOR_INTERNAL_ERROR"
+            },
+            "limit": {
+              "type": "null"
+            },
+            "observed": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "code",
+            "component",
+            "reason_code",
+            "limit",
+            "observed"
+          ],
+          "properties": {
+            "code": {
+              "const": "INTERNAL_ERROR"
+            },
+            "component": {
+              "const": "RENDERER"
+            },
+            "reason_code": {
+              "const": "RENDERER_INTERNAL_ERROR"
+            },
+            "limit": {
+              "type": "null"
+            },
+            "observed": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "code",
+            "component",
+            "reason_code",
+            "limit",
+            "observed"
+          ],
+          "properties": {
+            "code": {
+              "const": "OUTPUT_WRITE_ERROR"
+            },
+            "component": {
+              "const": "OUTPUT"
+            },
+            "reason_code": {
+              "const": "OUTPUT_TEMP_CREATE_FAILED"
+            },
+            "limit": {
+              "type": "null"
+            },
+            "observed": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "code",
+            "component",
+            "reason_code",
+            "limit",
+            "observed"
+          ],
+          "properties": {
+            "code": {
+              "const": "OUTPUT_WRITE_ERROR"
+            },
+            "component": {
+              "const": "OUTPUT"
+            },
+            "reason_code": {
+              "const": "OUTPUT_WRITE_FAILED"
+            },
+            "limit": {
+              "type": "null"
+            },
+            "observed": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "code",
+            "component",
+            "reason_code",
+            "limit",
+            "observed"
+          ],
+          "properties": {
+            "code": {
+              "const": "OUTPUT_WRITE_ERROR"
+            },
+            "component": {
+              "const": "OUTPUT"
+            },
+            "reason_code": {
+              "const": "OUTPUT_REPLACE_FAILED"
+            },
+            "limit": {
+              "type": "null"
+            },
+            "observed": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "code",
+            "component",
+            "reason_code",
+            "limit",
+            "observed"
+          ],
+          "properties": {
+            "code": {
+              "const": "NONDETERMINISTIC_RESULT"
+            },
+            "component": {
+              "const": "DETERMINISM"
+            },
+            "reason_code": {
+              "const": "NONDETERMINISTIC_RESULT"
+            },
+            "limit": {
+              "type": "null"
+            },
+            "observed": {
+              "type": "null"
+            }
+          }
+        }
+      ]
+    },
     "execution_error_hash": {
       "type": "string",
       "pattern": "^[0-9a-f]{64}$"
-    },
-    "error": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "code",
-        "component",
-        "reason_code",
-        "limit",
-        "observed"
-      ],
-      "properties": {
-        "code": {
-          "enum": [
-            "INVALID_JSON",
-            "INVALID_OBSERVATION_SCHEMA",
-            "INPUT_RESOURCE_LIMIT_EXCEEDED",
-            "UNSUPPORTED_RULESET",
-            "INTERNAL_ERROR",
-            "OUTPUT_WRITE_ERROR",
-            "NONDETERMINISTIC_RESULT"
-          ]
-        },
-        "component": {
-          "enum": [
-            "INPUT",
-            "JSON",
-            "OBSERVATION",
-            "RULESET",
-            "PARSER",
-            "EVALUATOR",
-            "RENDERER",
-            "OUTPUT",
-            "DETERMINISM"
-          ]
-        },
-        "reason_code": {
-          "enum": [
-            "INVALID_UTF8",
-            "INVALID_JSON",
-            "DUPLICATE_OBJECT_MEMBER",
-            "UNKNOWN_KEY",
-            "MISSING_KEY",
-            "TYPE_MISMATCH",
-            "INVALID_SNAPSHOT_STATE",
-            "EPOCH_RECEIPT_RULESET_MISMATCH",
-            "INVALID_BODY_ENCODING",
-            "RESOURCE_LIMIT",
-            "UNSUPPORTED_RULESET_ID",
-            "RULESET_DIGEST_MISMATCH",
-            "INPUT_READ_FAILED",
-            "PARSER_INTERNAL_ERROR",
-            "EVALUATOR_INTERNAL_ERROR",
-            "RENDERER_INTERNAL_ERROR",
-            "OUTPUT_TEMP_CREATE_FAILED",
-            "OUTPUT_WRITE_FAILED",
-            "OUTPUT_REPLACE_FAILED",
-            "NONDETERMINISTIC_RESULT"
-          ]
-        },
-        "limit": {
-          "type": [
-            "integer",
-            "null"
-          ]
-        },
-        "observed": {
-          "type": [
-            "integer",
-            "null"
-          ]
-        }
-      }
     },
     "receipt": {
       "type": "object",

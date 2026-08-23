@@ -25,7 +25,7 @@
       "const": "mastermind.pr_linkage_rules.v1"
     },
     "ruleset_digest": {
-      "$ref": "#/$defs/digest"
+      "const": "41d5634a6ca6d4bbd993e728b73d839260452b24c891e556c59da52a184a1859"
     },
     "repository": {
       "$ref": "#/$defs/repository"
@@ -67,7 +67,8 @@
     "diagnostics": {
       "type": "array",
       "items": {
-        "type": "string"
+        "type": "string",
+        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
       },
       "uniqueItems": true
     },
@@ -108,15 +109,15 @@
         },
         "branch": {
           "type": "string",
-          "minLength": 1
+          "pattern": "^[!-~]+$"
         },
         "base_ref": {
           "type": "string",
-          "minLength": 1
+          "pattern": "^[!-~]+$"
         },
         "head_ref": {
           "type": "string",
-          "minLength": 1
+          "pattern": "^[!-~]+$"
         }
       }
     },
@@ -155,16 +156,23 @@
           "type": [
             "string",
             "null"
-          ]
+          ],
+          "pattern": "^[!-~]+$"
         },
         "cutover_merge_sha": {
-          "type": [
-            "string",
-            "null"
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{40}$"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "template_blobs": {
           "type": "array",
+          "uniqueItems": true,
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -174,10 +182,13 @@
             ],
             "properties": {
               "path": {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^(?!/)(?!.*\\\\)(?!.*\\u0000)(?!.*(?:^|/)(?:\\.|\\.\\.)(?:/|$))(?!.*//).+$"
               },
               "blob_sha": {
-                "$ref": "#/$defs/sha"
+                "type": "string",
+                "pattern": "^[0-9a-f]{40}$"
               }
             }
           }
@@ -186,7 +197,8 @@
           "type": [
             "integer",
             "null"
-          ]
+          ],
+          "minimum": 1
         },
         "legacy_open_pr_numbers": {
           "type": "array",
@@ -197,21 +209,161 @@
           "uniqueItems": true
         },
         "receipt_ruleset_digest": {
-          "type": [
-            "string",
-            "null"
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "cutover_receipt_sha256": {
-          "type": [
-            "string",
-            "null"
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "diagnostics": {
           "$ref": "#/$defs/diagnostics"
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "PRESENT"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "allOf": [
+              {
+                "properties": {
+                  "diagnostics": {
+                    "maxItems": 0
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "relation": {
+                    "enum": [
+                      "PRE_CUTOVER",
+                      "AT_OR_POST_CUTOVER"
+                    ]
+                  },
+                  "default_ref": {
+                    "type": "string",
+                    "pattern": "^[!-~]+$"
+                  },
+                  "cutover_merge_sha": {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{40}$"
+                  },
+                  "template_blobs": {
+                    "minItems": 1
+                  },
+                  "first_strict_pr_number": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "receipt_ruleset_digest": {
+                    "const": "41d5634a6ca6d4bbd993e728b73d839260452b24c891e556c59da52a184a1859"
+                  },
+                  "cutover_receipt_sha256": {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{64}$"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "UNAVAILABLE"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "allOf": [
+              {
+                "properties": {
+                  "diagnostics": {
+                    "minItems": 1
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "relation": {
+                    "const": "UNKNOWN"
+                  },
+                  "default_ref": {
+                    "type": "null"
+                  },
+                  "cutover_merge_sha": {
+                    "type": "null"
+                  },
+                  "template_blobs": {
+                    "maxItems": 0
+                  },
+                  "first_strict_pr_number": {
+                    "type": "null"
+                  },
+                  "legacy_open_pr_numbers": {
+                    "maxItems": 0
+                  },
+                  "receipt_ruleset_digest": {
+                    "type": "null"
+                  },
+                  "cutover_receipt_sha256": {
+                    "type": "null"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "enum": [
+                  "PARTIAL",
+                  "CONTRADICTORY"
+                ]
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "diagnostics": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
     },
     "paths": {
       "type": "object",
@@ -243,7 +395,9 @@
             ],
             "properties": {
               "path": {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^(?!/)(?!.*\\\\)(?!.*\\u0000)(?!.*(?:^|/)(?:\\.|\\.\\.)(?:/|$))(?!.*//).+$"
               },
               "change_type": {
                 "enum": [
@@ -254,18 +408,174 @@
                 ]
               },
               "old_path": {
-                "type": [
-                  "string",
-                  "null"
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^(?!/)(?!.*\\\\)(?!.*\\u0000)(?!.*(?:^|/)(?:\\.|\\.\\.)(?:/|$))(?!.*//).+$"
+                  },
+                  {
+                    "type": "null"
+                  }
                 ]
               }
-            }
-          }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "change_type": {
+                      "const": "RENAMED"
+                    }
+                  },
+                  "required": [
+                    "change_type"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "old_path": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^(?!/)(?!.*\\\\)(?!.*\\u0000)(?!.*(?:^|/)(?:\\.|\\.\\.)(?:/|$))(?!.*//).+$"
+                    }
+                  }
+                },
+                "else": {
+                  "properties": {
+                    "old_path": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "uniqueItems": true
         },
         "diagnostics": {
           "$ref": "#/$defs/diagnostics"
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "PRESENT"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "diagnostics": {
+                "maxItems": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "PARTIAL"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "diagnostics": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "CONTRADICTORY"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "diagnostics": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "UNAVAILABLE"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "allOf": [
+              {
+                "properties": {
+                  "diagnostics": {
+                    "minItems": 1
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "paths": {
+                    "maxItems": 0
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "NOT_APPLICABLE"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "allOf": [
+              {
+                "properties": {
+                  "diagnostics": {
+                    "maxItems": 0
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "paths": {
+                    "maxItems": 0
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
     },
     "agentos": {
       "type": "object",
@@ -300,22 +610,144 @@
             ],
             "properties": {
               "key": {
-                "type": "string"
+                "type": "string",
+                "pattern": "^WS:[A-Z0-9]+(?:-[A-Z0-9]+)*$"
               },
               "waves": {
                 "type": "array",
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
                 },
                 "uniqueItems": true
               }
             }
-          }
+          },
+          "uniqueItems": true
         },
         "diagnostics": {
           "$ref": "#/$defs/diagnostics"
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "PRESENT"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "diagnostics": {
+                "maxItems": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "PARTIAL"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "diagnostics": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "CONTRADICTORY"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "diagnostics": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "UNAVAILABLE"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "allOf": [
+              {
+                "properties": {
+                  "diagnostics": {
+                    "minItems": 1
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "workstreams": {
+                    "maxItems": 0
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "NOT_APPLICABLE"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "allOf": [
+              {
+                "properties": {
+                  "diagnostics": {
+                    "maxItems": 0
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "workstreams": {
+                    "maxItems": 0
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
     },
     "linear": {
       "type": "object",
@@ -350,7 +782,8 @@
             ],
             "properties": {
               "id": {
-                "type": "string"
+                "type": "string",
+                "pattern": "^MAS-[1-9][0-9]{0,8}$"
               },
               "target_role": {
                 "enum": [
@@ -366,27 +799,168 @@
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "minLength": 1
               },
               "workstream_key": {
-                "type": [
-                  "string",
-                  "null"
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^WS:[A-Z0-9]+(?:-[A-Z0-9]+)*$"
+                  },
+                  {
+                    "type": "null"
+                  }
                 ]
               },
               "issue_type": {
-                "type": "string"
+                "enum": [
+                  "DELIVERY",
+                  "MAINTENANCE",
+                  "ROOT_RECOVERY",
+                  "ARCHITECTURE",
+                  "PROOF_GATE",
+                  "ACCEPTANCE_GATE",
+                  "UNKNOWN"
+                ]
               },
               "stop_law": {
-                "type": "string"
+                "enum": [
+                  "MERGE",
+                  "BUILT_NOT_PROVEN",
+                  "PROOF",
+                  "ACCEPTANCE",
+                  "RECORDS_ONLY",
+                  "UNKNOWN"
+                ]
               }
             }
-          }
+          },
+          "uniqueItems": true
         },
         "diagnostics": {
           "$ref": "#/$defs/diagnostics"
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "PRESENT"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "diagnostics": {
+                "maxItems": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "PARTIAL"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "diagnostics": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "CONTRADICTORY"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "diagnostics": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "UNAVAILABLE"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "allOf": [
+              {
+                "properties": {
+                  "diagnostics": {
+                    "minItems": 1
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "issues": {
+                    "maxItems": 0
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "NOT_APPLICABLE"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "allOf": [
+              {
+                "properties": {
+                  "diagnostics": {
+                    "maxItems": 0
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "issues": {
+                    "maxItems": 0
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
     },
     "ownership": {
       "type": "object",
@@ -425,7 +999,9 @@
             ],
             "properties": {
               "path": {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^(?!/)(?!.*\\\\)(?!.*\\u0000)(?!.*(?:^|/)(?:\\.|\\.\\.)(?:/|$))(?!.*//).+$"
               },
               "role": {
                 "enum": [
@@ -452,17 +1028,235 @@
               "allowed_authorities": {
                 "type": "array",
                 "items": {
-                  "type": "string"
+                  "enum": [
+                    "architecture_candidate",
+                    "deploy",
+                    "implementation",
+                    "maintenance",
+                    "proof",
+                    "records",
+                    "research"
+                  ]
                 },
                 "uniqueItems": true
               }
-            }
-          }
+            },
+            "allOf": [
+              {
+                "oneOf": [
+                  {
+                    "properties": {
+                      "resolution": {
+                        "const": "EXACT"
+                      },
+                      "owner_workstream": {
+                        "oneOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^WS:[A-Z0-9]+(?:-[A-Z0-9]+)*$"
+                          },
+                          {
+                            "const": "NONE"
+                          }
+                        ]
+                      },
+                      "path_class": {
+                        "enum": [
+                          "RECORDS",
+                          "RESEARCH",
+                          "MAINTENANCE",
+                          "IMPLEMENTATION",
+                          "PROOF",
+                          "DEPLOY",
+                          "ARCHITECTURE"
+                        ]
+                      },
+                      "allowed_authorities": {
+                        "minItems": 1
+                      }
+                    }
+                  },
+                  {
+                    "properties": {
+                      "resolution": {
+                        "const": "UNOWNED"
+                      },
+                      "owner_workstream": {
+                        "const": "NONE"
+                      },
+                      "path_class": {
+                        "const": "UNKNOWN"
+                      },
+                      "allowed_authorities": {
+                        "maxItems": 0
+                      }
+                    }
+                  },
+                  {
+                    "properties": {
+                      "resolution": {
+                        "const": "AMBIGUOUS"
+                      },
+                      "owner_workstream": {
+                        "type": "null"
+                      },
+                      "path_class": {
+                        "const": "UNKNOWN"
+                      },
+                      "allowed_authorities": {
+                        "maxItems": 0
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "uniqueItems": true
         },
         "diagnostics": {
           "$ref": "#/$defs/diagnostics"
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "PRESENT"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "allOf": [
+              {
+                "properties": {
+                  "diagnostics": {
+                    "maxItems": 0
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "resolutions": {
+                    "items": {
+                      "properties": {
+                        "resolution": {
+                          "enum": [
+                            "EXACT",
+                            "UNOWNED"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "PARTIAL"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "diagnostics": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "CONTRADICTORY"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "diagnostics": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "UNAVAILABLE"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "allOf": [
+              {
+                "properties": {
+                  "diagnostics": {
+                    "minItems": 1
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "resolutions": {
+                    "maxItems": 0
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "NOT_APPLICABLE"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "allOf": [
+              {
+                "properties": {
+                  "diagnostics": {
+                    "maxItems": 0
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "resolutions": {
+                    "maxItems": 0
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
     },
     "native": {
       "type": "object",
@@ -500,7 +1294,8 @@
             ],
             "properties": {
               "issue_id": {
-                "type": "string"
+                "type": "string",
+                "pattern": "^MAS-[1-9][0-9]{0,8}$"
               },
               "kind": {
                 "type": "string"
@@ -514,13 +1309,381 @@
               "completion_transition": {
                 "type": "string"
               }
-            }
-          }
+            },
+            "allOf": [
+              {
+                "oneOf": [
+                  {
+                    "oneOf": [
+                      {
+                        "properties": {
+                          "kind": {
+                            "const": "CLOSING"
+                          },
+                          "source": {
+                            "enum": [
+                              "BODY",
+                              "LINEAR_NATIVE",
+                              "ADAPTER"
+                            ]
+                          },
+                          "state": {
+                            "const": "PRESENT"
+                          },
+                          "completion_transition": {
+                            "const": "ELIGIBLE"
+                          }
+                        }
+                      },
+                      {
+                        "properties": {
+                          "kind": {
+                            "enum": [
+                              "CONTRIBUTING",
+                              "RELATION_ONLY"
+                            ]
+                          },
+                          "source": {
+                            "enum": [
+                              "BODY",
+                              "LINEAR_NATIVE",
+                              "ADAPTER"
+                            ]
+                          },
+                          "state": {
+                            "const": "PRESENT"
+                          },
+                          "completion_transition": {
+                            "const": "INELIGIBLE"
+                          }
+                        }
+                      },
+                      {
+                        "properties": {
+                          "kind": {
+                            "const": "AUTO_LINK"
+                          },
+                          "source": {
+                            "enum": [
+                              "BRANCH",
+                              "TITLE"
+                            ]
+                          },
+                          "state": {
+                            "const": "PRESENT"
+                          },
+                          "completion_transition": {
+                            "enum": [
+                              "ELIGIBLE",
+                              "INELIGIBLE"
+                            ]
+                          }
+                        }
+                      },
+                      {
+                        "properties": {
+                          "kind": {
+                            "const": "SUPPRESSED"
+                          },
+                          "source": {
+                            "enum": [
+                              "BRANCH",
+                              "TITLE"
+                            ]
+                          },
+                          "state": {
+                            "const": "SUPPRESSED"
+                          },
+                          "completion_transition": {
+                            "const": "INELIGIBLE"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "properties": {
+                      "kind": {
+                        "const": "UNKNOWN"
+                      },
+                      "source": {
+                        "enum": [
+                          "BODY",
+                          "BRANCH",
+                          "TITLE",
+                          "LINEAR_NATIVE",
+                          "ADAPTER"
+                        ]
+                      },
+                      "state": {
+                        "enum": [
+                          "AMBIGUOUS",
+                          "UNAVAILABLE"
+                        ]
+                      },
+                      "completion_transition": {
+                        "const": "UNKNOWN"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "uniqueItems": true
         },
         "diagnostics": {
           "$ref": "#/$defs/diagnostics"
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "PRESENT"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "allOf": [
+              {
+                "properties": {
+                  "diagnostics": {
+                    "maxItems": 0
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "pagination_complete": {
+                    "const": true
+                  },
+                  "relationships": {
+                    "items": {
+                      "oneOf": [
+                        {
+                          "properties": {
+                            "kind": {
+                              "const": "CLOSING"
+                            },
+                            "source": {
+                              "enum": [
+                                "BODY",
+                                "LINEAR_NATIVE",
+                                "ADAPTER"
+                              ]
+                            },
+                            "state": {
+                              "const": "PRESENT"
+                            },
+                            "completion_transition": {
+                              "const": "ELIGIBLE"
+                            }
+                          }
+                        },
+                        {
+                          "properties": {
+                            "kind": {
+                              "enum": [
+                                "CONTRIBUTING",
+                                "RELATION_ONLY"
+                              ]
+                            },
+                            "source": {
+                              "enum": [
+                                "BODY",
+                                "LINEAR_NATIVE",
+                                "ADAPTER"
+                              ]
+                            },
+                            "state": {
+                              "const": "PRESENT"
+                            },
+                            "completion_transition": {
+                              "const": "INELIGIBLE"
+                            }
+                          }
+                        },
+                        {
+                          "properties": {
+                            "kind": {
+                              "const": "AUTO_LINK"
+                            },
+                            "source": {
+                              "enum": [
+                                "BRANCH",
+                                "TITLE"
+                              ]
+                            },
+                            "state": {
+                              "const": "PRESENT"
+                            },
+                            "completion_transition": {
+                              "enum": [
+                                "ELIGIBLE",
+                                "INELIGIBLE"
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "properties": {
+                            "kind": {
+                              "const": "SUPPRESSED"
+                            },
+                            "source": {
+                              "enum": [
+                                "BRANCH",
+                                "TITLE"
+                              ]
+                            },
+                            "state": {
+                              "const": "SUPPRESSED"
+                            },
+                            "completion_transition": {
+                              "const": "INELIGIBLE"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "PARTIAL"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "allOf": [
+              {
+                "properties": {
+                  "diagnostics": {
+                    "minItems": 1
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "pagination_complete": {
+                    "const": false
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "CONTRADICTORY"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "allOf": [
+              {
+                "properties": {
+                  "diagnostics": {
+                    "minItems": 1
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "pagination_complete": {
+                    "const": false
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "UNAVAILABLE"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "allOf": [
+              {
+                "properties": {
+                  "diagnostics": {
+                    "minItems": 1
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "pagination_complete": {
+                    "const": false
+                  },
+                  "relationships": {
+                    "maxItems": 0
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "NOT_APPLICABLE"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "allOf": [
+              {
+                "properties": {
+                  "diagnostics": {
+                    "maxItems": 0
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "pagination_complete": {
+                    "const": false
+                  },
+                  "relationships": {
+                    "maxItems": 0
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
     },
     "receipt": {
       "type": "object",
@@ -540,7 +1703,8 @@
       ],
       "properties": {
         "repository": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
         },
         "pr_number": {
           "type": "integer",
@@ -562,13 +1726,19 @@
           "$ref": "#/$defs/digest"
         },
         "cutover_receipt_sha256": {
-          "type": [
-            "string",
-            "null"
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "ruleset_digest": {
-          "$ref": "#/$defs/digest"
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
         },
         "snapshot_digests": {
           "type": "object",
@@ -603,9 +1773,38 @@
           }
         },
         "producer": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         }
       }
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "pull_request": {
+            "properties": {
+              "body": {
+                "pattern": "(^|\\n)Portfolio-Mode: (?:tracked|`tracked`)(?:\\n|$)"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "native_linkage": {
+            "properties": {
+              "state": {
+                "not": {
+                  "const": "NOT_APPLICABLE"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
 }

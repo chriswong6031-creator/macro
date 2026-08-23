@@ -4,6 +4,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -26,22 +27,61 @@ def assert_route(capsys, status, reason):
     assert payload["execution_error_hash"] == core.digest(payload["error"])
 
 
+def assert_subprocess_route(result: subprocess.CompletedProcess[bytes], reason: str):
+    assert result.stdout == b""
+    payload = json.loads(result.stderr)
+    expected = next(r for r in MANIFEST["execution_error"]["routes"] if r["reason_code"] == reason)
+    assert result.returncode == expected["exit"]
+    assert (payload["error"]["component"], payload["error"]["code"], payload["error"]["reason_code"]) == (
+        expected["component"], expected["error_code"], reason)
+    assert payload["execution_error_hash"] == core.digest(payload["error"])
+
+
+def natural_input(reason: str) -> bytes:
+    """Produce the first twelve execution routes through their real parser/evaluator laws."""
+    if reason == "INVALID_UTF8": return b"\xff"
+    if reason == "INVALID_JSON": return b"{"
+    if reason == "DUPLICATE_OBJECT_MEMBER": return b'{"x":1,"x":2}'
+    if reason == "RESOURCE_LIMIT": return b" " * (cli.DEFAULT_LIMITS["observation_bytes"] + 1)
+    value = observation(VALID)
+    if reason == "UNKNOWN_KEY": value["extra"] = True
+    elif reason == "MISSING_KEY": value.pop("repository")
+    elif reason == "TYPE_MISMATCH": value["repository"]["name"] = 1
+    elif reason == "INVALID_SNAPSHOT_STATE": value["linear"]["extra"] = True
+    elif reason == "EPOCH_RECEIPT_RULESET_MISMATCH": value["authoring_epoch"]["receipt_ruleset_digest"] = "0" * 64
+    elif reason == "INVALID_BODY_ENCODING": value["pull_request"]["body"] += "\x00"
+    elif reason == "UNSUPPORTED_RULESET_ID": value["ruleset_id"] = "unknown.ruleset"
+    elif reason == "RULESET_DIGEST_MISMATCH": value["ruleset_digest"] = "0" * 64
+    else: raise AssertionError(reason)
+    return core.canonical_json(value)
+
+
 @pytest.mark.parametrize("reason", [r["reason_code"] for r in MANIFEST["execution_error"]["routes"][:12]])
-def test_all_input_contract_routes_are_typed(monkeypatch, capsys, reason):
-    monkeypatch.setattr(cli, "read_input", lambda _: b"{}")
-    monkeypatch.setattr(cli, "parse_input", lambda _: (_ for _ in ()).throw(core.ValidationError(reason)))
-    assert_route(capsys, cli.main(["x"]), reason)
+def test_all_input_contract_routes_are_natural_subprocesses(tmp_path, reason):
+    src = tmp_path / "input.json"
+    src.write_bytes(natural_input(reason))
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts/pr_linkage_validator.py"), str(src)],
+        cwd=ROOT, capture_output=True, check=False,
+    )
+    assert_subprocess_route(result, reason)
+
+
+def test_input_read_failure_is_a_natural_subprocess(tmp_path):
+    missing = tmp_path / "does-not-exist.json"
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts/pr_linkage_validator.py"), str(missing)],
+        cwd=ROOT, capture_output=True, check=False,
+    )
+    assert_subprocess_route(result, "INPUT_READ_FAILED")
 
 
 @pytest.mark.parametrize("reason, seam", [
-    ("INPUT_READ_FAILED", "read_input"), ("PARSER_INTERNAL_ERROR", "parse_input"),
+    ("PARSER_INTERNAL_ERROR", "parse_input"),
     ("EVALUATOR_INTERNAL_ERROR", "evaluate"), ("RENDERER_INTERNAL_ERROR", "render"),
     ("NONDETERMINISTIC_RESULT", "render"),
 ])
 def test_internal_phase_routes_are_operational(monkeypatch, capsys, reason, seam):
-    if seam == "read_input":
-        monkeypatch.setattr(cli, seam, lambda _: (_ for _ in ()).throw(cli.PhaseFailure(reason)))
-        assert_route(capsys, cli.main(["x"]), reason); return
     raw = core.canonical_json(observation(VALID))
     monkeypatch.setattr(cli, "read_input", lambda _: raw)
     if seam == "parse_input":
