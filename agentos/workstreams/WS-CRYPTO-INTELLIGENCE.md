@@ -24,8 +24,9 @@ waves:
       repaired on the same branch, the seven P0A commits were preserved by a
       normal merge onto origin/main pickup cd42b890d1df and subsequent normal
       merges through final render pickup 0e8cd8f28edd at f792c107473d, followed
-      by a cleanly composing CI/White-House-only refresh to 21fab3521143 at the
-      final PR head. Refreshed local product proof is complete. P0A is not
+      by a cleanly composing CI/White-House refresh and no-P0A-path Market OS
+      record at current-main parent e743db23c31a, carried by final reconciliation
+      merge e3642597ece3. Refreshed local product proof is complete. P0A is not
       Sol-accepted, merged, deployed or live. The done status describes the
       bounded build wave only.
   - id: P0B
