@@ -293,3 +293,77 @@ Recorded so a later seat does not go looking for rows that do not exist:
 - **MAC1-002** floors `.r3-textbtn` on the inline axis. `Show fewer` / `收起` is
   unchanged; only the box stopped being sized off the glyph count.
 - **PRC1R-001** adds `aria-controls="r3-receipt"`. No user-visible text.
+
+## 8 · B2-05 STRENGTHENING (Sol FINAL CONTINUATION HANDOFF §5) — the delta's label becomes VISIBLE
+
+Sol's amended B2-05 law: *"At ≤640, every figure whose visual header disappears
+gets a visible inline mobile label"*, with the required meanings naming
+`20d vs market +27.2% / 20日对比市场 +27.2%` explicitly. That **overrides §6 row 2
+of this ledger**, which recorded the 20-day delta's name as *"visually hidden at
+EVERY width by design"* on a density argument. §6 is left exactly as written —
+it is the record of what was decided then; this section is what supersedes it.
+
+**No string changed.** The pair `20d vs market` / `20日对比市场` is byte-identical
+to what §6 recorded and to the legend `<em>` it was taken from. What changed is
+the CARRIER and therefore the presentation.
+
+| EN | ZH | site | provenance | note |
+|---|---|---|---|---|
+| `20d vs market` | `20日对比市场` | `build/views/overview.html:722` — `rowHTML()`, `.r3-figlab` inside `.r3-delta`, marker `data-r3b2="05"` on the delta | **carrier re-classed `.r3-vh` → `.r3-figlab`**; string unchanged and still byte-identical to the column header's `<em>` second line (`overview.html:835`) | Now PAINTED at ≤640 and still clipped at >640, where the legend names the column. Asserted equal to that `<em>` by `fig_naming_audit.py` (`delta_label_mismatch` must be empty), so the delta cannot acquire a shortened synonym on the way to a phone. Rendered: `20D VS MARKET +27.2%` / `20日对比市场 +27.2%` at 320 and 390. Values unchanged. |
+| `Strength` | `强度` | `build/views/overview.html:734` — unchanged site, unchanged string | unchanged (§6 row 1) | Recorded only to note the guard around it moved: the caption is now emitted on `sc` alone rather than on `sc || p20`, so a row carrying a delta but no score can no longer inherit the score's name. Inert on this fixture (all 11 valued theme rows carry both). |
+
+**No duplicate spoken label.** The delta previously carried a `.r3-vh` twin *and*
+would now carry a `.r3-figlab`; only one node exists, so the accessible name is
+`20d vs market +27.2%` exactly once — the same single-node rule §6 row 4 applied
+to Conviction.
+
+**Composition, not abbreviation.** Two named figures now share one cell. The
+label sits *over* its figure rather than inline before it: inline is one line
+shorter but costs ~130px of a 320 viewport's 288px, taken out of the name
+column, where a primary name wraps and never ellipsizes. Stacked, the cell is
+~94px (EN) / ~62px (ZH) and the row grows by one micro line instead. Nothing is
+shortened in either language — `20d vs market` is the whole meaning, and
+`20d` alone would change what the number is measured against.
+
+## 9 · B2-15 — context-only / 5d evidence disclosure beside the track-record badge
+
+Closes the candidate-owned half of `DA1-03`. The badge itself is **untouched**:
+`Forward track record: Validated` / `前瞻战绩：已验证` still reads exactly as
+production authors it (`templates/sector_central.html.j2:3460-3468`), because the
+badge's broader `Validated` semantics and its 21d pairing are an R3C owner
+repair. What is added is the qualification the embedded payload already carried
+and the surface never painted.
+
+**Producer binding — verified before painting.** Fixture
+`research/reference_integrity/mastermind-xpv2-sector-r3/fixture/marketdata/index_leadership.json`
+(sha256 `d95fe2e7b28fda138f9834e424b358d590e514d2484cde9da90bf4260b20b50b`),
+JSON path `track_record`:
+
+```
+"schema": "index_leadership.track_record.v1",
+"is_context_only": true,
+"verdict": "validated",
+"proven": { "5": true, "10": false, "21": false, "63": false }
+```
+
+Every clause is derived, none asserted. The block renders only while
+`is_context_only === true`; the horizon it names is read out of `proven` itself
+(`build/views/money.html:1260-1276`, `trQualHtml()`). Flip the flag and the
+sentence disappears; mark `proven["21"]` true and the sentence says `5 / 21d`.
+It does **not** translate or restate the producer's English `note` — producer
+strings stay upstream-owned (Sol §4 / `PRC1R-U02`). These are reference-authored
+strings and therefore take a native ZH twin like every other authored string here.
+
+| EN | ZH | site | provenance | note |
+|---|---|---|---|---|
+| `Context only` | `仅为背景` | `build/views/money.html:1272` — `.lead-tr-cl` inside `.lead-tr-qual`, marker `data-r3b2="15"` | **authored-new**, bound to `track_record.is_context_only === true` | ZH is not a new coinage: `仅为背景` is this view's own established idiom for the same claim (`money.html:460`, `仅为背景 — 本视图不给出操作判断`), so the two context-only statements on one view speak with one voice. |
+| `evidence proven at 5d` | `仅 5 日周期有实测证据` | `build/views/money.html:1266-1267` — `ev`, rendered into `.lead-tr-cl` | **authored-new**, bound to `track_record.proven` (the `true` horizons, ascending) | `5` is not a literal — it is `Object.keys(proven).filter(v => v === true)`. ZH re-authored, not calqued: `实测` is the build's own word for measured-rather-than-asserted (`money.html:1299`, `实测而非断言`), and `周期` is the Horizon column's own noun (`moving.html`). The clause deliberately avoids `已验证` / `验证` so it cannot be read as extending the badge's word to this horizon. |
+| `never sizes decisions` | `从不用于仓位决策` | `build/views/money.html:1274` | **authored-new**, gated on `is_context_only` | `仓位` is this build's established ZH for position sizing (`overview.html:1250` `仓位缩至`, `:1254` `仓位如何设定`). |
+| *(null path, inert on this fixture)* `no horizon has cleared the bar yet` | `尚无周期达到实测证据` | `build/views/money.html:1268` | **authored-new**, the `proven` map with no `true` entry | Never renders against these bytes; exists so an all-false `proven` degrades to a plain-word null disclosure rather than to a missing clause. |
+| `21d hit-rate: ` | `21日命中率：` | `build/views/money.html:1297` — `.lead-tr-h21` | unchanged | **String untouched; carrier re-classed to `.lead-tr-h21`.** The 21d statistics keep their explicit horizon label and are now forced onto their own line under a hairline, so they can never sit beside the qualification and read as its evidence. `running` / `coiling` remain producer bytes and are not translated. |
+| `grades mature at 5 / 10 / 21 / 63d — measured, not asserted` | `5 / 10 / 21 / 63 日后成熟评级——实测而非断言` | `build/views/money.html:1298` | unchanged | Same re-class, same reason. Inert on this fixture (`any_matured` is true). |
+
+**What this does NOT say.** It does not claim the 21d horizon is validated, it
+does not contradict or reword the badge, and it does not use falsifier or
+refutation vocabulary. It states which horizon the evidence reaches, and that the
+reading never sizes anything — both straight out of the payload.

@@ -3,6 +3,11 @@
   "candidate": "MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html",
   "expected_census_per_cell": 18,
   "expected_empty_per_cell": 4,
+  "expected_delta_census_per_cell": 11,
+  "delta_phrase": {
+    "en": "20d vs market +27.2%",
+    "zh": "20日对比市场 +27.2%"
+  },
   "mobile_breakpoint_px": 640,
   "cells": [
     {
@@ -19,6 +24,16 @@
         "Strength 20d vs market"
       ],
       "label_mismatch": [],
+      "delta_census": 11,
+      "delta_painted": 3,
+      "delta_unnamed": [],
+      "delta_naked_visible": [],
+      "delta_double_labelled": [],
+      "header_unit": "20d vs market",
+      "delta_inline_labels": [
+        "20d vs market"
+      ],
+      "delta_label_mismatch": [],
       "proofs": [],
       "failures": []
     },
@@ -36,6 +51,16 @@
         "强度 20日对比市场"
       ],
       "label_mismatch": [],
+      "delta_census": 11,
+      "delta_painted": 3,
+      "delta_unnamed": [],
+      "delta_naked_visible": [],
+      "delta_double_labelled": [],
+      "header_unit": "20日对比市场",
+      "delta_inline_labels": [
+        "20日对比市场"
+      ],
+      "delta_label_mismatch": [],
       "proofs": [],
       "failures": []
     },
@@ -53,7 +78,23 @@
         "Strength 20d vs market"
       ],
       "label_mismatch": [],
+      "delta_census": 11,
+      "delta_painted": 3,
+      "delta_unnamed": [],
+      "delta_naked_visible": [],
+      "delta_double_labelled": [],
+      "header_unit": "20d vs market",
+      "delta_inline_labels": [
+        "20d vs market"
+      ],
+      "delta_label_mismatch": [],
       "proofs": [
+        {
+          "view": "overview",
+          "label": "delta-phrase",
+          "value": "20d vs market +27.2%",
+          "pass": true
+        },
         {
           "view": "overview",
           "label": "Strength",
@@ -89,7 +130,23 @@
         "强度 20日对比市场"
       ],
       "label_mismatch": [],
+      "delta_census": 11,
+      "delta_painted": 3,
+      "delta_unnamed": [],
+      "delta_naked_visible": [],
+      "delta_double_labelled": [],
+      "header_unit": "20日对比市场",
+      "delta_inline_labels": [
+        "20日对比市场"
+      ],
+      "delta_label_mismatch": [],
       "proofs": [
+        {
+          "view": "overview",
+          "label": "delta-phrase",
+          "value": "20日对比市场 +27.2%",
+          "pass": true
+        },
         {
           "view": "overview",
           "label": "强度",
@@ -125,7 +182,23 @@
         "Strength 20d vs market"
       ],
       "label_mismatch": [],
+      "delta_census": 11,
+      "delta_painted": 3,
+      "delta_unnamed": [],
+      "delta_naked_visible": [],
+      "delta_double_labelled": [],
+      "header_unit": "20d vs market",
+      "delta_inline_labels": [
+        "20d vs market"
+      ],
+      "delta_label_mismatch": [],
       "proofs": [
+        {
+          "view": "overview",
+          "label": "delta-phrase",
+          "value": "20d vs market +27.2%",
+          "pass": true
+        },
         {
           "view": "overview",
           "label": "Strength",
@@ -161,7 +234,23 @@
         "强度 20日对比市场"
       ],
       "label_mismatch": [],
+      "delta_census": 11,
+      "delta_painted": 3,
+      "delta_unnamed": [],
+      "delta_naked_visible": [],
+      "delta_double_labelled": [],
+      "header_unit": "20日对比市场",
+      "delta_inline_labels": [
+        "20日对比市场"
+      ],
+      "delta_label_mismatch": [],
       "proofs": [
+        {
+          "view": "overview",
+          "label": "delta-phrase",
+          "value": "20日对比市场 +27.2%",
+          "pass": true
+        },
         {
           "view": "overview",
           "label": "强度",
