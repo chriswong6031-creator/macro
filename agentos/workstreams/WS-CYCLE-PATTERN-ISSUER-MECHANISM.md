@@ -899,8 +899,34 @@ waves:
       errors, same 28 pre-existing unrelated warnings). Every new test this
       round was mutation-verified against its named regression, then
       reverted (repo left clean — confirmed via `git diff --stat` after
-      each revert). PR stays DRAFT pending the commissioning session's
-      re-review.
+      each revert).
+
+      POST-MERGE RECONCILIATION (same PR #6308, same branch): origin/main
+      advanced substantially across all 4 rounds of this PR's life
+      (unrelated sessions' commits), and a REAL content conflict surfaced
+      in THIS file — a sibling PR (#6307, wave id A5C, TOL beginning-
+      quarter-backlog cancellation sensitivity prior-year extraction) had
+      appended its own new wave entry at the same list position as this
+      record's own A5C-alpha entry. Resolved by `git merge origin/main`
+      (not rebase) and keeping BOTH wave entries as siblings under
+      `waves:` — a pure append-only-file concurrent-edit conflict, not a
+      semantic disagreement; no content from either side was altered.
+      `git merge-tree --write-tree HEAD origin/main` re-verified clean
+      (no remaining conflicts) after resolution; `python3
+      scripts/agentos.py validate` still 0 errors post-merge (622 records,
+      up from 609 — origin/main's own accumulated records, none of which
+      this PR authored). Re-verified on the FINAL merged head: pytest
+      tests/test_imce_prospective.py tests/test_refresh_event_workspaces.py
+      tests/test_company_intelligence_event_workspace.py
+      tests/test_gh_annotation_line_start.py
+      tests/test_issuer_profiles_a5a.py tests/test_earnings_release_binding.py
+      (283 passed, 2 skipped — the +9 over round 4's 274 is PR #6307's own
+      TOL sensitivity tests arriving via the merge into the shared
+      tests/test_issuer_profiles_a5a.py file, not new tests this PR
+      authored); `git diff origin/main -- tests/test_imce_prospective.py |
+      grep -c '^+def test_'` re-confirmed 14 (unchanged — this file was
+      not touched by the merge or by round 4). PR stays DRAFT pending the
+      commissioning session's re-review.
   - id: A5C
     title: >
       IMCE-A5C item 7/8 — TOL beginning-quarter-backlog cancellation
