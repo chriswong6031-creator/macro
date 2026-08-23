@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-23T11:11:18.610829+00:00",
-  "count": 1682,
+  "generated_at": "2026-08-23T12:16:09.081863+00:00",
+  "count": 1685,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -1289,6 +1289,66 @@
         "**AI Structural Investment**: 84% capex growth in AI infrastructure this year (33% next) amid hyperscaler monetization, creating a key structural trend despite tech sector competition risks.",
         "**Geopolitical Risk Catalyst**: Strait of Hormuz reopening timing is critical; prolonged Middle East conflict risks energy disruptions and material global growth slowdown.",
         "**Valuation-Driven Allocation**: \"Attractive\" tier prioritizes tech/cyclical sectors (consumer discretionary, banks) and structural themes (industrials, healthcare) where earnings growth outpaces price."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-rsgwmursz5w-6facca",
+      "title": "Treasury Inflation-Protected Securities",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:16:25Z",
+      "summary_points": [
+        "**Geopolitical Inflation Catalyst**: Middle East tensions pushed Brent crude to $90/barrel (vs $75 Aug), creating stagflationary pressure; TIPS benefit as real yields now positive (unlike 2022), unlike Russia-Ukraine exception.",
+        "**Inflation Policy Alignment**: Fed’s 2% target commitment and dovish reaction function support TIPS; TIPS outperform nominal Treasuries if inflation exceeds market expectations (current 10-yr breakeven at 2.3% below May peaks).",
+        "**Real Yield Valuation Shift**: Positive real yields (vs 2022 negative) and energy-driven 2.5% TIPS CPI rise create structural TIPS advantage; valuation hinges on sustained medium-term inflation from supply shocks.",
+        "**Scenario Risk Matrix**: Upside if inflation exceeds Fed target longer (vs nominal bonds); downside if growth scare accelerates inflation decline, widening risk premiums and negating TIPS carry."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-fcjctsgb13r-5c893c",
+      "title": "Private equity",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:16:24Z",
+      "summary_points": [
+        "**Private Equity Fundraising Momentum**: H126 fundraising exceeds 60% of FY25 target (USD 262B), with Asia Pacific leading (30% above FY25 level), driven by resilient macro fundamentals.",
+        "**Deal Activity Recovery**: Global PE deal count growth accelerated to 9% in Q2 2026 (from 6% previously), fueled by easing macro uncertainty and Fed rate cut expectations.",
+        "**Secondary Market Momentum**: Global secondary volumes up 15% vs 1H25, reflecting strong investor demand for liquidity, portfolio rebalancing, and defensive PE exposure.",
+        "**Venture Capital Thematic Shift**: VC diversification beyond tech/softw into healthcare/new energy amid AI disruption, policy scrutiny, and enterprise cost discipline risks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ploy2jr1uvn-623108",
+      "title": "Eurozone equities",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:16:23Z",
+      "summary_points": [
+        "**Eurozone Earnings Growth**: Forecast raised to 15% (2024-2027), confirmed by Q2 results (22% YoY, 11% excluding energy), driving index targets via 32% cumulative 2026-2027 growth.",
+        "**Strategic Allocation Focus**: Prioritize cyclical/structural growth in European banks, consumer discretionary, healthcare, industrials, IT, and Germany; luxury/lifestyles theme fueled by demographics and digitalization.",
+        "**Key Risk Factors**: Energy disruption risks triggering economic weakness/tighter policy; US-EU/EU-China trade wars and Chinese competition weigh on growth/valuations.",
+        "**Upside Catalysts**: EuroStoxx 50 2027 target (7,600) supported by AI/electrification/defense investment boom, German fiscal policy, Russia-Ukraine peace, and global policy shifts (lower-for-longer rates)."
       ],
       "tags": [],
       "tickers": [],
