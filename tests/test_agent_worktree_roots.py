@@ -130,6 +130,7 @@ def test_every_guarded_root_is_reachable_by_the_gc() -> None:
         ".codex-worktrees/",
         ".cursor/worktrees/",
         ".grok/worktrees/",
+        ".warp/worktrees/",
     ],
 )
 def test_known_fleet_roots_are_declared_everywhere(root: str) -> None:
