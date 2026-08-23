@@ -21,6 +21,11 @@ verification:
   approval_yml_present: false
 
 quarantine:
+  # ORCHESTRATOR SCHEMA-CONFORMANCE ANNOTATION (2026-08-23; not critic content): the canonical
+  # key below transcribes this receipt's own attestations -- honoured: true plus
+  # second_pass.rationale_read (rationale documents read only at the second pass; see
+  # verdict_rationale: six first-pass findings withdrawn/reattributed after the reveal).
+  rationale_received_after_first_pass: true
   honoured: true
   first_pass_inputs:
     - exact frozen candidate bytes, rendered independently (in-app Chromium, localhost static serve)
