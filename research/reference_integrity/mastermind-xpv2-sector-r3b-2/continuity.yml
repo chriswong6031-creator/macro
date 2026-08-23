@@ -24,16 +24,26 @@ predecessors:
   closure:
   - id: VTC1-001
     kind: blocker
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "Closed with B2-05 below (same mechanism): .r3-figlab per figure + strengthened delta label; fig_naming_audit 108-figure + 66-delta census, 0 unnamed at 1440/390/320, 0 painted-without-visible-name at <=640, 16/16 commissioned proofs, discrimination-proven (carrier revert RED, abbreviation RED). Lanes B+F commits 598144a05ac6 + 18af6a49394e; adjudications S4/S8."
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/overview.html
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/confluence.html
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/shell.html
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fig_naming_audit.py
     predecessor_note: 'BLOCKER (sole basis of the Visual/Taste BLOCK): .r3-cols legends aria-hidden
       + display:none <=640 kill the R3B1-13 label on mobile; 16/18 .r3-fig lack accessible
       names at any width. Fix = B2-05 (which also closes the same-mechanism majors MAC1-001
       and PRC1R-002).'
   - id: B2-01
     kind: condition
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "Strength / 强度 at every theme_intel.themes[].score binding site (6 sites incl. the action-board header -- carve-out amended; Lane A commit 2f5daab9808b) + label_map_audit guard: 8 sites/cell x EN/ZH, 0 failing, distinct-producer Conviction labels preserved; mutation flipping one site back to Score -> unique red naming the site, zero collateral (B2_01_LABEL_MAP_MUTATION.md; Lane G commit 490ab8b20ac4)."
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/overview.html
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/map.html
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/label_map_audit.py
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/verify_reference.py
     predecessor_note: 'One producer measure, one customer term: theme_intel.themes[].score
       renders Strength / 强度 everywhere (Overview action-board theme rows and Map/context surfaces
       included); remove copy asserting an independent action-board score field; producer-path->customer-label
@@ -41,8 +51,13 @@ predecessors:
       producer measure may use another term only with a distinct producer path.'
   - id: B2-05
     kind: condition
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "Every .r3-fig accessibly named at ALL widths; visible inline mobile labels at <=640 incl. Strength 76 / 强度 76, 20d vs market +27.2% / 20日对比市场 +27.2%, Entry tier / 入场层级, Conviction / 综合把握; no duplicate spoken label (single-node two-presentation rule); unique mutations for the figure classes (carrier revert RED 4/6, abbreviation RED 6/6). Evidence: fig_naming_audit.json + evidence/ crops at 320/390/1440 EN/ZH. Lanes B+F commits 598144a05ac6 + 18af6a49394e."
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/overview.html
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/confluence.html
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/shell.html
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fig_naming_audit.py
     predecessor_note: 'COMPLETE visible + accessible figure labeling: at ALL widths every
       .r3-fig gets a localized per-cell accessible name independent of .r3-cols; at <=640
       every figure whose visual header disappears gets a visible inline mobile label. Required
@@ -52,40 +67,57 @@ predecessors:
       parity; unique mutations for all three figure classes.'
   - id: B2-06
     kind: condition
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "Treemap sector/group labels: painted-width gate extended to sector headers, 0 cross-owner overlaps at 320/390 across 12 cells (5,928 tiles, 288 painted labels; the VTC1-002 Communication Services x Healthcare stress pair resolved); accessible browse table retains full information. treemap_labels_audit.json; Lane B commit 598144a05ac6; adjudications S4."
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/money.html
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/treemap_labels_audit.py
     predecessor_note: 'Treemap label collision at 320/390: no sector/group-label overlap by
       painted width (never character count); primary identity wins; secondary label may drop;
       accessible/list equivalent retains full information.'
   - id: B2-08
     kind: condition
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "Rank across all groups / 在全部分组中 folded into the Map/Themes rank column header (two-line header pattern); orphan note deleted; crops at 1440+390 EN/ZH. Lane A commit 2f5daab9808b; adjudications S2."
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/map.html
     predecessor_note: 'Rank scope at point of use: Rank across all groups + native ZH twin
       in the immediate Map/Themes rank label/header.'
   - id: B2-09
     kind: condition
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "RECENTLY WRONG (LOGGED) rows bind --muted (5.57/5.43:1, is_reserved=false in all four theme x lang cells; error-red rejected because --act sits outside the ZH direction swap). Lane A commit 2f5daab9808b; B209_INK_RECEIPT."
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/moving.html
     predecessor_note: 'Neutral Recent Wrong semantics: RECENTLY WRONG (LOGGED) + ZH twin never
       in reserved up/positive/Buy ink; neutral history/error treatment; result data unchanged.'
   - id: B2-10
     kind: condition
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "Five-segment ramp suppressed when the ledge stacks (<=767): painted 2 / suppressed 8 of 10 geometry cells, no decorative replacement; desktop unchanged. mobile_geometry_audit.json; Lane B commit 598144a05ac6."
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/confluence.html
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/mobile_geometry_audit.py
     predecessor_note: Suppress the horizontal five-segment state ramp when the state cells
       recompose vertically on mobile and it no longer maps spatially; no decorative replacement.
   - id: B2-11
     kind: condition
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "Receipt flows with the full wrapped headline: 10/10 cells on/after the final wrapped line incl. 320/390 EN/ZH and 200% large-text cells; discrimination-proven (restoring -13px margin -> VTC1-007 verbatim red). Lane B commit 598144a05ac6."
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/overview.html
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/mobile_geometry_audit.py
     predecessor_note: 'Headline receipt follows wrapped text: the Overview receipt/disclosure
       stays visually associated with the full wrapped headline; test 320/390 EN/ZH and large
       text.'
   - id: B2-12
     kind: condition
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "Chip renamed to Sol-canonical Low confidence / 低置信度 (marker data-r3b2=12; causal copy dropped; 48-omitted coverage sentence byte-unchanged) + thin_reliability_audit guard: 5 chips/cell x EN/ZH 0 failing, 'thin'/'稀疏' painted ONLY in the coverage-sentence context; mutation restoring Thin data -> unique red + collision red, zero coverage-sentence collateral. Reconciliation commit d48bc7c40c7c + Lane G 490ab8b20ac4."
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/confluence.html
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/thin_reliability_audit.py
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/verify_reference.py
     predecessor_note: 'thin vs reliability semantic collision: keep the visible reliability
       chip but rename the low-reliability state ''Low confidence / 低置信度'' (no causal copy
       unless the exact producer contract proves the cause); keep the 48-row omission sentence
@@ -93,21 +125,30 @@ predecessors:
       term; mutation restoring ''Thin data'' on in-table rows -> red.'
   - id: B2-13
     kind: condition
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "aria-controls=r3-receipt on the [data-r3b1=02] receipt button (Lane B commit 598144a05ac6) + aria_receipt_audit guard: 13 [aria-expanded] controls censused, 4/4 shared-panel controls wired, mutation stripping one -> unique red. Lane G commit 490ab8b20ac4."
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/overview.html
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/aria_receipt_audit.py
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/verify_reference.py
     predecessor_note: 'Methodology receipt aria-controls: add aria-controls=r3-receipt to
       the [data-r3b1=02] named receipt button; guard that any control owning expanded/collapsed
       state for the shared panel names the same target.'
   - id: B2-14
     kind: condition
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "收起 min-width:44px declared in BOTH owning partials (source-order-proof); 0/36 .r3-textbtn under the 44px floor across the geometry sweep; ZH measured at 320/390/820 (evidence receipt). Lane B commit 598144a05ac6."
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/map.html
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/moving.html
     predecessor_note: 'ZH Show fewer target floor: 收起 gets min-width:44px or equivalent symmetric
       inline padding (house 44px control floor); re-measure ZH at 320/390/820.'
   - id: B2-15
     kind: condition
-    disposition: CARRIED_BLOCK
-    note: "Open at cycle start; the owning R3B.2 lane flips this row to RESOLVED_BY_CHANGE with evidence + changed_files at successor freeze (COMMISSION.md fix packet B2-01..11). A row still CARRIED_BLOCK at freeze is a disclosed miss, never silent."
+    disposition: RESOLVED_BY_CHANGE
+    evidence: "Context only / evidence proven at 5d / never sizes decisions painted beside the Money & Breadth track-record badge (the DA1-03 surface), gated on verified fixture fields (index_leadership.json track_record: is_context_only true, proven 5-only; note_zh ABSENT so the ZH twin is lawful reference-authored copy); 21d figures on their own labelled line; badge untouched; ZH avoids 验证; contrast 12.09/14.78:1; geometry receipts at 1440+390 EN/ZH. Lane F commit 18af6a49394e; adjudications S8."
+    changed_files:
+      - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/money.html
     predecessor_note: 'Context-only / 5d evidence disclosure: paint the payload''s own qualification
       (is_context_only:true, proven 5d true / 21d false) beside the track-record badge --
       minimum customer semantics ''Context only - evidence proven at 5d - never sizes decisions''

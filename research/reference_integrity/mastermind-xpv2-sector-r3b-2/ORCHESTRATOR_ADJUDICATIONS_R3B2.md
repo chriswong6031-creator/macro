@@ -207,3 +207,35 @@ ea2e09b812d1; R3A 59; verify 17/19 ((j)/(k) = Lane G artifacts). All five deviat
 UPHELD (owned-file expansion to money.html covered by the commission's own USER JOB
 wording; shell.html untouched; emit-guard fix in-law; byproducts cleaned; nothing
 pushed by the lane).
+
+
+## §9 Lane G return — adjudicated ACCEPTED (commit 490ab8b20ac4)
+
+Verification hardening complete: verifier **22/22 ALL GREEN** under the Playwright venv,
+heatmap colour-field axis printed as UNMEASURED (never scored). Three discriminating
+guards, each with nonzero censuses and a unique-kill mutation proof with zero collateral:
+B2-01 label map (8 sites/cell × EN/ZH; Score-flip mutation reds exactly the mutated site),
+B2-12 thin/reliability non-collapse (5 chips/cell; Thin-data restoration reds the chip AND
+the collision census, coverage sentence untouched), B2-13 shared-panel wiring (13 controls
+censused, 4/4 wired; strip mutation reds uniquely). Gate artifacts for (j)/(k) committed
+at the verifier's paths: zoom 48/48 cells clean; contrast 0 AA failures across 15,388
+reference-authored cells with the 75 upstream sc_flows cells and 440 unmeasurable
+heatmap cells excluded from the GATE scope (and disclosed, per Sol §4/§6 — exclusion from
+a gate whose scope is reference-authored flat-surface cells, never conversion to PASS).
+Evidence: 53 files + bidirectional EVIDENCE_INDEX.md bound to candidate sha ea2e09b812d1
+(cross-checked against BUILD_MANIFEST.json). R3A 59 passed; candidate bytes unchanged;
+predecessor trees zero-diff. Ruling: the two flagged judgment calls (text receipts for
+exact-value items in evidence 6c; substring assertion on the descriptive vh caption)
+are UPHELD as the honest readings.
+
+## §10 Freeze record
+
+All 12 successor continuity rows RESOLVED_BY_CHANGE with per-row evidence and
+changed_files (VTC1-001 + the final eleven conditions). Freeze mechanics: the freeze
+commit's tree holds the final candidate bytes (sha256 ea2e09b812d1435103e491973ae01d2c4f
+ca63c3a29186023f40f137fc10aba8); manifest reference_files[].frozen_sha and proposal
+proposed_artifact.frozen_sha stamped with that commit (taken from `git log -1
+--format=%H`, never hand-expanded — the R3B.1 lesson); status draft -> in_review in the
+stamping commit. Terminal state per the Chairman directive: draft HOLD-FOR-SOL PR, no
+merge-on-green, native auto-merge null — PARKED for Sol's four fresh delta-focused final
+seats. No approval.yml; R3C not started; production untouched.
