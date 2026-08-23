@@ -1781,25 +1781,48 @@
   },
   "allOf": [
     {
-      "if": {
-        "properties": {
-          "pull_request": {
+      "not": {
+        "anyOf": [
+          {
             "properties": {
-              "body": {
-                "pattern": "(^|\\n)Portfolio-Mode: (?:tracked|`tracked`)(?:\\n|$)"
-              }
+              "authoring_epoch": {"properties": {"state": {"const": "NOT_APPLICABLE"}}}
+            }
+          },
+          {
+            "properties": {
+              "changed_paths": {"properties": {"state": {"const": "NOT_APPLICABLE"}}}
+            }
+          },
+          {
+            "properties": {
+              "linear": {"properties": {"state": {"const": "NOT_APPLICABLE"}}}
+            }
+          },
+          {
+            "properties": {
+              "path_ownership": {"properties": {"state": {"const": "NOT_APPLICABLE"}}}
+            }
+          },
+          {
+            "properties": {
+              "native_linkage": {"properties": {"state": {"const": "NOT_APPLICABLE"}}}
             }
           }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "agentos": {"properties": {"state": {"const": "NOT_APPLICABLE"}}}
         }
       },
       "then": {
         "properties": {
-          "native_linkage": {
+          "pull_request": {
             "properties": {
-              "state": {
-                "not": {
-                  "const": "NOT_APPLICABLE"
-                }
+              "body": {
+                "pattern": "(^|\\n)Workstream: (?:NONE|`NONE`)\\nLinear: [^\\r\\n]+\\nPortfolio-Mode: (?:architecture_candidate|`architecture_candidate`)(?:\\n|$)"
               }
             }
           }

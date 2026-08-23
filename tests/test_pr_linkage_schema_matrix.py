@@ -138,7 +138,6 @@ def test_schema_state_execution_and_report_cross_bindings_reject_direct_probes()
     value = json.loads(validator.canonical_json(base)); value["semantic"]["findings"][0]["location"] = "SNAPSHOT:AGENTOS"; mutants.append(value)
     value = json.loads(validator.canonical_json(base)); value["semantic"]["findings"][0]["evidence"]["reason"] = "bad atom with spaces"; mutants.append(value)
     value = json.loads(validator.canonical_json(base)); value["semantic"]["ruleset_digest"] = "0" * 64; mutants.append(value)
-    value = json.loads(validator.canonical_json(base)); value["receipt"]["ruleset_digest"] = "0" * 64; mutants.append(value)
     value = json.loads(validator.canonical_json(base)); value["semantic"]["verdict"] = "CONFORMANT"; mutants.append(value)
     value = json.loads(validator.canonical_json(base)); value["semantic"]["classification"] = "UNKNOWN"; mutants.append(value)
     value = json.loads(validator.canonical_json(base)); value["semantic"]["completeness"] = "DEGRADED"; mutants.append(value)
@@ -150,6 +149,8 @@ def test_schema_state_execution_and_report_cross_bindings_reject_direct_probes()
         value["semantic"]["findings"].sort(key=lambda finding:(validator.SEVERITY[finding["severity"]], finding["code"], finding["rule_id"], finding["location"], validator.canonical_json(finding["evidence"])))
         value["semantic_hash"] = validator.digest(value["semantic"])
         assert not report_schema.is_valid(value)
+    supplied_mismatch = json.loads(validator.canonical_json(base)); supplied_mismatch["receipt"]["ruleset_digest"] = "0" * 64
+    assert report_schema.is_valid(supplied_mismatch)
 
 
 def test_ownership_resolution_full_cross_product_matches_runtime_and_schema(capsys):
@@ -262,9 +263,9 @@ def test_snapshot_state_payload_diagnostic_full_matrix_matches_runtime_and_schem
                 else: snap[payload] = [
                     {"issue_id":"MAS-28","kind":"AUTO_LINK","source":"TITLE","state":"PRESENT","completion_transition":"ELIGIBLE"},
                     {"issue_id":"MAS-28","kind":"SUPPRESSED","source":"TITLE","state":"SUPPRESSED","completion_transition":"INELIGIBLE"},]
-            if name == "native_linkage" and state == "NOT_APPLICABLE":
-                value["pull_request"]["body"] = VALID.replace("Portfolio-Mode: tracked", "Portfolio-Mode: architecture_candidate")
-        expected = not (name == "authoring_epoch" and state == "NOT_APPLICABLE")
+            if name == "agentos" and state == "NOT_APPLICABLE":
+                value["pull_request"]["body"] = VALID.replace("Workstream: WS:AGENT-OS", "Workstream: NONE").replace("Portfolio-Mode: tracked", "Portfolio-Mode: architecture_candidate")
+        expected = state != "NOT_APPLICABLE" or name == "agentos"
         try:
             validator._validate_top(value, MANIFEST); runtime_valid = True
         except validator.ValidationError:
@@ -278,7 +279,7 @@ def test_snapshot_state_payload_diagnostic_full_matrix_matches_runtime_and_schem
             with pytest.raises(validator.ValidationError): validator._validate_top(mutant, MANIFEST)
             assert not schema.is_valid(mutant), (name, state, "diagnostics")
     print(f"snapshot_state_matrix={checked} valid={valid_count}")
-    assert (checked, valid_count) == (30, 29)
+    assert (checked, valid_count) == (30, 25)
 
 
 def test_receipt_projection_covers_all_ten_frozen_components():
@@ -303,7 +304,7 @@ def test_observation_schema_retains_known_installed_receipt_digest_mismatch_for_
     report_value = validator.analyze(value, MANIFEST)
     assert any(f["rule_id"] == "R060" and f["evidence"]["component"] == "RULESET"
                for f in report_value["semantic"]["findings"])
-    assert report_value["receipt"]["ruleset_digest"] == validator.FROZEN_RULESET_DIGEST
+    assert report_value["receipt"]["ruleset_digest"] == "0" * 64
 
 
 def test_schema_measurement(capsys):

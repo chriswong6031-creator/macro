@@ -134,6 +134,30 @@ def write_atomic(target: pathlib.Path, payload: bytes) -> None:
             except Exception: pass
 
 
+def write_stream(stream, payload: bytes) -> None:
+    """Write every byte with bounded progress and flush before success."""
+    try:
+        buffer = stream.buffer
+        offset = 0
+        attempts = 0
+        while offset < len(payload):
+            attempts += 1
+            if attempts > len(payload):
+                raise OSError("write did not make bounded progress")
+            written = buffer.write(payload[offset:])
+            if (not isinstance(written, int) or isinstance(written, bool)
+                    or written <= 0 or written > len(payload) - offset):
+                raise OSError("invalid stream write result")
+            offset += written
+        flush = getattr(buffer, "flush", None)
+        if flush is None:
+            flush = getattr(stream, "flush", None)
+        if flush is not None:
+            flush()
+    except Exception as exc:
+        raise PhaseFailure("OUTPUT_WRITE_FAILED") from exc
+
+
 def main(argv: list[str] | None = None) -> int:
     class TypedParser(argparse.ArgumentParser):
         def error(self, _message): raise PhaseFailure("INPUT_READ_FAILED")
@@ -146,8 +170,18 @@ def main(argv: list[str] | None = None) -> int:
             raise core.ResourceLimitError("observation_bytes", DEFAULT_LIMITS["observation_bytes"], len(raw))
         observation = parse_input(raw)
         manifest = parse_input(read_manifest())
-        report = evaluate(observation, manifest); payload = render(report, a.format)
-        if payload != render(evaluate(observation, manifest), a.format): raise PhaseFailure("NONDETERMINISTIC_RESULT")
+        first_report = evaluate(observation, manifest)
+        first_canonical = core.canonical_json(first_report)
+        second_report = evaluate(observation, manifest)
+        if first_canonical != core.canonical_json(second_report):
+            raise PhaseFailure("NONDETERMINISTIC_RESULT")
+        payload = render(first_report, a.format)
+        after_first_render = core.canonical_json(first_report)
+        second_payload = render(first_report, a.format)
+        after_second_render = core.canonical_json(first_report)
+        if (payload != second_payload or after_first_render != first_canonical
+                or after_second_render != first_canonical):
+            raise PhaseFailure("NONDETERMINISTIC_RESULT")
         status = 0
     except core.ValidationError as exc:
         reason = str(exc).split(":", 1)[0]
@@ -174,10 +208,22 @@ def main(argv: list[str] | None = None) -> int:
         try:
             write_atomic(pathlib.Path(a.output), payload)
         except PhaseFailure as exc:
-            sys.stderr.buffer.write(core.canonical_json(envelope(exc.reason, raw, src)))
+            try:
+                write_stream(sys.stderr, core.canonical_json(envelope(exc.reason, raw, src)))
+            except PhaseFailure:
+                pass
             return ROUTES[exc.reason][2]
     else:
-        (sys.stdout if status == 0 else sys.stderr).buffer.write(payload)
+        stream = sys.stdout if status == 0 else sys.stderr
+        try:
+            write_stream(stream, payload)
+        except PhaseFailure:
+            if status == 0:
+                try:
+                    write_stream(sys.stderr, core.canonical_json(envelope("OUTPUT_WRITE_FAILED", raw, src)))
+                except PhaseFailure:
+                    pass
+            return ROUTES["OUTPUT_WRITE_FAILED"][2]
     return status
 
 

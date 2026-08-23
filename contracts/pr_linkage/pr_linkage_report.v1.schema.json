@@ -57,46 +57,31 @@
           ],
           "properties": {
             "workstream": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "maxLength": 83
+              "oneOf": [
+                {"type": "string", "pattern": "^(?:NONE|WS:[A-Z0-9]+(?:-[A-Z0-9]+)*)$"},
+                {"type": "null"}
+              ]
             },
             "linear": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "maxLength": 13
+              "oneOf": [
+                {"type": "string", "pattern": "^(?:NONE|MAS-[1-9][0-9]{0,8})$"},
+                {"type": "null"}
+              ]
             },
             "portfolio_mode": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "maxLength": 80
+              "enum": ["tracked", "maintenance_exception", "creates_workstream", "architecture_candidate", null]
             },
             "wave": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "maxLength": 80
+              "oneOf": [
+                {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"},
+                {"type": "null"}
+              ]
             },
             "authority": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "maxLength": 80
+              "enum": ["implementation", "records", "research", "maintenance", "proof", "deploy", "architecture_candidate", null]
             },
             "completion": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "maxLength": 80
+              "enum": ["merge-is-done", "built-not-proven", "proof-required", "acceptance-required", "records-only", null]
             },
             "authoring_state": {
               "enum": [
@@ -160,11 +145,14 @@
                 ]
               },
               "declared_completion": {
-                "type": [
-                  "string",
-                  "null"
-                ],
-                "maxLength": 80
+                "enum": [
+                  "merge-is-done",
+                  "built-not-proven",
+                  "proof-required",
+                  "acceptance-required",
+                  "records-only",
+                  null
+                ]
               },
               "stop_law": {
                 "enum": [
@@ -274,6 +262,7 @@
                     "const": "ERROR"
                   },
                   "location": {
+                    "type": "string",
                     "pattern": "^BODY:L[1-9][0-9]*:(?:Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion)$"
                   },
                   "evidence": {
@@ -348,6 +337,7 @@
                     "const": "ERROR"
                   },
                   "location": {
+                    "type": "string",
                     "pattern": "^(?:DECLARATION:BLOCK|BODY:L[1-9][0-9]*:(?:Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion|RELATIONSHIP))$"
                   },
                   "evidence": {
@@ -395,6 +385,7 @@
                     "const": "ERROR"
                   },
                   "location": {
+                    "type": "string",
                     "pattern": "^BODY:L[1-9][0-9]*:(?:Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion)$"
                   },
                   "evidence": {
@@ -461,6 +452,7 @@
                     "const": "ERROR"
                   },
                   "location": {
+                    "type": "string",
                     "pattern": "^BODY:L[1-9][0-9]*:Workstream$"
                   },
                   "evidence": {
@@ -522,6 +514,7 @@
                     "const": "ERROR"
                   },
                   "location": {
+                    "type": "string",
                     "pattern": "^BODY:L[1-9][0-9]*:Linear$"
                   },
                   "evidence": {
@@ -583,6 +576,7 @@
                     "const": "ERROR"
                   },
                   "location": {
+                    "type": "string",
                     "pattern": "^BODY:L[1-9][0-9]*:Wave$"
                   },
                   "evidence": {
@@ -625,6 +619,7 @@
                     "const": "ERROR"
                   },
                   "location": {
+                    "type": "string",
                     "pattern": "^BODY:L[1-9][0-9]*:Wave$"
                   },
                   "evidence": {
@@ -686,6 +681,7 @@
                     "const": "ERROR"
                   },
                   "location": {
+                    "type": "string",
                     "pattern": "^BODY:L[1-9][0-9]*:Portfolio-Mode$"
                   },
                   "evidence": {
@@ -747,6 +743,7 @@
                     "const": "ERROR"
                   },
                   "location": {
+                    "type": "string",
                     "pattern": "^BODY:L[1-9][0-9]*:Portfolio-Mode$"
                   },
                   "evidence": {
@@ -808,6 +805,7 @@
                     "const": "ERROR"
                   },
                   "location": {
+                    "type": "string",
                     "pattern": "^BODY:L[1-9][0-9]*:Authority$"
                   },
                   "evidence": {
@@ -869,6 +867,7 @@
                     "const": "ERROR"
                   },
                   "location": {
+                    "type": "string",
                     "pattern": "^BODY:L[1-9][0-9]*:Completion$"
                   },
                   "evidence": {
@@ -930,6 +929,7 @@
                     "const": "ERROR"
                   },
                   "location": {
+                    "type": "string",
                     "pattern": "^BODY:L[1-9][0-9]*:(?:Portfolio-Mode|Authority|Completion)$"
                   },
                   "evidence": {
@@ -996,6 +996,7 @@
                     "const": "NOTICE"
                   },
                   "location": {
+                    "type": "string",
                     "pattern": "^BODY:L[1-9][0-9]*:(?:Portfolio-Mode|Authority|Completion)$"
                   },
                   "evidence": {
@@ -1067,6 +1068,7 @@
                     "const": "PARTIAL"
                   },
                   "location": {
+                    "type": "string",
                     "pattern": "^BODY:L[1-9][0-9]*:(?:Portfolio-Mode|Authority|Completion)$"
                   },
                   "evidence": {
@@ -2485,6 +2487,7 @@
                     "const": "ERROR"
                   },
                   "location": {
+                    "type": "string",
                     "pattern": "^BODY:L[1-9][0-9]*:RELATIONSHIP$"
                   },
                   "evidence": {
@@ -2790,6 +2793,7 @@
                     "const": "ERROR"
                   },
                   "location": {
+                    "type": "string",
                     "pattern": "^RECEIPT:(?:OBSERVATION|BODY|CUTOVER|RULESET|AUTHORING_EPOCH|CHANGED_PATHS|AGENTOS|LINEAR|PATH_OWNERSHIP|NATIVE_LINKAGE)$"
                   },
                   "evidence": {
@@ -2870,6 +2874,7 @@
                     "const": "PARTIAL"
                   },
                   "location": {
+                    "type": "string",
                     "pattern": "^SNAPSHOT:(?:AUTHORING_EPOCH|CHANGED_PATHS|AGENTOS|LINEAR|PATH_OWNERSHIP|NATIVE_LINKAGE)$"
                   },
                   "evidence": {
@@ -3504,6 +3509,93 @@
         {
           "if": {"properties": {"declaration": {"properties": {"authoring_state": {"const": "MISSING"}}}}},
           "then": {"properties": {"completeness": {"const": "UNAVAILABLE"}}}
+        },
+        {
+          "if": {"properties": {"declaration": {"properties": {"authoring_state": {"const": "LEGACY"}}}}},
+          "then": {
+            "allOf": [
+              {"properties": {"findings": {"contains": {"properties": {"rule_id": {"const": "R021"}}, "required": ["rule_id"]}}}},
+              {"properties": {"declaration": {"properties": {
+                "workstream": {"type": "string"}, "linear": {"type": "string"},
+                "portfolio_mode": {"type": "string"}, "wave": {"type": "string"},
+                "authority": {"type": "string"}, "completion": {"type": "string"}
+              }}}}
+            ]
+          }
+        },
+        {
+          "if": {"properties": {"declaration": {"properties": {"authoring_state": {"const": "CANONICAL"}}}}},
+          "then": {"properties": {"declaration": {"properties": {
+            "workstream": {"type": "string"}, "linear": {"type": "string"},
+            "portfolio_mode": {"type": "string"}, "wave": {"type": "string"},
+            "authority": {"type": "string"}, "completion": {"type": "string"}
+          }}}}
+        },
+        {
+          "if": {"properties": {"declaration": {"properties": {"authoring_state": {"const": "MISSING"}}}}},
+          "then": {
+            "allOf": [
+              {"properties": {"findings": {"contains": {"properties": {"rule_id": {"const": "R001"}}, "required": ["rule_id"]}}}},
+              {"properties": {"declaration": {"anyOf": [
+                {"properties": {"workstream": {"type": "null"}}},
+                {"properties": {"linear": {"type": "null"}}},
+                {"properties": {"portfolio_mode": {"type": "null"}}},
+                {"properties": {"wave": {"type": "null"}}},
+                {"properties": {"authority": {"type": "null"}}},
+                {"properties": {"completion": {"type": "null"}}}
+              ]}}}
+            ]
+          }
+        },
+        {
+          "if": {"properties": {"declaration": {"properties": {"authoring_state": {"const": "INVALID"}}}}},
+          "then": {
+            "properties": {
+              "findings": {
+                "contains": {"properties": {"rule_id": {"enum": ["R002","R003","R004","R005","R006","R007","R008","R009","R010","R011","R012","R020","R022"]}}, "required": ["rule_id"]}
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "completion_interpretation": {
+              "contains": {"properties": {"declared_completion": {"type": "string"}}, "required": ["declared_completion"]},
+              "minContains": 0,
+              "maxContains": 1
+            }
+          }
+        },
+        {
+          "if": {"properties": {"declaration": {"properties": {
+            "linear": {"type": "string", "pattern": "^MAS-[1-9][0-9]{0,8}$"},
+            "completion": {"type": "string"}
+          }}}},
+          "then": {"properties": {"completion_interpretation": {
+            "contains": {"properties": {"declared_completion": {"type": "string"}}, "required": ["declared_completion"]},
+            "minContains": 1,
+            "maxContains": 1
+          }}}
+        },
+        {
+          "if": {"properties": {"declaration": {"properties": {"completion": {"const": "merge-is-done"}}}}},
+          "then": {"properties": {"completion_interpretation": {"items": {"properties": {"declared_completion": {"enum": ["merge-is-done", null]}}}}}}
+        },
+        {
+          "if": {"properties": {"declaration": {"properties": {"completion": {"const": "built-not-proven"}}}}},
+          "then": {"properties": {"completion_interpretation": {"items": {"properties": {"declared_completion": {"enum": ["built-not-proven", null]}}}}}}
+        },
+        {
+          "if": {"properties": {"declaration": {"properties": {"completion": {"const": "proof-required"}}}}},
+          "then": {"properties": {"completion_interpretation": {"items": {"properties": {"declared_completion": {"enum": ["proof-required", null]}}}}}}
+        },
+        {
+          "if": {"properties": {"declaration": {"properties": {"completion": {"const": "acceptance-required"}}}}},
+          "then": {"properties": {"completion_interpretation": {"items": {"properties": {"declared_completion": {"enum": ["acceptance-required", null]}}}}}}
+        },
+        {
+          "if": {"properties": {"declaration": {"properties": {"completion": {"const": "records-only"}}}}},
+          "then": {"properties": {"completion_interpretation": {"items": {"properties": {"declared_completion": {"enum": ["records-only", null]}}}}}}
         }
       ]
     },
@@ -3564,7 +3656,8 @@
           "pattern": "^[0-9a-f]{64}$"
         },
         "ruleset_digest": {
-          "const": "41d5634a6ca6d4bbd993e728b73d839260452b24c891e556c59da52a184a1859"
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
         },
         "snapshot_digests": {
           "type": "object",

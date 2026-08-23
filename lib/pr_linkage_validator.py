@@ -208,11 +208,14 @@ def _visible_lines(body: str, limits: dict[str, int]) -> tuple[list[tuple[int, s
             fence = (opener.group(1)[0], len(opener.group(1)))
             continue
 
-        # Remove every complete comment span while preserving visible prefixes
-        # and tails.  An incomplete final span retains its visible prefix and
-        # marks the authority zone unclosed.
+        # A comment that shares a physical line with a canonical declaration
+        # must never be used as an invisible splice operator.  Full comment
+        # lines remain inert, and a tail after a comment opened on an earlier
+        # line remains visible (handled above), but same-line prefix/suffix
+        # surgery invalidates that field line instead of manufacturing a value.
         visible_parts: list[str] = []
         remainder = line
+        same_line_comment = "<!--" in remainder
         while "<!--" in remainder:
             start = remainder.index("<!--")
             visible_parts.append(remainder[:start])
@@ -223,6 +226,15 @@ def _visible_lines(body: str, limits: dict[str, int]) -> tuple[list[tuple[int, s
                 break
             remainder = remainder[end + 3:]
         line = "".join(visible_parts) + remainder
+        if same_line_comment:
+            field_match = re.match(
+                r"^[ \t]*(Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion):",
+                line,
+            )
+            if field_match:
+                defects.append(f"FIELD_COMMENT@{n}:{field_match.group(1)}")
+                quote_pending = False
+                continue
         stripped = line.lstrip(" ")
         indent = len(line) - len(stripped)
         if not line:
@@ -310,6 +322,22 @@ def parse_header(body: str, limits: dict[str, int]) -> tuple[dict[str, str | Non
     if len(relationships) > limits["relationships"]:
         raise ResourceLimitError("relationships", limits["relationships"], len(relationships))
     return values, locs, headers, defects, relationships
+
+
+def _normalized_applicability_identity(observation: dict[str, Any], manifest: dict[str, Any]) -> tuple[str | None, str | None]:
+    """Return only the normalized fields that govern snapshot applicability."""
+    values, _, _, defects, _ = parse_header(observation["pull_request"]["body"], manifest["limits"])
+    if "NO_CONTIGUOUS_BLOCK" in defects:
+        return None, None
+    workstream = values["Workstream"]
+    if not isinstance(workstream, str) or not re.fullmatch(r"(?:NONE|WS:[A-Z0-9]+(?:-[A-Z0-9]+)*)", workstream):
+        workstream = None
+    mode = values["Portfolio-Mode"]
+    if mode not in manifest["classification"]["mode_to_class"]:
+        alias = ALIASES_BY_FIELD["Portfolio-Mode"].get(mode) if isinstance(mode, str) else None
+        epoch = observation["authoring_epoch"]
+        mode = alias if alias and epoch["state"] == "PRESENT" and epoch.get("relation") == "PRE_CUTOVER" else None
+    return mode, workstream
 
 
 def _rule_map(manifest: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -409,7 +437,17 @@ def validate_report(report: dict[str, Any]) -> None:
     if semantic.get("ruleset_id") != RULESET_ID or semantic.get("ruleset_digest") != FROZEN_RULESET_DIGEST or semantic.get("enforcement") != "REPORT_ONLY" or semantic.get("verdict") not in {"CONFORMANT","WARN","PARTIAL","REFUSE_METADATA"} or semantic.get("classification") not in {"TRACKED","MAINTENANCE_EXCEPTION","CREATES_WORKSTREAM","ARCHITECTURE_CANDIDATE","UNCLASSIFIED_LEGACY","UNKNOWN"} or semantic.get("completeness") not in {"COMPLETE","DEGRADED","UNAVAILABLE"}:
         raise ValidationError("TYPE_MISMATCH")
     declaration = semantic.get("declaration")
-    if not isinstance(declaration, dict) or set(declaration) != {"workstream","linear","portfolio_mode","wave","authority","completion","authoring_state"} or declaration.get("authoring_state") not in {"CANONICAL","LEGACY","MISSING","INVALID"} or any(v is not None and not isinstance(v, str) for k,v in declaration.items() if k != "authoring_state"):
+    if not isinstance(declaration, dict) or set(declaration) != {"workstream","linear","portfolio_mode","wave","authority","completion","authoring_state"} or declaration.get("authoring_state") not in {"CANONICAL","LEGACY","MISSING","INVALID"}:
+        raise ValidationError("TYPE_MISMATCH")
+    declaration_valid = (
+        (declaration["workstream"] is None or isinstance(declaration["workstream"], str) and bool(re.fullmatch(r"(?:NONE|WS:[A-Z0-9]+(?:-[A-Z0-9]+)*)", declaration["workstream"])))
+        and (declaration["linear"] is None or isinstance(declaration["linear"], str) and bool(re.fullmatch(r"(?:NONE|MAS-[1-9][0-9]{0,8})", declaration["linear"])))
+        and (declaration["portfolio_mode"] is None or declaration["portfolio_mode"] in ENUMS["Portfolio-Mode"])
+        and (declaration["wave"] is None or isinstance(declaration["wave"], str) and bool(re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}", declaration["wave"])))
+        and (declaration["authority"] is None or declaration["authority"] in ENUMS["Authority"])
+        and (declaration["completion"] is None or declaration["completion"] in ENUMS["Completion"])
+    )
+    if not declaration_valid:
         raise ValidationError("TYPE_MISMATCH")
     rows = semantic.get("completion_interpretation")
     if not isinstance(rows, list): raise ValidationError("TYPE_MISMATCH")
@@ -418,11 +456,28 @@ def validate_report(report: dict[str, Any]) -> None:
     for row in rows:
         if not isinstance(row, dict) or set(row) != {"issue_id","effect","declared_completion","stop_law","consistency"} or not isinstance(row.get("issue_id"), str) or not re.fullmatch(r"MAS-[1-9][0-9]{0,8}", row["issue_id"]) or row.get("effect") not in {"COMPLETION_CAPABLE","NON_CLOSING","NONE","AMBIGUOUS","UNKNOWN"} or row.get("consistency") not in {"MATCH","MISMATCH","INDETERMINATE"} or row.get("declared_completion") is not None and (not isinstance(row["declared_completion"],str) or not row["declared_completion"] or len(row["declared_completion"].encode("utf-8")) > 80) or row.get("stop_law") not in {"MERGE","BUILT_NOT_PROVEN","PROOF","ACCEPTANCE","RECORDS_ONLY","UNKNOWN",None}:
             raise ValidationError("TYPE_MISMATCH")
+    concrete_linear = declaration["linear"] if isinstance(declaration["linear"], str) and declaration["linear"] != "NONE" else None
+    declared_rows = [row for row in rows if row["declared_completion"] is not None]
+    if concrete_linear is not None and declaration["completion"] is not None:
+        if (len(declared_rows) != 1
+                or declared_rows[0]["issue_id"] != concrete_linear
+                or declared_rows[0]["declared_completion"] != declaration["completion"]):
+            raise ValidationError("TYPE_MISMATCH")
+    elif declared_rows:
+        raise ValidationError("TYPE_MISMATCH")
     unresolved = semantic.get("unresolved_observation_classes")
     if not isinstance(unresolved, list) or unresolved != sorted(set(unresolved)) or any(x not in {"AUTHORING_EPOCH","CHANGED_PATHS","AGENTOS","LINEAR","PATH_OWNERSHIP","NATIVE_LINKAGE"} for x in unresolved):
         raise ValidationError("TYPE_MISMATCH")
     findings = semantic.get("findings")
     if not isinstance(findings, list) or len(findings) > 512: raise ValidationError("TYPE_MISMATCH")
+    if any(not isinstance(finding, dict)
+           or not isinstance(finding.get("severity"), str)
+           or not isinstance(finding.get("code"), str)
+           or not isinstance(finding.get("rule_id"), str)
+           or not isinstance(finding.get("location"), str)
+           or not isinstance(finding.get("evidence"), dict)
+           for finding in findings):
+        raise ValidationError("TYPE_MISMATCH")
     sort_key = lambda x:(SEVERITY.get(x.get("severity"),99),x.get("code",""),x.get("rule_id",""),x.get("location",""),canonical_json(x.get("evidence",{})))
     if findings != sorted(findings, key=sort_key) or len({canonical_json(x) for x in findings}) != len(findings): raise ValidationError("TYPE_MISMATCH")
     for finding in findings:
@@ -437,6 +492,19 @@ def validate_report(report: dict[str, Any]) -> None:
             raise ValidationError("TYPE_MISMATCH")
     by_rule: dict[str,list[dict[str,Any]]] = {}
     for finding in findings: by_rule.setdefault(finding["rule_id"],[]).append(finding)
+    authoring_state = declaration["authoring_state"]
+    authoring_error_rules = {f"R{number:03d}" for number in range(2, 13)} | {"R020", "R022"}
+    declaration_field_names = {"workstream":"Workstream", "linear":"Linear", "portfolio_mode":"Portfolio-Mode",
+                               "wave":"Wave", "authority":"Authority", "completion":"Completion"}
+    missing_declaration_fields = sorted(name for key, name in declaration_field_names.items() if declaration[key] is None)
+    all_declaration_values = not missing_declaration_fields
+    missing_finding_matches = (len(by_rule.get("R001", [])) == 1
+                               and by_rule["R001"][0]["evidence"]["missing_fields"] == missing_declaration_fields)
+    if ((authoring_state == "CANONICAL" and not all_declaration_values)
+            or (authoring_state == "LEGACY" and (not all_declaration_values or "R021" not in by_rule))
+            or (authoring_state == "MISSING" and (not missing_declaration_fields or not missing_finding_matches))
+            or (authoring_state == "INVALID" and not (set(by_rule) & authoring_error_rules))):
+        raise ValidationError("TYPE_MISMATCH")
     if any(len(by_rule.get(rule,[])) > 1 for rule in _ONE_FINDING_RULES): raise ValidationError("TYPE_MISMATCH")
     for rule in ("R002","R004","R005","R006","R007","R008","R009","R010","R011","R012","R020","R021","R022"):
         rows_for_rule = by_rule.get(rule,[])
@@ -461,7 +529,7 @@ def validate_report(report: dict[str, Any]) -> None:
         raise ValidationError("TYPE_MISMATCH")
     receipt = report.get("receipt")
     receipt_keys = {"observation_schema","repository","pr_number","base_sha","head_sha","source_sha","body_sha256","observation_sha256","cutover_receipt_sha256","ruleset_digest","snapshot_digests","producer"}
-    if not isinstance(receipt, dict) or set(receipt) != receipt_keys or receipt.get("observation_schema") != OBS_SCHEMA or not isinstance(receipt.get("repository"), str) or not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+",receipt["repository"]) or not _positive_int(receipt.get("pr_number")) or any(not isinstance(receipt.get(k),str) or not re.fullmatch(r"[0-9a-f]{40}",receipt[k]) for k in ("base_sha","head_sha","source_sha")) or any(not isinstance(receipt.get(k),str) or not re.fullmatch(r"[0-9a-f]{64}",receipt[k]) for k in ("body_sha256","observation_sha256")) or receipt.get("ruleset_digest") != FROZEN_RULESET_DIGEST or receipt.get("cutover_receipt_sha256") is not None and (not isinstance(receipt["cutover_receipt_sha256"],str) or not re.fullmatch(r"[0-9a-f]{64}",receipt["cutover_receipt_sha256"])) or not isinstance(receipt.get("snapshot_digests"),dict) or set(receipt["snapshot_digests"]) != {"authoring_epoch","changed_paths","agentos","linear","path_ownership","native_linkage"} or any(not isinstance(value,str) or not re.fullmatch(r"[0-9a-f]{64}",value) for value in receipt["snapshot_digests"].values()) or not isinstance(receipt.get("producer"),str) or not receipt["producer"]:
+    if not isinstance(receipt, dict) or set(receipt) != receipt_keys or receipt.get("observation_schema") != OBS_SCHEMA or not isinstance(receipt.get("repository"), str) or not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+",receipt["repository"]) or not _positive_int(receipt.get("pr_number")) or any(not isinstance(receipt.get(k),str) or not re.fullmatch(r"[0-9a-f]{40}",receipt[k]) for k in ("base_sha","head_sha","source_sha")) or any(not isinstance(receipt.get(k),str) or not re.fullmatch(r"[0-9a-f]{64}",receipt[k]) for k in ("body_sha256","observation_sha256","ruleset_digest")) or receipt.get("cutover_receipt_sha256") is not None and (not isinstance(receipt["cutover_receipt_sha256"],str) or not re.fullmatch(r"[0-9a-f]{64}",receipt["cutover_receipt_sha256"])) or not isinstance(receipt.get("snapshot_digests"),dict) or set(receipt["snapshot_digests"]) != {"authoring_epoch","changed_paths","agentos","linear","path_ownership","native_linkage"} or any(not isinstance(value,str) or not re.fullmatch(r"[0-9a-f]{64}",value) for value in receipt["snapshot_digests"].values()) or not isinstance(receipt.get("producer"),str) or not receipt["producer"]:
         raise ValidationError("TYPE_MISMATCH")
     human = report.get("human")
     expected_human = {"summary":f"{semantic['classification']}/{semantic['verdict']}","remediations":sorted({finding["remediation_code"] for finding in findings})}
@@ -684,8 +752,19 @@ def _validate_top(observation: dict[str, Any], manifest: dict[str, Any]) -> None
         raise ValidationError("INVALID_SNAPSHOT_STATE")
     if native["state"] == "CONTRADICTORY" and not native_conflict:
         raise ValidationError("INVALID_SNAPSHOT_STATE")
-    if native["state"] == "NOT_APPLICABLE" and re.search(r"(?m)^Portfolio-Mode: (?:tracked|`tracked`)$", pr["body"]):
-        raise ValidationError("INVALID_SNAPSHOT_STATE")
+    mode, workstream = _normalized_applicability_identity(observation, manifest)
+    snapshots = {
+        "AUTHORING_EPOCH": observation["authoring_epoch"],
+        "CHANGED_PATHS": observation["changed_paths"],
+        "AGENTOS": observation["agentos"],
+        "LINEAR": observation["linear"],
+        "PATH_OWNERSHIP": observation["path_ownership"],
+        "NATIVE_LINKAGE": observation["native_linkage"],
+    }
+    for snapshot_class, snapshot in snapshots.items():
+        na_allowed = snapshot_class == "AGENTOS" and mode == "architecture_candidate" and workstream == "NONE"
+        if snapshot["state"] == "NOT_APPLICABLE" and not na_allowed:
+            raise ValidationError("INVALID_SNAPSHOT_STATE")
     receipt = observation.get("receipt")
     receipt_keys = {"repository","pr_number","base_sha","head_sha","source_sha","body_sha256","observation_sha256","cutover_receipt_sha256","ruleset_digest","snapshot_digests","producer"}
     if not isinstance(receipt, dict) or set(receipt) != receipt_keys:
@@ -761,16 +840,22 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
         if match:
             location = f"BODY:L{match.group(1)}:RELATIONSHIP"
             findings.append(_finding(rules, "R003", {"location":location,"reason":match.group(2)}, field="RELATIONSHIP", line=int(match.group(1))))
+        elif (match := re.fullmatch(r"FIELD_COMMENT@([1-9][0-9]*):(.+)", defect)):
+            location = f"BODY:L{match.group(1)}:{match.group(2)}"
+            findings.append(_finding(rules, "R003", {"location":location,"reason":"COMMENT_SPLICE"}, field=match.group(2), line=int(match.group(1))))
         else:
             findings.append(_finding(rules, "R003", {"location":"DECLARATION:BLOCK","reason":defect.split(":", 1)[-1]}))
     normalized = dict(values)
+    invalid_fields: set[str] = set()
     epoch = observation["authoring_epoch"]
     authorized_alias = False
     for f in FIELDS:
         v = values[f]
         if v is None: continue
         if v in {"", "TBD", "TODO"} or "|" in v or (v.startswith("<") and v.endswith(">")):
-            add("R004", {"field":f,"location":f"BODY:L{locs[f][0]}:{f}","value":text_digest(v)}, f); continue
+            add("R004", {"field":f,"location":f"BODY:L{locs[f][0]}:{f}","value":text_digest(v)}, f)
+            invalid_fields.add(f)
+            continue
         if f not in ENUMS:
             continue
         aliases = ALIASES_BY_FIELD.get(f, {})
@@ -779,29 +864,52 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
                 normalized[f] = aliases[v]; authorized_alias = True; add("R021", {"alias":v,"canonical":aliases[v],"field":f,"receipt":canonical_digest(epoch)}, f)
             elif epoch["state"] == "PRESENT" and epoch.get("relation") == "AT_OR_POST_CUTOVER":
                 add("R020", {"epoch":"AT_OR_POST_CUTOVER","field":f,"value":text_digest(v)}, f)
+                invalid_fields.add(f)
             else:
                 add("R022", {"epoch_state":epoch["state"],"receipt_digest":epoch.get("cutover_receipt_sha256")}, f)
+                invalid_fields.add(f)
         elif v not in ENUMS[f]:
             if f == "Portfolio-Mode" and v == "untracked_refused": add("R010", {"location":f"BODY:L{locs[f][0]}:{f}","value":text_digest(v)}, f)
             add({"Portfolio-Mode":"R009","Authority":"R011","Completion":"R012"}[f], {"location":f"BODY:L{locs[f][0]}:{f}","value":text_digest(v)}, f)
             add("R020", {"epoch":epoch.get("relation","UNKNOWN"),"field":f,"value":text_digest(v)}, f)
-    ws, linear, wave = values["Workstream"], values["Linear"], values["Wave"]
-    linear_exact = bool(isinstance(linear, str) and re.fullmatch(r"MAS-[1-9][0-9]{0,8}", linear))
+            invalid_fields.add(f)
     # Placeholders are a distinct frozen rule for every scalar, including identity fields.
     for f, v in values.items():
         if v is not None and (v.startswith("<") and v.endswith(">")) and not any(x["rule_id"] == "R004" and x["location"].endswith(":" + f) for x in findings):
             add("R004", {"field":f,"location":f"BODY:L{locs[f][0]}:{f}","value":text_digest(v)}, f)
-    if ws is not None and not re.fullmatch(r"(?:NONE|WS:[A-Z0-9]+(?:-[A-Z0-9]+)*)", ws): add("R005", {"location":f"BODY:L{locs['Workstream'][0]}:Workstream","value":text_digest(ws)}, "Workstream")
-    if linear is not None and not re.fullmatch(r"(?:NONE|MAS-[1-9][0-9]{0,8})", linear): add("R006", {"location":f"BODY:L{locs['Linear'][0]}:Linear","value":text_digest(linear)}, "Linear")
-    if wave == "": add("R007", {"location":f"BODY:L{locs['Wave'][0]}:Wave"}, "Wave")
-    elif wave is not None and not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}", wave): add("R008", {"location":f"BODY:L{locs['Wave'][0]}:Wave","value":text_digest(wave)}, "Wave")
-    mode, authority, completion = normalized["Portfolio-Mode"], normalized["Authority"], normalized["Completion"]
+    raw_ws, raw_linear, raw_wave = values["Workstream"], values["Linear"], values["Wave"]
+    if raw_ws is not None and not re.fullmatch(r"(?:NONE|WS:[A-Z0-9]+(?:-[A-Z0-9]+)*)", raw_ws):
+        add("R005", {"location":f"BODY:L{locs['Workstream'][0]}:Workstream","value":text_digest(raw_ws)}, "Workstream")
+        invalid_fields.add("Workstream")
+    if raw_linear is not None and not re.fullmatch(r"(?:NONE|MAS-[1-9][0-9]{0,8})", raw_linear):
+        add("R006", {"location":f"BODY:L{locs['Linear'][0]}:Linear","value":text_digest(raw_linear)}, "Linear")
+        invalid_fields.add("Linear")
+    if raw_wave == "":
+        add("R007", {"location":f"BODY:L{locs['Wave'][0]}:Wave"}, "Wave")
+        invalid_fields.add("Wave")
+    elif raw_wave is not None and not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}", raw_wave):
+        add("R008", {"location":f"BODY:L{locs['Wave'][0]}:Wave","value":text_digest(raw_wave)}, "Wave")
+        invalid_fields.add("Wave")
+
+    # Only normalized, grammar-valid declaration values may drive joins or
+    # reducers.  Raw invalid text remains available solely through the bounded
+    # digest evidence in its authoring finding.
+    normalized_declaration = {
+        field: (None if field in invalid_fields else normalized[field])
+        for field in FIELDS
+    }
+    ws, linear, wave = (normalized_declaration[x] for x in ("Workstream", "Linear", "Wave"))
+    mode, authority, completion = (normalized_declaration[x] for x in ("Portfolio-Mode", "Authority", "Completion"))
+    linear_exact = bool(isinstance(linear, str) and re.fullmatch(r"MAS-[1-9][0-9]{0,8}", linear))
     canonical = mode in ENUMS["Portfolio-Mode"] and authority in ENUMS["Authority"] and completion in ENUMS["Completion"]
     # A receipt-authorized compatibility alias is analysed through its normalized
     # value but remains visibly legacy; it can never masquerade as a V1 author.
     identity_legal = bool(ws and re.fullmatch(r"(?:NONE|WS:[A-Z0-9]+(?:-[A-Z0-9]+)*)", ws) and linear and re.fullmatch(r"(?:NONE|MAS-[1-9][0-9]{0,8})", linear) and wave and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}", wave))
-    author_state = "LEGACY" if authorized_alias else ("CANONICAL" if canonical and identity_legal else ("MISSING" if missing else "INVALID"))
+    declaration_legal = canonical and identity_legal and not invalid_fields
+    author_state = ("MISSING" if missing else "LEGACY" if authorized_alias and declaration_legal
+                    else "CANONICAL" if declaration_legal else "INVALID")
     classification = manifest["classification"]["legacy_class"] if author_state == "LEGACY" else (manifest["classification"]["mode_to_class"].get(mode, "UNKNOWN") if author_state == "CANONICAL" else "UNKNOWN")
+
     if canonical and linear == "NONE": add("R029", {"linear":"NONE","portfolio_mode":mode})
     agentos, lsnap, paths, ownership, native = (observation[x] for x in ("agentos","linear","changed_paths","path_ownership","native_linkage"))
     if (mode in {"tracked","creates_workstream"} or (mode == "architecture_candidate" and ws not in {None,"NONE"})) and agentos["state"] != "PRESENT": add("R033", {"snapshot_state":agentos["state"],"workstream":ws or "NONE"})
@@ -842,8 +950,10 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
                     role_mismatch_targets.append(target); role_mismatch_roles.extend(roles_by_target[target])
                 invalid_type_rows = []
                 for r in rows:
-                    allowed = manifest["classification"]["mode_to_issue_types"].get(mode,[]) if r.get("target_role") == "DECLARED" else manifest["classification"]["target_role_to_issue_types"].get(r.get("target_role"),[])
-                    if r.get("issue_type") not in allowed:
+                    allowed = (manifest["classification"]["mode_to_issue_types"].get(mode,[])
+                               if r.get("target_role") == "DECLARED"
+                               else manifest["classification"]["target_role_to_issue_types"].get(r.get("target_role"),[]))
+                    if mode in manifest["classification"]["mode_to_class"] and r.get("issue_type") not in allowed:
                         invalid_type_rows.append(r)
                 if invalid_type_rows:
                     r = sorted(invalid_type_rows, key=lambda row:(row.get("target_role","UNKNOWN"),row.get("issue_type","UNKNOWN")))[0]
@@ -978,19 +1088,11 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
     completion_rows.sort(key=lambda r:(_mas_key(r["issue_id"]),r["effect"],r["declared_completion"] or "",r["stop_law"] or "",r["consistency"]))
     semantic = {"ruleset_id":manifest["ruleset_id"],"ruleset_digest":digest(manifest),"enforcement":"REPORT_ONLY","declaration":{"workstream":ws,"linear":linear,"portfolio_mode":mode,"wave":wave,"authority":authority,"completion":completion,"authoring_state":author_state},"classification":classification,"verdict":verdict,"completeness":completeness,"completion_interpretation":completion_rows,"unresolved_observation_classes":unresolved,"findings":kept}
     receipt = observation["receipt"]
-    # A supplied receipt mismatch remains in R060's observed evidence.  The
-    # emitted report receipt is the core's revalidated grounding projection,
-    # so it never repeats a digest it has just proven false.
+    # The report is an immutable readback of the supplied observation receipt.
+    # Grounding mismatches stay byte-for-byte visible here and are adjudicated
+    # separately through R060; the core must never heal its own input.
     report_receipt = json.loads(canonical_json(receipt))
     report_receipt["observation_schema"] = OBS_SCHEMA
-    report_receipt["observation_sha256"] = ground["OBSERVATION"]
-    report_receipt["body_sha256"] = ground["BODY"]
-    report_receipt["cutover_receipt_sha256"] = ground["CUTOVER"]
-    report_receipt["ruleset_digest"] = ground["RULESET"]
-    report_receipt["snapshot_digests"] = {
-        key.lower(): ground[key]
-        for key in ("AUTHORING_EPOCH","CHANGED_PATHS","AGENTOS","LINEAR","PATH_OWNERSHIP","NATIVE_LINKAGE")
-    }
     report = {"schema":REPORT_SCHEMA,"semantic":semantic,"semantic_hash":digest(semantic),"receipt":report_receipt,"human":{"summary":f"{classification}/{verdict}","remediations":sorted(set(f["remediation_code"] for f in kept))}}
     validate_report(report)
     return report

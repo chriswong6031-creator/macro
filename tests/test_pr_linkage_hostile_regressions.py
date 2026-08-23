@@ -1,8 +1,15 @@
 """Hostile-review regressions with paired bounded controls."""
 from __future__ import annotations
 
+import importlib.util
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+import jsonschema
 from lib import pr_linkage_validator as v
-from tests.test_pr_linkage_rulecase_matrix import clone, finish, mode
+from tests.test_pr_linkage_rulecase_matrix import RULE_IDS, case, clone, finish, mode
 from tests.test_pr_linkage_validator import MANIFEST, VALID, observation
 import pytest
 
@@ -304,12 +311,13 @@ def test_report_validator_binds_location_evidence_cardinality_ruleset_receipt_an
         lambda r: r["semantic"]["findings"][0].__setitem__("location", "SNAPSHOT:AGENTOS"),
         lambda r: r["semantic"]["findings"][0]["evidence"].__setitem__("reason", "bad atom with spaces"),
         lambda r: r["semantic"].__setitem__("ruleset_digest", "0" * 64),
-        lambda r: r["receipt"].__setitem__("ruleset_digest", "0" * 64),
         lambda r: r["human"].__setitem__("summary", "forged"),
     ]
     for mutate in mutations:
         mutant = clone(report); mutate(mutant); mutant["semantic_hash"] = v.digest(mutant["semantic"])
         with pytest.raises(v.ValidationError, match="TYPE_MISMATCH"): v.validate_report(mutant)
+    supplied_mismatch = clone(report); supplied_mismatch["receipt"]["ruleset_digest"] = "0" * 64
+    v.validate_report(supplied_mismatch)
     mutant = clone(report); mutant["semantic"]["findings"].append(clone(mutant["semantic"]["findings"][0])); mutant["semantic"]["findings"][1]["evidence"]["reason"] = "OTHER"
     mutant["semantic"]["findings"].sort(key=lambda f:(v.SEVERITY[f["severity"]],f["code"],f["rule_id"],f["location"],v.canonical_json(f["evidence"])))
     mutant["semantic_hash"] = v.digest(mutant["semantic"])
@@ -366,3 +374,255 @@ def test_hostile_repro_measurement(capsys):
     missing = []
     print(f"hostile_repros={len(cases)} missing={missing}")
     assert len(cases) >= 10 and missing == []
+ROOT = Path(__file__).parents[1]
+REPORT_SCHEMA = json.loads((ROOT / "contracts/pr_linkage/pr_linkage_report.v1.schema.json").read_text())
+OBSERVATION_SCHEMA = json.loads((ROOT / "contracts/pr_linkage/pr_linkage_observation.v1.schema.json").read_text())
+REPORT_VALIDATOR = jsonschema.Draft202012Validator(REPORT_SCHEMA)
+OBSERVATION_VALIDATOR = jsonschema.Draft202012Validator(OBSERVATION_SCHEMA)
+SPEC = importlib.util.spec_from_file_location("decisive_pr_linkage_cli", ROOT / "scripts/pr_linkage_validator.py")
+cli = importlib.util.module_from_spec(SPEC); assert SPEC.loader; SPEC.loader.exec_module(cli)
+
+
+def replace_field(body: str, field: str, value: str) -> str:
+    return "\n".join(f"{field}: {value}" if line.startswith(field + ":") else line for line in body.splitlines())
+
+
+def finalize_report(report: dict) -> dict:
+    report["semantic"]["completion_interpretation"].sort(
+        key=lambda row: (v._mas_key(row["issue_id"]), row["effect"], row["declared_completion"] or "", row["stop_law"] or "", row["consistency"])
+    )
+    report["semantic_hash"] = v.digest(report["semantic"])
+    report["human"] = {
+        "summary": f"{report['semantic']['classification']}/{report['semantic']['verdict']}",
+        "remediations": sorted({finding["remediation_code"] for finding in report["semantic"]["findings"]}),
+    }
+    return report
+
+
+@pytest.mark.parametrize("field,value,normalized,required", [
+    ("Workstream", "bad value", "workstream", {"R005"}),
+    ("Linear", "MAS-0", "linear", {"R006"}),
+    ("Portfolio-Mode", "bad value", "portfolio_mode", {"R009", "R020"}),
+    ("Wave", "", "wave", {"R004", "R007"}),
+    ("Authority", "bad value", "authority", {"R011", "R020"}),
+    ("Completion", "", "completion", {"R004"}),
+])
+def test_all_six_invalid_header_values_are_exit_zero_findings_with_null_normalization(tmp_path, field, value, normalized, required):
+    body = replace_field(VALID, field, value)
+    source = tmp_path / f"{normalized}.json"
+    source.write_bytes(v.canonical_json(observation(body)))
+    result = subprocess.run([sys.executable, str(ROOT / "scripts/pr_linkage_validator.py"), str(source)], cwd=ROOT, capture_output=True)
+    assert result.returncode == 0 and result.stderr == b""
+    report = json.loads(result.stdout)
+    ids = {finding["rule_id"] for finding in report["semantic"]["findings"]}
+    assert required <= ids
+    assert report["semantic"]["declaration"][normalized] is None
+    assert report["semantic"]["declaration"]["authoring_state"] == "INVALID"
+    assert report["semantic"]["classification"] == "UNKNOWN"
+    assert not ({"R030", "R031", "R032", "R034", "R036", "R038"} & ids)
+    if normalized == "portfolio_mode":
+        assert "R028" not in ids
+
+
+@pytest.mark.parametrize("field,value", [
+    ("Workstream", "WS:AGENT-OS"), ("Linear", "MAS-28"),
+    ("Portfolio-Mode", "tracked"), ("Wave", "MAS28-W1"),
+    ("Authority", "implementation"), ("Completion", "built-not-proven"),
+])
+@pytest.mark.parametrize("splice", ["inline", "trailing", "spaced-trailing", "leading"])
+def test_html_comments_cannot_splice_any_canonical_field_line(field, value, splice):
+    if splice == "inline":
+        pivot = max(1, len(value) // 2)
+        replacement = value[:pivot] + "<!--x-->" + value[pivot:]
+    elif splice == "trailing":
+        replacement = value + "<!--x-->"
+    elif splice == "spaced-trailing":
+        replacement = value + " <!--x-->"
+    else:
+        replacement = "<!--x-->" + value
+    report = v.analyze(observation(replace_field(VALID, field, replacement)), MANIFEST)
+    rows = [finding for finding in report["semantic"]["findings"] if finding["rule_id"] == "R003"]
+    assert len(rows) == 1
+    assert rows[0]["location"].endswith(":" + field)
+    assert rows[0]["evidence"]["reason"] == "COMMENT_SPLICE"
+
+
+def mode_observation(name: str) -> dict:
+    result = clone(observation(VALID))
+    if name == "maintenance_exception":
+        mode(result, workstream="NONE", portfolio=name, authority="maintenance")
+        result["linear"]["issues"][0]["issue_type"] = "MAINTENANCE"
+    elif name == "creates_workstream":
+        mode(result, workstream="WS:NEW", portfolio=name, authority="records", completion="records-only")
+        result["linear"]["issues"][0].update(issue_type="ROOT_RECOVERY", workstream_key=None, stop_law="RECORDS_ONLY")
+    elif name == "architecture_candidate":
+        mode(result, workstream="NONE", portfolio=name, authority="architecture_candidate", completion="records-only")
+        result["linear"]["issues"][0].update(issue_type="ARCHITECTURE", workstream_key=None)
+    return finish(result)
+
+
+def make_not_applicable(value: dict, snapshot: str) -> None:
+    if snapshot == "authoring_epoch":
+        value[snapshot]["state"] = "NOT_APPLICABLE"
+        return
+    payload = {"changed_paths":"paths", "agentos":"workstreams", "linear":"issues", "path_ownership":"resolutions", "native_linkage":"relationships"}[snapshot]
+    value[snapshot].update(state="NOT_APPLICABLE", diagnostics=[])
+    value[snapshot][payload] = []
+    if snapshot == "native_linkage":
+        value[snapshot]["pagination_complete"] = False
+
+
+@pytest.mark.parametrize("portfolio", ["tracked", "maintenance_exception", "creates_workstream", "architecture_candidate"])
+@pytest.mark.parametrize("snapshot", ["authoring_epoch", "changed_paths", "agentos", "linear", "path_ownership", "native_linkage"])
+def test_normalized_mode_snapshot_applicability_is_closed_in_runtime_and_schema(portfolio, snapshot):
+    value = mode_observation(portfolio)
+    make_not_applicable(value, snapshot)
+    expected = portfolio == "architecture_candidate" and snapshot == "agentos"
+    assert OBSERVATION_VALIDATOR.is_valid(value) is expected
+    if expected:
+        report = v.analyze(value, MANIFEST)
+        assert report["semantic"]["classification"] == "ARCHITECTURE_CANDIDATE"
+        assert "R033" not in {finding["rule_id"] for finding in report["semantic"]["findings"]}
+    else:
+        with pytest.raises(v.ValidationError, match="INVALID_SNAPSHOT_STATE"):
+            v.analyze(value, MANIFEST)
+
+
+@pytest.mark.parametrize("component,receipt_path", [
+    ("OBSERVATION", ("observation_sha256",)), ("BODY", ("body_sha256",)),
+    ("CUTOVER", ("cutover_receipt_sha256",)), ("RULESET", ("ruleset_digest",)),
+    ("AUTHORING_EPOCH", ("snapshot_digests", "authoring_epoch")),
+    ("CHANGED_PATHS", ("snapshot_digests", "changed_paths")),
+    ("AGENTOS", ("snapshot_digests", "agentos")), ("LINEAR", ("snapshot_digests", "linear")),
+    ("PATH_OWNERSHIP", ("snapshot_digests", "path_ownership")),
+    ("NATIVE_LINKAGE", ("snapshot_digests", "native_linkage")),
+])
+def test_report_receipt_preserves_every_supplied_digest_and_r060_expected_observed(component, receipt_path):
+    value = observation(VALID)
+    target = value["receipt"]
+    for key in receipt_path[:-1]: target = target[key]
+    target[receipt_path[-1]] = "0" * 64
+    expected = v.receipt_projection(value, MANIFEST)[component]
+    report = v.analyze(value, MANIFEST)
+    target = report["receipt"]
+    for key in receipt_path: target = target[key]
+    assert target == "0" * 64
+    finding = next(row for row in report["semantic"]["findings"] if row["rule_id"] == "R060" and row["evidence"]["component"] == component)
+    assert finding["evidence"]["expected"] == v.canonical_digest(expected)
+    assert finding["evidence"]["observed"] == v.canonical_digest("0" * 64)
+    v.validate_report(report)
+    REPORT_VALIDATOR.validate(report)
+
+
+def test_report_state_machine_rejects_all_reachable_forgery_classes_runtime_and_schema():
+    clean = v.analyze(observation(VALID), MANIFEST)
+    mutants = []
+    for key, bad in (("workstream", "not valid"), ("linear", "MAS-0")):
+        mutant = clone(clean); mutant["semantic"]["declaration"][key] = bad; mutants.append(finalize_report(mutant))
+    mutant = clone(clean); mutant["semantic"]["declaration"]["authoring_state"] = "LEGACY"; mutant["semantic"]["classification"] = "UNCLASSIFIED_LEGACY"; mutants.append(finalize_report(mutant))
+    mutant = clone(clean); mutant["semantic"]["declaration"].update(workstream=None, authoring_state="MISSING"); mutant["semantic"].update(classification="UNKNOWN", completeness="UNAVAILABLE"); mutants.append(finalize_report(mutant))
+    mutant = clone(clean); mutant["semantic"]["declaration"]["authoring_state"] = "INVALID"; mutant["semantic"]["classification"] = "UNKNOWN"; mutants.append(finalize_report(mutant))
+    mutant = clone(clean); mutant["semantic"]["completion_interpretation"][0]["declared_completion"] = "proof-required"; mutants.append(finalize_report(mutant))
+    mutant = clone(clean); mutant["semantic"]["completion_interpretation"][0]["declared_completion"] = None; mutants.append(finalize_report(mutant))
+    mutant = clone(clean); mutant["semantic"]["completion_interpretation"].append({"issue_id":"MAS-99","effect":"NONE","declared_completion":"built-not-proven","stop_law":"MERGE","consistency":"MATCH"}); mutants.append(finalize_report(mutant))
+    for mutant in mutants:
+        with pytest.raises(v.ValidationError, match="TYPE_MISMATCH"):
+            v.validate_report(mutant)
+        assert not REPORT_VALIDATOR.is_valid(mutant)
+    dynamic_join = clone(clean); dynamic_join["semantic"]["completion_interpretation"][0]["issue_id"] = "MAS-999"; dynamic_join = finalize_report(dynamic_join)
+    with pytest.raises(v.ValidationError, match="TYPE_MISMATCH"):
+        v.validate_report(dynamic_join)
+
+
+def test_all_finding_oneof_branches_reject_wrong_type_and_unknown_key_and_dynamic_locations_are_typed():
+    dynamic_location_schemas = []
+    def walk(node):
+        if isinstance(node, dict):
+            for key, child in node.items():
+                if key == "location" and isinstance(child, dict) and "pattern" in child:
+                    dynamic_location_schemas.append(child)
+                walk(child)
+        elif isinstance(node, list):
+            for child in node: walk(child)
+    walk(REPORT_SCHEMA["properties"]["semantic"]["properties"]["findings"]["items"])
+    assert len(dynamic_location_schemas) >= 17
+    assert all(schema.get("type") == "string" for schema in dynamic_location_schemas)
+    for rule in RULE_IDS:
+        report = v.analyze(case(rule), MANIFEST)
+        REPORT_VALIDATOR.validate(report)
+        index = next(index for index, finding in enumerate(report["semantic"]["findings"]) if finding["rule_id"] == rule)
+        wrong_type = clone(report); wrong_type["semantic"]["findings"][index]["location"] = 7; wrong_type["semantic_hash"] = v.digest(wrong_type["semantic"])
+        unknown = clone(report); unknown["semantic"]["findings"][index]["unknown"] = True; unknown["semantic_hash"] = v.digest(unknown["semantic"])
+        for mutant in (wrong_type, unknown):
+            assert not REPORT_VALIDATOR.is_valid(mutant), rule
+            with pytest.raises(v.ValidationError, match="TYPE_MISMATCH"):
+                v.validate_report(mutant)
+
+
+@pytest.mark.parametrize("fmt", ["json", "human", "github"])
+def test_full_report_and_selected_renderer_nondeterminism_are_detected_for_every_format(monkeypatch, capsys, fmt):
+    raw = v.canonical_json(observation(VALID))
+    monkeypatch.setattr(cli, "read_input", lambda _: raw)
+    original_evaluate = cli.evaluate
+    calls = {"n": 0}
+    def unstable_evaluator(*args):
+        calls["n"] += 1
+        report = original_evaluate(*args)
+        if calls["n"] == 2:
+            report["receipt"]["head_sha"] = "0" * 40
+        return report
+    monkeypatch.setattr(cli, "evaluate", unstable_evaluator)
+    assert cli.main(["x", "--format", fmt]) == 3
+    _, err = capsys.readouterr()
+    assert json.loads(err)["error"]["reason_code"] == "NONDETERMINISTIC_RESULT"
+
+    monkeypatch.setattr(cli, "evaluate", original_evaluate)
+    original_render = cli.render
+    calls = {"n": 0}
+    def unstable_renderer(*args):
+        calls["n"] += 1
+        return original_render(*args) + str(calls["n"]).encode()
+    monkeypatch.setattr(cli, "render", unstable_renderer)
+    assert cli.main(["x", "--format", fmt]) == 3
+    _, err = capsys.readouterr()
+    assert json.loads(err)["error"]["reason_code"] == "NONDETERMINISTIC_RESULT"
+
+
+class PlannedBuffer:
+    def __init__(self, actions=(), *, flush_error=False):
+        self.actions = list(actions); self.data = bytearray(); self.flush_error = flush_error; self.flushed = False
+    def write(self, payload):
+        action = self.actions.pop(0) if self.actions else len(payload)
+        if isinstance(action, BaseException): raise action
+        count = min(action, len(payload)) if isinstance(action, int) and action > 0 else action
+        if isinstance(count, int) and count > 0: self.data.extend(payload[:count])
+        return count
+    def flush(self):
+        if self.flush_error: raise OSError("flush")
+        self.flushed = True
+
+
+class PlannedStream:
+    def __init__(self, *args, **kwargs): self.buffer = PlannedBuffer(*args, **kwargs)
+
+
+def test_stdio_write_all_handles_partial_zero_oserror_and_flush_without_traceback(monkeypatch):
+    raw = v.canonical_json(observation(VALID))
+    monkeypatch.setattr(cli, "read_input", lambda _: raw)
+    partial_out, good_err = PlannedStream([1, 2, 3]), PlannedStream()
+    monkeypatch.setattr(cli.sys, "stdout", partial_out); monkeypatch.setattr(cli.sys, "stderr", good_err)
+    assert cli.main(["x", "--format", "human"]) == 0
+    assert partial_out.buffer.data == b"TRACKED/CONFORMANT\n" and partial_out.buffer.flushed
+
+    for actions, flush_error in (([0], False), ([OSError("write")], False), ([], True)):
+        bad_out, error_sink = PlannedStream(actions, flush_error=flush_error), PlannedStream()
+        monkeypatch.setattr(cli.sys, "stdout", bad_out); monkeypatch.setattr(cli.sys, "stderr", error_sink)
+        assert cli.main(["x", "--format", "human"]) == 3
+        payload = json.loads(error_sink.buffer.data)
+        assert payload["error"]["reason_code"] == "OUTPUT_WRITE_FAILED"
+
+    monkeypatch.setattr(cli, "read_input", lambda _: b"{")
+    for actions in ([0], [OSError("write")]):
+        failed_stderr = PlannedStream(actions)
+        monkeypatch.setattr(cli.sys, "stderr", failed_stderr)
+        assert cli.main(["x"]) == 3
