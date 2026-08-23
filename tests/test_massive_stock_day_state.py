@@ -50,6 +50,9 @@ def store(tmp_path, monkeypatch):
     monkeypatch.setattr(msd, "_MIN_STORE_FILES", 1)
     monkeypatch.setattr(msd, "enabled", lambda: True)
     monkeypatch.setattr(msd, "latest_available", lambda *a, **k: DAYS[-1])
+    monkeypatch.setattr(msd, "probe_available", lambda *a, **k: type("P", (), {
+        "available_date": DAYS[-1], "reason": "available", "detail": "",
+    })())
     ctl = {"holidays": set(), "fail": set(), "calls": []}
 
     def fake_fetch(d, product="stock_day", underlyings=None, use_cache=True):

@@ -1,6 +1,6 @@
 {
   "organ": "credit_momentum.v1",
-  "as_of": "2026-08-21",
+  "as_of": "2026-08-22",
   "data_session": "2026-08-20",
   "authority": {
     "rank": false,
@@ -1730,116 +1730,116 @@
       "_note": "CCW-R14: never blended with own-store numbers; distinctly labeled",
       "breadth": {
         "all securities": {
-          "advance_share_latest": 0.24878173890741215,
-          "advance_share_5d_ma": 0.3887049107556415,
-          "vel21_advance_share": 0.0818,
-          "vel21_pctile_advance_share": 69.657,
-          "wk52_high_low_net_share": -0.0238,
-          "n_days": 779,
-          "latest_date": "2026-08-20",
+          "advance_share_latest": 0.2954268006385576,
+          "advance_share_5d_ma": 0.39169001286639765,
+          "vel21_advance_share": 0.1406,
+          "vel21_pctile_advance_share": 82.4769,
+          "wk52_high_low_net_share": -0.0647,
+          "n_days": 780,
+          "latest_date": "2026-08-21",
           "momentum_1d": {
-            "macd": 0.4536,
-            "signal": 1.1142,
-            "hist": -0.6607,
-            "hist_vel3": -0.3384,
-            "k": 14.8819,
-            "d": 17.0987,
-            "depth_pctile": 55.2408,
-            "as_of": "2026-08-20",
-            "n_bars": 779
+            "macd": -0.1325,
+            "signal": 0.6987,
+            "hist": -0.8312,
+            "hist_vel3": -0.473,
+            "k": 10.0575,
+            "d": 15.2052,
+            "depth_pctile": 47.1004,
+            "as_of": "2026-08-21",
+            "n_bars": 780
           }
         },
         "investment grade": {
-          "advance_share_latest": 0.22482248224822482,
-          "advance_share_5d_ma": 0.3780781260527855,
-          "vel21_advance_share": 0.089,
-          "vel21_pctile_advance_share": 70.3166,
-          "wk52_high_low_net_share": -0.048,
-          "n_days": 779,
-          "latest_date": "2026-08-20",
+          "advance_share_latest": 0.26650790214332104,
+          "advance_share_5d_ma": 0.3840026751803264,
+          "vel21_advance_share": 0.1508,
+          "vel21_pctile_advance_share": 81.9499,
+          "wk52_high_low_net_share": -0.0881,
+          "n_days": 780,
+          "latest_date": "2026-08-21",
           "momentum_1d": {
-            "macd": 0.3471,
-            "signal": 0.9467,
-            "hist": -0.5996,
-            "hist_vel3": -0.2567,
-            "k": 18.0164,
-            "d": 19.9145,
-            "depth_pctile": 54.3909,
-            "as_of": "2026-08-20",
-            "n_bars": 779
+            "macd": -0.1769,
+            "signal": 0.5722,
+            "hist": -0.7491,
+            "hist_vel3": -0.404,
+            "k": 12.2826,
+            "d": 18.2088,
+            "depth_pctile": 46.2518,
+            "as_of": "2026-08-21",
+            "n_bars": 780
           }
         },
         "high yield": {
-          "advance_share_latest": 0.3821782178217822,
-          "advance_share_5d_ma": 0.45011994858423165,
-          "vel21_advance_share": 0.0392,
-          "vel21_pctile_advance_share": 65.1715,
-          "wk52_high_low_net_share": 0.0979,
-          "n_days": 779,
-          "latest_date": "2026-08-20",
+          "advance_share_latest": 0.4766058683584457,
+          "advance_share_5d_ma": 0.4426924311564443,
+          "vel21_advance_share": 0.0908,
+          "vel21_pctile_advance_share": 81.5547,
+          "wk52_high_low_net_share": 0.0635,
+          "n_days": 780,
+          "latest_date": "2026-08-21",
           "momentum_1d": {
-            "macd": 1.8126,
-            "signal": 3.2087,
-            "hist": -1.3961,
-            "hist_vel3": -1.3298,
+            "macd": 0.6351,
+            "signal": 2.3508,
+            "hist": -1.7157,
+            "hist_vel3": -1.2002,
             "k": 0.0,
-            "d": 15.1539,
-            "depth_pctile": 70.255,
-            "as_of": "2026-08-20",
-            "n_bars": 779
+            "d": 4.5212,
+            "depth_pctile": 57.9915,
+            "as_of": "2026-08-21",
+            "n_bars": 780
           }
         },
         "convertibles": {
-          "advance_share_latest": 0.453551912568306,
-          "advance_share_5d_ma": 0.45431044094853157,
-          "vel21_advance_share": -0.0032,
-          "vel21_pctile_advance_share": 48.8127,
-          "wk52_high_low_net_share": 0.0158,
-          "n_days": 779,
-          "latest_date": "2026-08-20",
+          "advance_share_latest": 0.5533333333333333,
+          "advance_share_5d_ma": 0.45271904309906913,
+          "vel21_advance_share": 0.0173,
+          "vel21_pctile_advance_share": 59.025,
+          "wk52_high_low_net_share": 0.0301,
+          "n_days": 780,
+          "latest_date": "2026-08-21",
           "momentum_1d": {
-            "macd": -0.581,
-            "signal": 0.4038,
-            "hist": -0.9848,
-            "hist_vel3": -0.7443,
+            "macd": -1.2186,
+            "signal": -0.137,
+            "hist": -1.0816,
+            "hist_vel3": -0.4064,
             "k": 4.122,
-            "d": 10.9537,
-            "depth_pctile": 39.3768,
-            "as_of": "2026-08-20",
-            "n_bars": 779
+            "d": 5.5451,
+            "depth_pctile": 30.8345,
+            "as_of": "2026-08-21",
+            "n_bars": 780
           }
         }
       },
       "sentiment": {
         "investment grade": {
-          "buy_sell_ratio_latest": 0.9286,
-          "buy_sell_ratio_5d_ma": 0.9445,
-          "buy_vol_latest": 11165.38631,
-          "sell_vol_latest": 12023.870342,
-          "n_days": 779,
-          "latest_date": "2026-08-20",
+          "buy_sell_ratio_latest": 0.8929,
+          "buy_sell_ratio_5d_ma": 0.9372,
+          "buy_vol_latest": 7120.853808,
+          "sell_vol_latest": 7975.105898,
+          "n_days": 780,
+          "latest_date": "2026-08-21",
           "_note": "ratio>1 = customer net buyer; productCategory carries buy/sell; tradeType carries grade (CCW-W5 FINRA schema)"
         },
         "high yield": {
-          "buy_sell_ratio_latest": 0.9934,
-          "buy_sell_ratio_5d_ma": 0.9733,
-          "buy_vol_latest": 1379.991932,
-          "sell_vol_latest": 1389.194961,
-          "n_days": 779,
-          "latest_date": "2026-08-20",
+          "buy_sell_ratio_latest": 0.9587,
+          "buy_sell_ratio_5d_ma": 0.9849,
+          "buy_vol_latest": 933.714344,
+          "sell_vol_latest": 973.949885,
+          "n_days": 780,
+          "latest_date": "2026-08-21",
           "_note": "ratio>1 = customer net buyer; productCategory carries buy/sell; tradeType carries grade (CCW-W5 FINRA schema)"
         },
         "all securities": {
-          "buy_sell_ratio_latest": 0.9376,
-          "buy_sell_ratio_5d_ma": 0.9475,
-          "buy_vol_latest": 13182.305445,
-          "sell_vol_latest": 14060.282752,
-          "n_days": 779,
-          "latest_date": "2026-08-20",
+          "buy_sell_ratio_latest": 0.9074,
+          "buy_sell_ratio_5d_ma": 0.9448,
+          "buy_vol_latest": 8678.860693,
+          "sell_vol_latest": 9564.30874,
+          "n_days": 780,
+          "latest_date": "2026-08-21",
           "_note": "ratio>1 = customer net buyer; productCategory carries buy/sell; tradeType carries grade (CCW-W5 FINRA schema)"
         }
       },
-      "n_days_breadth": 779
+      "n_days_breadth": 780
     },
     "_note": "Two breadth sources; labeled distinctly; NEVER blended (CCW-R14)"
   },
@@ -1924,6 +1924,6 @@
       "note": null
     }
   ],
-  "_timing_s": 9.1,
+  "_timing_s": 10.41,
   "_n_ledger_new": 0
 }

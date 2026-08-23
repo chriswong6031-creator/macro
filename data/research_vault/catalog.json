@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-23T00:36:50.286113+00:00",
-  "count": 1651,
+  "generated_at": "2026-08-23T03:40:15.110413+00:00",
+  "count": 1659,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -636,6 +636,107 @@
       "tickers": [],
       "top_pick": false,
       "pages": 21,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-p8pzxhpbigk-3650e1",
+      "title": "Global equity strategy",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:52Z",
+      "summary_points": [
+        "**Correlation Erosion**: AI exposure across compute, power, real estate, and infrastructure creates sector-wide correlations (e.g., semiconductors, copper, REITs), eroding diversification benefits during AI cycle reassessments.",
+        "**Infrastructure-Adoption Balance**: Resilient AI strategies require balancing infrastructure (e.g., semiconductors) with companies monetizing AI adoption (disrupting business models), avoiding capex-driven single-point returns.",
+        "**Sector Exposure Intensification**: Semiconductor declines correlate with -1.5% to -4.0% in large-cap tech and -2.7% in data-center REITs; 60% of equity performance tied to semiconductor-linked stocks, with emerging markets' semiconductor correlation rising to 34%.",
+        "**Risk Differentiation Imperative**: Hidden disruption risks in non-physical sectors demand multi-route AI allocation (capex, adoption, disruption protection) to mitigate slowdowns and avoid false diversification across AI-linked assets."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-roiljedjko7-89eb18",
+      "title": "Emerging market bonds",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:51Z",
+      "summary_points": [
+        "**Egypt sovereign credit: Policy credibility vs stretched valuations**: Stronger policy framework (exchange rate flexibility, fiscal discipline post-Ras El-Hekma deal) supports resilience, but valuations near multi-year tight with short-end curve premium vs sovereign curve; high public debt (79% GDP by 2027), interest burden, and external financing dependency constrain outlook despite Stable rating.",
+        "**Geopolitical volatility and spread dynamics**: Egyptian bond spreads near multi-year highs amid Middle East tensions; risk-reward unattractive without durable peace agreement, with EMBIG spreads tight but valuations stretched.",
+        "**IMF program cliff and fiscal risks**: Program ends Dec 2026 with no new program planned; persistent fiscal deficits, public debt at 79% GDP by 2027, and narrowing external financing (despite remittance support) create structural constraints.",
+        "**Cautiously constructive stance with selective positioning**: Upside risks (debt reduction, sustained interest burden reduction, privatization) vs.",
+        "downside (reform fatigue, fiscal slippage, geopolitical instability); recommend selective positioning at current spreads due to stretched valuations."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-iyrn0h4xdlf-25cbf9",
+      "title": "Should investors pay more attention to cash",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:49Z",
+      "summary_points": [
+        "**Cash Buffer Duration**: Maintain 2-5 year cash buffers to mitigate reinvestment risk and capture capital gains during adverse growth scenarios, with segmentation into everyday/core/investment categories.",
+        "**Fixed-Rate Instrument Strategy**: Lock in longer-term fixed-rate instruments to optimize liquidity and reduce exposure to interest rate volatility during market stress.",
+        "**Geopolitical Energy Shock**: Euro gas prices at 65.50/MWh (highest since Jan 2023) driven by US-Iran conflict, creating immediate inflationary pressure and necessitating strategic cash deployment.",
+        "**Inflation Data Trigger**: Euro 1-year inflation swap rate near one-month highs, signaling elevated inflation risk requiring proactive portfolio adjustments."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-1iizyxnsaa9-79d888",
+      "title": "USDCAD",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:47Z",
+      "summary_points": [
+        "**USD CAD Near-Term Support, Medium-Term Decline**: Fed tightening expectations fading (markets pricing <25bps hikes by year-end) and BoC dovishness (weak Canada recovery, USMCA uncertainty) support near-term USD CAD; medium-term decline driven by fading Fed hawkishness, BoC caution, and USMCA trade tensions.",
+        "**Price Targets & Tactical Levels**: Year-end target 1.39, falling to 1.36 in 2027 (Fed rate cuts); sell above 1.40, strong support at 1.37.",
+        "**Critical Risks**: Canadian economy acceleration (CAD strength), unexpected Fed hikes, USMCA withdrawal, and global risk sentiment deterioration (pushing above 1.43)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-zrplg4bl0zj-023299",
+      "title": "UBS Equity Preference List China Onshore Tech 2026 08 21",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:46Z",
+      "summary_points": [
+        "**Policy-Driven Semiconductor Catalyst**: China’s \"Digital China\" 2035 roadmap and $45bn National Integrated Circuit Fund accelerate semiconductor self-sufficiency, directly benefiting SOEs like CXMT (6.7% portfolio weight) amid US-China tech tensions.",
+        "**Portfolio Concentration Risk**: Heavy 6.7% weighting in semiconductors (7 of 12 holdings) amplifies exposure to US export controls, regulatory shifts, and DRAM cycle volatility (e.g., CXMT pricing uncertainty until 2H27).",
+        "**Sector Rating & Strategic Shift**: UBS rates China Onshore Tech \"Unattractive\" but adds CXMT/NAURA/SHENNA as \"Most Preferred\" due to policy tailwinds, while removing Shenzhen Inovance for weak 2H26 outlook.",
+        "**Key Risk Factor**: Geopolitical tensions (US sanctions, equipment access) threaten top holdings (e.g., AMEC, JIET Group), with talent shortages and wafer supply constraints limiting AI chip localization (CambriCon) and equipment growth (NAURA).",
+        "**Valuation Opportunity**: Multi-year policy support (semiconductor self-reliance, AI infrastructure) creates deep value for China tech firms, with hardware/semiconductor exposure trading below historical metrics despite sector risks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 17,
       "language": "en",
       "needs_metadata": false
     },
@@ -1462,6 +1563,47 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-qbgtwwnvnra-8fc3e4",
+      "title": "Situation Room Slower into HG",
+      "institution": "Bank of America",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T15:24:44Z",
+      "summary_points": [
+        "**HG Bond Flows Decoupling**: HG fund flows decoupled from returns since Oct-2024 (2M price return -56bps vs rising 10-day MA flows), signaling structural shift in investor behavior beyond price movements.",
+        "**Money Market Liquidity Stress**: Sharp negative weekly net flows (-$160bn around 10-Jun-26) indicate severe US money market liquidity outflows, elevating short-term rate volatility and portfolio liquidity risk.",
+        "**Credit Allocation Shift**: HG flows now represent 27% of AUM (vs.",
+        "HY’s 15%) as of Aug-19, reflecting fundamental reallocation toward higher-quality credit amid risk-off sentiment.",
+        "**EM Fund Surge**: Global EM bond (ex local) inflows surged to +$0.60bn (vs +$0.21bn prior), driven by EM Local funds, marking sustained inflows since May 2025."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-uobgakuckl9-9b164c",
+      "title": "India Watch Monsoon Tracker In standstill mode",
+      "institution": "Bank of America",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T15:24:41Z",
+      "summary_points": [
+        "**Deficit Magnitude**: 13% cumulative rainfall deficit (Aug season), reservoir levels at -18% yoy, and kharif sowing down 2% yoy, signaling acute water stress and delayed crop progress critical for inflation and rural demand.",
+        "**Regional Hotspots**: Severe deficits in South/Central India (Exhibit 4), with reservoirs at 64% capacity (18% yoy decline), threatening Kharif output in key agricultural states (Maharashtra, Karnataka, North India).",
+        "**El Niño Amplification**: SOI shows El Niño signals, combining with IMD’s 6% below-normal forecast (Aug-Sep) to heighten agricultural volatility and food inflation risks.",
+        "**Spatial Disparity**: 56% of sub-divisions normal rainfall, but deficient zones dominate central/western India (red), while excess zones (green) are limited to Northeast/coastal areas, creating uneven supply chain disruptions."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-7aq17rubsg7-44253d",
       "title": "The Flow Show Steel Cage Match...Bessent vs ABB",
       "institution": "Bank of America",
@@ -1581,6 +1723,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-naogk5udvy5-327668",
+      "title": "Daily ShortActivity20Aug2026 US CLEARED",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-21T14:51:05Z",
+      "summary_points": [
+        "**Short Interest Concentration**: Consumer Staples (4.9% short flow) and IT Services (3.5%) show highest short concentration, amplifying short squeeze risk during sector rallies; requires active portfolio monitoring for volatility spikes.",
+        "**Healthcare Sector Shift**: Health Care Technology (-5.4% short flow) leads sector covering, signaling active bullish positioning shift; critical for sector rotation and risk allocation decisions.",
+        "**Cyclical Sectors Vulnerability**: Industrials (GE, Boeing), IT (NVDA, AMD), and Materials (FCX, RIO) exhibit elevated short interest amid geopolitical tensions and tariff policies, heightening volatility and supply chain risk.",
+        "**Energy Transition Policy Risk**: Utilities (DUK, NEE) and Real Estate (PLD, VRE) face heightened short interest due to regulatory pressures on carbon emissions; policy shifts demand close monitoring for downside exposure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
       "language": "en",
       "needs_metadata": false
     },
