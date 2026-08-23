@@ -1,45 +1,52 @@
-"""IMCE A5B nightly builder — data/cycle_pattern/imce_prospective_observation_v1.jsonl.
+"""IMCE A5B/A5C nightly builder — data/cycle_pattern/imce_prospective_observation_v1.jsonl.
 
 Reads the published, R2-hosted ``event_workspace.v1`` objects for the four
 homebuilder issuers (DHI/PHM/KBH/TOL), and — after stamping/confirming
-activation — appends one immutable decision-time IMCE observation packet
-per qualifying post-activation earnings event through
+activation — appends immutable decision-time IMCE observation/correction
+packets for qualifying post-activation earnings events through
 ``engine.cycle_pattern.imce_prospective``.
 
-HONEST CLAIM (red-team N2 correction — an earlier draft of this docstring
-and the workstream record overstated this as "no second reader
-implementation", which was false the moment B3's fix landed): this module's
-``_raw_fetch_workspace``/``_load_workspace_with_disposition`` IS a second
-fetch implementation. It duplicates ``scripts.refresh_event_workspaces.
-load_prior_workspace``'s base-URL resolution and manifest+workspace GET
-sequence byte-for-byte, on purpose, because that existing reader is
-deliberately fail-soft FOR ITS OWN callers (a flaky CDN must never block a
-source-identical no-op rebuild) and therefore collapses "clean 404" and
-"network error" into the same ``None`` — exactly the ambiguity B3 requires
-this module to resolve (``found`` / ``not_published`` / ``fetch_failed``). A
-prospective observation must never mint "the issuer had no event" out of
-"the network was down." Two independent implementations of the SAME GET
-sequence is a real, named drift risk: if the R2 layout, headers, or
-base-URL resolution ever changes, both copies must be updated together, and
-nothing here enforces that. The correct long-term fix is to lift a
-disposition-aware fetch (or a ``raise_on_error``/mode parameter) INTO
-``scripts/refresh_event_workspaces.py`` itself, so there is one
-implementation with two calling conventions — deliberately NOT done in this
-PR (that file is A5A's, out of this build's scope; the red-team review
-authorized the duplication here rather than a cross-scope refactor). Future
-consolidation should retire ``_raw_fetch_workspace`` in favor of that
-lifted, shared implementation.
+IMCE A5C (Sol A5C directive, 2026-08-23, frozen spec D1/D3): the marker/
+generation/workspace GET sequence — and the ordered source-revision chain
+walk (frozen spec D2) — now live ONCE, in
+``engine.neuralweb.company_intelligence_reader``. This module's
+``_load_workspace_with_disposition`` is a thin disposition classifier over
+that ONE shared implementation (``ci_reader.load_current_workspace`` for
+the current-generation disposition scan, ``ci_reader.
+read_event_source_revisions`` for the per-event ordered-revision chain
+walk this module's eligibility/replay logic needs) — the former duplicate
+GET implementation (``_raw_fetch_workspace``) is RETIRED; it no longer
+exists in this file.
 
-On ANY fetch_failed anywhere in a run, EVERY observation this run is
-deferred (no row written, no activation stamped if this is the first run)
-— the roster is fixed and every observation pools over the same four
-tickers, so a failure on any one of them taints every pooled read equally;
-the next nightly retries cleanly since nothing was written.
+On ANY fetch_failed anywhere in a run — including a chain-integrity or
+chain-read failure surfaced while resolving a found candidate's ordered
+revision history — EVERY observation this run is deferred (no row written,
+no activation stamped if this is the first run) — the roster is fixed and
+every observation pools over the same four tickers, so a failure on any one
+of them taints every pooled read equally; the next nightly retries cleanly
+since nothing was written.
+
+IMCE A5C eligibility/replay/contributor laws (Sol A5C directive, frozen
+spec E/F/G): a candidate event's EARLIEST known source revision decides
+eligibility, permanently — a correction can never move an event across the
+activation boundary in either direction (E). The ONE immutable observation
+is minted from the EARLIEST ELIGIBLE revision's own workspace, with
+``decision_cutoff`` = that revision's own ``source_available_at`` — later,
+materially different revisions accumulated between nightlies become ordered
+correction rows in ascending source order; a cosmetic (non-materially-
+different) regeneration produces no correction noise (F). A contributor's
+state at a trigger's cutoff is the LATEST lawful revision of that
+contributor's own event whose ``source_available_at <= cutoff`` — walking
+the contributor's own chain, never a later correction used retrospectively
+(G). When an event's chain cannot be established (a chain-integrity
+failure), this module fails CLOSED — no observation, ever, for that
+candidate this run (deferred, per the fetch_failed law above).
 
 A5C safety law (Sol A5C review, 2026-08-23, item 1; hardened by the Opus
-red-team BLOCKER-1 fix, same day): this builder reads each trigger
-workspace's OWN ``lifecycle.state`` AND its issuer_release source row
-``form``, and passes BOTH through to ``append_observation`` as
+red-team BLOCKER-1 fix, same day): this builder reads the workspace it is
+about to MINT AN OBSERVATION FROM (the earliest eligible revision — E/F
+above) — its OWN ``lifecycle.state`` AND its issuer_release source row
+``form`` — and passes BOTH through to ``append_observation`` as
 ``trigger_lifecycle_state``/``trigger_source_form`` — it never decides
 safety itself; ``engine.cycle_pattern.imce_prospective`` is the sole
 enforcement point (a builder-only check would be insufficient — see that
@@ -79,6 +86,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from engine.neuralweb import company_intelligence_reader as ci_reader  # noqa: E402
+
 log = logging.getLogger("build_cycle_pattern_imce_prospective")
 
 # Bounded candidate lookback: current + prior fiscal year, all four quarters.
@@ -108,50 +117,14 @@ def _issuer_release_source_form(workspace: dict) -> str | None:
     return None
 
 
-class _NotPublished(Exception):
-    """A clean 404 (or an absent-generation manifest) — the event genuinely
-    is not published yet. Distinct from any other fetch failure."""
-
-
-def _raw_fetch_workspace(event_id: str, *, base_url: str | None = None) -> dict:
-    """Fetch one workspace over HTTP, mirroring scripts.refresh_event_workspaces.
-    load_prior_workspace's own base-URL resolution and GET sequence.
-
-    Raises _NotPublished on a clean 404/absent-generation manifest. Raises
-    any OTHER exception (network error, timeout, non-2xx, malformed JSON) on
-    a genuine fetch failure — never returns None; disposition classification
-    is the caller's job (_load_workspace_with_disposition), so a network
-    outage can never be silently read as "this issuer had no event."
-    """
-    import os
-
-    import requests
-
-    from scripts.refresh_event_workspaces import _DEFAULT_PUBLIC_ORIGIN
-
-    base = (base_url or os.environ.get("COMPANY_INTELLIGENCE_R2_BASE_URL", _DEFAULT_PUBLIC_ORIGIN)).strip().rstrip("/")
-    headers = {"Accept": "application/json", "User-Agent": "mastermind-event-workspaces/1"}
-
-    marker_resp = requests.get(f"{base}/event_workspaces/manifest.json", headers=headers, timeout=20)
-    if marker_resp.status_code == 404:
-        raise _NotPublished(f"{event_id}: manifest 404")
-    marker_resp.raise_for_status()
-    marker = marker_resp.json()
-    generation_id = str((marker or {}).get("generation_id") or "")
-    if not generation_id:
-        raise _NotPublished(f"{event_id}: manifest carries no generation_id")
-
-    workspace_resp = requests.get(
-        f"{base}/event_workspaces/generations/{generation_id}/workspaces/{event_id}.json",
-        headers=headers, timeout=20,
-    )
-    if workspace_resp.status_code == 404:
-        raise _NotPublished(f"{event_id}: workspace 404 in generation {generation_id}")
-    workspace_resp.raise_for_status()
-    payload = workspace_resp.json()
-    if not isinstance(payload, dict):
-        raise ValueError(f"{event_id}: workspace payload is not a dict")
-    return payload
+# IMCE A5C (frozen spec D1/D3): the ONE shared reader implementation lives
+# in engine.neuralweb.company_intelligence_reader. _NotPublished is an ALIAS
+# of that module's own exception class — not a lookalike — so a stub raising
+# ``b._NotPublished(...)`` in a test and the shared reader's real raise are
+# the exact same, catchable-together exception identity. The former
+# duplicate GET implementation (``_raw_fetch_workspace``) is RETIRED and no
+# longer exists in this file (mutation-kill test: it must not be importable).
+_NotPublished = ci_reader.WorkspaceChainNotPublished
 
 
 def _load_workspace_with_disposition(event_id: str, *, fetch=None) -> tuple[dict | None, str]:
@@ -159,10 +132,10 @@ def _load_workspace_with_disposition(event_id: str, *, fetch=None) -> tuple[dict
 
     *fetch* is injectable for tests (a stub raising _NotPublished for a clean
     404, any other exception for a network failure, or returning a dict for
-    a hit) — production callers never pass it, always exercising the real
-    HTTP path via _raw_fetch_workspace.
+    a hit) — production callers never pass it, always exercising the ONE
+    shared reader implementation via ``ci_reader.load_current_workspace``.
     """
-    fetcher = fetch or _raw_fetch_workspace
+    fetcher = fetch or ci_reader.load_current_workspace
     try:
         return fetcher(event_id), "found"
     except _NotPublished as exc:
@@ -171,6 +144,17 @@ def _load_workspace_with_disposition(event_id: str, *, fetch=None) -> tuple[dict
     except Exception as exc:  # noqa: BLE001 — every other failure is fetch_failed, never silently absent
         log.info("%s: workspace fetch failed, classified fetch_failed (%s)", event_id, exc)
         return None, "fetch_failed"
+
+
+def _load_event_revision_history(event_id: str) -> list[dict]:
+    """Ordered (oldest -> newest) source revisions for *event_id*, via the
+    ONE shared reader chain-walk (frozen spec D2(d)). Raises on ANY chain-
+    integrity or network failure — never silently returns a truncated or
+    empty history; the caller treats any exception here exactly like a
+    disposition-level fetch_failed (defers the whole run — E4 fail-closed).
+    A module-level indirection point so tests can inject a stub the same
+    way they already stub ``_fetch_all_candidates``."""
+    return ci_reader.read_event_source_revisions(event_id)
 
 
 def _candidate_event_ids(ticker: str, company_id: str, today: date) -> list[str]:
@@ -207,32 +191,45 @@ def _fetch_all_candidates(today: date) -> tuple[dict[str, list[dict]], dict[str,
     return found, dispositions
 
 
-def _latest_snapshot_at_or_before(workspaces: list[dict], cutoff_iso: str) -> dict | None:
-    """The workspace with the LATEST source_available_at that is still
-    <= cutoff_iso (PIT-knowability bound). None if no such snapshot exists.
+def _latest_contributor_revision_at_or_before(
+    ticker: str,
+    found: dict[str, list[dict]],
+    revision_histories: dict[str, list[dict]],
+    cutoff_iso: str,
+) -> dict | None:
+    """G (frozen spec): the LATEST LAWFUL revision of *ticker* — across
+    EVERY one of its own candidate events' own revision chains — whose
+    source_available_at is <= cutoff_iso. Never uses a later correction
+    retrospectively: only revisions individually at-or-before the cutoff are
+    even considered. None if no such revision exists.
 
-    Calendar-quarter pooling-key alignment (red-team M5) is enforced
-    downstream, inside engine.cycle_pattern.imce_prospective.per_issuer_state
-    — this helper only bounds by PIT-knowability, exactly as before.
+    Calendar-quarter pooling-key alignment (red-team M5) and denominator
+    conformance are enforced downstream, inside
+    engine.cycle_pattern.imce_prospective.per_issuer_state — this helper
+    only bounds by PIT-knowability across the CHAIN, exactly as
+    ``_latest_snapshot_at_or_before`` did across single current snapshots
+    before A5C.
     """
     from engine.cycle_pattern.imce_prospective import parse_iso
 
     cutoff = parse_iso(cutoff_iso)
-    best: dict | None = None
+    best_ws: dict | None = None
     best_dt = None
-    for ws in workspaces:
-        src = (ws.get("lifecycle") or {}).get("source_available_at")
-        if not src:
-            continue
-        try:
-            dt = parse_iso(src)
-        except Exception:  # noqa: BLE001
-            continue
-        if dt > cutoff:
-            continue
-        if best_dt is None or dt > best_dt:
-            best, best_dt = ws, dt
-    return best
+    for candidate_ws in found.get(ticker, []):
+        event_id = candidate_ws.get("event_id")
+        for revision in revision_histories.get(event_id, []) or []:
+            src = revision.get("source_available_at")
+            if not src:
+                continue
+            try:
+                dt = parse_iso(src)
+            except Exception:  # noqa: BLE001
+                continue
+            if dt > cutoff:
+                continue
+            if best_dt is None or dt > best_dt:
+                best_ws, best_dt = revision.get("workspace"), dt
+    return best_ws
 
 
 def run(production: bool = False) -> dict:
@@ -288,6 +285,25 @@ def run(production: bool = False) -> dict:
         event_id for per_ticker in dispositions.values()
         for event_id, disposition in per_ticker.items() if disposition == "fetch_failed"
     ]
+
+    # IMCE A5C (frozen spec D2(c)/D2(d)/E4): for every FOUND candidate,
+    # resolve its ordered source-revision chain BEFORE activation too — a
+    # chain-integrity or network failure while walking history is exactly
+    # the "network was down" ambiguity the fetch_failed law already exists
+    # to catch, discovered one layer deeper (a broken chain link, or an
+    # unbounded walk, is a hard failure, never a silent skip or truncation).
+    revision_histories: dict[str, list[dict]] = {}
+    for per_ticker_found in found.values():
+        for ws in per_ticker_found:
+            event_id = ws.get("event_id")
+            if not event_id or event_id in revision_histories:
+                continue
+            try:
+                revision_histories[event_id] = _load_event_revision_history(event_id)
+            except Exception as exc:  # noqa: BLE001 - chain ambiguity is fetch_failed-equivalent
+                log.info("%s: revision history read failed, classified fetch_failed (%s)", event_id, exc)
+                failed_ids.append(event_id)
+
     if failed_ids:
         # Red-team N4: a deferral this important must be visible in the
         # Actions summary, not just the log — GitHub only parses "::" at
@@ -327,101 +343,195 @@ def run(production: bool = False) -> dict:
 
     for trigger_ticker in ROSTER:
         for trigger_ws in found.get(trigger_ticker, []):
-            lifecycle = trigger_ws.get("lifecycle") or {}
-            decision_cutoff = lifecycle.get("source_available_at")
             event_id = trigger_ws.get("event_id")
-            if not decision_cutoff or not event_id:
+            if not event_id:
+                continue
+            revisions = revision_histories.get(event_id) or []
+            if not revisions:
+                # A candidate the disposition scan found, but the chain walk
+                # surfaced nothing for — treat as nothing to observe this
+                # run rather than guessing (should not occur on the real
+                # nightly path: a successful "found" disposition read
+                # already proves at least one revision exists).
                 continue
 
-            # Activation law on the TRIGGER itself (builder-level fence; the
-            # module ALSO enforces this independently on write — M7).
+            # BLOCKER-1 (Opus red-team, 2026-08-23): the chain walk's OWN
+            # return order (oldest -> newest) is a construction detail of
+            # read_event_source_revisions, not a guarantee this builder may
+            # lean on for a PERMANENT eligibility decision — a caller-
+            # injected or otherwise reordered revision list must not silently
+            # decide eligibility off revisions[0]. Sort by
+            # source_available_at FIRST; every downstream use (eligibility
+            # AND replay, F1) reads from this ONE sorted list, never the raw
+            # chain-order list again.
+            ordered = sorted(
+                (r for r in revisions if r.get("source_available_at")),
+                key=lambda r: parse_iso(r["source_available_at"]),
+            )
+            if not ordered:
+                summary["errors"].append(f"{event_id}: no revision carries a usable source_available_at")
+                continue
+
+            earliest = ordered[0]
+            earliest_avail = earliest["source_available_at"]
+
+            # E1/E2/E3 (frozen spec): the EARLIEST known revision's
+            # source_available_at decides eligibility, PERMANENTLY — a
+            # later correction can never move the event across the
+            # activation boundary in either direction. This is also the
+            # builder-level fence; the module ALSO enforces the activation
+            # law independently on write (M7).
             try:
-                if parse_iso(decision_cutoff) < parse_iso(activation_started_at):
-                    log.info("%s %s: pre-activation trigger event skipped (%s < %s)",
-                             trigger_ticker, event_id, decision_cutoff, activation_started_at)
-                    continue
-            except Exception as exc:  # noqa: BLE001
-                summary["errors"].append(f"{event_id}: cutoff parse failed ({exc})")
-                continue
-
-            issuer_workspaces: dict[str, dict | None] = {
-                t: _latest_snapshot_at_or_before(found.get(t, []), decision_cutoff) for t in ROSTER
-            }
-
-            try:
-                packet = build_observation_packet(
-                    trigger_ticker=trigger_ticker,
-                    trigger_workspace=trigger_ws,
-                    issuer_workspaces=issuer_workspaces,
-                    activation_started_at=activation_started_at,
-                )
-                assert_no_outcome_fields(packet)
-            except Exception as exc:  # noqa: BLE001
-                log.error("%s %s: packet build failed (%s)", trigger_ticker, event_id, exc)
-                summary["errors"].append(f"{event_id}: packet_build: {exc}")
-                continue
-
-            # M4: an event_id carries at most ONE observation, ever. Any
-            # existing observation for this event_id (regardless of whether
-            # decision_cutoff matches — an 8-K/A mints a NEW cutoff) routes
-            # through the correction path, never a second append_observation.
-            existing = find_observation_by_event_id(event_id)
-            if existing is not None:
-                if not packet_materially_differs(existing, packet, trigger_ticker):
-                    summary["n_observations_noop"] += 1
-                    continue
-                already_corrected = any(
-                    r.get("row_kind") == "correction"
-                    and r.get("supersedes_observation_id") == existing.get("observation_id")
-                    and (r.get("trigger") or {}).get("event_workspace_generation_id")
-                        == packet.get("trigger", {}).get("event_workspace_generation_id")
-                    for r in load_rows()
-                )
-                if already_corrected:
-                    summary["n_observations_noop"] += 1
-                    continue
-                try:
-                    old_gen = (existing.get("trigger") or {}).get("event_workspace_generation_id")
-                    new_gen = packet.get("trigger", {}).get("event_workspace_generation_id")
-                    append_correction(
-                        superseded_observation_id=existing["observation_id"],
-                        corrected_packet=packet,
-                        reason=f"source revision detected: generation {old_gen} -> {new_gen}, derived state changed",
-                        production=True,
+                if parse_iso(earliest_avail) < parse_iso(activation_started_at):
+                    log.info(
+                        "%s %s: permanently ineligible — earliest known revision (%s) predates "
+                        "activation (%s)", trigger_ticker, event_id, earliest_avail, activation_started_at,
                     )
-                    summary["n_corrections"] += 1
-                    log.info("%s %s: correction appended (material source revision)", trigger_ticker, event_id)
-                except Exception as exc:  # noqa: BLE001
-                    summary["errors"].append(f"{event_id}: correction_append: {exc}")
+                    continue
+            except Exception as exc:  # noqa: BLE001
+                summary["errors"].append(f"{event_id}: activation_check: {exc}")
                 continue
 
-            try:
-                # A5C (Sol, 2026-08-23, item 1) + BLOCKER-1 hardening (Opus
-                # red-team, same day): read this workspace's OWN lifecycle
-                # state AND its issuer_release source-row form, and pass both
-                # through untouched — the engine module decides safety, this
-                # builder never does.
-                trigger_lifecycle_state = (trigger_ws.get("lifecycle") or {}).get("state")
-                trigger_source_form = _issuer_release_source_form(trigger_ws)
-                _row, appended = append_observation(
-                    packet, production=True,
-                    trigger_lifecycle_state=trigger_lifecycle_state,
-                    trigger_source_form=trigger_source_form,
-                )
-                if appended:
-                    summary["n_observations_appended"] += 1
-                    log.info("%s %s: observation appended (label=%s pooled_state=%s)",
-                             trigger_ticker, event_id, packet["m_t"]["label"], packet["m_t"]["pooled_state"])
-                elif _row is None:
-                    # A5C refusal: no row of any kind was written. Per-candidate
-                    # only — other candidates this run are unaffected, activation
-                    # stays as already stamped above.
-                    summary["n_observations_refused_unsafe_correction"] += 1
+            # M4: an event_id carries at most ONE observation, ever.
+            existing_obs = find_observation_by_event_id(event_id)
+            anchor_observation_id = existing_obs.get("observation_id") if existing_obs else None
+            last_recorded_packet = existing_obs
+
+            # Idempotency across nightly runs (F1/F3 replay): which
+            # revisions has THIS event already recorded — as the
+            # observation, or as a correction? Only genuinely NEW revisions
+            # (accumulated since the last nightly) are replayed below.
+            recorded_generation_ids: set[str] = set()
+            if existing_obs is not None:
+                gen = (existing_obs.get("trigger") or {}).get("event_workspace_generation_id")
+                if gen:
+                    recorded_generation_ids.add(gen)
+            for row in load_rows():
+                if row.get("row_kind") != "correction":
+                    continue
+                if (row.get("trigger") or {}).get("event_id") != event_id:
+                    continue
+                gen = (row.get("trigger") or {}).get("event_workspace_generation_id")
+                if gen:
+                    recorded_generation_ids.add(gen)
+                    row_gen_is_newer = last_recorded_packet is None or gen != (
+                        last_recorded_packet.get("trigger") or {}
+                    ).get("event_workspace_generation_id")
+                    if row_gen_is_newer:
+                        last_recorded_packet = row
+
+            # F1: replay the SAME ascending-order list eligibility was
+            # decided from above — never re-derived here (BLOCKER-1).
+            for revision in ordered:
+                gen_id = revision.get("generation_id")
+                decision_cutoff = revision.get("source_available_at")
+                if gen_id and gen_id in recorded_generation_ids:
+                    continue  # already recorded in a prior nightly run
+
+                revision_ws = revision.get("workspace") or {}
+                # G (frozen spec): every OTHER roster ticker's contributor
+                # state is the LATEST LAWFUL revision of ITS OWN chain
+                # whose source_available_at <= THIS revision's own cutoff —
+                # never a later correction used retrospectively.
+                issuer_workspaces: dict[str, dict | None] = {
+                    t: (
+                        revision_ws if t == trigger_ticker
+                        else _latest_contributor_revision_at_or_before(
+                            t, found, revision_histories, decision_cutoff,
+                        )
+                    )
+                    for t in ROSTER
+                }
+
+                try:
+                    packet = build_observation_packet(
+                        trigger_ticker=trigger_ticker,
+                        trigger_workspace=revision_ws,
+                        issuer_workspaces=issuer_workspaces,
+                        activation_started_at=activation_started_at,
+                    )
+                    assert_no_outcome_fields(packet)
+                except Exception as exc:  # noqa: BLE001
+                    log.error("%s %s: packet build failed (%s)", trigger_ticker, event_id, exc)
+                    summary["errors"].append(f"{event_id}: packet_build: {exc}")
+                    if anchor_observation_id is None:
+                        # BLOCKER-1: this WOULD have been the anchor (earliest
+                        # eligible) mint — a build failure here must never
+                        # let the loop fall through to mint from a LATER
+                        # revision instead. Abandon this event for tonight
+                        # (recorded above); the next nightly retries cleanly.
+                        break
+                    continue
+
+                if anchor_observation_id is None:
+                    # F2: THE one immutable observation, minted from the
+                    # EARLIEST ELIGIBLE revision — safe-original by
+                    # construction (WORLD STATE note).
+                    try:
+                        # A5C (Sol, 2026-08-23, item 1) + BLOCKER-1
+                        # hardening (Opus red-team, same day): read THIS
+                        # (the minting) revision's OWN lifecycle state AND
+                        # its issuer_release source-row form, and pass both
+                        # through untouched — the engine module decides
+                        # safety, this builder never does.
+                        trigger_lifecycle_state = (revision_ws.get("lifecycle") or {}).get("state")
+                        trigger_source_form = _issuer_release_source_form(revision_ws)
+                        row, appended = append_observation(
+                            packet, production=True,
+                            trigger_lifecycle_state=trigger_lifecycle_state,
+                            trigger_source_form=trigger_source_form,
+                        )
+                        if appended:
+                            summary["n_observations_appended"] += 1
+                            anchor_observation_id = row["observation_id"]
+                            last_recorded_packet = row
+                            log.info(
+                                "%s %s: observation appended (label=%s pooled_state=%s)",
+                                trigger_ticker, event_id, packet["m_t"]["label"], packet["m_t"]["pooled_state"],
+                            )
+                        elif row is None:
+                            # A5C refusal: no row of any kind was written.
+                            # Per-candidate only — other candidates this run
+                            # are unaffected, activation stays as already
+                            # stamped above. Nothing else in this revision
+                            # list may be processed without an anchoring
+                            # observation.
+                            summary["n_observations_refused_unsafe_correction"] += 1
+                            break
+                        else:
+                            summary["n_observations_noop"] += 1
+                            anchor_observation_id = row["observation_id"]
+                            last_recorded_packet = row
+                    except Exception as exc:  # noqa: BLE001
+                        log.error("%s %s: observation append failed (%s)", trigger_ticker, event_id, exc)
+                        summary["errors"].append(f"{event_id}: observation_append: {exc}")
+                        break
                 else:
-                    summary["n_observations_noop"] += 1
-            except Exception as exc:  # noqa: BLE001
-                log.error("%s %s: observation append failed (%s)", trigger_ticker, event_id, exc)
-                summary["errors"].append(f"{event_id}: observation_append: {exc}")
+                    # F3/F4: a later revision is an ordered correction only
+                    # if it MATERIALLY differs from the last recorded state
+                    # — a cosmetic regeneration produces no correction noise.
+                    if last_recorded_packet is not None and not packet_materially_differs(
+                        last_recorded_packet, packet, trigger_ticker,
+                    ):
+                        summary["n_observations_noop"] += 1
+                        continue
+                    try:
+                        old_gen = (
+                            (last_recorded_packet.get("trigger") or {}).get("event_workspace_generation_id")
+                            if last_recorded_packet else None
+                        )
+                        new_gen = packet.get("trigger", {}).get("event_workspace_generation_id")
+                        corr = append_correction(
+                            superseded_observation_id=anchor_observation_id,
+                            corrected_packet=packet,
+                            reason=f"source revision detected: generation {old_gen} -> {new_gen}, derived state changed",
+                            production=True,
+                        )
+                        summary["n_corrections"] += 1
+                        last_recorded_packet = corr
+                        log.info("%s %s: correction appended (material source revision)", trigger_ticker, event_id)
+                    except Exception as exc:  # noqa: BLE001
+                        summary["errors"].append(f"{event_id}: correction_append: {exc}")
 
     elapsed = time.time() - t0
     log.info(
