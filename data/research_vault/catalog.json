@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-23T16:11:38.332078+00:00",
-  "count": 1697,
+  "generated_at": "2026-08-23T17:10:53.228908+00:00",
+  "count": 1700,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -87,6 +87,48 @@
   ],
   "items": [
     {
+      "id": "marketdesk-kuwlcsctckn-43814b",
+      "title": "South Korea Technology Korea WFE Substrate CCL Chip testing HBM Supply Chain Check reinforces our positive view on Samsung E...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T16:45:10Z",
+      "summary_points": [
+        "**HBM TAM Growth Catalyst**: HBM total addressable market growth at 67% and 108% YoY drives robust demand for Samsung, SK Hynix, and SEMCO, with expanding order backlogs across WFE, substrate/CCL, and chip testing sectors.",
+        "**Structural Supply-Demand Imbalance**: 2026E DRAM undersupply at 5.0% (expanding to 5.9% in 2027E) and NAND undersupply at 4.4% (vs.",
+        "2025E’s 4.2%) signal persistent demand outpacing supply, supporting capex growth and earnings.",
+        "**SEC Capex Surge & Profitability**: Korean front-end equipment firms project 59% YoY capex growth (2026) with Q2 2026 operating profit up 42% YoY, driven by 73% YoY WFE import surge and expanding order backlogs.",
+        "**Geopolitical Risk Exposure**: Korea-WFE exports to China declined 20% YTD (July), reflecting weakened demand due to China’s equipment localization policies, threatening supply chain resilience for exporters."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 25,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-rlxpmk7l1xh-e4ed78",
+      "title": "JPM Flows & Liquidity Are large enterprises spending $1.5tr on AI already",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T15:00:22Z",
+      "summary_points": [
+        "**AI Capex Cycle Viability**: Revenue acceleration in AI companies makes the capex cycle economically viable vs.",
+        "six months ago, shifting sustainability from capital intensity concerns to ecosystem revenue generation (model/cloud/neocloud providers).",
+        "**Retail Equity Flow Shift**: June 2026 retail share in US equity trading spiked (per SEC Rule 606), intensifying deleveraging in July; OTC venues (Virtu, Citadel) saw highest retail flow share since Oct 2025 peak.",
+        "**Yen Carry Trade Status**: No meaningful unwinding post-Japan MoF/US Treasury intervention (April 2025); foreign equity inflows stabilized at $160bn (mid-2026), yen borrowing peaked at $450bn (Q4 2024) and stabilized at $415bn (Q2 2026).",
+        "**S&P500 Direction Drivers**: Logistic regression confirms turnover (2.97, p=0.00), value (-3.47, p=0.00), and economic momentum (3.35, p=0.00) as key predictors of 6-month direction."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 31,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-9apkizzne1f-04d9c6",
       "title": "Fed On Hold",
       "institution": "Other",
@@ -164,6 +206,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-wb1knxz4a9v-8a572e",
+      "title": "AOM Raising the Earnings Bar",
+      "institution": "Alger",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T14:50:56Z",
+      "summary_points": [
+        "**Earnings Momentum**: 2026 S&P 500 earnings estimates up 15% since Jan (vs.",
+        "historical -3% by July), AI-driven 25% growth projection—strongest non-recessionary earnings growth in decades, outpacing S&P 500’s 13% return through July 31, 2026.",
+        "**Valuation Support**: Forward P/E at 19.6x (down from 22x) with record 16.4% net profit margins aligns with historical P/E-margins relationship (target ~23x), indicating market reasonably priced by fundamentals.",
+        "**Margin-Driven Pricing**: High margins (16.4%) support valuation, with P/E ratio reflecting earnings growth rather than sentiment, reinforcing sustainable pricing levels."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
       "language": "en",
       "needs_metadata": false
     },
