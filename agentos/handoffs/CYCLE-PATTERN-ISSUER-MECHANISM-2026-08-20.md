@@ -401,3 +401,75 @@ call for these families returns False by design (dedup on `(family, n, reason)` 
 re-stamp is a new decision, not an execution. Do not compute ANY outcome statistic on the six
 registered cells until the boundary-receipt fence lifts — the registered `criteria-commit
 strictly precedes outcome access` attestation binds every future session.
+
+# A5 closure addendum (Sol's fifth gate executed, 2026-08-22/23)
+
+Sol's fifth-gate directive (prospective observation activation) is executed as the two
+sequential PRs it ordered, same Fable carrier, each through the full wave pattern
+(sonnet builder → opus red-team → fix rounds → adversarial verification → Fable
+adjudication → armed merge on concluded green → server-side verification).
+
+**A5A — event-workspace generalization: MERGED + PROVEN LIVE.** PR #6270, merge
+`5b8ca994de05` 2026-08-23T01:16:24Z. DHI/PHM/KBH/TOL earnings-results events flow
+through the EXISTING `event_workspace.v1` path: `production_registry()` (four hardcoded
+IssuerIdentity entries, CIKs from the EDGAR ledger, NYSE/XNYS receipts), discovery-mode
+results-filing acquisition (newest Item-2.02 8-K or 8-K/A with EX-99.1), an
+`IssuerProfile` seam separating generic construction from issuer extraction (Apple's
+`_GLANCE_SPANS` behavior preserved byte-for-byte behind `apple_profile()`), and the six
+IMCE-critical facts extracted with byte-replayed span receipts or closed-vocab typed
+absences — denominator conventions verbatim, never normalized. Red-team history worth
+knowing cold: the original head minted WRONG fiscal quarters for all four issuers
+(EDGAR `reportDate` is the press-release date, NOT the period end) — fixed by
+quarter-end-before-anchor arithmetic plus a fail-closed cross-check against the
+exhibit's own stated period ("does not match → refuse to mint"); two fix-round
+regressions (a fixture-fitted column-binding guard that deleted Q1 facts; a prior-year
+value receipted over a digit-less equality clause) were caught by live-document
+verification and fixed — the reviewer's live probes are now committed fixtures.
+LIVE PROOF: production run 32609989956 published R2 generation `d7b994675fe59d0181643b8b`
+(5 events: AAPL 2026q3 + DHI 2026q3 + PHM 2026q2 + KBH 2026q2 + TOL 2026q3);
+`GET https://www.mastermind-x.com/api/event-workspace/DHI` serves
+`evt_cik0000882184_2026q3_results` with exact receipts; production API restarted on the
+merge (health endpoint reports `commit: 5b8ca994de0`).
+
+**A5B — registered prospective forward capture: MERGED, BUILT_NOT_PROVEN.** PR #6281,
+merge `9d14a3529d1c` 2026-08-23T04:27:34Z (adjudicated content head `6018e67302ca`).
+One bounded append-only dataset (`data/cycle_pattern/imce_prospective_observation_v1.jsonl`,
+created only by the first production nightly, which stamps `activation_started_at`),
+one bounded module (`engine/cycle_pattern/imce_prospective.py`), one nightly builder
+(`scripts/build_cycle_pattern_imce_prospective.py --production`, cl_misc band), one
+measurement subpanel (outcomes = fenced / 0). M_t implements the frozen order-softness
+construction verbatim (red-team verified constant-exact); contributor eligibility uses
+the ALREADY-FROZEN majority-month pooling key (HB0 census §4b item 2 — NOT the dating
+key, which cannot pool TOL); R_t = classic MACD(12,26,9) on `_biweekly_close` with
+session-close admissibility applied to the BIWEEKLY PERIOD-END (a mid-week cutoff can
+never admit a provisional bar — measured sign-flip defect fixed and pinned); C_t legs
+carry full shape with Treasury CMT typed-absent under GO_LIMITED. First-observation-wins
+per event_id; corrections append-and-supersede keyed on generation/material content
+(exhibit sha does NOT move on re-extraction); network failure defers the whole night
+(`::warning` annotated) rather than minting degraded immutable packets.
+
+**verified:** both merges via `gh api .../compare/<sha>...main`; A5A live proof via the
+R2 manifest read + production reader GET + `/api/health` commit; A5B tests
+100/114-passing at head, contract-delta `0 introduced` at exact head, agentos validate
+0 errors.
+
+**Sol return items (named, not resolved):** (1) TOL §1b sensitivity prior-year
+comparator is not extracted by A5A — the mandatory sensitivity diagnostic rides
+NOT_RECONSTRUCTABLE until a source-plane extension wave; (2) Treasury CMT capture needs
+a first-party fetcher (GO_LIMITED already authorizes persistence) — natural next
+increment; (3) event-workspace retrieval is latest-generation-only — no as-of/vintage
+read exists, so a re-extraction of a past event changes what a LATER reader sees
+(correction records preserve what the experiment knew at cutoff; the gap is
+observability, not ledger integrity); (4) NEW-B adjudication made this wave: a
+prior-year fact whose value is stated by explicit equality in the same clause
+("16%, consistent with the prior year quarter") is captured as PRESENT with the full
+clause receipted and a basis marker naming the stated-equality derivation — flagged
+for Sol's review, revertible to typed absence.
+
+**do_not_redo (additions):** do not re-run the A5A red-team probes against live SEC
+documents (KBH/PHM Q1, DHI Q2 are now committed fixtures with tests); do not "fix" the
+builder's duplicated disposition-aware fetch by editing `refresh_event_workspaces.py`
+casually — that consolidation is named future work touching A5A's plane; do not
+pre-seed the prospective ledger file in git (an empty pre-activation file risks being
+read as a production timestamp); do not dispatch daily.yml to force activation — the
+nightly stamps it naturally.
