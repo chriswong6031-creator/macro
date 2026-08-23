@@ -53,16 +53,19 @@ changed:
 verified:
   - claim: The modifying carrier started from the fresh protected Macro default head.
     command: >
-      git fetch origin; git rev-parse HEAD origin/main; git status --short --branch
+      git fetch origin; git rev-parse HEAD origin/main; git status --short --branch;
+      immediately before delivery fetch again and merge the non-overlapping default movement
     result: >
       Both refs were 6a1795192cc06c1ea8c9004a33b9e4bec62831c9 before edits;
-      branch claude/mas28-w0r was clean in the commissioned sparse worktree.
+      branch claude/mas28-w0r was clean in the commissioned sparse worktree. Before push,
+      origin/main advanced only in marketing/press-wire/White House data bytes; the carrier
+      merged exact head 4a14a56a0d97f551201c251e3a35a80d32c629b7 with no authorized-path overlap.
   - claim: Current cross-repository protected heads and authoring surfaces were read.
     command: >
       git -C each repository fetch origin; git rev-parse origin/main or origin/master;
       git show the protected .github/pull_request_template.md blobs.
     result: >
-      Macro 6a1795192cc06c1ea8c9004a33b9e4bec62831c9; Mastermind
+      Macro 4a14a56a0d97f551201c251e3a35a80d32c629b7; Mastermind
       eb9910681a6db9f9675b25233c8865bb43325c32; Terminal
       4e50b5f9f8a31a860f3dd12e7d70aaca52be421f. Mastermind blob
       a258becc198a1305cfde86969e77e4c5e141fbc6 and Terminal blob
