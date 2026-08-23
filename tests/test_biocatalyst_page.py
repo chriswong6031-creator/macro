@@ -251,6 +251,16 @@ def test_biocatalyst_assets_have_responsive_motion_and_focus_guards():
     assert "animation-duration: 2s" not in css
 
 
+def test_catalyst_radar_cards_do_not_shrink_inside_desktop_scroll_queue():
+    """Radar rows must expand to their content instead of clipping at 96px."""
+
+    css = (TEMPLATES / "biocatalyst.css").read_text(encoding="utf-8")
+    rule = re.search(r"\.bci-radar-card\s*\{(?P<body>[^}]*)\}", css)
+
+    assert rule is not None
+    assert re.search(r"(?:^|;)\s*flex-shrink:\s*0\s*(?:;|$)", rule.group("body"))
+
+
 def test_biocatalyst_modes_default_to_milestones_and_preserve_verified_pages():
     """Audit the UI contract around the non-inferential milestone endpoint.
 
