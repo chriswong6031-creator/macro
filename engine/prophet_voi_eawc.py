@@ -33,10 +33,14 @@ def _aligned(*values: Sequence[Any]) -> int:
     return next(iter(lengths), 0)
 
 
+def _is_bool(value: Any) -> bool:
+    return isinstance(value, (bool, np.bool_))
+
+
 def _ordinal(value: Any) -> int | None:
     if value is None:
         return None
-    if isinstance(value, bool):
+    if _is_bool(value):
         return None
     try:
         x = int(value)
@@ -48,10 +52,6 @@ def _ordinal(value: Any) -> int | None:
     except (TypeError, ValueError, OverflowError):
         return None
     return x
-
-
-def _is_bool(value: Any) -> bool:
-    return isinstance(value, (bool, np.bool_))
 
 
 def _invalid_bool_count(values: Sequence[Any], *, allow_none: bool) -> int:
@@ -171,6 +171,19 @@ def early_actionable_capture_recall(
             "invalid_surface_states": invalid_surface,
             "invalid_actionability_states": invalid_actionability,
         }
+
+    contradictory_surface_actionability = sum(
+        not _is_true(surface) and actionability is not None
+        for surface, actionability in zip(surfaced, actionable_at_first_surface)
+    )
+    if contradictory_surface_actionability:
+        return {
+            "state": HOLD_INTEGRITY,
+            "reference_subjects": n,
+            "reason": "actionability_present_without_first_surface",
+            "contradictory_surface_actionability": contradictory_surface_actionability,
+        }
+
     if any(label is None for label in positive_label):
         return {
             "state": UNAVAILABLE_FIELD,
@@ -340,6 +353,8 @@ def realized_r_multiple(
     with the entry/invalidation distance. A missing or zero initial risk is unavailable;
     this function never derives a retrospective stop.
     """
+    if any(_is_bool(value) for value in (direction_signed_pnl, entry_price, initial_invalidation_price)):
+        return {"state": HOLD_INTEGRITY, "value": None, "reason": "initial_risk_fields_boolean"}
     try:
         pnl = float(direction_signed_pnl)
         entry = float(entry_price)
@@ -370,7 +385,13 @@ def time_to_payoff_r(
     the sample. Missing path points make the subject unavailable because silently
     compressing the clock would invent an earlier hit.
     """
-    if not math.isfinite(float(threshold_r)) or threshold_r <= 0:
+    if _is_bool(threshold_r):
+        raise ValueError("threshold_r must be finite and positive")
+    try:
+        threshold = float(threshold_r)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("threshold_r must be finite and positive") from exc
+    if not math.isfinite(threshold) or threshold <= 0:
         raise ValueError("threshold_r must be finite and positive")
     horizon = len(strictly_forward_r_path)
     if horizon == 0:
@@ -380,6 +401,8 @@ def time_to_payoff_r(
     for value in strictly_forward_r_path:
         if value is None:
             return {"state": UNAVAILABLE_FIELD, "reason": "forward_path_has_missing_session"}
+        if _is_bool(value):
+            return {"state": HOLD_INTEGRITY, "reason": "forward_path_boolean"}
         try:
             numeric = float(value)
         except (TypeError, ValueError, OverflowError):
@@ -389,12 +412,12 @@ def time_to_payoff_r(
         path.append(numeric)
 
     for session_index, value in enumerate(path, start=1):
-        if value >= threshold_r:
+        if value >= threshold:
             return {
                 "state": MEASURED,
                 "hit": True,
                 "censored": False,
-                "threshold_r": float(threshold_r),
+                "threshold_r": threshold,
                 "time_to_payoff_sessions": session_index,
                 "horizon_sessions": horizon,
             }
@@ -402,7 +425,7 @@ def time_to_payoff_r(
         "state": MEASURED,
         "hit": False,
         "censored": True,
-        "threshold_r": float(threshold_r),
+        "threshold_r": threshold,
         "time_to_payoff_sessions": None,
         "horizon_sessions": horizon,
         "censor_at_session": horizon,
@@ -415,6 +438,8 @@ def eventual_move_consumed_fraction(
     future_mfe: float | int | None,
 ) -> dict[str, Any]:
     """Ex-post chase diagnostic only; never a live actionability or promotion gate."""
+    if _is_bool(favorable_move_at_first_surface) or _is_bool(future_mfe):
+        return {"state": HOLD_INTEGRITY, "value": None, "confirmatory": False}
     try:
         consumed = float(favorable_move_at_first_surface)
         mfe = float(future_mfe)
