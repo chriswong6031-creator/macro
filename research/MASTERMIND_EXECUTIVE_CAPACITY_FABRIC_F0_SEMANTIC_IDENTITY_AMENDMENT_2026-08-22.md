@@ -26,7 +26,7 @@ identical provider evidence
 
 That violates F0's own acceptance law that unchanged source evidence should retain the same semantic identity across invocations. It would also make later Executive claim receipts look like capacity decisions changed when only unrelated repository history moved.
 
-**Ruling:** whole-repository Git revision is audit provenance, not provider-capacity semantics.
+**Ruling:** whole-repository Git revision is audit provenance, not provider-capacity semantics. The semantic producer identity instead binds the exact material implementation source used by the projection.
 
 ---
 
@@ -42,7 +42,8 @@ The canonical F0 top-level object is amended to:
     "repository": "mastermindx-market-intelligence/macro",
     "program": "shared-ai-provider-control",
     "implementation_id": "provider-capacity-v1",
-    "implementation_version": 1
+    "implementation_version": 1,
+    "material_source_digest": "<64-lower-hex>"
   },
   "audit": {
     "repository_commit": "<40-hex>"
@@ -57,10 +58,47 @@ No extra top-level keys are accepted by a strict consumer.
 
 Rules:
 
-- `producer.repository`, `producer.program`, `producer.implementation_id` and `producer.implementation_version` are semantic contract identity.
+- `producer.repository`, `producer.program`, `producer.implementation_id`, `producer.implementation_version` and `producer.material_source_digest` are semantic contract identity.
 - `audit.repository_commit` is the exact Git commit from which the producer executed. It is retained for forensic provenance and debugging but is **not** capacity semantics.
 - `audit` is closed in v1 to exactly `repository_commit`. Do not turn it into a dumping ground for hostnames, worktree paths, users, branch names, credentials or process details.
 - A normalization/contract behavior change that is not byte-compatible with the accepted v1 law requires an explicit reviewed `implementation_version` change or a new schema; silently changing semantics under the same implementation identity is forbidden.
+
+### 2.1 Material-source digest
+
+A hand-maintained integer version alone is insufficient. A material Provider Control helper could change without somebody remembering to bump `implementation_version`, leaving two behaviorally different producers with the same semantic producer identity.
+
+CF1 must therefore define one reviewed, static `MATERIAL_SOURCE_PATHS` allowlist in the provider-capacity implementation. It contains the new normalizer plus every first-party Macro code/config file whose bytes can change the meaning of the observations consumed by the v1 producer. The initial reviewed implementation is expected to include, when actually used by CF1, the narrow set such as:
+
+```text
+engine/provider_capacity.py
+engine/neuralweb/key_pool.py
+engine/metabolism/budget_gate.py
+engine/codex_provider.py
+engine/llm_auth.py
+engine/provider_health.py
+config/capability_manifest.yml
+```
+
+The final set is frozen by the CF1 implementation review from the actual import/data-flow census; do not include unused files merely to make the list look comprehensive, and do not omit a helper whose behavior affects a projected field.
+
+`material_source_digest` is lowercase SHA-256 over canonical JSON of the lexicographically sorted list:
+
+```json
+[
+  {"path":"engine/codex_provider.py","sha256":"<64-hex>"},
+  {"path":"engine/provider_capacity.py","sha256":"<64-hex>"}
+]
+```
+
+where every SHA is computed from the exact regular-file bytes the running producer uses. Paths are repository-relative reviewed constants. Missing, duplicate, symlinked, non-regular, unreadable or path-escaping material sources refuse/degrade the producer rather than being silently omitted. The digest is computed from bytes, not from Git blob lookup, so it still describes the executed implementation if the checkout is detached; `audit.repository_commit` separately records Git provenance when available under the reviewed producer contract.
+
+Tests must prove:
+
+- changing an unrelated repository file does not change `material_source_digest`;
+- changing any allowlisted material source does change it;
+- changing the allowlist changes it;
+- a missing or symlinked allowlisted source refuses/degrades deterministically;
+- the normalizer cannot caller-supply a different source list or digest.
 
 ---
 
@@ -82,10 +120,10 @@ Therefore:
 - a changed provider/capability/host identity changes the hash;
 - changed present/enabled/health/cooling/quota/outcome/degraded evidence changes the hash;
 - changed source observation timestamps that are part of those evidence objects change the hash;
-- changed producer contract identity/version changes the hash;
+- changed producer implementation version or material-source digest changes the hash;
 - a different wall-clock projection time alone does not change the hash.
 
-CF1 tests must include an explicit mutation proving that changing only `audit.repository_commit` leaves `snapshot_hash` unchanged while changing `producer.implementation_version` changes it.
+CF1 tests must explicitly prove that changing only `audit.repository_commit` leaves `snapshot_hash` unchanged while changing `producer.implementation_version` or `producer.material_source_digest` changes it.
 
 ---
 
@@ -125,11 +163,12 @@ In addition to the parent F0 CF1 packet, CF1 must prove:
 1. two invocations over unchanged semantic provider evidence but different wall-clock `generated_at` values produce the same `snapshot_hash`;
 2. changing only `audit.repository_commit` leaves the semantic hash unchanged;
 3. changing `producer.implementation_version` changes the semantic hash;
-4. changing a source observation timestamp that is semantic evidence changes the hash;
-5. a direct projection-time presence observation is not represented as older/newer than `generated_at` unless a real source timestamp exists;
-6. stale source evidence stays stale after projection and is never refreshed by serialization;
-7. the machine/operator consumer displays or exposes both `snapshot_hash` and `generated_at` so later freshness policy has an auditable input;
-8. no Git path, hostname, username, credential, token, cookie, provider-home path or private process identity appears in `audit` or any other public field.
+4. changing any allowlisted material source changes `producer.material_source_digest` and therefore `snapshot_hash`;
+5. changing a source observation timestamp that is semantic evidence changes the hash;
+6. a direct projection-time presence observation is not represented as older/newer than `generated_at` unless a real source timestamp exists;
+7. stale source evidence stays stale after projection and is never refreshed by serialization;
+8. the machine/operator consumer displays or exposes `snapshot_hash`, `generated_at`, producer implementation identity/version/material-source digest and audit repository commit so later freshness/provenance policy has auditable inputs;
+9. no local checkout path, hostname, username, credential, token, cookie, provider-home path or private process identity appears in `audit` or any other public field.
 
 ---
 
@@ -155,7 +194,7 @@ Hard rules:
 - do not add a long-lived capacity daemon, database, queue or second provider-control service just to make the bridge convenient unless a separate architecture ruling proves it necessary;
 - acquisition timeout/unavailability yields unavailable/unknown capacity optimization, never permission to read secret/raw provider state as a fallback;
 - the producer remains the authority for normalization/evidence classification; Executive validates the strict returned contract but does not reinterpret source rows;
-- the acquisition receipt used by CF2-F must bind at least the exact `snapshot_hash`, exact `generated_at`, producer contract identity/version, and non-semantic `audit.repository_commit` used for that historical decision;
+- the acquisition receipt used by CF2-F must bind at least the exact `snapshot_hash`, exact `generated_at`, producer implementation identity/version/material-source digest, and non-semantic `audit.repository_commit` used for that historical decision;
 - if the acquisition principal/host cannot lawfully observe a configured slot, that slot is unavailable to that acquisition path; do not copy provider credentials across principals/hosts to make it visible.
 
 This keeps CF1 independently useful and no-write while preventing CF2 from quietly becoming a raw cross-repo provider-state reader.
