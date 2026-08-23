@@ -12762,15 +12762,24 @@ jobs:
       - scripts/research/dislocation_p0_a1r_semantic_run.py
       - scripts/research/dislocation_p0_a1r_source_run.py
       - scripts/research/dislocation_p0_s1f_measurement.py
+      - scripts/research/dislocation_p0_s1f_model_transport.py
       - scripts/research/dislocation_p0_s1f_owner_run.py
+      - scripts/research/dislocation_p0_s1f_runner.py
       - scripts/research/dislocation_p0_s1f_selection.py
+      - scripts/research/dislocation_p0_s1f_semantic_contract.py
+      - scripts/research/dislocation_p0_s1f_shadow_triage.py
       - scripts/research/dislocation_p0_s1f_triage.py
       - scripts/research/dislocation_p0_source_adapter.py
       - scripts/research/dislocation_p0_source_materializer.py
       - collectors/edgar_forensics.py
+      - collectors/fundamental_forensics_acquisition.py
+      - collectors/fundamental_forensics_companyfacts.py
       - collectors/sec_document_spine.py
+      - contracts/fundamental_forensics_broad_sec_issuer_manifest.schema.json
+      - engine/fundamental_forensics/broad_sec_store.py
       - engine/fundamental_forensics/models.py
       - engine/fundamental_forensics/sec_document_spine.py
+      - engine/research_vault/r2_store.py
       - lib/__init__.py
       - lib/config.py
       - tests/test_dislocation_p0_a1_blind_harvest.py
@@ -12782,7 +12791,9 @@ jobs:
       - tests/test_dislocation_p0_source_adapter.py
       - tests/test_dislocation_p0_source_materializer.py
       - tests/test_dislocation_p0_s1f.py
+      - tests/test_dislocation_p0_s1f_model_transport.py
       - tests/test_dislocation_p0_s1f_owner_run.py
+      - tests/test_dislocation_p0_s1f_shadow_triage.py
       - research/dislocation_intelligence/**
     timeout-minutes: 8
     runs-on: ubuntu-latest
@@ -12808,5 +12819,7 @@ jobs:
           tests/test_dislocation_p0_source_adapter.py
           tests/test_dislocation_p0_source_materializer.py
           tests/test_dislocation_p0_s1f.py
+          tests/test_dislocation_p0_s1f_model_transport.py
           tests/test_dislocation_p0_s1f_owner_run.py
+          tests/test_dislocation_p0_s1f_shadow_triage.py
           -q
