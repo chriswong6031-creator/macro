@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-23T13:24:00.454657+00:00",
-  "count": 1688,
+  "generated_at": "2026-08-23T14:12:54.872784+00:00",
+  "count": 1691,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -1414,6 +1414,66 @@
       "tickers": [],
       "top_pick": false,
       "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-xfsqxcsi8x9-84fa73",
+      "title": "Asian bonds",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:16:16Z",
+      "summary_points": [
+        "**Asian Credit Yield Advantage**: Asia IG credit yields >5% (1ppt+ vs US Treasuries), HY yields >7%—best global fixed-income performer; resilient to Middle East tensions and US policy headwinds despite volatility.",
+        "**Asia HY Credit Fundamentals**: Diversified index (no single market >20%), avg yield 7.4%, healthy rating migration, low default rate; key risk: Middle East conflict impacting oil-sensitive sectors/energy importers.",
+        "**China Recovery Catalyst**: Strong China rebound (tariff rollbacks), mainland/HK property recovery (housing sales support), dovish Fed action—compressing spreads and driving upside.",
+        "**Oil Price Downside Risk**: Sustained high oil prices compress corporate margins, raise USD funding costs for Chinese property, and drive restrictive rates—targeting 175bps spread widening."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-zp5chclsuq1-4f0707",
+      "title": "Chinese government bonds",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:16:15Z",
+      "summary_points": [
+        "**CGB Yield Outlook**: 10-year yield projected to decline to 1.65% by Dec-26, driven by weak domestic demand (July data) and PBoC liquidity operations, with limited near-term impact from policy shifts.",
+        "**PBoC Policy Risk**: Neutral stance maintained; PBoC sustains supportive measures but no imminent 7-day reverse repo rate cuts, constraining yield decline scope.",
+        "**Credit Risk Framework**: UBS categorizes CGBs into Very Low (<2% non-payment), Medium (2-20%), and High (≥20%) risk flags, directly reflecting default probability for fundamental evaluation.",
+        "**Sell Recommendation Threshold**: Triggered when adverse outcome risk (e.g., negative yield to maturity, imminent call below market) exceeds current valuation, signaling expected negative total returns.",
+        "**Risk Threshold Clarity**: BBB- marks the critical boundary between Investment Grade (AAA-BBB-) and Non-Investment Grade (BB+), directly dictating portfolio risk allocation and stress testing."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-qf6aomzb01s-cb2d47",
+      "title": "Investment grade",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:16:14Z",
+      "summary_points": [
+        "**IG Yield Attractiveness**: 5.1% USD/3.7% EUR yields with 50-70bps rise since year start; tight credit spreads amid strong demand for high-quality credit and solid fundamentals.",
+        "**Policy Rate Expectations**: Central banks cautious on hikes (40-60bps priced), but softening rhetoric in H2 as inflation trends lower; robust IG demand fueled by 34% YoY issuance growth (AI capex funding).",
+        "**Geopolitical Oil Risk**: Strait of Hormuz disruptions or infrastructure destruction could spike oil prices, forcing central banks to hike rates despite economic weakness."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },

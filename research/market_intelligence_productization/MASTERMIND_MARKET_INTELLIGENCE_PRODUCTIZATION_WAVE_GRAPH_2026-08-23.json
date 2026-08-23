@@ -1,0 +1,169 @@
+{
+  "schema": "mastermind.market_intelligence_productization.wave_graph.v0",
+  "generated_at": "2026-08-23",
+  "pins": {
+    "skillpack": "mastermindx-market-intelligence/Mastermind@db0bac5fe3f72348262d42c8bd26b836bda9f61d",
+    "macro": "mastermindx-market-intelligence/macro@fb2375441f21b94201edc4ed6ac2c40f67274cde",
+    "terminal": "mastermindx-market-intelligence/mastermind-terminal@449439c690e93ba968185499af4041c2f512b659"
+  },
+  "program_owners": {
+    "product": "WS:MARKET-OS",
+    "semantic_integration": "WS:ALPHA-INTELLIGENCE-INTEGRATION"
+  },
+  "nodes": [
+    {
+      "id": "MO-A1A-RECORDS",
+      "state": "OPEN_PR_6310",
+      "type": "gate",
+      "owner": "WS:MARKET-OS"
+    },
+    {
+      "id": "ALPHA-K1",
+      "state": "READY_TO_COMMISSION",
+      "type": "contract",
+      "owner": "WS:ALPHA-INTELLIGENCE-INTEGRATION"
+    },
+    {
+      "id": "MARKET-OS-A1B",
+      "state": "GATED",
+      "type": "product",
+      "owner": "WS:MARKET-OS"
+    },
+    {
+      "id": "MARKET-OS-B1A",
+      "state": "PREPARED_GATED",
+      "type": "product",
+      "owner": "WS:MARKET-OS"
+    },
+    {
+      "id": "MARKET-OS-B1B",
+      "state": "TODO",
+      "type": "product",
+      "owner": "WS:MARKET-OS"
+    },
+    {
+      "id": "ALPHA-K2",
+      "state": "TODO",
+      "type": "contract",
+      "owner": "WS:ALPHA-INTELLIGENCE-INTEGRATION"
+    },
+    {
+      "id": "ALPHA-K3",
+      "state": "TODO",
+      "type": "contract",
+      "owner": "WS:ALPHA-INTELLIGENCE-INTEGRATION"
+    },
+    {
+      "id": "ALPHA-K5",
+      "state": "TODO",
+      "type": "product_contract",
+      "owner": "WS:ALPHA-INTELLIGENCE-INTEGRATION"
+    },
+    {
+      "id": "MARKET-OS-B2",
+      "state": "TODO",
+      "type": "product",
+      "owner": "WS:MARKET-OS"
+    },
+    {
+      "id": "MARKET-OS-B3",
+      "state": "TODO",
+      "type": "product",
+      "owner": "WS:MARKET-OS"
+    },
+    {
+      "id": "MARKET-OS-C",
+      "state": "TODO",
+      "type": "product",
+      "owner": "WS:MARKET-OS"
+    },
+    {
+      "id": "MARKET-OS-D",
+      "state": "TODO",
+      "type": "product",
+      "owner": "WS:MARKET-OS"
+    },
+    {
+      "id": "MARKET-OS-E",
+      "state": "TODO",
+      "type": "product",
+      "owner": "WS:MARKET-OS"
+    }
+  ],
+  "edges": [
+    {
+      "from": "MO-A1A-RECORDS",
+      "to": "MARKET-OS-A1B"
+    },
+    {
+      "from": "MO-A1A-RECORDS",
+      "to": "MARKET-OS-B1A"
+    },
+    {
+      "from": "ALPHA-K1",
+      "to": "MARKET-OS-B1A"
+    },
+    {
+      "from": "MARKET-OS-B1A",
+      "to": "MARKET-OS-B1B"
+    },
+    {
+      "from": "ALPHA-K1",
+      "to": "ALPHA-K2"
+    },
+    {
+      "from": "ALPHA-K1",
+      "to": "ALPHA-K3"
+    },
+    {
+      "from": "ALPHA-K2",
+      "to": "ALPHA-K5"
+    },
+    {
+      "from": "ALPHA-K3",
+      "to": "ALPHA-K5"
+    },
+    {
+      "from": "MARKET-OS-B1A",
+      "to": "MARKET-OS-B2"
+    },
+    {
+      "from": "MARKET-OS-B1B",
+      "to": "MARKET-OS-B2"
+    },
+    {
+      "from": "MARKET-OS-B2",
+      "to": "MARKET-OS-B3"
+    },
+    {
+      "from": "ALPHA-K5",
+      "to": "MARKET-OS-B3"
+    },
+    {
+      "from": "MARKET-OS-B3",
+      "to": "MARKET-OS-C"
+    },
+    {
+      "from": "MARKET-OS-A1B",
+      "to": "MARKET-OS-D"
+    },
+    {
+      "from": "MARKET-OS-B2",
+      "to": "MARKET-OS-D"
+    },
+    {
+      "from": "MARKET-OS-C",
+      "to": "MARKET-OS-E"
+    },
+    {
+      "from": "MARKET-OS-D",
+      "to": "MARKET-OS-E"
+    }
+  ],
+  "parallelism": [
+    "ALPHA-K1 may run while #6310 concludes.",
+    "MARKET-OS-A1B and MARKET-OS-B1A may run in parallel only after #6310 and fresh path-collision proof.",
+    "ALPHA-K2/K3 may proceed after K1 without blocking B1A/B1B.",
+    "Specialist owner programs continue independently."
+  ]
+}
