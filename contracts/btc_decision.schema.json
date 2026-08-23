@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/btc_decision.schema.json",
+  "title": "Bitcoin Vector canonical decision",
+  "type": "object",
+  "required": ["schema", "status", "as_of", "authority"],
+  "properties": {
+    "schema": {"const": "btc.decision/v1"},
+    "status": {"enum": ["ok", "unavailable", "conflict"]},
+    "as_of": {"type": ["string", "null"], "format": "date"},
+    "generated_at": {"type": ["string", "null"]},
+    "authority": {
+      "type": "object",
+      "required": ["program", "source", "allocation_variant"],
+      "properties": {
+        "program": {"const": "crypto-intelligence"},
+        "source": {"const": "bitcoin_vector"},
+        "allocation_variant": {"const": "optimal"}
+      },
+      "additionalProperties": false
+    },
+    "error": {
+      "type": "object",
+      "required": ["code", "detail"],
+      "properties": {
+        "code": {"type": "string", "minLength": 1},
+        "detail": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "raw_model": {"type": "object"},
+    "override": {"type": "object"},
+    "final": {
+      "type": "object",
+      "properties": {
+        "exposure_pct": {"type": "integer", "minimum": 0, "maximum": 100},
+        "previous_exposure_pct": {"type": ["integer", "null"], "minimum": 0, "maximum": 100},
+        "change_pp": {"type": ["number", "null"]},
+        "action_code": {"enum": ["set", "increase", "reduce", "hold", "stay_out"]},
+        "action_en": {"type": "string"},
+        "action_zh": {"type": "string"},
+        "tone": {"enum": ["bull", "bear", "neutral"]},
+        "basis_en": {"type": "string"},
+        "basis_zh": {"type": "string"}
+      },
+      "additionalProperties": true
+    },
+    "advisory": {"type": "object"},
+    "receipts": {"type": "object"},
+    "integrity": {"type": "object"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "ok"}}, "required": ["status"]},
+      "then": {"required": ["raw_model", "override", "final", "advisory", "receipts", "integrity"]}
+    },
+    {
+      "if": {"properties": {"status": {"enum": ["unavailable", "conflict"]}}, "required": ["status"]},
+      "then": {"required": ["error"]}
+    }
+  ],
+  "additionalProperties": true
+}
