@@ -30,6 +30,11 @@ Checks:
   (k) contrast matrix — asserts the committed lane_crops_b/CONTRAST_TABLE.md
       + lane_crops_b/contrast_audit.json artifacts exist and report 0 AA
       failures (from committed artifact; NOT rerun here — browser-based gate).
+  (l) candidate-owned heatmap readable ink (B2-03) — asserts the committed
+      heatmap_ink_audit.json artifact exists, reports a NONZERO census, and
+      reports 0 cells under the 4.5:1 floor and 0 cells excluded as
+      unmeasurable (from committed artifact; NOT rerun here — browser-based
+      gate; reproduce with `<playwright-python> heatmap_ink_audit.py`).
 
 Checks (f)-(i) shell out to Playwright-based sibling scripts in this
 directory and therefore need a Playwright-enabled Python interpreter to run
@@ -72,6 +77,7 @@ LANE_CROPS_B = BUILD_DIR / "lane_crops_b"
 ZOOM_SWEEP_JSON = LANE_CROPS_B / "zoom_sweep.json"
 CONTRAST_TABLE_MD = LANE_CROPS_B / "CONTRAST_TABLE.md"
 CONTRAST_AUDIT_JSON = LANE_CROPS_B / "contrast_audit.json"
+HEATMAP_INK_JSON = BUILD_DIR / "heatmap_ink_audit.json"
 
 SIZE_LIMIT = 6 * 1024 * 1024
 
@@ -220,9 +226,10 @@ def main() -> int:
         [sys.executable, str(LANG_PROBE_SCRIPT)],
     )
 
-    # ── (j)/(k) committed browser-gate artifacts (not rerun here) ────────
+    # ── (j)/(k)/(l) committed browser-gate artifacts (not rerun here) ────
     check_committed_zoom_sweep()
     check_committed_contrast_audit()
+    check_committed_heatmap_ink_audit()
 
     return print_summary()
 
@@ -304,6 +311,32 @@ def check_committed_contrast_audit() -> None:
           f"contrast_audit.json recomputes {len(json_fails)} failing of "
           f"{len(scored)} reference-authored cells "
           f"(reproduce with `<playwright-python> contrast_audit.py`)")
+
+
+def check_committed_heatmap_ink_audit() -> None:
+    if not HEATMAP_INK_JSON.exists():
+        check("(l) candidate-owned heatmap readable ink (from committed artifact)", False,
+              f"missing {HEATMAP_INK_JSON}")
+        return
+    audit = json.loads(HEATMAP_INK_JSON.read_text(encoding="utf-8"))
+    if audit.get("error"):
+        check("(l) candidate-owned heatmap readable ink (from committed artifact)", False,
+              f"audit reported an error: {audit['error']}")
+        return
+    cells = audit.get("cells", [])
+    census = len(cells)
+    scored = [c for c in cells if c.get("ratio") is not None]
+    fails = [c for c in scored if not c.get("pass")]
+    suspects = [c for c in scored if c.get("suspect_parse")]
+    # B2-03's whole point: this population may never be silently excluded as
+    # "unmeasurable" — every cell in the artifact must carry a real ratio.
+    unscored = [c for c in cells if c.get("ratio") is None]
+    ok = census > 0 and not fails and not suspects and not unscored
+    check("(l) candidate-owned heatmap readable ink (from committed artifact)", ok,
+          f"{census} .hm-t/.hm-sechd leaves measured, {len(fails)} sub-4.5:1 failures, "
+          f"{len(suspects)} parser-suspect, {len(unscored)} excluded-as-unmeasurable "
+          f"(forbidden by COMMISSION.md B2-03; must be 0) "
+          f"(reproduce with `<playwright-python> heatmap_ink_audit.py`)")
 
 
 def print_summary() -> int:
