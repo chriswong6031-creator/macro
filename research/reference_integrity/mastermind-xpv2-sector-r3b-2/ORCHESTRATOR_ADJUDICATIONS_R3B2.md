@@ -74,4 +74,20 @@ audit trail. (4) Handoffs: Lane B inlines "Strength 76 / 强度 76" (the label L
 Lane D's B2-02 defect is CONFIRMED reproduced (the &#128202; entity visible in Lane A's 09-*
 crops).
 
-(§3+ appended as further lane returns are adjudicated.)
+## §3 Lane C return — adjudicated ACCEPTED (commit 33393eed1f17)
+
+B2-03 landed exactly as commissioned: the 10 CSS bin classes are an enumerable field, so
+the ink rule is a baked deterministic two-ink CSS rule keyed on [data-theme]/[data-lang]
+(money.html:355-394) — with the material discovery that LIGHT theme's ink crossover is
+language-dependent (EN needs dark ink on b2, ZH on b2d, because the two light anchor hues
+do not share a luminance crossover). The audit caught and fixed a real regression the fix
+packet never named: `.hm-t > .pc`'s decorative opacity:.92 blended white ink under the
+floor on two light bins (4.70→4.24, 4.92→4.45) — removal upheld as measured-necessary and
+minimal (font-weight still separates .sym/.pc). Census 504 leaves (440 bin-tile + 64
+sector-header) × dark/light × EN/ZH: 0 failures, 0 excluded-as-unmeasurable, 0 substrate
+fallbacks — every bin reaches 4.5:1 with one of the two inks, so the substrate-plate path
+stayed dormant. Blocking check (l) wired committed-artifact style; verify 15/17 (only
+(j)/(k) awaiting Lane E); deterministic ×2 at 6a067faf14dc; R3A 59 passed; bin ordering
+visually unchanged (before/after crop pair); sc_flows untouched.
+
+(§4+ appended as further lane returns are adjudicated.)
