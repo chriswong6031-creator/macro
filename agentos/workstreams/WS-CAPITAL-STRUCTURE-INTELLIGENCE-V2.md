@@ -51,6 +51,7 @@ discoveries:
   - DSC:CS-INSTRUMENT-AND-LIFECYCLE-COMPILERS-NOT-NIGHTLY
   - DSC:CS-EVENT-EDGES-NEAR-ZERO
   - DSC:CS-V2-W1B-NATURAL-CHAIN-PROVEN-LIVE
+  - DSC:CS-V2-W2A-NATURAL-CHAIN-PROVEN-LIVE
 do_not_redo:
   - "Reopen PR #5792 ingestion freeze (AccessDenied / zero-progress health) without new evidence"
   - "Solve concurrent collect with an et_gate mutex (DEC:COLLECT-MUTEX-CANNOT-LIVE-IN-ET-GATE)"
@@ -74,9 +75,7 @@ landmines:
   - "Candidate-only classify_bundle_against_published misses deselected current members"
   - "Subset-hashing v2 manifest_id fights validate_manifest_ledger one-id-one-body"
   - "Concurrent daily.yml collect is still possible; CS must be idempotent"
-  - "W2A code separates compiler age from information horizon, but it is not proven live until the first natural post-merge collector -> Capital Structure chain"
   - "Share-count v2 and Company Facts are default-off / unprovisioned — not live"
-  - "W1B merge is not its production receipt: wait for the first natural scheduled collector -> Capital Structure chain on a descendant containing #6044; never manufacture that proof with a duplicate daily dispatch"
 artifacts:
   - research/CAPITAL_STRUCTURE_INTELLIGENCE_V2_MASTERPLAN_2026-08-18.md
   - research/CAPITAL_STRUCTURE_W2A_QUEUE_CENSUS_2026-08-21.md
@@ -87,10 +86,11 @@ artifacts:
   - agentos/handoffs/CAPITAL-STRUCTURE-INTELLIGENCE-V2-2026-08-20-w1b-sol-acceptance-reconciliation.md
   - agentos/handoffs/CAPITAL-STRUCTURE-INTELLIGENCE-V2-2026-08-21.md
   - agentos/handoffs/CAPITAL-STRUCTURE-INTELLIGENCE-V2-2026-08-21-w2a.md
+  - agentos/handoffs/CAPITAL-STRUCTURE-INTELLIGENCE-V2-2026-08-23-w2a-closeout.md
 next_action: >
-  Independent Sol review is PASS. Finish attributable CI, merge, then use the
-  first natural scheduled collector -> Capital Structure chain for production
-  proof. Do not dispatch a duplicate daily and do not start W3/W4.
+  W2A is done and proven on the first natural scheduled collector -> Capital
+  Structure chain after #6220. Pause here. W3 and W4 remain unstarted and need
+  a separately authorized commission.
 waves:
   - id: W0
     title: Architecture freeze, estate audit, competitor/regulatory refresh
@@ -125,13 +125,14 @@ waves:
       96637756516) publishing generation 3ba28993b741.
       DSC:CS-V2-W1B-NATURAL-CHAIN-PROVEN-LIVE. Do not start W2 here.
   - id: W2
-    title: LIVE_TAIL / RECOVERY / HISTORICAL_BACKFILL plus horizon health
-    status: in_progress
+    title: W2A — LIVE_TAIL / RECOVERY / HISTORICAL_BACKFILL plus horizon health
+    status: done
     depends_on: [W1B]
     next_action: >
-      W2A implementation has independent Sol PASS. After attributable CI and
-      merge, wait for the first natural scheduled collector -> Capital Structure
-      chain and record exact class, horizon, W1, and twin-hash proof.
+      Done. #6220 merged as 7ea3dc5b421d. Natural run 32603557988
+      (collect 97105275976, capital_structure 97119200594) published generation
+      73d9810fe3f9 with exact class, horizon, W1, and twin-hash proof in
+      DSC:CS-V2-W2A-NATURAL-CHAIN-PROVEN-LIVE. Do not start W3 or W4 here.
   - id: W3
     title: Capital Changes Desk and issuer Capital Twin UX on honest states
     status: todo
@@ -157,5 +158,5 @@ waves:
 Capital Structure V2 recovers the 2026-08-01 product thesis after PR #5792
 fixed ingestion. Destination is a PIT issuer capital twin. W0 research and
 this AMEND were executed by Cursor Grok 4.6; COO Fable remains the program
-owner. W1/W1A/W1B are PROVEN_LIVE. W2A is in progress and cannot close before
-its first natural post-merge collector -> Capital Structure production receipt.
+owner. W1/W1A/W1B are PROVEN_LIVE. W2A is DONE and PROVEN_LIVE. W3 and W4
+remain unstarted.
