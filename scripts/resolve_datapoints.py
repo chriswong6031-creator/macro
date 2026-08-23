@@ -15,9 +15,8 @@ import sys
 from typing import Any, TextIO
 
 
-ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 
 from engine.intelligence_workspace.contracts import (  # noqa: E402
     CONSUMER_USES,
