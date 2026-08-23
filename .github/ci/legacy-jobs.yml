@@ -1778,6 +1778,7 @@ jobs:
       - "ops/launchd/com.mastermind.liveflow.plist"
       - "ops/launchd/com.mastermind.optionssparseselector.plist"
       - "ops/launchd/com.mastermind.prophetmarks.plist"
+      - "ops/launchd/run_with_env.sh"
       - "ops/launchd/run_options_sparse_selector_loop.sh"
       - "ops/launchd/run_options_sparse_selector_verified.py"
       - "ops/launchd/run_prophet_marks_loop.sh"

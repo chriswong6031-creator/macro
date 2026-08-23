@@ -1165,8 +1165,58 @@ def test_prophet_marks_runner_uses_the_checkout_that_owns_it():
 
     plist_path = repo / "ops/launchd/com.mastermind.prophetmarks.plist"
     plist_text = plist_path.read_text(encoding="utf-8")
+    payload = plistlib.loads(plist_path.read_bytes())
+    runtime_root = "/Users/chriswong/prophet-marks-runtime"
+    pinned_env = "/Users/chriswong/flow-ops-wt/.env"
+
     assert "/Users/chriswong/Documents/Cluade/Macro Dashboard" not in plist_text
-    assert plist_text.count("<string>/Users/chriswong/flow-ops-wt</string>") == 2
+    assert payload["ProgramArguments"] == [
+        f"{runtime_root}/ops/launchd/run_with_env.sh",
+        pinned_env,
+        "/usr/bin/env",
+        f"PYTHONPATH={runtime_root}",
+        "/bin/sh",
+        f"{runtime_root}/ops/launchd/run_prophet_marks_loop.sh",
+    ]
+    assert payload["WorkingDirectory"] == runtime_root
+    assert "EnvironmentVariables" not in payload
+    assert all(
+        not argument.startswith("/Users/chriswong/flow-ops-wt/")
+        for index, argument in enumerate(payload["ProgramArguments"])
+        if index != 1
+    )
+
+
+def test_prophet_marks_runtime_pythonpath_wins_after_sourcing_pinned_env(tmp_path):
+    """A stale env-file import path cannot override the disposable runtime."""
+    repo = Path(__file__).resolve().parents[1]
+    wrapper = repo / "ops/launchd/run_with_env.sh"
+    env_file = tmp_path / "marks.env"
+    env_file.write_text(
+        "PYTHONPATH=/Users/chriswong/flow-ops-wt\n",
+        encoding="utf-8",
+    )
+    runtime_root = "/Users/chriswong/prophet-marks-runtime"
+
+    completed = subprocess.run(
+        [
+            "/bin/sh",
+            str(wrapper),
+            str(env_file),
+            "/usr/bin/env",
+            f"PYTHONPATH={runtime_root}",
+            "/bin/sh",
+            "-c",
+            'printf "%s" "$PYTHONPATH"',
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 0
+    assert completed.stdout == runtime_root
+    assert completed.stderr == ""
 
 
 def test_prophet_marks_launchd_cadence_is_host_timezone_neutral():
