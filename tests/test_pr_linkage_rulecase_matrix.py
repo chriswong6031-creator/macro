@@ -41,7 +41,8 @@ def case(rule):
     elif rule == "R011": body(o, Authority="Authority: invalid")
     elif rule == "R012": body(o, Completion="Completion: invalid")
     elif rule == "R020": body(o, Authority="Authority: runtime")
-    elif rule == "R021": body(o, Authority="Authority: runtime"); o["authoring_epoch"]["relation"] = "PRE_CUTOVER"
+    elif rule == "R021":
+        body(o, Authority="Authority: runtime"); o["authoring_epoch"].update(relation="PRE_CUTOVER", first_strict_pr_number=124, legacy_open_pr_numbers=[123])
     elif rule == "R022": body(o, Authority="Authority: runtime"); o["authoring_epoch"]["state"] = "UNAVAILABLE"; o["authoring_epoch"]["relation"] = "UNKNOWN"; o["authoring_epoch"]["diagnostics"] = ["NO_RECEIPT"]
     elif rule == "R026": o["pull_request"]["title"] = "MAS-99"; o["linear"]["issues"].append({"id":"MAS-99","target_role":"UNKNOWN","project_id":None,"workstream_key":None,"issue_type":"UNKNOWN","stop_law":"UNKNOWN"})
     elif rule == "R027": o["linear"]["issues"][0]["target_role"] = "SECONDARY"

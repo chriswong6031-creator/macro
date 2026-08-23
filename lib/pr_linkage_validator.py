@@ -251,11 +251,15 @@ def _validate_top(observation: dict[str, Any], manifest: dict[str, Any]) -> None
     if observation["schema"] != OBS_SCHEMA: raise ValidationError("TYPE_MISMATCH")
     if observation["ruleset_id"] != manifest["ruleset_id"]: raise ValidationError("UNSUPPORTED_RULESET_ID")
     if observation["ruleset_digest"] != digest(manifest): raise ValidationError("RULESET_DIGEST_MISMATCH")
-    if not isinstance(observation.get("repository"), dict) or set(observation["repository"]) != {"name"} or not isinstance(observation["repository"]["name"], str):
+    atom_re = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
+    sha_re = re.compile(r"^[0-9a-f]{40}$")
+    digest_re = re.compile(r"^[0-9a-f]{64}$")
+    if not isinstance(observation.get("repository"), dict) or set(observation["repository"]) != {"name"} or not isinstance(observation["repository"]["name"], str) or not atom_re.fullmatch(observation["repository"]["name"]):
         raise ValidationError("TYPE_MISMATCH")
     pr = observation.get("pull_request")
-    if not isinstance(pr, dict) or set(pr) != {"number","title","body","branch","base_ref","head_ref"} or not isinstance(pr.get("number"), int) or pr["number"] < 1 or not all(isinstance(pr.get(k), str) for k in ("title","body","branch","base_ref","head_ref")):
+    if not isinstance(pr, dict) or set(pr) != {"number","title","body","branch","base_ref","head_ref"} or not isinstance(pr.get("number"), int) or pr["number"] < 1 or not all(isinstance(pr.get(k), str) for k in ("title","body")) or not all(isinstance(pr.get(k), str) and pr[k] and pr[k].isascii() for k in ("branch","base_ref","head_ref")):
         raise ValidationError("TYPE_MISMATCH")
+    if not isinstance(observation.get("ruleset_digest"), str) or not digest_re.fullmatch(observation["ruleset_digest"]): raise ValidationError("TYPE_MISMATCH")
     for name in ("authoring_epoch","changed_paths","agentos","linear","path_ownership","native_linkage"):
         snap = observation[name]
         if not isinstance(snap, dict) or snap.get("state") not in STATE or not isinstance(snap.get("diagnostics"), list) or any(not isinstance(x, str) for x in snap.get("diagnostics", [])) or snap["diagnostics"] != sorted(set(snap["diagnostics"])):
@@ -266,6 +270,13 @@ def _validate_top(observation: dict[str, Any], manifest: dict[str, Any]) -> None
         raise ValidationError("INVALID_SNAPSHOT_STATE")
     if epoch["state"] == "PRESENT" and (epoch["relation"] == "UNKNOWN" or epoch.get("receipt_ruleset_digest") != observation["ruleset_digest"]):
         raise ValidationError("EPOCH_RECEIPT_RULESET_MISMATCH")
+    if epoch["state"] == "PRESENT":
+        if not isinstance(epoch.get("default_ref"), str) or not isinstance(epoch.get("cutover_merge_sha"), str) or not sha_re.fullmatch(epoch["cutover_merge_sha"]) or not isinstance(epoch.get("first_strict_pr_number"), int) or not epoch.get("template_blobs"):
+            raise ValidationError("INVALID_SNAPSHOT_STATE")
+        if epoch["legacy_open_pr_numbers"] != sorted(set(epoch["legacy_open_pr_numbers"])) or any(not isinstance(x, int) or x < 1 for x in epoch["legacy_open_pr_numbers"]): raise ValidationError("INVALID_SNAPSHOT_STATE")
+        if epoch["relation"] == "PRE_CUTOVER" and (pr["number"] not in epoch["legacy_open_pr_numbers"] or pr["number"] >= epoch["first_strict_pr_number"]): raise ValidationError("INVALID_SNAPSHOT_STATE")
+        if epoch["relation"] == "AT_OR_POST_CUTOVER" and (pr["number"] < epoch["first_strict_pr_number"] or pr["number"] in epoch["legacy_open_pr_numbers"]): raise ValidationError("INVALID_SNAPSHOT_STATE")
+        if epoch.get("cutover_receipt_sha256") != cutover_digest(observation): raise ValidationError("INVALID_SNAPSHOT_STATE")
     payloads = {"changed_paths":"paths", "agentos":"workstreams", "linear":"issues", "path_ownership":"resolutions", "native_linkage":"relationships"}
     for name, payload in payloads.items():
         snap = observation[name]
@@ -275,6 +286,10 @@ def _validate_top(observation: dict[str, Any], manifest: dict[str, Any]) -> None
             raise ValidationError("INVALID_SNAPSHOT_STATE")
     if len(observation["changed_paths"]["paths"]) > manifest["limits"]["changed_paths"]:
         raise ValidationError("RESOURCE_LIMIT:changed_paths")
+    for name, base in (("agentos", "BASE"), ("path_ownership", "BASE_POLICY")):
+        if observation[name].get("basis") != base: raise ValidationError("INVALID_SNAPSHOT_STATE")
+    cp = observation["changed_paths"]["paths"]
+    if cp != sorted(cp, key=lambda r:(r.get("path", ""), r.get("change_type", ""), r.get("old_path") or "")) or len({(r.get("path"),r.get("change_type"),r.get("old_path")) for r in cp}) != len(cp): raise ValidationError("INVALID_SNAPSHOT_STATE")
     native = observation["native_linkage"]
     if not isinstance(native.get("pagination_complete"), bool):
         raise ValidationError("INVALID_SNAPSHOT_STATE")
@@ -294,6 +309,14 @@ def _validate_top(observation: dict[str, Any], manifest: dict[str, Any]) -> None
     receipt_keys = {"repository","pr_number","base_sha","head_sha","source_sha","body_sha256","observation_sha256","cutover_receipt_sha256","ruleset_digest","snapshot_digests","producer"}
     if not isinstance(receipt, dict) or set(receipt) != receipt_keys:
         raise ValidationError("TYPE_MISMATCH")
+    if receipt.get("repository") != observation["repository"]["name"] or receipt.get("pr_number") != pr["number"] or any(not isinstance(receipt.get(k), str) or not sha_re.fullmatch(receipt[k]) for k in ("base_sha","head_sha","source_sha")) or any(not isinstance(receipt.get(k), str) or not digest_re.fullmatch(receipt[k]) for k in ("body_sha256","observation_sha256","ruleset_digest")):
+        raise ValidationError("TYPE_MISMATCH")
+
+
+def cutover_digest(observation: dict[str, Any]) -> str:
+    epoch = observation["authoring_epoch"]
+    projection = {"repository": observation["repository"]["name"], "default_ref": epoch.get("default_ref"), "cutover_merge_sha": epoch.get("cutover_merge_sha"), "template_blobs": epoch.get("template_blobs"), "first_strict_pr_number": epoch.get("first_strict_pr_number"), "legacy_open_pr_numbers": epoch.get("legacy_open_pr_numbers"), "receipt_ruleset_digest": epoch.get("receipt_ruleset_digest")}
+    return digest(projection)
 
 
 def receipt_projection(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, str | None]:
@@ -321,8 +344,10 @@ def receipt_projection(observation: dict[str, Any], manifest: dict[str, Any]) ->
 def finalize_receipt(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, Any]:
     """Return a receipt-grounded deep copy for fixtures/adapters; the core remains pure."""
     out = json.loads(canonical_json(observation))
-    expected = receipt_projection(out, manifest)
     receipt = out["receipt"]
+    if out["authoring_epoch"].get("state") == "PRESENT":
+        out["authoring_epoch"]["cutover_receipt_sha256"] = cutover_digest(out)
+    expected = receipt_projection(out, manifest)
     receipt["repository"] = out["repository"]["name"]
     receipt["pr_number"] = out["pull_request"]["number"]
     receipt["body_sha256"] = expected["BODY"]
