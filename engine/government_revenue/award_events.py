@@ -154,6 +154,15 @@ _EXTENSION_CONTEXT_RE = re.compile(
     r"\b(?:period(?:\s+of\s+performance)?|performance|pop|contract\s+term)\b", re.I
 )
 _CORRECTION_RE = re.compile(r"\b(?:correct(?:ion|ed|s|ing)?|administrative\s+error)\b", re.I)
+# D5 (research/defense_intelligence/DEFENSE_D5_PROGRAM_GRAPH_ARCHITECTURE_FREEZE.md
+# SS10): a display-tier-only annotation on third-party award-description
+# prose that names a supplier relationship. Never a law -- it can at most
+# annotate an event; it never creates a D5 role_assertion (freeze SS3.1's
+# prose-vs-role discriminator, T4). The trigger regex is implementation-
+# chosen; no correctness property depends on its exact wording.
+_SUPPLIER_LANGUAGE_RE = re.compile(
+    r"\b(?:supplied\s+by|supplier\s+of|sub-?contract(?:or|ed)\s+(?:to|by))\b", re.I
+)
 _SHA256_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 # The only two rail names for the source's own effective clock.  Kept as one
 # constant because ``_effective_at`` and ``_receipt`` previously carried
@@ -875,6 +884,8 @@ def _action_text_annotations(row: Mapping[str, Any]) -> list[str]:
         annotations.append("unverified_retraction_language")
     if _CORRECTION_RE.search(text) and _structured_action_kind(row) != "action_corrected":
         annotations.append("unverified_correction_language")
+    if _SUPPLIER_LANGUAGE_RE.search(text):
+        annotations.append("unverified_supplier_language")
     return annotations
 
 
