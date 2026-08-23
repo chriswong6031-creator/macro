@@ -43,19 +43,22 @@ verified:
     result: "PASS — terminal-user-services owns the shared user-state/alert product boundary while identity/news/company-event/signal/risk/forecast owners remain independent and composed through contracts."
   - claim: Cell B is already active on the established Alpha-E incorporation route
     command: "Linear.get_issue MAS-118 with attached research return; GitHub.fetch_file Macro research/opportunity_evidence/E0_MARKET_INCORPORATION_CASEBOOK.md."
-    result: "PASS — MAS-118 was In Progress and rejects a universal gap score; existing Alpha-E research already defines incorporation as a state vector, not a grade."
+    result: "PASS — MAS-118 remained In Progress at the landing review and rejects a universal gap score; existing Alpha-E research already defines incorporation as a state vector, not a grade."
   - claim: Cell C is a prospective common expectation federation route, not yet canonical completion
     command: "Linear.get_issue MAS-119; GitHub.fetch PR #6264 Cell C prework."
-    result: "PASS — MAS-119 was Backlog; prework proposes EventFact -> ExpectationBaseline -> SurpriseAssessment -> IssuerMaterialityAssessment -> IncorporationEvidence and no common catalyst score."
+    result: "PASS — MAS-119 remained Backlog at the landing review; prework proposes EventFact -> ExpectationBaseline -> SurpriseAssessment -> IssuerMaterialityAssessment -> IncorporationEvidence and no common catalyst score."
   - claim: Cell F/D5 is transport, not research-navigation state
-    command: "GitHub.fetch PR #6275 head 4380c7de87a403113fd4ddf8de374702c6407cd6 agentos/handoffs/PROPHET-US-V4-D5-CELL-F-2026-08-22.md."
-    result: "PASS — D5 is an episode-scoped typed decision-time evidence read-model; specialist owners compute, D5 mechanically projects, and all D5 authority remains false."
+    command: "Linear.get_issue MAS-122; GitHub.fetch PR #6275 head 4380c7de87a403113fd4ddf8de374702c6407cd6 agentos/handoffs/PROPHET-US-V4-D5-CELL-F-2026-08-22.md."
+    result: "PASS — MAS-122 remained In Progress; D5 is an episode-scoped typed decision-time evidence read-model; specialist owners compute, D5 mechanically projects, and all D5 authority remains false."
   - claim: FIF remains financial semantic authority
     command: "GitHub.fetch_file Macro agentos/workstreams/WS-FINANCIAL-INTELLIGENCE-FABRIC.md."
     result: "PASS — FIF forbids a second semantic model, query kernel or metric registry and keeps production issuer coverage separately gated."
+  - claim: Post-write main movement was reconciled rather than ignored
+    command: "GitHub.compare_commits Macro 1dde1cc2dd1166c3ecda510a2f05a09ca6452fad..468e3f0257dac41b2e7e90771c3de87640e1c3ee; GitHub.fetch_file Macro@468e3f0257dac41b2e7e90771c3de87640e1c3ee agentos/workstreams/WS-FINANCIAL-INTELLIGENCE-FABRIC.md."
+    result: "PASS — main advanced by exactly one FIF records commit (#6290): FIF-3A1 became ACCEPTED / GOLDEN FIXTURE PROVEN / ON_MAIN, FIF-3 remains IN_PROGRESS, production attested issuer service remains NOT_BUILT, and the no-second-semantic-model law is unchanged. No exact path overlaps this five-file carrier."
   - claim: PR carrier is contained to records-only files
-    command: "GitHub.compare_commits Macro 1dde1cc2dd1166c3ecda510a2f05a09ca6452fad..PR #6293 head; GitHub.list_pr_changed_filenames #6293."
-    result: "PASS at initial PR head — exactly five added records/research files; zero engine/data/workflow/schema/runtime files. Schema/wording amendments modify those same files only."
+    command: "GitHub.compare_commits Macro current-main..PR #6293 head; GitHub.list_pr_changed_filenames #6293."
+    result: "PASS — exactly five added records/research files; zero engine/data/workflow/schema/runtime files. Schema/wording/reconciliation amendments modify those same files only."
 
 unverified:
   - claim: ResearchContextRef, AnalyticalLens or Market-Belief composition work in production
