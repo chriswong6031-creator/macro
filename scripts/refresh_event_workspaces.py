@@ -17,6 +17,17 @@ fail-soft (frozen spec item 8): one issuer's acquisition or extraction error
 is logged and that issuer is skipped for this run; it never blocks the
 flagship or the other homebuilders.  A5A stops at source truth — nothing here
 writes to ``data/cycle_pattern/`` or computes an IMCE observation.
+
+A GENUINE failure to read the PRIOR published workspace (network error,
+timeout, non-2xx, malformed JSON — as opposed to a clean not-yet-published
+404) is NOT fail-soft (NEW-1 fix, Opus red-team verification round 2,
+2026-08-23): ``load_prior_workspace`` raises ``PriorWorkspaceFetchFailed``
+rather than returning ``None``, which would otherwise be silently read as
+"first generation" and could permanently erase a prior "corrected"
+lifecycle state (see that exception's docstring). This still routes through
+the SAME two failure disciplines above: a hard ``RefreshError`` for the
+flagship, a per-ticker skip (no rebuild attempted this cycle) for a
+homebuilder.
 """
 from __future__ import annotations
 
@@ -174,7 +185,15 @@ def _parallel_row(block: Mapping[str, Any], accession: str, *, cik: str) -> dict
         return {
             "cik": cik,
             "accession": accession,
-            "form": at("form") or "8-K",
+            # NEW-2 fix (Opus red-team round 2, 2026-08-23): never manufacture
+            # "8-K" from a genuinely absent EDGAR form — at() already returns
+            # "" when missing; publishing that truthfully lets the A5C
+            # observation gate refuse rather than being handed an invented
+            # safe value. Discovery pre-filters candidates to {8-K, 8-K/A},
+            # so an empty form here should be unreachable on the real nightly
+            # path; this is a defense-in-depth truthfulness fix, not a
+            # behavior change for any real filing.
+            "form": at("form"),
             "filing_date": at("filingDate"),
             "acceptance_datetime": at("acceptanceDateTime"),
             "report_date": at("reportDate"),
@@ -270,7 +289,10 @@ def acquire_results_filing(
             {
                 "cik": cik,
                 "accession": str(entry.get("accessionNumber") or ""),
-                "form": entry.get("form") or "8-K",
+                # NEW-2 fix (Opus red-team round 2, 2026-08-23): never
+                # manufacture "8-K" from a genuinely absent EDGAR form — see
+                # the sibling comment on _parallel_row's "form" key above.
+                "form": entry.get("form") or "",
                 "filing_date": entry.get("filingDate") or "",
                 "acceptance_datetime": entry.get("acceptanceDateTime") or "",
                 "report_date": entry.get("reportDate") or "",
@@ -325,7 +347,10 @@ def acquire_results_filing(
         return {
             "cik": cik,
             "accession": row_accession,
-            "form": row["form"] or "8-K",
+            # NEW-2 fix (Opus red-team round 2, 2026-08-23): never
+            # manufacture "8-K" from a genuinely absent EDGAR form — see
+            # the sibling comments on the candidate_rows construction above.
+            "form": row["form"] or "",
             "filing_date": row["filing_date"],
             "acceptance_datetime": acceptance,
             "report_date": row["report_date"],
@@ -425,12 +450,46 @@ def prior_lifecycle_state(workspace: Mapping[str, Any] | None) -> str | None:
     return str(state) if state else None
 
 
-def load_prior_workspace(event_id: str, *, base_url: str | None = None) -> dict[str, Any] | None:
-    """Read the last published workspace for *event_id* from the public origin.
+class PriorWorkspaceFetchFailed(RuntimeError):
+    """The prior-workspace read failed for a reason OTHER than a clean
+    not-yet-published 404 (NEW-1, Opus red-team verification round 2,
+    2026-08-23): a network error, timeout, non-2xx, or malformed JSON.
 
-    A missing nest, or a nest published without this event, is first-publish,
-    not a failure.  Network errors are also fail-soft so a stale CDN cannot
-    block a source-identical no-op rebuild.
+    Distinguishable on purpose from "genuinely not published yet": treating
+    a transient fetch failure as first-publish is exactly the bug this
+    exception exists to prevent. A missed prior read on an event whose last
+    published generation was ``lifecycle.state == "corrected"`` would
+    silently erase that correction (the rebuild walks started -> complete
+    instead of re-applying corrected -> corrected), and because the
+    de-corrected workspace becomes the new "prior" on the very next read,
+    the erasure is PERMANENT, not merely delayed to the next successful
+    fetch. A second (non-amendment, still form="8-K") correction minted
+    after this erasure would then present as a first-ever "complete"/"8-K"
+    revision — the A5C form gate (BLOCKER-1 1c) does not catch this shape,
+    because nothing about it is actually an SEC amendment.
+    """
+
+
+class _PriorWorkspaceNotPublished(Exception):
+    """A clean 404 (manifest or workspace) or an absent-generation
+    manifest — the event genuinely has no prior publication yet. Distinct
+    from ``PriorWorkspaceFetchFailed`` above; caught internally by
+    ``load_prior_workspace`` and turned into a plain ``None`` return."""
+
+
+def _raw_load_prior_workspace(event_id: str, *, base_url: str | None = None) -> dict[str, Any]:
+    """Fetch the last published workspace for *event_id* from the public
+    origin, mirroring
+    ``scripts.build_cycle_pattern_imce_prospective._raw_fetch_workspace``'s
+    own base-URL resolution and GET sequence (NEW-1, Opus red-team round 2,
+    2026-08-23).
+
+    Raises ``_PriorWorkspaceNotPublished`` on a clean 404 (manifest or
+    workspace) or an absent-generation manifest. Raises any OTHER exception
+    (network error, timeout, non-2xx, malformed JSON) on a genuine fetch
+    failure — never returns ``None`` on failure; disposition classification
+    is ``load_prior_workspace``'s job, exactly as the A5B builder's
+    ``_load_workspace_with_disposition`` classifies its own fetcher.
     """
     import os
 
@@ -438,28 +497,70 @@ def load_prior_workspace(event_id: str, *, base_url: str | None = None) -> dict[
 
     base = (base_url or os.environ.get("COMPANY_INTELLIGENCE_R2_BASE_URL", _DEFAULT_PUBLIC_ORIGIN)).strip().rstrip("/")
     headers = {"Accept": "application/json", "User-Agent": "mastermind-event-workspaces/1"}
+
+    marker_resp = requests.get(f"{base}/event_workspaces/manifest.json", headers=headers, timeout=20)
+    if marker_resp.status_code == 404:
+        raise _PriorWorkspaceNotPublished(f"{event_id}: manifest 404")
+    marker_resp.raise_for_status()
+    marker = marker_resp.json()
+    generation_id = str((marker or {}).get("generation_id") or "")
+    if not generation_id:
+        raise _PriorWorkspaceNotPublished(f"{event_id}: manifest carries no generation_id")
+
+    workspace_resp = requests.get(
+        f"{base}/event_workspaces/generations/{generation_id}/workspaces/{event_id}.json",
+        headers=headers,
+        timeout=20,
+    )
+    if workspace_resp.status_code == 404:
+        raise _PriorWorkspaceNotPublished(f"{event_id}: workspace 404 in generation {generation_id}")
+    workspace_resp.raise_for_status()
+    payload = workspace_resp.json()
+    if not isinstance(payload, dict):
+        raise ValueError(f"{event_id}: workspace payload is not a dict")
+    return payload
+
+
+def load_prior_workspace(
+    event_id: str, *, base_url: str | None = None,
+    fetch: Callable[[str], dict[str, Any]] | None = None,
+) -> dict[str, Any] | None:
+    """Read the last published workspace for *event_id* from the public origin.
+
+    A missing nest, or a nest published without this event, is first-publish,
+    not a failure — returns ``None``.
+
+    NEW-1 fix (Opus red-team verification round 2, 2026-08-23): this NO
+    LONGER fail-softs a GENUINE fetch failure into "first generation". The
+    prior behavior (catching every ``Exception`` and returning ``None``)
+    meant one transient HTTP failure on the prior read was indistinguishable
+    from "this event was never published" — see
+    ``PriorWorkspaceFetchFailed``'s docstring for the exact silent-erasure
+    consequence. Raises ``PriorWorkspaceFetchFailed`` on anything other than
+    a clean not-published 404; only a genuinely absent prior publication
+    returns ``None``. *fetch* is injectable for tests (a stub raising
+    ``_PriorWorkspaceNotPublished`` for a clean 404, any other exception for
+    a fetch failure, or returning a dict for a hit) — production callers
+    never pass it, always exercising the real HTTP path via
+    ``_raw_load_prior_workspace``.
+    """
+    fetcher = fetch or (lambda eid: _raw_load_prior_workspace(eid, base_url=base_url))
     try:
-        marker_resp = requests.get(f"{base}/event_workspaces/manifest.json", headers=headers, timeout=20)
-        if marker_resp.status_code == 404:
-            return None
-        marker_resp.raise_for_status()
-        marker = marker_resp.json()
-        generation_id = str((marker or {}).get("generation_id") or "")
-        if not generation_id:
-            return None
-        workspace_resp = requests.get(
-            f"{base}/event_workspaces/generations/{generation_id}/workspaces/{event_id}.json",
-            headers=headers,
-            timeout=20,
-        )
-        if workspace_resp.status_code == 404:
-            return None
-        workspace_resp.raise_for_status()
-        payload = workspace_resp.json()
-        return payload if isinstance(payload, dict) else None
-    except Exception as exc:  # noqa: BLE001
-        log.info("prior event workspace unread for %s (%s); treating as first generation", event_id, exc)
+        return fetcher(event_id)
+    except _PriorWorkspaceNotPublished as exc:
+        log.debug("%s: prior workspace not published (%s)", event_id, exc)
         return None
+    except Exception as exc:  # noqa: BLE001 - every other failure is a genuine fetch failure, never silently absent
+        print(
+            "::warning title=event-workspace-prior-fetch-failed::"
+            f"{event_id}: prior workspace fetch failed ({type(exc).__name__}: {exc}) — "
+            "refusing to treat this as first-generation; this event's rebuild is skipped this cycle",
+            flush=True,
+        )
+        log.info("%s: prior workspace fetch failed, refusing first-generation fallback (%s)", event_id, exc)
+        raise PriorWorkspaceFetchFailed(
+            f"{event_id}: prior workspace fetch failed ({type(exc).__name__}: {exc})"
+        ) from exc
 
 
 def load_prior_flagship_workspace() -> dict[str, Any] | None:
@@ -635,7 +736,20 @@ def refresh(
     if callable(prior_workspace):
         try:
             prior = prior_workspace()
-        except Exception as exc:  # noqa: BLE001 - missing last-good is first publish
+        except PriorWorkspaceFetchFailed as exc:
+            # NEW-1 fix (Opus red-team round 2, 2026-08-23): a genuine fetch
+            # failure on the prior read must NEVER be silently treated as
+            # first-generation (see PriorWorkspaceFetchFailed's docstring —
+            # it would permanently erase a "corrected" lifecycle state).
+            # The flagship leg is ALREADY a hard, all-or-nothing failure for
+            # every other acquisition/build error (module docstring) — this
+            # raises RefreshError for the same reason, refusing the WHOLE
+            # refresh this cycle rather than minting a de-corrected
+            # flagship workspace. Chosen over "skip semantics" because the
+            # flagship has no per-issuer loop to skip within — refresh()
+            # produces exactly one flagship record, not N independent ones.
+            raise RefreshError(f"flagship prior workspace fetch failed: {exc}") from exc
+        except Exception as exc:  # noqa: BLE001 - a genuinely absent prior (first publish) stays fail-soft
             log.info("prior event workspace unavailable (%s); treating as first generation", exc)
             prior = None
     else:
@@ -671,6 +785,14 @@ def refresh(
                 fetch_body_fn=fetch_body_fn,
                 prior_workspace_loader=load_prior_workspace,
             )
+        # NEW-1 fix (Opus red-team round 2, 2026-08-23): a PriorWorkspaceFetchFailed
+        # from load_prior_workspace() (via acquire_and_build_homebuilder_workspace's
+        # own prior_workspace_loader(event_id) call, which does no local
+        # try/except of its own — see that function's docstring) lands here
+        # too, and this ALREADY-EXISTING fail-soft skip is exactly the
+        # "no publication for that event this run" semantics the fix
+        # requires: no rebuild is attempted at all this cycle for this
+        # ticker, the flagship and every other homebuilder are unaffected.
         except Exception as exc:  # noqa: BLE001 - fail-soft: one issuer never blocks the flagship or its siblings
             print(f"::warning title=event-workspaces::{ticker} skipped: {exc}", flush=True)
             log.info("%s event workspace skipped (%s)", ticker, exc)

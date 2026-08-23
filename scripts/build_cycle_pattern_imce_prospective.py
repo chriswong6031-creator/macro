@@ -96,7 +96,11 @@ def _issuer_release_source_form(workspace: dict) -> str | None:
     fail-closed signal alongside lifecycle.state (see
     engine.cycle_pattern.imce_prospective.is_safe_original_source_form).
     None if the row or field is absent (fails closed downstream, never
-    silently substituted for "8-K")."""
+    silently substituted for "8-K"). NEW-2 fix (Opus red-team round 2,
+    2026-08-23): this reads the PUBLISHED value verbatim, which since that
+    fix genuinely CAN be absent/None (the producer no longer manufactures
+    "8-K" from nothing) — this function was already honest about that; it
+    is the producer side that was fixed, not this reader."""
     for source in workspace.get("sources") or []:
         if isinstance(source, dict) and source.get("kind") == "issuer_release":
             form = source.get("form")

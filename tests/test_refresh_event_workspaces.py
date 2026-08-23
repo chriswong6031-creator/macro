@@ -22,9 +22,12 @@ from engine.earnings_transcript_intake import TranscriptRef, canonical_body_sha2
 from engine.neuralweb import company_intelligence_reader as reader
 from scripts.publish_company_intelligence_r2 import PUBLISH_CONFLICT, publish, publish_event_workspaces
 from scripts.refresh_event_workspaces import (
+    PriorWorkspaceFetchFailed,
     RefreshError,
     _parse_sgml_manifest,
+    _PriorWorkspaceNotPublished,
     _select_exhibit_99_1,
+    load_prior_workspace,
     refresh,
 )
 
@@ -278,6 +281,110 @@ def test_corrected_lifecycle_state_is_sticky_across_an_unchanged_source_rebuild(
     )
     assert third_workspace["lifecycle"]["state"] == "corrected"
     assert [key for key, _ in fake.puts[len(puts_after_second):]] == []
+
+
+# ---------------------------------------------------------------------------
+# NEW-1 (Opus red-team verification round 2, 2026-08-23): load_prior_workspace
+# was fail-soft on EVERY error — a clean 404 and a timeout/5xx/malformed-JSON
+# both returned None, so one transient HTTP failure on the prior read made
+# prior_lifecycle_state=None AND prior_source_sha256=None, walking the
+# rebuild started->complete and silently, PERMANENTLY erasing a sticky
+# "corrected" state (the de-corrected workspace becomes the new prior on the
+# next cycle). Fixed: load_prior_workspace now RAISES
+# PriorWorkspaceFetchFailed on a genuine fetch failure; only a clean
+# not-published 404 (_PriorWorkspaceNotPublished, internal) returns None.
+# ---------------------------------------------------------------------------
+
+def test_load_prior_workspace_raises_on_genuine_fetch_failure(capsys) -> None:
+    """Unit-level: any failure OTHER than a clean not-published 404 raises
+    PriorWorkspaceFetchFailed, never returns None, and emits a line-start
+    ::warning naming the event and the error class."""
+
+    def boom(event_id: str) -> dict:
+        raise TimeoutError("connection timed out")
+
+    with pytest.raises(PriorWorkspaceFetchFailed):
+        load_prior_workspace("evt_boom", fetch=boom)
+
+    out = capsys.readouterr().out
+    lines = out.splitlines()
+    assert any(line.startswith("::warning title=event-workspace-prior-fetch-failed::") for line in lines), out
+    warning_line = next(line for line in lines if line.startswith("::warning title=event-workspace-prior-fetch-failed::"))
+    assert "evt_boom" in warning_line
+    assert "TimeoutError" in warning_line
+
+
+def test_load_prior_workspace_returns_none_on_clean_not_published(capsys) -> None:
+    """Unit-level: a clean not-published disposition still returns None
+    (first-generation behavior unchanged) and emits NO fetch-failed warning."""
+
+    def not_found(event_id: str) -> dict:
+        raise _PriorWorkspaceNotPublished("manifest 404")
+
+    assert load_prior_workspace("evt_absent", fetch=not_found) is None
+    out = capsys.readouterr().out
+    assert "event-workspace-prior-fetch-failed" not in out
+
+
+def test_load_prior_workspace_returns_the_workspace_on_a_hit() -> None:
+    payload = {"event_id": "evt_x", "lifecycle": {"state": "complete"}}
+    assert load_prior_workspace("evt_x", fetch=lambda eid: payload) == payload
+
+
+def test_prior_fetch_failure_never_erases_a_corrected_lifecycle_state(tmp_path: Path, capsys) -> None:
+    """(a) THE NAMED FALSIFIER (verifier's own words): prior loader RAISES
+    against an already-corrected event -> no publication for that event
+    this cycle, warning emitted, marker not advanced with a de-corrected
+    workspace. Exercised at the refresh() level via a callable prior_workspace
+    that raises PriorWorkspaceFetchFailed (simulating what load_prior_workspace
+    itself would raise after classifying a real network failure — the HTTP
+    disposition classification itself is unit-tested above)."""
+    fake = _FakeR2()
+    assert _refresh(tmp_path, fake) == 0
+    first = _marker(tmp_path)
+    prior = json.loads(
+        (tmp_path / "event_workspaces" / "generations" / first["generation_id"] / "workspaces" / f"{FLAGSHIP_EVENT_ID}.json").read_text(encoding="utf-8")
+    )
+    mutated = EXHIBIT.read_text(encoding="utf-8") + "\n<!-- source correction -->\n"
+    assert _refresh(tmp_path, fake, http_get=_http_get_factory(mutated), prior_workspace=prior) == 0
+    second = _marker(tmp_path)
+    assert second["generation_id"] != first["generation_id"]
+    second_workspace = json.loads(
+        (tmp_path / "event_workspaces" / "generations" / second["generation_id"] / "workspaces" / f"{FLAGSHIP_EVENT_ID}.json").read_text(encoding="utf-8")
+    )
+    assert second_workspace["lifecycle"]["state"] == "corrected"
+    puts_after_second = list(fake.puts)
+
+    # THIRD refresh: the prior loader RAISES (simulating a transient outage
+    # on the prior-workspace GET) instead of returning the corrected dict.
+    def failing_prior_loader() -> dict:
+        raise PriorWorkspaceFetchFailed("evt: simulated network timeout")
+
+    with pytest.raises(RefreshError):
+        _refresh(tmp_path, fake, http_get=_http_get_factory(mutated), prior_workspace=failing_prior_loader)
+
+    third = _marker(tmp_path)
+    assert third["generation_id"] == second["generation_id"], "marker must NOT advance with a de-corrected workspace"
+    assert [key for key, _ in fake.puts[len(puts_after_second):]] == [], "nothing new published this cycle"
+    third_workspace = json.loads(
+        (tmp_path / "event_workspaces" / "generations" / third["generation_id"] / "workspaces" / f"{FLAGSHIP_EVENT_ID}.json").read_text(encoding="utf-8")
+    )
+    assert third_workspace["lifecycle"]["state"] == "corrected", "the on-disk generation is unchanged, still corrected"
+
+
+def test_prior_loader_absent_proceeds_as_first_generation_exactly_as_today(tmp_path: Path) -> None:
+    """(b): a genuinely absent prior (not_published / None) still proceeds
+    as first-generation build — unchanged regression, exercised both via
+    load_prior_workspace's own disposition classification (unit-level,
+    above) and here at the refresh() level with no prior at all."""
+    fake = _FakeR2()
+    assert _refresh(tmp_path, fake, prior_workspace=None) == 0
+    marker = _marker(tmp_path)
+    assert marker["generation_id"]
+    workspace = json.loads(
+        (tmp_path / "event_workspaces" / "generations" / marker["generation_id"] / "workspaces" / f"{FLAGSHIP_EVENT_ID}.json").read_text(encoding="utf-8")
+    )
+    assert workspace["lifecycle"]["state"] == "complete"
 
 
 def test_missing_transcript_hash_does_not_move_marker(tmp_path: Path) -> None:

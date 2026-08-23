@@ -380,7 +380,22 @@ def build_event_workspace(
             # preflight confirmed Terminal's normalizeSource() is a
             # permissive picker that ignores unrecognized keys rather than
             # rejecting them — this addition is safe on both sides).
-            "form": bound.revision.form,
+            #
+            # NEW-2 fix (Opus red-team round 2, 2026-08-23): deliberately
+            # published from the RAW *filing* mapping, NOT from
+            # bound.revision.form — bind_release_document (line ~167 above)
+            # defaults an empty/missing form to "8-K" for its OWN internal
+            # identity/is_amendment purposes (a default this function does
+            # not touch — nothing else here reads bound.revision.form or
+            # .is_amendment, so decoupling the PUBLISHED value carries no
+            # ripple risk). The safety gate downstream must see the form
+            # EDGAR actually gave, or see it genuinely absent — never an
+            # invented "8-K" standing in for "we don't know". On the real
+            # nightly path this is defense-in-depth, not a behavior change:
+            # discovery (refresh_event_workspaces._select_newest_results_rows)
+            # already pre-filters every candidate to {"8-K", "8-K/A"}, so a
+            # genuinely absent form should be unreachable there.
+            "form": (str(filing.get("form")) if filing.get("form") else None),
             "url": filing.get("exhibit_url"),
             "receipt_state": "byte_replayed",
         },

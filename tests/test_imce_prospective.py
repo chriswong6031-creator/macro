@@ -1450,6 +1450,69 @@ def test_a5c_missing_or_wrong_source_form_is_treated_as_unsafe(tmp_path, unsafe_
     assert m.load_rows(p) == []
 
 
+def test_a5c_builder_end_to_end_refuses_a_workspace_missing_its_form(monkeypatch, tmp_path):
+    """NEW-3 (Opus red-team round 2, 2026-08-23): pins the FAIL-REFUSE
+    direction end to end through the real builder — before this test, a
+    mutation making _issuer_release_source_form always return "8-K"
+    (instead of reading the workspace's real source row) survived all 134
+    tests, because nothing drove b.run(production=True) over a workspace
+    whose issuer_release row genuinely lacks "form" and asserted the
+    REFUSAL outcome specifically. lifecycle_state is pinned SAFE
+    ("complete") so the refusal is attributable purely to the missing form."""
+    import scripts.build_cycle_pattern_imce_prospective as b
+
+    fake_prod = tmp_path / "fake_prod_a5c_missing_form.jsonl"
+    monkeypatch.setattr(m, "PRODUCTION_PATH", fake_prod)
+    monkeypatch.setattr("engine.cycle_pattern.imce_prospective.PRODUCTION_PATH", fake_prod)
+    m.ensure_activation(path=fake_prod, reconstruction=False, production=True,
+                         now=datetime(2020, 1, 1, tzinfo=timezone.utc))
+
+    no_form_ws = _mk_ws("PHM", cutoff="2026-05-01T20:00:00Z", net_orders_current=50, net_orders_prior=45,
+                         cancel_current=8.0, cancel_prior=9.0, source_form=None)
+    assert b._issuer_release_source_form(no_form_ws) is None
+
+    def fake_fetch_all_candidates(today):
+        dispositions = {"PHM": {no_form_ws["event_id"]: "found"}, "DHI": {}, "KBH": {}, "TOL": {}}
+        found = {"DHI": [], "PHM": [no_form_ws], "KBH": [], "TOL": []}
+        return found, dispositions
+
+    monkeypatch.setattr(b, "_fetch_all_candidates", fake_fetch_all_candidates)
+    summary = b.run(production=True)
+    assert summary["errors"] == []
+    assert summary["n_observations_appended"] == 0
+    assert summary["n_observations_refused_unsafe_correction"] == 1
+    assert sum(1 for r in m.load_rows(fake_prod) if r["row_kind"] == "observation") == 0
+
+
+def test_a5c_builder_end_to_end_refuses_a_workspace_missing_its_lifecycle_state(monkeypatch, tmp_path):
+    """NEW-3 (Opus red-team round 2, 2026-08-23): sibling to the form test
+    above — pins that a mutation defaulting the builder's lifecycle read to
+    `or "complete"` would be caught. source_form is pinned SAFE ("8-K") so
+    the refusal is attributable purely to the missing lifecycle state."""
+    import scripts.build_cycle_pattern_imce_prospective as b
+
+    fake_prod = tmp_path / "fake_prod_a5c_missing_state.jsonl"
+    monkeypatch.setattr(m, "PRODUCTION_PATH", fake_prod)
+    monkeypatch.setattr("engine.cycle_pattern.imce_prospective.PRODUCTION_PATH", fake_prod)
+    m.ensure_activation(path=fake_prod, reconstruction=False, production=True,
+                         now=datetime(2020, 1, 1, tzinfo=timezone.utc))
+
+    no_state_ws = _mk_ws("KBH", cutoff="2026-05-01T20:00:00Z", net_orders_current=100, net_orders_prior=90,
+                          cancel_current=10.0, cancel_prior=12.0, lifecycle_state=None)
+
+    def fake_fetch_all_candidates(today):
+        dispositions = {"KBH": {no_state_ws["event_id"]: "found"}, "DHI": {}, "PHM": {}, "TOL": {}}
+        found = {"DHI": [], "PHM": [], "KBH": [no_state_ws], "TOL": []}
+        return found, dispositions
+
+    monkeypatch.setattr(b, "_fetch_all_candidates", fake_fetch_all_candidates)
+    summary = b.run(production=True)
+    assert summary["errors"] == []
+    assert summary["n_observations_appended"] == 0
+    assert summary["n_observations_refused_unsafe_correction"] == 1
+    assert sum(1 for r in m.load_rows(fake_prod) if r["row_kind"] == "observation") == 0
+
+
 def test_a5c_frozen_schema_whitelist_unaffected():
     """(g): the packet schema/whitelist is untouched by this law — the
     lifecycle state travels into append_observation as a function parameter,

@@ -61,15 +61,19 @@ def _collector_rows() -> list[dict]:
 
 def _build_flagship(
     *, exhibit_body: str | None = None, prior_sha: str | None = None, prior_state: str | None = None,
+    filing_overrides: dict | None = None,
 ) -> dict:
     tx, tx_sha = _transcript()
+    filing = _filing()
+    if filing_overrides:
+        filing = {**filing, **filing_overrides}
     return build_event_workspace(
         registry=apple_registry(),
         ticker="AAPL",
         asof=AAPL_CALL_DATE,
         fiscal_period=flagship_fiscal_period(),
         exhibit_body=exhibit_body if exhibit_body is not None else EXHIBIT.read_text(encoding="utf-8"),
-        filing=_filing(),
+        filing=filing,
         transcript=tx,
         transcript_sha256=tx_sha,
         observed_at=CLOCK,
@@ -300,6 +304,37 @@ def test_issuer_release_source_row_carries_the_bound_filing_form() -> None:
     release = next(source for source in payload["sources"] if source["kind"] == "issuer_release")
     assert release["form"] == "8-K"
     assert json.loads(FILING.read_text(encoding="utf-8"))["form"] == release["form"]
+
+
+def test_published_form_is_the_raw_filing_value_not_the_binder_internal_default() -> None:
+    """NEW-2 fix (Opus red-team round 2, 2026-08-23): falsified the round-1
+    claim that "missing/blank form is unsafe" reaches the gate — five
+    `or "8-K"` sites (engine/earnings_release/binding.py:266;
+    event_workspace_build.py; refresh_event_workspaces.py x3) manufactured
+    the literal safe value from absence, so None could never actually reach
+    it. bind_release_document DOES still default an empty/missing form to
+    "8-K" internally (for its own document-identity/is_amendment purposes —
+    that default is left alone since nothing else in this module reads
+    bound.revision.form/.is_amendment), but the PUBLISHED issuer_release
+    source row now comes from the RAW filing mapping, decoupled from that
+    internal default: a filing genuinely lacking a form publishes form=None,
+    not the manufactured "8-K". Discovery
+    (refresh_event_workspaces._select_newest_results_rows) pre-filters
+    candidates to {"8-K", "8-K/A"} so this shape should be unreachable on
+    the real nightly path — this test documents the producer's own
+    defaulting honestly rather than asserting it away."""
+    payload = _build_flagship(filing_overrides={"form": ""})
+    release = next(source for source in payload["sources"] if source["kind"] == "issuer_release")
+    assert release["form"] is None  # NOT "8-K" — the binder's internal default never leaks into publication
+
+
+def test_published_form_reflects_a_genuine_amendment_form() -> None:
+    """Sibling regression: a filing genuinely marked "8-K/A" publishes
+    "8-K/A" verbatim — the raw-filing sourcing is not itself lossy, only
+    non-inventive."""
+    payload = _build_flagship(filing_overrides={"form": "8-K/A"})
+    release = next(source for source in payload["sources"] if source["kind"] == "issuer_release")
+    assert release["form"] == "8-K/A"
 
 
 def test_v1_teaser_reader_is_not_the_workspace_consumer(tmp_path, monkeypatch) -> None:

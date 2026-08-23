@@ -204,21 +204,41 @@ def is_safe_original_lifecycle_state(state: object) -> bool:
 #: not (until the manifest/history chain lands) SUFFICIENT safety signal:
 #: the state signal is now durable within our OWN sha-comparison lineage
 #: (build_event_workspace's sticky-corrected fix, engine/company_intelligence/
-#: event_workspace_build.py), but it only fires when a PRIOR published
-#: workspace exists to compare against. A second, independent signal closes
+#: event_workspace_build.py) PROVIDED the prior-workspace READ ITSELF
+#: succeeds (see refresh_event_workspaces.PriorWorkspaceFetchFailed — a
+#: separate NEW-1 fix), but it only fires when a PRIOR published workspace
+#: exists to compare against at all. A second, independent signal closes
 #: part of that gap for free: the SEC's own form on the bound filing
-#: (issuer_release source row "form", engine/company_intelligence/
-#: event_workspace_build.py:339-350) is "8-K/A" the moment EDGAR itself
+#: (issuer_release source row "form") is "8-K/A" the moment EDGAR itself
 #: marks a filing as an amendment — true even on the FIRST-ever observed
-#: revision of an event, with no prior workspace to compare against at all.
+#: revision of an event, with no prior workspace to compare against.
 #: Requiring form == "8-K" EXACTLY (not merely "not 8-K/A") is deliberately
-#: the stricter reading: a missing/blank/unrecognized form is unsafe too,
-#: consistent with the fail-closed vocabulary above and self-healing within
-#: one 3h publish cycle once the field is populated everywhere.
+#: the stricter reading: a missing/blank/unrecognized form is unsafe too.
+#:
+#: HONEST PRODUCER CLAIM (NEW-2 fix, Opus red-team round 2, 2026-08-23): an
+#: earlier version of this comment claimed a missing/blank form
+#: "self-heals within one 3h publish cycle once populated" — false as
+#: written, because FIVE separate `or "8-K"` sites upstream of this gate
+#: (engine/earnings_release/binding.py, event_workspace_build.py,
+#: refresh_event_workspaces.py x3) manufactured the literal string "8-K"
+#: from ANY absence, so a genuinely missing form could never actually
+#: reach this function in the first place — the "self-healing" case was
+#: unreachable, not handled. Fixed: the PUBLISHED issuer_release source row
+#: now carries the RAW EDGAR-supplied form (event_workspace_build.py),
+#: decoupled from bind_release_document's own internal "8-K" default (that
+#: internal default is left alone — it exists for document-identity/
+#: is_amendment purposes this function never reads). On the REAL nightly
+#: path, a missing form is STILL expected unreachable: discovery
+#: (refresh_event_workspaces._select_newest_results_rows) pre-filters every
+#: candidate to {"8-K", "8-K/A"} before a filing is ever acquired. This
+#: function's None/missing-form handling is therefore genuinely
+#: reachable CODE, but consumer-side DEFENSE-IN-DEPTH in practice — not a
+#: transient state the nightly path is expected to pass through.
 def is_safe_original_source_form(form: object) -> bool:
     """True only when the bound filing's own SEC-assigned form is EXACTLY
     "8-K" (never "8-K/A", never missing/blank/unrecognized) — fail-closed,
-    mirroring ``is_safe_original_lifecycle_state`` above."""
+    mirroring ``is_safe_original_lifecycle_state`` above. See the module
+    comment above for the honest producer-defaulting claim (NEW-2 fix)."""
     return form == "8-K"
 
 

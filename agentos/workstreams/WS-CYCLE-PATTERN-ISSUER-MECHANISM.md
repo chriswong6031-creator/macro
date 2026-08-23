@@ -641,7 +641,7 @@ waves:
       "results_released" (never a real events.py EVENT_STATES value) to
       "complete", fixture gained a source_form="8-K" default, all
       first-write call sites updated to pass both signals explicitly, plus
-      13 new A5C test functions (24 parametrized cases: empty-ledger
+      12 new A5C test functions (24 parametrized cases: empty-ledger
       refusal + line-start-pinned ::warning content assertion, sibling-
       event isolation, existing-observation correction regression,
       safe-state regression, a REAL builder happy-path run asserting
@@ -665,6 +665,85 @@ waves:
       python3 scripts/agentos.py validate (0 errors, same 28 pre-existing
       unrelated warnings). DRAFT PR — commissioning session adjudicates and
       merges; not marked ready, merge-on-green not armed.
+
+      VERIFICATION ROUND 2 (same PR #6308, same branch — Opus red-team,
+      2026-08-23: everything from round 1 confirmed FIXED via independent
+      falsify-and-pass re-testing; three NEW findings from the hardening
+      itself). NEW-1 (BLOCKER): load_prior_workspace was fail-soft on EVERY
+      error — a clean 404 and a genuine network failure both returned None,
+      so one transient HTTP failure on the prior read made
+      prior_lifecycle_state=None AND prior_source_sha256=None, walking the
+      rebuild started->complete and PERMANENTLY erasing a sticky "corrected"
+      state (the de-corrected workspace becomes the new prior on the very
+      next read). Fixed by splitting dispositions exactly as the A5B
+      builder already does (mirrored, implemented locally in
+      refresh_event_workspaces.py): new PriorWorkspaceFetchFailed exception
+      + _raw_load_prior_workspace/_PriorWorkspaceNotPublished; a clean
+      not-published 404 still returns None (first-generation, unchanged);
+      any other failure now RAISES, surfaced via a bare line-start
+      print("::warning title=event-workspace-prior-fetch-failed::...",
+      flush=True) naming the event and the error class. Flagship: raises
+      RefreshError (refuses the whole refresh this cycle) — chosen over
+      skip semantics because refresh() has no per-issuer loop to skip
+      within for the single flagship record, consistent with its existing
+      all-or-nothing acquisition/build-error discipline. Homebuilders: the
+      exception propagates uncaught out of
+      acquire_and_build_homebuilder_workspace (which already does no local
+      try/except by design) straight into refresh()'s EXISTING per-ticker
+      fail-soft wrapper — no rebuild attempted for that ticker this cycle,
+      flagship and siblings unaffected, zero new wrapper code needed. NEW-2
+      (MAJOR): the round-1 claim "missing/blank form is unsafe" was
+      falsified by the producer — five `or "8-K"` sites (binding.py;
+      event_workspace_build.py; refresh_event_workspaces.py x3) manufactured
+      the literal "8-K" from any absence, so None could never actually
+      reach the gate. Fixed at the smallest honest layer: the three
+      refresh_event_workspaces.py filing-construction sites no longer
+      manufacture "8-K" (discovery already pre-filters candidates to
+      {8-K, 8-K/A}, so this is defense-in-depth, not a behavior change on
+      the real nightly path); event_workspace_build.py's published
+      issuer_release source row now reads the RAW filing mapping directly,
+      decoupled from bind_release_document's own internal "8-K" default
+      (left alone — it exists for that function's own document-identity/
+      is_amendment purposes, which nothing else in event_workspace_build.py
+      reads, so decoupling carries zero ripple risk — confirmed by grep,
+      only one production consumer). Comments/docstrings in
+      imce_prospective.py and the builder rewritten to state the honest
+      claim: missing form is genuinely reachable code post-fix, but
+      consumer-side defense-in-depth in practice, not a transient state the
+      nightly path passes through. NEW-3 (MAJOR): only the fail-REFUSE
+      direction was pinned — _issuer_release_source_form returning "8-K"
+      unconditionally, and the builder's lifecycle read defaulting
+      `or "complete"`, both survived all 134 tests. Fixed with two new
+      builder-level end-to-end tests driving b.run(production=True) over a
+      workspace missing its form and one missing its lifecycle.state,
+      each asserting n_observations_refused_unsafe_correction==1 and zero
+      observation rows on disk; both mutation-verified to kill the named
+      fail-open mutations while leaving the rest of the suite green. NIT:
+      test-function count corrected 13 -> 12 (git diff grep
+      '^+def test_' against tests/test_imce_prospective.py). New tests
+      this round: tests/test_refresh_event_workspaces.py +6 (two unit-level
+      load_prior_workspace disposition tests, one hit-passthrough test, the
+      NAMED FALSIFIER — prior loader raises against an already-corrected
+      event, marker not advanced, warning emitted — and a first-generation
+      regression); tests/test_company_intelligence_event_workspace.py +2
+      (raw-vs-defaulted form regression, genuine-amendment-form
+      regression); tests/test_imce_prospective.py +2 (the two NEW-3
+      fail-open mutation-kill tests). Re-verified: pytest
+      tests/test_imce_prospective.py tests/test_refresh_event_workspaces.py
+      tests/test_company_intelligence_event_workspace.py
+      tests/test_gh_annotation_line_start.py (197 passed, 2 skipped, same
+      sparse-worktree skips as before); tests/test_issuer_profiles_a5a.py +
+      tests/test_earnings_release_binding.py re-run clean alongside for the
+      touched company_intelligence/binding modules (61 passed, no
+      regression); python3 scripts/check_contract_delta.py --base
+      origin/main (0 introduced, 0 inherited); python3 scripts/agentos.py
+      validate (0 errors). Both fail-open mutations (form always "8-K",
+      lifecycle defaulting `or "complete"`) and the reintroduced BLOCKER-1
+      fail-soft bug (flagship catching PriorWorkspaceFetchFailed the same
+      way as a genuine first-publish) were manually mutation-verified this
+      round to confirm the new tests actually kill them; reverted, suite
+      re-confirmed green after each. PR stays DRAFT pending the
+      commissioning session's re-review.
 next_action: >
   Sol's FOURTH GATE (A4P.1) closes the five escalations the third gate left
   open with the returns: (1) AG14 cohort-label question SETTLED by R2's
