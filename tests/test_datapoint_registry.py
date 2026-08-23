@@ -145,6 +145,14 @@ def test_registry_exact_manifest_digest_and_immutable_cache():
         first.limits["max_fields"] = 13
 
 
+def test_registry_root_cost_ceiling_is_frozen(tmp_path):
+    with pytest.raises(DatapointContractError, match="schema violation.*8000"):
+        _load_mutant(
+            tmp_path,
+            lambda document: document["limits"].update(max_request_cost=99999),
+        )
+
+
 @pytest.mark.parametrize(
     "mutate,match",
     [
