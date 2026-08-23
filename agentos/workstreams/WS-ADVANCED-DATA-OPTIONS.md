@@ -76,16 +76,29 @@ waves:
   - id: AD-1T1
     title: Full-universe incremental ThetaData T1 cadence (Sol handoff 2026-08-22)
     status: in_progress
+    pr: 6267
     depends_on: [AD-1T0]
     next_action: >
-      Extend scripts/topup_thetadata_day.py into the canonical full-universe
-      daily incremental maintainer (one-session ensure law EOD[S]/Greeks[S]/
-      OI[S]/OI[D]); writer exclusion; daily source-health receipt in
-      _manifest.json; finite periodic launchd daily lane; retire the
-      whole-year DAILY refresh + unconditional KeepAlive. Frozen spec:
-      research/AD1T1_INCREMENTAL_CADENCE_SPEC_2026-08-22.md. PR returns to
-      Sol UNMERGED (no merge authority); scheduler is NOT installed on m1
-      until Sol accepts.
+      Implementation MERGED (Sol PASS 2026-08-23, release directive
+      ADVANCED_DATA_OPTIONS_AD1T1_RELEASE_AND_PRODUCTION_COMMISSIONING_
+      2026-08-23): PR 6267 squash-merged at accepted head cc2d90399bc4 ->
+      merge SHA 787787f93c8efaaf30b9cd3d32d9446596fa0925 (collision fence
+      clean; exact-head ci/fences green pre-merge; post-merge fences push
+      run green). M1 transition EXECUTED same day per runbook section 3a:
+      com.macro.thetadata-backfill booted out + plist removed + zero
+      orphans; com.macro.thetadata-daily bootstrapped from merge-SHA bytes
+      (7 files sha256-verified; streamed transfer because theta-ops-wt's
+      origin remote credential is dead — separate debt); weekend RunAtLoad
+      clean no-op proven (no receipt written); Terminal untouched (PID
+      10566, HTTP 200 before/after). State = BUILT_NOT_PROVEN, production
+      commissioning IN PROGRESS. Next: two consecutive normal healthy
+      scheduled sessions (D1 Mon 2026-08-24, D2 Tue 2026-08-25; forced=false,
+      status=healthy, ad_ready_coverage_pct >= 0.90, no deadline breach,
+      Terminal healthy, first fetching run oi_D_source=snapshot_open_
+      interest), then bounded production review + read-only AD diagnostic,
+      then return packet to Sol. NOTE-4 ruled NONBLOCKING (late-recovery
+      sentinel page is a real degraded-SLA alert — do not suppress).
+      No --force-run proof ever. AD-1T2/AD-2 stay CLOSED pending Sol.
   - id: AD-1T2
     title: Restore store-bearing M1 to the theta-m1 product workflow; commission AD-1 end to end
     status: todo

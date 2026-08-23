@@ -39,8 +39,11 @@ confidence: high
 reversibility: costly
 decided_by: ceo-sol
 decided_at: 2026-08-19
+superseded_by: DEC:FF-1R-BOUNDED-JULY-RECOVERY
 ---
 
-Index-driven discovery stays. Recovery execution is NOT_BUILT / NOT_COMMISSIONED
-under FF-1R. Previous-quarter weekly reconciliation remains SPEC_ONLY / NOT_BUILT.
-FF-2 remains forbidden.
+This decision prevented recovery execution from being smuggled into #5898. Its
+scope boundary remains historical provenance, but the explicit later Sol
+commission is now implemented as the bounded FF-1R capability in
+`DEC:FF-1R-BOUNDED-JULY-RECOVERY`. Previous-quarter weekly reconciliation
+remains SPEC_ONLY / NOT_BUILT. FF-2 remains forbidden.

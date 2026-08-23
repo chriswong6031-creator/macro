@@ -11,28 +11,30 @@ sessions start in whichever folder the operator opened — usually the occupied
 primary or the designated local root ``macro-main``, which is itself a linked
 worktree and must never be sparsified. This script is the missing mint:
 
-1. Session worktree already — run ``auto`` (idempotent; preserves ``add site``).
-2. Macro host checkout that is not a session worktree — mint a sparse linked
+1. Same identity-bound conversation carrier — run ``auto`` (idempotent;
+   preserves ``add site``).
+2. Any Macro checkout without that identity-bound carrier — mint a sparse linked
    worktree under the donor's ``.warp/worktrees/<name>/`` using
    ``git worktree add --no-checkout`` (Claude's pre-checkout shape). Never
    write a pointer file into that checkout: it is a git tree and the pointer
    would be dirt.
-3. Anything else — no-op. Never sparsify the occupied primary or the operator
-   local root.
+3. A path or branch collision — fail closed without taking over the existing
+   carrier. Anything else — no-op. Never sparsify the occupied primary or the
+   operator local root.
 
 Stdout prints ``WORKSPACE=<path>`` when a session tree is the workspace so a
 Warp skill/agent can ``cd`` there. Progress goes to stderr.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
-import re
 import sys
+import uuid
 from pathlib import Path
 
 HOOK = "WarpSessionStart"
-SAFE_NAME = re.compile(r"^[A-Za-z0-9._-]+$")
 POINTER_NAME = ".session-worktree"
 STUDIO_LOCAL_ROOT = Path("/Users/chriswong/Documents/Cluade/macro-main")
 ORIGIN_MARKERS = ("mastermindx-market-intelligence/macro",)
@@ -108,21 +110,46 @@ def discover_donor(cwd: Path) -> Path | None:
     return None
 
 
-def worktree_name(cwd: Path, payload: dict) -> str:
-    env_session = os.environ.get("WARP_TERMINAL_SESSION_UUID", "").strip()
-    if env_session:
-        slug = re.sub(r"[^A-Za-z0-9._-]+", "-", env_session).strip("-")[:40]
-        if slug and SAFE_NAME.match(slug):
-            return f"warp-{slug}"
-    session = payload.get("sessionId") or payload.get("session_id") or ""
-    if isinstance(session, str) and session:
-        slug = re.sub(r"[^A-Za-z0-9._-]+", "-", session).strip("-")[:40]
-        if slug and SAFE_NAME.match(slug):
-            return f"warp-{slug}"
-    for part in reversed(cwd.parts):
-        if part.startswith("warp-") and SAFE_NAME.match(part):
-            return part
-    return "warp-session"
+def worktree_name(payload: dict) -> tuple[str, bool]:
+    """Return ``(carrier_name, identity_proven)`` for this Warp invocation.
+
+    Only an unambiguous conversation/task identity can establish ownership.
+    Terminal and session IDs are intentionally ignored: one terminal can host
+    more than one agent conversation. The branch/path suffix is a SHA-256
+    digest of the complete raw identity, so no sanitization/truncation collision
+    and no raw identifier is written or logged.
+    """
+    candidates: list[object] = [
+        payload.get("conversationId"),
+        payload.get("conversation_id"),
+        os.environ.get("WARP_CONVERSATION_ID", ""),
+    ]
+    for candidate in candidates:
+        if isinstance(candidate, str) and candidate.strip():
+            digest = hashlib.sha256(candidate.encode("utf-8")).hexdigest()
+            return f"warp-{digest}", True
+    return f"warp-{uuid.uuid4().hex}", False
+
+
+def _branch(root: Path) -> str:
+    try:
+        proc = __import__("subprocess").run(
+            ("git", "-C", str(root), "branch", "--show-current"),
+            capture_output=True, text=True, timeout=15, check=False,
+        )
+    except Exception:  # noqa: BLE001
+        return ""
+    return proc.stdout.strip() if proc.returncode == 0 else ""
+
+
+def can_reuse_carrier(ws, dest: Path, branch: str, identity_proven: bool) -> bool:
+    """A path is reusable only when Warp positively bound it to this session."""
+    return (
+        identity_proven
+        and dest.is_dir()
+        and ws.is_session_worktree(dest)
+        and _branch(dest) == branch
+    )
 
 
 def write_pointer(cwd: Path, dest: Path) -> None:
@@ -167,39 +194,38 @@ def main() -> int:
         log(f"could not load worktree_sparse.py: {exc}")
         return 0
 
-    if ws.is_session_worktree(cwd):
-        log(f"session worktree already; running auto in {cwd}")
-        rc = ws.auto_profile(cwd)
-        if rc == 0:
-            emit_workspace(cwd)
-        return 0
+    name, identity_proven = worktree_name(payload)
+    branch = f"warp/{name}"
+    dest = donor / ".warp" / "worktrees" / name
 
-    existing = cwd / POINTER_NAME
-    if existing.is_file():
-        pointed = Path(existing.read_text(encoding="utf-8").strip())
-        if pointed.is_dir() and ws.is_session_worktree(pointed):
-            log(f"reusing pointer {pointed}")
-            rc = ws.auto_profile(pointed)
-            if rc == 0:
-                emit_workspace(pointed)
-            return 0
+    if can_reuse_carrier(ws, dest, branch, identity_proven):
+        log(f"reusing identity-bound session carrier {dest}")
+        rc = ws.auto_profile(dest)
+        if rc == 0:
+            emit_workspace(dest)
+        return rc
+
+    if dest.exists():
+        log(f"carrier collision at {dest}; refusing to take over an existing carrier")
+        return 1
 
     if not is_macro_checkout(cwd) or not is_git_checkout(cwd):
         log("not a Macro host checkout; leaving workspace unchanged")
         return 0
 
-    name = worktree_name(cwd, payload)
-    dest = donor / ".warp" / "worktrees" / name
-    branch = f"warp/{name}"
     log(f"minting sparse worktree {dest} off origin/main")
     rc = ws.mint_session_worktree(
         donor, dest, branch=branch, base="refs/remotes/origin/main", fetch=True,
+        reuse_existing=False, strict=True,
     )
     if rc == 0:
+        if not dest.is_dir() or not ws.is_session_worktree(dest):
+            log("mint reported success without creating a linked session carrier")
+            return 1
         write_pointer(cwd, dest)
         emit_workspace(dest)
         log(f"workspace -> {dest}")
-    return 0
+    return rc
 
 
 if __name__ == "__main__":

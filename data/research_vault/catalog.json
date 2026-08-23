@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-23T06:21:14.606856+00:00",
-  "count": 1668,
+  "generated_at": "2026-08-23T10:12:16.207164+00:00",
+  "count": 1679,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -940,6 +940,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-upwzp7bcgkk-a45499",
+      "title": "Bond markets",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:28Z",
+      "summary_points": [
+        "**Bail-in Risk Concentration**: 5 issuers (Deutsche Bank, JPMorgan Chase, Bank of Nova Scotia, Morgan Stanley, Goldman Sachs) carry \"Senior (bail-in)\" designation, exposing portfolios to capital drawdowns during financial stress.",
+        "**Cross-Border Currency Baskets**: Target USD/EUR/CHF/GBP baskets for resilience, leveraging mispriced credit risk from home bias and avoiding FX complexity.",
+        "**ESG-Linked Yield Opportunities**: SLB/Green bonds (e.g., BP, Amazon, Enel) offer YTM 3.1–4.0% with regulatory alignment, amid 5 new sustainability-linked additions.",
+        "**Yield & Duration Profile**: YTM 4.8–6.2% (USD), coupons 4.0–6.5%, maturities clustered 2023–2025, enabling tactical yield capture amid rising rates.",
+        "**Critical Credit Deterioration**: Barry Callebaut’s \"Deteriorating\" outlook (1 issuer) signals immediate need for portfolio adjustment to mitigate credit risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 30,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-nrqxsf0pkcj-103e1b",
       "title": "Daily US",
       "institution": "UBS",
@@ -951,6 +972,85 @@
         "**Eurozone PMI accelerates recovery**: Business activity at 4-year high (PMI 52.1), manufacturing at 4-year peak, easing inflation may delay ECB tightening—key data for European asset allocation.",
         "**Gold to $5,400/oz**: Driven by debt sustainability concerns, currency weakness, and rising government debt—critical safe-haven flow amid elevated rate expectations.",
         "**Rate Hike & Sector Shift**: One more 25bp hike expected before pause; European industrials, banks, consumer discretionary, and IT favored for structural growth and improving activity."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-yy1pewjwhba-0858c7",
+      "title": "Invest in transformational innovation",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:26Z",
+      "summary_points": [
+        "**AI Market Growth & Concentration Risk**: $3.1T addressable market by 2030 (30% CAGR), but semiconductor supply bottlenecks create single-stock concentration risk.",
+        "**Energy/Infrastructure Investment Surge**: Global grid investment to rise from $500bn (2026) to $3T (2030) amid AI demand and geopolitical pressures.",
+        "**Longevity Market Catalysts**: Market to grow from $5.3T (2023) to $8.0T (2030); 2026 pivotal for obesity/oncology pipeline readouts and M&A.",
+        "**Portfolio Diversification Edge**: Longevity shows negative return correlation to \"AI\" portfolio and resilience to geopolitical risks via diversified healthcare supply chains."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-a6ms5lesl7a-b64af1",
+      "title": "Put cash to work",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:25Z",
+      "summary_points": [
+        "**Historical Outperformance**: US stocks outperformed cash in 97% of cases (1945–2026); diversified 60/40 portfolios consistently beat cash, with excess cash risking inflation erosion and low real returns.",
+        "**Optimal Cash Allocation**: Hold 2–5 years of net withdrawals as cash; deploy excess into diversified assets (stocks, bonds, alternatives) to avoid market timing and leverage historical outperformance.",
+        "**Reinvestment Risk Mitigation**: Prioritize longer-term fixed deposits/high-grade bonds over short-term rolling to counter reinvestment risk, aligning with Fed rate hold expectations and elevated yields."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-srugyppwoin-abfe66",
+      "title": "Optimize your leverage",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:22Z",
+      "summary_points": [
+        "**Strategic Borrowing Rationale**: Mitigates tax drag and diversifies, but requires hedging geopolitical risks (Iran war, oil supply) and US rate cut timing (2027) to avoid margin calls/debt repayment issues.",
+        "**Leverage Strategy Core**: Align debt duration with assets, stress-test for margin calls during Middle East volatility, and formalize repayment timelines with contingency plans.",
+        "**Risk Resilience Essentials**: Monitor loan-to-value ratios and geopolitical shocks; ensure assets buffer against margin calls and delayed cash inflows to sustain leverage.",
+        "**Equity Rating Structure**: Five-tier system collapses equities to \"Unattractive\" if included in three-tier portfolio constraints, requiring tactical allocation adjustments for borrowing limits."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-3enxppdbicy-25e66a",
+      "title": "Diversify with alternatives",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:21Z",
+      "summary_points": [
+        "**Hedge Fund Performance**: Discretionary macro hedge funds delivered 7.2% avg annual return (5.6% volatility, 8.1% max drawdown) vs 54.0% equities, highlighting superior risk-adjusted returns.",
+        "**Infrastructure Diversification**: Private infrastructure offers 11% annualized returns with 30% correlation to stocks/bonds, providing inflation-linked diversification critical amid rising rates.",
+        "**PE Thematic Shift**: Global PE fundraising hit $262B in H1 2026 (exceeding 2025 full-year), led by Asia Pacific, with thematic focus on healthcare/new energy at 10.5x buyout multiples.",
+        "**Diversification Imperative**: Mitigate overconcentration and localized disruption by diversifying across sectors, geographies, strategies, and vintages in private markets."
       ],
       "tags": [],
       "tickers": [],
@@ -980,6 +1080,85 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-iqrqn1i2u1d-273d81",
+      "title": "Strengthen your core",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:18Z",
+      "summary_points": [
+        "**Portfolio Allocation**: Core strategy mandates 30-70% stocks (50% US, 20% global), 15-50% fixed income, 30% growth themes (AI/Power/Longevity), with rebalancing to trim outperformers and add underperformers for risk control.",
+        "**Geopolitical Risks**: US-Iran conflict, Middle East tensions, and oil volatility drive uncertainty; CIO projects global equities to rise by 2026 amid periodic volatility from economic/tech/geopolitical shifts.",
+        "**Alternatives Allocation**: Recommends 20-40% in alternatives (hedge funds/private equity) with careful manager selection for resilience, but mandates awareness of illiquidity risks and structural constraints.",
+        "**Liquidity Risks**: Withdrawal limits (\"gating\") signal liquidity concerns; investors must assess structure, stress behavior, and inherent illiquidity of private market assets."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-so6z9qaywfv-1ff944",
+      "title": "Audio",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:17Z",
+      "summary_points": [
+        "**Geopolitical Risk**: Iran sanctions due Monday (economic warfare) risk market optimism bias; Strait of Hormuz closure fears compound with US Treasury bond weakness and Trump policy response uncertainty.",
+        "**Fundamental Data Releases**: South Korea semiconductor exports drive export strength (Bank of Korea rate hike expected); UK July retail sales weakened by weather/early discounting despite fuel sales offsetting oil price impact.",
+        "**Tactical Allocation Tool**: Five-tier equity rating system (Most Attractive to Least Attractive) collapses to three tiers when combined with other assets, guiding portfolio allocation via expected returns and scenario analysis."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ydkpdw6jcyl-660bdf",
+      "title": "Listed real estate",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:17:17Z",
+      "summary_points": [
+        "**Allocation Priorities**: Prioritize Continental Europe, Hong Kong Developers/REITs, and US; avoid Australia, Japan, Singapore, UK due to interest rate sensitivity, China capital restrictions, and volatile bond markets.",
+        "**Earnings Growth**: Listed real estate EPS expected to grow 10.2% in 2026 and 7.7% in 2027 (ex-emerging markets), driven by rental indexation, reversion, and portfolio transactions.",
+        "**Valuation & Risk**: Sector dividend yield at 3.2% (below 7-yr avg 3.6%); REITs trade at 6% NAV premium; debt maturities >5yrs support refinancing flexibility amid office take-up risks.",
+        "**Target Range**: FTSE EPRA/Nareit 2027 target 9,100 (upside) vs.",
+        "8,500 (downside), driven by rental income growth, debt market stability, and NAV discounts for discounted companies."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-1bcgmtszblz-c7386e",
+      "title": "Chinese economy",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:16:41Z",
+      "summary_points": [
+        "**Household deleveraging constrains consumption**: Household leverage fell to 56.2% of GDP (1H26), with mortgages and consumer loans contracting for five quarters—first decline in consumer loans since series began—directly limiting domestic demand.",
+        "**EV Sector Divergence & Deposit Shift**: EV exports grew at high double-digit pace (2023–2025), but domestic retail sales fell >10% y/y; household deposits dropped CNY 100bn (2026), with funds migrating to wealth management (17% of assets) and stocks (11%).",
+        "**Household Asset Allocation Shift**: 48% of mass-affluent households allocate to nonbank products (stocks 11%, VOFs 17%, insurance 6%), signaling systemic capital reallocation away from traditional banking toward alternatives."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-49qcqev5a8t-9873fb",
       "title": "Daily Europe",
       "institution": "UBS",
@@ -991,6 +1170,45 @@
         "**UK Inflation & BoE Policy**: UK CPI rose to 2.9% YoY (July), BoE projects peak at 3.2% later 2023; Bank Rate held at 3.75% through 2026 despite oil price risks.",
         "**ECB Rate Cuts & Eurozone Bond Preference**: ECB rate cuts expected (3.50% March 2027, 3.25% June), prompting preference for quality short/medium-term Eurozone bonds and value in longer-maturity bonds.",
         "**Global Flow Shifts**: Eurozone bond outperformance (Germany 10-yr Bund YTD +40%) contrasts with rising US yields (US 10-yr Treasury YTD +54%), driving capital flows toward Eurozone assets."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-4lftwzje8is-9ac4ac",
+      "title": "Asia Pacific equities",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:16:38Z",
+      "summary_points": [
+        "**AI Compute Demand**: Sustained AI infrastructure expansion drives supply-chain bottlenecks, benefiting Taiwan’s 67% semiconductor/20% hardware market; TSMC 2026 earnings and hyperscaler capex provide visibility.",
+        "**Valuation Attractiveness**: Elevated P/E (~20x) offset by 42%/37% earnings growth (2026/2027), yielding low PEG (0.5-0.6x), sustaining market rally despite semiconductor investor caution.",
+        "**Geopolitical Risk Moderation**: Taiwan Strait tensions moderated by semiconductor supply chain importance; key risk is uncertain hyper-scaler capex growth beyond 2027 (potential 10-15% decline)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-nfqrwbegeyo-513572",
+      "title": "High yield",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-22T02:16:36Z",
+      "summary_points": [
+        "**High Yield Outlook**: US/EUR HY yields at 7.5%/5.9% with tight spreads, resilient growth, low defaults (1.9%/1.3%), and high-single-digit total returns supported by elevated yields and market overestimation of policy rate path.",
+        "**Policy & Default Dynamics**: Central banks cautious on hikes (40-60bps expected), inflation data driving rate cuts; low default activity (1.9% US, 1.3% Euro) with 2% rise projected in 12 months.",
+        "**High Yield Fundamentals**: US HY leverage at 4.5x (below long-term avg), distress ratio low (4.4% US), quality improved (BBs 60% index), CCC exposure low (4% EUR) but CCC issuers face constrained finance (15% yield vs 8% coupon, 9.4x net leverage).",
+        "**Spread Targets & Risks**: ICE BofA US/Euro HY spread targets 250bps/240bps by June 2027; CCC maturities (USD 27bn) and geopolitical risks (Hormuz disruptions) could pressure spreads to 330bps/310bps in yield pressure scenario."
       ],
       "tags": [],
       "tickers": [],

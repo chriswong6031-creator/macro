@@ -1,0 +1,154 @@
+{
+  "schema": "mastermind.dislocation_p0.a1r_source_attempt_history.v2",
+  "attempts": [
+    {
+      "attempt_id": "a1r-source-attempt-1",
+      "status": "ABORTED_AFTER_SOURCE_BEFORE_MANIFEST",
+      "network_scope": {
+        "named_leaf_count": 5,
+        "hosts_observed": [
+          "efts.sec.gov"
+        ],
+        "leaf_rows_observed": [
+          {
+            "end": "2025-12-31",
+            "form": "8-K",
+            "phrase": "bankruptcy",
+            "rows": 9877,
+            "start": "2025-07-03"
+          },
+          {
+            "end": "2025-12-31",
+            "form": "6-K",
+            "phrase": "liquidation",
+            "rows": 3431,
+            "start": "2025-01-01"
+          },
+          {
+            "end": "2017-12-31",
+            "form": "8-K",
+            "phrase": "default under",
+            "rows": 6742,
+            "start": "2017-07-03"
+          },
+          {
+            "end": "2023-07-02",
+            "form": "8-K",
+            "phrase": "default under",
+            "rows": 6108,
+            "start": "2023-01-01"
+          },
+          {
+            "end": "2025-07-02",
+            "form": "8-K",
+            "phrase": "default under",
+            "rows": 6585,
+            "start": "2025-01-01"
+          }
+        ]
+      },
+      "failure": {
+        "code": "LOCAL_SOLVER_IMPLEMENTATION_INEFFICIENCY",
+        "detail": "The original lexicographic feasibility implementation compared full candidate dictionaries through a growing rejection list. The operator interrupted only the CPU-bound local solver after every named leaf had completed.",
+        "stage": "exact20_manifest"
+      },
+      "admissibility": {
+        "acceptance_receipt": false,
+        "reason": "Leaf response hashes and access events had not yet been checkpointed; the observations are attempt history only."
+      },
+      "firewall": {
+        "forbidden_data_access": false,
+        "network_parent_aggregate_fetch": false
+      },
+      "repair": {
+        "solver": "indexed slot feasibility and set-based rejection",
+        "leaf_checkpoint_before_solver": true
+      }
+    },
+    {
+      "attempt_id": "a1r-source-attempt-2",
+      "status": "SUPERSEDED_GLOBAL_UNIQUE_CIK_SELECTION_DEFECT",
+      "network_scope": {
+        "retry_policy": "five named failed leaves only; four aggregates rebuilt offline",
+        "named_leaf_count": 5,
+        "access_event_count": 332,
+        "hosts_observed": [
+          "efts.sec.gov"
+        ]
+      },
+      "receipts": {
+        "historical_cache_sha256": "7b742d2ea6cf3bf22c3b24b8a512bab4eb168d8c5bc0e9cc320fb249134fb2d3",
+        "completed_cache_sha256": "e45a2c9661d496c074134fc212bbab5d1b70e25cda0e3fc5fb0d797592937c71",
+        "retry_receipt_sha256": "c5e7da408e66a1077602736e125b351257a213122148bfdc31a7dd597be469c4",
+        "aggregate_receipt_sha256": "120fb20111fec24eb3f7b096270814dd869153761da8cac6d1158726c16d21e9",
+        "candidate_universe_sha256": "aca01d616b859a9e59381748b86cd65405eb3bf54b57a10b1d7faef32b51a733",
+        "complete_cell_sha256": "b7e0c9a5f070473be7ed8fda887869878a210c21078faab2db9361111e4227e0",
+        "exact_twenty_manifest_sha256": "f44f37d5f44b4c3eabb5098004afa4aed8c40a173404709084a82152741d36bf",
+        "exact_twenty_file_sha256": "2635a5c6787d5fd60be8f08177d699e65c9f83ab39bdfec4e616b11d4b3e45fa"
+      },
+      "completion": {
+        "logical_cells": 146,
+        "complete_cells": 146,
+        "incomplete_records": 0,
+        "candidate_universe_count": 277549,
+        "selected_packets": 20,
+        "byte_identical_rerun": true
+      },
+      "admissibility": {
+        "acceptance_receipt": false,
+        "artifact": "A1R_QUERY_COMPLETION_AND_POOL_RECEIPT.json",
+        "reason": "Query completion and candidate-universe receipts remain valid, but the exact-twenty solver incorrectly required globally unique CIK rather than unique (CIK, accession)."
+      },
+      "firewall": {
+        "forbidden_dirs_present": [],
+        "official_sec_only": true,
+        "network_parent_aggregate_fetch": false
+      }
+    },
+    {
+      "attempt_id": "a1r-source-attempt-3",
+      "status": "COMPLETE_ACCEPTED_TUPLE_UNIQUENESS_REPAIR",
+      "network_scope": {
+        "retry_policy": "none; the completed 146-cell cache and frozen candidate universe were replayed without new FTS access",
+        "named_leaf_count": 0,
+        "access_event_count": 0,
+        "hosts_observed": []
+      },
+      "receipts": {
+        "candidate_universe_sha256": "aca01d616b859a9e59381748b86cd65405eb3bf54b57a10b1d7faef32b51a733",
+        "complete_cell_sha256": "b7e0c9a5f070473be7ed8fda887869878a210c21078faab2db9361111e4227e0",
+        "exact_twenty_manifest_sha256": "e436c6e87870468d0df0449c86cc9b69a9d23aa1396885fffdfcbfcf6398852e",
+        "exact_twenty_file_sha256": "740454d9d229b28e71fe35c4eb599cb0d1912227c4c44448214e5159a3d13085",
+        "query_completion_file_sha256": "447e378f98e0b5d7d036827eca5e1b405f0c480869f9056643e81e8bd2633611"
+      },
+      "completion": {
+        "logical_cells": 146,
+        "complete_cells": 146,
+        "incomplete_records": 0,
+        "candidate_universe_count": 277549,
+        "selected_packets": 20,
+        "unique_identity": "(CIK, accession)",
+        "same_cik_different_accession_allowed": true,
+        "duplicate_cik_accession_forbidden": true,
+        "selected_packet_ids_unchanged": true,
+        "byte_identical_rerun": true
+      },
+      "admissibility": {
+        "acceptance_receipt": true,
+        "artifact": "A1R_QUERY_COMPLETION_AND_POOL_RECEIPT.json"
+      },
+      "firewall": {
+        "forbidden_dirs_present": [],
+        "official_sec_only": true,
+        "network_parent_aggregate_fetch": false
+      }
+    }
+  ],
+  "authority": {
+    "can_rank": false,
+    "can_gate": false,
+    "can_size": false,
+    "can_originate_signal": false,
+    "can_escalate": false
+  }
+}

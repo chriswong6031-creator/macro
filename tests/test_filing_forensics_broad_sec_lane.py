@@ -17,6 +17,7 @@ R2_RESEARCH_KEYS = {
     "R2_RESEARCH_SECRET_ACCESS_KEY",
     "R2_RESEARCH_BUCKET",
 }
+EVENT_INPUT_KEYS = {"EVENT_NAME", "EVENT_MODE", "EVENT_RECOVERY_FROM"}
 
 
 def _load(path: Path) -> dict:
@@ -55,7 +56,7 @@ def test_daily_render_does_not_run_the_broad_sec_poll() -> None:
 def test_scheduled_path_cannot_enter_recovery() -> None:
     body = LANE.read_text(encoding="utf-8")
     assert "MODE=\"incremental\"" in body
-    assert "github.event_name" in body
+    assert "EVENT_NAME" in body
     assert "workflow_dispatch" in body
     poll_step = next(
         step
@@ -65,7 +66,8 @@ def test_scheduled_path_cannot_enter_recovery() -> None:
     )
     run = poll_step["run"]
     assert "continue-on-error" not in poll_step
-    assert set(poll_step["env"]) == R2_RESEARCH_KEYS
+    assert R2_RESEARCH_KEYS <= set(poll_step["env"])
+    assert set(poll_step["env"]) == R2_RESEARCH_KEYS | EVENT_INPUT_KEYS
     incremental_arm = [
         line
         for line in run.splitlines()
@@ -79,9 +81,23 @@ def test_scheduled_path_cannot_enter_recovery() -> None:
     assert incremental_arm
     assert recovery_arm
     recovery_index = run.index("--mode recovery")
-    dispatch_index = run.index('github.event_name')
+    dispatch_index = run.index('EVENT_NAME')
     assert dispatch_index < recovery_index
     assert "backlog" not in run.lower() or "cannot enter recovery merely because a backlog exists" in run
+    assert "${{" not in run
+
+
+def test_manual_recovery_is_bound_to_the_one_ratified_plan_input() -> None:
+    lane = _load(LANE)
+    triggers = lane[True] if True in lane else lane["on"]
+    inputs = triggers["workflow_dispatch"]["inputs"]
+    assert set(inputs) == {"mode", "recovery_from"}
+    assert inputs["mode"]["options"] == ["incremental", "recovery"]
+    assert inputs["recovery_from"]["default"] == "2026-07-12T11:23:15Z"
+    body = LANE.read_text(encoding="utf-8")
+    assert "--max-affected-issuers" not in body
+    assert "--max-companyfacts-bytes-per-run" not in body
+    assert "recovery-specific" not in body
 
 
 def test_lane_failure_is_a_hard_gate() -> None:

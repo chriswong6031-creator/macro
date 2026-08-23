@@ -1,8 +1,7 @@
 """Incremental broad SEC source-plane poll for Filing Forensics (FF-1).
 
-Scheduled invocation is incremental only. Recovery is an explicit
-workflow_dispatch path that currently fail-closes with
-``recovery_plan_required`` until FF-1R is commissioned. Discovery uses the
+Scheduled invocation is incremental only. Recovery is the explicit, bounded
+FF-1R workflow_dispatch path anchored at the ratified July vintage. Discovery uses the
 official EDGAR full-index master ZIP; per-issuer Submissions and Company
 Facts run only for affected canonical issuers. Partial polls persist
 successful issuer evidence but exit non-zero and do not advance the
@@ -23,6 +22,7 @@ sys.path.insert(0, str(_ROOT))
 from collectors.edgar_forensics import _user_agent  # noqa: E402
 from engine.fundamental_forensics.broad_sec_store import (  # noqa: E402
     BroadSecError,
+    FF1R_RECOVERY_FROM,
     PollClocks,
     UNIVERSE_RELATIVE_PATH,
     live_fetchers,
@@ -64,16 +64,13 @@ def main(
     parser.add_argument("--user-agent", default=None)
     args = parser.parse_args(argv)
 
-    if args.mode == "recovery":
+    if args.mode == "recovery" and args.recovery_from != FF1R_RECOVERY_FROM:
         print(
             json.dumps(
                 {
                     "status": "failed",
-                    "reason_code": "recovery_plan_required",
-                    "detail": (
-                        "Index-driven discovery is live, but large-scale recovery "
-                        "is not commissioned on this build."
-                    ),
+                    "reason_code": "recovery_plan_invalid",
+                    "detail": f"FF-1R requires --recovery-from {FF1R_RECOVERY_FROM}",
                 }
             )
         )
@@ -92,7 +89,12 @@ def main(
 
     try:
         store = open_store(args.local_store)
-        fetch_submissions, fetch_companyfacts, fetch_master_index = live_fetchers(
+        (
+            fetch_submissions,
+            fetch_historical_submissions,
+            fetch_companyfacts,
+            fetch_master_index,
+        ) = live_fetchers(
             user_agent=args.user_agent or _user_agent(repo_root),
             scratch_root=scratch,
         )
@@ -100,6 +102,7 @@ def main(
             store=store,
             universe_path=universe,
             fetch_submissions=fetch_submissions,
+            fetch_historical_submissions=fetch_historical_submissions,
             fetch_companyfacts=fetch_companyfacts,
             fetch_master_index=fetch_master_index,
             clocks=PollClocks(
