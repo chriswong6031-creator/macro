@@ -173,7 +173,6 @@
     "9c00f0c5ec2f2ba5faf04a7f29eea26b6c92b471": "2026-08-23T18:01:57.806424+00:00",
     "9ccc46436068a9a9e873064001871d1f738d1f31": "2026-08-23T18:01:57.806424+00:00",
     "9d2f1f0a95d911f4742ab9a71451dbb1706a8404": "2026-08-23T13:17:52.268666+00:00",
-    "9d7858d35c62591441ab807106b8c482e8f8b896": "2026-08-22T19:52:56.372828+00:00",
     "9e4b652395570343ebaa70c3bea651ce7a935ef4": "2026-08-23T19:06:02.845784+00:00",
     "9e5fdb04eb69cfed205b949c16e7bed3dd3b3bb2": "2026-08-23T19:06:02.845784+00:00",
     "9e81fef957d1ea9ce297fa38c2db46d161bd57e2": "2026-08-23T04:58:25.743589+00:00",
@@ -234,6 +233,7 @@
     "b48100483bfbc7c721f74db32ad44bc7038dfc6d": "2026-08-23T04:21:34.630374+00:00",
     "b4c731e20965c8ffd2acd3905880f50de8d1ee6c": "2026-08-23T19:06:02.845784+00:00",
     "b6538318158c5288427b7a3785b93f85470d3b7c": "2026-08-23T15:50:46.333309+00:00",
+    "b66b1e73ed00cf0508059afa12c0ec214a484243": "2026-08-23T20:01:42.625800+00:00",
     "ba88119ef08c824d68e92ca01c731be2ca3a807c": "2026-08-23T19:06:02.845784+00:00",
     "bab9a8877e64ce1be03474fbf2a14df1aeecad52": "2026-08-23T14:59:02.427906+00:00",
     "bae32ef87737c7226baa8d1caef1a931bfd355a5": "2026-08-22T23:40:35.692695+00:00",
@@ -256,6 +256,7 @@
     "c287ab1ab67b2916cba1f2330c30f148018e8905": "2026-08-22T20:42:26.993339+00:00",
     "c30c9cc351d8a53f07a00b64ce8bc3613e381fea": "2026-08-23T15:30:03.919611+00:00",
     "c324d45d37a4b20859c738eddeba8995ec7aacad": "2026-08-23T18:43:34.719860+00:00",
+    "c439352c4994f070ffa2ca2783d07f98180ae1ed": "2026-08-23T20:01:42.625800+00:00",
     "c46d5724c69246506caef114caeb258fffb6921e": "2026-08-23T17:29:08.194162+00:00",
     "c47221808764f3aa54e30066425f815d5992bb95": "2026-08-22T21:30:09.554662+00:00",
     "c52787736210e3bf2332aef5ff8d302bebfa5df4": "2026-08-22T20:13:43.262274+00:00",
@@ -327,9 +328,15 @@
   },
   "corroboration": {
     "claim:none:sec:technology": {
-      "first_ts": "2026-08-23T19:31:39.532412+00:00",
+      "first_ts": "2026-08-23T20:01:42.625800+00:00",
       "sources": [
-        "host:benzinga.com"
+        "host:zerohedge.com"
+      ]
+    },
+    "head:italy extends diesel tax cut to wednesday amid rising fuel prices": {
+      "first_ts": "2026-08-23T20:01:42.625800+00:00",
+      "sources": [
+        "host:investing.com"
       ]
     },
     "truth:117129929938107129": {
@@ -909,7 +916,7 @@
   },
   "providers": {
     "alpaca": {
-      "last_poll": "2026-08-23T19:50:00.788825+00:00",
+      "last_poll": "2026-08-23T20:01:42.625800+00:00",
       "primed_at": "2026-08-04T07:19:01.408847+00:00",
       "since": "2026-08-23T19:15:40+00:00"
     },
@@ -921,7 +928,7 @@
     },
     "trumpstruth": {
       "fail_count": 0,
-      "last_poll_ts": 1787514603.985412
+      "last_poll_ts": 1787515305.1813304
     },
     "twitterapiio": {
       "cursors": {
@@ -992,65 +999,65 @@
   },
   "schema": "press_wire.cursors/v1",
   "transient_refusals": {},
-  "updated_at": "2026-08-23T19:50:00Z",
+  "updated_at": "2026-08-23T20:01:42Z",
   "wire": {
     "bea_news": {
       "etag": "W/\"d0e223fac24dd1:0\"",
       "fail_count": 0,
       "last_modified": "Tue, 04 Aug 2026 12:30:04 GMT",
-      "last_poll_ts": 1787514602.4143438
+      "last_poll_ts": 1787515303.9046295
     },
     "bls_news": {
       "etag": "\"07aaf967531dd1:0\"",
       "fail_count": 0,
       "last_modified": "Fri, 21 Aug 2026 14:01:40 GMT",
-      "last_poll_ts": 1787514602.0307577
+      "last_poll_ts": 1787515303.7823756
     },
     "cnbc_top": {
       "fail_count": 0,
-      "last_poll_ts": 1787514602.7270238
+      "last_poll_ts": 1787515304.0482943
     },
     "coindesk_rss": {
       "fail_count": 0,
-      "last_poll_ts": 1787514603.6922967
+      "last_poll_ts": 1787515304.8960586
     },
     "cointelegraph_rss": {
       "fail_count": 0,
-      "last_modified": "Sun, 23 Aug 2026 19:49:51 GMT",
-      "last_poll_ts": 1787514603.8611712
+      "last_modified": "Sun, 23 Aug 2026 19:57:50 GMT",
+      "last_poll_ts": 1787515305.095192
     },
     "fed_press": {
       "etag": "W/\"53636b83de30dd1:0\"",
       "fail_count": 0,
       "last_modified": "Thu, 20 Aug 2026 20:00:13 GMT",
-      "last_poll_ts": 1787514601.8884714
+      "last_poll_ts": 1787515303.671463
     },
     "forexlive_news": {
-      "etag": "W/\"9x1MPkgqE0P6MfXNmtKo00gNqkQ\"",
+      "etag": "W/\"FvPNmE3zhyA7q3yhTVxngjaFu1s\"",
       "fail_count": 0,
-      "last_poll_ts": 1787514603.2231076
+      "last_poll_ts": 1787515304.6204884
     },
     "investing_news": {
-      "etag": "W/\"124b-659bbfc01f4e7\"",
+      "etag": "W/\"126a-659bc4ca13785\"",
       "fail_count": 0,
-      "last_modified": "Sun, 23 Aug 2026 19:36:22 GMT",
-      "last_poll_ts": 1787514603.5367134
+      "last_modified": "Sun, 23 Aug 2026 19:58:54 GMT",
+      "last_poll_ts": 1787515304.8349264
     },
     "marketwatch_top": {
-      "etag": "W/\"2156-+SAUP98WGr5KyWGx5gqXtNojw08\"",
+      "etag": "W/\"2156-OUjyU9KHuY8pJkKTaYWd1qOOsaI\"",
       "fail_count": 0,
-      "last_poll_ts": 1787514602.8749287
+      "last_poll_ts": 1787515304.2210352
     },
     "whitehouse_actions": {
       "etag": "\"393774828a07a184ce685a347792bc6c\"",
       "fail_count": 0,
       "last_modified": "Fri, 21 Aug 2026 21:35:04 GMT",
-      "last_poll_ts": 1787514602.6412117
+      "last_poll_ts": 1787515304.0219471
     },
     "zerohedge_feed": {
       "fail_count": 0,
-      "last_modified": "Sun, 23 Aug 2026 18:55:21 GMT",
-      "last_poll_ts": 1787514602.9245484
+      "last_modified": "Sun, 23 Aug 2026 19:59:58 GMT",
+      "last_poll_ts": 1787515304.2674491
     }
   },
   "wire_day_counts": {
