@@ -1485,6 +1485,7 @@ jobs:
     # 846 tracked / 127 concrete. Subject packages stay globbed.
     scope: exclusive
     paths:
+      - "engine/quote_resolution.py"
       - "app/*"
       - "collectors/*"
       - "collectors/biocatalyst/**"
@@ -1777,6 +1778,7 @@ jobs:
       - "ops/launchd/com.mastermind.liveflow.plist"
       - "ops/launchd/com.mastermind.optionssparseselector.plist"
       - "ops/launchd/com.mastermind.prophetmarks.plist"
+      - "ops/launchd/run_with_env.sh"
       - "ops/launchd/run_options_sparse_selector_loop.sh"
       - "ops/launchd/run_options_sparse_selector_verified.py"
       - "ops/launchd/run_prophet_marks_loop.sh"
@@ -1804,6 +1806,7 @@ jobs:
       - "scripts/build_options_structure_intraday.py"
       - "scripts/build_prophet_marks.py"
       - "scripts/build_prophet_option_shadow_lifecycle.py"
+      - "scripts/prophet_canonical_git.py"
       - "scripts/capture_market_memory_context.py"
       - "scripts/capture_market_memory_options_episodes.py"
       - "scripts/chain_snapshot_poller.py"
@@ -3355,7 +3358,7 @@ jobs:
         #    exercises that degraded branch instead of the shipped one.
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 requests
       - name: neural-web core suite (mastermind context + confluence + spine query + ask brain + world state + R5 macro context + ADB-W1 brief context + ADB-W2 forward calendar + Analyst OS P0 + W2)
-        run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_company_intelligence_neural_reader.py tests/test_company_intelligence_event_workspace.py tests/test_company_intelligence_event_compiler_e3a.py tests/test_refresh_event_workspaces.py tests/test_issuer_profiles_a5a.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py tests/test_neuralweb_health.py tests/test_neuralweb_daily_brief.py tests/test_brief_context.py tests/test_forward_calendar.py tests/test_orchestrator_log.py tests/test_mastermind_feedback.py tests/test_admin_orchestrator.py tests/test_admin_prophet.py tests/test_admin_trade_memory.py tests/test_macro_thesis.py tests/test_brain_doctrine.py tests/test_mastermind_response_log.py tests/test_admin_mastermind_logs.py tests/test_brain_analyst_doctrine.py tests/test_brain_analyst_wiring.py tests/test_market_packet.py tests/test_brain_market_intel.py tests/test_brain_seed_router.py tests/test_brain_analogues.py tests/test_brain_curve.py tests/test_response_eval.py tests/test_brain_user_memory.py tests/test_user_prefs.py -q
+        run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_company_intelligence_neural_reader.py tests/test_company_intelligence_workspace_chain.py tests/test_company_intelligence_event_workspace.py tests/test_company_intelligence_event_compiler_e3a.py tests/test_refresh_event_workspaces.py tests/test_issuer_profiles_a5a.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py tests/test_neuralweb_health.py tests/test_neuralweb_daily_brief.py tests/test_brief_context.py tests/test_forward_calendar.py tests/test_orchestrator_log.py tests/test_mastermind_feedback.py tests/test_admin_orchestrator.py tests/test_admin_prophet.py tests/test_admin_trade_memory.py tests/test_macro_thesis.py tests/test_brain_doctrine.py tests/test_mastermind_response_log.py tests/test_admin_mastermind_logs.py tests/test_brain_analyst_doctrine.py tests/test_brain_analyst_wiring.py tests/test_market_packet.py tests/test_brain_market_intel.py tests/test_brain_seed_router.py tests/test_brain_analogues.py tests/test_brain_curve.py tests/test_response_eval.py tests/test_brain_user_memory.py tests/test_user_prefs.py -q
 
   cn-standout-audit:
     if: ${{ false }}
@@ -6257,6 +6260,7 @@ jobs:
     # genuine import edges.
     scope: exclusive
     paths:
+      - "engine/quote_resolution.py"
       - "app/*"
       - "collectors/*"
       - "collectors/biocatalyst/**"
@@ -6800,6 +6804,7 @@ jobs:
     # 846 tracked / 74 concrete.
     scope: exclusive
     paths:
+      - "engine/quote_resolution.py"
       - "app/*"
       - "collectors/*"
       - "collectors/biocatalyst/**"
@@ -8892,6 +8897,47 @@ jobs:
       - name: D4 company financial truth bridge — IRDM-only, hostile families T1-T10 + R2/R4/R5/R7/R9/R10/R12
         run: python -m pytest tests/test_government_revenue_company_bridge.py -q
 
+  govrev-program-ontology:
+    # D5 Program/Mission/Capability/Product graph (research/defense_intelligence/
+    # DEFENSE_D5_PROGRAM_GRAPH_ARCHITECTURE_FREEZE.md): the reviewed acquisition-
+    # domain ontology contract, its propose/curate admission scripts, and the
+    # composed Program Dossier read model. Must be merge-binding (freeze SS8's
+    # T1-T17 adversarial battery is the acceptance gate for the whole vertical),
+    # so this rides `gate: code` with frozen committed fixtures per the D4
+    # CI-wiring law — never `gate: data`, and never reading nightly-rewritten
+    # site/government-revenue-data/ or data/government_revenue/ artifacts.
+    #
+    # Deliberately NOT `scope: exclusive`: this suite imports
+    # engine/government_revenue/program_ontology.py's sibling modules
+    # (award_events/entity_resolution/workspace/budget_program/metrics,
+    # their contracts, and the collectors those touch) -- a closure real but
+    # narrower than it once was. It no longer needs scripts/build_government_
+    # revenue.py's own much larger transitive closure at all: the five D5
+    # composer end-to-end tests that used to pull it in were relocated to
+    # tests/test_build_government_revenue.py (2026-08-23 CI repair, PR #6312
+    # ci-pack-7 red -- that import needs `requests`, which this job's install
+    # line does not carry, while test_build_government_revenue.py's lane
+    # already provisions it). Left inferred rather than curated: the
+    # remaining closure still touches collectors/base.py's/dod_budget.py's
+    # own filesystem-ambiguity widen-to-roots edges, which would need
+    # constant upkeep to hand-curate as those modules evolve; automatic
+    # scope inference (the same machinery `scope: exclusive` opts OUT of)
+    # derives and keeps it current instead.
+    if: ${{ false }}
+    gate: code
+    timeout-minutes: 8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: install test deps
+        run: pip install pytest jsonschema pandas numpy pyarrow jinja2
+      - name: D5 program ontology — T1-T17 adversarial battery + dossier composer
+        run: python -m pytest tests/test_government_program_ontology.py -q
+      - name: D5 program ontology — propose/curate admission scripts
+        run: python -m pytest tests/test_government_program_ontology_scripts.py -q
+
   unrun-government-revenue-candidate-projection:
     # The projection matrix is the slower half of the candidate contract. It
     # reached 42/44 tests when it shared one sequential 15-minute lane with the
@@ -10642,9 +10688,20 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn fastapi httpx
+        run: pip install pytest pandas numpy pyarrow pyyaml jsonschema jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn fastapi httpx
       - name: brain gateway — lane routing, quota ledger, tool allowlist, SSE event order
         run: python -m pytest tests/test_brain_gateway.py tests/test_brain_gateway_quota_safety.py tests/test_brain_streaming.py tests/test_brain_tool_economics.py tests/test_brain_instant_lane.py -q
+      - name: W1-A typed datapoint registry — owners, PIT, rights, consumers, mutations, batching
+        run: >-
+          python -m pytest
+          tests/test_datapoint_registry.py
+          tests/test_quote_resolution.py
+          tests/test_intelligence_workspace_identity_market.py
+          tests/test_intelligence_workspace_owner_adapters.py
+          tests/test_intelligence_workspace_consumers.py
+          tests/test_intelligence_workspace_mutations.py
+          tests/test_intelligence_workspace_cli.py
+          tests/test_intelligence_workspace_performance.py -q
 
   unrun-macro-panels:
     # commodities / forex / rates / news / policy panels and their calibration guards.
@@ -11517,6 +11574,7 @@ jobs:
     # 846 tracked / 74 concrete. Subject packages stay globbed.
     scope: exclusive
     paths:
+      - "engine/quote_resolution.py"
       - "app/*"
       - "collectors/*"
       - "collectors/biocatalyst/**"

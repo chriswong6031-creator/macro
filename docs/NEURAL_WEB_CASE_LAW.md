@@ -1,6 +1,6 @@
 <!-- DO NOT EDIT BY HAND — regenerate with: python3 scripts/build_ruling_graph.py -->
 <!-- Source: config/ruling_graph.yml -->
-<!-- source_sha256: 93a5339b47231eb563bd42e5f32b5849fda058dc5925e90493bbfafc248cfaa2 -->
+<!-- source_sha256: fc0e9be566d41ba836a943021e98d9ef5bdb00b55a4d3df888a501eff94b20b8 -->
 
 # Neural Web Case Law
 
@@ -9,7 +9,7 @@
 > The public site JSON at `site/neuralwebdata/ruling_graph.json` carries
 > only `public_research` rows.
 
-Total rulings: 500
+Total rulings: 501
 
 ## Precedence Order
 
@@ -562,8 +562,37 @@ Total rulings: 500
 | [CYC-U9](#cyc-u9) | Live-cohort visual authority subordinated until n_eff ≥ 40 | `active_law` | `constitution` | cycle-intelligence |
 | [CYC-IX-1](#cyc-ix-1) | Gate IX-1: index turn hazard model beats index's own… | `active_law` | `study` | cycle-intelligence |
 | [CYC-TR-1](#cyc-tr-1) | Gate TR-1: next-phase model beats empirical transition… | `active_law` | `study` | cycle-intelligence |
+| [K3E-EVAL-0-R1](#k3e-eval-0-r1) | K3E EVAL-0 v1 freezes one 64-trial BY-FDR family before… | `active_law` | `study` | alpha-intelligence-integration |
 
 ## Rulings by Owner Program
+
+### alpha-intelligence-integration
+
+### K3E-EVAL-0-R1
+
+**K3E EVAL-0 v1 freezes one 64-trial BY-FDR family before advanced tuning**
+
+- Status: `active_law` | Kind: `study` | Nondelegable: `True`
+- Authority ceiling: `A1_EXPLAIN`
+
+**Ruling:** K3E-EVAL-0-V1 preregisters the expectation-market-dynamics model competition as one dependent multiple-testing family, k3e_expectation_market_dynamics_v1, with at most 64 challenger trials and Benjamini-Yekutieli q=0.10. The fixed eras, targets, boring baselines, episode-N law, coverage gate, null/adverse publication law, and immutable amendment boundary are frozen in the exact content-addressed machine registration cited by the source document. EVAL-0 grants research procedure only and no fair-value, rank, gate, size, trade, Prophet, product, or production authority.
+
+**Scope fence:** Applies only to K3E expectation-dynamics research under existing Eval OS law. Reserved downstream targets remain ineligible until their named owner-native dependencies are accepted.
+
+**Forbidden actions:**
+  - starting an advanced challenger before the exact registration digest is accepted on origin/main
+  - excluding failed, discarded, ablation, preprocessing, threshold, or seed-policy trials from the 64-trial budget
+  - using a subgroup to rescue a failed overall result
+  - changing fixed eras, targets, baselines, thresholds, or FDR procedure after outcome access without a new version and forward boundary
+  - granting product, Prophet, fair-value, rank, gate, size, trade, or production authority from EVAL-0
+
+**Unblock condition:** Exact registration digest accepted on origin/main; later source/surface dependencies accepted; activation receipt resolves the first eligible NYSE boundary; lawful data and rights support the registered grain.
+
+**Source:** `research/alpha_intelligence/expectation_market_dynamics/EVALUATION_PREREG.md`
+> All promotion-bearing challenger/target/horizon comparisons share FDR family `k3e_expectation_market_dynamics_v1`. Benjamini-Yekutieli at `q=0.10` applies across the full family because target/horizon losses are dependent.
+
+*Owner program: alpha-intelligence-integration*
+
 
 ### cycle-intelligence
 

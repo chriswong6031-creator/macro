@@ -53,6 +53,7 @@ discoveries:
   - DSC:CS-EVENT-EDGES-NEAR-ZERO
   - DSC:CS-V2-W1B-NATURAL-CHAIN-PROVEN-LIVE
   - DSC:CS-V2-W2A-NATURAL-CHAIN-PROVEN-LIVE
+  - DSC:CS-V2-W2B-NATURAL-CHAIN-PROVEN-LIVE
 do_not_redo:
   - "Reopen PR #5792 ingestion freeze (AccessDenied / zero-progress health) without new evidence"
   - "Solve concurrent collect with an et_gate mutex (DEC:COLLECT-MUTEX-CANNOT-LIVE-IN-ET-GATE)"
@@ -90,12 +91,13 @@ artifacts:
   - agentos/handoffs/CAPITAL-STRUCTURE-INTELLIGENCE-V2-2026-08-21-w2a.md
   - agentos/handoffs/CAPITAL-STRUCTURE-INTELLIGENCE-V2-2026-08-23-w2a-closeout.md
   - agentos/handoffs/CAPITAL-STRUCTURE-INTELLIGENCE-V2-2026-08-23-w2b.md
+  - agentos/handoffs/CAPITAL-STRUCTURE-INTELLIGENCE-V2-2026-08-24-w2b-natural-proof.md
 next_action: >
-  W2A is done and proven live. W2B is the current bounded capacity subwave:
-  obtain Sol review of the qualified 540 = 500/20/20 change before merge, then
-  use only the first natural post-merge chain for production proof. W3 and W4
-  remain held until W2 closes at a natural current horizon with discovery
-  healthy and zero unserved LIVE work, unless Sol explicitly rerules that gate.
+  W2A and W2B are done and proven live. Let the remaining 337 inherited LIVE
+  filings drain through natural schedules only; do not create W2C merely to
+  wait. W2 closes only at a natural current horizon with healthy discovery and
+  zero unserved LIVE work, unless Sol explicitly rerules. W3 and W4 remain held
+  behind W2.
 waves:
   - id: W0
     title: Architecture freeze, estate audit, competitor/regulatory refresh
@@ -134,10 +136,10 @@ waves:
     status: in_progress
     depends_on: [W1B]
     next_action: >
-      W2A is proven live. Complete W2B review, merge, and natural proof, then
-      let inherited LIVE debt drain through natural schedules only. W2 closes
-      only on a natural current horizon with healthy discovery and zero
-      unserved LIVE work, absent an explicit Sol reruling.
+      W2A and W2B are proven live. Continue natural scheduled debt drain from
+      337 unserved LIVE filings. Do not dispatch, rerun, or create W2C merely to
+      wait. Close W2 only on a natural current horizon with healthy discovery
+      and zero unserved LIVE work, absent an explicit Sol reruling.
   - id: W2A
     title: LIVE_TAIL / RECOVERY / HISTORICAL_BACKFILL plus horizon health
     status: done
@@ -148,13 +150,13 @@ waves:
       Preserve its scheduling, truth, identity, and projection laws in W2B.
   - id: W2B
     title: Existing-carrier capacity envelope 540 = 500 / 20 / 20
-    status: in_progress
+    status: done
     depends_on: [W2A]
-    pr: [6287]
+    pr: [6287, 6349]
     next_action: >
-      Return the qualified implementation and exact receipts for Sol review
-      before merge. After approval and merge, wait for the first natural daily;
-      do not dispatch a duplicate or create W2C merely to wait for debt drain.
+      Done and proven live by natural run 32671784885, collect job 97273624140,
+      Capital Structure job 97292842139, and generation 8a3628f1c2bb. Preserve
+      the 500/20/20 law while W2 waits on natural inherited-debt closure.
   - id: W3
     title: Capital Changes Desk and issuer Capital Twin UX on honest states
     status: todo
@@ -180,6 +182,7 @@ waves:
 Capital Structure V2 recovers the 2026-08-01 product thesis after PR #5792
 fixed ingestion. Destination is a PIT issuer capital twin. W0 research and
 this AMEND were executed by Cursor Grok 4.6; COO Fable remains the program
-owner. W1/W1A/W1B are PROVEN_LIVE. W2A is DONE and PROVEN_LIVE. W2B is the
-current bounded capacity subwave. W3 and W4 remain unstarted and held until W2
-closes under the canonical natural-horizon rule.
+owner. W1/W1A/W1B are PROVEN_LIVE. W2A and W2B are DONE and PROVEN_LIVE. W2
+remains in progress because 337 inherited LIVE filings remain unserved. W3 and
+W4 remain unstarted and held until W2 closes under the canonical natural-horizon
+rule.

@@ -53,6 +53,12 @@ Row kinds (append-only JSONL, one JSON object per line, never rewritten):
     decision_cutoff) is a no-op. A second attempt at the SAME event_id with
     a DIFFERENT decision_cutoff (e.g. an 8-K/A source correction) is
     REFUSED by append_observation — it must route through append_correction.
+    A FIRST-EVER attempt whose triggering workspace is itself a correction
+    (or an unrecognized lifecycle state, or a non-"8-K" SEC form) is also
+    REFUSED, log-only, with NO row of any kind appended (A5C safety law —
+    see ``SAFE_ORIGINAL_LIFECYCLE_STATES`` / ``is_safe_original_source_form``
+    / ``append_observation``'s ``trigger_lifecycle_state`` and
+    ``trigger_source_form`` parameters below).
   * ``correction``   — a linked supersession record referencing the
     superseded ``observation_id`` when a source correction (a new workspace
     revision for the same event) is observed. The original packet is NEVER
@@ -68,6 +74,34 @@ layers: the builder script fences the trigger before it ever calls into this
 module, AND (red-team M7 fix) ``append_observation`` itself refuses any
 packet whose ``decision_cutoff`` predates the ledger's own activation row,
 independent of caller discipline.
+
+A5C safety law (Sol A5C review, 2026-08-23, item 1): "no correction to a
+pre-activation event can ever enter the prospective cohort as a new
+observation." Until canonical source-revision history exists, a first-ever
+write for an ``event_id`` whose triggering workspace is a CORRECTION (or
+carries an unrecognized/future lifecycle state, or a non-"8-K" SEC form —
+see ``SAFE_ORIGINAL_LIFECYCLE_STATES`` / ``is_safe_original_source_form``
+below) is REFUSED rather than minted: activation may exist and other
+candidates proceed normally, but this one event_id gets no observation row
+until a genuinely safe-original revision (or the future manifest/history-
+chain eligibility path) is seen. The refusal is log-only (a bare
+``::warning`` line reporting what was SEEN, never a guessed diagnosis) — it
+never writes a row of any kind, never stamps/unstamps activation, and is
+naturally idempotent (nothing was written, so nothing needs to be undone).
+Two independent signals are checked (Opus red-team BLOCKER-1 hardening,
+2026-08-23): lifecycle.state alone only fires when a PRIOR published
+workspace exists to compare against — closed for OUR OWN sha-tracked
+corrections by making the "corrected" state STICKY across an unchanged-
+source republish (engine/company_intelligence/event_workspace_build.py's
+``prior_lifecycle_state`` parameter), but a replacement 8-K/A whose
+original was never published at all still presents as a first-ever
+"complete" state either way; the SEC's own issuer_release source-row
+``form`` closes part of that residual gap for free (an "8-K/A" is visible
+from the FIRST observed revision, prior workspace or not). The remaining
+gap (a NON-amendment replacement 8-K whose original was never published)
+is a NAMED residual, closed only by the future manifest/history chain. See
+``append_observation``'s ``trigger_lifecycle_state``/``trigger_source_form``
+parameters for the enforcement itself.
 
 Two additional per-issuer contributor-eligibility gates (red-team M5/MIN9,
 layered UPSTREAM of the verbatim §2/§3.1 math, which is otherwise untouched):
@@ -126,6 +160,88 @@ ROW_KIND_OBSERVATION = "observation"
 ROW_KIND_CORRECTION = "correction"
 ROW_KINDS = frozenset({ROW_KIND_ACTIVATION, ROW_KIND_OBSERVATION, ROW_KIND_CORRECTION})
 
+# ---------------------------------------------------------------------------
+# A5C safety law (Sol A5C review, 2026-08-23, item 1) — fail-closed
+# correction detection pending canonical source-revision history.
+#
+# "Until canonical source-revision history is available, A5B must fail
+# closed rather than mint an observation from a corrected workspace when no
+# prior observation exists. Activation may exist; unsafe observation
+# creation may not." — Sol, A5C item 1.
+#
+# The published ``event_workspace.v1`` carries only a SINGLE current
+# ``lifecycle.state`` (engine/company_intelligence/event_workspace.py
+# ``_lifecycle_payload`` -> ``CompanyEvent.state``) — there is no
+# revision-number or amends-generation field in the current contract. The
+# only production writer of that field, ``build_event_workspace``
+# (engine/company_intelligence/event_workspace_build.py:169-196), walks
+# started -> complete, and ADDITIONALLY -> corrected only when
+# ``prior_source_sha256`` differs from the newly bound exhibit hash.
+# "complete" is therefore the ONLY published state this repo's real builder
+# ever emits WITHOUT having applied a "corrected" transition.
+#
+# Every other value is treated as unsafe, INCLUDING states this module has
+# never seen a production writer emit: engine/company_intelligence/events.py
+# ``_TRANSITIONS`` lets "corrected" advance to "derived_ready" / "superseded"
+# / itself, so a state reached further down that graph cannot be trusted as
+# "never corrected" merely because its CURRENT state string is no longer
+# literally "corrected" — the machine carries no revision counter to prove
+# it. Fail-closed: only a state explicitly enumerated below is safe-original;
+# "corrected" and any unknown/future state are unsafe.
+SAFE_ORIGINAL_LIFECYCLE_STATES: frozenset[str] = frozenset({"complete"})
+
+
+def is_safe_original_lifecycle_state(state: object) -> bool:
+    """True only for a lifecycle state KNOWN to be reachable without ever
+    having passed through a "corrected" transition (see
+    ``SAFE_ORIGINAL_LIFECYCLE_STATES`` above). ``None``, ``"corrected"``, and
+    any unrecognized/future state string all return False — fail-closed by
+    construction, never by an exception a caller could forget to catch."""
+    return isinstance(state, str) and state in SAFE_ORIGINAL_LIFECYCLE_STATES
+
+
+#: A5C BLOCKER-1 (1c) — the lifecycle-state signal alone is a NECESSARY but
+#: not (until the manifest/history chain lands) SUFFICIENT safety signal:
+#: the state signal is now durable within our OWN sha-comparison lineage
+#: (build_event_workspace's sticky-corrected fix, engine/company_intelligence/
+#: event_workspace_build.py) PROVIDED the prior-workspace READ ITSELF
+#: succeeds (see refresh_event_workspaces.PriorWorkspaceFetchFailed — a
+#: separate NEW-1 fix), but it only fires when a PRIOR published workspace
+#: exists to compare against at all. A second, independent signal closes
+#: part of that gap for free: the SEC's own form on the bound filing
+#: (issuer_release source row "form") is "8-K/A" the moment EDGAR itself
+#: marks a filing as an amendment — true even on the FIRST-ever observed
+#: revision of an event, with no prior workspace to compare against.
+#: Requiring form == "8-K" EXACTLY (not merely "not 8-K/A") is deliberately
+#: the stricter reading: a missing/blank/unrecognized form is unsafe too.
+#:
+#: HONEST PRODUCER CLAIM (NEW-2 fix, Opus red-team round 2, 2026-08-23): an
+#: earlier version of this comment claimed a missing/blank form
+#: "self-heals within one 3h publish cycle once populated" — false as
+#: written, because FIVE separate `or "8-K"` sites upstream of this gate
+#: (engine/earnings_release/binding.py, event_workspace_build.py,
+#: refresh_event_workspaces.py x3) manufactured the literal string "8-K"
+#: from ANY absence, so a genuinely missing form could never actually
+#: reach this function in the first place — the "self-healing" case was
+#: unreachable, not handled. Fixed: the PUBLISHED issuer_release source row
+#: now carries the RAW EDGAR-supplied form (event_workspace_build.py),
+#: decoupled from bind_release_document's own internal "8-K" default (that
+#: internal default is left alone — it exists for document-identity/
+#: is_amendment purposes this function never reads). On the REAL nightly
+#: path, a missing form is STILL expected unreachable: discovery
+#: (refresh_event_workspaces._select_newest_results_rows) pre-filters every
+#: candidate to {"8-K", "8-K/A"} before a filing is ever acquired. This
+#: function's None/missing-form handling is therefore genuinely
+#: reachable CODE, but consumer-side DEFENSE-IN-DEPTH in practice — not a
+#: transient state the nightly path is expected to pass through.
+def is_safe_original_source_form(form: object) -> bool:
+    """True only when the bound filing's own SEC-assigned form is EXACTLY
+    "8-K" (never "8-K/A", never missing/blank/unrecognized) — fail-closed,
+    mirroring ``is_safe_original_lifecycle_state`` above. See the module
+    comment above for the honest producer-defaulting claim (NEW-2 fix)."""
+    return form == "8-K"
+
+
 AUTHORITY = "context_only"
 PROPHET_FLAGS = {
     "may_rank": False,
@@ -155,9 +271,13 @@ FACT_IDS: tuple[str, ...] = (
     "fact_cancellation_rate_denominator",
 )
 TOL_SENSITIVITY_FACT_ID = "fact_cancellation_rate_beginning_backlog_sensitivity"
-#: Not yet extracted by A5A's source plane (as of this wave) — the lookup
-#: below is a REAL fact lookup, so the day A5A starts emitting this fact_id
-#: the sensitivity diagnostic self-heals with zero code change here (MIN8).
+#: IMCE A5C item 7 (TOL backlog-sensitivity prior-year extraction, PR #6307,
+#: 2026-08-23): the source plane (engine/company_intelligence/issuer_profiles.py
+#: _tol_extract_release_facts) NOW emits this fact_id from the exhibit's own
+#: two-cell beginning-quarter-backlog row (current + prior-year), MIN8's
+#: self-healing having landed — this was a REAL fact lookup even before that
+#: PR (never a placeholder), so no code changed here when extraction caught
+#: up; the lookup below simply started resolving instead of typed-absenting.
 TOL_SENSITIVITY_PRIOR_YEAR_FACT_ID = "fact_cancellation_rate_beginning_backlog_sensitivity_prior_year"
 
 # Sign-only per-issuer lookup table (construction doc §2) — VERBATIM,
@@ -436,7 +556,8 @@ def compute_observation_id(packet: dict, *, prefix: str = "obs") -> str:
 
 def append_observation(
     packet: dict, *, path: Path | None = None, reconstruction: bool = False, production: bool = False,
-) -> tuple[dict, bool]:
+    trigger_lifecycle_state: str | None = None, trigger_source_form: str | None = None,
+) -> tuple[dict | None, bool]:
     """Append one observation packet.
 
     Identity law (red-team M4): at most ONE observation per event_id, ever.
@@ -450,6 +571,38 @@ def append_observation(
     activation row, a packet whose decision_cutoff predates
     activation_started_at is refused, independent of any upstream fencing
     the caller may or may not have done.
+
+    A5C safety law (Sol A5C review, 2026-08-23, item 1; hardened by the
+    Opus red-team BLOCKER-1 fix on the same day): *trigger_lifecycle_state*
+    and *trigger_source_form* are the triggering event_workspace's OWN
+    ``lifecycle.state`` string and issuer_release source row ``form`` string
+    at the time of this call — the caller (the nightly builder) must read
+    both straight off the workspace and pass them through; this function
+    never infers either from the packet, which does not (and must not)
+    carry them as stored keys. When this call is about to mint a genuinely
+    FIRST observation for event_id (no exact-duplicate, no existing
+    observation of any kind — see ``existing_any`` below) AND EITHER signal
+    is unsafe (``is_safe_original_lifecycle_state`` is False, OR
+    ``is_safe_original_source_form`` is False), the write is REFUSED: no row
+    of any kind is appended, no exception is raised, activation is left
+    untouched, and the caller's per-candidate loop is expected to continue
+    with the next one. Two independent signals are required because
+    lifecycle.state alone is a NECESSARY but not (until the manifest/history
+    chain lands) SUFFICIENT signal: it only fires when a prior published
+    workspace exists to compare against, while the SEC's own form is
+    "8-K/A" from the very first observed revision of an amended event, prior
+    workspace or not. The refusal is log-only — a bare ``::warning`` line
+    reporting what was SEEN (never a guessed diagnosis), and never a logger
+    call (this repo's "GitHub annotations must start the line" law) — and
+    returns ``(None, False)``, distinguishable from an exact-duplicate no-op
+    (which always returns the existing row, never ``None``, alongside
+    ``appended=False``). A corrected revision for an event_id that ALREADY
+    has a prior observation is UNAFFECTED by this law — it still routes
+    through the existing_any branch below into ``append_correction()``,
+    exactly as before. KNOWN RESIDUAL GAP (named, not closed here): a
+    replacement/amended 8-K whose ORIGINAL was never published at all still
+    presents as a first-ever "complete"/"8-K" revision to both signals —
+    closing that requires the manifest/history chain, a separate future PR.
 
     A non-reconstruction call additionally requires production=True (M7).
     """
@@ -497,6 +650,33 @@ def append_observation(
             f"a second append_observation() call for the same event_id is refused; "
             f"route this through append_correction() (M4 fix)"
         )
+
+    safe_state = is_safe_original_lifecycle_state(trigger_lifecycle_state)
+    safe_form = is_safe_original_source_form(trigger_source_form)
+    if not (safe_state and safe_form):
+        # A5C safety law (Sol, 2026-08-23, item 1) + BLOCKER-1 hardening
+        # (Opus red-team, same day): this would be the FIRST observation
+        # ever recorded for event_id, and at least one of the two safety
+        # signals says unsafe — with no prior observation to anchor against
+        # and no source-revision history chain yet, we cannot know whether
+        # the ORIGINAL revision predated activation. Fail closed: log and
+        # refuse, never guess. The message reports what was SEEN (both
+        # signals, verbatim via !r), never an asserted diagnosis — MAJOR-2
+        # fix: a missing/unknown state or form must not be narrated as "a
+        # correction" when it might instead be a missing field or a novel
+        # state this module has never seen. Bare print, line-start
+        # "::warning" — never log.*, which prefixes the line and makes
+        # GitHub silently drop it (repo law); flush=True is load-bearing
+        # because stdout is block-buffered when piped in CI.
+        print(
+            "::warning title=imce-prospective-unsafe-correction::"
+            f"{event_id} unsafe trigger for first observation — "
+            f"lifecycle_state={trigger_lifecycle_state!r} (safe={safe_state}) "
+            f"source_form={trigger_source_form!r} (safe={safe_form}); "
+            "fail-closed pending source-revision history",
+            flush=True,
+        )
+        return None, False
 
     row = dict(packet)
     row["schema"] = SCHEMA
@@ -671,13 +851,17 @@ def _denominator_conforms(ticker: str, denom_value: object) -> bool | None:
 
 
 def _tol_sensitivity(workspace: dict, *, d_orders: str | None, primary_state: str) -> dict:
-    """Construction doc §1b mandatory diagnostic. Self-healing (MIN8): both
-    the current- and prior-year values are REAL fact lookups; A5A's source
-    plane does not yet extract TOL_SENSITIVITY_PRIOR_YEAR_FACT_ID, so today
-    that lookup returns a typed absence (fact_absent_from_workspace) and the
-    sensitivity state is honestly NOT_RECONSTRUCTABLE — but the day A5A
-    starts emitting that fact_id, this function picks it up with zero code
-    change here."""
+    """Construction doc §1b mandatory diagnostic. Both the current- and
+    prior-year values are REAL fact lookups — this function never changed;
+    only the source plane's own extraction caught up (IMCE A5C item 7, PR
+    #6307, 2026-08-23: engine/company_intelligence/issuer_profiles.py
+    _tol_extract_release_facts now emits TOL_SENSITIVITY_PRIOR_YEAR_FACT_ID
+    from the exhibit's own two-cell beginning-quarter-backlog row). A
+    workspace whose exhibit lacks that row (an ambiguous/absent cell shape)
+    still resolves the prior-year lookup to a typed absence
+    (fact_absent_from_workspace) and the sensitivity state stays honestly
+    NOT_RECONSTRUCTABLE for that event — this is a per-event data
+    completeness outcome, not a placeholder."""
     current_fact = _fact_by_id(workspace, TOL_SENSITIVITY_FACT_ID)
     current_value, current_absence = _fact_value(current_fact)
     basis = current_fact.get("basis") if isinstance(current_fact, dict) else None

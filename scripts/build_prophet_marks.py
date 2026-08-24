@@ -9,7 +9,7 @@ provider-observed entry, exit, or fill and has no execution or product authority
 
 Index source (DEC:B1-PROPHET-PUBLIC-SPLIT): the full Prophet plan book is
 premium/private and is never fetched from a public URL.  Publish mode reads the
-canonical accepted bytes via git (``origin/main:site/prophet/index.json``) — correct
+canonical accepted bytes via git (``refs/heads/main:site/prophet/index.json``) — correct
 even from a pinned ops checkout, and authenticated, unlike an anonymous R2 GET.  Debug
 builds (no ``--publish``) read only the local checkout's generated index; there is no
 public-URL fallback.
@@ -68,7 +68,6 @@ from pathlib import Path
 import re
 import secrets
 import stat
-import subprocess
 import sys
 from typing import Any
 
@@ -77,6 +76,7 @@ _REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_REPO))
 
 from lib.nyse_calendar import is_session, ET
+from scripts import prophet_canonical_git
 
 log = logging.getLogger(__name__)
 
@@ -94,7 +94,11 @@ MAX_QUOTE_AGE_SECONDS = 30 * 60
 #: Canonical index provenance evidence field (DEC:B1-PROPHET-PUBLIC-SPLIT — the
 #: full plan book is never fetched from a public URL; publish mode reads it via
 #: authenticated git instead, see ``_load_index_canonical_git``).
-CANONICAL_INDEX_SOURCE_URL = "git:origin/main:site/prophet/index.json"
+CANONICAL_INDEX_SOURCE_URL = (
+    "git:github.com/mastermindx-market-intelligence/macro@refs/heads/main:"
+    "site/prophet/index.json"
+)
+CANONICAL_INDEX_SOURCE_PATH = "site/prophet/index.json"
 
 # Regular trading hours: 09:30–16:00 ET (inclusive on open, exclusive on close)
 _RTH_OPEN  = dtime(9, 30, 0)
@@ -235,34 +239,20 @@ def _load_index_local() -> dict | None:
 
 
 def _load_index_canonical_git() -> dict | None:
-    """Fetch the canonical accepted ``site/prophet/index.json`` via git, never a
-    public URL (DEC:B1-PROPHET-PUBLIC-SPLIT).
+    """Read canonical ``site/prophet/index.json`` via pinned machine-auth Git.
 
     A deployed publisher may run from an intentionally pinned operations
-    checkout, so its local generated index is not canonical.  The authenticated
-    origin remote is the one canonical source: fetch main, then read the exact
-    committed bytes at that ref with ``git show`` — never the working tree,
-    which may be stale or absent entirely on a pinned ops host.  Returns
-    ``None`` on ANY failure; callers treat that as "index unavailable" and
-    refuse the publish cycle rather than falling back to a stale local file or
-    an anonymous public URL.
+    checkout, so neither its generated index nor ambient ``origin``/SSH config is
+    canonical.  The shared reader pins the approved repository, main ref and
+    external machine identity, then returns bytes from one immutable commit.
+    ``None`` on ANY failure refuses the cycle; there is no stale-local or public
+    URL fallback.
     """
     try:
-        subprocess.run(
-            ["git", "fetch", "origin", "+refs/heads/main:refs/remotes/origin/main"],
-            cwd=_REPO,
-            check=True,
-            capture_output=True,
-            timeout=120,
+        blob = prophet_canonical_git.read_canonical_blob(
+            CANONICAL_INDEX_SOURCE_PATH
         )
-        result = subprocess.run(
-            ["git", "show", "origin/main:site/prophet/index.json"],
-            cwd=_REPO,
-            check=True,
-            capture_output=True,
-            timeout=120,
-        )
-        return json.loads(result.stdout.decode("utf-8"))
+        return json.loads(blob.body.decode("utf-8"))
     except Exception as exc:  # noqa: BLE001
         log.warning("prophet_marks: canonical git index load failed: %s", exc)
     return None
