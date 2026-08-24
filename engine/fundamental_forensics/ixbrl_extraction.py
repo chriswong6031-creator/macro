@@ -24,7 +24,7 @@ from .filing_package import (
     FilingPackageError,
 )
 from .models import canonical_json, parse_utc, stable_id, utc_text
-from .sec_document_spine import ARCHIVE_RECEIPT_SCHEMA, archive_document_url, archive_index_url, canonical_cik, parse_json_int64
+from .sec_document_spine import ARCHIVE_RECEIPT_SCHEMA, archive_document_url, archive_index_url, canonical_cik, parse_json_int64, sec_document_id
 
 
 FFXBRL_SCHEMA = "fundamental_forensics.ixbrl_extraction/v1"
@@ -574,7 +574,7 @@ def _normalise_source(value: Any) -> dict[str, Any]:
     role = member["role"]
     if role not in {"primary", "archive", "exhibit"}:
         raise IxbrlExtractionError("source member role is invalid")
-    document_id = stable_id("sec_document", cik, accession, role, name)
+    document_id = sec_document_id(cik, accession, role, name)
     archive_url = archive_document_url(cik, accession, name)
     digest = _sha256(member["content_sha256"], field="source member content_sha256")
     length = _length(member["byte_length"], field="source member byte_length")

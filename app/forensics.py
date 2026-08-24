@@ -729,12 +729,12 @@ def attested_history_private_not_found(
 
 
 def _financial_query_provider():
-    """Test seam: monkeypatch this to inject a fixture provider in tests."""
-    from engine.fundamental_forensics.query_service import (  # noqa: PLC0415
-        UnavailableFinancialQueryProvider,
+    """Golden AAPL query provider. Production attested issuer service stays unbuilt."""
+    from engine.fundamental_forensics.ixbrl_raw_ledger import (  # noqa: PLC0415
+        GoldenAaplFinancialQueryProvider,
     )
 
-    return UnavailableFinancialQueryProvider()
+    return GoldenAaplFinancialQueryProvider(repo_root=REPO)
 
 
 def _financial_revision_provider():

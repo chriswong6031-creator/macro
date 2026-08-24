@@ -54,6 +54,7 @@ confidence: high
 reversibility: costly
 decided_by: ceo-sol
 decided_at: 2026-08-23
+superseded_by: DEC:MAS28-R028-TARGET-IDENTITY-RECONCILIATION
 ---
 
 ## Canonical consequence
@@ -73,3 +74,7 @@ No V1 finding may become a required check, branch-protection rule, merge-control
 PR mutation, Linear mutation or automatic repair under this decision. A future enforcement
 proposal must cite accepted blinded calibration, real-path shadow receipts, observed operator
 utility, measured partial rates, failure/rollback behavior and a new Chairman/Sol authority grant.
+
+Superseded record-wide by `DEC:MAS28-R028-TARGET-IDENTITY-RECONCILIATION`. The successor carries
+forward the canonical grammar, compatibility epoch, report-only authority, and enforcement
+barrier while repairing R028's missing per-target evidence identity.

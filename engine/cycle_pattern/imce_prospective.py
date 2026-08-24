@@ -271,9 +271,13 @@ FACT_IDS: tuple[str, ...] = (
     "fact_cancellation_rate_denominator",
 )
 TOL_SENSITIVITY_FACT_ID = "fact_cancellation_rate_beginning_backlog_sensitivity"
-#: Not yet extracted by A5A's source plane (as of this wave) — the lookup
-#: below is a REAL fact lookup, so the day A5A starts emitting this fact_id
-#: the sensitivity diagnostic self-heals with zero code change here (MIN8).
+#: IMCE A5C item 7 (TOL backlog-sensitivity prior-year extraction, PR #6307,
+#: 2026-08-23): the source plane (engine/company_intelligence/issuer_profiles.py
+#: _tol_extract_release_facts) NOW emits this fact_id from the exhibit's own
+#: two-cell beginning-quarter-backlog row (current + prior-year), MIN8's
+#: self-healing having landed — this was a REAL fact lookup even before that
+#: PR (never a placeholder), so no code changed here when extraction caught
+#: up; the lookup below simply started resolving instead of typed-absenting.
 TOL_SENSITIVITY_PRIOR_YEAR_FACT_ID = "fact_cancellation_rate_beginning_backlog_sensitivity_prior_year"
 
 # Sign-only per-issuer lookup table (construction doc §2) — VERBATIM,
@@ -847,13 +851,17 @@ def _denominator_conforms(ticker: str, denom_value: object) -> bool | None:
 
 
 def _tol_sensitivity(workspace: dict, *, d_orders: str | None, primary_state: str) -> dict:
-    """Construction doc §1b mandatory diagnostic. Self-healing (MIN8): both
-    the current- and prior-year values are REAL fact lookups; A5A's source
-    plane does not yet extract TOL_SENSITIVITY_PRIOR_YEAR_FACT_ID, so today
-    that lookup returns a typed absence (fact_absent_from_workspace) and the
-    sensitivity state is honestly NOT_RECONSTRUCTABLE — but the day A5A
-    starts emitting that fact_id, this function picks it up with zero code
-    change here."""
+    """Construction doc §1b mandatory diagnostic. Both the current- and
+    prior-year values are REAL fact lookups — this function never changed;
+    only the source plane's own extraction caught up (IMCE A5C item 7, PR
+    #6307, 2026-08-23: engine/company_intelligence/issuer_profiles.py
+    _tol_extract_release_facts now emits TOL_SENSITIVITY_PRIOR_YEAR_FACT_ID
+    from the exhibit's own two-cell beginning-quarter-backlog row). A
+    workspace whose exhibit lacks that row (an ambiguous/absent cell shape)
+    still resolves the prior-year lookup to a typed absence
+    (fact_absent_from_workspace) and the sensitivity state stays honestly
+    NOT_RECONSTRUCTABLE for that event — this is a per-event data
+    completeness outcome, not a placeholder."""
     current_fact = _fact_by_id(workspace, TOL_SENSITIVITY_FACT_ID)
     current_value, current_absence = _fact_value(current_fact)
     basis = current_fact.get("basis") if isinstance(current_fact, dict) else None

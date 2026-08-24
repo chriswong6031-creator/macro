@@ -686,6 +686,19 @@ jobs:
           tests/test_fundamental_forensics_detectors.py
           tests/test_fundamental_forensics_contract.py
           tests/test_fundamental_forensics_disclosure_bundle.py -q
+      # K1 Evidence Foundation is a pointer contract spanning owner-native FIF,
+      # Earnings, Theme Graph, Institutional 13F, GovRev, BioCatalyst, TXI, QLedger,
+      # Market Memory objects, plus the Data OS no-I/O negative control. It rides this
+      # existing contract job rather
+      # than creating a new job: the install line already supplies the complete import
+      # closure, and the suite resolves every declared owner reader on the checked-out
+      # base in addition to schema/fixture semantics. Appended after the FIF owner step
+      # so an owner regression is reported before an interoperability regression.
+      - name: K1 Evidence Foundation ref, block, recipe, and hostile-fixture contracts
+        run: >
+          python -m pytest
+          tests/test_evidence_foundation_contract.py
+          tests/test_evidence_foundation_product_contract.py -q
       # Four detector ids exist as byte-identical strings in THREE implementations
       # with three separate threshold stores: scripts/build_fundamental_forensics.py
       # (inline FRACTION literals, Filing Forensics workbench),
@@ -1778,6 +1791,7 @@ jobs:
       - "ops/launchd/com.mastermind.liveflow.plist"
       - "ops/launchd/com.mastermind.optionssparseselector.plist"
       - "ops/launchd/com.mastermind.prophetmarks.plist"
+      - "ops/launchd/run_with_env.sh"
       - "ops/launchd/run_options_sparse_selector_loop.sh"
       - "ops/launchd/run_options_sparse_selector_verified.py"
       - "ops/launchd/run_prophet_marks_loop.sh"
@@ -1805,6 +1819,7 @@ jobs:
       - "scripts/build_options_structure_intraday.py"
       - "scripts/build_prophet_marks.py"
       - "scripts/build_prophet_option_shadow_lifecycle.py"
+      - "scripts/prophet_canonical_git.py"
       - "scripts/capture_market_memory_context.py"
       - "scripts/capture_market_memory_options_episodes.py"
       - "scripts/chain_snapshot_poller.py"
@@ -2202,6 +2217,7 @@ jobs:
           tests/test_fundamental_forensics_filing_package.py
           tests/test_fundamental_forensics_financial_query_service.py
           tests/test_fundamental_forensics_financial_query_api.py
+          tests/test_fundamental_forensics_ixbrl_raw_ledger.py
           tests/test_fundamental_forensics_financial_revision_service.py
           tests/test_fundamental_forensics_financial_revision_api.py
           tests/test_fundamental_forensics_financial_packet_service.py
@@ -3356,7 +3372,7 @@ jobs:
         #    exercises that degraded branch instead of the shipped one.
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 requests
       - name: neural-web core suite (mastermind context + confluence + spine query + ask brain + world state + R5 macro context + ADB-W1 brief context + ADB-W2 forward calendar + Analyst OS P0 + W2)
-        run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_company_intelligence_neural_reader.py tests/test_company_intelligence_event_workspace.py tests/test_company_intelligence_event_compiler_e3a.py tests/test_refresh_event_workspaces.py tests/test_issuer_profiles_a5a.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py tests/test_neuralweb_health.py tests/test_neuralweb_daily_brief.py tests/test_brief_context.py tests/test_forward_calendar.py tests/test_orchestrator_log.py tests/test_mastermind_feedback.py tests/test_admin_orchestrator.py tests/test_admin_prophet.py tests/test_admin_trade_memory.py tests/test_macro_thesis.py tests/test_brain_doctrine.py tests/test_mastermind_response_log.py tests/test_admin_mastermind_logs.py tests/test_brain_analyst_doctrine.py tests/test_brain_analyst_wiring.py tests/test_market_packet.py tests/test_brain_market_intel.py tests/test_brain_seed_router.py tests/test_brain_analogues.py tests/test_brain_curve.py tests/test_response_eval.py tests/test_brain_user_memory.py tests/test_user_prefs.py -q
+        run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_company_intelligence_neural_reader.py tests/test_company_intelligence_workspace_chain.py tests/test_company_intelligence_event_workspace.py tests/test_company_intelligence_event_compiler_e3a.py tests/test_company_intelligence_qa_reconstruction.py tests/test_refresh_event_workspaces.py tests/test_issuer_profiles_a5a.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py tests/test_neuralweb_health.py tests/test_neuralweb_daily_brief.py tests/test_brief_context.py tests/test_forward_calendar.py tests/test_orchestrator_log.py tests/test_mastermind_feedback.py tests/test_admin_orchestrator.py tests/test_admin_prophet.py tests/test_admin_trade_memory.py tests/test_macro_thesis.py tests/test_brain_doctrine.py tests/test_mastermind_response_log.py tests/test_admin_mastermind_logs.py tests/test_brain_analyst_doctrine.py tests/test_brain_analyst_wiring.py tests/test_market_packet.py tests/test_brain_market_intel.py tests/test_brain_seed_router.py tests/test_brain_analogues.py tests/test_brain_curve.py tests/test_response_eval.py tests/test_brain_user_memory.py tests/test_user_prefs.py -q
 
   cn-standout-audit:
     if: ${{ false }}
@@ -8423,7 +8439,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn fastapi httpx
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn fastapi httpx jsonschema
       # P1 unrun backfill 2026-08-14: two more scripts/build_vector.py organs join the
       # step that already owns the vector page's organs.  Both import straight from
       # scripts.build_vector (_g_alerts and the market-card renderer) and both were
@@ -8440,8 +8456,8 @@ jobs:
       # No dependency widened: probed at RUN time both load only pandas/numpy/pyarrow/
       # pyyaml — PIL is imported transitively but blocking it leaves them 6-passed and
       # 1-passed, so it is optional, and it is not on this install line.
-      - name: vector page organs — catalyst, forward-risk, Kelly, gated timeline
-        run: python -m pytest tests/test_vector_catalyst.py tests/test_vector_forward_risk.py tests/test_vector_kelly.py tests/test_vector_timeline_gated.py tests/test_hub_alerts_explanation.py tests/test_hub_market_card_labels.py -q
+      - name: vector page organs — decision authority, catalyst, forward-risk, Kelly, gated timeline
+        run: python -m pytest tests/test_btc_decision.py tests/test_vector_catalyst.py tests/test_vector_forward_risk.py tests/test_vector_kelly.py tests/test_vector_timeline_gated.py tests/test_hub_alerts_explanation.py tests/test_hub_market_card_labels.py -q
       - name: DSR / override-registry trial budget (dof charged must equal dof declared)
         run: python -m pytest tests/test_btc_vector_w1.py tests/test_deflated_sharpe.py -q
       - name: settled-close tape — the basket pulse the closing-bell lane publishes
@@ -9830,6 +9846,10 @@ jobs:
       - "engine/btc_correlation_regime.py"
       - "engine/btc_cycle_thesis.py"
       - "engine/btc_dat.py"
+      # P0A: tests/test_btc_decision.py reaches this module through the Vector
+      # builder. This curated scope replaces inference, so the closure entry is
+      # explicit; widening is the safe direction.
+      - "engine/btc_decision.py"
       - "engine/btc_impulse_ledger.py"
       - "engine/btc_impulse_radar.py"
       - "engine/btc_impulse_radar_backtest.py"

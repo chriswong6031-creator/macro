@@ -13,6 +13,13 @@
 
   DO NOT touch the com.mastermind.liveflow lane — this is a separate, independent job.
 
+  RUNTIME ARCHITECTURE:
+    /Users/chriswong/flow-ops-wt is an intentionally pinned, dirty multi-lane
+    checkout.  It remains the existing credential file location only.  Executable
+    code runs from /Users/chriswong/prophet-marks-runtime, a disposable sparse
+    projection pinned to an accepted current Macro commit.  Never reset, update,
+    or copy isolated current scripts into flow-ops-wt to service this job.
+
   INSTALL (as the mac user who runs Theta Terminal — not root):
     cp ops/launchd/com.mastermind.prophetmarks.plist ~/Library/LaunchAgents/
     launchctl load ~/Library/LaunchAgents/com.mastermind.prophetmarks.plist
@@ -27,7 +34,8 @@
   ENV FILE:
     R2 credentials are sourced from /Users/chriswong/flow-ops-wt/.env via
     run_with_env.sh. Required vars:
-      R2_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET
+      R2_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET,
+      PROPHET_CANONICAL_GIT_SSH_KEY
 
   LOG TAILING:
     tail -f /tmp/prophetmarks.stdout.log /tmp/prophetmarks.stderr.log
@@ -36,14 +44,16 @@
     set -a
     source /Users/chriswong/flow-ops-wt/.env
     set +a
-    cd /Users/chriswong/flow-ops-wt
+    export PYTHONPATH=/Users/chriswong/prophet-marks-runtime
+    cd /Users/chriswong/prophet-marks-runtime
     python -m scripts.build_prophet_marks
 
   MANUAL PUBLISH (one cycle):
     set -a
     source /Users/chriswong/flow-ops-wt/.env
     set +a
-    cd /Users/chriswong/flow-ops-wt
+    export PYTHONPATH=/Users/chriswong/prophet-marks-runtime
+    cd /Users/chriswong/prophet-marks-runtime
     python -m scripts.build_prophet_marks  [add the publish flag]
 -->
 <plist version="1.0">
@@ -56,15 +66,17 @@
   -->
   <key>ProgramArguments</key>
   <array>
-    <string>/Users/chriswong/flow-ops-wt/ops/launchd/run_with_env.sh</string>
+    <string>/Users/chriswong/prophet-marks-runtime/ops/launchd/run_with_env.sh</string>
     <string>/Users/chriswong/flow-ops-wt/.env</string>
+    <string>/usr/bin/env</string>
+    <string>PYTHONPATH=/Users/chriswong/prophet-marks-runtime</string>
     <string>/bin/sh</string>
-    <string>/Users/chriswong/flow-ops-wt/ops/launchd/run_prophet_marks_loop.sh</string>
+    <string>/Users/chriswong/prophet-marks-runtime/ops/launchd/run_prophet_marks_loop.sh</string>
   </array>
 
-  <!-- Working directory = flow-ops-wt (launchd law: never ~/Documents). -->
+  <!-- Disposable current runtime; launchd law: never ~/Documents. -->
   <key>WorkingDirectory</key>
-  <string>/Users/chriswong/flow-ops-wt</string>
+  <string>/Users/chriswong/prophet-marks-runtime</string>
 
   <!--
     StartInterval is elapsed time, not a wall-clock hour, so host timezone cannot
@@ -73,13 +85,6 @@
   -->
   <key>StartInterval</key>
   <integer>300</integer>
-
-  <key>EnvironmentVariables</key>
-  <dict>
-    <key>PYTHONPATH</key>
-    <string>/Users/chriswong/flow-ops-wt</string>
-    <!-- R2_* and other secrets sourced from .env via run_with_env.sh above. -->
-  </dict>
 
   <key>StandardOutPath</key>
   <string>/tmp/prophetmarks.stdout.log</string>

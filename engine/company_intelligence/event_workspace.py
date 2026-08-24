@@ -33,7 +33,20 @@ from .identity import IssuerIdentity, IssuerRegistry, ListingAlias, company_id_f
 
 
 WORKSPACE_SCHEMA = "event_workspace.v1"
-MANIFEST_SCHEMA = "event_workspace_manifest.v1"
+# IMCE A5C (Sol A5C directive, 2026-08-23, item A): the manifest chain.
+# v1 stays readable forever as the chain ROOT/backward-compatible generation
+# (A2) -- nothing ever rewrites or deletes a v1 object.  Every generation
+# minted BY THIS MODULE going forward (write_workspace_generation) is v2:
+# v1's exact closed key set PLUS previous_generation_id/previous_manifest_
+# sha256, so a source revision's bytes are never stranded with no
+# discoverable predecessor pointer once a newer generation supersedes it.
+MANIFEST_SCHEMA_V1 = "event_workspace_manifest.v1"
+MANIFEST_SCHEMA_V2 = "event_workspace_manifest.v2"
+# Legacy alias -- historically "the" manifest schema constant.  Nothing
+# outside this module keys off its current value (grep-verified); kept
+# pointing at v1 so a caller that only ever compared against the OLD
+# published schema string keeps comparing against a real, still-valid value.
+MANIFEST_SCHEMA = MANIFEST_SCHEMA_V1
 PROCESSOR_VERSION = "event_workspace/1.0.0"
 NEST = "event_workspaces"
 AUTHORITY = AUTHORITY
@@ -78,6 +91,10 @@ MANIFEST_KEYS = (
     "authority",
     "warnings",
 )
+
+# v2 = v1's exact key set PLUS the two chain-link keys (A1).  Both are
+# REQUIRED in a v2 manifest -- never optional-and-silently-absent (A3).
+MANIFEST_KEYS_V2 = MANIFEST_KEYS + ("previous_generation_id", "previous_manifest_sha256")
 
 WORKSPACE_WARNINGS = frozenset({
     "wire_record_not_found",
@@ -298,8 +315,12 @@ def validate_event_workspace(payload: object) -> None:
 
 def validate_workspace_manifest(payload: object) -> None:
     item = _require_mapping(payload, name="event_workspace_manifest")
-    _require_exact_keys(item, MANIFEST_KEYS, name="event_workspace_manifest")
-    if item.get("schema") != MANIFEST_SCHEMA:
+    schema = item.get("schema")
+    if schema == MANIFEST_SCHEMA_V2:
+        _require_exact_keys(item, MANIFEST_KEYS_V2, name="event_workspace_manifest")
+    elif schema == MANIFEST_SCHEMA_V1:
+        _require_exact_keys(item, MANIFEST_KEYS, name="event_workspace_manifest")
+    else:
         raise WorkspaceError("workspace manifest schema mismatch")
     if not _GENERATION_RE.fullmatch(str(item.get("generation_id") or "")):
         raise WorkspaceError("invalid manifest generation_id")
@@ -344,6 +365,30 @@ def validate_workspace_manifest(payload: object) -> None:
     warnings = item.get("warnings")
     if not isinstance(warnings, list) or warnings != sorted(set(warnings)):
         raise WorkspaceError("manifest warnings invalid")
+    if schema == MANIFEST_SCHEMA_V2:
+        previous_id = item.get("previous_generation_id")
+        previous_sha = item.get("previous_manifest_sha256")
+        # A2: previous_generation_id may be null ONLY for a genuine
+        # first-ever generation of the nest -- but a v2 manifest ALWAYS
+        # carries both keys (A3); when there is no predecessor, both are
+        # null together, never one without the other.
+        if previous_id is None:
+            if previous_sha is not None:
+                raise WorkspaceError(
+                    "manifest previous_manifest_sha256 must be null when "
+                    "previous_generation_id is null"
+                )
+        else:
+            if not _GENERATION_RE.fullmatch(str(previous_id)):
+                raise WorkspaceError("invalid manifest previous_generation_id")
+            if (
+                not isinstance(previous_sha, str)
+                or len(previous_sha) != 64
+                or any(ch not in "0123456789abcdef" for ch in previous_sha)
+            ):
+                raise WorkspaceError("invalid manifest previous_manifest_sha256")
+            if str(previous_id) == str(item.get("generation_id") or ""):
+                raise WorkspaceError("manifest previous_generation_id cannot equal its own generation_id")
 
 
 def _strip_private(workspace: Mapping[str, Any]) -> dict[str, Any]:
@@ -374,15 +419,47 @@ def _register_alias(alias_map: dict[str, str], alias: object, event_id: str) -> 
 def _generation_identity(
     workspaces: Mapping[str, Mapping[str, Any]],
     generated_at: str,
+    *,
+    previous_generation_id: str | None = None,
 ) -> str:
+    """Content address for one nest generation.
+
+    A4: *previous_generation_id* is folded into the hash so identical
+    workspace content atop a DIFFERENT predecessor mints a DISTINCT
+    generation_id -- a content cycle A -> B -> A must mint a distinct third
+    generation, never collide with the original A.  The semantic no-op (an
+    unchanged-source re-run atop the SAME predecessor) is preserved: same
+    content + same previous_generation_id -> same hash -> short-circuits
+    before any new generation is minted.
+    """
     pre_id = {
         event_id: {key: payload[key] for key in WORKSPACE_KEYS if key != "generation_id"}
         for event_id, payload in sorted(workspaces.items())
     }
     return sha256(canonical_json_bytes({
         "generated_at": generated_at,
+        "previous_generation_id": previous_generation_id,
         "workspaces": pre_id,
     })).hexdigest()[:24]
+
+
+def preview_generation_identity(
+    workspaces: Mapping[str, Mapping[str, Any]],
+    generated_at: str,
+    *,
+    previous_generation_id: str | None = None,
+) -> str:
+    """Pure preview of the ``generation_id`` :func:`write_workspace_generation`
+    would mint for *workspaces* at *generated_at* atop *previous_generation_id*
+    — no disk writes.  A caller that must decide, BEFORE writing, whether a
+    cycle's freshly-assembled content reproduces the CURRENTLY published
+    generation (the semantic no-op, A4) needs this: with
+    ``previous_generation_id`` folded into the hash, that decision requires
+    computing the candidate id against the CURRENT generation's OWN
+    predecessor first (see ``scripts/refresh_event_workspaces.py``'s
+    chain-pointer resolution)."""
+    cleaned = {event_id: _strip_private(payload) for event_id, payload in workspaces.items()}
+    return _generation_identity(cleaned, str(generated_at), previous_generation_id=previous_generation_id)
 
 
 def write_workspace_generation(
@@ -391,14 +468,33 @@ def write_workspace_generation(
     *,
     generated_at: str | None = None,
     status: str = "ready",
+    previous_generation_id: str | None = None,
+    previous_manifest_sha256: str | None = None,
 ) -> Path:
     """Write immutable workspace objects, then atomically advance the nest marker.
 
     ``out_dir`` is the Company Intelligence product prefix
     (``company_intelligence/``).  Objects land under ``event_workspaces/``.
+
+    IMCE A5C (manifest chain, frozen spec A): *previous_generation_id* is the
+    predecessor generation's id -- the currently-published generation (v1 OR
+    v2; A2) at the moment this generation is minted, or the immediately
+    prior generation minted EARLIER in the SAME publish cycle when several
+    source revisions are being chained in one run (frozen spec B3).
+    *previous_manifest_sha256* is the sha256 of that predecessor's own
+    immutable ``manifest.json`` bytes -- the verification receipt for the
+    link (A1).  Both are ``None`` ONLY for a genuine first-ever generation of
+    the nest (A2); every OTHER call must supply the real predecessor, or the
+    resulting v2 manifest's chain link would be undiscoverable.  Every
+    generation minted by this function is v2 going forward -- v1 stays
+    readable only as pre-existing history.
     """
     if not workspaces:
         raise WorkspaceError("write_workspace_generation requires at least one workspace")
+    if previous_generation_id is not None and not previous_manifest_sha256:
+        raise WorkspaceError(
+            "previous_manifest_sha256 is required whenever previous_generation_id is set"
+        )
     stamped: dict[str, dict[str, Any]] = {}
     generated = generated_at or next(iter(workspaces.values())).get("generated_at")
     if not generated:
@@ -407,7 +503,9 @@ def write_workspace_generation(
         event_id: _strip_private(payload)
         for event_id, payload in workspaces.items()
     }
-    generation_id = _generation_identity(cleaned, str(generated))
+    generation_id = _generation_identity(
+        cleaned, str(generated), previous_generation_id=previous_generation_id,
+    )
     alias_map: dict[str, str] = {}
     for event_id, payload in cleaned.items():
         if event_id != payload.get("event_id"):
@@ -455,12 +553,14 @@ def write_workspace_generation(
         "files": dict(sorted(file_blocks.items())),
         "generated_at": str(generated),
         "generation_id": generation_id,
-        "schema": MANIFEST_SCHEMA,
+        "schema": MANIFEST_SCHEMA_V2,
         "status": status,
         "warnings": [],
+        "previous_generation_id": previous_generation_id,
+        "previous_manifest_sha256": previous_manifest_sha256,
     }
-    # Re-order to MANIFEST_KEYS.
-    manifest = {key: manifest[key] for key in MANIFEST_KEYS}
+    # Re-order to MANIFEST_KEYS_V2.
+    manifest = {key: manifest[key] for key in MANIFEST_KEYS_V2}
     validate_workspace_manifest(manifest)
     manifest_body = canonical_json_bytes(manifest)
     immutable_manifest_path = generation_dir / "manifest.json"
