@@ -20,9 +20,11 @@ import math
 import os
 import re
 import sys
+import threading
 import time
 import zipfile
 from collections import Counter, defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -116,6 +118,7 @@ _BUYBACK_MENTION = re.compile(
     r"\b(?:share|stock|common\s+stock)\s+(?:repurchase|buyback)|\brepurchase\s+(?:program|authorization|plan)\b|\brepurchased\b.{0,80}?\b(?:shares?|stock)\b",
     re.IGNORECASE,
 )
+_RAW_BUYBACK_MENTION = re.compile(r"repurchas|buyback", re.IGNORECASE)
 _NOT_NEW = re.compile(
     r"\b(?:increase(?:d|s)?|additional|expand(?:ed|s)?|extend(?:ed|s|ing)?|extension|renew(?:ed|s|al)?|remaining|replenish(?:ed|es)?)\b",
     re.IGNORECASE,
@@ -659,27 +662,36 @@ class SecArchiveClient:
         self.user_agent = user_agent
         self.min_interval_seconds = max(0.1, float(min_interval_seconds))
         self.timeout_seconds = timeout_seconds
-        self.session = requests.Session()
+        self._thread_local = threading.local()
+        self._start_lock = threading.Lock()
         self._last_request = 0.0
+
+    def _session(self) -> requests.Session:
+        session = getattr(self._thread_local, "session", None)
+        if session is None:
+            session = requests.Session()
+            self._thread_local.session = session
+        return session
 
     def fetch(self, url: str, *, max_bytes: int = 64 * 1024 * 1024) -> bytes:
         if not url.startswith(SEC_ARCHIVES):
             raise CensusError(f"non-SEC archive source refused: {url}")
         last_error: Exception | None = None
         for attempt in range(4):
-            wait = self.min_interval_seconds - (time.monotonic() - self._last_request)
-            if wait > 0:
-                time.sleep(wait)
+            with self._start_lock:
+                wait = self.min_interval_seconds - (time.monotonic() - self._last_request)
+                if wait > 0:
+                    time.sleep(wait)
+                self._last_request = time.monotonic()
             response = None
             try:
-                response = self.session.get(
+                response = self._session().get(
                     url,
                     headers={"User-Agent": self.user_agent, "Accept-Encoding": "gzip, deflate"},
                     timeout=self.timeout_seconds,
                     stream=True,
                     allow_redirects=False,
                 )
-                self._last_request = time.monotonic()
                 if response.url != url or 300 <= response.status_code < 400:
                     raise CensusError(f"SEC archive redirect/source mismatch for {url}")
                 if response.status_code in {429, 500, 502, 503, 504}:
@@ -710,6 +722,8 @@ class SecArchiveClient:
 def _candidate_documents(documents: Sequence[SourceDocument]) -> list[tuple[SourceDocument, str, list[int], re.Match[str]]]:
     matches: list[tuple[SourceDocument, str, list[int], re.Match[str]]] = []
     for document in documents:
+        if not _RAW_BUYBACK_MENTION.search(document.text):
+            continue
         visible, offsets = visible_text_with_map(document.text)
         for pattern in _SEMANTIC_PATTERNS:
             match = pattern.search(visible)
@@ -763,6 +777,8 @@ def classify_filing(
     candidates = _candidate_documents(documents)
     if not candidates:
         for document in documents:
+            if not _RAW_BUYBACK_MENTION.search(document.text):
+                continue
             visible, _offsets = visible_text_with_map(document.text)
             if not _BUYBACK_MENTION.search(visible):
                 continue
@@ -1252,6 +1268,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     scanned_rows: list[dict[str, Any]] = []
     scan_receipts: list[dict[str, Any]] = []
     counters = Counter()
+    jobs: list[tuple[FilingRow, dict[str, Any], list[IdentityRow]]] = []
     for cik_index, cik in enumerate(relevant_ciks, start=1):
         metadata_rows, receipt = load_submissions_for_cik(
             collector, scratch / "submissions", cik
@@ -1266,23 +1283,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             if not structurally_possible(items):
                 counters["structural_negative"] += 1
                 continue
-            row, scan_receipt = scan_filing(
-                archive_client,
-                scratch / "scan-cache",
-                filing,
-                metadata,
-                identities[cik],
-                reuse_cache=args.reuse_cache,
-            )
-            scanned_rows.append(row)
-            scan_receipts.append(scan_receipt)
-            counters["scanned"] += 1
-            if counters["scanned"] % args.progress_every == 0:
-                print(
-                    f"CELL_B_V2_PROGRESS scanned={counters['scanned']} "
-                    f"roots={len(scanned_rows)} ciks={cik_index}/{len(relevant_ciks)}",
-                    flush=True,
-                )
+            jobs.append((filing, metadata, identities[cik]))
         if cik_index % 50 == 0:
             print(
                 f"CELL_B_V2_METADATA ciks={cik_index}/{len(relevant_ciks)} "
@@ -1290,6 +1291,34 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 f"metadata_unresolved={counters['metadata_unresolved']}",
                 flush=True,
             )
+    print(
+        f"CELL_B_V2_SCAN_PLAN roots={len(jobs)} workers={args.workers} "
+        f"min_interval={args.min_interval:.3f}",
+        flush=True,
+    )
+
+    def execute(job: tuple[FilingRow, dict[str, Any], list[IdentityRow]]) -> tuple[dict[str, Any], dict[str, Any]]:
+        filing, metadata, filing_identities = job
+        return scan_filing(
+            archive_client,
+            scratch / "scan-cache",
+            filing,
+            metadata,
+            filing_identities,
+            reuse_cache=args.reuse_cache,
+        )
+
+    with ThreadPoolExecutor(max_workers=args.workers, thread_name_prefix="cell-b-sec") as executor:
+        for row, scan_receipt in executor.map(execute, jobs):
+            scanned_rows.append(row)
+            scan_receipts.append(scan_receipt)
+            counters["scanned"] += 1
+            if counters["scanned"] % args.progress_every == 0:
+                print(
+                    f"CELL_B_V2_PROGRESS scanned={counters['scanned']} roots={len(scanned_rows)} "
+                    f"planned={len(jobs)}",
+                    flush=True,
+                )
     rows = apply_correction_supersession(collapse_dependence_roots(scanned_rows))
     identity_receipt = {
         **identity_receipt,
@@ -1340,6 +1369,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--code-commit", default=None)
     parser.add_argument("--min-interval", type=float, default=0.11)
     parser.add_argument("--progress-every", type=int, default=100)
+    parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--reuse-cache", action=argparse.BooleanOptionalAction, default=True)
     args = parser.parse_args(argv)
     if args.base_commit is None:
@@ -1348,6 +1378,8 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         args.code_commit = _git_output(["rev-parse", "HEAD"])
     if args.progress_every < 1:
         parser.error("--progress-every must be positive")
+    if not 1 <= args.workers <= 6:
+        parser.error("--workers must be between 1 and 6")
     return args
 
 
