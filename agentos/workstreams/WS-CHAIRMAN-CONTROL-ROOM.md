@@ -32,6 +32,14 @@ waves:
       No further H0 release action is owed. Preserve the clean-runtime-worktree launch law and
       keep the separate Macro Agent OS brief/git_dates performance root cause out of H0 unless
       independently commissioned.
+  - id: X1
+    title: Chairman Command Deck product hardening and high-density operating surface
+    status: done
+    depends_on: [H0]
+    next_action: >
+      Preserve Mastermind PR #138 merge 12117ca576cec2c4f054664dd62c4e0809f27e75 as the accepted
+      read-only X1 product surface. Do not reopen X1 to absorb P0B, ASD production dialogue,
+      dispatch, wake, lifecycle ownership or later Control Room waves; those remain separately gated.
   - id: P0B
     title: Vendor-supported managed-browser Open Sol actuator
     status: todo
@@ -87,6 +95,7 @@ decisions:
   - DEC:CHAIRMAN-CONTROL-ROOM-P0-ARCHITECTURE-ACCEPTED
   - DEC:CHAIRMAN-CONTROL-ROOM-ACTIVE-SESSION-DIALOGUE-F0-ACCEPTED
   - DEC:CCR-P0B-AUTOMATION-OWNED-NONSEAT-CANARY-ONLY
+  - DEC:CCR-BRIDGE-FIRST-CHAIRMAN-PRIORITY
   - DEC:CCR-SOL-IDENTITY-IS-NOT-A-CHAT
 discoveries:
   - DSC:CCR-MANAGED-BROWSER-RUNNING-SEAT-ACTUATOR-MISSING
@@ -98,6 +107,7 @@ artifacts:
   - agentos/decisions/DEC-CHAIRMAN-CONTROL-ROOM-P0-ARCHITECTURE-ACCEPTED.md
   - agentos/decisions/DEC-CHAIRMAN-CONTROL-ROOM-ACTIVE-SESSION-DIALOGUE-F0-ACCEPTED.md
   - agentos/decisions/DEC-CCR-P0B-AUTOMATION-OWNED-NONSEAT-CANARY-ONLY.md
+  - agentos/decisions/DEC-CCR-BRIDGE-FIRST-CHAIRMAN-PRIORITY.md
   - agentos/decisions/DEC-CCR-SOL-IDENTITY-IS-NOT-A-CHAT.md
   - agentos/discoveries/DSC-ASD-MODEL-VISIBLE-SETTINGS-CAN-EXPOSE-LIVE-CREDENTIALS.md
   - agentos/discoveries/DSC-CCR-SECURITY-CLI-PROMPT-TRUNCATES-LONG-MULTILOGIN-TOKEN.md
@@ -109,6 +119,7 @@ artifacts:
   - agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-08-23-asd-a1-accepted.md
   - agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-08-23-seat-project-chat-cardinality.md
   - agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-08-24-mas115-live-canary-repair.md
+  - agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-08-24-x1-accepted.md
   - mastermind:research/MASTERMIND_ACTIVE_SESSION_EXECUTIVE_DIALOGUE_F0_ARCHITECTURE_AND_FABLE01_COMMISSION_2026-08-22.md
   - mastermind:research/MASTERMIND_ACTIVE_SESSION_EXECUTIVE_DIALOGUE_F0_CURRENT_STATE_AMENDMENT_2026-08-22.md
   - mastermind:research/MASTERMIND_ACTIVE_SESSION_EXECUTIVE_DIALOGUE_A0_TOKEN_ISOLATION_FALSIFIER_2026-08-23.md
@@ -152,23 +163,32 @@ do_not_redo:
   - "Do not inspect live Slack/vendor credentials through model-visible settings pages or browser tooling; revoke/rotate an exposed credential through a secure human-admin boundary."
   - "Do not recreate ASD A0/A1 or create another MAS-125 implementation carrier. Exact accepted PR #125 merge eb9910681a6db9f9675b25233c8865bb43325c32 is the sole DEVELOPMENT_UNARMED core."
   - "Do not re-open H0 because the persistent 8787 adoption gate is complete; treat future CCR reliability regressions as new evidence, not unfinished H0."
+  - "Do not re-open X1 merely to absorb later capabilities. X1 is the accepted read-only command surface; managed-seat actuation, production dialogue, dispatch and wake remain separate waves."
   - "Do not rerun the disposable lifecycle from the 2026-08-24 failure receipt. Reconcile the current read-only cloud-search contract first, then require a fresh explicit Chairman release for any new lifecycle canary."
 next_action: >
-  Preserve the enrolled seats and stopped disposable provision. Through a human/native secret
-  boundary, replace the rejected Multilogin bearer with a current vendor-issued automation token,
-  then prove authenticated launcher readiness plus a read-only, shape-only accepted census before
-  asking the Chairman for separately explicit authorization for one new disposable lifecycle
-  canary. Independently, issue a separate explicit Sol ASD-A2
-  commission before any production Agent Relay principal or dialogue canary. Do not start ASD-A3,
-  ASD-A4, real-seat mutation, generic Wake or P1 from the accepted A1 core or seat enrollment alone.
+  X1 is accepted; no further X1 release action is owed. Bridge-First continuation resumes at a
+  separately explicit Sol ASD-A2 commission and native action-time confirmation for one bounded
+  production Agent Relay canary, followed by reviewed ASD-A3 proof. Independently preserve the
+  enrolled seats and stopped disposable provision: replace the rejected Multilogin bearer only
+  through a human/native secret boundary, then prove authenticated launcher readiness plus a
+  read-only, shape-only accepted census before asking the Chairman for separately explicit
+  authorization for one new disposable lifecycle canary. Do not start ASD-A3, ASD-A4, real-seat
+  mutation, generic Wake or P1 from X1, the accepted A1 core or seat enrollment alone.
 ---
 
 ## Capability state
 
 `PARTIAL` overall because P0B remains `DARK_OR_DISCONNECTED / unsupported_surface` and the
 production ASD transport path remains unproven. P0A plus H0 is `PROVEN_LIVE` on the persistent
-Chairman path; the supervised loopback service is running from current Mastermind merge
-`591b7ace4dd9b2d46edccaa5e66eebf1ead8657f`, and MAS-114 is complete.
+Chairman path, X1 is `ACCEPTED / PROVEN_LIVE_LOCAL`, and MAS-114 is complete. The supervised
+loopback service is running the exact X1 merge `12117ca576cec2c4f054664dd62c4e0809f27e75`
+at `http://127.0.0.1:8787/`.
+
+X1 is the accepted daily command surface over the existing truth model: truthful Needs You,
+deterministic Focus, 47-row All Work, Surface Dock, detail drawer, local Command-K search and System
+evidence. Its real-browser review covered desktop dark/light, compact desktop, the dock breakpoint,
+375x812 mobile, degraded Executive-DB-absent state and a synthetic binding conflict. This is product
+acceptance of the read-only surface, not P0B managed-seat actuation or ASD production dialogue.
 
 The three-seat enrollment and conflict-free local projection are now `PROVEN_LIVE` on the
 loopback Control Room read path. This proves seat addressability only. It does not prove vendor
@@ -213,6 +233,20 @@ separately authorized real canaries pass.
 - Mastermind PR #134 merged exact Project-chat navigation and the non-primary-chat correction as
   `591b7ace4dd9b2d46edccaa5e66eebf1ead8657f` from exact head
   `9bc12c9e6dc23c30ab356971c90ebf34de2b72a3`; repository CI and all CodeQL analyses passed.
+
+### Immutable X1 receipt
+
+- Mastermind PR #138 exact accepted head `55ec5069e653489541ef273fdb0e76f7df2598e7`
+  merged as `12117ca576cec2c4f054664dd62c4e0809f27e75` after the focused 261-test Control
+  Room pack, the post-base 18/18 X1 suite, exact-head CI `32724498791`, CodeQL
+  `32724495498` and Sol real-browser product acceptance.
+- The accepted browser matrix proved Needs You, 10-row Focus, 47-row All Work, desktop dock
+  collapse/reveal/focus, mobile Surfaces navigation, drawer and Command-K focus return, dark/light,
+  actual Executive-runtime-DB absence, exact synthetic conflict claimants, no horizontal overflow
+  and zero console warnings/errors. The review repaired hidden-state override, compact-header clipping,
+  mobile topbar wrapping and refresh-banner obstruction on the same carrier before acceptance.
+- Post-merge local proof served HTTP 200 on loopback with source marker `MASTERMIND 12117ca · HEAD`,
+  refreshed `GitHub live cache`, 47 work references and truthful `EXECUTIVE RUNTIME DB absent`.
 
 ### Immutable ASD receipts
 
@@ -259,10 +293,12 @@ separately authorized real canaries pass.
    by authenticated launcher status. Keychain presence and failed disposable attempts do not
    establish a supported live lifecycle.
 7. Agent OS brief latency remains a separate Macro performance problem.
+8. X1 acceptance does not make managed-seat Open Sol, production Agent Relay dialogue, Executive
+   dispatch, automatic wake or later Control Room waves complete.
 
 ## Completion boundary
 
-MAS-114/H0 and ASD A0/A1 are complete at their stated boundaries. MAS-113 remains nonterminal until P0B proves the vendor-supported
+MAS-114/H0, X1 and ASD A0/A1 are complete at their stated boundaries. MAS-113 remains nonterminal until P0B proves the vendor-supported
 managed-seat Open Sol journey including intended-seat foreground reachability, zero cross-seat
 fallback, zero message send, zero managed-environment state mutation and required restart/failure
 proof. ASD becomes `PROVEN_LIVE` only after separately authorized A2 and A3 canaries prove a real
