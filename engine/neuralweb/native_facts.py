@@ -154,7 +154,7 @@ def _symbol_candidates(message: str) -> tuple[tuple[str, ...], bool]:
             r"^\s+(?:price|quote|stage|weeks?\s+(?:in|of)|1\s*(?:-\s*)?(?:m|mo|month)|"
             r"3\s*(?:-\s*)?(?:m|mo|month)|12\s*(?:-\s*)?(?:m|mo|month)|industry\s+rank|"
             r"within[-\s]+industry|member\s+rs|next\s+earnings|latest\s+(?:eps|revenue|sales)|"
-            r"direct\s+(?:local\s+)?theme)",
+            r"direct\s+(?:local\s+)?theme|trading\s+(?:at|now))",
             after,
             re.IGNORECASE,
         ))
@@ -165,7 +165,12 @@ def _symbol_candidates(message: str) -> tuple[tuple[str, ...], bool]:
             before,
             re.IGNORECASE,
         ))
-        proven_slot = possessive or suffix_slot or post_field_slot
+        natural_price_prefix_slot = bool(re.search(
+            r"\b(?:what(?:'s|\s+is)|how\s+much\s+is)\s*$",
+            before,
+            re.IGNORECASE,
+        ))
+        proven_slot = possessive or suffix_slot or post_field_slot or natural_price_prefix_slot
         # Dollar syntax is an explicit entity assertion regardless of whether
         # the letters also form request grammar; W1-A still proves identity.
         if raw.startswith("$"):

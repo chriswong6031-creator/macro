@@ -1165,6 +1165,8 @@ def test_site_quotes_reader_still_returns_dateless_when_no_timestamp_exists(tmp_
 
 @pytest.mark.parametrize(("message", "expected"), [
     ("AAPL price", ("market.price.last",)),
+    ("What's AAPL trading at?", ("market.price.last",)),
+    ("How much is AAPL?", ("market.price.last",)),
     ("AAPL Stage", ("stage.current",)),
     ("AAPL weeks in Stage", ("stage.weeks_in_stage",)),
     ("AAPL 1m, 3m and 12m return", (
@@ -1225,15 +1227,25 @@ def test_w1b_native_planner_accepts_grammar_collision_in_structured_ambient_cont
     "IT and Stage",
     "Give me ARE and price",
     "A and price",
-    "How much is IT",
-    "How much is A",
-    "How much is ARE",
-    "What is IT trading at",
     "What Stage is IT",
     "What Stage is IT in",
 ])
 def test_w1b_native_planner_ambiguous_uppercase_collision_vetoes_ambient(message):
     assert nf.plan_native_facts(message, {"symbol": "AAPL"}) is None
+
+
+@pytest.mark.parametrize("message", [
+    "How much is IT",
+    "How much is A",
+    "How much is ARE",
+    "What is IT trading at",
+])
+def test_w1b_native_planner_natural_price_slot_beats_ambient(message):
+    plan = nf.plan_native_facts(message, {"symbol": "AAPL"})
+    assert plan is not None
+    assert plan.symbol in {"IT", "A", "ARE"}
+    assert plan.explicit_entity is True
+    assert plan.effective_context_reason == "explicit_entity_wins"
 
 
 def test_w1b_native_planner_dollar_collision_symbol_is_unambiguously_explicit():
