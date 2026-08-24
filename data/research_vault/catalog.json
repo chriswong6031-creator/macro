@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-23T23:10:10.639678+00:00",
-  "count": 1708,
+  "generated_at": "2026-08-24T00:35:34.364113+00:00",
+  "count": 1721,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -107,6 +107,68 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-m5einnyptrx-8a19a8",
+      "title": "Asia Economics Analyst China's Broad Based Export Strength to Persist Despite Limited AI Boost",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T21:46:09Z",
+      "summary_points": [
+        "**AI Export Misleading Growth**: AI-related trade drives nominal export growth (50% of Q2 2026 nominal surge) but contributes minimally to real growth (sub-1pp); real expansion stems from electrical machinery (19% EU H1 2026 exports).",
+        "**Value-Added Discrepancy**: 80% of AI exports under processing trade regimes reduce domestic value-added; gross export figures overstate net trade impact significantly.",
+        "**Trade Balance Widening**: Underlying trade balance widened to $1.3tn annualized (excluding gold-driven imports), reflecting policy-driven dynamics, not market demand.",
+        "**EU Sectoral Targeting**: EU measures target PHEVs, electrical machinery, and wind components (covering 27% of China’s EU exports), with CBAM extension raising affected exports to 12.1% of China-EU trade.",
+        "**\"New Three\" Export Insignificance**: AI, robotics, and drugs contribute negligibly to exports (AI: 0.3pp volume, 7.3pp value; robots: -0.8pp volume), with services-oriented trade not captured in data."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 19,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-cn8tv28kn5g-c33dda",
+      "title": "China Three things in China",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T21:46:08Z",
+      "summary_points": [
+        "**Weaker Activity Data**: Services retail sales slowed to 3.2% yoy (most concerning), industrial production (4.5% yoy), retail sales (0.6% yoy), and fixed asset investment (-6.2% yoy) all decelerated, signaling soft Q3 start.",
+        "**Housing Stabilization Signals**: House prices showed slightly smaller declines in key cities (Shanghai, Hangzhou, Hefei), indicating potential stabilization amid policy easing (Beijing home purchase restrictions, Housing Provident Fund rules).",
+        "**Property Policy Limited Impact**: Recent policy easing moderated price declines in Tier-1/Tier-2 cities, but nationwide impact remains limited per Goldman Sachs analysis.",
+        "**Fiscal Tightening & Credit Dynamics**: Fiscal deficit narrowed in July (strong revenue, slower spending); credit extension stronger than expected despite loan stock decline."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-srsxextkm5w-e4b8de",
+      "title": "What could the ecbs structural ltros look like",
+      "institution": "Rabobank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T21:45:58Z",
+      "summary_points": [
+        "**ECB Structural LTRs Design**: 12-month maturity, variable-rate tenders, market-rate allocations to address liquidity gaps as ECB shrinks balance sheet; avoids uniform pricing subsidies and overbidding risks.",
+        "**Term Rate Impact Limitation**: LTRs fail to offset liquidity draining from declining reserves; cannot meaningfully compress Euribor-OIS spreads despite flattening money market curve.",
+        "**Allocation Mechanics Risk**: Variable-rate tenders sort bids from highest to lowest rate; successful bidders pay weighted average rate (not marginal rate), creating cost variability across banks.",
+        "**Subsidy Risk Mitigation**: Multiple-rate tenders (vs.",
+        "uniform pricing) reduce subsidies to high-cost banks, enabling market-aligned pricing and incremental demand."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-g6uqrtgtpmh-7a25a3",
       "title": "Week in Focus 24 28th August 2026 1",
       "institution": "Week Ahead",
@@ -143,6 +205,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-wwoxlg8r33x-03777a",
+      "title": "Weekly Economic Calendar 24 28th August 2026",
+      "institution": "Week Ahead",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T21:12:31Z",
+      "summary_points": [
+        "**Mexican Inflation & US Economic Momentum**: MX CPI data tracks inflation trends; US Chicago Fed Index (exp 0.1) signals economic momentum—positive surprise could drive risk asset rallies.",
+        "**Iran Sanctions Geopolitical Risk**: US Treasury Secretary’s press conference on Iranian sanctions introduces trade disruption risk, directly impacting oil markets and global EM exposure.",
+        "**US Treasury Auction**: $70bn 5-Year Note Auction (13:00 EDT) is high-impact supply event; results may drive 5Y yields, USD liquidity, and global risk sentiment.",
+        "**Fed Jackson Hole Symposium**: Critical policy event (Aug 27-29) directly impacting interest rate expectations and global portfolio flows.",
+        "**Japan's Core CPI YY**: Significant inflationary pressure (exp 2.5% vs prev 1.9%) signals potential BoJ policy shift (rate hike/yield curve adjustment)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
@@ -249,6 +332,150 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-gabxqgofm8o-a977ff",
+      "title": "Global Semis CHIPS IV China Semis self sufficiency builds",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T16:45:08Z",
+      "summary_points": [
+        "**China's 7nm Supply-Demand Gap Narrowing**: Projected to 34% by 2035E (vs 92% in 2025), driven by AI server demand (42% CAGR), critical for self-sufficiency progress.",
+        "**China Semis Capex Surge**: $82bn by 2030E (796% rise from 2010), driven by generative AI, memory demand, and \"local for local\" strategy; reverses 2025 flat growth.",
+        "**SPE Supplier Dynamics**: NAURA (Front-end) and AMEC (Back-end) gaining traction in high-value segments (Immersion DUV/EUV); geopolitical risks (US sanctions) and technical execution gaps are key portfolio risks.",
+        "**US SPE Market Share Risk**: US suppliers face reduced China WFE market share due to export controls (starting 2H25) and domestic CapEx focus; Chinese players' share to rise to 38% by 2028E.",
+        "**CXMT Capacity Expansion**: DRAM supply to reach 41%/50% of Samsung/SK Hynix by 2028E; capacity doubling by 2030E critical for meeting demand amid tech gaps."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 32,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-aueifxab5ps-878832",
+      "title": "Kweichow Moutai (600519)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T16:45:06Z",
+      "summary_points": [
+        "**DTC Reform Momentum**: i-Moutai revenue Rmb40.26bn (1H26, ex-VAT), scaling rapidly with dynamic pricing since Aug 8; aligns with market demand, prioritizing sell-through over NT growth.",
+        "**Pricing Discipline & Affordability**: Wholesale price as % of urban salary dropped to 29% (vs.",
+        "60% in 2021), improving consumer accessibility; ASP stable for 7 months amid normalized retail pricing across pyramid portfolio (Feitian base, Jingpin/Zodiac middle, aged top).",
+        "**Growth Catalysts**: +274% YoY revenue, 17.44mn new users (cumulative 29.41mn); i-Moutai drives engagement (44.4% under 35), critical for market share expansion and sustainable growth."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-xas9yhkzc2l-b541d5",
+      "title": "Insta360 (688775)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T16:45:04Z",
+      "summary_points": [
+        "**Product Differentiation & Market Edge**: Luna Ultra's Leica Summicron lens (14-stop DR), 1\" 8K sensor, AI tracking (DeepTrack 5.0), and telephoto (12x zoom) target pro vloggers with premium features, differentiating from competitors and expanding ecosystem.",
+        "**Valuation Upside & Growth Catalyst**: 156.7% upside to Rmb311 target (vs.",
+        "current Rmb121.17) driven by 20x 2030E P/E, with revenue surging from Rmb9.74bn (2025) to Rmb47.3bn (2028E) and EPS climbing from Rmb2.37 to Rmb12.23.",
+        "**Revenue & EPS Trajectory**: Robust growth projected (Rmb9.74bn → Rmb47.3bn revenue, Rmb2.37 → Rmb12.23 EPS by 2028E), supported by market expansion, premium brand strength, and accessory ecosystem growth."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-uk6aa7lglx8-febc1a",
+      "title": "Faratronic (600563)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T16:45:02Z",
+      "summary_points": [
+        "**GPM Beat & H226E Outlook**: Q26 GPM beat consensus by 3pp (34.4%) due to operational efficiency; H226E GPM expected to improve as raw material pressures ease and pricing actions take effect from Q3.",
+        "**Revised EPS & Target**: 2026-30E EPS revised up 3-9% with new 12-m TP at Rmb154.8 (current Rmb133.07), 16.3% upside, driven by industrial control segment (16% revenue) growth in grid/data center applications.",
+        "**Market Leadership & Growth**: #1 film capacitor supplier (18% market share), driven by EV controller upgrades, industrial control (AIDC/power grid/railway), with attractive valuation at 17%/19% revenue/net income CAGR vs.",
+        "22X 2028E P/E.",
+        "**Key Risk Factor**: Downstream segment pullback (EV/solar/wind in China/globally) as primary risk, alongside aluminum electrolytic/MLCC tech disruption and lower-than-expected NEV market share."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-qbbuoo0mfgy-16519a",
+      "title": "China Humanoid Robot 2026 WRC takeaways Healthy shift to commercialization & ROI",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T16:45:01Z",
+      "summary_points": [
+        "**2026 WRC Commercialization Shift**: Logistics sorting leads early commercialization (small-batch volume ramp late 2026, larger-batch 2027), pivoting to product-market fit with measurable ROI.",
+        "**Shenzhen Inovance Buy Thesis**: 12-mo TP Rmb92.90 (35x 2027E P/E), driven by 25%/33% CAGR in key products (No.1 China by 2025), EV components, and digitalization; key risk: slower market share gains.",
+        "**Shuanghuan Driveline Growth**: EV gears revenue 23%/24% yoy (2025E/26E), intelligent transmission gears 55%/43% yoy; firmwide revenue/net profit CAGR 11%/19% (2024-26E), Buy rating on better-than-expected margins.",
+        "**Geopolitical & Regulatory Risks**: US-China tech tensions and China’s domestic policies directly impact valuations, causing inconsistent analyst outlooks and jurisdictional constraints (e.g., US laws, market access limits).",
+        "**Sector Fragmentation**: 3 firms (Leader Harmonious, Luster, Moons’ Electric) show bearish sentiment (target < closing), while 2 (Sanhua Intelligent, Inovance) show bullish sentiment, signaling divergent performance and potential mispricing."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-adpxtjd7jki-c18d4a",
+      "title": "Asia Index Strategy Hang Seng Indexes Rebalancing Review and Flow Implications (September 2026)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T16:44:58Z",
+      "summary_points": [
+        "**Rebalancing Schedule & Constituent Shifts**: HSI adds Hua Hong Grace Semis (1347) & Weichai Power (2338); HSTECH replaces Tongcheng Travel (780) with Shanghai Iliuvatar Corex Semis (9903); effective Sept 4/11 with weight adjustments post-re-capping.",
+        "**Passive Flow Implications**: $7.2bn gross two-way passive flows; Tech/HW & Semis (+$870mn), Software & Services, Internet/Media largest buyers; Banks (-$800mn), Utilities, Consumer Retail largest sellers.",
+        "**Southbound Eligibility Restructuring**: Stricter WRR requirements for WVR stocks; Tencent/Alibaba excluded, altering portfolio construction for Southbound strategies and necessitating tech sector exposure adjustments.",
+        "**Southbound Flow Impact**: SB inclusions drive 2pp ownership rise + 9pp price rally over 3 months; exclusions trigger 1pp ownership drop + 4pp price pressure post-exclusion."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-axmryvuuony-6ccb9c",
+      "title": "Nantong Jianghai Capacitor Co. (002484.SZ) 2Q26 results below GSe, limited shipment or customer certification progress despi...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T16:44:58Z",
+      "summary_points": [
+        "**Q2 2026 results below expectations**: Revenue/gross profit/net profit of Rmb 1,767mn/435mn/251mn/221mn (+15%/+12%/+11%/+7% YoY) vs.",
+        "Goldman Sachs estimates (-6%/-8%/-8%/-14% vs.",
+        "GSe), with AIDC shipments (2mn units, Rmb 108mn revenue) lagging aggressive plans.",
+        "**Valuation-revenue mismatch**: Revenue forecasted to grow 121% (Rmb 5,484.3m to Rmb 12,116.2m by 2028E) while P/E declines from 30.6 to 22.1, indicating overvaluation despite growth.",
+        "**EDLC raw material bottleneck**: Tight supply of high-end activated carbon (critical for AI capacitors) with Kuray reporting tight prices; company’s 1mn units/month EDLC capacity faces 8.3mn/month industry demand, risking full utilization."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-156ooarazal-bc68bb",
       "title": "GS Quinn Gold Futures Record 3 Weeks of Buying 23 Aug 2026",
       "institution": "S&T",
@@ -264,6 +491,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-frxokjv9ue9-acc24a",
+      "title": "Nomura Special Report The Seeds Of political change",
+      "institution": "Nomura",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T15:28:14Z",
+      "summary_points": [
+        "**European Elections & Fiscal Risk**: Populist right-wing gains in key EU states (Germany, France, Italy, Spain) threaten fiscal stability; markets assess new governments' spending discipline vs.",
+        "profligacy (e.g., UK/Hungary precedents).",
+        "**France's Fiscal Fragility**: Debt/GDP ratio projected to exceed 120% by 2027 (vs.",
+        "4% in 2024), driven by widening primary deficit; markets penalize fiscal missteps (e.g., OAT-Bund spread widening on Mélénchon win).",
+        "**Italy's Fiscal Creditworthiness**: Meloni’s policies narrowed 10y BTP-Bund spread to 80bp (vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 27,
       "language": "en",
       "needs_metadata": false
     },
@@ -325,6 +573,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-1dzgtpkdntg-5d7b22",
+      "title": "article whytherealestatemattersinnetleaseinvesting",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T14:53:04Z",
+      "summary_points": [
+        "**Net Lease Resilience & Geopolitical Tailwinds**: Tariffs accelerating US manufacturing onshoring (Midwest/Southeast) drive sale leaseback activity in established clusters, enhancing net lease demand amid volatility.",
+        "**Mission Critical Net Lease Security**: Superior security via \"four wall economics\" (total corporate revenue vs.",
+        "rent) and tenant stickiness (premium locations show +30-50% higher leasing share), though tariffs reduce coverage ratios for tariff-sensitive sectors.",
+        "**Renewal Probability as Return Driver**: Directly tied to asset mission criticality; high-quality, well-located real estate has higher renewal likelihood, with market dynamics (demand/supply, demographics, labor access) dictating attractiveness."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },
