@@ -41,10 +41,15 @@ owns_paths:
   - engine/fundamental_forensics/statement_service.py
   - tests/test_fundamental_forensics_financial_statement_service.py
   - tests/test_fundamental_forensics_financial_statement_api.py
+  - tests/test_fundamental_forensics_ixbrl_raw_ledger.py
   - tests/fixtures/fundamental_forensics/aapl_10k_2025/
   - tests/fixtures/fundamental_forensics/aapl_10q_2026q3/
+  - engine/fundamental_forensics/ixbrl_raw_ledger.py
+  - engine/fundamental_forensics/sec_document_spine.py
+  - tests/test_sec_document_spine.py
   - research/financial_intelligence_fabric/FIF_3A1_REUSE_MAP.md
   - research/financial_intelligence_fabric/FIF_3A2_REUSE_MAP.md
+  - research/financial_intelligence_fabric/FIF_3A3_REUSE_MAP.md
   - research/financial_intelligence_fabric/FIF_3A2_AAPL_GOLDEN_REVIEW.md
   - contracts/statement_cell.v1.md
   - scripts/capture_fif3a1_aapl_package.py
@@ -59,6 +64,7 @@ discoveries:
   - DSC:AAPL-CF-BEGINNING-CASH-IS-INSTANT-IN-DURATION-COLUMNS
   - DSC:AAPL-CF-CASH-CONCEPT-OCCURS-TWICE
   - DSC:AAPL-Q3-DURATION-FAMILIES-SHARE-END-DATE
+  - DSC:AAPL-UNLINKED-VINTAGES-REQUIRE-TYPED-REVISION-LINEAGE
 decisions:
   - DEC:FIF-1-INDEPENDENT-FILING-PACKAGE-FIXTURE
   - DEC:FIF-1R-HERMETIC-PACKET-CONTRACT
@@ -81,17 +87,18 @@ decisions:
   - DEC:FIF-3A2-COLUMNS-BIND-COMPLETE-PERIOD
   - DEC:FIF-3A2-RELATED-EVENT-REF-OMITS-GENERATION
   - DEC:FIF-3A2-ACCEPTED-GOLDEN-ON-MAIN
+  - DEC:FIF-3A3-REUSE-MAP
+  - DEC:FIF-3A3-ACCEPTED-GOLDEN-QUERY-ON-MAIN
 next_action: >
   FIF-1 is DONE / FROZEN. FIF-2 is DONE / FIXTURE_PROVEN SERVICE
   SUBSTRATE (DEC:FIF-2-DONE-STATEMENTS-MOVE-TO-FIF-3). FIF-2A/B/C remain
   ACCEPTED / FIXTURE_PROVEN / ON_MAIN. FIF-3 is IN_PROGRESS. FIF-3A1 is
   ACCEPTED / GOLDEN FIXTURE PROVEN / ON_MAIN. FIF-3A2 is ACCEPTED /
-  GOLDEN FIXTURE PROVEN / ON_MAIN (AAPL FY2026 Q3 10-Q accession
-  0000320193-26-000020 plus stable related_event_ref to
-  evt_cik0000320193_2026q3_results; PR #6302, accepted head 9598c543,
-  merge e210a80d2bad). Do not reopen FIF-2A/2B/2C, FIF-3A1, or FIF-3A2.
-  Do not call FIF-3 done. Do not claim production issuer coverage. Do
-  not start FIF-3A3 or another issuer.
+  GOLDEN FIXTURE PROVEN / ON_MAIN. FIF-3A3 is ACCEPTED / GOLDEN QUERY
+  CONVERGENCE PROVEN / ON_MAIN (DEC:FIF-3A3-ACCEPTED-GOLDEN-QUERY-ON-MAIN).
+  Do not reopen FIF-2A/2B/2C, FIF-3A1, FIF-3A2, or FIF-3A3. Do not call
+  FIF-3 done. Do not claim production issuer coverage. Do not start
+  FIF-3A4 or another issuer.
 landmines:
   - >
     Core catalog is consolidated_only. Company Facts conversion sets
@@ -116,6 +123,23 @@ landmines:
     dates are shared by 3M and 9M families. Bind by complete period.
     See DSC:AAPL-Q3-DURATION-FAMILIES-SHARE-END-DATE and
     DEC:FIF-3A2-COLUMNS-BIND-COMPLETE-PERIOD.
+  - >
+    After both AAPL golden filings are visible, comparative instants such
+    as total_assets at 2025-09-27 are NOT_EVALUABLE because the 10-K and
+    10-Q are unlinked duplicate roots. Do not invent revision_of.
+    See DSC:AAPL-UNLINKED-VINTAGES-REQUIRE-TYPED-REVISION-LINEAGE.
+  - >
+    FIF-3A3 query source set is frozen to A1 0000320193-25-000079 and A2
+    0000320193-26-000020. Iterating GOLDEN_AAPL_FIXTURES silently admits
+    later statement packages into the A3 ledger.
+  - >
+    Non-null FinancialQueryDataset.delivery is exact committed_golden_fixture
+    / attested=false / production_issuer_service=false. Extra keys, true
+    flags, or non-booleans are private 503, not a new authority vocabulary.
+  - >
+    sec_document_id owns canonical CIK plus accession, existing SEC document
+    role vocabulary, and document-spine member-path validation. 320193 and
+    0000320193 mint one identity.
   - >
     PR #5799 owns Earnings Intelligence E0/E1/E2 documents. FIF must not edit them.
   - >
@@ -157,7 +181,10 @@ do_not_redo:
   - FIF-3A1 is ACCEPTED / GOLDEN FIXTURE PROVEN / ON_MAIN (DEC:FIF-3A1-ACCEPTED-GOLDEN-ON-MAIN); do not reopen accepted AAPL composition, mapping, duplicate, presentation-occurrence, or authority laws, and do not add FIF-3A1 hardening.
   - Do not call FIF-3 done; the golden five-issuer slice is still IN_PROGRESS.
   - FIF-3A2 is ACCEPTED / GOLDEN FIXTURE PROVEN / ON_MAIN (DEC:FIF-3A2-ACCEPTED-GOLDEN-ON-MAIN); do not reopen accepted Q3 composition, complete-period column law, related_event_ref, or SHA b98602a299996ff7ea58b842364031547df795d1458b51134eef0e37159b7918, and do not add FIF-3A2 hardening.
-  - Do not start FIF-3A3 or another issuer from this closeout.
+  - FIF-3A3 is ACCEPTED / GOLDEN QUERY CONVERGENCE PROVEN / ON_MAIN (DEC:FIF-3A3-ACCEPTED-GOLDEN-QUERY-ON-MAIN); do not reopen the A1+A2 source freeze, delivery fail-closed law, canonical sec_document_id, unlinked-vintage N/E, or ledger/query identities, and do not add FIF-3A3 hardening.
+  - Do not start FIF-3A4 or another issuer from this closeout.
+  - Do not iterate GOLDEN_AAPL_FIXTURES inside GoldenAaplFinancialQueryProvider.
+  - Do not treat a non-null FinancialQueryDataset.delivery as a production-attestation authority.
   - Do not label frozen FIF-1 packet_id fip_18e2f725f6ba20678d0612bb as FIF-2C; FIF-2C rich HTTP proof is fip_49718dcaf4c6855592b6ba0a / content 49718dcaf4c6855592b6ba0a160851c608b4733b44f8ac9a6cf7d907df7565e5 / response 310f6579ab0014e6af16a3341f005078eab3fdcc70ebe67ec83cf138b9e6c23a.
   - Do not mint generation_id as financial-statement truth; related_event_ref is a stable event_id plus distinct SEC accessions.
   - Do not rewrite source-native SEC/XBRL identity to mint a Mastermind issuer ID.
@@ -189,19 +216,23 @@ waves:
     title: Golden five issuer vertical slice
     status: in_progress
     depends_on: [FIF-2]
-    pr: [6268, 6302]
+    pr: [6268, 6302, 6352]
     next_action: >
       FIF-3A1 is ACCEPTED / GOLDEN FIXTURE PROVEN / ON_MAIN via PR #6268
       (accepted head 80d3da1e2ce6, merge 4ef15259f027). FIF-3A2 AAPL
       FY2026 Q3 10-Q accession 0000320193-26-000020 plus related_event_ref
       to evt_cik0000320193_2026q3_results is ACCEPTED / GOLDEN FIXTURE
       PROVEN / ON_MAIN via PR #6302 (accepted head 9598c5430c587b,
-      merge e210a80d2bad). SEC inventory 65 members / 6 retained;
-      response SHA b98602a299996ff7ea58b842364031547df795d1458b51134eef0e37159b7918
-      / 190019 bytes / rows 24/36/35; columns bind complete {kind,start,end};
-      event link has no generation_id. FIF-3 itself is not done. Do not
-      add SNOW/CAT/BAC/GOOGL. Do not start FIF-3A3. Production attested
-      issuer service remains NOT_BUILT.
+      merge e210a80d2bad). FIF-3A3 is ACCEPTED / GOLDEN QUERY
+      CONVERGENCE PROVEN / ON_MAIN via PR #6352 (accepted head
+      197f405758fd, merge 34ce48ec67a8). Query source set is exactly A1
+      0000320193-25-000079 plus A2 0000320193-26-000020. Ledger SHA
+      ba149bd55d929d843f353e91bbf68147791fb8b4a20c258426ea2eb7527019d8;
+      AAPL response SHA 58972cb88f82483e86acc9d9fc3b1cbce046f466ff8665ae214909d90ab078b0.
+      Unlinked A1/A2 comparatives remain NOT_EVALUABLE
+      (DSC:AAPL-UNLINKED-VINTAGES-REQUIRE-TYPED-REVISION-LINEAGE).
+      FIF-3 itself is not done. Do not add SNOW/CAT/BAC/GOOGL. Do not
+      start FIF-3A4. Production attested issuer service remains NOT_BUILT.
   - id: FIF-4
     title: Filing Forensics V2 product MVP
     status: todo
@@ -325,12 +356,41 @@ distinct (`DEC:FIF-3A2-COLUMNS-BIND-COMPLETE-PERIOD`). Optional
 omits `generation_id`, copies no Earnings payload, and is absent on
 the A1 10-K (`DEC:FIF-3A2-RELATED-EVENT-REF-OMITS-GENERATION`).
 FIF-3A2 is ACCEPTED / GOLDEN FIXTURE PROVEN / ON_MAIN
-(`DEC:FIF-3A2-ACCEPTED-GOLDEN-ON-MAIN`). Predecessor-label law: frozen
-FIF-1 golden packet_id is `fip_18e2f725f6ba20678d0612bb`; FIF-2C rich
-HTTP proof remains packet_id `fip_49718dcaf4c6855592b6ba0a`,
+(`DEC:FIF-3A2-ACCEPTED-GOLDEN-ON-MAIN`). FIF-3A3 converts the accepted
+A1/A2 iXBRL bytes through the strict SEC parser and one
+`ixbrl_raw_ledger.py` adapter into canonical `RawFactLedger`, then
+serves governed values on the existing authenticated
+`POST /api/forensics/v1/financial/query`. Sol source-reviewed exact
+product head `197f405758fdfe19be7de739c1aabfc938272c40` as PASS /
+ACCEPTED_FOR_LANDING. PR #6352 squash-merged as
+`34ce48ec67a8697ddfbe439e9840e818c98eee70` on 2026-08-24T09:53:54Z.
+Accepted identities remain ledger SHA
+`ba149bd55d929d843f353e91bbf68147791fb8b4a20c258426ea2eb7527019d8`,
+AAPL response SHA
+`58972cb88f82483e86acc9d9fc3b1cbce046f466ff8665ae214909d90ab078b0`,
+query hash
+`f8f6dc3134592c817001738cbdefb09ee1b71798ef24a8e64dc75685a6f9c7a1`,
+A1 statement SHA
+`25e5562e81cb80bd42d0feb544c212c4471e11736601aaee418a60981a457184`,
+A2 statement SHA
+`b98602a299996ff7ea58b842364031547df795d1458b51134eef0e37159b7918`,
+A1 document
+`sec_document_d23a609841f9a32489dd7abc952d39622540f8a24905612bda1d43e5577860b8`,
+A2 document
+`sec_document_29a36fa46a0bc5309f17bd254c3061f20c4b3de7e05898a2fec9ee58f89e8760`.
+The A3 source set is exactly A1+A2
+(`DEC:FIF-3A3-ACCEPTED-GOLDEN-QUERY-ON-MAIN`). Non-null delivery is
+exact committed-golden / non-attested / non-production.
+`sec_document_id` owns canonical CIK plus accession, role, and
+member-path validation. Unlinked A1/A2 comparatives remain
+`NOT_EVALUABLE` (`DSC:AAPL-UNLINKED-VINTAGES-REQUIRE-TYPED-REVISION-LINEAGE`).
+FIF-3A3 is ACCEPTED / GOLDEN QUERY CONVERGENCE PROVEN / ON_MAIN.
+Predecessor-label law: frozen FIF-1 golden packet_id is
+`fip_18e2f725f6ba20678d0612bb`; FIF-2C rich HTTP proof remains
+packet_id `fip_49718dcaf4c6855592b6ba0a`,
 content `49718dcaf4c6855592b6ba0a160851c608b4733b44f8ac9a6cf7d907df7565e5`,
 response `310f6579ab0014e6af16a3341f005078eab3fdcc70ebe67ec83cf138b9e6c23a`.
 This is not production coverage. Production attested issuer service
 remains NOT_BUILT. Do not create FIF-1R4. Do not reopen accepted
-packet, query, revision, FIF-3A1, or FIF-3A2 statement semantics. Do
-not call FIF-3 done. Do not start FIF-3A3.
+packet, query, revision, FIF-3A1, FIF-3A2, or FIF-3A3 semantics. Do
+not call FIF-3 done. Do not start FIF-3A4.

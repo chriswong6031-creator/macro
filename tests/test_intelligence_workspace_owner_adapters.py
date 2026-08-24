@@ -73,6 +73,75 @@ def _security(entity_id: str = AAPL) -> dict[str, str]:
     return {"type": "security", "id": entity_id, "universe": "us_equity"}
 
 
+def _relationship_resolver(tmp_path: Path, *, schema="stage_screener.v1", current=True):
+    _write_json(
+        tmp_path / "data/stage_analysis/screener.json",
+        {
+            "schema": schema,
+            "asof": "2026-08-23",
+            "built": "2026-08-23T03:55:25Z",
+            "stage_week_end": "2026-08-21",
+            "rows": [{
+                "ticker": "AAPL",
+                "source": "live",
+                "industry": "software",
+                "stage": 2,
+                "weeks_in_stage": 7,
+                "stage_current": current,
+                "stage_source_asof": "2026-08-21",
+                "stage_week_end": "2026-08-21",
+            }],
+        },
+    )
+    return DatapointResolver(
+        registry=load_registry(),
+        identity_normalizer=FixedIdentity(),
+        adapters={
+            "stage": StageAdapter(
+                repo_root=tmp_path,
+                symbol_map_loader=lambda: {AAPL: "AAPL"},
+            )
+        },
+        clock=lambda: NOW,
+    )
+
+
+def test_stage_current_industry_relationship_uses_central_subscriber_projection(tmp_path):
+    resolver = _relationship_resolver(tmp_path)
+    relationship = resolver.resolve_current_industry_relationship(
+        CanonicalEntity("security", AAPL, "us_equity")
+    )
+    assert relationship["schema"] == \
+        "intelligence_workspace.current_industry_relationship.v1"
+    assert relationship["from"] == {"type": "security", "id": AAPL}
+    assert relationship["to"] == {
+        "type": "industry", "id": "software", "universe": "us_industry",
+    }
+    assert relationship["status"] == "available"
+    assert len(relationship["relationship_fingerprint"]) == 64
+    assert resolver.resolve_current_industry_relationship(
+        CanonicalEntity("security", AAPL, "us_equity")
+    )["relationship_fingerprint"] == relationship["relationship_fingerprint"]
+    serialized = json.dumps(relationship)
+    assert "artifact_id" not in serialized
+    assert "owner_artifact" not in serialized
+
+
+@pytest.mark.parametrize(("schema", "current", "status", "reason"), [
+    ("hostile.lookalike.v1", True, "unavailable", "owner_degraded"),
+    ("stage_screener.v1", False, "stale", "owner_stale"),
+])
+def test_stage_current_industry_relationship_refuses_invalid_or_stale_owner_edge(
+        tmp_path, schema, current, status, reason):
+    resolver = _relationship_resolver(tmp_path, schema=schema, current=current)
+    relationship = resolver.resolve_current_industry_relationship(
+        CanonicalEntity("security", AAPL, "us_equity")
+    )
+    assert (relationship["status"], relationship["reason_code"], relationship["to"]) == (
+        status, reason, None,
+    )
+
+
 @pytest.mark.parametrize("stage", [0, 1, 2, 3, 4])
 def test_stage_zero_is_typed_absence_and_one_through_four_are_owner_values(
     tmp_path: Path, stage: int

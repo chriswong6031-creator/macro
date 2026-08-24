@@ -1,113 +1,613 @@
 {
   "schema": "active_builds.v1",
-  "generated_at": "2026-08-23T00:59:27.032657+00:00",
+  "generated_at": "2026-08-24T01:18:31.138716+00:00",
   "base": {
-    "sha": "4c7a45ad2236af31f5f3cc675f27a90ee3890429"
+    "sha": "9b35a3839c6e214b1b30cab416d27952ee7ed95f"
   },
   "merged_days": 14,
   "merged_truncated": true,
   "open_prs_truncated": false,
   "open_prs": [
     {
-      "number": 6279,
-      "title": "HOLD-FOR-SOL \u2014 XPV2-SC-R3B.1 Visual/Taste critic receipt: BLOCK on VTC1-001 (review-only)",
-      "head_ref": "claude/xpv2-sc-r3b1-visual-taste-receipt",
-      "updated_at": "2026-08-23T00:53:49Z",
+      "number": 6337,
+      "title": "HOLD-FOR-SOL \u2014 XPV2-SC-R3B.2 final surgical closure: frozen successor mastermind-xpv2-sector-r3b-2 (in_review; do not merge)",
+      "head_ref": "claude/xpv2-sc-r3b2-build",
+      "updated_at": "2026-08-23T14:46:33Z",
       "is_draft": true,
-      "merge_state": "CLEAN",
-      "merge_state_raw": "CLEAN",
-      "files_count": 1,
-      "files_truncated": false,
+      "merge_state": "DIRTY",
+      "merge_state_raw": "DIRTY",
+      "files_count": 100,
+      "files_truncated": true,
       "files_error": false,
       "files": [
-        "research/reference_integrity/mastermind-xpv2-sector-r3b-1/reviews/visual_taste.yml"
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/B2_01_LABEL_MAP_MUTATION.md",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/B2_12_THIN_RELIABILITY_MUTATION.md",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/B2_13_ARIA_RECEIPT_MUTATION.md",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/DESIGN_SYSTEM_SPEC.md",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/INVENTORY_SOURCES.md",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/MUTATION_RESULTS.md",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/README_BUILD.md",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/aria_id_audit.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/aria_receipt_audit.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/aria_receipt_audit.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/build_reference.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/contrast_audit.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/expected_inventory.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fig_naming_audit.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fig_naming_audit.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fixture_supplement/PROVENANCE_SUPPLEMENT.md",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fixture_supplement/basketdata/etf_pulse.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fixture_supplement/basketdata/vol_sentiment.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fixture_supplement/fragments/sc_flows.html",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fixture_supplement/marketdata/nasdaq_internals.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fixture_supplement/marketdata/sp500_heatmap.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fixture_supplement/receipts_supplement.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fixture_supplement/sector_cycles_data.js",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/inventory_check.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/label_map_audit.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/label_map_audit.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/01-overview-actionboard-strength-1440-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/01-overview-actionboard-strength-1440-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/01-overview-actionboard-strength-390-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/08-map-rank-header-1440-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/08-map-rank-header-1440-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/08-map-rank-header-390-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/08-map-rank-header-390-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/09-moving-recent-wrong-1440-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/09-moving-recent-wrong-1440-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/09-moving-recent-wrong-1440-light-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/09-moving-recent-wrong-1440-light-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/B209_INK_RECEIPT.txt",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/contrast_audit_a2.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b/CONTRAST_TABLE.md",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b/LANG_PROBE.txt",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b/aria_id_audit.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b/contrast_audit.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b/zoom_sweep.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/05-confluence-conviction-320-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/05-confluence-conviction-320-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/05-confluence-conviction-390-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/05-confluence-conviction-390-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/05-overview-strength-1440-dark-en-DESKTOP-UNCHANGED.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/05-overview-strength-320-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/05-overview-strength-390-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/05-overview-strength-390-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/06-treemap-320-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/06-treemap-390-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/06-treemap-390-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/07-heatmap-band-320-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/07-heatmap-band-390-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/07-heatmap-band-820-dark-en-DESKTOP-UNCHANGED.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/10-ledge-desktop-ramp-1440-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/10-ledge-stacked-no-ramp-320-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/10-ledge-stacked-no-ramp-390-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/11-receipt-flow-320-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/11-receipt-flow-320-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/11-receipt-flow-320-zoom200-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/11-receipt-flow-390-zoom200-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/11-receipt-flow-390-zoom200-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/B2_LANE_B_RECEIPT.txt",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_f2/F2_LANE_F_RECEIPT.txt",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_f2/b2-05_overview-actionrow_1440_en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_f2/b2-05_overview-actionrow_1440_zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_f2/b2-05_overview-actionrow_320_en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_f2/b2-05_overview-actionrow_320_zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_f2/b2-05_overview-actionrow_390_en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_f2/b2-05_overview-actionrow_390_zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_f2/b2-15_money-trackrecord_1440_en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_f2/b2-15_money-trackrecord_1440_zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_f2/b2-15_money-trackrecord_390_en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_f2/b2-15_money-trackrecord_390_zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lang_probe.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/mobile_geometry_audit.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/mobile_geometry_audit.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/mutation_suite.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/runtime_shim.js",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/shell.html",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/shell_specimen.html",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/thin_reliability_audit.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/thin_reliability_audit.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/treemap_labels_audit.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/treemap_labels_audit.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/verify_reference.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/confluence.html",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/explore.html",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/map.html",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/money.html",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/moving.html",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/overview.html",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/zoom_sweep.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/6a_confluence-1440-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/6a_confluence-390-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/6a_confluence-390-dark-zh.png"
       ],
       "protected_paths_touched": []
     },
     {
-      "number": 6277,
-      "title": "HOLD-FOR-SOL \u00b7 fix(biocatalyst): prevent Catalyst Radar desktop row shrink",
-      "head_ref": "claude/biocatalyst-p1-1r-row-containment",
-      "updated_at": "2026-08-23T00:09:07Z",
+      "number": 6336,
+      "title": "HOLD-FOR-SOL \u2014 XPV2-SC-R3B.2 final continuation freeze (reference-only)",
+      "head_ref": "codex/xpv2-sc-r3b2-final-continuation",
+      "updated_at": "2026-08-23T14:00:39Z",
       "is_draft": true,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
+      "files_count": 100,
+      "files_truncated": true,
+      "files_error": false,
+      "files": [
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/CLOSURE_MUTATION_RESULTS.md",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/DESIGN_SYSTEM_SPEC.md",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/INVENTORY_SOURCES.md",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/MUTATION_RESULTS.md",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/README_BUILD.md",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/aria_id_audit.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/build_reference.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/capture_evidence.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/closure_audit.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/closure_audit.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/closure_mutation_results.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/closure_mutation_suite.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/contrast_audit.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/expected_inventory.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fig_naming_audit.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fig_naming_audit.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fixture_supplement/PROVENANCE_SUPPLEMENT.md",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fixture_supplement/basketdata/etf_pulse.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fixture_supplement/basketdata/vol_sentiment.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fixture_supplement/fragments/sc_flows.html",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fixture_supplement/marketdata/nasdaq_internals.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fixture_supplement/marketdata/sp500_heatmap.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fixture_supplement/receipts_supplement.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fixture_supplement/sector_cycles_data.js",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/inventory_check.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/01-overview-actionboard-strength-1440-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/01-overview-actionboard-strength-1440-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/01-overview-actionboard-strength-390-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/08-map-rank-header-1440-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/08-map-rank-header-1440-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/08-map-rank-header-390-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/08-map-rank-header-390-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/09-moving-recent-wrong-1440-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/09-moving-recent-wrong-1440-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/09-moving-recent-wrong-1440-light-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/09-moving-recent-wrong-1440-light-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/B209_INK_RECEIPT.txt",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/contrast_audit_a2.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b/CONTRAST_TABLE.md",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b/LANG_PROBE.txt",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b/aria_id_audit.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b/contrast_audit.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b/zoom_sweep.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/05-confluence-conviction-320-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/05-confluence-conviction-320-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/05-confluence-conviction-390-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/05-confluence-conviction-390-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/05-overview-strength-1440-dark-en-DESKTOP-UNCHANGED.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/05-overview-strength-320-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/05-overview-strength-390-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/05-overview-strength-390-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/06-treemap-320-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/06-treemap-390-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/06-treemap-390-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/07-heatmap-band-320-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/07-heatmap-band-390-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/07-heatmap-band-820-dark-en-DESKTOP-UNCHANGED.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/10-ledge-desktop-ramp-1440-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/10-ledge-stacked-no-ramp-320-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/10-ledge-stacked-no-ramp-390-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/11-receipt-flow-320-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/11-receipt-flow-320-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/11-receipt-flow-320-zoom200-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/11-receipt-flow-390-zoom200-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/11-receipt-flow-390-zoom200-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/B2_LANE_B_RECEIPT.txt",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lang_probe.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/mobile_geometry_audit.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/mobile_geometry_audit.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/mutation_suite.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/runtime_shim.js",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/shell.html",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/shell_specimen.html",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/state_smoke.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/state_smoke.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/treemap_labels_audit.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/treemap_labels_audit.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/verify_reference.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/confluence.html",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/explore.html",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/map.html",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/money.html",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/moving.html",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/overview.html",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/zoom_sweep.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/CLOSURE_MUTATION_RESULTS.md",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/CONTRAST_TABLE.md",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/EVIDENCE_INDEX.md",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/FINAL_ACCEPTANCE.md",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/LANG_PROBE.txt",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/MUTATION_RESULTS.md",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/all6-confluence-1440-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/all6-confluence-1440-light-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/all6-confluence-390-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/all6-confluence-390-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/all6-explore-1440-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/all6-explore-1440-light-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/all6-explore-390-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/all6-explore-390-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/all6-map-1440-dark-en.png"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6335,
+      "title": "[DRAFT][HOLD-FOR-SOL] A1B: atomic Portfolio Fast Start Import",
+      "head_ref": "warp/warp-71ca86ff4f1545089aa1fc6fd9eda4e0",
+      "updated_at": "2026-08-23T15:04:56Z",
+      "is_draft": true,
+      "merge_state": "CLEAN",
+      "merge_state_raw": "CLEAN",
+      "files_count": 21,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/ci/legacy-jobs.yml",
+        "agentos/handoffs/MARKET-OS-2026-08-23-a1b-implementation.md",
+        "agentos/workstreams/WS-MARKET-OS.md",
+        "app/deploy/Caddyfile",
+        "config/site_access.yml",
+        "scripts/build_site.py",
+        "site/portfolio.js",
+        "site/portfolio_import.css",
+        "site/portfolio_import.js",
+        "site/portfolio_import_ui.js",
+        "site/watchlist.html",
+        "site/watchstore.js",
+        "templates/portfolio.js",
+        "templates/portfolio_import.css",
+        "templates/portfolio_import.js",
+        "templates/portfolio_import_ui.js",
+        "templates/watchlist.html.j2",
+        "templates/watchstore.js",
+        "tests/test_caddy_hub_boundary.py",
+        "tests/test_portfolio_import_a1b_js.py",
+        "tests/test_unsubscribe_page.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6334,
+      "title": "[DRAFT][HOLD-FOR-SOL] Dislocation P0-S1F source precision feasibility",
+      "head_ref": "claude/dislocation-p0-s1f-20260823",
+      "updated_at": "2026-08-23T14:56:42Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 38,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/ci.yml",
+        "agentos/decisions/DEC-DISLOCATION-P0-S2-HELD-BEHIND-S1F.md",
+        "agentos/discoveries/DSC-DISLOCATION-A1R-LEXICAL-PRECISION-ONE-OF-TWENTY.md",
+        "research/dislocation_intelligence/DISLOCATION_P0_S1F_SOURCE_PRECISION_FREEZE_2026-08-23.md",
+        "research/dislocation_intelligence/commissions/P0_S1F_SOURCE_ONLY_MODEL_AUDIT_COMMISSION_2026-08-23.md",
+        "research/dislocation_intelligence/p0_s1f/S1F_AUDIT_BATCH_POLICY.json",
+        "research/dislocation_intelligence/p0_s1f/S1F_CANONICAL_OWNER_ATTEMPT1_RECONCILIATION.json",
+        "research/dislocation_intelligence/p0_s1f/S1F_CANONICAL_OWNER_ATTEMPT2_RECEIPT.json",
+        "research/dislocation_intelligence/p0_s1f/S1F_CANONICAL_OWNER_GAP_ATTEMPT1.json",
+        "research/dislocation_intelligence/p0_s1f/S1F_CANONICAL_OWNER_REPLAY_PROOF.json",
+        "research/dislocation_intelligence/p0_s1f/S1F_CANONICAL_SOURCE_PACKET_MANIFEST.json",
+        "research/dislocation_intelligence/p0_s1f/S1F_EXACT70_AUDIT_BATCH_PLAN.json",
+        "research/dislocation_intelligence/p0_s1f/S1F_EXACT70_SELECTION_RECEIPT.json",
+        "research/dislocation_intelligence/p0_s1f/S1F_EXACT70_SOURCE_MANIFEST.json",
+        "research/dislocation_intelligence/p0_s1f/S1F_FROZEN_SHADOW_TRIAGE.json",
+        "research/dislocation_intelligence/p0_s1f/S1F_MEASUREMENT_CONTRACT.json",
+        "research/dislocation_intelligence/p0_s1f/S1F_OFFICIAL_SEC_SOURCE_RECEIPT.json",
+        "research/dislocation_intelligence/p0_s1f/S1F_PROSPECTIVE_FREEZE_RECEIPT.json",
+        "research/dislocation_intelligence/p0_s1f/S1F_SOURCE_ONLY_REVIEW_PACKET_BUNDLE_PLAN.json",
+        "research/dislocation_intelligence/p0_s1f/S1F_TRIAGE_RULESET.json",
+        "research/dislocation_intelligence/p0_s1f/work/.gitignore",
+        "scripts/research/dislocation_p0_s1f_measurement.py",
+        "scripts/research/dislocation_p0_s1f_model_transport.py",
+        "scripts/research/dislocation_p0_s1f_owner_run.py",
+        "scripts/research/dislocation_p0_s1f_runner.py",
+        "scripts/research/dislocation_p0_s1f_selection.py",
+        "scripts/research/dislocation_p0_s1f_semantic_contract.py",
+        "scripts/research/dislocation_p0_s1f_shadow_triage.py",
+        "scripts/research/dislocation_p0_s1f_triage.py",
+        "scripts/research/dislocation_p0_source_adapter.py",
+        "scripts/research/dislocation_p0_source_materializer.py",
+        "tests/test_dislocation_p0_s1f.py",
+        "tests/test_dislocation_p0_s1f_model_transport.py",
+        "tests/test_dislocation_p0_s1f_owner_run.py",
+        "tests/test_dislocation_p0_s1f_shadow_triage.py",
+        "tests/test_dislocation_p0_source_adapter.py",
+        "tests/test_dislocation_p0_source_materializer.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml"
+      ]
+    },
+    {
+      "number": 6330,
+      "title": "records(ccr): reconcile Bridge-First and merged P0B harness",
+      "head_ref": "sol/ccr-bridge-p0b-closeout-20260823",
+      "updated_at": "2026-08-23T13:23:15Z",
+      "is_draft": true,
+      "merge_state": "DIRTY",
+      "merge_state_raw": "DIRTY",
       "files_count": 3,
       "files_truncated": false,
       "files_error": false,
       "files": [
-        "site/biocatalyst.css",
-        "templates/biocatalyst.css",
-        "tests/test_biocatalyst_page.py"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 6276,
-      "title": "MAS-123: freeze Cell G flagship VOI law + read-only report",
-      "head_ref": "chatgpt1/mas-123-cell-g-incremental-value-of-information-promotion-flagship",
-      "updated_at": "2026-08-23T00:24:28Z",
-      "is_draft": true,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 8,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "agentos/handoffs/PROPHET-CELL-G-VOI-MEASUREMENT-2026-08-22.md",
-        "engine/prophet_voi.py",
-        "engine/prophet_voi_eawc.py",
-        "research/prophet_v4/CELL_G_FLAGSHIP_VOI_MEASUREMENT_LAW_2026-08-22.md",
-        "scripts/prophet_flagship_voi_report.py",
-        "tests/test_prophet_flagship_voi_report.py",
-        "tests/test_prophet_voi.py",
-        "tests/test_prophet_voi_eawc.py"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 6275,
-      "title": "research(prophet): freeze MAS-122 Cell F D5 evidence contract",
-      "head_ref": "chatgpt/mas-122-cell-f-d5-contract-20260822",
-      "updated_at": "2026-08-23T00:06:50Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 5,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "agentos/decisions/DEC-PROPHET-D5-PRESERVES-CONTEXT-VECTOR-AND-SEPARATES-EVIDENCE-AUTHORITY.md",
-        "agentos/discoveries/DSC-PROPHET-D5-BLOCKED-ON-CANONICAL-CANDIDATE-EPISODE-B1.md",
-        "agentos/handoffs/PROPHET-US-V4-D5-CELL-F-2026-08-22.md",
-        "research/prophet_v4/flagship_cells/CELL_F_D5_ADVERSARIAL_REVIEW_AMENDMENTS_2026-08-22.md",
-        "research/prophet_v4/flagship_cells/CELL_F_D5_EVIDENCE_TRANSLATION_AND_TRAJECTORY_CONTRACT_2026-08-22.md"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 6274,
-      "title": "records(ccr): project merged Active-Session Dialogue F0 into Agent OS",
-      "head_ref": "sol/ccr-asd-agentos-20260822",
-      "updated_at": "2026-08-23T00:17:39Z",
-      "is_draft": true,
-      "merge_state": "CLEAN",
-      "merge_state_raw": "CLEAN",
-      "files_count": 3,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "agentos/decisions/DEC-CHAIRMAN-CONTROL-ROOM-ACTIVE-SESSION-DIALOGUE-F0-ACCEPTED.md",
-        "agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-08-22-active-session-dialogue-f0.md",
+        "agentos/decisions/DEC-CCR-BRIDGE-FIRST-CHAIRMAN-PRIORITY.md",
+        "agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-08-23-bridge-first-p0b-closeout.md",
         "agentos/workstreams/WS-CHAIRMAN-CONTROL-ROOM.md"
       ],
       "protected_paths_touched": []
     },
     {
-      "number": 6272,
-      "title": "docs(capacity): freeze Executive Capacity Fabric F0",
-      "head_ref": "sol/executive-capacity-fabric-f0-20260822",
-      "updated_at": "2026-08-23T00:28:22Z",
+      "number": 6328,
+      "title": "MAS-28 W1: report-only PR linkage validator",
+      "head_ref": "claude/mas28-w1",
+      "updated_at": "2026-08-23T20:06:14Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 19,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "config/unrun_test_waivers.yml",
+        "contracts/pr_linkage/pr_linkage_execution_error.v1.schema.json",
+        "contracts/pr_linkage/pr_linkage_observation.v1.schema.json",
+        "contracts/pr_linkage/pr_linkage_report.v1.schema.json",
+        "contracts/pr_linkage/pr_linkage_rule_manifest.v1.schema.json",
+        "lib/pr_linkage_validator.py",
+        "scripts/pr_linkage_validator.py",
+        "tests/test_pr_linkage_cli.py",
+        "tests/test_pr_linkage_contract_matrix.py",
+        "tests/test_pr_linkage_epoch_executable.py",
+        "tests/test_pr_linkage_header_executable.py",
+        "tests/test_pr_linkage_hostile_regressions.py",
+        "tests/test_pr_linkage_mutations.py",
+        "tests/test_pr_linkage_operational_routes.py",
+        "tests/test_pr_linkage_parser.py",
+        "tests/test_pr_linkage_purity_boundaries.py",
+        "tests/test_pr_linkage_rulecase_matrix.py",
+        "tests/test_pr_linkage_schema_matrix.py",
+        "tests/test_pr_linkage_validator.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6320,
+      "title": "[HOLD-FOR-SOL] Prophet US 2026-08-14 PIT replay settlement",
+      "head_ref": "claude/a1r-replay-settlement-20260823",
+      "updated_at": "2026-08-23T14:20:42Z",
+      "is_draft": true,
+      "merge_state": "CLEAN",
+      "merge_state_raw": "CLEAN",
+      "files_count": 6,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "data/pit_replay/provenance/us-2026-08-14-83d9d00bc4494b90.json",
+        "data/pit_replay/reconstructions/us-2026-08-14-64fb7339a71ee8bb.json",
+        "data/pit_replay/us-2026-08-14-a76ad8f34ad360cd.json",
+        "data/us_board_ledger/pending_replay/2026-08-14.json",
+        "scripts/prophet_pit_replay.py",
+        "tests/test_prophet_pit_replay.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6319,
+      "title": "[HOLD-FOR-SOL] feat(evidence): freeze K1 Evidence Foundation v1",
+      "head_ref": "claude/k1-evidence-foundation-20260823",
+      "updated_at": "2026-08-23T19:10:57Z",
+      "is_draft": true,
+      "merge_state": "CLEAN",
+      "merge_state_raw": "CLEAN",
+      "files_count": 39,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/ci/legacy-jobs.yml",
+        "agentos/handoffs/ALPHA-INTELLIGENCE-INTEGRATION-2026-08-23-k1.md",
+        "agentos/workstreams/WS-ALPHA-INTELLIGENCE-INTEGRATION.md",
+        "contracts/evidence_foundation/README.md",
+        "contracts/evidence_foundation/block.v1.schema.json",
+        "contracts/evidence_foundation/recipe.v1.schema.json",
+        "contracts/evidence_foundation/reference.v1.schema.json",
+        "contracts/evidence_foundation/vocabulary.v1.json",
+        "lib/evidence_foundation.py",
+        "research/evidence_mesh/K1_EVIDENCE_FOUNDATION_CONTRACT_FREEZE_2026-08-23.md",
+        "tests/fixtures/evidence_foundation/aapl_earnings_change_block_valid.json",
+        "tests/fixtures/evidence_foundation/aapl_forward_context_block_valid.json",
+        "tests/fixtures/evidence_foundation/aapl_fundamental_context_block_valid.json",
+        "tests/fixtures/evidence_foundation/aapl_security_state_compilation_expected.json",
+        "tests/fixtures/evidence_foundation/aapl_security_state_recipe_valid.json",
+        "tests/fixtures/evidence_foundation/aapl_theme_context_block_valid.json",
+        "tests/fixtures/evidence_foundation/authority_leak_hostile.json",
+        "tests/fixtures/evidence_foundation/belief_as_fact_block_hostile.json",
+        "tests/fixtures/evidence_foundation/conflicting_observations_block_valid.json",
+        "tests/fixtures/evidence_foundation/corrected_context_block_valid.json",
+        "tests/fixtures/evidence_foundation/correction_append_valid.json",
+        "tests/fixtures/evidence_foundation/duplicate_corroboration_hostile.json",
+        "tests/fixtures/evidence_foundation/earnings_workspace_valid.json",
+        "tests/fixtures/evidence_foundation/fif_packet_valid.json",
+        "tests/fixtures/evidence_foundation/forbidden_cik_join_recipe_hostile.json",
+        "tests/fixtures/evidence_foundation/manifest.json",
+        "tests/fixtures/evidence_foundation/product_manifest.json",
+        "tests/fixtures/evidence_foundation/qledger_claim_valid.json",
+        "tests/fixtures/evidence_foundation/replay_lookahead_hostile.json",
+        "tests/fixtures/evidence_foundation/replay_valid.json",
+        "tests/fixtures/evidence_foundation/rights_blocked_block_valid.json",
+        "tests/fixtures/evidence_foundation/rights_blocked_reference_valid.json",
+        "tests/fixtures/evidence_foundation/shared_upstream_block_valid.json",
+        "tests/fixtures/evidence_foundation/theme_graph_conflicting_valid.json",
+        "tests/fixtures/evidence_foundation/theme_graph_evidence_valid.json",
+        "tests/fixtures/evidence_foundation/theme_graph_shared_upstream_valid.json",
+        "tests/fixtures/evidence_foundation/typed_missingness_valid.json",
+        "tests/test_evidence_foundation_contract.py",
+        "tests/test_evidence_foundation_product_contract.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6316,
+      "title": "Cell B V2: freeze price-blind buyback source census",
+      "head_ref": "warp/warp-cell-b-v2-buyback-census-20260823",
+      "updated_at": "2026-08-23T10:25:31Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 4,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/prophet_v4/flagship_cells/CELL_B_V2_BUYBACK_SOURCE_CENSUS_2026-08-22.md",
+        "research/prophet_v4/flagship_cells/cell_b_v2_buyback_source_census_manifest.v2.json",
+        "scripts/cell_b_v2_buyback_source_census.py",
+        "tests/test_cell_b_v2_buyback_source_census.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6306,
+      "title": "HOLD-FOR-SOL: E3-A2 deterministic source-native Q&A skeleton",
+      "head_ref": "claude/e3-a2-deterministic-qa",
+      "updated_at": "2026-08-23T13:11:10Z",
+      "is_draft": true,
+      "merge_state": "DIRTY",
+      "merge_state_raw": "DIRTY",
+      "files_count": 7,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/ci.yml",
+        "agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-23-e3a2.md",
+        "agentos/workstreams/WS-EARNINGS-EVENT-INTELLIGENCE-COMPILER.md",
+        "engine/company_intelligence/qa_reconstruction.py",
+        "research/earnings_intelligence/e3/e3a2_aapl_fy2026_q3_reconstruction_receipt.json",
+        "tests/test_company_intelligence_qa_reconstruction.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml"
+      ]
+    },
+    {
+      "number": 6305,
+      "title": "records(biocatalyst): close P1-1 production acceptance [HOLD-FOR-SOL]",
+      "head_ref": "claude/biocatalyst-p1-1r-prod-success",
+      "updated_at": "2026-08-23T07:36:12Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 3,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "agentos/handoffs/BIOCATALYST-CORE-PRODUCT-2026-08-23-P1-1R-PROD.md",
+        "agentos/workstreams/WS-BIOCATALYST-CORE-PRODUCT.md",
+        "research/BIOCATALYST_P1_1R_PRODUCTION_ACCEPTANCE_2026-08-23.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6297,
+      "title": "[DRAFT][HOLD-FOR-SOL] MAS-126 CF1: secret-free provider capacity v1",
+      "head_ref": "sol/executive-capacity-cf1-20260823",
+      "updated_at": "2026-08-23T07:58:50Z",
+      "is_draft": true,
+      "merge_state": "CLEAN",
+      "merge_state_raw": "CLEAN",
+      "files_count": 10,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/ci/legacy-jobs.yml",
+        "agentos/handoffs/EXECUTIVE-CAPACITY-FABRIC-2026-08-23.md",
+        "agentos/workstreams/WS-EXECUTIVE-CAPACITY-FABRIC.md",
+        "engine/codex_provider.py",
+        "engine/metabolism/budget_gate.py",
+        "engine/neuralweb/key_pool.py",
+        "engine/provider_capacity.py",
+        "engine/provider_health.py",
+        "scripts/build_provider_capacity.py",
+        "tests/test_provider_capacity.py"
+      ],
+      "protected_paths_touched": [
+        "engine/neuralweb/key_pool.py"
+      ]
+    },
+    {
+      "number": 6296,
+      "title": "[HOLD-FOR-SOL] W-LIQ.1 causal global liquidity state producer",
+      "head_ref": "claude/w-liq1-global-liquidity",
+      "updated_at": "2026-08-23T09:32:39Z",
+      "is_draft": true,
+      "merge_state": "CLEAN",
+      "merge_state_raw": "CLEAN",
+      "files_count": 15,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/ci/legacy-jobs.yml",
+        "agentos/discoveries/DSC-BOJ-ASSETS-REQUIRE-MONTH-END-ANCHOR.md",
+        "agentos/handoffs/GLOBAL-LIQUIDITY-TRANSMISSION-2026-08-22-w-liq1.md",
+        "agentos/workstreams/WS-GLOBAL-LIQUIDITY-TRANSMISSION.md",
+        "config/global_liquidity_transmission_v1.yml",
+        "data/global_liquidity_transmission/factor_comparison_btc_4w.json",
+        "data/global_liquidity_transmission/state_history.parquet",
+        "data/global_liquidity_transmission/state_history_meta.json",
+        "engine/global_liquidity_transmission.py",
+        "research/GLOBAL_LIQUIDITY_DATA_CENSUS_2026-08-22.md",
+        "research/GLOBAL_LIQUIDITY_TRANSMISSION_STATE_METHODOLOGY_2026-08-22.md",
+        "scripts/build_global_liquidity_transmission.py",
+        "site/liquiditydata/global_liquidity_transmission.json",
+        "tests/fixtures/global_liquidity_transmission_wliq1_window.json",
+        "tests/test_global_liquidity_transmission.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6294,
+      "title": "[HOLD-FOR-SOL] P0A: unify BTC Vector decision authority",
+      "head_ref": "claude/p0a-btc-decision-authority",
+      "updated_at": "2026-08-23T11:18:50Z",
+      "is_draft": true,
+      "merge_state": "DIRTY",
+      "merge_state_raw": "DIRTY",
+      "files_count": 14,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/ci/legacy-jobs.yml",
+        "agentos/handoffs/CRYPTO-INTELLIGENCE-2026-08-23-p0a-btc-decision.md",
+        "agentos/workstreams/WS-CRYPTO-INTELLIGENCE.md",
+        "contracts/btc_decision.schema.json",
+        "engine/btc_decision.py",
+        "scripts/build_vector.py",
+        "site/assets/css/e7978af3.css",
+        "site/vector.html",
+        "templates/vector.html.j2",
+        "tests/test_btc_decision.py",
+        "verify_shots/p0a_btc_decision/vector_s2_desktop_dark_zh.png",
+        "verify_shots/p0a_btc_decision/vector_s2_desktop_light_zh.png",
+        "verify_shots/p0a_btc_decision/vector_s2_mobile_dark_zh.png",
+        "verify_shots/p0a_btc_decision/vector_s2_mobile_light_en.png"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6286,
+      "title": "HOLD-FOR-SOL \u00b7 ci: contain ci-plan working tree (W3)",
+      "head_ref": "codex/ci-plan-working-tree-containment-w3-20260822",
+      "updated_at": "2026-08-23T07:49:45Z",
       "is_draft": true,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
@@ -115,125 +615,39 @@
       "files_truncated": false,
       "files_error": false,
       "files": [
-        "agentos/decisions/DEC-EXECUTIVE-CAPACITY-FABRIC-OWNERSHIP-AND-CONTRACT.md",
-        "agentos/workstreams/WS-EXECUTIVE-CAPACITY-FABRIC.md",
-        "research/MASTERMIND_EXECUTIVE_CAPACITY_FABRIC_F0_ARCHITECTURE_2026-08-22.md",
-        "research/MASTERMIND_EXECUTIVE_CAPACITY_FABRIC_F0_OBSERVATION_NULL_AMENDMENT_2026-08-22.md",
-        "research/MASTERMIND_EXECUTIVE_CAPACITY_FABRIC_F0_PLACEMENT_AMENDMENT_2026-08-22.md",
-        "research/MASTERMIND_EXECUTIVE_CAPACITY_FABRIC_F0_SEMANTIC_IDENTITY_AMENDMENT_2026-08-22.md"
+        ".github/workflows/ci.yml",
+        "agentos/handoffs/CI-PLAN-WORKING-TREE-CONTAINMENT-2026-08-22-codex-implementation.md",
+        "scripts/ci_scope_dependencies.py",
+        "scripts/run_ci_pack.py",
+        "tests/test_ci_pack.py",
+        "tests/test_ci_plan_workflow.py"
       ],
-      "protected_paths_touched": []
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml"
+      ]
     },
     {
-      "number": 6270,
-      "title": "imce(a5a): generalize event_workspace.v1 to DHI/PHM/KBH/TOL earnings results",
-      "head_ref": "claude/imce-a5a-event-workspace-generalization",
-      "updated_at": "2026-08-23T00:52:02Z",
+      "number": 6275,
+      "title": "research(prophet): freeze MAS-122 Cell F D5 evidence contract",
+      "head_ref": "chatgpt/mas-122-cell-f-d5-contract-20260822",
+      "updated_at": "2026-08-23T07:25:35Z",
       "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 14,
+      "merge_state": "CLEAN",
+      "merge_state_raw": "CLEAN",
+      "files_count": 10,
       "files_truncated": false,
       "files_error": false,
       "files": [
-        ".github/ci/legacy-jobs.yml",
-        "agentos/workstreams/WS-CYCLE-PATTERN-ISSUER-MECHANISM.md",
-        "engine/company_intelligence/event_workspace.py",
-        "engine/company_intelligence/event_workspace_build.py",
-        "engine/company_intelligence/issuer_profiles.py",
-        "scripts/refresh_event_workspaces.py",
-        "tests/fixtures/company_intelligence/dhi_fy2026q2_ex99_1.htm",
-        "tests/fixtures/company_intelligence/dhi_fy2026q3_ex99_1.htm",
-        "tests/fixtures/company_intelligence/kbh_fy2026q1_ex99_1.htm",
-        "tests/fixtures/company_intelligence/kbh_fy2026q2_ex99_1.htm",
-        "tests/fixtures/company_intelligence/phm_fy2026q1_ex99_1.htm",
-        "tests/fixtures/company_intelligence/phm_fy2026q2_ex99_1.htm",
-        "tests/fixtures/company_intelligence/tol_fy2026q3_ex99_1.htm",
-        "tests/test_issuer_profiles_a5a.py"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 6268,
-      "title": "HOLD-FOR-SOL: FIF-3A1 AAPL as-reported 10-K statement trees",
-      "head_ref": "claude/fif-3a1",
-      "updated_at": "2026-08-23T00:50:23Z",
-      "is_draft": true,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 34,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        ".github/ci/legacy-jobs.yml",
-        "agentos/decisions/DEC-FIF-2-DONE-STATEMENTS-MOVE-TO-FIF-3.md",
-        "agentos/decisions/DEC-FIF-3A1-CALC-NETWORKS-ARE-ROLE-LOCAL.md",
-        "agentos/decisions/DEC-FIF-3A1-DISPLAYED-TABLE-IS-THE-COMPOSITION.md",
-        "agentos/decisions/DEC-FIF-3A1-ISSUERMASTER-IS-THE-IDENTITY-READER.md",
-        "agentos/decisions/DEC-FIF-3A1-PACKAGE-WITNESS-ADMISSION.md",
-        "agentos/decisions/DEC-FIF-3A1-REUSE-MAP.md",
-        "agentos/discoveries/DSC-AAPL-CF-BEGINNING-CASH-IS-INSTANT-IN-DURATION-COLUMNS.md",
-        "agentos/discoveries/DSC-AAPL-LABEL-RESOURCES-SHARE-XLINK-LABEL.md",
-        "agentos/discoveries/DSC-AAPL-PRODUCT-SERVICE-HYPERCUBE-PRECEDES-LINE-ITEMS.md",
-        "agentos/handoffs/FINANCIAL-INTELLIGENCE-FABRIC-2026-08-22.md",
-        "agentos/handoffs/FINANCIAL-INTELLIGENCE-FABRIC-2026-08-23.md",
-        "agentos/workstreams/WS-FINANCIAL-INTELLIGENCE-FABRIC.md",
-        "app/forensics.py",
-        "contracts/statement_cell.v1.md",
-        "engine/fundamental_forensics/query_service.py",
-        "engine/fundamental_forensics/statement_graph.py",
-        "engine/fundamental_forensics/statement_service.py",
-        "research/financial_intelligence_fabric/FIF_3A1_AAPL_GOLDEN_REVIEW.md",
-        "research/financial_intelligence_fabric/FIF_3A1_REUSE_MAP.md",
-        "scripts/capture_fif3a1_aapl_package.py",
-        "tests/fixtures/fundamental_forensics/aapl_10k_2025/index.json",
-        "tests/fixtures/fundamental_forensics/aapl_10k_2025/members/aapl-20250927.htm",
-        "tests/fixtures/fundamental_forensics/aapl_10k_2025/members/aapl-20250927.xsd",
-        "tests/fixtures/fundamental_forensics/aapl_10k_2025/members/aapl-20250927_cal.xml",
-        "tests/fixtures/fundamental_forensics/aapl_10k_2025/members/aapl-20250927_def.xml",
-        "tests/fixtures/fundamental_forensics/aapl_10k_2025/members/aapl-20250927_lab.xml",
-        "tests/fixtures/fundamental_forensics/aapl_10k_2025/members/aapl-20250927_pre.xml",
-        "tests/fixtures/fundamental_forensics/aapl_10k_2025/package_manifest.json",
-        "tests/fixtures/fundamental_forensics/aapl_10k_2025/sec_submissions_witness.json",
-        "tests/fixtures/fundamental_forensics/issuer_master_adversarial_duplicate_mint.json",
-        "tests/test_forensics_api.py",
-        "tests/test_fundamental_forensics_financial_statement_api.py",
-        "tests/test_fundamental_forensics_financial_statement_service.py"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 6267,
-      "title": "AD-1T1: full-universe incremental ThetaData T1 cadence [HOLD-FOR-SOL \u2014 do not merge]",
-      "head_ref": "claude/ad1t1-t1-incremental-cadence",
-      "updated_at": "2026-08-23T00:49:04Z",
-      "is_draft": true,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 20,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        ".github/ci/legacy-jobs.yml",
-        ".gitignore",
-        "agentos/discoveries/DSC-THETADATA-19H-ESTIMATE-WAS-THE-WHOLE-YEAR-DESIGN.md",
-        "agentos/handoffs/ADVANCED-DATA-OPTIONS-2026-08-22-AD1T1-INCREMENTAL-CADENCE.md",
-        "agentos/workstreams/WS-ADVANCED-DATA-OPTIONS.md",
-        "ops/LIVE_FLOW_RUNBOOK.md",
-        "research/AD1T1_INCREMENTAL_CADENCE_SPEC_2026-08-22.md",
-        "research/ADVANCED_DATA_OPTIONS_AD1T1_THETADATA_INCREMENTAL_T1_CADENCE_HANDOFF_2026-08-22.md",
-        "research/THETADATA_OPS_RUNBOOK.md",
-        "scripts/backfill_thetadata_eod.py",
-        "scripts/launchd/com.macro.thetadata-backfill.plist",
-        "scripts/launchd/com.macro.thetadata-daily.plist",
-        "scripts/launchd/theta_backfill_keepalive.sh",
-        "scripts/launchd/theta_daily_refresh.sh",
-        "scripts/launchd/theta_staleness_sentinel.sh",
-        "scripts/publish_r2.py",
-        "scripts/topup_thetadata_day.py",
-        "tests/test_topup_thetadata_daily.py",
-        "tests/test_topup_thetadata_legacy.py",
-        "tests/test_topup_thetadata_scheduler.py"
+        "agentos/decisions/DEC-PROPHET-D5-PRESERVES-CONTEXT-VECTOR-AND-SEPARATES-EVIDENCE-AUTHORITY.md",
+        "agentos/discoveries/DSC-PROPHET-D5-BLOCKED-ON-CANONICAL-CANDIDATE-EPISODE-B1.md",
+        "agentos/handoffs/PROPHET-US-V4-D5-CELL-F-2026-08-22.md",
+        "agentos/workstreams/WS-PROPHET-US-V4-RECOVERY.md",
+        "research/prophet_v4/CONTRACT_AND_OWNER_MAP.md",
+        "research/prophet_v4/D1_D5_READINESS_RULING.md",
+        "research/prophet_v4/WAVE_GRAPH_AND_MERGE_ORDER.md",
+        "research/prophet_v4/flagship_cells/CELL_F_D5_ADVERSARIAL_REVIEW_AMENDMENTS_2026-08-22.md",
+        "research/prophet_v4/flagship_cells/CELL_F_D5_CANDIDATE_REFERENCE_COMPOSITIONS_AND_E1_BASELINE_2026-08-23.md",
+        "research/prophet_v4/flagship_cells/CELL_F_D5_EVIDENCE_TRANSLATION_AND_TRAJECTORY_CONTRACT_2026-08-22.md"
       ],
       "protected_paths_touched": []
     },
@@ -241,7 +655,7 @@
       "number": 6264,
       "title": "research(prophet): harden flagship intelligence fan-out cells",
       "head_ref": "sol/prophet-flagship-fanout-hardening-20260822",
-      "updated_at": "2026-08-23T00:06:25Z",
+      "updated_at": "2026-08-23T01:40:14Z",
       "is_draft": true,
       "merge_state": "CLEAN",
       "merge_state_raw": "CLEAN",
@@ -280,86 +694,6 @@
         "research/prophet_v4/flagship_cells/launch_handoffs/CELL_F_EVIDENCE_TRANSLATION_CHATGPT_FIRST_EXECUTION_HANDOFF_2026-08-22.md",
         "research/prophet_v4/flagship_cells/launch_handoffs/CELL_G_VALUE_OF_INFORMATION_CHATGPT_FIRST_EXECUTION_HANDOFF_2026-08-22.md",
         "research/prophet_v4/flagship_cells/launch_handoffs/CELL_H_FLAGSHIP_EXPERIENCE_CHATGPT_FIRST_EXECUTION_HANDOFF_2026-08-22.md"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 6258,
-      "title": "HOLD-FOR-SOL: Dislocation P0-A1R source-integrity repair",
-      "head_ref": "claude/dislocation-p0-a1r-repair",
-      "updated_at": "2026-08-22T22:59:41Z",
-      "is_draft": true,
-      "merge_state": "CLEAN",
-      "merge_state_raw": "CLEAN",
-      "files_count": 36,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        ".github/ci/legacy-jobs.yml",
-        ".github/workflows/ci.yml",
-        "agentos/decisions/DEC-DISLOCATION-P0-A1R-SOURCE-LAW-RECONCILIATION.md",
-        "agentos/discoveries/DSC-DISLOCATION-P0-A1-NAMED-QUERY-LEDGER-WAS-ABSENT.md",
-        "agentos/handoffs/ALPHA-INTELLIGENCE-INTEGRATION-2026-08-22-dislocation-p0-a1r.md",
-        "research/dislocation_intelligence/DISLOCATION_P0_A1R_SOURCE_LAW_AMENDMENT_2026-08-22.md",
-        "research/dislocation_intelligence/DISLOCATION_P0_BLIND_SELECTION_FREEZE_CONTRACT.md",
-        "research/dislocation_intelligence/commissions/P0_A1R_SOURCE_ONLY_PROPOSAL_AUDIT_COMMISSION_2026-08-22.md",
-        "research/dislocation_intelligence/p0_a1/A1_QUARANTINE_AND_SALVAGE_LEDGER.json",
-        "research/dislocation_intelligence/p0_a1r/.gitignore",
-        "research/dislocation_intelligence/p0_a1r/A1R_CANONICAL_SOURCE_PACKET_MANIFEST.json",
-        "research/dislocation_intelligence/p0_a1r/A1R_DISAGREEMENT_MATRIX.json",
-        "research/dislocation_intelligence/p0_a1r/A1R_EPISODE_LINKAGE.json",
-        "research/dislocation_intelligence/p0_a1r/A1R_EXACT20_SOURCE_SELECTION.json",
-        "research/dislocation_intelligence/p0_a1r/A1R_FIREWALL_AND_ACCESS_RECEIPT.json",
-        "research/dislocation_intelligence/p0_a1r/A1R_GROK_SOURCE_PROPOSALS.json",
-        "research/dislocation_intelligence/p0_a1r/A1R_K_PACKET_TO_SOL.json",
-        "research/dislocation_intelligence/p0_a1r/A1R_OPUS_INDEPENDENT_AUDIT.json",
-        "research/dislocation_intelligence/p0_a1r/A1R_OWNER_AND_MODEL_ATTEMPT_HISTORY.json",
-        "research/dislocation_intelligence/p0_a1r/A1R_QUERY_COMPLETION_AND_POOL_RECEIPT.json",
-        "research/dislocation_intelligence/p0_a1r/A1R_SOURCE_ATTEMPT_HISTORY.json",
-        "scripts/research/dislocation_p0_a1r.py",
-        "scripts/research/dislocation_p0_a1r_evidence_catalog.py",
-        "scripts/research/dislocation_p0_a1r_owner_run.py",
-        "scripts/research/dislocation_p0_a1r_semantic_contract.py",
-        "scripts/research/dislocation_p0_a1r_semantic_run.py",
-        "scripts/research/dislocation_p0_a1r_source_run.py",
-        "scripts/research/dislocation_p0_source_adapter.py",
-        "scripts/research/dislocation_p0_source_materializer.py",
-        "tests/test_dislocation_p0_a1r_evidence_catalog.py",
-        "tests/test_dislocation_p0_a1r_owner_run.py",
-        "tests/test_dislocation_p0_a1r_selection.py",
-        "tests/test_dislocation_p0_a1r_semantic_contract.py",
-        "tests/test_dislocation_p0_a1r_semantic_run.py",
-        "tests/test_dislocation_p0_source_adapter.py",
-        "tests/test_dislocation_p0_source_materializer.py"
-      ],
-      "protected_paths_touched": [
-        ".github/workflows/ci.yml"
-      ]
-    },
-    {
-      "number": 6245,
-      "title": "HOLD-FOR-SOL: E3-A R1 evaluator repair \u2014 AAPL shadow gold (do not merge)",
-      "head_ref": "claude/e3-a-aapl-shadow",
-      "updated_at": "2026-08-22T23:45:36Z",
-      "is_draft": true,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 12,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        ".github/ci/legacy-jobs.yml",
-        "agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-22-e3a-r1.md",
-        "agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-22-e3a.md",
-        "agentos/workstreams/WS-EARNINGS-EVENT-INTELLIGENCE-COMPILER.md",
-        "data/ai_costs/provider_health.jsonl",
-        "data/ai_costs/usage.jsonl",
-        "engine/company_intelligence/e3_shadow_compiler.py",
-        "lib/ai_costs.py",
-        "research/earnings_intelligence/e3/gold/aapl_fy2026_q3_adjudication_receipt.json",
-        "research/earnings_intelligence/e3/gold/aapl_fy2026_q3_eval_receipt.json",
-        "research/earnings_intelligence/e3/gold/aapl_fy2026_q3_qa_gold.json",
-        "tests/test_company_intelligence_event_compiler_e3a.py"
       ],
       "protected_paths_touched": []
     },
@@ -477,22 +811,6 @@
       "protected_paths_touched": []
     },
     {
-      "number": 6135,
-      "title": "chore(workflow): add tracked-work PR metadata template (MAS-6)",
-      "head_ref": "chatgpt1/mas-6-pr-metadata-template-macro",
-      "updated_at": "2026-08-21T16:13:29Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 1,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        ".github/pull_request_template.md"
-      ],
-      "protected_paths_touched": []
-    },
-    {
       "number": 6126,
       "title": "records(intraday-flow): reconcile PR-4 merge to current-session production gate",
       "head_ref": "chatgpt1/mas-86-intraday-pr4-merge-reconcile",
@@ -507,24 +825,6 @@
         "agentos/decisions/DEC-INTRADAY-FLOW-PR4-MERGED-PRODUCTION-ACCEPTANCE-OWED.md",
         "agentos/handoffs/INTRADAY-FLOW-P0-RECOVERY-2026-08-20-pr4-merge-reconciliation.md",
         "agentos/workstreams/WS-INTRADAY-FLOW-P0-RECOVERY.md"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 6125,
-      "title": "records(market-os): reconcile A1A merge to bounded production acceptance",
-      "head_ref": "chatgpt1/mas-72-a1a-merge-reconcile",
-      "updated_at": "2026-08-22T21:26:20Z",
-      "is_draft": false,
-      "merge_state": "DIRTY",
-      "merge_state_raw": "DIRTY",
-      "files_count": 3,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "agentos/decisions/DEC-MARKET-OS-A1A-MERGED-PRODUCTION-ACCEPTANCE-REQUIRED.md",
-        "agentos/handoffs/MARKET-OS-2026-08-20-a1a-merge-reconciliation.md",
-        "agentos/workstreams/WS-MARKET-OS.md"
       ],
       "protected_paths_touched": []
     },
@@ -640,8 +940,103 @@
   ],
   "collisions": [
     {
-      "pr_a": 6270,
-      "pr_b": 6268,
+      "pr_a": 6337,
+      "pr_b": 6336,
+      "shared_files": [
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/DESIGN_SYSTEM_SPEC.md",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/INVENTORY_SOURCES.md",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/MUTATION_RESULTS.md",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/README_BUILD.md",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/aria_id_audit.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/build_reference.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/contrast_audit.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/expected_inventory.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fig_naming_audit.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fig_naming_audit.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fixture_supplement/PROVENANCE_SUPPLEMENT.md",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fixture_supplement/basketdata/etf_pulse.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fixture_supplement/basketdata/vol_sentiment.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fixture_supplement/fragments/sc_flows.html",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fixture_supplement/marketdata/nasdaq_internals.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fixture_supplement/marketdata/sp500_heatmap.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fixture_supplement/receipts_supplement.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fixture_supplement/sector_cycles_data.js",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/inventory_check.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/01-overview-actionboard-strength-1440-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/01-overview-actionboard-strength-1440-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/01-overview-actionboard-strength-390-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/08-map-rank-header-1440-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/08-map-rank-header-1440-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/08-map-rank-header-390-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/08-map-rank-header-390-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/09-moving-recent-wrong-1440-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/09-moving-recent-wrong-1440-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/09-moving-recent-wrong-1440-light-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/09-moving-recent-wrong-1440-light-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/B209_INK_RECEIPT.txt",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/contrast_audit_a2.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b/CONTRAST_TABLE.md",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b/LANG_PROBE.txt",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b/aria_id_audit.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b/contrast_audit.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b/zoom_sweep.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/05-confluence-conviction-320-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/05-confluence-conviction-320-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/05-confluence-conviction-390-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/05-confluence-conviction-390-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/05-overview-strength-1440-dark-en-DESKTOP-UNCHANGED.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/05-overview-strength-320-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/05-overview-strength-390-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/05-overview-strength-390-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/06-treemap-320-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/06-treemap-390-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/06-treemap-390-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/07-heatmap-band-320-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/07-heatmap-band-390-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/07-heatmap-band-820-dark-en-DESKTOP-UNCHANGED.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/10-ledge-desktop-ramp-1440-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/10-ledge-stacked-no-ramp-320-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/10-ledge-stacked-no-ramp-390-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/11-receipt-flow-320-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/11-receipt-flow-320-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/11-receipt-flow-320-zoom200-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/11-receipt-flow-390-zoom200-dark-en.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/11-receipt-flow-390-zoom200-dark-zh.png",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/B2_LANE_B_RECEIPT.txt",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lang_probe.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/mobile_geometry_audit.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/mobile_geometry_audit.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/mutation_suite.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/runtime_shim.js",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/shell.html",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/shell_specimen.html",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/treemap_labels_audit.json",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/treemap_labels_audit.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/verify_reference.py",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/confluence.html",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/explore.html",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/map.html",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/money.html",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/moving.html",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/overview.html",
+        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/zoom_sweep.py"
+      ],
+      "shared_count": 77,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6334,
+      "pr_b": 6306,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 6335,
+      "pr_b": 6334,
       "shared_files": [
         ".github/ci/legacy-jobs.yml"
       ],
@@ -649,8 +1044,8 @@
       "any_protected": false
     },
     {
-      "pr_a": 6270,
-      "pr_b": 6267,
+      "pr_a": 6335,
+      "pr_b": 6319,
       "shared_files": [
         ".github/ci/legacy-jobs.yml"
       ],
@@ -658,8 +1053,8 @@
       "any_protected": false
     },
     {
-      "pr_a": 6270,
-      "pr_b": 6258,
+      "pr_a": 6335,
+      "pr_b": 6306,
       "shared_files": [
         ".github/ci/legacy-jobs.yml"
       ],
@@ -667,8 +1062,8 @@
       "any_protected": false
     },
     {
-      "pr_a": 6270,
-      "pr_b": 6245,
+      "pr_a": 6335,
+      "pr_b": 6297,
       "shared_files": [
         ".github/ci/legacy-jobs.yml"
       ],
@@ -676,7 +1071,25 @@
       "any_protected": false
     },
     {
-      "pr_a": 6270,
+      "pr_a": 6335,
+      "pr_b": 6296,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6335,
+      "pr_b": 6294,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6335,
       "pr_b": 6207,
       "shared_files": [
         ".github/ci/legacy-jobs.yml"
@@ -685,8 +1098,8 @@
       "any_protected": false
     },
     {
-      "pr_a": 6268,
-      "pr_b": 6267,
+      "pr_a": 6334,
+      "pr_b": 6319,
       "shared_files": [
         ".github/ci/legacy-jobs.yml"
       ],
@@ -694,8 +1107,8 @@
       "any_protected": false
     },
     {
-      "pr_a": 6268,
-      "pr_b": 6258,
+      "pr_a": 6334,
+      "pr_b": 6297,
       "shared_files": [
         ".github/ci/legacy-jobs.yml"
       ],
@@ -703,8 +1116,8 @@
       "any_protected": false
     },
     {
-      "pr_a": 6268,
-      "pr_b": 6245,
+      "pr_a": 6334,
+      "pr_b": 6296,
       "shared_files": [
         ".github/ci/legacy-jobs.yml"
       ],
@@ -712,7 +1125,25 @@
       "any_protected": false
     },
     {
-      "pr_a": 6268,
+      "pr_a": 6334,
+      "pr_b": 6294,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6334,
+      "pr_b": 6286,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 6334,
       "pr_b": 6207,
       "shared_files": [
         ".github/ci/legacy-jobs.yml"
@@ -721,8 +1152,17 @@
       "any_protected": false
     },
     {
-      "pr_a": 6267,
-      "pr_b": 6258,
+      "pr_a": 6328,
+      "pr_b": 5737,
+      "shared_files": [
+        "config/unrun_test_waivers.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6319,
+      "pr_b": 6306,
       "shared_files": [
         ".github/ci/legacy-jobs.yml"
       ],
@@ -730,8 +1170,8 @@
       "any_protected": false
     },
     {
-      "pr_a": 6267,
-      "pr_b": 6245,
+      "pr_a": 6319,
+      "pr_b": 6297,
       "shared_files": [
         ".github/ci/legacy-jobs.yml"
       ],
@@ -739,7 +1179,25 @@
       "any_protected": false
     },
     {
-      "pr_a": 6267,
+      "pr_a": 6319,
+      "pr_b": 6296,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6319,
+      "pr_b": 6294,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6319,
       "pr_b": 6207,
       "shared_files": [
         ".github/ci/legacy-jobs.yml"
@@ -748,8 +1206,8 @@
       "any_protected": false
     },
     {
-      "pr_a": 6258,
-      "pr_b": 6245,
+      "pr_a": 6306,
+      "pr_b": 6297,
       "shared_files": [
         ".github/ci/legacy-jobs.yml"
       ],
@@ -757,7 +1215,34 @@
       "any_protected": false
     },
     {
-      "pr_a": 6258,
+      "pr_a": 6306,
+      "pr_b": 6296,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6306,
+      "pr_b": 6294,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6306,
+      "pr_b": 6286,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 6306,
       "pr_b": 6207,
       "shared_files": [
         ".github/ci/legacy-jobs.yml"
@@ -766,7 +1251,52 @@
       "any_protected": false
     },
     {
-      "pr_a": 6245,
+      "pr_a": 6297,
+      "pr_b": 6296,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6297,
+      "pr_b": 6294,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6297,
+      "pr_b": 6207,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6296,
+      "pr_b": 6294,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6296,
+      "pr_b": 6207,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6294,
       "pr_b": 6207,
       "shared_files": [
         ".github/ci/legacy-jobs.yml"
@@ -777,9 +1307,254 @@
   ],
   "recent_merged": [
     {
+      "number": 6348,
+      "title": "B1: route Prophet marks through disposable runtime",
+      "merged_at": "2026-08-23T21:36:29Z"
+    },
+    {
+      "number": 6347,
+      "title": "B1: harden canonical Prophet Git reads",
+      "merged_at": "2026-08-23T20:46:45Z"
+    },
+    {
+      "number": 6345,
+      "title": "fix(mas28): reconcile R028 per-target identity",
+      "merged_at": "2026-08-23T19:30:44Z"
+    },
+    {
+      "number": 6344,
+      "title": "agentos(imce): A5C closure records \u2014 waves done, production proof + incident + residuals",
+      "merged_at": "2026-08-23T19:08:27Z"
+    },
+    {
+      "number": 6343,
+      "title": "imce(a5c): production incident heal \u2014 discovery backward-window bound + shared chain-walk",
+      "merged_at": "2026-08-23T18:14:46Z"
+    },
+    {
+      "number": 6342,
+      "title": "feat(revisions): accrue prospective expectation observations",
+      "merged_at": "2026-08-23T15:47:44Z"
+    },
+    {
+      "number": 6341,
+      "title": "research(k3e): preregister EVAL-0 model competition",
+      "merged_at": "2026-08-23T16:08:05Z"
+    },
+    {
+      "number": 6340,
+      "title": "records(ccr): close out accepted ASD A1 core",
+      "merged_at": "2026-08-23T15:06:39Z"
+    },
+    {
+      "number": 6339,
+      "title": "research: add VEND-0 institutional estimates bake-off",
+      "merged_at": "2026-08-23T15:17:17Z"
+    },
+    {
+      "number": 6338,
+      "title": "records(alpha-intel): freeze SRC-A1 source contract",
+      "merged_at": "2026-08-23T14:44:59Z"
+    },
+    {
+      "number": 6332,
+      "title": "docs(agentos): record .github PR-template case-collision phantom-dirt landmine",
+      "merged_at": "2026-08-23T14:30:40Z"
+    },
+    {
+      "number": 6329,
+      "title": "records(alpha-intel): freeze K3E-0 expectation-market-dynamics architecture",
+      "merged_at": "2026-08-23T14:00:31Z"
+    },
+    {
+      "number": 6327,
+      "title": "fix(canada): restore Prophet-first V3.6.1 hierarchy",
+      "merged_at": "2026-08-23T13:12:38Z"
+    },
+    {
+      "number": 6325,
+      "title": "records(market-os): Market Intelligence Productization packet + K1 double-dispatch receipt",
+      "merged_at": "2026-08-23T14:04:57Z"
+    },
+    {
+      "number": 6324,
+      "title": "FIF-3A2 acceptance records after PR #6302 landing",
+      "merged_at": "2026-08-23T12:30:40Z"
+    },
+    {
+      "number": 6323,
+      "title": "chore(agentos): record Canada stock V3.6 merge closeout",
+      "merged_at": "2026-08-23T12:30:45Z"
+    },
+    {
+      "number": 6322,
+      "title": "imce(a5c): prospective source-vintage integrity \u2014 manifest chain, discovery, two-clock law, shared reader",
+      "merged_at": "2026-08-23T16:37:11Z"
+    },
+    {
+      "number": 6321,
+      "title": "feat(intelligence-workspace): ship W1-A typed datapoint resolver",
+      "merged_at": "2026-08-23T12:55:41Z"
+    },
+    {
+      "number": 6318,
+      "title": "FF-1R immutable issuer-manifest transport repair",
+      "merged_at": "2026-08-23T14:00:44Z"
+    },
+    {
+      "number": 6317,
+      "title": "docs(agentos): freeze MAS-28 PR-linkage validator V1 contract",
+      "merged_at": "2026-08-23T12:47:37Z"
+    },
+    {
+      "number": 6315,
+      "title": "feat(canada): ship Stock Dashboard V3.6 composition",
+      "merged_at": "2026-08-23T11:45:12Z"
+    },
+    {
+      "number": 6314,
+      "title": "fix(worktrees): bind Warp carriers to conversations",
+      "merged_at": "2026-08-23T10:34:27Z"
+    },
+    {
+      "number": 6313,
+      "title": "xpv2-sc-r3b-1: Sol REVISE verdict (durable four-seat receipts) + status revise; R3B.2 commission",
+      "merged_at": "2026-08-23T10:17:36Z"
+    },
+    {
+      "number": 6312,
+      "title": "D5: Virginia-class Program Dossier \u2014 ontology, dossier read model, program_link, mode=programs (Sol-authorized)",
+      "merged_at": "2026-08-23T11:42:19Z"
+    },
+    {
+      "number": 6311,
+      "title": "docs(theta-ops): m1 theta-ops-wt repointed to canonical origin \u2014 runbook \u00a73a Step 0 update",
+      "merged_at": "2026-08-23T09:39:41Z"
+    },
+    {
+      "number": 6310,
+      "title": "records(market-os): accept A1A in production and advance gate to A1B",
+      "merged_at": "2026-08-23T10:43:51Z"
+    },
+    {
+      "number": 6309,
+      "title": "XPV2-SC-R3B.1: recover the missing final critic receipts (re-run, review-only)",
+      "merged_at": "2026-08-23T08:38:52Z"
+    },
+    {
+      "number": 6308,
+      "title": "imce(a5c): fail-closed correction detection pending source-revision history",
+      "merged_at": "2026-08-23T10:51:09Z"
+    },
+    {
+      "number": 6307,
+      "title": "imce(a5c): TOL backlog-sensitivity prior-year extraction (item 7); pin Sol equality ruling (item 8)",
+      "merged_at": "2026-08-23T09:48:38Z"
+    },
+    {
+      "number": 6304,
+      "title": "docs(agentos): record final A1A authenticated matrix",
+      "merged_at": "2026-08-23T07:49:54Z"
+    },
+    {
+      "number": 6302,
+      "title": "FIF-3A2 AAPL FY2026 Q3 10-Q + canonical earnings-event link",
+      "merged_at": "2026-08-23T11:57:16Z"
+    },
+    {
+      "number": 6301,
+      "title": "AD-1T1 commissioning: durable state after Sol PASS merge + m1 lane transition",
+      "merged_at": "2026-08-23T07:44:23Z"
+    },
+    {
+      "number": 6300,
+      "title": "records(market-os): commission bounded RCTX-1 exact-source context vertical",
+      "merged_at": "2026-08-23T07:41:27Z"
+    },
+    {
+      "number": 6299,
+      "title": "records(ccr): preserve MAS-125 security stop and P0B canary boundary",
+      "merged_at": "2026-08-23T07:37:18Z"
+    },
+    {
+      "number": 6298,
+      "title": "records(china-p1r3a): closeout \u2014 Sol PASS, #6269 lineage, residual rulings",
+      "merged_at": "2026-08-23T07:31:08Z"
+    },
+    {
+      "number": 6295,
+      "title": "MAS-123: close out Cell G AgentOS handoff",
+      "merged_at": "2026-08-23T07:14:08Z"
+    },
+    {
+      "number": 6293,
+      "title": "research(market-os): freeze Fiscal-derived Research OS architecture delta",
+      "merged_at": "2026-08-23T06:44:28Z"
+    },
+    {
+      "number": 6292,
+      "title": "records(ccr): close H0 persistent production adoption",
+      "merged_at": "2026-08-23T07:06:44Z"
+    },
+    {
+      "number": 6291,
+      "title": "E3-A post-merge Agent OS closeout \u2014 squash SHA d919637f",
+      "merged_at": "2026-08-23T06:29:17Z"
+    },
+    {
+      "number": 6290,
+      "title": "FIF-3A1 acceptance records after PR #6268 landing",
+      "merged_at": "2026-08-23T06:17:07Z"
+    },
+    {
+      "number": 6289,
+      "title": "prophet: close HK-DISCOVERY-SHADOW wave with production receipts (records only)",
+      "merged_at": "2026-08-23T06:22:09Z"
+    },
+    {
+      "number": 6288,
+      "title": "records(imce): fifth-gate closure \u2014 A5A merged+proven-live, A5B merged BUILT_NOT_PROVEN",
+      "merged_at": "2026-08-23T04:56:46Z"
+    },
+    {
+      "number": 6287,
+      "title": "Capital Structure W2B: 500-live capacity envelope",
+      "merged_at": "2026-08-23T06:56:37Z"
+    },
+    {
+      "number": 6285,
+      "title": "FF-1R: bounded July recovery engine",
+      "merged_at": "2026-08-23T07:38:34Z"
+    },
+    {
+      "number": 6284,
+      "title": "records(market-os): receipt semantic-v2 restoration probe",
+      "merged_at": "2026-08-23T03:30:42Z"
+    },
+    {
+      "number": 6283,
+      "title": "Recover massive_stock_day from unpublished-today 403 probe abort",
+      "merged_at": "2026-08-23T03:04:03Z"
+    },
+    {
+      "number": 6282,
+      "title": "records(cs-v2): close W2A natural production proof",
+      "merged_at": "2026-08-23T02:53:11Z"
+    },
+    {
+      "number": 6281,
+      "title": "imce(a5b): registered prospective forward capture",
+      "merged_at": "2026-08-23T04:27:34Z"
+    },
+    {
       "number": 6280,
       "title": "records(market-os): adopt A1A semantic-v2 restoration law",
       "merged_at": "2026-08-23T00:59:00Z"
+    },
+    {
+      "number": 6279,
+      "title": "HOLD-FOR-SOL \u2014 XPV2-SC-R3B.1 Visual/Taste critic receipt: BLOCK on VTC1-001 (review-only)",
+      "merged_at": "2026-08-23T09:43:08Z"
     },
     {
       "number": 6278,
@@ -787,9 +1562,29 @@
       "merged_at": "2026-08-23T00:57:51Z"
     },
     {
+      "number": 6277,
+      "title": "fix(biocatalyst): prevent Catalyst Radar desktop row shrink",
+      "merged_at": "2026-08-23T06:32:56Z"
+    },
+    {
+      "number": 6276,
+      "title": "MAS-123: freeze Cell G flagship VOI law + read-only report",
+      "merged_at": "2026-08-23T06:46:02Z"
+    },
+    {
+      "number": 6274,
+      "title": "records(ccr): project merged Active-Session Dialogue F0 into Agent OS",
+      "merged_at": "2026-08-23T02:25:53Z"
+    },
+    {
       "number": 6273,
       "title": "fix(stocks-hub): Pressure Watch rows keep the record, drop the dead anchor",
       "merged_at": "2026-08-23T00:19:00Z"
+    },
+    {
+      "number": 6272,
+      "title": "docs(capacity): freeze Executive Capacity Fabric F0",
+      "merged_at": "2026-08-23T02:29:02Z"
     },
     {
       "number": 6271,
@@ -797,9 +1592,24 @@
       "merged_at": "2026-08-22T23:41:04Z"
     },
     {
+      "number": 6270,
+      "title": "imce(a5a): generalize event_workspace.v1 to DHI/PHM/KBH/TOL earnings results",
+      "merged_at": "2026-08-23T01:16:24Z"
+    },
+    {
       "number": 6269,
       "title": "fix(china-p1r3a): make the coverage exception durable BEFORE the filtered commit",
       "merged_at": "2026-08-22T22:21:16Z"
+    },
+    {
+      "number": 6268,
+      "title": "FIF-3A1 AAPL as-reported 10-K statement trees",
+      "merged_at": "2026-08-23T05:43:51Z"
+    },
+    {
+      "number": 6267,
+      "title": "AD-1T1: full-universe incremental ThetaData T1 cadence [HOLD-FOR-SOL \u2014 do not merge]",
+      "merged_at": "2026-08-23T06:47:35Z"
     },
     {
       "number": 6266,
@@ -825,6 +1635,11 @@
       "number": 6260,
       "title": "agentos: accept runner-fleet W3 production proof",
       "merged_at": "2026-08-22T21:16:40Z"
+    },
+    {
+      "number": 6258,
+      "title": "LANDED: Dislocation P0-A1R source-integrity repair",
+      "merged_at": "2026-08-23T09:06:35Z"
     },
     {
       "number": 6257,
@@ -885,6 +1700,11 @@
       "number": 6246,
       "title": "records(imce): fourth-gate closure \u2014 A4P.1 + A4 registration executed, WS/handoff reconciled",
       "merged_at": "2026-08-22T18:00:20Z"
+    },
+    {
+      "number": 6245,
+      "title": "E3-A R2 AAPL shadow gold \u2014 calibration / negative-method experiment",
+      "merged_at": "2026-08-23T05:57:38Z"
     },
     {
       "number": 6244,
@@ -1392,6 +2212,11 @@
       "merged_at": "2026-08-21T00:08:35Z"
     },
     {
+      "number": 6135,
+      "title": "chore(workflow): cut over MAS-28 V1 PR metadata templates",
+      "merged_at": "2026-08-23T13:42:28Z"
+    },
+    {
       "number": 6134,
       "title": "docs(agentos): D4 company-bridge close \u2014 WS seal + handoff",
       "merged_at": "2026-08-20T22:38:22Z"
@@ -1430,6 +2255,11 @@
       "number": 6127,
       "title": "records(imce): IMCE-00 architecture freeze \u2014 issuer-mechanism research extension under CPI [HOLD-FOR-SOL]",
       "merged_at": "2026-08-21T03:55:28Z"
+    },
+    {
+      "number": 6125,
+      "title": "records(market-os): reconcile A1A merge to bounded production acceptance",
+      "merged_at": "2026-08-23T08:26:33Z"
     },
     {
       "number": 6124,
@@ -2975,306 +3805,6 @@
       "number": 5788,
       "title": "docs(biocatalyst): add recovery and alpha-engine masterplan v2",
       "merged_at": "2026-08-16T08:02:41Z"
-    },
-    {
-      "number": 5787,
-      "title": "cn-live(pr2): asia-close arming, keep-first ledger, confirmation receipt",
-      "merged_at": "2026-08-16T14:16:06Z"
-    },
-    {
-      "number": 5785,
-      "title": "cn-live(pr4): sentinel surface + rescue classifier",
-      "merged_at": "2026-08-16T13:00:02Z"
-    },
-    {
-      "number": 5786,
-      "title": "cn-live(pr3): runtime board on china_stocks \u2014 chips, strip, fail-closed",
-      "merged_at": "2026-08-16T10:56:15Z"
-    },
-    {
-      "number": 5784,
-      "title": "docs(prophet-fusion): w2b live acceptance PASS \u2014 14/14 on the first us_prophet_v3 board",
-      "merged_at": "2026-08-16T06:36:14Z"
-    },
-    {
-      "number": 5783,
-      "title": "feat(fleet): Cursor IDE sparse worktrees via sessionStart",
-      "merged_at": "2026-08-16T06:17:49Z"
-    },
-    {
-      "number": 5782,
-      "title": "cn-live(pr1): mainland evaluator, close pass, and VPS timer",
-      "merged_at": "2026-08-16T09:48:45Z"
-    },
-    {
-      "number": 5781,
-      "title": "docs(workspace): canonical tree is origin/main; sole local root is macro-main (operator 2026-08-15)",
-      "merged_at": "2026-08-16T05:29:13Z"
-    },
-    {
-      "number": 5780,
-      "title": "radar(w5): \u00a77 control matching sees the panel again \u2014 date-keyed lookup + bench calendar",
-      "merged_at": "2026-08-16T06:53:52Z"
-    },
-    {
-      "number": 5779,
-      "title": "docs(breathing): final-state handoff \u2014 revival wave merged+deployed; Monday W-ACCEPT is the remainder",
-      "merged_at": "2026-08-16T05:15:38Z"
-    },
-    {
-      "number": 5778,
-      "title": "feat(fleet): sparse worktrees for Cursor CLI and Grok Build",
-      "merged_at": "2026-08-16T08:47:36Z"
-    },
-    {
-      "number": 5777,
-      "title": "fix(ship-loop): an absence of red is not a pass \u2014 the other edge of the inactive-context exclusion",
-      "merged_at": "2026-08-16T05:28:57Z"
-    },
-    {
-      "number": 5776,
-      "title": "fix(ship-loop): one shared non-binding-check rule, so the merged-head gate stops owning a designed red",
-      "merged_at": "2026-08-16T04:33:23Z"
-    },
-    {
-      "number": 5775,
-      "title": "perf(entry-radar w5): 58x attach/match \u2014 stop deep-copying the session map through pandas attrs",
-      "merged_at": "2026-08-16T05:34:55Z"
-    },
-    {
-      "number": 5774,
-      "title": "radar(w5): replay progress heartbeat \u2014 [phase] k/N (elapsed Xs) on stderr across the five long loops",
-      "merged_at": "2026-08-16T07:58:44Z"
-    },
-    {
-      "number": 5773,
-      "title": "fix(ship-loop): the merged path ignores the inactive pilot authority context",
-      "merged_at": "2026-08-16T04:08:43Z"
-    },
-    {
-      "number": 5772,
-      "title": "radar(w4): records \u2014 W4 done at actual merge (#5768) with verification receipts",
-      "merged_at": "2026-08-16T03:29:44Z"
-    },
-    {
-      "number": 5771,
-      "title": "fix(ship-loop): the merged-head proof base survives the cached PR narrowing",
-      "merged_at": "2026-08-16T03:47:52Z"
-    },
-    {
-      "number": 5770,
-      "title": "research: CN Breathing Platform session-1 continuation handoff",
-      "merged_at": "2026-08-16T01:49:00Z"
-    },
-    {
-      "number": 5769,
-      "title": "fix(prophet-us): the retired v2 scorer accrues under its own name on a fusion board",
-      "merged_at": "2026-08-16T02:43:09Z"
-    },
-    {
-      "number": 5768,
-      "title": "radar(w4): PR-4 live evaluator \u2014 frozen-substrate pack + inversion proof, 5-min RTH pass, \u00a710 clocks/re-arm, spool-first ledger, liveness, staged deploy",
-      "merged_at": "2026-08-16T03:13:45Z"
-    },
-    {
-      "number": 5767,
-      "title": "docs(prophet-fusion): record the two open adjudications; re-cut W3",
-      "merged_at": "2026-08-16T02:06:38Z"
-    },
-    {
-      "number": 5766,
-      "title": "breathing: revival close \u2014 Agent OS handoff record, workstream state, final continuation doc",
-      "merged_at": "2026-08-16T01:20:17Z"
-    },
-    {
-      "number": 5765,
-      "title": "fix(ci-scope): curate cn-standout-audit + coiled-mtf-anchor-era to exclusive scope",
-      "merged_at": "2026-08-16T03:22:46Z"
-    },
-    {
-      "number": 5764,
-      "title": "fix(prophet-fusion): the board comparison must survive the board becoming v3",
-      "merged_at": "2026-08-16T01:45:42Z"
-    },
-    {
-      "number": 5763,
-      "title": "agentos: close semantic proof wave",
-      "merged_at": "2026-08-16T00:49:17Z"
-    },
-    {
-      "number": 5762,
-      "title": "feat(fleet): default Codex worktrees to sparse",
-      "merged_at": "2026-08-16T02:49:25Z"
-    },
-    {
-      "number": 5761,
-      "title": "feat(sentinel): WL1 close\u2192candidate\u2192visible liveness ruler + stale-armed-pack watchdog (breathing PR-C)",
-      "merged_at": "2026-08-16T01:00:50Z"
-    },
-    {
-      "number": 5760,
-      "title": "feat(close-pass): host-native primary clock \u2014 launchd close pass, GitHub demoted to bounded backstop (breathing PR-B)",
-      "merged_at": "2026-08-16T02:53:58Z"
-    },
-    {
-      "number": 5759,
-      "title": "cn-live(pr0): mainland session clock + calendar threading for the armed pack",
-      "merged_at": "2026-08-16T01:32:13Z"
-    },
-    {
-      "number": 5758,
-      "title": "research: Breathing Platform revival \u2014 mid-flight continuation handoff (session-limit loss-proofing)",
-      "merged_at": "2026-08-16T00:09:13Z"
-    },
-    {
-      "number": 5757,
-      "title": "fix(ship-loop): a merged head binds its proof base from the pull request",
-      "merged_at": "2026-08-15T17:10:15Z"
-    },
-    {
-      "number": 5756,
-      "title": "fix(ship-loop): a merge's own skipped ci-gate is not a competing verdict",
-      "merged_at": "2026-08-15T16:47:42Z"
-    },
-    {
-      "number": 5755,
-      "title": "fix(ci): align PC runner umask with hosted jobs",
-      "merged_at": "2026-08-15T13:05:34Z"
-    },
-    {
-      "number": 5754,
-      "title": "feat(cn-prophet): v4 \u2014 rank by board-independent intelligence, gate by entry",
-      "merged_at": "2026-08-15T14:22:11Z"
-    },
-    {
-      "number": 5753,
-      "title": "feat(prophet-us): C1 evidence-family fusion is the canonical ranker (us_prophet_v3)",
-      "merged_at": "2026-08-15T13:17:24Z"
-    },
-    {
-      "number": 5751,
-      "title": "fix: preserve Massive ticker case identity",
-      "merged_at": "2026-08-15T11:53:27Z"
-    },
-    {
-      "number": 5750,
-      "title": "ci: add semantic proof and ancestry repair v2",
-      "merged_at": "2026-08-15T13:06:43Z"
-    },
-    {
-      "number": 5749,
-      "title": "docs(biocatalyst): hand off current state and closure risks",
-      "merged_at": "2026-08-15T10:45:29Z"
-    },
-    {
-      "number": 5748,
-      "title": "docs(prophet-us): hand off earnings catalyst project",
-      "merged_at": "2026-08-15T10:44:13Z"
-    },
-    {
-      "number": 5747,
-      "title": "docs(options): hand off sparse selector activation",
-      "merged_at": "2026-08-15T10:42:06Z"
-    },
-    {
-      "number": 5746,
-      "title": "feat(close-pass): Massive close truth \u2014 full-universe same-day closes with basis parity (breathing PR-A)",
-      "merged_at": "2026-08-15T11:36:15Z"
-    },
-    {
-      "number": 5745,
-      "title": "fix(ci): bind M1 canary listeners to registrations",
-      "merged_at": "2026-08-15T11:07:27Z"
-    },
-    {
-      "number": 5744,
-      "title": "research: CN Breathing Platform architecture ruling (CN-W-L3)",
-      "merged_at": "2026-08-15T10:29:59Z"
-    },
-    {
-      "number": 5743,
-      "title": "breathing: revival session records \u2014 workstream, clock ruling, close-semantics discovery, replay harness",
-      "merged_at": "2026-08-15T10:12:47Z"
-    },
-    {
-      "number": 5741,
-      "title": "radar(w5): PR-5b \u2014 replay/outcome/controls machinery, qledger registration, nightly reconciler, \u00a724 battery",
-      "merged_at": "2026-08-15T11:39:35Z"
-    },
-    {
-      "number": 5740,
-      "title": "docs(security): WS-5 / GATE-5 full git-history secret-scan triage",
-      "merged_at": "2026-08-15T09:16:30Z"
-    },
-    {
-      "number": 5739,
-      "title": "radar(w5): PR-5a \u2014 forward-evidence preregistration (pre-outcome freeze, red-teamed)",
-      "merged_at": "2026-08-15T08:58:10Z"
-    },
-    {
-      "number": 5738,
-      "title": "fix(w4): smallest repair of signed-in watchlist acceptance defects",
-      "merged_at": "2026-08-15T09:14:38Z"
-    },
-    {
-      "number": 5736,
-      "title": "fix(brain): WS-2 quota ledger atomicity, crash-safety, and global spend ceiling",
-      "merged_at": "2026-08-15T10:25:25Z"
-    },
-    {
-      "number": 5735,
-      "title": "ci(auth): AST guard against client-supplied user identity (WS-9 / GATE-6)",
-      "merged_at": "2026-08-15T08:56:45Z"
-    },
-    {
-      "number": 5734,
-      "title": "feat(ops): GATE-4 commercial-path alerts on the existing sentinel transport",
-      "merged_at": "2026-08-15T09:33:56Z"
-    },
-    {
-      "number": 5733,
-      "title": "feat(backup): nightly encrypted customer-table dump (MMX-001 / WS-1)",
-      "merged_at": "2026-08-15T10:13:40Z"
-    },
-    {
-      "number": 5731,
-      "title": "fix(auth): require_user reuses paywall._AUTH_CACHE and bounds Supabase outages (WS-3)",
-      "merged_at": "2026-08-15T10:15:57Z"
-    },
-    {
-      "number": 5730,
-      "title": "feat(cn-intel): prospective keep-first PIT hist for broker, margin, blocks, buybacks",
-      "merged_at": "2026-08-15T09:58:09Z"
-    },
-    {
-      "number": 5729,
-      "title": "P-B3 persistence-robust certification: NULL=12, UNINFORMATIVE=8",
-      "merged_at": "2026-08-15T16:03:15Z"
-    },
-    {
-      "number": 5728,
-      "title": "docs(fleet): record the multi-pack main-red-repair exception in house law",
-      "merged_at": "2026-08-15T08:09:15Z"
-    },
-    {
-      "number": 5727,
-      "title": "fix(ci): make M1 listener canary portable",
-      "merged_at": "2026-08-15T09:47:03Z"
-    },
-    {
-      "number": 5726,
-      "title": "radar(w3): records \u2014 W3 done at actual merge (#5724 / 4b9706ef), merged-main verified",
-      "merged_at": "2026-08-15T07:17:52Z"
-    },
-    {
-      "number": 5725,
-      "title": "SP1-B: pre-register then apply the trading-day price-index fix",
-      "merged_at": "2026-08-15T08:12:01Z"
-    },
-    {
-      "number": 5724,
-      "title": "radar(w3): PR-3 \u2014 exact C1\u2013C5 specification lock (\u00a718 A5) + 1D/4H point-in-time proof battery",
-      "merged_at": "2026-08-15T06:55:31Z"
     }
   ]
 }

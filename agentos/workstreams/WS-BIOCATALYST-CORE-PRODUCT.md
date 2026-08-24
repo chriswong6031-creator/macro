@@ -38,18 +38,13 @@ owns_paths:
 waves:
   - id: P1-1
     title: Catalyst Radar — Trial Milestones first slice
-    status: in_progress
+    status: done
     next_action: >
-      Sol reviews the records-only P1-1 production-acceptance failure receipt.
-      The merged/deployed API, entitlement, safety, current generation, real
-      evidence inspector, three-entry lineage and exact 390px EN/ZH journey
-      passed, but both real desktop languages failed the no-clipping gate: each
-      Radar flex row stayed about 96px high while its live content required
-      116-150px, so metadata/date blocks escaped their row and collided with
-      the next row. P1-1 remains in_progress; PROVEN_LIVE_COHORT_LIMITED is not
-      claimed. Only Sol may authorize the bounded Radar-only desktop flex-size
-      repair described in the 2026-08-22 receipt. No runtime edit, P1-2,
-      source/cadence/cohort, soak or authority change is authorized.
+      P1-1 is complete. No next CORE-PRODUCT wave is currently commissioned.
+      P1-2 requires a separate explicit Sol ruling. The 2026-08-26T02:00Z
+      source/launch-soak boundary remains owned by its source-governance path:
+      window end grants no expansion authority; exact evidence must be frozen
+      and adjudicated before any successor source/cohort transition.
 decisions:
   - "DEC:BIOCATALYST-P1-FIRST-VERTICAL-MILESTONE-RADAR"
   - "DEC:BIOCATALYST-PDUFA-TRUTH-IS-CORPORATE-DISCLOSURE-PLANE"
@@ -119,20 +114,21 @@ do_not_redo:
     terminal; a future milestone may be marked inactive because of trial
     status without inventing an event-cancellation fact.
   - >-
-    Do not present healthy four-NCT API/mobile production evidence as P1-1
-    acceptance or functional parity while the desktop row-clipping blocker is
-    open. PROVEN_LIVE_COHORT_LIMITED is not claimed until a Sol-authorized
-    repair passes a new real production matrix; the parity ledger stays PARTIAL
-    even after that narrower gate eventually passes.
+    P1-1 is now PROVEN_LIVE_COHORT_LIMITED on the real current four-NCT
+    production cohort. Do not widen that bounded claim into full functional
+    parity, production-scale proof, source-soak acceptance, or authority to
+    start P1-2. The broader parity ledger remains PARTIAL.
 artifacts:
   - research/BIOCATALYST_P1_RECHARTER_AND_FIRST_VERTICAL_ARCHITECTURE_2026-08-20.md
   - research/BIOCATALYST_P1_CONTINUATION_HANDOFF_2026-08-20.md
   - research/BIOCATALYST_P1_1_PRODUCTION_ACCEPTANCE_2026-08-22.md
+  - research/BIOCATALYST_P1_1R_PRODUCTION_ACCEPTANCE_2026-08-23.md
 next_action: >
-  Sol reviews the records-only P1-1 production-acceptance failure receipt and
-  decides whether to authorize its bounded Radar-only desktop flex-size repair.
-  P1-1 stays in_progress; do not merge the held records PR, change runtime,
-  claim PROVEN_LIVE_COHORT_LIMITED, or start P1-2 before that ruling.
+  P1-1 is complete. No next CORE-PRODUCT wave is currently commissioned. P1-2
+  requires a separate explicit Sol ruling. The 2026-08-26T02:00Z
+  source/launch-soak boundary remains owned by its source-governance path:
+  window end grants no expansion authority; exact evidence must be frozen and
+  adjudicated before any successor source/cohort transition.
 ---
 
 ## Context

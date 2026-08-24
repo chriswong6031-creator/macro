@@ -4,14 +4,15 @@ question: >
   With the Chairman overloaded by concurrent CEO and worker sessions, what work has company
   priority until he no longer has to carry bounded Sol↔Fable dialogue and session handoffs manually?
 answer: >
-  Bridge completion is the company P0. Finish the existing Active-Session Dialogue carrier on
-  Mastermind PR #125, then advance directly through ASD-A2 production transport proof and ASD-A3
-  real already-active Sol↔Fable dialogue proof. Do not create another MAS-125 carrier or spawn new
-  unrelated follow-on waves while this bridge critical path is unresolved. Existing bounded in-flight
-  work may finish and return, but new expansion is subordinate to the bridge. After ASD-A3 removes
+  Bridge completion remains the company P0. Preserve the accepted DEVELOPMENT_UNARMED A0/A1 core
+  from Mastermind PR #125, then advance through a separately released ASD-A2 production transport
+  proof and ASD-A3 real already-active Sol↔Fable dialogue proof. The accepted X1 Chairman Command
+  Deck reduces session hunting but does not remove the Chairman as the substantive message bus and
+  does not release A2, P0B, dispatch or wake authority. Do not create another MAS-125 carrier or
+  unrelated follow-on waves while this bridge critical path is unresolved. After ASD-A3 removes
   Chairman copy/paste, finish the existing MAS-48 Personal-Pro→Slack→Executive admission path and
-  then design the separate bounded attention/wake/resume layer by extending canonical Executive/provider
-  lifecycle rather than creating a Session OS.
+  then design the separate bounded attention/wake/resume layer by extending canonical
+  Executive/provider lifecycle rather than creating a Session OS.
 rationale: >
   The binding product failure is Chairman coordination load: too many concurrent CEO and worker
   sessions require manual discovery, copy/paste, handoff delivery and state tracking. More parallel
@@ -40,11 +41,11 @@ alternatives:
       First prove the bounded active-session dialogue loop; then extend canonical lifecycle for wake.
 evidence:
   - "Chairman priority statement, 2026-08-23: too many projects/sessions to juggle; bridge needed for hands-free operation"
-  - "Mastermind PR #125: sole ASD-A0/A1 carrier; A0 PASS and A1 implementation under Sol review"
-  - "Mastermind PR #125 Sol review 5002385059: Bridge-First bounded A1 repair on exact head 33b32d9d0587e2b030902e79f29e5400d8bd1c5c"
+  - "Mastermind PR #125: accepted A0/A1 head 21361653a273b801b08caa7271daa68437f7b2fc merged as eb9910681a6db9f9675b25233c8865bb43325c32; DEVELOPMENT_UNARMED"
+  - "Mastermind PR #138: X1 exact accepted head 55ec5069e653489541ef273fdb0e76f7df2598e7 merged as 12117ca576cec2c4f054664dd62c4e0809f27e75 and proven live-local"
   - "Linear MAS-125: Urgent / In Progress after Chairman priority override"
   - "Linear MAS-48: existing Personal-Pro→Slack→Executive OS bounded CEO-intent bridge remains PARTIAL"
-  - "Mastermind PR #128 / merge 7292e7c333a63fe2a3940663931d108d2aa54de7: P0B inert non-seat harness BUILT_NOT_PROVEN; live canary held behind Bridge-First priority"
+  - "Mastermind PR #139 / merge 933382619541bb9efa02a1b521168acfd99f5f0b: P0B harness repaired; later canary failed safely before launch and current bearer readiness is false"
 affects:
   - WS:CHAIRMAN-CONTROL-ROOM
   - MAS-125
@@ -65,7 +66,9 @@ decided_at: 2026-08-23
 ### P0 — Active-Session Dialogue
 
 1. **ASD-A1 / MAS-125** — finish and accept the hermetic, storeless Agent Relay on the existing
-   `sol/asd-a0a1-20260823` / Mastermind PR #125 carrier only.
+   `sol/asd-a0a1-20260823` / Mastermind PR #125 carrier only. **Done:** accepted head
+   `21361653a273b801b08caa7271daa68437f7b2fc` merged as
+   `eb9910681a6db9f9675b25233c8865bb43325c32`; preserve it and do not rebuild.
 2. **ASD-A2** — production least-privilege Slack transport canary on one exact bound thread after
    A1 acceptance. This proves real app identity/scopes/history/send/restart/effect-unknown behavior;
    it still does not wake sessions or create Executive authority.
@@ -98,18 +101,29 @@ keep Slack transport-only, preserve one-carrier reconciliation, and create no Se
 - Do not create a new MAS-125 branch, PR or duplicate builder session.
 - Do not spawn unrelated follow-on waves merely because an in-flight project finishes.
 - Existing bounded in-flight operators may complete their current stop condition and return normally.
-- MAS-115/P0B inert harness is merged, but its live disposable canary is held unless Sol explicitly
-  releases it or the Chairman changes priority; no real-seat mutation is implied.
+- MAS-115/P0B remains separate. Two bounded attempts failed safely, the current stored bearer is not
+  accepted by authenticated launcher status, and no retry or real-seat mutation is authorized.
+- X1 is accepted and live-local as a read-only command surface. It does not satisfy ASD-A2/A3,
+  managed-seat Open Sol, Executive dispatch or wake.
 - Generic MAS-29/30/31 agent-dispatch redesign stays held pending the bridge proofs and fresh review.
 - P1/Wake remains gated; no new lifecycle, queue, inbox, identity or control plane is authorized.
 
 ## Current implementation receipts at decision closeout
 
-Mastermind PR #125 is the sole ASD implementation carrier. A0 has passed and A1 was explicitly
-released. Current reviewed A1 head is `33b32d9d0587e2b030902e79f29e5400d8bd1c5c`, exact-head CI
-`32629984914` is green, and Sol review `5002385059` requests four bounded A1 repairs before acceptance.
-No Slack pickup/delivery receipt by itself proves a Fable session is executing that repair.
+Mastermind PR #125 remains the sole ASD A0/A1 implementation carrier. Exact accepted head
+`21361653a273b801b08caa7271daa68437f7b2fc` merged as
+`eb9910681a6db9f9675b25233c8865bb43325c32` after CI `32645138774`, CodeQL `32645136478`
+and final Sol acceptance `5386528780`. The core is `BUILT_NOT_PROVEN / DEVELOPMENT_UNARMED`;
+no production credential, app, service or Slack message exists from that acceptance.
 
-Mastermind PR #128 merged the separately reviewed P0B disposable non-seat harness as
-`7292e7c333a63fe2a3940663931d108d2aa54de7`. That capability is `BUILT_NOT_PROVEN`; the live canary,
-real Chairman-seat proof and foreground-focus proof remain unexecuted and nonterminal.
+Mastermind PR #138 exact accepted X1 head `55ec5069e653489541ef273fdb0e76f7df2598e7`
+merged as `12117ca576cec2c4f054664dd62c4e0809f27e75` after 261 focused tests, 18/18
+post-base X1 tests, CI `32724498791`, CodeQL `32724495498` and real-browser Sol acceptance.
+The persistent loopback service returned HTTP 200 from that exact merge with 47 work references,
+live GitHub evidence and truthful Executive-runtime-DB absence. X1 reduces navigation and scanning
+load; it does not satisfy the still-separate dialogue, actuation, dispatch or wake gates.
+
+Mastermind PR #139 merged the current P0B disposable harness as
+`933382619541bb9efa02a1b521168acfd99f5f0b`. The post-merge canary failed safely before launch on
+the bounded vendor contract, a later read-only official-contract probe measured launcher HTTP 401,
+and no Chairman seat was addressed. P0B remains nonterminal and no blind retry is authorized.

@@ -4,7 +4,7 @@
  "index": "Russell-2000",
  "benchmark": "IWM",
  "benchmark_label": "Russell-2000 (IWM)",
- "as_of": "2026-08-23",
+ "as_of": "2026-08-24",
  "source": "finviz idx_rut (1889 names); sub-industry subsectors + sector amalgamations",
  "subsectors": {
   "advertising-agencies": {
@@ -2106,10 +2106,6 @@
      "name": "Kyverna Therapeutics Inc"
     },
     {
-     "ticker": "DNA",
-     "name": "Ginkgo Bioworks Holdings Inc"
-    },
-    {
      "ticker": "RLMD",
      "name": "Relmada Therapeutics Inc"
     },
@@ -2136,6 +2132,10 @@
     {
      "ticker": "PBYI",
      "name": "Puma Biotechnology Inc"
+    },
+    {
+     "ticker": "DNA",
+     "name": "Ginkgo Bioworks Holdings Inc"
     },
     {
      "ticker": "OCGN",
@@ -7270,12 +7270,12 @@
      "name": "Franklin Electric Co Inc"
     },
     {
-     "ticker": "SMR",
-     "name": "NuScale Power Corp"
-    },
-    {
      "ticker": "MWA",
      "name": "Mueller Water Products Inc"
+    },
+    {
+     "ticker": "SMR",
+     "name": "NuScale Power Corp"
     },
     {
      "ticker": "SXI",
@@ -7342,10 +7342,6 @@
      "name": "Richtech Robotics Inc"
     },
     {
-     "ticker": "NPWR",
-     "name": "NET Power Inc"
-    },
-    {
      "ticker": "TWIN",
      "name": "Twin Disc Incorporated"
     },
@@ -7356,6 +7352,10 @@
     {
      "ticker": "TAYD",
      "name": "Taylor Devices Inc"
+    },
+    {
+     "ticker": "NPWR",
+     "name": "NET Power Inc"
     }
    ]
   },
@@ -12360,10 +12360,6 @@
      "name": "Senseonics Holdings Inc"
     },
     {
-     "ticker": "DNA",
-     "name": "Ginkgo Bioworks Holdings Inc"
-    },
-    {
      "ticker": "RLMD",
      "name": "Relmada Therapeutics Inc"
     },
@@ -12398,6 +12394,10 @@
     {
      "ticker": "PBYI",
      "name": "Puma Biotechnology Inc"
+    },
+    {
+     "ticker": "DNA",
+     "name": "Ginkgo Bioworks Holdings Inc"
     },
     {
      "ticker": "OCGN",
@@ -13038,16 +13038,16 @@
      "name": "Firefly Aerospace Inc"
     },
     {
-     "ticker": "SMR",
-     "name": "NuScale Power Corp"
-    },
-    {
      "ticker": "SKYW",
      "name": "Skywest Inc"
     },
     {
      "ticker": "MWA",
      "name": "Mueller Water Products Inc"
+    },
+    {
+     "ticker": "SMR",
+     "name": "NuScale Power Corp"
     },
     {
      "ticker": "OTTR",
@@ -13694,10 +13694,6 @@
      "name": "Richtech Robotics Inc"
     },
     {
-     "ticker": "NPWR",
-     "name": "NET Power Inc"
-    },
-    {
      "ticker": "XRX",
      "name": "Xerox Holdings Corp"
     },
@@ -13828,6 +13824,10 @@
     {
      "ticker": "SHIM",
      "name": "Shimmick Corp"
+    },
+    {
+     "ticker": "NPWR",
+     "name": "NET Power Inc"
     },
     {
      "ticker": "PAL",

@@ -1,44 +1,39 @@
 {
   "display_only": true,
-  "hk_session_date": "2026-08-21",
+  "hk_session_date": "2026-08-24",
   "adr_date": "2026-08-21",
-  "expected_hk_session": "2026-08-21",
-  "freshness_verdict": "ok",
+  "expected_hk_session": "2026-08-24",
+  "freshness_verdict": "degraded",
   "adr_freshness": {
-    "BIDU": {
+    "TCOM": {
       "asof": "2026-08-21",
-      "lag_days": 0,
-      "state": "fresh"
+      "lag_days": 3,
+      "state": "slow"
+    },
+    "JD": {
+      "asof": "2026-08-21",
+      "lag_days": 3,
+      "state": "slow"
     },
     "BABA": {
       "asof": "2026-08-21",
-      "lag_days": 0,
-      "state": "fresh"
+      "lag_days": 3,
+      "state": "slow"
     },
-    "TCOM": {
+    "BIDU": {
       "asof": "2026-08-21",
-      "lag_days": 0,
-      "state": "fresh"
-    },
-    "TCOM": {
-      "asof": "2026-08-21",
-      "lag_days": 0,
-      "state": "fresh"
+      "lag_days": 3,
+      "state": "slow"
     },
     "KWEB": {
       "asof": "2026-08-21",
-      "lag_days": 0,
-      "state": "fresh"
+      "lag_days": 3,
+      "state": "slow"
     },
     "FXI": {
       "asof": "2026-08-21",
-      "lag_days": 0,
-      "state": "fresh"
-    },
-    "BABA": {
-      "asof": "2026-08-21",
-      "lag_days": 0,
-      "state": "fresh"
+      "lag_days": 3,
+      "state": "slow"
     }
   },
   "names": [
@@ -57,8 +52,8 @@
       "missing_reason": null,
       "freshness": {
         "asof": "2026-08-21",
-        "lag_days": 0,
-        "state": "fresh"
+        "lag_days": 3,
+        "state": "slow"
       }
     },
     {
@@ -76,8 +71,8 @@
       "missing_reason": null,
       "freshness": {
         "asof": "2026-08-21",
-        "lag_days": 0,
-        "state": "fresh"
+        "lag_days": 3,
+        "state": "slow"
       }
     },
     {
@@ -95,8 +90,8 @@
       "missing_reason": null,
       "freshness": {
         "asof": "2026-08-21",
-        "lag_days": 0,
-        "state": "fresh"
+        "lag_days": 3,
+        "state": "slow"
       }
     },
     {
@@ -114,8 +109,8 @@
       "missing_reason": null,
       "freshness": {
         "asof": "2026-08-21",
-        "lag_days": 0,
-        "state": "fresh"
+        "lag_days": 3,
+        "state": "slow"
       }
     },
     {
@@ -133,8 +128,8 @@
       "missing_reason": null,
       "freshness": {
         "asof": "2026-08-21",
-        "lag_days": 0,
-        "state": "fresh"
+        "lag_days": 3,
+        "state": "slow"
       }
     },
     {
@@ -152,8 +147,8 @@
       "missing_reason": null,
       "freshness": {
         "asof": "2026-08-21",
-        "lag_days": 0,
-        "state": "fresh"
+        "lag_days": 3,
+        "state": "slow"
       }
     },
     {
@@ -171,8 +166,8 @@
       "missing_reason": null,
       "freshness": {
         "asof": "2026-08-21",
-        "lag_days": 0,
-        "state": "fresh"
+        "lag_days": 3,
+        "state": "slow"
       }
     },
     {
@@ -190,8 +185,8 @@
       "missing_reason": null,
       "freshness": {
         "asof": "2026-08-21",
-        "lag_days": 0,
-        "state": "fresh"
+        "lag_days": 3,
+        "state": "slow"
       }
     },
     {
@@ -209,8 +204,8 @@
       "missing_reason": null,
       "freshness": {
         "asof": "2026-08-21",
-        "lag_days": 0,
-        "state": "fresh"
+        "lag_days": 3,
+        "state": "slow"
       }
     }
   ],
@@ -223,6 +218,9 @@
     "etf_composite_pct": 0.21,
     "etf_gap_context": "flat"
   },
-  "banner": null,
+  "banner": {
+    "en": "ADR bridge data degraded \u2014 stale: unknown; implied gaps may be outdated",
+    "zh": "ADR \u6865\u6570\u636edegraded \u2014 \u843d\u540e\uff1aunknown\uff1b\u9690\u542b\u8df3\u7a7a\u53ef\u80fd\u5df2\u8fc7\u65f6"
+  },
   "note": "context, not a signal / \u53c2\u8003\uff0c\u975e\u4e70\u5356\u4fe1\u53f7"
 }

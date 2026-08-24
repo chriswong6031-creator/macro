@@ -1,0 +1,168 @@
+{
+  "schema": "evidence_foundation.block.v1",
+  "version": "1.0.0",
+  "evidence_block_id": "ebl_d918340631f9f32606a2d9da1dcd3f6f0017561e4dff0e34fe149bd0f4a53c32",
+  "block_key": "shared_upstream_example",
+  "consumer": {
+    "workstream": "WS:MARKET-OS",
+    "job": "build security_state.v1 for AAPL",
+    "output_contract": "security_state.v1"
+  },
+  "supported_claim": {
+    "kind": "claim",
+    "text": "Two Theme Graph observations share one upstream earnings release and count as one independent evidence leg.",
+    "state": "partial"
+  },
+  "reference_ids": [
+    "efr_c5a0444802fa2ed354a7324be6dc5bb17b81cd205d44ee49465be43db5e36011",
+    "efr_12eaccc5ce267040216c55e7f0f06158d81bb6508f60d5bbd9eb46b8aca40050"
+  ],
+  "owner_stores": [
+    "theme_graph.edge_belief"
+  ],
+  "object_classes": [
+    "system_belief"
+  ],
+  "evidence_class": "deterministic",
+  "clock_summary": {
+    "collapsed": false,
+    "entries": [
+      {
+        "reference_id": "efr_c5a0444802fa2ed354a7324be6dc5bb17b81cd205d44ee49465be43db5e36011",
+        "class": "world_valid",
+        "field": "valid_from",
+        "value_state": "known",
+        "value": "2026-07-30",
+        "grain": "date"
+      },
+      {
+        "reference_id": "efr_c5a0444802fa2ed354a7324be6dc5bb17b81cd205d44ee49465be43db5e36011",
+        "class": "world_valid",
+        "field": "valid_to",
+        "value_state": "unknown",
+        "value": null,
+        "grain": "date"
+      },
+      {
+        "reference_id": "efr_c5a0444802fa2ed354a7324be6dc5bb17b81cd205d44ee49465be43db5e36011",
+        "class": "source_published",
+        "field": "evidence_time",
+        "value_state": "known",
+        "value": "2026-07-30",
+        "grain": "date"
+      },
+      {
+        "reference_id": "efr_c5a0444802fa2ed354a7324be6dc5bb17b81cd205d44ee49465be43db5e36011",
+        "class": "belief_or_build",
+        "field": "belief_time",
+        "value_state": "known",
+        "value": "2026-07-31",
+        "grain": "date"
+      },
+      {
+        "reference_id": "efr_c5a0444802fa2ed354a7324be6dc5bb17b81cd205d44ee49465be43db5e36011",
+        "class": "belief_or_build",
+        "field": "computed_at",
+        "value_state": "known",
+        "value": "2026-07-31T00:15:00Z",
+        "grain": "datetime"
+      },
+      {
+        "reference_id": "efr_12eaccc5ce267040216c55e7f0f06158d81bb6508f60d5bbd9eb46b8aca40050",
+        "class": "world_valid",
+        "field": "valid_from",
+        "value_state": "known",
+        "value": "2026-07-30",
+        "grain": "date"
+      },
+      {
+        "reference_id": "efr_12eaccc5ce267040216c55e7f0f06158d81bb6508f60d5bbd9eb46b8aca40050",
+        "class": "world_valid",
+        "field": "valid_to",
+        "value_state": "unknown",
+        "value": null,
+        "grain": "date"
+      },
+      {
+        "reference_id": "efr_12eaccc5ce267040216c55e7f0f06158d81bb6508f60d5bbd9eb46b8aca40050",
+        "class": "source_published",
+        "field": "evidence_time",
+        "value_state": "known",
+        "value": "2026-07-30",
+        "grain": "date"
+      },
+      {
+        "reference_id": "efr_12eaccc5ce267040216c55e7f0f06158d81bb6508f60d5bbd9eb46b8aca40050",
+        "class": "belief_or_build",
+        "field": "belief_time",
+        "value_state": "known",
+        "value": "2026-08-01",
+        "grain": "date"
+      },
+      {
+        "reference_id": "efr_12eaccc5ce267040216c55e7f0f06158d81bb6508f60d5bbd9eb46b8aca40050",
+        "class": "belief_or_build",
+        "field": "computed_at",
+        "value_state": "known",
+        "value": "2026-08-01T00:16:00Z",
+        "grain": "datetime"
+      }
+    ]
+  },
+  "coverage": {
+    "state": "unknown",
+    "total": 2,
+    "included": 2,
+    "excluded": 0,
+    "missing": 0,
+    "stale": 0,
+    "rights_blocked": 0,
+    "fallback": 0,
+    "basis": "all requested owner-reader fixture rows reconcile by native reference identity; freshness remains owner-policy dependent",
+    "reconciliation_state": "reconciled"
+  },
+  "uncertainty": {
+    "state": "none",
+    "probability": null,
+    "derivation_ref": null,
+    "calibration_ref": null
+  },
+  "dependence": {
+    "state": "shared_upstream",
+    "independent_evidence_count": 1,
+    "groups": [
+      {
+        "kind": "shared_upstream",
+        "reference_ids": [
+          "efr_c5a0444802fa2ed354a7324be6dc5bb17b81cd205d44ee49465be43db5e36011",
+          "efr_12eaccc5ce267040216c55e7f0f06158d81bb6508f60d5bbd9eb46b8aca40050"
+        ],
+        "deterministic_key": null
+      }
+    ]
+  },
+  "conflict_correction": {
+    "state": "none",
+    "reference_ids": []
+  },
+  "next_observable": {
+    "state": "unknown",
+    "description": null,
+    "owner_clock_field": null
+  },
+  "permitted_consumers": [
+    "security_state.v1"
+  ],
+  "lineage": {
+    "state": "original",
+    "predecessor_block_ids": [],
+    "invalidated_by_reference_ids": []
+  },
+  "authority": {
+    "can_rank": false,
+    "can_gate": false,
+    "can_size": false,
+    "can_originate": false,
+    "can_open_entry": false
+  }
+}
