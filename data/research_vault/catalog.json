@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-24T15:28:03.689746+00:00",
-  "count": 1764,
+  "generated_at": "2026-08-24T16:22:11.767276+00:00",
+  "count": 1767,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -89,6 +89,27 @@
   ],
   "items": [
     {
+      "id": "marketdesk-ryitpzoueb9-db281f",
+      "title": "GS Arruda What Matters Today HFs and MFs differ on AI but converge on Financials 24 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T15:32:29Z",
+      "summary_points": [
+        "**Growth Dominance**: Large-Cap Growth mutual funds outperformed by 75% YTD vs.",
+        "34% historical average, while Large-Cap Value lagged at 8% YTD vs.",
+        "46% historical, signaling a sustained growth regime shift.",
+        "**Hedge Fund Shortfall**: Equity Long/Short Hedge Funds returned 10% YTD, trailing concentrated short strategies (Russell 2000) at 38%, indicating strategy underperformance relative to targeted short momentum.",
+        "**AI/Semis Risk Catalysts**: AI-driven price erosion (LLM Token Expenditure index down 40% since June), AVGO’s $60bn debt, and capex concerns threaten semiconductor sector fundamentals."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-mtd5iihfb7c-df11e2",
       "title": "America Financials 2Q26 mutual fund and hedge fund Financials positioning analysis",
       "institution": "Goldman Sachs",
@@ -126,6 +147,44 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-tdbewbuqgyc-245802",
+      "title": "Brazil Lower 2026 Growth Expectations; Small Uptick in 2027 Inflation",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T13:44:12Z",
+      "summary_points": [
+        "**Fiscal Deficit Contradiction**: Primary fiscal balance deficit persists through 2029 (-0.50% to -0.15% GDP), directly conflicting with government’s non-negative fiscal targets.",
+        "**Inflation Above Target**: Inflation expectations remain elevated (2026: 5.02% vs 3% target; 2027: 4.25%), signaling persistent monetary policy challenges.",
+        "**Stable but Weak Growth**: Real GDP growth expectations hold at 1.95% (2026) and 1.50% (2027), reflecting subdued economic momentum despite stable policy rates."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vb29qma3l0u-0bc880",
+      "title": "India Aerospace & Defense Field Trip Days 2,3 and 4 highlights",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T13:44:09Z",
+      "summary_points": [
+        "**China+1 Structural Shift**: Precision machining TAM in India to grow 4-5x to $2.5-3bn by FY31E driven by China+1 factor; PTC Industries and Azad Engineering (Buys) positioned to benefit from supply reliability, zero rejects, and quality focus in global aerospace/energy supply chains.",
+        "**Triveni Turbines Operational Efficiency**: Net sales surged 210% (FY21–FY26), EBITDA margins stable at 19-21%, lead times cut from 8-9m to 3-3.5m; execution of India’s first 160 MWh CO2 energy storage project and 58% export revenue (FY26) signal strong growth trajectory.",
+        "**Balu Forge Defense Revenue Inflection**: Defense revenue share rose from 5% (FY24) to 13% (FY26), now ~50% of order book; secured 30,000 152mm artillery shells order (June 2026) and NATO-affiliated MoU for ammunition supply, with EBITDA margins expanding from 9% to 27% (FY24–FY26)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
