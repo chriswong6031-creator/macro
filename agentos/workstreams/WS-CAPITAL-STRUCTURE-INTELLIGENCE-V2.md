@@ -152,7 +152,7 @@ waves:
     title: Existing-carrier capacity envelope 540 = 500 / 20 / 20
     status: done
     depends_on: [W2A]
-    pr: [6287]
+    pr: [6287, 6349]
     next_action: >
       Done and proven live by natural run 32671784885, collect job 97273624140,
       Capital Structure job 97292842139, and generation 8a3628f1c2bb. Preserve

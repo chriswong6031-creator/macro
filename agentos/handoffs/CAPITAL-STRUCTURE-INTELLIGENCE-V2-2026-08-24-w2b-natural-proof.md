@@ -152,7 +152,7 @@ danger_areas:
   - "degraded_capacity is allowed solely because inherited LIVE debt remains; it is not a failed W2B proof."
   - "RECOVERY was empty, so its protected-service condition was not falsified; its exact 20-slot spill is the relevant receipt."
   - "The overall daily workflow can continue independently of the two required terminal-success jobs; do not interfere with unrelated work."
-prs: [6287]
+prs: [6287, 6349]
 decisions:
   - DEC:CS-V2-W2B-500-LIVE-ENVELOPE
 discoveries:
