@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-24T09:35:27.230101+00:00",
-  "count": 1747,
+  "generated_at": "2026-08-24T10:26:46.058422+00:00",
+  "count": 1750,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -76,6 +76,7 @@
     "The Market Ear",
     "The Punchline",
     "UBS",
+    "WEF",
     "WGC",
     "Week Ahead",
     "Weekly Preview",
@@ -86,6 +87,46 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-zijnfb0txyf-344c1c",
+      "title": "JPM Asia Technology",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T08:20:45Z",
+      "summary_points": [
+        "**Shareholder Returns & LTA Structure**: SEC/SKH lift return pool to >50% of accumulated FCF; LTA coverage 50%-70% (SEC: ~70%, Hynix: >50%, Kioxia: 50% for '27-'28), signaling strong commitment to shareholder value amid cautious LTA stance.",
+        "**AI-Driven Demand Surge**: DRAM demand growth 30%+ (vs historical 15-20%) from agent-AI CPU demand; NAND suppliers adopt eSSD for KV-cache, TLC as primary, SLC/Z-NAND emerging for AI.",
+        "**HBM Pricing Upside**: Upside risk to HBM ASP (+43% y-y) due to supplier negotiations; 2027 HBM ASP under review with S-D shortage variables, AI memory opportunity (DD% sales mix in 28E) with mainstream DRAM-like profitability.",
+        "**China Competition Risk**: Chinese capacity expansion limited to consumer apps; geopolitical risks and yield issues restrict AI-grade memory access, making China competition a minor risk to AI hardware capex cycle.",
+        "**Kioxia Technical Momentum**: Price surged 13x (from ~10k to ~130k Y, Jan-Jul 2026), with rising price targets (17,910→47,730 Y) and consistent Overweight ratings, indicating strong bullish trajectory."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-3tqzpbo0the-d1eaf8",
+      "title": "JPM US Focus Jackson Hole",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T08:20:44Z",
+      "summary_points": [
+        "**Volatility Baseline**: 2y yields show ~5bps daily volatility (std dev), establishing current technical range.",
+        "**Policy Shift Contrast**: 2023 restrictive stance caused +5bps yield move; 2024 accommodative shift implies muted market reactions.",
+        "**Historical Benchmark**: Greenspan-era volatility serves as reference for expected reduced sensitivity to 2024 policy shifts."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-onyp6ckv1li-c65156",
       "title": "JPM European Semiconductors",
@@ -1169,6 +1210,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-euxmbzckgqm-a53508",
+      "title": "WEF Intelligent Industrial Ecosystems Turning Proximity into Intelligence 2026",
+      "institution": "WEF",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T14:51:33Z",
+      "summary_points": [
+        "**Industrial Tech Integration in Logistics**: AI/IoT-driven port optimization (e.g., container tracking, predictive maintenance) drives capital inflows into smart manufacturing, with quantifiable efficiency gains (e.g., Port of Rotterdam: 5%→8.5x gains) as a key growth catalyst for industrial equities.",
+        "**China’s 2026 AI/Manufacturing Policy**: National action plan (Ministry of Industry and Information Technology + 7 agencies) with explicit 2027 targets reshapes industrial competitiveness, signaling policy-driven tech adoption and supply chain restructuring.",
+        "**Data Collaboration Barriers**: Only 32% of organizations capture measurable data value; structural gaps (misaligned incentives, digital maturity disparities, cybersecurity risks) confine AI to isolated use cases, with 72% of EU industrial clusters reporting rising cyberattacks.",
+        "**Geopolitical Industrial Competition**: Rising tensions over infrastructure control (e.g., port dominance) create policy risks for multinationals, altering capital allocation priorities and necessitating proximity intelligence strategies.",
+        "**Industrial Clusters & Energy Equation**: Systemic collaboration via trusted data exchange (e.g., Kalundborg Symbiosis: 80% emissions cut, 4M m³ groundwater conserved) is critical for energy transition and supply chain resilience, requiring cross-sector data sharing."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 42,
       "language": "en",
       "needs_metadata": false
     },
