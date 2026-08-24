@@ -240,4 +240,33 @@ def test_financial_sic_is_refused():
 
 def test_only_declared_verdict_vocabulary_is_emitted():
     assert census.verdict_for([]) == "SOURCE_CENSUS_UNDERPOWERED"
+    assert (
+        census.verdict_for([], identity_or_rights_ceiling_clears_center=True)
+        == "SOURCE_CENSUS_IDENTITY_OR_RIGHTS_BLOCKED"
+    )
     assert census.verdict_for([]) in census.VERDICTS
+
+
+def test_earlier_semantic_refusal_does_not_erase_identity_or_public_rights():
+    refused = census.classify_filing(
+        filing(),
+        metadata(),
+        [identity()],
+        submission(
+            "The board approved an increase to the common stock repurchase program up to $500 million."
+        ),
+    )
+    assert refused["economic_issuer_id"] is None
+    attached = census.attach_source_plane_receipts(
+        [refused],
+        {filing().cik: [identity()]},
+        [
+            {
+                "accession": filing().accession,
+                "url": "https://www.sec.gov/Archives/edgar/data/1/fixture.txt",
+                "sha256": "a" * 64,
+            }
+        ],
+    )[0]
+    assert attached["economic_issuer_id"] == identity().economic_issuer_id
+    assert attached["rights_profile"]["rights_class"] == "public_source_link"

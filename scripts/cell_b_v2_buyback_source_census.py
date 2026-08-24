@@ -980,6 +980,38 @@ def apply_correction_supersession(rows: Sequence[dict[str, Any]]) -> list[dict[s
     return copied
 
 
+def attach_source_plane_receipts(
+    rows: Sequence[dict[str, Any]],
+    identities: Mapping[str, Sequence[IdentityRow]],
+    scan_receipts: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    """Attach proven identity and rights facts regardless of refusal order."""
+    receipts = {str(item["accession"]): item for item in scan_receipts}
+    attached: list[dict[str, Any]] = []
+    for source_row in rows:
+        row = dict(source_row)
+        candidates = list(identities.get(str(row["cik"]), ()))
+        if len(candidates) == 1:
+            identity = candidates[0]
+            row["economic_issuer_id"] = identity.economic_issuer_id
+            row["security_id"] = identity.security_id
+            row["listing_id"] = identity.listing_id
+        receipt = receipts.get(str(row["accession"]))
+        if (
+            receipt
+            and receipt.get("sha256")
+            and str(receipt.get("url") or "").startswith(SEC_ARCHIVES)
+        ):
+            row["rights_profile"] = {
+                "rights_class": "public_source_link",
+                "source_system": "sec_edgar",
+                "source_url": receipt["url"],
+                "source_sha256": receipt["sha256"],
+            }
+        attached.append(row)
+    return attached
+
+
 def kish_effective_n(values: Iterable[str]) -> float:
     counts = Counter(values)
     total = sum(counts.values())
@@ -1054,10 +1086,17 @@ def summarize(rows: Sequence[dict[str, Any]], denominator: Sequence[FilingRow]) 
     periods: dict[str, dict[str, Any]] = {}
     for period in ("development_through_2024", "confirmatory_2025", "replication_2026_h1"):
         subset = [row for row in rows if _period(row) == period]
+        candidates = [
+            row
+            for row in subset
+            if row.get("refusal_reason")
+            not in {"NOT_NEW_AUTHORIZATION", "SOURCE_ROOT_UNRESOLVED"}
+        ]
         stats = support_stats(subset)
         refusals = Counter(row.get("refusal_reason") for row in subset if row.get("refusal_reason"))
         periods[period] = {
-            "raw_discovered_roots": len(subset),
+            "structurally_possible_roots": len(subset),
+            "raw_discovered_roots": len(candidates),
             "admitted_roots": stats["events"],
             "refusal_counts": {reason: refusals.get(reason, 0) for reason in REFUSALS},
             "support": stats,
@@ -1066,12 +1105,12 @@ def summarize(rows: Sequence[dict[str, Any]], denominator: Sequence[FilingRow]) 
             "leave_one_issuer_worst_case_support": _leave_one_issuer_worst(subset),
             "amount_distribution": amount_distribution(subset),
             "clock_certification_rate": round(
-                sum(row.get("publication_bucket") in {"AFTER_CLOSE_CERTIFIED", "PREOPEN_CERTIFIED"} for row in subset)
-                / len(subset),
+                sum(row.get("publication_bucket") in {"AFTER_CLOSE_CERTIFIED", "PREOPEN_CERTIFIED"} for row in candidates)
+                / len(candidates),
                 6,
-            ) if subset else 0.0,
-            "identity_resolution_rate": round(sum(bool(row.get("economic_issuer_id")) for row in subset) / len(subset), 6) if subset else 0.0,
-            "rights_resolution_rate": round(sum(bool(row.get("rights_profile")) for row in subset) / len(subset), 6) if subset else 0.0,
+            ) if candidates else 0.0,
+            "identity_resolution_rate": round(sum(bool(row.get("economic_issuer_id")) for row in candidates) / len(candidates), 6) if candidates else 0.0,
+            "rights_resolution_rate": round(sum(bool(row.get("rights_profile")) for row in candidates) / len(candidates), 6) if candidates else 0.0,
         }
     return {
         "denominator": {
@@ -1084,7 +1123,11 @@ def summarize(rows: Sequence[dict[str, Any]], denominator: Sequence[FilingRow]) 
     }
 
 
-def verdict_for(rows: Sequence[dict[str, Any]]) -> str:
+def verdict_for(
+    rows: Sequence[dict[str, Any]],
+    *,
+    identity_or_rights_ceiling_clears_center: bool = False,
+) -> str:
     development = [row for row in rows if date.fromisoformat(row["filing_date"]) <= DEV_END]
     admitted = support_stats(development)
     if center_clears(admitted):
@@ -1109,7 +1152,31 @@ def verdict_for(rows: Sequence[dict[str, Any]]) -> str:
     ]
     if center_clears(support_stats(identity_possible)):
         return "SOURCE_CENSUS_IDENTITY_OR_RIGHTS_BLOCKED"
+    if identity_or_rights_ceiling_clears_center:
+        return "SOURCE_CENSUS_IDENTITY_OR_RIGHTS_BLOCKED"
     return "SOURCE_CENSUS_UNDERPOWERED"
+
+
+def unresolved_identity_capacity_ceiling(
+    denominator: Sequence[FilingRow],
+    resolved_ciks: set[str],
+) -> dict[str, Any]:
+    """Upper bound hidden behind unresolved exact identity in development.
+
+    CIK and filing date prove only that the unresolved plane is large enough to
+    change the source-capacity verdict.  They do not admit an episode or mint an
+    issuer/security/listing identity.
+    """
+    potential = [
+        {
+            "status": "ADMITTED",
+            "economic_issuer_id": f"unresolved-cik:{row.cik}",
+            "event_session": row.filing_date,
+        }
+        for row in denominator
+        if row.cik not in resolved_ciks and date.fromisoformat(row.filing_date) <= DEV_END
+    ]
+    return support_stats(potential)
 
 
 def build_manifest(
@@ -1123,6 +1190,7 @@ def build_manifest(
     repository: str,
     base_commit: str,
     code_commit: str,
+    identity_or_rights_ceiling_clears_center: bool,
 ) -> dict[str, Any]:
     summary = summarize(rows, denominator)
     source_receipt_set = {
@@ -1131,7 +1199,10 @@ def build_manifest(
         "filing_scans": sorted(scan_receipts, key=lambda item: item["accession"]),
     }
     receipt_sha = sha256_bytes(canonical_json_bytes(source_receipt_set))
-    verdict = verdict_for(rows)
+    verdict = verdict_for(
+        rows,
+        identity_or_rights_ceiling_clears_center=identity_or_rights_ceiling_clears_center,
+    )
     if verdict not in VERDICTS:
         raise CensusError(f"illegal verdict {verdict}")
     manifest = {
@@ -1193,16 +1264,17 @@ def render_report(manifest: Mapping[str, Any], manifest_file_sha256: str) -> str
         f"- unique filing dates: **{summary['denominator']['unique_filing_dates']:,}**",
         f"- range: `{manifest['population']['start']}..{manifest['population']['end']}`",
         "- source: all 18 official quarterly EDGAR master indexes; SEC full-text search was not used.",
+        f"- exact-identity denominator coverage: **{manifest['identity_receipt']['denominator_rows_with_resolved_cik']:,} / {summary['denominator']['rows']:,}** ({manifest['identity_receipt']['denominator_identity_coverage_rate']:.3%}); **{manifest['identity_receipt']['denominator_rows_without_resolved_cik']:,}** rows remain outside the current exact identity plane.",
         "",
         "## Source capacity by frozen period",
         "",
-        "| period | discovered roots | admitted | issuers | dates | source N_eff | center floor | tail source floor |",
-        "|---|---:|---:|---:|---:|---:|---|---|",
+        "| period | possible roots | discovered roots | admitted | issuers | dates | source N_eff | center floor | tail source floor |",
+        "|---|---:|---:|---:|---:|---:|---:|---|---|",
     ]
     for period, data in summary["periods"].items():
         stats = data["support"]
         lines.append(
-            f"| {period} | {data['raw_discovered_roots']} | {data['admitted_roots']} | "
+            f"| {period} | {data['structurally_possible_roots']} | {data['raw_discovered_roots']} | {data['admitted_roots']} | "
             f"{stats['unique_economic_issuers']} | {stats['unique_event_dates']} | "
             f"{stats['source_n_eff']:.3f} | {data['center_source_floor_clears']} | "
             f"{data['tail_source_floor_clears']} |"
@@ -1224,6 +1296,7 @@ def render_report(manifest: Mapping[str, Any], manifest_file_sha256: str) -> str
             "",
             "- The 300,995-row denominator is exhaustive. Content acquisition is fail-closed behind official Submissions item metadata: every identity-resolved 7.01/8.01 (or item-undeclared) root is retrieved from the exact SEC archive filename; all other denominator rows remain denominator negatives rather than discovered family roots.",
             "- A current ticker is never used as identity. Only exact repository issuer/security/listing rows are eligible; missing historical/delisted coverage is disclosed through denominator-versus-identity counts and cannot be silently promoted.",
+            "- The unresolved development identity plane has an upper-bound support ceiling above the center floor. Because those rows cannot be source-adjudicated into or out of the family without exact identity, the terminal verdict is identity/rights blocked rather than an underpowered-family finding. The exact-identity subset is a lower-bound read, not the family denominator.",
             "- SEC acceptance time alone never certifies the family clock. A row is admitted only when an official source document states an exact dated Eastern timestamp that maps wholly to a closed-market interval on the canonical US cash-equity calendar, including early closes and holidays.",
             "- The tail line is source capacity only. It is not a classification or promotion result; any later response-valid subset would have to re-clear its separately frozen gates.",
             "- Adverse or null capacity is accepted as the scientific result. No exclusion, clock rule, amount rule, or family boundary was broadened after the scan.",
@@ -1319,11 +1392,17 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                     f"planned={len(jobs)}",
                     flush=True,
                 )
-    rows = apply_correction_supersession(collapse_dependence_roots(scanned_rows))
+    receipted_rows = attach_source_plane_receipts(scanned_rows, identities, scan_receipts)
+    rows = apply_correction_supersession(collapse_dependence_roots(receipted_rows))
+    identity_ceiling = unresolved_identity_capacity_ceiling(denominator, set(identities))
+    resolved_denominator_rows = sum(len(denominator_by_cik[cik]) for cik in relevant_ciks)
     identity_receipt = {
         **identity_receipt,
-        "denominator_rows_with_resolved_cik": sum(len(denominator_by_cik[cik]) for cik in relevant_ciks),
-        "denominator_rows_without_resolved_cik": len(denominator) - sum(len(denominator_by_cik[cik]) for cik in relevant_ciks),
+        "denominator_rows_with_resolved_cik": resolved_denominator_rows,
+        "denominator_rows_without_resolved_cik": len(denominator) - resolved_denominator_rows,
+        "denominator_identity_coverage_rate": round(resolved_denominator_rows / len(denominator), 6),
+        "development_unresolved_identity_capacity_ceiling": identity_ceiling,
+        "development_unresolved_identity_ceiling_clears_center": center_clears(identity_ceiling),
         "official_metadata_unresolved_rows": counters["metadata_unresolved"],
         "structural_negative_rows": counters["structural_negative"],
         "content_scanned_rows": counters["scanned"],
@@ -1338,6 +1417,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         repository=args.repository,
         base_commit=args.base_commit,
         code_commit=args.code_commit,
+        identity_or_rights_ceiling_clears_center=center_clears(identity_ceiling),
     )
     manifest_body = canonical_json_bytes(manifest)
     _atomic_write(args.manifest, manifest_body)
