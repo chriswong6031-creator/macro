@@ -3545,7 +3545,7 @@ _SS_RESULT: dict[str, dict[str, str]] = {
 _SS_WORKSPACE_WARNINGS: dict[str, tuple[str, str]] = {
     "collector_filing_unjoinable": (
         "The filing could not be matched to this release.",
-        "该申报文件未能与本次发布匹配。"),
+        "该披露文件未能与本次发布匹配。"),
     "consensus_unlicensed": (
         "Analyst consensus is not licensed for this page.",
         "分析师一致预期在本页无发布授权。"),
@@ -3898,7 +3898,7 @@ _SS_OBSERVABLE_KINDS: dict[str, tuple[str, str]] = {
     "EXPECTED_EARNINGS": ("Next earnings report", "下次财报"),
     "EARNINGS": ("Next earnings report", "下次财报"),
     "CONFIRMED_EARNINGS": ("Confirmed results date", "已确认财报日期"),
-    "FILING_DUE": ("Filing due", "申报截止"),
+    "FILING_DUE": ("Filing due", "披露截止"),
     "DEADLINE": ("Deadline", "截止时点"),
     "ESTIMATED_WINDOW": ("Estimated window", "预计窗口"),
 }
