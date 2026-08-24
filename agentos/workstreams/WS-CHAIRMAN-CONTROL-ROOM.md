@@ -79,9 +79,9 @@ waves:
     status: todo
     depends_on: [ASD-A2]
     next_action: >
-      Prove one already-active, already-commissioned Sol↔Fable project thread carries ACK,
-      DECISION_REQUEST/BLOCKED, RULING/CONTINUE/STOP, PROGRESS and RESULT without Chairman copy/paste.
-      This is the first Bridge-First milestone that removes Chris as the normal message bus.
+      Prove one already-active, already-commissioned Sol↔Fable project thread can carry ACK,
+      decision request, ruling, progress and result frames without Chairman copy/paste while
+      GitHub/Agent OS/Executive OS remain the authoritative systems of record.
   - id: ASD-A4
     title: Read-only Control Room dialogue-attention projection
     status: todo
@@ -89,7 +89,8 @@ waves:
     next_action: >
       Only after P0B and ASD-A3 are independently accepted, project read-only `awaiting_sol`,
       `awaiting_fable`, `returned` and `transport_degraded` from current bounded Slack history
-      into the Control Room. Store no inbox/attention/cursor state and add no sending to CCR.
+      into the Control Room. Store no inbox/attention/cursor state and add no sending to the
+      Control Room surface.
 decisions:
   - DEC:CHAIRMAN-CONTROL-ROOM-P0-ARCHITECTURE-ACCEPTED
   - DEC:CHAIRMAN-CONTROL-ROOM-ACTIVE-SESSION-DIALOGUE-F0-ACCEPTED
@@ -121,18 +122,27 @@ artifacts:
   - agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-08-24-x1-accepted.md
   - mastermind:research/MASTERMIND_ACTIVE_SESSION_EXECUTIVE_DIALOGUE_F0_ARCHITECTURE_AND_FABLE01_COMMISSION_2026-08-22.md
   - mastermind:research/MASTERMIND_ACTIVE_SESSION_EXECUTIVE_DIALOGUE_F0_CURRENT_STATE_AMENDMENT_2026-08-22.md
+  - mastermind:research/MASTERMIND_ACTIVE_SESSION_EXECUTIVE_DIALOGUE_A0_TOKEN_ISOLATION_FALSIFIER_2026-08-23.md
 landmines:
   - "Surface bindings are local navigation addresses only; they are not runtime, role, workstream, completion, liveness or authority records."
   - "There is no canonical or primary Sol chat. The account plus MastermindX Project context bootstraps Sol; exact normal-chat and Project-chat URLs are navigation destinations only."
   - "A tab/window/process title may be a candidate locator but never proves work ownership or execution."
+  - "Open actions may focus/resume a surface only; P0 may not type prompts, send messages, dispatch work or wake a CEO."
   - "Linear remains projection. A Linear assignee or status never proves a provider session claimed the work."
-  - "Slack DELIVERY_ONLY pickup is transport evidence, not proof that Fable or another provider is executing the commission."
+  - "Missing exact joins stay UNKNOWN/UNBOUND; title or objective similarity may not manufacture identity."
   - "The Chairman's Personal-Pro seats live in persistent GoLogin/Multilogin environments; ordinary Chrome profiles are superseded for this program."
-  - "No current vendor contract adopts the Chairman's already-running GUI/manual process into automation ownership. The merged P0B harness proves only code availability, not live safety or real-seat compatibility."
-  - "Exact URL navigation is not the whole Open Sol product. Programmatic foreground activation remains a load-bearing P0B gate."
-  - "Authenticated settings/browser inspection can render credentials into model-visible output. Use the reviewed human-controlled Keychain-to-stdin boundary and allowlisted non-secret receipts only."
-  - "Do not launch persistent CCR from a busy session checkout; use the clean detached runtime worktrees proven by H0."
-  - "MAS-113 and MAS-125 have experienced double-dispatch collisions. A duplicate session must stop and reconcile the existing carrier."
+  - "No current vendor contract adopts the Chairman's already-running GUI/manual GoLogin or Multilogin process into automation ownership. Supported automation launch is a different lifecycle and must be proven on disposable profiles before any real-seat change."
+  - "Exact URL navigation is not the whole Open Sol product. Programmatic foreground activation of the intended managed-browser window remains a load-bearing P0B gate because the Chairman job is to eliminate session/window hunting."
+  - "Managed-browser process argv can carry proxy credentials; observation may reduce it only to non-secret booleans/known ids and must never log/store raw argv."
+  - "X-CCR-Token is a per-process browser-origin/CSRF capability nonce, not authentication against another same-user local process; GET / intentionally bootstraps that nonce."
+  - "Authenticated vendor/app settings and browser inspection surfaces can render live credentials into model-visible output. Never use model-visible DOM/DevTools/settings inspection to verify a credential boundary. Use a human-controlled secure source and a narrow helper that emits only allowlisted non-secret metadata."
+  - "Mastermind's reviewed credential precedent is operator Keychain to stdin-only helper: never argv, environment, temporary file, shell variable/command substitution, log or receipt. Reuse that pattern conceptually; do not create a generic secret service or new state plane."
+  - "Do not launch persistent CCR from a busy session checkout merely because its directory name looks canonical. H0 closeout proved a clean detached Mastermind runtime worktree plus a clean detached current Macro runtime worktree avoids disturbing concurrent agents and prevents stale local-main/untracked-session state from becoming the production read root."
+  - "Agent OS brief cost on the M3 Ultra is variable enough to exceed the 240s compose ceiling. H0 serves honest degraded last-good state, but the Macro-side git_dates/brief cost remains a separate performance problem."
+  - "The committed project_active_builds.json projection can be stale; merged Macro #6225 provides the reviewed no-write GitHub refresh path. Persistent CCR must use that live refresh rather than treating an old committed collection time as current."
+  - "MAS-113 and MAS-125 have both experienced double-dispatch collisions. A duplicate session must stop and reconcile the existing carrier rather than create another branch/PR or silently restart the wave."
+  - "Slack delivery is transport evidence only. A delivered commission or dialogue frame is not Executive admission, session execution, lifecycle completion or durable Agent OS truth."
+  - "ASD is only for already-active, already-commissioned Sol/Fable sessions bound to one immutable commission thread. Generic find/assign/wake/resume stays outside this wave."
   - "MMX/AGENT_DIALOGUE_V1 history reconciliation must remain bounded and storeless; do not add a cursor DB, inbox, queue, replay ledger or mutable dialogue state store."
   - "The historical PR #125 A0 credential-verification failure was resolved through human/admin fixture removal, a non-secret allowlisted verifier and fresh hostile-path proof. Do not treat the old failure receipt as a current gate, recreate the removed fixture or expose a replacement credential to model-visible tooling."
   - "The macOS security CLI bare -w prompt truncated the current long Multilogin JWT to 128 bytes on this host. MAS-115 credential enrollment must use the fixed secret-owning Security.framework helper; never pass the token through argv, environment, shell, temp files, logs or model-visible output."
@@ -141,9 +151,10 @@ landmines:
   - "ASD-A4 is a derived read-only consumer only after both P0B and ASD-A3 are accepted; it may not become a stored attention inbox or a Control Room send path."
 do_not_redo:
   - "Do not create a Session OS, task database, tmux lifecycle registry, second Executive service, mutable seat inbox or new active-build compiler."
+  - "Reuse Mastermind control_plane.executive_inbox, control_plane.ceo_boot_packet and Macro scripts/build_project_active_build_map.py."
   - "Do not create WS:ACTIVE-AGENT-COMMS or another dialogue workstream; ASD is a wave under WS:CHAIRMAN-CONTROL-ROOM."
   - "Do not create a dialogue DB, Slack-owned lifecycle state, mutable thread cursor, second queue, automatic retry ledger or another session identity plane."
-  - "Do not absorb MAS-48, generic dispatch or Wake into ASD before their accepted gates."
+  - "Do not absorb MAS-48 B1/C1/B2/C2, generic agent dispatch, automatic Wake, provider credentials or multi-host capacity routing."
   - "Do not commit private ChatGPT URLs, browser target IDs, credentials, chat text or local surface_bindings.json."
   - "Do not ask the Chairman to re-enroll the three ChatGPT seats or turn their initial destinations into an identity plane."
   - "Do not use ordinary Chrome as a fallback for the Chairman's managed-browser seats."
@@ -183,6 +194,14 @@ The three-seat enrollment and conflict-free local projection are now `PROVEN_LIV
 loopback Control Room read path. This proves seat addressability only. It does not prove vendor
 automation ownership, exact intended-window foreground, production dialogue or Executive execution.
 The initial stored conversation for each seat is not a primary chat and does not define Sol identity.
+
+P0B research now establishes a `SUPPORTED_BUT_REQUIRES_ARCHITECTURE_CHANGE` candidate substrate:
+GoLogin and Multilogin can support exact profile launch plus exact URL navigation when the profile is
+owned from launch by their documented automation lifecycle. This does not adopt the Chairman's
+current GUI/manual process and does not provide a supported programmatic OS-window foreground
+contract. The candidate is therefore eligible only for a disposable non-seat canary; it is not P0B
+completion and authorizes no real-seat mutation.
+
 The disposable implementation is now `BUILT_NOT_PROVEN / CANARY_FAILED_SAFELY`. Mastermind PR #139
 merged the long-token enrollment repair, exact-profile process-group predicates, split C1 evidence
 and unconditional exact-profile cleanup receipt. The exact merged-runtime canary then refused before
@@ -262,7 +281,7 @@ separately authorized real canaries pass.
   endpoint was called and no bearer, response body or private identity was emitted. This falsifies
   credential readiness while preserving the native secret boundary.
 
-## What remains false
+### What is still false
 
 1. Current GUI-started Chairman managed-browser seats are not automation-adoptable under a documented vendor contract.
 2. No supported programmatic OS-window foreground operation has been accepted; Open Sol therefore remains incomplete even if exact URL navigation can be proven on an automation-owned disposable profile.
