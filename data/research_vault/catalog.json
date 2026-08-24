@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-24T14:31:22.581330+00:00",
-  "count": 1762,
+  "generated_at": "2026-08-24T15:28:03.689746+00:00",
+  "count": 1764,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -109,6 +109,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-6juzjj8adhd-e0ff83",
+      "title": "Cambricon",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T13:44:15Z",
+      "summary_points": [
+        "**Policy-Driven AI Chip Demand Surge**: China’s CHIPS IV policy and localization trend fuel vertical expansion (smart cities, mines, transportation, supermarkets), driving projected EBITDA growth of 82% (2028-30E) and revenue acceleration in key sectors.",
+        "**Margin & Leverage Deterioration**: EBITDA margin contracted to 25.8% (from 33.6%) and net debt/equity rose to 17.3% (from 8.0%), signaling deteriorating profitability and heightened financial risk despite stock outperformance (48.9% vs.",
+        "index 38.2%).",
+        "**Revised Valuation with Elevated Risk Profile**: Target EV/EBITDA reduced to 27x (from 43x) based on 2027E EBITDA growth (29% YoY), but implied EV/Sales (48x) and 12.7% cost of equity reflect aggressive growth expectations and high risk.",
+        "**Inventory Buildup as Critical Risk Factor**: Raw material inventory surged 77% YoY (H1 2026), supporting near-term revenue but requiring monitoring for sustainability amid margin pressure and rising leverage."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-dg5dwkx8enk-685e56",
       "title": "Target Corp.",
       "institution": "Goldman Sachs",
@@ -126,6 +147,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-offpbbvqrbz-281308",
+      "title": "GS Duttenhoefer Charts at Goldman Sachs 24 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T13:18:58Z",
+      "summary_points": [
+        "**TINA Over: Equities Must Beat Bonds**: STOXX 600 yield vs.",
+        "EUR IG/Germany 10-yr signals end of \"no alternative\" environment; equities require growth/cash returns to outperform bonds.",
+        "**Oil Inventory Risk: Strait Reopening Critical**: Global oil inventories at historic lows if Strait remains closed, creating acute geopolitical supply risk.",
+        "**Large-Cap Performance Gap**: Large-Cap Growth mutual funds outperformed benchmarks at 75% YTD (vs 34% historical), while Large-Cap Value lagged at 8% YTD (vs 46%), reflecting extreme sector divergence amid hedge fund de-grossing.",
+        "**Nasdaq Short Position Risk**: Hedge funds hold unusually large short positions in NASDAQ-100 futures/stocks, driving net positions negative (2026-2028), signaling elevated tech equity volatility risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
