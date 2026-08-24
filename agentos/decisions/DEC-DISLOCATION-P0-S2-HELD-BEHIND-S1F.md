@@ -38,7 +38,6 @@ confidence: high
 reversibility: easy
 decided_by: ceo-sol
 decided_at: 2026-08-23
-superseded_by: DEC:DISLOCATION-S1F-AUDITOR-RUNTIME-GROK46
 ---
 
 # Release condition

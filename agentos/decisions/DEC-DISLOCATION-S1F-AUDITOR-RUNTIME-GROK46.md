@@ -45,8 +45,6 @@ confidence: high
 reversibility: easy
 decided_by: chairman-chris
 decided_at: 2026-08-24
-supersedes:
-  - DEC:DISLOCATION-P0-S2-HELD-BEHIND-S1F
 ---
 
 ## Preserved hold

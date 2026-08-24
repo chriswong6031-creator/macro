@@ -154,10 +154,11 @@ verified:
       The compatible owner change did not alter selected identities or source bytes,
       so no proposal or audit transplant/rerun was required.
 unverified:
-  - claim: "Sol accepts or lands PR #6334."
+  - claim: "Sol lands PR #6334."
     what_would_verify: >
-      Sol reviews the exact pushed PR head, exact-head hosted CI/fences, the zero-yield
-      K-packet, and explicitly releases the hold. This carrier remains draft and held.
+      Sol explicitly releases the hold after reviewing the amended exact head and its
+      exact-head hosted CI/fences. The S1F result is accepted, but the carrier remains
+      draft and held.
   - claim: "P0-S2, price/outcome replay, or a revised source-feasibility wave is authorized."
     what_would_verify: >
       A later explicit Sol commission. This session stops before P0-S2 and exposes no
@@ -167,10 +168,11 @@ unresolved:
   - "The canonical non-mining-core versus external-validation-mining partition remains SECTOR_PARTITION_UNRESOLVED."
   - "PR #6334 remains DRAFT / HOLD-FOR-SOL; only Sol may release or land it."
 next_actions:
-  - "Sol adjudicates the honest 0/70 K-packet and decides whether to stop the Dislocation lane or commission a new price-blind source-law experiment."
+  - "No implementation action is authorized. Only a later explicit Sol commission may open a new logical operation and new carrier for an event-first, still-price-blind source-law experiment."
   - "If Sol later releases #6334, re-pin current origin/main, require exact-head green hosted CI/fences, and merge only under that explicit release."
   - "Until then, preserve the exact carrier; do not merge, mark ready, arm merge-on-green, begin P0-S2, or mount restricted data."
 do_not_redo:
+  - "Do not rerun the seventy, Grok proposals, independent Grok 4.6 audit, relationship reconciliation, source materialization, triage, or measurement unless their immutable inputs actually change."
   - "Do not top up, alter phrases, change the frozen 10-per-stratum allocation, or relax the P0 episode ontology because the result is zero."
   - "Do not turn RETAIN into an episode label: retained source context was 18/70, while audited episode-origin N was 0/70."
   - "Do not count accessions, filings, transitions, proposals, ACCEPT verdicts, or repaired fields as economic episodes."
@@ -199,5 +201,20 @@ packet. A future reviewer can inspect the full proposal, independent audit, rela
 reconciliation, linkage, disagreement matrix, measurement and K-packet directly from
 the tracked `research/dislocation_intelligence/p0_s1f/` artifacts, then verify their
 runtime and batch-input hashes through the final receipt graph.
+
+## Continuation ruling
+
+Sol accepts the S1F semantic, source, audit and measurement result for adjudication.
+After the prospective experiment returned 0/70 economic origins and 0/18 retained
+precision, the frozen Turn-5 **phrase-first candidate-discovery lane is
+`REJECTED_BY_DESIGN` for P0-S2**. This rejects the source-discovery method, not the
+Dislocation economic thesis, canonical SEC source owners, evidence/audit machinery,
+or P0 preregistration.
+
+The next potential research wave would be a new logical operation and new carrier for
+an event-first, still-price-blind source-law experiment. It is not authorized to start
+in PR #6334. Preserve the PR #6258 and PR #6334 packets as immutable
+source-development and falsification evidence. PR #6117 remains
+`QUARANTINED_UNAUDITED`; do not unquarantine it.
 
 Stop here. Sol is the only release and next-wave authority.
