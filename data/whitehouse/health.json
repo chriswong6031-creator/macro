@@ -1,23 +1,10 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-08-24T19:45:28.033340+00:00",
-  "posts_seen": 8,
+  "as_of": "2026-08-24T20:47:31.439210+00:00",
+  "posts_seen": 6,
   "seen_total": 132,
-  "evaluated": 2,
-  "activated": 1,
+  "evaluated": 0,
+  "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": [
-    {
-      "id": "wh-2026-08-24-presidential-message-on-national-park-week",
-      "importance": 5,
-      "activated": false,
-      "degraded_reason": "served_by:codex"
-    },
-    {
-      "id": "wh-2026-08-24-operation-economic-outcast-total-isolation-of-the-iranian-regime",
-      "importance": 94,
-      "activated": true,
-      "degraded_reason": null
-    }
-  ]
+  "gate_scores": []
 }
