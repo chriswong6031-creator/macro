@@ -254,11 +254,11 @@ def _p1_detail_page(
     *, appropriation_code: str = "2031A", appropriation_name: str = "Test Procurement Army",
     ba_code: str = "01", ba_name: str = "Test Activity", side: str,
     rows: list[list[tuple[float, float, str]]], ba_close_slots: dict[int, str],
-    appr_close_slots: dict[int, str],
+    appr_close_slots: dict[int, str], component: str = "Department of the Army",
 ) -> list[tuple[float, float, str]]:
     anchors = _P1_LEFT_ANCHORS if side == "left" else _P1_RIGHT_ANCHORS
     words: list[tuple[float, float, str]] = [
-        (72.0, 700.0, "UNCLASSIFIED"), (72.0, 685.0, "Department of the Army"),
+        (72.0, 700.0, "UNCLASSIFIED"), (72.0, 685.0, component),
         (72.0, 670.0, "FY 2027 President's Budget"), (72.0, 655.0, "Exhibit P-1"),
         (72.0, 640.0, "Total Obligational Authority"),
         (72.0, 625.0, f"{appropriation_code} Detail Apr 2026"),
@@ -293,11 +293,11 @@ def _p1_detail_page(
 def _p1_ba_summary_page(
     *, appropriation_code: str = "2031A", appropriation_name: str = "Test Procurement Army",
     ba_code: str = "01", ba_name: str = "Test Activity", side: str, ba_slots: dict[int, str],
-    appr_slots: dict[int, str],
+    appr_slots: dict[int, str], component: str = "Department of the Army",
 ) -> list[tuple[float, float, str]]:
     summary_words = _P1_LEFT_SUMMARY_WORDS if side == "left" else _P1_RIGHT_SUMMARY_WORDS
     words: list[tuple[float, float, str]] = [
-        (72.0, 700.0, "UNCLASSIFIED"), (72.0, 685.0, "Department of the Army"),
+        (72.0, 700.0, "UNCLASSIFIED"), (72.0, 685.0, component),
         (72.0, 670.0, "FY 2027 President's Budget"), (72.0, 655.0, "Exhibit P-1"),
         (72.0, 640.0, "Total Obligational Authority"),
         (72.0, 625.0, f"{appropriation_code} Budget Activity Summary Apr 2026"),
@@ -321,6 +321,8 @@ def _p1_ba_summary_page(
 def _p1_golden_pages(
     *, line_no: str = "10", name: str = "Test Widget",
     left_values: dict[int, str] | None = None, right_values: dict[int, str] | None = None,
+    appropriation_code: str = "2031A", appropriation_name: str = "Test Procurement Army",
+    component: str = "Department of the Army",
 ) -> list[list[tuple[float, float, str]]]:
     """A complete, self-reconciling minimal P-1 document: LEFT+RIGHT Detail
     pages carrying ONE numbered line (rule 1, no Less-children) plus
@@ -331,8 +333,14 @@ def _p1_golden_pages(
     right_values = right_values if right_values is not None else {0: "1,200", 4: "1,200"}
     left_detail_row = _p1_detail_row(520.0, anchors=_P1_LEFT_ANCHORS, line_no=line_no, name=name, slots=left_values)
     right_detail_row = _p1_detail_row(520.0, anchors=_P1_RIGHT_ANCHORS, line_no=line_no, name=name, slots=right_values)
-    left_page = _p1_detail_page(side="left", rows=[left_detail_row], ba_close_slots=left_values, appr_close_slots=left_values)
-    right_page = _p1_detail_page(side="right", rows=[right_detail_row], ba_close_slots=right_values, appr_close_slots=right_values)
+    left_page = _p1_detail_page(
+        side="left", rows=[left_detail_row], ba_close_slots=left_values, appr_close_slots=left_values,
+        appropriation_code=appropriation_code, appropriation_name=appropriation_name, component=component,
+    )
+    right_page = _p1_detail_page(
+        side="right", rows=[right_detail_row], ba_close_slots=right_values, appr_close_slots=right_values,
+        appropriation_code=appropriation_code, appropriation_name=appropriation_name, component=component,
+    )
     # BA-Summary slots: LEFT idx 0..3 = Actuals/Enacted/Plan/Total; map from
     # Cost-slot values (1,3,5,7) -> summary idx (0,1,2,3); RIGHT idx 0..2 =
     # Request/Request/Total from Cost-slot (0,2,4) -> summary idx (0,1,2).
@@ -340,8 +348,14 @@ def _p1_golden_pages(
     right_summary_map = {0: 0, 2: 1, 4: 2}
     left_ba_slots = {left_summary_map[k]: v for k, v in left_values.items() if k in left_summary_map}
     right_ba_slots = {right_summary_map[k]: v for k, v in right_values.items() if k in right_summary_map}
-    left_summary = _p1_ba_summary_page(side="left", ba_slots=left_ba_slots, appr_slots=left_ba_slots)
-    right_summary = _p1_ba_summary_page(side="right", ba_slots=right_ba_slots, appr_slots=right_ba_slots)
+    left_summary = _p1_ba_summary_page(
+        side="left", ba_slots=left_ba_slots, appr_slots=left_ba_slots,
+        appropriation_code=appropriation_code, appropriation_name=appropriation_name, component=component,
+    )
+    right_summary = _p1_ba_summary_page(
+        side="right", ba_slots=right_ba_slots, appr_slots=right_ba_slots,
+        appropriation_code=appropriation_code, appropriation_name=appropriation_name, component=component,
+    )
     return [left_page, right_page, left_summary, right_summary]
 
 
@@ -844,13 +858,29 @@ def test_r1_unrecognized_header_layout_refused_whole_document() -> None:
 
 
 def test_r1_boundary_bucket_violation_refused() -> None:
-    """A numeric token that lands outside every column's boundary bucket
-    refuses rather than guessing the nearest column."""
+    """§5b.1 fix 6: R-1 column assignment is the SAME zero-tolerance
+    boundary-bucket model P-1 uses (field left edge = its own header x0,
+    right edge = the NEXT column's x0) — not the old ±28pt nearest-anchor
+    match. A stray token placed at x0=466.0 on the golden page's detail row
+    (real header x0 anchors [358, 418, 496, 550, 598, 658, 730], so its
+    rendered x1≈492.69) falls INSIDE column 1's boundary bucket [418, 496)
+    — which the golden row's own printed value ("1100") already occupies —
+    so it refuses on a genuine collision.
+
+    This is deliberately NOT "outside every bucket" (the old vacuous
+    far-right-of-everything shape, which any tolerance model would also
+    refuse and proves nothing about THIS rewrite): under the retired
+    ±28pt-of-header-x1 nearest-anchor model the same token's x1 was only
+    27.32pt from the EMPTY "Plan" column's anchor (520.01) and 74.66pt (out
+    of tolerance) from the occupied "Enacted" column's anchor (462.03), so
+    it would have been silently assigned to the empty column instead —
+    verified directly against `_r1_assign_to_column`/`_r1_find_value_anchors`
+    this session (old nearest-anchor model: col=2, no collision, no
+    refusal; new boundary-bucket model: col=1, collision, refused) — killed
+    by reverting either function to the retired nearest-anchor shape.
+    """
     page = list(_r1_golden_page())
-    page.append((250.0, 550.5, "9999"))  # x0=250 < min_x0=336.0 value-zone floor is fine,
-    # so place it INSIDE the value zone but between real bucket boundaries instead:
-    page = [w for w in _r1_golden_page()]
-    page.append((900.0, 565.0, "9999"))  # far right of every real column x1+tol
+    page.append((466.0, 565.0, "9999"))  # lands in col-1's bucket, already filled with "1100"
     pdf_bytes = _r1_pdf(page)
     with pytest.raises(live.DodBudgetParseRefused, match="unassignable"):
         _parse_r1(pdf_bytes)
@@ -961,6 +991,47 @@ def test_p1_golden_fixture_parses_and_reconciles_cleanly() -> None:
     assert lines[0]["native_identifier"] == {"kind": "p1_line_item", "value": "10"}
 
 
+def test_p1_defense_wide_page_publishes_component_defense_wide_verbatim() -> None:
+    """§5b.1 fix 1/2 (adversarial-review Blocker): a Defense-Wide P-1
+    appropriation prints its component header slot as the bare literal
+    "Defense-Wide" (no "Department of" prefix) — captured POSITIONALLY and
+    published VERBATIM, never stripped, never a leftover from a prior
+    page's "Department of X" line."""
+    pdf_bytes = _p1_pdf_words(*_p1_golden_pages(
+        appropriation_code="0300D", appropriation_name="Procurement, Defense-Wide", component="Defense-Wide",
+    ))
+    lines, _totals = _parse_p1(pdf_bytes)
+    assert len(lines) == 1
+    assert lines[0]["component"] == "Defense-Wide"
+    assert "War" not in lines[0]["component"]
+
+
+def test_p1_page_missing_positional_component_slot_refused() -> None:
+    """§5b.1 fix 1 (adversarial-review Blocker): a detail/BA-summary page
+    whose header block does NOT carry the UNCLASSIFIED / <component> /
+    "FY 2027 President's Budget" 3-line shape (component slot missing, or
+    shifted out of position) refuses the whole document rather than
+    silently publishing whatever component a PRIOR page last captured."""
+    left_page = [
+        w for w in _p1_detail_page(
+            side="left", rows=[
+                _p1_detail_row(520.0, anchors=_P1_LEFT_ANCHORS, line_no="10", name="Test Widget", slots={1: "1,000"}),
+            ],
+            ba_close_slots={1: "1,000"}, appr_close_slots={1: "1,000"},
+        )
+        if w[2] != "Department of the Army"  # strip the component slot entirely
+    ]
+    right_page = _p1_detail_page(
+        side="right", rows=[_p1_detail_row(520.0, anchors=_P1_RIGHT_ANCHORS, line_no="10", name="Test Widget", slots={})],
+        ba_close_slots={}, appr_close_slots={},
+    )
+    left_summary = _p1_ba_summary_page(side="left", ba_slots={0: "1,000"}, appr_slots={0: "1,000"})
+    right_summary = _p1_ba_summary_page(side="right", ba_slots={}, appr_slots={})
+    pdf_bytes = _p1_pdf_words(left_page, right_page, left_summary, right_summary)
+    with pytest.raises(live.DodBudgetParseRefused, match="component header slot"):
+        _parse_p1(pdf_bytes)
+
+
 def test_p1_value_bearing_additive_child_publishes_its_own_record() -> None:
     """§5b.1 ruling 3: an Advance Procurement (CY) child publishes as its
     OWN record, native value "<parent line no>--<slugged child label>"."""
@@ -1012,19 +1083,46 @@ def test_p1_bare_two_number_row_never_misclassified_as_a_numbered_line() -> None
     """§5b.1 ruling 6: a bare two-number row (no non-numeric nomenclature
     after the leading digit run) is never mistaken for a numbered detail
     line, even when its first token could look like a plausible Line No —
-    it is read as an unlabeled net-memo row instead (P-1 p.121 "20 20")."""
-    left_line = _p1_detail_row(520.0, anchors=_P1_LEFT_ANCHORS, line_no="24", name="Test Missile", slots={1: "(500)"})
-    left_less = _p1_less_row(505.0, anchors=_P1_LEFT_ANCHORS, prefix="Less: Advance Procurement (PY)", slots={1: "(480)"})
-    left_netmemo = [_p1_value_word(_P1_LEFT_ANCHORS, 1, "20", 490.0)]  # bare "20" alone, net = -(-500)+(-480)=20
+    it is read as an unlabeled net-memo row instead (P-1 p.121 "20 20").
+
+    The fixture emits TWO clustered value tokens ("20" at Cost-col 1 AND
+    "20" at Cost-col 3, same y) so `_line_text` joins them into the literal
+    two-token row "20 20" that the real p.121 anomaly reproduces — a SINGLE
+    bare "20" never even reaches the has_nomenclature guard, because
+    `re.match(r"^(\\d{1,4})\\s+(.*)$", "20")` cannot match without a second
+    token after the required `\\s+`. With only one token this test passes
+    whether or not the guard exists, which is exactly the vacuousness an
+    adversarial review caught. Killed by mutation (verified manually,
+    2026-08-24): commenting out the `if not has_nomenclature: m_line = None`
+    guard in `_p1_classify_document` misreads "20 20" as detail line "20",
+    COLLIDES with the real numbered line 20 below, and this test fails
+    (either a duplicate-derived-identity refusal or wrong amounts/native
+    set) — restoring the guard makes it pass again.
+    """
+    left_line = _p1_detail_row(
+        520.0, anchors=_P1_LEFT_ANCHORS, line_no="24", name="Test Missile", slots={1: "(500)", 7: "(300)"},
+    )
+    left_less = _p1_less_row(
+        505.0, anchors=_P1_LEFT_ANCHORS, prefix="Less: Advance Procurement (PY)", slots={1: "(480)", 7: "(280)"},
+    )
+    # net at col1 (-> output 0, historical_actual) = -(-500)+(-480)=20; net
+    # at col7 (-> output 3, prior_year_enacted_reference) = -(-300)+(-280)
+    # =20 — two clustered tokens, both "20", joined by `_line_text` into
+    # "20 20" (columns 2/4/5/6 stay unpopulated so no OTHER numeric token
+    # can land between them and break the two-token clustering).
+    left_netmemo = [
+        _p1_value_word(_P1_LEFT_ANCHORS, 1, "20", 490.0),
+        _p1_value_word(_P1_LEFT_ANCHORS, 7, "20", 490.0),
+    ]
     left_next = _p1_detail_row(475.0, anchors=_P1_LEFT_ANCHORS, line_no="20", name="Genuinely Line Twenty", slots={1: "50"})
     left_page = _p1_detail_page(
         side="left", rows=[left_line, left_less, left_netmemo, left_next],
-        ba_close_slots={1: "70"}, appr_close_slots={1: "70"},
+        ba_close_slots={1: "70", 7: "20"}, appr_close_slots={1: "70", 7: "20"},
     )
     right_row = _p1_detail_row(520.0, anchors=_P1_RIGHT_ANCHORS, line_no="24", name="Test Missile", slots={})
     right_next = _p1_detail_row(505.0, anchors=_P1_RIGHT_ANCHORS, line_no="20", name="Genuinely Line Twenty", slots={})
     right_page = _p1_detail_page(side="right", rows=[right_row, right_next], ba_close_slots={}, appr_close_slots={})
-    left_summary = _p1_ba_summary_page(side="left", ba_slots={0: "70"}, appr_slots={0: "70"})
+    left_summary = _p1_ba_summary_page(side="left", ba_slots={0: "70", 3: "20"}, appr_slots={0: "70", 3: "20"})
     right_summary = _p1_ba_summary_page(side="right", ba_slots={}, appr_slots={})
     pdf_bytes = _p1_pdf_words(left_page, right_page, left_summary, right_summary)
     lines, _totals = _parse_p1(pdf_bytes)
@@ -1032,6 +1130,7 @@ def test_p1_bare_two_number_row_never_misclassified_as_a_numbered_line() -> None
     assert set(natives) == {"24", "20"}
     resolved = {a["semantic"]: a["amount_usd"] for a in natives["24"]["amounts"]}
     assert resolved["historical_actual"] == 20_000.0  # the net-memo value, not the -500 own row
+    assert resolved["prior_year_enacted_reference"] == 20_000.0  # net-memo's col3 "20" too
     assert natives["20"]["program_name"] == "Genuinely Line Twenty"
 
 
@@ -1050,6 +1149,132 @@ def test_p1_less_row_without_resolving_net_memo_refused() -> None:
     right_summary = _p1_ba_summary_page(side="right", ba_slots={}, appr_slots={})
     pdf_bytes = _p1_pdf_words(left_page, right_page, left_summary, right_summary)
     with pytest.raises(live.DodBudgetParseRefused, match="resolving"):
+        _parse_p1(pdf_bytes)
+
+
+def test_p1_e7_own_value_nets_exactly_zero_against_less_publishes_all_null() -> None:
+    """§5b.1(7) REVISED (adversarial-review Blocker fix): a parent whose own
+    row prints a value AND whose value-bearing Less:-children net it to
+    EXACTLY zero, with no printed net-memo row resolving it (P-1 p.230
+    line 22, "E-7" — own row +200,000, Less: Advance Procurement (PY)
+    -200,000), publishes with ALL-NULL amounts — never 0.0 (that would be a
+    computed sum of two printed rows, forbidden by §5b.1(3)'s
+    printed-addend-grain rule), never a refusal, never generalized to any
+    other needs-resolution shape. Reconciliation still closes because the
+    line's true additive contribution is zero and None is excluded from
+    sums: the BA close total here is carried entirely by the unrelated
+    sibling line 23, not by a computed E-7 contribution.
+
+    Killed by mutation (verified manually, 2026-08-24): restoring the
+    retired `zeroed = [0.0 if v is not None else None for v in
+    implicit_net]` shape (publish 0.0) makes the amounts assertions below
+    fail; deleting the whole null-publication branch (always refusing when
+    `pending_needs_resolution and not pending_resolved`) makes the parse
+    raise instead of returning a record for line 22.
+    """
+    left_line = _p1_detail_row(520.0, anchors=_P1_LEFT_ANCHORS, line_no="22", name="E-7", slots={1: "200,000"})
+    left_less = _p1_less_row(
+        505.0, anchors=_P1_LEFT_ANCHORS, prefix="Less: Advance Procurement (PY)", slots={1: "(200,000)"},
+    )
+    left_next = _p1_detail_row(490.0, anchors=_P1_LEFT_ANCHORS, line_no="23", name="Unrelated Line", slots={1: "500"})
+    left_page = _p1_detail_page(
+        side="left", rows=[left_line, left_less, left_next], ba_close_slots={1: "500"}, appr_close_slots={1: "500"},
+    )
+    right_row = _p1_detail_row(520.0, anchors=_P1_RIGHT_ANCHORS, line_no="22", name="E-7", slots={})
+    right_next = _p1_detail_row(505.0, anchors=_P1_RIGHT_ANCHORS, line_no="23", name="Unrelated Line", slots={})
+    right_page = _p1_detail_page(side="right", rows=[right_row, right_next], ba_close_slots={}, appr_close_slots={})
+    left_summary = _p1_ba_summary_page(side="left", ba_slots={0: "500"}, appr_slots={0: "500"})
+    right_summary = _p1_ba_summary_page(side="right", ba_slots={}, appr_slots={})
+    pdf_bytes = _p1_pdf_words(left_page, right_page, left_summary, right_summary)
+    lines, _totals = _parse_p1(pdf_bytes)
+    natives = {l["native_identifier"]["value"]: l for l in lines}
+    assert set(natives) == {"22", "23"}
+    e7_amounts = {a["semantic"]: a["amount_usd"] for a in natives["22"]["amounts"]}
+    assert set(e7_amounts.values()) == {None}, f"E-7 amounts must be ALL-NULL, got {e7_amounts!r}"
+    unrelated_amounts = {a["semantic"]: a["amount_usd"] for a in natives["23"]["amounts"]}
+    assert unrelated_amounts["historical_actual"] == 500_000.0
+
+
+def test_p1_valueless_less_row_obliges_no_net_memo_parent_publishes_own_row() -> None:
+    """§5b.1(7) first bullet: a `Less:` child row that prints NO value at
+    all (P-1 p.145 line 10, CVN Refueling Overhauls) obliges NOTHING — the
+    parent publishes straight from its own row, exactly as if the Less:
+    row were never there. Distinct from the E-7 null-amount shape above:
+    here the parent's own value IS the publishable figure, not a null.
+    """
+    left_line = _p1_detail_row(520.0, anchors=_P1_LEFT_ANCHORS, line_no="10", name="CVN Refueling Overhauls", slots={1: "300,000"})
+    left_less = _p1_less_row(505.0, anchors=_P1_LEFT_ANCHORS, prefix="Less: Advance Procurement (PY)", slots={})
+    left_next = _p1_detail_row(490.0, anchors=_P1_LEFT_ANCHORS, line_no="11", name="Unrelated Line", slots={1: "50,000"})
+    left_page = _p1_detail_page(
+        side="left", rows=[left_line, left_less, left_next], ba_close_slots={1: "350,000"}, appr_close_slots={1: "350,000"},
+    )
+    right_row = _p1_detail_row(520.0, anchors=_P1_RIGHT_ANCHORS, line_no="10", name="CVN Refueling Overhauls", slots={})
+    right_next = _p1_detail_row(505.0, anchors=_P1_RIGHT_ANCHORS, line_no="11", name="Unrelated Line", slots={})
+    right_page = _p1_detail_page(side="right", rows=[right_row, right_next], ba_close_slots={}, appr_close_slots={})
+    left_summary = _p1_ba_summary_page(side="left", ba_slots={0: "350,000"}, appr_slots={0: "350,000"})
+    right_summary = _p1_ba_summary_page(side="right", ba_slots={}, appr_slots={})
+    pdf_bytes = _p1_pdf_words(left_page, right_page, left_summary, right_summary)
+    lines, _totals = _parse_p1(pdf_bytes)
+    natives = {l["native_identifier"]["value"]: l for l in lines}
+    assert set(natives) == {"10", "11"}
+    cvn_amounts = {a["semantic"]: a["amount_usd"] for a in natives["10"]["amounts"]}
+    assert cvn_amounts["historical_actual"] == 300_000_000.0  # own row's printed value, unaltered
+
+
+def test_p1_bare_numeric_row_with_nothing_pending_refused() -> None:
+    """§5b.1 fix 8: a bare, purely-numeric row ("45 2000" — numeric-only
+    nomenclature, so the §5b.1 ruling-6 guard correctly keeps it OUT of
+    `m_line`) classifies as `unlabeled_net_memo_row` (it has no non-numeric
+    token outside the value zone — the positive shape fix 8 requires), but
+    with NO pending parent that needs a resolving net-memo row (line 10's
+    own value is a plain positive, no Less:-children, no parenthesized
+    value) it refuses at emission time rather than silently publishing an
+    unrelated figure under a resolution nobody asked for."""
+    left_line = _p1_detail_row(520.0, anchors=_P1_LEFT_ANCHORS, line_no="10", name="Test Widget", slots={1: "1,000"})
+    stray_bare_row = [
+        _p1_value_word(_P1_LEFT_ANCHORS, 1, "45", 505.0),
+        _p1_value_word(_P1_LEFT_ANCHORS, 3, "2000", 505.0),
+    ]
+    left_page = _p1_detail_page(
+        side="left", rows=[left_line, stray_bare_row], ba_close_slots={1: "1,000"}, appr_close_slots={1: "1,000"},
+    )
+    right_row = _p1_detail_row(520.0, anchors=_P1_RIGHT_ANCHORS, line_no="10", name="Test Widget", slots={})
+    right_page = _p1_detail_page(side="right", rows=[right_row], ba_close_slots={}, appr_close_slots={})
+    left_summary = _p1_ba_summary_page(side="left", ba_slots={0: "1,000"}, appr_slots={0: "1,000"})
+    right_summary = _p1_ba_summary_page(side="right", ba_slots={}, appr_slots={})
+    pdf_bytes = _p1_pdf_words(left_page, right_page, left_summary, right_summary)
+    with pytest.raises(live.DodBudgetParseRefused, match="nothing to resolve"):
+        _parse_p1(pdf_bytes)
+
+
+def test_p1_labeled_numeric_row_never_swept_into_net_memo_shape() -> None:
+    """§5b.1 fix 8 positive shape: a row that carries REAL non-numeric label
+    text left of the value zone is not the "bare numeric row" net-memo
+    shape, even though it has a value in the value zone and doesn't match
+    `m_line` — it must fall through to the unclassified-row refusal, never
+    silently absorb into whatever resolution happens to be pending."""
+    left_line = _p1_detail_row(
+        520.0, anchors=_P1_LEFT_ANCHORS, line_no="24", name="Test Missile", slots={1: "(500)"},
+    )
+    left_less = _p1_less_row(
+        505.0, anchors=_P1_LEFT_ANCHORS, prefix="Less: Advance Procurement (PY)", slots={1: "(480)"},
+    )
+    # A genuinely labeled stray row (non-numeric text outside the value
+    # zone) that happens to sit where a resolving net-memo row is pending —
+    # it must NOT be swept in as the resolution.
+    stray_labeled_row = [(60.0, 490.0, "Some Unrelated Footnote")] + [
+        _p1_value_word(_P1_LEFT_ANCHORS, 1, "20", 490.0),
+    ]
+    left_page = _p1_detail_page(
+        side="left", rows=[left_line, left_less, stray_labeled_row],
+        ba_close_slots={1: "20"}, appr_close_slots={1: "20"},
+    )
+    right_row = _p1_detail_row(520.0, anchors=_P1_RIGHT_ANCHORS, line_no="24", name="Test Missile", slots={})
+    right_page = _p1_detail_page(side="right", rows=[right_row], ba_close_slots={}, appr_close_slots={})
+    left_summary = _p1_ba_summary_page(side="left", ba_slots={0: "20"}, appr_slots={0: "20"})
+    right_summary = _p1_ba_summary_page(side="right", ba_slots={}, appr_slots={})
+    pdf_bytes = _p1_pdf_words(left_page, right_page, left_summary, right_summary)
+    with pytest.raises(live.DodBudgetParseRefused, match="unclassified"):
         _parse_p1(pdf_bytes)
 
 

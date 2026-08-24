@@ -401,9 +401,15 @@ def acquire_official_document(
         raise DodBudgetStoreUnavailable(
             "DoD budget object store is unavailable; refusing acquisition without a receipt"
         )
+    # §4 order is LAW (design doc): fetch (magic/sha verified inside
+    # `fetch_official_pdf`) → durable store PUT + strict readback → only
+    # THEN extract → receipt. Extraction used to run before the store
+    # round-trip, ahead of the docstring's own claimed order — moved here
+    # so nothing downstream of this function can ever see extracted content
+    # from bytes that were not already durably written and verified.
     fetched = fetch_official_pdf(url, session=session, timeout=timeout, max_bytes=max_bytes)
-    extracted = extract_pages(fetched.content)
     immutable_object_key = put_and_verify_pdf(store, fetched.content, max_bytes=max_bytes)
+    extracted = extract_pages(fetched.content)
     receipt = dod_budget.build_document_receipt(
         source_url=fetched.source_url,
         final_url=fetched.final_url,
@@ -531,6 +537,42 @@ def _unit_marker_present(page_text: str) -> bool:
     return "(Dollars in Thousands)" in page_text
 
 
+def _header_component_slot(
+    lines: Sequence[Sequence[Mapping[str, Any]]],
+) -> tuple[int | None, str | None]:
+    """Locate THIS page's own component/department header line, POSITIONALLY
+    (adversarial-review blocker fix, §5b.1 fix 1/2): the line immediately
+    after "UNCLASSIFIED" and immediately before a line starting with
+    "FY 2027 President's Budget", within the page's top furniture block.
+
+    This is the ONE component normalizer shared by P-1 and R-1 (fix 2): the
+    printed header line is used VERBATIM (surrounding whitespace stripped
+    only — no "Department of" prefix removal, no vocabulary matching),
+    because the same slot prints a bare component ("Defense-Wide"), a
+    service branch ("Department of the Army"), a DoW-level rollup
+    ("Department of War"), or an evidence-only agency name (R-1's pp.89+
+    per-agency re-itemization, "Classified Organization" etc.) — that set is
+    not enumerable in advance, so matching by fixed vocabulary is wrong.
+
+    Returns ``(department_line_index, verbatim_text)``, or ``(None, None)``
+    if the exact 3-line UNCLASSIFIED / <component> / "FY 2027 President's
+    Budget..." shape is not present in the page's top 8 lines. The caller
+    MUST NEVER carry a prior page's captured value forward when this returns
+    None — a missing slot on a page that needs a component is a refusal
+    (fail closed), never a sticky fallback to whatever a previous page held.
+    """
+    uncls_idx: int | None = None
+    for idx, l in enumerate(lines[:8]):
+        t = _line_text(l)
+        if t == "UNCLASSIFIED":
+            uncls_idx = idx
+        elif t.startswith("FY 2027 President's Budget") and uncls_idx is not None:
+            if idx == uncls_idx + 2:
+                return uncls_idx + 1, _line_text(lines[uncls_idx + 1]).strip()
+            break
+    return None, None
+
+
 # ---------------------------------------------------------------------------
 # R-1 parser
 # ---------------------------------------------------------------------------
@@ -556,11 +598,14 @@ _R1_BA_TITLES = {
 }
 _R1_FURNITURE_EXACT = {
     "UNCLASSIFIED", "THIS PAGE INTENTIONALLY LEFT BLANK",
-    # Component/department furniture line. Usually "Department of X" (a
-    # prefix match below) but "Defense-Wide" prints bare, with no "Department
-    # of" prefix, for the Defense-Wide RDT&E appropriation (0400D) sections
-    # (verified: FY2027 R-1 p.66).
-    "Defense-Wide",
+    # NOTE: the component/department header line ("Department of X",
+    # "Defense-Wide", ...) is NEVER classified via this furniture set — it is
+    # consumed positionally by `_header_component_slot` and skipped by INDEX
+    # (`department_line_idx`) before this table is ever consulted (blocker
+    # fix, §5b.1 fix 1/2). It must never be re-added here: it is the
+    # component itself, not decoration to discard, and a bare "Defense-Wide"
+    # furniture-matching it (as it did pre-fix) is exactly what let the
+    # component go unread and a stale prior page's value publish instead.
 }
 _R1_FURNITURE_PREFIXES = (
     "Department of", "FY 2027 President's Budget", "Exhibit R-1",
@@ -602,24 +647,47 @@ DOD_BUDGET_R1_DEFENSE_WIDE_CONSOLIDATED_MAX_PAGE = 88
 
 
 def _r1_find_value_anchors(lines: Sequence[Sequence[Mapping[str, Any]]]):
+    """Returns (header_row_idx, anchor_x0s): the 7 value-column header
+    words' own LEFT edges (x0), sorted left-to-right — the left bound of
+    each boundary bucket (§5b.1 fix 6, same model as P-1's
+    `_p1_assign_numeric`)."""
     best = None
     for idx, lw in enumerate(lines):
         matches = [w for w in lw if str(w["text"]).rstrip("*") in _R1_VALUE_HEADER_WORDS]
         if len(matches) == 7:
             texts = [str(w["text"]).rstrip("*") for w in sorted(matches, key=lambda w: w["x0"])]
             if texts == ["Actuals", "Enacted", "Plan", "Total", "Request", "Request", "Total"]:
-                best = (idx, sorted(w["x1"] for w in matches))
+                best = (idx, sorted(w["x0"] for w in matches))
     return best
 
 
-def _r1_assign_to_column(x1: float, anchors: Sequence[float], tol: float = 28.0) -> int | None:
-    best_i, best_d = None, None
-    for i, a in enumerate(anchors):
-        d = abs(x1 - a)
-        if best_d is None or d < best_d:
-            best_d, best_i = d, i
-    if best_d is not None and best_d <= tol:
-        return best_i
+# Matches P-1's `_p1_assign_numeric` last-column allowance: the rightmost
+# value column has no following header to bound it, so its bucket extends a
+# fixed width past its own x0.
+_R1_LAST_COL_WIDTH = 90.0
+
+# The Act ("No Number Item Act Sec" detail-row) code and Sec code windows
+# are NOT derived from the 7 value-column header anchors — they are a
+# distinct fixed-width print position tied to the Line-No/PE prefix, not to
+# the value table. Proven exact-match (§5b.1 fix 7): every Act code across
+# the full real FY2027 R-1 exhibit (1,457 detail rows) falls inside
+# [283, 312], and every Sec code (1,452 rows) falls inside [312, 333], with
+# zero exceptions — verified against `FY2027_r1.pdf` this session by
+# requiring BOTH the fixed position window AND the position-independent
+# regex to agree on every classified detail-line row.
+_R1_ACT_WINDOW = (283.0, 312.0)
+_R1_SEC_WINDOW = (312.0, 333.0)
+
+
+def _r1_assign_to_column(x1: float, anchor_x0s: Sequence[float]) -> int | None:
+    """Boundary-bucket column assignment (§5b.1 fix 6): a value's bucket is
+    [this column's header x0, the NEXT column's header x0) — zero
+    tolerance, no nearest-anchor matching. Identical model to P-1's
+    `_p1_assign_numeric`."""
+    bounds = [anchor_x0s[i + 1] for i in range(len(anchor_x0s) - 1)] + [anchor_x0s[-1] + _R1_LAST_COL_WIDTH]
+    for i, ax0 in enumerate(anchor_x0s):
+        if ax0 <= x1 < bounds[i]:
+            return i
     return None
 
 
@@ -634,14 +702,42 @@ def _r1_classify_furniture(text: str) -> bool:
     return False
 
 
-def _r1_extract_numeric_row(line_words, anchors, min_x0: float = 336.0):
+def _r1_extract_numeric_row(line_words, anchor_x0s: Sequence[float]):
+    """Extract the 7 value-column slots from one row's words.
+
+    The value-zone floor is DERIVED from the page's own header anchors
+    (§5b.1 fix 7: `min(anchor_x0s)`, never a literal) rather than the prior
+    hard-coded 336.0. Every floor/gap comparison below uses the token's
+    RIGHT edge (x1) — the same coordinate the boundary-bucket assignment
+    itself keys on (right-aligned columns) — NEVER its x0: a wide printed
+    value (e.g. an 11-digit "14,508,761") can legitimately start printing
+    to the LEFT of a narrower header word's own x0 while still correctly
+    right-aligning under that same column, so gating on x0 false-positived
+    a real appropriation-total value into `unassigned` (real FY2027 R-1
+    p.24, verified this session) the boundary-bucket check itself would
+    have placed correctly. A numeric token whose x1 sits in the GAP between
+    the recognized left-hand fields (Line No/PE/Act/Sec/name, all at or
+    left of the Sec window's right edge — `_R1_SEC_WINDOW[1]`) and that
+    derived floor is unexplained on a row this classifier is about to treat
+    as value-bearing — it routes to `unassigned` (⇒ the caller refuses)
+    rather than a silent `continue`. A token left of the Sec window is a
+    recognized left-hand field (or wrapped name text) and is still ignored
+    here exactly as before; those are extracted by the caller's own
+    separate logic.
+    """
+    min_x0 = min(anchor_x0s)
     slots: list[float | None] = [None] * 7
     unassigned: list[tuple[str, float, float]] = []
     for w in line_words:
         tok = str(w["text"])
-        if w["x0"] < min_x0 or not _is_numeric_token(tok):
+        if not _is_numeric_token(tok):
             continue
-        col = _r1_assign_to_column(w["x1"], anchors)
+        if w["x1"] < _R1_SEC_WINDOW[1]:
+            continue
+        if w["x1"] < min_x0:
+            unassigned.append((tok, w["x0"], w["top"]))
+            continue
+        col = _r1_assign_to_column(w["x1"], anchor_x0s)
         if col is None:
             unassigned.append((tok, w["x0"], w["top"]))
             continue
@@ -696,29 +792,16 @@ def _r1_classify_document(pages: Sequence[str], pages_words: Sequence[Sequence[M
         if not _unit_marker_present(page_text):
             raise DodBudgetParseRefused(f"R-1 page {page_num} table lacks the '(Dollars in Thousands)' unit marker")
 
-        # The component/department furniture line is POSITIONAL, not a fixed
-        # vocabulary: it always sits immediately after "UNCLASSIFIED" and
-        # immediately before "FY 2027 President's Budget" on every page.
-        # Usually "Department of X" (a component service branch) or the bare
-        # "Defense-Wide" label, but the pp.89+ per-agency re-itemization
-        # sections (verification-only, §5b.1 ruling 5) print the AGENCY name
-        # itself in this exact slot ("Classified Organization", "Chemical
-        # and Biological Defense Program", ... — the same vocabulary the
-        # "Total <Agency>" closing rows use). Matching by position, not by a
-        # closed name list, is required because that agency-name set is not
-        # enumerable in advance.
-        department_line_idx: int | None = None
-        uncls_idx: int | None = None
-        for idx, l in enumerate(lines[:8]):
-            t = _line_text(l)
-            if t == "UNCLASSIFIED":
-                uncls_idx = idx
-            elif t.startswith("FY 2027 President's Budget") and uncls_idx is not None:
-                if idx == uncls_idx + 2:
-                    department_line_idx = uncls_idx + 1
-                break
-        if department_line_idx is not None:
-            current_department = _line_text(lines[department_line_idx]).strip()
+        # Component/department: captured fresh from THIS page's own header
+        # block every iteration — never carried over from a prior page. A
+        # detail page whose slot is missing refuses rather than silently
+        # publishing an inherited component (blocker fix, §5b.1 fix 1/2).
+        department_line_idx, current_department = _header_component_slot(lines)
+        if is_detail_page and current_department is None:
+            raise DodBudgetParseRefused(
+                f"R-1 page {page_num} detail page has no positional component header slot "
+                "(between UNCLASSIFIED and \"FY 2027 President's Budget\")"
+            )
 
         for idx, lw in enumerate(lines):
             if idx == department_line_idx:
@@ -758,13 +841,13 @@ def _r1_classify_document(pages: Sequence[str], pages_words: Sequence[Sequence[M
                     wt = str(w["text"])
                     if wt in (line_no, pe):
                         continue
-                    if 283 <= w["x0"] <= 312 and re.fullmatch(r"\d{2}", wt):
+                    if _R1_ACT_WINDOW[0] <= w["x0"] <= _R1_ACT_WINDOW[1] and re.fullmatch(r"\d{2}", wt):
                         act = wt
                         continue
-                    if 312 <= w["x0"] <= 333 and re.fullmatch(r"[A-Z]", wt):
+                    if _R1_SEC_WINDOW[0] <= w["x0"] <= _R1_SEC_WINDOW[1] and re.fullmatch(r"[A-Z]", wt):
                         sec = wt
                         continue
-                    if _is_numeric_token(wt) and w["x0"] >= 336.0:
+                    if _is_numeric_token(wt) and w["x1"] >= min(anchors):
                         continue
                     name_tokens.append(wt)
                 if act is None:
@@ -785,7 +868,7 @@ def _r1_classify_document(pages: Sequence[str], pages_words: Sequence[Sequence[M
                 continue
 
             has_value_numbers = any(
-                _is_numeric_token(str(w["text"])) and w["x0"] >= 336.0 for w in lw
+                _is_numeric_token(str(w["text"])) and w["x1"] >= min(anchors) for w in lw
             )
             low = text.strip().casefold().replace("*", "")
             matched_title = None
@@ -833,7 +916,7 @@ def _r1_classify_document(pages: Sequence[str], pages_words: Sequence[Sequence[M
                 pending_item_row = None
                 continue
 
-            has_numbers = any(_is_numeric_token(str(w["text"])) and w["x0"] >= 336.0 for w in lw)
+            has_numbers = any(_is_numeric_token(str(w["text"])) and w["x1"] >= min(anchors) for w in lw)
             if not has_numbers:
                 xs = [w["x0"] for w in lw]
                 if pending_item_row is not None and xs and min(xs) < 340 and min(xs) > 40:
@@ -1106,7 +1189,13 @@ def parse_official_r1_document(
 _P1_COLS = _R1_COLS
 _P1_FURNITURE_EXACT = {
     "UNCLASSIFIED", "THIS PAGE INTENTIONALLY LEFT BLANK", "Apr 2026",
-    "Defense-Wide",
+    # NOTE: "Defense-Wide" (the bare component printed with no "Department
+    # of" prefix) must NEVER be listed here — it is the component itself,
+    # not furniture, and is consumed positionally by `_header_component_slot`
+    # / skipped by index (`department_line_idx`) before this table is ever
+    # consulted (blocker fix, §5b.1 fix 1/2). Furniture-matching it hid the
+    # real component and let a stale prior page's captured department leak
+    # into Defense-Wide detail pages (P-1 p.302, appropriation 0300D).
     "27 Discretionary FY 2027 Mandatory",
     "Appropriation Summary", "Budget Activity",
 }
@@ -1217,36 +1306,19 @@ def _p1_find_summary_anchors(lines):
     return best
 
 
-def _p1_calibrate_anchors(lines, header_row_idx, header_anchors, min_x0=336.0, gap=15.0):
-    x1s = []
-    for idx, lw in enumerate(lines):
-        if idx <= header_row_idx:
-            continue
-        for w in lw:
-            if w["x0"] >= min_x0 and _is_numeric_token(str(w["text"])):
-                x1s.append(w["x1"])
-    if not x1s:
-        return header_anchors
-    x1s.sort()
-    clusters = [[x1s[0]]]
-    for v in x1s[1:]:
-        if v - clusters[-1][-1] <= gap:
-            clusters[-1].append(v)
-        else:
-            clusters.append([v])
-    centroids = [sum(c) / len(c) for c in clusters]
-    result = list(header_anchors)
-    next_h = 0
-    for cx in centroids:
-        best_i, best_d = None, None
-        for i in range(next_h, len(header_anchors)):
-            d = abs(cx - header_anchors[i][1])
-            if best_d is None or d < best_d:
-                best_d, best_i = d, i
-        if best_i is not None and best_d <= 60.0:
-            result[best_i] = (header_anchors[best_i][0], cx)
-            next_h = best_i + 1
-    return result
+# A prior "anchor calibration" pass (empirical value-cluster centroids
+# re-snapped onto the nearest raw header anchor) was explored during the
+# Stage 1 survey and lived here as `_p1_calibrate_anchors`. It was never
+# wired into the classification loop below — the proven 81/81 document-wide
+# typed-model closure (gate-zero (a)) used the RAW header-word anchors
+# directly — and wiring it in during Stage 2b regressed a real row (P-1
+# p.14 line 7, appropriation 2031A): the empirical centroids do not
+# maintain the same left-to-right ORDER as the header words in every case,
+# so greedy nearest-anchor calibration silently swapped a Cost column's
+# value into the following Qty column's slot with no unassigned-token
+# signal. Deleted as dead code (§5b.1 fix 10, adversarial review); the
+# rejected approach is preserved at commit b24626cd3063 if it is ever
+# worth revisiting, not as unreferenced surface area to carry forward here.
 
 
 def _p1_assign_numeric(line_words, anchors, min_x0=280.0, last_col_width=90.0):
@@ -1367,10 +1439,20 @@ def _p1_classify_document(pages: Sequence[str], pages_words, *, document_sha256:
         is_org_breakdown = caption == "Organization Breakdown"
         is_dow_or_dept_summary = caption is not None and caption.endswith("Summary") and not is_ba_summary
 
-        for l in lines[:6]:
-            t = _line_text(l)
-            if t.startswith("Department of"):
-                current_department = t.replace("Department of", "").strip()
+        # Component/department: captured fresh from THIS page's own header
+        # block every iteration — never carried over from a prior page. A
+        # detail or BA-summary page whose slot is missing refuses rather
+        # than silently publishing an inherited component (blocker fix,
+        # §5b.1 fix 1/2 — this is what let a Defense-Wide detail page
+        # (p.302, appropriation 0300D) publish the STALE component "War"
+        # left over from an earlier Organization-Breakdown page whose own
+        # header slot literally printed "Department of War").
+        department_line_idx, current_department = _header_component_slot(lines)
+        if (is_detail or is_ba_summary) and current_department is None:
+            raise DodBudgetParseRefused(
+                f"P-1 page {page_num} has no positional component header slot "
+                "(between UNCLASSIFIED and \"FY 2027 President's Budget\")"
+            )
 
         if is_detail:
             anchor_result = _p1_find_qtycost_anchors(lines)
@@ -1390,20 +1472,14 @@ def _p1_classify_document(pages: Sequence[str], pages_words, *, document_sha256:
         n_anchor = len(anchor_list)
         if is_detail:
             side = "left" if anchor_list[0][0] == "Qty" and n_anchor >= 7 else "right"
-            # NOTE: anchor calibration (_p1_calibrate_anchors) is deliberately
-            # NOT applied here. It exists (below) because it was explored
-            # during the Stage 1 survey, but the survey's actual proven run
-            # (81/81 document-wide typed-model closure, gate-zero (a)) never
-            # wired it into its classification loop — it used the RAW
-            # header-word anchors directly. Wiring calibration in DURING
-            # Stage 2b regressed a real row (P-1 p.14 line 7, appropriation
-            # 2031A): the empirical value-cluster centroids do not maintain
-            # the same left-to-right ORDER as the header words in every case,
-            # so greedy nearest-anchor calibration silently swapped a Cost
-            # column's value into the following Qty column's slot with no
-            # unassigned-token signal. Kept in the module (unused) as
-            # evidence of what was tried and rejected, not as dead surface
-            # area to prune blindly.
+            # NOTE: no anchor calibration is applied here — the RAW
+            # header-word anchors are used directly, matching the proven
+            # 81/81 document-wide typed-model closure (gate-zero (a)). A
+            # rejected "calibrate anchors onto empirical value centroids"
+            # approach (`_p1_calibrate_anchors`) lived in this module and
+            # is deleted (§5b.1 fix 10) — see the comment just above
+            # `_p1_assign_numeric` for why it was rejected; commit
+            # b24626cd3063 has the code if this is ever worth revisiting.
         else:
             side = "left" if any(lbl in ("Enacted",) for lbl, _ in anchor_list) or n_anchor == 4 else "right"
         current_ba_code = ba_code_by_side[side]
@@ -1411,6 +1487,8 @@ def _p1_classify_document(pages: Sequence[str], pages_words, *, document_sha256:
 
         footnote_active = False
         for idx, lw in enumerate(lines):
+            if idx == department_line_idx:
+                continue
             text = _line_text(lw)
             if not text.strip():
                 continue
@@ -1663,18 +1741,39 @@ def _p1_classify_document(pages: Sequence[str], pages_words, *, document_sha256:
                 continue
 
             if is_detail and has_value_numbers and not m_line:
-                if unassigned:
-                    raise DodBudgetParseRefused(
-                        f"P-1 page {page_num} net-memo row has an unassignable numeric token: {unassigned!r}"
-                    )
-                detail_rows.append({
-                    "page": page_num, "side": side, "raw": text, "slots": slots,
-                    "appropriation_code": current_appropriation_code,
-                    "appropriation_code_full": current_appropriation_code_full,
-                    "ba_code": current_ba_code, "ba_name": current_ba_name,
-                    "kind": "unlabeled_net_memo_row", "_evseq": next_seq(),
-                })
-                continue
+                # §5b.1 fix 8: the POSITIVE shape of an unlabeled net-memo
+                # row is a BARE numeric row — no non-numeric token anywhere
+                # outside the value zone (the row is nothing but printed
+                # figures). Whether a pending parent actually NEEDS this
+                # resolution is checked downstream in `_p1_emit_side` (it
+                # cannot be decided here — that state is tracked per
+                # (appropriation, BA, side) event stream, built after this
+                # whole-document classification pass completes); a bare row
+                # with nothing pending to resolve refuses there ("nothing to
+                # resolve"). A row that ISN'T bare — it carries real label
+                # text left of the value zone — is NOT this shape at all and
+                # must not be swept in here; it falls through to the
+                # unclassified-row refusal below instead of silently
+                # publishing under a resolution it was never printed as.
+                value_zone_x0 = anchor_list[0][1]
+                is_bare_numeric_row = not any(
+                    not _is_numeric_token(str(w["text"]))
+                    for w in lw
+                    if w["x0"] < value_zone_x0
+                )
+                if is_bare_numeric_row:
+                    if unassigned:
+                        raise DodBudgetParseRefused(
+                            f"P-1 page {page_num} net-memo row has an unassignable numeric token: {unassigned!r}"
+                        )
+                    detail_rows.append({
+                        "page": page_num, "side": side, "raw": text, "slots": slots,
+                        "appropriation_code": current_appropriation_code,
+                        "appropriation_code_full": current_appropriation_code_full,
+                        "ba_code": current_ba_code, "ba_name": current_ba_name,
+                        "kind": "unlabeled_net_memo_row", "_evseq": next_seq(),
+                    })
+                    continue
 
             raise DodBudgetParseRefused(
                 f"P-1 page {page_num} has an unclassified numeric row: {text!r} (side={side}, caption={caption!r})"
@@ -1812,9 +1911,16 @@ def _p1_emit_side(rows: Sequence[Mapping[str, Any]]):
     # at all — those are plain own-row values, never expecting resolution.
     pending_needs_resolution = False
     pending_resolved = False
+    # Tracked SEPARATELY from `pending_needs_resolution` (which a bare
+    # parenthesized own-row value also sets, with no Less:-child at all —
+    # the Standard Missile shape above): the REVISED §5b.1(7) null-amount
+    # publication path requires an ACTUAL value-bearing Less:-child, not
+    # merely a parenthesized own value with nothing to net against.
+    pending_less_has_value = False
 
     def flush_parent() -> None:
-        nonlocal pending_own_values, pending_own_qty, pending_less_sum, pending_needs_resolution, pending_resolved
+        nonlocal pending_own_values, pending_own_qty, pending_less_sum
+        nonlocal pending_needs_resolution, pending_resolved, pending_less_has_value
         if current_parent_line_no is not None and pending_needs_resolution and not pending_resolved:
             # A Less:-child or a parenthesized negative own-row value implied
             # a resolving net-memo row, but no unlabeled_net_memo_row ever
@@ -1824,30 +1930,57 @@ def _p1_emit_side(rows: Sequence[Mapping[str, Any]]):
             # own row prints +200,000 and its Less: Advance Procurement (PY)
             # prints exactly -200,000 on the SAME columns — a genuine implied
             # net of exactly $0.00 that the document simply never prints a
-            # redundant zero-value net-memo row for. That ONE shape is
-            # accepted: own + Σ(less) closes to EXACTLY zero on every
-            # populated column. Anything else (a non-zero unexplained
-            # residual, or a parenthesized own value with nothing at all to
-            # net it against) is a row shape this parser does not
-            # understand and refuses rather than guessing.
+            # redundant zero-value net-memo row for.
+            #
+            # §5b.1(7) REVISED (adversarial-review Blocker, 2026-08-24): the
+            # earlier "publish 0.0" acceptance was UNLAWFUL — $0 would be a
+            # computed sum of two printed rows, which rule §5b.1(3) forbids
+            # verbatim (a published record's amounts always come from
+            # exactly ONE printed row, never a sum), and §3 binds each
+            # semantic to a printed column whose actual cell prints 200,000
+            # (gross), not 0. NULL is the honest "not printed at line grain"
+            # state. This ONLY shape is accepted, and ONLY publishes NULLS —
+            # never 0.0, never a refusal, never generalized to any other
+            # needs-resolution shape — when ALL FOUR conjuncts hold:
+            #   (a) the parent's own row printed at least one value,
+            #   (b) at least one Less:-child row printed at least one value,
+            #   (c) own + Σ(less) is EXACTLY zero on every populated column,
+            #   (d) no unlabeled_net_memo_row ever resolved it.
+            # Reconciliation still closes because the line's true additive
+            # contribution is zero and None is excluded from sums (the null
+            # record below contributes NOTHING to full_sum/pub_sum). Any
+            # other needs-resolution-not-resolved shape — a non-zero
+            # residual, a parenthesized own value with no value-bearing
+            # Less:-child at all, or Less:-children with no own-row value —
+            # is NOT this adjudicated shape and refuses rather than guessing.
             own = pending_own_values if pending_own_values is not None else [None] * 7
+            own_has_value = any(v is not None for v in own)
             implicit_net: list[float | None] = [None] * 7
             for i in range(7):
                 if own[i] is None and pending_less_sum[i] is None:
                     continue
                 implicit_net[i] = (own[i] or 0.0) + (pending_less_sum[i] or 0.0)
-            if any(v is not None and not math.isclose(v, 0.0, rel_tol=0.0, abs_tol=0.01) for v in implicit_net):
+            has_residual = any(
+                v is not None and not math.isclose(v, 0.0, rel_tol=0.0, abs_tol=0.01)
+                for v in implicit_net
+            )
+            if has_residual:
                 raise DodBudgetParseRefused(
                     f"P-1 line {current_parent_line_no} (page {current_parent_page}) needs a resolving "
                     "net-memo row but none followed, and its own value plus Less:-children do not net to zero"
                 )
+            if not (own_has_value and pending_less_has_value):
+                raise DodBudgetParseRefused(
+                    f"P-1 line {current_parent_line_no} (page {current_parent_page}) needs a resolving "
+                    "net-memo row but none followed, and the shape does not match the one adjudicated "
+                    "null-amount case (§5b.1(7): own-row value present AND value-bearing Less:-children "
+                    "AND algebraic net exactly zero AND no printed net-memo row)"
+                )
             qty = pending_own_qty if pending_own_qty is not None else [None] * 7
-            zeroed = [0.0 if v is not None else None for v in implicit_net]
-            _p1_add7(full_sum, full_present, zeroed)
-            _p1_add7(pub_sum, pub_present, zeroed)
+            nulls: list[float | None] = [None] * 7
             records.append({
-                "native_value": current_parent_line_no, "amounts": zeroed, "quantities": qty,
-                "label": current_parent_name, "page": current_parent_page, "kind": "parent_implicit_zero_net",
+                "native_value": current_parent_line_no, "amounts": nulls, "quantities": qty,
+                "label": current_parent_name, "page": current_parent_page, "kind": "parent_all_null_net",
             })
         elif current_parent_line_no is not None and not pending_resolved and not pending_needs_resolution:
             vals = pending_own_values if pending_own_values is not None else [None] * 7
@@ -1863,6 +1996,7 @@ def _p1_emit_side(rows: Sequence[Mapping[str, Any]]):
         pending_less_sum = [None] * 7
         pending_needs_resolution = False
         pending_resolved = False
+        pending_less_has_value = False
 
     for row in rows:
         kind = row["kind"]
@@ -1885,6 +2019,7 @@ def _p1_emit_side(rows: Sequence[Mapping[str, Any]]):
             less_vals = _p1_cost_values(row)
             if any(v is not None for v in less_vals):
                 pending_needs_resolution = True
+                pending_less_has_value = True
                 for i in range(7):
                     if less_vals[i] is not None:
                         pending_less_sum[i] = (pending_less_sum[i] or 0.0) + less_vals[i]
@@ -2080,7 +2215,7 @@ def parse_official_p1_document(
                 full_merged[col] = full_side[col]
                 pub_merged[col] = pub_side[col]
             for rec in side_records:
-                if rec["kind"] in ("parent_own_row", "parent_net_memo", "parent_implicit_zero_net"):
+                if rec["kind"] in ("parent_own_row", "parent_net_memo", "parent_all_null_net"):
                     parent_names_by_side[side][rec["native_value"]] = rec["label"]
                 merged_rec = records_by_native.setdefault(rec["native_value"], {
                     "native_value": rec["native_value"], "amounts": [None] * 7, "quantities": [None] * 7,
