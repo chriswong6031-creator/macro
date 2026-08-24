@@ -219,8 +219,21 @@ waves:
       FY2027_r1.pdf sha256 1aa8846edb69d4c3a54e03b383b0cabb77f93433162b8139ab8cbb55bcc7882a).
       Semantic firewall unchanged (request ≠ appropriation ≠ obligation ≠
       revenue); authority stays display/evidence-only; D5 v1
-      budget_program_keys stays const []. D6-B+ and D7+ remain
-      UNAUTHORIZED until D6-A returns to Sol.
+      budget_program_keys stays const []. DELIVERED 2026-08-24 on the
+      carrier PR #6377 chain (+ dispatch lane #6378 merged): real runner
+      acquisition run 32764547804 (canary sha256s byte-identical to the
+      pinned census, R2 content-addressed write + strict readback proven),
+      committed triad 94ab73114336 (2 receipts / 2,172 lines, generation
+      dod-budget-401e0479c00c449c3b4bd7e0), graph builds+validates locally
+      (grbg1-125cd95cc0e78c5f459c1ad2, 2,143 programs), opus adversarial
+      review FAIL→repaired (e0095c1299f1; component-leak + E-7 blockers
+      fixed with mutation-proven tests). Production proof (live twins via
+      government-revenue-live, nonzero API, served Budget & Programs bytes,
+      anonymous 401 boundary) completes post-merge and goes to Sol in the
+      return. Named unresolveds (retraction path before any parser-version
+      bump; FY2026 sub-cells; E-7 null ratification; NSBDF line-grain gap)
+      in agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-24-d6a-budget-rail.md.
+      D6-B+ and D7+ remain UNAUTHORIZED until D6-A returns to Sol.
 landmines:
   - "Live page is government_revenue.html (underscore). government-revenue.html 404s."
   - "Access (site_full / 401 locked) is independent of epistemics (display/context_only). Do not conflate them."
