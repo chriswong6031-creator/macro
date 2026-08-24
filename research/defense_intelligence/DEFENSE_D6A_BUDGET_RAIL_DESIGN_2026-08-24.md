@@ -241,6 +241,52 @@ Additive/publication law:
    already counted once — the parser must prove no duplicate line_keys and
    never double-count those totals.
 
+### 5b.1 Gate-zero rulings (adjudicated 2026-08-24, after the document-wide census)
+
+Evidence: scratchpad `gate_zero_p1_typed_model.py` (+ fixed `survey_common.py`) —
+document-wide typed-model closure at $0.00: P-1 81/81 BA groups vs BOTH printed
+sources, R-1 103/103 + 28/28, after fixing a bare-minus sign-drop.
+
+1. **Sign law (frozen):** recognized numeric forms are plain, `(paren)`,
+   `(paren-minus)`, and bare-minus (P-1 p.108 TTNT lines print bare negatives);
+   any other numeric form refuses the document.
+2. **Zero-numbered-line partitions (1612N BA01):** publication stays
+   numbered-lines-only. A totals partition containing ZERO numbered lines is
+   excluded from the hermetic `reconcile_line_totals` input; the parser's own
+   document-wide typed-model closure (which includes it) is a HARD in-parser
+   gate — any residual refuses. Named product gap: NSBDF-style unnumbered
+   full-funding rows are not at line grain.
+3. **Printed-addend grain (dual parents / additive children):** a published
+   record's amounts ALWAYS come from exactly ONE printed row — never a sum.
+   - Numbered parent: amounts = resolving net-memo row when Less-children
+     exist; else its own row's values; else ALL-NULL when its own row prints
+     no values (blank stays null — e.g. SCN COLUMBIA line 2's parent row).
+   - EVERY value-bearing additive child row (`advance_procurement_cy`,
+     `completion_subsequent_row`) publishes as its OWN record: kind
+     `p1_line_item`, native value `"<parent line no>--<printed child label
+     slug>"` (both components printed; duplicate derived identity refuses),
+     `program_name` = the child's printed label verbatim, same
+     component/appropriation/BA, provenance = the child row's page.
+   - Quantities bind to whichever published record's source row printed them.
+   - Proven closure shape (COLUMBIA BA01): parent net 6,904,785 + completion
+     child 3,329,047 + line-2 child 4,763,342 = printed 14,997,174 (FY27 disc).
+   - Noted display gap: child records carry only their own printed label as
+     the name; parent context lives in the line identity — a later UI pass
+     may compose display naming, never this wave.
+4. **Line identity gains the budget-activity slug** (BOTH exhibits, uniform):
+   `_line_identity` line_key AND line_family_key include a BA segment —
+   required because R-1 genuinely reuses one PE across BAs within one
+   appropriation (29 real collisions, e.g. PE 999999999 per-BA, 0604776F in
+   BA03+BA04). No production data exists anywhere yet, so this is the last
+   zero-cost moment. Program-node grammar UNCHANGED; the graph must tolerate
+   same-FY sibling lines under one program key (verify; stop if it refuses).
+5. **R-1 Defense-Wide (0400D):** lines emit ONLY from the consolidated listing
+   (pages < 89); the per-agency pp.89+ sections are verification-only (their
+   printed totals must still close vs p.83 — hard check, no line emission).
+6. Classification refinement: a bare two-number row matching the leading-digit
+   line pattern (1507 p.121 `"20 20"`) — detail_line classification requires
+   non-numeric nomenclature text after the leading line number.
+
 ## 6. Activation & publication
 
 - `DOD_BUDGET_PRODUCTION_ACTIVATION_ENABLED = True` flips ONLY in the same PR
