@@ -31,6 +31,7 @@ from .sec_document_spine import (
     archive_document_url,
     archive_index_url,
     canonical_cik,
+    sec_document_id,
     manifest_from_json_bytes,
     parse_json_int64,
     validate_manifest,
@@ -473,7 +474,7 @@ def _expected_document(
     if matches:
         document = matches[0]
         return str(document["document_id"]), str(document["role"])
-    return stable_id("sec_document", cik, accession, "archive", name), "archive"
+    return sec_document_id(cik, accession, "archive", name), "archive"
 
 
 def _retrieved_receipt(
@@ -555,7 +556,7 @@ def _archive_index_document(value: Any, *, cik: str, accession: str) -> dict[str
     document = _strict_object(value, field="archive index document", required=_DOCUMENT_FIELDS)
     name = _safe_name(document["document_name"], field="archive index document.document_name")
     expected_url = archive_index_url(cik, accession)
-    expected_id = stable_id("sec_document", cik, accession, "archive", "index.json")
+    expected_id = sec_document_id(cik, accession, "archive", "index.json")
     if (
         name != "index.json"
         or document["role"] != "archive"
@@ -857,7 +858,7 @@ def _normalise_record(value: Any) -> dict[str, Any]:
         role = raw_copy["role"]
         if not isinstance(role, str) or role not in {"primary", "exhibit", "archive"}:
             raise FilingPackageError(f"inventory {name} has invalid document role")
-        expected_id = stable_id("sec_document", cik, accession, role, name)
+        expected_id = sec_document_id(cik, accession, role, name)
         if raw_copy["document_id"] != expected_id:
             raise FilingPackageError(f"inventory {name} document_id does not bind role and member name")
         provided_inventory.append(raw_copy)
