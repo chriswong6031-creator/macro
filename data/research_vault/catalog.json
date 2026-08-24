@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-24T17:20:57.098287+00:00",
-  "count": 1770,
+  "generated_at": "2026-08-24T18:22:22.696281+00:00",
+  "count": 1773,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -89,6 +89,48 @@
   ],
   "items": [
     {
+      "id": "marketdesk-jhgwz8gvy79-caeefc",
+      "title": "Asia Pacific Portfolio Strategy Asian equity market daily update",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T16:57:48Z",
+      "summary_points": [
+        "**MXAPJ Valuation Discount**: Trades at 0.73x US and 0.54x Europe valuation, signaling significant relative value opportunity amid mid-cycle equity cheapness vs bonds (450bp yield gap).",
+        "**Korea/India Divergence**: Korea drives MXAPJ (+21.4% YTD) with Info Tech (140% YTD) and Financials (36%), while India underperforms (-19% Energy, -12% Industrials) amid FII outflows (-8.4B YTD).",
+        "**FII Outflows vs DII Inflows**: Korea (-105.7B YTD) and India (-8.4B) face severe FII capital flight, countered by strong DII inflows (Asia: +111.78B YTD), highlighting regional flow divergence.",
+        "**TOPIX Overvaluation Risk**: TOPIX forward P/E at 15.9x (1.2s.d.",
+        "above avg) and narrow equity/bond yield gap (148bp) indicate expensive valuations, a critical risk factor for portfolio managers."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-czp44zhywbi-d9c546",
+      "title": "Tracking U.S. Supply Chain Congestion GS Supply Chain Congestion Scale Aug 17th",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T16:57:36Z",
+      "summary_points": [
+        "**Ocean Shipping Rates Surge**: Rates hit $6.83k (+222% YoY, +11% WoW), reflecting acute supply chain congestion impacting import costs and trade flows.",
+        "**Bottleneck Scale Persistent**: Congestion index remains at '2' (vs.",
+        "peak '10'), signaling easing but persistent pressure; June bottleneck score averaged 110 (close to '1' territory).",
+        "**Rail Intermodal Deceleration**: West Coast rail intermodal growth slowed to +5% YoY (vs.",
+        "+6% prior), with mixed dwell time trends (UNP +0.1h, BNSF -2.2h), indicating partial relief but ongoing constraints."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-qqqrgbhf0e9-1d5724",
       "title": "MS Jackson Hole If you want to say less, say less",
       "institution": "Morgan Stanley",
@@ -169,6 +211,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-nwgojqfprev-20ad0e",
+      "title": "DB Jackson Hole preview Staying on the summit or trekking a path back to target",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T14:15:24Z",
+      "summary_points": [
+        "**AI Policy Shift**: Warsh likely to abandon \"inflation from growth\" dogma amid AI's disinflationary impact, potentially altering Fed framework and policy trajectory.",
+        "**Task Force Uncertainty**: Scope ambiguity (Communications, Balance Sheet, AI) and premature \"checking\" by Warsh create immediate policy risk and delay actionable signals.",
+        "**Inflation Scenarios**: Fed's dual path (dissipating vs.",
+        "persistent inflation) dictates rate outcome—hold/low rates if dissipating, tightening if elevated, with task forces delaying decisions."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },
