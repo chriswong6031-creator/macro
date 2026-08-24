@@ -136,6 +136,7 @@ landmines:
   - "The historical PR #125 A0 credential-verification failure was resolved through human/admin fixture removal, a non-secret allowlisted verifier and fresh hostile-path proof. Do not treat the old failure receipt as a current gate, recreate the removed fixture or expose a replacement credential to model-visible tooling."
   - "The macOS security CLI bare -w prompt truncated the current long Multilogin JWT to 128 bytes on this host. MAS-115 credential enrollment must use the fixed secret-owning Security.framework helper; never pass the token through argv, environment, shell, temp files, logs or model-visible output."
   - "A reachable Multilogin cloud transport may still return HTTP 501 with a non-JSON body on the authenticated profile-search request. That is VENDOR_ERROR before launch, not evidence of a missing profile or permission to retry, fall back, or bypass the complete inventory gate."
+  - "A bounded official-contract probe also returned HTTP 401 from authenticated local-launcher status with the same stored JWT. Keychain presence is not credential readiness; replace the rejected bearer only through a human/native secret boundary with a current vendor-issued automation token, never by scraping app state, cookies or session stores."
   - "ASD-A4 is a derived read-only consumer only after both P0B and ASD-A3 are accepted; it may not become a stored attention inbox or a Control Room send path."
 do_not_redo:
   - "Do not create a Session OS, task database, tmux lifecycle registry, second Executive service, mutable seat inbox or new active-build compiler."
@@ -153,10 +154,11 @@ do_not_redo:
   - "Do not re-open H0 because the persistent 8787 adoption gate is complete; treat future CCR reliability regressions as new evidence, not unfinished H0."
   - "Do not rerun the disposable lifecycle from the 2026-08-24 failure receipt. Reconcile the current read-only cloud-search contract first, then require a fresh explicit Chairman release for any new lifecycle canary."
 next_action: >
-  Preserve the enrolled seats and stopped disposable provision. Reconcile the current official
-  Multilogin cloud profile-search contract and prove a read-only, shape-only accepted census before
-  asking the Chairman for a fresh action-time credential and separately explicit authorization for
-  one new disposable lifecycle canary. Independently, issue a separate explicit Sol ASD-A2
+  Preserve the enrolled seats and stopped disposable provision. Through a human/native secret
+  boundary, replace the rejected Multilogin bearer with a current vendor-issued automation token,
+  then prove authenticated launcher readiness plus a read-only, shape-only accepted census before
+  asking the Chairman for separately explicit authorization for one new disposable lifecycle
+  canary. Independently, issue a separate explicit Sol ASD-A2
   commission before any production Agent Relay principal or dialogue canary. Do not start ASD-A3,
   ASD-A4, real-seat mutation, generic Wake or P1 from the accepted A1 core or seat enrollment alone.
 ---
@@ -184,7 +186,9 @@ The disposable implementation is now `BUILT_NOT_PROVEN / CANARY_FAILED_SAFELY`. 
 merged the long-token enrollment repair, exact-profile process-group predicates, split C1 evidence
 and unconditional exact-profile cleanup receipt. The exact merged-runtime canary then refused before
 launch because the authenticated Multilogin cloud profile-search request returned HTTP 501 with a
-small non-JSON body. The disposable process count remained zero and all other managed-profile counts
+small non-JSON body. A subsequent official-contract read-only probe also returned HTTP 401 from
+authenticated local-launcher status, proving the present Keychain JWT is not a currently accepted
+automation bearer. The disposable process count remained zero and all other managed-profile counts
 were unchanged; no Chairman seat was addressed. This adverse result does not authorize a retry.
 
 Active-Session Dialogue F0 is accepted and A0/A1 is `BUILT_NOT_PROVEN / DEVELOPMENT_UNARMED` in
@@ -238,6 +242,10 @@ separately authorized real canaries pass.
   shape probe proved credential present plus reachable cloud/launcher transports, then measured the
   authenticated profile-search response as HTTP 501 and 357 bytes of non-JSON without emitting its
   body, credential, profile identifiers, names or browser content.
+- A later official-contract, read-only probe preserved the same cloud result and measured
+  authenticated local-launcher status as HTTP 401 with a 93-byte JSON error envelope. No lifecycle
+  endpoint was called and no bearer, response body or private identity was emitted. This falsifies
+  credential readiness while preserving the native secret boundary.
 
 ### What is still false
 
@@ -247,8 +255,9 @@ separately authorized real canaries pass.
    predicates, and no real Chairman seat may be changed by this result.
 4. The removed fixture is not a production principal, and no production Agent Relay app or credential is installed.
 5. No real `MMX/AGENT_DIALOGUE_V1` Slack exchange has occurred. A2/A3/A4 remain unstarted.
-6. Three-seat enrollment and disposable provisioning are complete, but short-lived credential
-   presence and failed disposable attempts do not establish a supported live lifecycle.
+6. Three-seat enrollment and disposable provisioning are complete, but the stored bearer is rejected
+   by authenticated launcher status. Keychain presence and failed disposable attempts do not
+   establish a supported live lifecycle.
 7. Agent OS brief latency remains a separate Macro performance problem.
 
 ## Completion boundary

@@ -70,6 +70,19 @@ verified:
       DNS/direct transport reachable; authenticated profile-search returned
       HTTP 501, 357 bytes, non-JSON. No response body, credential, identifier,
       name, URL, cookie, proxy, process argv or browser content was emitted.
+  - claim: The present Keychain credential is not a currently accepted Multilogin automation bearer.
+    command: >
+      Reconcile the current official Multilogin automation-token, profile-search
+      and launcher-status contracts, then send the Keychain value through a
+      private one-shot read-only probe while emitting only response status,
+      byte count, JSON shape and accepted-envelope predicates.
+    result: >
+      Official headers did not change the cloud result: profile search returned
+      HTTP 501, 357 bytes and non-JSON. The authenticated local-launcher status
+      endpoint returned HTTP 401 with a 93-byte JSON error envelope. The bearer
+      was never printed, decoded, copied or exposed, and no lifecycle endpoint
+      was called. Presence therefore cannot be treated as readiness; a current
+      vendor-issued automation token is required.
 unverified:
   - claim: The current official Multilogin profile-search contract can again return an accepted complete inventory census.
     what_would_verify: >
@@ -86,11 +99,13 @@ unverified:
       and real-seat proof; exact URL navigation alone remains insufficient.
 unresolved:
   - "Multilogin authenticated cloud profile-search returned HTTP 501/non-JSON at the post-merge canary boundary."
+  - "The stored Keychain JWT is not accepted by authenticated local-launcher status and requires native secret-boundary replacement with a current automation token."
   - "No disposable P0B canary has passed."
   - "Programmatic intended-window foreground remains unsupported."
 next_actions:
   - "Do not rerun the lifecycle canary from this receipt."
-  - "Re-read the current official Multilogin profile-search contract and prove the bounded read-only accepted census first."
+  - "Use a human/native secret boundary to enroll a current vendor-issued Multilogin automation token; do not inspect or copy an existing app session, auth store or cookie."
+  - "Then prove authenticated launcher readiness and the bounded read-only accepted census before any lifecycle call."
   - "After that proof, require a fresh explicit Chairman release and action-time native credential confirmation for one new disposable canary."
   - "Keep Chairman seats, ASD-A2/A3/A4, generic Wake and P1 held."
 do_not_redo:
@@ -103,6 +118,7 @@ danger_areas:
   - "HTTP reachability is not an accepted vendor contract; the authenticated request can still return 501/non-JSON."
   - "A lifecycle retry before read-only census proof repeats an ambiguous external dependency and violates the one-carrier/no-blind-retry law."
   - "The short-lived Keychain credential may expire; presence is not current authorization or evidence of validity."
+  - "The official sign-in and automation-token flows cross a nondelegable vendor credential boundary. Do not scrape the signed-in app, inspect cookies/session stores, or turn a Chairman credential into model-visible state."
 prs: [139]
 decisions:
   - DEC:CCR-P0B-AUTOMATION-OWNED-NONSEAT-CANARY-ONLY
@@ -116,6 +132,7 @@ discoveries:
 
 Start from protected Mastermind merge `933382619541bb9efa02a1b521168acfd99f5f0b`,
 current Macro main, Mastermind PR #139 and this handoff. The three Chairman seats
-remain untouched and the disposable profile is stopped. Reconcile the current
-official Multilogin cloud-search contract and prove the read-only accepted census;
-do not perform another lifecycle attempt without a fresh explicit Chairman release.
+remain untouched and the disposable profile is stopped. Replace the rejected
+bearer only through a human/native secret boundary, then prove authenticated
+launcher readiness and the read-only accepted census. Do not perform another
+lifecycle attempt without a fresh explicit Chairman release.
