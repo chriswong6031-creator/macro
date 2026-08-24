@@ -1,0 +1,209 @@
+{
+  "schema": "evidence_foundation.recipe.v1",
+  "version": "1.0.0",
+  "recipe_id": "erp_489b3887921c5c97f4a55c816a503e3e8e5f9eca47c1d6e3862c36af3cfc5293",
+  "recipe_name": "security_state.v1.evidence",
+  "consumer": {
+    "workstream": "WS:MARKET-OS",
+    "job": "build security_state.v1 for AAPL",
+    "output_contract": "security_state.v1"
+  },
+  "subject_instance": {
+    "key_type": "security_id",
+    "key": "SEC:US-XNAS-AAPL"
+  },
+  "subject_key_types": [
+    "cik",
+    "issuer_id",
+    "security_id",
+    "theme_node"
+  ],
+  "block_specs": [
+    {
+      "order": 1,
+      "block_key": "earnings_change",
+      "requirement": "required",
+      "allowed_owner_stores": [
+        "earnings.workspace_generation"
+      ],
+      "allowed_object_classes": [
+        "derived_view"
+      ],
+      "evidence_class": "deterministic",
+      "minimum_references": 1,
+      "maximum_references": 1,
+      "on_absent": "refuse",
+      "output_fields": [
+        "change.event",
+        "change.evidence"
+      ]
+    },
+    {
+      "order": 2,
+      "block_key": "fundamental_context",
+      "requirement": "optional",
+      "allowed_owner_stores": [
+        "fif.packet"
+      ],
+      "allowed_object_classes": [
+        "derived_view"
+      ],
+      "evidence_class": "deterministic",
+      "minimum_references": 1,
+      "maximum_references": 1,
+      "on_absent": "degrade",
+      "output_fields": [
+        "state.financial_context"
+      ]
+    },
+    {
+      "order": 3,
+      "block_key": "theme_context",
+      "requirement": "optional",
+      "allowed_owner_stores": [
+        "theme_graph.edge_belief"
+      ],
+      "allowed_object_classes": [
+        "system_belief"
+      ],
+      "evidence_class": "deterministic",
+      "minimum_references": 1,
+      "maximum_references": 2,
+      "on_absent": "degrade",
+      "output_fields": [
+        "opportunity.theme_context"
+      ]
+    },
+    {
+      "order": 4,
+      "block_key": "forward_context",
+      "requirement": "optional",
+      "allowed_owner_stores": [
+        "qledger.claim"
+      ],
+      "allowed_object_classes": [
+        "forward_claim"
+      ],
+      "evidence_class": "model",
+      "minimum_references": 1,
+      "maximum_references": 1,
+      "on_absent": "degrade",
+      "output_fields": [
+        "opportunity.forward_context",
+        "catalyst.next_observable"
+      ]
+    }
+  ],
+  "identity_joins": [
+    {
+      "from": "cik",
+      "from_key": "0000320193",
+      "to": "security_id",
+      "to_key": "SEC:US-XNAS-AAPL",
+      "only_via": "dated symbol_directory plus cik_map"
+    },
+    {
+      "from": "issuer_id",
+      "from_key": "ISS:US-XNAS-AAPL",
+      "to": "security_id",
+      "to_key": "SEC:US-XNAS-AAPL",
+      "only_via": "lib.dataos.identity.IssuerMaster resolved owner row"
+    },
+    {
+      "from": "theme_node",
+      "from_key": "co:us:AAPL",
+      "to": "security_id",
+      "to_key": "SEC:US-XNAS-AAPL",
+      "only_via": "engine.theme_graph.identity_resolution resolved owner row"
+    }
+  ],
+  "refusal_degradation_rules": [
+    {
+      "code": "REQUIRED_BLOCK_ABSENT",
+      "condition": "a required block has no valid owner-backed EvidenceBlock",
+      "effect": "refuse"
+    },
+    {
+      "code": "OPTIONAL_BLOCK_ABSENT",
+      "condition": "an optional block has no valid owner-backed EvidenceBlock",
+      "effect": "degrade"
+    },
+    {
+      "code": "IDENTITY_UNRESOLVED",
+      "condition": "the required subject join is unresolved or ambiguous",
+      "effect": "refuse"
+    },
+    {
+      "code": "RIGHTS_BLOCKED",
+      "condition": "a required owner reference is rights blocked",
+      "effect": "refuse"
+    },
+    {
+      "code": "CONFLICTED_REQUIRED_BLOCK",
+      "condition": "a required block retains unresolved conflicting observations",
+      "effect": "abstain"
+    }
+  ],
+  "dedup_dependence_rules": {
+    "automatic_relation_types": [],
+    "nonautomatic_relation_types": [
+      "exact_duplicate",
+      "same_fact",
+      "same_event",
+      "corroborates",
+      "contradicts",
+      "shares_upstream",
+      "corrects",
+      "supersedes",
+      "projects"
+    ],
+    "reference_count_implies_independence": false
+  },
+  "output_mappings": [
+    {
+      "output_field": "change.event",
+      "block_key": "earnings_change",
+      "when_unavailable": "refuse"
+    },
+    {
+      "output_field": "change.evidence",
+      "block_key": "earnings_change",
+      "when_unavailable": "refuse"
+    },
+    {
+      "output_field": "state.financial_context",
+      "block_key": "fundamental_context",
+      "when_unavailable": "explicit_unavailable"
+    },
+    {
+      "output_field": "opportunity.theme_context",
+      "block_key": "theme_context",
+      "when_unavailable": "explicit_unavailable"
+    },
+    {
+      "output_field": "opportunity.forward_context",
+      "block_key": "forward_context",
+      "when_unavailable": "explicit_unavailable"
+    },
+    {
+      "output_field": "catalyst.next_observable",
+      "block_key": "forward_context",
+      "when_unavailable": "explicit_unavailable"
+    }
+  ],
+  "integrity": {
+    "denominator_receipt_required": true,
+    "dominant_degradation_required": true,
+    "partial_may_look_complete": false,
+    "confidence_requires_receipt": true,
+    "correction_recompilation_required": true,
+    "owner_payload_copy_allowed": false
+  },
+  "authority": {
+    "can_rank": false,
+    "can_gate": false,
+    "can_size": false,
+    "can_originate": false,
+    "can_open_entry": false
+  }
+}
