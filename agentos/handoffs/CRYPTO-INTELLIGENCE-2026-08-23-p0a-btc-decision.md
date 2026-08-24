@@ -2,15 +2,14 @@
 workstream: "WS:CRYPTO-INTELLIGENCE"
 session: claude/p0a-btc-decision-authority
 model: codex
-ended_because: blocked
+ended_because: ci_handoff
 mission: >
-  Build and, after Sol's bounded return, repair only P0A BTC Decision Authority
-  Closure on the existing Macro branch and Draft PR #6294. Make the final Vector
-  action and target derive from one authority; refuse economically meaningful
-  raw/final drift and a corrupt most-recent prior allocation; reconcile the
-  branch with current origin/main by a normal merge; prove the rendered
-  desktop/mobile product; and re-park the same Draft PR for Sol. Do not start
-  P0B, alerts, broader redesign, merge or deployment.
+  Build and repair only P0A BTC Decision Authority Closure on the existing Macro
+  branch and PR #6294. After Sol accepted exact source head 9ce6ce711602, merge
+  current main normally, relinquish feature ownership of generated Vector bytes,
+  preserve the accepted source blobs exactly, prove the reconciliation head, and
+  release only through the repository's normal merge and canonical render lanes.
+  Do not start P0B, alerts or broader redesign.
 state_before: >
   Vector's final sizing already came from signals.alloc_optimal after
   btc_overrides.apply(), but S2 still rendered action, tone and a target band
@@ -68,14 +67,15 @@ changed:
       changing the established Vector component language.
   - path: site/vector.html
     what: >
-      Regenerated the product artifact from current stored data after the normal
-      origin/main merge. Its decision marker reports btc.decision/v1, status ok
-      and exact final exposure 100; S2 says HOLD 100% BTC / 持有 100% BTC and
-      contains neither the retired veto nor a defensive 0-10% instruction.
+      Removed from the P0A feature delta during Sol's release reconciliation.
+      Normal merge 78b07d80b9f7 resolves the generated page to exact current-main
+      bytes at pickup 5ad13e2ed335. Canonical post-merge render.yml, not the
+      feature branch, owns publication of the accepted template/source changes.
   - path: site/assets/css/e7978af3.css
     what: >
-      Added the content-addressed stylesheet emitted by the normal Vector
-      externalize-and-stamp chain after the template changed.
+      Removed as an orphaned feature-render artifact after current main was
+      verified to neither contain nor reference it. No main-owned asset was
+      deleted.
   - path: verify_shots/p0a_btc_decision/vector_s2_desktop_dark_zh.png
     what: "Desktop dark-theme Chinese S2 authority proof."
   - path: verify_shots/p0a_btc_decision/vector_s2_desktop_light_zh.png
@@ -86,22 +86,17 @@ changed:
     what: "390px mobile light-theme English S2 authority proof."
   - path: agentos/handoffs/CRYPTO-INTELLIGENCE-2026-08-23-p0a-btc-decision.md
     what: >
-      Updated this cold-stranger record with Sol's bounded return, exact
-      initial current-main pickup cd42b890d1df, reconciliation merge
-      935ec982dcff, repair commit 667ea437021e, and final current-main merge
-      f792c107473d onto render pickup 0e8cd8f28edd, followed by a cleanly
-      composing CI/White-House refresh and the newer no-P0A-path Market OS
-      record at current-main parent e743db23c31a. Final reconciliation merge
-      e3642597ece3 carries that exact parent. Refreshed evidence, held state,
-      release condition and forbidden adjacent work are recorded here. The
-      final self-containing handoff commit is identified by the exact PR head
-      receipt, because a tracked file cannot contain the hash of the commit
-      that contains that file.
+      Updated this cold-stranger record with Sol's exact-source acceptance and
+      release reconciliation: old accepted head 9ce6ce711602, current-main
+      pickup 5ad13e2ed335, and normal merge 78b07d80b9f7. The record now makes
+      canonical render ownership explicit and retains the P0B boundary. The
+      final self-containing handoff commit is identified by the exact PR-head
+      receipt because a tracked file cannot contain its own commit hash.
   - path: agentos/workstreams/WS-CRYPTO-INTELLIGENCE.md
     what: >
-      Registered the existing crypto-intelligence program's P0A/P0B boundary in
-      the canonical knowledge plane: P0A build wave complete but parked for Sol,
-      P0B todo and uncommissioned, with no execution or merge authority implied.
+      Updated the existing crypto-intelligence program boundary for Sol's P0A
+      release: reconciliation is active, canonical render/live proof remains
+      pending, and P0B remains todo and uncommissioned.
 prs: [6294]
 verified:
   - claim: >
@@ -117,8 +112,19 @@ verified:
       new pytest suite unwired against the exact current-main pickup.
     command: >-
       python3 scripts/check_contract_delta.py --base
-      e743db23c31a7d86e8276c1ea602acb79abac7a9
-    result: "contract-delta: 0 introduced, 0 inherited (base e743db23c31a)."
+      5ad13e2ed335a47ecd33d73346fb23dd5d59050a
+    result: "contract-delta: 0 introduced, 0 inherited (base 5ad13e2ed335)."
+  - claim: >
+      The current legacy CI manifest is structurally valid with the accepted P0A
+      dependency, test-suite and curated-closure additions intact.
+    command: >-
+      PYTHONDONTWRITEBYTECODE=1 python3 -B scripts/run_ci_pack.py --workflow
+      .github/ci/legacy-jobs.yml --pack-index 0 --pack-count 12 --validate-only
+    result: >
+      Validated 202 legacy jobs; 202 in scope; balanced 12-pack plan produced and
+      pack 0 selected successfully. The manifest retains jsonschema in the Vector
+      dependency install, tests/test_btc_decision.py in the Vector step and
+      engine/btc_decision.py in the curated import closure.
   - claim: >
       The deterministic decision, BTC authority, Vector, asset and site-reference
       regression set passes in a full checkout on the refreshed branch.
@@ -167,15 +173,17 @@ verified:
       e743db23c31a. No ledger or parquet mutation was carried from either
       disposable render worktree.
   - claim: >
-      A real stored-data Vector render publishes one final action and exact target,
-      and does not publish the conflicting legacy action or target band.
+      A pre-release disposable render of the accepted source publishes one final
+      action and exact target without the conflicting legacy action or target
+      band; it is evidence of source behavior, not a feature-owned publication.
     command: >-
       In a disposable full detached worktree, monkeypatch only
       scripts.notify.send_telegram to a no-op, wrap build_vector.write_page to
       stop immediately after writing vector.html, run build_vector.main(), then
       assert the rendered S2 marker and text with a Python invariant script.
     result: >
-      P0A_RETURN_VECTOR_RENDER_COMPLETE and rendered invariant OK; schema
+      Historical accepted-source proof: P0A_RETURN_VECTOR_RENDER_COMPLETE and
+      rendered invariant OK; schema
       btc.decision/v1, status ok, final exposure 100, HOLD 100% BTC and
       持有 100% BTC present; STAY DEFENSIVE and 0–10% absent. Raw and final
       exposure were both 100%, override active false, Kelly receipt 10%,
@@ -220,33 +228,56 @@ verified:
       desktop light zh 75f7b000077f6aaab5f22d76ccda4c221c1697e9c04d6ee983b59f43e425abaa;
       mobile dark zh 64326755e329f4191ab9ac70155c210b3e984462858fa856d8bd166bab790bc6;
       mobile light en 9c61075ae7248cb0d0c9579f1464b49ef6ff387d6e355784065c8f40c64ba05c.
+  - claim: >
+      Sol's release reconciliation preserves every accepted P0A source blob,
+      carries current main normally, and leaves no generated Vector artifact in
+      the feature delta.
+    command: >-
+      Compare the six protected source blobs at accepted head
+      9ce6ce711602f6bb4986ed59ea84d70b704f3eac and reconciliation merge
+      78b07d80b9f72cc92629c63cbb65de44277971f7; compare site/vector.html at
+      78b07d80b9f7 with current-main pickup 5ad13e2ed335; inspect
+      site/assets/css/e7978af3.css existence and references on that main pickup;
+      inspect the merge parents and feature diff.
+    result: >
+      All six accepted source blob IDs match exactly; 78b07d80b9f7 is a normal
+      two-parent merge of 9ce6ce711602 and 5ad13e2ed335; site/vector.html matches
+      main blob ed000bfd6750 exactly; main had neither the CSS asset nor a
+      reference to it; both generated paths are absent from the feature diff.
 unverified:
-  - claim: "Sol accepts the exact P0A implementation and authorizes release of the hold."
+  - claim: >
+      The exact reconciliation head passes hosted CI, merges cleanly, publishes
+      through canonical render.yml, and is proven on the live Vector surface.
     what_would_verify: >
-      Sol reviews the final pushed PR #6294 head, explicitly accepts P0A and
-      explicitly authorizes the PR to leave Draft / merge. CI green alone is
-      not that authorization.
+      Push the same branch; receive exact-head CI/fence/authority green; verify
+      clean mergeability; record Sol's release; mark PR #6294 ready; merge by the
+      normal path; observe the natural main render.yml run and its site-only
+      commit; then prove the bilingual responsive decision surface in production.
   - claim: "P0B Crypto H5 authority closure, alerts or broader redesign are complete."
     what_would_verify: >
       Separate Sol directives and separately bounded implementation/review
       programs. None may be inferred from P0A acceptance.
 unresolved:
   - >
-    Sol has not reviewed or accepted PR #6294. The implementation is therefore
-    PARKED / HOLD-FOR-SOL even if every binding check concludes green.
+    Reconciliation merge 78b07d80b9f7 is local. Exact-head local/hosted proof,
+    clean mergeability, normal merge, canonical render publication and live
+    desktop/mobile EN/ZH proof remain outstanding.
 next_actions:
   - >
-    Sol reviews Draft PR #6294 at its final exact head. Keep the PR Draft, keep
-    merge-on-green absent, keep native auto-merge null, and do not deploy while
-    review is pending.
+    Run the requested local proof matrix on the reconciliation head, including
+    contract-delta against 5ad13e2ed335, CI-manifest validation, diff check and
+    Agent OS validation; then commit the durable record and push the same branch.
   - >
-    If Sol rejects any P0A behavior, repair only the named defect on this held
-    branch, rerun the focused/schema/real-render/browser matrix and return a new
-    exact head for review.
+    Wait for exact-head hosted CI, authority/fence checks and clean mergeability.
+    If any protected P0A source blob changes or a real check fails, stop with the
+    named blocker rather than widening scope.
   - >
-    If Sol explicitly accepts and releases the hold, a new authorized session
-    may move the PR out of Draft and follow the repository's then-current merge
-    and live-verification rules. This session must not infer that release.
+    On green proof, record Sol's explicit release, mark PR #6294 ready and merge
+    by the normal path. Observe—not manufacture—the main render.yml publication;
+    stop as MERGED / PUBLICATION BLOCKED if that lane does not complete.
+  - >
+    After canonical render, prove production Vector schema/status/action/exposure,
+    EN/ZH parity, desktop/mobile layout and browser-console health.
   - >
     Keep P0B Crypto H5 authority closure, alerts and broader crypto redesign
     unstarted until separately authorized.
@@ -262,17 +293,19 @@ do_not_redo:
     Do not delete btc_recommend or broaden P0A into recommendation redesign. Its
     lawful residue is advisory levels/rationale after allowlist sanitization.
   - >
-    Do not commit the disposable render's override ledger, shadow, regime ledger
-    or signals.parquet writes. They were isolated and intentionally excluded;
-    only the normalized site/vector.html and its new CSS asset belong in P0A.
+    Do not restore feature-branch ownership of site/vector.html or orphan
+    e7978af3.css. Sol ruled that current-main bytes win the reconciliation and
+    that canonical post-merge render.yml owns generated publication.
   - >
-    Do not merge, deploy, arm merge-on-green, enable auto-merge or mark this work
-    shipped merely because CI is green. Sol review is the release authority.
+    Do not regenerate Vector on the feature branch, create a replacement branch
+    or PR, rebase/reset/force, arm merge-on-green, or infer any P0B authority from
+    P0A release.
 danger_areas:
   - >
     A standalone build_vector.main() mutates Vector ledgers and signal parquet
-    before it writes the page. Repeat product renders in a disposable full
-    worktree and copy only the normalized page/CSS output into the held branch.
+    before it writes the page. The feature branch must not run or commit that
+    generated path during release reconciliation; only canonical main render.yml
+    may publish the accepted source/template changes.
   - >
     The raw/final integrity gate intentionally fails closed on economically
     meaningful drift without an active named override, or when an active
@@ -284,8 +317,8 @@ danger_areas:
     must fail closed and must never trigger a search for an older valid row.
   - >
     Generated vector.html must pass inline CSS externalization and asset
-    stamping. Committing raw write_page output inlines the full stylesheet and
-    drops the content-hashed dependency contract.
+    stamping. That publication contract is why the natural main render lane,
+    including its site-only commit, is mandatory production evidence.
   - >
     DecisionState stores precise exposure as a 0..1 fraction and change as
     percentage points; the present Vector display rounds the exact target to an
@@ -295,36 +328,33 @@ danger_areas:
 
 ## §0 State — what is true right now
 
-P0A was returned by Sol for two named integrity blockers and a current-main
-reconciliation. Both blockers are repaired on the same branch, the seven P0A
-commits were preserved through normal merge 935ec982dcff onto origin/main pickup
-cd42b890d1df, followed by normal current-main merges through final render pickup
-0e8cd8f28edd at merge f792c107473d and a clean CI/White-House-only refresh to
-current-main parent e743db23c31a at final reconciliation merge e3642597ece3.
-The rebuilt product/evidence is green. Vector S2 has one action
-and one exact target from the post-override final allocation; the current
-stored-data render says HOLD 100% BTC in both languages and contains no legacy
-defensive 0–10% instruction. It is still not Sol-accepted, merged, deployed or
-live. Draft PR #6294 is intentionally PARKED / HOLD-FOR-SOL.
+Sol accepted exact P0A source head 9ce6ce711602 and authorized a bounded release
+reconciliation. Normal merge 78b07d80b9f7 carries current-main pickup
+5ad13e2ed335 while preserving every protected P0A source blob exactly. The merge
+resolves site/vector.html to exact current-main bytes and removes orphaned
+e7978af3.css, so generated publication is no longer a feature delta. P0A is not
+yet merged, canonically rendered or live-proven; PR #6294 remains Draft until the
+new exact head passes the required local and hosted proof.
 
 ## §1 What is LEFT — in order
 
-1. Let every binding check on the final PR head conclude, repairing only a real
-   P0A failure. Do not release the hold based on green checks.
-2. Sol reviews the exact final PR #6294 head and either rejects a named behavior
-   or explicitly accepts and releases P0A.
-3. Only after an explicit Sol release may a new authorized session change the
-   Draft/merge state. P0B, alerts and redesign still require separate authority.
+1. Complete and commit the requested local reconciliation proof; push only the
+   existing branch and wait for exact-head hosted CI/fence/authority results.
+2. Verify clean mergeability, record Sol's release, mark PR #6294 ready and merge
+   by the normal path.
+3. Observe the canonical main render.yml run and its site-only publication
+   commit, then prove the live desktop/mobile EN/ZH decision surface. P0B, alerts
+   and redesign still require separate authority.
 
 ## §2 What will bite you
 
-The Vector builder writes ledgers and parquet before the HTML, so a product
-proof run in the held branch would mix unrelated data churn into the repair.
-The generated page also needs the externalize-and-stamp post-pass; raw builder
-HTML is not the committed artifact shape. Finally, a raw/final mismatch without
-an active named override is an integrity failure, not a reason to choose whichever
-number makes the page look coherent. The most-recent non-null prior allocation
-also cannot be skipped when corrupt: continuity fails closed instead.
+The Vector builder writes ledgers and parquet before the HTML, so running it on
+the feature branch would reintroduce the exact generated-artifact ownership Sol
+removed. The canonical main render must publish and commit only site output.
+Separately, a raw/final mismatch without an active named override is an integrity
+failure, not a reason to choose whichever number makes the page look coherent.
+The most-recent non-null prior allocation cannot be skipped when corrupt:
+continuity fails closed instead.
 
 ## §3 What was decided and found
 
@@ -335,6 +365,7 @@ not allocation authority.
 ## §4 Not in scope — do not adopt
 
 P0B Crypto H5 authority closure, alerting, recommendation redesign, broader
-Vector redesign, new override mechanisms, merge and deployment were not started.
-The legacy recommender remains intentionally present behind an advisory allowlist;
-its removal or redesign would be a different program.
+Vector redesign and new override mechanisms were not started. P0A merge,
+canonical publication and live proof are authorized only under this bounded
+release. The legacy recommender remains intentionally present behind an advisory
+allowlist; its removal or redesign would be a different program.
