@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-24T13:41:35.560690+00:00",
-  "count": 1759,
+  "generated_at": "2026-08-24T14:31:22.581330+00:00",
+  "count": 1762,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -89,6 +89,47 @@
   ],
   "items": [
     {
+      "id": "marketdesk-mtd5iihfb7c-df11e2",
+      "title": "America Financials 2Q26 mutual fund and hedge fund Financials positioning analysis",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T13:44:17Z",
+      "summary_points": [
+        "**MF/HF Consensus on Financials Leaders**: Mutual funds and hedge funds align on overweight positions in Visa (V), Mastercard (MA), and Capital One (COF), with V/MA showing strongest institutional consensus (171/138 HFs long) and MF overweight baskets (SCHW +33 bps, MA +21 bps), signaling sector leadership.",
+        "**Critical Short Interest Risks**: Rising short interest in BAC (1%, $6.2B) and AXP (2%, $4.1B) indicates growing bearish sentiment, while Fintech shorts (UPST/DAVE at 23% each, -34%/-51% YTD) highlight imminent squeeze vulnerability in consumer finance.",
+        "**Sector Rotation in Financials**: Hedge funds show divergent flows: CME Group (+26 QoQ) and LPL Financial (+22 QoQ) gain HF ownership, while Nu Holdings (-17 QoQ) and Fifth Third Bancorp (-15 QoQ) decline, signaling selective rotation toward mid-cap financials (e.g., UNM, FNF, FHN).",
+        "**Concentration Risk in Key Holdings**: Capital One (COF) dominates HF longs (7% mcap owned among top 50), yet faces -8 QoQ HF ownership shift, contrasting with Webster Financial (WBS)’s -6% QoQ decline, exposing potential outflows in concentrated positions."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-dg5dwkx8enk-685e56",
+      "title": "Target Corp.",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T13:43:51Z",
+      "summary_points": [
+        "**Revenue & Margin Expansion**: Target's revenue projected to grow from $104.8B (1/26) to $116.9B (1/29E), with gross margin expanding to 29.2% (1/29E) from 27.9% (1/26), driven by steady same-store sales growth and EBITDA expansion.",
+        "**Key FY27 Risks**: Incremental labor costs and tech spending threaten longer-term earnings growth; digital channel vulnerabilities (deteriorated price, website/app KPIs) require urgent monitoring.",
+        "**Competitive Shift**: Target gained low-income consumer share (<$50k) vs.",
+        "competitors while losing higher-income share ($50k+), with lowest quintile (<$25k) surpassing $25k-$49k cohort in early 2025.",
+        "**Digital Engagement Decline**: App downloads fell 14.1% y/y (July), MAUs dropped 6.2% y/y, signaling weakening digital user base and pricing strategy risks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-edtnetc6zbu-3e72a3",
       "title": "GS Blekos Marketcolour Semicap Equipment Nvidia Preview Vonovia Unibail SIG 24 Aug 2026",
       "institution": "S&T",
@@ -105,6 +146,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-83sprzuxtyt-d36b3b",
+      "title": "GS Privorotsky GS Basics AI Debate Flows for Sale Oil Inventories 24 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T13:18:57Z",
+      "summary_points": [
+        "**AI Sector Financing Strain**: SDLMTK index down 40% since June; AVGO $60bn debt deal signals acute financing pressure amid sector competition.",
+        "**Tech Flows & Sentiment Shift**: Decisive tech sector selling with meaningful long liquidation, driving price-driven derating narrative.",
+        "**Oil Geopolitical & Price Impact**: Iran sanctions threaten US-China talks; oil inventories at 7706 mb (-509 mb since March 1) with $10 oil decline easing inflation expectations."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },
