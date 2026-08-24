@@ -161,9 +161,14 @@ waves:
     depends_on: [c0]
   - id: k1
     title: K1 Evidence Foundation — mesh contract freeze (FABLE-A)
-    status: in_progress
+    status: done
     depends_on: [c0]
-    next_action: A fresh exact-head review rules on the integrated authenticated-rider-complete v1.0.0 contract-only packet; after reviewer PASS, Sol accepts or returns exact amendments. No dependent wave starts before Sol's ruling.
+    next_action: >
+      CLOSED — Sol returned PASS and ACCEPTED exact K1 head
+      b7b861a288491ba776dda0087b6153c346e9aabc; PR #6319 squash-merged as
+      696afbb57483577770ac48c57f7eeafd5344cf17. Exact-merge fences run
+      32706205395 and full main CI run 32706358419 concluded SUCCESS. This
+      closure authorizes no dependent product or runtime wave.
   - id: k2
     title: K2 Institutional Intelligence — manager ontology + intent contract (B), adapter pilots (C)
     status: todo
@@ -189,16 +194,13 @@ waves:
     status: todo
     depends_on: [k6]
 next_action: >
-  A fresh exact-head reviewer rules on the integrated authenticated-rider-complete K1
-  Evidence Foundation v1.0.0
-  return packet at
-  research/evidence_mesh/K1_EVIDENCE_FOUNDATION_CONTRACT_FREEZE_2026-08-23.md.
-  After reviewer PASS, Sol rules ACCEPT or names exact amendments. The named
-  four-owner AAPL fixture input validates but the recipe honestly refuses without a
-  validated cross-type identity bridge. A pointer index cannot cure that proof gap,
-  so owner access remains owner-bound and no store/index was built. Do not start K2,
-  K3, K4, K5, B1A, K2-B, D5-EARNINGS, runtime, or any dependent wave before Sol
-  accepts K1.
+  K1 Evidence Foundation v1.0.0 is ACCEPTED / DONE at exact source head
+  b7b861a288491ba776dda0087b6153c346e9aabc and merge
+  696afbb57483577770ac48c57f7eeafd5344cf17. Preserve the adverse physical-store
+  verdict: the four-owner AAPL recipe remains honestly REFUSED without a validated
+  cross-type identity bridge, and no store/index was built. HOLD at the K1 boundary;
+  do not start K2, K3, K4, K5, B1A, K2-B, D5-EARNINGS, runtime, or any dependent
+  wave without a separate explicit Sol commission.
 ---
 
 # Alpha Intelligence Expansion — integration workstream
