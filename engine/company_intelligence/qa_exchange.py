@@ -14,11 +14,6 @@ from .event_workspace import WorkspaceError
 from .qa_reconstruction import SCHEMA as RECONSTRUCTION_SCHEMA
 from .qa_reconstruction import reconstruct_qa
 
-EXCHANGE_SCHEMA = "qa_exchange.v1"
-EXTRACTOR_ID = RECONSTRUCTION_SCHEMA
-VALIDATOR_ID = "qa_exchange_validator.v1"
-RIGHTS_PROFILE = "rp_public_primary_v1"
-UNAVAILABLE_TOPIC = "unavailable"
 # Frozen qa_topic.v1 identity. Copied, not imported from e3_shadow_compiler,
 # so the production adapter does not pull gold/eval/launchd into its import graph.
 TAXONOMY_VERSION = "qa_topic.v1"
