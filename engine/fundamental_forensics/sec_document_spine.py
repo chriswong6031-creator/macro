@@ -44,6 +44,7 @@ HARD_MAX_HTTP_METADATA_BYTES = 8 * 1024
 _ACCESSION_RE = re.compile(r"^[0-9]{10}-[0-9]{2}-[0-9]{6}$")
 _CIK_RE = re.compile(r"^[0-9]{1,10}$")
 _DOCUMENT_SEGMENT_RE = re.compile(r"^[A-Za-z0-9._-]+$")
+_DOCUMENT_ROLES = frozenset({"primary", "exhibit", "archive"})
 _SHA256_RE = re.compile(r"^[a-f0-9]{64}$")
 _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _AVAILABILITY = {"declared", "stored", "missing"}
@@ -178,6 +179,24 @@ def archive_document_url(cik: int | str, accession: str, document_name: str) -> 
     return archive_directory_url(cik, accession) + f"/{document_name}"
 
 
+def sec_document_id(
+    cik: int | str, accession: str, role: str, document_name: str
+) -> str:
+    """Canonical SEC document-spine identity: CIK + accession + role + document name.
+
+    CIK is normalized to the ten-digit ASCII spelling so ``320193`` and
+    ``0000320193`` mint one identity. Accession, role, and document name are
+    validated through the existing spine path law; they are not rewritten.
+    """
+    cik10 = canonical_cik(cik)
+    if not isinstance(accession, str) or not _ACCESSION_RE.fullmatch(accession):
+        raise FilingManifestError(f"invalid accession: {accession!r}")
+    if not isinstance(role, str) or role not in _DOCUMENT_ROLES:
+        raise FilingManifestError(f"invalid document role: {role!r}")
+    name = _check_document_name(document_name)
+    return stable_id("sec_document", cik10, accession, role, name)
+
+
 def _check_document_name(value: Any) -> str:
     name = str(value or "").strip()
     # SEC Submissions occasionally uses a safe relative primary-document path
@@ -236,7 +255,7 @@ def _primary_document(cik: str, accession: str, value: Any) -> dict[str, Any] | 
         return None
     name = _check_document_name(value)
     return {
-        "document_id": stable_id("sec_document", cik, accession, "primary", name),
+        "document_id": sec_document_id(cik, accession, "primary", name),
         "document_name": name,
         "document_type": None,
         "sequence": None,
@@ -351,11 +370,9 @@ def _validate_document(document: Mapping[str, Any], *, cik: str, accession: str)
     if availability not in _AVAILABILITY:
         raise FilingManifestError(f"invalid document availability: {availability!r}")
     role = document["role"]
-    if not isinstance(role, str) or role not in {"primary", "exhibit", "archive"}:
+    if not isinstance(role, str) or role not in _DOCUMENT_ROLES:
         raise FilingManifestError(f"invalid document role: {role!r}")
-    expected_document_id = stable_id(
-        "sec_document", cik, accession, role, name
-    )
+    expected_document_id = sec_document_id(cik, accession, role, name)
     if document["document_id"] != expected_document_id:
         raise FilingManifestError("document_id does not bind its filing identity")
     if availability == "stored":
@@ -525,10 +542,10 @@ def _document_metadata(
 ) -> dict[str, Any]:
     name = _check_document_name(name)
     role = str(role).strip().lower()
-    if role not in {"primary", "exhibit", "archive"}:
+    if role not in _DOCUMENT_ROLES:
         raise FilingManifestError(f"unsupported archive document role: {role!r}")
     return {
-        "document_id": stable_id("sec_document", cik, accession, role, name),
+        "document_id": sec_document_id(cik, accession, role, name),
         "document_name": name,
         "document_type": str(document_type).strip() if document_type else None,
         "sequence": (
@@ -920,6 +937,7 @@ __all__ = [
     "base_form",
     "build_filing_manifests",
     "canonical_cik",
+    "sec_document_id",
     "document_with_retrieval",
     "documents_from_archive_index",
     "manifest_content_key",

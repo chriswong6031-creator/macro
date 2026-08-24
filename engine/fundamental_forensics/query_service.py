@@ -11,7 +11,7 @@ import hashlib
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any, Mapping, Protocol
 
 from .financial_intelligence_packet import (
     EntityInput,
@@ -49,6 +49,10 @@ MAX_CELLS = _MAX_CELLS
 
 _REQUEST_SCHEMA = "fundamental_forensics.financial_query_request/v1"
 _RESPONSE_SCHEMA = "fundamental_forensics.financial_query_response/v1"
+_LAWFUL_GOLDEN_DELIVERY_KIND = "committed_golden_fixture"
+_LAWFUL_GOLDEN_DELIVERY_KEYS = frozenset(
+    {"kind", "attested", "production_issuer_service"}
+)
 _VALID_POLICIES = frozenset(p.value for p in BitemporalPolicy)
 _REQUIRED_ROOT_FIELDS = frozenset({"schema", "entity_id", "policy", "metric_ids", "periods"})
 _REQUIRED_POLICY_FIELDS = frozenset({"selection", "source_snapshot_at", "recorded_at"})
@@ -69,14 +73,58 @@ class CanonicalEntityBinding:
     source_entity_id: str
 
 
+def _canonical_query_delivery(
+    delivery: Mapping[str, Any] | None,
+) -> dict[str, Any] | None:
+    """FIF-3A3 delivery is fail-closed. Absent remains lawful for FIP1.
+
+    The only lawful non-null object is exact committed_golden_fixture with
+    attested=false and production_issuer_service=false. Extra keys, missing
+    keys, wrong kind, true flags, or non-booleans are unavailable.
+    """
+    if delivery is None:
+        return None
+    if not isinstance(delivery, Mapping) or isinstance(delivery, (str, bytes, bytearray)):
+        raise FinancialQueryUnavailableError()
+    try:
+        keys = set(delivery)
+    except TypeError:
+        raise FinancialQueryUnavailableError() from None
+    if keys != _LAWFUL_GOLDEN_DELIVERY_KEYS:
+        raise FinancialQueryUnavailableError()
+    try:
+        kind = delivery["kind"]
+        attested = delivery["attested"]
+        production = delivery["production_issuer_service"]
+    except (KeyError, TypeError):
+        raise FinancialQueryUnavailableError() from None
+    if kind != _LAWFUL_GOLDEN_DELIVERY_KIND:
+        raise FinancialQueryUnavailableError()
+    if type(attested) is not bool or attested is not False:
+        raise FinancialQueryUnavailableError()
+    if type(production) is not bool or production is not False:
+        raise FinancialQueryUnavailableError()
+    return {
+        "kind": _LAWFUL_GOLDEN_DELIVERY_KIND,
+        "attested": False,
+        "production_issuer_service": False,
+    }
+
+
 @dataclass(frozen=True)
 class FinancialQueryDataset:
-    """Everything a query run needs; opened only after admission."""
+    """Everything a query run needs; opened only after admission.
+
+    ``delivery`` is absent on FIP1. A non-null value must be the exact
+    FIF-3A3 golden-fixture object; execute_financial_query fail-closes
+    anything else as unavailable.
+    """
 
     binding: CanonicalEntityBinding
     ledger: Any
     filing_metadata: Any
     registry: Any
+    delivery: Mapping[str, Any] | None = None
 
 
 class FinancialQueryAdmissionError(Exception):
@@ -460,6 +508,7 @@ def execute_financial_query(*, body: bytes, provider: FinancialQueryProvider) ->
     # is unavailable, not a successful query of another issuer's matrix.
     dataset = provider.resolve(entity_id)
     binding = _validate_supplied_dataset(entity_id, dataset)
+    delivery = _canonical_query_delivery(dataset.delivery)
 
     # Phase 3: kernel query. Metric support is cutoff-visible governance,
     # never live catalog membership.
@@ -520,6 +569,9 @@ def execute_financial_query(*, body: bytes, provider: FinancialQueryProvider) ->
         },
         "receipt": matrix.to_dict(),
     }
+    delivery = _canonical_query_delivery(dataset.delivery)
+    if delivery is not None:
+        envelope["delivery"] = delivery
 
     response_body = canonical_json(envelope).encode("utf-8")
 
