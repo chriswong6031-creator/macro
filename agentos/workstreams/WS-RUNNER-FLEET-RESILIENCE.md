@@ -46,10 +46,11 @@ waves:
     status: in_progress
     depends_on: [M0]
     next_action: >
-      Three guarded diagnostic listeners, the no-op canary and one-listener crash
-      recovery are healthy. Obtain the terminal 12-hour soak receipt before closing
-      W2; full_work_allowed remains false below the 200 GiB free-space floor, so W4
-      production admission remains blocked.
+      The terminal 12-hour listener soak is accepted from the Aug-21 receipt: 73
+      hourly samples, all three exact listener identities, zero ENOSPC and terminal
+      completion. Finish the reversible fixed-set storage recovery through qualified
+      TerraMaster scratch and require at least 200 GiB free plus below 85 percent used
+      before closing W2. full_work_allowed remains false, so W4 stays blocked.
   - id: W3
     title: PC render recovery and default full-render cutover
     status: done
@@ -84,12 +85,17 @@ waves:
       critical path using nightly timing receipts; do not mix this with fleet recovery.
 decisions:
   - DEC:RUNNER-FLEET-PHYSICAL-FAILURE-DOMAINS
+discoveries:
+  - DSC:PRIVATE-CI-HOSTED-MINUTES-REQUIRE-TWO-LEVER-CUTOVER
+  - DSC:PERSISTENT-RUNNER-TEMP-PACKS-CAN-BREACH-THE-HOST-DISK-GUARD
 artifacts:
   - research/RUNNER_FLEET_RESILIENCE_ARCHITECTURE_FREEZE_2026-08-20.md
   - research/RUNNER_FLEET_RESILIENCE_M0_ADVERSARIAL_AMENDMENT_2026-08-20.md
   - research/PRIVATE_REPO_RUNNER_STORAGE_ALLOCATION_AUDIT_2026_08_14.md
   - docs/CI_SELFHOSTED_WAVE_BC_RUNBOOK.md
   - .github/workflows/merge-control-hosted-canary.yml
+  - agentos/discoveries/DSC-PRIVATE-CI-HOSTED-MINUTES-REQUIRE-TWO-LEVER-CUTOVER.md
+  - agentos/discoveries/DSC-PERSISTENT-RUNNER-TEMP-PACKS-CAN-BREACH-THE-HOST-DISK-GUARD.md
 landmines:
   - >
     `parked` is not an exclusion label; positive label matching still routes jobs to
@@ -137,9 +143,16 @@ do_not_redo:
     named run_id + run_attempt artifact containing job_started_at_observed.
 next_action: >
   W3 is Sol-accepted and closed. Keep the overall workstream active: W2's terminal
-  12-hour soak receipt remains independently outstanding and W4 stays blocked on W2.
-  W4/W5 remain unstarted; do not enter either wave without fresh Chairman intent and
-  a current authority load.
+  listener soak is accepted, but M1 storage remains below the 200 GiB full-work floor
+  and W4 stays blocked on W2. TerraMaster is qualified only as non-secret scratch.
+  The M2 temporary-pack incident is recovered with 303.6 GB unallocated and zero Git
+  garbage; measure the producer before extending the existing runner lifecycle.
+  The private-readiness baseline in
+  DSC:PRIVATE-CI-HOSTED-MINUTES-REQUIRE-TWO-LEVER-CUTOVER proves that moving packs
+  alone cannot meet the 50,000-minute allowance; after PC and cutover acceptance,
+  measure and reduce the complete hosted estate without weakening its protected
+  control/untrusted boundary. W4/W5 remain unstarted; do not enter either wave without
+  fresh Chairman intent and a current authority load.
 ---
 
 ## Current incident
@@ -202,3 +215,21 @@ acceptance. Post-proof `main` drift through
 emitter, dead-reference guard, regression surface, or R2/site publication semantics.
 Therefore the production receipt remains current enough to close W3. This ruling does
 not close the overall runner-fleet workstream and does not authorize W4 or W5.
+
+## Private-repository hosted-minute baseline — 2026-08-24
+
+The current GitHub enhanced-billing report makes the remaining private-cutover gap
+quantitative. Macro used 74,489 gross hosted Linux minutes over the latest three
+complete days, a 744,890-minute 30-day projection. A complete 2026-08-23 `ci.yml`
+jobs census attributes 20,400 billed-equivalent minutes to packs, 1,148 to planning,
+1,275 to contract-delta and 279 to the final gate. The same date's billing item is
+28,135 minutes total.
+
+Even moving every pack and applying PR #6286's proven sub-minute plan leaves a
+6,878-minute/day counterfactual when the non-CI remainder is held constant, or
+206,340 minutes per 30 days. Therefore PC pack capacity is necessary but cannot by
+itself justify private readiness. The accepted cutover must preserve hosted authority,
+fences, merge control and untrusted independence while also reducing execution
+amplification or other avoidable hosted work, then re-measuring the billing API with
+explicit headroom below the allowance. See
+DSC:PRIVATE-CI-HOSTED-MINUTES-REQUIRE-TWO-LEVER-CUTOVER.

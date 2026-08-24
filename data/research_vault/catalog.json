@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-24T12:22:55.748122+00:00",
-  "count": 1755,
+  "generated_at": "2026-08-24T15:28:03.689746+00:00",
+  "count": 1764,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -51,6 +51,7 @@
     "Natixis",
     "Nomura",
     "Nordea",
+    "Northern Trust",
     "Nuveen",
     "Other",
     "PNC",
@@ -87,6 +88,145 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-mtd5iihfb7c-df11e2",
+      "title": "America Financials 2Q26 mutual fund and hedge fund Financials positioning analysis",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T13:44:17Z",
+      "summary_points": [
+        "**MF/HF Consensus on Financials Leaders**: Mutual funds and hedge funds align on overweight positions in Visa (V), Mastercard (MA), and Capital One (COF), with V/MA showing strongest institutional consensus (171/138 HFs long) and MF overweight baskets (SCHW +33 bps, MA +21 bps), signaling sector leadership.",
+        "**Critical Short Interest Risks**: Rising short interest in BAC (1%, $6.2B) and AXP (2%, $4.1B) indicates growing bearish sentiment, while Fintech shorts (UPST/DAVE at 23% each, -34%/-51% YTD) highlight imminent squeeze vulnerability in consumer finance.",
+        "**Sector Rotation in Financials**: Hedge funds show divergent flows: CME Group (+26 QoQ) and LPL Financial (+22 QoQ) gain HF ownership, while Nu Holdings (-17 QoQ) and Fifth Third Bancorp (-15 QoQ) decline, signaling selective rotation toward mid-cap financials (e.g., UNM, FNF, FHN).",
+        "**Concentration Risk in Key Holdings**: Capital One (COF) dominates HF longs (7% mcap owned among top 50), yet faces -8 QoQ HF ownership shift, contrasting with Webster Financial (WBS)’s -6% QoQ decline, exposing potential outflows in concentrated positions."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-6juzjj8adhd-e0ff83",
+      "title": "Cambricon",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T13:44:15Z",
+      "summary_points": [
+        "**Policy-Driven AI Chip Demand Surge**: China’s CHIPS IV policy and localization trend fuel vertical expansion (smart cities, mines, transportation, supermarkets), driving projected EBITDA growth of 82% (2028-30E) and revenue acceleration in key sectors.",
+        "**Margin & Leverage Deterioration**: EBITDA margin contracted to 25.8% (from 33.6%) and net debt/equity rose to 17.3% (from 8.0%), signaling deteriorating profitability and heightened financial risk despite stock outperformance (48.9% vs.",
+        "index 38.2%).",
+        "**Revised Valuation with Elevated Risk Profile**: Target EV/EBITDA reduced to 27x (from 43x) based on 2027E EBITDA growth (29% YoY), but implied EV/Sales (48x) and 12.7% cost of equity reflect aggressive growth expectations and high risk.",
+        "**Inventory Buildup as Critical Risk Factor**: Raw material inventory surged 77% YoY (H1 2026), supporting near-term revenue but requiring monitoring for sustainability amid margin pressure and rising leverage."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-dg5dwkx8enk-685e56",
+      "title": "Target Corp.",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T13:43:51Z",
+      "summary_points": [
+        "**Revenue & Margin Expansion**: Target's revenue projected to grow from $104.8B (1/26) to $116.9B (1/29E), with gross margin expanding to 29.2% (1/29E) from 27.9% (1/26), driven by steady same-store sales growth and EBITDA expansion.",
+        "**Key FY27 Risks**: Incremental labor costs and tech spending threaten longer-term earnings growth; digital channel vulnerabilities (deteriorated price, website/app KPIs) require urgent monitoring.",
+        "**Competitive Shift**: Target gained low-income consumer share (<$50k) vs.",
+        "competitors while losing higher-income share ($50k+), with lowest quintile (<$25k) surpassing $25k-$49k cohort in early 2025.",
+        "**Digital Engagement Decline**: App downloads fell 14.1% y/y (July), MAUs dropped 6.2% y/y, signaling weakening digital user base and pricing strategy risks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-offpbbvqrbz-281308",
+      "title": "GS Duttenhoefer Charts at Goldman Sachs 24 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T13:18:58Z",
+      "summary_points": [
+        "**TINA Over: Equities Must Beat Bonds**: STOXX 600 yield vs.",
+        "EUR IG/Germany 10-yr signals end of \"no alternative\" environment; equities require growth/cash returns to outperform bonds.",
+        "**Oil Inventory Risk: Strait Reopening Critical**: Global oil inventories at historic lows if Strait remains closed, creating acute geopolitical supply risk.",
+        "**Large-Cap Performance Gap**: Large-Cap Growth mutual funds outperformed benchmarks at 75% YTD (vs 34% historical), while Large-Cap Value lagged at 8% YTD (vs 46%), reflecting extreme sector divergence amid hedge fund de-grossing.",
+        "**Nasdaq Short Position Risk**: Hedge funds hold unusually large short positions in NASDAQ-100 futures/stocks, driving net positions negative (2026-2028), signaling elevated tech equity volatility risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-edtnetc6zbu-3e72a3",
+      "title": "GS Blekos Marketcolour Semicap Equipment Nvidia Preview Vonovia Unibail SIG 24 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T13:18:57Z",
+      "summary_points": [
+        "**Semicap Equipment Upgrades**: 2026-28 CapEx estimates raised 29-45% to $150/$218/$281B, driving bullish stance on Applied Materials, Lam Research, ASML, Tokyo Electron, ASMI, BESI, Lasertec, Ebara.",
+        "**Nvidia Earnings Risk**: Solid 2Q report expected 26 Aug but elevated short-term risk from 12% two-week price volatility.",
+        "**CapEx Revisions**: Major upward revisions (36%/45%/29% for 2026-28) signal stronger semiconductor equipment demand fundamentals.",
+        "**Technical Volatility**: Nvidia's 12% two-week price move highlights acute technical risk ahead of earnings."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-83sprzuxtyt-d36b3b",
+      "title": "GS Privorotsky GS Basics AI Debate Flows for Sale Oil Inventories 24 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T13:18:57Z",
+      "summary_points": [
+        "**AI Sector Financing Strain**: SDLMTK index down 40% since June; AVGO $60bn debt deal signals acute financing pressure amid sector competition.",
+        "**Tech Flows & Sentiment Shift**: Decisive tech sector selling with meaningful long liquidation, driving price-driven derating narrative.",
+        "**Oil Geopolitical & Price Impact**: Iran sanctions threaten US-China talks; oil inventories at 7706 mb (-509 mb since March 1) with $10 oil decline easing inflation expectations."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-emze597tdj7-ad0087",
+      "title": "JPM US Market Intelligence | Morning Briefing",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T12:11:30Z",
+      "summary_points": [
+        "**Key Data & Event Calendar**: Flash PMIs, Jackson Hole, Japan/BOJ, NVDA/Retail earnings, Treasury actions critical for market direction and risk assessment - **Bond-Yield Equity Link**: Higher yields not a death sentence for stocks; vital for portfolio positioning amid yield curve dynamics - **SPX Momentum Confirmation**: 73.6% of SPX members above 200DMA with SPX in \"Leading\" zone (JXK RS Ratio >100), confirming broad-based bullish trend - **Japan BOJ Rate Hike**: 82% market probability of September hike (vs 41% earlier), bullish on Japan equities (TOPIX sales +14% YoY, net profit +70% YoY) - **NVDA/MRVL Earnings Pressure**: NVDA (revenue $91.8bn +96.5% YoY) and MRVL (revenue $2.7bn +35% YoY) reports key near-term headwinds amid rising Treasury yields - **HY Maturity Wall**: $500bn HY debt maturing by FY29, creating structural credit risk amid widening spreads in September credit issuance wave - **Econ Surprise Indices**: EU (87.90) vs US (26.20) growth outperformance driving capital flows toward EU; China (-26.10) signals weakening growth - **Tactical Bullish with Lower Conviction**: Market must overcome NVDA and Warsh speech headwinds; US earnings growth outlook (20%+) supports global outperformance if correct"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 29,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-mxerqphoz60-9fee55",
       "title": "BTIG Krinsky Who Blinks First Bonds vs. Stocks in a Staring Contest",
@@ -1272,6 +1412,25 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-flq07yaokbx-7170ac",
+      "title": "• Keeping The Pace Up",
+      "institution": "Northern Trust",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T14:52:17Z",
+      "summary_points": [
+        "**Growth Sustainability Risks**: Q2 2026 growth at 1.5% annualized amid volatile energy prices, uncertain inflation, and geopolitical threats; elevated overheating or crash risks despite current sustainability.",
+        "**Inflation Core Dynamics**: July CPI at 3.4% annualized (2.5% ex food/energy), signaling persistent core inflation amid uneven consumer demand.",
+        "**Demand Fragmentation**: Tech-led equity strength supports spending, but retail sales and purchasing power pressures indicate growth reliance on higher-income households, not broad-based demand."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-uxknxblgq7b-c40a26",
       "title": "Factor narratives Quality under pressure but the investment case remains intact",
       "institution": "Eastspring",
@@ -1309,6 +1468,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-luguacah9ej-b23a5c",
+      "title": "WEF The Catalysts Unlocking Markets for a Sustainable Economy 2026",
+      "institution": "WEF",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T14:51:38Z",
+      "summary_points": [
+        "**Climate Finance Gap**: $10T annual climate/nature finance needed ($7T for 1.5°C, $2.7T for nature-positive) vs.",
+        "current $2T/year; $7.3T fossil fuel subsidies exacerbate stranded asset risks and policy misalignment.",
+        "**Catalytic Capital Paradigm**: Shift from transactional grants to active stewardship (e.g., risk-absorbing, market-building roles) enabling scalable impact; 8 catalytic roles deploy capital beyond subsidies (e.g., Ecuador’s $450M debt swap, Ørsted’s €100M blue bond).",
+        "**Investment Returns & Growth**: Climate/nature investments deliver 10x long-term returns (BCG); green revenues grow 2x faster (12% vs 6%) than conventional (LSEG, 6,500 companies).",
+        "**Debt-for-Nature Leverage**: Debt restructuring frees $100B for climate/nature (e.g., Ecuador’s $1.63B Galápagos deal); ecosystem payments fund 550+ programs ($36-42B) for habitat protection."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 38,
       "language": "en",
       "needs_metadata": false
     },
