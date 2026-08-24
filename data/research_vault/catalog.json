@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-24T00:35:34.364113+00:00",
-  "count": 1721,
+  "generated_at": "2026-08-24T02:15:50.494141+00:00",
+  "count": 1726,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -86,6 +86,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-l76zls5iywt-b09b18",
+      "title": "Investor Positioning Strategy Update and Flows Another Post Earnings Season Lull",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T01:29:55Z",
+      "summary_points": [
+        "**Equity/Bond Flow Acceleration**: $40bn equity inflows (US-led) and $21bn bond inflows (govt/broad-mandate), with equity positioning overweight but below earnings growth (0.18sd, 52nd percentile), signaling room for further allocation.",
+        "**Rates Volatility Over Level**: Equities driven by *volatility* (not yield level), with contained Treasury volatility (1m) vs 2022 panic; 10y yield stability (1pp range for 3 years) amid S&P 500 gains is critical for positioning.",
+        "**Earnings Momentum & Guidance**: Q4 2026 consensus earnings ($820bn) exceed prior quarters; robust company guidance (74% correlation vs consensus) signals strong Q3 2026 earnings growth ahead.",
+        "**Systematic Risk Concentration**: Vol-Control funds at 99th percentile equity allocation; 2% S&P 500 sell-off triggers $10bn+ potential outflows, creating systemic liquidity risk.",
+        "**Sector Overexposure Risks**: Mega-cap Tech at 74th percentile (high concentration) and Energy at 84th percentile (overbought) increase vulnerability to growth deceleration or rotation; Consumer Staples at 13th percentile offers defensive opportunity."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 45,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-4kzhonhjxzh-c31c33",
       "title": "Bessents game of chicken with the bond vigilantes",
@@ -291,6 +312,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-lz8qe5nnjly-d42160",
+      "title": "MS Our Views After Treasury Announced Larger Buybacks",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T17:13:20Z",
+      "summary_points": [
+        "**UST Curve Steepening**: Treasury buybacks ($4bn+ long-end) and T-bill issuance signal sustained curve steepening, driven by fundamental supply dynamics amid volatility.",
+        "**USD Policy Weakness**: Treasury buybacks (Jan 27) and Fed Chair nomination (Warsh) triggered policy-driven USD downside, boosting CHF/gold; z-score peak (Aug 19) confirmed extreme policy-linked moves.",
+        "**Structural Yield Curve**: Markets pricing higher Fed funds than forecast sustains steeper curves; August 10y yield rise lacks supply-driven swap spread impact.",
+        "**Treasury Supply Dynamics**: Buyback expansion targets long-end coupons to align with lower demand; corporate supply (IG bonds) impacted spreads but not Treasury yields.",
+        "**Fed Data Catalysts**: Trades prioritize labor/inflation data (e.g., \"softer labor data reducing near-term Fed hikes\") and Fed policy expectations as key yield curve drivers."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 19,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-kuwlcsctckn-43814b",
       "title": "South Korea Technology Korea WFE Substrate CCL Chip testing HBM Supply Chain Check reinforces our positive view on Samsung E...",
       "institution": "Goldman Sachs",
@@ -435,6 +477,48 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-izqzbjdvbpw-d205d4",
+      "title": "Samsung Electronics (005930.KS) Announces 2026 shareholder returns of ~W100tn at the mid point, likely higher mix of dividen...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T16:45:00Z",
+      "summary_points": [
+        "**Shareholder Returns Exceeding Consensus**: FY2026 midpoint W100tn (W30tn Q3 dividend), 2027/2028E returns W179tn/W232tn; exceeds consensus, driving higher valuation multiples via dividends/buybacks.",
+        "**Policy Stability vs Peers**: Maintains 50% FCF return target since 2018 (vs.",
+        "Micron/SanDisk’s aggressive buybacks), with consistent annual dividends (~9.8t KRW) and canceled buybacks in 2025/2026.",
+        "**HBM Progress as Growth Driver**: Meaningful HBM advancements underpin Goldman’s Buy rating, critical for semiconductor growth amid memory market volatility.",
+        "**Key Downside Risks**: Memory supply/demand deterioration, smartphone margin contraction, and mobile OLED market share loss threaten valuation (12m target: W490k common)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-onrifevbgm0-610f3e",
+      "title": "AAC (2018)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T16:44:59Z",
+      "summary_points": [
+        "**Downgrade Catalyst**: Neutral rating from Buy due to 1H26 revenue miss (22% YoY decline) amid slow smartphone market, high memory costs, and competition; handset cameras revenue down 23% YoY.",
+        "**Cash Flow Resilience**: Strong financial health with net debt/equity at 10.6%, operating cash flow Rmb 7,183mn, and free cash flow Rmb 4,353mn (12/25), enabling dividend sustainability despite near-term headwinds.",
+        "**Margin Expansion Risk**: Camera module gross margin growth is a critical valuation driver; faster/slower expansion directly impacts upside/downside estimates per Goldman Sachs analysis.",
+        "**Valuation Alignment**: Current P/E 14x vs.",
+        "17x target multiple suggests positives largely priced in; 12m target HK$50.0 (25% upside) below 87% upside for Greater China Tech coverage."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-adpxtjd7jki-c18d4a",
       "title": "Asia Index Strategy Hang Seng Indexes Rebalancing Review and Flow Implications (September 2026)",
       "institution": "Goldman Sachs",
@@ -512,6 +596,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 27,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-orvorf2d3nd-4cb442",
+      "title": "JPM PI Weekly Wrap Aug 23",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T15:00:23Z",
+      "summary_points": [
+        "**Gross Flows & Momentum Reversal**: US gross flows bottomed (rolling 20d), historically turning positive by mid-Sep; momentum reversal led to drawdowns followed by 20d/60d rebounds.",
+        "**EU Banks Selling**: EU Banks sold sharply by HFs despite EU HC positive through Q3, signaling potential sector risk.",
+        "**Metals & Mining Positioning**: Metals & Mining positioning not stretched despite rally, offering relative safety amid sector rotation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
       "language": "en",
       "needs_metadata": false
     },
