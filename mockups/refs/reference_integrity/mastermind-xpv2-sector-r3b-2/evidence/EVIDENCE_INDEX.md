@@ -1,13 +1,24 @@
-# XPV2-SC-R3B.2 Lane G — evidence index
+# XPV2-SC-R3B.2 — evidence index
 
-candidate sha256: `ea2e09b812d1435103e491973ae01d2c4fca63c3a29186023f40f137fc10aba8`
-cross-checked against `proposal/BUILD_MANIFEST.json` `output.sha256`: MATCH
-freeze commit (candidate bytes, read-only for this lane): `18af6a49394e`
-total evidence files: 53
+Corrected candidate sha256: `4adb4b6245e8e4aa5b68c850a615461327c0a5d2e672e4c203d6ba32a3b8d53c`
 
-Every file below is captured against the exact frozen candidate bytes (sha256 above) with the Playwright venv (`/private/tmp/claude-501/-Users-chriswong-Documents-Cluade-macro-main/1dfe9b32-deeb-48bf-b129-c67d9ec236e8/scratchpad/pwvenv/bin/python`), Chromium from `~/Library/Caches/ms-playwright/`, a FRESH browser context per capture cell (per the known `page.screenshot()` / `setDeviceMetricsOverride` trap).
+Corrected candidate size: `5,506,871` bytes
 
-## Bidirectional index
+Cross-check against `proposal/BUILD_MANIFEST.json` `output`: MATCH
+
+New immutable content-freeze commit: `PENDING_CONTENT_FREEZE` (stamped after the commit exists)
+
+Indexed evidence artifacts: 66 (53 historical provisional-freeze artifacts + 13 pre-final reconciliation artifacts)
+
+The historical 6a/6b/6c/6d matrix remains bound to the provisional candidate sha256
+`ea2e09b812d1435103e491973ae01d2c4fca63c3a29186023f40f137fc10aba8`, whose declared
+freeze commit is `80347cd6cb37c8e17b7ac7b1dacc0a81f60fc913`. It is preserved as historical
+evidence and is **not** rebound to the corrected bytes. The 7a/7b/7c/7d/7e delta below
+is bound to the corrected candidate sha256 above. Captures used the Playwright venv
+(`/private/tmp/claude-501/-Users-chriswong-Documents-Cluade-macro-main/1dfe9b32-deeb-48bf-b129-c67d9ec236e8/scratchpad/pwvenv/bin/python`), Chromium from
+`~/Library/Caches/ms-playwright/`, and a fresh browser context per capture cell.
+
+## Historical provisional-freeze bidirectional index (53 artifacts)
 
 | File | Description |
 |---|---|
@@ -65,7 +76,30 @@ Every file below is captured against the exact frozen candidate bytes (sha256 ab
 | `6d_reffail_armed_receipt.txt` | 6d — ?reffail=1 boot-armed fetch-fail proof (REF.log, 8 simulated-fail entries) |
 | `6d_verifier_full_output.txt` | 6d — full verify_reference.py console output, 22/22 ALL GREEN |
 
-**Completeness:** 53 files in `evidence/`, 53 rows above — zero dangling rows, zero unindexed files.
+**Historical completeness:** 53 historical artifacts, 53 rows above — preserved
+byte-for-byte from the provisional freeze.
+
+## Pre-final decoded-emoji reconciliation delta (13 artifacts)
+
+| File | Description |
+|---|---|
+| `7a_smoke-confluence-1440-dark-en.png` | 7a — corrected Confluence first-viewport smoke, 1440 desktop, dark, EN |
+| `7a_smoke-explore-1440-dark-en.png` | 7a — corrected Explore first-viewport smoke, 1440 desktop, dark, EN |
+| `7a_smoke-map-1440-dark-en.png` | 7a — corrected Map first-viewport smoke, 1440 desktop, dark, EN |
+| `7a_smoke-money-1440-dark-en.png` | 7a — corrected Money & Breadth first-viewport smoke, 1440 desktop, dark, EN |
+| `7a_smoke-moving-1440-dark-en.png` | 7a — corrected Moving first-viewport smoke, 1440 desktop, dark, EN |
+| `7a_smoke-overview-1440-dark-en.png` | 7a — corrected Overview first-viewport smoke, 1440 desktop, dark, EN |
+| `7b_moving-1440-dark-en.png` | 7b — corrected Moving Track record panel, 1440 desktop, dark, EN; no chart emoji |
+| `7b_moving-1440-dark-zh.png` | 7b — corrected Moving 跟踪记录 panel, 1440 desktop, dark, ZH; no chart emoji |
+| `7b_moving-390-dark-en.png` | 7b — corrected Moving Track record panel, 390 mobile, dark, EN; no chart emoji |
+| `7b_moving-390-dark-zh.png` | 7b — corrected Moving 跟踪记录 panel, 390 mobile, dark, ZH; no chart emoji |
+| `7c_decoded_emoji_audit_and_mutation.txt` | 7c — decoded-output audit census, detector self-test, and unique-red mutation receipt |
+| `7d_corrected_candidate_reproof.txt` | 7d — corrected-candidate build, verifier, R3A, RIG, mutation, smoke, and production-path proof |
+| `7e_current_main_and_critic_precheck.txt` | 7e — current-main material-path conclusion and immediately-pre-freeze final-receipt precheck |
+
+**Current completeness:** 66 indexed evidence artifacts + this index file = 67 files
+in `evidence/`; 66 rows across the two tables — zero dangling rows, zero unindexed
+artifacts.
 
 ## Item 6 mapping
 
@@ -76,5 +110,10 @@ Every file below is captured against the exact frozen candidate bytes (sha256 ab
 
 ## Reuse note
 
-Lane F's `build/lane_crops_f2/` crops (B2-05 action-row, B2-15 track-record) are AT the frozen final sha and are not recaptured here — see that directory and `build/lane_crops_f2/F2_LANE_F_RECEIPT.txt`. The (j)/(k)/(m)/(n)/(o)/(p)/(q)/(r) committed gate artifacts under `build/lane_crops_b/` and `build/*.json` are this lane's own verification artifacts, distinct from this human-readable evidence matrix, and are indexed by `build/verify_reference.py`, not by this file.
-
+Lane F's `build/lane_crops_f2/` crops (B2-05 action-row, B2-15 track-record) remain
+historical proof for the provisional candidate and are not relabeled as corrected-byte
+captures — see that directory and `build/lane_crops_f2/F2_LANE_F_RECEIPT.txt`. The
+(j)/(k)/(m)/(n)/(o)/(p)/(q)/(r)/(s) committed gate artifacts under
+`build/lane_crops_b/` and `build/*.json` are programmatic verification artifacts,
+distinct from the human-readable evidence matrix; `build/verify_reference.py` indexes
+them.

@@ -27,17 +27,23 @@ schema: mastermind.rig_proposal.v1
 reference_id: mastermind-xpv2-sector-r3b-2
 
 proposed_artifact:
-  frozen_sha: "80347cd6cb37c8e17b7ac7b1dacc0a81f60fc913"   # replaced with the real 40-hex R3B.2 freeze commit (from git log -1 --format=%H) in the same edit that flips status draft -> in_review
+  # Historical provisional freeze retained until the pre-final corrected content
+  # commit exists; the following stamp commit replaces this with that real 40-hex SHA.
+  frozen_sha: "80347cd6cb37c8e17b7ac7b1dacc0a81f60fc913"
   paths:
     - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/proposal/MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html
     - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/proposal/BUILD_MANIFEST.json
-  screenshots:   # fresh successor evidence matrix (49 files + index); index: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/EVIDENCE_INDEX.md
-    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/overview-1440-dark-en.png
-    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/map-1440-dark-en.png
-    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/moving-1440-dark-en.png
-    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/money-1440-dark-en.png
-    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/explore-1440-dark-en.png
-    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/confluence-1440-dark-en.png
+  screenshots:   # corrected-candidate delta; full historical + delta index: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/EVIDENCE_INDEX.md
+    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/7a_smoke-overview-1440-dark-en.png
+    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/7a_smoke-map-1440-dark-en.png
+    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/7a_smoke-moving-1440-dark-en.png
+    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/7a_smoke-money-1440-dark-en.png
+    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/7a_smoke-explore-1440-dark-en.png
+    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/7a_smoke-confluence-1440-dark-en.png
+    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/7b_moving-1440-dark-en.png
+    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/7b_moving-1440-dark-zh.png
+    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/7b_moving-390-dark-en.png
+    - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/7b_moving-390-dark-zh.png
 
 # EVERY baseline capability id appears exactly once. No implicit deletion (RIG S1/S5).
 dispositions:

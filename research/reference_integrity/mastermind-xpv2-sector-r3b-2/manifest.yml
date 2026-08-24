@@ -12,16 +12,18 @@ schema: mastermind.rig_manifest.v1
 reference_id: mastermind-xpv2-sector-r3b-2
 scope: full
 status: in_review
-# status: in_review SET AT FREEZE (2026-08-23): all lanes converged and adjudicated under
-# the FINAL CONTINUATION HANDOFF's eleven-item set, 12/12 continuity rows
-# RESOLVED_BY_CHANGE, verifier 22/22 ALL GREEN (heatmap axis reported UNMEASURED, never
-# scored), fresh 53-file evidence matrix bound to candidate sha256 ea2e09b812d1... .
-# Awaiting Sol's four FRESH delta-focused final seats via the draft HOLD-FOR-SOL PR;
-# no approval.yml may be authored by this cycle.
-# The orchestrator flips status: draft -> in_review at successor freeze, once
-# proposed_artifact.frozen_sha and reference_files[].frozen_sha are the real 40-hex
-# successor commit SHA (taken from `git log -1 --format=%H`, never hand-expanded) and the
-# fresh evidence matrix lands (COMMISSION.md Evidence matrix + Stop condition).
+# status: in_review remains unchanged through the Sol-commissioned pre-final emoji
+# reconciliation. The historical provisional freeze `80347cd6...` / candidate
+# `ea2e09b8...` remains in Git history. The corrected candidate is
+# `4adb4b6245e8e4aa5b68c850a615461327c0a5d2e672e4c203d6ba32a3b8d53c`
+# (5,506,871 bytes), verifier 23/23 ALL GREEN, heatmap axis UNMEASURED (never
+# scored), with a 13-artifact reconciliation delta appended to the historical
+# 53-artifact matrix. Awaiting Sol's four FRESH delta-focused final seats via the
+# draft HOLD-FOR-SOL PR; no approval.yml may be authored by this cycle.
+# The provisional successor satisfied the draft -> in_review gate on 2026-08-23.
+# This pre-final correction keeps status in_review and re-stamps
+# proposed_artifact.frozen_sha/reference_files[].frozen_sha only after the corrected
+# content commit exists (real 40-hex from Git, never hand-expanded).
 
 surface:
   route: sector_central.html
@@ -44,20 +46,21 @@ lineage:
   # substrate remains authority substrate, not a RIG predecessor.
 
 reference_files:            # the FROZEN successor reference artifact (stamped at freeze).
-  # frozen_sha names the freeze commit whose tree holds the final candidate bytes
-  # (candidate sha256 ea2e09b812d1435103e491973ae01d2c4fca63c3a29186023f40f137fc10aba8);
-  # the stamping commit follows it. The four NEW critic receipts must bind artifact_sha
-  # to this value.
+  # The values below preserve the historical provisional freeze until the new
+  # content-freeze commit exists. The following stamp commit replaces all four
+  # with that real 40-hex commit. Its tree holds corrected candidate sha256
+  # 4adb4b6245e8e4aa5b68c850a615461327c0a5d2e672e4c203d6ba32a3b8d53c;
+  # the four NEW critic receipts must bind artifact_sha to the corrected value.
   - path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/proposal/MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html
     frozen_sha: "80347cd6cb37c8e17b7ac7b1dacc0a81f60fc913"
   - path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/proposal/BUILD_MANIFEST.json
     frozen_sha: "80347cd6cb37c8e17b7ac7b1dacc0a81f60fc913"
   - path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/
     frozen_sha: "80347cd6cb37c8e17b7ac7b1dacc0a81f60fc913"
-    note: "source directory -- byte-identical copy of the frozen R3B.1 build at cycle start (incl. its committed gate scripts); lanes A (authority/copy identity: B2-01/04/08/09), B (responsive/a11y geometry: B2-05/06/07/10/11), C (heatmap ink + measurement: B2-03), D (icon/decoded-output guard: B2-02) modify ONLY what a B2-* item requires"
+    note: "source directory -- byte-identical copy of the frozen R3B.1 build at cycle start (incl. its committed gate scripts); the final eleven-item closure changes only its adjudicated targets; the Sol-commissioned pre-final reconciliation removes only the decoded chart emoji from the Moving Track Record heading and adds the decoded-output guard required by that ruling"
   - path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/
     frozen_sha: "80347cd6cb37c8e17b7ac7b1dacc0a81f60fc913"
-    note: "fresh evidence matrix per COMMISSION.md Evidence matrix -- predecessor screenshots are stale for approval once the SHA changes; lands with the frozen successor"
+    note: "historical 53-artifact provisional-freeze matrix plus a separately indexed 13-artifact pre-final correction delta; historical screenshots are not rebound to the corrected candidate"
 
 files:
   baseline: baseline.yml

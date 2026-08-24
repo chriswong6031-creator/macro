@@ -18,6 +18,22 @@ python3 verify_reference.py   # standalone checks (not pytest — see below)
 
 Both scripts are stdlib-only Python 3, no dependencies, no network access.
 
+The pre-final reconciliation also adds a browser gate that must be run with
+the Playwright interpreter before `verify_reference.py` consumes its committed
+receipt:
+
+```
+<playwright-python> decoded_emoji_audit.py
+<playwright-python> decoded_emoji_audit.py --mutate
+```
+
+It decodes literal/decimal/hex pictographic Unicode, audits live DOM text,
+Chromium-computed accessible names, and observable generated content across
+all six views in EN/ZH, and proves the `&#128202;` regression is uniquely
+owned by the Moving track-record heading. The companion
+`capture_prefinal_emoji_evidence.py` writes the commissioned fresh Moving and
+six-view first-viewport screenshots without overwriting the historical freeze.
+
 ## Determinism contract
 
 `build_reference.py` never writes a wall-clock timestamp of its own. Every

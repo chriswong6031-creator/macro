@@ -239,3 +239,43 @@ proposed_artifact.frozen_sha stamped with that commit (taken from `git log -1
 stamping commit. Terminal state per the Chairman directive: draft HOLD-FOR-SOL PR, no
 merge-on-green, native auto-merge null — PARKED for Sol's four fresh delta-focused final
 seats. No approval.yml; R3C not started; production untouched.
+
+## §11 Sol pre-final decoded-emoji reconciliation
+
+Sol found that the provisional frozen source encoded `&#128202;` before the EN and
+ZH Moving Track Record headings. No R3B.2 final critic receipt existed, so the
+provisional freeze remains preserved in history and one pre-review correction was
+authorized on the same held carrier. The candidate-owned delta is exact: remove the
+two encoded chart-emoji presentations and change no label text, vocabulary, icon
+system, producer data, architecture, or production path.
+
+The corrected candidate is sha256
+`4adb4b6245e8e4aa5b68c850a615461327c0a5d2e672e4c203d6ba32a3b8d53c`,
+5,506,871 bytes (20 bytes smaller). A new browser audit checks literal
+Extended_Pictographic Unicode in the six candidate-owned view partials, decimal and
+hex numeric entities, rendered DOM text, Chromium-computed accessibility names, and
+observable generated content across all six views in EN/ZH. Its detector self-test
+covers literal `📊`, decimal `&#128202;`, and hexadecimal `&#x1F4CA;`. The pristine
+candidate is 12/12 green with a nonzero source/DOM/AX/generated-content census and
+zero violations. A temporary reinsertion of `&#128202;` reds only semantic owner
+`moving.track_record_heading`, in both EN/ZH rendered text and accessibility names;
+governed bytes remain restored.
+
+Corrected-byte proof: deterministic double-build; successor verifier 23/23 ALL
+GREEN; R3A 59 passed; RIG checker green; mandate/continuity exact 12/12; duplicate
+IDs 0; href="#" 0; B2-01/B2-12/B2-13 plus decoded-emoji mutations discriminating;
+zero production-path diff. Heatmap colour-field remains UNMEASURED, never PASS. The
+historical 53-artifact matrix is not rebound; a fresh 13-artifact reconciliation
+delta adds six-view first-viewport smoke, four exact Moving-panel EN/ZH captures,
+and three proof receipts.
+
+Current-main pin `08fdcbe1a9ddbb88146c9957113e3d43aa1d9222` produced no material
+Sector Central source/authority/design-law collision; merge reconciliation remains
+post-approval. Immediately before the freeze moved, remote branch and PR head still
+matched `ac3b76046ee4d37949d4ac7d83ac3c7877ac475a`, PR reviews were empty,
+and no local or separate-PR R3B.2 final critic receipt existed. New immutable
+content-freeze SHA: `PENDING_CONTENT_FREEZE`. Its
+following stamp commit updates manifest/proposal freeze references while retaining
+`status: in_review`. PR #6337 stays DRAFT / HOLD-FOR-SOL with no merge-on-green and
+native auto-merge null. No approval.yml; no final critic dispatch; R3C not started;
+production untouched.

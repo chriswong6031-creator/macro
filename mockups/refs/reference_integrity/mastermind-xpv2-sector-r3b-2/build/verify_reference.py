@@ -52,6 +52,12 @@ Checks:
       every [aria-expanded] control driving the shared #r3-receipt panel (the
       [data-r3b1="02"] button + the three [data-r3b1="08"] siblings, exactly
       4) names it via aria-controls="r3-receipt".
+  (s) decoded-output no-emoji audit (from committed
+      decoded_emoji_audit.json; NOT rerun here — browser-based gate). Asserts
+      literal pictographic Unicode, decimal/hex numeric entities, rendered DOM
+      text, browser-computed accessible names, and observable generated content
+      were scanned across all six views in EN/ZH with a nonzero census and no
+      Extended_Pictographic violation.
 
 Checks (f)-(i) shell out to Playwright-based sibling scripts in this
 directory and therefore need a Playwright-enabled Python interpreter to run
@@ -100,6 +106,7 @@ MOBILE_GEOMETRY_JSON = BUILD_DIR / "mobile_geometry_audit.json"
 LABEL_MAP_JSON = BUILD_DIR / "label_map_audit.json"
 THIN_RELIABILITY_JSON = BUILD_DIR / "thin_reliability_audit.json"
 ARIA_RECEIPT_JSON = BUILD_DIR / "aria_receipt_audit.json"
+DECODED_EMOJI_JSON = BUILD_DIR / "decoded_emoji_audit.json"
 
 SIZE_LIMIT = 6 * 1024 * 1024
 
@@ -258,10 +265,11 @@ def main() -> int:
     check_committed_treemap_labels_audit()
     check_committed_mobile_geometry_audit()
 
-    # ── (p)/(q)/(r) Lane G verification-hardening guards ─────────────────
+    # ── (p)/(q)/(r)/(s) verification-hardening guards ────────────────────
     check_committed_label_map_audit()
     check_committed_thin_reliability_audit()
     check_committed_aria_receipt_audit()
+    check_committed_decoded_emoji_audit()
 
     return print_summary()
 
@@ -544,6 +552,53 @@ def check_committed_aria_receipt_audit() -> None:
           f"{len(wrong_shared)} cell(s) with wrong shared-panel count, "
           f"{total_fails} failing assertion(s) "
           f"(reproduce with `<playwright-python> aria_receipt_audit.py`)")
+
+
+def check_committed_decoded_emoji_audit() -> None:
+    """(s) Pre-final reconciliation — decoded-output no-emoji audit.
+
+    The browser audit is committed as JSON so the stdlib verifier can fail
+    closed on missing coverage without trying to launch a second Chromium
+    process inside an already expensive verification run.
+    """
+    name = "(s) decoded-output no-emoji audit (source/entity/DOM/AX/generated-content)"
+    audit = _load_audit(DECODED_EMOJI_JSON, name)
+    if audit is None:
+        return
+    cells = audit["cells"]
+    expected_pairs = {(lang, view) for lang in ("en", "zh")
+                      for view in ("overview", "map", "moving", "money", "explore", "confluence")}
+    got_pairs = {(c.get("lang"), c.get("view")) for c in cells}
+    source = audit.get("source_census") or {}
+    zero_cells = [
+        c for c in cells
+        if not c.get("element_census")
+        or not c.get("dom_text_node_census")
+        or not c.get("accessible_name_census")
+    ]
+    violations = audit.get("violations") or []
+    self_test = (audit.get("detector_self_test") or {}).get("pass") is True
+    nonzero = (
+        audit.get("nonzero_census") is True
+        and source.get("files") == 7
+        and source.get("bytes", 0) > 0
+        and source.get("literal_non_ascii_occurrences", 0) > 0
+        and source.get("decimal_numeric_entities", 0) > 0
+        and got_pairs == expected_pairs
+        and not zero_cells
+    )
+    ok = self_test and nonzero and not violations and audit.get("pass") is True
+    total_dom = sum(c.get("dom_text_node_census", 0) for c in cells)
+    total_ax = sum(c.get("accessible_name_census", 0) for c in cells)
+    total_pseudo = sum(c.get("observable_pseudo_content_census", 0) for c in cells)
+    check(name, ok,
+          f"{len(cells)}/12 EN/ZH x six-view cells; source files={source.get('files')} "
+          f"bytes={source.get('bytes')} decimal entities={source.get('decimal_numeric_entities')} "
+          f"hex entities={source.get('hex_numeric_entities')}; DOM text nodes={total_dom}, "
+          f"accessible names={total_ax}, observable pseudo-content={total_pseudo}; "
+          f"detector self-test={'PASS' if self_test else 'FAIL'}, "
+          f"zero-census cells={len(zero_cells)}, violations={len(violations)} "
+          f"(reproduce with `<playwright-python> decoded_emoji_audit.py`)")
 
 
 def print_summary() -> int:
