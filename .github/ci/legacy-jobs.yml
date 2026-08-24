@@ -2217,6 +2217,7 @@ jobs:
           tests/test_fundamental_forensics_filing_package.py
           tests/test_fundamental_forensics_financial_query_service.py
           tests/test_fundamental_forensics_financial_query_api.py
+          tests/test_fundamental_forensics_ixbrl_raw_ledger.py
           tests/test_fundamental_forensics_financial_revision_service.py
           tests/test_fundamental_forensics_financial_revision_api.py
           tests/test_fundamental_forensics_financial_packet_service.py
