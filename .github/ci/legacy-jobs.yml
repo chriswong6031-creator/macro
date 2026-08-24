@@ -1499,6 +1499,12 @@ jobs:
     scope: exclusive
     paths:
       - "engine/quote_resolution.py"
+      # W1-B wires Brain's native-fact serve to the frozen W1-A runtime. This
+      # job's own app/neuralweb import closure now reaches those packages, so
+      # its curated scope must retain their real dependency ownership.
+      - "engine/intelligence_workspace/**"
+      - "engine/theme_graph/**"
+      - "lib/dataos/**"
       - "app/*"
       - "collectors/*"
       - "collectors/biocatalyst/**"
@@ -6280,6 +6286,12 @@ jobs:
     scope: exclusive
     paths:
       - "engine/quote_resolution.py"
+      # W1-B wires Brain's native-fact serve to the frozen W1-A runtime. This
+      # job's own app/neuralweb import closure now reaches those packages, so
+      # its curated scope must retain their real dependency ownership.
+      - "engine/intelligence_workspace/**"
+      - "engine/theme_graph/**"
+      - "lib/dataos/**"
       - "app/*"
       - "collectors/*"
       - "collectors/biocatalyst/**"
@@ -6824,6 +6836,12 @@ jobs:
     scope: exclusive
     paths:
       - "engine/quote_resolution.py"
+      # W1-B wires Brain's native-fact serve to the frozen W1-A runtime. This
+      # job's own app/neuralweb import closure now reaches those packages, so
+      # its curated scope must retain their real dependency ownership.
+      - "engine/intelligence_workspace/**"
+      - "engine/theme_graph/**"
+      - "lib/dataos/**"
       - "app/*"
       - "collectors/*"
       - "collectors/biocatalyst/**"
@@ -11594,6 +11612,12 @@ jobs:
     scope: exclusive
     paths:
       - "engine/quote_resolution.py"
+      # W1-B wires Brain's native-fact serve to the frozen W1-A runtime. This
+      # job's own app/neuralweb import closure now reaches those packages, so
+      # its curated scope must retain their real dependency ownership.
+      - "engine/intelligence_workspace/**"
+      - "engine/theme_graph/**"
+      - "lib/dataos/**"
       - "app/*"
       - "collectors/*"
       - "collectors/biocatalyst/**"

@@ -54,6 +54,7 @@ from pathlib import Path
 from typing import Any, Callable, Generator, Iterable
 
 from engine import quote_resolution as _quote_resolution
+from engine.neuralweb import native_facts as _native_facts
 from lib.tiers import normalize_tier
 from engine.fundamental_forensics.private_state import load_state
 from engine.fundamental_forensics.context_projection import compact_disclosure_context
@@ -5798,7 +5799,7 @@ def _cache_control_last_message(messages: list[dict]) -> None:
 # Every number here is a time.monotonic() diff measured from the loop's own t0 — no new
 # dependency, no I/O, and nothing on this path may ever raise into the turn.
 #
-#   route        'instant' | 'deep'  — which lane served the turn
+#   route        'instant' | 'instant/native-fact' | 'deep' — serving route
 #   ttfv_ms      time to FIRST visible answer byte (the first `delta` yield); None on
 #                the non-streaming entrypoint, which has no wire to be first on
 #   rounds       [{"model_ms": int, "tools": [{"name": str, "ms": int}]}] — one per
@@ -6173,6 +6174,7 @@ def _run_brain_loop(
 # moment the answer actually starts being written.
 _STAGE_LABELS: dict[str, tuple[str, str]] = {
     "start":      ("Reading your question",          "正在读懂您的问题"),
+    "native":     ("Checking the canonical facts",   "核对权威数据"),
     "grounding":  ("Catching up on today's tape",    "先看今天的盘面"),
     "model.fast": ("Thinking it through",            "正在推演"),
     "model.pro":  ("Thinking it through properly",   "深入推演中"),
@@ -8328,6 +8330,52 @@ def _instant_answer(
     return {"text": screened, "usage": usage, "model": used_model or "", "symbol": symbol}
 
 
+def _native_fact_citations(receipt: dict) -> list[str]:
+    """Subscriber-safe source IDs, de-duplicated in visible fact order."""
+    sources: list[str] = []
+    for fact in receipt.get("facts") or []:
+        source = fact.get("source") if isinstance(fact, dict) else None
+        source_id = source.get("source_id") if isinstance(source, dict) else None
+        if isinstance(source_id, str) and source_id and source_id not in sources:
+            sources.append(source_id)
+    relation = receipt.get("relationship_receipt")
+    relation_source = relation.get("source") if isinstance(relation, dict) else None
+    relation_source_id = (
+        relation_source.get("source_id") if isinstance(relation_source, dict) else None
+    )
+    if (isinstance(relation_source_id, str) and relation_source_id
+            and relation_source_id not in sources):
+        sources.append(relation_source_id)
+    return sources
+
+
+def _native_fact_latency(receipt: dict, route_started: float) -> dict:
+    """Merge measured native stages into the existing additive latency contract."""
+    timing = _new_turn_timing(_native_facts.NATIVE_FACT_ROUTE)
+    native_timing = receipt.get("timing")
+    if isinstance(native_timing, dict):
+        for key in (
+            "route_decision_ms", "context_assembly_ms",
+            "registry_context_assembly_ms", "render_ms",
+        ):
+            value = native_timing.get(key)
+            if isinstance(value, (int, float)) and not isinstance(value, bool):
+                timing[key] = value
+    timing["total_ms"] = _ms_since(route_started)
+    return timing
+
+
+def _native_fact_stream_chunks(execution: Any) -> list[str]:
+    """First delta already contains a typed fact; later clauses append incrementally."""
+    clauses = list(execution.clauses or ())
+    if not clauses:
+        return [execution.answer]
+    symbol = str((execution.receipt.get("effective_context") or {}).get("symbol") or "")
+    chunks = [f"{symbol} — {clauses[0]['text']}"]
+    chunks.extend(f"; {clause['text']}" for clause in clauses[1:])
+    return chunks
+
+
 # ---------------------------------------------------------------------------
 # Public: chat() — non-streaming entrypoint
 # ---------------------------------------------------------------------------
@@ -8500,13 +8548,75 @@ def chat(
             "screened": True,
         }
 
-    # 3c. Instant-fact routing decision (W5 Contract I). Pure + no I/O, taken HERE —
-    #     after quota/prescreen, before a provider exists — so the two lanes see
-    #     byte-identical inputs and the instant lane can never skip a gate. The turn is
-    #     SERVED further down, once a client has been resolved; an image turn is never
-    #     a price lookup, so attachments opt out.
+    # 3c. Instant routing decision. W1-B plans registered native facts first; the
+    #     existing quote-only W5 route remains the non-US compatibility island. Both
+    #     decisions are pure and happen after quota/prescreen but before providers.
     _instant_t0 = time.monotonic()
-    _instant_route_hit = None if images else _instant_route(clean_msg, context)
+    _native_plan_t0 = time.monotonic()
+    _native_plan_hit = (
+        None if images or mode == "research"
+        else _native_facts.plan_native_facts(clean_msg, context)
+    )
+    _native_route_decision_ms = _ms_since(_native_plan_t0)
+    _instant_route_hit = (
+        None if images or _native_plan_hit is not None
+        else _instant_route(clean_msg, context)
+    )
+
+    # 3d. W1-B deterministic native serve. This branch intentionally precedes
+    #     provider construction: canonical local truth cannot depend on model health,
+    #     and a typed stale/null/rights-blocked result must not fall into a model loop.
+    if _native_plan_hit is not None:
+        _nf_exec = _native_facts.execute_native_fact_plan(
+            _native_plan_hit,
+            repo_root=root,
+            route_decision_ms=_native_route_decision_ms,
+        )
+        _nf_receipt = _nf_exec.receipt
+        _nf_timing = _native_fact_latency(_nf_receipt, _instant_t0)
+        _nf_receipt["timing"] = {
+            key: value for key, value in _nf_timing.items()
+            if key not in {"rounds", "synthesis_ms"}
+        }
+        _nf_thread_id: str | None = None
+        if not is_guest:
+            _nf_thread_id = _ensure_thread(thread_id, user_id, lane, title=clean_msg)
+            if _nf_thread_id:
+                try:
+                    from engine.neuralweb import brain_user_memory as _bum  # noqa: PLC0415
+                    _append_message(_nf_thread_id, "user", clean_msg)
+                    _append_message(
+                        _nf_thread_id, "assistant", _nf_exec.answer,
+                        meta=_bum.assistant_meta(None, _nf_exec.answer),
+                    )
+                except Exception:  # noqa: BLE001
+                    pass
+        _record_token_usage(user_id, lane, 0, 0)
+        _log_brain_response(
+            question=clean_msg, answer=_nf_exec.answer, model="native-fact.v1",
+            lane=lane, mode=mode, thread_id=_nf_thread_id, user_id=user_id,
+            user_email=user_email, is_guest=is_guest,
+            latency_ms=int(_nf_timing["total_ms"]),
+            input_tokens=0, output_tokens=0, context=context, latency=_nf_timing,
+            flags={"native_fact": True},
+        )
+        return {
+            "ok": True,
+            "reply": _nf_exec.answer,
+            "citations": _native_fact_citations(_nf_receipt),
+            "lane": lane,
+            "model": "native-fact.v1",
+            "thread_id": _nf_thread_id,
+            "quota": quota_info,
+            "latency": _nf_timing,
+            "usage": {"input_tokens": 0, "output_tokens": 0, "latency": _nf_timing},
+            "filtered": False,
+            "degraded": bool(_nf_receipt.get("failure")),
+            "is_context_only": True,
+            "route": _native_facts.NATIVE_FACT_ROUTE,
+            "symbol": _native_plan_hit.symbol,
+            "native_fact_receipt": _nf_receipt,
+        }
 
     # 4. Build providers
     providers = _build_lane_providers(lane, root)
@@ -8886,10 +8996,77 @@ def chat_stream(
             flags={"screened": True})
         return
 
-    # 2c. Instant-fact routing decision (W5 Contract I) — see chat()'s 3c. Pure, no I/O,
-    #     taken after quota/prescreen and before any provider exists; served at 5b below.
+    # 2c. Instant routing decision — W1-B native facts first, then the preserved
+    #     quote-only compatibility route. Both remain behind quota and prescreen.
     _instant_t0 = time.monotonic()
-    _instant_route_hit = None if images else _instant_route(clean_msg, context)
+    _native_plan_t0 = time.monotonic()
+    _native_plan_hit = (
+        None if images or mode == "research"
+        else _native_facts.plan_native_facts(clean_msg, context)
+    )
+    _native_route_decision_ms = _ms_since(_native_plan_t0)
+    _instant_route_hit = (
+        None if images or _native_plan_hit is not None
+        else _instant_route(clean_msg, context)
+    )
+
+    # 2d. Deterministic W1-B native stream. Meta/status go out before owner I/O;
+    #     the first delta already contains a typed fact, so TTFV is never gamed by
+    #     content-free progress. Typed unavailability stays on this route.
+    if _native_plan_hit is not None:
+        _nf_thread_id: str | None = None
+        if not is_guest:
+            _nf_thread_id = _ensure_thread(thread_id, user_id, lane, title=clean_msg)
+            if _nf_thread_id:
+                _append_message(_nf_thread_id, "user", clean_msg)
+        yield f"data: {json.dumps({'type': 'meta', 'lane': lane, 'model': 'native-fact.v1', 'thread_id': _nf_thread_id, 'quota': quota_info})}\n\n"
+        yield _status_event("native", _instant_t0, _STAGE_LABELS["native"],
+                            detail=_native_plan_hit.symbol)
+        _nf_exec = _native_facts.execute_native_fact_plan(
+            _native_plan_hit,
+            repo_root=root,
+            route_decision_ms=_native_route_decision_ms,
+        )
+        _nf_receipt = _nf_exec.receipt
+        _nf_timing = _native_fact_latency(_nf_receipt, _instant_t0)
+        for _nf_chunk in _native_fact_stream_chunks(_nf_exec):
+            yield _delta_sse(_nf_chunk, _nf_timing, _instant_t0)
+        _nf_timing["total_ms"] = _ms_since(_instant_t0)
+        _nf_receipt["timing"] = {
+            key: value for key, value in _nf_timing.items()
+            if key not in {"rounds", "synthesis_ms"}
+        }
+        _nf_usage = {"input_tokens": 0, "output_tokens": 0, "latency": _nf_timing}
+        yield "data: " + json.dumps({
+            "type": "done",
+            "route": _native_facts.NATIVE_FACT_ROUTE,
+            "citations": _native_fact_citations(_nf_receipt),
+            "quota": quota_info,
+            "usage": _nf_usage,
+            "filtered": False,
+            "degraded": bool(_nf_receipt.get("failure")),
+            "is_context_only": True,
+            "native_fact_receipt": _nf_receipt,
+        }) + "\n\n"
+        if _nf_thread_id:
+            try:
+                from engine.neuralweb import brain_user_memory as _bum  # noqa: PLC0415
+                _append_message(
+                    _nf_thread_id, "assistant", _nf_exec.answer,
+                    meta=_bum.assistant_meta(None, _nf_exec.answer),
+                )
+            except Exception:  # noqa: BLE001
+                pass
+        _record_token_usage(user_id, lane, 0, 0)
+        _log_brain_response(
+            question=clean_msg, answer=_nf_exec.answer, model="native-fact.v1",
+            lane=lane, mode=mode, thread_id=_nf_thread_id, user_id=user_id,
+            user_email=user_email, is_guest=is_guest,
+            latency_ms=int((time.time() - _t0) * 1000), input_tokens=0,
+            output_tokens=0, context=context, latency=_nf_timing,
+            flags={"native_fact": True},
+        )
+        return
 
     # 3. Providers
     providers = _build_lane_providers(lane, root)
