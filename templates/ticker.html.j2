@@ -437,7 +437,53 @@ html.has-js .rv.in{opacity:1;transform:none;transition:opacity .55s ease,transfo
 .ss-gate .w em{font-style:normal;font-weight:650;color:var(--text);}
 .ss-receipt{margin-top:8px;font-size:11.5px;line-height:1.55;color:var(--muted);}
 
-[data-lang="zh"] :is(.ss-axis,.ss-ev-label,.ss-note b){letter-spacing:0;text-transform:none;}
+/* ── the provenance register ──────────────────────────────────────────────
+   Two kinds of line live in this panel: values quoted from an owner, and
+   values worked out here from those quotes. Quoting is the majority and the
+   default, so the QUOTED lines carry no mark at all and the worked-out ones
+   carry this tag — mark the exception, not the rule, or the mark stops
+   meaning anything. It is a tag, not a badge: hairline, muted, no hue, so it
+   never competes with the state rail for attention.                        */
+.ss-prov{display:inline-flex;align-items:center;flex:0 0 auto;margin-left:8px;padding:1px 6px;
+  border:1px solid var(--hair);border-radius:5px;vertical-align:middle;
+  font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  line-height:1.6;white-space:nowrap;color:var(--muted);}
+.dpanel h3 .ss-prov{position:relative;top:-1px;}
+
+/* estimated timing — an estimate that could be mistaken for a diary entry is
+   the failure mode this element exists to prevent, so the qualifier sits on
+   its own line under the window rather than in a tooltip. */
+.ss-est{display:block;margin-top:2px;font-size:10.5px;line-height:1.45;color:var(--ink-warn,var(--warn));}
+.ss-when{font-variant-numeric:tabular-nums;}
+
+/* nested owner reads inside one leg (opportunity context) */
+.ss-subs{display:flex;flex-direction:column;gap:4px;}
+.ss-sub-r{display:flex;align-items:baseline;gap:8px;min-width:0;}
+.ss-sub-r>.n{min-width:0;overflow-wrap:anywhere;color:var(--text);}
+.ss-sub-r>.s{margin-left:auto;flex:0 0 auto;font-size:10.5px;font-weight:650;color:var(--ss-ink);}
+.ss-sub-r>.s::before{content:"";display:inline-block;width:5px;height:5px;margin-right:5px;
+  border-radius:50%;background:var(--ss-c);vertical-align:middle;}
+.ss-sub-r.ss-r-hollow>.s::before{background:transparent;box-shadow:inset 0 0 0 1px var(--ss-c);}
+.ss-sub-r.ss-r-dash>.s::before{width:7px;height:2px;border-radius:1px;}
+
+/* identity receipt rows — R1…R9, one block each, in the .ss-gate family */
+.ss-chk{padding:11px 0;border-bottom:1px solid var(--hair);}
+.ss-chk:last-child{border-bottom:0;}
+.ss-chk-h{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;}
+.ss-chk-h .r{font-family:var(--font-mono);font-size:11.5px;font-weight:700;color:var(--text);}
+.ss-chk-h .v{font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ss-ink);}
+.ss-chk-h .v::before{content:"";display:inline-block;width:5px;height:5px;margin-right:5px;
+  border-radius:50%;background:var(--ss-c);vertical-align:middle;}
+.ss-chk-h .c{margin-left:auto;color:var(--muted);}
+.ss-chk-d{margin:4px 0 0;font-size:12px;line-height:1.5;color:var(--text);overflow-wrap:anywhere;}
+.ss-chk-s{margin:4px 0 0;font-size:10.5px;line-height:1.5;color:var(--muted);overflow-wrap:anywhere;}
+.ss-chk-v{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;margin-top:6px;}
+.ss-chk-v dt,.ss-chk-v dd{margin:0;font-family:var(--font-mono);font-size:10.5px;line-height:1.55;
+  overflow-wrap:anywhere;}
+.ss-chk-v dt{color:var(--muted);}
+.ss-chk-v dd{color:var(--text);}
+
+[data-lang="zh"] :is(.ss-axis,.ss-ev-label,.ss-note b,.ss-prov,.ss-chk-h .v){letter-spacing:0;text-transform:none;}
 
 /* Light is designed, not translated: a 10% mix of a hue with `transparent`
    sits on white glass and disappears, so light tints mix with #fff instead,
@@ -1002,7 +1048,10 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
      problem; both name what still works, so the reader never has to guess how
      far the failure reaches. #}
   {% if ss.degradation.failed %}
-  <p class="ss-flag ss-t-act"><b>{{ t('This read could not be built', '本次读数无法生成') }}</b>{{ t('The six reads below could not be compiled from their sources this run. The price, chart and company sections above are unaffected.', '本次运行未能从来源生成下方六项读数。上方的价格、图表与公司板块不受影响。') }}{% if ss.last_good.at %} {{ t('Last complete read:', '上次完整读数：') }} {{ ss.last_good.at }}.{% endif %}</p>
+  {# The last-good citation is gated on a read that actually succeeded: a
+     recorded fallback whose own compile failed is not something to fall back
+     on, and naming it would promise the reader a version that never existed. #}
+  <p class="ss-flag ss-t-act"><b>{{ t('This read could not be built', '本次读数无法生成') }}</b>{{ t('The six reads below could not be compiled from their sources this run. The price, chart and company sections above are unaffected.', '本次运行未能从来源生成下方六项读数。上方的价格、图表与公司板块不受影响。') }}{% if ss.last_good.ok %} {{ t('Last complete read:', '上次完整读数：') }} {{ ss.last_good.at }}{% if ss.last_good.deg and ss.last_good.deg.code != 'NONE' %} — {{ t(ss.last_good.deg.en|lower, ss.last_good.deg.zh) }}{% endif %}.{% endif %}</p>
   {% elif not ss.identity.ok %}
   <p class="ss-flag ss-t-{{ ss.identity.tone }}"><b>{{ t(ss.identity.en, ss.identity.zh) }}</b>{{ t(ss.identity.why_en, ss.identity.why_zh) }}</p>
   {% endif %}
@@ -1017,8 +1066,18 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
 
       {# The strongest unresolved fact sits ahead of every secondary block in
          DOM order, so the mobile column needs no reordering to satisfy it. #}
+      {# Direction is a second quoted field, not a second opinion — one short
+         row, and only when the page can say it in both languages. #}
+      {% if a.direction %}
+      <div class="ss-note"><b>{{ t('Direction', '方向') }}</b><span class="v">{{ t(a.direction.en, a.direction.zh) }}</span></div>
+      {% endif %}
+      {% if a.subreads %}
+      <div class="ss-note"><b>{{ t('Reads behind this', '构成这项的读数') }}</b>
+        <div class="ss-subs">{% for s in a.subreads %}<span class="ss-sub-r ss-t-{{ s.tone }} ss-r-{{ s.rail }}"><span class="n">{{ t(s.en, s.zh) }}</span><span class="s">{{ t(s.cov_en, s.cov_zh) }}</span></span>{% endfor %}</div>
+      </div>
+      {% endif %}
       {% if a.unresolved %}
-      <div class="ss-note"><b>{{ t('Biggest open question', '最大未决问题') }}</b><span class="v">{{ t(a.unresolved.en, a.unresolved.zh) }}</span></div>
+      <div class="ss-note"><b>{{ t('Biggest open question', '最大未决问题') }}<span class="ss-prov">{{ t('worked out here', '本页推算') }}</span></b><span class="v">{{ t(a.unresolved.en, a.unresolved.zh) }}</span></div>
       {% endif %}
       {% if a.gates %}
       <div class="ss-note"><b>{{ t('Checks not cleared', '未通过的检查') }}</b>
@@ -1028,7 +1087,7 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
       {% endif %}
       {% if a.observables %}
       <div class="ss-note"><b>{{ t('Next observable', '下一个可观测点') }}</b>
-        <ul class="ss-list">{% for o in a.observables[:3] %}<li>{{ t(o.en, o.zh) }}{% if o.when %} <span class="mut">· {{ o.when }}</span>{% endif %}</li>{% endfor %}</ul>
+        <ul class="ss-list">{% for o in a.observables[:3] %}<li>{{ t(o.en, o.zh) }}{% if o.when %} <span class="mut ss-when">· {{ o.when }}</span>{% endif %}{% if o.est %}<span class="ss-est">{{ t('Estimated window — not an announced date', '预计窗口 — 并非官方公布日期') }}</span>{% endif %}</li>{% endfor %}</ul>
       </div>
       {% endif %}
       {% if a.warnings %}
@@ -1052,6 +1111,7 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
     <span class="ss-ev-label">{{ t('Evidence & receipts', '证据与凭证') }}</span>
     <span class="ss-tally">
       {% for b in ss.tally %}<span class="ss-t-{{ b.tone }}"><i class="ss-tick ss-r-{{ b.rail }}" aria-hidden="true"></i><b>{{ b.n }}</b> {{ t(b.en|lower, b.zh) }}</span>{% endfor %}
+      <span class="ss-prov">{{ t('counted here', '本页统计') }}</span>
     </span>
     {% if ss.frontier_at %}<span class="ss-clock">{{ t('sources through', '来源截至') }} {{ ss.frontier_at }}</span>{% endif %}
     <button type="button" class="gbtn gbtn-sm" onclick="dsrOpenDlg('dlg-ss-evidence')">{{ t('Open evidence', '查看证据') }}</button>
@@ -1634,6 +1694,7 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
         <p class="ss-dp">{{ t(a.headline.en, a.headline.zh) }}</p>
         {% if a.clause %}<p class="ss-dp mut">{{ t(a.clause.en, a.clause.zh) }}</p>{% endif %}
         {% if a.why %}<p class="ss-dp mut">{{ t(a.why.en, a.why.zh) }}</p>{% endif %}
+        {% if a.derived %}<div class="dfoot">{{ t('This sentence is our plain wording of the values in this panel. The values themselves are quoted.', '此表述为本页对本面板数值的通俗措辞；数值本身为原样引用。') }}</div>{% endif %}
       </section>
 
       <section class="dpanel">
@@ -1648,6 +1709,27 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
           <div class="r6d"><span class="k">{{ t('Correction state', '更正状态') }}</span><span class="vv">{{ a.correction if a.correction else t('None recorded', '无记录') }}</span></div>
         </div>
       </section>
+
+      {# The quoted values the card's sentence rests on. The sentence above is
+         this page's wording; these are the source's own fields, unchanged. #}
+      {% if a.fields %}
+      <section class="dpanel">
+        <h3>{{ t('Fields read, exactly as recorded', '按原样读取的字段') }}</h3>
+        <dl class="ss-chk-v">{% for f in a.fields %}<dt>{{ f.k }}</dt><dd>{{ f.v if f.v else '—' }}</dd>{% endfor %}</dl>
+        {% if a.quoted_summary %}<p class="ss-receipt">{{ t('Recorded as', '记录原文') }}: <span class="ss-id">{{ t(a.quoted_summary.en, a.quoted_summary.zh) }}</span></p>{% endif %}
+      </section>
+      {% endif %}
+
+      {% if a.subreads %}
+      <section class="dpanel">
+        <h3>{{ t('Reads behind this', '构成这项的读数') }}</h3>
+        <div class="dkv">
+          {% for s in a.subreads %}<div class="r6d"><span class="k">{{ t(s.en, s.zh) }}</span><span class="vv ss-t-{{ s.tone }} ss-tone-ink">{{ t(s.cov_en, s.cov_zh) }}</span></div>{% endfor %}
+        </div>
+        {% for s in a.subreads %}{% if s.reason %}<p class="ss-receipt">{{ t(s.en, s.zh) }} — {{ s.reason }}</p>{% endif %}{% endfor %}
+        <div class="dfoot">{{ t('A read that is not available is left out. No rank, score or stand-in value is put in its place.', '不可用的读数即留空，不会以任何排名、评分或替代数值填补。') }}</div>
+      </section>
+      {% endif %}
 
       {% if a.unresolved %}
       <section class="dpanel">
@@ -1671,8 +1753,23 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
 
       {% if a.observables %}
       <section class="dpanel">
-        <h3>{{ t('What to watch next', '接下来关注什么') }}</h3>
-        <ul class="dnotes">{% for o in a.observables %}<li>{{ t(o.en, o.zh) }}{% if o.when %} · {{ o.when }}{% endif %}</li>{% endfor %}</ul>
+        <h3>{{ t('What to watch next', '接下来关注什么') }}{% if a.observables|selectattr('est')|list %}<span class="ss-prov">{{ t('worked out here', '本页推算') }}</span>{% endif %}</h3>
+        {% for o in a.observables %}
+        <div class="ss-gate">
+          <span class="g">{{ t(o.en, o.zh) }}{% if o.when %}<span class="c ss-when">{{ o.when }}</span>{% endif %}</span>
+          {% if o.est %}<span class="ss-est">{{ t('Estimated window — not an announced date', '预计窗口 — 并非官方公布日期') }}</span>{% endif %}
+          {% if o.basis %}<span class="w"><em>{{ t('Worked out from', '推算依据') }}:</em> {{ o.basis }}</span>{% endif %}
+        </div>
+        {% endfor %}
+      </section>
+      {% endif %}
+
+      {% if a.warnings %}
+      <section class="dpanel">
+        <h3>{{ t('Noted while building', '生成过程中的提示') }}</h3>
+        {% for w in a.warnings %}
+        <div class="ss-gate"><span class="g">{{ t(w.en, w.zh) }}{% if w.code %}<span class="c ss-id">{{ w.code }}</span>{% endif %}</span></div>
+        {% endfor %}
       </section>
       {% endif %}
 
@@ -1687,7 +1784,11 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
         <h3>{{ t('Can you act on this', '是否可据此行动') }}</h3>
         <p class="ss-dp">{{ t(a.actionable.en, a.actionable.zh) }}</p>
       </section>
-      <div class="dfoot">{{ t('Nothing in this panel is calculated here. Every value is quoted from the source named beside it.', '本面板不进行任何计算，所有数值均引用其旁标注的来源。') }}</div>
+      {# Provenance, in two registers. The panel used to claim it calculated
+         nothing — it does: it counts, it picks, it estimates a window. Saying
+         so, and marking which lines those are, is worth more than a promise
+         the panel could not keep. #}
+      <div class="dfoot">{{ t("Most lines here are quoted — copied as recorded from the source named beside them. Lines tagged “worked out here” are produced by Mastermind from those quoted values under a fixed rule, never by judgement. The plain wording of a source's own status is ours; the status itself is the source's, and a missing source stays missing.", '本面板多数内容为引用 — 按记录原样复制自旁注来源。标注「本页推算」的内容由 Mastermind 依据这些引用值按固定规则得出，不含主观判断。来源状态的通俗措辞由本页给出，状态本身来自来源；缺失的来源仍按缺失呈现。') }}</div>
     </div>
   </div>
 </div>
@@ -1702,13 +1803,33 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
     </div>
     <div class="dsr-dlg-body">
       <section class="dpanel">
-        <h3>{{ t('Coverage of the six reads', '六项读数的覆盖情况') }}</h3>
+        <h3>{{ t('Coverage of the six reads', '六项读数的覆盖情况') }}<span class="ss-prov">{{ t('counted here', '本页统计') }}</span></h3>
         <div class="dkv">
           {% for b in ss.tally %}<div class="r6d"><span class="k ss-t-{{ b.tone }} ss-tone-ink">{{ t(b.en, b.zh) }}</span><span class="vv num">{{ b.n }} / {{ ss.axes|length }}</span></div>{% endfor %}
-          {% if ss.required_legs is not none %}<div class="r6d"><span class="k">{{ t('Required reads', '必需读数') }}</span><span class="vv num">{{ ss.required_legs }}</span></div>{% endif %}
-          {% if ss.optional_legs is not none %}<div class="r6d"><span class="k">{{ t('Optional reads', '可选读数') }}</span><span class="vv num">{{ ss.optional_legs }}</span></div>{% endif %}
         </div>
       </section>
+
+      {# Two different questions, so two different rows. "Current" counts only
+         reads that came back current; "not in the way" also counts a read that
+         does not apply to this listing or sits outside its coverage. Folding
+         them into one number is how a read that does not apply ends up looking
+         like a read that is fine. #}
+      {% if ss.coverage.req_total is not none or ss.coverage.opt_total is not none %}
+      <section class="dpanel">
+        <h3>{{ t('Required and optional reads', '必需与可选读数') }}</h3>
+        <div class="dkv">
+          {% if ss.coverage.req_total is not none %}
+          <div class="r6d"><span class="k">{{ t('Required reads, current', '必需读数：当前') }}</span><span class="vv num">{{ ss.coverage.req_avail if ss.coverage.req_avail is not none else '—' }} / {{ ss.coverage.req_total }}</span></div>
+          {% if ss.coverage.req_nonblock is not none %}<div class="r6d"><span class="k">{{ t('Required reads, not in the way', '必需读数：不构成阻碍') }}</span><span class="vv num">{{ ss.coverage.req_nonblock }} / {{ ss.coverage.req_total }}</span></div>{% endif %}
+          {% endif %}
+          {% if ss.coverage.opt_total is not none %}
+          <div class="r6d"><span class="k">{{ t('Optional reads, current', '可选读数：当前') }}</span><span class="vv num">{{ ss.coverage.opt_avail if ss.coverage.opt_avail is not none else '—' }} / {{ ss.coverage.opt_total }}</span></div>
+          {% if ss.coverage.opt_nonblock is not none %}<div class="r6d"><span class="k">{{ t('Optional reads, not in the way', '可选读数：不构成阻碍') }}</span><span class="vv num">{{ ss.coverage.opt_nonblock }} / {{ ss.coverage.opt_total }}</span></div>{% endif %}
+          {% endif %}
+        </div>
+        <div class="dfoot">{{ t('"Current" counts only reads that came back current. "Not in the way" also counts a read that does not apply to this listing, or sits outside its coverage — which is not the same as current. These counts include the evidence read, which has its own panel below rather than a card above.', '「当前」仅统计返回为当前的读数；「不构成阻碍」还包括不适用于该证券或不在覆盖范围内的读数 — 与「当前」并不相同。以上计数包含证据读数，该读数在下方独立面板中呈现，而非上方卡片。') }}</div>
+      </section>
+      {% endif %}
 
       {% if ss.gates %}
       <section class="dpanel">
@@ -1737,7 +1858,7 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
           {% if ss.listing_key %}<div class="r6d"><span class="k">{{ t('Listing', '上市代码') }}</span><span class="vv ss-id">{{ ss.listing_key }}</span></div>{% endif %}
           {% if ss.security_id %}<div class="r6d"><span class="k">{{ t('Security', '证券标识') }}</span><span class="vv ss-id">{{ ss.security_id }}</span></div>{% endif %}
           {% if ss.issuer_id %}<div class="r6d"><span class="k">{{ t('Issuer', '发行人标识') }}</span><span class="vv ss-id">{{ ss.issuer_id }}</span></div>{% endif %}
-          {% for c in ss.evidence.counts %}<div class="r6d"><span class="k">{{ t(c.en, c.zh) }}</span><span class="vv num">{{ c.v }}</span></div>{% endfor %}
+          {% if ss.content_sha256 %}<div class="r6d"><span class="k">{{ t('Content fingerprint', '内容指纹') }}</span><span class="vv ss-id">{{ ss.content_sha256 }}</span></div>{% endif %}
           {% if ss.market_at %}<div class="r6d"><span class="k">{{ t('Market data through', '行情数据截至') }}</span><span class="vv num">{{ ss.market_at }}</span></div>{% endif %}
           {% if ss.frontier_at %}<div class="r6d"><span class="k">{{ t('Sources through', '来源截至') }}</span><span class="vv num">{{ ss.frontier_at }}</span></div>{% endif %}
           {% if ss.compiled_at %}<div class="r6d"><span class="k">{{ t('Compiled', '编排时间') }}</span><span class="vv num">{{ ss.compiled_at }}</span></div>{% endif %}
@@ -1746,29 +1867,55 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
         <p class="ss-receipt">{{ t(ss.identity.en, ss.identity.zh) }}{% if ss.identity.legs %} · {{ ss.identity.legs|length }} {{ t('source checks', '项来源核对') }}{% endif %}{% if ss.identity.equalities %} · {{ ss.identity.equalities|length }} {{ t('matches', '项一致') }}{% endif %}{% if ss.identity.why_en %} — {{ t(ss.identity.why_en, ss.identity.why_zh) }}{% endif %}</p>
       </section>
 
+      {# The evidence read's own receipt: which records were asked for, which
+         were used, and what happened to the rest. The zeros print too. #}
+      {% if ss.evidence.compile_state or ss.evidence.counts %}
+      <section class="dpanel">
+        <h3>{{ t('What went into the evidence', '证据的构成') }}<span class="ss-prov">{{ t('counted here', '本页统计') }}</span></h3>
+        <div class="dkv">
+          {% if ss.evidence.compile_state %}<div class="r6d"><span class="k">{{ t('Evidence compiled', '证据编排结果') }}</span><span class="vv ss-t-{{ ss.evidence.compile_state.tone }} ss-tone-ink">{{ t(ss.evidence.compile_state.en, ss.evidence.compile_state.zh) }}</span></div>{% endif %}
+          {% for c in ss.evidence.counts %}<div class="r6d"><span class="k">{{ t(c.en, c.zh) }}</span><span class="vv num">{{ c.v }}</span></div>{% endfor %}
+          {% if ss.evidence.compiled_at %}<div class="r6d"><span class="k">{{ t('Compiled', '编排时间') }}</span><span class="vv num">{{ ss.evidence.compiled_at }}</span></div>{% endif %}
+        </div>
+        {% if ss.evidence.conflicts %}<ul class="dnotes">{% for c in ss.evidence.conflicts %}<li>{{ c }}</li>{% endfor %}</ul>{% endif %}
+      </section>
+      {% endif %}
+
       {% if ss.identity.legs or ss.identity.refusals or ss.identity.disclosures %}
       <section class="dpanel">
         <h3>{{ t('Identity checks', '身份核对') }}</h3>
-        {% if ss.identity.legs %}
-        <div class="dkv">
-          {% for lg in ss.identity.legs %}<div class="r6d"><span class="k">{{ lg.name }}{% if lg.artifact %} <span class="ss-id">{{ lg.artifact }}</span>{% endif %}</span><span class="vv ss-id">{{ lg.values }}</span></div>{% endfor %}
+        {% for lg in ss.identity.legs %}
+        <div class="ss-chk ss-t-{{ lg.tone }}">
+          <div class="ss-chk-h">
+            <span class="r">{{ lg.check }}</span>
+            <span class="v">{{ t(lg.result_en, lg.result_zh) }}</span>
+            {% if lg.code %}<span class="c ss-id">{{ lg.code }}</span>{% endif %}
+          </div>
+          {% if lg.desc %}<p class="ss-chk-d">{{ lg.desc }}</p>{% endif %}
+          {% if lg.artifact %}<p class="ss-chk-s"><span class="ss-id">{{ lg.artifact }}</span></p>{% endif %}
+          {% if lg.reader %}<p class="ss-chk-s">{{ t('read by', '读取方') }} <span class="ss-id">{{ lg.reader }}</span></p>{% endif %}
+          {% if lg.reads %}<dl class="ss-chk-v">{% for v in lg.reads %}<dt>{{ v.k }}</dt><dd>{{ v.v if v.v else '—' }}</dd>{% endfor %}</dl>{% endif %}
         </div>
-        {% endif %}
+        {% endfor %}
         {% if ss.identity.equalities %}<ul class="dnotes">{% for e in ss.identity.equalities %}<li class="ss-id">{{ e }}</li>{% endfor %}</ul>{% endif %}
         {% if ss.identity.refusals %}<div class="dfoot">{{ t('Held back', '暂不呈现') }}: {% for r in ss.identity.refusals %}{{ r }}{% if not loop.last %} · {% endif %}{% endfor %}</div>{% endif %}
         {% if ss.identity.disclosures %}<div class="dfoot">{% for d in ss.identity.disclosures %}{{ d }}{% if not loop.last %} · {% endif %}{% endfor %}</div>{% endif %}
       </section>
       {% endif %}
 
-      {% if ss.last_good.at %}
+      {% if ss.last_good.ok %}
       <section class="dpanel">
         <h3>{{ t('Last complete read', '上次完整读数') }}</h3>
-        <div class="dkv"><div class="r6d"><span class="k">{{ t('Compiled', '编排时间') }}</span><span class="vv num">{{ ss.last_good.at }}</span></div></div>
-        {% if ss.last_good.note %}<p class="ss-receipt">{{ t(ss.last_good.note.en, ss.last_good.note.zh) }}</p>{% endif %}
+        <div class="dkv">
+          <div class="r6d"><span class="k">{{ t('Built', '生成时间') }}</span><span class="vv num">{{ ss.last_good.at }}</span></div>
+          {% if ss.last_good.deg %}<div class="r6d"><span class="k">{{ t('Its own coverage', '其自身覆盖情况') }}</span><span class="vv ss-t-{{ ss.last_good.deg.tone }} ss-tone-ink">{{ t(ss.last_good.deg.en, ss.last_good.deg.zh) }}</span></div>{% endif %}
+          {% if ss.last_good.sha %}<div class="r6d"><span class="k">{{ t('Content fingerprint', '内容指纹') }}</span><span class="vv ss-id">{{ ss.last_good.sha }}</span></div>{% endif %}
+        </div>
+        {% if ss.last_good.reason %}<p class="ss-receipt">{{ t('Why this earlier read is named', '为何列出这一较早读数') }}: {{ t(ss.last_good.reason.en, ss.last_good.reason.zh) }}</p>{% endif %}
       </section>
       {% endif %}
 
-      <div class="dfoot">{{ t('This panel quotes sources. It does not calculate anything, and it never fills a missing source with a neutral value.', '本面板仅引用来源，不进行任何计算，也不会以中性数值填补缺失的来源。') }}</div>
+      <div class="dfoot">{{ t("This panel is a receipt. Anything untagged is quoted from the owner named beside it. The tagged lines — the counts, the pick of the biggest open question, and the estimated window — are worked out here from those quotes under a fixed rule. Nothing is estimated to cover a gap, and no missing source is replaced by a neutral value.", '本面板为凭证。未加标注的内容均引用自旁注来源方；标注项 — 各项计数、最大未决问题的选取，以及预计窗口 — 由本页依据上述引用按固定规则得出。缺失的来源不会被推算填补，也不会以中性数值替代。') }}</div>
     </div>
   </div>
 </div>

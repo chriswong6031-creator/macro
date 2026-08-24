@@ -3484,6 +3484,86 @@ _SS_GATES: dict[str, dict[str, str]] = {
 }
 
 
+# ── Plain words for the sub-reads the contract nests inside a leg ───────────
+# `legs.opportunity_context` is four separate owner reads in one leg. Printing
+# only the leg's roll-up state would hide which owner is missing, which is the
+# one thing the reference composition asks this card to say.
+_SS_SUBREADS: tuple[tuple[str, str, str], ...] = (
+    ("prophet", "Prophet outlook", "Prophet 前瞻"),
+    ("entry", "Entry read", "入场读数"),
+    ("market_incorporation", "Priced-in read", "定价程度读数"),
+    ("dislocation", "Mispricing read", "错价读数"),
+)
+
+# `legs.personal_impact.state` — a public page has no session, and saying so
+# plainly is the designed state, not an error.
+_SS_PERSONAL: dict[str, dict[str, str]] = {
+    "NO_USER_CONTEXT": {
+        "en": "No portfolio or watchlist signed in", "zh": "未登录投资组合或自选清单",
+        "why_en": "This page is public, so it carries no portfolio or watchlist context. "
+                  "Everything else on it still applies.",
+        "why_zh": "本页为公开页面，不包含投资组合或自选清单信息；页面其余内容不受影响。",
+    },
+}
+
+# `legs.state.ladder_direction` — plain words only for directions the page can
+# translate. An unmapped direction stays a quoted field in the drilldown rather
+# than becoming English text inside a Chinese page.
+_SS_DIRECTION: dict[str, tuple[str, str]] = {
+    "UP": ("pointing up", "向上"),
+    "RISING": ("pointing up", "向上"),
+    "IMPROVING": ("improving", "转好"),
+    "DOWN": ("pointing down", "向下"),
+    "FALLING": ("pointing down", "向下"),
+    "DETERIORATING": ("weakening", "转弱"),
+    "FLAT": ("flat", "走平"),
+    "SIDEWAYS": ("sideways", "横向"),
+    "UNKNOWN": ("not stated", "未说明"),
+}
+
+# `legs.evidence.compilation.state` — the K1 compilation receipt's own verdict.
+_SS_COMPILE_STATE: dict[str, dict[str, str]] = {
+    "COMPLETE": {"tone": "ok", "en": "Complete", "zh": "完整"},
+    "PARTIAL": {"tone": "warn", "en": "Partly compiled", "zh": "部分编排"},
+    "DEGRADED": {"tone": "warn", "en": "Compiled with gaps", "zh": "编排存在缺口"},
+    "REFUSED": {"tone": "act", "en": "Refused", "zh": "已拒绝"},
+    "FAILED": {"tone": "act", "en": "Failed", "zh": "失败"},
+}
+
+# `identity_proof.legs[].result` — R1…R9 verdicts.
+_SS_RESULT: dict[str, dict[str, str]] = {
+    "PASS": {"tone": "ok", "en": "passed", "zh": "通过"},
+    "FAIL": {"tone": "act", "en": "did not pass", "zh": "未通过"},
+    "REFUSE": {"tone": "act", "en": "refused", "zh": "已拒绝"},
+    "SKIP": {"tone": "off", "en": "not run", "zh": "未执行"},
+    "NOT_APPLICABLE": {"tone": "off", "en": "does not apply", "zh": "不适用"},
+}
+
+# `legs.change.workspace_warnings` — the producer's own notes. They ship as
+# machine codes; the card is a glance surface, so the known ones get plain
+# sentences and the code itself stays in the drilldown.
+_SS_WORKSPACE_WARNINGS: dict[str, tuple[str, str]] = {
+    "collector_filing_unjoinable": (
+        "The filing could not be matched to this release.",
+        "该申报文件未能与本次发布匹配。"),
+    "consensus_unlicensed": (
+        "Analyst consensus is not licensed for this page.",
+        "分析师一致预期在本页无发布授权。"),
+    "questions_count_unstructured": (
+        "The number of questions asked could not be read reliably.",
+        "提问数量未能可靠读取。"),
+    "reaction_not_joined": (
+        "Market reaction has not been linked to this release yet.",
+        "市场反应尚未与本次发布关联。"),
+    "slides_absent": (
+        "No slide deck was published with this release.",
+        "本次发布未附幻灯片。"),
+    "wire_record_not_found": (
+        "No newswire record was found for this release.",
+        "未找到本次发布的新闻通稿记录。"),
+}
+
+
 # "Why this field is or is not actionable" — the reference composition requires
 # the answer in the drilldown even when the answer is "there is nothing to act
 # on". Supplied per leg when the compiler has something specific to say; these
@@ -3522,13 +3602,91 @@ _SS_COUNTS: dict[str, tuple[str, str]] = {
     "events_considered": ("Events considered", "纳入考量的事件"),
     "gates_evaluated": ("Checks run", "已执行的检查"),
     "gates_failed": ("Checks not cleared", "未通过的检查"),
+    # recipe_compilation_receipt.v1 denominator — the honest denominator of the
+    # evidence read. Every one of these is printed, including the zeros: a
+    # denominator with its zeros hidden is not a denominator.
+    "total": ("Records asked for", "请求的记录"),
+    "included": ("Records used", "已采用的记录"),
+    "excluded": ("Records left out", "已排除的记录"),
+    "missing": ("Records missing", "缺失的记录"),
+    "stale": ("Records older than policy", "超出时效的记录"),
+    "rights_blocked": ("Records not licensed here", "此处无授权的记录"),
+    "fallback": ("Records from a fallback", "来自备用来源的记录"),
+    "identity_unresolved": ("Records not tied to this listing", "未与该证券对应的记录"),
 }
+
+# Denominator rows print in this order — the population first, then what
+# happened to it. dict order from the payload is not a reading order.
+_SS_COUNT_ORDER: tuple[str, ...] = (
+    "total", "included", "excluded", "missing", "stale",
+    "rights_blocked", "fallback", "identity_unresolved",
+)
 
 
 def _ss_prettify(code: str) -> str:
     """`EVENT_FRESHNESS_WINDOW` -> `Event freshness window`. Never blank."""
     words = re.sub(r"[^0-9A-Za-z]+", " ", str(code or "")).strip().lower()
     return (words[:1].upper() + words[1:]) if words else "Check not cleared"
+
+
+def _ss_value(v: Any) -> str:
+    """Render one receipt VALUE exactly as the contract carries it.
+
+    Receipts are Tier-3: `null` must read as `null`, not as an em dash, and a
+    boolean must not become "Yes". These strings are the audit trail, so they
+    are deliberately not prettified.
+    """
+    if v is None:
+        return "null"
+    if isinstance(v, bool):
+        return "true" if v else "false"
+    if isinstance(v, (int, float)):
+        return _clean_str(f"{v:g}" if isinstance(v, float) else str(v))
+    if isinstance(v, (list, tuple)):
+        return ", ".join(_ss_value(x) for x in v)
+    if isinstance(v, dict):
+        return ", ".join(f"{k}={_ss_value(x)}" for k, x in v.items())
+    return _clean_str(v)
+
+
+def _ss_field_rows(seq: Any) -> list[dict[str, str]]:
+    """Normalise a contract `[{field, value}]` list into printable rows.
+
+    Tolerates a bare list of field NAMES (the shape used where the contract
+    names the fields it read without echoing their values) — the row then
+    carries the name and no value, which is what an honest render of that
+    payload looks like.
+    """
+    rows: list[dict[str, str]] = []
+    for item in (seq if isinstance(seq, (list, tuple)) else []):
+        if isinstance(item, dict):
+            k = _clean_str(item.get("field") or item.get("name") or item.get("k") or "")
+            if not k:
+                continue
+            has_v = ("value" in item) or ("v" in item)
+            rows.append({"k": k, "v": _ss_value(item.get("value", item.get("v"))) if has_v else ""})
+        elif isinstance(item, str) and item.strip():
+            rows.append({"k": _clean_str(item), "v": ""})
+    return rows
+
+
+def _ss_split_lead(en: str, zh: str) -> tuple[dict[str, str], dict[str, str] | None]:
+    """Split a house stance sentence into its short lead and its explanation.
+
+    The hero already prints these sentences for the same listing, so the State
+    card derives its wording from the SAME string rather than a parallel table:
+    two tables drift, and a card that contradicts the hero about one ladder
+    state is worse than a card with fewer words.
+    """
+    en_lead, _, en_tail = en.partition(" — ")
+    zh_lead, _, zh_tail = zh.partition("，")
+    lead = {"en": _clean_str(en_lead), "zh": _clean_str(zh_lead) or _clean_str(en_lead)}
+    tail_en, tail_zh = _clean_str(en_tail), _clean_str(zh_tail)
+    if not tail_en and not tail_zh:
+        return lead, None
+    tail = {"en": tail_en[:1].upper() + tail_en[1:] if tail_en else "",
+            "zh": tail_zh or tail_en}
+    return lead, tail
 
 
 def _ss_pair(node: Any, key: str = "") -> dict[str, str] | None:
@@ -3554,8 +3712,14 @@ def _ss_leg(key: str, title_en: str, title_zh: str, leg: Any) -> dict[str, Any]:
     why = reason or (
         {"en": cov["why_en"], "zh": cov["why_zh"]} if cov["why_en"] else None
     )
-    headline = _ss_pair(leg, "headline") or {"en": cov["en"], "zh": cov["zh"]}
-    clause = _ss_pair(leg, "clause") or _ss_pair(leg, "summary")
+    # The coverage word already has a home — the chip in the card's eyebrow. So
+    # the headline is the substantive sentence the contract supplies, and the
+    # coverage word is the headline only when there is genuinely nothing else to
+    # say. A card whose bold line repeats its own chip has spent its best line
+    # on a word the reader already read.
+    summary = _ss_pair(leg, "summary")
+    headline = _ss_pair(leg, "headline") or summary or {"en": cov["en"], "zh": cov["zh"]}
+    clause = _ss_pair(leg, "clause") or (summary if summary is not headline else None)
 
     # Clocks, in the order the reference composition names them. A clock that is
     # absent is dropped rather than printed as "—": an empty clock row would
@@ -3595,34 +3759,42 @@ def _ss_leg(key: str, title_en: str, title_zh: str, leg: Any) -> dict[str, Any]:
                         or "该来源返回可通过此项检查的数值。",
         })
 
-    observables = []
-    for o in (leg.get("next_observables") or []):
-        pair = _ss_pair(o, "label") if isinstance(o, dict) else _ss_pair(o)
-        if not pair:
-            continue
-        observables.append({
-            "en": pair["en"], "zh": pair["zh"],
-            "when": _clean_str((o or {}).get("window") or (o or {}).get("when") or "")
-                    if isinstance(o, dict) else "",
-        })
+    observables = _ss_observables(leg.get("next_observables"))
 
     warnings = []
     for w in (leg.get("workspace_warnings") or []):
-        pair = _ss_pair(w, "label") if isinstance(w, dict) else _ss_pair(w)
+        code = _clean_str(w if isinstance(w, str) else (w or {}).get("code") or "")
+        pair = _ss_pair(w, "label") if isinstance(w, dict) else None
+        known = _SS_WORKSPACE_WARNINGS.get(code.lower()) if code else None
         if pair:
-            warnings.append(pair)
-        elif isinstance(w, str) and w.strip():
-            warnings.append({"en": _ss_prettify(w), "zh": _ss_prettify(w)})
+            warnings.append({"en": pair["en"], "zh": pair["zh"], "code": code})
+        elif known:
+            warnings.append({"en": known[0], "zh": known[1], "code": code})
+        elif code:
+            warnings.append({"en": _ss_prettify(code), "zh": _ss_prettify(code), "code": code})
 
-    refs = [_clean_str(r) for r in (leg.get("evidence") or leg.get("evidence_refs") or [])
-            if _clean_str(r)]
+    # Reference lists live under several contract names — an event leg names
+    # events, a risk leg names risks. Printing them under one heading keeps the
+    # drilldown honest without inventing a per-leg vocabulary.
+    refs: list[str] = []
+    for fld in ("evidence", "evidence_refs", "evidence_block_refs",
+                "event_refs", "risk_refs", "economic_episode_ref"):
+        raw = leg.get(fld)
+        for r in ([raw] if isinstance(raw, str) else (raw or [])):
+            s = _clean_str(r)
+            if s and s not in refs:
+                refs.append(s)
 
     unresolved = None
     suf = leg.get("strongest_unresolved_fact")
     if isinstance(suf, dict) and _clean_str(suf.get("state") or "").lower() != "unavailable":
-        unresolved = _ss_pair(suf)
+        pair = _ss_pair(suf)
+        if pair:
+            unresolved = dict(pair)
+            unresolved["code"] = _clean_str(suf.get("code") or "")
+            unresolved["from"] = _clean_str(suf.get("leg") or "")
 
-    return {
+    out = {
         "key": key,
         "dlg": f"ss-{key.replace('_', '-')}",
         "title_en": title_en, "title_zh": title_zh,
@@ -3646,7 +3818,249 @@ def _ss_leg(key: str, title_en: str, title_zh: str, leg: Any) -> dict[str, Any]:
         "warnings": warnings,
         "refs": refs,
         "unresolved": unresolved,
+        # Filled per leg below. `fields` is the quoted-field receipt: the exact
+        # values this card's wording rests on, so the reader can see that the
+        # plain sentence is ours and the value underneath is the owner's.
+        "fields": [],
+        "subreads": [],
+        "direction": None,
+        "derived": False,
+        "quoted_summary": None,
     }
+
+    if key == "state":
+        _ss_fill_state(out, leg)
+    elif key == "opportunity_context":
+        _ss_fill_opportunity(out, leg)
+    elif key == "personal_impact":
+        _ss_fill_personal(out, leg)
+    elif key == "risk":
+        _ss_fill_risk(out, leg)
+    elif key == "catalyst":
+        _ss_fill_catalyst(out, leg)
+
+    for fld in ("headline", "clause"):
+        pair = out.get(fld)
+        if pair:
+            out[fld] = {"en": _ss_plain(_scrub_machine(pair["en"])),
+                        "zh": _ss_plain(_scrub_machine_zh(pair["zh"]))}
+    return out
+
+
+def _ss_plain(s: str) -> str:
+    """`3 fact(s), 1 delta(s)` -> `3 facts, 1 delta`. Glance-tier hygiene only.
+
+    A machine plural is the compiler's shorthand, not a word anybody says, and
+    the count right in front of it already says which form is meant. This
+    touches the shorthand and nothing else — a sentence is never reworded here.
+    """
+    s = re.sub(r"(\b(\d+)\s+[A-Za-z]+)\(s\)",
+               lambda m: m.group(1) if m.group(2) == "1" else m.group(1) + "s", s or "")
+    return re.sub(r"\b([A-Za-z]+)\(s\)", r"\1s", s)
+
+
+def _ss_headline_gap(leg: dict) -> bool:
+    """True when the contract left this card's sentence for the page to write."""
+    return not _ss_pair(leg, "headline") and not _ss_pair(leg, "summary")
+
+
+def _ss_fill_risk(out: dict[str, Any], leg: dict) -> None:
+    """No failed gates is a finding, and it deserves the card's best line."""
+    if not _ss_headline_gap(leg):
+        return
+    n = len(out["gates"])
+    if n == 0:
+        out["headline"] = {"en": "No checks failed", "zh": "无未通过的检查"}
+    elif n == 1:
+        out["headline"] = {"en": "One check did not clear", "zh": "有 1 项检查未通过"}
+    else:
+        out["headline"] = {"en": f"{n} checks did not clear", "zh": f"有 {n} 项检查未通过"}
+    out["derived"] = True
+
+
+def _ss_fill_catalyst(out: dict[str, Any], leg: dict) -> None:
+    """Say up front whether anything ahead is actually on the calendar."""
+    if not _ss_headline_gap(leg) or not out["observables"]:
+        return
+    if all(o["est"] for o in out["observables"]):
+        out["headline"] = {"en": "No announced dates yet", "zh": "尚无已公布的日期"}
+    else:
+        out["headline"] = {"en": "Dated events ahead", "zh": "前方有已定日期的事件"}
+    out["derived"] = True
+
+
+# ── kind → what the observable IS ───────────────────────────────────────────
+# `ESTIMATED_WINDOW` says how firm the timing is, not what the event is, so the
+# subject is resolved from an explicit label first and only then inferred from
+# the basis the compiler recorded. An estimate we cannot name stays "estimated
+# window" rather than being labelled as an earnings date it may not be.
+_SS_OBSERVABLE_KINDS: dict[str, tuple[str, str]] = {
+    "EXPECTED_EARNINGS": ("Next earnings report", "下次财报"),
+    "EARNINGS": ("Next earnings report", "下次财报"),
+    "CONFIRMED_EARNINGS": ("Confirmed results date", "已确认财报日期"),
+    "FILING_DUE": ("Filing due", "申报截止"),
+    "DEADLINE": ("Deadline", "截止时点"),
+    "ESTIMATED_WINDOW": ("Estimated window", "预计窗口"),
+}
+
+_SS_EARNINGS_BASIS = ("fiscal", "earnings", "results", "quarter")
+
+
+def _ss_observables(seq: Any) -> list[dict[str, Any]]:
+    """Project `next_observables`, keeping an estimate visibly an estimate."""
+    rows: list[dict[str, Any]] = []
+    for o in (seq if isinstance(seq, (list, tuple)) else []):
+        if isinstance(o, str):
+            s = _clean_str(o)
+            if s:
+                rows.append({"en": s, "zh": s, "when": "", "est": False,
+                             "basis": "", "kind": ""})
+            continue
+        if not isinstance(o, dict):
+            continue
+        kind = _clean_str(o.get("kind") or "")
+        basis = _clean_str(o.get("basis") or "")
+        pair = _ss_pair(o, "label") or _ss_pair(o, "event")
+        # An estimated window is never authoritative, whether or not the payload
+        # says so out loud.
+        est = (kind.upper() == "ESTIMATED_WINDOW") or (o.get("authoritative") is False)
+
+        if not pair:
+            known = _SS_OBSERVABLE_KINDS.get(kind.upper())
+            if kind.upper() == "ESTIMATED_WINDOW" and any(
+                    w in basis.lower() for w in _SS_EARNINGS_BASIS):
+                known = _SS_OBSERVABLE_KINDS["EXPECTED_EARNINGS"]
+            if known:
+                pair = {"en": known[0], "zh": known[1]}
+            elif kind:
+                pair = {"en": _ss_prettify(kind), "zh": _ss_prettify(kind)}
+        if not pair:
+            continue
+
+        start = _ss_clock(o.get("window_start"))
+        end = _ss_clock(o.get("window_end"))
+        if start and end and start != end:
+            when = f"{start} – {end}"
+        else:
+            when = start or end or _ss_clock(o.get("window") or o.get("date") or o.get("when"))
+
+        rows.append({"en": pair["en"], "zh": pair["zh"], "when": when,
+                     "est": est, "basis": basis, "kind": kind})
+    return rows
+
+
+def _ss_fill_state(out: dict[str, Any], leg: dict) -> None:
+    """The State axis renders from `legs.state` and from nothing else.
+
+    Before the contract carried a state leg this card had no owner-backed
+    payload to read. It now has one, so the plain sentence is DERIVED from the
+    quoted ladder state via the page's existing stance vocabulary — the same
+    string the hero prints — and the quoted values ride along in `fields`.
+    """
+    ladder = _clean_str(leg.get("ladder_state") or "")
+    direction = _clean_str(leg.get("ladder_direction") or "")
+
+    # `deterministic_state_refs` names the fields the compiler read;
+    # `values_read` carries the ones it echoed back. Both are receipts, so both
+    # print — a named field with no value reads as named-but-not-echoed, which
+    # is what that payload honestly is.
+    rows = _ss_field_rows(leg.get("deterministic_state_refs"))
+    by_key = {r["k"]: r for r in rows}
+    for r in _ss_field_rows(leg.get("values_read")):
+        if r["k"] in by_key:
+            by_key[r["k"]]["v"] = r["v"] or by_key[r["k"]]["v"]
+        else:
+            rows.append(r)
+            by_key[r["k"]] = r
+    for fld, val in (("ladder_state", ladder), ("ladder_direction", direction)):
+        if not val:
+            continue
+        if fld in by_key:
+            by_key[fld]["v"] = by_key[fld]["v"] or val
+        else:
+            rows.append({"k": fld, "v": val})
+    out["fields"] = rows
+    out["ladder_state"] = ladder
+    out["ladder_direction"] = direction
+
+    # A ladder state arrives either as a ladder LABEL ("RALLY ON") or already as
+    # a stance key ("watch"). Both are looked up; anything else derives nothing,
+    # because compute_stance's "default to watch" is right for a hero subtitle
+    # and wrong for a card that claims to quote a state.
+    stance_key = None
+    if ladder:
+        stance_key = _LADDER_TO_STANCE.get(ladder.upper())
+        if not stance_key and ladder.lower() in _STANCE_DESC:
+            stance_key = ladder.lower()
+    # The contract's own state summary is a faithful restatement of the fields
+    # it read ("Ladder state: watch (up)."), which is a receipt, not a glance
+    # line: it prints an internal state name, and prints it in English inside a
+    # Chinese page. So on THIS axis the page words the card and keeps the
+    # contract's sentence verbatim in the drilldown — the doctrine's plain-words
+    # law decides the card, and nothing is lost, because the quoted sentence and
+    # the quoted fields are both one click away.
+    out["quoted_summary"] = _ss_pair(leg, "summary")
+    if stance_key and stance_key in _STANCE_DESC and not _ss_pair(leg, "headline"):
+        lead, tail = _ss_split_lead(*_STANCE_DESC[stance_key])
+        out["headline"] = lead
+        out["derived"] = True
+        out["clause"] = _ss_pair(leg, "clause") or tail
+
+    plain = _SS_DIRECTION.get(direction.upper()) if direction else None
+    if plain:
+        out["direction"] = {"en": plain[0], "zh": plain[1]}
+
+
+def _ss_fill_opportunity(out: dict[str, Any], leg: dict) -> None:
+    """Four owner reads live inside this one leg — name each one separately."""
+    subs = []
+    for fld, en, zh in _SS_SUBREADS:
+        node = leg.get(fld)
+        if not isinstance(node, dict) or not node:
+            continue
+        code = _clean_str(node.get("state") or "").upper()
+        if not code and node.get("available") is True:
+            code = "AVAILABLE"
+        cov = _SS_COVERAGE.get(code, _SS_COVERAGE_FALLBACK)
+        reason = _clean_str(node.get("reason") or node.get("null_reason") or "")
+        subs.append({
+            "en": en, "zh": zh,
+            "cov": code, "tone": cov["tone"], "rail": cov["rail"],
+            "cov_en": cov["en"], "cov_zh": cov["zh"],
+            "reason": reason,
+            "ref": _clean_str(node.get("ref") or ""),
+        })
+    out["subreads"] = subs
+
+    # The card must still say something plain when the contract gives it no
+    # summary: whether anything is missing, and what a missing read does not do
+    # to the rest of the page.
+    if not subs:
+        return
+    missing = [s for s in subs if s["tone"] == "off"]
+    if _ss_headline_gap(leg):
+        out["headline"] = ({"en": "Some context reads are missing", "zh": "部分背景读数缺失"}
+                           if missing else
+                           {"en": "All context reads are current", "zh": "背景读数均为当前"})
+        out["derived"] = True
+    if missing and not out["clause"]:
+        out["clause"] = {
+            "en": "The rest of the page is unaffected: no rank, score or "
+                  "stand-in value is put where a missing read would go.",
+            "zh": "本页其余内容不受影响：缺失的读数不会被任何排名、评分或替代数值填补。",
+        }
+
+
+def _ss_fill_personal(out: dict[str, Any], leg: dict) -> None:
+    """`personal_impact` on a public page is a designed state, not a blank."""
+    code = _clean_str(leg.get("state") or "").upper()
+    known = _SS_PERSONAL.get(code)
+    if known and not _ss_pair(leg, "headline"):
+        out["headline"] = {"en": known["en"], "zh": known["zh"]}
+        if not _ss_pair(leg, "reason"):
+            out["why"] = {"en": known["why_en"], "zh": known["why_zh"]}
+    if code:
+        out["fields"] = [{"k": "state", "v": code}]
 
 
 def build_security_state(blob: dict | None) -> dict | None:
@@ -3668,15 +4082,29 @@ def build_security_state(blob: dict | None) -> dict | None:
         ident_raw = ss.get("identity_proof") if isinstance(ss.get("identity_proof"), dict) else {}
         id_code = _clean_str(ident_raw.get("state") or "").upper() or "PARTIAL"
         idc = _SS_IDENTITY.get(id_code, _SS_IDENTITY["PARTIAL"])
+        # R1…R9 — the identity receipt chain, printed with the fields the
+        # contract actually emits. Each row is one check: what it looked at,
+        # who read it, the exact values read, and its verdict. A receipt that
+        # prints only a name is not a receipt.
         id_legs = []
         for lg in (ident_raw.get("legs") or []):
             if not isinstance(lg, dict):
                 continue
+            res_code = _clean_str(lg.get("result") or "").upper()
+            res = _SS_RESULT.get(res_code, {"tone": "off",
+                                            "en": _ss_prettify(res_code) or "not stated",
+                                            "zh": _ss_prettify(res_code) or "未说明"})
             id_legs.append({
-                "name": _clean_str(lg.get("leg") or lg.get("name") or ""),
-                "artifact": _clean_str(lg.get("artifact") or lg.get("reader") or ""),
-                "values": ", ".join(_clean_str(v) for v in (lg.get("values_read") or [])
-                                    if _clean_str(v)),
+                "check": _clean_str(lg.get("check") or lg.get("leg") or lg.get("name") or ""),
+                "desc": _clean_str(lg.get("description") or ""),
+                "artifact": _clean_str(lg.get("artifact") or ""),
+                "reader": _clean_str(lg.get("reader") or ""),
+                "reads": _ss_field_rows(lg.get("values_read")),
+                "result": res_code.lower(),
+                "result_en": res["en"], "result_zh": res["zh"],
+                "tone": res["tone"],
+                "ok": res_code == "PASS",
+                "code": _clean_str(lg.get("code") or ""),
             })
 
         # The tally under the grid is the grid's own legend: same rail shapes,
@@ -3692,11 +4120,39 @@ def build_security_state(blob: dict | None) -> dict | None:
         tally = sorted(buckets.values(), key=lambda b: (order.index(b["tone"]), -b["n"]))
 
         asof = ss.get("as_of") if isinstance(ss.get("as_of"), dict) else {}
-        ev = ss.get("evidence") if isinstance(ss.get("evidence"), dict) else {}
-        receipt = ev.get("compilation_receipt") if isinstance(ev.get("compilation_receipt"), dict) else {}
-        counts = receipt.get("denominator_counts") if isinstance(receipt.get("denominator_counts"), dict) else {}
+        # The evidence receipt is a LEG of the contract, not a sibling of legs:
+        # `legs.evidence` carries the recipe, the blocks it read, and the K1
+        # compilation receipt with its own denominator.
+        ev = legs.get("evidence") if isinstance(legs.get("evidence"), dict) else {}
+        comp = ev.get("compilation") if isinstance(ev.get("compilation"), dict) else {}
+        denom = comp.get("denominator") if isinstance(comp.get("denominator"), dict) else {}
+        comp_code = _clean_str(comp.get("state") or "").upper()
+        comp_state = _SS_COMPILE_STATE.get(comp_code)
         cov_block = ss.get("coverage") if isinstance(ss.get("coverage"), dict) else {}
         last_good = ss.get("last_good") if isinstance(ss.get("last_good"), dict) else {}
+
+        # Denominator counts: declared order first, then anything the receipt
+        # adds that this page has not seen before — never silently dropped.
+        count_rows = []
+        for k in list(_SS_COUNT_ORDER) + [k for k in denom if k not in _SS_COUNT_ORDER]:
+            if k not in denom:
+                continue
+            lab = _SS_COUNTS.get(k, (_ss_prettify(k), _ss_prettify(k)))
+            count_rows.append({"en": lab[0], "zh": lab[1], "v": denom.get(k)})
+
+        # A last-good banner may only ever cite a read that actually succeeded.
+        # A recorded fallback whose own compile failed is not a complete read,
+        # and citing it would tell the reader the page has something to fall
+        # back on when it does not.
+        lg_at = _ss_clock(last_good.get("generated_at"))
+        lg_deg_code = _clean_str(last_good.get("dominant_degradation") or "").upper()
+        lg_deg = _SS_DEGRADATION.get(lg_deg_code) if lg_deg_code else None
+        lg_ok = bool(lg_at) and lg_deg_code != "COMPILER_FAILURE"
+        lg_reason = _ss_pair(last_good, "reason")
+        if lg_reason and re.fullmatch(r"[a-z0-9_.:-]+", lg_reason["en"] or ""):
+            # A bare machine code is not a sentence; it reads as words here and
+            # keeps its exact form nowhere else, because nowhere else asked.
+            lg_reason = {"en": _ss_prettify(lg_reason["en"]), "zh": _ss_prettify(lg_reason["en"])}
 
         return {
             "version": _clean_str(ss.get("schema") or ss.get("version") or "security_state.v1"),
@@ -3725,24 +4181,43 @@ def build_security_state(blob: dict | None) -> dict | None:
                 "disclosures": [_clean_str(e) for e in (ident_raw.get("disclosures") or []) if _clean_str(e)],
             },
             "coverage_state": _clean_str(cov_block.get("overall_state") or ""),
-            "required_legs": cov_block.get("required_leg_count"),
-            "optional_legs": cov_block.get("optional_leg_count"),
+            # Availability and non-blocking are two different questions and the
+            # contract now answers both. `available` counts only AVAILABLE; a
+            # read that does not apply is not available, it is simply not in the
+            # way — so it is counted, and named, separately.
+            "coverage": {
+                "req_total": cov_block.get("required_legs_total"),
+                "req_avail": cov_block.get("required_legs_available"),
+                "req_nonblock": cov_block.get("required_legs_nonblocking"),
+                "opt_total": cov_block.get("optional_legs_total"),
+                "opt_avail": cov_block.get("optional_legs_available"),
+                "opt_nonblock": cov_block.get("optional_legs_nonblocking"),
+            },
             "axes": axes,
             "tally": tally,
             "gates": [g for a in axes for g in a["gates"]],
             "evidence": {
                 "refs": [_clean_str(r) for r in (ev.get("evidence_block_refs") or []) if _clean_str(r)],
                 "recipe_id": _clean_str(ev.get("recipe_id") or ""),
-                "counts": [
-                    {"en": _SS_COUNTS.get(k, (_ss_prettify(k), _ss_prettify(k)))[0],
-                     "zh": _SS_COUNTS.get(k, (_ss_prettify(k), _ss_prettify(k)))[1], "v": v}
-                    for k, v in counts.items()
-                ],
-                "compiled_at": _ss_clock(receipt.get("compiled_at")),
+                "counts": count_rows,
+                "compile_state": ({"code": comp_code, "tone": comp_state["tone"],
+                                   "en": comp_state["en"], "zh": comp_state["zh"]}
+                                  if comp_state else
+                                  ({"code": comp_code, "tone": "off",
+                                    "en": _ss_prettify(comp_code), "zh": _ss_prettify(comp_code)}
+                                   if comp_code else None)),
+                "conflicts": [_clean_str(c) if isinstance(c, str) else _ss_value(c)
+                              for c in (ev.get("conflicts") or [])],
+                "compiled_at": _ss_clock(comp.get("compiled_at")),
             },
+            "content_sha256": _clean_str(ss.get("content_sha256") or ""),
             "last_good": {
-                "at": _ss_clock(last_good.get("state_compiled_at") or last_good.get("at")),
-                "note": _ss_pair(last_good, "summary"),
+                "ok": lg_ok,
+                "at": lg_at,
+                "sha": _clean_str(last_good.get("content_sha256") or ""),
+                "deg": ({"code": lg_deg_code, "en": lg_deg["en"], "zh": lg_deg["zh"],
+                         "tone": lg_deg["tone"]} if lg_deg else None),
+                "reason": lg_reason,
             },
         }
     except Exception as e:  # noqa: BLE001 — a broken block costs the section, not the page
