@@ -46,6 +46,153 @@ class StageAdapter:
         return payload, None
 
     @staticmethod
+    def _industry_relationship_result(
+        *,
+        value: str | None,
+        status: str,
+        reason: str | None,
+        freshness: str,
+        quality: str,
+        issues: list[str],
+        observed_at: Any,
+        effective_at: Any,
+        as_of: Any,
+        artifact: Path,
+    ) -> AdapterResult:
+        """Owner result for the bounded security->current-industry planning edge.
+
+        This is not a registered datapoint and cannot be rendered as one. The
+        central resolver projects it into an explicit typed relationship receipt
+        used only to address the already-registered industry-rank field.
+        """
+        return AdapterResult(
+            value=value,
+            status=status,
+            reason_code=reason,
+            unit="industry_id",
+            observed_at=observed_at,
+            effective_at=effective_at,
+            as_of=as_of,
+            freshness={"state": freshness, "policy": "owner_native"},
+            quality={"state": quality, "issues": issues},
+            source={
+                "source_id": "stage_analysis.screener",
+                "owner": "stage_analysis",
+                "license_class": "internal_derived",
+                "dataset_id": None,
+                "artifact_id": "data/stage_analysis/screener.json",
+            },
+            provenance={
+                "kind": "owner_relationship",
+                "owner_field_key": "current_industry",
+                "relationship": "security.current_industry",
+                "basis": "owner_published_current_relationship",
+                "owner_artifact": str(artifact),
+            },
+        )
+
+    def resolve_current_industry_relationship(
+        self,
+        entity: CanonicalEntity,
+        context: RequestContext,
+    ) -> AdapterResult:
+        """Resolve one canonical security's current owner-published industry.
+
+        The canonical security ID is converted through the same current Data OS
+        symbol map as Stage facts. Alias text from the Brain request is never used
+        as the relationship key.
+        """
+        document, load_issue = context.memoize(
+            f"w1a:stage:screener:{self.path}", self._load_document
+        )
+        try:
+            symbol_map = context.memoize(
+                f"identity:current-symbol-map:{self.vendor}", self._load_symbol_map
+            )
+        except Exception:
+            symbol_map = None
+        symbol = (
+            str(symbol_map.get(entity.id) or "").strip().upper()
+            if isinstance(symbol_map, Mapping) else ""
+        )
+        common = {
+            "observed_at": document.get("built") if document else None,
+            "effective_at": document.get("stage_week_end") if document else None,
+            "as_of": document.get("asof") if document else None,
+            "artifact": self.path,
+        }
+        if load_issue or document is None:
+            return self._industry_relationship_result(
+                value=None, status="unavailable", reason="owner_unavailable",
+                freshness="unknown", quality="unknown",
+                issues=[load_issue or "stage_artifact_unavailable"], **common,
+            )
+        if document.get("schema") != "stage_screener.v1":
+            return self._industry_relationship_result(
+                value=None, status="unavailable", reason="owner_degraded",
+                freshness="unknown", quality="degraded",
+                issues=["stage_relationship_schema_invalid"], **common,
+            )
+        if not symbol:
+            return self._industry_relationship_result(
+                value=None, status="unavailable", reason="owner_missing",
+                freshness="unknown", quality="unknown",
+                issues=["symbol_mapping_missing"], **common,
+            )
+        matches = [
+            row for row in document["rows"]
+            if isinstance(row, Mapping)
+            and row.get("source") == "live"
+            and str(row.get("ticker") or "").strip().upper() == symbol
+        ]
+        if len(matches) != 1:
+            return self._industry_relationship_result(
+                value=None,
+                status="unavailable",
+                reason="owner_missing" if not matches else "owner_degraded",
+                freshness="unknown",
+                quality="unknown" if not matches else "degraded",
+                issues=["stage_row_missing" if not matches else "stage_row_ambiguous"],
+                **common,
+            )
+        row = matches[0]
+        row_common = {
+            "observed_at": row.get("stage_source_asof") or document.get("built"),
+            "effective_at": row.get("stage_week_end") or document.get("stage_week_end"),
+            "as_of": document.get("asof"),
+            "artifact": self.path,
+        }
+        if row.get("retired") is True:
+            return self._industry_relationship_result(
+                value=None, status="unavailable", reason="retired_entity",
+                freshness="not_applicable", quality="unknown",
+                issues=["retired_entity"], **row_common,
+            )
+        if row.get("stage_current") is False:
+            return self._industry_relationship_result(
+                value=None, status="stale", reason="owner_stale",
+                freshness="stale", quality="degraded",
+                issues=["stage_row_stale"], **row_common,
+            )
+        if row.get("stage_current") is not True:
+            return self._industry_relationship_result(
+                value=None, status="unknown", reason="owner_degraded",
+                freshness="unknown", quality="degraded",
+                issues=["stage_current_unknown"], **row_common,
+            )
+        industry_id = str(row.get("industry") or "").strip()
+        if not industry_id:
+            return self._industry_relationship_result(
+                value=None, status="unavailable", reason="owner_missing",
+                freshness="unknown", quality="unknown",
+                issues=["current_industry_missing"], **row_common,
+            )
+        return self._industry_relationship_result(
+            value=industry_id, status="available", reason=None,
+            freshness="fresh", quality="ok", issues=[], **row_common,
+        )
+
+    @staticmethod
     def _result(
         spec: FieldSpec,
         *,

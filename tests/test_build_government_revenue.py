@@ -227,10 +227,15 @@ def test_site_only_rebuild_uses_canonical_bytes_without_recalculation(
     assert "<main>v2 " in html.read_text(encoding="utf-8")
 
 
-def test_builder_refuses_fixture_only_dod_bundle_activation(
+def test_builder_builds_budget_program_graph_from_a_complete_triad(
     tmp_path: Path,
     monkeypatch,
 ) -> None:
+    """Stage 2b activation (DOD_BUDGET_PRODUCTION_ACTIVATION_ENABLED=True):
+    a complete receipt-bound triad now BUILDS a real, schema-valid graph and
+    publishes its canonical/site twins -- this used to hard-refuse while the
+    flag was False (superseded name:
+    test_builder_refuses_fixture_only_dod_bundle_activation)."""
     templates = tmp_path / "templates"
     templates.mkdir()
     templates.joinpath("government_revenue.html.j2").write_text(
@@ -241,14 +246,54 @@ def test_builder_refuses_fixture_only_dod_bundle_activation(
 
     canonical = tmp_path / "data" / "government_revenue" / "budget_program_graph.json"
     public = tmp_path / "site" / "government-revenue-data" / "budget-program.json"
-    with pytest.raises(ValueError, match="publication is hard-disabled"):
-        build_government_revenue.build(tmp_path)
-    assert not canonical.exists()
-    assert not public.exists()
+    build_government_revenue.build(tmp_path)
+    assert canonical.exists() and public.exists()
+    assert canonical.read_bytes() == public.read_bytes()
+    graph = json.loads(canonical.read_text(encoding="utf-8"))
+    assert graph["contract"] == "government_budget_program_graph.v1"
+    assert graph["lines"] and graph["programs"]
+    assert graph["source_coverage"]["president_budget_request"]["status"] == "ok"
+
+
+def test_builder_refuses_a_partial_dod_bundle_even_with_activation_enabled(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    """Partial triad => hard refusal regardless of the activation flag value
+    (the flag check in _build_budget_program_graph_if_ready runs AFTER the
+    partial-bundle check, so this is unaffected by Stage 2b activation)."""
+    templates = tmp_path / "templates"
+    templates.mkdir()
+    templates.joinpath("government_revenue.html.j2").write_text(
+        "<main>{{ payload_json|safe }}</main>", encoding="utf-8"
+    )
+    _write_dod_budget_source_bundle(tmp_path)
+    monkeypatch.setattr(build_government_revenue, "build_payload", lambda **_kwargs: _payload())
 
     (tmp_path / "data" / "government_revenue" / "dod_budget_projection_state.json").unlink()
     with pytest.raises(ValueError, match="DoD budget source bundle is partial"):
         build_government_revenue.build(tmp_path)
+
+
+def test_builder_leaves_budget_rail_absent_when_no_triad_member_exists(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    """All three triad members absent => the optional rail stays None (no
+    error, no synthetic graph, no twins written) -- distinct from a partial
+    bundle, which is a hard failure."""
+    templates = tmp_path / "templates"
+    templates.mkdir()
+    templates.joinpath("government_revenue.html.j2").write_text(
+        "<main>{{ payload_json|safe }}</main>", encoding="utf-8"
+    )
+    monkeypatch.setattr(build_government_revenue, "build_payload", lambda **_kwargs: _payload())
+
+    canonical = tmp_path / "data" / "government_revenue" / "budget_program_graph.json"
+    public = tmp_path / "site" / "government-revenue-data" / "budget-program.json"
+    build_government_revenue.build(tmp_path)
+    assert not canonical.exists()
+    assert not public.exists()
 
 
 def test_site_only_rebuild_fails_closed_on_generation_mismatch(

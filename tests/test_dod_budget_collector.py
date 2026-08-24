@@ -218,3 +218,39 @@ def test_fixture_loader_stays_local_and_never_acquires_live_sources() -> None:
     docs = dod_budget.fixture_documents_from_directory(FIXTURES)
     assert {doc["exhibit"] for doc in docs} == {"p1", "r1"}
     assert dod_budget.main(["--fixture-dir", str(FIXTURES)]) == 0
+
+
+def test_publisher_is_the_source_native_war_gov_string() -> None:
+    """FY2027 exhibits self-identify as the War (not Defense) Comptroller (verified 2026-08-24)."""
+    _, receipt = _receipt("fy2026_p1.json")
+    assert receipt["publisher"] == "Office of the Under Secretary of War (Comptroller)"
+    assert dod_budget.PUBLISHER == receipt["publisher"]
+
+    stale = dict(receipt)
+    stale["publisher"] = "Office of the Under Secretary of Defense (Comptroller)"
+    with pytest.raises(ValueError, match="publisher"):
+        dod_budget.validate_document_receipt(stale)
+
+
+def test_amounts_blank_cell_is_none_never_zero_for_every_semantic() -> None:
+    """A blank cell must surface as None; only a printed 0 becomes 0.0 (hard test-red on coercion)."""
+    fields = {
+        "actual": "",
+        "enacted": None,
+        "disc_request": "",
+        "recon_request": "0",
+        "total_request": "",
+    }
+    amounts = {row["semantic"]: row["amount_usd"] for row in dod_budget.amounts_from_fields(fields, fiscal_year=2027)}
+    assert amounts == {
+        "historical_actual": None,
+        "prior_year_enacted_reference": None,
+        "discretionary_request": None,
+        "reconciliation_request": 0.0,
+        "president_budget_request_total": None,
+    }
+    # every semantic is independently nullable, not just the two that were
+    # already nullable before this wave (discretionary/reconciliation request)
+    all_blank = dod_budget.amounts_from_fields({}, fiscal_year=2027)
+    assert all(row["amount_usd"] is None for row in all_blank)
+    assert len(all_blank) == len(dod_budget.AMOUNT_SEMANTICS)
