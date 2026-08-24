@@ -1509,6 +1509,42 @@ def test_w0b_native_receipt_projection_rejects_path_like_or_extra_proof_metadata
     assert projected["facts"][0]["entity"] == projected["canonical_entity"]
     assert "/Users" not in json.dumps(projected)
 
+    price = json.loads(json.dumps(safe))
+    price["facts"][0]["field_id"] = "market.price.last"
+    price["facts"][0]["unit"] = "USD"
+    price["clauses"][0]["field_id"] = "market.price.last"
+    projected_price = bench._safe_native_fact_receipt(price)
+    assert projected_price is not None
+    assert projected_price["facts"][0]["unit"] == "USD"
+
+    invalid_currency = json.loads(json.dumps(price))
+    invalid_currency["facts"][0]["unit"] = "USDT"
+    assert bench._safe_native_fact_receipt(invalid_currency) is None
+
+    missing_price_unit = json.loads(json.dumps(price))
+    missing_price_unit["facts"][0]["unit"] = None
+    assert bench._safe_native_fact_receipt(missing_price_unit) is None
+
+    missing_fixed_unit = json.loads(json.dumps(safe))
+    missing_fixed_unit["facts"][0]["unit"] = None
+    assert bench._safe_native_fact_receipt(missing_fixed_unit) is None
+
+    for field_id, currency_shaped_unit in (
+        ("stage.current", "USD"),
+        ("market.return.1m", "JPY"),
+        ("earnings.next_date", "ABC"),
+        ("security.industry_member.rs_percentile", "USD"),
+    ):
+        wrong_dynamic_field = json.loads(json.dumps(safe))
+        wrong_dynamic_field["facts"][0]["field_id"] = field_id
+        wrong_dynamic_field["facts"][0]["unit"] = currency_shaped_unit
+        wrong_dynamic_field["clauses"][0]["field_id"] = field_id
+        assert bench._safe_native_fact_receipt(wrong_dynamic_field) is None
+
+    wrong_fixed_unit = json.loads(json.dumps(safe))
+    wrong_fixed_unit["facts"][0]["unit"] = "percent"
+    assert bench._safe_native_fact_receipt(wrong_fixed_unit) is None
+
     wrong_symbol = json.loads(json.dumps(safe))
     wrong_symbol["effective_context"]["symbol"] = "INOD"
     assert bench._safe_native_fact_receipt(wrong_symbol) is None
