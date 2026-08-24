@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-24T02:15:50.494141+00:00",
-  "count": 1726,
+  "generated_at": "2026-08-24T03:43:18.942692+00:00",
+  "count": 1729,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -86,6 +86,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-5dawzjd6hl1-18ca76",
+      "title": "GS Shelofsky IG Credit Week in Review 23 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T02:25:48Z",
+      "summary_points": [
+        "**Treasury Buyback Policy Impact**: Sustained $144bn/year supply reduction via $2bn+ long-end buybacks, but cyclical resilience, inflation, and policy uncertainty prevent yield compression.",
+        "**Sector Momentum Divergence**: GS AI vs.",
+        "AI Risk (-10%) and High Beta Momentum (-10.5%) show sector moves exceeding index volatility; 12m/3m winner/loser overlap near multi-year highs.",
+        "**AI Financing Acceleration**: QTS $3.9bn 5-year non-call (6.625% coupon) and Broadcom $70-80bn chip project signal $20bn+ order book, pricing improvements, and duration shifting down curve.",
+        "**Insurance Sector Volatility**: Sammons 10yr widened to +245 (recovered to +200), Guggenheim loan down 15pts; IG index yield highest since Liberation Day, with $3.5bn net selling reversal."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-l76zls5iywt-b09b18",
       "title": "Investor Positioning Strategy Update and Flows Another Post Earnings Season Lull",
@@ -329,6 +350,47 @@
       "tickers": [],
       "top_pick": false,
       "pages": 19,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-uhvdaleiyiw-32c176",
+      "title": "MS Enter Long 5y Linker",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T17:13:18Z",
+      "summary_points": [
+        "**Long 5y Real Yields Strategy**: Enter long 5y real yields (L31) at 0.95% (target 0.70%, stop 1.10%) due to lower energy price sensitivity vs nominals, BoE/Fed hold through year-end, and front-end real yields declining.",
+        "**Key Data Focus**: Next week’s July CPI (1.9% central, 2.4% adverse), labor market report, and August PMIs to gauge market direction amid BoE dovish stance (wage growth slowing to 3.4%, CPI inflation 1.9%).",
+        "**UK Curve Steepening Risk**: Current UK curve \"too steep\" with risks skewed toward further steepening (2s10s steeper than 10s30s; Exhibit 7), driven by front-end rate expectations (Exhibit 8: 2s10s inversely related to 1yly SONIA).",
+        "**Energy Volatility & Policy Risk**: Elevated/volatile WTI/Brent prices with no geopolitical resolution → market retains policy-risk premium; firms absorbing costs (64% expect higher margins), limiting second-round inflation effects.",
+        "**Tactical Trade Execution**: Long 10y ASW (4S 36) at -47.8bp (target -40bp, stop -52bp) supported by favorable valuations, carry/roll dynamics, and structural demand (Exhibit 11/12)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ukvha8hzjmw-8a9b3b",
+      "title": "MS $40T of Debt Brake or Break",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T17:13:17Z",
+      "summary_points": [
+        "**Debt Impact Threshold**: $40T debt (US $20T + $20T last decade) risks acting as 'brake' (constraining activity) or 'break' (shattering market calm), with post-GFC fears unfulfilled but rising yields now critical.",
+        "**Corporate Debt Absorption & Financing Wave**: Record issuance justified by tech spending/M&A normalization; low hyperscaler leverage, high AI ROIC, and modest spread widening sustain financing wave without yield-driven halt.",
+        "**US Home Prices Bottoming**: Case-Shiller Index at 1.1% y/y (May) showing upward trend, with housing strategists forecasting 2% y/y end-year growth—key fundamental for equity/bond allocation.",
+        "**US PCE Inflation Forecast**: Core PCE +0.23% m/m (July), 3-mo/6-mo annualized paces slowing to 2.79%/3.30% (vs June 2.89%/3.76%), critical for Fed policy trajectory."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
       "language": "en",
       "needs_metadata": false
     },
