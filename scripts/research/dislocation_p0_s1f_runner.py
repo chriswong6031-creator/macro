@@ -15,8 +15,8 @@ from pathlib import Path
 import sys
 from typing import Any, Mapping, Sequence
 
-if __package__ in (None, ""):
-    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(_ROOT))
 
 from scripts.research.dislocation_p0_a1_lib import canonical_cik, canonical_json
 from scripts.research.dislocation_p0_s1f_selection import (

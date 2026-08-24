@@ -38,6 +38,7 @@ confidence: high
 reversibility: easy
 decided_by: ceo-sol
 decided_at: 2026-08-23
+superseded_by: DEC:DISLOCATION-S1F-AUDITOR-RUNTIME-GROK46
 ---
 
 # Release condition
@@ -49,4 +50,3 @@ release P0-S2 by itself.
 The mining/core partition is separately required by the preregistration. Until a
 canonical current issuer/sector owner resolves it, S1F returns
 `SECTOR_PARTITION_UNRESOLVED` as a P0-S2 blocker rather than creating a taxonomy.
-

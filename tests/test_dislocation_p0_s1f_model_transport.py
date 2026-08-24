@@ -8,20 +8,23 @@ import pytest
 from scripts.research.dislocation_p0_a1_lib import canonical_json
 from scripts.research.dislocation_p0_a1r_semantic_contract import RELATIONSHIPS, SEMANTIC_FIELDS
 from scripts.research.dislocation_p0_s1f_model_transport import (
+    AUDIT_RESULT_SCHEMA,
+    AUDITOR_MODEL,
+    AUDITOR_PROVIDER,
+    AUDITOR_ROLE,
     GROK_RESULT_SCHEMA,
-    OPUS_RESULT_SCHEMA,
     RELATION_SCHEMA,
     S1FModelBlocked,
     build_evidence_catalog,
     build_grok_inputs,
-    build_opus_inputs,
+    build_audit_inputs,
     build_relationship_input,
     enrich_packets_from_source_manifest,
     finalize_all70,
     load_packets,
     logical_sha,
     merge_grok_results,
-    merge_opus_results,
+    merge_audit_results,
     validate_batch_plan,
     validate_source_manifest_binding,
 )
@@ -126,10 +129,11 @@ def _proposals(packets: list[dict]) -> list[dict]:
 def _audits(packets: list[dict]) -> list[dict]:
     return [{
         "packet_id": row["packet_id"],
-        "auditor_role": "OPUS",
+        "auditor_role": AUDITOR_ROLE,
         "verdict": "ACCEPT",
         "disagreements": [],
         "relationship_assessment": {kind: {"state": "NOT_APPLICABLE"} for kind in RELATIONSHIPS},
+        "audited_false_positive_mechanism": {"state": "NOT_A_FALSE_POSITIVE"},
     } for row in packets]
 
 
@@ -140,7 +144,7 @@ def _episode(packet: dict, audit: dict) -> dict:
         "packet_ids": [packet["packet_id"]],
         "episode_id": "episode-one",
         "evidence": _evidence(packet),
-        "auditor_role": "OPUS",
+        "auditor_role": AUDITOR_ROLE,
         "audit_verdict": "ACCEPT",
         "resolution": "RESOLVED",
     }
@@ -338,32 +342,46 @@ def test_rejected_packet_cannot_originate_but_evidence_backed_control_can() -> N
     assert result.episodes == ()
 
 
-def test_all70_opus_and_reconciliation_are_distinct_bound_artifacts() -> None:
+def test_all70_independent_audit_and_reconciliation_are_distinct_bound_artifacts() -> None:
     packets, plan, batches, grok_inputs = _prepared()
     proposal_bundle = {"proposals": _proposals(packets)}
     proposal_sha = "b" * 64
-    opus_inputs = build_opus_inputs(grok_inputs=grok_inputs, proposal_bundle=proposal_bundle, proposal_bundle_sha256=proposal_sha)
+    audit_inputs = build_audit_inputs(grok_inputs=grok_inputs, proposal_bundle=proposal_bundle, proposal_bundle_sha256=proposal_sha)
     audits = _audits(packets)
     audit_by_id = {row["packet_id"]: row for row in audits}
-    input_hashes = [logical_sha(row) for row in opus_inputs]
+    input_hashes = [logical_sha(row) for row in audit_inputs]
     results = []
     for number, (batch, input_sha) in enumerate(zip(batches, input_hashes), 1):
         results.append({
-            "schema": OPUS_RESULT_SCHEMA, "batch_number": number, "batch_id": batch["batch_id"],
+            "schema": AUDIT_RESULT_SCHEMA, "batch_number": number, "batch_id": batch["batch_id"],
             "source_manifest_sha256": "a" * 64, "batch_plan_sha256": plan["batch_plan_sha256"],
             "proposal_bundle_sha256": proposal_sha, "input_bundle_sha256": input_sha,
-            "auditor": {"provider": "Anthropic", "model": "Opus 5 Max", "role": "OPUS", "independent_source_only": True},
+            "auditor": {"provider": AUDITOR_PROVIDER, "model": AUDITOR_MODEL, "role": AUDITOR_ROLE, "independent_source_only": True},
             "audits": [audit_by_id[packet_id] for packet_id in batch["packet_ids"]], "relationships": [],
         })
-    audit_bundle = merge_opus_results(
-        packets=packets, batches=batches, results=results, input_bundle_sha256s=input_hashes,
+    audit_bundle = merge_audit_results(
+        packets=packets, batches=batches, proposal_bundle=proposal_bundle,
+        results=results, input_bundle_sha256s=input_hashes,
         source_manifest_sha256="a" * 64, batch_plan_sha256=plan["batch_plan_sha256"], proposal_bundle_sha256=proposal_sha,
     )
+    wrong_runtime = deepcopy(results)
+    wrong_runtime[0]["auditor"] = {
+        "provider": "Anthropic", "model": "Opus 5 Max", "role": "OPUS",
+        "independent_source_only": True,
+    }
+    with pytest.raises(S1FModelBlocked, match="binding/identity invalid"):
+        merge_audit_results(
+            packets=packets, batches=batches, proposal_bundle=proposal_bundle,
+            results=wrong_runtime, input_bundle_sha256s=input_hashes,
+            source_manifest_sha256="a" * 64,
+            batch_plan_sha256=plan["batch_plan_sha256"], proposal_bundle_sha256=proposal_sha,
+        )
     missing_audit = deepcopy(results)
     missing_audit[3]["audits"].pop()
     with pytest.raises(S1FModelBlocked, match="order changed"):
-        merge_opus_results(
-            packets=packets, batches=batches, results=missing_audit,
+        merge_audit_results(
+            packets=packets, batches=batches, proposal_bundle=proposal_bundle,
+            results=missing_audit,
             input_bundle_sha256s=input_hashes, source_manifest_sha256="a" * 64,
             batch_plan_sha256=plan["batch_plan_sha256"], proposal_bundle_sha256=proposal_sha,
         )
@@ -373,6 +391,7 @@ def test_all70_opus_and_reconciliation_are_distinct_bound_artifacts() -> None:
         proposal_bundle_sha256=proposal_sha, audit_bundle_sha256=audit_sha,
     )
     assert len(relation_input["packets"]) == 70
+    assert relation_input["packets"][0]["independent_audit"]["audited_false_positive_mechanism"] == {"state": "NOT_A_FALSE_POSITIVE"}
     reconciliation = {
         "schema": RELATION_SCHEMA, "source_manifest_sha256": "a" * 64,
         "batch_plan_sha256": plan["batch_plan_sha256"], "proposal_bundle_sha256": proposal_sha,
@@ -384,7 +403,7 @@ def test_all70_opus_and_reconciliation_are_distinct_bound_artifacts() -> None:
             {"packet_id": row["packet_id"], "relationship_assessment": deepcopy(audit["relationship_assessment"])}
             for row, audit in zip(packets, audits)
         ],
-        "reconciler": {"provider": "Anthropic", "model": "opus-5-max", "role": "OPUS", "independent_source_only": True},
+        "reconciler": {"provider": AUDITOR_PROVIDER, "model": AUDITOR_MODEL, "role": AUDITOR_ROLE, "independent_source_only": True},
         "relationships": [],
     }
     summary, matrix = finalize_all70(
@@ -409,6 +428,17 @@ def test_all70_opus_and_reconciliation_are_distinct_bound_artifacts() -> None:
             packets=packets, proposal_bundle=proposal_bundle, audit_bundle=audit_bundle,
             reconciliation=unresolved, proposal_bundle_sha256=proposal_sha, audit_bundle_sha256=audit_sha,
         )
+    wrong_reconciler = deepcopy(reconciliation)
+    wrong_reconciler["reconciler"] = {
+        "provider": "Anthropic", "model": "Opus 5 Max", "role": "OPUS",
+        "independent_source_only": True,
+    }
+    with pytest.raises(S1FModelBlocked, match="reconciliation"):
+        finalize_all70(
+            packets=packets, proposal_bundle=proposal_bundle, audit_bundle=audit_bundle,
+            reconciliation=wrong_reconciler,
+            proposal_bundle_sha256=proposal_sha, audit_bundle_sha256=audit_sha,
+        )
 
     # The final panel may lawfully discover a cross-batch duplicate that no
     # ten-packet batch could see. It repairs relationship assessments only.
@@ -428,7 +458,7 @@ def test_all70_opus_and_reconciliation_are_distinct_bound_artifacts() -> None:
         "kind": "duplicate",
         "packet_ids": [first["packet_id"], second["packet_id"]],
         "evidence": _evidence(first),
-        "auditor_role": "OPUS",
+        "auditor_role": AUDITOR_ROLE,
         "audit_verdict": "ACCEPT",
         "resolution": "RESOLVED",
     }]
@@ -437,3 +467,98 @@ def test_all70_opus_and_reconciliation_are_distinct_bound_artifacts() -> None:
         reconciliation=cross_batch, proposal_bundle_sha256=proposal_sha, audit_bundle_sha256=audit_sha,
     )
     assert cross_summary["relationship_counts"] == {"duplicate": 1}
+
+
+def test_independent_audit_mechanism_is_required_source_evidenced_and_not_shadow_derived() -> None:
+    packets, plan, batches, grok_inputs = _prepared()
+    proposal_sha = "b" * 64
+    proposal_bundle = {"proposals": _proposals(packets)}
+    audit_inputs = build_audit_inputs(
+        grok_inputs=grok_inputs,
+        proposal_bundle=proposal_bundle,
+        proposal_bundle_sha256=proposal_sha,
+    )
+    input_hashes = [logical_sha(row) for row in audit_inputs]
+    audits = _audits(packets)
+    by_id = {row["packet_id"]: row for row in audits}
+    results = [{
+        "schema": AUDIT_RESULT_SCHEMA,
+        "batch_number": number,
+        "batch_id": batch["batch_id"],
+        "source_manifest_sha256": "a" * 64,
+        "batch_plan_sha256": plan["batch_plan_sha256"],
+        "proposal_bundle_sha256": proposal_sha,
+        "input_bundle_sha256": input_sha,
+        "auditor": {"provider": AUDITOR_PROVIDER, "model": AUDITOR_MODEL, "role": AUDITOR_ROLE, "independent_source_only": True},
+        "audits": [deepcopy(by_id[packet_id]) for packet_id in batch["packet_ids"]],
+        "relationships": [],
+    } for number, (batch, input_sha) in enumerate(zip(batches, input_hashes), 1)]
+    evidence_backed = deepcopy(results)
+    evidence_backed[0]["audits"][1]["audited_false_positive_mechanism"] = {
+        "value": "CERTIFICATION_ONLY", "evidence": _evidence(packets[1]),
+    }
+    merged = merge_audit_results(
+        packets=packets, batches=batches, proposal_bundle=proposal_bundle,
+        results=evidence_backed,
+        input_bundle_sha256s=input_hashes, source_manifest_sha256="a" * 64,
+        batch_plan_sha256=plan["batch_plan_sha256"], proposal_bundle_sha256=proposal_sha,
+    )
+    assert merged["audits"][1]["audited_false_positive_mechanism"]["value"] == "CERTIFICATION_ONLY"
+    missing = deepcopy(results)
+    missing[0]["audits"][0].pop("audited_false_positive_mechanism")
+    with pytest.raises(S1FModelBlocked, match="MECHANISM_MISSING"):
+        merge_audit_results(
+            packets=packets, batches=batches, proposal_bundle=proposal_bundle,
+            results=missing,
+            input_bundle_sha256s=input_hashes, source_manifest_sha256="a" * 64,
+            batch_plan_sha256=plan["batch_plan_sha256"], proposal_bundle_sha256=proposal_sha,
+        )
+    noneligible_proposals = deepcopy(proposal_bundle)
+    noneligible_proposals["proposals"][0]["semantic"]["adverse_information_state"] = {
+        "state": "NOT_APPLICABLE"
+    }
+    with pytest.raises(S1FModelBlocked, match="MECHANISM_STATE_INVALID"):
+        merge_audit_results(
+            packets=packets, batches=batches, proposal_bundle=noneligible_proposals,
+            results=results,
+            input_bundle_sha256s=input_hashes, source_manifest_sha256="a" * 64,
+            batch_plan_sha256=plan["batch_plan_sha256"], proposal_bundle_sha256=proposal_sha,
+        )
+    unknown = deepcopy(results)
+    unknown[0]["audits"][1]["audited_false_positive_mechanism"] = {
+        "value": "UNBOUNDED_AFTER_THE_FACT", "evidence": _evidence(packets[1]),
+    }
+    with pytest.raises(S1FModelBlocked, match="MECHANISM_INVALID"):
+        merge_audit_results(
+            packets=packets, batches=batches, proposal_bundle=proposal_bundle,
+            results=unknown,
+            input_bundle_sha256s=input_hashes, source_manifest_sha256="a" * 64,
+            batch_plan_sha256=plan["batch_plan_sha256"], proposal_bundle_sha256=proposal_sha,
+        )
+    foreign_span = deepcopy(results)
+    foreign_span[0]["audits"][1]["audited_false_positive_mechanism"] = {
+        "value": "CERTIFICATION_ONLY", "evidence": _evidence(packets[2]),
+    }
+    with pytest.raises(S1FModelBlocked, match="SPAN_DOCUMENT_UNKNOWN"):
+        merge_audit_results(
+            packets=packets, batches=batches, proposal_bundle=proposal_bundle,
+            results=foreign_span,
+            input_bundle_sha256s=input_hashes, source_manifest_sha256="a" * 64,
+            batch_plan_sha256=plan["batch_plan_sha256"], proposal_bundle_sha256=proposal_sha,
+        )
+
+
+def test_resolved_episode_first_packet_must_be_the_eligible_origin() -> None:
+    packets, _plan, _batches, _inputs = _prepared()
+    proposals, audits = _proposals(packets), _audits(packets)
+    first, later = packets[1], packets[0]
+    proposals[1]["semantic"]["adverse_information_state"] = {"state": "NOT_APPLICABLE"}
+    audits[0]["relationship_assessment"]["episode"] = {"value": "episode-one", "evidence": _evidence(later)}
+    audits[1]["relationship_assessment"]["episode"] = {"value": "episode-one", "evidence": _evidence(first)}
+    edge = {
+        "kind": "episode", "packet_ids": [first["packet_id"], later["packet_id"]],
+        "episode_id": "episode-one", "evidence": _evidence(first),
+        "auditor_role": AUDITOR_ROLE, "audit_verdict": "ACCEPT", "resolution": "RESOLVED",
+    }
+    refusals = validate_s1f_audit(packets, proposals, audits, [edge]).refusals
+    assert "EPISODE_P0_ELIGIBILITY_MISSING" in {row["code"] for row in refusals}

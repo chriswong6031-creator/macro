@@ -12761,6 +12761,7 @@ jobs:
       - scripts/research/dislocation_p0_a1r_semantic_contract.py
       - scripts/research/dislocation_p0_a1r_semantic_run.py
       - scripts/research/dislocation_p0_a1r_source_run.py
+      - scripts/research/dislocation_p0_s1f_finalize_measurement.py
       - scripts/research/dislocation_p0_s1f_measurement.py
       - scripts/research/dislocation_p0_s1f_model_transport.py
       - scripts/research/dislocation_p0_s1f_owner_run.py
@@ -12791,6 +12792,7 @@ jobs:
       - tests/test_dislocation_p0_source_adapter.py
       - tests/test_dislocation_p0_source_materializer.py
       - tests/test_dislocation_p0_s1f.py
+      - tests/test_dislocation_p0_s1f_finalize_measurement.py
       - tests/test_dislocation_p0_s1f_model_transport.py
       - tests/test_dislocation_p0_s1f_owner_run.py
       - tests/test_dislocation_p0_s1f_shadow_triage.py
@@ -12803,10 +12805,10 @@ jobs:
         with:
           python-version: "3.12"
       - name: install source-owner test deps
-        # The bounded A1R adapters import the canonical raw SEC owner, whose
-        # module boundary declares pandas/requests/PyYAML even though these
-        # focused tests never perform a network call.
-        run: pip install pytest pandas requests pyyaml scipy
+        # The bounded A1R/S1F adapters import the canonical raw SEC owner,
+        # including its Draft202012Validator boundary; these focused tests
+        # still perform no network call.
+        run: pip install pytest pandas requests pyyaml scipy jsonschema==4.26.0
       - name: Dislocation P0-A1 price-blind source-integrity primitives
         run: >-
           python -m pytest
@@ -12819,6 +12821,7 @@ jobs:
           tests/test_dislocation_p0_source_adapter.py
           tests/test_dislocation_p0_source_materializer.py
           tests/test_dislocation_p0_s1f.py
+          tests/test_dislocation_p0_s1f_finalize_measurement.py
           tests/test_dislocation_p0_s1f_model_transport.py
           tests/test_dislocation_p0_s1f_owner_run.py
           tests/test_dislocation_p0_s1f_shadow_triage.py

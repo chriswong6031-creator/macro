@@ -145,7 +145,7 @@ def test_measurement_boundaries_and_suppressed_admission_safety():
     assert exact_binomial_95(0,0)["status"]=="UNDEFINED_ZERO_DENOMINATOR"
     items=[]
     for original in rows70():
-        one=dict(original, audit_verdict="REJECT", audited_episode_origin=False, audited_false_positive_mechanism="AUDITED_NO_EPISODE", shadow_disposition="DEFER", matched_document_role="ARCHIVE_ONLY", reviewed_documents=[])
+        one=dict(original, audit_verdict="REJECT", audited_episode_origin=False, audited_false_positive_mechanism={"value":"AUDITED_NO_EPISODE", "evidence":{"document_sha256":"fixture", "start":0, "end":1, "excerpt":"x"}}, shadow_disposition="DEFER", matched_document_role="ARCHIVE_ONLY", reviewed_documents=[])
         items.append(one)
     items[0].update(audit_verdict="ACCEPT",audited_episode_origin=True,
                     economic_episode_id="s1f_episode_001",
@@ -163,7 +163,7 @@ def test_measurement_boundaries_and_suppressed_admission_safety():
 def test_additive_primary_does_not_relabel_archive_only_match():
     items=[]
     for original in rows70():
-        items.append(dict(original, audit_verdict="REJECT", audited_episode_origin=False, audited_false_positive_mechanism="AUDITED_NO_EPISODE", shadow_disposition="DEFER", reviewed_documents=[{"exact_fts_matched":True,"canonical_owner_role":"archive","sha256":"a","byte_length":1},{"exact_fts_matched":False,"canonical_owner_role":"primary","sha256":"b","byte_length":1}]))
+        items.append(dict(original, audit_verdict="REJECT", audited_episode_origin=False, audited_false_positive_mechanism={"value":"AUDITED_NO_EPISODE", "evidence":{"document_sha256":"fixture", "start":0, "end":1, "excerpt":"x"}}, shadow_disposition="DEFER", reviewed_documents=[{"exact_fts_matched":True,"canonical_owner_role":"archive","sha256":"a","byte_length":1},{"exact_fts_matched":False,"canonical_owner_role":"primary","sha256":"b","byte_length":1}]))
     report=measure(items)
     assert set(report["by_document_role"]) == {"ARCHIVE_ONLY"}
 

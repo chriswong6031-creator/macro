@@ -3,7 +3,17 @@
 from __future__ import annotations
 
 from collections import Counter
+from pathlib import Path
+import sys
 from typing import Any, Iterable, Mapping
+
+_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(_ROOT))
+
+from scripts.research.dislocation_p0_s1f_semantic_contract import (
+    FALSE_POSITIVE_MECHANISMS,
+    NOT_A_FALSE_POSITIVE,
+)
 
 try:
     from scipy.stats import beta
@@ -168,22 +178,30 @@ def _matched_role_class(documents: Any) -> str:
     return "UNRESOLVED"
 
 
-ALLOWED_FALSE_POSITIVE_MECHANISMS = frozenset({
-    "CERTIFICATION_ONLY", "AGREEMENT_COVENANT_DEFINITION_ONLY", "HYPOTHETICAL_RISK_ONLY",
-    "ORDINARY_FINANCING_OR_TRANSACTION", "COMPLETED_PERIOD_RESULTS", "ORDINARY_EARNINGS",
-    "RISK_FACTOR_EXHIBIT", "OTHER_AUDITED_FALSE_POSITIVE", "AUDITED_NO_EPISODE",
-})
-
-
 def _dominant_false_positives(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     non_origins = [row for row in rows if not _admitted(row)]
-    missing = [row for row in non_origins if str(row.get("audit_verdict")) in {"ACCEPT", "REPAIR", "REJECT"} and row.get("audited_false_positive_mechanism") not in ALLOWED_FALSE_POSITIVE_MECHANISMS]
+    def mechanism(row: Mapping[str, Any]) -> str | None:
+        assertion = row.get("audited_false_positive_mechanism")
+        if not isinstance(assertion, Mapping):
+            return None
+        if set(assertion) == {"state"}:
+            return str(assertion.get("state"))
+        if set(assertion) == {"value", "evidence"}:
+            return str(assertion.get("value"))
+        return None
+
+    missing = [
+        row for row in non_origins
+        if str(row.get("audit_verdict")) in {"ACCEPT", "REPAIR", "REJECT"}
+        and mechanism(row) not in (FALSE_POSITIVE_MECHANISMS | {NOT_A_FALSE_POSITIVE})
+    ]
     if missing:
         raise MeasurementBlocked("audited non-origin lacks allowed audited_false_positive_mechanism")
-    values = Counter(str(row.get("audited_false_positive_mechanism")) for row in non_origins)
-    total = len(non_origins)
+    false_positives = [row for row in non_origins if mechanism(row) != NOT_A_FALSE_POSITIVE]
+    values = Counter(str(mechanism(row)) for row in false_positives)
+    total = len(false_positives)
     return [{
         "mechanism": key,
         "count": value,
-        "proportion_of_non_origins": format(value / total, ".12f") if total else None,
+        "proportion_of_false_positives": format(value / total, ".12f") if total else None,
     } for key, value in sorted(values.items(), key=lambda item: (-item[1], item[0]))]

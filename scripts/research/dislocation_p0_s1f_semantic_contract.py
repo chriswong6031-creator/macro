@@ -13,7 +13,6 @@ from typing import Any, Mapping, Sequence
 
 from scripts.research.dislocation_p0_a1r_semantic_contract import (
     AUDIT_VERDICTS,
-    AUDITOR_ROLE,
     PROPOSER_ROLE,
     RELATIONSHIPS,
     SEMANTIC_FIELDS,
@@ -32,6 +31,19 @@ from scripts.research.dislocation_p0_a1r_semantic_contract import (
 REQUIRED_PACKET_COUNT = 70
 REQUIRED_BATCH_COUNT = 7
 REQUIRED_BATCH_SIZE = 10
+AUDITOR_ROLE = "INDEPENDENT_AUDITOR"
+NOT_A_FALSE_POSITIVE = "NOT_A_FALSE_POSITIVE"
+FALSE_POSITIVE_MECHANISMS = frozenset({
+    "CERTIFICATION_ONLY",
+    "AGREEMENT_COVENANT_DEFINITION_ONLY",
+    "HYPOTHETICAL_RISK_ONLY",
+    "ORDINARY_FINANCING_OR_TRANSACTION",
+    "COMPLETED_PERIOD_RESULTS",
+    "ORDINARY_EARNINGS",
+    "RISK_FACTOR_EXHIBIT",
+    "OTHER_AUDITED_FALSE_POSITIVE",
+    "AUDITED_NO_EPISODE",
+})
 
 
 @dataclass(frozen=True)
@@ -48,6 +60,43 @@ class S1FAuditValidation:
     typed_states: dict[str, int]
     disagreements: tuple[dict[str, str], ...]
     episodes: tuple[str, ...]
+
+
+def validate_audited_false_positive_mechanism(
+    packet: Mapping[str, Any],
+    audit: Mapping[str, Any],
+    refusals: list[dict[str, str]],
+    *,
+    final_semantic: Mapping[str, Any] | None = None,
+) -> None:
+    """Require an independent-auditor-owned, source-replayable non-origin classification.
+
+    ``NOT_A_FALSE_POSITIVE`` is a state rather than an affirmative source claim and
+    is reserved for independently accepted/repaired packets.  Every affirmative
+    mechanism is a bounded value with evidence against that packet's exact source.
+    """
+    assertion = audit.get("audited_false_positive_mechanism")
+    packet_id = str(packet.get("packet_id"))
+    if not isinstance(assertion, Mapping):
+        _refuse(refusals, "AUDIT_FALSE_POSITIVE_MECHANISM_MISSING", packet_id)
+        return
+    if set(assertion) == {"state"}:
+        if (
+            assertion.get("state") != NOT_A_FALSE_POSITIVE
+            or audit.get("verdict") not in {"ACCEPT", "REPAIR"}
+            or (final_semantic is not None and not _is_p0_episode_eligible(final_semantic))
+        ):
+            _refuse(refusals, "AUDIT_FALSE_POSITIVE_MECHANISM_STATE_INVALID", packet_id)
+        return
+    if set(assertion) != {"value", "evidence"}:
+        _refuse(refusals, "AUDIT_FALSE_POSITIVE_MECHANISM_SHAPE_INVALID", packet_id)
+        return
+    value = assertion.get("value")
+    if value not in FALSE_POSITIVE_MECHANISMS:
+        _refuse(refusals, "AUDIT_FALSE_POSITIVE_MECHANISM_INVALID", packet_id)
+        return
+    if issue := _evidence_issue(packet, assertion.get("evidence")):
+        _refuse(refusals, issue, f"audited_false_positive_mechanism:{packet_id}")
 
 
 def _validate_packets(
@@ -148,6 +197,12 @@ def validate_s1f_audit(
             continue
         if audit.get("auditor_role") != AUDITOR_ROLE:
             _refuse(refusals, "AUDIT_NOT_INDEPENDENT", packet_id)
+        validate_audited_false_positive_mechanism(
+            packet,
+            audit,
+            refusals,
+            final_semantic=_final_semantic(packet_id, proposal_by_id, audit_by_id),
+        )
         _validate_relationship_assessment(
             packet, audit.get("relationship_assessment"), packet_id, refusals
         )
@@ -249,7 +304,15 @@ def validate_s1f_audit(
             _refuse(refusals, "RELATIONSHIP_UNRESOLVED", f"{kind}:{linked}")
             valid = False
         if kind == "episode" and edge.get("resolution") == "RESOLVED":
-            if not any(_is_p0_episode_eligible(_final_semantic(str(packet_id), proposal_by_id, audit_by_id)) for packet_id in linked):
+            origin_packet_id = str(linked[0])
+            origin_audit = audit_by_id.get(origin_packet_id)
+            if (
+                origin_audit is None
+                or origin_audit.get("verdict") not in {"ACCEPT", "REPAIR"}
+                or not _is_p0_episode_eligible(
+                    _final_semantic(origin_packet_id, proposal_by_id, audit_by_id)
+                )
+            ):
                 _refuse(refusals, "EPISODE_P0_ELIGIBILITY_MISSING", str(linked))
                 valid = False
             episode_id = edge.get("episode_id")

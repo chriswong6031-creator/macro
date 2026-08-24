@@ -10,10 +10,15 @@ from __future__ import annotations
 
 from hashlib import sha256
 import json
+from pathlib import Path
+import sys
 from typing import Any, Iterable, Mapping, Sequence
 
 from scipy.optimize import Bounds, LinearConstraint, milp
 from scipy.sparse import lil_matrix
+
+_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(_ROOT))
 
 from scripts.research.dislocation_p0_a1_lib import (
     PRIMARY_FAMILIES,

@@ -9,6 +9,13 @@ authority.
 `3a742388e9751eb3a464cab6d80a13deb0f7a09d`, immutable K-packet
 `665628e8d1d217b15239091ca6a4963a2196b3b36c4f850c18a85a0f8da8781e`.
 
+**Later specific runtime ruling (Chairman, 2026-08-24):** independent audits and
+the all-seventy relationship reconciliation run through Warp/Oz on Grok 4.6,
+not Claude Web/Opus. `DEC:DISLOCATION-S1F-AUDITOR-RUNTIME-GROK46` supersedes
+only the older auditor-runtime choice; every source, evidence, ontology,
+cardinality, measurement, authority, and stop constraint in this freeze remains
+unchanged.
+
 ## Decision
 
 S1F is a prospective, price-blind source-precision test between the frozen
@@ -166,8 +173,8 @@ if the implementation and frozen constants drift.
 ## Prospective audit protocol
 
 Triage has zero skip authority. All seventy packets proceed to a fresh source-only
-Grok proposal and an independent source-only Opus audit under the accepted #6258
-semantic/episode ontology. Neither model receives price/outcome data. The Opus
+Grok proposal and an independent source-only Grok 4.6 audit under the accepted #6258
+semantic/episode ontology. Neither model receives price/outcome data. The independent
 auditor is not shown the prior #6258 semantic outputs as truth and is not shown the
 new shadow disposition before it renders its semantic verdict.
 
@@ -254,3 +261,40 @@ has no `merge-on-green`, has native auto-merge null, and is not merged or marked
 ready. Stop before P0-S2 and before any price, outcome, counterfactual, ranking,
 sizing, execution, Prophet, Radar, or Fusion path.
 
+## Observed source-only result — 2026-08-24
+
+The frozen seventy completed without a top-up. Canonical owner replay remains
+`COMPLETE_BYTE_IDENTICAL`: 70 packets, 129 exact FTS-matched documents, 183 unique
+documents after additive primary context, and source network access `NONE` during
+replay. The exact source-manifest logical SHA remains
+`98740d5aeee8e0e3ae3bb8408498b72db839cdc3686b8b3994b416c99cd7a3e4`.
+
+Seven isolated Warp/Oz conversations on runtime `grok-4-6-high` independently
+audited all seventy proposals. Their merged verdict is 52 `ACCEPT`, 18 `REPAIR`,
+0 `REJECT`, with 46 resolved field disagreements and 0 unresolved disagreements.
+The separate all-seventy Warp/Grok 4.6 reconciliation reviewed all 70 packet IDs,
+emitted 70 terminal relationship assessments, and admitted no duplicate,
+amendment, pulse, mitigation, resolution, or episode edge.
+
+The honest economic-episode-origin count is therefore **0 / 70**, not one per
+accession and not the shadow-retain count. Its exact two-sided 95% Clopper-Pearson
+interval is `[0.000000000000, 0.051333797151]`. Retain was 18 / 70, but retained
+precision was 0 / 18; every primary family was 0 / 10. The terminal source finding
+is `SOURCE_PRECISION_NOT_PROVEN`, while the separately frozen sector finding remains
+`SECTOR_PARTITION_UNRESOLVED`. Neither finding is permission to alter phrases,
+ontology, allocation, or admission law.
+
+The immutable returned evidence is:
+
+- proposal bundle SHA `02d55bcba5f1d259bb543c58e888137872cde7274dfff22a7fb599305c302532`;
+- independent audit bundle SHA `f6d9cc77cadca7d7086564acd710aa8a82c0b0b9a5e199cd11f16c1ec016eaad`;
+- all-seventy reconciliation SHA `2b5c6e3d624fd6d7514fed1e6bb54178f3ad12adc64b54efc46780f286713711`;
+- Warp/Grok runtime-access receipt SHA `7c3ef8dbec7940a02b24545c297c8f6fc785a51a0daa4b220392f1e631156143`;
+- measurement SHA `31446575f23123a3a9b2e83f7cc2057bdb0ab2a0976f460cba16262aedab3c4c`;
+- K-packet SHA `572fab916e3505a05896a76784c3084af71619c88a7e39a6b4fdff1b96577b99`;
+- final receipt bundle SHA `a87fb536d7c7c3c42798eacedddf18b69501573045ca6c20ac197f58ff4cdb25`.
+
+The K-packet binds the runtime-access receipt, all authority flags are false, the
+source-only structural scan passes, no forbidden data directory is present, and the
+stop remains exactly before P0-S2. Sol alone decides whether the zero-yield source
+experiment ends the lane or commissions a new price-blind source-law wave.

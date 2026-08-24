@@ -30,6 +30,7 @@ from scripts.research.dislocation_p0_s1f_semantic_contract import (  # noqa: E40
     REQUIRED_BATCH_SIZE,
     REQUIRED_PACKET_COUNT,
     validate_s1f_audit,
+    validate_audited_false_positive_mechanism,
     validate_s1f_proposals,
 )
 
@@ -38,9 +39,9 @@ SOURCE_MANIFEST_SCHEMA = "mastermind.dislocation_p0.s1f_canonical_source_packets
 GROK_INPUT_SCHEMA = "mastermind.dislocation_p0.s1f_grok_input_batch.v1"
 GROK_RESULT_SCHEMA = "mastermind.dislocation_p0.s1f_grok_proposal_batch.v1"
 PROPOSAL_SCHEMA = "mastermind.dislocation_p0.s1f_grok_proposals.v1"
-OPUS_INPUT_SCHEMA = "mastermind.dislocation_p0.s1f_opus_audit_input_batch.v1"
-OPUS_RESULT_SCHEMA = "mastermind.dislocation_p0.s1f_opus_audit_batch.v1"
-AUDIT_SCHEMA = "mastermind.dislocation_p0.s1f_opus_audit.v1"
+AUDIT_INPUT_SCHEMA = "mastermind.dislocation_p0.s1f_independent_audit_input_batch.v2"
+AUDIT_RESULT_SCHEMA = "mastermind.dislocation_p0.s1f_independent_audit_batch.v2"
+AUDIT_SCHEMA = "mastermind.dislocation_p0.s1f_independent_audit.v2"
 RELATION_INPUT_SCHEMA = "mastermind.dislocation_p0.s1f_all70_relationship_input.v1"
 RELATION_SCHEMA = "mastermind.dislocation_p0.s1f_all70_relationship_reconciliation.v1"
 EVIDENCE_CATALOG_SCHEMA = "mastermind.dislocation_p0.s1f_evidence_catalog.v1"
@@ -51,8 +52,13 @@ class S1FModelBlocked(RuntimeError):
     """A source-only model transport or result failed closed."""
 
 
-def _is_opus_5_max(value: Any) -> bool:
-    return str(value or "").strip().lower().replace("-", " ").replace("_", " ") == "opus 5 max"
+AUDITOR_PROVIDER = "xAI"
+AUDITOR_MODEL = "Grok 4.6"
+AUDITOR_ROLE = "INDEPENDENT_AUDITOR"
+
+
+def _is_grok_4_6(value: Any) -> bool:
+    return str(value or "").strip().lower().replace("-", " ").replace("_", " ") == "grok 4.6"
 
 
 def logical_sha(value: Any) -> str:
@@ -490,7 +496,7 @@ def merge_grok_results(
     return merged
 
 
-def build_opus_inputs(
+def build_audit_inputs(
     *, grok_inputs: Sequence[Mapping[str, Any]], proposal_bundle: Mapping[str, Any],
     proposal_bundle_sha256: str,
 ) -> list[dict[str, Any]]:
@@ -501,10 +507,10 @@ def build_opus_inputs(
         for row in grok_input.get("packets") or []:
             packet = row.get("packet") if isinstance(row, Mapping) else None
             if not isinstance(packet, Mapping) or str(packet.get("packet_id")) not in proposal_by_id:
-                raise S1FModelBlocked("Opus input packet/proposal crosswire")
+                raise S1FModelBlocked("independent audit input packet/proposal crosswire")
             rows.append(dict(row) | {"grok_proposal": proposal_by_id[str(packet["packet_id"])]})
         value = {
-            "schema": OPUS_INPUT_SCHEMA,
+            "schema": AUDIT_INPUT_SCHEMA,
             "batch_number": grok_input["batch_number"],
             "batch_id": grok_input["batch_id"],
             "packet_count": REQUIRED_BATCH_SIZE,
@@ -521,25 +527,34 @@ def build_opus_inputs(
         byte_length = len((canonical_json(value) + "\n").encode("utf-8"))
         if byte_length >= MAX_MODEL_BATCH_BYTES:
             raise S1FModelBlocked(
-                f"Opus input batch exceeds {MAX_MODEL_BATCH_BYTES} bytes: {grok_input['batch_id']}:{byte_length}"
+                f"independent audit input batch exceeds {MAX_MODEL_BATCH_BYTES} bytes: {grok_input['batch_id']}:{byte_length}"
             )
         output.append(value)
     return output
 
 
-def merge_opus_results(
+def merge_audit_results(
     *, packets: Sequence[Mapping[str, Any]], batches: Sequence[Mapping[str, Any]],
+    proposal_bundle: Mapping[str, Any],
     results: Sequence[Mapping[str, Any]], input_bundle_sha256s: Sequence[str],
     source_manifest_sha256: str, batch_plan_sha256: str, proposal_bundle_sha256: str,
 ) -> dict[str, Any]:
     if len(results) != REQUIRED_BATCH_COUNT or len(input_bundle_sha256s) != REQUIRED_BATCH_COUNT:
-        raise S1FModelBlocked("all seven Opus result batches are required")
+        raise S1FModelBlocked("all seven independent audit result batches are required")
+    packet_by_id = {str(packet["packet_id"]): packet for packet in packets}
+    proposal_by_id = {
+        str(row["packet_id"]): row
+        for row in proposal_bundle.get("proposals") or []
+        if isinstance(row, Mapping) and isinstance(row.get("packet_id"), str)
+    }
+    if set(proposal_by_id) != set(packet_by_id):
+        raise S1FModelBlocked("independent audit mechanism validation proposal set mismatch")
     audit_by_id: dict[str, Mapping[str, Any]] = {}
     result_hashes: list[str] = []
     for number, (batch, result, input_sha) in enumerate(zip(batches, results, input_bundle_sha256s), 1):
         auditor = result.get("auditor")
         if (
-            result.get("schema") != OPUS_RESULT_SCHEMA
+            result.get("schema") != AUDIT_RESULT_SCHEMA
             or result.get("batch_number") != number
             or result.get("batch_id") != batch["batch_id"]
             or result.get("source_manifest_sha256") != source_manifest_sha256
@@ -547,25 +562,40 @@ def merge_opus_results(
             or result.get("proposal_bundle_sha256") != proposal_bundle_sha256
             or result.get("input_bundle_sha256") != input_sha
             or not isinstance(auditor, Mapping)
-            or auditor.get("provider") != "Anthropic"
-            or not _is_opus_5_max(auditor.get("model"))
-            or auditor.get("role") != "OPUS"
+            or auditor.get("provider") != AUDITOR_PROVIDER
+            or not _is_grok_4_6(auditor.get("model"))
+            or auditor.get("role") != AUDITOR_ROLE
             or auditor.get("independent_source_only") is not True
         ):
-            raise S1FModelBlocked(f"Opus result batch binding/identity invalid: {batch['batch_id']}")
+            raise S1FModelBlocked(f"independent audit result batch binding/identity invalid: {batch['batch_id']}")
         audits = result.get("audits")
         actual_ids = [str(row.get("packet_id")) for row in audits or [] if isinstance(row, Mapping)]
         if not isinstance(audits, list) or actual_ids != batch["packet_ids"]:
-            raise S1FModelBlocked(f"Opus result packet order changed: {batch['batch_id']}")
+            raise S1FModelBlocked(f"independent audit result packet order changed: {batch['batch_id']}")
         for row in audits:
             assessment = row.get("relationship_assessment") if isinstance(row, Mapping) else None
             if (
-                row.get("auditor_role") != "OPUS"
+                row.get("auditor_role") != AUDITOR_ROLE
                 or not isinstance(assessment, Mapping)
                 or set(assessment) != RELATIONSHIPS
                 or row["packet_id"] in audit_by_id
             ):
-                raise S1FModelBlocked(f"Opus audit shape/identity invalid: {row.get('packet_id')}")
+                raise S1FModelBlocked(f"independent audit shape/identity invalid: {row.get('packet_id')}")
+            mechanism_refusals: list[dict[str, str]] = []
+            proposal_semantic = proposal_by_id[str(row["packet_id"])].get("semantic")
+            final_semantic = (
+                proposal_semantic if row.get("verdict") == "ACCEPT"
+                else row.get("final_semantic") if row.get("verdict") == "REPAIR"
+                else None
+            )
+            validate_audited_false_positive_mechanism(
+                packet_by_id[str(row["packet_id"])],
+                row,
+                mechanism_refusals,
+                final_semantic=final_semantic if isinstance(final_semantic, Mapping) else None,
+            )
+            if mechanism_refusals:
+                raise S1FModelBlocked(canonical_json({"audit_mechanism_refusals": mechanism_refusals}))
             audit_by_id[str(row["packet_id"])] = row
         if result.get("relationships") not in (None, []):
             raise S1FModelBlocked("batch-local relationship edges forbidden before all70 reconciliation")
@@ -618,7 +648,7 @@ def build_relationship_input(
                 "packet": compact_packet,
                 "document_inventory": inventory,
                 "grok_proposal": proposals[packet_id],
-                "opus_audit": audits[packet_id],
+                "independent_audit": audits[packet_id],
             })
     rows.sort(key=lambda row: int(row["packet"]["slot"]))
     if len(rows) != REQUIRED_PACKET_COUNT or [int(row["packet"]["slot"]) for row in rows] != list(range(1, 71)):
@@ -693,9 +723,9 @@ def finalize_all70(
         or len(final_assessments) != REQUIRED_PACKET_COUNT
         or final_assessment_ids != expected_ids
         or not isinstance(reconciler, Mapping)
-        or reconciler.get("provider") != "Anthropic"
-        or not _is_opus_5_max(reconciler.get("model"))
-        or reconciler.get("role") != "OPUS"
+        or reconciler.get("provider") != AUDITOR_PROVIDER
+        or not _is_grok_4_6(reconciler.get("model"))
+        or reconciler.get("role") != AUDITOR_ROLE
         or reconciler.get("independent_source_only") is not True
     ):
         raise S1FModelBlocked("final all70 relationship reconciliation binding/identity invalid")
@@ -847,22 +877,22 @@ def merge_grok_stage(argv: argparse.Namespace) -> dict[str, Any]:
     proposal_path = argv.out_dir / "S1F_GROK_SOURCE_PROPOSALS.json"
     _write_json(proposal_path, proposal)
     proposal_sha = file_sha(proposal_path)
-    opus_inputs = build_opus_inputs(
+    audit_inputs = build_audit_inputs(
         grok_inputs=grok_inputs, proposal_bundle=proposal,
         proposal_bundle_sha256=proposal_sha,
     )
-    opus_hashes: list[str] = []
-    for row in opus_inputs:
-        target = argv.out_dir / f"S1F_OPUS_INPUT_B{int(row['batch_number']):02d}.json"
+    audit_hashes: list[str] = []
+    for row in audit_inputs:
+        target = argv.out_dir / f"S1F_INDEPENDENT_AUDIT_INPUT_B{int(row['batch_number']):02d}.json"
         _write_json(target, row)
-        opus_hashes.append(file_sha(target))
+        audit_hashes.append(file_sha(target))
     receipt = {
-        "status": "EXACT70_GROK_VALID_OPUS_INPUTS_READY",
+        "status": "EXACT70_GROK_VALID_INDEPENDENT_AUDIT_INPUTS_READY",
         "source_manifest_sha256": source_sha,
         "batch_plan_sha256": plan["batch_plan_sha256"],
         "grok_proposal_bundle_file_sha256": proposal_sha,
         "grok_result_batch_file_sha256s": [file_sha(path) for path in argv.grok_result],
-        "opus_input_bundle_file_sha256s": opus_hashes,
+        "independent_audit_input_bundle_file_sha256s": audit_hashes,
         "packet_count": REQUIRED_PACKET_COUNT,
         "network": "NONE",
     }
@@ -870,7 +900,7 @@ def merge_grok_stage(argv: argparse.Namespace) -> dict[str, Any]:
     return receipt
 
 
-def merge_opus_stage(argv: argparse.Namespace) -> dict[str, Any]:
+def merge_audit_stage(argv: argparse.Namespace) -> dict[str, Any]:
     packets, _manifest, source_sha, plan, batches = _load_common(argv)
     catalog = build_evidence_catalog(packets)
     expected_grok_inputs = build_grok_inputs(
@@ -881,19 +911,19 @@ def merge_opus_stage(argv: argparse.Namespace) -> dict[str, Any]:
     proposal = _read_json(argv.proposal)
     proposal_sha = file_sha(argv.proposal)
     _validate_merged_proposal(proposal, packets, source_sha, str(plan["batch_plan_sha256"]))
-    expected_opus_inputs = build_opus_inputs(
+    expected_audit_inputs = build_audit_inputs(
         grok_inputs=grok_inputs, proposal_bundle=proposal,
         proposal_bundle_sha256=proposal_sha,
     )
-    _opus_inputs, opus_input_hashes = _exact_inputs(argv.opus_input, expected_opus_inputs, "Opus")
-    results = [_read_json(path) for path in argv.opus_result]
-    audit = merge_opus_results(
-        packets=packets, batches=batches, results=results,
-        input_bundle_sha256s=opus_input_hashes, source_manifest_sha256=source_sha,
+    _audit_inputs, audit_input_hashes = _exact_inputs(argv.audit_input, expected_audit_inputs, "independent audit")
+    results = [_read_json(path) for path in argv.audit_result]
+    audit = merge_audit_results(
+        packets=packets, batches=batches, proposal_bundle=proposal, results=results,
+        input_bundle_sha256s=audit_input_hashes, source_manifest_sha256=source_sha,
         batch_plan_sha256=str(plan["batch_plan_sha256"]), proposal_bundle_sha256=proposal_sha,
     )
     argv.out_dir.mkdir(parents=True, exist_ok=True)
-    audit_path = argv.out_dir / "S1F_OPUS_INDEPENDENT_AUDIT.json"
+    audit_path = argv.out_dir / "S1F_GROK46_INDEPENDENT_AUDIT.json"
     _write_json(audit_path, audit)
     audit_sha = file_sha(audit_path)
     relation_input = build_relationship_input(
@@ -903,16 +933,16 @@ def merge_opus_stage(argv: argparse.Namespace) -> dict[str, Any]:
     relation_path = argv.out_dir / "S1F_ALL70_RELATIONSHIP_INPUT.json"
     _write_json(relation_path, relation_input)
     receipt = {
-        "status": "EXACT70_OPUS_AUDIT_VALID_ALL70_RECONCILIATION_READY",
+        "status": "EXACT70_GROK46_AUDIT_VALID_ALL70_RECONCILIATION_READY",
         "source_manifest_sha256": source_sha,
         "grok_proposal_bundle_file_sha256": proposal_sha,
-        "opus_audit_bundle_file_sha256": audit_sha,
-        "opus_result_batch_file_sha256s": [file_sha(path) for path in argv.opus_result],
+        "independent_audit_bundle_file_sha256": audit_sha,
+        "independent_audit_result_batch_file_sha256s": [file_sha(path) for path in argv.audit_result],
         "all70_relationship_input_file_sha256": file_sha(relation_path),
         "packet_count": REQUIRED_PACKET_COUNT,
         "network": "NONE",
     }
-    _write_json(argv.out_dir / "S1F_OPUS_MERGE_RECEIPT.json", receipt)
+    _write_json(argv.out_dir / "S1F_GROK46_AUDIT_MERGE_RECEIPT.json", receipt)
     return receipt
 
 
@@ -928,7 +958,7 @@ def finalize_stage(argv: argparse.Namespace) -> dict[str, Any]:
         or audit.get("proposal_bundle_sha256") != proposal_sha
         or audit.get("audit_count") != REQUIRED_PACKET_COUNT
     ):
-        raise S1FModelBlocked("merged Opus audit bundle binding invalid")
+        raise S1FModelBlocked("merged independent audit bundle binding invalid")
     summary, matrix = finalize_all70(
         packets=packets, proposal_bundle=proposal, audit_bundle=audit,
         reconciliation=reconciliation, proposal_bundle_sha256=proposal_sha,
@@ -954,7 +984,7 @@ def finalize_stage(argv: argparse.Namespace) -> dict[str, Any]:
         "status": "EXACT70_SOURCE_ONLY_SEMANTIC_AUDIT_LINKAGE_COMPLETE",
         "source_manifest_sha256": source_sha,
         "grok_proposal_bundle_file_sha256": proposal_sha,
-        "opus_audit_bundle_file_sha256": audit_sha,
+        "independent_audit_bundle_file_sha256": audit_sha,
         "relationship_reconciliation_file_sha256": reconciliation_sha,
         "episode_linkage_file_sha256": file_sha(linkage_path),
         "disagreement_matrix_file_sha256": file_sha(disagreement_path),
@@ -969,22 +999,22 @@ def finalize_stage(argv: argparse.Namespace) -> dict[str, Any]:
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="stage", required=True)
-    for stage in ("prepare", "merge-grok", "merge-opus", "finalize"):
+    for stage in ("prepare", "merge-grok", "merge-audit", "finalize"):
         child = subparsers.add_parser(stage)
         child.add_argument("--packet-index", type=Path, required=True)
         child.add_argument("--source-root", type=Path, required=True)
         child.add_argument("--source-manifest", type=Path, required=True)
         child.add_argument("--batch-plan", type=Path, required=True)
         child.add_argument("--out-dir", type=Path, required=True)
-        if stage in {"merge-grok", "merge-opus"}:
+        if stage in {"merge-grok", "merge-audit"}:
             child.add_argument("--grok-input", type=Path, action="append", required=True)
         if stage == "merge-grok":
             child.add_argument("--grok-result", type=Path, action="append", required=True)
-        if stage in {"merge-opus", "finalize"}:
+        if stage in {"merge-audit", "finalize"}:
             child.add_argument("--proposal", type=Path, required=True)
-        if stage == "merge-opus":
-            child.add_argument("--opus-input", type=Path, action="append", required=True)
-            child.add_argument("--opus-result", type=Path, action="append", required=True)
+        if stage == "merge-audit":
+            child.add_argument("--audit-input", type=Path, action="append", required=True)
+            child.add_argument("--audit-result", type=Path, action="append", required=True)
         if stage == "finalize":
             child.add_argument("--audit", type=Path, required=True)
             child.add_argument("--reconciliation", type=Path, required=True)
@@ -997,7 +1027,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         handler = {
             "prepare": prepare,
             "merge-grok": merge_grok_stage,
-            "merge-opus": merge_opus_stage,
+            "merge-audit": merge_audit_stage,
             "finalize": finalize_stage,
         }[args.stage]
         print(canonical_json(handler(args)))
