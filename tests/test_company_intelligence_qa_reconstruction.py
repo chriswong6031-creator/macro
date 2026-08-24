@@ -523,8 +523,9 @@ def _module_sha() -> str:
     return hashlib.sha256(MODULE_PATH.read_bytes()).hexdigest()
 
 
-def _git_head() -> str:
-    return subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
+def _git_blob_sha(rev: str, relpath: str) -> str:
+    blob = subprocess.check_output(["git", "show", f"{rev}:{relpath}"], cwd=ROOT)
+    return hashlib.sha256(blob).hexdigest()
 
 
 def test_proof_receipt_matches_live_reconstruction():
@@ -549,7 +550,15 @@ def test_proof_receipt_matches_live_reconstruction():
     assert committed["unclassified_segment_count"] == 0
     assert committed["gold_sha256"] == hashlib.sha256(GOLD_PATH.read_bytes()).hexdigest()
     assert committed["gold_exchange_count"] == gold["qa_exchange_count"]
-    assert committed["git_head_at_proof"]
+    impl = committed["implementation_head_at_proof"]
+    assert impl
+    assert impl != _PICKUP_HEAD_FALSE_GREEN
+    assert committed["git_head_at_proof"] == impl
+    assert committed["pickup_head_refused"] == _PICKUP_HEAD_FALSE_GREEN
+    bound_module = _git_blob_sha(
+        impl, "engine/company_intelligence/qa_reconstruction.py"
+    )
+    assert bound_module == committed["reconstruction_module_sha256"] == _module_sha()
     assert committed["exchange_0_turns"] == [
         {"name": name, "role": role, "segment_indexes": segs}
         for name, role, segs in ORACLE_EX0_TURNS
@@ -560,4 +569,8 @@ def test_proof_receipt_matches_live_reconstruction():
     assert committed["answer_span_count"] == sum(
         len(exchange["answer_spans"]) for exchange in result["exchanges"]
     )
-    _git_head()  # proof is bound to a real git head; value is committed separately
+    assert committed["mutation_tests"]["missing_affiliation_keeps_name_unresolved"] == "pass"
+    assert committed["mutation_tests"]["punctuated_affiliation_exact_or_unresolved"] == "pass"
+    assert committed["mutation_tests"]["verified_analyst_role_stays_question"] == "pass"
+    assert committed["mutation_tests"]["third_party_non_management_role_refuses"] == "pass"
+    assert committed["mutation_tests"]["no_hardcoded_count_7"] == "pass"

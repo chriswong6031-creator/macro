@@ -21,8 +21,9 @@ depends_on:
 decisions:
   - DEC:E3-EVENT-INTELLIGENCE-COMPILER-NOT-SCORER
 next_action: >
-  HOLD-FOR-SOL: E3-A2 draft PR. Do not merge. Do not mark E3-A2 done.
-  Do not start E3-B.
+  HOLD-FOR-SOL: E3-A2 draft PR #6306 after Sol review 5002451341 repairs
+  (H_IMPL a6c075f18a7205d943bf6d95aaf904e782a1267c). Do not merge. Do not
+  mark E3-A2 done. Do not start E3-B.
 owns_paths:
   - research/earnings_intelligence/e3/**
   - engine/company_intelligence/qa_reconstruction.py
@@ -39,6 +40,7 @@ artifacts:
   - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-23-e3a-r2.md
   - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-23-e3a-landed.md
   - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-23-e3a2.md
+  - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-24-e3a2.md
   - engine/company_intelligence/qa_reconstruction.py
   - tests/test_company_intelligence_qa_reconstruction.py
   - research/earnings_intelligence/e3/e3a2_aapl_fy2026_q3_reconstruction_receipt.json
@@ -119,10 +121,12 @@ waves:
       - tests/test_company_intelligence_qa_reconstruction.py
       - research/earnings_intelligence/e3/e3a2_aapl_fy2026_q3_reconstruction_receipt.json
     next_action: >
-      Draft PR held for Sol. Local proof: 7 exchanges / 26 answer-turns /
-      exact AAPL structural gold parity; runtime has no gold import and
-      no AAPL literals. Topics remain UNRESOLVED / PASS_A_REFERENCE_ONLY.
-      Do not merge. Do not mark this wave done. Do not start E3-B.
+      Draft PR #6306 held for Sol after review 5002451341. H_IMPL
+      a6c075f18a7205d943bf6d95aaf904e782a1267c. Local proof: 7 exchanges /
+      32 question spans / 36 answer spans / 26 answer-turns / 68 replay;
+      runtime has no gold import, no AAPL literals, and no hardcoded 7.
+      Topics remain UNRESOLVED / PASS_A_REFERENCE_ONLY. Do not merge.
+      Do not mark this wave done. Do not start E3-B.
   - id: E3-B
     title: AAPL live Q&A into event_workspace.v1
     status: todo
@@ -147,4 +151,4 @@ E3-0 landed on main at `22686d255eb047cf5bffc91a35984515acb3d466` (#6161; Sol re
 
 E3-A is done as a completed calibration / negative-method experiment. Immutable squash-merge SHA: `d919637f3680d3da25a904484749409b043f60e9` (#6245; Sol review 5001747968; accepted head `b403fba8e141e4a12083f97d104a851178f68051`; merged 2026-08-23T05:57:38Z). Gold is `aapl_fy2026_q3_qa_gold.v2` SHA `fc6df84d2a8d0d96475ce697ba92ffdd071d5c283b8daee97c1b3381382fa42c`; v1 `6b1100b148396db9a29974da5bc6e0cc55e5534185e50e061fe3635d429ed761` is superseded calibration gold. Canonical taxonomy remains `qa_topic.v1` / `a928ca72ab2e91bda74bd1e69021e08a5234e501f095610e623655db7e323b5e`. The immutable blind Pass B packet stores `b2ae2508877ccda4dea911d52952c49f78b0dbc26049326d542ee77439cf9a14` as a **noncanonical pass-local members digest**, not the qa_topic.v1 hash; enum membership matches. **Topic adjudication is UNRESOLVED / PASS_A_REFERENCE_ONLY** — Pass A and Pass B disagree on all 7 per-exchange topic sets; Haiku Jaccard 0.722 is descriptive against Pass-A reference labels only and grants zero topic-model authority. Structural gold is accepted: 7 Operator-delimited exchanges, exact source spans, identities, 26 management answer-turns. Measured eval `run_id=27e3e380f70658c1`: Qwen `[]` (NOT_EXERCISED, local $0.00) — full-transcript Qwen structural extraction is **not promoted**; Haiku remains **benchmark-only**. No numeric usefulness threshold was manufactured.
 
-E3-A2 is implemented on a held draft PR and is **not done**. Generic runtime `engine/company_intelligence/qa_reconstruction.py` reconstructs Operator-`go ahead` exchanges, question/answer spans, questioner identity, and management answer-turns from source segments only. Local AAPL oracle parity is 7 exchanges / 26 turns with exact spans and identities; topics are not copied. **E3-B stays locked.** Sol decides whether E3-A2 lands. Do not start E3-B.
+E3-A2 is implemented on held draft PR #6306 and is **not done**. Sol review 5002451341 repairs bind the proof receipt to implementation head `a6c075f18a7205d943bf6d95aaf904e782a1267c` (not pickup), keep missing/punctuated affiliation fail-closed, keep verified Analyst-role speech as question, refuse third-party non-management roles, and forbid hardcoded 7. Generic runtime `engine/company_intelligence/qa_reconstruction.py` reconstructs Operator-`go ahead` exchanges from source segments only. Local AAPL oracle parity is 7 exchanges / 32 question spans / 36 answer spans / 26 turns / 68 replay; topics are not copied. **E3-B stays locked.** Sol decides whether E3-A2 lands. Do not start E3-B.
