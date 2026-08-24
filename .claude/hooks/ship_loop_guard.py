@@ -151,6 +151,27 @@ EXTERNAL_BLOCKERS = {
 # benign `unmerged` wait, which is internal and costs 10 consecutive / 15 total.
 # So it is internal, and the ladder now matches the severity of the state.
 CI_FAILED_UNMERGED = "ci_failed_unmerged"
+# ── Ship-watcher quiescence (Sol commission #6379, 2026-08-24) ────────────────
+# A "ship watcher" is a DELAYED BACKGROUND wake timer: a `run_in_background`
+# Bash whose command sleeps at least this long before doing anything else. Its
+# completion starts a NEW model turn via `<task-notification>` (reproduced live
+# 2026-08-24; also the measured 2026-08-04 `stop_hook_active` reset class), and
+# that turn's Stop re-enters this guard. The platform exposes NO way for a hook
+# to enumerate or cancel Claude-native background tasks, so watcher lifetime is
+# controlled at the only two boundaries a repository owns: CREATION (at most one
+# live reservation per session state — a second overlapping timer is refused, and
+# any timer aimed at an already-terminal state is refused) and WAKE (a terminal
+# latch makes the re-entered Stop pass silently). Nothing here kills a process
+# or task: an unknown/foreign waiter is simply left alone, which is the
+# fail-closed direction for ownership.
+#
+# 60s is the discriminator between "waiting out a command" and "waking the
+# session later": foreground waits and short retry sleeps never produce a
+# task-notification turn minutes after the session went quiet. The slack keeps a
+# reservation alive past its nominal fire time so a timer that is slow to start
+# (queued task, loaded host) is not double-booked the moment its sleep elapses.
+WATCHER_MIN_SLEEP_SECONDS = 60
+WATCHER_EXPIRY_SLACK_SECONDS = 900
 # Roots holding OTHER agent sessions' checkouts. A repository serving several
 # fleets accumulates dozens of them side by side — measured 2026-07-30 in the
 # primary checkout: 34 `.codex-worktrees/*` entries plus `.claire/worktrees/*`
@@ -897,6 +918,184 @@ def _remember_proof(
     proofs = state.setdefault("ship_proofs", {})
     proofs[gate] = {"key": key, "value": value}
     _save(path, state)
+
+
+def _external_exit_key(code: str, head: str, reason: str) -> str:
+    """Frozen-state identity for an EXTERNAL block's remembered ladder exit.
+
+    External blockers describe machinery the session does not own, so once the
+    full escape ladder has ratified an exit (explicit ``SHIP LOOP BLOCKED:``
+    report on a re-entrant Stop, counters armed), a later wake — typically a
+    leftover background timer's `<task-notification>` turn — re-derives the
+    SAME state and must pass silently instead of re-blocking a session that
+    already lawfully left (Sol commission #6379, incident PR #6377). The key
+    binds code, the exact local HEAD, and a digest of the block evidence:
+
+    - HEAD is load-bearing, not decoration. A generic external reason (an
+      unreachable-API exception text, say) can recur verbatim for NEW work; a
+      session that escaped, then committed and pushed something new, must not
+      have its new head's outage excused by the old head's ratified report.
+    - The reason digest keeps the memory fail-closed exactly as it does for
+      the merged-head ``ci_failed`` key: a materially changed blocker (other
+      lane, other run, other error) mints a different key and gates fresh.
+      Volatile reason details (rate-limit reset stamps) therefore re-block —
+      the cheap direction; only the byte-identical frozen state is quiet.
+
+    Internal codes NEVER mint a key here: ``unmerged``/``ci_failed_unmerged``/
+    ``unpushed``/``uncommitted``/``unsafe_branch``/``guard_error`` remain owned
+    repair states with only the 10/15 loop breaker, unchanged (Journey C).
+    """
+    if code not in EXTERNAL_BLOCKERS:
+        return ""
+    digest = hashlib.sha256(reason.encode("utf-8")).hexdigest()[:12]
+    return f"{code}:{head}:{digest}"
+
+
+def _watcher_request(payload: dict[str, Any]) -> dict[str, Any] | None:
+    """Classify a PreToolUse payload as a ship-watcher creation, else None.
+
+    Pure text inspection — no filesystem, no git, no network — so the common
+    case (every ordinary Bash call) costs one regex and returns before the
+    delegation machinery is even consulted. Only a BACKGROUND command whose
+    longest literal ``sleep N`` is at least WATCHER_MIN_SLEEP_SECONDS is a
+    watcher: that is the shape whose completion wakes the session minutes
+    later (incident PR #6377's delayed rerun timer, and the leftover timers
+    that kept re-narrating PR #6371's PARKED state). Foreground commands,
+    short sleeps, and non-Bash tools are never gated here.
+    """
+    if str(payload.get("tool_name") or "") != "Bash":
+        return None
+    tool_input = payload.get("tool_input")
+    if not isinstance(tool_input, dict) or not tool_input.get("run_in_background"):
+        return None
+    command = str(tool_input.get("command") or "")
+    sleeps = [int(match) for match in re.findall(r"\bsleep\s+(\d+)\b", command)]
+    longest = max(sleeps, default=0)
+    if longest < WATCHER_MIN_SLEEP_SECONDS:
+        return None
+    return {
+        "command": command,
+        "sleep_seconds": longest,
+        "digest": hashlib.sha256(command.encode("utf-8")).hexdigest()[:12],
+    }
+
+
+def _latched_terminal_heads(state: dict[str, Any]) -> set[str]:
+    """Every HEAD sha this session's ledger already holds a terminal latch for.
+
+    Two latch families, both minted only at a ratified terminal moment:
+    ``parked_latch`` (``parked:<pr>:<head>``, written by the hold wrapper when
+    a lawful HOLD-FOR-SOL becomes PARKED) and ``ladder_exits`` entries
+    (``<code>:<head>:<digest>`` external form, or the merged-head
+    ``ci_failed:<head>:<merge>:<digest>`` form — HEAD is segment 1 in both).
+    Unparseable entries contribute nothing: failing to recognise a latch only
+    ALLOWS a watcher, never denies one.
+    """
+    heads: set[str] = set()
+    latch = str(state.get("parked_latch") or "")
+    parts = latch.split(":")
+    if len(parts) == 3 and parts[0] == "parked" and parts[2]:
+        heads.add(parts[2])
+    exits = state.get("ladder_exits")
+    for key in exits if isinstance(exits, list) else []:
+        segments = str(key).split(":")
+        if len(segments) >= 3 and segments[1]:
+            heads.add(segments[1])
+    return heads
+
+
+def _deny_watcher(reason: str) -> None:
+    _emit(
+        {
+            "hookSpecificOutput": {
+                "hookEventName": "PreToolUse",
+                "permissionDecision": "deny",
+                "permissionDecisionReason": reason,
+            }
+        }
+    )
+
+
+def _watcher_gate(root: Path, path: Path, state: dict[str, Any], watch: dict[str, Any]) -> None:
+    """Enforce the one-watcher law for THIS session's ship state.
+
+    At most one live delayed-wake reservation per session ledger; none at all
+    once the state it would watch is already terminal. The reservation lives in
+    the same per-session state file every other ship gate uses — worktree and
+    session identity are inherited from ``_state_path``, so one session can
+    never see (let alone refuse or expire) another session's watcher, and
+    nothing is ever killed: an existing background task simply runs out.
+
+    Fail-open on uncertainty, deliberately: no ledger (pre-hook session), an
+    unanswerable ``git rev-parse``, or an unparseable reservation all ALLOW.
+    Denial here is an advisory refusal to mint REDUNDANT wake timers; a missed
+    denial restores yesterday's behavior, while a false denial would block
+    ordinary work — the one direction a watcher gate may never fail.
+
+    Wall-clock expiry is transport bookkeeping only (when the timer can no
+    longer be waiting, the reservation stops coalescing) — it is never read as
+    evidence that any work completed.
+    """
+    try:
+        head = _run(root, "git", "rev-parse", "HEAD")
+    except Exception:
+        return
+    if head in _latched_terminal_heads(state):
+        _deny_watcher(
+            "SHIP WATCHER REFUSED: this session's ship state at HEAD "
+            f"{head[:12]} is already terminal (PARKED or a ratified SHIP LOOP "
+            "BLOCKED exit). A new delayed background timer could only wake the "
+            "session to re-report the same frozen state. Do not create new ship "
+            "watchers; emit the single terminal report and end the turn."
+        )
+        return
+    reservation = state.get("ship_watcher")
+    now = time.time()
+    if isinstance(reservation, dict):
+        try:
+            expires = float(reservation.get("expires") or 0.0)
+        except (TypeError, ValueError):
+            expires = 0.0
+        if expires > now and str(reservation.get("head") or "") == head:
+            _deny_watcher(
+                "SHIP WATCHER COALESCED: one background ship watcher already "
+                f"owns this wait for HEAD {head[:12]} (up to ~{int(expires - now)}s "
+                "remaining). A session carries AT MOST ONE ship-state watcher — "
+                "rely on the existing timer instead of stacking a second wake. If "
+                "the horizon was wrong, let the current watcher fire, then create "
+                "the next single watcher."
+            )
+            return
+    state["ship_watcher"] = {
+        "digest": watch["digest"],
+        "head": head,
+        "created": now,
+        "expires": now + float(watch["sleep_seconds"]) + WATCHER_EXPIRY_SLACK_SECONDS,
+    }
+    _save(path, state)
+
+
+def _pre_tool_use(payload: dict[str, Any], raw: bytes) -> None:
+    """PreToolUse entry: gate ship-watcher creation, ignore everything else.
+
+    The non-watcher fast path returns BEFORE delegation on purpose — watcher
+    classification is pure text with identical semantics in every version of
+    this file, and paying a delegated subprocess per ordinary Bash call would
+    tax the whole session for a gate that almost never speaks. Watcher-shaped
+    calls (rare) take the same delegate-to-evaluated-tree route as Stop.
+    """
+    watch = _watcher_request(payload)
+    if watch is None:
+        return
+    if _delegate_to_evaluated_hook(payload, raw):
+        return
+    root = _repo_root(payload)
+    if root is None:
+        return
+    state = _load(_state_path(root, payload))
+    if not isinstance(state, dict):
+        return
+    _watcher_gate(root, _state_path(root, payload), state, watch)
 
 
 def _github_slug(root: Path) -> tuple[str, str]:
@@ -3846,25 +4045,29 @@ def _block(
     is the only thing that can end that wait early.
 
     A RATIFIED ladder exit is REMEMBERED for the exact frozen state it excused
-    (2026-08-19, operator complaint). ``exit_key`` names one evaluated state —
-    today only `ci_failed` on a merged head, keyed
-    ``ci_failed:<head_sha>:<merge_sha>:<sha256(reason)[:12]>``. The reason
-    digest is load-bearing, not decoration: a merged head's check SET is not
-    immutable (a `gh run rerun` or a late-attaching cron can bind a different
-    red to the same shas), so the shas alone would let one ratified report
-    cover an unbounded family of later, unrelated CI states. Digesting the
-    block reason pins the memory to the exact evidence the report answered —
-    any different red produces a different reason, a different key, and a fresh
-    block, which is the fail-closed direction. Without the memory, a long-lived
-    session re-blocked on every subsequent Stop and had to re-file the SAME
-    `SHIP LOOP BLOCKED:` report dozens of times (measured on the 2026-08-19
-    authority-frozen main-red-repair session). The memory records an exit key
-    ONLY at the moment an escape actually fires — which itself required the
-    full evidence report on a re-entrant Stop — and a later block carrying a
-    remembered key passes through without bumping any counter. A DIFFERENT key
-    (new PR, new merge, new evidence) never matches, internal codes never carry
-    a key, and an unratified block records nothing, so no ladder widens: the
-    report is demanded once per frozen state instead of once per Stop.
+    (2026-08-19, operator complaint; widened to every EXTERNAL code by Sol
+    commission #6379, 2026-08-24). ``exit_key`` names one evaluated state: the
+    merged-head red keeps its original
+    ``ci_failed:<head_sha>:<merge_sha>:<sha256(reason)[:12]>`` key, and every
+    other external block site now passes ``_external_exit_key``'s
+    ``<code>:<head_sha>:<sha256(reason)[:12]>``. The reason digest is
+    load-bearing, not decoration: a merged head's check SET is not immutable
+    (a `gh run rerun` or a late-attaching cron can bind a different red to the
+    same shas), and an external blocker that materially changes (other lane,
+    other error) is a NEW state — so a changed reason mints a different key
+    and a fresh block, which is the fail-closed direction. Without the memory,
+    a long-lived session re-blocked on every subsequent Stop and had to
+    re-file the SAME `SHIP LOOP BLOCKED:` report dozens of times (measured on
+    the 2026-08-19 authority-frozen main-red-repair session); the same shape
+    re-entered a lawfully escaped session whenever a leftover background
+    timer's `<task-notification>` turn hit Stop after the escape (incident
+    PR #6377). The memory records an exit key ONLY at the moment an escape
+    actually fires — which itself required the full evidence report on a
+    re-entrant Stop — and a later block carrying a remembered key passes
+    through without bumping any counter. A DIFFERENT key (new PR, new merge,
+    new head, new evidence) never matches, internal codes never carry a key,
+    and an unratified block records nothing, so no ladder widens: the report
+    is demanded once per frozen state instead of once per Stop.
     """
     exits = state.get("ladder_exits")
     remembered = [str(item) for item in exits] if isinstance(exits, list) else []
@@ -4151,7 +4354,10 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
     try:
         owner, repo = _github_slug(root)
     except Exception as exc:
-        _block(path, state, payload, "github_unreachable", str(exc))
+        _block(
+            path, state, payload, "github_unreachable", str(exc),
+            exit_key=_external_exit_key("github_unreachable", head, str(exc)),
+        )
         return
     pull_key = f"{branch}:{head}"
     pull = _proof(state, "merged_pull", pull_key)
@@ -4172,7 +4378,11 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
         try:
             pull = _latest_merged_pr(owner, repo, branch)
         except Exception as exc:
-            _block(path, state, payload, _github_block_code(exc), str(exc))
+            code = _github_block_code(exc)
+            _block(
+                path, state, payload, code, str(exc),
+                exit_key=_external_exit_key(code, head, str(exc)),
+            )
             return
         if pull:
             # A merged PR and its head/merge/base identities are immutable. Keep
@@ -4255,17 +4465,22 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
                 str((pull.get("base") or {}).get("sha") or ""),
             )
         except Exception as exc:
-            _block(path, state, payload, _github_block_code(exc), str(exc))
+            code = _github_block_code(exc)
+            _block(
+                path, state, payload, code, str(exc),
+                exit_key=_external_exit_key(code, head, str(exc)),
+            )
             return
         if ci_ok:
             _remember_proof(path, state, "ci", ci_key, {"reason": ci_reason})
     if not ci_ok:
         code = "ci_failed" if ci_reason.startswith("Failing") else "render_pending"
-        # Only the merged-head red carries an exit key, and the key binds the
-        # exact evidence text: one ratified ladder exit covers later Stops on
-        # the IDENTICAL frozen state only. A different red on the same head
-        # (rerun, late cron) yields a different reason and re-blocks.
-        # `render_pending` states evolve and never carry a key.
+        # The merged-head red keeps its richer three-part key (head:merge:digest)
+        # so already-ratified exits stay recognisable; the render_pending shape of
+        # this site uses the standard external key like every other external
+        # block. Both bind the exact evidence text: one ratified ladder exit
+        # covers later Stops on the IDENTICAL frozen state only — a different red
+        # or an evolved render state yields a different reason and re-blocks.
         reason_digest = hashlib.sha256(ci_reason.encode("utf-8")).hexdigest()[:12]
         _block(
             path,
@@ -4274,7 +4489,9 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
             code,
             ci_reason,
             exit_key=(
-                f"{code}:{ci_key}:{reason_digest}" if code == "ci_failed" else ""
+                f"{code}:{ci_key}:{reason_digest}"
+                if code == "ci_failed"
+                else _external_exit_key(code, head, ci_reason)
             ),
         )
         return
@@ -4283,12 +4500,14 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
             _run(root, "git", "fetch", "origin", "main", timeout=90)
             _run(root, "git", "merge-base", "--is-ancestor", merge_sha, "origin/main")
         except Exception as exc:
+            reason = f"Merge is not confirmed on origin/main: {exc}"
             _block(
                 path,
                 state,
                 payload,
                 "github_unreachable",
-                f"Merge is not confirmed on origin/main: {exc}",
+                reason,
+                exit_key=_external_exit_key("github_unreachable", head, reason),
             )
             return
         _remember_proof(path, state, "origin_main", merge_sha, True)
@@ -4314,7 +4533,11 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
                     root, owner, repo, merge_sha, merged_at, workflow
                 )
             except Exception as exc:
-                _block(path, state, payload, _github_block_code(exc), str(exc))
+                code = _github_block_code(exc)
+                _block(
+                    path, state, payload, code, str(exc),
+                    exit_key=_external_exit_key(code, head, str(exc)),
+                )
                 return
             if status == "deferred":
                 # An in-flight covering run satisfies the gate: the merge is already
@@ -4325,12 +4548,14 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
                 _remember_proof(path, state, gate, merge_sha, {"deferred": detail})
                 render_notes.append(detail)
             elif status != "success":
+                code = "render_failed" if status == "failed" else "render_pending"
                 _block(
                     path,
                     state,
                     payload,
-                    "render_failed" if status == "failed" else "render_pending",
+                    code,
                     detail,
+                    exit_key=_external_exit_key(code, head, detail),
                 )
                 return
             else:
@@ -4344,16 +4569,22 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
     try:
         health = _get_json(LIVE_HEALTH_URL)
     except Exception as exc:
-        _block(path, state, payload, "live_unreachable", f"Production health check failed: {exc}")
+        reason = f"Production health check failed: {exc}"
+        _block(
+            path, state, payload, "live_unreachable", reason,
+            exit_key=_external_exit_key("live_unreachable", head, reason),
+        )
         return
     live_ok, live_detail = _live_gate(root, merge_sha, start_head, head, health)
     if not live_ok:
+        reason = f"Production does not yet contain the merge: {live_detail}"
         _block(
             path,
             state,
             payload,
             "live_stale",
-            f"Production does not yet contain the merge: {live_detail}",
+            reason,
+            exit_key=_external_exit_key("live_stale", head, reason),
         )
         return
 
@@ -4567,6 +4798,15 @@ def _delegate_to_evaluated_hook(payload: dict[str, Any], raw: bytes) -> bool:
 def main() -> None:
     payload, raw = _load_payload_and_raw()
     if payload is None:
+        return
+    if str(payload.get("hook_event_name") or "") == "PreToolUse":
+        # The watcher gate is advisory and fail-open: a crash here may never
+        # deny (or delay) ordinary tool use, so it does not route through the
+        # guard_error path below — it just allows.
+        try:
+            _pre_tool_use(payload, raw)
+        except Exception:
+            pass
         return
     if _delegate_to_evaluated_hook(payload, raw):
         return

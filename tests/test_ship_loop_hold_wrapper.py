@@ -323,3 +323,154 @@ def test_stop_hook_routes_through_wrapper_but_keeps_original_guard_as_delegate()
         for hook in entry["hooks"]
     ]
     assert any("ship_loop_guard.py" in hook.get("command", "") for hook in session_hooks)
+
+
+# ── PARKED narrates once, then the latch keeps wake turns silent (#6379) ─────
+
+
+def _ledger_guard(tmp_path: Path, *, split=None, pull="default", state_extra=None):
+    """A fake guard whose per-session ledger is a REAL file, as in production.
+
+    ``pull=None`` models a closed/merged PR (probe finds nothing); any other
+    value overrides the default lawful hold PR.
+    """
+    state_path = tmp_path / "state.json"
+    state = {"last_blocker": "unmerged"}
+    state.update(state_extra or {})
+    state_path.write_text(json.dumps(state), encoding="utf-8")
+    open_pull = _pull() if pull == "default" else pull
+    split_result = split or ([], [], ["ci-gate", "fences"])
+    calls = {"open_pull": 0, "checks": 0}
+
+    def _open_pull(*_args):
+        calls["open_pull"] += 1
+        return open_pull
+
+    def _head_check_runs(*_args):
+        calls["checks"] += 1
+        return [object()]
+
+    def _load(path):
+        try:
+            return json.loads(Path(path).read_text(encoding="utf-8"))
+        except OSError:
+            return None
+
+    def _save(path, value):
+        Path(path).write_text(json.dumps(value), encoding="utf-8")
+
+    guard = SimpleNamespace(
+        _repo_root=lambda _payload: tmp_path,
+        _state_path=lambda _root, _payload: state_path,
+        _load=_load,
+        _save=_save,
+        _github_slug=lambda _root: ("mastermindx-market-intelligence", "macro"),
+        _open_pull=_open_pull,
+        _get_json=lambda _url: _comments(),
+        _head_check_runs=_head_check_runs,
+        _split_head_runs=lambda _runs: split_result,
+    )
+    return guard, state_path, calls
+
+
+def test_first_parked_stop_narrates_once_then_the_latch_silences_wakes(monkeypatch, tmp_path):
+    """Incident PR #6371's chatter: the first lawful PARKED is the ONE terminal
+    report; a later Stop (a leftover background task's wake turn) that
+    re-derives the identical hold passes silently — while still re-running the
+    full mechanical probe, so nothing is suppressed on trust."""
+    _stub_clean_pushed_git(monkeypatch)
+    guard, state_path, calls = _ledger_guard(tmp_path)
+
+    first = WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"})
+    assert first is not None and first["action"] == "emit"
+    message = first["value"]["systemMessage"]
+    assert message.startswith("SHIP LOOP PARKED")
+    assert "ONE terminal report" in message
+    state = json.loads(state_path.read_text(encoding="utf-8"))
+    assert state["parked_latch"] == f"parked:6138:{HEAD}"
+
+    second = WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"})
+    assert second == {"action": "silent"}
+    # Quiescence is narration-only: the hold was mechanically revalidated.
+    assert calls["open_pull"] == 2 and calls["checks"] == 2
+
+
+def test_github_outage_cannot_unpark_a_ratified_latch(monkeypatch, tmp_path):
+    """GitHub unreachable during terminal revalidation: with the latch's exact
+    HEAD still checked out and clean, the ratified terminal state stands."""
+    _stub_clean_pushed_git(monkeypatch)
+
+    def broken_open_pull(*_args):
+        raise RuntimeError("api.github.com unreachable")
+
+    guard, state_path, _ = _ledger_guard(
+        tmp_path, state_extra={"parked_latch": f"parked:6138:{HEAD}"}
+    )
+    guard._open_pull = broken_open_pull
+    assert WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"}) == {"action": "silent"}
+    # The latch survives the outage for the next wake.
+    assert json.loads(state_path.read_text(encoding="utf-8"))["parked_latch"]
+
+
+def test_outage_with_local_drift_clears_the_latch_and_delegates(monkeypatch, tmp_path):
+    """A moved HEAD during an outage is NOT the ratified state: fail closed back
+    to the canonical guard rather than staying quiet on stale identity."""
+    _stub_clean_pushed_git(monkeypatch)
+
+    def broken_open_pull(*_args):
+        raise RuntimeError("api.github.com unreachable")
+
+    stale = f"parked:6138:{'d' * 40}"
+    guard, state_path, _ = _ledger_guard(tmp_path, state_extra={"parked_latch": stale})
+    guard._open_pull = broken_open_pull
+    assert WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"}) is None
+    assert "parked_latch" not in json.loads(state_path.read_text(encoding="utf-8"))
+
+
+def test_a_released_or_closed_hold_clears_the_latch_and_resumes_ordinary_law(
+    monkeypatch, tmp_path
+):
+    """Sol releasing the hold (un-drafting, retitling, or merging/closing the
+    PR) is a genuinely new state: the old PARKED latch must not suppress the
+    ordinary completion chain (acceptance: 'Hold release ... resumes')."""
+    _stub_clean_pushed_git(monkeypatch)
+    for released_pull in (_pull(draft=False), None):
+        guard, state_path, _ = _ledger_guard(
+            tmp_path,
+            pull=released_pull,
+            state_extra={"parked_latch": f"parked:6138:{HEAD}"},
+        )
+        assert WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"}) is None
+        assert "parked_latch" not in json.loads(state_path.read_text(encoding="utf-8"))
+
+
+def test_a_red_check_after_park_clears_the_latch_and_keeps_the_sol_hold_block(
+    monkeypatch, tmp_path
+):
+    branch = "sol/chairman-tushare-compliance-override-2026-08-21"
+    _stub_clean_pushed_git(monkeypatch, branch=branch)
+    guard, state_path, _ = _ledger_guard(
+        tmp_path,
+        split=(["ci-pack-1 (failure)"], [], ["fences"]),
+        state_extra={"parked_latch": f"parked:6138:{HEAD}"},
+    )
+    verdict = WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"})
+    assert verdict is not None and verdict["action"] == "emit"
+    assert "HOLD-FOR-SOL CHECKS RED" in verdict["value"]["reason"]
+    assert "parked_latch" not in json.loads(state_path.read_text(encoding="utf-8"))
+
+
+def test_ordinary_sessions_still_delegate_with_no_latch_side_effects(monkeypatch, tmp_path):
+    """Negative control: a non-hold session's Stop is byte-identical to before —
+    delegate, no latch written, no extra GitHub spend."""
+    guard, state_path, calls = _ledger_guard(tmp_path, state_extra={"last_blocker": "render_pending"})
+
+    def branch_only(_root, *args, **_kwargs):
+        if args == ("branch", "--show-current"):
+            return "claude/ordinary-feature"
+        pytest.fail(f"non-candidate blocker must not inspect further git state: {args}")
+
+    monkeypatch.setattr(WRAPPER, "_git", branch_only)
+    assert WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"}) is None
+    assert "parked_latch" not in json.loads(state_path.read_text(encoding="utf-8"))
+    assert calls == {"open_pull": 0, "checks": 0}

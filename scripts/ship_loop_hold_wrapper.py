@@ -26,6 +26,21 @@ red checks produce a HOLD repair block, both explicitly forbidding branch/PR ide
 mutation. Every malformed/ambiguous hold and every non-``sol/*`` unsafe branch
 delegates byte-for-byte to the canonical guard. Ordinary branch, merge, CI, render,
 and live enforcement therefore remains unchanged.
+
+PARKED is narrated ONCE per frozen hold state (Sol commission #6379). This
+adapter used to be stateless, so every later Stop — typically a turn started by
+a leftover background task's ``<task-notification>`` — re-probed GitHub and
+re-emitted the full PARKED message, making a correctly parked worker look stuck
+(incident PR #6371). The first PARKED verdict now writes a ``parked_latch``
+(``parked:<pr>:<head>``) into the guard's own per-session state ledger; a later
+Stop that re-derives the IDENTICAL parked state passes silently. The latch never
+weakens the gate: every quiet pass still runs the full mechanical hold probe, so
+a released hold, a new head, a re-armed label, a dirtied tree, or a check that
+stopped being green makes the probe answer differently, clears the latch, and
+restores ordinary fail-closed law. Only when GitHub itself cannot answer during
+revalidation does the latch stand on local evidence alone (same HEAD, still
+clean): an API outage cannot un-park a state that was already terminally
+ratified, and it must not wake a parked session into a block loop either.
 """
 
 from __future__ import annotations
@@ -282,6 +297,127 @@ def _hold_block(probe: dict[str, Any]) -> dict[str, str] | None:
     return None
 
 
+def _ledger(guard: ModuleType, payload: dict[str, Any]) -> tuple[Path | None, dict[str, Any] | None]:
+    """This session's guard state file and its parsed content, best-effort.
+
+    The latch is bookkeeping inside the guard's existing per-session ledger,
+    never a second lifecycle store. A session the guard has not baselined (no
+    ledger) simply cannot latch — PARKED then narrates on every Stop exactly as
+    before this repair, which is the harmless direction.
+    """
+    try:
+        root = guard._repo_root(payload)
+        if root is None:
+            return None, None
+        path = guard._state_path(Path(root), payload)
+        state = guard._load(path)
+        return path, (state if isinstance(state, dict) else None)
+    except Exception:
+        return None, None
+
+
+def _latch_matches_local(guard: ModuleType, payload: dict[str, Any], latched: str) -> bool:
+    """Whether the ratified latch still describes THIS worktree, by local evidence.
+
+    Used only when GitHub cannot answer a revalidation probe: the latch head
+    must still be the exact checked-out HEAD and the tree must still be clean.
+    Any local drift — new commits, a dirty tree, an unanswerable git — reads as
+    "does not match", which sends the Stop back through the fail-closed guard.
+    """
+    head = latched.rsplit(":", 1)[-1]
+    if not head:
+        return False
+    try:
+        root = guard._repo_root(payload)
+        if root is None:
+            return False
+        root = Path(root)
+        if _git(root, "rev-parse", "HEAD") != head:
+            return False
+        return not _git(root, "status", "--porcelain=v1", "--untracked-files=all")
+    except Exception:
+        return False
+
+
+def _parked_message(probe: dict[str, Any]) -> dict[str, str]:
+    checks = ", ".join(str(name) for name in probe["passed"][:8])
+    return {
+        "systemMessage": (
+            f"SHIP LOOP PARKED: PR #{probe['number']} is lawfully {HOLD_TOKEN}. "
+            "The exact local head is pushed; the worktree is clean; the PR is "
+            "draft; merge-on-green and native auto-merge are disarmed; Sol "
+            "authority plus Sol release condition are recorded; and all binding "
+            f"checks have concluded clean ({checks}). Merge/render/live are "
+            "intentionally deferred to Sol review. This is a terminal PARKED "
+            "state, not SHIPPED and not a blocker to retry. Do not re-enter the "
+            "ship loop unless Sol releases the hold. This is the ONE terminal "
+            "report: create no new ship watchers or wake timers, and if a "
+            "leftover background task completes later, end that turn without "
+            "re-reporting — this guard stays silent for the same frozen hold."
+        )
+    }
+
+
+def _handle_stop(guard: ModuleType, payload: dict[str, Any]) -> dict[str, Any] | None:
+    """Resolve one Stop against the hold law; None means delegate to the guard.
+
+    Returns ``{"action": "silent"}`` for a latched terminal state that has
+    nothing new to say, or ``{"action": "emit", "value": <hook JSON>}`` for the
+    single PARKED report and the non-terminal sol/* hold blocks.
+    """
+    path, state = _ledger(guard, payload)
+    latched = str((state or {}).get("parked_latch") or "")
+
+    probe: dict[str, Any] | None = None
+    probe_failed = False
+    try:
+        probe = _hold_probe(guard, payload)
+    except Exception:
+        # Any uncertainty restores the original fail-closed guard. This wrapper
+        # may correct the reason for one proven hold state; it may never replace
+        # an ambiguous ordinary guard error with permission to stop — except for
+        # a state ALREADY ratified terminal, judged below on local evidence.
+        probe_failed = True
+
+    if probe is not None and probe["status"] == "parked":
+        key = f"parked:{probe['number']}:{probe['head']}"
+        if latched == key:
+            # Same frozen hold, already narrated once: quiescent pass. This is
+            # what makes a leftover background task's wake turn end silently.
+            return {"action": "silent"}
+        if state is not None and path is not None:
+            state["parked_latch"] = key
+            try:
+                guard._save(path, state)
+            except Exception:
+                pass
+        return {"action": "emit", "value": _parked_message(probe)}
+
+    if probe_failed and latched and _latch_matches_local(guard, payload, latched):
+        # GitHub unreachable during terminal revalidation: an outage cannot
+        # un-park a ratified terminal state, and it must not wake the session
+        # into a github_unreachable block loop. Local identity still matches,
+        # so the terminal state stands, silently.
+        return {"action": "silent"}
+
+    if latched and state is not None and path is not None:
+        # The hold state moved (released, re-armed, red, pending, new head, or
+        # locally dirty during an outage): the latch is for a state that no
+        # longer exists. Clear it so ordinary fail-closed law gates fresh — a
+        # release resumes the normal ship loop, never a suppressed one.
+        state.pop("parked_latch", None)
+        try:
+            guard._save(path, state)
+        except Exception:
+            pass
+
+    if probe is not None:
+        hold_block = _hold_block(probe)
+        if hold_block is not None:
+            return {"action": "emit", "value": hold_block}
+    return None
+
+
 def main() -> None:
     payload, raw = _read_payload()
     delegate = (
@@ -294,39 +430,16 @@ def main() -> None:
 
     cwd = Path(str(payload.get("cwd") or Path.cwd())).expanduser()
     if str(payload.get("hook_event_name") or "") == "Stop":
+        verdict: dict[str, Any] | None = None
         try:
             guard = _load_guard(delegate)
-            probe = _hold_probe(guard, payload)
+            verdict = _handle_stop(guard, payload)
         except Exception:
-            # Any uncertainty restores the original fail-closed guard. This wrapper
-            # may correct the reason for one proven hold state; it may never replace
-            # an ambiguous ordinary guard error with permission to stop.
-            probe = None
-        if probe is not None and probe["status"] == "parked":
-            checks = ", ".join(str(name) for name in probe["passed"][:8])
-            print(
-                json.dumps(
-                    {
-                        "systemMessage": (
-                            f"SHIP LOOP PARKED: PR #{probe['number']} is lawfully {HOLD_TOKEN}. "
-                            "The exact local head is pushed; the worktree is clean; the PR is "
-                            "draft; merge-on-green and native auto-merge are disarmed; Sol "
-                            "authority plus Sol release condition are recorded; and all binding "
-                            f"checks have concluded clean ({checks}). Merge/render/live are "
-                            "intentionally deferred to Sol review. This is a terminal PARKED "
-                            "state, not SHIPPED and not a blocker to retry. Do not re-enter the "
-                            "ship loop unless Sol releases the hold."
-                        )
-                    },
-                    ensure_ascii=False,
-                )
-            )
+            verdict = None
+        if verdict is not None:
+            if verdict.get("action") == "emit":
+                print(json.dumps(verdict["value"], ensure_ascii=False))
             return
-        if probe is not None:
-            hold_block = _hold_block(probe)
-            if hold_block is not None:
-                print(json.dumps(hold_block, ensure_ascii=False))
-                return
 
     _relay(delegate, raw, cwd)
 

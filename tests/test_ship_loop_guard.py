@@ -5493,3 +5493,225 @@ def test_an_unresolvable_gitdir_is_remembered_as_unresolvable(monkeypatch, tmp_p
     assert GUARD._worktree_index_lock(tmp_path) is None
     assert len(calls) == 1
     assert GUARD._sweep_stale_index_lock(tmp_path) is None
+
+
+# ── ship-watcher quiescence after terminal states (Sol commission #6379) ─────
+#
+# A leftover background task's completion starts a NEW turn via
+# `<task-notification>` (reproduced live 2026-08-24), and that turn's Stop
+# re-enters this guard. Terminal states must therefore be REMEMBERED: a
+# ratified external ladder exit passes the wake silently, exactly as the
+# merged-head ci_failed exit has since 2026-08-19, while internal codes keep
+# the full-priced loop breaker (Journey C, byte-unchanged semantics).
+
+
+def test_every_external_code_mints_a_frozen_exit_key():
+    head = "a" * 40
+    for code in sorted(GUARD.EXTERNAL_BLOCKERS):
+        key = GUARD._external_exit_key(code, head, f"reason for {code}")
+        assert key.startswith(f"{code}:{head}:") and len(key.split(":")) == 3, key
+    for code in ("unmerged", GUARD.CI_FAILED_UNMERGED, "unpushed", "uncommitted",
+                 "unsafe_branch", "guard_error"):
+        assert GUARD._external_exit_key(code, head, "reason") == ""
+
+
+def test_a_ratified_external_exit_quiesces_the_task_notification_wake(tmp_path, capsys):
+    """Incident PR #6377's shape: escape ratified, then a delayed timer wakes
+    the session. The wake turn's Stop re-derives the SAME frozen external state
+    and must pass silently without demanding the report again."""
+    path = _block_state(tmp_path)
+    reported = {"stop_hook_active": True, "last_assistant_message": _REPORTED}
+    key = GUARD._external_exit_key("github_unreachable", "a" * 40, "fetch died")
+    assert _drive_block_keyed(path, capsys, "github_unreachable", reported, key) is False
+    assert _drive_block_keyed(path, capsys, "github_unreachable", reported, key) is True
+    # The wake: started by a task notification, so stop_hook_active is False and
+    # the final message is ordinary prose, not a SHIP LOOP BLOCKED report.
+    wake = {"stop_hook_active": False, "last_assistant_message": "Leftover timer drained."}
+    before = GUARD._load(path)["total_blocks"]
+    assert _drive_block_keyed(path, capsys, "github_unreachable", wake, key) is True
+    assert GUARD._load(path)["total_blocks"] == before
+    assert GUARD._load(path)["ladder_exits"] == [key]
+
+
+def test_an_external_exit_for_one_head_never_excuses_a_new_head(tmp_path, capsys):
+    """A generic outage reason can recur verbatim for NEW work; the head in the
+    key is what keeps the old report from covering it."""
+    path = _block_state(tmp_path)
+    reported = {"stop_hook_active": True, "last_assistant_message": _REPORTED}
+    old = GUARD._external_exit_key("github_unreachable", "a" * 40, "fetch died")
+    assert _drive_block_keyed(path, capsys, "github_unreachable", reported, old) is False
+    assert _drive_block_keyed(path, capsys, "github_unreachable", reported, old) is True
+    fresh = GUARD._external_exit_key("github_unreachable", "b" * 40, "fetch died")
+    wake = {"stop_hook_active": False, "last_assistant_message": "done."}
+    assert _drive_block_keyed(path, capsys, "github_unreachable", wake, fresh) is False
+    assert GUARD._load(path)["ladder_exits"] == [old]
+
+
+def test_a_changed_external_reason_regates_fresh(tmp_path, capsys):
+    """A materially changed blocker is a NEW state (commission failure case:
+    'external blocker changes reason while a watcher is sleeping')."""
+    path = _block_state(tmp_path)
+    reported = {"stop_hook_active": True, "last_assistant_message": _REPORTED}
+    first = GUARD._external_exit_key("render_failed", "a" * 40, "render run 1 failed")
+    assert _drive_block_keyed(path, capsys, "render_failed", reported, first) is False
+    assert _drive_block_keyed(path, capsys, "render_failed", reported, first) is True
+    changed = GUARD._external_exit_key("render_failed", "a" * 40, "render run 2 failed")
+    wake = {"stop_hook_active": False, "last_assistant_message": "done."}
+    assert _drive_block_keyed(path, capsys, "render_failed", wake, changed) is False
+
+
+def test_internal_own_red_cannot_ride_the_external_quiescence_path(tmp_path, capsys):
+    """`ci_failed_unmerged` mints no key and keeps the 10/15 loop breaker: the
+    cheap external wake-quiescence path must be unreachable for an owned red."""
+    path = _block_state(tmp_path)
+    assert GUARD._external_exit_key(GUARD.CI_FAILED_UNMERGED, "a" * 40, "own red") == ""
+    reported = {"stop_hook_active": True, "last_assistant_message": _REPORTED}
+    assert _drive_block(path, capsys, GUARD.CI_FAILED_UNMERGED, reported) is False
+    assert _drive_block(path, capsys, GUARD.CI_FAILED_UNMERGED, reported) is False
+    assert "ladder_exits" not in GUARD._load(path)
+
+
+# ── one-watcher law (PreToolUse ship-watcher gate) ───────────────────────────
+
+
+def _watcher_payload(command: str, background: bool = True, tool: str = "Bash") -> dict:
+    return {
+        "hook_event_name": "PreToolUse",
+        "tool_name": tool,
+        "tool_input": {"command": command, "run_in_background": background},
+    }
+
+
+def test_watcher_request_classifies_only_delayed_background_bash():
+    assert GUARD._watcher_request(_watcher_payload("sleep 1800 && gh run rerun 1")) is not None
+    assert GUARD._watcher_request(_watcher_payload("sleep 60 && echo wake")) is not None
+    # Foreground waits, short sleeps, other tools, and sleepless commands are
+    # never ship watchers.
+    assert GUARD._watcher_request(_watcher_payload("sleep 1800", background=False)) is None
+    assert GUARD._watcher_request(_watcher_payload("sleep 45 && echo hi")) is None
+    assert GUARD._watcher_request(_watcher_payload("gh run watch 1 --interval 60")) is None
+    assert GUARD._watcher_request(_watcher_payload("sleep 1800", tool="Read")) is None
+    request = GUARD._watcher_request(_watcher_payload("sleep 5; sleep 900 && gh pr view"))
+    assert request is not None and request["sleep_seconds"] == 900
+
+
+def _watcher_state(tmp_path: Path, extra: dict | None = None) -> Path:
+    path = tmp_path / "watch-state.json"
+    state = {
+        "root": str(tmp_path),
+        "start_head": "0" * 40,
+        "baseline": {},
+        "last_blocker": "",
+        "blocker_count": 0,
+        "total_blocks": 0,
+        "external_blocks": 0,
+    }
+    state.update(extra or {})
+    GUARD._save(path, state)
+    return path
+
+
+def _drive_watcher_gate(monkeypatch, capsys, path: Path, command: str, head: str = "a" * 40) -> str:
+    monkeypatch.setattr(GUARD, "_run", lambda _root, *args, **_kw: head)
+    watch = GUARD._watcher_request(_watcher_payload(command))
+    assert watch is not None
+    state = GUARD._load(path)
+    GUARD._watcher_gate(Path("/unused"), path, state, watch)
+    return capsys.readouterr().out
+
+
+def test_first_watcher_reserves_and_second_is_coalesced(monkeypatch, capsys, tmp_path):
+    path = _watcher_state(tmp_path)
+    assert _drive_watcher_gate(monkeypatch, capsys, path, "sleep 1800 && gh run rerun 1") == ""
+    reservation = GUARD._load(path)["ship_watcher"]
+    assert reservation["head"] == "a" * 40
+    assert reservation["expires"] > reservation["created"] + 1800
+    denied = _drive_watcher_gate(monkeypatch, capsys, path, "sleep 900 && gh pr checks 2")
+    verdict = json.loads(denied)["hookSpecificOutput"]
+    assert verdict["permissionDecision"] == "deny"
+    assert "SHIP WATCHER COALESCED" in verdict["permissionDecisionReason"]
+    # The refusal must not clobber the live reservation.
+    assert GUARD._load(path)["ship_watcher"] == reservation
+
+
+def test_a_new_head_or_an_expired_reservation_admits_the_next_watcher(
+    monkeypatch, capsys, tmp_path
+):
+    path = _watcher_state(tmp_path)
+    assert _drive_watcher_gate(monkeypatch, capsys, path, "sleep 1800 && gh run rerun 1") == ""
+    # Head moved: the old reservation watches a stale state and is replaced.
+    assert _drive_watcher_gate(monkeypatch, capsys, path, "sleep 900 && gh pr checks 2", head="b" * 40) == ""
+    assert GUARD._load(path)["ship_watcher"]["head"] == "b" * 40
+    # Expired: the timer cannot still be waiting, so the slot is free again.
+    state = GUARD._load(path)
+    state["ship_watcher"]["expires"] = 1.0
+    GUARD._save(path, state)
+    assert _drive_watcher_gate(monkeypatch, capsys, path, "sleep 600 && gh pr checks 3", head="b" * 40) == ""
+
+
+def test_terminal_latches_refuse_new_watchers_for_that_exact_head(
+    monkeypatch, capsys, tmp_path
+):
+    parked = _watcher_state(tmp_path, {"parked_latch": f"parked:6371:{'a' * 40}"})
+    denied = _drive_watcher_gate(monkeypatch, capsys, parked, "sleep 1800 && gh pr view 6371")
+    verdict = json.loads(denied)["hookSpecificOutput"]
+    assert verdict["permissionDecision"] == "deny"
+    assert "SHIP WATCHER REFUSED" in verdict["permissionDecisionReason"]
+
+    escaped = _watcher_state(
+        tmp_path,
+        {"ladder_exits": [GUARD._external_exit_key("github_unreachable", "a" * 40, "x")]},
+    )
+    denied = _drive_watcher_gate(monkeypatch, capsys, escaped, "sleep 900 && gh api rate_limit")
+    assert "SHIP WATCHER REFUSED" in denied
+
+    # A latch for a DIFFERENT head never refuses fresh work's watcher.
+    other = _watcher_state(tmp_path, {"parked_latch": f"parked:6371:{'c' * 40}"})
+    assert _drive_watcher_gate(monkeypatch, capsys, other, "sleep 900 && gh pr checks 9") == ""
+
+
+def test_watcher_gate_fails_open_without_ledger_or_git(monkeypatch, capsys, tmp_path):
+    # No ledger: _pre_tool_use allows before ever reaching the gate.
+    monkeypatch.setattr(GUARD, "_delegate_to_evaluated_hook", lambda *_a: False)
+    monkeypatch.setattr(GUARD, "_repo_root", lambda _p: tmp_path)
+    monkeypatch.setattr(GUARD, "_state_path", lambda _r, _p: tmp_path / "absent.json")
+    GUARD._pre_tool_use(_watcher_payload("sleep 1800 && gh run rerun 1"), b"{}")
+    assert capsys.readouterr().out == ""
+    # Unanswerable git: the gate allows rather than falsely denying tool use.
+    path = _watcher_state(tmp_path)
+
+    def broken_run(_root, *_args, **_kw):
+        raise RuntimeError("git unavailable")
+
+    monkeypatch.setattr(GUARD, "_run", broken_run)
+    watch = GUARD._watcher_request(_watcher_payload("sleep 1800 && gh run rerun 1"))
+    GUARD._watcher_gate(Path("/unused"), path, GUARD._load(path), watch)
+    assert capsys.readouterr().out == ""
+    assert "ship_watcher" not in GUARD._load(path)
+
+
+def test_non_watcher_bash_returns_before_delegation(monkeypatch, capsys):
+    """The common case must stay free: no delegation subprocess, no git, no
+    ledger read for ordinary Bash calls."""
+
+    def explode(*_a, **_kw):
+        raise AssertionError("non-watcher PreToolUse must not reach delegation")
+
+    monkeypatch.setattr(GUARD, "_delegate_to_evaluated_hook", explode)
+    monkeypatch.setattr(GUARD, "_repo_root", explode)
+    GUARD._pre_tool_use(_watcher_payload("pytest -q tests/test_x.py", background=False), b"{}")
+    GUARD._pre_tool_use(_watcher_payload("sleep 30 && echo quick"), b"{}")
+    assert capsys.readouterr().out == ""
+
+
+def test_settings_wire_pre_tool_use_watcher_gate():
+    settings = json.loads((ROOT / ".claude" / "settings.json").read_text(encoding="utf-8"))
+    bash_hooks = [
+        hook
+        for entry in settings["hooks"]["PreToolUse"]
+        if entry.get("matcher") == "Bash"
+        for hook in entry["hooks"]
+    ]
+    commands = [hook["command"] for hook in bash_hooks]
+    assert any("gh_quota_guard.py" in command for command in commands)
+    assert any("ship_loop_guard.py" in command for command in commands)
