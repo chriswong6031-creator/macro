@@ -1,6 +1,6 @@
 {
-  "ts": "2026-08-24T09:19:29+00:00",
-  "main_sha": "6bacbcbe61345376fd738c35a9eab75a26e7546b",
+  "ts": "2026-08-24T11:08:37+00:00",
+  "main_sha": "64aa4c43ae578366f4325caa39097a5a35d7ca10",
   "red_required": [
     {
       "name": "audit",
@@ -28,9 +28,9 @@
     }
   ],
   "green": false,
-  "consecutive_failures": 45,
+  "consecutive_failures": 46,
   "sensed_shas": [
-    "6bacbcbe61345376fd738c35a9eab75a26e7546b",
+    "64aa4c43ae578366f4325caa39097a5a35d7ca10",
     "08fdcbe1a9ddbb88146c9957113e3d43aa1d9222"
   ],
   "heartbeat_degraded": false
