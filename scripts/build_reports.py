@@ -53,6 +53,27 @@ def _tag(key: str, en: str, zh: str) -> dict:
 # ---------------------------------------------------------------------------
 REPORTS: list[dict] = [
     {
+        "slug": "report_price_of_duration",
+        "template": "report_price_of_duration.html.j2",
+        "date": "2026-08-24",
+        "read_min": 82,
+        "title_en": "The Price of Duration",
+        "title_zh": "久期的价格",
+        "dek_en": "AI, gold, Bitcoin and the new fight over who finances America. The sovereign "
+                  "and artificial-intelligence buildouts now compete for the same long-term "
+                  "capital; the clearing price is remaking policy, asset leadership and the "
+                  "road through 2027.",
+        "dek_zh": "AI、黄金、比特币，以及谁来为美国融资的新争夺战。主权融资与人工智能建设正在争夺同一池"
+                  "长期资本；这笔资本的出清价格，正重塑政策、资产领导权与通往 2027 年的路径。",
+        "tags": [
+            _tag("macro", "Macro", "宏观"),
+            _tag("rates", "Rates", "利率"),
+            _tag("ai", "AI", "AI"),
+            _tag("crypto", "Crypto", "加密"),
+            _tag("credit", "Credit", "信用"),
+        ],
+    },
+    {
         "slug": "report_haven_audition",
         "template": "report_haven_audition.html.j2",
         "date": "2026-07-11",
