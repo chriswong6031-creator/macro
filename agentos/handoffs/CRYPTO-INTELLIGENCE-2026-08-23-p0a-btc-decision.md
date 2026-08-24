@@ -88,10 +88,11 @@ changed:
     what: >
       Updated this cold-stranger record with Sol's exact-source acceptance and
       release reconciliation: old accepted head 9ce6ce711602, current-main
-      pickup 5ad13e2ed335, and normal merge 78b07d80b9f7. The record now makes
-      canonical render ownership explicit and retains the P0B boundary. The
-      final self-containing handoff commit is identified by the exact PR-head
-      receipt because a tracked file cannot contain its own commit hash.
+      pickup 5ad13e2ed335, normal merge 78b07d80b9f7, and final pre-push main
+      parent a8b7de1a47ae. The record now makes canonical render ownership
+      explicit and retains the P0B boundary. The final normal merge and
+      self-containing handoff commit are identified by the exact PR-head receipt
+      because a tracked file cannot contain its own commit hash.
   - path: agentos/workstreams/WS-CRYPTO-INTELLIGENCE.md
     what: >
       Updated the existing crypto-intelligence program boundary for Sol's P0A
@@ -112,8 +113,8 @@ verified:
       new pytest suite unwired against the exact current-main pickup.
     command: >-
       python3 scripts/check_contract_delta.py --base
-      5ad13e2ed335a47ecd33d73346fb23dd5d59050a
-    result: "contract-delta: 0 introduced, 0 inherited (base 5ad13e2ed335)."
+      a8b7de1a47aeb132627e5180345fe622bcbf2a70
+    result: "contract-delta: 0 introduced, 0 inherited (base a8b7de1a47ae)."
   - claim: >
       The current legacy CI manifest is structurally valid with the accepted P0A
       dependency, test-suite and curated-closure additions intact.
@@ -244,6 +245,9 @@ verified:
       two-parent merge of 9ce6ce711602 and 5ad13e2ed335; site/vector.html matches
       main blob ed000bfd6750 exactly; main had neither the CSS asset nor a
       reference to it; both generated paths are absent from the feature diff.
+      Final pre-push main parent a8b7de1a47ae changes only government-revenue
+      contract/test paths and is carried by the final normal merge at the exact
+      PR-head receipt.
 unverified:
   - claim: >
       The exact reconciliation head passes hosted CI, merges cleanly, publishes
@@ -265,7 +269,7 @@ unresolved:
 next_actions:
   - >
     Run the requested local proof matrix on the reconciliation head, including
-    contract-delta against 5ad13e2ed335, CI-manifest validation, diff check and
+    contract-delta against a8b7de1a47ae, CI-manifest validation, diff check and
     Agent OS validation; then commit the durable record and push the same branch.
   - >
     Wait for exact-head hosted CI, authority/fence checks and clean mergeability.
@@ -330,8 +334,9 @@ danger_areas:
 
 Sol accepted exact P0A source head 9ce6ce711602 and authorized a bounded release
 reconciliation. Normal merge 78b07d80b9f7 carries current-main pickup
-5ad13e2ed335 while preserving every protected P0A source blob exactly. The merge
-resolves site/vector.html to exact current-main bytes and removes orphaned
+5ad13e2ed335; the final pre-push normal merge additionally carries unrelated
+current-main parent a8b7de1a47ae. Every protected P0A source blob remains exact.
+The reconciliation resolves site/vector.html to main bytes and removes orphaned
 e7978af3.css, so generated publication is no longer a feature delta. P0A is not
 yet merged, canonically rendered or live-proven; PR #6294 remains Draft until the
 new exact head passes the required local and hosted proof.

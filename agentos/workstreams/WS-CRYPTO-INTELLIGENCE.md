@@ -24,8 +24,10 @@ waves:
       release ownership. Normal reconciliation merge 78b07d80b9f7 picked up
       current main 5ad13e2ed335, retained every accepted P0A source blob, restored
       site/vector.html byte-for-byte to current-main truth and removed the
-      branch-only e7978af3 CSS asset. The source build wave is done; exact-head
-      CI, merge, canonical main render and production acceptance remain active.
+      branch-only e7978af3 CSS asset. A final pre-push normal merge carries
+      unrelated current-main parent a8b7de1a47ae without changing any protected
+      P0A path. The source build wave is done; exact-head CI, merge, canonical
+      main render and production acceptance remain active.
   - id: P0B
     title: Crypto H5 authority closure
     status: todo
