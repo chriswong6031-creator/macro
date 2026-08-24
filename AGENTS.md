@@ -696,15 +696,20 @@ BLOCKED:` ladder exit — emits ONE terminal report and then stays quiet: the gu
 latches the exact frozen state (`parked_latch`; external ladder-exit keys
 `<code>:<head>:<digest>`), so a leftover background timer's wake turn passes Stop
 silently instead of re-narrating or re-blocking. The latch is state-specific and
-never weakens completion: a released hold, a new head, a red check, or a dirty
-tree clears it and ordinary fail-closed law resumes; internal codes (`unmerged`,
-`ci_failed_unmerged`, …) never latch. One-watcher law: a background command
-sleeping ≥60s is a ship watcher; a session carries at most one live watcher
-reservation (a second overlapping timer is refused — coalesce), and none may be
-created once the state is terminal. Hooks cannot enumerate or cancel
-Claude-native background tasks (`DSC:CLAUDE-TASK-WAKES-OUTLIVE-TERMINAL-SHIP-STATES`),
-so never design around cancellation: create at most one watcher, and end
-post-terminal wake turns without re-reporting. The CI gate remains
+never weakens completion: only a probe that positively answers "parked" may
+silence a Stop; a released hold, a new head, a red check, a dirty tree, or a
+pruned branch clears the latch and ordinary fail-closed law resumes, while an
+unanswerable GitHub layer delegates to the canonical guard's own escapeable
+outage block (the latch survives, but an outage is never terminal evidence).
+Internal codes (`unmerged`, `ci_failed_unmerged`, …) never latch. One-watcher
+law: a background command with a literal `sleep` delay ≥60s is a ship watcher; a
+session carries at most one live watcher reservation, coalescing until the
+timer's nominal fire time (a second overlapping timer is refused; the fired
+watcher's successor is admitted), and none may be created at a PARKED-latched
+HEAD. Hooks cannot enumerate or cancel Claude-native background tasks
+(`DSC:CLAUDE-TASK-WAKES-OUTLIVE-TERMINAL-SHIP-STATES`), so never design around
+cancellation: create at most one watcher, and end post-terminal wake turns
+without re-reporting. The CI gate remains
 base-side-aware: a red on the merged head that provably pre-existed on main (same check
 failing on ≥2 independent concurrent PR heads pre-merge, or a green ci.yml run on a main
 descendant) is excluded by name rather than pinning the session forever; the operator

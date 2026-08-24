@@ -37,10 +37,19 @@ Stop that re-derives the IDENTICAL parked state passes silently. The latch never
 weakens the gate: every quiet pass still runs the full mechanical hold probe, so
 a released hold, a new head, a re-armed label, a dirtied tree, or a check that
 stopped being green makes the probe answer differently, clears the latch, and
-restores ordinary fail-closed law. Only when GitHub itself cannot answer during
-revalidation does the latch stand on local evidence alone (same HEAD, still
-clean): an API outage cannot un-park a state that was already terminally
-ratified, and it must not wake a parked session into a block loop either.
+restores ordinary fail-closed law.
+
+An UNANSWERABLE probe silences nothing (red-team F1/F2, 2026-08-24). A local
+git failure inside the probe reads as "not a hold candidate" and delegates —
+that is how a session whose held PR was merged and whose branch was pruned
+falls through to the canonical guard's merged-PR/CI/render/live chain instead
+of stopping silently on a stale latch. A GitHub-layer failure raises
+``HoldProbeUnanswerable`` and ALSO delegates: the canonical guard files its own
+escapeable ``github_unreachable``/``github_rate_limited`` block, exactly as
+before this adapter existed, because an outage cannot prove the hold is still
+in force — a released hold looks locally identical to a parked one. The latch
+is kept across unanswerable Stops (it re-silences once the probe answers
+"parked" again) but it is never itself evidence.
 """
 
 from __future__ import annotations
@@ -59,6 +68,18 @@ from typing import Any
 HOLD_TOKEN = "HOLD-FOR-SOL"
 MERGE_LABEL = "merge-on-green"
 _PROTOCOL_FIELDS = ("Authority", "Release condition")
+
+
+class HoldProbeUnanswerable(RuntimeError):
+    """The GitHub layer could not answer the hold probe.
+
+    Deliberately distinct from every local failure: a local git error means
+    "this is not (or no longer) a hold-candidate worktree" and reads as probe
+    None, while this exception means "the candidate shape holds locally but
+    the remote truth is unknowable right now". Neither may silence a Stop —
+    the difference only decides whether the parked latch is cleared (local
+    evidence of change) or kept (pure outage, latch re-silences once the
+    probe answers parked again)."""
 
 
 def _read_payload() -> tuple[dict[str, Any] | None, bytes]:
@@ -181,39 +202,51 @@ def _hold_probe(guard: ModuleType, payload: dict[str, Any]) -> dict[str, Any] | 
     interception in ``main``; ordinary ``claude/*`` behavior still delegates unless
     the hold is fully PARKED.
     """
-    root = guard._repo_root(payload)
-    if root is None:
-        return None
-    root = Path(root)
-    state = guard._load(guard._state_path(root, payload))
-    if not isinstance(state, dict):
-        return None
-    last_blocker = str(state.get("last_blocker") or "")
+    # Every failure in this LOCAL section — an unresolvable root/state, a git
+    # that answers non-zero (a pruned @{upstream} after Sol merges the held PR
+    # is the canonical case), a malformed ledger — reads as "not a hold
+    # candidate" and returns None, which delegates to the fail-closed guard.
+    # Only the GitHub layer below may raise HoldProbeUnanswerable.
+    try:
+        root = guard._repo_root(payload)
+        if root is None:
+            return None
+        root = Path(root)
+        state = guard._load(guard._state_path(root, payload))
+        if not isinstance(state, dict):
+            return None
+        last_blocker = str(state.get("last_blocker") or "")
 
-    # Read the local branch before deciding whether GitHub deserves a probe. A Sol
-    # authority branch is the one case where waiting for a prior unsafe_branch is
-    # itself unsafe: the first false message can cause the worker to rename the held
-    # branch and GitHub closes/rekeys the PR. All other branches preserve the old
-    # quota rule and are eligible only after the canonical guard reaches unmerged.
-    branch = _git(root, "branch", "--show-current")
-    if branch.startswith("sol/"):
-        candidate_kind = "sol_authority"
-    elif last_blocker == "unmerged" and branch.startswith("claude/"):
-        candidate_kind = "ordinary_unmerged"
-    else:
+        # Read the local branch before deciding whether GitHub deserves a probe. A Sol
+        # authority branch is the one case where waiting for a prior unsafe_branch is
+        # itself unsafe: the first false message can cause the worker to rename the held
+        # branch and GitHub closes/rekeys the PR. All other branches preserve the old
+        # quota rule and are eligible only after the canonical guard reaches unmerged.
+        branch = _git(root, "branch", "--show-current")
+        if branch.startswith("sol/"):
+            candidate_kind = "sol_authority"
+        elif last_blocker == "unmerged" and branch.startswith("claude/"):
+            candidate_kind = "ordinary_unmerged"
+        else:
+            return None
+
+        head = _git(root, "rev-parse", "HEAD")
+        upstream = _git(root, "rev-parse", "--abbrev-ref", "@{upstream}")
+        if int(_git(root, "rev-list", "--count", f"{upstream}..HEAD") or "0") != 0:
+            return None
+        # A Sol preflight can run before the delegate's first Stop verdict, so cleanliness
+        # must be proven here rather than inferred from prior state.
+        if _git(root, "status", "--porcelain=v1", "--untracked-files=all"):
+            return None
+
+        owner, repo = guard._github_slug(root)
+    except Exception:
         return None
 
-    head = _git(root, "rev-parse", "HEAD")
-    upstream = _git(root, "rev-parse", "--abbrev-ref", "@{upstream}")
-    if int(_git(root, "rev-list", "--count", f"{upstream}..HEAD") or "0") != 0:
-        return None
-    # A Sol preflight can run before the delegate's first Stop verdict, so cleanliness
-    # must be proven here rather than inferred from prior state.
-    if _git(root, "status", "--porcelain=v1", "--untracked-files=all"):
-        return None
-
-    owner, repo = guard._github_slug(root)
-    pull = guard._open_pull(owner, repo, branch)
+    try:
+        pull = guard._open_pull(owner, repo, branch)
+    except Exception as exc:
+        raise HoldProbeUnanswerable(str(exc)) from exc
     if not isinstance(pull, dict):
         return None
     number = pull.get("number")
@@ -221,11 +254,17 @@ def _hold_probe(guard: ModuleType, payload: dict[str, Any]) -> dict[str, Any] | 
         return None
 
     comments_url = str(pull.get("comments_url") or "")
-    comments = guard._get_json(comments_url) if comments_url else []
+    try:
+        comments = guard._get_json(comments_url) if comments_url else []
+    except Exception as exc:
+        raise HoldProbeUnanswerable(str(exc)) from exc
     if not isinstance(comments, list) or not _hold_protocol_is_complete(pull, comments):
         return None
 
-    runs = guard._head_check_runs(owner, repo, head)
+    try:
+        runs = guard._head_check_runs(owner, repo, head)
+    except Exception as exc:
+        raise HoldProbeUnanswerable(str(exc)) from exc
     red, pending, passed = guard._split_head_runs(runs)
     if red:
         status = "red"
@@ -316,29 +355,6 @@ def _ledger(guard: ModuleType, payload: dict[str, Any]) -> tuple[Path | None, di
         return None, None
 
 
-def _latch_matches_local(guard: ModuleType, payload: dict[str, Any], latched: str) -> bool:
-    """Whether the ratified latch still describes THIS worktree, by local evidence.
-
-    Used only when GitHub cannot answer a revalidation probe: the latch head
-    must still be the exact checked-out HEAD and the tree must still be clean.
-    Any local drift — new commits, a dirty tree, an unanswerable git — reads as
-    "does not match", which sends the Stop back through the fail-closed guard.
-    """
-    head = latched.rsplit(":", 1)[-1]
-    if not head:
-        return False
-    try:
-        root = guard._repo_root(payload)
-        if root is None:
-            return False
-        root = Path(root)
-        if _git(root, "rev-parse", "HEAD") != head:
-            return False
-        return not _git(root, "status", "--porcelain=v1", "--untracked-files=all")
-    except Exception:
-        return False
-
-
 def _parked_message(probe: dict[str, Any]) -> dict[str, str]:
     checks = ", ".join(str(name) for name in probe["passed"][:8])
     return {
@@ -364,20 +380,28 @@ def _handle_stop(guard: ModuleType, payload: dict[str, Any]) -> dict[str, Any] |
     Returns ``{"action": "silent"}`` for a latched terminal state that has
     nothing new to say, or ``{"action": "emit", "value": <hook JSON>}`` for the
     single PARKED report and the non-terminal sol/* hold blocks.
+
+    Only a probe that POSITIVELY answers "parked" for the exact latched
+    identity may silence a Stop. An unanswerable GitHub layer delegates with
+    the latch kept (the canonical guard files its own escapeable external
+    block; the latch re-silences once the probe answers parked again), and
+    every positively-changed or no-longer-candidate state clears the latch and
+    delegates — a released hold resumes the ordinary fail-closed ship loop,
+    never a suppressed one (red-team F1/F2, 2026-08-24).
     """
     path, state = _ledger(guard, payload)
     latched = str((state or {}).get("parked_latch") or "")
 
-    probe: dict[str, Any] | None = None
-    probe_failed = False
     try:
         probe = _hold_probe(guard, payload)
+    except HoldProbeUnanswerable:
+        # GitHub cannot answer. This wrapper may never replace an ambiguous
+        # state with permission to stop — and it also may not clear a ratified
+        # latch on evidence of nothing. Delegate; the guard owns outage blocks.
+        return None
     except Exception:
-        # Any uncertainty restores the original fail-closed guard. This wrapper
-        # may correct the reason for one proven hold state; it may never replace
-        # an ambiguous ordinary guard error with permission to stop — except for
-        # a state ALREADY ratified terminal, judged below on local evidence.
-        probe_failed = True
+        # A crash in the probe itself restores the original guard unchanged.
+        return None
 
     if probe is not None and probe["status"] == "parked":
         key = f"parked:{probe['number']}:{probe['head']}"
@@ -393,18 +417,11 @@ def _handle_stop(guard: ModuleType, payload: dict[str, Any]) -> dict[str, Any] |
                 pass
         return {"action": "emit", "value": _parked_message(probe)}
 
-    if probe_failed and latched and _latch_matches_local(guard, payload, latched):
-        # GitHub unreachable during terminal revalidation: an outage cannot
-        # un-park a ratified terminal state, and it must not wake the session
-        # into a github_unreachable block loop. Local identity still matches,
-        # so the terminal state stands, silently.
-        return {"action": "silent"}
-
     if latched and state is not None and path is not None:
-        # The hold state moved (released, re-armed, red, pending, new head, or
-        # locally dirty during an outage): the latch is for a state that no
-        # longer exists. Clear it so ordinary fail-closed law gates fresh — a
-        # release resumes the normal ship loop, never a suppressed one.
+        # The hold state positively moved (released, re-armed, red, pending,
+        # new head, dirty tree, closed PR, or the worktree stopped being a
+        # candidate at all): the latch names a state that no longer exists.
+        # Clear it so ordinary fail-closed law gates fresh.
         state.pop("parked_latch", None)
         try:
             guard._save(path, state)

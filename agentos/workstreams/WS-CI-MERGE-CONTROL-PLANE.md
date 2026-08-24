@@ -180,13 +180,16 @@ waves:
       <code>:<head>:<digest12(reason)> so the ratified-ladder-exit memory
       quiesces post-escape wakes; (2) the hold wrapper writes parked_latch on
       the first lawful PARKED and passes the identical re-derived hold
-      silently, clearing the latch on any changed hold state; (3) a
-      PreToolUse:Bash branch of the guard enforces at most one live
-      delayed-wake reservation per session and refuses new watchers at a
-      terminally latched HEAD — fail-open, never kills tasks. Internal codes
-      byte-unchanged (Journey C). PR held HOLD-FOR-SOL per commission stop
-      condition; mutation receipts + replayed-incident proof in the PR body
-      and CI-MERGE-CONTROL-PLANE-2026-08-24.md handoff.
+      silently, clearing the latch on any positively changed hold state —
+      an unanswerable probe never silences (delegates to the guard's own
+      escapeable outage block; opus red-team F1/F2); (3) a PreToolUse:Bash
+      branch of the guard enforces at most one live delayed-wake reservation
+      per session, coalescing until the nominal fire time, and refuses new
+      watchers only at a PARKED-latched HEAD — fail-open, never kills tasks.
+      Internal codes byte-unchanged (Journey C). PR #6381 held HOLD-FOR-SOL
+      per commission stop condition; mutation receipts + replayed-incident
+      proof in the PR body and the
+      CI-MERGE-CONTROL-PLANE-2026-08-24-quiescence.md handoff.
 next_action: >
   W-TRANSPORT and W-PR-EVENT-CAUSALITY are closed. Do not reopen either for a
   new CI-speed, runner, branch-protection, or cancellation-system proposal.

@@ -5585,10 +5585,14 @@ def _watcher_payload(command: str, background: bool = True, tool: str = "Bash") 
 def test_watcher_request_classifies_only_delayed_background_bash():
     assert GUARD._watcher_request(_watcher_payload("sleep 1800 && gh run rerun 1")) is not None
     assert GUARD._watcher_request(_watcher_payload("sleep 60 && echo wake")) is not None
+    # Suffixed literal delays are the same wake timer (red-team F5).
+    assert GUARD._watcher_request(_watcher_payload("sleep 30m && gh pr view"))["sleep_seconds"] == 1800
+    assert GUARD._watcher_request(_watcher_payload("sleep 2h && gh pr view"))["sleep_seconds"] == 7200
     # Foreground waits, short sleeps, other tools, and sleepless commands are
     # never ship watchers.
     assert GUARD._watcher_request(_watcher_payload("sleep 1800", background=False)) is None
     assert GUARD._watcher_request(_watcher_payload("sleep 45 && echo hi")) is None
+    assert GUARD._watcher_request(_watcher_payload("sleep 45s && echo hi")) is None
     assert GUARD._watcher_request(_watcher_payload("gh run watch 1 --interval 60")) is None
     assert GUARD._watcher_request(_watcher_payload("sleep 1800", tool="Read")) is None
     request = GUARD._watcher_request(_watcher_payload("sleep 5; sleep 900 && gh pr view"))
@@ -5625,13 +5629,27 @@ def test_first_watcher_reserves_and_second_is_coalesced(monkeypatch, capsys, tmp
     assert _drive_watcher_gate(monkeypatch, capsys, path, "sleep 1800 && gh run rerun 1") == ""
     reservation = GUARD._load(path)["ship_watcher"]
     assert reservation["head"] == "a" * 40
-    assert reservation["expires"] > reservation["created"] + 1800
+    # Nominal fire time, no slack (red-team F3): coalescing may not outlive
+    # the moment the timer could have fired.
+    assert reservation["expires"] == pytest.approx(reservation["created"] + 1800)
     denied = _drive_watcher_gate(monkeypatch, capsys, path, "sleep 900 && gh pr checks 2")
     verdict = json.loads(denied)["hookSpecificOutput"]
     assert verdict["permissionDecision"] == "deny"
     assert "SHIP WATCHER COALESCED" in verdict["permissionDecisionReason"]
     # The refusal must not clobber the live reservation.
     assert GUARD._load(path)["ship_watcher"] == reservation
+
+
+def test_a_fired_watcher_admits_its_own_successor(monkeypatch, capsys, tmp_path):
+    """The lawful post-wake sequence (red-team F3): watcher created, its sleep
+    elapses, the wake turn creates the NEXT single watcher — allowed, no
+    hand-edited state."""
+    path = _watcher_state(tmp_path)
+    assert _drive_watcher_gate(monkeypatch, capsys, path, "sleep 300 && gh pr checks 1") == ""
+    fire_time = GUARD._load(path)["ship_watcher"]["expires"]
+    monkeypatch.setattr(GUARD.time, "time", lambda: fire_time + 1.0)
+    assert _drive_watcher_gate(monkeypatch, capsys, path, "sleep 300 && gh pr checks 1") == ""
+    assert GUARD._load(path)["ship_watcher"]["created"] == fire_time + 1.0
 
 
 def test_a_new_head_or_an_expired_reservation_admits_the_next_watcher(
@@ -5649,7 +5667,7 @@ def test_a_new_head_or_an_expired_reservation_admits_the_next_watcher(
     assert _drive_watcher_gate(monkeypatch, capsys, path, "sleep 600 && gh pr checks 3", head="b" * 40) == ""
 
 
-def test_terminal_latches_refuse_new_watchers_for_that_exact_head(
+def test_only_the_parked_latch_refuses_new_watchers_for_its_exact_head(
     monkeypatch, capsys, tmp_path
 ):
     parked = _watcher_state(tmp_path, {"parked_latch": f"parked:6371:{'a' * 40}"})
@@ -5658,12 +5676,17 @@ def test_terminal_latches_refuse_new_watchers_for_that_exact_head(
     assert verdict["permissionDecision"] == "deny"
     assert "SHIP WATCHER REFUSED" in verdict["permissionDecisionReason"]
 
+    # A ratified ladder exit does NOT refuse a watcher (red-team F4): exits
+    # have no clearing path, and a transient external blocker (a spent
+    # rate-limit window) lawfully resumes at the same head — its wake
+    # quiescence is owned by the exit-key memory in _block, not by creation
+    # refusal.
     escaped = _watcher_state(
         tmp_path,
-        {"ladder_exits": [GUARD._external_exit_key("github_unreachable", "a" * 40, "x")]},
+        {"ladder_exits": [GUARD._external_exit_key("github_rate_limited", "a" * 40, "x")]},
     )
-    denied = _drive_watcher_gate(monkeypatch, capsys, escaped, "sleep 900 && gh api rate_limit")
-    assert "SHIP WATCHER REFUSED" in denied
+    assert _drive_watcher_gate(monkeypatch, capsys, escaped, "sleep 900 && gh api rate_limit") == ""
+    assert GUARD._load(escaped)["ship_watcher"]["head"] == "a" * 40
 
     # A latch for a DIFFERENT head never refuses fresh work's watcher.
     other = _watcher_state(tmp_path, {"parked_latch": f"parked:6371:{'c' * 40}"})
@@ -5715,3 +5738,29 @@ def test_settings_wire_pre_tool_use_watcher_gate():
     commands = [hook["command"] for hook in bash_hooks]
     assert any("gh_quota_guard.py" in command for command in commands)
     assert any("ship_loop_guard.py" in command for command in commands)
+
+
+def test_main_routes_a_real_pre_tool_use_payload_end_to_end(monkeypatch, capsys, tmp_path):
+    """Drive GUARD.main() with an actual PreToolUse payload: the deny JSON is
+    emitted through the whole entrypoint, and a crashing gate is swallowed
+    into an allow (fail-open) rather than surfacing as any output."""
+    import io
+
+    path = _watcher_state(tmp_path, {"parked_latch": f"parked:6371:{'a' * 40}"})
+    monkeypatch.setattr(GUARD, "_delegate_to_evaluated_hook", lambda *_a: False)
+    monkeypatch.setattr(GUARD, "_repo_root", lambda _p: tmp_path)
+    monkeypatch.setattr(GUARD, "_state_path", lambda _r, _p: path)
+    monkeypatch.setattr(GUARD, "_run", lambda _root, *args, **_kw: "a" * 40)
+    payload = json.dumps(_watcher_payload("sleep 1800 && gh pr view 6371"))
+    monkeypatch.setattr(GUARD.sys, "stdin", io.StringIO(payload))
+    GUARD.main()
+    verdict = json.loads(capsys.readouterr().out)["hookSpecificOutput"]
+    assert verdict["permissionDecision"] == "deny"
+
+    def explode(*_a, **_kw):
+        raise RuntimeError("gate crashed")
+
+    monkeypatch.setattr(GUARD, "_watcher_gate", explode)
+    monkeypatch.setattr(GUARD.sys, "stdin", io.StringIO(payload))
+    GUARD.main()
+    assert capsys.readouterr().out == ""

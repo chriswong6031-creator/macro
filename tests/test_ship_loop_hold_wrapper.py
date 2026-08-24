@@ -395,9 +395,11 @@ def test_first_parked_stop_narrates_once_then_the_latch_silences_wakes(monkeypat
     assert calls["open_pull"] == 2 and calls["checks"] == 2
 
 
-def test_github_outage_cannot_unpark_a_ratified_latch(monkeypatch, tmp_path):
-    """GitHub unreachable during terminal revalidation: with the latch's exact
-    HEAD still checked out and clean, the ratified terminal state stands."""
+def test_github_outage_never_silences_and_never_clears_the_latch(monkeypatch, tmp_path):
+    """An unanswerable GitHub layer DELEGATES (red-team F1/F2): the canonical
+    guard files its own escapeable outage block — an outage cannot prove the
+    hold is still in force, so it may not silence a Stop. The latch is kept
+    (no evidence of change) so a later answerable parked probe is silent."""
     _stub_clean_pushed_git(monkeypatch)
 
     def broken_open_pull(*_args):
@@ -407,24 +409,34 @@ def test_github_outage_cannot_unpark_a_ratified_latch(monkeypatch, tmp_path):
         tmp_path, state_extra={"parked_latch": f"parked:6138:{HEAD}"}
     )
     guard._open_pull = broken_open_pull
-    assert WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"}) == {"action": "silent"}
-    # The latch survives the outage for the next wake.
+    assert WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"}) is None
     assert json.loads(state_path.read_text(encoding="utf-8"))["parked_latch"]
 
 
-def test_outage_with_local_drift_clears_the_latch_and_delegates(monkeypatch, tmp_path):
-    """A moved HEAD during an outage is NOT the ratified state: fail closed back
-    to the canonical guard rather than staying quiet on stale identity."""
-    _stub_clean_pushed_git(monkeypatch)
+def test_local_probe_failure_reads_as_not_a_candidate_and_clears_the_latch(
+    monkeypatch, tmp_path
+):
+    """The F1 incident shape: Sol merges the held PR, the branch is pruned, and
+    `@{upstream}` stops resolving. That is a LOCAL failure — the probe answers
+    None, the stale latch is cleared, and the Stop delegates to the canonical
+    guard, whose merged-PR lookup then owns CI/render/live verification."""
 
-    def broken_open_pull(*_args):
-        raise RuntimeError("api.github.com unreachable")
+    def pruned_git(_root, *args, **_kwargs):
+        if args == ("branch", "--show-current"):
+            return "claude/biocatalyst-p1-0r-authority-closure"
+        if args == ("rev-parse", "HEAD"):
+            return HEAD
+        if args == ("rev-parse", "--abbrev-ref", "@{upstream}"):
+            raise RuntimeError("fatal: no upstream configured (branch pruned after merge)")
+        raise AssertionError(args)
 
-    stale = f"parked:6138:{'d' * 40}"
-    guard, state_path, _ = _ledger_guard(tmp_path, state_extra={"parked_latch": stale})
-    guard._open_pull = broken_open_pull
+    monkeypatch.setattr(WRAPPER, "_git", pruned_git)
+    guard, state_path, calls = _ledger_guard(
+        tmp_path, state_extra={"parked_latch": f"parked:6138:{HEAD}"}
+    )
     assert WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"}) is None
     assert "parked_latch" not in json.loads(state_path.read_text(encoding="utf-8"))
+    assert calls == {"open_pull": 0, "checks": 0}
 
 
 def test_a_released_or_closed_hold_clears_the_latch_and_resumes_ordinary_law(

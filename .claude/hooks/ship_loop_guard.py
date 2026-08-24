@@ -167,11 +167,19 @@ CI_FAILED_UNMERGED = "ci_failed_unmerged"
 #
 # 60s is the discriminator between "waiting out a command" and "waking the
 # session later": foreground waits and short retry sleeps never produce a
-# task-notification turn minutes after the session went quiet. The slack keeps a
-# reservation alive past its nominal fire time so a timer that is slow to start
-# (queued task, loaded host) is not double-booked the moment its sleep elapses.
+# task-notification turn minutes after the session went quiet. A reservation
+# expires at its NOMINAL FIRE TIME (created + sleep), deliberately with no
+# slack: past that moment the old timer is no longer necessarily sleeping, and
+# the lawful next action after a watcher fires is to create the next single
+# watcher — a slack window would refuse exactly that (red-team F3, 2026-08-24).
+# The residual overlap (a replacement minted while the fired timer's
+# notification is still in flight) is one bounded extra wake, not a stack.
 WATCHER_MIN_SLEEP_SECONDS = 60
-WATCHER_EXPIRY_SLACK_SECONDS = 900
+# The classifier reads LITERAL `sleep` delays (integer, optional s/m/h/d
+# suffix). Computed delays (`sleep $((30*60))`, `python -c 'time.sleep(...)'`)
+# are invisible to it — the gate is a coalescer for the shapes sessions
+# actually emit, not a sandbox; unrecognized delay forms simply fail open.
+_WATCHER_SLEEP_UNIT_SECONDS = {"": 1, "s": 1, "m": 60, "h": 3600, "d": 86400}
 # Roots holding OTHER agent sessions' checkouts. A repository serving several
 # fleets accumulates dozens of them side by side — measured 2026-07-30 in the
 # primary checkout: 34 `.codex-worktrees/*` entries plus `.claire/worktrees/*`
@@ -894,7 +902,11 @@ def _load(path: Path) -> dict[str, Any] | None:
 
 
 def _save(path: Path, state: dict[str, Any]) -> None:
-    temp = path.with_suffix(".tmp")
+    # Per-PID temp name: PreToolUse hooks can run concurrently for parallel
+    # tool calls in one assistant block, and two writers sharing one fixed
+    # ".tmp" can interleave truncate-and-write into a corrupt ledger — whose
+    # downstream failure mode is a fail-OPEN Stop (_load -> None -> return).
+    temp = path.with_suffix(f".{os.getpid()}.tmp")
     temp.write_text(json.dumps(state, ensure_ascii=False, sort_keys=True), encoding="utf-8")
     temp.replace(path)
 
@@ -935,11 +947,15 @@ def _external_exit_key(code: str, head: str, reason: str) -> str:
       unreachable-API exception text, say) can recur verbatim for NEW work; a
       session that escaped, then committed and pushed something new, must not
       have its new head's outage excused by the old head's ratified report.
-    - The reason digest keeps the memory fail-closed exactly as it does for
-      the merged-head ``ci_failed`` key: a materially changed blocker (other
-      lane, other run, other error) mints a different key and gates fresh.
-      Volatile reason details (rate-limit reset stamps) therefore re-block —
-      the cheap direction; only the byte-identical frozen state is quiet.
+    - The reason digest keeps the memory state-specific exactly as it does
+      for the merged-head ``ci_failed`` key: a materially changed blocker
+      (other lane, other run, other error) mints a different key and gates
+      fresh. The converse is equally true and intended: a blocker whose
+      message is byte-stable for its whole window — a rate-limit reason
+      carrying one fixed reset epoch, a render lane that never started —
+      stays silent for that window, which is precisely one report per frozen
+      state. The digest narrows what one report can cover; it does not
+      promise that every underlying retry re-blocks.
 
     Internal codes NEVER mint a key here: ``unmerged``/``ci_failed_unmerged``/
     ``unpushed``/``uncommitted``/``unsafe_branch``/``guard_error`` remain owned
@@ -969,7 +985,10 @@ def _watcher_request(payload: dict[str, Any]) -> dict[str, Any] | None:
     if not isinstance(tool_input, dict) or not tool_input.get("run_in_background"):
         return None
     command = str(tool_input.get("command") or "")
-    sleeps = [int(match) for match in re.findall(r"\bsleep\s+(\d+)\b", command)]
+    sleeps = [
+        int(amount) * _WATCHER_SLEEP_UNIT_SECONDS[unit.lower()]
+        for amount, unit in re.findall(r"\bsleep\s+(\d+)([smhdSMHD]?)\b", command)
+    ]
     longest = max(sleeps, default=0)
     if longest < WATCHER_MIN_SLEEP_SECONDS:
         return None
@@ -981,14 +1000,22 @@ def _watcher_request(payload: dict[str, Any]) -> dict[str, Any] | None:
 
 
 def _latched_terminal_heads(state: dict[str, Any]) -> set[str]:
-    """Every HEAD sha this session's ledger already holds a terminal latch for.
+    """HEAD shas this session's ledger holds a PARKED latch for.
 
-    Two latch families, both minted only at a ratified terminal moment:
-    ``parked_latch`` (``parked:<pr>:<head>``, written by the hold wrapper when
-    a lawful HOLD-FOR-SOL becomes PARKED) and ``ladder_exits`` entries
-    (``<code>:<head>:<digest>`` external form, or the merged-head
-    ``ci_failed:<head>:<merge>:<digest>`` form — HEAD is segment 1 in both).
-    Unparseable entries contribute nothing: failing to recognise a latch only
+    ONLY ``parked_latch`` (``parked:<pr>:<head>``, written by the hold wrapper
+    when a lawful HOLD-FOR-SOL becomes PARKED) refuses new watchers. It is the
+    one terminal latch with a clearing path — the wrapper removes it the
+    moment the hold state positively changes — so a refusal here can never
+    outlive the state it describes. ``ladder_exits`` entries deliberately do
+    NOT refuse watchers (red-team F4, 2026-08-24): they are append-only with
+    no clearing path, and a ratified exit on a TRANSIENT external blocker
+    (a spent rate-limit window, say) lawfully resumes at the same head once
+    the blocker lifts — a permanent "terminal" refusal there would deny the
+    resumed session its one legitimate watcher. Post-exit wake QUIESCENCE is
+    already owned by the exit-key memory in ``_block``, which passes the
+    identical frozen state silently; a redundant post-exit watcher therefore
+    wakes to silence rather than being refused at creation.
+    Unparseable latches contribute nothing: failing to recognise one only
     ALLOWS a watcher, never denies one.
     """
     heads: set[str] = set()
@@ -996,11 +1023,6 @@ def _latched_terminal_heads(state: dict[str, Any]) -> set[str]:
     parts = latch.split(":")
     if len(parts) == 3 and parts[0] == "parked" and parts[2]:
         heads.add(parts[2])
-    exits = state.get("ladder_exits")
-    for key in exits if isinstance(exits, list) else []:
-        segments = str(key).split(":")
-        if len(segments) >= 3 and segments[1]:
-            heads.add(segments[1])
     return heads
 
 
@@ -1043,10 +1065,10 @@ def _watcher_gate(root: Path, path: Path, state: dict[str, Any], watch: dict[str
     if head in _latched_terminal_heads(state):
         _deny_watcher(
             "SHIP WATCHER REFUSED: this session's ship state at HEAD "
-            f"{head[:12]} is already terminal (PARKED or a ratified SHIP LOOP "
-            "BLOCKED exit). A new delayed background timer could only wake the "
-            "session to re-report the same frozen state. Do not create new ship "
-            "watchers; emit the single terminal report and end the turn."
+            f"{head[:12]} is already terminal (PARKED / HOLD-FOR-SOL). A new "
+            "delayed background timer could only wake the session to re-report "
+            "the same frozen hold. Do not create new ship watchers; emit the "
+            "single terminal report and end the turn."
         )
         return
     reservation = state.get("ship_watcher")
@@ -1070,7 +1092,10 @@ def _watcher_gate(root: Path, path: Path, state: dict[str, Any], watch: dict[str
         "digest": watch["digest"],
         "head": head,
         "created": now,
-        "expires": now + float(watch["sleep_seconds"]) + WATCHER_EXPIRY_SLACK_SECONDS,
+        # Nominal fire time, no slack: past this instant the reservation stops
+        # coalescing, because "let the current watcher fire, then create the
+        # next single watcher" must actually be possible (red-team F3).
+        "expires": now + float(watch["sleep_seconds"]),
     }
     _save(path, state)
 
@@ -4479,8 +4504,9 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
         # so already-ratified exits stay recognisable; the render_pending shape of
         # this site uses the standard external key like every other external
         # block. Both bind the exact evidence text: one ratified ladder exit
-        # covers later Stops on the IDENTICAL frozen state only — a different red
-        # or an evolved render state yields a different reason and re-blocks.
+        # covers later Stops on the IDENTICAL frozen state only — a different
+        # red re-blocks, while a render state whose detail text is byte-stable
+        # (a lane that never started) stays covered by its one ratified report.
         reason_digest = hashlib.sha256(ci_reason.encode("utf-8")).hexdigest()[:12]
         _block(
             path,

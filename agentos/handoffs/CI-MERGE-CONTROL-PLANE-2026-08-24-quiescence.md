@@ -30,16 +30,25 @@ changed:
       merged-head ci_failed keeps its original 3-part key. New PreToolUse
       branch (_pre_tool_use/_watcher_request/_watcher_gate/
       _latched_terminal_heads/_deny_watcher): one live delayed-wake
-      reservation per session ledger, none at a terminally latched HEAD;
-      fail-open, kills nothing; non-watcher Bash returns before delegation.
+      reservation per session ledger; fail-open, kills nothing; non-watcher
+      Bash returns before delegation. After the opus red-team: reservations
+      expire at the NOMINAL FIRE TIME, no slack, so a fired watcher's
+      successor is admitted (F3); only the parked_latch refuses creation —
+      ladder exits do not, having no clearing path (F4); sleep parsing is
+      suffix-aware s/m/h/d (F5); _save uses a per-PID temp name against
+      concurrent PreToolUse writers (F6).
   - path: scripts/ship_loop_hold_wrapper.py
     what: >
       _handle_stop: first lawful PARKED writes parked_latch
       (parked:<pr>:<head>) into the guard ledger and emits the ONE terminal
       report; an identical re-derived hold passes silently (still fully
-      re-probed); any changed hold state clears the latch; GitHub outage
-      with matching local identity (same HEAD, clean) keeps the ratified
-      terminal state silent.
+      re-probed); any positively changed hold state clears the latch. After
+      the opus red-team (F1/F2): an UNANSWERABLE probe never silences —
+      local git failures inside _hold_probe read as "not a candidate"
+      (delegate + clear latch; the merged-and-pruned branch falls through to
+      the guard's merged-PR/CI/render/live chain), and GitHub-layer failures
+      raise HoldProbeUnanswerable (delegate with latch kept; the guard files
+      its own escapeable outage block).
   - path: .claude/settings.json
     what: PreToolUse:Bash now also runs ship_loop_guard.py (timeout 15).
   - path: tests/test_ship_loop_guard.py
@@ -115,8 +124,17 @@ danger_areas:
     on latch-hit would suppress a Sol release (tested by
     test_first_parked_stop_narrates_once_then_the_latch_silences_wakes's
     open_pull==2 assertion).
+  - >
+    Never reintroduce an outage-silent path in _handle_stop — an unanswerable
+    probe cannot distinguish "hold in force" from "hold released", so silence
+    there is a free exit for ordinary work (red-team F1/F2; opus review
+    2026-08-24, session transcript).
   - _watcher_gate must stay fail-open; a crash-deny would block ordinary Bash
     fleet-wide via settings.json PreToolUse wiring.
+  - Do not add slack to the watcher reservation expiry and do not let
+    ladder_exits refuse watcher creation — both were shipped and reverted on
+    red-team findings F3/F4 (permanent false-DENY of the lawful successor
+    watcher / of a resumed transient-escape session).
 ---
 
 Root cause, one line: terminal ship states were derived statelessly per Stop
