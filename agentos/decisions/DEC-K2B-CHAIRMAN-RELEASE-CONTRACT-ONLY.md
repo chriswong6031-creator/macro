@@ -26,6 +26,7 @@ evidence:
   - "research/alpha_intelligence/censuses/B0/B0_MANAGER_COMPLEX_DRAFT.md"
   - "research/alpha_intelligence/censuses/B0/B0_INTENT_NORMALIZATION_INPUT_MATRIX.md"
   - "PR #6370 hostile-review repair requirement, 2026-08-24: executable typed shares, coverage, clocks, campaign, count, reliability, and China-extension laws."
+  - "PR #6370 second hostile-review repair: full K1 EvidenceRef collection, compiler-derived true-S residual/theme preference, strict campaign eligibility/history, nonnegative count receipt, exact prospective reliability, and nine reproduced hostile probes."
 affects:
   - "WS:ALPHA-INTELLIGENCE-INTEGRATION"
   - "contracts/institutional_intelligence/**"
@@ -38,5 +39,8 @@ decided_at: 2026-08-24
 
 This records the separate Chairman release demanded by the K1 handoff. It does
 not supersede the K1 hold on physical evidence persistence or any existing owner.
-The later hostile-review repair does not widen this release: it only turns the
-already-authorized contract refusals into closed deterministic checks.
+The hostile-review rewrites do not widen this release: they replace caller-trust
+surfaces with full accepted K1 references, owner-bound clocks/identity,
+compiler-derived results, append-only histories, closed denominators, and
+fail-closed adverse states. A raw 13F receipt reference still cannot bind a
+security holding by itself; that limitation is explicit rather than papered over.

@@ -179,10 +179,12 @@ waves:
     status: in_progress
     depends_on: [k1]
     next_action: >
-      K2-B is under same-carrier hostile-review repair on PR #6370. The repair
-      must make normalization, residual, comparator, campaign, count, reliability,
-      K1 coverage, and China actor-extension semantics executable before exact-head
-      review; it remains contract-only with no K2-C adapter authority.
+      K2-B's coherent second repair is locally complete on the existing PR #6370
+      carrier and awaiting a pushed exact-head/root review. The repaired compiler
+      validates full K1 EvidenceRefs; computes normalization, residual, PIT theme
+      comparison, campaigns, counts and prospective reliability; preserves the
+      eight China actor-role extensions; and remains contract-only with no K2-C
+      adapter authority.
   - id: k3
     title: K3 Opportunity Semantics — propagation contract (D), opportunity evidence vector (E)
     status: todo
@@ -204,20 +206,20 @@ waves:
     status: todo
     depends_on: [k6]
 next_action: >
-  K2-B manager-complex and research-intent contract packet is under same-carrier
-  hostile-review repair on PR #6370. It returns to exact-head review only after
-  normalization, residual, comparator, campaign, count, reliability, K1 typed
-  vocabulary, and China extension cases are proven. It has no adapter,
-  persistence, rank/gate/size/origination/entry authority, or deployment
-  obligation.
+  Push the locally green K2-B coherent second repair to the existing PR #6370,
+  bind hosted checks and root's independent hostile review to that exact SHA,
+  and keep the carrier unarmed/unmerged in the builder lane. The packet has no
+  adapter, persistence, rank/gate/size/origination/entry authority, or deployment
+  obligation. A later K2-C adapter requires a separate commission and bounded
+  owner-reader/source/rights/PIT proof.
 
   K1 Evidence Foundation v1.0.0 is ACCEPTED / DONE at exact source head
   b7b861a288491ba776dda0087b6153c346e9aabc and merge
   696afbb57483577770ac48c57f7eeafd5344cf17. Preserve the adverse physical-store
   verdict: the four-owner AAPL recipe remains honestly REFUSED without a validated
-  cross-type identity bridge, and no store/index was built. HOLD at the K1 boundary;
-  do not start K2, K3, K4, K5, B1A, K2-B, D5-EARNINGS, runtime, or any dependent
-  wave without a separate explicit Sol commission.
+  cross-type identity bridge, and no store/index was built. The separate Chairman
+  commission now covers K2-B's contract-only repair on PR #6370; it does not cover
+  K2-C, K3, K4, K5, B1A, D5-EARNINGS, runtime, product, or another dependent wave.
 ---
 
 # Alpha Intelligence Expansion — integration workstream

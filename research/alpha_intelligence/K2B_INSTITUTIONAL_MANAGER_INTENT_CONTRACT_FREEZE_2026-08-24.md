@@ -1,83 +1,184 @@
 # K2-B — Institutional Manager Complex + Research Intent Contract Freeze
 
-## Capability and boundary
+**State:** contract/fixture packet only; no owner/runtime/product authority
 
-K2-B supplies a deterministic, pointer-only vocabulary/compiler for describing institutional-manager observations. It is **BUILT_NOT_PROVEN** at the contract/fixture layer only. It creates no owner reader, store, scheduler, API, UI, ranking, gate, sizing, origination, or `ENTRY_OPEN` behaviour.
+**Carrier:** PR #6370
 
-It validates an actual K1 `EvidenceRef` through `lib.evidence_foundation` and adopts
-its pointer-only, rights, coverage-class, typed-missingness, replay/correction,
-independence, clock and all-false-authority vocabulary. An observation carries only
-an owner-native `reference_id`, object id, accession, source URL, and
-publication/knowability clocks. It never copies an owner payload and never makes an
-evidence warehouse. The owner paths remain `engine/institutional_census/**`, ETF/ARK
-holdings, IBKR borrow, Theme Graph, Stock Identity and the ownership wire.
+**Dependency:** accepted K1 Evidence Foundation v1
 
-## Four-plane law
+**Decision:** `DEC:K2B-CHAIRMAN-RELEASE-CONTRACT-ONLY`
 
-| Plane | Question it may describe | It may not become |
-|---|---|---|
-| Manager Research Intent | Did a discretionary research complex report a comparable preference? | fund flow, a recommendation, a score, or live flow |
-| Fund Flow Pressure | Is a vehicle change consistent with mechanical subscriptions, redemptions or reconstitution? | manager conviction |
-| Theme Capital Rotation | Is capital moving among members of one epoch-bound theme? | a cross-vintage preference comparison |
-| Institutionalization / Saturation | What is observable about ownership breadth or concentration? | an entry/exit, crowding gate, or master score |
+## 1. Capability and hard boundary
 
-No plane is netted or automatically suppressed. The conditional-fusion exception in `DEC:PROPHET-ZERO-AUTHORITY-SUPERSEDED-BY-EARNED-CONDITIONAL-AUTHORITY` remains a separately governed future arena; K2-B grants it nothing.
+K2-B freezes a deterministic vocabulary, validator, and in-memory compiler for
+manager-complex evidence. It creates no 13F/ETF/ARK/borrow/ownership store, owner
+reader, schedule, API, UI, alert, score, rank, gate, sizing rule, origination, or
+`ENTRY_OPEN` path. The native owners remain unchanged:
 
-## Identity, classification and clocks
+- `engine/institutional_census/**` and the featured 13F desk;
+- sponsor/ARK/ETF holdings owners;
+- `engine/company_institutional_context/**` and the ownership wire;
+- IBKR borrow;
+- Data OS, Stock Identity, and Theme Graph;
+- accepted K1 `contracts/evidence_foundation/**`.
 
-`manager_complex_id` and `identity_epoch` identify a research complex at a declared epoch. A vehicle points to that pair, so multiple vehicles at one complex count once for independent-research-complex purposes. Classes are explicit: discretionary active, sector specialist, systematic, thematic/broad passive, overlay, leveraged/inverse, and synthetic/fund-of-funds. Only discretionary classes can contribute to the Manager Research Intent plane.
+Compilation returns `persistence: none`, `owner_payloads_copied: false`,
+`master_score: null`, and five literal false authority axes. A professional
+manager is an evidence-producing agent, not an oracle.
 
-Shares outstanding has typed states `observed`, `absent`, and `unsupported`; absent and unsupported are never zero-filled. Mechanical flow is held in Fund Flow Pressure and compiles to `MECHANICAL_FLOW_RESIDUAL` or `MECHANICAL_FLOW_PROXY_OR_UNRESOLVED`. Within-theme preference requires exactly equal theme identity and theme epoch. The campaign vocabulary is a closed linear sequence: `IDLE → INITIATED → ACCUMULATING → PAUSED → CLOSED`; a skipped or reversed transition is invalid.
+## 2. Second hostile-review repair ruling
 
-Form 13F observations require report-period-end, filing, publication, and knowability clocks in order. Before knowability they compile as `NOT_KNOWABLE`; after their declared horizon they are `STALE`; rights-blocked observations are `RIGHTS_BLOCKED`. A 13F observation cannot claim `live_flow`. Corrections append a later event with an explicit superseded predecessor; they do not rewrite history.
+The initial PR shape used one unrelated top-level QLedger anchor, seven-field
+event mini-pointers, caller-authored residuals/results, a one-name theme
+denominator, permissive campaign evidence, partial K1-like vocabularies, and an
+unsafe count formula. That surface was blocked. The coherent repair replaces it
+rather than layering more flags over it:
 
-### Repair amendment — executable descriptor law
+1. `evidence_refs` now contains complete K1 `EvidenceRef` objects; every event
+   resolves one exact ID and repeats only equality-checked owner/native identity
+   and clock bindings.
+2. The source fixture contains an owner-model-derived raw 13F receipt reference
+   with native digest, exact reader/pointer/clocks/rights/coverage/replay and
+   all-false authority. K1 validates every reference.
+3. Raw 13F receipt identity does not bind a security row. The real source-backed
+   fixture therefore refuses a security claim; all numeric examples are openly
+   marked synthetic positive/adverse.
+4. True-S ETF residual and within-theme preference are compiler-derived. There
+   is no caller result field.
+5. Campaigns use only eligible, resolved, active, discretionary manager-intent
+   observations already knowable at the transition time and return complete
+   append-only history.
+6. Coverage, rights, missingness, correction, replay, vintage, object/authority,
+   independence, owner identity, and clocks come from validated K1 objects—not
+   local free strings.
+7. Counts distinguish vehicles, filers, resolved epochs, unresolved/excluded/
+   mechanical rows, same-complex multivehicle deductions, and distinct eligible
+   research complexes; deductions are nonnegative by construction.
+8. Reliability is prospective Eval OS-only, exact complex epoch × closed domain
+   × closed horizon × closed action, with coherent trial/maturity/scoring counts,
+   shrinkage, compiler-derived ordered uncertainty, and compilation-cutoff law.
+9. Complex/filer/vehicle effective/valid/knowable intervals and lineage are
+   explicit. The canonical eight China actor roles extend B0 without erasing raw
+   strings, ontology versions, unresolved states, or remap history.
 
-The contract no longer leaves the structural nouns as prose-only vocabulary:
+## 3. Evidence-reference law
 
-- Holdings normalization is closed and typed. A 13F only admits unscaled reported
-  holding shares with shares-outstanding `unsupported`; ETF true-S normalization is
-  a different basis and is forbidden for a 13F. Observed shares outstanding is
-  positive/non-null, while absent/unsupported is null.
-- Mechanical flow carries a residual basis (`true_shares_outstanding`, `proxy`, or
-  `unresolved`) plus typed state. Proxy/unresolved and passive movement compiles as
-  mechanical/fund-flow context, never Manager Research Intent.
-- A within-theme preference has real comparator and denominator observation ids,
-  theme identity/epoch equality, and an as-of/knowability pair. Cross-vintage or
-  unresolved comparator claims refuse.
-- Campaigns are append-only records bound to campaign, subject, complex epoch,
-  observation evidence, pointer provenance and clocks. The compiler rejects
-  duplicate, missing, skipped, reversed, and post-closed transition histories.
-- The count receipt reports raw vehicle/filer totals, same-complex deductions,
-  unresolved/excluded/mechanical counts, and resolved eligible active complexes.
-  `independence_state` stays `declarative_unverified`: different resolved complex
-  ids are not proof of independent corroboration on K1's axes.
-- Reliability is exact complex epoch × domain × horizon × action, with explicit
-  eligibility, maturity, counts, prior shrinkage, uncertainty and typed
-  insufficient state. It neither imports nor aliases legacy display grades.
+The full K1 object is the evidence anchor. `validate_reference` enforces owner
+schema and identity grammars, pointer construction, clock bindings, coverage and
+replay capability, rights/missingness consistency, append-only corrections,
+object/authority class, and deterministic reference identity. K2 neither edits
+nor shadows that vocabulary.
 
-K1's accepted rights, coverage, missingness, publication/knowability clocks and
-append/supersede correction vocabulary are used directly. Unknown, partial and
-rights-blocked state survives compilation instead of being upgraded to observed.
-The China actor extension is explicit and source-bound: `cn_*` actor classes require
-`CHINA_ALPHA_INTELLIGENCE_ARCHITECTURE_FREEZE`; the B0 global class stays intact.
+The raw 13F reference freezes:
 
-## Reliability and authority
+- accession `0001398344-26-013841`;
+- filer CIK `0001792167`;
+- native schema `institutional_13f.raw_evidence_receipt/v1`;
+- receipt ID `i13fraw_c16997a2b2d352a4b7ada643273e00ca482505cf84b1e33e3688d3b0dc6fa8d2`;
+- native canonical digest `cc09d4f341c5d2fbb03ec994178f9ed38dddd4e4ee8e1bc333be9fb605917311`;
+- owner parser `engine.institutional_census.models.RawEvidenceReceipt.from_json_bytes`;
+- `report_period`, `accepted_at`, and `retained_at` clocks;
+- source-release-snapshot coverage and permitted rights.
 
-Reliability is a descriptive beta-binomial posterior keyed by complex × domain × horizon × action. Low-N observations shrink toward a declared prior. It has no oracle semantics and no cross-domain/horizon/action leakage.
+Operational availability is the later of acceptance and retention. The source
+pointer row carries `unresolved_security_subject`: K1 raw receipt subjects are
+manager CIK/accession, not holdings/security identities. A future real security
+observation requires a bounded native catalog row selection that cites the exact
+immutable catalog generation, raw receipt/accession, and requested security.
+That adapter/read is deliberately not commissioned here.
 
-### Legacy retrospective context is not K2-B reliability
+## 4. Four-plane semantic freeze
 
-`engine/manager_quality.py`, `engine/manager_trades.py`, and `engine/fund_followability.py` are adopted only as their existing legacy retrospective display/track-record context surfaces. Their quality grades, trade-history reliability read, and `follow_score` are not a prospective manager-complex × domain × horizon × action shrunk-reliability input; K2-B does not import, copy, normalize, or silently reinterpret them. This preserves their documented display-only/non-gate boundary and avoids creating a competing reliability owner. A future bridge requires a separate commission and point-in-time evaluation proof.
+### Manager Research Intent
 
-All authority axes are literal false: `can_rank`, `can_gate`, `can_size`, `can_originate`, and `can_open_entry`. Model prose and caller-injected vocabulary are rejected. Compilation is deterministic, in-memory, and reports `persistence: none`.
+Input is only a reported-share `Q_prev/Q_now` pair or typed unavailable state,
+with a reconciled public-sleeve denominator. Both values are required to compute
+an unscaled 13F reported delta. The plane is eligible context only when complex
+and vehicle epochs are resolved, active, discretionary, and source state is
+usable. It is never live flow, conviction truth, or an entry recommendation.
 
-## Source-backed fixture and hostile coverage
+### Fund Flow Pressure
 
-`tests/fixtures/institutional_intelligence/source_backed_manager_intent_recipe.json` pins accession `0001398344-26-013841` with its SEC archive pointer and complete public/knowability clock chain. It contains true closed descriptor shapes for all four planes; its passive mechanical row is deliberately labelled `synthetic_adverse_fixture` while retaining the real SEC source pointer, so it cannot be represented as a live owner capture. The test contract proves epoch deduplication, class separation, typed missingness, no mechanical-to-intent laundering, theme-vintage binding, every legal campaign step plus invalid jump, 13F cutoff/stale/rights states, append/supersede lineage, low-N shrinkage, duplicate/corroboration and payload attacks, actual K1 EvidenceRef validation, all-false authority, deterministic no-persistence compilation, and caller-vocabulary/identity-alias attacks.
+True-S ETF inputs are `Q_prev`, `Q_now`, `S_prev`, `S_now`; the compiler alone
+computes:
 
-## Reuse and non-adoption ledger
+`Q_now - Q_prev * (S_now / S_prev)`
 
-- Adopted: K1 pointer semantics; B0 manager-complex/vehicle distinction; B0 class taxonomy and 13F timing caveats; China four-model separation and its epoch-bound identity extension pattern.
-- Not adopted: B0's proposed human roster or any people graph; a second 13F/ETF/ARK/borrow store; ETF shares-outstanding capture; live flow; a manager score; a future Conditional Fusion entry.
-- Falsifier for a future adapter: a named owner-backed consumer can supply source/rights coverage and point-in-time replay receipts without copying owner payloads. That is a separate commission.
+A 13F has no S slot. Continuing-constituent sum/median and price-residual-weight
+constructions are named proxy states with residual `null`; unavailable and
+rights-blocked rows likewise cannot become intent.
+
+### Theme Capital Rotation
+
+Target and peer observations are distinct subjects in one exact theme epoch.
+The comparison binds a K1 Theme Graph membership reference and its knowable
+clock. The membership receipt's member set must equal target plus peers and be
+exactly partitioned into eligible and typed exclusions. A late peer, passive or
+mechanical peer marked eligible, overlap, one-name denominator, clock lookahead,
+or unresolved member refuses. For valid rows the compiler returns target delta,
+eligible-peer mean delta, and spread—never a score.
+
+### Institutionalization / Saturation
+
+This plane carries typed complex presence/position count or unavailable state,
+against explicit eligible/excluded complex epochs. It is descriptive breadth or
+concentration context only.
+
+No plane is netted with another. The separately governed Conditional Fusion
+exception grants K2-B no authority.
+
+## 5. Identity and actor law
+
+Complex, filer, and vehicle identities are immutable epochs with separate
+effective, valid, and knowable intervals, status, resolution, decision mode, and
+append-only lineage. Same-complex vehicles deduplicate by exact complex epoch.
+Mixed and unknown are explicit modes. Unresolved epochs never count as eligible
+research complexes.
+
+China's roles are the exact masterplan extensions: institution/manager complex;
+fund company; fund vehicle; manager/person; broker/research house; analyst;
+named market actor/broker seat; holder/controller/executive. Raw actor string,
+original ontology version, unresolved state, and remap lineage remain immutable.
+
+## 6. Campaign and correction law
+
+The closed campaign chain is
+`IDLE → INITIATED → ACCUMULATING → PAUSED → CLOSED`. Every append record has a
+stable transition ID, exact sequence and predecessor, complex epoch, subject,
+transition time, eligible observation IDs, and correction lineage. Rights-
+blocked, missing, unresolved, passive/systematic, mechanical, superseded, or
+pre-knowledge observations cannot back a transition. A second campaign for the
+same subject/complex begins only after the first closes. The receipt includes
+every record and its current/superseded/not-yet-knowable state.
+
+Observation corrections also append. A successor must retain subject/vehicle/
+plane identity, arrive later, and resolve a full K1 correction/supersession
+reference whose predecessor set contains the predecessor event's reference.
+
+## 7. Count and reliability receipts
+
+The count receipt separately reports raw vehicle/filer epochs, resolved active
+complex epochs, same-complex multivehicle deductions, unresolved complexes,
+excluded vehicles, mechanical vehicles, and distinct eligible research
+complexes. It keeps K1's exact `source_independence`, `information_novelty`, and
+`mechanism_independence` axis objects distinct, `not_assessed`, and
+`declarative_unverified`; a distinct-complex count is not verified independence.
+
+Reliability imports no legacy grades. The only domains, horizons, and actions are
+closed in schema. Trials ≥ matured ≥ scored ≥ successes; eligible rows must be
+fully matured/scored, while zero/immature/unscored rows are insufficient with no
+posterior. The compiler applies the frozen beta-binomial normal-approximation
+method/version, produces ordered 95% bounds, and rejects trial or maturity
+cutoffs after compilation `as_of`.
+
+## 8. Evidence and remaining gap
+
+The focused suite proves the nine reproduced second-round defects plus the first
+round's identity, clock, class, passive/mechanical, denominator, interval,
+lineage, campaign-chain, reliability, payload, authority, and determinism cases.
+Adjacent K1 suites prove no contract regression.
+
+The remaining gap is deliberate: there is no rights-approved source adapter or
+owner-reader result that binds a live security-level manager-intent observation.
+K2-B is a contract freeze, not that adapter. K2-C or later work requires a
+separate commission and exact source/rights/PIT evidence.
