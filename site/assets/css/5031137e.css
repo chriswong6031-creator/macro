@@ -49,8 +49,7 @@
     font-variant-numeric:tabular-nums;
     color:var(--text);
   }
-  .pod .pod-gauge span {
-    display:block;
+  .pod .pod-gauge-label {
     margin-top:6px;
     color:var(--muted);
     font-size:10.5px;
@@ -105,7 +104,7 @@
     gap:7px;
     margin:14px 0 20px;
   }
-  .pod .pod-proof-key span {
+  .pod .pod-proof-chip {
     display:inline-flex;
     gap:5px;
     align-items:center;
@@ -197,9 +196,13 @@
   .pod .pod-arrow-teal { stroke:var(--pod-teal); }
   .pod .pod-arrow-red { stroke:var(--pod-red); }
   .pod .pod-reveal {
+    opacity:1;
+    transform:none;
+    transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1);
+  }
+  .pod .pod-figure.pod-motion-pending .pod-reveal {
     opacity:0;
     transform:translateY(7px);
-    transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1);
   }
   .pod .pod-figure.is-visible .pod-reveal {
     opacity:1;
@@ -211,9 +214,10 @@
   .pod .pod-figure.is-visible .pod-reveal:nth-of-type(5) { transition-delay:.48s; }
   .pod .pod-draw {
     stroke-dasharray:760;
-    stroke-dashoffset:760;
+    stroke-dashoffset:0;
     transition:stroke-dashoffset 1.15s cubic-bezier(.3,.7,.2,1);
   }
+  .pod .pod-figure.pod-motion-pending .pod-draw { stroke-dashoffset:760; }
   .pod .pod-figure.is-visible .pod-draw { stroke-dashoffset:0; }
 
   .pod .pod-accounting {

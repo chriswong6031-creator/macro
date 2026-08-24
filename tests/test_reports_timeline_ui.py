@@ -165,6 +165,29 @@ def test_price_of_duration_reduced_motion_forces_final_state() -> None:
     assert "matchMedia('(prefers-reduced-motion: reduce)')" in compact
 
 
+def test_price_of_duration_language_labels_do_not_override_language_visibility() -> None:
+    source = _price_source()
+
+    assert source.count('class="pod-gauge-label"') == 8
+    assert source.count('class="pod-proof-chip"') == 4
+    assert ".pod .pod-gauge span" not in source
+    assert ".pod .pod-proof-key span" not in source
+    assert ".pod .pod-gauge-label" in source
+    assert ".pod .pod-proof-chip" in source
+
+
+def test_price_of_duration_figures_are_visible_without_animation_javascript() -> None:
+    compact = re.sub(r"\s+", " ", _price_source())
+
+    assert ".pod .pod-reveal { opacity:1; transform:none;" in compact
+    assert ".pod .pod-draw { stroke-dasharray:760; stroke-dashoffset:0;" in compact
+    assert ".pod .pod-figure.pod-motion-pending .pod-reveal { opacity:0;" in compact
+    assert "f.classList.add('pod-motion-pending')" in compact
+    assert "f.classList.remove('pod-motion-pending')" in compact
+    assert "f.classList.add('is-visible')" in compact
+    assert "},4000)" in compact
+
+
 def test_price_of_duration_snapshot_and_primary_sources_are_timestamped() -> None:
     source = _price_source()
 

@@ -57,8 +57,7 @@
     font-variant-numeric:tabular-nums;
     color:var(--text);
   }
-  .pod .pod-gauge span {
-    display:block;
+  .pod .pod-gauge-label {
     margin-top:6px;
     color:var(--muted);
     font-size:10.5px;
@@ -113,7 +112,7 @@
     gap:7px;
     margin:14px 0 20px;
   }
-  .pod .pod-proof-key span {
+  .pod .pod-proof-chip {
     display:inline-flex;
     gap:5px;
     align-items:center;
@@ -205,9 +204,13 @@
   .pod .pod-arrow-teal { stroke:var(--pod-teal); }
   .pod .pod-arrow-red { stroke:var(--pod-red); }
   .pod .pod-reveal {
+    opacity:1;
+    transform:none;
+    transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1);
+  }
+  .pod .pod-figure.pod-motion-pending .pod-reveal {
     opacity:0;
     transform:translateY(7px);
-    transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1);
   }
   .pod .pod-figure.is-visible .pod-reveal {
     opacity:1;
@@ -219,9 +222,10 @@
   .pod .pod-figure.is-visible .pod-reveal:nth-of-type(5) { transition-delay:.48s; }
   .pod .pod-draw {
     stroke-dasharray:760;
-    stroke-dashoffset:760;
+    stroke-dashoffset:0;
     transition:stroke-dashoffset 1.15s cubic-bezier(.3,.7,.2,1);
   }
+  .pod .pod-figure.pod-motion-pending .pod-draw { stroke-dashoffset:760; }
   .pod .pod-figure.is-visible .pod-draw { stroke-dashoffset:0; }
 
   .pod .pod-accounting {
@@ -383,23 +387,23 @@
     'AI、黄金、比特币，以及谁来为美国融资的新争夺战。研究日期：2026 年 8 月 24 日。') }}</p>
 
   <div class="pod-snapshot" aria-label="Publication-day market snapshot">
-    <div class="pod-gauge" style="--pod-c:var(--pod-red)"><b>5.23%</b><span>{{ t('30Y Treasury · Aug 20 official close', '30 年期美债 · 8 月 20 日官方收盘') }}</span></div>
-    <div class="pod-gauge" style="--pod-c:var(--pod-gold)"><b>2.35%</b><span>{{ t('10Y real yield · Aug 20 official close', '10 年期实际收益率 · 8 月 20 日官方收盘') }}</span></div>
-    <div class="pod-gauge" style="--pod-c:var(--pod-blue)"><b>98.97</b><span>{{ t('DXY · Aug 24, 10:35 UTC', 'DXY · 8 月 24 日 10:35 UTC') }}</span></div>
-    <div class="pod-gauge" style="--pod-c:var(--pod-teal)"><b>2.75%</b><span>{{ t('Broad HY OAS · Aug 20 official close', '广义高收益债 OAS · 8 月 20 日官方收盘') }}</span></div>
-    <div class="pod-gauge" style="--pod-c:var(--pod-teal)"><b>15.93</b><span>{{ t('VIX · Aug 24, 10:30 UTC', 'VIX · 8 月 24 日 10:30 UTC') }}</span></div>
-    <div class="pod-gauge" style="--pod-c:var(--pod-gold)"><b>$4,703</b><span>{{ t('Gold futures · Aug 24, 10:35 UTC', '黄金期货 · 8 月 24 日 10:35 UTC') }}</span></div>
-    <div class="pod-gauge" style="--pod-c:var(--pod-violet)"><b>$77,788</b><span>{{ t('Bitcoin · Aug 24, 10:45 UTC', '比特币 · 8 月 24 日 10:45 UTC') }}</span></div>
-    <div class="pod-gauge" style="--pod-c:var(--pod-red)"><b>10.35%</b><span>{{ t('CCC &amp; lower OAS · Aug 20 official close', 'CCC 及以下 OAS · 8 月 20 日官方收盘') }}</span></div>
+    <div class="pod-gauge" style="--pod-c:var(--pod-red)"><b>5.23%</b><div class="pod-gauge-label">{{ t('30Y Treasury · Aug 20 official close', '30 年期美债 · 8 月 20 日官方收盘') }}</div></div>
+    <div class="pod-gauge" style="--pod-c:var(--pod-gold)"><b>2.35%</b><div class="pod-gauge-label">{{ t('10Y real yield · Aug 20 official close', '10 年期实际收益率 · 8 月 20 日官方收盘') }}</div></div>
+    <div class="pod-gauge" style="--pod-c:var(--pod-blue)"><b>98.97</b><div class="pod-gauge-label">{{ t('DXY · Aug 24, 10:35 UTC', 'DXY · 8 月 24 日 10:35 UTC') }}</div></div>
+    <div class="pod-gauge" style="--pod-c:var(--pod-teal)"><b>2.75%</b><div class="pod-gauge-label">{{ t('Broad HY OAS · Aug 20 official close', '广义高收益债 OAS · 8 月 20 日官方收盘') }}</div></div>
+    <div class="pod-gauge" style="--pod-c:var(--pod-teal)"><b>15.93</b><div class="pod-gauge-label">{{ t('VIX · Aug 24, 10:30 UTC', 'VIX · 8 月 24 日 10:30 UTC') }}</div></div>
+    <div class="pod-gauge" style="--pod-c:var(--pod-gold)"><b>$4,703</b><div class="pod-gauge-label">{{ t('Gold futures · Aug 24, 10:35 UTC', '黄金期货 · 8 月 24 日 10:35 UTC') }}</div></div>
+    <div class="pod-gauge" style="--pod-c:var(--pod-violet)"><b>$77,788</b><div class="pod-gauge-label">{{ t('Bitcoin · Aug 24, 10:45 UTC', '比特币 · 8 月 24 日 10:45 UTC') }}</div></div>
+    <div class="pod-gauge" style="--pod-c:var(--pod-red)"><b>10.35%</b><div class="pod-gauge-label">{{ t('CCC &amp; lower OAS · Aug 20 official close', 'CCC 及以下 OAS · 8 月 20 日官方收盘') }}</div></div>
   </div>
   <p class="pod-asof">{{ t('Publication snapshot: market-traded instruments are point-in-time values captured August 24, 2026 at the UTC times shown; Treasury and ICE BofA/FRED series use the latest available official daily observation, August 20. Values are context, not trade signals.',
     '发布快照：交易型资产为 2026 年 8 月 24 日按所列 UTC 时间截取的点时值；美债及 ICE BofA/FRED 序列采用当时最新可得的 8 月 20 日官方日度观测。数值仅作背景，不构成交易信号。') }}</p>
 
   <div class="pod-proof-key" aria-label="Evidence key">
-    <span><sup class="ev ev-f">F</sup>{{ t('Fact · primary/current data', '事实 · 一手/当前数据') }}</span>
-    <span><sup class="ev ev-c">C</sup>{{ t('Reported / consensus', '报道 / 共识') }}</span>
-    <span><sup class="ev ev-i">I</sup>{{ t('Mastermind inference', 'Mastermind 推断') }}</span>
-    <span><sup class="ev ev-s">S</sup>{{ t('Scenario / desk estimate', '情景 / 本台估计') }}</span>
+    <span class="pod-proof-chip"><sup class="ev ev-f">F</sup>{{ t('Fact · primary/current data', '事实 · 一手/当前数据') }}</span>
+    <span class="pod-proof-chip"><sup class="ev ev-c">C</sup>{{ t('Reported / consensus', '报道 / 共识') }}</span>
+    <span class="pod-proof-chip"><sup class="ev ev-i">I</sup>{{ t('Mastermind inference', 'Mastermind 推断') }}</span>
+    <span class="pod-proof-chip"><sup class="ev ev-s">S</sup>{{ t('Scenario / desk estimate', '情景 / 本台估计') }}</span>
   </div>
 
   <h2 id="opening"><span class="num">1</span>{{ t('The anomaly', '异常信号') }}</h2>
@@ -2563,7 +2567,20 @@
       }
     });
   },{threshold:.18,rootMargin:'0px 0px -8% 0px'});
-  figures.forEach(function(f){ io.observe(f); });
+  figures.forEach(function(f){
+    var rect=f.getBoundingClientRect();
+    if(rect.top<window.innerHeight*.92&&rect.bottom>0){
+      f.classList.add('is-visible');
+      return;
+    }
+    f.classList.add('pod-motion-pending');
+    io.observe(f);
+    window.setTimeout(function(){
+      f.classList.remove('pod-motion-pending');
+      f.classList.add('is-visible');
+      io.unobserve(f);
+    },4000);
+  });
 })();
 </script>
 {% endblock %}
