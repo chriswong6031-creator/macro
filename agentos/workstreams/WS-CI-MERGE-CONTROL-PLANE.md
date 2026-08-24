@@ -20,6 +20,7 @@ discoveries:
   - "DSC:GITHUB-CONCURRENCY-SUPERSEDES-PENDING"
   - "DSC:PR-EVENT-DELIVERY-IS-NOT-CANDIDATE-IDENTITY"
   - "DSC:CI-SELF-MOD-FENCE-ARGV-BYPASSES-BOUNDED-TRANSPORT"
+  - "DSC:CLAUDE-TASK-WAKES-OUTLIVE-TERMINAL-SHIP-STATES"
 waves:
   - id: W-TRANSPORT
     title: Bounded changed-files transport across CI and self-mod fences
@@ -166,6 +167,26 @@ waves:
       the bridge: live runner/group census, P1 one-slot, P2 three CI slots
       plus render reservation, P3A inert trusted executor, P3B production
       route with hosted ci-pack-N anchors, P4 three natural PR proofs.
+  - id: W-QUIESCENCE
+    title: Ship-loop watcher quiescence after PARKED / external ladder exit
+    status: awaiting_ci
+    note: >
+      Sol commission macro#6379 (2026-08-24). Root cause reproduced live: a
+      run_in_background timer's completion starts a <task-notification> turn
+      whose Stop re-enters the hooks, and no hook can enumerate/cancel
+      Claude-native tasks (DSC:CLAUDE-TASK-WAKES-OUTLIVE-TERMINAL-SHIP-STATES).
+      Mechanism (one, deterministic, inside the existing per-session ledger):
+      (1) every EXTERNAL block site mints a frozen-state exit key
+      <code>:<head>:<digest12(reason)> so the ratified-ladder-exit memory
+      quiesces post-escape wakes; (2) the hold wrapper writes parked_latch on
+      the first lawful PARKED and passes the identical re-derived hold
+      silently, clearing the latch on any changed hold state; (3) a
+      PreToolUse:Bash branch of the guard enforces at most one live
+      delayed-wake reservation per session and refuses new watchers at a
+      terminally latched HEAD — fail-open, never kills tasks. Internal codes
+      byte-unchanged (Journey C). PR held HOLD-FOR-SOL per commission stop
+      condition; mutation receipts + replayed-incident proof in the PR body
+      and CI-MERGE-CONTROL-PLANE-2026-08-24.md handoff.
 next_action: >
   W-TRANSPORT and W-PR-EVENT-CAUSALITY are closed. Do not reopen either for a
   new CI-speed, runner, branch-protection, or cancellation-system proposal.
@@ -185,6 +206,8 @@ next_action: >
   and #6286 attempt-1 checkout-only failures; do not absorb pack-checkout
   repairs into product PRs or reopen them here outside the #6351 sequence.
 owns_paths:
+  - ".claude/hooks/ship_loop_guard.py"
+  - "scripts/ship_loop_hold_wrapper.py"
   - ".github/workflows/ci.yml"
   - ".github/workflows/merge-on-green.yml"
   - ".github/workflows/fences.yml"

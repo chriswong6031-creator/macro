@@ -32,3 +32,16 @@ changes the hold.
 If any condition above is missing, ambiguous, red, pending, dirty, or stale, fail
 closed and follow the ordinary ship loop instead. A vague request to "hold" or
 "review later" is never enough to create the PARKED state.
+
+## Terminal quiescence (Sol commission #6379)
+
+A terminal state — PARKED, or a ratified external `SHIP LOOP BLOCKED` ladder
+exit — gets exactly ONE terminal report. After it, do not create new background
+wake timers, do not re-poll, and when a leftover background task completes and
+wakes the session, end that turn without re-reporting: the guard latches the
+frozen state and passes the wake silently. At most one background ship-state
+watcher may exist at a time while waiting on external machinery; a second
+overlapping timer is refused — rely on the existing one. A hold release, a new
+head, or any materially changed state clears the latch and the ordinary
+fail-closed ship loop resumes; the latch never makes unfinished work easier to
+abandon.
