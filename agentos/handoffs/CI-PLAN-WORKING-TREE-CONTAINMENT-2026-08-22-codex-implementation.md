@@ -298,3 +298,51 @@ plan digest, and concluded binding-check packet are necessarily written to the
 existing PR #6286 receipt comment after that immutable subject exists. Embedding
 those future identifiers in their own commit would change the subject SHA and
 invalidate them. The draft `HOLD-FOR-SOL` barrier remains binding throughout.
+
+## 5. Current-main reconciliation and reproof (2026-08-24)
+
+The sole existing PR #6286 carrier was reconciled by merge only; it was never
+rebased, reset, widened, or replaced. The final local proof merge before this
+handoff refresh is `07955ce0590a1ce98c4095a2aaacf68dc4886338`, with parents
+`8e3f8df3a78c8cf85664338ada0b4ff8e46b57d0` and current main
+`46dbe25b843a9933c8787af5b2a64bae50caec54`. A prior completed proof was
+discarded when `.github/ci/legacy-jobs.yml` moved on main; this is the required
+new current-manifest proof cycle.
+
+The four frozen W3 implementation/test blobs are byte-identical before and
+after each reconciliation:
+
+```text
+scripts/ci_scope_dependencies.py  1be36fb466d4c044018145c87d596a1ae3d7b154
+scripts/run_ci_pack.py            fda27bd3293b50cb72deaae62e24865b84d346a8
+tests/test_ci_pack.py             bb0005e2127f4cee8b7352e1a68ccfbacc009d35
+tests/test_ci_plan_workflow.py    14b4f81ad5386ef41c39f77cc3105929766a2195
+```
+
+Local reproof on the reconciled current manifest:
+
+```text
+python3 -m pytest tests/test_ci_plan_workflow.py tests/test_ci_pack.py tests/test_audit_unrun_tests.py -q
+184 passed, 3 temporary-cleanup warnings, 684.11s
+
+python3 -m pytest tests/test_ci_pack.py tests/test_ci_plan_workflow.py -q \
+  -k 'inventory or virtual_existence or depth_two_merge or sparse_profile or bounded_exact_tree or partial_clone_keeps_history or full_and_sparse'
+10 passed, 120 deselected, 3 temporary-cleanup warnings, 13.41s
+
+python3 scripts/check_workflow_yaml.py
+OK: 93 workflow file(s) parse with on: + jobs: blocks.
+python3 scripts/check_workflow_yaml.py --selftest
+SELFTEST OK: 4 cases.
+python3 scripts/run_ci_pack.py --workflow .github/ci/legacy-jobs.yml --pack-index 0 --pack-count 12 --validate-only
+Validated 202 legacy jobs; 202 in scope.
+```
+
+Before push, fetch and compare fresh `origin/main` against the frozen candidate
+at least for `.github/workflows/ci.yml` and `.github/ci/legacy-jobs.yml` plus
+the W3 preserved inputs. Movement in those relevant inputs requires another
+merge-and-reproof. Unrelated main movement is recorded as `DIRTY` and does not
+alter the frozen candidate or this proof. After the handoff commit, push only
+this carrier, obtain three same-head successful `ci-plan` observations under
+60 seconds, wait for the concluded binding packet, write the volatile receipts
+to PR #6286, and leave it `OPEN / DRAFT / HOLD-FOR-SOL` with no labels and
+native auto-merge null. Do not merge.
