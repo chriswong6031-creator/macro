@@ -6,7 +6,7 @@
   "listing_key": "US-XNAS-AAPL",
   "ticker_display": "AAPL",
   "generated_at": "2026-08-23T12:00:00Z",
-  "content_sha256": "cfecf1282d8c59f8d265529e040f9d04ed7e31caaa3b23d8ab22c88cd74c0138",
+  "content_sha256": "42d8696d1d3a00682fa8e0681ca01f8fe30a21797cb2a70247ab86a49fb1d3a7",
   "as_of": {
     "market_at": "2026-08-23",
     "source_frontier_at": "2026-07-30T20:30:28Z",
@@ -288,10 +288,12 @@
   },
   "coverage": {
     "overall_state": "PARTIAL",
-    "required_legs_total": 1,
-    "required_legs_available": 1,
+    "required_legs_total": 2,
+    "required_legs_available": 2,
+    "required_legs_nonblocking": 2,
     "optional_legs_total": 5,
-    "optional_legs_available": 4,
+    "optional_legs_available": 2,
+    "optional_legs_nonblocking": 3,
     "missing_legs": [],
     "stale_legs": [],
     "rights_blocked_legs": [],
@@ -299,6 +301,26 @@
   },
   "dominant_degradation": "PARTIAL",
   "legs": {
+    "state": {
+      "deterministic_state_refs": [
+        "ladder.state",
+        "ladder.dir",
+        "tech.chg_1d"
+      ],
+      "ladder_state": "watch",
+      "ladder_direction": "up",
+      "values_read": [
+        {
+          "field": "tech.chg_1d",
+          "value": 0.5
+        }
+      ],
+      "summary": {
+        "en": "Ladder state: watch (up).",
+        "zh": "阶梯状态：watch（上行）。"
+      },
+      "coverage_state": "AVAILABLE"
+    },
     "change": {
       "economic_episode_ref": "evt_cik0000320193_2026q3_results",
       "event_refs": [
@@ -362,13 +384,15 @@
     "catalyst": {
       "next_observables": [
         {
-          "kind": "expected_earnings",
-          "date": "2026-09-26",
-          "basis": "fiscal_period.calendar_end + ~1 fiscal quarter (91 days), deterministic calendar arithmetic"
+          "kind": "ESTIMATED_WINDOW",
+          "window_start": "2026-09-12",
+          "window_end": "2026-10-10",
+          "authoritative": false,
+          "basis": "deterministic Mastermind estimate: fiscal_period.calendar_end + ~1 fiscal quarter; no canonical earnings-calendar owner exists"
         }
       ],
       "deadlines": [],
-      "coverage_state": "AVAILABLE"
+      "coverage_state": "PARTIAL"
     },
     "personal_impact": {
       "state": "NO_USER_CONTEXT",

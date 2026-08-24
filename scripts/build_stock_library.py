@@ -802,22 +802,20 @@ def _compile_security_state_for_ticker(ticker: str, rec: dict, *, now: str) -> d
 
 
 def _read_prior_security_state(outdir: Path, ticker: str) -> dict | None:
-    """The prior cycle's committed ``security_state.v1`` receipt — read BEFORE
-    this run overwrites ``site/stockdata/<ticker>.json`` — as the compact
-    ``{generated_at, content_sha256, reason}`` the ``last_good`` field carries,
-    never the whole prior blob."""
+    """The prior cycle's FULL committed ``security_state.v1`` read — read
+    BEFORE this run overwrites ``site/stockdata/<ticker>.json`` — as the whole
+    prior state dict, never pre-reduced to the compact ``last_good`` receipt
+    shape. Owner I/O only: eligibility (was the prior read PROVEN and not
+    itself a COMPILER_FAILURE?) and the compact-receipt derivation are
+    ``engine.security_state.derive_last_good``'s pure business logic (Sol
+    blocker 4) — the caller passes this function's return straight through as
+    ``compile_security_state_failure``'s ``prior_state``."""
     path = outdir / f"{ticker}.json"
     if not path.exists():
         return None
     try:
         prior_state = json.loads(path.read_text()).get("security_state")
-        if not isinstance(prior_state, dict):
-            return None
-        return {
-            "generated_at": prior_state.get("generated_at"),
-            "content_sha256": prior_state.get("content_sha256"),
-            "reason": "prior cycle's committed security_state.v1",
-        }
+        return prior_state if isinstance(prior_state, dict) else None
     except Exception:  # noqa: BLE001 — no usable prior is not fatal
         return None
 
@@ -4533,8 +4531,12 @@ def main() -> int:
     # One owner-backed identity+K1 compile per allow-listed ticker, attached to
     # its rec BEFORE the write loop below. Exception-contained end to end: a
     # failure here degrades rec["security_state"] to a typed compiler-failure
-    # shell (falling back to the prior cycle's committed receipt when one
-    # exists) and never loses the rest of this ticker's blob write.
+    # shell, with ``last_good`` derived from the FULL prior cycle's committed
+    # read via ``engine.security_state.derive_last_good`` (Sol blocker 4) —
+    # only a PROVEN, non-COMPILER_FAILURE prior read is ever eligible to
+    # become last_good; an ineligible prior that itself carries a last_good
+    # has that receipt carried forward unchanged, never overwritten by the
+    # failed prior itself — and never loses the rest of this ticker's blob write.
     try:
         from engine.security_state import SECURITY_STATE_TICKERS, compile_security_state_failure
         _ss_targets = [(t, r) for t, r in to_write if r.get("ticker") in SECURITY_STATE_TICKERS]
@@ -4550,7 +4552,7 @@ def main() -> int:
                 log.warning("security_state.v1 compile failed for %s (%s)", _ss_ticker, e)
                 _ss_prior = _read_prior_security_state(outdir, _ss_ticker)
                 _ss_state = compile_security_state_failure(
-                    now=_ss_now, reason=f"{type(e).__name__}: {e}", last_good=_ss_prior,
+                    now=_ss_now, reason=f"{type(e).__name__}: {e}", prior_state=_ss_prior,
                 )
             _ss_rec["security_state"] = _ss_state
             for _ss_idx_row in index:

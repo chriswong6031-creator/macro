@@ -85,7 +85,15 @@ SECURITY_STATE_TICKERS = (PINNED_TICKER,)
 _EVENT_ID_RE = re.compile(r"^evt_cik0000320193_\d{4}(?:q[1-4]|fy)_[a-z0-9]+$")
 _WORKSPACE_SCHEMA = "event_workspace.v1"
 _STALE_DAYS = 120
-_EARNINGS_CADENCE_DAYS = 91  # ~1 fiscal quarter, deterministic calendar arithmetic
+# The estimated next-earnings WINDOW (never a single precise date -- Sol
+# blocker 6: no canonical earnings-calendar owner exists for this build).
+# ~1 fiscal quarter (91d) +/- a 2-week band around calendar_end.
+_EARNINGS_WINDOW_START_DAYS = 77
+_EARNINGS_WINDOW_END_DAYS = 105
+_EARNINGS_WINDOW_BASIS = (
+    "deterministic Mastermind estimate: fiscal_period.calendar_end + ~1 fiscal "
+    "quarter; no canonical earnings-calendar owner exists"
+)
 
 _EARNINGS_CONSUMER = {
     "workstream": "WS:MARKET-OS",
@@ -144,11 +152,20 @@ _WARNING_TEXT: dict[str, dict[str, str]] = {
 
 _PROPHET_REASON = "no current Prophet US owner output for this security"
 
-_REQUIRED_LEGS: tuple[str, ...] = ("change",)
+# Decision Spine required axes (Sol blocker 1): state + change. legs.evidence
+# REMAINS a leg but is supporting metadata for change's provenance, not its
+# own Decision Spine axis -- it stays optional, as it always has.
+_REQUIRED_LEGS: tuple[str, ...] = ("state", "change")
 _OPTIONAL_LEGS: tuple[str, ...] = (
     "opportunity_context", "risk", "catalyst", "personal_impact", "evidence",
 )
-_NEUTRAL_STATES = frozenset({"AVAILABLE", "NOT_COVERED", "NOT_APPLICABLE"})
+# NONBLOCKING (Sol blocker 7): a leg whose coverage_state does not itself
+# represent a degradation -- AVAILABLE, or a disclosed non-applicability
+# (NOT_APPLICABLE/NOT_COVERED). Deliberately looser than "available": a
+# NOT_APPLICABLE personal_impact does not make the read look MORE complete
+# than it is (it never counts toward *_legs_available), it only means that
+# leg does not BLOCK overall_state.
+_NONBLOCKING_STATES = frozenset({"AVAILABLE", "NOT_COVERED", "NOT_APPLICABLE"})
 _SEVERITY = {
     "CONFLICTED": 6, "CORRECTED": 5, "UNAVAILABLE": 4, "RIGHTS_BLOCKED": 4,
     "STALE": 3, "PARTIAL": 2,
@@ -816,6 +833,57 @@ def _build_evidence_leg(*, recipe_id: str | None, compilation: Mapping[str, Any]
 # legs
 # ---------------------------------------------------------------------------
 
+_STATE_LEG_REFS: tuple[str, ...] = ("ladder.state", "ladder.dir", "tech.chg_1d")
+_DIRECTION_WORD = {"up": "up", "down": "down"}
+_DIRECTION_WORD_ZH = {"up": "上行", "down": "下行"}
+
+
+def _build_state_leg(*, blob: Mapping[str, Any]) -> dict[str, Any]:
+    """Decision Spine ``legs.state`` (Sol blocker 1).
+
+    EXISTING owner-native, deterministic, display-tier values read verbatim
+    off the producer's ``rec`` -- the price ladder's own state/direction
+    label, plus the day's raw price-change read. Zero arithmetic; never a
+    score/rank/gate (``authority.can_*`` stays all-false regardless). This
+    leg is independent of the earnings-workspace identity chain: a ladder
+    read is not itself a claim about THIS cycle's earnings event, so it is
+    never forced to UNAVAILABLE by a ``BLOCKED_IDENTITY_BRIDGE`` -- only the
+    top-level ``dominant_degradation``/``coverage.overall_state`` are (see
+    :func:`compile_security_state`).
+    """
+    ladder = blob.get("ladder") if isinstance(blob.get("ladder"), Mapping) else {}
+    tech = blob.get("tech") if isinstance(blob.get("tech"), Mapping) else {}
+    ladder_state = _null_to_none(ladder.get("state"))
+    ladder_direction = _null_to_none(ladder.get("dir"))
+    chg_1d = _null_to_none(tech.get("chg_1d"))
+
+    values_read = [{"field": "tech.chg_1d", "value": _jsonable(chg_1d)}]
+
+    if ladder_state is not None:
+        direction_en = _DIRECTION_WORD.get(str(ladder_direction), "unclear")
+        direction_zh = _DIRECTION_WORD_ZH.get(str(ladder_direction), "方向不明")
+        summary = _bilingual(
+            f"Ladder state: {ladder_state} ({direction_en}).",
+            f"阶梯状态：{ladder_state}（{direction_zh}）。",
+        )
+        coverage_state = "AVAILABLE"
+    else:
+        summary = _bilingual(
+            "No deterministic ladder state is available for this security yet.",
+            "该证券当前没有可用的确定性阶梯状态。",
+        )
+        coverage_state = "UNAVAILABLE"
+
+    return {
+        "deterministic_state_refs": list(_STATE_LEG_REFS),
+        "ladder_state": ladder_state,
+        "ladder_direction": ladder_direction,
+        "values_read": values_read,
+        "summary": summary,
+        "coverage_state": coverage_state,
+    }
+
+
 def _build_change_leg(
     *,
     workspace: Mapping[str, Any] | None,
@@ -999,24 +1067,35 @@ def _build_risk_leg(
 
 
 def _build_catalyst_leg(*, workspace: Mapping[str, Any] | None, workspace_disposition: str) -> dict[str, Any]:
+    """The next-earnings catalyst -- an ESTIMATED WINDOW, never a precise date
+    (Sol blocker 6: presenting ``calendar_end + 91d`` as a single observed date
+    labeled AVAILABLE overstated this leg's own honesty; no canonical
+    earnings-calendar owner exists for this build). When the only observable
+    this leg can offer is a non-authoritative estimate, coverage_state is
+    PARTIAL -- it is never plain AVAILABLE."""
     if workspace is None or workspace_disposition != "found":
         return {"next_observables": [], "deadlines": [], "coverage_state": "UNAVAILABLE"}
     fiscal = workspace.get("fiscal_period") if isinstance(workspace.get("fiscal_period"), Mapping) else {}
     calendar_end = _null_to_none(fiscal.get("calendar_end"))
-    next_date: str | None = None
+    window_start: str | None = None
+    window_end: str | None = None
     if calendar_end:
         try:
-            next_date = (date.fromisoformat(str(calendar_end)[:10]) + timedelta(days=_EARNINGS_CADENCE_DAYS)).isoformat()
+            end_date = date.fromisoformat(str(calendar_end)[:10])
+            window_start = (end_date + timedelta(days=_EARNINGS_WINDOW_START_DAYS)).isoformat()
+            window_end = (end_date + timedelta(days=_EARNINGS_WINDOW_END_DAYS)).isoformat()
         except ValueError:
-            next_date = None
-    if next_date is None:
+            window_start = window_end = None
+    if window_start is None or window_end is None:
         return {"next_observables": [], "deadlines": [], "coverage_state": "UNAVAILABLE"}
     observables = [{
-        "kind": "expected_earnings",
-        "date": next_date,
-        "basis": "fiscal_period.calendar_end + ~1 fiscal quarter (91 days), deterministic calendar arithmetic",
+        "kind": "ESTIMATED_WINDOW",
+        "window_start": window_start,
+        "window_end": window_end,
+        "authoritative": False,
+        "basis": _EARNINGS_WINDOW_BASIS,
     }]
-    return {"next_observables": observables, "deadlines": [], "coverage_state": "AVAILABLE"}
+    return {"next_observables": observables, "deadlines": [], "coverage_state": "PARTIAL"}
 
 
 def _build_personal_impact_leg() -> dict[str, Any]:
@@ -1028,21 +1107,37 @@ def _build_personal_impact_leg() -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 def _build_coverage_and_dominant(legs: Mapping[str, Mapping[str, Any]]) -> tuple[dict[str, Any], str]:
+    """The coverage denominator block (Sol blocker 7).
+
+    Six exact counts, never conflated: ``*_legs_available`` counts ONLY legs
+    whose ``coverage_state`` is exactly ``AVAILABLE``; ``*_legs_nonblocking``
+    additionally counts a disclosed ``NOT_APPLICABLE``/``NOT_COVERED`` leg --
+    honestly nonblocking, never disguised as available. ``overall_state``'s
+    UNAVAILABLE branch gates on the NONBLOCKING count (a required leg that is
+    genuinely missing/stale/etc. blocks; a required leg can never itself be
+    NOT_APPLICABLE/NOT_COVERED in this build, so the two counts agree there in
+    practice, but the semantics stay distinct on purpose).
+    """
     missing_legs: list[str] = []
     stale_legs: list[str] = []
     rights_blocked_legs: list[str] = []
     conflicted_legs: list[str] = []
     required_available = 0
+    required_nonblocking = 0
     optional_available = 0
+    optional_nonblocking = 0
     worst_severity = 0
 
     for name in (*_REQUIRED_LEGS, *_OPTIONAL_LEGS):
         state = legs[name]["coverage_state"]
-        available = state in _NEUTRAL_STATES
+        strictly_available = state == "AVAILABLE"
+        nonblocking = state in _NONBLOCKING_STATES
         if name in _REQUIRED_LEGS:
-            required_available += int(available)
+            required_available += int(strictly_available)
+            required_nonblocking += int(nonblocking)
         else:
-            optional_available += int(available)
+            optional_available += int(strictly_available)
+            optional_nonblocking += int(nonblocking)
         if state == "UNAVAILABLE":
             missing_legs.append(name)
         elif state == "STALE":
@@ -1056,7 +1151,7 @@ def _build_coverage_and_dominant(legs: Mapping[str, Mapping[str, Any]]) -> tuple
     dominant = _SEVERITY_TO_DOMINANT.get(worst_severity, "NONE")
     if worst_severity == 0:
         overall_state = "AVAILABLE"
-    elif required_available < len(_REQUIRED_LEGS):
+    elif required_nonblocking < len(_REQUIRED_LEGS):
         overall_state = "UNAVAILABLE"
     else:
         overall_state = "PARTIAL"
@@ -1065,8 +1160,10 @@ def _build_coverage_and_dominant(legs: Mapping[str, Mapping[str, Any]]) -> tuple
         "overall_state": overall_state,
         "required_legs_total": len(_REQUIRED_LEGS),
         "required_legs_available": required_available,
+        "required_legs_nonblocking": required_nonblocking,
         "optional_legs_total": len(_OPTIONAL_LEGS),
         "optional_legs_available": optional_available,
+        "optional_legs_nonblocking": optional_nonblocking,
         "missing_legs": missing_legs, "stale_legs": stale_legs,
         "rights_blocked_legs": rights_blocked_legs, "conflicted_legs": conflicted_legs,
     }
@@ -1161,6 +1258,7 @@ def compile_security_state(
             raise SecurityStateCompilationError(f"K1 compilation failed: {exc}") from exc
         evidence_leg = _build_evidence_leg(recipe_id=recipe["recipe_id"], compilation=compilation)
 
+    state_leg = _build_state_leg(blob=blob)
     opportunity_leg = _build_opportunity_context_leg(blob=blob)
     catalyst_leg = _build_catalyst_leg(workspace=effective_workspace, workspace_disposition=effective_disposition)
     personal_impact_leg = _build_personal_impact_leg()
@@ -1169,7 +1267,7 @@ def compile_security_state(
     )
 
     legs = {
-        "change": change_leg, "opportunity_context": opportunity_leg, "risk": risk_leg,
+        "state": state_leg, "change": change_leg, "opportunity_context": opportunity_leg, "risk": risk_leg,
         "catalyst": catalyst_leg, "personal_impact": personal_impact_leg, "evidence": evidence_leg,
     }
     coverage, dominant = _build_coverage_and_dominant(legs)
@@ -1204,18 +1302,82 @@ def compile_security_state(
     return state
 
 
+_LAST_GOOD_REASON = "prior cycle's committed security_state.v1"
+
+
+def _is_last_good_eligible(prior: Mapping[str, Any] | None) -> bool:
+    """Eligibility predicate for treating ``prior`` as this cycle's ``last_good``
+    (Sol blocker 4).
+
+    ``prior`` is the FULL prior ``security_state.v1`` read (never the compact
+    ``last_good`` receipt shape). It is eligible ONLY when every one of these
+    holds: it is a mapping whose ``schema`` is ``security_state.v1``, its
+    ``identity_proof.state`` is ``PROVEN`` (a ``BLOCKED_IDENTITY_BRIDGE`` or
+    ``PARTIAL`` identity proof is never eligible, even if its own
+    ``dominant_degradation`` looks benign), and its own
+    ``dominant_degradation`` is not ``COMPILER_FAILURE``. A failed prior state
+    can therefore never silently become the next failure's "last complete
+    read".
+    """
+    if not isinstance(prior, Mapping):
+        return False
+    if prior.get("schema") != SCHEMA:
+        return False
+    identity_proof = prior.get("identity_proof")
+    if not isinstance(identity_proof, Mapping) or identity_proof.get("state") != "PROVEN":
+        return False
+    if prior.get("dominant_degradation") == "COMPILER_FAILURE":
+        return False
+    return True
+
+
+def derive_last_good(prior: Mapping[str, Any] | None) -> dict[str, Any] | None:
+    """The ``last_good`` a failure shell should carry, derived from the FULL
+    prior ``security_state.v1`` read (Sol blocker 4).
+
+    Three-way rule, in order:
+
+    1. ``prior`` itself is eligible (:func:`_is_last_good_eligible`) -> snapshot
+       it as the compact ``{generated_at, content_sha256, dominant_degradation,
+       reason}`` receipt.
+    2. ``prior`` is ineligible but itself already carries a ``last_good`` ->
+       carry that receipt forward UNCHANGED. This is what makes a SECOND
+       consecutive failure keep the ORIGINAL good read rather than losing it:
+       failure #1's own ``last_good`` (a snapshot of the last success) is not
+       overwritten by failure #1 itself, because failure #1 is never eligible
+       (its ``dominant_degradation`` is ``COMPILER_FAILURE``).
+    3. Otherwise -> ``None`` (no usable last-good anywhere in the chain).
+    """
+    if _is_last_good_eligible(prior):
+        assert isinstance(prior, Mapping)  # narrows for the type checker
+        return {
+            "generated_at": str(prior["generated_at"]),
+            "content_sha256": str(prior["content_sha256"]),
+            "dominant_degradation": str(prior["dominant_degradation"]),
+            "reason": _LAST_GOOD_REASON,
+        }
+    if isinstance(prior, Mapping):
+        carried = prior.get("last_good")
+        if isinstance(carried, Mapping):
+            return dict(carried)
+    return None
+
+
 def compile_security_state_failure(
-    *, now: str, reason: str, last_good: Mapping[str, Any] | None = None,
+    *, now: str, reason: str, prior_state: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Pure fallback shell for the PRODUCER's own exception-containment boundary.
 
     Called by ``scripts/build_stock_library.py`` — never by
-    :func:`compile_security_state` itself — when compilation raised.  Every leg
-    is typed UNAVAILABLE/blocked; ``last_good`` threads through the compact
-    ``{generated_at, content_sha256, reason}`` receipt of a prior-good snapshot
-    the producer already had on disk (or stays null when there is none) so a
-    compiler failure can never silently present as ``dominant_degradation:
-    NONE`` (a mutation-kill this module is built to resist).
+    :func:`compile_security_state` itself — when compilation raised. Every leg
+    is typed UNAVAILABLE/blocked (``personal_impact`` stays its permanent
+    ``NOT_APPLICABLE``). ``prior_state`` is the FULL prior cycle's committed
+    ``security_state.v1`` read (or ``None`` when there is none) — this
+    function derives ``last_good`` from it via :func:`derive_last_good`'s
+    eligibility predicate (Sol blocker 4), so a failed prior state can never
+    become the next failure's "last complete read", and a compiler failure can
+    never silently present as ``dominant_degradation: NONE`` (a mutation-kill
+    this module is built to resist).
     """
     blocked_summary = _bilingual(
         "This security's state could not be compiled this cycle (a compiler failure, not an absence).",
@@ -1225,6 +1387,11 @@ def compile_security_state_failure(
         "state": "BLOCKED_IDENTITY_BRIDGE", "method": "owner_backed_chain.v1",
         "legs": [], "equalities": [], "refusals": ["COMPILER_FAILURE"],
         "disclosures": list(DISCLOSURES),
+    }
+    state_leg = {
+        "deterministic_state_refs": list(_STATE_LEG_REFS),
+        "ladder_state": None, "ladder_direction": None, "values_read": [],
+        "summary": blocked_summary, "coverage_state": "UNAVAILABLE",
     }
     change_leg = {
         "economic_episode_ref": None, "event_refs": [], "generation_id": None,
@@ -1250,16 +1417,10 @@ def compile_security_state_failure(
         "conflicts": [], "coverage_state": "UNAVAILABLE",
     }
     legs = {
-        "change": change_leg, "opportunity_context": opportunity_leg, "risk": risk_leg,
+        "state": state_leg, "change": change_leg, "opportunity_context": opportunity_leg, "risk": risk_leg,
         "catalyst": catalyst_leg, "personal_impact": personal_impact_leg, "evidence": evidence_leg,
     }
-    coverage = {
-        "overall_state": "UNAVAILABLE",
-        "required_legs_total": len(_REQUIRED_LEGS), "required_legs_available": 0,
-        "optional_legs_total": len(_OPTIONAL_LEGS), "optional_legs_available": 0,
-        "missing_legs": [*_REQUIRED_LEGS, *_OPTIONAL_LEGS],
-        "stale_legs": [], "rights_blocked_legs": [], "conflicted_legs": [],
-    }
+    coverage, _leg_derived_dominant = _build_coverage_and_dominant(legs)
     state: dict[str, Any] = {
         "schema": SCHEMA, "version": VERSION,
         "security_id": PINNED_SECURITY_ID, "issuer_id": PINNED_ISSUER_ID,
@@ -1274,13 +1435,7 @@ def compile_security_state_failure(
         "coverage": coverage,
         "dominant_degradation": "COMPILER_FAILURE",
         "legs": legs,
-        "last_good": (
-            {
-                "generated_at": str(last_good["generated_at"]),
-                "content_sha256": str(last_good["content_sha256"]),
-                "reason": str(last_good.get("reason") or reason),
-            } if last_good else None
-        ),
+        "last_good": derive_last_good(prior_state),
     }
     state["content_sha256"] = _content_sha256(state)
     _self_validate(state)

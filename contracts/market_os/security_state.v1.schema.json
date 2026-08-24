@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mastermind-x.com/contracts/market_os/security_state.v1.schema.json",
   "title": "security_state.v1",
-  "description": "Market OS B1A per-security display contract. One security's compiled, owner-backed, display-only state: an identity receipt chain over the Data OS master, a K1 (Evidence Foundation) recipe compilation for the earnings-change leg, and a fixed set of typed legs. Context-only (authority.can_* all false) — never a ranker/gate/sizer input. Closed at every level: no leg may silently gain a field, and no leg may substitute a null for a typed absence code (no null-means-neutral).",
+  "description": "Market OS B1A per-security display contract. One security's compiled, owner-backed, display-only state: an identity receipt chain over the Data OS master, a K1 (Evidence Foundation) recipe compilation for the earnings-change leg, and a fixed set of typed legs. Context-only (authority.can_* all false) — never a ranker/gate/sizer input. Closed at every level: no leg may silently gain a field, and no leg may substitute a null for a typed absence code (no null-means-neutral). The Decision Spine (the axes this contract requires as a matter of state, not evidence) is exactly two required legs: `legs.state` (verbatim owner-native deterministic display values -- the ladder's own state/direction label plus the day's raw price-change read, zero arithmetic, zero score/rank) and `legs.change` (the owner-backed earnings-change event). `legs.evidence` REMAINS in the contract as the K1 (Evidence Foundation) receipt for the change leg's provenance, but it is supporting metadata -- a receipt ABOUT change, never its own Decision Spine axis -- and stays an OPTIONAL leg.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -111,29 +111,74 @@
       "additionalProperties": false,
       "required": [
         "overall_state", "required_legs_total", "required_legs_available",
-        "optional_legs_total", "optional_legs_available", "missing_legs",
+        "required_legs_nonblocking", "optional_legs_total", "optional_legs_available",
+        "optional_legs_nonblocking", "missing_legs",
         "stale_legs", "rights_blocked_legs", "conflicted_legs"
       ],
       "properties": {
         "overall_state": { "$ref": "#/$defs/coverageState" },
         "required_legs_total": { "type": "integer", "minimum": 0 },
-        "required_legs_available": { "type": "integer", "minimum": 0 },
+        "required_legs_available": {
+          "type": "integer", "minimum": 0,
+          "description": "Count of required legs whose coverage_state is exactly AVAILABLE. Never counts NOT_APPLICABLE/NOT_COVERED as available -- those are nonblocking, not available (see required_legs_nonblocking)."
+        },
+        "required_legs_nonblocking": {
+          "type": "integer", "minimum": 0,
+          "description": "Count of required legs whose coverage_state is in {AVAILABLE, NOT_APPLICABLE, NOT_COVERED} -- legs that do not block overall_state. This is the denominator overall_state's UNAVAILABLE branch gates on, and it is DELIBERATELY looser than required_legs_available: a NOT_APPLICABLE/NOT_COVERED leg is honestly nonblocking, never disguised as available."
+        },
         "optional_legs_total": { "type": "integer", "minimum": 0 },
-        "optional_legs_available": { "type": "integer", "minimum": 0 },
+        "optional_legs_available": {
+          "type": "integer", "minimum": 0,
+          "description": "Count of optional legs whose coverage_state is exactly AVAILABLE. Never counts NOT_APPLICABLE/NOT_COVERED as available."
+        },
+        "optional_legs_nonblocking": {
+          "type": "integer", "minimum": 0,
+          "description": "Count of optional legs whose coverage_state is in {AVAILABLE, NOT_APPLICABLE, NOT_COVERED}."
+        },
         "missing_legs": { "type": "array", "items": { "type": "string" } },
         "stale_legs": { "type": "array", "items": { "type": "string" } },
         "rights_blocked_legs": { "type": "array", "items": { "type": "string" } },
         "conflicted_legs": { "type": "array", "items": { "type": "string" } }
       }
     },
-    "dominant_degradation": {
-      "enum": ["NONE", "PARTIAL", "STALE", "UNAVAILABLE", "CONFLICTED", "CORRECTED", "COMPILER_FAILURE"]
-    },
+    "dominant_degradation": { "$ref": "#/$defs/dominantDegradation" },
     "legs": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["change", "opportunity_context", "risk", "catalyst", "personal_impact", "evidence"],
+      "required": ["state", "change", "opportunity_context", "risk", "catalyst", "personal_impact", "evidence"],
       "properties": {
+        "state": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "deterministic_state_refs", "ladder_state", "ladder_direction",
+            "values_read", "summary", "coverage_state"
+          ],
+          "description": "Decision Spine state axis. EXISTING owner-native deterministic display-tier values from the producer's rec, carried verbatim with zero arithmetic -- never a score/rank/gate.",
+          "properties": {
+            "deterministic_state_refs": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "description": "The blob field names this leg reads (e.g. \"ladder.state\", \"ladder.dir\", \"tech.chg_1d\")."
+            },
+            "ladder_state": { "type": ["string", "null"] },
+            "ladder_direction": { "type": ["string", "null"] },
+            "values_read": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["field", "value"],
+                "properties": {
+                  "field": { "type": "string" },
+                  "value": { "type": ["string", "number", "boolean", "null"] }
+                }
+              }
+            },
+            "summary": { "$ref": "#/$defs/bilingualText" },
+            "coverage_state": { "$ref": "#/$defs/coverageState" }
+          }
+        },
         "change": {
           "type": "object",
           "additionalProperties": false,
@@ -247,10 +292,13 @@
               "items": {
                 "type": "object",
                 "additionalProperties": false,
-                "required": ["kind", "date", "basis"],
+                "required": ["kind", "window_start", "window_end", "authoritative", "basis"],
+                "description": "A deterministic Mastermind ESTIMATE, never an authoritative single date -- no canonical earnings-calendar owner exists for this build.",
                 "properties": {
-                  "kind": { "type": "string" },
-                  "date": { "type": ["string", "null"] },
+                  "kind": { "const": "ESTIMATED_WINDOW" },
+                  "window_start": { "type": "string" },
+                  "window_end": { "type": "string" },
+                  "authoritative": { "const": false },
                   "basis": { "type": "string" }
                 }
               }
@@ -355,10 +403,12 @@
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["generated_at", "content_sha256", "reason"],
+          "required": ["generated_at", "content_sha256", "dominant_degradation", "reason"],
+          "description": "A snapshot of the last PROVEN, non-COMPILER_FAILURE security_state.v1 read this security ever had. Eligibility is a hard predicate (engine.security_state._is_last_good_eligible): the prior read's schema must be security_state.v1, its identity_proof.state must be PROVEN, and its own dominant_degradation must not be COMPILER_FAILURE -- a BLOCKED_IDENTITY_BRIDGE or COMPILER_FAILURE prior can never become the next failure's \"last complete read\". When the immediate prior is itself ineligible but carries its own last_good, that last_good is carried forward UNCHANGED (a second consecutive failure keeps the ORIGINAL good read, never the intervening failed one).",
           "properties": {
             "generated_at": { "type": "string" },
             "content_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+            "dominant_degradation": { "$ref": "#/$defs/dominantDegradation" },
             "reason": { "type": "string", "minLength": 1 }
           }
         }
@@ -366,6 +416,9 @@
     }
   },
   "$defs": {
+    "dominantDegradation": {
+      "enum": ["NONE", "PARTIAL", "STALE", "UNAVAILABLE", "CONFLICTED", "CORRECTED", "COMPILER_FAILURE"]
+    },
     "coverageState": {
       "enum": [
         "AVAILABLE", "NOT_COVERED", "NOT_APPLICABLE", "UNAVAILABLE",

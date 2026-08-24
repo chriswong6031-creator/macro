@@ -126,6 +126,119 @@ def test_case1_golden_current_event() -> None:
 
 
 # ---------------------------------------------------------------------------
+# legs.state -- Decision Spine state axis (Sol blocker 1)
+# ---------------------------------------------------------------------------
+
+def test_state_leg_sources_verbatim_ladder_and_tech_values() -> None:
+    state = ss.compile_security_state(**_golden_input())
+    leg = state["legs"]["state"]
+    assert leg["deterministic_state_refs"] == ["ladder.state", "ladder.dir", "tech.chg_1d"]
+    assert leg["ladder_state"] == "watch"
+    assert leg["ladder_direction"] == "up"
+    assert {"field": "tech.chg_1d", "value": 0.5} in leg["values_read"]
+    assert leg["coverage_state"] == "AVAILABLE"
+    # plain-word template over the owner-native display values, no internal
+    # jargon/score/rank leaking into the reader-facing summary.
+    assert "watch" in leg["summary"]["en"]
+    assert "up" in leg["summary"]["en"]
+    assert leg["summary"]["zh"]
+    for banned in ("score", "rank", "percentile"):
+        assert banned not in leg["summary"]["en"].lower()
+    # required leg -- state is a Decision Spine axis now, not evidence.
+    assert "state" in ss._REQUIRED_LEGS
+    assert state["coverage"]["required_legs_total"] == 2
+
+
+def test_state_leg_unavailable_and_null_safe_when_ladder_state_absent() -> None:
+    inp = _golden_input()
+    inp["blob"]["ladder"] = {"state": None, "dir": None}
+    state = ss.compile_security_state(**inp)
+    leg = state["legs"]["state"]
+    assert leg["ladder_state"] is None
+    assert leg["ladder_direction"] is None
+    assert leg["coverage_state"] == "UNAVAILABLE"
+    assert "state" in state["coverage"]["missing_legs"]
+    # never null-means-neutral: a null ladder state is a typed UNAVAILABLE,
+    # not a silently-omitted or falsely-AVAILABLE leg.
+    validator = _validator()
+    assert list(validator.iter_errors(state)) == []
+
+
+# ---------------------------------------------------------------------------
+# coverage denominator semantics (Sol blocker 7) -- available vs nonblocking
+# ---------------------------------------------------------------------------
+
+def test_golden_fixture_pins_all_six_coverage_denominator_fields() -> None:
+    state = ss.compile_security_state(**_golden_input())
+    coverage = state["coverage"]
+    assert coverage["required_legs_total"] == 2
+    assert coverage["required_legs_available"] == 2
+    assert coverage["required_legs_nonblocking"] == 2
+    assert coverage["optional_legs_total"] == 5
+    assert coverage["optional_legs_available"] == 2
+    assert coverage["optional_legs_nonblocking"] == 3
+
+
+def test_not_applicable_and_not_covered_legs_are_nonblocking_but_not_available() -> None:
+    """A NOT_APPLICABLE leg (personal_impact, always) and a NOT_COVERED leg
+    (risk, when neither conviction nor alerts are present) must each be
+    counted in *_legs_nonblocking but NEVER in *_legs_available -- a
+    NOT_APPLICABLE/NOT_COVERED leg is honestly nonblocking, never disguised
+    as available (Sol blocker 7)."""
+    legs = {
+        "state": {"coverage_state": "AVAILABLE"},
+        "change": {"coverage_state": "AVAILABLE"},
+        "opportunity_context": {"coverage_state": "AVAILABLE"},
+        "risk": {"coverage_state": "NOT_COVERED"},
+        "catalyst": {"coverage_state": "PARTIAL"},
+        "personal_impact": {"coverage_state": "NOT_APPLICABLE"},
+        "evidence": {"coverage_state": "UNAVAILABLE"},
+    }
+    coverage, dominant = ss._build_coverage_and_dominant(legs)
+    assert coverage["required_legs_total"] == 2
+    assert coverage["required_legs_available"] == 2
+    assert coverage["required_legs_nonblocking"] == 2
+    assert coverage["optional_legs_total"] == 5
+    # only opportunity_context is strictly AVAILABLE among the 5 optional legs.
+    assert coverage["optional_legs_available"] == 1
+    # opportunity_context + risk(NOT_COVERED) + personal_impact(NOT_APPLICABLE)
+    # are nonblocking; catalyst(PARTIAL) and evidence(UNAVAILABLE) are not.
+    assert coverage["optional_legs_nonblocking"] == 3
+    assert coverage["missing_legs"] == ["evidence"]
+    assert dominant == "UNAVAILABLE"  # worst leg-level severity: evidence
+    # but overall_state reflects required-leg completeness, not worst severity
+    # -- both required legs are nonblocking, so the read is PARTIAL not
+    # UNAVAILABLE at the overall level.
+    assert coverage["overall_state"] == "PARTIAL"
+
+    # and directly at the fixture-level, confirm the two real legs that
+    # produce these states in production never get counted as available.
+    assert legs["personal_impact"]["coverage_state"] not in {"AVAILABLE"}
+    assert legs["risk"]["coverage_state"] not in {"AVAILABLE"}
+
+
+# ---------------------------------------------------------------------------
+# legs.catalyst -- estimated earnings WINDOW, never a precise date (Sol blocker 6)
+# ---------------------------------------------------------------------------
+
+def test_catalyst_is_an_estimated_window_never_a_precise_authoritative_date() -> None:
+    state = ss.compile_security_state(**_golden_input())
+    catalyst = state["legs"]["catalyst"]
+    assert catalyst["coverage_state"] == "PARTIAL"  # never plain AVAILABLE for an estimate-only leg
+    assert len(catalyst["next_observables"]) == 1
+    obs = catalyst["next_observables"][0]
+    assert obs["kind"] == "ESTIMATED_WINDOW"
+    assert obs["authoritative"] is False
+    assert "date" not in obs  # no single precise date field anywhere on this leg
+    assert obs["window_start"] == "2026-09-12"  # fiscal_period.calendar_end (2026-06-27) + 77d
+    assert obs["window_end"] == "2026-10-10"  # + 105d
+    assert obs["window_start"] < obs["window_end"]
+    assert "no canonical earnings-calendar owner exists" in obs["basis"]
+    validator = _validator()
+    assert list(validator.iter_errors(state)) == []
+
+
+# ---------------------------------------------------------------------------
 # 2. no current event
 # ---------------------------------------------------------------------------
 
@@ -389,15 +502,22 @@ def test_case11_no_user_context() -> None:
 # ---------------------------------------------------------------------------
 
 def test_case12_compiler_failure_with_last_good() -> None:
-    prior = {
-        "generated_at": "2026-08-22T12:00:00Z",
-        "content_sha256": "a" * 64,
-        "reason": "prior night compiled clean",
-    }
-    state = ss.compile_security_state_failure(now="2026-08-23T12:00:00Z", reason="unexpected KeyError", last_good=prior)
+    """``prior_state`` is the FULL prior security_state.v1 read (Sol blocker
+    4) -- an eligible one (PROVEN identity, not itself a COMPILER_FAILURE)
+    snapshots into the compact {generated_at, content_sha256,
+    dominant_degradation, reason} last_good receipt."""
+    prior = ss.compile_security_state(**_golden_input())
+    assert prior["identity_proof"]["state"] == "PROVEN"
+    assert prior["dominant_degradation"] != "COMPILER_FAILURE"
+    state = ss.compile_security_state_failure(
+        now="2026-08-23T12:00:00Z", reason="unexpected KeyError", prior_state=prior,
+    )
     assert state["dominant_degradation"] == "COMPILER_FAILURE"
     assert state["last_good"] == {
-        "generated_at": "2026-08-22T12:00:00Z", "content_sha256": "a" * 64, "reason": "prior night compiled clean",
+        "generated_at": prior["generated_at"],
+        "content_sha256": prior["content_sha256"],
+        "dominant_degradation": prior["dominant_degradation"],
+        "reason": "prior cycle's committed security_state.v1",
     }
     assert state["coverage"]["overall_state"] == "UNAVAILABLE"
     for leg in state["legs"].values():
@@ -416,11 +536,109 @@ def test_case13_first_failure_no_last_good() -> None:
 
 def test_compiler_failure_never_emits_dominant_degradation_none() -> None:
     """Mutation kill: failure->current fallback. A compiler failure must never
-    present as dominant_degradation NONE, with or without a last_good receipt."""
-    for last_good in (None, {"generated_at": "x", "content_sha256": "b" * 64, "reason": "y"}):
-        state = ss.compile_security_state_failure(now="2026-08-23T12:00:00Z", reason="boom", last_good=last_good)
+    present as dominant_degradation NONE, with or without an eligible prior
+    read to derive last_good from."""
+    eligible_prior = ss.compile_security_state(**_golden_input())
+    for prior_state in (None, eligible_prior):
+        state = ss.compile_security_state_failure(now="2026-08-23T12:00:00Z", reason="boom", prior_state=prior_state)
         assert state["dominant_degradation"] == "COMPILER_FAILURE"
         assert state["dominant_degradation"] != "NONE"
+
+
+# ---------------------------------------------------------------------------
+# last_good eligibility + two-consecutive-failure regression (Sol blocker 4)
+# ---------------------------------------------------------------------------
+
+def test_last_good_eligibility_matrix() -> None:
+    eligible_prior = {
+        "schema": "security_state.v1",
+        "identity_proof": {"state": "PROVEN"},
+        "dominant_degradation": "PARTIAL",
+        "generated_at": "2026-08-20T00:00:00Z",
+        "content_sha256": "a" * 64,
+    }
+    assert ss._is_last_good_eligible(eligible_prior) is True
+    assert ss.derive_last_good(eligible_prior) == {
+        "generated_at": "2026-08-20T00:00:00Z", "content_sha256": "a" * 64,
+        "dominant_degradation": "PARTIAL", "reason": "prior cycle's committed security_state.v1",
+    }
+
+    # identity_proof.state != PROVEN is never eligible, regardless of
+    # dominant_degradation -- this is the half of the predicate a bare
+    # dominant_degradation-only check would miss.
+    blocked_prior = {**eligible_prior, "identity_proof": {"state": "BLOCKED_IDENTITY_BRIDGE"}}
+    assert ss._is_last_good_eligible(blocked_prior) is False
+    assert ss.derive_last_good(blocked_prior) is None
+
+    partial_identity_prior = {**eligible_prior, "identity_proof": {"state": "PARTIAL"}}
+    assert ss._is_last_good_eligible(partial_identity_prior) is False
+
+    compiler_failure_prior = {**eligible_prior, "dominant_degradation": "COMPILER_FAILURE"}
+    assert ss._is_last_good_eligible(compiler_failure_prior) is False
+
+    wrong_schema_prior = {**eligible_prior, "schema": "something_else.v1"}
+    assert ss._is_last_good_eligible(wrong_schema_prior) is False
+
+    assert ss._is_last_good_eligible(None) is False
+    assert ss._is_last_good_eligible("not-a-mapping") is False  # type: ignore[arg-type]
+    assert ss.derive_last_good(None) is None
+
+    # ineligible prior that itself carries a last_good -> carried forward
+    # unchanged, never re-derived from the ineligible prior's own fields.
+    carried = {
+        "generated_at": "2026-08-18T00:00:00Z", "content_sha256": "c" * 64,
+        "dominant_degradation": "STALE", "reason": "prior cycle's committed security_state.v1",
+    }
+    blocked_with_last_good = {**blocked_prior, "last_good": carried}
+    assert ss.derive_last_good(blocked_with_last_good) == carried
+
+
+def test_last_good_blocked_identity_bridge_prior_is_never_eligible() -> None:
+    """A genuine BLOCKED_IDENTITY_BRIDGE compile (not a hand-built dict) is
+    never eligible as a last_good snapshot, even though its
+    dominant_degradation is UNAVAILABLE (not COMPILER_FAILURE) -- proves the
+    identity_proof.state==PROVEN half of the predicate is load-bearing on its
+    own, independent of the dominant_degradation half."""
+    blocked_state = ss.compile_security_state(**_load("identity_r1_superseded_input.json"))
+    assert blocked_state["identity_proof"]["state"] == "BLOCKED_IDENTITY_BRIDGE"
+    assert blocked_state["dominant_degradation"] != "COMPILER_FAILURE"
+    assert ss._is_last_good_eligible(blocked_state) is False
+    assert ss.derive_last_good(blocked_state) is None
+
+
+def test_last_good_carries_forward_unchanged_across_two_consecutive_failures() -> None:
+    """Two-consecutive-failure regression (Sol blocker 4): success S, then
+    failure F1 (last_good == snapshot of S), then failure F2 computed with F1
+    as prior_state -- last_good must STILL == snapshot of S, never F1 (F1 is
+    itself a COMPILER_FAILURE read and is therefore never eligible)."""
+    success_state = ss.compile_security_state(**_golden_input())
+    assert success_state["identity_proof"]["state"] == "PROVEN"
+    assert success_state["dominant_degradation"] != "COMPILER_FAILURE"
+    expected_snapshot = {
+        "generated_at": success_state["generated_at"],
+        "content_sha256": success_state["content_sha256"],
+        "dominant_degradation": success_state["dominant_degradation"],
+        "reason": "prior cycle's committed security_state.v1",
+    }
+
+    failure_1 = ss.compile_security_state_failure(
+        now="2026-08-24T12:00:00Z", reason="first failure", prior_state=success_state,
+    )
+    assert failure_1["dominant_degradation"] == "COMPILER_FAILURE"
+    assert failure_1["last_good"] == expected_snapshot
+
+    failure_2 = ss.compile_security_state_failure(
+        now="2026-08-25T12:00:00Z", reason="second consecutive failure", prior_state=failure_1,
+    )
+    assert failure_2["dominant_degradation"] == "COMPILER_FAILURE"
+    # F1 is COMPILER_FAILURE and therefore NEVER eligible on its own -- F2's
+    # last_good must still be the ORIGINAL snapshot of S, never F1's own
+    # (COMPILER_FAILURE, BLOCKED_IDENTITY_BRIDGE) fields.
+    assert failure_2["last_good"] == expected_snapshot
+    assert failure_2["last_good"] != {
+        "generated_at": failure_1["generated_at"], "content_sha256": failure_1["content_sha256"],
+        "dominant_degradation": failure_1["dominant_degradation"], "reason": "prior cycle's committed security_state.v1",
+    }
 
 
 # ---------------------------------------------------------------------------
