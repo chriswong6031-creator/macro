@@ -4,7 +4,13 @@
 
 K2-B supplies a deterministic, pointer-only vocabulary/compiler for describing institutional-manager observations. It is **BUILT_NOT_PROVEN** at the contract/fixture layer only. It creates no owner reader, store, scheduler, API, UI, ranking, gate, sizing, origination, or `ENTRY_OPEN` behaviour.
 
-It adopts K1's pointer discipline: an observation carries only an owner-native `reference_id`, object id, accession, source URL, and publication/knowability clocks. It never copies an owner payload and never makes an evidence warehouse. The owner paths remain `engine/institutional_census/**`, ETF/ARK holdings, IBKR borrow, Theme Graph, Stock Identity and the ownership wire.
+It validates an actual K1 `EvidenceRef` through `lib.evidence_foundation` and adopts
+its pointer-only, rights, coverage-class, typed-missingness, replay/correction,
+independence, clock and all-false-authority vocabulary. An observation carries only
+an owner-native `reference_id`, object id, accession, source URL, and
+publication/knowability clocks. It never copies an owner payload and never makes an
+evidence warehouse. The owner paths remain `engine/institutional_census/**`, ETF/ARK
+holdings, IBKR borrow, Theme Graph, Stock Identity and the ownership wire.
 
 ## Four-plane law
 
@@ -21,9 +27,40 @@ No plane is netted or automatically suppressed. The conditional-fusion exception
 
 `manager_complex_id` and `identity_epoch` identify a research complex at a declared epoch. A vehicle points to that pair, so multiple vehicles at one complex count once for independent-research-complex purposes. Classes are explicit: discretionary active, sector specialist, systematic, thematic/broad passive, overlay, leveraged/inverse, and synthetic/fund-of-funds. Only discretionary classes can contribute to the Manager Research Intent plane.
 
-Shares outstanding has typed states `observed`, `absent`, and `unsupported`; absent and unsupported are never zero-filled. Mechanical flow is held in Fund Flow Pressure and compiles to `MECHANICAL_FLOW_NOT_INTENT`. Within-theme preference requires exactly equal theme identity and theme epoch. The campaign vocabulary is a closed linear sequence: `IDLE → INITIATED → ACCUMULATING → PAUSED → CLOSED`; a skipped or reversed transition is invalid.
+Shares outstanding has typed states `observed`, `absent`, and `unsupported`; absent and unsupported are never zero-filled. Mechanical flow is held in Fund Flow Pressure and compiles to `MECHANICAL_FLOW_RESIDUAL` or `MECHANICAL_FLOW_PROXY_OR_UNRESOLVED`. Within-theme preference requires exactly equal theme identity and theme epoch. The campaign vocabulary is a closed linear sequence: `IDLE → INITIATED → ACCUMULATING → PAUSED → CLOSED`; a skipped or reversed transition is invalid.
 
 Form 13F observations require report-period-end, filing, publication, and knowability clocks in order. Before knowability they compile as `NOT_KNOWABLE`; after their declared horizon they are `STALE`; rights-blocked observations are `RIGHTS_BLOCKED`. A 13F observation cannot claim `live_flow`. Corrections append a later event with an explicit superseded predecessor; they do not rewrite history.
+
+### Repair amendment — executable descriptor law
+
+The contract no longer leaves the structural nouns as prose-only vocabulary:
+
+- Holdings normalization is closed and typed. A 13F only admits unscaled reported
+  holding shares with shares-outstanding `unsupported`; ETF true-S normalization is
+  a different basis and is forbidden for a 13F. Observed shares outstanding is
+  positive/non-null, while absent/unsupported is null.
+- Mechanical flow carries a residual basis (`true_shares_outstanding`, `proxy`, or
+  `unresolved`) plus typed state. Proxy/unresolved and passive movement compiles as
+  mechanical/fund-flow context, never Manager Research Intent.
+- A within-theme preference has real comparator and denominator observation ids,
+  theme identity/epoch equality, and an as-of/knowability pair. Cross-vintage or
+  unresolved comparator claims refuse.
+- Campaigns are append-only records bound to campaign, subject, complex epoch,
+  observation evidence, pointer provenance and clocks. The compiler rejects
+  duplicate, missing, skipped, reversed, and post-closed transition histories.
+- The count receipt reports raw vehicle/filer totals, same-complex deductions,
+  unresolved/excluded/mechanical counts, and resolved eligible active complexes.
+  `independence_state` stays `declarative_unverified`: different resolved complex
+  ids are not proof of independent corroboration on K1's axes.
+- Reliability is exact complex epoch × domain × horizon × action, with explicit
+  eligibility, maturity, counts, prior shrinkage, uncertainty and typed
+  insufficient state. It neither imports nor aliases legacy display grades.
+
+K1's accepted rights, coverage, missingness, publication/knowability clocks and
+append/supersede correction vocabulary are used directly. Unknown, partial and
+rights-blocked state survives compilation instead of being upgraded to observed.
+The China actor extension is explicit and source-bound: `cn_*` actor classes require
+`CHINA_ALPHA_INTELLIGENCE_ARCHITECTURE_FREEZE`; the B0 global class stays intact.
 
 ## Reliability and authority
 
@@ -37,7 +74,7 @@ All authority axes are literal false: `can_rank`, `can_gate`, `can_size`, `can_o
 
 ## Source-backed fixture and hostile coverage
 
-`tests/fixtures/institutional_intelligence/source_backed_manager_intent_recipe.json` pins accession `0001398344-26-013841` with its SEC archive pointer and complete public/knowability clock chain. The same fixture carries a hostile passive-flow observation. The test contract proves epoch deduplication, class separation, typed missingness, no mechanical-to-intent laundering, theme-vintage binding, every legal campaign step plus invalid jump, 13F cutoff/stale/rights states, append/supersede lineage, low-N shrinkage, duplicate/corroboration and payload attacks, pointer-only K1 provenance, all-false authority, deterministic no-persistence compilation, and caller-vocabulary/identity-alias attacks.
+`tests/fixtures/institutional_intelligence/source_backed_manager_intent_recipe.json` pins accession `0001398344-26-013841` with its SEC archive pointer and complete public/knowability clock chain. It contains true closed descriptor shapes for all four planes; its passive mechanical row is deliberately labelled `synthetic_adverse_fixture` while retaining the real SEC source pointer, so it cannot be represented as a live owner capture. The test contract proves epoch deduplication, class separation, typed missingness, no mechanical-to-intent laundering, theme-vintage binding, every legal campaign step plus invalid jump, 13F cutoff/stale/rights states, append/supersede lineage, low-N shrinkage, duplicate/corroboration and payload attacks, actual K1 EvidenceRef validation, all-false authority, deterministic no-persistence compilation, and caller-vocabulary/identity-alias attacks.
 
 ## Reuse and non-adoption ledger
 

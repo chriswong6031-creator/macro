@@ -25,6 +25,7 @@ evidence:
   - "K1 accepted source b7b861a288491ba776dda0087b6153c346e9aabc; PR #6319 squash 696afbb57483577770ac48c57f7eeafd5344cf17"
   - "research/alpha_intelligence/censuses/B0/B0_MANAGER_COMPLEX_DRAFT.md"
   - "research/alpha_intelligence/censuses/B0/B0_INTENT_NORMALIZATION_INPUT_MATRIX.md"
+  - "PR #6370 hostile-review repair requirement, 2026-08-24: executable typed shares, coverage, clocks, campaign, count, reliability, and China-extension laws."
 affects:
   - "WS:ALPHA-INTELLIGENCE-INTEGRATION"
   - "contracts/institutional_intelligence/**"
@@ -37,3 +38,5 @@ decided_at: 2026-08-24
 
 This records the separate Chairman release demanded by the K1 handoff. It does
 not supersede the K1 hold on physical evidence persistence or any existing owner.
+The later hostile-review repair does not widen this release: it only turns the
+already-authorized contract refusals into closed deterministic checks.

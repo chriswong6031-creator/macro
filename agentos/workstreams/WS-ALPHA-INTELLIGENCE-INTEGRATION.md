@@ -179,9 +179,10 @@ waves:
     status: in_progress
     depends_on: [k1]
     next_action: >
-      K2-B contract/fixture packet is commissioned by the Chairman on 2026-08-24.
-      It remains contract-only and requires exact-head review before any K2-C
-      adapter consideration.
+      K2-B is under same-carrier hostile-review repair on PR #6370. The repair
+      must make normalization, residual, comparator, campaign, count, reliability,
+      K1 coverage, and China actor-extension semantics executable before exact-head
+      review; it remains contract-only with no K2-C adapter authority.
   - id: k3
     title: K3 Opportunity Semantics — propagation contract (D), opportunity evidence vector (E)
     status: todo
@@ -203,9 +204,12 @@ waves:
     status: todo
     depends_on: [k6]
 next_action: >
-  K2-B manager-complex and research-intent contract packet is in exact-head
-  review. It has no adapter, persistence, rank/gate/size/origination/entry
-  authority, or deployment obligation.
+  K2-B manager-complex and research-intent contract packet is under same-carrier
+  hostile-review repair on PR #6370. It returns to exact-head review only after
+  normalization, residual, comparator, campaign, count, reliability, K1 typed
+  vocabulary, and China extension cases are proven. It has no adapter,
+  persistence, rank/gate/size/origination/entry authority, or deployment
+  obligation.
 
   K1 Evidence Foundation v1.0.0 is ACCEPTED / DONE at exact source head
   b7b861a288491ba776dda0087b6153c346e9aabc and merge

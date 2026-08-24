@@ -2,7 +2,7 @@
 workstream: "WS:ALPHA-INTELLIGENCE-INTEGRATION"
 session: claude/k2b-manager-intent-20260824
 model: codex
-ended_because: complete
+ended_because: blocked
 mission: >
   Implement only the Chairman-authorized K2-B Institutional Manager Complex and
   Research Intent contract/fixture wave after K1 acceptance, with no owner store,
@@ -22,7 +22,7 @@ changed:
   - path: "tests/fixtures/institutional_intelligence/source_backed_manager_intent_recipe.json"
     what: "Source-backed 13F accession pointer plus hostile mechanical passive-flow fixture."
   - path: "tests/test_institutional_manager_intent_contract.py"
-    what: "Hostile semantic tests for identity, flow, clocks, corrections, reliability, provenance and authority."
+    what: "Hostile semantic tests for identity, typed shares/coverage, residual, comparator, campaign history, count receipt, clocks, corrections, reliability, provenance and authority."
   - path: ".github/ci/legacy-jobs.yml"
     what: "Registers the K2-B suite beside the K1 pointer-contract run line."
   - path: "research/alpha_intelligence/K2B_INSTITUTIONAL_MANAGER_INTENT_CONTRACT_FREEZE_2026-08-24.md"
@@ -32,9 +32,9 @@ changed:
   - path: "agentos/workstreams/WS-ALPHA-INTELLIGENCE-INTEGRATION.md"
     what: "Moves K2 to contract packet review without advancing an adapter or runtime state."
 verified:
-  - claim: "K2-B and adjacent K1 contract tests pass."
+  - claim: "Initial K2-B and adjacent K1 contract tests passed before the hostile-review amendment."
     command: "python3 -m pytest tests/test_institutional_manager_intent_contract.py tests/test_evidence_foundation_contract.py tests/test_evidence_foundation_product_contract.py -q"
-    result: "143 passed after the legacy retrospective-surface clarification; 3 pre-existing temporary-directory cleanup warnings."
+    result: "143 passed after the legacy retrospective-surface clarification; this is superseded by the pending exact repair verification."
   - claim: "Agent OS records are schema-valid."
     command: "python3 scripts/agentos.py validate"
     result: "0 errors; inherited repository warnings only."
@@ -42,8 +42,8 @@ verified:
     command: "git diff --check"
     result: "exit 0."
 unverified:
-  - claim: "Exact-head hosted CI and root adversarial review pass."
-    what_would_verify: "Push the reviewed head, inspect the PR checks, then have /root review before merge."
+  - claim: "Hostile-review amendment is exact-head verified and root adversarial review passes."
+    what_would_verify: "Run the revised focused/K1/contract-delta/CI-plan/AgentOS checks, push the repaired head to PR #6370, inspect exact-head checks, then have /root review before merge."
 unresolved:
   - "No source-backed owner adapter or rights-approved live capture exists; that is deliberately outside K2-B."
 next_actions:
@@ -69,9 +69,12 @@ commissioned.
 
 ## §1 What is LEFT — in order
 
-1. Reconcile this carrier with fresh `origin/main` for same-path drift before
+1. Finish the same-carrier hostile-review amendment: prove malformed shares,
+   pointer clocks, typed coverage, passive complex count, campaign history,
+   exact reliability epoch, normalization, residual and comparator laws.
+2. Reconcile this carrier with fresh `origin/main` for same-path drift before
    push; do not rebase through a conflicting CI manifest hunk.
-2. Root performs the bounded adversarial review of the opened PR.
+3. Root performs the bounded adversarial review of the repaired opened PR.
 
 ## §2 What will bite you
 
