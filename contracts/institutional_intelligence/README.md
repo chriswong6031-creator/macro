@@ -18,6 +18,13 @@ identity, world-valid clock, and operational-availability clock. It cannot carry
 its own rights, coverage, missingness, replay, correction, source URL, owner
 payload, or caller result.
 
+Positive compilation also requires point-in-time-usable K1 coverage and a
+`native_clock_bound` freshness basis whose bound native clock is knowable by the
+compilation cutoff. `unknown`/`not_applicable` freshness, stale or other typed
+absence, rights blockage, and non-PIT coverage fail closed into typed non-positive
+states. A date-grain native clock is conservatively usable only at the following
+UTC midnight; it is never silently parsed as an intraday timestamp.
+
 The real evidence anchor is an owner-model-derived
 `institutional_13f.raw_receipt` for accession `0001398344-26-013841`. Its native
 identity, schema, canonical native digest, parser, pointer, report-period clock,
@@ -45,7 +52,12 @@ Manager complexes, filers, and vehicles are immutable epochs with distinct
 effective, valid, and knowable intervals; active/inactive/unresolved status;
 resolution state; explicit decision mode (`discretionary`, `passive`,
 `systematic`, `mixed`, or `unknown`); and append-only original/remap/correction
-lineage. Raw actor strings and original ontology versions remain in history.
+lineage. All three intervals use inclusive starts and exclusive ends. Empty
+intervals are invalid. Every remap/correction predecessor must resolve in the
+correct registry, retain the canonical entity, be acyclic and linear, and obey
+non-overlap or later correction-knowledge chronology. Actor remaps bind to the
+manager-complex epoch lineage; dangling/self/cyclic predecessors and mutation of
+the preserved raw actor string or original ontology version are refused.
 Unresolved epochs cannot enter the eligible research-complex count.
 
 The China masterplan's exact eight actor roles are additive extensions of the B0
@@ -73,7 +85,7 @@ cross-plane netting exists.
 | Manager Research Intent | reported `Q_prev`, `Q_now` or typed unavailable | public reported sleeve counts | only resolved active discretionary complex/vehicle context; 13F is never live flow or an oracle |
 | Fund Flow Pressure | true-S ETF inputs, a named proxy, or typed unavailable | vehicle shares-outstanding state | the compiler alone derives `Q_now - Q_prev*(S_now/S_prev)`; proxies never receive a true residual or intent state |
 | Theme Capital Rotation | target/peer reported share changes | PIT membership receipt | target and distinct peers must share theme epoch, be knowable by cutoff, and reconcile exactly to eligible/excluded membership |
-| Institutionalization / Saturation | typed complex presence/count or unavailable | eligible/excluded complex epochs | breadth/context only; no crowding gate or master score |
+| Institutionalization / Saturation | typed present complex IDs or unavailable | exact PIT eligible complex set plus exact excluded complement | compiler derives present/eligible counts and ratio; breadth/context only, never a crowding gate or master score |
 
 The true-S residual is never caller supplied. A 13F manager-intent observation
 has no `S` slot and only computes an unscaled reported-share delta when both
@@ -89,6 +101,14 @@ eligible, unresolved member, membership lookahead, or caller result fails closed
 The output is the target reported-share delta, eligible-peer mean delta, and
 their spread; no score or recommendation is produced.
 
+Saturation has no caller-authored count. The validated input can name present
+complex epochs only when each one is backed by a usable, non-superseded,
+cutoff-eligible saturation observation. The compiler derives the exact PIT
+eligible set from resolved active discretionary complex epochs, the exact typed
+excluded complement, the present subset, both counts, and the ratio. Unknown,
+future, expired, passive, systematic, mixed, unresolved, missing, rights-blocked,
+or superseded rows cannot inflate the numerator or denominator.
+
 ## Campaign history is append-only evidence history
 
 Campaigns use only the linear vocabulary
@@ -101,6 +121,14 @@ campaign for the same subject and complex cannot start until the prior campaign
 is closed. The compilation receipt returns the complete transition history,
 including superseded and future/not-yet-knowable record states, plus current
 campaign states.
+
+Supersession is point-in-time. An observation predecessor is superseded only
+after its successor reference is usable, knowable, and epoch-applicable at the
+correction clock. A rights-blocked, missing, stale, or future successor cannot
+erase a usable predecessor. Campaign correction availability is the correction
+transition's own `transitioned_at`; a future append remains
+`NOT_YET_KNOWABLE`. Historical campaign epoch applicability is evaluated at the
+transition, so a later epoch expiry never rewrites valid append-only history.
 
 ## Counting and reliability
 
@@ -123,6 +151,11 @@ uncertainty bounds under the frozen method/version. Both cutoffs must be at or
 before compilation `as_of`. Legacy `manager_quality`, `manager_trades`, and
 `fund_followability` grades are neither imported nor aliased.
 
+Trial and maturity cutoffs must each fall inside the relevant complex epoch's
+effective, valid, and knowable interval. Reliability is evaluated at those trial
+and maturity clocks—not at a later compilation time—so later expiry does not
+erase a historically valid prospective posterior.
+
 ## Full inherited K1 vocabulary
 
 The receipt derives and exposes the exact accepted K1 sets for coverage classes,
@@ -138,4 +171,9 @@ fabricated residual, target/peer/denominator collapse, rights-blocked campaign,
 pre-knowledge campaign, invented missingness, inverted uncertainty, eligible
 zero-trial mismatch, and negative dedupe—as well as the first-review identity,
 clock, plane, passive/mechanical, interval, correction, campaign-chain,
-reliability, payload, authority, and determinism cases.
+reliability, payload, authority, and determinism cases. The third hostile repair
+adds future/expired/empty interval boundaries; future comparison and correction
+lookahead; unknown freshness/stale missingness/coverage refusal; superseded theme
+and saturation exclusion; exact derived saturation population/counts; and
+dangling, self-referential, cyclic, cross-entity, or nonlinear epoch/actor
+lineage attacks.

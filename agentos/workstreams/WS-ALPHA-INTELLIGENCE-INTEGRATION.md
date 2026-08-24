@@ -179,12 +179,12 @@ waves:
     status: in_progress
     depends_on: [k1]
     next_action: >
-      K2-B's coherent second repair is locally complete on the existing PR #6370
+      K2-B's third hostile repair is locally green on the existing PR #6370
       carrier and awaiting a pushed exact-head/root review. The repaired compiler
-      validates full K1 EvidenceRefs; computes normalization, residual, PIT theme
-      comparison, campaigns, counts and prospective reliability; preserves the
-      eight China actor-role extensions; and remains contract-only with no K2-C
-      adapter authority.
+      validates full K1 EvidenceRefs; enforces PIT freshness and interval clocks;
+      computes normalization, residual, theme comparison, saturation population,
+      campaigns, counts and prospective reliability; binds actor/epoch lineages;
+      and remains contract-only with no K2-C adapter authority.
   - id: k3
     title: K3 Opportunity Semantics — propagation contract (D), opportunity evidence vector (E)
     status: todo
@@ -206,7 +206,7 @@ waves:
     status: todo
     depends_on: [k6]
 next_action: >
-  Push the locally green K2-B coherent second repair to the existing PR #6370,
+  Push the locally green K2-B third hostile repair to the existing PR #6370,
   bind hosted checks and root's independent hostile review to that exact SHA,
   and keep the carrier unarmed/unmerged in the builder lane. The packet has no
   adapter, persistence, rank/gate/size/origination/entry authority, or deployment

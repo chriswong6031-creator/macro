@@ -60,6 +60,16 @@ rather than layering more flags over it:
 9. Complex/filer/vehicle effective/valid/knowable intervals and lineage are
    explicit. The canonical eight China actor roles extend B0 without erasing raw
    strings, ontology versions, unresolved states, or remap history.
+10. The third repair makes every positive path point-in-time: future theme
+    comparisons and future or unusable corrections cannot rewrite current
+    receipts; epoch intervals are `[from,to)` and evaluated at the event,
+    transition, trial, or maturity clock they govern.
+11. Saturation is an aggregate derived receipt. The compiler derives the exact
+    eligible complex population, exact excluded complement, usable present
+    subset, counts, and ratio. No caller scalar or dangling complex ID survives.
+12. Complex, filer, vehicle, and actor-remap lineages resolve within their exact
+    registries, preserve entity/raw-history identity, and are append-only,
+    chronological, acyclic, and linear.
 
 ## 3. Evidence-reference law
 
@@ -120,9 +130,12 @@ eligible-peer mean delta, and spread—never a score.
 
 ### Institutionalization / Saturation
 
-This plane carries typed complex presence/position count or unavailable state,
-against explicit eligible/excluded complex epochs. It is descriptive breadth or
-concentration context only.
+This plane carries typed present complex-epoch IDs or unavailable state. The
+compiler derives the PIT eligible set from resolved active discretionary complex
+epochs, derives the exact typed excluded complement, admits present IDs only
+from usable non-superseded cutoff-eligible observations, and computes present
+count, eligible count, and ratio. `position_count` is not an input or output
+semantic. It is descriptive breadth or concentration context only.
 
 No plane is netted with another. The separately governed Conditional Fusion
 exception grants K2-B no authority.
@@ -134,6 +147,13 @@ effective, valid, and knowable intervals, status, resolution, decision mode, and
 append-only lineage. Same-complex vehicles deduplicate by exact complex epoch.
 Mixed and unknown are explicit modes. Unresolved epochs never count as eligible
 research complexes.
+
+Intervals use inclusive starts and exclusive ends; equal boundaries are empty
+and invalid. Remap/correction predecessors resolve in the correct registry,
+retain the same canonical entity, obey non-overlap or later correction-knowledge
+chronology, and form one acyclic linear chain. Actor remaps are bound to their
+complex-epoch lineage; raw actor strings and original ontology versions cannot
+be mutated out of history.
 
 China's roles are the exact masterplan extensions: institution/manager complex;
 fund company; fund vehicle; manager/person; broker/research house; analyst;
@@ -154,6 +174,11 @@ every record and its current/superseded/not-yet-knowable state.
 Observation corrections also append. A successor must retain subject/vehicle/
 plane identity, arrive later, and resolve a full K1 correction/supersession
 reference whose predecessor set contains the predecessor event's reference.
+Supersession is evaluated as-of: a future, stale, missing, rights-blocked,
+non-PIT, or epoch-inapplicable successor cannot erase the usable predecessor.
+Campaign corrections become knowable at their own `transitioned_at`; historical
+campaign epoch applicability is evaluated at the transition rather than a later
+compile clock.
 
 ## 7. Count and reliability receipts
 
@@ -171,12 +196,19 @@ posterior. The compiler applies the frozen beta-binomial normal-approximation
 method/version, produces ordered 95% bounds, and rejects trial or maturity
 cutoffs after compilation `as_of`.
 
+Both reliability cutoffs must also fall inside the exact complex epoch. That
+applicability is evaluated at the trial/maturity clocks, preserving a historically
+valid posterior after a later epoch expiry. K1 reference freshness, missingness,
+coverage, and native date/datetime grain are consumed directly and fail closed.
+
 ## 8. Evidence and remaining gap
 
-The focused suite proves the nine reproduced second-round defects plus the first
-round's identity, clock, class, passive/mechanical, denominator, interval,
-lineage, campaign-chain, reliability, payload, authority, and determinism cases.
-Adjacent K1 suites prove no contract regression.
+The 50-test focused suite proves the nine reproduced second-round defects plus
+the first round's identity, clock, class, passive/mechanical, denominator,
+interval, lineage, campaign-chain, reliability, payload, authority, and
+determinism cases. It also reproduces the third-round temporal, freshness,
+saturation, actor-remap, and future-supersession attacks. The exact combined K2
+and accepted K1 suites pass 175 tests, proving no K1 contract regression.
 
 The remaining gap is deliberate: there is no rights-approved source adapter or
 owner-reader result that binds a live security-level manager-intent observation.

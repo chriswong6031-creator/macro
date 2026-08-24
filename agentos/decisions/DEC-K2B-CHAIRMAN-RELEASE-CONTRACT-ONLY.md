@@ -27,6 +27,7 @@ evidence:
   - "research/alpha_intelligence/censuses/B0/B0_INTENT_NORMALIZATION_INPUT_MATRIX.md"
   - "PR #6370 hostile-review repair requirement, 2026-08-24: executable typed shares, coverage, clocks, campaign, count, reliability, and China-extension laws."
   - "PR #6370 second hostile-review repair: full K1 EvidenceRef collection, compiler-derived true-S residual/theme preference, strict campaign eligibility/history, nonnegative count receipt, exact prospective reliability, and nine reproduced hostile probes."
+  - "PR #6370 third hostile-review repair: point-in-time interval/freshness/correction law, compiler-derived saturation population and counts, and registry-bound acyclic linear complex/filer/vehicle/actor lineage."
 affects:
   - "WS:ALPHA-INTELLIGENCE-INTEGRATION"
   - "contracts/institutional_intelligence/**"
@@ -44,3 +45,8 @@ surfaces with full accepted K1 references, owner-bound clocks/identity,
 compiler-derived results, append-only histories, closed denominators, and
 fail-closed adverse states. A raw 13F receipt reference still cannot bind a
 security holding by itself; that limitation is explicit rather than papered over.
+The third repair remains inside the same release: it adds no adapter or authority.
+It closes lookahead and caller-trust seams by deriving applicability at the exact
+event/transition/trial/maturity cutoff, requiring usable K1 freshness/coverage/
+missingness, making correction supersession point-in-time, and replacing the
+detached saturation scalar with a derived population receipt.

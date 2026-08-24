@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from collections.abc import Mapping
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from hashlib import sha256
 import json
 from math import sqrt
@@ -51,6 +51,14 @@ PLANES = (
     "theme_capital_rotation",
     "institutionalization_saturation",
 )
+PIT_USABLE_COVERAGE_CLASSES = frozenset({
+    "record_history_complete",
+    "source_release_snapshot_only",
+    "append_only_bitemporal",
+    "immutable_generation",
+    "prospective_only",
+})
+EPOCH_APPLICABLE = "APPLICABLE"
 NEXT_CAMPAIGN_STATE = {
     "IDLE": "INITIATED",
     "INITIATED": "ACCUMULATING",
@@ -141,6 +149,24 @@ def _time(value: object, label: str) -> datetime:
     return parsed.astimezone(timezone.utc)
 
 
+def _clock_time(clock: Mapping[str, Any], label: str) -> datetime:
+    """Map a native K1 clock to a conservative UTC knowability boundary."""
+    value = clock.get("value")
+    if clock.get("value_state") != "known" or not isinstance(value, str):
+        raise InstitutionalIntelligenceError(f"invalid_clock:{label}")
+    if clock.get("grain") == "date":
+        try:
+            parsed = date.fromisoformat(value)
+        except ValueError as exc:
+            raise InstitutionalIntelligenceError(f"invalid_clock:{label}") from exc
+        # A date-only native clock proves no intraday instant. It becomes safely
+        # usable at the following UTC midnight, after the entire native date.
+        return datetime(parsed.year, parsed.month, parsed.day, tzinfo=timezone.utc) + timedelta(days=1)
+    if clock.get("grain") == "datetime":
+        return _time(value, label)
+    raise InstitutionalIntelligenceError(f"invalid_clock:{label}")
+
+
 def _schema_errors(recipe: Mapping[str, Any]) -> list[str]:
     try:
         schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
@@ -183,9 +209,28 @@ def _interval_errors(row: Mapping[str, Any], label: str) -> list[str]:
         except InstitutionalIntelligenceError:
             errors.append(f"epoch_interval_invalid:{label}:{prefix}")
             continue
-        if end_time is not None and end_time < start_time:
+        if end_time is not None and end_time <= start_time:
             errors.append(f"epoch_interval_reversed:{label}:{prefix}")
     return errors
+
+
+def _interval_state(row: Mapping[str, Any], cutoff: datetime) -> str:
+    """Return bitemporal applicability using inclusive starts/exclusive ends."""
+    interval = row.get("interval")
+    if not isinstance(interval, Mapping):
+        return "EPOCH_INTERVAL_INVALID"
+    for dimension in ("effective", "valid", "knowable"):
+        try:
+            start = _time(interval.get(f"{dimension}_from"), f"{dimension}_from")
+            raw_end = interval.get(f"{dimension}_to")
+            end = _time(raw_end, f"{dimension}_to") if raw_end is not None else None
+        except InstitutionalIntelligenceError:
+            return "EPOCH_INTERVAL_INVALID"
+        if cutoff < start:
+            return f"EPOCH_{dimension.upper()}_NOT_STARTED"
+        if end is not None and cutoff >= end:
+            return f"EPOCH_{dimension.upper()}_EXPIRED"
+    return EPOCH_APPLICABLE
 
 
 def _lineage_errors(row: Mapping[str, Any], label: str) -> list[str]:
@@ -206,6 +251,133 @@ def _lineage_errors(row: Mapping[str, Any], label: str) -> list[str]:
     return []
 
 
+def _registry_lineage_errors(
+    rows: Mapping[str, Mapping[str, Any]],
+    *,
+    entity_fields: tuple[str, ...],
+    label: str,
+) -> list[str]:
+    """Validate one append-only epoch registry as a linear acyclic history."""
+    errors: list[str] = []
+    successors: defaultdict[str, list[str]] = defaultdict(list)
+    graph: dict[str, str] = {}
+    for epoch_id, row in rows.items():
+        lineage = row.get("lineage")
+        if not isinstance(lineage, Mapping):
+            continue
+        state = lineage.get("state")
+        predecessor_id = lineage.get("predecessor_epoch_id")
+        if state not in {"remapped", "corrected"} and not (
+            state == "unresolved" and predecessor_id is not None
+        ):
+            continue
+        predecessor = rows.get(str(predecessor_id))
+        if predecessor is None or predecessor_id == epoch_id:
+            errors.append(f"{label}_lineage_predecessor_invalid")
+            continue
+        if any(row.get(field) != predecessor.get(field) for field in entity_fields):
+            errors.append(f"{label}_lineage_identity_conflict")
+        graph[epoch_id] = str(predecessor_id)
+        successors[str(predecessor_id)].append(epoch_id)
+        try:
+            predecessor_interval = predecessor["interval"]
+            interval = row["interval"]
+            if state == "remapped":
+                for dimension in ("effective", "valid", "knowable"):
+                    predecessor_end = predecessor_interval.get(f"{dimension}_to")
+                    if predecessor_end is None or _time(
+                        predecessor_end,
+                        f"{label}:{epoch_id}:{dimension}:predecessor_end",
+                    ) > _time(
+                        interval.get(f"{dimension}_from"),
+                        f"{label}:{epoch_id}:{dimension}:successor_start",
+                    ):
+                        errors.append(f"{label}_lineage_interval_overlap")
+                        break
+            elif _time(
+                interval.get("knowable_from"),
+                f"{label}:{epoch_id}:knowable_from",
+            ) <= _time(
+                predecessor_interval.get("knowable_from"),
+                f"{label}:{epoch_id}:predecessor_knowable_from",
+            ):
+                errors.append(f"{label}_correction_not_later")
+        except (KeyError, InstitutionalIntelligenceError):
+            errors.append(f"{label}_lineage_interval_invalid")
+
+    if any(len(epoch_ids) > 1 for epoch_ids in successors.values()):
+        errors.append(f"{label}_lineage_not_linear")
+    for start in graph:
+        seen: set[str] = set()
+        cursor: str | None = start
+        while cursor in graph:
+            if cursor in seen:
+                errors.append(f"{label}_lineage_cycle")
+                break
+            seen.add(cursor)
+            cursor = graph[cursor]
+    return errors
+
+
+def _actor_remap_errors(
+    complexes: Mapping[str, Mapping[str, Any]],
+) -> list[str]:
+    """Bind actor remaps to the manager-complex epoch registry, not free strings."""
+    errors: list[str] = []
+    successors: defaultdict[str, list[str]] = defaultdict(list)
+    graph: dict[str, str] = {}
+    for epoch_id, row in complexes.items():
+        actor = row.get("actor_identity")
+        lineage = row.get("lineage")
+        remap = actor.get("remap_lineage") if isinstance(actor, Mapping) else None
+        if not isinstance(actor, Mapping) or not isinstance(remap, Mapping):
+            continue
+        state = remap.get("state")
+        row_state = lineage.get("state") if isinstance(lineage, Mapping) else None
+        if actor.get("resolution_state") == "unresolved":
+            if state != "unresolved":
+                errors.append("actor_remap_resolution_conflict")
+        elif state == "unresolved":
+            errors.append("actor_remap_resolution_conflict")
+        if state in {"original", "remapped", "corrected"} and row_state != state:
+            errors.append("actor_remap_epoch_lineage_conflict")
+        predecessor_id = remap.get("predecessor_epoch_id")
+        if state not in {"remapped", "corrected"} and not (
+            state == "unresolved" and predecessor_id is not None
+        ):
+            continue
+        predecessor = complexes.get(str(predecessor_id))
+        if predecessor is None or predecessor_id == epoch_id:
+            errors.append("actor_remap_predecessor_invalid")
+            continue
+        if predecessor.get("manager_complex_id") != row.get("manager_complex_id"):
+            errors.append("actor_remap_identity_conflict")
+        predecessor_actor = predecessor.get("actor_identity")
+        if isinstance(predecessor_actor, Mapping) and any(
+            actor.get(field) != predecessor_actor.get(field)
+            for field in ("raw_actor_string", "original_ontology_version")
+        ):
+            errors.append("actor_remap_raw_history_conflict")
+        if not isinstance(lineage, Mapping) or (
+            lineage.get("predecessor_epoch_id") != predecessor_id
+        ):
+            errors.append("actor_remap_epoch_lineage_conflict")
+        graph[epoch_id] = str(predecessor_id)
+        successors[str(predecessor_id)].append(epoch_id)
+    if any(len(epoch_ids) > 1 for epoch_ids in successors.values()):
+        errors.append("actor_remap_not_linear")
+    for start in graph:
+        seen: set[str] = set()
+        cursor: str | None = start
+        while cursor in graph:
+            if cursor in seen:
+                errors.append("actor_remap_cycle")
+                break
+            seen.add(cursor)
+            cursor = graph[cursor]
+    return errors
+
+
 def _clock_entry(reference: Mapping[str, Any], binding: object) -> Mapping[str, Any] | None:
     if not isinstance(binding, Mapping):
         return None
@@ -222,8 +394,24 @@ def _clock_entry(reference: Mapping[str, Any], binding: object) -> Mapping[str, 
     return matches[0] if len(matches) == 1 else None
 
 
-def _available_time(event: Mapping[str, Any]) -> datetime:
+def _available_time(
+    event: Mapping[str, Any],
+    reference: Mapping[str, Any] | None = None,
+) -> datetime:
     binding = event["reference_binding"]["available_clock"]
+    if reference is not None:
+        clock = _clock_entry(reference, binding)
+        if clock is not None:
+            return _clock_time(clock, f"available_clock:{event['observation_id']}")
+    value = binding["value"]
+    if isinstance(value, str) and len(value) == 10:
+        try:
+            parsed = date.fromisoformat(value)
+        except ValueError as exc:
+            raise InstitutionalIntelligenceError(
+                f"invalid_timestamp:available_clock:{event['observation_id']}"
+            ) from exc
+        return datetime(parsed.year, parsed.month, parsed.day, tzinfo=timezone.utc) + timedelta(days=1)
     return _time(binding["value"], f"available_clock:{event['observation_id']}")
 
 
@@ -236,14 +424,121 @@ def _reference_state(reference: Mapping[str, Any], available_at: datetime, cutof
         return "RIGHTS_UNKNOWN"
     if missingness["state"] == "absent":
         return str(missingness["reason"]).upper()
+    coverage = str(reference["coverage_class"])
+    if coverage not in PIT_USABLE_COVERAGE_CLASSES:
+        return f"COVERAGE_{coverage.upper()}"
+    freshness = reference["freshness"]
+    freshness_state = str(freshness["state"])
+    if freshness_state != "native_clock_bound":
+        return f"FRESHNESS_{freshness_state.upper()}"
+    freshness_clock = next(
+        (
+            clock
+            for clock in reference["clocks"]
+            if clock["field"] == freshness["clock_field"]
+            and clock["value_state"] == "known"
+        ),
+        None,
+    )
+    if freshness_clock is None:
+        return "FRESHNESS_CLOCK_UNBOUND"
+    if _clock_time(freshness_clock, "freshness_clock") > cutoff:
+        return "NOT_KNOWABLE"
     if cutoff < available_at:
         return "NOT_KNOWABLE"
     return "PRESENT"
 
 
+def _superseded_observations_as_of(
+    observations: Mapping[str, Mapping[str, Any]],
+    references: Mapping[str, Mapping[str, Any]],
+    vehicles: Mapping[str, Mapping[str, Any]],
+    complexes: Mapping[str, Mapping[str, Any]],
+    filers: Mapping[str, Mapping[str, Any]],
+    cutoff: datetime,
+) -> set[str]:
+    """Return predecessors erased only by a usable PIT-known correction."""
+    superseded: set[str] = set()
+    for successor in observations.values():
+        correction = successor.get("correction")
+        if not isinstance(correction, Mapping) or correction.get("kind") == "none":
+            continue
+        reference = references.get(str(successor.get("evidence_reference_id")))
+        try:
+            if reference is None:
+                continue
+            available_at = _available_time(successor, reference)
+            if (
+                available_at <= cutoff
+                and _reference_state(reference, available_at, cutoff) == "PRESENT"
+                and _observation_epoch_state(
+                    successor,
+                    reference=reference,
+                    vehicles=vehicles,
+                    complexes=complexes,
+                    filers=filers,
+                    cutoff=available_at,
+                ) == EPOCH_APPLICABLE
+            ):
+                superseded.add(str(correction.get("predecessor_observation_id")))
+        except (KeyError, InstitutionalIntelligenceError):
+            continue
+    return superseded
+
+
+def _superseded_transitions_as_of(
+    transitions: Mapping[str, Mapping[str, Any]],
+    cutoff: datetime,
+) -> set[str]:
+    """Campaign correction availability is its append-only transitioned_at clock."""
+    return {
+        str(row["correction"]["supersedes_transition_id"])
+        for row in transitions.values()
+        if isinstance(row.get("correction"), Mapping)
+        and row["correction"].get("kind") != "none"
+        and _time(row["transitioned_at"], "campaign_correction_available") <= cutoff
+    }
+
+
+def _complex_exclusion_reason(row: Mapping[str, Any], cutoff: datetime) -> str | None:
+    if row.get("resolution_state") != "resolved":
+        return "unresolved"
+    if row.get("status") != "active":
+        return "inactive"
+    decision_mode = str(row.get("decision_mode"))
+    if decision_mode in {"passive", "systematic", "mixed", "unknown"}:
+        return decision_mode
+    if decision_mode != "discretionary":
+        return "unknown"
+    if _interval_state(row, cutoff) != EPOCH_APPLICABLE:
+        return "epoch_not_applicable"
+    return None
+
+
+def _saturation_denominator(
+    complexes: Mapping[str, Mapping[str, Any]],
+    cutoff: datetime,
+) -> dict[str, Any]:
+    eligible: list[str] = []
+    excluded: list[dict[str, str]] = []
+    for epoch_id in sorted(complexes):
+        reason = _complex_exclusion_reason(complexes[epoch_id], cutoff)
+        if reason is None:
+            eligible.append(epoch_id)
+        else:
+            excluded.append({"complex_epoch_id": epoch_id, "reason": reason})
+    return {
+        "kind": "eligible_research_complexes",
+        "eligible_complex_epoch_ids": eligible,
+        "excluded_complex_epochs": excluded,
+    }
+
+
 def _vehicle_is_discretionary(
     vehicle: Mapping[str, Any] | None,
     complex_epoch: Mapping[str, Any] | None,
+    *,
+    cutoff: datetime,
 ) -> bool:
     return bool(
         vehicle
@@ -255,7 +550,49 @@ def _vehicle_is_discretionary(
         and complex_epoch.get("status") == "active"
         and complex_epoch.get("resolution_state") == "resolved"
         and complex_epoch.get("decision_mode") == "discretionary"
+        and _interval_state(vehicle, cutoff) == EPOCH_APPLICABLE
+        and _interval_state(complex_epoch, cutoff) == EPOCH_APPLICABLE
     )
+
+
+def _observation_epoch_state(
+    event: Mapping[str, Any],
+    *,
+    reference: Mapping[str, Any],
+    vehicles: Mapping[str, Mapping[str, Any]],
+    complexes: Mapping[str, Mapping[str, Any]],
+    filers: Mapping[str, Mapping[str, Any]],
+    cutoff: datetime,
+) -> str:
+    vehicle = vehicles.get(str(event.get("vehicle_epoch_id")))
+    if not vehicle:
+        return "VEHICLE_EPOCH_UNRESOLVED"
+    complex_epoch = complexes.get(str(vehicle.get("complex_epoch_id")))
+    if not complex_epoch:
+        return "COMPLEX_EPOCH_UNRESOLVED"
+    for label, row in (("VEHICLE", vehicle), ("COMPLEX", complex_epoch)):
+        state = _interval_state(row, cutoff)
+        if state != EPOCH_APPLICABLE:
+            return f"{label}_{state}"
+    if (
+        event.get("evidence_basis") == "source_backed_pointer_only"
+        and reference.get("owner_store") == "institutional_13f.raw_receipt"
+    ):
+        native_cik = reference.get("native_identity", {}).get("filer_cik")
+        matching_filers = [
+            row
+            for row in filers.values()
+            if row.get("filer_id") == native_cik
+            and row.get("complex_epoch_id") == vehicle.get("complex_epoch_id")
+            and row.get("resolution_state") == "resolved"
+            and row.get("status") == "active"
+        ]
+        if len(matching_filers) != 1:
+            return "FILER_EPOCH_UNRESOLVED"
+        state = _interval_state(matching_filers[0], cutoff)
+        if state != EPOCH_APPLICABLE:
+            return f"FILER_{state}"
+    return EPOCH_APPLICABLE
 
 
 def _measure_delta(measure: Mapping[str, Any]) -> float | None:
@@ -276,21 +613,37 @@ def _observation_ineligible_reason(
     references: Mapping[str, Mapping[str, Any]],
     vehicles: Mapping[str, Mapping[str, Any]],
     complexes: Mapping[str, Mapping[str, Any]],
+    filers: Mapping[str, Mapping[str, Any]],
     cutoff: datetime,
+    superseded_observations: set[str] | frozenset[str] = frozenset(),
 ) -> str | None:
+    if str(event.get("observation_id")) in superseded_observations:
+        return "superseded"
     reference = references.get(str(event.get("evidence_reference_id")))
     if reference is None:
         return "unresolved_identity"
-    state = _reference_state(reference, _available_time(event), cutoff)
+    state = _reference_state(reference, _available_time(event, reference), cutoff)
     if state == "RIGHTS_BLOCKED":
         return "rights_blocked"
     if state not in {"PRESENT"}:
         return "missing"
+    if event.get("evidence_basis") == "source_backed_pointer_only":
+        return "unresolved_identity"
+    epoch_state = _observation_epoch_state(
+        event,
+        reference=reference,
+        vehicles=vehicles,
+        complexes=complexes,
+        filers=filers,
+        cutoff=cutoff,
+    )
+    if epoch_state != EPOCH_APPLICABLE:
+        return "epoch_not_applicable"
     vehicle = vehicles.get(event["vehicle_epoch_id"])
     complex_epoch = complexes.get(str(vehicle.get("complex_epoch_id"))) if vehicle else None
     if not vehicle or not complex_epoch or complex_epoch.get("resolution_state") != "resolved":
         return "unresolved_identity"
-    if not _vehicle_is_discretionary(vehicle, complex_epoch):
+    if not _vehicle_is_discretionary(vehicle, complex_epoch, cutoff=cutoff):
         return "passive_or_systematic"
     if _measure_delta(event["measure"]) is None:
         return "unavailable_measure"
@@ -341,6 +694,12 @@ def _semantic_errors(recipe: Mapping[str, Any]) -> list[str]:
                 errors.extend(_lineage_errors(shadow, f"actor:{epoch_id}"))
         if row.get("resolution_state") == "unresolved" and row.get("status") != "unresolved":
             errors.append("unresolved_complex_status_conflict")
+    errors.extend(_registry_lineage_errors(
+        complexes,
+        entity_fields=("manager_complex_id",),
+        label="manager_complex",
+    ))
+    errors.extend(_actor_remap_errors(complexes))
 
     filer_rows = recipe.get("filer_epochs", [])
     filers = _rows_by_id(filer_rows, "filer_epoch_id", errors, "duplicate_filer_epoch")
@@ -350,6 +709,11 @@ def _semantic_errors(recipe: Mapping[str, Any]) -> list[str]:
         complex_epoch = complexes.get(str(row.get("complex_epoch_id")))
         if not complex_epoch or complex_epoch.get("manager_complex_id") != row.get("manager_complex_id"):
             errors.append("filer_complex_epoch_unresolved")
+    errors.extend(_registry_lineage_errors(
+        filers,
+        entity_fields=("filer_id", "manager_complex_id"),
+        label="filer",
+    ))
 
     vehicle_rows = recipe.get("vehicle_epochs", [])
     vehicles = _rows_by_id(vehicle_rows, "vehicle_epoch_id", errors, "duplicate_vehicle_epoch")
@@ -369,6 +733,11 @@ def _semantic_errors(recipe: Mapping[str, Any]) -> list[str]:
             errors.append("vehicle_class_decision_mode_conflict")
         if row.get("vehicle_class") in MIXED_OR_UNKNOWN_CLASSES and row.get("decision_mode") not in {"mixed", "unknown"}:
             errors.append("vehicle_class_decision_mode_conflict")
+    errors.extend(_registry_lineage_errors(
+        vehicles,
+        entity_fields=("vehicle_id", "manager_complex_id"),
+        label="vehicle",
+    ))
 
     observations = _rows_by_id(recipe.get("observations", []), "observation_id", errors, "duplicate_observation_id")
     comparison_ids = {
@@ -403,6 +772,17 @@ def _semantic_errors(recipe: Mapping[str, Any]) -> list[str]:
         complex_epoch = complexes.get(str(vehicle.get("complex_epoch_id")))
         if not complex_epoch:
             errors.append("event_complex_epoch_unresolved")
+        if available_clock:
+            epoch_state = _observation_epoch_state(
+                event,
+                reference=reference,
+                vehicles=vehicles,
+                complexes=complexes,
+                filers=filers,
+                cutoff=_clock_time(available_clock, f"event_available:{observation_id}"),
+            )
+            if epoch_state != EPOCH_APPLICABLE:
+                errors.append("event_epoch_not_applicable")
         if reference.get("owner_store") == "institutional_13f.raw_receipt":
             native = reference.get("native_identity", {})
             owned_filers = {
@@ -454,20 +834,39 @@ def _semantic_errors(recipe: Mapping[str, Any]) -> list[str]:
         if measure.get("kind") == "proxy_residual" and denominator.get("state") != "proxy":
             errors.append("proxy_residual_denominator_conflict")
         if plane == "manager_research_intent" and complex_epoch and _measure_delta(measure) is not None:
-            if not _vehicle_is_discretionary(vehicle, complex_epoch):
+            eligibility_cutoff = (
+                _clock_time(available_clock, f"event_available:{observation_id}")
+                if available_clock
+                else datetime.min.replace(tzinfo=timezone.utc)
+            )
+            if not _vehicle_is_discretionary(
+                vehicle,
+                complex_epoch,
+                cutoff=eligibility_cutoff,
+            ):
                 errors.append("non_discretionary_vehicle_cannot_emit_manager_intent")
         if plane == "theme_capital_rotation" and denominator.get("comparison_id") not in comparison_ids:
             errors.append("theme_comparison_unresolved")
-        if measure.get("kind") == "complex_presence":
-            if measure.get("state") == "observed" and (
-                not isinstance(measure.get("present"), bool)
-                or not isinstance(measure.get("position_count"), int)
-            ):
-                errors.append("saturation_observed_shape_invalid")
-            if measure.get("state") == "unavailable" and (
-                measure.get("present") is not None or measure.get("position_count") is not None
-            ):
-                errors.append("saturation_unavailable_shape_invalid")
+        if plane == "institutionalization_saturation":
+            try:
+                saturation_cutoff = (
+                    _clock_time(available_clock, f"saturation_available:{observation_id}")
+                    if available_clock
+                    else datetime.min.replace(tzinfo=timezone.utc)
+                )
+                expected_denominator = _saturation_denominator(complexes, saturation_cutoff)
+                if denominator != expected_denominator:
+                    errors.append("saturation_denominator_not_derived")
+                if measure.get("kind") == "complex_presence":
+                    present_ids = list(measure.get("present_complex_epoch_ids", []))
+                    eligible_ids = set(expected_denominator["eligible_complex_epoch_ids"])
+                    if measure.get("state") == "observed":
+                        if not present_ids or not set(present_ids) <= eligible_ids:
+                            errors.append("saturation_observed_shape_invalid")
+                    elif present_ids:
+                        errors.append("saturation_unavailable_shape_invalid")
+            except InstitutionalIntelligenceError:
+                errors.append("saturation_denominator_not_derived")
 
         correction = event.get("correction")
         if isinstance(correction, Mapping):
@@ -484,7 +883,13 @@ def _semantic_errors(recipe: Mapping[str, Any]) -> list[str]:
                     if any(event.get(field) != predecessor.get(field) for field in ("vehicle_epoch_id", "subject_id", "plane")):
                         errors.append("observation_correction_identity_conflict")
                     try:
-                        if _available_time(event) <= _available_time(predecessor):
+                        predecessor_reference = references.get(
+                            str(predecessor.get("evidence_reference_id"))
+                        )
+                        if _available_time(event, reference) <= _available_time(
+                            predecessor,
+                            predecessor_reference,
+                        ):
                             errors.append("observation_correction_clock_not_later")
                     except (KeyError, InstitutionalIntelligenceError):
                         errors.append("observation_correction_clock_not_later")
@@ -493,11 +898,71 @@ def _semantic_errors(recipe: Mapping[str, Any]) -> list[str]:
                     if ref_correction.get("kind") not in CORRECTION_KINDS or predecessor_ref not in set(ref_correction.get("predecessor_reference_ids", [])):
                         errors.append("observation_correction_k1_lineage_unbound")
 
-    superseded_observations = {
+    correction_predecessors = [
         str(row["correction"]["predecessor_observation_id"])
         for row in observations.values()
         if isinstance(row.get("correction"), Mapping) and row["correction"].get("kind") != "none"
-    }
+    ]
+    if len(correction_predecessors) != len(set(correction_predecessors)):
+        errors.append("observation_correction_lineage_not_linear")
+
+    for observation_id, saturation in observations.items():
+        if saturation.get("plane") != "institutionalization_saturation":
+            continue
+        measure = saturation.get("measure")
+        if not isinstance(measure, Mapping) or measure.get("kind") != "complex_presence":
+            continue
+        reference = references.get(str(saturation.get("evidence_reference_id")))
+        try:
+            saturation_cutoff = _available_time(saturation, reference)
+        except (KeyError, InstitutionalIntelligenceError):
+            continue
+        saturation_superseded = _superseded_observations_as_of(
+            observations,
+            references,
+            vehicles,
+            complexes,
+            filers,
+            saturation_cutoff,
+        )
+        for complex_epoch_id in measure.get("present_complex_epoch_ids", []):
+            backed = False
+            for candidate_id, candidate in observations.items():
+                candidate_reference = references.get(str(candidate.get("evidence_reference_id")))
+                candidate_vehicle = vehicles.get(str(candidate.get("vehicle_epoch_id")))
+                try:
+                    candidate_available = _available_time(candidate, candidate_reference)
+                except (KeyError, InstitutionalIntelligenceError):
+                    continue
+                if (
+                    candidate_id not in saturation_superseded
+                    and candidate.get("plane") == "institutionalization_saturation"
+                    and isinstance(candidate.get("measure"), Mapping)
+                    and candidate["measure"].get("kind") == "complex_presence"
+                    and candidate["measure"].get("state") == "observed"
+                    and complex_epoch_id in candidate["measure"].get("present_complex_epoch_ids", [])
+                    and candidate_vehicle is not None
+                    and candidate_vehicle.get("complex_epoch_id") == complex_epoch_id
+                    and candidate_reference is not None
+                    and candidate_available <= saturation_cutoff
+                    and _reference_state(
+                        candidate_reference,
+                        candidate_available,
+                        saturation_cutoff,
+                    ) == "PRESENT"
+                    and _observation_epoch_state(
+                        candidate,
+                        reference=candidate_reference,
+                        vehicles=vehicles,
+                        complexes=complexes,
+                        filers=filers,
+                        cutoff=candidate_available,
+                    ) == EPOCH_APPLICABLE
+                ):
+                    backed = True
+                    break
+            if not backed:
+                errors.append("saturation_present_complex_unbacked")
 
     comparison_rows = recipe.get("theme_comparisons", [])
     seen_comparisons: set[str] = set()
@@ -535,10 +1000,24 @@ def _semantic_errors(recipe: Mapping[str, Any]) -> list[str]:
             errors.append("theme_membership_clock_unbound")
         try:
             as_of = _time(comparison.get("as_of"), f"theme_as_of:{comparison_id}")
-            if membership_clock and _time(membership_clock["value"], "membership_clock") > as_of:
+            if membership_clock and _clock_time(membership_clock, "membership_clock") > as_of:
                 errors.append("theme_membership_lookahead")
+            if membership_ref and membership_clock and _reference_state(
+                membership_ref,
+                _clock_time(membership_clock, "membership_clock"),
+                as_of,
+            ) != "PRESENT":
+                errors.append("theme_membership_reference_unusable")
         except InstitutionalIntelligenceError:
             as_of = datetime.max.replace(tzinfo=timezone.utc)
+        comparison_superseded = _superseded_observations_as_of(
+            observations,
+            references,
+            vehicles,
+            complexes,
+            filers,
+            as_of,
+        )
         for observation_id in expected_members:
             event = observations.get(str(observation_id))
             if not event:
@@ -548,7 +1027,8 @@ def _semantic_errors(recipe: Mapping[str, Any]) -> list[str]:
                 errors.append("theme_observation_wrong_plane")
             if event.get("theme_id") != comparison.get("theme_id") or event.get("theme_epoch_id") != comparison.get("theme_epoch_id"):
                 errors.append("theme_observation_epoch_conflict")
-            if _available_time(event) > as_of:
+            event_reference = references.get(str(event.get("evidence_reference_id")))
+            if _available_time(event, event_reference) > as_of:
                 errors.append("theme_peer_not_knowable_at_cutoff")
         target = observations.get(str(target_id))
         for peer_id in peer_ids:
@@ -557,20 +1037,37 @@ def _semantic_errors(recipe: Mapping[str, Any]) -> list[str]:
                 errors.append("theme_target_peer_subject_not_distinct")
         for observation_id in eligible_ids:
             event = observations.get(str(observation_id))
-            if event and _observation_ineligible_reason(event, references=references, vehicles=vehicles, complexes=complexes, cutoff=as_of) is not None:
+            if event and _observation_ineligible_reason(
+                event,
+                references=references,
+                vehicles=vehicles,
+                complexes=complexes,
+                filers=filers,
+                cutoff=as_of,
+                superseded_observations=comparison_superseded,
+            ) is not None:
                 errors.append("theme_ineligible_member_marked_eligible")
         for excluded in excluded_rows:
             if not isinstance(excluded, Mapping):
                 continue
             event = observations.get(str(excluded.get("observation_id")))
             if event:
-                actual = _observation_ineligible_reason(event, references=references, vehicles=vehicles, complexes=complexes, cutoff=as_of)
+                actual = _observation_ineligible_reason(
+                    event,
+                    references=references,
+                    vehicles=vehicles,
+                    complexes=complexes,
+                    filers=filers,
+                    cutoff=as_of,
+                    superseded_observations=comparison_superseded,
+                )
                 if actual != excluded.get("reason"):
                     errors.append("theme_exclusion_reason_conflict")
 
     transition_rows = recipe.get("campaign_transitions", [])
     transitions = _rows_by_id(transition_rows, "transition_id", errors, "duplicate_campaign_transition_id")
     superseded_transitions: set[str] = set()
+    transition_correction_predecessors: list[str] = []
     for transition_id, transition in transitions.items():
         correction = transition.get("correction")
         if isinstance(correction, Mapping) and correction.get("kind") != "none":
@@ -582,12 +1079,15 @@ def _semantic_errors(recipe: Mapping[str, Any]) -> list[str]:
                 errors.append("campaign_correction_identity_conflict")
             else:
                 superseded_transitions.add(str(predecessor_id))
+                transition_correction_predecessors.append(str(predecessor_id))
                 if _time(transition["transitioned_at"], "transitioned_at") <= _time(predecessor["transitioned_at"], "transitioned_at"):
                     errors.append("campaign_correction_clock_not_later")
         elif isinstance(correction, Mapping) and (
             correction.get("supersedes_transition_id") is not None or correction.get("reason") is not None
         ):
             errors.append("campaign_original_has_lineage")
+    if len(transition_correction_predecessors) != len(set(transition_correction_predecessors)):
+        errors.append("campaign_correction_lineage_not_linear")
 
     active_transitions = {
         key: value for key, value in transitions.items() if key not in superseded_transitions
@@ -599,6 +1099,14 @@ def _semantic_errors(recipe: Mapping[str, Any]) -> list[str]:
         if not complex_epoch or complex_epoch.get("manager_complex_id") != transition.get("manager_complex_id") or complex_epoch.get("resolution_state") != "resolved":
             errors.append("campaign_complex_epoch_unresolved")
         transitioned_at = _time(transition.get("transitioned_at"), f"transitioned_at:{transition_id}")
+        transition_superseded_observations = _superseded_observations_as_of(
+            observations,
+            references,
+            vehicles,
+            complexes,
+            filers,
+            transitioned_at,
+        )
         for observation_id in transition.get("observation_ids", []):
             event = observations.get(str(observation_id))
             if not event:
@@ -610,14 +1118,23 @@ def _semantic_errors(recipe: Mapping[str, Any]) -> list[str]:
                 or event.get("subject_id") != transition.get("subject_id")
                 or not vehicle
                 or vehicle.get("complex_epoch_id") != transition.get("complex_epoch_id")
-                or observation_id in superseded_observations
+                or observation_id in transition_superseded_observations
             ):
                 errors.append("campaign_observation_ineligible")
                 continue
-            reason = _observation_ineligible_reason(event, references=references, vehicles=vehicles, complexes=complexes, cutoff=transitioned_at)
+            reason = _observation_ineligible_reason(
+                event,
+                references=references,
+                vehicles=vehicles,
+                complexes=complexes,
+                filers=filers,
+                cutoff=transitioned_at,
+                superseded_observations=transition_superseded_observations,
+            )
             if reason is not None:
                 errors.append("campaign_observation_ineligible")
-            if _available_time(event) > transitioned_at:
+            event_reference = references.get(str(event.get("evidence_reference_id")))
+            if _available_time(event, event_reference) > transitioned_at:
                 errors.append("campaign_observation_not_yet_knowable")
 
     campaign_ranges: dict[tuple[str, str, str], list[tuple[datetime, datetime | None, str]]] = defaultdict(list)
@@ -688,8 +1205,15 @@ def _semantic_errors(recipe: Mapping[str, Any]) -> list[str]:
             if not allowed:
                 errors.append("reliability_state_coherence_invalid")
         try:
-            if _time(row.get("maturity_cutoff_at"), "maturity_cutoff_at") < _time(row.get("trial_cutoff_at"), "trial_cutoff_at"):
+            trial_cutoff = _time(row.get("trial_cutoff_at"), "trial_cutoff_at")
+            maturity_cutoff = _time(row.get("maturity_cutoff_at"), "maturity_cutoff_at")
+            if maturity_cutoff < trial_cutoff:
                 errors.append("reliability_cutoff_order_invalid")
+            if complex_epoch and (
+                _interval_state(complex_epoch, trial_cutoff) != EPOCH_APPLICABLE
+                or _interval_state(complex_epoch, maturity_cutoff) != EPOCH_APPLICABLE
+            ):
+                errors.append("reliability_epoch_not_applicable")
         except InstitutionalIntelligenceError:
             pass
 
@@ -740,19 +1264,39 @@ def _compile_measure(event: Mapping[str, Any]) -> dict[str, Any]:
             "residual_shares": None,
         }
     if kind == "complex_presence":
+        present_ids = sorted(set(measure["present_complex_epoch_ids"]))
         return {
             "kind": kind,
             "state": measure["state"],
-            "present": measure["present"],
-            "position_count": measure["position_count"],
+            "present_complex_epoch_ids": present_ids,
+            "present_complex_count": (
+                len(present_ids) if measure["state"] == "observed" else None
+            ),
         }
     return {"kind": "unavailable", "state": str(measure["reason"]).upper(), "value": None}
 
 
-def _reliability_receipt(row: Mapping[str, Any]) -> dict[str, Any]:
-    if row["eligibility_state"] != "eligible":
+def _suppressed_measure(event: Mapping[str, Any], reason: str) -> dict[str, Any]:
+    return {
+        "kind": event["measure"]["kind"],
+        "state": "not_compiled",
+        "reason": reason,
+        "value": None,
+    }
+
+
+def _reliability_receipt(
+    row: Mapping[str, Any],
+    *,
+    epoch_state: str,
+) -> dict[str, Any]:
+    if row["eligibility_state"] != "eligible" or epoch_state != EPOCH_APPLICABLE:
         return {
             **row,
+            "eligibility_state": "insufficient",
+            "maturity_state": "insufficient",
+            "scored_state": "insufficient",
+            "epoch_state": epoch_state,
             "posterior": None,
             "uncertainty_bounds": {"lower": None, "upper": None},
         }
@@ -765,6 +1309,7 @@ def _reliability_receipt(row: Mapping[str, Any]) -> dict[str, Any]:
     upper = min(1.0, posterior + half_width)
     return {
         **row,
+        "epoch_state": epoch_state,
         "posterior": posterior,
         "uncertainty_bounds": {"lower": lower, "upper": upper},
     }
@@ -775,12 +1320,17 @@ def compile_recipe(recipe: Mapping[str, Any], *, as_of: str) -> dict[str, Any]:
     cutoff = _time(as_of, "as_of")
     references = {row["reference_id"]: row for row in validated["evidence_refs"]}
     complexes = {row["complex_epoch_id"]: row for row in validated["manager_complex_epochs"]}
+    filers = {row["filer_epoch_id"]: row for row in validated["filer_epochs"]}
     vehicles = {row["vehicle_epoch_id"]: row for row in validated["vehicle_epochs"]}
-    superseded_observations = {
-        row["correction"]["predecessor_observation_id"]
-        for row in validated["observations"]
-        if row["correction"]["kind"] != "none"
-    }
+    observations = {row["observation_id"]: row for row in validated["observations"]}
+    superseded_observations = _superseded_observations_as_of(
+        observations,
+        references,
+        vehicles,
+        complexes,
+        filers,
+        cutoff,
+    )
 
     event_receipts: list[dict[str, Any]] = []
     event_receipt_map: dict[str, dict[str, Any]] = {}
@@ -788,41 +1338,73 @@ def compile_recipe(recipe: Mapping[str, Any], *, as_of: str) -> dict[str, Any]:
     eligible_intent_vehicle_epochs: set[str] = set()
     for event in validated["observations"]:
         reference = references[event["evidence_reference_id"]]
-        reference_state = _reference_state(reference, _available_time(event), cutoff)
+        reference_state = _reference_state(
+            reference,
+            _available_time(event, reference),
+            cutoff,
+        )
         vehicle = vehicles[event["vehicle_epoch_id"]]
         complex_epoch = complexes[vehicle["complex_epoch_id"]]
-        measure = _compile_measure(event)
+        epoch_state = _observation_epoch_state(
+            event,
+            reference=reference,
+            vehicles=vehicles,
+            complexes=complexes,
+            filers=filers,
+            cutoff=cutoff,
+        )
+        compiled_measure = _compile_measure(event)
         state = reference_state
         if event["observation_id"] in superseded_observations:
             state = "SUPERSEDED"
-        elif reference_state == "PRESENT":
+        elif reference_state != "PRESENT":
+            state = reference_state
+        elif epoch_state != EPOCH_APPLICABLE:
+            state = epoch_state
+        else:
             if event["evidence_basis"] == "source_backed_pointer_only":
                 state = "SOURCE_POINTER_ONLY_NO_SECURITY_BINDING"
             elif event["plane"] == "manager_research_intent":
                 state = (
                     "MANAGER_RESEARCH_INTENT_ELIGIBLE_CONTEXT"
-                    if _vehicle_is_discretionary(vehicle, complex_epoch)
-                    and measure["state"] == "computed"
+                    if _vehicle_is_discretionary(vehicle, complex_epoch, cutoff=cutoff)
+                    and compiled_measure["state"] == "computed"
                     else "MANAGER_INTENT_INELIGIBLE_OR_INSUFFICIENT"
                 )
             elif event["plane"] == "fund_flow_pressure":
                 state = {
                     "computed_true_shares_outstanding": "MECHANICAL_FLOW_RESIDUAL",
                     "proxy_not_true_residual": "MECHANICAL_FLOW_PROXY",
-                }.get(measure["state"], "MECHANICAL_FLOW_UNAVAILABLE")
+                }.get(compiled_measure["state"], "MECHANICAL_FLOW_UNAVAILABLE")
             elif event["plane"] == "theme_capital_rotation":
-                state = "THEME_MEMBER_CHANGE" if measure["state"] == "computed" else "THEME_MEMBER_CHANGE_UNAVAILABLE"
+                state = "THEME_MEMBER_CHANGE" if compiled_measure["state"] == "computed" else "THEME_MEMBER_CHANGE_UNAVAILABLE"
             else:
-                state = "SATURATION_OBSERVED" if measure["state"] == "observed" else "SATURATION_UNAVAILABLE"
+                state = "SATURATION_OBSERVED" if compiled_measure["state"] == "observed" else "SATURATION_UNAVAILABLE"
+        measure = (
+            compiled_measure
+            if state in {
+                "MANAGER_RESEARCH_INTENT_ELIGIBLE_CONTEXT",
+                "MECHANICAL_FLOW_RESIDUAL",
+                "MECHANICAL_FLOW_PROXY",
+                "THEME_MEMBER_CHANGE",
+                "SATURATION_OBSERVED",
+            }
+            else _suppressed_measure(event, state)
+        )
         receipt = {
             "observation_id": event["observation_id"],
             "plane": event["plane"],
             "state": state,
             "reference_state": reference_state,
+            "epoch_state": epoch_state,
             "evidence_reference_id": event["evidence_reference_id"],
             "evidence_basis": event["evidence_basis"],
             "measure": measure,
-            "denominator": event["denominator"],
+            "denominator": (
+                _saturation_denominator(complexes, cutoff)
+                if event["plane"] == "institutionalization_saturation"
+                else event["denominator"]
+            ),
             "correction": event["correction"],
         }
         event_receipts.append(receipt)
@@ -831,21 +1413,134 @@ def compile_recipe(recipe: Mapping[str, Any], *, as_of: str) -> dict[str, Any]:
             eligible_intent_complexes.add(vehicle["complex_epoch_id"])
             eligible_intent_vehicle_epochs.add(vehicle["vehicle_epoch_id"])
 
+    saturation_denominator = _saturation_denominator(complexes, cutoff)
+    saturation_eligible = set(saturation_denominator["eligible_complex_epoch_ids"])
+    saturation_present = sorted({
+        complex_epoch_id
+        for event_receipt in event_receipts
+        if event_receipt["plane"] == "institutionalization_saturation"
+        and event_receipt["state"] == "SATURATION_OBSERVED"
+        for complex_epoch_id in event_receipt["measure"]["present_complex_epoch_ids"]
+        if complex_epoch_id in saturation_eligible
+    })
+    saturation_eligible_count = len(saturation_eligible)
+    saturation_receipt = {
+        "state": (
+            "SATURATION_COMPUTED"
+            if saturation_eligible_count > 0
+            else "SATURATION_INSUFFICIENT_DENOMINATOR"
+        ),
+        "as_of": as_of,
+        "denominator": saturation_denominator,
+        "present_complex_epoch_ids": saturation_present,
+        "present_complex_count": len(saturation_present),
+        "eligible_complex_count": saturation_eligible_count,
+        "saturation_ratio": (
+            len(saturation_present) / saturation_eligible_count
+            if saturation_eligible_count > 0
+            else None
+        ),
+    }
+
     comparison_receipts: list[dict[str, Any]] = []
-    observations = {row["observation_id"]: row for row in validated["observations"]}
     for comparison in validated["theme_comparisons"]:
-        target = event_receipt_map[comparison["target_observation_id"]]
+        comparison_cutoff = _time(comparison["as_of"], "theme_comparison_as_of")
+        member_ids = list(comparison["denominator_receipt"]["member_observation_ids"])
+        membership_reference = references[comparison["membership_reference_id"]]
+        membership_clock = _clock_entry(
+            membership_reference,
+            comparison["membership_clock_binding"],
+        )
+        if membership_clock is None:  # validate() already rejects this; defensive only.
+            raise InstitutionalIntelligenceError("theme_membership_clock_unbound")
+        membership_available = _clock_time(
+            membership_clock,
+            "theme_membership_available",
+        )
+        membership_state = _reference_state(
+            membership_reference,
+            membership_available,
+            comparison_cutoff,
+        )
+        derived_eligible_ids: list[str] = []
+        derived_excluded_members: list[dict[str, str]] = []
+        comparison_measures: dict[str, dict[str, Any]] = {}
+        comparison_superseded = _superseded_observations_as_of(
+            observations,
+            references,
+            vehicles,
+            complexes,
+            filers,
+            comparison_cutoff,
+        )
+        if comparison_cutoff > cutoff:
+            comparison_state = "NOT_YET_KNOWABLE"
+            for observation_id in member_ids:
+                derived_excluded_members.append({
+                    "observation_id": observation_id,
+                    "reason": "comparison_not_yet_knowable",
+                })
+        elif membership_state != "PRESENT":
+            comparison_state = "MEMBERSHIP_REFERENCE_UNUSABLE"
+            for observation_id in member_ids:
+                derived_excluded_members.append({
+                    "observation_id": observation_id,
+                    "reason": membership_state.lower(),
+                })
+        else:
+            comparison_state = "READY"
+            for observation_id in member_ids:
+                event = observations[observation_id]
+                reason = _observation_ineligible_reason(
+                    event,
+                    references=references,
+                    vehicles=vehicles,
+                    complexes=complexes,
+                    filers=filers,
+                    cutoff=comparison_cutoff,
+                    superseded_observations=comparison_superseded,
+                )
+                if reason is None:
+                    comparison_measures[observation_id] = _compile_measure(event)
+                    derived_eligible_ids.append(observation_id)
+                else:
+                    derived_excluded_members.append({
+                        "observation_id": observation_id,
+                        "reason": reason,
+                    })
+        derived_denominator = {
+            "member_observation_ids": member_ids,
+            "eligible_observation_ids": derived_eligible_ids,
+            "excluded_members": derived_excluded_members,
+        }
+        target_id = comparison["target_observation_id"]
         eligible_peer_ids = [
             observation_id
             for observation_id in comparison["peer_observation_ids"]
-            if observation_id in comparison["denominator_receipt"]["eligible_observation_ids"]
+            if observation_id in derived_eligible_ids
         ]
-        target_delta = target["measure"].get("reported_share_delta")
+        target_delta = (
+            comparison_measures[target_id].get("reported_share_delta")
+            if target_id in derived_eligible_ids
+            else None
+        )
         peer_deltas = [
-            event_receipt_map[observation_id]["measure"].get("reported_share_delta")
+            comparison_measures[observation_id].get("reported_share_delta")
             for observation_id in eligible_peer_ids
         ]
-        if eligible_peer_ids and target_delta is not None and all(value is not None for value in peer_deltas):
+        if comparison_state == "NOT_YET_KNOWABLE":
+            state = comparison_state
+            peer_mean = None
+            spread = None
+        elif comparison_state == "MEMBERSHIP_REFERENCE_UNUSABLE":
+            state = comparison_state
+            peer_mean = None
+            spread = None
+        elif target_id not in derived_eligible_ids:
+            state = "TARGET_INELIGIBLE"
+            peer_mean = None
+            spread = None
+        elif eligible_peer_ids and target_delta is not None and all(value is not None for value in peer_deltas):
             peer_mean = sum(float(value) for value in peer_deltas) / len(peer_deltas)
             state = "WITHIN_THEME_PREFERENCE_COMPUTED"
             spread = float(target_delta) - peer_mean
@@ -856,21 +1551,22 @@ def compile_recipe(recipe: Mapping[str, Any], *, as_of: str) -> dict[str, Any]:
         comparison_receipts.append({
             "comparison_id": comparison["comparison_id"],
             "state": state,
-            "target_observation_id": comparison["target_observation_id"],
+            "target_observation_id": target_id,
             "eligible_peer_observation_ids": eligible_peer_ids,
             "target_reported_share_delta": target_delta,
             "eligible_peer_mean_reported_share_delta": peer_mean,
             "preference_spread": spread,
-            "denominator_receipt": comparison["denominator_receipt"],
+            "denominator_receipt": derived_denominator,
             "membership_reference_id": comparison["membership_reference_id"],
+            "membership_reference_state": membership_state,
             "as_of": comparison["as_of"],
+            "compiled_as_of": as_of,
         })
 
-    superseded_transitions = {
-        row["correction"]["supersedes_transition_id"]
-        for row in validated["campaign_transitions"]
-        if row["correction"]["kind"] != "none"
+    transitions = {
+        row["transition_id"]: row for row in validated["campaign_transitions"]
     }
+    superseded_transitions = _superseded_transitions_as_of(transitions, cutoff)
     campaign_history: list[dict[str, Any]] = []
     current_campaign_states: dict[str, str] = {}
     for transition in sorted(
@@ -878,22 +1574,37 @@ def compile_recipe(recipe: Mapping[str, Any], *, as_of: str) -> dict[str, Any]:
         key=lambda row: (row["campaign_id"], row["sequence"], row["transitioned_at"]),
     ):
         transitioned_at = _time(transition["transitioned_at"], "transitioned_at")
+        campaign_complex = complexes[transition["complex_epoch_id"]]
+        campaign_epoch_state = _interval_state(campaign_complex, transitioned_at)
+        if campaign_epoch_state == EPOCH_APPLICABLE:
+            for observation_id in transition["observation_ids"]:
+                observation = observations[observation_id]
+                vehicle = vehicles[observation["vehicle_epoch_id"]]
+                vehicle_state = _interval_state(vehicle, transitioned_at)
+                if vehicle_state != EPOCH_APPLICABLE:
+                    campaign_epoch_state = vehicle_state
+                    break
         if transition["transition_id"] in superseded_transitions:
             record_state = "SUPERSEDED"
         elif transitioned_at > cutoff:
             record_state = "NOT_YET_KNOWABLE"
+        elif campaign_epoch_state != EPOCH_APPLICABLE:
+            record_state = "EPOCH_NOT_APPLICABLE_AT_TRANSITION"
         else:
             record_state = "CURRENT_APPEND_ONLY_RECORD"
             current_campaign_states[transition["campaign_id"]] = transition["to"]
         campaign_history.append({
             **transition,
             "record_state": record_state,
+            "transition_epoch_state": campaign_epoch_state,
         })
 
     resolved_complex_epochs = {
         epoch_id
         for epoch_id, row in complexes.items()
-        if row["resolution_state"] == "resolved" and row["status"] == "active"
+        if row["resolution_state"] == "resolved"
+        and row["status"] == "active"
+        and _interval_state(row, cutoff) == EPOCH_APPLICABLE
     }
     excluded_vehicle_epochs = {
         epoch_id
@@ -903,11 +1614,13 @@ def compile_recipe(recipe: Mapping[str, Any], *, as_of: str) -> dict[str, Any]:
         or row["decision_mode"] != "discretionary"
         or row["vehicle_class"] not in ACTIVE_CLASSES
         or row["complex_epoch_id"] not in resolved_complex_epochs
+        or _interval_state(row, cutoff) != EPOCH_APPLICABLE
     }
     mechanical_vehicle_epochs = {
-        event["vehicle_epoch_id"]
-        for event in validated["observations"]
-        if event["plane"] == "fund_flow_pressure"
+        observations[event_receipt["observation_id"]]["vehicle_epoch_id"]
+        for event_receipt in event_receipts
+        if event_receipt["plane"] == "fund_flow_pressure"
+        and event_receipt["state"] in {"MECHANICAL_FLOW_RESIDUAL", "MECHANICAL_FLOW_PROXY"}
     }
     eligible_vehicle_complexes = {
         vehicles[epoch_id]["complex_epoch_id"] for epoch_id in eligible_intent_vehicle_epochs
@@ -940,7 +1653,23 @@ def compile_recipe(recipe: Mapping[str, Any], *, as_of: str) -> dict[str, Any]:
     for row in validated["reliability"]:
         if _time(row["trial_cutoff_at"], "trial_cutoff_at") > cutoff or _time(row["maturity_cutoff_at"], "maturity_cutoff_at") > cutoff:
             raise InstitutionalIntelligenceError("reliability_cutoff_after_compile_as_of")
-        reliability_receipts.append(_reliability_receipt(row))
+        complex_epoch = complexes[row["complex_epoch_id"]]
+        trial_epoch_state = _interval_state(
+            complex_epoch,
+            _time(row["trial_cutoff_at"], "trial_cutoff_at"),
+        )
+        maturity_epoch_state = _interval_state(
+            complex_epoch,
+            _time(row["maturity_cutoff_at"], "maturity_cutoff_at"),
+        )
+        epoch_state = (
+            trial_epoch_state
+            if trial_epoch_state != EPOCH_APPLICABLE
+            else maturity_epoch_state
+        )
+        reliability_receipts.append(
+            _reliability_receipt(row, epoch_state=epoch_state)
+        )
 
     return {
         "schema": RECEIPT_SCHEMA,
@@ -951,6 +1680,7 @@ def compile_recipe(recipe: Mapping[str, Any], *, as_of: str) -> dict[str, Any]:
         "theme_comparisons": comparison_receipts,
         "campaign_history": campaign_history,
         "current_campaign_states": current_campaign_states,
+        "institutionalization_saturation": saturation_receipt,
         "complex_count_receipt": count_receipt,
         "reliability": reliability_receipts,
         "k1_contract_reuse": {

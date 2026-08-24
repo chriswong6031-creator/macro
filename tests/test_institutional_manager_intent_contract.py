@@ -75,6 +75,83 @@ def replace_reference(value: dict, old_id: str, mutate) -> str:
     return new_id
 
 
+def append_theme_correction(
+    value: dict,
+    *,
+    belief_date: str,
+    rights_blocked: bool = False,
+) -> str:
+    reference = deepcopy(
+        next(row for row in value["evidence_refs"] if row["reference_id"] == THEME_REF_ID)
+    )
+    computed_at = f"{belief_date}T00:15:00Z"
+    reference["native_identity"]["belief_time"] = belief_date
+    reference["provenance"]["pointer"] = reference["provenance"]["pointer"].replace(
+        "belief_time=2026-07-31",
+        f"belief_time={belief_date}",
+    )
+    for clock in reference["clocks"]:
+        if clock["field"] == "belief_time":
+            clock["value"] = belief_date
+        elif clock["field"] == "computed_at":
+            clock["value"] = computed_at
+    reference["correction"] = {
+        "kind": "source_correction",
+        "predecessor_reference_ids": [RAW_REF_ID],
+        "clock_field": "computed_at",
+        "chronology_state": "owner_clock_order_verified",
+        "append_only": True,
+        "mutates_predecessor": False,
+    }
+    reference["relations"] = [{
+        "type": "corrects",
+        "target_reference_id": RAW_REF_ID,
+        "deterministic_key": None,
+        "automatic_effect": False,
+        "independence": {
+            axis: {
+                "state": "shared",
+                "assessment": "declarative_unverified",
+                "basis": "synthetic correction lineage shares predecessor source",
+            }
+            for axis in (
+                "source_independence",
+                "information_novelty",
+                "mechanism_independence",
+            )
+        },
+    }]
+    if rights_blocked:
+        reference["rights"] = {"state": "rights_blocked", "policy_id": "hostile"}
+        reference["missingness"] = {
+            "state": "absent",
+            "reason": "rights_blocked",
+            "zero_substituted": False,
+        }
+    reference["reference_id"] = compute_reference_id(reference)
+    validate_reference(reference)
+    value["evidence_refs"].append(reference)
+
+    successor = deepcopy(event(value, "obs_theme_peer"))
+    successor["observation_id"] = f"obs_theme_peer_corrected_{belief_date.replace('-', '_')}"
+    successor["evidence_reference_id"] = reference["reference_id"]
+    successor["reference_binding"] = {
+        "reference_id": reference["reference_id"],
+        "owner_store": reference["owner_store"],
+        "native_identity": deepcopy(reference["native_identity"]),
+        "valid_clock": {"field": "valid_from", "value": "2026-07-30"},
+        "available_clock": {"field": "computed_at", "value": computed_at},
+    }
+    successor["correction"] = {
+        "kind": "source_correction",
+        "predecessor_observation_id": "obs_theme_peer",
+        "reason": "synthetic PIT correction",
+        "append_only": True,
+    }
+    value["observations"].append(successor)
+    return successor["observation_id"]
+
+
 def _transition(
     transition_id: str,
     *,
@@ -173,6 +250,101 @@ def test_four_planes_have_closed_positive_and_adverse_receipts() -> None:
     assert by_id["obs_flow_proxy"]["state"] == "MECHANICAL_FLOW_PROXY"
     assert by_id["obs_saturation_positive"]["state"] == "SATURATION_OBSERVED"
     assert by_id["obs_saturation_adverse"]["state"] == "SATURATION_UNAVAILABLE"
+    assert by_id["obs_saturation_positive"]["measure"] == {
+        "kind": "complex_presence",
+        "state": "observed",
+        "present_complex_epoch_ids": ["mce_meeder_2026q2"],
+        "present_complex_count": 1,
+    }
+    saturation = receipt["institutionalization_saturation"]
+    assert saturation["present_complex_epoch_ids"] == ["mce_meeder_2026q2"]
+    assert saturation["present_complex_count"] == 1
+    assert saturation["eligible_complex_count"] == 2
+    assert saturation["saturation_ratio"] == 0.5
+    assert saturation["denominator"] == {
+        "kind": "eligible_research_complexes",
+        "eligible_complex_epoch_ids": ["mce_meeder_2026q2", "mce_peer_2026q2"],
+        "excluded_complex_epochs": [
+            {"complex_epoch_id": "mce_passive_2026q2", "reason": "passive"},
+            {"complex_epoch_id": "mce_unresolved_2026q2", "reason": "unresolved"},
+        ],
+    }
+
+
+def test_saturation_has_no_detached_count_or_caller_denominator_override() -> None:
+    value = recipe()
+    event(value, "obs_saturation_positive")["measure"]["position_count"] = 999
+    rejected(value, "json_schema:observations")
+
+    value = recipe()
+    event(value, "obs_saturation_positive")["denominator"][
+        "eligible_complex_epoch_ids"
+    ] = ["mce_does_not_exist"]
+    rejected(value, "saturation_denominator_not_derived")
+
+    value = recipe()
+    event(value, "obs_saturation_positive")["measure"][
+        "present_complex_epoch_ids"
+    ].append("mce_peer_2026q2")
+    rejected(value, "saturation_present_complex_unbacked")
+
+
+@pytest.mark.parametrize(
+    "interval_update",
+    [
+        {
+            "effective_from": "2030-01-01T00:00:00Z",
+            "valid_from": "2030-01-01T00:00:00Z",
+            "knowable_from": "2030-01-02T00:00:00Z",
+        },
+        {
+            "effective_to": "2026-05-01T00:00:00Z",
+            "valid_to": "2026-05-01T00:00:00Z",
+            "knowable_to": "2026-05-01T00:00:00Z",
+        },
+    ],
+)
+def test_saturation_denominator_cannot_keep_future_or_expired_epoch_eligible(
+    interval_update: dict,
+) -> None:
+    value = recipe()
+    value["manager_complex_epochs"][1]["interval"].update(interval_update)
+    value["theme_comparisons"] = []
+    value["campaign_transitions"] = []
+    value["observations"] = [
+        row for row in value["observations"]
+        if row["plane"] == "institutionalization_saturation"
+    ]
+    rejected(value, "saturation_denominator_not_derived")
+
+
+def test_superseded_saturation_observation_cannot_contribute_present_count() -> None:
+    value = recipe()
+    successor_id = append_theme_correction(value, belief_date="2026-09-01")
+    successor = event(value, successor_id)
+    predecessor = event(value, "obs_saturation_positive")
+    successor.update({
+        "vehicle_epoch_id": predecessor["vehicle_epoch_id"],
+        "subject_id": predecessor["subject_id"],
+        "theme_id": predecessor["theme_id"],
+        "theme_epoch_id": predecessor["theme_epoch_id"],
+        "plane": predecessor["plane"],
+        "measure": {"kind": "unavailable", "reason": "source_missing"},
+        "denominator": deepcopy(predecessor["denominator"]),
+    })
+    successor["correction"]["predecessor_observation_id"] = predecessor["observation_id"]
+    stamp(value)
+
+    earlier = compile_recipe(value, as_of=AS_OF)
+    assert earlier["institutionalization_saturation"]["present_complex_count"] == 1
+
+    later = compile_recipe(value, as_of="2026-09-02T00:30:00Z")
+    later_events = {row["observation_id"]: row for row in later["events"]}
+    assert later_events[predecessor["observation_id"]]["state"] == "SUPERSEDED"
+    assert later_events[successor_id]["state"] == "SATURATION_UNAVAILABLE"
+    assert later["institutionalization_saturation"]["present_complex_epoch_ids"] == []
+    assert later["institutionalization_saturation"]["present_complex_count"] == 0
+    assert later["institutionalization_saturation"]["saturation_ratio"] == 0.0
 
 
 def test_event_pointer_tamper_and_full_ref_tamper_fail_closed() -> None:
@@ -238,6 +410,25 @@ def test_within_theme_preference_is_derived_from_distinct_pit_members() -> None:
     assert adverse["preference_spread"] is None
 
 
+def test_future_theme_comparison_never_compiles_or_copies_future_eligibility() -> None:
+    receipt = compile_recipe(recipe(), as_of="2026-08-02T00:00:00Z")
+    positive = next(
+        row for row in receipt["theme_comparisons"]
+        if row["comparison_id"] == "thc_positive"
+    )
+    assert positive["state"] == "NOT_YET_KNOWABLE"
+    assert positive["compiled_as_of"] == "2026-08-02T00:00:00Z"
+    assert positive["as_of"] == "2026-08-08T00:00:00Z"
+    assert positive["target_reported_share_delta"] is None
+    assert positive["eligible_peer_mean_reported_share_delta"] is None
+    assert positive["preference_spread"] is None
+    assert positive["eligible_peer_observation_ids"] == []
+    assert positive["denominator_receipt"]["eligible_observation_ids"] == []
+    assert {
+        row["reason"] for row in positive["denominator_receipt"]["excluded_members"]
+    } == {"comparison_not_yet_knowable"}
+
+
 def test_same_target_peer_or_one_name_denominator_is_rejected() -> None:
     value = recipe()
     comparison = value["theme_comparisons"][0]
@@ -264,6 +455,18 @@ def test_membership_pointer_clock_tamper_is_rejected() -> None:
     value = recipe()
     value["theme_comparisons"][0]["membership_clock_binding"]["value"] = "2026-08-09T00:00:00Z"
     rejected(value, "theme_membership_clock_unbound|theme_membership_lookahead")
+
+
+def test_date_grain_membership_clock_uses_conservative_following_midnight() -> None:
+    value = recipe()
+    for comparison in value["theme_comparisons"]:
+        comparison["membership_clock_binding"] = {
+            "field": "belief_time",
+            "value": "2026-07-31",
+        }
+    stamp(value)
+    receipt = compile_recipe(value, as_of=AS_OF)
+    assert receipt["theme_comparisons"][0]["state"] == "WITHIN_THEME_PREFERENCE_COMPUTED"
 
 
 def test_campaign_refuses_rights_blocked_and_preknowledge_observations() -> None:
@@ -334,6 +537,67 @@ def test_event_missingness_rights_coverage_and_caller_output_cannot_be_invented(
         rejected(value, "json_schema:observations")
 
 
+@pytest.mark.parametrize(
+    ("mutation", "expected_state"),
+    [
+        (
+            lambda reference: reference.update(
+                freshness={"state": "unknown", "clock_field": None, "policy_id": None}
+            ),
+            "FRESHNESS_UNKNOWN",
+        ),
+        (
+            lambda reference: reference.update(
+                missingness={
+                    "state": "absent",
+                    "reason": "stale",
+                    "zero_substituted": False,
+                }
+            ),
+            "STALE",
+        ),
+    ],
+)
+def test_k1_freshness_and_missingness_fail_closed_without_positive_outputs(
+    mutation,
+    expected_state: str,
+) -> None:
+    value = recipe()
+    replace_reference(value, RAW_REF_ID, mutation)
+    value["campaign_transitions"] = []
+    value["theme_comparisons"] = []
+    value["observations"] = [
+        row for row in value["observations"]
+        if row["plane"] not in {
+            "institutionalization_saturation",
+            "theme_capital_rotation",
+        }
+    ]
+    stamp(value)
+    receipt = compile_recipe(value, as_of="2026-08-10T00:00:00Z")
+    raw_events = [
+        row for row in receipt["events"]
+        if row["evidence_reference_id"] != THEME_REF_ID
+    ]
+    assert raw_events
+    assert {row["reference_state"] for row in raw_events} == {expected_state}
+    assert all(row["measure"]["state"] == "not_compiled" for row in raw_events)
+    assert receipt["complex_count_receipt"]["distinct_eligible_research_complex_count"] == 0
+    assert receipt["complex_count_receipt"]["mechanical_vehicle_epoch_count"] == 0
+
+
+def test_k1_owner_incoherent_coverage_is_rejected_before_compilation() -> None:
+    value = recipe()
+    raw = next(row for row in value["evidence_refs"] if row["reference_id"] == RAW_REF_ID)
+    raw["coverage_class"] = "current_only"
+    raw["reference_id"] = compute_reference_id(raw)
+    for row in value["observations"]:
+        if row["evidence_reference_id"] == RAW_REF_ID:
+            row["evidence_reference_id"] = raw["reference_id"]
+            row["reference_binding"]["reference_id"] = raw["reference_id"]
+    rejected(value, "k1_evidence_ref_invalid")
+
+
 def test_epoch_intervals_lineage_decision_modes_and_raw_actor_history_are_closed() -> None:
     value = recipe()
     value["manager_complex_epochs"][0]["interval"]["valid_to"] = "2026-03-01T00:00:00Z"
@@ -351,6 +615,169 @@ def test_epoch_intervals_lineage_decision_modes_and_raw_actor_history_are_closed
 
     assert value["manager_complex_epochs"][0]["actor_identity"]["raw_actor_string"]
     assert value["manager_complex_epochs"][0]["actor_identity"]["original_ontology_version"]
+
+    value = recipe()
+    interval = value["manager_complex_epochs"][0]["interval"]
+    interval["effective_to"] = interval["effective_from"]
+    rejected(value, "epoch_interval_reversed")
+
+
+def test_epoch_and_actor_lineage_bind_to_the_correct_registry_and_entity() -> None:
+    value = recipe()
+    actor = value["manager_complex_epochs"][0]["actor_identity"]
+    actor["remap_lineage"] = {
+        "state": "remapped",
+        "predecessor_epoch_id": "mce_does_not_exist",
+        "reason": "hostile dangling remap",
+        "append_only": True,
+    }
+    rejected(value, "actor_remap_predecessor_invalid|actor_remap_epoch_lineage_conflict")
+
+    value = recipe()
+    value["filer_epochs"][0]["lineage"] = {
+        "state": "corrected",
+        "predecessor_epoch_id": "fie_does_not_exist",
+        "reason": "hostile dangling filer correction",
+        "append_only": True,
+    }
+    rejected(value, "filer_lineage_predecessor_invalid")
+
+    value = recipe()
+    value["vehicle_epochs"][0]["lineage"] = {
+        "state": "corrected",
+        "predecessor_epoch_id": "vie_does_not_exist",
+        "reason": "hostile dangling vehicle correction",
+        "append_only": True,
+    }
+    rejected(value, "vehicle_lineage_predecessor_invalid")
+
+    value = recipe()
+    current = value["manager_complex_epochs"][0]
+    current["lineage"] = {
+        "state": "corrected",
+        "predecessor_epoch_id": current["complex_epoch_id"],
+        "reason": "hostile self correction",
+        "append_only": True,
+    }
+    current["actor_identity"]["remap_lineage"] = deepcopy(current["lineage"])
+    rejected(value, "manager_complex_lineage_predecessor_invalid|actor_remap_predecessor_invalid")
+
+    value = recipe()
+    first, second = value["manager_complex_epochs"][:2]
+    for row, predecessor in ((first, second), (second, first)):
+        row["lineage"] = {
+            "state": "corrected",
+            "predecessor_epoch_id": predecessor["complex_epoch_id"],
+            "reason": "hostile cycle",
+            "append_only": True,
+        }
+        row["actor_identity"]["remap_lineage"] = deepcopy(row["lineage"])
+    rejected(value, "manager_complex_lineage_cycle|actor_remap_cycle")
+
+
+def test_valid_manager_and_actor_remap_is_linear_append_only_and_nonoverlapping() -> None:
+    value = recipe()
+    current = value["manager_complex_epochs"][0]
+    predecessor = deepcopy(current)
+    predecessor["complex_epoch_id"] = "mce_meeder_2026q1"
+    predecessor["interval"] = {
+        "effective_from": "2025-01-01T00:00:00Z",
+        "effective_to": current["interval"]["effective_from"],
+        "valid_from": "2025-01-01T00:00:00Z",
+        "valid_to": current["interval"]["valid_from"],
+        "knowable_from": "2025-01-01T00:00:00Z",
+        "knowable_to": current["interval"]["knowable_from"],
+    }
+    predecessor["status"] = "inactive"
+    predecessor["actor_identity"]["remap_lineage"] = {
+        "state": "original",
+        "predecessor_epoch_id": None,
+        "reason": None,
+        "append_only": True,
+    }
+    predecessor["lineage"] = deepcopy(predecessor["actor_identity"]["remap_lineage"])
+    current["actor_identity"]["remap_lineage"] = {
+        "state": "remapped",
+        "predecessor_epoch_id": predecessor["complex_epoch_id"],
+        "reason": "canonical entity remapped without mutating history",
+        "append_only": True,
+    }
+    current["lineage"] = deepcopy(current["actor_identity"]["remap_lineage"])
+    value["manager_complex_epochs"].append(predecessor)
+    for saturation in [
+        row for row in value["observations"]
+        if row["plane"] == "institutionalization_saturation"
+    ]:
+        saturation["denominator"]["excluded_complex_epochs"].insert(0, {
+            "complex_epoch_id": predecessor["complex_epoch_id"],
+            "reason": "inactive",
+        })
+    stamp(value)
+    assert validate(value)
+
+
+def test_future_epochs_refuse_events_counts_campaigns_and_reliability() -> None:
+    value = recipe()
+    for row in (
+        value["manager_complex_epochs"][0],
+        value["filer_epochs"][0],
+        value["vehicle_epochs"][0],
+    ):
+        row["interval"].update(
+            effective_from="2030-01-01T00:00:00Z",
+            valid_from="2030-01-01T00:00:00Z",
+            knowable_from="2030-01-02T00:00:00Z",
+        )
+    stamp(value)
+    errors = violations(value)
+    assert "event_epoch_not_applicable" in errors
+    assert "campaign_observation_ineligible" in errors
+    assert "reliability_epoch_not_applicable" in errors
+    with pytest.raises(InstitutionalIntelligenceError):
+        compile_recipe(value, as_of="2026-08-10T00:00:00Z")
+
+
+def test_expiry_after_event_preserves_historical_campaign_and_reliability() -> None:
+    value = recipe()
+    for row in (
+        value["manager_complex_epochs"][0],
+        value["filer_epochs"][0],
+        value["vehicle_epochs"][0],
+    ):
+        row["interval"].update(
+            effective_to="2026-08-05T00:00:00Z",
+            valid_to="2026-08-05T00:00:00Z",
+            knowable_to="2026-08-05T00:00:00Z",
+        )
+    value["theme_comparisons"] = []
+    value["observations"] = [
+        row for row in value["observations"]
+        if row["plane"] != "theme_capital_rotation"
+    ]
+    stamp(value)
+    receipt = compile_recipe(value, as_of=AS_OF)
+    events = {row["observation_id"]: row for row in receipt["events"]}
+    assert events["obs_manager_positive"]["state"] == "VEHICLE_EPOCH_EFFECTIVE_EXPIRED"
+    assert events["obs_manager_positive"]["measure"]["state"] == "not_compiled"
+    assert receipt["complex_count_receipt"]["distinct_eligible_research_complex_count"] == 0
+    assert receipt["campaign_history"][0]["record_state"] == "CURRENT_APPEND_ONLY_RECORD"
+    assert receipt["campaign_history"][0]["transition_epoch_state"] == "APPLICABLE"
+    assert receipt["current_campaign_states"] == {"cmp_meeder_alpha_1": "INITIATED"}
+    assert receipt["reliability"][0]["epoch_state"] == "APPLICABLE"
+    assert receipt["reliability"][0]["posterior"] == 0.5
+
+
+def test_campaign_and_reliability_cutoffs_must_be_inside_epoch_intervals() -> None:
+    value = recipe()
+    for row in (value["manager_complex_epochs"][0], value["vehicle_epochs"][0]):
+        row["interval"]["valid_to"] = "2026-05-16T00:00:00Z"
+    stamp(value)
+    assert "campaign_observation_ineligible" in violations(value)
+
+    value = recipe()
+    value["manager_complex_epochs"][0]["interval"]["knowable_from"] = "2026-07-15T00:00:00Z"
+    stamp(value)
+    assert "reliability_epoch_not_applicable" in violations(value)
 
 
 @pytest.mark.parametrize(
@@ -405,6 +832,10 @@ def test_unresolved_complex_never_inflates_independent_research_count() -> None:
 
 def test_same_complex_deductions_cannot_be_negative_when_complexes_exceed_vehicles() -> None:
     value = recipe()
+    value["observations"] = [
+        row for row in value["observations"]
+        if row["plane"] != "institutionalization_saturation"
+    ]
     for ordinal in range(5):
         row = deepcopy(value["manager_complex_epochs"][1])
         row["manager_complex_id"] = f"mcx_extra_{ordinal}"
@@ -518,6 +949,68 @@ def test_correction_requires_real_k1_append_supersession_lineage() -> None:
     }
     value["observations"].append(successor)
     rejected(value, "observation_correction_clock_not_later|observation_correction_k1_lineage_unbound")
+
+
+def test_future_observation_correction_is_not_premature_supersession() -> None:
+    value = recipe()
+    successor_id = append_theme_correction(value, belief_date="2026-09-01")
+    stamp(value)
+
+    earlier = compile_recipe(value, as_of=AS_OF)
+    earlier_events = {row["observation_id"]: row for row in earlier["events"]}
+    assert earlier_events["obs_theme_peer"]["state"] == "THEME_MEMBER_CHANGE"
+    assert earlier_events[successor_id]["state"] == "NOT_KNOWABLE"
+    assert earlier["theme_comparisons"][0]["state"] == "WITHIN_THEME_PREFERENCE_COMPUTED"
+
+    later = compile_recipe(value, as_of="2026-09-02T00:30:00Z")
+    later_events = {row["observation_id"]: row for row in later["events"]}
+    assert later_events["obs_theme_peer"]["state"] == "SUPERSEDED"
+    assert later_events[successor_id]["state"] == "THEME_MEMBER_CHANGE"
+    # The comparison is a PIT receipt at 2026-08-08, so the later correction
+    # never rewrites its historical denominator or result.
+    assert later["theme_comparisons"][0]["state"] == "WITHIN_THEME_PREFERENCE_COMPUTED"
+
+
+def test_rights_blocked_correction_never_erases_usable_predecessor() -> None:
+    value = recipe()
+    successor_id = append_theme_correction(
+        value,
+        belief_date="2026-08-01",
+        rights_blocked=True,
+    )
+    stamp(value)
+    receipt = compile_recipe(value, as_of=AS_OF)
+    events = {row["observation_id"]: row for row in receipt["events"]}
+    assert events["obs_theme_peer"]["state"] == "THEME_MEMBER_CHANGE"
+    assert events[successor_id]["state"] == "RIGHTS_BLOCKED"
+    assert receipt["theme_comparisons"][0]["state"] == "WITHIN_THEME_PREFERENCE_COMPUTED"
+
+
+def test_future_campaign_correction_preserves_current_predecessor_until_known() -> None:
+    value = recipe()
+    correction = deepcopy(value["campaign_transitions"][0])
+    correction["transition_id"] = "ctr_campaign_1_corrected"
+    correction["transitioned_at"] = "2026-09-01T00:00:00Z"
+    correction["correction"] = {
+        "kind": "source_correction",
+        "supersedes_transition_id": "ctr_campaign_1",
+        "reason": "future synthetic campaign correction",
+        "append_only": True,
+    }
+    value["campaign_transitions"].append(correction)
+    stamp(value)
+
+    earlier = compile_recipe(value, as_of=AS_OF)
+    earlier_history = {row["transition_id"]: row for row in earlier["campaign_history"]}
+    assert earlier_history["ctr_campaign_1"]["record_state"] == "CURRENT_APPEND_ONLY_RECORD"
+    assert earlier_history["ctr_campaign_1_corrected"]["record_state"] == "NOT_YET_KNOWABLE"
+    assert earlier["current_campaign_states"] == {"cmp_meeder_alpha_1": "INITIATED"}
+
+    later = compile_recipe(value, as_of="2026-09-02T00:00:00Z")
+    later_history = {row["transition_id"]: row for row in later["campaign_history"]}
+    assert later_history["ctr_campaign_1"]["record_state"] == "SUPERSEDED"
+    assert later_history["ctr_campaign_1_corrected"]["record_state"] == "CURRENT_APPEND_ONLY_RECORD"
+    assert later["current_campaign_states"] == {"cmp_meeder_alpha_1": "INITIATED"}
 
 
 def test_no_authority_alias_payload_copy_or_freeform_plane_shape_can_enter() -> None:

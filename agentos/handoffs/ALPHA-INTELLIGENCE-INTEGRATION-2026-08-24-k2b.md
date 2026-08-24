@@ -14,15 +14,15 @@ state_before: >
   commission. The Chairman supplied that bounded release on 2026-08-24.
 changed:
   - path: "contracts/institutional_intelligence/manager_intent_recipe.v1.schema.json"
-    what: "Closed full-EvidenceRef manager-complex, vehicle, observation, theme denominator, campaign-history and reliability recipe schema."
+    what: "Closed full-EvidenceRef manager-complex, vehicle, observation, PIT theme/saturation denominator, campaign-history and reliability recipe schema."
   - path: "contracts/institutional_intelligence/README.md"
     what: "Frozen four-plane, authority, clock, correction and non-persistence contract."
   - path: "lib/institutional_intelligence.py"
-    what: "Pure deterministic validator/compiler: K1 reference validation and binding, true-S residuals, PIT theme denominators, append-only campaigns, honest counts and prospective reliability, with no owner read or persistence path."
+    what: "Pure deterministic validator/compiler: K1 reference/freshness validation, grain-aware clocks, exact interval and lineage law, true-S residuals, PIT theme/saturation denominators, as-of supersession, append-only campaigns, honest counts and prospective reliability, with no owner read or persistence path."
   - path: "tests/fixtures/institutional_intelligence/source_backed_manager_intent_recipe.json"
     what: "Actual accepted K1 raw-13F/catalog/ThemeGraph refs, an honestly unresolved source-backed 13F security row, and explicitly synthetic positive/adverse compiler rows."
   - path: "tests/test_institutional_manager_intent_contract.py"
-    what: "Hostile tests for full-ref tamper, computed residual/comparator, PIT denominator, campaign lineage/knowledge/rights, K1 vocab, nonnegative counts, unresolved-complex exclusion, reliability cutoffs/uncertainty and all eight China actor roles."
+    what: "Hostile tests for full-ref tamper, freshness/missingness/coverage, computed residual/comparator, PIT theme/saturation denominator, future corrections, campaign lineage/knowledge/rights, registry-bound actor/epoch lineage, nonnegative counts, reliability cutoffs/uncertainty and all eight China actor roles."
   - path: ".github/ci/legacy-jobs.yml"
     what: "Registers the K2-B suite beside the K1 pointer-contract run line."
   - path: "research/alpha_intelligence/K2B_INSTITUTIONAL_MANAGER_INTENT_CONTRACT_FREEZE_2026-08-24.md"
@@ -32,15 +32,15 @@ changed:
   - path: "agentos/workstreams/WS-ALPHA-INTELLIGENCE-INTEGRATION.md"
     what: "Moves K2 to contract packet review without advancing an adapter or runtime state."
 verified:
-  - claim: "The repaired K2-B contract closes both hostile-review rounds and remains compatible with the exact accepted K1 suites."
+  - claim: "The repaired K2-B contract closes the reproduced defects from all three prior exact-head hostile reviews and remains compatible with the exact accepted K1 suites; the amended head still requires fresh independent review."
     command: "python3 -m pytest tests/test_institutional_manager_intent_contract.py tests/test_evidence_foundation_contract.py tests/test_evidence_foundation_product_contract.py -q"
-    result: "158 passed, 3 inherited pytest temporary-directory cleanup warnings."
+    result: "175 passed, 3 inherited pytest temporary-directory cleanup warnings."
   - claim: "Every focused K2-B positive and hostile case passes."
     command: "python3 -m pytest tests/test_institutional_manager_intent_contract.py -q"
-    result: "33 passed, 3 inherited pytest temporary-directory cleanup warnings."
+    result: "50 passed, 3 inherited pytest temporary-directory cleanup warnings."
   - claim: "The changed contract introduces no base-relative contract-delta violation."
     command: "python3 scripts/check_contract_delta.py --base origin/main"
-    result: "contract-delta: 0 introduced, 0 inherited (base d1cebef60e7e)."
+    result: "contract-delta: 0 introduced, 0 inherited (base 010a16a44d0d)."
   - claim: "The CI manifest and local plan include the exact K2-B run line."
     command: "python3 scripts/run_ci_pack.py --workflow .github/ci/legacy-jobs.yml --pack-index 0 --pack-count 12 --validate-only && python3 scripts/run_ci_pack.py --workflow .github/ci/legacy-jobs.yml --changed-from origin/main --plan-only --emit-plan-json -"
     result: "Validated 202 legacy jobs; global CI-manifest invalidator plans all 202 jobs into 2 packs, including K1 and K2-B under signal-contract; plan aaad58483706c1ea4655605558c223ccdc45655513e327d0151d977215622d96."
@@ -71,14 +71,14 @@ danger_areas:
 
 ## §0 State — what is true right now
 
-K2-B is a repaired contract-only packet awaiting exact-head review. The compiler
+K2-B is a third-round repaired contract-only packet awaiting exact-head review. The compiler
 produces an in-memory descriptive receipt and explicitly preserves
 `persistence: none` and five false authority axes. It has no deployment or
 live-product proof obligation because none was commissioned.
 
 ## §1 What is LEFT — in order
 
-1. Reconcile this carrier with fresh `origin/main` for same-path drift before
+1. Reconcile this third repair with fresh `origin/main` for same-path drift before
    push; do not rebase through a conflicting CI manifest hunk.
 2. Push one clean commit to the existing PR #6370 and bind hosted checks to its
    exact SHA.
@@ -91,6 +91,11 @@ are three distinct clocks. A future consumer which ignores any of them will
 recreate historical-as-live flow laundering. K1 validation proves the filing
 pointer and manager identity, not a security holdings row; only a bounded owner
 reader against the immutable catalog generation can close that later seam.
+Supersession is PIT: only a usable, knowable, epoch-applicable successor erases
+its predecessor at a given cutoff. Saturation counts are derived from the exact
+eligible population and usable present observations; never restore a detached
+caller count. Epoch and actor remaps are registry-bound linear histories, not
+free predecessor strings.
 
 ## §3 What was decided and found
 
