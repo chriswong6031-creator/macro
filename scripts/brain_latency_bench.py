@@ -188,10 +188,20 @@ _NATIVE_REASON_CODES = frozenset({
     "value_missing", "history_not_supported", "not_applicable", "rights_blocked",
     "retired_entity", "superseded_entity",
 })
-_NATIVE_UNITS = frozenset({
-    "currency", "percent", "stage_code", "weeks", "percentile", "iso_date",
-    "entity_refs",
-})
+_NATIVE_FIELD_UNITS = {
+    "market.price.last": "currency",
+    "market.return.1m": "percent",
+    "market.return.3m": "percent",
+    "market.return.12m": "percent",
+    "stage.current": "stage_code",
+    "stage.weeks_in_stage": "weeks",
+    "industry.rank.percentile": "percentile",
+    "security.industry_member.rs_percentile": "percentile",
+    "earnings.next_date": "iso_date",
+    "earnings.latest.eps_growth_pct": "percent",
+    "earnings.latest.revenue_growth_pct": "percent",
+    "theme.local.memberships": "entity_refs",
+}
 _NATIVE_PRECEDENCE_REASONS = frozenset({
     "explicit_request", "explicit_entity_wins", "ambient_context",
 })
@@ -596,6 +606,20 @@ def _safe_native_fact_receipt(value: Any) -> dict | None:
     def safe_clock(raw: Any) -> str | None:
         return safe_token(raw, _PROOF_CLOCK_RE, optional=True)
 
+    def safe_unit(field_id: str, raw: Any) -> str:
+        expected = _NATIVE_FIELD_UNITS[field_id]
+        if raw == expected:
+            return raw
+        # W1-A freezes market.price.last as owner_currency_code: an available
+        # price carries the owner's concrete ISO 4217 code (for example USD),
+        # not the registry's abstract ``currency`` unit.  Keep that dynamic
+        # surface closed to exactly three uppercase ASCII letters and bind it
+        # to the sole dynamic-unit field.
+        if (field_id == "market.price.last" and isinstance(raw, str)
+                and re.fullmatch(r"[A-Z]{3}", raw)):
+            return raw
+        raise ValueError("native proof unit is invalid")
+
     def safe_industry_id(raw: Any) -> str:
         if (not isinstance(raw, str) or not raw or len(raw) > 160
                 or _PATH_LIKE_RE.search(raw) or any(ord(char) < 32 for char in raw)
@@ -664,6 +688,7 @@ def _safe_native_fact_receipt(value: Any) -> dict | None:
         for fact in raw_facts:
             if not isinstance(fact, dict):
                 raise ValueError("native fact proof is invalid")
+            field_id = enum(fact.get("field_id"), _NATIVE_FIELD_IDS)
             source = fact.get("source")
             freshness = fact.get("freshness")
             display_order = fact.get("display_order")
@@ -674,14 +699,14 @@ def _safe_native_fact_receipt(value: Any) -> dict | None:
             facts.append({
                 "clause_id": safe_token(fact.get("clause_id"), _CLAUSE_ID_RE),
                 "display_order": display_order,
-                "field_id": enum(fact.get("field_id"), _NATIVE_FIELD_IDS),
+                "field_id": field_id,
                 "entity": safe_entity(fact.get("entity")),
                 "fact_fingerprint": hex64(fact.get("fact_fingerprint")),
                 "status": enum(fact.get("status"), _NATIVE_STATUSES),
                 "reason_code": enum(
                     fact.get("reason_code"), _NATIVE_REASON_CODES, optional=True
                 ),
-                "unit": enum(fact.get("unit"), _NATIVE_UNITS, optional=True),
+                "unit": safe_unit(field_id, fact.get("unit")),
                 "source_id": safe_token(source.get("source_id"), _SOURCE_ID_RE),
                 "as_of": safe_clock(fact.get("as_of")),
                 "freshness": enum(
