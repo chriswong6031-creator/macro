@@ -1853,6 +1853,10 @@ def main(argv: list[str] | None = None) -> int:
             print("production process identity changed during the corpus; no acceptance output written",
                   file=sys.stderr)
             return 2
+        if not _sha_prefix_matches(post_health.get("checkout"), health.get("checkout")):
+            print("production deployment checkout changed during the corpus; "
+                  "no acceptance output written", file=sys.stderr)
+            return 2
         if args.expected_deployed_checkout and not _sha_prefix_matches(
                 post_health.get("checkout"), args.expected_deployed_checkout):
             print("production checkout changed during the exact-checkout corpus; "

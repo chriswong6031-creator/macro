@@ -1354,6 +1354,52 @@ def test_w0b_production_identity_is_rechecked_after_complete_corpus(
     assert not out.exists()
 
 
+def test_w0b_production_checkout_change_without_optional_pin_writes_no_proof(
+        tmp_path, monkeypatch, capsys):
+    manifest_path = _write_w0b_manifest(tmp_path)
+    _version, manifest_digest, _specs = bench.load_private_manifest(str(manifest_path))
+    health_reads = iter([
+        {"commit": "a" * 12, "checkout": "b" * 12, "error": None},
+        {"commit": "a" * 12, "checkout": "c" * 12, "error": None},
+    ])
+    monkeypatch.setattr(bench, "capture_health", lambda *args, **kwargs: next(health_reads))
+    probes = []
+
+    def _probe(*args, **kwargs):
+        probes.append(args[1])
+        return {
+            "headers_ms": 1, "first_status_ms": 2, "ttfv_ms": 3, "done_ms": 4,
+            "n_deltas": 1, "n_tool_events": 0, "route": "deep",
+            "server_latency": {
+                "route": "deep", "ttfv_ms": 3, "total_ms": 4, "rounds": [],
+            },
+            "answer_chars": 7, "output_bytes": 7, "degraded": False, "error": None,
+            "_raw_answer": "private fixture",
+        }
+
+    monkeypatch.setattr(bench, "probe", _probe)
+    out = tmp_path / "after-receipt.jsonl"
+    raw_out = tmp_path / "after-answers.jsonl"
+    assert bench.main([
+        "--base-url", "https://benchmark.example.test",
+        "--cookie", "ephemeral-guest-fixture",
+        "--environment", "production",
+        "--cache-basis", "natural_running_service",
+        "--manifest", str(manifest_path),
+        "--expected-manifest-digest", manifest_digest,
+        "--out", str(out),
+        "--raw-answer-out", str(raw_out),
+        "--health-url", "https://benchmark.example.test/api/health",
+        "--expected-deployed-commit", "a" * 40,
+        "--reviewer", "fixture-reviewer",
+        "--rubric-version", bench.W0B_RUBRIC_VERSION,
+    ]) == 2
+    assert len(probes) == len(bench.W0B_CORPUS_V1)
+    assert "deployment checkout changed during the corpus" in capsys.readouterr().err
+    assert not out.exists()
+    assert not raw_out.exists()
+
+
 def test_w0b_private_output_is_owner_only_and_refuses_symlink(tmp_path):
     target = tmp_path / "private.jsonl"
     bench.append_jsonl(target, [{"safe": True}])
