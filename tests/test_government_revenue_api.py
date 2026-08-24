@@ -609,3 +609,26 @@ def test_public_endpoints_deep_scrub_private_fields_and_credential_query_params(
     assert "api_key" not in serialized
     assert "token=leak" not in serialized
     assert "safe=1" in serialized
+
+
+def test_public_budget_line_publisher_passes_through_validated_source() -> None:
+    """The public serializer must never rewrite the receipt-validated publisher.
+
+    A hardcoded era string here silently misstated the source after the
+    Department of War rebrand (the FY2027 exhibits self-identify as the Office
+    of the Under Secretary of War (Comptroller)).
+    """
+    from collectors.dod_budget import PUBLISHER
+
+    row = {
+        "line_key": "dod:p1:navy:1611:p1-line-item:6:fy2027:president_budget_request",
+        "source": {
+            "publisher": PUBLISHER,
+            "source_url": "https://comptroller.war.gov/Portals/45/Documents/defbudget/FY2027/FY2027_p1.pdf",
+            "document_sha256": "b8d5248257590856ee33ddb1b401ec2efcdfea219c05b5bc8ea1068d9000d0a6",
+            "receipt_id": "dod-budget:" + "0" * 64,
+        },
+    }
+    out = api._public_budget_line(row)
+    assert out["source"]["publisher"] == PUBLISHER
+    assert "Under Secretary of Defense" not in json.dumps(out)
