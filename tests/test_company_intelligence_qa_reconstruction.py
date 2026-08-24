@@ -363,6 +363,80 @@ def test_unresolved_affiliation_preserves_name():
     assert questioner["affiliation"] == ""
 
 
+def test_missing_affiliation_keeps_name_unresolved():
+    segments = _synthetic_two_exchange_call()
+    segments[2]["text"] = (
+        "We will take our first question from Jordan Blake. Please go ahead."
+    )
+    result = _reconstruct(
+        segments,
+        document_sha256="7" * 64,
+        event_id="evt_noaff",
+        document_id="tx:NOAFF",
+    )
+    assert result["status"] == "ok"
+    questioner = result["exchanges"][0]["questioner"]
+    assert questioner["name"] == "Jordan Blake"
+    assert questioner["affiliation"] == ""
+    assert questioner["affiliation_state"] == "unresolved"
+
+
+def test_punctuated_affiliation_is_exact_or_unresolved_never_truncated():
+    segments = _synthetic_two_exchange_call()
+    segments[2]["text"] = (
+        "We will take our first question from Jordan Blake of J.P. Morgan. "
+        "Please go ahead."
+    )
+    result = _reconstruct(
+        segments,
+        document_sha256="8" * 64,
+        event_id="evt_jp",
+        document_id="tx:JP",
+    )
+    assert result["status"] == "ok"
+    questioner = result["exchanges"][0]["questioner"]
+    assert questioner["name"] == "Jordan Blake"
+    assert questioner["affiliation"] != "J"
+    assert questioner["affiliation"] in {"", "J.P. Morgan"}
+    if questioner["affiliation"] == "J.P. Morgan":
+        assert questioner["affiliation_state"] == "source_supported"
+    else:
+        assert questioner["affiliation_state"] == "unresolved"
+
+
+def test_verified_questioner_analyst_role_stays_question():
+    segments = _synthetic_two_exchange_call()
+    segments[3]["role"] = "Analyst"
+    result = _reconstruct(
+        segments,
+        document_sha256="a1" * 32,
+        event_id="evt_anrole",
+        document_id="tx:ANROLE",
+    )
+    assert result["status"] == "ok"
+    exchange = result["exchanges"][0]
+    question_indexes = _span_indexes(exchange["question_spans"])
+    answer_indexes = _span_indexes(exchange["answer_spans"])
+    assert 3 in question_indexes
+    assert 3 not in answer_indexes
+    assert all(span["role"] != "Analyst" for span in exchange["answer_spans"])
+    assert exchange["questioner"]["name"] == "Jordan Blake"
+
+
+def test_third_party_non_management_role_refuses():
+    segments = _synthetic_two_exchange_call()
+    segments.insert(5, _seg("Analyst", "Unknown Guest", "Can I jump in?"))
+    result = _reconstruct(
+        segments,
+        document_sha256="a2" * 32,
+        event_id="evt_guest",
+        document_id="tx:GUEST",
+    )
+    assert result["status"] == "failed"
+    assert result["failure"]["code"] == "unexpected_non_housekeeping_speaker"
+    assert result["exchanges"] == []
+
+
 def test_empty_segment_fails_closed():
     segments = _synthetic_two_exchange_call()
     segments[4]["text"] = ""
@@ -400,7 +474,8 @@ _FORBIDDEN_SUBSTRINGS = (
     "earnings_intelligence/e3/gold",
 )
 
-_FORBIDDEN_INDEX_CONSTANTS = frozenset({32, 42, 52, 63, 76, 84, 97, 26})
+_FORBIDDEN_INDEX_CONSTANTS = frozenset({7, 32, 42, 52, 63, 76, 84, 97, 26})
+_PICKUP_HEAD_FALSE_GREEN = "bdd8dffc18cd079dbd25e869a6b9afb910d70b2c"
 
 
 def test_runtime_module_has_no_gold_import_or_path():

@@ -21,16 +21,30 @@ _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _HOUSEKEEPING_ROLES = frozenset({"operator", "ir"})
 _GO_AHEAD = "go ahead"
 
-# Generic Operator-intro identity grammar. Not issuer-specific.
-#   "question from NAME from/of AFFILIATION"
-#   "question is from NAME of AFFILIATION"
-#   "go to NAME of AFFILIATION"
-_IDENTITY_RE = re.compile(
+# Generic Operator-intro identity grammar. Name and affiliation are separable.
+# Affiliation is cut at the go-ahead clause, never at the first period, so
+# "J.P. Morgan" cannot collapse to "J".
+_NAME_CUE_RE = re.compile(
     r"(?:question(?:\s+\w+)?\s+from|go\s+to)\s+"
-    r"(?P<name>[A-Z][A-Za-z'.-]+(?:\s+[A-Z][A-Za-z'.-]+){0,4})"
-    r"\s+(?:from|of|with|at)\s+"
-    r"(?P<affiliation>[^.,]+)"
+    r"(?P<name>[A-Z][A-Za-z']+(?:-[A-Z][A-Za-z']+)?(?:\s+[A-Z][A-Za-z']+(?:-[A-Z][A-Za-z']+)?){0,4})"
 )
+_AFFIL_PREP_RE = re.compile(
+    r"^\s+(?:from|of|with|at)\s+(?P<body>.*)$",
+    re.DOTALL | re.IGNORECASE,
+)
+_AFFIL_CUT_RE = re.compile(
+    r"(?P<affiliation>.*?)"
+    r"(?=\s*\.\s*(?:Please\s+)?go\s+ahead|\s+Please\s+go\s+ahead|\s*[?!]|$)",
+    re.IGNORECASE | re.DOTALL,
+)
+_NON_MANAGEMENT_ROLES = frozenset({
+    "analyst",
+    "guest",
+    "moderator",
+    "journalist",
+    "attendee",
+    "participant",
+})
 
 _FAILURE_CODES = frozenset({
     "transcript_sha_invalid",
@@ -172,8 +186,21 @@ def _is_operator(seg: Mapping[str, Any]) -> bool:
     return _role_key(seg) == "operator"
 
 
-def _is_management(seg: Mapping[str, Any]) -> bool:
-    return (not _is_housekeeping(seg)) and bool(_role_key(seg))
+def _is_verified_questioner(seg: Mapping[str, Any], questioner_name: str) -> bool:
+    name = _speaker_name(seg)
+    return bool(questioner_name) and bool(name) and _norm_person(name) == _norm_person(questioner_name)
+
+
+def _is_non_management_role(seg: Mapping[str, Any]) -> bool:
+    return _role_key(seg) in _NON_MANAGEMENT_ROLES
+
+
+def _is_management(seg: Mapping[str, Any], questioner_name: str = "") -> bool:
+    if _is_housekeeping(seg) or _is_verified_questioner(seg, questioner_name):
+        return False
+    if _is_non_management_role(seg):
+        return False
+    return bool(_role_key(seg))
 
 
 def _norm_person(name: str) -> str:
@@ -192,27 +219,54 @@ def _qualifying_boundaries(segments: Sequence[Mapping[str, Any]]) -> list[int]:
     return out
 
 
+def _affiliation_is_truncated(body: str, parsed: str) -> bool:
+    if not parsed:
+        return False
+    idx = body.find(parsed)
+    if idx < 0:
+        return True
+    rest = body[idx + len(parsed):]
+    return bool(rest) and rest[0] == "." and len(rest) > 1 and rest[1].isalpha()
+
+
+def _parse_affiliation_after(after: str) -> tuple[str, str]:
+    match = _AFFIL_PREP_RE.match(after)
+    if not match:
+        return "", "unresolved"
+    body = match.group("body")
+    cut = _AFFIL_CUT_RE.match(body)
+    affiliation = (cut.group("affiliation") if cut else body).strip().strip(" ,;")
+    if not affiliation or _affiliation_is_truncated(body, affiliation):
+        return "", "unresolved"
+    return affiliation, "source_supported"
+
+
 def _parse_operator_identity(text: str) -> dict[str, Any] | None:
-    matches = list(_IDENTITY_RE.finditer(str(text)))
+    source = str(text)
+    matches = list(_NAME_CUE_RE.finditer(source))
     if not matches:
         return None
-    names = {m.group("name").strip() for m in matches}
-    affils = {m.group("affiliation").strip() for m in matches}
+    names = {match.group("name").strip() for match in matches}
+    names.discard("")
     if len(names) != 1:
         return None
     name = next(iter(names))
-    if not name:
-        return None
-    if len(affils) != 1 or not next(iter(affils)):
+    affiliations: set[str] = set()
+    for i, match in enumerate(matches):
+        after_end = matches[i + 1].start() if i + 1 < len(matches) else len(source)
+        affiliation, state = _parse_affiliation_after(source[match.end():after_end])
+        if state == "source_supported" and affiliation:
+            affiliations.add(affiliation)
+    if len(affiliations) == 1:
         return {
             "name": name,
-            "affiliation": "",
-            "affiliation_state": "unresolved",
+            "affiliation": next(iter(affiliations)),
+            "affiliation_state": "source_supported",
         }
     return {
         "name": name,
-        "affiliation": next(iter(affils)),
-        "affiliation_state": "source_supported",
+        "affiliation": "",
+        "affiliation_state": "unresolved",
     }
 
 
@@ -264,7 +318,10 @@ def _reconstruct_exchange(
         seg = segments[idx]
         if _is_housekeeping(seg):
             continue
-        if _is_management(seg):
+        if _is_verified_questioner(seg, parsed["name"]):
+            first_analyst_idx = idx
+            break
+        if _is_management(seg, parsed["name"]):
             continue
         first_analyst_idx = idx
         break
@@ -310,7 +367,9 @@ def _reconstruct_exchange(
             kind = "question"
         elif _is_housekeeping(seg):
             kind = "housekeeping"
-        elif _is_management(seg):
+        elif _is_verified_questioner(seg, questioner_name):
+            kind = "question"
+        elif _is_management(seg, questioner_name):
             if not _speaker_name(seg) or not _role_key(seg):
                 return {
                     "status": "failed",
@@ -320,7 +379,7 @@ def _reconstruct_exchange(
                     },
                 }
             kind = "answer"
-        elif _is_housekeeping(seg) is False and not _role_key(seg):
+        elif not _role_key(seg):
             name = _speaker_name(seg)
             if not name:
                 return {
@@ -341,6 +400,18 @@ def _reconstruct_exchange(
                     },
                 }
             kind = "question"
+        elif _is_non_management_role(seg):
+            name = _speaker_name(seg) or "<unnamed>"
+            return {
+                "status": "failed",
+                "failure": {
+                    "code": "unexpected_non_housekeeping_speaker",
+                    "message": (
+                        f"segment {idx} speaker {name!r} has a non-management role "
+                        "and is not the verified questioner"
+                    ),
+                },
+            }
         else:
             return {
                 "status": "failed",
