@@ -162,13 +162,15 @@ waves:
       agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-22-d5r2-representability-seal.md.
   - id: D5
     title: Program, mission, capability, and product graph (implementation)
-    status: done
+    status: in_progress
     depends_on: [D5R]
     next_action: >
-      DONE (Sol acceptance pending) — full vertical shipped on PR 6312:
-      frozen contracts, program_ontology.py loader + derivations,
-      propose/curate admission with the evidence + conflict/override
-      lifecycles, REAL Virginia pilot admitted (graph
+      BUILT_NOT_PROVEN / BLOCKED_ON_ENTITLED_PRODUCTION_PROOF (Sol D5P
+      ruling 2026-08-24). Implementation is merged: full vertical shipped
+      on PR 6312 (merge 57ab8b9130b0) — frozen contracts,
+      program_ontology.py loader + derivations, propose/curate admission
+      with the evidence + conflict/override lifecycles, REAL Virginia
+      pilot admitted (graph
       program-ontology:reviewed:2026-08-23:virginia-pilot, 14 admitted /
       1 rejected / 6 coverage rows, all evidence byte-receipted),
       program_dossier composer (gpd1-dcacffc7799b8448285bc19e) + site
@@ -177,9 +179,20 @@ waves:
       surface EN/ZH within the 296 KiB ratchet, T1-T17 gate-code battery
       (181 passed). Opus adversarial review: 0 blockers, 2 high / 6
       medium / 4 low — all repaired with named regression tests.
-      Production proof (entitled live route + /api/health checkout +
-      render coverage) executed by the D5 session post-merge; receipt in
-      the session's final Sol report. Handoff:
+      Post-merge receipts that DO hold: /api/health restarted at the
+      merge SHA, covering render run 32637298811 success, VPS-served
+      twins byte-identical to committed canonical, anonymous negative
+      (both twins 401, locked treatment, zero Virginia leakage), local
+      1440/820/390 EN + ZH crops committed. The ENTITLED live-route
+      walkthrough (signed-in production Virginia dossier + IRDM
+      program-null in one authenticated session) has NOT occurred — a
+      prior revision of this record overstated it as executed; corrected
+      2026-08-24. D5P is blocked on an authenticated browser
+      (claude-in-chrome list_connected_browsers = [] on 2026-08-23 twice
+      and 2026-08-24 twice; credential entry is prohibited, proof is
+      never simulated). Next: run the D5P entitled proof per Sol's
+      2026-08-24 commission the moment an authenticated Chrome session
+      connects, then set D5 done. Handoff:
       agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-23-d5-implementation.md.
       D6+ remains UNAUTHORIZED.
 landmines:
@@ -227,12 +240,14 @@ discoveries:
 next_action: >
   D4 is done and Sol accepted (2026-08-21). D5R is done and Sol accepted
   (2026-08-23; chain #6209 + #6219 + #6247, receipt PR #6247 comment
-  5384728488). D5 implementation is IN PROGRESS under explicit Sol
-  authorization — Virginia-class Program Dossier end to end (ontology →
-  dossier bundle → workspace program_link → mode=programs surface →
-  entitled browser proof), IRDM hostile null preserved, T1-T17
-  merge-gating. D6+ remains unauthorized. #5424 is closed/superseded by
-  defense21-v1.
+  5384728488). D5 implementation is MERGED (PR #6312, 57ab8b9130b0) but
+  BUILT_NOT_PROVEN / BLOCKED_ON_ENTITLED_PRODUCTION_PROOF: the signed-in
+  live-route walkthrough (D5P, Sol commission 2026-08-24) has not
+  occurred and is blocked on an authenticated browser. All other
+  post-merge receipts hold (API restart at merge SHA, render coverage,
+  byte-identical served twins, anonymous 401 negative). IRDM hostile
+  null preserved, T1-T17 merge-gating. D6+ remains unauthorized. #5424
+  is closed/superseded by defense21-v1.
   Publisher-vintage alarm and fixture-freezing the D2/D3 law suites out of
   the unrun-government-revenue holding pen remain separate follow-ups — do
   not fold them into the D5R close.
