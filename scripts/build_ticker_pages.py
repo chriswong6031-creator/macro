@@ -3332,6 +3332,425 @@ def sections_available(blob: dict | None, per: dict, agg: dict, ticker: str) -> 
 
 
 # ---------------------------------------------------------------------------
+# Security State (security_state.v1) — display projection
+# ---------------------------------------------------------------------------
+# Pure presentation. The compiler owns the payload; this turns its typed enums
+# into plain bilingual words so the section never prints a machine slug at rest
+# (DESIGN_DOCTRINE Law 2). Every projection is fail-soft: an absent block costs
+# the section, an absent field costs a line — never the page.
+#
+# Two rules shape the tables below and are deliberate, not incidental:
+#   * absence is GREY, not red. "Prophet unavailable" is not a risk finding;
+#     painting it --act would invent a signal the compiler did not make. Only a
+#     contradiction between sources (CONFLICTED / COMPILER_FAILURE) earns --act.
+#   * the rail SHAPE carries the class of state, so hue is never the only
+#     channel: solid = covered, dashed = interrupted, hollow = absent,
+#     split = contradicted. That survives zh, light mode and colour blindness.
+
+_SS_COVERAGE: dict[str, dict[str, str]] = {
+    "AVAILABLE": {
+        "tone": "ok", "rail": "solid",
+        "en": "Current", "zh": "当前",
+        "why_en": "", "why_zh": "",
+    },
+    "PARTIAL": {
+        "tone": "warn", "rail": "dash",
+        "en": "Partly covered", "zh": "部分覆盖",
+        "why_en": "Some of the sources this read needs are missing, so it is narrower than usual.",
+        "why_zh": "该读数所需的部分来源缺失，覆盖面较平时更窄。",
+    },
+    "STALE": {
+        "tone": "warn", "rail": "dash",
+        "en": "Older than policy", "zh": "已超出时效",
+        "why_en": "The newest supported source is older than the freshness policy for this read.",
+        "why_zh": "最新的可用来源已超出该读数的时效要求。",
+    },
+    "CORRECTED": {
+        "tone": "warn", "rail": "dash",
+        "en": "Source corrected", "zh": "来源已更正",
+        "why_en": "The source was revised after first publication. This read uses the corrected version.",
+        "why_zh": "来源在首次发布后被修订，此处使用更正后的版本。",
+    },
+    "CONFLICTED": {
+        "tone": "act", "rail": "split",
+        "en": "Sources disagree", "zh": "来源不一致",
+        "why_en": "Two supported sources report different values. Neither is presented as the answer.",
+        "why_zh": "两个可用来源给出不同数值，此处不选定其中任何一个作为结论。",
+    },
+    "UNAVAILABLE": {
+        "tone": "off", "rail": "hollow",
+        "en": "Not available", "zh": "暂不可用",
+        "why_en": "The owner of this read returned nothing. No substitute value is shown.",
+        "why_zh": "该读数的负责来源没有返回结果，此处不使用任何替代数值。",
+    },
+    "RIGHTS_BLOCKED": {
+        "tone": "off", "rail": "hollow",
+        "en": "Not licensed here", "zh": "此处无授权",
+        "why_en": "The source exists but cannot be republished on a public page.",
+        "why_zh": "来源存在，但不可在公开页面上转载。",
+    },
+    "NOT_COVERED": {
+        "tone": "off", "rail": "hollow",
+        "en": "Not covered", "zh": "未覆盖",
+        "why_en": "This listing is outside the coverage set for this read.",
+        "why_zh": "该证券不在此读数的覆盖范围内。",
+    },
+    "NOT_APPLICABLE": {
+        "tone": "off", "rail": "hollow",
+        "en": "Does not apply", "zh": "不适用",
+        "why_en": "This read does not apply to a listing of this kind.",
+        "why_zh": "此读数不适用于该类型的证券。",
+    },
+}
+
+_SS_COVERAGE_FALLBACK = {
+    "tone": "off", "rail": "hollow", "en": "Not available", "zh": "暂不可用",
+    "why_en": "This read reported a state the page does not recognise, so nothing is claimed for it.",
+    "why_zh": "该读数返回了本页无法识别的状态，因此不作任何结论。",
+}
+
+# Dominant degradation — the one word the hero chip carries.
+_SS_DEGRADATION: dict[str, dict[str, str]] = {
+    "NONE": {"tone": "ok", "en": "Sources current", "zh": "来源均为当前"},
+    "PARTIAL": {"tone": "warn", "en": "Partly covered", "zh": "部分覆盖"},
+    "STALE": {"tone": "warn", "en": "Some sources are older", "zh": "部分来源已过期"},
+    "CORRECTED": {"tone": "warn", "en": "A source was corrected", "zh": "有来源已更正"},
+    "UNAVAILABLE": {"tone": "off", "en": "Some sources unavailable", "zh": "部分来源不可用"},
+    "CONFLICTED": {"tone": "act", "en": "Sources disagree", "zh": "来源不一致"},
+    "COMPILER_FAILURE": {"tone": "act", "en": "Read could not be built", "zh": "读数无法生成"},
+}
+
+_SS_IDENTITY: dict[str, dict[str, str]] = {
+    "PROVEN": {
+        "tone": "ok", "en": "Identity confirmed", "zh": "身份已确认",
+        "why_en": "", "why_zh": "",
+    },
+    "PARTIAL": {
+        "tone": "warn", "en": "Identity partly confirmed", "zh": "身份部分确认",
+        "why_en": "Some sources below could not be tied to this exact listing. Those reads are held back; "
+                  "the rest of the page is unaffected.",
+        "why_zh": "以下部分来源无法与该证券精确对应，相关读数暂不呈现；本页其余内容不受影响。",
+    },
+    "BLOCKED_IDENTITY_BRIDGE": {
+        "tone": "act", "en": "Identity not confirmed", "zh": "身份未确认",
+        "why_en": "We could not confirm that these sources describe this exact listing, so nothing below is "
+                  "attributed to it. The price, chart and company sections above are unaffected.",
+        "why_zh": "无法确认以下来源描述的正是该证券，因此下方内容不归属于它。上方的价格、图表与公司板块不受影响。",
+    },
+}
+
+# Six axes, in reading order. Titles are plain words: the axis names in the
+# contract (STATE / OPPORTUNITY_CONTEXT / PERSONAL_IMPACT) are field names, and
+# field names are not user copy.
+_SS_AXES: tuple[tuple[str, str, str], ...] = (
+    ("state", "Where it stands", "当前位置"),
+    ("change", "What changed", "有何变化"),
+    ("opportunity_context", "Opportunity context", "机会背景"),
+    ("risk", "What could go wrong", "风险"),
+    ("catalyst", "What to watch next", "接下来关注"),
+    ("personal_impact", "Your position", "你的持仓"),
+)
+
+# Gate codes are deterministic machine identifiers — required in the drilldown
+# (the reference composition asks for the code), banned at rest. Known codes get
+# house copy; anything else is prettified so an unmapped code still reads as
+# words on the card and keeps its exact code in the dialog.
+_SS_GATES: dict[str, dict[str, str]] = {
+    "EVENT_FRESHNESS": {
+        "en": "Latest event is older than policy", "zh": "最新事件已超出时效",
+        "clear_en": "A newer supported company event is published and observed.",
+        "clear_zh": "发布并采集到更新的公司事件。",
+    },
+    "OWNER_UNAVAILABLE": {
+        "en": "A source owner returned nothing", "zh": "有来源未返回结果",
+        "clear_en": "The owning system answers again on its next scheduled run.",
+        "clear_zh": "该来源系统在下一次计划运行中恢复应答。",
+    },
+    "SOURCE_CONFLICT": {
+        "en": "Two sources report different values", "zh": "两个来源数值冲突",
+        "clear_en": "The sources agree, or one is withdrawn or corrected.",
+        "clear_zh": "两个来源取得一致，或其中之一被撤回或更正。",
+    },
+    "IDENTITY_BRIDGE": {
+        "en": "Sources not tied to this exact listing", "zh": "来源未与该证券精确对应",
+        "clear_en": "Every source resolves to the same issuer and listing.",
+        "clear_zh": "所有来源都解析到同一发行人与同一上市代码。",
+    },
+    "RIGHTS_WITHHELD": {
+        "en": "Source cannot be republished here", "zh": "来源不可在此转载",
+        "clear_en": "Publication rights cover this surface, or an open source replaces it.",
+        "clear_zh": "取得该页面的发布授权，或改用可公开的来源。",
+    },
+}
+
+
+# "Why this field is or is not actionable" — the reference composition requires
+# the answer in the drilldown even when the answer is "there is nothing to act
+# on". Supplied per leg when the compiler has something specific to say; these
+# are the honest defaults keyed on the state's class.
+_SS_ACTIONABLE: dict[str, dict[str, str]] = {
+    "ok": {"en": "Usable as it stands, within the clocks above.",
+           "zh": "在上述时间戳范围内可直接使用。"},
+    "warn": {"en": "Read it together with its age and correction state — not as a current value.",
+             "zh": "需结合其时效与更正状态阅读，不能当作当前数值使用。"},
+    "act": {"en": "Not usable until the sources agree. No value is chosen for you here.",
+            "zh": "在来源取得一致前不可使用，此处不代为选定任何数值。"},
+    "off": {"en": "Nothing is claimed here, so there is nothing to act on.",
+            "zh": "此处未作任何结论，因此没有可据以行动的内容。"},
+}
+
+
+def _ss_clock(v: Any) -> str:
+    """`2026-08-23T11:55:00Z` -> `2026-08-23 11:55Z`. Left alone if unrecognised."""
+    s = _clean_str(v)
+    m = re.match(r"^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})(?::\d{2})?(?:\.\d+)?(Z|[+-]\d{2}:?\d{2})?$", s)
+    if not m:
+        return s
+    tz = (m.group(3) or "").replace(":", "")
+    return f"{m.group(1)} {m.group(2)}{'Z' if tz in ('Z', '+0000', '-0000') else tz}"
+
+
+# Denominator counts are Tier-3 receipts, but their LABELS are still UI: they
+# get plain bilingual twins so the drilldown does not print "legs_requested" —
+# or an English-only row inside a Chinese page. Unknown keys prettify.
+_SS_COUNTS: dict[str, tuple[str, str]] = {
+    "legs_requested": ("Reads asked for", "请求的读数"),
+    "legs_answered": ("Reads answered", "已返回的读数"),
+    "owners_polled": ("Sources asked", "已询问的来源"),
+    "owners_answered": ("Sources that answered", "已应答的来源"),
+    "evidence_blocks_read": ("Evidence records read", "已读取的证据记录"),
+    "events_considered": ("Events considered", "纳入考量的事件"),
+    "gates_evaluated": ("Checks run", "已执行的检查"),
+    "gates_failed": ("Checks not cleared", "未通过的检查"),
+}
+
+
+def _ss_prettify(code: str) -> str:
+    """`EVENT_FRESHNESS_WINDOW` -> `Event freshness window`. Never blank."""
+    words = re.sub(r"[^0-9A-Za-z]+", " ", str(code or "")).strip().lower()
+    return (words[:1].upper() + words[1:]) if words else "Check not cleared"
+
+
+def _ss_pair(node: Any, key: str = "") -> dict[str, str] | None:
+    """Read an {en, zh} twin, tolerating a bare string or a missing zh."""
+    src = (node or {}).get(key) if key else node
+    if isinstance(src, str):
+        s = _clean_str(src)
+        return {"en": s, "zh": s} if s else None
+    if isinstance(src, dict):
+        en = _clean_str(src.get("en") or "")
+        zh = _clean_str(src.get("zh") or "") or en
+        return {"en": en, "zh": zh} if en or zh else None
+    return None
+
+
+def _ss_leg(key: str, title_en: str, title_zh: str, leg: Any) -> dict[str, Any]:
+    """Project one axis leg into everything its card and dialog print."""
+    leg = leg if isinstance(leg, dict) else {}
+    cov_code = _clean_str(leg.get("coverage_state") or "").upper() or "UNAVAILABLE"
+    cov = _SS_COVERAGE.get(cov_code, _SS_COVERAGE_FALLBACK)
+
+    reason = _ss_pair(leg, "reason")
+    why = reason or (
+        {"en": cov["why_en"], "zh": cov["why_zh"]} if cov["why_en"] else None
+    )
+    headline = _ss_pair(leg, "headline") or {"en": cov["en"], "zh": cov["zh"]}
+    clause = _ss_pair(leg, "clause") or _ss_pair(leg, "summary")
+
+    # Clocks, in the order the reference composition names them. A clock that is
+    # absent is dropped rather than printed as "—": an empty clock row would
+    # imply the field was checked and found empty.
+    clocks = [
+        (lab_en, lab_zh, _ss_clock(leg.get(fld)))
+        for fld, lab_en, lab_zh in (
+            ("published_at", "Published", "发布时间"),
+            ("source_available_at", "Available", "可获取时间"),
+            ("available_at", "Available", "可获取时间"),
+            ("observed_at", "Observed", "采集时间"),
+            ("compiled_at", "Compiled", "编排时间"),
+        )
+    ]
+    seen: set[str] = set()
+    clock_rows = []
+    for lab_en, lab_zh, val in clocks:
+        if val and lab_en not in seen:
+            seen.add(lab_en)
+            clock_rows.append({"en": lab_en, "zh": lab_zh, "v": val})
+
+    gates = []
+    for g in (leg.get("failed_gates") or []):
+        code = _clean_str((g or {}).get("code") if isinstance(g, dict) else g)
+        if not code:
+            continue
+        known = _SS_GATES.get(code.upper(), {})
+        lab = _ss_pair(g, "label") if isinstance(g, dict) else None
+        clr = _ss_pair(g, "clears") if isinstance(g, dict) else None
+        gates.append({
+            "code": code,
+            "en": (lab or {}).get("en") or known.get("en") or _ss_prettify(code),
+            "zh": (lab or {}).get("zh") or known.get("zh") or _ss_prettify(code),
+            "clear_en": (clr or {}).get("en") or known.get("clear_en")
+                        or "The owning source answers with a value that clears this check.",
+            "clear_zh": (clr or {}).get("zh") or known.get("clear_zh")
+                        or "该来源返回可通过此项检查的数值。",
+        })
+
+    observables = []
+    for o in (leg.get("next_observables") or []):
+        pair = _ss_pair(o, "label") if isinstance(o, dict) else _ss_pair(o)
+        if not pair:
+            continue
+        observables.append({
+            "en": pair["en"], "zh": pair["zh"],
+            "when": _clean_str((o or {}).get("window") or (o or {}).get("when") or "")
+                    if isinstance(o, dict) else "",
+        })
+
+    warnings = []
+    for w in (leg.get("workspace_warnings") or []):
+        pair = _ss_pair(w, "label") if isinstance(w, dict) else _ss_pair(w)
+        if pair:
+            warnings.append(pair)
+        elif isinstance(w, str) and w.strip():
+            warnings.append({"en": _ss_prettify(w), "zh": _ss_prettify(w)})
+
+    refs = [_clean_str(r) for r in (leg.get("evidence") or leg.get("evidence_refs") or [])
+            if _clean_str(r)]
+
+    unresolved = None
+    suf = leg.get("strongest_unresolved_fact")
+    if isinstance(suf, dict) and _clean_str(suf.get("state") or "").lower() != "unavailable":
+        unresolved = _ss_pair(suf)
+
+    return {
+        "key": key,
+        "dlg": f"ss-{key.replace('_', '-')}",
+        "title_en": title_en, "title_zh": title_zh,
+        "cov": cov_code,
+        "tone": cov["tone"], "rail": cov["rail"],
+        "cov_en": cov["en"], "cov_zh": cov["zh"],
+        "ok": cov_code == "AVAILABLE",
+        "headline": headline,
+        "clause": clause,
+        "why": why,
+        "actionable": _ss_pair(leg, "actionable") or _SS_ACTIONABLE[cov["tone"]],
+        "owner": _clean_str(leg.get("owner") or ""),
+        "owner_object": _clean_str(leg.get("owner_object") or leg.get("owner_object_id") or ""),
+        "source": _clean_str(leg.get("source") or ""),
+        "correction": _clean_str(leg.get("correction_state") or ""),
+        "generation_id": _clean_str(leg.get("generation_id") or ""),
+        "clocks": clock_rows,
+        "asof": clock_rows[-1]["v"] if clock_rows else "",
+        "gates": gates,
+        "observables": observables,
+        "warnings": warnings,
+        "refs": refs,
+        "unresolved": unresolved,
+    }
+
+
+def build_security_state(blob: dict | None) -> dict | None:
+    """Project `blob["security_state"]` (security_state.v1) for the dossier.
+
+    Returns None when the block is absent, which is every listing outside the
+    golden vertical — those pages must render byte-identically to before.
+    """
+    ss = (blob or {}).get("security_state")
+    if not isinstance(ss, dict) or not ss:
+        return None
+    try:
+        legs = ss.get("legs") if isinstance(ss.get("legs"), dict) else {}
+        axes = [_ss_leg(k, en, zh, legs.get(k)) for k, en, zh in _SS_AXES]
+
+        deg_code = _clean_str(ss.get("dominant_degradation") or "").upper() or "NONE"
+        deg = _SS_DEGRADATION.get(deg_code, _SS_DEGRADATION["UNAVAILABLE"])
+
+        ident_raw = ss.get("identity_proof") if isinstance(ss.get("identity_proof"), dict) else {}
+        id_code = _clean_str(ident_raw.get("state") or "").upper() or "PARTIAL"
+        idc = _SS_IDENTITY.get(id_code, _SS_IDENTITY["PARTIAL"])
+        id_legs = []
+        for lg in (ident_raw.get("legs") or []):
+            if not isinstance(lg, dict):
+                continue
+            id_legs.append({
+                "name": _clean_str(lg.get("leg") or lg.get("name") or ""),
+                "artifact": _clean_str(lg.get("artifact") or lg.get("reader") or ""),
+                "values": ", ".join(_clean_str(v) for v in (lg.get("values_read") or [])
+                                    if _clean_str(v)),
+            })
+
+        # The tally under the grid is the grid's own legend: same rail shapes,
+        # same words, counted from the same six legs. One canonical count per
+        # population, printed once (design system §9.5).
+        order = ["ok", "warn", "act", "off"]
+        buckets: dict[tuple[str, str], dict[str, Any]] = {}
+        for a in axes:
+            k = (a["tone"], a["cov_en"])
+            b = buckets.setdefault(k, {"tone": a["tone"], "rail": a["rail"],
+                                       "en": a["cov_en"], "zh": a["cov_zh"], "n": 0})
+            b["n"] += 1
+        tally = sorted(buckets.values(), key=lambda b: (order.index(b["tone"]), -b["n"]))
+
+        asof = ss.get("as_of") if isinstance(ss.get("as_of"), dict) else {}
+        ev = ss.get("evidence") if isinstance(ss.get("evidence"), dict) else {}
+        receipt = ev.get("compilation_receipt") if isinstance(ev.get("compilation_receipt"), dict) else {}
+        counts = receipt.get("denominator_counts") if isinstance(receipt.get("denominator_counts"), dict) else {}
+        cov_block = ss.get("coverage") if isinstance(ss.get("coverage"), dict) else {}
+        last_good = ss.get("last_good") if isinstance(ss.get("last_good"), dict) else {}
+
+        return {
+            "version": _clean_str(ss.get("schema") or ss.get("version") or "security_state.v1"),
+            "ticker_display": _clean_str(ss.get("ticker_display") or ""),
+            "security_id": _clean_str(ss.get("security_id") or ""),
+            "issuer_id": _clean_str(ss.get("issuer_id") or ""),
+            "listing_key": _clean_str(ss.get("listing_key") or ""),
+            "generated_at": _ss_clock(ss.get("generated_at")),
+            "market_at": _ss_clock(asof.get("market_at")),
+            "frontier_at": _ss_clock(asof.get("source_frontier_at")),
+            "compiled_at": _ss_clock(asof.get("state_compiled_at")),
+            "degradation": {
+                "code": deg_code, "tone": deg["tone"],
+                "en": deg["en"], "zh": deg["zh"],
+                "clean": deg_code == "NONE",
+                "failed": deg_code == "COMPILER_FAILURE",
+            },
+            "identity": {
+                "code": id_code, "tone": idc["tone"],
+                "ok": id_code == "PROVEN",
+                "en": idc["en"], "zh": idc["zh"],
+                "why_en": idc["why_en"], "why_zh": idc["why_zh"],
+                "legs": id_legs,
+                "equalities": [_clean_str(e) for e in (ident_raw.get("equalities") or []) if _clean_str(e)],
+                "refusals": [_clean_str(e) for e in (ident_raw.get("refusals") or []) if _clean_str(e)],
+                "disclosures": [_clean_str(e) for e in (ident_raw.get("disclosures") or []) if _clean_str(e)],
+            },
+            "coverage_state": _clean_str(cov_block.get("overall_state") or ""),
+            "required_legs": cov_block.get("required_leg_count"),
+            "optional_legs": cov_block.get("optional_leg_count"),
+            "axes": axes,
+            "tally": tally,
+            "gates": [g for a in axes for g in a["gates"]],
+            "evidence": {
+                "refs": [_clean_str(r) for r in (ev.get("evidence_block_refs") or []) if _clean_str(r)],
+                "recipe_id": _clean_str(ev.get("recipe_id") or ""),
+                "counts": [
+                    {"en": _SS_COUNTS.get(k, (_ss_prettify(k), _ss_prettify(k)))[0],
+                     "zh": _SS_COUNTS.get(k, (_ss_prettify(k), _ss_prettify(k)))[1], "v": v}
+                    for k, v in counts.items()
+                ],
+                "compiled_at": _ss_clock(receipt.get("compiled_at")),
+            },
+            "last_good": {
+                "at": _ss_clock(last_good.get("state_compiled_at") or last_good.get("at")),
+                "note": _ss_pair(last_good, "summary"),
+            },
+        }
+    except Exception as e:  # noqa: BLE001 — a broken block costs the section, not the page
+        log.debug("security_state projection failed: %s", e)
+        return None
+
+
+# ---------------------------------------------------------------------------
 # Main context builder
 # ---------------------------------------------------------------------------
 
@@ -3538,6 +3957,9 @@ def build_page_context(
         "brief": brief_section,
         "factors": factors_section,
         "deep": deep,
+        # Decision Spine. None for every listing whose blob carries no
+        # security_state block — those pages render exactly as before.
+        "security_state": build_security_state(blob),
         "news": news_section,
         "placeholders": {
             "analyst_targets": True,
