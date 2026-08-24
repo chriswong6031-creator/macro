@@ -40,12 +40,11 @@ waves:
     title: Catalyst Radar — Trial Milestones first slice
     status: done
     next_action: >
-      Sol reviews the held records-only P1-1R production-success closeout. The
-      approved repair is merged and naturally deployed; the current four-NCT
-      real site_full matrix passes API, safety, 2055/1280/390 EN/ZH geometry,
-      public evidence and full revision lineage. P1-1 is
-      PROVEN_LIVE_COHORT_LIMITED and done; broader parity remains PARTIAL. Do
-      not self-merge the closeout or start P1-2 without a new Sol ruling.
+      P1-1 is complete. No next CORE-PRODUCT wave is currently commissioned.
+      P1-2 requires a separate explicit Sol ruling. The 2026-08-26T02:00Z
+      source/launch-soak boundary remains owned by its source-governance path:
+      window end grants no expansion authority; exact evidence must be frozen
+      and adjudicated before any successor source/cohort transition.
 decisions:
   - "DEC:BIOCATALYST-P1-FIRST-VERTICAL-MILESTONE-RADAR"
   - "DEC:BIOCATALYST-PDUFA-TRUTH-IS-CORPORATE-DISCLOSURE-PLANE"
@@ -125,10 +124,11 @@ artifacts:
   - research/BIOCATALYST_P1_1_PRODUCTION_ACCEPTANCE_2026-08-22.md
   - research/BIOCATALYST_P1_1R_PRODUCTION_ACCEPTANCE_2026-08-23.md
 next_action: >
-  Sol reviews the held records-only P1-1R production-success closeout. Keep the
-  PR draft with HOLD-FOR-SOL, no merge-on-green and native auto-merge null; do
-  not self-merge it. P1-1 is done at PROVEN_LIVE_COHORT_LIMITED, broader parity
-  remains PARTIAL, and P1-2 requires a separate explicit commission.
+  P1-1 is complete. No next CORE-PRODUCT wave is currently commissioned. P1-2
+  requires a separate explicit Sol ruling. The 2026-08-26T02:00Z
+  source/launch-soak boundary remains owned by its source-governance path:
+  window end grants no expansion authority; exact evidence must be frozen and
+  adjudicated before any successor source/cohort transition.
 ---
 
 ## Context

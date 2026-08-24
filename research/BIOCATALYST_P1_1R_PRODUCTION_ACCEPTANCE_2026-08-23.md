@@ -238,7 +238,7 @@ from `mastermind-x.com` and neither is a product warning or error.
 - No production-scale, full-parity, post-soak, or closed-beta claim is made.
 - No P1-2 work began and no P1-2 authority is inferred.
 
-The only next action is Sol review of the new records-only closeout PR. Keep it
-draft, `HOLD-FOR-SOL`, without `merge-on-green` and with native auto-merge null.
-Do not merge the records PR or start P1-2 until Sol explicitly releases that
-hold.
+P1-1 is closed at PROVEN_LIVE_COHORT_LIMITED. Broader parity remains PARTIAL.
+No P1-2 or source/cohort expansion is commissioned by this closeout. Any later
+BioCatalyst product wave requires a separate explicit Sol commission and must
+respect the still-binding source/soak gates.

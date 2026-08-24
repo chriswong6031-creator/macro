@@ -25,8 +25,8 @@ changed:
   - path: agentos/workstreams/WS-BIOCATALYST-CORE-PRODUCT.md
     what: >
       Set wave P1-1 to done and recorded PROVEN_LIVE_COHORT_LIMITED while
-      keeping broader parity PARTIAL. The only next action is Sol review of the
-      held records-only closeout; P1-2 remains unauthorized.
+      keeping broader parity PARTIAL. No next CORE-PRODUCT wave is commissioned;
+      P1-2 and any source/cohort transition remain separately gated.
   - path: agentos/handoffs/BIOCATALYST-CORE-PRODUCT-2026-08-23-P1-1R-PROD.md
     what: >
       Added this cold-stranger continuation handoff with the exact proof chain,
@@ -157,25 +157,23 @@ unverified:
       PROVEN_LIVE_COHORT_LIMITED and broader parity remains PARTIAL.
   - claim: P1-2 is authorized or started.
     what_would_verify: >
-      A new explicit Sol/operator commission after this held records closeout.
-      Neither P1-1 success nor the end of the soak window grants that authority.
+      A new explicit Sol/operator commission after the separately gated source
+      and soak evidence is frozen and adjudicated. Neither P1-1 success nor the
+      end of the soak window grants that authority.
 unresolved:
   - >
-    No P1-1 product or production blocker remains. The records-only closeout
-    itself remains under Sol hold, and no later BioCatalyst wave has authority
-    from this acceptance result.
+    Whether and when any successor BioCatalyst source/cohort transition is
+    commissioned remains unresolved pending frozen soak evidence, separate
+    adjudication, and an explicit Sol ruling. No P1-1 issue remains.
 next_actions:
   - >
-    Sol reviews the new records-only P1-1R production-success closeout. Keep it
-    DRAFT / HOLD-FOR-SOL, do not add merge-on-green, keep native auto-merge
-    null, and do not self-merge it.
+    No CORE-PRODUCT action is commissioned. Do not start P1-2, widen the cohort,
+    change source cadence/soak law, or infer production-scale authority without
+    a separate explicit Sol ruling.
   - >
-    If Sol releases that records hold, merge only the closeout through the
-    normal path. The durable state on main will then record P1-1 done and
-    PROVEN_LIVE_COHORT_LIMITED while broader parity remains PARTIAL.
-  - >
-    Stop after P1-1 closeout. Do not start P1-2, widen the cohort, change source
-    cadence/soak law, or infer production-scale authority without a new ruling.
+    The source-governance owner must freeze and adjudicate the exact soak
+    evidence before any successor source/cohort transition. The
+    2026-08-26T02:00Z window end grants no expansion authority by itself.
 do_not_redo:
   - >
     Do not reopen #6191 substantive review, #6271's valid historical FAIL, or
@@ -211,11 +209,7 @@ decisions:
 
 ## Current state
 
-P1-1 is production accepted at `PROVEN_LIVE_COHORT_LIMITED`. The exact
-Sol-approved repair bytes are on the natural static delivery path, the current
-four-NCT generation passes every API/safety/geometry/evidence gate, and the
-earlier desktop blocker is closed. Broader parity remains PARTIAL.
-
-The only open action is Sol review of the records-only closeout containing this
-handoff, the new PASS receipt, and the P1-1 done transition. No P1-2 work is
-authorized or started.
+P1-1 is production accepted and closed at PROVEN_LIVE_COHORT_LIMITED. Broader
+parity remains PARTIAL. There is no commissioned P1-2. The next BioCatalyst
+source-expansion decision remains separately gated by the frozen soak
+evidence/adjudication and a new Sol commission.
