@@ -6,9 +6,9 @@ This is the commissioned price-blind source census. It does not inspect any mark
 
 ## Frozen receipts
 
-- repository/base: `mastermindx-market-intelligence/macro@900b5d8d489a91a9121fc6febd50338fbae1c9a9`
+- repository/base: `mastermindx-market-intelligence/macro@3d35ec5cd5aee8f11dedbd87136444e1e8bf4497`
 - census code commit: `acaf0cd61e21c46e81b880b9c3d7246b6aa60e22`
-- canonical manifest file SHA-256: `e4a5ff8203b416904206836d70b12cad175171477beba2857352546f04d15bf6`
+- canonical manifest file SHA-256: `36bef94006eea85e4fc1e65651aa1ec79a23db1766b9ecdbc7ab9ee2c4c3d276`
 - source-receipt-set SHA-256: `e97d1bdfb85c23c749fe98607a064ee9fa5f5e8303169f18ab02b15b20f99098`
 - parser: `cell-b-v2-buyback-source-census/2.0.0`
 
