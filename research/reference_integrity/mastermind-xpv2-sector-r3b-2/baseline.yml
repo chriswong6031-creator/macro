@@ -52,19 +52,39 @@ production:
 
 evidence:
   screenshots:
-    # PLANNED capture set (COMMISSION.md S22 primary matrix), not yet captured: the R3A dossier
-    # (archaeology lanes) is a TEXT census, no image evidence was produced there, and this
-    # drafting pass has no browser/capture tool. Paths follow the prophet-board-5514 precedent
-    # naming convention (mockups/refs/reference_integrity/<id>/production/prod-<viewport>-
-    # <theme>-<locale>-<view>.png). GAP, not silent absence: see evidence.gaps below and RETURN
-    # GAPS -- the orchestrator/design lanes must capture these six frames (or amend this list)
-    # before a full (non-sparse) checker run can pass missing-baseline-evidence.
-    - {path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/production/prod-desktop-dark-en-overview.png, viewport: desktop, theme: dark, locale: en, note: "Overview -- PLANNED, not yet captured"}
-    - {path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/production/prod-desktop-dark-en-map.png, viewport: desktop, theme: dark, locale: en, note: "The Map -- PLANNED, not yet captured"}
-    - {path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/production/prod-desktop-dark-en-moving.png, viewport: desktop, theme: dark, locale: en, note: "What's Moving -- PLANNED, not yet captured"}
-    - {path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/production/prod-desktop-dark-en-money.png, viewport: desktop, theme: dark, locale: en, note: "Money & Breadth -- PLANNED, not yet captured"}
-    - {path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/production/prod-desktop-dark-en-explore.png, viewport: desktop, theme: dark, locale: en, note: "Explore -- PLANNED, not yet captured"}
-    - {path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/production/prod-desktop-dark-en-confluence.png, viewport: desktop, theme: dark, locale: en, note: "Confluence -- PLANNED, not yet captured"}
+    # CAPTURED AND COMMITTED (records truthing, XPV2-SC-R3B.2 durability pass 2026-08-24).
+    # All six desktop-dark-EN production frames below exist on canonical origin/main: they were
+    # captured by the R3B production-evidence lane and landed in merged PR #6197 (adding commit
+    # f5b0094614b6), alongside that directory's PROVENANCE.md. Paths follow the
+    # prophet-board-5514 precedent naming convention (mockups/refs/reference_integrity/<id>/
+    # production/prod-<viewport>-<theme>-<locale>-<view>.png).
+    #
+    # WHAT WAS STALE: this block previously read "PLANNED capture set ... not yet captured" --
+    # true when written in the R3B.2 drafting pass, never updated after #6197 landed. Final
+    # Mobile/Accessibility finding MA2-001 (minor, evidence provenance, attributed upstream)
+    # read that stale prose from a sparse checkout in which mockups/ is not materialized, so
+    # neither the prose nor the filesystem showed the frames. Disposition:
+    #   MA2-001 = REFUTED_BY_CANONICAL_GITHUB_EVIDENCE
+    # The critic receipt at reviews/mobile_accessibility.md is preserved byte-exact and is NOT
+    # edited by this truthing; the refutation is recorded here, in the records layer, and
+    # carried to Sol. Verified 2026-08-24 at carrier head 0e542f3eda09 with mockups/
+    # materialized (python3 scripts/worktree_sparse.py add mockups):
+    #   git ls-tree --name-only origin/main -- \
+    #     mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/production/
+    #   -> all six named files present and tracked; byte sizes 673,713 / 2,107,497 / 2,166,511
+    #      / 1,174,134 / 1,163,766 / 2,595,814 for overview/map/moving/money/explore/confluence.
+    # No image was captured, recaptured or replaced by this pass.
+    #
+    # STILL REAL: evidence.gaps below (mobile390 + tablet820, light theme, ZH locale, gated vs
+    # authenticated access) are unchanged and remain open -- only these six desktop-dark-EN
+    # rows are trued. A full (non-sparse) checker run passes missing-baseline-evidence for the
+    # six rows; the gaps stay declared gaps, not silent absences.
+    - {path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/production/prod-desktop-dark-en-overview.png, viewport: desktop, theme: dark, locale: en, note: "Overview -- CAPTURED; committed on origin/main via merged PR #6197"}
+    - {path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/production/prod-desktop-dark-en-map.png, viewport: desktop, theme: dark, locale: en, note: "The Map -- CAPTURED; committed on origin/main via merged PR #6197"}
+    - {path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/production/prod-desktop-dark-en-moving.png, viewport: desktop, theme: dark, locale: en, note: "What's Moving -- CAPTURED; committed on origin/main via merged PR #6197"}
+    - {path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/production/prod-desktop-dark-en-money.png, viewport: desktop, theme: dark, locale: en, note: "Money & Breadth -- CAPTURED; committed on origin/main via merged PR #6197"}
+    - {path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/production/prod-desktop-dark-en-explore.png, viewport: desktop, theme: dark, locale: en, note: "Explore -- CAPTURED; committed on origin/main via merged PR #6197"}
+    - {path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/production/prod-desktop-dark-en-confluence.png, viewport: desktop, theme: dark, locale: en, note: "Confluence -- CAPTURED; committed on origin/main via merged PR #6197"}
   gaps:
     - {axis: viewport, value: "mobile390 + tablet820, all six views", reason: "capture deferred to the R3B evidence lane; this drafting pass has no browser/capture tool (COMMISSION.md S22 requires 1440 dark/light/ZH + 390 dark/ZH per view, 30 primary captures minimum)"}
     - {axis: theme, value: light, reason: "no light-theme production capture exists yet for any of the six views; deferred to the R3B evidence lane"}
