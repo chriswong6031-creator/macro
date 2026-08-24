@@ -37,13 +37,14 @@ waves:
     status: todo
     depends_on: [P0A]
     next_action: >
-      Run only a bounded disposable NON-SEAT canary of the vendor-supported automation-owned
-      persistent lifecycle: exact profile ownership, benign exact-URL navigation, same-owner reuse,
-      state persistence, owner-loss/not-found/auth refusal, zero duplicate/repeat-start, zero typing
-      or message send, zero profile mutation and receipt hygiene. Provision any disposable vendor
-      credential through a human-controlled Keychain-to-stdin boundary. Programmatic OS-window
-      foreground remains a separate unsupported gate; do not touch a Chairman seat until the
-      non-seat canary passes and a supported focus contract is resolved.
+      Preserve the completed three-seat enrollment; those rows are initial navigation destinations,
+      not primary Sol chats. Next run only a bounded disposable NON-SEAT canary of the
+      vendor-supported automation-owned persistent lifecycle: exact profile ownership, benign
+      exact-URL navigation, same-owner reuse, state persistence, owner-loss/not-found/auth refusal,
+      zero duplicate/repeat-start, zero typing or message send, zero profile mutation and receipt
+      hygiene. Provision any disposable vendor credential through a human-controlled Keychain-to-stdin
+      boundary. Programmatic OS-window foreground remains a separate unsupported gate; do not touch a
+      Chairman seat until the non-seat canary passes and a supported focus contract is resolved.
   - id: ASD-F0
     title: Active-Session Dialogue architecture and authority freeze
     status: done
@@ -87,6 +88,7 @@ decisions:
   - DEC:CHAIRMAN-CONTROL-ROOM-P0-ARCHITECTURE-ACCEPTED
   - DEC:CHAIRMAN-CONTROL-ROOM-ACTIVE-SESSION-DIALOGUE-F0-ACCEPTED
   - DEC:CCR-P0B-AUTOMATION-OWNED-NONSEAT-CANARY-ONLY
+  - DEC:CCR-SOL-IDENTITY-IS-NOT-A-CHAT
 discoveries:
   - DSC:CCR-MANAGED-BROWSER-RUNNING-SEAT-ACTUATOR-MISSING
   - DSC:CCR-PROCESS-SNAPSHOT-OUTPUT-CAP-CAN-HIDE-RUNNING-SEATS
@@ -95,17 +97,20 @@ artifacts:
   - agentos/decisions/DEC-CHAIRMAN-CONTROL-ROOM-P0-ARCHITECTURE-ACCEPTED.md
   - agentos/decisions/DEC-CHAIRMAN-CONTROL-ROOM-ACTIVE-SESSION-DIALOGUE-F0-ACCEPTED.md
   - agentos/decisions/DEC-CCR-P0B-AUTOMATION-OWNED-NONSEAT-CANARY-ONLY.md
+  - agentos/decisions/DEC-CCR-SOL-IDENTITY-IS-NOT-A-CHAT.md
   - agentos/discoveries/DSC-ASD-MODEL-VISIBLE-SETTINGS-CAN-EXPOSE-LIVE-CREDENTIALS.md
   - agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-08-22-sol-architecture.md
   - agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-08-22-h0-release.md
   - agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-08-22-active-session-dialogue-f0.md
   - agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-08-23-mas125-mas115-rulings.md
   - agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-08-23-asd-a1-accepted.md
+  - agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-08-23-seat-project-chat-cardinality.md
   - mastermind:research/MASTERMIND_ACTIVE_SESSION_EXECUTIVE_DIALOGUE_F0_ARCHITECTURE_AND_FABLE01_COMMISSION_2026-08-22.md
   - mastermind:research/MASTERMIND_ACTIVE_SESSION_EXECUTIVE_DIALOGUE_F0_CURRENT_STATE_AMENDMENT_2026-08-22.md
   - mastermind:research/MASTERMIND_ACTIVE_SESSION_EXECUTIVE_DIALOGUE_A0_TOKEN_ISOLATION_FALSIFIER_2026-08-23.md
 landmines:
   - "Surface bindings are local navigation addresses only; they are not runtime, role, workstream, completion, liveness or authority records."
+  - "There is no canonical or primary Sol chat. The account plus MastermindX Project context bootstraps Sol; exact normal-chat and Project-chat URLs are navigation destinations only."
   - "A tab/window/process title may be a candidate locator but never proves work ownership or execution."
   - "Open actions may focus/resume a surface only; P0 may not type prompts, send messages, dispatch work or wake a CEO."
   - "Linear remains projection. A Linear assignee or status never proves a provider session claimed the work."
@@ -133,6 +138,7 @@ do_not_redo:
   - "Do not create a dialogue DB, Slack-owned lifecycle state, mutable thread cursor, second queue, automatic retry ledger or another session identity plane."
   - "Do not absorb MAS-48 B1/C1/B2/C2, generic agent dispatch, automatic Wake, provider credentials or multi-host capacity routing."
   - "Do not commit private ChatGPT URLs, browser target IDs, credentials, chat text or local surface_bindings.json."
+  - "Do not ask the Chairman to re-enroll the three ChatGPT seats or turn their initial destinations into an identity plane."
   - "Do not use ordinary Chrome as a fallback for the Chairman's managed-browser seats."
   - "Do not use GUI/RPA scripting or undocumented repeat-start to make a navigation side effect look like a supported Open Sol actuator."
   - "Do not lower P0B completion from exact-seat/exact-conversation foreground reachability to background URL navigation merely because automation-owned profiles can navigate."
@@ -140,11 +146,12 @@ do_not_redo:
   - "Do not recreate ASD A0/A1 or create another MAS-125 implementation carrier. Exact accepted PR #125 merge eb9910681a6db9f9675b25233c8865bb43325c32 is the sole DEVELOPMENT_UNARMED core."
   - "Do not re-open H0 because the persistent 8787 adoption gate is complete; treat future CCR reliability regressions as new evidence, not unfinished H0."
 next_action: >
-  When the Chairman is present, obtain native action-time confirmation for persistent managed-seat
-  enrollment and any credential installation. Then issue a separate explicit Sol ASD-A2 commission
-  for one least-privilege non-authoritative production canary. Independently, P0B remains gated on
-  all-three-seat enrollment plus the bounded disposable non-seat vendor canary. Do not start ASD-A3,
-  ASD-A4, real-seat mutation, generic Wake or P1 from the accepted A1 core alone.
+  The Chairman completed all-three-seat managed-browser enrollment; do not repeat it. With the
+  Chairman present, select one stopped disposable non-Chairman Multilogin profile, obtain native
+  action-time confirmation for the vendor Keychain credential, and run only the bounded P0B non-seat
+  canary. Independently, issue a separate explicit Sol ASD-A2 commission before any production Agent
+  Relay principal or dialogue canary. Do not start ASD-A3, ASD-A4, real-seat mutation, generic Wake
+  or P1 from the accepted A1 core or seat enrollment alone.
 ---
 
 ## Capability state
@@ -152,7 +159,12 @@ next_action: >
 `PARTIAL` overall because P0B remains `DARK_OR_DISCONNECTED / unsupported_surface` and the
 production ASD transport path remains unproven. P0A plus H0 is `PROVEN_LIVE` on the persistent
 Chairman path; the supervised loopback service is running from current Mastermind merge
-`eb9910681a6db9f9675b25233c8865bb43325c32`, and MAS-114 is complete.
+`591b7ace4dd9b2d46edccaa5e66eebf1ead8657f`, and MAS-114 is complete.
+
+The three-seat enrollment and conflict-free local projection are now `PROVEN_LIVE` on the
+loopback Control Room read path. This proves seat addressability only. It does not prove vendor
+automation ownership, exact intended-window foreground, production dialogue or Executive execution.
+The initial stored conversation for each seat is not a primary chat and does not define Sol identity.
 
 P0B research now establishes a `SUPPORTED_BUT_REQUIRES_ARCHITECTURE_CHANGE` candidate substrate:
 GoLogin and Multilogin can support exact profile launch plus exact URL navigation when the profile is
@@ -177,6 +189,12 @@ separately authorized real canaries pass.
   `d0c649d9f99b52a1b0f80c8757bc65e1951fc40c` after CI `32599272414`, CodeQL
   `32599271255`, and Sol review `5001161545`.
 - Macro PR #6292 merged as `fc94d43ad4142e50ec808b2f1a8d6f922ff1fa7b`, recording H0 persistent-8787 production adoption.
+- Mastermind PR #133 merged the three-seat/multi-chat reconciliation as
+  `7cba4ca74003a37064cf46650f4d931a324350ba` from exact head
+  `ed41a194f5c875b3fc6a54e20488e6c4ab73cb39`.
+- Mastermind PR #134 merged exact Project-chat navigation and the non-primary-chat correction as
+  `591b7ace4dd9b2d46edccaa5e66eebf1ead8657f` from exact head
+  `9bc12c9e6dc23c30ab356971c90ebf34de2b72a3`; repository CI and all CodeQL analyses passed.
 
 ### Immutable ASD receipts
 
@@ -196,7 +214,7 @@ separately authorized real canaries pass.
 3. No P0B non-seat canary has been executed, and no real Chairman seat may be changed by this ruling.
 4. The removed fixture is not a production principal, and no production Agent Relay app or credential is installed.
 5. No real `MMX/AGENT_DIALOGUE_V1` Slack exchange has occurred. A2/A3/A4 remain unstarted.
-6. No three-seat managed-browser enrollment, vendor credential installation or disposable P0B canary has been completed.
+6. Three-seat managed-browser enrollment is complete, but no vendor credential installation or disposable P0B canary has been completed.
 7. Agent OS brief latency remains a separate Macro performance problem.
 
 ## Completion boundary
