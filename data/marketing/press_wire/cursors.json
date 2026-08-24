@@ -3,6 +3,7 @@
     "013d1e251fe90e7faf6fe600ffe75f587da1105b": "2026-08-23T23:53:36.041923+00:00",
     "020c93c7322e196c376e46fa142b08e26765f849": "2026-08-23T19:06:02.845784+00:00",
     "036f49b31e2b2dcfe002e0b522bae344601ed640": "2026-08-24T05:52:00.919448+00:00",
+    "045133280819328e18b622cfa3b00f0b46b031c5": "2026-08-24T07:42:33.266390+00:00",
     "05570eb17fb146576e70639e69dbb622248c9706": "2026-08-23T19:06:02.845784+00:00",
     "0587cc3e13e404d4845fea1bb6973e31b1d54f4a": "2026-08-23T10:28:29.343714+00:00",
     "0588ade41801e8dbfc8d0791f944fa8118f64494": "2026-08-23T20:34:26.694258+00:00",
@@ -32,6 +33,7 @@
     "124fae1407429d0ffb1317760c20ffb4d705b79a": "2026-08-23T13:17:52.268666+00:00",
     "134de9226745e851d4fd761e843f2faae94bef99": "2026-08-23T17:01:30.323944+00:00",
     "13a5b0c92e369d0878bbbc4dad91c64f5fa36107": "2026-08-23T18:01:57.806424+00:00",
+    "1497b67e79382821041b37c7f0e9765af189940c": "2026-08-24T07:42:33.266390+00:00",
     "1508beff8c16ea4e63dc229980cdcb662942a368": "2026-08-23T23:07:42.895829+00:00",
     "15c3e50eae2881e31c3fb5b5a2fbe980b7f413d5": "2026-08-24T05:08:51.005026+00:00",
     "1684fc53cc8e253a469d35d8c0e97262e078cb57": "2026-08-23T12:34:34.068155+00:00",
@@ -58,6 +60,7 @@
     "20fc3ad67839f190931839efba20e2245065c872": "2026-08-23T23:34:04.219273+00:00",
     "22dc8918a63ebae6373ef8bde675ee0119564312": "2026-08-23T18:01:57.806424+00:00",
     "24a4abab92c6ff5e6ec9e119c27cff013435a313": "2026-08-24T00:52:44.115545+00:00",
+    "25a9ac5617b5a09362a24ce48d87b6cfd0c36cc1": "2026-08-24T07:42:33.266390+00:00",
     "260753e3fdfb4853c1be0844abf1f1f8ee8fd117": "2026-08-24T05:08:51.005026+00:00",
     "26914d4f627bb2eed76e93f0c96dd8272d6821bd": "2026-08-24T05:52:00.919448+00:00",
     "2691c8933e5a932c5b8b3ad92e7ad5fb19d12c78": "2026-08-24T05:52:00.919448+00:00",
@@ -87,6 +90,7 @@
     "3b7997e13efd8828932fd6e87c6f223fcf63b88d": "2026-08-23T19:06:02.845784+00:00",
     "3ca0bfa13c5c5fd3c0c7c91ea95fc94908ed1f70": "2026-08-23T18:43:34.719860+00:00",
     "3d603db60e568b107c61df0c14eebe7a52311e59": "2026-08-23T13:17:52.268666+00:00",
+    "3e33e624431cafed426e5c4c941c7bba45bc4112": "2026-08-24T07:42:33.266390+00:00",
     "3ecd75719f8a4771dbd79eba71edc74c1bb9bd44": "2026-08-23T17:29:08.194162+00:00",
     "3f4b4f99e3d3ea6e5fdf8d2ddfdec3240086d86f": "2026-08-23T23:07:42.895829+00:00",
     "3f78c4f7c3401a609d9537e7fceb180d917dbc08": "2026-08-24T03:27:43.983133+00:00",
@@ -113,6 +117,7 @@
     "4d98ce6f33eddfd36e5c36b0b41e5a8e56f92d6f": "2026-08-23T17:29:08.194162+00:00",
     "4dd868fa9dfc42ab1e5fd318fabe3b626dfa8fca": "2026-08-23T12:34:34.068155+00:00",
     "4e5723847261c4215fbd5976448c0561e6523d7d": "2026-08-24T02:17:51.575537+00:00",
+    "4e7b74c6dc97f27e551f019290e10e7b95803189": "2026-08-24T07:42:33.266390+00:00",
     "4f94adedbfb5776d43873674c47d17cbde9de4b3": "2026-08-23T20:34:26.694258+00:00",
     "50041e6ea0e4002605f50e1b97f5c91921bb9053": "2026-08-23T18:01:57.806424+00:00",
     "50169a8227e20bc6a96b57999011488404aa5d1a": "2026-08-23T10:28:29.343714+00:00",
@@ -137,7 +142,6 @@
     "5a10b621e92072fe26cfd33cb1d4c9fdf3ab1896": "2026-08-23T23:34:04.219273+00:00",
     "5ac79711383c9c567f978fc96f593eabad2531b7": "2026-08-23T16:41:27.274502+00:00",
     "5b0c3d68cb2d0a4883cf435cecd33c0dd04bae33": "2026-08-23T15:50:46.333309+00:00",
-    "5ba2e1e084e36b94d3e86897afb8027486f92df0": "2026-08-23T06:54:09.712299+00:00",
     "5bc75807523ecad76f1957be19f1ad280999c5d4": "2026-08-23T19:06:02.845784+00:00",
     "5d9fe0677bb6bc5d5fe6faedfe65c513cccfc94e": "2026-08-23T19:06:02.845784+00:00",
     "5f61df980f3ef8a16c422a83aba7363be3723ed8": "2026-08-24T05:52:00.919448+00:00",
@@ -163,7 +167,6 @@
     "6af97c2ab5ca96e3cdc344bae7db4b16fc7981a9": "2026-08-24T06:34:02.966648+00:00",
     "6b6bc7ee2ff3c483ba7008d06137fb52b3923084": "2026-08-23T11:55:11.990618+00:00",
     "6bfa3e309686cd1d35fd157b6d5cc11e6f8d5c64": "2026-08-23T23:34:04.219273+00:00",
-    "6c3234f05e8fe5590d209f9b568c13f40cde7cd7": "2026-08-23T06:54:09.712299+00:00",
     "6e1ca90952ff3068d50b12ee7dfae59fb460b32f": "2026-08-23T20:34:26.694258+00:00",
     "6fdf2362ad8e2b786b51bdefc088c9967ffc98c1": "2026-08-23T19:06:02.845784+00:00",
     "6ff4818ccb7981922fe09d72206d977a7b3e50e5": "2026-08-23T19:06:02.845784+00:00",
@@ -175,9 +178,12 @@
     "76c693d2b27810e3171fb2c9514f1ea59066d62a": "2026-08-23T19:06:02.845784+00:00",
     "775148161d616ee4cccf859f0747df1e0ecde14e": "2026-08-23T23:07:42.895829+00:00",
     "77617697d30951e74298bb29ad7df0039ff9fff0": "2026-08-23T17:29:08.194162+00:00",
+    "7840ffe5a545a9ed72f5ec1b3d0abc725240a17e": "2026-08-24T07:42:33.266390+00:00",
+    "78df979018e2d61c2ccc0328271859d65d235557": "2026-08-24T07:42:33.266390+00:00",
     "79d1eeacb7965a5aaab45e69975435561f96bd79": "2026-08-23T18:01:57.806424+00:00",
     "79eacce7156276eaff0794ed20d3ac37ac153247": "2026-08-23T14:59:02.427906+00:00",
     "79fb22fd1062e4412a022a1f6fa63c0adaea8e4d": "2026-08-23T18:01:57.806424+00:00",
+    "7a4f31ac68e90763f294198739f23ddfb09d8fc6": "2026-08-24T07:42:33.266390+00:00",
     "7adc9259c0bca15040b595f31dd3ceb3e06e1c96": "2026-08-23T21:41:27.978672+00:00",
     "7ae1cdfff6d03283b27f5c3d878291b0ffbb67c5": "2026-08-23T21:41:27.978672+00:00",
     "7bca5f8997b41748fea38c960b47798b7a7c3ec4": "2026-08-24T02:17:51.575537+00:00",
@@ -203,6 +209,7 @@
     "83e985b7358c4c8b11eef2e0ca6554f973752ab8": "2026-08-23T18:01:57.806424+00:00",
     "848678e72d17ce5f9e9527f674d89397808e6bff": "2026-08-24T06:34:02.966648+00:00",
     "8559a38078b1449777201e1a379aa96aaf08352c": "2026-08-24T03:27:43.983133+00:00",
+    "8590bb4c7651a50f407e6fee39496159b642afcf": "2026-08-24T07:42:33.266390+00:00",
     "859550937c72c1a3368e674c2ee2f4a3a3c00331": "2026-08-24T00:52:44.115545+00:00",
     "865202b9eef92fbd66305483578e6cabe290d2c9": "2026-08-24T05:52:00.919448+00:00",
     "87e929d803f2448b5504b94a08026afc725aa31f": "2026-08-23T21:41:27.978672+00:00",
@@ -229,9 +236,11 @@
     "96324d7fe9f766bab63a7c1254f6ce29903eee8e": "2026-08-23T17:01:30.323944+00:00",
     "96343307a3a9ab269fef120598539edf3494239c": "2026-08-23T17:29:08.194162+00:00",
     "9640d10bd0654f1591afc01dfe968e68e88c7755": "2026-08-23T17:29:08.194162+00:00",
+    "9694dea6883c03377d38da84e1e9c5d1122068a5": "2026-08-24T07:42:33.266390+00:00",
     "97207b799e444cf67b2cbe650e22ee1c19185098": "2026-08-24T04:22:36.034395+00:00",
     "97a5ab55f8d782886be1ec56a9dfb47cf8ad0085": "2026-08-24T03:27:43.983133+00:00",
     "9825f99b4e0c4ba67e56af7bdd8c20cf5feff1da": "2026-08-23T09:01:57.804216+00:00",
+    "986e42f327795a5500354fce667f66eb92877135": "2026-08-24T07:42:33.266390+00:00",
     "98f9d9b084f5ce19ac7422cdf33a8d0e0f4517a7": "2026-08-24T00:52:44.115545+00:00",
     "99fb281e9e3f048ebe91d5e71fc8f27a426d84a3": "2026-08-23T19:06:02.845784+00:00",
     "9a5d6bcf7399cf714a2d6a52c02b0458984be2fc": "2026-08-23T11:12:42.661663+00:00",
@@ -262,15 +271,14 @@
     "a7034c638f393a304274db5e07b3de67fdf6f00f": "2026-08-23T19:06:02.845784+00:00",
     "a717e59ca82dc10c17528776963d11117fc406ff": "2026-08-23T10:28:29.343714+00:00",
     "a90ba33656b04508afbe798c045757868cba8e5a": "2026-08-23T20:55:28.550374+00:00",
+    "a9dc8e68ebee4e434cb5e2bbb42d412b574e3b34": "2026-08-24T07:42:33.266390+00:00",
     "a9e6e2ee58390136528e1ea07cc52971efc2d57e": "2026-08-24T05:08:51.005026+00:00",
     "ab0797a6742a99a423cf110e422a72841d346fe5": "2026-08-24T03:27:43.983133+00:00",
+    "abd6165541d00c62bd094fb5b4959c0ac5788e9f": "2026-08-24T07:42:33.266390+00:00",
     "adbcb613398cc965e066532fc929b546ede70498": "2026-08-23T13:17:52.268666+00:00",
     "ae163fca77f8e6c8b8bab56ef9f8d15eaa1db461": "2026-08-23T13:17:52.268666+00:00",
     "ae37303d90a5222ddb396a8813d26fa53e02cb8b": "2026-08-24T00:52:44.115545+00:00",
     "af62f9039d775050a7a5c4bf4377fe42f5dcf003": "2026-08-24T05:52:00.919448+00:00",
-    "alpaca:61372332": "2026-08-23T06:54:09.712299+00:00",
-    "alpaca:61372354": "2026-08-23T06:54:09.712299+00:00",
-    "alpaca:61372372": "2026-08-23T07:29:07.139159+00:00",
     "alpaca:61372393": "2026-08-23T07:58:19.221614+00:00",
     "alpaca:61372412": "2026-08-23T08:37:07.276901+00:00",
     "alpaca:61372425": "2026-08-23T08:37:07.276901+00:00",
@@ -334,6 +342,22 @@
     "alpaca:61374613": "2026-08-24T06:34:02.966648+00:00",
     "alpaca:61374635": "2026-08-24T06:34:02.966648+00:00",
     "alpaca:61374649": "2026-08-24T06:34:02.966648+00:00",
+    "alpaca:61374663": "2026-08-24T07:42:33.266390+00:00",
+    "alpaca:61374789": "2026-08-24T07:42:33.266390+00:00",
+    "alpaca:61374931": "2026-08-24T07:42:33.266390+00:00",
+    "alpaca:61374946": "2026-08-24T07:42:33.266390+00:00",
+    "alpaca:61374958": "2026-08-24T07:42:33.266390+00:00",
+    "alpaca:61374969": "2026-08-24T07:42:33.266390+00:00",
+    "alpaca:61374981": "2026-08-24T07:42:33.266390+00:00",
+    "alpaca:61374992": "2026-08-24T07:42:33.266390+00:00",
+    "alpaca:61375003": "2026-08-24T07:42:33.266390+00:00",
+    "alpaca:61375016": "2026-08-24T07:42:33.266390+00:00",
+    "alpaca:61375027": "2026-08-24T07:42:33.266390+00:00",
+    "alpaca:61375038": "2026-08-24T07:42:33.266390+00:00",
+    "alpaca:61375057": "2026-08-24T07:42:33.266390+00:00",
+    "alpaca:61375069": "2026-08-24T07:42:33.266390+00:00",
+    "alpaca:61375081": "2026-08-24T07:42:33.266390+00:00",
+    "alpaca:61375092": "2026-08-24T07:42:33.266390+00:00",
     "b121d65119f9ef3cb4e36fecf1ef7c3e9bfa486a": "2026-08-23T19:06:02.845784+00:00",
     "b22341877e4ac1df6fbc7fe96b638a63ad27975a": "2026-08-24T03:27:43.983133+00:00",
     "b3899e7eaed44eaf63a427b417775b67f994fadd": "2026-08-23T18:01:57.806424+00:00",
@@ -391,6 +415,7 @@
     "c745c5742f0ed01c832954a95de5084d18942f8b": "2026-08-23T19:06:02.845784+00:00",
     "c756e0082e6326d0d21ebb5a2370089a84cb1326": "2026-08-24T00:52:44.115545+00:00",
     "c7e4b173622652fc195de69c5d060129f501179f": "2026-08-23T17:29:08.194162+00:00",
+    "c891e0af6ac061796d43f2aeaf6cdbe58a744821": "2026-08-24T07:42:33.266390+00:00",
     "c89a410c207da63fcfb0d1e3b90c894825901384": "2026-08-23T21:41:27.978672+00:00",
     "c8d900ba163a34a61ea23761e2032463fd138f6d": "2026-08-23T19:06:02.845784+00:00",
     "ca36ee608092e83530a58ae9900a1c2067c5a4e7": "2026-08-24T02:17:51.575537+00:00",
@@ -462,7 +487,6 @@
     "f2f4897f3d2ea6403d44cc574a8461b51a6137e4": "2026-08-23T19:06:02.845784+00:00",
     "f3767ae6b6e1e7cd034003ebe58d9e9630ff408d": "2026-08-24T04:22:36.034395+00:00",
     "f3dfcd1b8752750d7bae341125ab0c7bbb104767": "2026-08-24T05:08:51.005026+00:00",
-    "f5352db909b9f58cf623ed2067b9e4edc4301e7e": "2026-08-23T06:54:09.712299+00:00",
     "f6186914f7bbe30456e498665ce604bb8296659f": "2026-08-23T19:06:02.845784+00:00",
     "f649108abfce51ff4bfdcd46e1f03c468858bf6a": "2026-08-23T13:17:52.268666+00:00",
     "f701dc9ba21fc5efccd6eff4f92ae578c2d3a534": "2026-08-23T21:41:27.978672+00:00",
@@ -470,6 +494,7 @@
     "f83f7ba50ca5eedfb4632881c8480cc8667ccf9b": "2026-08-23T21:58:18.024763+00:00",
     "f884a6039b692b58298d2d967f98274d99b52524": "2026-08-23T17:29:08.194162+00:00",
     "fae365fb47b67fb5774229ac8d747d350f15c60c": "2026-08-23T23:53:36.041923+00:00",
+    "fb5d1b43d4efde9f81ce73438828ec15995e9513": "2026-08-24T07:42:33.266390+00:00",
     "fb6465d67920dc256e532b95b3e41bcf3ab80277": "2026-08-24T05:52:00.919448+00:00",
     "fc12e193b30276a2787fb6c3312fadba2e8b1c21": "2026-08-23T12:34:34.068155+00:00",
     "fcb05d8982fb0cb731f624842582caa90300b035": "2026-08-23T22:28:21.654207+00:00",
@@ -478,1347 +503,709 @@
     "fde5da56a5a4ba3a33ba3985b80815cb41b506ca": "2026-08-23T16:08:39.124141+00:00"
   },
   "corroboration": {
-    "claim:geopolitical:sec:technology": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+    "claim:none:sec:communication": {
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
-        "host:benzinga.com"
+        "host:zerohedge.com"
       ]
     },
     "claim:none:sec:consumer": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
+        "host:zerohedge.com"
+      ]
+    },
+    "claim:none:sec:energy": {
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
+      "sources": [
+        "host:zerohedge.com",
+        "host:investing.com",
         "host:benzinga.com"
       ]
     },
     "claim:none:sec:financials": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:cointelegraph.com"
-      ]
-    },
-    "claim:none:sec:healthcare": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:investing.com"
       ]
     },
     "claim:none:sec:technology": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
+        "host:cnbc.com",
         "host:investing.com",
+        "host:coindesk.com",
         "host:benzinga.com"
       ]
     },
     "claim:none:tic:NVDA": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:benzinga.com"
       ]
     },
-    "head:applied optoelectronics pdd holdings and 3 stocks to watch heading into monday": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+    "claim:none:tic:XOM": {
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:benzinga.com"
       ]
     },
-    "head:box likely to report higher q2 earnings these most accurate analysts revise fore": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+    "claim:policy:mac:tariffs": {
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:benzinga.com"
       ]
     },
-    "head:ethereum lending app term finance loses 85 million after attacker buys voting po": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:coindesk.com"
-      ]
-    },
-    "head:gdi fy26 slides ffo surges 25 on perth leasing strength": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+    "claim:policy:sec:technology": {
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:investing.com"
       ]
     },
-    "head:gsks hibsago wins first global approval in japan for hepatitis b": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:investing.com"
-      ]
-    },
-    "head:india sugar stocks surge on higher prices festiveseason demand": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:investing.com"
-      ]
-    },
-    "head:quantum helium advances sagebrush testing identifies new targets": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:investing.com"
-      ]
-    },
-    "head:rep greg steube calls for flock camera ban says police should get a warrantceo s": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+    "head:aegon boosts 2026 share buyback to eur 350m after repurchasing eur 57m under ini": {
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:benzinga.com"
       ]
     },
-    "head:reported sunday faraday future ceo yt jia shares weekly update signs new ff par ": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+    "head:arada sukuk extends consent fee deadline to august 31": {
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
+      "sources": [
+        "host:investing.com"
+      ]
+    },
+    "head:bw offshore shares drop 11 as bw opal delay forces guidance cut": {
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
+      "sources": [
+        "host:investing.com"
+      ]
+    },
+    "head:california expected to seek tv channel sales from paramountwarner wsj": {
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:benzinga.com"
       ]
     },
-    "head:toei animation shares surge over 5 on new one piece films": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+    "head:canaccord downgrades regis resources stock rating on valuation": {
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:investing.com"
       ]
     },
-    "head:uk economy hands burnham surprise boost before first budget": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+    "head:dow jumps over 500 points but records weekly loss investor sentiment improves fe": {
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:european commission approves acadias daybu for rett syndrome patients aged five ": {
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:long beach power outage leaves 22000 customers without electricity amid extreme ": {
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:paysafe expands beyond payments with gaming arena offering publishers access to ": {
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:reported saturday superiormed announces business combination with starry sea acq": {
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:reported sunday endeavour silver removes terronera mine blockade in mexico opera": {
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:samsung electronics shares skid as record shareholder returns disappoint": {
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:investing.com"
       ]
     },
-    "head:valerio therapeutics to acquire etherna for 30 million": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+    "head:takedas orzeyful wins japan approval for narcolepsy type 1 after phase 3 studies": {
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
-        "host:investing.com"
-      ]
-    },
-    "truth:117113512922041373": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117113514109900078": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117113515147374539": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117113516302899762": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117113517318085766": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117113518610928478": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117113519814962467": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117113520942942067": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117113521957487229": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117113523040467938": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117113524020838641": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117113525004064948": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117113526265485643": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117113527232177944": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117113528507989902": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117113529529648757": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117113530523550991": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117113531476309322": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117113535082793528": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117113555008813580": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117113780858157626": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117115756665493321": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117115777270677160": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117115788618837208": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117116193025089146": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117116197583802302": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117116198386080523": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117116227337554222": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117116699169209088": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117116872320047163": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117117939770163535": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117117993981850553": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117117994608282703": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117118475271319244": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117118611688599747": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117118626722039422": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117118679309261908": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117118691151954389": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117118710370504523": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117118726898376521": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117118742340410434": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117118759965215830": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117119022282550607": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117119023019756903": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117119023541992974": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117119024196042249": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117119024814753227": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117119025318491204": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117119025950123947": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117119026889308862": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117119027372702006": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117119027928642145": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117119028477327636": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117119029036069385": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117119029592152542": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117119202454280113": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117119203221927549": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117119203873925166": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117119204688973925": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117119205242482325": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117119206141856177": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117119206919334140": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117119272303231622": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117119272883328354": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117119273375861239": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117119274059105642": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117119274682441393": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117119275212651288": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117119603749653762": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117119613077575764": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117119807819944656": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117120004758545122": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117122454656898588": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117122655030789696": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117122893417828005": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117122897019429188": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117123052590365117": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117124382820949631": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117124383223887727": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117124388139342612": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117125319695089292": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117125320372310851": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117125340444071624": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117125341278153871": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117125632032911785": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117125718254050188": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117125911763587334": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117125949632758649": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117125950821111248": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117128115633309906": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117128906084783390": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117129360852240314": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117129928672171856": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117129929938107129": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117129931396749934": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117129933367951405": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117129934429426476": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117129936834321487": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117130257407138275": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117130287849451563": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117131390037719482": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117131396419596554": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117131396522866670": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117131409354478560": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117133920887750401": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117134194900118704": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117134308987004111": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117134321216949559": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117134359860253059": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117134429829202518": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
-      ]
-    },
-    "truth:117134430528835875": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
-      "sources": [
-        "host:truthsocial.com"
+        "host:benzinga.com"
       ]
     },
     "truth:117134432679930032": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134433446256360": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134434446472238": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134435070312739": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134436836934561": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134437554179764": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134439935650398": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134443801937584": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134444832067768": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134446457656698": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134447318347925": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134448075588837": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134450446438705": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134587500534715": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134595100624861": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134595889412013": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134597641992037": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134598983433487": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134600045602327": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134600943313462": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134621340718784": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134622109680955": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134631536748114": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134633473478901": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134634331609267": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134635572174687": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134636703184466": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134637894565376": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134638780061079": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134639829580841": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134640697916931": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134641491790365": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134642322045474": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134643261686455": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134644597189989": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134645458445535": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134646355692943": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134647345137602": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134648247611471": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134649080283243": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134650068984827": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134650935728888": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134651908743307": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134652986157363": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134653874219621": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134654816697655": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134655888333194": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134656767200357": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134657793309927": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134659039628490": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134660180705641": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134845877719345": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134849304439845": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117134908401668938": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117135011934383556": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117135361970854867": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117135555611644462": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117135559489217035": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117135561220383573": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117135773042405247": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117135789576192806": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117135790192886203": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117135791766560725": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117136610993218864": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117136747897665850": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117136835644298066": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117139411859970862": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117140908995401671": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117141030718774729": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117141031402175912": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117141031914400514": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117141177283721411": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117141444139360871": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117141444922153076": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117142893735691144": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117144256940071915": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117144987049568805": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117144988108827513": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117147749847925768": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117147806182467462": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117148203995010811": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117148206284732927": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117148209419677521": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117148212992149477": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117148215693769273": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117148217545915792": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117148220406407911": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117148614817419837": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117148617954763691": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117148812663367626": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117148818788198933": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117148820570832936": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117148822269956937": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117148823903421618": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117148833275862351": {
-      "first_ts": "2026-08-24T06:34:02.966648+00:00",
+      "first_ts": "2026-08-24T07:42:33.266390+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
@@ -1830,19 +1217,19 @@
   },
   "providers": {
     "alpaca": {
-      "last_poll": "2026-08-24T06:34:02.966648+00:00",
+      "last_poll": "2026-08-24T07:42:33.266390+00:00",
       "primed_at": "2026-08-04T07:19:01.408847+00:00",
-      "since": "2026-08-24T06:30:57+00:00"
+      "since": "2026-08-24T07:37:54+00:00"
     },
     "cnn_truth_backfill": {
       "etag": "\"3a5d99069feaf100bf9280e4dfcad4b8-3\"",
       "fail_count": 0,
       "last_modified": "Mon, 24 Aug 2026 05:10:40 GMT",
-      "last_poll_ts": 1787553246.1856935
+      "last_poll_ts": 1787557355.5965967
     },
     "trumpstruth": {
       "fail_count": 0,
-      "last_poll_ts": 1787553245.8474483
+      "last_poll_ts": 1787557355.4766223
     },
     "twitterapiio": {
       "cursors": {
@@ -1913,65 +1300,65 @@
   },
   "schema": "press_wire.cursors/v1",
   "transient_refusals": {},
-  "updated_at": "2026-08-24T06:34:02Z",
+  "updated_at": "2026-08-24T07:42:33Z",
   "wire": {
     "bea_news": {
       "etag": "W/\"d0e223fac24dd1:0\"",
       "fail_count": 0,
       "last_modified": "Tue, 04 Aug 2026 12:30:04 GMT",
-      "last_poll_ts": 1787553244.4206939
+      "last_poll_ts": 1787557354.4367857
     },
     "bls_news": {
       "etag": "\"07aaf967531dd1:0\"",
       "fail_count": 0,
       "last_modified": "Fri, 21 Aug 2026 14:01:40 GMT",
-      "last_poll_ts": 1787553244.294379
+      "last_poll_ts": 1787557354.3131008
     },
     "cnbc_top": {
       "fail_count": 0,
-      "last_poll_ts": 1787553244.8944142
+      "last_poll_ts": 1787557354.518673
     },
     "coindesk_rss": {
       "fail_count": 0,
-      "last_poll_ts": 1787553245.5777285
+      "last_poll_ts": 1787557355.2388468
     },
     "cointelegraph_rss": {
       "fail_count": 0,
-      "last_modified": "Mon, 24 Aug 2026 06:32:05 GMT",
-      "last_poll_ts": 1787553245.6667776
+      "last_modified": "Mon, 24 Aug 2026 07:38:54 GMT",
+      "last_poll_ts": 1787557355.3547392
     },
     "fed_press": {
       "etag": "W/\"53636b83de30dd1:0\"",
       "fail_count": 0,
       "last_modified": "Thu, 20 Aug 2026 20:00:13 GMT",
-      "last_poll_ts": 1787553244.1436064
+      "last_poll_ts": 1787557354.2473447
     },
     "forexlive_news": {
-      "etag": "W/\"lfiNw0YGDd9FtMlmg44Mdy0I2c8\"",
+      "etag": "W/\"mfSn_kwNYchCMKx6llxRH68EIdY\"",
       "fail_count": 0,
-      "last_poll_ts": 1787553245.4195855
+      "last_poll_ts": 1787557354.8902383
     },
     "investing_news": {
-      "etag": "W/\"1246-659c4ed0d1f89\"",
+      "etag": "W/\"1264-659c5fabfe40a\"",
       "fail_count": 0,
-      "last_modified": "Mon, 24 Aug 2026 06:16:25 GMT",
-      "last_poll_ts": 1787553245.5047908
+      "last_modified": "Mon, 24 Aug 2026 07:31:50 GMT",
+      "last_poll_ts": 1787557355.1077354
     },
     "marketwatch_top": {
-      "etag": "W/\"20eb-hF6HjQzeQGPMOEo6kcUIAsEltnI\"",
+      "etag": "W/\"20eb-wfhliVaUbgpV/sVIEnq13FcoXYw\"",
       "fail_count": 0,
-      "last_poll_ts": 1787553245.0204902
+      "last_poll_ts": 1787557354.610012
     },
     "whitehouse_actions": {
       "etag": "\"cc3cbea060314e7826ea02e93699ec79\"",
       "fail_count": 0,
       "last_modified": "Sun, 23 Aug 2026 17:17:26 GMT",
-      "last_poll_ts": 1787553244.7562606
+      "last_poll_ts": 1787557354.4964092
     },
     "zerohedge_feed": {
       "fail_count": 0,
-      "last_modified": "Mon, 24 Aug 2026 04:54:00 GMT",
-      "last_poll_ts": 1787553245.0646174
+      "last_modified": "Mon, 24 Aug 2026 07:41:28 GMT",
+      "last_poll_ts": 1787557354.7231073
     }
   },
   "wire_day_counts": {
