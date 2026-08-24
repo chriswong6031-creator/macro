@@ -702,6 +702,174 @@ def test_source_spy_rest_unit_has_load_credential() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Experience-v2 namespace: tmpfs-hidden v1 siblings must be optional
+# ---------------------------------------------------------------------------
+
+_MM_ROOT = "/var/lib/macro-market-memory"
+_V2_SOURCE_ROOT = f"{_MM_ROOT}/state/sources-spy-rest-v1"
+_V2_TECHNICALS_ROOT = f"{_MM_ROOT}/state/technicals-v2"
+_V2_EXPERIENCE_ROOT = f"{_MM_ROOT}/state/experience-v2"
+_V1_TMPFS_HIDDEN_SIBLINGS = (
+    f"{_MM_ROOT}/state/sources",
+    f"{_MM_ROOT}/state/technicals-v1",
+    f"{_MM_ROOT}/state/experience-v1",
+)
+_EXTERNAL_MANDATORY_DENIES = (
+    "/etc/macro-market-memory-spy-rest",
+    "/var/lib/macro-market-memory-options",
+    "/etc/macro-market-memory-options",
+)
+
+
+def _unit_setting_values(unit: str, setting: str) -> list[str]:
+    prefix = f"{setting}="
+    return [
+        line[len(prefix) :]
+        for line in unit.splitlines()
+        if line.startswith(prefix)
+    ]
+
+
+def _tmpfs_roots(unit: str) -> tuple[str, ...]:
+    return tuple(value.split(":", 1)[0] for value in _unit_setting_values(unit, "TemporaryFileSystem"))
+
+
+def _bind_destinations(unit: str) -> set[str]:
+    dests: set[str] = set()
+    for setting in ("BindReadOnlyPaths", "BindPaths"):
+        for value in _unit_setting_values(unit, setting):
+            parts = value.split(":")
+            dest = parts[1] if len(parts) >= 2 and parts[1].startswith("/") else parts[0]
+            dests.add(dest)
+    return dests
+
+
+def _inaccessible_entries(unit: str) -> list[tuple[bool, str]]:
+    entries: list[tuple[bool, str]] = []
+    for value in _unit_setting_values(unit, "InaccessiblePaths"):
+        optional = value.startswith("-")
+        path = value[1:] if optional else value
+        entries.append((optional, path))
+    return entries
+
+
+def _is_under(path: str, root: str) -> bool:
+    path = path.rstrip("/")
+    root = root.rstrip("/")
+    return path == root or path.startswith(root + "/")
+
+
+def _hidden_by_tmpfs(path: str, tmpfs_roots: tuple[str, ...], bind_dests: set[str]) -> bool:
+    if not any(_is_under(path, root) for root in tmpfs_roots):
+        return False
+    if path in bind_dests:
+        return False
+    if any(_is_under(path, bind) for bind in bind_dests):
+        return False
+    return True
+
+
+def _mandatory_inaccessible_hidden_by_tmpfs(unit: str) -> list[str]:
+    """Mandatory InaccessiblePaths that TemporaryFileSystem already hides.
+
+    Those paths do not exist inside the constructed namespace and abort
+    setup with 226/NAMESPACE unless they use the optional '-' prefix.
+    """
+    tmpfs = _tmpfs_roots(unit)
+    binds = _bind_destinations(unit)
+    return [
+        path
+        for optional, path in _inaccessible_entries(unit)
+        if not optional and _hidden_by_tmpfs(path, tmpfs, binds)
+    ]
+
+
+_EXPERIENCE_V2_BROKEN_NAMESPACE_UNIT = """
+[Service]
+TemporaryFileSystem=/var/lib/macro-market-memory:ro
+BindReadOnlyPaths=/var/lib/macro-market-memory/state/sources-spy-rest-v1
+BindReadOnlyPaths=/var/lib/macro-market-memory/state/technicals-v2
+BindPaths=/var/lib/macro-market-memory/state/experience-v2
+InaccessiblePaths=/etc/macro-market-memory-spy-rest
+InaccessiblePaths=/var/lib/macro-market-memory/state/sources
+InaccessiblePaths=/var/lib/macro-market-memory/state/technicals-v1
+InaccessiblePaths=/var/lib/macro-market-memory/state/experience-v1
+InaccessiblePaths=/var/lib/macro-market-memory-options
+InaccessiblePaths=/etc/macro-market-memory-options
+"""
+
+
+def _experience_v2_unit() -> str:
+    return (ROOT / "app" / "deploy" / "macro-market-memory-experience-v2.service").read_text()
+
+
+def test_experience_v2_tmpfs_hidden_v1_siblings_must_be_optional() -> None:
+    """v1 siblings under TemporaryFileSystem are absent unless rebound; they must be optional."""
+    unit = _experience_v2_unit()
+    assert _mandatory_inaccessible_hidden_by_tmpfs(unit) == []
+    optional_paths = {path for optional, path in _inaccessible_entries(unit) if optional}
+    mandatory_paths = {path for optional, path in _inaccessible_entries(unit) if not optional}
+    for sibling in _V1_TMPFS_HIDDEN_SIBLINGS:
+        assert sibling in optional_paths
+        assert sibling not in mandatory_paths
+
+
+def test_experience_v2_broken_mandatory_tmpfs_siblings_are_rejected() -> None:
+    """The Sunday 226/NAMESPACE combination must remain red: mandatory tmpfs-hidden siblings."""
+    hidden = _mandatory_inaccessible_hidden_by_tmpfs(_EXPERIENCE_V2_BROKEN_NAMESPACE_UNIT)
+    assert set(hidden) == set(_V1_TMPFS_HIDDEN_SIBLINGS)
+    repaired = _experience_v2_unit()
+    assert _mandatory_inaccessible_hidden_by_tmpfs(repaired) == []
+    # Optionalizing only the reported path is not enough: sources and technicals-v1 fail the same way.
+    partial = _EXPERIENCE_V2_BROKEN_NAMESPACE_UNIT.replace(
+        "InaccessiblePaths=/var/lib/macro-market-memory/state/experience-v1",
+        "InaccessiblePaths=-/var/lib/macro-market-memory/state/experience-v1",
+    )
+    still_hidden = _mandatory_inaccessible_hidden_by_tmpfs(partial)
+    assert f"{_MM_ROOT}/state/experience-v1" not in still_hidden
+    assert f"{_MM_ROOT}/state/sources" in still_hidden
+    assert f"{_MM_ROOT}/state/technicals-v1" in still_hidden
+
+
+def test_experience_v2_bind_mounted_io_is_not_inaccessible() -> None:
+    unit = _experience_v2_unit()
+    inaccessible_paths = {path for _, path in _inaccessible_entries(unit)}
+    for rebound in (_V2_SOURCE_ROOT, _V2_TECHNICALS_ROOT, _V2_EXPERIENCE_ROOT):
+        assert rebound not in inaccessible_paths
+    assert _unit_setting_values(unit, "BindReadOnlyPaths") == [
+        _V2_SOURCE_ROOT,
+        _V2_TECHNICALS_ROOT,
+    ]
+    assert _unit_setting_values(unit, "BindPaths") == [_V2_EXPERIENCE_ROOT]
+
+
+def test_experience_v2_external_denies_remain_mandatory() -> None:
+    """Paths outside the tmpfs still exist at setup and must stay mandatory denies."""
+    unit = _experience_v2_unit()
+    mandatory_paths = {path for optional, path in _inaccessible_entries(unit) if not optional}
+    optional_paths = {path for optional, path in _inaccessible_entries(unit) if optional}
+    for path in _EXTERNAL_MANDATORY_DENIES:
+        assert path in mandatory_paths
+        assert path not in optional_paths
+    tmpfs = _tmpfs_roots(unit)
+    for path in _EXTERNAL_MANDATORY_DENIES:
+        assert not any(_is_under(path, root) for root in tmpfs)
+
+
+def test_experience_v2_sandbox_isolation_contract_unchanged() -> None:
+    unit = _experience_v2_unit()
+    assert _unit_setting_values(unit, "PrivateNetwork") == ["true"]
+    assert _unit_setting_values(unit, "RestrictAddressFamilies") == ["AF_UNIX"]
+    assert _unit_setting_values(unit, "TemporaryFileSystem") == [f"{_MM_ROOT}:ro"]
+    assert _unit_setting_values(unit, "NoNewPrivileges") == ["true"]
+    assert "LoadCredential=" not in unit
+    assert "EnvironmentFile=" not in unit
+    assert "Environment=" not in unit
+    assert "Wants=network-online.target" not in unit
+    assert "AF_INET" not in unit
+
+
+# ---------------------------------------------------------------------------
 # CPI SOURCE_ID/SCHEMA unchanged
 # ---------------------------------------------------------------------------
 

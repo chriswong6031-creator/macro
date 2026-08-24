@@ -50,12 +50,11 @@ waves:
     status: in_progress
     depends_on: [M0C]
     next_action: >
-      After the M0D-0 records closeout is on origin/main, implement the runtime
-      vertical slice under DEC:W2C-M0D0-0400Z-SOURCE-SEAL-GO and
-      agentos/handoffs/MARKET-MEMORY-W2C-2026-08-21-m0d0.md: one sealed REST
-      capture per session in [04:00:00Z, 04:05:00Z) D+1; keyless technicals-v2;
-      registration v2 encoding the seal predicate; experience-v2 at 04:32Z;
-      strict prospective activation. Do not mix D-class R2 coherence into this PR.
+      Namespace repair for experience-v2 is in this change. Do not start
+      experience-v2 by hand. Tuesday 2026-08-25 04:00–04:32Z is the first
+      natural PROVEN_LIVE gate. M0D remains BUILT_NOT_PROVEN until that
+      natural admit authenticates. Do not mix D-class R2 coherence into this
+      wave.
   - id: V1-CONTEXT-AUDIT-DECOUPLE
     title: Restore v1 owner replay by decoupling trusted context from Options audit
     status: done
@@ -66,10 +65,12 @@ waves:
       audit. v1 experience.timer still waits on technicals freshness, which
       waits on massive_stock_day.
 next_action: >
-  Allow ordinary v1 technicals to consume public session 2026-08-21. Do not
-  start technicals or experience by hand. Tuesday 2026-08-25 M0D v2 proof
-  proceeds independently; if v1 is not restored by then, grade v2 as
-  v1_control_unavailable. Do not implement Options Audit preregistration v2 here.
+  Do not start experience-v2 or v1 writers by hand. Tuesday 2026-08-25
+  04:00–04:32Z is the first natural M0D PROVEN_LIVE gate after the
+  experience-v2 tmpfs/InaccessiblePaths namespace repair. M0D remains
+  BUILT_NOT_PROVEN. If v1 is unrestored by then, grade v2 as
+  v1_control_unavailable. Do not implement Options Audit preregistration v2
+  here. Do not open R2.
 decisions:
   - "DEC:W2C-M0B-V1-SOURCE-WINDOW-UNACHIEVABLE"
   - "DEC:W2C-M0C-V2-REST-SINGLE-TICKER-DAILY"
@@ -87,6 +88,7 @@ discoveries:
   - "DSC:W2C-M0D0-SPY-REST-FORMING-BAR-SEAL-STABLE"
   - "DSC:OPTIONS-CONTEXT-AUDIT-V1-TIMEOUT-PRECEDES-4096-REFUSAL"
   - "DSC:MASSIVE-STOCK-DAY-UNPUBLISHED-TODAY-RETURNS-403"
+  - "DSC:W2C-M0D-EXPERIENCE-V2-TMPFS-OPTIONAL-V1-INACCESSIBLE"
 do_not_redo:
   - Do not treat a lawful in-window abstained row as missed, absent, or an M0A failure.
   - Do not reopen #5805 or the nested __case_v1 filename admit without a live journal reproducing the noncanonical-filename exception.
@@ -112,6 +114,8 @@ do_not_redo:
   - Do not recouple the Options Context Audit into macro-market-memory-context.service or scripts/project_market_memory_context.py main().
   - Do not backdate activation_session or rush Monday 2026-08-24.
   - Do not treat stock-day unpublished-today 403 as a Massive stock entitlement regression or flatten it to no_entitled_date.
+  - Do not restore mandatory InaccessiblePaths for tmpfs-hidden unbound v1 siblings on experience-v2; that combination is 226/NAMESPACE (DSC:W2C-M0D-EXPERIENCE-V2-TMPFS-OPTIONAL-V1-INACCESSIBLE).
+  - Do not start experience-v2 by hand to manufacture the Tuesday natural admit.
 landmines:
   - Nested-path admission must round-trip artifact_relative_path. Any slash, mixed-case nested name, or hex that decodes to an uppercase ticker reopens traversal and identity-fold bugs.
   - Experience timer enabled-but-inactive is not armed. Armed means enabled plus active/waiting with a future NextElapse.
@@ -129,6 +133,7 @@ landmines:
   - Two experience oneshots at the same 04:30:00Z second contend for the 900s window; v2 starts at 04:32Z.
   - REST daily is a live forming aggregate from 09:30 ET; 546 unique digests on 2026-08-20. First availability is not a sealed source.
   - Production 04:00–04:05Z sampling may poll repeatedly; only the sealed digest is a source generation. Post-04:05Z corrections append lineage, they do not rewrite the sealed opportunity.
+  - TemporaryFileSystem=/var/lib/macro-market-memory:ro hides unbound v1 siblings; mandatory InaccessiblePaths for those siblings is 226/NAMESPACE. Optional '-' is the v1-proven form and is not an isolation weakening (DSC:W2C-M0D-EXPERIENCE-V2-TMPFS-OPTIONAL-V1-INACCESSIBLE).
 artifacts:
   - agentos/handoffs/MARKET_MEMORY_M0A_CLOSEOUT_2026-08-16.md
   - agentos/handoffs/MARKET-MEMORY-W2C-2026-08-20.md
@@ -140,6 +145,7 @@ artifacts:
   - agentos/handoffs/MARKET-MEMORY-W2C-2026-08-21-m0d0.md
   - agentos/handoffs/MARKET-MEMORY-W2C-2026-08-22-v1-context-decouple.md
   - agentos/handoffs/MARKET-MEMORY-W2C-2026-08-23-source-liveness.md
+  - agentos/handoffs/MARKET-MEMORY-W2C-2026-08-24-experience-v2-namespace.md
   - agentos/decisions/DEC-W2C-M0B-V1-SOURCE-WINDOW-UNACHIEVABLE.md
   - agentos/decisions/DEC-W2C-M0C-V2-REST-SINGLE-TICKER-DAILY.md
   - agentos/decisions/DEC-W2C-M0C-V2-HYBRID-PRICE-ACTIVITY-SCOPE.md

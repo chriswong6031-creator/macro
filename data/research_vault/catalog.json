@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-24T05:28:33.599711+00:00",
-  "count": 1735,
+  "generated_at": "2026-08-24T08:35:04.350099+00:00",
+  "count": 1744,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -87,6 +87,65 @@
   ],
   "items": [
     {
+      "id": "marketdesk-yqnipkixp18-672482",
+      "title": "JPM Europe Equity Research | Today’s Morning Meeting",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T08:11:04Z",
+      "summary_points": [
+        "**European Semiconductors Inventory Strength**: Inventory at 136 days (vs.",
+        "140 days Q1’26) with seasonal data 1.5% below normal, confirming cyclical up-cycle support without over-building, critical for supply chain fundamentals.",
+        "**Diploma PLC Upgrade to Overweight**: Earnings upgrade driven by organic growth/margins/M&A; PT raised to 8250p (from 5760p), reflecting double-digit EPS growth and 6% CAGR potential to FY30 via M&A.",
+        "**European Utilities' Low Gas Storage**: Geopolitical energy dynamics (low storage levels) underpin positive earnings momentum for generators/integrated utilities, a key sector catalyst amid supply risks.",
+        "**Pernod-Ricard SA FY28E/29E Cut**: Valuation impact from FY26 reporting debate, signaling sector-specific risk factor requiring portfolio reassessment in consumer staples."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-po7hsyltspp-96c40c",
+      "title": "DB Early Morning Reid Macro Strategy",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T07:31:15Z",
+      "summary_points": [
+        "**Oil Geopolitics & Inflation**: Strait of Hormuz fears drove Brent crude to $79.16/bbl (12-mo future), triggering equity pullbacks (S&P 500 -0.10%) and inflation concerns, pressuring sovereign bonds (10yr yield +4.2bps).",
+        "**Nvidia AI Pricing Shift**: Major customers face server chip price hikes, signaling AI-driven inflation (not supply shock), challenging prior economic assumptions and fueling market inflation fears.",
+        "**Jackson Hole Policy Catalyst**: Fed Chair’s Sept 20 speech pivotal for rate path; market pricing reflects 26/3bp Fed hike expectation, with ECB 42/0bp priced in, dominating near-term policy trajectory."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-olik15a1qfg-76d70b",
+      "title": "US Week Ahead August 24 August 30",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T03:15:13Z",
+      "summary_points": [
+        "**Core PCE Miss**: Core PCE YoY +3.24% (vs consensus +3.3%) signals potential easing inflation trajectory, directly impacting Fed policy expectations.",
+        "**Housing Weakness**: New home sales fell -2.3% (vs consensus -1.3%) and S&P home prices rose only 0.2% (vs consensus 0.1%), indicating cooling housing demand.",
+        "**Fed Policy Focus**: Barkin’s inflation remarks and Warsh’s Jackson Hole speech (on financial innovation) will shape near-term monetary policy interpretation of data."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-kqcvpfcwgqu-b3ca21",
       "title": "The 720 China Semis & CXMT initiation, Samsung Electronics, Japan SPE, China Matters, Jackson Hole, NEC, Li Ning, Zijin Mining",
       "institution": "Goldman Sachs",
@@ -104,6 +163,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ezgmwpcy4tm-f64bc5",
+      "title": "JCET (600584)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T03:15:09Z",
+      "summary_points": [
+        "**Q226 Revenue Miss & Earnings Revision**: Revenue missed estimates (12% YoY/13% QoQ vs.",
+        "282B Rmb), but GM beat due to AI-driven demand, cost control, and high-end AIDC mix; earnings revised up 11% YoY/9% QoQ for 2027-30E, though 2026E revenue cut 3% due to Q2 miss.",
+        "**AI Infrastructure Tailwinds**: Core growth catalyst from rising AI infrastructure demand; 2H26 growth driven by high-value AI product mix (chips/memory), advanced packaging capacity expansion, and rising utilization rates.",
+        "**Key Risks**: Critical exposure to faster/slower-than-expected Chinese semis capex, technology development pace, and advanced packaging shipment ramp.",
+        "**Valuation & Rating**: Neutral rating with 12-month target Rmb125 (42.8x 2030E P/E), reflecting 15% NI YoY and 11% OPM in 2031E; P/E declining to 27.7 amid debt inclusion in EV and low dividend yield (0.4%)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
@@ -129,6 +209,46 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-z5skebqutzh-83a7fe",
+      "title": "Natural Gas Comment Delayed Hormuz Normalization Forces Price Driven Fix",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T03:15:05Z",
+      "summary_points": [
+        "**Hormuz Delay & TTF Rally**: TTF surged above 65 EUR/MWh, moderating Asia LNG demand and redirecting supply to Europe; August storage at 51% (3.4pp below base case) signals industrial demand risk in Asia.",
+        "**Winter Storage Crisis Risk**: Without Hormuz normalization, TTF must exceed 100 EUR/MWh (110% above base) to deter Asian demand, but low demand response at such prices indicates flawed price-discovery.",
+        "**Qatar Supply Tightness**: Reduced Hormuz flow (Exhibit 1) directly causes lower LNG loadings, tightening global supply and driving regional price dynamics."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-xylv4ps4kte-8e2896",
+      "title": "Kingsoft Office (688111)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T03:15:02Z",
+      "summary_points": [
+        "**Earnings Miss & R&D Impact**: 2Q26 net income Rmb322m (38% below estimates) driven by elevated R&D spend, offsetting 25% YoY revenue growth (Rmb1.7bn); GM declined to 83.3%.",
+        "**Valuation Overextension**: Target price (Rmb201) implies 31x 2027E P/E, below historical average (44x), yet current price (Rmb240.50) exceeds target by 20%, signaling overvaluation.",
+        "**AI Monetization Risks**: AI Agent product adoption and paying ratio delays threaten growth; report cites \"Sell\" rating due to NI miss and product mix challenges.",
+        "**Downside Pressure**: 12m target implies 16.4% downside from current price (Rmb240.50), with historical targets declining from Rmb539 (2023) to Rmb328 (2024) before rebounding.",
+        "**Earnings Revision**: 2026E earnings revised down 5% due to higher Opex from AI R&D (e.g., Lingxi AI agent launches), negating revenue growth momentum."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-qen1twgrkbj-39adb4",
       "title": "Japan Electronics Semiconductors TOPPAN DNP earnings update Packaging related businesses support company wide profits",
       "institution": "Goldman Sachs",
@@ -150,6 +270,48 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-ypkl6nqmosh-14d20e",
+      "title": "Index Strategy FTSE Global Equity Index Series Rebalancing Review and Flow Implications (September 2026)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T03:15:00Z",
+      "summary_points": [
+        "**Vietnam/Greece Market Reclassification**: Vietnam moved from Frontier to Secondary Emerging Market (10% initial tranche, phased 2027), Greece to Developed Market; triggers $15bn/$10bn gross passive flows (APAC/EM), with $4.1bn/$3.8bn net inflows (China, Korea/Taiwan, India top inflows; Japan top outflow).",
+        "**Tech Hardware/Semis Dominance**: Tech Hardware & Semis (+$3.4bn) and Tech Goods (+$1.7%) lead passive inflows; Consumer Staples (-20%) and Health Care (-13%) face outflows in FTSE China rebalancing, signaling sector rotation.",
+        "**Taiwan Concentration Risk**: FTSE Taiwan rebalancing amplifies Tech Hardware/Semis weight (+1.7%, TSMC-led) and EM exposure (37.7%), exposing portfolios to rebalancing shocks and geopolitical volatility (critical for risk management).",
+        "**APAC/EM Flow Allocation**: $4.1bn net passive inflows to APAC (China, Korea, Taiwan top beneficiaries) and $3.8bn to EM; Japan, Germany, Spain, Italy, Mexico see significant outflows, driving capital reallocation.",
+        "**Sector Rotation Dynamics**: Additions outperform deletions in developed/EM markets (higher EM volatility around announcements); Tech Hardware/Semis (6.7% weight) and Consumer Staples (1.3%) dominate flows, with geopolitical risks (e.g., Korea tech exposure) as key risk factors."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 22,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-srksa4dsfko-0f40ca",
+      "title": "Gerdau (GGBR4)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T03:14:58Z",
+      "summary_points": [
+        "**Earnings Momentum Pause & Neutral Downgrade**: Goldman Sachs downgrades Gerdau to Neutral due to limited earnings upside (US import pricing cap, Mexico steel capacity expansion by 4Q26, Brazil demand weakness) and valuation overpricing (above normal multiples), with US trade policy (50% tariffs) and Mexico-US tariff negotiations as critical geopolitical risks.",
+        "**US Profitability Peak & Downside Risks**: US operations nearing peak profitability (75% of LTM EBITDA) with downside risks into 2026–27 from pricing caps, competition on long steel, and moderating earnings momentum.",
+        "**Brazil Momentum Deterioration**: Brazil operations face 30% downward earnings revision for 2026–27 due to weaker demand, competition on long steel, and Mexico’s ramping trade protection, eroding momentum.",
+        "**Mexico Trade Policy Shifts**: Mexico implemented 13 antidumping orders (Jun-Dec 2025) and TRQ for flat-rolled products, aligning with US policy; US-Mexico tariff negotiations could accelerate competition for Gerdau’s US sales.",
+        "**Valuation Paradox & Key Risks**: Stock trades at 50% discount to peers but re-rate upside not materializing; critical risks include higher Chinese exports pressuring Brazil, BRL strength reducing domestic prices, and faster NA margin normalization."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-wgcvphewn9f-013cbb",
       "title": "Europe Paper & Forest Products US Paper Update Containerboard Flat",
       "institution": "Goldman Sachs",
@@ -166,6 +328,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-a3aobg70cct-1ba279",
+      "title": "China Petroleum & Chemical (0386)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T03:14:56Z",
+      "summary_points": [
+        "**Policy Risk**: Earnings negatively correlated with Brent >$90/bbl due to China's fuel pricing policy, creating structural headwinds amid rising Brent (+30.3% YoY).",
+        "**Financial Underperformance**: Revenue, EBITDA, and net income down 3%, 8%, and 13% YoY, signaling deteriorating core profitability despite operational cash flow gains.",
+        "**FCF Growth vs.",
+        "Earnings Mismatch**: 2Q FCF up 33% YoY from operational cash flow, but offset by 8% EBITDA decline and volume drop (19% YoY sales decline).",
+        "**Key Risk Concentration**: Oil price volatility, refining/chemical margin shifts, LNG cost pass-through, and capex uncertainty dominate downside risks (6.9% H downside)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
