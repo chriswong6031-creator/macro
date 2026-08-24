@@ -28,21 +28,19 @@ PRICE_FIGURE_IDS = (
 )
 
 PRICE_ANCHORS = (
-    "opening",
-    "accountability",
-    "duration",
-    "policy",
-    "stablecoins",
-    "ai",
-    "global",
-    "assets",
-    "regimes",
-    "triggers",
-    "road",
-    "portfolio",
-    "falsifiers",
-    "conclusion",
-    "sources",
+    "market-changed",
+    "model-repair",
+    "duration-mechanism",
+    "policy-trap-v2",
+    "stablecoin-machine-v2",
+    "ai-capital-efficiency",
+    "global-market-map",
+    "hard-assets",
+    "four-futures",
+    "change-our-mind",
+    "road-2027",
+    "next-act",
+    "sources-v2",
 )
 
 
@@ -163,6 +161,33 @@ def test_price_of_duration_reduced_motion_forces_final_state() -> None:
     assert "transition:none !important" in compact
     assert "stroke-dashoffset:0 !important" in compact
     assert "matchMedia('(prefers-reduced-motion: reduce)')" in compact
+
+
+def test_price_of_duration_language_labels_do_not_override_language_visibility() -> None:
+    source = _price_source()
+
+    assert source.count('<div class="stat"') == 5
+    assert source.count('class="sk"') == 5
+    assert source.count('class="sl"') == 5
+    assert source.count('class="pod-gauge-label"') == 8
+    assert source.count('class="pod-proof-chip"') >= 4
+    assert ".pod .stat span" not in source
+    assert ".pod .pod-gauge span" not in source
+    assert ".pod .pod-proof-key span" not in source
+    assert ".pod .pod-gauge-label" in source
+    assert ".pod .pod-proof-chip" in source
+
+
+def test_price_of_duration_figures_are_visible_without_animation_javascript() -> None:
+    compact = re.sub(r"\s+", " ", _price_source())
+
+    assert ".pod .pod-reveal { opacity:1; transform:none;" in compact
+    assert ".pod .pod-draw { stroke-dasharray:760; stroke-dashoffset:0;" in compact
+    assert ".pod .pod-figure.pod-motion-pending .pod-reveal { opacity:0;" in compact
+    assert "f.classList.add('pod-motion-pending')" in compact
+    assert "f.classList.remove('pod-motion-pending')" in compact
+    assert "f.classList.add('is-visible')" in compact
+    assert "},4000)" in compact
 
 
 def test_price_of_duration_snapshot_and_primary_sources_are_timestamped() -> None:

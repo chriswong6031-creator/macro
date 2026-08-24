@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-24T19:21:04.246562+00:00",
-  "count": 1773,
+  "generated_at": "2026-08-24T22:14:11.462575+00:00",
+  "count": 1775,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -88,6 +88,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-ngd9kianxpr-86fe86",
+      "title": "UBS Garber The Bullion Report Gold Finds New Buyers As USD Weakness Drives Fresh Interest 24 Aug 2026",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T18:20:29Z",
+      "summary_points": [
+        "**ETF & Inflation Fundamentals**: Strong ETF inflows, persistent inflation risks, and USD weakness (geopolitics) drive bullish sentiment; central bank buying and China's record gold purchases (fastest monthly pace since 2023) reinforce fundamentals.",
+        "**Technical Momentum Confirmation**: Bullish DeMark signals, tighter spreads (down 4% vs Aug MTD), and higher electronic trading volumes confirm sustained momentum; resistance at 4670/4770/4890, support at 4520/4380/4305.",
+        "**Financing Demand Rebound**: Asian lending activity rebounding (Singapore premium, increased borrowing demand) signals return of financing demand; gold ETF holdings rebounding to May 2026 highs.",
+        "**Options & Flow Surge**: Options skew favoring calls and realized volatility exceeding implied volatility indicate bullish positioning; XAUUSD cash volumes rising, 27% weekly turnover (Aug 19), hedge funds executing 30%+ of weekly turnover.",
+        "**XAUUSD Liquidity & Catalysts**: Spreads tightened 10% vs July; Treasury’s long-end buybacks driving USD weakness; Jackson Hole as key catalyst for sustained bullish momentum."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-jhgwz8gvy79-caeefc",
       "title": "Asia Pacific Portfolio Strategy Asian equity market daily update",
@@ -310,6 +331,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-9zwovayctdl-055f34",
+      "title": "Taiwan CCL Fulltech mgmt. visit Ongoing product mix shift toward high",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T13:43:54Z",
+      "summary_points": [
+        "**Product Mix Shift & Margin Upside**: Fulltech's 60%+ glass fiber capacity expansion by 2029 shifts to high-end Low DK/Low DK2 (GM 45-65% vs 38% avg), driving GM to 45-50% via pricing power (Low DK2 price 2x+ Low DK) and constrained supply (96% 2025-28E CAGR vs 22% high-end supply CAGR).",
+        "**AI Server Demand Surge**: M7+ AI servers adopting Low DK/Low DK2 glass fiber fuels strong demand, with suppliers paying premiums for raw materials (HVL copper foil, Low DK2 fiber), enabling margin expansion amid supply shortages.",
+        "**High-End CCL Leadership & Growth**: EMC leads in HDI/SLP (70%+/90%+) and expanding server CCL share (10%→15-20% in Purley), with AI server dominance (Nvidia/Google/AWS supplier); TUC targets 20%+ server market share with AI projects.",
+        "**Key Risk Factors**: RCC replacing HDI, trade tensions, and mainland China competition threaten both EMC (12m TP NT$10,200) and TUC (12m TP NT$3,010) growth trajectories.",
+        "**Low-End Volatility Contrast**: Weak consumer electronics demand (50%+ of low-end CCL) and seasonal Q4/Q1 weakness may slow price hikes in Q226 as suppliers shift back to E-glass, contrasting with high-end momentum."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },
