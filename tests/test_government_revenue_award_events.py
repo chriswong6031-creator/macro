@@ -787,7 +787,23 @@ def test_v2_event_and_workspace_contracts_validate_and_authority_is_display_only
         known_at="2026-03-31T23:59:59+00:00",
         award_events=events,
         award_event_freshness={"status": "ok", "records_visible": len(events)},
+        program_link_by_event_id={
+            events[0]["event_id"]: {
+                "state": "reviewed_none",
+                "reason_code": "no_reviewed_program_link",
+                "program_id": None,
+                "program_event_link_id": None,
+                "ontology_graph_id": "program-ontology:reviewed:2026-08-23:virginia-pilot",
+            },
+        },
     )
+    assert workspace["events"][0]["program_link"] == {
+        "state": "reviewed_none",
+        "reason_code": "no_reviewed_program_link",
+        "program_id": None,
+        "program_event_link_id": None,
+        "ontology_graph_id": "program-ontology:reviewed:2026-08-23:virginia-pilot",
+    }
     workspace_validator.validate(workspace)
 
 
