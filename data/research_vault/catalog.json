@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-24T16:22:11.767276+00:00",
-  "count": 1767,
+  "generated_at": "2026-08-24T17:20:57.098287+00:00",
+  "count": 1770,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -88,6 +88,69 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-qqqrgbhf0e9-1d5724",
+      "title": "MS Jackson Hole If you want to say less, say less",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T16:27:20Z",
+      "summary_points": [
+        "**Treasury Buyback Expansion**: Cap doubled to $4bn/operation (10–20y/20–30y) starting Sept 9, targeting disorderly long-end rate increases (not liquidity), signaling discomfort with yield curve steepening beyond intervention limits.",
+        "**Treasury-Fed Policy Divergence**: Treasury’s focus on preventing yield spikes conflicts with Fed’s inflation response, risking conundrums in policy-rate adjustments and undermining fiscal dominance.",
+        "**Jackson Hole Policy Uncertainty**: Fed Chair Warsh avoids policy clarification; market movements drive outcomes more than speeches, with symposium shifting focus to payments innovation reshaping monetary architecture.",
+        "**CBDC Disintermediation Risk**: CBDC accessibility during stress triggers \"fast disintermediation\" (Biddler et al.",
+        ", accelerating bank runs and requiring policy intervention to address run speed/severity."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vihaclhc2wa-59a381",
+      "title": "MS Michael Wilson Weekly Warm up Treasury Buybacks in the Context of Our Run It Hot Thesis",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T16:27:19Z",
+      "summary_points": [
+        "**Run It Hot Regime Shift**: Pivot from low-quality cyclical stocks to high-quality equities driven by persistent inflation >2%, shorter economic cycles, and reactive monetary policy; Financial Services/Insurance sectors overweight with strong earnings revisions.",
+        "**Oil Volatility as Primary Equity Risk**: Brent up 13% amid Strait closure; oil spike pressures input costs/yields; energy equities provide strategic hedge for equity portfolios (up-tape impact twice as material as down-tape).",
+        "**Treasury Yield Breakout Signals Regime Change**: 10-year yield breakout confirms \"Run It Hot\" regime; mirrors 1945-1982 dynamics (Kondratieff cycle), ending disinflationary era post-COVID with higher secular yield trend.",
+        "**AI Monetization Maturation**: Accelerating focus on ROI/monetization (vs.",
+        "pure buildout) in transcripts; companies prioritize revenue generation, critical for valuing AI-driven stocks and growth sustainability."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 24,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-5kvfke6rxx1-e1244e",
+      "title": "GS Wijaya Energy Natural Resources and Utilities Preview Monday Thoughts 24 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T16:20:52Z",
+      "summary_points": [
+        "**Refining Sentiment Shift & Equity Performance**: Refining equities +15% (1m), sentiment shifting from binary to idiosyncratic (Hormuz/crack beta), PSX standout (deleveraging focus), key risk: stock lagged YTD due to \"lack of crack beta\".",
+        "**Gold Speculative Flows**: Record $22.2bn COT speculative buying (10+ yr max), net length 93% (2-yr high), driven by Treasury actions; GS CTA model confirms sustained positioning.",
+        "**Fed Policy Risk**: Tactical unwinds possible if Warsh signals discomfort; Jackson Hole context implies urgency to restore inflation credibility, altering market expectations.",
+        "**Utilities Net Selling Surge**: HFs net sold Utilities daily (-2.5 SDs, largest 5-yr net selling), led by Electric/Multi-Utilities/PPs; US Utilities exposure at 2.6% (8th percentile vs.",
+        "1-yr)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-ryitpzoueb9-db281f",
       "title": "GS Arruda What Matters Today HFs and MFs differ on AI but converge on Financials 24 Aug 2026",
