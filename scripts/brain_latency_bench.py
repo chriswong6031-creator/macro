@@ -34,6 +34,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -86,6 +87,81 @@ W0B_MANIFEST_SCHEMA = "ai_benchmark_prompt_manifest.v1"
 W0B_CORPUS_VERSION = "w0b.v1"
 AI_BENCHMARK_RECEIPT_SCHEMA = "ai_benchmark_receipt.v1"
 AI_BENCHMARK_SCORECARD_SCHEMA = "ai_benchmark_scorecard.v1"
+W0B_RUBRIC_VERSION = "deepvue-w0b-quality.v1"
+W0B_FROZEN_RUBRIC = {
+    "score_domains": {
+        "field_correctness": (
+            "Binary 1 only when every requested factual field or analytical task is correctly "
+            "answered; a degraded non-answer is 0."
+        ),
+        "missingness_honesty": (
+            "Binary 1 when unavailable, stale, rights-blocked, or degraded state is stated "
+            "without a fabricated replacement fact; otherwise 0."
+        ),
+        "numeric_correctness": (
+            "Binary 1 only when every requested number, date, unit, and deterministic calculation "
+            "is correct and traceable; a degraded non-answer is 0."
+        ),
+        "source_as_of_correctness": (
+            "Binary 1 only when every current factual read carries the correct owner and as-of, "
+            "including source quality and recency; a degraded non-answer is 0."
+        ),
+        "source_span_correctness": (
+            "Binary 1 only when citations or typed receipts cover the exact factual claims they "
+            "support; a degraded non-answer is 0."
+        ),
+        "unsupported_claim_count": (
+            "Non-negative integer count of visible factual claims unsupported by an identified "
+            "source, evidence span, or typed receipt."
+        ),
+    },
+    "class_criteria": {
+        "current-market": (
+            "Judge regime, breadth, themes, liquidity, source quality, timestamp coverage, and "
+            "unsupported claims."
+        ),
+        "native-multi-field": (
+            "Judge explicit context use, exact field provenance, units, per-field as-of, and "
+            "missingness honesty for RS, Stage, industry, and earnings facts."
+        ),
+        "simple-fact": (
+            "Judge freshness, numeric accuracy, exact as-of, and source coverage of the requested "
+            "single fact."
+        ),
+        "instant-fact": (
+            "Judge the same single-fact law as simple-fact and require that latency never excuses "
+            "wrong identity, value, freshness, or provenance."
+        ),
+        "context-collision": (
+            "Judge explicit requested-entity precedence over conflicting ambient context, plus "
+            "the correctness and provenance of the resulting fact."
+        ),
+        "screener-compilation": (
+            "Judge condition-by-condition AST fidelity and correctness of the executable result; "
+            "prose similarity is insufficient."
+        ),
+        "calculation": (
+            "Judge deterministic arithmetic, declared units, explicit inputs, and reproducibility."
+        ),
+        "filing-event": (
+            "Judge primary-source quality, claim-to-source-span correctness, dates, and unsupported "
+            "claims in the reported-quarter explanation."
+        ),
+        "deep-synthesis": (
+            "Judge tool selection, contradiction handling, authority discipline, source coverage, "
+            "and unsupported claims across Neural Web and Prophet evidence."
+        ),
+    },
+    "automatic_receipt_metrics": [
+        "cache_label_and_basis",
+        "headers_first_status_ttfv_completion_ms",
+        "context_and_output_bytes",
+        "route_and_tool_count_duration",
+        "explicit_context_and_effective_entity",
+        "degraded_and_error_state",
+    ],
+}
+W0B_RUBRIC_DIGEST = "3f6b87f4754e2d57ea75beaf20340e42c94ff4fbb0f64ecc83770c880b65f70f"
 
 _NATIVE_FIELD_IDS = frozenset({
     "market.price.last",
@@ -144,6 +220,18 @@ _PATH_LIKE_RE = re.compile(
     r"(?:^|[\\/])\.\.(?:[\\/]|$)|^~[\\/]|^[A-Za-z]:[\\/]|^file://",
     re.IGNORECASE,
 )
+_RECEIPT_ERROR_CODES = frozenset({
+    "connection_unavailable",
+    "stream_broken",
+    "native_proof_missing_or_malformed",
+    "native_degraded_proof_mismatch",
+    "probe_error",
+})
+_HEALTH_ERROR_CODES = frozenset({
+    "health_unavailable",
+    "health_response_not_object",
+    "health_identity_missing",
+})
 
 _LEGACY_W0B_META: dict[str, tuple[str, str, str]] = {
     # legacy label: (prompt_id, prompt_version, prompt_class)
@@ -169,7 +257,7 @@ W0B_CORPUS_V1: tuple[tuple[str, str], ...] = (
 
 RECEIPT_REQUIRED_FIELDS = frozenset({
     "schema", "system", "environment", "deployed_commit", "deployed_checkout",
-    "prompt_id", "prompt_version", "prompt_class", "prompt_text_hash",
+    "prompt_id", "prompt_version", "prompt_class", "prompt_text_hash", "manifest_digest",
     "explicit_context", "ambient_context", "expected_effective_entity",
     "expected_precedence_reason", "actual_effective_entity",
     "actual_precedence_reason", "ambient_used", "precedence_match",
@@ -179,7 +267,11 @@ RECEIPT_REQUIRED_FIELDS = frozenset({
     "field_correctness", "numeric_correctness", "source_span_correctness",
     "source_as_of_correctness",
     "unsupported_claim_count", "missingness_honesty", "degraded", "error",
-    "reviewer", "rubric_version", "recorded_at",
+    "reviewer", "rubric_version", "rubric_digest", "recorded_at",
+})
+RECEIPT_ALLOWED_FIELDS = RECEIPT_REQUIRED_FIELDS | frozenset({
+    "probe", "label", "base_url", "ts", "health_error", "lane", "run",
+    "n_deltas", "server_timing", "server_latency", "answer_chars",
 })
 
 
@@ -194,6 +286,39 @@ def _json_bytes(value: Any) -> int:
 
 def _utc_now() -> str:
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+
+def _receipt_error_code(value: Any) -> str | None:
+    """Project display-oriented probe errors onto a closed, text-free code set."""
+    if value is None:
+        return None
+    if isinstance(value, str):
+        match = re.match(r"^HTTP (\d{3})(?:\b|$)", value)
+        if match:
+            return f"http_{match.group(1)}"
+        if value.startswith("cannot reach "):
+            return "connection_unavailable"
+        if value.startswith("stream broke after headers"):
+            return "stream_broken"
+        if value == "native route omitted or malformed proof receipt":
+            return "native_proof_missing_or_malformed"
+        if value == "native route degraded flag disagrees with proof receipt":
+            return "native_degraded_proof_mismatch"
+    return "probe_error"
+
+
+def _health_error_code(value: Any) -> str | None:
+    """Project health diagnostics onto a closed receipt code set."""
+    if value is None:
+        return None
+    if isinstance(value, str):
+        if value.startswith("health unavailable"):
+            return "health_unavailable"
+        if value == "health response was not an object":
+            return "health_response_not_object"
+        if value == "health response lacked commit/checkout identity":
+            return "health_identity_missing"
+    return "health_unavailable"
 
 
 _PRIVATE_CONTEXT_KEY_MARKERS = ("account", "auth", "bearer", "cookie", "email", "secret",
@@ -237,12 +362,12 @@ def _safe_context_metadata(value: Any) -> Any:
 
 
 def _safe_base_url(value: str) -> str:
-    """Keep the legacy base-url field while stripping query credentials and userinfo."""
+    """Project an operator URL onto a credential-free origin."""
     parts = urlsplit(value)
     host = parts.hostname or ""
     if parts.port:
         host = f"{host}:{parts.port}"
-    return urlunsplit((parts.scheme, host, parts.path, "", ""))
+    return urlunsplit((parts.scheme, host, "", "", ""))
 
 
 def _legacy_prompt_specs(*, page: str = "", symbol: str = "") -> list[dict]:
@@ -265,28 +390,58 @@ def _legacy_prompt_specs(*, page: str = "", symbol: str = "") -> list[dict]:
             "expected_effective_entity": None,
             "expected_precedence_reason": None,
         })
-    return specs
+    digest = _corpus_manifest_digest(specs)
+    return [{**spec, "manifest_digest": digest} for spec in specs]
 
 
-def load_private_manifest(path: str) -> tuple[str, list[dict]]:
+def _corpus_manifest_digest(specs: list[dict]) -> str:
+    """Bind private prompt hashes and context law without retaining prompt text."""
+    canonical = {
+        "schema": W0B_MANIFEST_SCHEMA,
+        "version": W0B_CORPUS_VERSION,
+        "prompts": [{
+            "prompt_id": spec["prompt_id"],
+            "prompt_class": spec["prompt_class"],
+            "prompt_text_hash": spec["prompt_text_hash"],
+            "explicit_context": spec.get("explicit_context") or {},
+            "ambient_context": spec.get("ambient_context") or {},
+            "expected_effective_entity": spec.get("expected_effective_entity"),
+            "expected_precedence_reason": spec.get("expected_precedence_reason"),
+        } for spec in specs],
+    }
+    return hashlib.sha256(json.dumps(
+        canonical, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
+    ).encode("utf-8")).hexdigest()
+
+
+def load_private_manifest(path: str) -> tuple[str, str, list[dict]]:
     """Load a text-bearing W0-B manifest kept outside this repository."""
     try:
         manifest_path = _assert_private_output_path(path, kind="manifest")
         raw = json.loads(manifest_path.read_text(encoding="utf-8"))
     except (OSError, ValueError) as exc:
         raise ValueError(f"cannot load private manifest: {type(exc).__name__}") from exc
-    if not isinstance(raw, dict) or raw.get("schema") != W0B_MANIFEST_SCHEMA:
+    if (not isinstance(raw, dict) or set(raw) != {"schema", "version", "prompts"}
+            or raw.get("schema") != W0B_MANIFEST_SCHEMA):
         raise ValueError(f"manifest schema must be {W0B_MANIFEST_SCHEMA}")
     version = raw.get("version")
     prompts = raw.get("prompts")
-    if not isinstance(version, str) or not version or not isinstance(prompts, list) or not prompts:
-        raise ValueError("manifest requires non-empty version and prompts")
+    if version != W0B_CORPUS_VERSION or not isinstance(prompts, list) or not prompts:
+        raise ValueError(f"manifest version must be {W0B_CORPUS_VERSION} with complete prompts")
 
     seen: set[str] = set()
     specs: list[dict] = []
     allowed = dict(W0B_CORPUS_V1)
+    allowed_item_keys = {
+        "prompt_id", "prompt_class", "prompt_text", "prompt_text_hash",
+        "explicit_context", "ambient_context", "expected_effective_entity",
+        "expected_precedence_reason",
+    }
+    legacy_text = {
+        _LEGACY_W0B_META[label][0]: message for label, message in DOCKET_PROMPTS
+    }
     for item in prompts:
-        if not isinstance(item, dict):
+        if not isinstance(item, dict) or set(item) - allowed_item_keys:
             raise ValueError("manifest prompts must be objects")
         prompt_id = item.get("prompt_id")
         prompt_class = item.get("prompt_class")
@@ -300,6 +455,8 @@ def load_private_manifest(path: str) -> tuple[str, list[dict]]:
         actual_hash = _sha256_text(message)
         if declared_hash != actual_hash:
             raise ValueError(f"manifest prompt hash mismatch for {prompt_id}")
+        if prompt_id in legacy_text and message != legacy_text[prompt_id]:
+            raise ValueError(f"legacy docket prompt text drift for {prompt_id}")
         explicit = item.get("explicit_context") or {}
         ambient = item.get("ambient_context") or {}
         if not isinstance(explicit, dict) or not isinstance(ambient, dict):
@@ -310,8 +467,19 @@ def load_private_manifest(path: str) -> tuple[str, list[dict]]:
         expected_reason = item.get("expected_precedence_reason")
         if prompt_class == "context-collision" and (
                 not isinstance(expected_entity, str) or not expected_entity
-                or not isinstance(expected_reason, str) or not expected_reason):
+                or expected_reason != "explicit_entity_wins"
+                or explicit.get("entity") != expected_entity
+                or not isinstance(ambient.get("symbol"), str)
+                or ambient["symbol"] == expected_entity
+                or re.search(
+                    rf"(?<![A-Z0-9.-])\$?{re.escape(expected_entity)}(?![A-Z0-9.-])",
+                    message,
+                    re.IGNORECASE,
+                ) is None):
             raise ValueError("context-collision requires expected entity and precedence reason")
+        if prompt_class != "context-collision" and (
+                expected_entity is not None or expected_reason is not None):
+            raise ValueError("only context-collision may declare expected precedence")
         seen.add(prompt_id)
         specs.append({
             "label": prompt_id,
@@ -325,7 +493,12 @@ def load_private_manifest(path: str) -> tuple[str, list[dict]]:
             "expected_effective_entity": expected_entity,
             "expected_precedence_reason": expected_reason,
         })
-    return version, specs
+    if tuple(spec["prompt_id"] for spec in specs) != tuple(allowed):
+        raise ValueError("manifest must contain the complete ordered W0-B corpus")
+    manifest_digest = _corpus_manifest_digest(specs)
+    return version, manifest_digest, [
+        {**spec, "manifest_digest": manifest_digest} for spec in specs
+    ]
 
 
 # ---------------------------------------------------------------------------
@@ -629,8 +802,66 @@ def _safe_native_fact_receipt(value: Any) -> dict | None:
             "rank_resolution_failure": rank_failure,
             "failure": failure,
         }
-    except ValueError:
+    except (TypeError, ValueError):
         return None
+
+
+def _is_safe_native_fact_projection(value: Any) -> bool:
+    """Reinflate and re-project a stored native proof to prove its closed shape.
+
+    ``_safe_native_fact_receipt`` consumes the richer SSE receipt and deliberately
+    removes its schema wrapper plus nested value-bearing containers. Scoring sees
+    that stored projection, not the raw SSE object. Re-running the raw sanitizer on
+    the projection would reject every real native row, so reconstruct only the
+    allowed raw proof shape and require exact idempotence after projection.
+    """
+    if not isinstance(value, dict):
+        return False
+    try:
+        facts = [{
+            "clause_id": fact["clause_id"],
+            "display_order": fact["display_order"],
+            "field_id": fact["field_id"],
+            "fact_fingerprint": fact["fact_fingerprint"],
+            "status": fact["status"],
+            "reason_code": fact["reason_code"],
+            "unit": fact["unit"],
+            "source": {"source_id": fact["source_id"]},
+            "as_of": fact["as_of"],
+            "freshness": {"state": fact["freshness"]},
+        } for fact in value["facts"]]
+        relationship = value["relationship"]
+        raw_relationship = None
+        if relationship is not None:
+            raw_relationship = {
+                "status": relationship["status"],
+                "reason_code": relationship["reason_code"],
+                "to": ({"type": "industry", "id": relationship["industry_id"]}
+                       if relationship["industry_id"] is not None else None),
+                "relationship_fingerprint": relationship["relationship_fingerprint"],
+                "source": {"source_id": relationship["source_id"]},
+                "as_of": relationship["as_of"],
+            }
+        raw = {
+            "schema": "brain.native_fact_receipt.v1",
+            "route": value["route"],
+            "planner_version": value["planner_version"],
+            "registry_digest": value["registry_digest"],
+            "effective_context": {
+                "symbol": value["actual_effective_entity"],
+                "precedence_reason": value["actual_precedence_reason"],
+                "ambient_used": value["ambient_used"],
+            },
+            "canonical_entity": value["canonical_entity"],
+            "facts": facts,
+            "clauses": value["clauses"],
+            "relationship_receipt": raw_relationship,
+            "rank_resolution_failure": value["rank_resolution_failure"],
+            "failure": value["failure"],
+        }
+    except (KeyError, TypeError):
+        return False
+    return _safe_native_fact_receipt(raw) == value
 
 
 def summarize(events: list[tuple[dict, float]], t0: float, headers_ms: int | None) -> dict:
@@ -701,7 +932,8 @@ def _server_tool_metrics(server_latency: Any) -> tuple[int | None, list[int] | N
                 continue
             count += 1
             value = tool.get("ms")
-            if isinstance(value, (int, float)) and not isinstance(value, bool):
+            if (isinstance(value, (int, float)) and not isinstance(value, bool)
+                    and math.isfinite(value) and value >= 0):
                 durations.append(int(value))
     return count, durations
 
@@ -711,11 +943,15 @@ def _safe_server_timing(server_latency: Any) -> dict | None:
     if not isinstance(server_latency, dict):
         return None
     def numeric(value: Any) -> int | float | None:
-        return value if isinstance(value, (int, float)) and not isinstance(value, bool) else None
+        return value if (
+            isinstance(value, (int, float)) and not isinstance(value, bool)
+            and math.isfinite(value) and value >= 0
+        ) else None
 
     route = server_latency.get("route")
     out: dict[str, Any] = {
-        "route": route if route in {"instant", "instant/native-fact", "deep"} else None,
+        "route": route if isinstance(route, str)
+        and route in {"instant", "instant/native-fact", "deep"} else None,
         "ttfv_ms": numeric(server_latency.get("ttfv_ms")),
         "synthesis_ms": numeric(server_latency.get("synthesis_ms")),
         "total_ms": numeric(server_latency.get("total_ms")),
@@ -731,10 +967,10 @@ def _safe_server_timing(server_latency: Any) -> dict | None:
             continue
         tools = []
         for tool in round_.get("tools") or []:
-            if isinstance(tool, dict) and isinstance(tool.get("ms"), int):
-                tools.append({"ms": tool["ms"]})
+            if isinstance(tool, dict) and numeric(tool.get("ms")) is not None:
+                tools.append({"ms": numeric(tool["ms"])})
         out["rounds"].append({
-            "model_ms": round_.get("model_ms") if isinstance(round_.get("model_ms"), int) else None,
+            "model_ms": numeric(round_.get("model_ms")),
             "tools": tools,
         })
     return out
@@ -769,6 +1005,18 @@ def capture_health(health_url: str, *, timeout: float = 20.0) -> dict:
         "error": None if safe_commit is not None or safe_checkout is not None
         else "health response lacked commit/checkout identity",
     }
+
+
+def _sha_prefix_matches(observed: str | None, expected: str | None) -> bool:
+    """Compare a public short deployment SHA with its expected full Git identity."""
+    if not isinstance(observed, str) or not isinstance(expected, str):
+        return False
+    observed = observed.lower()
+    expected = expected.lower()
+    if (not re.fullmatch(r"[0-9a-f]{7,64}", observed)
+            or not re.fullmatch(r"[0-9a-f]{7,64}", expected)):
+        return False
+    return observed.startswith(expected) or expected.startswith(observed)
 
 
 # ---------------------------------------------------------------------------
@@ -936,11 +1184,12 @@ def build_receipt_row(row: dict, spec: dict, *, run: int, lane: str, system: str
         "environment": environment,
         "deployed_commit": health.get("commit"),
         "deployed_checkout": health.get("checkout"),
-        "health_error": health.get("error"),
+        "health_error": _health_error_code(health.get("error")),
         "prompt_id": spec["prompt_id"],
         "prompt_version": spec["prompt_version"],
         "prompt_class": spec["prompt_class"],
         "prompt_text_hash": spec["prompt_text_hash"],
+        "manifest_digest": spec.get("manifest_digest"),
         "explicit_context": dict(spec.get("explicit_context") or {}),
         "ambient_context": ambient,
         "expected_effective_entity": expected_entity,
@@ -977,9 +1226,10 @@ def build_receipt_row(row: dict, spec: dict, *, run: int, lane: str, system: str
         "unsupported_claim_count": None,
         "missingness_honesty": None,
         "degraded": row.get("degraded"),
-        "error": row.get("error"),
+        "error": _receipt_error_code(row.get("error")),
         "reviewer": reviewer or None,
         "rubric_version": rubric_version or None,
+        "rubric_digest": W0B_RUBRIC_DIGEST if rubric_version == W0B_RUBRIC_VERSION else None,
         "recorded_at": _utc_now(),
     }
     missing = RECEIPT_REQUIRED_FIELDS - set(receipt)
@@ -1036,6 +1286,168 @@ _SCORE_FIELDS = (
 )
 
 
+def _valid_optional_nonnegative_number(value: Any) -> bool:
+    return value is None or (
+        isinstance(value, (int, float))
+        and not isinstance(value, bool)
+        and math.isfinite(value)
+        and value >= 0
+    )
+
+
+def _validate_receipt_row(row: Any) -> dict[str, Any]:
+    """Validate one closed, text-free W0-B receipt before manual scoring."""
+    if not isinstance(row, dict) or set(row) != RECEIPT_ALLOWED_FIELDS:
+        raise ValueError("score input receipt fields are not the closed v1 schema")
+    if row.get("schema") != AI_BENCHMARK_RECEIPT_SCHEMA:
+        raise ValueError("score input must contain ai_benchmark_receipt.v1 rows")
+    allowed_prompts = dict(W0B_CORPUS_V1)
+    prompt_id = row.get("prompt_id")
+    if (not isinstance(prompt_id, str) or prompt_id not in allowed_prompts
+            or row.get("prompt_class") != allowed_prompts[prompt_id]
+            or row.get("prompt_version") != W0B_CORPUS_VERSION
+            or not isinstance(row.get("prompt_text_hash"), str)
+            or not _HEX64_RE.fullmatch(row["prompt_text_hash"])
+            or not isinstance(row.get("manifest_digest"), str)
+            or not _HEX64_RE.fullmatch(row["manifest_digest"])):
+        raise ValueError("score input receipt prompt identity is invalid")
+    run = row.get("run")
+    if (row.get("probe") != prompt_id or not isinstance(run, int)
+            or isinstance(run, bool) or run < 1):
+        raise ValueError("score input receipt run identity is invalid")
+    for context_key in ("explicit_context", "ambient_context"):
+        value = row.get(context_key)
+        if _safe_context_metadata(value) != value:
+            raise ValueError("score input receipt context projection is invalid")
+    token_re = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,159}$")
+    for key in ("system", "environment", "cache_basis", "reviewer"):
+        if not isinstance(row.get(key), str) or not token_re.fullmatch(row[key]):
+            raise ValueError(f"score input receipt {key} is invalid")
+    if (not isinstance(row.get("label"), str) or row.get("label") not in {"cold", "warm"}
+            or not isinstance(row.get("cache_label"), str)
+            or row.get("cache_label") not in {"cold", "warm"}
+            or row.get("label") != row.get("cache_label")
+            or not isinstance(row.get("lane"), str) or row.get("lane") not in {"fast", "pro"}):
+        raise ValueError("score input receipt lane/cache labels are invalid")
+    if row.get("rubric_version") != W0B_RUBRIC_VERSION \
+            or row.get("rubric_digest") != W0B_RUBRIC_DIGEST:
+        raise ValueError("score input receipt is not bound to the frozen W0-B rubric")
+    for key in ("deployed_commit", "deployed_checkout"):
+        if row.get(key) is not None and (
+                not isinstance(row[key], str)
+                or not re.fullmatch(r"[0-9a-fA-F]{7,64}", row[key])):
+            raise ValueError("score input receipt deployment identity is invalid")
+    if not isinstance(row.get("base_url"), str) \
+            or _safe_base_url(row["base_url"]) != row["base_url"] \
+            or urlsplit(row["base_url"]).scheme not in {"http", "https"} \
+            or not urlsplit(row["base_url"]).hostname:
+        raise ValueError("score input receipt base URL is invalid")
+    if row.get("route") is not None and (
+            not isinstance(row.get("route"), str)
+            or row.get("route") not in {"deep", "instant", "instant/quote", "instant/native-fact"}):
+        raise ValueError("score input receipt route is invalid")
+    for key in (
+        "headers_ms", "first_status_ms", "ttfv_ms", "done_ms", "context_bytes",
+        "output_bytes", "answer_chars", "server_tool_count",
+    ):
+        if not _valid_optional_nonnegative_number(row.get(key)):
+            raise ValueError("score input receipt timing/count is invalid")
+    if row.get("context_bytes") != _json_bytes(row["ambient_context"]):
+        raise ValueError("score input receipt context byte count is invalid")
+    has_error = isinstance(row.get("error"), str) and bool(row["error"])
+    for key in ("n_deltas", "n_tool_events"):
+        value = row.get(key)
+        if value is None and has_error:
+            continue
+        if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+            raise ValueError("score input receipt event counts are invalid")
+    durations = row.get("server_tool_durations_ms")
+    tool_count = row.get("server_tool_count")
+    if durations is None:
+        if tool_count is not None:
+            raise ValueError("score input receipt tool durations are invalid")
+    elif not isinstance(durations, list) or any(
+            not _valid_optional_nonnegative_number(value) or value is None for value in durations):
+        raise ValueError("score input receipt tool durations are invalid")
+    if (row.get("server_timing") != row.get("server_latency")
+            or not isinstance(row.get("server_timing"), (dict, type(None)))
+            or _safe_server_timing(row.get("server_timing")) != row.get("server_timing")):
+        raise ValueError("score input receipt server timing is invalid")
+    server_timing = row.get("server_timing")
+    if server_timing is not None:
+        if server_timing.get("route") != row.get("route"):
+            raise ValueError("score input receipt route differs from server timing")
+        expected_tool_count, expected_tool_durations = _server_tool_metrics(server_timing)
+        if (row.get("server_tool_count"), row.get("server_tool_durations_ms")) != (
+                expected_tool_count, expected_tool_durations):
+            raise ValueError("score input receipt tool aggregates differ from server timing")
+    elif row.get("server_tool_count") is not None or row.get("server_tool_durations_ms") is not None:
+        raise ValueError("score input receipt tool aggregates lack server timing")
+    degraded = row.get("degraded")
+    if (degraded is None and not has_error) \
+            or (degraded is not None and not isinstance(degraded, bool)) \
+            or not isinstance(row.get("error"), (str, type(None))) \
+            or not isinstance(row.get("health_error"), (str, type(None))):
+        raise ValueError("score input receipt status is invalid")
+    if row.get("error") is not None and (
+            row["error"] not in _RECEIPT_ERROR_CODES
+            and not re.fullmatch(r"http_\d{3}", row["error"])):
+        raise ValueError("score input receipt error code is invalid")
+    if row.get("health_error") is not None and row["health_error"] not in _HEALTH_ERROR_CODES:
+        raise ValueError("score input receipt health code is invalid")
+    if (row.get("ambient_used") is not None and not isinstance(row.get("ambient_used"), bool)) \
+            or (row.get("precedence_match") is not None
+                and not isinstance(row.get("precedence_match"), bool)):
+        raise ValueError("score input receipt precedence state is invalid")
+    entity_re = re.compile(r"^[A-Z][A-Z0-9.-]{0,15}$")
+    for key in ("expected_effective_entity", "actual_effective_entity"):
+        if row.get(key) is not None and (
+                not isinstance(row[key], str) or not entity_re.fullmatch(row[key])):
+            raise ValueError("score input receipt entity identity is invalid")
+    for key in ("expected_precedence_reason", "actual_precedence_reason"):
+        if row.get(key) is not None and (
+                not isinstance(row[key], str) or row[key] not in _NATIVE_PRECEDENCE_REASONS):
+            raise ValueError("score input receipt precedence reason is invalid")
+    if row.get("prompt_class") == "context-collision":
+        if (row.get("expected_precedence_reason") != "explicit_entity_wins"
+                or row.get("precedence_match") != (
+                    row.get("expected_effective_entity") == row.get("actual_effective_entity")
+                    and row.get("expected_precedence_reason")
+                    == row.get("actual_precedence_reason")
+                )):
+            raise ValueError("score input context-collision precedence proof is invalid")
+    elif (row.get("expected_effective_entity") is not None
+          or row.get("expected_precedence_reason") is not None
+          or row.get("precedence_match") is not None):
+        raise ValueError("score input non-collision receipt carries expected precedence")
+    native = row.get("native_fact_receipt")
+    if native is not None and not _is_safe_native_fact_projection(native):
+        raise ValueError("score input native proof is invalid")
+    if row.get("route") == "instant/native-fact" and native is None:
+        raise ValueError("score input native route lacks typed proof")
+    if native is not None:
+        if row.get("route") != "instant/native-fact" or any(
+                row.get(key) != native.get(key) for key in (
+                    "actual_effective_entity", "actual_precedence_reason", "ambient_used",
+                )) or degraded is not bool(native.get("failure")):
+            raise ValueError("score input native proof differs from top-level identity")
+    elif any(row.get(key) is not None for key in (
+            "actual_effective_entity", "actual_precedence_reason", "ambient_used")):
+        raise ValueError("score input non-native receipt carries native identity")
+    if any(row.get(field) is not None for field in _SCORE_FIELDS):
+        raise ValueError("score input receipt must be unscored")
+    if (not isinstance(row.get("recorded_at"), str)
+            or not _PROOF_CLOCK_RE.fullmatch(row["recorded_at"])
+            or not isinstance(row.get("ts"), str)
+            or not _PROOF_CLOCK_RE.fullmatch(row["ts"])):
+        raise ValueError("score input receipt clock is invalid")
+    if row.get("environment").lower().startswith("production") and (
+            row.get("deployed_commit") is None or row.get("deployed_checkout") is None
+            or row.get("health_error") is not None):
+        raise ValueError("production score input lacks verified deployment identity")
+    return row
+
+
 def load_scorecard(path: str) -> dict[tuple[str, int], dict[str, Any]]:
     """Load a private, frozen manual adjudication keyed by prompt ID and run."""
     score_path = _assert_private_output_path(path, kind="scorecard")
@@ -1043,13 +1455,26 @@ def load_scorecard(path: str) -> dict[tuple[str, int], dict[str, Any]]:
         raw = json.loads(score_path.read_text(encoding="utf-8"))
     except (OSError, ValueError) as exc:
         raise ValueError(f"cannot load private scorecard: {type(exc).__name__}") from exc
-    if not isinstance(raw, dict) or raw.get("schema") != AI_BENCHMARK_SCORECARD_SCHEMA:
+    if (not isinstance(raw, dict)
+            or set(raw) != {
+                "schema", "rubric_version", "reviewer", "rubric", "manifest_digest", "scores",
+            }
+            or raw.get("schema") != AI_BENCHMARK_SCORECARD_SCHEMA):
         raise ValueError(f"scorecard schema must be {AI_BENCHMARK_SCORECARD_SCHEMA}")
     rubric = raw.get("rubric_version")
     reviewer = raw.get("reviewer")
     scores = raw.get("scores")
-    if not isinstance(rubric, str) or not rubric or not isinstance(reviewer, str) or not reviewer:
-        raise ValueError("scorecard requires rubric_version and reviewer")
+    manifest_digest = raw.get("manifest_digest")
+    rubric_body = raw.get("rubric")
+    rubric_digest = hashlib.sha256(json.dumps(
+        rubric_body, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
+    ).encode("utf-8")).hexdigest() if isinstance(rubric_body, dict) else None
+    if (rubric != W0B_RUBRIC_VERSION or rubric_body != W0B_FROZEN_RUBRIC
+            or rubric_digest != W0B_RUBRIC_DIGEST
+            or not isinstance(manifest_digest, str) or not _HEX64_RE.fullmatch(manifest_digest)
+            or not isinstance(reviewer, str)
+            or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,159}", reviewer)):
+        raise ValueError("scorecard must bind the frozen W0-B rubric and reviewer")
     if not isinstance(scores, list) or not scores:
         raise ValueError("scorecard requires non-empty scores")
     result: dict[tuple[str, int], dict[str, Any]] = {}
@@ -1058,7 +1483,9 @@ def load_scorecard(path: str) -> dict[tuple[str, int], dict[str, Any]]:
             raise ValueError("scorecard scores must be objects")
         prompt_id = item.get("prompt_id")
         run = item.get("run")
-        if not isinstance(prompt_id, str) or not prompt_id or not isinstance(run, int) or run < 1:
+        if (not isinstance(prompt_id, str) or prompt_id not in dict(W0B_CORPUS_V1)
+                or not isinstance(run, int)
+                or isinstance(run, bool) or run < 1):
             raise ValueError("scorecard score requires prompt_id and positive run")
         key = (prompt_id, run)
         if key in result:
@@ -1066,14 +1493,20 @@ def load_scorecard(path: str) -> dict[tuple[str, int], dict[str, Any]]:
         unknown = set(item) - {"prompt_id", "run", *_SCORE_FIELDS}
         if unknown or any(field not in item for field in _SCORE_FIELDS):
             raise ValueError(f"scorecard fields invalid for {prompt_id}/{run}")
-        scored: dict[str, Any] = {"reviewer": reviewer, "rubric_version": rubric}
+        scored: dict[str, Any] = {
+            "reviewer": reviewer,
+            "rubric_version": rubric,
+            "rubric_digest": W0B_RUBRIC_DIGEST,
+            "manifest_digest": manifest_digest,
+        }
         for field in _SCORE_FIELDS:
             value = item[field]
             if field == "unsupported_claim_count":
                 if not isinstance(value, int) or isinstance(value, bool) or value < 0:
                     raise ValueError(f"{field} must be a non-negative integer")
-            elif not isinstance(value, (int, float, bool)) or isinstance(value, str):
-                raise ValueError(f"{field} must be a numeric or boolean score")
+            elif (not isinstance(value, (int, float, bool)) or isinstance(value, str)
+                  or not math.isfinite(float(value)) or value not in (0, 1)):
+                raise ValueError(f"{field} must be a finite binary 0/1 score")
             scored[field] = value
         result[key] = scored
     return result
@@ -1081,11 +1514,55 @@ def load_scorecard(path: str) -> dict[tuple[str, int], dict[str, Any]]:
 
 def apply_scorecard(receipts: list[dict], scores: dict[tuple[str, int], dict[str, Any]]) -> list[dict]:
     """Bind every receipt one-to-one to a frozen manual score; fail on omissions."""
-    observed = {(str(row.get("prompt_id") or ""), int(row.get("run") or 0)) for row in receipts}
+    identities: list[tuple[str, int]] = []
+    for row in receipts:
+        if (not isinstance(row, dict) or not isinstance(row.get("prompt_id"), str)
+                or not isinstance(row.get("run"), int) or isinstance(row.get("run"), bool)
+                or row["run"] < 1):
+            raise ValueError("receipt prompt_id/run identity is invalid")
+        identities.append((row["prompt_id"], row["run"]))
+    observed = set(identities)
+    if len(observed) != len(receipts):
+        raise ValueError("duplicate receipt prompt_id/run rows are forbidden")
+    runs = {run for _, run in observed}
+    if runs != set(range(1, max(runs, default=0) + 1)):
+        raise ValueError("receipt run identities must be contiguous from 1")
+    expected = {(prompt_id, run) for run in runs for prompt_id, _ in W0B_CORPUS_V1}
+    if observed != expected:
+        raise ValueError("receipts must contain the complete W0-B corpus for every run")
+    for run in runs:
+        by_prompt = {row["prompt_id"]: row for row in receipts if row["run"] == run}
+        ordered = [by_prompt[prompt_id] for prompt_id, _ in W0B_CORPUS_V1]
+        computed_digest = _corpus_manifest_digest(ordered)
+        if any(row.get("manifest_digest") != computed_digest for row in ordered):
+            raise ValueError("receipt manifest digest does not bind its prompt/context corpus")
     if observed != set(scores):
         raise ValueError("scorecard keys must exactly match receipt prompt_id/run keys")
-    return [{**row, **scores[(str(row["prompt_id"]), int(row["run"]))]}
-            for row in receipts]
+    receipt_digests = {row.get("manifest_digest") for row in receipts}
+    score_digests = {score.get("manifest_digest") for score in scores.values()}
+    if len(receipt_digests) != 1 or receipt_digests != score_digests:
+        raise ValueError("scorecard manifest digest must match every receipt")
+    invocation_keys = (
+        "system", "environment", "base_url", "deployed_commit", "deployed_checkout",
+        "health_error", "lane", "label", "cache_label", "cache_basis", "reviewer",
+        "rubric_version", "rubric_digest", "manifest_digest",
+    )
+    invocation_fingerprints = {
+        tuple(row.get(key) for key in invocation_keys) for row in receipts
+    }
+    if len(invocation_fingerprints) != 1:
+        raise ValueError("receipts must share one immutable benchmark invocation identity")
+    receipt_reviewers = {row.get("reviewer") for row in receipts}
+    score_reviewers = {score.get("reviewer") for score in scores.values()}
+    if len(receipt_reviewers) != 1 or receipt_reviewers != score_reviewers:
+        raise ValueError("scorecard reviewer must match the receipt reviewer")
+    return [{
+        **row,
+        **{
+            field: scores[(str(row["prompt_id"]), int(row["run"]))][field]
+            for field in _SCORE_FIELDS
+        },
+    } for row in receipts]
 
 
 def score_receipt_file(receipt_path: str, scorecard_path: str, out_path: str) -> int:
@@ -1095,13 +1572,13 @@ def score_receipt_file(receipt_path: str, scorecard_path: str, out_path: str) ->
         target = _assert_private_output_path(out_path, kind="scored receipt")
         rows = [json.loads(line) for line in source.read_text(encoding="utf-8").splitlines()
                 if line.strip()]
-        if not rows or any(not isinstance(row, dict)
-                           or row.get("schema") != AI_BENCHMARK_RECEIPT_SCHEMA for row in rows):
+        if not rows:
             raise ValueError("score input must contain ai_benchmark_receipt.v1 rows")
+        rows = [_validate_receipt_row(row) for row in rows]
         scored = apply_scorecard(rows, load_scorecard(scorecard_path))
         append_jsonl(target, scored, exclusive=True)
-    except (OSError, ValueError) as exc:
-        print(str(exc), file=sys.stderr)
+    except (OSError, TypeError, ValueError) as exc:
+        print(f"private benchmark scoring failed: {type(exc).__name__}", file=sys.stderr)
         return 2
     return 0
 
@@ -1143,14 +1620,22 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--timeout", type=float, default=180.0,
                    help="per-probe socket timeout in seconds (default: %(default)s)")
     p.add_argument("--out", default="",
-                   help="append one JSON object per probe to this path (JSONL). W0-B manifest "
-                        "runs require a path outside this repository.")
+                   help="write one JSON object per probe to this path (JSONL). W0-B manifest "
+                        "runs require a new path outside this repository and never append.")
     p.add_argument("--manifest", default="", metavar="PATH",
                    help="private ai_benchmark_prompt_manifest.v1; supplies W0-B prompt text, "
                         "verified hashes, and context metadata")
+    p.add_argument("--expected-manifest-digest", default="", metavar="SHA256",
+                   help="canonical digest pinned independently of the private manifest; required "
+                        "for every W0-B manifest run")
     p.add_argument("--health-url", default="", metavar="URL",
-                   help="public health URL to record deployment commit/checkout; omitted keeps "
-                        "those receipt fields null")
+                   help="public health URL that identifies the running process commit and the "
+                        "possibly-later checkout; required for production acceptance")
+    p.add_argument("--expected-deployed-commit", default="", metavar="SHA",
+                   help="accepted candidate SHA; production health commit must prefix-match it")
+    p.add_argument("--expected-deployed-checkout", default="", metavar="SHA",
+                   help="optional expected checkout SHA; use when the deployment checkout is "
+                        "required to remain exact during the run")
     p.add_argument("--system", default="mastermind",
                    help="receipt system name (default: %(default)s)")
     p.add_argument("--environment", default="unspecified",
@@ -1158,7 +1643,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--cache-basis", default="caller_label",
                    help="how the cold/warm label was established (default: %(default)s)")
     p.add_argument("--reviewer", default="", help="private receipt reviewer identifier")
-    p.add_argument("--rubric-version", default="", help="frozen private scoring-rubric version")
+    p.add_argument("--rubric-version", default="",
+                   help=f"frozen scoring rubric (W0-B requires {W0B_RUBRIC_VERSION})")
     p.add_argument("--raw-answer-out", default="", metavar="PATH",
                    help="opt-in private raw-answer JSONL; path must be outside this repository")
     p.add_argument("--score-receipt", default="", metavar="PATH",
@@ -1175,12 +1661,54 @@ def main(argv: list[str] | None = None) -> int:
             print("--score-receipt requires --scorecard and --out", file=sys.stderr)
             return 2
         return score_receipt_file(args.score_receipt, args.scorecard, args.out)
+    if args.runs < 1:
+        print("--runs must be a positive integer", file=sys.stderr)
+        return 2
+    production = args.environment.strip().lower().startswith("production")
+    token_re = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,159}$")
+    if any(not token_re.fullmatch(value) for value in (
+            args.system, args.environment, args.cache_basis)):
+        print("benchmark receipt identifiers must be bounded public tokens", file=sys.stderr)
+        return 2
+    if args.manifest and args.only:
+        print("W0-B manifest runs must execute the complete corpus; use legacy mode for --only",
+              file=sys.stderr)
+        return 2
+    if args.manifest and (
+            not args.out or not token_re.fullmatch(args.reviewer)
+            or args.rubric_version != W0B_RUBRIC_VERSION
+            or not re.fullmatch(r"[0-9a-f]{64}", args.expected_manifest_digest)):
+        print("W0-B manifest runs require --out, a reviewer token, the frozen rubric, and "
+              "an independently pinned manifest digest",
+              file=sys.stderr)
+        return 2
+    if production and (
+            not args.manifest or not args.out or not args.health_url
+            or not args.expected_deployed_commit or not (args.cookie or args.bearer)
+            or args.cache_basis == "caller_label"):
+        print("production acceptance requires the complete W0-B manifest, private output, "
+              "health identity, accepted commit, authenticated principal, and observed cache basis",
+              file=sys.stderr)
+        return 2
+    if production and (
+            not re.fullmatch(r"[0-9a-fA-F]{7,64}", args.expected_deployed_commit)
+            or (args.expected_deployed_checkout and not re.fullmatch(
+                r"[0-9a-fA-F]{7,64}", args.expected_deployed_checkout))):
+        print("production expected deployment identities must be Git SHAs", file=sys.stderr)
+        return 2
     try:
-        _manifest_version, specs = (load_private_manifest(args.manifest) if args.manifest
-                                    else (W0B_CORPUS_VERSION,
-                                          _legacy_prompt_specs(page=args.page, symbol=args.symbol)))
+        if args.manifest:
+            _manifest_version, manifest_digest, specs = load_private_manifest(args.manifest)
+        else:
+            _manifest_version = W0B_CORPUS_VERSION
+            specs = _legacy_prompt_specs(page=args.page, symbol=args.symbol)
+            manifest_digest = specs[0]["manifest_digest"]
     except ValueError as exc:
         print(str(exc), file=sys.stderr)
+        return 2
+    if args.manifest and manifest_digest != args.expected_manifest_digest:
+        print("private manifest digest differs from the independently pinned corpus",
+              file=sys.stderr)
         return 2
     selected = [s for s in specs if not args.only
                 or args.only in (s["label"], s["prompt_id"])]
@@ -1195,11 +1723,18 @@ def main(argv: list[str] | None = None) -> int:
         except ValueError as exc:
             print(str(exc), file=sys.stderr)
             return 2
-    if args.manifest and args.out:
+        if os.path.lexists(raw_path):
+            print("private raw-answer output must be a new path", file=sys.stderr)
+            return 2
+    receipt_path: Path | str = args.out
+    if args.manifest:
         try:
-            _assert_private_output_path(args.out, kind="receipt")
+            receipt_path = _assert_private_output_path(args.out, kind="receipt")
         except ValueError as exc:
             print(str(exc), file=sys.stderr)
+            return 2
+        if os.path.lexists(receipt_path):
+            print("private receipt output must be a new path", file=sys.stderr)
             return 2
     if not (args.cookie or args.bearer):
         print("note: no --cookie / --bearer given; expect HTTP 401 unless guest access "
@@ -1209,10 +1744,25 @@ def main(argv: list[str] | None = None) -> int:
     health = capture_health(args.health_url, timeout=args.timeout) if args.health_url else {
         "commit": None, "checkout": None, "error": None,
     }
+    if production and (
+            health.get("error") is not None or health.get("commit") is None
+            or health.get("checkout") is None):
+        print("production health identity is unavailable; no probes were sent", file=sys.stderr)
+        return 2
+    if production and not _sha_prefix_matches(
+            health.get("commit"), args.expected_deployed_commit):
+        print("production process commit does not match the accepted candidate; no probes were sent",
+              file=sys.stderr)
+        return 2
+    if production and args.expected_deployed_checkout and not _sha_prefix_matches(
+            health.get("checkout"), args.expected_deployed_checkout):
+        print("production checkout does not match the required checkout; no probes were sent",
+              file=sys.stderr)
+        return 2
     rows: list[dict] = []
     receipts: list[dict] = []
     raw_answers: list[dict] = []
-    for run in range(1, max(1, args.runs) + 1):
+    for run in range(1, args.runs + 1):
         for spec in selected:
             row = probe(args.base_url, spec["message"], cookie=args.cookie, bearer=args.bearer,
                         lane=args.lane, context=spec["ambient_context"], timeout=args.timeout,
@@ -1220,17 +1770,39 @@ def main(argv: list[str] | None = None) -> int:
             raw_answer = row.pop("_raw_answer", None)
             row.update({"probe": spec["label"], "run": run, "label": args.label,
                         "lane": args.lane, "base_url": _safe_base_url(args.base_url),
-                        "ts": time.strftime("%Y-%m-%dT%H:%M:%S%z")})
+                        "ts": _utc_now()})
             rows.append(row)
-            receipts.append(build_receipt_row(
+            receipt = build_receipt_row(
                 row, spec, run=run, lane=args.lane, system=args.system,
                 environment=args.environment, cache_label=args.label,
                 cache_basis=args.cache_basis, health=health, reviewer=args.reviewer,
                 rubric_version=args.rubric_version,
-            ))
+            )
+            if args.manifest:
+                try:
+                    _validate_receipt_row(receipt)
+                except (TypeError, ValueError):
+                    print("benchmark receipt validation failed", file=sys.stderr)
+                    return 2
+            receipts.append(receipt)
             if raw_path is not None:
                 raw_answers.append({"prompt_id": spec["prompt_id"], "run": run,
                                     "answer": raw_answer or ""})
+
+    if production:
+        post_health = capture_health(args.health_url, timeout=args.timeout)
+        if (post_health.get("error") is not None or post_health.get("commit") is None
+                or post_health.get("checkout") is None
+                or not _sha_prefix_matches(post_health.get("commit"), args.expected_deployed_commit)
+                or not _sha_prefix_matches(post_health.get("commit"), health.get("commit"))):
+            print("production process identity changed during the corpus; no acceptance output written",
+                  file=sys.stderr)
+            return 2
+        if args.expected_deployed_checkout and not _sha_prefix_matches(
+                post_health.get("checkout"), args.expected_deployed_checkout):
+            print("production checkout changed during the exact-checkout corpus; "
+                  "no acceptance output written", file=sys.stderr)
+            return 2
 
     print_table(rows)
     print_medians(rows)
@@ -1238,15 +1810,15 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.out:
         try:
-            append_jsonl(args.out, receipts)
-        except OSError as exc:
-            print(f"could not write {args.out}: {exc}", file=sys.stderr)
+            append_jsonl(receipt_path, receipts, exclusive=bool(args.manifest))
+        except OSError:
+            print("private benchmark receipt write failed", file=sys.stderr)
             return 1
     if raw_path is not None:
         try:
-            append_jsonl(raw_path, raw_answers)
-        except OSError as exc:
-            print(f"could not write raw answers: {exc}", file=sys.stderr)
+            append_jsonl(raw_path, raw_answers, exclusive=True)
+        except OSError:
+            print("private benchmark raw-answer write failed", file=sys.stderr)
             return 1
     precedence_failed = any(receipt.get("precedence_match") is False for receipt in receipts)
     return 1 if any(r.get("error") for r in rows) or precedence_failed else 0

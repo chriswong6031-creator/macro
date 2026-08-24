@@ -176,6 +176,12 @@ def _symbol_candidates(message: str) -> tuple[tuple[str, ...], bool]:
         if raw.startswith("$"):
             candidates.append(token.upper())
             continue
+        # In "What's PRICE?" / "How much is STAGE?" the token is the
+        # registered field phrase itself, not an entity merely because it
+        # follows a natural request prefix. Consume that grammar before the
+        # ticker-slot exception. Dollar syntax above remains authoritative.
+        if natural_price_prefix_slot and token.lower() in _FIELD_GRAMMAR_WORDS:
+            continue
         # Native routing is precision-first. A bare lower-case word ("beta")
         # or an upper-case unsupported field after "and" must never steal an
         # ambient ticker. Conversely, a genuinely explicit ticker can collide
@@ -205,6 +211,7 @@ def _symbol_candidates(message: str) -> tuple[tuple[str, ...], bool]:
         # silently selecting ambient context or maintaining a ticker denylist.
         request_prefix_ambiguity = (
             (lowered in {"the", "what", "show"} and not before.strip())
+            or (lowered == "the" and natural_price_prefix_slot)
             or (lowered == "me" and bool(re.search(r"\b(?:give|tell)\s*$", before, re.IGNORECASE)))
         )
         if request_prefix_ambiguity:

@@ -274,6 +274,18 @@ MUST_RESTART = [
     "config/intelligence_workspace/datapoints.v1.json",
     "contracts/intelligence_workspace/datapoint_registry.schema.json",
     "contracts/intelligence_workspace/datapoint_value.schema.json",
+    # W1-B request-time transitive closure. These modules/configs are imported
+    # or lru-cached by the frozen runtime after the first native request.
+    "lib/dataos/__init__.py",
+    "lib/dataos/identity.py",
+    "lib/dataos/registry.py",
+    "config/dataset_registry.yml",
+    "engine/theme_graph/store.py",
+    "engine/theme_graph/rights.py",
+    "config/theme_sources.yml",
+    "collectors/equity_earnings.py",
+    "engine/earnings_catalyst.py",
+    "config.yml",
     "engine/neuralweb/cortex.py",
     "engine/neuralweb/earnings_context_reader.py",
     "engine/neuralweb/chart_perception.py",
@@ -372,6 +384,13 @@ MUST_NOT_RESTART = [
     "config/intelligence_workspace/datapoints.v1.json.bak",
     "contracts/intelligence_workspace/datapoint_value.schema.json.bak",
     "engine/intelligence_workspaces/resolver.py",
+    "lib/dataoses/registry.py",
+    "config/dataset_registry.yml.bak",
+    "config/theme_sources.yml.bak",
+    "engine/theme_graph/stores.py",
+    "engine/theme_graph/materialize.py",
+    "collectors/equity_earnings.py.bak",
+    "engine/earnings_catalysts.py",
 ]
 
 

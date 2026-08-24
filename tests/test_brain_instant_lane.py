@@ -691,50 +691,153 @@ def test_w0b_legacy_specs_keep_labels_text_hashes_and_ambient_metadata():
     assert specs[1]["prompt_class"] == "native-multi-field"
 
 
-def test_w0b_private_manifest_binds_collision_context_and_hash(tmp_path):
-    fixture_text = "fixture-only collision input"
-    manifest = {
+_W0B_LEGACY_PROMPT_TEXT = {
+    "legacy.broad.v1": (
+        "Give me situational awareness of the market right now: the regime, which themes "
+        "are working, breadth, rates and liquidity, the catalysts ahead and the main "
+        "risks. Cite your sources and timestamp every read."
+    ),
+    "legacy.native.v1": (
+        "For AAPL give me relative strength over 1 month, 3 months and 12 months, its "
+        "industry rank, its Stage, the next earnings date and the latest reported EPS "
+        "growth. Give the as-of for each field and cite the source."
+    ),
+    "legacy.simple.v1": "What is AAPL's current price? One sentence, with the source and the exact as-of.",
+    "legacy.instant.v1": "What's AAPL trading at?",
+}
+
+_W0B_PRIVATE_FIXTURE_TEXT = {
+    "w0b.context-collision.v1": "What is INOD trading at?",
+    "w0b.screener-compilation.v1": "List the current Stage 2 leaders in semiconductors.",
+    "w0b.calculation.v1": "Calculate the percentage change from 100 to 125.",
+    "w0b.filing-event.v1": "Summarize the latest AAPL earnings filing event.",
+    "w0b.deep-synthesis.v1": "Explain the investment implications of the current market regime.",
+}
+
+
+def _complete_w0b_manifest() -> dict:
+    """A text-bearing external corpus fixture, in the frozen public ID order."""
+    prompts = []
+    for prompt_id, prompt_class in bench.W0B_CORPUS_V1:
+        prompt_text = (_W0B_LEGACY_PROMPT_TEXT[prompt_id]
+                       if prompt_id in _W0B_LEGACY_PROMPT_TEXT
+                       else _W0B_PRIVATE_FIXTURE_TEXT[prompt_id])
+        collision = prompt_id == "w0b.context-collision.v1"
+        prompts.append({
+            "prompt_id": prompt_id,
+            "prompt_class": prompt_class,
+            "prompt_text": prompt_text,
+            "prompt_text_hash": bench._sha256_text(prompt_text),
+            "explicit_context": {"entity": "INOD"} if collision else {},
+            "ambient_context": {"symbol": "AAOI"} if collision else {},
+            "expected_effective_entity": "INOD" if collision else None,
+            "expected_precedence_reason": "explicit_entity_wins" if collision else None,
+        })
+    return {
         "schema": bench.W0B_MANIFEST_SCHEMA,
         "version": bench.W0B_CORPUS_VERSION,
-        "prompts": [{
-            "prompt_id": "w0b.context-collision.v1",
-            "prompt_class": "context-collision",
-            "prompt_text": fixture_text,
-            "prompt_text_hash": bench._sha256_text(fixture_text),
-            "explicit_context": {"entity": "INOD"},
-            "ambient_context": {"symbol": "AAOI"},
-            "expected_effective_entity": "INOD",
-            "expected_precedence_reason": "explicit_request",
-        }],
+        "prompts": prompts,
     }
-    path = tmp_path / "private-manifest.json"
-    path.write_text(json.dumps(manifest), encoding="utf-8")
-    version, specs = bench.load_private_manifest(str(path))
-    assert version == "w0b.v1"
-    assert specs[0]["prompt_text_hash"] == bench._sha256_text(fixture_text)
-    assert specs[0]["explicit_context"] == {"entity": "INOD"}
-    assert specs[0]["ambient_context"] == {"symbol": "AAOI"}
-    assert specs[0]["expected_effective_entity"] == "INOD"
-    assert specs[0]["expected_precedence_reason"] == "explicit_request"
 
 
-def test_w0b_private_manifest_rejects_hash_drift_and_incomplete_collision(tmp_path):
-    manifest = {
-        "schema": bench.W0B_MANIFEST_SCHEMA,
-        "version": "w0b.v1",
-        "prompts": [{
-            "prompt_id": "w0b.context-collision.v1",
-            "prompt_class": "context-collision",
-            "prompt_text": "fixture-only input",
-            "prompt_text_hash": "0" * 64,
-            "explicit_context": {},
-            "ambient_context": {"symbol": "AAOI"},
-        }],
+def _write_w0b_manifest(tmp_path, manifest=None):
+    path = tmp_path / "private-w0b-manifest.json"
+    path.write_text(json.dumps(manifest or _complete_w0b_manifest()), encoding="utf-8")
+    return path
+
+
+def _strict_w0b_receipt(spec: dict, *, run: int = 1) -> dict:
+    """Create a closed, unscored receipt through the production builder."""
+    row = {
+        "probe": spec["prompt_id"],
+        "label": "warm",
+        "base_url": "https://benchmark.example.test",
+        "ts": "2026-08-24T12:00:00Z",
+        "route": "deep",
+        "headers_ms": 1,
+        "first_status_ms": 2,
+        "ttfv_ms": 3,
+        "done_ms": 4,
+        "n_deltas": 1,
+        "n_tool_events": 0,
+        "server_latency": {"route": "deep", "ttfv_ms": 3, "total_ms": 4, "rounds": []},
+        "answer_chars": 12,
+        "output_bytes": 12,
+        "degraded": False,
+        "error": None,
     }
-    path = tmp_path / "bad-private-manifest.json"
-    path.write_text(json.dumps(manifest), encoding="utf-8")
-    with pytest.raises(ValueError, match="hash mismatch"):
-        bench.load_private_manifest(str(path))
+    return bench.build_receipt_row(
+        row, spec, run=run, lane="fast", system="mastermind",
+        environment="production", cache_label="warm",
+        cache_basis="natural_running_service",
+        health={"commit": "a" * 12, "checkout": "b" * 12, "error": None},
+        reviewer="fixture-reviewer", rubric_version=bench.W0B_RUBRIC_VERSION,
+    )
+
+
+def _complete_w0b_receipts(tmp_path) -> list[dict]:
+    _version, _manifest_digest, specs = bench.load_private_manifest(
+        str(_write_w0b_manifest(tmp_path))
+    )
+    return [_strict_w0b_receipt(spec) for spec in specs]
+
+
+def _complete_w0b_scorecard(receipts: list[dict]) -> dict:
+    return {
+        "schema": bench.AI_BENCHMARK_SCORECARD_SCHEMA,
+        "rubric_version": bench.W0B_RUBRIC_VERSION,
+        "manifest_digest": receipts[0]["manifest_digest"],
+        "reviewer": "fixture-reviewer",
+        "rubric": bench.W0B_FROZEN_RUBRIC,
+        "scores": [{
+            "prompt_id": receipt["prompt_id"],
+            "run": receipt["run"],
+            "field_correctness": 1,
+            "numeric_correctness": 1,
+            "source_span_correctness": 1,
+            "source_as_of_correctness": 1,
+            "unsupported_claim_count": 0,
+            "missingness_honesty": 1,
+        } for receipt in receipts],
+    }
+
+
+def test_w0b_private_manifest_binds_complete_ordered_corpus_and_collision(tmp_path):
+    path = _write_w0b_manifest(tmp_path)
+    version, manifest_digest, specs = bench.load_private_manifest(str(path))
+    assert version == bench.W0B_CORPUS_VERSION
+    assert len(manifest_digest) == 64
+    assert all(spec["manifest_digest"] == manifest_digest for spec in specs)
+    assert [(spec["prompt_id"], spec["prompt_class"]) for spec in specs] == list(bench.W0B_CORPUS_V1)
+    assert [spec["message"] for spec in specs[:4]] == list(_W0B_LEGACY_PROMPT_TEXT.values())
+    collision = specs[4]
+    assert collision["explicit_context"] == {"entity": "INOD"}
+    assert collision["ambient_context"] == {"symbol": "AAOI"}
+    assert collision["expected_effective_entity"] == "INOD"
+    assert collision["expected_precedence_reason"] == "explicit_entity_wins"
+
+
+@pytest.mark.parametrize("mutation, error", [
+    (lambda manifest: manifest["prompts"].pop(), "complete ordered"),
+    (lambda manifest: manifest["prompts"][0].update({
+        "prompt_text": "Legacy text drift", "prompt_text_hash": bench._sha256_text("Legacy text drift"),
+    }), "legacy docket prompt text drift"),
+    (lambda manifest: manifest["prompts"][4].update({"prompt_text_hash": "0" * 64}), "hash mismatch"),
+    (lambda manifest: manifest["prompts"][4].update({"explicit_context": {}}),
+     "context-collision requires"),
+    (lambda manifest: manifest["prompts"][4].update({
+        "ambient_context": {"symbol": "INOD"},
+    }), "context-collision requires"),
+    (lambda manifest: manifest["prompts"][4].update({
+        "prompt_text": "What is the current price?",
+        "prompt_text_hash": bench._sha256_text("What is the current price?"),
+    }), "context-collision requires"),
+])
+def test_w0b_private_manifest_rejects_subset_legacy_drift_and_hash_drift(tmp_path, mutation, error):
+    manifest = _complete_w0b_manifest()
+    mutation(manifest)
+    with pytest.raises(ValueError, match=error):
+        bench.load_private_manifest(str(_write_w0b_manifest(tmp_path, manifest)))
 
 
 def test_w0b_receipt_is_complete_text_free_and_uses_first_delta_for_ttfv():
@@ -751,17 +854,18 @@ def test_w0b_receipt_is_complete_text_free_and_uses_first_delta_for_ttfv():
         "prompt_version": "w0b.v1",
         "prompt_class": "context-collision",
         "prompt_text_hash": "a" * 64,
+        "manifest_digest": "b" * 64,
         "message": "fixture-only text that must not enter receipt",
         "explicit_context": {"entity": "INOD"},
         "ambient_context": {"symbol": "AAOI"},
         "expected_effective_entity": "INOD",
-        "expected_precedence_reason": "explicit_request",
+        "expected_precedence_reason": "explicit_entity_wins",
     }
     receipt = bench.build_receipt_row(
         row, spec, run=1, lane="fast", system="mastermind", environment="production",
         cache_label="cold", cache_basis="verified_restart", health={
             "commit": "a" * 12, "checkout": "b" * 12, "error": None,
-        }, reviewer="reviewer-v1", rubric_version="rubric.v1",
+        }, reviewer="reviewer-v1", rubric_version=bench.W0B_RUBRIC_VERSION,
     )
     assert bench.RECEIPT_REQUIRED_FIELDS <= set(receipt)
     assert receipt["ttfv_ms"] == 2000, "status is not visible answer content"
@@ -810,7 +914,7 @@ def test_w0b_context_and_base_url_receipts_strip_private_shapes():
         "page": "terminal", "symbol": "AAOI",
     }
     assert bench._safe_base_url("https://user:pass@example.test/path?token=fixture#frag") == \
-        "https://example.test/path"
+        "https://example.test"
 
 
 def test_w0b_native_timing_projection_preserves_route_and_measured_float_stages():
@@ -874,11 +978,20 @@ def test_w0b_context_collision_compares_expected_entity_to_sanitized_actual_rece
         "data: " + json.dumps(done) + "\n", "\n",
     ]
     row = bench.summarize(bench.read_events(lines, clock=_fake_clock()), 0.0, 1)
+    row.update({
+        "probe": "w0b.context-collision.v1",
+        "run": 1,
+        "label": "warm",
+        "lane": "fast",
+        "base_url": "https://benchmark.example.test",
+        "ts": "2026-08-24T12:00:00Z",
+    })
     spec = {
         "prompt_id": "w0b.context-collision.v1",
         "prompt_version": "w0b.v1",
         "prompt_class": "context-collision",
         "prompt_text_hash": "a" * 64,
+        "manifest_digest": "b" * 64,
         "explicit_context": {"entity": "INOD"},
         "ambient_context": {"symbol": "AAOI"},
         "expected_effective_entity": "INOD",
@@ -888,12 +1001,18 @@ def test_w0b_context_collision_compares_expected_entity_to_sanitized_actual_rece
         row, spec, run=1, lane="fast", system="mastermind", environment="production",
         cache_label="warm", cache_basis="natural_running_service",
         health={"commit": "a" * 12, "checkout": "b" * 12, "error": None},
-        reviewer="fixture", rubric_version="rubric.v1",
+        reviewer="fixture", rubric_version=bench.W0B_RUBRIC_VERSION,
     )
     assert receipt["actual_effective_entity"] == "AAOI"
     assert receipt["actual_precedence_reason"] == "ambient_context"
     assert receipt["precedence_match"] is False
     assert "fixture visible" not in json.dumps(receipt)
+    assert bench._is_safe_native_fact_projection(receipt["native_fact_receipt"])
+    assert bench._validate_receipt_row(receipt) is receipt
+    mutated = json.loads(json.dumps(receipt))
+    mutated["ambient_used"] = False
+    with pytest.raises(ValueError, match="differs from top-level identity"):
+        bench._validate_receipt_row(mutated)
 
 
 def test_w0b_p95_is_nearest_rank_and_never_printed_for_one_observation(capsys):
@@ -903,40 +1022,311 @@ def test_w0b_p95_is_nearest_rank_and_never_printed_for_one_observation(capsys):
     assert capsys.readouterr().out == ""
 
 
-def test_w0b_scorecard_binds_every_private_receipt_exactly_once(tmp_path):
-    receipts = [
-        {"schema": bench.AI_BENCHMARK_RECEIPT_SCHEMA, "prompt_id": "p1", "run": 1},
-        {"schema": bench.AI_BENCHMARK_RECEIPT_SCHEMA, "prompt_id": "p2", "run": 1},
-    ]
-    score_rows = []
-    for prompt_id in ("p1", "p2"):
-        score_rows.append({
-            "prompt_id": prompt_id,
-            "run": 1,
-            "field_correctness": 1,
-            "numeric_correctness": 1,
-            "source_span_correctness": 1,
-            "source_as_of_correctness": 1,
-            "unsupported_claim_count": 0,
-            "missingness_honesty": 1,
-        })
+def test_w0b_scorecard_binds_every_strict_private_receipt_exactly_once(tmp_path):
+    receipts = _complete_w0b_receipts(tmp_path)
     source = tmp_path / "receipt.jsonl"
     scorecard = tmp_path / "scorecard.json"
     target = tmp_path / "scored.jsonl"
     source.write_text("".join(json.dumps(row) + "\n" for row in receipts), encoding="utf-8")
-    scorecard.write_text(json.dumps({
-        "schema": bench.AI_BENCHMARK_SCORECARD_SCHEMA,
-        "rubric_version": "rubric.v1",
-        "reviewer": "fixture-reviewer",
-        "scores": score_rows,
-    }), encoding="utf-8")
+    scorecard.write_text(json.dumps(_complete_w0b_scorecard(receipts)), encoding="utf-8")
     assert bench.score_receipt_file(str(source), str(scorecard), str(target)) == 0
     scored = [json.loads(line) for line in target.read_text(encoding="utf-8").splitlines()]
-    assert [row["prompt_id"] for row in scored] == ["p1", "p2"]
+    assert [row["prompt_id"] for row in scored] == [row["prompt_id"] for row in receipts]
     assert all(row["reviewer"] == "fixture-reviewer" for row in scored)
+    assert all(row["rubric_version"] == bench.W0B_RUBRIC_VERSION for row in scored)
+    assert all(row["rubric_digest"] == bench.W0B_RUBRIC_DIGEST for row in scored)
     assert target.stat().st_mode & 0o777 == 0o600
-    with pytest.raises(ValueError, match="exactly match"):
+    with pytest.raises(ValueError, match="complete W0-B corpus"):
         bench.apply_scorecard(receipts[:1], bench.load_scorecard(str(scorecard)))
+
+
+def test_w0b_score_input_rejects_duplicate_receipts_and_raw_or_unknown_fields(tmp_path, capsys):
+    receipts = _complete_w0b_receipts(tmp_path)
+    scorecard = tmp_path / "scorecard.json"
+    scorecard.write_text(json.dumps(_complete_w0b_scorecard(receipts)), encoding="utf-8")
+
+    duplicate_source = tmp_path / "duplicate-receipt.jsonl"
+    duplicate_source.write_text(
+        "".join(json.dumps(row) + "\n" for row in [*receipts, receipts[0]]), encoding="utf-8"
+    )
+    assert bench.score_receipt_file(
+        str(duplicate_source), str(scorecard), str(tmp_path / "duplicate-scored.jsonl")
+    ) == 2
+    assert "private benchmark scoring failed: ValueError" in capsys.readouterr().err
+
+    hostile = dict(receipts[0])
+    hostile["raw_answer"] = "PRIVATE RAW ANSWER MUST NOT LEAK"
+    hostile_source = tmp_path / "hostile-receipt.jsonl"
+    hostile_source.write_text(json.dumps(hostile) + "\n", encoding="utf-8")
+    assert bench.score_receipt_file(
+        str(hostile_source), str(scorecard), str(tmp_path / "hostile-scored.jsonl")
+    ) == 2
+    stderr = capsys.readouterr().err
+    assert "PRIVATE RAW ANSWER MUST NOT LEAK" not in stderr
+    assert str(hostile_source) not in stderr
+
+
+@pytest.mark.parametrize("mutation", [
+    lambda row: row.update({"ts": "PRIVATE PROMPT /Users/alice/secret"}),
+    lambda row: row.update({"error": "short private answer text", "degraded": True}),
+    lambda row: row.update({"health_error": "private account state"}),
+    lambda row: row.update({"cache_label": "cold"}),
+    lambda row: row.update({"context_bytes": 999999}),
+    lambda row: row.update({"actual_effective_entity": "AAPL"}),
+    lambda row: row["server_timing"].update({"route": "instant"}),
+    lambda row: row.update({"server_tool_count": 99, "server_tool_durations_ms": [999]}),
+])
+def test_w0b_score_input_rejects_text_or_cross_field_mutations(tmp_path, mutation):
+    receipt = _complete_w0b_receipts(tmp_path)[0]
+    mutation(receipt)
+    with pytest.raises(ValueError):
+        bench._validate_receipt_row(receipt)
+
+
+def test_w0b_score_binding_rejects_noncontiguous_runs_or_manifest_digest_drift(tmp_path):
+    receipts = _complete_w0b_receipts(tmp_path)
+    run_two = [{**receipt, "run": 2} for receipt in receipts]
+    with pytest.raises(ValueError, match="contiguous from 1"):
+        bench.apply_scorecard(run_two, {})
+
+    scorecard = _complete_w0b_scorecard(receipts)
+    scorecard["manifest_digest"] = "f" * 64
+    scorecard_path = tmp_path / "drifted-scorecard.json"
+    scorecard_path.write_text(json.dumps(scorecard), encoding="utf-8")
+    scores = bench.load_scorecard(str(scorecard_path))
+    with pytest.raises(ValueError, match="manifest digest"):
+        bench.apply_scorecard(receipts, scores)
+
+    exact_scorecard = _complete_w0b_scorecard(receipts)
+    exact_path = tmp_path / "exact-scorecard.json"
+    exact_path.write_text(json.dumps(exact_scorecard), encoding="utf-8")
+    exact_scores = bench.load_scorecard(str(exact_path))
+    stitched = json.loads(json.dumps(receipts))
+    stitched[1]["deployed_commit"] = "e" * 12
+    with pytest.raises(ValueError, match="invocation identity"):
+        bench.apply_scorecard(stitched, exact_scores)
+
+    mismatched_reviewer = _complete_w0b_scorecard(receipts)
+    mismatched_reviewer["reviewer"] = "different-reviewer"
+    reviewer_path = tmp_path / "reviewer-scorecard.json"
+    reviewer_path.write_text(json.dumps(mismatched_reviewer), encoding="utf-8")
+    with pytest.raises(ValueError, match="reviewer must match"):
+        bench.apply_scorecard(receipts, bench.load_scorecard(str(reviewer_path)))
+
+
+def test_w0b_native_failure_projection_binds_top_level_degraded_state(tmp_path):
+    _version, _digest, specs = bench.load_private_manifest(str(_write_w0b_manifest(tmp_path)))
+    failure = bench._safe_native_fact_receipt({
+        "schema": "brain.native_fact_receipt.v1",
+        "route": "instant/native-fact",
+        "planner_version": "w1b.native_fact_planner.v1",
+        "registry_digest": None,
+        "effective_context": {
+            "symbol": "AAPL",
+            "precedence_reason": "explicit_entity_wins",
+            "ambient_used": False,
+        },
+        "canonical_entity": None,
+        "facts": [],
+        "clauses": [],
+        "relationship_receipt": None,
+        "rank_resolution_failure": None,
+        "failure": {"status": "unavailable", "reason_code": "identity_unavailable"},
+    })
+    assert failure is not None
+    spec = specs[3]
+    row = {
+        "probe": spec["prompt_id"], "run": 1, "label": "warm", "lane": "fast",
+        "base_url": "https://benchmark.example.test", "ts": "2026-08-24T12:00:00Z",
+        "route": "instant/native-fact", "headers_ms": 1, "first_status_ms": 2,
+        "ttfv_ms": 3, "done_ms": 4, "n_deltas": 1, "n_tool_events": 0,
+        "server_latency": {
+            "route": "instant/native-fact", "ttfv_ms": 3, "total_ms": 4, "rounds": [],
+        },
+        "native_fact_receipt": failure, "answer_chars": 12, "output_bytes": 12,
+        "degraded": True, "error": None,
+    }
+    receipt = bench.build_receipt_row(
+        row, spec, run=1, lane="fast", system="mastermind", environment="production",
+        cache_label="warm", cache_basis="natural_running_service",
+        health={"commit": "a" * 12, "checkout": "b" * 12, "error": None},
+        reviewer="fixture-reviewer", rubric_version=bench.W0B_RUBRIC_VERSION,
+    )
+    assert bench._validate_receipt_row(receipt) is receipt
+    receipt["degraded"] = False
+    with pytest.raises(ValueError, match="differs from top-level identity"):
+        bench._validate_receipt_row(receipt)
+
+
+@pytest.mark.parametrize("field, value", [
+    ("field_correctness", float("nan")),
+    ("numeric_correctness", 2),
+    ("unsupported_claim_count", -1),
+])
+def test_w0b_scorecard_rejects_nonfinite_or_out_of_range_scores(tmp_path, field, value):
+    receipts = _complete_w0b_receipts(tmp_path)
+    scorecard = _complete_w0b_scorecard(receipts)
+    scorecard["scores"][0][field] = value
+    path = tmp_path / "invalid-scorecard.json"
+    path.write_text(json.dumps(scorecard), encoding="utf-8")
+    with pytest.raises(ValueError):
+        bench.load_scorecard(str(path))
+
+
+def test_w0b_cli_manifest_errors_redact_private_path_and_text(tmp_path, capsys):
+    manifest = _complete_w0b_manifest()
+    manifest["prompts"][4]["prompt_text"] = "PRIVATE PROMPT THAT MUST NOT LEAK"
+    manifest["prompts"][4]["prompt_text_hash"] = "0" * 64
+    path = _write_w0b_manifest(tmp_path, manifest)
+    assert bench.main([
+        "--manifest", str(path), "--out", str(tmp_path / "receipt.jsonl"),
+        "--reviewer", "fixture-reviewer", "--rubric-version", bench.W0B_RUBRIC_VERSION,
+        "--expected-manifest-digest", "a" * 64,
+    ]) == 2
+    stderr = capsys.readouterr().err
+    assert "PRIVATE PROMPT THAT MUST NOT LEAK" not in stderr
+    assert str(path) not in stderr
+    assert "manifest prompt hash mismatch" in stderr
+
+
+def test_w0b_cli_rejects_private_prompt_mutation_against_pinned_manifest_digest(
+        tmp_path, monkeypatch):
+    original = _complete_w0b_manifest()
+    original_path = _write_w0b_manifest(tmp_path, original)
+    _version, original_digest, _specs = bench.load_private_manifest(str(original_path))
+    mutated = _complete_w0b_manifest()
+    replacement = "Use a different but internally self-hashed screener prompt."
+    mutated["prompts"][5].update({
+        "prompt_text": replacement,
+        "prompt_text_hash": bench._sha256_text(replacement),
+    })
+    mutated_path = tmp_path / "mutated-private-w0b-manifest.json"
+    mutated_path.write_text(json.dumps(mutated), encoding="utf-8")
+    monkeypatch.setattr(
+        bench, "probe", lambda *args, **kwargs: pytest.fail("digest mismatch sent a probe")
+    )
+    assert bench.main([
+        "--manifest", str(mutated_path),
+        "--expected-manifest-digest", original_digest,
+        "--out", str(tmp_path / "receipt.jsonl"),
+        "--reviewer", "fixture-reviewer",
+        "--rubric-version", bench.W0B_RUBRIC_VERSION,
+    ]) == 2
+    assert not (tmp_path / "receipt.jsonl").exists()
+
+
+@pytest.mark.parametrize("health, expected_checkout, error", [
+    (
+        {"commit": "b" * 12, "checkout": "c" * 12, "error": None},
+        "",
+        "process commit does not match",
+    ),
+    (
+        {"commit": "a" * 12, "checkout": "c" * 12, "error": None},
+        "d" * 40,
+        "checkout does not match",
+    ),
+    (
+        {"commit": None, "checkout": None, "error": "fixture unavailable"},
+        "",
+        "health identity is unavailable",
+    ),
+])
+def test_w0b_production_identity_fails_before_any_probe(
+        tmp_path, monkeypatch, capsys, health, expected_checkout, error):
+    manifest_path = _write_w0b_manifest(tmp_path)
+    _version, manifest_digest, _specs = bench.load_private_manifest(str(manifest_path))
+    monkeypatch.setattr(bench, "capture_health", lambda *args, **kwargs: health)
+    monkeypatch.setattr(
+        bench, "probe",
+        lambda *args, **kwargs: pytest.fail("production identity failure sent a probe"),
+    )
+    argv = [
+        "--base-url", "https://benchmark.example.test",
+        "--cookie", "ephemeral-guest-fixture",
+        "--environment", "production",
+        "--cache-basis", "natural_running_service",
+        "--manifest", str(manifest_path),
+        "--out", str(tmp_path / "after-receipt.jsonl"),
+        "--health-url", "https://benchmark.example.test/api/health",
+        "--expected-deployed-commit", "a" * 40,
+        "--reviewer", "fixture-reviewer",
+        "--rubric-version", bench.W0B_RUBRIC_VERSION,
+        "--expected-manifest-digest", manifest_digest,
+    ]
+    if expected_checkout:
+        argv.extend(["--expected-deployed-checkout", expected_checkout])
+    assert bench.main(argv) == 2
+    assert error in capsys.readouterr().err
+    assert not (tmp_path / "after-receipt.jsonl").exists()
+
+
+def test_w0b_manifest_run_rejects_partial_or_nonpositive_execution_before_probe(
+        tmp_path, monkeypatch):
+    manifest_path = _write_w0b_manifest(tmp_path)
+    _version, manifest_digest, _specs = bench.load_private_manifest(str(manifest_path))
+    monkeypatch.setattr(
+        bench, "probe",
+        lambda *args, **kwargs: pytest.fail("invalid corpus arguments sent a probe"),
+    )
+    common = [
+        "--manifest", str(manifest_path),
+        "--out", str(tmp_path / "receipt.jsonl"),
+        "--reviewer", "fixture-reviewer",
+        "--rubric-version", bench.W0B_RUBRIC_VERSION,
+        "--expected-manifest-digest", manifest_digest,
+    ]
+    assert bench.main([*common, "--only", "legacy.instant.v1"]) == 2
+    assert bench.main([*common, "--runs", "0"]) == 2
+
+
+def test_w0b_deployment_identity_accepts_safe_short_or_full_sha_prefixes():
+    full = "abcdef0123456789" * 2 + "abcdef01"
+    assert bench._sha_prefix_matches(full[:12], full)
+    assert bench._sha_prefix_matches(full, full[:12])
+    assert not bench._sha_prefix_matches("abcdef0", "bbcdef0")
+    assert not bench._sha_prefix_matches("unknown", full)
+
+
+def test_w0b_production_identity_is_rechecked_after_complete_corpus(
+        tmp_path, monkeypatch, capsys):
+    manifest_path = _write_w0b_manifest(tmp_path)
+    _version, manifest_digest, _specs = bench.load_private_manifest(str(manifest_path))
+    health_reads = iter([
+        {"commit": "a" * 12, "checkout": "c" * 12, "error": None},
+        {"commit": "b" * 12, "checkout": "d" * 12, "error": None},
+    ])
+    monkeypatch.setattr(bench, "capture_health", lambda *args, **kwargs: next(health_reads))
+    probes = []
+
+    def _probe(*args, **kwargs):
+        probes.append(args[1])
+        return {
+            "headers_ms": 1, "first_status_ms": 2, "ttfv_ms": 3, "done_ms": 4,
+            "n_deltas": 1, "n_tool_events": 0, "route": "deep",
+            "server_latency": {"route": "deep", "ttfv_ms": 3, "total_ms": 4,
+                               "rounds": []},
+            "answer_chars": 7, "output_bytes": 7, "degraded": False, "error": None,
+        }
+
+    monkeypatch.setattr(bench, "probe", _probe)
+    out = tmp_path / "after-receipt.jsonl"
+    assert bench.main([
+        "--base-url", "https://benchmark.example.test",
+        "--cookie", "ephemeral-guest-fixture",
+        "--environment", "production",
+        "--cache-basis", "natural_running_service",
+        "--manifest", str(manifest_path),
+        "--expected-manifest-digest", manifest_digest,
+        "--out", str(out),
+        "--health-url", "https://benchmark.example.test/api/health",
+        "--expected-deployed-commit", "a" * 40,
+        "--reviewer", "fixture-reviewer",
+        "--rubric-version", bench.W0B_RUBRIC_VERSION,
+    ]) == 2
+    assert len(probes) == len(bench.W0B_CORPUS_V1)
+    assert "identity changed during the corpus" in capsys.readouterr().err
+    assert not out.exists()
 
 
 def test_w0b_private_output_is_owner_only_and_refuses_symlink(tmp_path):
@@ -965,7 +1355,7 @@ def test_w0b_cli_raw_and_scored_outputs_refuse_dangling_symlinks(tmp_path, monke
     monkeypatch.setattr(bench, "print_p95", lambda rows: None)
     assert bench.main([
         "--only", "instant", "--raw-answer-out", str(raw_link),
-    ]) == 1
+    ]) == 2
     assert raw_link.is_symlink()
     assert not raw_target.exists()
 
@@ -979,14 +1369,11 @@ def test_w0b_cli_raw_and_scored_outputs_refuse_dangling_symlinks(tmp_path, monke
     scorecard = tmp_path / "scorecard.json"
     scorecard.write_text(json.dumps({
         "schema": bench.AI_BENCHMARK_SCORECARD_SCHEMA,
-        "rubric_version": "rubric.v1",
+        "rubric_version": bench.W0B_RUBRIC_VERSION,
         "reviewer": "fixture-reviewer",
-        "scores": [{
-            "prompt_id": "p1", "run": 1, "field_correctness": 1,
-            "numeric_correctness": 1, "source_span_correctness": 1,
-            "source_as_of_correctness": 1, "unsupported_claim_count": 0,
-            "missingness_honesty": 1,
-        }],
+        "rubric": bench.W0B_FROZEN_RUBRIC,
+        "manifest_digest": "a" * 64,
+        "scores": [],
     }), encoding="utf-8")
     scored_target = tmp_path / "scored-target.jsonl"
     scored_link = tmp_path / "scored-link.jsonl"
@@ -1104,7 +1491,7 @@ def test_w0b_legacy_main_stays_selectable_and_writes_a_text_free_receipt(tmp_pat
     monkeypatch.setattr(bench, "probe", _probe)
     monkeypatch.setattr(bench, "print_table", lambda rows: None)
     monkeypatch.setattr(bench, "print_medians", lambda rows: None)
-    monkeypatch.setattr(bench, "append_jsonl", lambda path, rows: captured.extend(rows))
+    monkeypatch.setattr(bench, "append_jsonl", lambda path, rows, **kwargs: captured.extend(rows))
     assert bench.main(["--only", "instant", "--cookie", "fixture", "--out",
                        str(tmp_path / "receipt.jsonl")]) == 0
     assert len(captured) == 1
@@ -1246,6 +1633,29 @@ def test_w1b_native_planner_natural_price_slot_beats_ambient(message):
     assert plan.symbol in {"IT", "A", "ARE"}
     assert plan.explicit_entity is True
     assert plan.effective_context_reason == "explicit_entity_wins"
+
+
+@pytest.mark.parametrize(("message", "field_id"), [
+    ("What's PRICE?", "market.price.last"),
+    ("How much is PRICE?", "market.price.last"),
+    ("What's QUOTE?", "market.price.last"),
+    ("What's STAGE?", "stage.current"),
+])
+def test_w1b_native_planner_natural_prefix_field_grammar_uses_ambient(message, field_id):
+    plan = nf.plan_native_facts(message, {"symbol": "MSFT"})
+    assert plan is not None
+    assert plan.symbol == "MSFT"
+    assert plan.explicit_entity is False
+    assert plan.field_ids == (field_id,)
+
+
+@pytest.mark.parametrize("message", [
+    "What's THE price?",
+    "What is THE price?",
+    "How much is THE price?",
+])
+def test_w1b_native_planner_natural_prefix_determiner_cannot_defeat_ambient(message):
+    assert nf.plan_native_facts(message, {"symbol": "MSFT"}) is None
 
 
 def test_w1b_native_planner_dollar_collision_symbol_is_unambiguously_explicit():
