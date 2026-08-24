@@ -46,11 +46,12 @@ waves:
     status: in_progress
     depends_on: [M0]
     next_action: >
-      The terminal 12-hour listener soak is accepted from the Aug-21 receipt: 73
-      hourly samples, all three exact listener identities, zero ENOSPC and terminal
-      completion. Finish the reversible fixed-set storage recovery through qualified
-      TerraMaster scratch and require at least 200 GiB free plus below 85 percent used
-      before closing W2. full_work_allowed remains false, so W4 stays blocked.
+      The terminal 12-hour listener soak is accepted: 73 hourly samples from
+      2026-08-21T08:07:28Z through 2026-08-21T20:07:56Z preserved exactly three
+      intended guarded listeners with no lightweight-guard or ENOSPC failures.
+      Close W2 only after the independently guarded Chrome-clone recovery completes,
+      checksum parity is exact, and a fresh disk guard proves at least 200 GiB free
+      and less than 85 percent used. W4 remains blocked until that final guard.
   - id: W3
     title: PC render recovery and default full-render cutover
     status: done
@@ -65,10 +66,12 @@ waves:
     status: todo
     depends_on: [W2]
     next_action: >
-      Census every current macstudio consumer and its memory/local-capability envelope,
-      then admit one explicitly selected safe production lane through m1-nightly and
-      restore theta-m1 only on the proven store-bearing listener. Do not add the generic
-      macstudio label to the M1 in this wave.
+      HELD / NOT_ADMITTED. The current census found 50 generic macstudio jobs across
+      33 workflows plus 18 macstudio-light jobs, with heterogeneous secrets, local
+      stores and 5-300 minute runtime envelopes; generic macstudio remains forbidden.
+      theta-m1 has historical success but no fresh bounded resource-extrema proof, and
+      runner-group membership could not be read with the current credential. Admit no
+      M1 production label or route until Sol accepts one exact capability-specific lane.
   - id: W5
     title: Retire obsolete M2 roles and add live fleet health projection
     status: todo
@@ -143,16 +146,9 @@ do_not_redo:
     named run_id + run_attempt artifact containing job_started_at_observed.
 next_action: >
   W3 is Sol-accepted and closed. Keep the overall workstream active: W2's terminal
-  listener soak is accepted, but M1 storage remains below the 200 GiB full-work floor
-  and W4 stays blocked on W2. TerraMaster is qualified only as non-secret scratch.
-  The M2 temporary-pack incident is recovered with 303.6 GB unallocated and zero Git
-  garbage; measure the producer before extending the existing runner lifecycle.
-  The private-readiness baseline in
-  DSC:PRIVATE-CI-HOSTED-MINUTES-REQUIRE-TWO-LEVER-CUTOVER proves that moving packs
-  alone cannot meet the 50,000-minute allowance; after PC and cutover acceptance,
-  measure and reduce the complete hosted estate without weakening its protected
-  control/untrusted boundary. W4/W5 remain unstarted; do not enter either wave without
-  fresh Chairman intent and a current authority load.
+  12-hour listener soak is accepted, but its closeout remains pending exact checksum
+  verification of the guarded storage recovery and a fresh full-work disk guard.
+  W4 is HELD / NOT_ADMITTED after the current consumer census; W5 remains unstarted.
 ---
 
 ## Current incident
@@ -169,6 +165,50 @@ render routing. It does **not** own merge semantics. Any edit to
 `.github/workflows/merge-on-green.yml` or `scripts/merge_on_green.py` is commissioned
 through `WS:CI-MERGE-CONTROL-PLANE`; W1-A supplies environment/capacity proof only and
 W1-B is the separately reviewed route cutover.
+
+## W2 terminal soak and guarded storage recovery — 2026-08-24 (in progress)
+
+The W2 listener soak is accepted independently of the storage closeout. Receipt
+`/Users/chriswong/runner-recovery-receipts/20260821-w2w3/m1-soak-20260821T080442Z`
+contains 73 hourly samples from `2026-08-21T08:07:28Z` through
+`2026-08-21T20:07:56Z`; `soak.log` has SHA-256
+`b5baf6044615328e8fed16319234d71738cb7f0542cd42b9f6d8f620dd925293`. All 73
+samples contained exactly the three intended guarded listener PIDs. All 219 guard
+records had `lightweight_allowed=true`, and neither the soak nor the guards recorded
+an ENOSPC/no-space marker. The existing no-op canary and one-listener active-GUI crash
+recovery remain valid diagnostic receipts; unattended reboot recovery remains
+**NOT_PROVEN**.
+
+TerraMaster is qualified only as disposable, rebuildable, non-secret scratch. The
+physical TerraMaster TDAS exposes a Lexar EQ790 4-TB NVMe at APFS UUID
+`7EE5D196-8BB6-4E6D-B1D7-AFEA5DEB172A`; SMART was verified, an 8-GiB probe measured
+1.268 GB/s write and 1.688 GB/s read, and a checksum marker survived a controlled
+unmount/remount while the mount failed closed. APFS ownership could not be enabled,
+so it is not approved for canonical Git objects, runner configuration/registration,
+secrets, Agent OS state, publication state, databases, or any source of truth.
+
+The M1 storage source is the inactive portion of
+`/private/var/folders/sb/h3rq5rvj1b3_r18p6w9swyp80000gn/X/com.google.Chrome.code_sign_clone`.
+The active clone `code_sign_clone.Vy0wWV` is excluded and preserved. A first guarded
+copy moved 72,218,204 KiB of the fixed 153,192,948-KiB inactive set before the M2
+resource guard paused it at `2026-08-24T08:41Z`; the source remains untouched and the
+partial scratch destination is resumable. The expected interruption receipt is four
+rsync exit-130 markers for partial directories. The continuation remained paused when
+the serialized W3 window closed blocked: at `2026-08-24T12:10:14Z`, M2 runner-4 still
+had an active `Runner.Worker`, a pytest process remained active, and host load was
+22.91/24.02/23.97. W2 does not close until a single low-priority continuation finishes
+after all production listeners drain, parent-level `rsync -aHcni --delete` reports
+exact parity, only verified inactive source directories are recovered, and the
+post-recovery guard proves at least 200 GiB free and less than 85 percent used.
+
+W4 is **HELD / NOT_ADMITTED**. The current consumer census proves the broad M1 aliases
+unsafe: 50 generic `macstudio` jobs across 33 workflows and 18 `macstudio-light` jobs
+span heterogeneous secret, local-store and runtime requirements. No current workflow
+consumes `theta-m1`; its historical M1 successes do not include fresh resource extrema,
+and current authority cannot read the required organization runner-group membership
+without `admin:org`. No label, runner group, workflow route, runner policy, M2 route or
+M4 host changed. A future W4 may admit at most one exact capability-specific lane after
+fresh proof and Sol acceptance; generic `macstudio` remains forbidden.
 
 ## W3 Sol acceptance — 2026-08-22
 
