@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-24T11:16:57.925832+00:00",
-  "count": 1752,
+  "generated_at": "2026-08-24T12:22:55.748122+00:00",
+  "count": 1755,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -87,6 +87,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-mxerqphoz60-9fee55",
+      "title": "BTIG Krinsky Who Blinks First Bonds vs. Stocks in a Staring Contest",
+      "institution": "BTIG",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T11:52:39Z",
+      "summary_points": [
+        "**Bonds-First Rotation Risk**: Dovish data + Treasury long-end support failing to move yields from cycle highs creates tension; High Beta Momentum Short at 52wk high signals forced rotation (not bullish), with historical parallels (2000, 2020, 2023) indicating stock vulnerability if bonds rally first.",
+        "**Inflation & Equity Risk**: Rising inflation swaps (one-year spreads up 5 days) and gold breaking $4500 (linked to U.S.",
+        "debt risk) highlight near-term equity risk; gold’s rise implies falling treasuries would be negative for equities.",
+        "**Market Timing Risk**: Stocks remain vulnerable if bonds rally first; yield levels critical for tactical positioning, with historical triggers (2000, 2020, 2023) showing forced rotation dynamics.",
+        "**Breadth Deterioration**: SPX component participation above 50 DMA fell from 72% to 55%, signaling narrowing market participation despite SPX at 7674.37 above 50-day SMA (7541.05)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 22,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-zijnfb0txyf-344c1c",
       "title": "JPM Asia Technology",
@@ -186,6 +207,26 @@
       "tickers": [],
       "top_pick": true,
       "pages": 20,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-dfbkolj2sz9-41587a",
+      "title": "The Point for Europe Monday, 24 August 2026",
+      "institution": "Citi",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T08:12:40Z",
+      "summary_points": [
+        "**Holcim's Fermacell Acquisition**: €840m EV deal for sustainable building solutions, delivering €22m annual synergies by 2027, 9.5x 2027 EBITDA multiple, and EPS accretion from H1 2027.",
+        "**Benelux Banks' ROE Target**: Dutch banks (ABN, ING, KBC) target 15% ROE by 2029 via disciplined pricing, volume growth, and capital returns; ABN (Buy) highlighted for net interest income upside.",
+        "**Ryanair's Valuation Catalyst**: 1x EV/EBIT drops to 7x over 3 years amid jet-fuel pain, with margin pressure subsiding and buybacks re-entering as key catalysts.",
+        "**European Data Releases**: German Ifo (Tue), France/Spain inflation (Fri), Fitch France rating (Fri) critical for pre-Jackson Hole fundamental positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
       "language": "en",
       "needs_metadata": false
     },
@@ -1167,6 +1208,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vtnswtypufq-c211c2",
+      "title": "DynamicMarkets",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-23T14:53:27Z",
+      "summary_points": [
+        "**Income Engine Shift**: Higher bond yields (6%) enable 7% portfolio returns with 80% equity allocation, reducing equity risk burden and making fixed income critical for income generation without sacrificing growth.",
+        "**Tactical ETF Precision**: Active ETFs allow precise, risk-controlled adjustments to duration, credit exposure, or growth positioning without abandoning core strategy or increasing unintended risk.",
+        "**Structural Shift Targeting**: ETFs capture evolving structural demand (e.g., AI infrastructure, supply chain reconfiguration) via thematic strategies, providing targeted exposure without destabilizing core portfolio anchors."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
