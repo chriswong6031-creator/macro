@@ -1724,6 +1724,7 @@ on:
       - "tests/test_ask_brain.py"
       - "tests/test_company_intelligence_neural_reader.py"
       - "tests/test_company_intelligence_event_workspace.py"
+      - "tests/test_company_intelligence_qa_reconstruction.py"
       - "tests/test_world_state.py"
       # PR-C health builder tests (weekend-aware staleness, cadence exclusion, staleness_from).
       - "tests/test_neuralweb_health.py"

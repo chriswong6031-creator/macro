@@ -1,5 +1,5 @@
 {
- "asof": "2026-08-22",
+ "asof": "2026-08-23",
  "audit": "stocks",
  "config": {
   "price_max_gap_days": 4,
@@ -37,7 +37,7 @@
     {
      "name": "EA",
      "kind": "stale_live",
-     "detail": "last bar 2026-08-10 (12d stale)"
+     "detail": "last bar 2026-08-10 (13d stale)"
     }
    ]
   }
@@ -55,7 +55,7 @@
   {
    "ticker": "EA",
    "last_bar": "2026-08-10",
-   "lag_days": 12,
+   "lag_days": 13,
    "in_union": false
   }
  ],

@@ -1,0 +1,24 @@
+capability,state,canonical_owner,productization_ruling
+Market OS product architecture,SPEC_ONLY_FROZEN,WS:MARKET-OS,Use existing product owner; no new workstream
+A1A Portfolio state authority,PROVEN_LIVE_EVIDENCE_RECORDS_PR_OPEN,WS:MARKET-OS,Wait for #6310 canonical reconciliation
+A1B Portfolio import,NOT_BUILT,WS:MARKET-OS,Parallel after A1A; separate from B1
+security_state.v1,NOT_BUILT,WS:MARKET-OS B1,First product vertical
+Buy Decision Packet v0,PARTIAL_LEGACY_DISPLAY,engine/stock_dossier.py,Reuse display semantics only
+K1 Evidence Foundation,NOT_BUILT_NEXT,WS:ALPHA-INTELLIGENCE-INTEGRATION,Immediate FABLE-A commission
+K3 Opportunity Semantics,NOT_BUILT,WS:ALPHA-INTELLIGENCE-INTEGRATION,After/alongside K1 under c0 conditions
+K5 OpportunityCase,NOT_BUILT,WS:ALPHA-INTELLIGENCE-INTEGRATION,Canonical episodic synthesis; later
+Earnings event_workspace.v1,PROVEN_LIVE,WS:EARNINGS-INTELLIGENCE-OS,Golden AAPL producer
+Prophet C1 ranker,PROVEN_LIVE_CONDITIONAL_AUTHORITY,WS:PROPHET-CONDITIONAL-FUSION,Read-only product input
+Prophet V4 flagship,PARTIAL_ACTIVE,WS:PROPHET-US-V4-RECOVERY,Avoid owned paths in B1
+Live Entry Radar,PARTIAL_LIVE,WS:LIVE-ENTRY-RADAR,Read-only input or typed unavailable
+GMI Theme Graph,PARTIAL,WS:GMI-THEME-GRAPH,No broad transmission dependency for B1
+Stock Identity,PARTIAL_W1_W2_DONE,WS:STOCK-IDENTITY,Analog product held
+Dislocation Intelligence,SOURCE_AUDIT_STAGE,Alpha Integration subprogram,No price/outcome authority
+FIF,FIXTURE_PROVEN_PARTIAL,WS:FINANCIAL-INTELLIGENCE-FABRIC,Valuation later
+Fundamental Forensics,PARTIAL_FF1,WS:FUNDAMENTAL-FORENSICS,FF2 forbidden
+Portfolio risk core,SUBSTANTIAL_EXISTING,Portfolio Superintelligence,Reuse in D waves
+Human InvestmentThesis/RMS,NOT_BUILT,Future Market OS human research layer,After case identity and tenancy
+ResearchStudy Workbench,NOT_BUILT_PRODUCT,Evaluation OS + model owners,One-model later vertical
+Historical Analog product,NOT_BUILT_PRODUCT,Stock Identity + Outcome Spine,After PIT/episode gates
+Desk tenancy,NOT_BUILT,Market OS human workspace,Before team beta
+External API,NOT_BUILT,Delivery projection,After internal proof

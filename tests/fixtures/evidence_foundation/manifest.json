@@ -1,0 +1,61 @@
+{
+  "schema": "evidence_foundation.fixture_manifest.v1",
+  "fixtures": [
+    {
+      "file": "fif_packet_valid.json",
+      "expected": "valid",
+      "size_bytes": 3321,
+      "sha256": "3d0efbeac47394749ce8519f3113bde7acb07aae7fee2cb188464826ccdae2e4",
+      "proves": "FIF financial packet pointer"
+    },
+    {
+      "file": "earnings_workspace_valid.json",
+      "expected": "valid",
+      "size_bytes": 3179,
+      "sha256": "f2a8a41eec0761610c1ccf287d69bdfef38ec2043fd5f2e194b8228758cad27b",
+      "proves": "Earnings event_workspace immutable generation"
+    },
+    {
+      "file": "duplicate_corroboration_hostile.json",
+      "expected": "invalid",
+      "size_bytes": 3837,
+      "sha256": "a15c83f41d2265c75c3bbaafe8ecca00437c15bcccaf5f3ca3121f9e0ec2b7f6",
+      "proves": "corroboration cannot auto-net or fake source independence"
+    },
+    {
+      "file": "correction_append_valid.json",
+      "expected": "valid",
+      "size_bytes": 4125,
+      "sha256": "e31fbcf92de08f0a8b4f695c642c81569bae06ffad566a5facd9b28836ab25cb",
+      "proves": "append/supersede correction lineage"
+    },
+    {
+      "file": "replay_valid.json",
+      "expected": "valid",
+      "size_bytes": 3702,
+      "sha256": "2d6e098ce51de3367969776e83102cb053b15064864f594d16ad15dd1141a978",
+      "proves": "historical replay with typed cutoffs and reproducibility"
+    },
+    {
+      "file": "replay_lookahead_hostile.json",
+      "expected": "invalid",
+      "size_bytes": 3702,
+      "sha256": "bf5a0977b48eea5effe175499fcb6cab8a1f30ad78566e6f2fc5383c1e7086d0",
+      "proves": "source clock beyond replay cutoff is refused"
+    },
+    {
+      "file": "typed_missingness_valid.json",
+      "expected": "valid",
+      "size_bytes": 2996,
+      "sha256": "8c2d26c24e526361075064610e964427ac5419db57c309982184281278390e71",
+      "proves": "unsupported is typed and never zero-filled"
+    },
+    {
+      "file": "authority_leak_hostile.json",
+      "expected": "invalid",
+      "size_bytes": 2802,
+      "sha256": "7cb493022871a603f2ee2b8b8d2e3e4bf127244e4010846cc2aa3323362c26f6",
+      "proves": "ENTRY_OPEN and every authority axis remain false"
+    }
+  ]
+}

@@ -37,36 +37,36 @@ waves:
     status: todo
     depends_on: [P0A]
     next_action: >
-      Run only a bounded disposable NON-SEAT canary of the vendor-supported automation-owned
-      persistent lifecycle: exact profile ownership, benign exact-URL navigation, same-owner reuse,
-      state persistence, owner-loss/not-found/auth refusal, zero duplicate/repeat-start, zero typing
-      or message send, zero profile mutation and receipt hygiene. Provision any disposable vendor
-      credential through a human-controlled Keychain-to-stdin boundary. Programmatic OS-window
-      foreground remains a separate unsupported gate; do not touch a Chairman seat until the
-      non-seat canary passes and a supported focus contract is resolved.
+      Preserve the completed three-seat enrollment; those rows are initial navigation destinations,
+      not primary Sol chats. Next run only a bounded disposable NON-SEAT canary of the
+      vendor-supported automation-owned persistent lifecycle: exact profile ownership, benign
+      exact-URL navigation, same-owner reuse, state persistence, owner-loss/not-found/auth refusal,
+      zero duplicate/repeat-start, zero typing or message send, zero profile mutation and receipt
+      hygiene. Provision any disposable vendor credential through a human-controlled Keychain-to-stdin
+      boundary. Programmatic OS-window foreground remains a separate unsupported gate; do not touch a
+      Chairman seat until the non-seat canary passes and a supported focus contract is resolved.
   - id: ASD-F0
     title: Active-Session Dialogue architecture and authority freeze
     status: done
     depends_on: [F0]
   - id: ASD-A0A1
     title: Active-Session Dialogue falsifiers and hermetic Agent Relay
-    status: todo
+    status: done
     depends_on: [ASD-F0]
     next_action: >
-      HOLD on Mastermind PR #125 after A0 token-isolation falsifier. First have a human/admin
-      revoke or rotate the exposed disposable fixture credential outside model-visible tooling.
-      Then resume the SAME `sol/asd-a0a1-20260823` / PR #125 carrier for A0 only: reconcile the
-      dirty worktree artifact, prove a minimal allowlisted credential-safe metadata verifier using
-      the Keychain-to-stdin pattern, and rerun the remaining A0 falsifiers from a clean session.
-      A1 remains unstarted until A0 returns PASS and Sol explicitly releases the hold. Do not create
-      a third MAS-125 session, branch or PR.
+      Preserve Mastermind PR #125 merge eb9910681a6db9f9675b25233c8865bb43325c32 as the
+      accepted DEVELOPMENT_UNARMED / BUILT_NOT_PROVEN A0/A1 core. Do not rebuild or reopen this
+      wave. A real credential, app, Slack message, service installation or production canary belongs
+      only to ASD-A2 after a separate explicit Sol release and action-time human confirmation.
   - id: ASD-A2
     title: Production Slack app canary for one exact active-session thread
     status: todo
     depends_on: [ASD-A0A1]
     next_action: >
-      Only after the hermetic relay is accepted, provision/verify the least-privilege production
-      transport principal and prove one bounded non-authoritative canary in #agent-dispatch.
+      The code predecessor is satisfied. Start only after a separate explicit Sol A2 release and
+      native action-time human confirmation for the least-privilege production Agent Relay app and
+      credential. Prove one exact non-authoritative canary in #agent-dispatch; do not start A3/A4
+      until the A2 result is reviewed and accepted.
   - id: ASD-A3
     title: Real Sol↔Fable project dialogue proof
     status: todo
@@ -88,6 +88,7 @@ decisions:
   - DEC:CHAIRMAN-CONTROL-ROOM-P0-ARCHITECTURE-ACCEPTED
   - DEC:CHAIRMAN-CONTROL-ROOM-ACTIVE-SESSION-DIALOGUE-F0-ACCEPTED
   - DEC:CCR-P0B-AUTOMATION-OWNED-NONSEAT-CANARY-ONLY
+  - DEC:CCR-SOL-IDENTITY-IS-NOT-A-CHAT
 discoveries:
   - DSC:CCR-MANAGED-BROWSER-RUNNING-SEAT-ACTUATOR-MISSING
   - DSC:CCR-PROCESS-SNAPSHOT-OUTPUT-CAP-CAN-HIDE-RUNNING-SEATS
@@ -96,16 +97,20 @@ artifacts:
   - agentos/decisions/DEC-CHAIRMAN-CONTROL-ROOM-P0-ARCHITECTURE-ACCEPTED.md
   - agentos/decisions/DEC-CHAIRMAN-CONTROL-ROOM-ACTIVE-SESSION-DIALOGUE-F0-ACCEPTED.md
   - agentos/decisions/DEC-CCR-P0B-AUTOMATION-OWNED-NONSEAT-CANARY-ONLY.md
+  - agentos/decisions/DEC-CCR-SOL-IDENTITY-IS-NOT-A-CHAT.md
   - agentos/discoveries/DSC-ASD-MODEL-VISIBLE-SETTINGS-CAN-EXPOSE-LIVE-CREDENTIALS.md
   - agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-08-22-sol-architecture.md
   - agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-08-22-h0-release.md
   - agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-08-22-active-session-dialogue-f0.md
   - agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-08-23-mas125-mas115-rulings.md
+  - agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-08-23-asd-a1-accepted.md
+  - agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-08-23-seat-project-chat-cardinality.md
   - mastermind:research/MASTERMIND_ACTIVE_SESSION_EXECUTIVE_DIALOGUE_F0_ARCHITECTURE_AND_FABLE01_COMMISSION_2026-08-22.md
   - mastermind:research/MASTERMIND_ACTIVE_SESSION_EXECUTIVE_DIALOGUE_F0_CURRENT_STATE_AMENDMENT_2026-08-22.md
   - mastermind:research/MASTERMIND_ACTIVE_SESSION_EXECUTIVE_DIALOGUE_A0_TOKEN_ISOLATION_FALSIFIER_2026-08-23.md
 landmines:
   - "Surface bindings are local navigation addresses only; they are not runtime, role, workstream, completion, liveness or authority records."
+  - "There is no canonical or primary Sol chat. The account plus MastermindX Project context bootstraps Sol; exact normal-chat and Project-chat URLs are navigation destinations only."
   - "A tab/window/process title may be a candidate locator but never proves work ownership or execution."
   - "Open actions may focus/resume a surface only; P0 may not type prompts, send messages, dispatch work or wake a CEO."
   - "Linear remains projection. A Linear assignee or status never proves a provider session claimed the work."
@@ -124,7 +129,7 @@ landmines:
   - "Slack delivery is transport evidence only. A delivered commission or dialogue frame is not Executive admission, session execution, lifecycle completion or durable Agent OS truth."
   - "ASD is only for already-active, already-commissioned Sol/Fable sessions bound to one immutable commission thread. Generic find/assign/wake/resume stays outside this wave."
   - "MMX/AGENT_DIALOGUE_V1 history reconciliation must remain bounded and storeless; do not add a cursor DB, inbox, queue, replay ledger or mutable dialogue state store."
-  - "ASD A0 token isolation failed on PR #125. The failure is evidence against the verification surface, not license to build around the gate. A1/A2/A3/A4 remain unstarted until the prescribed recovery passes."
+  - "The historical PR #125 A0 credential-verification failure was resolved through human/admin fixture removal, a non-secret allowlisted verifier and fresh hostile-path proof. Do not treat the old failure receipt as a current gate, recreate the removed fixture or expose a replacement credential to model-visible tooling."
   - "ASD-A4 is a derived read-only consumer only after both P0B and ASD-A3 are accepted; it may not become a stored attention inbox or a Control Room send path."
 do_not_redo:
   - "Do not create a Session OS, task database, tmux lifecycle registry, second Executive service, mutable seat inbox or new active-build compiler."
@@ -133,24 +138,33 @@ do_not_redo:
   - "Do not create a dialogue DB, Slack-owned lifecycle state, mutable thread cursor, second queue, automatic retry ledger or another session identity plane."
   - "Do not absorb MAS-48 B1/C1/B2/C2, generic agent dispatch, automatic Wake, provider credentials or multi-host capacity routing."
   - "Do not commit private ChatGPT URLs, browser target IDs, credentials, chat text or local surface_bindings.json."
+  - "Do not ask the Chairman to re-enroll the three ChatGPT seats or turn their initial destinations into an identity plane."
   - "Do not use ordinary Chrome as a fallback for the Chairman's managed-browser seats."
   - "Do not use GUI/RPA scripting or undocumented repeat-start to make a navigation side effect look like a supported Open Sol actuator."
   - "Do not lower P0B completion from exact-seat/exact-conversation foreground reachability to background URL navigation merely because automation-owned profiles can navigate."
   - "Do not inspect live Slack/vendor credentials through model-visible settings pages or browser tooling; revoke/rotate an exposed credential through a secure human-admin boundary."
-  - "Do not create a third MAS-125 implementation carrier. Resume the same PR #125 branch only after the recovery gate is met."
+  - "Do not recreate ASD A0/A1 or create another MAS-125 implementation carrier. Exact accepted PR #125 merge eb9910681a6db9f9675b25233c8865bb43325c32 is the sole DEVELOPMENT_UNARMED core."
   - "Do not re-open H0 because the persistent 8787 adoption gate is complete; treat future CCR reliability regressions as new evidence, not unfinished H0."
 next_action: >
-  First, securely revoke or rotate the exposed disposable MAS-125 fixture credential outside
-  model-visible tooling; then resume A0 on the same PR #125 carrier to prove the credential-safe
-  verifier and remaining falsifiers. In parallel, commission only the bounded P0B disposable
-  non-seat automation-owned lifecycle/navigation canary with the same secure credential boundary.
-  Keep MAS-113, P0B real-seat proof, ASD A1/A2/A3/A4 and generic Wake/P1 nonterminal.
+  The Chairman completed all-three-seat managed-browser enrollment; do not repeat it. With the
+  Chairman present, select one stopped disposable non-Chairman Multilogin profile, obtain native
+  action-time confirmation for the vendor Keychain credential, and run only the bounded P0B non-seat
+  canary. Independently, issue a separate explicit Sol ASD-A2 commission before any production Agent
+  Relay principal or dialogue canary. Do not start ASD-A3, ASD-A4, real-seat mutation, generic Wake
+  or P1 from the accepted A1 core or seat enrollment alone.
 ---
 
 ## Capability state
 
-`PARTIAL` overall because P0B remains `DARK_OR_DISCONNECTED / unsupported_surface`.
-P0A plus H0 is `PROVEN_LIVE` on the persistent Chairman path and MAS-114 is complete.
+`PARTIAL` overall because P0B remains `DARK_OR_DISCONNECTED / unsupported_surface` and the
+production ASD transport path remains unproven. P0A plus H0 is `PROVEN_LIVE` on the persistent
+Chairman path; the supervised loopback service is running from current Mastermind merge
+`591b7ace4dd9b2d46edccaa5e66eebf1ead8657f`, and MAS-114 is complete.
+
+The three-seat enrollment and conflict-free local projection are now `PROVEN_LIVE` on the
+loopback Control Room read path. This proves seat addressability only. It does not prove vendor
+automation ownership, exact intended-window foreground, production dialogue or Executive execution.
+The initial stored conversation for each seat is not a primary chat and does not define Sol identity.
 
 P0B research now establishes a `SUPPORTED_BUT_REQUIRES_ARCHITECTURE_CHANGE` candidate substrate:
 GoLogin and Multilogin can support exact profile launch plus exact URL navigation when the profile is
@@ -159,11 +173,11 @@ current GUI/manual process and does not provide a supported programmatic OS-wind
 contract. The candidate is therefore eligible only for a disposable non-seat canary; it is not P0B
 completion and authorizes no real-seat mutation.
 
-Active-Session Dialogue F0 remains `SPEC_ONLY`. MAS-125 A0 is `FALSIFIED / STOP` on exact Mastermind
-PR #125 head `9847f1bc7eaed881a5d8b5684e24edd2a80b7497`: a disposable Slack fixture bot credential crossed
-into model-visible browser-tool output during settings verification. The returned one-file research
-receipt is accepted evidence; A1/A2/A3/A4 remain `UNSTARTED`. The storeless relay architecture is not
-rejected by this evidence; the credential-verification surface must be repaired and A0 rerun first.
+Active-Session Dialogue F0 is accepted and A0/A1 is `BUILT_NOT_PROVEN / DEVELOPMENT_UNARMED` in
+Mastermind PR #125 merge `eb9910681a6db9f9675b25233c8865bb43325c32`. The accepted core is
+hermetic and storeless: it installs no production credential/app/service and sends no real Slack
+traffic. ASD-A2/A3/A4 remain `UNSTARTED`; production capability therefore remains false until the
+separately authorized real canaries pass.
 
 ### Immutable P0A + H0 receipts
 
@@ -175,27 +189,39 @@ rejected by this evidence; the credential-verification surface must be repaired 
   `d0c649d9f99b52a1b0f80c8757bc65e1951fc40c` after CI `32599272414`, CodeQL
   `32599271255`, and Sol review `5001161545`.
 - Macro PR #6292 merged as `fc94d43ad4142e50ec808b2f1a8d6f922ff1fa7b`, recording H0 persistent-8787 production adoption.
+- Mastermind PR #133 merged the three-seat/multi-chat reconciliation as
+  `7cba4ca74003a37064cf46650f4d931a324350ba` from exact head
+  `ed41a194f5c875b3fc6a54e20488e6c4ab73cb39`.
+- Mastermind PR #134 merged exact Project-chat navigation and the non-primary-chat correction as
+  `591b7ace4dd9b2d46edccaa5e66eebf1ead8657f` from exact head
+  `9bc12c9e6dc23c30ab356971c90ebf34de2b72a3`; repository CI and all CodeQL analyses passed.
 
 ### Immutable ASD receipts
 
 - Mastermind PR #115 merged ASD F0 as `e1101eb2c1f17d801d480ded497b3fc1bb0ef18b`.
-- Mastermind PR #125 exact head `9847f1bc7eaed881a5d8b5684e24edd2a80b7497` is a DRAFT/HOLD failure return only. Hosted CI
-  `32623161918` succeeded. Sol review `5001858914` accepts the falsifier evidence while preserving the hold.
+- The historical A0 failure on PR #125 was truthfully preserved, the disposable fixture was reported
+  removed by a human/admin, and recovery remained on the same carrier without credential reuse.
+- Mastermind PR #125 exact accepted head `21361653a273b801b08caa7271daa68437f7b2fc`
+  merged as `eb9910681a6db9f9675b25233c8865bb43325c32` after 163/163 tests on macOS
+  Python 3.12 and 3.14, hosted CI run `32645138774` / job `97208142651`, CodeQL run
+  `32645136478` / aggregate job `97208212489`, source-fixed alert #138 without dismissal,
+  and final Sol acceptance comment `5386528780`.
 
 ### What is still false
 
 1. Current GUI-started Chairman managed-browser seats are not automation-adoptable under a documented vendor contract.
 2. No supported programmatic OS-window foreground operation has been accepted; Open Sol therefore remains incomplete even if exact URL navigation can be proven on an automation-owned disposable profile.
 3. No P0B non-seat canary has been executed, and no real Chairman seat may be changed by this ruling.
-4. MAS-125's exposed disposable fixture credential has not been proven revoked/rotated yet; no A0 retry is authorized until that human-admin action is complete.
-5. No Agent Relay or real `MMX/AGENT_DIALOGUE_V1` exchange exists. A1/A2/A3/A4 remain unstarted.
-6. Agent OS brief latency remains a separate Macro performance problem.
+4. The removed fixture is not a production principal, and no production Agent Relay app or credential is installed.
+5. No real `MMX/AGENT_DIALOGUE_V1` Slack exchange has occurred. A2/A3/A4 remain unstarted.
+6. Three-seat managed-browser enrollment is complete, but no vendor credential installation or disposable P0B canary has been completed.
+7. Agent OS brief latency remains a separate Macro performance problem.
 
 ## Completion boundary
 
-MAS-114/H0 is complete. MAS-113 remains nonterminal until P0B proves the vendor-supported
+MAS-114/H0 and ASD A0/A1 are complete at their stated boundaries. MAS-113 remains nonterminal until P0B proves the vendor-supported
 managed-seat Open Sol journey including intended-seat foreground reachability, zero cross-seat
 fallback, zero message send, zero managed-environment state mutation and required restart/failure
-proof. ASD becomes built only after a clean A0 pass permits A1 and the A1 implementation is accepted;
-it becomes `PROVEN_LIVE` only after a real already-active Sol↔Fable project dialogue canary. None of
-these conditions authorizes generic Wake/P1 by itself.
+proof. ASD becomes `PROVEN_LIVE` only after separately authorized A2 and A3 canaries prove a real
+already-active Sol↔Fable project dialogue through the production path. The A1 merge alone authorizes
+no credential installation, production message, A3/A4, generic Wake or P1.

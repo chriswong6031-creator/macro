@@ -577,10 +577,12 @@ waves:
       DRAFT pending the commissioning session's re-review.
   - id: A5C-alpha
     title: IMCE-A5C-alpha — fail-closed correction detection pending source-revision history (Sol A5C review item 1; Opus BLOCKER-1 hardened)
-    status: awaiting_ci
+    status: done
     pr: 6308
     depends_on: [A5B]
     next_action: >
+      MERGED 2026-08-23 as 2ee5c16724da (PR #6308) — closure record:
+      agentos/handoffs/CYCLE-PATTERN-ISSUER-MECHANISM-2026-08-23.md.
       Sol's A5C review (2026-08-23) named item 1: "no correction to a
       pre-activation event can ever enter the prospective cohort as a new
       observation" — until canonical source-revision history exists, A5B
@@ -931,12 +933,13 @@ waves:
     title: >
       IMCE-A5C item 7/8 — TOL beginning-quarter-backlog cancellation
       sensitivity PRIOR-YEAR extraction + Sol equality-ruling pin
-    status: awaiting_ci
+    status: done
     pr: 6307
     depends_on: [A5A]
     next_action: >
-      DRAFT PR #6307 open, not merged; commissioning session adjudicates and
-      merges. Extraction-only, closes the named A5 gap: "TOL sensitivity
+      MERGED 2026-08-23 as 3d35ec5cd5ae (PR #6307) — closure record:
+      agentos/handoffs/CYCLE-PATTERN-ISSUER-MECHANISM-2026-08-23.md.
+      Extraction-only, closes the named A5 gap: "TOL sensitivity
       prior-year comparator not extracted by A5A" (this file's own
       next_action above). engine/company_intelligence/issuer_profiles.py's
       TOL beginning-quarter-backlog block (:1162-1261 post-change) now also
@@ -975,6 +978,284 @@ waves:
       when d_orders is also unavailable -- no runtime/consumption code
       change required, confirming the A5B design note at
       engine/cycle_pattern/imce_prospective.py:158-161.
+  - id: A5C-chain
+    title: >
+      IMCE-A5C — prospective source-vintage integrity: manifest chain,
+      ascending discovery, two-clock law, ONE shared reader, earliest-
+      revision eligibility/replay/contributor laws (Sol A5C directive,
+      2026-08-23, items 1/3/4/5/6)
+    status: done
+    pr: [6322, 6343]
+    depends_on: [A5B, A5C-alpha, A5C]
+    next_action: >
+      MERGED — #6322 as 8c0608652652 (2026-08-23) and the production-
+      incident heal #6343 as 6fa417959bf9 (2026-08-23). Closure record:
+      agentos/handoffs/CYCLE-PATTERN-ISSUER-MECHANISM-2026-08-23.md; see
+      the top-level next_action's "SOL'S A5C DIRECTIVE IS EXECUTED" block
+      for the full production-proof receipts, the incident, and named
+      residuals.
+      PR #6322 (branch claude/imce-a5c-source-vintage-main, off
+      fresh origin/main containing both merge 2ee5c16724da/#6308 A5C-alpha
+      and merge 3d35ec5cd5ae/#6307 A5C-TOL) was the "honest
+      fix" both A5C-alpha (#6308) and A5C (#6307) named as still-pending.
+      REVISED after an Opus red-team pass (2026-08-23, BLOCK: 3 blockers/
+      5 majors/6 minors/1 nit) found the FIRST-pass architecture broken in
+      three load-bearing ways, all now fixed on the same branch — the
+      SCOPE was explicitly amended mid-review to bring
+      tests/test_issuer_profiles_a5a.py into this PR's owned files (its
+      mocks previously drove the avoidance of the correct architecture).
+      BLOCKER-1 (eligibility): the builder now sorts revisions by
+      source_available_at BEFORE deciding eligibility (never trusts raw
+      chain order), and a packet-build failure on the would-be ANCHOR
+      revision now aborts the event for the night instead of falling
+      through to mint from a LATER revision.
+      BLOCKER-2/MAJOR-6/MINOR-9 (discovery architecture, REPLACED): the
+      FIRST pass ran discovery as an additive pre-step alongside the OLD
+      single-newest acquire_and_build_homebuilder_workspace() call site —
+      red-team found this mints a REDUNDANT, clock-drifted third
+      generation nightly (the two mechanisms independently rebuilding "the
+      newest" row with different observed_at stamps). Corrected: discovery
+      is now the SOLE per-ticker mechanism, yielding the full ascending
+      not-yet-represented list INCLUDING the newest; each revision chains
+      onto the one immediately before it (never a "latest chain state"
+      lookahead — fixes lineage); the running snapshot always ends each
+      ticker's slot at its own newest revision; and the closing write now
+      skips entirely when nothing changed since the last chained publish
+      this cycle (own regression test:
+      test_refresh_publishes_original_and_amendment_as_two_chained_generations
+      caught THIS EXACT redundant-generation bug during the fix).
+      tests/test_issuer_profiles_a5a.py's mocks were retargeted from
+      acquire_and_build_homebuilder_workspace to
+      discover_new_homebuilder_revisions — all 36 tests pass with every
+      existing assertion preserved (none weakened).
+      BLOCKER-3/MAJOR-4 (two-clock law): already correctly applied inside
+      discover_new_homebuilder_revisions from the first pass; the fix
+      round added the previously-missing tests (prior_observed_at
+      coverage, an injected-clock semantic-no-op proof replacing "two
+      calls landed in the same wall-clock second" luck, homebuilder-path
+      clock-separation assertions).
+      MAJOR-5: refresh()-level multi-generation tests added (original+
+      amendment as two chained generations; newest-already-represented
+      restores current state without a redundant write; mid-sequence
+      publish failure aborts before any out-of-order write, verified
+      against the FAKE R2's remote_manifest — the true published state —
+      not the local scratch file every attempt unconditionally overwrites).
+      MAJOR-7: the "second GET-sequence" claim was FALSE — unified onto
+      the model-facing reader's own _fetch_bytes (new allow_404 param) and
+      _public_base_url (new require_public_host param, off for the
+      producer/nightly path since its origin is trusted config, never
+      model input); the separate _raw_get/_resolve_workspace_base_url
+      stack is deleted.
+      MAJOR-8/MINOR-10: the chain walk now verifies each predecessor link
+      against the sha256 of the RAW FETCHED BYTES (never a
+      re-serialization) and REUSES that fetch as the next hop's own
+      manifest (halves manifest GETs from 2N to N); max_hops is
+      documented as configurable with a small-bound test.
+      MINOR-13/14: homebuilder_discovery's type hint corrected to
+      Callable[..., ...] (its real keyword-heavy signature); a discovery
+      WINDOW-gap heuristic warns (log-only) when the chain's newest known
+      revision predates the oldest row still visible in the SEC recent
+      block.
+      A. MANIFEST CHAIN: event_workspace_manifest.v2 (v1 stays the
+      backward-compatible chain ROOT) adds previous_generation_id +
+      previous_manifest_sha256; write_workspace_generation mints v2 going
+      forward and folds previous_generation_id into the content-address
+      hash; preview_generation_identity() lets a caller decide, BEFORE
+      writing, whether a cycle reproduces the CURRENTLY published
+      generation or genuinely chains forward.
+      D. ONE SHARED READER (home: engine/neuralweb/company_intelligence_reader.py):
+      load_current_workspace / load_workspace_with_disposition (three-way
+      found/not_published/fetch_failed) / find_current_event_id_for_company
+      / read_event_source_revisions. scripts/refresh_event_workspaces.py's
+      load_prior_workspace / load_prior_workspace_for_ticker and
+      scripts/build_cycle_pattern_imce_prospective.py's
+      _load_workspace_with_disposition are thin delegators (their
+      *NotPublished exception classes are ALIASES of
+      WorkspaceChainNotPublished, not lookalikes); _raw_fetch_workspace is
+      RETIRED (grep-proof test).
+      E/F/G in scripts/build_cycle_pattern_imce_prospective.py's run():
+      eligibility decided by the sorted-ascending EARLIEST known
+      revision's source_available_at, PERMANENTLY; the one immutable
+      observation mints from the earliest ELIGIBLE revision; later
+      materially-different revisions become ordered corrections, cosmetic
+      ones produce no noise; a contributor's state at a trigger cutoff is
+      the latest LAWFUL revision of the contributor's OWN chain
+      at-or-before that cutoff. Zero new ledger schema fields. TOL sweep:
+      _tol_sensitivity's docstring corrected; consumption flow-through
+      test added.
+      Tests (post-fix-round): test_company_intelligence_event_workspace.py
+      (unchanged), test_refresh_event_workspaces.py (+11: 4 original +
+      2 discovery-order + 3 MAJOR-5 refresh-level + 1 injected-clock +
+      homebuilder clock-separation assertions), test_imce_prospective.py
+      (+7: 5 original + BLOCKER-1 inverted-order probe + anchor-failure
+      probe), test_issuer_profiles_a5a.py (5 tests' mocks retargeted, all
+      36 green), new test_company_intelligence_workspace_chain.py (13
+      tests incl. max_hops bound + single-fetch-per-hop verification) —
+      289 passed / 2 skipped across the full touched-module run;
+      contract-delta 0 introduced; agentos validate 0 errors. CI wiring:
+      .github/ci/legacy-jobs.yml neural-web-core pytest line gained the
+      new test file; .github/workflows/company-intelligence.yml
+      sparse-checkout gained engine/neuralweb/__init__.py +
+      company_intelligence_reader.py (requests was already an installed
+      dep there — no new pip dependency).
+      ROUND 2 (Opus red-team verification, 2026-08-23, BLOCK: ten round-1
+      findings confirmed FIXED with mutant kills; remaining + new fixed on
+      the same branch/head). NEW-BLOCKER-16 (FROZEN FIX, two-phase
+      refresh()): a live verifier probe caught the single-pass per-ticker
+      loop publishing a triggering ticker's own first generation BEFORE a
+      LATER-ordered ticker had been carried forward at all (marker
+      generation 0 missing a ticker, only complete once that ticker was
+      later visited in the SAME cycle). refresh() now runs Phase 1
+      (discovery + an UNCONDITIONAL per-ticker carry-forward read, zero
+      writes, for ALL tickers) fully before Phase 2 (writes only, applying
+      each triggering ticker's ascending sequence atop the now-complete
+      base) — every promoted marker is therefore complete from its very
+      first write. New regression test
+      test_refresh_every_write_contains_every_resolved_ticker_before_any_write
+      is a proven mutant-kill: it FAILS against the pre-fix single-pass
+      code (asserts 2 == 1 generation dirs, first generation missing the
+      carried ticker) and passes against the fix.
+      MINOR-9 (real per-sequence lineage, frozen "strictly older"
+      predecessor lookup): discover_new_homebuilder_revisions now resolves
+      each row's predecessor via _nearest_older_revision — the nearest
+      timeline entry whose source_available_at is STRICTLY OLDER, never
+      "the chain's overall newest" (wrong for a genuine backfill, where a
+      newly-discovered row is chronologically OLDER than something already
+      represented). Two new proven mutant-kill tests in
+      tests/test_issuer_profiles_a5a.py
+      (test_backfilled_original_publishes_complete_never_a_newer_known_revision,
+      test_amendment_after_backfilled_original_walks_to_corrected_with_true_lineage)
+      both FAIL against a naive "timeline max by timestamp, no `before`
+      filter" mutant and pass against the real implementation; the second
+      test makes the wrong-lineage failure mode OBSERVABLE by giving a
+      temporally-invalid decoy the amendment's own real sha256, so a wrong
+      selection would silently leave the amendment "complete" instead of
+      "corrected".
+      NEW-MAJOR-17: the stale "10 R2 GETs/cycle" accepted-cost comment
+      above refresh()'s per-ticker loop is rewritten to describe the
+      two-phase architecture's real, larger GET cost (4 unconditional
+      carry-forward GETs/cycle, paid once regardless of how many revisions
+      Phase 2 replays).
+      NEW-MINOR-18 (raw marker byte hashing): current_marker_loader's
+      production default is now ci_reader.fetch_current_workspace_marker_raw
+      (new reader primitive returning (raw_bytes, parsed_dict) | None);
+      refresh()'s chain_previous_sha hashes the raw fetched bytes directly,
+      never a re-serialization via canonical_json_bytes — the now-dead
+      canonical_json_bytes import was removed from the script. Two new
+      reader-level tests in tests/test_company_intelligence_workspace_chain.py
+      prove the raw-bytes contract with a fixture body deliberately NOT
+      byte-identical to its own canonical re-serialization, plus the clean-
+      404 case.
+      MINOR-12/NEW-NIT-21/MINOR-17: acquire_and_build_homebuilder_workspace
+      is DELETED (dead once discovery became the sole per-ticker mechanism
+      — BLOCKER-2); its own direct unit test at
+      tests/test_issuer_profiles_a5a.py (test_fiscal_period_mismatch_refuses_rather_than_guesses)
+      is retargeted from the deleted function's (incorrect, since deleted)
+      RefreshError-raise expectation to discover_new_homebuilder_revisions'
+      real, frozen B4 skip-not-fail behavior (asserts an empty return list
+      plus the actual ::warning text) — the safety property (never mint a
+      guessed fiscal identity) is preserved, only the mechanism assertion
+      changed to match reality. The stale `real_acquire` local variable
+      name (three destructuring call sites + the one place it was actually
+      called) is renamed `real_discover` throughout
+      tests/test_issuer_profiles_a5a.py. refresh()'s own docstring is
+      corrected to describe true nearest-strictly-older lineage (not "the
+      revision immediately before it in the list") and the two-phase split.
+      FINAL VERIFICATION at the round-2 head: the six touched-module test
+      files together = 290 passed, 2 skipped (30.80s);
+      tests/test_gh_annotation_line_start.py run SEPARATELY (never folded
+      into the above per MINOR-12) = 4 passed (15.02s); combined seven-
+      suite total = 294 passed, 2 skipped, 0 failed. contract-delta --base
+      origin/main = 0 introduced, 0 inherited (base 25b961651882). agentos
+      validate = 0 errors (29 pre-existing warnings, unrelated to this PR).
+      test_issuer_profiles_a5a.py alone: 38 passed (was 36 — +2 MINOR-9
+      tests). test_refresh_event_workspaces.py alone: 36 passed (was 35 —
+      +1 BLOCKER-16 test). Still a DRAFT PR — never marked ready, armed
+      merge-on-green, or merged; the commissioning session owns
+      integration/merge.
+      ROUND 3 (Opus red-team verification, 2026-08-23) — APPROVE, no
+      blockers/majors, one closing micro-round before the commissioning
+      session merges. MINOR-22: the accepted-cost comment above refresh()'s
+      per-ticker loop understated the quiet-cycle R2 GET volume ~4x —
+      corrected: load_prior_workspace_for_ticker is find_current_event_id_
+      for_company (marker + generation manifest = 2 GETs) + load_prior_
+      workspace (marker + workspace object = 2 GETs) = 4 GETs/ticker, 16/
+      cycle across HOMEBUILDER_TICKERS; plus the top-level marker read (1)
+      and the flagship's own prior read (2) = ~19 R2 GETs on a quiet cycle,
+      not ~4-10 — PLUS each ticker's discovery performing a FULL
+      read_event_source_revisions chain walk (1 marker + N generation
+      manifests + M workspaces, growing with that event's own chain
+      length) for every distinct candidate event_id, which fires even when
+      nothing is new (the chain-state loader call happens on first sight
+      of an event_id among candidates, before the already-represented
+      check) — 4 such walks on a quiet cycle with one candidate event per
+      ticker, unbounded with chain length; this is the real, dominant
+      cost, not a fixed small constant. MINOR-23: added a refresh()-level
+      test (test_refresh_chains_onto_the_marker_raw_bytes_hash_not_a_
+      reserialization) injecting current_marker_loader returning a
+      deliberately non-canonical (raw_bytes, parsed) pair and asserting
+      the minted generation's previous_manifest_sha256 ==
+      sha256(raw_bytes) and != sha256(canonical_json_bytes(parsed)) —
+      proven mutant kill: temporarily reverted the target line to hash
+      canonical_json_bytes(current_marker) again, confirmed the new test
+      FAILS (assertion mismatch on the two sha256 values), restored the
+      fix, confirmed it passes. NIT-24: refresh()'s docstring gained one
+      sentence documenting that a fiscal-quarter rollover can legitimately
+      publish two events for one issuer in a single cycle, and why that is
+      safe and self-clearing (find_current_event_id_for_company's own
+      documented double-match tie-break always resolves to the newest
+      fiscal period on the next carry-forward read — no special-case code
+      needed). NIT-25: fixed two stale comments that still described the
+      round-2-deleted acquire_and_build_homebuilder_workspace as existing/
+      independently-testable or as sharing this discipline; both now
+      correctly describe the current architecture
+      (discover_new_homebuilder_revisions / _event_known_revisions).
+      FINAL VERIFICATION at the round-3 head: six touched-module test
+      files together = 291 passed, 2 skipped (28.17s);
+      tests/test_gh_annotation_line_start.py run SEPARATELY = 4 passed
+      (6.50s); combined seven-suite total = 295 passed, 2 skipped, 0
+      failed. test_refresh_event_workspaces.py alone: 37 passed (was 36 —
+      +1 MINOR-23 test). contract-delta --base origin/main = 0 introduced,
+      0 inherited (base 3695178cef2a). agentos validate = 0 errors (29
+      pre-existing warnings,
+      unchanged). Still a DRAFT PR — never marked ready, armed
+      merge-on-green, or merged; the commissioning session owns
+      integration/merge.
+      PRODUCTION INCIDENT + HEAL (2026-08-23, PR #6343, branch claude/imce-
+      a5c-discovery-bound, off fresh origin/main after #6322 merged as
+      8c0608652652): #6322's first production run (workflow_dispatch
+      32652474368) crawled each homebuilder's ENTIRE SEC recent block back
+      to 2010 — "not yet represented" alone admits all of history on first
+      deploy, Sol's "since the canonical prior generation" boundary was
+      never implemented — published ~170 backfilled historical events
+      (lawful, A5B-safe: all pre-activation, permanently ineligible) and
+      hit the job's 25-min timeout mid-step. Fix: discover_new_homebuilder_
+      revisions gained discovery_boundary (a row qualifies only if STRICTLY
+      NEWER than the issuer's newest already-represented source_available_
+      at, filtered on the raw row before any per-accession fetch, no
+      warning) and a first-publish bound (current+prior fiscal year,
+      mirrors the A5B builder's own candidate-lookback convention).
+      refresh()'s Phase 1 reordered (carry-forward before discover) so the
+      boundary costs zero extra GETs. Addendum (measured live): a chain
+      walk against the ~170-generation post-incident chain cost 153s for
+      ONE event; the A5B builder called it once per candidate (~8/night,
+      ~20 min against the render budget). Added ci_reader.
+      read_all_event_source_revisions (ONE shared walk harvesting every
+      requested event from one pass, O(hops) not O(events x hops));
+      read_event_source_revisions is now a thin wrapper over it; the
+      builder's run() now performs exactly one walk per run
+      (harvest_event_revisions), all 10 existing test stubs retargeted.
+      refresh_event_workspaces.py's own per-ticker walk is NOT additionally
+      batched across tickers — named judgment call (already near-zero cost
+      per ticker post-boundary-fix on a quiet night, unlike the builder's
+      unconditional every-candidate walk). Tests: boundary law (zero
+      per-accession fetches, proven mutant kill vs pre-fix TypeError),
+      forward-correction-unaffected, first-publish bound, refresh()-level
+      wiring integration test, shared-walk-equals-per-event-walks-at-half-
+      cost, builder-one-walk-per-run (proven mutant kill vs a reverted
+      per-candidate-loop). Seven-suite total 302 passed/2 skipped/0 failed;
+      contract-delta 0 introduced/0 inherited; agentos validate 0 errors.
+      DRAFT — never marked ready, armed, or merged.
 next_action: >
   Sol's FOURTH GATE (A4P.1) closes the five escalations the third gate left
   open with the returns: (1) AG14 cohort-label question SETTLED by R2's
@@ -1024,6 +1305,81 @@ next_action: >
   rewrites the readable facts — correction records preserve what the
   experiment knew, but as-of retrieval does not exist). No runner built;
   no outcome computed; awaiting Sol's next directive.
+  SOL'S A5C DIRECTIVE IS EXECUTED (2026-08-23). Four merges close it: A5C
+  gamma (TOL sensitivity prior-year + equality-ruling pin) = PR #6307 ->
+  3d35ec5cd5ae; A5C-alpha alpha (fail-closed correction detection pending
+  source-revision history) = PR #6308 -> 2ee5c16724da; A5C-chain beta+
+  delta (manifest chain/discovery/two-clock/shared-reader honest fix,
+  plus the production-incident heal) = PR #6322 -> 8c0608652652 and PR
+  #6343 -> 6fa417959bf9.
+  PRODUCTION PROOF RECEIPTS: the healed dispatch (workflow_dispatch run
+  32657963256) completed SUCCESS in 8.5 minutes. The live top-level
+  marker is generation 6d56c84a3ac23b8954e59ee7, schema
+  event_workspace_manifest.v2, event_count 5, chaining onto
+  previous_generation_id 8351f6fa8df7507c0ff842d1 with its verified sha
+  receipt. All five tickers' latest reads were verified live on
+  www.mastermind-x.com: AAPL (2026Q3), DHI (2026Q3), PHM (2026Q2), KBH
+  (2026Q2), TOL (2026Q3). The live history walk was verified end-to-end
+  (DHI 2026Q3 gives exactly 1 revision, state complete, form 8-K,
+  receipts present, walk terminates at the v1 root) -- the SAME walk
+  whose pre-optimization cost was measured at 153s against the
+  post-incident chain, the number that motivated the
+  read_all_event_source_revisions shared-walk fix in #6343.
+  THE PRODUCTION INCIDENT, STATED HONESTLY: dispatch run 32652474368 (the
+  FIRST production run of #6322, before the delta heal) crawled each
+  homebuilder issuer's SEC "recent" submissions block back to 2010 under
+  the then-unbounded discovery admission rule, and published ~170
+  historical events before the job's 25-minute timeout killed it
+  mid-step. Those ~170 events are now immutable chain history -- never
+  rewritten -- and are HARMLESS: every one is pre-activation, so A5B's
+  own activation-cutoff law makes them permanently ineligible to ever
+  become an observation. The healed dispatch (32657963256, above)
+  converged back to a normal 5-event nest on its very next run,
+  confirming the delta fix.
+  NAMED RESIDUALS (delta red-team review, not closed by this directive,
+  not hidden): MINOR-1 -- the per-issuer discovery boundary can silently
+  exclude a genuine BETWEEN-QUARTERS amendment (an out-of-window
+  correction to an already-superseded fiscal period); this is
+  fail-closed (never a false admission) but currently silent -- a
+  ::warning is recommended future work, not yet added. MINOR-2 -- the
+  shared walk's own docstring overclaims its complexity: generation
+  MANIFESTS are fetched at O(hops) as documented, but per-event
+  WORKSPACE BODIES are still fetched only where present, so the true
+  cost is O(hops) manifests + O(revisions-found) workspace reads, not a
+  flat O(hops) for everything; the docstring should be corrected to say
+  so. MINOR-3 -- the None-boundary (genuine first-publish) branch's own
+  walk cost is UNBOUNDED in principle (bounded only by the
+  current+prior-fiscal-year row filter, not by a hop cap on that branch
+  specifically); unreachable in practice today (every current issuer
+  already has a represented event), but not structurally guaranteed
+  against a future issuer onboarding with zero prior history. Chain
+  COMPACTION remains declared future work -- the incident alone consumed
+  roughly 35% of the 500-hop DEFAULT_MAX_CHAIN_HOPS bound; the bound is
+  not yet at risk but is no longer purely theoretical headroom. The
+  REPLACEMENT-8-K residual named since wave alpha is UNCHANGED and still
+  open (a same-accession-form-class replacement filing is not
+  distinguished from a genuine correction).
+  A5B STATUS: BUILT_NOT_PROVEN. Activation is NOT yet stamped -- the
+  forward ledger data/cycle_pattern/imce_prospective_observation_v1.jsonl
+  is still absent from main as of 2026-08-23T18:40Z; it is created and
+  activation_started_at is stamped by the FIRST production nightly that
+  runs after this point. Sol's own promotion precondition for A5B (A5C
+  merged AND production-verified) is NOW SATISFIED by the four merges
+  and receipts above. Natural-event proof (a real post-activation
+  DHI/PHM/KBH/TOL earnings event actually observed) remains outstanding
+  -- next expected candidate is KBH FY2026 Q3, ~late September 2026.
+  TREASURY CMT FROZEN TEMPORAL LAW, restated for the next increment
+  (unchanged by this directive, binding on any future C_t leg work):
+  only the official rate/date pair from a first-party Treasury/CMT
+  source may be used; retrieved_at/first_seen_at must be the REAL
+  wall-clock ingestion time, never inferred; publication time is NEVER
+  inferred from the ~3:30PM ET methodology-implied release convention --
+  only a genuine observed retrieval timestamp counts; a decision cutoff
+  consumes only rows whose first_seen_at is at-or-before that cutoff
+  (never the official rate/date field for eligibility); Freddie Mac PMMS
+  stays HELD (not sourced); FRED/ALFRED remain EXCLUDED (no store/cache/
+  archive of FRED content per the standing FRED clause); NAR remains
+  PROHIBITED as a source.
 landmines:
   - "DNR:KILL-OUTCOME-AUDITION is TWO-RULER — no per-name best-of-grid anywhere in IMCE; CELH may never receive a bespoke threshold/indicator/model."
   - "DNR:KILL-ROTATION-CYCLE-CONFLUENCE — no rotation x cycle-position entry confluence construction."
