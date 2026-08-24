@@ -1,9 +1,10 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-24T22:14:11.462575+00:00",
-  "count": 1775,
+  "generated_at": "2026-08-24T23:25:15.797233+00:00",
+  "count": 1786,
   "institutions": [
     "13F Summary",
+    "ABN Amro",
     "Academy Securities",
     "Alger",
     "Allianz",
@@ -89,6 +90,185 @@
   ],
   "items": [
     {
+      "id": "marketdesk-2ogtpzcoozx-6082c4",
+      "title": "US Equities Weekly Rundown 8 21 26",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T22:40:34Z",
+      "summary_points": [
+        "**HF Flow Reversal & Sector Selling**: HF net sold US stocks fastest since Liberation Day (2.0 SDs 1-yr), L/S net leverage at 48.3% (1-yr low); Info Tech (1.1 SDs) and Utilities (2.5 SDs) led net selling across 9/11 sectors.",
+        "**Tech Exposure Surge**: Prime Book data shows Info Tech net exposure rising sharply (25th percentile), signaling significant investor inflows into tech for growth portfolios.",
+        "**Momentum Breakdown**: GSPRHIMO (US High Beta Momentum) broke support with -35.0469% drawdown, volatility at 88.57 (highest since 2020), signaling elevated risk and technical deterioration.",
+        "**Crypto Market Catalyst**: Bitcoin’s 3-year weekly gain fuels crypto-sensitive equities rally; IBIT call volume spiked to 1.58mm (record), steepening 3m call skew indicating aggressive crypto/gold positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ice8vm406tl-cf05f8",
+      "title": "JPMJPM 1",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T22:35:20Z",
+      "summary_points": [
+        "**NVDA Positioning & Revenue**: Near $2B revenue beat (15% seq, +100% YoY), strong guide (13% QoQ, 86% YoY), implied move 4.6%; wafer availability risks higher targets.",
+        "**Geopolitical Oil Market Impact**: Red Sea incident targeting Saudi tanker *Amazan*, 16M barrels oil movement, WTI/Brent down 2.5% to $84.95/$91.94.",
+        "**Key Data Releases**: US ADP Employment (8:15am ET) and Philly Fed Non-Mfg (8:30am ET) critical for market direction amid tech pullback.",
+        "**MRVL Datacenter Catalyst**: GOOGL partnership implies $20b p.a.",
+        "revenue upside (vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-p13ysqiujhg-d81bbc",
+      "title": "Europe Paper & Forest Products US Paper Update Containerboard",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T22:13:54Z",
+      "summary_points": [
+        "**Containerboard**: $80/st price increase plausible in September amid tight inventories (80-85% in Aug 2025), strong seasonal demand (Sep-Dec), and low stock levels justifying 50% of $80-140/st hikes.",
+        "**Boxboard**: SBS $20/st + CRB $50/st + CUK $60/st hikes expected for September, with 12-14 week lead times and solid backlogs supporting price dynamics.",
+        "**Smurfit Westrock**: 60% NA EBITDA exposure (70% tied to containerboard) makes US price trends critical; Buy rating with $51 target (9.6x EV/DACF vs.",
+        "historical 9.1x) reflecting premium pricing expectations."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-cxu5jdqh9sf-d0d743",
+      "title": "Americas Transportation Railroads Weekly Rail Carload Snapshot —",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T22:13:53Z",
+      "summary_points": [
+        "**US Intermodal Acceleration**: +7.3% YoY intermodal growth (vs +3.0% prior week), driven by UNP's +14% YoY intermodal growth, signaling strong freight demand momentum.",
+        "**Canadian Rail Divergence**: CN shows declining intermodal growth (-4.5% YoY vs +0.3% prior week) despite strong ex-intermodal (+12% YoY), while CPKC maintains robust intermodal growth at +15% YoY.",
+        "**US Rail Growth Momentum**: Class I carload growth accelerated to +4.7% YoY (vs +2.4% prior week), led by intermodal strength and UNP/NSC ex-intermodal growth at +3.2% YoY."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-qgd72rovwgu-c84b5e",
+      "title": "Weekly IMM FX Positioning",
+      "institution": "Safra",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T22:12:52Z",
+      "summary_points": [
+        "**USD positioning shift**: JPY shorts surged 10,808 contracts to 52,883, signaling potential USD strength or JPY weakness amid broader USD longs decline (1,348 contracts) and CAD short reduction.",
+        "**EURUSD stretched shorts**: Non-commercial position at -59,088 with 1-yr Z-score -1.92, indicating overextended shorts vulnerable to reversal.",
+        "**USD/JPY commercial shorts widen**: Net commercial short position widened to -52,893 (vs -42,085), 1-yr Z-score -0.31, signaling heightened bearish JPY positioning.",
+        "**Gold long strength**: Long position extended to 222,189 (+4,249), 5-yr/1-yr Z-scores 0.54/0.73 (above averages), reflecting rising bullish diversification sentiment."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-2kawxzdsjcl-92eef9",
+      "title": "Mi weekly market brief",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T22:06:57Z",
+      "summary_points": [
+        "**Policy Shift**: Doubling longer-dated Treasury purchases post-30-yr yield spike to 5.3%, signaling fiscal stance adjustment amid persistent inflation concerns.",
+        "**Jackson Hole Focus**: Markets scrutinizing Fed’s inflation credibility amid fiscal deficits and Middle East tensions, positioning speech as pivotal policy catalyst.",
+        "**Market Reaction**: Immediate focus on Fed’s response to yield surge and geopolitical risks, driving bond volatility and repositioning flows."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-rfrf9gqvhfh-e04caf",
+      "title": "Top of Mind Rising US Treasury yields Q A",
+      "institution": "ABN Amro",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T22:05:39Z",
+      "summary_points": [
+        "**Fiscal Consolidation Imperative**: 2.5-3% GDP fiscal consolidation required to stabilize debt ratio, as current Treasury buybacks (e.g., USD 4bn liquidity support) are temporary and fail to address elevated term premia or rising debt (projected $56T by 2036, 100-120% GDP).",
+        "**Term Premiums to Rise**: Current ACM term premium (0.8% for 10Y US T-bills vs.",
+        "4% historical avg) faces further upside due to fiscal trajectory (strong bond issuance), declining official holdings (Fed/foreign), and increased price-sensitive investor participation.",
+        "**Intervention Limits**: Treasury’s USD 4bn buybacks offer only temporary yield relief; lack credible firepower for long-term stability amid steepening curves and persistent term premium pressures."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-qrovgbxrtzm-f08679",
+      "title": "GS Pasquariello markets macro two charts that stuck out from the weekend reading 24 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T21:49:38Z",
+      "summary_points": [
+        "**Record 2026 EPS Consensus**: S&P 500 (32%), Nasdaq 100 (44%), S&P Midcap 400 (23%) 2026 estimates far exceed 2025 (12%, 21%, 1%) and 2027 (12%, 19%, 13%), signaling imminent earnings deceleration.",
+        "**Persistent Optimism Amid Risks**: S&P 500 2026 earnings expectations have steadily risen since early 2025, reflecting sustained bullish sentiment despite near-term macroeconomic headwinds.",
+        "**Structural Earnings Gap**: The widening divergence between 2026 and 2027 consensus (e.g., S&P 500: 32% vs 12%) highlights market pricing of a pronounced near-term earnings slowdown."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-y2ngiukgrc1-de527d",
+      "title": "GS Pasquariello markets macro two charts that stuck out from the weekend reading 24 Aug 2026",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T21:49:32Z",
+      "summary_points": [
+        "**Record 2026 EPS Consensus**: S&P 500 (32%), Nasdaq 100 (44%), S&P Midcap 400 (23%) 2026 estimates at record highs vs.",
+        "2025 (12%, 21%, 1%) and 2027 (12%, 19%, 13%), signaling potential near-term earnings slowdown.",
+        "**Persistent Optimism Trend**: S&P 500 2026 earnings expectations show steady upward trajectory since early 2025, reflecting sustained optimism despite near-term risks.",
+        "**Nasdaq 100 Earnings Premium**: Nasdaq 100 2026 growth consensus (44%) significantly outpaces S&P 500 (32%) and 2027 estimates (19%), highlighting sector-specific over-optimism.",
+        "**2027 Growth Gap**: Sharp decline in consensus from 2026 to 2027 (e.g., S&P 500: 32%→12%) indicates market pricing in a pronounced earnings deceleration post-2026."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-ngd9kianxpr-86fe86",
       "title": "UBS Garber The Bullion Report Gold Finds New Buyers As USD Weakness Drives Fresh Interest 24 Aug 2026",
       "institution": "UBS",
@@ -148,6 +328,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-9qxreq2kxaf-6087fe",
+      "title": "MS The Weekly Worldview Managed Stability, Manageable",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T16:27:21Z",
+      "summary_points": [
+        "**US-China Policy Expiries Risk**: November 10 expiries (Section 301, BIS suspension, China’s Wave 2) pose escalation risk as trade downshifted; September summit reinforces managed competition without breakthrough.",
+        "**China's AI Chip Self-Sufficiency Trajectory**: Projected to rise from 33% (2024) to 70% (2030), driven by advanced node capacity build-out and manufacturing improvements, signaling strategic tech decoupling.",
+        "**US-China Trade & Summit Geopolitical Outlook**: Direct trade stabilized at lower levels; Summit focuses on trade/tech (not currency), with outcome as managed competition (no breakthrough/breakdown), CNY modestly evolving to 6.75 by 2026."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
@@ -373,6 +572,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-rkqcwzj88pq-6dc975",
+      "title": "Xiaomi Corp. (1810.HK) XRING triple chip breakthroughs unify AI",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T13:43:47Z",
+      "summary_points": [
+        "**Chipset Performance Leap**: XRING O3 outperforms Snapdragon 8 Elite Gen 5 (5.22mm AnTuTu vs 3.9-4mm), 25% lower power vs O1, 64% lower consumption; 3.13 TFLOPS vector + 200TOPS tensor; 40%/45% faster AI inference; first in Xiaomi 18 Fold (Sep 2026).",
+        "**Vertical Integration Catalyst**: XRING O100/D100 offers 1.22TB/s bandwidth (O100) and 200B-parameter LLM support locally (D100, 160GB memory); commercial deployment 2027 driving cost advantages via vertical integration.",
+        "**Strategic R&D Momentum**: Rmb200bn R&D (2026-30) + Rmb50bn XRING focus; Q3 2026 catalysts (SkyNomad EV, Mijia ALOt, XRING/HyperOS, Xiaomi 18, MiMo-V3 AI) enabling ecosystem leverage."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },
