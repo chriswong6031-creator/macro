@@ -18,6 +18,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "templates" / "portfolio_import.js"
+UI = ROOT / "templates" / "portfolio_import_ui.js"
 WATCHSTORE = ROOT / "templates" / "watchstore.js"
 HAS_NODE = shutil.which("node") is not None
 needs_node = pytest.mark.skipif(not HAS_NODE, reason="node not on PATH")
@@ -57,6 +58,62 @@ def _node(body: str, *, store: bool = False) -> dict:
     assert proc.returncode == 0, f"node failed:\nSTDERR:\n{proc.stderr}\nSTDOUT:\n{proc.stdout}"
     assert proc.stdout.strip(), f"node returned no receipt; stderr={proc.stderr}"
     return json.loads(proc.stdout)
+
+
+def _ui_node(body: str, *, lang: str = "en") -> dict:
+    source = UI.read_text(encoding="utf-8")
+    hook = r"""
+  window.__PFI_TEST__ = {
+    setDraft: function (rows) {
+      draft = { rows: JSON.parse(JSON.stringify(rows)), errors: [] };
+      editErrors = []; step = 'review'; saving = false; completed = false; hardBlocked = false;
+      render();
+    },
+    editRow: editRow,
+    removeRow: removeRow,
+    save: save,
+    state: function () {
+      return {
+        draft: JSON.parse(JSON.stringify(draft)), saving: saving,
+        completed: completed, hardBlocked: hardBlocked,
+        rowsHtml: el('pfi_rows').innerHTML,
+        status: el('pfi_status').textContent,
+        saveDisabled: !!el('pfi_save').disabled,
+        launchDisabled: !!el('pf_import').disabled
+      };
+    }
+  };
+"""
+    assert source.rstrip().endswith("})();")
+    instrumented = source.rstrip()[:-5] + hook + "})();"
+    setup = r"""
+var __elementIds = [
+  'dlg-import','pf_import','pfi_status','pfi_errors','pfi_paste_view','pfi_review_view',
+  'pfi_title','pfi_intro','pfi_grammar','pfi_paste','pfi_review','pfi_exact','pfi_back',
+  'pfi_rows','pfi_count','pfi_save'
+];
+function classList() {
+  var values={};
+  return {add:function(k){values[k]=true;},remove:function(k){delete values[k];},contains:function(k){return !!values[k];}};
+}
+var __elements={};
+__elementIds.forEach(function(id){
+  __elements[id]={id:id,style:{},className:'',textContent:'',innerHTML:'',placeholder:'',disabled:false,
+    classList:classList(),attributes:{},focus:function(){},querySelector:function(){return null;},
+    addEventListener:function(){},setAttribute:function(k,v){this.attributes[k]=String(v);},
+    getAttribute:function(k){return Object.prototype.hasOwnProperty.call(this.attributes,k)?this.attributes[k]:null;}};
+});
+global.document={
+  readyState:'loading',activeElement:null,
+  documentElement:{getAttribute:function(k){return k==='data-lang'?%s:null;},classList:classList()},
+  getElementById:function(id){return __elements[id]||null;},
+  addEventListener:function(){},dispatchEvent:function(){return true;}
+};
+window.document=global.document;
+global.setTimeout=function(){return 0;};
+eval(%s);
+""" % (json.dumps(lang), json.dumps(instrumented))
+    return _node(setup + "\n" + textwrap.dedent(body))
 
 
 IDS = [
@@ -190,6 +247,111 @@ def test_local_storage_throw_preserves_previous_book_byte_for_byte():
         store=True,
     )
     assert out == {"ok": False, "state": "local_write_failed", "unchanged": True}
+
+
+@needs_node
+def test_local_write_success_with_hostile_verify_mismatch_is_terminal_unknown_without_rollback():
+    out = _node(
+        """
+        var key='mdash.pf.v1';
+        var before=JSON.stringify({v:1,rows:[{id:'loc-old',ticker:'OLD',shares:1,entry_price:null,entry_date:null,notes:null,status:'open'}]});
+        __store[key]=before;
+        var wrote=false, actualGet=localStorage.getItem, actualSet=localStorage.setItem;
+        localStorage.setItem=function(k,v){ actualSet(k,v); if(k===key) wrote=true; };
+        localStorage.getItem=function(k){
+          if(k===key && wrote) return before;
+          return actualGet(k);
+        };
+        WS.portfolio.importBatch(%s).then(function(result){
+          OUT({ok:result.ok,state:result.state,effect:result.effect,retryable:result.retryable,
+               writeHappened:wrote,writes:__sets.length,storedChanged:__store[key]!==before});
+        });
+        """ % json.dumps(LOCAL_BATCH),
+        store=True,
+    )
+    assert out == {
+        "ok": False,
+        "state": "local_verify_failed",
+        "effect": "unknown",
+        "retryable": False,
+        "writeHappened": True,
+        "writes": 1,
+        "storedChanged": True,
+    }
+
+
+@needs_node
+def test_inflight_save_freezes_model_visible_draft_and_exact_payload():
+    out = _ui_node(
+        """
+        var rows=%s.map(function(row){return Object.assign({},row,{coverage:'covered',warnings:[]});});
+        var resolveSave, captured=null, editCalls=0, removeCalls=0;
+        var realEdit=PortfolioImport.edit, realRemove=PortfolioImport.remove;
+        PortfolioImport.edit=function(){editCalls++;return realEdit.apply(null,arguments);};
+        PortfolioImport.remove=function(){removeCalls++;return realRemove.apply(null,arguments);};
+        var pending=new Promise(function(resolve){resolveSave=resolve;});
+        window.WatchStore={portfolio:{importBatch:function(batch){captured=JSON.parse(JSON.stringify(batch));return pending;}}};
+        __PFI_TEST__.setDraft(rows);
+        var before=__PFI_TEST__.state();
+        __PFI_TEST__.save();
+        var locked=__PFI_TEST__.state();
+        var rowHost={getAttribute:function(){return rows[0].id;}};
+        __PFI_TEST__.editRow({value:'MSFT',closest:function(){return rowHost;},getAttribute:function(k){return k==='data-pfi-field'?'ticker':null;}});
+        __PFI_TEST__.removeRow(rows[0].id);
+        var attacked=__PFI_TEST__.state();
+        resolveSave({ok:true,state:'saved',rows:captured});
+        Promise.resolve().then(function(){return Promise.resolve();}).then(function(){
+          var done=__PFI_TEST__.state();
+          OUT({
+            inputsLocked:(locked.rowsHtml.match(/<input[^>]* disabled/g)||[]).length,
+            removesLocked:(locked.rowsHtml.match(/<button[^>]*data-pfi-remove[^>]* disabled/g)||[]).length,
+            modelFrozen:JSON.stringify(before.draft)===JSON.stringify(attacked.draft),
+            visibleFrozen:locked.rowsHtml===attacked.rowsHtml,
+            exactPayload:JSON.stringify(captured)===JSON.stringify(before.draft.rows),
+            editCalls:editCalls,removeCalls:removeCalls,
+            completed:done.completed,saveDisabled:done.saveDisabled,
+            finalVisibleFrozen:done.rowsHtml===locked.rowsHtml,status:done.status
+          });
+        });
+        """ % json.dumps(LOCAL_BATCH)
+    )
+    assert out == {
+        "inputsLocked": 8,
+        "removesLocked": 2,
+        "modelFrozen": True,
+        "visibleFrozen": True,
+        "exactPayload": True,
+        "editCalls": 0,
+        "removeCalls": 0,
+        "completed": True,
+        "saveDisabled": True,
+        "finalVisibleFrozen": True,
+        "status": "Saved. Refreshing your Portfolio…",
+    }
+
+
+@needs_node
+@pytest.mark.parametrize(
+    ("lang", "message"),
+    [
+        ("en", "This browser wrote the book, but could not verify the resulting Portfolio. Do not retry here. Reopen Portfolio and verify it before doing anything else."),
+        ("zh", "本浏览器已写入账簿，但无法核实保存后的持仓状态。请勿在此重试；先重新打开持仓并核对，再进行其他操作。"),
+    ],
+)
+def test_local_verify_failed_is_hard_blocked_with_honest_en_zh_copy(lang: str, message: str):
+    out = _ui_node(
+        """
+        var rows=%s.map(function(row){return Object.assign({},row,{coverage:'covered',warnings:[]});});
+        window.WatchStore={portfolio:{importBatch:function(){return Promise.resolve({ok:false,state:'local_verify_failed',effect:'unknown',retryable:false});}}};
+        __PFI_TEST__.setDraft(rows); __PFI_TEST__.save();
+        Promise.resolve().then(function(){return Promise.resolve();}).then(function(){OUT(__PFI_TEST__.state());});
+        """ % json.dumps(LOCAL_BATCH),
+        lang=lang,
+    )
+    assert out["hardBlocked"] is True
+    assert out["saveDisabled"] is True and out["launchDisabled"] is True
+    assert out["status"] == message
+    assert out["rowsHtml"].count('disabled aria-disabled="true"') == 10
 
 
 CLOUD_HELPER = r"""
@@ -395,7 +557,8 @@ def test_uuid_fold_preserves_two_exact_duplicate_lots_and_is_idempotent():
 def test_page_wires_pure_contract_before_store_and_ui_after_portfolio():
     page = (ROOT / "templates" / "watchlist.html.j2").read_text(encoding="utf-8")
     assert 'id="pf_import"' in page and 'id="dlg-import"' in page
-    assert 'src="watchstore.js?v=10"' in page and 'src="portfolio.js?v=10"' in page
+    assert 'src="watchstore.js?v=11"' in page and 'src="portfolio.js?v=10"' in page
+    assert 'src="portfolio_import_ui.js?v=2"' in page
     assert page.index('src="portfolio_import.js') < page.index('src="watchstore.js')
     assert page.index('src="portfolio.js') < page.index('src="portfolio_import_ui.js')
     ui = (ROOT / "templates" / "portfolio_import_ui.js").read_text(encoding="utf-8")

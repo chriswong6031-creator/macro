@@ -39,6 +39,7 @@
       rereadFailed: 'The write was acknowledged, but the authoritative Portfolio reread could not be proven. Verify Portfolio before retrying.',
       rejected: 'Nothing was saved. You can retry this same reviewed draft.',
       localFailed: 'This browser could not save the complete book. Your previous Portfolio is unchanged.',
+      localVerifyUnknown: 'This browser wrote the book, but could not verify the resulting Portfolio. Do not retry here. Reopen Portfolio and verify it before doing anything else.',
       unavailable: 'Portfolio is unavailable for writes right now. Nothing was saved.',
       failed: 'The batch was not confirmed. Nothing here will claim it was saved.'
     },
@@ -62,6 +63,7 @@
       rereadFailed: '写入已获确认，但无法证明权威持仓重读成功。重试前请先核对持仓。',
       rejected: '没有保存任何记录。你可以用同一份已核对草稿重试。',
       localFailed: '本浏览器无法保存完整账簿。原有持仓保持不变。',
+      localVerifyUnknown: '本浏览器已写入账簿，但无法核实保存后的持仓状态。请勿在此重试；先重新打开持仓并核对，再进行其他操作。',
       unavailable: '持仓目前不可写入。没有保存任何记录。',
       failed: '本批次未获确认。页面不会声称已经保存。'
     }
@@ -143,13 +145,14 @@
   }
   function reviewRow(row) {
     var c = row.coverage || 'unknown';
+    var locked = saving || completed || hardBlocked ? ' disabled aria-disabled="true"' : '';
     return '<div class="pfi-review-row" data-pfi-row="' + esc(row.id) + '">' +
-      '<label><span>' + esc(L('ticker')) + '</span><input class="wl-in" data-pfi-field="ticker" value="' + esc(row.ticker) + '"></label>' +
-      '<label><span>' + esc(L('shares')) + '</span><input class="wl-in fig" data-pfi-field="shares" inputmode="decimal" value="' + esc(row.shares == null ? '' : row.shares) + '"></label>' +
-      '<label><span>' + esc(L('price')) + '</span><input class="wl-in fig" data-pfi-field="entry_price" inputmode="decimal" value="' + esc(row.entry_price == null ? '' : row.entry_price) + '"></label>' +
-      '<label><span>' + esc(L('date')) + '</span><input class="wl-in fig" data-pfi-field="entry_date" type="date" value="' + esc(row.entry_date || '') + '"></label>' +
+      '<label><span>' + esc(L('ticker')) + '</span><input class="wl-in" data-pfi-field="ticker" value="' + esc(row.ticker) + '"' + locked + '></label>' +
+      '<label><span>' + esc(L('shares')) + '</span><input class="wl-in fig" data-pfi-field="shares" inputmode="decimal" value="' + esc(row.shares == null ? '' : row.shares) + '"' + locked + '></label>' +
+      '<label><span>' + esc(L('price')) + '</span><input class="wl-in fig" data-pfi-field="entry_price" inputmode="decimal" value="' + esc(row.entry_price == null ? '' : row.entry_price) + '"' + locked + '></label>' +
+      '<label><span>' + esc(L('date')) + '</span><input class="wl-in fig" data-pfi-field="entry_date" type="date" value="' + esc(row.entry_date || '') + '"' + locked + '></label>' +
       '<div class="pfi-row-meta"><span class="pfi-coverage is-' + esc(c) + '">' + esc(L(c)) + '</span>' + warningHtml(row) + '</div>' +
-      '<button class="gbtn gbtn-sm pfi-remove" type="button" data-pfi-remove="' + esc(row.id) + '">' + esc(L('remove')) + '</button>' +
+      '<button class="gbtn gbtn-sm pfi-remove" type="button" data-pfi-remove="' + esc(row.id) + '"' + locked + '>' + esc(L('remove')) + '</button>' +
       '</div>';
   }
   function render() {
@@ -195,6 +198,7 @@
   }
 
   function editRow(target) {
+    if (saving || completed || hardBlocked) return;
     var rowHost = target.closest('[data-pfi-row]');
     if (!rowHost || !api()) return;
     var patch = {}, field = target.getAttribute('data-pfi-field');
@@ -206,6 +210,7 @@
     render();
   }
   function removeRow(id) {
+    if (saving || completed || hardBlocked) return;
     if (!api()) return;
     draft.rows = api().remove(draft.rows, id).rows;
     editErrors = [];
@@ -220,22 +225,25 @@
     if (result.state === 'stale_auth') return L('authChanged');
     if (result.state === 'authoritative_reread_failed' || result.state === 'authoritative_reread_mismatch') return L('rereadFailed');
     if (result.state === 'rejected') return L('rejected');
-    if (result.state === 'local_write_failed' || result.state === 'local_verify_failed') return L('localFailed');
+    if (result.state === 'local_write_failed') return L('localFailed');
+    if (result.state === 'local_verify_failed') return L('localVerifyUnknown');
     if (result.state === 'unavailable') return L('unavailable');
     return L('failed');
   }
   function isTerminal(result) {
     return !result || ['effect_unknown', 'some', 'conflict', 'owner_conflict', 'ambiguous_receipt',
-      'stale_auth', 'authoritative_reread_failed', 'authoritative_reread_mismatch'].indexOf(result.state) >= 0;
+      'stale_auth', 'authoritative_reread_failed', 'authoritative_reread_mismatch',
+      'local_verify_failed'].indexOf(result.state) >= 0;
   }
   function save() {
     var contract = api(), persistence = store();
     if (saving || completed || hardBlocked || !contract || !persistence) return;
     var check = contract.validate(draft.rows);
     if (!check.ok || draft.errors.length || editErrors.length) { setStatus(L('invalidDraft'), 'bad'); render(); return; }
+    var frozenRows = draft.rows.map(function (row) { return Object.assign({}, row); });
     saving = true; setStatus('', ''); emit('saving'); render();
     var pending;
-    try { pending = persistence.importBatch(draft.rows); }
+    try { pending = persistence.importBatch(frozenRows); }
     catch (e) { pending = Promise.reject(e); }
     Promise.resolve(pending).then(function (result) {
       saving = false;

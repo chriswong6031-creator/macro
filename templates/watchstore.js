@@ -1024,7 +1024,9 @@
     var after = pfImportClassify(wanted, afterRows, null);
     return after.state === 'all'
       ? Promise.resolve(pfImportResult(true, 'saved', { authority: 'local', rows: wanted }))
-      : Promise.resolve(pfImportResult(false, 'local_verify_failed', { authority: 'local' }));
+      : Promise.resolve(pfImportResult(false, 'local_verify_failed', {
+        authority: 'local', effect: 'unknown', retryable: false
+      }));
   }
   // dedupe identity for the fold: ticker + entry_date + shares (spec §5.5)
   function pfKey(r) {
