@@ -76,6 +76,7 @@ _EXCLUDED_TEMPLATES = {
     "report_ai_master_plan.html.j2", "report_bessent_jun24.html.j2",
     "report_haven_audition.html.j2", "report_relapse_jul8.html.j2",
     "report_second_act.html.j2", "report_warsh_fomc.html.j2",
+    "report_price_of_duration.html.j2",
     # SEO estate family (site/tools/, site/learn/, site/blog/): these pages live
     # in SUBDIRECTORIES, and _seo_head.html.j2 is root-relative by contract
     # ("all pages that include this live at the site root" — canonical + favicon
