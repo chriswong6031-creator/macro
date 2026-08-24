@@ -293,14 +293,19 @@ sources, R-1 103/103 + 28/28, after fixing a bare-minus sign-drop.
      from its own row.
    - An own-row value whose Less:-children net to EXACTLY $0.00 with no
      printed net-memo row (P-1 p.230 line 22, E-7 — the only such case in
-     the document) publishes as an implicit-zero record rather than
-     refusing. Rationale: the exhibit omits zero net rows by convention, and
-     the printed BA total closes only with a zero contribution — the zero is
-     asserted by the printed arithmetic (gross + less cells), not
-     manufactured; publishing null would misdescribe a real full offset as
-     missing data. Test-pinned; must never generalize beyond the
-     exact shape (own value present AND Less children present AND algebraic
-     net exactly 0 AND no net-memo row).
+     the document) publishes as an ALL-NULL-amounts record (identity and
+     any printed quantities kept; no amounts). REVISED 2026-08-24 after
+     adversarial review: the earlier implicit-zero acceptance was
+     UNLAWFUL — $0 would be a computed sum of two printed rows, which
+     rule §5b.1(3) forbids verbatim, and §3 binds each semantic to a
+     printed column whose actual cell prints 200,000 (gross). NULL is the
+     honest "not printed at line grain" state; reconciliation still closes
+     because the line's true additive contribution is zero and None is
+     excluded from sums. Test-pinned on all four conjuncts (own value
+     present AND Less children with values AND algebraic net exactly 0 AND
+     no net-memo row) asserting NULLS — never 0.0, never a refusal, never
+     generalized. Both rationales (implicit-zero vs null) are presented to
+     Sol in the D6-A return for ratification.
 
 ## 6. Activation & publication
 
