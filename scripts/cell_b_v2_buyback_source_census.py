@@ -36,9 +36,8 @@ import pandas as pd
 import requests
 import yaml
 
-ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 
 from collectors.edgar_forensics import (  # noqa: E402
     SecForensicsCollector,
@@ -1309,12 +1308,12 @@ def render_report(manifest: Mapping[str, Any], manifest_file_sha256: str) -> str
 def _git_output(args: Sequence[str]) -> str:
     import subprocess
 
-    result = subprocess.run(["git", *args], cwd=ROOT, check=True, capture_output=True, text=True)
+    result = subprocess.run(["git", *args], cwd=_ROOT, check=True, capture_output=True, text=True)
     return result.stdout.strip()
 
 
 def _user_agent() -> str:
-    config = yaml.safe_load((ROOT / "config.yml").read_text(encoding="utf-8")) or {}
+    config = yaml.safe_load((_ROOT / "config.yml").read_text(encoding="utf-8")) or {}
     value = str(((config.get("edgar") or {}).get("user_agent") or "")).strip()
     if "@" not in value:
         raise CensusError("config.yml edgar.user_agent must identify an application and contact email")
@@ -1437,12 +1436,12 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--manifest",
         type=Path,
-        default=ROOT / "research/prophet_v4/flagship_cells/cell_b_v2_buyback_source_census_manifest.v2.json",
+        default=_ROOT / "research/prophet_v4/flagship_cells/cell_b_v2_buyback_source_census_manifest.v2.json",
     )
     parser.add_argument(
         "--report",
         type=Path,
-        default=ROOT / "research/prophet_v4/flagship_cells/CELL_B_V2_BUYBACK_SOURCE_CENSUS_2026-08-22.md",
+        default=_ROOT / "research/prophet_v4/flagship_cells/CELL_B_V2_BUYBACK_SOURCE_CENSUS_2026-08-22.md",
     )
     parser.add_argument("--repository", default="mastermindx-market-intelligence/macro")
     parser.add_argument("--base-commit", default=None)

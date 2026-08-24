@@ -12851,3 +12851,21 @@ jobs:
           tests/test_dislocation_p0_source_adapter.py
           tests/test_dislocation_p0_source_materializer.py
           -q
+
+  unrun-cell-b-v2-buyback-census:
+    # Owns scripts/cell_b_v2_buyback_source_census.py — the price-blind Cell B
+    # V2 buyback source-capacity census. Dedicated job because no existing
+    # cell-B/buyback owner exists on the pack runner.
+    if: ${{ false }}
+    gate: code
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: Cell B V2 buyback source-capacity census
+        run: python -m pytest tests/test_cell_b_v2_buyback_source_census.py -q
