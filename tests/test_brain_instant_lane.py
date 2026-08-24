@@ -30,6 +30,7 @@ import pytest
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 from engine.neuralweb import brain_gateway as gw  # noqa: E402
+from engine.neuralweb import native_facts as nf  # noqa: E402
 from scripts import brain_latency_bench as bench  # noqa: E402
 
 
@@ -286,27 +287,29 @@ def test_router_is_pure_and_never_raises_on_junk():
 
 def _chat(root, tmp_path, client, message="AAPL price", **kw):
     providers = [{"client": client, "model": "deepseek-v4-flash"}]
-    with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
-        with patch.object(gw, "_build_lane_providers", return_value=providers):
-            with patch.object(gw, "_resolve_tier", return_value={
-                    "tier": "pro", "status": "active", "current_period_end": None}):
-                with patch.object(gw, "_ensure_thread", return_value=None):
-                    with patch("lib.ai_costs.record_usage", return_value=True):
-                        return gw.chat(message, kw.pop("user_id", "u_instant"),
-                                       lane="fast", root=root, **kw)
+    with patch.object(gw._native_facts, "plan_native_facts", return_value=None):
+        with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+            with patch.object(gw, "_build_lane_providers", return_value=providers):
+                with patch.object(gw, "_resolve_tier", return_value={
+                        "tier": "pro", "status": "active", "current_period_end": None}):
+                    with patch.object(gw, "_ensure_thread", return_value=None):
+                        with patch("lib.ai_costs.record_usage", return_value=True):
+                            return gw.chat(message, kw.pop("user_id", "u_instant"),
+                                           lane="fast", root=root, **kw)
 
 
 def _stream(root, tmp_path, client, message="AAPL price", **kw):
     providers = [{"client": client, "model": "deepseek-v4-flash"}]
-    with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
-        with patch.object(gw, "_build_lane_providers", return_value=providers):
-            with patch.object(gw, "_resolve_tier", return_value={
-                    "tier": "pro", "status": "active", "current_period_end": None}):
-                with patch.object(gw, "_ensure_thread", return_value=None):
-                    with patch("lib.ai_costs.record_usage", return_value=True):
-                        return list(gw.chat_stream(
-                            message, kw.pop("user_id", "u_instant_s"),
-                            lane="fast", root=root, **kw))
+    with patch.object(gw._native_facts, "plan_native_facts", return_value=None):
+        with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+            with patch.object(gw, "_build_lane_providers", return_value=providers):
+                with patch.object(gw, "_resolve_tier", return_value={
+                        "tier": "pro", "status": "active", "current_period_end": None}):
+                    with patch.object(gw, "_ensure_thread", return_value=None):
+                        with patch("lib.ai_costs.record_usage", return_value=True):
+                            return list(gw.chat_stream(
+                                message, kw.pop("user_id", "u_instant_s"),
+                                lane="fast", root=root, **kw))
 
 
 def test_instant_chat_returns_route_instant_and_a_latency_record(tmp_path):
@@ -676,6 +679,442 @@ def test_bench_docket_prompts_are_the_three_classes_plus_the_instant_probe():
     assert gw._instant_route(prompts["native"], None) is None
 
 
+def test_w0b_legacy_specs_keep_labels_text_hashes_and_ambient_metadata():
+    specs = bench._legacy_prompt_specs(page="terminal", symbol="AAOI")
+    assert [s["label"] for s in specs] == ["broad", "native", "simple", "instant"]
+    assert [s["prompt_id"] for s in specs] == [
+        "legacy.broad.v1", "legacy.native.v1", "legacy.simple.v1", "legacy.instant.v1",
+    ]
+    assert all(len(s["prompt_text_hash"]) == 64 for s in specs)
+    assert all(s["ambient_context"] == {"page": "terminal", "symbol": "AAOI"}
+               for s in specs)
+    assert specs[1]["prompt_class"] == "native-multi-field"
+
+
+def test_w0b_private_manifest_binds_collision_context_and_hash(tmp_path):
+    fixture_text = "fixture-only collision input"
+    manifest = {
+        "schema": bench.W0B_MANIFEST_SCHEMA,
+        "version": bench.W0B_CORPUS_VERSION,
+        "prompts": [{
+            "prompt_id": "w0b.context-collision.v1",
+            "prompt_class": "context-collision",
+            "prompt_text": fixture_text,
+            "prompt_text_hash": bench._sha256_text(fixture_text),
+            "explicit_context": {"entity": "INOD"},
+            "ambient_context": {"symbol": "AAOI"},
+            "expected_effective_entity": "INOD",
+            "expected_precedence_reason": "explicit_request",
+        }],
+    }
+    path = tmp_path / "private-manifest.json"
+    path.write_text(json.dumps(manifest), encoding="utf-8")
+    version, specs = bench.load_private_manifest(str(path))
+    assert version == "w0b.v1"
+    assert specs[0]["prompt_text_hash"] == bench._sha256_text(fixture_text)
+    assert specs[0]["explicit_context"] == {"entity": "INOD"}
+    assert specs[0]["ambient_context"] == {"symbol": "AAOI"}
+    assert specs[0]["expected_effective_entity"] == "INOD"
+    assert specs[0]["expected_precedence_reason"] == "explicit_request"
+
+
+def test_w0b_private_manifest_rejects_hash_drift_and_incomplete_collision(tmp_path):
+    manifest = {
+        "schema": bench.W0B_MANIFEST_SCHEMA,
+        "version": "w0b.v1",
+        "prompts": [{
+            "prompt_id": "w0b.context-collision.v1",
+            "prompt_class": "context-collision",
+            "prompt_text": "fixture-only input",
+            "prompt_text_hash": "0" * 64,
+            "explicit_context": {},
+            "ambient_context": {"symbol": "AAOI"},
+        }],
+    }
+    path = tmp_path / "bad-private-manifest.json"
+    path.write_text(json.dumps(manifest), encoding="utf-8")
+    with pytest.raises(ValueError, match="hash mismatch"):
+        bench.load_private_manifest(str(path))
+
+
+def test_w0b_receipt_is_complete_text_free_and_uses_first_delta_for_ttfv():
+    times = iter([1.0, 2.0, 3.0])
+    lines = [
+        'data: {"type":"status"}\n', "\n",
+        'data: {"type":"delta","text":"visible"}\n', "\n",
+        'data: {"type":"done","route":"deep","usage":{"latency":{"rounds":['
+        '{"tools":[{"ms":17}]}]}}}\n', "\n",
+    ]
+    row = bench.summarize(bench.read_events(lines, clock=lambda: next(times)), 0.0, 9)
+    spec = {
+        "prompt_id": "w0b.context-collision.v1",
+        "prompt_version": "w0b.v1",
+        "prompt_class": "context-collision",
+        "prompt_text_hash": "a" * 64,
+        "message": "fixture-only text that must not enter receipt",
+        "explicit_context": {"entity": "INOD"},
+        "ambient_context": {"symbol": "AAOI"},
+        "expected_effective_entity": "INOD",
+        "expected_precedence_reason": "explicit_request",
+    }
+    receipt = bench.build_receipt_row(
+        row, spec, run=1, lane="fast", system="mastermind", environment="production",
+        cache_label="cold", cache_basis="verified_restart", health={
+            "commit": "a" * 12, "checkout": "b" * 12, "error": None,
+        }, reviewer="reviewer-v1", rubric_version="rubric.v1",
+    )
+    assert bench.RECEIPT_REQUIRED_FIELDS <= set(receipt)
+    assert receipt["ttfv_ms"] == 2000, "status is not visible answer content"
+    assert receipt["first_status_ms"] == 1000
+    assert receipt["output_bytes"] == len("visible".encode("utf-8"))
+    assert receipt["server_tool_count"] == 1
+    assert receipt["server_tool_durations_ms"] == [17]
+    serialized = json.dumps(receipt)
+    assert "fixture-only text" not in serialized
+    assert "message" not in receipt
+
+
+def test_w0b_health_capture_and_private_raw_answer_boundary(tmp_path, monkeypatch):
+    class _HealthResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def read(self):
+            return b'{"commit":"aaaaaaaaaaaa","checkout":"bbbbbbbbbbbb"}'
+
+    monkeypatch.setattr(bench.urllib.request, "urlopen", lambda *args, **kwargs: _HealthResponse())
+    assert bench.capture_health("https://example.test/api/health") == {
+        "commit": "a" * 12, "checkout": "b" * 12, "error": None,
+    }
+    with pytest.raises(ValueError, match="outside the repository"):
+        bench._assert_private_output_path(
+            str(pathlib.Path(bench.__file__).resolve().parent.parent / "site" / "raw.jsonl"))
+    assert bench._assert_private_output_path(str(tmp_path / "raw.jsonl")) == (tmp_path / "raw.jsonl")
+
+
+def test_w0b_context_and_base_url_receipts_strip_private_shapes():
+    with pytest.raises(ValueError, match="credentials or account identifiers"):
+        bench._safe_context_metadata({"access_token": "fixture-only"})
+    with pytest.raises(ValueError, match="public ticker identity"):
+        bench._safe_context_metadata({"symbol": "/Users/private/secret"})
+    with pytest.raises(ValueError, match="not allowed"):
+        bench._safe_context_metadata({"note": "Bearer supersecret"})
+    assert bench._safe_context_metadata({
+        "entity": "AAPL", "entities": ["AAPL", "MSFT"],
+        "page": "terminal", "symbol": "AAOI",
+    }) == {
+        "entity": "AAPL", "entities": ["AAPL", "MSFT"],
+        "page": "terminal", "symbol": "AAOI",
+    }
+    assert bench._safe_base_url("https://user:pass@example.test/path?token=fixture#frag") == \
+        "https://example.test/path"
+
+
+def test_w0b_native_timing_projection_preserves_route_and_measured_float_stages():
+    timing = bench._safe_server_timing({
+        "route": "instant/native-fact",
+        "ttfv_ms": 411,
+        "total_ms": 430,
+        "route_decision_ms": 0.125,
+        "context_assembly_ms": 188.75,
+        "registry_context_assembly_ms": 188.75,
+        "render_ms": 0.031,
+        "rounds": [],
+    })
+    assert timing == {
+        "route": "instant/native-fact",
+        "ttfv_ms": 411,
+        "synthesis_ms": None,
+        "total_ms": 430,
+        "rounds": [],
+        "route_decision_ms": 0.125,
+        "context_assembly_ms": 188.75,
+        "registry_context_assembly_ms": 188.75,
+        "resolver_ms": None,
+        "render_ms": 0.031,
+    }
+
+
+def test_w0b_context_collision_compares_expected_entity_to_sanitized_actual_receipt():
+    fingerprint = "a" * 64
+    native_receipt = {
+        "schema": "brain.native_fact_receipt.v1",
+        "route": "instant/native-fact",
+        "planner_version": "w1b.native_fact_planner.v1",
+        "registry_digest": "d" * 64,
+        "canonical_entity": {"type": "security", "id": "SEC:US-XNAS-AAOI"},
+        "effective_context": {
+            "symbol": "AAOI", "precedence_reason": "ambient_context",
+            "ambient_used": True,
+        },
+        "facts": [{
+            "clause_id": "c1", "display_order": 0, "field_id": "stage.current",
+            "fact_fingerprint": fingerprint, "status": "available", "reason_code": None,
+            "unit": "stage_code", "source": {"source_id": "stage_analysis.screener"},
+            "as_of": "2026-08-23", "freshness": {"state": "fresh"},
+        }],
+        "clauses": [{
+            "clause_id": "c1", "display_order": 0, "field_id": "stage.current",
+            "fact_fingerprint": fingerprint, "status": "available",
+            "receipt_kind": "typed_fact",
+        }],
+    }
+    done = {
+        "type": "done", "route": "instant/native-fact", "degraded": False,
+        "usage": {"latency": {
+            "route": "instant/native-fact", "ttfv_ms": 1, "total_ms": 2,
+        }},
+        "native_fact_receipt": native_receipt,
+    }
+    lines = [
+        'data: {"type":"delta","text":"fixture visible"}\n', "\n",
+        "data: " + json.dumps(done) + "\n", "\n",
+    ]
+    row = bench.summarize(bench.read_events(lines, clock=_fake_clock()), 0.0, 1)
+    spec = {
+        "prompt_id": "w0b.context-collision.v1",
+        "prompt_version": "w0b.v1",
+        "prompt_class": "context-collision",
+        "prompt_text_hash": "a" * 64,
+        "explicit_context": {"entity": "INOD"},
+        "ambient_context": {"symbol": "AAOI"},
+        "expected_effective_entity": "INOD",
+        "expected_precedence_reason": "explicit_entity_wins",
+    }
+    receipt = bench.build_receipt_row(
+        row, spec, run=1, lane="fast", system="mastermind", environment="production",
+        cache_label="warm", cache_basis="natural_running_service",
+        health={"commit": "a" * 12, "checkout": "b" * 12, "error": None},
+        reviewer="fixture", rubric_version="rubric.v1",
+    )
+    assert receipt["actual_effective_entity"] == "AAOI"
+    assert receipt["actual_precedence_reason"] == "ambient_context"
+    assert receipt["precedence_match"] is False
+    assert "fixture visible" not in json.dumps(receipt)
+
+
+def test_w0b_p95_is_nearest_rank_and_never_printed_for_one_observation(capsys):
+    assert bench._nearest_rank_percentile(list(range(1, 21)), 0.95) == 19
+    bench.print_p95([{"probe": "single", "ttfv_ms": 1, "done_ms": 2,
+                      "headers_ms": 1}])
+    assert capsys.readouterr().out == ""
+
+
+def test_w0b_scorecard_binds_every_private_receipt_exactly_once(tmp_path):
+    receipts = [
+        {"schema": bench.AI_BENCHMARK_RECEIPT_SCHEMA, "prompt_id": "p1", "run": 1},
+        {"schema": bench.AI_BENCHMARK_RECEIPT_SCHEMA, "prompt_id": "p2", "run": 1},
+    ]
+    score_rows = []
+    for prompt_id in ("p1", "p2"):
+        score_rows.append({
+            "prompt_id": prompt_id,
+            "run": 1,
+            "field_correctness": 1,
+            "numeric_correctness": 1,
+            "source_span_correctness": 1,
+            "source_as_of_correctness": 1,
+            "unsupported_claim_count": 0,
+            "missingness_honesty": 1,
+        })
+    source = tmp_path / "receipt.jsonl"
+    scorecard = tmp_path / "scorecard.json"
+    target = tmp_path / "scored.jsonl"
+    source.write_text("".join(json.dumps(row) + "\n" for row in receipts), encoding="utf-8")
+    scorecard.write_text(json.dumps({
+        "schema": bench.AI_BENCHMARK_SCORECARD_SCHEMA,
+        "rubric_version": "rubric.v1",
+        "reviewer": "fixture-reviewer",
+        "scores": score_rows,
+    }), encoding="utf-8")
+    assert bench.score_receipt_file(str(source), str(scorecard), str(target)) == 0
+    scored = [json.loads(line) for line in target.read_text(encoding="utf-8").splitlines()]
+    assert [row["prompt_id"] for row in scored] == ["p1", "p2"]
+    assert all(row["reviewer"] == "fixture-reviewer" for row in scored)
+    assert target.stat().st_mode & 0o777 == 0o600
+    with pytest.raises(ValueError, match="exactly match"):
+        bench.apply_scorecard(receipts[:1], bench.load_scorecard(str(scorecard)))
+
+
+def test_w0b_private_output_is_owner_only_and_refuses_symlink(tmp_path):
+    target = tmp_path / "private.jsonl"
+    bench.append_jsonl(target, [{"safe": True}])
+    assert target.stat().st_mode & 0o777 == 0o600
+    link = tmp_path / "link.jsonl"
+    link.symlink_to(target)
+    with pytest.raises(OSError):
+        bench.append_jsonl(link, [{"must_not_land": True}])
+    assert "must_not_land" not in target.read_text(encoding="utf-8")
+
+
+def test_w0b_cli_raw_and_scored_outputs_refuse_dangling_symlinks(tmp_path, monkeypatch):
+    raw_target = tmp_path / "raw-target.jsonl"
+    raw_link = tmp_path / "raw-link.jsonl"
+    raw_link.symlink_to(raw_target)
+    monkeypatch.setattr(bench, "probe", lambda *args, **kwargs: {
+        "headers_ms": 1, "first_status_ms": 2, "ttfv_ms": 3, "done_ms": 4,
+        "n_deltas": 1, "n_tool_events": 0, "route": "instant",
+        "server_latency": None, "answer_chars": 7, "output_bytes": 7,
+        "degraded": False, "error": None, "_raw_answer": "private fixture",
+    })
+    monkeypatch.setattr(bench, "print_table", lambda rows: None)
+    monkeypatch.setattr(bench, "print_medians", lambda rows: None)
+    monkeypatch.setattr(bench, "print_p95", lambda rows: None)
+    assert bench.main([
+        "--only", "instant", "--raw-answer-out", str(raw_link),
+    ]) == 1
+    assert raw_link.is_symlink()
+    assert not raw_target.exists()
+
+    receipt = {
+        "schema": bench.AI_BENCHMARK_RECEIPT_SCHEMA,
+        "prompt_id": "p1",
+        "run": 1,
+    }
+    source = tmp_path / "receipt.jsonl"
+    source.write_text(json.dumps(receipt) + "\n", encoding="utf-8")
+    scorecard = tmp_path / "scorecard.json"
+    scorecard.write_text(json.dumps({
+        "schema": bench.AI_BENCHMARK_SCORECARD_SCHEMA,
+        "rubric_version": "rubric.v1",
+        "reviewer": "fixture-reviewer",
+        "scores": [{
+            "prompt_id": "p1", "run": 1, "field_correctness": 1,
+            "numeric_correctness": 1, "source_span_correctness": 1,
+            "source_as_of_correctness": 1, "unsupported_claim_count": 0,
+            "missingness_honesty": 1,
+        }],
+    }), encoding="utf-8")
+    scored_target = tmp_path / "scored-target.jsonl"
+    scored_link = tmp_path / "scored-link.jsonl"
+    scored_link.symlink_to(scored_target)
+    assert bench.score_receipt_file(str(source), str(scorecard), str(scored_link)) == 2
+    assert scored_link.is_symlink()
+    assert not scored_target.exists()
+
+
+def test_w0b_native_receipt_projection_rejects_path_like_or_extra_proof_metadata():
+    hostile = {
+        "schema": "brain.native_fact_receipt.v1",
+        "route": "instant/native-fact",
+        "planner_version": "w1b.native_fact_planner.v1",
+        "registry_digest": "/Users/private/secret",
+        "canonical_entity": {
+            "type": "security", "id": "SEC:US-XNAS-AAPL",
+            "owner_artifact": "/Users/private/path",
+        },
+        "effective_context": {
+            "symbol": "AAPL", "precedence_reason": "explicit_request",
+            "ambient_used": False,
+        },
+        "facts": [{
+            "clause_id": "c1", "display_order": 0,
+            "field_id": "stage.current", "fact_fingerprint": "a" * 64,
+            "status": "available", "reason_code": None, "unit": "stage_code",
+            "source": {"source_id": "/Users/private/source"},
+            "as_of": "2026-08-23", "freshness": {"state": "fresh"},
+        }],
+        "clauses": [],
+    }
+    assert bench._safe_native_fact_receipt(hostile) is None
+
+    safe = dict(hostile)
+    safe["registry_digest"] = "b" * 64
+    safe["facts"] = [{
+        "clause_id": "c1", "display_order": 0,
+        "field_id": "stage.current", "fact_fingerprint": "a" * 64,
+        "status": "available", "reason_code": None, "unit": "stage_code",
+        "source": {"source_id": "stage_analysis.screener"},
+        "as_of": "2026-08-23", "freshness": {"state": "fresh"},
+    }]
+    safe["clauses"] = [{
+        "clause_id": "c1", "display_order": 0,
+        "field_id": "stage.current", "fact_fingerprint": "a" * 64,
+        "status": "available", "receipt_kind": "typed_fact",
+    }]
+    projected = bench._safe_native_fact_receipt(safe)
+    assert projected is not None
+    assert projected["canonical_entity"] == {
+        "type": "security", "id": "SEC:US-XNAS-AAPL",
+    }
+    assert "/Users" not in json.dumps(projected)
+
+
+def test_w0b_native_route_with_malformed_proof_fails_the_run(tmp_path, monkeypatch):
+    lines = [
+        'data: {"type":"delta","text":"fixture visible"}\n', "\n",
+        'data: {"type":"done","route":"instant/native-fact","degraded":false,'
+        '"usage":{"latency":{"route":"instant/native-fact","ttfv_ms":1,"total_ms":2}},'
+        '"native_fact_receipt":{"schema":"brain.native_fact_receipt.v1",'
+        '"route":"instant/native-fact","planner_version":"w1b.native_fact_planner.v1",'
+        '"registry_digest":"/Users/private/secret","effective_context":'
+        '{"symbol":"AAPL","precedence_reason":"explicit_request",'
+        '"ambient_used":false},"facts":[],"clauses":[]}}\n',
+        "\n",
+    ]
+    row = bench.summarize(bench.read_events(lines, clock=_fake_clock()), 0.0, 1)
+    assert row["route"] == "instant/native-fact"
+    assert row["native_fact_receipt"] is None
+    assert row["degraded"] is True
+    assert row["error"] == "native route omitted or malformed proof receipt"
+
+    monkeypatch.setattr(bench, "probe", lambda *args, **kwargs: dict(row))
+    monkeypatch.setattr(bench, "print_table", lambda rows: None)
+    monkeypatch.setattr(bench, "print_medians", lambda rows: None)
+    monkeypatch.setattr(bench, "print_p95", lambda rows: None)
+    assert bench.main(["--only", "instant", "--out", str(tmp_path / "receipt.jsonl")]) == 1
+
+    proofless = {
+        "schema": "brain.native_fact_receipt.v1",
+        "route": "instant/native-fact",
+        "planner_version": "w1b.native_fact_planner.v1",
+        "effective_context": {
+            "symbol": "AAPL", "precedence_reason": "explicit_request",
+            "ambient_used": False,
+        },
+        "facts": [], "clauses": [],
+    }
+    proofless_done = {
+        "type": "done", "route": "instant/native-fact", "degraded": False,
+        "usage": {"latency": {"route": "instant/native-fact"}},
+        "native_fact_receipt": proofless,
+    }
+    proofless_row = bench.summarize(bench.read_events([
+        'data: {"type":"delta","text":"fabricated native prose"}\n', "\n",
+        "data: " + json.dumps(proofless_done) + "\n", "\n",
+    ], clock=_fake_clock()), 0.0, 1)
+    assert proofless_row["native_fact_receipt"] is None
+    assert proofless_row["error"] == "native route omitted or malformed proof receipt"
+
+
+def test_w0b_legacy_main_stays_selectable_and_writes_a_text_free_receipt(tmp_path, monkeypatch):
+    captured: list[dict] = []
+
+    def _probe(*args, **kwargs):
+        return {
+            "headers_ms": 1, "first_status_ms": 2, "ttfv_ms": 3, "done_ms": 4,
+            "n_deltas": 1, "n_tool_events": 0, "route": "instant",
+            "server_latency": None, "answer_chars": 7, "output_bytes": 7,
+            "degraded": False, "error": None,
+        }
+
+    monkeypatch.setattr(bench, "probe", _probe)
+    monkeypatch.setattr(bench, "print_table", lambda rows: None)
+    monkeypatch.setattr(bench, "print_medians", lambda rows: None)
+    monkeypatch.setattr(bench, "append_jsonl", lambda path, rows: captured.extend(rows))
+    assert bench.main(["--only", "instant", "--cookie", "fixture", "--out",
+                       str(tmp_path / "receipt.jsonl")]) == 0
+    assert len(captured) == 1
+    receipt = captured[0]
+    assert receipt["probe"] == "instant"
+    assert receipt["prompt_id"] == "legacy.instant.v1"
+    assert receipt["schema"] == "ai_benchmark_receipt.v1"
+    assert "message" not in receipt
+
+
 # ---------------------------------------------------------------------------
 # W5.1 — the site_quotes reader carries the plane's timestamp through
 # ---------------------------------------------------------------------------
@@ -717,3 +1156,605 @@ def test_site_quotes_reader_still_returns_dateless_when_no_timestamp_exists(tmp_
     root = _quotes_root(tmp_path, {"SPY": {"price": 739.09}})
     q = gw._tool_get_quote({"symbol": "SPY"}, tmp_path / "absent", "", root)
     assert q.get("as_of") is None, "no timestamp may be invented"
+
+
+# ---------------------------------------------------------------------------
+# W1-B — deterministic W1-A native fact planner/executor
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(("message", "expected"), [
+    ("AAPL price", ("market.price.last",)),
+    ("AAPL Stage", ("stage.current",)),
+    ("AAPL weeks in Stage", ("stage.weeks_in_stage",)),
+    ("AAPL 1m, 3m and 12m return", (
+        "market.return.1m", "market.return.3m", "market.return.12m")),
+    ("AAPL industry rank", ("industry.rank.percentile",)),
+    ("AAPL within-industry member RS percentile", (
+        "security.industry_member.rs_percentile",)),
+    ("AAPL next earnings date", ("earnings.next_date",)),
+    ("AAPL latest EPS growth", ("earnings.latest.eps_growth_pct",)),
+    ("AAPL latest revenue growth", ("earnings.latest.revenue_growth_pct",)),
+    ("AAPL direct local theme memberships", ("theme.local.memberships",)),
+])
+def test_w1b_native_planner_maps_only_exact_frozen_fields(message, expected):
+    plan = nf.plan_native_facts(message)
+    assert plan is not None
+    assert plan.field_ids == expected
+    assert set(plan.field_ids) <= nf.ALLOWED_FIELD_IDS
+
+
+def test_w1b_native_planner_preserves_multi_field_order_and_explicit_precedence():
+    plan = nf.plan_native_facts(
+        "Give me INOD's 1m, 3m and 12m return, Stage, industry rank and latest EPS growth.",
+        {"symbol": "AAOI"},
+    )
+    assert plan is not None
+    assert plan.symbol == "INOD"
+    assert plan.explicit_entity is True
+    assert plan.effective_context_reason == "explicit_entity_wins"
+    assert plan.field_ids == (
+        "market.return.1m", "market.return.3m", "market.return.12m", "stage.current",
+        "industry.rank.percentile", "earnings.latest.eps_growth_pct",
+    )
+
+
+@pytest.mark.parametrize("symbol", [
+    "IT", "ARE", "AS", "AT", "BE", "AN", "ME", "A", "FOR", "NOW", "NEXT", "YOU",
+    "ONE", "IS",
+])
+def test_w1b_native_planner_grammar_collision_symbol_never_yields_to_ambient(symbol):
+    plan = nf.plan_native_facts(f"{symbol} price", {"symbol": "AAPL"})
+    assert plan is not None
+    assert plan.symbol == symbol
+    assert plan.explicit_entity is True
+    assert plan.effective_context_reason == "explicit_entity_wins"
+
+
+def test_w1b_native_planner_accepts_grammar_collision_in_structured_ambient_context():
+    plan = nf.plan_native_facts("price", {"symbol": "IT"})
+    assert plan is not None
+    assert plan.symbol == "IT"
+    assert plan.explicit_entity is False
+    assert plan.effective_context_reason == "ambient_context"
+
+
+@pytest.mark.parametrize("message", [
+    "IT and price",
+    "Give me IT and price",
+    "IT and Stage",
+    "Give me ARE and price",
+    "A and price",
+    "How much is IT",
+    "How much is A",
+    "How much is ARE",
+    "What is IT trading at",
+    "What Stage is IT",
+    "What Stage is IT in",
+])
+def test_w1b_native_planner_ambiguous_uppercase_collision_vetoes_ambient(message):
+    assert nf.plan_native_facts(message, {"symbol": "AAPL"}) is None
+
+
+def test_w1b_native_planner_dollar_collision_symbol_is_unambiguously_explicit():
+    plan = nf.plan_native_facts("$IT and price", {"symbol": "AAPL"})
+    assert plan is not None
+    assert plan.symbol == "IT"
+    assert plan.effective_context_reason == "explicit_entity_wins"
+
+
+def test_w1b_native_planner_dollar_symbol_overrides_request_grammar_collision():
+    plan = nf.plan_native_facts("$WHAT price", {"symbol": "AAPL"})
+    assert plan is not None
+    assert plan.symbol == "WHAT"
+    assert plan.effective_context_reason == "explicit_entity_wins"
+
+
+@pytest.mark.parametrize(("message", "fields"), [
+    ("PRICE AND STAGE", ("market.price.last", "stage.current")),
+    ("PRICE WITH STAGE", ("market.price.last", "stage.current")),
+    ("PRICE AND INDUSTRY RANK", ("market.price.last", "industry.rank.percentile")),
+])
+def test_w1b_native_planner_all_caps_grammar_cannot_hijack_ambient(message, fields):
+    plan = nf.plan_native_facts(message, {"symbol": "AAPL"})
+    assert plan is not None
+    assert plan.symbol == "AAPL"
+    assert plan.explicit_entity is False
+    assert plan.field_ids == fields
+
+
+@pytest.mark.parametrize("message", ["THE STAGE", "WHAT STAGE", "SHOW STAGE", "GIVE ME PRICE"])
+def test_w1b_native_planner_all_caps_ambiguous_request_prose_goes_deep(message):
+    assert nf.plan_native_facts(message, {"symbol": "AAPL"}) is None
+
+
+@pytest.mark.parametrize("message", [
+    "why is AAPL down", "AAPL price target", "should I buy AAPL", "forecast AAPL Stage",
+    "compare AAPL and MSFT price", "AAPL vs MSFT", "AAPL price last month", "AAPL RS",
+    "0700.HK price", "SSE:600036 price",
+])
+def test_w1b_native_planner_falls_through_for_ambiguous_analytical_history_or_non_us(message):
+    assert nf.plan_native_facts(message, {"symbol": "AAOI"}) is None
+
+
+@pytest.mark.parametrize("message", [
+    "AAPL price yesterday",
+    "AAPL Stage in 2024",
+    "Give AAPL price and volume",
+    "AAPL price and market capitalization",
+    "AAPL price and EPS",
+    "AAPL returns and Stage",
+    "AAPL one month return and Stage",
+    "AAPL Stage and weeks",
+    "AAPL price and theme",
+    "AAPL price and growth",
+    "AAPL price and memberships",
+    "AAPL price and strength",
+    "AAPL price and member",
+    "AAPL price over one year",
+    "AAPL Stage over one year",
+    "AAPL price for the month",
+    "AAPL price one month",
+    "AAPL price over one month",
+    "AAPL price over the year",
+    "AAPL price for one year",
+])
+def test_w1b_native_planner_rejects_historical_or_unsupported_composite_residue(message):
+    assert nf.plan_native_facts(message) is None
+
+
+def test_w1b_native_planner_supports_complete_hyphenated_return_clause():
+    plan = nf.plan_native_facts("AAPL 3-month return and Stage")
+    assert plan is not None
+    assert plan.field_ids == ("market.return.3m", "stage.current")
+
+
+@pytest.mark.parametrize(
+    "message",
+    [
+        "1m return and one year return",
+        "1m return for one year",
+        "1m and 3m return over one year",
+        "3-month return over the year",
+        "AAPL 1m return and one year return",
+        "AAPL 1m return for one year",
+        "AAPL 1m and 3m return over one year",
+        "AAPL 3-month return over the year",
+    ],
+)
+def test_w1b_native_planner_rejects_mixed_registered_and_unbounded_return_horizons(message):
+    assert nf.plan_native_facts(message, context={"symbol": "AAPL"}) is None
+
+
+@pytest.mark.parametrize("unsupported", ["beta", "high", "open", "PE", "yield", "float"])
+def test_w1b_native_planner_does_not_let_unsupported_field_hijack_ambient_entity(unsupported):
+    assert nf.plan_native_facts(
+        f"price and {unsupported}", {"symbol": "AAPL"}
+    ) is None
+
+
+@pytest.mark.parametrize(
+    "unsupported", ["RSI", "MACD", "VWAP", "ATR", "LOW", "CLOSE", "DEBT", "CASH", "FCF", "ROE"],
+)
+def test_w1b_native_planner_request_prefix_does_not_turn_unknown_metric_into_ticker(unsupported):
+    assert nf.plan_native_facts(
+        f"Give me {unsupported} and price", {"symbol": "AAPL"}
+    ) is None
+
+
+class _NativeIdentity:
+    def normalize_many(self, entities):
+        entity = entities[0]
+        if entity.symbol == "ZZZZZ":
+            raise ValueError("unknown identity")
+        if entity.type == "security":
+            from engine.intelligence_workspace.contracts import CanonicalEntity
+            return (CanonicalEntity("security", "SEC:US-XNAS-" + (entity.symbol or "AAPL"), "us_equity"),)
+        from engine.intelligence_workspace.contracts import CanonicalEntity
+        return (CanonicalEntity("industry", entity.id, "us_industry"),)
+
+
+def _native_envelope(field_id, entity, *, value=2, status="available", reason=None, unit="percent"):
+    if status != "available":
+        value = None
+        reason = reason or ("rights_blocked" if status == "rights_blocked" else "owner_missing")
+    return {
+        "schema": "datapoint_value.v1", "registry_digest": "registry-digest", "field_id": field_id,
+        "entity": entity, "value": value, "status": status, "reason_code": reason, "unit": unit,
+        "observed_at": "2026-08-23", "effective_at": "2026-08-23", "as_of": "2026-08-23",
+        "freshness": {"state": "stale" if status == "stale" else "fresh", "policy": "owner_native"},
+        "quality": {"state": "ok", "issues": []},
+        "source": {"source_id": "owner." + field_id, "owner": "owner", "license_class": "internal"},
+        "provenance": {"kind": "owner_derived", "owner_field_key": field_id, "basis": "owner"},
+        "audience": "subscriber", "consumer_uses": ["ai_fact"],
+        "fact_fingerprint": "fp-" + field_id,
+    }
+
+
+class _NativeRuntime:
+    class _Registry:
+        digest = "registry-digest"
+
+    registry = _Registry()
+
+    def __init__(self, statuses=None, *, relationship=None, rank_raises=False):
+        self.identity_normalizer = _NativeIdentity()
+        self.calls = []
+        self.statuses = statuses or {}
+        self.relationship = relationship or _native_relationship()
+        self.rank_raises = rank_raises
+
+    def resolve_current_industry_relationship(self, entity):
+        return self.relationship
+
+    def resolve(self, request):
+        self.calls.append(request)
+        entity = request.entities[0]
+        if entity.type == "industry" and self.rank_raises:
+            raise RuntimeError("fixture industry resolver unavailable")
+        canonical = {"type": entity.type, "id": entity.id or "SEC:US-XNAS-AAPL"}
+        return tuple(
+            _native_envelope(
+                field_id, canonical, value=87.7 if field_id == "industry.rank.percentile" else 2,
+                status=self.statuses.get(field_id, "available"),
+                unit="stage_code" if field_id == "stage.current" else "percent",
+            )
+            for field_id in request.field_ids
+        )
+
+
+def _native_relationship(*, status="available", reason=None):
+    available = status == "available"
+    return {
+        "schema": "intelligence_workspace.current_industry_relationship.v1",
+        "registry_digest": "registry-digest",
+        "relationship": "security.current_industry",
+        "from": {"type": "security", "id": "SEC:US-XNAS-AAPL"},
+        "to": (
+            {"type": "industry", "id": "Technology Hardware", "universe": "us_industry"}
+            if available else None
+        ),
+        "status": status,
+        "reason_code": reason,
+        "observed_at": "2026-08-23",
+        "effective_at": "2026-08-23",
+        "as_of": "2026-08-23",
+        "freshness": {
+            "state": "fresh" if available else ("stale" if status == "stale" else "unknown"),
+            "policy": "owner_native",
+        },
+        "quality": {"state": "ok" if available else "degraded", "issues": []},
+        "source": {
+            "source_id": "stage_analysis.screener", "owner": "stage_analysis",
+            "license_class": "internal_derived", "dataset_id": None,
+        },
+        "provenance": {
+            "kind": "owner_relationship", "owner_field_key": "current_industry",
+            "relationship": "security.current_industry",
+            "basis": "owner_published_current_relationship",
+        },
+        "audience": "subscriber",
+        "consumer_use": "ai_fact",
+        "relationship_fingerprint": "relationship-fingerprint",
+    }
+
+
+def test_w1b_executor_partitions_industry_rank_and_preserves_direct_fingerprints(tmp_path):
+    runtime = _NativeRuntime()
+    plan = nf.plan_native_facts("AAPL Stage, industry rank and within-industry member RS percentile")
+    result = nf.execute_native_fact_plan(plan, runtime=runtime, repo_root=tmp_path)
+    assert [call.entities[0].type for call in runtime.calls] == ["security", "industry"]
+    assert runtime.calls[0].field_ids == ("stage.current", "security.industry_member.rs_percentile")
+    assert runtime.calls[1].field_ids == ("industry.rank.percentile",)
+    receipt = result.receipt
+    assert receipt["route"] == "instant/native-fact"
+    assert receipt["relationship_receipt"]["to"]["id"] == "Technology Hardware"
+    assert receipt["relationship_receipt"]["from"] == {
+        "type": "security", "id": "SEC:US-XNAS-AAPL",
+    }
+    assert [fact["fact_fingerprint"] for fact in receipt["facts"]] == [
+        "fp-stage.current", "fp-industry.rank.percentile", "fp-security.industry_member.rs_percentile",
+    ]
+    # A hostile rank/member swap changes both field and entity request and cannot pass.
+    assert "industry rank percentile: 87.7%" in result.answer
+    assert "within-industry member RS percentile: 2%" in result.answer
+    assert [clause["fact_fingerprint"] for clause in result.clauses] == [
+        "fp-stage.current", "fp-industry.rank.percentile", "fp-security.industry_member.rs_percentile",
+    ]
+    assert [fact["clause_id"] for fact in receipt["facts"]] == ["c1", "c2", "c3"]
+    assert [fact["display_order"] for fact in receipt["facts"]] == [0, 1, 2]
+
+
+def test_w1b_real_w1a_runtime_preserves_direct_parity_and_dynamic_theme_denial():
+    from engine.intelligence_workspace.consumers import PARITY_KEYS
+    from engine.intelligence_workspace.contracts import (
+        EntityRequest,
+        ResolutionRequest,
+        RightsDecision,
+    )
+    from engine.intelligence_workspace.runtime import build_runtime
+
+    repo_root = pathlib.Path(__file__).resolve().parents[1]
+    runtime = build_runtime(repo_root=repo_root)
+    direct_stage = runtime.resolve(ResolutionRequest(
+        entities=(EntityRequest(type="security", symbol="AAPL", universe="us_equity"),),
+        field_ids=("stage.current",),
+        audience="subscriber",
+        consumer_use="ai_fact",
+    ))[0]
+    stage_plan = nf.plan_native_facts("AAPL Stage")
+    brain_stage = nf.execute_native_fact_plan(stage_plan, runtime=runtime, repo_root=repo_root)
+    projected_stage = brain_stage.receipt["facts"][0]
+    assert {key: projected_stage[key] for key in PARITY_KEYS} == {
+        key: direct_stage[key] for key in PARITY_KEYS
+    }
+
+    runtime.rights_projector = lambda *_: RightsDecision(False)
+    direct_theme = runtime.resolve(ResolutionRequest(
+        entities=(EntityRequest(type="security", symbol="AAPL", universe="us_equity"),),
+        field_ids=("theme.local.memberships",),
+        audience="subscriber",
+        consumer_use="ai_fact",
+    ))[0]
+    theme_plan = nf.plan_native_facts("AAPL direct local theme memberships")
+    brain_theme = nf.execute_native_fact_plan(theme_plan, runtime=runtime, repo_root=repo_root)
+    projected_theme = brain_theme.receipt["facts"][0]
+    assert (direct_theme["status"], direct_theme["reason_code"], direct_theme["value"]) == (
+        "rights_blocked", "rights_blocked", None,
+    )
+    assert {key: projected_theme[key] for key in PARITY_KEYS} == {
+        key: direct_theme[key] for key in PARITY_KEYS
+    }
+    assert "rights_blocked" in brain_theme.answer
+    assert all("owner_artifact" not in json.dumps(fact)
+               for fact in brain_theme.receipt["facts"])
+
+
+def test_w1b_executor_keeps_stale_missing_and_rights_blocked_honest(tmp_path):
+    runtime = _NativeRuntime({
+        "stage.current": "stale", "earnings.next_date": "unavailable", "theme.local.memberships": "rights_blocked",
+    })
+    plan = nf.plan_native_facts("AAPL Stage, next earnings date and direct local theme memberships")
+    result = nf.execute_native_fact_plan(plan, runtime=runtime, repo_root=tmp_path)
+    assert "Stage: stale (owner_missing)" in result.answer
+    assert "next earnings date: unavailable (owner_missing)" in result.answer
+    assert "direct local theme memberships: rights_blocked (rights_blocked)" in result.answer
+    assert all(" 2" not in clause["text"] for clause in result.clauses)
+
+
+def test_w1b_missing_industry_relationship_is_a_receipted_visible_stream_clause(tmp_path):
+    runtime = _NativeRuntime(relationship=_native_relationship(
+        status="unavailable", reason="owner_missing"))
+    plan = nf.plan_native_facts("AAPL Stage and industry rank")
+    result = nf.execute_native_fact_plan(plan, runtime=runtime, repo_root=tmp_path)
+    assert len(result.clauses) == 2
+    missing = result.clauses[1]
+    assert missing == {
+        "clause_id": "c2",
+        "display_order": 1,
+        "field_id": None,
+        "requested_field_id": "industry.rank.percentile",
+        "fact_fingerprint": None,
+        "status": "unavailable",
+        "receipt_kind": "owner_relationship",
+        "receipt_reference": "relationship_receipt",
+        "text": missing["text"],
+    }
+    assert missing["text"] in result.answer
+    assert result.receipt["clauses"][1] == missing
+    chunks = gw._native_fact_stream_chunks(result)
+    assert "".join(chunks) == result.answer
+
+
+@pytest.mark.parametrize(("schema", "current", "reason"), [
+    ("hostile.lookalike.v1", True, "owner_degraded"),
+    ("stage_screener.v1", False, "owner_stale"),
+])
+def test_w1b_industry_rank_fails_closed_on_invalid_or_stale_relationship(
+        tmp_path, schema, current, reason):
+    status = "stale" if not current else "unavailable"
+    runtime = _NativeRuntime(relationship=_native_relationship(status=status, reason=reason))
+    plan = nf.plan_native_facts("AAPL Stage and industry rank")
+    result = nf.execute_native_fact_plan(plan, runtime=runtime, repo_root=tmp_path)
+    assert [call.entities[0].type for call in runtime.calls] == ["security"]
+    assert result.receipt["relationship_receipt"]["reason_code"] == reason
+    assert "industry rank was not resolved" in result.answer
+    assert all(fact["field_id"] != "industry.rank.percentile"
+               for fact in result.receipt["facts"])
+
+
+def test_w1b_industry_resolver_failure_preserves_resolved_security_fact(tmp_path):
+    runtime = _NativeRuntime(rank_raises=True)
+    plan = nf.plan_native_facts("AAPL Stage and industry rank")
+    result = nf.execute_native_fact_plan(plan, runtime=runtime, repo_root=tmp_path)
+    assert "Stage: 2" in result.answer
+    assert "industry rank was not resolved" in result.answer
+    assert [fact["field_id"] for fact in result.receipt["facts"]] == ["stage.current"]
+    assert result.receipt["rank_resolution_failure"] == \
+        "industry_rank_resolver_unavailable"
+
+
+def test_w1b_executor_unknown_identity_fails_closed_without_fabricated_fact(tmp_path):
+    plan = nf.plan_native_facts("ZZZZZ price")
+    result = nf.execute_native_fact_plan(plan, runtime=_NativeRuntime(), repo_root=tmp_path)
+    assert result.receipt["facts"] == []
+    assert result.receipt["failure"]["reason_code"] == "identity_unavailable"
+    assert "no fact was asserted" in result.answer
+
+
+def _gateway_native_execution():
+    fact = _native_envelope(
+        "stage.current", {"type": "security", "id": "SEC:US-XNAS-INOD"},
+        value=2, unit="stage_code",
+    )
+    fact.update({"clause_id": "c1", "display_order": 0})
+    clause_text = (
+        "Stage: 2 [stage.current; source=owner.stage.current; "
+        "as_of=2026-08-23; freshness=fresh]"
+    )
+    receipt = {
+        "schema": "brain.native_fact_receipt.v1",
+        "route": "instant/native-fact",
+        "planner_version": "w1b.native_fact_planner.v1",
+        "registry_digest": "registry-digest",
+        "canonical_entity": {"type": "security", "id": "SEC:US-XNAS-INOD"},
+        "effective_context": {
+            "symbol": "INOD", "explicit_entity": True,
+            "reason": "explicit_entity_wins", "precedence_reason": "explicit_entity_wins",
+            "ambient_symbol": "AAOI", "ambient_used": False,
+        },
+        "relationship_receipt": None,
+        "facts": [fact],
+        "cache": {"label": "request_scoped_no_value_cache", "hit": False},
+        "timing": {
+            "route_decision_ms": 1, "context_assembly_ms": 4,
+            "registry_context_assembly_ms": 4, "render_ms": 1, "total_ms": 6,
+        },
+    }
+    return nf.NativeFactExecution(
+        answer=f"INOD — {clause_text}", receipt=receipt,
+        clauses=({"clause_id": "c1", "field_id": "stage.current",
+                  "fact_fingerprint": "fp-stage.current", "status": "available",
+                  "text": clause_text},),
+    )
+
+
+def test_w1b_gateway_native_nonstream_needs_no_provider_and_persists_one_turn(tmp_path):
+    plan = nf.plan_native_facts("INOD Stage", {"symbol": "AAOI"})
+    appended: list[tuple[str, str, str]] = []
+    with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+        with patch.object(gw, "_resolve_tier", return_value={
+                "tier": "pro", "status": "active", "current_period_end": None}):
+            with patch.object(gw._native_facts, "plan_native_facts", return_value=plan):
+                with patch.object(gw._native_facts, "execute_native_fact_plan",
+                                  return_value=_gateway_native_execution()):
+                    with patch.object(gw, "_build_lane_providers",
+                                      side_effect=AssertionError("provider must not be built")):
+                        with patch.object(gw, "_ensure_thread", return_value="thread-native"):
+                            with patch.object(
+                                gw, "_append_message",
+                                side_effect=lambda thread, role, text, **kw:
+                                    appended.append((thread, role, text)),
+                            ):
+                                with patch("lib.ai_costs.record_usage",
+                                           side_effect=AssertionError("no provider cost row")):
+                                    result = gw.chat(
+                                        "INOD Stage", "u_native", lane="fast", root=_root(),
+                                        context={"symbol": "AAOI"},
+                                    )
+    assert result["route"] == "instant/native-fact"
+    assert result["model"] == "native-fact.v1"
+    assert result["reply"].startswith("INOD — Stage: 2")
+    assert result["citations"] == ["owner.stage.current"]
+    assert result["native_fact_receipt"]["facts"][0]["field_id"] == "stage.current"
+    assert result["native_fact_receipt"]["effective_context"]["precedence_reason"] == \
+        "explicit_entity_wins"
+    assert result["usage"]["input_tokens"] == result["usage"]["output_tokens"] == 0
+    assert result["latency"] == result["usage"]["latency"]
+    assert [row[1] for row in appended] == ["user", "assistant"]
+
+
+def test_w1b_gateway_native_stream_is_resumable_shape_and_first_delta_is_a_fact(tmp_path):
+    plan = nf.plan_native_facts("INOD Stage", {"symbol": "AAOI"})
+    with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+        with patch.object(gw, "_resolve_tier", return_value={
+                "tier": "pro", "status": "active", "current_period_end": None}):
+            with patch.object(gw._native_facts, "plan_native_facts", return_value=plan):
+                with patch.object(gw._native_facts, "execute_native_fact_plan",
+                                  return_value=_gateway_native_execution()):
+                    with patch.object(gw, "_build_lane_providers",
+                                      side_effect=AssertionError("provider must not be built")):
+                        with patch.object(gw, "_ensure_thread", return_value=None):
+                            events = _sse(list(gw.chat_stream(
+                                "INOD Stage", "u_native_stream", lane="fast", root=_root(),
+                                context={"symbol": "AAOI"},
+                            )))
+    assert [event["type"] for event in events] == ["meta", "status", "delta", "done"]
+    assert events[0]["model"] == "native-fact.v1"
+    assert "stage.current" in events[2]["text"]
+    done = events[-1]
+    assert done["route"] == "instant/native-fact"
+    assert done["native_fact_receipt"]["facts"][0]["fact_fingerprint"] == \
+        "fp-stage.current"
+    latency = done["usage"]["latency"]
+    assert latency["route"] == "instant/native-fact"
+    assert isinstance(latency["ttfv_ms"], int)
+    assert latency["context_assembly_ms"] == 4
+    assert done["usage"]["input_tokens"] == done["usage"]["output_tokens"] == 0
+
+
+def test_w1b_gateway_native_turns_each_consume_exactly_one_message_quota(tmp_path):
+    plan = nf.plan_native_facts("INOD Stage")
+    results = []
+    with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+        with patch.object(gw, "_resolve_tier", return_value={
+                "tier": "pro", "status": "active", "current_period_end": None}):
+            with patch.object(gw._native_facts, "plan_native_facts", return_value=plan):
+                with patch.object(gw._native_facts, "execute_native_fact_plan",
+                                  return_value=_gateway_native_execution()):
+                    with patch.object(gw, "_build_lane_providers",
+                                      side_effect=AssertionError("provider must not be built")):
+                        with patch.object(gw, "_ensure_thread", return_value=None):
+                            for _ in range(2):
+                                results.append(gw.chat(
+                                    "INOD Stage", "u_native_quota", lane="fast", root=_root(),
+                                ))
+    assert results[1]["quota"]["remaining"] == results[0]["quota"]["remaining"] - 1
+
+
+def test_w1b_native_stream_disconnect_resume_replays_tail_without_second_quota(tmp_path):
+    from app import brain_runs
+
+    brain_runs.reset_for_tests()
+    plan = nf.plan_native_facts("INOD Stage")
+    quota_calls = 0
+
+    def _quota(*args, **kwargs):
+        nonlocal quota_calls
+        quota_calls += 1
+        return True, {"lane": "fast", "remaining": 9, "limit": 10, "period": "fixture"}
+
+    try:
+        with patch.object(gw, "_resolve_tier", return_value={
+                "tier": "pro", "status": "active", "current_period_end": None}):
+            with patch.object(gw, "_check_and_increment_quota", side_effect=_quota):
+                with patch.object(gw._native_facts, "plan_native_facts", return_value=plan):
+                    with patch.object(gw._native_facts, "execute_native_fact_plan",
+                                      return_value=_gateway_native_execution()):
+                        with patch.object(gw, "_build_lane_providers",
+                                          side_effect=AssertionError("provider must not be built")):
+                            with patch.object(gw, "_ensure_thread", return_value=None):
+                                with patch.object(gw, "_log_brain_response"):
+                                    run = brain_runs.start(
+                                        gw.chat_stream(
+                                            "INOD Stage", "u_native_resume", lane="fast",
+                                            root=_root(),
+                                        ),
+                                        user_id="u_native_resume",
+                                    )
+                                    first = brain_runs.follow(run, interval=0.05)
+                                    received = [next(first), next(first), next(first)]
+                                    first.close()
+                                    tail = list(brain_runs.follow(
+                                        run, cursor=3, interval=0.05,
+                                    ))
+        first_events = [json.loads(chunk[5:].strip()) for chunk in received]
+        tail_events = [json.loads(chunk[5:].strip()) for chunk in tail
+                       if chunk.startswith("data:")]
+        assert [event["type"] for event in first_events] == ["meta", "status", "delta"]
+        assert [event["type"] for event in tail_events] == ["done"]
+        assert first_events[2]["text"].startswith("INOD — Stage: 2")
+        assert tail_events[0]["native_fact_receipt"]["facts"][0]["field_id"] == \
+            "stage.current"
+        assert quota_calls == 1
+    finally:
+        brain_runs.reset_for_tests()
+
+
+def test_w1b_simple_price_with_receipt_instructions_still_plans_native():
+    plan = nf.plan_native_facts(
+        "What is AAPL's current price? One sentence, with the source and the exact as-of."
+    )
+    assert plan is not None
+    assert plan.symbol == "AAPL"
+    assert plan.field_ids == ("market.price.last",)

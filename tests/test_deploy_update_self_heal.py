@@ -264,6 +264,16 @@ MUST_RESTART = [
     "engine/neuralweb/ask_brain.py",
     "engine/neuralweb/chat_plain_words.py",
     "engine/neuralweb/brain_gateway.py",
+    "engine/neuralweb/native_facts.py",
+    # W1-B imports this typed-fact package on the first native request.  From
+    # then on its modules and lru-cached registry/schema validators are pinned.
+    "engine/intelligence_workspace/runtime.py",
+    "engine/intelligence_workspace/resolver.py",
+    "engine/intelligence_workspace/registry.py",
+    "engine/intelligence_workspace/adapters/quote.py",
+    "config/intelligence_workspace/datapoints.v1.json",
+    "contracts/intelligence_workspace/datapoint_registry.schema.json",
+    "contracts/intelligence_workspace/datapoint_value.schema.json",
     "engine/neuralweb/cortex.py",
     "engine/neuralweb/earnings_context_reader.py",
     "engine/neuralweb/chart_perception.py",
@@ -358,6 +368,10 @@ MUST_NOT_RESTART = [
     "engine/spine.py",
     "admin/server.py",
     "templates/index.html.j2",
+    # Hostile lookalikes must not widen the exact W1-A restart closure.
+    "config/intelligence_workspace/datapoints.v1.json.bak",
+    "contracts/intelligence_workspace/datapoint_value.schema.json.bak",
+    "engine/intelligence_workspaces/resolver.py",
 ]
 
 
