@@ -1,128 +1,154 @@
 ---
-workstream: MARKET-OS
-date: 2026-08-24
-session: coo-fable-b1a-20260824
-status: delivered-held
+workstream: "WS:MARKET-OS"
+session: claude/market-os-b1a-20260824
+model: fable
+ended_because: complete
+mission: >
+  Execute the Chairman-dispatched Market OS B1A commission end to end: adjudicate
+  the binding identity rider before product code, then ship the first Market
+  Intelligence product vertical — security_state.v1 contract + pure compiler +
+  AAPL producer + public dossier Decision Spine consumer — as one PR held
+  DRAFT + HOLD-FOR-SOL for Sol's acceptance review.
+state_before: >
+  K1 closed and Sol-accepted (source b7b861a2, PR #6319 merged 696afbb5,
+  closeout #6356 merged dc6a4d59); A1A canonical (#6310 merged e743db23);
+  B1A PREPARED_NOT_AUTHORIZED behind four gates; no B1/security-state/dossier
+  lane anywhere (A1B #6335 DRAFT/HOLD fenced; DeepVue #6359 disjoint paths);
+  no security_state code, schema, producer stage, or dossier section existed;
+  the K1 four-owner AAPL golden recipe honestly REFUSED / identity_unresolved.
+changed:
+  - path: agentos/decisions/DEC-MARKET-OS-B1A-IDENTITY-GATE-OWNER-BACKED-CHAIN.md
+    what: >
+      Identity-gate adjudication — PASS instance-scoped via the exact
+      owner-backed chain, with the adversarial BLOCKED_IDENTITY_BRIDGE verdict
+      preserved verbatim as dissent and its falsifications carried as mandatory
+      refusal fixtures; two named Sol repair items (CIK_LEG_UNOWNED_ACCESS,
+      NO_GENERAL_NAMESPACE_RENDERER).
+  - path: contracts/market_os/security_state.v1.schema.json
+    what: Closed draft-2020-12 contract; authority all-false consts; 385 lines.
+  - path: engine/security_state.py
+    what: >
+      Pure zero-I/O compiler (1287 lines): R1-R9 identity receipt chain
+      refusal-first, six typed legs, K1 Ref/Block/Recipe cik-native composition
+      via lib.evidence_foundation, frozen strongest-unresolved-fact rule v1,
+      content_sha256, last-good/first-failure objects, schema self-validation.
+  - path: scripts/build_stock_library.py
+    what: >
+      Additive producer stage (+135 lines): frozen ("AAPL",) allowlist,
+      exception-contained end to end, one R2 manifest+object fetch per night,
+      identity rows read from the DECLARED master artifacts, last-good fallback
+      from the pre-overwrite blob, compact index.json projection.
+  - path: templates/ticker.html.j2
+    what: >
+      Server-rendered Decision Spine section between #chart and technicals +
+      hero degradation chip + seven drilldown dialogs at the dialog layer;
+      insert-only; whole style block gated on security_state.
+  - path: scripts/build_ticker_pages.py
+    what: >
+      build_security_state(blob) display projection + bilingual enum tables,
+      wired as one ctx key; insert-only.
+  - path: tests/test_security_state_contract.py
+    what: 42 tests; fixtures under tests/fixtures/security_state/ (12 files).
+  - path: verify_shots/b1a/
+    what: 82 browser proofs (3 widths x light/dark x en/zh, all typed states).
+  - path: agentos/workstreams/WS-MARKET-OS.md
+    what: B1 wave split into B1A (in_progress, delivered-held) and B1B-B6.
+verified:
+  - claim: All four dispatch gates true at pickup.
+    command: gh api graphql (PRs 6310/6319/6356/6335); gh pr list/branches/worktree census; HTTPS fetch of the live workspace manifest+object with sha256 comparison
+    result: "#6310 MERGED e743db23; #6319 MERGED 696afbb5; #6356 MERGED dc6a4d59; census clean; workspace gen 6d56c84a3ac23b8954e59ee7 sha256 c3b9495028c0... == manifest, lifecycle complete"
+  - claim: >
+      The owner-backed identity chain holds on today's committed artifacts:
+      SEC:US-XNAS-AAPL active/unsuperseded -> ISS:US-XNAS-AAPL RESOLVED ->
+      issuer_cik 0000320193 (evidence sec_company_tickers 2026-08-18, era
+      receipted, zero migrations, CIK->1 issuer, issuer->1 security) == the
+      workspace's native CIK subject.
+    command: adversarial opus analysis executed pandas reads over data/reference parquets (macro-main, byte-identical to branch HEAD) + IssuerMaster/VendorAliasTable calls + lib/evidence_foundation grammar probes; receipts pasted in its packet and preserved in the DEC
+    result: R1-R7 pass; general-renderer absence and vocabulary-triple absence recorded as Sol repair items, not silently absorbed
+  - claim: Contract suite green with all commission cases, identity refusal fixtures, mutation kills, and K1 receipts.
+    command: python3 -m pytest tests/test_security_state_contract.py -q (builder run + independent orchestrator re-run)
+    result: 42 passed both times; 3 live mutation kills demonstrated (introduce->red->revert->green)
+  - claim: >
+      Golden AAPL object: identity_proof PROVEN, dominant_degradation PARTIAL
+      (honest: Prophet UNAVAILABLE + K1 v1 freshness-unknown), K1 compile
+      receipt compiled/included=1 on subject cik:0000320193.
+    command: jq over tests/fixtures/security_state/golden_aapl_expected_output.json
+    result: content_sha256 cfecf1282d8c...; recipe erp_5687f42d2aca...; block ebl_5b86ed829a65...
+  - claim: Non-AAPL dossier pages byte-identical before/after the consumer change.
+    command: designer render harness — same fixtures against git show HEAD versions vs working tree, sha256 + diff
+    result: control-msft b0828a884dff... and control-no-spine 3d7ae0d91dbb... identical, diffs empty
+  - claim: Consumer regression unchanged; zero horizontal overflow; keyboard-accessible dialogs.
+    command: python3 -m pytest tests/test_ticker_pages.py -q (125 passed, 2 pre-existing failures reproduced on unmodified HEAD); CDP overflow probe lifting overflow-x:clip at 390/820/1440 (82 measurements, 0 offenders); live keyboard walk (Enter/Escape/focus-return)
+    result: all pass; receipts in the designer packet and overflow_receipts.json
+  - claim: agentos records schema-valid.
+    command: python3 scripts/agentos.py validate
+    result: 0 errors after this handoff's schema repair
+unresolved:
+  - Sol review of the identity adjudication (dissent preserved in the DEC) and
+    of the implementation + browser evidence — the PR is DRAFT + HOLD-FOR-SOL.
+  - >-
+    Production proof — live AAPL object + live page + production browser proof —
+    executes only after Sol accepts and merges (nightly + render lanes).
+    Capability is BUILT_NOT_PROVEN until then.
+  - >-
+    Sol repair items — expose issuer_cik on the canonical Data OS reader
+    (CIK_LEG_UNOWNED_ACCESS); owner-routed ListingAlias->ListingKey renderer +
+    K1 vocabulary triple (NO_GENERAL_NAMESPACE_RENDERER), the precondition for
+    any issuer beyond AAPL.
+unverified:
+  - The producer stage against real nightly I/O (network + full data tree) —
+    exercised only by py_compile + code review in the sparse sandbox; first
+    real execution is the post-merge nightly.
+  - The live corrected/superseded workspace transition (no correction cycle has
+    occurred in production for AAPL FY2026Q3; the path is fixture-proven only).
+next_actions:
+  - Sol reviews the held B1A PR (adjudication + implementation + evidence);
+    on acceptance merge and let the nightly produce the live object, then
+    complete commission §13 Step 5 production browser proof.
+  - After acceptance, commission B1B (Terminal/Desk projection) separately;
+    require the identity-renderer repair before any second issuer.
+do_not_redo:
+  - Do not re-run the identity adjudication absent new artifacts; the dissent
+    already lives in DEC:MARKET-OS-B1A-IDENTITY-GATE-OWNER-BACKED-CHAIN.
+  - Do not widen SECURITY_STATE_TICKERS beyond ("AAPL",) before the
+    owner-routed renderer repair lands.
+  - Do not make the K1 four-owner golden fixture pass; do not edit
+    contracts/evidence_foundation/* or lib/evidence_foundation.py.
+  - Do not arm merge-on-green on the B1A PR; the recorded HOLD-FOR-SOL binds
+    every merge path.
+  - Do not re-shoot the 82-file browser matrix; it is the design evidence of
+    record on the PR head.
+danger_areas:
+  - The producer stage must stay exception-contained and preserve the
+    last-good vs first-failure distinction (cases 12/13); it must never lose
+    the blob write.
+  - issuer_cik is read from the declared master artifacts directly because
+    SecurityIssuerRow omits the column; switch to the canonical reader and
+    delete the direct read when Sol lands that repair.
+  - change-leg staleness is a CONSUMER display policy v1 (>120d past
+    calendar_end while still current alias target); never present it as owner
+    truth — the owner has no freshness policy for event_workspace.v1.
+  - R7/R8 evaluate vacuously when no workspace exists this cycle so a missing
+    event is a change-leg absence, not a fake identity refusal; do not "fix"
+    this into a refusal.
+  - The spine's dialogs live at the dialog layer because .mod's
+    backdrop-filter would trap position:fixed descendants; do not move them
+    into the section.
 ---
 
-# B1A security_state.v1 golden AAPL vertical — delivered, held for Sol
+# B1A delivered-held — narrative
 
-## What happened
+The Chairman dispatched the prepared B1A commission directly on 2026-08-24,
+satisfying the WS:ALPHA-INTELLIGENCE-INTEGRATION K1-boundary hold's "separate
+explicit commission" requirement. The identity rider was adjudicated BEFORE
+product code: an adversarial opus analysis returned BLOCKED_IDENTITY_BRIDGE at
+the general-renderer altitude; the Fable adjudication passed the gate
+instance-scoped under the dispatch's "exact owner-backed chain" clause. Both
+positions and all receipts are preserved in the DEC — the disagreement rides
+to Sol inside the held PR rather than being rewritten.
 
-The Chairman dispatched the prepared B1A commission directly on 2026-08-24
-("K1 has been closed. We're starting next thing. Take full ownership of Market
-OS B1A"), which satisfies the WS:ALPHA-INTELLIGENCE-INTEGRATION K1-boundary
-hold's "separate explicit commission" requirement. All four dispatch gates were
-receipt-verified: A1A canonical (#6310 merged e743db23); K1 accepted by Sol
-(source b7b861a2, #6319 merged 696afbb5, closeout #6356 merged dc6a4d59);
-fresh census clean (no B1/security-state/dossier lane in open PRs, branches, or
-worktrees; A1B #6335 fenced and untouched; DeepVue #6359 paths disjoint); the
-live AAPL event workspace fetched over HTTPS and hash-verified
-(generation 6d56c84a3ac23b8954e59ee7, event evt_cik0000320193_2026q3_results,
-sha256 c3b9495028c07e6bf1eb385f520f0b3c57064b84ea430540ba9a0808cd2d14db,
-lifecycle complete, suitable-with-flags: 6 closed-vocabulary warnings, no
-correction cycle observed yet).
-
-The commission's binding identity rider was adjudicated BEFORE product code:
-an adversarial opus analysis executed the proof against the committed
-artifacts and returned BLOCKED_IDENTITY_BRIDGE at the general-renderer
-altitude; the Fable adjudication passed the gate instance-scoped under the
-dispatch's "exact owner-backed chain" clause. Both positions and all receipts
-are preserved in DEC:MARKET-OS-B1A-IDENTITY-GATE-OWNER-BACKED-CHAIN — the
-dissent is not summarized away, and its falsification cases became mandatory
-compiler refusal fixtures.
-
-Implementation shipped in one held PR (three commits + records):
-contract schema (contracts/market_os/security_state.v1.schema.json, closed,
-authority all-false consts), pure zero-I/O compiler (engine/security_state.py,
-R1–R9 receipt chain refusal-first, six typed legs, K1 Ref/Block/Recipe
-cik-native composition, frozen strongest-unresolved-fact rule, content hash,
-last-good/first-failure), producer stage (scripts/build_stock_library.py,
-frozen ("AAPL",) allowlist, exception-contained, one R2 fetch/night, compact
-index projection), and the server-rendered Decision Spine consumer
-(templates/ticker.html.j2 + scripts/build_ticker_pages.py, insert-only,
-CSS gated on security_state so non-AAPL pages are byte-identical).
-
-## verified: (each claim names its command)
-
-- Gate receipts: `gh api graphql` PRs 6310/6319/6356 → MERGED shas above; #6335 OPEN/DRAFT.
-- Live workspace: HTTPS fetch + sha256 == manifest entry (c3b9495028c0…, 22450 bytes).
-- Master rows: pandas over data/reference parquets in read-only macro-main,
-  byte-identical to branch HEAD (`git cat-file` comparison in the analyst run):
-  SEC:US-XNAS-AAPL → ISS:US-XNAS-AAPL RESOLVED, issuer_cik 0000320193,
-  evidence sec_company_tickers 2026-08-18, no migrations; CIK maps to exactly
-  one issuer; issuer holds exactly one security.
-- Contract tests: `python3 -m pytest tests/test_security_state_contract.py -q`
-  → 42 passed (independently re-run by the orchestrator). Coverage: 14
-  commission cases + 5 identity refusal fixtures (VMRK-shaped tombstone,
-  GOOG-shaped multi-security CIK, migration row, workspace CIK mismatch, R9
-  corroboration divergence → PARTIAL not BLOCKED) + mutation kills + K1
-  receipts (validators pass; compile_recipe compiled, included=1, on subject
-  cik:0000320193; negative path refuses) + content_sha256 stability.
-- Live mutation kills demonstrated (introduce → red → revert → green):
-  authority.can_rank leak (compiler self-refuses), hash-stability break,
-  R1 tombstone check disable.
-- Golden object: identity_proof PROVEN, dominant_degradation PARTIAL (honest:
-  Prophet leg UNAVAILABLE + K1 v1 freshness-unknown), content_sha256
-  cfecf1282d8c59f8d265529e040f9d04ed7e31caaa3b23d8ab22c88cd74c0138,
-  recipe erp_5687f42d2acac8826110a5952a4d0ba0d662453577258fe8145214ab98b90d19,
-  block ebl_5b86ed829a65b95f6f82bc5a856f8f74b6af2825013681b8fe2ed21b72924c97.
-- Consumer regression: `python3 -m pytest tests/test_ticker_pages.py -q` →
-  125 passed, 2 failed — both reproduce on unmodified HEAD (pre-existing; one
-  requires sparse-omitted site/assets), re-verified by the orchestrator.
-- Non-AAPL byte-identity: designer sha256 receipts (control-msft
-  b0828a884dff…, control-no-spine 3d7ae0d91dbb…, before == after, empty diffs).
-- Browser proof: 82 files under verify_shots/b1a/ — golden + stale +
-  missing-event + corrected + no-user-context + degraded-mix +
-  compiler-failure at 1440/820/390 × light/dark, 17 zh captures, hero chip
-  set, 16 drilldown dialogs; zero-horizontal-overflow receipts at all widths
-  (probe lifts overflow-x:clip and enumerates offending elements: 0);
-  keyboard open/trap/Escape/focus-return verified.
-- agentos: `python3 scripts/agentos.py validate` → 0 errors.
-
-## do_not_redo
-
-- Do not re-run the identity adjudication absent new artifacts — the dissent
-  is preserved verbatim in the DEC; re-arguing without new evidence is churn.
-- Do not widen SECURITY_STATE_TICKERS beyond ("AAPL",) — expansion is BLOCKED
-  on the owner-routed ListingAlias→ListingKey renderer + K1 vocabulary triple
-  (Sol repair item NO_GENERAL_NAMESPACE_RENDERER).
-- Do not make the K1 four-owner golden fixture pass; do not edit
-  contracts/evidence_foundation/* or lib/evidence_foundation.py.
-- Do not arm merge-on-green on the B1A PR; the recorded HOLD-FOR-SOL is a
-  merge barrier binding every merge path.
-- Do not call this production proof: capability is BUILT_NOT_PROVEN until Sol
-  merges and the nightly + render lanes produce the live object and page.
-- Do not re-shoot the browser matrix; the 82-file set on the PR head is the
-  design evidence of record.
-
-## danger_areas
-
-- build_stock_library.py security_state stage is exception-contained by
-  design; preserve the last-good vs first-failure distinction (cases 12/13)
-  and never let the stage lose the blob write.
-- The compiler reads issuer_cik from the DECLARED master artifacts directly
-  because lib.dataos.identity.SecurityIssuerRow omits the column
-  (CIK_LEG_UNOWNED_ACCESS, printed in every object). If Sol lands the reader
-  repair, switch to it and delete the direct read.
-- change-leg staleness is a CONSUMER display policy v1 (>120d past
-  fiscal_period.calendar_end while still the current alias target) — the owner
-  has no freshness policy for event_workspace.v1; never present it as owner
-  truth.
-- R7/R8 evaluate vacuously when no workspace exists this cycle so "no current
-  event" presents as change-leg absence, not a fake identity refusal — do not
-  "fix" this into a refusal.
-- The spine's drilldown dialogs live at the dialog layer (not inside the
-  section) because .mod's backdrop-filter would become the containing block
-  for position:fixed — do not "tidy" them into the section.
-
-## next_action
-
-Sol reviews the held PR: the identity adjudication (with dissent), the
-implementation, and the browser evidence. On acceptance: merge; the nightly
-daily.yml produces the live AAPL security_state block; the render lane
-rebuilds site/stocks/AAPL.html; production browser proof then completes
-commission §13 Step 5 and the capability advances BUILT_NOT_PROVEN →
-PROVEN_LIVE. After acceptance, B1B (Terminal/Desk projection over the frozen
-surface) is the next separate commission; any second issuer additionally
-requires the identity-renderer repair.
+Implementation shipped as three commits (adjudication DEC; contract + compiler
++ producer + tests; Decision Spine consumer + browser evidence) plus this
+records commit, one held PR, one session — sonnet builder and opus designer in
+parallel lanes with disjoint file ownership, both packets independently
+re-verified by the orchestrator before commit.

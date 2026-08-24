@@ -63,7 +63,7 @@ waves:
     next_action: Commission one independently useful vertical at a time; no broad My Market rewrite.
   - id: B1A
     title: security_state.v1 golden AAPL product vertical (contract + compiler + producer + dossier Decision Spine)
-    status: in_review
+    status: in_progress
     depends_on: [A1A]
     next_action: >
       DELIVERED-HELD 2026-08-24 under the Chairman dispatch of the prepared B1A
@@ -92,12 +92,12 @@ waves:
   - id: C1-C6
     title: What Changed and deterministic Market discovery
     status: todo
-    depends_on: [B1-B6]
+    depends_on: [B1B-B6]
     next_action: Use compact Security State and Change Event projections; no fused rank.
   - id: D1-D9
     title: Portfolio Brief v3, Risk Packet, Holdings Map, visible risk sections, and scenarios
     status: todo
-    depends_on: [A2-A6, B1-B6]
+    depends_on: [A2-A6, B1B-B6]
     next_action: Preserve the existing risk core and one Portfolio composer; current-context mode precedes forecast mode.
   - id: E1-E3
     title: My Market Overview, personalized change feed, alerts, and digest
@@ -107,7 +107,7 @@ waves:
   - id: F0-F5
     title: Forecast Packet, prospective ledgers, shadow evaluation, and earned promotion
     status: todo
-    depends_on: [B1-B6, D1-D9]
+    depends_on: [B1B-B6, D1-D9]
     next_action: No live forward claim before point-in-time replay, calibration, forward shadow, and explicit authority promotion.
 decisions:
   - "DEC:MARKET-OS-B1A-IDENTITY-GATE-OWNER-BACKED-CHAIN"
