@@ -337,7 +337,352 @@
     line-height:1.55;
   }
 
+  /* Editorial V2 — Wave 1 composition shell. The shared article base still owns
+     the hero, active TOC, callouts and compact data tables. These rules compose
+     those primitives into the denser Fable-quality report rhythm. */
+  .pod .pod-v2-shell { display:block; }
+  .pod .pod-legacy[hidden] { display:none !important; }
+  .pod .statband {
+    display:grid;
+    grid-template-columns:repeat(5,minmax(0,1fr));
+    gap:10px;
+    margin:2px 0 12px;
+  }
+  .pod .stat {
+    min-width:0;
+    position:relative;
+    overflow:hidden;
+    min-height:116px;
+    padding:14px 14px 13px;
+    border:1px solid var(--line);
+    border-radius:14px;
+    background:
+      radial-gradient(circle at 100% 0,color-mix(in srgb,var(--sc,var(--pod-blue)) 14%,transparent),transparent 52%),
+      var(--panel2);
+    box-shadow:var(--card-shadow);
+  }
+  .pod .stat::before {
+    content:"";
+    position:absolute;
+    inset:0 auto 0 0;
+    width:3px;
+    background:var(--sc,var(--pod-blue));
+  }
+  .pod .stat .sk {
+    display:block;
+    color:var(--muted);
+    font-size:9.5px;
+    line-height:1.25;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    font-weight:750;
+  }
+  .pod .stat .sv {
+    display:block;
+    margin-top:8px;
+    color:var(--text);
+    font-size:23px;
+    line-height:1;
+    letter-spacing:-.025em;
+    font-weight:780;
+    font-variant-numeric:tabular-nums;
+  }
+  .pod .stat .sl {
+    display:block;
+    margin-top:8px;
+    color:var(--muted);
+    font-size:10.5px;
+    line-height:1.35;
+  }
+  .pod .pod-v2-asof {
+    margin:0 0 17px;
+    color:var(--muted);
+    font-size:10.5px;
+    line-height:1.5;
+  }
+  .pod .pod-bottom-line {
+    margin:15px 0 26px;
+    padding:20px 22px;
+    border-left-width:4px;
+  }
+  .pod .pod-bottom-line .co-h {
+    color:#2f9e63;
+    font-size:10.5px;
+    letter-spacing:.13em;
+    text-transform:uppercase;
+  }
+  html[data-theme="dark"] .pod .pod-bottom-line .co-h { color:#55c98e; }
+  .pod .pod-bottom-line p {
+    margin:0;
+    font-size:16px;
+    line-height:1.62;
+    letter-spacing:-.006em;
+  }
+  .pod .pod-section-kicker {
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:8px;
+    margin:4px 0 13px;
+    color:var(--muted);
+    font-size:10px;
+    letter-spacing:.09em;
+    text-transform:uppercase;
+    font-weight:750;
+  }
+  .pod .pod-section-kicker::before {
+    content:"";
+    width:22px;
+    height:2px;
+    border-radius:2px;
+    background:linear-gradient(90deg,var(--pod-gold),var(--pod-blue));
+  }
+  .pod .pod-intro-grid {
+    display:grid;
+    grid-template-columns:minmax(0,1.35fr) minmax(220px,.65fr);
+    gap:18px;
+    align-items:start;
+    margin:8px 0 19px;
+  }
+  .pod .pod-intro-grid .pod-copy p:first-child { margin-top:0; }
+  .pod .pod-mechanism-card {
+    border:1px solid color-mix(in srgb,var(--pod-gold) 38%,var(--line));
+    border-radius:15px;
+    padding:16px;
+    background:linear-gradient(150deg,color-mix(in srgb,var(--pod-gold) 10%,var(--panel2)),var(--panel2));
+  }
+  .pod .pod-mechanism-card .mk {
+    display:block;
+    color:var(--pod-gold);
+    font-size:9.5px;
+    letter-spacing:.11em;
+    text-transform:uppercase;
+    font-weight:800;
+  }
+  .pod .pod-mechanism-card strong {
+    display:block;
+    margin:7px 0 9px;
+    font-size:18px;
+    line-height:1.28;
+    letter-spacing:-.015em;
+  }
+  .pod .pod-mechanism-card p {
+    margin:0;
+    color:var(--muted);
+    font-size:12px;
+    line-height:1.55;
+  }
+  .pod .pod-loop {
+    display:grid;
+    grid-template-columns:repeat(6,minmax(0,1fr));
+    gap:0;
+    margin:17px 0 20px;
+    border:1px solid var(--line);
+    border-radius:14px;
+    overflow:hidden;
+    background:var(--panel2);
+  }
+  .pod .pod-loop-step {
+    position:relative;
+    padding:12px 18px 12px 11px;
+    min-height:74px;
+    border-right:1px solid var(--line);
+  }
+  .pod .pod-loop-step:last-child { border-right:0; }
+  .pod .pod-loop-step:not(:last-child)::after {
+    content:"→";
+    position:absolute;
+    z-index:2;
+    top:26px;
+    right:-8px;
+    width:16px;
+    color:var(--pod-gold);
+    background:var(--panel2);
+    text-align:center;
+    font-weight:800;
+  }
+  .pod .pod-loop-step b {
+    display:block;
+    font-size:11px;
+    line-height:1.25;
+  }
+  .pod .pod-loop-step small {
+    display:block;
+    margin-top:5px;
+    color:var(--muted);
+    font-size:9.5px;
+    line-height:1.3;
+  }
+  .pod .pod-stage-band {
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:10px;
+    margin:17px 0 22px;
+  }
+  .pod .pod-stage {
+    border:1px solid var(--line);
+    border-top:3px solid var(--stage,var(--pod-blue));
+    border-radius:12px;
+    padding:13px 14px;
+    background:var(--panel2);
+  }
+  .pod .pod-stage b { display:block; font-size:12px; }
+  .pod .pod-stage p { margin:6px 0 0; color:var(--muted); font-size:11px; line-height:1.42; }
+  .pod .pod-split-figure {
+    display:grid;
+    grid-template-columns:minmax(0,1.25fr) minmax(240px,.75fr);
+    gap:14px;
+    align-items:stretch;
+    margin:16px 0 20px;
+  }
+  .pod .pod-split-figure .pod-figure { margin:0; }
+  .pod .pod-equation {
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:18px;
+    background:
+      radial-gradient(circle at 100% 0,color-mix(in srgb,var(--pod-violet) 18%,transparent),transparent 45%),
+      var(--panel2);
+  }
+  .pod .pod-equation .eq-k {
+    color:var(--pod-violet);
+    font-size:9.5px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    font-weight:800;
+  }
+  .pod .pod-equation .eq-main {
+    margin:13px 0;
+    font-size:18px;
+    line-height:1.3;
+    font-weight:780;
+    letter-spacing:-.015em;
+  }
+  .pod .pod-equation .eq-rule {
+    height:1px;
+    margin:7px 0;
+    background:linear-gradient(90deg,var(--pod-violet),transparent);
+  }
+  .pod .pod-equation p { margin:4px 0 0; color:var(--muted); font-size:11px; line-height:1.5; }
+  .pod .pod-status-grid {
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:10px;
+    margin:18px 0 24px;
+  }
+  .pod .vcard {
+    min-width:0;
+    border:1px solid var(--line);
+    border-top:3px solid var(--vc,var(--pod-blue));
+    border-radius:13px;
+    padding:13px 14px;
+    background:var(--panel2);
+  }
+  .pod .vcard .vtag {
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    color:var(--vc,var(--pod-blue));
+    font-size:9.5px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    font-weight:800;
+  }
+  .pod .vcard .vtag::before {
+    content:"";
+    width:7px;
+    height:7px;
+    border-radius:50%;
+    background:currentColor;
+    box-shadow:0 0 0 3px color-mix(in srgb,currentColor 16%,transparent);
+  }
+  .pod .vcard h3 { margin:9px 0 5px; font-size:14px; }
+  .pod .vcard p { margin:0; color:var(--muted); font-size:11px; line-height:1.45; }
+  .pod .pod-regime-strip {
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:10px;
+    margin:16px 0 20px;
+  }
+  .pod .pod-regime-card {
+    min-width:0;
+    border:1px solid var(--line);
+    border-top:3px solid var(--rc,var(--pod-blue));
+    border-radius:13px;
+    padding:13px 14px;
+    background:var(--panel2);
+  }
+  .pod .pod-regime-card .rp {
+    color:var(--rc,var(--pod-blue));
+    font-size:23px;
+    line-height:1;
+    font-weight:800;
+    font-variant-numeric:tabular-nums;
+  }
+  .pod .pod-regime-card b { display:block; margin-top:7px; font-size:12px; line-height:1.25; }
+  .pod .pod-regime-card p { margin:6px 0 0; color:var(--muted); font-size:10.5px; line-height:1.4; }
+  .pod .pod-compact { margin-top:12px; margin-bottom:24px; }
+  .pod .pod-compact th,
+  .pod .pod-compact td { font-size:11.5px; line-height:1.35; padding:7px 8px; }
+  .pod .pod-shell-rail {
+    display:flex;
+    flex-wrap:wrap;
+    gap:7px;
+    margin:10px 0 15px;
+  }
+  .pod .pod-shell-rail .chip { font-size:10px; padding:5px 8px; }
+  .pod .pod-dashboard td:first-child { width:25%; }
+  .pod .pod-timeline {
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:10px;
+    margin:16px 0 24px;
+  }
+  .pod .pod-gate {
+    border:1px solid var(--line);
+    border-radius:13px;
+    padding:13px 14px;
+    background:var(--panel2);
+  }
+  .pod .pod-gate .gk { color:var(--pod-gold); font-size:9px; letter-spacing:.1em; text-transform:uppercase; font-weight:800; }
+  .pod .pod-gate b { display:block; margin:7px 0 4px; font-size:12px; }
+  .pod .pod-gate p { margin:0; color:var(--muted); font-size:10.5px; line-height:1.4; }
+  .pod .pquote {
+    position:relative;
+    overflow:hidden;
+    margin:23px 0;
+    padding:23px 26px;
+    border:1px solid var(--line);
+    border-radius:17px;
+    background:linear-gradient(135deg,color-mix(in srgb,var(--pod-blue) 13%,var(--panel)),color-mix(in srgb,var(--pod-gold) 10%,var(--panel)));
+  }
+  .pod .pquote::before {
+    content:"\201C";
+    position:absolute;
+    top:-21px;
+    left:13px;
+    color:var(--pod-blue);
+    opacity:.16;
+    font:96px/1 Georgia,serif;
+  }
+  .pod .pquote p { position:relative; margin:0; font-size:16px; line-height:1.55; font-weight:650; }
+
   @media(max-width:720px) {
+    .pod .statband { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .pod .stat:last-child { grid-column:1 / -1; }
+    .pod .pod-intro-grid,
+    .pod .pod-split-figure { grid-template-columns:1fr; }
+    .pod .pod-loop { grid-template-columns:1fr 1fr; }
+    .pod .pod-loop-step { border-bottom:1px solid var(--line); }
+    .pod .pod-loop-step:nth-child(2n) { border-right:0; }
+    .pod .pod-loop-step::after { display:none; }
+    .pod .pod-stage-band,
+    .pod .pod-regime-strip { grid-template-columns:1fr; }
+    .pod .pod-status-grid,
+    .pod .pod-timeline { grid-template-columns:1fr 1fr; }
     .pod .pod-snapshot { grid-template-columns:repeat(2,minmax(0,1fr)); }
     .pod .pod-accounting { grid-template-columns:1fr; }
     .pod .pod-thesis { padding:21px 20px 21px 23px; }
@@ -346,6 +691,8 @@
     .pod .pod-figure-head { align-items:flex-start; flex-direction:column; gap:2px; }
   }
   @media(max-width:390px) {
+    .pod .pod-status-grid,
+    .pod .pod-timeline { grid-template-columns:1fr; }
     .pod .pod-gauge b { font-size:18px; }
     .pod .pod-gauge { padding:10px 9px; }
     .pod .pod-figure { margin-left:-5px; margin-right:-5px; }
@@ -364,25 +711,24 @@
 {% endblock %}
 
 {% block art_toc %}
-  <a href="#opening">{{ t('1 · The anomaly', '1 · 异常信号') }}</a>
-  <a href="#accountability">{{ t('2 · What changed', '2 · 哪些判断变了') }}</a>
-  <a href="#duration">{{ t('3 · The price of duration', '3 · 久期的价格') }}</a>
-  <a href="#policy">{{ t('4 · The policy trap', '4 · 政策困局') }}</a>
-  <a href="#stablecoins">{{ t('5 · The stablecoin machine', '5 · 稳定币机器') }}</a>
-  <a href="#ai">{{ t('6 · AI after easy money', '6 · 宽松资金之后的 AI') }}</a>
-  <a href="#global">{{ t('7 · The global map', '7 · 全球市场地图') }}</a>
-  <a href="#assets">{{ t('8 · Hard assets &amp; crypto', '8 · 硬资产与加密资产') }}</a>
-  <a href="#regimes">{{ t('9 · Four futures', '9 · 四种未来') }}</a>
-  <a href="#triggers">{{ t('10 · Trigger framework', '10 · 触发框架') }}</a>
-  <a href="#road">{{ t('11 · Event-gated road', '11 · 事件门控路径') }}</a>
-  <a href="#portfolio">{{ t('12 · Portfolio map', '12 · 组合地图') }}</a>
-  <a href="#falsifiers">{{ t('13 · What proves us wrong', '13 · 什么会证明我们错了') }}</a>
-  <a href="#conclusion">{{ t('14 · Conclusion', '14 · 结论') }}</a>
-  <a href="#sources">{{ t('Sources &amp; method', '资料来源与方法') }}</a>
+  <a href="#market-changed">{{ t('1 · What changed', '1 · 市场发生了什么变化') }}</a>
+  <a href="#model-repair">{{ t('2 · Repairing the map', '2 · 修复旧地图') }}</a>
+  <a href="#duration-mechanism">{{ t('3 · The price of duration', '3 · 久期的价格') }}</a>
+  <a href="#policy-trap-v2">{{ t('4 · The policy trap', '4 · 政策困局') }}</a>
+  <a href="#stablecoin-machine-v2">{{ t('5 · The Treasury-bill machine', '5 · 国库券机器') }}</a>
+  <a href="#ai-capital-efficiency">{{ t('6 · AI capital efficiency', '6 · AI 资本效率') }}</a>
+  <a href="#global-market-map">{{ t('7 · The global market map', '7 · 全球市场地图') }}</a>
+  <a href="#hard-assets">{{ t('8 · Hard assets &amp; crypto', '8 · 硬资产与加密资产') }}</a>
+  <a href="#four-futures">{{ t('9 · Four futures', '9 · 四种未来') }}</a>
+  <a href="#change-our-mind">{{ t('10 · What changes our mind', '10 · 什么会改变我们的判断') }}</a>
+  <a href="#road-2027">{{ t('11 · The road through 2027', '11 · 通向 2027 年的路径') }}</a>
+  <a href="#next-act">{{ t('12 · The next act', '12 · 下一幕') }}</a>
+  <a href="#sources-v2">{{ t('Sources &amp; method', '资料来源与方法') }}</a>
 {% endblock %}
 
 {% block art_body %}
 <article class="pod">
+<div class="pod-legacy" hidden aria-hidden="true">
   <p class="pod-deck">{{ t('AI, gold, Bitcoin and the new fight over who finances America. Research date: August 24, 2026.',
     'AI、黄金、比特币，以及谁来为美国融资的新争夺战。研究日期：2026 年 8 月 24 日。') }}</p>
 
@@ -2546,12 +2892,366 @@
   </div>
 
   <p class="pod-note">{{ t('Editorial note: market values are point-in-time context, not investment advice. Forecast probabilities are conditional research-desk estimates and must be updated when the observable state changes.', '编辑注：市场数值是点时背景，不是投资建议。预测概率是条件性研究台估计，可观察状态变化时必须更新。') }}</p>
+</div>
+
+<div class="pod-v2-shell">
+  <p class="pod-deck">{{ t('AI, gold, Bitcoin and the new fight over who finances America. Research date: August 24, 2026.',
+    'AI、黄金、比特币，以及谁来为美国融资的新争夺战。研究日期：2026 年 8 月 24 日。') }}</p>
+
+  <div class="statband" aria-label="Publication snapshot">
+    <div class="stat" style="--sc:var(--pod-red)">
+      <span class="sk">{{ t('30Y Treasury', '30 年期美债') }}</span><span class="sv">5.23%</span>
+      <span class="sl">{{ t('Long-duration clearing price · Aug 20 official close', '长期久期的出清价格 · 8 月 20 日官方收盘') }}</span>
+    </div>
+    <div class="stat" style="--sc:var(--pod-gold)">
+      <span class="sk">{{ t('Gold futures', '黄金期货') }}</span><span class="sv">$4,703</span>
+      <span class="sl">{{ t('Monetary-confidence signal · Aug 24, 10:35 UTC', '货币信心信号 · 8 月 24 日 10:35 UTC') }}</span>
+    </div>
+    <div class="stat" style="--sc:var(--pod-violet)">
+      <span class="sk">{{ t('AI-linked debt', 'AI 相关债务') }}</span><span class="sv">{{ t('Record pace', '创纪录节奏') }}</span>
+      <span class="sl">{{ t('Source-qualified issuance trend [C] · numeric series held for publication refresh', '经来源限定的发行趋势 [C] · 数值序列留待发布刷新') }}</span>
+    </div>
+    <div class="stat" style="--sc:var(--pod-teal)">
+      <span class="sk">{{ t('Broad HY OAS', '广义高收益债 OAS') }}</span><span class="sv">2.75%</span>
+      <span class="sl">{{ t('Credit transmission remains contained · Aug 20 official close', '信用传导仍受控 · 8 月 20 日官方收盘') }}</span>
+    </div>
+    <div class="stat" style="--sc:var(--pod-blue)">
+      <span class="sk">{{ t('Base regime', '基准情景') }}</span><span class="sv">45%</span>
+      <span class="sl">{{ t('Managed Duration Pressure · Mastermind desk prior [S]', '受管理的久期压力 · Mastermind 研究台先验 [S]') }}</span>
+    </div>
+  </div>
+  <p class="pod-v2-asof">{{ t('Publication snapshot: point-in-time market values retain the report research date and the capture times shown. The AI-debt tile uses a source-qualified trend rather than invented numeric precision pending the publication-day series refresh.',
+    '发布快照：点时市场值保留报告研究日期与所列截取时间。AI 债务卡片在发布日序列刷新前，采用经来源限定的趋势，而不制造数值精度。') }}</p>
+
+  <div class="pod-proof-key" aria-label="Evidence key">
+    <span class="pod-proof-chip"><sup class="ev ev-f">F</sup>{{ t('Fact · primary/current data', '事实 · 一手/当前数据') }}</span>
+    <span class="pod-proof-chip"><sup class="ev ev-c">C</sup>{{ t('Reported / consensus', '报道 / 共识') }}</span>
+    <span class="pod-proof-chip"><sup class="ev ev-i">I</sup>{{ t('Mastermind inference', 'Mastermind 推断') }}</span>
+    <span class="pod-proof-chip"><sup class="ev ev-s">S</sup>{{ t('Scenario / desk estimate', '情景 / 研究台估计') }}</span>
+  </div>
+
+  <div class="callout key pod-bottom-line">
+    <span class="co-h">{{ t('Bottom line', '核心结论') }}</span>
+    <p>{{ t('The market is not yet in a credit crisis. It is in something more interesting: <strong>the cost of long-term capital has risen enough to begin disciplining the AI buildout and the sovereign financing system at the same time.</strong> Gold is reacting before conventional easing arrives, Bitcoin&rsquo;s liquidity clock has moved ahead of the old cycle calendar, and equities are beginning to separate according to capital efficiency rather than AI narrative alone. The next phase depends on whether the long end stabilizes naturally, is managed through Treasury and market structure, stays pinned by inflation, or finally transmits into credit.',
+      '市场尚未陷入信用危机。它正处于更耐人寻味的阶段：<strong>长期资本成本已上升到足以同时约束 AI 建设与主权融资体系的程度。</strong>黄金在传统宽松到来前已作出反应；比特币的流动性时钟走在旧周期日历之前；股票也开始按资本效率分化，而不再只按 AI 叙事分化。下一阶段取决于长端收益率是自然稳定、通过财政部与市场结构得到管理、被通胀钉住，还是最终传导进信用。') }}</p>
+  </div>
+
+  <h2 id="market-changed"><span class="num">1</span>{{ t('The market just told us something changed', '市场刚刚告诉我们：有些东西变了') }}</h2>
+  <div class="pod-section-kicker">{{ t('Opening diagnosis · anomaly before narrative', '开篇诊断 · 先看异常，再讲叙事') }}</div>
+  <div class="pod-copy">
+    <p>{{ t('There are moments when markets stop behaving according to the story investors have been using to explain them. Those moments matter because the anomaly is usually more informative than the trend. <strong>This is one of those moments.</strong>',
+      '有些时刻，市场会突然不再按照投资者惯用的故事运行。这种时刻很重要，因为异常通常比趋势本身更有信息量。<strong>现在正是这样的时刻。</strong>') }}</p>
+    <p>{{ t('Gold has broken sharply higher even though long-term interest rates remain restrictive. Bitcoin has moved before the conventional easing cycle we once thought it would need. The dollar has weakened from its hawkish-squeeze highs. At the same time, <strong>VIX and broad high-yield credit still look far calmer than a genuine financial accident should look.</strong>',
+      '尽管长期利率仍具约束性，黄金却已大幅突破；比特币也在我们过去认为它必须等待的传统宽松周期之前启动；美元则从鹰派挤压的高点回落。与此同时，<strong>VIX 与广义高收益债信用的平静程度，远高于真正金融事故应有的样子。</strong>') }}</p>
+    <p>{{ t('The missing piece is the <strong>price of duration</strong>. The United States is trying to finance two enormous projects at the same time: the federal government itself and the physical AI buildout. Both ultimately arrive at the same market. Both need investors willing to lock money away for years.',
+      '缺失的拼图是<strong>久期的价格</strong>。美国正在同时为两个庞大项目融资：联邦政府自身，以及实体化的 AI 建设。两者最终都来到同一个市场，也都需要投资者愿意把资金锁定多年。') }}</p>
+    <p>{{ t('When the amount of long-term capital demanded rises faster than the amount investors willingly supply at yesterday&rsquo;s price, <strong>the yield has to rise until the market balances.</strong> The present combination says the cost of capital is uncomfortable, but the system is still absorbing it. This is a selection regime, not a declaration that the system has broken.',
+      '当长期资本需求的增速快于投资者愿意按昨日价格提供的资金，<strong>收益率就必须上升，直到市场重新平衡。</strong>当前组合说明资本成本已经令人不适，但系统仍在吸收它。这是一个筛选体制，并不是宣布系统已经崩坏。') }}</p>
+  </div>
+  <h3>{{ t('The anomaly that matters', '真正重要的异常') }}</h3>
+  <div class="pod-shell-rail" aria-label="Anomaly signals">
+    <span class="chip">{{ t('Long yields high', '长端收益率高企') }}</span>
+    <span class="chip">{{ t('Dollar softer', '美元走软') }}</span>
+    <span class="chip">{{ t('Gold strong', '黄金强势') }}</span>
+    <span class="chip">{{ t('Bitcoin early', '比特币提前') }}</span>
+    <span class="chip">{{ t('Credit calm', '信用平静') }}</span>
+  </div>
+  <div data-figure-slot="fig-quadrant"></div>
+  <div class="pod-callout" style="--pod-c:var(--pod-red)">
+    <b>{{ t('Reader takeaway', '读者要点') }}</b>
+    <p>{{ t('No single yield threshold proves fiscal stress. The most important warning is <strong>long yields rising while the dollar falls</strong>—the market demanding more compensation for the duration while simultaneously becoming less enthusiastic about the currency denomination. [I]',
+      '没有任何单一收益率阈值能够证明财政压力。最重要的警告是<strong>长端收益率上升而美元下跌</strong>——市场一边要求更高的久期补偿，一边降低对该计价货币的热情。[I]') }}</p>
+  </div>
+
+  <h2 id="model-repair"><span class="num">2</span>{{ t('What changed since our last map', '上一张地图之后，哪些判断变了') }}</h2>
+  <div class="pod-section-kicker">{{ t('Forecast accountability · mechanisms over dates', '预测问责 · 机制重于日期') }}</div>
+  <p>{{ t('The value of reviewing an old forecast is not to defend it. It is to find out <strong>where the model actually failed.</strong> A surprising amount of the July framework held up. What failed was the sequence.',
+    '复盘旧预测的价值不在于替它辩护，而在于找出<strong>模型究竟在哪里失效。</strong>七月框架中相当多的部分经受住了检验；真正失败的是顺序。') }}</p>
+  <div class="pod-table-wrap"><table class="pod-table pod-compact">
+    <thead><tr><th>{{ t('July framework', '七月框架') }}</th><th>{{ t('What happened', '实际发生了什么') }}</th><th>{{ t('Model repair', '模型修复') }}</th></tr></thead>
+    <tbody>
+      <tr><td><strong>{{ t('AI buildout survives', 'AI 建设继续') }}</strong></td><td>{{ t('Physical investment continued', '实体投资延续') }}</td><td>{{ t('Held', '成立') }}</td></tr>
+      <tr><td><strong>{{ t('Power and networking matter', '电力与网络更重要') }}</strong></td><td>{{ t('Infrastructure bottlenecks remained central', '基础设施瓶颈仍居核心') }}</td><td>{{ t('Held / strengthened', '成立 / 加强') }}</td></tr>
+      <tr><td><strong>{{ t('Memory equities crowded', '存储股拥挤') }}</strong></td><td>{{ t('Korea suffered violent resets', '韩国出现剧烈仓位重置') }}</td><td>{{ t('Held', '成立') }}</td></tr>
+      <tr><td><strong>{{ t('One late memory cycle', '单一的晚周期存储判断') }}</strong></td><td>{{ t('Supplier economics stayed much stronger than the tape', '供应商经济性远强于股价表现') }}</td><td><strong>{{ t('Four separate clocks', '拆成四只独立时钟') }}</strong></td></tr>
+      <tr><td><strong>{{ t('Gold thesis survives', '黄金结构性论点延续') }}</strong></td><td>{{ t('Gold accelerated before clean easing', '黄金在明确宽松前加速') }}</td><td>{{ t('Catalyst moved earlier', '催化剂提前') }}</td></tr>
+      <tr><td><strong>{{ t('Term-premium problem in 2027–28', '期限溢价问题在 2027–28 年') }}</strong></td><td>{{ t('Long-end stress became live in 2026', '长端压力在 2026 年已成为现实') }}</td><td><strong>{{ t('Major timing miss', '重大时点失误') }}</strong></td></tr>
+    </tbody>
+  </table></div>
+  <div data-figure-slot="fig-timeline"></div>
+  <div class="callout lead">
+    <span class="co-h">{{ t('The repair', '修复原则') }}</span>
+    {{ t('<strong>Causal conditions must outrank calendar analogies.</strong> Dates still matter when real information arrives—FOMC meetings, Treasury refundings, BOJ decisions, stablecoin implementation and earnings. The calendar no longer gets to overrule the evidence.',
+      '<strong>因果条件必须高于日历类比。</strong>当真实信息到来时，日期仍然重要——FOMC 会议、财政部再融资、日本央行决定、稳定币实施与财报。但日历不再有权压过证据。') }}
+  </div>
+
+  <h2 id="duration-mechanism"><span class="num">3</span>{{ t('The price of duration', '久期的价格') }}</h2>
+  <div class="pod-section-kicker">{{ t('The governing mechanism · one auction for long-term capital', '治理全局的机制 · 一场长期资本拍卖') }}</div>
+  <div class="pod-intro-grid">
+    <div class="pod-copy">
+      <p>{{ t('To understand why the current market feels internally contradictory, stop thinking of interest rates as something the Federal Reserve simply &ldquo;sets.&rdquo; The Fed controls a very short-term policy rate. <strong>The market determines the price of lending money for ten, twenty or thirty years.</strong>',
+        '要理解当前市场为何内在矛盾，就别再把利率想成美联储简单“设定”的数字。美联储控制的是极短期政策利率；<strong>借出十年、二十年或三十年资金的价格，由市场决定。</strong>') }}</p>
+      <p>{{ t('A long-term investor accepts decades of inflation risk, fiscal risk, opportunity cost and uncertainty. When duration supply rises—or buyers become less willing to hold it at the old yield—the yield must rise until the market clears.',
+        '长期投资者承担的是数十年的通胀风险、财政风险、机会成本与不确定性。当久期供给上升，或买家不再愿意按原有收益率持有时，收益率必须上升，直到市场完成出清。') }}</p>
+    </div>
+    <aside class="pod-mechanism-card">
+      <span class="mk">{{ t('The clearing equation', '出清方程') }}</span>
+      <strong>{{ t('Borrowers&rsquo; duration demand = investors&rsquo; willingness to absorb it', '借款人的久期需求 = 投资者吸收久期的意愿') }}</strong>
+      <p>{{ t('The yield is the price that forces both sides to meet. It is simultaneously a funding cost, a discount rate and a policy constraint.', '收益率是迫使双方相遇的价格。它同时是融资成本、折现率与政策约束。') }}</p>
+    </aside>
+  </div>
+  <div data-figure-slot="fig-collision"></div>
+  <div class="pod-loop" aria-label="AI duration feedback loop">
+    <div class="pod-loop-step"><b>{{ t('AI demand', 'AI 需求') }}</b><small>{{ t('More physical buildout', '更多实体建设') }}</small></div>
+    <div class="pod-loop-step"><b>{{ t('Capex rises', '资本开支上升') }}</b><small>{{ t('Power, chips, buildings', '电力、芯片、建筑') }}</small></div>
+    <div class="pod-loop-step"><b>{{ t('Financing rises', '融资上升') }}</b><small>{{ t('Debt and project capital', '债务与项目资本') }}</small></div>
+    <div class="pod-loop-step"><b>{{ t('Duration supply', '久期供给') }}</b><small>{{ t('Beside Treasury issuance', '叠加财政部发行') }}</small></div>
+    <div class="pod-loop-step"><b>{{ t('Yield rises', '收益率上升') }}</b><small>{{ t('Investors demand more', '投资者要求更多补偿') }}</small></div>
+    <div class="pod-loop-step"><b>{{ t('Projects selected', '项目被筛选') }}</b><small>{{ t('ROI must clear the hurdle', '回报必须越过门槛') }}</small></div>
+  </div>
+  <p>{{ t('AI is no longer only affected by rates. Its financing demand increasingly participates in the market that sets them. The boom begins raising the hurdle rate that values the boom itself. <sup class="ev ev-i">I</sup>',
+    'AI 已不再只是被动承受利率影响；它的融资需求正越来越多地参与决定利率的市场。繁荣开始抬高衡量自身价值的门槛收益率。<sup class="ev ev-i">I</sup>') }}</p>
+  <div class="pod-stage-band">
+    <div class="pod-stage" style="--stage:var(--pod-teal)"><b>{{ t('First AI phase', 'AI 第一阶段') }}</b><p>{{ t('Scarcity wins. GPU, HBM and network bottlenecks dominate.', '稀缺取胜。GPU、HBM 与网络瓶颈主导。') }}</p></div>
+    <div class="pod-stage" style="--stage:var(--pod-gold)"><b>{{ t('Current transition', '当前过渡期') }}</b><p>{{ t('Financing pressure rises. FCF, dilution and duration begin separating names.', '融资压力上升。自由现金流、稀释与久期开始区分公司。') }}</p></div>
+    <div class="pod-stage" style="--stage:var(--pod-blue)"><b>{{ t('Next AI phase', 'AI 下一阶段') }}</b><p>{{ t('Return on capital wins. Weak projects die; cash-flow proof dominates.', '资本回报取胜。弱项目退出，现金流证据主导。') }}</p></div>
+  </div>
+  <h3>{{ t('Why the long bond suddenly matters to equity investors', '为什么长期债券突然对股票投资者至关重要') }}</h3>
+  <p>{{ t('The same future profit is worth less when investors can earn a higher return elsewhere. That is why Nvidia can report extraordinary demand and still experience multiple compression if long yields rise. A company can be <strong>fundamentally right and still be a bad stock at the wrong price.</strong>',
+    '当投资者能在别处获得更高回报时，同一笔未来利润的现值就更低。这就是为什么英伟达即使报告非凡需求，也可能在长端收益率上升时遭遇估值倍数压缩。企业可以<strong>在基本面上正确，却在错误价格上成为一只糟糕的股票。</strong>') }}</p>
+  <p>{{ t('Expensive money can strengthen the survivors: weak projects are cancelled, duplicative capacity is delayed and companies with genuine demand plus internal financing keep investing. If real rates later fall, the survivors enter the next phase with more infrastructure, less competition and visibly better economics.',
+    '昂贵资金反而可能强化幸存者：弱项目被取消，重复产能被推迟，拥有真实需求与内部融资能力的公司继续投资。若实际利率随后下降，幸存者将带着更多基础设施、更少竞争与更清晰的经济性进入下一阶段。') }}</p>
+  <h2 id="policy-trap-v2"><span class="num">4</span>{{ t('Dalio, Treasury, and the policy trap', '达利欧、财政部与政策困局') }}</h2>
+  <div class="pod-section-kicker">{{ t('Reaction functions · plumbing is not monetization', '反应函数 · 市场管道不等于货币化') }}</div>
+  <p>{{ t('A government can carry enormous debt for a long time while buyers willingly absorb it at an acceptable yield. The critical transition comes when debt supply grows faster than demand at the prevailing price. Then the market clears through a higher yield—and that higher yield raises the government&rsquo;s own refinancing cost.',
+    '只要买家愿意按可接受的收益率吸收债务，政府就能长期承载庞大债务。关键转折出现在债务供给以现行价格计增长得比需求更快时；市场随后通过更高收益率出清，而更高收益率又抬升政府自身的再融资成本。') }}</p>
+  <div class="pod-table-wrap"><table class="pod-table pod-compact">
+    <thead><tr><th>{{ t('Already visible', '已经可见') }}</th><th>{{ t('Not proven today', '今天尚未证明') }}</th></tr></thead>
+    <tbody>
+      <tr><td>{{ t('Long-end Treasury pressure [F]', '美债长端压力 [F]') }}</td><td>{{ t('A sovereign buyers&rsquo; strike', '主权债务买家罢买') }}</td></tr>
+      <tr><td>{{ t('Dollar / gold behavior changed [F/I]', '美元 / 黄金行为已改变 [F/I]') }}</td><td>{{ t('An imminent U.S. default', '美国即将违约') }}</td></tr>
+      <tr><td>{{ t('Long-duration buybacks enlarged [F]', '长久期回购规模扩大 [F]') }}</td><td>{{ t('QE or formal yield-curve control', '量化宽松或正式收益率曲线控制') }}</td></tr>
+      <tr><td>{{ t('Foreign holdings softened [F]', '海外持仓有所走弱 [F]') }}</td><td>{{ t('Wholesale foreign abandonment', '海外投资者全面撤离') }}</td></tr>
+    </tbody>
+  </table></div>
+  <div data-figure-slot="fig-reactions"></div>
+  <div class="callout warn">
+    <span class="co-h">{{ t('Boundary conditions', '边界条件') }}</span>
+    {{ t('<strong>Treasury buybacks are not QE.</strong> There is no official Treasury yield cap. Buybacks can support market functioning and alter the market&rsquo;s reaction function, but Treasury still has to finance itself elsewhere. Current conditions are a warning about the price of capital, not a credit crisis.',
+      '<strong>财政部回购不是量化宽松。</strong>财政部并未设定官方收益率上限。回购可以改善市场运行并改变市场的反应函数，但财政部仍需在别处完成融资。当前状况是资本价格发出的警告，不是信用危机。') }}
+  </div>
+
+  <h2 id="stablecoin-machine-v2"><span class="num">5</span>{{ t('Stablecoins and the Treasury bill machine', '稳定币与国库券机器') }}</h2>
+  <div class="pod-section-kicker">{{ t('Collateral architecture · a maturity trade, not free money', '抵押品架构 · 到期结构交易，而非免费资金') }}</div>
+  <p>{{ t('Regulated dollar stablecoins can become a distribution system for dollar liabilities backed by cash, repo and short-dated Treasury securities. The critical word is <strong>short-dated</strong>: rapid redemption makes long-bond price volatility a poor reserve match.',
+    '受监管的美元稳定币可以成为一种美元负债分销系统，由现金、回购与短期美国国债支持。关键在于<strong>短期</strong>：快速赎回使长债价格波动无法成为合适的储备匹配。') }}</p>
+  <div data-figure-slot="fig-stablecoin"></div>
+  <div class="pod-table-wrap"><table class="pod-table pod-compact">
+    <thead><tr><th>{{ t('Stablecoins can potentially...', '稳定币可能做到……') }}</th><th>{{ t('They cannot directly...', '它们不能直接做到……') }}</th></tr></thead>
+    <tbody>
+      <tr><td>{{ t('Create structural demand for bills', '创造对国库券的结构性需求') }}</td><td><strong>{{ t('Create natural demand for 30Y Treasuries', '创造对 30 年期美债的自然需求') }}</strong></td></tr>
+      <tr><td>{{ t('Expand global dollar distribution', '扩大美元全球分销') }}</td><td>{{ t('Eliminate fiscal deficits', '消除财政赤字') }}</td></tr>
+      <tr><td>{{ t('Increase short-end financing capacity', '提高短端融资能力') }}</td><td>{{ t('Remove refinancing risk', '消除再融资风险') }}</td></tr>
+      <tr><td>{{ t('Deepen Treasury-backed digital settlement', '深化以美债支持的数字结算') }}</td><td>{{ t('Make Bitcoin &ldquo;backed by Treasuries&rdquo;', '让比特币“获得美债支持”') }}</td></tr>
+    </tbody>
+  </table></div>
+  <p>{{ t('<strong>Stablecoin bill demand is not equivalent to 30-year Treasury demand.</strong> The structure can trade long-duration market risk for greater sensitivity to short policy rates. Bitcoin remains outside the reserve loop: <strong>Bitcoin is not backed by Treasury or stablecoin reserves.</strong>',
+    '<strong>稳定币带来的国库券需求不等于 30 年期美债需求。</strong>这一结构可能把长久期市场风险换成对短期政策利率更高的敏感性。比特币仍在储备循环之外：<strong>比特币并不由美债或稳定币储备支持。</strong>') }}</p>
+
+  <h2 id="ai-capital-efficiency"><span class="num">6</span>{{ t('AI after the easy money', '宽松资金之后的 AI') }}</h2>
+  <div class="pod-section-kicker">{{ t('Capital-efficiency frontier · proof outranks exposure', '资本效率前沿 · 证据高于敞口') }}</div>
+  <div class="pod-copy">
+    <p>{{ t('The first phase of the AI boom rewarded the company closest to scarcity. There were not enough accelerators, then not enough HBM, optical networking, power, cooling or transformer capacity. When demand hits a hard bottleneck, the economics are easy: <strong>the scarce supplier wins.</strong>',
+      'AI 热潮第一阶段奖励的是最靠近稀缺性的公司。先是加速器不够，继而是 HBM、光网络、电力、冷却与变压器产能不足。当需求撞上硬瓶颈时，经济逻辑很简单：<strong>稀缺供应商取胜。</strong>') }}</p>
+    <p>{{ t('That phase is becoming less forgiving. The market is beginning to ask a different question: <strong>how much durable cash flow does each additional dollar of AI investment actually create?</strong> This is the transition from AI exposure to AI capital efficiency.',
+      '这一阶段正变得不再宽容。市场开始追问一个不同的问题：<strong>每多投入一美元 AI 资本，究竟能创造多少持久现金流？</strong>这就是从 AI 敞口转向 AI 资本效率。') }}</p>
+  </div>
+  <div class="pod-split-figure">
+    <div data-figure-slot="fig-ai-frontier"></div>
+    <aside class="pod-equation">
+      <span class="eq-k">{{ t('The new AI equation', '新的 AI 方程') }}</span>
+      <div class="eq-main">{{ t('Durable AI cash earnings', '持久 AI 现金收益') }}<div class="eq-rule"></div>{{ t('Incremental invested capital', '增量投入资本') }}</div>
+      <p>{{ t('Then adjust for financing cost · dilution · utilization · depreciation · asset life · energy cost · residual value.', '随后对融资成本、稀释、利用率、折旧、资产寿命、能源成本与残值作调整。') }}</p>
+    </aside>
+  </div>
+  <div class="pod-table-wrap"><table class="pod-table pod-compact">
+    <thead><tr><th>{{ t('Company', '公司') }}</th><th>{{ t('Monetization proof', '变现证据') }}</th><th>{{ t('Capital intensity', '资本强度') }}</th><th>{{ t('Current read', '当前判断') }}</th></tr></thead>
+    <tbody>
+      <tr><td><strong>MSFT</strong></td><td>{{ t('Strong · cloud, distribution, backlog', '强 · 云、分销与在手订单') }}</td><td>{{ t('Very high; internally supported', '很高；由内部现金流支持') }}</td><td><strong>{{ t('Cleanest printed proof', '最干净的纸面证据') }}</strong></td></tr>
+      <tr><td><strong>GOOGL</strong></td><td>{{ t('Strong · cloud + custom silicon', '强 · 云 + 自研芯片') }}</td><td>{{ t('Very high; burden rising', '很高；负担上升') }}</td><td>{{ t('Vertical-integration ROI test', '垂直整合回报测试') }}</td></tr>
+      <tr><td><strong>META</strong></td><td>{{ t('Indirect / developing', '间接 / 仍在形成') }}</td><td>{{ t('Extreme; FCF compression', '极高；自由现金流受压') }}</td><td><strong>{{ t('Proof still required', '仍需证据') }}</strong></td></tr>
+      <tr><td><strong>NVDA</strong></td><td>{{ t('Direct supplier revenue', '直接供应商收入') }}</td><td>{{ t('Customer capex sensitivity', '受客户资本开支影响') }}</td><td>{{ t('Demand vs duration multiple', '需求强度与久期估值的拉扯') }}</td></tr>
+      <tr><td><strong>AAPL</strong></td><td>{{ t('Less infrastructure-dependent', '对基础设施依赖较低') }}</td><td>{{ t('Lower relative burden', '相对负担较低') }}</td><td>{{ t('Relative shelter, not highest beta', '相对庇护，非最高贝塔') }}</td></tr>
+      <tr><td><strong>BABA</strong></td><td>{{ t('Real AI / cloud growth', '真实 AI / 云增长') }}</td><td>{{ t('Extreme; equity dilution', '极高；股权稀释') }}</td><td>{{ t('Strategic upside, shareholder cost', '战略上行，股东承担成本') }}</td></tr>
+    </tbody>
+  </table></div>
+  <div class="pod-status-grid">
+    <article class="vcard" style="--vc:var(--pod-teal)"><span class="vtag">{{ t('Printed proof', '已打印证据') }}</span><h3>MSFT</h3><p>{{ t('Existing cloud distribution converts infrastructure into identifiable revenue. The question is ROI at scale, not whether customers exist.', '既有云分销把基础设施转成可识别收入。问题是规模化回报，而非客户是否存在。') }}</p></article>
+    <article class="vcard" style="--vc:var(--pod-blue)"><span class="vtag">{{ t('Integration test', '整合测试') }}</span><h3>GOOGL</h3><p>{{ t('Custom silicon can improve economics, but capital absorption must prove the advantage in margins and free cash flow.', '自研芯片可以改善经济性，但资本吸收必须在利润率与自由现金流中证明优势。') }}</p></article>
+    <article class="vcard" style="--vc:var(--pod-gold)"><span class="vtag">{{ t('Proof required', '仍需证据') }}</span><h3>META</h3><p>{{ t('Strategic AI value remains plausible; the direct monetization bridge is less visible than the infrastructure spend.', '战略 AI 价值仍可信，但直接变现桥梁远没有基础设施开支清晰。') }}</p></article>
+    <article class="vcard" style="--vc:var(--pod-violet)"><span class="vtag">{{ t('Duration-sensitive', '久期敏感') }}</span><h3>NVDA</h3><p>{{ t('Demand can remain extraordinary while the equity multiple compresses under a higher required return.', '需求可以继续非凡，但股票估值倍数仍会在更高必要回报率下压缩。') }}</p></article>
+  </div>
+  <div class="callout key">
+    <span class="co-h">{{ t('The paradox', '悖论') }}</span>
+    {{ t('Expensive money can make the final AI winners stronger. Weak projects are cancelled, duplication is reduced and the survivors enter the next phase with more infrastructure, less competition and clearer monetization.',
+      '昂贵资金可以让最终的 AI 赢家更强。弱项目被取消，重复建设减少，而幸存者将带着更多基础设施、更少竞争与更清晰的变现进入下一阶段。') }}
+  </div>
+
+  <h2 id="global-market-map"><span class="num">7</span>{{ t('The global market map', '全球市场地图') }}</h2>
+  <div class="pod-section-kicker">{{ t('Five markets · five capital cycles', '五个市场 · 五种资本周期') }}</div>
+  <div class="pod-table-wrap"><table class="pod-table pod-compact">
+    <thead><tr><th>{{ t('Market', '市场') }}</th><th>{{ t('The real cycle', '真实周期') }}</th><th>{{ t('What matters now', '当前关键') }}</th><th>{{ t('Main risk', '主要风险') }}</th></tr></thead>
+    <tbody>
+      <tr><td><strong>{{ t('United States', '美国') }}</strong></td><td>{{ t('Duration + AI financing', '久期 + AI 融资') }}</td><td>{{ t('Capital efficiency / credit transmission', '资本效率 / 信用传导') }}</td><td>{{ t('Sovereign stress enters credit', '主权压力进入信用') }}</td></tr>
+      <tr><td><strong>{{ t('Hong Kong', '香港') }}</strong></td><td>{{ t('Offshore tech + global liquidity', '离岸科技 + 全球流动性') }}</td><td>{{ t('Monetization and dilution', '变现与稀释') }}</td><td>{{ t('Strong AI, bad financing', 'AI 强，融资差') }}</td></tr>
+      <tr><td><strong>{{ t('Mainland China', '中国大陆') }}</strong></td><td>{{ t('Industrial strength vs household weakness', '工业强势对家庭疲弱') }}</td><td>{{ t('Strategic manufacturing', '战略制造业') }}</td><td>{{ t('Property / local balance sheets', '地产 / 地方资产负债表') }}</td></tr>
+      <tr><td><strong>{{ t('Korea', '韩国') }}</strong></td><td>{{ t('Memory profits vs positioning', '存储利润对仓位') }}</td><td>{{ t('Deleveraging reset', '去杠杆重置') }}</td><td>{{ t('Crowding outruns fundamentals', '拥挤跑在基本面之前') }}</td></tr>
+      <tr><td><strong>{{ t('Japan', '日本') }}</strong></td><td>{{ t('Domestic yields + global funding', '国内收益率 + 全球融资') }}</td><td>{{ t('JGB / yen / carry', '日债 / 日元 / 套息') }}</td><td>{{ t('Repatriation and leverage unwind', '资金回流与杠杆平仓') }}</td></tr>
+    </tbody>
+  </table></div>
+  <p>{{ t('<strong>Hong Kong and mainland China are separate capital cycles.</strong> The right question is not “China bullish or bearish?” but which balance sheet is connected to which capital cycle.',
+    '<strong>香港与中国大陆是彼此独立的资本周期。</strong>正确的问题不是“中国看多还是看空”，而是哪一张资产负债表连接着哪一种资本周期。') }}</p>
+  <h3>{{ t('The stock peaked before the memory industry did', '股票先于存储产业见顶') }}</h3>
+  <p>{{ t('Memory equity timing and memory-fundamental timing are separate. Physical supply, supplier profit, equity positioning and downstream system cost are connected clocks; <strong>they are not synchronized.</strong>',
+    '存储股的时点与存储基本面的时点彼此独立。实体供给、供应商利润、股票仓位与下游系统成本是相互连接的时钟；<strong>它们并不同步。</strong>') }}</p>
+  <div data-figure-slot="fig-memory"></div>
+  <h3>{{ t('Japan: the world&rsquo;s funding variable returns', '日本：全球融资变量回归') }}</h3>
+  <p>{{ t('Higher JGB yields can draw marginal Japanese capital home while a narrowing U.S.–Japan rate differential strengthens the yen and weakens carry. Global risk can therefore de-lever even as U.S. liquidity expectations improve.',
+    '更高的日本国债收益率可以吸引边际日本资本回流；美日利差收窄则会强化日元并削弱套息交易。因此，即使美国流动性预期改善，全球风险资产仍可能去杠杆。') }}</p>
+  <div data-figure-slot="fig-triangle"></div>
+
+  <h2 id="hard-assets"><span class="num">8</span>{{ t('Hard assets and crypto: stop calling them one trade', '硬资产与加密资产：别再把它们叫作同一笔交易') }}</h2>
+  <div class="pod-section-kicker">{{ t('Different assets · different monetary expressions', '不同资产 · 不同货币表达') }}</div>
+  <div class="pod-table-wrap"><table class="pod-table pod-compact">
+    <thead><tr><th>{{ t('Asset', '资产') }}</th><th>{{ t('Primary expression', '主要表达') }}</th><th>{{ t('Structural view', '结构性判断') }}</th><th>{{ t('Tactical risk', '战术风险') }}</th></tr></thead>
+    <tbody>
+      <tr><td><strong>{{ t('Gold', '黄金') }}</strong></td><td>{{ t('Sovereign confidence + real rates', '主权信心 + 实际利率') }}</td><td><strong>{{ t('Strongest', '最强') }}</strong></td><td>{{ t('Vertical rally / real-yield reversal', '垂直上涨 / 实际利率反转') }}</td></tr>
+      <tr><td><strong>{{ t('Bitcoin', '比特币') }}</strong></td><td>{{ t('Liquidity + monetary optionality', '流动性 + 货币选择权') }}</td><td>{{ t('Positive', '正面') }}</td><td>{{ t('Leverage / risk-off', '杠杆 / 风险规避') }}</td></tr>
+      <tr><td><strong>{{ t('Silver', '白银') }}</strong></td><td>{{ t('Monetary beta + industrial demand', '货币贝塔 + 工业需求') }}</td><td>{{ t('Positive', '正面') }}</td><td>{{ t('Convexity both ways', '双向凸性') }}</td></tr>
+      <tr><td><strong>{{ t('Platinum', '铂金') }}</strong></td><td>{{ t('Physical deficit / inventory', '实体短缺 / 库存') }}</td><td>{{ t('Positive relative', '相对正面') }}</td><td>{{ t('Already rerated', '已经重估') }}</td></tr>
+      <tr><td><strong>{{ t('Palladium', '钯金') }}</strong></td><td>{{ t('Auto demand / supply balance', '汽车需求 / 供给平衡') }}</td><td>{{ t('Weaker relative', '相对较弱') }}</td><td>{{ t('Violent squeezes', '剧烈挤压') }}</td></tr>
+      <tr><td><strong>{{ t('Copper', '铜') }}</strong></td><td>{{ t('Electrification / AI scarcity', '电气化 / AI 稀缺') }}</td><td>{{ t('Strong long run', '长期强势') }}</td><td>{{ t('Physical squeeze / poor entry', '实物挤压 / 糟糕入场点') }}</td></tr>
+    </tbody>
+  </table></div>
+  <div class="pquote"><p>{{ t('Hard assets are not one trade. Gold measures confidence in nominal claims. Bitcoin measures liquidity-sensitive monetary optionality. Copper is an electrification scarcity asset whose best entry may arrive after the squeeze.',
+    '硬资产不是同一笔交易。黄金衡量对名义债权的信心；比特币衡量对流动性敏感的货币选择权；铜则是电气化稀缺资产，其最佳入场点可能出现在挤压之后。') }}</p></div>
+  <h2 id="four-futures"><span class="num">9</span>{{ t('Four futures from here', '从此出发的四种未来') }}</h2>
+  <div class="pod-section-kicker">{{ t('Explicit alternatives · probabilities must move with evidence', '明确列出替代路径 · 概率必须随证据变化') }}</div>
+  <p>{{ t('The old forecasting mistake was to let one path become too authoritative. The repair is to make the alternatives explicit. These probabilities are <strong>Mastermind desk estimates—not statistically calibrated confidence intervals.</strong> Their purpose is to force updates rather than narrate around new evidence.',
+    '旧预测的错误，是让单一路径获得过多权威。修复方式是明确列出替代路径。这些概率是<strong>Mastermind 研究台估计，并非统计校准的置信区间。</strong>它们的目的，是迫使我们更新，而不是围绕新证据编故事。') }}</p>
+  <div data-figure-slot="fig-regimes"></div>
+  <p class="pod-note">Mastermind desk estimates — not statistical confidence intervals. / Mastermind 研究台估计——并非统计置信区间。</p>
+  <div class="pod-regime-strip">
+    <article class="pod-regime-card" style="--rc:var(--pod-blue)"><span class="rp">45%</span><b>{{ t('Managed Duration Pressure', '受管理的久期压力') }}</b><p>{{ t('Long end remains high but orderly; credit stays calm; selection dominates liquidation.', '长端高企但有序；信用平静；筛选主导而非清算。') }}</p></article>
+    <article class="pod-regime-card" style="--rc:var(--pod-teal)"><span class="rp">20%</span><b>{{ t('Benign Absorption', '良性吸收') }}</b><p>{{ t('Private demand clears duration naturally as inflation and real yields cool.', '通胀与实际利率降温，私人需求自然吸收久期。') }}</p></article>
+    <article class="pod-regime-card" style="--rc:var(--pod-gold)"><span class="rp">25%</span><b>{{ t('Inflation Veto', '通胀否决') }}</b><p>{{ t('The economy wants relief, but inflation denies policymakers room to deliver it.', '经济需要缓解，但通胀不允许政策提供缓解。') }}</p></article>
+    <article class="pod-regime-card" style="--rc:var(--pod-red)"><span class="rp">10%</span><b>{{ t('Term-Premium Accident', '期限溢价事故') }}</b><p>{{ t('Duration stress transmits into private credit and liquidity becomes scarce.', '久期压力传入私人信用，流动性变得稀缺。') }}</p></article>
+  </div>
+  <div class="pod-table-wrap"><table class="pod-table pod-compact">
+    <thead><tr><th></th><th>45% · {{ t('Managed', '受管理') }}</th><th>20% · {{ t('Benign', '良性') }}</th><th>25% · {{ t('Inflation veto', '通胀否决') }}</th><th>10% · {{ t('Accident', '事故') }}</th></tr></thead>
+    <tbody>
+      <tr><td><strong>{{ t('Long yields', '长端收益率') }}</strong></td><td>{{ t('High but contained', '高企但受控') }}</td><td>{{ t('Fall organically', '自然下行') }}</td><td>{{ t('High / rising', '高企 / 上升') }}</td><td>{{ t('Disorderly', '失序') }}</td></tr>
+      <tr><td><strong>{{ t('Real yields', '实际收益率') }}</strong></td><td>{{ t('Gradually lower', '逐步下降') }}</td><td>{{ t('Clearly lower', '明确下降') }}</td><td>{{ t('Higher', '上升') }}</td><td>{{ t('High / volatile', '高企 / 波动') }}</td></tr>
+      <tr><td><strong>{{ t('Credit', '信用') }}</strong></td><td>{{ t('Calm', '平静') }}</td><td>{{ t('Calm', '平静') }}</td><td>{{ t('Slowly wider', '缓慢走阔') }}</td><td><strong>{{ t('Breaks wider', '突破走阔') }}</strong></td></tr>
+      <tr><td><strong>{{ t('U.S. equities', '美股') }}</strong></td><td>{{ t('Rotation / correction', '轮动 / 调整') }}</td><td>{{ t('Broad rally', '广泛上涨') }}</td><td>{{ t('De-rating', '估值下修') }}</td><td>{{ t('Deep liquidation', '深度清算') }}</td></tr>
+      <tr><td><strong>{{ t('AI infrastructure', 'AI 基础设施') }}</strong></td><td>{{ t('Strong', '强') }}</td><td>{{ t('Very strong', '很强') }}</td><td>{{ t('Selective', '选择性') }}</td><td>{{ t('Delays / rationing', '延迟 / 配给') }}</td></tr>
+      <tr><td><strong>{{ t('Gold', '黄金') }}</strong></td><td>{{ t('Strong', '强') }}</td><td>{{ t('Positive', '正面') }}</td><td>{{ t('Tactical downside', '战术下行') }}</td><td>{{ t('Down first / strongest recovery', '先跌 / 最强复苏') }}</td></tr>
+      <tr><td><strong>{{ t('Bitcoin', '比特币') }}</strong></td><td>{{ t('Positive / volatile', '正面 / 波动') }}</td><td>{{ t('High-beta upside', '高贝塔上行') }}</td><td>{{ t('Down', '下跌') }}</td><td>{{ t('Violent first leg down', '首段剧烈下跌') }}</td></tr>
+      <tr><td><strong>{{ t('Yen', '日元') }}</strong></td><td>{{ t('Firmer bias', '偏强') }}</td><td>{{ t('Mixed', '混合') }}</td><td>{{ t('BOJ-dependent', '取决于日本央行') }}</td><td>{{ t('Strong on carry unwind', '套息平仓时走强') }}</td></tr>
+    </tbody>
+  </table></div>
+  <div class="pod-callout" style="--pod-c:var(--pod-blue)">
+    <b>{{ t('Base-regime read', '基准情景判断') }}</b>
+    <p>{{ t('Managed Duration Pressure best fits the current contradiction: long-end stress is real, but credit has not broken and policy has tools that operate before full monetary easing is required. The base case is dispersion before liquidation—not a claim that Treasury can permanently repeal the bond market. [S]',
+      '受管理的久期压力最符合当前矛盾：长端压力真实存在，但信用尚未破裂，政策也拥有在全面货币宽松之前就能运作的工具。基准情景是先分化、后清算——并非宣称财政部可以永久废除债券市场。[S]') }}</p>
+  </div>
+
+  <h2 id="change-our-mind"><span class="num">10</span>{{ t('What changes our mind', '什么会改变我们的判断') }}</h2>
+  <div class="pod-section-kicker">{{ t('Confirmation and kill conditions · no moving the goalposts', '确认与改判条件 · 不许移动球门') }}</div>
+  <div class="pod-table-wrap"><table class="pod-table pod-compact pod-dashboard">
+    <thead><tr><th>{{ t('Claim', '主张') }}</th><th>{{ t('What confirms it', '什么确认它') }}</th><th>{{ t('What kills or downgrades it', '什么推翻或降级它') }}</th></tr></thead>
+    <tbody>
+      <tr><td><strong>{{ t('Managed pressure [S]', '受管理压力 [S]') }}</strong></td><td>{{ t('Long end orderly; real yields stop rising; credit calm', '长端有序；实际收益率停止上升；信用平静') }}</td><td>{{ t('Natural 30Y rally → Benign; credit/VIX break → Accident', '30 年期自然上涨 → 良性；信用/VIX 破裂 → 事故') }}</td></tr>
+      <tr><td><strong>{{ t('Benign absorption [S]', '良性吸收 [S]') }}</strong></td><td>{{ t('30Y below ~5% organically; real yields below ~2.25%', '30 年期自然降至约 5% 以下；实际收益率低于约 2.25%') }}</td><td>{{ t('Renewed inflation, weak auctions or escalating support', '通胀重燃、拍卖疲弱或支持不断升级') }}</td></tr>
+      <tr><td><strong>{{ t('Inflation veto [S]', '通胀否决 [S]') }}</strong></td><td>{{ t('Hot core prints; real yields above ~2.55%; stronger dollar', '核心通胀偏热；实际收益率高于约 2.55%；美元走强') }}</td><td>{{ t('Inflation cools as labor weakens and real yields roll', '就业走弱同时通胀降温、实际收益率回落') }}</td></tr>
+      <tr><td><strong>{{ t('Term-premium accident [S]', '期限溢价事故 [S]') }}</strong></td><td>{{ t('Broad HY OAS above ~4%; VIX above 25 persistently', '广义高收益债 OAS 高于约 4%；VIX 持续高于 25') }}</td><td>{{ t('Credit stays tight; stress remains valuation-only', '信用仍紧；压力局限在估值') }}</td></tr>
+      <tr><td><strong>{{ t('Gold thesis [I/S]', '黄金论点 [I/S]') }}</strong></td><td>{{ t('Softer real-yield impulse; weaker dollar; monetary demand', '实际收益率冲力走软；美元走弱；货币需求') }}</td><td>{{ t('Durable real-yield and dollar rise without confidence damage', '实际收益率与美元持续上升且信心未受损') }}</td></tr>
+      <tr><td><strong>{{ t('AI capital efficiency [I]', 'AI 资本效率 [I]') }}</strong></td><td>{{ t('Self-financed, high-return names separate', '自融资、高回报公司走出分化') }}</td><td>{{ t('Easy financing returns with no penalty for weak ROI', '宽松融资回归，低回报不再受惩罚') }}</td></tr>
+    </tbody>
+  </table></div>
+  <div data-figure-slot="fig-cockpit"></div>
+  <div class="pquote"><p>{{ t('The one combination we care about most: <strong>long yields up + dollar down.</strong> Persistently together, they mean the market is asking for more compensation to hold the duration and less exposure to the currency at the same time. That does not prove fiscal dominance; it makes the thesis materially more urgent.',
+    '我们最关注的组合：<strong>长端收益率上升 + 美元下跌。</strong>若两者持续同时出现，意味着市场既要求更高的久期补偿，又降低对该货币的敞口。这并不能证明财政主导，但会显著提高本论点的紧迫性。') }}</p></div>
+
+  <h2 id="road-2027"><span class="num">11</span>{{ t('The road through 2027', '通向 2027 年的路径') }}</h2>
+  <div class="pod-section-kicker">{{ t('Event-gated timeline · information gates, not a fake smooth price path', '事件门控时间线 · 信息关口，而非虚假的平滑价格路径') }}</div>
+  <div class="pod-timeline">
+    <article class="pod-gate"><span class="gk">{{ t('Now → early autumn 2026', '现在 → 2026 年初秋') }}</span><b>{{ t('Information and policy separation', '信息与政策分离') }}</b><p>{{ t('Inflation, AI earnings and Treasury operations test three reaction functions at once.', '通胀、AI 财报与财政部操作同时检验三套反应函数。') }}</p></article>
+    <article class="pod-gate"><span class="gk">{{ t('Autumn 2026', '2026 年秋季') }}</span><b>{{ t('Stress and reallocation', '压力与再配置') }}</b><p>{{ t('A volatility window, not a guaranteed capitulation date. Credit and breadth decide.', '这是波动窗口，不是保证投降的日期。由信用与市场广度决定。') }}</p></article>
+    <article class="pod-gate"><span class="gk">{{ t('H1 2027', '2027 年上半年') }}</span><b>{{ t('The monetary transition', '货币转折') }}</b><p>{{ t('If inflation permits, the Fed can join a transition market structure began pricing earlier.', '若通胀允许，美联储可加入市场结构早已开始定价的转折。') }}</p></article>
+    <article class="pod-gate"><span class="gk">{{ t('H2 2027', '2027 年下半年') }}</span><b>{{ t('The AI return-on-capital test', 'AI 资本回报测试') }}</b><p>{{ t('Monetization plus cheaper finance creates the boom; weak utilization reveals overbuild.', '变现叠加更便宜融资会创造繁荣；低利用率则暴露过度建设。') }}</p></article>
+  </div>
+  <div class="pod-table-wrap"><table class="pod-table pod-compact">
+    <thead><tr><th>{{ t('Information gate', '信息关口') }}</th><th>{{ t('What it tests', '它检验什么') }}</th></tr></thead>
+    <tbody>
+      <tr><td>{{ t('Near-term inflation / growth data', '近期通胀 / 增长数据') }}</td><td>{{ t('Inflation Veto vs Benign Absorption', '通胀否决对良性吸收') }}</td></tr>
+      <tr><td>{{ t('Major AI earnings', '主要 AI 公司财报') }}</td><td>{{ t('Earnings power vs duration compression', '盈利能力对久期压缩') }}</td></tr>
+      <tr><td>{{ t('Treasury buyback / refunding decisions', '财政部回购 / 再融资决定') }}</td><td>{{ t('Whether market structure can contain long-end stress', '市场结构能否约束长端压力') }}</td></tr>
+      <tr><td>{{ t('FOMC communication', 'FOMC 沟通') }}</td><td>{{ t('Inflation vs labor reaction function', '通胀对就业的反应函数') }}</td></tr>
+      <tr><td>{{ t('BOJ decisions', '日本央行决定') }}</td><td>{{ t('Yen / carry / repatriation channel', '日元 / 套息 / 资金回流渠道') }}</td></tr>
+      <tr><td>{{ t('Stablecoin implementation', '稳定币实施') }}</td><td>{{ t('Whether bill-demand architecture becomes measurable', '国库券需求架构能否被衡量') }}</td></tr>
+      <tr><td>{{ t('H2 2027 AI ROI evidence', '2027 年下半年 AI 回报证据') }}</td><td>{{ t('Productive expansion vs overbuild', '生产性扩张对过度建设') }}</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="next-act"><span class="num">12</span>{{ t('The next act is decided by the price of capital', '下一幕由资本价格决定') }}</h2>
+  <div class="pod-section-kicker">{{ t('Conclusion · which AI, which balance sheet, which regime', '结论 · 哪一种 AI、哪一张资产负债表、哪一种体制') }}</div>
+  <p>{{ t('AI changes the capital cycle because AI is becoming physical. Physical AI requires factories, chips, memory, power plants, transmission lines, transformers, cooling systems, buildings and debt. The deeper the boom moves into the physical economy, the more it must compete with every other borrower for capital—including the U.S. government.',
+    'AI 改变资本周期，因为 AI 正在实体化。实体 AI 需要工厂、芯片、存储、电厂、输电线、变压器、冷却系统、建筑与债务。热潮越深入实体经济，就越必须与其他每一个借款人争夺资本——包括美国政府。') }}</p>
+  <p>{{ t('Gold moved first because it does not need to know which adjustment wins. Bitcoin moved early because its liquidity clock changed before the old calendar expected it. AI is not over; the rules changed. Scarcity alone is no longer enough. <strong>The next winners must convert capital into cash above the new hurdle rate.</strong>',
+    '黄金先动，因为它不需要知道哪一种调整最终胜出；比特币提前，是因为其流动性时钟早于旧日历发生改变。AI 没有结束，规则变了。只有稀缺已经不够。<strong>下一批赢家必须把资本转成高于新门槛收益率的现金。</strong>') }}</p>
+  <div class="pquote"><p>{{ t('The next market cycle will be decided by whether the United States can finance both its sovereign debt and the AI buildout at a tolerable long-term yield without forcing the adjustment into inflation, the dollar, credit—or all three.',
+    '下一个市场周期，将由美国能否以可承受的长期收益率同时为主权债务与 AI 建设融资，并避免把调整强行推入通胀、美元、信用——或三者同时——而决定。') }}</p></div>
+
+  <h2 id="sources-v2">{{ t('Sources &amp; method', '资料来源与方法') }}</h2>
+  <div class="pod-intro-grid">
+    <div class="pod-copy">
+      <p>{{ t('This report is a point-in-time research framework, not a deterministic forecast. Primary-source families include Federal Reserve and FRED rate / real-yield / credit series, U.S. Treasury refunding and buyback materials, BEA and BLS releases, BOJ decisions, company filings and investor relations, and lawful public market tape. Credible secondary reporting is used only where the claim cannot be established more cleanly from primary data.',
+        '本报告是一份点时研究框架，而非确定性预测。主要一手来源包括美联储与 FRED 的利率、实际收益率与信用序列，美国财政部再融资与回购材料，BEA 与 BLS 发布，日本央行决定，公司申报与投资者关系资料，以及合法公开市场行情。只有在无法由一手数据更干净地确立主张时，才使用可信二手报道。') }}</p>
+      <p>{{ t('Claims about an unannounced Treasury pain threshold, stablecoins relieving the long end, AI debt driving term premium, the base regime, gold&rsquo;s duration-confidence signal, Bitcoin&rsquo;s front-running and a 2027 AI blow-off remain explicitly inference or scenario—not fact.',
+        '有关财政部未宣布痛点、稳定币缓解长端、AI 债务推动期限溢价、基准体制、黄金久期信心信号、比特币抢跑以及 2027 年 AI 最后喷出的主张，都明确保持为推断或情景，而非事实。') }}</p>
+    </div>
+    <aside class="pod-mechanism-card">
+      <span class="mk">{{ t('Publication gate', '发布门') }}</span>
+      <strong>{{ t('Research date preserved · market snapshot timestamped', '研究日期保留 · 市场快照带时间戳') }}</strong>
+      <p>{{ t('Before production, refresh every time-sensitive value and event date. If a major regime trigger is crossed, return to Sol rather than rewriting around it.', '生产发布前刷新每个时效性数值与事件日期。若穿越重大体制触发器，应返回 Sol 审查，而不是绕开证据改写。') }}</p>
+    </aside>
+  </div>
+  <div class="pod-source-list">
+    <a href="https://fred.stlouisfed.org/series/DGS30" rel="noopener">{{ t('Federal Reserve / FRED — 30-Year Treasury Constant Maturity Rate', '美联储 / FRED — 30 年期国债固定到期收益率') }}</a>
+    <a href="https://fred.stlouisfed.org/series/DFII10" rel="noopener">{{ t('Federal Reserve / FRED — 10-Year Real Yield', '美联储 / FRED — 10 年期实际收益率') }}</a>
+    <a href="https://fred.stlouisfed.org/series/BAMLH0A0HYM2" rel="noopener">{{ t('ICE BofA / FRED — U.S. High Yield OAS', 'ICE BofA / FRED — 美国高收益债 OAS') }}</a>
+    <a href="https://home.treasury.gov/news/press-releases/sb0607" rel="noopener">{{ t('U.S. Treasury — August 2026 refunding and buyback schedule', '美国财政部 — 2026 年 8 月再融资与回购日程') }}</a>
+    <a href="https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm" rel="noopener">{{ t('Federal Reserve — FOMC calendar', '美联储 — FOMC 日历') }}</a>
+    <a href="https://www.boj.or.jp/en/mopo/mpmsche_minu/index.htm" rel="noopener">{{ t('Bank of Japan — Monetary Policy Meeting schedule', '日本央行 — 货币政策会议日程') }}</a>
+  </div>
+  <p class="pod-note">{{ t('Market values are point-in-time context, not investment advice. Scenario probabilities are conditional research-desk estimates and must be updated when the observable state changes.',
+    '市场数值是点时背景，不构成投资建议。情景概率是条件性研究台估计，必须在可观察状态变化时更新。') }}</p>
+</div>
 </article>
 {% endblock %}
 
 {% block body_scripts %}
 <script>
 (function(){
+  var legacy=document.querySelector('.pod-legacy');
+  if(legacy){
+    [].slice.call(legacy.querySelectorAll('.pod-figure')).forEach(function(figure){
+      var slot=document.querySelector('[data-figure-slot="'+figure.id+'"]');
+      if(slot) slot.replaceWith(figure);
+    });
+    legacy.remove();
+  }
   var figures=[].slice.call(document.querySelectorAll('.pod-figure'));
   if(!figures.length) return;
   var reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;

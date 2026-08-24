@@ -28,21 +28,19 @@ PRICE_FIGURE_IDS = (
 )
 
 PRICE_ANCHORS = (
-    "opening",
-    "accountability",
-    "duration",
-    "policy",
-    "stablecoins",
-    "ai",
-    "global",
-    "assets",
-    "regimes",
-    "triggers",
-    "road",
-    "portfolio",
-    "falsifiers",
-    "conclusion",
-    "sources",
+    "market-changed",
+    "model-repair",
+    "duration-mechanism",
+    "policy-trap-v2",
+    "stablecoin-machine-v2",
+    "ai-capital-efficiency",
+    "global-market-map",
+    "hard-assets",
+    "four-futures",
+    "change-our-mind",
+    "road-2027",
+    "next-act",
+    "sources-v2",
 )
 
 
@@ -168,8 +166,12 @@ def test_price_of_duration_reduced_motion_forces_final_state() -> None:
 def test_price_of_duration_language_labels_do_not_override_language_visibility() -> None:
     source = _price_source()
 
+    assert source.count('<div class="stat"') == 5
+    assert source.count('class="sk"') == 5
+    assert source.count('class="sl"') == 5
     assert source.count('class="pod-gauge-label"') == 8
-    assert source.count('class="pod-proof-chip"') == 4
+    assert source.count('class="pod-proof-chip"') >= 4
+    assert ".pod .stat span" not in source
     assert ".pod .pod-gauge span" not in source
     assert ".pod .pod-proof-key span" not in source
     assert ".pod .pod-gauge-label" in source
