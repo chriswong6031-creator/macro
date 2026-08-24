@@ -4240,23 +4240,28 @@ def main() -> int:
         except Exception as we:    # noqa: BLE001
             log.warning("regime persist failed (%s)", we)
 
-    # Forward-return CONES (empirical, regime-conditioned) + the RECOMMENDATION engine —
-    # the command-center decision layer (engine/btc_recommend.py). Never break the build.
+    # Forward-return CONES + the legacy recommendation engine. Its allowlisted levels,
+    # rationale and risk copy remain advisory; it no longer owns an action or target.
     try:
         from engine import btc_recommend
         cones = btc_recommend.forward_cones(sig)
         recommendation = btc_recommend.recommend(sig, master, cones, envd.get("risk"), sizing)
-        # Fix #34: stamp the midterm-blackout state directly on the rec object so BOTH
-        # templates (vector.html.j2 and vector_allocation.html.j2) can guard from a SINGLE
-        # flag and cannot drift. When suppressed, ok stays True so the object is valid, but
-        # templates check `rec.suppressed_by_blackout` before rendering the action card.
-        if isinstance(recommendation, dict) and recommendation.get("ok"):
-            recommendation["suppressed_by_blackout"] = bool(gate.get("active"))
-        else:
-            recommendation["suppressed_by_blackout"] = False
-    except Exception as e:  # noqa: BLE001 — decision layer is optional
+    except Exception as e:  # noqa: BLE001 — advisory context is optional
         log.warning("recommendation engine failed (%s)", e)
-        cones, recommendation = {"ok": False}, {"ok": False, "suppressed_by_blackout": False}
+        cones, recommendation = {"ok": False}, {"ok": False}
+
+    # P0A authority closure: exactly one decision-bearing projection crosses into Vector.
+    # signals.alloc_optimal is final authority; Kelly and categorical momentum are receipts.
+    # Data-integrity failures return status=unavailable with no action. Unexpected code faults
+    # intentionally fail the build instead of silently restoring the competing legacy path.
+    from engine import btc_decision
+    decision = btc_decision.build_decision(
+        sig,
+        master,
+        recommendation=recommendation,
+        sizing=sizing,
+        generated_at=datetime.now(timezone.utc),
+    )
 
     # New mastermind-upgrade factor panels (research/VECTOR_FACTOR_ROADMAP_2026).
     newf = {
@@ -4349,7 +4354,6 @@ def main() -> int:
             min(int(last["cycle_position"] * 4), 3)],
         "alt_leader": last.get("alt_cycle_leader", "BTC"),
         "market_mode": last["market_mode"],
-        "alloc_pct": round(100 * last["alloc_optimal"]),
         "alloc_sizing": asizing,
         "gate": gate,                            # W3: the ONE stamped gated-state flag
 
@@ -4559,7 +4563,7 @@ def main() -> int:
         "master": master,
         "regime": regime,
         "cones": cones,
-        "rec": recommendation,
+        "decision": decision,
         "newf": newf,
         "presentation": presentation,
         "strategy": strategy,
