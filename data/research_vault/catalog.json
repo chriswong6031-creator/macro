@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-24T04:33:49.616613+00:00",
-  "count": 1729,
+  "generated_at": "2026-08-24T05:28:33.599711+00:00",
+  "count": 1735,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -86,6 +86,131 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-kqcvpfcwgqu-b3ca21",
+      "title": "The 720 China Semis & CXMT initiation, Samsung Electronics, Japan SPE, China Matters, Jackson Hole, NEC, Li Ning, Zijin Mining",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T03:15:11Z",
+      "summary_points": [
+        "**China Semis Supply Chain Buildout**: CHIPS Act-driven $82bn supply chain target by 2030E; CXMT capacity doubling by 2030E (vs.",
+        "665k wpm 2026E) critical for closing S/D gap and enabling China’s AI market expansion.",
+        "**Samsung EPS/ROE Upgrade**: FY2026-2028 EPS raised 1%-11%, ROE to 53%/52%/43%; stock at 1.7X 2027E P/B with 40-50% ROE, offering attractive risk/reward for Buy rating.",
+        "**Hang Seng Rebalancing Flows**: Sept 2026 rebalancing generates $7.2bn gross two-way passive flows; Tech hardware/semis largest buyers, Hua Hong Grace Semis added to HSI.",
+        "**China Economic Weakness**: Real GDP ~4% yoy (early Q3), policy support insufficient for private sector; cyclical weakness risks structural shift without demand-side stimulus."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-37dkhblbb2p-f9f0a8",
+      "title": "Global Semis CHIPS IV China Semis self sufficiency builds",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T03:15:07Z",
+      "summary_points": [
+        "**China's 7nm+ Supply-Demand Gap**: Narrows to 34% by 2035E (vs.",
+        "92% in 2025), driven by 17% CAGR wafer demand (AI servers at 42% CAGR) and 46% CAGR supply growth.",
+        "**$82bn Semiconductor Capex Target**: 79% YoY growth from 2025 to 2030E, fueled by generative AI demand (13-15% YoY WFE spending), critical for closing tech gaps.",
+        "**CXMT's DRAM Market Penetration**: Supplies 50% of China's DRAM demand by 2028E (vs.",
+        "40% in 2025), pivotal for China's memory self-sufficiency amid tech gaps (1z vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 34,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-qen1twgrkbj-39adb4",
+      "title": "Japan Electronics Semiconductors TOPPAN DNP earnings update Packaging related businesses support company wide profits",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T03:15:00Z",
+      "summary_points": [
+        "**Semiconductor Photomask Demand**: Structural growth in advanced node DUV photomask sales (DNP) driven by in-house manufacturer demand, with metal mask decline mitigated by memory price impacts, signaling long-term sector tailwinds.",
+        "**Electronics Segment Revisions**: DNP Electronics operating profit estimates upgraded +4% (FY26E)/+6% (FY27E)/+8% (FY28E), reflecting robust semiconductor-driven growth amid TOPPAN’s AI ASIC capacity expansion (Phase 1 mass production FY3/28).",
+        "**TOPPAN Valuation Upside**: Goldman Sachs maintains ¥6,500 target (27% upside from ¥5,123 close) via sum-of-parts (EV/EBITDA: 5.4x/8.3x/15.0x), with Electronics segment valuation (¥864.872bn) as key driver.",
+        "**Middle East Demand Impact**: Front-loaded Q1 sales/profits from Middle East procurement now prompting cautious margin outlook (vs.",
+        "prior 2Q forecast), with packaging business sales/OP revised down due to automotive demand disruption (battery pouches)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-wgcvphewn9f-013cbb",
+      "title": "Europe Paper & Forest Products US Paper Update Containerboard Flat",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T03:14:57Z",
+      "summary_points": [
+        "**Containerboard**: $80/st price increase plausible in September amid tight inventories (80-85% in Aug 2025), strong seasonal demand (Sep-Dec), and low stock levels justifying 50% of $80-140/st hikes.",
+        "**Boxboard**: SBS $20/st + CRB $50/st + CUK $60/st hikes expected for September, with 12-14 week lead times and solid backlogs supporting price dynamics.",
+        "**Smurfit Westrock**: 60% NA EBITDA exposure (70% tied to containerboard) makes US price trends critical; Buy rating with $51 target (9.6x EV/DACF vs.",
+        "historical 9.1x) reflecting premium pricing expectations."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-c2fospgb2k2-94b679",
+      "title": "Americas Diversified Financials 2Q26 mutual fund and hedge fund Financials positioning analysis",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T03:14:55Z",
+      "summary_points": [
+        "**Sector Overweight Consensus**: Mutual funds hold highest Financials sector overweight in decade (2nd largest QoQ S&P 500 sector increase), with Insurance and Banks as top subsector tilts; Mortgage REITs remain strong despite sector-wide decline.",
+        "**MF/HF Alignment on Key Stocks**: Mutual fund overweight baskets (SCHW, MA, V) align with hedge fund longs (V, MA, COF), while MF underweights (BRK.B, JPM) overlap with HF shorts (RAC, AXP), signaling institutional consensus.",
+        "**Rising Short Interest Risk**: BAC (1% short interest, $6.2B) and AXP (2% short interest, $4.1B) show upward short trends; AXP has -22% YTD return, indicating elevated downside risk.",
+        "**Fintech Short Squeeze Vulnerability**: Upstart (UPST) and Dave (DAVE) dominate short interest (23% each) with -34%/-51% YTD returns, highlighting critical short squeeze risk in consumer finance.",
+        "**Selective Financials Rotation**: Hedge funds show inflows into LPL Financial (LPLA, +3% QoQ) and Fidelity National (FNF, +4% QoQ), while Capital One (COF) sees -8% QoQ decline, signaling sector rotation toward select mid-cap financials."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-gpg7pq47gnx-440099",
+      "title": "Cambricon (688256)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T03:14:55Z",
+      "summary_points": [
+        "**Target Price Hike to Rmb1,841 (77.9% Upside)**: Driven by China’s AI demand surge (smart cities, mines, transportation, supermarkets) and CHIPS IV policy, with EBITDA growth accelerating to 82% (2028-30E) and revenue growth in key verticals.",
+        "**Margin & Leverage Deterioration**: EBITDA margin contracted to 25.8% (from 33.6%) and net debt/equity rose to 17.3% (from 8.0%), signaling weakening profitability and heightened financial risk despite technical outperformance (48.9% stock gain vs.",
+        "2% index).",
+        "**Revised Valuation Basis**: Target EV/EBITDA lowered to 27x (vs.",
+        "43x) on 2027E EBITDA margin of 19% (vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-5dawzjd6hl1-18ca76",
       "title": "GS Shelofsky IG Credit Week in Review 23 Aug 2026",
