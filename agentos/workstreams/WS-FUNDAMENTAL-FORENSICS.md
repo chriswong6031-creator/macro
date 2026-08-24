@@ -20,6 +20,7 @@ discoveries:
   - DSC:FF-1-Q3-2026-MASTER-INDEX-CANARY
   - DSC:FF-1R-RECOVERY-PLAN-EPOCH-IS-FROZEN
   - DSC:FF-1-IMMUTABLE-MANIFEST-IS-NOT-A-COMPACT-POINTER
+  - DSC:FF-1R-ANGO-ACCEPTANCE-DATETIME-CONFLICT
 decisions:
   - DEC:FF-1-UNIVERSE-CENSUS-IS-PARQUET-DERIVED
   - DEC:FF-1-BROAD-DISCOVERY-USES-EDGAR-INDEXES
@@ -53,7 +54,7 @@ waves:
     title: Incremental Broad SEC Source Plane
     status: in_progress
     depends_on: [FF-0]
-    pr: [5820, 5864, 5898, 6285]
+    pr: [5820, 5864, 5898, 6285, 6318]
     next_action: >
       FF-1P2R is PROVEN_LIVE, but FF-1 remains PARTIAL / in progress. FF-1R
       recovery is a separately commissioned capability and previous-quarter
@@ -79,17 +80,19 @@ waves:
     title: July recovery engine
     status: in_progress
     depends_on: [FF-1P2R]
-    pr: 6285
+    pr: [6285, 6318]
     next_action: >
-      P1 TRANSPORT REPAIR ACTIVE / PRODUCTION RECOVERY FROZEN. PR #6285
-      merged as 1e7d9f5030fd7c7c06fb03f022857510c5d0f9ed. Its first
-      production tranche, run 32626273461, failed closed on valid 20,779-byte
-      ANGO evidence because the full immutable manifest was read through the
-      16 KiB compact-pointer envelope. The run is a fail-closed witness, not an
-      accepted recovery checkpoint. Preserve plan e252f0a85c193323be128b6de2762c522a0ab86b74d8a2ed15a1f3014695e5a4,
-      cursor 0, completed total 0 and null last-successful recovery receipt.
-      Land the separately bounded manifest-transport repair under Sol review;
-      a corrective tranche-A retry requires a later explicit Sol release.
+      BUILT_NOT_PROVEN / BLOCKED_ON_ANGO_ACCEPTANCE_CONFLICT. PR #6318 landed
+      the immutable-manifest transport repair as
+      32cbd775e827653e88f8be6f8094d73e8c3014dc. Sol-released corrective
+      tranche-A run 32708350406 / run_56830b4a74bd82a33d19 cleared the old
+      20,779 > 16,384 transport blocker, then failed closed on its first issuer:
+      ANGO accession 0001628280-26-048138 conflicts on acceptance_datetime.
+      The run made one current-Submissions request, zero historical or Company
+      Facts requests, completed zero issuers, and did not move the recovery
+      checkpoint. Preserve plan e252f0a85c193323be128b6de2762c522a0ab86b74d8a2ed15a1f3014695e5a4,
+      cursor/completed 0, backlog 2,571 and null last-successful recovery
+      receipt. Do not retry or skip ANGO; return the conflict to Sol.
   - id: FF-2
     title: Broad workbench rebuild from the FF-1 source plane
     status: todo
@@ -123,6 +126,7 @@ landmines:
   - "A partial FF-1R tranche may write immutable observations, receipts and its compact continuation, but never latest-complete. Only a backlog-zero final composition may advance latest-complete, and it must preserve newer current-incremental evidence."
   - "POINTER_MAX_BYTES=16 KiB governs compact mutable heads and pointers only. Full immutable issuer manifests use their separately measured 128 KiB finite envelope in both recovery and incremental paths (DSC:FF-1-IMMUTABLE-MANIFEST-IS-NOT-A-COMPACT-POINTER)."
   - "FF-1R run 32626273461 / run_382b4fbf26bb0fe3e298 is a fail-closed transport witness, not tranche progress: ANGO was refused at 20,779 > 16,384 before cursor movement. Do not label its retry tranche B."
+  - "Corrective tranche-A run 32708350406 / run_56830b4a74bd82a33d19 proved the immutable-manifest transport repair, then failed closed before progress because ANGO accession 0001628280-26-048138 conflicts on acceptance_datetime. failures is nonempty, cursor remains 0, and the operation is not an accepted checkpoint."
 do_not_redo:
   - "Do not modify FF-0 (app/forensics.py, engine/fundamental_forensics/health.py, templates/fundamental_forensics*, site/fundamental_forensics*, scripts/build_fundamental_forensics.py)."
   - "Do not start FF-2: no workbench rebuild, detectors, findings publish, Prophet/Neural Web, attested-history, or Calcbench."
@@ -145,16 +149,17 @@ do_not_redo:
   - "Do not move the 03:15 UTC schedule merely because submissions.zip rebuilds around 03:00 ET. Q3 master.zip Last-Modified was 02:02 UTC."
   - "Do not make recovery chase a live index, materialize a full pending-CIK list in continuation, refetch already committed CIKs, or use all historical filings.files shards. FF-1R binds a frozen plan and advances its compact cursor only after an issuer outcome is durable."
   - "Do not raise POINTER_MAX_BYTES to admit issuer manifests, rewrite existing immutable manifests, regenerate plan e252f0a85c193323be128b6de2762c522a0ab86b74d8a2ed15a1f3014695e5a4, or advance the recovery cursor to bypass the ANGO refusal."
-  - "Do not retry FF-1R tranche A without a new explicit Sol production release. Run 32626273461 consumed no recovery cursor position; any later authorized operation starts again from cursor 0."
+  - "Do not rerun 32626273461 or 32708350406, dispatch another cursor-zero recovery, skip ANGO, or call the next operation tranche B. The one corrective tranche-A release was consumed by run 32708350406 and stopped on historical_submissions_conflict."
 next_action: >
   FF-1P2R current-quarter EDGAR-index discovery is PROVEN_LIVE. FF-1 remains
-  PARTIAL / in progress. PR #6285 merged, but its first FF-1R production
-  attempt is rejected as a recovery checkpoint and retained as the
-  fail-closed immutable-manifest transport witness. Complete the P1 bounded
-  transport repair while recovery remains frozen at plan e252f0a85c193323be128b6de2762c522a0ab86b74d8a2ed15a1f3014695e5a4
-  and cursor 0. A corrective tranche-A retry requires a later explicit Sol
-  release. Previous-quarter reconciliation is SPEC_ONLY / NOT_BUILT; FF-2 is
-  FORBIDDEN / NOT_STARTED.
+  PARTIAL / in progress. PR #6318's bounded transport repair is merged, but
+  corrective tranche-A run 32708350406 made zero safe progress and stopped on
+  ANGO historical_submissions_conflict for accession
+  0001628280-26-048138. Preserve plan e252f0a85c193323be128b6de2762c522a0ab86b74d8a2ed15a1f3014695e5a4,
+  cursor/completed 0, backlog 2,571, null last-successful recovery receipt and
+  the current incremental latest-complete. Sol must adjudicate the exact
+  acceptance_datetime conflict before any new recovery operation. Previous-quarter
+  reconciliation is SPEC_ONLY / NOT_BUILT; FF-2 is FORBIDDEN / NOT_STARTED.
 ---
 
 ## Context
@@ -188,10 +193,20 @@ manifest was read through the 16 KiB compact-pointer envelope. It made one
 current-Submissions request, zero Company Facts requests, and no recovery
 progress. Recovery is frozen at plan
 `e252f0a85c193323be128b6de2762c522a0ab86b74d8a2ed15a1f3014695e5a4`,
-cursor 0, completed total 0 and null last-successful recovery receipt while
-the P1 manifest-transport repair is reviewed. The immutable manifest envelope
-is separate from the unchanged pointer envelope
-(`DSC:FF-1-IMMUTABLE-MANIFEST-IS-NOT-A-COMPACT-POINTER`). A later operation is
-a corrective tranche-A retry and requires a new explicit Sol release.
-Previous-quarter weekly reconciliation remains SPEC_ONLY / NOT_BUILT. Do not
-mark FF-1 done. FF-2 remains forbidden.
+cursor 0, completed total 0 and null last-successful recovery receipt.
+
+PR #6318 merged the separately bounded immutable-manifest transport repair as
+`32cbd775e827653e88f8be6f8094d73e8c3014dc`. The next scheduled incremental,
+run `32688874242` / `run_2dfb3cc973b3f025b09e`, lawfully advanced
+latest-complete without changing the frozen recovery plan or continuation.
+Sol-released corrective tranche-A run `32708350406` /
+`run_56830b4a74bd82a33d19` selected the same cursor-zero 64-CIK slice and read
+the valid 20,779-byte legacy ANGO manifest without the former transport error.
+It then failed closed on ANGO accession `0001628280-26-048138` because duplicate
+evidence conflicts on `acceptance_datetime`: failures=1, current Submissions=1,
+historical Submissions=0, Company Facts=0, completed=0 and backlog=2,571.
+latest-complete, ANGO and the recovery continuation remained byte-identical;
+only the immutable failed receipt/observations and latest-observation head were
+published. This is not an accepted recovery checkpoint. Do not retry or skip
+ANGO; return the exact conflict to Sol. Previous-quarter weekly reconciliation
+remains SPEC_ONLY / NOT_BUILT. Do not mark FF-1 done. FF-2 remains forbidden.

@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-24T08:35:04.350099+00:00",
-  "count": 1744,
+  "generated_at": "2026-08-24T09:35:27.230101+00:00",
+  "count": 1747,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -86,6 +86,68 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-onyp6ckv1li-c65156",
+      "title": "JPM European Semiconductors",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T08:20:41Z",
+      "summary_points": [
+        "**Distributor Inventory Tightness**: Distributor inventory days at 59 (20.5% below 3-year average), declining 2 days QoQ, signaling lean channel inventory and imminent restocking demand.",
+        "**DRAM Pricing Power**: DDR5 spot prices surged sharply in 2026 while DDR4 stabilized, indicating demand shift toward high-margin memory types and sustained pricing strength (DRAM ASP +160% YoY).",
+        "**AI-Driven Inventory Surge**: AI server OEM inventory rose 16% QoQ (16.7% in inventory days), well above 3-year seasonality, reflecting strategic stockpiling for H2 2026 revenue amid AI component inflation.",
+        "**Semi Sales Acceleration**: Total semiconductor sales up 35.3% QoQ (vs 5.6% seasonal avg) and 124% YoY, with memory sales surging 64.2% QoQ (363% YoY), driven by 44.4% YoY unit growth and +225% YoY pricing.",
+        "**Memory Inventory Efficiency**: Memory players (ex-Samsung) reported 122 inventory days (14% below 3-year avg), 24% below Q1 2026, sustaining low inventory amid strong up-cycle and supply tightness."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 22,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-pcohmpu2qnb-58fbbb",
+      "title": "Asia Bits | China Semis, CXMT",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T08:19:38Z",
+      "summary_points": [
+        "**Macro Policy Gap**: July activity data shows further slowdown (retail sales, industrial production) with GDP at ~4%; supply-driven policies insufficient, demanding urgent demand-side stimulus and domestic reforms.",
+        "**Semiconductor Structural Shift**: $82bn semiconductor capex by 2030 targets 50% DRAM demand capture by 2028; 7nm+ supply-demand gap narrows from 92% (2025) to 34% (2035E), requiring $124bn capex to meet supply by 2035E.",
+        "**Critical Capital Allocation Risk**: $124bn capex needed by 2035E to close semiconductor supply gap signals massive structural market shifts and capital allocation pressures for portfolio positioning.",
+        "**Geopolitical Flow Catalyst**: India-focused trips (Make in India, IT Services Tour) and Macau Gaming Trip indicate policy-driven shifts in regional investment flows impacting sector dynamics."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-x6dm5a4kmqa-490e9f",
+      "title": "JPM International Market Intelligence | Morning Briefing",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T08:17:01Z",
+      "summary_points": [
+        "**Geopolitical & Sector Dynamics**: Iran war escalation (economic toll) and US fiscal measures (16m barrels SoH drawdown) pressure oil; EU Industrials gain from security/resiliency focus.",
+        "**UST Safety Premium Erosion**: Treasury-AAA corporate spread near zero (Fig 1a), signaling reduced perceived safety of Treasuries amid fiscal sensitivity and AI financing jitters.",
+        "**Jackson Hole Catalyst**: Historical 2y yield volatility (±1 std dev) around Fed speeches critical for positioning rate-sensitive assets ahead of key events.",
+        "**Bond Fund Allocation Shift**: Core Bond funds reduced Treasury exposure (36%→31% since 2023) and increased corporates (28%→30% by 2026), reflecting strategic pivot.",
+        "**USD Positioning & Divergence**: Net long USD positioning (z-score positive) with \"decent length left\"; USD undershooting US-G10 5Y real yields constrains further weakness."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": true,
+      "pages": 20,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-yqnipkixp18-672482",
       "title": "JPM Europe Equity Research | Today’s Morning Meeting",
