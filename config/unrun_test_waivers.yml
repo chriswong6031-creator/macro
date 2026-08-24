@@ -29,3 +29,52 @@ tests/test_ship_loop_hold_wrapper.py: >-
   WS:CI-MERGE-CONTROL-PLANE / DEC:SOL-HOLD-IS-A-MERGE-BARRIER. Delete this waiver if
   the unrun-test auditor learns transitive fast-fence ownership or the suite is later
   named directly by the canonical fence runner; do not leave it dark.
+
+tests/test_pr_linkage_validator.py: >-
+  MAS-28 report-only W1 contract suite. Owner WS:AGENT-OS / MAS-28. W0 forbids
+  adding an enforcement or workflow runner for this analyzer. Delete when a
+  separately authorized lawful nonblocking runner names this suite, or the suite is deleted.
+tests/test_pr_linkage_parser.py: >-
+  MAS-28 report-only W1 parser suite. Owner WS:AGENT-OS / MAS-28. W0 forbids
+  adding an enforcement or workflow runner for this analyzer. Delete when a
+  separately authorized lawful nonblocking runner names this suite, or the suite is deleted.
+tests/test_pr_linkage_cli.py: >-
+  MAS-28 report-only W1 CLI suite. Owner WS:AGENT-OS / MAS-28. W0 forbids adding
+  an enforcement or workflow runner for this analyzer. Delete when a separately
+  authorized lawful nonblocking runner names this suite, or the suite is deleted.
+tests/test_pr_linkage_mutations.py: >-
+  MAS-28 report-only W1 mutation suite. Owner WS:AGENT-OS / MAS-28. W0 forbids
+  adding an enforcement or workflow runner for this analyzer. Delete when a
+  separately authorized lawful nonblocking runner names this suite, or the suite is deleted.
+tests/test_pr_linkage_contract_matrix.py: >-
+  MAS-28 report-only W1 contract-matrix suite. Owner WS:AGENT-OS / MAS-28. W0
+  forbids adding an enforcement or workflow runner for this analyzer. Delete when a
+  separately authorized lawful nonblocking runner names this suite, or the suite is deleted.
+tests/test_pr_linkage_header_executable.py: >-
+  MAS-28 report-only W1 header-executable suite. Owner WS:AGENT-OS / MAS-28. W0
+  forbids adding an enforcement or workflow runner for this analyzer. Delete when a
+  separately authorized lawful nonblocking runner names this suite, or the suite is deleted.
+tests/test_pr_linkage_epoch_executable.py: >-
+  MAS-28 report-only W1 epoch-executable suite. Owner WS:AGENT-OS / MAS-28. W0
+  forbids adding an enforcement or workflow runner for this analyzer. Delete when a
+  separately authorized lawful nonblocking runner names this suite, or the suite is deleted.
+tests/test_pr_linkage_schema_matrix.py: >-
+  MAS-28 report-only W1 schema-matrix suite. Owner WS:AGENT-OS / MAS-28. W0 forbids
+  adding an enforcement or workflow runner for this analyzer. Delete when a
+  separately authorized lawful nonblocking runner names this suite, or the suite is deleted.
+tests/test_pr_linkage_rulecase_matrix.py: >-
+  MAS-28 report-only W1 rulecase-matrix suite. Owner WS:AGENT-OS / MAS-28. W0
+  forbids adding an enforcement or workflow runner for this analyzer. Delete when a
+  separately authorized lawful nonblocking runner names this suite, or the suite is deleted.
+tests/test_pr_linkage_operational_routes.py: >-
+  MAS-28 report-only W1 operational-route suite. Owner WS:AGENT-OS / MAS-28. W0
+  forbids adding an enforcement or workflow runner for this analyzer. Delete when a
+  separately authorized lawful nonblocking runner names this suite, or the suite is deleted.
+tests/test_pr_linkage_purity_boundaries.py: >-
+  MAS-28 report-only W1 purity-boundary suite. Owner WS:AGENT-OS / MAS-28. W0
+  forbids adding an enforcement or workflow runner for this analyzer. Delete when a
+  separately authorized lawful nonblocking runner names this suite, or the suite is deleted.
+tests/test_pr_linkage_hostile_regressions.py: >-
+  MAS-28 report-only W1 hostile-regression suite. Owner WS:AGENT-OS / MAS-28. W0
+  forbids adding an enforcement or workflow runner for this analyzer. Delete when a
+  separately authorized lawful nonblocking runner names this suite, or the suite is deleted.
