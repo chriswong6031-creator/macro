@@ -53,6 +53,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Generator, Iterable
 
+from engine import quote_resolution as _quote_resolution
 from lib.tiers import normalize_tier
 from engine.fundamental_forensics.private_state import load_state
 from engine.fundamental_forensics.context_projection import compact_disclosure_context
@@ -1120,32 +1121,7 @@ def _safe_symbol(symbol: str) -> str:
     them to the Yahoo/artifact convention (``600036.SS``). Dots remain valid
     for tickers such as BRK.B; traversal-like repeated dots are collapsed.
     """
-    raw = str(symbol or "").strip().upper()
-    prefixed = re.fullmatch(r"(SSE|SHSE|SZSE|HKEX|TSX|TSXV):([A-Z0-9.\-]+)", raw)
-    if prefixed:
-        exchange, ticker = prefixed.groups()
-        suffix = {
-            "SSE": "SS",
-            "SHSE": "SS",
-            "SZSE": "SZ",
-            "HKEX": "HK",
-            "TSX": "TO",
-            "TSXV": "V",
-        }[exchange]
-        raw = f"{ticker}.{suffix}"
-
-    clean = re.sub(r"[^A-Z0-9.\-]", "", raw)
-    # Collapse repeated dots (prevent path traversal artifacts like '..')
-    clean = re.sub(r"\.{2,}", ".", clean)
-    # Strip leading/trailing dots
-    clean = clean.strip(".")
-    if clean.endswith(".SH"):
-        clean = clean[:-3] + ".SS"
-    if clean.endswith(".HK"):
-        stem = clean[:-3]
-        if stem.isdigit():
-            clean = f"{stem.zfill(4)}.HK"
-    return clean[:24]
+    return _quote_resolution.safe_symbol(symbol)
 
 
 _QUALIFIED_SYMBOL_RE = re.compile(
@@ -1680,158 +1656,10 @@ def _symbol_grounding_digest(
 
 
 def _tool_get_quote(params: dict, terminal_data_dir: Path, terminal_hub_url: str, root: Path) -> dict:
-    """Try the quote-hub /quotes batch endpoint, then the VPS quotes_full state
-    snapshot, then the manifest row, then site/live/quotes.json."""
-    symbol = _safe_symbol(params.get("symbol") or "")
-    if not symbol:
-        return {"error": "symbol required"}
-
-    # 1. Live hub — the charting-app quote-hub's /quotes BATCH endpoint. That hub
-    #    (hub/hub.js) exposes ONLY /health and /quotes?syms=CSV; the /quote/{symbol}
-    #    this leg used to call has never existed on any host, and the
-    #    {"error": "not found"} the VPS returned was simply its catch-all 404.
-    try:
-        url = f"{terminal_hub_url.rstrip('/')}/quotes?syms={urllib.parse.quote(symbol)}"
-        req = urllib.request.Request(url, headers={"User-Agent": "brain-gateway/1.0"})
-        with urllib.request.urlopen(req, timeout=3) as resp:
-            payload = json.loads(resp.read())
-        # Body is a {SYM: row} map; a symbol the hub has no data for is simply ABSENT
-        # (empty body when it has nothing at all). An error payload or a missing row
-        # is a MISS, not a quote, and must not mask the local fallbacks below.
-        if not isinstance(payload, dict) or payload.get("error"):
-            raise ValueError("hub miss")
-        row = payload.get(symbol)
-        if not isinstance(row, dict) or row.get("last") is None:
-            raise ValueError("hub miss")
-        # TRAP: on a symbol's FIRST request the hub cold-subscribes and writes a
-        # manifest-EOD placeholder whose ts is the SUBSCRIBE time — an old close
-        # stamped with the current clock. Serving it would launder a stale price under
-        # a fresh as-of. The discriminator is regularSessionDate, written only once a
-        # real Polygon AM bar has landed. Crypto rows never carry it, but their WS ts
-        # is genuinely real-time, so the guard is US-only. Falling through to the
-        # quotes_full snapshot (honest Yahoo regularMarketTime) is strictly more
-        # truthful, and this request already armed the subscribe, so the NEXT ask gets
-        # real delayed bars.
-        if row.get("market") == "us" and not row.get("regularSessionDate"):
-            raise ValueError("hub cold placeholder")
-        # Hub ts is epoch SECONDS (the quotes_full leg below is milliseconds).
-        ts_s = row.get("ts")
-        as_of = None
-        if isinstance(ts_s, (int, float)) and not isinstance(ts_s, bool) and ts_s > 0:
-            as_of = datetime.fromtimestamp(ts_s, tz=timezone.utc).isoformat(timespec="seconds")
-        out = {
-            "symbol": symbol,
-            "price": row.get("last"),
-            "prev_close": row.get("prevClose"),
-            "change_pct": row.get("chg"),
-            "as_of": as_of or datetime.now(timezone.utc).isoformat(timespec="seconds"),
-            "live": row.get("live"),
-            "source": "terminal_hub",
-        }
-        # Same plain-word delay vocabulary as the quotes_full leg below: the
-        # model-visible payload gets a number it can verbalize ("about 15 minutes
-        # delayed"), never the raw basis slug ("DELAYED_15M" is banned vocab).
-        basis = str(row.get("basis") or "")
-        basis_delay = re.search(r"(\d+)", basis)
-        if basis.upper().startswith("DELAYED") and basis_delay:
-            out["delayed_min"] = int(basis_delay.group(1))
-        return {k: v for k, v in out.items() if v is not None}
-    except Exception:  # noqa: BLE001
-        pass
-
-    # 2. VPS live-plane full snapshot (~2,100 symbols, refreshed ~every 5 min by the
-    #    macro-live snapshot lane via scripts/build_live_quotes.py).
-    #    WHY a local file read and not an HTTP fetch: the served site/live/quotes.json
-    #    at step 4 is the 34-symbol DISPLAY set; the full universe is deliberately NOT
-    #    web-addressable and lives root-side in the state dir. This gateway runs
-    #    root-side (macro-api.service), so it reads the file directly — that is what
-    #    gives the instant-fact lane and the deep loop single-stock coverage on the VPS.
-    full_env = os.environ.get("MACRO_QUOTES_FULL_PATH")
-    quotes_full_path = (
-        Path(full_env) if full_env
-        else Path(os.environ.get("MACRO_LIVE_STATE_DIR", "/var/lib/macro-live/state"))
-        / "quotes_full.json"
+    """Resolve through the neutral quote waterfall shared by typed consumers."""
+    return _quote_resolution.resolve_quote(
+        params.get("symbol") or "", terminal_data_dir, terminal_hub_url, root
     )
-    try:
-        if quotes_full_path.exists():
-            snap = json.loads(quotes_full_path.read_text(encoding="utf-8"))
-            row = (snap.get("quotes") or {}).get(symbol) or {}
-            if row.get("price") is not None:
-                # Per-quote ts (epoch ms) is the honest as-of; the snapshot's own asof
-                # only says when the batch was written.
-                as_of = None
-                ts_ms = row.get("ts")
-                if isinstance(ts_ms, (int, float)) and not isinstance(ts_ms, bool) and ts_ms > 0:
-                    as_of = datetime.fromtimestamp(
-                        ts_ms / 1000, tz=timezone.utc
-                    ).isoformat(timespec="seconds")
-                out = {
-                    "symbol": symbol,
-                    "price": row.get("price"),
-                    "prev_close": row.get("prevClose"),
-                    "change_pct": row.get("changePct"),
-                    "as_of": as_of or snap.get("asof"),
-                    "source": "live_plane_full",
-                }
-                delayed_min = (snap.get("meta") or {}).get("delayed_min")
-                if delayed_min:
-                    out["delayed_min"] = delayed_min
-                return {k: v for k, v in out.items() if v is not None}
-    except Exception:  # noqa: BLE001
-        pass
-
-    # 3. manifest.json fallback
-    manifest_path = terminal_data_dir / "manifest.json"
-    try:
-        if manifest_path.exists():
-            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-            syms = manifest.get("symbols") or {}
-            row = syms.get(symbol) or {}
-            if row:
-                return {
-                    "symbol": symbol,
-                    "price": row.get("price"),
-                    "verdict": row.get("verdict"),
-                    "wr": row.get("wr"),
-                    "as_of": manifest.get("as_of"),
-                    "source": "manifest",
-                }
-    except Exception:  # noqa: BLE001
-        pass
-
-    # 4. site/live/quotes.json fallback
-    quotes_path = root / "site" / "live" / "quotes.json"
-    try:
-        if quotes_path.exists():
-            quotes = json.loads(quotes_path.read_text(encoding="utf-8"))
-            row = (quotes.get("quotes") or quotes.get("symbols") or {}).get(symbol) or {}
-            if row:
-                # W5.1: the live plane writes per-row `ts` (epoch ms) and file-level
-                # `asof` — this reader asked for `as_of`, which the file never carries,
-                # so every quote from this source shipped DATELESS (and the instant
-                # lane's dateless-refuse gate correctly rejected all of them).
-                _row_ts = row.get("ts")
-                _as_of = None
-                if isinstance(_row_ts, (int, float)) and _row_ts > 0:
-                    try:
-                        _as_of = datetime.fromtimestamp(
-                            float(_row_ts) / 1000.0, tz=timezone.utc
-                        ).isoformat(timespec="seconds")
-                    except (OverflowError, OSError, ValueError):
-                        _as_of = None
-                return {
-                    "symbol": symbol,
-                    "price": row.get("price") or row.get("last"),
-                    "change_pct": row.get("changePct"),
-                    "prev_close": row.get("prevClose"),
-                    "as_of": _as_of or quotes.get("asof") or quotes.get("as_of"),
-                    "source": "site_quotes",
-                }
-    except Exception:  # noqa: BLE001
-        pass
-
-    return {"symbol": symbol, "available": False, "note": "quote not available from any source"}
-
 
 def _tool_get_symbol_intel(params: dict, terminal_data_dir: Path) -> dict:
     """Read TERMINAL_DATA_DIR/{SYM}.intel.json."""

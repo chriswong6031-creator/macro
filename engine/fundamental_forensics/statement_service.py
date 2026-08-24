@@ -1,4 +1,4 @@
-"""FIF-3A1: authenticated as-reported statement read over a golden AAPL package.
+"""FIF-3A1/3A2: authenticated as-reported statement read over golden AAPL packages.
 
 Admission is a dedicated statement contract. It reuses FIF-2 transport laws
 (duplicate JSON keys, UTF-8, 64 KiB, binary-float rejection) without opening
@@ -23,6 +23,7 @@ from .query_service import (
 )
 from .raw_ledger import canonical_json
 from .statement_graph import (
+    GOLDEN_AAPL_FIXTURES,
     GoldenFilingPackage,
     StatementGraphError,
     load_golden_aapl_package,
@@ -33,7 +34,9 @@ _REQUEST_SCHEMA = "fundamental_forensics.financial_statement_request/v1"
 _RESPONSE_SCHEMA = "fundamental_forensics.financial_statement_response/v1"
 _REQUIRED_ROOT_FIELDS = frozenset({"schema", "entity_id", "accession"})
 _GOLDEN_ENTITY_ID = "ISS:US-XNAS-AAPL"
-_GOLDEN_ACCESSION = "0000320193-25-000079"
+_RELATED_EVENT_REF_KEYS = frozenset(
+    {"plane", "event_id", "relation", "source_filing_distinction"}
+)
 
 
 @dataclass(frozen=True)
@@ -60,7 +63,7 @@ class UnavailableFinancialStatementProvider:
 
 
 class GoldenAaplStatementProvider:
-    """Serves only the committed AAPL FY2025 10-K fixture."""
+    """Serves only the committed AAPL golden filing set. No ticker. No latest."""
 
     def __init__(self, repo_root: Path | None = None) -> None:
         self.repo_root = Path(repo_root) if repo_root is not None else Path(__file__).resolve().parents[2]
@@ -69,10 +72,10 @@ class GoldenAaplStatementProvider:
     def resolve(self, entity_id: str, accession: str) -> GoldenFilingPackage:
         if entity_id != _GOLDEN_ENTITY_ID:
             raise FinancialQueryAdmissionError(400, "unknown entity")
-        if accession != _GOLDEN_ACCESSION:
+        if accession not in GOLDEN_AAPL_FIXTURES:
             raise FinancialQueryAdmissionError(400, "unknown filing")
         try:
-            return load_golden_aapl_package(self.repo_root)
+            return load_golden_aapl_package(self.repo_root, accession=accession)
         except StatementGraphError:
             raise FinancialQueryUnavailableError() from None
 
@@ -183,6 +186,30 @@ def _bind_data_os_issuer(
     )
 
 
+def _related_event_ref(manifest: dict[str, Any]) -> dict[str, Any] | None:
+    raw = manifest.get("related_event_ref")
+    if raw is None:
+        return None
+    if not isinstance(raw, dict) or set(raw) != _RELATED_EVENT_REF_KEYS:
+        raise FinancialQueryUnavailableError()
+    distinction = raw.get("source_filing_distinction")
+    if not isinstance(distinction, dict):
+        raise FinancialQueryUnavailableError()
+    eight_k = distinction.get("earnings_release_8k_accession")
+    periodic = distinction.get("periodic_report_accession")
+    if eight_k == periodic:
+        raise FinancialQueryUnavailableError()
+    return {
+        "plane": raw["plane"],
+        "event_id": raw["event_id"],
+        "relation": raw["relation"],
+        "source_filing_distinction": {
+            "earnings_release_8k_accession": eight_k,
+            "periodic_report_accession": periodic,
+        },
+    }
+
+
 def execute_financial_statements(
     *,
     body: bytes,
@@ -271,6 +298,9 @@ def execute_financial_statements(
             "production_issuer_service": False,
         },
     }
+    related = _related_event_ref(package.manifest)
+    if related is not None:
+        envelope["related_event_ref"] = related
     body_out = canonical_json(envelope).encode("utf-8")
     if len(body_out) > MAX_RESPONSE_BYTES:
         raise FinancialQueryAdmissionError(413, "response exceeds bound")

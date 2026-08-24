@@ -1,15 +1,15 @@
 {
   "as_of": {
-    "critical_minerals": "2026-08-21",
+    "critical_minerals": "2026-08-23",
     "semicap_equipment": "2026-08-22",
     "ai_semiconductors": "2026-08-22",
     "defense": "2026-08-22",
     "space_economy": "2026-08-22",
     "quantum_computing": "2026-08-22",
-    "power_grid": "2026-08-21",
-    "data_center_power": "2026-08-21",
-    "ai_infra": "2026-08-21",
-    "ai_software": "2026-08-21",
-    "cybersecurity": "2026-08-21"
+    "power_grid": "2026-08-23",
+    "data_center_power": "2026-08-23",
+    "ai_infra": "2026-08-23",
+    "ai_software": "2026-08-23",
+    "cybersecurity": "2026-08-23"
   }
 }

@@ -119,12 +119,28 @@ def build_event_workspace(
     collector_rows: Sequence[Mapping[str, Any]] | None = None,
     wire_record_found: bool = False,
     prior_source_sha256: str | None = None,
+    prior_lifecycle_state: str | None = None,
+    prior_observed_at: object | None = None,
     profile: IssuerProfile | None = None,
 ) -> dict[str, Any]:
     """Bind one issuer event from identity + 8-K exhibit + (if held) transcript.
 
     ``prior_source_sha256`` is the previously published exhibit hash.  A new
     hash on the same canonical event walks the lifecycle to ``corrected``.
+
+    ``prior_lifecycle_state`` is the previously published workspace's OWN
+    ``lifecycle.state`` (IMCE A5C BLOCKER-1 fix, Opus red-team 2026-08-23):
+    when the source hash is UNCHANGED but the prior generation was already
+    ``"corrected"``, the corrected transition is re-applied so the state
+    STAYS ``"corrected"`` rather than silently walking back to
+    ``"complete"``.  Without this, the very next unchanged-source rebuild
+    after a correction re-derives the event from scratch (started ->
+    complete) and never re-observes that a correction happened — so a
+    downstream consumer sampling once per period (like IMCE A5B/A5C) sees a
+    transient "corrected" that flips back to "complete" within one
+    publication cycle, in which the exact mint the A5C safety law forbids
+    could otherwise proceed. ``corrected -> corrected`` is a legal
+    self-transition (``events.py``'s ``_TRANSITIONS``).
 
     ``profile`` supplies the issuer-specific extraction seam (additional
     ``event_fact.v1`` entries from the release body, and transcript claims);
@@ -133,15 +149,30 @@ def build_event_workspace(
     whose call is not held (e.g. a homebuilder absent from the Terminal tx
     index) — the workspace still publishes, with the transcript recorded as a
     typed absence rather than treated as a refusal.
+
+    IMCE A5C two-clock law (frozen spec C): ``source_available_at`` is the
+    SEC acceptance clock — unchanged, always the caller's *source_available_at*
+    verbatim.  ``observed_at`` is the ACTUAL time the system FIRST observed
+    THIS source revision — real wall-clock at build/fetch time, no longer
+    silently rewritten to equal ``source_available_at``.  *observed_at* (the
+    parameter) carries the caller's "now" for THIS build attempt;
+    *prior_observed_at* is the previously-published workspace's own
+    ``lifecycle.observed_at``.  When the newly bound exhibit's source hash is
+    UNCHANGED from *prior_source_sha256* AND *prior_observed_at* is
+    available, the published ``observed_at`` is the CARRIED-FORWARD prior
+    value, never the fresh "now" (C3, first-observation persistence — a
+    revision's observed_at is stamped once, at first observation, forever;
+    a carried-forward workspace's clocks are never re-stamped). Otherwise
+    (a genuinely new/changed revision, or no prior observed_at to carry) the
+    fresh *observed_at* is used, matching the pre-A5C default. Either way,
+    ``observed_at >= source_available_at`` remains mandatory (C4).
     """
     resolved = registry.resolve_ticker(ticker, asof=asof)
     if resolved is None:
         raise WorkspaceError(f"{ticker} maps to no issuer at {asof}")
     issuer = registry.get(resolved.company_id)
-    clock = _utc(observed_at, field_name="observed_at")
+    requested_clock = _utc(observed_at, field_name="observed_at")
     available = _utc(source_available_at, field_name="source_available_at")
-    if clock < available:
-        raise WorkspaceError("observed_at precedes source_available_at")
 
     accession = str(filing.get("accession") or "")
     cik = str(filing.get("cik") or issuer.cik)
@@ -155,6 +186,20 @@ def build_event_workspace(
         report_date=filing.get("report_date") or "",
         exhibit_url=str(filing.get("exhibit_url") or "") or None,
     )
+
+    if (
+        prior_source_sha256
+        and prior_observed_at is not None
+        and prior_source_sha256 == bound.revision.source_sha256
+    ):
+        # C3: an unchanged source revision keeps its ORIGINAL observed_at —
+        # wall-clock re-build time never advances it.
+        clock = _utc(prior_observed_at, field_name="prior_observed_at")
+    else:
+        clock = requested_clock
+    if clock < available:
+        raise WorkspaceError("observed_at precedes source_available_at")
+
     aliases = aliases_for(issuer.company_id, fiscal_period, issuer.tickers_at(asof))
     event_id = aliases.canonical_event_id
     has_transcript = transcript is not None
@@ -197,6 +242,21 @@ def build_event_workspace(
             source_available_at=available,
             effective_at=available,
             reason="source_sha256 changed; document revision restates the original",
+            document_ids=(bound.revision.document_id,),
+        )
+    elif prior_lifecycle_state == "corrected":
+        # A5C BLOCKER-1 fix (Opus red-team, 2026-08-23): sha UNCHANGED, but
+        # the prior generation was already corrected — re-apply the SAME
+        # corrected transition (binding the same document revision already
+        # bound above) so the published state stays "corrected" instead of
+        # silently re-deriving "complete" from scratch. See the docstring
+        # above for why this matters.
+        event = event.apply_transition(
+            "corrected",
+            observed_at=clock,
+            source_available_at=available,
+            effective_at=available,
+            reason="correction carried forward; source-revision history not yet published",
             document_ids=(bound.revision.document_id,),
         )
 
@@ -342,6 +402,30 @@ def build_event_workspace(
             "document_id": release_doc_id,
             "filing_key": {"cik": cik.zfill(10) if cik.isdigit() else cik, "accession": accession},
             "source_sha256": bound.revision.source_sha256,
+            # A5C BLOCKER-1 (1b) — the bound filing's own SEC-assigned FORM
+            # ("8-K" vs "8-K/A") was previously bound but dropped before
+            # publication; IMCE A5C's fail-closed observation gate needs it
+            # as a second durable safety signal (source rows are NOT
+            # exact-keyed by validate_event_workspace, and cross-repo
+            # preflight confirmed Terminal's normalizeSource() is a
+            # permissive picker that ignores unrecognized keys rather than
+            # rejecting them — this addition is safe on both sides).
+            #
+            # NEW-2 fix (Opus red-team round 2, 2026-08-23): deliberately
+            # published from the RAW *filing* mapping, NOT from
+            # bound.revision.form — bind_release_document (line ~167 above)
+            # defaults an empty/missing form to "8-K" for its OWN internal
+            # identity/is_amendment purposes (a default this function does
+            # not touch — nothing else here reads bound.revision.form or
+            # .is_amendment, so decoupling the PUBLISHED value carries no
+            # ripple risk). The safety gate downstream must see the form
+            # EDGAR actually gave, or see it genuinely absent — never an
+            # invented "8-K" standing in for "we don't know". On the real
+            # nightly path this is defense-in-depth, not a behavior change:
+            # discovery (refresh_event_workspaces._select_newest_results_rows)
+            # already pre-filters every candidate to {"8-K", "8-K/A"}, so a
+            # genuinely absent form should be unreachable there.
+            "form": (str(filing.get("form")) if filing.get("form") else None),
             "url": filing.get("exhibit_url"),
             "receipt_state": "byte_replayed",
         },

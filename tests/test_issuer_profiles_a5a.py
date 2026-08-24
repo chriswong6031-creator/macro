@@ -313,31 +313,66 @@ def test_fiscal_period_for_report_date_uses_real_reportdate_values() -> None:
         assert stated == expect_end, name
 
 
-def test_fiscal_period_mismatch_refuses_rather_than_guesses(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_fiscal_period_mismatch_refuses_rather_than_guesses(capsys: pytest.CaptureFixture) -> None:
     """If the computed quarter end does NOT match the exhibit's own stated
-    period, the issuer is skipped for the run (typed/logged absence) — never
-    published under a guessed fiscal identity."""
-    import scripts.refresh_event_workspaces as refresh_mod
-    from scripts.refresh_event_workspaces import RefreshError
+    period, the row is SKIPPED (typed/logged absence, B4 skip != fail) —
+    never published under a guessed fiscal identity.
 
-    def fake_acquire_results_filing(*, cik, http_get):
+    NEW-NIT-21/MINOR-17 (Opus red-team verification round 2, 2026-08-23):
+    retargeted from the deleted acquire_and_build_homebuilder_workspace
+    (which hard-raised RefreshError on a mismatch) to the real production
+    call site, discover_new_homebuilder_revisions — whose actual, frozen
+    B4 behavior for a mismatched row is a per-row SKIP with a ::warning,
+    never a refusal of the whole run. The safety property this test
+    guards (never mint a guessed fiscal identity) is preserved; only the
+    mechanism assertion changes to match what B4 actually does."""
+    import json
+
+    from scripts.refresh_event_workspaces import discover_new_homebuilder_revisions
+
+    dhi_cik = DHI_ACCESSION.split("-", 1)[0]  # "0000882184"
+    archive_base = f"https://www.sec.gov/Archives/edgar/data/{int(dhi_cik)}/{DHI_ACCESSION.replace('-', '')}"
+    exhibit_name = "exhibit991.htm"
+
+    def http_get(url: str) -> tuple[int, bytes]:
+        if url == f"https://data.sec.gov/submissions/CIK{dhi_cik}.json":
+            return 200, json.dumps({
+                "cik": dhi_cik,
+                "filings": {"recent": {
+                    "accessionNumber": [DHI_ACCESSION],
+                    "filingDate": [DHI_REPORT_DATE],
+                    "acceptanceDateTime": [f"{DHI_REPORT_DATE}T16:05:00.000Z"],
+                    # A wrong reportDate that derives a DIFFERENT quarter end
+                    # than the real exhibit states (the real exhibit says
+                    # June 30 2026).
+                    "reportDate": ["2026-10-21"],
+                    "form": ["8-K"],
+                    "primaryDocument": ["primary.htm"],
+                    "items": ["2.02,9.01"],
+                }},
+            }).encode("utf-8")
+        if url == f"{archive_base}/{DHI_ACCESSION}-index-headers.html":
+            return 200, _headers_html(True).encode("utf-8")
+        if url == f"{archive_base}/{exhibit_name}":
+            return 200, DHI_EXHIBIT.read_text(encoding="utf-8").encode("utf-8")
+        return 404, b""
+
+    def fetch_index(_base: str) -> dict:
         return {
-            "cik": cik,
-            "accession": DHI_ACCESSION,
-            "form": "8-K",
-            "filing_date": DHI_REPORT_DATE,
-            "acceptance_datetime": f"{DHI_REPORT_DATE}T16:05:00Z",
-            # A wrong report_date that derives a DIFFERENT quarter end than
-            # the real exhibit states (real exhibit says June 30 2026).
-            "report_date": "2026-10-21",
-            "exhibit_url": "https://example/dhi.htm",
-            "exhibit_body": DHI_EXHIBIT.read_text(encoding="utf-8"),
-            "items": "2.02,9.01",
+            "schema": "mastermind.tx-index/v1", "symbols": {}, "revisions": {}, "dates": {},
+            "body_count": 0, "symbol_count": 0, "generated_at": "2026-01-01T00:00:00Z",
         }
 
-    monkeypatch.setattr(refresh_mod, "acquire_results_filing", fake_acquire_results_filing)
-    with pytest.raises(RefreshError, match="does not match"):
-        refresh_mod.acquire_and_build_homebuilder_workspace("DHI")
+    def fetch_body(_base: str, _ref) -> dict:  # pragma: no cover — never reached (row skipped first)
+        raise AssertionError("no transcript should be fetched for a skipped row")
+
+    revisions = discover_new_homebuilder_revisions(
+        "DHI", http_get=http_get, fetch_index=fetch_index, fetch_body_fn=fetch_body,
+        chain_state_loader=lambda event_id: [],
+    )
+    assert revisions == []
+    captured = capsys.readouterr()
+    assert "does not match the exhibit's own stated period end" in captured.out
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -490,6 +525,67 @@ def test_dhi_cancellation_current_equal_prior_synthetic_never_collides() -> None
     prior_span = by_id["fact_cancellation_rate_prior_year"]["source_span"]
     assert current_span["span_id"] != prior_span["span_id"]
     assert current_span["locator"]["span_start_byte"] != prior_span["locator"]["span_start_byte"]
+    _verify_all_spans(facts, bound=bound)
+
+
+@pytest.mark.parametrize(
+    ("clause", "expect_present"),
+    [
+        # Positive control (red-team MINOR-3): the EXACT literal wording
+        # Sol's ruling requires, from the SAME template as the approximate
+        # cases below -- the only delta is the equality wording itself.
+        # This makes the approximate cases path-discriminating: if the
+        # paragraph lookup or receipt-minting broke instead of the regex
+        # correctly rejecting loose language, this control would fail too.
+        ("16%, consistent with the prior year quarter", True),
+        ("16%, approximately in line with the prior year quarter", False),
+        ("16%, similar to a year ago", False),
+    ],
+)
+def test_dhi_cancellation_equality_ruling_control_vs_approximate_language(
+    clause: str, expect_present: bool,
+) -> None:
+    """IMCE A5C item 8 (Sol's equality ruling), PINNED behavior, not changed
+    here: the explicit-equality treatment at issuer_profiles.py:621-663 only
+    fires on the LITERAL clause ", consistent with the prior year quarter"
+    (``_DHI_CANCELLATION_CONSISTENT_RE``). Approximate/similar language --
+    "approximately in line with the prior year quarter", "similar to a year
+    ago" -- matches neither ``_DHI_CANCELLATION_COMPARED_RE`` nor
+    ``_DHI_CANCELLATION_CONSISTENT_RE``, so it must NEVER produce a present
+    prior-year fact by loosely pattern-matching "close enough" language --
+    it is typed absence, same as any other unrecognized clause shape. Red-
+    team MINOR-3: the positive control case (exact "consistent with the
+    prior year quarter" wording) shares the SAME body template as the two
+    approximate cases -- a dead/broken paragraph lookup would fail the
+    control too, so an approximate case passing is not vacuous."""
+    synthetic_body = (
+        "<html><body><p>Net sales orders totaled 10,000 homes with an order value of $2.0 billion. "
+        f"The Company's cancellation rate (cancelled sales orders divided by gross sales orders) for "
+        f"the quarter was {clause}.</p></body></html>"
+    )
+    bound = bind_release_document(
+        cik="882184", accession=DHI_ACCESSION, body=synthetic_body, form="8-K",
+        filing_date=DHI_REPORT_DATE, acceptance_datetime=f"{DHI_REPORT_DATE}T16:05:00.000Z",
+        report_date=DHI_REPORT_DATE, exhibit_url="https://example/dhi.htm",
+    )
+    fiscal_period = FiscalPeriod(year=2026, quarter=3, calendar_end=date(2026, 6, 30))
+    facts = dhi_profile().extract_release_facts(
+        bound=bound, document_id="doc:dhi-equality-ruling-synthetic", event_id="evt_x", fiscal_period=fiscal_period,
+    )
+    by_id = {fact["fact_id"]: fact for fact in facts}
+    prior_fact = by_id["fact_cancellation_rate_prior_year"]
+    if expect_present:
+        assert "typed_absence" not in prior_fact
+        assert prior_fact["value"] == 16.0
+        assert (
+            "prior-year value stated by explicit equality with the current-quarter figure"
+            in prior_fact["basis"]
+        )
+        assert "consistent with the prior year quarter" in prior_fact["source_span"]["display_excerpt"]
+    else:
+        assert "typed_absence" in prior_fact
+        assert "value" not in prior_fact
+        assert prior_fact["typed_absence"]["reason"] == "no_span_addressable_evidence"
     _verify_all_spans(facts, bound=bound)
 
 
@@ -662,7 +758,11 @@ def test_tol_historical_release_facts_replay_including_backlog_sensitivity() -> 
 
     TOL's primary convention is signed contracts in the quarter; the
     beginning-quarter-backlog cancellation measure is a MANDATORY sensitivity
-    fact carried alongside it (frozen spec item 4(vi))."""
+    fact carried alongside it (frozen spec item 4(vi)), and — per IMCE A5C
+    item 7 — the SAME row's prior-year cell is also extracted as its own
+    fact (fact_cancellation_rate_beginning_backlog_sensitivity_prior_year),
+    the fact_id engine/cycle_pattern/imce_prospective.py:161 has been looking
+    up since A5A (self-healing, consumption side untouched here)."""
     bound = _bound(TOL_EXHIBIT, cik="794170", accession=TOL_ACCESSION, filing_date=TOL_REPORT_DATE, report_date=TOL_REPORT_DATE)
     fiscal_period = FiscalPeriod(year=2026, quarter=3, calendar_end=date(2026, 7, 31))
     facts = tol_profile().extract_release_facts(
@@ -677,13 +777,57 @@ def test_tol_historical_release_facts_replay_including_backlog_sensitivity() -> 
         "fact_cancellation_rate_prior_year",
         "fact_cancellation_rate_denominator",
         "fact_cancellation_rate_beginning_backlog_sensitivity",
+        "fact_cancellation_rate_beginning_backlog_sensitivity_prior_year",
     }
     assert by_id["fact_net_orders_current"]["value"] == 2508
     assert by_id["fact_net_orders_prior_year"]["value"] == 2388
     assert by_id["fact_cancellation_rate_current"]["value"] == 5.4
     assert by_id["fact_cancellation_rate_prior_year"]["value"] == 7.5
+    # F3/spec-item-3 substitution guard: BOTH sensitivity values replay from
+    # their OWN cells in the real fixture row (byte ~40138) -- current==2.6,
+    # prior_year==3.2. A bug that silently copied the current cell's value
+    # (or the primary denominator row) into the prior-year fact would leave
+    # this 3.2 assertion the only thing standing between "looks extracted"
+    # and "quietly wrong forever" (mutation-kill discriminator).
     assert by_id["fact_cancellation_rate_beginning_backlog_sensitivity"]["value"] == 2.6
     assert by_id["fact_cancellation_rate_beginning_backlog_sensitivity"]["metric"] == "cancellation_rate_sensitivity"
+    assert "typed_absence" not in by_id["fact_cancellation_rate_beginning_backlog_sensitivity_prior_year"]
+    assert by_id["fact_cancellation_rate_beginning_backlog_sensitivity_prior_year"]["value"] == 3.2
+    assert (
+        by_id["fact_cancellation_rate_beginning_backlog_sensitivity_prior_year"]["metric"]
+        == "cancellation_rate_sensitivity"
+    )
+    assert by_id["fact_cancellation_rate_beginning_backlog_sensitivity_prior_year"]["period"] == "prior_year_same_quarter"
+    # Spec item 2: the SAME verbatim basis string as the current-quarter
+    # sensitivity fact (the row's own label, not a paraphrase).
+    assert (
+        by_id["fact_cancellation_rate_beginning_backlog_sensitivity_prior_year"]["basis"]
+        == by_id["fact_cancellation_rate_beginning_backlog_sensitivity"]["basis"]
+        == "Quarterly Cancellations as a Percentage of Beginning-Quarter Backlog"
+    )
+    # F3/spec-item-3: the current and prior-year sensitivity facts' receipts
+    # are DISJOINT byte spans, and both are disjoint from
+    # fact_cancellation_rate_prior_year's span (the signed-contracts row, a
+    # different row entirely) -- proving the prior-year sensitivity value is
+    # not a byte-identical copy of either.
+    sensitivity_current_span = by_id["fact_cancellation_rate_beginning_backlog_sensitivity"]["source_span"]
+    sensitivity_prior_span = by_id["fact_cancellation_rate_beginning_backlog_sensitivity_prior_year"]["source_span"]
+    signed_contracts_prior_span = by_id["fact_cancellation_rate_prior_year"]["source_span"]
+
+    def _byte_range(span: dict) -> tuple[int, int]:
+        locator = span["locator"]
+        return locator["span_start_byte"], locator["span_end_byte"]
+
+    def _disjoint(a: tuple[int, int], b: tuple[int, int]) -> bool:
+        return a[1] <= b[0] or b[1] <= a[0]
+
+    current_range = _byte_range(sensitivity_current_span)
+    prior_range = _byte_range(sensitivity_prior_span)
+    signed_range = _byte_range(signed_contracts_prior_span)
+    assert sensitivity_current_span["span_id"] != sensitivity_prior_span["span_id"]
+    assert _disjoint(current_range, prior_range)
+    assert _disjoint(prior_range, signed_range)
+    assert _disjoint(current_range, signed_range)
     # F4: the denominator fact's VALUE is the row's own verbatim label text —
     # never a code-authored paraphrase receipted against an unrelated numeric
     # cell.
@@ -693,6 +837,124 @@ def test_tol_historical_release_facts_replay_including_backlog_sensitivity() -> 
     )
     denom_span = by_id["fact_cancellation_rate_denominator"]["source_span"]
     assert denom_span["display_excerpt"] == by_id["fact_cancellation_rate_denominator"]["value"]
+    _verify_all_spans(facts, bound=bound)
+
+
+def test_tol_backlog_sensitivity_prior_year_absent_when_cell_missing_current_still_present() -> None:
+    """A5C item 7 absence path: a synthetic TOL-shaped table whose backlog
+    row carries ONLY the current-quarter cell (no prior-year cell at all)
+    must leave the prior-year sensitivity fact TYPED ABSENT with its own
+    reason detail, while the current-quarter sensitivity fact is entirely
+    unaffected (no inference, no substitution -- frozen spec item 2)."""
+    synthetic_body = (
+        "<html><body>"
+        "<table>"
+        "<tr><td colspan=\"3\">Three Months Ended July 31,</td></tr>"
+        "<tr><td>Quarterly Cancellations as a Percentage of Beginning-Quarter Backlog</td>"
+        "<td>2.6</td><td>%</td></tr>"
+        "</table>"
+        "</body></html>"
+    )
+    bound = bind_release_document(
+        cik="794170", accession=TOL_ACCESSION, body=synthetic_body, form="8-K",
+        filing_date=TOL_REPORT_DATE, acceptance_datetime=f"{TOL_REPORT_DATE}T16:05:00.000Z",
+        report_date=TOL_REPORT_DATE, exhibit_url="https://example/tol.htm",
+    )
+    fiscal_period = FiscalPeriod(year=2026, quarter=3, calendar_end=date(2026, 7, 31))
+    facts = tol_profile().extract_release_facts(
+        bound=bound, document_id="doc:tol-synthetic-no-prior-cell", event_id="evt_x", fiscal_period=fiscal_period,
+    )
+    by_id = {fact["fact_id"]: fact for fact in facts}
+    assert "typed_absence" not in by_id["fact_cancellation_rate_beginning_backlog_sensitivity"]
+    assert by_id["fact_cancellation_rate_beginning_backlog_sensitivity"]["value"] == 2.6
+    prior_fact = by_id["fact_cancellation_rate_beginning_backlog_sensitivity_prior_year"]
+    assert "typed_absence" in prior_fact
+    assert "value" not in prior_fact
+    assert prior_fact["typed_absence"]["reason"] == "no_span_addressable_evidence"
+    assert prior_fact["typed_absence"]["schema"] == "typed_absence.v1"
+    _verify_all_spans(facts, bound=bound)
+
+
+@pytest.mark.parametrize("prior_cell_text", ["N/A", "(1)", "1,234", "—"])
+def test_tol_backlog_sensitivity_prior_year_unparseable_cell_is_typed_absence_not_a_crash(
+    prior_cell_text: str,
+) -> None:
+    """Red-team MAJOR-1: an unparseable prior-year cell ("N/A", "(1)", a
+    stray "1,234" thousands-separator shape, or an em-dash "—") must
+    NOT raise. Pre-fix, ``float(backlog_prior_value)`` was unguarded --
+    any of these four shapes would propagate a ValueError out of
+    ``extract_release_facts`` and kill the ENTIRE TOL workspace build on
+    the nightly path (pre-PR these shapes were harmless because the cell
+    was never read at all). Typed absence on its own terms; the
+    current-quarter fact (2.6, from cells[0], parsed by the PRE-EXISTING
+    unguarded idiom this PR does not touch) is entirely unaffected."""
+    synthetic_body = (
+        "<html><body>"
+        "<table>"
+        "<tr><td colspan=\"3\">Three Months Ended July 31,</td></tr>"
+        "<tr><td>Quarterly Cancellations as a Percentage of Beginning-Quarter Backlog</td>"
+        f"<td>2.6</td><td>%</td><td>{prior_cell_text}</td><td>%</td></tr>"
+        "</table>"
+        "</body></html>"
+    )
+    bound = bind_release_document(
+        cik="794170", accession=TOL_ACCESSION, body=synthetic_body, form="8-K",
+        filing_date=TOL_REPORT_DATE, acceptance_datetime=f"{TOL_REPORT_DATE}T16:05:00.000Z",
+        report_date=TOL_REPORT_DATE, exhibit_url="https://example/tol.htm",
+    )
+    fiscal_period = FiscalPeriod(year=2026, quarter=3, calendar_end=date(2026, 7, 31))
+    facts = tol_profile().extract_release_facts(
+        bound=bound, document_id="doc:tol-synthetic-unparseable-prior", event_id="evt_x",
+        fiscal_period=fiscal_period,
+    )
+    by_id = {fact["fact_id"]: fact for fact in facts}
+    assert "typed_absence" not in by_id["fact_cancellation_rate_beginning_backlog_sensitivity"]
+    assert by_id["fact_cancellation_rate_beginning_backlog_sensitivity"]["value"] == 2.6
+    prior_fact = by_id["fact_cancellation_rate_beginning_backlog_sensitivity_prior_year"]
+    assert "typed_absence" in prior_fact
+    assert "value" not in prior_fact
+    assert prior_fact["typed_absence"]["reason"] == "no_span_addressable_evidence"
+    assert prior_cell_text in prior_fact["typed_absence"]["detail"]
+    _verify_all_spans(facts, bound=bound)
+
+
+def test_tol_backlog_sensitivity_prior_year_absent_on_ambiguous_combined_period_row_shape() -> None:
+    """Red-team MINOR-2: ``cells[1]`` is positional with no shape guard on
+    the row. This exhibit's OWN document carries blocks combining "three
+    months" AND "nine months" columns; a future combined-period row with
+    >=3 numeric cells could otherwise let ``cells[1]`` silently bind to a
+    non-prior-year figure (e.g. a nine-month column) and mint a
+    byte-exact-but-WRONG receipt for the new prior-year fact. Any row
+    shape other than EXACTLY 2 numeric cells is typed absence for the new
+    fact -- never a guess. The current-quarter fact's PRE-EXISTING
+    ``if cells:`` (>=1) behavior is untouched and still fires (byte-
+    identical to pre-PR main)."""
+    synthetic_body = (
+        "<html><body>"
+        "<table>"
+        "<tr><td colspan=\"3\">Three Months Ended July 31,</td></tr>"
+        "<tr><td>Quarterly Cancellations as a Percentage of Beginning-Quarter Backlog</td>"
+        "<td>2.6</td><td>%</td><td>3.2</td><td>%</td><td>4.1</td><td>%</td></tr>"
+        "</table>"
+        "</body></html>"
+    )
+    bound = bind_release_document(
+        cik="794170", accession=TOL_ACCESSION, body=synthetic_body, form="8-K",
+        filing_date=TOL_REPORT_DATE, acceptance_datetime=f"{TOL_REPORT_DATE}T16:05:00.000Z",
+        report_date=TOL_REPORT_DATE, exhibit_url="https://example/tol.htm",
+    )
+    fiscal_period = FiscalPeriod(year=2026, quarter=3, calendar_end=date(2026, 7, 31))
+    facts = tol_profile().extract_release_facts(
+        bound=bound, document_id="doc:tol-synthetic-ambiguous-shape", event_id="evt_x",
+        fiscal_period=fiscal_period,
+    )
+    by_id = {fact["fact_id"]: fact for fact in facts}
+    assert "typed_absence" not in by_id["fact_cancellation_rate_beginning_backlog_sensitivity"]
+    assert by_id["fact_cancellation_rate_beginning_backlog_sensitivity"]["value"] == 2.6
+    prior_fact = by_id["fact_cancellation_rate_beginning_backlog_sensitivity_prior_year"]
+    assert "typed_absence" in prior_fact
+    assert "value" not in prior_fact
+    assert "ambiguous" in prior_fact["typed_absence"]["detail"].lower()
     _verify_all_spans(facts, bound=bound)
 
 
@@ -785,6 +1047,84 @@ def test_source_sha_unchanged_stays_complete_not_corrected() -> None:
     first = _build_dhi_workspace(exhibit_body=original_body, prior_source_sha256=None)
     replay = _build_dhi_workspace(exhibit_body=original_body, prior_source_sha256=first["_source_sha256"])
     assert replay["lifecycle"]["state"] == "complete"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MINOR-9 (Opus red-team verification round 2, 2026-08-23 — real per-
+# sequence lineage): _nearest_older_revision resolves a revision's true
+# predecessor from its OWN event timeline by TIMESTAMP, never from list
+# position or "whichever entry the chain last knew about" — the distinction
+# only shows up in a BACKFILL, where a newly-discovered row is
+# chronologically OLDER than something already chain-represented.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_backfilled_original_publishes_complete_never_a_newer_known_revision() -> None:
+    """A genuine BACKFILL: an original discovered AFTER its own (later)
+    amendment is already chain-represented. Its true predecessor is
+    NOTHING — an event can never have a prior that postdates it — so it
+    must publish "complete", never "corrected" against its own future
+    amendment. This is exactly what the pre-MINOR-9 "chain's overall
+    newest" heuristic would have gotten wrong."""
+    from scripts.refresh_event_workspaces import _nearest_older_revision, exhibit_source_sha256
+
+    original_accepted = "2026-07-21T16:05:00Z"
+    amendment_already_known = {
+        "source_available_at": "2026-07-22T12:00:00Z",  # AFTER the original
+        "workspace": _build_dhi_workspace(
+            exhibit_body=DHI_EXHIBIT.read_text(encoding="utf-8") + "\n<!-- amendment -->\n",
+            prior_source_sha256=None,
+        ),
+    }
+    prior_ws = _nearest_older_revision([amendment_already_known], before=original_accepted)
+    assert prior_ws is None, "an entry that POSTDATES the row being resolved must never be its predecessor"
+
+    original = _build_dhi_workspace(
+        exhibit_body=DHI_EXHIBIT.read_text(encoding="utf-8"),
+        prior_source_sha256=exhibit_source_sha256(prior_ws),
+    )
+    assert original["lifecycle"]["state"] == "complete"
+
+
+def test_amendment_after_backfilled_original_walks_to_corrected_with_true_lineage() -> None:
+    """Once the backfilled original above is itself chain-represented, a
+    genuinely NEWER amendment's own predecessor must resolve to THAT
+    backfilled original specifically — never a temporally-invalid decoy
+    that merely happens to sit later in the timeline list. Made
+    observable: the decoy is stamped AFTER the amendment itself (so a
+    picker that fails to filter by "before" would still wrongly select
+    it) and its own source_sha256 is deliberately set EQUAL to the
+    amendment's real fresh sha256 — if the decoy were wrongly chosen as
+    prior, the amendment would incorrectly resolve "complete" (unchanged
+    source) instead of "corrected"."""
+    from scripts.refresh_event_workspaces import _nearest_older_revision, exhibit_source_sha256
+
+    original_exhibit = DHI_EXHIBIT.read_text(encoding="utf-8")
+    amendment_exhibit = original_exhibit + "\n<!-- amendment restates a figure -->\n"
+
+    backfilled_original = _build_dhi_workspace(exhibit_body=original_exhibit, prior_source_sha256=None)
+    amendment_probe = _build_dhi_workspace(exhibit_body=amendment_exhibit, prior_source_sha256=None)
+
+    decoy = dict(backfilled_original)
+    decoy["sources"] = [dict(backfilled_original["sources"][0])]
+    decoy["sources"][0]["source_sha256"] = amendment_probe["_source_sha256"]
+
+    timeline = [
+        # AFTER the amendment's own acceptance below — must be excluded by
+        # the "strictly older than `before`" filter, not merely by being
+        # "farther" in some ranking.
+        {"source_available_at": "2026-07-25T00:00:00Z", "workspace": decoy},
+        {"source_available_at": "2026-07-21T16:05:00Z", "workspace": backfilled_original},
+    ]
+    amendment_accepted = "2026-07-23T00:00:00Z"
+    prior_ws = _nearest_older_revision(timeline, before=amendment_accepted)
+    assert prior_ws is backfilled_original, "the TRUE nearest-older predecessor, never the newer decoy"
+
+    amendment = _build_dhi_workspace(
+        exhibit_body=amendment_exhibit,
+        prior_source_sha256=exhibit_source_sha256(prior_ws),
+    )
+    assert amendment["lifecycle"]["state"] == "corrected"
+    assert amendment["_source_sha256"] != backfilled_original["_source_sha256"]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -912,16 +1252,16 @@ def test_refresh_is_fail_soft_per_homebuilder(tmp_path: Path, monkeypatch: pytes
         return aapl_transcript_payload
 
     skipped: list[str] = []
-    real_acquire = refresh_mod.acquire_and_build_homebuilder_workspace
+    real_discover = refresh_mod.discover_new_homebuilder_revisions
 
-    def spying_acquire(ticker: str, **kwargs):
+    def spying_discover(ticker: str, **kwargs):
         try:
-            return real_acquire(ticker, **kwargs)
+            return real_discover(ticker, **kwargs)
         except Exception:
             skipped.append(ticker)
             raise
 
-    monkeypatch.setattr(refresh_mod, "acquire_and_build_homebuilder_workspace", spying_acquire)
+    monkeypatch.setattr(refresh_mod, "discover_new_homebuilder_revisions", spying_discover)
 
     rc = refresh_mod.refresh(
         tmp_path,
@@ -929,6 +1269,16 @@ def test_refresh_is_fail_soft_per_homebuilder(tmp_path: Path, monkeypatch: pytes
         http_get=http_get,
         fetch_index=fetch_index,
         fetch_body_fn=fetch_body,
+        # NEW-4 fix (Opus red-team verification round 3, 2026-08-23); the
+        # call site is now discovery (BLOCKER-2, 2026-08-23): every
+        # homebuilder discovery fails here by construction (fake SEC only
+        # answers AAPL), so refresh() now attempts a carry-forward prior
+        # lookup on each failure — the REAL default
+        # (load_prior_workspace_for_ticker) would make a genuine network
+        # call against production R2. An explicit offline stub (no prior)
+        # keeps this test's "ALL FOUR are true skips, nothing to carry"
+        # premise intact and off the network.
+        homebuilder_carry_forward_loader=lambda ticker: None,
         publish_generation=lambda out_dir, dry_run=False: 0,
     )
     assert rc == 0
@@ -998,17 +1348,23 @@ def test_refresh_publishes_a_successful_homebuilder_alongside_a_skipped_one(
 
     dhi_event_id = "evt_cik0000882184_2026q3_results"
     dhi_payload = _build_dhi_workspace(exhibit_body=DHI_EXHIBIT.read_text(encoding="utf-8"), prior_source_sha256=None)
-    real_acquire = refresh_mod.acquire_and_build_homebuilder_workspace
+    real_discover = refresh_mod.discover_new_homebuilder_revisions
 
-    def stubbed_acquire(ticker: str, **kwargs):
+    def stubbed_discover(ticker: str, **kwargs):
         if ticker == "DHI":
-            return dhi_event_id, dhi_payload
-        return real_acquire(ticker, **kwargs)
+            return [(dhi_event_id, dhi_payload)]
+        return real_discover(ticker, **kwargs)
 
-    monkeypatch.setattr(refresh_mod, "acquire_and_build_homebuilder_workspace", stubbed_acquire)
+    monkeypatch.setattr(refresh_mod, "discover_new_homebuilder_revisions", stubbed_discover)
 
     rc = refresh_mod.refresh(
         tmp_path, out_dir=tmp_path, http_get=http_get, fetch_index=fetch_index, fetch_body_fn=fetch_body,
+        # NEW-4 fix (Opus red-team verification round 3, 2026-08-23); the
+        # call site is now discovery (BLOCKER-2): the three non-DHI tickers
+        # fail discovery here (fake SEC only answers AAPL/DHI) — an
+        # explicit offline stub keeps the carry-forward lookup off the
+        # network (see the sibling test above).
+        homebuilder_carry_forward_loader=lambda ticker: None,
         publish_generation=lambda out_dir, dry_run=False: 0,
     )
     assert rc == 0
@@ -1018,3 +1374,270 @@ def test_refresh_publishes_a_successful_homebuilder_alongside_a_skipped_one(
         f"workspaces/{FLAGSHIP_EVENT_ID}.json",
         f"workspaces/{dhi_event_id}.json",
     }
+
+
+# ---------------------------------------------------------------------------
+# NEW-4 (Opus red-team verification round 3, 2026-08-23): generations are
+# WHOLE-NEST snapshots — write_workspace_generation has no carry logic, so a
+# per-ticker skip DROPS the event from the published generation, and the
+# NEXT cycle's prior lookup 404s inside the CURRENT (this) generation — a
+# legitimate, successful "not published here" read, not a fetch failure
+# NEW-1 catches — silently erasing a sticky "corrected" state one hop later.
+# Fixed with a ticker-scoped carry-forward lookup
+# (load_prior_workspace_for_ticker) independent of whether THIS cycle's
+# fresh event_id was ever computed.
+# ---------------------------------------------------------------------------
+
+def _dhi_refresh_fixtures():
+    """Shared AAPL http_get/fetch_index/fetch_body + a corrected DHI
+    payload, reused by both NEW-4 falsifier tests below."""
+    import gzip
+    import json as jsonlib
+
+    from engine.company_intelligence.event_workspace import LIVE_NARRATIVE_ALIAS
+    from engine.earnings_transcript_intake import canonical_body_sha256
+
+    aapl_transcript_payload = jsonlib.loads(
+        gzip.decompress((FIXTURES / "aapl_fy2026_q3.json.gz").read_bytes()).decode("utf-8")
+    )
+    tx_sha = canonical_body_sha256(aapl_transcript_payload)
+    aapl_exhibit = AAPL_EXHIBIT.read_text(encoding="utf-8")
+    archive_base = f"https://www.sec.gov/Archives/edgar/data/{int(AAPL_CIK)}/{AAPL_ACCESSION.replace('-', '')}"
+    exhibit_name = "a8-kex991q3202606272026.htm"
+
+    def http_get(url: str):
+        if url == f"https://data.sec.gov/submissions/CIK{AAPL_CIK}.json":
+            return 200, jsonlib.dumps({
+                "cik": AAPL_CIK,
+                "filings": {"recent": {
+                    "accessionNumber": [AAPL_ACCESSION],
+                    "filingDate": ["2026-07-30"],
+                    "acceptanceDateTime": ["2026-07-30T16:30:00.000Z"],
+                    "reportDate": ["2026-06-27"],
+                    "form": ["8-K"],
+                    "primaryDocument": ["aapl-20260730.htm"],
+                    "items": ["2.02,9.01"],
+                }},
+            }).encode("utf-8")
+        if url == f"{archive_base}/{AAPL_ACCESSION}-index-headers.html":
+            return 200, (
+                "<HTML><BODY><PRE>&lt;DOCUMENT&gt;\n&lt;TYPE&gt;8-K\n"
+                "&lt;FILENAME&gt;aapl-20260730.htm\n&lt;/DOCUMENT&gt;\n"
+                f"&lt;DOCUMENT&gt;\n&lt;TYPE&gt;EX-99.1\n&lt;FILENAME&gt;{exhibit_name}\n"
+                "&lt;/DOCUMENT&gt;\n</PRE></BODY></HTML>"
+            ).encode("utf-8")
+        if url == f"{archive_base}/{exhibit_name}":
+            return 200, aapl_exhibit.encode("utf-8")
+        # Every homebuilder CIK's submissions call 404s: real acquisition
+        # for DHI/PHM/KBH/TOL always fails in these tests by construction.
+        return 404, b""
+
+    def fetch_index(_base: str) -> dict:
+        return {
+            "schema": "mastermind.tx-index/v1",
+            "symbols": {"AAPL": ["2026Q3"]},
+            "revisions": {LIVE_NARRATIVE_ALIAS: tx_sha},
+            "dates": {LIVE_NARRATIVE_ALIAS: "2026-07-30"},
+            "body_count": 1,
+            "symbol_count": 1,
+            "generated_at": "2026-08-16T23:51:18Z",
+        }
+
+    def fetch_body(_base: str, ref) -> dict:
+        return aapl_transcript_payload
+
+    dhi_event_id = "evt_cik0000882184_2026q3_results"
+    dhi_original = _build_dhi_workspace(exhibit_body=DHI_EXHIBIT.read_text(encoding="utf-8"), prior_source_sha256=None)
+    dhi_corrected = _build_dhi_workspace(
+        exhibit_body=DHI_EXHIBIT.read_text(encoding="utf-8") + "\n<!-- source correction -->\n",
+        prior_source_sha256=dhi_original["_source_sha256"],
+    )
+    assert dhi_corrected["lifecycle"]["state"] == "corrected"
+    return http_get, fetch_index, fetch_body, dhi_event_id, dhi_corrected
+
+
+def _publish_dhi_corrected_cycle_1(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """CYCLE 1 shared by both falsifier tests: DHI publishes already
+    "corrected"; PHM/KBH/TOL never published (true skip, no prior)."""
+    import json as jsonlib
+
+    import scripts.refresh_event_workspaces as refresh_mod
+
+    http_get, fetch_index, fetch_body, dhi_event_id, dhi_corrected = _dhi_refresh_fixtures()
+    real_discover = refresh_mod.discover_new_homebuilder_revisions
+
+    def stubbed_discover_cycle1(ticker: str, **kwargs):
+        if ticker == "DHI":
+            return [(dhi_event_id, dhi_corrected)]
+        return real_discover(ticker, **kwargs)
+
+    monkeypatch.setattr(refresh_mod, "discover_new_homebuilder_revisions", stubbed_discover_cycle1)
+    rc1 = refresh_mod.refresh(
+        tmp_path, out_dir=tmp_path, http_get=http_get, fetch_index=fetch_index, fetch_body_fn=fetch_body,
+        homebuilder_carry_forward_loader=lambda ticker: None,
+        publish_generation=lambda out_dir, dry_run=False: 0,
+    )
+    assert rc1 == 0
+    monkeypatch.setattr(refresh_mod, "discover_new_homebuilder_revisions", real_discover)
+    marker1 = jsonlib.loads((tmp_path / "event_workspaces" / "manifest.json").read_text())
+    dhi_published_1 = jsonlib.loads(
+        (tmp_path / "event_workspaces" / "generations" / marker1["generation_id"]
+         / "workspaces" / f"{dhi_event_id}.json").read_text()
+    )
+    assert dhi_published_1["lifecycle"]["state"] == "corrected"
+    # (c): a never-published ticker with a failed discovery is a true
+    # skip — PHM/KBH/TOL are absent from cycle 1 (only AAPL + DHI present),
+    # confirming case (c) alongside cases (a)/(b) exercised below.
+    assert marker1["event_count"] == 2
+    return http_get, fetch_index, fetch_body, dhi_event_id, dhi_corrected, dhi_published_1, marker1["generation_id"], real_discover
+
+
+def test_carry_forward_lookup_failure_aborts_the_whole_refresh_then_recovers(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """NEW-4 NAMED FALSIFIER (1): the ticker-scoped carry-forward lookup
+    RAISES for DHI on cycle 2 (simulating a transient CDN blip on that
+    specific read, while DHI's real acquisition ALSO fails naturally) ->
+    cycle 2 publishes NOTHING (RefreshError, marker frozen at cycle 1's
+    generation). Cycle 3 behaves normally (the same loader now succeeds) ->
+    the generation still carries lifecycle.state "corrected" for DHI,
+    proving nothing was lost across the aborted cycle."""
+    import json as jsonlib
+
+    import scripts.refresh_event_workspaces as refresh_mod
+
+    (http_get, fetch_index, fetch_body, dhi_event_id, dhi_corrected,
+     dhi_published_1, gen1_id, real_discover) = _publish_dhi_corrected_cycle_1(tmp_path, monkeypatch)
+
+    def failing_carry_forward(ticker: str):
+        if ticker == "DHI":
+            raise refresh_mod.PriorWorkspaceFetchFailed("DHI: simulated transient CDN blip")
+        return None
+
+    with pytest.raises(refresh_mod.RefreshError):
+        refresh_mod.refresh(
+            tmp_path, out_dir=tmp_path, http_get=http_get, fetch_index=fetch_index, fetch_body_fn=fetch_body,
+            homebuilder_carry_forward_loader=failing_carry_forward,
+            publish_generation=lambda out_dir, dry_run=False: 0,
+        )
+    marker2 = jsonlib.loads((tmp_path / "event_workspaces" / "manifest.json").read_text())
+    assert marker2["generation_id"] == gen1_id, "marker must stay frozen at cycle 1's generation — nothing published"
+
+    def normal_carry_forward(ticker: str):
+        if ticker == "DHI":
+            return dhi_published_1
+        return None
+
+    rc3 = refresh_mod.refresh(
+        tmp_path, out_dir=tmp_path, http_get=http_get, fetch_index=fetch_index, fetch_body_fn=fetch_body,
+        homebuilder_carry_forward_loader=normal_carry_forward,
+        publish_generation=lambda out_dir, dry_run=False: 0,
+    )
+    assert rc3 == 0
+    marker3 = jsonlib.loads((tmp_path / "event_workspaces" / "manifest.json").read_text())
+    dhi_published_3 = jsonlib.loads(
+        (tmp_path / "event_workspaces" / "generations" / marker3["generation_id"]
+         / "workspaces" / f"{dhi_event_id}.json").read_text()
+    )
+    assert dhi_published_3["lifecycle"]["state"] == "corrected"
+
+
+def test_carry_forward_lookup_bare_exception_also_aborts(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """NIT (Opus red-team verification round 4, 2026-08-23 — same asymmetry
+    class as NEW-5-PIN): the carry-forward call site used to catch only
+    `except PriorWorkspaceFetchFailed`, so any OTHER exception from a
+    future carry loader would escape refresh() raw instead of becoming a
+    clean RefreshError. Fixed to be uniform with the flagship handler: ANY
+    exception from the carry-forward lookup aborts. This test uses a bare
+    RuntimeError (deliberately NOT PriorWorkspaceFetchFailed)."""
+    import json as jsonlib
+
+    import scripts.refresh_event_workspaces as refresh_mod
+
+    (http_get, fetch_index, fetch_body, dhi_event_id, dhi_corrected,
+     dhi_published_1, gen1_id, real_discover) = _publish_dhi_corrected_cycle_1(tmp_path, monkeypatch)
+
+    def bare_exception_carry_forward(ticker: str):
+        if ticker == "DHI":
+            raise RuntimeError("DHI: simulated non-PriorWorkspaceFetchFailed failure")
+        return None
+
+    with pytest.raises(refresh_mod.RefreshError):
+        refresh_mod.refresh(
+            tmp_path, out_dir=tmp_path, http_get=http_get, fetch_index=fetch_index, fetch_body_fn=fetch_body,
+            homebuilder_carry_forward_loader=bare_exception_carry_forward,
+            publish_generation=lambda out_dir, dry_run=False: 0,
+        )
+    marker2 = jsonlib.loads((tmp_path / "event_workspaces" / "manifest.json").read_text())
+    assert marker2["generation_id"] == gen1_id, "marker must stay frozen — nothing published this cycle"
+
+
+def test_acquisition_failure_carries_forward_a_corrected_event_byte_identical(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """NEW-4 NAMED FALSIFIER (2): DHI's acquisition fails on cycle 2 (NOT
+    the prior read — the carry-forward lookup succeeds normally, returning
+    cycle 1's corrected payload). Cycle 2's generation still CONTAINS DHI,
+    carried forward, state "corrected", byte-content-identical to its prior
+    payload (module content, excluding generation_id/generated_at which
+    write_workspace_generation always re-stamps) — with a valid receipt in
+    the manifest's files map. Cycle 3 normal (DHI's acquisition succeeds
+    again with the SAME unchanged source) -> sticky-corrected still holds."""
+    import json as jsonlib
+
+    import scripts.refresh_event_workspaces as refresh_mod
+
+    (http_get, fetch_index, fetch_body, dhi_event_id, dhi_corrected,
+     dhi_published_1, gen1_id, real_discover) = _publish_dhi_corrected_cycle_1(tmp_path, monkeypatch)
+
+    def carry_forward_succeeds(ticker: str):
+        if ticker == "DHI":
+            return dhi_published_1
+        return None
+
+    rc2 = refresh_mod.refresh(
+        tmp_path, out_dir=tmp_path, http_get=http_get, fetch_index=fetch_index, fetch_body_fn=fetch_body,
+        homebuilder_carry_forward_loader=carry_forward_succeeds,
+        publish_generation=lambda out_dir, dry_run=False: 0,
+    )
+    assert rc2 == 0
+    marker2 = jsonlib.loads((tmp_path / "event_workspaces" / "manifest.json").read_text())
+    assert f"workspaces/{dhi_event_id}.json" in marker2["files"]
+    receipt = marker2["files"][f"workspaces/{dhi_event_id}.json"]
+    assert receipt["bytes"] > 0 and len(receipt["sha256"]) == 64
+    dhi_published_2 = jsonlib.loads(
+        (tmp_path / "event_workspaces" / "generations" / marker2["generation_id"]
+         / "workspaces" / f"{dhi_event_id}.json").read_text()
+    )
+    assert dhi_published_2["lifecycle"]["state"] == "corrected"
+
+    def _content(payload: dict) -> dict:
+        return {k: v for k, v in payload.items() if k not in ("generation_id", "generated_at")}
+
+    assert _content(dhi_published_2) == _content(dhi_published_1), "carried-forward content must be unchanged"
+
+    # CYCLE 3: DHI discovery "succeeds" again (same unchanged source, so it
+    # is expected to be already-represented and NOT re-returned by the
+    # real discovery path — this stub simulates the OLD accession still
+    # producing the same corrected content, e.g. via carry-forward) —
+    # sticky-corrected (round 1/2) must still hold.
+    def stubbed_discover_cycle3(ticker: str, **kwargs):
+        if ticker == "DHI":
+            return [(dhi_event_id, dhi_corrected)]
+        return real_discover(ticker, **kwargs)
+
+    monkeypatch.setattr(refresh_mod, "discover_new_homebuilder_revisions", stubbed_discover_cycle3)
+    rc3 = refresh_mod.refresh(
+        tmp_path, out_dir=tmp_path, http_get=http_get, fetch_index=fetch_index, fetch_body_fn=fetch_body,
+        homebuilder_carry_forward_loader=lambda ticker: None,
+        publish_generation=lambda out_dir, dry_run=False: 0,
+    )
+    assert rc3 == 0
+    marker3 = jsonlib.loads((tmp_path / "event_workspaces" / "manifest.json").read_text())
+    dhi_published_3 = jsonlib.loads(
+        (tmp_path / "event_workspaces" / "generations" / marker3["generation_id"]
+         / "workspaces" / f"{dhi_event_id}.json").read_text()
+    )
+    assert dhi_published_3["lifecycle"]["state"] == "corrected"

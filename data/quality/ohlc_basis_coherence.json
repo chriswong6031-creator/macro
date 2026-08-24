@@ -345,10 +345,20 @@
       ]
     },
     "russell_breadth": {
-      "status": "coherent",
-      "split_tickers": 0,
+      "status": "split",
+      "split_tickers": 1,
       "noise_tickers": 42,
       "findings": [
+        {
+          "ticker": "BRCC",
+          "verdict": "split",
+          "bad_bars": 500,
+          "bars": 524,
+          "bad_share": 0.9542,
+          "worst_excess": 9.000001,
+          "worst_date": "2025-04-02",
+          "inverted_bars": 0
+        },
         {
           "ticker": "APC",
           "verdict": "noise",
@@ -929,7 +939,7 @@
       ]
     }
   },
-  "splits": 0,
-  "status": "coherent",
+  "splits": 1,
+  "status": "split",
   "noise_tickers": 90
 }

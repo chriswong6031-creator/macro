@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-23T00:33:13.328828+00:00",
+  "generated_at": "2026-08-24T00:49:40.650017+00:00",
   "ok": false,
   "fail_reasons": [
     "CHAINS STALE: latest chain file is 2026-08-13 (6 NYSE session(s) behind last_session=2026-08-21); threshold=1 \u2014 OI snapshot may have been missed",
@@ -7,9 +7,9 @@
   ],
   "warnings": [],
   "detail": {
-    "today_utc": "2026-08-23",
+    "today_utc": "2026-08-24",
     "last_trading_day": "2026-08-21",
-    "chains_dir": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/polygon_gex/chains",
+    "chains_dir": "/Users/chriswong/actions-runner-4/_work/macro/macro/data/polygon_gex/chains",
     "chains_latest_date": "2026-08-13",
     "chains_count": 28,
     "chains_age_sessions": 6,

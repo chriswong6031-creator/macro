@@ -1,6 +1,6 @@
 {
 "filter":"idx_rut",
-"as_of":"2026-08-23 00:21 UTC",
+"as_of":"2026-08-24 00:38 UTC",
 "n":1949,
 "total_reported":1949,
 "unmapped_industries":[],
@@ -1803,7 +1803,7 @@
 "industry":"Software - Application",
 "sector":"Technology",
 "country":"USA",
-"market_cap_b":4.52
+"market_cap_b":4.53
 },
 {
 "ticker":"CHEF",
@@ -2262,14 +2262,6 @@
 "market_cap_b":4.05
 },
 {
-"ticker":"SMR",
-"company":"NuScale Power Corp",
-"industry":"Specialty Industrial Machinery",
-"sector":"Industrials",
-"country":"USA",
-"market_cap_b":4.04
-},
-{
 "ticker":"TNGX",
 "company":"Tango Therapeutics Inc",
 "industry":"Biotechnology",
@@ -2450,6 +2442,14 @@
 "company":"Arcus Biosciences Inc",
 "industry":"Biotechnology",
 "sector":"Healthcare",
+"country":"USA",
+"market_cap_b":3.86
+},
+{
+"ticker":"SMR",
+"company":"NuScale Power Corp",
+"industry":"Specialty Industrial Machinery",
+"sector":"Industrials",
 "country":"USA",
 "market_cap_b":3.86
 },
@@ -11326,14 +11326,6 @@
 "market_cap_b":0.4991
 },
 {
-"ticker":"DNA",
-"company":"Ginkgo Bioworks Holdings Inc",
-"industry":"Biotechnology",
-"sector":"Healthcare",
-"country":"USA",
-"market_cap_b":0.4983
-},
-{
 "ticker":"CPS",
 "company":"Cooper-Standard Holdings Inc",
 "industry":"Auto Parts",
@@ -11540,6 +11532,14 @@
 "sector":"Communication Services",
 "country":"USA",
 "market_cap_b":0.4767
+},
+{
+"ticker":"DNA",
+"company":"Ginkgo Bioworks Holdings Inc",
+"industry":"Biotechnology",
+"sector":"Healthcare",
+"country":"USA",
+"market_cap_b":0.4761
 },
 {
 "ticker":"VHI",
@@ -12402,14 +12402,6 @@
 "company":"Arcturus Therapeutics Holdings Inc",
 "industry":"Biotechnology",
 "sector":"Healthcare",
-"country":"USA",
-"market_cap_b":0.3823
-},
-{
-"ticker":"NPWR",
-"company":"NET Power Inc",
-"industry":"Specialty Industrial Machinery",
-"sector":"Industrials",
 "country":"USA",
 "market_cap_b":0.3823
 },
@@ -15140,6 +15132,14 @@
 "sector":"Industrials",
 "country":"USA",
 "market_cap_b":0.1554
+},
+{
+"ticker":"NPWR",
+"company":"NET Power Inc",
+"industry":"Specialty Industrial Machinery",
+"sector":"Industrials",
+"country":"USA",
+"market_cap_b":0.1504
 },
 {
 "ticker":"INTT",
