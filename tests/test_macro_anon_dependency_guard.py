@@ -18,6 +18,8 @@ from __future__ import annotations
 
 import json
 import os
+import plistlib
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -691,20 +693,16 @@ def test_m1_publisher_launch_contract_separates_current_launcher_from_pinned_eng
     plist_name: str,
     runner_name: str,
 ) -> None:
-    parsed = subprocess.run(
-        [
-            "plutil",
-            "-convert",
-            "json",
-            "-o",
-            "-",
-            str(REPO_ROOT / "ops" / "launchd" / plist_name),
-        ],
-        check=True,
-        capture_output=True,
-        text=True,
+    # The production plists contain legacy comments that macOS plutil accepts,
+    # including long separator runs that strict cross-platform XML parsers
+    # reject as invalid ``--`` comment bodies.  Comments are not plist data:
+    # remove them permissively, parse the actual dictionary with the stdlib,
+    # and retain native ``plutil -lint`` as a separate macOS acceptance check.
+    plist_text = (REPO_ROOT / "ops" / "launchd" / plist_name).read_text(
+        encoding="utf-8"
     )
-    payload = json.loads(parsed.stdout)
+    plist_without_comments = re.sub(r"<!--.*?-->", "", plist_text, flags=re.DOTALL)
+    payload = plistlib.loads(plist_without_comments.encode("utf-8"))
     assert payload["ProgramArguments"] == [
         "/Users/chriswong/macro-publisher-runtime/ops/launchd/run_with_env.sh",
         "/Users/chriswong/flow-ops-wt/.env",
