@@ -1,0 +1,385 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/market_os/security_state.v1.schema.json",
+  "title": "security_state.v1",
+  "description": "Market OS B1A per-security display contract. One security's compiled, owner-backed, display-only state: an identity receipt chain over the Data OS master, a K1 (Evidence Foundation) recipe compilation for the earnings-change leg, and a fixed set of typed legs. Context-only (authority.can_* all false) — never a ranker/gate/sizer input. Closed at every level: no leg may silently gain a field, and no leg may substitute a null for a typed absence code (no null-means-neutral).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "version", "security_id", "issuer_id", "listing_key", "ticker_display",
+    "generated_at", "content_sha256", "as_of", "authority", "identity_proof",
+    "coverage", "dominant_degradation", "legs", "last_good"
+  ],
+  "properties": {
+    "schema": { "const": "security_state.v1" },
+    "version": { "const": "1.0.0" },
+    "security_id": { "type": "string", "pattern": "^SEC:[A-Z]{2}-[A-Z]{4}-[A-Z0-9.\\-]+$" },
+    "issuer_id": { "type": "string", "pattern": "^ISS:[A-Z]{2}-[A-Z]{4}-[A-Z0-9.\\-]+$" },
+    "listing_key": { "type": "string", "pattern": "^[A-Z]{2}-[A-Z]{4}-[A-Z0-9.\\-]+$" },
+    "ticker_display": { "type": "string", "minLength": 1, "maxLength": 16 },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "content_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "as_of": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["market_at", "source_frontier_at", "state_compiled_at"],
+      "properties": {
+        "market_at": { "type": ["string", "null"] },
+        "source_frontier_at": { "type": ["string", "null"] },
+        "state_compiled_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "class", "display_only", "can_rank", "can_gate", "can_size",
+        "can_originate_signal", "can_execute"
+      ],
+      "properties": {
+        "class": { "const": "context_only" },
+        "display_only": { "const": true },
+        "can_rank": { "const": false },
+        "can_gate": { "const": false },
+        "can_size": { "const": false },
+        "can_originate_signal": { "const": false },
+        "can_execute": { "const": false }
+      }
+    },
+    "identity_proof": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "method", "legs", "equalities", "refusals", "disclosures"],
+      "properties": {
+        "state": { "enum": ["PROVEN", "BLOCKED_IDENTITY_BRIDGE", "PARTIAL"] },
+        "method": { "const": "owner_backed_chain.v1" },
+        "legs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["check", "description", "artifact", "reader", "values_read", "result", "code"],
+            "properties": {
+              "check": { "type": "string", "pattern": "^R[1-9]$" },
+              "description": { "type": "string", "minLength": 1 },
+              "artifact": { "type": "string", "minLength": 1 },
+              "reader": { "type": "string", "minLength": 1 },
+              "values_read": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["field", "value"],
+                  "properties": {
+                    "field": { "type": "string" },
+                    "value": { "type": ["string", "number", "boolean", "null"] }
+                  }
+                }
+              },
+              "result": { "enum": ["pass", "fail"] },
+              "code": { "type": ["string", "null"] }
+            }
+          }
+        },
+        "equalities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["check", "left", "left_value", "right", "right_value", "equal"],
+            "properties": {
+              "check": { "type": "string" },
+              "left": { "type": "string" },
+              "left_value": { "type": ["string", "number", "boolean", "null"] },
+              "right": { "type": "string" },
+              "right_value": { "type": ["string", "number", "boolean", "null"] },
+              "equal": { "type": "boolean" }
+            }
+          }
+        },
+        "refusals": { "type": "array", "items": { "type": "string" } },
+        "disclosures": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 4,
+          "maxItems": 4
+        }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "overall_state", "required_legs_total", "required_legs_available",
+        "optional_legs_total", "optional_legs_available", "missing_legs",
+        "stale_legs", "rights_blocked_legs", "conflicted_legs"
+      ],
+      "properties": {
+        "overall_state": { "$ref": "#/$defs/coverageState" },
+        "required_legs_total": { "type": "integer", "minimum": 0 },
+        "required_legs_available": { "type": "integer", "minimum": 0 },
+        "optional_legs_total": { "type": "integer", "minimum": 0 },
+        "optional_legs_available": { "type": "integer", "minimum": 0 },
+        "missing_legs": { "type": "array", "items": { "type": "string" } },
+        "stale_legs": { "type": "array", "items": { "type": "string" } },
+        "rights_blocked_legs": { "type": "array", "items": { "type": "string" } },
+        "conflicted_legs": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "dominant_degradation": {
+      "enum": ["NONE", "PARTIAL", "STALE", "UNAVAILABLE", "CONFLICTED", "CORRECTED", "COMPILER_FAILURE"]
+    },
+    "legs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["change", "opportunity_context", "risk", "catalyst", "personal_impact", "evidence"],
+      "properties": {
+        "change": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "economic_episode_ref", "event_refs", "generation_id", "source_available_at",
+            "observed_at", "summary", "correction_state", "coverage_state", "workspace_warnings"
+          ],
+          "properties": {
+            "economic_episode_ref": { "type": ["string", "null"] },
+            "event_refs": { "type": "array", "items": { "type": "string" } },
+            "generation_id": { "type": ["string", "null"] },
+            "source_available_at": { "type": ["string", "null"] },
+            "observed_at": { "type": ["string", "null"] },
+            "summary": { "$ref": "#/$defs/bilingualText" },
+            "correction_state": { "enum": ["none", "corrected", "superseded"] },
+            "coverage_state": { "$ref": "#/$defs/coverageState" },
+            "workspace_warnings": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "opportunity_context": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["prophet", "entry", "market_incorporation", "dislocation", "coverage_state"],
+          "properties": {
+            "prophet": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["ref", "state", "reason"],
+              "properties": {
+                "ref": { "type": "null" },
+                "state": { "$ref": "#/$defs/coverageState" },
+                "reason": { "type": ["string", "null"] }
+              }
+            },
+            "entry": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["state", "available", "null_reason"],
+              "properties": {
+                "state": { "$ref": "#/$defs/coverageState" },
+                "available": { "type": "boolean" },
+                "null_reason": { "type": ["string", "null"] }
+              }
+            },
+            "market_incorporation": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["ref", "state"],
+              "properties": {
+                "ref": { "type": "null" },
+                "state": { "$ref": "#/$defs/coverageState" }
+              }
+            },
+            "dislocation": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["ref", "state"],
+              "properties": {
+                "ref": { "type": "null" },
+                "state": { "$ref": "#/$defs/coverageState" }
+              }
+            },
+            "coverage_state": { "$ref": "#/$defs/coverageState" }
+          }
+        },
+        "risk": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["risk_refs", "failed_gates", "strongest_unresolved_fact", "coverage_state"],
+          "properties": {
+            "risk_refs": { "type": "array", "items": { "type": "string" } },
+            "failed_gates": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["code", "reason"],
+                "properties": {
+                  "code": { "type": "string" },
+                  "reason": { "type": "string" }
+                }
+              }
+            },
+            "strongest_unresolved_fact": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["state", "leg", "code", "en", "zh"],
+              "properties": {
+                "state": {
+                  "enum": [
+                    "conflicted_leg", "corrected_source", "required_leg_degraded",
+                    "workspace_warning", "unavailable"
+                  ]
+                },
+                "leg": { "type": ["string", "null"] },
+                "code": { "type": ["string", "null"] },
+                "en": { "type": ["string", "null"] },
+                "zh": { "type": ["string", "null"] }
+              }
+            },
+            "coverage_state": { "$ref": "#/$defs/coverageState" }
+          }
+        },
+        "catalyst": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["next_observables", "deadlines", "coverage_state"],
+          "properties": {
+            "next_observables": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["kind", "date", "basis"],
+                "properties": {
+                  "kind": { "type": "string" },
+                  "date": { "type": ["string", "null"] },
+                  "basis": { "type": "string" }
+                }
+              }
+            },
+            "deadlines": { "type": "array", "items": {} , "maxItems": 0 },
+            "coverage_state": { "$ref": "#/$defs/coverageState" }
+          }
+        },
+        "personal_impact": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state", "user_exposure_overlay_ref", "coverage_state"],
+          "properties": {
+            "state": { "const": "NO_USER_CONTEXT" },
+            "user_exposure_overlay_ref": { "type": "null" },
+            "coverage_state": { "const": "NOT_APPLICABLE" }
+          }
+        },
+        "evidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["evidence_block_refs", "recipe_id", "compilation", "conflicts", "coverage_state"],
+          "properties": {
+            "evidence_block_refs": { "type": "array", "items": { "type": "string" } },
+            "recipe_id": { "type": ["string", "null"] },
+            "compilation": {
+              "oneOf": [
+                { "type": "null" },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "schema", "version", "recipe_id", "consumer", "state",
+                    "dominant_degradation", "block_ids", "missing_required_blocks",
+                    "missing_optional_blocks", "denominator", "owner_payloads_persisted",
+                    "authority"
+                  ],
+                  "properties": {
+                    "schema": { "const": "evidence_foundation.recipe_compilation_receipt.v1" },
+                    "version": { "const": "1.0.0" },
+                    "recipe_id": { "type": "string" },
+                    "consumer": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["workstream", "job", "output_contract"],
+                      "properties": {
+                        "workstream": { "type": "string" },
+                        "job": { "type": "string" },
+                        "output_contract": { "type": "string" }
+                      }
+                    },
+                    "state": { "enum": ["refused", "abstained", "partial", "corrected", "complete"] },
+                    "dominant_degradation": { "type": "string" },
+                    "block_ids": { "type": "array", "items": { "type": "string" } },
+                    "missing_required_blocks": { "type": "array", "items": { "type": "string" } },
+                    "missing_optional_blocks": { "type": "array", "items": { "type": "string" } },
+                    "identity_unresolved_blocks": { "type": "array", "items": { "type": "string" } },
+                    "denominator": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "total", "included", "excluded", "missing", "stale",
+                        "rights_blocked", "fallback"
+                      ],
+                      "properties": {
+                        "total": { "type": "integer" },
+                        "included": { "type": "integer" },
+                        "excluded": { "type": "integer" },
+                        "missing": { "type": "integer" },
+                        "stale": { "type": "integer" },
+                        "rights_blocked": { "type": "integer" },
+                        "fallback": { "type": "integer" },
+                        "identity_unresolved": { "type": "integer" }
+                      }
+                    },
+                    "owner_payloads_persisted": { "const": false },
+                    "authority": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["can_rank", "can_gate", "can_size", "can_originate", "can_open_entry"],
+                      "properties": {
+                        "can_rank": { "const": false },
+                        "can_gate": { "const": false },
+                        "can_size": { "const": false },
+                        "can_originate": { "const": false },
+                        "can_open_entry": { "const": false }
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            "conflicts": { "type": "array", "items": { "type": "string" } },
+            "coverage_state": { "$ref": "#/$defs/coverageState" }
+          }
+        }
+      }
+    },
+    "last_good": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["generated_at", "content_sha256", "reason"],
+          "properties": {
+            "generated_at": { "type": "string" },
+            "content_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+            "reason": { "type": "string", "minLength": 1 }
+          }
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "coverageState": {
+      "enum": [
+        "AVAILABLE", "NOT_COVERED", "NOT_APPLICABLE", "UNAVAILABLE",
+        "STALE", "RIGHTS_BLOCKED", "CONFLICTED", "CORRECTED", "PARTIAL"
+      ]
+    },
+    "bilingualText": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["en", "zh"],
+      "properties": {
+        "en": { "type": "string", "minLength": 1 },
+        "zh": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

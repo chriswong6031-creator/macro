@@ -719,6 +719,109 @@ def _apply_delisting(rec: dict, disclosure: dict) -> None:
         conv["score"] = None
 
 
+# ---------------------------------------------------------------------------
+# Market OS B1A — security_state.v1 (frozen allowlist: engine.security_state.
+# SECURITY_STATE_TICKERS, AAPL only). Three narrow, import-lazy helpers for
+# the one-ticker owner-read + K1 compile stage wired below, right before the
+# site/stockdata write loop. The pure compile itself lives entirely in
+# engine/security_state.py — everything here is owner I/O + exception
+# containment, never business logic.
+# ---------------------------------------------------------------------------
+
+def _read_security_state_identity_rows(data_dir: Path) -> dict:
+    """Read the four DECLARED master identity artifacts (config/identity_seams.yml
+    ``master.artifacts``) into the plain dict/row shape
+    ``engine.security_state.compile_security_state`` consumes.
+
+    CIK_LEG_UNOWNED_ACCESS disclosure: ``issuer_cik`` is read directly off this
+    declared artifact column, not through ``lib.dataos.identity.IssuerMaster``
+    (whose ``SecurityIssuerRow`` deliberately omits it). Raises on a genuine
+    read failure (absent ``data/reference/`` in a sparse/CI checkout included)
+    — the caller treats that as an ordinary compile failure, never a build crash.
+    """
+    from engine.security_state import PINNED_ISSUER_ID, PINNED_SECURITY_ID
+
+    ref = data_dir / "reference"
+    security_master = pd.read_parquet(ref / "security_master.parquet")
+    issuer_master = pd.read_parquet(ref / "issuer_master.parquet")
+    issuer_migrations = pd.read_parquet(ref / "issuer_migrations.parquet")
+    security_migrations = pd.read_parquet(ref / "security_migrations.parquet")
+
+    row_df = security_master[security_master["security_id"] == PINNED_SECURITY_ID]
+    security_master_row = row_df.iloc[0].to_dict() if len(row_df) else None
+    issuer_security_ids = security_master[
+        (security_master["issuer_id"] == PINNED_ISSUER_ID) & security_master["security_state"].isna()
+    ]["security_id"].astype(str).tolist()
+    return {
+        "security_master_row": security_master_row,
+        "issuer_master_rows": issuer_master.to_dict("records"),
+        "issuer_security_ids": issuer_security_ids,
+        "issuer_migration_matches": issuer_migrations[
+            issuer_migrations["security_id"] == PINNED_SECURITY_ID
+        ].to_dict("records"),
+        "security_migration_matches": security_migrations[
+            security_migrations["security_id"] == PINNED_SECURITY_ID
+        ].to_dict("records"),
+    }
+
+
+def _compile_security_state_for_ticker(ticker: str, rec: dict, *, now: str) -> dict:
+    """One security's ``security_state.v1``. Owner reads only — the compile
+    itself is pure (``engine.security_state.compile_security_state``).
+
+    Budget: exactly ONE extra R2 fetch beyond ``load_workspace_with_disposition``
+    (the generation manifest, for the K1 ``native_digest``) — never fatal if it
+    fails; the change leg still compiles, only ``native_digest`` degrades to
+    ``unknown``.
+    """
+    from engine import security_state as ss
+    from engine.neuralweb.company_intelligence_reader import (
+        fetch_generation_manifest,
+        find_current_event_id_for_company,
+        load_workspace_with_disposition,
+    )
+
+    identity = _read_security_state_identity_rows(config.data_dir())
+    event_id = find_current_event_id_for_company(f"cik:{ss.PINNED_CIK}")
+    workspace, disposition, manifest_sha256 = None, "not_published", None
+    if event_id:
+        workspace, disposition = load_workspace_with_disposition(event_id)
+        generation_id = str((workspace or {}).get("generation_id") or "")
+        if workspace is not None and disposition == "found" and generation_id:
+            try:
+                manifest = fetch_generation_manifest(generation_id)
+                entry = (manifest.get("files") or {}).get(f"workspaces/{event_id}.json")
+                if isinstance(entry, dict):
+                    manifest_sha256 = entry.get("sha256")
+            except Exception as manifest_exc:  # noqa: BLE001 — digest degrades to unknown, never fatal
+                log.debug("security_state.v1 manifest fetch failed for %s (%s)", ticker, manifest_exc)
+    return ss.compile_security_state(
+        now=now, workspace=workspace, workspace_disposition=disposition,
+        blob=rec, manifest_sha256=manifest_sha256, **identity,
+    )
+
+
+def _read_prior_security_state(outdir: Path, ticker: str) -> dict | None:
+    """The prior cycle's committed ``security_state.v1`` receipt — read BEFORE
+    this run overwrites ``site/stockdata/<ticker>.json`` — as the compact
+    ``{generated_at, content_sha256, reason}`` the ``last_good`` field carries,
+    never the whole prior blob."""
+    path = outdir / f"{ticker}.json"
+    if not path.exists():
+        return None
+    try:
+        prior_state = json.loads(path.read_text()).get("security_state")
+        if not isinstance(prior_state, dict):
+            return None
+        return {
+            "generated_at": prior_state.get("generated_at"),
+            "content_sha256": prior_state.get("content_sha256"),
+            "reason": "prior cycle's committed security_state.v1",
+        }
+    except Exception:  # noqa: BLE001 — no usable prior is not fatal
+        return None
+
+
 def _one(ticker: str, close: pd.Series, high: pd.Series | None,
          name: str, sector: str, liquidity: str | None = None,
          macro_drag: float | None = None, macro_beta: float = 0.0,
@@ -4426,6 +4529,38 @@ def main() -> int:
             log.info("B2 conviction accrual: archived conviction_us for %s", alpha_asof)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("B2 conviction accrual (us) failed (%s)", e)
+    # ---- Market OS B1A: security_state.v1 (frozen allowlist, AAPL only) ----
+    # One owner-backed identity+K1 compile per allow-listed ticker, attached to
+    # its rec BEFORE the write loop below. Exception-contained end to end: a
+    # failure here degrades rec["security_state"] to a typed compiler-failure
+    # shell (falling back to the prior cycle's committed receipt when one
+    # exists) and never loses the rest of this ticker's blob write.
+    try:
+        from engine.security_state import SECURITY_STATE_TICKERS, compile_security_state_failure
+        _ss_targets = [(t, r) for t, r in to_write if r.get("ticker") in SECURITY_STATE_TICKERS]
+    except Exception as e:  # noqa: BLE001 — the whole stage is additive
+        log.warning("security_state.v1 stage disabled this cycle (%s)", e)
+        _ss_targets = []
+    if _ss_targets:
+        _ss_now = pd.Timestamp.now(tz="UTC").isoformat()
+        for _ss_ticker, _ss_rec in _ss_targets:
+            try:
+                _ss_state = _compile_security_state_for_ticker(_ss_ticker, _ss_rec, now=_ss_now)
+            except Exception as e:  # noqa: BLE001 — never lose the blob write to this stage
+                log.warning("security_state.v1 compile failed for %s (%s)", _ss_ticker, e)
+                _ss_prior = _read_prior_security_state(outdir, _ss_ticker)
+                _ss_state = compile_security_state_failure(
+                    now=_ss_now, reason=f"{type(e).__name__}: {e}", last_good=_ss_prior,
+                )
+            _ss_rec["security_state"] = _ss_state
+            for _ss_idx_row in index:
+                if _ss_idx_row.get("t") == _ss_ticker:
+                    _ss_idx_row["security_state"] = {
+                        "overall_state": _ss_state["coverage"]["overall_state"],
+                        "dominant_degradation": _ss_state["dominant_degradation"],
+                        "generated_at": _ss_state["generated_at"],
+                    }
+                    break
     for safe, rec in to_write:
         # canonical render model (engine/stock_view) — built AFTER attach_panel_scores so
         # the view's score/band match the final within-market percentile. Additive: the
