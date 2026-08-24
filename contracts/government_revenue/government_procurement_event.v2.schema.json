@@ -31,6 +31,7 @@
     "primary_date_id": {"type": ["string", "null"]},
     "primary_amount_id": {"type": ["string", "null"]},
     "listed_company_impacts": {"type": "array", "items": {"$ref": "#/$defs/companyImpact"}},
+    "program_link": {"$ref": "#/$defs/programLink"},
     "primary_ticker": {"type": ["string", "null"], "pattern": "^[A-Z][A-Z0-9.-]{0,9}$"},
     "display_priority": {"$ref": "#/$defs/displayPriority"},
     "evidence": {"$ref": "#/$defs/evidence"},
@@ -98,6 +99,55 @@
     }
   ],
   "$defs": {
+    "programLink": {
+      "description": "D5 reviewed program relation for an award-change event. Optional for pre-D5 generations; when present it is exactly one admitted five-key state.",
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["state", "reason_code", "program_id", "program_event_link_id", "ontology_graph_id"],
+          "properties": {
+            "state": {"const": "reviewed"},
+            "reason_code": {"type": "null"},
+            "program_id": {"type": "string", "pattern": "^acq-program:[a-z0-9][a-z0-9:-]*$"},
+            "program_event_link_id": {"type": "string", "pattern": "^prog-event:[a-f0-9]{12}$"},
+            "ontology_graph_id": {"type": "string", "pattern": "^program-ontology:"}
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["state", "reason_code", "program_id", "program_event_link_id", "ontology_graph_id"],
+          "properties": {
+            "state": {"enum": ["not_reviewed", "reviewed_none"]},
+            "reason_code": {"const": "no_reviewed_program_link"},
+            "program_id": {"type": "null"},
+            "program_event_link_id": {"type": "null"},
+            "ontology_graph_id": {"type": "string", "pattern": "^program-ontology:"}
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["state", "reason_code", "program_id", "program_event_link_id", "ontology_graph_id"],
+          "properties": {
+            "state": {"const": "conflicted"},
+            "reason_code": {"type": "null"},
+            "program_id": {"type": "null"},
+            "program_event_link_id": {"type": "null"},
+            "ontology_graph_id": {"type": "string", "pattern": "^program-ontology:"}
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["state", "reason_code", "program_id", "program_event_link_id", "ontology_graph_id"],
+          "properties": {
+            "state": {"const": "source_unavailable"},
+            "reason_code": {"const": "ontology_unavailable"},
+            "program_id": {"type": "null"},
+            "program_event_link_id": {"type": "null"},
+            "ontology_graph_id": {"type": "null"}
+          }
+        }
+      ]
+    },
     "nullableTemporal": {"anyOf": [{"type": "null"}, {"type": "string", "format": "date"}, {"type": "string", "format": "date-time"}]},
     "agency": {
       "type": "object", "additionalProperties": false,
