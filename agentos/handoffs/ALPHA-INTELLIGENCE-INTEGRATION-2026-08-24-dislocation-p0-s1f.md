@@ -134,6 +134,25 @@ verified:
       tests/test_dislocation_p0_s1f_finalize_measurement.py
     result: >
       37 passed with three unrelated macOS pytest temporary-directory cleanup warnings.
+  - claim: "Fresh-main canonical document-owner changes are compatible and the seventy replay byte-identically on the reconciled carrier."
+    command: >
+      git merge --no-edit origin/main;
+      python3 scripts/research/dislocation_p0_s1f_owner_run.py
+      --replay-manifest research/dislocation_intelligence/p0_s1f/S1F_CANONICAL_SOURCE_PACKET_MANIFEST.json
+      --workspace research/dislocation_intelligence/p0_s1f/work/source_owner_attempt2
+      --replay-out research/dislocation_intelligence/p0_s1f/work/source_owner_current_main_replay
+      --packet-index research/dislocation_intelligence/p0_s1f/work/source_owner_attempt2/source_packets/packet_index.json;
+      shasum -a 256 research/dislocation_intelligence/p0_s1f/work/source_owner_current_main_replay/S1F_CANONICAL_SOURCE_PACKET_MANIFEST.json
+      research/dislocation_intelligence/p0_s1f/S1F_CANONICAL_SOURCE_PACKET_MANIFEST.json
+    result: >
+      Reconciled through origin/main 34ce48ec67a8697ddfbe439e9840e818c98eee70.
+      Its FIF-3A3 sec_document_spine delta centralizes document-id minting and
+      canonicalizes CIK; all seventy frozen CIKs were already ten-digit canonical.
+      Offline replay returned COMPLETE_BYTE_IDENTICAL, 70 packets, 183 documents,
+      network NONE; both manifest files SHA to
+      25d3c0482959c150ce676bac7051cc51073f63bd67e367254eb5b7d59ce0f947.
+      The compatible owner change did not alter selected identities or source bytes,
+      so no proposal or audit transplant/rerun was required.
 unverified:
   - claim: "Sol accepts or lands PR #6334."
     what_would_verify: >
