@@ -274,7 +274,7 @@ Sector Central source/authority/design-law collision; merge reconciliation remai
 post-approval. Immediately before the freeze moved, remote branch and PR head still
 matched `ac3b76046ee4d37949d4ac7d83ac3c7877ac475a`, PR reviews were empty,
 and no local or separate-PR R3B.2 final critic receipt existed. New immutable
-content-freeze SHA: `PENDING_CONTENT_FREEZE`. Its
+content-freeze SHA: `d0830a374795925ee1e55b66c0cc42e329ac172d`. Its
 following stamp commit updates manifest/proposal freeze references while retaining
 `status: in_review`. PR #6337 stays DRAFT / HOLD-FOR-SOL with no merge-on-green and
 native auto-merge null. No approval.yml; no final critic dispatch; R3C not started;

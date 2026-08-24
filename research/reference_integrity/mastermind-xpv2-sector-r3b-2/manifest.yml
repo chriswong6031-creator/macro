@@ -46,20 +46,19 @@ lineage:
   # substrate remains authority substrate, not a RIG predecessor.
 
 reference_files:            # the FROZEN successor reference artifact (stamped at freeze).
-  # The values below preserve the historical provisional freeze until the new
-  # content-freeze commit exists. The following stamp commit replaces all four
-  # with that real 40-hex commit. Its tree holds corrected candidate sha256
+  # The historical provisional freeze remains in Git history. These four values
+  # now name the corrected immutable content-freeze commit. Its tree holds sha256
   # 4adb4b6245e8e4aa5b68c850a615461327c0a5d2e672e4c203d6ba32a3b8d53c;
   # the four NEW critic receipts must bind artifact_sha to the corrected value.
   - path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/proposal/MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html
-    frozen_sha: "80347cd6cb37c8e17b7ac7b1dacc0a81f60fc913"
+    frozen_sha: "d0830a374795925ee1e55b66c0cc42e329ac172d"
   - path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/proposal/BUILD_MANIFEST.json
-    frozen_sha: "80347cd6cb37c8e17b7ac7b1dacc0a81f60fc913"
+    frozen_sha: "d0830a374795925ee1e55b66c0cc42e329ac172d"
   - path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/
-    frozen_sha: "80347cd6cb37c8e17b7ac7b1dacc0a81f60fc913"
+    frozen_sha: "d0830a374795925ee1e55b66c0cc42e329ac172d"
     note: "source directory -- byte-identical copy of the frozen R3B.1 build at cycle start (incl. its committed gate scripts); the final eleven-item closure changes only its adjudicated targets; the Sol-commissioned pre-final reconciliation removes only the decoded chart emoji from the Moving Track Record heading and adds the decoded-output guard required by that ruling"
   - path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/
-    frozen_sha: "80347cd6cb37c8e17b7ac7b1dacc0a81f60fc913"
+    frozen_sha: "d0830a374795925ee1e55b66c0cc42e329ac172d"
     note: "historical 53-artifact provisional-freeze matrix plus a separately indexed 13-artifact pre-final correction delta; historical screenshots are not rebound to the corrected candidate"
 
 files:

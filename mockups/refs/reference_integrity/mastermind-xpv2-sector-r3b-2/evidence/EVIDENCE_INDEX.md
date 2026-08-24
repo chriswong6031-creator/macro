@@ -6,7 +6,7 @@ Corrected candidate size: `5,506,871` bytes
 
 Cross-check against `proposal/BUILD_MANIFEST.json` `output`: MATCH
 
-New immutable content-freeze commit: `PENDING_CONTENT_FREEZE` (stamped after the commit exists)
+New immutable content-freeze commit: `d0830a374795925ee1e55b66c0cc42e329ac172d`
 
 Indexed evidence artifacts: 66 (53 historical provisional-freeze artifacts + 13 pre-final reconciliation artifacts)
 

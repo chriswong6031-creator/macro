@@ -27,9 +27,9 @@ schema: mastermind.rig_proposal.v1
 reference_id: mastermind-xpv2-sector-r3b-2
 
 proposed_artifact:
-  # Historical provisional freeze retained until the pre-final corrected content
-  # commit exists; the following stamp commit replaces this with that real 40-hex SHA.
-  frozen_sha: "80347cd6cb37c8e17b7ac7b1dacc0a81f60fc913"
+  # Corrected immutable content-freeze commit; historical provisional freeze
+  # 80347cd6cb37c8e17b7ac7b1dacc0a81f60fc913 remains in Git history.
+  frozen_sha: "d0830a374795925ee1e55b66c0cc42e329ac172d"
   paths:
     - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/proposal/MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html
     - mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/proposal/BUILD_MANIFEST.json
