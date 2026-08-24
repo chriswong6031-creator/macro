@@ -3653,3 +3653,5 @@
 {"id":"ob-2026-08-24-f6422c353a","from":"queued","to":"approved","at":"2026-08-24T14:41:30Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
 {"id":"ob-2026-08-24-eb6b84ed3b","from":"approved","to":"quarantined","at":"2026-08-24T14:41:30Z","actor":"publisher","note":"frame repeat (skeleton jaccard=0.67) of ob-2026-08-24-93753e2bcb posted today; same template, different ticker","receipt":null}
 {"id":"ob-2026-08-24-f6422c353a","from":"approved","to":"quarantined","at":"2026-08-24T14:41:30Z","actor":"publisher","note":"clock: yesterday_word_off_session:yesterday","receipt":null}
+{"id":"ob-2026-08-24-5777bedbab","from":"approved","to":"posting","at":"2026-08-24T15:12:10Z","actor":"publisher","note":"in-flight (pre-publish)","receipt":null}
+{"id":"ob-2026-08-24-5777bedbab","from":"posting","to":"posted","at":"2026-08-24T15:12:11Z","actor":"publisher","note":"published","receipt":{"backend":"buffer","external_id":"6a8c5f4beb28b318599aedf1","external_url":null,"at":"2026-08-24T15:12:00Z","booked_at":"2026-08-24T15:12:00Z"}}
