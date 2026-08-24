@@ -36,7 +36,6 @@ from .raw_ledger import (
 )
 from .sec_document_spine import archive_document_url, canonical_cik, sec_document_id
 from .statement_graph import (
-    GOLDEN_AAPL_FIXTURES,
     GoldenFilingPackage,
     StatementGraphError,
     load_golden_aapl_package,
@@ -45,6 +44,10 @@ from .statement_service import _bind_data_os_issuer
 
 _GOLDEN_ENTITY_ID = "ISS:US-XNAS-AAPL"
 _GOLDEN_LISTING_KEY = "US-XNAS-AAPL"
+GOLDEN_AAPL_QUERY_ACCESSIONS: tuple[str, ...] = (
+    "0000320193-25-000079",
+    "0000320193-26-000020",
+)
 _ISO4217_NS = "http://www.xbrl.org/2003/iso4217"
 _XBRLI_NS = "http://www.xbrl.org/2003/instance"
 _UNIT_MEASURE_PREFIX = {
@@ -478,7 +481,7 @@ class GoldenAaplFinancialQueryProvider:
                 raise FinancialQueryUnavailableError()
             packages = [
                 load_golden_aapl_package(self.repo_root, accession=accession)
-                for accession in GOLDEN_AAPL_FIXTURES
+                for accession in GOLDEN_AAPL_QUERY_ACCESSIONS
             ]
             ledger, filing_metadata, report = parse_and_convert_golden_packages(packages)
             ticker = _GOLDEN_LISTING_KEY.rsplit("-", 1)[-1]
@@ -508,6 +511,7 @@ class GoldenAaplFinancialQueryProvider:
 __all__ = [
     "ConversionReport",
     "FilingConversionReceipt",
+    "GOLDEN_AAPL_QUERY_ACCESSIONS",
     "GoldenAaplFinancialQueryProvider",
     "IxbrlRawLedgerError",
     "canonicalize_clark_qname",

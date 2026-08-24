@@ -738,6 +738,35 @@ def test_provider_generic_exception_returns_503_no_leak(paid_client, monkeypatch
     assert "secret internal path" not in response.text
 
 
+def test_unlawful_delivery_returns_private_503(paid_client, monkeypatch) -> None:
+    base = fip1_fixture_dataset(ROOT)
+    dataset = FinancialQueryDataset(
+        binding=base.binding,
+        ledger=base.ledger,
+        filing_metadata=base.filing_metadata,
+        registry=base.registry,
+        delivery={
+            "kind": "committed_golden_fixture",
+            "attested": True,
+            "production_issuer_service": False,
+        },
+    )
+
+    class _Provider:
+        def resolve(self, entity_id: str) -> FinancialQueryDataset:
+            return dataset
+
+    monkeypatch.setattr(forensics_api, "_financial_query_provider", lambda: _Provider())
+    response = paid_client.post(
+        _QUERY_PATH,
+        content=_make_request(),
+        headers={"content-type": "application/json"},
+    )
+    _assert_error(response, 503, "financial query temporarily unavailable")
+    assert "committed_golden_fixture" not in response.text
+    assert "attested" not in response.text
+
+
 # ---------------------------------------------------------------------------
 # Production app integration: unauthenticated POST → 401 not 404
 # ---------------------------------------------------------------------------

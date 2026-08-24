@@ -14,6 +14,7 @@ from fastapi.testclient import TestClient
 
 import app.forensics as forensics_api
 from engine.fundamental_forensics.ixbrl_raw_ledger import (
+    GOLDEN_AAPL_QUERY_ACCESSIONS,
     GoldenAaplFinancialQueryProvider,
     canonicalize_clark_qname,
     parse_and_convert_golden_packages,
@@ -21,11 +22,12 @@ from engine.fundamental_forensics.ixbrl_raw_ledger import (
 from engine.fundamental_forensics.models import stable_id
 from engine.fundamental_forensics.query_service import (
     FinancialQueryDataset,
+    FinancialQueryUnavailableError,
     execute_financial_query,
     fip1_fixture_dataset,
 )
 from engine.fundamental_forensics.raw_ledger import RawFactLedger
-from engine.fundamental_forensics.sec_document_spine import sec_document_id
+from engine.fundamental_forensics.sec_document_spine import FilingManifestError, sec_document_id
 from engine.fundamental_forensics.statement_graph import (
     GOLDEN_AAPL_FIXTURES,
     load_golden_aapl_package,
@@ -42,6 +44,8 @@ _A2 = "0000320193-26-000020"
 _A1_PRIMARY = "aapl-20250927.htm"
 _A2_PRIMARY = "aapl-20260627.htm"
 _CIK = "0000320193"
+_A1_DOCUMENT_ID = "sec_document_d23a609841f9a32489dd7abc952d39622540f8a24905612bda1d43e5577860b8"
+_A2_DOCUMENT_ID = "sec_document_29a36fa46a0bc5309f17bd254c3061f20c4b3de7e05898a2fec9ee58f89e8760"
 
 _AAPL_QUERY_RESPONSE_SHA = "58972cb88f82483e86acc9d9fc3b1cbce046f466ff8665ae214909d90ab078b0"
 _AAPL_QUERY_HASH = "f8f6dc3134592c817001738cbdefb09ee1b71798ef24a8e64dc75685a6f9c7a1"
@@ -188,15 +192,53 @@ def test_qname_bridge_reuses_attestation_namespace_policy() -> None:
 def test_document_id_reuses_sec_spine_formula() -> None:
     a1 = sec_document_id(_CIK, _A1, "primary", _A1_PRIMARY)
     a2 = sec_document_id(_CIK, _A2, "primary", _A2_PRIMARY)
+    assert a1 == _A1_DOCUMENT_ID
+    assert a2 == _A2_DOCUMENT_ID
     assert a1 == stable_id("sec_document", _CIK, _A1, "primary", _A1_PRIMARY)
     assert a2 == stable_id("sec_document", _CIK, _A2, "primary", _A2_PRIMARY)
+    assert sec_document_id("320193", _A1, "primary", _A1_PRIMARY) == a1
+    assert sec_document_id(320193, _A1, "primary", _A1_PRIMARY) == a1
     assert a1 != a2
+    with pytest.raises(FilingManifestError):
+        sec_document_id(_CIK, "not-an-accession", "primary", _A1_PRIMARY)
+    with pytest.raises(FilingManifestError):
+        sec_document_id(_CIK, _A1, "attachment", _A1_PRIMARY)
+    with pytest.raises(FilingManifestError):
+        sec_document_id(_CIK, _A1, "primary", "../" + _A1_PRIMARY)
+
+
+def test_future_statement_fixture_cannot_enter_a3_ledger(monkeypatch) -> None:
+    hostile = "0000320193-99-999999"
+    expanded = dict(GOLDEN_AAPL_FIXTURES)
+    expanded[hostile] = GOLDEN_AAPL_FIXTURES[_A1]
+    monkeypatch.setattr(
+        "engine.fundamental_forensics.statement_graph.GOLDEN_AAPL_FIXTURES",
+        expanded,
+    )
+    assert hostile in expanded
+    assert GOLDEN_AAPL_QUERY_ACCESSIONS == (_A1, _A2)
+    provider = GoldenAaplFinancialQueryProvider(ROOT)
+    dataset = provider.resolve(_GOLDEN_ENTITY)
+    report = provider.conversion_report()
+    assert report.ledger_sha256 == _LEDGER_SHA
+    assert set(dataset.filing_metadata) == {_A1, _A2}
+    assert hostile not in dataset.filing_metadata
+    assert all(event.source.accession in {_A1, _A2} for event in dataset.ledger.events)
+    result = execute_financial_query(
+        body=_query_body(
+            metric_ids=["revenue", "total_assets", "gross_margin", "net_cash_from_operating_activities"],
+            periods=[FY2025_REV, Q3_REV, YTD_REV, A2_ASSETS],
+        ),
+        provider=provider,
+    )
+    assert result.sha256 == _AAPL_QUERY_RESPONSE_SHA
+    assert result.envelope["receipt"]["query_hash"] == _AAPL_QUERY_HASH
 
 
 def test_conversion_report_is_complete_and_deterministic() -> None:
     from engine.fundamental_forensics.raw_ledger import canonical_json
 
-    packages = [load_golden_aapl_package(ROOT, accession=item) for item in GOLDEN_AAPL_FIXTURES]
+    packages = [load_golden_aapl_package(ROOT, accession=item) for item in GOLDEN_AAPL_QUERY_ACCESSIONS]
     first = parse_and_convert_golden_packages(packages)
     second = parse_and_convert_golden_packages(packages)
     ledger, metadata, report = first
@@ -446,7 +488,7 @@ def test_unlinked_vintages_are_not_evaluable() -> None:
 
 
 def test_agreeing_and_conflicting_duplicates() -> None:
-    packages = [load_golden_aapl_package(ROOT, accession=item) for item in GOLDEN_AAPL_FIXTURES]
+    packages = [load_golden_aapl_package(ROOT, accession=item) for item in GOLDEN_AAPL_QUERY_ACCESSIONS]
     ledger, metadata, _report = parse_and_convert_golden_packages(packages)
     source = next(
         event
@@ -636,6 +678,87 @@ def test_fip1_response_remains_byte_identical_without_delivery() -> None:
         provider=_P(),
     )
     assert "delivery" not in result.envelope
+
+
+def _fip1_dataset_with_delivery(delivery):
+    base = fip1_fixture_dataset(ROOT)
+    return FinancialQueryDataset(
+        binding=base.binding,
+        ledger=base.ledger,
+        filing_metadata=base.filing_metadata,
+        registry=base.registry,
+        delivery=delivery,
+    )
+
+
+def _fip1_query_bytes() -> bytes:
+    return json.dumps(
+        {
+            "schema": "fundamental_forensics.financial_query_request/v1",
+            "entity_id": "mmx.issuer.fip1",
+            "policy": {
+                "selection": "as_reported",
+                "source_snapshot_at": "2024-12-31T23:59:59Z",
+                "recorded_at": "2026-08-03T12:00:00Z",
+            },
+            "metric_ids": ["revenue"],
+            "periods": [{"kind": "duration", "start": "2023-01-01", "end": "2023-12-31", "label": "FY2023"}],
+        },
+        separators=(",", ":"),
+    ).encode("utf-8")
+
+
+@pytest.mark.parametrize(
+    "delivery",
+    (
+        {
+            "kind": "production_attested",
+            "attested": False,
+            "production_issuer_service": False,
+        },
+        {
+            "kind": "committed_golden_fixture",
+            "attested": True,
+            "production_issuer_service": False,
+        },
+        {
+            "kind": "committed_golden_fixture",
+            "attested": False,
+            "production_issuer_service": True,
+        },
+        {
+            "kind": "committed_golden_fixture",
+            "attested": 0,
+            "production_issuer_service": False,
+        },
+        {
+            "kind": "committed_golden_fixture",
+            "attested": False,
+            "production_issuer_service": 0,
+        },
+        {
+            "kind": "committed_golden_fixture",
+            "attested": "false",
+            "production_issuer_service": False,
+        },
+        {"kind": "committed_golden_fixture", "attested": False},
+        {
+            "kind": "committed_golden_fixture",
+            "attested": False,
+            "production_issuer_service": False,
+            "authority": "context_only",
+        },
+        {},
+        "committed_golden_fixture",
+    ),
+)
+def test_unlawful_delivery_is_unavailable(delivery) -> None:
+    class _P:
+        def resolve(self, entity_id: str):
+            return _fip1_dataset_with_delivery(delivery)
+
+    with pytest.raises(FinancialQueryUnavailableError):
+        execute_financial_query(body=_fip1_query_bytes(), provider=_P())
 
 
 def test_five_5983_query_hashes_and_fif2c_pins() -> None:

@@ -25,7 +25,7 @@ changed:
   - path: app/forensics.py
     what: Default query provider is GoldenAaplFinancialQueryProvider.
   - path: tests/test_fundamental_forensics_ixbrl_raw_ledger.py
-    what: Conversion, reconciliation, PIT, dimensions, duplicates, unlinked vintages.
+    what: Conversion, reconciliation, PIT, dimensions, duplicates, unlinked vintages, Sol REQUEST_CHANGES regressions.
 decisions:
   - DEC:FIF-3A3-REUSE-MAP
   - DEC:FIF-1-V1-FROZEN
@@ -44,6 +44,9 @@ verified:
   - claim: A1/A2 statement SHAs, five #5983 query hashes, and FIF-2C packet pins remain unchanged; FIF-1 and query/raw_ledger/metric_registry are empty-diff versus origin/main.
     command: python3 -m pytest tests/test_fundamental_forensics_ixbrl_raw_ledger.py::test_five_5983_query_hashes_and_fif2c_pins tests/test_fundamental_forensics_ixbrl_raw_ledger.py::test_frozen_predecessor_paths_are_empty_diff -q
     result: passed
+  - claim: "Sol REQUEST_CHANGES repairs: frozen A1/A2 query source set survives hostile GOLDEN_AAPL_FIXTURES expansion; unlawful delivery is unavailable/private 503; 320193 and 0000320193 mint one document ID; A1/A2 document IDs and ledger/query hashes unchanged."
+    command: python3 -m pytest tests/test_fundamental_forensics_ixbrl_raw_ledger.py::test_future_statement_fixture_cannot_enter_a3_ledger tests/test_fundamental_forensics_ixbrl_raw_ledger.py::test_unlawful_delivery_is_unavailable tests/test_sec_document_spine.py::test_sec_document_id_normalizes_cik_and_validates_spine_path_law tests/test_fundamental_forensics_financial_query_api.py::test_unlawful_delivery_returns_private_503 tests/test_fundamental_forensics_ixbrl_raw_ledger.py::test_required_governed_aapl_values tests/test_fundamental_forensics_ixbrl_raw_ledger.py::test_five_5983_query_hashes_and_fif2c_pins -q
+    result: passed; ledger ba149bd55d929d843f353e91bbf68147791fb8b4a20c258426ea2eb7527019d8; AAPL response 58972cb88f82483e86acc9d9fc3b1cbce046f466ff8665ae214909d90ab078b0
   - claim: AgentOS schema validates.
     command: python3 scripts/agentos.py validate
     result: 0 error(s)
@@ -62,6 +65,7 @@ do_not_redo:
   - Do not convert only statement totals; retain every representable numeric occurrence.
   - Do not activate AAPL packet or revision providers.
   - Do not add delivery metadata to FIP1 datasets.
+  - Do not iterate GOLDEN_AAPL_FIXTURES inside GoldenAaplFinancialQueryProvider.
 danger_areas:
   - Setting revision_of on A2 comparative facts would silently fuse unlinked vintages.
   - Flipping dimensions_known true on partial contexts would let Product/Service or incomplete parses become consolidated revenue.

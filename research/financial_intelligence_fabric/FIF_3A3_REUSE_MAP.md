@@ -37,7 +37,7 @@ kernel, or financial API.
 | Listing | `US-XNAS-AAPL` | `listing_key` |
 | Source filer | `0000320193` | accession / XBRL entity |
 | Query ticker | `AAPL` | last segment of Data OS listing_key |
-| Document | `sec_document_id(cik, accession, "primary", name)` | exported from `sec_document_spine.py` |
+| Document | `sec_document_id(...)` after CIK normalize + accession/role/name spine validation | exported from `sec_document_spine.py`; `320193` ≡ `0000320193` |
 
 Request `entity_id` remains `ISS:US-XNAS-AAPL`. Query kernel entities map
 `AAPL → 0000320193`. FIP1 stays `mmx.issuer.fip1`.
@@ -65,12 +65,17 @@ Request `entity_id` remains `ISS:US-XNAS-AAPL`. Query kernel entities map
 
 Change only `_financial_query_provider()` to `GoldenAaplFinancialQueryProvider`.
 Do not activate revision or packet providers for AAPL.
+The query provider source set is frozen to A1 `0000320193-25-000079` and
+A2 `0000320193-26-000020` (`GOLDEN_AAPL_QUERY_ACCESSIONS`). It must not
+iterate `GOLDEN_AAPL_FIXTURES`.
 
 - AAPL golden query → 200
 - Unknown issuer on this available provider → private 400 `unknown entity`
 - Corrupt/missing admitted golden source → private 503
+- Unlawful `FinancialQueryDataset.delivery` → private 503
 
-Optional `FinancialQueryDataset.delivery`, default absent:
+Optional `FinancialQueryDataset.delivery`, default absent. The only lawful
+non-null object is exact:
 
 ```
 kind = committed_golden_fixture
@@ -78,7 +83,8 @@ attested = false
 production_issuer_service = false
 ```
 
-FIP1 builders omit delivery → FIF-2A bytes unchanged.
+Wrong kind, true flags, non-booleans, missing keys, or extra keys are
+unavailable. FIP1 builders omit delivery → FIF-2A bytes unchanged.
 Authority remains `{"class":"context_only","display_only":true}`.
 
 ## Explicit non-goals
