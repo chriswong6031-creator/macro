@@ -185,6 +185,62 @@ triad to the PR branch. Publication stays with government-revenue-live.
 - OCR is FORBIDDEN this wave. Text-layer only.
 - LLMs may not originate any number, identifier, code, page location, or date.
 
+## 5b. FROZEN P-1 row model (adjudicated 2026-08-24 after the Stage 1/2a surveys)
+
+Evidence: scratchpad `survey_p1.py` / `survey_p1_reconcile.py` / `survey_scn_1611.py`
+(+ JSONs) — full-document classification with ONE remaining exception (the pinned
+p.158 anomaly below), reconciliation 24/24 + 81/81 + 24/24 across all 22
+appropriations, and exact $0.00 typed-model closure on all four SCN (1611) BAs
+plus the appropriation total.
+
+Closed row taxonomy: detail_line · group_label · nomenclature_wrap_fragment ·
+less_advance_procurement · less_subsequent_full_funding · unlabeled_net_memo_row ·
+advance_procurement_cy · completion_subsequent_row · schedule_row
+(`C (FY x for FY y) (M)`) · memo_non_add_row (`(MEMO NON ADD)`) · BA headers ·
+close/total rows · page furniture · footnotes. Any row carrying numbers that
+does not classify ⇒ refuse the document.
+
+Additive/publication law:
+1. detail_line with NO Less-children → published line; amounts = its own row
+   values.
+2. detail_line WITH less_advance_procurement / less_subsequent_full_funding
+   children → published amounts = the resolving `unlabeled_net_memo_row`
+   (matched as the next net-memo row in the SAME side's event stream; printed,
+   never derived — proven `net_memo = −(line) + Σ(less)` exact on every tested
+   line, Virginia FY27 = p.143 `8,402,316`). Quantities come from the
+   detail_line row itself (the only place the exhibit prints them).
+   Provenance `page_number` = the line-identity row's page; `source_span`
+   additionally names the resolving net row's page:line. Gross and Less values
+   are NOT represented in v1 (named gap: full-funding structure).
+3. advance_procurement_cy and completion_subsequent_row are ADDITIVE in the
+   printed totals. Their published-line identity binding (own printed Line No
+   or not) must be settled by the Stage 2b gate-zero census before the parser
+   emits them — if any additive row lacks a printed source-native identity,
+   STOP for adjudication; never mint an identity that is not printed.
+4. schedule_row and memo_non_add_row are NEVER additive and NEVER published.
+5. Column assignment is the exact boundary-bucket model (field left edge = its
+   header word x0, right edge = next column's x0); a token outside every
+   bucket ⇒ refuse the document. Zero-tolerance: no nearest-anchor matching.
+6. BA-code state is tracked PER SIDE (left/right half-views are independent
+   streams); joins are by appropriation CODE (caption form with letter suffix
+   is the line-identity form, e.g. `2031A`; matching strips the suffix).
+   Close-row label recognition uses the per-row, per-side ≥80% length-ratio
+   prefix match (documented cases: clipped `…Vehic`, identical-name 0360D).
+7. Pinned source-anomaly table (exact-match only; anything else refuses):
+   (doc sha256 `b8d5248257590856ee33ddb1b401ec2efcdfea219c05b5bc8ea1068d9000d0a6`,
+   page 158, literal caption `1612N Budget Activity Summary AApprr 22002266`)
+   → accepted as `1612N Budget Activity Summary` + `Apr 2026`.
+8. Totals fed to `reconcile_line_totals` = the BA-Summary pages' printed BA
+   rows (the independent copy); the parser ADDITIONALLY hard-checks the Detail
+   stream's own close rows against them (level-2) and the appropriation/grand
+   totals (levels 1/3). BA/appropriation totals never print quantity sums
+   (verified exhaustively) — no aggregate-quantity reconciliation exists.
+9. R-1 (frozen from Stage 1): single-page rows, inline BA-close group rows +
+   per-component recap pages as the printed totals; the Defense-Wide
+   per-agency listings (pp.89+) are a NON-ADDITIVE re-itemization of money
+   already counted once — the parser must prove no duplicate line_keys and
+   never double-count those totals.
+
 ## 6. Activation & publication
 
 - `DOD_BUDGET_PRODUCTION_ACTIVATION_ENABLED = True` flips ONLY in the same PR
