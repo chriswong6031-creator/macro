@@ -174,7 +174,7 @@ def test_correction_is_append_only_and_supersedes_parent():
 def test_master_index_denominator_uses_exact_frozen_range_and_form(tmp_path):
     rows = [
         "1|Before|8-K|2022-02-28|edgar/data/1/000000000122000001.txt",
-        "1|First|8-K|2022-03-01|edgar/data/1/000000000122000002.txt",
+        "1|First|8-K|2022-03-01|edgar/data/1/0000000001-22-000002.txt",
         "1|Last|8-K|2026-06-30|edgar/data/1/000000000126000003.txt",
         "1|After|8-K|2026-07-01|edgar/data/1/000000000126000004.txt",
         "1|Amended|8-K/A|2024-08-01|edgar/data/1/000000000124000005.txt",

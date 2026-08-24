@@ -236,7 +236,10 @@ def _atomic_write(path: Path, body: bytes) -> None:
 
 def _accession_from_filename(filename: str) -> str:
     leaf = filename.rsplit("/", 1)[-1]
-    compact = leaf.removesuffix(".txt")
+    raw = leaf.removesuffix(".txt")
+    if re.fullmatch(r"\d{10}-\d{2}-\d{6}", raw):
+        return raw
+    compact = raw.replace("-", "")
     if not re.fullmatch(r"\d{18}", compact):
         raise CensusError(f"master-index filename has no canonical accession: {filename}")
     return f"{compact[:10]}-{compact[10:12]}-{compact[12:]}"
@@ -300,9 +303,9 @@ def build_denominator(master_root: Path) -> tuple[list[FilingRow], list[dict[str
         rows.extend(part)
         receipts.append(receipt)
     rows.sort(key=lambda row: (row.filing_date, row.cik, row.accession))
-    accessions = [row.accession for row in rows]
-    if len(accessions) != len(set(accessions)):
-        raise CensusError("master-index denominator contains duplicate accessions")
+    filer_accessions = [(row.cik, row.accession) for row in rows]
+    if len(filer_accessions) != len(set(filer_accessions)):
+        raise CensusError("master-index denominator contains duplicate CIK/accession rows")
     return rows, receipts
 
 
