@@ -1,0 +1,149 @@
+{
+  "schema": "evidence_foundation.reference.v1",
+  "version": "1.0.0",
+  "reference_id": "efr_cfe2ff76eaf1b6780fdf397d34b94e3ddcbe05c40e2db316aa30c509aacbdfbc",
+  "object_class": "world_observation",
+  "owner_store": "theme_graph.evidence",
+  "native_identity": {
+    "evidence_id": "ev:3333333333333333"
+  },
+  "native_schema": "theme_graph.evidence.v1",
+  "native_digest": {
+    "state": "known",
+    "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+  },
+  "coverage_class": "append_only_bitemporal",
+  "subject": {
+    "key_type": "theme_evidence_id",
+    "key": "ev:3333333333333333"
+  },
+  "secondary_subjects": [],
+  "clocks": [
+    {
+      "class": "source_published",
+      "field": "published_at",
+      "value_state": "known",
+      "value": "2026-07-30",
+      "grain": "date"
+    },
+    {
+      "class": "world_valid",
+      "field": "effective_at",
+      "value_state": "unknown",
+      "value": null,
+      "grain": "date"
+    },
+    {
+      "class": "belief_or_build",
+      "field": "computed_at",
+      "value_state": "known",
+      "value": "2026-08-23T12:00:00Z",
+      "grain": "datetime"
+    }
+  ],
+  "provenance": {
+    "pointer_only": true,
+    "body_embedded": false,
+    "owner_reader": "engine.theme_graph.store.read_evidence",
+    "pointer": "data/theme_graph/evidence.parquet#evidence_id=ev:3333333333333333",
+    "owner_reader_kind": "collection"
+  },
+  "relations": [
+    {
+      "target_reference_id": "efr_1111111111111111111111111111111111111111111111111111111111111111",
+      "type": "corroborates",
+      "automatic_effect": false,
+      "deterministic_key": null,
+      "independence": {
+        "source_independence": {
+          "state": "independent",
+          "basis": "hostile unbound assertion: same upstream is claimed independent without typed lineage proof",
+          "assessment": "verified"
+        },
+        "information_novelty": {
+          "state": "shared",
+          "basis": "same sentence and source bytes",
+          "assessment": "declarative_unverified"
+        },
+        "mechanism_independence": {
+          "state": "not_assessed",
+          "basis": "no separate economic mechanism was measured",
+          "assessment": "declarative_unverified"
+        }
+      }
+    }
+  ],
+  "missingness": {
+    "state": "present",
+    "reason": null,
+    "zero_substituted": false
+  },
+  "correction": {
+    "kind": "none",
+    "predecessor_reference_ids": [],
+    "clock_field": null,
+    "append_only": true,
+    "mutates_predecessor": false,
+    "chronology_state": "not_applicable"
+  },
+  "replay": {
+    "mode": "live",
+    "cutoffs": {
+      "world_valid": {
+        "state": "unknown",
+        "value": null,
+        "grain": "date"
+      },
+      "source_published": {
+        "state": "unknown",
+        "value": null,
+        "grain": "date"
+      },
+      "knowable": {
+        "state": "unknown",
+        "value": null,
+        "grain": "datetime"
+      },
+      "observed": {
+        "state": "unknown",
+        "value": null,
+        "grain": "datetime"
+      },
+      "system_recorded": {
+        "state": "unknown",
+        "value": null,
+        "grain": "datetime"
+      },
+      "belief_or_build": {
+        "state": "unknown",
+        "value": null,
+        "grain": "datetime"
+      },
+      "review_due": {
+        "state": "unknown",
+        "value": null,
+        "grain": "datetime"
+      }
+    },
+    "code_revision": null,
+    "input_digest": null,
+    "vintage_state": "owner_native"
+  },
+  "authority": {
+    "can_rank": false,
+    "can_gate": false,
+    "can_size": false,
+    "can_originate": false,
+    "can_open_entry": false
+  },
+  "freshness": {
+    "state": "unknown",
+    "clock_field": null,
+    "policy_id": null
+  },
+  "rights": {
+    "state": "permitted",
+    "policy_id": null
+  },
+  "authority_class": "fact"
+}

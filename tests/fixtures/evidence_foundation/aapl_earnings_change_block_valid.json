@@ -1,0 +1,102 @@
+{
+  "schema": "evidence_foundation.block.v1",
+  "version": "1.0.0",
+  "evidence_block_id": "ebl_956ab221cc7f7b5ec38c81c005d6c32af5d07c37b98250184d2dffe45d09ef1d",
+  "block_key": "earnings_change",
+  "consumer": {
+    "workstream": "WS:MARKET-OS",
+    "job": "build security_state.v1 for AAPL",
+    "output_contract": "security_state.v1"
+  },
+  "supported_claim": {
+    "kind": "claim",
+    "text": "The AAPL company-change leg is backed by one immutable event_workspace.v1 generation.",
+    "state": "partial"
+  },
+  "reference_ids": [
+    "efr_cdf2c278d077d746758115be8400fb102625c42f1f2b0c8778c56d60c0c40535"
+  ],
+  "owner_stores": [
+    "earnings.workspace_generation"
+  ],
+  "object_classes": [
+    "derived_view"
+  ],
+  "evidence_class": "deterministic",
+  "clock_summary": {
+    "collapsed": false,
+    "entries": [
+      {
+        "reference_id": "efr_cdf2c278d077d746758115be8400fb102625c42f1f2b0c8778c56d60c0c40535",
+        "class": "knowable",
+        "field": "lifecycle.source_available_at",
+        "value_state": "known",
+        "value": "2026-07-30T20:30:00Z",
+        "grain": "datetime"
+      },
+      {
+        "reference_id": "efr_cdf2c278d077d746758115be8400fb102625c42f1f2b0c8778c56d60c0c40535",
+        "class": "observed",
+        "field": "lifecycle.observed_at",
+        "value_state": "known",
+        "value": "2026-07-30T20:31:00Z",
+        "grain": "datetime"
+      },
+      {
+        "reference_id": "efr_cdf2c278d077d746758115be8400fb102625c42f1f2b0c8778c56d60c0c40535",
+        "class": "belief_or_build",
+        "field": "generated_at",
+        "value_state": "known",
+        "value": "2026-07-30T20:31:00Z",
+        "grain": "datetime"
+      }
+    ]
+  },
+  "coverage": {
+    "state": "unknown",
+    "total": 1,
+    "included": 1,
+    "excluded": 0,
+    "missing": 0,
+    "stale": 0,
+    "rights_blocked": 0,
+    "fallback": 0,
+    "basis": "all requested owner-reader fixture rows reconcile by native reference identity; freshness remains owner-policy dependent",
+    "reconciliation_state": "reconciled"
+  },
+  "uncertainty": {
+    "state": "none",
+    "probability": null,
+    "derivation_ref": null,
+    "calibration_ref": null
+  },
+  "dependence": {
+    "state": "independent",
+    "independent_evidence_count": 1,
+    "groups": []
+  },
+  "conflict_correction": {
+    "state": "none",
+    "reference_ids": []
+  },
+  "next_observable": {
+    "state": "unknown",
+    "description": null,
+    "owner_clock_field": null
+  },
+  "permitted_consumers": [
+    "security_state.v1"
+  ],
+  "lineage": {
+    "state": "original",
+    "predecessor_block_ids": [],
+    "invalidated_by_reference_ids": []
+  },
+  "authority": {
+    "can_rank": false,
+    "can_gate": false,
+    "can_size": false,
+    "can_originate": false,
+    "can_open_entry": false
+  }
+}

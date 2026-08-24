@@ -18,6 +18,12 @@ blast_radius: reversible
 ambiguity: scoped
 owns_paths:
   - research/alpha_intelligence/
+  - research/evidence_mesh/
+  - contracts/evidence_foundation/
+  - lib/evidence_foundation.py
+  - tests/fixtures/evidence_foundation/
+  - tests/test_evidence_foundation_contract.py
+  - tests/test_evidence_foundation_product_contract.py
 depends_on:
   - WS:PROPHET-US-V4-RECOVERY
   - WS:PROPHET-CONDITIONAL-FUSION
@@ -33,6 +39,11 @@ artifacts:
   - research/alpha_intelligence/MASTERMIND_ALPHA_INTELLIGENCE_EXPANSION_PASS0_2026-08-18.md
   - research/alpha_intelligence/C0_WAVE0_ADJUDICATION_2026-08-19.md
   - research/alpha_intelligence/C0G_G0_SEAT_ADJUDICATION_2026-08-19.md
+  - research/evidence_mesh/K1_EVIDENCE_FOUNDATION_CONTRACT_FREEZE_2026-08-23.md
+  - contracts/evidence_foundation/reference.v1.schema.json
+  - contracts/evidence_foundation/block.v1.schema.json
+  - contracts/evidence_foundation/recipe.v1.schema.json
+  - contracts/evidence_foundation/vocabulary.v1.json
 landmines:
   - "Runtime authority of this workstream is NONE, permanently. It coordinates and
     adjudicates; it never gates, dispatches, ranks, or owns production state. Its
@@ -41,11 +52,20 @@ landmines:
   - "CRITICAL FIREWALL: OpportunityCase prose never feeds Prophet ranking. Prophet
     consumes structured governed families only (via the conditional-fusion arena +
     Eval OS gauntlet)."
-  - "FIF is stop-for-Sol-review (FIF-1R3, PR #5889 DO NOT MERGE) and
-    WS:FUNDAMENTAL-FORENSICS is blocked on the FF-1P2 STOP (PR #5898, SEC bulk
-    submissions.zip 1.45 GiB): no A/B/C lane may couple to fundamentals truth or
-    route bulk-filings capture around that STOP until Sol rules. FABLE-A's FIF
-    acceptance leg runs on FIXTURE packets only until Sol rules (c0 §5)."
+  - "The c0 FIF/FF stop prose is historical, not current state: #5889 merged as
+    f4183edade53603fad7a97f702eb4c6e5eabff5d, #5898 merged as
+    21f51a1ecfed778a738b048bd7e5efd30b1d9336, and #6285 merged as
+    1e7d9f5030fd7c7c06fb03f022857510c5d0f9ed. Merge never implies unrelated
+    production acceptance. FIF-3A2 #6302 subsequently merged as
+    e210a80d2bad56b351d90ef82ddaa4ec114887b9, and #6324 durably records Sol's
+    exact-head PASS as ACCEPTED / GOLDEN FIXTURE PROVEN / ON_MAIN. That decision
+    also keeps the production attested issuer service NOT_BUILT and FIF-3
+    IN_PROGRESS, so accepted golden/on-main is not production/live proof. K1
+    neither modifies nor routes around it."
+  - "The authenticated Market Ontology rider names a bounded future B1 AAPL
+    security_state.v1 job. K1 freezes and fixture-compiles its Ref/Block/Recipe
+    evidence composition only. It does not start B1A, create a shared evidence
+    store, copy owner payloads, or grant rank/gate/size/originate/entry authority."
   - "PR #5894 (V4-D2A GMI→Data OS bridge) MERGED 2026-08-18 — the theme-graph/
     identity occupation cleared by its own terms (c0 delta). Radar/Prophet-Lab
     surfaces are now the occupied territory: #5925/#5928/#5929 open post-#5924
@@ -59,6 +79,44 @@ landmines:
     needs a cross-store pointer index over >=3 owner_stores for one subject
     (A0_MINIMAL_EVIDENCE_MESH_RECOMMENDATION.md §8 flip condition). FABLE-A
     freezes contracts; it does not build the store until that condition is met."
+  - "K1 exact-head review rejected the first candidate because several vocabulary
+    rows were not bound to actual native wire/storage grain, native_schema and full
+    clocks were not fail-closed, independence was overclaimed, correction relations
+    were not set-equal to predecessors, and JSON-Schema plus semantic validation had
+    two consumer paths. A second exact-head review of ead0076 requested changes for
+    source-backed clock completeness/classes, Earnings generation aliasing, a
+    non-reader Data OS row, FIF historical replay unknowns, and an unsafe automatic
+    relation escape. The current repaired candidate uses 13 source-backed rows, the
+    native Earnings parser, no Data OS pseudo-reader, one combined validator,
+    declarative_unverified independence, automatic_effect=false throughout v1, and
+    executed cutoff/replay mutation kills. A third exact-head review of 32b8015 then
+    requested source-backed coverage/replay capability, native identity value
+    grammars, closure of the public vocabulary-injection seam, and the missing 13F
+    catalog adoption row. The fourth exact-head review of 71cd33ab then reproduced
+    rider-specific laundering: Block claims were not derived from cited refs and
+    relations, the caller reference map could alias a different object, Recipe outputs
+    and rules were not exact, required rights-blocked composition degraded instead of
+    refusing, and subject joins did not execute exact values. The current repair binds
+    structured subject/native identities, Block coverage/dependence/conflict/correction,
+    reference-map keys, exact Recipe outputs/rules, and AAPL subject values through
+    rehashed hostile kills. A fifth exact-head review of 9747c906 then showed that
+    QLedger, FIF, and Theme still admitted valid-different subjects through successful
+    `unbound` parity, and that recipe join prose could still unlock composition without
+    an owner-native resolution object. The current repair abolishes successful
+    `unbound` parity across all 13 owners, exposes only native claim/packet/occurrence/
+    evidence/generation/event/outcome IDs where the pointer cannot prove an entity,
+    migrates the golden Theme leg to a subject-bearing edge belief, and refuses or
+    excludes every cross-type leg lacking validated resolution proof. A sixth
+    exact-head review of f1a76d27 closed all prior identity/rider blockers and found
+    one remaining Recipe contradiction: its schema advertised exact/same-fact/
+    same-event as automatic despite the frozen no-automatic-effect law. The current
+    repair freezes the automatic relation set empty, classifies every v1 relation as
+    descriptive/manual-only, and proves relation labels do not suppress blocks or
+    denominator rows. K1 stays
+    in_progress until a fresh exact-head review passes
+    and Sol accepts. Current main's #6325 authenticated-MO double-dispatch receipt
+    authenticates this Ref/Block/Recipe rider on the sole #6319 lane; it does not
+    authorize a separate K1-B, B1A, runtime, store, or dependent wave."
   - "US G0 canonical copy is MERGED PR #5955 (research/earnings_intelligence/g0/,
     inside the Earnings owner's owns_paths); CN-G0 is MERGED PR #5943
     (research/alpha_intelligence/censuses/CN-G0/). The #5822->#5953 rival
@@ -103,8 +161,9 @@ waves:
     depends_on: [c0]
   - id: k1
     title: K1 Evidence Foundation — mesh contract freeze (FABLE-A)
-    status: todo
+    status: in_progress
     depends_on: [c0]
+    next_action: A fresh exact-head review rules on the integrated authenticated-rider-complete v1.0.0 contract-only packet; after reviewer PASS, Sol accepts or returns exact amendments. No dependent wave starts before Sol's ruling.
   - id: k2
     title: K2 Institutional Intelligence — manager ontology + intent contract (B), adapter pilots (C)
     status: todo
@@ -130,15 +189,16 @@ waves:
     status: todo
     depends_on: [k6]
 next_action: >
-  Sol dispatch FABLE-A (with the c0 §5.1 rider appended verbatim; contract-first;
-  store build gated on A0 §8 flip condition; FIF acceptance leg fixture-only
-  until Sol rules). FABLE-00 waves p0/c0/c0g are CLOSED and proven on origin/main
-  (operator acceptance 2026-08-19); #5955/#5943/#5933/#5953 ALL MERGED
-  (#5953 rival G0 copy withdrawn pre-merge). A FRESH session adjudicates the
-  K1 packet; Sol authors K4-G carrying the seat packet §6 preconditions
-  unchanged (canonical sources per item: handoff
-  ALPHA-INTELLIGENCE-INTEGRATION-2026-08-19 §"K4-G preconditions — canonical
-  sources"). This seat begins neither.
+  A fresh exact-head reviewer rules on the integrated authenticated-rider-complete K1
+  Evidence Foundation v1.0.0
+  return packet at
+  research/evidence_mesh/K1_EVIDENCE_FOUNDATION_CONTRACT_FREEZE_2026-08-23.md.
+  After reviewer PASS, Sol rules ACCEPT or names exact amendments. The named
+  four-owner AAPL fixture input validates but the recipe honestly refuses without a
+  validated cross-type identity bridge. A pointer index cannot cure that proof gap,
+  so owner access remains owner-bound and no store/index was built. Do not start K2,
+  K3, K4, K5, B1A, K2-B, D5-EARNINGS, runtime, or any dependent wave before Sol
+  accepts K1.
 ---
 
 # Alpha Intelligence Expansion — integration workstream

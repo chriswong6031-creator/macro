@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-24T07:48:21.030611+00:00",
-  "count": 1742,
+  "generated_at": "2026-08-24T08:35:04.350099+00:00",
+  "count": 1744,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -86,6 +86,46 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-yqnipkixp18-672482",
+      "title": "JPM Europe Equity Research | Today’s Morning Meeting",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T08:11:04Z",
+      "summary_points": [
+        "**European Semiconductors Inventory Strength**: Inventory at 136 days (vs.",
+        "140 days Q1’26) with seasonal data 1.5% below normal, confirming cyclical up-cycle support without over-building, critical for supply chain fundamentals.",
+        "**Diploma PLC Upgrade to Overweight**: Earnings upgrade driven by organic growth/margins/M&A; PT raised to 8250p (from 5760p), reflecting double-digit EPS growth and 6% CAGR potential to FY30 via M&A.",
+        "**European Utilities' Low Gas Storage**: Geopolitical energy dynamics (low storage levels) underpin positive earnings momentum for generators/integrated utilities, a key sector catalyst amid supply risks.",
+        "**Pernod-Ricard SA FY28E/29E Cut**: Valuation impact from FY26 reporting debate, signaling sector-specific risk factor requiring portfolio reassessment in consumer staples."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-po7hsyltspp-96c40c",
+      "title": "DB Early Morning Reid Macro Strategy",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T07:31:15Z",
+      "summary_points": [
+        "**Oil Geopolitics & Inflation**: Strait of Hormuz fears drove Brent crude to $79.16/bbl (12-mo future), triggering equity pullbacks (S&P 500 -0.10%) and inflation concerns, pressuring sovereign bonds (10yr yield +4.2bps).",
+        "**Nvidia AI Pricing Shift**: Major customers face server chip price hikes, signaling AI-driven inflation (not supply shock), challenging prior economic assumptions and fueling market inflation fears.",
+        "**Jackson Hole Policy Catalyst**: Fed Chair’s Sept 20 speech pivotal for rate path; market pricing reflects 26/3bp Fed hike expectation, with ECB 42/0bp priced in, dominating near-term policy trajectory."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-olik15a1qfg-76d70b",
       "title": "US Week Ahead August 24 August 30",
