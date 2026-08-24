@@ -1,6 +1,6 @@
 {
-  "ts": "2026-08-24T15:12:34+00:00",
-  "main_sha": "05253bcb0af3362fbf424405776bcb9bbc18f99e",
+  "ts": "2026-08-24T17:13:30+00:00",
+  "main_sha": "928750598a01738600bb618b5ad8c8ff576c91be",
   "red_required": [
     {
       "name": "sweep",
@@ -34,9 +34,9 @@
     }
   ],
   "green": false,
-  "consecutive_failures": 48,
+  "consecutive_failures": 49,
   "sensed_shas": [
-    "05253bcb0af3362fbf424405776bcb9bbc18f99e",
+    "928750598a01738600bb618b5ad8c8ff576c91be",
     "d16cbf3e39495ab86b8a7581d02ce6c0c2aea3c8"
   ],
   "heartbeat_degraded": false
