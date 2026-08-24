@@ -21,9 +21,10 @@ depends_on:
 decisions:
   - DEC:E3-EVENT-INTELLIGENCE-COMPILER-NOT-SCORER
 next_action: >
-  HOLD-FOR-SOL: E3-A2 draft PR #6306 after Sol review 5002451341 repairs
-  (H_IMPL a6c075f18a7205d943bf6d95aaf904e782a1267c). Do not merge. Do not
-  mark E3-A2 done. Do not start E3-B.
+  E3-A2 landed as a deterministic shadow structural method, not
+  production-live Q&A. Immutable squash-merge
+  1158c9a17712084c011581cd68933f09100c2e5a (#6306). E3-B remains
+  LOCKED. Do not start E3-B.
 owns_paths:
   - research/earnings_intelligence/e3/**
   - engine/company_intelligence/qa_reconstruction.py
@@ -41,6 +42,7 @@ artifacts:
   - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-23-e3a-landed.md
   - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-23-e3a2.md
   - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-24-e3a2.md
+  - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-24-e3a2-landed.md
   - engine/company_intelligence/qa_reconstruction.py
   - tests/test_company_intelligence_qa_reconstruction.py
   - research/earnings_intelligence/e3/e3a2_aapl_fy2026_q3_reconstruction_receipt.json
@@ -79,7 +81,8 @@ do_not_redo:
   - Do not treat Haiku topic Jaccard as usefulness, promotion, or topic-model authority.
   - Do not grant Haiku production authority.
   - Do not manufacture a numeric usefulness threshold from N=7.
-  - Do not start E3-B. E3-B remains locked until E3-A2 is complete and Sol unlocks it.
+  - Do not start E3-B. E3-B remains locked until Sol unlocks it.
+  - Do not describe E3-A2 as production-live Q&A.
   - Do not treat E3-A2 structural reconstruction as qa_exchange.v1 publication authority.
   - Do not copy Pass-A topic labels into deterministic reconstruction.
   - Do not put AAPL names, tickers, or boundary indexes in qa_reconstruction.py.
@@ -114,27 +117,28 @@ waves:
       26 answer-turns. No numeric usefulness threshold manufactured.
   - id: E3-A2
     title: Deterministic source-native Q&A skeleton
-    status: in_progress
+    status: done
     depends_on: [E3-A]
+    pr: 6306
     artifacts:
       - engine/company_intelligence/qa_reconstruction.py
       - tests/test_company_intelligence_qa_reconstruction.py
       - research/earnings_intelligence/e3/e3a2_aapl_fy2026_q3_reconstruction_receipt.json
     next_action: >
-      Draft PR #6306 held for Sol after review 5002451341. H_IMPL
-      a6c075f18a7205d943bf6d95aaf904e782a1267c. Local proof: 7 exchanges /
-      32 question spans / 36 answer spans / 26 answer-turns / 68 replay;
-      runtime has no gold import, no AAPL literals, and no hardcoded 7.
-      Topics remain UNRESOLVED / PASS_A_REFERENCE_ONLY. Do not merge.
-      Do not mark this wave done. Do not start E3-B.
+      Done. Squash-merge 1158c9a17712084c011581cd68933f09100c2e5a
+      (#6306; Sol PASS; accepted head
+      2f8b7ab443bcd020f0baef618b7ce90f2d6c90fa; H_IMPL
+      a6c075f18a7205d943bf6d95aaf904e782a1267c). Landed capability is a
+      deterministic shadow structural method, not production-live Q&A.
+      Source-format limitations preserved for later generalization.
+      Do not start E3-B.
   - id: E3-B
     title: AAPL live Q&A into event_workspace.v1
     status: todo
     depends_on: [E3-A2]
     next_action: >
-      LOCKED. Do not start E3-B. Depends on E3-A2 completing and an
-      explicit Sol unlock. Do not publish live qa_exchanges from the
-      E3-A model experiment.
+      LOCKED. Do not start E3-B. E3-A2 landing does not unlock live
+      qa_exchanges. Requires an explicit Sol unlock.
   - id: E3-C
     title: Second-event generalization
     status: todo
@@ -151,4 +155,4 @@ E3-0 landed on main at `22686d255eb047cf5bffc91a35984515acb3d466` (#6161; Sol re
 
 E3-A is done as a completed calibration / negative-method experiment. Immutable squash-merge SHA: `d919637f3680d3da25a904484749409b043f60e9` (#6245; Sol review 5001747968; accepted head `b403fba8e141e4a12083f97d104a851178f68051`; merged 2026-08-23T05:57:38Z). Gold is `aapl_fy2026_q3_qa_gold.v2` SHA `fc6df84d2a8d0d96475ce697ba92ffdd071d5c283b8daee97c1b3381382fa42c`; v1 `6b1100b148396db9a29974da5bc6e0cc55e5534185e50e061fe3635d429ed761` is superseded calibration gold. Canonical taxonomy remains `qa_topic.v1` / `a928ca72ab2e91bda74bd1e69021e08a5234e501f095610e623655db7e323b5e`. The immutable blind Pass B packet stores `b2ae2508877ccda4dea911d52952c49f78b0dbc26049326d542ee77439cf9a14` as a **noncanonical pass-local members digest**, not the qa_topic.v1 hash; enum membership matches. **Topic adjudication is UNRESOLVED / PASS_A_REFERENCE_ONLY** — Pass A and Pass B disagree on all 7 per-exchange topic sets; Haiku Jaccard 0.722 is descriptive against Pass-A reference labels only and grants zero topic-model authority. Structural gold is accepted: 7 Operator-delimited exchanges, exact source spans, identities, 26 management answer-turns. Measured eval `run_id=27e3e380f70658c1`: Qwen `[]` (NOT_EXERCISED, local $0.00) — full-transcript Qwen structural extraction is **not promoted**; Haiku remains **benchmark-only**. No numeric usefulness threshold was manufactured.
 
-E3-A2 is implemented on held draft PR #6306 and is **not done**. Sol review 5002451341 repairs bind the proof receipt to implementation head `a6c075f18a7205d943bf6d95aaf904e782a1267c` (not pickup), keep missing/punctuated affiliation fail-closed, keep verified Analyst-role speech as question, refuse third-party non-management roles, and forbid hardcoded 7. Generic runtime `engine/company_intelligence/qa_reconstruction.py` reconstructs Operator-`go ahead` exchanges from source segments only. Local AAPL oracle parity is 7 exchanges / 32 question spans / 36 answer spans / 26 turns / 68 replay; topics are not copied. **E3-B stays locked.** Sol decides whether E3-A2 lands. Do not start E3-B.
+E3-A2 is done as a landed **deterministic shadow structural method**, not production-live Q&A. Immutable squash-merge SHA: `1158c9a17712084c011581cd68933f09100c2e5a` (#6306; Sol PASS; accepted head `2f8b7ab443bcd020f0baef618b7ce90f2d6c90fa`; H_IMPL `a6c075f18a7205d943bf6d95aaf904e782a1267c`; merged 2026-08-24T09:37:22Z). Runtime `engine/company_intelligence/qa_reconstruction.py` reconstructs Operator-`go ahead` exchanges from source segments only: no model calls, no gold import, no issuer literals, no live `qa_exchanges`. AAPL oracle parity remains 7 exchanges / 32 question spans / 36 answer spans / 26 turns / 68 replay. Topics remain UNRESOLVED / PASS_A_REFERENCE_ONLY. Source-format limitations (operator-intro identity grammar; other vendor intros may refuse) are preserved for later generalization. **E3-B stays locked.** Do not start E3-B.
