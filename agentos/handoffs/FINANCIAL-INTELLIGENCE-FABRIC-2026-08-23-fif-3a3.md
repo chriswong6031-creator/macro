@@ -3,7 +3,7 @@ workstream: "WS:FINANCIAL-INTELLIGENCE-FABRIC"
 session: claude/fif-3a3
 model: local
 ended_because: complete
-prs: []
+prs: ["https://github.com/mastermindx-market-intelligence/macro/pull/6352"]
 mission: >
   FIF-3A3: convert accepted AAPL iXBRL occurrences into the canonical
   RawFactLedger and return governed normalized values on the existing
