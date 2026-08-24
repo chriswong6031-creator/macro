@@ -11,7 +11,7 @@ import hashlib
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any, Mapping, Protocol
 
 from .financial_intelligence_packet import (
     EntityInput,
@@ -77,6 +77,7 @@ class FinancialQueryDataset:
     ledger: Any
     filing_metadata: Any
     registry: Any
+    delivery: Mapping[str, Any] | None = None
 
 
 class FinancialQueryAdmissionError(Exception):
@@ -520,6 +521,15 @@ def execute_financial_query(*, body: bytes, provider: FinancialQueryProvider) ->
         },
         "receipt": matrix.to_dict(),
     }
+    if dataset.delivery is not None:
+        try:
+            envelope["delivery"] = {
+                "kind": dataset.delivery["kind"],
+                "attested": dataset.delivery["attested"],
+                "production_issuer_service": dataset.delivery["production_issuer_service"],
+            }
+        except (KeyError, TypeError):
+            raise FinancialQueryUnavailableError() from None
 
     response_body = canonical_json(envelope).encode("utf-8")
 

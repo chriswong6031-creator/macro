@@ -178,6 +178,11 @@ def archive_document_url(cik: int | str, accession: str, document_name: str) -> 
     return archive_directory_url(cik, accession) + f"/{document_name}"
 
 
+def sec_document_id(cik: str, accession: str, role: str, document_name: str) -> str:
+    """Canonical SEC document-spine identity: CIK + accession + role + document name."""
+    return stable_id("sec_document", cik, accession, role, document_name)
+
+
 def _check_document_name(value: Any) -> str:
     name = str(value or "").strip()
     # SEC Submissions occasionally uses a safe relative primary-document path
@@ -236,7 +241,7 @@ def _primary_document(cik: str, accession: str, value: Any) -> dict[str, Any] | 
         return None
     name = _check_document_name(value)
     return {
-        "document_id": stable_id("sec_document", cik, accession, "primary", name),
+        "document_id": sec_document_id(cik, accession, "primary", name),
         "document_name": name,
         "document_type": None,
         "sequence": None,
@@ -353,9 +358,7 @@ def _validate_document(document: Mapping[str, Any], *, cik: str, accession: str)
     role = document["role"]
     if not isinstance(role, str) or role not in {"primary", "exhibit", "archive"}:
         raise FilingManifestError(f"invalid document role: {role!r}")
-    expected_document_id = stable_id(
-        "sec_document", cik, accession, role, name
-    )
+    expected_document_id = sec_document_id(cik, accession, role, name)
     if document["document_id"] != expected_document_id:
         raise FilingManifestError("document_id does not bind its filing identity")
     if availability == "stored":
@@ -528,7 +531,7 @@ def _document_metadata(
     if role not in {"primary", "exhibit", "archive"}:
         raise FilingManifestError(f"unsupported archive document role: {role!r}")
     return {
-        "document_id": stable_id("sec_document", cik, accession, role, name),
+        "document_id": sec_document_id(cik, accession, role, name),
         "document_name": name,
         "document_type": str(document_type).strip() if document_type else None,
         "sequence": (
@@ -920,6 +923,7 @@ __all__ = [
     "base_form",
     "build_filing_manifests",
     "canonical_cik",
+    "sec_document_id",
     "document_with_retrieval",
     "documents_from_archive_index",
     "manifest_content_key",

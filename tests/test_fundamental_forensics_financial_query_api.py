@@ -127,7 +127,8 @@ def _asgi_post(app, path: str, *, body: bytes, extra_headers: list[tuple[bytes, 
 
 
 @pytest.fixture
-def router_app() -> FastAPI:
+def router_app(monkeypatch) -> FastAPI:
+    monkeypatch.setattr(forensics_api, "REPO", ROOT)
     app = FastAPI()
     app.include_router(forensics_api.router)
     return app
@@ -710,15 +711,14 @@ def test_exactly_64kib_body_is_not_413(paid_client, monkeypatch) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_default_unavailable_provider_returns_503(paid_client) -> None:
-    """Paid user, no FIP1 inject → default UnavailableFinancialQueryProvider → 503."""
+def test_default_golden_provider_unknown_entity_returns_400(paid_client) -> None:
+    """Paid user, default golden AAPL provider, non-AAPL issuer → private 400."""
     response = paid_client.post(
         _QUERY_PATH,
         content=_make_request(),
         headers={"content-type": "application/json"},
     )
-    _assert_error(response, 503, "financial query temporarily unavailable")
-    # Must not contain exception text
+    _assert_error(response, 400, "unknown entity")
     assert "UnavailableFinancialQueryProvider" not in response.text
     assert "FinancialQueryUnavailableError" not in response.text
 
