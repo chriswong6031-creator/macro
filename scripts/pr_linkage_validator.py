@@ -115,8 +115,9 @@ def write_atomic(target: pathlib.Path, payload: bytes) -> None:
             offset = 0
             while offset < len(payload):
                 written = os.write(fd, payload[offset:])
-                if not isinstance(written, int) or written <= 0:
-                    raise OSError("short write")
+                if (not isinstance(written, int) or isinstance(written, bool)
+                        or written <= 0 or written > len(payload) - offset):
+                    raise OSError("invalid atomic write result")
                 offset += written
             os.fsync(fd)
             os.close(fd)

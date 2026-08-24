@@ -210,8 +210,46 @@ def _visible_lines(body: str, limits: dict[str, int]) -> tuple[list[tuple[int, s
     fence: tuple[str, int] | None = None
     comment = False
     quote_pending = False
+
+    def measure_field_candidate(candidate: str) -> str | None:
+        """Bound one visible physical field candidate and return its label."""
+        lexical = re.match(
+            r"^(Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion):(.*)$",
+            candidate,
+        )
+        if not lexical:
+            return None
+        field, tail = lexical.groups()
+        lexical_occurrences[field] += 1
+        if lexical_occurrences[field] > limits["field_occurrences"]:
+            raise ResourceLimitError(
+                "field_occurrences", limits["field_occurrences"], lexical_occurrences[field]
+            )
+        lexical_value = tail[1:] if tail.startswith(" ") else tail
+        if (len(lexical_value) >= 2 and lexical_value.startswith("`")
+                and lexical_value.endswith("`") and lexical_value.count("`") == 2):
+            lexical_value = lexical_value[1:-1]
+        value_bytes = len(lexical_value.encode("utf-8"))
+        if value_bytes > limits["value_bytes"]:
+            raise ResourceLimitError("value_bytes", limits["value_bytes"], value_bytes)
+        return field
+
+    def without_complete_comments(candidate: str) -> str:
+        """Project same-line comments without changing the physical state."""
+        parts: list[str] = []
+        remainder = candidate
+        while "<!--" in remainder:
+            start = remainder.index("<!--")
+            parts.append(remainder[:start])
+            end = remainder.find("-->", start + 4)
+            if end < 0:
+                return "".join(parts)
+            remainder = remainder[end + 3:]
+        return "".join(parts) + remainder
+
     for n, original_line in enumerate(lines, 1):
         line = original_line
+        comment_close_tail = False
         # Once a fence is open, HTML markers are ordinary inert fence content.
         if fence:
             closer = re.fullmatch(r" {0,3}([`~]{3,})[ \t]*", line)
@@ -219,8 +257,9 @@ def _visible_lines(body: str, limits: dict[str, int]) -> tuple[list[tuple[int, s
                 fence = None
             continue
 
-        # A comment may close mid-line.  Its visible tail is still parsed; this
-        # is load-bearing for ``-->Fixes MAS-28`` and for a following fence.
+        # A comment may close mid-line.  Relationship and fence tails remain
+        # visible; a field-bearing close tail is diagnosed below but is never
+        # allowed to manufacture header authority.
         if comment:
             end = line.find("-->")
             if end < 0:
@@ -228,6 +267,7 @@ def _visible_lines(body: str, limits: dict[str, int]) -> tuple[list[tuple[int, s
             comment = False
             quote_pending = False
             line = line[end + 3:]
+            comment_close_tail = True
 
         # CommonMark recognizes an opening fence before treating its info as
         # HTML.  A backtick fence's info string may not itself contain a
@@ -235,36 +275,50 @@ def _visible_lines(body: str, limits: dict[str, int]) -> tuple[list[tuple[int, s
         opener = re.match(r" {0,3}(`{3,}|~{3,})(.*)$", line)
         if opener and (opener.group(1)[0] == "~" or "`" not in opener.group(2)):
             fence = (opener.group(1)[0], len(opener.group(1)))
+            quote_pending = False
+            continue
+
+        # Resolve physical Markdown state before authority or resource
+        # accounting.  Lazy continuation lines are line-addressable invalid
+        # metadata, never field occurrences or declaration sources.
+        stripped_physical = line.lstrip(" ")
+        physical_indent = len(line) - len(stripped_physical)
+        if not line:
+            quote_pending = False
+            continue
+        if physical_indent <= 3 and stripped_physical.startswith(">"):
+            quote_pending = True
+            continue
+        if quote_pending and re.match(r" {0,3}<!--", line):
+            # A top-level HTML block starts a new physical block and therefore
+            # ends the quoted paragraph; it is not a lazy continuation.
+            quote_pending = False
+        if quote_pending:
+            projected = without_complete_comments(line)
+            lazy_field = re.match(
+                r"^(Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion):", projected
+            )
+            if lazy_field:
+                defects.append(
+                    f"FIELD_SYNTAX@{n}:{lazy_field.group(1)}:LAZY_BLOCKQUOTE_CONTINUATION"
+                )
+            elif re.match(rf" {{0,3}}(?:{_RELATIONSHIP_KEYWORD_RE})\b", projected, re.I | re.ASCII):
+                defects.append(f"RELATIONSHIP@{n}:LAZY_BLOCKQUOTE_CONTINUATION")
+            else:
+                defects.append(f"PREAMBLE@{n}:LAZY_BLOCKQUOTE_CONTINUATION")
+            quote_pending = False
             continue
 
         # Resource limits apply to every visible lexical field candidate, not
         # merely to the six declarations eventually selected as canonical.
-        # Measure before HTML splice rejection so comment surgery cannot hide
-        # the 101st occurrence or an overlong value.
-        lexical = re.match(
-            r"^(Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion):(.*)$",
-            line,
-        )
-        if lexical:
-            field, tail = lexical.groups()
-            lexical_occurrences[field] += 1
-            if lexical_occurrences[field] > limits["field_occurrences"]:
-                raise ResourceLimitError(
-                    "field_occurrences", limits["field_occurrences"], lexical_occurrences[field]
-                )
-            lexical_value = tail[1:] if tail.startswith(" ") else tail
-            if (len(lexical_value) >= 2 and lexical_value.startswith("`")
-                    and lexical_value.endswith("`") and lexical_value.count("`") == 2):
-                lexical_value = lexical_value[1:-1]
-            value_bytes = len(lexical_value.encode("utf-8"))
-            if value_bytes > limits["value_bytes"]:
-                raise ResourceLimitError("value_bytes", limits["value_bytes"], value_bytes)
+        raw_field = measure_field_candidate(line)
+        if comment_close_tail and raw_field:
+            defects.append(f"FIELD_SYNTAX@{n}:{raw_field}:COMMENT_CLOSE_TAIL")
+            continue
 
-        # A comment that shares a physical line with a canonical declaration
-        # must never be used as an invisible splice operator.  Full comment
-        # lines remain inert, and a tail after a comment opened on an earlier
-        # line remains visible (handled above), but same-line prefix/suffix
-        # surgery invalidates that field line instead of manufacturing a value.
+        # Same-line prefix/suffix/label comment surgery invalidates a field
+        # line.  Label-internal splices count their visible projection exactly
+        # once, so the 100/101 cap cannot be evaded.
         visible_parts: list[str] = []
         remainder = line
         same_line_comment = "<!--" in remainder
@@ -284,6 +338,8 @@ def _visible_lines(body: str, limits: dict[str, int]) -> tuple[list[tuple[int, s
                 line,
             )
             if field_match:
+                if raw_field is None and not line.startswith((" ", "\t")):
+                    measure_field_candidate(line)
                 defects.append(f"FIELD_COMMENT@{n}:{field_match.group(1)}")
                 quote_pending = False
                 continue
@@ -303,14 +359,6 @@ def _visible_lines(body: str, limits: dict[str, int]) -> tuple[list[tuple[int, s
         if not line:
             quote_pending = False
             continue
-        if indent <= 3 and stripped.startswith(">"):
-            quote_pending = True
-            continue
-        if quote_pending and line:
-            defects.append(f"PREAMBLE@{n}:LAZY_BLOCKQUOTE_CONTINUATION")
-            quote_pending = False
-        if not line:
-            quote_pending = False
         if indent >= 4:
             continue
         visible.append((n, line))
@@ -427,6 +475,41 @@ def _snapshot_applicable(
     )
 
 
+def _records_only_supported(
+    *, target: str, declared_linear: str | None, completion: str | None,
+    stop_law: str | None, mode: str | None, authority: str | None,
+    workstream: str | None, changed_paths: dict[str, Any],
+    ownership: dict[str, Any], manifest: dict[str, Any],
+) -> bool:
+    """One exact predicate for the R052/R056 records-only exception.
+
+    W0 binds the exception to the declared issue's stop law, an allowed
+    mode/authority/completion tuple, and complete exact RECORDS coverage.  A
+    records path may be shared (owner NONE) or owned by the declared
+    workstream; literal Authority=records and owner NONE are not special.
+    """
+    if (target != declared_linear or completion != "records-only"
+            or stop_law != "RECORDS_ONLY"):
+        return False
+    if [mode, authority, completion] not in manifest["authority_completion_allowlist"]:
+        return False
+    rows = ownership.get("resolutions", [])
+    changed = changed_paths.get("paths", [])
+    if (changed_paths.get("state") != "PRESENT"
+            or ownership.get("state") != "PRESENT" or not changed or not rows):
+        return False
+    compatible_owners = {"NONE"}
+    if isinstance(workstream, str):
+        compatible_owners.add(workstream)
+    return all(
+        row.get("resolution") == "EXACT"
+        and row.get("path_class") == "RECORDS"
+        and authority in row.get("allowed_authorities", [])
+        and row.get("owner_workstream") in compatible_owners
+        for row in rows
+    )
+
+
 def _rule_map(manifest: dict[str, Any]) -> dict[str, dict[str, Any]]:
     out = {r["rule_id"]: r for r in manifest["rules"]}
     if set(out) != FROZEN_RULE_IDS or len(out) != 46:
@@ -524,8 +607,16 @@ def _finding_location_valid(finding: dict[str, Any]) -> bool:
 
 def _finding_sort_key(finding: dict[str, Any]) -> tuple[Any, ...]:
     """Frozen global order with numeric target order for per-target rows."""
-    target = finding.get("evidence", {}).get("target")
-    target_key = _mas_key(target) if finding.get("rule_id") == "R028" and isinstance(target, str) else (-1, "")
+    evidence = finding.get("evidence", {})
+    numeric_value: Any = None
+    if finding.get("rule_id") == "R026":
+        required = evidence.get("required_targets")
+        numeric_value = required[0] if isinstance(required, list) and required else None
+    elif finding.get("rule_id") in {"R028", "R056"}:
+        numeric_value = evidence.get("target")
+    elif finding.get("rule_id") == "R055":
+        numeric_value = evidence.get("linear")
+    target_key = _mas_key(numeric_value) if isinstance(numeric_value, str) else (-1, "")
     return (
         SEVERITY.get(finding.get("severity"), 99),
         finding.get("code", ""),
@@ -697,7 +788,80 @@ def _validate_report(report: dict[str, Any]) -> None:
         raise ValidationError("TYPE_MISMATCH")
 
     rows_by_issue = {row["issue_id"]: row for row in rows}
+    if len(rows_by_issue) != len(rows):
+        raise ValidationError("TYPE_MISMATCH")
+    # Unknown/ambiguous native effects are reachable only while native
+    # evidence is unresolved.  COMPLETE can therefore never carry either.
+    native_unresolved = "NATIVE_LINKAGE" in unresolved
+    if any(row["effect"] in {"UNKNOWN", "AMBIGUOUS"} for row in rows) and not native_unresolved:
+        raise ValidationError("TYPE_MISMATCH")
+
+    per_target_bindings = (
+        ("R026", "required_targets"), ("R028", "target"),
+        ("R055", "linear"), ("R056", "target"),
+    )
+    for rule, key in per_target_bindings:
+        for finding in by_rule.get(rule, []):
+            identities = finding["evidence"][key]
+            if not isinstance(identities, list):
+                identities = [identities]
+            if not identities or any(identity not in rows_by_issue for identity in identities):
+                raise ValidationError("TYPE_MISMATCH")
+
+    issue_types = {"DELIVERY","MAINTENANCE","ROOT_RECOVERY","ARCHITECTURE","PROOF_GATE","ACCEPTANCE_GATE","UNKNOWN"}
+    concrete_roles = {"DECLARED","SECONDARY","PARENT","PROOF_GATE","ACCEPTANCE_GATE"}
+    for finding in by_rule.get("R028", []):
+        evidence = finding["evidence"]
+        if (evidence["issue_type"] not in issue_types
+                or evidence["portfolio_mode"] not in ENUMS["Portfolio-Mode"] | {"UNKNOWN"}
+                or evidence["target_role"] not in concrete_roles):
+            raise ValidationError("TYPE_MISMATCH")
+    for finding in by_rule.get("R056", []):
+        evidence = finding["evidence"]
+        if (evidence["target_role"] not in concrete_roles
+                or evidence["effect"] not in {"COMPLETION_CAPABLE","NON_CLOSING","NONE"}):
+            raise ValidationError("TYPE_MISMATCH")
+
+    declaration_bindings = {
+        "R029": {"linear":declaration["linear"], "portfolio_mode":declaration["portfolio_mode"]},
+        "R039": {"declared":declaration["linear"]},
+        "R041": {"authority":declaration["authority"]},
+        "R044": {"authority":declaration["authority"], "linear":declaration["linear"] or "NONE"},
+        "R045": {"authority":declaration["authority"] or "UNKNOWN"},
+    }
+    for rule, bindings in declaration_bindings.items():
+        for finding in by_rule.get(rule, []):
+            if any(finding["evidence"].get(key) != value for key, value in bindings.items()):
+                raise ValidationError("TYPE_MISMATCH")
+    if by_rule.get("R029") and (
+        declaration["linear"] != "NONE" or declaration["portfolio_mode"] not in ENUMS["Portfolio-Mode"]
+    ):
+        raise ValidationError("TYPE_MISMATCH")
+
+    unresolved_findings = {
+        "R033": ("AGENTOS", {"PARTIAL","UNAVAILABLE","CONTRADICTORY"}),
+        "R035": ("LINEAR", {"PARTIAL","UNAVAILABLE","CONTRADICTORY"}),
+        "R042": ("PATH_OWNERSHIP", {"PARTIAL","UNAVAILABLE","CONTRADICTORY"}),
+        "R043": ("CHANGED_PATHS", {"PARTIAL","UNAVAILABLE","CONTRADICTORY"}),
+    }
+    for rule, (snapshot_class, states) in unresolved_findings.items():
+        for finding in by_rule.get(rule, []):
+            if (snapshot_class not in unresolved
+                    or finding["evidence"].get("snapshot_state") not in states):
+                raise ValidationError("TYPE_MISMATCH")
+    for finding in by_rule.get("R033", []):
+        if finding["evidence"]["workstream"] != (declaration["workstream"] or "NONE"):
+            raise ValidationError("TYPE_MISMATCH")
+    for finding in by_rule.get("R035", []):
+        if finding["evidence"]["linear"] != declaration["linear"]:
+            raise ValidationError("TYPE_MISMATCH")
+
     r056_by_target = {finding["evidence"]["target"]: finding for finding in by_rule.get("R056", [])}
+    r026_targets = {
+        target for finding in by_rule.get("R026", [])
+        for target in finding["evidence"]["required_targets"]
+    }
+    r055_by_target = {finding["evidence"]["linear"]: finding for finding in by_rule.get("R055", [])}
     native_contradictory = any(
         finding["evidence"]["snapshot"] == "NATIVE_LINKAGE" for finding in by_rule.get("R061", [])
     )
@@ -713,6 +877,14 @@ def _validate_report(report: dict[str, Any]) -> None:
             )
         if native_contradictory:
             expected_mismatch = False
+        secondary_completion_mismatch = (
+            row["declared_completion"] is None
+            and row["effect"] == "COMPLETION_CAPABLE"
+            and declaration["completion"] is not None
+            and row["issue_id"] not in r026_targets
+            and not native_contradictory
+        )
+        expected_mismatch = expected_mismatch or secondary_completion_mismatch
         has_r056 = row["issue_id"] in r056_by_target
         if row["consistency"] == "MISMATCH" and not has_r056:
             raise ValidationError("TYPE_MISMATCH")
@@ -726,6 +898,9 @@ def _validate_report(report: dict[str, Any]) -> None:
                     or evidence["completion"] != declaration["completion"]
                     or evidence["stop_law"] != (row["stop_law"] or "UNKNOWN")):
                 raise ValidationError("TYPE_MISMATCH")
+        has_r055 = row["issue_id"] in r055_by_target
+        if (row["effect"] == "AMBIGUOUS") != has_r055:
+            raise ValidationError("TYPE_MISMATCH")
     if set(r056_by_target) - set(rows_by_issue):
         raise ValidationError("TYPE_MISMATCH")
 
@@ -752,7 +927,8 @@ def _validate_report(report: dict[str, Any]) -> None:
     for finding in by_rule.get("R060", []):
         component = finding["evidence"]["component"]
         r060_components.add(component)
-        if finding["evidence"]["observed"] != canonical_digest(receipt_component[component]):
+        if (finding["evidence"]["expected"] == finding["evidence"]["observed"]
+                or finding["evidence"]["observed"] != canonical_digest(receipt_component[component])):
             raise ValidationError("TYPE_MISMATCH")
         if component == "RULESET" and finding["evidence"]["expected"] != canonical_digest(FROZEN_RULESET_DIGEST):
             raise ValidationError("TYPE_MISMATCH")
@@ -812,9 +988,31 @@ def _row_order(rows: list[dict[str, Any]], key: Any, *, contradictory: bool) -> 
     return rows == sorted(rows, key=order) and len({canonical_json(row) for row in rows}) == len(rows)
 
 
+def _lone_surrogate_paths(value: Any, path: tuple[Any, ...] = ()) -> list[tuple[Any, ...]]:
+    """Locate JSON strings that cannot be represented as Unicode scalar text."""
+    found: list[tuple[Any, ...]] = []
+    if isinstance(value, str):
+        if any(0xD800 <= ord(char) <= 0xDFFF for char in value):
+            found.append(path)
+    elif isinstance(value, dict):
+        for key, child in value.items():
+            if isinstance(key, str) and any(0xD800 <= ord(char) <= 0xDFFF for char in key):
+                found.append(path + ("<key>",))
+            found.extend(_lone_surrogate_paths(child, path + (key,)))
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            found.extend(_lone_surrogate_paths(child, path + (index,)))
+    return found
+
+
 def _validate_top(observation: dict[str, Any], manifest: dict[str, Any]) -> None:
     required = {"schema","ruleset_id","ruleset_digest","repository","pull_request","authoring_epoch","changed_paths","agentos","linear","path_ownership","native_linkage","receipt"}
     if not isinstance(observation, dict): raise ValidationError("TYPE_MISMATCH")
+    surrogate_paths = _lone_surrogate_paths(observation)
+    if any(path == ("pull_request", "body") for path in surrogate_paths):
+        raise ValidationError("INVALID_BODY_ENCODING")
+    if surrogate_paths:
+        raise ValidationError("TYPE_MISMATCH")
     if set(observation) != required: raise ValidationError("UNKNOWN_KEY" if set(observation)-required else "MISSING_KEY")
     if observation["schema"] != OBS_SCHEMA: raise ValidationError("TYPE_MISMATCH")
     if not isinstance(manifest, dict) or manifest.get("ruleset_id") != RULESET_ID: raise ValidationError("UNSUPPORTED_RULESET_ID")
@@ -863,7 +1061,12 @@ def _validate_top(observation: dict[str, Any], manifest: dict[str, Any]) -> None
     for blob in epoch["template_blobs"]:
         if not isinstance(blob, dict) or set(blob) != {"path","blob_sha"} or not _repo_path(blob.get("path")) or not isinstance(blob.get("blob_sha"), str) or not sha_re.fullmatch(blob["blob_sha"]):
             raise ValidationError("INVALID_SNAPSHOT_STATE")
-    if epoch["template_blobs"] != sorted(epoch["template_blobs"], key=lambda row:(row["path"].encode("utf-8"),row["blob_sha"])) or len({(row["path"],row["blob_sha"]) for row in epoch["template_blobs"]}) != len(epoch["template_blobs"]):
+    if (epoch["template_blobs"] != sorted(
+            epoch["template_blobs"], key=lambda row:(row["path"].encode("utf-8"),row["blob_sha"])
+        ) or len({(row["path"],row["blob_sha"]) for row in epoch["template_blobs"]}) != len(epoch["template_blobs"])):
+        raise ValidationError("INVALID_SNAPSHOT_STATE")
+    template_path_conflict = len({row["path"] for row in epoch["template_blobs"]}) != len(epoch["template_blobs"])
+    if template_path_conflict and epoch["state"] != "CONTRADICTORY":
         raise ValidationError("INVALID_SNAPSHOT_STATE")
     if epoch["legacy_open_pr_numbers"] != sorted(set(epoch["legacy_open_pr_numbers"])) or any(not _positive_int(x) for x in epoch["legacy_open_pr_numbers"]):
         raise ValidationError("INVALID_SNAPSHOT_STATE")
@@ -875,6 +1078,7 @@ def _validate_top(observation: dict[str, Any], manifest: dict[str, Any]) -> None
     # diagnostic asserting one.  Conversely, PARTIAL may omit facts but may not
     # carry known-inconsistent retained facts; those belong to CONTRADICTORY.
     epoch_conflict = False
+    epoch_conflict = epoch_conflict or template_path_conflict
     if epoch.get("receipt_ruleset_digest") is not None:
         epoch_conflict = epoch_conflict or epoch["receipt_ruleset_digest"] != observation["ruleset_digest"]
     if epoch.get("cutover_receipt_sha256") is not None:
@@ -943,6 +1147,14 @@ def _validate_top(observation: dict[str, Any], manifest: dict[str, Any]) -> None
             raise ValidationError("INVALID_SNAPSHOT_STATE")
     if not _row_order(resolutions, lambda r:(r["path"].encode("utf-8"),r["role"]), contradictory=observation["path_ownership"]["state"] == "CONTRADICTORY"):
         raise ValidationError("INVALID_SNAPSHOT_STATE")
+    required_ownership_identities = {(row["path"], "CURRENT") for row in cp}
+    required_ownership_identities |= {
+        (row["old_path"], "OLD_RENAME_SOURCE")
+        for row in cp if row["change_type"] == "RENAMED"
+    }
+    resolution_identities = {(row["path"], row["role"]) for row in resolutions}
+    if not resolution_identities <= required_ownership_identities:
+        raise ValidationError("INVALID_SNAPSHOT_STATE")
     ownership_conflict = len({(row["path"],row["role"]) for row in resolutions}) != len(resolutions)
     if ownership_conflict and observation["path_ownership"]["state"] != "CONTRADICTORY":
         raise ValidationError("INVALID_SNAPSHOT_STATE")
@@ -957,12 +1169,8 @@ def _validate_top(observation: dict[str, Any], manifest: dict[str, Any]) -> None
             rename_ownership_conflict = True
     if observation["path_ownership"]["state"] == "CONTRADICTORY" and not (ownership_conflict or rename_ownership_conflict):
         raise ValidationError("INVALID_SNAPSHOT_STATE")
-    if observation["changed_paths"]["state"] == "PRESENT" and observation["path_ownership"]["state"] == "PRESENT":
-        current = {r["path"] for r in resolutions if r["role"] == "CURRENT"}
-        old_sources = {r["path"] for r in resolutions if r["role"] == "OLD_RENAME_SOURCE"}
-        required_current = {r["path"] for r in cp}
-        required_old = {r["old_path"] for r in cp if r["change_type"] == "RENAMED"}
-        if current != required_current or old_sources != required_old:
+    if observation["path_ownership"]["state"] == "PRESENT":
+        if resolution_identities != required_ownership_identities:
             raise ValidationError("INVALID_SNAPSHOT_STATE")
         if rename_ownership_conflict:
             raise ValidationError("INVALID_SNAPSHOT_STATE")
@@ -1174,9 +1382,15 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
     title_targets = _issue_ids(observation["pull_request"].get("title", ""))
     body_targets = sorted({issue for issue, _, _ in body_relationships}, key=_mas_key)
     native_targets = sorted({r.get("issue_id") for r in native.get("relationships", []) if isinstance(r.get("issue_id"), str)}, key=_mas_key)
-    target_ids = sorted(set(([linear] if linear_exact else []) + branch_targets + title_targets + body_targets + native_targets), key=_mas_key)
+    identity_native_targets = [] if native["state"] == "CONTRADICTORY" else native_targets
+    target_ids = sorted(set(
+        ([linear] if linear_exact else []) + branch_targets + title_targets
+        + body_targets + identity_native_targets
+    ), key=_mas_key)
+    completion_target_ids = sorted(set(target_ids + native_targets), key=_mas_key)
     roles_by_target: dict[str, list[str]] = {}
     rows_by_target: dict[str, list[dict[str, Any]]] = {}
+    indeterminate_targets: set[str] = set()
     role_mismatch_targets: list[str] = []
     role_mismatch_roles: list[str] = []
     if linear_exact and lsnap["state"] != "PRESENT":
@@ -1192,6 +1406,7 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
             # A missing row or UNKNOWN role owns the target through R026.  No
             # role/type/identity reducer may guess past that indeterminacy.
             if not rows or "UNKNOWN" in roles_by_target[target]:
+                indeterminate_targets.add(target)
                 add("R026", {"required_targets":[target],"target_roles":roles_by_target[target] or ["UNKNOWN"]})
                 continue
             declared = [r for r in rows if r.get("target_role") == "DECLARED"]
@@ -1220,14 +1435,18 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
     if role_mismatch_targets:
         add("R027", {"declared":linear,"roles":sorted(set(role_mismatch_roles)),"targets":sorted(set(role_mismatch_targets), key=_mas_key)})
     if linear_exact:
-        suppressed = {(r.get("issue_id"), r.get("source")) for r in native.get("relationships", []) if r.get("state") == "SUPPRESSED"}
+        suppressed = ({(r.get("issue_id"), r.get("source")) for r in native.get("relationships", []) if r.get("state") == "SUPPRESSED"}
+                      if native["state"] != "CONTRADICTORY" else set())
         def competes(target: str, source: str) -> bool:
-            return target != linear and (target, source) not in suppressed and "DECLARED" in roles_by_target.get(target, [])
+            return (target != linear and target not in indeterminate_targets
+                    and (target, source) not in suppressed
+                    and "DECLARED" in roles_by_target.get(target, []))
         bad_branch = [x for x in branch_targets if competes(x, "BRANCH")]
         if bad_branch: add("R050", {"branch_targets":bad_branch,"declared":linear})
         competing = sorted({x for x in title_targets if competes(x, "TITLE")} | {x for x in body_targets if competes(x, "BODY")}, key=_mas_key)
         if competing: add("R051", {"body_targets":body_targets,"declared":linear,"title_targets":title_targets})
-        native_competing = {r.get("issue_id") for r in native.get("relationships", []) if r.get("state") == "PRESENT" and isinstance(r.get("issue_id"), str) and competes(r["issue_id"], r.get("source", "ADAPTER"))}
+        native_competing = ({r.get("issue_id") for r in native.get("relationships", []) if r.get("state") == "PRESENT" and isinstance(r.get("issue_id"), str) and competes(r["issue_id"], r.get("source", "ADAPTER"))}
+                            if native["state"] != "CONTRADICTORY" else set())
         declared_targets = sorted({linear} | {x for x in branch_targets if competes(x, "BRANCH")} | {x for x in title_targets if competes(x, "TITLE")} | {x for x in body_targets if competes(x, "BODY")} | native_competing, key=_mas_key)
         if len(declared_targets) > 1: add("R039", {"declared":linear,"targets":declared_targets})
     if canonical and tuple([mode,authority,completion]) not in {tuple(x) for x in manifest["authority_completion_allowlist"]}: add("R040", {"authority":authority,"completion":completion,"portfolio_mode":mode})
@@ -1240,29 +1459,68 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
     )
     if ownership["state"] != "PRESENT":
         add("R042", {"paths":_digest_wrappers(text_digest(value) for value in path_evidence_rows),"snapshot_state":ownership["state"]})
+    # PRESENT and PARTIAL ownership may retain conclusive rows.  A
+    # CONTRADICTORY snapshot's rows are never consumed by dependent reducers;
+    # its only row-level conclusion is ambiguity/R061.
+    path_rows_conclusive = (
+        ownership["state"] in {"PRESENT", "PARTIAL"}
+        and paths["state"] != "CONTRADICTORY"
+    )
+    if path_rows_conclusive:
         unowned = [row for row in rs if row.get("resolution") == "UNOWNED"]
+        exact = [row for row in rs if row.get("resolution") == "EXACT"]
+        excluded = [row for row in exact if authority is not None and authority not in row.get("allowed_authorities", [])]
         if unowned:
-            add("R047", {"paths":_digest_wrappers(text_digest(row["path"]) for row in unowned),"resolutions":_digest_wrappers(canonical_digest(row) for row in unowned)})
-        # Partial ownership may still contain conclusive negative evidence.  Do
-        # not convert an observed UNOWNED/exact-nonmaintenance row into an
-        # unknown merely because unrelated rows could not be captured.
+            add("R047", {
+                "paths":_digest_wrappers(text_digest(row["path"]) for row in unowned),
+                "resolutions":_digest_wrappers(canonical_digest(row) for row in unowned),
+            })
+        if excluded:
+            add("R041", {
+                "authority":authority,
+                "paths":_digest_wrappers(text_digest(row["path"]) for row in excluded),
+                "resolutions":_digest_wrappers(canonical_digest(row) for row in excluded),
+            })
         if mode == "maintenance_exception" and authority is not None:
-            known_bad = [r for r in ownership.get("resolutions", []) if r.get("resolution") == "UNOWNED" or (r.get("resolution") == "EXACT" and (r.get("path_class") != "MAINTENANCE" or r.get("owner_workstream") != "NONE" or "maintenance" not in r.get("allowed_authorities", [])))]
-            if known_bad: add("R044", {"authority":authority,"linear":linear or "NONE","paths":_digest_wrappers(text_digest(r.get("path","")) for r in known_bad)})
-    else:
-        unowned = [r for r in rs if r.get("resolution") == "UNOWNED"]
-        excluded = [r for r in rs if authority is not None and r.get("resolution") == "EXACT" and authority not in r.get("allowed_authorities",[])]
-        if unowned: add("R047", {"paths":_digest_wrappers(text_digest(r.get("path","")) for r in unowned),"resolutions":_digest_wrappers(canonical_digest(r) for r in unowned)})
-        if excluded: add("R041", {"authority":authority,"paths":_digest_wrappers(text_digest(r.get("path","")) for r in excluded),"resolutions":_digest_wrappers(canonical_digest(r) for r in excluded)})
-        if mode == "maintenance_exception" and authority is not None:
-            bad = [r for r in rs if r.get("resolution") != "EXACT" or r.get("path_class") != "MAINTENANCE" or r.get("owner_workstream") != "NONE" or "maintenance" not in r.get("allowed_authorities", [])]
-            if bad or not paths.get("paths") or not rs:
-                add("R044", {"authority":authority,"linear":linear or "NONE","paths":_digest_wrappers(text_digest(r.get("path","")) for r in bad)})
-        if mode == "architecture_candidate" and authority is not None and (authority in {"implementation","deploy"} or any(r.get("path_class") in {"IMPLEMENTATION","DEPLOY"} for r in rs)):
-            add("R045", {"authority":authority,"paths":_digest_wrappers(text_digest(r.get("path","")) for r in rs)})
+            bad = unowned + [
+                row for row in exact
+                if (row.get("path_class") != "MAINTENANCE"
+                    or row.get("owner_workstream") != "NONE"
+                    or "maintenance" not in row.get("allowed_authorities", []))
+            ]
+            # Empty complete path evidence disproves the mandatory support;
+            # absent PARTIAL evidence does not.
+            empty_complete = (
+                ownership["state"] == "PRESENT" and paths["state"] == "PRESENT"
+                and (not paths.get("paths") or not rs)
+            )
+            if bad or empty_complete:
+                add("R044", {
+                    "authority":authority, "linear":linear or "NONE",
+                    "paths":_digest_wrappers(text_digest(row["path"]) for row in bad),
+                })
+        if mode == "architecture_candidate":
+            implementation_rows = [
+                row for row in exact if row.get("path_class") in {"IMPLEMENTATION", "DEPLOY"}
+            ]
+            if authority in {"implementation", "deploy"} or implementation_rows:
+                claimed_paths = (
+                    path_evidence_rows if authority in {"implementation", "deploy"}
+                    else [row["path"] for row in implementation_rows]
+                )
+                add("R045", {
+                    "authority":authority or "UNKNOWN",
+                    "paths":_digest_wrappers(text_digest(path) for path in claimed_paths),
+                })
         if mode == "creates_workstream":
-            impl = [r for r in rs if r.get("path_class") in {"IMPLEMENTATION","DEPLOY"}]
-            if impl: add("R046", {"path_classes":sorted(set(r.get("path_class") for r in impl)),"paths":_digest_wrappers(text_digest(r.get("path","")) for r in impl)})
+            implementation_rows = [
+                row for row in exact if row.get("path_class") in {"IMPLEMENTATION", "DEPLOY"}
+            ]
+            if implementation_rows:
+                add("R046", {
+                    "path_classes":sorted(set(row["path_class"] for row in implementation_rows)),
+                    "paths":_digest_wrappers(text_digest(row["path"]) for row in implementation_rows),
+                })
     if mode == "creates_workstream":
         if agentos["state"] == "PRESENT" and ws:
             collisions = sorted(r.get("key") for r in agentos.get("workstreams", []) if r.get("key", "").upper() == ws.upper())
@@ -1274,11 +1532,11 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
     if native["state"] in {"PARTIAL", "UNAVAILABLE"}:
         if linear_exact:
             add("R054", {"linear":linear,"snapshot_state":native["state"]})
-        for target in target_ids:
+        for target in completion_target_ids:
             row = next((r for r in rows_by_target.get(target, []) if r.get("target_role") == "DECLARED"), None)
             completion_rows.append({"issue_id":target,"effect":"UNKNOWN","declared_completion":completion if target == linear else None,"stop_law":row.get("stop_law") if row else None,"consistency":"INDETERMINATE"})
     else:
-        for target in target_ids:
+        for target in completion_target_ids:
             rels = [r for r in native.get("relationships", []) if r.get("issue_id") == target]
             active = [r for r in rels if r.get("state") == "PRESENT"]
             eligible = [r for r in active if r.get("completion_transition") == "ELIGIBLE"]
@@ -1288,8 +1546,16 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
             declared_row = next((r for r in rows_by_target.get(target, []) if r.get("target_role") == "DECLARED"), None)
             stop_law = declared_row.get("stop_law") if declared_row else None
             declared_completion = completion if target == linear else None
-            records_exception = target == linear and completion == "records-only" and stop_law == "RECORDS_ONLY" and ownership["state"] == "PRESENT" and bool(ownership.get("resolutions")) and all(r.get("resolution") == "EXACT" and r.get("path_class") == "RECORDS" and r.get("owner_workstream") in {"NONE", None} and "records" in r.get("allowed_authorities", []) for r in ownership.get("resolutions", []))
-            role_indeterminate = not rows_by_target.get(target) or "UNKNOWN" in roles_by_target.get(target, [])
+            records_exception = _records_only_supported(
+                target=target, declared_linear=linear, completion=completion,
+                stop_law=stop_law, mode=mode, authority=authority,
+                workstream=ws, changed_paths=paths, ownership=ownership,
+                manifest=manifest,
+            )
+            role_indeterminate = (
+                target in indeterminate_targets or not rows_by_target.get(target)
+                or "UNKNOWN" in roles_by_target.get(target, [])
+            )
             mismatch = (completion is not None and not ambiguous and not role_indeterminate and (
                 (target == linear and completion == "merge-is-done" and effect != "COMPLETION_CAPABLE")
                 or (effect == "COMPLETION_CAPABLE" and ((target != linear) or (completion in {"built-not-proven","proof-required","acceptance-required"}) or (completion == "records-only" and not records_exception)))
@@ -1303,7 +1569,9 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
             if target == linear and completion == "merge-is-done" and stop_law in {"PROOF","ACCEPTANCE"}:
                 add("R053", {"completion":completion,"linear":linear,"stop_law":stop_law})
     for sname, snap in (("AUTHORING_EPOCH",epoch),("CHANGED_PATHS",paths),("AGENTOS",agentos),("LINEAR",lsnap),("PATH_OWNERSHIP",ownership),("NATIVE_LINKAGE",native)):
-        if snap["state"] == "CONTRADICTORY": findings.append(_finding(rules, "R061", {"diagnostics":snap.get("diagnostics",[]),"snapshot":sname}, component=sname))
+        if (snap["state"] == "CONTRADICTORY"
+                and _snapshot_applicable(sname, mode, ws, manifest)):
+            findings.append(_finding(rules, "R061", {"diagnostics":snap.get("diagnostics",[]),"snapshot":sname}, component=sname))
     # Grounding mismatches are semantic (valid observation, refused metadata), not an exit-2 route.
     receipt = observation["receipt"]
     ground = receipt_projection(observation, manifest)
@@ -1326,7 +1594,12 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
         closing = []
         for target, kind, line in body_relationships:
             declared_row = next((r for r in rows_by_target.get(target, []) if r.get("target_role") == "DECLARED"), None)
-            records_ok = completion == "records-only" and declared_row and declared_row.get("stop_law") == "RECORDS_ONLY" and ownership["state"] == "PRESENT" and bool(ownership.get("resolutions")) and all(r.get("resolution") == "EXACT" and r.get("path_class") == "RECORDS" and r.get("owner_workstream") in {"NONE", None} and "records" in r.get("allowed_authorities", []) for r in ownership.get("resolutions", []))
+            records_ok = bool(declared_row) and _records_only_supported(
+                target=target, declared_linear=linear, completion=completion,
+                stop_law=declared_row.get("stop_law") if declared_row else None,
+                mode=mode, authority=authority, workstream=ws,
+                changed_paths=paths, ownership=ownership, manifest=manifest,
+            )
             if target == linear and kind == "CLOSING" and not records_ok:
                 closing.append((line, canonical_digest({"issue":target,"kind":kind})))
         if closing:

@@ -265,6 +265,10 @@ def test_snapshot_state_payload_diagnostic_full_matrix_matches_runtime_and_schem
                     {"issue_id":"MAS-28","kind":"SUPPRESSED","source":"TITLE","state":"SUPPRESSED","completion_transition":"INELIGIBLE"},]
             if name == "agentos" and state == "NOT_APPLICABLE":
                 value["pull_request"]["body"] = VALID.replace("Workstream: WS:AGENT-OS", "Workstream: NONE").replace("Portfolio-Mode: tracked", "Portfolio-Mode: architecture_candidate")
+            if name == "path_ownership" and state == "CONTRADICTORY":
+                value["changed_paths"]["paths"] = [{"path":"x","change_type":"ADDED","old_path":None}]
+            if name == "changed_paths" and state == "CONTRADICTORY":
+                value["path_ownership"]["resolutions"] = [{"path":"x","role":"CURRENT","resolution":"EXACT","owner_workstream":"WS:AGENT-OS","path_class":"IMPLEMENTATION","allowed_authorities":["implementation"]}]
         expected = state != "NOT_APPLICABLE" or name == "agentos"
         try:
             validator._validate_top(value, MANIFEST); runtime_valid = True

@@ -172,7 +172,17 @@
                   "INDETERMINATE"
                 ]
               }
-            }
+            },
+            "allOf": [
+              {
+                "if": {"properties": {"effect": {"enum": ["UNKNOWN", "AMBIGUOUS"]}}, "required": ["effect"]},
+                "then": {"properties": {"consistency": {"const": "INDETERMINATE"}}}
+              },
+              {
+                "if": {"properties": {"effect": {"const": "COMPLETION_CAPABLE"}, "declared_completion": {"type": "null"}}, "required": ["effect", "declared_completion"]},
+                "then": {"properties": {"consistency": {"enum": ["MISMATCH", "INDETERMINATE"]}}}
+              }
+            ]
           },
           "uniqueItems": true
         },
@@ -1252,11 +1262,11 @@
                     "properties": {
                       "issue_type": {
                         "type": "string",
-                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                        "enum": ["DELIVERY", "MAINTENANCE", "ROOT_RECOVERY", "ARCHITECTURE", "PROOF_GATE", "ACCEPTANCE_GATE", "UNKNOWN"]
                       },
                       "portfolio_mode": {
                         "type": "string",
-                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                        "enum": ["tracked", "maintenance_exception", "creates_workstream", "architecture_candidate", "UNKNOWN"]
                       },
                       "target": {
                         "type": "string",
@@ -1264,7 +1274,7 @@
                       },
                       "target_role": {
                         "type": "string",
-                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                        "enum": ["DECLARED", "SECONDARY", "PARENT", "PROOF_GATE", "ACCEPTANCE_GATE"]
                       }
                     }
                   },
@@ -1307,11 +1317,11 @@
                     "properties": {
                       "linear": {
                         "type": "string",
-                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                        "const": "NONE"
                       },
                       "portfolio_mode": {
                         "type": "string",
-                        "pattern": "^[A-Za-z0-9_.:/-]{1,160}$"
+                        "enum": ["tracked", "maintenance_exception", "creates_workstream", "architecture_candidate"]
                       }
                     }
                   },
@@ -2855,7 +2865,19 @@
                   "remediation_code": {
                     "const": "REBUILD_IMMUTABLE_OBSERVATION"
                   }
-                }
+                },
+                "allOf": [
+                  {"if": {"properties": {"evidence": {"properties": {"component": {"const": "OBSERVATION"}}}}}, "then": {"properties": {"location": {"const": "RECEIPT:OBSERVATION"}}}},
+                  {"if": {"properties": {"evidence": {"properties": {"component": {"const": "BODY"}}}}}, "then": {"properties": {"location": {"const": "RECEIPT:BODY"}}}},
+                  {"if": {"properties": {"evidence": {"properties": {"component": {"const": "CUTOVER"}}}}}, "then": {"properties": {"location": {"const": "RECEIPT:CUTOVER"}}}},
+                  {"if": {"properties": {"evidence": {"properties": {"component": {"const": "RULESET"}}}}}, "then": {"properties": {"location": {"const": "RECEIPT:RULESET"}}}},
+                  {"if": {"properties": {"evidence": {"properties": {"component": {"const": "AUTHORING_EPOCH"}}}}}, "then": {"properties": {"location": {"const": "RECEIPT:AUTHORING_EPOCH"}}}},
+                  {"if": {"properties": {"evidence": {"properties": {"component": {"const": "CHANGED_PATHS"}}}}}, "then": {"properties": {"location": {"const": "RECEIPT:CHANGED_PATHS"}}}},
+                  {"if": {"properties": {"evidence": {"properties": {"component": {"const": "AGENTOS"}}}}}, "then": {"properties": {"location": {"const": "RECEIPT:AGENTOS"}}}},
+                  {"if": {"properties": {"evidence": {"properties": {"component": {"const": "LINEAR"}}}}}, "then": {"properties": {"location": {"const": "RECEIPT:LINEAR"}}}},
+                  {"if": {"properties": {"evidence": {"properties": {"component": {"const": "PATH_OWNERSHIP"}}}}}, "then": {"properties": {"location": {"const": "RECEIPT:PATH_OWNERSHIP"}}}},
+                  {"if": {"properties": {"evidence": {"properties": {"component": {"const": "NATIVE_LINKAGE"}}}}}, "then": {"properties": {"location": {"const": "RECEIPT:NATIVE_LINKAGE"}}}}
+                ]
               },
               {
                 "type": "object",
@@ -2907,7 +2929,15 @@
                   "remediation_code": {
                     "const": "RECAPTURE_CONSISTENT_SNAPSHOT"
                   }
-                }
+                },
+                "allOf": [
+                  {"if": {"properties": {"evidence": {"properties": {"snapshot": {"const": "AUTHORING_EPOCH"}}}}}, "then": {"properties": {"location": {"const": "SNAPSHOT:AUTHORING_EPOCH"}}}},
+                  {"if": {"properties": {"evidence": {"properties": {"snapshot": {"const": "CHANGED_PATHS"}}}}}, "then": {"properties": {"location": {"const": "SNAPSHOT:CHANGED_PATHS"}}}},
+                  {"if": {"properties": {"evidence": {"properties": {"snapshot": {"const": "AGENTOS"}}}}}, "then": {"properties": {"location": {"const": "SNAPSHOT:AGENTOS"}}}},
+                  {"if": {"properties": {"evidence": {"properties": {"snapshot": {"const": "LINEAR"}}}}}, "then": {"properties": {"location": {"const": "SNAPSHOT:LINEAR"}}}},
+                  {"if": {"properties": {"evidence": {"properties": {"snapshot": {"const": "PATH_OWNERSHIP"}}}}}, "then": {"properties": {"location": {"const": "SNAPSHOT:PATH_OWNERSHIP"}}}},
+                  {"if": {"properties": {"evidence": {"properties": {"snapshot": {"const": "NATIVE_LINKAGE"}}}}}, "then": {"properties": {"location": {"const": "SNAPSHOT:NATIVE_LINKAGE"}}}}
+                ]
               }
             ]
           },
@@ -3601,6 +3631,75 @@
         {
           "if": {"properties": {"declaration": {"properties": {"completion": {"const": "records-only"}}}}},
           "then": {"properties": {"completion_interpretation": {"items": {"properties": {"declared_completion": {"enum": ["records-only", null]}}}}}}
+        },
+        {
+          "if": {"properties": {"completion_interpretation": {"contains": {"properties": {"effect": {"enum": ["UNKNOWN", "AMBIGUOUS"]}}, "required": ["effect"]}}}},
+          "then": {"properties": {"unresolved_observation_classes": {"contains": {"const": "NATIVE_LINKAGE"}}}}
+        },
+        {
+          "if": {"properties": {"completion_interpretation": {"contains": {"properties": {"effect": {"const": "AMBIGUOUS"}}, "required": ["effect"]}}}},
+          "then": {"properties": {"findings": {"contains": {"properties": {"rule_id": {"const": "R055"}}, "required": ["rule_id"]}}}}
+        },
+        {
+          "if": {"properties": {"findings": {"contains": {"properties": {"rule_id": {"const": "R055"}}, "required": ["rule_id"]}}}},
+          "then": {"properties": {"completion_interpretation": {"contains": {"properties": {"effect": {"const": "AMBIGUOUS"}}, "required": ["effect"]}}}}
+        },
+        {
+          "if": {"properties": {"completion_interpretation": {"contains": {"properties": {"effect": {"const": "COMPLETION_CAPABLE"}, "declared_completion": {"type": "null"}, "consistency": {"const": "MISMATCH"}}, "required": ["effect", "declared_completion", "consistency"]}}}},
+          "then": {"properties": {"findings": {"contains": {"properties": {"rule_id": {"const": "R056"}}, "required": ["rule_id"]}}}}
+        },
+        {
+          "if": {"properties": {"findings": {"contains": {"properties": {"rule_id": {"const": "R033"}}, "required": ["rule_id"]}}}},
+          "then": {"properties": {"unresolved_observation_classes": {"contains": {"const": "AGENTOS"}}}}
+        },
+        {
+          "if": {"properties": {"findings": {"contains": {"properties": {"rule_id": {"const": "R035"}}, "required": ["rule_id"]}}}},
+          "then": {"properties": {"unresolved_observation_classes": {"contains": {"const": "LINEAR"}}}}
+        },
+        {
+          "if": {"properties": {"findings": {"contains": {"properties": {"rule_id": {"const": "R042"}}, "required": ["rule_id"]}}}},
+          "then": {"properties": {"unresolved_observation_classes": {"contains": {"const": "PATH_OWNERSHIP"}}}}
+        },
+        {
+          "if": {"properties": {"findings": {"contains": {"properties": {"rule_id": {"const": "R043"}}, "required": ["rule_id"]}}}},
+          "then": {"properties": {"unresolved_observation_classes": {"contains": {"const": "CHANGED_PATHS"}}}}
+        },
+        {
+          "if": {"properties": {"findings": {"contains": {"properties": {"rule_id": {"const": "R029"}}, "required": ["rule_id"]}}}},
+          "then": {"allOf": [
+            {"properties": {"declaration": {"properties": {"linear": {"const": "NONE"}}}}},
+            {"oneOf": [
+              {"properties": {"declaration": {"properties": {"portfolio_mode": {"const": "tracked"}}}, "findings": {"contains": {"properties": {"rule_id": {"const": "R029"}, "evidence": {"properties": {"portfolio_mode": {"const": "tracked"}}}}, "required": ["rule_id", "evidence"]}}}},
+              {"properties": {"declaration": {"properties": {"portfolio_mode": {"const": "maintenance_exception"}}}, "findings": {"contains": {"properties": {"rule_id": {"const": "R029"}, "evidence": {"properties": {"portfolio_mode": {"const": "maintenance_exception"}}}}, "required": ["rule_id", "evidence"]}}}},
+              {"properties": {"declaration": {"properties": {"portfolio_mode": {"const": "creates_workstream"}}}, "findings": {"contains": {"properties": {"rule_id": {"const": "R029"}, "evidence": {"properties": {"portfolio_mode": {"const": "creates_workstream"}}}}, "required": ["rule_id", "evidence"]}}}},
+              {"properties": {"declaration": {"properties": {"portfolio_mode": {"const": "architecture_candidate"}}}, "findings": {"contains": {"properties": {"rule_id": {"const": "R029"}, "evidence": {"properties": {"portfolio_mode": {"const": "architecture_candidate"}}}}, "required": ["rule_id", "evidence"]}}}}
+            ]}
+          ]}
+        },
+        {
+          "if": {"properties": {"findings": {"contains": {"properties": {"rule_id": {"enum": ["R041", "R044"]}}, "required": ["rule_id"]}}}},
+          "then": {"oneOf": [
+            {"properties": {"declaration": {"properties": {"authority": {"const": "implementation"}}}, "findings": {"contains": {"properties": {"rule_id": {"enum": ["R041", "R044"]}, "evidence": {"properties": {"authority": {"const": "implementation"}}}}, "required": ["rule_id", "evidence"]}}}},
+            {"properties": {"declaration": {"properties": {"authority": {"const": "records"}}}, "findings": {"contains": {"properties": {"rule_id": {"enum": ["R041", "R044"]}, "evidence": {"properties": {"authority": {"const": "records"}}}}, "required": ["rule_id", "evidence"]}}}},
+            {"properties": {"declaration": {"properties": {"authority": {"const": "research"}}}, "findings": {"contains": {"properties": {"rule_id": {"enum": ["R041", "R044"]}, "evidence": {"properties": {"authority": {"const": "research"}}}}, "required": ["rule_id", "evidence"]}}}},
+            {"properties": {"declaration": {"properties": {"authority": {"const": "maintenance"}}}, "findings": {"contains": {"properties": {"rule_id": {"enum": ["R041", "R044"]}, "evidence": {"properties": {"authority": {"const": "maintenance"}}}}, "required": ["rule_id", "evidence"]}}}},
+            {"properties": {"declaration": {"properties": {"authority": {"const": "proof"}}}, "findings": {"contains": {"properties": {"rule_id": {"enum": ["R041", "R044"]}, "evidence": {"properties": {"authority": {"const": "proof"}}}}, "required": ["rule_id", "evidence"]}}}},
+            {"properties": {"declaration": {"properties": {"authority": {"const": "deploy"}}}, "findings": {"contains": {"properties": {"rule_id": {"enum": ["R041", "R044"]}, "evidence": {"properties": {"authority": {"const": "deploy"}}}}, "required": ["rule_id", "evidence"]}}}},
+            {"properties": {"declaration": {"properties": {"authority": {"const": "architecture_candidate"}}}, "findings": {"contains": {"properties": {"rule_id": {"enum": ["R041", "R044"]}, "evidence": {"properties": {"authority": {"const": "architecture_candidate"}}}}, "required": ["rule_id", "evidence"]}}}}
+          ]}
+        },
+        {
+          "if": {"properties": {"findings": {"contains": {"properties": {"rule_id": {"const": "R045"}}, "required": ["rule_id"]}}}},
+          "then": {"oneOf": [
+            {"properties": {"declaration": {"properties": {"authority": {"type": "null"}}}, "findings": {"contains": {"properties": {"rule_id": {"const": "R045"}, "evidence": {"properties": {"authority": {"const": "UNKNOWN"}}}}, "required": ["rule_id", "evidence"]}}}},
+            {"properties": {"declaration": {"properties": {"authority": {"const": "implementation"}}}, "findings": {"contains": {"properties": {"rule_id": {"const": "R045"}, "evidence": {"properties": {"authority": {"const": "implementation"}}}}, "required": ["rule_id", "evidence"]}}}},
+            {"properties": {"declaration": {"properties": {"authority": {"const": "records"}}}, "findings": {"contains": {"properties": {"rule_id": {"const": "R045"}, "evidence": {"properties": {"authority": {"const": "records"}}}}, "required": ["rule_id", "evidence"]}}}},
+            {"properties": {"declaration": {"properties": {"authority": {"const": "research"}}}, "findings": {"contains": {"properties": {"rule_id": {"const": "R045"}, "evidence": {"properties": {"authority": {"const": "research"}}}}, "required": ["rule_id", "evidence"]}}}},
+            {"properties": {"declaration": {"properties": {"authority": {"const": "maintenance"}}}, "findings": {"contains": {"properties": {"rule_id": {"const": "R045"}, "evidence": {"properties": {"authority": {"const": "maintenance"}}}}, "required": ["rule_id", "evidence"]}}}},
+            {"properties": {"declaration": {"properties": {"authority": {"const": "proof"}}}, "findings": {"contains": {"properties": {"rule_id": {"const": "R045"}, "evidence": {"properties": {"authority": {"const": "proof"}}}}, "required": ["rule_id", "evidence"]}}}},
+            {"properties": {"declaration": {"properties": {"authority": {"const": "deploy"}}}, "findings": {"contains": {"properties": {"rule_id": {"const": "R045"}, "evidence": {"properties": {"authority": {"const": "deploy"}}}}, "required": ["rule_id", "evidence"]}}}},
+            {"properties": {"declaration": {"properties": {"authority": {"const": "architecture_candidate"}}}, "findings": {"contains": {"properties": {"rule_id": {"const": "R045"}, "evidence": {"properties": {"authority": {"const": "architecture_candidate"}}}}, "required": ["rule_id", "evidence"]}}}}
+          ]}
         }
       ]
     },

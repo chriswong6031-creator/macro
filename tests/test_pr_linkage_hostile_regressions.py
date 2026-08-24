@@ -153,7 +153,9 @@ def test_reviewer_reducers_r027_r044_r052_native_source_and_numeric_order():
     assert len([x for x in r["semantic"]["findings"] if x["rule_id"] == "R027"]) == 1
     # Conclusive partial ownership still disproves a maintenance exception.
     p = clone(observation(VALID)); mode(p, workstream="NONE", portfolio="maintenance_exception", authority="maintenance", completion="built-not-proven")
-    p["linear"]["issues"][0]["issue_type"] = "MAINTENANCE"; p["path_ownership"].update(state="PARTIAL", diagnostics=["STALE"], resolutions=[{"path":"x","role":"CURRENT","resolution":"EXACT","owner_workstream":"NONE","path_class":"IMPLEMENTATION","allowed_authorities":["maintenance"]}])
+    p["linear"]["issues"][0]["issue_type"] = "MAINTENANCE"
+    p["changed_paths"]["paths"] = [{"path":"x","change_type":"ADDED","old_path":None}]
+    p["path_ownership"].update(state="PARTIAL", diagnostics=["STALE"], resolutions=[{"path":"x","role":"CURRENT","resolution":"EXACT","owner_workstream":"NONE","path_class":"IMPLEMENTATION","allowed_authorities":["maintenance"]}])
     assert {"R042","R044"} <= ids(finish(p))
     # Records-only cannot suppress a closing claim through an empty/non-record path set.
     q = clone(observation(VALID)); mode(q, authority="records", completion="records-only"); q["linear"]["issues"][0]["stop_law"]="RECORDS_ONLY"; q["pull_request"]["body"] += "\nFixes MAS-28\nFixes MAS-28"; q["changed_paths"]["paths"]=[{"path":"x","change_type":"ADDED","old_path":None}]; q["path_ownership"]["resolutions"]=[{"path":"x","role":"CURRENT","resolution":"EXACT","owner_workstream":"NONE","path_class":"IMPLEMENTATION","allowed_authorities":["records"]}]
@@ -241,7 +243,7 @@ def test_native_issue_order_pagination_and_active_suppressed_conflict_state():
 
 def test_contradictory_payloads_are_retained_but_same_conflicts_reject_under_present():
     cases = []
-    o = clone(observation(VALID)); o["changed_paths"].update(state="CONTRADICTORY",diagnostics=["CONFLICT"],paths=[{"path":"x","change_type":"ADDED","old_path":None},{"path":"x","change_type":"MODIFIED","old_path":None}]); cases.append(("changed_paths",o))
+    o = clone(observation(VALID)); o["changed_paths"].update(state="CONTRADICTORY",diagnostics=["CONFLICT"],paths=[{"path":"x","change_type":"ADDED","old_path":None},{"path":"x","change_type":"MODIFIED","old_path":None}]); o["path_ownership"]["resolutions"] = [{"path":"x","role":"CURRENT","resolution":"EXACT","owner_workstream":"WS:AGENT-OS","path_class":"IMPLEMENTATION","allowed_authorities":["implementation"]}]; cases.append(("changed_paths",o))
     o = clone(observation(VALID)); o["agentos"].update(state="CONTRADICTORY",diagnostics=["CONFLICT"],workstreams=[{"key":"WS:AGENT-OS","waves":["A"]},{"key":"WS:AGENT-OS","waves":["B"]}]); cases.append(("agentos",o))
     o = clone(observation(VALID)); o["linear"].update(state="CONTRADICTORY",diagnostics=["CONFLICT"],issues=[{"id":"MAS-28","target_role":"DECLARED","project_id":None,"workstream_key":"WS:AGENT-OS","issue_type":"ARCHITECTURE","stop_law":"BUILT_NOT_PROVEN"},{"id":"MAS-28","target_role":"DECLARED","project_id":None,"workstream_key":"WS:AGENT-OS","issue_type":"DELIVERY","stop_law":"BUILT_NOT_PROVEN"}]); cases.append(("linear",o))
     for name, o in cases:
@@ -278,8 +280,8 @@ def test_contradictory_ownership_rename_conflict_is_retained_but_present_rejects
 
 def test_exact_macro_two_template_epoch_inventory_and_order_is_a_golden():
     o = clone(observation(VALID)); o["authoring_epoch"]["template_blobs"] = [
-        {"path":".github/PULL_REQUEST_TEMPLATE/design_migration.md","blob_sha":"27af158978b0ab51d7cbfdb376fa346a8d6da5e9"},
-        {"path":".github/pull_request_template.md","blob_sha":"b7bd0dc2d9a30960722d92974b4be088fd6a25ce"},
+        {"path":".github/PULL_REQUEST_TEMPLATE/design_migration.md","blob_sha":"ee4c7d1bf8d26d18218443c382e4e9cce2a8bd46"},
+        {"path":".github/pull_request_template.md","blob_sha":"4af0a1a3273ba4eefec99cad2441264705551835"},
     ]
     assert v.analyze(finish(o), MANIFEST)["semantic"]["verdict"] == "CONFORMANT"
     o["authoring_epoch"]["template_blobs"].reverse()
@@ -863,3 +865,322 @@ def test_stdio_write_all_handles_partial_zero_oserror_and_flush_without_tracebac
         failed_stderr = PlannedStream(actions)
         monkeypatch.setattr(cli.sys, "stderr", failed_stderr)
         assert cli.main(["x"]) == 3
+
+
+def reseal_report(report: dict) -> dict:
+    findings = report["semantic"]["findings"]
+    findings.sort(key=v._finding_sort_key)
+    report["semantic"]["verdict"] = (
+        "REFUSE_METADATA" if any(row["severity"] == "ERROR" for row in findings)
+        else "PARTIAL" if any(row["severity"] == "PARTIAL" for row in findings)
+        else "WARN" if findings else "CONFORMANT"
+    )
+    declaration = report["semantic"]["declaration"]
+    unresolved = report["semantic"]["unresolved_observation_classes"]
+    report["semantic"]["completeness"] = (
+        "UNAVAILABLE" if declaration["authoring_state"] == "MISSING"
+        else "DEGRADED" if unresolved or any(row["severity"] == "PARTIAL" for row in findings)
+        else "COMPLETE"
+    )
+    return finalize_report(report)
+
+
+def test_release_role_availability_owns_each_indeterminate_target_end_to_end():
+    value = clone(observation(VALID))
+    value["pull_request"].update(title="MAS-99", branch="feature/MAS-99")
+    value["pull_request"]["body"] += "\nFixes MAS-99"
+    value["linear"]["issues"] += [
+        {"id":"MAS-99","target_role":"DECLARED","project_id":None,"workstream_key":None,"issue_type":"DELIVERY","stop_law":"MERGE"},
+        {"id":"MAS-99","target_role":"UNKNOWN","project_id":None,"workstream_key":None,"issue_type":"UNKNOWN","stop_law":"UNKNOWN"},
+    ]
+    value["native_linkage"]["relationships"] = [{
+        "issue_id":"MAS-99","kind":"CLOSING","source":"BODY","state":"PRESENT",
+        "completion_transition":"ELIGIBLE",
+    }]
+    report = v.analyze(finish(value), MANIFEST)
+    rows = [row for row in report["semantic"]["findings"] if row["rule_id"] == "R026"]
+    assert [row["evidence"]["required_targets"] for row in rows] == [["MAS-99"]]
+    assert not ({"R027","R028","R039","R050","R051","R056"}
+                & {row["rule_id"] for row in report["semantic"]["findings"]})
+
+
+def test_release_parser_resolves_physical_state_before_authority_and_caps():
+    lazy_then_visible = "> quoted\n" + "\n".join(["Workstream: WS:AGENT-OS"] * 101)
+    values, _, _, defects, _ = v.parse_header(lazy_then_visible, MANIFEST["limits"])
+    assert values["Workstream"] == "WS:AGENT-OS"
+    assert "FIELD_SYNTAX@2:Workstream:LAZY_BLOCKQUOTE_CONTINUATION" in defects
+    with pytest.raises(v.ResourceLimitError) as caught:
+        v.parse_header(lazy_then_visible + "\nWorkstream: WS:AGENT-OS", MANIFEST["limits"])
+    assert (caught.value.key, caught.value.limit, caught.value.observed) == ("field_occurrences", 100, 101)
+
+    field_tail = "<!-- guidance\n-->Workstream: WS:AGENT-OS\n" + "\n".join(VALID.splitlines()[1:])
+    report = v.analyze(observation(field_tail), MANIFEST)
+    finding = next(row for row in report["semantic"]["findings"] if row["rule_id"] == "R003")
+    assert finding["location"] == "BODY:L2:Workstream"
+    assert report["semantic"]["declaration"]["workstream"] is None
+
+    relationship_tail = "<!-- guidance\n-->Fixes MAS-28\n" + VALID
+    assert ("MAS-28", "CLOSING", 2) in v.parse_header(relationship_tail, MANIFEST["limits"])[4]
+    internal = "\n".join(["Work<!--x-->stream: WS:AGENT-OS"] * 101)
+    with pytest.raises(v.ResourceLimitError) as caught:
+        v.parse_header(internal, MANIFEST["limits"])
+    assert (caught.value.key, caught.value.limit, caught.value.observed) == ("field_occurrences", 100, 101)
+
+
+def test_release_every_observation_string_rejects_lone_surrogates_before_canonicalization():
+    base = observation(VALID)
+    paths = []
+    def walk(value, path=()):
+        if isinstance(value, str):
+            paths.append(path)
+        elif isinstance(value, dict):
+            for key, child in value.items(): walk(child, path + (key,))
+        elif isinstance(value, list):
+            for index, child in enumerate(value): walk(child, path + (index,))
+    def locate(value, path):
+        for part in path[:-1]: value = value[part]
+        return value, path[-1]
+    walk(base)
+    for path in paths:
+        mutant = clone(base)
+        parent, leaf = locate(mutant, path)
+        parent[leaf] += "\ud800"
+        reason = "INVALID_BODY_ENCODING" if path == ("pull_request", "body") else "TYPE_MISMATCH"
+        with pytest.raises(v.ValidationError, match=reason):
+            v.analyze(mutant, MANIFEST)
+    mutant = clone(base)
+    mutant["receipt"]["snapshot_digests"]["linear\ud800"] = mutant["receipt"]["snapshot_digests"].pop("linear")
+    with pytest.raises(v.ValidationError, match="TYPE_MISMATCH"):
+        v.analyze(mutant, MANIFEST)
+
+
+def test_release_contradictory_rows_never_feed_dependent_reducers_or_irrelevant_r061():
+    irrelevant = clone(observation(VALID))
+    mode(irrelevant, workstream="NONE", portfolio="architecture_candidate", authority="architecture_candidate", completion="records-only")
+    irrelevant["linear"]["issues"][0].update(issue_type="ARCHITECTURE", workstream_key=None, stop_law="RECORDS_ONLY")
+    irrelevant["agentos"].update(state="CONTRADICTORY", diagnostics=["DUPLICATE_KEY"], workstreams=[
+        {"key":"WS:OTHER","waves":["A"]}, {"key":"WS:OTHER","waves":["B"]},
+    ])
+    report = v.analyze(finish(irrelevant), MANIFEST)
+    assert "AGENTOS" not in report["semantic"]["unresolved_observation_classes"]
+    assert not any(row["rule_id"] == "R061" and row["evidence"]["snapshot"] == "AGENTOS"
+                   for row in report["semantic"]["findings"])
+
+    linear = clone(observation(VALID))
+    linear["linear"].update(state="CONTRADICTORY", diagnostics=["ROW_CONFLICT"], issues=sorted([
+        {"id":"MAS-28","target_role":"DECLARED","project_id":None,"workstream_key":"WS:OTHER","issue_type":"ARCHITECTURE","stop_law":"PROOF"},
+        {"id":"MAS-28","target_role":"DECLARED","project_id":None,"workstream_key":"WS:AGENT-OS","issue_type":"DELIVERY","stop_law":"BUILT_NOT_PROVEN"},
+    ], key=lambda row: ((v._mas_key(row["id"]), row["target_role"]), v.canonical_json(row))))
+    found = {row["rule_id"] for row in v.analyze(finish(linear), MANIFEST)["semantic"]["findings"]}
+    assert {"R035","R061"} <= found and not ({"R026","R027","R028","R036"} & found)
+
+    ownership = clone(observation(VALID))
+    mode(ownership, workstream="NONE", portfolio="architecture_candidate", authority="architecture_candidate", completion="records-only")
+    ownership["linear"]["issues"][0].update(issue_type="ARCHITECTURE", workstream_key=None, stop_law="RECORDS_ONLY")
+    ownership["changed_paths"]["paths"] = [{"path":"x","change_type":"ADDED","old_path":None}]
+    ownership["path_ownership"].update(state="CONTRADICTORY", diagnostics=["ROW_CONFLICT"], resolutions=sorted([
+        {"path":"x","role":"CURRENT","resolution":"EXACT","owner_workstream":"NONE","path_class":"IMPLEMENTATION","allowed_authorities":["implementation"]},
+        {"path":"x","role":"CURRENT","resolution":"EXACT","owner_workstream":"NONE","path_class":"RECORDS","allowed_authorities":["architecture_candidate"]},
+    ], key=lambda row: ((row["path"].encode(), row["role"]), v.canonical_json(row))))
+    found = {row["rule_id"] for row in v.analyze(finish(ownership), MANIFEST)["semantic"]["findings"]}
+    assert {"R042","R061"} <= found and not ({"R041","R044","R045","R046","R047"} & found)
+
+
+def test_release_epoch_path_identity_and_partial_ownership_subset_laws():
+    duplicate = [
+        {"path":"templates/custom.md","blob_sha":"1" * 40},
+        {"path":"templates/custom.md","blob_sha":"2" * 40},
+    ]
+    for state in ("PRESENT", "PARTIAL"):
+        value = clone(observation(VALID))
+        value["authoring_epoch"].update(state=state, diagnostics=[] if state == "PRESENT" else ["PARTIAL"], template_blobs=duplicate)
+        with pytest.raises(v.ValidationError, match="INVALID_SNAPSHOT_STATE"):
+            v.analyze(value, MANIFEST)
+    value = clone(observation(VALID))
+    value["authoring_epoch"].update(state="CONTRADICTORY", diagnostics=["TEMPLATE_PATH_CONFLICT"], template_blobs=duplicate)
+    report = v.analyze(value, MANIFEST)
+    assert any(row["rule_id"] == "R061" and row["evidence"]["snapshot"] == "AUTHORING_EPOCH"
+               for row in report["semantic"]["findings"])
+
+    for state in ("PRESENT", "PARTIAL", "CONTRADICTORY"):
+        value = clone(observation(VALID))
+        value["changed_paths"]["paths"] = [{"path":"expected","change_type":"ADDED","old_path":None}]
+        value["path_ownership"].update(
+            state=state, diagnostics=[] if state == "PRESENT" else ["STATE"],
+            resolutions=[{"path":"unrelated","role":"CURRENT","resolution":"EXACT","owner_workstream":"NONE","path_class":"RECORDS","allowed_authorities":["records"]}],
+        )
+        with pytest.raises(v.ValidationError, match="INVALID_SNAPSHOT_STATE"):
+            v.analyze(finish(value), MANIFEST)
+    omitted = clone(observation(VALID))
+    mode(omitted, workstream="NONE", portfolio="maintenance_exception", authority="maintenance", completion="built-not-proven")
+    omitted["linear"]["issues"][0]["issue_type"] = "MAINTENANCE"
+    omitted["changed_paths"]["paths"] = [{"path":"expected","change_type":"ADDED","old_path":None}]
+    omitted["path_ownership"].update(state="PARTIAL", diagnostics=["MISSING_ROW"], resolutions=[])
+    found = {row["rule_id"] for row in v.analyze(finish(omitted), MANIFEST)["semantic"]["findings"]}
+    assert "R042" in found and "R044" not in found
+
+
+def test_release_partial_path_proofs_and_shared_records_only_predicate():
+    candidate = clone(observation(VALID))
+    mode(candidate, workstream="NONE", portfolio="architecture_candidate", completion="records-only")
+    candidate["pull_request"]["body"] = replace_field(candidate["pull_request"]["body"], "Authority", "bad value")
+    candidate["linear"]["issues"][0].update(issue_type="ARCHITECTURE", workstream_key=None, stop_law="RECORDS_ONLY")
+    candidate["changed_paths"]["paths"] = [{"path":"x","change_type":"ADDED","old_path":None}]
+    candidate["path_ownership"].update(state="PARTIAL", diagnostics=["PARTIAL"], resolutions=[
+        {"path":"x","role":"CURRENT","resolution":"EXACT","owner_workstream":"NONE","path_class":"IMPLEMENTATION","allowed_authorities":["implementation"]},
+    ])
+    row = next(row for row in v.analyze(finish(candidate), MANIFEST)["semantic"]["findings"] if row["rule_id"] == "R045")
+    assert row["evidence"] == {"authority":"UNKNOWN", "paths":[v.text_digest("x")]}
+
+    excluded = clone(observation(VALID))
+    excluded["changed_paths"]["paths"] = [{"path":"x","change_type":"ADDED","old_path":None}]
+    excluded["path_ownership"].update(state="PARTIAL", diagnostics=["PARTIAL"], resolutions=[
+        {"path":"x","role":"CURRENT","resolution":"EXACT","owner_workstream":"WS:AGENT-OS","path_class":"RECORDS","allowed_authorities":["records"]},
+    ])
+    assert "R041" in {row["rule_id"] for row in v.analyze(finish(excluded), MANIFEST)["semantic"]["findings"]}
+
+    creator = clone(observation(VALID))
+    mode(creator, workstream="WS:NEW", portfolio="creates_workstream", authority="records", completion="records-only")
+    creator["linear"]["issues"][0].update(issue_type="ROOT_RECOVERY", workstream_key=None, stop_law="RECORDS_ONLY")
+    creator["changed_paths"]["paths"] = [{"path":"x","change_type":"ADDED","old_path":None}]
+    creator["path_ownership"].update(state="PARTIAL", diagnostics=["PARTIAL"], resolutions=[
+        {"path":"x","role":"CURRENT","resolution":"EXACT","owner_workstream":"WS:NEW","path_class":"IMPLEMENTATION","allowed_authorities":["records"]},
+    ])
+    assert "R046" in {row["rule_id"] for row in v.analyze(finish(creator), MANIFEST)["semantic"]["findings"]}
+
+    tuples = [
+        ("tracked", "WS:AGENT-OS", "research", "WS:AGENT-OS", "research", "DELIVERY"),
+        ("architecture_candidate", "NONE", "architecture_candidate", "NONE", "architecture_candidate", "ARCHITECTURE"),
+        ("tracked", "WS:AGENT-OS", "records", "WS:AGENT-OS", "records", "DELIVERY"),
+    ]
+    for portfolio, workstream, authority, owner, allowed, issue_type in tuples:
+        value = clone(observation(VALID))
+        mode(value, workstream=workstream, portfolio=portfolio, authority=authority, completion="records-only")
+        value["linear"]["issues"][0].update(issue_type=issue_type, workstream_key=None if workstream == "NONE" else workstream, stop_law="RECORDS_ONLY")
+        value["pull_request"]["body"] += "\nFixes MAS-28"
+        value["changed_paths"]["paths"] = [{"path":"research/x","change_type":"ADDED","old_path":None}]
+        value["path_ownership"]["resolutions"] = [{
+            "path":"research/x","role":"CURRENT","resolution":"EXACT","owner_workstream":owner,
+            "path_class":"RECORDS","allowed_authorities":[allowed],
+        }]
+        value["native_linkage"]["relationships"] = [{
+            "issue_id":"MAS-28","kind":"CLOSING","source":"BODY","state":"PRESENT",
+            "completion_transition":"ELIGIBLE",
+        }]
+        report = v.analyze(finish(value), MANIFEST)
+        assert not ({"R052","R056"} & {row["rule_id"] for row in report["semantic"]["findings"]}), (portfolio, authority)
+        assert report["semantic"]["completion_interpretation"][0]["consistency"] == "MATCH"
+
+    disproved = clone(observation(VALID)); mode(disproved, authority="research", completion="records-only")
+    disproved["linear"]["issues"][0]["stop_law"] = "MERGE"
+    disproved["pull_request"]["body"] += "\nFixes MAS-28"
+    disproved["native_linkage"]["relationships"] = [{"issue_id":"MAS-28","kind":"CLOSING","source":"BODY","state":"PRESENT","completion_transition":"ELIGIBLE"}]
+    assert {"R052","R056"} <= {row["rule_id"] for row in v.analyze(finish(disproved), MANIFEST)["semantic"]["findings"]}
+
+
+def test_release_numeric_finding_order_is_shared_for_all_per_target_rules():
+    unavailable = clone(observation(VALID)); unavailable["pull_request"]["title"] = "MAS-10 MAS-2"
+    r026 = [row for row in v.analyze(finish(unavailable), MANIFEST)["semantic"]["findings"] if row["rule_id"] == "R026"]
+    assert [row["evidence"]["required_targets"][0] for row in r026] == ["MAS-2", "MAS-10"]
+
+    mismatch = clone(observation(VALID)); mismatch["pull_request"]["title"] = "MAS-10 MAS-2"
+    mismatch["linear"]["issues"] = [
+        {"id":"MAS-2","target_role":"SECONDARY","project_id":None,"workstream_key":None,"issue_type":"DELIVERY","stop_law":"MERGE"},
+        {"id":"MAS-10","target_role":"SECONDARY","project_id":None,"workstream_key":None,"issue_type":"DELIVERY","stop_law":"MERGE"},
+        mismatch["linear"]["issues"][0],
+    ]
+    mismatch["native_linkage"]["relationships"] = [
+        {"issue_id":"MAS-2","kind":"CLOSING","source":"BODY","state":"PRESENT","completion_transition":"ELIGIBLE"},
+        {"issue_id":"MAS-10","kind":"CLOSING","source":"BODY","state":"PRESENT","completion_transition":"ELIGIBLE"},
+    ]
+    r056 = [row for row in v.analyze(finish(mismatch), MANIFEST)["semantic"]["findings"] if row["rule_id"] == "R056"]
+    assert [row["evidence"]["target"] for row in r056] == ["MAS-2", "MAS-10"]
+
+    ambiguous = clone(mismatch)
+    ambiguous["native_linkage"].update(state="CONTRADICTORY", pagination_complete=False, diagnostics=["TRANSITION_CONFLICT"], relationships=[
+        {"issue_id":issue,"kind":"AUTO_LINK","source":source,"state":"PRESENT","completion_transition":transition}
+        for issue in ("MAS-2", "MAS-10")
+        for source, transition in (("BRANCH","ELIGIBLE"),("TITLE","INELIGIBLE"))
+    ])
+    r055 = [row for row in v.analyze(finish(ambiguous), MANIFEST)["semantic"]["findings"] if row["rule_id"] == "R055"]
+    assert [row["evidence"]["linear"] for row in r055] == sorted(
+        [row["evidence"]["linear"] for row in r055], key=v._mas_key
+    )
+
+
+def test_release_report_runtime_and_schema_close_expressible_reachability_forges():
+    clean = v.analyze(observation(VALID), MANIFEST)
+    runtime_forges = []
+    schema_forges = []
+
+    mutant = clone(clean)
+    mutant["semantic"]["completion_interpretation"][0].update(effect="UNKNOWN", consistency="INDETERMINATE")
+    runtime_forges.append(reseal_report(mutant)); schema_forges.append(runtime_forges[-1])
+    mutant = clone(clean)
+    mutant["semantic"]["completion_interpretation"].append({"issue_id":"MAS-99","effect":"COMPLETION_CAPABLE","declared_completion":None,"stop_law":"MERGE","consistency":"MATCH"})
+    runtime_forges.append(reseal_report(mutant)); schema_forges.append(runtime_forges[-1])
+
+    for rule, key in (("R026","required_targets"),("R028","target"),("R055","linear"),("R056","target")):
+        mutant = clone(v.analyze(case(rule), MANIFEST))
+        finding = next(row for row in mutant["semantic"]["findings"] if row["rule_id"] == rule)
+        finding["evidence"][key] = ["MAS-999"] if key == "required_targets" else "MAS-999"
+        runtime_forges.append(reseal_report(mutant))
+
+    for rule, key in (("R029","linear"),("R039","declared"),("R041","authority"),("R044","linear"),("R045","authority")):
+        mutant = clone(v.analyze(case(rule), MANIFEST))
+        finding = next(row for row in mutant["semantic"]["findings"] if row["rule_id"] == rule)
+        finding["evidence"][key] = "MAS-999" if key != "authority" else "deploy"
+        runtime_forges.append(reseal_report(mutant))
+        if rule in {"R029", "R041", "R045"}: schema_forges.append(runtime_forges[-1])
+
+    for rule, snapshot in (("R033","AGENTOS"),("R035","LINEAR"),("R042","PATH_OWNERSHIP"),("R043","CHANGED_PATHS")):
+        mutant = clone(v.analyze(case(rule), MANIFEST))
+        mutant["semantic"]["unresolved_observation_classes"].remove(snapshot)
+        runtime_forges.append(reseal_report(mutant)); schema_forges.append(runtime_forges[-1])
+
+    mutant = clone(v.analyze(case("R060"), MANIFEST))
+    finding = next(row for row in mutant["semantic"]["findings"] if row["rule_id"] == "R060")
+    finding["evidence"]["expected"] = clone(finding["evidence"]["observed"])
+    runtime_forges.append(reseal_report(mutant))
+
+    for key in ("issue_type", "portfolio_mode", "target_role"):
+        mutant = clone(v.analyze(case("R028"), MANIFEST))
+        next(row for row in mutant["semantic"]["findings"] if row["rule_id"] == "R028")["evidence"][key] = "BOGUS"
+        runtime_forges.append(reseal_report(mutant)); schema_forges.append(runtime_forges[-1])
+    for state in ("PRESENT", "BOGUS"):
+        mutant = clone(v.analyze(case("R035"), MANIFEST))
+        next(row for row in mutant["semantic"]["findings"] if row["rule_id"] == "R035")["evidence"]["snapshot_state"] = state
+        runtime_forges.append(reseal_report(mutant)); schema_forges.append(runtime_forges[-1])
+    mutant = clone(v.analyze(case("R056"), MANIFEST))
+    next(row for row in mutant["semantic"]["findings"] if row["rule_id"] == "R056")["evidence"]["target_role"] = "BOGUS"
+    runtime_forges.append(reseal_report(mutant)); schema_forges.append(runtime_forges[-1])
+
+    mutant = clone(v.analyze(case("R060"), MANIFEST)); row = next(row for row in mutant["semantic"]["findings"] if row["rule_id"] == "R060")
+    row["evidence"]["component"] = "BODY"; row["location"] = "RECEIPT:RULESET"
+    runtime_forges.append(reseal_report(mutant)); schema_forges.append(runtime_forges[-1])
+    mutant = clone(v.analyze(case("R061"), MANIFEST)); row = next(row for row in mutant["semantic"]["findings"] if row["rule_id"] == "R061")
+    row["evidence"]["snapshot"] = "AGENTOS"; row["location"] = "SNAPSHOT:LINEAR"
+    runtime_forges.append(reseal_report(mutant)); schema_forges.append(runtime_forges[-1])
+
+    for mutant in runtime_forges:
+        with pytest.raises(v.ValidationError, match="TYPE_MISMATCH"):
+            v.validate_report(mutant)
+    assert all(not REPORT_VALIDATOR.is_valid(mutant) for mutant in schema_forges)
+
+
+def test_release_atomic_writer_rejects_bool_and_overlong_write_results(monkeypatch, tmp_path):
+    for result in (True, 10):
+        monkeypatch.setattr(cli.os, "write", lambda _fd, _payload, result=result: result)
+        with pytest.raises(cli.PhaseFailure) as caught:
+            cli.write_atomic(tmp_path / f"bad-{result}.json", b"abc")
+        assert caught.value.reason == "OUTPUT_WRITE_FAILED"
+    class RawBuffer:
+        def __init__(self, result): self.result = result
+        def write(self, _payload): return self.result
+        def flush(self): pass
+    class RawStream:
+        def __init__(self, result): self.buffer = RawBuffer(result)
+    for result in (True, 999):
+        with pytest.raises(cli.PhaseFailure) as caught:
+            cli.write_stream(RawStream(result), b"abc")
+        assert caught.value.reason == "OUTPUT_WRITE_FAILED"
