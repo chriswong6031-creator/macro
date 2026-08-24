@@ -34,7 +34,7 @@ changed:
 verified:
   - claim: "K2-B and adjacent K1 contract tests pass."
     command: "python3 -m pytest tests/test_institutional_manager_intent_contract.py tests/test_evidence_foundation_contract.py tests/test_evidence_foundation_product_contract.py -q"
-    result: "142 passed; 3 pre-existing temporary-directory cleanup warnings."
+    result: "143 passed after the legacy retrospective-surface clarification; 3 pre-existing temporary-directory cleanup warnings."
   - claim: "Agent OS records are schema-valid."
     command: "python3 scripts/agentos.py validate"
     result: "0 errors; inherited repository warnings only."
@@ -53,6 +53,7 @@ do_not_redo:
   - "Do not create a second 13F, ETF, ARK, borrow, ownership, identity or payload store."
   - "Do not interpret a 13F clock as live flow, or a mechanical passive flow as research intent."
   - "Do not net the four planes or grant any of the five authority axes."
+  - "Do not rebrand legacy manager_quality, manager_trades, or fund_followability display context as K2-B prospective shrunk reliability."
 danger_areas:
   - "The fixture's SEC accession is a pointer, not an invitation to persist filing payloads or infer real-time trades."
   - "A same-complex multi-vehicle count must remain epoch-bound; a vehicle count is not independent research corroboration."

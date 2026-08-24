@@ -29,6 +29,10 @@ Form 13F observations require report-period-end, filing, publication, and knowab
 
 Reliability is a descriptive beta-binomial posterior keyed by complex × domain × horizon × action. Low-N observations shrink toward a declared prior. It has no oracle semantics and no cross-domain/horizon/action leakage.
 
+### Legacy retrospective context is not K2-B reliability
+
+`engine/manager_quality.py`, `engine/manager_trades.py`, and `engine/fund_followability.py` are adopted only as their existing legacy retrospective display/track-record context surfaces. Their quality grades, trade-history reliability read, and `follow_score` are not a prospective manager-complex × domain × horizon × action shrunk-reliability input; K2-B does not import, copy, normalize, or silently reinterpret them. This preserves their documented display-only/non-gate boundary and avoids creating a competing reliability owner. A future bridge requires a separate commission and point-in-time evaluation proof.
+
 All authority axes are literal false: `can_rank`, `can_gate`, `can_size`, `can_originate`, and `can_open_entry`. Model prose and caller-injected vocabulary are rejected. Compilation is deterministic, in-memory, and reports `persistence: none`.
 
 ## Source-backed fixture and hostile coverage

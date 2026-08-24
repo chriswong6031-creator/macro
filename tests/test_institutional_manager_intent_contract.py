@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+import inspect
 import json
 from pathlib import Path
 
@@ -14,6 +15,7 @@ from lib.institutional_intelligence import (
     reliability_posterior,
     validate,
 )
+import lib.institutional_intelligence as manager_intent
 
 
 FIXTURE = Path(__file__).parent / "fixtures" / "institutional_intelligence" / "source_backed_manager_intent_recipe.json"
@@ -132,3 +134,12 @@ def test_authority_and_compiler_are_deterministic_and_persistent_nowhere() -> No
     assert first == second and first["authority"] == ALL_FALSE_AUTHORITY and first["persistence"] == "none"
     bad = recipe(); bad["authority"]["can_rank"] = True
     assert_rejected(bad, "False was expected")
+
+
+def test_legacy_retro_grade_and_follow_surfaces_are_not_k2b_reliability_inputs() -> None:
+    source = inspect.getsource(manager_intent)
+    assert "engine.manager_quality" not in source
+    assert "engine.manager_trades" not in source
+    assert "engine.fund_followability" not in source
+    row = recipe()["reliability"][0]
+    assert {"domain", "horizon", "action", "prior_strength"} <= set(row)
