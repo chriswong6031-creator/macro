@@ -31,10 +31,17 @@ DOD_BUDGET_INGEST_STATUS_CONTRACT = "government_revenue.dod_budget_ingest_status
 SCHEMA_VERSION = "1.0.0"
 PARSER_VERSION = "dod-budget-fixture-parser.v1"
 EXTRACTOR_VERSION = "dod-budget-fixture-pages.v1"
-# Publication remains deliberately hard-disabled until a live acquisition lane
-# proves the durable object write and derives page text from those exact PDF
-# bytes with a production parser/extractor contract.
-DOD_BUDGET_PRODUCTION_ACTIVATION_ENABLED = False
+# Publication activated (Stage 2b, D6-A): a live acquisition lane now proves
+# the durable object write (fetch -> R2 put -> strict bounded readback,
+# collectors/dod_budget_live.py) and derives page text/words from those exact
+# PDF bytes through a production parser (parse_official_p1_document /
+# parse_official_r1_document) that emits ONLY through this module's public
+# wrappers, so every identity/semantic/state-hash invariant below is still
+# enforced by this same hermetic code. Gate-zero rulings (§5b.1) are frozen
+# law for that parser; a partial acquisition/storage/extraction receipt chain
+# is still a hard refusal (scripts/build_government_revenue.py:726 partial-
+# triad check is unaffected by this flag).
+DOD_BUDGET_PRODUCTION_ACTIVATION_ENABLED = True
 
 ALLOWED_SOURCE_HOSTS = {"comptroller.defense.gov", "comptroller.war.gov"}
 ALLOWED_EXHIBITS = {"p1", "r1"}
@@ -391,14 +398,26 @@ def _quantities_from_fields(fields: Mapping[str, str], *, fiscal_year: int) -> l
     return result
 
 
-def _line_identity(*, exhibit: str, component: str, appropriation_code: str, native_kind: str, native_value: str, fiscal_year: int) -> tuple[str, str]:
+def _line_identity(
+    *, exhibit: str, component: str, appropriation_code: str, native_kind: str,
+    native_value: str, fiscal_year: int, budget_activity: str,
+) -> tuple[str, str]:
+    # The budget-activity slug is REQUIRED (gate-zero census, §5b.1 ruling 4):
+    # R-1 genuinely reuses one Program Element across different budget
+    # activities within the same appropriation with different dollar amounts
+    # each time (29 real collisions found document-wide, e.g. PE 999999999
+    # "Classified Programs" printed once per BA as a per-BA catch-all; PE
+    # 0604776F at BA03 and BA04). Without a BA segment the identity grammar
+    # cannot tell these genuinely distinct lines apart. Adjudicated while no
+    # production data exists anywhere yet (last zero-cost moment).
     family = ":".join((
         "dod-family", exhibit, _slug(component), _slug(appropriation_code),
-        _slug(native_kind), _slug(native_value),
+        _slug(native_kind), _slug(native_value), _slug(budget_activity),
     ))
     line = ":".join((
         "dod", exhibit, _slug(component), _slug(appropriation_code),
-        _slug(native_kind), _slug(native_value), f"fy{fiscal_year}", DOCUMENT_STAGE,
+        _slug(native_kind), _slug(native_value), _slug(budget_activity),
+        f"fy{fiscal_year}", DOCUMENT_STAGE,
     ))
     return line, family
 
@@ -452,6 +471,7 @@ def _normalized_line(
         native_kind=native_kind,
         native_value=native_value,
         fiscal_year=fiscal_year,
+        budget_activity=fields["activity"],
     )
     observed = _utc_iso(receipt["observed_at"])
     row = {
@@ -507,12 +527,13 @@ def quantities_from_fields(fields: Mapping[str, str], *, fiscal_year: int) -> li
 
 def line_identity(
     *, exhibit: str, component: str, appropriation_code: str, native_kind: str,
-    native_value: str, fiscal_year: int,
+    native_value: str, fiscal_year: int, budget_activity: str,
 ) -> tuple[str, str]:
     """Public wrapper around ``_line_identity`` for external parsers."""
     return _line_identity(
         exhibit=exhibit, component=component, appropriation_code=appropriation_code,
         native_kind=native_kind, native_value=native_value, fiscal_year=fiscal_year,
+        budget_activity=budget_activity,
     )
 
 
