@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-24T05:28:33.599711+00:00",
-  "count": 1735,
+  "generated_at": "2026-08-24T06:33:40.029778+00:00",
+  "count": 1738,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -87,6 +87,25 @@
   ],
   "items": [
     {
+      "id": "marketdesk-olik15a1qfg-76d70b",
+      "title": "US Week Ahead August 24 August 30",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T03:15:13Z",
+      "summary_points": [
+        "**Core PCE Miss**: Core PCE YoY +3.24% (vs consensus +3.3%) signals potential easing inflation trajectory, directly impacting Fed policy expectations.",
+        "**Housing Weakness**: New home sales fell -2.3% (vs consensus -1.3%) and S&P home prices rose only 0.2% (vs consensus 0.1%), indicating cooling housing demand.",
+        "**Fed Policy Focus**: Barkin’s inflation remarks and Warsh’s Jackson Hole speech (on financial innovation) will shape near-term monetary policy interpretation of data."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-kqcvpfcwgqu-b3ca21",
       "title": "The 720 China Semis & CXMT initiation, Samsung Electronics, Japan SPE, China Matters, Jackson Hole, NEC, Li Ning, Zijin Mining",
       "institution": "Goldman Sachs",
@@ -104,6 +123,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ezgmwpcy4tm-f64bc5",
+      "title": "JCET (600584)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T03:15:09Z",
+      "summary_points": [
+        "**Q226 Revenue Miss & Earnings Revision**: Revenue missed estimates (12% YoY/13% QoQ vs.",
+        "282B Rmb), but GM beat due to AI-driven demand, cost control, and high-end AIDC mix; earnings revised up 11% YoY/9% QoQ for 2027-30E, though 2026E revenue cut 3% due to Q2 miss.",
+        "**AI Infrastructure Tailwinds**: Core growth catalyst from rising AI infrastructure demand; 2H26 growth driven by high-value AI product mix (chips/memory), advanced packaging capacity expansion, and rising utilization rates.",
+        "**Key Risks**: Critical exposure to faster/slower-than-expected Chinese semis capex, technology development pace, and advanced packaging shipment ramp.",
+        "**Valuation & Rating**: Neutral rating with 12-month target Rmb125 (42.8x 2030E P/E), reflecting 15% NI YoY and 11% OPM in 2031E; P/E declining to 27.7 amid debt inclusion in EV and low dividend yield (0.4%)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
@@ -146,6 +186,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ypkl6nqmosh-14d20e",
+      "title": "Index Strategy FTSE Global Equity Index Series Rebalancing Review and Flow Implications (September 2026)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T03:15:00Z",
+      "summary_points": [
+        "**Vietnam/Greece Market Reclassification**: Vietnam moved from Frontier to Secondary Emerging Market (10% initial tranche, phased 2027), Greece to Developed Market; triggers $15bn/$10bn gross passive flows (APAC/EM), with $4.1bn/$3.8bn net inflows (China, Korea/Taiwan, India top inflows; Japan top outflow).",
+        "**Tech Hardware/Semis Dominance**: Tech Hardware & Semis (+$3.4bn) and Tech Goods (+$1.7%) lead passive inflows; Consumer Staples (-20%) and Health Care (-13%) face outflows in FTSE China rebalancing, signaling sector rotation.",
+        "**Taiwan Concentration Risk**: FTSE Taiwan rebalancing amplifies Tech Hardware/Semis weight (+1.7%, TSMC-led) and EM exposure (37.7%), exposing portfolios to rebalancing shocks and geopolitical volatility (critical for risk management).",
+        "**APAC/EM Flow Allocation**: $4.1bn net passive inflows to APAC (China, Korea, Taiwan top beneficiaries) and $3.8bn to EM; Japan, Germany, Spain, Italy, Mexico see significant outflows, driving capital reallocation.",
+        "**Sector Rotation Dynamics**: Additions outperform deletions in developed/EM markets (higher EM volatility around announcements); Tech Hardware/Semis (6.7% weight) and Consumer Staples (1.3%) dominate flows, with geopolitical risks (e.g., Korea tech exposure) as key risk factors."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 22,
       "language": "en",
       "needs_metadata": false
     },
