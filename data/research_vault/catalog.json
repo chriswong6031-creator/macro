@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-24T10:26:46.058422+00:00",
-  "count": 1750,
+  "generated_at": "2026-08-24T11:16:57.925832+00:00",
+  "count": 1752,
   "institutions": [
     "13F Summary",
     "Academy Securities",
@@ -282,6 +282,26 @@
         "**AI Infrastructure Tailwinds**: Core growth catalyst from rising AI infrastructure demand; 2H26 growth driven by high-value AI product mix (chips/memory), advanced packaging capacity expansion, and rising utilization rates.",
         "**Key Risks**: Critical exposure to faster/slower-than-expected Chinese semis capex, technology development pace, and advanced packaging shipment ramp.",
         "**Valuation & Rating**: Neutral rating with 12-month target Rmb125 (42.8x 2030E P/E), reflecting 15% NI YoY and 11% OPM in 2031E; P/E declining to 27.7 amid debt inclusion in EV and low dividend yield (0.4%)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-5dwsgxpu6vv-c81a79",
+      "title": "Global Week Ahead August 24 – August 30",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T03:15:08Z",
+      "summary_points": [
+        "**South Korea Rate Cut**: 2.75% forecast vs consensus 3.0%, signaling potential policy shift ahead of US PCE data.",
+        "**Mexico Economic Activity**: 2.8% YoY vs consensus 1.9%, indicating robust regional growth diverging from global slowdown narratives.",
+        "**France HICP**: 2.7% YoY vs consensus 2.6%, marking most bullish out-of-consensus inflation signal in Eurozone.",
+        "**US Inflation Signals**: Core PCE YoY (GS 0.2 vs consensus 0.1) and Personal Income MoM (GS 0.3 vs consensus 0.2) show stronger-than-expected readings."
       ],
       "tags": [],
       "tickers": [],
@@ -597,6 +617,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ztg4alfhtdp-3a05df",
+      "title": "European Week Ahead August 24 August 30",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-23T21:46:08Z",
+      "summary_points": [
+        "**French Inflation Surge**: Headline HICP to rise to 2.7% (July 2.4%) driven by services (6.9% mom nsa) and energy (17.3% vs 12.5% July), fueling Eurozone inflation trajectory.",
+        "**ECB Policy Signals**: Schnabel’s Jackson Hole panel on financial innovation critical for assessing monetary policy stance and market expectations.",
+        "**Spanish Inflation Confirmation**: Headline HICP to 4.6% (3.9% July), energy at 17.6% (fuel +13% diesel), reinforcing Eurozone inflation momentum."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
