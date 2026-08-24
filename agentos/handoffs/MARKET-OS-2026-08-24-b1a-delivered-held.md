@@ -152,3 +152,55 @@ Implementation shipped as three commits (adjudication DEC; contract + compiler
 records commit, one held PR, one session — sonnet builder and opus designer in
 parallel lanes with disjoint file ownership, both packets independently
 re-verified by the orchestrator before commit.
+
+---
+
+# Amendment — Sol review round 1 repairs (2026-08-24, same session/carrier)
+
+Sol reviewed head 8b6e3f48, accepted the CI repair, and returned seven
+semantic blockers with REQUEST CHANGES, same carrier only. All seven were
+repaired on claude/market-os-b1a-20260824 in two parallel lanes (sonnet
+builder: blockers 1/4/6/7 contract-side; opus designer: blockers 2/3/5
+view-side), each packet independently re-verified by the orchestrator.
+
+- Blocker 1: `legs.state` added as a REQUIRED axis compiled verbatim from
+  `rec.ladder.state`/`rec.ladder.dir`/`tech.chg_1d`; required legs now
+  {state, change}; evidence demoted to supporting metadata in the schema
+  description. Discrimination test: blob says uptrend, contract says
+  downtrend, page shows the contract value; the section has no blob fallback.
+- Blocker 2: build_security_state() reads legs.evidence (compilation,
+  denominator, recipe_id, evidence_block_refs) and the six coverage counts;
+  integration test compiles the golden through engine.security_state and
+  asserts every receipt survives into the view model.
+- Blocker 3: R1–R9 render check/description/artifact/reader/values_read/
+  result/code verbatim (view-model key is `reads`, not `values` — Jinja
+  resolves `.values` to the dict method).
+- Blocker 4: `_is_last_good_eligible` = identity_proof.state==PROVEN AND
+  dominant_degradation!=COMPILER_FAILURE; ineligible prior carries forward its
+  own last_good unchanged; two-consecutive-failure regression S→F1(=S)→F2(=S);
+  stored shape {generated_at, content_sha256, dominant_degradation, reason}
+  matches the renderer exactly, and the banner names the prior's degradation.
+- Blocker 5: false provenance sentences deleted repo-wide; new two-register
+  copy — untagged lines are quoted, `worked out here`/`counted here` tags mark
+  the page's own deterministic projections, with per-dialog footers (EN+ZH)
+  exposing the basis.
+- Blocker 6: catalyst emits {kind: ESTIMATED_WINDOW, window_start:
+  calendar_end+77d, window_end: +105d, authoritative: false, basis}; no date
+  field exists; leg is PARTIAL when estimate-only; UI renders "Estimated
+  window — not an announced date".
+- Blocker 7: *_legs_available counts strictly AVAILABLE; new
+  required/optional_legs_nonblocking count AVAILABLE|NOT_APPLICABLE|
+  NOT_COVERED; exact-count tests pin all six fields.
+
+Verified (orchestrator, merged head): tests/test_security_state_contract.py
+50 passed; tests/test_security_state_view_model.py 15 passed;
+tests/test_ticker_pages.py 125 passed + the 2 known pre-existing failures;
+contract-delta 0 introduced / 0 inherited; non-AAPL MSFT render byte-identical
+to HEAD; origin/main merged in (not reset) with legacy-jobs.yml a clean union.
+
+Known gaps riding to Sol: producer copy in _build_change_leg breaks the glance
+tier ("workspace", untranslated state token in ZH) — consumer quotes rather
+than rewrites, fix belongs contract-side; 390px captures are width-clamped,
+not device-emulated; last-good/compiler-failure capture families use
+display-level overrides on a real compiled golden (compiler has no failing
+input fixture).
