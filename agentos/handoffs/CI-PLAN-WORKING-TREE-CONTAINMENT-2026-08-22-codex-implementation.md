@@ -302,12 +302,12 @@ invalidate them. The draft `HOLD-FOR-SOL` barrier remains binding throughout.
 ## 5. Current-main reconciliation and reproof (2026-08-24)
 
 The sole existing PR #6286 carrier was reconciled by merge only; it was never
-rebased, reset, widened, or replaced. The final local proof merge before this
-handoff refresh is `07955ce0590a1ce98c4095a2aaacf68dc4886338`, with parents
-`8e3f8df3a78c8cf85664338ada0b4ff8e46b57d0` and current main
-`46dbe25b843a9933c8787af5b2a64bae50caec54`. A prior completed proof was
-discarded when `.github/ci/legacy-jobs.yml` moved on main; this is the required
-new current-manifest proof cycle.
+rebased, reset, widened, or replaced. The frozen current-manifest code tree is
+`9a194a30e428856c4c986db93c967d4a2e6cf1f1`, with parents
+`1b68259be59e88e9bd740b675fc27d0e42514e5c` and current main
+`7424670ebe92e0324f6922563f03f48f347ebbdd`. Earlier completed proofs were
+discarded when direct planner inputs moved on main; this is the required final
+current-manifest proof cycle. This handoff correction is receipt-only.
 
 The four frozen W3 implementation/test blobs are byte-identical before and
 after each reconciliation:
@@ -323,7 +323,7 @@ Local reproof on the reconciled current manifest:
 
 ```text
 python3 -m pytest tests/test_ci_plan_workflow.py tests/test_ci_pack.py tests/test_audit_unrun_tests.py -q
-184 passed, 3 temporary-cleanup warnings, 684.11s
+184 passed, 3 temporary-cleanup warnings, 838.51s
 
 python3 -m pytest tests/test_ci_pack.py tests/test_ci_plan_workflow.py -q \
   -k 'inventory or virtual_existence or depth_two_merge or sparse_profile or bounded_exact_tree or partial_clone_keeps_history or full_and_sparse'
