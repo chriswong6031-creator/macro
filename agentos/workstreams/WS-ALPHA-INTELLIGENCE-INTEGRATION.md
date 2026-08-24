@@ -24,6 +24,11 @@ owns_paths:
   - tests/fixtures/evidence_foundation/
   - tests/test_evidence_foundation_contract.py
   - tests/test_evidence_foundation_product_contract.py
+  - research/alpha_intelligence/K2B_INSTITUTIONAL_MANAGER_INTENT_CONTRACT_FREEZE_2026-08-24.md
+  - contracts/institutional_intelligence/
+  - lib/institutional_intelligence.py
+  - tests/fixtures/institutional_intelligence/
+  - tests/test_institutional_manager_intent_contract.py
 depends_on:
   - WS:PROPHET-US-V4-RECOVERY
   - WS:PROPHET-CONDITIONAL-FUSION
@@ -171,8 +176,12 @@ waves:
       closure authorizes no dependent product or runtime wave.
   - id: k2
     title: K2 Institutional Intelligence — manager ontology + intent contract (B), adapter pilots (C)
-    status: todo
+    status: in_progress
     depends_on: [k1]
+    next_action: >
+      K2-B contract/fixture packet is commissioned by the Chairman on 2026-08-24.
+      It remains contract-only and requires exact-head review before any K2-C
+      adapter consideration.
   - id: k3
     title: K3 Opportunity Semantics — propagation contract (D), opportunity evidence vector (E)
     status: todo
@@ -194,6 +203,10 @@ waves:
     status: todo
     depends_on: [k6]
 next_action: >
+  K2-B manager-complex and research-intent contract packet is in exact-head
+  review. It has no adapter, persistence, rank/gate/size/origination/entry
+  authority, or deployment obligation.
+
   K1 Evidence Foundation v1.0.0 is ACCEPTED / DONE at exact source head
   b7b861a288491ba776dda0087b6153c346e9aabc and merge
   696afbb57483577770ac48c57f7eeafd5344cf17. Preserve the adverse physical-store

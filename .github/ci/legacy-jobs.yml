@@ -699,6 +699,11 @@ jobs:
           python -m pytest
           tests/test_evidence_foundation_contract.py
           tests/test_evidence_foundation_product_contract.py -q
+      # K2-B is a pure contract/fixture compiler which deliberately does not import
+      # an institutional owner or materialize a store. Keeping its hostile contract
+      # suite adjacent to K1 makes the pointer-only boundary visible in CI.
+      - name: K2-B manager-complex and research-intent hostile contracts
+        run: python -m pytest tests/test_institutional_manager_intent_contract.py -q
       # Four detector ids exist as byte-identical strings in THREE implementations
       # with three separate threshold stores: scripts/build_fundamental_forensics.py
       # (inline FRACTION literals, Filing Forensics workbench),

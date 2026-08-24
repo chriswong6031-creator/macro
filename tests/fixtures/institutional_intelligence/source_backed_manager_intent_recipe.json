@@ -1,0 +1,31 @@
+{
+  "schema": "institutional_intelligence.manager_intent_recipe.v1",
+  "recipe_id": "mri_2775a5b60825741e331f88fa14d0b2603aa4a02f838c9e3ffb7012297860b6b4",
+  "authority": {"can_rank": false, "can_gate": false, "can_size": false, "can_originate": false, "can_open_entry": false},
+  "manager_complexes": [
+    {"manager_complex_id": "mcx_example_adviser", "identity_epoch": "mce_2026q2"}
+  ],
+  "vehicles": [
+    {"vehicle_id": "veh_example_13f", "manager_complex_id": "mcx_example_adviser", "manager_identity_epoch": "mce_2026q2", "vehicle_class": "concentrated_discretionary_active"},
+    {"vehicle_id": "veh_example_sidecar", "manager_complex_id": "mcx_example_adviser", "manager_identity_epoch": "mce_2026q2", "vehicle_class": "thematic_passive"}
+  ],
+  "observations": [
+    {
+      "event_id": "obs_13f_q1", "vehicle_id": "veh_example_13f", "plane": "manager_research_intent", "observation_kind": "reported_holding_change", "source_kind": "form_13f",
+      "theme_id": "theme_ai_infrastructure", "theme_identity_epoch": "theme_epoch_2026q2", "report_period_end": "2026-03-31T00:00:00Z", "filed_at": "2026-05-15T20:00:00Z", "published_at": "2026-05-15T20:00:00Z", "knowable_at": "2026-05-15T20:00:00Z", "stale_after_days": 180,
+      "shares_outstanding": {"state": "unsupported", "value": null}, "coverage": {"state": "partial", "rights": "allowed"},
+      "evidence_ref": {"reference_id": "efr_0f6c6c5982b088121fcacb92f3f1e37db8a9b949a6fb8c2d541bccc6ed572014", "owner": "institutional_13f_catalog", "object_id": "13f_filing_0001398344_26_013841", "accession": "0001398344-26-013841", "source_url": "https://www.sec.gov/Archives/edgar/data/1792167/000139834426013841/", "published_at": "2026-05-15T20:00:00Z", "knowable_at": "2026-05-15T20:00:00Z"}
+    },
+    {
+      "event_id": "obs_passive_flow", "vehicle_id": "veh_example_sidecar", "plane": "fund_flow_pressure", "observation_kind": "mechanical_flow", "source_kind": "sponsor_holdings", "theme_id": "theme_ai_infrastructure", "theme_identity_epoch": "theme_epoch_2026q2", "shares_outstanding": {"state": "absent", "value": null}, "coverage": {"state": "partial", "rights": "allowed"},
+      "evidence_ref": {"reference_id": "efr_20c2d2259ba893c126c3296246e0e0aeec987c6759d5352dc9ea644a8a2c3a94", "owner": "etf_holdings", "object_id": "sponsor_snapshot_example_20260515", "accession": "0001398344-26-013842", "source_url": "https://example.invalid/source-backed-passive-flow", "published_at": "2026-05-15T20:00:00Z", "knowable_at": "2026-05-15T20:00:00Z"}
+    }
+  ],
+  "campaign_transitions": [
+    {"from": "IDLE", "to": "INITIATED"}, {"from": "INITIATED", "to": "ACCUMULATING"}, {"from": "ACCUMULATING", "to": "PAUSED"}, {"from": "PAUSED", "to": "CLOSED"}
+  ],
+  "reliability": [
+    {"manager_complex_id": "mcx_example_adviser", "domain": "ai_infrastructure", "horizon": "quarterly", "action": "reported_add", "successes": 1, "trials": 2, "prior_rate": 0.5, "prior_strength": 20, "oracle_semantics": false},
+    {"manager_complex_id": "mcx_example_adviser", "domain": "ai_infrastructure", "horizon": "annual", "action": "reported_add", "successes": 1, "trials": 2, "prior_rate": 0.5, "prior_strength": 20, "oracle_semantics": false}
+  ]
+}
