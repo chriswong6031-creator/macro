@@ -1541,7 +1541,11 @@ def _public_budget_line(row: dict) -> dict:
     source = row.get("source")
     if isinstance(source, dict):
         out["source"] = {
-            "publisher": "Office of the Under Secretary of Defense (Comptroller)",
+            # Pass through the build-time-validated publisher (the graph
+            # builder pins it against the collection receipt); a hardcoded
+            # era string here silently misstated the source after the
+            # Department of War rebrand.
+            "publisher": source.get("publisher"),
             "source_url": _dod_budget_source_url(source.get("source_url")),
             "document_sha256": source.get("document_sha256"),
             "receipt_id": source.get("receipt_id"),
