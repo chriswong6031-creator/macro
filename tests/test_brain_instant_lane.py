@@ -950,12 +950,17 @@ def test_w0b_context_collision_compares_expected_entity_to_sanitized_actual_rece
         "planner_version": "w1b.native_fact_planner.v1",
         "registry_digest": "d" * 64,
         "canonical_entity": {"type": "security", "id": "SEC:US-XNAS-AAOI"},
+        "identity_admission": {
+            "requested_symbol": "AAOI", "alias_interpretation": "current_alias_only",
+            "canonical_security_id": "SEC:US-XNAS-AAOI",
+        },
         "effective_context": {
             "symbol": "AAOI", "precedence_reason": "ambient_context",
             "ambient_used": True,
         },
         "facts": [{
             "clause_id": "c1", "display_order": 0, "field_id": "stage.current",
+            "entity": {"type": "security", "id": "SEC:US-XNAS-AAOI"},
             "fact_fingerprint": fingerprint, "status": "available", "reason_code": None,
             "unit": "stage_code", "source": {"source_id": "stage_analysis.screener"},
             "as_of": "2026-08-23", "freshness": {"state": "fresh"},
@@ -1127,6 +1132,7 @@ def test_w0b_native_failure_projection_binds_top_level_degraded_state(tmp_path):
             "ambient_used": False,
         },
         "canonical_entity": None,
+        "identity_admission": None,
         "facts": [],
         "clauses": [],
         "relationship_receipt": None,
@@ -1134,6 +1140,25 @@ def test_w0b_native_failure_projection_binds_top_level_degraded_state(tmp_path):
         "failure": {"status": "unavailable", "reason_code": "identity_unavailable"},
     })
     assert failure is not None
+    hostile_failure = {
+        "schema": "brain.native_fact_receipt.v1",
+        "route": "instant/native-fact",
+        "planner_version": "w1b.native_fact_planner.v1",
+        "registry_digest": None,
+        "effective_context": {
+            "symbol": "AAPL", "precedence_reason": "explicit_entity_wins",
+            "ambient_used": False,
+        },
+        "canonical_entity": None,
+        "identity_admission": {
+            "requested_symbol": "AAPL", "alias_interpretation": "current_alias_only",
+            "canonical_security_id": "SEC:US-XNAS-AAPL",
+        },
+        "facts": [], "clauses": [], "relationship_receipt": None,
+        "rank_resolution_failure": None,
+        "failure": {"status": "unavailable", "reason_code": "identity_unavailable"},
+    }
+    assert bench._safe_native_fact_receipt(hostile_failure) is None
     spec = specs[3]
     row = {
         "probe": spec["prompt_id"], "run": 1, "label": "warm", "lane": "fast",
@@ -1393,13 +1418,19 @@ def test_w0b_native_receipt_projection_rejects_path_like_or_extra_proof_metadata
             "type": "security", "id": "SEC:US-XNAS-AAPL",
             "owner_artifact": "/Users/private/path",
         },
+        "identity_admission": {
+            "requested_symbol": "AAPL", "alias_interpretation": "current_alias_only",
+            "canonical_security_id": "SEC:US-XNAS-AAPL",
+        },
         "effective_context": {
             "symbol": "AAPL", "precedence_reason": "explicit_request",
             "ambient_used": False,
         },
         "facts": [{
             "clause_id": "c1", "display_order": 0,
-            "field_id": "stage.current", "fact_fingerprint": "a" * 64,
+            "field_id": "stage.current",
+            "entity": {"type": "security", "id": "SEC:US-XNAS-AAPL"},
+            "fact_fingerprint": "a" * 64,
             "status": "available", "reason_code": None, "unit": "stage_code",
             "source": {"source_id": "/Users/private/source"},
             "as_of": "2026-08-23", "freshness": {"state": "fresh"},
@@ -1412,7 +1443,9 @@ def test_w0b_native_receipt_projection_rejects_path_like_or_extra_proof_metadata
     safe["registry_digest"] = "b" * 64
     safe["facts"] = [{
         "clause_id": "c1", "display_order": 0,
-        "field_id": "stage.current", "fact_fingerprint": "a" * 64,
+        "field_id": "stage.current",
+        "entity": {"type": "security", "id": "SEC:US-XNAS-AAPL"},
+        "fact_fingerprint": "a" * 64,
         "status": "available", "reason_code": None, "unit": "stage_code",
         "source": {"source_id": "stage_analysis.screener"},
         "as_of": "2026-08-23", "freshness": {"state": "fresh"},
@@ -1427,7 +1460,124 @@ def test_w0b_native_receipt_projection_rejects_path_like_or_extra_proof_metadata
     assert projected["canonical_entity"] == {
         "type": "security", "id": "SEC:US-XNAS-AAPL",
     }
+    assert projected["facts"][0]["entity"] == projected["canonical_entity"]
     assert "/Users" not in json.dumps(projected)
+
+    wrong_symbol = json.loads(json.dumps(safe))
+    wrong_symbol["effective_context"]["symbol"] = "INOD"
+    assert bench._safe_native_fact_receipt(wrong_symbol) is None
+
+    missing_admission = json.loads(json.dumps(safe))
+    missing_admission.pop("identity_admission")
+    assert bench._safe_native_fact_receipt(missing_admission) is None
+
+    wrong_admission_symbol = json.loads(json.dumps(safe))
+    wrong_admission_symbol["identity_admission"]["requested_symbol"] = "INOD"
+    assert bench._safe_native_fact_receipt(wrong_admission_symbol) is None
+
+    wrong_alias_kind = json.loads(json.dumps(safe))
+    wrong_alias_kind["identity_admission"]["alias_interpretation"] = "id_suffix_guess"
+    assert bench._safe_native_fact_receipt(wrong_alias_kind) is None
+
+    wrong_fact_entity = json.loads(json.dumps(safe))
+    wrong_fact_entity["facts"][0]["entity"]["id"] = "SEC:US-XNAS-AAOI"
+    assert bench._safe_native_fact_receipt(wrong_fact_entity) is None
+
+
+def test_w0b_native_rank_proof_binds_relationship_origin_and_industry_target():
+    raw = {
+        "schema": "brain.native_fact_receipt.v1",
+        "route": "instant/native-fact",
+        "planner_version": "w1b.native_fact_planner.v1",
+        "registry_digest": "d" * 64,
+        "canonical_entity": {"type": "security", "id": "SEC:US-XNAS-AAPL"},
+        "identity_admission": {
+            "requested_symbol": "AAPL", "alias_interpretation": "current_alias_only",
+            "canonical_security_id": "SEC:US-XNAS-AAPL",
+        },
+        "effective_context": {
+            "symbol": "AAPL", "precedence_reason": "explicit_request",
+            "ambient_used": False,
+        },
+        "facts": [{
+            "clause_id": "c1", "display_order": 0,
+            "field_id": "industry.rank.percentile",
+            "entity": {"type": "industry", "id": "software"},
+            "fact_fingerprint": "a" * 64, "status": "available", "reason_code": None,
+            "unit": "percentile", "source": {"source_id": "stage_analysis.screener"},
+            "as_of": "2026-08-23", "freshness": {"state": "fresh"},
+        }],
+        "clauses": [{
+            "clause_id": "c1", "display_order": 0,
+            "field_id": "industry.rank.percentile", "fact_fingerprint": "a" * 64,
+            "status": "available", "receipt_kind": "typed_fact",
+        }],
+        "relationship_receipt": {
+            "from": {"type": "security", "id": "SEC:US-XNAS-AAPL"},
+            "to": {"type": "industry", "id": "software"},
+            "status": "available", "reason_code": None,
+            "relationship_fingerprint": "b" * 64,
+            "source": {"source_id": "stage_analysis.screener"},
+            "as_of": "2026-08-23",
+        },
+    }
+    projected = bench._safe_native_fact_receipt(raw)
+    assert projected is not None
+    assert projected["relationship"]["from_security_id"] == "SEC:US-XNAS-AAPL"
+    assert projected["facts"][0]["entity"] == {"type": "industry", "id": "software"}
+
+    wrong_origin = json.loads(json.dumps(raw))
+    wrong_origin["relationship_receipt"]["from"]["id"] = "SEC:US-XNAS-AAOI"
+    assert bench._safe_native_fact_receipt(wrong_origin) is None
+
+    wrong_target = json.loads(json.dumps(raw))
+    wrong_target["facts"][0]["entity"]["id"] = "hardware"
+    assert bench._safe_native_fact_receipt(wrong_target) is None
+
+
+@pytest.mark.parametrize(("symbol", "canonical_id"), [
+    ("FI", "SEC:US-XNAS-FISV"),
+    ("MRSH", "SEC:US-XNYS-MMC"),
+])
+def test_w0b_native_proof_uses_rename_safe_w1a_identity_admission(symbol, canonical_id):
+    raw = {
+        "schema": "brain.native_fact_receipt.v1",
+        "route": "instant/native-fact",
+        "planner_version": "w1b.native_fact_planner.v1",
+        "registry_digest": "d" * 64,
+        "canonical_entity": {"type": "security", "id": canonical_id},
+        "identity_admission": {
+            "requested_symbol": symbol, "alias_interpretation": "current_alias_only",
+            "canonical_security_id": canonical_id,
+        },
+        "effective_context": {
+            "symbol": symbol, "precedence_reason": "explicit_request",
+            "ambient_used": False,
+        },
+        "facts": [{
+            "clause_id": "c1", "display_order": 0,
+            "field_id": "market.price.last",
+            "entity": {"type": "security", "id": canonical_id},
+            "fact_fingerprint": "a" * 64, "status": "unavailable",
+            "reason_code": "owner_unavailable", "unit": "currency",
+            "source": {"source_id": "quote_resolution"},
+            "as_of": None, "freshness": {"state": "unknown"},
+        }],
+        "clauses": [{
+            "clause_id": "c1", "display_order": 0,
+            "field_id": "market.price.last", "fact_fingerprint": "a" * 64,
+            "status": "unavailable", "receipt_kind": "typed_fact",
+        }],
+    }
+    projected = bench._safe_native_fact_receipt(raw)
+    assert projected is not None
+    assert projected["actual_effective_entity"] == symbol
+    assert projected["canonical_entity"]["id"] == canonical_id
+
+    wrong_canonical = json.loads(json.dumps(raw))
+    wrong_canonical["canonical_entity"]["id"] = "SEC:US-XNAS-AAOI"
+    wrong_canonical["facts"][0]["entity"]["id"] = "SEC:US-XNAS-AAOI"
+    assert bench._safe_native_fact_receipt(wrong_canonical) is None
 
 
 def test_w0b_native_route_with_malformed_proof_fails_the_run(tmp_path, monkeypatch):
@@ -1635,6 +1785,24 @@ def test_w1b_native_planner_natural_price_slot_beats_ambient(message):
     assert plan.effective_context_reason == "explicit_entity_wins"
 
 
+@pytest.mark.parametrize(("message", "symbol", "fields"), [
+    ("What's PRICE trading at?", "PRICE", ("market.price.last",)),
+    ("What's QUOTE trading at?", "QUOTE", ("market.price.last",)),
+    ("What's STAGE trading at?", "STAGE", ("market.price.last",)),
+    ("What's STAGE price?", "STAGE", ("market.price.last",)),
+    ("What's PRICE Stage?", "PRICE", ("stage.current",)),
+    ("What's QUOTE Stage?", "QUOTE", ("stage.current",)),
+])
+def test_w1b_native_planner_explicit_suffix_slot_field_word_never_yields_to_ambient(
+        message, symbol, fields):
+    plan = nf.plan_native_facts(message, {"symbol": "MSFT"})
+    assert plan is not None
+    assert plan.symbol == symbol
+    assert plan.explicit_entity is True
+    assert plan.effective_context_reason == "explicit_entity_wins"
+    assert plan.field_ids == fields
+
+
 @pytest.mark.parametrize(("message", "field_id"), [
     ("What's PRICE?", "market.price.last"),
     ("How much is PRICE?", "market.price.last"),
@@ -1771,7 +1939,10 @@ class _NativeIdentity:
             raise ValueError("unknown identity")
         if entity.type == "security":
             from engine.intelligence_workspace.contracts import CanonicalEntity
-            return (CanonicalEntity("security", "SEC:US-XNAS-" + (entity.symbol or "AAPL"), "us_equity"),)
+            return (CanonicalEntity(
+                "security", "SEC:US-XNAS-" + (entity.symbol or "AAPL"), "us_equity",
+                alias_interpretation="current_alias_only",
+            ),)
         from engine.intelligence_workspace.contracts import CanonicalEntity
         return (CanonicalEntity("industry", entity.id, "us_industry"),)
 
@@ -2020,6 +2191,10 @@ def _gateway_native_execution():
         "planner_version": "w1b.native_fact_planner.v1",
         "registry_digest": "registry-digest",
         "canonical_entity": {"type": "security", "id": "SEC:US-XNAS-INOD"},
+        "identity_admission": {
+            "requested_symbol": "INOD", "alias_interpretation": "current_alias_only",
+            "canonical_security_id": "SEC:US-XNAS-INOD",
+        },
         "effective_context": {
             "symbol": "INOD", "explicit_entity": True,
             "reason": "explicit_entity_wins", "precedence_reason": "explicit_entity_wins",

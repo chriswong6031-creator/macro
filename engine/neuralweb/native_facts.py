@@ -138,8 +138,8 @@ class NativeFactExecution:
     clauses: tuple[dict[str, Any], ...]
 
 
-def _symbol_candidates(message: str) -> tuple[tuple[str, ...], bool]:
-    candidates: list[str] = []
+def _symbol_candidates(message: str) -> tuple[tuple[tuple[str, int, int], ...], bool]:
+    candidates: list[tuple[str, int, int]] = []
     suppressed_uppercase_ambiguity = False
     for match in _SYMBOL_TOKEN.finditer(message):
         token = match.group(1)
@@ -174,13 +174,14 @@ def _symbol_candidates(message: str) -> tuple[tuple[str, ...], bool]:
         # Dollar syntax is an explicit entity assertion regardless of whether
         # the letters also form request grammar; W1-A still proves identity.
         if raw.startswith("$"):
-            candidates.append(token.upper())
+            candidates.append((token.upper(), match.start(1), match.end(1)))
             continue
         # In "What's PRICE?" / "How much is STAGE?" the token is the
         # registered field phrase itself, not an entity merely because it
         # follows a natural request prefix. Consume that grammar before the
         # ticker-slot exception. Dollar syntax above remains authoritative.
-        if natural_price_prefix_slot and token.lower() in _FIELD_GRAMMAR_WORDS:
+        if (natural_price_prefix_slot and not suffix_slot
+                and token.lower() in _FIELD_GRAMMAR_WORDS):
             continue
         # Native routing is precision-first. A bare lower-case word ("beta")
         # or an upper-case unsupported field after "and" must never steal an
@@ -227,8 +228,27 @@ def _symbol_candidates(message: str) -> tuple[tuple[str, ...], bool]:
         # unambiguous ticker slot; W1-A remains the final identity proof.
         if not token.isupper() or not proven_slot:
             continue
-        candidates.append(token.upper())
-    return tuple(dict.fromkeys(candidates)), suppressed_uppercase_ambiguity
+        candidates.append((token.upper(), match.start(1), match.end(1)))
+    return tuple(candidates), suppressed_uppercase_ambiguity
+
+
+def _without_explicit_entity_spans(
+    message: str,
+    candidates: tuple[tuple[str, int, int], ...],
+    symbol: str,
+) -> str:
+    """Mask a selected entity token before registered-field extraction.
+
+    A spelling can lawfully be both a current ticker and a field word. Once an
+    occurrence wins an explicit ticker slot (``STAGE trading at``), that same
+    occurrence cannot independently request the Stage field. Spaces preserve
+    every remaining field's source order without introducing new grammar.
+    """
+    masked = list(message)
+    for candidate, start, end in candidates:
+        if candidate == symbol:
+            masked[start:end] = " " * (end - start)
+    return "".join(masked)
 
 
 def _context_symbol(context: Mapping[str, Any] | None) -> str | None:
@@ -386,13 +406,18 @@ def plan_native_facts(message: str, context: Mapping[str, Any] | None = None) ->
         return None
     if _ANALYTICAL.search(message) or _HISTORICAL.search(message) or _NON_US_QUALIFIED.search(message):
         return None
-    fields = _field_hits(message)
-    if fields is None:
-        return None
-    explicit, ambiguous_suppressed_symbol = _symbol_candidates(message)
+    candidate_spans, ambiguous_suppressed_symbol = _symbol_candidates(message)
     if ambiguous_suppressed_symbol:
         return None
+    explicit = tuple(dict.fromkeys(candidate for candidate, _, _ in candidate_spans))
     if len(explicit) > 1:
+        return None
+    field_message = (
+        _without_explicit_entity_spans(message, candidate_spans, explicit[0])
+        if explicit else message
+    )
+    fields = _field_hits(field_message)
+    if fields is None:
         return None
     if _has_unsupported_residue(message, explicit):
         return None
@@ -447,6 +472,7 @@ def _unavailable_execution(
         "planner_version": NATIVE_FACT_PLANNER_VERSION,
         "registry_digest": registry_digest,
         "canonical_entity": None,
+        "identity_admission": None,
         "effective_context": {
             "symbol": plan.symbol,
             "explicit_entity": plan.explicit_entity,
@@ -555,6 +581,8 @@ def execute_native_fact_plan(
         canonical_security = resolver.identity_normalizer.normalize_many(
             (EntityRequest(type="security", symbol=plan.symbol, universe="us_equity"),)
         )[0]
+        if canonical_security.alias_interpretation != "current_alias_only":
+            raise ValueError("W1-A did not prove a current symbol alias")
     except Exception:
         return _unavailable_execution(
             plan, registry_digest=None, started=started, reason="identity_unavailable", clock=clock,
@@ -703,6 +731,11 @@ def execute_native_fact_plan(
         "planner_version": NATIVE_FACT_PLANNER_VERSION,
         "registry_digest": registry_digest,
         "canonical_entity": {"type": canonical_security.type, "id": canonical_security.id},
+        "identity_admission": {
+            "requested_symbol": plan.symbol,
+            "alias_interpretation": canonical_security.alias_interpretation,
+            "canonical_security_id": canonical_security.id,
+        },
         "effective_context": {
             "symbol": plan.symbol,
             "explicit_entity": plan.explicit_entity,

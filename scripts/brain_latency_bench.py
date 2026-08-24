@@ -603,6 +603,18 @@ def _safe_native_fact_receipt(value: Any) -> dict | None:
             raise ValueError("native proof industry identity is invalid")
         return raw
 
+    def safe_entity(raw: Any) -> dict[str, str]:
+        if not isinstance(raw, dict):
+            raise ValueError("native proof entity is invalid")
+        entity_type = raw.get("type")
+        if entity_type == "security":
+            entity_id = safe_token(raw.get("id"), _SECURITY_ID_RE)
+        elif entity_type == "industry":
+            entity_id = safe_industry_id(raw.get("id"))
+        else:
+            raise ValueError("native proof entity type is invalid")
+        return {"type": entity_type, "id": entity_id}
+
     effective = value.get("effective_context")
     effective = effective if isinstance(effective, dict) else {}
     try:
@@ -615,15 +627,35 @@ def _safe_native_fact_receipt(value: Any) -> dict | None:
 
         canonical_raw = value.get("canonical_entity")
         canonical = None
+        identity_raw = value.get("identity_admission")
+        identity_admission = None
+        if identity_raw is not None:
+            if not isinstance(identity_raw, dict) or set(identity_raw) != {
+                "requested_symbol", "alias_interpretation", "canonical_security_id",
+            }:
+                raise ValueError("native identity admission proof is invalid")
+            identity_admission = {
+                "requested_symbol": safe_token(
+                    identity_raw.get("requested_symbol"), re.compile(r"^[A-Z]{1,5}$")
+                ),
+                "alias_interpretation": enum(
+                    identity_raw.get("alias_interpretation"), frozenset({"current_alias_only"})
+                ),
+                "canonical_security_id": safe_token(
+                    identity_raw.get("canonical_security_id"), _SECURITY_ID_RE
+                ),
+            }
+            if identity_admission["requested_symbol"] != symbol:
+                raise ValueError("native identity admission differs from effective symbol")
         if canonical_raw is not None:
             if not isinstance(canonical_raw, dict) or canonical_raw.get("type") != "security":
                 raise ValueError("native canonical entity is invalid")
-            canonical = {
-                "type": "security",
-                "id": safe_token(canonical_raw.get("id"), _SECURITY_ID_RE),
-            }
+            canonical = safe_entity(canonical_raw)
             if digest is None:
                 raise ValueError("native canonical proof lacks registry digest")
+            if (identity_admission is None
+                    or identity_admission["canonical_security_id"] != canonical["id"]):
+                raise ValueError("native identity admission differs from canonical security")
 
         raw_facts = value.get("facts") or []
         if not isinstance(raw_facts, list):
@@ -643,6 +675,7 @@ def _safe_native_fact_receipt(value: Any) -> dict | None:
                 "clause_id": safe_token(fact.get("clause_id"), _CLAUSE_ID_RE),
                 "display_order": display_order,
                 "field_id": enum(fact.get("field_id"), _NATIVE_FIELD_IDS),
+                "entity": safe_entity(fact.get("entity")),
                 "fact_fingerprint": hex64(fact.get("fact_fingerprint")),
                 "status": enum(fact.get("status"), _NATIVE_STATUSES),
                 "reason_code": enum(
@@ -701,6 +734,9 @@ def _safe_native_fact_receipt(value: Any) -> dict | None:
         if relationship_raw is not None:
             if not isinstance(relationship_raw, dict):
                 raise ValueError("native relationship proof is invalid")
+            relationship_from = safe_entity(relationship_raw.get("from"))
+            if relationship_from.get("type") != "security":
+                raise ValueError("native relationship source entity is invalid")
             relationship_to = relationship_raw.get("to")
             industry_id = None
             if relationship_to is not None:
@@ -725,6 +761,7 @@ def _safe_native_fact_receipt(value: Any) -> dict | None:
             relationship = {
                 "status": relationship_status,
                 "reason_code": relationship_reason,
+                "from_security_id": relationship_from["id"],
                 "industry_id": industry_id,
                 "relationship_fingerprint": hex64(
                     relationship_raw.get("relationship_fingerprint")
@@ -757,11 +794,13 @@ def _safe_native_fact_receipt(value: Any) -> dict | None:
 
         if failure is not None:
             if (canonical is not None or facts or clauses or relationship is not None
-                    or rank_failure is not None):
+                    or rank_failure is not None or identity_admission is not None):
                 raise ValueError("native failure receipt carries successful proof")
         else:
-            if digest is None or canonical is None or not clauses:
+            if digest is None or canonical is None or identity_admission is None or not clauses:
                 raise ValueError("native success receipt lacks typed proof")
+            if relationship is not None and relationship["from_security_id"] != canonical["id"]:
+                raise ValueError("native relationship origin differs from canonical security")
             typed_clauses = {
                 clause["clause_id"]: clause
                 for clause in clauses if clause["receipt_kind"] == "typed_fact"
@@ -777,6 +816,16 @@ def _safe_native_fact_receipt(value: Any) -> dict | None:
                     )
                 ):
                     raise ValueError("native typed fact/clause proof differs")
+                if fact["field_id"] == "industry.rank.percentile":
+                    expected_entity = (
+                        {"type": "industry", "id": relationship["industry_id"]}
+                        if relationship is not None and relationship["status"] == "available"
+                        else None
+                    )
+                    if expected_entity is None or fact["entity"] != expected_entity:
+                        raise ValueError("native industry-rank fact differs from relationship")
+                elif fact["entity"] != canonical:
+                    raise ValueError("native security fact differs from canonical security")
             for clause in clauses:
                 kind = clause["receipt_kind"]
                 reference = clause["receipt_reference"]
@@ -796,6 +845,7 @@ def _safe_native_fact_receipt(value: Any) -> dict | None:
             "actual_precedence_reason": precedence,
             "ambient_used": ambient_used,
             "canonical_entity": canonical,
+            "identity_admission": identity_admission,
             "facts": facts,
             "clauses": clauses,
             "relationship": relationship,
@@ -822,6 +872,7 @@ def _is_safe_native_fact_projection(value: Any) -> bool:
             "clause_id": fact["clause_id"],
             "display_order": fact["display_order"],
             "field_id": fact["field_id"],
+            "entity": fact["entity"],
             "fact_fingerprint": fact["fact_fingerprint"],
             "status": fact["status"],
             "reason_code": fact["reason_code"],
@@ -836,6 +887,9 @@ def _is_safe_native_fact_projection(value: Any) -> bool:
             raw_relationship = {
                 "status": relationship["status"],
                 "reason_code": relationship["reason_code"],
+                "from": {
+                    "type": "security", "id": relationship["from_security_id"],
+                },
                 "to": ({"type": "industry", "id": relationship["industry_id"]}
                        if relationship["industry_id"] is not None else None),
                 "relationship_fingerprint": relationship["relationship_fingerprint"],
@@ -853,6 +907,7 @@ def _is_safe_native_fact_projection(value: Any) -> bool:
                 "ambient_used": value["ambient_used"],
             },
             "canonical_entity": value["canonical_entity"],
+            "identity_admission": value["identity_admission"],
             "facts": facts,
             "clauses": value["clauses"],
             "relationship_receipt": raw_relationship,
