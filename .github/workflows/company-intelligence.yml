@@ -43,6 +43,8 @@ jobs:
             engine/earnings_transcript_intake.py
             engine/earnings_release
             engine/earnings_narrative
+            engine/neuralweb/__init__.py
+            engine/neuralweb/company_intelligence_reader.py
             engine/fundamental_forensics
             engine/press
             lib/config.py

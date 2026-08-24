@@ -370,6 +370,24 @@ class SecForensicsCollector:
             max_response_bytes=max_response_bytes,
         )
 
+    def retrieve_historical_submissions_file(
+        self,
+        cik: int | str,
+        source_name: str,
+        *,
+        max_response_bytes: int | None = None,
+    ) -> tuple[bytes, dict[str, str | None]]:
+        """Fetch one CIK-bound historical Submissions shard without persistence.
+
+        Broad-SEC recovery admits exact source bytes into its own immutable
+        source plane.  Keep this retrieval-only so it cannot create a second
+        local raw copy or move the current Submissions ``latest`` pointer.
+        """
+        return self._download_json_bytes(
+            historical_submissions_url(cik, source_name),
+            max_response_bytes=max_response_bytes,
+        )
+
     def fetch(
         self,
         cik: int | str,

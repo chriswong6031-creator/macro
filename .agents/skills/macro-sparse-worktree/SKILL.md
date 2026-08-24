@@ -25,8 +25,12 @@ Then:
 The hook:
 
 - no-ops unless the donor is GitHub `mastermindx-market-intelligence/macro`
-- converts only a linked worktree under a session root (`.warp/worktrees/` and siblings)
-- otherwise mints a sparse tree under `<donor>/.warp/worktrees/<name>/` with `git worktree add --no-checkout`
+- reuses only a carrier whose unambiguous Warp conversation/task identity
+  matches its identity-bound branch and destination; the branch/path use a
+  SHA-256 digest of the complete identifier, never the raw identifier. Terminal
+  and session IDs are not ownership proof. An identity-less start receives a
+  new collision-resistant carrier rather than the old fixed `warp-session`
+- mints a sparse tree under `<donor>/.warp/worktrees/<name>/` with `git worktree add --no-checkout`; destination/branch collisions and failed origin fetches fail closed, preserving the foreign carrier untouched
 - omits `data/`, `site/`, `mockups/`, `verify_shots/` from `config/sparse_worktree.json`
 - preserves an existing sparse selection such as `add site`
 
