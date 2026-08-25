@@ -8,11 +8,12 @@ claim: >
   historical S0 fixture credential is additionally forbidden from reuse until secure
   rotation or revocation because it crossed a model-visible boundary on 2026-08-23.
 falsifier: >
-  file:agentos/discoveries/DSC-PERSONAL-PRO-INGRESS-PRINCIPAL-GAP.md:1 Re-read Slack
-  membership for C0BRUL9F2V7 and C0BSGABKBFY plus workspace users, and produce the
-  current non-secret app/bot identity receipts. This claim is false once the correct
-  disposable S0 fixture principal is active and secret-safe for S0-R1 and the dedicated
-  Relay principal is installed and confined to the reviewed C1 channel boundary.
+  #6401 agentos/discoveries/DSC-PERSONAL-PRO-INGRESS-PRINCIPAL-GAP.md:1
+  Re-read Slack membership for C0BRUL9F2V7 and C0BSGABKBFY plus workspace users,
+  and produce the current non-secret app/bot identity receipts. This claim is false
+  once the correct disposable S0 fixture principal is active and secret-safe for
+  S0-R1 and the dedicated Relay principal is installed and confined to the reviewed
+  C1 channel boundary.
 so_what: >
   Crypto P0B must not attempt Executive admission yet. First restore/provision the
   two reviewed Slack principals and complete the independent S0-R1 carrier proof and
