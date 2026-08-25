@@ -1,0 +1,73 @@
+# Approval receipt (RIG V1 §7/§12) — exists ONLY when manifest status is approved.
+# This is what a migration packet's RIG-RECEIPT line and a registry compliant-flip stand on.
+#
+# XPV2-SC-R3B.2 US Sector Central six-view workspace. Sol final ruling APPROVE_WITH_CONDITIONS
+# (verdict.yml, this directory), issued after the four FRESH final critic seats returned
+# product_regression PASS_WITH_CONDITIONS, visual_taste PASS, mobile_accessibility
+# PASS_WITH_CONDITIONS and data_authority PASS_WITH_CONDITIONS with zero surviving
+# candidate-owned blockers, majors or minors.
+#
+# artifact_sha below is the proposal frozen_sha and equals the artifact_sha of BOTH formal
+# critic receipts. The approved candidate is
+# mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/proposal/MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html,
+# sha256 4adb4b6245e8e4aa5b68c850a615461327c0a5d2e672e4c203d6ba32a3b8d53c, 5,506,871 bytes.
+#
+# conditions and overrides are copied verbatim from verdict.yml — mechanically generated from
+# that file, not retyped. reviewer identities are copied verbatim from reviews/*.yml and the
+# author identity verbatim from manifest.yml; all three are distinct (RIG §6/§7).
+#
+# This receipt approves REFERENCE LAW ONLY. It is not production deployment, and it does not
+# authorize R3C implementation.
+schema: mastermind.rig_approval.v1
+reference_id: mastermind-xpv2-sector-r3b-2
+approved_at: '2026-08-24'
+verdict: APPROVE_WITH_CONDITIONS
+artifact_sha: d0830a374795925ee1e55b66c0cc42e329ac172d
+authority:
+  identity: Sol (AI CEO, mastermindx-market-intelligence) as design authority for the Sector Central reference
+    line -- FINAL APPROVAL + CARRIER RECONCILIATION ruling 2026-08-24, under protected Sol Skillpack mastermindx-market-intelligence/Mastermind@4d323d03e4151449a4b76abfdfefca1d56825fde
+    (mastermind.sol_skillpack.v1 v1.0.0). Authored zero candidate bytes and occupied no critic seat.
+  role: design_authority
+reviewers:
+- identity: codex-product-regression-final-fresh-2026-08-24
+  role: product_regression
+- identity: Fresh independent Codex Visual / Taste critic commissioned by Chris under Sol dispatch
+  role: visual_taste
+author:
+  identity: XPV2-SC-R3B.2 final surgical closure -- returning R3B/R3B.1 Fable orchestrator with delegated
+    Opus design + Sonnet build/QA lanes (COMMISSION.md, Sol + Chairman 2026-08-23)
+conditions:
+- id: R3C-HEATMAP-LEGIBILITY
+  text: 'Heatmap colour-field glyph legibility remains UNMEASURED, never PASS. No seat in this cycle held
+    a valid blended/painted-substrate method, and the Mobile seat explicitly declined an invalid flat-surface
+    substitution (MA2-002). R3C must obtain an appropriate composited-background or human-equivalent determination
+    before production acceptance; failure blocks shipping until a bounded treatment is adjudicated by
+    design authority.
+
+    '
+- id: R3C-AUTH-PREMIUM
+  text: 'R3C must prove real auth settlement, /premiumdata/sector_central.json authorization, successful
+    hydrate, preview preservation for the ungated state, and 401 / 403 / offline / malformed behavior
+    against the live surface. The static reference cannot establish any of these and does not claim to.
+
+    '
+- id: R3C-TIME-MACHINE
+  text: 'R3C must prove live Time Machine behavior end to end: manifest, episode feed, per-period and
+    per-year chunks, and the empty, missing and failure paths. Recorded-not-executed evidence is not production
+    proof.
+
+    '
+- id: R3C-VALIDATED-21D
+  text: 'R3C must resolve the broader production-owned "Forward track record: Validated" wording, the
+    unproven-21d horizon, and the overloaded customer word "validated" -- while preserving the candidate''s
+    explicit and narrower disclosure, "Context only · evidence proven at 5d · never sizes decisions",
+    together with its native ZH twin and the visual separation from explicitly labelled 21d figures.
+
+    '
+- id: R3C-NO-UNSUPPORTED-INVENTION
+  text: 'Baskets thin/gateable disclosure and any correction/revision UI remain FORBIDDEN until real producer
+    contracts exist. No implementation may invent local producer truth, local rank, local state or local
+    score to satisfy a surface.
+
+    '
+overrides: []

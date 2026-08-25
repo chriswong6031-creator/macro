@@ -11,8 +11,17 @@
 schema: mastermind.rig_manifest.v1
 reference_id: mastermind-xpv2-sector-r3b-2
 scope: full
-status: in_review
-# status: in_review remains unchanged through the Sol-commissioned pre-final emoji
+status: approved
+# status: approved -- Sol FINAL APPROVAL + CARRIER RECONCILIATION ruling 2026-08-24,
+# APPROVE_WITH_CONDITIONS (verdict.yml + approval.yml in this directory, both binding
+# frozen_sha d0830a374795925ee1e55b66c0cc42e329ac172d). The five carried conditions are
+# R3C-owned: heatmap legibility UNMEASURED (never PASS), auth//premiumdata/ proof, live
+# Time Machine proof, production Validated/21d semantics, and the standing prohibition on
+# unsupported Baskets/correction-UI invention. No frozen_sha moved on approval; the
+# candidate bytes are unchanged. This approves REFERENCE LAW only -- not production
+# deployment, and it does not authorize R3C implementation.
+#
+# History: status was in_review through the Sol-commissioned pre-final emoji
 # reconciliation. The historical provisional freeze `80347cd6...` / candidate
 # `ea2e09b8...` remains in Git history. The corrected candidate is
 # `4adb4b6245e8e4aa5b68c850a615461327c0a5d2e672e4c203d6ba32a3b8d53c`
