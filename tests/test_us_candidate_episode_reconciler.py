@@ -638,6 +638,37 @@ def test_turn_watch_receipt_hashes_the_exact_once_read_bytes(tmp_path: Path, mon
     assert load_candidate_episode_store(_episode_root(tmp_path))[0]["security_id"] == "SEC:US-XNAS-ALFA"
 
 
+def test_source_status_files_share_canonical_paths_and_digests_with_source_hashes(
+    tmp_path: Path, monkeypatch,
+):
+    """A readdressed receipt must not assert two digests for one disclosed source file."""
+    _seed_sources(tmp_path)
+    receipt = _run_nightly(tmp_path, monkeypatch)
+    file_rows = [
+        file_row
+        for source_receipt in receipt["source_receipts"]
+        for file_row in source_receipt.get("files", [])
+    ]
+    assert file_rows
+    for file_row in file_rows:
+        assert receipt["source_hashes"][file_row["path"]] == file_row["sha256"]
+
+    generation = _generation(tmp_path)
+    receipt_path = generation / "latest_receipt.json"
+    forged = json.loads(receipt_path.read_text())
+    turn_watch = next(
+        source_receipt
+        for source_receipt in forged["source_receipts"]
+        if source_receipt["source"] == "turn_watch"
+    )
+    turn_watch["files"][0]["sha256"] = "sha256:" + "0" * 64
+    receipt_path.write_text(canonical_json(forged) + "\n")
+    _readdress_current_generation(tmp_path)
+
+    with pytest.raises(EpisodeContractError, match="source file receipt.*source hash"):
+        load_candidate_episode_store(_episode_root(tmp_path))
+
+
 def test_correction_receipt_hashes_the_exact_once_read_bytes(tmp_path: Path, monkeypatch):
     """A correction re-read after parsing could bind the receipt to unexecuted bytes."""
     _seed_sources(tmp_path)

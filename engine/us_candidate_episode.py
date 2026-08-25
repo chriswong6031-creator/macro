@@ -12,7 +12,7 @@ from decimal import Decimal, InvalidOperation
 from hashlib import sha256
 import json
 import math
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import re
 from typing import Mapping, Sequence
 
@@ -658,6 +658,96 @@ def _merge_events(existing: Sequence[Mapping[str, object]], additions: Sequence[
     return merged, tuple(sorted(new, key=_event_order))
 
 
+def _assert_ordinary_source_retry_matches(
+    committed: Mapping[str, object], observation: Mapping[str, object], *,
+    security: str, company: str, epoch: str, occurred_at: str, known_at: str,
+    source_system: str, source_schema: str, source_event_id: str,
+    source_receipt: str, definition_era: str,
+) -> None:
+    """Require a stable ordinary source key to reproduce its committed event bytes."""
+    event_type = str(committed["event_type"])
+    if event_type == "OPENED":
+        anchor = observation.get("anchor")
+        if not isinstance(anchor, Mapping):
+            raise EpisodeContractError("ordinary source key reused with different committed bytes")
+        canonical = canonical_anchor(anchor)
+        opened_at = max(_timestamp(canonical["time"], field="anchor.time"), known_at)
+        committed_payload = committed.get("payload")
+        if not isinstance(committed_payload, Mapping):
+            raise EpisodeContractError("ordinary source key reused with different committed bytes")
+        anchor_payload = dict(canonical)
+        if anchor.get("source_receipt") is not None:
+            anchor_payload["source_receipt"] = anchor["source_receipt"]
+        payload: dict[str, object] = {
+            "security_id": security,
+            "company_id": company,
+            "ticker_at_observation": observation.get("ticker_at_observation"),
+            "identity_epoch": epoch,
+            "identity_epoch_state": observation.get("identity_epoch_state"),
+            "identity_spec_schema": observation.get("identity_spec_schema"),
+            "identity_spec_hash": observation.get("identity_spec_hash"),
+            "structural_anchor": anchor_payload,
+            "intake_class": observation.get("intake_class"),
+            "opened_at": opened_at,
+            "opened_session": opened_at[:10],
+            "rearm_of": committed_payload.get("rearm_of"),
+        }
+    elif event_type in {"OBSERVED", "EXPERT_EVENT_ATTACHED"}:
+        committed_security, committed_epoch, committed_anchor, _generation = _parse_episode_id(
+            committed["episode_id"]
+        )
+        retry_anchor = observation.get("anchor")
+        if (
+            security != committed_security
+            or epoch != committed_epoch
+            or (
+                isinstance(retry_anchor, Mapping)
+                and anchor_token(retry_anchor) != committed_anchor
+            )
+        ):
+            raise EpisodeContractError("ordinary source key reused with different committed bytes")
+        expert = observation.get("expert_event_id")
+        expected_type = "EXPERT_EVENT_ATTACHED" if expert is not None else "OBSERVED"
+        payload = {
+            "intake_class": observation.get("intake_class"),
+            "source_relationship": {
+                "source_system": source_system,
+                "source_schema": source_schema,
+                "source_event_id": source_event_id,
+            },
+        }
+        if expected_type == "EXPERT_EVENT_ATTACHED":
+            if (
+                source_system != "entry_radar"
+                or source_schema != "mastermind.entry_event.v1"
+                or not isinstance(expert, str)
+                or not expert
+                or expert != source_event_id
+            ):
+                raise EpisodeContractError(
+                    "expert attachment requires the exact Radar mastermind.entry_event.v1 event_id"
+                )
+            payload["expert_event_id"] = expert
+        event_type = expected_type
+    else:
+        return
+    expected = make_event(
+        event_type=event_type,
+        episode_id=str(committed["episode_id"]),
+        source_system=source_system,
+        source_schema=source_schema,
+        source_event_id=source_event_id,
+        occurred_at=occurred_at,
+        known_at=known_at,
+        recorded_at=str(committed["recorded_at"]),
+        source_receipt=source_receipt,
+        definition_era=definition_era,
+        payload=payload,
+    )
+    if canonical_json(expected) != canonical_json(committed):
+        raise EpisodeContractError("ordinary source key reused with different committed bytes")
+
+
 def reconcile_observations(
     events: Sequence[Mapping[str, object]],
     observations: Sequence[Mapping[str, object]],
@@ -667,13 +757,20 @@ def reconcile_observations(
 ) -> ReconcileResult:
     """Deterministically map normalized source observations to immutable events."""
     base = tuple(validate_events(events))
+    source_key_owners: dict[tuple[str, str, str], dict[str, object]] = {}
+    for event in base:
+        source_key = (
+            str(event["source_system"]),
+            str(event["source_schema"]),
+            str(event["source_event_id"]),
+        )
+        if source_key in source_key_owners:
+            raise EpisodeContractError("duplicate immutable source key in event ledger")
+        source_key_owners[source_key] = event
     projected = project_events(base)
     additions: list[dict[str, object]] = []
     suppressions: list[dict[str, object]] = []
-    seen_source_keys = {
-        (str(event["source_system"]), str(event["source_schema"]), str(event["source_event_id"]))
-        for event in base
-    }
+    suppressed_by_source_key: dict[tuple[str, str, str], dict[str, object]] = {}
     ordered = sorted(observations, key=lambda value: (str(value.get("known_at")), str(value.get("source_system")), str(value.get("source_event_id"))))
     for observation in ordered:
         security = _security_id(observation.get("security_id"))
@@ -695,22 +792,47 @@ def reconcile_observations(
         if not all(isinstance(value, str) and value for value in (source_system, source_schema, source_event_id, receipt)):
             raise EpisodeContractError("observation requires source identity and receipt")
         source_key = (source_system, source_schema, source_event_id)
-        if source_key in seen_source_keys:
+        committed = source_key_owners.get(source_key)
+        if committed is not None:
+            if committed["event_type"] in {"OPENED", "OBSERVED", "EXPERT_EVENT_ATTACHED"}:
+                _assert_ordinary_source_retry_matches(
+                    committed, observation, security=security, company=company, epoch=epoch,
+                    occurred_at=occurred, known_at=known, source_system=source_system,
+                    source_schema=source_schema, source_event_id=source_event_id,
+                    source_receipt=receipt, definition_era=definition_era,
+                )
+            else:
+                raise EpisodeContractError("ordinary source key is owned by a non-ordinary event")
             continue
-        seen_source_keys.add(source_key)
+        committed_suppression = suppressed_by_source_key.get(source_key)
+        if committed_suppression is not None:
+            expected_suppression = _suppression(
+                observation, str(committed_suppression["reason"])
+            )
+            if canonical_json(expected_suppression) != canonical_json(committed_suppression):
+                raise EpisodeContractError(
+                    "ordinary source key reused with different committed bytes"
+                )
+            continue
         anchor = observation.get("anchor")
         canonical = canonical_anchor(anchor) if anchor is not None else None  # type: ignore[arg-type]
         active = next((row for row in projected if row["security_id"] == security and row["identity_epoch"] == epoch and row["episode_state"] == ACTIVE_STATE), None)
         if active is not None and canonical is not None and canonical != canonical_anchor(active["structural_anchor"]):
-            suppressions.append(_suppression(observation, "ACTIVE_EPISODE_DIFFERENT_ANCHOR"))
+            suppression = _suppression(observation, "ACTIVE_EPISODE_DIFFERENT_ANCHOR")
+            suppressions.append(suppression)
+            suppressed_by_source_key[source_key] = suppression
             continue
         if active is None and canonical is None:
-            suppressions.append(_suppression(observation, "MISSING_STRUCTURAL_ANCHOR"))
+            suppression = _suppression(observation, "MISSING_STRUCTURAL_ANCHOR")
+            suppressions.append(suppression)
+            suppressed_by_source_key[source_key] = suppression
             continue
         if active is None:
             prior = [row for row in projected if row["security_id"] == security and row["identity_epoch"] == epoch]
             if prior and any(canonical_anchor(row["structural_anchor"]) == canonical for row in prior):
-                suppressions.append(_suppression(observation, "REARM_REQUIRES_TERMINAL_STATE"))
+                suppression = _suppression(observation, "REARM_REQUIRES_TERMINAL_STATE")
+                suppressions.append(suppression)
+                suppressed_by_source_key[source_key] = suppression
                 continue
             generation = max((_episode_generation(str(row["episode_id"])) for row in prior), default=0) + 1
             rearm_of = str(prior[-1]["episode_id"]) if prior else None
@@ -732,12 +854,14 @@ def reconcile_observations(
                 "opened_session": opened_at[:10],
                 "rearm_of": rearm_of,
             }
-            additions.append(make_event(
+            event = make_event(
                 event_type="OPENED", episode_id=episode_id(security, epoch, canonical, generation),
                 source_system=source_system, source_schema=source_schema, source_event_id=source_event_id,
                 occurred_at=occurred, known_at=known, recorded_at=recorded_at, source_receipt=receipt,
                 definition_era=definition_era, payload=payload,
-            ))
+            )
+            additions.append(event)
+            source_key_owners[source_key] = event
             projected = project_events([*base, *additions])
             continue
         expert = observation.get("expert_event_id")
@@ -760,12 +884,14 @@ def reconcile_observations(
             ):
                 raise EpisodeContractError("expert attachment requires the exact Radar mastermind.entry_event.v1 event_id")
             payload["expert_event_id"] = expert
-        additions.append(make_event(
+        event = make_event(
             event_type=event_type, episode_id=str(active["episode_id"]), source_system=source_system,
             source_schema=source_schema, source_event_id=source_event_id, occurred_at=occurred,
             known_at=known, recorded_at=recorded_at, source_receipt=receipt,
             definition_era=definition_era, payload=payload,
-        ))
+        )
+        additions.append(event)
+        source_key_owners[source_key] = event
     merged, new = _merge_events(base, additions)
     return ReconcileResult(merged, new, tuple(suppressions), tuple(project_events(merged)))
 
@@ -1025,6 +1151,20 @@ def _non_negative_count(value: object, *, field: str) -> int:
     return value
 
 
+def _canonical_receipt_path(value: object) -> str:
+    if not isinstance(value, str) or not value or "\\" in value or "\x00" in value:
+        raise EpisodeContractError("reconcile receipt source path is invalid")
+    path = PurePosixPath(value)
+    if (
+        value in {".", "/"}
+        or value.startswith("//")
+        or path.as_posix() != value
+        or any(part in {".", ".."} for part in path.parts)
+    ):
+        raise EpisodeContractError("reconcile receipt source path is not canonical")
+    return value
+
+
 def validate_reconciliation_receipt(
     receipt: Mapping[str, object], *, events: Sequence[Mapping[str, object]],
     suppressions: Sequence[Mapping[str, object]], all_candidates_bytes: bytes,
@@ -1098,11 +1238,16 @@ def validate_reconciliation_receipt(
         raise EpisodeContractError("reconcile receipt projection hashes are invalid")
     source_hashes = row.get("source_hashes")
     if not isinstance(source_hashes, Mapping) or any(
-        not isinstance(path, str) or not path or not isinstance(value, str)
+        not isinstance(path, str) or not isinstance(value, str)
         or _SHA256_RECEIPT_RE.fullmatch(value) is None
         for path, value in source_hashes.items()
     ):
         raise EpisodeContractError("reconcile receipt source hashes are invalid")
+    normalized_source_hashes: dict[str, str] = {}
+    for path, digest in source_hashes.items():
+        canonical_path = _canonical_receipt_path(path)
+        assert isinstance(digest, str)
+        normalized_source_hashes[canonical_path] = digest
     source_receipts = row.get("source_receipts")
     expected_source_order = ["turn_watch", "candidate", "doors", "entry_radar"]
     if not isinstance(source_receipts, list) or [
@@ -1110,6 +1255,7 @@ def validate_reconciliation_receipt(
         for receipt_row in source_receipts
     ] != expected_source_order:
         raise EpisodeContractError("reconcile receipt source status rows are invalid")
+    disclosed_source_paths: set[str] = set()
     for receipt_row in source_receipts:
         assert isinstance(receipt_row, Mapping)
         status = receipt_row.get("status")
@@ -1134,6 +1280,17 @@ def validate_reconciliation_receipt(
             for file_row in files
         ):
             raise EpisodeContractError("reconcile receipt source file receipts are invalid")
+        for file_row in files:
+            assert isinstance(file_row, Mapping)
+            path = _canonical_receipt_path(file_row["path"])
+            digest = file_row["sha256"]
+            if path in disclosed_source_paths:
+                raise EpisodeContractError("reconcile receipt duplicates a source file receipt")
+            disclosed_source_paths.add(path)
+            if normalized_source_hashes.get(path) != digest:
+                raise EpisodeContractError(
+                    "reconcile receipt source file receipt contradicts its source hash"
+                )
     return row
 
 

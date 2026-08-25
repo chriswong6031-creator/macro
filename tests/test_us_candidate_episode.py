@@ -157,6 +157,118 @@ def test_reconciliation_deduplicates_a_repeated_source_input_and_rejects_bad_iss
         )
 
 
+def test_ordinary_source_key_retry_keeps_original_bytes_and_rejects_committed_drift():
+    """Dropping a changed stable source key would silently preserve contradicted truth."""
+    source_receipt = "sha256:" + "a" * 64
+    observation = _observation(source_receipt=source_receipt)
+    first = reconcile_observations(
+        [], [observation], recorded_at=RECORDED_AT, definition_era=ERA
+    )
+
+    identical = reconcile_observations(
+        first.events,
+        [observation],
+        recorded_at="2026-08-26T02:00:00Z",
+        definition_era=ERA,
+    )
+    assert identical.events == first.events
+    assert identical.events[0]["recorded_at"] == RECORDED_AT
+
+    contradicted = {
+        **observation,
+        "ticker_at_observation": "XYZ.CONTRADICTED",
+        "source_receipt": "sha256:" + "b" * 64,
+    }
+    with pytest.raises(EpisodeContractError, match="source key.*different committed bytes"):
+        reconcile_observations(
+            first.events,
+            [contradicted],
+            recorded_at="2026-08-26T02:00:00Z",
+            definition_era=ERA,
+        )
+    with pytest.raises(EpisodeContractError, match="source key.*different committed bytes"):
+        reconcile_observations(
+            [],
+            [observation, contradicted],
+            recorded_at=RECORDED_AT,
+            definition_era=ERA,
+        )
+
+    next_observation = _observation(source_event_id="turn-watch:XYZ:2026-08-25")
+    observed = reconcile_observations(
+        first.events, [next_observation], recorded_at=RECORDED_AT, definition_era=ERA
+    )
+    raw_only_change = {**next_observation, "ticker_at_observation": "XYZ.ALIAS"}
+    raw_retry = reconcile_observations(
+        observed.events,
+        [raw_only_change],
+        recorded_at="2026-08-26T02:00:00Z",
+        definition_era=ERA,
+    )
+    assert raw_retry.events == observed.events
+    with pytest.raises(EpisodeContractError, match="source key.*different committed bytes"):
+        reconcile_observations(
+            observed.events,
+            [{**next_observation, "security_id": "SEC:US-XNAS-DIFFERENT"}],
+            recorded_at="2026-08-26T02:00:00Z",
+            definition_era=ERA,
+        )
+
+    suppressed = _observation(source_event_id="candidate:suppressed", anchor=None)
+    with pytest.raises(EpisodeContractError, match="source key.*different committed bytes"):
+        reconcile_observations(
+            [],
+            [suppressed, {**suppressed, "source_receipt": "sha256:" + "c" * 64}],
+            recorded_at=RECORDED_AT,
+            definition_era=ERA,
+        )
+
+    opened = first.events[0]
+    duplicate_key = make_event(
+        event_type="OBSERVED",
+        episode_id=opened["episode_id"],
+        source_system=opened["source_system"],
+        source_schema=opened["source_schema"],
+        source_event_id=opened["source_event_id"],
+        occurred_at=opened["occurred_at"],
+        known_at=opened["known_at"],
+        recorded_at=opened["recorded_at"],
+        source_receipt=opened["source_receipt"],
+        definition_era=opened["definition_era"],
+        payload={
+            "intake_class": "technical_emergence",
+            "source_relationship": {
+                "source_system": opened["source_system"],
+                "source_schema": opened["source_schema"],
+                "source_event_id": opened["source_event_id"],
+            },
+        },
+    )
+    with pytest.raises(EpisodeContractError, match="duplicate immutable source key"):
+        reconcile_observations(
+            [opened, duplicate_key], [], recorded_at=RECORDED_AT, definition_era=ERA
+        )
+
+    non_ordinary = _event(
+        "STATE_TRANSITIONED",
+        opened["episode_id"],
+        source_event_id="state:source-key-owner",
+        payload={"episode_state": "RESOLVED", "terminal_reason": "expired"},
+    )
+    colliding_observation = _observation(
+        source_system=non_ordinary["source_system"],
+        source_schema=non_ordinary["source_schema"],
+        source_event_id=non_ordinary["source_event_id"],
+    )
+    with pytest.raises(EpisodeContractError, match="non-ordinary event"):
+        reconcile_observations(
+            [opened, non_ordinary],
+            [colliding_observation],
+            recorded_at=RECORDED_AT,
+            definition_era=ERA,
+        )
+
+
 def test_expert_events_use_exact_radar_event_id_and_unanchored_input_needs_active_episode():
     expert = _observation(
         anchor=None,

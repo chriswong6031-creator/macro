@@ -155,19 +155,48 @@ def _source_hashes(
         file_receipts.append(correction_receipt)
     result: dict[str, str] = {}
     for receipt in file_receipts:
-        path, digest = receipt.get("path"), receipt.get("sha256")
-        if not isinstance(path, str) or not isinstance(digest, str):
-            raise EpisodeContractError("once-read source receipt is incomplete")
-        source_path = Path(path)
-        try:
-            name = str(source_path.relative_to(repo_root))
-        except ValueError:
-            name = str(source_path.resolve())
+        normalized = _canonical_source_file_receipt(repo_root, receipt)
+        name, digest = normalized["path"], normalized["sha256"]
         prior = result.get(name)
         if prior is not None and prior != digest:
             raise EpisodeContractError("one source path produced conflicting once-read hashes")
         result[name] = digest
     return dict(sorted(result.items()))
+
+
+def _canonical_source_file_receipt(
+    repo_root: Path, receipt: Mapping[str, object],
+) -> dict[str, str]:
+    path, digest = receipt.get("path"), receipt.get("sha256")
+    if not isinstance(path, str) or not isinstance(digest, str):
+        raise EpisodeContractError("once-read source receipt is incomplete")
+    source_path = Path(path).resolve()
+    try:
+        name = source_path.relative_to(Path(repo_root).resolve()).as_posix()
+    except ValueError:
+        name = source_path.as_posix()
+    return {"path": name, "sha256": digest}
+
+
+def _canonical_source_status_receipts(
+    repo_root: Path, batches: Sequence[IntakeBatch],
+) -> list[dict[str, object]]:
+    rows: list[dict[str, object]] = []
+    for batch in batches:
+        for receipt in batch.source_receipts:
+            row = dict(receipt)
+            files = row.get("files")
+            if isinstance(files, list):
+                normalized_files: list[dict[str, str]] = []
+                for file_receipt in files:
+                    if not isinstance(file_receipt, Mapping):
+                        raise EpisodeContractError("once-read source receipt is incomplete")
+                    normalized_files.append(
+                        _canonical_source_file_receipt(repo_root, file_receipt)
+                    )
+                row["files"] = normalized_files
+            rows.append(row)
+    return rows
 
 
 def _load_event_partitions(directory: Path) -> list[dict[str, object]]:
@@ -377,7 +406,7 @@ def _load_and_build(*, repo_root: Path, recorded_at: str, correction_path: Path 
             "all_candidates.json": _sha_receipt(projection_json),
             "current.parquet": _sha_receipt(projection_parquet),
         },
-        "source_receipts": [receipt for batch in batches for receipt in batch.source_receipts],
+        "source_receipts": _canonical_source_status_receipts(repo_root, batches),
     }
     return (receipt, projection, list(commanded.events), suppressions, projection_parquet,
             current_generation, previous_receipt)
