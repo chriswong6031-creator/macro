@@ -12914,14 +12914,29 @@ jobs:
       - scripts/research/dislocation_p0_a1r_semantic_contract.py
       - scripts/research/dislocation_p0_a1r_semantic_run.py
       - scripts/research/dislocation_p0_a1r_source_run.py
+      - scripts/research/dislocation_p0_s1f_finalize_measurement.py
+      - scripts/research/dislocation_p0_s1f_measurement.py
+      - scripts/research/dislocation_p0_s1f_model_transport.py
+      - scripts/research/dislocation_p0_s1f_owner_run.py
+      - scripts/research/dislocation_p0_s1f_runner.py
+      - scripts/research/dislocation_p0_s1f_selection.py
+      - scripts/research/dislocation_p0_s1f_semantic_contract.py
+      - scripts/research/dislocation_p0_s1f_shadow_triage.py
+      - scripts/research/dislocation_p0_s1f_triage.py
       - scripts/research/dislocation_p0_source_adapter.py
       - scripts/research/dislocation_p0_source_materializer.py
       - collectors/edgar_forensics.py
+      - collectors/fundamental_forensics_acquisition.py
+      - collectors/fundamental_forensics_companyfacts.py
       - collectors/sec_document_spine.py
+      - contracts/fundamental_forensics_broad_sec_issuer_manifest.schema.json
+      - engine/fundamental_forensics/broad_sec_store.py
       - engine/fundamental_forensics/models.py
       - engine/fundamental_forensics/sec_document_spine.py
+      - engine/research_vault/r2_store.py
       - lib/__init__.py
       - lib/config.py
+      - tests/__init__.py
       - tests/test_dislocation_p0_a1_blind_harvest.py
       - tests/test_dislocation_p0_a1r_evidence_catalog.py
       - tests/test_dislocation_p0_a1r_owner_run.py
@@ -12930,6 +12945,11 @@ jobs:
       - tests/test_dislocation_p0_a1r_semantic_run.py
       - tests/test_dislocation_p0_source_adapter.py
       - tests/test_dislocation_p0_source_materializer.py
+      - tests/test_dislocation_p0_s1f.py
+      - tests/test_dislocation_p0_s1f_finalize_measurement.py
+      - tests/test_dislocation_p0_s1f_model_transport.py
+      - tests/test_dislocation_p0_s1f_owner_run.py
+      - tests/test_dislocation_p0_s1f_shadow_triage.py
       - research/dislocation_intelligence/**
     timeout-minutes: 8
     runs-on: ubuntu-latest
@@ -12939,10 +12959,10 @@ jobs:
         with:
           python-version: "3.12"
       - name: install source-owner test deps
-        # The bounded A1R adapters import the canonical raw SEC owner, whose
-        # module boundary declares pandas/requests/PyYAML even though these
-        # focused tests never perform a network call.
-        run: pip install pytest pandas requests pyyaml
+        # The bounded A1R/S1F adapters import the canonical raw SEC owner,
+        # including its Draft202012Validator boundary; these focused tests
+        # still perform no network call.
+        run: pip install pytest pandas requests pyyaml scipy jsonschema==4.26.0
       - name: Dislocation P0-A1 price-blind source-integrity primitives
         run: >-
           python -m pytest
@@ -12954,6 +12974,11 @@ jobs:
           tests/test_dislocation_p0_a1r_semantic_run.py
           tests/test_dislocation_p0_source_adapter.py
           tests/test_dislocation_p0_source_materializer.py
+          tests/test_dislocation_p0_s1f.py
+          tests/test_dislocation_p0_s1f_finalize_measurement.py
+          tests/test_dislocation_p0_s1f_model_transport.py
+          tests/test_dislocation_p0_s1f_owner_run.py
+          tests/test_dislocation_p0_s1f_shadow_triage.py
           -q
 
   unrun-cell-b-v2-buyback-census:

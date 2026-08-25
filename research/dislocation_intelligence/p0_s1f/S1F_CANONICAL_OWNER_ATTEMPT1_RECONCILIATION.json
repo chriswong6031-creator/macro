@@ -1,0 +1,107 @@
+{
+  "adapter_repair_permitted": true,
+  "attempt_id": "S1F-OWNER-ATTEMPT-01",
+  "attempt_ordinal": 1,
+  "authority": {
+    "can_escalate": false,
+    "can_gate": false,
+    "can_originate_signal": false,
+    "can_rank": false,
+    "can_size": false
+  },
+  "canonical_owner_failed": false,
+  "classification": "STOPPED_ADAPTER_CAPABILITY_OMISSION",
+  "failed_attempt_file": "S1F_CANONICAL_OWNER_GAP_ATTEMPT1.json",
+  "failed_attempt_file_sha256": "4d5991a573c108ee1b4a25fb6adc663c06cb74f9b2c8799dc8a1a0f25554ae97",
+  "firewall": {
+    "forbidden_dirs_present": [],
+    "market_or_outcome_access": false,
+    "official_sec_hosts": [
+      "data.sec.gov"
+    ],
+    "price_counterfactual_rank_size_execution_mounts": []
+  },
+  "frozen_bindings": {
+    "audit_batch_plan_file_sha256": "6363ceb88aceb61cb7de5a7e5dbd40a325adb0e7aea3db36f1ad801a4f8b248c",
+    "audit_batch_plan_logical_sha256": "12b05972e24337dd008c4dc96e3e9a0aace30b6491a7b4ccbbde95c0e7f77bf7",
+    "contract_set_sha256": "d18011cc9cf5b1ece0fcb00a5b5283b6543bf2939f0d8195bba73d7c002293cc",
+    "exact70_selection_file_sha256": "6ff41a366bc4a6adc68abc2be374f5e0cbc01037a95dbc4f05b280f9cceee181",
+    "exact70_selection_logical_sha256": "2e852c8999a85e5039af4d3d49fa00e98b9774c60ddcb3bc41acebb3fb9d1cc1",
+    "exact70_selection_manifest_logical_sha256": "60296fcc12efa261a4e82ed2b8251572a155f22f2e501ae1881b860ed07aceda",
+    "selection_receipt_file_sha256": "39f9b7aaeb0f9ffd5443f9151fd82163c58b185b8092999a56ec19f912ceda56",
+    "selection_receipt_logical_sha256": "b84a61a3f8dcf7cd643d07163849194d5a00d97dbe42342f892c728036555bb4",
+    "triage_rule_file_sha256": "fda0746260e1d6faa3d96164032a6f6ae7d97e3d222e28a2c3ca9c432035b0af",
+    "triage_rule_logical_sha256": "ae50a6d6b20e09a255e1755217018739a7ad0699d9b63c546c413583aedc10ed"
+  },
+  "gap": {
+    "accession": "0001069533-18-000041",
+    "cik": "0001069533",
+    "code": "OWNER_CAPABILITY_GAP",
+    "detail": "selected accession absent from current Submissions",
+    "filed_on": "2018-09-25",
+    "form": "8-K",
+    "frozen_selection_key": "0019a89539536621f1631dd0e873ed3c7c9dd3a870965ce8db41a2137ad54373",
+    "slot": 25,
+    "stratum": "WEATHER_OR_PHYSICAL_DISASTER"
+  },
+  "historical_owner_evidence": {
+    "canonical_method_omitted_by_attempt1": "SecForensicsCollector.fetch_historical_submissions_file",
+    "current_submissions_sha256": "874df2d448ff15b5cbda11ccf5be62d50bd585aa581efa73a1cc5af901b327bf",
+    "current_submissions_url": "https://data.sec.gov/submissions/CIK0001069533.json",
+    "declared_filing_from": "2005-06-03",
+    "declared_filing_to": "2019-04-30",
+    "declared_source_name": "CIK0001069533-submissions-001.json",
+    "derived_canonical_url": "https://data.sec.gov/submissions/CIK0001069533-submissions-001.json",
+    "frozen_filed_on_is_covered": true,
+    "historical_fetch_attempted": false
+  },
+  "local_source_fallback_permitted": false,
+  "progress": {
+    "accepted_packet_refs": 0,
+    "canonical_replay_attempted": false,
+    "current_submissions_receipts": 69,
+    "exact_matched_documents_accepted": 0,
+    "fully_replayed_packets": 0,
+    "historical_submissions_receipts": 0,
+    "partial_internal_owner_objects_admissible": false,
+    "selected_packets": 70,
+    "unique_selected_ciks": 69
+  },
+  "recorded_at": "2026-08-23T14:14:46.731881Z",
+  "resume_condition": "Retry only the unchanged exact seventy through the same canonical owner with its declared historical-Submissions read-through; proceed to triage only after all seventy packets and every exact matched document replay byte-identically.",
+  "rule_mutation_permitted": false,
+  "schema": "mastermind.dislocation_p0.s1f_owner_attempt_reconciliation.v1",
+  "selection_mutation_permitted": false,
+  "stage_execution": {
+    "canonical_replay": {
+      "attempted": false,
+      "completed": false
+    },
+    "final_relationship_reconciliation": {
+      "attempted": false,
+      "completed": false
+    },
+    "grok": {
+      "attempted": false,
+      "completed": false
+    },
+    "independent_opus": {
+      "attempted": false,
+      "completed": false
+    },
+    "measurement": {
+      "attempted": false,
+      "completed": false
+    },
+    "source_materialization": {
+      "attempted": true,
+      "completed": false
+    },
+    "triage": {
+      "attempted": false,
+      "completed": false
+    }
+  },
+  "status": "COMPLETE_RECONCILIATION",
+  "top_up_permitted": false
+}
