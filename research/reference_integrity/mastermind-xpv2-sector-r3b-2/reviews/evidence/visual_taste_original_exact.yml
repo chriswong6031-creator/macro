@@ -1,7 +1,6 @@
 schema: mastermind.rig_review.v1
 reference_id: mastermind-xpv2-sector-r3b-2
 role: visual_taste
-artifact_sha: d0830a374795925ee1e55b66c0cc42e329ac172d
 verdict: PASS
 
 identity:
