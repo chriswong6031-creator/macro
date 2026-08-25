@@ -32,8 +32,9 @@ existing Parquet stores, pytest, GitHub Actions YAML, Agent OS records.
   Door, and unanchored Radar inputs may attach to an active episode or are suppressed.
 - All registered inputs map or produce an enumerated suppression. No producer cap and no
   silent orphaning.
-- The immutable ledgers are truth. `current.parquet` and `all_candidates.json` are derived
-  only by replaying them.
+- The immutable ledgers in the generation named by atomic `HEAD.json` are truth.
+  `current.parquet` and `all_candidates.json` in that same immutable generation are derived
+  only by replaying them; canonical readers never select an unreferenced generation.
 - Corrections, retractions, state transitions, re-arms, and identity supersession append
   events; no raw event is overwritten and no last-write-wins logic is permitted.
 - Durable writes require both `--nightly` and
@@ -344,20 +345,29 @@ Prove:
 - a repeat with identical sources changes zero file bytes and creates no event;
 - a changed current observation appends one `OBSERVED`, not a new episode;
 - explicit correction JSONL appends `CORRECTED` and preserves the original ledger line;
-- a forced failure during staging leaves all prior target bytes unchanged;
+- a forced failure before the atomic HEAD swap leaves the prior HEAD/generation canonical;
+- a forced failure after a generation is completely installed but before the HEAD swap leaves
+  only an unreferenced generation, which the canonical reader cannot observe;
+- first publication exposes no generation until HEAD exists, and a reader sees either the
+  entire old generation or the entire new generation, never a mixed set;
 - corrupt existing event hash aborts every output;
 - output monthly ledgers are canonical newline-delimited JSON sorted by event address;
 - `current.parquet` and `all_candidates.json` rederive to identical logical rows;
 - downstream fixture reads only `load_all_candidates`;
 - every input count equals mapped plus suppressed and no cap exists.
 
-- [ ] **Step 5: Implement transactional output publication**
+- [ ] **Step 5: Implement immutable-generation publication with one atomic HEAD swap**
 
-Stage all changed files under a temporary directory inside
-`data/us_prophet_rank/episodes/`, fsync file contents and the directory, validate staged
-bytes, then replace targets. Compare bytes first and do not touch unchanged targets. If a
-multi-file replace fails, restore the target set from staged preimages before raising; tests
-must inject the failure and prove no partial state remains.
+Stage the complete prospective generation under
+`data/us_prophet_rank/episodes/generations/`, fsync file contents and directories, validate
+every staged byte and all cross-target invariants, then install the immutable generation under
+its content-addressed `generation_id`. Publish it with one atomic temp+fsync+`os.replace` of
+`data/us_prophet_rank/episodes/HEAD.json`. Canonical readers resolve and validate HEAD, and
+must refuse an absent/malformed pointer or an unreferenced generation. Compare the complete
+generation hash first: identical inputs reuse the existing generation and touch zero bytes.
+Failure before the pointer swap leaves the old HEAD canonical; failure after the swap exposes
+the already-complete generation, so no preimage rollback protocol or sequential target rename
+is permitted.
 
 The receipt schema is `prophet.candidate_episode_reconcile_receipt/v1` with exact source
 hashes, gate/mode, definition era, input/mapped/suppressed counts, old/new event counts,
@@ -519,4 +529,3 @@ episode ledger, current projection, All Candidates projection, source/output has
 idempotence/duplicate checks, workflow job conclusions, and canonical-reader output. Ship a
 small records-only acceptance PR that marks B1 `done` and releases D5. Only after that merge
 may the D5 runtime plan begin.
-

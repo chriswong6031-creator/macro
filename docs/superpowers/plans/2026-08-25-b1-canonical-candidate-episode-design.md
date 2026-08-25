@@ -233,17 +233,20 @@ Suppression is evidence, not an episode and not a market verdict.
 
 ```text
 data/us_prophet_rank/episode_inputs/turn_watch/YYYY-MM-DD.json
-data/us_prophet_rank/episodes/events/YYYY-MM.jsonl
-data/us_prophet_rank/episodes/suppressions/YYYY-MM.jsonl
-data/us_prophet_rank/episodes/current.parquet
-data/us_prophet_rank/episodes/all_candidates.json
-data/us_prophet_rank/episodes/latest_receipt.json
+data/us_prophet_rank/episodes/HEAD.json
+data/us_prophet_rank/episodes/generations/<generation_id>/events/YYYY-MM.jsonl
+data/us_prophet_rank/episodes/generations/<generation_id>/suppressions/YYYY-MM.jsonl
+data/us_prophet_rank/episodes/generations/<generation_id>/current.parquet
+data/us_prophet_rank/episodes/generations/<generation_id>/all_candidates.json
+data/us_prophet_rank/episodes/generations/<generation_id>/latest_receipt.json
 ```
 
 - TURN WATCH owns the input sidecar and writes it once in the existing engine job from the
   same in-memory uncapped rows used to build the capped display artifact.
 - B1 owns everything below `data/us_prophet_rank/episodes/`.
-- The event and suppression ledgers are truth. All other B1 files are projections/receipts.
+- The event and suppression ledgers inside the generation named by `HEAD.json` are truth. All
+  other B1 files are projections/receipts. A generation directory is immutable after it becomes
+  visible.
 - Production data files are created only by a natural nightly after code merges; sparse build
   worktrees do not author or truncate tracked `data/` artifacts.
 
@@ -273,10 +276,23 @@ data/us_prophet_rank/episodes/latest_receipt.json
    last-write-wins.
 8. Merge by content address. Existing identical semantic addresses are no-ops.
 9. Build all projections from the merged ledger.
-10. Stage every changed output in the target directory, fsync, and `os.replace` only after
-    every output validates. Unchanged bytes are not rewritten.
-11. Emit a receipt with exact source hashes, input/mapped/suppressed counts, old/new event
+10. Stage one complete immutable generation under `generations/`, fsync and validate every
+    byte plus every cross-target invariant, then atomically replace `HEAD.json` as the single
+    visibility boundary. A crash before the pointer swap leaves the old generation canonical;
+    a crash after it exposes the already-complete new generation. An orphan staged/generation
+    directory is never readable without a matching valid HEAD. Unchanged inputs reuse the
+    existing generation and do not rewrite HEAD or any target byte.
+11. Emit a receipt with exact once-read source hashes, input/mapped/suppressed counts, old/new event
     counts, projection hashes, gate/mode, and definition era.
+
+### 6.1 Atomic publication amendment (2026-08-25 review ruling)
+
+The earlier draft described sequential `os.replace` calls over top-level output files. That
+cannot be crash-atomic: a process or machine death between renames exposes a split generation.
+The immutable-generation plus atomic-HEAD layout above supersedes that wording. Canonical
+readers resolve and validate `HEAD.json` before opening a generation; direct reconstruction or
+selection of an unreferenced generation is forbidden. First publication may create empty
+container directories, but no generation is current until the single HEAD swap succeeds.
 
 ## 7. TURN WATCH seam
 
@@ -340,4 +356,3 @@ merge, with:
 - no replay, manual dispatch, rerun, or fabricated surface clock.
 
 Only that packet may mark B1 accepted and release D5 runtime.
-
