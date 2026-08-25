@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-25T09:24:39.754455+00:00",
-  "count": 1817,
+  "generated_at": "2026-08-25T10:20:15.016867+00:00",
+  "count": 1820,
   "institutions": [
     "13F Summary",
     "ABN Amro",
@@ -89,6 +89,68 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-hnosrx2adrd-6669fd",
+      "title": "JPM Asia Tech Tour",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-25T09:08:55Z",
+      "summary_points": [
+        "**GPU/ASIC Demand & Supply Chain Tightness**: Robust AI-driven GPU/ASIC demand (Neoclouds/SpaceX), supply chain constraints in lead-edge foundry, packaging, substrates; memory demand strong with LTA smoothing.",
+        "ASIC vendors (Mediatek, Alchip) top picks; OSAT capacity bottlenecks extend to 2027/28 (12m CoW tool lead times).",
+        "**OSAT Capacity Constraints**: Clean-room/equipment bottlenecks (12m lead times) intensify capacity tightness through 2027/28; major OSATs raising capex 80%+ YoY amid robust demand, lead times at 6-9m.",
+        "**ASIC Vendor Uncertainty & Risk**: TPU v10 debate prolongs vendor selection confusion; MediaTek’s stock outperformance capped by v10 revenue concerns, shifting scale-driven CoT model (Alchip/MediaTek/GUC).",
+        "**Institutional Flow Bias**: J.P."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ksw8twoslqb-1bdecf",
+      "title": "JPM Korea Robotics and Humanoid",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-25T09:08:50Z",
+      "summary_points": [
+        "**US Demand vs Supply Imbalance**: US humanoid demand forecast at 531k units by 2030 (vs.",
+        "300k production capacity), driven by structural labor shortages in manufacturing (1.6M jobs by 2030) and logistics (1.2M roles by 2030), creating supply constraints.",
+        "**Robotics Valuation Upside**: HMG robotics valued at $57bn (16% higher than prior $49bn estimate), supporting Overweight on HMC/Kia; industrial sector willingness to pay justifies $120k/unit ASP for 2028-30E.",
+        "**Industrial-First Adoption**: Prioritize industrial applications (higher ROI, clearer payback, lower BOM costs) over consumer market; validates safety/reliability before consumer rollout, de-risking deployment.",
+        "**Demand Catalysts**: Manufacturing (462k unfilled jobs → 1.6M by 2030) and logistics (800k roles in 2026 → 1.2M by 2030) drive explosive demand growth (249% YoY to 58% by 2030), with penetration rising from 1% to 16% in logistics."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 39,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vtevj8yu1yq-065715",
+      "title": "JPM US Treasury Market",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-25T09:08:35Z",
+      "summary_points": [
+        "**Treasury Buyback Policy & Term Premium**: Treasury increased buyback size to $4bn for longer-dated Treasuries (funded via T-bills, not TGA), risking elevated term premium without fiscal adjustment, supporting 2s/10s steepener trade.",
+        "**30-Year Bond Technical Risk**: Near-term bearish momentum at risk if 30-year yields break above 5.14-5.20% resistance; breakout would reverse selling pressure, critical for duration positioning.",
+        "**Treasury Auction Flows & Demand**: 2-year on-the-run volumes surge 50% on auction days, signaling heightened demand; end-user demand at 90.6% (highest since Jan 2026) confirms strong front-end support.",
+        "**Macro Hedge Fund Positioning**: Strong positive exposure to 10-year Treasuries (1y z-score: 0.49), indicating institutional long positioning amid yield curve dynamics and term premium risks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-ctej1nf9iyo-ea69b0",
       "title": "JPM International Market Intelligence | Morning Briefing",
