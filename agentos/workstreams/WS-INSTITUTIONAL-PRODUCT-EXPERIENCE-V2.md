@@ -7,7 +7,7 @@ objective: >
   invent authority. Done = a Reference Integrity Gate-approved R3 Sector Central reference
   built on the R3A binding pack with zero guessed actions, scores, rows, routes, access
   behaviors, clocks, or failure states.
-status: active
+status: done
 program: sector-rotation-intelligence
 repos: [macro]
 owner: coo-fable
@@ -55,32 +55,29 @@ waves:
     # Successor reference `mastermind-xpv2-sector-r3b-1` landed as merge
     # 780cbcf6d2d2c7b32b87a4674929e1732e5ad036. Durable critic recovery and Sol
     # REVISE record followed through #6309/#6313. Later Sol S3 amendments on the
-    # active R3B.2 branch narrowed/translated the predecessor mandate; those newer
-    # amendments are part of the current #6337 conflict-resolution ruling and are
-    # not silently replaced by the older #6313 squash.
+    # R3B.2 carrier narrowed/translated the predecessor mandate and were explicitly
+    # ratified to supersede the older #6313 squash for this continuation.
   - id: R3B.2
     title: Final surgical closure + four fresh final critics
-    status: in_progress
+    status: done
     pr: 6337
     depends_on: [R3B.1]
     next_action: >
-      Sol reviews canonical carrier #6337 at head
-      90ce21ac977209370b57b2ef1af7331cebb25861. Fresh critic receipts are durable,
-      exact-head CI 32727024895 is green, candidate sha256
-      4adb4b6245e8e4aa5b68c850a615461327c0a5d2e672e4c203d6ba32a3b8d53c is frozen,
-      and current-main drift through 2026-08-25 is nonmaterial to Sector Central/RIG.
-      Before any approval/merge: (F1) normalize the Visual/Taste receipt by mirroring
-      its already-bound identity.artifact_sha at the schema-required top level without
-      changing critic judgment; (F2) explicitly ratify that the branch-side later R3B.1
-      verdict amendments (3a6638d2d15b / da2df767af77 lineage) supersede the older
-      #6313 squash for this continuation and may ride to main. Resolve the add/add
-      conflict accordingly, re-run RIG + exact-head hosted CI on the resulting head,
-      then issue the final Sol design-authority verdict. R3C remains unauthorized.
+      None. Sol issued APPROVE_WITH_CONDITIONS for REFERENCE LAW ONLY on PR #6337
+      issuecomment 5404196829. The sanitized exact head
+      f400e8b4df4d05434b74b8d50dd7e3ae37405342 passed fences 32801298636 and
+      semantic CI 32801298582, then merged as
+      8b303a58e8c0b807ef34d1913c4cacf5bb346e2d on 2026-08-25. Frozen candidate
+      sha256 4adb4b6245e8e4aa5b68c850a615461327c0a5d2e672e4c203d6ba32a3b8d53c
+      remains the approved reference identity. This is reference-law completion only;
+      no production migration or R3C authority follows from it.
 next_action: >
-  Stay on canonical R3B.2 carrier #6337 only. Resolve F1/F2, reconcile it onto current
-  main without changing the frozen candidate, re-run the reference/RIG/hosted gates,
-  and return to Sol for the final design-authority verdict. Do not start R3C or mutate
-  production. Superseded duplicate #6336 was closed without merge on 2026-08-24/25.
+  This bounded XPV2 design/reference workstream is complete under its own declared
+  completion law. Preserve the approved R3B.2 reference and its five production-migration
+  conditions. Do not start R3C, mutate production, or reopen this completed design identity
+  implicitly. Any Sector Central production migration requires a fresh explicit Chairman/Sol
+  commission, current production archaeology, a separately bounded carrier, and proof against
+  the five carried conditions.
 ---
 
 # XPV2 — institutional product experience v2
@@ -93,24 +90,42 @@ R3-visible field is bound to its producer, path/key, authority class, clock, acc
 destination, and null/stale behavior, and 59 attack tests red anyone who changes what those
 mean.
 
-R3B and R3B.1 are completed predecessor reference cycles, not production completion. The
-current live organizational object is R3B.2 on Macro #6337. It is reference-only and remains
-`SPEC_ONLY` / `in_review`: the final four critic receipts exist, but no final `approval.yml`,
-no production migration, and no R3C authority exist yet. The frozen R3B.2 candidate is
-sha256 `4adb4b6245e8e4aa5b68c850a615461327c0a5d2e672e4c203d6ba32a3b8d53c`.
+R3B and R3B.1 are completed predecessor reference cycles. R3B.2 is also complete: Sol's final
+design-authority verdict on PR #6337 is `APPROVE_WITH_CONDITIONS` for **REFERENCE LAW ONLY**,
+and the exact approved head `f400e8b4df4d05434b74b8d50dd7e3ae37405342` merged as
+`8b303a58e8c0b807ef34d1913c4cacf5bb346e2d` after hosted fences and semantic CI both passed.
+The frozen R3B.2 candidate remains sha256
+`4adb4b6245e8e4aa5b68c850a615461327c0a5d2e672e4c203d6ba32a3b8d53c`.
+
+The design/reference workstream is therefore `done`, but the actual Sector Central product
+capability remains **SPEC_ONLY** with respect to this reference: no production template,
+producer, route, registry, deployment, or user journey was migrated by #6337. Reference-law
+completion must never be projected as production completion.
+
+The five binding conditions that any future production-migration commission must carry are:
+
+1. heatmap colour-field legibility remains **UNMEASURED**, never PASS until measured on the real path;
+2. real auth plus `/premiumdata/sector_central.json` hydration and failure-state proof;
+3. real Time Machine end-to-end proof;
+4. resolve production-owned `Validated` / unproven 21d semantics while preserving the narrower
+   5d/context-only disclosure; and
+5. do not invent unsupported Baskets/correction UI or local rank/state/score/producer truth.
 
 Authority precedence remains: current production producers/payload contracts > current
-user-facing production behavior > durable critic/verdict records > Design Doctrine / Master
-Product Design System / RIG > the active Sol adjudication. Rejected/superseded reference HTML
-is evidence, never source authority.
+user-facing production behavior > durable critic/verdict/approval records > Design Doctrine /
+Master Product Design System / RIG. Rejected/superseded reference HTML is evidence, never source
+authority.
 
-Current carrier law: #6337 is canonical. #6336 is explicitly superseded and closed without
-merge. The branch-side R3B.1 verdict on #6337 contains later Sol-authorized amendments than
-the older #6313 squash on main; resolving the conflict by blindly taking main would regress
-the ratified continuation shape and is forbidden pending the explicit F2 ruling recorded
-above.
+Carrier law is closed: #6337 was the sole R3B.2 carrier and is merged; #6336 is explicitly
+superseded and closed without merge. F1 was ratified as a non-substantive top-level
+`artifact_sha` mirror while preserving the original Visual/Taste receipt as evidence. F2 was
+ratified so the later branch-side R3B.1 verdict amendments (`3a6638d2d15b` /
+`da2df767af77` lineage) supersede the older #6313 squash for this continuation and lawfully
+rode to main. Unrelated Government Revenue side-lineage was removed before the final hosted
+proof.
 
-Verified_by for current state: GitHub #6197/#6248/#6313/#6337 exact PR records; #6337
-exact-head CI run 32727024895; current-main drift comparison from `ba44b49b0d97` through
-`0c0c0f491832` showing no material R3B.2/Sector Central/RIG/design-law collision; and the
-R3B.2 durability return persisted on #6337.
+Verified_by for terminal state: GitHub #6337 exact approved head
+`f400e8b4df4d05434b74b8d50dd7e3ae37405342`; Sol final ruling issuecomment `5404196829`;
+HOLD-release comment `5404462128`; fences run `32801298636` success; semantic CI run
+`32801298582` success; merge `8b303a58e8c0b807ef34d1913c4cacf5bb346e2d`; Linear child
+MAS-133 completed only after that canonical merge. No open R3C carrier existed at closeout.
