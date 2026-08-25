@@ -81,12 +81,12 @@ waves:
     title: July recovery engine
     status: in_progress
     depends_on: [FF-1P2R]
-    pr: [6285, 6318]
+    pr: [6285, 6318, 6391]
     next_action: >
       PARKED / BUILT_NOT_PROVEN. Sol adjudicated only canonical duplicate
       acceptance_datetime comparison: exact source text remains first-bound, and
       valid UTC strings may reconcile only when their frozen _iso_order_key values
-      match. The local FF-1R repair packet is not production authority. Preserve
+      match. Held PR #6391 is not production authority. Preserve
       plan e252f0a85c193323be128b6de2762c522a0ab86b74d8a2ed15a1f3014695e5a4,
       cursor/completed 0, backlog 2,571 and null last-successful recovery receipt.
       Do not dispatch, retry, skip ANGO, advance the cursor, or start FF-2.
@@ -148,8 +148,8 @@ do_not_redo:
   - "Do not raise POINTER_MAX_BYTES to admit issuer manifests, rewrite existing immutable manifests, regenerate plan e252f0a85c193323be128b6de2762c522a0ab86b74d8a2ed15a1f3014695e5a4, or advance the recovery cursor to bypass the ANGO refusal."
   - "Do not rerun 32626273461 or 32708350406, dispatch another cursor-zero recovery, skip ANGO, or call the next operation tranche B. The one corrective tranche-A release was consumed by run 32708350406 and stopped on historical_submissions_conflict."
 next_action: >
-  PARKED pending root integration and the separately governed release process.
-  The local FF-1R comparator repair admits only representationally equal valid UTC
+  PARKED / HOLD-FOR-SOL on PR #6391 pending review of its exact candidate head.
+  The held FF-1R comparator repair admits only representationally equal valid UTC
   acceptance_datetime strings at canonical duplicate reconciliation, retaining the
   first exact text. It authorizes no recovery operation. Preserve plan
   e252f0a85c193323be128b6de2762c522a0ab86b74d8a2ed15a1f3014695e5a4,

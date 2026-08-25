@@ -7,7 +7,7 @@ mission: >
   Implement only the Sol-commissioned FF-1R canonical duplicate
   acceptance_datetime representational-equivalence repair, with direct,
   recovery-path, and incremental-path regression proof, then preserve the
-  packet for Sol review of the exact held PR/head after root publishes it.
+  packet in held PR #6391 for Sol review of its exact candidate head.
 state_before: >
   Production recovery was frozen after ANGO accession 0001628280-26-048138
   failed closed on acceptance_datetime conflict. Plan
@@ -30,6 +30,7 @@ changed:
     what: Mark the workstream parked while FF-1R remains in_progress and no-dispatch / FF-2 prohibitions remain explicit.
   - path: agentos/handoffs/FUNDAMENTAL-FORENSICS-2026-08-24-FF-1R-ACCEPTANCE-DATETIME-REPAIR.md
     what: Preserve the narrow local handoff and frozen production state for held-PR Sol review.
+prs: [6391]
 verified:
   - claim: The requested focused tests failed before production code changed.
     command: >
@@ -61,18 +62,18 @@ verified:
 unverified:
   - claim: Any production recovery advance, deployment, merge, or live proof.
     what_would_verify: >
-      Sol review of the exact held PR/head after root publishes it, followed only
+      Sol review of PR #6391's exact held candidate head, followed only
       by separately authorized production evidence; no merge or recovery action
       is authorized by this handoff.
 unresolved:
   - >
-    The held PR/head requires Sol review after root publication. This packet does
+    PR #6391's exact held candidate head requires Sol review. This packet does
     not release a merge or authorize a recovery dispatch.
   - >
     Production remains frozen at cursor/completed 0, backlog 2,571 and null
     last-successful recovery receipt until separately authorized evidence changes it.
 next_actions:
-  - Sol must review the exact held PR/head after root publishes it; do not merge or dispatch recovery.
+  - Sol must review PR #6391's exact held candidate head; do not merge or dispatch recovery.
   - Preserve DSC:FF-1R-ANGO-ACCEPTANCE-DATETIME-CONFLICT; it remains the factual
     production witness while DEC:FF-1-ACCEPTANCE-DATETIME-COMPARES-BY-INSTANT
     records the narrow representational-equivalence rule.
@@ -124,5 +125,5 @@ time disagreements.
 
 ## §4. Lawful next action
 
-After root publishes the held PR, Sol reviews its exact head. Do not merge,
-dispatch recovery, skip ANGO, advance the cursor, or start FF-2.
+PR #6391 is published and held. Sol reviews its exact candidate head. Do not
+merge, dispatch recovery, skip ANGO, advance the cursor, or start FF-2.
