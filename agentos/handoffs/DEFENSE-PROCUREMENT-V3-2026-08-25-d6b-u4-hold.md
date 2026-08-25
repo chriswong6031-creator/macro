@@ -3,7 +3,7 @@ workstream: WS:DEFENSE-PROCUREMENT-V3
 session: claude/d6b-fms-vertical-20260825
 model: fable
 ended_because: blocked
-prs: [6421]
+prs: [6420]
 decisions: []
 discoveries: []
 mission: >
