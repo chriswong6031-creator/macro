@@ -99,7 +99,7 @@ danger_areas:
   - "A new manifest/evidence identity and a parser-version change must force source reads even if accession or visible values look unchanged."
   - "Full-rebuild parity is an authority gate; do not optimize --rebuild by removing its whole-ledger retained-byte audit."
   - "The 63 dirty roots were HISTORICAL spill, but this PR has no authority to cap or rewrite spill law."
-prs: []
+prs: [6415]
 decisions:
   - DEC:CS-V2-W2C-EXACT-DEPENDENCY-INCREMENTAL-DOCUMENT-TERMS
 discoveries:
