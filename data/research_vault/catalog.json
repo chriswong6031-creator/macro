@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-25T15:32:37.129937+00:00",
-  "count": 1834,
+  "generated_at": "2026-08-25T16:23:00.023163+00:00",
+  "count": 1837,
   "institutions": [
     "13F Summary",
     "ABN Amro",
@@ -90,6 +90,48 @@
   ],
   "items": [
     {
+      "id": "marketdesk-uieip51lh41-b6c881",
+      "title": "BNP Lim Consumer Ingredients Fibre is the new protein 21 Aug 2026",
+      "institution": "BNP Paribas",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-25T15:47:47Z",
+      "summary_points": [
+        "**Fibre market dominance**: Global dietary fibre claims now exceed probiotics (38% vs 19% in digestive health products), driving a $9.6B market with 9.6% CAGR (2025-34), leveraging EU health claims for regulatory tailwinds.",
+        "**Protein demand surge linked to GLP-1**: 35% of US consumers increased protein intake (2024/25), with protein ranking #1 healthy food category (38% of consumers); 75% pay premium prices (10-25% higher) for protein-fortified products.",
+        "**Ingredient firms' strategic positioning**: Tate & Lyle leads soluble fibre solutions (7% sales in fortification), while Kerry, DSM-Firmenich, and Novonesis provide critical texture/flavour solutions to overcome protein-related challenges (bitterness, grittiness).",
+        "**Whey price volatility risk**: Whey concentrate price spikes since 2024 pressure sports nutrition/dairy margins, accelerating plant-based protein adoption (soy/pea isolates) despite texture challenges, creating opportunity for ingredient firms.",
+        "**Fibre gap as $100B+ opportunity**: 80% globally undershoot WHO fibre guidelines (25-38g/day), with cost/taste barriers driving demand for fortified functional foods; social media (#fibremaxxing: 150M+ TikTok views) amplifies consumer interest."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 25,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-1awx7mqqaiw-a51901",
+      "title": "commods",
+      "institution": "HSBC",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-25T15:37:19Z",
+      "summary_points": [
+        "**Geopolitical & Climate Supply Shortfall**: USDA forecasts global grains production below consumption (largest shortfall since 2006/07), driven by Middle East conflict (Hormuz Strait closure), Russia-Ukraine war disrupting Black Sea exports, and El Niño; grains up 22% y-o-y (wheat +30%).",
+        "**El Niño Record Intensity**: NOAA confirms strongest El Niño on record (July 2026, +2.0°C anomalies), 90% chance of strong event 2026-27, threatening corn/wheat/rice production (EU drought, Asia rice decline).",
+        "**Fertilizer Supply Chain Disruption**: Strait of Hormuz closure curtails 30% of global fertilizer trade; Russia’s sulphur export ban (until 2026) and China export policy shifts tighten supply, risking 0.3%-1.3% yield drop from 2.5% fertilizer application decline.",
+        "**Black Sea Grain Export Collapse**: Conflict escalation caused >40% drop in Black Sea shipments (late July 2026 vs prior year), directly impacting Russia/Ukraine’s 30% global wheat exports and cutting Ukraine’s 2026/27 grain export forecast by 12%.",
+        "**Geopolitical Input Cost Surge**: Diesel crack spreads hit record highs (US), amplifying farm machinery costs; fertilizer prices remain elevated despite urea pullback, heightening production risks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 17,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-qfsbmavedrz-bb462d",
       "title": "Global daily operation economic outcast but of whom",
       "institution": "Rabobank",
@@ -105,6 +147,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-o2rki1r60o8-8f0ac9",
+      "title": "European Economics Analyst UK—Inflationary Pressures Probably Not Sufficient to Push the BoE to Hike",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-25T11:55:28Z",
+      "summary_points": [
+        "**BoE Rate Cut Timing**: MPC holds rates in 2024 with Bank Rate cut expected in 2027, not hiking despite near-term petrol/diesel rebounds; market pricing for two 2024 hikes deemed excessive.",
+        "**Energy Inflation Acceleration**: Strategists’ oil/gas forecasts below futures imply sharper consumer energy price decline than BoE expects, pushing headline inflation to -0.5pp in 2027Q4 (vs.",
+        "BoE’s -0.1pp).",
+        "**Services Inflation Persistence**: Underlying services inflation at 3.8% driven by hospitality wage growth (NICS hike), moderating gradually toward 2027 as NICS impact fades but offset by rising food/energy prices short-term.",
+        "**Core Goods Inflation Surge**: PMI/CBI surveys signal material acceleration in core goods inflation (household goods/electronics) ahead, with PPI data showing elevated input costs; expected to moderate late 2027 as energy prices fall."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
       "language": "en",
       "needs_metadata": false
     },
