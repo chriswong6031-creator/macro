@@ -24,6 +24,7 @@ from .contracts import (
     RightsDecision,
     VALUE_SCHEMA,
     canonical_json_bytes,
+    canonical_json_sha256,
     concrete_unit,
     iso_utc,
     parse_rfc3339,
@@ -357,6 +358,97 @@ class DatapointResolver:
         self.adapters = dict(adapters)
         self.rights_projector = rights_projector
         self.clock = clock or (lambda: datetime.now(timezone.utc))
+
+    def resolve_current_industry_relationship(
+        self,
+        entity: CanonicalEntity,
+    ) -> dict[str, Any]:
+        """Project the one bounded related-entity edge needed by W1-B.
+
+        This does not add a datapoint, formula, registry entry, identity system,
+        or general relationship query language. The existing Stage owner resolves
+        its current security->industry edge; this resolver applies the same
+        subscriber metadata projection used by registered datapoint envelopes.
+        """
+        if (
+            not isinstance(entity, CanonicalEntity)
+            or entity.type != "security"
+            or entity.universe != "us_equity"
+            or entity.state != "active"
+        ):
+            raise RequestValidationError(
+                "current-industry relationship requires one active canonical US security"
+            )
+        adapter = self.adapters.get("stage")
+        owner_resolver = getattr(adapter, "resolve_current_industry_relationship", None)
+        if not callable(owner_resolver):
+            raise RequestValidationError("runtime Stage owner lacks current-industry relationship")
+        now = self.clock()
+        if now.tzinfo is None or now.utcoffset() is None:
+            raise DatapointContractError("resolver clock must be timezone-aware")
+        now = now.astimezone(timezone.utc)
+        context = RequestContext(generated_at=now, requested_as_of=None)
+        try:
+            result = owner_resolver(entity, context)
+        except Exception as exc:
+            raise AdapterContractError("Stage current-industry relationship failed") from exc
+        if not isinstance(result, AdapterResult):
+            raise AdapterContractError("Stage current-industry relationship returned invalid result")
+        if result.status not in {"available", "unknown", "unavailable", "stale", "not_applicable"}:
+            raise AdapterContractError("Stage current-industry relationship returned invalid status")
+        if result.unit != "industry_id":
+            raise AdapterContractError("Stage current-industry relationship returned invalid unit")
+        if result.status == "available":
+            industry_id = str(result.value or "").strip()
+            if not industry_id or result.reason_code is not None:
+                raise AdapterContractError("available current-industry relationship lacks target")
+        else:
+            if result.value is not None or not result.reason_code:
+                raise AdapterContractError("non-available current-industry relationship carries target")
+            industry_id = ""
+        observed_at = validate_clock(result.observed_at, field_name="observed_at")
+        effective_at = validate_clock(result.effective_at, field_name="effective_at")
+        as_of = validate_clock(result.as_of, field_name="as_of")
+        source = _source_payload(result.source, subscriber=True)
+        provenance = _provenance_payload(result.provenance, subscriber=True)
+        if (
+            source.get("source_id") != "stage_analysis.screener"
+            or provenance.get("kind") != "owner_relationship"
+            or provenance.get("relationship") != "security.current_industry"
+        ):
+            raise AdapterContractError("Stage current-industry relationship authority drift")
+        _validate_subscriber_metadata(source, location="source")
+        _validate_subscriber_metadata(provenance, location="provenance")
+        payload: dict[str, Any] = {
+            "schema": "intelligence_workspace.current_industry_relationship.v1",
+            "registry_digest": self.registry.digest,
+            "relationship": "security.current_industry",
+            "from": {"type": "security", "id": entity.id},
+            "to": (
+                {"type": "industry", "id": industry_id, "universe": "us_industry"}
+                if industry_id else None
+            ),
+            "status": result.status,
+            "reason_code": result.reason_code,
+            "observed_at": observed_at,
+            "effective_at": effective_at,
+            "as_of": as_of,
+            "generated_at": iso_utc(now),
+            "freshness": thaw(result.freshness),
+            "quality": thaw(result.quality),
+            "source": source,
+            "provenance": provenance,
+            "audience": "subscriber",
+            "consumer_use": "ai_fact",
+            "relationship_fingerprint": "",
+        }
+        fingerprint_basis = {
+            key: value for key, value in payload.items()
+            if key not in {"generated_at", "relationship_fingerprint"}
+        }
+        payload["relationship_fingerprint"] = canonical_json_sha256(fingerprint_basis)
+        canonical_json_bytes(payload)
+        return payload
 
     def resolve(self, payload: ResolutionRequest | Mapping[str, Any]) -> tuple[dict[str, Any], ...]:
         request = _coerce_request(payload)

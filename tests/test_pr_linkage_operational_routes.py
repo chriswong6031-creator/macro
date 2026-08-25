@@ -1,0 +1,159 @@
+"""All twenty frozen execution routes exercised through real CLI phase seams."""
+from __future__ import annotations
+
+import importlib.util
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+import pytest
+
+from lib import pr_linkage_validator as core
+from tests.test_pr_linkage_validator import MANIFEST, VALID, observation
+
+ROOT = Path(__file__).parents[1]
+SPEC = importlib.util.spec_from_file_location("pr_linkage_cli", ROOT / "scripts/pr_linkage_validator.py")
+cli = importlib.util.module_from_spec(SPEC); assert SPEC.loader; SPEC.loader.exec_module(cli)
+
+
+def assert_route(capsys, status, reason):
+    out, err = capsys.readouterr()
+    assert out == ""
+    payload = json.loads(err)
+    expected = next(r for r in MANIFEST["execution_error"]["routes"] if r["reason_code"] == reason)
+    assert status == expected["exit"]
+    assert (payload["error"]["component"], payload["error"]["code"], payload["error"]["reason_code"]) == (expected["component"], expected["error_code"], reason)
+    assert payload["execution_error_hash"] == core.digest(payload["error"])
+
+
+def assert_subprocess_route(result: subprocess.CompletedProcess[bytes], reason: str):
+    assert result.stdout == b""
+    payload = json.loads(result.stderr)
+    expected = next(r for r in MANIFEST["execution_error"]["routes"] if r["reason_code"] == reason)
+    assert result.returncode == expected["exit"]
+    assert (payload["error"]["component"], payload["error"]["code"], payload["error"]["reason_code"]) == (
+        expected["component"], expected["error_code"], reason)
+    assert payload["execution_error_hash"] == core.digest(payload["error"])
+
+
+def natural_input(reason: str) -> bytes:
+    """Produce the first twelve execution routes through their real parser/evaluator laws."""
+    if reason == "INVALID_UTF8": return b"\xff"
+    if reason == "INVALID_JSON": return b"{"
+    if reason == "DUPLICATE_OBJECT_MEMBER": return b'{"x":1,"x":2}'
+    if reason == "RESOURCE_LIMIT": return b" " * (cli.DEFAULT_LIMITS["observation_bytes"] + 1)
+    value = observation(VALID)
+    if reason == "UNKNOWN_KEY": value["extra"] = True
+    elif reason == "MISSING_KEY": value.pop("repository")
+    elif reason == "TYPE_MISMATCH": value["repository"]["name"] = 1
+    elif reason == "INVALID_SNAPSHOT_STATE": value["linear"]["extra"] = True
+    elif reason == "EPOCH_RECEIPT_RULESET_MISMATCH": value["authoring_epoch"]["receipt_ruleset_digest"] = "0" * 64
+    elif reason == "INVALID_BODY_ENCODING": value["pull_request"]["body"] += "\x00"
+    elif reason == "UNSUPPORTED_RULESET_ID": value["ruleset_id"] = "unknown.ruleset"
+    elif reason == "RULESET_DIGEST_MISMATCH": value["ruleset_digest"] = "0" * 64
+    else: raise AssertionError(reason)
+    return core.canonical_json(value)
+
+
+@pytest.mark.parametrize("reason", [r["reason_code"] for r in MANIFEST["execution_error"]["routes"][:12]])
+def test_all_input_contract_routes_are_natural_subprocesses(tmp_path, reason):
+    src = tmp_path / "input.json"
+    src.write_bytes(natural_input(reason))
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts/pr_linkage_validator.py"), str(src)],
+        cwd=ROOT, capture_output=True, check=False,
+    )
+    assert_subprocess_route(result, reason)
+
+
+def test_input_read_failure_is_a_natural_subprocess(tmp_path):
+    missing = tmp_path / "does-not-exist.json"
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts/pr_linkage_validator.py"), str(missing)],
+        cwd=ROOT, capture_output=True, check=False,
+    )
+    assert_subprocess_route(result, "INPUT_READ_FAILED")
+
+
+@pytest.mark.parametrize("reason, seam", [
+    ("PARSER_INTERNAL_ERROR", "parse_input"),
+    ("EVALUATOR_INTERNAL_ERROR", "evaluate"), ("RENDERER_INTERNAL_ERROR", "render"),
+    ("NONDETERMINISTIC_RESULT", "render"),
+])
+def test_internal_phase_routes_are_operational(monkeypatch, capsys, reason, seam):
+    raw = core.canonical_json(observation(VALID))
+    monkeypatch.setattr(cli, "read_input", lambda _: raw)
+    if seam == "parse_input":
+        calls = {"n": 0}
+        def parse(_):
+            calls["n"] += 1
+            if calls["n"] == 1: raise cli.PhaseFailure(reason)
+            return MANIFEST
+        monkeypatch.setattr(cli, seam, parse)
+    elif seam == "evaluate": monkeypatch.setattr(cli, seam, lambda *_: (_ for _ in ()).throw(cli.PhaseFailure(reason)))
+    elif reason == "NONDETERMINISTIC_RESULT":
+        calls = {"n": 0}; original = cli.render
+        def unstable(*args):
+            calls["n"] += 1
+            return original(*args) + str(calls["n"]).encode()
+        monkeypatch.setattr(cli, seam, unstable)
+    else: monkeypatch.setattr(cli, seam, lambda *_: (_ for _ in ()).throw(cli.PhaseFailure(reason)))
+    assert_route(capsys, cli.main(["x"]), reason)
+
+
+@pytest.mark.parametrize("reason, seam", [
+    ("OUTPUT_TEMP_CREATE_FAILED", "mkstemp"), ("OUTPUT_WRITE_FAILED", "write"), ("OUTPUT_WRITE_FAILED", "fsync"), ("OUTPUT_REPLACE_FAILED", "replace"),
+])
+def test_atomic_output_failure_routes_are_operational(monkeypatch, capsys, tmp_path, reason, seam):
+    src = tmp_path / "input.json"; src.write_bytes(core.canonical_json(observation(VALID)))
+    if seam == "mkstemp": monkeypatch.setattr(cli.tempfile, seam, lambda **_: (_ for _ in ()).throw(OSError("temp")))
+    elif seam in {"write", "fsync"}: monkeypatch.setattr(cli.os, seam, lambda *_: (_ for _ in ()).throw(OSError("write")))
+    else: monkeypatch.setattr(cli.os, seam, lambda *_: (_ for _ in ()).throw(OSError("replace")))
+    assert_route(capsys, cli.main([str(src), "--output", str(tmp_path / "report.json")]), reason)
+    assert not list(tmp_path.glob(".report.json.*"))
+
+
+def test_source_sha_fallback_is_bounded_validated_and_nullable(monkeypatch):
+    monkeypatch.setattr(cli.subprocess, "run", lambda *_, **__: subprocess.CompletedProcess([], 0, "a" * 40 + "\n", ""))
+    assert cli.source_sha(None) == "a" * 40
+    assert cli.source_sha("b" * 40) == "b" * 40
+    assert cli.source_sha("B" * 40) == "a" * 40
+    monkeypatch.setattr(cli.subprocess, "run", lambda *_, **__: (_ for _ in ()).throw(OSError("no git")))
+    assert cli.source_sha(None) is None
+
+
+def test_valid_explicit_source_sha_survives_later_typed_failure(monkeypatch, capsys):
+    monkeypatch.setattr(cli, "read_input", lambda _: b"{}")
+    monkeypatch.setattr(cli, "parse_input", lambda _: (_ for _ in ()).throw(core.ValidationError("TYPE_MISMATCH")))
+    explicit = "c" * 40
+    assert_route(capsys, cli.main(["x", "--source-sha", explicit]), "TYPE_MISMATCH")
+    _, err = capsys.readouterr()
+    # assert_route consumed the stream; exercise a second time for receipt bytes.
+    assert cli.main(["x", "--source-sha", explicit]) == 2
+    _, err = capsys.readouterr()
+    assert json.loads(err)["receipt"]["source_sha"] == explicit
+
+
+def test_resource_limit_uses_phase_measurement_not_raw_reconstruction(monkeypatch, capsys):
+    monkeypatch.setattr(cli, "read_input", lambda _: b"{}")
+    monkeypatch.setattr(cli, "parse_input", lambda _: (_ for _ in ()).throw(core.ResourceLimitError("relationships", 256, 257)))
+    assert cli.main(["x"]) == 2
+    _, err = capsys.readouterr()
+    payload = json.loads(err)
+    assert payload["error"]["reason_code"] == "RESOURCE_LIMIT"
+    assert (payload["error"]["limit"], payload["error"]["observed"]) == (256, 257)
+
+
+def test_manifest_and_invocation_failures_are_typed(monkeypatch, capsys):
+    assert_route(capsys, cli.main(["--unknown"]), "INPUT_READ_FAILED")
+    monkeypatch.setattr(cli, "read_input", lambda _: core.canonical_json(observation(VALID)))
+    monkeypatch.setattr(cli, "read_manifest", lambda: (_ for _ in ()).throw(cli.PhaseFailure("PARSER_INTERNAL_ERROR")))
+    assert_route(capsys, cli.main(["x"]), "PARSER_INTERNAL_ERROR")
+
+
+def test_operational_route_measurement(capsys):
+    routes = [r["reason_code"] for r in MANIFEST["execution_error"]["routes"]]
+    missing = sorted(set(cli.ROUTES) ^ set(routes))
+    print(f"operational_routes={len(routes)} missing={missing}")
+    assert len(routes) == 20 and missing == []

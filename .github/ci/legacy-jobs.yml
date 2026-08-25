@@ -699,6 +699,11 @@ jobs:
           python -m pytest
           tests/test_evidence_foundation_contract.py
           tests/test_evidence_foundation_product_contract.py -q
+      # K2-B is a pure contract/fixture compiler which deliberately does not import
+      # an institutional owner or materialize a store. Keeping its hostile contract
+      # suite adjacent to K1 makes the pointer-only boundary visible in CI.
+      - name: K2-B manager-complex and research-intent hostile contracts
+        run: python -m pytest tests/test_institutional_manager_intent_contract.py -q
       # Four detector ids exist as byte-identical strings in THREE implementations
       # with three separate threshold stores: scripts/build_fundamental_forensics.py
       # (inline FRACTION literals, Filing Forensics workbench),
@@ -1499,6 +1504,12 @@ jobs:
     scope: exclusive
     paths:
       - "engine/quote_resolution.py"
+      # W1-B wires Brain's native-fact serve to the frozen W1-A runtime. This
+      # job's own app/neuralweb import closure now reaches those packages, so
+      # its curated scope must retain their real dependency ownership.
+      - "engine/intelligence_workspace/**"
+      - "engine/theme_graph/**"
+      - "lib/dataos/**"
       - "app/*"
       - "collectors/*"
       - "collectors/biocatalyst/**"
@@ -2217,6 +2228,7 @@ jobs:
           tests/test_fundamental_forensics_filing_package.py
           tests/test_fundamental_forensics_financial_query_service.py
           tests/test_fundamental_forensics_financial_query_api.py
+          tests/test_fundamental_forensics_ixbrl_raw_ledger.py
           tests/test_fundamental_forensics_financial_revision_service.py
           tests/test_fundamental_forensics_financial_revision_api.py
           tests/test_fundamental_forensics_financial_packet_service.py
@@ -6274,6 +6286,12 @@ jobs:
     scope: exclusive
     paths:
       - "engine/quote_resolution.py"
+      # W1-B wires Brain's native-fact serve to the frozen W1-A runtime. This
+      # job's own app/neuralweb import closure now reaches those packages, so
+      # its curated scope must retain their real dependency ownership.
+      - "engine/intelligence_workspace/**"
+      - "engine/theme_graph/**"
+      - "lib/dataos/**"
       - "app/*"
       - "collectors/*"
       - "collectors/biocatalyst/**"
@@ -6818,6 +6836,12 @@ jobs:
     scope: exclusive
     paths:
       - "engine/quote_resolution.py"
+      # W1-B wires Brain's native-fact serve to the frozen W1-A runtime. This
+      # job's own app/neuralweb import closure now reaches those packages, so
+      # its curated scope must retain their real dependency ownership.
+      - "engine/intelligence_workspace/**"
+      - "engine/theme_graph/**"
+      - "lib/dataos/**"
       - "app/*"
       - "collectors/*"
       - "collectors/biocatalyst/**"
@@ -8752,7 +8776,10 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps plus the schema/API wheels
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn jsonschema fastapi httpx2
+        # pdfplumber: the D6-A DoD budget live suite imports
+        # collectors/dod_budget_live.py, whose deterministic extractor is
+        # pdfplumber (frozen choice, design doc §5).
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn jsonschema fastapi httpx2 pdfplumber
       # Wave 9D: the admissibility fences on issuer graph expansion — exact
       # identifier + verbatim Exhibit 21 name only, no discovery_query_ticker, no
       # similarity, no LLM assertion; PIT; the proposed-edge-cannot-become-a-
@@ -8765,6 +8792,14 @@ jobs:
         run: python -m pytest tests/test_government_revenue_issuer_graph_expansion.py -q
       - name: builder envelope + publication fence + dossier/subaward rails
         run: python -m pytest tests/test_build_government_revenue.py tests/test_check_government_revenue_projection.py tests/test_government_revenue_dossiers.py tests/test_government_revenue_subaward_api.py -q
+      # D6-A DoD budget live rail (PR #6377): the hostile law battery for the
+      # production P-1/R-1 acquisition + parser — fetch/R2-readback order, no
+      # receipt without readback proof, §5b/§5b.1 row-model refusals (sign law,
+      # printed-addend grain, boundary buckets, page-pair joins, 0400D
+      # consolidated-only), idempotence, and the activation fence. Merge-binding
+      # per the commission ("do not rely on an unrun test holding pen").
+      - name: DoD budget live acquisition + parser law suite (D6-A)
+        run: python -m pytest tests/test_dod_budget_live.py -q
       # The prophet↔government-revenue context bridge. Named by NOTHING in
       # .github/ before this line — not this manifest, not any workflow, and not
       # even a ci.yml trigger path — so the one suite proving the Prophet side
@@ -11588,6 +11623,12 @@ jobs:
     scope: exclusive
     paths:
       - "engine/quote_resolution.py"
+      # W1-B wires Brain's native-fact serve to the frozen W1-A runtime. This
+      # job's own app/neuralweb import closure now reaches those packages, so
+      # its curated scope must retain their real dependency ownership.
+      - "engine/intelligence_workspace/**"
+      - "engine/theme_graph/**"
+      - "lib/dataos/**"
       - "app/*"
       - "collectors/*"
       - "collectors/biocatalyst/**"
@@ -12821,3 +12862,21 @@ jobs:
           tests/test_dislocation_p0_source_adapter.py
           tests/test_dislocation_p0_source_materializer.py
           -q
+
+  unrun-cell-b-v2-buyback-census:
+    # Owns scripts/cell_b_v2_buyback_source_census.py — the price-blind Cell B
+    # V2 buyback source-capacity census. Dedicated job because no existing
+    # cell-B/buyback owner exists on the pack runner.
+    if: ${{ false }}
+    gate: code
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: Cell B V2 buyback source-capacity census
+        run: python -m pytest tests/test_cell_b_v2_buyback_source_census.py -q

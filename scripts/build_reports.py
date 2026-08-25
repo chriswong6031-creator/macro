@@ -53,6 +53,32 @@ def _tag(key: str, en: str, zh: str) -> dict:
 # ---------------------------------------------------------------------------
 REPORTS: list[dict] = [
     {
+        "slug": "report_price_of_duration",
+        "template": "report_price_of_duration.html.j2",
+        "date": "2026-08-24",
+        "read_min": 44,
+        "title_en": "The Price of Duration",
+        "title_zh": "久期的价格",
+        "dek_en": "The AI boom did not end. The debt problem did not wait for 2027. They "
+                  "collided. As Treasury, hyperscalers, utilities and the rest of the AI "
+                  "buildout compete for the same capital, long yields have become the market's "
+                  "governing price. Gold and Bitcoin have already begun reacting to what comes "
+                  "next. The question is no longer simply whether the Fed cuts—it is who absorbs "
+                  "the duration, at what price, and what policymakers do when that price becomes "
+                  "unacceptable.",
+        "dek_zh": "AI 热潮没有结束，债务问题也没有等到 2027 年——两者已经相撞。随着财政部、超大规模云厂商、"
+                  "公用事业公司与 AI 建设链的其余参与者争夺同一池资本，长端收益率已成为市场的治理价格。黄金与"
+                  "比特币已经开始回应下一步。问题不再只是美联储是否降息，而是谁来吸收久期、以什么价格吸收，"
+                  "以及当这个价格变得不可接受时，政策制定者会做什么。",
+        "tags": [
+            _tag("macro", "Macro", "宏观"),
+            _tag("rates", "Rates", "利率"),
+            _tag("ai", "AI", "AI"),
+            _tag("crypto", "Crypto", "加密"),
+            _tag("credit", "Credit", "信用"),
+        ],
+    },
+    {
         "slug": "report_haven_audition",
         "template": "report_haven_audition.html.j2",
         "date": "2026-07-11",

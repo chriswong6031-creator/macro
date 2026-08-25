@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.daily_brief.v1",
-  "produced_at": "2026-08-24T03:26:14.758876+00:00",
+  "produced_at": "2026-08-24T19:54:35.961491+00:00",
   "as_of": "2026-08-21",
   "status": "warn",
   "phase": "final",
@@ -483,8 +483,8 @@
   },
   "china_market_state": {
     "available": true,
-    "as_of": "2026-08-23",
-    "phase": "REPAIR",
+    "as_of": "2026-08-24",
+    "phase": "POLICY_PUT",
     "phase_confidence": 0.75,
     "who_controls": "mixed",
     "policy_impulse": "targeted_support",

@@ -66,14 +66,22 @@
     tail -f /tmp/index_gex_history.stdout.log /tmp/index_gex_history.stderr.log
 
   MANUAL RUN (full — rebuild + R2 + push):
-    /Users/chriswong/flow-ops-wt/ops/launchd/run_with_env.sh \
+    /Users/chriswong/macro-publisher-runtime/ops/launchd/run_with_env.sh \
       /Users/chriswong/flow-ops-wt/.env \
-      /Users/chriswong/flow-ops-wt/ops/launchd/run_index_gex_history.sh
+      /usr/bin/env \
+      MACRO_PUBLISH_GIT_SSH_KEY=/Users/chriswong/.ssh/macro_dashboard_deploy \
+      PYTHONPATH=/Users/chriswong/flow-ops-wt \
+      /bin/sh \
+      /Users/chriswong/macro-publisher-runtime/ops/launchd/run_index_gex_history.sh
 
   MANUAL RUN (push tail only — skips the ~20 min rebuild):
-    INDEXGEX_SKIP_ENGINE=1 /Users/chriswong/flow-ops-wt/ops/launchd/run_with_env.sh \
+    INDEXGEX_SKIP_ENGINE=1 /Users/chriswong/macro-publisher-runtime/ops/launchd/run_with_env.sh \
       /Users/chriswong/flow-ops-wt/.env \
-      /Users/chriswong/flow-ops-wt/ops/launchd/run_index_gex_history.sh
+      /usr/bin/env \
+      MACRO_PUBLISH_GIT_SSH_KEY=/Users/chriswong/.ssh/macro_dashboard_deploy \
+      PYTHONPATH=/Users/chriswong/flow-ops-wt \
+      /bin/sh \
+      /Users/chriswong/macro-publisher-runtime/ops/launchd/run_index_gex_history.sh
 
   VERIFY IT LANDED:
     python -c "import pandas as pd; d=pd.read_parquet('data/index_gex_history/SPY.parquet'); print(len(d), d.index.max())"
@@ -90,9 +98,13 @@
   -->
   <key>ProgramArguments</key>
   <array>
-    <string>/Users/chriswong/flow-ops-wt/ops/launchd/run_with_env.sh</string>
+    <string>/Users/chriswong/macro-publisher-runtime/ops/launchd/run_with_env.sh</string>
     <string>/Users/chriswong/flow-ops-wt/.env</string>
-    <string>/Users/chriswong/flow-ops-wt/ops/launchd/run_index_gex_history.sh</string>
+    <string>/usr/bin/env</string>
+    <string>MACRO_PUBLISH_GIT_SSH_KEY=/Users/chriswong/.ssh/macro_dashboard_deploy</string>
+    <string>PYTHONPATH=/Users/chriswong/flow-ops-wt</string>
+    <string>/bin/sh</string>
+    <string>/Users/chriswong/macro-publisher-runtime/ops/launchd/run_index_gex_history.sh</string>
   </array>
 
   <!-- Working directory must be flow-ops-wt (avoids ~/Documents TCC denial). -->
@@ -107,15 +119,11 @@
     <key>Minute</key><integer>0</integer>
   </dict>
 
-  <key>EnvironmentVariables</key>
-  <dict>
-    <key>PYTHONPATH</key>
-    <string>/Users/chriswong/flow-ops-wt</string>
-    <!--
-      THETADATA_STORE and R2_* are sourced from .env via run_with_env.sh above.
-      Do NOT set them here to avoid duplication / stale override.
-    -->
-  </dict>
+  <!--
+    THETADATA_STORE and R2_* are sourced from .env. /usr/bin/env then reasserts
+    the non-secret machine-key path and pinned PYTHONPATH AFTER that source, so
+    a stale environment-file assignment cannot replace the approved identity.
+  -->
 
   <key>StandardOutPath</key>
   <string>/tmp/index_gex_history.stdout.log</string>
