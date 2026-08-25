@@ -4376,6 +4376,18 @@ jobs:
           # shallow-checkout.
           filter: blob:none
           fetch-depth: 0
+          # W3 working-tree containment. The planner's mechanical census reads
+          # source/config/test bytes outside these four generated-heavy trees;
+          # omitted tracked-path existence is supplied separately by the exact
+          # tested-tree inventory below. Unknown/new top-level trees remain
+          # included, so profile drift widens cost rather than narrowing proof.
+          sparse-checkout: |
+            /*
+            !/data/
+            !/site/
+            !/mockups/
+            !/verify_shots/
+          sparse-checkout-cone-mode: false
       - uses: actions/setup-python@v5
         with:
           # PINNED to an exact patch release, not the floating "3.12".
@@ -4454,6 +4466,11 @@ jobs:
         run: |
           python -m venv "$RUNNER_TEMP/ci-plan-runner"
           "$RUNNER_TEMP/ci-plan-runner/bin/pip" install pyyaml
+      - name: bind exact tested-tree path inventory
+        run: >-
+          "$RUNNER_TEMP/ci-plan-runner/bin/python" scripts/ci_scope_dependencies.py
+          --write-tracked-paths "$RUNNER_TEMP/ci-tracked-paths/tracked-paths.v1"
+          --tested-tree-sha "${{ steps.identity.outputs.tested_tree_sha }}"
       # Same `env`-built, UNQUOTED shell-argument idiom as the pack step below, and
       # for the same two reasons: a folded `>-` scalar tolerates no `#` and no
       # varying indent, and an empty `CI_SCOPE_ARG` must word-split away to nothing
@@ -4491,6 +4508,7 @@ jobs:
           --github-output "$GITHUB_OUTPUT"
           --emit-plan-json "$RUNNER_TEMP/ci-semantic-plan/ci-plan.json"
           --emit-changed-files "$RUNNER_TEMP/ci-changed-files/changed-files.json"
+          --tracked-paths-file "$RUNNER_TEMP/ci-tracked-paths/tracked-paths.v1"
           --workflow-run-id "$GITHUB_RUN_ID"
           --workflow-name ci
           --event "$GITHUB_EVENT_NAME"

@@ -192,14 +192,29 @@
   }
 }());
 
-/* Canada Stock Dashboard V3.6 progressive composer. Strict no-op elsewhere. */
+/* Canada Stock Dashboard V3.6 progressive composer. Strict no-op elsewhere.
+   The asset is entitled-only (401 anonymous, served no-store), and the gate
+   consults the auth backend per request — a transient 401/503 there used to
+   strand an ENTITLED visitor on the legacy page until a manual reload
+   (observed twice in the 2026-08-25 production acceptance). Bounded backoff
+   retries cover that window; anonymous visitors still fail every attempt
+   quietly and keep the designed legacy fallback. */
 (function () {
   "use strict";
   if (!/(^|\/)canada_stocks\.html$/.test(location.pathname)) return;
   if (window.__mmCanadaStockV36Loader) return;
   window.__mmCanadaStockV36Loader = true;
-  var script = document.createElement("script");
-  script.src = "canada-stock-v36.js?v=20260823";
-  script.async = false;
-  (document.head || document.documentElement).appendChild(script);
+  var attempt = 0;
+  function inject() {
+    attempt += 1;
+    var script = document.createElement("script");
+    script.src = "canada-stock-v36.js?v=20260823";
+    script.async = false;
+    script.onerror = function () {
+      if (script.parentNode) script.parentNode.removeChild(script);
+      if (attempt < 3 && !window.__mmCanadaStockV36) setTimeout(inject, 1500 * attempt);
+    };
+    (document.head || document.documentElement).appendChild(script);
+  }
+  inject();
 }());
