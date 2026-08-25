@@ -25,9 +25,10 @@ waves:
     pr: 6297
     depends_on: [F0]
     next_action: >
-      Sol reviews the exact final head of draft HOLD-FOR-SOL PR #6297 after its independent
-      adversarial packet and hosted CI conclude. Keep the PR draft and unarmed; CF1 remains
-      unaccepted until Sol explicitly releases the hold. Do not modify Executive placement.
+      Complete the current-head hosted proof for the same draft HOLD-FOR-SOL PR #6297 after the
+      2026-08-25 current-main reconciliation packet, then perform Sol REVIEW_RETURN against that
+      exact head. Keep the PR draft and unarmed; CF1 remains unaccepted until Sol explicitly
+      releases the hold. Do not modify Executive placement or begin a provider login ceremony.
   - id: CF2-F
     title: Freeze Executive claim-time capacity evidence and acquisition against landed schema v4
     status: todo
@@ -89,6 +90,8 @@ artifacts:
   - research/MASTERMIND_EXECUTIVE_CAPACITY_FABRIC_F0_PLACEMENT_AMENDMENT_2026-08-22.md
   - research/MASTERMIND_EXECUTIVE_CAPACITY_FABRIC_F0_SEMANTIC_IDENTITY_AMENDMENT_2026-08-22.md
   - research/MASTERMIND_EXECUTIVE_CAPACITY_FABRIC_F0_OBSERVATION_NULL_AMENDMENT_2026-08-22.md
+  - agentos/handoffs/EXECUTIVE-CAPACITY-FABRIC-2026-08-25.md
+  - docs/superpowers/plans/2026-08-25-mas-126-cf1-reconciliation.md
 landmines:
   - "Macro `shared-ai-provider-control` already owns provider availability, auth pools, cooling and quota state; do not create ProviderAccount/QuotaHorizon truth tables in Executive OS."
   - "`usage_snapshot()` is a display aggregate, not a normalized truth contract. Its numeric defaults and fail-soft joins cannot be mapped 1:1 into provider_capacity.v1."
@@ -132,8 +135,9 @@ do_not_redo:
   - "Do not add Z.AI, Alibaba, Claude Code, Grok, Cursor, OpenRouter or local-provider adapters in CF1; prove the contract first on existing Codex/Claude/DeepSeek sources."
   - "Do not widen Capacity Fabric into Wake, Slack dispatch, Control Room P1, merge/deploy authority or capital/trading authority."
 next_action: >
-  Complete the exact-head independent review and hosted-CI receipt for draft HOLD-FOR-SOL PR #6297,
-  then return it to Sol as sole release authority. Keep CF2-F/CF2-I, RF1, HF1, PF1 and MH1 held.
+  Complete the final record-bearing exact-head hosted-CI receipt for draft HOLD-FOR-SOL PR #6297,
+  then run Sol REVIEW_RETURN against that same head. Keep the PR draft/unarmed and keep CF2-F/CF2-I,
+  RF1, HF1, PF1, MH1, Personal Pro login/readiness and provider expansion held.
 ---
 
 ## Capability state
