@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-25T05:22:05.288743+00:00",
-  "count": 1805,
+  "generated_at": "2026-08-25T06:25:09.262803+00:00",
+  "count": 1808,
   "institutions": [
     "13F Summary",
     "ABN Amro",
@@ -909,6 +909,25 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-bojgrboi6sd-59bbc6",
+      "title": "Nebius Group (NBIS) Strong competitive performance and robust",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T13:43:55Z",
+      "summary_points": [
+        "**Competitive Demand & Capacity Growth**: 4 billion-dollar contracts and >$20m/MW deals confirm robust demand; accelerated capacity build-out with faster power procurement and retained 2027 capacity for pricing confidence.",
+        "**Capital Availability & Financing Levers**: $9bn upfront funding (2Q), $40bn committed backlog, and $775mn asset-backed debt facility enable scalable growth; prepayments cover 50-60% of capex with target for further improvement.",
+        "**Growth & Margin Catalysts**: Asset-light model drives high-margin revenue, 15% pricing uplift (Blackwell GPUs), and 1GW/year capacity deployment; 2-3% top-line growth projected for 2027-30 via AI business expansion."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-9zwovayctdl-055f34",
       "title": "Taiwan CCL Fulltech mgmt. visit Ongoing product mix shift toward high",
       "institution": "Goldman Sachs",
@@ -930,6 +949,26 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-ldw1fbyriwd-8da4db",
+      "title": "Trend Micro Inc.",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T13:43:53Z",
+      "summary_points": [
+        "**Earnings Revision & Target Cut**: FY12/26-28 operating profit estimates cut 17-21% due to cloud/AI token costs; target price slashed to ¥5,900 (−11% from ¥6,600), reflecting cost control failures and pricing constraints.",
+        "**AI Token Cost Pressure**: Rising AI token costs (e.g., CREM) in cloud services will persist, with external costs unlikely to be passed to prices; profits unlikely to hit new highs until ~2030 despite AI-driven security demand.",
+        "**Profit Downturn Drivers**: Operating expenses surged 19% YoY (+¥42.0bn), driven by 58% cloud cost jump (+¥16.2bn) and 16% labor costs (+¥10.5bn); operating margin projected to fall 6.6 pp to 14.3%.",
+        "**Structural Profit Recovery Delay**: Five consecutive years of missed guidance due to cost management issues; profit recovery to record highs uncertain until ~2030 amid yen weakness and inflation-driven labor costs (GSe +11% YoY)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-dg5dwkx8enk-685e56",
       "title": "Target Corp.",
       "institution": "Goldman Sachs",
@@ -947,6 +986,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-lsvkkplzesj-a83875",
+      "title": "US Tariff Impact Tracker Indicated Imports into LA Positive on YOY Basis",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T13:43:49Z",
+      "summary_points": [
+        "**China-US TEU Decline Signals Tariff Impact**: China-to-US container volumes fell -0.5% YoY (8/14-8/20) vs +8% prior week, reversing momentum amid tariff uncertainty, indicating weakening trade dynamics and potential supply chain disruption.",
+        "**Tariff-Induced Demand Shifts Drive 2026 Recovery**: Pull-forward demand from tariff uncertainty caused 2025 underperformance, but subseasonal peak shipping (4Q reporting) may trigger 2026 volume rebound, aligning with Fed rate cut timing (Dec 2026/Mar 2027).",
+        "**Ocean Container Rates Surge Amid Geopolitical Volatility**: China/East Asia to US West Coast rates surged 4.3x YoY (+1% WoW), driven by geopolitical tensions and early peak season, signaling acute supply chain disruption risks for trade-dependent portfolios.",
+        "**Inventory Fragmentation & Cost Pressures Intensify**: Upstream (B2B) inventories grew slower (59 vs 59.1 in June) while downstream (Retail) contracted (46.3 vs 66), and inventory cost index rose to 77 (vs 75.9), reflecting accelerating cost pressures and supply chain fragmentation.",
+        "**LA Port TEU Flow Volatility Signals Near-Term Congestion**: Planned TEUs into LA rose +3% sequentially, with forecasted +26% next week (then -12.5% two weeks out), indicating imminent congestion followed by potential easing, impacting port-dependent logistics flows."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
       "language": "en",
       "needs_metadata": false
     },
