@@ -70,7 +70,6 @@ SUPPRESSION_REASONS = frozenset({
     "SOURCE_SCHEMA_UNSUPPORTED",
     "SOURCE_RECEIPT_INVALID",
 })
-ORDINARY_EVENT_TYPES = frozenset({"OPENED", "OBSERVED", "EXPERT_EVENT_ATTACHED"})
 _SUPPRESSION_SOURCE_FACT_FIELDS = (
     "schema",
     "source_system",
@@ -671,16 +670,14 @@ def validate_ordinary_source_ownership(
     events: Sequence[Mapping[str, object]],
     suppressions: Sequence[Mapping[str, object]],
 ) -> tuple[list[dict[str, object]], list[dict[str, object]]]:
-    """Require one immutable event-or-suppression owner per ordinary source key."""
+    """Require one immutable event-or-suppression owner per source key."""
     validated_events = validate_events(events)
     validated_suppressions = validate_suppressions(suppressions)
     event_keys: set[tuple[str, str, str]] = set()
     for event in validated_events:
-        if event["event_type"] not in ORDINARY_EVENT_TYPES:
-            continue
         source_key = _ordinary_source_key(event)
         if source_key in event_keys:
-            raise EpisodeContractError("duplicate immutable source key in ordinary event ledger")
+            raise EpisodeContractError("duplicate immutable source key in event ledger")
         event_keys.add(source_key)
     suppression_keys: set[tuple[str, str, str]] = set()
     for suppression in validated_suppressions:
@@ -689,7 +686,7 @@ def validate_ordinary_source_ownership(
             raise EpisodeContractError("duplicate immutable suppression source key")
         if source_key in event_keys:
             raise EpisodeContractError(
-                "ordinary source key has both event and suppression owners"
+                "immutable source key has both event and suppression owners"
             )
         suppression_keys.add(source_key)
     return validated_events, validated_suppressions

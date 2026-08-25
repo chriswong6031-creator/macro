@@ -20,7 +20,6 @@ from engine.us_candidate_episode import (
     DEFAULT_DEFINITION_ERA,
     GENERATION_MANIFEST_SCHEMA,
     HEAD_SCHEMA,
-    ORDINARY_EVENT_TYPES,
     PARQUET_JSON_FIELDS,
     RECONCILE_RECEIPT_SCHEMA,
     SUPPRESSION_REASONS,
@@ -327,7 +326,6 @@ def _merge_suppressions(existing, additions, *, events, recorded_at: str):
     event_keys = {
         _ordinary_source_key(row)
         for row in validated_events
-        if row["event_type"] in ORDINARY_EVENT_TYPES
     }
     merged = {str(row["suppression_id"]): dict(row) for row in validated_existing}
     source_owners = {
@@ -338,7 +336,7 @@ def _merge_suppressions(existing, additions, *, events, recorded_at: str):
         source_key = _ordinary_source_key(candidate)
         if source_key in event_keys:
             raise EpisodeContractError(
-                "ordinary source key has both event and suppression owners"
+                "immutable source key has both event and suppression owners"
             )
         prior = source_owners.get(source_key)
         if prior is not None:

@@ -12,9 +12,11 @@ import pytest
 
 from engine.us_candidate_episode import (
     EpisodeContractError,
+    build_all_candidates,
     canonical_json,
     load_all_candidates,
     load_candidate_episode_store,
+    make_event,
 )
 from scripts import reconcile_us_candidate_episodes as writer
 
@@ -137,6 +139,35 @@ def _write_candidate(repo_root: Path, *, revision: int) -> None:
         "board_definition": "b1-test",
         "observation_revision": revision,
     }]).to_parquet(path, index=False)
+
+
+def _state_transition(opened: dict[str, object]) -> dict[str, object]:
+    return make_event(
+        event_type="STATE_TRANSITIONED",
+        episode_id=str(opened["episode_id"]),
+        source_system="episode_state",
+        source_schema="prophet.candidate_episode_state/v1",
+        source_event_id="state:resolved:ALFA:2026-11-27",
+        occurred_at="2026-11-27T18:06:00Z",
+        known_at="2026-11-27T18:06:00Z",
+        recorded_at="2026-11-27T18:06:00Z",
+        source_receipt="sha256:" + "d" * 64,
+        definition_era=str(opened["definition_era"]),
+        payload={"episode_state": "RESOLVED", "terminal_reason": "test-resolution"},
+    )
+
+
+def _same_key_suppression(event: dict[str, object]) -> dict[str, object]:
+    return {
+        "source_system": event["source_system"],
+        "source_schema": event["source_schema"],
+        "source_event_id": event["source_event_id"],
+        "source_receipt": event["source_receipt"],
+        "observation_session": "2026-11-27",
+        "ticker_at_observation": "ALFA",
+        "security_id": "SEC:US-XNAS-ALFA",
+        "reason": "MISSING_STRUCTURAL_ANCHOR",
+    }
 
 
 def _parquet_logical_rows(path: Path) -> list[dict[str, object]]:
@@ -354,6 +385,22 @@ def test_intake_suppression_cannot_reuse_persisted_turn_watch_event_source_key(
     assert [row["event_type"] for row in _event_rows(tmp_path)] == ["OPENED"]
     assert _suppression_rows(tmp_path) == []
     assert len(load_candidate_episode_store(_episode_root(tmp_path))) == 1
+
+
+def test_suppression_merge_rejects_source_key_owned_by_state_transition(
+    tmp_path: Path, monkeypatch,
+):
+    """Every immutable event type, not only intake events, owns its source key."""
+    _seed_sources(tmp_path)
+    _run_nightly(tmp_path, monkeypatch)
+    opened = _event_rows(tmp_path)[0]
+    state = _state_transition(opened)
+
+    with pytest.raises(EpisodeContractError, match="source key.*event.*suppression"):
+        writer._merge_suppressions(
+            [], [_same_key_suppression(state)], events=[opened, state],
+            recorded_at="2026-11-27T18:07:00Z",
+        )
 
 
 def test_first_publication_has_no_current_generation_until_head_swap(tmp_path: Path, monkeypatch):
@@ -979,6 +1026,124 @@ def test_canonical_reader_rejects_readdressed_duplicate_source_ownership(
     _readdress_current_generation(tmp_path)
 
     with pytest.raises(EpisodeContractError, match="source key.*owner|duplicate.*source key"):
+        load_candidate_episode_store(_episode_root(tmp_path))
+
+
+def test_canonical_reader_rejects_readdressed_state_event_suppression_overlap(
+    tmp_path: Path, monkeypatch,
+):
+    """A self-addressed generation cannot hide non-intake event source ownership."""
+    _seed_sources(tmp_path)
+    _run_nightly(tmp_path, monkeypatch)
+    generation = _generation(tmp_path)
+    opened = _event_rows(tmp_path)[0]
+    state = _state_transition(opened)
+    events = sorted(
+        [opened, state],
+        key=lambda row: (row["known_at"], row["source_system"], row["source_event_id"]),
+    )
+    (generation / "events" / "2026-11.jsonl").write_text(
+        "".join(canonical_json(row) + "\n" for row in events)
+    )
+    suppression = writer._normalize_suppression(
+        _same_key_suppression(state), recorded_at="2026-11-27T18:07:00Z",
+    )
+    (generation / "suppressions" / "2026-11.jsonl").write_text(
+        canonical_json(suppression) + "\n"
+    )
+
+    projection = build_all_candidates(events, suppression_count=1)
+    projection_bytes = (canonical_json(projection) + "\n").encode()
+    (generation / "all_candidates.json").write_bytes(projection_bytes)
+    parquet_bytes = writer._parquet_bytes(projection["episodes"])
+    (generation / "current.parquet").write_bytes(parquet_bytes)
+    receipt_path = generation / "latest_receipt.json"
+    receipt = json.loads(receipt_path.read_text())
+    receipt["counts"].update({
+        "ledger_suppressions": 1,
+        "old_events": 0,
+        "new_events": 2,
+        "appended_events": 2,
+    })
+    receipt["ledger_sha256"] = "sha256:" + sha256(
+        canonical_json(tuple(events)).encode()
+    ).hexdigest()
+    receipt["projection_hashes"] = {
+        "all_candidates.json": "sha256:" + sha256(projection_bytes).hexdigest(),
+        "current.parquet": "sha256:" + sha256(parquet_bytes).hexdigest(),
+    }
+    receipt_path.write_text(canonical_json(receipt) + "\n")
+    _readdress_current_generation(tmp_path)
+
+    with pytest.raises(EpisodeContractError, match="source key.*event.*suppression"):
+        load_candidate_episode_store(_episode_root(tmp_path))
+
+
+def test_canonical_reader_rejects_readdressed_duplicate_correction_source_key(
+    tmp_path: Path, monkeypatch,
+):
+    """Correction semantics cannot be repainted under one stable source identity."""
+    _seed_sources(tmp_path)
+    _run_nightly(tmp_path, monkeypatch)
+    generation = _generation(tmp_path)
+    opened = _event_rows(tmp_path)[0]
+    correction_material = {
+        "event_type": "CORRECTED",
+        "episode_id": str(opened["episode_id"]),
+        "source_system": "operator_correction",
+        "source_schema": "prophet.candidate_episode_correction/v1",
+        "source_event_id": "correction:stable-source-key",
+        "definition_era": str(opened["definition_era"]),
+        "correction_of": str(opened["event_id"]),
+    }
+    corrections = [
+        make_event(
+            **correction_material,
+            occurred_at="2026-11-27T18:06:00Z",
+            known_at="2026-11-27T18:06:00Z",
+            recorded_at="2026-11-27T18:06:00Z",
+            source_receipt="sha256:" + "e" * 64,
+            payload={"patch": {"ticker_at_observation": "ALFA.ONE"}},
+        ),
+        make_event(
+            **correction_material,
+            occurred_at="2026-11-27T18:07:00Z",
+            known_at="2026-11-27T18:07:00Z",
+            recorded_at="2026-11-27T18:07:00Z",
+            source_receipt="sha256:" + "f" * 64,
+            payload={"patch": {"ticker_at_observation": "ALFA.TWO"}},
+        ),
+    ]
+    events = sorted(
+        [opened, *corrections],
+        key=lambda row: (row["known_at"], row["source_system"], row["source_event_id"]),
+    )
+    (generation / "events" / "2026-11.jsonl").write_text(
+        "".join(canonical_json(row) + "\n" for row in events)
+    )
+    projection = build_all_candidates(events, suppression_count=0)
+    projection_bytes = (canonical_json(projection) + "\n").encode()
+    (generation / "all_candidates.json").write_bytes(projection_bytes)
+    parquet_bytes = writer._parquet_bytes(projection["episodes"])
+    (generation / "current.parquet").write_bytes(parquet_bytes)
+    receipt_path = generation / "latest_receipt.json"
+    receipt = json.loads(receipt_path.read_text())
+    receipt["counts"].update({
+        "old_events": 0,
+        "new_events": 3,
+        "appended_events": 3,
+    })
+    receipt["ledger_sha256"] = "sha256:" + sha256(
+        canonical_json(tuple(events)).encode()
+    ).hexdigest()
+    receipt["projection_hashes"] = {
+        "all_candidates.json": "sha256:" + sha256(projection_bytes).hexdigest(),
+        "current.parquet": "sha256:" + sha256(parquet_bytes).hexdigest(),
+    }
+    receipt_path.write_text(canonical_json(receipt) + "\n")
+    _readdress_current_generation(tmp_path)
+
+    with pytest.raises(EpisodeContractError, match="duplicate immutable source key"):
         load_candidate_episode_store(_episode_root(tmp_path))
 
 
