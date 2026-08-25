@@ -3735,3 +3735,4 @@
 {"id":"ob-2026-08-24-62940a1d10","from":"queued","to":"approved","at":"2026-08-24T22:58:53Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
 {"id":"ob-2026-08-24-62940a1d10","from":"approved","to":"posting","at":"2026-08-24T22:59:04Z","actor":"publisher","note":"in-flight (pre-publish)","receipt":null}
 {"id":"ob-2026-08-24-62940a1d10","from":"posting","to":"posted","at":"2026-08-24T22:59:05Z","actor":"publisher","note":"published","receipt":{"backend":"buffer","external_id":"6a8cccb82a0955d667d861ef","external_url":null,"at":"2026-08-24T22:58:53Z","booked_at":"2026-08-24T22:58:53Z"}}
+{"id":"ob-2026-08-24-012483518d","from":"approved","to":"quarantined","at":"2026-08-25T00:24:10Z","actor":"press_wire_reap","note":"expired_stale_wire: mover sat untouched 3.4h (ttl 3h) — the moment it was written about is gone","receipt":null}
