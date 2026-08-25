@@ -138,6 +138,43 @@
     font-size:10.5px;
     background:var(--panel2);
   }
+  .pod .pod-motion-toggle {
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    position:fixed;
+    left:max(14px,env(safe-area-inset-left));
+    bottom:max(14px,env(safe-area-inset-bottom));
+    z-index:5000;
+    min-height:29px;
+    border:1px solid color-mix(in srgb,var(--pod-blue) 45%,var(--line));
+    border-radius:999px;
+    padding:5px 10px;
+    color:var(--text);
+    background:color-mix(in srgb,var(--pod-blue) 8%,var(--panel2));
+    font:700 10.5px/1.2 var(--font-ui);
+    box-shadow:0 8px 26px color-mix(in srgb,#000 16%,transparent);
+    backdrop-filter:blur(10px);
+    cursor:pointer;
+  }
+  .pod .pod-motion-toggle::before {
+    content:"";
+    width:7px;
+    height:7px;
+    border-radius:50%;
+    background:var(--pod-teal);
+    box-shadow:0 0 0 3px color-mix(in srgb,var(--pod-teal) 18%,transparent);
+  }
+  .pod .pod-motion-toggle:hover,
+  .pod .pod-motion-toggle:focus-visible {
+    border-color:var(--pod-blue);
+    outline:2px solid color-mix(in srgb,var(--pod-blue) 28%,transparent);
+    outline-offset:2px;
+  }
+  .pod .pod-motion-toggle[aria-pressed="true"]::before { background:var(--muted); box-shadow:none; }
+  .pod .pod-motion-label-resume { display:none; }
+  .pod .pod-motion-toggle[aria-pressed="true"] .pod-motion-label-pause { display:none; }
+  .pod .pod-motion-toggle[aria-pressed="true"] .pod-motion-label-resume { display:inline; }
   .pod sup.ev {
     display:inline-block;
     font-size:9px;
@@ -247,6 +284,130 @@
   }
   .pod .pod-figure.pod-motion-pending .pod-draw { stroke-dashoffset:760; }
   .pod .pod-figure.is-visible .pod-draw { stroke-dashoffset:0; }
+
+  /* Report-scoped motion grammar: static final state first, motion only while visible. */
+  .pod .pod-motion-flow {
+    opacity:0;
+    pointer-events:none;
+    offset-rotate:0deg;
+  }
+  .pod .pod-motion-trail {
+    fill:none;
+    stroke:var(--pod-red);
+    stroke-width:1.5;
+    stroke-dasharray:4 6;
+    opacity:.42;
+  }
+  .pod .pod-motion-point,
+  .pod .pod-motion-collapse,
+  .pod .pod-motion-accumulator,
+  .pod .pod-motion-meter,
+  .pod .pod-motion-convergence,
+  .pod .pod-motion-machine,
+  .pod .pod-motion-frontier,
+  .pod .pod-motion-clock,
+  .pod .pod-motion-synapse,
+  .pod .pod-motion-probability,
+  .pod .pod-motion-gauge,
+  .pod .pod-motion-pulse,
+  .pod .pod-motion-connector,
+  .pod .pod-motion-bubble {
+    transform-box:fill-box;
+  }
+  .pod .pod-motion-point,
+  .pod .pod-motion-pulse,
+  .pod .pod-motion-accumulator,
+  .pod .pod-motion-gauge { transform-origin:center; }
+  .pod .pod-motion-probability,
+  .pod .pod-motion-gauge-level { transform-origin:left center; }
+  .pod .pod-motion-connector {
+    stroke-dasharray:7 8;
+    transition:none;
+  }
+
+  .pod .pod-figure.is-motion-active .pod-motion-flow {
+    animation:pod-flow-travel var(--pod-flow-duration,5.4s) linear var(--pod-flow-delay,0s) infinite;
+  }
+  .pod .pod-figure.is-motion-active .pod-motion-point {
+    animation:pod-point-arrive 5.8s cubic-bezier(.22,.72,.2,1) infinite;
+  }
+  .pod .pod-figure.is-motion-active .pod-motion-collapse {
+    animation:pod-collapse-charge 5.8s ease-in-out infinite;
+  }
+  .pod .pod-figure.is-motion-active .pod-motion-accumulator {
+    animation:pod-accumulator-ring 3.8s ease-out .8s infinite;
+  }
+  .pod .pod-figure.is-motion-active .pod-motion-meter {
+    animation:pod-meter-settle 6.2s cubic-bezier(.22,.72,.2,1) .6s infinite;
+  }
+  .pod .pod-figure.is-motion-active .pod-motion-frontier {
+    animation:pod-frontier-stream 3.8s linear infinite;
+  }
+  .pod .pod-figure.is-motion-active .pod-motion-clock {
+    animation:pod-clock-turn var(--pod-clock-duration,12s) linear var(--pod-clock-delay,0s) infinite;
+  }
+  .pod .pod-figure.is-motion-active .pod-motion-probability {
+    animation:pod-level-settle 1.35s cubic-bezier(.22,.72,.2,1) var(--pod-level-delay,0s) both;
+  }
+  .pod .pod-figure.is-motion-active .pod-motion-gauge {
+    animation:pod-gauge-scan 3.2s ease-in-out var(--pod-gauge-delay,0s) infinite;
+  }
+  .pod .pod-figure.is-motion-active .pod-motion-pulse {
+    animation:pod-center-breathe 3.6s ease-in-out infinite;
+  }
+  .pod .pod-figure.is-motion-active .pod-motion-connector {
+    animation:pod-connector-flow 2.8s linear infinite;
+  }
+  .pod .pod-figure.is-motion-active .pod-motion-bubble {
+    animation:pod-bubble-lift .9s cubic-bezier(.2,.75,.2,1) var(--pod-bubble-delay,0s) both;
+  }
+
+  @keyframes pod-flow-travel {
+    0% { offset-distance:0%; opacity:0; }
+    8% { opacity:1; }
+    84% { opacity:1; }
+    94%,100% { offset-distance:100%; opacity:0; }
+  }
+  @keyframes pod-point-arrive {
+    0%,10% { transform:translate(-70px,70px) scale(.72); opacity:.18; }
+    34%,82% { transform:none; opacity:1; }
+    88% { transform:scale(1.34); opacity:.48; }
+    96%,100% { transform:none; opacity:1; }
+  }
+  @keyframes pod-collapse-charge {
+    0%,25%,100% { opacity:.7; stroke-width:1; }
+    34%,62% { opacity:1; stroke-width:2.4; }
+  }
+  @keyframes pod-accumulator-ring {
+    0% { transform:scale(.72); opacity:0; }
+    24% { opacity:.72; }
+    78%,100% { transform:scale(1.14); opacity:0; }
+  }
+  @keyframes pod-meter-settle {
+    0%,8% { transform:translateX(-270px); opacity:0; }
+    18% { opacity:1; }
+    48%,90% { transform:none; opacity:1; }
+    100% { transform:none; opacity:0; }
+  }
+  @keyframes pod-frontier-stream { to { stroke-dashoffset:-48; } }
+  @keyframes pod-clock-turn { to { transform:rotate(360deg); } }
+  @keyframes pod-level-settle {
+    from { transform:scaleX(0); opacity:.25; }
+    to { transform:scaleX(1); opacity:1; }
+  }
+  @keyframes pod-gauge-scan {
+    0%,100% { transform:scale(.78); opacity:.44; }
+    45%,65% { transform:scale(1.28); opacity:1; }
+  }
+  @keyframes pod-center-breathe {
+    0%,100% { transform:scale(.985); opacity:.72; }
+    50% { transform:scale(1.025); opacity:1; }
+  }
+  @keyframes pod-connector-flow { to { stroke-dashoffset:-32; } }
+  @keyframes pod-bubble-lift {
+    from { transform:translateY(28px) scale(.9); opacity:.18; }
+    to { transform:none; opacity:1; }
+  }
 
   .pod .pod-accounting {
     display:grid;
@@ -782,11 +943,14 @@
   }
   @media(prefers-reduced-motion:reduce) {
     .pod .pod-reveal,
-    .pod .pod-draw {
+    .pod .pod-draw,
+    .pod .pod-figure [class*="pod-motion-"] {
       opacity:1 !important;
       transform:none !important;
       transition:none !important;
+      animation:none !important;
       stroke-dashoffset:0 !important;
     }
+    .pod .pod-motion-flow { display:none !important; }
   }
 

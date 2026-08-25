@@ -1,0 +1,53 @@
+{
+  "_note": "SHA-256 receipts for the XPV2-SC-R3B fixture SUPPLEMENT set. Same shape as research/reference_integrity/mastermind-xpv2-sector-r3/fixture/receipts.json (Deliverable 3 of the R3A pack), which this file does NOT modify -- it is a sibling record for the four supplementary producer artifacts plus one extracted HTML fragment that the R3A fixture did not capture. Each entry carries ONE sha256 computed from the fixture_supplement/<...> file; the copy was verified byte-identical to its site/... source (or, for the fragment, correctly extracted from the rendered site/sector_central.html) AT CAPTURE TIME. Recomputation at build/verify time MUST match the stored hash -- a mismatch means the file was altered after capture.",
+  "captured_commit": "4c55fe433490adfd75fd901ef25f5793db2202db",
+  "captured_date": "2026-08-20",
+  "entries": [
+    {
+      "path": "sector_cycles_data.js",
+      "source": "site/sector_cycles_data.js",
+      "fixture": "fixture_supplement/sector_cycles_data.js",
+      "sha256": "aa15f230421acda47659c20bff69dd17b6f2e350a389643b7a9c6f258fcae22a",
+      "size_bytes": 318577,
+      "note": "window.SECTOR_CYCLES writer; embedded as a plain executed <script>, verbatim bytes"
+    },
+    {
+      "path": "marketdata/sp500_heatmap.json",
+      "source": "site/marketdata/sp500_heatmap.json",
+      "fixture": "fixture_supplement/marketdata/sp500_heatmap.json",
+      "sha256": "14309d888dafc5076bf68236365414e743cd53f9a9e703b312e189068c3b5d35",
+      "size_bytes": 117950
+    },
+    {
+      "path": "basketdata/etf_pulse.json",
+      "source": "site/basketdata/etf_pulse.json",
+      "fixture": "fixture_supplement/basketdata/etf_pulse.json",
+      "sha256": "2d5cbc89df108177d0c5d4e315fdb25ca936e1e4f349199e26c4f579a3cb4479",
+      "size_bytes": 4201
+    },
+    {
+      "path": "basketdata/vol_sentiment.json",
+      "source": "site/basketdata/vol_sentiment.json",
+      "fixture": "fixture_supplement/basketdata/vol_sentiment.json",
+      "sha256": "845c68eec1c271d55422cc00bf5556bf2a8bca1af22a52e81426b67021f8c647",
+      "size_bytes": 819
+    },
+    {
+      "path": "fragments/sc_flows.html",
+      "source": "site/sector_central.html (extracted, not a byte-for-byte whole-file copy -- see PROVENANCE_SUPPLEMENT.md 'Extraction rule')",
+      "fixture": "fixture_supplement/fragments/sc_flows.html",
+      "sha256": "a0a3805fb339f9659dac6d1ec81883481246f8b13d8f9f153c060aa0e17cafd3",
+      "size_bytes": 8860,
+      "note": "the #sc-flows section as rendered verbatim in site/sector_central.html at the capture commit; server producer is scripts/build_sector_central.py:263-328 _flows_section_html()"
+    },
+    {
+      "path": "marketdata/nasdaq_internals.json",
+      "source": "site/marketdata/nasdaq_internals.json",
+      "fixture": "fixture_supplement/marketdata/nasdaq_internals.json",
+      "sha256": "d21d64ee2a417d88097386479cbc02b968c1693d249881c87081042046dfb4d6",
+      "size_bytes": 4004,
+      "note": "Nasdaq internals organ producer artifact (templates/subsectors.js:417-448 niSection); added after the D1 follow-up lane so the Confluence view's internals disclosure renders real producer bytes on the Nasdaq tab"
+    }
+  ],
+  "total_supplement_bytes": 454411
+}

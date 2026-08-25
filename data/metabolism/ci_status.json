@@ -1,7 +1,13 @@
 {
-  "ts": "2026-08-25T02:06:51+00:00",
-  "main_sha": "6de456e4dc6a2a8f75e851c18f5cc885afa9b26a",
+  "ts": "2026-08-25T03:42:20+00:00",
+  "main_sha": "7a1c6251ed0c76fe9482ac548e378bd6d7328c2d",
   "red_required": [
+    {
+      "name": "publish",
+      "conclusion": "failure",
+      "status": "completed",
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32805392536/job/97674413753"
+    },
     {
       "name": "sweep",
       "conclusion": "cancelled",
@@ -31,18 +37,12 @@
       "conclusion": "failure",
       "status": "completed",
       "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32799139400/job/97656441961"
-    },
-    {
-      "name": "publish",
-      "conclusion": "failure",
-      "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32799117431/job/97656379355"
     }
   ],
   "green": false,
-  "consecutive_failures": 51,
+  "consecutive_failures": 52,
   "sensed_shas": [
-    "6de456e4dc6a2a8f75e851c18f5cc885afa9b26a",
+    "7a1c6251ed0c76fe9482ac548e378bd6d7328c2d",
     "f2de463c4feb3eea6e6b20ae3b31ff823035e415"
   ],
   "heartbeat_degraded": false

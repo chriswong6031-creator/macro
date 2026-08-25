@@ -1,0 +1,33 @@
+# XPV2-SC-R3B.2 — canonical + legacy hash smoke
+candidate sha256: ea2e09b812d1435103e491973ae01d2c4fca63c3a29186023f40f137fc10aba8
+total hashes: 27 (6 canonical + 21 legacy)
+
+[PASS] canonical #overview -> active view 'overview'
+[PASS] canonical #map -> active view 'map'
+[PASS] canonical #moving -> active view 'moving'
+[PASS] canonical #money -> active view 'money'
+[PASS] canonical #explore -> active view 'explore'
+[PASS] canonical #confluence -> active view 'confluence'
+[PASS] legacy #actnow-section -> expected 'overview', got 'overview'
+[PASS] legacy #regime -> expected 'overview', got 'overview'
+[PASS] legacy #grader -> expected 'overview', got 'overview'
+[PASS] legacy #si-map -> expected 'map', got 'map'
+[PASS] legacy #rotmap-section -> expected 'map', got 'map'
+[PASS] legacy #sc-cyclemap -> expected 'map', got 'map'
+[PASS] legacy #board -> expected 'map', got 'map'
+[PASS] legacy #si-movement -> expected 'moving', got 'moving'
+[PASS] legacy #rc-events-mount -> expected 'moving', got 'moving'
+[PASS] legacy #rotation-app -> expected 'moving', got 'moving'
+[PASS] legacy #si-money -> expected 'money', got 'money'
+[PASS] legacy #internals-section -> expected 'money', got 'money'
+[PASS] legacy #scc-leadership -> expected 'money', got 'money'
+[PASS] legacy #explore-section -> expected 'explore', got 'explore'
+[PASS] legacy #table-section -> expected 'explore', got 'explore'
+[PASS] legacy #chart-section -> expected 'explore', got 'explore'
+[PASS] legacy #forming-narratives -> expected 'explore', got 'explore'
+[PASS] legacy #tm-mount -> expected 'explore', got 'explore'
+[PASS] legacy #confluence -> expected 'confluence', got 'confluence'
+[PASS] legacy #sc-app -> expected 'confluence', got 'confluence'
+[PASS] legacy #sc-top -> expected 'confluence', got 'confluence'
+
+RESULT: 27/27 hashes resolved correctly

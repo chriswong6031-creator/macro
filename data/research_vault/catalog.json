@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-25T02:11:19.198655+00:00",
-  "count": 1796,
+  "generated_at": "2026-08-25T03:38:25.381501+00:00",
+  "count": 1799,
   "institutions": [
     "13F Summary",
     "ABN Amro",
@@ -512,6 +512,43 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-h4vr4x6iyib-75e2c8",
+      "title": "Shenzhen Inovance Technology Co. (300124.SZ) Pre announced 2Q26 results in line with GSe; key things for upcoming earning call",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T16:57:39Z",
+      "summary_points": [
+        "**Revenue-profit disconnect**: 26% revenue growth (AI investment, exports, localization) offset by 9% net profit decline (NEV powertrain weakness, FX volatility).",
+        "**NEV powertrain drag**: Core profitability deterioration in NEV powertrain segment is a primary net profit headwind.",
+        "**Automation sustainability**: Key earnings call focus on whether automation upcycle can maintain momentum amid cost inflation.",
+        "**Automotive earnings trends**: Critical to monitor for near-term profitability trajectory in automotive segment."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-uykpf7lgz4e-d9d881",
+      "title": "Turkiye TCMB Restarts Repo Auctions and Surprises Our Expectation by",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T16:57:37Z",
+      "summary_points": [
+        "Document Missing**: No source document provided for extraction"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 1,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-czp44zhywbi-d9c546",
       "title": "Tracking U.S. Supply Chain Congestion GS Supply Chain Congestion Scale Aug 17th",
       "institution": "Goldman Sachs",
@@ -529,6 +566,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-urhyp4meny3-68b861",
+      "title": "USA GS Economic Indicators Update",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T16:57:35Z",
+      "summary_points": [
+        "**GS US Financial Conditions Index Movement**: Nominal eased 0.8bp to 98.39, real eased 5.0bp to 98.15, driven by weaker dollar—key data for market positioning and credit/equity market constraints.",
+        "**US Financial Conditions Tightening**: Real GDP Growth Impulse negative, BBB Credit Spread widening (+5.4 bps), Log SPX declining (-4.6 bps) since Aug 2026—actively dampening growth potential and signaling constrained credit/equity markets.",
+        "**GS Wage Tracker as Leading Indicator**: Persistent wage growth trend (accelerated post-2020), near-perfect correlation with Core PCE—critical for inflation expectations and Fed policy response, directly impacting interest rate forecasts."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },

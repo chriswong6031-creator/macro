@@ -1,0 +1,451 @@
+{
+  "schema": "mastermind.r3b2.mobile_geometry_audit.v1",
+  "candidate": "MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html",
+  "target_floor_px": 44.0,
+  "zh_shou_qi_controls_measured": 13,
+  "aria_cells_checked": 10,
+  "cells": [
+    {
+      "physical_width": 1440,
+      "css_width": 1440,
+      "zoom": "100%",
+      "lang": "en",
+      "receipt": {
+        "line_count": 1,
+        "last_line": {
+          "x": 224,
+          "y": 460,
+          "b": 475
+        },
+        "btn": {
+          "x": 610.7,
+          "y": 446.7,
+          "w": 44,
+          "h": 44
+        },
+        "content_left": 224,
+        "doc_width": 1440,
+        "ink_mid_y": 468.7,
+        "on_last_line": true,
+        "after_last_line": false,
+        "inside_content_box": true,
+        "inside_viewport": true
+      },
+      "ramp": {
+        "tracks": 5,
+        "cells": 5,
+        "ramp_display": "flex",
+        "ramp_painted": true,
+        "ramp_segments": 5
+      },
+      "aria": {
+        "present": true,
+        "aria_controls": "r3-receipt",
+        "aria_expanded": "false",
+        "panel_present": true,
+        "controls_r3_receipt_count": 4
+      },
+      "textbtn_census": 2,
+      "textbtn_under_floor": [],
+      "failures": []
+    },
+    {
+      "physical_width": 1440,
+      "css_width": 1440,
+      "zoom": "100%",
+      "lang": "zh",
+      "receipt": {
+        "line_count": 1,
+        "last_line": {
+          "x": 224,
+          "y": 467.4,
+          "b": 484.4
+        },
+        "btn": {
+          "x": 518.3,
+          "y": 455.1,
+          "w": 44,
+          "h": 44
+        },
+        "content_left": 224,
+        "doc_width": 1440,
+        "ink_mid_y": 477.1,
+        "on_last_line": true,
+        "after_last_line": false,
+        "inside_content_box": true,
+        "inside_viewport": true
+      },
+      "ramp": {
+        "tracks": 5,
+        "cells": 5,
+        "ramp_display": "flex",
+        "ramp_painted": true,
+        "ramp_segments": 5
+      },
+      "aria": {
+        "present": true,
+        "aria_controls": "r3-receipt",
+        "aria_expanded": "false",
+        "panel_present": true,
+        "controls_r3_receipt_count": 4
+      },
+      "textbtn_census": 2,
+      "textbtn_under_floor": [],
+      "failures": []
+    },
+    {
+      "physical_width": 390,
+      "css_width": 390,
+      "zoom": "100%",
+      "lang": "en",
+      "receipt": {
+        "line_count": 2,
+        "last_line": {
+          "x": 16,
+          "y": 1536.9,
+          "b": 1551.9
+        },
+        "btn": {
+          "x": 87.8,
+          "y": 1523.6,
+          "w": 44,
+          "h": 44
+        },
+        "content_left": 16,
+        "doc_width": 390,
+        "ink_mid_y": 1545.6,
+        "on_last_line": true,
+        "after_last_line": false,
+        "inside_content_box": true,
+        "inside_viewport": true
+      },
+      "ramp": {
+        "tracks": 2,
+        "cells": 5,
+        "ramp_display": "none",
+        "ramp_painted": false,
+        "ramp_segments": 5
+      },
+      "aria": {
+        "present": true,
+        "aria_controls": "r3-receipt",
+        "aria_expanded": "false",
+        "panel_present": true,
+        "controls_r3_receipt_count": 4
+      },
+      "textbtn_census": 4,
+      "textbtn_under_floor": [],
+      "failures": []
+    },
+    {
+      "physical_width": 390,
+      "css_width": 390,
+      "zoom": "100%",
+      "lang": "zh",
+      "receipt": {
+        "line_count": 1,
+        "last_line": {
+          "x": 16,
+          "y": 1406.1,
+          "b": 1423.1
+        },
+        "btn": {
+          "x": 310.3,
+          "y": 1393.9,
+          "w": 44,
+          "h": 44
+        },
+        "content_left": 16,
+        "doc_width": 390,
+        "ink_mid_y": 1415.9,
+        "on_last_line": true,
+        "after_last_line": false,
+        "inside_content_box": true,
+        "inside_viewport": true
+      },
+      "ramp": {
+        "tracks": 2,
+        "cells": 5,
+        "ramp_display": "none",
+        "ramp_painted": false,
+        "ramp_segments": 5
+      },
+      "aria": {
+        "present": true,
+        "aria_controls": "r3-receipt",
+        "aria_expanded": "false",
+        "panel_present": true,
+        "controls_r3_receipt_count": 4
+      },
+      "textbtn_census": 4,
+      "textbtn_under_floor": [],
+      "failures": []
+    },
+    {
+      "physical_width": 320,
+      "css_width": 320,
+      "zoom": "100%",
+      "lang": "en",
+      "receipt": {
+        "line_count": 2,
+        "last_line": {
+          "x": 12,
+          "y": 1805.2,
+          "b": 1820.2
+        },
+        "btn": {
+          "x": 124.5,
+          "y": 1791.9,
+          "w": 44,
+          "h": 44
+        },
+        "content_left": 12,
+        "doc_width": 320,
+        "ink_mid_y": 1813.9,
+        "on_last_line": true,
+        "after_last_line": false,
+        "inside_content_box": true,
+        "inside_viewport": true
+      },
+      "ramp": {
+        "tracks": 1,
+        "cells": 5,
+        "ramp_display": "none",
+        "ramp_painted": false,
+        "ramp_segments": 5
+      },
+      "aria": {
+        "present": true,
+        "aria_controls": "r3-receipt",
+        "aria_expanded": "false",
+        "panel_present": true,
+        "controls_r3_receipt_count": 4
+      },
+      "textbtn_census": 4,
+      "textbtn_under_floor": [],
+      "failures": []
+    },
+    {
+      "physical_width": 320,
+      "css_width": 320,
+      "zoom": "100%",
+      "lang": "zh",
+      "receipt": {
+        "line_count": 1,
+        "last_line": {
+          "x": 12,
+          "y": 1675.3,
+          "b": 1692.3
+        },
+        "btn": {
+          "x": 12,
+          "y": 1681.8,
+          "w": 44,
+          "h": 44
+        },
+        "content_left": 12,
+        "doc_width": 320,
+        "ink_mid_y": 1703.8,
+        "on_last_line": false,
+        "after_last_line": true,
+        "inside_content_box": true,
+        "inside_viewport": true
+      },
+      "ramp": {
+        "tracks": 1,
+        "cells": 5,
+        "ramp_display": "none",
+        "ramp_painted": false,
+        "ramp_segments": 5
+      },
+      "aria": {
+        "present": true,
+        "aria_controls": "r3-receipt",
+        "aria_expanded": "false",
+        "panel_present": true,
+        "controls_r3_receipt_count": 4
+      },
+      "textbtn_census": 4,
+      "textbtn_under_floor": [],
+      "failures": []
+    },
+    {
+      "physical_width": 390,
+      "css_width": 195,
+      "zoom": "200%",
+      "lang": "en",
+      "receipt": {
+        "line_count": 3,
+        "last_line": {
+          "x": 12,
+          "y": 2550.2,
+          "b": 2565.2
+        },
+        "btn": {
+          "x": 83.8,
+          "y": 2536.9,
+          "w": 44,
+          "h": 44
+        },
+        "content_left": 12,
+        "doc_width": 195,
+        "ink_mid_y": 2558.9,
+        "on_last_line": true,
+        "after_last_line": false,
+        "inside_content_box": true,
+        "inside_viewport": true
+      },
+      "ramp": {
+        "tracks": 1,
+        "cells": 5,
+        "ramp_display": "none",
+        "ramp_painted": false,
+        "ramp_segments": 5
+      },
+      "aria": {
+        "present": true,
+        "aria_controls": "r3-receipt",
+        "aria_expanded": "false",
+        "panel_present": true,
+        "controls_r3_receipt_count": 4
+      },
+      "textbtn_census": 4,
+      "textbtn_under_floor": [],
+      "failures": []
+    },
+    {
+      "physical_width": 390,
+      "css_width": 195,
+      "zoom": "200%",
+      "lang": "zh",
+      "receipt": {
+        "line_count": 2,
+        "last_line": {
+          "x": 12,
+          "y": 2200.7,
+          "b": 2217.7
+        },
+        "btn": {
+          "x": 145.5,
+          "y": 2188.5,
+          "w": 44,
+          "h": 44
+        },
+        "content_left": 12,
+        "doc_width": 195,
+        "ink_mid_y": 2210.5,
+        "on_last_line": true,
+        "after_last_line": false,
+        "inside_content_box": true,
+        "inside_viewport": true
+      },
+      "ramp": {
+        "tracks": 1,
+        "cells": 5,
+        "ramp_display": "none",
+        "ramp_painted": false,
+        "ramp_segments": 5
+      },
+      "aria": {
+        "present": true,
+        "aria_controls": "r3-receipt",
+        "aria_expanded": "false",
+        "panel_present": true,
+        "controls_r3_receipt_count": 4
+      },
+      "textbtn_census": 4,
+      "textbtn_under_floor": [],
+      "failures": []
+    },
+    {
+      "physical_width": 320,
+      "css_width": 160,
+      "zoom": "200%",
+      "lang": "en",
+      "receipt": {
+        "line_count": 4,
+        "last_line": {
+          "x": 12,
+          "y": 3569.8,
+          "b": 3584.8
+        },
+        "btn": {
+          "x": 36.5,
+          "y": 3556.5,
+          "w": 44,
+          "h": 44
+        },
+        "content_left": 12,
+        "doc_width": 160,
+        "ink_mid_y": 3578.5,
+        "on_last_line": true,
+        "after_last_line": false,
+        "inside_content_box": true,
+        "inside_viewport": true
+      },
+      "ramp": {
+        "tracks": 1,
+        "cells": 5,
+        "ramp_display": "none",
+        "ramp_painted": false,
+        "ramp_segments": 5
+      },
+      "aria": {
+        "present": true,
+        "aria_controls": "r3-receipt",
+        "aria_expanded": "false",
+        "panel_present": true,
+        "controls_r3_receipt_count": 4
+      },
+      "textbtn_census": 4,
+      "textbtn_under_floor": [],
+      "failures": []
+    },
+    {
+      "physical_width": 320,
+      "css_width": 160,
+      "zoom": "200%",
+      "lang": "zh",
+      "receipt": {
+        "line_count": 3,
+        "last_line": {
+          "x": 12,
+          "y": 2969.8,
+          "b": 2986.8
+        },
+        "btn": {
+          "x": 50.3,
+          "y": 2957.6,
+          "w": 44,
+          "h": 44
+        },
+        "content_left": 12,
+        "doc_width": 160,
+        "ink_mid_y": 2979.6,
+        "on_last_line": true,
+        "after_last_line": false,
+        "inside_content_box": true,
+        "inside_viewport": true
+      },
+      "ramp": {
+        "tracks": 1,
+        "cells": 5,
+        "ramp_display": "none",
+        "ramp_painted": false,
+        "ramp_segments": 5
+      },
+      "aria": {
+        "present": true,
+        "aria_controls": "r3-receipt",
+        "aria_expanded": "false",
+        "panel_present": true,
+        "controls_r3_receipt_count": 4
+      },
+      "textbtn_census": 4,
+      "textbtn_under_floor": [],
+      "failures": []
+    }
+  ],
+  "failing_cells": [],
+  "pass": true
+}
