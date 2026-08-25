@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-25T13:39:39.512713+00:00",
-  "count": 1829,
+  "generated_at": "2026-08-25T14:34:01.826821+00:00",
+  "count": 1832,
   "institutions": [
     "13F Summary",
     "ABN Amro",
@@ -89,6 +89,64 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-qfsbmavedrz-bb462d",
+      "title": "Global daily operation economic outcast but of whom",
+      "institution": "Rabobank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-25T13:52:38Z",
+      "summary_points": [
+        "**Geopolitical Escalation & Sanctions**: Treasury Secretary Besent’s $1tn military bond buyback plan, \"Operation Economic Outcast\" targeting Iran via secondary sanctions, nuclear threats, and regional tensions (Houthi attacks, China’s PLA jets, Turkey warnings); Ukraine defense funding gaps amid Russia’s threats signal high-stakes sanctions-driven conflict risks.",
+        "**Trade Policy Volatility**: Trump’s 7.5% China tariffs, 25-50% auto/truck tariffs on Canada, and EU defense talks create market uncertainty; Canada’s defense dependency vulnerability and secession referendum pressures amplify trade war risks.",
+        "**EU Systemic Stagnation Risk**: Rhine Group warns of declining core EU obligations (defense, healthcare, pensions) amid stagnation; US-Venezuela telecom deal excluding China signals deepening US-China tech tensions impacting portfolio flows."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vmebm6gryrd-22b08b",
+      "title": "Taiwan July IP Strong Tech Production And Weak Retail Sales",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-25T11:55:07Z",
+      "summary_points": [
+        "**AI Tech Production Surge**: Accelerated growth in Taiwan's computers/electronic and optical products (RHS) sector driven by AI demand, signaling robust semiconductor/tech fundamentals.",
+        "**Industrial Production Growth**: IP rose 2.9% mom (25.6% yoy), with tech production up 3.4% mom (11-month gain), highlighting sector strength.",
+        "**Retail Sales Decline**: Retail and food/beverage services sales fell 0.7% mom, reversing six months of gains, indicating weakening consumer demand and a key risk for discretionary stocks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-9mqevwpyzqz-8478a9",
+      "title": "GS Crook GS Morning 25 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-25T11:48:54Z",
+      "summary_points": [
+        "**NBH Rate Cut Outlook**: 25bp cut to 5.50% expected as MPC maintains dovish stance; FX appreciation (Forint) dominates recent inflation weakness, key to rate cut path.",
+        "**Hungary Policy Revision**: Neutral policy rate revised to 3.00% (from 4.00%) due to inflation target cut to 2.0%, implying cautious monetary policy and lower rate cut expectations.",
+        "**Nasdaq 100 2026 EPS Growth**: Consensus estimate at 44% (up from 21% in 2025), signaling robust near-term tech sector growth momentum.",
+        "**Inflation Drivers**: FX appreciation (Forint) is dominant factor in recent inflation weakness, overriding wage-sensitive domestic inflation trends."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-tojlwecvx1a-1cf993",
       "title": "GS Novak US Industrials Materials events corn HEI 25 Aug 2026",
