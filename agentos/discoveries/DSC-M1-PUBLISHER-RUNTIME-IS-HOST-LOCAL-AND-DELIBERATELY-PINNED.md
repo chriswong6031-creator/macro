@@ -6,9 +6,12 @@ claim: >
   On 2026-08-25 `/Users/chriswong/flow-ops-wt` was found fully intact on the M1
   at exactly the pin the Day-6 record named — detached
   `a5f79c83fe0b26e3fbd798ffc4630fc957d09a60` (#2760, 2026-07-17) — carrying 395
-  tracked modifications and 20 untracked paths
-  (`git status --porcelain` sha256 `560e8e92...`, `git diff HEAD` sha256
-  `5ba54da6...`). Its detached dirty pin is DELIBERATE, not damage: PR #6363's
+  tracked modifications and 20 untracked paths. The STABLE identity invariant is
+  the `git status --porcelain` sha256 `560e8e92...` — the SET of dirty paths is
+  what the pin is. The `git diff HEAD` sha256 `5ba54da6...` is a POINT-IN-TIME
+  forensic capture only and is EXPECTED to drift, because `flow-ops-wt` is a
+  live tree whose data artifacts are rewritten by the production lanes it
+  serves. Its detached dirty pin is DELIBERATE, not damage: PR #6363's
   architecture separates a *current, disposable launcher* (a clean governed
   clone at `~/macro-publisher-runtime`) from a *deliberately pinned engine*
   (`flow-ops-wt`, supplied to the lane only as `PYTHONPATH` + `WorkingDirectory`
@@ -21,7 +24,9 @@ falsifier: >
   `560e8e929c5b768230680966e43001daae7d44a90137c1710627ed0c28e62834`; or show
   that the merged `ops/launchd/run_*.sh` at `deb53e6f` resolve `$REPO` to
   something other than `/Users/chriswong/flow-ops-wt`, which would mean the pin
-  is incidental rather than load-bearing.
+  is incidental rather than load-bearing. The `git diff HEAD` digest is
+  deliberately NOT part of this falsifier: it is a capture-time value, and a
+  changed diff digest on its own falsifies nothing here.
 so_what: >
   Never infer B1 M1 runtime loss from an absent path on the machine a session
   happens to be running on — probe the M1 over Tailscale first. Never "advance",
@@ -44,8 +49,13 @@ verified_by: >
   (detached), `git log -1`, `git config --get remote.origin.url`,
   `git status --porcelain` counts + sha256, `git diff HEAD` sha256, full
   untracked inventory, and `grep -rl flow-ops-wt ~/Library/LaunchAgents/`.
-  Re-run of the identical digest capture AFTER the #6363 install returned
-  byte-identical values, proving the install did not mutate the runtime.
+  Re-run of the identical capture IMMEDIATELY AFTER the #6363 install returned
+  byte-identical values for BOTH digests, which proves the install itself did
+  not mutate the runtime during that capture interval. That is an interval
+  claim, not a permanence claim. Later the same day the `git diff HEAD` digest
+  moved to `b2b14cd8...` from a single benign production write to
+  `data/thetadata_eod/_manifest.json` (14:30:15 PDT) — zero engine code changed,
+  and the `git status --porcelain` digest was unmoved.
 related:
   - "DEC:B1A-M1-RUNTIME-RECOVERED-NO-SUPERSESSION"
   - "DEC:B1-MACRO-PRIVATE-CUTOVER"

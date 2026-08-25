@@ -29,7 +29,7 @@ changed:
   - {path: "agentos/discoveries/DSC-M1-PUBLISHER-RUNTIME-IS-HOST-LOCAL-AND-DELIBERATELY-PINNED.md", what: "NEW — the runtime is host-local to the M1 and its dirty pin is load-bearing by design; never normalize it."}
 
 verified:
-  - {claim: "The governed runtime was NOT lost. /Users/chriswong/flow-ops-wt is intact on the M1 (Mac13,1, Tailscale 100.117.58.62) at exactly the pin the Day-6 record named.", command: "ssh m1 read-only: git rev-parse HEAD = a5f79c83fe0b26e3fbd798ffc4630fc957d09a60 (detached, #2760, 2026-07-17); 395 tracked modified + 20 untracked; status --porcelain sha256 560e8e929c5b768230680966e43001daae7d44a90137c1710627ed0c28e62834; diff HEAD sha256 5ba54da65e39ca975d449431ead3771e2cda49534595bcdac40f453e487adeca; stat dev=16777234 inode=280284433"}
+  - {claim: "The governed runtime was NOT lost. /Users/chriswong/flow-ops-wt is intact on the M1 (Mac13,1, Tailscale 100.117.58.62) at exactly the pin the Day-6 record named.", command: "ssh m1 read-only: git rev-parse HEAD = a5f79c83fe0b26e3fbd798ffc4630fc957d09a60 (detached, #2760, 2026-07-17); 395 tracked modified + 20 untracked; STABLE INVARIANT status --porcelain sha256 560e8e929c5b768230680966e43001daae7d44a90137c1710627ed0c28e62834; CAPTURE-TIME ONLY diff HEAD sha256 5ba54da65e39ca975d449431ead3771e2cda49534595bcdac40f453e487adeca (this is a live tree — the production lanes rewrite data artifacts inside it, so the diff digest is expected to drift and is not a falsifier); stat dev=16777234 inode=280284433"}
   - {claim: "The PR-comment 'unrecoverable' verdict was scoped to the wrong host and is falsified. It names its own scope in its first clause — 'On the commissioning Mac' (the M2). The M1 was never probed and answered on first attempt.", command: "ssh m1 'ls -lad /Users/chriswong/flow-ops-wt' → present; the same probe on the M2 returns No such file or directory"}
   - {claim: "No newer Sol/Agent-OS ruling superseded the Day-6 record; the durable plane still carries the M1 pin advance as a residual chore, never a blocker.", command: "grep -rl flow-ops-wt agentos/ (6 files, newest 2026-08-23); WS-PROPHET-US-V4-RECOVERY.md:307 'M1 flow-ops-wt pin advance'; no decision/handoff after 2026-08-21 amends DEC:B1-MACRO-PRIVATE-CUTOVER"}
   - {claim: "The ~69 GiB TerraMaster M1 recovery set cannot establish flow-ops-wt identity — it is entirely Chrome code-sign clones.", command: "find /Volumes/Mastermind/Mastermind/scratch/runner-fleet -maxdepth 3 → only m1-recovery-20260824/chrome-code-sign-clones-inactive/code_sign_clone.*; du -sh = 69G; find /Volumes/Mastermind -maxdepth 4 -iname '*flow-ops*' → zero hits"}
@@ -40,7 +40,7 @@ verified:
   - {claim: "The publishing identity is a repo-scoped WRITE deploy key, not the Chairman's account.", command: "ssh-keygen -y -f ~/.ssh/macro_dashboard_deploy = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIGsg0RaONMmPx/E… ; gh api repos/mastermindx-market-intelligence/macro/keys → id=154241382 read_only=false title=key1 with the identical public key. The other three registered keys are read_only=true."}
   - {claim: "No fallback to a user SSH agent, credential helper, global config, URL rewrite, or hooks is possible.", command: "scripts/macro_machine_git.py _git_environment: BatchMode=yes, IdentitiesOnly=yes, IdentityAgent=none, GIT_CONFIG_GLOBAL=/dev/null, GIT_CONFIG_SYSTEM=/dev/null, GIT_CONFIG_NOSYSTEM=1, GIT_TERMINAL_PROMPT=0, core.hooksPath=/dev/null"}
   - {claim: "Both plists are installed, valid, loaded, and carry the hardened argument vector.", command: "plutil -lint OK on both; installed sha256 equals the runtime source sha256 for both; launchctl list shows both at status 0; launchctl print gui/501/com.macro.theme-options-witness and …indexgexhistory show run_with_env.sh from macro-publisher-runtime + MACRO_PUBLISH_GIT_SSH_KEY + PYTHONPATH=flow-ops-wt + the runtime's runner script"}
-  - {claim: "Commissioning did NOT mutate the recovered runtime.", command: "post-install re-capture: head a5f79c83…, 395 modified, 20 untracked, status sha256 560e8e92… and diff sha256 5ba54da6… — byte-identical to the pre-install forensic capture"}
+  - {claim: "Commissioning ITSELF did not mutate the recovered runtime during the install capture interval. This is an interval claim, not a claim that either digest is permanently stable.", command: "post-install re-capture: head a5f79c83…, 395 modified, 20 untracked, status sha256 560e8e92… and diff sha256 5ba54da6… — byte-identical to the pre-install forensic capture. Later the same day the diff digest drifted to b2b14cd8… from one benign production write to data/thetadata_eod/_manifest.json (14:30:15 PDT), zero engine code changed, status digest unmoved — which is why only the status digest is carried forward as the invariant"}
   - {claim: "The push-repo clone the lanes perform at run time will satisfy the strict config validator.", command: "~/.ssh = drwx------ uid 501; key -rw------- nlink=1; the identical clone shape produced local config matching all 13 _CANONICAL_LOCAL_CONFIG keys and both _CANONICAL_WORKTREE_CONFIG keys; the clone contract forbids --no-tags so no tagopt key appears"}
 
 unverified:
@@ -55,8 +55,12 @@ unverified:
       that ~/witness-push-repo-private was created by the lane itself with
       remote git@github.com:mastermindx-market-intelligence/macro.git, that the
       push carries NO 'This repository moved' redirect notice, and that
-      flow-ops-wt's status/diff digests are unchanged. No synthetic invocation
-      was substituted, and the lane was NOT hand-run to manufacture a receipt.
+      flow-ops-wt's `git status --porcelain` digest is unchanged. Only the
+      status digest belongs in this receipt: the `git diff HEAD` digest is a
+      capture-time value expected to drift as the production lanes rewrite data
+      artifacts, so a moved diff digest is NOT a failure signal. No synthetic
+      invocation was substituted, and the lane was NOT hand-run to manufacture a
+      receipt.
   - claim: "Natural production proof for the index/GEX history lane."
     what_would_verify: >
       Its scheduler is StartCalendarInterval Weekday=0 Hour=20 (Sundays, America/Vancouver),
@@ -159,8 +163,13 @@ decisions:
 The governed M1 publisher runtime was **recovered, not replaced**. It was never
 lost: `/Users/chriswong/flow-ops-wt` sits on the M1 exactly where the Day-6
 record said it did, at exactly the pin the Day-6 record named, with its dirty
-state intact and cryptographically fixed by two digests captured before any
-mutation and re-verified byte-identical afterwards.
+state intact and cryptographically fixed by a `git status --porcelain` digest
+captured before any mutation. Both that digest and a point-in-time `git diff
+HEAD` digest were re-verified byte-identical immediately after commissioning,
+which establishes that the install itself changed nothing during that interval.
+Only the status digest is carried forward as the durable invariant: this is a
+live tree, and its diff digest is expected to move as the production lanes it
+serves rewrite data artifacts.
 
 The competing claim — that the checkout was unrecoverable and that installation,
 natural proof, and cutover were therefore blocked — came from a PR comment whose

@@ -44,11 +44,11 @@ alternatives:
       There is nothing to restore. The bytes were never missing, and the install
       is purely additive (one clone, two plist swaps, both backed up).
 evidence:
-  - "M1 `Mac13,1` reachable at Tailscale 100.117.58.62; `/Users/chriswong/flow-ops-wt` present, detached at a5f79c83fe0b26e3fbd798ffc4630fc957d09a60 (#2760, 2026-07-17), 395 tracked modified + 20 untracked, status digest 560e8e929c5b768230680966e43001daae7d44a90137c1710627ed0c28e62834, diff digest 5ba54da65e39ca975d449431ead3771e2cda49534595bcdac40f453e487adeca"
+  - "M1 `Mac13,1` reachable at Tailscale 100.117.58.62; `/Users/chriswong/flow-ops-wt` present, detached at a5f79c83fe0b26e3fbd798ffc4630fc957d09a60 (#2760, 2026-07-17), 395 tracked modified + 20 untracked, STABLE status digest 560e8e929c5b768230680966e43001daae7d44a90137c1710627ed0c28e62834; CAPTURE-TIME diff digest 5ba54da65e39ca975d449431ead3771e2cda49534595bcdac40f453e487adeca (point-in-time only — this is a live tree whose data artifacts churn under the production lanes, so the diff digest is expected to drift and is not a falsifier)"
   - "Day-6 handoff records the same pin ('pinned a5f79c83 (#2760-era, no auto-pull) … NOT a flip-blocker'), so the recovered HEAD independently corroborates the Day-6 record"
   - "The ~69 GiB TerraMaster M1 recovery set at /Volumes/Mastermind/Mastermind/scratch/runner-fleet/m1-recovery-20260824 is entirely chrome-code-sign-clones-inactive and contains zero flow-ops-wt material — it can neither establish nor restore the runtime's identity"
   - "No Agent-OS decision, workstream or handoff after 2026-08-21 supersedes DEC:B1-MACRO-PRIVATE-CUTOVER; WS:PROPHET-US-V4-RECOVERY still lists the pin advance as a residual chore"
-  - "Post-install re-capture of the same digests returned byte-identical values, proving commissioning did not mutate the recovered runtime"
+  - "Post-install re-capture of the same digests returned byte-identical values, proving commissioning ITSELF did not mutate the recovered runtime during that capture interval — an interval claim, not a permanence claim. The status --porcelain digest is the durable invariant; the diff HEAD digest later drifted to b2b14cd8... from one benign write to data/thetadata_eod/_manifest.json, with zero engine code changed"
   - "Sol acceptance 2026-08-25 on the B1-A result: ACCEPTS the forensic recovery at a5f79c83, ACCEPTS that replacement-pin migration is not triggered, ACCEPTS that DEC:B1-MACRO-PRIVATE-CUTOVER remains controlling and the 2026-08-24 #6363 terminal comment did not supersede it, ACCEPTS the #6363 commissioning as BUILT_NOT_PROVEN, and ACCEPTS the ~/macro-live finding as a new blocking input to MACRO-PRIVATE-CUTOVER READY"
 affects:
   - "ops/launchd/com.macro.indexgexhistory.plist"
