@@ -3956,6 +3956,34 @@
    "Disclaimer This document is published by the World Economic Forum as a contribution to a project, insight area or interaction. The findings, interpretations and conclusions expressed herein are a result of a collaborative process facilitated and endorsed by the World Economic Forum but whose results do not necessarily represent the views of the World Economic Forum, nor the entirety of its Members, Partners or other stakeholders. © 2026 World Economic Forum. All rights reserved. No part of this publication may be reproduced or transmitted in any form or by any means, including photocopying and recording, or by any information storage and retrieval system.",
    "Intelligent Industrial Ecosystems 2"
   ],
+  "marketdesk-ewkkie4nlpu-b54e88": [
+   "M August 25, 2026 02:57 AM GMT",
+   "Global Valuation, Accounting & Tax | North America Morgan Stanley & Co. LLC Foundation",
+   "Todd Castagno, CFA, CPA GVAT Strategist",
+   "AI: Funding the Buildout Beyond",
+   "GVAT Strategist Leases, debt, equity, and purchase commitments are extending Mariah Thompson GVAT Strategist the data center buildout beyond self-funded hyperscaler cash",
+   "flow. Each new arrangement, whether on-balance sheet or not, requires committing future cash, and further capex revisions require incremental sources of capital.",
+   "Key Takeaways Hyperscalers are expected to spend more than $1.2tn on cash capex in 2027, versus an estimated $1tn of total operating cash flow.",
+   "Hyperscalers are using leases, issuing public debt, halting share repurchases, and issuing equity to fund incremental capex.",
+   "More than $3.1tn of commitments and guarantees from hyperscalers + NVDA and AVGO are enabling third parties to obtain financing to fund AI infrastructure.",
+   "Capex is understated, and FCF is overstated to the extent that operating leases are used to obtain data center construction financing via SPVs.",
+   "If financing costs increase with incremental commitments, returns on new AI infrastructure investment will need to cover the rising cost of capital.",
+   "The rush to build compute infrastructure to meet rising demand has resulted in investment levels well in excess of cash generated in operations, which are largely being funded by private credit loans to special purpose vehicles (SPVs) and, more recently, hyperscaler debt and equity issuances.",
+   "The need for capital to support the build: In order to achieve the lowest financing costs possible, hyperscalers are providing various forms of credit support for the data center buildout, many of which are off-balance sheet today (see Off-Balance Sheet, On the Hook).",
+   "Hyperscalers are also committing to larger and longer-dated purchase commitments to secure GPUs, memory, and networking equipment to be available when data centers are completed. As of their latest SEC filings, hyperscalers' undiscounted commitments total more than $2.7tn, or ~3 years of current operating cash flow.",
+   "Now, chip companies are also stepping in to lend their balance sheets in further support of financing compute capex as seen in Broadcom's announced chip leasing facility to support up to 20GW of compute capex and reports of new structures from Nvidia. As investors look to how high capex could go, discussions have shifted to what the source and cost of the next leg of funding will be.",
+   "For analyst certification and other important disclosures, refer to the Disclosure Section, located at the end of this report.",
+   "Exhibit 1: Hyperscalers, NVDA, AVGO disclosed off-balance sheet commitments total more than $3.1tn, with more financing structures under development Lease Backstops $44 AI Lab Investment $22 GOOGL Purchases $707 Leases $85",
+   "Future Lease Energy Data Center Guarantee $36 Backstops $24 Backstop $8",
+   "META Purchases $349 Leases $279 El Paso Guarantee $13",
+   "Contingent Purchase Commitments $36",
+   "MSFT Purchases $229 Leases $329",
+   "AMZN Purchases $130 Leases $137 AI Lab Credit Facility $15",
+   "Leases $32 Committed Investments $32",
+   "NVDA Potential Chip Credit Facility Residual Value Support $125 Purchases $155 (reported $500bn facility with 25% RVS)",
+   "AVGO Purchases $128 Chip Lease Residual Value Support $29",
+   "Source: Company Filings, Morgan Stanley Research."
+  ],
   "marketdesk-ewml3rqvk9m-b36784": [
    "18 August 2026, 12:52 UTC Chief Investment Office GWM Investment Research",
    "USDILS: Tech lifts shekel CIO View: USDILS Tilmann Kolb, Analyst, UBS AG Dubai Branch Pietro Santin, CIO Emerging Market Strategist, UBS Switzerland AG",
@@ -8284,6 +8312,14 @@
    "The path from here is likely higher, more fundamentals-driven, see more divergence, but also expect continued volatility.",
    "I am sticking to my barbell approach - Momentum/AI on one end, Value/Laggards on the other."
   ],
+  "marketdesk-pvnndo7yrbj-ee6357": [
+   "GS Pasquariello - two levered hot spots: semis vs software and momentum 25 Aug 2026 Tony Pasquariello · Goldman Sachs · FICC & Equities Tue 25 Aug 2026, 12:04pm ET",
+   "here are a couple more charts to consider on a late August afternoon. the focus today is on two (interrelated) hot spots within the levered community: semis vs software AND the momentum factor. both stretch back a full ten years and are sourced from the GS PB data set (credit = Erin Tolar).",
+   "1. this illustrates client length in a specific industry group, measured as a percentage of our entire PB book. the green line is semis (and semi equipment); the red line is software (and IT services). note the longstanding pattern of trading as the photographic negative of each other. the chart speaks for itself: that inverse relationship went into overdrive in the second half of last year as the market started to press very hard on the AI enablers-vs-disrupted narrative. the fever broke in recent months, which is partly a positioning story (e.g. the July deleveraging) and partly a fundamental story (i.e. there's a more 2-sided debate now within software). my guess is this wedge will retain some structural width, but will also be subject to plenty of ebb-and-flow along the way given the concentration in capital here:",
+   "2. this looks at positioning through the factor lens. it specifically measures client exposure to momentum over the past ten years. again, the chart speaks for itself: as the actual performance of the momentum factor trended from the lower left to the upper right over those ten years -- most pronounced in the past couple of years -- clients steadily dialed up their leverage to it. and, for good order's sake, the prior chart is part and parcel of this chart (i.e. long semis / short software defined the edges of the momentum pair). in",
+   "turn, I come out here where I came out there: as long as the AI buildout remains on track, client exposure to this factor will run on the structurally higher end of history, but with that comes a more volatile path:",
+   "Source: Goldman Sachs FICC & Equities / GS Prime Brokerage (Erin Tolar); GIR, as of 25 Aug 2026. Past performance is not indicative of future results."
+  ],
   "marketdesk-pvxsb2sx11m-5c5bfb": [
    "GS MORNING: 1) US CPI Recap, 2) FX Trader Call Takeaways, 3) Asia FX Update and 4) GS Space Webcast Today",
    "Highlights from GS Research, Sales, and Trading: 1) US CPI Recap, 2) FX Trader Call Takeaways, 3) Asia FX Update and 4) GS Space Webcast Today",
@@ -10067,6 +10103,24 @@
    "This introduces a whole new set of complications. By making debt issuance less predictable, it fuels market volatility. Ironically, this could force investors to demand an even higher risk premium on Treasury yields.",
    "Figure 1: The rising term premium",
    "The limits to the Treasury’s intervention The ultimate problem with the Treasury’s intervention is that it…"
+  ],
+  "marketdesk-ubm7koca6sm-17323b": [
+   "GS Armbrust - What Matters Today: Ex AI Winners vs Hardware, A Softer Economic D Day, Meta to Launch a Consumer AI Agent, FTSE Rebalance in September 25 Aug 2026 Nelson Armbrust · Goldman Sachs · Managing Director, FICC & Equities Tue 25 Aug 2026, 8:01am ET",
+   "US Pension Rebalance: we estimate pensions to SELL $6bn of US equities (42nd percentile).",
+   "Financials are trading well, materials are trading well and industrials (ex the AI levered ones) are trading well. Throw healthcare in the same category, think AI spend is getting more useful for lower cost and the winners are those who spend the most on human capital who are currently spending the least on AI capex. The hardware complex is de-rating on the other side but at some point will be floored by earnings/revision.",
+   "On AI specifically, there are new models arriving at an almost weekly cadence. SSI is particularly interesting given the rumors around continual or self learning, but nothing has been officially released or demonstrated yet. If continual learning really works, it could be quite disruptive to the existing pretraining paradigm and reduce the need to continuously rerun ever larger training clusters.",
+   "I am much less convinced it means less compute overall….if anything, better models that continuously learn probably push substantially more activity into inference. So for hardware, potentially a shift in where compute gets consumed rather than outright demand destruction. Mixed to positive if it arrives soon. (TY Rich Privo)",
+   "Oil lower yesterday because, despite the “economic D Day” rhetoric on Iran, the actual package came with enough boundary conditions and enough time that it wasn’t an immediate change. “The Treasury Department did announce new sanctions on 60 individuals, entities and vessels, but the list did not include any of the Chinese financial institutions suspected of facilitating Iran’s oil trade.” (Reuters)",
+   "More importantly, Bessent basically told you the reflexivity himself. Asked why he stopped short of actually imposing penalties on Iran and declined to identify the countries that would be targeted, Bessent responded, “Why would I want to blow up the global financial system?” (Reuters) All roads ultimately lead back to trying to keep the oil price as contained as possible. (TY Rich Privo)",
+   "3) Meta to Launch a Consumer AI Agent",
+   "Meta Platforms plans to launch its consumer version of the OpenClaw AI agent, dubbed Hatch internally, as soon as the next several weeks and is targeting October for its latest AI model, called Watermelon, according to internal documents reviewed by The Information.",
+   "Hatch is part of Meta Chief Executive Mark Zuckerberg’s ambitions to monetize the company’s enormous AI investments and diversify its revenue streams beyond advertising. Meta has considered a tiered pricing system, as The Information previously reported, including charging up to $199.99 for a premium monthly subscription for the product that would include higher usage limits.",
+   "Hatch has been trained to access websites such as DoorDash, Etsy, Reddit, Yelp and Outlook. Based on early prototypes, it will have a customizable dashboard that displays tools or skills created by the agents, such as a fitness tracker or creating a travel itinerary. The documents said Hatch’s release is targeted for late August or early September.",
+   "4) FTSE Rebalance in September",
+   "The Takeaway: Position ahead of $25bn+ in gross flow reallocations across APAC and EM scheduled for implementation after market close on September 18.",
+   "Reclassifications: Vietnam gets promoted to Secondary Emerging Market (phased over 4 tranches), while Greece transitions to Developed Market status.",
+   "Country Winners & Losers: China (+$1.5bn), Korea (+$1.2bn), Taiwan (+$1.2bn), and India (+$0.7bn) will capture the largest net passive inflows, whereas Japan (-$1.0bn) faces the largest net passive selling pressure.",
+   "Sector Beneficiaries: Tech Hardware & Semis (+$3.4bn) and Capital Goods (+$0.5bn) command the largest share of net passive demand across Asia-Pacific. Source: Goldman Sachs FICC & Equities, FTSE Russell, FactSet, EPFR, as of 25 August 2026."
   ],
   "marketdesk-ucjkvbyjtau-5728a0": [
    "J P M O R G A N Global Markets Strategy 07 August 2026",
