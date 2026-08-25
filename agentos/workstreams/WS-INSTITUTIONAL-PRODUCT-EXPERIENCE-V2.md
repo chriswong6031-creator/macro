@@ -60,7 +60,7 @@ waves:
     # not silently replaced by the older #6313 squash.
   - id: R3B.2
     title: Final surgical closure + four fresh final critics
-    status: awaiting_review
+    status: in_progress
     pr: 6337
     depends_on: [R3B.1]
     next_action: >
