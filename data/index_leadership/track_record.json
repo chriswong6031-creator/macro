@@ -1,70 +1,70 @@
 {
   "schema": "index_leadership.track_record.v1",
   "as_of": "2026-08-21",
-  "generated_at": "2026-08-23T03:29:04.475401+00:00",
+  "generated_at": "2026-08-25T04:10:15.569873+00:00",
   "is_context_only": true,
   "n_snapshots": 411,
   "n_days": 13,
   "horizons": {
     "5": {
-      "n_matured": 263,
+      "n_matured": 267,
       "by_stage": {
         "running": {
-          "n": 234,
-          "mean_fwd_rel": -0.0007,
-          "hit_rate": 0.5
+          "n": 238,
+          "mean_fwd_rel": -0.0002,
+          "hit_rate": 0.513
         },
         "coiling": {
           "n": 13,
-          "mean_fwd_rel": -0.0004,
+          "mean_fwd_rel": -0.001,
           "hit_rate": 0.615
         },
         "coiling_primed": {
           "n": 16,
-          "mean_fwd_rel": 0.0275,
+          "mean_fwd_rel": 0.0278,
           "hit_rate": 0.938
         }
       },
-      "running_ic": 0.2144,
-      "running_ic_t_hac": 3.335,
+      "running_ic": 0.1908,
+      "running_ic_t_hac": 2.973,
       "coiling_ic": null,
       "coiling_ic_t_hac": null
     },
     "10": {
-      "n_matured": 218,
+      "n_matured": 222,
       "by_stage": {
         "running": {
-          "n": 199,
-          "mean_fwd_rel": -0.0011,
-          "hit_rate": 0.492
+          "n": 203,
+          "mean_fwd_rel": -0.0012,
+          "hit_rate": 0.498
         },
         "coiling": {
           "n": 10,
-          "mean_fwd_rel": -0.0239,
+          "mean_fwd_rel": -0.0258,
           "hit_rate": 0.1
         },
         "coiling_primed": {
           "n": 9,
-          "mean_fwd_rel": 0.0426,
+          "mean_fwd_rel": 0.0408,
           "hit_rate": 0.778
         }
       },
-      "running_ic": 0.1129,
+      "running_ic": 0.0667,
       "running_ic_t_hac": null,
       "coiling_ic": null,
       "coiling_ic_t_hac": null
     },
     "21": {
-      "n_matured": 62,
+      "n_matured": 64,
       "by_stage": {
         "running": {
-          "n": 53,
-          "mean_fwd_rel": -0.0012,
-          "hit_rate": 0.566
+          "n": 55,
+          "mean_fwd_rel": 0.0012,
+          "hit_rate": 0.582
         },
         "coiling": {
           "n": 8,
-          "mean_fwd_rel": -0.0184,
+          "mean_fwd_rel": -0.0221,
           "hit_rate": 0.625
         },
         "coiling_primed": {
@@ -88,7 +88,7 @@
     }
   },
   "lead_time_d": 5,
-  "peak_ic": 0.2144,
+  "peak_ic": 0.1908,
   "proven": {
     "5": true,
     "10": false,
@@ -105,14 +105,6 @@
       "name": "Information Technology Services",
       "stage": "running",
       "fwd_rel": -0.0717,
-      "horizon_d": 21
-    },
-    {
-      "date": "2026-07-31",
-      "id": "russell:asset-management",
-      "name": "Asset Management",
-      "stage": "running",
-      "fwd_rel": -0.0643,
       "horizon_d": 21
     },
     {
@@ -137,6 +129,14 @@
       "name": "Real Estate (Equal-Weight)",
       "stage": "running",
       "fwd_rel": -0.0323,
+      "horizon_d": 21
+    },
+    {
+      "date": "2026-07-31",
+      "id": "russell:asset-management",
+      "name": "Asset Management",
+      "stage": "running",
+      "fwd_rel": -0.0298,
       "horizon_d": 21
     },
     {
