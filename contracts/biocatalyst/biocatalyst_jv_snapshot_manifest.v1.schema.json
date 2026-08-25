@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/biocatalyst_jv_snapshot_manifest.v1.schema.json",
+  "title": "BioCatalyst licensed JV finite-snapshot manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_id", "schema_version", "source_id", "license_class", "capture", "inputs", "families", "manifest_sha256"],
+  "properties": {
+    "contract_id": {"const": "biocatalyst_jv_snapshot_manifest.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "source_id": {"const": "biopharmcatalyst_jv_snapshot"},
+    "license_class": {"const": "licensed_finite_snapshot"},
+    "capture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["observed_at", "source_published_at", "source_published_at_state"],
+      "properties": {
+        "observed_at": {"type": "string", "format": "date-time"},
+        "source_published_at": {"type": ["string", "null"], "format": "date-time"},
+        "source_published_at_state": {"enum": ["observed", "unknown"]}
+      }
+    },
+    "inputs": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["input_id", "safe_name", "sha256", "byte_count", "media_type", "role"],
+        "properties": {
+          "input_id": {"type": "string", "pattern": "^[a-z0-9_]+$"},
+          "safe_name": {"type": "string", "pattern": "^[A-Za-z0-9_.-]+$"},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "byte_count": {"type": "integer", "minimum": 1},
+          "media_type": {"enum": ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "text/csv"]},
+          "role": {"enum": ["canonical_workbook", "identity_reconciliation", "historical_event_source", "inventory_only"]}
+        }
+      }
+    },
+    "families": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["family", "source_rows", "normalized_rows", "repaired_rows", "publication_state"],
+        "properties": {
+          "family": {"type": "string"},
+          "source_rows": {"type": "integer", "minimum": 0},
+          "normalized_rows": {"type": "integer", "minimum": 0},
+          "repaired_rows": {"type": "integer", "minimum": 0},
+          "publication_state": {"enum": ["projected", "inventory_only", "reconciliation_only"]}
+        }
+      }
+    },
+    "manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/historical_event_generation.v1.schema.json",
+  "title": "BioCatalyst historical-event generation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_id", "schema_version", "generation_id", "published_at", "capture_observed_at", "coverage", "artifacts", "manifest_sha256"],
+  "properties": {
+    "contract_id": {"const": "biocatalyst_historical_event_generation.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "generation_id": {"type": "string", "pattern": "^bpcjv_gen_[0-9a-f]{24}$"},
+    "published_at": {"type": "string", "format": "date-time"},
+    "capture_observed_at": {"type": "string", "format": "date-time"},
+    "coverage": {
+      "type": "object", "additionalProperties": false,
+      "required": ["state", "source_rows", "normalized_rows", "identity_resolved", "identity_unresolved", "duplicates_collapsed", "families", "family_source_rows"],
+      "properties": {
+        "state": {"enum": ["ready", "partial"]},
+        "source_rows": {"type": "integer", "minimum": 0},
+        "normalized_rows": {"type": "integer", "minimum": 0},
+        "identity_resolved": {"type": "integer", "minimum": 0},
+        "identity_unresolved": {"type": "integer", "minimum": 0},
+        "duplicates_collapsed": {"type": "integer", "minimum": 0},
+        "families": {
+          "type": "object",
+          "propertyNames": {"enum": ["historical_fda", "device_history", "device_pipeline_history"]},
+          "additionalProperties": {"type": "integer", "minimum": 0}
+        },
+        "family_source_rows": {
+          "type": "object",
+          "propertyNames": {"enum": ["historical_fda", "device_history", "device_pipeline_history"]},
+          "additionalProperties": {"type": "integer", "minimum": 0}
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array", "minItems": 1, "maxItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["name", "sha256", "byte_count"],
+        "properties": {
+          "name": {"const": "events.jsonl"},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "byte_count": {"type": "integer", "minimum": 0}
+        }
+      }
+    },
+    "manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

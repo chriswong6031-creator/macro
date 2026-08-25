@@ -2676,3 +2676,230 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
+
+/* Licensed finite-snapshot history is an independent read projection. It does
+   not share the current CT.gov workspace state machine or raise its authority. */
+(function () {
+  'use strict';
+
+  var API = '/api/biocatalyst/v1/historical-events';
+  var panel = document.getElementById('bci-history');
+  if (!panel) return;
+
+  var ui = {
+    form: document.getElementById('bci-history-form'),
+    search: document.getElementById('bci-history-search'),
+    family: document.getElementById('bci-history-family'),
+    from: document.getElementById('bci-history-from'),
+    to: document.getElementById('bci-history-to'),
+    stage: document.getElementById('bci-history-stage'),
+    asset: document.getElementById('bci-history-asset'),
+    clear: document.getElementById('bci-history-clear'),
+    status: document.getElementById('bci-history-status'),
+    meta: document.getElementById('bci-history-meta'),
+    rows: document.getElementById('bci-history-rows'),
+    more: document.getElementById('bci-history-load-more')
+  };
+  var nextCursor = null;
+  var lastRows = [];
+  var lastPayload = null;
+  var controller = null;
+
+  function isZh() { return (document.documentElement.dataset.lang || '').toLowerCase().indexOf('zh') === 0; }
+  function tr(en, zh) { return isZh() ? zh : en; }
+  function localizeInputs() {
+    [ui.search, ui.stage, ui.asset].forEach(function (control) {
+      if (!control) return;
+      control.placeholder = control.getAttribute(isZh() ? 'data-placeholder-zh' : 'data-placeholder-en') || '';
+    });
+    Array.prototype.forEach.call(ui.family.options || [], function (option) {
+      option.textContent = option.getAttribute(isZh() ? 'data-label-zh' : 'data-label-en') || option.textContent;
+    });
+  }
+  function text(node, value) { if (node) node.textContent = value == null ? '' : String(value); }
+  function setState(value) {
+    panel.dataset.state = value;
+    panel.setAttribute('data-state', value);
+    panel.setAttribute('aria-busy', value === 'loading' ? 'true' : 'false');
+  }
+  function clearNode(node) { while (node && node.firstChild) node.removeChild(node.firstChild); }
+  function add(parent, tag, className, value) {
+    var node = document.createElement(tag);
+    if (className) node.className = className;
+    if (value != null) node.textContent = String(value);
+    parent.appendChild(node);
+    return node;
+  }
+  function value(value, fallback) {
+    return value == null || String(value).trim() === '' ? fallback : String(value);
+  }
+  function formatDate(value) {
+    var literal = String(value || '');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(literal)) return literal || tr('Unknown date', '日期未知');
+    var parts = literal.split('-');
+    var month = Number(parts[1]);
+    var day = Number(parts[2]);
+    if (isZh()) return parts[0] + '年' + month + '月' + day + '日';
+    var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return months[month - 1] + ' ' + String(day).padStart(2, '0') + ', ' + parts[0];
+  }
+  function hasPrivateField(input) {
+    var forbidden = {
+      raw: true, raw_row: true, raw_bytes: true, sha256: true, hash: true,
+      manifest_sha256: true, source_sha256: true, object_key: true, path: true,
+      locator: true, company_url: true, catalyst_url: true, source_url: true,
+      receipt: true, provenance: true, generation_id: true
+    };
+    if (Array.isArray(input)) return input.some(hasPrivateField);
+    if (!input || typeof input !== 'object') return false;
+    return Object.keys(input).some(function (key) {
+      var normalized = key.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+      return forbidden[normalized] || hasPrivateField(input[key]);
+    });
+  }
+  function validRow(row) {
+    return !!row && typeof row === 'object' &&
+      row.contract_id === 'biocatalyst_historical_event_record.v1' &&
+      row.schema_version === '1.0.0' && /^bpcjv_event_[0-9a-f]{24}$/.test(String(row.event_id || '')) &&
+      row.source && row.source.license_class === 'licensed_finite_snapshot' &&
+      row.company && row.event && /^\d{4}-\d{2}-\d{2}$/.test(String(row.event.date || '')) &&
+      row.event.source_available_at === null && row.asset && row.historical_market && row.normalization &&
+      row.authority && row.authority.classification === 'licensed_historical_context' &&
+      row.authority.decision_authority === false && !hasPrivateField(row);
+  }
+  function validPayload(payload) {
+    return !!payload && typeof payload === 'object' && payload.schema_version === '1.0.0' &&
+      ['ready', 'partial', 'empty'].indexOf(payload.state) >= 0 &&
+      payload.source && payload.source.license_class === 'licensed_finite_snapshot' &&
+      payload.authority && payload.authority.classification === 'licensed_historical_context' &&
+      payload.authority.decision_authority === false && payload.coverage &&
+      payload.pagination && Array.isArray(payload.historical_events) &&
+      payload.historical_events.every(validRow) && !hasPrivateField(payload);
+  }
+  function stateMessage(state) {
+    if (state === 'locked') return tr('Full access required', '需要完整访问权限');
+    if (state === 'unavailable') return tr('Historical event history unavailable', '历史事件记录暂不可用');
+    if (state === 'integrity_block') return tr('Historical event history failed its integrity contract', '历史事件记录未通过完整性合约');
+    return tr('No historical events match these filters', '没有历史事件符合这些筛选条件');
+  }
+  function paintState(state, detail) {
+    setState(state);
+    clearNode(ui.rows);
+    var box = add(ui.rows, 'div', 'bci-history-state');
+    add(box, 'strong', '', stateMessage(state));
+    add(box, 'p', '', detail || (state === 'locked'
+      ? tr('Sign in with a site_full entitlement to read this licensed history.', '请使用具有完整站点权限的账户登录以读取此许可历史记录。')
+      : tr('The current-trials workspace remains independent and available.', '当前试验工作台保持独立并可继续使用。')));
+    text(ui.status, stateMessage(state));
+    text(ui.meta, '');
+    ui.more.hidden = true;
+  }
+  function detailLine(details, label, body) {
+    var row = add(details, 'p', 'bci-history-detail-line');
+    add(row, 'span', '', label);
+    add(row, 'strong', '', body);
+  }
+  function renderRow(row) {
+    var card = add(ui.rows, 'article', 'bci-history-card');
+    card.setAttribute('data-event-id', row.event_id);
+    var date = add(card, 'time', 'bci-history-date', formatDate(row.event.date));
+    date.setAttribute('datetime', row.event.date);
+    var main = add(card, 'div', 'bci-history-main');
+    var companyName = value(row.company.name_evidence, tr('Company name unavailable', '公司名称不可用'));
+    var ticker = value(row.company.ticker_evidence, tr('Ticker unavailable', '代码不可用'));
+    add(main, 'h3', '', companyName + ' · ' + ticker);
+    var topline = add(main, 'p', 'bci-history-topline');
+    add(topline, 'span', '', value(row.event.stage, tr('Stage unavailable', '阶段不可用')));
+    add(topline, 'span', '', row.event.family === 'device' ? tr('Device', '器械') : tr('Regulatory', '监管'));
+    add(main, 'p', 'bci-history-description', value(row.event.description, tr('Description unavailable', '说明不可用')));
+    var facts = add(main, 'div', 'bci-history-facts');
+    add(facts, 'span', '', tr('Asset: ', '资产：') + value(row.asset.label, tr('unavailable', '不可用')));
+    add(facts, 'span', '', tr('Indication: ', '适应症：') + value(row.asset.indication, tr('unavailable', '不可用')));
+    if (row.historical_market.price_at_event != null) add(facts, 'span', '', tr('Recorded price: ', '记录价格：') + row.historical_market.price_at_event);
+    if (row.historical_market.price_movement != null) add(facts, 'span', '', tr('Recorded movement: ', '记录涨跌：') + row.historical_market.price_movement);
+    var details = add(main, 'details', 'bci-history-details');
+    add(details, 'summary', '', tr('Evidence and normalization', '证据与规范化'));
+    detailLine(details, tr('Capture', '采集时间'), row.source.capture_observed_at);
+    detailLine(details, tr('Publication clock', '发布时间'), row.source.source_published_at_state === 'observed' ? row.source.source_published_at : tr('Unavailable in the licensed snapshot', '许可快照中不可用'));
+    detailLine(details, tr('Identity', '身份'), row.company.resolution_state === 'resolved'
+      ? tr('Resolved through existing identity artifacts', '已通过现有身份工件解析')
+      : tr('Identity unresolved', '身份未解析'));
+    detailLine(details, tr('Normalization', '规范化'), row.normalization.repair === 'missing_row_index_unshifted'
+      ? tr('Deterministically repaired', '已确定性修复')
+      : tr('Deterministic, no repair required', '确定性规范化，无需修复'));
+    if (row.unsafe_fields && row.unsafe_fields.length) {
+      detailLine(details, tr('Unavailable fields', '不可用字段'), row.unsafe_fields.join(', '));
+    }
+    add(details, 'p', 'bci-history-authority', tr('Licensed historical context only. No signal, ranking, selection, sizing or execution authority.', '仅限许可历史背景信息。不具备信号、排名、筛选、仓位或执行权限。'));
+  }
+  function render(payload, append) {
+    if (!append) {
+      clearNode(ui.rows);
+      lastRows = [];
+    }
+    lastPayload = payload;
+    lastRows = lastRows.concat(payload.historical_events);
+    if (!lastRows.length) { paintState('empty'); return; }
+    if (!append) clearNode(ui.rows);
+    payload.historical_events.forEach(renderRow);
+    setState(payload.state === 'partial' ? 'partial' : 'ready');
+    text(ui.status, tr('Showing ', '显示 ') + lastRows.length + tr(' of ', ' / ') + payload.pagination.total + tr(' historical events.', ' 条历史事件。'));
+    text(ui.meta, tr('Captured ', '采集于 ') + payload.capture_observed_at + ' · ' + payload.coverage.normalized_rows + tr(' normalized events', ' 条规范化事件'));
+    nextCursor = payload.pagination.next_cursor || null;
+    ui.more.hidden = !nextCursor;
+    panel.setAttribute('aria-busy', 'false');
+  }
+  function query(cursor) {
+    var params = new URLSearchParams();
+    var controls = [
+      ['q', ui.search.value], ['family', ui.family.value], ['from_date', ui.from.value],
+      ['to_date', ui.to.value], ['stage', ui.stage.value], ['asset', ui.asset.value]
+    ];
+    controls.forEach(function (entry) { if (entry[1] && entry[1] !== 'all') params.set(entry[0], entry[1]); });
+    params.set('limit', '50');
+    if (cursor) params.set('cursor', cursor);
+    return API + '?' + params.toString();
+  }
+  function load(options) {
+    options = options || {};
+    if (controller && controller.abort) controller.abort();
+    controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    if (!options.append) {
+      setState('loading');
+      text(ui.status, tr('Loading historical events…', '正在加载历史事件…'));
+    }
+    var requestOptions = controller ? { signal: controller.signal, credentials: 'same-origin' } : { credentials: 'same-origin' };
+    fetch(query(options.append ? nextCursor : null), requestOptions).then(function (response) {
+      if (response.status === 401 || response.status === 403) { paintState('locked'); return null; }
+      if (!response.ok) { paintState('unavailable'); return null; }
+      var contentType = response.headers && response.headers.get ? response.headers.get('content-type') : '';
+      if (String(contentType || '').toLowerCase().indexOf('application/json') < 0) { paintState('integrity_block'); return null; }
+      return response.json();
+    }).then(function (payload) {
+      if (payload == null) return;
+      if (!validPayload(payload)) { paintState('integrity_block'); return; }
+      render(payload, !!options.append);
+    }).catch(function (error) {
+      if (error && error.name === 'AbortError') return;
+      paintState('unavailable');
+    });
+  }
+  ui.form.addEventListener('submit', function (event) { event.preventDefault(); load(); });
+  ui.clear.addEventListener('click', function () {
+    ui.search.value = ''; ui.family.value = 'all'; ui.from.value = ''; ui.to.value = '';
+    ui.stage.value = ''; ui.asset.value = ''; load();
+  });
+  ui.more.addEventListener('click', function () { if (nextCursor) load({ append: true }); });
+  document.addEventListener('langchange', function () {
+    localizeInputs();
+    if (lastPayload && lastRows.length) {
+      var payload = lastPayload;
+      payload = Object.assign({}, payload, { historical_events: lastRows, pagination: Object.assign({}, payload.pagination, { total: lastPayload.pagination.total }) });
+      render(payload, false);
+    } else if (panel.dataset.state !== 'loading') {
+      paintState(panel.dataset.state);
+    }
+  });
+  localizeInputs();
+  load();
+})();

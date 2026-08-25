@@ -2718,6 +2718,8 @@ def trial_milestones(
 _CATALYST_RADAR_MILESTONE_KINDS = frozenset(("all", "primary_completion", "completion"))
 _CATALYST_RADAR_CURSOR_VERSION = "cr1"
 _CATALYST_RADAR_CURSOR_DOMAIN = b"macro-biocatalyst:catalyst-radar:cursor-key:v1"
+_HISTORICAL_EVENT_CURSOR_DOMAIN = b"macro-biocatalyst:historical-events:cursor-key:v1"
+_HISTORICAL_EVENT_CURSOR_PROCESS_KEY = os.urandom(32)
 _CATALYST_RADAR_CURSOR_PROCESS_KEY = os.urandom(32)
 
 
@@ -2762,6 +2764,41 @@ def _catalyst_radar_cursor_key() -> bytes:
     if len(raw) < 32:
         raise _unavailable()
     return hmac.new(raw, _CATALYST_RADAR_CURSOR_DOMAIN, sha256).digest()
+
+
+def _historical_event_runtime() -> tuple[type[Exception], Any, Any]:
+    """Load the licensed finite-snapshot projection only for its paid route."""
+
+    from engine.biocatalyst.historical_events import (  # noqa: PLC0415
+        HistoricalEventError,
+        HistoricalEventPublisher,
+        query_events,
+    )
+
+    return HistoricalEventError, HistoricalEventPublisher, query_events
+
+
+def _historical_event_cursor_key() -> bytes:
+    configured = os.environ.get("BIOCATALYST_CURSOR_SECRET")
+    if configured is None:
+        return _HISTORICAL_EVENT_CURSOR_PROCESS_KEY
+    try:
+        raw = configured.encode("utf-8")
+    except UnicodeEncodeError:
+        raise _unavailable() from None
+    if len(raw) < 32:
+        raise _unavailable()
+    return hmac.new(raw, _HISTORICAL_EVENT_CURSOR_DOMAIN, sha256).digest()
+
+
+def _read_historical_event_projection() -> Any:
+    historical_error, publisher_type, _query = _historical_event_runtime()
+    try:
+        return publisher_type(_PUBLIC_ROOT / "historical_events").read_current()
+    except (OSError, historical_error) as exc:
+        code = getattr(exc, "code", type(exc).__name__)
+        log.warning("BioCatalyst historical-event projection unavailable (%s)", code)
+        return None
 
 
 def _catalyst_radar_cursor_payload(
@@ -3153,6 +3190,127 @@ def catalyst_radar(
         }
     )
     return _response(payload)
+
+
+@router.get("/api/biocatalyst/v1/historical-events")
+def historical_events(
+    q: str | None = None,
+    family: str = "all",
+    stage: str | None = None,
+    asset: str | None = None,
+    from_date: str | None = None,
+    to_date: str | None = None,
+    cursor: str | None = None,
+    limit: str = "50",
+    _user: dict = Depends(require_site_full_user),
+) -> JSONResponse:
+    """List deterministic licensed history as facts/context only."""
+
+    q = _query_text(q, name="query", maximum=100)
+    stage = _query_text(stage, name="stage", maximum=100)
+    asset = _query_text(asset, name="asset", maximum=120)
+    if family not in {"all", "regulatory", "device"}:
+        raise HTTPException(400, "invalid family", headers=_PRIVATE_HEADERS)
+    parsed_from = _query_iso_date(from_date, name="from_date")
+    parsed_to = _query_iso_date(to_date, name="to_date")
+    if parsed_from and parsed_to and parsed_from > parsed_to:
+        raise HTTPException(400, "invalid date range", headers=_PRIVATE_HEADERS)
+    page_limit = _query_limit(limit)
+    if page_limit > 100:
+        raise HTTPException(400, "invalid limit", headers=_PRIVATE_HEADERS)
+    historical_error, _publisher_type, query_projection = _historical_event_runtime()
+    cursor_key = _historical_event_cursor_key()
+    query_arguments = {
+        "q": q,
+        "family": family,
+        "stage": stage,
+        "asset": asset,
+        "from_date": parsed_from.isoformat() if parsed_from else None,
+        "to_date": parsed_to.isoformat() if parsed_to else None,
+        "limit": page_limit,
+        "cursor": cursor,
+        "cursor_key": cursor_key,
+    }
+    try:
+        # Cursor/filter validation is independent of corpus bytes and therefore
+        # happens before the paid projection read.
+        query_projection((), **query_arguments)
+    except historical_error as exc:
+        if getattr(exc, "code", "") in {
+            "HISTORICAL_EVENT_CURSOR_INVALID",
+            "HISTORICAL_EVENT_CURSOR_QUERY_MISMATCH",
+            "HISTORICAL_EVENT_FILTER_INVALID",
+        }:
+            raise HTTPException(400, "invalid historical event query", headers=_PRIVATE_HEADERS) from None
+        raise
+    projection = _read_historical_event_projection()
+    if projection is None:
+        raise HTTPException(
+            503,
+            "historical event history temporarily unavailable",
+            headers=_PRIVATE_HEADERS,
+        )
+    try:
+        page = query_projection(projection.events, **query_arguments)
+    except historical_error as exc:
+        if getattr(exc, "code", "") in {
+            "HISTORICAL_EVENT_CURSOR_INVALID",
+            "HISTORICAL_EVENT_CURSOR_QUERY_MISMATCH",
+            "HISTORICAL_EVENT_FILTER_INVALID",
+        }:
+            raise HTTPException(400, "invalid historical event query", headers=_PRIVATE_HEADERS) from None
+        raise HTTPException(
+            503,
+            "historical event history temporarily unavailable",
+            headers=_PRIVATE_HEADERS,
+        ) from None
+    coverage = dict(projection.coverage)
+    state = str(coverage.get("state") or "partial")
+    if page.total == 0:
+        state = "empty"
+    return _response(
+        {
+            "schema_version": "1.0.0",
+            "state": state,
+            "as_of": projection.published_at,
+            "capture_observed_at": projection.capture_observed_at,
+            "source": {
+                "provider": "BioPharmCatalyst",
+                "source_id": "biopharmcatalyst_jv_snapshot",
+                "license_class": "licensed_finite_snapshot",
+                "availability": "last_admitted_finite_snapshot",
+            },
+            "coverage": coverage,
+            "authority": {
+                "classification": "licensed_historical_context",
+                "decision_authority": False,
+                "allowed_uses": ["display", "context", "explain"],
+                "forbidden_uses": [
+                    "originate_signal",
+                    "rank_security",
+                    "select_security",
+                    "size_position",
+                    "gate_decision",
+                    "execute_trade",
+                    "raise_authority",
+                ],
+            },
+            "query": {
+                "q": q,
+                "family": family,
+                "stage": stage,
+                "asset": asset,
+                "from_date": parsed_from.isoformat() if parsed_from else None,
+                "to_date": parsed_to.isoformat() if parsed_to else None,
+            },
+            "pagination": {
+                "limit": page_limit,
+                "total": page.total,
+                "next_cursor": page.next_cursor,
+            },
+            "historical_events": list(page.rows),
+        }
+    )
 
 
 @router.get("/api/biocatalyst/v1/trials/changes")

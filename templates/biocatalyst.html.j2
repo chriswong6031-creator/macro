@@ -246,6 +246,59 @@
       </div>
     </aside>
   </section>
+
+  <section class="bci-history" id="bci-history" data-state="loading" aria-labelledby="bci-history-title" aria-busy="true">
+    <header class="bci-history-head">
+      <div>
+        <p class="bci-kicker">{{ t('Licensed finite snapshot', '许可有限快照') }}</p>
+        <h2 id="bci-history-title">{{ t('Historical Event History', '历史事件记录') }}</h2>
+        <p class="bci-history-subtitle">{{ t('Recorded regulatory and device milestones from the last admitted BioPharmCatalyst snapshot. Context only — never a ranking, score, recommendation, or live feed.', '来自最后一次准入许可快照的监管与器械里程碑记录。仅供背景参考——不是排名、评分、建议或实时数据源。') }}</p>
+      </div>
+      <div class="bci-history-meta" id="bci-history-meta" aria-live="polite"></div>
+    </header>
+
+    <form class="bci-history-filters" id="bci-history-form">
+      <label class="bci-history-search">
+        <span>{{ t('Search company, ticker, asset or indication', '搜索公司、代码、资产或适应症') }}</span>
+        <input id="bci-history-search" type="search" autocomplete="off" placeholder="Search history" data-placeholder-en="Search history" data-placeholder-zh="搜索历史记录">
+      </label>
+      <label>
+        <span>{{ t('Family', '类别') }}</span>
+        <select id="bci-history-family">
+          <option value="all" data-label-en="All families" data-label-zh="全部类别">All families</option>
+          <option value="regulatory" data-label-en="Regulatory" data-label-zh="监管">Regulatory</option>
+          <option value="device" data-label-en="Device" data-label-zh="器械">Device</option>
+        </select>
+      </label>
+      <label>
+        <span>{{ t('From', '开始日期') }}</span>
+        <input id="bci-history-from" type="date">
+      </label>
+      <label>
+        <span>{{ t('To', '结束日期') }}</span>
+        <input id="bci-history-to" type="date">
+      </label>
+      <label>
+        <span>{{ t('Stage', '阶段') }}</span>
+        <input id="bci-history-stage" type="search" autocomplete="off" placeholder="Any stage" data-placeholder-en="Any stage" data-placeholder-zh="全部阶段">
+      </label>
+      <label>
+        <span>{{ t('Asset', '资产') }}</span>
+        <input id="bci-history-asset" type="search" autocomplete="off" placeholder="Any asset" data-placeholder-en="Any asset" data-placeholder-zh="全部资产">
+      </label>
+      <div class="bci-history-actions">
+        <button class="bci-history-submit" type="submit">{{ t('Apply filters', '应用筛选') }}</button>
+        <button class="bci-history-clear" id="bci-history-clear" type="button">{{ t('Clear', '清除') }}</button>
+      </div>
+    </form>
+
+    <p class="bci-history-status" id="bci-history-status" role="status" aria-live="polite">{{ t('Loading historical events…', '正在加载历史事件…') }}</p>
+    <div class="bci-history-rows" id="bci-history-rows" aria-live="polite"></div>
+    <div class="bci-history-footer">
+      <p>{{ t('Source evidence is retained as a bounded, licensed historical snapshot. Missing identity, unavailable publication time and deterministic repair are shown explicitly.', '来源证据以有边界的许可历史快照保留。身份缺失、发布时间不可用及确定性修复均明确展示。') }}</p>
+      <button class="bci-load-more" id="bci-history-load-more" type="button" hidden>{{ t('Load more history', '加载更多历史记录') }}</button>
+    </div>
+  </section>
 </main>
 
 <div class="bci-scrim" id="bci-scrim" hidden></div>
