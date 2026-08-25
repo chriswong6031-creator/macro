@@ -1,0 +1,18 @@
+# XPV2-SC-R3B.2 — ?reffail=1 boot-armed fetch-fail proof
+candidate sha256: ea2e09b812d1435103e491973ae01d2c4fca63c3a29186023f40f137fc10aba8
+
+REF.simulateFetchFail armed at boot: True
+
+REF.log entries: 9
+  simulated-fail: 8  recorded-not-executed: 0  hit: 0
+
+Full log (seq/type/path/result):
+  1  boot  basketdata/baskets.json  -> hit (sync boot parse)
+  2  fetch  basketdata/baskets.json  -> simulated-fail
+  3  fetch  basketdata/etf_pulse.json  -> simulated-fail
+  4  fetch  basketdata/vol_sentiment.json  -> simulated-fail
+  5  fetch  marketdata/sp500_heatmap.json  -> simulated-fail
+  6  fetch  marketdata/index_leadership.json  -> simulated-fail
+  7  fetch  basketdata/baskets.json  -> simulated-fail
+  8  fetch  basketdata/narrative_emergence.json  -> simulated-fail
+  9  fetch  marketdata/nasdaq_internals.json  -> simulated-fail

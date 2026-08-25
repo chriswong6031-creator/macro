@@ -1,0 +1,74 @@
+# RIG artifact manifest (RIG V1 S3) -- XPV2-SC-R3B.2, US Sector Central six-view workspace,
+# FINAL SURGICAL CLOSURE cycle over the REVISE'd mastermind-xpv2-sector-r3b-1 reference.
+# Commission: COMMISSION.md in this directory (Sol + Chairman execution directive,
+# 2026-08-23). The R3B product architecture is FROZEN (immutable-architecture list); this
+# cycle implements exactly B2-01..B2-11. Build tree started as a byte-identical copy of the
+# frozen R3B.1 build (untouched rebuild = candidate sha256 fec05b058fbc9dbe29744ad015b7ee9c
+# d9baa5cb85bbbde739daa8b97644cf70 before any fix landed).
+# Authority pins at pickup: origin/main e4562f8b7662 (post 59fed333c063); protected Sol
+# Skillpack mastermindx-market-intelligence/Mastermind@e1101eb2c1f17d801d480ded497b3fc1bb0ef18b;
+# predecessor merge #6248/780cbcf6d2d2 verified ancestor of main.
+schema: mastermind.rig_manifest.v1
+reference_id: mastermind-xpv2-sector-r3b-2
+scope: full
+status: in_review
+# status: in_review remains unchanged through the Sol-commissioned pre-final emoji
+# reconciliation. The historical provisional freeze `80347cd6...` / candidate
+# `ea2e09b8...` remains in Git history. The corrected candidate is
+# `4adb4b6245e8e4aa5b68c850a615461327c0a5d2e672e4c203d6ba32a3b8d53c`
+# (5,506,871 bytes), verifier 23/23 ALL GREEN, heatmap axis UNMEASURED (never
+# scored), with a 13-artifact reconciliation delta appended to the historical
+# 53-artifact matrix. Awaiting Sol's four FRESH delta-focused final seats via the
+# draft HOLD-FOR-SOL PR; no approval.yml may be authored by this cycle.
+# The provisional successor satisfied the draft -> in_review gate on 2026-08-23.
+# This pre-final correction keeps status in_review and re-stamps
+# proposed_artifact.frozen_sha/reference_files[].frozen_sha only after the corrected
+# content commit exists (real 40-hex from Git, never hand-expanded).
+
+surface:
+  route: sector_central.html
+  registry_row: "macro:sector_central"
+  archetype: intelligence_desk
+
+author:
+  identity: "XPV2-SC-R3B.2 final surgical closure -- returning R3B/R3B.1 Fable orchestrator with delegated Opus design + Sonnet build/QA lanes (COMMISSION.md, Sol + Chairman 2026-08-23)"
+  role: designer
+
+lineage:
+  predecessors:
+    - mastermind-xpv2-turn3-r2
+    - mastermind-xpv2-sector-r3b
+    - mastermind-xpv2-sector-r3b-1
+  # Ordered oldest -> nearest (RIG S13); the closure obligation runs against the NEAREST,
+  # mastermind-xpv2-sector-r3b-1, whose verdict.yml (Sol REVISE as CORRECTED 2026-08-23)
+  # mints exactly ONE upheld_revise blocker (VTC1-001) + the FINAL eleven B2 conditions =
+  # 12 open items, all closed RESOLVED_BY_CHANGE in this cycle's continuity.yml. The R3A
+  # substrate remains authority substrate, not a RIG predecessor.
+
+reference_files:            # the FROZEN successor reference artifact (stamped at freeze).
+  # The historical provisional freeze remains in Git history. These four values
+  # now name the corrected immutable content-freeze commit. Its tree holds sha256
+  # 4adb4b6245e8e4aa5b68c850a615461327c0a5d2e672e4c203d6ba32a3b8d53c;
+  # the four NEW critic receipts must bind artifact_sha to the corrected value.
+  - path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/proposal/MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html
+    frozen_sha: "d0830a374795925ee1e55b66c0cc42e329ac172d"
+  - path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/proposal/BUILD_MANIFEST.json
+    frozen_sha: "d0830a374795925ee1e55b66c0cc42e329ac172d"
+  - path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/
+    frozen_sha: "d0830a374795925ee1e55b66c0cc42e329ac172d"
+    note: "source directory -- byte-identical copy of the frozen R3B.1 build at cycle start (incl. its committed gate scripts); the final eleven-item closure changes only its adjudicated targets; the Sol-commissioned pre-final reconciliation removes only the decoded chart emoji from the Moving Track Record heading and adds the decoded-output guard required by that ruling"
+  - path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/
+    frozen_sha: "d0830a374795925ee1e55b66c0cc42e329ac172d"
+    note: "historical 53-artifact provisional-freeze matrix plus a separately indexed 13-artifact pre-final correction delta; historical screenshots are not rebound to the corrected candidate"
+
+files:
+  baseline: baseline.yml
+  proposal: proposal.yml
+  continuity: continuity.yml
+  # reviews/: the four FRESH delta-focused final seats Sol commissions AFTER reviewing this
+  # cycle's return (Chairman directive: do not dispatch them from this session). Never
+  # authored by this cycle; no R3B.2 author may occupy a seat.
+  # verdict/approval: Sol's, post-critics. Never authored by this cycle.
+
+# lightweight: not applicable -- scope: full.
+# superseded: not applicable -- status: draft, no successor exists.

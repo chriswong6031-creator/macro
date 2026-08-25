@@ -1,0 +1,3220 @@
+{
+  "schema": "mastermind.r3b2.thin_reliability_audit.v1",
+  "candidate": "MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html",
+  "chip_term": {
+    "en": "Low confidence",
+    "zh": "低置信度"
+  },
+  "thin_word": {
+    "en": "thin",
+    "zh": "稀疏"
+  },
+  "expected_n_thin": 48,
+  "cells": [
+    {
+      "lang": "en",
+      "measure": {
+        "chipNames": [
+          "Low confidence",
+          "Low confidence",
+          "Low confidence",
+          "Low confidence",
+          "Low confidence"
+        ],
+        "chipCensus": 5,
+        "covText": "65 of 113 subsectors have enough live data to time. 48 are too thin to time and are omitted from the timed table.",
+        "textNodes": [
+          {
+            "text": "Confluence",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "1",
+            "cls": "",
+            "inCoverage": false
+          },
+          {
+            "text": "group just turned",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "buyable",
+            "cls": "accent-up",
+            "inCoverage": false
+          },
+          {
+            "text": "and",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "16",
+            "cls": "",
+            "inCoverage": false
+          },
+          {
+            "text": "more carry a tailwind. Entries have the wind at their back — confirm the group before chasing.",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "1",
+            "cls": "",
+            "inCoverage": false
+          },
+          {
+            "text": "可买",
+            "cls": "accent-up",
+            "inCoverage": false
+          },
+          {
+            "text": "16",
+            "cls": "",
+            "inCoverage": false
+          },
+          {
+            "text": "as of 2026-08-19",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Graded call · this view only",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "S&P 500",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "65",
+            "cls": "n tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "Nasdaq-100",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "12",
+            "cls": "n tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "Russell-2000",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "93",
+            "cls": "n tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "Thematic Baskets",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "49",
+            "cls": "n tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "Entry now",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "1",
+            "cls": "r3-ledge-count tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "Tailwind",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "16",
+            "cls": "r3-ledge-count tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "Neutral",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "21",
+            "cls": "r3-ledge-count tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "Late",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "18",
+            "cls": "r3-ledge-count tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "Headwind",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "9",
+            "cls": "r3-ledge-count tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "65",
+            "cls": "tnum",
+            "inCoverage": true
+          },
+          {
+            "text": "of",
+            "cls": "l-en",
+            "inCoverage": true
+          },
+          {
+            "text": "113",
+            "cls": "tnum",
+            "inCoverage": true
+          },
+          {
+            "text": "subsectors have enough live data to time.",
+            "cls": "l-en",
+            "inCoverage": true
+          },
+          {
+            "text": "48",
+            "cls": "tnum",
+            "inCoverage": true
+          },
+          {
+            "text": "are too thin to time and are omitted from the timed table.",
+            "cls": "l-en",
+            "inCoverage": true
+          },
+          {
+            "text": "113",
+            "cls": "tnum",
+            "inCoverage": true
+          },
+          {
+            "text": "65",
+            "cls": "tnum",
+            "inCoverage": true
+          },
+          {
+            "text": "48",
+            "cls": "tnum",
+            "inCoverage": true
+          },
+          {
+            "text": "How timing support is graded",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "1 of 1 shown",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Subsector",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Entry tier",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Why it is here",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Auto Manufacturers",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Low confidence",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "EXTENDED",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Consumer Cyclical",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "3 names",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Entry tier",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "T1",
+            "cls": "r3-fig tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "Fresh T1 entry — just crossed",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Stock picks",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Stocks with an active or forming T1–T4 entry read inside a subsector that is also working. Strongest combined reads come first.",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Stock",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Conviction",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Why it is here",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "COIN",
+            "cls": "r3-mem-tk",
+            "inCoverage": false
+          },
+          {
+            "text": "Capital Markets",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Conviction",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "0.60",
+            "cls": "r3-fig tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "Its tier",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "T2",
+            "cls": "r3-why",
+            "inCoverage": false
+          },
+          {
+            "text": "vs sub 20d",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "-1.6",
+            "cls": "tnum neg",
+            "inCoverage": false
+          },
+          {
+            "text": "NSC",
+            "cls": "r3-mem-tk",
+            "inCoverage": false
+          },
+          {
+            "text": "Railroads",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Conviction",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "0.54",
+            "cls": "r3-fig tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "Its tier",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "T1",
+            "cls": "r3-why",
+            "inCoverage": false
+          },
+          {
+            "text": "vs sub 20d",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "+2.2",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "All subsectors",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "65",
+            "cls": "tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "Sortable. Filter by subsector or sector name.",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "65 / 65",
+            "cls": "cnt",
+            "inCoverage": false
+          },
+          {
+            "text": "Subsector",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Sector",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Entry",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Regime",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Freshness",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "N",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Auto Manufacturers",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Low confidence",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Consumer Cyclical",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "T1",
+            "cls": "",
+            "inCoverage": false
+          },
+          {
+            "text": "EXTENDED",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "fired 1 bar ago",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "-1.5",
+            "cls": "tnum neg",
+            "inCoverage": false
+          },
+          {
+            "text": "3",
+            "cls": "num tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "Oil & Gas Midstream",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Low confidence",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Energy",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "T2",
+            "cls": "",
+            "inCoverage": false
+          },
+          {
+            "text": "TOPPING",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "fired 2 bars ago",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "-2.2",
+            "cls": "tnum neg",
+            "inCoverage": false
+          },
+          {
+            "text": "4",
+            "cls": "num tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "Computer Hardware",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Technology",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "–",
+            "cls": "",
+            "inCoverage": false
+          },
+          {
+            "text": "BUY",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "fired 29 bars ago",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "+31.9",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "7",
+            "cls": "num tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "Insurance - Brokers",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Low confidence",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Financial",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "–",
+            "cls": "",
+            "inCoverage": false
+          },
+          {
+            "text": "BUY",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "fired 18 bars ago",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "+17.0",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "5",
+            "cls": "num tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "Packaged Foods",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Consumer Defensive",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "–",
+            "cls": "",
+            "inCoverage": false
+          },
+          {
+            "text": "BUY",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "fired 22 bars ago",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "+10.5",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "7",
+            "cls": "num tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "Railroads",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Low confidence",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Industrials",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "–",
+            "cls": "",
+            "inCoverage": false
+          },
+          {
+            "text": "BUY",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "fired 12 bars ago",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "+8.3",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "4",
+            "cls": "num tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "Insurance - Property & Casualty",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Financial",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "–",
+            "cls": "",
+            "inCoverage": false
+          },
+          {
+            "text": "BUY",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "fired 31 bars ago",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "+6.2",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "7",
+            "cls": "num tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "Capital Markets",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Financial",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "–",
+            "cls": "",
+            "inCoverage": false
+          },
+          {
+            "text": "BUY",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "fired 32 bars ago",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "+5.5",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "6",
+            "cls": "num tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "Show all 65 subsectors",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Supporting context",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Deeper evidence for the read above. Open what you need.",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Leadership — running & coiling",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "who is already running, and who is coiling next",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Running — rising leaders",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "10",
+            "cls": "cf-n",
+            "inCoverage": false
+          },
+          {
+            "text": "Already leading their peers and still accelerating (RRG leading quadrant, not topping). Ranked by acceleration, not level.",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Biotechnology",
+            "cls": "cf-lc-nm",
+            "inCoverage": false
+          },
+          {
+            "text": "Healthcare",
+            "cls": "cf-lc-sub",
+            "inCoverage": false
+          },
+          {
+            "text": "Leading",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "EXTENDED",
+            "cls": "r3-tag",
+            "inCoverage": false
+          },
+          {
+            "text": "accel",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "+7.12",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-lc-meta",
+            "inCoverage": false
+          },
+          {
+            "text": "+81.6",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "Software - Application",
+            "cls": "cf-lc-nm",
+            "inCoverage": false
+          },
+          {
+            "text": "Technology",
+            "cls": "cf-lc-sub",
+            "inCoverage": false
+          },
+          {
+            "text": "Leading",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "EXTENDED",
+            "cls": "r3-tag",
+            "inCoverage": false
+          },
+          {
+            "text": "accel",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "+1.44",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-lc-meta",
+            "inCoverage": false
+          },
+          {
+            "text": "+5.3",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "Information Technology Services",
+            "cls": "cf-lc-nm",
+            "inCoverage": false
+          },
+          {
+            "text": "Technology",
+            "cls": "cf-lc-sub",
+            "inCoverage": false
+          },
+          {
+            "text": "Leading",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "EXTENDED",
+            "cls": "r3-tag",
+            "inCoverage": false
+          },
+          {
+            "text": "accel",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "+1.33",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-lc-meta",
+            "inCoverage": false
+          },
+          {
+            "text": "+14.2",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "Drug Manufacturers - General",
+            "cls": "cf-lc-nm",
+            "inCoverage": false
+          },
+          {
+            "text": "Healthcare",
+            "cls": "cf-lc-sub",
+            "inCoverage": false
+          },
+          {
+            "text": "Leading",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "EXTENDED",
+            "cls": "r3-tag",
+            "inCoverage": false
+          },
+          {
+            "text": "accel",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "+1.10",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-lc-meta",
+            "inCoverage": false
+          },
+          {
+            "text": "+18.0",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "Packaged Foods",
+            "cls": "cf-lc-nm",
+            "inCoverage": false
+          },
+          {
+            "text": "Consumer Defensive",
+            "cls": "cf-lc-sub",
+            "inCoverage": false
+          },
+          {
+            "text": "Leading",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "BUY_PARTIAL",
+            "cls": "r3-tag",
+            "inCoverage": false
+          },
+          {
+            "text": "accel",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "+0.91",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-lc-meta",
+            "inCoverage": false
+          },
+          {
+            "text": "+10.5",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "Medical Devices",
+            "cls": "cf-lc-nm",
+            "inCoverage": false
+          },
+          {
+            "text": "Healthcare",
+            "cls": "cf-lc-sub",
+            "inCoverage": false
+          },
+          {
+            "text": "Leading",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "EXTENDED",
+            "cls": "r3-tag",
+            "inCoverage": false
+          },
+          {
+            "text": "accel",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "+0.65",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-lc-meta",
+            "inCoverage": false
+          },
+          {
+            "text": "+5.9",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "Household & Personal Products",
+            "cls": "cf-lc-nm",
+            "inCoverage": false
+          },
+          {
+            "text": "Consumer Defensive",
+            "cls": "cf-lc-sub",
+            "inCoverage": false
+          },
+          {
+            "text": "Leading",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "EXTENDED",
+            "cls": "r3-tag",
+            "inCoverage": false
+          },
+          {
+            "text": "accel",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "+0.50",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-lc-meta",
+            "inCoverage": false
+          },
+          {
+            "text": "+6.6",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "Discount Stores",
+            "cls": "cf-lc-nm",
+            "inCoverage": false
+          },
+          {
+            "text": "Consumer Defensive",
+            "cls": "cf-lc-sub",
+            "inCoverage": false
+          },
+          {
+            "text": "Leading",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "EXTENDED",
+            "cls": "r3-tag",
+            "inCoverage": false
+          },
+          {
+            "text": "accel",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "+0.39",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-lc-meta",
+            "inCoverage": false
+          },
+          {
+            "text": "+7.6",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "Industrial Distribution",
+            "cls": "cf-lc-nm",
+            "inCoverage": false
+          },
+          {
+            "text": "Industrials",
+            "cls": "cf-lc-sub",
+            "inCoverage": false
+          },
+          {
+            "text": "Leading",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "BUY",
+            "cls": "r3-tag",
+            "inCoverage": false
+          },
+          {
+            "text": "accel",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "+0.14",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-lc-meta",
+            "inCoverage": false
+          },
+          {
+            "text": "+5.0",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "Aerospace & Defense",
+            "cls": "cf-lc-nm",
+            "inCoverage": false
+          },
+          {
+            "text": "Industrials",
+            "cls": "cf-lc-sub",
+            "inCoverage": false
+          },
+          {
+            "text": "Leading",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "EXTENDED",
+            "cls": "r3-tag",
+            "inCoverage": false
+          },
+          {
+            "text": "accel",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "+0.02",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-lc-meta",
+            "inCoverage": false
+          },
+          {
+            "text": "+7.1",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "Coiling — about to run",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "2",
+            "cls": "cf-n",
+            "inCoverage": false
+          },
+          {
+            "text": "Laggards turning up that pass a coil confirmation (RSI divergence, multi-timeframe turn, volatility contraction, RS-hold) and survive a weekly / 2-week / monthly downtrend veto. W/2W/M chips show the higher-timeframe trend.",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "REIT - Specialty",
+            "cls": "cf-lc-nm",
+            "inCoverage": false
+          },
+          {
+            "text": "Real Estate",
+            "cls": "cf-lc-sub",
+            "inCoverage": false
+          },
+          {
+            "text": "Primed",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "SETUP_BUY",
+            "cls": "r3-tag",
+            "inCoverage": false
+          },
+          {
+            "text": "higher TF",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "W",
+            "cls": "cf-tf up",
+            "inCoverage": false
+          },
+          {
+            "text": "rising",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "2W",
+            "cls": "cf-tf flat",
+            "inCoverage": false
+          },
+          {
+            "text": "flat",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "M",
+            "cls": "cf-tf flat",
+            "inCoverage": false
+          },
+          {
+            "text": "flat",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "confirming",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "coil",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "71/100",
+            "cls": "tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-lc-meta",
+            "inCoverage": false
+          },
+          {
+            "text": "-7.4",
+            "cls": "tnum neg",
+            "inCoverage": false
+          },
+          {
+            "text": "Oil & Gas E&P",
+            "cls": "cf-lc-nm",
+            "inCoverage": false
+          },
+          {
+            "text": "Energy",
+            "cls": "cf-lc-sub",
+            "inCoverage": false
+          },
+          {
+            "text": "Primed",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "EXTENDED",
+            "cls": "r3-tag",
+            "inCoverage": false
+          },
+          {
+            "text": "higher TF",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "W",
+            "cls": "cf-tf up",
+            "inCoverage": false
+          },
+          {
+            "text": "rising",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "2W",
+            "cls": "cf-tf up",
+            "inCoverage": false
+          },
+          {
+            "text": "rising",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "M",
+            "cls": "cf-tf flat",
+            "inCoverage": false
+          },
+          {
+            "text": "flat",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "confirming",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "coil",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "58/100",
+            "cls": "tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-lc-meta",
+            "inCoverage": false
+          },
+          {
+            "text": "-1.9",
+            "cls": "tnum neg",
+            "inCoverage": false
+          },
+          {
+            "text": "3 more dropped by the weekly / 2-week / monthly downtrend veto (a bounce inside a higher-timeframe bear — not a durable coil).",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Sector backdrop",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "whether the backdrop supports what you picked",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Each sector as one equal-weight basket — the backdrop the subsectors live inside.",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "Basic Materials",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "EXTENDED",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-line",
+            "inCoverage": false
+          },
+          {
+            "text": "-0.5",
+            "cls": "tnum neg",
+            "inCoverage": false
+          },
+          {
+            "text": "Communication Services",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "TOPPING",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-line",
+            "inCoverage": false
+          },
+          {
+            "text": "-3.5",
+            "cls": "tnum neg",
+            "inCoverage": false
+          },
+          {
+            "text": "Consumer Cyclical",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "TOPPING",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-line",
+            "inCoverage": false
+          },
+          {
+            "text": "+4.8",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "Consumer Defensive",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "SETUP",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-line",
+            "inCoverage": false
+          },
+          {
+            "text": "+2.1",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "Energy",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "TOPPING",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-line",
+            "inCoverage": false
+          },
+          {
+            "text": "+1.5",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "Financial",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "TOPPING",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-line",
+            "inCoverage": false
+          },
+          {
+            "text": "+7.9",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "Healthcare",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "EXTENDED",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-line",
+            "inCoverage": false
+          },
+          {
+            "text": "+18.5",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "Industrials",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "NEUTRAL",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-line",
+            "inCoverage": false
+          },
+          {
+            "text": "+4.7",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "Real Estate",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "BUY",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-line",
+            "inCoverage": false
+          },
+          {
+            "text": "-1.2",
+            "cls": "tnum neg",
+            "inCoverage": false
+          },
+          {
+            "text": "Technology",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "TOPPING",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-line",
+            "inCoverage": false
+          },
+          {
+            "text": "+5.6",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "Utilities",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "TOPPING",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-line",
+            "inCoverage": false
+          },
+          {
+            "text": "-3.7",
+            "cls": "tnum neg",
+            "inCoverage": false
+          },
+          {
+            "text": "See the rotation map",
+            "cls": "l-en",
+            "inCoverage": false
+          },
+          {
+            "text": "for where each group sits in the leading / lagging cycle.",
+            "cls": "l-en",
+            "inCoverage": false
+          }
+        ]
+      },
+      "failures": []
+    },
+    {
+      "lang": "zh",
+      "measure": {
+        "chipNames": [
+          "低置信度",
+          "低置信度",
+          "低置信度",
+          "低置信度",
+          "低置信度"
+        ],
+        "chipCensus": 5,
+        "covText": "113 个子行业中，65 个实时数据足够，可用于计时。另有 48 个数据过于稀疏，无法计时，未列入下方计时表。",
+        "textNodes": [
+          {
+            "text": "子行业汇聚",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "1",
+            "cls": "",
+            "inCoverage": false
+          },
+          {
+            "text": "buyable",
+            "cls": "accent-up",
+            "inCoverage": false
+          },
+          {
+            "text": "16",
+            "cls": "",
+            "inCoverage": false
+          },
+          {
+            "text": "1",
+            "cls": "",
+            "inCoverage": false
+          },
+          {
+            "text": "个子行业刚转为",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "可买",
+            "cls": "accent-up",
+            "inCoverage": false
+          },
+          {
+            "text": "，另有",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "16",
+            "cls": "",
+            "inCoverage": false
+          },
+          {
+            "text": "个处于顺风。入场有顺风——追涨前请先确认该组。",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "截至 2026-08-19",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "分级判断 · 仅此视图",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "标普500",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "65",
+            "cls": "n tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "纳斯达克100",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "12",
+            "cls": "n tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "罗素2000",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "93",
+            "cls": "n tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "主题篮子",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "49",
+            "cls": "n tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "现可入场",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "1",
+            "cls": "r3-ledge-count tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "顺风",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "16",
+            "cls": "r3-ledge-count tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "中性",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "21",
+            "cls": "r3-ledge-count tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "偏晚",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "18",
+            "cls": "r3-ledge-count tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "逆风",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "9",
+            "cls": "r3-ledge-count tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "65",
+            "cls": "tnum",
+            "inCoverage": true
+          },
+          {
+            "text": "113",
+            "cls": "tnum",
+            "inCoverage": true
+          },
+          {
+            "text": "48",
+            "cls": "tnum",
+            "inCoverage": true
+          },
+          {
+            "text": "113",
+            "cls": "tnum",
+            "inCoverage": true
+          },
+          {
+            "text": "个子行业中，",
+            "cls": "l-zh",
+            "inCoverage": true
+          },
+          {
+            "text": "65",
+            "cls": "tnum",
+            "inCoverage": true
+          },
+          {
+            "text": "个实时数据足够，可用于计时。另有",
+            "cls": "l-zh",
+            "inCoverage": true
+          },
+          {
+            "text": "48",
+            "cls": "tnum",
+            "inCoverage": true
+          },
+          {
+            "text": "个数据过于稀疏，无法计时，未列入下方计时表。",
+            "cls": "l-zh",
+            "inCoverage": true
+          },
+          {
+            "text": "时机支持的评分方式",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "已显示 1 / 1",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "子行业",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "入场层级",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "入选原因",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "Auto Manufacturers",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "低置信度",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "过热",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "Consumer Cyclical",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "3 只",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "入场层级",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "T1",
+            "cls": "r3-fig tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "刚触发 T1 入场交叉",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "个股精选",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "这些股票出现了已生效或正在形成的 T1–T4 入场判断，同时所在子行业也在走强。综合判断最强的排在前面。",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "个股",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "综合把握",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "入选原因",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "COIN",
+            "cls": "r3-mem-tk",
+            "inCoverage": false
+          },
+          {
+            "text": "Capital Markets",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "综合把握",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "0.60",
+            "cls": "r3-fig tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "个股层级",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "T2",
+            "cls": "r3-why",
+            "inCoverage": false
+          },
+          {
+            "text": "相对子行业20日",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "-1.6",
+            "cls": "tnum neg",
+            "inCoverage": false
+          },
+          {
+            "text": "NSC",
+            "cls": "r3-mem-tk",
+            "inCoverage": false
+          },
+          {
+            "text": "Railroads",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "综合把握",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "0.54",
+            "cls": "r3-fig tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "个股层级",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "T1",
+            "cls": "r3-why",
+            "inCoverage": false
+          },
+          {
+            "text": "相对子行业20日",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "+2.2",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "全部子行业",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "65",
+            "cls": "tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "可排序。可按子行业或板块名称筛选。",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "65 / 65",
+            "cls": "cnt",
+            "inCoverage": false
+          },
+          {
+            "text": "子行业",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "板块",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "入场",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "状态",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "新鲜度",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "数",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "Auto Manufacturers",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "低置信度",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "Consumer Cyclical",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "T1",
+            "cls": "",
+            "inCoverage": false
+          },
+          {
+            "text": "过热",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "1 根K线前触发",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "-1.5",
+            "cls": "tnum neg",
+            "inCoverage": false
+          },
+          {
+            "text": "3",
+            "cls": "num tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "Oil & Gas Midstream",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "低置信度",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "Energy",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "T2",
+            "cls": "",
+            "inCoverage": false
+          },
+          {
+            "text": "见顶",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "2 根K线前触发",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "-2.2",
+            "cls": "tnum neg",
+            "inCoverage": false
+          },
+          {
+            "text": "4",
+            "cls": "num tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "Computer Hardware",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "Technology",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "–",
+            "cls": "",
+            "inCoverage": false
+          },
+          {
+            "text": "买入",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "29 根K线前触发",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "+31.9",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "7",
+            "cls": "num tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "Insurance - Brokers",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "低置信度",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "Financial",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "–",
+            "cls": "",
+            "inCoverage": false
+          },
+          {
+            "text": "买入",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "18 根K线前触发",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "+17.0",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "5",
+            "cls": "num tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "Packaged Foods",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "Consumer Defensive",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "–",
+            "cls": "",
+            "inCoverage": false
+          },
+          {
+            "text": "买入",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "22 根K线前触发",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "+10.5",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "7",
+            "cls": "num tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "Railroads",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "低置信度",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "Industrials",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "–",
+            "cls": "",
+            "inCoverage": false
+          },
+          {
+            "text": "买入",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "12 根K线前触发",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "+8.3",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "4",
+            "cls": "num tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "Insurance - Property & Casualty",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "Financial",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "–",
+            "cls": "",
+            "inCoverage": false
+          },
+          {
+            "text": "买入",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "31 根K线前触发",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "+6.2",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "7",
+            "cls": "num tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "Capital Markets",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "Financial",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "–",
+            "cls": "",
+            "inCoverage": false
+          },
+          {
+            "text": "买入",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "32 根K线前触发",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "+5.5",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "6",
+            "cls": "num tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "展开全部 65 个子行业",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "支持背景",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "上方判断的更深证据。按需展开。",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "领导地位——领跑与蓄势",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "谁已在领跑，谁正在蓄势",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "领跑——上升领导",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "10",
+            "cls": "cf-n",
+            "inCoverage": false
+          },
+          {
+            "text": "已领先同侪且仍在加速（RRG 领先象限，未见顶）。按加速度而非水平排序。",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "Biotechnology",
+            "cls": "cf-lc-nm",
+            "inCoverage": false
+          },
+          {
+            "text": "Healthcare",
+            "cls": "cf-lc-sub",
+            "inCoverage": false
+          },
+          {
+            "text": "领先",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "EXTENDED",
+            "cls": "r3-tag",
+            "inCoverage": false
+          },
+          {
+            "text": "加速",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "+7.12",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-lc-meta",
+            "inCoverage": false
+          },
+          {
+            "text": "+81.6",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "Software - Application",
+            "cls": "cf-lc-nm",
+            "inCoverage": false
+          },
+          {
+            "text": "Technology",
+            "cls": "cf-lc-sub",
+            "inCoverage": false
+          },
+          {
+            "text": "领先",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "EXTENDED",
+            "cls": "r3-tag",
+            "inCoverage": false
+          },
+          {
+            "text": "加速",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "+1.44",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-lc-meta",
+            "inCoverage": false
+          },
+          {
+            "text": "+5.3",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "Information Technology Services",
+            "cls": "cf-lc-nm",
+            "inCoverage": false
+          },
+          {
+            "text": "Technology",
+            "cls": "cf-lc-sub",
+            "inCoverage": false
+          },
+          {
+            "text": "领先",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "EXTENDED",
+            "cls": "r3-tag",
+            "inCoverage": false
+          },
+          {
+            "text": "加速",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "+1.33",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-lc-meta",
+            "inCoverage": false
+          },
+          {
+            "text": "+14.2",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "Drug Manufacturers - General",
+            "cls": "cf-lc-nm",
+            "inCoverage": false
+          },
+          {
+            "text": "Healthcare",
+            "cls": "cf-lc-sub",
+            "inCoverage": false
+          },
+          {
+            "text": "领先",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "EXTENDED",
+            "cls": "r3-tag",
+            "inCoverage": false
+          },
+          {
+            "text": "加速",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "+1.10",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-lc-meta",
+            "inCoverage": false
+          },
+          {
+            "text": "+18.0",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "Packaged Foods",
+            "cls": "cf-lc-nm",
+            "inCoverage": false
+          },
+          {
+            "text": "Consumer Defensive",
+            "cls": "cf-lc-sub",
+            "inCoverage": false
+          },
+          {
+            "text": "领先",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "BUY_PARTIAL",
+            "cls": "r3-tag",
+            "inCoverage": false
+          },
+          {
+            "text": "加速",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "+0.91",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-lc-meta",
+            "inCoverage": false
+          },
+          {
+            "text": "+10.5",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "Medical Devices",
+            "cls": "cf-lc-nm",
+            "inCoverage": false
+          },
+          {
+            "text": "Healthcare",
+            "cls": "cf-lc-sub",
+            "inCoverage": false
+          },
+          {
+            "text": "领先",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "EXTENDED",
+            "cls": "r3-tag",
+            "inCoverage": false
+          },
+          {
+            "text": "加速",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "+0.65",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-lc-meta",
+            "inCoverage": false
+          },
+          {
+            "text": "+5.9",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "Household & Personal Products",
+            "cls": "cf-lc-nm",
+            "inCoverage": false
+          },
+          {
+            "text": "Consumer Defensive",
+            "cls": "cf-lc-sub",
+            "inCoverage": false
+          },
+          {
+            "text": "领先",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "EXTENDED",
+            "cls": "r3-tag",
+            "inCoverage": false
+          },
+          {
+            "text": "加速",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "+0.50",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-lc-meta",
+            "inCoverage": false
+          },
+          {
+            "text": "+6.6",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "Discount Stores",
+            "cls": "cf-lc-nm",
+            "inCoverage": false
+          },
+          {
+            "text": "Consumer Defensive",
+            "cls": "cf-lc-sub",
+            "inCoverage": false
+          },
+          {
+            "text": "领先",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "EXTENDED",
+            "cls": "r3-tag",
+            "inCoverage": false
+          },
+          {
+            "text": "加速",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "+0.39",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-lc-meta",
+            "inCoverage": false
+          },
+          {
+            "text": "+7.6",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "Industrial Distribution",
+            "cls": "cf-lc-nm",
+            "inCoverage": false
+          },
+          {
+            "text": "Industrials",
+            "cls": "cf-lc-sub",
+            "inCoverage": false
+          },
+          {
+            "text": "领先",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "BUY",
+            "cls": "r3-tag",
+            "inCoverage": false
+          },
+          {
+            "text": "加速",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "+0.14",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-lc-meta",
+            "inCoverage": false
+          },
+          {
+            "text": "+5.0",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "Aerospace & Defense",
+            "cls": "cf-lc-nm",
+            "inCoverage": false
+          },
+          {
+            "text": "Industrials",
+            "cls": "cf-lc-sub",
+            "inCoverage": false
+          },
+          {
+            "text": "领先",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "EXTENDED",
+            "cls": "r3-tag",
+            "inCoverage": false
+          },
+          {
+            "text": "加速",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "+0.02",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-lc-meta",
+            "inCoverage": false
+          },
+          {
+            "text": "+7.1",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "蓄势——即将启动",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "2",
+            "cls": "cf-n",
+            "inCoverage": false
+          },
+          {
+            "text": "开始转强的落后组，通过蓄势确认（RSI 背离、多周期转向、波动收缩、相对强弱守稳）并通过周/双周/月线下跌否决。W/2W/M 标签显示更高周期趋势。",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "REIT - Specialty",
+            "cls": "cf-lc-nm",
+            "inCoverage": false
+          },
+          {
+            "text": "Real Estate",
+            "cls": "cf-lc-sub",
+            "inCoverage": false
+          },
+          {
+            "text": "就绪",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "SETUP_BUY",
+            "cls": "r3-tag",
+            "inCoverage": false
+          },
+          {
+            "text": "更高周期",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "W",
+            "cls": "cf-tf up",
+            "inCoverage": false
+          },
+          {
+            "text": "上行",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "2W",
+            "cls": "cf-tf flat",
+            "inCoverage": false
+          },
+          {
+            "text": "走平",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "M",
+            "cls": "cf-tf flat",
+            "inCoverage": false
+          },
+          {
+            "text": "走平",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "确认中",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "蓄势",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "71/100",
+            "cls": "tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-lc-meta",
+            "inCoverage": false
+          },
+          {
+            "text": "-7.4",
+            "cls": "tnum neg",
+            "inCoverage": false
+          },
+          {
+            "text": "Oil & Gas E&P",
+            "cls": "cf-lc-nm",
+            "inCoverage": false
+          },
+          {
+            "text": "Energy",
+            "cls": "cf-lc-sub",
+            "inCoverage": false
+          },
+          {
+            "text": "就绪",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "EXTENDED",
+            "cls": "r3-tag",
+            "inCoverage": false
+          },
+          {
+            "text": "更高周期",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "W",
+            "cls": "cf-tf up",
+            "inCoverage": false
+          },
+          {
+            "text": "上行",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "2W",
+            "cls": "cf-tf up",
+            "inCoverage": false
+          },
+          {
+            "text": "上行",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "M",
+            "cls": "cf-tf flat",
+            "inCoverage": false
+          },
+          {
+            "text": "走平",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "确认中",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "蓄势",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "58/100",
+            "cls": "tnum",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-lc-meta",
+            "inCoverage": false
+          },
+          {
+            "text": "-1.9",
+            "cls": "tnum neg",
+            "inCoverage": false
+          },
+          {
+            "text": "3 个被周/双周/月线下跌否决过滤（更高周期熊市中的反弹——非可持续蓄势）。",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "板块背景",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "所选标的是否有背景支持",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "每个板块作为一个等权篮子——子行业所处的大背景。",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "Basic Materials",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "过热",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-line",
+            "inCoverage": false
+          },
+          {
+            "text": "-0.5",
+            "cls": "tnum neg",
+            "inCoverage": false
+          },
+          {
+            "text": "Communication Services",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "见顶",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-line",
+            "inCoverage": false
+          },
+          {
+            "text": "-3.5",
+            "cls": "tnum neg",
+            "inCoverage": false
+          },
+          {
+            "text": "Consumer Cyclical",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "见顶",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-line",
+            "inCoverage": false
+          },
+          {
+            "text": "+4.8",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "Consumer Defensive",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "预备",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-line",
+            "inCoverage": false
+          },
+          {
+            "text": "+2.1",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "Energy",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "见顶",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-line",
+            "inCoverage": false
+          },
+          {
+            "text": "+1.5",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "Financial",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "见顶",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-line",
+            "inCoverage": false
+          },
+          {
+            "text": "+7.9",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "Healthcare",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "过热",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-line",
+            "inCoverage": false
+          },
+          {
+            "text": "+18.5",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "Industrials",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "中性",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-line",
+            "inCoverage": false
+          },
+          {
+            "text": "+4.7",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "Real Estate",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "买入",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-line",
+            "inCoverage": false
+          },
+          {
+            "text": "-1.2",
+            "cls": "tnum neg",
+            "inCoverage": false
+          },
+          {
+            "text": "Technology",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "见顶",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-line",
+            "inCoverage": false
+          },
+          {
+            "text": "+5.6",
+            "cls": "tnum pos",
+            "inCoverage": false
+          },
+          {
+            "text": "Utilities",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "见顶",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "RS60",
+            "cls": "cf-line",
+            "inCoverage": false
+          },
+          {
+            "text": "-3.7",
+            "cls": "tnum neg",
+            "inCoverage": false
+          },
+          {
+            "text": "查看轮动图",
+            "cls": "l-zh",
+            "inCoverage": false
+          },
+          {
+            "text": "了解各组在领先/落后周期中的位置。",
+            "cls": "l-zh",
+            "inCoverage": false
+          }
+        ]
+      },
+      "failures": []
+    }
+  ],
+  "pass": true
+}

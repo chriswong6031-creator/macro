@@ -1,0 +1,137 @@
+{
+  "schema": "mastermind.r3b2.decoded_emoji_audit.v1",
+  "candidate": "MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html",
+  "classifier": "ECMAScript Unicode property Extended_Pictographic",
+  "detector_self_test": {
+    "rows": {
+      "literal_unicode": true,
+      "decimal_numeric_entity": true,
+      "hex_numeric_entity": true
+    },
+    "pass": true
+  },
+  "source_census": {
+    "files": 7,
+    "bytes": 5979332,
+    "literal_non_ascii_occurrences": 6019,
+    "literal_distinct_non_ascii": 680,
+    "literal_source_files": 6,
+    "decimal_numeric_entities": 49,
+    "hex_numeric_entities": 0
+  },
+  "cells": [
+    {
+      "lang": "en",
+      "view": "overview",
+      "element_census": 553,
+      "dom_text_node_census": 111,
+      "accessible_name_census": 298,
+      "observable_pseudo_content_census": 4,
+      "violation_count": 0
+    },
+    {
+      "lang": "en",
+      "view": "map",
+      "element_census": 1497,
+      "dom_text_node_census": 490,
+      "accessible_name_census": 828,
+      "observable_pseudo_content_census": 0,
+      "violation_count": 0
+    },
+    {
+      "lang": "en",
+      "view": "moving",
+      "element_census": 1037,
+      "dom_text_node_census": 309,
+      "accessible_name_census": 764,
+      "observable_pseudo_content_census": 25,
+      "violation_count": 0
+    },
+    {
+      "lang": "en",
+      "view": "money",
+      "element_census": 4460,
+      "dom_text_node_census": 2493,
+      "accessible_name_census": 959,
+      "observable_pseudo_content_census": 2,
+      "violation_count": 0
+    },
+    {
+      "lang": "en",
+      "view": "explore",
+      "element_census": 1576,
+      "dom_text_node_census": 422,
+      "accessible_name_census": 1126,
+      "observable_pseudo_content_census": 0,
+      "violation_count": 0
+    },
+    {
+      "lang": "en",
+      "view": "confluence",
+      "element_census": 785,
+      "dom_text_node_census": 329,
+      "accessible_name_census": 428,
+      "observable_pseudo_content_census": 1,
+      "violation_count": 0
+    },
+    {
+      "lang": "zh",
+      "view": "overview",
+      "element_census": 553,
+      "dom_text_node_census": 112,
+      "accessible_name_census": 299,
+      "observable_pseudo_content_census": 4,
+      "violation_count": 0
+    },
+    {
+      "lang": "zh",
+      "view": "map",
+      "element_census": 1497,
+      "dom_text_node_census": 490,
+      "accessible_name_census": 825,
+      "observable_pseudo_content_census": 0,
+      "violation_count": 0
+    },
+    {
+      "lang": "zh",
+      "view": "moving",
+      "element_census": 1037,
+      "dom_text_node_census": 309,
+      "accessible_name_census": 760,
+      "observable_pseudo_content_census": 25,
+      "violation_count": 0
+    },
+    {
+      "lang": "zh",
+      "view": "money",
+      "element_census": 4462,
+      "dom_text_node_census": 2496,
+      "accessible_name_census": 963,
+      "observable_pseudo_content_census": 2,
+      "violation_count": 0
+    },
+    {
+      "lang": "zh",
+      "view": "explore",
+      "element_census": 1576,
+      "dom_text_node_census": 422,
+      "accessible_name_census": 1117,
+      "observable_pseudo_content_census": 0,
+      "violation_count": 0
+    },
+    {
+      "lang": "zh",
+      "view": "confluence",
+      "element_census": 785,
+      "dom_text_node_census": 329,
+      "accessible_name_census": 428,
+      "observable_pseudo_content_census": 1,
+      "violation_count": 0
+    }
+  ],
+  "expected_render_cells": 12,
+  "nonzero_census": true,
+  "violations": [],
+  "violation_owners": [],
+  "pass": true
+}

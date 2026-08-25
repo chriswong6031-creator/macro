@@ -1,0 +1,71 @@
+{
+  "schema": "mastermind.r3b2.aria_receipt_audit.v1",
+  "candidate": "MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html",
+  "expected_shared_panel_controls": 4,
+  "receipt_id": "r3-receipt",
+  "cells": [
+    {
+      "lang": "en",
+      "measure": {
+        "census": 13,
+        "sharedCensus": 4,
+        "sharedRows": [
+          {
+            "marker": "02",
+            "cls": "r3-rcpt r3-rcpt--named",
+            "ariaControls": "r3-receipt"
+          },
+          {
+            "marker": "08",
+            "cls": "r3-tr-help",
+            "ariaControls": "r3-receipt"
+          },
+          {
+            "marker": "08",
+            "cls": "r3-tr-help",
+            "ariaControls": "r3-receipt"
+          },
+          {
+            "marker": "08",
+            "cls": "r3-tr-help r3-tr-help--named",
+            "ariaControls": "r3-receipt"
+          }
+        ],
+        "panelCount": 1
+      },
+      "failures": []
+    },
+    {
+      "lang": "zh",
+      "measure": {
+        "census": 13,
+        "sharedCensus": 4,
+        "sharedRows": [
+          {
+            "marker": "02",
+            "cls": "r3-rcpt r3-rcpt--named",
+            "ariaControls": "r3-receipt"
+          },
+          {
+            "marker": "08",
+            "cls": "r3-tr-help",
+            "ariaControls": "r3-receipt"
+          },
+          {
+            "marker": "08",
+            "cls": "r3-tr-help",
+            "ariaControls": "r3-receipt"
+          },
+          {
+            "marker": "08",
+            "cls": "r3-tr-help r3-tr-help--named",
+            "ariaControls": "r3-receipt"
+          }
+        ],
+        "panelCount": 1
+      },
+      "failures": []
+    }
+  ],
+  "pass": true
+}
