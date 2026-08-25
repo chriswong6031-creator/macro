@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-25T04:27:52.453667+00:00",
-  "count": 1799,
+  "generated_at": "2026-08-25T05:22:05.288743+00:00",
+  "count": 1805,
   "institutions": [
     "13F Summary",
     "ABN Amro",
@@ -89,6 +89,25 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-uyvcubmk4ag-979ace",
+      "title": "DB Fixed Income Blog The element of surprise",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-25T03:11:40Z",
+      "summary_points": [
+        "**Tactical Debt Management Shift**: Treasury's $16bn/quarter long-end buyback increase (doubled from $8bn) timed before FOMC minutes aims to shorten WAM and cap long-end yields, signaling active debt management.",
+        "**Credibility Erosion Risk**: Activist policies (e.g., 2023 buybacks) risk undermining institutional credibility, increasing term premia, and diminishing marginal market impact from successive interventions.",
+        "**Curve Steepening Reinforcement**: Intervention threats moderate near-term steepening bias but reinforce a steeper yield curve and wider swap spreads, directly impacting portfolio positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-4qm9hr4e26e-c00fe9",
       "title": "JPM US Market Intelligence Afternoon Briefing Aug 24",
@@ -671,6 +690,26 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-en0l3z7yszz-c3ace2",
+      "title": "GS Singhal Hedge Funds Crowding Monitor US 24 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T15:45:45Z",
+      "summary_points": [
+        "**Bullish Sector Rotation**: Household & Personal Products (SPLRCHHPE) and Consumer Services (SPLRCHR) flipped to crowded long (0.22/0.24 vs -0.16/-0.03), signaling decisive bullish momentum amid unwinding short crowding (0.26/0.92).",
+        "**Critical Short Crowding Risk**: SPXK (Banks) Short Crowding Score (1.50, 63%ile) and GSXMEGA (Mega) (1.48, 75%ile) indicate overconcentration, highlighting potential reversal risk in key sectors.",
+        "**Crowded Heatmap Signals**: Transportation and Financial Services dominate \"Crowded and Heating Up\" quadrant (top-right), suggesting overbought conditions, while Utilities and Pharma/Biotech are in \"Not Crowded and Cooling Down\" (bottom-left), signaling tactical short-term downside risk.",
+        "**Imminent Short Squeeze Risk**: Health Care Equipment & Services, Consumer Durables & Apparel, and Capital Goods show high short interest + rising prices, indicating near-term squeeze potential."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-ryitpzoueb9-db281f",
       "title": "GS Arruda What Matters Today HFs and MFs differ on AI but converge on Financials 24 Aug 2026",
       "institution": "S&T",
@@ -787,6 +826,85 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vab4bv2jztz-a6eb8b",
+      "title": "China Basic Materials Monitor Aug 2026 Supply keeping prices supported amid weak demand",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T13:44:07Z",
+      "summary_points": [
+        "**Supply constraints vs.",
+        "weak demand**: Coal safety enforcement, delayed copper maintenance, aluminum exports (2.8 mmt over 2026/July), and CBAM impact on steel exports support prices despite softened construction demand (cement/construction steel down 5–10% YoY) and high inventory in battery/machinery.",
+        "**Steel inventory & supply signals**: Steel inventory 11% net above normal (moving down), containerboard up, OCC down 100% net below—highlighting divergent supply pressures; finished steel inventory trend signals near-term constraints.",
+        "**Property market collapse**: Monthly residential sales (-12.7% YoY), starts (-24.0% YoY), and completions (-23.2% YoY) in July 2026 indicate severe demand collapse, increasing risk for real estate developers and related assets.",
+        "**Copper supply tightness**: Physical premium surge (SHFE Cu Exh."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 40,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-syrunzme9xe-20afce",
+      "title": "Mexico Moderate 1H Aug HeadlineCore Prints; Sticky Services (Ramos)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T13:44:04Z",
+      "summary_points": [
+        "**Services Inflation Sticky at 4.34% yoy**: Labor costs and El Niño risks sustain elevated services inflation, limiting near-term central bank rate cuts despite headline inflation below consensus.",
+        "**Wage-Sensitive Core Inflation Persistent at 3.77% yoy**: Structural labor-driven pressures (wage-sensitive core) remain elevated, signaling prolonged inflation dynamics beyond temporary factors.",
+        "**Administered Prices Rising Above Market Prices (3.3% increase)**: Regulatory policy risks intensify as government-set prices outpace market prices, creating structural inflationary pressure and delaying monetary easing."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-77ufztxbokd-baa876",
+      "title": "Market Intelligence US Morning Update",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T13:44:00Z",
+      "summary_points": [
+        "**China semiconductor self-sufficiency push**: 79% capex surge to $82bn (2030 plants) drives WFE estimates to $281bn (+29%), accelerating supply chain independence from Taiwan foundries amid lithography shortages and R&D gaps.",
+        "**Geopolitical supply chain shift**: China’s memory/foundry capacity build (NAND/logic/node transitions) reduces Taiwan reliance, with 2026-28 as critical momentum window for global semiconductor realignment.",
+        "**China semiconductor gap**: 70% IC volume self-sufficiency persists but value gap remains due to lithography/R&D lag; ASML, Tokyo Electron, and ASMI are key beneficiaries of China’s push."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-rhjsetrpmn9-aa1e20",
+      "title": "Mexico Solid Broad Based Expansion of Real GDP During 2Q26; Some",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T13:43:57Z",
+      "summary_points": [
+        "**Q2 GDP Revision**: 1.42% qoq sa (vs.",
+        "5% consensus), revised up 25bp, reflecting broad-based secondary/services expansion.",
+        "**Q3 Payback Risk**: Expected due to soft business confidence, credit cycle peak, and USMCA trade policy uncertainty.",
+        "**2026 GDP Forecast**: Revised up 10bp to 1.4%, driven by statistical carry-over from confirmed Q2 growth."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },
