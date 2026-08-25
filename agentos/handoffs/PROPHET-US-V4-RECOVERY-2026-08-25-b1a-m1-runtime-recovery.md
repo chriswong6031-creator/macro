@@ -97,7 +97,18 @@ next_actions:
     execution (or, if that cycle is missed, the next weekday 17:15). Do NOT hand-run
     the lane and present the output as production proof.
   - "On 2026-08-30 20:00 PDT bank the index/GEX natural receipt the same way; do NOT dispatch it by hand."
-  - "Only after both lane receipts exist should the private-cutover packet return to Sol; the visibility flip stays the Chairman's isolated act."
+  - >
+    Each natural receipt is banked in its OWN later records PR by whichever session
+    observes that cycle. This PR is BUILT_NOT_PROVEN and carries neither receipt.
+  - >
+    Commission a SEPARATE bounded cutover-consumer wave to migrate the M1-local
+    anonymous consumers — `~/macro-live` first (LIVE: FETCH_HEAD 2026-08-25T13:48:31,
+    loaded agent com.macro.live-breadth), then the dormant `~/hub-ops-wt` and
+    `~/fund-engine-wt`. #6418 was deliberately NOT widened to this.
+  - >
+    MACRO-PRIVATE-CUTOVER READY stays WITHHELD until BOTH lane receipts exist AND the
+    macro-live consumer wave lands. Only then does the private-cutover packet return
+    to Sol; the visibility flip remains the Chairman's isolated act.
 
 do_not_redo:
   - "Do NOT re-diagnose the M1 runtime as lost from an absent path on whatever Mac a session occupies. Probe the M1 over Tailscale (`ssh m1`) FIRST. See DSC:M1-PUBLISHER-RUNTIME-IS-HOST-LOCAL-AND-DELIBERATELY-PINNED."
@@ -120,13 +131,29 @@ decisions:
 
 # Handoff — B1-A M1 runtime recovery + #6363 commissioning · 2026-08-25
 
-> **State at merge:** recovery and commissioning are DONE and receipted. The one
-> remaining gate is an external scheduler clock that cannot be accelerated: the
-> theme-options-witness lane fires Mon–Fri 17:15 America/Vancouver and the
-> index/GEX lane fires Sundays 20:00. `ended_because: blocked` names exactly that
-> clock — not a defect, not a missing capability, and not a reason for another
-> session to re-open the recovery question. The natural receipts are banked in a
-> follow-up records PR by this same session; do NOT hand-run either lane.
+> **CAPABILITY STATE: `BUILT_NOT_PROVEN`** (Sol, 2026-08-25).
+> Recovery and installation are **COMPLETE and receipted**. Natural scheduler proof
+> is **INCOMPLETE** for BOTH publisher lanes. Do not read this record as production
+> proof of either lane, and do not cite it as one.
+>
+> Both natural proofs remain explicitly OPEN:
+> - **theme-options-witness** — first natural post-install weekday cycle (scheduler
+>   Mon–Fri 17:15 America/Vancouver).
+> - **index/GEX history** — first natural post-install Sunday cycle, currently
+>   **2026-08-30** (scheduler Sundays 20:00).
+>
+> Neither lane may be hand-run and presented as production proof. Each receipt is
+> banked in its own LATER records PR by whichever session observes that cycle; this
+> PR does not carry them and does not promise them.
+>
+> `MACRO-PRIVATE-CUTOVER READY` is **WITHHELD** — independently of the two lane
+> proofs — because the newly discovered active M1 `~/macro-live` anonymous fetch
+> path is still unfixed. Repairing it is a SEPARATE bounded cutover-consumer wave;
+> it was deliberately not widened into this PR.
+>
+> `ended_because: blocked` names the external scheduler clock plus this withheld
+> readiness — not a defect, not a missing capability, and not a reason for another
+> session to re-open the recovery question.
 
 
 The governed M1 publisher runtime was **recovered, not replaced**. It was never

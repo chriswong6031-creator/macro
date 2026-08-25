@@ -49,19 +49,34 @@ evidence:
   - "The ~69 GiB TerraMaster M1 recovery set at /Volumes/Mastermind/Mastermind/scratch/runner-fleet/m1-recovery-20260824 is entirely chrome-code-sign-clones-inactive and contains zero flow-ops-wt material — it can neither establish nor restore the runtime's identity"
   - "No Agent-OS decision, workstream or handoff after 2026-08-21 supersedes DEC:B1-MACRO-PRIVATE-CUTOVER; WS:PROPHET-US-V4-RECOVERY still lists the pin advance as a residual chore"
   - "Post-install re-capture of the same digests returned byte-identical values, proving commissioning did not mutate the recovered runtime"
+  - "Sol acceptance 2026-08-25 on the B1-A result: ACCEPTS the forensic recovery at a5f79c83, ACCEPTS that replacement-pin migration is not triggered, ACCEPTS that DEC:B1-MACRO-PRIVATE-CUTOVER remains controlling and the 2026-08-24 #6363 terminal comment did not supersede it, ACCEPTS the #6363 commissioning as BUILT_NOT_PROVEN, and ACCEPTS the ~/macro-live finding as a new blocking input to MACRO-PRIVATE-CUTOVER READY"
 affects:
   - "ops/launchd/com.macro.indexgexhistory.plist"
   - "ops/launchd/com.macro.theme-options-witness.plist"
   - "scripts/macro_machine_git.py"
 confidence: high
 reversibility: easy
-decided_by: fable
+decided_by: ceo-sol
 decided_at: 2026-08-25
 related:
   - "DSC:M1-PUBLISHER-RUNTIME-IS-HOST-LOCAL-AND-DELIBERATELY-PINNED"
   - "DEC:B1-MACRO-PRIVATE-CUTOVER"
   - "WS:PROPHET-US-V4-RECOVERY"
 ---
+
+## Authority provenance
+
+This record carries an ORGANIZATIONAL/AUTHORITY adjudication, not merely a factual
+discovery, so its authority seat is **Sol (ceo-sol)**, who accepted the result on
+2026-08-25. **Fable (the B1-A session) is the investigator and evidence producer**:
+it performed the forensic recovery, produced the digests, falsified the
+`EXTERNAL_CAPABILITY_BLOCKED` verdict, and commissioned #6363. The ruling that
+Day-6 remains controlling and that supersession is not triggered is Sol's to hold;
+the evidence beneath it is Fable's to have produced. Neither attribution absorbs
+the other.
+
+**Capability state: BUILT_NOT_PROVEN.** Recovery and installation are complete and
+receipted; natural scheduler proof is INCOMPLETE for both publisher lanes.
 
 Recorded by the B1-A session commissioned to recover the M1 runtime or ratify a
 replacement pin. The recovery branch of that mandate was taken; the replacement
