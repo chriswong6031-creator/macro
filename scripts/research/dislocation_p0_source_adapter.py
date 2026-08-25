@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read exactly twenty P0 source packets from the canonical SEC document spine.
+"""Read frozen P0 source packets from the canonical SEC document spine.
 
 This module is intentionally a *consumer* of Filing Forensics evidence.  It
 does not discover SEC filings, call the network, persist archive bytes, or
@@ -61,27 +61,38 @@ class CanonicalSourcePacket:
     lineage: Mapping[str, Any]
     matched_documents: tuple[Mapping[str, Any], ...]
     source_documents: tuple[bytes, ...]
+    # This is deliberately separate from the exact FTS packet.  Consumers may
+    # request the owner-designated primary filing context, but it can never
+    # replace an exact FTS-matched document.
+    primary_context: Mapping[str, Any] | None = None
+    primary_context_source: bytes | None = None
 
 
 @dataclass(frozen=True)
 class SourcePacketResult:
     packets: tuple[CanonicalSourcePacket, ...]
     gaps: tuple[OwnerCapabilityGap, ...]
+    required_packet_count: int = REQUIRED_PACKET_COUNT
 
     @property
     def complete(self) -> bool:
-        return len(self.packets) == REQUIRED_PACKET_COUNT and not self.gaps
+        return len(self.packets) == self.required_packet_count and not self.gaps
 
 
 def _gap(ref: CanonicalSpineRef, code: str, detail: str) -> OwnerCapabilityGap:
     return OwnerCapabilityGap(ref.slot, ref.cik, ref.accession, code, detail)
 
 
-def _selection_gaps(refs: Sequence[CanonicalSpineRef]) -> list[OwnerCapabilityGap]:
+def _selection_gaps(
+    refs: Sequence[CanonicalSpineRef], *, required_packet_count: int
+) -> list[OwnerCapabilityGap]:
     gaps: list[OwnerCapabilityGap] = []
-    if len(refs) != REQUIRED_PACKET_COUNT:
+    if not isinstance(required_packet_count, int) or isinstance(required_packet_count, bool) or required_packet_count < 1:
+        gaps.append(OwnerCapabilityGap(0, "", "", "EXACT_CARDINALITY_UNSATISFIED", "required packet count must be a positive integer"))
+        return gaps
+    if len(refs) != required_packet_count:
         gaps.append(OwnerCapabilityGap(0, "", "", "EXACT_CARDINALITY_UNSATISFIED", (
-            f"P0 requires exactly {REQUIRED_PACKET_COUNT} selections; got {len(refs)}"
+            f"P0 requires exactly {required_packet_count} selections; got {len(refs)}"
         )))
     seen_slots: set[int] = set()
     seen_filings: set[tuple[str, str]] = set()
@@ -108,15 +119,21 @@ def _selection_gaps(refs: Sequence[CanonicalSpineRef]) -> list[OwnerCapabilityGa
             if ref.manifest_storage_key in seen_keys:
                 gaps.append(_gap(ref, "OWNER_PACKET_DUPLICATE", "duplicate owner manifest reference"))
             seen_keys.add(ref.manifest_storage_key)
-    expected_slots = set(range(1, REQUIRED_PACKET_COUNT + 1))
+    expected_slots = set(range(1, required_packet_count + 1))
     if seen_slots != expected_slots:
         gaps.append(OwnerCapabilityGap(0, "", "", "EXACT_CARDINALITY_UNSATISFIED", (
-            "selection slots must be exactly 1..20"
+            f"selection slots must be exactly 1..{required_packet_count}"
         )))
     return gaps
 
 
-def _read_packet(archive_root: Path, ref: CanonicalSpineRef) -> CanonicalSourcePacket | OwnerCapabilityGap:
+def _read_packet(
+    archive_root: Path,
+    ref: CanonicalSpineRef,
+    *,
+    include_primary_context: bool,
+    primary_context_required: bool,
+) -> CanonicalSourcePacket | OwnerCapabilityGap:
     # A missing historical Submissions row cannot be reconstructed or topped up
     # from a newer candidate.  The caller must obtain an existing owner reference.
     if not ref.manifest_storage_key:
@@ -182,6 +199,39 @@ def _read_packet(archive_root: Path, ref: CanonicalSpineRef) -> CanonicalSourceP
             return _gap(ref, "OWNER_FTS_DOCUMENT_UNREPLAYABLE", f"{name}: {exc}")
         matched.append(document)
         source_documents.append(source)
+    primary_context: Mapping[str, Any] | None = None
+    primary_context_source: bytes | None = None
+    if include_primary_context:
+        primary = [document for document in manifest["documents"] if document.get("role") == "primary"]
+        if len(primary) != 1:
+            if primary_context_required:
+                return _gap(ref, "OWNER_PRIMARY_CONTEXT_UNAVAILABLE", "owner manifest has no unique declared primary document")
+        else:
+            primary_context = primary[0]
+            if primary_context["availability"] == "missing":
+                if primary_context_required:
+                    return _gap(ref, "OWNER_PRIMARY_CONTEXT_UNAVAILABLE", "owner recorded a canonical SEC 404 for primary document")
+                primary_context = None
+            elif primary_context["availability"] != "stored" or len(primary_context["source_spans"]) != 1:
+                if primary_context_required:
+                    return _gap(ref, "OWNER_PRIMARY_CONTEXT_UNAVAILABLE", "primary document has no replayable owner span")
+                primary_context = None
+            else:
+                try:
+                    matched_index = next(
+                        index for index, document in enumerate(matched)
+                        if document["document_id"] == primary_context["document_id"]
+                    )
+                    primary_context_source = source_documents[matched_index]
+                except StopIteration:
+                    try:
+                        primary_context_source = read_archive_document(
+                            archive_root, primary_context["retrieval"]
+                        )
+                    except ArchiveStoreError as exc:
+                        if primary_context_required:
+                            return _gap(ref, "OWNER_PRIMARY_CONTEXT_UNREPLAYABLE", str(exc))
+                        primary_context = None
     return CanonicalSourcePacket(
         slot=ref.slot,
         manifest_storage_key=ref.manifest_storage_key,
@@ -193,30 +243,57 @@ def _read_packet(archive_root: Path, ref: CanonicalSpineRef) -> CanonicalSourceP
         lineage=lineage,
         matched_documents=tuple(matched),
         source_documents=tuple(source_documents),
+        primary_context=primary_context,
+        primary_context_source=primary_context_source,
     )
 
 
-def read_exact_p0_source_packets(
-    *, archive_root: Path, refs: Sequence[CanonicalSpineRef]
+def read_source_packets(
+    *,
+    archive_root: Path,
+    refs: Sequence[CanonicalSpineRef],
+    required_packet_count: int,
+    include_primary_context: bool = False,
+    primary_context_required: bool = False,
 ) -> SourcePacketResult:
-    """Return all twenty verified owner packets, or no packets plus typed gaps.
+    """Return every required owner packet, or no packets plus typed gaps.
 
     This is deliberately atomic.  It never returns a partial source panel, and
     it never writes to ``archive_root``.
     """
-    gaps = _selection_gaps(refs)
+    if primary_context_required and not include_primary_context:
+        gap = OwnerCapabilityGap(0, "", "", "OWNER_PRIMARY_CONTEXT_CONFIGURATION_INVALID", "required primary context must be included")
+        return SourcePacketResult((), (gap,), required_packet_count)
+    gaps = _selection_gaps(refs, required_packet_count=required_packet_count)
     if gaps:
-        return SourcePacketResult((), tuple(sorted(gaps, key=lambda gap: (gap.slot, gap.code, gap.detail))))
+        return SourcePacketResult((), tuple(sorted(gaps, key=lambda gap: (gap.slot, gap.code, gap.detail))), required_packet_count)
     packets: list[CanonicalSourcePacket] = []
     for ref in sorted(refs, key=lambda item: item.slot):
-        result = _read_packet(Path(archive_root), ref)
+        result = _read_packet(
+            Path(archive_root), ref,
+            include_primary_context=include_primary_context,
+            primary_context_required=primary_context_required,
+        )
         if isinstance(result, OwnerCapabilityGap):
             gaps.append(result)
         else:
             packets.append(result)
     if gaps:
-        return SourcePacketResult((), tuple(sorted(gaps, key=lambda gap: (gap.slot, gap.code, gap.detail))))
-    return SourcePacketResult(tuple(packets), ())
+        return SourcePacketResult((), tuple(sorted(gaps, key=lambda gap: (gap.slot, gap.code, gap.detail))), required_packet_count)
+    return SourcePacketResult(tuple(packets), (), required_packet_count)
+
+
+def read_exact_p0_source_packets(
+    *, archive_root: Path, refs: Sequence[CanonicalSpineRef]
+) -> SourcePacketResult:
+    """Exact-twenty compatibility wrapper for the A1R source contract."""
+    return read_source_packets(
+        archive_root=archive_root,
+        refs=refs,
+        required_packet_count=REQUIRED_PACKET_COUNT,
+        include_primary_context=False,
+        primary_context_required=False,
+    )
 
 
 __all__ = [
@@ -225,5 +302,6 @@ __all__ = [
     "OwnerCapabilityGap",
     "REQUIRED_PACKET_COUNT",
     "SourcePacketResult",
+    "read_source_packets",
     "read_exact_p0_source_packets",
 ]

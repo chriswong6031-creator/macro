@@ -1,0 +1,83 @@
+{
+  "admission_truth": "FINAL_INDEPENDENT_AUDIT_PLUS_ALL70_EPISODE_LINKAGE",
+  "confidence_intervals": {
+    "alpha": "0.05",
+    "method": "CLOPPER_PEARSON_EXACT_TWO_SIDED",
+    "serialization_decimal_places": 12,
+    "zero_success_lower": "0",
+    "zero_success_upper_formula": "BETA_PPF(0.975,1,n)",
+    "all_success_lower_formula": "BETA_PPF(0.025,n,1)",
+    "all_success_upper": "1"
+  },
+  "document_role_class": {
+    "additive_primary_context_changes_class": false,
+    "classes": [
+      "PRIMARY_ONLY",
+      "ARCHIVE_ONLY",
+      "MIXED",
+      "UNRESOLVED"
+    ],
+    "source": "canonical roles of exact FTS-matched documents only"
+  },
+  "enrichment": {
+    "formula": "(retained_admitted_origins / retained_packets) / (all_admitted_origins / 70)",
+    "zero_denominator": "UNDEFINED_ZERO_DENOMINATOR"
+  },
+  "failure_states": {
+    "all_modern_zero": "SOURCE_PRECISION_NOT_PROVEN",
+    "hard_refusal_contains_admitted_origin": "UNSAFE_FOR_PROMOTION",
+    "primary_family_zero_of_ten": "SOURCE_FEASIBILITY_UNPROVEN",
+    "sector_partition": "SECTOR_PARTITION_UNRESOLVED"
+  },
+  "fixed_denominators": {
+    "all": 70,
+    "development": 21,
+    "each_stratum": 10,
+    "form_6_k": 21,
+    "form_8_k": 49,
+    "modern": 49
+  },
+  "forbidden_count_units": [
+    "accession",
+    "candidate",
+    "filing",
+    "model_proposal",
+    "query_edge",
+    "transition"
+  ],
+  "group_cuts": [
+    "overall",
+    "source_stratum",
+    "era",
+    "base_form",
+    "matched_document_role_class"
+  ],
+  "metrics": [
+    "audited_episode_origin_yield",
+    "modern_episode_origin_yield",
+    "triage_retain_rate",
+    "retained_admitted_origin_precision",
+    "suppressed_admitted_origin_identities_by_defer",
+    "suppressed_admitted_origin_identities_by_hard_refusal",
+    "retain_enrichment_over_raw",
+    "candidates_reviewed_per_admitted_origin",
+    "unique_source_bytes_reviewed_per_admitted_origin",
+    "dominant_false_positive_mechanisms"
+  ],
+  "origin_assignment": "one designated source packet per final linked economic episode",
+  "schema": "mastermind.dislocation_p0.s1f_measurement_contract.v1",
+  "source_byte_counting": {
+    "denominator": "final admitted economic episode origins",
+    "documents": "all exact matched and additive primary context documents exposed to a model",
+    "unit": "raw bytes",
+    "uniqueness": "canonical document_sha256"
+  },
+  "suppression_join_timing": "after independent audit and all70 linkage are frozen",
+  "unit": "distinct_final_independently_audited_economic_episode_origin",
+  "undefined_serialization": {
+    "schema": "typed_result",
+    "status": "UNDEFINED_ZERO_DENOMINATOR",
+    "value": null
+  },
+  "version": "S1F-MEASUREMENT-2026-08-23-v1"
+}

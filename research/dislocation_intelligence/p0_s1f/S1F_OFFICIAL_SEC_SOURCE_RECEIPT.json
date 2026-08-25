@@ -1,0 +1,35 @@
+{
+  "authority": "official SEC published source semantics only",
+  "network_hosts": [
+    "www.sec.gov"
+  ],
+  "retrieved_on": "2026-08-23",
+  "schema": "mastermind.dislocation_p0.s1f_official_sec_source_receipt.v1",
+  "sources": [
+    {
+      "bytes": 1022559,
+      "purpose": "current Form 8-K item semantics including Items 1.05, 2.02, 2.04, 2.05, 2.06, and 4.02",
+      "sha256": "2e2688e274fac938be749c206ec3d6590c458a221964d2140bfb1782ba3e74b2",
+      "url": "https://www.sec.gov/files/form8-k.pdf"
+    },
+    {
+      "bytes": 268747,
+      "purpose": "current Form 6-K furnishing semantics and absence of a closed Form 8-K item taxonomy",
+      "sha256": "e19e92e5823e4dcd1b8179435819588fd61406a52ed846a2fefcfed993f1f0ef",
+      "url": "https://www.sec.gov/files/form6-k.pdf"
+    },
+    {
+      "bytes": 1035609,
+      "purpose": "Item 1.05 final rule and compliance dates",
+      "sha256": "1900e0c066715f4b53671145d5f2872baa7c20281181c8a9935359f11d9827d5",
+      "url": "https://www.sec.gov/files/rules/final/2023/33-11216.pdf"
+    },
+    {
+      "bytes": 67525,
+      "purpose": "SEC staff clarification distinguishing material Item 1.05 incidents from voluntary Item 8.01 disclosure",
+      "sha256": "fe51368d0c96ca5aaf1debc4a641343673a15f3fe76bf75c85427a9d3dd39999",
+      "url": "https://www.sec.gov/newsroom/whats-new/gerding-cybersecurity-incidents-05212024"
+    }
+  ],
+  "validation_packet_bytes_read_before_freeze": 0
+}

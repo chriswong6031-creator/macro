@@ -1,0 +1,76 @@
+{
+  "a1r_immutable_design_evidence": {
+    "design_cik_count": 20,
+    "design_ciks": [
+      "0000051143",
+      "0000059478",
+      "0000715957",
+      "0000821483",
+      "0000895051",
+      "0000895417",
+      "0000922521",
+      "0001013605",
+      "0001050007",
+      "0001132597",
+      "0001145986",
+      "0001357459",
+      "0001473334",
+      "0001649373",
+      "0001711570",
+      "0001829726",
+      "0001852117",
+      "0001889539",
+      "0001953575",
+      "0001985062"
+    ],
+    "episode_linkage_file_sha256": "b7df15236399b545ec0ea86ad43afa0663eae80b5df2e5358117e6418dac42f8",
+    "exact20_selection_file_sha256": "740454d9d229b28e71fe35c4eb599cb0d1912227c4c44448214e5159a3d13085",
+    "grok_file_sha256": "98383da61ac11c072a1c0cc10a00218164fb95446c277cf4da212121250fbee2",
+    "k_packet_file_sha256": "665628e8d1d217b15239091ca6a4963a2196b3b36c4f850c18a85a0f8da8781e",
+    "opus_file_sha256": "7c01072dafa92e7f2c4e31723317351694e575f6947185b8112a29a12923a88a",
+    "query_completion_receipt_file_sha256": "447e378f98e0b5d7d036827eca5e1b405f0c480869f9056643e81e8bd2633611",
+    "source_manifest_file_sha256": "03355ff15941750f3d26f3bbf5783c536cc16fefd47692296f1331e062216ea4"
+  },
+  "authority": {
+    "can_escalate": false,
+    "can_gate": false,
+    "can_originate_signal": false,
+    "can_rank": false,
+    "can_size": false
+  },
+  "contract_files": {
+    "architecture_file_sha256": "e4b9c50e78754f8a8d0ae9314f6ce5ceaaac1a7b821bc3ad357dc341157ed335",
+    "audit_batch_policy_file_sha256": "d09d1e0e08ae7a4a5ed600e5d66c53f7886066256783f46d04b0436c4aa30cae",
+    "measurement_contract_file_sha256": "817a05cae97d10fc6e661ad48510d4df93096b1115b23cbf4be03f365fe7add7",
+    "measurement_executable_file_sha256": "6f87cd13b6aa3096e5c5b71fa3ccc0699330e7dd653373b0d8e9b6d09cc6d3af",
+    "official_sec_source_receipt_file_sha256": "1b3cb5bc892f52e49aa994b0a29aeda931f8c7e25c341e2d622a19ab7667a775",
+    "selection_executable_file_sha256": "620d547ac5696ec2e2c83e870319299ff75ef692a8fa3abed915207224a4f7eb",
+    "triage_executable_file_sha256": "82fe3fd8a885bdd4fa6f8b9797f783e31022ba0538f8daf17ed9522057e60e88",
+    "triage_ruleset_file_sha256": "fda0746260e1d6faa3d96164032a6f6ae7d97e3d222e28a2c3ca9c432035b0af"
+  },
+  "contract_set_sha256": "d18011cc9cf5b1ece0fcb00a5b5283b6543bf2939f0d8195bba73d7c002293cc",
+  "contract_set_sha256_method": "SHA256(canonical_json(contract_files))",
+  "fresh_validation_boundary_at_freeze": {
+    "fresh_candidate_rows_inspected": 0,
+    "fresh_candidate_selection_executed": false,
+    "fresh_validation_documents_materialized": false,
+    "fresh_validation_source_bytes_read": 0,
+    "grok_executed": false,
+    "independent_opus_audit_executed": false,
+    "market_or_outcome_access": false
+  },
+  "frozen_candidate_universe": {
+    "candidate_count": 277549,
+    "candidate_universe_file_sha256": "aca01d616b859a9e59381748b86cd65405eb3bf54b57a10b1d7faef32b51a733",
+    "complete_cell_sha256": "b7e0c9a5f070473be7ed8fda887869878a210c21078faab2db9361111e4227e0",
+    "complete_cells": 146,
+    "incomplete_cells": 0
+  },
+  "frozen_rule_logical_sha256": "ae50a6d6b20e09a255e1755217018739a7ad0699d9b63c546c413583aedc10ed",
+  "frozen_at": "2026-08-23T13:50:53Z",
+  "pickup_main_sha": "395db13b9dadf4975e0ed43c68d02983134ddbff",
+  "prospective_order": "RULE_AND_MEASUREMENT_CONTRACT_FROZEN_BEFORE_FRESH70_SELECTION_OR_SOURCE_READ",
+  "schema": "mastermind.dislocation_p0.s1f_prospective_freeze_receipt.v1",
+  "sector_partition_state": "SECTOR_PARTITION_UNRESOLVED",
+  "status": "FROZEN_PROSPECTIVE"
+}
