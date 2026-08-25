@@ -23,6 +23,9 @@ from lib.dataos.identity import IdentityError, issuer_id as dataos_issuer_id, pa
 EVENT_SCHEMA = "prophet.candidate_episode_event/v1"
 EPISODE_SCHEMA = "prophet.candidate_episode/v1"
 ALL_CANDIDATES_SCHEMA = "prophet.all_candidates/v1"
+HEAD_SCHEMA = "prophet.candidate_episode_head/v1"
+GENERATION_MANIFEST_SCHEMA = "prophet.candidate_episode_generation_manifest/v1"
+SUPPRESSION_SCHEMA = "prophet.candidate_episode_suppression/v1"
 DEFAULT_DEFINITION_ERA = "candidate-episode-v1-2026-08-25"
 EVENT_TYPES = frozenset({
     "OPENED",
@@ -50,6 +53,18 @@ PATCHABLE_FIELDS = frozenset({
     "opened_session",
     "intake_classes",
     "terminal_reason",
+})
+SUPPRESSION_REASONS = frozenset({
+    "MISSING_STRUCTURAL_ANCHOR",
+    "IDENTITY_UNRESOLVED",
+    "ISSUER_UNRESOLVED",
+    "HISTORICAL_IDENTITY_UNPROVEN",
+    "ACTIVE_EPISODE_DIFFERENT_ANCHOR",
+    "NO_EVALUATED_TRIGGER",
+    "INVALID_STRUCTURAL_ANCHOR",
+    "REARM_REQUIRES_TERMINAL_STATE",
+    "SOURCE_SCHEMA_UNSUPPORTED",
+    "SOURCE_RECEIPT_INVALID",
 })
 
 
@@ -598,6 +613,7 @@ def _suppression(observation: Mapping[str, object], reason: str) -> dict[str, ob
         "source_receipt": observation.get("source_receipt"),
         "security_id": observation.get("security_id"),
         "ticker_at_observation": observation.get("ticker_at_observation"),
+        "observation_session": str(observation.get("known_at") or "")[:10] or None,
         "reason": reason,
     }
     material["suppression_id"] = "pes:" + sha256(canonical_json(material).encode("utf-8")).hexdigest()
@@ -831,4 +847,187 @@ def load_all_candidates(path: Path) -> list[dict[str, object]]:
     expected = sorted(rows, key=lambda row: (str(row["opened_at"]), str(row["episode_id"])))
     if canonical_json(rows) != canonical_json(expected):
         raise EpisodeContractError("all candidates episodes are not in canonical order")
+    return rows
+
+
+def _canonical_file(path: Path) -> dict[str, object]:
+    try:
+        payload = path.read_bytes()
+        value = json.loads(payload)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise EpisodeContractError(f"cannot read canonical file {path}: {exc}") from exc
+    if not isinstance(value, Mapping) or payload != (canonical_json(value) + "\n").encode("utf-8"):
+        raise EpisodeContractError(f"{path.name} is not canonical JSON")
+    return dict(value)
+
+
+def _sha_receipt(payload: bytes) -> str:
+    return "sha256:" + sha256(payload).hexdigest()
+
+
+def validate_suppressions(rows: Sequence[Mapping[str, object]]) -> list[dict[str, object]]:
+    """Validate the exact closed immutable suppression envelope."""
+    required = {
+        "schema", "suppression_id", "recorded_at", "source_system", "source_schema",
+        "source_event_id", "source_receipt", "observation_session", "ticker_at_observation",
+        "security_id", "reason", "content_sha256",
+    }
+    seen: set[str] = set()
+    result: list[dict[str, object]] = []
+    for raw in rows:
+        if not isinstance(raw, Mapping) or set(raw) != required:
+            raise EpisodeContractError("suppression envelope has missing or unknown fields")
+        row = dict(raw)
+        if row["schema"] != SUPPRESSION_SCHEMA or row["reason"] not in SUPPRESSION_REASONS:
+            raise EpisodeContractError("suppression schema or reason is invalid")
+        for field in ("source_system", "source_schema", "source_event_id"):
+            if not isinstance(row[field], str) or not row[field]:
+                raise EpisodeContractError(f"suppression {field} is invalid")
+        receipt = row["source_receipt"]
+        if receipt is None:
+            if row["reason"] != "SOURCE_RECEIPT_INVALID":
+                raise EpisodeContractError("suppression source_receipt may be null only for an invalid receipt")
+        else:
+            _require_sha256_receipt(receipt, field="suppression source_receipt")
+        session = row["observation_session"]
+        if not isinstance(session, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", session):
+            raise EpisodeContractError("suppression observation_session is invalid")
+        ticker = row["ticker_at_observation"]
+        if ticker is not None and (not isinstance(ticker, str) or not ticker):
+            raise EpisodeContractError("suppression ticker_at_observation is invalid")
+        security = row["security_id"]
+        if security is not None:
+            _security_id(security)
+        recorded = _timestamp(row["recorded_at"], field="suppression.recorded_at")
+        if recorded != row["recorded_at"]:
+            raise EpisodeContractError("suppression recorded_at is not canonical")
+        address_material = {
+            key: value for key, value in row.items()
+            if key not in {"suppression_id", "content_sha256", "recorded_at"}
+        }
+        expected_id = "pes:" + sha256(canonical_json(address_material).encode("utf-8")).hexdigest()
+        if row["suppression_id"] != expected_id:
+            raise EpisodeContractError("suppression address is invalid")
+        content = {key: value for key, value in row.items() if key != "content_sha256"}
+        if row["content_sha256"] != sha256(canonical_json(content).encode("utf-8")).hexdigest():
+            raise EpisodeContractError("suppression content hash is invalid")
+        if expected_id in seen:
+            raise EpisodeContractError("duplicate immutable suppression")
+        seen.add(expected_id)
+        result.append(row)
+    return result
+
+
+def _load_partitioned_events(directory: Path) -> list[dict[str, object]]:
+    rows: list[dict[str, object]] = []
+    for path in sorted(directory.glob("*.jsonl")):
+        try:
+            payload = path.read_bytes()
+            raw_lines = payload.splitlines()
+            parsed = [json.loads(line) for line in raw_lines]
+        except (OSError, json.JSONDecodeError) as exc:
+            raise EpisodeContractError(f"event partition {path.name} is unreadable") from exc
+        if not parsed or payload != ("\n".join(canonical_json(row) for row in parsed) + "\n").encode("utf-8"):
+            raise EpisodeContractError("event partition is not canonical JSONL")
+        validated = validate_events(parsed)
+        if validated != sorted(validated, key=_event_order):
+            raise EpisodeContractError("event partition is not in canonical order")
+        if any(str(row["recorded_at"])[:7] != path.stem for row in validated):
+            raise EpisodeContractError("event partition filename month disagrees with recorded_at")
+        rows.extend(validated)
+    validate_events(rows)
+    return sorted(rows, key=_event_order)
+
+
+def _load_partitioned_suppressions(directory: Path) -> list[dict[str, object]]:
+    rows: list[dict[str, object]] = []
+    for path in sorted(directory.glob("*.jsonl")):
+        try:
+            payload = path.read_bytes()
+            raw_lines = payload.splitlines()
+            parsed = [json.loads(line) for line in raw_lines]
+        except (OSError, json.JSONDecodeError) as exc:
+            raise EpisodeContractError(f"suppression partition {path.name} is unreadable") from exc
+        if not parsed or payload != ("\n".join(canonical_json(row) for row in parsed) + "\n").encode("utf-8"):
+            raise EpisodeContractError("suppression partition is not canonical JSONL")
+        validated = validate_suppressions(parsed)
+        if validated != sorted(validated, key=lambda row: str(row["suppression_id"])):
+            raise EpisodeContractError("suppression partition is not in canonical order")
+        if any(str(row["recorded_at"])[:7] != path.stem for row in validated):
+            raise EpisodeContractError("suppression partition filename month disagrees with recorded_at")
+        rows.extend(validated)
+    validate_suppressions(rows)
+    return sorted(rows, key=lambda row: str(row["suppression_id"]))
+
+
+def _validate_generation_file_set(generation: Path, relative_files: set[str]) -> None:
+    required = {"all_candidates.json", "current.parquet", "latest_receipt.json"}
+    if not required.issubset(relative_files):
+        raise EpisodeContractError("generation is missing a required projection or receipt")
+    if not (generation / "events").is_dir() or not (generation / "suppressions").is_dir():
+        raise EpisodeContractError("generation is missing an immutable ledger directory")
+    allowed_partition = re.compile(r"^(events|suppressions)/\d{4}-(0[1-9]|1[0-2])\.jsonl$")
+    unexpected = relative_files - required
+    if any(allowed_partition.fullmatch(path) is None for path in unexpected):
+        raise EpisodeContractError("generation contains an unexpected file")
+
+
+def load_candidate_episode_store(root: Path) -> list[dict[str, object]]:
+    """Resolve and validate the sole atomic HEAD before loading All Candidates."""
+    store = Path(root)
+    head_path = store / "HEAD.json"
+    head = _canonical_file(head_path)
+    head_required = {"schema", "generation_id", "manifest_sha256", "content_sha256"}
+    if set(head) != head_required or head.get("schema") != HEAD_SCHEMA:
+        raise EpisodeContractError("HEAD envelope is invalid")
+    generation_id = head.get("generation_id")
+    if not isinstance(generation_id, str) or not re.fullmatch(r"peg:[0-9a-f]{64}", generation_id):
+        raise EpisodeContractError("HEAD generation_id is invalid")
+    head_content = {key: value for key, value in head.items() if key != "content_sha256"}
+    if head.get("content_sha256") != sha256(canonical_json(head_content).encode("utf-8")).hexdigest():
+        raise EpisodeContractError("HEAD content hash is invalid")
+    generation = store / "generations" / generation_id
+    if not generation.is_dir():
+        raise EpisodeContractError("HEAD references a missing generation")
+    manifest_path = generation / "manifest.json"
+    manifest_bytes = manifest_path.read_bytes() if manifest_path.is_file() else b""
+    if head.get("manifest_sha256") != _sha_receipt(manifest_bytes):
+        raise EpisodeContractError("HEAD manifest hash is invalid")
+    manifest = _canonical_file(manifest_path)
+    manifest_required = {"schema", "generation_id", "files", "content_sha256"}
+    if set(manifest) != manifest_required or manifest.get("schema") != GENERATION_MANIFEST_SCHEMA:
+        raise EpisodeContractError("generation manifest envelope is invalid")
+    files = manifest.get("files")
+    if not isinstance(files, Mapping) or manifest.get("generation_id") != generation_id:
+        raise EpisodeContractError("generation manifest identity is invalid")
+    material = {"schema": GENERATION_MANIFEST_SCHEMA, "files": files}
+    expected_generation = "peg:" + sha256(canonical_json(material).encode("utf-8")).hexdigest()
+    content = {key: value for key, value in manifest.items() if key != "content_sha256"}
+    if expected_generation != generation_id or manifest.get("content_sha256") != sha256(
+        canonical_json(content).encode("utf-8")
+    ).hexdigest():
+        raise EpisodeContractError("generation manifest content address is invalid")
+    actual_files = {
+        str(path.relative_to(generation)): path
+        for path in generation.rglob("*") if path.is_file() and path.name != "manifest.json"
+    }
+    _validate_generation_file_set(generation, set(actual_files))
+    if set(files) != set(actual_files):
+        raise EpisodeContractError("generation manifest file set is not exact")
+    for relative, descriptor in files.items():
+        if not isinstance(relative, str) or not isinstance(descriptor, Mapping) or set(descriptor) != {"sha256", "bytes"}:
+            raise EpisodeContractError("generation manifest file descriptor is invalid")
+        payload = actual_files[relative].read_bytes()
+        if descriptor.get("sha256") != _sha_receipt(payload) or descriptor.get("bytes") != len(payload):
+            raise EpisodeContractError("generation manifest file hash is invalid")
+    events = _load_partitioned_events(generation / "events")
+    suppressions = _load_partitioned_suppressions(generation / "suppressions")
+    rows = load_all_candidates(generation / "all_candidates.json")
+    projection = json.loads((generation / "all_candidates.json").read_text(encoding="utf-8"))
+    generated = projection["generated_from"]
+    ledger_hash = "sha256:" + sha256(canonical_json(tuple(events)).encode("utf-8")).hexdigest()
+    if generated.get("event_count") != len(events) or generated.get("ledger_sha256") != ledger_hash:
+        raise EpisodeContractError("All Candidates metadata differs from generation ledger")
+    if projection["coverage"].get("suppressed_inputs") != len(suppressions):
+        raise EpisodeContractError("All Candidates suppression count differs from generation ledger")
     return rows

@@ -6,6 +6,7 @@ re-ranks, re-gates, or owns an episode lifecycle; reconciliation remains the sol
 from __future__ import annotations
 
 import json
+from io import BytesIO
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from hashlib import sha256
@@ -28,6 +29,7 @@ IDENTITY_SCHEMA = "stock_identity.fingerprint_spec.v1"
 class IdentitySpine:
     aliases: VendorAliasTable
     issuers: IssuerMaster
+    source_receipts: tuple[dict[str, object], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -37,8 +39,14 @@ class IntakeBatch:
     source_receipts: tuple[dict[str, object], ...]
 
 
-def _records(path: Path) -> list[dict[str, object]]:
-    return [_json_safe(dict(row)) for row in pd.read_parquet(path).to_dict("records")]
+def _file_receipt(path: Path, payload: bytes) -> dict[str, object]:
+    return {"path": str(path), "sha256": "sha256:" + sha256(payload).hexdigest()}
+
+
+def _records_snapshot(path: Path) -> tuple[list[dict[str, object]], dict[str, object]]:
+    payload = path.read_bytes()
+    rows = pd.read_parquet(BytesIO(payload)).to_dict("records")
+    return [_json_safe(dict(row)) for row in rows], _file_receipt(path, payload)
 
 
 def _json_safe(value: object) -> object:
@@ -59,9 +67,18 @@ def _json_safe(value: object) -> object:
 def load_identity_spine(data_root: Path) -> IdentitySpine:
     """Load the one Data OS alias/issuer reader pair; never recreate identity locally."""
     reference = Path(data_root) / "reference"
-    aliases = VendorAliasTable.from_records(_records(reference / "vendor_aliases.parquet"))
-    issuers = IssuerMaster.from_records(_records(reference / "security_master.parquet"))
-    return IdentitySpine(aliases=aliases, issuers=issuers)
+    alias_rows, alias_receipt = _records_snapshot(reference / "vendor_aliases.parquet")
+    issuer_rows, issuer_receipt = _records_snapshot(reference / "security_master.parquet")
+    aliases = VendorAliasTable.from_records(alias_rows)
+    issuers = IssuerMaster.from_records(issuer_rows)
+    return IdentitySpine(
+        aliases=aliases,
+        issuers=issuers,
+        source_receipts=(
+            {"source": "identity", **alias_receipt},
+            {"source": "identity", **issuer_receipt},
+        ),
+    )
 
 
 def _session(value: object) -> date | None:
@@ -104,7 +121,8 @@ def _source_id(source: str, row: Mapping[str, object]) -> str:
 
 
 def _suppression(source: str, schema: str, source_event_id: str, receipt: str | None,
-                 ticker: object, reason: str) -> dict[str, object]:
+                 ticker: object, reason: str, *, session: object = None,
+                 security_id: str | None = None) -> dict[str, object]:
     return {
         "schema": "prophet.candidate_episode_suppression/v1",
         "source_system": source,
@@ -112,6 +130,8 @@ def _suppression(source: str, schema: str, source_event_id: str, receipt: str | 
         "source_event_id": source_event_id,
         "source_receipt": receipt,
         "ticker_at_observation": str(ticker or "") or None,
+        "security_id": security_id,
+        "observation_session": str(session or "")[:10] or None,
         "reason": reason,
     }
 
@@ -155,16 +175,24 @@ def turn_watch_observations(path: Path, spine: IdentitySpine) -> IntakeBatch:
     """Normalize full private TURN WATCH rows; only this source provides a structural anchor."""
     source, schema = "turn_watch", TURN_WATCH_SCHEMA
     try:
-        document = json.loads(Path(path).read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
+        payload = Path(path).read_bytes()
+    except OSError:
         return IntakeBatch((), (), ({"source": source, "status": "degraded", "reason": "UNREADABLE_SOURCE"},))
+    file_receipts = [_file_receipt(Path(path), payload)]
+    try:
+        document = json.loads(payload)
+    except json.JSONDecodeError:
+        return IntakeBatch((), (), ({"source": source, "status": "degraded", "reason": "MALFORMED_SOURCE",
+                                     "files": file_receipts},))
     if not isinstance(document, Mapping):
-        return IntakeBatch((), (), ({"source": source, "status": "degraded", "reason": "MALFORMED_SOURCE"},))
+        return IntakeBatch((), (), ({"source": source, "status": "degraded", "reason": "MALFORMED_SOURCE",
+                                     "files": file_receipts},))
     rows = document.get("rows")
     digest = document.get("content_sha256")
     receipt = _receipt(f"sha256:{digest}" if isinstance(digest, str) else None)
     if document.get("schema") != TURN_WATCH_SCHEMA or not isinstance(rows, list):
-        return IntakeBatch((), (), ({"source": source, "status": "degraded", "reason": "MALFORMED_SOURCE"},))
+        return IntakeBatch((), (), ({"source": source, "status": "degraded", "reason": "MALFORMED_SOURCE",
+                                     "files": file_receipts},))
     expected_digest = sha256(canonical_json({key: value for key, value in document.items()
                                               if key != "content_sha256"}).encode("utf-8")).hexdigest()
     if receipt is None or digest != expected_digest:
@@ -172,11 +200,12 @@ def turn_watch_observations(path: Path, spine: IdentitySpine) -> IntakeBatch:
             _suppression(source, schema, _source_id(source, {"data_session": document.get("data_session"),
                                                                "row": dict(row) if isinstance(row, Mapping) else {}}),
                          None, row.get("ticker") if isinstance(row, Mapping) else None,
-                         "MALFORMED_RECEIPT")
+                         "MALFORMED_RECEIPT", session=document.get("data_session"))
             for row in rows
         )
         return IntakeBatch((), suppressions,
-                           ({"source": source, "status": "degraded", "reason": "MALFORMED_RECEIPT"},))
+                           ({"source": source, "status": "degraded", "reason": "MALFORMED_RECEIPT",
+                             "files": file_receipts},))
     observations: list[dict[str, object]] = []
     suppressions: list[dict[str, object]] = []
     session = document.get("data_session")
@@ -187,19 +216,23 @@ def turn_watch_observations(path: Path, spine: IdentitySpine) -> IntakeBatch:
         fired = row.get("triggers")
         if not isinstance(fired, Mapping) or not any(isinstance(v, Mapping) and v.get("fired")
                                                      for v in fired.values()):
-            suppressions.append(_suppression(source, schema, event_id, receipt, ticker, "MISSING_TRIGGER"))
+            suppressions.append(_suppression(source, schema, event_id, receipt, ticker, "MISSING_TRIGGER",
+                                              session=session))
             continue
         if any(isinstance(v, Mapping) and v.get("fired") and not v.get("evaluated", False)
                for v in fired.values()):
-            suppressions.append(_suppression(source, schema, event_id, receipt, ticker, "UNEVALUATED_TRIGGER"))
+            suppressions.append(_suppression(source, schema, event_id, receipt, ticker, "UNEVALUATED_TRIGGER",
+                                              session=session))
             continue
         reset = row.get("reset")
         if not isinstance(reset, Mapping) or reset.get("reset_low") is None or not reset.get("reset_low_date"):
-            suppressions.append(_suppression(source, schema, event_id, receipt, ticker, "MISSING_RESET_LOW"))
+            suppressions.append(_suppression(source, schema, event_id, receipt, ticker, "MISSING_RESET_LOW",
+                                              session=session))
             continue
         anchor_time = _close(reset.get("reset_low_date"))
         if anchor_time is None:
-            suppressions.append(_suppression(source, schema, event_id, receipt, ticker, "MALFORMED_RECEIPT"))
+            suppressions.append(_suppression(source, schema, event_id, receipt, ticker, "MALFORMED_RECEIPT",
+                                              session=session))
             continue
         anchor = {"kind": "turn_watch_reset_low", "time": anchor_time,
                   "price": reset["reset_low"], "basis": "adjusted_close", "source_receipt": receipt}
@@ -215,17 +248,21 @@ def turn_watch_observations(path: Path, spine: IdentitySpine) -> IntakeBatch:
                          default=session),
         )
         if observation is None:
-            suppressions.append(_suppression(source, schema, event_id, receipt, ticker, str(reason)))
+            security, _company = _identity(spine, ticker, session)
+            suppressions.append(_suppression(source, schema, event_id, receipt, ticker, str(reason),
+                                              session=session, security_id=security))
         else:
             observations.append(observation)
     return IntakeBatch(tuple(observations), tuple(suppressions),
-                       ({"source": source, "status": "ok", "rows": len(rows)},))
+                       ({"source": source, "status": "ok", "rows": len(rows),
+                         "files": file_receipts},))
 
 
 def _unanchored_batch(source: str, schema: str, rows: list[dict[str, object]], spine: IdentitySpine,
                       *, ticker_key: str = "ticker", session_key: str = "as_of",
                       source_id: Callable[[dict[str, object]], str] | None = None,
-                      radar: bool = False) -> IntakeBatch:
+                      radar: bool = False,
+                      file_receipts: list[dict[str, object]] | None = None) -> IntakeBatch:
     observations: list[dict[str, object]] = []
     suppressions: list[dict[str, object]] = []
     for row in rows:
@@ -236,11 +273,12 @@ def _unanchored_batch(source: str, schema: str, rows: list[dict[str, object]], s
         if radar and not event_id:
             receipt = "sha256:" + sha256(canonical_json(row).encode("utf-8")).hexdigest()
             suppressions.append(_suppression(source, schema, event_id, receipt, ticker,
-                                             "MISSING_EXPERT_EVENT_ID"))
+                                             "MISSING_EXPERT_EVENT_ID", session=session))
             continue
         receipt = "sha256:" + sha256(canonical_json(row).encode("utf-8")).hexdigest()
         if bool(row.get("historical") or row.get("replay")) and not str(row.get("security_id") or "").startswith("SEC:"):
-            suppressions.append(_suppression(source, schema, event_id, receipt, ticker, "HISTORICAL_IDENTITY_UNPROVEN"))
+            suppressions.append(_suppression(source, schema, event_id, receipt, ticker,
+                                              "HISTORICAL_IDENTITY_UNPROVEN", session=session))
             continue
         observation, reason = _observation(
             source=source, schema=schema, source_event_id=event_id, receipt=receipt, ticker=ticker,
@@ -249,18 +287,23 @@ def _unanchored_batch(source: str, schema: str, rows: list[dict[str, object]], s
             expert_event_id=event_id if radar else None,
         )
         if observation is None:
-            suppressions.append(_suppression(source, schema, event_id, receipt, ticker, str(reason)))
+            security, _company = _identity(spine, ticker, session)
+            suppressions.append(_suppression(source, schema, event_id, receipt, ticker, str(reason),
+                                              session=session, security_id=security))
         else:
             observations.append(observation)
     return IntakeBatch(tuple(observations), tuple(suppressions),
-                       ({"source": source, "status": "ok", "rows": len(rows)},))
+                       ({"source": source, "status": "ok", "rows": len(rows),
+                         "files": list(file_receipts or [])},))
 
 
 def candidate_observations(data_root: Path, spine: IdentitySpine) -> IntakeBatch:
     paths = sorted((Path(data_root) / "us_prophet_rank" / "candidates").glob("*.parquet"))
     if not paths:
         return IntakeBatch((), (), ({"source": "candidate", "status": "degraded", "reason": "MISSING_SOURCE_FILE"},))
-    rows = [row for path in paths for row in _records(path)]
+    snapshots = [_records_snapshot(path) for path in paths]
+    rows = [row for snapshot_rows, _receipt_row in snapshots for row in snapshot_rows]
+    file_receipts = [receipt for _snapshot_rows, receipt in snapshots]
     sessions = [str(row.get("stamp_date") or "") for row in rows]
     current = max((value for value in sessions if _session(value) is not None), default=None)
     if current is not None:
@@ -270,13 +313,15 @@ def candidate_observations(data_root: Path, spine: IdentitySpine) -> IntakeBatch
         source_id=lambda row: "candidate:{stamp_date}:{ticker}:{board_definition}".format(
             stamp_date=row.get("stamp_date"), ticker=row.get("ticker"),
             board_definition=row.get("board_definition")),
+        file_receipts=file_receipts,
     )
 
 
 def door_observations(path: Path, spine: IdentitySpine) -> IntakeBatch:
     if not Path(path).exists():
         return IntakeBatch((), (), ({"source": "doors", "status": "degraded", "reason": "MISSING_SOURCE_FILE"},))
-    rows = [json.loads(line) for line in Path(path).read_text(encoding="utf-8").splitlines() if line.strip()]
+    payload = Path(path).read_bytes()
+    rows = [json.loads(line) for line in payload.splitlines() if line.strip()]
     current = max((str(row.get("date") or "") for row in rows if _session(row.get("date")) is not None), default=None)
     if current is not None:
         rows = [row for row in rows if str(row.get("date")) == current]
@@ -284,14 +329,16 @@ def door_observations(path: Path, spine: IdentitySpine) -> IntakeBatch:
         "doors", "prophet_doors/v1", rows, spine, session_key="date",
         source_id=lambda row: "doors:{date}:{door}:{ticker}".format(
             date=row.get("date"), door=row.get("door"), ticker=row.get("ticker")),
+        file_receipts=[_file_receipt(Path(path), payload)],
     )
 
 
 def radar_observations(path: Path, spine: IdentitySpine) -> IntakeBatch:
     if not Path(path).exists():
         return IntakeBatch((), (), ({"source": "entry_radar", "status": "degraded", "reason": "MISSING_SOURCE_FILE"},))
+    rows, receipt = _records_snapshot(Path(path))
     return _unanchored_batch(
-        "entry_radar", "mastermind.entry_event.v1", _records(Path(path)), spine,
+        "entry_radar", "mastermind.entry_event.v1", rows, spine,
         session_key="decision_session", source_id=lambda row: str(row.get("episode_address") or ""),
-        radar=True,
+        radar=True, file_receipts=[receipt],
     )

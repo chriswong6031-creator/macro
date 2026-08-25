@@ -3,13 +3,19 @@ from __future__ import annotations
 
 import json
 from hashlib import sha256
+import importlib.util
 from pathlib import Path
 import shutil
 
 import pandas as pd
 import pytest
 
-from engine.us_candidate_episode import EpisodeContractError, canonical_json, load_all_candidates
+from engine.us_candidate_episode import (
+    EpisodeContractError,
+    canonical_json,
+    load_all_candidates,
+    load_candidate_episode_store,
+)
 from scripts import reconcile_us_candidate_episodes as writer
 
 
@@ -49,13 +55,19 @@ def _turn_path(repo_root: Path) -> Path:
     return repo_root / "data" / "us_prophet_rank" / "episode_inputs" / "turn_watch" / "2026-11-27.json"
 
 
-def _run_nightly(repo_root: Path, monkeypatch, *, correction_path: Path | None = None) -> dict[str, object]:
+def _run_nightly(
+    repo_root: Path,
+    monkeypatch,
+    *,
+    correction_path: Path | None = None,
+    recorded_at: str = RECORDED_AT,
+) -> dict[str, object]:
     monkeypatch.setattr(writer, "nightly_advance_enabled", lambda: True)
     return writer.reconcile(
         repo_root=repo_root,
         nightly=True,
         replay=False,
-        recorded_at=RECORDED_AT,
+        recorded_at=recorded_at,
         correction_path=correction_path,
     )
 
@@ -64,8 +76,16 @@ def _episode_root(repo_root: Path) -> Path:
     return repo_root / "data" / "us_prophet_rank" / "episodes"
 
 
+def _head(repo_root: Path) -> dict[str, object]:
+    return json.loads((_episode_root(repo_root) / "HEAD.json").read_text())
+
+
+def _generation(repo_root: Path) -> Path:
+    return _episode_root(repo_root) / "generations" / str(_head(repo_root)["generation_id"])
+
+
 def _event_rows(repo_root: Path) -> list[dict[str, object]]:
-    paths = sorted((_episode_root(repo_root) / "events").glob("*.jsonl"))
+    paths = sorted((_generation(repo_root) / "events").glob("*.jsonl"))
     return [json.loads(line) for path in paths for line in path.read_text().splitlines() if line]
 
 
@@ -145,10 +165,14 @@ def test_natural_nightly_opens_once_and_publishes_exact_derived_targets(tmp_path
     _seed_sources(tmp_path)
     receipt = _run_nightly(tmp_path, monkeypatch)
     episode_root = _episode_root(tmp_path)
+    generation = _generation(tmp_path)
 
     events = _event_rows(tmp_path)
     assert [event["event_type"] for event in events] == ["OPENED"]
-    assert (episode_root / "events" / "2026-11.jsonl").read_bytes().endswith(b"\n")
+    assert (generation / "events" / "2026-11.jsonl").read_bytes().endswith(b"\n")
+    assert _head(tmp_path)["schema"] == "prophet.candidate_episode_head/v1"
+    assert str(_head(tmp_path)["generation_id"]).startswith("peg:")
+    assert (generation / "manifest.json").is_file()
     assert receipt["schema"] == "prophet.candidate_episode_reconcile_receipt/v1"
     assert receipt["mode"] == "nightly"
     assert receipt["gate"] == {"nightly_requested": True, "nightly_advance_enabled": True}
@@ -158,6 +182,7 @@ def test_natural_nightly_opens_once_and_publishes_exact_derived_targets(tmp_path
         "input": 1,
         "mapped": 1,
         "suppressed": 0,
+        "ledger_suppressions": 0,
         "old_events": 0,
         "new_events": 1,
         "appended_events": 1,
@@ -170,10 +195,11 @@ def test_natural_nightly_opens_once_and_publishes_exact_derived_targets(tmp_path
     }
     assert set(receipt["projection_hashes"]) == {"all_candidates.json", "current.parquet"}
     assert all(str(value).startswith("sha256:") for value in receipt["source_hashes"].values())
-    assert (episode_root / "latest_receipt.json").read_text() == canonical_json(receipt) + "\n"
-    logical_json = load_all_candidates(episode_root / "all_candidates.json")
-    logical_parquet = _parquet_logical_rows(episode_root / "current.parquet")
+    assert (generation / "latest_receipt.json").read_text() == canonical_json(receipt) + "\n"
+    logical_json = load_all_candidates(generation / "all_candidates.json")
+    logical_parquet = _parquet_logical_rows(generation / "current.parquet")
     assert logical_parquet == logical_json
+    assert load_candidate_episode_store(episode_root) == logical_json
     assert len(logical_json) == 1
 
 
@@ -187,6 +213,107 @@ def test_identical_nightly_is_content_addressed_and_rewrites_zero_bytes(tmp_path
     assert second == first
     assert _snapshot(tmp_path) == before
     assert len(_event_rows(tmp_path)) == 1
+
+
+def test_suppression_retry_at_later_recorded_at_retains_original_immutable_row(
+    tmp_path: Path, monkeypatch,
+):
+    """The writer clock is not the semantic identity of an at-least-once suppression."""
+    _seed_sources(tmp_path)
+    document = json.loads(_turn_path(tmp_path).read_text())
+    document["rows"][0]["ticker"] = "UNKNOWN"
+    _turn_path(tmp_path).write_text(canonical_json(_rehash_turn_watch(document)) + "\n")
+    first = _run_nightly(tmp_path, monkeypatch)
+    before = _snapshot(tmp_path)
+    first_row = json.loads(next((_generation(tmp_path) / "suppressions").glob("*.jsonl")).read_text())
+
+    second = _run_nightly(
+        tmp_path, monkeypatch, recorded_at="2026-11-27T18:06:00Z",
+    )
+
+    assert second == first
+    assert _snapshot(tmp_path) == before
+    row = json.loads(next((_generation(tmp_path) / "suppressions").glob("*.jsonl")).read_text())
+    assert row == first_row
+    assert row["recorded_at"] == RECORDED_AT
+
+
+def test_first_publication_has_no_current_generation_until_head_swap(tmp_path: Path, monkeypatch):
+    """A generation directory alone must never become the canonical read target."""
+    _seed_sources(tmp_path)
+    monkeypatch.setattr(writer, "_publish_head", lambda *_args, **_kwargs: (_ for _ in ()).throw(
+        RuntimeError("stop before first HEAD")
+    ))
+
+    with pytest.raises(RuntimeError, match="before first HEAD"):
+        _run_nightly(tmp_path, monkeypatch)
+    assert not (_episode_root(tmp_path) / "HEAD.json").exists()
+    assert len(list((_episode_root(tmp_path) / "generations").iterdir())) == 1
+    with pytest.raises(EpisodeContractError, match="HEAD"):
+        load_candidate_episode_store(_episode_root(tmp_path))
+
+
+def test_reader_observes_only_old_or_new_generation_across_one_head_replace(tmp_path: Path, monkeypatch):
+    """Any multi-file visibility boundary would expose a mixed ledger/projection set here."""
+    _seed_sources(tmp_path)
+    _run_nightly(tmp_path, monkeypatch)
+    old_rows = load_candidate_episode_store(_episode_root(tmp_path))
+    document = json.loads(_turn_path(tmp_path).read_text())
+    document["rows"][0]["observation_revision"] = 2
+    _turn_path(tmp_path).write_text(canonical_json(_rehash_turn_watch(document)) + "\n")
+    real_publish = writer._publish_head
+    observed: list[list[dict[str, object]]] = []
+
+    def observe_swap(*args, **kwargs):
+        observed.append(load_candidate_episode_store(_episode_root(tmp_path)))
+        result = real_publish(*args, **kwargs)
+        observed.append(load_candidate_episode_store(_episode_root(tmp_path)))
+        return result
+
+    monkeypatch.setattr(writer, "_publish_head", observe_swap)
+    _run_nightly(tmp_path, monkeypatch)
+    new_rows = load_candidate_episode_store(_episode_root(tmp_path))
+    assert observed == [old_rows, new_rows]
+    assert old_rows[0]["observation_count"] == 0
+    assert new_rows[0]["observation_count"] == 1
+
+
+def test_failure_during_atomic_head_replace_keeps_old_generation_current(tmp_path: Path, monkeypatch):
+    """A failed pointer replace must not expose the already-installed orphan generation."""
+    _seed_sources(tmp_path)
+    _run_nightly(tmp_path, monkeypatch)
+    old_head = (_episode_root(tmp_path) / "HEAD.json").read_bytes()
+    old_rows = load_candidate_episode_store(_episode_root(tmp_path))
+    document = json.loads(_turn_path(tmp_path).read_text())
+    document["rows"][0]["observation_revision"] = 2
+    _turn_path(tmp_path).write_text(canonical_json(_rehash_turn_watch(document)) + "\n")
+    monkeypatch.setattr(writer, "_replace_head", lambda *_args, **_kwargs: (_ for _ in ()).throw(
+        OSError("injected HEAD replace failure")
+    ))
+
+    with pytest.raises(OSError, match="HEAD replace failure"):
+        _run_nightly(tmp_path, monkeypatch)
+    assert (_episode_root(tmp_path) / "HEAD.json").read_bytes() == old_head
+    assert load_candidate_episode_store(_episode_root(tmp_path)) == old_rows
+
+
+def test_failure_before_head_temp_is_written_keeps_old_generation_current(tmp_path: Path, monkeypatch):
+    """The pointer temp-file window is still before the single visibility boundary."""
+    _seed_sources(tmp_path)
+    _run_nightly(tmp_path, monkeypatch)
+    old_head = (_episode_root(tmp_path) / "HEAD.json").read_bytes()
+    old_rows = load_candidate_episode_store(_episode_root(tmp_path))
+    document = json.loads(_turn_path(tmp_path).read_text())
+    document["rows"][0]["observation_revision"] = 2
+    _turn_path(tmp_path).write_text(canonical_json(_rehash_turn_watch(document)) + "\n")
+    monkeypatch.setattr(writer.tempfile, "mkstemp", lambda *_args, **_kwargs: (_ for _ in ()).throw(
+        OSError("injected HEAD temp failure")
+    ))
+
+    with pytest.raises(OSError, match="HEAD temp failure"):
+        _run_nightly(tmp_path, monkeypatch)
+    assert (_episode_root(tmp_path) / "HEAD.json").read_bytes() == old_head
+    assert load_candidate_episode_store(_episode_root(tmp_path)) == old_rows
 
 
 def test_changed_observation_appends_observed_to_the_active_episode(tmp_path: Path, monkeypatch):
@@ -212,7 +339,7 @@ def test_explicit_correction_appends_without_mutating_the_original_line(tmp_path
     """Last-write-wins replacement would erase the immutable event being corrected."""
     _seed_sources(tmp_path)
     _run_nightly(tmp_path, monkeypatch)
-    event_path = _episode_root(tmp_path) / "events" / "2026-11.jsonl"
+    event_path = _generation(tmp_path) / "events" / "2026-11.jsonl"
     original_line = event_path.read_bytes()
     opened = _event_rows(tmp_path)[0]
     correction = tmp_path / "corrections.jsonl"
@@ -231,67 +358,327 @@ def test_explicit_correction_appends_without_mutating_the_original_line(tmp_path
     correction.write_text(canonical_json(command) + "\n")
 
     _run_nightly(tmp_path, monkeypatch, correction_path=correction)
-    assert event_path.read_bytes().startswith(original_line)
+    corrected_event_path = _generation(tmp_path) / "events" / "2026-11.jsonl"
+    assert corrected_event_path.read_bytes().startswith(original_line)
     assert [event["event_type"] for event in _event_rows(tmp_path)] == ["OPENED", "CORRECTED"]
-    assert load_all_candidates(_episode_root(tmp_path) / "all_candidates.json")[0][
+    assert load_candidate_episode_store(_episode_root(tmp_path))[0][
         "ticker_at_observation"
     ] == "ALFA.C"
 
 
-def test_staging_validation_failure_leaves_the_complete_prior_tree(tmp_path: Path, monkeypatch):
-    """Publishing before staged validation would expose an unverified target subset."""
+def test_correction_retry_at_later_recorded_time_reuses_original_generation_bytes(tmp_path: Path, monkeypatch):
+    """At-least-once delivery must retain the original immutable correction envelope."""
     _seed_sources(tmp_path)
     _run_nightly(tmp_path, monkeypatch)
+    opened = _event_rows(tmp_path)[0]
+    correction = tmp_path / "corrections.jsonl"
+    command = {
+        "event_type": "CORRECTED",
+        "episode_id": opened["episode_id"],
+        "source_system": "operator_correction",
+        "source_schema": "prophet.candidate_episode_correction/v1",
+        "source_event_id": "retry-safe-correction",
+        "occurred_at": RECORDED_AT,
+        "known_at": RECORDED_AT,
+        "source_receipt": "sha256:" + "b" * 64,
+        "correction_of": opened["event_id"],
+        "payload": {"patch": {"ticker_at_observation": "ALFA.R"}},
+    }
+    correction.write_text(canonical_json(command) + "\n")
+    first = _run_nightly(tmp_path, monkeypatch, correction_path=correction)
+    before = _snapshot(_episode_root(tmp_path))
+
+    second = _run_nightly(
+        tmp_path,
+        monkeypatch,
+        correction_path=correction,
+        recorded_at="2026-11-27T18:06:00Z",
+    )
+    assert second == first
+    assert _snapshot(_episode_root(tmp_path)) == before
+    correction_events = [row for row in _event_rows(tmp_path) if row["event_type"] == "CORRECTED"]
+    assert len(correction_events) == 1
+    assert correction_events[0]["recorded_at"] == RECORDED_AT
+
+
+def test_same_correction_source_identity_with_changed_payload_fails_closed(tmp_path: Path, monkeypatch):
+    """Source-address reuse with changed semantics must not mint a second command effect."""
+    _seed_sources(tmp_path)
+    _run_nightly(tmp_path, monkeypatch)
+    opened = _event_rows(tmp_path)[0]
+    correction = tmp_path / "corrections.jsonl"
+    command = {
+        "event_type": "CORRECTED", "episode_id": opened["episode_id"],
+        "source_system": "operator_correction",
+        "source_schema": "prophet.candidate_episode_correction/v1",
+        "source_event_id": "stable-command-address",
+        "occurred_at": RECORDED_AT, "known_at": RECORDED_AT,
+        "source_receipt": "sha256:" + "c" * 64,
+        "correction_of": opened["event_id"],
+        "payload": {"patch": {"ticker_at_observation": "ALFA.ONE"}},
+    }
+    correction.write_text(canonical_json(command) + "\n")
+    _run_nightly(tmp_path, monkeypatch, correction_path=correction)
+    command["payload"] = {"patch": {"ticker_at_observation": "ALFA.TWO"}}
+    correction.write_text(canonical_json(command) + "\n")
+    before = _snapshot(_episode_root(tmp_path))
+
+    with pytest.raises(EpisodeContractError, match="source identity"):
+        _run_nightly(tmp_path, monkeypatch, correction_path=correction,
+                     recorded_at="2026-11-27T18:06:00Z")
+    assert _snapshot(_episode_root(tmp_path)) == before
+
+
+def test_failure_before_generation_install_leaves_old_head_canonical(tmp_path: Path, monkeypatch):
+    """Installing unvalidated bytes would let HEAD expose an incomplete generation."""
+    _seed_sources(tmp_path)
+    _run_nightly(tmp_path, monkeypatch)
+    old_head = (_episode_root(tmp_path) / "HEAD.json").read_bytes()
+    old_rows = load_candidate_episode_store(_episode_root(tmp_path))
     document = json.loads(_turn_path(tmp_path).read_text())
     document["rows"][0]["observation_revision"] = 2
     _turn_path(tmp_path).write_text(canonical_json(_rehash_turn_watch(document)) + "\n")
-    before = _snapshot(tmp_path)
-    monkeypatch.setattr(writer, "_validate_staged", lambda *_args, **_kwargs: (_ for _ in ()).throw(
-        RuntimeError("injected staged validation failure")
+    monkeypatch.setattr(writer, "_install_generation", lambda *_args, **_kwargs: (_ for _ in ()).throw(
+        RuntimeError("injected generation install failure")
     ))
 
-    with pytest.raises(RuntimeError, match="injected staged validation failure"):
+    with pytest.raises(RuntimeError, match="generation install failure"):
         _run_nightly(tmp_path, monkeypatch)
-    assert _snapshot(tmp_path) == before
+    assert (_episode_root(tmp_path) / "HEAD.json").read_bytes() == old_head
+    assert load_candidate_episode_store(_episode_root(tmp_path)) == old_rows
 
 
-def test_replace_failure_rolls_back_every_changed_target(tmp_path: Path, monkeypatch):
-    """Losing rollback after one replace would split ledger from its projections."""
+def test_installed_orphan_before_head_swap_is_not_reader_visible(tmp_path: Path, monkeypatch):
+    """Selecting an unreferenced generation would bypass the sole visibility boundary."""
     _seed_sources(tmp_path)
     _run_nightly(tmp_path, monkeypatch)
+    old_head = (_episode_root(tmp_path) / "HEAD.json").read_bytes()
+    old_rows = load_candidate_episode_store(_episode_root(tmp_path))
     document = json.loads(_turn_path(tmp_path).read_text())
     document["rows"][0]["observation_revision"] = 2
     _turn_path(tmp_path).write_text(canonical_json(_rehash_turn_watch(document)) + "\n")
-    before = _snapshot(tmp_path)
-    real_replace = writer._replace_file
-    calls = 0
-
-    def fail_once(source: Path, target: Path) -> None:
-        nonlocal calls
-        calls += 1
-        if calls == 2:
-            raise OSError("injected replace failure")
-        real_replace(source, target)
-
-    monkeypatch.setattr(writer, "_replace_file", fail_once)
-    with pytest.raises(OSError, match="injected replace failure"):
+    monkeypatch.setattr(writer, "_publish_head", lambda *_args, **_kwargs: (_ for _ in ()).throw(
+        RuntimeError("injected pre-HEAD failure")
+    ))
+    with pytest.raises(RuntimeError, match="pre-HEAD failure"):
         _run_nightly(tmp_path, monkeypatch)
-    assert _snapshot(tmp_path) == before
+    assert (_episode_root(tmp_path) / "HEAD.json").read_bytes() == old_head
+    assert load_candidate_episode_store(_episode_root(tmp_path)) == old_rows
+    generations = list((_episode_root(tmp_path) / "generations").iterdir())
+    assert len(generations) == 2  # complete orphan plus the still-canonical old generation.
+
+
+def test_turn_watch_receipt_hashes_the_exact_once_read_bytes(tmp_path: Path, monkeypatch):
+    """Reopening latest input after normalization could attest a different source snapshot."""
+    _seed_sources(tmp_path)
+    original = _turn_path(tmp_path).read_bytes()
+    original_digest = "sha256:" + sha256(original).hexdigest()
+    real_normalize = writer.turn_watch_observations
+
+    def normalize_then_replace(path: Path, spine):
+        batch = real_normalize(path, spine)
+        replacement = json.loads(path.read_text())
+        replacement["rows"][0]["ticker"] = "REPLACED_AFTER_READ"
+        path.write_text(canonical_json(_rehash_turn_watch(replacement)) + "\n")
+        return batch
+
+    monkeypatch.setattr(writer, "turn_watch_observations", normalize_then_replace)
+    receipt = _run_nightly(tmp_path, monkeypatch)
+    turn_hashes = {
+        path: digest for path, digest in receipt["source_hashes"].items()
+        if "turn_watch" in path
+    }
+    assert turn_hashes == {
+        "data/us_prophet_rank/episode_inputs/turn_watch/2026-11-27.json": original_digest,
+    }
+    assert load_candidate_episode_store(_episode_root(tmp_path))[0]["security_id"] == "SEC:US-XNAS-ALFA"
+
+
+def test_correction_receipt_hashes_the_exact_once_read_bytes(tmp_path: Path, monkeypatch):
+    """A correction re-read after parsing could bind the receipt to unexecuted bytes."""
+    _seed_sources(tmp_path)
+    _run_nightly(tmp_path, monkeypatch)
+    opened = _event_rows(tmp_path)[0]
+    correction = tmp_path / "commands.jsonl"
+    command = {
+        "event_type": "CORRECTED", "episode_id": opened["episode_id"],
+        "source_system": "operator_correction",
+        "source_schema": "prophet.candidate_episode_correction/v1",
+        "source_event_id": "once-read-command", "occurred_at": RECORDED_AT,
+        "known_at": RECORDED_AT, "source_receipt": "sha256:" + "d" * 64,
+        "correction_of": opened["event_id"],
+        "payload": {"patch": {"ticker_at_observation": "ALFA.ONCE"}},
+    }
+    correction.write_text(canonical_json(command) + "\n")
+    original = correction.read_bytes()
+    original_digest = "sha256:" + sha256(original).hexdigest()
+    real_load = writer._load_commands_snapshot
+
+    def load_then_replace(path: Path | None):
+        result = real_load(path)
+        assert path is not None
+        path.write_text("{}\n")
+        return result
+
+    monkeypatch.setattr(writer, "_load_commands_snapshot", load_then_replace)
+    receipt = _run_nightly(tmp_path, monkeypatch, correction_path=correction)
+    assert receipt["source_hashes"]["commands.jsonl"] == original_digest
+    assert load_candidate_episode_store(_episode_root(tmp_path))[0]["ticker_at_observation"] == "ALFA.ONCE"
+
+
+@pytest.mark.parametrize("recorded_at", ["badZ", "2026-11-27T18:05:00+00:00", "2026-11-27", "2026-11-27T18:05:00.000000Z"])
+def test_recorded_at_is_canonical_utc_before_any_ledger_or_source_read(
+    tmp_path: Path, monkeypatch, recorded_at: str,
+):
+    """Zero-input publication must not bypass the persistence clock boundary."""
+    monkeypatch.setattr(writer, "nightly_advance_enabled", lambda: True)
+    monkeypatch.setattr(writer, "_load_existing_ledgers", lambda *_args, **_kwargs: (_ for _ in ()).throw(
+        AssertionError("ledger read before recorded_at validation")
+    ))
+    with pytest.raises(EpisodeContractError, match="recorded_at"):
+        writer.reconcile(repo_root=tmp_path, nightly=True, replay=False,
+                         recorded_at=recorded_at, correction_path=None)
+    assert _snapshot(tmp_path) == {}
+
+
+def test_default_recorded_at_is_validated_at_the_same_boundary(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr(writer, "nightly_advance_enabled", lambda: True)
+    monkeypatch.setattr(writer, "_now", lambda: "not-canonicalZ")
+    monkeypatch.setattr(writer, "_load_existing_ledgers", lambda *_args, **_kwargs: (_ for _ in ()).throw(
+        AssertionError("ledger read before default recorded_at validation")
+    ))
+    with pytest.raises(EpisodeContractError, match="recorded_at"):
+        writer.reconcile(repo_root=tmp_path, nightly=True, replay=False,
+                         recorded_at=None, correction_path=None)
 
 
 def test_corrupt_existing_event_hash_aborts_before_every_output(tmp_path: Path, monkeypatch):
     """Skipping validation of old truth would let corruption flow into every projection."""
     _seed_sources(tmp_path)
     _run_nightly(tmp_path, monkeypatch)
-    event_path = _episode_root(tmp_path) / "events" / "2026-11.jsonl"
+    event_path = _generation(tmp_path) / "events" / "2026-11.jsonl"
     row = json.loads(event_path.read_text())
     row["content_sha256"] = "0" * 64
     event_path.write_text(canonical_json(row) + "\n")
     before = _snapshot(tmp_path)
 
-    with pytest.raises(EpisodeContractError, match="content address or bytes"):
+    with pytest.raises(EpisodeContractError, match="manifest file hash"):
         _run_nightly(tmp_path, monkeypatch)
     assert _snapshot(tmp_path) == before
+
+
+def test_head_is_exact_content_addressed_and_rejects_unknown_fields(tmp_path: Path, monkeypatch):
+    _seed_sources(tmp_path)
+    _run_nightly(tmp_path, monkeypatch)
+    head_path = _episode_root(tmp_path) / "HEAD.json"
+    head = json.loads(head_path.read_text())
+    head["unexpected"] = True
+    head_path.write_text(canonical_json(head) + "\n")
+    with pytest.raises(EpisodeContractError, match="HEAD"):
+        load_candidate_episode_store(_episode_root(tmp_path))
+
+
+def test_generation_manifest_rejects_extra_or_hash_changed_files(tmp_path: Path, monkeypatch):
+    _seed_sources(tmp_path)
+    _run_nightly(tmp_path, monkeypatch)
+    generation = _generation(tmp_path)
+    (generation / "unexpected.json").write_text("{}\n")
+    with pytest.raises(EpisodeContractError, match="unexpected file"):
+        load_candidate_episode_store(_episode_root(tmp_path))
+    (generation / "unexpected.json").unlink()
+    all_candidates = generation / "all_candidates.json"
+    all_candidates.write_bytes(all_candidates.read_bytes() + b" ")
+    with pytest.raises(EpisodeContractError, match="manifest"):
+        load_candidate_episode_store(_episode_root(tmp_path))
+
+
+def test_event_partition_loader_rejects_noncanonical_wrong_month_and_duplicate_rows(
+    tmp_path: Path, monkeypatch,
+):
+    _seed_sources(tmp_path)
+    _run_nightly(tmp_path, monkeypatch)
+    row = _event_rows(tmp_path)[0]
+    partitions = tmp_path / "partitions"
+    partitions.mkdir()
+    canonical = canonical_json(row) + "\n"
+
+    (partitions / "2026-11.jsonl").write_text("  " + canonical)
+    with pytest.raises(EpisodeContractError, match="canonical"):
+        writer._load_event_partitions(partitions)
+    (partitions / "2026-11.jsonl").unlink()
+
+    (partitions / "2026-10.jsonl").write_text(canonical)
+    with pytest.raises(EpisodeContractError, match="month"):
+        writer._load_event_partitions(partitions)
+    (partitions / "2026-10.jsonl").unlink()
+
+    (partitions / "2026-11.jsonl").write_text(canonical + canonical)
+    with pytest.raises(EpisodeContractError, match="duplicate"):
+        writer._load_event_partitions(partitions)
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        lambda row: {**row, "extra": True},
+        lambda row: {key: value for key, value in row.items() if key != "reason"},
+        lambda row: {**row, "recorded_at": "not-a-clockZ"},
+        lambda row: {**row, "reason": "UNKNOWN_REASON"},
+        lambda row: {**row, "source_receipt": "not-a-receipt"},
+    ],
+)
+def test_suppression_validation_requires_exact_closed_envelope(tmp_path: Path, monkeypatch, mutation):
+    _seed_sources(tmp_path)
+    document = json.loads(_turn_path(tmp_path).read_text())
+    document["rows"][0]["ticker"] = "UNKNOWN"
+    _turn_path(tmp_path).write_text(canonical_json(_rehash_turn_watch(document)) + "\n")
+    _run_nightly(tmp_path, monkeypatch)
+    suppression_path = next((_generation(tmp_path) / "suppressions").glob("*.jsonl"))
+    row = json.loads(suppression_path.read_text())
+    broken = mutation(row)
+    material = {key: value for key, value in broken.items()
+                if key not in {"suppression_id", "content_sha256", "recorded_at"}}
+    broken["suppression_id"] = "pes:" + sha256(canonical_json(material).encode()).hexdigest()
+    broken["content_sha256"] = sha256(canonical_json({
+        key: value for key, value in broken.items() if key != "content_sha256"
+    }).encode()).hexdigest()
+    with pytest.raises(EpisodeContractError, match="suppression"):
+        writer.validate_suppressions([broken])
+
+
+@pytest.mark.parametrize(
+    "target", ["receipt_ledger", "projection_count", "source_balance", "parquet", "extra_file"],
+)
+def test_staged_cross_target_validation_recomputes_every_declared_invariant(
+    tmp_path: Path, monkeypatch, target: str,
+):
+    _seed_sources(tmp_path)
+    _run_nightly(tmp_path, monkeypatch)
+    staged = tmp_path / "staged-generation"
+    shutil.copytree(_generation(tmp_path), staged)
+    if target == "receipt_ledger":
+        path = staged / "latest_receipt.json"
+        value = json.loads(path.read_text())
+        value["ledger_sha256"] = "sha256:" + "0" * 64
+        path.write_text(canonical_json(value) + "\n")
+    elif target == "projection_count":
+        path = staged / "all_candidates.json"
+        value = json.loads(path.read_text())
+        value["generated_from"]["event_count"] += 1
+        path.write_text(canonical_json(value) + "\n")
+    elif target == "source_balance":
+        path = staged / "latest_receipt.json"
+        value = json.loads(path.read_text())
+        value["source_counts"]["turn_watch"]["mapped"] += 1
+        path.write_text(canonical_json(value) + "\n")
+    else:
+        if target == "parquet":
+            path = staged / "current.parquet"
+            pd.DataFrame([]).to_parquet(path, index=False)
+        else:
+            (staged / "unexpected.txt").write_text("not part of the generation contract")
+    with pytest.raises(EpisodeContractError):
+        writer._validate_generation_payload(staged)
 
 
 def test_monthly_ledgers_are_canonical_sorted_jsonl_and_suppressions_are_truth(tmp_path: Path, monkeypatch):
@@ -304,9 +691,9 @@ def test_monthly_ledgers_are_canonical_sorted_jsonl_and_suppressions_are_truth(t
     _turn_path(tmp_path).write_text(canonical_json(_rehash_turn_watch(document)) + "\n")
     receipt = _run_nightly(tmp_path, monkeypatch)
 
-    event_lines = (_episode_root(tmp_path) / "events" / "2026-11.jsonl").read_text().splitlines()
+    event_lines = (_generation(tmp_path) / "events" / "2026-11.jsonl").read_text().splitlines()
     suppression_lines = (
-        _episode_root(tmp_path) / "suppressions" / "2026-11.jsonl"
+        _generation(tmp_path) / "suppressions" / "2026-11.jsonl"
     ).read_text().splitlines()
     events = [json.loads(line) for line in event_lines]
     suppressions = [json.loads(line) for line in suppression_lines]
@@ -359,7 +746,7 @@ def test_uncapped_input_accounting_preserves_every_logical_candidate(tmp_path: P
     path.write_text(canonical_json(_rehash_turn_watch(turn)) + "\n")
 
     receipt = _run_nightly(tmp_path, monkeypatch)
-    projected = load_all_candidates(_episode_root(tmp_path) / "all_candidates.json")
+    projected = load_candidate_episode_store(_episode_root(tmp_path))
     assert receipt["counts"]["input"] == count
     assert receipt["counts"]["mapped"] == count
     assert receipt["counts"]["suppressed"] == 0
@@ -367,14 +754,17 @@ def test_uncapped_input_accounting_preserves_every_logical_candidate(tmp_path: P
 
 
 def test_downstream_fixture_consumes_only_the_canonical_reader(tmp_path: Path, monkeypatch):
-    """A downstream parquet read would bypass the sole All Candidates contract reader."""
+    """A real fixture adapter must resolve the validated HEAD-backed canonical reader."""
     _seed_sources(tmp_path)
     _run_nightly(tmp_path, monkeypatch)
-    monkeypatch.setattr(pd, "read_parquet", lambda *_args, **_kwargs: (_ for _ in ()).throw(
-        AssertionError("downstream bypassed load_all_candidates")
-    ))
-
-    def downstream_fixture(path: Path) -> list[str]:
-        return [row["episode_id"] for row in load_all_candidates(path)]
-
-    assert downstream_fixture(_episode_root(tmp_path) / "all_candidates.json")
+    adapter_path = FIXTURE_ROOT.parent / "downstream_consumer.py"
+    spec = importlib.util.spec_from_file_location("candidate_episode_downstream_fixture", adapter_path)
+    assert spec is not None and spec.loader is not None
+    adapter = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(adapter)
+    assert adapter.load_candidate_episode_store is load_candidate_episode_store
+    assert adapter.project_episode_reference(_episode_root(tmp_path)) == [{
+        "episode_id": _event_rows(tmp_path)[0]["episode_id"],
+        "security_id": "SEC:US-XNAS-ALFA",
+        "episode_state": "ACTIVE",
+    }]

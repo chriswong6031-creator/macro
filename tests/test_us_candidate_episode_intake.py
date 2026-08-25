@@ -130,8 +130,10 @@ def test_nonobject_turn_watch_json_is_named_degraded_source(tmp_path: Path):
     path = tmp_path / "sidecar.json"
     path.write_text("[]")
     batch = turn_watch_observations(path, load_identity_spine(data))
-    assert batch.source_receipts == ({"source": "turn_watch", "status": "degraded",
-                                      "reason": "MALFORMED_SOURCE"},)
+    assert batch.source_receipts == ({
+        "source": "turn_watch", "status": "degraded", "reason": "MALFORMED_SOURCE",
+        "files": [{"path": str(path), "sha256": "sha256:" + sha256(path.read_bytes()).hexdigest()}],
+    },)
 
 
 def test_turn_watch_open_time_uses_the_later_of_reset_and_earliest_trigger_close(tmp_path: Path):
@@ -274,3 +276,38 @@ def test_missing_optional_source_is_named_degraded_receipt(tmp_path: Path):
     assert batch.observations == batch.suppressions == ()
     assert batch.source_receipts == ({"source": "candidate", "status": "degraded",
                                       "reason": "MISSING_SOURCE_FILE"},)
+
+
+def test_identity_and_intake_receipts_attest_the_exact_once_read_file_bytes(tmp_path: Path):
+    """Reopening a mutable source later must not change the bytes named by its receipt."""
+    data = tmp_path / "data"
+    _identity_spine(data)
+    alias_path = data / "reference" / "vendor_aliases.parquet"
+    security_path = data / "reference" / "security_master.parquet"
+    alias_hash = "sha256:" + sha256(alias_path.read_bytes()).hexdigest()
+    security_hash = "sha256:" + sha256(security_path.read_bytes()).hexdigest()
+    spine = load_identity_spine(data)
+    assert spine.source_receipts == (
+        {"source": "identity", "path": str(alias_path), "sha256": alias_hash},
+        {"source": "identity", "path": str(security_path), "sha256": security_hash},
+    )
+
+    turn_path = write_candidate_episode_input(_turn_artifact(), [_turn_row()], data)
+    turn_hash = "sha256:" + sha256(turn_path.read_bytes()).hexdigest()
+    turn_batch = turn_watch_observations(turn_path, spine)
+    assert turn_batch.source_receipts[0]["files"] == [
+        {"path": str(turn_path), "sha256": turn_hash}
+    ]
+
+    candidates = data / "us_prophet_rank" / "candidates"
+    candidates.mkdir(parents=True)
+    candidate_path = candidates / "2026-11.parquet"
+    pd.DataFrame([{
+        "stamp_date": "2026-11-27", "ticker": "ALFA",
+        "board_definition": "us_prophet_v2",
+    }]).to_parquet(candidate_path, index=False)
+    candidate_hash = "sha256:" + sha256(candidate_path.read_bytes()).hexdigest()
+    candidate_batch = candidate_observations(data, spine)
+    assert candidate_batch.source_receipts[0]["files"] == [
+        {"path": str(candidate_path), "sha256": candidate_hash}
+    ]

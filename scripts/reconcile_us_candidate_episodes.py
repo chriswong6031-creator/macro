@@ -1,10 +1,4 @@
-"""Nightly-only reconciler for the canonical U.S. candidate-episode ledger.
-
-The pure event contract and the source normalizers live in ``engine``.  This
-module is the one persistence boundary: read-only report/replay is available in
-every lane, while durable publication requires both an explicit ``--nightly``
-request and the repository's canonical nightly ledger-lane gate.
-"""
+"""Nightly-only immutable-generation writer for U.S. candidate episodes."""
 from __future__ import annotations
 
 import argparse
@@ -13,6 +7,7 @@ from hashlib import sha256
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import tempfile
 from typing import Mapping, Sequence
@@ -23,13 +18,22 @@ import pyarrow.parquet as pq
 from engine.ledger_lane import nightly_advance_enabled
 from engine.us_candidate_episode import (
     DEFAULT_DEFINITION_ERA,
+    GENERATION_MANIFEST_SCHEMA,
+    HEAD_SCHEMA,
+    SUPPRESSION_REASONS,
+    SUPPRESSION_SCHEMA,
     EpisodeContractError,
+    _validate_generation_file_set,
+    _load_partitioned_events as _core_load_event_partitions,
+    _load_partitioned_suppressions as _core_load_suppression_partitions,
     apply_commands,
     build_all_candidates,
     canonical_json,
     load_all_candidates,
+    load_candidate_episode_store,
     reconcile_observations,
     validate_events,
+    validate_suppressions,
 )
 from engine.us_candidate_episode_intake import (
     IntakeBatch,
@@ -42,10 +46,16 @@ from engine.us_candidate_episode_intake import (
 
 
 RECEIPT_SCHEMA = "prophet.candidate_episode_reconcile_receipt/v1"
-SUPPRESSION_SCHEMA = "prophet.candidate_episode_suppression/v1"
 _PARQUET_JSON_FIELDS = frozenset({
     "intake_classes", "structural_anchor", "expert_events", "source_event_ids",
 })
+_SUPPRESSION_REASON_MAP = {
+    "MISSING_TRIGGER": "NO_EVALUATED_TRIGGER",
+    "UNEVALUATED_TRIGGER": "NO_EVALUATED_TRIGGER",
+    "MISSING_RESET_LOW": "INVALID_STRUCTURAL_ANCHOR",
+    "MALFORMED_RECEIPT": "SOURCE_RECEIPT_INVALID",
+    "MISSING_EXPERT_EVENT_ID": "SOURCE_SCHEMA_UNSUPPORTED",
+}
 
 
 class ReconcileRefused(RuntimeError):
@@ -56,83 +66,50 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
 
 
-def _jsonl(path: Path) -> list[dict[str, object]]:
+def _canonical_recorded_at(value: object) -> str:
+    if not isinstance(value, str) or not value.endswith("Z"):
+        raise EpisodeContractError("recorded_at must be canonical RFC3339 UTC ending in Z")
+    try:
+        parsed = datetime.fromisoformat(value[:-1] + "+00:00")
+    except ValueError as exc:
+        raise EpisodeContractError("recorded_at must be canonical RFC3339 UTC") from exc
+    if parsed.tzinfo is None:
+        raise EpisodeContractError("recorded_at must be timezone-aware")
+    canonical = parsed.astimezone(timezone.utc).isoformat(timespec="microseconds").replace("+00:00", "Z")
+    canonical = canonical.replace(".000000Z", "Z")
+    if canonical != value:
+        raise EpisodeContractError("recorded_at must use canonical RFC3339 UTC Z text")
+    return canonical
+
+
+def _sha_receipt(payload: bytes) -> str:
+    return "sha256:" + sha256(payload).hexdigest()
+
+
+def _jsonl_from_bytes(payload: bytes, *, source: Path) -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
-    for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+    for line_number, line in enumerate(payload.splitlines(), 1):
         if not line.strip():
             continue
         try:
-            row = json.loads(line)
+            value = json.loads(line)
         except json.JSONDecodeError as exc:
-            raise EpisodeContractError(f"{path}:{line_number} is not JSON") from exc
-        if not isinstance(row, Mapping):
-            raise EpisodeContractError(f"{path}:{line_number} must be a JSON object")
-        rows.append(dict(row))
+            raise EpisodeContractError(f"{source}:{line_number} is not JSON") from exc
+        if not isinstance(value, Mapping):
+            raise EpisodeContractError(f"{source}:{line_number} must be a JSON object")
+        rows.append(dict(value))
     return rows
 
 
-def _load_existing_ledgers(episode_root: Path) -> tuple[list[dict[str, object]], list[dict[str, object]]]:
-    event_rows = [row for path in sorted((episode_root / "events").glob("*.jsonl")) for row in _jsonl(path)]
-    suppression_rows = [
-        row for path in sorted((episode_root / "suppressions").glob("*.jsonl")) for row in _jsonl(path)
-    ]
-    events = validate_events(event_rows)
-    return events, _validate_suppressions(suppression_rows)
-
-
-def _suppression_material(row: Mapping[str, object]) -> dict[str, object]:
-    return {
-        key: value for key, value in row.items()
-        if key not in {"suppression_id", "recorded_at", "content_sha256"}
-    }
-
-
-def _suppression_address(row: Mapping[str, object]) -> str:
-    return "pes:" + sha256(canonical_json(_suppression_material(row)).encode("utf-8")).hexdigest()
-
-
-def _suppression_content(row: Mapping[str, object]) -> str:
-    return sha256(canonical_json({key: value for key, value in row.items()
-                                  if key != "content_sha256"}).encode("utf-8")).hexdigest()
-
-
-def _validate_suppressions(rows: Sequence[Mapping[str, object]]) -> list[dict[str, object]]:
-    seen: set[str] = set()
-    result: list[dict[str, object]] = []
-    for raw in rows:
-        row = dict(raw)
-        if row.get("schema") != SUPPRESSION_SCHEMA:
-            raise EpisodeContractError("existing suppression schema is invalid")
-        suppression_id = row.get("suppression_id")
-        if suppression_id != _suppression_address(row):
-            raise EpisodeContractError("existing suppression address is invalid")
-        if row.get("content_sha256") != _suppression_content(row):
-            raise EpisodeContractError("existing suppression content hash mismatch")
-        if not isinstance(row.get("recorded_at"), str) or not str(row["recorded_at"]).endswith("Z"):
-            raise EpisodeContractError("existing suppression recorded_at is invalid")
-        assert isinstance(suppression_id, str)
-        if suppression_id in seen:
-            raise EpisodeContractError("duplicate suppression address")
-        seen.add(suppression_id)
-        result.append(row)
-    return sorted(result, key=lambda row: str(row["suppression_id"]))
-
-
-def _merge_suppressions(
-    existing: Sequence[Mapping[str, object]], additions: Sequence[Mapping[str, object]], *, recorded_at: str,
-) -> list[dict[str, object]]:
-    merged = {str(row["suppression_id"]): dict(row) for row in _validate_suppressions(existing)}
-    for raw in additions:
-        material = _suppression_material(raw)
-        if material.get("schema") != SUPPRESSION_SCHEMA:
-            raise EpisodeContractError("new suppression schema is invalid")
-        suppression_id = _suppression_address(material)
-        if suppression_id in merged:
-            continue
-        row = {**material, "suppression_id": suppression_id, "recorded_at": recorded_at}
-        row["content_sha256"] = _suppression_content(row)
-        merged[suppression_id] = row
-    return sorted(merged.values(), key=lambda row: str(row["suppression_id"]))
+def _load_commands_snapshot(path: Path | None) -> tuple[list[dict[str, object]], dict[str, object] | None]:
+    if path is None:
+        return [], None
+    payload = Path(path).read_bytes()
+    rows = _jsonl_from_bytes(payload, source=Path(path))
+    canonical = b"" if not rows else ("\n".join(canonical_json(row) for row in rows) + "\n").encode("utf-8")
+    if payload != canonical:
+        raise EpisodeContractError("correction commands must be canonical JSONL")
+    return rows, {"path": str(Path(path).resolve()), "sha256": _sha_receipt(payload)}
 
 
 def _latest_turn_watch(data_root: Path) -> Path:
@@ -140,146 +117,250 @@ def _latest_turn_watch(data_root: Path) -> Path:
     return paths[-1] if paths else data_root / "us_prophet_rank" / "episode_inputs" / "turn_watch" / "missing.json"
 
 
-def _load_intakes(data_root: Path, *, allow_degraded_identity: bool) -> tuple[IntakeBatch, ...]:
+def _load_intakes(data_root: Path, *, allow_degraded_identity: bool):
     try:
         spine = load_identity_spine(data_root)
-    except (OSError, FileNotFoundError):
+    except OSError:
         if not allow_degraded_identity:
             raise
-        return tuple(
+        spine = None
+        batches = tuple(
             IntakeBatch((), (), ({"source": source, "status": "degraded",
                                   "reason": "MISSING_IDENTITY_SPINE"},))
             for source in ("turn_watch", "candidate", "doors", "entry_radar")
         )
-    return (
+        return (), batches
+    batches = (
         turn_watch_observations(_latest_turn_watch(data_root), spine),
         candidate_observations(data_root, spine),
         door_observations(data_root / "prophet_doors" / "flags.jsonl", spine),
         radar_observations(data_root / "entry_radar" / "forward.parquet", spine),
     )
+    return spine.source_receipts, batches
 
 
-def _commands(path: Path | None) -> list[dict[str, object]]:
-    return [] if path is None else _jsonl(path)
-
-
-def _source_hashes(repo_root: Path, correction_path: Path | None) -> dict[str, str]:
-    data_root = repo_root / "data"
-    paths = [
-        data_root / "reference" / "vendor_aliases.parquet",
-        data_root / "reference" / "security_master.parquet",
-        _latest_turn_watch(data_root),
-        *sorted((data_root / "us_prophet_rank" / "candidates").glob("*.parquet")),
-        data_root / "prophet_doors" / "flags.jsonl",
-        data_root / "entry_radar" / "forward.parquet",
-    ]
-    if correction_path is not None:
-        paths.append(correction_path)
+def _source_hashes(
+    repo_root: Path,
+    identity_receipts: Sequence[Mapping[str, object]],
+    batches: Sequence[IntakeBatch],
+    correction_receipt: Mapping[str, object] | None,
+) -> dict[str, str]:
+    file_receipts: list[Mapping[str, object]] = list(identity_receipts)
+    for batch in batches:
+        for receipt in batch.source_receipts:
+            files = receipt.get("files", [])
+            if isinstance(files, list):
+                file_receipts.extend(item for item in files if isinstance(item, Mapping))
+    if correction_receipt is not None:
+        file_receipts.append(correction_receipt)
     result: dict[str, str] = {}
-    for path in paths:
-        if path.is_file():
-            try:
-                name = str(path.relative_to(repo_root))
-            except ValueError:
-                name = str(path.resolve())
-            result[name] = "sha256:" + sha256(path.read_bytes()).hexdigest()
+    for receipt in file_receipts:
+        path, digest = receipt.get("path"), receipt.get("sha256")
+        if not isinstance(path, str) or not isinstance(digest, str):
+            raise EpisodeContractError("once-read source receipt is incomplete")
+        source_path = Path(path)
+        try:
+            name = str(source_path.relative_to(repo_root))
+        except ValueError:
+            name = str(source_path.resolve())
+        prior = result.get(name)
+        if prior is not None and prior != digest:
+            raise EpisodeContractError("one source path produced conflicting once-read hashes")
+        result[name] = digest
     return dict(sorted(result.items()))
 
 
+def _load_event_partitions(directory: Path) -> list[dict[str, object]]:
+    return _core_load_event_partitions(directory)
+
+
+def _load_suppression_partitions(directory: Path) -> list[dict[str, object]]:
+    return _core_load_suppression_partitions(directory)
+
+
+def _resolve_current_generation(episode_root: Path) -> Path | None:
+    head_path = episode_root / "HEAD.json"
+    if not head_path.exists():
+        return None
+    load_candidate_episode_store(episode_root)
+    head = json.loads(head_path.read_text(encoding="utf-8"))
+    return episode_root / "generations" / str(head["generation_id"])
+
+
+def _load_existing_ledgers(episode_root: Path):
+    generation = _resolve_current_generation(episode_root)
+    if generation is None:
+        return [], [], None
+    return (
+        _load_event_partitions(generation / "events"),
+        _load_suppression_partitions(generation / "suppressions"),
+        generation,
+    )
+
+
+def _command_semantic(command: Mapping[str, object]) -> dict[str, object]:
+    required = {
+        "event_type", "episode_id", "source_system", "source_schema", "source_event_id",
+        "occurred_at", "known_at", "source_receipt", "payload",
+    }
+    missing = required - set(command)
+    if missing:
+        raise EpisodeContractError(f"command is missing {sorted(missing)[0]}")
+    return {
+        "event_type": command["event_type"],
+        "episode_id": command["episode_id"],
+        "source_system": command["source_system"],
+        "source_schema": command["source_schema"],
+        "source_event_id": command["source_event_id"],
+        "occurred_at": command["occurred_at"],
+        "known_at": command["known_at"],
+        "source_receipt": command["source_receipt"],
+        "definition_era": DEFAULT_DEFINITION_ERA,
+        "correction_of": command.get("correction_of"),
+        "payload": command["payload"],
+    }
+
+
+def _event_command_semantic(event: Mapping[str, object]) -> dict[str, object]:
+    return {key: event[key] for key in (
+        "event_type", "episode_id", "source_system", "source_schema", "source_event_id",
+        "occurred_at", "known_at", "source_receipt", "definition_era", "correction_of", "payload",
+    )}
+
+
+def _dedupe_commands(events: Sequence[Mapping[str, object]], commands: Sequence[Mapping[str, object]]):
+    existing = {
+        (str(event["source_system"]), str(event["source_schema"]), str(event["source_event_id"])): event
+        for event in events
+    }
+    accepted: list[dict[str, object]] = []
+    seen_input: dict[tuple[str, str, str], str] = {}
+    for raw in commands:
+        command = dict(raw)
+        semantic = _command_semantic(command)
+        key = (
+            str(semantic["source_system"]), str(semantic["source_schema"]),
+            str(semantic["source_event_id"]),
+        )
+        encoded = canonical_json(semantic)
+        prior_input = seen_input.get(key)
+        if prior_input is not None:
+            if prior_input != encoded:
+                raise EpisodeContractError("correction source identity carries changed semantic payload")
+            continue
+        seen_input[key] = encoded
+        prior = existing.get(key)
+        if prior is not None:
+            if canonical_json(_event_command_semantic(prior)) != encoded:
+                raise EpisodeContractError("correction source identity carries changed semantic payload")
+            continue
+        accepted.append(command)
+    return accepted
+
+
+def _normalize_suppression(raw: Mapping[str, object], *, recorded_at: str) -> dict[str, object]:
+    reason = _SUPPRESSION_REASON_MAP.get(str(raw.get("reason")), str(raw.get("reason")))
+    if reason not in SUPPRESSION_REASONS:
+        reason = "SOURCE_SCHEMA_UNSUPPORTED"
+    source_receipt = raw.get("source_receipt")
+    if reason == "SOURCE_RECEIPT_INVALID":
+        source_receipt = None
+    session = raw.get("observation_session")
+    if not isinstance(session, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", session):
+        session = recorded_at[:10]
+    material: dict[str, object] = {
+        "schema": SUPPRESSION_SCHEMA,
+        "recorded_at": recorded_at,
+        "source_system": raw.get("source_system"),
+        "source_schema": raw.get("source_schema"),
+        "source_event_id": raw.get("source_event_id"),
+        "source_receipt": source_receipt,
+        "observation_session": session,
+        "ticker_at_observation": raw.get("ticker_at_observation"),
+        "security_id": raw.get("security_id"),
+        "reason": reason,
+    }
+    address = {key: value for key, value in material.items() if key != "recorded_at"}
+    suppression_id = "pes:" + sha256(canonical_json(address).encode("utf-8")).hexdigest()
+    row = {**material, "suppression_id": suppression_id}
+    row["content_sha256"] = sha256(canonical_json(row).encode("utf-8")).hexdigest()
+    return validate_suppressions([row])[0]
+
+
+def _merge_suppressions(existing, additions, *, recorded_at: str):
+    merged = {str(row["suppression_id"]): dict(row) for row in validate_suppressions(existing)}
+    for raw in additions:
+        candidate = _normalize_suppression(raw, recorded_at=recorded_at)
+        key = str(candidate["suppression_id"])
+        if key not in merged:
+            merged[key] = candidate
+    return sorted(merged.values(), key=lambda row: str(row["suppression_id"]))
+
+
 def _parquet_bytes(rows: Sequence[Mapping[str, object]]) -> bytes:
-    encoded = [
-        {
-            key: canonical_json(value) if key in _PARQUET_JSON_FIELDS else value
-            for key, value in row.items()
-        }
-        for row in rows
-    ]
+    encoded = [{key: canonical_json(value) if key in _PARQUET_JSON_FIELDS else value
+                for key, value in row.items()} for row in rows]
     table = pa.Table.from_pylist(encoded)
     sink = pa.BufferOutputStream()
-    pq.write_table(
-        table,
-        sink,
-        compression="zstd",
-        version="2.6",
-        data_page_version="2.0",
-        use_dictionary=False,
-        write_statistics=True,
-    )
+    pq.write_table(table, sink, compression="zstd", version="2.6", data_page_version="2.0",
+                   use_dictionary=False, write_statistics=True)
     return sink.getvalue().to_pybytes()
 
 
 def _decode_parquet(path: Path) -> list[dict[str, object]]:
-    rows = pq.read_table(path).to_pylist()
-    return [
-        {
-            key: json.loads(value) if key in _PARQUET_JSON_FIELDS and isinstance(value, str) else value
-            for key, value in row.items()
-        }
-        for row in rows
-    ]
+    return [{key: json.loads(value) if key in _PARQUET_JSON_FIELDS and isinstance(value, str) else value
+             for key, value in row.items()} for row in pq.read_table(path).to_pylist()]
 
 
-def _load_and_build(
-    *, repo_root: Path, recorded_at: str, correction_path: Path | None, mode: str,
-) -> tuple[
-    dict[str, object], dict[str, object], list[dict[str, object]], list[dict[str, object]], bytes,
-]:
+def _source_accounting(batches: Sequence[IntakeBatch], reconciled_suppressions):
+    suppression_keys = {(row.get("source_system"), row.get("source_schema"), row.get("source_event_id"))
+                        for row in reconciled_suppressions}
+    result: dict[str, dict[str, int]] = {}
+    for batch in batches:
+        source = next((str(item["source"]) for item in batch.source_receipts if item.get("source")), "unknown")
+        core_suppressed = sum((row.get("source_system"), row.get("source_schema"),
+                               row.get("source_event_id")) in suppression_keys
+                              for row in batch.observations)
+        input_count = len(batch.observations) + len(batch.suppressions)
+        suppressed = len(batch.suppressions) + core_suppressed
+        result[source] = {"input": input_count, "mapped": input_count - suppressed,
+                          "suppressed": suppressed}
+    return dict(sorted(result.items()))
+
+
+def _stable_receipt(old: Mapping[str, object], new: Mapping[str, object]) -> bool:
+    return all(old.get(field) == new.get(field) for field in (
+        "schema", "mode", "gate", "definition_era", "source_hashes", "source_counts",
+        "ledger_sha256", "projection_hashes", "source_receipts",
+    ))
+
+
+def _load_and_build(*, repo_root: Path, recorded_at: str, correction_path: Path | None, mode: str):
     data_root = repo_root / "data"
     episode_root = data_root / "us_prophet_rank" / "episodes"
-    existing_events, existing_suppressions = _load_existing_ledgers(episode_root)
-    batches = _load_intakes(data_root, allow_degraded_identity=mode != "nightly")
+    existing_events, existing_suppressions, current_generation = _load_existing_ledgers(episode_root)
+    identity_receipts, batches = _load_intakes(data_root, allow_degraded_identity=mode != "nightly")
     observations = [row for batch in batches for row in batch.observations]
     intake_suppressions = [row for batch in batches for row in batch.suppressions]
-    reconciled = reconcile_observations(
-        existing_events,
-        observations,
-        recorded_at=recorded_at,
-        definition_era=DEFAULT_DEFINITION_ERA,
-    )
-    commanded = apply_commands(
-        reconciled.events,
-        _commands(correction_path),
-        recorded_at=recorded_at,
-        definition_era=DEFAULT_DEFINITION_ERA,
-    )
+    reconciled = reconcile_observations(existing_events, observations, recorded_at=recorded_at,
+                                        definition_era=DEFAULT_DEFINITION_ERA)
+    commands, correction_receipt = _load_commands_snapshot(correction_path)
+    commands = _dedupe_commands(reconciled.events, commands)
+    commanded = apply_commands(reconciled.events, commands, recorded_at=recorded_at,
+                               definition_era=DEFAULT_DEFINITION_ERA)
     run_suppressions = [*intake_suppressions, *reconciled.suppressions]
-    suppressions = _merge_suppressions(existing_suppressions, run_suppressions, recorded_at=recorded_at)
+    suppressions = _merge_suppressions(existing_suppressions, run_suppressions,
+                                       recorded_at=recorded_at)
     projection = build_all_candidates(commanded.events, suppression_count=len(suppressions))
-    reconciled_suppression_keys = {
-        (row.get("source_system"), row.get("source_schema"), row.get("source_event_id"))
-        for row in reconciled.suppressions
-    }
-    source_counts: dict[str, dict[str, int]] = {}
-    for batch in batches:
-        source = next(
-            (str(item["source"]) for item in batch.source_receipts if item.get("source")),
-            str(batch.observations[0]["source_system"]) if batch.observations else "unknown",
-        )
-        reconciled_suppressed = sum(
-            (
-                row.get("source_system"), row.get("source_schema"), row.get("source_event_id")
-            ) in reconciled_suppression_keys
-            for row in batch.observations
-        )
-        source_input = len(batch.observations) + len(batch.suppressions)
-        source_suppressed = len(batch.suppressions) + reconciled_suppressed
-        source_counts[source] = {
-            "input": source_input,
-            "mapped": source_input - source_suppressed,
-            "suppressed": source_suppressed,
-        }
-    input_count = sum(counts["input"] for counts in source_counts.values())
-    mapped_count = sum(counts["mapped"] for counts in source_counts.values())
-    suppressed_count = sum(counts["suppressed"] for counts in source_counts.values())
-    if input_count != mapped_count + suppressed_count:
-        raise EpisodeContractError("source accounting is not input = mapped + suppressed")
-    if any(counts["input"] != counts["mapped"] + counts["suppressed"]
-           for counts in source_counts.values()):
-        raise EpisodeContractError("per-source accounting is not input = mapped + suppressed")
-    event_count = len(commanded.events)
-    ledger_hash = "sha256:" + sha256(canonical_json(tuple(commanded.events)).encode("utf-8")).hexdigest()
     projection_json = (canonical_json(projection) + "\n").encode("utf-8")
     projection_parquet = _parquet_bytes(projection["episodes"])
+    source_counts = _source_accounting(batches, reconciled.suppressions)
+    input_count = sum(row["input"] for row in source_counts.values())
+    mapped_count = sum(row["mapped"] for row in source_counts.values())
+    suppressed_count = sum(row["suppressed"] for row in source_counts.values())
+    if input_count != mapped_count + suppressed_count:
+        raise EpisodeContractError("aggregate source accounting is unbalanced")
+    ledger_hash = _sha_receipt(canonical_json(tuple(commanded.events)).encode("utf-8"))
     receipt: dict[str, object] = {
         "schema": RECEIPT_SCHEMA,
         "mode": mode,
@@ -287,69 +368,53 @@ def _load_and_build(
         "durable_write": False,
         "recorded_at": recorded_at,
         "definition_era": DEFAULT_DEFINITION_ERA,
-        "source_hashes": _source_hashes(repo_root, correction_path),
-        "source_counts": dict(sorted(source_counts.items())),
+        "source_hashes": _source_hashes(repo_root, identity_receipts, batches, correction_receipt),
+        "source_counts": source_counts,
         "counts": {
-            "input": input_count,
-            "mapped": mapped_count,
-            "suppressed": suppressed_count,
-            "old_events": len(existing_events),
-            "new_events": event_count,
-            "appended_events": len(commanded.new_events) + len(reconciled.new_events),
+            "input": input_count, "mapped": mapped_count, "suppressed": suppressed_count,
+            "ledger_suppressions": len(suppressions),
+            "old_events": len(existing_events), "new_events": len(commanded.events),
+            "appended_events": len(commanded.events) - len(existing_events),
         },
         "ledger_sha256": ledger_hash,
         "projection_hashes": {
-            "all_candidates.json": "sha256:" + sha256(projection_json).hexdigest(),
-            "current.parquet": "sha256:" + sha256(projection_parquet).hexdigest(),
+            "all_candidates.json": _sha_receipt(projection_json),
+            "current.parquet": _sha_receipt(projection_parquet),
         },
         "source_receipts": [receipt for batch in batches for receipt in batch.source_receipts],
     }
-    return receipt, projection, list(commanded.events), suppressions, projection_parquet
+    previous_receipt = None
+    if current_generation is not None:
+        previous_receipt = json.loads((current_generation / "latest_receipt.json").read_text())
+    return (receipt, projection, list(commanded.events), suppressions, projection_parquet,
+            current_generation, previous_receipt)
 
 
-def _event_order(row: Mapping[str, object]) -> tuple[str, str, str]:
+def _event_order(row: Mapping[str, object]):
     return str(row["known_at"]), str(row["source_system"]), str(row["source_event_id"])
 
 
 def _jsonl_bytes(rows: Sequence[Mapping[str, object]]) -> bytes:
-    return ("" if not rows else "\n".join(canonical_json(row) for row in rows) + "\n").encode("utf-8")
+    return ("" if not rows else "\n".join(canonical_json(row) for row in rows) + "\n").encode()
 
 
-def _month(value: object, *, field: str) -> str:
-    text = str(value)
-    if len(text) < 7 or text[4] != "-":
-        raise EpisodeContractError(f"{field} has no canonical month")
-    return text[:7]
-
-
-def _target_bytes(
-    episode_root: Path,
-    receipt: Mapping[str, object],
-    projection: Mapping[str, object],
-    events: Sequence[Mapping[str, object]],
-    suppressions: Sequence[Mapping[str, object]],
-    projection_parquet: bytes,
-) -> dict[Path, bytes]:
+def _generation_payloads(receipt, projection, events, suppressions, projection_parquet):
     by_event_month: dict[str, list[Mapping[str, object]]] = {}
     for row in sorted(events, key=_event_order):
-        by_event_month.setdefault(_month(row["recorded_at"], field="event.recorded_at"), []).append(row)
+        by_event_month.setdefault(str(row["recorded_at"])[:7], []).append(row)
     by_suppression_month: dict[str, list[Mapping[str, object]]] = {}
     for row in sorted(suppressions, key=lambda value: str(value["suppression_id"])):
-        by_suppression_month.setdefault(
-            _month(row["recorded_at"], field="suppression.recorded_at"), []
-        ).append(row)
-    targets = {
-        episode_root / "events" / f"{month}.jsonl": _jsonl_bytes(rows)
-        for month, rows in sorted(by_event_month.items())
-    }
-    targets.update({
-        episode_root / "suppressions" / f"{month}.jsonl": _jsonl_bytes(rows)
-        for month, rows in sorted(by_suppression_month.items())
+        by_suppression_month.setdefault(str(row["recorded_at"])[:7], []).append(row)
+    payloads = {f"events/{month}.jsonl": _jsonl_bytes(rows)
+                for month, rows in sorted(by_event_month.items())}
+    payloads.update({f"suppressions/{month}.jsonl": _jsonl_bytes(rows)
+                     for month, rows in sorted(by_suppression_month.items())})
+    payloads.update({
+        "all_candidates.json": (canonical_json(projection) + "\n").encode(),
+        "current.parquet": projection_parquet,
+        "latest_receipt.json": (canonical_json(receipt) + "\n").encode(),
     })
-    targets[episode_root / "all_candidates.json"] = (canonical_json(projection) + "\n").encode("utf-8")
-    targets[episode_root / "current.parquet"] = projection_parquet
-    targets[episode_root / "latest_receipt.json"] = (canonical_json(receipt) + "\n").encode("utf-8")
-    return targets
+    return payloads
 
 
 def _write_fsynced(path: Path, payload: bytes) -> None:
@@ -370,173 +435,212 @@ def _fsync_directory(path: Path) -> None:
 
 def _fsync_tree(root: Path) -> None:
     directories = [root, *(path for path in root.rglob("*") if path.is_dir())]
-    for directory in sorted(directories, key=lambda path: len(path.parts), reverse=True):
+    for directory in sorted(directories, key=lambda item: len(item.parts), reverse=True):
         _fsync_directory(directory)
 
 
-def _validate_staged(stage_new: Path, episode_root: Path, relative_targets: Sequence[Path]) -> None:
-    event_rows: list[dict[str, object]] = []
-    suppression_rows: list[dict[str, object]] = []
-    for relative in sorted(relative_targets):
-        staged = stage_new / relative
-        if relative.parts[0] == "events":
-            rows = _jsonl(staged)
-            if staged.read_bytes() != _jsonl_bytes(rows) or rows != sorted(rows, key=_event_order):
-                raise EpisodeContractError("staged event ledger is not canonical sorted JSONL")
-            event_rows.extend(rows)
-        elif relative.parts[0] == "suppressions":
-            rows = _jsonl(staged)
-            if staged.read_bytes() != _jsonl_bytes(rows):
-                raise EpisodeContractError("staged suppression ledger is not canonical JSONL")
-            suppression_rows.extend(rows)
-    validate_events(event_rows)
-    _validate_suppressions(suppression_rows)
-    all_candidates = stage_new / "all_candidates.json"
-    logical_json = load_all_candidates(all_candidates)
-    logical_parquet = _decode_parquet(stage_new / "current.parquet")
-    if canonical_json(logical_parquet) != canonical_json(logical_json):
-        raise EpisodeContractError("current.parquet differs from All Candidates logical rows")
-    receipt = json.loads((stage_new / "latest_receipt.json").read_text(encoding="utf-8"))
-    if not isinstance(receipt, Mapping) or receipt.get("schema") != RECEIPT_SCHEMA:
-        raise EpisodeContractError("staged reconcile receipt is invalid")
-    expected = receipt.get("projection_hashes")
-    if not isinstance(expected, Mapping):
-        raise EpisodeContractError("staged reconcile receipt lacks projection hashes")
-    for name in ("all_candidates.json", "current.parquet"):
-        actual = "sha256:" + sha256((stage_new / name).read_bytes()).hexdigest()
-        if expected.get(name) != actual:
-            raise EpisodeContractError(f"staged {name} hash differs from receipt")
+def _validate_receipt(receipt: Mapping[str, object], *, events, suppressions, projection_json,
+                      parquet_bytes) -> None:
+    required = {"schema", "mode", "gate", "durable_write", "recorded_at", "definition_era",
+                "source_hashes", "source_counts", "counts", "ledger_sha256",
+                "projection_hashes", "source_receipts"}
+    if set(receipt) != required or receipt.get("schema") != RECEIPT_SCHEMA:
+        raise EpisodeContractError("reconcile receipt envelope is invalid")
+    if receipt.get("mode") != "nightly" or receipt.get("gate") != {
+        "nightly_requested": True, "nightly_advance_enabled": True,
+    } or receipt.get("durable_write") is not True:
+        raise EpisodeContractError("reconcile receipt durable gate is invalid")
+    if receipt.get("definition_era") != DEFAULT_DEFINITION_ERA:
+        raise EpisodeContractError("reconcile receipt definition era is invalid")
+    _canonical_recorded_at(receipt.get("recorded_at"))
+    source_counts = receipt.get("source_counts")
+    counts = receipt.get("counts")
+    if not isinstance(source_counts, Mapping) or not isinstance(counts, Mapping):
+        raise EpisodeContractError("reconcile receipt counts are invalid")
+    required_counts = {
+        "input", "mapped", "suppressed", "ledger_suppressions", "old_events",
+        "new_events", "appended_events",
+    }
+    if set(counts) != required_counts:
+        raise EpisodeContractError("reconcile receipt count envelope is invalid")
+    for row in source_counts.values():
+        if not isinstance(row, Mapping) or set(row) != {"input", "mapped", "suppressed"}:
+            raise EpisodeContractError("receipt per-source counts are invalid")
+        if row["input"] != row["mapped"] + row["suppressed"]:
+            raise EpisodeContractError("receipt per-source counts are unbalanced")
+    if counts.get("input") != sum(row["input"] for row in source_counts.values()):
+        raise EpisodeContractError("receipt aggregate input count is invalid")
+    if counts.get("mapped") != sum(row["mapped"] for row in source_counts.values()):
+        raise EpisodeContractError("receipt aggregate mapped count is invalid")
+    if counts.get("suppressed") != sum(row["suppressed"] for row in source_counts.values()):
+        raise EpisodeContractError("receipt aggregate suppressed count is invalid")
+    if counts.get("new_events") != len(events) or counts.get("ledger_suppressions") != len(suppressions):
+        raise EpisodeContractError("receipt ledger counts are invalid")
+    if counts.get("old_events", -1) + counts.get("appended_events", -1) != len(events):
+        raise EpisodeContractError("receipt event delta is invalid")
+    ledger_hash = _sha_receipt(canonical_json(tuple(events)).encode())
+    if receipt.get("ledger_sha256") != ledger_hash:
+        raise EpisodeContractError("receipt ledger hash is invalid")
+    expected = {"all_candidates.json": _sha_receipt(projection_json),
+                "current.parquet": _sha_receipt(parquet_bytes)}
+    if receipt.get("projection_hashes") != expected:
+        raise EpisodeContractError("receipt projection hashes are invalid")
+    source_hashes = receipt.get("source_hashes")
+    if not isinstance(source_hashes, Mapping) or any(
+        not isinstance(path, str) or not path or not isinstance(value, str)
+        or not re.fullmatch(r"sha256:[0-9a-f]{64}", value)
+        for path, value in source_hashes.items()
+    ):
+        raise EpisodeContractError("receipt source hashes are invalid")
 
 
-def _replace_file(source: Path, target: Path) -> None:
+def _validate_generation_payload(directory: Path) -> None:
+    relative_files = {
+        str(path.relative_to(directory)) for path in directory.rglob("*")
+        if path.is_file() and path.name != "manifest.json"
+    }
+    _validate_generation_file_set(directory, relative_files)
+    events = _load_event_partitions(directory / "events")
+    suppressions = _load_suppression_partitions(directory / "suppressions")
+    all_path = directory / "all_candidates.json"
+    all_bytes = all_path.read_bytes()
+    projection = json.loads(all_bytes)
+    if all_bytes != (canonical_json(projection) + "\n").encode():
+        raise EpisodeContractError("All Candidates bytes are not canonical")
+    logical_json = load_all_candidates(all_path)
+    logical_parquet = _decode_parquet(directory / "current.parquet")
+    if canonical_json(logical_json) != canonical_json(logical_parquet):
+        raise EpisodeContractError("current.parquet differs from All Candidates rows")
+    ledger_hash = _sha_receipt(canonical_json(tuple(events)).encode())
+    if projection["generated_from"] != {"event_count": len(events), "ledger_sha256": ledger_hash}:
+        raise EpisodeContractError("All Candidates metadata differs from staged ledger")
+    if projection["coverage"].get("suppressed_inputs") != len(suppressions):
+        raise EpisodeContractError("All Candidates suppression count differs from staged ledger")
+    receipt_path = directory / "latest_receipt.json"
+    receipt_bytes = receipt_path.read_bytes()
+    receipt = json.loads(receipt_bytes)
+    if receipt_bytes != (canonical_json(receipt) + "\n").encode():
+        raise EpisodeContractError("reconcile receipt bytes are not canonical")
+    _validate_receipt(receipt, events=events, suppressions=suppressions,
+                      projection_json=all_bytes, parquet_bytes=(directory / "current.parquet").read_bytes())
+
+
+def _manifest_for(directory: Path):
+    files: dict[str, dict[str, object]] = {}
+    for path in sorted(directory.rglob("*")):
+        if not path.is_file() or path.name == "manifest.json":
+            continue
+        payload = path.read_bytes()
+        files[str(path.relative_to(directory))] = {
+            "sha256": _sha_receipt(payload), "bytes": len(payload),
+        }
+    material = {"schema": GENERATION_MANIFEST_SCHEMA, "files": files}
+    generation_id = "peg:" + sha256(canonical_json(material).encode()).hexdigest()
+    manifest = {**material, "generation_id": generation_id}
+    manifest["content_sha256"] = sha256(canonical_json(manifest).encode()).hexdigest()
+    return generation_id, manifest
+
+
+def _validate_generation_directory(directory: Path, expected_generation_id: str) -> None:
+    manifest_path = directory / "manifest.json"
+    manifest_bytes = manifest_path.read_bytes()
+    manifest = json.loads(manifest_bytes)
+    if manifest_bytes != (canonical_json(manifest) + "\n").encode():
+        raise EpisodeContractError("generation manifest bytes are not canonical")
+    actual_id, expected_manifest = _manifest_for(directory)
+    if actual_id != expected_generation_id or manifest != expected_manifest:
+        raise EpisodeContractError("generation manifest or content address is invalid")
+    _validate_generation_payload(directory)
+
+
+def _install_generation(stage: Path, destination: Path) -> None:
+    if destination.exists():
+        _validate_generation_directory(destination, destination.name)
+        shutil.rmtree(stage)
+        return
+    os.rename(stage, destination)
+    _fsync_directory(destination.parent)
+
+
+def _replace_head(source: Path, target: Path) -> None:
     os.replace(source, target)
 
 
-def _same_receipt_inputs(old: Mapping[str, object], new: Mapping[str, object]) -> bool:
-    return all(old.get(field) == new.get(field) for field in (
-        "schema", "mode", "gate", "definition_era", "recorded_at", "source_hashes",
-        "ledger_sha256", "projection_hashes", "source_counts", "source_receipts",
-    ))
+def _head_bytes(generation_id: str, manifest_bytes: bytes) -> bytes:
+    head = {"schema": HEAD_SCHEMA, "generation_id": generation_id,
+            "manifest_sha256": _sha_receipt(manifest_bytes)}
+    head["content_sha256"] = sha256(canonical_json(head).encode()).hexdigest()
+    return (canonical_json(head) + "\n").encode()
 
 
-def _remove_empty_created_directories(created: Sequence[Path]) -> None:
-    for directory in sorted(created, key=lambda path: len(path.parts), reverse=True):
-        try:
-            directory.rmdir()
-        except OSError:
-            pass
-
-
-def _publish_transaction(
-    repo_root: Path,
-    receipt: dict[str, object],
-    projection: Mapping[str, object],
-    events: Sequence[Mapping[str, object]],
-    suppressions: Sequence[Mapping[str, object]],
-    projection_parquet: bytes,
-) -> dict[str, object]:
-    episode_root = repo_root / "data" / "us_prophet_rank" / "episodes"
-    receipt = {**receipt, "durable_write": True}
-    candidate_targets = _target_bytes(
-        episode_root, receipt, projection, events, suppressions, projection_parquet,
-    )
-    previous_receipt_path = episode_root / "latest_receipt.json"
-    if previous_receipt_path.is_file():
-        try:
-            previous_receipt = json.loads(previous_receipt_path.read_text(encoding="utf-8"))
-        except json.JSONDecodeError:
-            previous_receipt = None
-        if isinstance(previous_receipt, Mapping) and _same_receipt_inputs(previous_receipt, receipt):
-            stable_targets = _target_bytes(
-                episode_root, previous_receipt, projection, events, suppressions, projection_parquet,
-            )
-            if all(path.is_file() and path.read_bytes() == payload
-                   for path, payload in stable_targets.items()):
-                return dict(previous_receipt)
-
-    targets = candidate_targets
-    changed = {path: payload for path, payload in targets.items()
-               if not path.is_file() or path.read_bytes() != payload}
-    if not changed:
-        return receipt
-
-    created_directories: list[Path] = []
-    for directory in (repo_root / "data", repo_root / "data" / "us_prophet_rank", episode_root):
-        if not directory.exists():
-            directory.mkdir()
-            created_directories.append(directory)
-    stage = Path(tempfile.mkdtemp(prefix=".candidate-episode-stage-", dir=episode_root))
-    stage_new = stage / "new"
-    stage_old = stage / "old"
-    relative_targets = [path.relative_to(episode_root) for path in targets]
+def _publish_head(episode_root: Path, payload: bytes) -> None:
+    target = episode_root / "HEAD.json"
+    if target.is_file() and target.read_bytes() == payload:
+        return
+    descriptor, temporary_name = tempfile.mkstemp(prefix=".HEAD.", suffix=".json", dir=episode_root)
+    temporary = Path(temporary_name)
     try:
-        for target, payload in targets.items():
-            relative = target.relative_to(episode_root)
-            _write_fsynced(stage_new / relative, payload)
-            if target in changed and target.is_file():
-                _write_fsynced(stage_old / relative, target.read_bytes())
-        _fsync_tree(stage)
-        _validate_staged(stage_new, episode_root, relative_targets)
-
-        created_target_directories: list[Path] = []
-        for target in changed:
-            missing: list[Path] = []
-            cursor = target.parent
-            while cursor != episode_root and not cursor.exists():
-                missing.append(cursor)
-                cursor = cursor.parent
-            target.parent.mkdir(parents=True, exist_ok=True)
-            created_target_directories.extend(missing)
-        replaced: list[Path] = []
-        try:
-            for target in sorted(changed, key=lambda path: str(path.relative_to(episode_root))):
-                _replace_file(stage_new / target.relative_to(episode_root), target)
-                replaced.append(target)
-                _fsync_directory(target.parent)
-            _fsync_directory(episode_root)
-        except BaseException:
-            for target in reversed(replaced):
-                relative = target.relative_to(episode_root)
-                preimage = stage_old / relative
-                if preimage.is_file():
-                    restore = stage / "restore" / relative
-                    _write_fsynced(restore, preimage.read_bytes())
-                    os.replace(restore, target)
-                elif target.exists():
-                    target.unlink()
-                _fsync_directory(target.parent)
-            _remove_empty_created_directories(created_target_directories)
-            raise
+        with os.fdopen(descriptor, "wb") as handle:
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+        _replace_head(temporary, target)
+        _fsync_directory(episode_root)
     finally:
-        shutil.rmtree(stage, ignore_errors=True)
-        _remove_empty_created_directories(created_directories)
-    return receipt
+        if temporary.exists():
+            temporary.unlink()
 
 
-def reconcile(
-    *,
-    repo_root: Path,
-    nightly: bool,
-    replay: bool,
-    recorded_at: str | None,
-    correction_path: Path | None,
-) -> dict[str, object]:
-    """Reconcile registered B1 sources, publishing only in the explicit nightly lane."""
+def _publish_transaction(repo_root: Path, receipt, projection, events, suppressions,
+                         projection_parquet):
+    episode_root = repo_root / "data" / "us_prophet_rank" / "episodes"
+    generations = episode_root / "generations"
+    generations.mkdir(parents=True, exist_ok=True)
+    durable_receipt = {**receipt, "durable_write": True}
+    payloads = _generation_payloads(durable_receipt, projection, events, suppressions,
+                                    projection_parquet)
+    stage = Path(tempfile.mkdtemp(prefix=".stage-", dir=generations))
+    installed = False
+    try:
+        (stage / "events").mkdir()
+        (stage / "suppressions").mkdir()
+        for relative, payload in payloads.items():
+            _write_fsynced(stage / relative, payload)
+        generation_id, manifest = _manifest_for(stage)
+        _write_fsynced(stage / "manifest.json", (canonical_json(manifest) + "\n").encode())
+        _fsync_tree(stage)
+        _validate_generation_directory(stage, generation_id)
+        destination = generations / generation_id
+        _install_generation(stage, destination)
+        installed = True
+        manifest_bytes = (destination / "manifest.json").read_bytes()
+        _publish_head(episode_root, _head_bytes(generation_id, manifest_bytes))
+        return durable_receipt
+    finally:
+        if not installed and stage.exists():
+            shutil.rmtree(stage)
+
+
+def reconcile(*, repo_root: Path, nightly: bool, replay: bool, recorded_at: str | None,
+              correction_path: Path | None) -> dict[str, object]:
     durable = bool(nightly and not replay)
     if durable and not nightly_advance_enabled():
         raise ReconcileRefused("durable write refused: nightly_advance_enabled() is false")
+    run_clock = _canonical_recorded_at(recorded_at if recorded_at is not None else _now())
     mode = "replay" if replay else "nightly" if nightly else "report"
-    receipt, projection, events, suppressions, projection_parquet = _load_and_build(
-        repo_root=Path(repo_root),
-        recorded_at=recorded_at or _now(),
-        correction_path=correction_path,
-        mode=mode,
+    (receipt, projection, events, suppressions, projection_parquet,
+     current_generation, previous_receipt) = _load_and_build(
+        repo_root=Path(repo_root), recorded_at=run_clock, correction_path=correction_path, mode=mode,
     )
     if not durable:
         return receipt
-    return _publish_transaction(
-        Path(repo_root), receipt, projection, events, suppressions, projection_parquet,
-    )
+    durable_candidate = {**receipt, "durable_write": True}
+    if current_generation is not None and isinstance(previous_receipt, Mapping) and _stable_receipt(
+        previous_receipt, durable_candidate
+    ):
+        return dict(previous_receipt)
+    return _publish_transaction(Path(repo_root), receipt, projection, events, suppressions,
+                                projection_parquet)
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -551,13 +655,8 @@ def _parser() -> argparse.ArgumentParser:
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parser().parse_args(argv)
-    receipt = reconcile(
-        repo_root=args.repo_root,
-        nightly=args.nightly,
-        replay=args.replay,
-        recorded_at=args.recorded_at,
-        correction_path=args.corrections,
-    )
+    receipt = reconcile(repo_root=args.repo_root, nightly=args.nightly, replay=args.replay,
+                        recorded_at=args.recorded_at, correction_path=args.corrections)
     print(canonical_json(receipt))
     return 0
 
