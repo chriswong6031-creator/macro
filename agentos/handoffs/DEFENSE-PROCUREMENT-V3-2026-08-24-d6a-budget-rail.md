@@ -117,14 +117,38 @@ verified:
   - claim: Idempotent re-observation is a no-op
     command: local rehearsal double-run + runner NOOP path
     result: second run byte-identical, both exhibits NOOP, counts unchanged.
-unverified:
-  - claim: Production API serves nonzero budget programs and the Budget & Programs page renders the canaries
-    what_would_verify: >
-      post-merge government-revenue-live run commits the graph twins; then
-      GET /api/government-revenue/budget-programs (nonzero) +
-      /api/government-revenue/budget-line/<canary keys> + served
-      site/government-revenue-data/budget-program.json bytes + anonymous 401
-      boundary unchanged. Owned by this session immediately after merge.
+  - claim: Production proof complete post-merge (2026-08-25T00:29Z)
+    command: >
+      gh run view 32788159575; git merge-base --is-ancestor; curl
+      https://www.mastermind-x.com/api/health + anonymous probes; ssh VPS
+      /opt/macro-api/.venv/bin/python in-process handler invocation
+    result: >
+      PR #6377 merged 2026-08-24T23:10:48Z as 2cfc5c73bd09 (head
+      49b3eb82c29b); government-revenue-live run 32788159575 SUCCESS
+      published the twins in commit da305fa5a5e2 (descendant of the
+      merge, on origin/main; both twins sha256
+      a889ca79b96730ac54f4e2351d205a7fa89de98b3a7f47078ec3c3d4d3526a1c);
+      /api/health commit=2cfc5c73bd0 checkout=6af1ccd17c0 (descendant of
+      da305fa5a5e2); production checkout carries the full triad
+      (2,172 snapshots / 2 receipts); in-process invocation of the real
+      handlers on the production checkout: budget_programs total=2143,
+      content_id grbg1-125cd95cc0e78c5f459c1ad2, both canaries resolve
+      with amounts and quantities exactly equal to the committed
+      receipt-bound triad rows (P-1 Virginia 8,402,316,000 FY27
+      disc/total, qty 1/2/2; R-1 0604558N 237,103,000 FY27, all
+      quantities null), publisher + document_sha256 + receipt_id bound
+      on every line, edges economic_weight null; Caddy root is
+      /opt/macro/site.served and its
+      government-revenue-data/budget-program.json is sha-identical to
+      the canonical generation; served consumer JS
+      (government-revenue-dossiers.js, sha-identical to repo twin)
+      fetches /api/government-revenue/budget-programs with the entitled
+      Authorization header and carries the Mandatory-request label;
+      anonymous probes locked with no leak (API + canary line 401
+      "missing bearer token"; site twin 401 locked:true). No
+      authenticated-browser walkthrough performed or required (Chairman
+      sequencing amendment).
+unverified: []
 unresolved:
   - >
     NO RETRACTION PATH for superseded parser generations (review MEDIUM 9,
