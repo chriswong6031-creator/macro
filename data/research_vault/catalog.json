@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-25T10:20:15.016867+00:00",
-  "count": 1820,
+  "generated_at": "2026-08-25T11:16:22.296752+00:00",
+  "count": 1822,
   "institutions": [
     "13F Summary",
     "ABN Amro",
@@ -90,6 +90,23 @@
   ],
   "items": [
     {
+      "id": "marketdesk-ywbrwz5jiwn-4cc295",
+      "title": "JPM US Market Intelligence | Morning Briefing",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-25T10:31:01Z",
+      "summary_points": [
+        "**US-Canada Trade War Escalation**: Retaliatory tariffs effective Sep 8 ($20bn impact), US ignoring USMCA (litigation risk), Trump’s 50% auto tariff plan (Jan 2027) → inflation/bond yield risk - **NVDA Earnings Catalyst**: Beat-and-raise expected ($94–95b revenue, $107–108b guide); strong GB300 racks/supply chain despite networking moderation; implied move 4.6% - **TGA Buyback Funding**: Treasury using TGA cash for bond buybacks (not new debt) → erodes liquidity buffer, contradicts cash management principles, risks operational resilience - **Critical US Data Releases**: ADP Employment Change (8:15am ET), Philly Fed Non-Mfg Activity (8:30am ET), FHFA House Price Index (9am ET) → drive market direction - **Geopolitical Tensions**: 7.5% China tariff threat (pre-Xi meeting), Iran sanctions (secondary), oil prices down → trade/energy volatility - **Flow Shifts**: Equity ETF inflows down 65% (30.8→10.0), HY redemptions; strong gold/crypto demand ($4.6Bn/$2.8Bn highs), commodities inflows (energy, copper) - **Sector Positioning**: Financials (-2.5z outflows), Energy/Commodities (+inflows); Precious Metals attractive amid debase fears; AI trade supported by NVDA earnings"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 17,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-hnosrx2adrd-6669fd",
       "title": "JPM Asia Tech Tour",
       "institution": "J.P. Morgan",
@@ -148,6 +165,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-tqmd6smqwib-9874d1",
+      "title": "JPM US and Canada trade war",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-25T09:08:31Z",
+      "summary_points": [
+        "**US-Canada Tariff Escalation**: US imposed 50% tariffs on $20bn of Canadian imports, Canada retaliated; US threatens 50% vehicle tariffs by 2027, raising effective tariffs to 7.6% (from 5.3%), risking Canadian growth rebound while US inflation impact remains minimal.",
+        "**USMCA Collapse & Bilateral Deal Risk**: Trade talks collapsed amid mutual blame, with USMCA at risk of replacement by bilateral deals as retaliation threats persist, disrupting auto/steel trade flows (current USMCA tariffs: 25% steel/aluminum, 15% autos).",
+        "**Legal Challenges to Section 338**: Section 338 tariffs face legal scrutiny under USMCA (1930 law), risking invalidation of USMCA-compliant goods and adding policy uncertainty amid trade negotiations."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
