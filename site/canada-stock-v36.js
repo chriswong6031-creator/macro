@@ -156,7 +156,7 @@
       ".ca-v36-controls{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.ca-v36-seg{display:inline-flex;gap:3px;padding:3px;border:1px solid var(--line);border-radius:9px;background:var(--panel2)}.ca-v36-seg button{height:36px;padding:0 14px;border:1px solid transparent;border-radius:7px;background:transparent;color:var(--muted);font-size:13.1px;font-weight:650;cursor:pointer}.ca-v36-seg button[aria-selected=true]{background:var(--panel);border-color:var(--line);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.12)}.ca-v36-result{color:var(--muted);font-size:12px;white-space:nowrap}.ca-v36-filter{display:none;height:32px;align-items:center;padding:0 10px;border:1px solid color-mix(in srgb,var(--link) 35%,var(--line));border-radius:999px;background:color-mix(in srgb,var(--link) 7%,transparent);color:var(--text);font-size:12px;cursor:pointer}.ca-v36-filter.is-on{display:inline-flex}",
       ".ca-v36-card-grid[hidden]{display:none!important}.ca-v36-card-grid .pvcard[hidden]{display:none!important}" +
       ".ca-v36-card-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;padding:14px}.ca-v36-card-grid .pvcard{min-width:0;height:100%;font-family:" + FONT_UI + ";transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease}.ca-v36-card-grid .pvcard:hover{transform:translateY(-2px)}.ca-v36-card-grid .sm-hidden{display:flex!important}.ca-v36-card-grid .pv-chart svg{height:82px!important}.ca-v36-card-grid .pv-bd{padding:14px 14px 12px!important}.ca-v36-card-grid .pv-tk{font-family:" + FONT_UI + "!important;font-size:16.7px!important;font-weight:700!important;letter-spacing:-.012em!important}.ca-v36-card-grid .pv-nm{font-family:" + FONT_UI + "!important;font-size:12.5px!important}.ca-v36-card-grid .pv-ind{font-size:11.1px!important}.ca-v36-card-grid .pv-edge{font-family:" + FONT_UI + "!important}.ca-v36-card-grid .pv-edn{font-size:16px!important}.ca-v36-card-grid .nb-px.pv-px{font-family:" + FONT_UI + "!important;font-size:15.8px!important;font-weight:750!important}.ca-v36-card-grid .nb-chg.pv-chg{font-family:" + FONT_UI + "!important;font-size:13.4px!important;font-weight:750!important}.ca-v36 .nb-chg.up,.ca-v36-table .nb-chg.up{color:var(--ok)!important}.ca-v36 .nb-chg.down,.ca-v36-table .nb-chg.down{color:var(--act)!important}.ca-v36-card-grid .pv-chip{font-size:10.8px!important}.ca-v36-card-grid .pv-life-w,.ca-v36-card-grid .pv-stl{font-size:11.1px!important}.ca-v36-card-grid .pv-zn{min-height:42px!important;font-size:11.6px!important}.ca-v36-card-grid .pv-znr,.ca-v36-card-grid .pv-znm{font-family:" + FONT_UI + "!important;font-size:11.8px!important}",
-      ".ca-v36-card-grid .ca-v36-top-pick{border-color:color-mix(in srgb,var(--link) 20%,var(--line));box-shadow:0 0 0 1px color-mix(in srgb,var(--link) 8%,transparent),0 0 24px -16px color-mix(in srgb,var(--link) 42%,transparent),0 8px 24px -20px rgba(0,0,0,.55)}html[data-theme=light] .ca-v36-card-grid .ca-v36-top-pick{background:#fff;border-color:color-mix(in srgb,var(--link) 18%,var(--line));box-shadow:0 0 0 1px color-mix(in srgb,var(--link) 7%,transparent),0 10px 26px -22px color-mix(in srgb,var(--link) 30%,transparent)}.ca-v36-empty{grid-column:1/-1;padding:36px 16px;text-align:center;color:var(--muted);font-size:13px}",
+      ".ca-v36-card-grid .ca-v36-top-pick{border-color:color-mix(in srgb,var(--link) 20%,var(--line));box-shadow:0 0 0 1px color-mix(in srgb,var(--link) 8%,transparent),0 0 24px -16px color-mix(in srgb,var(--link) 42%,transparent),0 8px 24px -20px rgba(0,0,0,.55)}html[data-theme=light] .ca-v36-card-grid .ca-v36-top-pick{background:#fff;border-color:color-mix(in srgb,var(--link) 18%,var(--line));box-shadow:0 0 0 1px color-mix(in srgb,var(--link) 7%,transparent),0 10px 26px -22px color-mix(in srgb,var(--link) 30%,transparent)}.ca-v36-empty{grid-column:1/-1;padding:36px 16px;text-align:center;color:var(--muted);font-size:13px}.ca-v36-empty-switch{display:block;margin:10px auto 0;height:31px;padding:0 13px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);color:var(--text);font-size:11.8px;font-weight:650;cursor:pointer}.ca-v36-empty-switch:hover{border-color:color-mix(in srgb,var(--text) 30%,var(--line));transform:translateY(-1px)}",
       ".ca-v36-table{padding:12px 14px 15px}.ca-v36-table[hidden]{display:none!important}.ca-v36-table #stocktable-wrap{display:block!important}.ca-v36-table .stf-row,.ca-v36-table .stf-controls{font-family:" + FONT_UI + "!important}.ca-v36-table :is(input,select,button){min-height:38px;font-size:12.8px!important}.ca-v36-table .st-table{font-family:" + FONT_UI + "!important;font-size:13.3px!important}.ca-v36-table .st-table th{font-size:11px!important;padding:11px 10px!important}.ca-v36-table .st-table td{padding:11px 10px!important}.ca-v36-table .st-table td:nth-child(2) b{font-family:" + FONT_UI + "!important;font-size:13.8px}.ca-v36-table-live{display:inline-flex;align-items:baseline;gap:8px;white-space:nowrap;font-family:" + FONT_UI + "}.ca-v36-table-live .nb-px{font-size:14.8px;font-weight:700}.ca-v36-table-live .nb-chg{font-size:12.7px;font-weight:750}.ca-v36-table tr.ca-v36-hidden{display:none!important}",
       ".ca-v36-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:11px 14px}.ca-v36-tools b{font-size:12.8px;margin-right:2px}.ca-v36-tool{height:37px;display:inline-flex;align-items:center;padding:0 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);color:var(--muted);font-size:12.1px;font-weight:600;text-decoration:none}.ca-v36-tool:hover{color:var(--text);border-color:color-mix(in srgb,var(--text) 28%,var(--line));transform:translateY(-1px)}",
       /* Evidence & Record — the moved `.trk` chip keeps its own box (border/
@@ -211,10 +211,26 @@
       el.classList.toggle("is-active", !!state.filter && el.getAttribute("data-ca-lead-kind") === state.filter.kind && el.getAttribute("data-ca-lead-id") === state.filter.id);
     });
   }
+  /* Sol adversarial gate: a leadership filter must never silently switch
+     the Top Picks / All Candidates population. When the active filter
+     leaves zero Top Picks but All Candidates DOES have matches, invite the
+     reader to switch deliberately instead of doing it for them. */
+  function emptyStateHtml() {
+    var item = itemForFilter();
+    if (state.source === "top" && item && item.members) {
+      var wouldAllShowMore = state.cards.some(function (card) { return item.members.has(ticker(card.getAttribute("data-ticker"))); });
+      if (wouldAllShowMore) {
+        return bi("No Top Picks in this group.", "该组别中暂无首选。") +
+          ' <button class="ca-v36-empty-switch" type="button">' + bi("View All Candidates", "查看全部候选") + '</button>';
+      }
+    }
+    return bi("No names match this leadership filter.", "当前领先筛选下暂无匹配个股。");
+  }
   function applyFilter() {
     var shown = 0;
     state.cards.forEach(function (card) { var show = allowed(ticker(card.getAttribute("data-ticker"))); card.hidden = !show; if (show) shown++; });
-    var empty = qs("#ca-v36-grid-empty"); if (empty) empty.hidden = shown !== 0;
+    var empty = qs("#ca-v36-grid-empty");
+    if (empty) { empty.hidden = shown !== 0; if (shown === 0) empty.innerHTML = emptyStateHtml(); }
     var result = qs("#ca-v36-result"); if (result) result.innerHTML = bi(shown + " shown · " + state.cards.length + " on board", "显示 " + shown + " 只 · 榜单共 " + state.cards.length + " 只");
     var pill = qs("#ca-v36-filter"), item = itemForFilter();
     if (pill) { pill.classList.toggle("is-on", !!item); pill.innerHTML = item ? bi(item.kind === "theme" ? "Theme" : "Sector", item.kind === "theme" ? "主题" : "板块") + ': ' + bi(item.name.en, item.name.zh) + ' ×' : ""; }
@@ -267,8 +283,11 @@
     var grid = qs("#ca-v36-card-grid"), table = qs("#ca-v36-table"); if (grid) grid.hidden = state.view !== "grid"; if (table) table.hidden = state.view !== "table";
     if (state.view === "table") { enhanceTableQuotes(); applyTableFilter(); }
   }
+  /* Sol adversarial gate: leadership activation sets the filter only — it
+     must never force-switch the Top Picks / All Candidates population.
+     applyFilter() (not setSource()) is what re-renders the grid here. */
   function activate(kind, id) {
-    state.filter = { kind: kind, id: id }; state.source = "all"; setSource("all"); closeModal();
+    state.filter = { kind: kind, id: id }; applyFilter(); closeModal();
     var prophet = qs("#ca-v36-prophet"); if (prophet) prophet.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
@@ -310,6 +329,7 @@
       b = e.target.closest("[data-ca-lead-kind][data-ca-lead-id]"); if (b) return activate(b.getAttribute("data-ca-lead-kind"), b.getAttribute("data-ca-lead-id"));
       if (e.target.closest("#ca-v36-filter")) { state.filter = null; return applyFilter(); }
       if (e.target.closest("#ca-v36-expand")) return openModal();
+      if (e.target.closest(".ca-v36-empty-switch")) return setSource("all");
     });
   }
 

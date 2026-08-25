@@ -226,3 +226,50 @@ def test_group_action_band_uses_owner_lanes_and_existing_modal_activation():
         "in both modalRows() and laneItemHtml() (found "
         f"{live_id_interpolations})"
     )
+
+
+def test_leadership_activation_never_force_switches_population():
+    """Sol adversarial gate (2026-08-25): "Leadership filters can reduce
+    either population without silently switching modes" and "selecting a
+    group/action with zero matching Top Picks must show an explicit zero
+    state such as 'No Top Picks in this group'; it must never silently
+    switch to All Candidates; if All Candidates contains records, preserve
+    the empty Top Picks state and invite the user to switch population
+    deliberately."
+
+    activate() must set state.filter and re-render via applyFilter() only
+    — it must NOT force state.source to "all" (the V3.6-inherited defect:
+    clicking any leadership row silently left Top Picks for All
+    Candidates, so the reader never saw that their filter emptied the
+    board they were looking at). The negative assertion is scoped to
+    activate()'s own function body (extracted via a regex capture between
+    `function activate` and the next `function `) rather than the whole
+    file, so the deliberate, user-initiated `setSource("all")` call wired
+    to the .ca-v36-empty-switch button in bind() does not false-positive
+    this pin — only activate() forcing the switch as a side effect is
+    forbidden.
+    """
+    text = _composer_text()
+    m = re.search(r"function activate\b.*?(?=\n  function )", text, re.S)
+    assert m, "could not locate activate() function body via regex"
+    body = m.group(0)
+    assert "setSource(" not in body, (
+        "activate() calls setSource(...), which force-switches the Top "
+        "Picks / All Candidates population as a side effect of leadership "
+        "activation; the Sol gate forbids this — only a deliberate user "
+        'action (the .ca-v36-empty-switch button) may call setSource("all")'
+    )
+    assert 'state.source = "all"' not in body, (
+        'activate() directly sets state.source = "all"; leadership '
+        "activation must leave the active population untouched"
+    )
+    assert "applyFilter()" in body, (
+        "activate() must re-render via applyFilter() after setting "
+        "state.filter, now that setSource() (which used to trigger the "
+        "re-render as a side effect) is no longer called here"
+    )
+    # The zero-state invitation must exist as a deliberate, separately
+    # clicked control — never a silent mode switch.
+    assert "No Top Picks in this group." in text, "EN zero-state invitation missing"
+    assert "该组别中暂无首选。" in text, "ZH zero-state invitation missing"
+    assert "ca-v36-empty-switch" in text, "deliberate switch-to-All button missing"
