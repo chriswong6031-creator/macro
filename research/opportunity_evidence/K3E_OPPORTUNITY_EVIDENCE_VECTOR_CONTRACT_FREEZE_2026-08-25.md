@@ -263,10 +263,12 @@ Receipts (exact, this candidate):
 
 - Contract suite: {{PYTEST_RECEIPT}}
 - Contract-delta vs pinned main: {{CONTRACT_DELTA_RECEIPT}}
-- Agent OS validate: {{AGENTOS_RECEIPT}}
+- Agent OS validate: 0 errors (710 records; inherited repository warnings only)
 - Registry ↔ families.yml join: asserted inside the suite on every run
-- Exact candidate head: {{HEAD_SHA}} on PR {{PR_NUMBER}} (DRAFT / HOLD-FOR-SOL)
-- Hosted CI on exact head: {{CI_RECEIPT}}
+- Carrier: PR #6417 (DRAFT / HOLD-FOR-SOL from its first revision)
+- Exact held head + concluded hosted CI/fences run ids: recorded in the PR #6417
+  conversation at park time (they cannot live in this committed file without
+  moving the head they describe)
 
 ## 11. Explicit non-goals (verbatim scope fence)
 
@@ -288,7 +290,8 @@ tuning. This PR merges nothing and starts no dependent wave.
 > fusion family / research_only / candidate_new_family (families.yml join
 > test-enforced), and the seven MO legs independently visible with denominator +
 > dominant-degradation receipts. All ten commissioned mutation classes die by named
-> rule codes with fixture receipts. The PR is DRAFT / HOLD-FOR-SOL at exact head
-> {{HEAD_SHA}} with concluded hosted checks. Please rule ACCEPT or return exact
+> rule codes with fixture receipts. The carrier is PR #6417, DRAFT / HOLD-FOR-SOL
+> from its first revision; the exact held head and its concluded hosted check run
+> ids are pinned in that PR's conversation. Please rule ACCEPT or return exact
 > amendments. This packet does not authorize or begin K3-D, K5, any consumer
 > wiring, any store, or any promotion.
