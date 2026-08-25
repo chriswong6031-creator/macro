@@ -306,7 +306,15 @@ waves:
       readable — Radar-owner escalation). Residual chores: tonight's
       stays-gone receipt (tombstone-enforced), M1 flow-ops-wt pin advance
       (marks stale during RTH until then), Terminal deploy of #439, site-full
-      token proofs, pixel crops. Handoff:
+      token proofs, pixel crops. CORRECTION 2026-08-25 (B1-A): the 'M1
+      flow-ops-wt pin advance' chore must NOT be read as authority to advance,
+      reset, clean or reconstruct that checkout. Its detached dirty pin at
+      a5f79c83 is the deliberate ENGINE the merged #6363 publisher lanes consume
+      via PYTHONPATH/WorkingDirectory/.env; normalizing it destroys the governed
+      runtime. The marks lane was separately migrated to ~/prophet-marks-runtime
+      on 2026-08-23 and no longer depends on that pin. See
+      DSC:M1-PUBLISHER-RUNTIME-IS-HOST-LOCAL-AND-DELIBERATELY-PINNED and
+      DEC:B1A-M1-RUNTIME-RECOVERED-NO-SUPERSESSION. Handoff:
       agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-21-lab-day5.md."
     status: in_progress
   - id: b5b
