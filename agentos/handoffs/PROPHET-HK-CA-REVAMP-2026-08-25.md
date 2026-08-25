@@ -69,16 +69,23 @@ unverified:
       overflow) run in a real entitled session — Claude-in-Chrome with the
       operator's session, or the operator by hand.
 unresolved:
-  - "Canada stays BUILT_NOT_PROVEN: leg 2 needs an entitled session an autonomous agent cannot lawfully create (credential entry prohibited; Claude-in-Chrome disconnected all session; no reviewed non-credential probe path exists, correctly)."
-  - "HK V3.6 remains lawfully unreleased until Canada leg 2 passes; the build is fully prepared (disposition table + build-shape ruling in the convergence packet §4)."
-  - "HK→US rollout sequence is NOT durably recorded anywhere; only Canada→HK is law. Sol must ratify or decouple (packet §8.2)."
-  - "Cell H experience research is off-main (sol/prophet-flagship-fanout-hardening-20260822 only); merge/ratify before any US freeze cites it (packet §8.5)."
-  - "The 08-23 handoff's 'regional experience architecture was frozen' claim has no DEC record; the missing durable records are listed in packet §8.3."
+  - "Canada stays BUILT_NOT_PROVEN: leg 2 needs an entitled session an autonomous agent cannot lawfully create (credential entry prohibited; Claude-in-Chrome NEVER connected to this fleet account — probed 08-24 across hours and re-probed 08-25, list_connected_browsers → [] and tab-context reports 'not installed or not signed in'; no reviewed non-credential probe path exists, correctly)."
+  - "HK V3.6 remains lawfully unreleased until Canada leg 2 passes; the build is fully prepared (disposition table + build-shape ruling in the convergence packet §4) and is now RATIFIED as the pilot follower by DEC:V36-REGIONAL-PILOT-RATIFIED-US-DECOUPLED."
+sol_rulings_2026_08_25: >
+  Sol accepted the #6398 return and issued seven rulings, recorded as
+  DEC:V36-REGIONAL-PILOT-RATIFIED-US-DECOUPLED: Canada→HK ratified as the
+  pilot sequence; HK→US decoupled (US = separate convergence/cutover wave);
+  #6327 Prophet-first hierarchy accepted cross-market; HK must not fabricate
+  LIVE state absent an HK live quote plane; Cell H stays advisory/off-main
+  and does not block Canada/HK; no US redesign code authorized; a future US
+  freeze requires the real V4 chain B1 → B2/B3 → B4 plus HK follower proof
+  and reconciled Cell H. Packet §8 items 1, 2, 4, 5, 6, 7 are thereby
+  adjudicated; §8.3's missing-record gap is closed by the DEC itself.
 next_actions:
-  - "Operator: provide an entitled session (connect Claude-in-Chrome, or run the matrix by hand per research/STOCK_DASHBOARD_V36_CANADA_ACCEPTANCE_2026-08-25.md) — this is the single lever unblocking the lane."
-  - "On leg-2 PASS: promote Canada to PROVEN_LIVE in a dated receipt, then release the HK V3.6 presentation coding wave executing packet §4 (new hk-stock-v36.js; RETAIN rows binding; no writes to hk_standouts.json/build_hk_library.py; keep ZH tape swap; no fabricated LIVE chip)."
-  - "On leg-2 FAIL: repair Canada only, re-prove, do not start HK."
-  - "Sol: adjudicate packet §8 (sequence ratification, Cell H provenance, US hierarchy doctrine, US freeze gates). Do not commission any US implementation before the §7 gates."
+  - "Operator: provide an entitled session — install/sign in the Claude-in-Chrome extension side panel under the fleet account, or run the matrix by hand per research/STOCK_DASHBOARD_V36_CANADA_ACCEPTANCE_2026-08-25.md. This remains the single lever unblocking the lane."
+  - "On leg-2 PASS: promote Canada to PROVEN_LIVE in a dated receipt, then continue DIRECTLY into the HK V3.6 coding wave executing packet §4 (new hk-stock-v36.js; RETAIN rows binding; no writes to hk_standouts.json/build_hk_library.py; keep ZH tape swap; no fabricated LIVE chip per Sol ruling 4) — Sol pre-authorized the continuation, no fresh commissioning needed."
+  - "On leg-2 FAIL: repair Canada only, re-prove, then continue to HK."
+  - "Do not begin US implementation; the US freeze gate chain is fixed by the DEC (V4 B1 → B2/B3 → B4 + HK proof + Cell H reconciled)."
 do_not_redo:
   - "Do not re-run the Phase A archaeology: the V3.6 masterplan does not exist as a document; PR #6315/#6327 bodies + the 08-23 handoff are the complete design authority (searched: macro research/, agentos/, mockups/, verify_shots/, Mastermind tracked tree, both SOL operation IDs — zero hits)."
   - "Do not make canada-stock-v36.js (or a future hk-stock-v36.js) anonymously public to simplify probing; the 401-anonymous boundary is reviewed design."
