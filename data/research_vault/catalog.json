@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-25T08:28:36.127095+00:00",
-  "count": 1814,
+  "generated_at": "2026-08-25T09:24:39.754455+00:00",
+  "count": 1817,
   "institutions": [
     "13F Summary",
     "ABN Amro",
@@ -89,6 +89,47 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-ctej1nf9iyo-ea69b0",
+      "title": "JPM International Market Intelligence | Morning Briefing",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-25T09:06:53Z",
+      "summary_points": [
+        "**UST Safety Premium Erosion**: Spread between US Treasuries and AAA corporates narrowed significantly post-2022, signaling diminished risk premium and potential shift toward riskier assets; US Treasury TGA buybacks without fiscal adjustment risk higher term premium.",
+        "**Treasury Income Dominance**: Companies with dividend yields exceeding 10-year Treasury yields at 20-year low, making Treasuries superior income asset for income-focused portfolios.",
+        "**Gold Bullish Flows**: Money managers' net long positions in gold accelerating alongside rising spot prices, indicating heightened safe-haven demand.",
+        "**AI Scalability Diminishing Returns**: Motion forecasting quality follows power-law decline with training compute, signaling diminishing returns on data input for autonomous systems—critical risk for AI investments.",
+        "**US-China Tariff Volatility**: Tariffs spiked post-Jan 25 but fell after Jan 26 IEEPA ruling; Section 338 (Jul 26) signals ongoing trade policy uncertainty impacting tech flows."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 20,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-nt4ejxwtfnc-92a32b",
+      "title": "Early Morning Reid Macro Strategy",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-25T08:56:51Z",
+      "summary_points": [
+        "**Semiconductor Sell-Off**: S&P 500 (-0.28%), Nasdaq (-0.76%) pressured by semiconductor stocks (Nvidia -2.91%, Micron -5.83%, Sandisk -6.45%) post-earnings.",
+        "**Treasury Yield Support**: 10yr yields down to 4.70% (30yr 5.22%) amid oil dip (Brent -2.35%) and TGA cash ($953bn) aiding buybacks without short-term debt.",
+        "**Natural Gas Supply Shock**: European natural gas (TTF +3.73% to 68.94/MWh) surges on low storage (63% full, lowest since 2009).",
+        "**Real Yield Tightening**: 10y US Real Yield at 2.37% (-3 bp) signals tightening, VIX up to 15.85 (+0.72) amid New Home Sales (630k) and softening Consumer Confidence (90.2)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-uyvcubmk4ag-979ace",
       "title": "DB Fixed Income Blog The element of surprise",
@@ -827,6 +868,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-lymmeyvn5ry-be9de3",
+      "title": "Investor Positioning and Flows Aug 24",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T14:23:14Z",
+      "summary_points": [
+        "**Rates Volatility Driver**: Rates volatility (not level) critically drives equities, with contained volatility vs 2022 panic; negative S&P 500/10Y yield correlation now exceeds 2022 panic levels.",
+        "**Vol-Control Extreme Risk**: Vol-Control funds at 99th percentile equity allocation (Figure 31), amplified by high volatility sensitivity (2% sell-off risk), signaling severe overexposure and drawdown vulnerability.",
+        "**S&P 500 Earnings Season Pattern**: Tactical positioning critical: +2.8% rally in first 4 weeks post-earnings (Q2 2025), post-season lull (-2.3% Q4 2025), then pickup (Q2 2026 +1.7%).",
+        "**DB S&P 500 Target & EPS**: S&P 500 target set at 8000 (2026), with EPS forecasted at $358 (2026) and $420 (2027), reflecting robust consensus growth trajectory.",
+        "**Volatility Metrics Misalignment**: Time-wtd RV metrics diverge from VIX-based volatility (Figure 33), indicating overallocation to equities during rising volatility, increasing portfolio risk exposure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 52,
       "language": "en",
       "needs_metadata": false
     },
