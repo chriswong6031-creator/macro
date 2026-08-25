@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-25T07:34:46.525272+00:00",
-  "count": 1811,
+  "generated_at": "2026-08-25T08:28:36.127095+00:00",
+  "count": 1814,
   "institutions": [
     "13F Summary",
     "ABN Amro",
@@ -191,6 +191,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-xf1qy9yxguo-cdeccb",
+      "title": "HF Highlights 2026.08.21",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T22:16:53Z",
+      "summary_points": [
+        "**Global Equity Supply Surge**: Significant global equity supply increase driving substantial net leverage decline, a critical fundamental shift for portfolio positioning.",
+        "**Regional HF Exposure Shifts**: APAC dominates 2nd largest weekly HF supply (12M), US L/S nets down 5% (28th %-tile); Asia net leverage up 7% MTD vs US down 5%.",
+        "**Sector Rotation & Flows**: HFs sold AI Tech/Global Memory/Semi Caps; bought Health Care (Biotech/Digital Health/Pharma) & Financials; global equity inflows rising with MSCI ACWI performance.",
+        "**US Leverage Concentration Risk**: US HF gross leverage at 212% with 88% of funds above 5-year highs, signaling elevated systemic risk concentration.",
+        "**Quality Factor Opportunity**: North America Quality (FACS) factor Z-Score 1.3 elevated, indicating tactical entry for quality-oriented strategies."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-amjoyrz3fzw-b40f93",
       "title": "Americas Steel USCanada Suspend Trade Discussions Over Weekend",
       "institution": "Goldman Sachs",
@@ -204,6 +225,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-bhg7yzybdly-75d84c",
+      "title": "US Week Ahead August 24 August 30",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T22:13:57Z",
+      "summary_points": [
+        "**Core PCE Miss & Fed Policy**: Core PCE YoY +3.24% (below consensus +3.3%) and Fed speeches (Barkin on inflation, Warsh at Jackson Hole) shift inflation policy expectations, critical for rate trajectory.",
+        "**Housing Data Divergence**: S&P home prices +0.2% (beat) vs.",
+        "new home sales -2.3% (miss), signaling mixed housing market dynamics impacting sector allocation.",
+        "**GDP Revision & Consumer Resilience**: Q2 GDP revised +1.6% (up from +1.5%), driven by upward consumer spending (+3.4%), indicating economic strength despite business investment dip."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },
@@ -358,6 +399,26 @@
         "**Eurozone PMI Expansion Signals Cyclical Recovery**: Composite output at 52.1 (fastest since Nov 2019) and manufacturing PMI at 4-yr high (52.8) strengthen ECB rate hike expectations (25bps further before pause).",
         "**Gold Price Outlook: $5,400/oz Target**: Debt sustainability, USD weakness, and fiscal concerns drive 15%+ upside to $5,400/oz over 12 months.",
         "**US-Canada Tariff Escalation**: Bilateral trade ($350bn) faces counter-tariffs ($20bn US goods, 50% US tariff on Canadian goods); midterms limit aggressive hikes (10-15% effective rate), creating trade flow risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ou9z1hk7psv-75c82e",
+      "title": "Daily Asia",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T22:11:21Z",
+      "summary_points": [
+        "**Structural Treasury Drivers**: Fiscal deficits, energy prices, and AI capital demand outweigh Treasury intervention, causing 30-year yields to rise to 5.27% despite short-term easing; DXY fell 0.9% and gold surged >5% to $4,600.",
+        "**Short-Medium Duration Strategy**: Prioritize short/medium-duration bonds due to long-end volatility; attractive yields in these maturities amid unresolved inflation/fiscal concerns.",
+        "**Gold $5,400 Target**: Structural forces (debt sustainability, oil prices, dollar weakness) support gold targeting $5,400/oz, acting as alternative to duration risk/dollar exposure.",
+        "**Eurozone PMI Recovery**: Eurozone PMI (52.0) and manufacturing at 4-yr high (52.8) signal cyclical traction, limiting ECB rate hike potential."
       ],
       "tags": [],
       "tickers": [],
