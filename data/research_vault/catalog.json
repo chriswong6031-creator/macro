@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-25T06:25:09.262803+00:00",
-  "count": 1808,
+  "generated_at": "2026-08-25T07:34:46.525272+00:00",
+  "count": 1811,
   "institutions": [
     "13F Summary",
     "ABN Amro",
@@ -309,6 +309,25 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-jebhebka7qv-c81cc1",
+      "title": "Daily US",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T22:11:43Z",
+      "summary_points": [
+        "**Long-end yields near 2007 peak**: 30-yr Treasury closed above 5.27% (near 2007 peak), driven by fiscal deficits, US-Iran war, and doubled Treasury buyback program ($4bn/operation).",
+        "**US-Canada tariff escalation**: Canada imposes counter-tariffs on $20bn US goods; US responds with 50% tariffs on Canadian goods, escalating trade war risks amid $350B bilateral trade volume.",
+        "**Fiscal policy tension**: Treasury’s consolidation plan (Scott Besent) targets lower borrowing costs, but persistent deficits and AI-driven productivity gains sustain upward yield pressure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-do7vgyjotpz-563f5c",
       "title": "What does the Warsh era mean for Fed policy",
       "institution": "UBS",
@@ -324,6 +343,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-wyos57qyll3-1aa6a5",
+      "title": "Daily Europe",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T22:11:25Z",
+      "summary_points": [
+        "**US Treasury intervention impact**: Structural forces (fiscal deficits, energy prices, AI capital demand) outweigh policy efforts, driving 30Y yields to 5.27% despite intervention; long-end volatility necessitates short/medium-duration bond focus.",
+        "**Eurozone PMI Expansion Signals Cyclical Recovery**: Composite output at 52.1 (fastest since Nov 2019) and manufacturing PMI at 4-yr high (52.8) strengthen ECB rate hike expectations (25bps further before pause).",
+        "**Gold Price Outlook: $5,400/oz Target**: Debt sustainability, USD weakness, and fiscal concerns drive 15%+ upside to $5,400/oz over 12 months.",
+        "**US-Canada Tariff Escalation**: Bilateral trade ($350bn) faces counter-tariffs ($20bn US goods, 50% US tariff on Canadian goods); midterms limit aggressive hikes (10-15% effective rate), creating trade flow risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
@@ -1026,6 +1065,23 @@
       "tickers": [],
       "top_pick": false,
       "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-lkicxresg6s-de904b",
+      "title": "US Morning Call August 24, 2026",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T13:43:47Z",
+      "summary_points": [
+        "**Fund Positioning Shift**: Hedge funds diverge from mutual funds on AI exposure but converge on Financials, signaling sector-specific tactical allocation opportunities - **Aeva Execution Risk**: Neutral initiation hinges on new design wins; current stock price reflects existing award traction, making future contract execution critical for upside"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
       "language": "en",
       "needs_metadata": false
     },
