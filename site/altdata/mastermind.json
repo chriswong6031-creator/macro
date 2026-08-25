@@ -1,17 +1,17 @@
 {
   "schema": "altdata.mastermind.v1",
   "as_of": "2026-08-25",
-  "generated_utc": "2026-08-25T03:12:55.993851+00:00",
+  "generated_utc": "2026-08-25T05:23:10.939643+00:00",
   "contract": "Actionable alt-data axis for the Mastermind bot. Each signal: signal_score 0-100 (composite of weighted convergence + brain conviction + price confirm \u2212 extension), action \u2208 {ACCUMULATE,WATCH,AVOID}, direction \u2208 {long,short,neutral}, source \u2208 {brain,deterministic}. The bot sizes through its OWN risk framework; this is an input, not an order. Brain calls are graded vs SPY (see calibration). An extended name is never ACCUMULATE. trump_linked / affiliations flag actor ties. rolling_over names (off_high\u2264\u221215% AND 20d<0 AND below 50dma) appear in broken_signals only \u2014 crowd attention, NOT entries. entry_tier (T1/T2/T3) = validated confluence buy gate signal.",
-  "regime_read": "The strongest measured convergence is selective rather than market-wide: technology demand/IP signals, policy-linked activity, and event-driven catalysts align in a few non-extended names. With no completed track-record observations, these reads warrant modest conviction despite unusually broad channel counts.",
+  "regime_read": "Convergence is concentrated in semiconductors, cloud demand and healthcare, but several five-channel scores rely heavily on sentiment or affiliation rather than hard operating signals. With no scored track record yet, conviction stays modest and only non-extended names with multiple distinct channels merit action.",
   "brain_present": true,
   "brain_usable": true,
   "article3": {
     "granted": false,
     "lift_lb": null,
     "reason": "insufficient-n: n=17 < min_n=25",
-    "evidence_asof": "2026-08-23",
-    "evaluated_at": "2026-08-23T04:38:32+00:00"
+    "evidence_asof": "2026-08-25",
+    "evaluated_at": "2026-08-25T05:22:02+00:00"
   },
   "is_context_only": true,
   "calibration": {
@@ -24,49 +24,43 @@
   "n_broken": 30,
   "signals": [
     {
-      "ticker": "MU",
-      "signal_score": 83,
-      "conviction": "medium",
+      "ticker": "MRK",
+      "signal_score": 76,
+      "conviction": "low",
       "action": "ACCUMULATE",
       "direction": "long",
       "source": "brain",
-      "weighted_score": 2.4,
+      "weighted_score": 1.9,
       "convergence_score": 5,
       "channels": [
-        "affiliation",
-        "congress_cluster",
-        "insider_mspr",
-        "patent_cluster",
-        "stocktwits_bull"
+        "clinical_phase3_start",
+        "fda_label_expansion",
+        "lobbying",
+        "special_situation",
+        "trump"
       ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": 1.9,
+      "trump_linked": true,
+      "rs_vs_spy_60d": 25.1,
       "no_price_data": false,
       "extended": false,
       "rolling_over": false,
-      "off_high_252": -25.0,
-      "ret_20d": 1.1,
-      "above_50dma": false,
+      "off_high_252": -1.2,
+      "ret_20d": 15.2,
+      "above_50dma": true,
       "entry_tier": null,
-      "affiliations": [
-        {
-          "actor": "Ro Khanna",
-          "rel": "AFFILIATES_WITH",
-          "kind": "politician"
-        }
-      ],
-      "n_affiliated_actors": 1,
-      "thesis": "MU's alignment spans insider activity, a dense patent cluster, accelerating government-grant activity, and uniformly bullish retail sentiment [insider_mspr] [patent_cluster] [gov_grant] [stocktwits_bull]. These channels point toward semiconductor investment and institutional-policy support from different directions, while the stock is non-extended; retail unanimity, however, raises crowding risk.",
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": "MRK combines ten Phase 3 starts [clinical_phase3_start], an FDA label-expansion signal [fda_label_expansion], substantial lobbying activity [lobbying], and a favorable Trump-linked signal [trump]. These channels span pipeline, regulation and policy access, but four clinical halts materially weaken the read; the stock remains below the extended threshold.",
       "second_order": [
-        "Semiconductor equipment \u2014 MU's patent and grant activity implies continued memory-manufacturing investment.",
-        "Data-center memory supply chain \u2014 stronger memory investment can support advanced packaging, testing, and substrate demand.",
-        "Domestic semiconductor infrastructure \u2014 grant acceleration can benefit U.S. fab construction and specialty-material suppliers."
+        "Large-cap pharma R&D theme \u2014 multiple Phase 3 starts imply sustained demand for trials, manufacturing and regulatory services [clinical_phase3_start]",
+        "Clinical-research services theme \u2014 a broad late-stage pipeline increases trial execution needs, though the pack names no specific beneficiary [clinical_phase3_start]",
+        "ALS-therapy ecosystem \u2014 Senate reporting of S4472 could support research programs, but the pack does not establish a direct MRK linkage [bill:S4472]"
       ],
       "falsifier": {
-        "text": "Insider support disappears and grant or patent activity fails to translate into sustained manufacturing or end-demand evidence.",
+        "text": "Clinical halts broaden or the reported label-expansion opportunity fails to produce meaningful commercial uptake.",
         "check": {
           "kind": "rel_return",
-          "subject_ticker": "MU",
+          "subject_ticker": "MRK",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
@@ -77,8 +71,8 @@
     },
     {
       "ticker": "MSFT",
-      "signal_score": 80,
-      "conviction": "medium",
+      "signal_score": 68,
+      "conviction": "low",
       "action": "ACCUMULATE",
       "direction": "long",
       "source": "brain",
@@ -91,7 +85,7 @@
         "patent_cluster"
       ],
       "trump_linked": false,
-      "rs_vs_spy_60d": 15.0,
+      "rs_vs_spy_60d": 12.9,
       "no_price_data": false,
       "extended": false,
       "rolling_over": false,
@@ -112,14 +106,14 @@
         }
       ],
       "n_affiliated_actors": 2,
-      "thesis": "MSFT shows coherent product-and-innovation breadth through app demand, GitHub momentum, patent clustering, and its established partnership with Sam Altman [app_demand] [github_momentum] [patent_cluster] [actor:Sam Altman]. This is a more operationally connected mix than pure sentiment, but the 60-day relative gain reduces entry asymmetry even though it remains below the pack's extended threshold.",
+      "thesis": "MSFT's alignment is operational rather than purely promotional: strong app engagement [app_demand], broad developer activity [github_momentum], and a large patent cluster [patent_cluster] coincide with its factual partnership connection to Sam Altman [actor:Sam Altman]. The channels support durable ecosystem demand, although they do not establish incremental revenue growth by themselves; the shares are not extended.",
       "second_order": [
-        "AI data-center infrastructure \u2014 product and developer momentum imply sustained compute, networking, cooling, and power requirements.",
-        "Enterprise software ecosystem \u2014 GitHub activity can support developer tooling, cybersecurity, and integration partners.",
-        "Advanced semiconductors \u2014 continued AI-platform demand can benefit accelerators, memory, and high-speed connectivity suppliers."
+        "NVDA \u2014 expanding cloud and developer workloads imply continued accelerator demand, subject to near-term earnings risk [github_momentum]",
+        "AMD \u2014 broader AI-cloud deployment can support demand for alternative compute platforms [github_momentum]",
+        "Cloud software ecosystem \u2014 high app engagement and developer activity point to downstream tooling and infrastructure demand [app_demand][github_momentum]"
       ],
       "falsifier": {
-        "text": "App and GitHub momentum weaken together without corresponding evidence of enterprise adoption or AI monetization.",
+        "text": "App engagement and developer activity weaken together without corresponding growth in commercial cloud demand.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "MSFT",
@@ -127,52 +121,6 @@
           "op": "<",
           "threshold": -0.05,
           "horizon_d": 75
-        }
-      },
-      "clamped": null
-    },
-    {
-      "ticker": "MRK",
-      "signal_score": 68,
-      "conviction": "low",
-      "action": "WATCH",
-      "direction": "long",
-      "source": "brain",
-      "weighted_score": 1.9,
-      "convergence_score": 5,
-      "channels": [
-        "clinical_phase3_start",
-        "fda_label_expansion",
-        "lobbying",
-        "special_situation",
-        "trump"
-      ],
-      "trump_linked": true,
-      "rs_vs_spy_60d": 25.5,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": false,
-      "off_high_252": -1.2,
-      "ret_20d": 15.2,
-      "above_50dma": true,
-      "entry_tier": null,
-      "affiliations": [],
-      "n_affiliated_actors": 0,
-      "thesis": "MRK combines late-stage clinical starts, an FDA label-expansion signal, lobbying, and a special situation [clinical_phase3_start] [fda_label_expansion] [lobbying] [special_situation]. The channels form a plausible regulatory-and-pipeline catalyst stack, but four clinical halts and substantial recent relative strength make the payoff distribution less attractive and argue for watching rather than adding now.",
-      "second_order": [
-        "Clinical research services \u2014 numerous Phase 3 starts can increase trial-management and patient-recruitment demand.",
-        "Drug manufacturing and packaging \u2014 successful label expansion can require additional commercial supply capacity.",
-        "Healthcare diagnostics \u2014 broader treatment eligibility can increase companion-testing and screening activity."
-      ],
-      "falsifier": {
-        "text": "Clinical halts broaden or the anticipated label expansion fails to produce a durable commercial opportunity.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "MRK",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 90
         }
       },
       "clamped": null
@@ -1072,6 +1020,35 @@
       "second_order": [],
       "falsifier": null,
       "clamped": null
+    },
+    {
+      "ticker": "LTH",
+      "signal_score": 31,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 0.7,
+      "convergence_score": 2,
+      "channels": [
+        "news_sentiment",
+        "trump"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": 34.8,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": false,
+      "off_high_252": -1.5,
+      "ret_20d": 12.4,
+      "above_50dma": true,
+      "entry_tier": null,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
     }
   ],
   "broken_signals": [
@@ -1235,6 +1212,42 @@
       "entry_tier": null,
       "affiliations": [],
       "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "LUV",
+      "signal_score": 35,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.1,
+      "convergence_score": 3,
+      "channels": [
+        "activist_13d",
+        "affiliation",
+        "app_demand"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": -7.0,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": true,
+      "off_high_252": -25.1,
+      "ret_20d": -10.3,
+      "above_50dma": false,
+      "entry_tier": null,
+      "affiliations": [
+        {
+          "actor": "Paul Singer",
+          "rel": "AFFILIATES_WITH",
+          "kind": "fund"
+        }
+      ],
+      "n_affiliated_actors": 1,
       "thesis": null,
       "second_order": [],
       "falsifier": null,
@@ -1974,56 +1987,6 @@
       "second_order": [],
       "falsifier": null,
       "clamped": null
-    },
-    {
-      "ticker": "LUV",
-      "signal_score": 4,
-      "conviction": "low",
-      "action": "AVOID",
-      "direction": "short",
-      "source": "brain",
-      "weighted_score": 1.1,
-      "convergence_score": 3,
-      "channels": [
-        "activist_13d",
-        "affiliation",
-        "app_demand"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": -9.4,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": true,
-      "off_high_252": -25.1,
-      "ret_20d": -10.3,
-      "above_50dma": false,
-      "entry_tier": null,
-      "affiliations": [
-        {
-          "actor": "Paul Singer",
-          "rel": "AFFILIATES_WITH",
-          "kind": "fund"
-        }
-      ],
-      "n_affiliated_actors": 1,
-      "thesis": "LUV's activist 13D, disclosed Paul Singer affiliation, app-demand signal, and policy-linked buy indication create an event-driven turnaround setup [activist_13d] [actor:Paul Singer] [app_demand] [trump]. Its relative underperformance and non-extended status improve the prospective entry backdrop, but app ratings and political linkage do not demonstrate profitable demand, so the evidence is not yet strong enough for an accumulate call.",
-      "second_order": [
-        "Aircraft maintenance and parts \u2014 an activist-led operating reset could redirect spending toward fleet reliability and utilization.",
-        "Travel distribution \u2014 improved app engagement can support booking and ancillary-service ecosystems.",
-        "U.S. leisure travel \u2014 stabilization at LUV would imply firmer domestic passenger demand for airports and travel services."
-      ],
-      "falsifier": {
-        "text": "Activist involvement produces no measurable operating change and app engagement fails to coincide with improving profitable demand.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "LUV",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 60
-        }
-      },
-      "clamped": "lean 'overweight' \u2192 'underweight' (deterministic witness); action 'WATCH' \u2192 'AVOID' (deterministic ceiling)"
     }
   ],
   "disclaimer": "An AI reading of the desk's own deterministic convergence \u2014 accountable and checkable, not a guarantee. Every call cites the channels/actors it is based on, is graded vs SPY over the horizon, and can be wrong or overconfident. The Mastermind sizes it through its own risk framework; treat as odds, not a forecast."

@@ -18,7 +18,6 @@
     "mag7",
     "managed_care",
     "memory_storage",
-    "non_ai_software",
     "non_ai_tech",
     "obesity_glp1",
     "pgm_miners",
@@ -46,7 +45,7 @@
     "memory_storage",
     "gold_miners",
     "ai_infra",
-    "non_ai_software"
+    "us_sector_health"
   ],
   "leader": "memory_storage",
   "names": {

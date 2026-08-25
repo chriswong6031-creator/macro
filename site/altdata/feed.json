@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-08-25T03:12:39.565245+00:00",
+  "generated_utc": "2026-08-25T05:22:55.141890+00:00",
   "as_of": "2026-08-25",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -7766,11 +7766,11 @@
       },
       {
         "ticker": "RMAX",
-        "category": "Acquisitions",
+        "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Acquisitions"
+        "detail": "Delistings"
       },
       {
         "ticker": "RLYB",
@@ -8171,14 +8171,6 @@
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
-      },
-      {
-        "ticker": "KO",
-        "category": "Divestitures",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Divestitures"
       },
       {
         "ticker": "CNTM",
@@ -17693,7 +17685,7 @@
         "detail": "Delistings"
       },
       {
-        "ticker": "PMNT",
+        "ticker": "PGACR",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
@@ -17701,12 +17693,12 @@
         "detail": "Delistings"
       },
       {
-        "ticker": "QXO-PB",
-        "category": "Acquisitions",
+        "ticker": "PMNT",
+        "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Acquisitions"
+        "detail": "Delistings"
       },
       {
         "ticker": "RCKTW",
@@ -19125,6 +19117,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "UTZ",
+        "category": "Going-Private",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Going-Private"
+      },
+      {
         "ticker": "VHUB",
         "category": "Delistings",
         "confidence": "high",
@@ -19235,14 +19235,6 @@
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
-      },
-      {
-        "ticker": "BBLR",
-        "category": "Delistings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Delistings"
       },
       {
         "ticker": "CBGGF",
@@ -19630,11 +19622,11 @@
       },
       {
         "ticker": "ABUS",
-        "category": "Deal Terminations",
+        "category": "Issuer Tenders",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Deal Terminations"
+        "detail": "Issuer Tenders"
       },
       {
         "ticker": "UAN",
@@ -19997,14 +19989,6 @@
         "detail": "Acquisitions"
       },
       {
-        "ticker": "CJMB",
-        "category": "Delistings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Delistings"
-      },
-      {
         "ticker": "CCEL",
         "category": "Delistings",
         "confidence": "high",
@@ -20112,6 +20096,14 @@
         "ticker": "PONOR",
         "category": "Acquisitions",
         "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "RKLB",
+        "category": "Acquisitions",
+        "confidence": "high",
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
@@ -20291,14 +20283,6 @@
         "activist": true,
         "filer": null,
         "detail": "Activist Campaigns"
-      },
-      {
-        "ticker": "LODE",
-        "category": "Divestitures",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Divestitures"
       },
       {
         "ticker": "QUCY",
@@ -20614,14 +20598,6 @@
       },
       {
         "ticker": "MTNB",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
-      },
-      {
-        "ticker": "HVIIR",
         "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
@@ -21203,14 +21179,6 @@
         "activist": false,
         "filer": null,
         "detail": "Divestitures"
-      },
-      {
-        "ticker": "REAX",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
       },
       {
         "ticker": "SCNI",
@@ -24198,11 +24166,11 @@
       },
       {
         "ticker": "SQFTW",
-        "category": "Acquisitions",
+        "category": "Issuer Tenders",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Acquisitions"
+        "detail": "Issuer Tenders"
       },
       {
         "ticker": "MSBB",
@@ -24523,6 +24491,22 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "DRDBU",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
+        "ticker": "AIHS",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
       }
     ],
     "unusual_options": [
@@ -24703,7 +24687,7 @@
         "ticker": "AMZN",
         "net_up_30d": 34,
         "breadth": 0.77,
-        "est_chg_30d": 5.19,
+        "est_chg_30d": 4.94,
         "n_analysts": 44,
         "bull_ratio": 0.89,
         "rising": true,
@@ -24736,7 +24720,7 @@
         "ticker": "AMD",
         "net_up_30d": 31,
         "breadth": 0.89,
-        "est_chg_30d": 15.97,
+        "est_chg_30d": 14.78,
         "n_analysts": 35,
         "bull_ratio": 0.94,
         "rising": true,
@@ -24758,7 +24742,7 @@
         "ticker": "ANET",
         "net_up_30d": 26,
         "breadth": 1.0,
-        "est_chg_30d": 15.83,
+        "est_chg_30d": 15.49,
         "n_analysts": 26,
         "bull_ratio": 1.0,
         "rising": true,
