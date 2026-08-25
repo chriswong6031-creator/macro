@@ -29,36 +29,35 @@ changed:
       P0A closure or replay historical P0B failures from chat.
 verified:
   - claim: P0A plus H0 is already durably closed and proven on the persistent Chairman path.
-    command: >
-      Read current Macro main `agentos/workstreams/WS-CHAIRMAN-CONTROL-ROOM.md` and verify the P0A
-      and H0 wave states plus the capability-state paragraph against the immutable P0A/H0 receipts.
+    command: |
+      python3 -c "from pathlib import Path; import re; t=Path('agentos/workstreams/WS-CHAIRMAN-CONTROL-ROOM.md').read_text(); print(re.findall(r'- id: (P0A|H0)\n    title: .+\n    status: (\w+)', t)); print([line.strip() for line in t.splitlines() if 'P0A plus H0 is' in line][0])"
     result: >
-      P0A status is done, H0 status is done, and the current record states P0A plus H0 is
-      PROVEN_LIVE; immutable receipts remain Mastermind #110/#113 and Macro #6225/#6292.
+      wave_status [('P0A', 'done'), ('H0', 'done')]; capability paragraph is
+      'P0A plus H0 is `PROVEN_LIVE` on the persistent Chairman path, X1 is'.
+      Immutable receipts remain Mastermind #110/#113 and Macro #6225/#6292.
   - claim: The obsolete 501/profile-search gate has been overtaken by later accepted implementation evidence.
-    command: >
-      Read protected Mastermind `docs/superpowers/specs/2026-08-24-mas115-fixed-port-disposable-canary-design.md`
-      and compare its capability ledger/current diagnosis with the older MAS-115 failure handoff.
+    command: |
+      gh api "repos/mastermindx-market-intelligence/Mastermind/contents/docs/superpowers/specs/2026-08-24-mas115-fixed-port-disposable-canary-design.md?ref=51f9942733b86e550bb9169d2a43462bd28e774f" --jq ".content" | base64 -d | sed -n '63,77p'
     result: >
-      The fixed-port design records Keychain credential handoff, complete bounded profile search,
-      exact-profile start/WebDriver and page-membership/cleanup as PROVEN_LIVE subcapabilities before
-      the fixed-port repair; the remaining observed defect was local-origin visibility under
-      Multilogin port masking.
+      Protected spec sha 9510255a47a0bd185d3b610bce29de5ba7459144 records Keychain
+      credential handoff, complete bounded profile search, exact-profile
+      start/WebDriver and page-membership/cleanup as PROVEN_LIVE; Full C0-C10
+      remains BUILT_NOT_PROVEN. Section 3 is the current diagnosis (fixed-port
+      local-origin visibility under Multilogin port masking), not the historical
+      501/non-JSON start gate.
   - claim: The current fixed-port implementation is merged and exact-head CI passed.
-    command: >
-      Inspect Mastermind PR #145 metadata and exact-head workflow runs for
-      72de6345ee74ca9720f5d25c9f9985495b7cea8c, then read current protected Mastermind operator docs.
+    command: |
+      gh pr view 145 --repo mastermindx-market-intelligence/Mastermind --json number,state,mergedAt,mergeCommit,headRefOid && gh run list --repo mastermindx-market-intelligence/Mastermind --commit 72de6345ee74ca9720f5d25c9f9985495b7cea8c --json databaseId,conclusion,name --limit 5
     result: >
-      Mastermind PR #145 head 72de6345ee74ca9720f5d25c9f9985495b7cea8c passed CI run
-      32790337750 and merged as 4d323d03e4151449a4b76abfdfefca1d56825fde. Current protected
-      Mastermind contains the fixed 127.0.0.1:65535 origin, v3 provision, bounded
-      configure-canary-port transaction and ordinary run-canary no-update boundary.
+      state=MERGED headRefOid=72de6345ee74ca9720f5d25c9f9985495b7cea8c
+      mergeCommit=4d323d03e4151449a4b76abfdfefca1d56825fde mergedAt=2026-08-24T23:47:08Z.
+      Exact-head runs: CI 32790337750 SUCCESS; PR #145 32790335691 SUCCESS.
   - claim: No duplicate MAS-115 implementation carrier is currently open.
-    command: >
-      Search open Mastermind pull requests for MAS-115 and read Linear MAS-115 current status/history.
+    command: |
+      gh pr list --repo mastermindx-market-intelligence/Mastermind --state open --search "MAS-115" --json number,title,state
     result: >
-      GitHub returned no open Mastermind PR matching MAS-115. Linear MAS-115 is In Progress after
-      its latest false-green projection repair, not Done.
+      GitHub returned []. No open Mastermind PR matches MAS-115. Linear status was
+      not re-queried in this heal (projection only; not a carrier).
 unverified:
   - claim: The current native Multilogin automation credential is fresh at action time.
     what_would_verify: >
