@@ -83,16 +83,6 @@
   function sectorMembers(name) {
     return new Set(state.rows.filter(function (r) { return r.sector === name; }).map(function (r) { return ticker(r.ticker); }));
   }
-  /* Days-in-state is only ever read from the row's own rendered text
-     (templates/canada.html.j2 `.anv2-stat`, e.g. "BOTTOMING筑底中 · ~3d天 ·
-     XIT.TO") — never inferred or defaulted. Absent text means the owner
-     published no days for that row, so we harvest null, not 0. */
-  function harvestDays(node) {
-    var stat = qs(".anv2-stat", node);
-    if (!stat) return null;
-    var m = /~(\d+)<span class="l-en">d<\/span>/.exec(stat.innerHTML || "");
-    return m ? parseInt(m[1], 10) : null;
-  }
   function collectSectors() {
     var out = [], seen = Object.create(null);
     LANE_DEFS.forEach(function (def) {
@@ -105,7 +95,7 @@
         var members = sectorMembers(name.en), leaders = Array.from(members).slice(0, 3);
         out.push({ kind: "sector", rank: out.length + 1, id: id, name: name,
           stance: { en: def.en, zh: def.zh }, tone: def.tone, count: members.size,
-          members: members, leaders: leaders, href: href, days: harvestDays(node) });
+          members: members, leaders: leaders, href: href });
       });
     });
     return out;
@@ -175,7 +165,7 @@
       ".ca-v36-evidence-body{display:flex;justify-content:center;padding:13px 14px 15px;font-family:" + FONT_UI + "}.ca-v36-evidence-body .trk{margin:0;padding:9px 12px;font-family:" + FONT_UI + "}",
       /* Group-action band (change 4) — four owner lane groups above the two
          existing ranking panes inside the Expand-leadership modal. */
-      ".ca-v36-modal-lanes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}.ca-v36-modal-lane{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel2)}.ca-v36-modal-lane-hd{padding:9px 10px;border-bottom:1px solid var(--line);border-top:2px solid currentColor;font-size:11.3px;font-weight:750;text-transform:uppercase;letter-spacing:.02em}.ca-v36-modal-lane-hd.buy{color:var(--ink-up,var(--up))}.ca-v36-modal-lane-hd.near{color:var(--ink-link,var(--link))}.ca-v36-modal-lane-hd.wait{color:var(--ink-warn,var(--warn))}.ca-v36-modal-lane-hd.avoid{color:var(--ink-down,var(--down))}.ca-v36-modal-lane-row{display:flex;flex-direction:column;gap:2px;padding:8px 10px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);cursor:pointer}.ca-v36-modal-lane-row:first-of-type{border-top:0}.ca-v36-modal-lane-row:hover{background:color-mix(in srgb,var(--link) 6%,transparent)}.ca-v36-modal-lane-row.ca-v36-modal-lane-empty{color:var(--muted);cursor:default;text-align:center}.ca-v36-modal-lane-name{font-size:12.6px;font-weight:650}.ca-v36-modal-lane-meta{color:var(--muted);font-size:10.8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ca-v36-modal-lane-days{margin-left:5px}",
+      ".ca-v36-modal-lanes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}.ca-v36-modal-lane{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel2)}.ca-v36-modal-lane-hd{padding:9px 10px;border-bottom:1px solid var(--line);border-top:2px solid currentColor;font-size:11.3px;font-weight:750;text-transform:uppercase;letter-spacing:.02em}.ca-v36-modal-lane-hd.buy{color:var(--ink-up,var(--up))}.ca-v36-modal-lane-hd.near{color:var(--ink-link,var(--link))}.ca-v36-modal-lane-hd.wait{color:var(--ink-warn,var(--warn))}.ca-v36-modal-lane-hd.avoid{color:var(--ink-down,var(--down))}.ca-v36-modal-lane-row{display:flex;flex-direction:column;gap:2px;padding:8px 10px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);cursor:pointer}.ca-v36-modal-lane-hd+.ca-v36-modal-lane-row{border-top:0}.ca-v36-modal-lane-row:not(.ca-v36-modal-lane-empty):hover{background:color-mix(in srgb,var(--link) 6%,transparent)}.ca-v36-modal-lane-row.ca-v36-modal-lane-empty{color:var(--muted);cursor:default;text-align:center}.ca-v36-modal-lane-name{font-size:12.6px;font-weight:650}.ca-v36-modal-lane-meta{color:var(--muted);font-size:10.8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
       ".ca-v36-modal{position:fixed;inset:0;z-index:2147481000;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(4,7,12,.62);backdrop-filter:blur(8px)}.ca-v36-modal.is-open{display:flex}.ca-v36-modal-card{width:min(1180px,calc(100vw - 32px));max-height:min(820px,calc(100vh - 36px));display:flex;flex-direction:column;border:1px solid var(--line);border-radius:15px;background:var(--panel);box-shadow:0 30px 90px rgba(0,0,0,.5);overflow:hidden}html[data-theme=light] .ca-v36-modal{background:rgba(50,64,90,.22)}html[data-theme=light] .ca-v36-modal-card{box-shadow:0 24px 70px rgba(20,32,64,.2)}.ca-v36-modal-hd{min-height:56px;display:flex;align-items:center;padding:0 15px;border-bottom:1px solid var(--line)}.ca-v36-modal-hd h3{margin:0;font-size:19px;font-weight:650}.ca-v36-modal-x{margin-left:auto;width:36px;height:36px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);color:var(--text);font-size:21px;cursor:pointer}.ca-v36-modal-body{overflow:auto;padding:14px}.ca-v36-modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.ca-v36-modal-pane{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel2)}.ca-v36-modal-pane h4{margin:0;padding:11px 12px;border-bottom:1px solid var(--line);font-size:13px}.ca-v36-modal-table{width:100%;border-collapse:collapse;font-size:12.8px}.ca-v36-modal-table th{padding:9px 10px;color:var(--muted);font-size:10.8px;text-align:left;border-bottom:1px solid var(--line)}.ca-v36-modal-table td{padding:10px;border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent)}.ca-v36-modal-table tbody tr{cursor:pointer}.ca-v36-modal-table tbody tr:hover{background:color-mix(in srgb,var(--link) 6%,transparent)}.ca-v36-modal-table .num,.ca-v36-modal-table .leaders{color:var(--muted)}",
       "@media(max-width:1200px){.ca-v36-card-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.ca-v36-modal-lanes{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:900px){.ca-v36-head{flex-wrap:wrap}.ca-v36-head-spacer{display:none}.ca-v36-lead-cols,.ca-v36-modal-grid{grid-template-columns:1fr}.ca-v36-lead-col+.ca-v36-lead-col{border-left:0;border-top:1px solid var(--line)}.ca-v36-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:680px){.ca-v36{width:min(100% - 20px,680px);margin-top:12px;font-size:15.8px}.ca-v36-head{gap:8px}.ca-v36-head h1{width:100%;font-size:27.5px}.ca-v36-leading{flex-wrap:wrap}.ca-v36-leading-k{width:100%}.ca-v36-leading-btn{flex:1;min-width:140px}.ca-v36-leading-fresh{width:100%;margin-left:0}.ca-v36-sec-hd{align-items:flex-start;flex-wrap:wrap;padding:11px 12px}.ca-v36-sec-hd h2{font-size:17px}.ca-v36-controls{width:100%}.ca-v36-card-grid{grid-template-columns:1fr;padding:10px;gap:10px}.ca-v36-card-grid .pv-tk{font-size:16.3px!important}.ca-v36-card-grid .nb-px.pv-px{font-size:15.5px!important}.ca-v36-card-grid .nb-chg.pv-chg{font-size:13.1px!important}.ca-v36-modal{padding:8px}.ca-v36-modal-card{width:100%;max-height:calc(100vh - 16px)}.ca-v36-modal-lanes{grid-template-columns:1fr}.ca-v36-evidence-body{padding:11px 10px 13px}}"
     ].join("\n");
@@ -294,10 +284,9 @@
      data-ca-modal-kind/data-ca-modal-id pair modalRows() uses so the existing
      modal click/keydown delegation activates them with no new handler path. */
   function laneItemHtml(x) {
-    var days = x.days != null ? ' <span class="ca-v36-modal-lane-days">~' + x.days + bi("d", "天") + '</span>' : '';
     return '<div class="ca-v36-modal-lane-row" tabindex="0" data-ca-modal-kind="' + x.kind + '" data-ca-modal-id="' + esc(x.id) + '">' +
       '<span class="ca-v36-modal-lane-name">' + bi(x.name.en, x.name.zh) + '</span>' +
-      '<span class="ca-v36-modal-lane-meta">' + esc(x.leaders.length ? x.leaders.join(" · ") : "—") + ' · ' + (x.count || 0) + days + '</span></div>';
+      '<span class="ca-v36-modal-lane-meta">' + esc(x.leaders.length ? x.leaders.join(" · ") : "—") + ' · ' + (x.count || 0) + '</span></div>';
   }
   function laneGroupHtml(lane) {
     var items = state.sectors.filter(function (x) { return x.tone === lane.tone; });

@@ -67,34 +67,52 @@ def test_composer_still_hides_via_hidden_attribute():
 # These pins hold the four bounded V3.7 changes in place.
 # ---------------------------------------------------------------------------
 
-OWNER_LANE_LABELS = [
-    ("Buy Now", "立即买入"),
-    ("In Favour", "看好"),
-    ("Bottoming Watch", "洗盘观察"),
-    ("Reduce / Avoid", "减仓 / 回避"),
+# (sel, en, zh) — the exact LANE_DEFS binding. Order matches the file so a
+# swapped-lane mutation (e.g. "Buy Now" moved onto #anv2-red) is visible in
+# a diff against this table too.
+LANE_BINDINGS = [
+    ("#anv2-buy", "Buy Now", "立即买入"),
+    ("#anv2-pull", "In Favour", "看好"),
+    ("#anv2-bot", "Bottoming Watch", "洗盘观察"),
+    ("#anv2-red", "Reduce / Avoid", "减仓 / 回避"),
 ]
 
 
 def test_lane_labels_are_the_owner_native_act_now_vocabulary():
     """The four lane labels must be the page owner's verbatim Act-Now lane
     titles (templates/canada.html.j2:854-996, `_ca_anlane(...)` title_en/
-    title_zh — "Buy Now"/"In Favour"/"Bottoming Watch"/"Reduce / Avoid").
+    title_zh — "Buy Now"/"In Favour"/"Bottoming Watch"/"Reduce / Avoid"),
+    each bound to its OWN selector in LANE_DEFS — not merely present
+    somewhere in the file.
+
+    This pins the selector<->label BINDING via a regex over the literal
+    LANE_DEFS entry, not bare string presence: a mutation that swaps a
+    label onto the wrong lane (e.g. "Buy Now" moved from #anv2-buy onto
+    #anv2-red) would still satisfy a bare `'"Buy Now"' in text` check but
+    fails this one, because the regex requires sel/en/zh to appear together
+    in that exact entry.
 
     Reverting to the composer's old invented vocabulary ("Entry now",
     "Setting up", "In favour", "Reduce / avoid" — lower-cased, paraphrased,
     and never published anywhere by the page owner) is the defect this test
-    guards against: it invents a parallel lane taxonomy the owner never
-    endorsed, which is exactly what a "no invented vocabulary" constitution
-    forbids.
+    also guards against: it invents a parallel lane taxonomy the owner
+    never endorsed, which is exactly what a "no invented vocabulary"
+    constitution forbids.
     """
     text = _composer_text()
-    for en, zh in OWNER_LANE_LABELS:
-        assert '"' + en + '"' in text, (
-            f"owner-native lane label {en!r} missing from composer; "
-            "reverting to invented labels like 'Entry now'/'Setting up' is "
-            "the defect this pin exists to catch"
+    for sel, en, zh in LANE_BINDINGS:
+        pattern = (
+            r'sel:\s*"' + re.escape(sel) + r'",\s*'
+            r'en:\s*"' + re.escape(en) + r'",\s*'
+            r'zh:\s*"' + re.escape(zh) + r'"'
         )
-        assert zh in text, f"owner-native lane label zh {zh!r} missing from composer"
+        assert re.search(pattern, text), (
+            f"LANE_DEFS no longer binds {sel!r} to en={en!r} zh={zh!r} "
+            "as one entry (sel/en/zh must appear together in that order); "
+            "either the label was swapped onto the wrong lane, or it was "
+            "moved out of LANE_DEFS into a second, independently-invented "
+            "vocabulary"
+        )
     # The old invented English labels must not reappear verbatim.
     for stale in ("Entry now", "Setting up"):
         assert '"' + stale + '"' not in text, (
@@ -108,18 +126,43 @@ def test_evidence_and_record_section_restores_track_record():
     """Change 3 restores Track Record (deleted in V3.6) as a compact
     'Evidence & Record' panel that MOVES the legacy `.trk`/`#trd-btn` chip
     via appendChild — the same owner-DOM-move pattern already used for
-    #stocktable-wrap — rather than recomputing or re-fetching anything."""
+    #stocktable-wrap — rather than recomputing or re-fetching anything.
+
+    Three mutations this pin kills that a looser check would miss:
+    - deleting the `appendChild(trk)` call (section renders but stays
+      empty, since nothing ever moves the chip into it) — killed by the
+      literal `appendChild(trk)` assertion, not just "trk" appearing
+      somewhere in the move-pattern comments;
+    - renaming the section id off `ca-v36-evidence` while leaving the
+      `.ca-v36-evidence-body` CSS class behind — killed by asserting the
+      exact `id="ca-v36-evidence"` markup, which the CSS class text alone
+      does not satisfy;
+    - defining `evidenceSectionHtml()` but never splicing its call into
+      `buildShell()`'s section string (section never renders even when
+      `.trk` exists) — killed by requiring the function name to appear at
+      least twice (its definition AND its `trk ? evidenceSectionHtml() : ''`
+      call site).
+    """
     text = _composer_text()
-    assert "ca-v36-evidence" in text, "Evidence & Record section id missing"
+    assert 'id="ca-v36-evidence"' in text, (
+        "Evidence & Record section markup missing its exact id="
+        '"ca-v36-evidence" — the .ca-v36-evidence-body CSS class alone '
+        "does not prove the <section> exists"
+    )
     assert "Evidence &amp; Record" in text or "Evidence & Record" in text, (
         "Evidence & Record EN heading missing"
     )
     assert "证据与往绩" in text, "Evidence & Record ZH heading missing"
-    # The move-by-reference pattern: the composer must query the legacy trk
-    # chip (by class or by its #trd-btn anchor) rather than rebuild it.
-    assert ('qs(".trk")' in text) or ("#trd-btn" in text), (
-        "composer no longer references the legacy .trk/#trd-btn chip; "
-        "Track Record must be MOVED via appendChild, never recomputed"
+    assert "appendChild(trk)" in text, (
+        "composer no longer moves the legacy .trk chip via appendChild(trk); "
+        "Track Record must be MOVED into the section body, never recomputed "
+        "or left unattached"
+    )
+    assert text.count("evidenceSectionHtml()") >= 2, (
+        "evidenceSectionHtml() must appear at least twice: once where it is "
+        "defined and once where buildShell() splices its call "
+        "(`trk ? evidenceSectionHtml() : ''`) into the panel sequence — "
+        "otherwise the section can be defined but never rendered"
     )
     assert "measurement.html" in text, "Methodology link to measurement.html missing"
 
@@ -146,7 +189,17 @@ def test_group_action_band_uses_owner_lanes_and_existing_modal_activation():
     """Change 4: the Expand-leadership modal gets a group-action band above
     the two ranking panes, partitioned into the same four owner lanes, with
     rows reusing the existing data-ca-modal-kind/data-ca-modal-id activation
-    (never a new click-handler path)."""
+    (never a new click-handler path).
+
+    The interpolation-shape assertion below kills a mutation that a bare
+    `"data-ca-modal-kind" in text` check would miss: stripping the data
+    attributes out of laneItemHtml() (so group-action rows silently stop
+    being clickable) while leaving delegation selectors like
+    `[data-ca-modal-kind][data-ca-modal-id]` and this docstring's prose
+    untouched — the bare token would still be present in the file, but the
+    live `data-ca-modal-kind="' + x.kind` interpolation would only appear
+    once (in modalRows()) instead of twice.
+    """
     text = _composer_text()
     assert "ca-v36-modal-lanes" in text, "group-action band container missing"
     assert "LANE_DEFS" in text, (
@@ -154,10 +207,22 @@ def test_group_action_band_uses_owner_lanes_and_existing_modal_activation():
         "LANE_DEFS source collectSectors() uses — never a second, "
         "independently-invented lane vocabulary"
     )
-    assert "data-ca-modal-kind" in text and "data-ca-modal-id" in text
-    # Group-action rows must reuse the SAME data attributes as modalRows(),
-    # not a parallel activation mechanism.
-    assert text.count("data-ca-modal-kind") >= 2, (
-        "expected data-ca-modal-kind on both modalRows() and the new "
-        "group-action lane rows"
+    # modalRows() and laneItemHtml() must BOTH build the same live
+    # data-ca-modal-kind="' + x.kind interpolation — not just contain the
+    # bare attribute name somewhere (e.g. in a delegation selector string).
+    live_kind_interpolations = text.count('data-ca-modal-kind="\' + x.kind')
+    assert live_kind_interpolations >= 2, (
+        "expected the live `data-ca-modal-kind=\"' + x.kind` interpolation "
+        "in both modalRows() and laneItemHtml() (found "
+        f"{live_kind_interpolations}); group-action rows must reuse the "
+        "SAME activation attributes as modalRows(), not a parallel "
+        "mechanism, and stripping them from laneItemHtml() must fail this "
+        "test even though the bare 'data-ca-modal-kind' token still "
+        "appears elsewhere (e.g. the click-delegation selector)"
+    )
+    live_id_interpolations = text.count('data-ca-modal-id="\' + esc(x.id)')
+    assert live_id_interpolations >= 2, (
+        "expected the live `data-ca-modal-id=\"' + esc(x.id)` interpolation "
+        "in both modalRows() and laneItemHtml() (found "
+        f"{live_id_interpolations})"
     )
