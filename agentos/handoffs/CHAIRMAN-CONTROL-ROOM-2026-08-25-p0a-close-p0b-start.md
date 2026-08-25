@@ -2,7 +2,7 @@
 workstream: WS:CHAIRMAN-CONTROL-ROOM
 session: sol/ccr-p0b-durable-start-20260825
 model: sol
-ended_because: gated_on_live_host_action
+ended_because: blocked
 mission: >
   Reconcile the Chairman Control Room durable organizational record to the current protected
   P0A/P0B truth: preserve P0A plus H0 as already PROVEN_LIVE, supersede the obsolete P0B
@@ -29,25 +29,36 @@ changed:
       P0A closure or replay historical P0B failures from chat.
 verified:
   - claim: P0A plus H0 is already durably closed and proven on the persistent Chairman path.
-    evidence: >
-      Current Macro Agent OS marks P0A status done, H0 status done and states P0A plus H0 is
+    command: >
+      Read current Macro main `agentos/workstreams/WS-CHAIRMAN-CONTROL-ROOM.md` and verify the P0A
+      and H0 wave states plus the capability-state paragraph against the immutable P0A/H0 receipts.
+    result: >
+      P0A status is done, H0 status is done, and the current record states P0A plus H0 is
       PROVEN_LIVE; immutable receipts remain Mastermind #110/#113 and Macro #6225/#6292.
   - claim: The obsolete 501/profile-search gate has been overtaken by later accepted implementation evidence.
-    evidence: >
-      Current Mastermind fixed-port design records Keychain credential handoff, complete bounded
-      profile search, exact-profile start/WebDriver and page-membership/cleanup as PROVEN_LIVE
-      subcapabilities before the fixed-port repair; the remaining observed defect was local-origin
-      visibility under Multilogin port masking.
+    command: >
+      Read protected Mastermind `docs/superpowers/specs/2026-08-24-mas115-fixed-port-disposable-canary-design.md`
+      and compare its capability ledger/current diagnosis with the older MAS-115 failure handoff.
+    result: >
+      The fixed-port design records Keychain credential handoff, complete bounded profile search,
+      exact-profile start/WebDriver and page-membership/cleanup as PROVEN_LIVE subcapabilities before
+      the fixed-port repair; the remaining observed defect was local-origin visibility under
+      Multilogin port masking.
   - claim: The current fixed-port implementation is merged and exact-head CI passed.
-    evidence: >
+    command: >
+      Inspect Mastermind PR #145 metadata and exact-head workflow runs for
+      72de6345ee74ca9720f5d25c9f9985495b7cea8c, then read current protected Mastermind operator docs.
+    result: >
       Mastermind PR #145 head 72de6345ee74ca9720f5d25c9f9985495b7cea8c passed CI run
       32790337750 and merged as 4d323d03e4151449a4b76abfdfefca1d56825fde. Current protected
-      Mastermind master contains the fixed 127.0.0.1:65535 origin, v3 provision, bounded
+      Mastermind contains the fixed 127.0.0.1:65535 origin, v3 provision, bounded
       configure-canary-port transaction and ordinary run-canary no-update boundary.
   - claim: No duplicate MAS-115 implementation carrier is currently open.
-    evidence: >
-      Current GitHub search returned no open Mastermind PR matching MAS-115. Linear MAS-115 is
-      In Progress after its latest false-green projection repair, not Done.
+    command: >
+      Search open Mastermind pull requests for MAS-115 and read Linear MAS-115 current status/history.
+    result: >
+      GitHub returned no open Mastermind PR matching MAS-115. Linear MAS-115 is In Progress after
+      its latest false-green projection repair, not Done.
 unverified:
   - claim: The current native Multilogin automation credential is fresh at action time.
     what_would_verify: >
