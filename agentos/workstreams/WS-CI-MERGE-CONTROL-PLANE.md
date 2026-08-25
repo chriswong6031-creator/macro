@@ -18,6 +18,7 @@ discoveries:
   - "DSC:GITHUB-CONCURRENCY-SUPERSEDES-PENDING"
   - "DSC:PR-EVENT-DELIVERY-IS-NOT-CANDIDATE-IDENTITY"
   - "DSC:CI-SELF-MOD-FENCE-ARGV-BYPASSES-BOUNDED-TRANSPORT"
+  - "DSC:SEMANTIC-REFUSAL-BYPASSED-PROOFFRESHNESS"
 waves:
   - id: W-TRANSPORT
     title: Bounded changed-files transport across CI and self-mod fences
@@ -66,6 +67,21 @@ waves:
       ProofFreshness remain the governing contract. PR 5591 remains historical
       W-REWRITE archaeology only; completing this wave does not commission or
       complete W-REWRITE or any CI-speed/scoping wave.
+  - id: W-PROOFFRESHNESS-ORDER
+    title: ProofFreshness precedes semantic disposition
+    status: awaiting_ci
+    note: >
+      Sol commissioned one bounded merge-controller repair after PR #6391
+      exposed stale unknown/inherited evidence blocking before the canonical
+      reproof path. The candidate preserves semantic classification and exact
+      tested-tree/base law while ordering bound semantic-v1 freshness before
+      either success or refusal. Fresh unknown/regression evidence still blocks;
+      stale green and stale red both reprove; pending/incomplete anchors wait;
+      malformed and legacy-absent evidence preserve existing fail-closed law;
+      the existing refresh lease remains the sole duplicate-dispatch guard.
+      Evidence: DEC:STALE-SEMANTIC-PROOF-HAS-NO-CURRENT-VERDICT-AUTHORITY and
+      DSC:SEMANTIC-REFUSAL-BYPASSED-PROOFFRESHNESS. The wave remains awaiting_ci
+      and HOLD-FOR-SOL; it does not modify or operate PR #6391.
   - id: W-PR-EVENT-CAUSALITY
     title: Candidate authority and lifecycle-event causality closure
     status: done

@@ -6228,18 +6228,18 @@ def reprove(
     merge_token: str,
     budget: "SweepBudget | None" = None,
 ) -> str:
-    """Refuse to merge a clean-but-stale proof; hand the head back to CI.
+    """Refuse to merge on a stale proof; hand the head back to CI.
 
     `update-branch` is the sanctioned path and already exists: it merges main into
     the head, which makes the head UNPROVEN until its fresh checks conclude, and a
     later sweep judges it on those. Nothing about the merge gate is weakened here —
-    this only stops a green from outliving the base it was computed against.
+    this only stops a receipt from outliving the base it was computed against.
 
     When GitHub declines the update the head genuinely conflicts with main, which no
     number of sweeps will fix, so it is labeled and explained exactly once.
 
     …UNLESS another sweep merged it a second ago. Pre-deploy or out-of-band sweeps
-    can both judge this pull request clean and stale; the loser's
+    can both judge this pull request's proof stale; the loser's
     update-branch answers 422 because the pull request is MERGED, and labelling that
     `merge-blocked` with a one-shot "not merging" comment is #4647's hazard arriving
     through a new door. `already_settled` is asked before any accusation here for
@@ -6249,7 +6249,7 @@ def reprove(
     _annotate(
         "notice",
         "merge-on-green",
-        f"PR #{number}: checks are clean but the proof is stale — {reason}. Merging "
+        f"PR #{number}: the advertised proof is stale — {reason}. Merging "
         "main into the head; its fresh checks decide on a later sweep.",
     )
     update_result = attempt_update_branch(
@@ -6292,8 +6292,8 @@ def reprove(
         repo,
         pull,
         (
-            "`merge-on-green` sweeper: **not merging.** Every check concluded clean, "
-            f"but the proof is no longer trustworthy: {reason}.\n\n"
+            "`merge-on-green` sweeper: **not merging.** The advertised proof is no "
+            f"longer trustworthy because it is no longer current: {reason}.\n\n"
             "A check proves the head against the base it was handed, not against the "
             "base that exists at merge time — that is how PR #4583's honest 15-hour-old "
             "green turned main red. The sweeper tried to merge `main` into this branch "
@@ -6465,17 +6465,70 @@ def sweep_pull(
         if anchor_verdict != "clean":
             verdict, names = anchor_verdict, anchor_names
 
+    # A physical proof generation that has not concluded has no semantic
+    # disposition yet. In particular, a historical artifact preloaded for the
+    # main-red overlap check must not override an active anchor, write a refusal,
+    # or request a second proof generation.
+    if verdict == "pending":
+        print(
+            f"PR #{number}: {len(names)} check(s) still running "
+            f"({', '.join(names[:6])}) — waiting for the next sweep.",
+            flush=True,
+        )
+        return verdict
+
+    if verdict in {"unproven", "incomplete"}:
+        _annotate(
+            "notice",
+            "merge-on-green",
+            f"PR #{number}: head {head_sha[:12]} has no complete affirmative ci/fences "
+            f"proof ({', '.join(names[:6]) or 'no check runs'}). Nothing is merged or "
+            "accused; a fresh proof event or branch update can supply the missing anchors. "
+            "If this head intentionally has no CI, dispose of it manually.",
+        )
+        return verdict
+
+    def proof_freshness_disposition() -> str | None:
+        """Return a terminal freshness action, or None when proof is current."""
+        try:
+            stale, reason = freshness.stale_for(pull, runs)
+        except Exception as exc:  # a broken read must never become permission to merge
+            stale, reason = None, f"the tested-surface check itself failed ({exc})"
+        if stale is None:
+            _annotate(
+                "warning",
+                "merge-on-green",
+                f"PR #{number}: exact proof freshness is indeterminate ({reason}). "
+                "Left armed without update-branch; the next sweep re-reads the evidence.",
+            )
+            return "freshness-deferred"
+        if stale:
+            if settled_owner_generation:
+                _annotate(
+                    "notice",
+                    "merge-on-green refresh lease",
+                    f"PR #{number}: its leased proof generation settled but main moved "
+                    "again. Rotating the high-load lane before this pull request may "
+                    "request another generation.",
+                )
+                return "lease-rotation-deferred"
+            return reprove(repo, pull, reason, read_token, merge_token, budget)
+        print(f"PR #{number}: proof still current — {reason}.", flush=True)
+        return None
+
     semantic_mode = False
     semantic_gate = None
     semantic_refusal = ""
+    semantic_freshness_checked = False
     # Green heads retain the zero-artifact-call fast path. A red/ambiguous head,
     # or a candidate already loaded for the semantic main-red overlap decision,
     # must use v1 when present. Claimed malformed v1 is a hard refusal and cannot
     # fall back to pack-name causality.
-    if semantic_evidence is not None or (
+    semantic_candidate = semantic_evidence is not None or (
         verdict in {"blocked", "incomplete"}
         and _head_can_advertise_semantic_evidence(runs)
-    ):
+    )
+    if semantic_candidate:
         try:
             loaded = semantic_evidence or semantic_evidence_for_head(
                 repo,
@@ -6484,6 +6537,17 @@ def sweep_pull(
                 check_runs=runs,
                 expected_base_sha=_semantic_pr_base_sha(runs, head_sha, number),
             )
+            # Merely advertising a ci-gate run does not prove this is a
+            # semantic-v1 head: pre-epoch runs load as legacy_absent and retain
+            # their exact legacy disposition. For an actual, already-bound v1
+            # receipt, freshness must precede semantic classification in both
+            # directions — stale success and stale failure have equal zero
+            # authority over the current candidate.
+            if getattr(loaded, "mode", "") == "semantic":
+                freshness_action = proof_freshness_disposition()
+                if freshness_action is not None:
+                    return freshness_action
+                semantic_freshness_checked = True
             semantic_gate = _semantic_gate(loaded)
             if semantic_gate is not None:
                 semantic_mode = True
@@ -6512,25 +6576,6 @@ def sweep_pull(
                 f"legacy reasoning: {str(exc)[:400]}"
             )
             verdict, names = "blocked", [semantic_refusal]
-
-    if verdict == "pending":
-        print(
-            f"PR #{number}: {len(names)} check(s) still running "
-            f"({', '.join(names[:6])}) — waiting for the next sweep.",
-            flush=True,
-        )
-        return verdict
-
-    if verdict in {"unproven", "incomplete"}:
-        _annotate(
-            "notice",
-            "merge-on-green",
-            f"PR #{number}: head {head_sha[:12]} has no complete affirmative ci/fences "
-            f"proof ({', '.join(names[:6]) or 'no check runs'}). Nothing is merged or "
-            "accused; a fresh proof event or branch update can supply the missing anchors. "
-            "If this head intentionally has no CI, dispose of it manually.",
-        )
-        return verdict
 
     if verdict == "blocked":
         if semantic_mode:
@@ -6685,35 +6730,14 @@ def sweep_pull(
             flush=True,
         )
 
-    # Every check concluded clean, or the reds are main's current weather.
-    # proven but WHICH exact main SHA its pull_request event tested. GitHub records
-    # that SHA on the check run itself; timestamps are not proof identity. An
-    # unavailable identity defers without mutation because update-branch cannot
-    # repair a control-plane read failure.
-    try:
-        stale, reason = freshness.stale_for(pull, runs)
-    except Exception as exc:  # a broken read must never become permission to merge
-        stale, reason = None, f"the tested-surface check itself failed ({exc})"
-    if stale is None:
-        _annotate(
-            "warning",
-            "merge-on-green",
-            f"PR #{number}: exact proof freshness is indeterminate ({reason}). "
-            "Left armed without update-branch; the next sweep re-reads the evidence.",
-        )
-        return "freshness-deferred"
-    if stale:
-        if settled_owner_generation:
-            _annotate(
-                "notice",
-                "merge-on-green refresh lease",
-                f"PR #{number}: its leased proof generation settled but main moved "
-                "again. Rotating the high-load lane before this pull request may "
-                "request another generation.",
-            )
-            return "lease-rotation-deferred"
-        return reprove(repo, pull, reason, read_token, merge_token, budget)
-    print(f"PR #{number}: proof still current — {reason}.", flush=True)
+    # Every check concluded clean, or the reds are main's current weather. A
+    # semantic-era candidate was already freshness-bound before its semantic
+    # disposition could gain merge or blocking authority. Legacy and green
+    # zero-artifact heads retain the same late freshness path as before.
+    if not semantic_freshness_checked:
+        freshness_action = proof_freshness_disposition()
+        if freshness_action is not None:
+            return freshness_action
     # NOTE (item N5, round-3 adjudication, 2026-08-21): a stale-`merge-blocked`
     # cleanup used to run HERE, unconditionally. Round-2 (item m3) narrowed it
     # to skip when a cheap, network-free BODY-only pre-check thought the pull
