@@ -53,7 +53,7 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="stylesheet" href="assets/css/ca184080.css?v=ca184080">
+<link rel="stylesheet" href="assets/css/2fc983b2.css?v=2fc983b2">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
 <link rel="preload" as="style" href="navigation-refresh.css?v=c299c324">
 
@@ -376,6 +376,10 @@
     <span class="pod-proof-chip"><sup class="ev ev-c">C</sup><span class="l-en">Reported / consensus</span><span class="l-zh">报道 / 共识</span></span>
     <span class="pod-proof-chip"><sup class="ev ev-i">I</sup><span class="l-en">Mastermind inference</span><span class="l-zh">Mastermind 推断</span></span>
     <span class="pod-proof-chip"><sup class="ev ev-s">S</sup><span class="l-en">Scenario / desk estimate</span><span class="l-zh">情景 / 研究台估计</span></span>
+    <button id="pod-motion-toggle" class="pod-motion-toggle" type="button" aria-pressed="false">
+      <span class="pod-motion-label-pause"><span class="l-en">Pause figure motion</span><span class="l-zh">暂停图表动画</span></span>
+      <span class="pod-motion-label-resume"><span class="l-en">Resume figure motion</span><span class="l-zh">继续图表动画</span></span>
+    </button>
   </div>
 
   <div class="callout key pod-bottom-line">
@@ -417,7 +421,7 @@
     <span class="chip"><span class="l-en">Credit calm</span><span class="l-zh">信用平静</span></span>
   </div>
   </div>
-  <figure class="pod-figure" id="fig-quadrant">
+  <figure class="pod-figure" id="fig-quadrant" data-motion-scene="sovereign-signal">
     <div class="pod-figure-head"><b><span class="l-en">Figure 1 · The Four-Quadrant Sovereign Signal</span><span class="l-zh">图 1 · 主权信号四象限</span></b><span><span class="l-en">1-month direction · [F/I]</span><span class="l-zh">1 个月方向 · [F/I]</span></span></div>
     <svg viewBox="0 0 760 520" role="img" aria-labelledby="quadrant-title-en quadrant-desc-en" data-a11y-en="quadrant-title-en quadrant-desc-en" data-a11y-zh="quadrant-title-zh quadrant-desc-zh">
       <title id="quadrant-title-en" class="l-en">The Four-Quadrant Sovereign Signal</title>
@@ -445,7 +449,9 @@
         <text class="pod-svg-text" x="535" y="127" text-anchor="middle" font-size="17" font-weight="800" fill="var(--pod-red)"><tspan class="l-en">DURATION-CONFIDENCE</tspan><tspan class="l-zh">久期信心</tspan></text>
         <text class="pod-svg-text" x="535" y="149" text-anchor="middle" font-size="17" font-weight="800" fill="var(--pod-red)"><tspan class="l-en">WARNING</tspan><tspan class="l-zh">警报</tspan></text>
         <text class="pod-svg-muted" x="535" y="179" text-anchor="middle" font-size="11"><tspan class="l-en">more yield · less currency enthusiasm</tspan><tspan class="l-zh">要求更多收益 · 却降低货币热情</tspan></text>
-        <circle cx="587" cy="208" r="12" fill="var(--pod-red)" stroke="var(--panel)" stroke-width="4"/>
+        <path class="pod-motion-trail" d="M517 278 L587 208"/>
+        <circle class="pod-motion-pulse" cx="587" cy="208" r="18" fill="none" stroke="var(--pod-red)" stroke-width="2" opacity=".72"/>
+        <circle class="pod-motion-point" cx="587" cy="208" r="12" fill="var(--pod-red)" stroke="var(--panel)" stroke-width="4"/>
         <text class="pod-svg-text" x="565" y="232" text-anchor="middle" font-size="10" font-weight="750"><tspan class="l-en">NOW · +14bp / −2.18%</tspan><tspan class="l-zh">当前 · +14bp / −2.18%</tspan></text>
       </g>
       <g class="pod-reveal">
@@ -549,7 +555,7 @@
       </tr>
     </tbody>
   </table></div>
-  <figure class="pod-figure" id="fig-timeline">
+  <figure class="pod-figure" id="fig-timeline" data-motion-scene="collapsed-timeline">
     <div class="pod-figure-head"><b><span class="l-en">Figure 2 · The Timeline Collapsed</span><span class="l-zh">图 2 · 时间线坍缩</span></b><span><span class="l-en">Illustrative · [I]</span><span class="l-zh">示意图 · [I]</span></span></div>
     <svg viewBox="0 0 820 370" role="img" aria-labelledby="timeline-title-en timeline-desc-en" data-a11y-en="timeline-title-en timeline-desc-en" data-a11y-zh="timeline-title-zh timeline-desc-zh">
       <title id="timeline-title-en" class="l-en">The Timeline Collapsed</title>
@@ -562,6 +568,7 @@
       <text class="pod-svg-muted pod-reveal" x="24" y="27" font-size="13" letter-spacing="1.1"><tspan class="l-en">EXPECTED SEQUENCE</tspan><tspan class="l-zh">预期顺序</tspan></text>
       <line class="pod-svg-grid" x1="36" y1="74" x2="784" y2="74"/>
       <path class="pod-arrow pod-draw" d="M52 74 H770" marker-end="url(#f1-arrow)"/>
+      <circle class="pod-motion-flow" r="6" fill="var(--pod-blue)" style="offset-path:path('M52 74 H770');--pod-flow-duration:5.8s"/>
       <g class="pod-reveal">
         <circle cx="80" cy="74" r="7" fill="var(--pod-blue)"/>
         <text class="pod-svg-text" x="80" y="102" text-anchor="middle" font-size="11"><tspan class="l-en">Hawkish</tspan><tspan class="l-zh">鹰派压力</tspan></text>
@@ -595,32 +602,32 @@
         <tspan class="l-en">THE FUTURE ARRIVED EARLY</tspan><tspan class="l-zh">未来提前抵达</tspan>
       </text>
       <g class="pod-reveal">
-        <rect x="45" y="259" width="112" height="46" rx="10" fill="color-mix(in srgb,var(--pod-red) 12%,var(--panel2))" stroke="var(--pod-red)"/>
+        <rect class="pod-motion-collapse" x="45" y="259" width="112" height="46" rx="10" fill="color-mix(in srgb,var(--pod-red) 12%,var(--panel2))" stroke="var(--pod-red)"/>
         <text class="pod-svg-text" x="101" y="278" text-anchor="middle" font-size="10.5"><tspan class="l-en">Debt stress</tspan><tspan class="l-zh">债市压力</tspan></text>
         <text class="pod-svg-muted" x="101" y="293" text-anchor="middle" font-size="9"><tspan class="l-en">arrived early</tspan><tspan class="l-zh">提前</tspan></text>
       </g>
       <g class="pod-reveal">
-        <rect x="169" y="259" width="112" height="46" rx="10" fill="color-mix(in srgb,var(--pod-blue) 12%,var(--panel2))" stroke="var(--pod-blue)"/>
+        <rect class="pod-motion-collapse" x="169" y="259" width="112" height="46" rx="10" fill="color-mix(in srgb,var(--pod-blue) 12%,var(--panel2))" stroke="var(--pod-blue)"/>
         <text class="pod-svg-text" x="225" y="278" text-anchor="middle" font-size="10.5"><tspan class="l-en">AI financing</tspan><tspan class="l-zh">AI 融资</tspan></text>
         <text class="pod-svg-muted" x="225" y="293" text-anchor="middle" font-size="9"><tspan class="l-en">arrived early</tspan><tspan class="l-zh">提前</tspan></text>
       </g>
       <g class="pod-reveal">
-        <rect x="293" y="259" width="112" height="46" rx="10" fill="color-mix(in srgb,var(--pod-gold) 12%,var(--panel2))" stroke="var(--pod-gold)"/>
+        <rect class="pod-motion-collapse" x="293" y="259" width="112" height="46" rx="10" fill="color-mix(in srgb,var(--pod-gold) 12%,var(--panel2))" stroke="var(--pod-gold)"/>
         <text class="pod-svg-text" x="349" y="278" text-anchor="middle" font-size="10.5"><tspan class="l-en">Gold</tspan><tspan class="l-zh">黄金</tspan></text>
         <text class="pod-svg-muted" x="349" y="293" text-anchor="middle" font-size="9"><tspan class="l-en">next leg early</tspan><tspan class="l-zh">下一程提前</tspan></text>
       </g>
       <g class="pod-reveal">
-        <rect x="417" y="259" width="112" height="46" rx="10" fill="color-mix(in srgb,var(--pod-violet) 12%,var(--panel2))" stroke="var(--pod-violet)"/>
+        <rect class="pod-motion-collapse" x="417" y="259" width="112" height="46" rx="10" fill="color-mix(in srgb,var(--pod-violet) 12%,var(--panel2))" stroke="var(--pod-violet)"/>
         <text class="pod-svg-text" x="473" y="278" text-anchor="middle" font-size="10.5"><tspan class="l-en">Bitcoin</tspan><tspan class="l-zh">比特币</tspan></text>
         <text class="pod-svg-muted" x="473" y="293" text-anchor="middle" font-size="9"><tspan class="l-en">liquidity early</tspan><tspan class="l-zh">流动性反应提前</tspan></text>
       </g>
       <g class="pod-reveal">
-        <rect x="541" y="259" width="112" height="46" rx="10" fill="color-mix(in srgb,var(--pod-teal) 12%,var(--panel2))" stroke="var(--pod-teal)"/>
+        <rect class="pod-motion-collapse" x="541" y="259" width="112" height="46" rx="10" fill="color-mix(in srgb,var(--pod-teal) 12%,var(--panel2))" stroke="var(--pod-teal)"/>
         <text class="pod-svg-text" x="597" y="278" text-anchor="middle" font-size="10.5"><tspan class="l-en">Currency</tspan><tspan class="l-zh">汇率调整</tspan></text>
         <text class="pod-svg-muted" x="597" y="293" text-anchor="middle" font-size="9"><tspan class="l-en">adjusted early</tspan><tspan class="l-zh">提前</tspan></text>
       </g>
       <g class="pod-reveal">
-        <rect x="665" y="259" width="112" height="46" rx="10" fill="color-mix(in srgb,var(--pod-red) 12%,var(--panel2))" stroke="var(--pod-red)"/>
+        <rect class="pod-motion-collapse" x="665" y="259" width="112" height="46" rx="10" fill="color-mix(in srgb,var(--pod-red) 12%,var(--panel2))" stroke="var(--pod-red)"/>
         <text class="pod-svg-text" x="721" y="278" text-anchor="middle" font-size="10.5"><tspan class="l-en">Energy inflation</tspan><tspan class="l-zh">能源通胀</tspan></text>
         <text class="pod-svg-muted" x="721" y="293" text-anchor="middle" font-size="9"><tspan class="l-en">returned early</tspan><tspan class="l-zh">提前回归</tspan></text>
       </g>
@@ -663,7 +670,7 @@
   <p><span class="l-en">The easiest way to see the regime is as one giant auction for long-term capital. The borrowers are Treasury, hyperscalers, utilities, data-center developers, power projects, ordinary corporations and mortgage borrowers. The buyers are pensions, insurers, banks, money-market funds, sovereign investors, households and foreign reserve managers. <strong>The yield is the clearing price.</strong></span><span class="l-zh">理解这一体制最简单的方法，是把它看作一场长期资本的巨型拍卖。借款方包括财政部、超大规模云厂商、公用事业公司、数据中心开发商、电力项目、普通企业与按揭借款人；买方则包括养老金、保险公司、银行、货币市场基金、主权投资者、家庭与外汇储备管理者。<strong>收益率就是出清价格。</strong></span></p>
   <p><span class="l-en">The problem begins when that clearing price becomes high enough to damage the economy that created the borrowing demand. Mortgage rates rise, corporate refinancing becomes more expensive, government interest expense grows, equity multiples compress and the required return on new AI projects rises.</span><span class="l-zh">问题出现在出清价格高到足以反过来伤害产生借款需求的经济体时。房贷利率上升，企业再融资变贵，政府利息支出增加，股票估值倍数收缩，新 AI 项目的必要回报率也随之提高。</span></p>
   </div>
-  <figure class="pod-figure" id="fig-collision">
+  <figure class="pod-figure" id="fig-collision" data-motion-scene="capital-collision">
     <div class="pod-figure-head"><b><span class="l-en">Figure 3 · The Collision for Capital</span><span class="l-zh">图 3 · 资本争夺战</span></b><span><span class="l-en">Illustrative · [I]</span><span class="l-zh">示意图 · [I]</span></span></div>
     <svg viewBox="0 0 820 420" role="img" aria-labelledby="collision-title-en collision-desc-en" data-a11y-en="collision-title-en collision-desc-en" data-a11y-zh="collision-title-zh collision-desc-zh">
       <title id="collision-title-en" class="l-en">The Collision for Capital</title>
@@ -693,19 +700,24 @@
       </g>
       <path class="pod-arrow pod-draw" d="M263 113 C330 113 336 211 385 211" marker-end="url(#f2-blue)"/>
       <path class="pod-arrow pod-arrow-gold pod-draw" d="M557 113 C490 113 484 211 435 211" marker-end="url(#f2-gold)"/>
+      <circle class="pod-motion-flow pod-motion-convergence" r="6" fill="var(--pod-blue)" style="offset-path:path('M263 113 C330 113 336 211 385 211');--pod-flow-duration:4.8s"/>
+      <circle class="pod-motion-flow pod-motion-convergence" r="6" fill="var(--pod-gold)" style="offset-path:path('M557 113 C490 113 484 211 435 211');--pod-flow-duration:4.8s;--pod-flow-delay:.55s"/>
       <g class="pod-reveal">
         <circle cx="410" cy="213" r="80" fill="color-mix(in srgb,var(--pod-blue) 9%,var(--panel2))" stroke="var(--pod-blue)" stroke-width="2"/>
-        <text class="pod-svg-text" x="410" y="203" text-anchor="middle" font-size="14" font-weight="750"><tspan class="l-en">GLOBAL DURATION</tspan><tspan class="l-zh">全球久期需求</tspan></text>
+        <circle class="pod-motion-accumulator" cx="410" cy="213" r="76" fill="none" stroke="var(--pod-gold)" stroke-width="3" opacity="0"/>
+        <text class="pod-svg-text" x="410" y="203" text-anchor="middle" font-size="14" font-weight="750"><tspan class="l-en">GLOBAL DURATION</tspan><tspan class="l-zh">全球久期</tspan></text>
         <text class="pod-svg-text" x="410" y="223" text-anchor="middle" font-size="14" font-weight="750"><tspan class="l-en">DEMAND</tspan><tspan class="l-zh">需求</tspan></text>
-        <text class="pod-svg-muted" x="410" y="246" text-anchor="middle" font-size="10"><tspan class="l-en">pensions · insurers · banks</tspan><tspan class="l-zh">养老金 · 保险 · 银行</tspan></text>
-        <text class="pod-svg-muted" x="410" y="261" text-anchor="middle" font-size="10"><tspan class="l-en">foreign reserves · households</tspan><tspan class="l-zh">外汇储备 · 家庭</tspan></text>
+        <text class="pod-svg-muted pod-collision-meta l-en" text-anchor="middle" font-size="10"><tspan x="410" y="242">pensions · insurers</tspan><tspan x="410" y="257">banks · FX reserves</tspan><tspan x="410" y="272">households</tspan></text>
+        <text class="pod-svg-muted pod-collision-meta l-zh" text-anchor="middle" font-size="10"><tspan x="410" y="242">养老金 · 保险</tspan><tspan x="410" y="257">银行 · 外汇储备</tspan><tspan x="410" y="272">家庭</tspan></text>
       </g>
       <path class="pod-arrow pod-arrow-red pod-draw" d="M410 293 V323" marker-end="url(#f2-gold)"/>
       <g class="pod-reveal">
         <text class="pod-svg-muted" x="410" y="348" text-anchor="middle" font-size="10.5"><tspan class="l-en">SUPPLY &gt; WILLING DEMAND AT YESTERDAY'S PRICE</tspan><tspan class="l-zh">按昨天价格计算：供给 &gt; 自愿需求</tspan></text>
         <rect x="174" y="364" width="472" height="19" rx="9.5" fill="url(#f2-gauge)" opacity=".86"/>
-        <circle cx="522" cy="373.5" r="15" fill="var(--panel)" stroke="var(--text)" stroke-width="2"/>
-        <path d="M522 373.5 L535 366" stroke="var(--text)" stroke-width="2" stroke-linecap="round"/>
+        <g class="pod-motion-meter">
+          <circle cx="522" cy="373.5" r="15" fill="var(--panel)" stroke="var(--text)" stroke-width="2"/>
+          <path d="M522 373.5 L535 366" stroke="var(--text)" stroke-width="2" stroke-linecap="round"/>
+        </g>
         <text class="pod-svg-text" x="410" y="410" text-anchor="middle" font-size="15" font-weight="800"><tspan class="l-en">MARKET-CLEARING YIELD RISES</tspan><tspan class="l-zh">市场出清收益率上升</tspan></text>
       </g>
     </svg>
@@ -834,7 +846,7 @@
   <p><span class="l-en">Treasury cannot repeal the bond market, but it can influence the composition and functioning of the market that produces the yield. It chooses bills versus notes and bonds, can buy back older securities, can alter auction composition and can respond to demand across maturities. These tools support liquidity and market functioning; they do not erase the financing need.</span><span class="l-zh">财政部无法废除债券市场，但可以影响产生收益率的市场构成与运行方式。它可以选择更多国库券还是中长期国债，可以回购旧券，可以调整拍卖结构，也可以回应不同期限的需求。这些工具支持流动性与市场运行，却不会消除融资需求。</span></p>
   <p><span class="l-en">Larger long-duration buybacks matter less because their size can overpower a market measured in tens of trillions than because they reveal a behavioral threshold: sufficiently uncomfortable long-end conditions can change Treasury&rsquo;s actions. It does not require an explicit yield cap. There is no official yield cap, and <strong>Treasury buybacks are not central-bank monetization.</strong></span><span class="l-zh">长久期回购的重要性，不在于其规模能压倒一个以数十万亿美元计的市场，而在于它揭示了行为阈值：长端条件不适到一定程度，会改变财政部的行动。当前没有官方收益率上限，<strong>财政部回购也不是央行货币化。</strong></span></p>
   </div>
-  <figure class="pod-figure" id="fig-reactions">
+  <figure class="pod-figure" id="fig-reactions" data-motion-scene="reaction-functions">
     <div class="pod-figure-head"><b><span class="l-en">Figure 4 · The Two Reaction Functions</span><span class="l-zh">图 4 · 两套反应函数</span></b><span><span class="l-en">Mechanism map · [F/I]</span><span class="l-zh">机制图 · [F/I]</span></span></div>
     <svg viewBox="0 0 820 500" role="img" aria-labelledby="reactions-title-en reactions-desc-en" data-a11y-en="reactions-title-en reactions-desc-en" data-a11y-zh="reactions-title-zh reactions-desc-zh">
       <title id="reactions-title-en" class="l-en">The Two Reaction Functions</title>
@@ -872,7 +884,11 @@
       </g>
       <path class="pod-arrow pod-draw" d="M193 345 C193 403 304 414 373 414" marker-end="url(#f4a)"/>
       <path class="pod-arrow pod-arrow-gold pod-draw" d="M627 345 C627 403 516 414 447 414" marker-end="url(#f4b)"/>
-      <rect class="pod-node" x="326" y="385" width="168" height="61" rx="14"/>
+      <circle class="pod-motion-flow pod-motion-convergence" r="5.5" fill="var(--pod-blue)" style="offset-path:path('M193 180 V220');--pod-flow-duration:4.6s"/>
+      <circle class="pod-motion-flow pod-motion-convergence" r="5.5" fill="var(--pod-gold)" style="offset-path:path('M627 180 V220');--pod-flow-duration:4.6s;--pod-flow-delay:.45s"/>
+      <circle class="pod-motion-flow pod-motion-convergence" r="6" fill="var(--pod-blue)" style="offset-path:path('M193 345 C193 403 304 414 373 414');--pod-flow-duration:5.4s;--pod-flow-delay:1.1s"/>
+      <circle class="pod-motion-flow pod-motion-convergence" r="6" fill="var(--pod-gold)" style="offset-path:path('M627 345 C627 403 516 414 447 414');--pod-flow-duration:5.4s;--pod-flow-delay:1.55s"/>
+      <rect class="pod-node pod-motion-pulse" x="326" y="385" width="168" height="61" rx="14"/>
       <text class="pod-svg-text" x="410" y="412" text-anchor="middle" font-size="14" font-weight="800"><tspan class="l-en">FINANCIAL</tspan><tspan class="l-zh">金融条件</tspan></text>
       <text class="pod-svg-text" x="410" y="432" text-anchor="middle" font-size="14" font-weight="800"><tspan class="l-en">CONDITIONS</tspan><tspan class="l-zh">共同出清</tspan></text>
       <text class="pod-svg-text" x="410" y="481" text-anchor="middle" font-size="12" font-weight="800" fill="var(--pod-red)"><tspan class="l-en">LIQUIDITY SUPPORT ≠ QE ≠ FORMAL YIELD-CURVE CONTROL</tspan><tspan class="l-zh">流动性支持 ≠ QE ≠ 正式收益率曲线控制</tspan></text>
@@ -946,7 +962,7 @@
   <p><span class="l-en">Regulated dollar stablecoins can become a distribution system for dollar liabilities backed by cash, repo and short-dated Treasury securities. The critical word is <strong>short-dated</strong>: rapid redemption makes long-bond price volatility a poor reserve match.</span><span class="l-zh">受监管的美元稳定币可以成为一种美元负债分销系统，由现金、回购与短期美国国债支持。关键在于<strong>短期</strong>：快速赎回使长债价格波动无法成为合适的储备匹配。</span></p>
   <p><span class="l-en">Stablecoin issuers therefore do not naturally solve the problem of finding investors willing to hold 20- or 30-year bonds. What they can do is deepen structural demand for bills and repo, giving Treasury more flexibility over <strong>which part of the curve absorbs incremental borrowing</strong>.</span><span class="l-zh">因此，稳定币发行人并不会自然解决寻找 20 年或 30 年期债券买家的难题。它们能够做的是加深对国库券与回购的结构性需求，让财政部在<strong>由收益率曲线哪一段吸收新增借款</strong>上拥有更大灵活性。</span></p>
   </div>
-  <figure class="pod-figure" id="fig-stablecoin">
+  <figure class="pod-figure" id="fig-stablecoin" data-motion-scene="stablecoin-machine">
     <div class="pod-figure-head"><b><span class="l-en">Figure 5 · The Stablecoin Treasury Machine</span><span class="l-zh">图 5 · 稳定币国债机器</span></b><span><span class="l-en">Mechanism + second-order trade · [F/I]</span><span class="l-zh">机制 + 二阶取舍 · [F/I]</span></span></div>
     <svg viewBox="0 0 820 590" role="img" aria-labelledby="stablecoin-title-en stablecoin-desc-en" data-a11y-en="stablecoin-title-en stablecoin-desc-en" data-a11y-zh="stablecoin-title-zh stablecoin-desc-zh">
       <title id="stablecoin-title-en" class="l-en">The Stablecoin Treasury Machine</title>
@@ -956,6 +972,7 @@
       <defs>
         <marker id="f5m" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="var(--pod-blue)"/></marker>
         <marker id="f5g" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="var(--pod-gold)"/></marker>
+        <marker id="f5r" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="var(--pod-red)"/></marker>
       </defs>
       <g class="pod-reveal">
         <rect class="pod-node" x="24" y="44" width="145" height="77" rx="14"/>
@@ -981,7 +998,7 @@
         <text class="pod-svg-text" x="755" y="76" text-anchor="middle" font-size="13" font-weight="750"><tspan class="l-en">U.S.</tspan><tspan class="l-zh">美国</tspan></text>
         <text class="pod-svg-text" x="755" y="95" text-anchor="middle" font-size="13" font-weight="750"><tspan class="l-en">TREASURY</tspan><tspan class="l-zh">财政部</tspan></text>
       </g>
-      <path class="pod-arrow pod-arrow-teal pod-draw" d="M755 121 C755 178 649 177 591 177" marker-end="url(#f5m)"/>
+      <path class="pod-arrow pod-arrow-teal pod-draw" d="M311 121 C311 139 334 145 350 153" marker-end="url(#f5m)"/>
       <g class="pod-reveal">
         <rect class="pod-node" x="235" y="153" width="348" height="71" rx="14"/>
         <text class="pod-svg-text" x="409" y="182" text-anchor="middle" font-size="15" font-weight="800"><tspan class="l-en">GLOBAL DOLLAR SYSTEM</tspan><tspan class="l-zh">全球美元体系</tspan></text>
@@ -1002,7 +1019,7 @@
         <text class="pod-svg-muted" x="666" y="361" text-anchor="middle" font-size="10"><tspan class="l-en">already financing Treasuries</tspan><tspan class="l-zh">原本已在融资美债</tspan></text>
       </g>
       <path class="pod-arrow pod-arrow-teal pod-draw" d="M263 336 H335" marker-end="url(#f5m)"/>
-      <path class="pod-arrow pod-arrow-red pod-draw" d="M557 336 H485" marker-end="url(#f5m)"/>
+      <path class="pod-arrow pod-arrow-red pod-draw" d="M485 336 H557" marker-end="url(#f5r)"/>
       <rect x="335" y="301" width="150" height="70" rx="14" fill="color-mix(in srgb,var(--pod-gold) 12%,var(--panel2))" stroke="var(--pod-gold)"/>
       <text class="pod-svg-text" x="410" y="330" text-anchor="middle" font-size="13" font-weight="800"><tspan class="l-en">NET NEW</tspan><tspan class="l-zh">净新增</tspan></text>
       <text class="pod-svg-text" x="410" y="349" text-anchor="middle" font-size="13" font-weight="800"><tspan class="l-en">BILL DEMAND</tspan><tspan class="l-zh">国库券需求</tspan></text>
@@ -1019,6 +1036,16 @@
       </g>
       <path class="pod-arrow pod-draw" d="M410 410 C350 410 321 428 290 434" marker-end="url(#f5m)"/>
       <path class="pod-arrow pod-arrow-gold pod-draw" d="M410 410 C470 410 499 428 530 434" marker-end="url(#f5g)"/>
+      <circle class="pod-motion-flow pod-motion-machine" r="5.5" fill="var(--pod-blue)" style="offset-path:path('M169 82 H231');--pod-flow-duration:7.6s"/>
+      <circle class="pod-motion-flow pod-motion-machine" r="5.5" fill="var(--pod-blue)" style="offset-path:path('M384 82 H446');--pod-flow-duration:7.6s;--pod-flow-delay:.65s"/>
+      <circle class="pod-motion-flow pod-motion-machine" r="5.5" fill="var(--pod-gold)" style="offset-path:path('M644 82 H706');--pod-flow-duration:7.6s;--pod-flow-delay:1.3s"/>
+      <circle class="pod-motion-flow pod-motion-machine" r="5.5" fill="var(--pod-teal)" style="offset-path:path('M311 121 C311 139 334 145 350 153');--pod-flow-duration:7.6s;--pod-flow-delay:.95s"/>
+      <circle class="pod-motion-flow pod-motion-machine" r="5.5" fill="var(--pod-gold)" style="offset-path:path('M409 224 V277');--pod-flow-duration:7.6s;--pod-flow-delay:2.6s"/>
+      <circle class="pod-motion-flow pod-motion-machine" r="5.5" fill="var(--pod-teal)" style="offset-path:path('M263 336 H335');--pod-flow-duration:7.6s;--pod-flow-delay:3.25s"/>
+      <circle class="pod-motion-flow pod-motion-machine" r="5.5" fill="var(--pod-red)" style="offset-path:path('M485 336 H557');--pod-flow-duration:7.6s;--pod-flow-delay:3.9s"/>
+      <circle class="pod-motion-flow pod-motion-machine" r="5.5" fill="var(--pod-gold)" style="offset-path:path('M410 371 V421');--pod-flow-duration:7.6s;--pod-flow-delay:4.55s"/>
+      <circle class="pod-motion-flow pod-motion-machine" r="5.5" fill="var(--pod-blue)" style="offset-path:path('M410 410 C350 410 321 428 290 434');--pod-flow-duration:7.6s;--pod-flow-delay:5.2s"/>
+      <circle class="pod-motion-flow pod-motion-machine" r="5.5" fill="var(--pod-gold)" style="offset-path:path('M410 410 C470 410 499 428 530 434');--pod-flow-duration:7.6s;--pod-flow-delay:5.85s"/>
       <text class="pod-svg-text" x="410" y="558" text-anchor="middle" font-size="13" font-weight="850" fill="var(--pod-red)"><tspan class="l-en">BILL DEMAND ≠ 30-YEAR DEMAND · THIS IS MATURITY TRANSFORMATION</tspan><tspan class="l-zh">国库券需求 ≠ 30 年期需求 · 这是期限转换</tspan></text>
     </svg>
     <figcaption><span class="l-en">The gross stablecoin market cap is not the same as incremental Treasury demand. Source of funds matters. Even when bill demand is genuinely new, the benefit is indirect: more short-end capacity can reduce marginal long-end pressure while increasing refinancing sensitivity. [F/I]</span><span class="l-zh">稳定币总市值不等于新增美债需求；资金来源至关重要。即使国库券需求确为新增，收益也是间接的：更多短端容量可以减少边际长端压力，同时提高再融资敏感度。[F/I]</span></figcaption>
@@ -1101,7 +1128,7 @@
     <p>这就是从<strong>AI 敞口</strong>转向<strong>AI 资本效率</strong>。</p>
   </div>
   </div>
-  <figure class="pod-figure" id="fig-ai-frontier">
+  <figure class="pod-figure" id="fig-ai-frontier" data-motion-scene="ai-frontier">
     <div class="pod-figure-head"><b><span class="l-en">Figure 6 · The AI Capital-Efficiency Frontier</span><span class="l-zh">图 6 · AI 资本效率前沿</span></b><span><span class="l-en">Qualitative framework · [I]</span><span class="l-zh">定性框架 · [I]</span></span></div>
     <svg viewBox="0 0 820 560" role="img" aria-labelledby="frontier-title-en frontier-desc-en" data-a11y-en="frontier-title-en frontier-desc-en" data-a11y-zh="frontier-title-zh frontier-desc-zh">
       <title id="frontier-title-en" class="l-en">The AI Capital-Efficiency Frontier</title>
@@ -1113,34 +1140,35 @@
       <line class="pod-svg-grid" x1="98" y1="472" x2="98" y2="60" stroke-width="2" marker-end="url(#f6m)"/>
       <text class="pod-svg-muted" x="430" y="527" text-anchor="middle" font-size="13"><tspan class="l-en">INCREMENTAL AI CAPITAL INTENSITY →</tspan><tspan class="l-zh">增量 AI 资本强度 →</tspan></text>
       <text class="pod-svg-muted" x="28" y="266" text-anchor="middle" font-size="13" transform="rotate(-90 28 266)"><tspan class="l-en">MONETIZATION / FCF CONVERSION →</tspan><tspan class="l-zh">变现 / 自由现金流转换 →</tspan></text>
-      <path d="M140 390 C280 290 420 220 720 105" fill="none" stroke="var(--pod-gold)" stroke-width="2" stroke-dasharray="6 6"/>
+      <path class="pod-motion-frontier" d="M140 390 C280 290 420 220 720 105" fill="none" stroke="var(--pod-gold)" stroke-width="2" stroke-dasharray="6 6"/>
+      <circle class="pod-motion-flow" r="6" fill="var(--pod-gold)" style="offset-path:path('M140 390 C280 290 420 220 720 105');--pod-flow-duration:5.6s"/>
       <text class="pod-svg-muted" x="631" y="89" font-size="12"><tspan class="l-en">capital-efficiency frontier</tspan><tspan class="l-zh">资本效率前沿</tspan></text>
-      <g class="pod-reveal">
+      <g class="pod-reveal pod-motion-bubble" style="--pod-bubble-delay:.05s">
         <circle cx="236" cy="172" r="34" fill="color-mix(in srgb,var(--pod-teal) 18%,var(--panel2))" stroke="var(--pod-teal)" stroke-width="2"/>
         <text class="pod-svg-text" x="236" y="168" text-anchor="middle" font-size="12" font-weight="800">AAPL</text>
         <text class="pod-svg-muted" x="236" y="187" text-anchor="middle" font-size="11"><tspan class="l-en">cash-rich / lighter build</tspan><tspan class="l-zh">现金强 / 建设较轻</tspan></text>
       </g>
-      <g class="pod-reveal">
+      <g class="pod-reveal pod-motion-bubble" style="--pod-bubble-delay:.18s">
         <circle cx="482" cy="153" r="51" fill="color-mix(in srgb,var(--pod-blue) 17%,var(--panel2))" stroke="var(--pod-blue)" stroke-width="2"/>
         <text class="pod-svg-text" x="482" y="149" text-anchor="middle" font-size="13" font-weight="800">MSFT</text>
         <text class="pod-svg-muted" x="482" y="170" text-anchor="middle" font-size="11"><tspan class="l-en">clearest cash bridge</tspan><tspan class="l-zh">最清晰现金流桥</tspan></text>
       </g>
-      <g class="pod-reveal">
+      <g class="pod-reveal pod-motion-bubble" style="--pod-bubble-delay:.31s">
         <circle cx="622" cy="212" r="45" fill="color-mix(in srgb,var(--pod-gold) 17%,var(--panel2))" stroke="var(--pod-gold)" stroke-width="2"/>
         <text class="pod-svg-text" x="622" y="207" text-anchor="middle" font-size="13" font-weight="800">GOOGL</text>
         <text class="pod-svg-muted" x="622" y="228" text-anchor="middle" font-size="11"><tspan class="l-en">vertical integration</tspan><tspan class="l-zh">垂直整合</tspan></text>
       </g>
-      <g class="pod-reveal">
+      <g class="pod-reveal pod-motion-bubble" style="--pod-bubble-delay:.44s">
         <circle cx="557" cy="309" r="47" fill="color-mix(in srgb,var(--pod-violet) 17%,var(--panel2))" stroke="var(--pod-violet)" stroke-width="2"/>
         <text class="pod-svg-text" x="557" y="304" text-anchor="middle" font-size="13" font-weight="800">NVDA</text>
         <text class="pod-svg-muted" x="557" y="325" text-anchor="middle" font-size="11"><tspan class="l-en">direct economics</tspan><tspan class="l-zh">当期经济性直接</tspan></text>
       </g>
-      <g class="pod-reveal">
+      <g class="pod-reveal pod-motion-bubble" style="--pod-bubble-delay:.57s">
         <circle cx="665" cy="389" r="57" fill="color-mix(in srgb,var(--pod-red) 15%,var(--panel2))" stroke="var(--pod-red)" stroke-width="2"/>
         <text class="pod-svg-text" x="665" y="383" text-anchor="middle" font-size="13" font-weight="800">META</text>
         <text class="pod-svg-muted" x="665" y="404" text-anchor="middle" font-size="10.5"><tspan class="l-en">optionality / bridge unproven</tspan><tspan class="l-zh">期权性 / 现金桥待证</tspan></text>
       </g>
-      <g class="pod-reveal">
+      <g class="pod-reveal pod-motion-bubble" style="--pod-bubble-delay:.7s">
         <circle cx="471" cy="405" r="39" fill="color-mix(in srgb,var(--pod-red) 11%,var(--panel2))" stroke="var(--pod-red)" stroke-width="2"/>
         <text class="pod-svg-text" x="471" y="401" text-anchor="middle" font-size="12" font-weight="800">BABA</text>
         <text class="pod-svg-muted" x="471" y="421" text-anchor="middle" font-size="10.5"><tspan class="l-en">external equity / dilution</tspan><tspan class="l-zh">外部股权 / 稀释</tspan></text>
@@ -1360,7 +1388,7 @@
   <p><span class="l-en">Those clocks are connected. They are not synchronized. A crowded equity can peak before physical scarcity, supplier profit and downstream system cost turn together.</span><span class="l-zh">这些时钟彼此相连，却并不同步。一只拥挤的股票可以在实体稀缺、供应商利润与下游系统成本共同转向之前先行见顶。</span></p>
   <p><span class="l-en">Korea is the clearest example of how one word—cycle—can hide four processes. The equities became crowded and suffered a violent reset, which looked like a fundamental warning. Supplier economics stayed exceptionally strong because physical HBM and DRAM scarcity did not disappear. <strong>The equity clock turned first.</strong></span><span class="l-zh">韩国最能说明“周期”一词如何掩盖四个不同过程。存储股变得拥挤并出现剧烈重置，看起来像基本面警告；但供应商经济性依然异常强劲，因为实体 HBM 与 DRAM 稀缺并未消失。<strong>最先转向的是股票时钟。</strong></span></p>
   </div>
-  <figure class="pod-figure" id="fig-memory">
+  <figure class="pod-figure" id="fig-memory" data-motion-scene="memory-clocks">
     <div class="pod-figure-head"><b><span class="l-en">Figure 7 · The Four Memory Clocks</span><span class="l-zh">图 7 · 四只存储时钟</span></b><span><span class="l-en">Sequence map · [F/I]</span><span class="l-zh">顺序图 · [F/I]</span></span></div>
     <svg viewBox="0 0 820 500" role="img" aria-labelledby="memory-title-en memory-desc-en" data-a11y-en="memory-title-en memory-desc-en" data-a11y-zh="memory-title-zh memory-desc-zh">
       <title id="memory-title-en" class="l-en">The Four Memory Clocks</title>
@@ -1368,30 +1396,31 @@
       <desc id="memory-desc-en" class="l-en">Equity positioning and valuation can peak first, while physical supply and contract pricing, supplier profit and free cash flow, and downstream AI system cost turn on different clocks.</desc>
       <desc id="memory-desc-zh" class="l-zh">股票仓位与估值可以率先见顶，而实物供给与合约定价、供应商利润与自由现金流，以及下游 AI 系统成本各自运行在不同的时钟上。</desc>
       <line class="pod-svg-grid" x1="68" y1="424" x2="770" y2="424" stroke-width="2"/>
+      <circle class="pod-motion-flow" r="6" fill="var(--pod-blue)" style="offset-path:path('M68 424 H770');--pod-flow-duration:7.2s"/>
       <text class="pod-svg-muted" x="419" y="470" text-anchor="middle" font-size="10"><tspan class="l-en">TIME → CLOCKS CONNECT, BUT DO NOT TURN TOGETHER</tspan><tspan class="l-zh">时间 → 时钟彼此连接，但不会同步转动</tspan></text>
       <g class="pod-reveal">
         <circle cx="150" cy="214" r="92" fill="color-mix(in srgb,var(--pod-red) 10%,var(--panel2))" stroke="var(--pod-red)" stroke-width="3"/>
         <circle cx="150" cy="214" r="69" fill="none" stroke="var(--line)"/>
-        <line x1="150" y1="214" x2="117" y2="164" stroke="var(--pod-red)" stroke-width="4" stroke-linecap="round"/>
+        <line class="pod-motion-clock" x1="150" y1="214" x2="117" y2="164" stroke="var(--pod-red)" stroke-width="4" stroke-linecap="round" style="transform-box:view-box;transform-origin:150px 214px;--pod-clock-duration:10s;--pod-clock-delay:-2s"/>
         <text class="pod-svg-text" x="150" y="326" text-anchor="middle" font-size="13" font-weight="800"><tspan class="l-en">EQUITY POSITIONING</tspan><tspan class="l-zh">股票仓位 / 估值</tspan></text>
         <text class="pod-svg-text" x="150" y="346" text-anchor="middle" font-size="13" font-weight="800"><tspan class="l-en">&amp; VALUATION</tspan><tspan class="l-zh">时钟</tspan></text>
         <text class="pod-svg-text" x="150" y="386" text-anchor="middle" font-size="12" font-weight="850" fill="var(--pod-red)"><tspan class="l-en">PEAKS FIRST</tspan><tspan class="l-zh">最先见顶</tspan></text>
       </g>
       <g class="pod-reveal">
         <circle cx="365" cy="214" r="76" fill="color-mix(in srgb,var(--pod-blue) 10%,var(--panel2))" stroke="var(--pod-blue)" stroke-width="3"/>
-        <line x1="365" y1="214" x2="393" y2="170" stroke="var(--pod-blue)" stroke-width="4" stroke-linecap="round"/>
+        <line class="pod-motion-clock" x1="365" y1="214" x2="393" y2="170" stroke="var(--pod-blue)" stroke-width="4" stroke-linecap="round" style="transform-box:view-box;transform-origin:365px 214px;--pod-clock-duration:13s;--pod-clock-delay:-5s"/>
         <text class="pod-svg-text" x="365" y="316" text-anchor="middle" font-size="12" font-weight="800"><tspan class="l-en">PHYSICAL SUPPLY</tspan><tspan class="l-zh">物理供给</tspan></text>
         <text class="pod-svg-text" x="365" y="334" text-anchor="middle" font-size="12" font-weight="800"><tspan class="l-en">&amp; CONTRACT PRICE</tspan><tspan class="l-zh">与合约定价</tspan></text>
       </g>
       <g class="pod-reveal">
         <circle cx="555" cy="214" r="68" fill="color-mix(in srgb,var(--pod-teal) 10%,var(--panel2))" stroke="var(--pod-teal)" stroke-width="3"/>
-        <line x1="555" y1="214" x2="585" y2="188" stroke="var(--pod-teal)" stroke-width="4" stroke-linecap="round"/>
+        <line class="pod-motion-clock" x1="555" y1="214" x2="585" y2="188" stroke="var(--pod-teal)" stroke-width="4" stroke-linecap="round" style="transform-box:view-box;transform-origin:555px 214px;--pod-clock-duration:16s;--pod-clock-delay:-8s"/>
         <text class="pod-svg-text" x="555" y="306" text-anchor="middle" font-size="12" font-weight="800"><tspan class="l-en">SUPPLIER PROFIT</tspan><tspan class="l-zh">供应商利润</tspan></text>
         <text class="pod-svg-text" x="555" y="324" text-anchor="middle" font-size="12" font-weight="800"><tspan class="l-en">&amp; FREE CASH FLOW</tspan><tspan class="l-zh">与自由现金流</tspan></text>
       </g>
       <g class="pod-reveal">
         <circle cx="706" cy="214" r="58" fill="color-mix(in srgb,var(--pod-gold) 10%,var(--panel2))" stroke="var(--pod-gold)" stroke-width="3"/>
-        <line x1="706" y1="214" x2="681" y2="188" stroke="var(--pod-gold)" stroke-width="4" stroke-linecap="round"/>
+        <line class="pod-motion-clock" x1="706" y1="214" x2="681" y2="188" stroke="var(--pod-gold)" stroke-width="4" stroke-linecap="round" style="transform-box:view-box;transform-origin:706px 214px;--pod-clock-duration:20s;--pod-clock-delay:-11s"/>
         <text class="pod-svg-text" x="706" y="296" text-anchor="middle" font-size="11.5" font-weight="800"><tspan class="l-en">DOWNSTREAM</tspan><tspan class="l-zh">下游 AI</tspan></text>
         <text class="pod-svg-text" x="706" y="313" text-anchor="middle" font-size="11.5" font-weight="800"><tspan class="l-en">AI-SYSTEM COST</tspan><tspan class="l-zh">系统成本</tspan></text>
       </g>
@@ -1416,7 +1445,7 @@
   <p><span class="l-en">Higher JGB yields can draw marginal Japanese capital home while a narrowing U.S.–Japan rate differential strengthens the yen and weakens carry. Global risk can therefore de-lever even as U.S. liquidity expectations improve.</span><span class="l-zh">更高的日本国债收益率可以吸引边际日本资本回流；美日利差收窄则会强化日元并削弱套息交易。因此，即使美国流动性预期改善，全球风险资产仍可能去杠杆。</span></p>
   <p><span class="l-en">This can create a contradictory tape: <strong>the dollar weakens, gold rises, U.S. rate expectations improve—and global equities still sell off because the funding structure is deleveraging.</strong> Japan is therefore not merely a Treasury buyer in this story; it is a sovereign-duration market and a source of global leverage.</span><span class="l-zh">这会形成看似矛盾的市场：<strong>美元走弱、黄金上涨、美国利率预期改善，而全球股票仍因融资结构去杠杆而下跌。</strong>因此，日本在本报告中不只是美债买家；它既是一个主权久期市场，也是全球杠杆的资金来源。</span></p>
   </div>
-  <figure class="pod-figure" id="fig-triangle">
+  <figure class="pod-figure" id="fig-triangle" data-motion-scene="duration-triangle">
     <div class="pod-figure-head"><b><span class="l-en">Figure 8 · The Global Duration Triangle</span><span class="l-zh">图 8 · 全球久期三角</span></b><span><span class="l-en">Causal map · motives are [I]</span><span class="l-zh">因果图 · 动机为 [I]</span></span></div>
     <svg viewBox="0 0 820 560" role="img" aria-labelledby="triangle-title-en triangle-desc-en" data-a11y-en="triangle-title-en triangle-desc-en" data-a11y-zh="triangle-title-zh triangle-desc-zh">
       <title id="triangle-title-en" class="l-en">The Global Duration Triangle</title>
@@ -1458,6 +1487,12 @@
       <text class="pod-svg-muted" x="410" y="402" text-anchor="middle" font-size="9.5"><tspan class="l-en">cheap yen funds leverage</tspan><tspan class="l-zh">廉价日元为杠杆融资</tspan></text>
       <path class="pod-arrow pod-arrow-red pod-draw" d="M529 447 H306" marker-end="url(#f8r)"/>
       <text class="pod-svg-muted" x="410" y="473" text-anchor="middle" font-size="9.5"><tspan class="l-en">stronger yen forces unwind</tspan><tspan class="l-zh">日元走强迫使去杠杆</tspan></text>
+      <circle class="pod-motion-flow pod-motion-synapse" r="6" fill="var(--pod-blue)" style="offset-path:path('M339 176 C283 235 242 288 218 326');--pod-flow-duration:6.2s"/>
+      <circle class="pod-motion-flow pod-motion-synapse" r="6" fill="var(--pod-gold)" style="offset-path:path('M241 329 C279 268 319 221 356 185');--pod-flow-duration:6.2s;--pod-flow-delay:1s"/>
+      <circle class="pod-motion-flow pod-motion-synapse" r="6" fill="var(--pod-red)" style="offset-path:path('M481 176 C537 235 578 288 602 326');--pod-flow-duration:6.2s;--pod-flow-delay:2s"/>
+      <circle class="pod-motion-flow pod-motion-synapse" r="6" fill="var(--pod-blue)" style="offset-path:path('M579 329 C541 268 501 221 464 185');--pod-flow-duration:6.2s;--pod-flow-delay:3s"/>
+      <circle class="pod-motion-flow pod-motion-synapse" r="6" fill="var(--pod-gold)" style="offset-path:path('M291 417 H514');--pod-flow-duration:6.2s;--pod-flow-delay:4s"/>
+      <circle class="pod-motion-flow pod-motion-synapse" r="6" fill="var(--pod-red)" style="offset-path:path('M529 447 H306');--pod-flow-duration:6.2s;--pod-flow-delay:5s"/>
       <text class="pod-svg-muted" x="410" y="535" text-anchor="middle" font-size="10"><tspan class="l-en">Capital-flow motives are Mastermind inference; the rate and flow channels are observable.</tspan><tspan class="l-zh">资本流动机为 Mastermind 推断；利率与资金流渠道可观察。</tspan></text>
     </svg>
     <figcaption><span class="l-en">Japan is not merely a buyer in the U.S. duration story; it has its own sovereign-duration problem and supplies a global funding currency. The two sovereign markets and leveraged risk books form a two-way system. Motives are labeled inference. [F/I]</span><span class="l-zh">日本不只是美国久期故事中的买家；它有自己的主权久期问题，也提供全球融资货币。两大主权市场与杠杆风险账本形成双向系统。动机明确标为推断。[F/I]</span></figcaption>
@@ -1564,7 +1599,7 @@
   <div class="l-zh pod-lang-section">
   <p><span class="l-en">The old forecasting mistake was to let one path become too authoritative. The better discipline is to make the alternatives explicit. These are <strong>Mastermind desk estimates</strong>, not statistically calibrated probabilities. Their purpose is to force updates rather than narrate around new evidence.</span><span class="l-zh">旧预测的错误，是让单一路径获得过多权威。更好的纪律是明确列出替代路径。这些是<strong>Mastermind 研究台估计</strong>，并非经过统计校准的概率。它们的目的，是迫使我们更新，而不是围绕新证据编故事。</span></p>
   </div>
-  <figure class="pod-figure" id="fig-regimes">
+  <figure class="pod-figure" id="fig-regimes" data-motion-scene="regime-tree">
     <div class="pod-figure-head"><b><span class="l-en">Figure 9 · The Four-Regime Tree</span><span class="l-zh">图 9 · 四体制决策树</span></b><span><span class="l-en">Desk probabilities · 24 Aug 2026</span><span class="l-zh">研究台概率 · 2026 年 8 月 24 日</span></span></div>
     <svg viewBox="0 0 820 610" role="img" aria-labelledby="regimes-title-en regimes-desc-en" data-a11y-en="regimes-title-en regimes-desc-en" data-a11y-zh="regimes-title-zh regimes-desc-zh">
       <title id="regimes-title-en" class="l-en">The Four-Regime Tree</title>
@@ -1583,14 +1618,16 @@
         <text class="pod-svg-muted" x="410" y="80" text-anchor="middle" font-size="11.5"><tspan class="l-en">Duration stress</tspan><tspan class="l-zh">久期压力</tspan></text>
         <text class="pod-svg-muted" x="410" y="98" text-anchor="middle" font-size="11.5"><tspan class="l-en">Credit still functioning</tspan><tspan class="l-zh">信用仍在运转</tspan></text>
       </g>
-      <path class="pod-arrow pod-draw" d="M355 117 C300 150 222 165 127 199" marker-end="url(#f9b)"/>
-      <path class="pod-arrow pod-arrow-teal pod-draw" d="M392 117 C360 155 331 165 309 199" marker-end="url(#f9t)"/>
-      <path class="pod-arrow pod-arrow-gold pod-draw" d="M428 117 C460 155 489 165 511 199" marker-end="url(#f9g)"/>
-      <path class="pod-arrow pod-arrow-red pod-draw" d="M465 117 C520 150 598 165 693 199" marker-end="url(#f9r)"/>
+      <path class="pod-arrow pod-draw pod-motion-connector" d="M355 117 C300 150 222 165 127 199" marker-end="url(#f9b)"/>
+      <path class="pod-arrow pod-arrow-teal pod-draw pod-motion-connector" d="M392 117 C360 155 331 165 309 199" marker-end="url(#f9t)"/>
+      <path class="pod-arrow pod-arrow-gold pod-draw pod-motion-connector" d="M428 117 C460 155 489 165 511 199" marker-end="url(#f9g)"/>
+      <path class="pod-arrow pod-arrow-red pod-draw pod-motion-connector" d="M465 117 C520 150 598 165 693 199" marker-end="url(#f9r)"/>
       <g class="pod-reveal">
         <rect class="pod-node" x="18" y="205" width="205" height="304" rx="17" stroke="var(--pod-blue)" stroke-width="2"/>
         <text class="pod-svg-text" x="120" y="245" text-anchor="middle" font-size="28" font-weight="900">45%</text>
         <text class="pod-svg-text" x="120" y="273" text-anchor="middle" font-size="13.5" font-weight="800"><tspan class="l-en">MANAGED PRESSURE</tspan><tspan class="l-zh">受管理的久期压力</tspan></text>
+        <rect x="37" y="287" width="166" height="6" rx="3" fill="var(--pod-grid)"/>
+        <rect class="pod-motion-probability" x="37" y="287" width="74.7" height="6" rx="3" fill="var(--pod-blue)" style="--pod-level-delay:.1s"/>
         <text class="pod-svg-muted l-en" x="37" y="310" font-size="12"><tspan x="37" dy="0">• Long yields high, contained</tspan><tspan x="37" dy="25">• Real yields eventually ↓</tspan><tspan x="37" dy="25">• Dollar softer</tspan><tspan x="37" dy="25">• Gold strong</tspan><tspan x="37" dy="25">• BTC positive / volatile</tspan><tspan x="37" dy="25">• Equity dispersion</tspan></text>
         <text class="pod-svg-muted l-zh" x="37" y="310" font-size="12"><tspan x="37" dy="0">• 长端高但受控</tspan><tspan x="37" dy="25">• 实际收益率最终下降</tspan><tspan x="37" dy="25">• 美元走软</tspan><tspan x="37" dy="25">• 黄金强势</tspan><tspan x="37" dy="25">• BTC 偏强、波动较大</tspan><tspan x="37" dy="25">• 股票分化</tspan></text>
       </g>
@@ -1598,6 +1635,8 @@
         <rect class="pod-node" x="229" y="205" width="181" height="304" rx="17" stroke="var(--pod-teal)" stroke-width="2"/>
         <text class="pod-svg-text" x="319" y="245" text-anchor="middle" font-size="28" font-weight="900">20%</text>
         <text class="pod-svg-text" x="319" y="273" text-anchor="middle" font-size="13.5" font-weight="800"><tspan class="l-en">BENIGN ABSORPTION</tspan><tspan class="l-zh">良性吸收</tspan></text>
+        <rect x="247" y="287" width="145" height="6" rx="3" fill="var(--pod-grid)"/>
+        <rect class="pod-motion-probability" x="247" y="287" width="29" height="6" rx="3" fill="var(--pod-teal)" style="--pod-level-delay:.24s"/>
         <text class="pod-svg-muted l-en" x="247" y="310" font-size="12"><tspan x="247" dy="0">• Yields fall naturally</tspan><tspan x="247" dy="25">• Breadth improves</tspan><tspan x="247" dy="25">• Semis / small caps lead</tspan><tspan x="247" dy="25">• Gold positive, less urgent</tspan><tspan x="247" dy="25">• BTC risk-on</tspan></text>
         <text class="pod-svg-muted l-zh" x="247" y="310" font-size="12"><tspan x="247" dy="0">• 收益率自然下降</tspan><tspan x="247" dy="25">• 市场广度改善</tspan><tspan x="247" dy="25">• 半导体、小盘股领涨</tspan><tspan x="247" dy="25">• 黄金偏强，紧迫性下降</tspan><tspan x="247" dy="25">• BTC 受益于风险偏好</tspan></text>
       </g>
@@ -1605,6 +1644,8 @@
         <rect class="pod-node" x="416" y="205" width="181" height="304" rx="17" stroke="var(--pod-gold)" stroke-width="2"/>
         <text class="pod-svg-text" x="506" y="245" text-anchor="middle" font-size="28" font-weight="900">25%</text>
         <text class="pod-svg-text" x="506" y="273" text-anchor="middle" font-size="13.5" font-weight="800"><tspan class="l-en">INFLATION VETO</tspan><tspan class="l-zh">通胀否决</tspan></text>
+        <rect x="434" y="287" width="145" height="6" rx="3" fill="var(--pod-grid)"/>
+        <rect class="pod-motion-probability" x="434" y="287" width="36.25" height="6" rx="3" fill="var(--pod-gold)" style="--pod-level-delay:.38s"/>
         <text class="pod-svg-muted l-en" x="434" y="310" font-size="12"><tspan x="434" dy="0">• Real yields ↑</tspan><tspan x="434" dy="25">• Dollar ↑</tspan><tspan x="434" dy="25">• Gold tactical ↓</tspan><tspan x="434" dy="25">• BTC ↓</tspan><tspan x="434" dy="25">• Long-duration equities ↓</tspan></text>
         <text class="pod-svg-muted l-zh" x="434" y="310" font-size="12"><tspan x="434" dy="0">• 实际收益率上升</tspan><tspan x="434" dy="25">• 美元走强</tspan><tspan x="434" dy="25">• 黄金战术性下跌</tspan><tspan x="434" dy="25">• BTC 下跌</tspan><tspan x="434" dy="25">• 长久期股票承压</tspan></text>
       </g>
@@ -1612,6 +1653,8 @@
         <rect class="pod-node" x="603" y="205" width="199" height="304" rx="17" stroke="var(--pod-red)" stroke-width="2"/>
         <text class="pod-svg-text" x="702" y="245" text-anchor="middle" font-size="28" font-weight="900">10%</text>
         <text class="pod-svg-text" x="702" y="273" text-anchor="middle" font-size="13.5" font-weight="800"><tspan class="l-en">TERM-PREMIUM ACCIDENT</tspan><tspan class="l-zh">期限溢价事故</tspan></text>
+        <rect x="620" y="287" width="164" height="6" rx="3" fill="var(--pod-grid)"/>
+        <rect class="pod-motion-probability" x="620" y="287" width="16.4" height="6" rx="3" fill="var(--pod-red)" style="--pod-level-delay:.52s"/>
         <text class="pod-svg-muted l-en" x="620" y="310" font-size="12"><tspan x="620" dy="0">• Credit spreads ↑↑</tspan><tspan x="620" dy="25">• VIX persistent &gt;25</tspan><tspan x="620" dy="25">• Forced liquidation</tspan><tspan x="620" dy="25">• Policy response follows</tspan></text>
         <text class="pod-svg-muted l-zh" x="620" y="310" font-size="12"><tspan x="620" dy="0">• 信用利差显著走阔</tspan><tspan x="620" dy="25">• VIX 持续高于 25</tspan><tspan x="620" dy="25">• 强制清算</tspan><tspan x="620" dy="25">• 随后出现政策回应</tspan></text>
       </g>
@@ -1824,48 +1867,60 @@
   <div class="l-zh pod-lang-section">
 <p><span class="l-en">The thresholds are <strong>operating triggers</strong>, not immutable technical truths. Their job is to make the research updateable. Crossing one threshold changes a probability only in combination with the rest of the tape; it does not create a mechanical trade signal.</span><span class="l-zh">这些阈值是<strong>操作触发器</strong>，不是不可改变的技术真理。它们的任务是让研究能够更新。跨越单一阈值，只有在与其他市场信号共同出现时才会改变概率；它不会生成机械化交易信号。</span></p>
   </div>
-  <figure class="pod-figure" id="fig-cockpit">
+  <figure class="pod-figure" id="fig-cockpit" data-motion-scene="six-gauge-cockpit">
     <div class="pod-figure-head"><b><span class="l-en">Figure 10 · The Six-Gauge Cockpit</span><span class="l-zh">图 10 · 六仪表驾驶舱</span></b><span><span class="l-en">Operating triggers · not trade signals</span><span class="l-zh">操作触发器 · 非交易信号</span></span></div>
     <svg viewBox="0 0 820 610" role="img" aria-labelledby="cockpit-title-en cockpit-desc-en" data-a11y-en="cockpit-title-en cockpit-desc-en" data-a11y-zh="cockpit-title-zh cockpit-desc-zh">
       <title id="cockpit-title-en" class="l-en">The Six-Gauge Cockpit</title>
       <title id="cockpit-title-zh" class="l-zh">六仪表驾驶舱</title>
       <desc id="cockpit-desc-en" class="l-en">Six gauges monitor the 30-year Treasury yield, 10-year real yield, dollar index, broad high-yield option-adjusted spread, VIX and breadth, and gold versus Bitcoin behavior. The current regime is Managed Duration Pressure with moderate confidence.</desc>
       <desc id="cockpit-desc-zh" class="l-zh">六只仪表监测 30 年期美债收益率、10 年期实际收益率、美元指数、广义高收益债期权调整利差、VIX 与市场广度，以及黄金相对比特币的表现。当前体制是中等信心的受管理久期压力。</desc>
+      <defs>
+        <marker id="f10b" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="var(--pod-blue)"/></marker>
+        <marker id="f10g" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="var(--pod-gold)"/></marker>
+        <marker id="f10t" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="var(--pod-teal)"/></marker>
+        <marker id="f10r" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="var(--pod-red)"/></marker>
+      </defs>
       <g class="pod-reveal">
-        <circle cx="410" cy="305" r="108" fill="color-mix(in srgb,var(--pod-gold) 10%,var(--panel2))" stroke="var(--pod-gold)" stroke-width="2.5"/>
+        <circle class="pod-motion-pulse" cx="410" cy="305" r="108" fill="color-mix(in srgb,var(--pod-gold) 10%,var(--panel2))" stroke="var(--pod-gold)" stroke-width="2.5"/>
         <text class="pod-svg-muted" x="410" y="270" text-anchor="middle" font-size="10.5" font-weight="750"><tspan class="l-en">CURRENT REGIME</tspan><tspan class="l-zh">当前体制</tspan></text>
         <text class="pod-svg-text" x="410" y="302" text-anchor="middle" font-size="17" font-weight="900"><tspan class="l-en">MANAGED DURATION</tspan><tspan class="l-zh">受管理的久期</tspan></text>
         <text class="pod-svg-text" x="410" y="326" text-anchor="middle" font-size="17" font-weight="900"><tspan class="l-en">PRESSURE</tspan><tspan class="l-zh">压力</tspan></text>
         <text class="pod-svg-muted" x="410" y="359" text-anchor="middle" font-size="11"><tspan class="l-en">Confidence: Moderate</tspan><tspan class="l-zh">信心：中等</tspan></text>
       </g>
-      <path class="pod-arrow pod-draw" d="M327 239 L254 173"/><path class="pod-arrow pod-arrow-gold pod-draw" d="M410 197 V143"/><path class="pod-arrow pod-arrow-teal pod-draw" d="M493 239 L566 173"/><path class="pod-arrow pod-arrow-teal pod-draw" d="M493 371 L566 437"/><path class="pod-arrow pod-arrow-gold pod-draw" d="M410 413 V467"/><path class="pod-arrow pod-arrow-red pod-draw" d="M327 371 L254 437"/>
+      <path class="pod-arrow pod-draw pod-motion-connector" d="M254 173 L327 239" marker-end="url(#f10b)"/><path class="pod-arrow pod-arrow-gold pod-draw pod-motion-connector" d="M410 143 V197" marker-end="url(#f10g)"/><path class="pod-arrow pod-arrow-teal pod-draw pod-motion-connector" d="M566 173 L493 239" marker-end="url(#f10t)"/><path class="pod-arrow pod-arrow-teal pod-draw pod-motion-connector" d="M566 437 L493 371" marker-end="url(#f10t)"/><path class="pod-arrow pod-arrow-gold pod-draw pod-motion-connector" d="M410 467 V413" marker-end="url(#f10g)"/><path class="pod-arrow pod-arrow-red pod-draw pod-motion-connector" d="M254 437 L327 371" marker-end="url(#f10r)"/>
       <g class="pod-reveal">
         <rect class="pod-node" x="22" y="65" width="242" height="122" rx="16" stroke="var(--pod-blue)" stroke-width="2"/>
+        <circle class="pod-motion-gauge" cx="242" cy="86" r="6" fill="var(--pod-blue)" style="--pod-gauge-delay:.1s"/>
         <text class="pod-svg-text" x="42" y="92" font-size="11" font-weight="800"><tspan class="l-en">1 · 30Y TREASURY</tspan><tspan class="l-zh">1 · 30 年期美债</tspan></text><text class="pod-svg-text" x="42" y="125" font-size="25" font-weight="900">5.27%</text>
         <text class="pod-svg-muted" x="42" y="148" font-size="10.5"><tspan class="l-en">1M +14bp · warning 5.0–5.4%</tspan><tspan class="l-zh">1 月 +14bp · 警告 5.0–5.4%</tspan></text><text class="pod-svg-muted" x="42" y="169" font-size="9.5"><tspan class="l-en">Red: &gt;5.5–5.6% persistent</tspan><tspan class="l-zh">红色：持续 &gt;5.5–5.6%</tspan></text>
       </g>
       <g class="pod-reveal">
         <rect class="pod-node" x="289" y="20" width="242" height="122" rx="16" stroke="var(--pod-gold)" stroke-width="2"/>
+        <circle class="pod-motion-gauge" cx="509" cy="41" r="6" fill="var(--pod-gold)" style="--pod-gauge-delay:.32s"/>
         <text class="pod-svg-text" x="309" y="47" font-size="11" font-weight="800"><tspan class="l-en">2 · 10Y REAL YIELD</tspan><tspan class="l-zh">2 · 10 年期实际收益率</tspan></text><text class="pod-svg-text" x="309" y="80" font-size="25" font-weight="900">2.40%</text>
         <text class="pod-svg-muted" x="309" y="103" font-size="10.5"><tspan class="l-en">1M +3bp · warning 2.25–2.50%</tspan><tspan class="l-zh">1 月 +3bp · 警告 2.25–2.50%</tspan></text><text class="pod-svg-muted" x="309" y="124" font-size="9.5"><tspan class="l-en">Red: &gt;2.55%</tspan><tspan class="l-zh">红色：&gt;2.55%</tspan></text>
       </g>
       <g class="pod-reveal">
         <rect class="pod-node" x="556" y="65" width="242" height="122" rx="16" stroke="var(--pod-teal)" stroke-width="2"/>
+        <circle class="pod-motion-gauge" cx="776" cy="86" r="6" fill="var(--pod-teal)" style="--pod-gauge-delay:.54s"/>
         <text class="pod-svg-text" x="576" y="92" font-size="11" font-weight="800"><tspan class="l-en">3 · DOLLAR INDEX</tspan><tspan class="l-zh">3 · 美元指数</tspan></text><text class="pod-svg-text" x="576" y="125" font-size="25" font-weight="900">98.97</text>
         <text class="pod-svg-muted" x="576" y="148" font-size="10.5"><tspan class="l-en">1M −2.18% · softer</tspan><tspan class="l-zh">1 月 −2.18% · 走软</tspan></text><text class="pod-svg-muted" x="576" y="169" font-size="9.5"><tspan class="l-en">Read jointly with long yields</tspan><tspan class="l-zh">与长端收益率联合读取</tspan></text>
       </g>
       <g class="pod-reveal">
         <rect class="pod-node" x="556" y="425" width="242" height="122" rx="16" stroke="var(--pod-teal)" stroke-width="2"/>
+        <circle class="pod-motion-gauge" cx="776" cy="446" r="6" fill="var(--pod-teal)" style="--pod-gauge-delay:.76s"/>
         <text class="pod-svg-text" x="576" y="452" font-size="11" font-weight="800"><tspan class="l-en">4 · BROAD HY OAS</tspan><tspan class="l-zh">4 · 广义高收益债 OAS</tspan></text><text class="pod-svg-text" x="576" y="485" font-size="25" font-weight="900">2.70%</text>
         <text class="pod-svg-muted" x="576" y="508" font-size="10.5"><tspan class="l-en">1M +1bp · calm &lt;3%</tspan><tspan class="l-zh">1 月 +1bp · 平静 &lt;3%</tspan></text><text class="pod-svg-muted" x="576" y="529" font-size="9.5"><tspan class="l-en">Red: &gt;4%</tspan><tspan class="l-zh">红色：&gt;4%</tspan></text>
       </g>
       <g class="pod-reveal">
         <rect class="pod-node" x="289" y="468" width="242" height="122" rx="16" stroke="var(--pod-gold)" stroke-width="2"/>
+        <circle class="pod-motion-gauge" cx="509" cy="489" r="6" fill="var(--pod-gold)" style="--pod-gauge-delay:.98s"/>
         <text class="pod-svg-text" x="309" y="495" font-size="11" font-weight="800"><tspan class="l-en">5 · VIX + BREADTH</tspan><tspan class="l-zh">5 · VIX + 市场广度</tspan></text><text class="pod-svg-text" x="309" y="528" font-size="25" font-weight="900">15.93</text>
         <text class="pod-svg-muted" x="309" y="551" font-size="10.5"><tspan class="l-en">1M VIX ↓ · calm &lt;18</tspan><tspan class="l-zh">1 月 VIX ↓ · 平静 &lt;18</tspan></text><text class="pod-svg-muted" x="309" y="572" font-size="9.5"><tspan class="l-en">Confirm crisis only &gt;25 + weak breadth</tspan><tspan class="l-zh">只有 &gt;25 + 广度弱才确认危机</tspan></text>
       </g>
       <g class="pod-reveal">
         <rect class="pod-node" x="22" y="425" width="242" height="122" rx="16" stroke="var(--pod-red)" stroke-width="2"/>
+        <circle class="pod-motion-gauge" cx="242" cy="446" r="6" fill="var(--pod-red)" style="--pod-gauge-delay:1.2s"/>
         <text class="pod-svg-text" x="42" y="452" font-size="11" font-weight="800"><tspan class="l-en">6 · GOLD / BITCOIN</tspan><tspan class="l-zh">6 · 黄金 / 比特币</tspan></text><text class="pod-svg-text" x="42" y="485" font-size="20" font-weight="900">+15.5% / +18.3%</text>
         <text class="pod-svg-muted" x="42" y="508" font-size="10.5"><tspan class="l-en">1M · both led the transition</tspan><tspan class="l-zh">1 月 · 两者都领先转折</tspan></text><text class="pod-svg-muted" x="42" y="529" font-size="9.5"><tspan class="l-en">Signal / high-beta optionality</tspan><tspan class="l-zh">信号 / 高贝塔期权性</tspan></text>
       </g>
@@ -2122,7 +2177,7 @@
   </table></div>
 <div class="pod-callout" style="--pod-c:var(--pod-teal)"><b><span class="l-en">Regime check at publication</span><span class="l-zh">发布时体制检查</span></b><p><span class="l-en">Fresh evidence does not cross a major regime trigger. The 30Y at 5.27% remains in the 5.0–5.4% Managed band; the 10Y real yield at 2.40% is below the 2.55% Inflation Veto trigger; broad HY OAS at 2.70% is below the 4% accident trigger; and VIX is below the mid-20s crisis confirmation. Long yields up while DXY is down activates the sovereign-warning quadrant, confirming rather than overturning the opening anomaly. [F/I]</span><span class="l-zh">新鲜证据没有穿越主要体制触发器。30 年期收益率为 5.27%，仍处于 5.0–5.4% 的受管理区间；10 年期实际收益率为 2.40%，低于 2.55% 的通胀否决触发值；广义高收益债 OAS 为 2.70%，低于 4% 的事故触发值；VIX 也低于 20 多点中段的危机确认区。长端收益率上升而 DXY 下跌激活主权警告象限，它确认而不是推翻开篇异常。[F/I]</span></p></div>
   <h3><span class="l-en">Primary-source families</span><span class="l-zh">一手来源类别</span></h3>
-  <p class="pod-note"><span class="l-en">AI company classifications use issuer filings, earnings materials and investor-relations disclosures available through August 24, 2026. The comparison is qualitative and issuer-specific: companies do not use a standardized definition of AI capital expenditure or AI-linked debt, so this report does not calculate or imply a cross-issuer aggregate.</span><span class="l-zh">AI 公司分类采用截至 2026 年 8 月 24 日可得的发行人申报文件、财报材料与投资者关系披露。比较是定性且逐发行人的：各公司并未采用统一的 AI 资本开支或 AI 相关债务定义，因此本文不计算、也不暗示跨发行人的汇总总量。</span></p>
+  <p class="pod-note"><span class="l-en">AI company classifications use issuer filings, earnings materials and investor-relations disclosures available through August 24, 2026. The comparison is qualitative and issuer-specific: companies do not use a standardized definition of AI capital expenditure or AI-linked debt, so this report does not calculate or imply a cross-issuer aggregate.</span><span class="l-zh">AI 公司分类采用截至 2026 年 8 月 24 日可得的发行人披露文件、财报材料与投资者关系披露。比较是定性且逐发行人的：各公司并未采用统一的 AI 资本开支或 AI 相关债务定义，因此本文不计算、也不暗示跨发行人的汇总总量。</span></p>
   <div class="pod-source-list">
     <a href="https://fred.stlouisfed.org/series/DGS30" rel="noopener"><span class="l-en">Federal Reserve / FRED — 30-Year Treasury Constant Maturity Rate</span><span class="l-zh">美联储 / FRED — 30 年期国债固定到期收益率</span></a>
     <a href="https://fred.stlouisfed.org/series/DGS10" rel="noopener"><span class="l-en">Federal Reserve / FRED — 10-Year Treasury Constant Maturity Rate</span><span class="l-zh">美联储 / FRED — 10 年期国债固定到期收益率</span></a>
@@ -2138,9 +2193,9 @@
     <a href="https://www.cmegroup.com/markets/metals/precious.html" rel="noopener"><span class="l-en">CME Group — Gold, silver, platinum and palladium futures</span><span class="l-zh">CME Group — 黄金、白银、铂金与钯金期货</span></a>
     <a href="https://www.cmegroup.com/markets/metals/base.html" rel="noopener"><span class="l-en">CME Group — Copper futures</span><span class="l-zh">CME Group — 铜期货</span></a>
     <a href="https://finance.yahoo.com/quote/BTC-USD/" rel="noopener"><span class="l-en">Yahoo Finance — BTC-USD point-in-time public tape</span><span class="l-zh">Yahoo Finance — BTC-USD 点时公开行情</span></a>
-    <a href="https://www.microsoft.com/en-us/investor/sec-filings" rel="noopener"><span class="l-en">Microsoft Investor Relations — SEC filings and earnings materials</span><span class="l-zh">微软投资者关系 — SEC 申报与财报材料</span></a>
-    <a href="https://abc.xyz/investor/earnings/" rel="noopener"><span class="l-en">Alphabet Investor Relations — earnings and filings</span><span class="l-zh">Alphabet 投资者关系 — 财报与申报文件</span></a>
-    <a href="https://investor.atmeta.com/financials/default.aspx" rel="noopener"><span class="l-en">Meta Investor Relations — financials and SEC filings</span><span class="l-zh">Meta 投资者关系 — 财务资料与 SEC 申报</span></a>
+    <a href="https://www.microsoft.com/en-us/investor/sec-filings" rel="noopener"><span class="l-en">Microsoft Investor Relations — SEC filings and earnings materials</span><span class="l-zh">微软投资者关系 — SEC 披露与财报材料</span></a>
+    <a href="https://abc.xyz/investor/earnings/" rel="noopener"><span class="l-en">Alphabet Investor Relations — earnings and filings</span><span class="l-zh">Alphabet 投资者关系 — 财报与披露文件</span></a>
+    <a href="https://investor.atmeta.com/financials/default.aspx" rel="noopener"><span class="l-en">Meta Investor Relations — financials and SEC filings</span><span class="l-zh">Meta 投资者关系 — 财务资料与 SEC 披露</span></a>
     <a href="https://investor.nvidia.com/financial-info/financial-reports/default.aspx" rel="noopener"><span class="l-en">NVIDIA Investor Relations — financial reports</span><span class="l-zh">英伟达投资者关系 — 财务报告</span></a>
   </div>
   <p class="pod-note"><span class="l-en">Market values are point-in-time context, not investment advice. Scenario probabilities are conditional research-desk estimates and must be updated when the observable state changes.</span><span class="l-zh">市场数值是点时背景，不构成投资建议。情景概率是条件性研究台估计，必须在可观察状态变化时更新。</span></p>
@@ -2186,35 +2241,63 @@
   if('MutationObserver' in window){
     new MutationObserver(syncFigureLanguage).observe(document.documentElement,{attributes:true,attributeFilter:['data-lang']});
   }
-  var figures=[].slice.call(document.querySelectorAll('.pod-figure'));
+  var figures=[].slice.call(document.querySelectorAll('.pod-figure[data-motion-scene]'));
   if(!figures.length) return;
   var reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if(reduced||!('IntersectionObserver' in window)){
+  var motionToggle=document.getElementById('pod-motion-toggle');
+  var motionPaused=false;
+  function syncMotionActivity(){
+    figures.forEach(function(f){
+      var active=!reduced&&!motionPaused&&!document.hidden&&f.getAttribute('data-motion-in-view')==='true';
+      f.classList.toggle('is-motion-active',active);
+    });
+  }
+  if(motionToggle){
+    motionToggle.addEventListener('click',function(){
+      motionPaused=!motionPaused;
+      motionToggle.setAttribute('aria-pressed',motionPaused?'true':'false');
+      syncMotionActivity();
+    });
+  }
+  document.addEventListener('visibilitychange',syncMotionActivity);
+  if(reduced){
     figures.forEach(function(f){ f.classList.add('is-visible'); });
+    if(motionToggle) motionToggle.hidden=true;
+    return;
+  }
+  if(!('IntersectionObserver' in window)){
+    figures.forEach(function(f){
+      f.setAttribute('data-motion-in-view','false');
+      f.classList.add('is-visible');
+    });
     return;
   }
   var io=new IntersectionObserver(function(entries){
     entries.forEach(function(entry){
+      entry.target.setAttribute('data-motion-in-view',entry.isIntersecting?'true':'false');
       if(entry.isIntersecting){
+        entry.target.classList.remove('pod-motion-pending');
         entry.target.classList.add('is-visible');
-        io.unobserve(entry.target);
       }
     });
-  },{threshold:.18,rootMargin:'0px 0px -8% 0px'});
+    syncMotionActivity();
+  },{threshold:.1,rootMargin:'8% 0px 8% 0px'});
   figures.forEach(function(f){
     var rect=f.getBoundingClientRect();
     if(rect.top<window.innerHeight*.92&&rect.bottom>0){
+      f.setAttribute('data-motion-in-view','true');
       f.classList.add('is-visible');
-      return;
+    }else{
+      f.setAttribute('data-motion-in-view','false');
+      f.classList.add('pod-motion-pending');
     }
-    f.classList.add('pod-motion-pending');
     io.observe(f);
     window.setTimeout(function(){
       f.classList.remove('pod-motion-pending');
       f.classList.add('is-visible');
-      io.unobserve(f);
     },4000);
   });
+  syncMotionActivity();
 })();
 </script>
 
