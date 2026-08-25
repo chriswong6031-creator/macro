@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-25T11:16:22.296752+00:00",
-  "count": 1822,
+  "generated_at": "2026-08-25T12:23:27.466173+00:00",
+  "count": 1825,
   "institutions": [
     "13F Summary",
     "ABN Amro",
@@ -89,6 +89,25 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-vjmlbv6c3xh-e058fd",
+      "title": "GS Duttenhoefer Duttenhoefers Daily 25 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-25T11:48:49Z",
+      "summary_points": [
+        "**US-Iran Sanctions**: Secondary sanctions (\"operation economic outcast\") targeting shipping/oil with no deadline, escalating geopolitical risk for energy, shipping, and global trade flows.",
+        "**AI Power Demand**: AI-driven electricity demand to reach ~315 GW globally by 2033 (+1100% vs 2025), US accounting for ~64% of new demand; Texas Gov.",
+        "Abbott warns data centers \"dug their own grave\" amid power shortages."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-ywbrwz5jiwn-4cc295",
       "title": "JPM US Market Intelligence | Morning Briefing",
@@ -485,6 +504,48 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-lg9aokt0kp5-b59f84",
+      "title": "Emerging Markets Bond List",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T22:11:56Z",
+      "summary_points": [
+        "**Subordinated Bond Vulnerability**: Subordinated bonds (including financial Tier 2) face heightened default risk and coupon suspension potential during market stress, especially for Speculative Grade issuers, directly impacting portfolio liquidity and loss severity.",
+        "**Top EM Bond Selection Criteria**: Prioritize USD-denominated, near-term maturities (2023-2025), high yields (5.4%+), investment-grade to lower-grade issuers with call features (e.g., coupon resets at call date), excluding sustainability factors.",
+        "**Regional Exposure Shift**: Strategic removal of Chinese entities (China Cinda, China Development Bank) and additions of Indian (AXIS, HDFC, ICICI) and Korean (Hyundai Capital, Kookmin) banks signal geopolitical realignment amid US-China tensions and regulatory prioritization.",
+        "**Call Risk Exposure**: Callable bonds (e.g., Petrobras 2034, Al Rajhi 2036) with BB ratings create reinvestment risk and duration compression, amplifying yield volatility and cash flow uncertainty for institutional portfolios.",
+        "**Indonesian Credit Deterioration**: Republic of Indonesia bonds show \"Credit Outlook: Deteriorating\" (vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 279,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-5z3i0erirpo-7b53a3",
+      "title": "Emerging market equities",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T22:11:55Z",
+      "summary_points": [
+        "**EM EPS & Valuation**: MSCI EM EPS forecasted at 62% (2026), 18% (2027); 12-mo forward P/E at 10x (entry point 10.2x, 1.8 std dev below 10-yr avg), supported by resilient macro and broadening earnings.",
+        "**Dollar Dominance Over Yields**: EM equities correlate stronger with US dollar strength (DXY) than nominal yields; rising dollar + rising TIPS yields drive negative returns (-2.4% vs.",
+        "+2.3% for falling dollar).",
+        "**Tech Earnings Resilience & Risks**: North Asian tech/semiconductor exposure (AI, semiconductors) supports EM earnings against yield rises, but AI capex slowdowns or monetization issues amplify multi-factor risks (weaker earnings + rising yields + stronger dollar).",
+        "**Key Risk Triggers**: Sharp rise in real yields + dollar strength or AI capital expenditure slowdowns; prefer mainland China, India, Taiwan (upgraded), Malaysia due to resilient macro and lower external financing reliance."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
