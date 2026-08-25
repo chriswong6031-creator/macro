@@ -13,7 +13,7 @@
     "can_size": false
   },
   "compilation_state": "partial",
-  "content_sha256": "52dbcb6abcec8042b0d078b88953e9717ac420326207fcb2ee21d29442d846a5",
+  "content_sha256": "840930f613716171249e173f6dabbc921794431ca0b57a428142db19c28b5d63",
   "denominator": {
     "conflicted": 0,
     "excluded": 4,
@@ -225,7 +225,7 @@
       },
       "object_class": "world_observation",
       "owner_ref": {
-        "artifact": "data/finra/short_interest.parquet (+ candidates short_int__* projection)",
+        "artifact": "data/finra/short_interest_panel.parquet (PIT panel carrying knowable_date) + data/finra/short_interest.parquet (capture store; its asof/capture_date is a capture clock, observed class, never knowable)",
         "evidence_ref_id": null,
         "owner": "data/finra/ ingest",
         "reader": "owner parquet read"

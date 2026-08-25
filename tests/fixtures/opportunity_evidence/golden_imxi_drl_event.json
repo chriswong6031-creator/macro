@@ -13,7 +13,7 @@
     "can_size": false
   },
   "compilation_state": "partial",
-  "content_sha256": "8a778315d5346e0171e4e7ce93c0c50a98f348e271fef559e44eb7711a1d5017",
+  "content_sha256": "b0d31197c5eb404a2a907807d1d7cea56e42392d8647c5a6a7fb0fe536fb8e52",
   "denominator": {
     "conflicted": 0,
     "excluded": 5,
@@ -63,21 +63,20 @@
     "inferred": {
       "denominator": {
         "excluded": 0,
-        "included": 4,
-        "total": 4
+        "included": 3,
+        "total": 3
       },
       "label": "owner_derived_system_belief",
       "slot_refs": [
         "drl_resid_shock",
         "drl_filing_coverage",
-        "options_state",
-        "prophet_board_lane"
+        "options_state"
       ]
     },
     "market_reflection": {
       "denominator": {
-        "excluded": 5,
-        "included": 2,
+        "excluded": 6,
+        "included": 1,
         "total": 7
       },
       "incorporation_legs": [
@@ -105,7 +104,7 @@
           "slot_refs": [
             "options_state"
           ],
-          "state": "observed"
+          "state": "modeled"
         },
         {
           "leg": "I5_attention",
@@ -306,7 +305,7 @@
       "basis": null,
       "construct": "short_interest",
       "coverage_flag": {
-        "note": "settlement is a two-week-old clock relative to the capture asof",
+        "note": "settlement is stale relative to the capture asof",
         "state": "fallback"
       },
       "derivation": "owner_read",
@@ -320,9 +319,9 @@
       "known_at": {
         "clock_class": "knowable",
         "grain": "date",
-        "native_field": "asof",
+        "native_field": "knowable_date",
         "state": "known",
-        "value": "2026-08-14"
+        "value": "2026-08-12"
       },
       "missingness": {
         "reason": "stale",
@@ -331,7 +330,7 @@
       },
       "object_class": "world_observation",
       "owner_ref": {
-        "artifact": "data/finra/short_interest.parquet (+ candidates short_int__* projection)",
+        "artifact": "data/finra/short_interest_panel.parquet (PIT panel carrying knowable_date) + data/finra/short_interest.parquet (capture store; its asof/capture_date is a capture clock, observed class, never knowable)",
         "evidence_ref_id": null,
         "owner": "data/finra/ ingest",
         "reader": "owner parquet read"

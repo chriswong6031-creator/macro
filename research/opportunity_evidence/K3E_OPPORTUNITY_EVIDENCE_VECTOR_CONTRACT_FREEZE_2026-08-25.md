@@ -117,7 +117,9 @@ Each slot freezes at least
 additionally: registry-pinned `family_binding`, K1 `object_class`, an owner pointer
 (`owner_ref`, optionally carrying a K1 `efr_` EvidenceRef id), `derivation`
 (`owner_read` | `deterministic_join` — deterministic composition may **choose and
-route** typed owner outputs by frozen rules; it never computes new values),
+route** typed owner outputs by frozen rules; it never computes new values;
+every v1 registry construct pins `owner_read`, and `deterministic_join` is a
+reserved member for future routed constructs, unused in v1),
 `provenance_class`, K1-exact `missingness`, `basis` (peer-basis disclosure where
 required), `variation_receipt` (flow constructs), and explicit
 inclusion/exclusion with typed reasons.
@@ -131,7 +133,8 @@ EvidenceRef/EvidenceBlock vocabulary is literal and test-enforced:
 | `missingness` | K1 `{state, reason, zero_substituted:false}` with the identical closed reason enum | enum-equality test; `K3E_R005` |
 | `object_class` | K1's five classes; an `instrument_state` is never a market verdict | `K3E_R011` leg-membership law |
 | availability `state` | typed states {observed, modeled, missing, stale, rights_blocked, conflicted, unsupported, identity_unresolved, unknown} — the commissioned six adverse states plus observed/modeled/unknown; each adverse state crosswalks to a K1 reason (stale→stale, rights_blocked→rights_blocked, identity_unresolved→unresolved_identity, unsupported→unsupported, missing→{not_available_for_date, source_missing, not_applicable, explicit_none, quarantined, reconstructed_not_operational_pit}); `conflicted` crosswalks to the K1 block-level conflict state | schema conditionals + `K3E_R005`; none of these states ever becomes zero or neutral |
-| aggregates | denominator receipt + dominant degradation, inherited from the K1 block law; counts are the only lawful aggregate arithmetic | `K3E_R015`; schema has no other numeric aggregate field |
+| aggregates | denominator receipt + dominant degradation, inherited from the K1 block law; counts are the only lawful aggregate arithmetic; dominant severity is the strict order conflicted > corrected > identity_unresolved > rights_blocked > missing > unsupported > unknown > stale > partial_coverage | `K3E_R015`; schema has no other numeric aggregate field; `value_or_null` is typed flat-scalar with a payload key fence so no score/weight/rank structure can ride inside a value |
+| free text | every prose field (`coverage_flag.note`, `set_because`, gate `reason`, `fact`, `exclusion_reason`) is length-capped and DISPLAY-ONLY by consumer law: no consumer may parse values, scores, ranks, sizes, or entry directives out of free text | schema maxLength caps + description law; typed payloads carry every machine-readable fact |
 | authority | the exact K1 all-false envelope incl. `can_open_entry` | schema consts |
 | identity | owner-native subject identity; cross-owner joins lawful only via owner-approved bridges (Earnings `company_identity.v1` PIT alias / Data OS master); a nominal ticker match is not proof | `K3E_R010`; the forbidden symbol-directory + `cik_map` route stays forbidden |
 
@@ -214,6 +217,27 @@ Flow-label honesty (`K3E_R012`), impairment-axis claims (`K3E_R017`), receipt
 consistency (`K3E_R015`), and content-hash integrity (`K3E_R020`) are additionally
 killed as listed in the test suite.
 
+### 7.1 Independent red-team disposition (opus adversarial review, 2026-08-25)
+
+An independent opus red-team attacked the first candidate across six lines
+(laundering holes, false packet claims, vocabulary drift, fixture honesty,
+validator soundness, registry correctness) and returned 3 BLOCKERs, 6 MAJORs,
+5 MINORs. Every finding was adjudicated and the artifact repaired before this
+packet was finalized:
+
+| Finding | Repair |
+|---|---|
+| B1 — `value_or_null` untyped: a fused score/weights/rank/`buy` payload validated clean | `value_or_null` is now typed (scalar or flat one-level object of scalar leaves, key grammar + 16-key cap) and `K3E_R004` fences forbidden payload keys (score/weight/rank/buy/size/composite/entry/…); dislocation terms must be plain numbers; free-text fields are length-capped and display-only by consumer law |
+| B2 — look-ahead comparison truncated to day grain: an intraday `known_at` 14.5h after t0 was included | full-instant comparison when both grains are datetime; mixed-grain same-day stays ambiguous-excluded; new intraday mutation kill |
+| B3 — reconstruction detector defeated by float noise / string / dict values | relative tolerance; number-typing kills string/dict evasion structurally; near-sum kill added |
+| M4 — `unsupported`/`unknown` omitted from dominant-degradation severity (adverse slots could read "none") | strict severity order now includes both; false code comment removed; mutation kill added |
+| M5 — `entry_availability` could claim `read` over a missing owner slot; gates leg unvalidated | leg state must mirror the owner slot's state; a gate owned by this library/"computed" fires `K3E_R011` |
+| M6 — Prophet board admission leaked into the `inferred` evidence leg | `entry_owner_read` registry law: entry-owner slots live ONLY in `entry_availability`; presence in observed/inferred/market_reflection refs is refused |
+| M7 — `modeled` laundered to `observed` in market-reflection legs | `modeled` survives projection (leg enum + mapping fixed); goldens regenerated |
+| M8 — `short_interest.known_at` pinned to the collector's capture `asof` instead of the estate's canonical `knowable_date` (8th NYSE session after settlement, `lib/finra_knowable.py`) | registry re-pinned to `knowable_date`/knowable with the PIT-law citation; goldens updated — the commissioned owner-clock-collapse class had landed in our own registry and is now the exemplar of why the kill exists |
+| M9 — placeholder receipts | filled (§10) |
+| MINORs | `compilation_state` re-cited to K1's `recipe_compilation_receipt.v1` vocabulary (materialized in `security_state.v1`) with an equality test; `grain`'s single additive `unknown` member declared and drift-pinned; hostile docstring honesty fixed; `deterministic_join` documented as reserved-unused in v1; `drl_event_state.known_at` re-classed `belief_or_build` (session-derived evaluation clock); the IMXI receipt citation had already been repaired pre-review |
+
 ## 8. Remaining owner gaps (named, not papered over)
 
 1. **Windowed dislocation attribution has no producer.** The 5-layer per-window
@@ -261,8 +285,13 @@ python3 scripts/agentos.py validate
 
 Receipts (exact, this candidate):
 
-- Contract suite: {{PYTEST_RECEIPT}}
-- Contract-delta vs pinned main: {{CONTRACT_DELTA_RECEIPT}}
+- Contract suite: **59 passed** (post-red-team candidate; includes all ten
+  commissioned mutation kills, the 19 red-team repair proofs, the families.yml
+  join, both K1 enum-equality pins, the security_state compilation-state pin,
+  the grain-delta pin, determinism round-trips, and the no-store scans),
+  independently re-run by the commissioning session
+- Contract-delta vs current main: `0 introduced, 0 inherited` (differential
+  gate, run twice — once by the builder, once independently)
 - Agent OS validate: 0 errors (710 records; inherited repository warnings only)
 - Registry ↔ families.yml join: asserted inside the suite on every run
 - Carrier: PR #6417 (DRAFT / HOLD-FOR-SOL from its first revision)

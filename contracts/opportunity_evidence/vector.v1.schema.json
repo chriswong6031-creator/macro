@@ -31,7 +31,7 @@
     "authority": {"$ref": "#/$defs/authorityEnvelope"},
     "display_only": {"const": true},
     "compilation_state": {
-      "description": "Vector-level composition verdict, reusing the K1 recipe-compilation vocabulary. 'complete' is illegal when any adverse denominator count is non-zero.",
+      "description": "Vector-level composition verdict, reusing the K1 recipe_compilation_receipt.v1 state vocabulary verbatim (emitted by lib/evidence_foundation.py and frozen as the compilation.state enum in contracts/market_os/security_state.v1.schema.json). 'complete' is illegal when any adverse denominator count is non-zero.",
       "enum": ["refused", "abstained", "partial", "corrected", "complete"]
     },
     "slots": {
@@ -49,16 +49,17 @@
     },
     "denominator": {"$ref": "#/$defs/denominatorReceipt"},
     "dominant_degradation": {
-      "description": "Single worst adverse state across slots, by the frozen severity order (conflicted > corrected > identity_unresolved = rights_blocked = missing > stale > partial-coverage). 'none' only when no adverse state exists.",
+      "description": "Single worst adverse state across slots, by the frozen strict severity order conflicted > corrected > identity_unresolved > rights_blocked > missing > unsupported > unknown > stale > partial_coverage. 'none' only when no adverse state exists — every adverse slot state (including unsupported and unknown) participates.",
       "type": "string",
       "enum": [
         "none",
-        "stale",
         "partial_coverage",
+        "stale",
+        "unknown",
+        "unsupported",
         "missing",
         "rights_blocked",
         "identity_unresolved",
-        "unsupported",
         "corrected",
         "conflicted"
       ]
@@ -103,7 +104,10 @@
             {"type": "null"}
           ]
         },
-        "grain": {"enum": ["date", "datetime", "unknown"]},
+        "grain": {
+          "enum": ["date", "datetime", "unknown"],
+          "description": "K1 nativeClock grain (date|datetime) plus exactly one additive member, 'unknown', used only when the clock's state is unknown. This is the sole declared delta from the K1 clock vocabulary and is pinned by an equality test."
+        },
         "clock_class": {
           "description": "K1 clock class this value projects. The registry pins the lawful class per construct; the validator enforces the pin.",
           "enum": [
@@ -353,7 +357,11 @@
         "state": {
           "enum": ["full", "partial", "fallback", "unknown", "not_applicable"]
         },
-        "note": {"type": ["string", "null"]}
+        "note": {
+          "type": ["string", "null"],
+          "maxLength": 240,
+          "description": "Display-only prose. No consumer may parse values, scores, ranks, sizes, or entry directives out of any free-text field on this wire."
+        }
       }
     },
     "slot": {
@@ -409,7 +417,27 @@
           ]
         },
         "value_or_null": {
-          "description": "Owner-read value. MUST be null whenever state is not observed/modeled. Numeric zero is a value, never a stand-in for absence."
+          "description": "Owner-read value. MUST be null whenever state is not observed/modeled. Numeric zero is a value, never a stand-in for absence. The value surface is TYPED and flat: a scalar, or a one-level object of scalar leaves with lower_snake keys — no nested objects, no arrays, so no score/weight/rank/directive structure can ride inside a value. The semantic validator additionally fences forbidden payload keys (score/weight/rank/buy/size/composite/entry etc.) and requires plain numbers for dislocation-decomposition terms.",
+          "oneOf": [
+            {"type": "null"},
+            {"type": "number"},
+            {"type": "boolean"},
+            {"type": "string", "maxLength": 160},
+            {
+              "type": "object",
+              "minProperties": 1,
+              "maxProperties": 16,
+              "propertyNames": {"pattern": "^[a-z][a-z0-9_]{0,63}$"},
+              "additionalProperties": {
+                "oneOf": [
+                  {"type": "number"},
+                  {"type": "boolean"},
+                  {"type": "null"},
+                  {"type": "string", "maxLength": 160}
+                ]
+              }
+            }
+          ]
         },
         "asof": {"$ref": "#/$defs/clockValue"},
         "known_at": {"$ref": "#/$defs/clockValue"},
@@ -444,6 +472,7 @@
         "included_in_composition": {"type": "boolean"},
         "exclusion_reason": {
           "type": ["string", "null"],
+          "maxLength": 160,
           "description": "Why this slot is excluded from composition (e.g. lookahead_known_at_after_asof, identity_unresolved). Required non-null when included_in_composition is false."
         }
       },
@@ -540,7 +569,8 @@
                     "enum": ["I1_anticipation", "I2_immediate_response", "I3_estimate_revision", "I4_options_repricing", "I5_attention", "I6_peer_response", "I7_persistence_rejection"]
                   },
                   "state": {
-                    "enum": ["observed", "partial", "missing", "stale", "rights_blocked", "conflicted", "identity_unresolved", "unknown", "ex_post_excluded"]
+                    "enum": ["observed", "modeled", "partial", "missing", "stale", "rights_blocked", "conflicted", "identity_unresolved", "unknown", "ex_post_excluded"],
+                    "description": "A leg fed only by modeled slots (e.g. dealer gamma) is 'modeled', never 'observed' — the distinction survives projection."
                   },
                   "slot_refs": {"$ref": "#/$defs/slotRefList"}
                 }
@@ -555,7 +585,7 @@
           "required": ["state", "fact", "slot_refs"],
           "properties": {
             "state": {"enum": ["named", "none_open", "unknown"]},
-            "fact": {"type": ["string", "null"]},
+            "fact": {"type": ["string", "null"], "maxLength": 320},
             "slot_refs": {"$ref": "#/$defs/slotRefList"}
           },
           "allOf": [
@@ -583,10 +613,15 @@
                 "additionalProperties": false,
                 "required": ["gate", "owner", "state", "reason"],
                 "properties": {
-                  "gate": {"type": "string", "minLength": 1},
-                  "owner": {"type": "string", "minLength": 1},
+                  "gate": {"type": "string", "minLength": 1, "maxLength": 120},
+                  "owner": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120,
+                    "description": "The canonical gate OWNER being read. Never this library or any composed rule: a gate this vector computed itself is the named authority leak and fails semantic validation."
+                  },
                   "state": {"enum": ["failed", "unavailable", "not_evaluated"]},
-                  "reason": {"type": ["string", "null"]}
+                  "reason": {"type": ["string", "null"], "maxLength": 240}
                 }
               }
             },
@@ -622,7 +657,7 @@
           "type": "object",
           "additionalProperties": false,
           "required": ["prophet_board", "radar", "composition_law"],
-          "description": "A READ of the canonical entry owners' current state. This vector never computes, opens, gates, or times an entry; owner state is projected verbatim with its own clocks.",
+          "description": "A READ of the canonical entry owners' current state. This vector never computes, opens, gates, or times an entry; owner state is projected verbatim with its own clocks. 'read' is lawful ONLY over a referenced owner slot whose state is observed; a missing/stale/unknown owner slot forces the matching leg state (semantic K3E_R011).",
           "properties": {
             "prophet_board": {
               "type": "object",
@@ -669,7 +704,12 @@
           "description": "No LLM class. And no residual-magnitude class: a hypothesis can never be set from epsilon."
         },
         "supporting_slot_refs": {"$ref": "#/$defs/slotRefList"},
-        "set_because": {"type": "string", "minLength": 1}
+        "set_because": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 400,
+          "description": "Display-only prose. No consumer may parse values, scores, ranks, sizes, or entry directives out of any free-text field on this wire."
+        }
       }
     },
     "denominatorReceipt": {

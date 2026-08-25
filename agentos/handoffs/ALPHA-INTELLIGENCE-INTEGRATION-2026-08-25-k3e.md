@@ -77,12 +77,15 @@ verified:
   - claim: Agent OS records remain schema-valid with the new DEC + WS edits.
     command: python3 scripts/agentos.py validate
     result: 0 errors (inherited repository warnings only).
-  - claim: "{{PYTEST_CLAIM}}"
+  - claim: The contract suite (mutation kills, family join, K1 pins, determinism, no-store) is green on the final candidate.
     command: python3 -m pytest -q tests/test_opportunity_evidence_vector_contract.py
-    result: "{{PYTEST_RECEIPT}}"
-  - claim: "{{DELTA_CLAIM}}"
+    result: 59 passed (post-red-team; re-run independently by the commissioning session).
+  - claim: The differential contract gate introduces nothing vs current main.
     command: python3 scripts/check_contract_delta.py --base origin/main
-    result: "{{CONTRACT_DELTA_RECEIPT}}"
+    result: "contract-delta: 0 introduced, 0 inherited (run twice: builder + independent)."
+  - claim: An independent opus red-team attacked the artifact across six lines; every finding was adjudicated and repaired.
+    command: routed opus reviewer, findings 3 BLOCKER / 6 MAJOR / 5 MINOR
+    result: all repaired or dispositioned; full table in the freeze packet §7.1.
 unverified:
   - claim: Sol accepts the K3-E freeze clause-by-clause.
     what_would_verify: Sol's ACCEPT (or exact amendments) against the exact held head of PR #6417.

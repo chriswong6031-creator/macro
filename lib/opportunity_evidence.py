@@ -37,6 +37,7 @@ Public surface:
 
 from __future__ import annotations
 
+from datetime import datetime
 from functools import lru_cache
 import hashlib
 import itertools
@@ -241,7 +242,11 @@ _AUTHORITY_ENVELOPE = {
 
 _SLOT_STATE_TO_LEG_STATE = {
     "observed": "observed",
-    "modeled": "observed",
+    # R-7 red-team repair (2026-08-25): a leg fed by a modeled slot (e.g. GEX /
+    # dealer gamma) is "modeled", never "observed" — the schema's incorporation
+    # leg state enum now carries "modeled" precisely so this distinction
+    # survives projection instead of being laundered into "observed".
+    "modeled": "modeled",
     "missing": "missing",
     "stale": "stale",
     "rights_blocked": "rights_blocked",
@@ -280,18 +285,36 @@ _HYPOTHESIS_EVIDENCE_CLASSES = {
     },
 }
 
-# v1 dominant_degradation derivation order (highest severity first). Matches
-# "conflicted > corrected > identity_unresolved = rights_blocked = missing >
-# stale > partial_coverage > none"; `corrected` and `unsupported` are kept in
-# the wire enum but are unreachable from this derivation in v1 (no slot state
-# or coverage_flag value maps to them yet) — documented, not a defect.
+# v1 dominant_degradation derivation order (highest severity first). R-4
+# red-team repair (2026-08-25): the frozen strict order is now
+# conflicted > corrected > identity_unresolved > rights_blocked > missing >
+# unsupported > unknown > stale > partial_coverage > none. `unsupported` IS a
+# real slot.state value and participates directly (the earlier "unreachable
+# in v1" comment for `unsupported` was false and has been removed).
+# `corrected` remains the sole unreachable member: no slot state or
+# coverage_flag value maps to it in this v1 wire — documented, not a defect.
 _DOMINANT_DEGRADATION_ORDER = [
     "conflicted",
     "identity_unresolved",
     "rights_blocked",
     "missing",
+    "unsupported",
+    "unknown",
     "stale",
 ]
+
+# R-1 red-team repair (2026-08-25): value_or_null is now typed (scalar | flat
+# one-level object of scalar leaves) by the frozen schema, closing the
+# nested-payload smuggling hole. This is the SEMANTIC payload fence layered on
+# top: an object-valued value_or_null may never carry a key that names or
+# implies a composite/score/rank/directive, even flattened to one level and
+# even though the schema itself cannot forbid a key by NAME. Frozen at build
+# time; changing this set is a contract amendment, not a bug fix.
+_FORBIDDEN_VALUE_PAYLOAD_KEYS = {
+    "score", "scores", "scoring", "weight", "weights", "rank", "ranks", "ranking",
+    "buy", "sell", "size", "sizing", "composite", "entry", "entry_open", "fused",
+    "blend", "blended", "urgency", "conviction", "verdict", "potential",
+}
 
 
 def _is_decomp_construct(construct: str, decomp: dict) -> re.Match | None:
@@ -445,6 +468,29 @@ def _check_constructs(slots: list[dict], registry: dict) -> list[Finding]:
                     findings.append(_f("K3E_R012", f"slots[{construct}]", "distinct_values<=1 requires state stale"))
                 if state == "observed" and not (isinstance(dv, int) and dv >= 2):
                     findings.append(_f("K3E_R012", f"slots[{construct}]", "state observed requires distinct_values>=2"))
+
+        # R-1 red-team repair (2026-08-25): R004 payload-smuggling fence over
+        # value_or_null. The wire schema now types value_or_null as a scalar
+        # or a flat one-level object of scalar leaves, closing nested-payload
+        # smuggling; this semantic pass additionally fences forbidden KEY
+        # NAMES (a schema cannot forbid by name) and enforces plain-number
+        # values for value_type=number constructs (the dislocation group).
+        value = slot.get("value_or_null")
+        if isinstance(value, dict):
+            for key in value:
+                if not isinstance(key, str):
+                    continue
+                if key in forbidden or key.startswith(forbidden_prefixes) or key in _FORBIDDEN_VALUE_PAYLOAD_KEYS:
+                    findings.append(_f("K3E_R004", f"slots[{construct}].value_or_null.{key}", f"value payload key {key!r} names/implies a forbidden composite/score/rank/directive"))
+
+        if slot.get("state") in ("observed", "modeled"):
+            value_type = None
+            if is_known:
+                value_type = constructs[construct].get("value_type")
+            elif is_decomp:
+                value_type = decomp.get("value_type")
+            if value_type == "number" and not (isinstance(value, (int, float)) and not isinstance(value, bool)):
+                findings.append(_f("K3E_R004", f"slots[{construct}].value_or_null", f"construct {construct!r} is value_type=number but value_or_null is {type(value).__name__}"))
     return findings
 
 
@@ -468,7 +514,14 @@ def _check_disloc_reconstruction(slots: list[dict]) -> list[Finding]:
             found = False
             for r in range(2, len(others) + 1):
                 for combo in itertools.combinations(others, r):
-                    if abs(sum(combo) - value) < 1e-9:
+                    # R-3 red-team repair (2026-08-25): a bare absolute 1e-9
+                    # tolerance is blind to a near-sum reconstruction at
+                    # realistic return magnitudes (e.g. 0.08000001 vs
+                    # 0.05+0.03). Tolerance is now RELATIVE to the magnitude
+                    # of the value and its candidate terms, with the old
+                    # absolute floor kept for near-zero values.
+                    tol = max(1e-9, 1e-6 * max(abs(value), max(abs(v) for v in combo)))
+                    if abs(sum(combo) - value) <= tol:
                         found = True
                         break
                 if found:
@@ -537,10 +590,37 @@ def _check_clocks(slots: list[dict], registry: dict) -> list[Finding]:
     return findings
 
 
+def _parse_instant(value: str) -> datetime:
+    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+
+def _compare_known_at_to_asof(known_at_value: str | None, known_at_grain: str | None, asof_value: str | None, asof_grain: str | None) -> str:
+    """R-2 red-team repair (2026-08-25): a bare [:10] truncation is blind to
+    an intraday look-ahead when both clocks are datetime-grain (e.g. asof
+    09:30Z vs known_at 23:59:59Z the same calendar day). Returns one of
+    "after" (look-ahead — known_at strictly later), "before_or_equal"
+    (lawful), or "ambiguous" (mixed grain, same calendar day — symmetric
+    ambiguity, mirroring K1; must be excluded either way)."""
+
+    if not known_at_value or not asof_value:
+        return "unknown"
+    if known_at_grain == "datetime" and asof_grain == "datetime":
+        ka_dt = _parse_instant(known_at_value)
+        as_dt = _parse_instant(asof_value)
+        return "after" if ka_dt > as_dt else "before_or_equal"
+    if known_at_grain == "date" and asof_grain == "date":
+        return "after" if known_at_value > asof_value else "before_or_equal"
+    ka_day = known_at_value[:10]
+    as_day = asof_value[:10]
+    if ka_day == as_day:
+        return "ambiguous"
+    return "after" if ka_day > as_day else "before_or_equal"
+
+
 def _check_lookahead(vector: dict, slots: list[dict]) -> list[Finding]:
     findings: list[Finding] = []
     asof = vector.get("asof") or {}
-    as_day = (asof.get("value") or "")[:10]
+    asof_value = asof.get("value")
     asof_grain = asof.get("grain")
 
     for slot in slots:
@@ -551,11 +631,10 @@ def _check_lookahead(vector: dict, slots: list[dict]) -> list[Finding]:
         if known_at.get("state") != "known":
             findings.append(_f("K3E_R007", f"slots[{construct}]", "slot is included_in_composition with an unknown known_at"))
             continue
-        ka_day = (known_at.get("value") or "")[:10]
-        ka_grain = known_at.get("grain")
-        if as_day and ka_day > as_day:
+        verdict = _compare_known_at_to_asof(known_at.get("value"), known_at.get("grain"), asof_value, asof_grain)
+        if verdict == "after":
             findings.append(_f("K3E_R007", f"slots[{construct}]", "included slot's known_at is after asof (look-ahead)"))
-        elif ka_day == as_day and ka_grain != asof_grain:
+        elif verdict == "ambiguous":
             findings.append(_f("K3E_R007", f"slots[{construct}]", "date-grain vs datetime-grain same-day comparison is ambiguous and must be excluded"))
 
     mr = (vector.get("projection") or {}).get("market_reflection") or {}
@@ -629,29 +708,60 @@ def _check_identity_launder(vector: dict, slots: list[dict], registry: dict) -> 
     return findings
 
 
-def _check_authority_leak(vector: dict, slots: list[dict]) -> list[Finding]:
+# R-5(a) red-team repair (2026-08-25): entry_availability leg -> the ONE
+# lawful owner-slot state each entry_availability.state value may represent.
+# "read" is lawful ONLY when the referenced owner slot is itself observed; a
+# missing/stale/unknown owner slot FORCES the matching leg state to equal
+# that slot state — the leg may never claim more certainty than its owner
+# read actually carries. Any other adverse slot.state (rights_blocked,
+# conflicted, identity_unresolved, unsupported) has no matching leg-state
+# word in the closed 4-value entry_availability enum, so it maps to
+# "unknown" (the honest fallback, never silently upgraded to "read").
+def _expected_entry_leg_state(slot: dict | None) -> str | None:
+    if slot is None:
+        return None
+    st = slot.get("state")
+    if st == "observed":
+        return "read"
+    if st in ("missing", "stale", "unknown"):
+        return st
+    return "unknown"
+
+
+def _check_authority_leak(vector: dict, slots: list[dict], registry: dict) -> list[Finding]:
     findings: list[Finding] = []
     by_construct = {s.get("construct"): s for s in slots}
+    constructs = registry.get("constructs", {})
     projection = vector.get("projection") or {}
     entry = projection.get("entry_availability") or {}
 
-    prophet_board = entry.get("prophet_board") or {}
-    if prophet_board.get("state") == "read":
-        refs = prophet_board.get("slot_refs") or []
-        if not refs:
-            findings.append(_f("K3E_R011", "$.projection.entry_availability.prophet_board", "state=read requires non-empty slot_refs"))
-        for r in refs:
-            if r != "prophet_board_lane":
-                findings.append(_f("K3E_R011", "$.projection.entry_availability.prophet_board.slot_refs", f"ref {r!r} is not prophet_board_lane"))
+    for leg_key, owner_construct in (("prophet_board", "prophet_board_lane"), ("radar", "radar_probe_admission")):
+        leg = entry.get(leg_key) or {}
+        leg_state = leg.get("state")
+        refs = leg.get("slot_refs") or []
+        if leg_state == "read":
+            if not refs:
+                findings.append(_f("K3E_R011", f"$.projection.entry_availability.{leg_key}", "state=read requires non-empty slot_refs"))
+            for r in refs:
+                if r != owner_construct:
+                    findings.append(_f("K3E_R011", f"$.projection.entry_availability.{leg_key}.slot_refs", f"ref {r!r} is not {owner_construct}"))
 
-    radar = entry.get("radar") or {}
-    if radar.get("state") == "read":
-        refs = radar.get("slot_refs") or []
-        if not refs:
-            findings.append(_f("K3E_R011", "$.projection.entry_availability.radar", "state=read requires non-empty slot_refs"))
-        for r in refs:
-            if r != "radar_probe_admission":
-                findings.append(_f("K3E_R011", "$.projection.entry_availability.radar.slot_refs", f"ref {r!r} is not radar_probe_admission"))
+        # R-5(a): leg state must equal the law-derived state of the owner
+        # slot it names (or of the canonical owner construct, if present in
+        # the vector even without being referenced).
+        owner_slot = by_construct.get(owner_construct)
+        expected = _expected_entry_leg_state(owner_slot)
+        if expected is not None and leg_state is not None and leg_state != expected:
+            findings.append(_f("K3E_R011", f"$.projection.entry_availability.{leg_key}", f"leg state {leg_state!r} does not match owner slot {owner_construct!r} state law (expected {expected!r})"))
+
+    # R-5(b): a gate this vector (or any composed rule) claims to have
+    # computed itself is the named authority leak — failed_or_unavailable_
+    # gates may only ever name a canonical OWNER gate.
+    fug = projection.get("failed_or_unavailable_gates") or {}
+    for gate in fug.get("gates", []) or []:
+        owner = (gate.get("owner") or "")
+        if "opportunity_evidence" in owner.lower() or owner.strip().lower() == "computed":
+            findings.append(_f("K3E_R011", "$.projection.failed_or_unavailable_gates.gates", f"gate owner {owner!r} names this vector/a computed rule, never a canonical owner"))
 
     observed = projection.get("observed") or {}
     for r in observed.get("slot_refs", []) or []:
@@ -671,8 +781,17 @@ def _check_authority_leak(vector: dict, slots: list[dict]) -> list[Finding]:
         referenced_elsewhere |= set(leg.get("slot_refs", []) or [])
 
     for slot in slots:
-        if slot.get("object_class") == "instrument_state" and slot.get("construct") in referenced_elsewhere:
-            findings.append(_f("K3E_R011", f"slots[{slot.get('construct')}]", "instrument_state slot referenced from observed/inferred/market_reflection (only failed_or_unavailable_gates is lawful)"))
+        construct = slot.get("construct")
+        reg_row = constructs.get(construct)
+        if slot.get("object_class") == "instrument_state" and construct in referenced_elsewhere:
+            findings.append(_f("K3E_R011", f"slots[{construct}]", "instrument_state slot referenced from observed/inferred/market_reflection (only failed_or_unavailable_gates is lawful)"))
+        # R-6 red-team repair (2026-08-25): entry_owner_read constructs
+        # (prophet_board_lane, radar_probe_admission) are a verbatim owner
+        # read for entry_availability ONLY — Prophet/Radar admission is not
+        # vector evidence and must never enter observed/inferred/
+        # market_reflection.
+        if reg_row and reg_row.get("entry_owner_read") and construct in referenced_elsewhere:
+            findings.append(_f("K3E_R011", f"slots[{construct}]", "entry_owner_read construct referenced from observed/inferred/market_reflection (entry_availability only)"))
     return findings
 
 
@@ -720,6 +839,29 @@ def _check_receipt_consistency(vector: dict, slots: list[dict]) -> list[Finding]
         wire_denom = leg.get("denominator") or {}
         if wire_denom != expected:
             findings.append(_f("K3E_R015", f"$.projection.{leg_name}.denominator", f"expected {expected!r}, got {wire_denom!r}"))
+
+    # R-7 red-team repair (2026-08-25): a market_reflection incorporation
+    # leg's declared state must equal what its own referenced slot's state
+    # law recomputes to — this is the same "wire must equal recomputed
+    # truth" discipline the denominator/dominant_degradation checks above
+    # already enforce, so a leg fed only by a modeled slot (e.g. GEX) can
+    # never be mislabeled "observed" (documented here rather than under
+    # K3E_R011 because this is a receipt-recomputation check, not a
+    # cross-leg authority-boundary check).
+    mr = projection.get("market_reflection") or {}
+    for leg in mr.get("incorporation_legs", []) or []:
+        leg_name = leg.get("leg")
+        if leg_name == "I7_persistence_rejection":
+            continue
+        refs = leg.get("slot_refs") or []
+        if len(refs) != 1:
+            continue
+        slot = by_construct.get(refs[0])
+        if slot is None:
+            continue
+        expected_leg_state = _SLOT_STATE_TO_LEG_STATE.get(slot.get("state"), "unknown")
+        if leg.get("state") != expected_leg_state:
+            findings.append(_f("K3E_R015", f"$.projection.market_reflection.{leg_name}.state", f"expected {expected_leg_state!r} (from slot {refs[0]!r} state {slot.get('state')!r}), got {leg.get('state')!r}"))
     return findings
 
 
@@ -756,7 +898,7 @@ def validate_vector(vector: dict) -> list[Finding]:
     findings.extend(_check_lookahead(vector, slots))
     findings.extend(_check_cause_hypothesis(vector, slots))
     findings.extend(_check_identity_launder(vector, slots, registry))
-    findings.extend(_check_authority_leak(vector, slots))
+    findings.extend(_check_authority_leak(vector, slots, registry))
     findings.extend(_check_leg_membership(vector, slots))
     findings.extend(_check_receipt_consistency(vector, slots))
     findings.extend(_check_content_hash(vector))
@@ -788,11 +930,15 @@ def _derive_inclusion(state: str, asof_clock: dict, known_at_clock: dict, cross_
         reason = missingness.get("reason") or "unavailable"
         return False, reason
     if known_at_clock.get("state") == "known" and asof_clock.get("state") == "known":
-        ka_day = (known_at_clock.get("value") or "")[:10]
-        as_day = (asof_clock.get("value") or "")[:10]
-        if ka_day == as_day and known_at_clock.get("grain") != asof_clock.get("grain"):
-            return False, "lookahead_known_at_after_asof"
-        if ka_day and as_day and ka_day > as_day:
+        # R-2 red-team repair (2026-08-25): datetime-aware comparison — see
+        # _compare_known_at_to_asof. Both "after" (strict look-ahead) and
+        # "ambiguous" (mixed grain, same calendar day) are unlawful for
+        # inclusion.
+        verdict = _compare_known_at_to_asof(
+            known_at_clock.get("value"), known_at_clock.get("grain"),
+            asof_clock.get("value"), asof_clock.get("grain"),
+        )
+        if verdict in ("after", "ambiguous"):
             return False, "lookahead_known_at_after_asof"
     return True, None
 
@@ -882,18 +1028,14 @@ def _leg_denominator(refs: list[str], slots_by_construct: dict) -> dict:
 
 
 def _default_entry_availability(slots_by_construct: dict) -> dict:
+    # Shares _expected_entry_leg_state with the validator's R-5(a) check so
+    # composition and validation can never drift apart on this law.
     def _leg(construct_name: str) -> dict:
         slot = slots_by_construct.get(construct_name)
-        if slot is None:
+        expected = _expected_entry_leg_state(slot)
+        if expected is None:
             return {"state": "unknown", "slot_refs": []}
-        state = slot["state"]
-        if state == "observed":
-            return {"state": "read", "slot_refs": [construct_name]}
-        if state == "stale":
-            return {"state": "stale", "slot_refs": []}
-        if state == "missing":
-            return {"state": "missing", "slot_refs": []}
-        return {"state": "unknown", "slot_refs": []}
+        return {"state": expected, "slot_refs": [construct_name] if expected == "read" else []}
 
     return {
         "prophet_board": _leg("prophet_board_lane"),
@@ -945,13 +1087,22 @@ def compose_vector(
     )
     compilation_state = "partial" if adverse_total > 0 else "complete"
 
+    # R-6 red-team repair (2026-08-25): entry_owner_read constructs
+    # (prophet_board_lane, radar_probe_admission) are a verbatim owner read
+    # for entry_availability ONLY and must never enter observed/inferred.
+    def _is_entry_owner_read(construct: str) -> bool:
+        row = constructs.get(construct)
+        return bool(row and row.get("entry_owner_read"))
+
     observed_refs = [
         s["construct"] for s in composed_slots
         if s["object_class"] == "world_observation" and s["state"] == "observed" and s["included_in_composition"]
+        and not _is_entry_owner_read(s["construct"])
     ]
     inferred_refs = [
         s["construct"] for s in composed_slots
         if s["object_class"] in ("derived_view", "system_belief") and s["state"] in ("observed", "modeled") and s["included_in_composition"]
+        and not _is_entry_owner_read(s["construct"])
     ]
 
     incorporation_legs = []

@@ -8,10 +8,13 @@ and the fusion-family law (research/prophet_fusion/families.yml).
 
 Four golden fixtures prove a lawful vector validates clean and that
 compose_vector is deterministic (same input -> byte-identical output).
-Thirteen hostile fixtures each plant exactly one commissioned defect and
-assert the expected K3E_R0xx / schema rule code fires. A further block of
+Thirteen hostile fixtures each plant the commissioned defect; incidental
+cascade findings may accompany a planted defect (R-9 test-honesty repair,
+2026-08-25 red-team wave — an earlier "exactly one" claim here was false),
+and tests assert only that the commissioned code fires. A further block of
 programmatic mutation tests (built from golden_imxi in-memory, no files)
-covers the remaining named mutation classes.
+covers the remaining named mutation classes, including the repair-wave
+findings (R-1..R-9) below.
 """
 
 from __future__ import annotations
@@ -38,6 +41,7 @@ CONTRACT_DIR = ROOT / "contracts" / "opportunity_evidence"
 VECTOR_SCHEMA_PATH = CONTRACT_DIR / "vector.v1.schema.json"
 SLOT_REGISTRY_PATH = CONTRACT_DIR / "slot_registry.v1.json"
 K1_REFERENCE_SCHEMA_PATH = ROOT / "contracts" / "evidence_foundation" / "reference.v1.schema.json"
+SECURITY_STATE_SCHEMA_PATH = ROOT / "contracts" / "market_os" / "security_state.v1.schema.json"
 FAMILIES_PATH = ROOT / "research" / "prophet_fusion" / "families.yml"
 LIB_SOURCE_PATH = ROOT / "lib" / "opportunity_evidence.py"
 
@@ -99,9 +103,15 @@ def _build_golden_imxi_drl_event():
             asof=_unknown_clock(), known_at=_unknown_clock(),
         ),
         dict(
+            # R-8 red-team repair (2026-08-25): known_at is now the FINRA
+            # knowable_date clock (8th NYSE session after settlement, per
+            # lib/finra_knowable.py) — settlement 2026-07-31 -> Aug 3, 4, 5,
+            # 6, 7, 10, 11, 12 -> knowable_date 2026-08-12. State stays
+            # stale: a settlement two NYSE sessions shy of three full weeks
+            # old is stale for the current tape either way.
             construct="short_interest", state="stale", missingness={"reason": "stale"},
-            coverage_flag={"state": "fallback", "note": "settlement is a two-week-old clock relative to the capture asof"},
-            asof=_clock("2026-07-31"), known_at=_clock("2026-08-14"),
+            coverage_flag={"state": "fallback", "note": "settlement is stale relative to the capture asof"},
+            asof=_clock("2026-07-31"), known_at=_clock("2026-08-12"),
         ),
         dict(
             construct="smart_money_13f", state="identity_unresolved", missingness={"reason": "unresolved_identity"},
@@ -739,6 +749,187 @@ def test_mutation_stale_hash_fires_r020():
     assert v["content_sha256"] == old_hash  # left stale on purpose
     codes = _codes(validate_vector(v))
     assert "K3E_R020" in codes
+
+
+# ---------------------------------------------------------------------------
+# Repair-wave (2026-08-25 red-team) mutation tests, R-1..R-9.
+# ---------------------------------------------------------------------------
+
+
+def test_mutation_r1_value_payload_forbidden_key_fires_r004():
+    v = _golden_imxi_vector()
+    for slot in v["slots"]:
+        if slot["construct"] == "drl_resid_shock":
+            slot["value_or_null"] = dict(slot["value_or_null"], score=0.9)
+    codes = _codes(validate_vector(v))
+    assert "K3E_R004" in codes
+
+
+def test_mutation_r1_disloc_string_and_dict_values_both_fire_r004():
+    subject, asof, slots = _base_vector()
+    slots = slots + [
+        dict(construct="disloc.ret_mkt.21d", state="observed", value_or_null="0.08",
+             basis={"peer_basis": "market"}, asof=_clock("2026-08-14"), known_at=_clock("2026-08-14")),
+        dict(construct="disloc.ret_sec.21d", state="observed", value_or_null={"ret": 0.03},
+             basis={"peer_basis": "sector"}, asof=_clock("2026-08-14"), known_at=_clock("2026-08-14")),
+    ]
+    v = compose_vector(subject, asof, slots)
+    findings = validate_vector(v)
+    r004_paths = {f.path for f in findings if f.code == "K3E_R004"}
+    assert any("ret_mkt" in p for p in r004_paths), r004_paths
+    assert any("ret_sec" in p for p in r004_paths), r004_paths
+
+
+def test_mutation_r3_disloc_near_sum_reconstruction_fires_r004():
+    subject, asof, slots = _base_vector()
+    slots = slots + [
+        dict(construct="disloc.ret_mkt.21d", state="observed", value_or_null=0.05,
+             basis={"peer_basis": "market"}, asof=_clock("2026-08-14"), known_at=_clock("2026-08-14")),
+        dict(construct="disloc.ret_sec.21d", state="observed", value_or_null=0.03,
+             basis={"peer_basis": "sector"}, asof=_clock("2026-08-14"), known_at=_clock("2026-08-14")),
+        dict(construct="disloc.ret_fac.21d", state="observed", value_or_null=0.08000001,
+             basis={"peer_basis": "market"}, asof=_clock("2026-08-14"), known_at=_clock("2026-08-14")),
+    ]
+    v = compose_vector(subject, asof, slots)
+    codes = _codes(validate_vector(v))
+    assert "K3E_R004" in codes
+
+
+def test_mutation_r2_intraday_datetime_lookahead_fires_r007_and_autoexcludes():
+    subject = {
+        "subject_type": "us_listing_symbol", "value": "IMXI",
+        "identity_state": "bridge_validated",
+        "identity_bridge": {"method": "owner_native_same_key", "receipt": "test receipt"},
+    }
+    asof = {"value": "2026-08-14T09:30:00Z", "grain": "datetime", "t0_source": "drl_event_date", "t0_source_object": "x"}
+    slots = [
+        dict(construct="smart_money_13f", state="observed", value_or_null={"holders_delta": 1},
+             asof=_clock("2026-06-30"), known_at={"value": "2026-08-14T23:59:59Z", "grain": "datetime"}),
+    ]
+    v = compose_vector(subject, asof, slots)
+    slot = next(s for s in v["slots"] if s["construct"] == "smart_money_13f")
+    assert slot["included_in_composition"] is False, "compose_vector must auto-exclude an intraday look-ahead slot"
+    assert slot["exclusion_reason"] == "lookahead_known_at_after_asof"
+
+    # Force it back in to prove the validator independently catches the same
+    # defect, not just compose_vector's own auto-exclusion.
+    slot["included_in_composition"] = True
+    slot["exclusion_reason"] = None
+    codes = _codes(validate_vector(v))
+    assert "K3E_R007" in codes
+
+
+def test_mutation_r4_only_unsupported_and_unknown_adverse_dominant_is_unsupported():
+    subject = {"subject_type": "us_listing_symbol", "value": "IMXI", "identity_state": "single_owner_native", "identity_bridge": None}
+    asof = {"value": "2026-08-14", "grain": "date", "t0_source": "drl_event_date", "t0_source_object": "x"}
+    slots = [
+        dict(construct="drl_resid_shock", state="observed", value_or_null={"ret": 0.1, "resid": 0.09},
+             basis={"peer_basis": "market"}, asof=_clock("2026-08-14"), known_at=_clock("2026-08-14")),
+        dict(construct="estimate_revisions", state="unsupported", missingness={"reason": "unsupported"},
+             asof=_unknown_clock(), known_at=_unknown_clock()),
+        dict(construct="attention_views", state="unknown", missingness={"reason": "unknown"},
+             asof=_unknown_clock(), known_at=_unknown_clock()),
+    ]
+    v = compose_vector(subject, asof, slots)
+    assert validate_vector(v) == [], "compose_vector's own output must be receipt-consistent"
+    assert v["dominant_degradation"] == "unsupported"
+
+    v["dominant_degradation"] = "none"
+    codes = _codes(validate_vector(v))
+    assert "K3E_R015" in codes
+
+
+def test_mutation_r5a_entry_leg_state_mismatches_owner_slot_fires_r011():
+    v = _golden_imxi_vector()
+    # golden_imxi's prophet_board_lane slot is state=observed -> the leg must
+    # read "read"; forcing it to "missing" while the owner slot stays
+    # observed is the named leg/owner mismatch.
+    owner_slot = next(s for s in v["slots"] if s["construct"] == "prophet_board_lane")
+    assert owner_slot["state"] == "observed"
+    v["projection"]["entry_availability"]["prophet_board"]["state"] = "missing"
+    codes = _codes(validate_vector(v))
+    assert "K3E_R011" in codes
+
+
+def test_mutation_r5b_gate_owner_self_or_computed_fires_r011():
+    v = _golden_imxi_vector()
+    v["projection"]["failed_or_unavailable_gates"] = {
+        "gates": [
+            {"gate": "self_read_gate", "owner": "lib/opportunity_evidence.py", "state": "failed", "reason": "x"},
+            {"gate": "self_rule_gate", "owner": "Computed", "state": "failed", "reason": "y"},
+        ],
+        "denominator": {"total": 2, "included": 0, "excluded": 2},
+    }
+    codes = _codes(validate_vector(v))
+    assert "K3E_R011" in codes
+
+
+def test_mutation_r6_entry_owner_read_construct_in_inferred_leg_fires_r011():
+    v = _golden_imxi_vector()
+    # radar_probe_admission is object_class derived_view, which the generic
+    # inferred-leg object_class check alone would accept -- only the R-6
+    # entry_owner_read fence catches this.
+    radar_slot = next(s for s in v["slots"] if s["construct"] == "radar_probe_admission")
+    assert radar_slot["object_class"] == "derived_view"
+    v["projection"]["inferred"]["slot_refs"].append("radar_probe_admission")
+    codes = _codes(validate_vector(v))
+    assert "K3E_R011" in codes
+
+
+def test_compose_vector_never_puts_entry_owner_read_constructs_in_observed_or_inferred():
+    for name in GOLDEN_BUILDERS:
+        v = _compose_golden(name)
+        refs = set(v["projection"]["observed"]["slot_refs"]) | set(v["projection"]["inferred"]["slot_refs"])
+        assert "prophet_board_lane" not in refs
+        assert "radar_probe_admission" not in refs
+
+
+def test_r7_golden_imxi_i4_leg_reads_modeled_not_observed():
+    v = _load_fixture("golden_imxi_drl_event")
+    options_slot = next(s for s in v["slots"] if s["construct"] == "options_state")
+    assert options_slot["state"] == "modeled"
+    leg = next(l for l in v["projection"]["market_reflection"]["incorporation_legs"] if l["leg"] == "I4_options_repricing")
+    assert leg["state"] == "modeled"
+
+
+def test_mutation_r7_modeled_leg_mislabeled_observed_fires_r015():
+    v = _golden_imxi_vector()
+    leg = next(l for l in v["projection"]["market_reflection"]["incorporation_legs"] if l["leg"] == "I4_options_repricing")
+    assert leg["state"] == "modeled"
+    leg["state"] = "observed"
+    codes = _codes(validate_vector(v))
+    assert "K3E_R015" in codes
+
+
+def test_r8_golden_imxi_short_interest_known_at_is_finra_knowable_date():
+    v = _load_fixture("golden_imxi_drl_event")
+    slot = next(s for s in v["slots"] if s["construct"] == "short_interest")
+    assert slot["known_at"] == {
+        "value": "2026-08-12", "grain": "date", "clock_class": "knowable",
+        "native_field": "knowable_date", "state": "known",
+    }
+    assert slot["state"] == "stale"
+
+
+def test_r9_compilation_state_enum_matches_security_state_recipe_compilation_receipt():
+    vector_schema = load_vector_schema()
+    security_schema = json.loads(SECURITY_STATE_SCHEMA_PATH.read_text(encoding="utf-8"))
+    vector_enum = vector_schema["properties"]["compilation_state"]["enum"]
+    compilation_node = (
+        security_schema["properties"]["legs"]["properties"]["evidence"]["properties"]["compilation"]["oneOf"][1]
+    )
+    assert vector_enum == compilation_node["properties"]["state"]["enum"]
+
+
+def test_r9_clock_value_grain_equals_k1_native_clock_grain_plus_unknown():
+    vector_schema = load_vector_schema()
+    k1_schema = json.loads(K1_REFERENCE_SCHEMA_PATH.read_text(encoding="utf-8"))
+    vector_grain_enum = vector_schema["$defs"]["clockValue"]["properties"]["grain"]["enum"]
+    k1_grain_enum = k1_schema["$defs"]["nativeClock"]["properties"]["grain"]["enum"]
+    assert vector_grain_enum == k1_grain_enum + ["unknown"], (
+        "grain is K1 nativeClock grain plus exactly one additive member, 'unknown' -- "
+        "the sole declared delta from the K1 clock vocabulary"
+    )
 
 
 # ---------------------------------------------------------------------------

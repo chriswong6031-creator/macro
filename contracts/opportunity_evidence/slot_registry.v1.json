@@ -60,6 +60,7 @@
       "family_binding": {"kind": "research_only", "family_id": null, "member": null, "routed_to": null},
       "object_class": "derived_view",
       "basis_required": true,
+      "value_type": "number",
       "kills": [
         "DNR:KILL-PSS-F3-RESIDUAL — residualization is a descriptor of where the move lived, never a timer, gate, or ranker",
         "DNR:KILL-LIQUIDITY-SHOCK-REVERSAL-CLASSIFIER — closed at OHLCV grade; do not re-propose by re-tuning z/volume/horizon/peer-basis/label taxonomy; its analyst-revision firewall reopener is coverage-blocked-not-null and stays accruing",
@@ -137,7 +138,7 @@
       "object_class": "instrument_state",
       "family_binding": {"kind": "research_only", "family_id": null, "member": null, "routed_to": null},
       "asof_clock": {"native_field": "state_asof", "clock_class": "belief_or_build"},
-      "known_at_clock": {"native_field": "state_updated", "clock_class": "system_recorded"},
+      "known_at_clock": {"native_field": "state_updated", "clock_class": "belief_or_build"},
       "clock_distinct": true,
       "cross_owner_join": false,
       "variation_required": false,
@@ -145,7 +146,8 @@
       "optional_family": false,
       "derivation": "owner_read",
       "notes": [
-        "An instrument verdict is not a market verdict: a terminal window state means the declared windows resolved, never that a thesis is true or false."
+        "An instrument verdict is not a market verdict: a terminal window state means the declared windows resolved, never that a thesis is true or false.",
+        "state_updated is a market SESSION date derived from bar indices (engine/price_pressure/ledger.py grading walk), i.e. the owner's evaluation/build clock — belief_or_build, not a system write clock (repaired from system_recorded on red-team finding, 2026-08-25)."
       ]
     },
     "macro_chain_state": {
@@ -262,12 +264,12 @@
     "short_interest": {
       "title": "FINRA short interest (biweekly settlement)",
       "owner": "data/finra/ ingest",
-      "artifact": "data/finra/short_interest.parquet (+ candidates short_int__* projection)",
+      "artifact": "data/finra/short_interest_panel.parquet (PIT panel carrying knowable_date) + data/finra/short_interest.parquet (capture store; its asof/capture_date is a capture clock, observed class, never knowable)",
       "reader": "owner parquet read",
       "object_class": "world_observation",
       "family_binding": {"kind": "governed_family", "family_id": "F5_FLOW_POSITIONING", "member": "short_interest", "routed_to": null},
       "asof_clock": {"native_field": "settlement_date", "clock_class": "world_valid"},
-      "known_at_clock": {"native_field": "asof", "clock_class": "knowable"},
+      "known_at_clock": {"native_field": "knowable_date", "clock_class": "knowable"},
       "clock_distinct": true,
       "cross_owner_join": false,
       "variation_required": false,
@@ -275,7 +277,8 @@
       "optional_family": false,
       "derivation": "owner_read",
       "notes": [
-        "The settlement date is the information date; the capture asof is a different clock. A capture asof describing a two-week-old settlement is stale for the current tape and must be typed stale — collapsing the two clocks is the named mutation kill.",
+        "knowable_date is the estate's ONE canonical FINRA availability clock — the 8th NYSE session after settlement (lib/finra_knowable.py; engine/short_pressure.py PIT LAW: joins on knowable_date, never settlement_date). The capture store's asof (= collector run date, collectors/finra.py) is an observed-class capture clock and is NOT knowable — pinning it as known_at was the exact owner-clock-collapse this registry exists to kill (repaired on red-team finding, 2026-08-25).",
+        "A knowable_date describing a two-week-old settlement is stale for the current tape and must be typed stale — collapsing settlement and availability clocks is the named mutation kill.",
         "Days-to-cover uses FINRA ADV, not borrow; utilization/CTB/locate are UNKNOWN constructs and stay out of this registry."
       ]
     },
@@ -430,7 +433,8 @@
       "derivation": "owner_read",
       "notes": [
         "Backlog honesty: no event in projection is not a clean cap table — absence with a pending parser backlog is coverage partial, never a clean verdict. Do not read 424B2 count as dilution intensity.",
-        "Capital Structure Intelligence V2 (#5901) owns this axis's architecture — cite, do not fork."
+        "Capital Structure Intelligence V2 (#5901) owns this axis's architecture — cite, do not fork.",
+        "Join key: dilution_events.parquet natively carries BOTH cik and ticker columns, so a listing-symbol subject joins owner-native same-key on ticker (cross_owner_join false). Any cik-keyed instrument object without a native ticker requires the Earnings company_identity.v1 PIT alias and types identity_unresolved without it."
       ]
     },
     "etf_flow_shares_outstanding": {
@@ -467,9 +471,10 @@
       "variation_required": false,
       "basis_required": false,
       "optional_family": false,
+      "entry_owner_read": true,
       "derivation": "owner_read",
       "notes": [
-        "Verbatim owner projection for the entry_availability leg. Prophet selection/gating is untouchable; Prophet does not consume this vector; empty prophet_entry/prophet_signal columns are typed unknown (entry state may live in engine/entry_signal dossiers — an unclosed Track-C question), never no-entry-state."
+        "Verbatim owner projection for the entry_availability leg ONLY: entry_owner_read slots never enter the observed/inferred/market_reflection legs — Prophet's admission verdict is not vector evidence (red-team repair 2026-08-25). Prophet selection/gating is untouchable; Prophet does not consume this vector; empty prophet_entry/prophet_signal columns are typed unknown (entry state may live in engine/entry_signal dossiers — an unclosed Track-C question), never no-entry-state."
       ]
     },
     "radar_probe_admission": {
@@ -486,8 +491,10 @@
       "variation_required": false,
       "basis_required": false,
       "optional_family": false,
+      "entry_owner_read": true,
       "derivation": "owner_read",
       "notes": [
+        "Entry_availability leg ONLY: entry_owner_read slots never enter the observed/inferred/market_reflection legs (red-team repair 2026-08-25).",
         "ProbeRecord carries no score, rank, points, candidate boolean, or bullish field — admission is a coverage decision, not an opinion; this vector projects it verbatim under DEC:PROPHET-LAB-B5A-RECUT's read/filter/join/decorate-only verbs.",
         "Radar neither consumes nor writes this vector. Radar W5 forward tables are score-search-contaminated for any weight fitting (DNR:KILL-OUTCOME-AUDITION; PR-0 §18 A2.5 side-door law) — no vector construct may be fit, tuned, or selected on them."
       ]
