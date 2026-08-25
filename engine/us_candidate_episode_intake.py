@@ -224,6 +224,18 @@ def turn_watch_observations(path: Path, spine: IdentitySpine) -> IntakeBatch:
             suppressions.append(_suppression(source, schema, event_id, receipt, ticker, "UNEVALUATED_TRIGGER",
                                               session=session))
             continue
+        trigger_clocks = []
+        for trigger in fired.values():
+            if not isinstance(trigger, Mapping) or not trigger.get("fired"):
+                continue
+            trigger_clock = _close(trigger.get("last_date"))
+            if trigger_clock is not None:
+                trigger_clocks.append(trigger_clock)
+        if not trigger_clocks:
+            suppressions.append(_suppression(source, schema, event_id, receipt, ticker,
+                                              "MALFORMED_RECEIPT", session=session))
+            continue
+        trigger_clock = min(trigger_clocks)
         reset = row.get("reset")
         if not isinstance(reset, Mapping) or reset.get("reset_low") is None or not reset.get("reset_low_date"):
             suppressions.append(_suppression(source, schema, event_id, receipt, ticker, "MISSING_RESET_LOW",
@@ -240,12 +252,8 @@ def turn_watch_observations(path: Path, spine: IdentitySpine) -> IntakeBatch:
             source=source, schema=schema, source_event_id=event_id, receipt=receipt,
             ticker=ticker, session=session, spine=spine, intake_class="technical_emergence",
             anchor=anchor,
-            occurred_at=min((v.get("last_date") for v in fired.values()
-                             if isinstance(v, Mapping) and v.get("fired") and v.get("last_date")),
-                            default=session),
-            known_at=min((v.get("last_date") for v in fired.values()
-                          if isinstance(v, Mapping) and v.get("fired") and v.get("last_date")),
-                         default=session),
+            occurred_at=trigger_clock,
+            known_at=trigger_clock,
         )
         if observation is None:
             security, _company = _identity(spine, ticker, session)

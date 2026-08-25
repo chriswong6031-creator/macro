@@ -257,8 +257,9 @@ data/us_prophet_rank/episodes/generations/<generation_id>/latest_receipt.json
    or ledger read.
 2. Load the immutable ledger and validate every event hash, schema, enum, clock ordering,
    source address, and episode-id derivation. Fail closed on corrupt truth.
-3. Derive current state solely by replaying the ledger in deterministic `(known_at,event_id)`
-   order.
+3. Derive current state solely by replaying the ledger in deterministic
+   `(known_at, source_system, source_event_id)` order; content-addressed `event_id` is
+   identity, not a replay-order tiebreaker.
 4. Load the latest TURN WATCH sidecar, current candidate snapshot, Doors flags, and Radar
    forward rows through source-specific normalizers. A missing optional source yields a named
    suppression/receipt degradation; it never manufactures an empty-success claim.

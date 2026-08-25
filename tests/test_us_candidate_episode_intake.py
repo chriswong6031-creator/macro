@@ -95,6 +95,8 @@ def test_turn_watch_sidecar_and_identity_spine_open_at_the_nyse_early_close(tmp_
         (_turn_row(triggers={}), "ISS:US-XNAS-ALFA", "MISSING_TRIGGER"),
         (_turn_row(triggers={"dot_1d": {"fired": True, "evaluated": False}}),
          "ISS:US-XNAS-ALFA", "UNEVALUATED_TRIGGER"),
+        (_turn_row(triggers={"dot_1d": {"fired": True, "evaluated": True}}),
+         "ISS:US-XNAS-ALFA", "MALFORMED_RECEIPT"),
         (_turn_row(reset={"reset_low": None, "reset_low_date": None}),
          "ISS:US-XNAS-ALFA", "MISSING_RESET_LOW"),
         (_turn_row(ticker="UNKNOWN"), "ISS:US-XNAS-ALFA", "IDENTITY_UNRESOLVED"),
