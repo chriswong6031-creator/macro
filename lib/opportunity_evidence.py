@@ -1,0 +1,1043 @@
+"""K3-E Opportunity Evidence Vector — semantic validator + deterministic composer.
+
+This module is a VIEW/JOIN executor over the two frozen contract files:
+
+    contracts/opportunity_evidence/vector.v1.schema.json
+    contracts/opportunity_evidence/slot_registry.v1.json
+
+It is never a store: nothing here writes to disk, opens a file for writing,
+creates a directory, or persists any output. ``compose_vector`` builds a
+vector purely in memory and returns it; the caller decides what (if anything)
+to do with the result.
+
+Dependency-minimal by law (see the K3-E build commission): stdlib only. No
+``yaml``, ``pandas``, ``jsonschema`` or ``engine`` imports live in this
+module. A hand-rolled structural checker (``_validate_node``) implements the
+subset of JSON Schema draft 2020-12 the frozen wire schema actually uses
+(type, const, enum, pattern, min/maxLength, min/maxItems, minimum/maximum,
+required, additionalProperties, $ref/$defs, oneOf, allOf-with-if/then/else)
+rather than adding a third-party dependency.
+
+Public surface:
+
+    load_vector_schema() / load_slot_registry()
+        Repository-canonical contract loaders. No caller-supplied path
+        override — callers always validate against the frozen files this
+        repo ships, mirroring the K1 Evidence Foundation's no-vocabulary-
+        injection law.
+
+    validate_vector(vector) -> list[Finding]
+        Structural (schema) + semantic (K3E_R0xx) validation. Fail-closed:
+        unknown anything is a Finding, never a silent pass.
+
+    compose_vector(subject, asof, slots, economic_cause_hypothesis=None, ...)
+        Deterministic in-memory composition. Same input -> byte-identical
+        output (content_sha256 included).
+"""
+
+from __future__ import annotations
+
+from functools import lru_cache
+import hashlib
+import itertools
+import json
+from pathlib import Path
+import re
+from typing import Any, NamedTuple
+
+# ---------------------------------------------------------------------------
+# Contract locations (repo-canonical; never overridable by a caller).
+# ---------------------------------------------------------------------------
+
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+_CONTRACT_DIR = _REPO_ROOT / "contracts" / "opportunity_evidence"
+_VECTOR_SCHEMA_PATH = _CONTRACT_DIR / "vector.v1.schema.json"
+_SLOT_REGISTRY_PATH = _CONTRACT_DIR / "slot_registry.v1.json"
+
+
+class OpportunityEvidenceError(Exception):
+    """Raised only for programmer errors (e.g. malformed caller input to
+    compose_vector). Never raised by validate_vector — that function always
+    returns findings instead of raising, so a fail-closed caller can inspect
+    every defect in one pass."""
+
+
+@lru_cache(maxsize=1)
+def load_vector_schema() -> dict:
+    """Load contracts/opportunity_evidence/vector.v1.schema.json. No path
+    override parameter exists on this public function by design."""
+
+    return json.loads(_VECTOR_SCHEMA_PATH.read_text(encoding="utf-8"))
+
+
+@lru_cache(maxsize=1)
+def load_slot_registry() -> dict:
+    """Load contracts/opportunity_evidence/slot_registry.v1.json. No path
+    override parameter exists on this public function by design."""
+
+    return json.loads(_SLOT_REGISTRY_PATH.read_text(encoding="utf-8"))
+
+
+class Finding(NamedTuple):
+    code: str
+    path: str
+    message: str
+
+
+def _f(code: str, path: str, message: str) -> Finding:
+    return Finding(code=code, path=path, message=message)
+
+
+# ---------------------------------------------------------------------------
+# Minimal in-module JSON-Schema structural checker (draft 2020-12 subset).
+# ---------------------------------------------------------------------------
+
+_TYPE_MAP = {"object": dict, "array": list, "string": str, "boolean": bool}
+
+
+def _check_type(value: Any, type_spec: Any) -> bool:
+    types = type_spec if isinstance(type_spec, list) else [type_spec]
+    for t in types:
+        if t == "null":
+            if value is None:
+                return True
+        elif t == "integer":
+            if isinstance(value, int) and not isinstance(value, bool):
+                return True
+        elif t == "number":
+            if isinstance(value, (int, float)) and not isinstance(value, bool):
+                return True
+        elif t == "boolean":
+            if isinstance(value, bool):
+                return True
+        else:
+            py = _TYPE_MAP.get(t)
+            if py is dict and isinstance(value, dict):
+                return True
+            if py is list and isinstance(value, list):
+                return True
+            if py is str and isinstance(value, str):
+                return True
+    return False
+
+
+def _resolve(schema: dict, defs: dict) -> dict:
+    if isinstance(schema, dict) and "$ref" in schema:
+        ref = schema["$ref"]
+        prefix = "#/$defs/"
+        if not ref.startswith(prefix):
+            raise OpportunityEvidenceError(f"unsupported $ref shape: {ref!r}")
+        return defs[ref[len(prefix):]]
+    return schema
+
+
+def _validate_node(instance: Any, schema: dict, defs: dict, path: str) -> list[tuple[str, str, str]]:
+    schema = _resolve(schema, defs)
+    errors: list[tuple[str, str, str]] = []
+
+    if "oneOf" in schema:
+        matched = 0
+        for sub in schema["oneOf"]:
+            if not _validate_node(instance, sub, defs, path):
+                matched += 1
+        if matched != 1:
+            errors.append((path, f"{matched} of {len(schema['oneOf'])} oneOf branches matched", "oneOf"))
+        return errors
+
+    if "type" in schema:
+        if not _check_type(instance, schema["type"]):
+            errors.append((path, f"expected type {schema['type']!r}, got {type(instance).__name__}", "type"))
+            return errors
+
+    if "const" in schema:
+        if instance != schema["const"]:
+            errors.append((path, f"expected const {schema['const']!r}, got {instance!r}", "const"))
+
+    if "enum" in schema:
+        if instance not in schema["enum"]:
+            errors.append((path, f"value {instance!r} not in enum {schema['enum']!r}", "enum"))
+
+    if isinstance(instance, str):
+        if "pattern" in schema and re.search(schema["pattern"], instance) is None:
+            errors.append((path, f"value {instance!r} does not match pattern {schema['pattern']!r}", "pattern"))
+        if "minLength" in schema and len(instance) < schema["minLength"]:
+            errors.append((path, "string shorter than minLength", "minLength"))
+        if "maxLength" in schema and len(instance) > schema["maxLength"]:
+            errors.append((path, "string longer than maxLength", "maxLength"))
+
+    if isinstance(instance, (int, float)) and not isinstance(instance, bool):
+        if "minimum" in schema and instance < schema["minimum"]:
+            errors.append((path, "value below minimum", "minimum"))
+        if "maximum" in schema and instance > schema["maximum"]:
+            errors.append((path, "value above maximum", "maximum"))
+
+    if isinstance(instance, dict):
+        props = schema.get("properties", {})
+        for req in schema.get("required", []):
+            if req not in instance:
+                errors.append((f"{path}.{req}", "missing required property", "required"))
+        additional = schema.get("additionalProperties", True)
+        for key, val in instance.items():
+            if key in props:
+                errors.extend(_validate_node(val, props[key], defs, f"{path}.{key}"))
+            elif additional is False:
+                errors.append((f"{path}.{key}", f"unknown property {key!r} (additionalProperties: false)", "additionalProperties"))
+            elif isinstance(additional, dict):
+                errors.extend(_validate_node(val, additional, defs, f"{path}.{key}"))
+        if "minProperties" in schema and len(instance) < schema["minProperties"]:
+            errors.append((path, "fewer than minProperties", "minProperties"))
+        if "maxProperties" in schema and len(instance) > schema["maxProperties"]:
+            errors.append((path, "more than maxProperties", "maxProperties"))
+
+    if isinstance(instance, list):
+        if "minItems" in schema and len(instance) < schema["minItems"]:
+            errors.append((path, "fewer than minItems", "minItems"))
+        if "maxItems" in schema and len(instance) > schema["maxItems"]:
+            errors.append((path, "more than maxItems", "maxItems"))
+        if schema.get("uniqueItems"):
+            seen: list[Any] = []
+            for item in instance:
+                if item in seen:
+                    errors.append((path, "duplicate item violates uniqueItems", "uniqueItems"))
+                    break
+                seen.append(item)
+        if "items" in schema:
+            for i, item in enumerate(instance):
+                errors.extend(_validate_node(item, schema["items"], defs, f"{path}[{i}]"))
+
+    if "allOf" in schema:
+        for sub in schema["allOf"]:
+            if "if" in sub:
+                matches = not _validate_node(instance, sub["if"], defs, path)
+                branch = sub.get("then") if matches else sub.get("else")
+                if branch is not None:
+                    errors.extend(_validate_node(instance, branch, defs, path))
+            else:
+                errors.extend(_validate_node(instance, sub, defs, path))
+
+    return errors
+
+
+def _schema_findings(vector: dict) -> list[Finding]:
+    schema = load_vector_schema()
+    defs = schema.get("$defs", {})
+    raw = _validate_node(vector, schema, defs, "$")
+    return [Finding(f"K3E_SCHEMA_{keyword.upper()}", path, message) for path, message, keyword in raw]
+
+
+# ---------------------------------------------------------------------------
+# Registry-driven constants.
+# ---------------------------------------------------------------------------
+
+_DISLOC_RE = re.compile(r"^disloc\.(?P<term>[a-z0-9_]+)\.(?P<window>\d+d)$")
+
+_AUTHORITY_ENVELOPE = {
+    "can_rank": False,
+    "can_gate": False,
+    "can_size": False,
+    "can_originate": False,
+    "can_open_entry": False,
+}
+
+_SLOT_STATE_TO_LEG_STATE = {
+    "observed": "observed",
+    "modeled": "observed",
+    "missing": "missing",
+    "stale": "stale",
+    "rights_blocked": "rights_blocked",
+    "conflicted": "conflicted",
+    "unsupported": "unknown",
+    "identity_unresolved": "identity_unresolved",
+    "unknown": "unknown",
+}
+
+_MARKET_REFLECTION_MAP = {
+    "I1_anticipation": None,
+    "I2_immediate_response": "drl_resid_shock",
+    "I3_estimate_revision": "estimate_revisions",
+    "I4_options_repricing": "options_state",
+    "I5_attention": "attention_views",
+    "I6_peer_response": "theme_membership",
+    "I7_persistence_rejection": None,
+}
+
+_RESIDUAL_OWNERS = {"engine/price_pressure/", "engine/residual_alpha.py"}
+_RESIDUAL_STANDALONE_CONSTRUCTS = {"drl_resid_shock"}
+
+_HYPOTHESIS_EVIDENCE_CLASSES = {
+    "company_impairment": {
+        "forensics_scalars",
+        "capital_structure_supply",
+        "sue_surprise",
+        "eightk_recency",
+        "estimate_revisions",
+    },
+    "positioning_unwind": {
+        "short_interest",
+        "options_state",
+        "smart_money_13f",
+        "insider_activity",
+    },
+}
+
+# v1 dominant_degradation derivation order (highest severity first). Matches
+# "conflicted > corrected > identity_unresolved = rights_blocked = missing >
+# stale > partial_coverage > none"; `corrected` and `unsupported` are kept in
+# the wire enum but are unreachable from this derivation in v1 (no slot state
+# or coverage_flag value maps to them yet) — documented, not a defect.
+_DOMINANT_DEGRADATION_ORDER = [
+    "conflicted",
+    "identity_unresolved",
+    "rights_blocked",
+    "missing",
+    "stale",
+]
+
+
+def _is_decomp_construct(construct: str, decomp: dict) -> re.Match | None:
+    m = _DISLOC_RE.match(construct)
+    if not m:
+        return None
+    if m.group("term") not in decomp.get("terms", []):
+        return None
+    if m.group("window") not in decomp.get("windows", []):
+        return None
+    return m
+
+
+def _is_residual_construct(construct: str) -> bool:
+    if construct in _RESIDUAL_STANDALONE_CONSTRUCTS:
+        return True
+    m = _DISLOC_RE.match(construct)
+    return bool(m and m.group("term") in ("ret_resid", "resid_z"))
+
+
+def registry_hygiene_findings() -> list[Finding]:
+    """K3E_R003(a): registry-level hygiene — no two registry constructs may
+    bind the same (family_id, member) pair. Intended for TEST-level use over
+    the frozen registry file, not part of per-vector validation."""
+
+    registry = load_slot_registry()
+    findings: list[Finding] = []
+    seen: dict[tuple, str] = {}
+    for name, row in registry.get("constructs", {}).items():
+        fb = row.get("family_binding", {})
+        if fb.get("kind") != "governed_family":
+            continue
+        key = (fb.get("family_id"), fb.get("member"))
+        if key in seen:
+            findings.append(_f("K3E_R003", f"constructs.{name}", f"registry double-homes {key!r} via {seen[key]!r} and {name!r}"))
+        else:
+            seen[key] = name
+    return findings
+
+
+def compute_content_sha256(vector: dict) -> str:
+    payload = {k: v for k, v in vector.items() if k != "content_sha256"}
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+# ---------------------------------------------------------------------------
+# Semantic rule passes.
+# ---------------------------------------------------------------------------
+
+
+def _recompute_denominator(slots: list[dict]) -> dict:
+    d = {
+        "total": len(slots),
+        "included": 0,
+        "excluded": 0,
+        "missing": 0,
+        "stale": 0,
+        "rights_blocked": 0,
+        "conflicted": 0,
+        "unsupported": 0,
+        "identity_unresolved": 0,
+        "unknown": 0,
+    }
+    for s in slots:
+        if s.get("included_in_composition"):
+            d["included"] += 1
+        else:
+            d["excluded"] += 1
+        st = s.get("state")
+        if st in d:
+            d[st] += 1
+    return d
+
+
+def _recompute_dominant_degradation(slots: list[dict]) -> str:
+    present_states = {s.get("state") for s in slots}
+    partial_coverage = any((s.get("coverage_flag") or {}).get("state") == "partial" for s in slots)
+    for candidate in _DOMINANT_DEGRADATION_ORDER:
+        if candidate in present_states:
+            return candidate
+    if partial_coverage:
+        return "partial_coverage"
+    return "none"
+
+
+def _check_constructs(slots: list[dict], registry: dict) -> list[Finding]:
+    findings: list[Finding] = []
+    constructs = registry.get("constructs", {})
+    decomp = registry.get("decomposition_groups", {}).get("dislocation", {})
+    forbidden = set(registry.get("forbidden_constructs", []))
+    forbidden_prefixes = tuple(registry.get("forbidden_construct_prefixes", []))
+
+    for slot in slots:
+        construct = slot.get("construct", "")
+        is_known = construct in constructs
+        is_decomp = not is_known and _is_decomp_construct(construct, decomp) is not None
+        is_forbidden = construct in forbidden or construct.startswith(forbidden_prefixes)
+
+        if is_forbidden:
+            findings.append(_f("K3E_R001", f"slots[{construct}]", f"forbidden construct {construct!r}"))
+            findings.append(_f("K3E_R004", f"slots[{construct}]", f"forbidden construct {construct!r} is a scalar reconstruction"))
+        elif not is_known and not is_decomp:
+            findings.append(_f("K3E_R001", f"slots[{construct}]", f"unknown construct {construct!r}"))
+
+        lowered = construct.lower()
+        if "impair" in lowered or "net_demand" in lowered:
+            findings.append(_f("K3E_R017", f"slots[{construct}]", f"construct {construct!r} claims the unowned axis (company_impairment_attribution / latent_net_demand)"))
+
+        # R002 / R003(b) family-binding checks.
+        expected = None
+        if is_known:
+            reg_fb = constructs[construct]["family_binding"]
+            expected = (reg_fb.get("kind"), reg_fb.get("family_id"), reg_fb.get("routed_to"))
+        elif is_decomp:
+            grp_fb = decomp.get("family_binding", {})
+            expected = (grp_fb.get("kind"), grp_fb.get("family_id"), grp_fb.get("routed_to"))
+
+        if expected is not None:
+            fb = slot.get("family_binding") or {}
+            actual = (fb.get("kind"), fb.get("family_id"), fb.get("routed_to"))
+            if actual != expected:
+                findings.append(_f("K3E_R002", f"slots[{construct}].family_binding", f"binding {actual!r} != registry pin {expected!r}"))
+                if fb.get("kind") == "governed_family" and fb.get("family_id") and fb.get("family_id") != expected[1]:
+                    findings.append(_f("K3E_R003", f"slots[{construct}].family_binding", f"construct {construct!r} claims a second family {fb.get('family_id')!r}; registry homes it in {expected[1]!r}"))
+
+        # R008 residual re-derivation.
+        owner_ref = slot.get("owner_ref") or {}
+        if construct.startswith("drl_"):
+            if owner_ref.get("owner") != "engine/price_pressure/" or "price_pressure" not in (owner_ref.get("reader") or ""):
+                findings.append(_f("K3E_R008", f"slots[{construct}].owner_ref", "drl_* construct must be owned by engine/price_pressure/ with a price_pressure reader"))
+        if construct == "residual_alpha_momentum" and owner_ref.get("owner") != "engine/residual_alpha.py":
+            findings.append(_f("K3E_R008", f"slots[{construct}].owner_ref", "residual_alpha_momentum must be owned by engine/residual_alpha.py"))
+        if is_known and slot.get("derivation") != constructs[construct].get("derivation"):
+            findings.append(_f("K3E_R008", f"slots[{construct}].derivation", "derivation does not match registry law"))
+        decomp_match = _is_decomp_construct(construct, decomp)
+        if decomp_match is not None and slot.get("state") in ("observed", "modeled") and decomp_match.group("term") in ("ret_resid", "resid_z"):
+            if owner_ref.get("owner") not in _RESIDUAL_OWNERS:
+                findings.append(_f("K3E_R008", f"slots[{construct}].owner_ref", "value-bearing residual decomposition slot must cite a canonical residual owner"))
+
+        # R012 flow-nominal label.
+        if is_known and constructs[construct].get("variation_required"):
+            vr = slot.get("variation_receipt")
+            state = slot.get("state")
+            if vr is None:
+                if state not in ("missing", "unknown"):
+                    findings.append(_f("K3E_R012", f"slots[{construct}]", "variation-required construct with no variation_receipt must be state missing/unknown"))
+            else:
+                dv = vr.get("distinct_values")
+                if isinstance(dv, int) and dv <= 1 and state != "stale":
+                    findings.append(_f("K3E_R012", f"slots[{construct}]", "distinct_values<=1 requires state stale"))
+                if state == "observed" and not (isinstance(dv, int) and dv >= 2):
+                    findings.append(_f("K3E_R012", f"slots[{construct}]", "state observed requires distinct_values>=2"))
+    return findings
+
+
+def _check_disloc_reconstruction(slots: list[dict]) -> list[Finding]:
+    findings: list[Finding] = []
+    by_window: dict[str, list[tuple[str, str, float]]] = {}
+    for slot in slots:
+        m = _DISLOC_RE.match(slot.get("construct", ""))
+        if not m:
+            continue
+        value = slot.get("value_or_null")
+        if not isinstance(value, (int, float)) or isinstance(value, bool):
+            continue
+        by_window.setdefault(m.group("window"), []).append((m.group("term"), slot.get("construct"), float(value)))
+
+    for entries in by_window.values():
+        for term, construct, value in entries:
+            if term == "ret_raw":
+                continue
+            others = [v for t, c, v in entries if c != construct]
+            found = False
+            for r in range(2, len(others) + 1):
+                for combo in itertools.combinations(others, r):
+                    if abs(sum(combo) - value) < 1e-9:
+                        found = True
+                        break
+                if found:
+                    break
+            if found:
+                findings.append(_f("K3E_R004", f"slots[{construct}]", "value reconstructs as a sum of two-or-more other same-window terms"))
+    return findings
+
+
+def _check_missing_to_neutral(vector: dict, slots: list[dict]) -> list[Finding]:
+    findings: list[Finding] = []
+    for slot in slots:
+        construct = slot.get("construct")
+        if slot.get("state") not in ("observed", "modeled") and slot.get("value_or_null") is not None:
+            findings.append(_f("K3E_R005", f"slots[{construct}]", "adverse-state slot carries a non-null value_or_null"))
+        missingness = slot.get("missingness") or {}
+        if missingness.get("zero_substituted") is not False:
+            findings.append(_f("K3E_R005", f"slots[{construct}].missingness", "zero_substituted must be false"))
+
+    denominator = vector.get("denominator") or {}
+    adverse_keys = ("missing", "stale", "rights_blocked", "conflicted", "unsupported", "identity_unresolved", "unknown")
+    adverse_total = sum((denominator.get(k) or 0) for k in adverse_keys)
+    if vector.get("compilation_state") == "complete" and adverse_total > 0:
+        findings.append(_f("K3E_R005", "$.compilation_state", "compilation_state complete while an adverse denominator count is non-zero"))
+    return findings
+
+
+def _check_clocks(slots: list[dict], registry: dict) -> list[Finding]:
+    findings: list[Finding] = []
+    constructs = registry.get("constructs", {})
+    decomp = registry.get("decomposition_groups", {}).get("dislocation", {})
+
+    for slot in slots:
+        construct = slot.get("construct", "")
+        reg_row = constructs.get(construct)
+        if reg_row is not None:
+            asof_pin = reg_row["asof_clock"]
+            known_at_pin = reg_row["known_at_clock"]
+            clock_distinct = bool(reg_row.get("clock_distinct"))
+        elif _is_decomp_construct(construct, decomp) is not None:
+            asof_pin = {"native_field": "bar_date", "clock_class": "world_valid"}
+            known_at_pin = {"native_field": "bar_date", "clock_class": "observed"}
+            clock_distinct = False
+        else:
+            continue
+
+        asof_clock = slot.get("asof") or {}
+        known_at_clock = slot.get("known_at") or {}
+
+        if asof_clock.get("clock_class") != asof_pin["clock_class"]:
+            findings.append(_f("K3E_R006", f"slots[{construct}].asof.clock_class", "asof clock_class does not match the registry pin"))
+        if asof_clock.get("state") == "known" and asof_clock.get("native_field") != asof_pin["native_field"]:
+            findings.append(_f("K3E_R006", f"slots[{construct}].asof.native_field", "asof native_field does not match the registry pin"))
+        if known_at_clock.get("clock_class") != known_at_pin["clock_class"]:
+            findings.append(_f("K3E_R006", f"slots[{construct}].known_at.clock_class", "known_at clock_class does not match the registry pin"))
+        if known_at_clock.get("state") == "known" and known_at_clock.get("native_field") != known_at_pin["native_field"]:
+            findings.append(_f("K3E_R006", f"slots[{construct}].known_at.native_field", "known_at native_field does not match the registry pin"))
+
+        if clock_distinct and asof_clock.get("state") == "known" and known_at_clock.get("state") == "known":
+            if asof_clock.get("native_field") == known_at_clock.get("native_field"):
+                findings.append(_f("K3E_R006", f"slots[{construct}]", "clock_distinct construct collapses asof/known_at onto one native field"))
+            as_day = (asof_clock.get("value") or "")[:10]
+            ka_day = (known_at_clock.get("value") or "")[:10]
+            if ka_day and as_day and ka_day < as_day:
+                findings.append(_f("K3E_R006", f"slots[{construct}]", "known_at precedes asof for a clock_distinct availability clock"))
+    return findings
+
+
+def _check_lookahead(vector: dict, slots: list[dict]) -> list[Finding]:
+    findings: list[Finding] = []
+    asof = vector.get("asof") or {}
+    as_day = (asof.get("value") or "")[:10]
+    asof_grain = asof.get("grain")
+
+    for slot in slots:
+        if not slot.get("included_in_composition"):
+            continue
+        construct = slot.get("construct")
+        known_at = slot.get("known_at") or {}
+        if known_at.get("state") != "known":
+            findings.append(_f("K3E_R007", f"slots[{construct}]", "slot is included_in_composition with an unknown known_at"))
+            continue
+        ka_day = (known_at.get("value") or "")[:10]
+        ka_grain = known_at.get("grain")
+        if as_day and ka_day > as_day:
+            findings.append(_f("K3E_R007", f"slots[{construct}]", "included slot's known_at is after asof (look-ahead)"))
+        elif ka_day == as_day and ka_grain != asof_grain:
+            findings.append(_f("K3E_R007", f"slots[{construct}]", "date-grain vs datetime-grain same-day comparison is ambiguous and must be excluded"))
+
+    mr = (vector.get("projection") or {}).get("market_reflection") or {}
+    for leg in mr.get("incorporation_legs", []) or []:
+        if leg.get("leg") == "I7_persistence_rejection" and leg.get("state") != "ex_post_excluded":
+            findings.append(_f("K3E_R007", "$.projection.market_reflection.I7_persistence_rejection", "I7_persistence_rejection must always be ex_post_excluded in a t0 vector"))
+    return findings
+
+
+def _check_cause_hypothesis(vector: dict, slots: list[dict]) -> list[Finding]:
+    findings: list[Finding] = []
+    ech = vector.get("economic_cause_hypothesis")
+    if not ech or ech.get("hypothesis") == "unknown":
+        return findings
+
+    by_construct = {s.get("construct"): s for s in slots}
+    refs = ech.get("supporting_slot_refs") or []
+    if not refs:
+        findings.append(_f("K3E_R009", "$.economic_cause_hypothesis.supporting_slot_refs", "a non-unknown hypothesis requires non-empty supporting_slot_refs"))
+        return findings
+
+    unresolved = [r for r in refs if r not in by_construct]
+    if unresolved:
+        findings.append(_f("K3E_R009", "$.economic_cause_hypothesis.supporting_slot_refs", f"refs do not resolve to present slots: {unresolved!r}"))
+
+    if refs and all(_is_residual_construct(r) for r in refs):
+        findings.append(_f("K3E_R009", "$.economic_cause_hypothesis.supporting_slot_refs", "support set cannot consist solely of residual constructs"))
+
+    hyp = ech.get("hypothesis")
+
+    def _observed(names):
+        return any(by_construct.get(n, {}).get("state") == "observed" for n in names)
+
+    if hyp == "company_impairment":
+        if not _observed(_HYPOTHESIS_EVIDENCE_CLASSES["company_impairment"]):
+            findings.append(_f("K3E_R009", "$.economic_cause_hypothesis", "company_impairment requires an observed company-evidence slot"))
+    elif hyp == "sector_or_factor_washout":
+        disloc_ok = False
+        for construct, slot in by_construct.items():
+            m = _DISLOC_RE.match(construct)
+            if m and m.group("term") in ("ret_sec", "ret_fac") and slot.get("state") == "observed":
+                disloc_ok = True
+                break
+        if not disloc_ok or not _observed(_HYPOTHESIS_EVIDENCE_CLASSES["company_impairment"]):
+            findings.append(_f("K3E_R009", "$.economic_cause_hypothesis", "sector_or_factor_washout requires an observed sector/factor decomposition slot AND observed company evidence"))
+    elif hyp == "liquidity_airpocket":
+        if by_construct.get("turnover_liquidity", {}).get("state") != "observed":
+            findings.append(_f("K3E_R009", "$.economic_cause_hypothesis", "liquidity_airpocket requires turnover_liquidity observed"))
+    elif hyp == "positioning_unwind":
+        ok = any(
+            by_construct.get(n, {}).get("state") == "observed" and by_construct.get(n, {}).get("included_in_composition")
+            for n in _HYPOTHESIS_EVIDENCE_CLASSES["positioning_unwind"]
+        )
+        if not ok:
+            findings.append(_f("K3E_R009", "$.economic_cause_hypothesis", "positioning_unwind requires an observed+included positioning slot"))
+    return findings
+
+
+def _check_identity_launder(vector: dict, slots: list[dict], registry: dict) -> list[Finding]:
+    findings: list[Finding] = []
+    subject = vector.get("subject") or {}
+    if subject.get("identity_state") == "bridge_validated":
+        return findings
+    constructs = registry.get("constructs", {})
+    for slot in slots:
+        construct = slot.get("construct")
+        reg_row = constructs.get(construct)
+        if reg_row and reg_row.get("cross_owner_join"):
+            if slot.get("state") != "identity_unresolved" or slot.get("included_in_composition") is not False:
+                findings.append(_f("K3E_R010", f"slots[{construct}]", "cross-owner construct must be state=identity_unresolved and included_in_composition=false when subject identity is unproven"))
+    return findings
+
+
+def _check_authority_leak(vector: dict, slots: list[dict]) -> list[Finding]:
+    findings: list[Finding] = []
+    by_construct = {s.get("construct"): s for s in slots}
+    projection = vector.get("projection") or {}
+    entry = projection.get("entry_availability") or {}
+
+    prophet_board = entry.get("prophet_board") or {}
+    if prophet_board.get("state") == "read":
+        refs = prophet_board.get("slot_refs") or []
+        if not refs:
+            findings.append(_f("K3E_R011", "$.projection.entry_availability.prophet_board", "state=read requires non-empty slot_refs"))
+        for r in refs:
+            if r != "prophet_board_lane":
+                findings.append(_f("K3E_R011", "$.projection.entry_availability.prophet_board.slot_refs", f"ref {r!r} is not prophet_board_lane"))
+
+    radar = entry.get("radar") or {}
+    if radar.get("state") == "read":
+        refs = radar.get("slot_refs") or []
+        if not refs:
+            findings.append(_f("K3E_R011", "$.projection.entry_availability.radar", "state=read requires non-empty slot_refs"))
+        for r in refs:
+            if r != "radar_probe_admission":
+                findings.append(_f("K3E_R011", "$.projection.entry_availability.radar.slot_refs", f"ref {r!r} is not radar_probe_admission"))
+
+    observed = projection.get("observed") or {}
+    for r in observed.get("slot_refs", []) or []:
+        slot = by_construct.get(r)
+        if slot and (slot.get("object_class") != "world_observation" or slot.get("state") != "observed"):
+            findings.append(_f("K3E_R011", "$.projection.observed.slot_refs", f"ref {r!r} is not an observed world_observation"))
+
+    inferred = projection.get("inferred") or {}
+    for r in inferred.get("slot_refs", []) or []:
+        slot = by_construct.get(r)
+        if slot and slot.get("object_class") not in ("derived_view", "system_belief"):
+            findings.append(_f("K3E_R011", "$.projection.inferred.slot_refs", f"ref {r!r} is not derived_view/system_belief"))
+
+    referenced_elsewhere = set(observed.get("slot_refs", []) or []) | set(inferred.get("slot_refs", []) or [])
+    mr = projection.get("market_reflection") or {}
+    for leg in mr.get("incorporation_legs", []) or []:
+        referenced_elsewhere |= set(leg.get("slot_refs", []) or [])
+
+    for slot in slots:
+        if slot.get("object_class") == "instrument_state" and slot.get("construct") in referenced_elsewhere:
+            findings.append(_f("K3E_R011", f"slots[{slot.get('construct')}]", "instrument_state slot referenced from observed/inferred/market_reflection (only failed_or_unavailable_gates is lawful)"))
+    return findings
+
+
+def _check_leg_membership(vector: dict, slots: list[dict]) -> list[Finding]:
+    findings: list[Finding] = []
+    known = {s.get("construct") for s in slots}
+    projection = vector.get("projection") or {}
+
+    def _refs(items, path):
+        for r in items or []:
+            if r not in known:
+                findings.append(_f("K3E_R014", path, f"ref {r!r} does not resolve to a present slot"))
+
+    _refs((projection.get("observed") or {}).get("slot_refs"), "$.projection.observed.slot_refs")
+    _refs((projection.get("inferred") or {}).get("slot_refs"), "$.projection.inferred.slot_refs")
+    for leg in (projection.get("market_reflection") or {}).get("incorporation_legs", []) or []:
+        _refs(leg.get("slot_refs"), f"$.projection.market_reflection.{leg.get('leg')}.slot_refs")
+    _refs((projection.get("strongest_unresolved_fact") or {}).get("slot_refs"), "$.projection.strongest_unresolved_fact.slot_refs")
+    entry = projection.get("entry_availability") or {}
+    _refs((entry.get("prophet_board") or {}).get("slot_refs"), "$.projection.entry_availability.prophet_board.slot_refs")
+    _refs((entry.get("radar") or {}).get("slot_refs"), "$.projection.entry_availability.radar.slot_refs")
+    return findings
+
+
+def _check_receipt_consistency(vector: dict, slots: list[dict]) -> list[Finding]:
+    findings: list[Finding] = []
+    recomputed = _recompute_denominator(slots)
+    wire = vector.get("denominator") or {}
+    for key, val in recomputed.items():
+        if wire.get(key) != val:
+            findings.append(_f("K3E_R015", f"$.denominator.{key}", f"expected {val}, got {wire.get(key)!r}"))
+
+    dd = _recompute_dominant_degradation(slots)
+    if vector.get("dominant_degradation") != dd:
+        findings.append(_f("K3E_R015", "$.dominant_degradation", f"expected {dd!r}, got {vector.get('dominant_degradation')!r}"))
+
+    by_construct = {s.get("construct"): s for s in slots}
+    projection = vector.get("projection") or {}
+    for leg_name in ("observed", "inferred"):
+        leg = projection.get(leg_name) or {}
+        refs = leg.get("slot_refs") or []
+        included = sum(1 for r in refs if by_construct.get(r, {}).get("included_in_composition"))
+        total = len(refs)
+        expected = {"total": total, "included": included, "excluded": total - included}
+        wire_denom = leg.get("denominator") or {}
+        if wire_denom != expected:
+            findings.append(_f("K3E_R015", f"$.projection.{leg_name}.denominator", f"expected {expected!r}, got {wire_denom!r}"))
+    return findings
+
+
+def _check_content_hash(vector: dict) -> list[Finding]:
+    sha = vector.get("content_sha256")
+    if not isinstance(sha, str):
+        return []
+    recomputed = compute_content_sha256(vector)
+    if recomputed != sha:
+        return [_f("K3E_R020", "$.content_sha256", "content_sha256 does not match the recomputed hash of the vector")]
+    return []
+
+
+def validate_vector(vector: dict) -> list[Finding]:
+    """Structural (JSON-Schema-subset) + semantic (K3E_R0xx) validation.
+    Fail-closed: an unrecognized shape anywhere always yields a Finding
+    rather than a silent pass. Always loads the two repo-canonical contract
+    files; there is no caller-supplied override."""
+
+    if not isinstance(vector, dict):
+        return [_f("K3E_SCHEMA_TYPE", "$", f"vector must be an object, got {type(vector).__name__}")]
+
+    findings: list[Finding] = list(_schema_findings(vector))
+
+    registry = load_slot_registry()
+    slots = vector.get("slots")
+    if not isinstance(slots, list):
+        slots = []
+
+    findings.extend(_check_constructs(slots, registry))
+    findings.extend(_check_disloc_reconstruction(slots))
+    findings.extend(_check_missing_to_neutral(vector, slots))
+    findings.extend(_check_clocks(slots, registry))
+    findings.extend(_check_lookahead(vector, slots))
+    findings.extend(_check_cause_hypothesis(vector, slots))
+    findings.extend(_check_identity_launder(vector, slots, registry))
+    findings.extend(_check_authority_leak(vector, slots))
+    findings.extend(_check_leg_membership(vector, slots))
+    findings.extend(_check_receipt_consistency(vector, slots))
+    findings.extend(_check_content_hash(vector))
+    return findings
+
+
+# ---------------------------------------------------------------------------
+# Deterministic in-memory composer.
+# ---------------------------------------------------------------------------
+
+
+def _clock_value(raw_clock: dict | None, pin: dict) -> dict:
+    raw_clock = dict(raw_clock or {})
+    state = raw_clock.get("state", "known")
+    grain = raw_clock.get("grain", "date")
+    value = raw_clock.get("value")
+    native_field = raw_clock.get("native_field", pin["native_field"])
+    clock_class = raw_clock.get("clock_class", pin["clock_class"])
+    if state == "unknown":
+        value = None
+        native_field = None
+    return {"value": value, "grain": grain, "clock_class": clock_class, "native_field": native_field, "state": state}
+
+
+def _derive_inclusion(state: str, asof_clock: dict, known_at_clock: dict, cross_owner_join: bool, subject: dict, missingness: dict) -> tuple[bool, str | None]:
+    if cross_owner_join and subject.get("identity_state") != "bridge_validated":
+        return False, "identity_unresolved"
+    if state not in ("observed", "modeled"):
+        reason = missingness.get("reason") or "unavailable"
+        return False, reason
+    if known_at_clock.get("state") == "known" and asof_clock.get("state") == "known":
+        ka_day = (known_at_clock.get("value") or "")[:10]
+        as_day = (asof_clock.get("value") or "")[:10]
+        if ka_day == as_day and known_at_clock.get("grain") != asof_clock.get("grain"):
+            return False, "lookahead_known_at_after_asof"
+        if ka_day and as_day and ka_day > as_day:
+            return False, "lookahead_known_at_after_asof"
+    return True, None
+
+
+def _compose_one_slot(raw: dict, subject: dict, constructs: dict, decomp: dict) -> dict:
+    construct = raw["construct"]
+    reg_row = constructs.get(construct)
+    decomp_match = _is_decomp_construct(construct, decomp) if reg_row is None else None
+
+    if reg_row is not None:
+        reg_fb = reg_row["family_binding"]
+        default_family_binding = {"kind": reg_fb["kind"], "family_id": reg_fb["family_id"], "routed_to": reg_fb["routed_to"]}
+        default_object_class = reg_row["object_class"]
+        default_derivation = reg_row["derivation"]
+        asof_pin = reg_row["asof_clock"]
+        known_at_pin = reg_row["known_at_clock"]
+        cross_owner_join = bool(reg_row.get("cross_owner_join"))
+        default_owner = {"owner": reg_row["owner"], "artifact": reg_row["artifact"], "reader": reg_row["reader"], "evidence_ref_id": None}
+    elif decomp_match is not None:
+        grp_fb = decomp.get("family_binding", {})
+        default_family_binding = {"kind": grp_fb.get("kind"), "family_id": grp_fb.get("family_id"), "routed_to": grp_fb.get("routed_to")}
+        default_object_class = decomp.get("object_class", "derived_view")
+        default_derivation = "owner_read"
+        asof_pin = {"native_field": "bar_date", "clock_class": "world_valid"}
+        known_at_pin = {"native_field": "bar_date", "clock_class": "observed"}
+        cross_owner_join = False
+        default_owner = None
+    else:
+        default_family_binding = {"kind": "research_only", "family_id": None, "routed_to": None}
+        default_object_class = "derived_view"
+        default_derivation = "owner_read"
+        asof_pin = {"native_field": None, "clock_class": "belief_or_build"}
+        known_at_pin = {"native_field": None, "clock_class": "belief_or_build"}
+        cross_owner_join = False
+        default_owner = None
+
+    family_binding = raw.get("family_binding", default_family_binding)
+    object_class = raw.get("object_class", default_object_class)
+    derivation = raw.get("derivation", default_derivation)
+
+    asof_clock = _clock_value(raw.get("asof"), asof_pin)
+    known_at_clock = _clock_value(raw.get("known_at"), known_at_pin)
+
+    state = raw["state"]
+    value_or_null = raw.get("value_or_null") if state in ("observed", "modeled") else None
+
+    if state in ("observed", "modeled"):
+        missingness = {"state": "present", "reason": None, "zero_substituted": False}
+    else:
+        reason = (raw.get("missingness") or {}).get("reason") or "unknown"
+        missingness = {"state": "absent", "reason": reason, "zero_substituted": False}
+
+    owner_ref = raw.get("owner_ref", default_owner) or {"owner": "unknown", "artifact": "unknown", "reader": "unknown", "evidence_ref_id": None}
+    provenance_class = raw.get("provenance_class", "owner_artifact")
+    coverage_flag = raw.get("coverage_flag") or {"state": "unknown", "note": None}
+    basis = raw.get("basis")
+    variation_receipt = raw.get("variation_receipt")
+
+    included_in_composition, exclusion_reason = _derive_inclusion(
+        state, asof_clock, known_at_clock, cross_owner_join, subject, missingness
+    )
+
+    return {
+        "construct": construct,
+        "family_binding": family_binding,
+        "object_class": object_class,
+        "state": state,
+        "value_or_null": value_or_null,
+        "asof": asof_clock,
+        "known_at": known_at_clock,
+        "coverage_flag": coverage_flag,
+        "owner_ref": owner_ref,
+        "derivation": derivation,
+        "provenance_class": provenance_class,
+        "missingness": missingness,
+        "basis": basis,
+        "variation_receipt": variation_receipt,
+        "included_in_composition": included_in_composition,
+        "exclusion_reason": exclusion_reason,
+    }
+
+
+def _leg_denominator(refs: list[str], slots_by_construct: dict) -> dict:
+    total = len(refs)
+    included = sum(1 for r in refs if slots_by_construct.get(r, {}).get("included_in_composition"))
+    return {"total": total, "included": included, "excluded": total - included}
+
+
+def _default_entry_availability(slots_by_construct: dict) -> dict:
+    def _leg(construct_name: str) -> dict:
+        slot = slots_by_construct.get(construct_name)
+        if slot is None:
+            return {"state": "unknown", "slot_refs": []}
+        state = slot["state"]
+        if state == "observed":
+            return {"state": "read", "slot_refs": [construct_name]}
+        if state == "stale":
+            return {"state": "stale", "slot_refs": []}
+        if state == "missing":
+            return {"state": "missing", "slot_refs": []}
+        return {"state": "unknown", "slot_refs": []}
+
+    return {
+        "prophet_board": _leg("prophet_board_lane"),
+        "radar": _leg("radar_probe_admission"),
+        "composition_law": "owner_read_only_never_computed",
+    }
+
+
+def compose_vector(
+    subject: dict,
+    asof: dict,
+    slots: list[dict],
+    economic_cause_hypothesis: dict | None = None,
+    *,
+    permitted_consumers: list[str] | None = None,
+    strongest_unresolved_fact: dict | None = None,
+    next_observable: dict | None = None,
+    entry_availability: dict | None = None,
+    failed_or_unavailable_gates: list[dict] | None = None,
+    generated_at: str | None = None,
+) -> dict:
+    """Deterministic, pure in-memory composition of an opportunity_evidence
+    vector. Never invents, weights, nets, or drops a slot silently: slots are
+    ordered canonically (registry order, then construct string), and
+    inclusion/exclusion is derived by the frozen composition law
+    (adverse-state, look-ahead, and unproven-identity cross-owner exclusion).
+    Same input -> byte-identical output (content_sha256 included)."""
+
+    registry = load_slot_registry()
+    constructs = registry.get("constructs", {})
+    decomp = registry.get("decomposition_groups", {}).get("dislocation", {})
+
+    ordered_names = list(constructs.keys())
+
+    def _sort_key(raw_slot: dict):
+        c = raw_slot["construct"]
+        if c in constructs:
+            return (0, ordered_names.index(c), c)
+        return (1, c)
+
+    ordered_raw = sorted(slots, key=_sort_key)
+    composed_slots = [_compose_one_slot(raw, subject, constructs, decomp) for raw in ordered_raw]
+    slots_by_construct = {s["construct"]: s for s in composed_slots}
+
+    denominator = _recompute_denominator(composed_slots)
+    dominant_degradation = _recompute_dominant_degradation(composed_slots)
+    adverse_total = sum(
+        denominator[k] for k in ("missing", "stale", "rights_blocked", "conflicted", "unsupported", "identity_unresolved", "unknown")
+    )
+    compilation_state = "partial" if adverse_total > 0 else "complete"
+
+    observed_refs = [
+        s["construct"] for s in composed_slots
+        if s["object_class"] == "world_observation" and s["state"] == "observed" and s["included_in_composition"]
+    ]
+    inferred_refs = [
+        s["construct"] for s in composed_slots
+        if s["object_class"] in ("derived_view", "system_belief") and s["state"] in ("observed", "modeled") and s["included_in_composition"]
+    ]
+
+    incorporation_legs = []
+    for leg_name in (
+        "I1_anticipation", "I2_immediate_response", "I3_estimate_revision",
+        "I4_options_repricing", "I5_attention", "I6_peer_response", "I7_persistence_rejection",
+    ):
+        if leg_name == "I7_persistence_rejection":
+            incorporation_legs.append({"leg": leg_name, "state": "ex_post_excluded", "slot_refs": []})
+            continue
+        mapped = _MARKET_REFLECTION_MAP.get(leg_name)
+        slot = slots_by_construct.get(mapped) if mapped else None
+        if slot is None:
+            incorporation_legs.append({"leg": leg_name, "state": "missing", "slot_refs": []})
+        else:
+            incorporation_legs.append({"leg": leg_name, "state": _SLOT_STATE_TO_LEG_STATE.get(slot["state"], "unknown"), "slot_refs": [mapped]})
+
+    mr_included = sum(1 for leg in incorporation_legs if leg["state"] == "observed")
+    market_reflection = {
+        "incorporation_legs": incorporation_legs,
+        "denominator": {"total": len(incorporation_legs), "included": mr_included, "excluded": len(incorporation_legs) - mr_included},
+    }
+
+    observed_leg = {"slot_refs": observed_refs, "denominator": _leg_denominator(observed_refs, slots_by_construct)}
+    inferred_leg = {
+        "slot_refs": inferred_refs,
+        "denominator": _leg_denominator(inferred_refs, slots_by_construct),
+        "label": "owner_derived_system_belief",
+    }
+
+    if strongest_unresolved_fact is None:
+        excluded = [s for s in composed_slots if not s["included_in_composition"]]
+        if excluded:
+            first = excluded[0]
+            strongest_unresolved_fact = {
+                "state": "named",
+                "fact": f"{first['construct']} unresolved: {first['exclusion_reason']}",
+                "slot_refs": [first["construct"]],
+            }
+        else:
+            strongest_unresolved_fact = {"state": "none_open", "fact": None, "slot_refs": []}
+
+    if next_observable is None:
+        next_observable = {"state": "none", "observable": None, "expected_clock_class": None, "expected_by": None}
+
+    if entry_availability is None:
+        entry_availability = _default_entry_availability(slots_by_construct)
+
+    gates = list(failed_or_unavailable_gates or [])
+    failed_or_unavailable_gates_leg = {
+        "gates": gates,
+        "denominator": {"total": len(gates), "included": 0, "excluded": len(gates)},
+    }
+
+    projection = {
+        "observed": observed_leg,
+        "inferred": inferred_leg,
+        "market_reflection": market_reflection,
+        "strongest_unresolved_fact": strongest_unresolved_fact,
+        "failed_or_unavailable_gates": failed_or_unavailable_gates_leg,
+        "next_observable": next_observable,
+        "entry_availability": entry_availability,
+    }
+
+    if permitted_consumers is None:
+        permitted_consumers = ["research_session"]
+
+    if generated_at is None:
+        generated_at = f"{asof['value']}T00:00:00Z" if asof.get("grain") == "date" else asof["value"]
+
+    vector = {
+        "schema": "opportunity_evidence.vector.v1",
+        "version": "1.0.0",
+        "subject": subject,
+        "asof": asof,
+        "generated_at": generated_at,
+        "authority": dict(_AUTHORITY_ENVELOPE),
+        "display_only": True,
+        "compilation_state": compilation_state,
+        "slots": composed_slots,
+        "projection": projection,
+        "economic_cause_hypothesis": economic_cause_hypothesis,
+        "denominator": denominator,
+        "dominant_degradation": dominant_degradation,
+        "permitted_consumers": list(permitted_consumers),
+        "content_sha256": "0" * 64,
+    }
+    vector["content_sha256"] = compute_content_sha256(vector)
+    return vector

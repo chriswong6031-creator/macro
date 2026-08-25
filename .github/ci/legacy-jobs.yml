@@ -704,6 +704,18 @@ jobs:
       # suite adjacent to K1 makes the pointer-only boundary visible in CI.
       - name: K2-B manager-complex and research-intent hostile contracts
         run: python -m pytest tests/test_institutional_manager_intent_contract.py -q
+      # K3-E is the Opportunity Evidence Vector: a typed, deterministic view/join
+      # over canonical owner outputs (contracts/opportunity_evidence/vector.v1.
+      # schema.json + slot_registry.v1.json) — never a store, never a score. Rides
+      # this same contract job for the reason K2-B does: it is a pure in-memory
+      # validator/composer (lib/opportunity_evidence.py is stdlib-only — json,
+      # hashlib, re, pathlib, typing) that imports no owner and materializes no
+      # store, so the install line above already satisfies it (pyyaml is used by
+      # the suite's families.yml join test only, not by the lib module itself).
+      # Placed immediately after K2-B to keep the two pointer-only, zero-authority
+      # contract compilers adjacent.
+      - name: K3-E Opportunity Evidence Vector contract and hostile-fixture kills
+        run: python -m pytest tests/test_opportunity_evidence_vector_contract.py -q
       # Four detector ids exist as byte-identical strings in THREE implementations
       # with three separate threshold stores: scripts/build_fundamental_forensics.py
       # (inline FRACTION literals, Filing Forensics workbench),

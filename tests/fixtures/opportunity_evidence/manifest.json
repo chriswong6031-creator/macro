@@ -1,0 +1,146 @@
+{
+  "fixtures": {
+    "golden_dual_read": {
+      "bytes": 9045,
+      "kind": "golden",
+      "receipts": [
+        "Gold/real-rate dual-read receipts committed in research/opportunity_evidence/E0_PEER_RELATIVE_CASEBOOK.md PR-39 and E0_MARKET_INCORPORATION_CASEBOOK.md INC-25 (chain windows FAILED 08-05/08-07 while gold +5.8%/22d and NEM +15% on the 08-09 tape; DFII10 63d window certified after the market had incorporated).",
+        "Dual-read law: constructs.macro_chain_state note (operator 2026-08-09) \u2014 instrument state referenced only from failed_or_unavailable_gates; tape-side observed slots lead market_reflection."
+      ],
+      "sha256": "465b88a6919ab7df6177f9476744d713906d0a03060c1e5c020a8b33eebf3ba1"
+    },
+    "golden_fpi_absence": {
+      "bytes": 8634,
+      "kind": "golden",
+      "receipts": [
+        "FPI zero-EDGAR-statements rule: contracts/opportunity_evidence/slot_registry.v1.json constructs.forensics_scalars note ('Canadian/FPI names may have zero EDGAR rows: missing filings are not missing operations')."
+      ],
+      "sha256": "183b1e28158dcdc0bb15fd07d0a9e684bfaacc82bb72bf0aa448ba017dcd28fe"
+    },
+    "golden_imxi_drl_event": {
+      "bytes": 16058,
+      "kind": "golden",
+      "receipts": [
+        "IMXI DRL open-event values are the PRODUCTION VERIFIED figures committed in research/opportunity_evidence/E0_DISLOCATION_RESEARCH_SPEC.md \u00a76 (open_events[0] on asof 2026-08-14: ret=0.2470, peer_ret=0.0014 peer_basis=market, resid=0.2456, resid_z=11.85, edgar_covered=false, family filing-coverage-unknown), read in the shape engine.price_pressure.ledger.read_ledger emits.",
+        "Economic cause deliberately UNKNOWN per the same \u00a76 worked example: residual is large vs the market fallback, not vs a sector peer; Cell C/E, not a washout call."
+      ],
+      "sha256": "f14e2d0278600eac96ff919ff54b5b5075e28eac6c65cb5af65ff8f5acc58d6d"
+    },
+    "golden_optional_expectation": {
+      "bytes": 7371,
+      "kind": "golden",
+      "receipts": [
+        "constructs.prospective_expectation_src_a1 note: 'OPTIONAL evidence family only ... never a prerequisite for composition'."
+      ],
+      "sha256": "56e1ec43b0c7654b2495635dc396395c2baef460cc23b6ff98d01dc9ded78b40"
+    },
+    "hostile_authority_leak": {
+      "bytes": 8741,
+      "expected_codes": [
+        "K3E_R011"
+      ],
+      "kind": "hostile",
+      "sha256": "baad2e4f918b4d916c97bf3e7f8543f4fdb98dcd57c260a437ead7a5d04e12ff"
+    },
+    "hostile_cause_from_epsilon": {
+      "bytes": 8957,
+      "expected_codes": [
+        "K3E_R009"
+      ],
+      "kind": "hostile",
+      "sha256": "bd302eba40188b512efa1ebbcc210aa215ef3fd212b728a3ae3f8986e64d952c"
+    },
+    "hostile_clock_collapse": {
+      "bytes": 9981,
+      "expected_codes": [
+        "K3E_R006"
+      ],
+      "kind": "hostile",
+      "sha256": "afaf38beaf20f7c1e43a9b6bbb3e9341873a67d2ad638fa673ea2cecdf9861fa"
+    },
+    "hostile_composite_scalar": {
+      "bytes": 9885,
+      "expected_codes": [
+        "K3E_R001",
+        "K3E_R004"
+      ],
+      "kind": "hostile",
+      "sha256": "52fbf8510f9013c3d0207172e3277e3eec52862049a0e5ed09cdfed471eccada"
+    },
+    "hostile_disloc_reconstitution": {
+      "bytes": 13632,
+      "expected_codes": [
+        "K3E_R004"
+      ],
+      "kind": "hostile",
+      "sha256": "db1fb9aa934bfec955dacb5ad38769e94d10535e905369fa057d4ee99ca38edc"
+    },
+    "hostile_double_family": {
+      "bytes": 10030,
+      "expected_codes": [
+        "K3E_R002",
+        "K3E_R003"
+      ],
+      "kind": "hostile",
+      "sha256": "9b6f2b81edd39ef604a110f339880d69d72e7702b8ad3bf1c4dcbf6025124867"
+    },
+    "hostile_flow_nominal": {
+      "bytes": 10174,
+      "expected_codes": [
+        "K3E_R012"
+      ],
+      "kind": "hostile",
+      "sha256": "00fdf07988eb1c30ed788b93a3da18963322079d044825cd98bed6a69072b43b"
+    },
+    "hostile_identity_launder": {
+      "bytes": 10045,
+      "expected_codes": [
+        "K3E_R010"
+      ],
+      "kind": "hostile",
+      "sha256": "f0a7e3cd3c8296f358fba8fc2cf3bb067a34f1e13c76ac8438849f87d94439f8"
+    },
+    "hostile_impairment_axis": {
+      "bytes": 9882,
+      "expected_codes": [
+        "K3E_R001",
+        "K3E_R017"
+      ],
+      "kind": "hostile",
+      "sha256": "6870dff6e71953509119081a85bc62ffaa0cc94fe96d42a2aabe79d3a794a094"
+    },
+    "hostile_llm_provenance": {
+      "bytes": 8696,
+      "expected_codes": [
+        "K3E_SCHEMA_ENUM"
+      ],
+      "kind": "hostile",
+      "sha256": "2e9383858ba4515efa7ff72e0f9cbc852c8c0c09dc409ff8d3f76324170264ff"
+    },
+    "hostile_lookahead": {
+      "bytes": 10113,
+      "expected_codes": [
+        "K3E_R007"
+      ],
+      "kind": "hostile",
+      "sha256": "4acdda19d9a46dbeb0493054d2b5524c0f55fac449555ec912ce534aa39381dd"
+    },
+    "hostile_missing_neutral": {
+      "bytes": 8707,
+      "expected_codes": [
+        "K3E_R005"
+      ],
+      "kind": "hostile",
+      "sha256": "9dbb3796526bb786907d6ae4b82f01a3a036c991ad9c4fd55456cfae865c56f1"
+    },
+    "hostile_residual_rederived": {
+      "bytes": 8631,
+      "expected_codes": [
+        "K3E_R008"
+      ],
+      "kind": "hostile",
+      "sha256": "480d25ac49cce4740c1b328fa96dfec390c74cc465ea73c6eb8cb76db8c91d30"
+    }
+  },
+  "schema": "opportunity_evidence.fixture_manifest.v1"
+}
