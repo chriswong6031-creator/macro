@@ -68,6 +68,11 @@ from scripts.ci_authority_paths import (  # noqa: E402
     AuthorityPathError,
     is_ci_authority_path,
 )
+from scripts.ci_scope_dependencies import (  # noqa: E402
+    planner_path_exists,
+    planner_path_is_file,
+    planner_tracked_path_inventory,
+)
 
 
 PACK_JOB_ID = "ci-pack"
@@ -811,7 +816,7 @@ def _scope_coverage_findings(job_id: str, definition: dict[str, Any],
     findings: list[str] = []
     for reference in sorted(set(SCOPE_REFERENCE_RE.findall(commands))):
         referenced = reference.split("::", 1)[0].rstrip(".,;:'\")")
-        if not Path(referenced).exists():
+        if not planner_path_exists(Path(referenced)):
             continue
         if _matches_any(GLOBAL_INVALIDATORS, referenced):
             continue
@@ -1121,7 +1126,7 @@ def infer_job_scopes(jobs: Iterable[LegacyJob]) -> tuple[list[LegacyJob], str]:
             for reference in SCOPE_REFERENCE_RE.findall(command):
                 rel = reference.split("::", 1)[0].rstrip(".,;:'\")")
                 path = Path(rel)
-                if not path.is_file():
+                if not planner_path_is_file(path):
                     continue
                 owned.add(rel)
                 named_any = True
@@ -1899,6 +1904,7 @@ def plan_from_workflow(
     scope_mode: str,
     pack_count: int = 12,
     changed_files_file: str | Path | None = None,
+    tracked_paths_file: str | Path | None = None,
     workflow_run_id: str | None = None,
     workflow_name: str | None = None,
     event: str | None = None,
@@ -1909,22 +1915,37 @@ def plan_from_workflow(
     gate: str | None = None,
 ) -> CIPackPlan:
     """Load the manifest, resolve the diff, and plan — the whole decision."""
-    legacy = load_legacy_jobs(workflow, gate=gate)
-    changed = resolve_changed_files(changed_from, explicit_file=changed_files_file)
-    return build_plan(
-        legacy,
-        changed,
-        changed_from=changed_from,
-        scope_mode=scope_mode,
-        pack_count=pack_count,
-        workflow_run_id=workflow_run_id,
-        workflow=workflow_name,
-        event=event,
-        role=role,
-        tested_tree_sha=tested_tree_sha,
-        subject_head_sha=subject_head_sha,
-        base_sha=base_sha,
+    if tracked_paths_file is not None and tested_tree_sha is None:
+        raise RuntimeError(
+            "--tracked-paths-file requires --tested-tree-sha so repository "
+            "existence cannot drift to a different checkout"
+        )
+    inventory = (
+        planner_tracked_path_inventory(
+            Path(tracked_paths_file), tested_tree_sha or ""
+        )
+        if tracked_paths_file is not None
+        else contextlib.nullcontext()
     )
+    with inventory:
+        legacy = load_legacy_jobs(workflow, gate=gate)
+        changed = resolve_changed_files(
+            changed_from, explicit_file=changed_files_file
+        )
+        return build_plan(
+            legacy,
+            changed,
+            changed_from=changed_from,
+            scope_mode=scope_mode,
+            pack_count=pack_count,
+            workflow_run_id=workflow_run_id,
+            workflow=workflow_name,
+            event=event,
+            role=role,
+            tested_tree_sha=tested_tree_sha,
+            subject_head_sha=subject_head_sha,
+            base_sha=base_sha,
+        )
 
 
 def _load_json_object(path: Path, *, max_bytes: int = 5_000_000) -> dict[str, Any]:
@@ -4141,6 +4162,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--tracked-paths-file",
+        default=None,
+        metavar="PATH",
+        help=(
+            "planner-only handle containing the exact tested tree's tracked paths; "
+            "preserves repository-existence semantics in a sparse ci-plan checkout"
+        ),
+    )
+    parser.add_argument(
         "--expect-plan-sha",
         default=None,
         help="refuse to execute unless the authoritative plan has this sha256",
@@ -4200,6 +4230,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         parser.error("--execute and --plan-only are mutually exclusive")
     if args.plan_json is not None and args.plan_only:
         parser.error("--plan-json consumes a plan and cannot pair with --plan-only")
+    if args.tracked_paths_file is not None and not args.plan_only:
+        parser.error("--tracked-paths-file is planner-only and requires --plan-only")
+    if args.tracked_paths_file is not None and not args.tested_tree_sha:
+        parser.error("--tracked-paths-file requires --tested-tree-sha")
     if args.semantic_replay_job and not args.execute:
         parser.error("--semantic-replay-job requires --execute")
     if args.semantic_replay_job and args.emit_semantic_fragment is None:
@@ -4279,6 +4313,7 @@ def main(argv: list[str] | None = None) -> int:
                 scope_mode=args.scope_mode,
                 pack_count=args.pack_count,
                 changed_files_file=args.changed_files_file,
+                tracked_paths_file=args.tracked_paths_file,
                 workflow_run_id=args.workflow_run_id,
                 workflow_name=args.workflow_name,
                 event=args.event,
