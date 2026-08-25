@@ -1,36 +1,36 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "UCB-BULL-20260810",
-  "asof": "2026-08-22",
+  "asof": "2026-08-24",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
-  "management_confidence": 60.0,
-  "raw_confidence": 59.1,
-  "delta_vs_base": -0.0,
+  "management_confidence": 58.5,
+  "raw_confidence": 56.6,
+  "delta_vs_base": -1.5,
   "recommended_action": "wait",
   "human_state": "Approaching Trigger",
   "components": {
-    "validity": 75.2,
+    "validity": 71.6,
     "progress": 0.0,
-    "pace": 81.1,
+    "pace": 70.5,
     "retention": 50.0,
-    "overlay": 58.0
+    "overlay": 55.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.81,
+    "dist_to_stop_r": 0.781,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 20.0,
-    "p1": -0.1267,
-    "p2": -0.0633,
+    "horizon_pct_used": 24.4,
+    "p1": -0.146,
+    "p2": -0.073,
     "p3": null,
-    "move_r": -0.19,
+    "move_r": -0.219,
     "mfe_r": 0.0,
-    "mae_r": -0.198
+    "mae_r": -0.219
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "",
+  "change_reason": "Weakening",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -40,11 +40,11 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 0.0,
-  "_mae": -1.230001220703123,
+  "_mae": -1.3599984741210918,
   "_max_p1": 0.0,
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 9,
-  "tau": 0.2
+  "days_elapsed": 11,
+  "tau": 0.2444
 }
