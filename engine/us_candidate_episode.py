@@ -17,6 +17,7 @@ import re
 from typing import Mapping, Sequence
 
 from engine.stock_identity import fingerprint
+from lib.dataos.identity import IdentityError, issuer_id as dataos_issuer_id, parse_id, security_id as dataos_security_id
 
 
 EVENT_SCHEMA = "prophet.candidate_episode_event/v1"
@@ -38,11 +39,6 @@ ACTIVE_STATE = "ACTIVE"
 EPISODE_STATES = frozenset({ACTIVE_STATE, *TERMINAL_STATES})
 STOCK_IDENTITY_SCHEMA = "stock_identity.fingerprint_spec.v1"
 STOCK_IDENTITY_SPEC_HASH = fingerprint.spec_hash()
-_SECURITY_ID_RE = re.compile(r"^SEC:[A-Z]{2}-[A-Z0-9]+(?:-[A-Z0-9]+)+$")
-_COMPANY_ID_RE = re.compile(r"^ISS:[A-Z]{2}-[A-Z0-9]+(?:-[A-Z0-9]+)*$")
-_EPISODE_ID_RE = re.compile(
-    r"^pe:(SEC:[A-Z]{2}-[A-Z0-9]+(?:-[A-Z0-9]+)+):([^:]+):(sa:[0-9a-f]{24}):([1-9][0-9]*)$"
-)
 _SHA256_RECEIPT_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
 PATCHABLE_FIELDS = frozenset({
     "company_id",
@@ -109,16 +105,27 @@ def _decimal_price(value: object) -> str:
     return format(normalized, "f")
 
 
+def _dataos_id(value: object, *, expected_kind: str, field: str) -> str:
+    if not isinstance(value, str):
+        raise EpisodeContractError(f"{field} must be an exact Data OS identifier")
+    try:
+        kind, listing = parse_id(value)
+    except IdentityError as exc:
+        raise EpisodeContractError(f"{field} must be an exact Data OS identifier") from exc
+    if kind != expected_kind:
+        raise EpisodeContractError(f"{field} must be a Data OS {expected_kind} identifier")
+    canonical = dataos_security_id(listing) if expected_kind == "security" else dataos_issuer_id(listing)
+    if value != canonical:
+        raise EpisodeContractError(f"{field} must be canonical Data OS identity text")
+    return canonical
+
+
 def _security_id(value: object) -> str:
-    if not isinstance(value, str) or not _SECURITY_ID_RE.fullmatch(value):
-        raise EpisodeContractError("security_id must be an exact Data OS SEC: identifier")
-    return value
+    return _dataos_id(value, expected_kind="security", field="security_id")
 
 
 def _company_id(value: object) -> str:
-    if not isinstance(value, str) or not _COMPANY_ID_RE.fullmatch(value):
-        raise EpisodeContractError("company_id must be an exact Data OS ISS: identifier")
-    return value
+    return _dataos_id(value, expected_kind="issuer", field="company_id")
 
 
 def _identity_provenance(identity_epoch: object, state: object, schema: object, spec_hash: object) -> None:
@@ -245,8 +252,32 @@ def make_event(
     return envelope
 
 
+def _parse_episode_id(value: object) -> tuple[str, str, str, int]:
+    """Parse the episode envelope while delegating its Data OS identity to Data OS."""
+    if not isinstance(value, str):
+        raise EpisodeContractError("episode_id is not a candidate episode identifier")
+    parts = value.split(":")
+    if len(parts) != 7 or parts[0] != "pe" or parts[1] != "SEC" or parts[4] != "sa":
+        raise EpisodeContractError("episode_id is not a candidate episode identifier")
+    security = _security_id(f"SEC:{parts[2]}")
+    epoch, anchor_digest, generation_text = parts[3], parts[5], parts[6]
+    if not epoch or len(anchor_digest) != 24 or any(character not in "0123456789abcdef" for character in anchor_digest):
+        raise EpisodeContractError("episode_id is not a candidate episode identifier")
+    try:
+        generation = int(generation_text)
+    except ValueError as exc:
+        raise EpisodeContractError("episode_id has no positive generation") from exc
+    if generation <= 0:
+        raise EpisodeContractError("episode_id has no positive generation")
+    return security, epoch, f"sa:{anchor_digest}", generation
+
+
 def _valid_episode_id(value: object) -> bool:
-    return isinstance(value, str) and _EPISODE_ID_RE.fullmatch(value) is not None
+    try:
+        _parse_episode_id(value)
+    except EpisodeContractError:
+        return False
+    return True
 
 
 def validate_events(events: Sequence[Mapping[str, object]]) -> list[dict[str, object]]:
@@ -362,10 +393,44 @@ def _row_from_open(event: Mapping[str, object]) -> dict[str, object]:
 
 
 def _episode_generation(value: str) -> int:
-    try:
-        return int(value.rsplit(":", 1)[1])
-    except (IndexError, ValueError) as exc:
-        raise EpisodeContractError("episode_id has no positive generation") from exc
+    return _parse_episode_id(value)[3]
+
+
+def _validate_projected_row(row: Mapping[str, object]) -> None:
+    """Fail closed if a correction leaves a row outside the frozen contract."""
+    if row.get("schema") != EPISODE_SCHEMA:
+        raise EpisodeContractError("episode row schema is invalid")
+    security = _security_id(row.get("security_id"))
+    _company_id(row.get("company_id"))
+    epoch = row.get("identity_epoch")
+    _identity_provenance(
+        epoch,
+        row.get("identity_epoch_state"),
+        row.get("identity_spec_schema"),
+        row.get("identity_spec_hash"),
+    )
+    assert isinstance(epoch, str)  # established by _identity_provenance
+    anchor = row.get("structural_anchor")
+    canonical_anchor(anchor)  # type: ignore[arg-type]
+    if not isinstance(anchor, Mapping):
+        raise EpisodeContractError("episode structural anchor is invalid")
+    if episode_id(security, epoch, anchor, _episode_generation(str(row.get("episode_id")))) != row.get("episode_id"):
+        raise EpisodeContractError("episode row identity does not match frozen anchor")
+    opened_at = _timestamp(row.get("opened_at"), field="opened_at")
+    if row.get("opened_session") != opened_at[:10]:
+        raise EpisodeContractError("episode opened_session must match opened_at")
+    if not isinstance(row.get("ticker_at_observation"), str) or not row["ticker_at_observation"]:
+        raise EpisodeContractError("episode ticker_at_observation is invalid")
+    intake_classes = row.get("intake_classes")
+    if not isinstance(intake_classes, list) or not intake_classes or not all(isinstance(value, str) and value for value in intake_classes):
+        raise EpisodeContractError("episode intake_classes are invalid")
+    state, terminal_reason = row.get("episode_state"), row.get("terminal_reason")
+    if state == ACTIVE_STATE and terminal_reason is not None:
+        raise EpisodeContractError("ACTIVE episode terminal_reason must be null")
+    if state in TERMINAL_STATES and (not isinstance(terminal_reason, str) or not terminal_reason):
+        raise EpisodeContractError("terminal episode requires a non-empty terminal_reason")
+    if state not in EPISODE_STATES:
+        raise EpisodeContractError("episode state is invalid")
 
 
 def _validate_correction_patch(row: Mapping[str, object], patch: Mapping[str, object]) -> dict[str, object]:
@@ -459,14 +524,19 @@ def project_events(events: Sequence[Mapping[str, object]]) -> list[dict[str, obj
                 target_episode = str(relations[target]["episode_id"])
                 if episode != target_episode:
                     raise EpisodeContractError("correction episode does not match correction target")
-                rows[target_episode].update(_validate_correction_patch(rows[target_episode], patch))
-                rows[target_episode]["correction_state"] = "corrected"
+                corrected = dict(rows[target_episode])
+                corrected.update(_validate_correction_patch(corrected, patch))
+                corrected["correction_state"] = "corrected"
+                _validate_projected_row(corrected)
+                rows[target_episode] = corrected
             elif event_type == "RETRACTED":
                 target = event["correction_of"]
                 if not isinstance(target, str) or not isinstance(payload, Mapping) or not isinstance(payload.get("reason"), str) or not payload["reason"]:
                     raise EpisodeContractError("retraction requires an existing target and reason")
                 if episode != str(relations[target]["episode_id"]):
                     raise EpisodeContractError("retraction episode does not match retraction target")
+                if relations[target]["event_type"] not in {"OPENED", "OBSERVED", "EXPERT_EVENT_ATTACHED"}:
+                    raise EpisodeContractError("unsupported retraction target event type")
                 retracted.add(target)
             elif event_type == "IDENTITY_SUPERSEDED":
                 if not isinstance(payload, Mapping):
