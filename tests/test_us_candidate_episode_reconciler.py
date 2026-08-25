@@ -123,6 +123,22 @@ def _event_rows(repo_root: Path) -> list[dict[str, object]]:
     return [json.loads(line) for path in paths for line in path.read_text().splitlines() if line]
 
 
+def _suppression_rows(repo_root: Path) -> list[dict[str, object]]:
+    paths = sorted((_generation(repo_root) / "suppressions").glob("*.jsonl"))
+    return [json.loads(line) for path in paths for line in path.read_text().splitlines() if line]
+
+
+def _write_candidate(repo_root: Path, *, revision: int) -> None:
+    path = repo_root / "data" / "us_prophet_rank" / "candidates" / "2026-11.parquet"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame([{
+        "stamp_date": "2026-11-27",
+        "ticker": "ALFA",
+        "board_definition": "b1-test",
+        "observation_revision": revision,
+    }]).to_parquet(path, index=False)
+
+
 def _parquet_logical_rows(path: Path) -> list[dict[str, object]]:
     rows = pd.read_parquet(path).to_dict("records")
     nested = {"intake_classes", "structural_anchor", "expert_events", "source_event_ids"}
@@ -270,6 +286,74 @@ def test_suppression_retry_at_later_recorded_at_retains_original_immutable_row(
     row = json.loads(next((_generation(tmp_path) / "suppressions").glob("*.jsonl")).read_text())
     assert row == first_row
     assert row["recorded_at"] == RECORDED_AT
+
+
+def test_persisted_suppression_owns_source_key_and_rejects_changed_candidate_receipt(
+    tmp_path: Path, monkeypatch,
+):
+    """A suppressed stable key must not repaint into a second durable suppression."""
+    _seed_sources(tmp_path)
+    _turn_path(tmp_path).unlink()
+    _write_candidate(tmp_path, revision=1)
+    first = _run_nightly(tmp_path, monkeypatch)
+    first_row = _suppression_rows(tmp_path)[0]
+    assert first_row["reason"] == "MISSING_STRUCTURAL_ANCHOR"
+    assert first["source_counts"]["candidate"] == {
+        "input": 1, "mapped": 0, "suppressed": 1,
+    }
+
+    before_identical = _snapshot(_episode_root(tmp_path))
+    identical = _run_nightly(
+        tmp_path, monkeypatch, recorded_at="2026-11-27T18:06:00Z",
+    )
+    assert identical == first
+    assert _snapshot(_episode_root(tmp_path)) == before_identical
+    assert _suppression_rows(tmp_path) == [first_row]
+    assert _suppression_rows(tmp_path)[0]["recorded_at"] == RECORDED_AT
+
+    _write_candidate(tmp_path, revision=2)
+    before_conflict = _snapshot(_episode_root(tmp_path))
+    with pytest.raises(EpisodeContractError, match="source key.*different committed bytes"):
+        _run_nightly(tmp_path, monkeypatch, recorded_at="2026-11-27T18:07:00Z")
+    assert _snapshot(_episode_root(tmp_path)) == before_conflict
+
+    _write_candidate(tmp_path, revision=1)
+    shutil.copyfile(FIXTURE_ROOT / "turn_watch.json", _turn_path(tmp_path))
+    advanced = _run_nightly(
+        tmp_path, monkeypatch, recorded_at="2026-11-27T18:08:00Z",
+    )
+    assert [row["event_type"] for row in _event_rows(tmp_path)] == ["OPENED"]
+    assert _suppression_rows(tmp_path) == [first_row]
+    assert advanced["source_counts"]["candidate"] == {
+        "input": 1, "mapped": 0, "suppressed": 1,
+    }
+    before_advanced_retry = _snapshot(_episode_root(tmp_path))
+    advanced_retry = _run_nightly(
+        tmp_path, monkeypatch, recorded_at="2026-11-27T18:09:00Z",
+    )
+    assert advanced_retry == advanced
+    assert _snapshot(_episode_root(tmp_path)) == before_advanced_retry
+    assert _suppression_rows(tmp_path) == [first_row]
+
+
+def test_intake_suppression_cannot_reuse_persisted_turn_watch_event_source_key(
+    tmp_path: Path, monkeypatch,
+):
+    """An invalid later receipt cannot give one TURN WATCH key two immutable owners."""
+    _seed_sources(tmp_path)
+    _run_nightly(tmp_path, monkeypatch)
+    before = _snapshot(_episode_root(tmp_path))
+    document = json.loads(_turn_path(tmp_path).read_text())
+    document["content_sha256"] = "0" * 64
+    _turn_path(tmp_path).write_text(canonical_json(document) + "\n")
+
+    with pytest.raises(EpisodeContractError, match="source key.*event.*suppression"):
+        _run_nightly(tmp_path, monkeypatch, recorded_at="2026-11-27T18:06:00Z")
+
+    assert _snapshot(_episode_root(tmp_path)) == before
+    assert [row["event_type"] for row in _event_rows(tmp_path)] == ["OPENED"]
+    assert _suppression_rows(tmp_path) == []
+    assert len(load_candidate_episode_store(_episode_root(tmp_path))) == 1
 
 
 def test_first_publication_has_no_current_generation_until_head_swap(tmp_path: Path, monkeypatch):
@@ -830,6 +914,71 @@ def test_canonical_reader_rejects_projection_not_recomputed_from_immutable_event
     _readdress_current_generation(tmp_path)
 
     with pytest.raises(EpisodeContractError, match="immutable event ledger projection"):
+        load_candidate_episode_store(_episode_root(tmp_path))
+
+
+@pytest.mark.parametrize("forgery", ["event_overlap", "suppression_conflict"])
+def test_canonical_reader_rejects_readdressed_duplicate_source_ownership(
+    tmp_path: Path, monkeypatch, forgery: str,
+):
+    """A self-addressed generation cannot give one ordinary source key two owners."""
+    _seed_sources(tmp_path)
+    _run_nightly(tmp_path, monkeypatch)
+    generation = _generation(tmp_path)
+    opened = _event_rows(tmp_path)[0]
+    if forgery == "event_overlap":
+        raw_suppressions = [{
+            "source_system": opened["source_system"],
+            "source_schema": opened["source_schema"],
+            "source_event_id": opened["source_event_id"],
+            "source_receipt": None,
+            "observation_session": str(opened["known_at"])[:10],
+            "ticker_at_observation": "ALFA",
+            "security_id": "SEC:US-XNAS-ALFA",
+            "reason": "SOURCE_RECEIPT_INVALID",
+        }]
+    else:
+        common = {
+            "source_system": "candidate",
+            "source_schema": "us_prophet_rank.candidates/v1",
+            "source_event_id": "candidate:2026-11-27:ALFA:b1-test",
+            "observation_session": "2026-11-27",
+            "ticker_at_observation": "ALFA",
+            "security_id": "SEC:US-XNAS-ALFA",
+        }
+        raw_suppressions = [
+            {**common, "source_receipt": "sha256:" + "a" * 64,
+             "reason": "MISSING_STRUCTURAL_ANCHOR"},
+            {**common, "source_receipt": "sha256:" + "b" * 64,
+             "reason": "ACTIVE_EPISODE_DIFFERENT_ANCHOR"},
+        ]
+    suppressions = [
+        writer._normalize_suppression(raw, recorded_at=RECORDED_AT)
+        for raw in raw_suppressions
+    ]
+    suppression_path = generation / "suppressions" / "2026-11.jsonl"
+    suppression_path.write_text(
+        "".join(canonical_json(row) + "\n" for row in sorted(
+            suppressions, key=lambda row: row["suppression_id"],
+        ))
+    )
+    projection_path = generation / "all_candidates.json"
+    projection = json.loads(projection_path.read_text())
+    projection["coverage"]["suppressed_inputs"] = len(suppressions)
+    projection_bytes = (canonical_json(projection) + "\n").encode()
+    projection_path.write_bytes(projection_bytes)
+    parquet_bytes = (generation / "current.parquet").read_bytes()
+    receipt_path = generation / "latest_receipt.json"
+    receipt = json.loads(receipt_path.read_text())
+    receipt["counts"]["ledger_suppressions"] = len(suppressions)
+    receipt["projection_hashes"] = {
+        "all_candidates.json": "sha256:" + sha256(projection_bytes).hexdigest(),
+        "current.parquet": "sha256:" + sha256(parquet_bytes).hexdigest(),
+    }
+    receipt_path.write_text(canonical_json(receipt) + "\n")
+    _readdress_current_generation(tmp_path)
+
+    with pytest.raises(EpisodeContractError, match="source key.*owner|duplicate.*source key"):
         load_candidate_episode_store(_episode_root(tmp_path))
 
 

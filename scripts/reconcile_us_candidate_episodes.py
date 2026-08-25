@@ -20,6 +20,7 @@ from engine.us_candidate_episode import (
     DEFAULT_DEFINITION_ERA,
     GENERATION_MANIFEST_SCHEMA,
     HEAD_SCHEMA,
+    ORDINARY_EVENT_TYPES,
     PARQUET_JSON_FIELDS,
     RECONCILE_RECEIPT_SCHEMA,
     SUPPRESSION_REASONS,
@@ -27,6 +28,8 @@ from engine.us_candidate_episode import (
     EpisodeContractError,
     _load_partitioned_events as _core_load_event_partitions,
     _load_partitioned_suppressions as _core_load_suppression_partitions,
+    _ordinary_source_key,
+    _suppression_source_facts,
     apply_commands,
     build_all_candidates,
     canonical_json,
@@ -35,6 +38,7 @@ from engine.us_candidate_episode import (
     validate_candidate_episode_generation,
     validate_candidate_episode_generation_payload,
     validate_events,
+    validate_ordinary_source_ownership,
     validate_suppressions,
 )
 from engine.us_candidate_episode_intake import (
@@ -316,14 +320,48 @@ def _normalize_suppression(raw: Mapping[str, object], *, recorded_at: str) -> di
     return validate_suppressions([row])[0]
 
 
-def _merge_suppressions(existing, additions, *, recorded_at: str):
-    merged = {str(row["suppression_id"]): dict(row) for row in validate_suppressions(existing)}
+def _merge_suppressions(existing, additions, *, events, recorded_at: str):
+    validated_events, validated_existing = validate_ordinary_source_ownership(
+        events, existing
+    )
+    event_keys = {
+        _ordinary_source_key(row)
+        for row in validated_events
+        if row["event_type"] in ORDINARY_EVENT_TYPES
+    }
+    merged = {str(row["suppression_id"]): dict(row) for row in validated_existing}
+    source_owners = {
+        _ordinary_source_key(row): row for row in validated_existing
+    }
     for raw in additions:
         candidate = _normalize_suppression(raw, recorded_at=recorded_at)
+        source_key = _ordinary_source_key(candidate)
+        if source_key in event_keys:
+            raise EpisodeContractError(
+                "ordinary source key has both event and suppression owners"
+            )
+        prior = source_owners.get(source_key)
+        if prior is not None:
+            if canonical_json(_suppression_source_facts(prior)) != canonical_json(
+                _suppression_source_facts(candidate)
+            ):
+                raise EpisodeContractError(
+                    "ordinary source key reused with different committed bytes"
+                )
+            continue
         key = str(candidate["suppression_id"])
-        if key not in merged:
-            merged[key] = candidate
-    return sorted(merged.values(), key=lambda row: str(row["suppression_id"]))
+        addressed = merged.get(key)
+        if addressed is not None:
+            if canonical_json(addressed) != canonical_json(candidate):
+                raise EpisodeContractError(
+                    "semantic suppression address collided with different bytes"
+                )
+            continue
+        merged[key] = candidate
+        source_owners[source_key] = candidate
+    result = sorted(merged.values(), key=lambda row: str(row["suppression_id"]))
+    validate_ordinary_source_ownership(validated_events, result)
+    return result
 
 
 def _parquet_bytes(rows: Sequence[Mapping[str, object]]) -> bytes:
@@ -367,15 +405,20 @@ def _load_and_build(*, repo_root: Path, recorded_at: str, correction_path: Path 
     identity_receipts, batches = _load_intakes(data_root, allow_degraded_identity=mode != "nightly")
     observations = [row for batch in batches for row in batch.observations]
     intake_suppressions = [row for batch in batches for row in batch.suppressions]
-    reconciled = reconcile_observations(existing_events, observations, recorded_at=recorded_at,
-                                        definition_era=DEFAULT_DEFINITION_ERA)
+    reconciled = reconcile_observations(
+        existing_events, observations, recorded_at=recorded_at,
+        definition_era=DEFAULT_DEFINITION_ERA,
+        existing_suppressions=existing_suppressions,
+    )
     commands, correction_receipt = _load_commands_snapshot(correction_path)
     commands = _dedupe_commands(reconciled.events, commands)
     commanded = apply_commands(reconciled.events, commands, recorded_at=recorded_at,
                                definition_era=DEFAULT_DEFINITION_ERA)
     run_suppressions = [*intake_suppressions, *reconciled.suppressions]
-    suppressions = _merge_suppressions(existing_suppressions, run_suppressions,
-                                       recorded_at=recorded_at)
+    suppressions = _merge_suppressions(
+        existing_suppressions, run_suppressions, events=commanded.events,
+        recorded_at=recorded_at,
+    )
     projection = build_all_candidates(commanded.events, suppression_count=len(suppressions))
     projection_json = (canonical_json(projection) + "\n").encode("utf-8")
     projection_parquet = _parquet_bytes(projection["episodes"])

@@ -70,6 +70,18 @@ SUPPRESSION_REASONS = frozenset({
     "SOURCE_SCHEMA_UNSUPPORTED",
     "SOURCE_RECEIPT_INVALID",
 })
+ORDINARY_EVENT_TYPES = frozenset({"OPENED", "OBSERVED", "EXPERT_EVENT_ATTACHED"})
+_SUPPRESSION_SOURCE_FACT_FIELDS = (
+    "schema",
+    "source_system",
+    "source_schema",
+    "source_event_id",
+    "source_receipt",
+    "observation_session",
+    "ticker_at_observation",
+    "security_id",
+    "reason",
+)
 PARQUET_JSON_FIELDS = frozenset({
     "intake_classes", "structural_anchor", "expert_events", "source_event_ids",
 })
@@ -642,6 +654,47 @@ def _suppression(observation: Mapping[str, object], reason: str) -> dict[str, ob
     return material
 
 
+def _ordinary_source_key(row: Mapping[str, object]) -> tuple[str, str, str]:
+    return (
+        str(row["source_system"]),
+        str(row["source_schema"]),
+        str(row["source_event_id"]),
+    )
+
+
+def _suppression_source_facts(row: Mapping[str, object]) -> dict[str, object]:
+    """Return only the immutable source facts committed by a suppression row."""
+    return {field: row.get(field) for field in _SUPPRESSION_SOURCE_FACT_FIELDS}
+
+
+def validate_ordinary_source_ownership(
+    events: Sequence[Mapping[str, object]],
+    suppressions: Sequence[Mapping[str, object]],
+) -> tuple[list[dict[str, object]], list[dict[str, object]]]:
+    """Require one immutable event-or-suppression owner per ordinary source key."""
+    validated_events = validate_events(events)
+    validated_suppressions = validate_suppressions(suppressions)
+    event_keys: set[tuple[str, str, str]] = set()
+    for event in validated_events:
+        if event["event_type"] not in ORDINARY_EVENT_TYPES:
+            continue
+        source_key = _ordinary_source_key(event)
+        if source_key in event_keys:
+            raise EpisodeContractError("duplicate immutable source key in ordinary event ledger")
+        event_keys.add(source_key)
+    suppression_keys: set[tuple[str, str, str]] = set()
+    for suppression in validated_suppressions:
+        source_key = _ordinary_source_key(suppression)
+        if source_key in suppression_keys:
+            raise EpisodeContractError("duplicate immutable suppression source key")
+        if source_key in event_keys:
+            raise EpisodeContractError(
+                "ordinary source key has both event and suppression owners"
+            )
+        suppression_keys.add(source_key)
+    return validated_events, validated_suppressions
+
+
 def _merge_events(existing: Sequence[Mapping[str, object]], additions: Sequence[Mapping[str, object]]) -> tuple[tuple[dict[str, object], ...], tuple[dict[str, object], ...]]:
     current = validate_events(existing)
     by_id = {str(event["event_id"]): event for event in current}
@@ -754,23 +807,26 @@ def reconcile_observations(
     *,
     recorded_at: str,
     definition_era: str,
+    existing_suppressions: Sequence[Mapping[str, object]] = (),
 ) -> ReconcileResult:
     """Deterministically map normalized source observations to immutable events."""
-    base = tuple(validate_events(events))
+    validated_events, validated_suppressions = validate_ordinary_source_ownership(
+        events, existing_suppressions
+    )
+    base = tuple(validated_events)
     source_key_owners: dict[tuple[str, str, str], dict[str, object]] = {}
     for event in base:
-        source_key = (
-            str(event["source_system"]),
-            str(event["source_schema"]),
-            str(event["source_event_id"]),
-        )
+        source_key = _ordinary_source_key(event)
         if source_key in source_key_owners:
             raise EpisodeContractError("duplicate immutable source key in event ledger")
         source_key_owners[source_key] = event
     projected = project_events(base)
     additions: list[dict[str, object]] = []
     suppressions: list[dict[str, object]] = []
-    suppressed_by_source_key: dict[tuple[str, str, str], dict[str, object]] = {}
+    suppressed_by_source_key = {
+        _ordinary_source_key(row): row for row in validated_suppressions
+    }
+    returned_persisted_suppressions: set[tuple[str, str, str]] = set()
     ordered = sorted(observations, key=lambda value: (str(value.get("known_at")), str(value.get("source_system")), str(value.get("source_event_id"))))
     for observation in ordered:
         security = _security_id(observation.get("security_id"))
@@ -809,10 +865,15 @@ def reconcile_observations(
             expected_suppression = _suppression(
                 observation, str(committed_suppression["reason"])
             )
-            if canonical_json(expected_suppression) != canonical_json(committed_suppression):
+            if canonical_json(_suppression_source_facts(expected_suppression)) != canonical_json(
+                _suppression_source_facts(committed_suppression)
+            ):
                 raise EpisodeContractError(
                     "ordinary source key reused with different committed bytes"
                 )
+            if source_key not in returned_persisted_suppressions:
+                suppressions.append(committed_suppression)
+                returned_persisted_suppressions.add(source_key)
             continue
         anchor = observation.get("anchor")
         canonical = canonical_anchor(anchor) if anchor is not None else None  # type: ignore[arg-type]
@@ -1304,6 +1365,7 @@ def validate_candidate_episode_generation_payload(directory: Path) -> ValidatedC
     _validate_generation_file_set(generation, relative_files)
     events = _load_partitioned_events(generation / "events")
     suppressions = _load_partitioned_suppressions(generation / "suppressions")
+    validate_ordinary_source_ownership(events, suppressions)
 
     all_path = generation / "all_candidates.json"
     try:
