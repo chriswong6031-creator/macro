@@ -267,8 +267,8 @@ def _parse_episode_id(value: object) -> tuple[str, str, str, int]:
         generation = int(generation_text)
     except ValueError as exc:
         raise EpisodeContractError("episode_id has no positive generation") from exc
-    if generation <= 0:
-        raise EpisodeContractError("episode_id has no positive generation")
+    if generation <= 0 or generation_text != str(generation):
+        raise EpisodeContractError("episode_id generation must be a canonical positive integer")
     return security, epoch, f"sa:{anchor_digest}", generation
 
 

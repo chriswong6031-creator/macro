@@ -554,3 +554,37 @@ def test_correction_cannot_leave_a_terminal_episode_without_its_terminal_reason(
     }
     with pytest.raises(EpisodeContractError, match="terminal_reason"):
         apply_commands([*opened.events, state], [invalid], recorded_at=RECORDED_AT, definition_era=ERA)
+
+
+def test_episode_generation_text_is_canonical_in_validation_reader_and_supersession(tmp_path: Path):
+    canonical = episode_id(SECURITY_ID, "epoch_1", ANCHOR, 1)
+    opened = reconcile_observations([], [_observation()], recorded_at=RECORDED_AT, definition_era=ERA)
+    source_episode = opened.episodes[0]["episode_id"]
+    fixture = json.loads((Path(__file__).parent / "fixtures/us_candidate_episode/all_candidates.json").read_text())
+
+    for spelling in ("01", "+1", " 1 "):
+        noncanonical = canonical.rsplit(":", 1)[0] + f":{spelling}"
+        raw = _event("OBSERVED", canonical, source_event_id=f"validation:{spelling!r}", payload={"intake_class": "technical_emergence"})
+        raw["episode_id"] = noncanonical
+        semantic = {key: raw[key] for key in ("event_type", "episode_id", "source_system", "source_schema", "source_event_id", "occurred_at", "known_at", "definition_era", "correction_of", "payload")}
+        raw["event_id"] = "pee:" + sha256(canonical_json(semantic).encode()).hexdigest()
+        raw["content_sha256"] = sha256(canonical_json({key: value for key, value in raw.items() if key != "content_sha256"}).encode()).hexdigest()
+        with pytest.raises(EpisodeContractError):
+            validate_events([raw])
+
+        document = copy.deepcopy(fixture)
+        document["episodes"][0]["episode_id"] = document["episodes"][0]["episode_id"].rsplit(":", 1)[0] + f":{spelling}"
+        path = tmp_path / f"generation-{spelling.encode().hex()}.json"
+        path.write_text(json.dumps(document))
+        with pytest.raises(EpisodeContractError):
+            load_all_candidates(path)
+
+        command = {
+            "event_type": "IDENTITY_SUPERSEDED", "episode_id": source_episode,
+            "source_system": "stock_identity", "source_schema": "stock_identity.epoch/v1",
+            "source_event_id": f"identity:generation:{spelling!r}", "source_receipt": "sha256:identity",
+            "occurred_at": "2026-08-24T20:00:00Z", "known_at": "2026-08-24T20:00:00Z",
+            "payload": {"successor_episode_id": noncanonical, "reason": "epoch detected"},
+        }
+        with pytest.raises(EpisodeContractError, match="supersession"):
+            apply_commands(opened.events, [command], recorded_at=RECORDED_AT, definition_era=ERA)
