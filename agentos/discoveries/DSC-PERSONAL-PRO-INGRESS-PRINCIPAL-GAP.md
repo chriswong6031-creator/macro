@@ -10,13 +10,13 @@ claim: >
   no longer treats that old receipt alone as an automatic present-day blocker: the
   approved non-secret readiness verifier owns the current S0 fixture decision.
 falsifier: >
-  For the S0 side, run the already-reviewed credential-safe readiness verifier against
-  the existing disposable app/principal without exposing a secret and record its
-  allowlisted PASS receipt; then MAS-112 still owes the complete three-seat framed
-  carrier matrix. For the C1 side, install the dedicated least-privilege Relay app/bot
-  and host principal and prove the private SOL_STATE read lane. The overall Personal-Pro
-  ingress principal gap is closed only when the current S0 fixture is verifier-qualified
-  and the dedicated C1 Relay principal is installed under its reviewed boundary.
+  Through the approved secret-owning stdin boundary, run
+  `python3 scripts/verify_slack_agent_dialogue_metadata.py --expected-team-id T0BRD2AQXQV
+  --expected-bot-user-id U0BST4WG996 --expected-scope groups:history
+  --expected-scope chat:write` without putting the bot token in chat, argv, environment,
+  logs, or git. Then complete the accepted MAS-112 twenty-row S0-R1 matrix and re-read
+  private C1 channel `C0BSGABKBFY`. A verifier PASS plus accepted S0-R1 PASS plus a
+  dedicated production Relay bot/principal proven in C1 disproves the ingress-principal gap.
 so_what: >
   Bot membership alone is not S0-R1 PASS and must not release B2. The exact S0 continuation
   is verifier qualification followed by the one authorized MAS-112 experiment. C1 remains
@@ -26,11 +26,10 @@ so_what: >
 kind: runtime
 verified_at: 2026-08-25
 verified_by: >
-  Current Slack channel/member read for C0BRUL9F2V7 showing Chris + ChatGPT1/2/3 +
-  U0BST4WG996; current Slack bot profile showing U0BST4WG996 is a bot; current Slack
-  channel/member read for C0BSGABKBFY showing exactly Chris + ChatGPT1/2/3 and no bot;
-  workspace user search finding no Relay identity; Linear MAS-112 current recovery comment
-  and S0-R1 contract; Linear MAS-109; protected Mastermind metadata-verifier implementation.
+  macro #6422 records the 2026-08-25 current Slack channel/member and bot-profile reads,
+  the no-Relay workspace search, and the current Linear MAS-112/MAS-109 reconciliation;
+  protected Mastermind `integrations/slack_agent_dialogue/metadata_verifier.py:1` defines
+  the credential-safe verifier boundary used by the current MAS-112 ruling.
 scope:
   - crypto-intelligence
   - executive-os
