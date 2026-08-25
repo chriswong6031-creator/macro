@@ -161,13 +161,159 @@ owner DOM, exactly as Canada did. No template forks, no second card family,
 no writes to `hk_standouts.json`/`build_hk_library.py` (intelligence-lane
 landmine), no new artifacts.
 
-## §5 US current-state overlay (pending analyst return — see following section in this commit series)
+## §5 US current-state overlay (with rulings)
 
-## §6 V4 / Cell H overlays (pending analyst return)
+Inventory basis: full read of `templates/dashboard.html.j2` mode="stocks"
+(50 user-facing capabilities enumerated this session, DOM order, with data
+sources; detail refs: header `:2393-2412`, Act-Now include `:15626`,
+`#prophet-live` `:15823`, source toggle `:15925-15928`, lifecycle ladder
+`:16272`, plan grid `:16283`, candidate grid `:16459-16460`, walls
+`:16344`/`:16468`, refusal shelf `:16567`, track record `:16646-16700`;
+`scripts/build_site.py` `:4718-5249`, `:6951-6987`).
 
-## §7 Recommended rollout + US architecture (provisional)
+**Headline finding for Sol:** the US page today carries the exact inverted
+hierarchy that #6327 corrected on Canada — a macro-context tier (policy lever,
+regime read, week-ahead, AI brief, sector heat, sentiment, cross-asset, index
+health) **plus** the five-lane Act-Now board **above** the principal Prophet
+board. If the #6327 Discovery-Board doctrine (Prophet owns the first decision
+viewport) is Chairman law and not a Canada-only taste call, the US page is in
+violation today. That is a hierarchy question, not a V3.6-code question.
 
-Written after §5/§6 land in this document.
+**MP-1/P0 shipped state (receipts):** MP-1 central act shipped (#6076
+`31ca4971ba4a`: plan-book grid + 7-cell lifecycle ladder + W-L1 repaint
+neutralization); it deleted the candidate experience (recorded regression);
+P0 restored it (#6243 `fd0c0b0ece50` + heal #6249 `87e65fcdb761`) as a
+two-source `Candidates | Plans` toggle — **a source switch, not a population
+merge** (MP-1 Amendment 2 / `DEC:P0-PROPHET-CANDIDATE-BOARD-RESTORE`).
+`P-MP1-DENSE` (plans-only dense table) is OWED, and MP-1 law forbids calling
+the US redesign complete while it is open. Still-unverified production legs:
+entitled 60-card hydration; intraday tick repainting a candidate card.
+
+**Rulings per major capability cluster** (`RETAIN`=stays where it is;
+`IMPROVE`=stays, needs work; `RELOCATE`=survives but moves;
+`SUPERSEDE`=replaced by a named successor; `BLOCKED_DATA`=wants a plane that
+is not accepted yet; nothing is REMOVE — no capability dies for cleanliness):
+
+| US cluster | Ruling | Why |
+|---|---|---|
+| Header + freshness/staleness contract (fail-closed badge, `_DELAY_RE` phrase contract) | **RETAIN** | Stronger than V3.6's clocks; the V3.6 dual-clock chip is the junior sibling. Never regress to a client-clock LIVE pill |
+| Macro-context tier (8 panels) | **RELOCATE** | Below the principal board (or progressively disclosed / linked to `macro.html`) per the #6327 doctrine — pending Chairman ratification that the doctrine is cross-market law |
+| Act-Now five-lane sector/theme board | **RELOCATE + eventual SUPERSEDE** | Near-term: fold into the Leadership tier below Prophet (as Canada did with its lanes). At V4 B4 cutover its lane vocabulary (BUY NOW / ALMOST READY / …) must yield to availability-derived lanes — three lane vocabularies on one page is two too many |
+| Prophet Live "Forming today" (W-L1 poller + stamp) | **RETAIN** | Provisional-intraday tier V3.6 lacks; repaint-neutralization ruling stands |
+| `Candidates \| Plans` toggle, candidate census/shelves, plan grid + lifecycle ladder | **RETAIN** | Binding Chairman ruling; the ladder's counts come from the full unsliced book (count law). V3.6's single-population Prophet slot must NOT be imposed here |
+| Grid/Table toggle + USStockTable | **RETAIN + IMPROVE** | P-MP1-DENSE owed (plans-only table); no second candidate table |
+| Tier walls + hydration (server split, fail-closed plan gate / fail-open candidate gate) | **RETAIN** | US boundary architecture is server-split+hydration; V3.6's composer-gating (401 JS) is the small-market pattern and must not replace it. Note: V3.6 "first 5" Top Picks is unfillable on the anonymous shell (preview=3) — a US concentration device must be the existing Featured cohort, not a new Top Picks rule |
+| Disclosure tier (refusal shelf, no-plan sample, blackout note, featured footnote, board-state note) | **RETAIN** | V4 law-9 obligations (missing ≠ zero); shipped error copy promises these sections by name |
+| Track record strip + dialog, what-changed dialog | **RETAIN** | Era/cohort-honest; position is load-bearing (named in shipped copy) |
+| Research/context rows (recently fired, fresh triggers, market leaders, breadth, sector setups, turn setups, accumulation, 13F, theme tape, tapes) | **RETAIN, RELOCATE below board** | Research tier of the hierarchy; leaders/theme tape feed a future Leading-Now analogue |
+| Live quotes (live.js repaint contracts) | **RETAIN** | Owner plane; any recomposition must keep repaint selectors intact |
+| "Leading Now" strip (V3.6 element) | **ADOPT (new)** | US has the data (sector heat, theme tape, leaders) to render the compact cue above the board — presentation-only |
+| EN/ZH, mobile, stock-detail routing | **RETAIN** | House law |
+
+## §6 V4 overlay and Cell H overlay
+
+### V4: what a US presentation layer may read vs must never own
+
+Frozen thesis (`research/prophet_v4/ARCHITECTURE_FREEZE.md`): *surface by
+emergence, gate by the trade available now, rank by intelligence* — with law 2
+(no browser-derived authority) and law 7 (availability outranks score) binding
+any presentation work. Plane boundary (condensed; full table in the analyst
+inventory, refs above):
+
+- **Plan lifecycle vocabulary** (`site/prophet/index.json`, 7 cells + counts):
+  LIVE — read the published counts/order verbatim; never re-count from a
+  slice, never re-sort (`plans_sort_key` is the only order).
+- **Availability/ENTRY_OPEN** (B4): PARTIAL — semantics in
+  `engine/entry_signal.py`; presentation renders state/zone/blocker, never
+  computes a second zone; `UNAVAILABLE_DATA` is never green; lanes derive from
+  `availability_state` only.
+- **Lifecycle 4-field state** (B3) and **candidate episode identity** (B1
+  grain): NOT_BUILT — nothing may fake them meanwhile (the MP-1 episode chip
+  is a display count, not the episode plane).
+- **Candidate pool** (`us_candidate_pool_v1`): data plane LIVE, full UI
+  NOT_BUILT — a future All-Candidates UI consumes the lossless partition; no
+  rival partition client-side.
+- **Suppression/retirement (D2B3)**: BUILT_NOT_PROVEN — presentation may show
+  typed refusals/retired status; never overlays or undoes one.
+- **Freshness/settlement**: page must announce stale/degraded before cards;
+  the EN staleness phrasing is a sentinel contract.
+- **Ranking/eras/outcomes**: read published order and cohort-honest stats;
+  `DNR:KILL-PROPHET-POP-MERGE` and never-pool-eras stand.
+
+V3.6 already complies with the analogous laws on Canada (no re-scoring, owner
+DOM moved, counts from displayed collection); the US application of V3.6
+*doctrine* is compatible with V4 **only** as a server-side hierarchy change —
+a client-side composer re-owning the US board would violate law 2 at the four
+collision points named in §5.
+
+### Cell H: where its ideas belong
+
+**Governance fact:** the Cell H handoff
+(`CELL_H_FLAGSHIP_PRODUCT_EXPERIENCE_HANDOFF_2026-08-22.md`) is **not on
+`origin/main`** — it exists only on `origin/sol/prophet-flagship-fanout-
+hardening-20260822` (`1ba4580f0679`). It self-declares "experience research /
+reference composition only, zero production authority," and its five proposed
+waves are explicitly unauthorized. Sol must merge/ratify that branch (or
+re-home the docs) before any of it becomes citable law.
+
+Disposition of its idea set (per the commission's four buckets):
+
+- **Directly in the future US board:** three-tier information law
+  (glance/inspection/forensic); 5-second decision goal; four-questions card
+  anatomy with "can I act" dominant; mobile 390px priority law; bilingual
+  plain-language law (already house law); ten typed degraded-state designs
+  (several states already real: staleness, rights gate, correction/identity
+  receipts).
+- **Behind progressive disclosure:** evidence-independence UX,
+  price-incorporation UX, fragility/crowding panel, analogue/prior UX — all
+  **BLOCKED_DATA** today (intelligence vector D5, Cell B/D, alt-data families
+  not accepted); design slots may be reserved, populated only when planes land.
+- **In detail/dossier surfaces:** the 9-question dossier order (inherited V4
+  law); theme & propagation composition (BLOCKED_DATA on `theme_state/v1`).
+- **Later (upstream not accepted):** transition-driven alerts; "why now"
+  explanation contract (needs an accepted explanation primitive + theme
+  evidence reaching rows — currently 73% structural-only).
+
+Cell H's own non-goals independently reinforce §5's rulings: green means
+`ENTRY_OPEN` and nothing else; no overall conviction score; no client-filter
+hidden authority; do not redesign the six-view V4 shell.
+
+## §7 One recommended US architecture (recommendation only — no implementation)
+
+**Recommendation:** the future US Prophet page is a **server-side template
+evolution of the existing `dashboard.html.j2` stocks mode** that adopts the
+V3.6.1 *hierarchy doctrine* and Cell H's *information-tier doctrine*, while
+keeping every US semantic device exactly where V4/MP-1 law put it:
+
+```
+Header (identity · freshness/staleness contract · board-state stamp · dual clocks)
+Leading Now (compact: top theme · top sector · leaders cue — presentation-only)
+PROPHET principal panel  ←— first decision viewport
+  ├─ Candidates | Plans toggle (Amendment 2, unchanged)
+  ├─ Plans: 7-cell ladder + plan cards (+ owed P-MP1-DENSE table)
+  ├─ Candidates: census + stage shelves + cards + tier wall/hydration
+  └─ Prophet Live "Forming today" (provisional tier, adjacent)
+Disclosure tier (refusals · no-plan sample · blackout · footnotes · track record)
+Theme & Sector Leadership (Act-Now folded here; lane vocab → availability lanes at B4)
+Research tier (breadth · setups · accumulation · 13F · leaders · tapes)
+Macro context (relocated below, or progressively disclosed / linked)
+```
+
+- **Delivery mechanism:** NOT a client-side composer. US keeps
+  server-split+hydration tiering; the V3.6 composer pattern stays a
+  small-market (CA/HK) delivery tactic.
+- **Concentration device:** the existing Featured cohort (≤12, ≤4/sector,
+  disclosure footnote) — no new Top Picks rule, no first-N-of-preview
+  arithmetic.
+- **Freeze gates (ordered):** (1) Canada leg 2 passes; (2) HK follower ships
+  and proves the grammar generalizes; (3) V4 B3/B4 (lifecycle/availability
+  planes) land so lanes/verbs bind to real states; (4) Cell H provenance
+  ratified. Freezing the US visual architecture before (2)+(3) would bind the
+  flagship to an unproven grammar and unaccepted planes — the exact failure
+  mode this commission exists to prevent.
+- **Kill list on ratification:** any parallel US redesign that (a) merges the
+  two populations, (b) introduces a new lane vocabulary, (c) re-derives
+  availability client-side, or (d) re-owns the board via a client composer.
 
 ## §8 Unresolved decisions for Sol/Chairman
 
@@ -182,3 +328,13 @@ Written after §5/§6 land in this document.
    and committed reference visuals once leg 2 produces them.
 4. **HK "LIVE" treatment** — accept the §4 ruling (no fabricated live chip) or
    commission an HK quote plane first.
+5. **Cell H provenance** — the flagship experience research lives only on the
+   unmerged `sol/prophet-flagship-fanout-hardening-20260822` branch. Merge or
+   re-home it before any US freeze cites it (§6).
+6. **US hierarchy doctrine** — ratify whether the #6327 "Prophet owns the
+   first decision viewport" lesson is cross-market law; if yes, the US page's
+   macro-tier-above-board layout is a standing violation to be corrected in
+   the (later, separately commissioned) US wave (§5/§7).
+7. **US freeze order** — §7's gates: Canada leg 2 → HK follower proof →
+   V4 B3/B4 → then freeze US. Competing US redesign paths can be killed
+   against §7's kill list at ratification time.
