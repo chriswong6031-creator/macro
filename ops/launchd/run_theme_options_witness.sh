@@ -29,11 +29,9 @@
 # site/basketdata checked out, ~100MB). The wrapper self-heals it if absent.
 # The repo is disposable — delete it and the next run re-clones.
 #
-# Consequence: this lane no longer advances flow-ops-wt (no git ops there).
-# Keeping flow-ops-wt's ENGINE CODE near origin/main is an operator/ops
-# concern: run `git -C /Users/chriswong/flow-ops-wt fetch origin && git -C
-# /Users/chriswong/flow-ops-wt checkout --detach origin/main` from a normal
-# (non-launchd) shell occasionally, and after any engine change.
+# Consequence: this lane never advances flow-ops-wt and performs no git operation
+# there.  That engine checkout is governed and deliberately pinned; only its
+# separate authority lane may replace or advance it.
 #
 # RACE HANDLING (simpler than the daily.yml rebase dance — the push repo is
 # single-purpose, so there is nothing local to preserve):
@@ -43,21 +41,37 @@
 #
 # SMOKE-TESTING THE TAIL ALONE (skips the ~5 min engine run; uses whatever
 # artifacts are already in flow-ops-wt):
-#   WITNESS_SKIP_ENGINE=1 /Users/chriswong/flow-ops-wt/ops/launchd/run_with_env.sh \
+#   WITNESS_SKIP_ENGINE=1 /Users/chriswong/macro-publisher-runtime/ops/launchd/run_with_env.sh \
 #     /Users/chriswong/flow-ops-wt/.env \
-#     /Users/chriswong/flow-ops-wt/ops/launchd/run_theme_options_witness.sh
+#     /usr/bin/env \
+#     MACRO_PUBLISH_GIT_SSH_KEY=/Users/chriswong/.ssh/macro_dashboard_deploy \
+#     PYTHONPATH=/Users/chriswong/flow-ops-wt \
+#     /bin/sh \
+#     /Users/chriswong/macro-publisher-runtime/ops/launchd/run_theme_options_witness.sh
 #
 # LOG TAILING:
 #   tail -f /tmp/theme_options_witness.stdout.log /tmp/theme_options_witness.stderr.log
 
-set -u
+set -eu
 
 REPO="/Users/chriswong/flow-ops-wt"
-PUSH_REPO="/Users/chriswong/witness-push-repo"
-REMOTE_URL="https://github.com/mastermindx-market-intelligence/macro.git"
+RUNTIME="/Users/chriswong/macro-publisher-runtime"
+PUSH_REPO="/Users/chriswong/witness-push-repo-private"
+REMOTE_URL="git@github.com:mastermindx-market-intelligence/macro.git"
+MACHINE_GIT="$RUNTIME/scripts/macro_machine_git.py"
 PYTHON="/opt/homebrew/Caskroom/miniconda/base/bin/python"
 ART_NW="data/neuralweb/theme_options_witness.json"
 ART_SITE="site/basketdata/options_witness.json"
+
+: "${MACRO_PUBLISH_GIT_SSH_KEY:?MACRO_PUBLISH_GIT_SSH_KEY is required}"
+[ -f "$MACHINE_GIT" ] || { echo "[theme_options_witness] ERROR: machine Git helper missing"; exit 1; }
+
+machine_git() {
+    /usr/bin/python3 "$MACHINE_GIT" "$@"
+}
+
+# The launcher is current and disposable; the engine remains deliberately pinned.
+export PYTHONPATH="$REPO"
 
 cd "$REPO" || { echo "[theme_options_witness] ERROR: cannot cd $REPO"; exit 1; }
 
@@ -80,10 +94,12 @@ fi
 # ── commit tail (in the $HOME push repo — see TCC LAW above) ─────────────────
 if [ ! -d "$PUSH_REPO/.git" ]; then
     echo "[theme_options_witness] push repo absent — cloning (sparse, blob-less, depth 1)"
-    git clone --depth 1 --filter=blob:none --sparse "$REMOTE_URL" "$PUSH_REPO" \
+    machine_git clone --depth 1 --filter=blob:none --sparse "$REMOTE_URL" "$PUSH_REPO" \
         || { echo "[theme_options_witness] ERROR: clone failed"; exit 1; }
-    git -C "$PUSH_REPO" sparse-checkout set data/neuralweb site/basketdata \
+    machine_git -C "$PUSH_REPO" sparse-checkout set data/neuralweb site/basketdata \
         || { echo "[theme_options_witness] ERROR: sparse-checkout failed"; exit 1; }
+    [ -d "$PUSH_REPO/data/neuralweb" ] && [ -d "$PUSH_REPO/site/basketdata" ] \
+        || { echo "[theme_options_witness] ERROR: sparse projection did not materialize"; exit 1; }
 fi
 
 cd "$PUSH_REPO" || { echo "[theme_options_witness] ERROR: cannot cd $PUSH_REPO"; exit 1; }
@@ -91,8 +107,8 @@ cd "$PUSH_REPO" || { echo "[theme_options_witness] ERROR: cannot cd $PUSH_REPO";
 # Standalone-repo guard: gitdir must resolve INSIDE the push repo. A gitdir
 # anywhere else (worktree layout, or fall-through to an enclosing repo) would
 # reintroduce the TCC failure or commit into the wrong tree.
-TOPLEVEL=$(git rev-parse --show-toplevel 2>/dev/null || echo "")
-GITDIR=$(git rev-parse --absolute-git-dir 2>/dev/null || echo "")
+TOPLEVEL=$(machine_git -C "$PUSH_REPO" rev-parse --show-toplevel 2>/dev/null || echo "")
+GITDIR=$(machine_git -C "$PUSH_REPO" rev-parse --absolute-git-dir 2>/dev/null || echo "")
 if [ "$TOPLEVEL" != "$PUSH_REPO" ] || [ "$GITDIR" != "$PUSH_REPO/.git" ]; then
     echo "[theme_options_witness] ERROR: push repo layout wrong (toplevel='$TOPLEVEL' gitdir='$GITDIR') — aborting"
     exit 1
@@ -100,18 +116,19 @@ fi
 
 n=1
 while [ "$n" -le 5 ]; do
-    if git fetch --depth 1 origin main \
-        && git reset --hard refs/remotes/origin/main >/dev/null; then
+    if machine_git -C "$PUSH_REPO" fetch --no-tags --no-recurse-submodules --depth 1 "$REMOTE_URL" \
+            +refs/heads/main:refs/remotes/origin/main \
+        && machine_git -C "$PUSH_REPO" reset --hard refs/remotes/origin/main >/dev/null; then
         cp "$REPO/$ART_NW" "$ART_NW" || exit 1
         cp "$REPO/$ART_SITE" "$ART_SITE" || exit 1
-        git add -- "$ART_NW" "$ART_SITE"
-        if git diff --cached --quiet -- "$ART_NW" "$ART_SITE"; then
+        machine_git -C "$PUSH_REPO" add -- "$ART_NW" "$ART_SITE"
+        if machine_git -C "$PUSH_REPO" diff --cached --quiet -- "$ART_NW" "$ART_SITE"; then
             echo "[theme_options_witness] artifacts identical to origin/main — nothing to push"
             exit 0
         fi
-        if git -c user.name="dashboard-bot" -c user.email="actions@users.noreply.github.com" \
+        if machine_git -C "$PUSH_REPO" -c user.name="dashboard-bot" -c user.email="actions@users.noreply.github.com" \
                 commit -q -m "data: theme options witness $(date -u +%F)" -- "$ART_NW" "$ART_SITE" \
-            && git push origin main; then
+            && machine_git -C "$PUSH_REPO" push --recurse-submodules=no "$REMOTE_URL" HEAD:refs/heads/main; then
             echo "[theme_options_witness] pushed artifacts on attempt $n"
             exit 0
         fi

@@ -25,6 +25,7 @@ What is actually being pinned, and why each one has bitten:
 from __future__ import annotations
 
 import importlib.util
+import hashlib
 import io
 import json
 import subprocess
@@ -101,6 +102,17 @@ def synthetic_repo(tmp_path: Path) -> Path:
 def _make_sparse(repo: Path, keep: list[str]) -> None:
     _git(repo, "sparse-checkout", "init", "--cone")
     _git(repo, "sparse-checkout", "set", "--cone", "--", *keep)
+
+
+def _wire_origin_main(repo: Path, tmp_path: Path) -> Path:
+    """Give strict Warp mint tests a real fetchable ``origin/main``."""
+    origin = tmp_path / "origin.git"
+    subprocess.run(("git", "init", "--bare", "-q", "-b", "main", str(origin)),
+                   capture_output=True, check=True)
+    _git(repo, "remote", "add", "origin", str(origin))
+    _git(repo, "push", "origin", "HEAD:main")
+    _git(repo, "fetch", "origin", "main")
+    return origin
 
 
 # --------------------------------------------------------------------------
@@ -476,6 +488,18 @@ def test_mint_session_worktree_is_sparse_and_skips_heavy_trees(
     assert _git(dest, "status", "--porcelain") == ""
 
 
+def test_mint_session_worktree_default_keeps_legacy_best_effort_origin_behavior(
+        synthetic_repo: Path, tmp_path: Path):
+    """Grok/AionUi retain their pre-Warp fetch/base fallback contract."""
+    dest = tmp_path / ".grok" / "worktrees" / "grok-best-effort-origin"
+    assert WS.mint_session_worktree(
+        synthetic_repo, dest, branch="grok/grok-best-effort-origin",
+        base="refs/remotes/origin/main", fetch=True,
+    ) == 0
+    assert WS.is_session_worktree(dest) is True
+    assert WS.missing_dirs(dest) == ["data", "mockups", "site"]
+
+
 def test_mint_session_worktree_refuses_a_path_outside_session_roots(
         synthetic_repo: Path, tmp_path: Path):
     dest = tmp_path / "not-a-session-root" / "tree"
@@ -525,14 +549,18 @@ def test_grok_session_start_hook_mints_from_an_aionui_temp(
 def test_warp_hook_mints_from_a_macro_host_without_writing_pointer(
         synthetic_repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     hook = _load_warp_hook()
+    _wire_origin_main(synthetic_repo, tmp_path)
     (synthetic_repo / ".git").mkdir(exist_ok=True)
     monkeypatch.setattr(hook, "discover_donor", lambda cwd: synthetic_repo)
     monkeypatch.setattr(hook, "is_macro_checkout", lambda root: True)
     monkeypatch.setattr(hook, "_load_ws", lambda donor: WS)
-    monkeypatch.delenv("WARP_TERMINAL_SESSION_UUID", raising=False)
-    monkeypatch.setattr(sys, "stdin", io.StringIO(json.dumps({"cwd": str(synthetic_repo)})))
+    payload = {"cwd": str(synthetic_repo), "conversationId": "profile-warp-host"}
+    monkeypatch.setattr(sys, "stdin", io.StringIO(json.dumps(payload)))
     assert hook.main() == 0
-    dest = synthetic_repo / ".warp" / "worktrees" / "warp-session"
+    name, proven = hook.worktree_name(payload)
+    assert proven is True
+    assert name == f"warp-{hashlib.sha256(b'profile-warp-host').hexdigest()}"
+    dest = synthetic_repo / ".warp" / "worktrees" / name
     assert dest.is_dir()
     assert not (synthetic_repo / ".session-worktree").exists(), (
         "a pointer inside a git checkout is dirt"
@@ -544,17 +572,21 @@ def test_warp_hook_does_not_sparsify_the_operator_local_root(
         synthetic_repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     """macro-main is a linked worktree; Warp SessionStart must mint beside it."""
     hook = _load_warp_hook()
+    _wire_origin_main(synthetic_repo, tmp_path)
     linked = tmp_path / "macro-main-analog"
     _git(synthetic_repo, "worktree", "add", "-q", "--detach", str(linked), "HEAD")
     monkeypatch.setattr(hook, "discover_donor", lambda cwd: linked)
     monkeypatch.setattr(hook, "is_macro_checkout", lambda root: True)
     monkeypatch.setattr(hook, "_load_ws", lambda donor: WS)
-    monkeypatch.delenv("WARP_TERMINAL_SESSION_UUID", raising=False)
-    monkeypatch.setattr(sys, "stdin", io.StringIO(json.dumps({"cwd": str(linked)})))
+    payload = {"cwd": str(linked), "conversationId": "profile-warp-linked"}
+    monkeypatch.setattr(sys, "stdin", io.StringIO(json.dumps(payload)))
     assert hook.main() == 0
     assert WS.is_sparse(linked) is False
     assert (linked / "data" / "keep.txt").is_file()
-    dest = linked / ".warp" / "worktrees" / "warp-session"
+    name, proven = hook.worktree_name(payload)
+    assert proven is True
+    assert name == f"warp-{hashlib.sha256(b'profile-warp-linked').hexdigest()}"
+    dest = linked / ".warp" / "worktrees" / name
     assert dest.is_dir()
     assert WS.missing_dirs(dest) == ["data", "mockups", "site"]
 

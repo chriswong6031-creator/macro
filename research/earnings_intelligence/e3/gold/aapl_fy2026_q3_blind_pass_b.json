@@ -1,0 +1,1002 @@
+{
+  "schema": "e3a_blind_labeling_packet.v1",
+  "pass": "B",
+  "pass_kind": "independent_pre_inference_dual_adjudication",
+  "ticker": "AAPL",
+  "period": "Q3 FY2026",
+  "document_id": "tx:AAPL/2026Q3",
+  "document_sha256": "a8ff5d03e875fef5604791edbf625186c447af049e6e02f55bb89c68c7cc9f9f",
+  "segment_count": 108,
+  "taxonomy_version": "qa_topic.v1",
+  "taxonomy_members": [
+    "capacity",
+    "capital_allocation",
+    "costs_supply",
+    "demand",
+    "other",
+    "pricing",
+    "product",
+    "regulation",
+    "unavailable"
+  ],
+  "taxonomy_hash": "b2ae2508877ccda4dea911d52952c49f78b0dbc26049326d542ee77439cf9a14",
+  "taxonomy_hash_preimage_recipe": "sha256(json.dumps(sorted(members), separators=(\",\",\":\")))",
+  "unit_law": "E3-0 section 7.2: Operator segment containing 'go ahead' opens an exchange; 7 exchanges; overlay 14 forbidden",
+  "span_law": "source_span.v1, whole segment, start_byte=0, end_byte=UTF-8 byte length",
+  "respondent_law": "one element per management answer-turn in source order; a turn ends when an analyst/Operator/IR utterance interrupts or the speaker changes; same speaker may occupy more than one turn; unique speakers are never collapsed",
+  "exclusions_applied": [
+    "prepared remarks (segments 0-31) are not Q&A",
+    "IR next-question prompts (41, 51, 62, 75, 83, 96) and the IR close (106) are neither question nor answer turns",
+    "Operator segment 107 lacks 'go ahead' and opens no exchange"
+  ],
+  "roles_source": "transcript segment metadata role field only; no external biography consulted",
+  "validation_state": "independent_unvalidated_pass_b",
+  "exchange_count": 7,
+  "answer_turn_total": 26,
+  "exchanges": [
+    {
+      "ordinal": 0,
+      "exchange_id": "qx_tx:AAPL/2026Q3_a8ff5d03e875_00",
+      "boundary_operator_segment": 32,
+      "boundary_operator_text": "Certainly. We will go ahead and take our first question from Amit Daryanani from Evercore. Please go ahead.",
+      "body_segment_range": [
+        33,
+        41
+      ],
+      "questioner": {
+        "name": "Amit Daryanani",
+        "affiliation": "Evercore",
+        "name_state": "present",
+        "affiliation_state": "present",
+        "affiliation_source_segment": 32
+      },
+      "question_spans": [
+        {
+          "schema": "source_span.v1",
+          "segment_index": 33,
+          "start_byte": 0,
+          "end_byte": 586
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 38,
+          "start_byte": 0,
+          "end_byte": 720
+        }
+      ],
+      "question_segment_indexes": [
+        33,
+        38
+      ],
+      "answer_spans": [
+        {
+          "schema": "source_span.v1",
+          "segment_index": 34,
+          "start_byte": 0,
+          "end_byte": 739
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 35,
+          "start_byte": 0,
+          "end_byte": 211
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 36,
+          "start_byte": 0,
+          "end_byte": 794
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 37,
+          "start_byte": 0,
+          "end_byte": 116
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 39,
+          "start_byte": 0,
+          "end_byte": 791
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 40,
+          "start_byte": 0,
+          "end_byte": 592
+        }
+      ],
+      "answer_segment_indexes": [
+        34,
+        35,
+        36,
+        37,
+        39,
+        40
+      ],
+      "respondents": [
+        {
+          "name": "Kevan Parekh",
+          "role": "CFO",
+          "identity_state": "present",
+          "span_indexes": [
+            0,
+            1
+          ],
+          "segment_indexes": [
+            34,
+            35
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "present",
+          "span_indexes": [
+            2,
+            3
+          ],
+          "segment_indexes": [
+            36,
+            37
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "present",
+          "span_indexes": [
+            4,
+            5
+          ],
+          "segment_indexes": [
+            39,
+            40
+          ]
+        }
+      ],
+      "answer_turn_count": 3,
+      "topics": [
+        "costs_supply",
+        "demand",
+        "pricing"
+      ]
+    },
+    {
+      "ordinal": 1,
+      "exchange_id": "qx_tx:AAPL/2026Q3_a8ff5d03e875_01",
+      "boundary_operator_segment": 42,
+      "boundary_operator_text": "Our next question is from Michael Ng of Goldman Sachs. Please go ahead.",
+      "body_segment_range": [
+        43,
+        51
+      ],
+      "questioner": {
+        "name": "Michael Ng",
+        "affiliation": "Goldman Sachs",
+        "name_state": "present",
+        "affiliation_state": "present",
+        "affiliation_source_segment": 42
+      },
+      "question_spans": [
+        {
+          "schema": "source_span.v1",
+          "segment_index": 43,
+          "start_byte": 0,
+          "end_byte": 524
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 46,
+          "start_byte": 0,
+          "end_byte": 443
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 49,
+          "start_byte": 0,
+          "end_byte": 47
+        }
+      ],
+      "question_segment_indexes": [
+        43,
+        46,
+        49
+      ],
+      "answer_spans": [
+        {
+          "schema": "source_span.v1",
+          "segment_index": 44,
+          "start_byte": 0,
+          "end_byte": 728
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 45,
+          "start_byte": 0,
+          "end_byte": 82
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 47,
+          "start_byte": 0,
+          "end_byte": 755
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 48,
+          "start_byte": 0,
+          "end_byte": 261
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 50,
+          "start_byte": 0,
+          "end_byte": 10
+        }
+      ],
+      "answer_segment_indexes": [
+        44,
+        45,
+        47,
+        48,
+        50
+      ],
+      "respondents": [
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "present",
+          "span_indexes": [
+            0
+          ],
+          "segment_indexes": [
+            44
+          ]
+        },
+        {
+          "name": "Kevan Parekh",
+          "role": "CFO",
+          "identity_state": "present",
+          "span_indexes": [
+            1
+          ],
+          "segment_indexes": [
+            45
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "present",
+          "span_indexes": [
+            2,
+            3
+          ],
+          "segment_indexes": [
+            47,
+            48
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "present",
+          "span_indexes": [
+            4
+          ],
+          "segment_indexes": [
+            50
+          ]
+        }
+      ],
+      "answer_turn_count": 4,
+      "topics": [
+        "product",
+        "demand",
+        "pricing"
+      ]
+    },
+    {
+      "ordinal": 2,
+      "exchange_id": "qx_tx:AAPL/2026Q3_a8ff5d03e875_02",
+      "boundary_operator_segment": 52,
+      "boundary_operator_text": "Our next question is from Ben Reitzes from Melius Research. Please go ahead.",
+      "body_segment_range": [
+        53,
+        62
+      ],
+      "questioner": {
+        "name": "Ben Reitzes",
+        "affiliation": "Melius Research",
+        "name_state": "present",
+        "affiliation_state": "present",
+        "affiliation_source_segment": 52
+      },
+      "question_spans": [
+        {
+          "schema": "source_span.v1",
+          "segment_index": 53,
+          "start_byte": 0,
+          "end_byte": 702
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 54,
+          "start_byte": 0,
+          "end_byte": 102
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 58,
+          "start_byte": 0,
+          "end_byte": 431
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 60,
+          "start_byte": 0,
+          "end_byte": 12
+        }
+      ],
+      "question_segment_indexes": [
+        53,
+        54,
+        58,
+        60
+      ],
+      "answer_spans": [
+        {
+          "schema": "source_span.v1",
+          "segment_index": 55,
+          "start_byte": 0,
+          "end_byte": 781
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 56,
+          "start_byte": 0,
+          "end_byte": 134
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 57,
+          "start_byte": 0,
+          "end_byte": 455
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 59,
+          "start_byte": 0,
+          "end_byte": 466
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 61,
+          "start_byte": 0,
+          "end_byte": 15
+        }
+      ],
+      "answer_segment_indexes": [
+        55,
+        56,
+        57,
+        59,
+        61
+      ],
+      "respondents": [
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "present",
+          "span_indexes": [
+            0,
+            1
+          ],
+          "segment_indexes": [
+            55,
+            56
+          ]
+        },
+        {
+          "name": "Kevan Parekh",
+          "role": "CFO",
+          "identity_state": "present",
+          "span_indexes": [
+            2
+          ],
+          "segment_indexes": [
+            57
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "present",
+          "span_indexes": [
+            3
+          ],
+          "segment_indexes": [
+            59
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "present",
+          "span_indexes": [
+            4
+          ],
+          "segment_indexes": [
+            61
+          ]
+        }
+      ],
+      "answer_turn_count": 4,
+      "topics": [
+        "costs_supply",
+        "demand",
+        "capacity"
+      ]
+    },
+    {
+      "ordinal": 3,
+      "exchange_id": "qx_tx:AAPL/2026Q3_a8ff5d03e875_03",
+      "boundary_operator_segment": 63,
+      "boundary_operator_text": "Our next question is from Erik Woodring of Morgan Stanley. Please go ahead.",
+      "body_segment_range": [
+        64,
+        75
+      ],
+      "questioner": {
+        "name": "Erik Woodring",
+        "affiliation": "Morgan Stanley",
+        "name_state": "present",
+        "affiliation_state": "present",
+        "affiliation_source_segment": 63
+      },
+      "question_spans": [
+        {
+          "schema": "source_span.v1",
+          "segment_index": 64,
+          "start_byte": 0,
+          "end_byte": 746
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 66,
+          "start_byte": 0,
+          "end_byte": 24
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 68,
+          "start_byte": 0,
+          "end_byte": 680
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 73,
+          "start_byte": 0,
+          "end_byte": 63
+        }
+      ],
+      "question_segment_indexes": [
+        64,
+        66,
+        68,
+        73
+      ],
+      "answer_spans": [
+        {
+          "schema": "source_span.v1",
+          "segment_index": 65,
+          "start_byte": 0,
+          "end_byte": 622
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 67,
+          "start_byte": 0,
+          "end_byte": 5
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 69,
+          "start_byte": 0,
+          "end_byte": 760
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 70,
+          "start_byte": 0,
+          "end_byte": 723
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 71,
+          "start_byte": 0,
+          "end_byte": 754
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 72,
+          "start_byte": 0,
+          "end_byte": 561
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 74,
+          "start_byte": 0,
+          "end_byte": 31
+        }
+      ],
+      "answer_segment_indexes": [
+        65,
+        67,
+        69,
+        70,
+        71,
+        72,
+        74
+      ],
+      "respondents": [
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "present",
+          "span_indexes": [
+            0
+          ],
+          "segment_indexes": [
+            65
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "present",
+          "span_indexes": [
+            1
+          ],
+          "segment_indexes": [
+            67
+          ]
+        },
+        {
+          "name": "Kevan Parekh",
+          "role": "CFO",
+          "identity_state": "present",
+          "span_indexes": [
+            2,
+            3,
+            4,
+            5
+          ],
+          "segment_indexes": [
+            69,
+            70,
+            71,
+            72
+          ]
+        },
+        {
+          "name": "Kevan Parekh",
+          "role": "CFO",
+          "identity_state": "present",
+          "span_indexes": [
+            6
+          ],
+          "segment_indexes": [
+            74
+          ]
+        }
+      ],
+      "answer_turn_count": 4,
+      "topics": [
+        "pricing",
+        "costs_supply",
+        "demand"
+      ]
+    },
+    {
+      "ordinal": 4,
+      "exchange_id": "qx_tx:AAPL/2026Q3_a8ff5d03e875_04",
+      "boundary_operator_segment": 76,
+      "boundary_operator_text": "Our next question is from Aaron Rakers of Wells Fargo. Please go ahead.",
+      "body_segment_range": [
+        77,
+        83
+      ],
+      "questioner": {
+        "name": "Aaron Rakers",
+        "affiliation": "Wells Fargo",
+        "name_state": "present",
+        "affiliation_state": "present",
+        "affiliation_source_segment": 76
+      },
+      "question_spans": [
+        {
+          "schema": "source_span.v1",
+          "segment_index": 77,
+          "start_byte": 0,
+          "end_byte": 416
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 79,
+          "start_byte": 0,
+          "end_byte": 347
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 81,
+          "start_byte": 0,
+          "end_byte": 10
+        }
+      ],
+      "question_segment_indexes": [
+        77,
+        79,
+        81
+      ],
+      "answer_spans": [
+        {
+          "schema": "source_span.v1",
+          "segment_index": 78,
+          "start_byte": 0,
+          "end_byte": 614
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 80,
+          "start_byte": 0,
+          "end_byte": 392
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 82,
+          "start_byte": 0,
+          "end_byte": 5
+        }
+      ],
+      "answer_segment_indexes": [
+        78,
+        80,
+        82
+      ],
+      "respondents": [
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "present",
+          "span_indexes": [
+            0
+          ],
+          "segment_indexes": [
+            78
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "present",
+          "span_indexes": [
+            1
+          ],
+          "segment_indexes": [
+            80
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "present",
+          "span_indexes": [
+            2
+          ],
+          "segment_indexes": [
+            82
+          ]
+        }
+      ],
+      "answer_turn_count": 3,
+      "topics": [
+        "demand",
+        "pricing",
+        "product"
+      ]
+    },
+    {
+      "ordinal": 5,
+      "exchange_id": "qx_tx:AAPL/2026Q3_a8ff5d03e875_05",
+      "boundary_operator_segment": 84,
+      "boundary_operator_text": "Our next question is from Wamsi Mohan of Bank of America. Please go ahead.",
+      "body_segment_range": [
+        85,
+        96
+      ],
+      "questioner": {
+        "name": "Wamsi Mohan",
+        "affiliation": "Bank of America",
+        "name_state": "present",
+        "affiliation_state": "present",
+        "affiliation_source_segment": 84
+      },
+      "question_spans": [
+        {
+          "schema": "source_span.v1",
+          "segment_index": 85,
+          "start_byte": 0,
+          "end_byte": 203
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 87,
+          "start_byte": 0,
+          "end_byte": 16
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 89,
+          "start_byte": 0,
+          "end_byte": 512
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 91,
+          "start_byte": 0,
+          "end_byte": 18
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 93,
+          "start_byte": 0,
+          "end_byte": 494
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 95,
+          "start_byte": 0,
+          "end_byte": 10
+        }
+      ],
+      "question_segment_indexes": [
+        85,
+        87,
+        89,
+        91,
+        93,
+        95
+      ],
+      "answer_spans": [
+        {
+          "schema": "source_span.v1",
+          "segment_index": 86,
+          "start_byte": 0,
+          "end_byte": 19
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 88,
+          "start_byte": 0,
+          "end_byte": 23
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 90,
+          "start_byte": 0,
+          "end_byte": 585
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 92,
+          "start_byte": 0,
+          "end_byte": 5
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 94,
+          "start_byte": 0,
+          "end_byte": 223
+        }
+      ],
+      "answer_segment_indexes": [
+        86,
+        88,
+        90,
+        92,
+        94
+      ],
+      "respondents": [
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "present",
+          "span_indexes": [
+            0
+          ],
+          "segment_indexes": [
+            86
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "present",
+          "span_indexes": [
+            1
+          ],
+          "segment_indexes": [
+            88
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "present",
+          "span_indexes": [
+            2
+          ],
+          "segment_indexes": [
+            90
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "present",
+          "span_indexes": [
+            3
+          ],
+          "segment_indexes": [
+            92
+          ]
+        },
+        {
+          "name": "John Ternus",
+          "role": "CEO",
+          "identity_state": "present",
+          "span_indexes": [
+            4
+          ],
+          "segment_indexes": [
+            94
+          ]
+        }
+      ],
+      "answer_turn_count": 5,
+      "topics": [
+        "capital_allocation",
+        "capacity",
+        "product"
+      ]
+    },
+    {
+      "ordinal": 6,
+      "exchange_id": "qx_tx:AAPL/2026Q3_a8ff5d03e875_06",
+      "boundary_operator_segment": 97,
+      "boundary_operator_text": "We will now go to Samik Chatterjee of JPMorgan. Please go ahead.",
+      "body_segment_range": [
+        98,
+        106
+      ],
+      "questioner": {
+        "name": "Samik Chatterjee",
+        "affiliation": "JPMorgan",
+        "name_state": "present",
+        "affiliation_state": "present",
+        "affiliation_source_segment": 97
+      },
+      "question_spans": [
+        {
+          "schema": "source_span.v1",
+          "segment_index": 98,
+          "start_byte": 0,
+          "end_byte": 459
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 101,
+          "start_byte": 0,
+          "end_byte": 486
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 104,
+          "start_byte": 0,
+          "end_byte": 78
+        }
+      ],
+      "question_segment_indexes": [
+        98,
+        101,
+        104
+      ],
+      "answer_spans": [
+        {
+          "schema": "source_span.v1",
+          "segment_index": 99,
+          "start_byte": 0,
+          "end_byte": 762
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 100,
+          "start_byte": 0,
+          "end_byte": 143
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 102,
+          "start_byte": 0,
+          "end_byte": 761
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 103,
+          "start_byte": 0,
+          "end_byte": 621
+        },
+        {
+          "schema": "source_span.v1",
+          "segment_index": 105,
+          "start_byte": 0,
+          "end_byte": 51
+        }
+      ],
+      "answer_segment_indexes": [
+        99,
+        100,
+        102,
+        103,
+        105
+      ],
+      "respondents": [
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "present",
+          "span_indexes": [
+            0,
+            1
+          ],
+          "segment_indexes": [
+            99,
+            100
+          ]
+        },
+        {
+          "name": "Kevan Parekh",
+          "role": "CFO",
+          "identity_state": "present",
+          "span_indexes": [
+            2,
+            3
+          ],
+          "segment_indexes": [
+            102,
+            103
+          ]
+        },
+        {
+          "name": "Tim Cook",
+          "role": "CEO",
+          "identity_state": "present",
+          "span_indexes": [
+            4
+          ],
+          "segment_indexes": [
+            105
+          ]
+        }
+      ],
+      "answer_turn_count": 3,
+      "topics": [
+        "regulation",
+        "product",
+        "costs_supply"
+      ]
+    }
+  ]
+}

@@ -82,6 +82,7 @@ meta:
     - esx_underwater
     - esx_vol_transition
     - esx_washout_x_turn
+    - k3e_expectation_market_dynamics_v1
     - leadlag
     - long_hold
     - macro_context
@@ -18025,3 +18026,61 @@ rulings:
     aliases:
       - "TR-1"
     notes: "Defined in §8 preregistration amendments. Embargo 2024-01-01."
+  - ruling_id: "K3E-EVAL-0-R1"
+    local_id: "EVAL-0-R1"
+    short_name: "expectation-market-dynamics-v1-preregistered-evaluation-family"
+    title: "K3E EVAL-0 v1 freezes one 64-trial BY-FDR family before advanced tuning"
+    ruling: >
+      K3E-EVAL-0-V1 preregisters the expectation-market-dynamics model competition
+      as one dependent multiple-testing family, k3e_expectation_market_dynamics_v1,
+      with at most 64 challenger trials and Benjamini-Yekutieli q=0.10. The fixed
+      eras, targets, boring baselines, episode-N law, coverage gate, null/adverse
+      publication law, and immutable amendment boundary are frozen in the exact
+      content-addressed machine registration cited by the source document. EVAL-0 grants research procedure only
+      and no fair-value, rank, gate, size, trade, Prophet, product, or production
+      authority.
+    status: "active_law"
+    object_kind: "study"
+    owner_program: "alpha-intelligence-integration"
+    authority_ceiling: "A1_EXPLAIN"
+    privacy_class: "public_research"
+    scope_fence: >
+      Applies only to K3E expectation-dynamics research under existing Eval OS law.
+      Reserved downstream targets remain ineligible until their named owner-native
+      dependencies are accepted.
+    forbidden_actions:
+      - "starting an advanced challenger before the exact registration digest is accepted on origin/main"
+      - "excluding failed, discarded, ablation, preprocessing, threshold, or seed-policy trials from the 64-trial budget"
+      - "using a subgroup to rescue a failed overall result"
+      - "changing fixed eras, targets, baselines, thresholds, or FDR procedure after outcome access without a new version and forward boundary"
+      - "granting product, Prophet, fair-value, rank, gate, size, trade, or production authority from EVAL-0"
+    unblock_condition: >
+      Exact registration digest accepted on origin/main; later source/surface
+      dependencies accepted; activation receipt resolves the first eligible NYSE
+      boundary; lawful data and rights support the registered grain.
+    come_back_on: null
+    experiment_ref: null
+    fdr_family: "k3e_expectation_market_dynamics_v1"
+    precedence_rank: 7
+    source_doc: "research/alpha_intelligence/expectation_market_dynamics/EVALUATION_PREREG.md"
+    source_quote: >
+      All promotion-bearing challenger/target/horizon comparisons share FDR family
+      `k3e_expectation_market_dynamics_v1`. Benjamini-Yekutieli at `q=0.10` applies
+      across the full family because target/horizon losses are dependent.
+    source_pr: null
+    supersedes: []
+    superseded_by: []
+    nondelegable: true
+    match_terms:
+      - "K3E-EVAL-0-V1"
+      - "k3e expectation market dynamics fdr"
+      - "expectation dynamics trial budget"
+      - "BY-FDR q 0.10 expectation"
+      - "UNESTIMABLE_AS_PROGRAM"
+    aliases:
+      - "EVAL-0-R1"
+      - "k3e-eval-family-v1"
+    notes: >
+      This row registers the evaluation family in the existing Ruling Graph and
+      Evaluation OS boundary. It creates no evaluator or result store; git history
+      and the content-addressed JSON registration are the immutable record.

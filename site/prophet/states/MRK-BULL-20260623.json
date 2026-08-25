@@ -1,30 +1,30 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "MRK-BULL-20260623",
-  "asof": "2026-08-21",
+  "asof": "2026-08-24",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 73.4,
-  "raw_confidence": 75.7,
-  "delta_vs_base": 13.4,
+  "management_confidence": 74.4,
+  "raw_confidence": 74.5,
+  "delta_vs_base": 14.4,
   "recommended_action": "hold",
   "human_state": "On Track",
   "components": {
     "validity": 100.0,
-    "progress": 38.7,
+    "progress": 35.9,
     "pace": 100.0,
     "retention": 50.0,
-    "overlay": 67.0
+    "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.708,
-    "dist_to_t1_r": 0.792,
-    "dist_to_t2_r": 2.292,
-    "horizon_pct_used": 20.0,
-    "p1": 0.4721,
-    "p2": 0.236,
+    "dist_to_stop_r": 1.64,
+    "dist_to_t1_r": 0.86,
+    "dist_to_t2_r": 2.36,
+    "horizon_pct_used": 26.7,
+    "p1": 0.4267,
+    "p2": 0.2133,
     "p3": null,
-    "move_r": 0.708,
+    "move_r": 0.64,
     "mfe_r": 0.708,
     "mae_r": 0.0
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-13",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 9,
-  "tau": 0.2
+  "days_elapsed": 12,
+  "tau": 0.2667
 }

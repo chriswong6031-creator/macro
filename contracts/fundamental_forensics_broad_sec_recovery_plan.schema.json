@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/fundamental_forensics_broad_sec_recovery_plan.schema.json",
+  "title": "Filing Forensics bounded July recovery plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "recovery_from",
+    "selection_cutoff_at",
+    "selection_policy",
+    "universe",
+    "anchor_complete",
+    "index",
+    "candidate_row_count",
+    "candidate_cik_count",
+    "candidate_rows_sha256",
+    "candidate_ciks_sha256",
+    "candidate_rows",
+    "candidate_ciks"
+  ],
+  "properties": {
+    "schema": {"const": "fundamental_forensics.broad_sec.recovery_plan.v1"},
+    "recovery_from": {"const": "2026-07-12T11:23:15Z"},
+    "selection_cutoff_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]+)?Z$"
+    },
+    "selection_policy": {"const": "filed-chronology-cik-accession/v1"},
+    "universe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "universe_id",
+        "content_sha256",
+        "issuer_count",
+        "unique_ticker_count",
+        "unique_cik_count",
+        "canonical"
+      ],
+      "properties": {
+        "path": {"const": "data/edgar/fundamentals.parquet"},
+        "universe_id": {"const": "edgar.fundamentals"},
+        "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "issuer_count": {"type": "integer", "minimum": 1, "maximum": 4000},
+        "unique_ticker_count": {"type": "integer", "minimum": 1, "maximum": 4000},
+        "unique_cik_count": {"type": "integer", "minimum": 1, "maximum": 4000},
+        "canonical": {"const": true}
+      }
+    },
+    "anchor_complete": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "run_id",
+        "run_key",
+        "run_receipt_sha256",
+        "observation_key",
+        "observation_sha256"
+      ],
+      "properties": {
+        "run_id": {"type": "string", "minLength": 1},
+        "run_key": {"type": "string", "minLength": 1},
+        "run_receipt_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "observation_key": {"type": "string", "minLength": 1},
+        "observation_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    },
+    "index": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "year",
+        "quarter",
+        "snapshot_sha256",
+        "relevant_set_sha256",
+        "archive_sha256",
+        "member_sha256"
+      ],
+      "properties": {
+        "year": {"type": "integer", "minimum": 1994, "maximum": 2100},
+        "quarter": {"type": "integer", "minimum": 1, "maximum": 4},
+        "snapshot_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "relevant_set_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "archive_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "member_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    },
+    "candidate_row_count": {"type": "integer", "minimum": 0},
+    "candidate_cik_count": {"type": "integer", "minimum": 0, "maximum": 4000},
+    "candidate_rows_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "candidate_ciks_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "candidate_rows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["cik", "form", "filed_on", "filename", "accession"],
+        "properties": {
+          "cik": {"type": "string", "pattern": "^[0-9]{10}$"},
+          "form": {
+            "enum": [
+              "10-K",
+              "10-K/A",
+              "10-Q",
+              "10-Q/A",
+              "20-F",
+              "20-F/A",
+              "40-F",
+              "40-F/A"
+            ]
+          },
+          "filed_on": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+          "filename": {
+            "type": "string",
+            "pattern": "^edgar/data/[0-9]+/[0-9]{10}-[0-9]{2}-[0-9]{6}\\.txt$"
+          },
+          "accession": {"type": "string", "pattern": "^[0-9]{10}-[0-9]{2}-[0-9]{6}$"}
+        }
+      }
+    },
+    "candidate_ciks": {
+      "type": "array",
+      "maxItems": 4000,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[0-9]{10}$"}
+    }
+  }
+}

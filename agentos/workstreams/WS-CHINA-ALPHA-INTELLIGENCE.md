@@ -336,6 +336,20 @@ waves:
       failure-state evidence but is NOT the clean-path acceptance receipt.
       P1 therefore stays PARTIAL: normal path PROVEN_LIVE, final
       malformed-evidence lifecycle BUILT_NOT_PROVEN.
+      ===== SOL FINAL CODE ADJUDICATION 2026-08-23: PASS. P1-R3A merged as
+      #6269, squash 0bcfef045517bcaae23271b1218f37c59bcaa864 (merged
+      2026-08-22T22:21:16Z from head c7bd320b1cbc; ancestor of origin/main
+      verified). CODE IS CLOSED — no further P1 implementation repair is
+      authorized, and all three residuals are RULED, each a standing "do not
+      build this": (1) the unreadable accrued-store path is a broader
+      china_filings OUTAGE-RECOVERY concern, not a P1 persistence path, no
+      change now; (2) the china_visits import failure stays FAIL-CLOSED BY
+      DESIGN and the P1-relevance law must NOT be duplicated into
+      china_filings to narrow it; (3) scoped coverage exceptions keep NO
+      TTL/expiry/prune/operator-clear — open until deterministic
+      reconciliation or a future explicitly evidence-backed adjudication
+      mechanism. Full text in DEC:CHINA-COVERAGE-EXCEPTION-LEDGER §"Sol
+      residual rulings, 2026-08-23". What remains is a RECEIPT, not code.
   - id: l0
     title: L0 full-pool canonical outcomes (extract china_standout_track primitives for the candidate plane)
     status: todo
@@ -376,14 +390,24 @@ next_action: >
   Its malformed-evidence lifecycle is BUILT_NOT_PROVEN across three
   Sol-commissioned repairs of ONE defect family: p1r2 (#6229 squash
   c11b16500c15, superseded IN PART), p1r3 (#6242 squash 4e9735088638) and the
-  p1r3a crash-consistency amendment inside the p1r3 wave entry. The
-  DSC:CHINA-VISITS-UNTYPED-ANNOUNCEMENT-ID-DROP question that the old text
-  handed back to Sol is CLOSED — #6229 repaired that mechanism; what remains
-  open is its successor,
+  p1r3a crash-consistency amendment inside the p1r3 wave entry (#6269 squash
+  0bcfef045517). The DSC:CHINA-VISITS-UNTYPED-ANNOUNCEMENT-ID-DROP question
+  that the old text handed back to Sol is CLOSED — #6229 repaired that
+  mechanism; what remains open is its successor,
   DSC:CHINA-VISITS-KEY-EXCLUSION-LATCH-AND-AGING-FORGETFULNESS.
-  THE ONE THING A FRESH SESSION MAY DO HERE: after P1-R3A merges, take the
-  FIRST natural asia-close with HEALTHY CNInfo transport and record the seven
-  acceptance items named in the p1r3 wave entry. As of 2026-08-22 production
+  P1 CODE IS CLOSED (Sol FINAL CODE ADJUDICATION 2026-08-23: PASS). No further
+  P1 implementation repair is authorized, and the three former residuals are
+  RULED — see DEC:CHINA-COVERAGE-EXCEPTION-LEDGER §"Sol residual rulings,
+  2026-08-23" before proposing any of them: the unreadable accrued-store path
+  is an outage-recovery concern and gets no second persistence site; the
+  china_visits import failure stays fail-closed and the P1-relevance law must
+  NOT be duplicated into china_filings; coverage exceptions get NO
+  TTL/expiry/prune/operator-clear.
+  THE ONE THING A FRESH SESSION MAY DO HERE — and it is a RECEIPT, not code:
+  take the FIRST natural asia-close containing 0bcfef045517 with HEALTHY
+  CNInfo transport and record the acceptance items named in the p1r3 wave
+  entry. Do NOT rerun the lane and do NOT manufacture data to obtain one. As
+  of 2026-08-22 production
   china_visits health reads upstream_degraded from a real
   `sse: HTTP 504 from CNInfo` with last_success_utc 2026-08-21T09:29:55Z, so
   the next close may degrade for that unrelated reason — a 504 run is valid

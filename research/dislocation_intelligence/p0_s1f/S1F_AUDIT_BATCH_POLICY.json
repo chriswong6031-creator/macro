@@ -1,0 +1,72 @@
+{
+  "all70_reconciliation_required": true,
+  "batch_count": 7,
+  "batch_order": [
+    "S1F-B01-PHYSICAL-MECHANICAL",
+    "S1F-B02-EXTERNAL-HUMAN",
+    "S1F-B03-CYBER-IT",
+    "S1F-B04-WEATHER-PHYSICAL",
+    "S1F-B05-TEMPORARY-EXPECTATION-RESET",
+    "S1F-B06-STRUCTURAL-IMPAIRMENT-CONTROL",
+    "S1F-B07-RESOLVED-BEFORE-DISCLOSURE-CONTROL"
+  ],
+  "batches": [
+    {
+      "batch_id": "S1F-B01-PHYSICAL-MECHANICAL",
+      "packet_count": 10,
+      "retrieval_stratum": "PHYSICAL_MECHANICAL_INTERRUPTION"
+    },
+    {
+      "batch_id": "S1F-B02-EXTERNAL-HUMAN",
+      "packet_count": 10,
+      "retrieval_stratum": "EXTERNAL_HUMAN_INTERRUPTION"
+    },
+    {
+      "batch_id": "S1F-B03-CYBER-IT",
+      "packet_count": 10,
+      "retrieval_stratum": "CYBER_OR_IT_INTERRUPTION"
+    },
+    {
+      "batch_id": "S1F-B04-WEATHER-PHYSICAL",
+      "packet_count": 10,
+      "retrieval_stratum": "WEATHER_OR_PHYSICAL_DISASTER"
+    },
+    {
+      "batch_id": "S1F-B05-TEMPORARY-EXPECTATION-RESET",
+      "packet_count": 10,
+      "retrieval_stratum": "TEMPORARY_EXPECTATION_RESET"
+    },
+    {
+      "batch_id": "S1F-B06-STRUCTURAL-IMPAIRMENT-CONTROL",
+      "packet_count": 10,
+      "retrieval_stratum": "STRUCTURAL_IMPAIRMENT_CONTROL"
+    },
+    {
+      "batch_id": "S1F-B07-RESOLVED-BEFORE-DISCLOSURE-CONTROL",
+      "packet_count": 10,
+      "retrieval_stratum": "RESOLVED_BEFORE_DISCLOSURE_CONTROL"
+    }
+  ],
+  "binding_rule": "within each batch bind the ten selected packet IDs in ascending frozen selection_key order",
+  "independent_auditor_input_excludes": [
+    "A1R semantic outputs",
+    "A1R K-packet semantic conclusions",
+    "S1F shadow triage category",
+    "S1F shadow triage disposition",
+    "price",
+    "outcome",
+    "counterfactual"
+  ],
+  "relationship_reconciliation_scope": [
+    "amendment",
+    "correction",
+    "duplicate_disclosure",
+    "adverse_pulse",
+    "mitigation_transition",
+    "resolution_transition",
+    "economic_episode_origin"
+  ],
+  "schema": "mastermind.dislocation_p0.s1f_audit_batch_policy.v1",
+  "semantic_selection_or_rebatching": false,
+  "version": "S1F-AUDIT-BATCHES-2026-08-23-v1"
+}

@@ -1,15 +1,15 @@
 {
   "schema": "altdata_track_record.v1",
-  "as_of": "2026-08-23",
-  "scored_total": 90,
-  "open": 435,
+  "as_of": "2026-08-26",
+  "scored_total": 92,
+  "open": 444,
   "unscored_soft": 0,
-  "expired": 0,
+  "expired": 5,
   "overall": {
-    "n": 90,
-    "hits": 61,
+    "n": 92,
+    "hits": 63,
     "misses": 29,
-    "hit_rate": 0.678,
+    "hit_rate": 0.685,
     "dir_accuracy": 0.467
   },
   "by_conviction": {
@@ -28,19 +28,19 @@
       "dir_accuracy": null
     },
     "low": {
-      "n": 90,
-      "hits": 61,
+      "n": 92,
+      "hits": 63,
       "misses": 29,
-      "hit_rate": 0.678,
+      "hit_rate": 0.685,
       "dir_accuracy": 0.467
     }
   },
   "by_kind": {
     "rel_return": {
-      "n": 90,
-      "hits": 61,
+      "n": 92,
+      "hits": 63,
       "misses": 29,
-      "hit_rate": 0.678,
+      "hit_rate": 0.685,
       "dir_accuracy": 0.467
     },
     "level": {
@@ -52,8 +52,26 @@
     }
   },
   "by_regime": {},
-  "calibration_note": "90 scored, hit-rate 0.678 (directional accuracy 0.467).",
+  "calibration_note": "92 scored, hit-rate 0.685 (directional accuracy 0.467).",
   "recent": [
+    {
+      "id": "2026-07-25-BAC-altconv",
+      "subject": "BAC alt-data convergence",
+      "lean": "overweight",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": -0.0287,
+      "check_by": "2026-08-24"
+    },
+    {
+      "id": "2026-07-25-USAR-altconv",
+      "subject": "USAR alt-data convergence",
+      "lean": "overweight",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": 0.2594,
+      "check_by": "2026-08-24"
+    },
     {
       "id": "2026-07-21-LVS-altconv",
       "subject": "LVS alt-data convergence",
@@ -125,26 +143,8 @@
       "outcome": "hit",
       "realized": -0.0026,
       "check_by": "2026-08-18"
-    },
-    {
-      "id": "2026-07-20-PANW-altconv",
-      "subject": "PANW alt-data convergence",
-      "lean": "overweight",
-      "conviction": "low",
-      "outcome": "hit",
-      "realized": 0.0389,
-      "check_by": "2026-08-18"
-    },
-    {
-      "id": "2026-07-19-DDOG-altconv",
-      "subject": "DDOG alt-data convergence",
-      "lean": "overweight",
-      "conviction": "low",
-      "outcome": "miss",
-      "realized": -0.0835,
-      "check_by": "2026-08-17"
     }
   ],
-  "calibration_note_zh": "\u5df2\u8bc4\u5206 90 \u6761\uff0c\u547d\u4e2d\u7387 0.678\uff08\u65b9\u5411\u51c6\u786e\u7387 0.467\uff09\u3002",
+  "calibration_note_zh": "\u5df2\u8bc4\u5206 92 \u6761\uff0c\u547d\u4e2d\u7387 0.685\uff08\u65b9\u5411\u51c6\u786e\u7387 0.467\uff09\u3002",
   "note": "Alt-data convergence theses graded vs SPY. Context-only \u2014 the signal earns a scored vote only once this track record shows forward edge."
 }

@@ -16,7 +16,7 @@ import socket
 import threading
 import time
 import urllib.parse
-from typing import Any, Mapping
+from typing import Any, Iterable, Mapping
 
 import requests
 
@@ -120,9 +120,30 @@ def _require_public_hostname(host: str) -> None:
         raise CompanyIntelligenceReadError("Company Intelligence public origin must resolve only to public hosts")
 
 
-def _public_base_url() -> str:
-    """Resolve one operator-controlled HTTPS origin, never from tool input."""
-    raw = os.environ.get("COMPANY_INTELLIGENCE_R2_BASE_URL", _DEFAULT_BASE_URL).strip().rstrip("/")
+def _public_base_url(override: str | None = None, *, require_public_host: bool = True) -> str:
+    """Resolve one operator-controlled HTTPS origin — MAJOR-7: the ONE base-
+    URL resolver for both the model-facing reads above and the producer-
+    facing workspace-chain primitives below (never a second implementation).
+
+    *override* lets a producer caller (or a test) pin an explicit origin;
+    model-facing callers never pass it, always resolving from
+    ``COMPANY_INTELLIGENCE_R2_BASE_URL``/the hardcoded default.
+
+    *require_public_host* gates the live DNS/public-IP-only check
+    (:func:`_require_public_hostname`) — always True for the model-facing
+    path (its base can, in principle, come from operator env config read at
+    request time, so the SSRF-style guard stays load-bearing there).
+    Producer/nightly-builder callers (refresh/discovery/chain-walk — trusted
+    admin-side code, never model/tool input) pass ``require_public_host=
+    False``: their *override* is frequently a test-only, non-resolving
+    domain (``example.test``, RFC 2606), and the producer path already runs
+    inside a controlled CI/nightly context rather than serving live model
+    requests. HTTPS-scheme validation, no query/fragment/credentials, and
+    (inside ``_fetch_bytes``) redirect refusal + origin-pinning + a size
+    bound apply UNCONDITIONALLY either way — only the live-DNS check is
+    parameterized.
+    """
+    raw = (override or os.environ.get("COMPANY_INTELLIGENCE_R2_BASE_URL", _DEFAULT_BASE_URL)).strip().rstrip("/")
     parsed = urllib.parse.urlsplit(raw)
     if (
         parsed.scheme.lower() != "https"
@@ -134,7 +155,8 @@ def _public_base_url() -> str:
     ):
         raise CompanyIntelligenceReadError("Company Intelligence public origin is not a safe HTTPS URL")
     _scheme, host, _port = _origin_tuple(parsed)
-    _require_public_hostname(host)
+    if require_public_host:
+        _require_public_hostname(host)
     return raw
 
 
@@ -145,12 +167,18 @@ def _object_url(base_url: str, relative_path: str) -> str:
     return f"{base_url}/{urllib.parse.quote(relative_path, safe='/')}"
 
 
-def _fetch_bytes(url: str, *, limit: int) -> bytes:
+def _fetch_bytes(url: str, *, limit: int, allow_404: bool = False) -> bytes | None:
     """Fetch bounded bytes from R2 with a non-default user agent.
 
     The public R2 binding can reject Python's stock agent.  More importantly,
     the explicit bound prevents an unexpected object from becoming a chat-token
     or memory exhaustion vector.
+
+    *allow_404*: when True, a clean HTTP 404 returns ``None`` instead of
+    raising — MAJOR-7's unified fetch helper, used by the producer-facing
+    workspace-chain primitives (which must distinguish "genuinely not
+    published" from every other failure — the model-facing callers above
+    never pass this and keep raising on 404 exactly as before).
     """
     parsed_url = urllib.parse.urlsplit(url)
     expected_origin = _origin_tuple(parsed_url)
@@ -177,6 +205,8 @@ def _fetch_bytes(url: str, *, limit: int) -> bytes:
                 or _origin_tuple(response_url) != expected_origin
             ):
                 raise CompanyIntelligenceReadError("Company Intelligence public source redirected or changed host")
+            if allow_404 and int(getattr(response, "status_code", 0) or 0) == 404:
+                return None
             response.raise_for_status()
             content_length = response.headers.get("Content-Length")
             if content_length:
@@ -229,6 +259,10 @@ def _load_snapshot(base_url: str) -> tuple[dict[str, Any], dict[str, str]]:
 
     marker_url = _object_url(base_url, "manifest.json")
     marker_body = _fetch_bytes(marker_url, limit=_MAX_MANIFEST_BYTES)
+    # NIT-21: this model-facing call never passes allow_404, so _fetch_bytes
+    # never returns None here — a 404 raises. Assert rather than silently
+    # trust the union type, so the None branch is honestly unreachable.
+    assert marker_body is not None
     marker = _json_object(marker_body, name="Company Intelligence marker")
     try:
         validate_manifest(marker)
@@ -238,6 +272,7 @@ def _load_snapshot(base_url: str) -> tuple[dict[str, Any], dict[str, str]]:
     generation_id = str(marker["generation_id"])
     immutable_url = _object_url(base_url, f"generations/{generation_id}/manifest.json")
     immutable_body = _fetch_bytes(immutable_url, limit=_MAX_MANIFEST_BYTES)
+    assert immutable_body is not None  # NIT-21: allow_404 never passed here
     immutable = _json_object(immutable_body, name="Company Intelligence immutable manifest")
     try:
         validate_manifest(immutable)
@@ -285,6 +320,7 @@ def _load_context(base_url: str, ticker: str) -> tuple[dict[str, Any], dict[str,
 
     company_url = _object_url(base_url, f"generations/{generation_id}/{relative}")
     body = _fetch_bytes(company_url, limit=_MAX_CONTEXT_BYTES)
+    assert body is not None  # NIT-21: allow_404 never passed here
     if len(body) != expected_bytes or sha256(body).hexdigest() != expected_hash:
         raise CompanyIntelligenceReadError("Company Intelligence context failed immutable receipt verification")
     context = _json_object(body, name="Company Intelligence context")
@@ -445,6 +481,7 @@ def _load_workspace_snapshot(base_url: str) -> tuple[dict[str, Any], dict[str, s
 
     marker_url = _object_url(base_url, f"{_EVENT_WORKSPACE_NEST}/manifest.json")
     marker_body = _fetch_bytes(marker_url, limit=_MAX_MANIFEST_BYTES)
+    assert marker_body is not None  # NIT-21: allow_404 never passed here
     marker = _json_object(marker_body, name="event workspace marker")
     try:
         ws.validate_workspace_manifest(marker)
@@ -456,6 +493,7 @@ def _load_workspace_snapshot(base_url: str) -> tuple[dict[str, Any], dict[str, s
         base_url, f"{_EVENT_WORKSPACE_NEST}/generations/{generation_id}/manifest.json"
     )
     immutable_body = _fetch_bytes(immutable_url, limit=_MAX_MANIFEST_BYTES)
+    assert immutable_body is not None  # NIT-21: allow_404 never passed here
     immutable = _json_object(immutable_body, name="event workspace immutable manifest")
     try:
         ws.validate_workspace_manifest(immutable)
@@ -514,6 +552,7 @@ def _load_event_workspace(base_url: str, event_id: str) -> tuple[dict[str, Any],
         base_url, f"{_EVENT_WORKSPACE_NEST}/generations/{generation_id}/{relative}"
     )
     body = _fetch_bytes(workspace_url, limit=_MAX_WORKSPACE_BYTES)
+    assert body is not None  # NIT-21: allow_404 never passed here
     if len(body) != expected_bytes or sha256(body).hexdigest() != expected_hash:
         raise CompanyIntelligenceReadError("event workspace failed immutable receipt verification")
     workspace = _json_object(body, name="event workspace")
@@ -820,3 +859,419 @@ def clear_company_intelligence_cache() -> None:
         _context_cache.clear()
         _workspace_snapshot_cache.clear()
         _workspace_cache.clear()
+
+
+# ---------------------------------------------------------------------------
+# IMCE A5C (frozen spec D) — ONE shared disposition-aware canonical history
+# reader.  Before this PR, three independent implementations fetched the
+# event_workspaces nest over HTTP: scripts.refresh_event_workspaces.
+# load_prior_workspace / load_prior_workspace_for_ticker, and
+# scripts.build_cycle_pattern_imce_prospective._raw_fetch_workspace (whose
+# OWN docstring named itself a duplicate, authorized only as a stopgap).
+# Every one of those functions now delegates to the primitives below.
+#
+# MAJOR-7 (red-team, corrects an earlier draft's false claim): these
+# primitives are NOT a second GET-sequence implementation — they reuse the
+# SAME ``_object_url`` (safe path join) / ``_fetch_bytes`` (HTTPS-scheme
+# check, redirect refusal, origin pinning, size bound) / ``_json_object``
+# machinery the model-facing Brain surface above uses, via ``_fetch_bytes``'s
+# new ``allow_404`` parameter and ``_public_base_url``'s new
+# ``require_public_host`` parameter (see each docstring). There is ONE URL
+# builder, ONE nest-prefix constant pattern, and ONE fetch helper in this
+# module, full stop.
+# ---------------------------------------------------------------------------
+
+
+class WorkspaceChainNotPublished(Exception):
+    """A clean 404 (top-level marker, a generation's own manifest, or one
+    workspace object) — the thing asked for genuinely has no publication
+    yet. Distinct from any OTHER fetch failure (network error, timeout,
+    non-2xx, malformed JSON) — a caller must never conflate the two; see
+    each wrapper's own docstring for the erasure risk of doing so."""
+
+
+class WorkspaceChainIntegrityError(RuntimeError):
+    """A predecessor link in the manifest chain is broken: it names a
+    generation that does not exist, or that generation's own immutable
+    manifest bytes do not hash to the ``previous_manifest_sha256`` receipt
+    the CHILD generation recorded. This is a HARD, typed failure — frozen
+    spec D2(c) requires it never be silently swallowed into a shorter
+    history or an empty revision list."""
+
+
+_WORKSPACE_NEST_PREFIX = "event_workspaces"
+# D2(c): a documented, finite, CONFIGURABLE (via the max_hops parameter)
+# bound on how many predecessor hops a chain walk will follow before
+# refusing — prevents an unbounded walk against a malicious or corrupted
+# chain. MAJOR-8(b): with the semantic-no-op discipline (A4) the chain only
+# grows on a genuine CONTENT change, so real depth is on the order of tens
+# of generations by the first natural multi-quarter event, not hundreds;
+# 500 is generous headroom, not a sizing estimate. Chain compaction/
+# archival of very old generations is explicitly future work, not attempted
+# here.
+DEFAULT_MAX_CHAIN_HOPS = 500
+
+
+def _workspace_object_url(base_url: str, relative_path: str) -> str:
+    """Join a ``event_workspaces/``-relative path onto *base_url* through
+    the SAME safe joiner the model-facing path uses."""
+    return _object_url(base_url, f"{_WORKSPACE_NEST_PREFIX}/{relative_path}")
+
+
+def fetch_current_workspace_marker_raw(
+    *, base_url: str | None = None,
+) -> tuple[bytes, dict[str, Any]] | None:
+    """(raw_bytes, parsed_dict) for the top-level ``event_workspaces/
+    manifest.json`` marker, or ``None`` on a clean 404 (no nest has ever
+    been published). Raises on any other failure.
+
+    MINOR-18: callers that must hash EXACTLY what was fetched (e.g. a
+    producer computing a chain link's ``previous_manifest_sha256``) need
+    the RAW bytes — re-serializing the parsed dict via
+    ``canonical_json_bytes`` is not equivalent in general (see
+    :func:`read_event_source_revisions`'s own MINOR-10 fix, which applies
+    the identical discipline to predecessor-generation manifests)."""
+    resolved = _public_base_url(base_url, require_public_host=False)
+    url = _workspace_object_url(resolved, "manifest.json")
+    body = _fetch_bytes(url, limit=_MAX_MANIFEST_BYTES, allow_404=True)
+    if body is None:
+        return None
+    marker = _json_object(body, name="event workspace marker")
+    return body, marker
+
+
+def fetch_current_workspace_marker(*, base_url: str | None = None) -> dict[str, Any] | None:
+    """The top-level ``event_workspaces/manifest.json`` marker, or ``None``
+    on a clean 404 (no nest has ever been published). Raises on any other
+    failure (network error, timeout, non-2xx, malformed JSON, non-object
+    body, unsafe origin) — a genuine fetch failure must never be read as
+    "no nest yet"."""
+    result = fetch_current_workspace_marker_raw(base_url=base_url)
+    return result[1] if result is not None else None
+
+
+def fetch_generation_manifest(generation_id: str, *, base_url: str | None = None) -> dict[str, Any]:
+    """One generation's own immutable ``manifest.json``.
+
+    Raises ``WorkspaceChainNotPublished`` on a clean 404. Raises any other
+    exception (network error, timeout, non-2xx, malformed JSON, non-object
+    body, unsafe origin) on a genuine fetch failure."""
+    return _fetch_generation_manifest_raw(generation_id, base_url=base_url)[1]
+
+
+def _fetch_generation_manifest_raw(
+    generation_id: str, *, base_url: str | None = None,
+) -> tuple[bytes, dict[str, Any]]:
+    """(raw_bytes, parsed_dict) for one generation's own manifest — MAJOR-8(a):
+    the RAW bytes are returned alongside the parsed object so a predecessor-
+    link verification (MINOR-10: hash the bytes actually fetched, never a
+    re-serialization) can reuse this SAME fetch as the next hop's own
+    "current" manifest, instead of a second GET for the same object."""
+    resolved = _public_base_url(base_url, require_public_host=False)
+    url = _workspace_object_url(resolved, f"generations/{generation_id}/manifest.json")
+    body = _fetch_bytes(url, limit=_MAX_MANIFEST_BYTES, allow_404=True)
+    if body is None:
+        raise WorkspaceChainNotPublished(f"generation {generation_id} manifest 404")
+    manifest = _json_object(body, name=f"generation {generation_id} manifest")
+    return body, manifest
+
+
+def fetch_raw_workspace(event_id: str, generation_id: str, *, base_url: str | None = None) -> dict[str, Any]:
+    """One workspace object, addressed by its OWN generation (no manifest
+    receipt cross-check here — callers that need hash verification against
+    a generation manifest's own ``files`` receipt do that themselves, e.g.
+    :func:`_load_event_workspace` above for the model-facing path).
+
+    Raises ``WorkspaceChainNotPublished`` on a clean 404. Raises any other
+    exception on a genuine fetch failure."""
+    resolved = _public_base_url(base_url, require_public_host=False)
+    url = _workspace_object_url(resolved, f"generations/{generation_id}/workspaces/{event_id}.json")
+    body = _fetch_bytes(url, limit=_MAX_WORKSPACE_BYTES, allow_404=True)
+    if body is None:
+        raise WorkspaceChainNotPublished(f"{event_id}: workspace 404 in generation {generation_id}")
+    payload = _json_object(body, name=f"{event_id} workspace")
+    return payload
+
+
+def load_current_workspace(event_id: str, *, base_url: str | None = None) -> dict[str, Any]:
+    """The event's workspace body in the CURRENTLY PUBLISHED (marker) generation.
+
+    Raises ``WorkspaceChainNotPublished`` when the top-level marker is a
+    clean 404, carries no ``generation_id``, or the event is absent from
+    that generation. Raises any other exception on a genuine fetch failure.
+    """
+    marker = fetch_current_workspace_marker(base_url=base_url)
+    if marker is None:
+        raise WorkspaceChainNotPublished(f"{event_id}: manifest 404")
+    generation_id = str(marker.get("generation_id") or "")
+    if not generation_id:
+        raise WorkspaceChainNotPublished(f"{event_id}: manifest carries no generation_id")
+    return fetch_raw_workspace(event_id, generation_id, base_url=base_url)
+
+
+def load_workspace_with_disposition(
+    event_id: str, *, base_url: str | None = None,
+    fetch: Any = None,
+) -> tuple[dict[str, Any] | None, str]:
+    """(workspace_or_None, disposition) in {"found", "not_published", "fetch_failed"}.
+
+    The three-way disposition D2(a) requires: a genuine network/timeout/
+    non-2xx/malformed-JSON failure must be distinguishable from "this event
+    has no publication yet" — collapsing the two would let a transient CDN
+    blip be minted as "the issuer had no event". *fetch* is injectable for
+    tests (a stub raising ``WorkspaceChainNotPublished`` for a clean 404,
+    any other exception for a network failure, or returning a dict for a
+    hit); production callers never pass it, always exercising
+    :func:`load_current_workspace`.
+    """
+    fetcher = fetch or (lambda eid: load_current_workspace(eid, base_url=base_url))
+    try:
+        return fetcher(event_id), "found"
+    except WorkspaceChainNotPublished:
+        return None, "not_published"
+    except Exception:  # noqa: BLE001 — every other failure is fetch_failed, never silently absent
+        return None, "fetch_failed"
+
+
+def find_current_event_id_for_company(
+    company_id: str, *, base_url: str | None = None,
+) -> str | None:
+    """The event_id of *company_id*'s most-recently-published event in the
+    CURRENT generation, scanning ONLY the generation manifest's own
+    ``files`` map (event_ids, no workspace bodies fetched) — a static,
+    acquisition-independent lookup.
+
+    Returns ``None`` ONLY for: (i) the top-level marker is a clean 404 (no
+    nest ever published); (ii) the current generation's manifest is
+    well-formed and simply carries no entry for *company_id*. EVERY other
+    outcome is an ANOMALY and raises (a marker with no generation_id, that
+    generation's own manifest 404ing, a non-object manifest payload, or a
+    manifest with no usable ``files`` map) — the publish protocol (immutable
+    workspaces, THEN the generation manifest, THEN the marker) guarantees
+    all of those exist once the marker names a generation_id, so any of them
+    failing means something is genuinely broken, not "nothing to carry".
+    On a double match (should never happen — one event per issuer per
+    generation), the NEWEST fiscal period wins, never the first one iterated
+    (``files`` iterates in sorted-string key order, which is NOT
+    chronological).
+    """
+    from engine.company_intelligence.events import parse_canonical_event_id
+
+    marker = fetch_current_workspace_marker(base_url=base_url)
+    if marker is None:
+        return None  # (i)
+    generation_id = str(marker.get("generation_id") or "")
+    if not generation_id:
+        raise WorkspaceChainIntegrityError(
+            "top-level marker carries no generation_id despite a non-404 read"
+        )
+    manifest = fetch_generation_manifest(generation_id, base_url=base_url)
+    if not isinstance(manifest, Mapping):
+        raise WorkspaceChainIntegrityError(
+            f"generation {generation_id} manifest payload is not an object"
+        )
+    files = manifest.get("files")
+    if not isinstance(files, Mapping):
+        raise WorkspaceChainIntegrityError(
+            f"generation {generation_id} manifest carries no usable 'files' map"
+        )
+    matches: list[tuple[tuple[int, int], str]] = []
+    for relative in files:
+        relative_text = str(relative)
+        if not relative_text.startswith("workspaces/") or not relative_text.endswith(".json"):
+            continue
+        candidate_event_id = relative_text[len("workspaces/"):-len(".json")]
+        try:
+            candidate_company_id, fiscal_period, _event_type = parse_canonical_event_id(candidate_event_id)
+        except Exception:  # noqa: BLE001 — a non-canonical file name is simply not a match
+            continue
+        if candidate_company_id == company_id:
+            matches.append(((fiscal_period.year, fiscal_period.quarter or 0), candidate_event_id))
+    if not matches:
+        return None  # (ii)
+    matches.sort(key=lambda item: item[0])
+    return matches[-1][1]
+
+
+def _event_revision_from_generation(
+    manifest: Mapping[str, Any], event_id: str, *, generation_id: str, base_url: str | None,
+) -> dict[str, Any] | None:
+    """The event's workspace body in *manifest*'s own generation, or None if
+    this generation's manifest carries no entry for the event at all (a
+    carried-forward nest that predates this event's first appearance, or an
+    event that had already been superseded off the nest by this point)."""
+    files = manifest.get("files") if isinstance(manifest.get("files"), Mapping) else {}
+    relative = f"workspaces/{event_id}.json"
+    if relative not in files:
+        return None
+    return fetch_raw_workspace(event_id, generation_id, base_url=base_url)
+
+
+def _receipt_from_revision(revision: Mapping[str, Any], *, generation_id: str) -> dict[str, Any]:
+    """One event's workspace body, at one generation, as the receipt dict
+    both walk functions below return: ``generation_id``, ``source_sha256``
+    (the workspace's own issuer_release source row hash, or ``None`` if
+    absent), ``source_available_at``, ``observed_at``, ``lifecycle_state``,
+    ``form`` (the issuer_release source row's SEC form), and ``workspace``
+    (the full body)."""
+    lifecycle = revision.get("lifecycle") if isinstance(revision.get("lifecycle"), Mapping) else {}
+    source_sha256 = None
+    form = None
+    for source in revision.get("sources") or []:
+        if isinstance(source, Mapping) and source.get("kind") == "issuer_release":
+            source_sha256 = source.get("source_sha256")
+            form = source.get("form")
+            break
+    return {
+        "generation_id": generation_id,
+        "source_sha256": source_sha256,
+        "source_available_at": lifecycle.get("source_available_at"),
+        "observed_at": lifecycle.get("observed_at"),
+        "lifecycle_state": lifecycle.get("state"),
+        "form": form,
+        "workspace": revision,
+    }
+
+
+def _dedupe_carry_forward_hops(newest_first: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """OLDEST FIRST, with CONSECUTIVE generations carrying a byte-identical
+    ``source_sha256`` (a carry-forward hop, WORLD STATE note) deduped —
+    only the FIRST generation that introduced a given source_sha256 is
+    kept, so a carry creates no phantom revision."""
+    oldest_first = list(reversed(newest_first))
+    deduped: list[dict[str, Any]] = []
+    for revision in oldest_first:
+        if deduped and revision["source_sha256"] == deduped[-1]["source_sha256"]:
+            continue
+        deduped.append(revision)
+    return deduped
+
+
+def read_all_event_source_revisions(
+    event_ids: Iterable[str],
+    *,
+    base_url: str | None = None,
+    max_hops: int = DEFAULT_MAX_CHAIN_HOPS,
+    start_generation_id: str | None = None,
+) -> dict[str, list[dict[str, Any]]]:
+    """Walk the verified predecessor chain ONCE and return EACH of
+    *event_ids*' own ordered source revisions, OLDEST FIRST — the SAME
+    per-hop verification semantics as :func:`read_event_source_revisions`
+    (raw-byte hash receipts, typed integrity failures on a broken link, the
+    documented hop bound), but performing exactly ONE bounded walk no
+    matter how many events are requested.
+
+    Production incident addendum (2026-08-23): a post-incident chain of
+    ~170+ generations measured 153 SECONDS for a single-event walk via
+    :func:`read_event_source_revisions`; the A5B nightly builder was
+    calling that once PER CANDIDATE event (~8), which threatens the
+    nightly render budget (~20 minutes of pure chain-walking). The walk
+    itself is IDENTICAL for every event in one run — this function fetches
+    each generation's manifest exactly ONCE (was O(events x hops); now
+    O(hops)) and extracts every requested event's own revision from that
+    SAME fetched manifest at each hop.
+
+    Returns a dict keyed by every one of *event_ids* (never a subset) —
+    an id with no revisions anywhere in the walked chain maps to an empty
+    list, so a caller can always index the result by every id it asked
+    for. *start_generation_id* lets a caller resume from a KNOWN
+    generation_id without a fresh marker fetch; default resolves the
+    CURRENT published marker.
+    """
+    ids = {str(event_id) for event_id in event_ids}
+    if start_generation_id is not None:
+        generation_id: str | None = start_generation_id
+        manifest: dict[str, Any] | None = None
+    else:
+        marker = fetch_current_workspace_marker(base_url=base_url)
+        generation_id = str(marker["generation_id"]) if marker else None
+        manifest = None
+
+    newest_first: dict[str, list[dict[str, Any]]] = {event_id: [] for event_id in ids}
+    hops = 0
+    while generation_id is not None:
+        if hops >= max_hops:
+            raise WorkspaceChainIntegrityError(
+                f"predecessor chain exceeds the {max_hops}-hop bound without reaching a root "
+                "— refusing an unbounded walk"
+            )
+        hops += 1
+        if manifest is None:
+            # First iteration (fresh marker read, or a caller-supplied
+            # start_generation_id): fetch fresh. On every LATER iteration
+            # this generation's bytes were already fetched+hash-verified as
+            # the PREVIOUS hop's predecessor — reused below (MAJOR-8(a): no
+            # second fetch per hop).
+            try:
+                _manifest_bytes, manifest = _fetch_generation_manifest_raw(generation_id, base_url=base_url)
+            except WorkspaceChainNotPublished as exc:
+                raise WorkspaceChainIntegrityError(
+                    f"chain link names generation {generation_id!r}, which does not exist"
+                ) from exc
+
+        # ONE manifest fetch above serves EVERY requested event_id at this
+        # hop — the fix's whole point (was one fetch per event PER hop).
+        for event_id in ids:
+            revision = _event_revision_from_generation(
+                manifest, event_id, generation_id=generation_id, base_url=base_url,
+            )
+            if revision is not None:
+                newest_first[event_id].append(_receipt_from_revision(revision, generation_id=generation_id))
+
+        schema = manifest.get("schema")
+        if schema == "event_workspace_manifest.v1":
+            break  # v1 is the chain root; no predecessor field to follow.
+        previous_id = manifest.get("previous_generation_id")
+        if previous_id is None:
+            break  # A genuine first-ever v2 generation.
+        previous_id = str(previous_id)
+        expected_sha = str(manifest.get("previous_manifest_sha256") or "")
+        try:
+            predecessor_bytes, predecessor_manifest = _fetch_generation_manifest_raw(previous_id, base_url=base_url)
+        except WorkspaceChainNotPublished as exc:
+            raise WorkspaceChainIntegrityError(
+                f"generation {generation_id} names predecessor {previous_id!r}, which does not exist"
+            ) from exc
+        # MINOR-10: verify against the sha256 of the RAW FETCHED BYTES of
+        # the predecessor manifest — never a re-serialization of the parsed
+        # dict, which would not catch a byte-level divergence that happens
+        # to parse identically.
+        actual_sha = sha256(predecessor_bytes).hexdigest()
+        if actual_sha != expected_sha:
+            raise WorkspaceChainIntegrityError(
+                f"generation {generation_id}'s previous_manifest_sha256 ({expected_sha!r}) does not "
+                f"match predecessor {previous_id}'s actual manifest bytes ({actual_sha!r})"
+            )
+        # MAJOR-8(a): the predecessor's bytes/manifest are ALREADY verified —
+        # reuse them as the NEXT loop iteration's "current" generation
+        # instead of re-fetching (halves manifest GETs from 2N to N).
+        generation_id = previous_id
+        manifest = predecessor_manifest
+
+    return {event_id: _dedupe_carry_forward_hops(revisions) for event_id, revisions in newest_first.items()}
+
+
+def read_event_source_revisions(
+    event_id: str,
+    *,
+    base_url: str | None = None,
+    max_hops: int = DEFAULT_MAX_CHAIN_HOPS,
+    start_generation_id: str | None = None,
+) -> list[dict[str, Any]]:
+    """Walk the verified predecessor chain and return *event_id*'s own
+    ordered source revisions, OLDEST FIRST — a thin single-event wrapper
+    over :func:`read_all_event_source_revisions` (production incident
+    addendum, 2026-08-23), so the two share ONE walk implementation rather
+    than two that could drift. See that function's docstring for the full
+    per-hop verification semantics (raw-byte hash receipts, typed
+    integrity failures, the documented hop bound) and the carry-forward
+    dedupe rule.
+
+    *start_generation_id* lets a caller resume from a KNOWN generation_id
+    without a fresh marker fetch (e.g. the generation just minted locally
+    this cycle, not yet visible on R2 under cache); default resolves the
+    CURRENT published marker.
+    """
+    return read_all_event_source_revisions(
+        (event_id,), base_url=base_url, max_hops=max_hops, start_generation_id=start_generation_id,
+    )[event_id]

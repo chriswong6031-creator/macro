@@ -391,7 +391,7 @@ def test_index_clocks_never_become_sec_accepted_at(tmp_path: Path) -> None:
     assert manifest["sec_accepted_at"] != manifest["submissions_retrieved_at"]
 
 
-def test_recovery_mode_is_not_commissioned_before_sec_or_r2(tmp_path: Path) -> None:
+def test_recovery_requires_complete_anchor_before_sec_or_r2(tmp_path: Path) -> None:
     repo, universe, store = _layout(tmp_path, [(AAPL[0], 320193)])
     fake = FakeSec()
     fake.set_index([_idx_row(AAPL[1], "10-Q", "2026-07-20", "0000320193-26-000040")])
@@ -422,14 +422,18 @@ def test_recovery_mode_is_not_commissioned_before_sec_or_r2(tmp_path: Path) -> N
     assert store.get_bytes_strict(index_latest_key("2026-Q3")) is None
 
 
-def test_july_recovery_derives_only_canonical_relevant_ciks(tmp_path: Path) -> None:
-    """July recovery execution is not commissioned on this build."""
-    test_recovery_mode_is_not_commissioned_before_sec_or_r2(tmp_path)
+def test_july_recovery_cannot_invent_a_plan_without_complete_index_evidence(
+    tmp_path: Path,
+) -> None:
+    """The bounded engine requires a complete canonical index epoch first."""
+    test_recovery_requires_complete_anchor_before_sec_or_r2(tmp_path)
 
 
-def test_recovery_continuation_does_not_repoll_the_universe(tmp_path: Path) -> None:
-    """The 8→5→2 Submissions recovery shape is not accepted architecture."""
-    test_recovery_mode_is_not_commissioned_before_sec_or_r2(tmp_path)
+def test_recovery_continuation_cannot_bootstrap_an_all_pending_fanout(
+    tmp_path: Path,
+) -> None:
+    """No complete anchor means no plan, issuer scan, or continuation mutation."""
+    test_recovery_requires_complete_anchor_before_sec_or_r2(tmp_path)
 
 
 def test_pit_cutoff_index_event_is_not_consumed_and_retries(tmp_path: Path) -> None:

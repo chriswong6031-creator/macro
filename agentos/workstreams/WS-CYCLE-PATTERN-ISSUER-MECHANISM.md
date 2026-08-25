@@ -288,12 +288,14 @@ waves:
       honestly open per R6.
   - id: A5A
     title: IMCE-A5A — event-workspace publication generalization (DHI/PHM/KBH/TOL results events through the existing event_workspace.v1 path; source truth only)
-    status: awaiting_ci
+    status: done
+    pr: 6270
     depends_on: [A4]
     next_action: >
-      BUILT — DRAFT PR open, pending the commissioning session's review and
-      merge (this record will not say "done" until that PR lands on
-      origin/main; update the status/commit hash then). Ran the registered
+      DONE — MERGED. PR #6270 landed as
+      5b8ca994de05345d3cea514c46c27611bfe496d1 (verified as this session's
+      origin/main ancestor pin via `git merge-base --is-ancestor`; A5B below
+      branches from this exact commit). Ran the registered
       homebuilder v0 experiment's SOURCE PLANE — nothing else —
       through the existing Company Intelligence event_workspace.v1 publication
       lane: no new source/event/document store, no new scheduler, no copied
@@ -333,6 +335,927 @@ waves:
       the diff — every new fixture/test is labelled historical/reconstruction.
       LEN/NVR are NOT added this wave (Sol: LEN outside v0; NVR separate
       stratum). Next gate: A5B (not yet scoped by this wave).
+  - id: A5B
+    title: IMCE-A5B — registered prospective forward capture (decision-time M_t/R_t/C_t observation ledger; zero outcome fields)
+    status: done
+    pr: 6281
+    depends_on: [A5A]
+    next_action: >
+      DONE — PR #6281 MERGED 9d14a3529d1c 2026-08-23T04:27:34Z (final head
+      84b0437cdbdc after sweeper update-branch; adjudicated content head
+      6018e67302ca; merge server-verified contained in origin/main), branched
+      from fresh origin/main pinned to the A5A merge SHA
+      5b8ca994de05345d3cea514c46c27611bfe496d1. Deployed classification:
+      BUILT_NOT_PROVEN (honest — activation_started_at stamps on the first
+      successful production nightly; no post-activation earnings event can
+      exist before it; PROVEN_LIVE requires a real DHI/PHM/KBH/TOL event with
+      source_available_at >= activation to flow source plane -> nightly
+      writer -> durable first observation -> measurement consumer).
+      One new bounded module
+      engine/cycle_pattern/imce_prospective.py (append-only JSONL,
+      activation/observation/correction row kinds, content-addressed
+      observation_id, first-observation-wins keying on
+      (event_id, decision_cutoff), activation-law fencing that also binds
+      contributing-issuer states — ENFORCED AT BOTH the builder script AND
+      (red-team M7 hardening, below) the module itself, independent of
+      caller discipline — an outcome-field blacklist assertion, and a
+      reconstruction/production write-path law enforced bidirectionally so
+      tests can never touch the production ledger). M_t's sign table, ≥2-
+      contributor pooling floor, tie handling, and label rule implement
+      research/imce/IMCE_A4P_ORDER_SOFTNESS_STATE_CONSTRUCTION_V1.md
+      VERBATIM and are UNCHANGED end to end (red-team-verified constant-exact
+      against the frozen doc; §2 lookup table, §3.1 ≥2-contributor pooling
+      floor with any tie typed MIXED, 4/4→cohort / 2-3→named_subset / <2→
+      NOT_RECONSTRUCTABLE label rule) — per-issuer CONTRIBUTOR ELIGIBILITY,
+      upstream of that verbatim arithmetic, gained two new gates in the
+      red-team fixes below (calendar-quarter pooling-key alignment;
+      denominator-convention conformance) — reusing A5A's own extracted facts
+      (fact_net_orders_current/prior_year, fact_cancellation_rate_current/
+      prior_year/denominator, plus TOL's beginning-quarter-backlog
+      sensitivity fact) — zero new threshold/model/issuer logic. TOL's §1b
+      mandatory sensitivity diagnostic is honestly NOT_RECONSTRUCTABLE this
+      wave (A5A's source plane extracts only the current-period backlog
+      figure, no prior-year comparator under that basis — a source-coverage
+      gap, never an imputed one). R_t reuses engine.htf_durability's
+      _biweekly_close + engine.technicals.macd_hist (classic 12/26/9),
+      PIT-bounded via engine.session_digest.session_window_et session-close
+      admissibility, reading the ticker's house-canonical plane via
+      engine.stock_identity.plane.primary_planes() (all four issuers resolve
+      to baskets_ohlcv_v1 — none are on the deeper stocks_tr_v1 plane — no
+      fallback across planes; the forbidden strings "2W-FRI"/"_resample_
+      weekly" are pinned absent by test). C_t captures Treasury CMT as an
+      honest typed absence (GO_LIMITED authorizes persistence but this repo
+      has no first-party Daily Treasury Par Yield Curve fetcher/store yet —
+      building one is new collector infrastructure, deferred rather than
+      improvised); PMMS held/never persisted, FRED/ALFRED/NAR excluded,
+      matching the registered contract's rights table exactly. Nightly
+      wiring: one step (build_cycle_pattern_imce_prospective) added to
+      daily.yml's cl_misc band via scripts/ci/daily_engine_regional_desk_builders.sh
+      (+ its ORDER string) and the matching config/dag.yml cl_misc block
+      ONLY (not render.yml's/engine-render.yml's separate cl_misc blocks,
+      which deliberately omit every other DAILY-ONLY forward-ledger writer
+      in this family) — verified by `pytest tests/test_dag_conformance.py`
+      (48 passed). The builder discovers candidate events via
+      engine.company_intelligence.events.canonical_event_id over a bounded
+      lookback window and reads them from the SAME public-origin R2 prefix
+      A5A already established. CORRECTED CLAIM (red-team N2 — the original
+      text here said "no second reader implementation," which the B3 fix
+      below made false): the builder's own
+      _raw_fetch_workspace/_load_workspace_with_disposition duplicates
+      scripts.refresh_event_workspaces.load_prior_workspace's base-URL
+      resolution and GET sequence on purpose, because that existing reader
+      is deliberately fail-soft for ITS OWN callers and cannot distinguish
+      a clean 404 from a network failure — exactly the distinction B3
+      requires. This is a real, named drift risk (two copies of one GET
+      sequence); the correct long-term fix is lifting a disposition-aware
+      fetch into refresh_event_workspaces.py itself, deliberately NOT done
+      in this PR (that file is A5A's, out of this build's scope). Consumer:
+      scripts/build_measurement.py gained build_imce_prospective_projection()
+      (registration state, activation timestamp, last decision cutoff,
+      per-issuer observation counts, cohort/named_subset/NOT_RECONSTRUCTABLE
+      counts, outcomes = fenced / 0 always) rendered as a new below-the-fold
+      subpanel in templates/measurement.html.j2 reusing the existing
+      Evidence-Gap panel's eg-* component set (no new visual language),
+      bilingual EN/ZH. No allowlist edit needed in
+      scripts/check_cycle_pattern_authority.py — both new files match its
+      existing scripts.build_cycle_pattern_/engine.cycle_pattern. prefixes.
+      New tests (tests/test_imce_prospective.py, 57 cases): activation
+      idempotence; first-observation-wins + duplicate no-op; correction
+      append with byte-exact original-packet immutability; activation-law
+      fencing + bidirectional reconstruction/production path enforcement;
+      the full order_softness lookup table + missing-never-zero +
+      no-state-carry-forward; the pooling floor/tie/label truth table; the
+      outcome-field blacklist over every declared token; PIT bar
+      admissibility against the REAL committed data/baskets/ohlcv/*.parquet
+      files (no network); the measurement projection rebuilding purely from
+      a reconstruction-mode ledger; and the cycle-pattern authority guard's
+      own selftest plus a direct scan of both new files. The production
+      ledger path is never created by this wave — this session verified
+      `data/cycle_pattern/imce_prospective_observation_v1.jsonl` does not
+      exist after the full test run; per frozen spec item 15 the file is
+      left for the first real nightly run to create (never pre-seeded empty
+      in git), because manufacturing even an empty pre-activation file risks
+      being read as a production timestamp before any real nightly has run.
+      Proof classification: BUILT_NOT_PROVEN, honestly — no real
+      post-activation earnings event can exist before the first post-merge
+      nightly; this wave does not backfill or manufacture one. Next gate:
+      whatever the commissioning session names after reviewing this draft
+      (a real post-activation observation is the natural A5B proof event).
+
+      RED-TEAM FIXES (same PR #6281, same branch — BLOCK verdict returned 3
+      blockers/4 majors/3 minors; M_t sign table/floor/tie/label logic
+      verified constant-exact and untouched by any fix below). B1: R_t
+      admissibility was daily-bar-only, so a truncated series could emit a
+      biweekly bar labelled by a FUTURE (not-yet-closed) period-end built
+      from a partial week — fixed by additionally filtering the biweekly
+      resample's own period-end dates through the same session-close
+      admissibility check; stamps last_biweekly_period_end; reproduced and
+      fixed against real DHI bars (Wed 2026-08-19 cutoff no longer admits
+      the 2026-08-21 period; sign flips + -> - exactly as the review
+      predicted once the period genuinely closes). B2: the outcome-field
+      blacklist was exact-match only — hardened to normalized-stem substring
+      matching (separator-stripped, lowercased) plus two added tokens
+      (fwd_ret, outcome); test-verified against forward_return_63d,
+      fwd_ret_21d, brier_score_90d, hit_rate_pct, p_value_two_sided,
+      sharpe_1y, forwardReturn, outcome, with an explicit no-false-positive
+      check against the real packet schema. B3: load_prior_workspace's own
+      fail-soft design (correct for ITS callers) meant the builder could not
+      tell a network failure from a genuine not-yet-published event —
+      addressed with an injectable-fetch classifier
+      (found/not_published/fetch_failed) mirroring load_prior_workspace's
+      own base-URL/manifest/workspace GET sequence without touching that
+      function or any other caller; ANY fetch_failed anywhere in a run now
+      defers every observation that run (no row written, activation not
+      stamped if this is the first run) — the roster is fixed and every
+      pooled read spans all four tickers, so one failure taints all of them
+      equally; the next nightly retries cleanly. M4: correction detection
+      keyed on exhibit sha256, which does not move on re-extraction, and an
+      8-K/A mints a new decision_cutoff, producing an unlinked second
+      observation instead of a correction — fixed at the module level
+      (append_observation now refuses a second observation for any event_id
+      that already has one, forcing the caller through append_correction)
+      plus a new packet_materially_differs() gate (generation_id change AND
+      a genuinely different derived per-issuer state — a cosmetic republish
+      is not material) that the builder uses to decide correction-worthy vs
+      no-op. M5: contributor snapshots had no recency bound at all — fixed
+      by implementing (mechanically, generically, from calendar_end alone)
+      the ACTUAL frozen calendar-quarter pooling key from
+      research/imce/IMCE_HB0_SOURCE_DEFINITION_CENSUS_V1.md §4b ("Pooling
+      key (NEW) = calendar quarter by majority-month", verified
+      zero-collision across all six roster issuers) — NOTE: this is a more
+      precise, independently-verified, ALREADY-FROZEN source than the
+      review's own proposed "same-or-preceding-quarter" approximation, which
+      it therefore supersedes rather than contradicts; a misaligned
+      contributor is typed activation_law="stale_snapshot_outside_aligned_
+      quarter". M6: c_t leg observation_timestamp (and the R_t leg's new
+      read-time vintage stamp, added for item (i) below) sat inside the
+      hashed body, so two identical builds at different wall-clock times
+      minted different observation_ids — both keys are now stripped from
+      compute_observation_id()'s hashed body (never from the stored packet)
+      and a same-inputs-different-wall-time test proves identical ids. M7:
+      activation-law fencing lived only in the builder — append_observation
+      now independently rejects any packet whose decision_cutoff predates
+      the ledger's own activation row; every non-reconstruction write
+      (ensure_activation/append_observation/append_correction) now
+      additionally requires an explicit production=True, which only the
+      nightly's --production CLI flag (wired into cl_misc's brun call)
+      supplies — a bare invocation refuses every write; and the builder now
+      fetches candidates BEFORE calling ensure_activation, so a first run
+      whose manifest read fails never burns the activation clock. MIN8: TOL
+      sensitivity's prior-year value is now a REAL fact lookup
+      (fact_cancellation_rate_beginning_backlog_sensitivity_prior_year) —
+      honestly NOT_RECONSTRUCTABLE today because A5A does not yet emit that
+      fact_id, self-healing the day it does. MIN9: a new denominator-
+      convention conformance guard checks the captured
+      fact_cancellation_rate_denominator text against the construction
+      doc's §1 frozen per-issuer keywords, excluding the contributor on
+      mismatch. MIN10: pmms/fred_alfred/nar_series now carry the same full
+      C_t leg shape as treasury_cmt. Item (i): R_t's adjustment_basis no
+      longer implies a stable/frozen basis it cannot evidence — it now
+      states plainly that the plane back-adjusts at READ TIME, values are
+      not guaranteed stable across re-reads if a corporate action posts
+      retroactively, and sign stability holds only absent such an event;
+      `vintage` records the read-time timestamp, never a per-bar revision
+      vintage the plane does not itself carry. tests/test_imce_prospective.py
+      grew from 57 to 100 cases covering every fix above (including the
+      builder's fetch-disposition classifier and correction-routing logic,
+      via injectable stubs — still zero network). Re-verified after the
+      fixes: pytest tests/test_imce_prospective.py (100 passed);
+      tests/test_dag_conformance.py (48 passed, --production arg addition
+      does not disturb parsing); tests/test_issuer_profiles_a5a.py +
+      tests/test_build_cycle_pattern_state.py (no regression, combined
+      with the above: 186 passed); python3 scripts/agentos.py validate (0
+      errors); python3 scripts/check_cycle_pattern_authority.py (exit 0,
+      same pre-existing unrelated WARNs, 0 HARD). python3
+      scripts/check_contract_delta.py --base
+      5b8ca994de05345d3cea514c46c27611bfe496d1 FIRST caught a genuine
+      finding of its own (tests/test_imce_prospective.py "named by no run:
+      step in any workflow") — healed by adding the file to the existing
+      DISABLED (`if: ${{ false }}`) unrun-neuralweb-cortex job's
+      cycle_pattern pytest line in .github/ci/legacy-jobs.yml, next to its
+      closest sibling tests/test_build_cycle_pattern_state.py (that job's
+      sibling test_issuer_profiles_a5a.py lives in an identically-disabled
+      neural-web-core job — a pre-existing house pattern of "named but not
+      scheduled," satisfying audit_unrun_tests.py's naming contract without
+      inventing a new one); re-run after the heal: 0 introduced, 0
+      inherited. tests/test_ci_pack.py re-run clean after the
+      legacy-jobs.yml edit (no pack-weight/import-closure regression).
+
+      VERIFICATION-PASS RESIDUALS (same PR #6281, same branch — coordinator
+      APPROVED all 10 red-team findings fixed with zero regressions, then
+      named four small residuals, all closed in one commit). N1: the
+      blacklist alone was still stem-incomplete (bare "return_63d" passed);
+      per the reviewer's stronger requirement, added a frozen-schema
+      WHITELIST test asserting the exact key set of the packet's top level,
+      trigger, m_t, every per-issuer entry (+ TOL's sensitivity block), r_t
+      (+ every leg), c_t (+ every leg), and prophet_flags — any unexpected
+      key of ANY kind now fails loudly; the blacklist stays as unchanged
+      defence-in-depth (plus a trivial added "return" stem). N2: corrected
+      a false claim — the builder's fetch is NOT a reuse of
+      load_prior_workspace, it is a second, disposition-classifying
+      implementation that duplicates that function's GET sequence on
+      purpose (that reader cannot distinguish 404 from network error); both
+      the builder's own docstring and this record now name the drift risk
+      explicitly and point at lifting a shared implementation into
+      refresh_event_workspaces.py as future consolidation — deliberately
+      NOT done in this PR (out of scope, A5A's file). N3:
+      append_observation now RAISES on a same-(event_id, decision_cutoff)
+      collision whose derived content materially differs (via
+      packet_materially_differs) rather than silently trusting the key over
+      the content; a genuinely identical rebuild still no-ops. N4: the B3
+      all-or-nothing deferral now also emits a bare
+      print("::warning title=imce-prospective-deferred::...", flush=True)
+      alongside the existing log.warning, so it is visible in the Actions
+      summary — verified against tests/test_gh_annotation_line_start.py's
+      own conventions (scripts/ is a scanned, non-exempt directory).
+      tests/test_imce_prospective.py grew 100 -> 110 cases. Re-verified:
+      pytest tests/test_imce_prospective.py tests/test_gh_annotation_line_
+      start.py (114 passed); python3 scripts/agentos.py validate (0
+      errors); python3 scripts/check_contract_delta.py --base
+      5b8ca994de05345d3cea514c46c27611bfe496d1 (0 introduced, 0 inherited).
+      Production ledger path still never created by this session. PR stays
+      DRAFT pending the commissioning session's re-review.
+  - id: A5C-alpha
+    title: IMCE-A5C-alpha — fail-closed correction detection pending source-revision history (Sol A5C review item 1; Opus BLOCKER-1 hardened)
+    status: done
+    pr: 6308
+    depends_on: [A5B]
+    next_action: >
+      MERGED 2026-08-23 as 2ee5c16724da (PR #6308) — closure record:
+      agentos/handoffs/CYCLE-PATTERN-ISSUER-MECHANISM-2026-08-23.md.
+      Sol's A5C review (2026-08-23) named item 1: "no correction to a
+      pre-activation event can ever enter the prospective cohort as a new
+      observation" — until canonical source-revision history exists, A5B
+      must fail closed rather than mint an observation from a corrected
+      event_workspace when no prior observation exists for that event_id.
+      PR #6308 (branch claude/imce-a5c-safety-law, off fresh origin/main)
+      is an INTERIM guard built on TWO durable safety signals, not a
+      permanent backstop — the honest fix requires the manifest/history
+      chain (a separate future PR); a named residual gap survives this PR
+      (below). FIRST PASS shipped a single signal (workspace
+      lifecycle.state); an Opus red-team pass (2026-08-23, BLOCK: 1
+      blocker/2 majors/3 minors) found that signal TRANSIENT — the only
+      producer (event_workspace_build.py's prior_source_sha256 check) fires
+      once, then the NEXT unchanged-source republish (~3h later) silently
+      walks the state back to "complete", so the exact mint Sol forbade
+      proceeded silently in ~7/8 corrections (measured window ~1
+      generation of 24). FIX ROUND (same PR, same branch, commission-widened
+      scope to include engine/company_intelligence — the original "no
+      engine/company_intelligence file" scope line is explicitly overridden
+      for this fix only): (1a) STICKY CORRECTED STATE —
+      scripts/refresh_event_workspaces.py now reads the prior workspace's
+      own lifecycle.state (new prior_lifecycle_state() helper) and passes
+      it into build_event_workspace, which — when the source sha is
+      UNCHANGED but the prior state was already "corrected" — re-applies
+      the corrected transition (corrected -> corrected is a legal
+      self-transition per events.py's _TRANSITIONS) instead of re-deriving
+      "complete" from scratch; sha-changed behavior is byte-for-byte
+      unchanged. (1b) FORM IN THE SOURCE ROW — the bound filing's own
+      SEC-assigned form ("8-K"/"8-K/A", already bound but previously
+      dropped) now travels into the issuer_release source row
+      (event_workspace_build.py); cross-repo preflight (grepped
+      charting-app's origin/master canonical eventWorkspace.ts /
+      eventWorkspacePresent.ts) confirmed neither macro's
+      validate_event_workspace nor Terminal's normalizeSource() exact-keys
+      nested source rows — both are permissive pickers, so the new key is
+      safe on both sides. (1c) A5B GATE ON BOTH SIGNALS —
+      engine/cycle_pattern/imce_prospective.py gains
+      is_safe_original_source_form() (form == "8-K" EXACTLY; missing/
+      other/None is unsafe) alongside is_safe_original_lifecycle_state();
+      append_observation now takes trigger_lifecycle_state AND
+      trigger_source_form and refuses unless BOTH are safe — still zero
+      ledger schema change (both travel as function parameters; the frozen
+      N1 whitelist tests pass with unchanged key sets), still per-candidate
+      only (does not join failed_ids, does not stamp/unstamp activation).
+      MAJOR-2 fix: the ::warning line now reports the OBSERVED
+      lifecycle_state and source_form verbatim (via !r), never an asserted
+      "corrected revision" diagnosis that could misdescribe a missing field
+      or a genuinely novel state. NAMED RESIDUAL GAP (not closed by this
+      PR): a replacement NON-amendment 8-K whose original was never
+      published at all still presents as a first-ever "complete"/"8-K"
+      revision to BOTH signals — only the manifest/history chain closes
+      that. Tests: tests/test_company_intelligence_event_workspace.py +3
+      (sticky-corrected regression, non-corrected-state regression, form
+      field regression); tests/test_refresh_event_workspaces.py +1
+      (end-to-end sticky-corrected + byte-stable semantic-no-op across a
+      three-refresh sequence); tests/test_imce_prospective.py — fixture
+      default lifecycle_state corrected from the placeholder
+      "results_released" (never a real events.py EVENT_STATES value) to
+      "complete", fixture gained a source_form="8-K" default, all
+      first-write call sites updated to pass both signals explicitly, plus
+      14 new A5C test functions (26 parametrized cases, verified via
+      `git diff origin/main -- tests/test_imce_prospective.py | grep -c
+      '^+def test_'` at this record's own final head — round-2's report
+      undercounted at "12" because it was measured before that round's
+      final 2 mutation-kill tests were added; empty-ledger
+      refusal + line-start-pinned ::warning content assertion, sibling-
+      event isolation, existing-observation correction regression,
+      safe-state regression, a REAL builder happy-path run asserting
+      n_observations_appended==1 on disk (MAJOR-3 — the earlier suite only
+      ever asserted ==0, so a builder key-read bug could have silently
+      refused every candidate forever and stayed green), no-deferral/
+      no-activation-block, idempotence across reruns, unknown/future
+      lifecycle-state fail-closed vocabulary parametrized over 8 values
+      with source_form pinned safe, missing/wrong source-form fail-closed
+      parametrized over 6 values with lifecycle_state pinned safe,
+      SAFE_ORIGINAL_LIFECYCLE_STATES <= the real EVENT_STATES vocabulary
+      (MINOR-6), frozen-schema-whitelist non-disturbance). Verified: pytest
+      tests/test_imce_prospective.py tests/test_refresh_event_workspaces.py
+      tests/test_company_intelligence_event_workspace.py
+      tests/test_gh_annotation_line_start.py (188 passed, 2 skipped —
+      needs_full_checkout price-leg tests, expected in this sparse
+      worktree); python3 scripts/check_cycle_pattern_authority.py's own
+      pytest-level selftest + no-hard-findings tests pass (2 passed; the
+      standalone CLI's HARD "zero rows" finding is a sparse-worktree
+      artifact — data/ is not checked out here — not a regression);
+      python3 scripts/agentos.py validate (0 errors, same 28 pre-existing
+      unrelated warnings). DRAFT PR — commissioning session adjudicates and
+      merges; not marked ready, merge-on-green not armed.
+
+      VERIFICATION ROUND 2 (same PR #6308, same branch — Opus red-team,
+      2026-08-23: everything from round 1 confirmed FIXED via independent
+      falsify-and-pass re-testing; three NEW findings from the hardening
+      itself). NEW-1 (BLOCKER): load_prior_workspace was fail-soft on EVERY
+      error — a clean 404 and a genuine network failure both returned None,
+      so one transient HTTP failure on the prior read made
+      prior_lifecycle_state=None AND prior_source_sha256=None, walking the
+      rebuild started->complete and PERMANENTLY erasing a sticky "corrected"
+      state (the de-corrected workspace becomes the new prior on the very
+      next read). Fixed by splitting dispositions exactly as the A5B
+      builder already does (mirrored, implemented locally in
+      refresh_event_workspaces.py): new PriorWorkspaceFetchFailed exception
+      + _raw_load_prior_workspace/_PriorWorkspaceNotPublished; a clean
+      not-published 404 still returns None (first-generation, unchanged);
+      any other failure now RAISES, surfaced via a bare line-start
+      print("::warning title=event-workspace-prior-fetch-failed::...",
+      flush=True) naming the event and the error class. Flagship: raises
+      RefreshError (refuses the whole refresh this cycle) — chosen over
+      skip semantics because refresh() has no per-issuer loop to skip
+      within for the single flagship record, consistent with its existing
+      all-or-nothing acquisition/build-error discipline. Homebuilders: the
+      exception propagates uncaught out of
+      acquire_and_build_homebuilder_workspace (which already does no local
+      try/except by design) straight into refresh()'s EXISTING per-ticker
+      fail-soft wrapper — no rebuild attempted for that ticker this cycle,
+      flagship and siblings unaffected, zero new wrapper code needed. NEW-2
+      (MAJOR): the round-1 claim "missing/blank form is unsafe" was
+      falsified by the producer — five `or "8-K"` sites (binding.py;
+      event_workspace_build.py; refresh_event_workspaces.py x3) manufactured
+      the literal "8-K" from any absence, so None could never actually
+      reach the gate. Fixed at the smallest honest layer: the three
+      refresh_event_workspaces.py filing-construction sites no longer
+      manufacture "8-K" (discovery already pre-filters candidates to
+      {8-K, 8-K/A}, so this is defense-in-depth, not a behavior change on
+      the real nightly path); event_workspace_build.py's published
+      issuer_release source row now reads the RAW filing mapping directly,
+      decoupled from bind_release_document's own internal "8-K" default
+      (left alone — it exists for that function's own document-identity/
+      is_amendment purposes, which nothing else in event_workspace_build.py
+      reads, so decoupling carries zero ripple risk — confirmed by grep,
+      only one production consumer). Comments/docstrings in
+      imce_prospective.py and the builder rewritten to state the honest
+      claim: missing form is genuinely reachable code post-fix, but
+      consumer-side defense-in-depth in practice, not a transient state the
+      nightly path passes through. NEW-3 (MAJOR): only the fail-REFUSE
+      direction was pinned — _issuer_release_source_form returning "8-K"
+      unconditionally, and the builder's lifecycle read defaulting
+      `or "complete"`, both survived all 134 tests. Fixed with two new
+      builder-level end-to-end tests driving b.run(production=True) over a
+      workspace missing its form and one missing its lifecycle.state,
+      each asserting n_observations_refused_unsafe_correction==1 and zero
+      observation rows on disk; both mutation-verified to kill the named
+      fail-open mutations while leaving the rest of the suite green. NIT:
+      test-function count corrected 13 -> 12 (git diff grep
+      '^+def test_' against tests/test_imce_prospective.py). New tests
+      this round: tests/test_refresh_event_workspaces.py +6 (two unit-level
+      load_prior_workspace disposition tests, one hit-passthrough test, the
+      NAMED FALSIFIER — prior loader raises against an already-corrected
+      event, marker not advanced, warning emitted — and a first-generation
+      regression); tests/test_company_intelligence_event_workspace.py +2
+      (raw-vs-defaulted form regression, genuine-amendment-form
+      regression); tests/test_imce_prospective.py +2 (the two NEW-3
+      fail-open mutation-kill tests). Re-verified: pytest
+      tests/test_imce_prospective.py tests/test_refresh_event_workspaces.py
+      tests/test_company_intelligence_event_workspace.py
+      tests/test_gh_annotation_line_start.py (197 passed, 2 skipped, same
+      sparse-worktree skips as before); tests/test_issuer_profiles_a5a.py +
+      tests/test_earnings_release_binding.py re-run clean alongside for the
+      touched company_intelligence/binding modules (61 passed, no
+      regression); python3 scripts/check_contract_delta.py --base
+      origin/main (0 introduced, 0 inherited); python3 scripts/agentos.py
+      validate (0 errors). Both fail-open mutations (form always "8-K",
+      lifecycle defaulting `or "complete"`) and the reintroduced BLOCKER-1
+      fail-soft bug (flagship catching PriorWorkspaceFetchFailed the same
+      way as a genuine first-publish) were manually mutation-verified this
+      round to confirm the new tests actually kill them; reverted, suite
+      re-confirmed green after each.
+
+      VERIFICATION ROUND 3 (same PR #6308, same branch — Opus red-team,
+      2026-08-23: NEW-1/2/3 all confirmed FIXED by the verifier's own
+      falsifiers; one NEW BLOCKER + one MINOR + a NIT). NEW-4 (BLOCKER):
+      the homebuilder per-ticker skip DROPPED the event from the published
+      generation entirely — write_workspace_generation has no carry logic,
+      generations are WHOLE-NEST snapshots. The NEXT cycle's prior lookup
+      for that same event_id then 404s inside the CURRENT (post-skip)
+      generation — a legitimate, successful "not published in THIS
+      generation" read, not a fetch failure NEW-1 catches — so
+      prior_source_sha256/prior_lifecycle_state both resolved None and a
+      "corrected" state silently erased ONE HOP LATER, with the only
+      ::warning ever fired describing a skip, not an erasure. Applied to
+      EVERY per-ticker skip class (fetch_failed prior, SEC acquisition
+      failure, unusable EX-99.1, fiscal cross-check refusal), because the
+      sticky-corrected guarantee (round 2) rests on generation MEMBERSHIP,
+      which was not monotonic. Fixed by making membership monotonic: new
+      load_prior_workspace_for_ticker() scans the CURRENT generation's own
+      manifest.json "files" map (event_ids only — no workspace body is
+      fetched except the one match) for an event_id whose
+      parse_canonical_event_id company_id matches a ticker's STATIC
+      registered issuer identity — a lookup independent of whether THIS
+      cycle's fresh acquisition (and therefore its freshly-discovered
+      event_id) ever succeeds at all. refresh()'s homebuilder loop now
+      implements three outcomes per ticker: (a) acquisition/build failed
+      but the ticker-scoped carry-forward lookup finds a prior -> CARRY IT
+      FORWARD unchanged into this generation (warning says "CARRIED
+      FORWARD", names the failure class); (b) that carry-forward lookup
+      itself raises PriorWorkspaceFetchFailed (or the NORMAL-path
+      event_id-keyed prior read inside acquire_and_build_homebuilder_workspace
+      does, after a successful acquisition) -> ABORT THE WHOLE REFRESH
+      (RefreshError, marker frozen) — cannot rule out silently dropping a
+      corrected event; one issuer's CDN blip delaying ALL publication by
+      one cycle is the accepted cost, same discipline as the flagship's
+      own prior-fetch-failure handling; (c) genuinely never published (no
+      match in the current generation) and acquisition failed -> true
+      skip, nothing to carry, absence next cycle correctly reads as
+      first-publish. Both homebuilder loaders
+      (homebuilder_prior_workspace_loader, homebuilder_carry_forward_loader)
+      are now real refresh() parameters (previously hardcoded at the
+      per-ticker call site, unreachable by a test without monkeypatching
+      the module-level name). NEW-5 (MINOR): refresh()'s flagship prior-read
+      handler still fail-softed any non-PriorWorkspaceFetchFailed exception
+      into "treating as first generation" — a latent re-entry of the
+      erasure bug if a future loader ever raised a different type. Fixed:
+      the two except branches merged into one — NO exception of any type
+      may mean first-generation; only an EXPLICIT clean None return may.
+      NIT: WS record test-count for tests/test_imce_prospective.py
+      corrected 12 -> 14 (measured LAST, after all round-3 edits, via
+      `git diff origin/main -- tests/test_imce_prospective.py | grep -c
+      '^+def test_'` — round 2's "12" was itself measured before that
+      round's final 2 tests were added; 26 parametrized cases). New tests
+      this round, all offline (no real network — explicit
+      homebuilder_prior_workspace_loader/homebuilder_carry_forward_loader
+      stubs added everywhere refresh() is called in the existing suite,
+      since the REAL default (load_prior_workspace_for_ticker) would
+      otherwise make a genuine network call against production R2 the
+      moment any homebuilder's acquisition fails, which every
+      pre-existing AAPL-flagship-focused test does by construction — this
+      was caught by two tests in tests/test_issuer_profiles_a5a.py
+      actually reaching PRODUCTION R2 and pulling real published
+      PHM/KBH/TOL data before the offline stubs were added):
+      tests/test_issuer_profiles_a5a.py +2 (the two reviewer-named
+      falsifiers — carry-forward-lookup-failure-aborts-then-recovers, and
+      acquisition-failure-carries-forward-a-corrected-event-byte-identical
+      with a manifest-receipt assertion and a true-no-prior-skip check
+      folded in); tests/test_refresh_event_workspaces.py +3 (direct
+      unit-level load_prior_workspace_for_ticker coverage: company_id-scan
+      match + only-the-matched-body-fetched + no-match-returns-None, raises
+      on genuine fetch failure with line-start warning, returns None when
+      no generation exists yet). All new tests mutation-verified (reverting
+      the NEW-4 carry-forward branch to a plain skip fails both named
+      falsifiers; reverted after, suite re-confirmed green). Re-verified:
+      pytest tests/test_imce_prospective.py
+      tests/test_refresh_event_workspaces.py
+      tests/test_company_intelligence_event_workspace.py
+      tests/test_gh_annotation_line_start.py
+      tests/test_issuer_profiles_a5a.py tests/test_earnings_release_binding.py
+      (263 passed, 2 skipped, same sparse-worktree skips as before);
+      python3 scripts/check_contract_delta.py --base origin/main (0
+      introduced, 0 inherited); python3 scripts/agentos.py validate (0
+      errors, same 28 pre-existing unrelated warnings).
+
+      VERIFICATION ROUND 4 (same PR #6308, same branch — Opus red-team,
+      2026-08-23: NEW-4's mechanism confirmed FIXED by the verifier's own
+      probes; narrow, one-liner-class remainder — MAJOR + MAJOR + MINOR +
+      MINOR + a NIT). NEW-5-PIN: round 3's uniform flagship handler was
+      correct but UNPINNED — reverting it to the round-3 two-handler shape
+      (PriorWorkspaceFetchFailed -> abort, everything else -> fail-soft
+      None) left the full suite green. Fixed by adding ONE test: the
+      flagship's prior_workspace loader raises a bare RuntimeError
+      (deliberately NOT PriorWorkspaceFetchFailed) -> RefreshError, nothing
+      published — mutation-verified to kill the exact reversion. NEW-6:
+      load_prior_workspace_for_ticker concluded "nothing to carry" (None)
+      from THREE states that are provably ANOMALIES in a healthy nest,
+      since write_workspace_generation uploads every workspace object,
+      THEN the generation's own manifest.json, and only THEN promotes the
+      marker: (a) the named generation's own manifest.json 404ing despite
+      a promoted marker, (b) a non-Mapping generation-manifest payload, (c)
+      a generation manifest with no usable "files" key. All three (plus a
+      fourth found by the same principle: a top-level marker that parses
+      but carries no generation_id) now raise PriorWorkspaceFetchFailed
+      with the ::warning, exactly like a genuine network failure. None
+      remains ONLY for a clean top-level marker 404 (no nest yet) and a
+      well-formed files map with no entry for this issuer — pinned by an
+      8-case probe table (marker 404/network-error/no-generation_id,
+      gen-manifest 404/network-error/not-an-object/no-files-key,
+      well-formed-no-match). NEW-7: files iterates in the manifest's own
+      sorted-string key order, so the prior first-match loop would have
+      picked the LEXICOGRAPHICALLY SMALLEST (= OLDEST fiscal period) event
+      if the one-event-per-issuer invariant ever broke. Fixed: collect
+      every company_id match, select the one with the MAX (year, quarter)
+      — pinned by a test with two DHI events (Q2 sorting first as a
+      string, Q3 the true newest) asserting Q3 wins and Q2's body is never
+      even fetched; mutation-verified. NEW-8: the round-3 comment
+      overstated the invariant as blanket "membership must be monotonic".
+      Reworded to the true, narrower invariant: each ticker's MOST
+      RECENTLY PUBLISHED event is carried forward when this cycle cannot
+      rebuild it; a SUPERSEDED event legitimately drops out at quarterly
+      rollover and reads as not_published downstream from then on — that
+      is fail-closed and intentional, not a regression. NIT (same asymmetry
+      class as NEW-5): the carry-forward call site caught only
+      PriorWorkspaceFetchFailed, so any OTHER exception from a future
+      carry loader would have escaped refresh() raw. Made uniform with the
+      flagship handler: ANY exception from the carry-forward lookup now
+      aborts — pinned by a bare-RuntimeError test, mutation-verified.
+      Accepted-cost note recorded per the review's request (no code
+      change): the abort surface is now ~10 R2 GETs/cycle x ~8 cycles/day;
+      each abort costs exactly one 3h cycle with the marker frozen on the
+      last good generation; at realistic GET success rates that is on the
+      order of one delayed cycle per days-to-weeks, not per night; a
+      bounded retry on the prior-read GETs is a possible future reduction,
+      deliberately not added here. New tests this round:
+      tests/test_refresh_event_workspaces.py +3 test functions / +10 cases
+      (the NEW-5-PIN flagship bare-exception test, the 8-case NEW-6 probe
+      table as one parametrized function, the NEW-7 newest-wins test);
+      tests/test_issuer_profiles_a5a.py +1 (the NIT bare-exception
+      carry-forward test). WS-record test count for
+      tests/test_imce_prospective.py re-verified UNCHANGED at 14 (this
+      round touched no A5C test file) via `git diff origin/main --
+      tests/test_imce_prospective.py | grep -c '^+def test_'` at this
+      record's own final head. Re-verified: pytest
+      tests/test_imce_prospective.py tests/test_refresh_event_workspaces.py
+      tests/test_company_intelligence_event_workspace.py
+      tests/test_gh_annotation_line_start.py
+      tests/test_issuer_profiles_a5a.py tests/test_earnings_release_binding.py
+      (274 passed, 2 skipped, same sparse-worktree skips as before);
+      python3 scripts/check_contract_delta.py --base origin/main (0
+      introduced, 0 inherited); python3 scripts/agentos.py validate (0
+      errors, same 28 pre-existing unrelated warnings). Every new test this
+      round was mutation-verified against its named regression, then
+      reverted (repo left clean — confirmed via `git diff --stat` after
+      each revert).
+
+      POST-MERGE RECONCILIATION (same PR #6308, same branch): origin/main
+      advanced substantially across all 4 rounds of this PR's life
+      (unrelated sessions' commits), and a REAL content conflict surfaced
+      in THIS file — a sibling PR (#6307, wave id A5C, TOL beginning-
+      quarter-backlog cancellation sensitivity prior-year extraction) had
+      appended its own new wave entry at the same list position as this
+      record's own A5C-alpha entry. Resolved by `git merge origin/main`
+      (not rebase) and keeping BOTH wave entries as siblings under
+      `waves:` — a pure append-only-file concurrent-edit conflict, not a
+      semantic disagreement; no content from either side was altered.
+      `git merge-tree --write-tree HEAD origin/main` re-verified clean
+      (no remaining conflicts) after resolution; `python3
+      scripts/agentos.py validate` still 0 errors post-merge (622 records,
+      up from 609 — origin/main's own accumulated records, none of which
+      this PR authored). Re-verified on the FINAL merged head: pytest
+      tests/test_imce_prospective.py tests/test_refresh_event_workspaces.py
+      tests/test_company_intelligence_event_workspace.py
+      tests/test_gh_annotation_line_start.py
+      tests/test_issuer_profiles_a5a.py tests/test_earnings_release_binding.py
+      (283 passed, 2 skipped — the +9 over round 4's 274 is PR #6307's own
+      TOL sensitivity tests arriving via the merge into the shared
+      tests/test_issuer_profiles_a5a.py file, not new tests this PR
+      authored); `git diff origin/main -- tests/test_imce_prospective.py |
+      grep -c '^+def test_'` re-confirmed 14 (unchanged — this file was
+      not touched by the merge or by round 4). PR stays DRAFT pending the
+      commissioning session's re-review.
+  - id: A5C
+    title: >
+      IMCE-A5C item 7/8 — TOL beginning-quarter-backlog cancellation
+      sensitivity PRIOR-YEAR extraction + Sol equality-ruling pin
+    status: done
+    pr: 6307
+    depends_on: [A5A]
+    next_action: >
+      MERGED 2026-08-23 as 3d35ec5cd5ae (PR #6307) — closure record:
+      agentos/handoffs/CYCLE-PATTERN-ISSUER-MECHANISM-2026-08-23.md.
+      Extraction-only, closes the named A5 gap: "TOL sensitivity
+      prior-year comparator not extracted by A5A" (this file's own
+      next_action above). engine/company_intelligence/issuer_profiles.py's
+      TOL beginning-quarter-backlog block (:1162-1261 post-change) now also
+      emits fact_cancellation_rate_beginning_backlog_sensitivity_prior_year
+      from the SAME row's prior-year cell (cells[1], the two-cell pattern
+      already proven for the adjacent signed-contracts row), receipted
+      byte-exact over its own span, period prior_year_same_quarter, basis
+      the row's own verbatim label shared with the current-quarter fact —
+      no inference, no substitution. Post-red-team hardening: the
+      prior-year fact is minted ONLY when the row's filtered numeric-cell
+      list has EXACTLY 2 entries AND that cell's own text parses as a
+      float; an ambiguous row shape (!=2 numeric cells -- e.g. a future
+      combined three-months+nine-months row) or an unparseable cell
+      ("N/A", "(1)", "1,234", an em-dash) both fall through to typed
+      absence with a detail naming the specific ambiguous-shape or
+      unparseable-cell reason -- these are the two absence paths a future
+      session will actually debug. The consumption side
+      (engine/cycle_pattern/imce_prospective.py:161's
+      TOL_SENSITIVITY_PRIOR_YEAR_FACT_ID lookup, A5B's self-healing
+      _tol_sensitivity diagnostic) is UNTOUCHED — this PR does not modify
+      engine/cycle_pattern/** or tests/test_imce_prospective.py (owned by a
+      parallel PR). Sol's item-8 equality ruling at issuer_profiles.py:621-663
+      (DHI "X%, consistent with the prior year quarter" explicit-equality
+      treatment) is PINNED unchanged, with a new discriminating test proving
+      approximate/similar language ("approximately in line with the prior
+      year quarter", "similar to a year ago") yields typed absence, never a
+      substituted present fact. Real-fixture replay
+      (tests/fixtures/company_intelligence/tol_fy2026q3_ex99_1.htm,
+      accession 0000794170-26-000096) verifies current==2.6/prior_year==3.2
+      from disjoint byte spans, also disjoint from
+      fact_cancellation_rate_prior_year's span (signed-contracts row).
+      tests/test_issuer_profiles_a5a.py grew 24 -> 33 passing across the
+      extraction PR and the red-team fix round (python3 -m pytest
+      tests/test_issuer_profiles_a5a.py -q). Once merged, A5B's
+      _tol_sensitivity diagnostic self-heals to NOT_RECONSTRUCTABLE only
+      when d_orders is also unavailable -- no runtime/consumption code
+      change required, confirming the A5B design note at
+      engine/cycle_pattern/imce_prospective.py:158-161.
+  - id: A5C-chain
+    title: >
+      IMCE-A5C — prospective source-vintage integrity: manifest chain,
+      ascending discovery, two-clock law, ONE shared reader, earliest-
+      revision eligibility/replay/contributor laws (Sol A5C directive,
+      2026-08-23, items 1/3/4/5/6)
+    status: done
+    pr: [6322, 6343]
+    depends_on: [A5B, A5C-alpha, A5C]
+    next_action: >
+      MERGED — #6322 as 8c0608652652 (2026-08-23) and the production-
+      incident heal #6343 as 6fa417959bf9 (2026-08-23). Closure record:
+      agentos/handoffs/CYCLE-PATTERN-ISSUER-MECHANISM-2026-08-23.md; see
+      the top-level next_action's "SOL'S A5C DIRECTIVE IS EXECUTED" block
+      for the full production-proof receipts, the incident, and named
+      residuals.
+      PR #6322 (branch claude/imce-a5c-source-vintage-main, off
+      fresh origin/main containing both merge 2ee5c16724da/#6308 A5C-alpha
+      and merge 3d35ec5cd5ae/#6307 A5C-TOL) was the "honest
+      fix" both A5C-alpha (#6308) and A5C (#6307) named as still-pending.
+      REVISED after an Opus red-team pass (2026-08-23, BLOCK: 3 blockers/
+      5 majors/6 minors/1 nit) found the FIRST-pass architecture broken in
+      three load-bearing ways, all now fixed on the same branch — the
+      SCOPE was explicitly amended mid-review to bring
+      tests/test_issuer_profiles_a5a.py into this PR's owned files (its
+      mocks previously drove the avoidance of the correct architecture).
+      BLOCKER-1 (eligibility): the builder now sorts revisions by
+      source_available_at BEFORE deciding eligibility (never trusts raw
+      chain order), and a packet-build failure on the would-be ANCHOR
+      revision now aborts the event for the night instead of falling
+      through to mint from a LATER revision.
+      BLOCKER-2/MAJOR-6/MINOR-9 (discovery architecture, REPLACED): the
+      FIRST pass ran discovery as an additive pre-step alongside the OLD
+      single-newest acquire_and_build_homebuilder_workspace() call site —
+      red-team found this mints a REDUNDANT, clock-drifted third
+      generation nightly (the two mechanisms independently rebuilding "the
+      newest" row with different observed_at stamps). Corrected: discovery
+      is now the SOLE per-ticker mechanism, yielding the full ascending
+      not-yet-represented list INCLUDING the newest; each revision chains
+      onto the one immediately before it (never a "latest chain state"
+      lookahead — fixes lineage); the running snapshot always ends each
+      ticker's slot at its own newest revision; and the closing write now
+      skips entirely when nothing changed since the last chained publish
+      this cycle (own regression test:
+      test_refresh_publishes_original_and_amendment_as_two_chained_generations
+      caught THIS EXACT redundant-generation bug during the fix).
+      tests/test_issuer_profiles_a5a.py's mocks were retargeted from
+      acquire_and_build_homebuilder_workspace to
+      discover_new_homebuilder_revisions — all 36 tests pass with every
+      existing assertion preserved (none weakened).
+      BLOCKER-3/MAJOR-4 (two-clock law): already correctly applied inside
+      discover_new_homebuilder_revisions from the first pass; the fix
+      round added the previously-missing tests (prior_observed_at
+      coverage, an injected-clock semantic-no-op proof replacing "two
+      calls landed in the same wall-clock second" luck, homebuilder-path
+      clock-separation assertions).
+      MAJOR-5: refresh()-level multi-generation tests added (original+
+      amendment as two chained generations; newest-already-represented
+      restores current state without a redundant write; mid-sequence
+      publish failure aborts before any out-of-order write, verified
+      against the FAKE R2's remote_manifest — the true published state —
+      not the local scratch file every attempt unconditionally overwrites).
+      MAJOR-7: the "second GET-sequence" claim was FALSE — unified onto
+      the model-facing reader's own _fetch_bytes (new allow_404 param) and
+      _public_base_url (new require_public_host param, off for the
+      producer/nightly path since its origin is trusted config, never
+      model input); the separate _raw_get/_resolve_workspace_base_url
+      stack is deleted.
+      MAJOR-8/MINOR-10: the chain walk now verifies each predecessor link
+      against the sha256 of the RAW FETCHED BYTES (never a
+      re-serialization) and REUSES that fetch as the next hop's own
+      manifest (halves manifest GETs from 2N to N); max_hops is
+      documented as configurable with a small-bound test.
+      MINOR-13/14: homebuilder_discovery's type hint corrected to
+      Callable[..., ...] (its real keyword-heavy signature); a discovery
+      WINDOW-gap heuristic warns (log-only) when the chain's newest known
+      revision predates the oldest row still visible in the SEC recent
+      block.
+      A. MANIFEST CHAIN: event_workspace_manifest.v2 (v1 stays the
+      backward-compatible chain ROOT) adds previous_generation_id +
+      previous_manifest_sha256; write_workspace_generation mints v2 going
+      forward and folds previous_generation_id into the content-address
+      hash; preview_generation_identity() lets a caller decide, BEFORE
+      writing, whether a cycle reproduces the CURRENTLY published
+      generation or genuinely chains forward.
+      D. ONE SHARED READER (home: engine/neuralweb/company_intelligence_reader.py):
+      load_current_workspace / load_workspace_with_disposition (three-way
+      found/not_published/fetch_failed) / find_current_event_id_for_company
+      / read_event_source_revisions. scripts/refresh_event_workspaces.py's
+      load_prior_workspace / load_prior_workspace_for_ticker and
+      scripts/build_cycle_pattern_imce_prospective.py's
+      _load_workspace_with_disposition are thin delegators (their
+      *NotPublished exception classes are ALIASES of
+      WorkspaceChainNotPublished, not lookalikes); _raw_fetch_workspace is
+      RETIRED (grep-proof test).
+      E/F/G in scripts/build_cycle_pattern_imce_prospective.py's run():
+      eligibility decided by the sorted-ascending EARLIEST known
+      revision's source_available_at, PERMANENTLY; the one immutable
+      observation mints from the earliest ELIGIBLE revision; later
+      materially-different revisions become ordered corrections, cosmetic
+      ones produce no noise; a contributor's state at a trigger cutoff is
+      the latest LAWFUL revision of the contributor's OWN chain
+      at-or-before that cutoff. Zero new ledger schema fields. TOL sweep:
+      _tol_sensitivity's docstring corrected; consumption flow-through
+      test added.
+      Tests (post-fix-round): test_company_intelligence_event_workspace.py
+      (unchanged), test_refresh_event_workspaces.py (+11: 4 original +
+      2 discovery-order + 3 MAJOR-5 refresh-level + 1 injected-clock +
+      homebuilder clock-separation assertions), test_imce_prospective.py
+      (+7: 5 original + BLOCKER-1 inverted-order probe + anchor-failure
+      probe), test_issuer_profiles_a5a.py (5 tests' mocks retargeted, all
+      36 green), new test_company_intelligence_workspace_chain.py (13
+      tests incl. max_hops bound + single-fetch-per-hop verification) —
+      289 passed / 2 skipped across the full touched-module run;
+      contract-delta 0 introduced; agentos validate 0 errors. CI wiring:
+      .github/ci/legacy-jobs.yml neural-web-core pytest line gained the
+      new test file; .github/workflows/company-intelligence.yml
+      sparse-checkout gained engine/neuralweb/__init__.py +
+      company_intelligence_reader.py (requests was already an installed
+      dep there — no new pip dependency).
+      ROUND 2 (Opus red-team verification, 2026-08-23, BLOCK: ten round-1
+      findings confirmed FIXED with mutant kills; remaining + new fixed on
+      the same branch/head). NEW-BLOCKER-16 (FROZEN FIX, two-phase
+      refresh()): a live verifier probe caught the single-pass per-ticker
+      loop publishing a triggering ticker's own first generation BEFORE a
+      LATER-ordered ticker had been carried forward at all (marker
+      generation 0 missing a ticker, only complete once that ticker was
+      later visited in the SAME cycle). refresh() now runs Phase 1
+      (discovery + an UNCONDITIONAL per-ticker carry-forward read, zero
+      writes, for ALL tickers) fully before Phase 2 (writes only, applying
+      each triggering ticker's ascending sequence atop the now-complete
+      base) — every promoted marker is therefore complete from its very
+      first write. New regression test
+      test_refresh_every_write_contains_every_resolved_ticker_before_any_write
+      is a proven mutant-kill: it FAILS against the pre-fix single-pass
+      code (asserts 2 == 1 generation dirs, first generation missing the
+      carried ticker) and passes against the fix.
+      MINOR-9 (real per-sequence lineage, frozen "strictly older"
+      predecessor lookup): discover_new_homebuilder_revisions now resolves
+      each row's predecessor via _nearest_older_revision — the nearest
+      timeline entry whose source_available_at is STRICTLY OLDER, never
+      "the chain's overall newest" (wrong for a genuine backfill, where a
+      newly-discovered row is chronologically OLDER than something already
+      represented). Two new proven mutant-kill tests in
+      tests/test_issuer_profiles_a5a.py
+      (test_backfilled_original_publishes_complete_never_a_newer_known_revision,
+      test_amendment_after_backfilled_original_walks_to_corrected_with_true_lineage)
+      both FAIL against a naive "timeline max by timestamp, no `before`
+      filter" mutant and pass against the real implementation; the second
+      test makes the wrong-lineage failure mode OBSERVABLE by giving a
+      temporally-invalid decoy the amendment's own real sha256, so a wrong
+      selection would silently leave the amendment "complete" instead of
+      "corrected".
+      NEW-MAJOR-17: the stale "10 R2 GETs/cycle" accepted-cost comment
+      above refresh()'s per-ticker loop is rewritten to describe the
+      two-phase architecture's real, larger GET cost (4 unconditional
+      carry-forward GETs/cycle, paid once regardless of how many revisions
+      Phase 2 replays).
+      NEW-MINOR-18 (raw marker byte hashing): current_marker_loader's
+      production default is now ci_reader.fetch_current_workspace_marker_raw
+      (new reader primitive returning (raw_bytes, parsed_dict) | None);
+      refresh()'s chain_previous_sha hashes the raw fetched bytes directly,
+      never a re-serialization via canonical_json_bytes — the now-dead
+      canonical_json_bytes import was removed from the script. Two new
+      reader-level tests in tests/test_company_intelligence_workspace_chain.py
+      prove the raw-bytes contract with a fixture body deliberately NOT
+      byte-identical to its own canonical re-serialization, plus the clean-
+      404 case.
+      MINOR-12/NEW-NIT-21/MINOR-17: acquire_and_build_homebuilder_workspace
+      is DELETED (dead once discovery became the sole per-ticker mechanism
+      — BLOCKER-2); its own direct unit test at
+      tests/test_issuer_profiles_a5a.py (test_fiscal_period_mismatch_refuses_rather_than_guesses)
+      is retargeted from the deleted function's (incorrect, since deleted)
+      RefreshError-raise expectation to discover_new_homebuilder_revisions'
+      real, frozen B4 skip-not-fail behavior (asserts an empty return list
+      plus the actual ::warning text) — the safety property (never mint a
+      guessed fiscal identity) is preserved, only the mechanism assertion
+      changed to match reality. The stale `real_acquire` local variable
+      name (three destructuring call sites + the one place it was actually
+      called) is renamed `real_discover` throughout
+      tests/test_issuer_profiles_a5a.py. refresh()'s own docstring is
+      corrected to describe true nearest-strictly-older lineage (not "the
+      revision immediately before it in the list") and the two-phase split.
+      FINAL VERIFICATION at the round-2 head: the six touched-module test
+      files together = 290 passed, 2 skipped (30.80s);
+      tests/test_gh_annotation_line_start.py run SEPARATELY (never folded
+      into the above per MINOR-12) = 4 passed (15.02s); combined seven-
+      suite total = 294 passed, 2 skipped, 0 failed. contract-delta --base
+      origin/main = 0 introduced, 0 inherited (base 25b961651882). agentos
+      validate = 0 errors (29 pre-existing warnings, unrelated to this PR).
+      test_issuer_profiles_a5a.py alone: 38 passed (was 36 — +2 MINOR-9
+      tests). test_refresh_event_workspaces.py alone: 36 passed (was 35 —
+      +1 BLOCKER-16 test). Still a DRAFT PR — never marked ready, armed
+      merge-on-green, or merged; the commissioning session owns
+      integration/merge.
+      ROUND 3 (Opus red-team verification, 2026-08-23) — APPROVE, no
+      blockers/majors, one closing micro-round before the commissioning
+      session merges. MINOR-22: the accepted-cost comment above refresh()'s
+      per-ticker loop understated the quiet-cycle R2 GET volume ~4x —
+      corrected: load_prior_workspace_for_ticker is find_current_event_id_
+      for_company (marker + generation manifest = 2 GETs) + load_prior_
+      workspace (marker + workspace object = 2 GETs) = 4 GETs/ticker, 16/
+      cycle across HOMEBUILDER_TICKERS; plus the top-level marker read (1)
+      and the flagship's own prior read (2) = ~19 R2 GETs on a quiet cycle,
+      not ~4-10 — PLUS each ticker's discovery performing a FULL
+      read_event_source_revisions chain walk (1 marker + N generation
+      manifests + M workspaces, growing with that event's own chain
+      length) for every distinct candidate event_id, which fires even when
+      nothing is new (the chain-state loader call happens on first sight
+      of an event_id among candidates, before the already-represented
+      check) — 4 such walks on a quiet cycle with one candidate event per
+      ticker, unbounded with chain length; this is the real, dominant
+      cost, not a fixed small constant. MINOR-23: added a refresh()-level
+      test (test_refresh_chains_onto_the_marker_raw_bytes_hash_not_a_
+      reserialization) injecting current_marker_loader returning a
+      deliberately non-canonical (raw_bytes, parsed) pair and asserting
+      the minted generation's previous_manifest_sha256 ==
+      sha256(raw_bytes) and != sha256(canonical_json_bytes(parsed)) —
+      proven mutant kill: temporarily reverted the target line to hash
+      canonical_json_bytes(current_marker) again, confirmed the new test
+      FAILS (assertion mismatch on the two sha256 values), restored the
+      fix, confirmed it passes. NIT-24: refresh()'s docstring gained one
+      sentence documenting that a fiscal-quarter rollover can legitimately
+      publish two events for one issuer in a single cycle, and why that is
+      safe and self-clearing (find_current_event_id_for_company's own
+      documented double-match tie-break always resolves to the newest
+      fiscal period on the next carry-forward read — no special-case code
+      needed). NIT-25: fixed two stale comments that still described the
+      round-2-deleted acquire_and_build_homebuilder_workspace as existing/
+      independently-testable or as sharing this discipline; both now
+      correctly describe the current architecture
+      (discover_new_homebuilder_revisions / _event_known_revisions).
+      FINAL VERIFICATION at the round-3 head: six touched-module test
+      files together = 291 passed, 2 skipped (28.17s);
+      tests/test_gh_annotation_line_start.py run SEPARATELY = 4 passed
+      (6.50s); combined seven-suite total = 295 passed, 2 skipped, 0
+      failed. test_refresh_event_workspaces.py alone: 37 passed (was 36 —
+      +1 MINOR-23 test). contract-delta --base origin/main = 0 introduced,
+      0 inherited (base 3695178cef2a). agentos validate = 0 errors (29
+      pre-existing warnings,
+      unchanged). Still a DRAFT PR — never marked ready, armed
+      merge-on-green, or merged; the commissioning session owns
+      integration/merge.
+      PRODUCTION INCIDENT + HEAL (2026-08-23, PR #6343, branch claude/imce-
+      a5c-discovery-bound, off fresh origin/main after #6322 merged as
+      8c0608652652): #6322's first production run (workflow_dispatch
+      32652474368) crawled each homebuilder's ENTIRE SEC recent block back
+      to 2010 — "not yet represented" alone admits all of history on first
+      deploy, Sol's "since the canonical prior generation" boundary was
+      never implemented — published ~170 backfilled historical events
+      (lawful, A5B-safe: all pre-activation, permanently ineligible) and
+      hit the job's 25-min timeout mid-step. Fix: discover_new_homebuilder_
+      revisions gained discovery_boundary (a row qualifies only if STRICTLY
+      NEWER than the issuer's newest already-represented source_available_
+      at, filtered on the raw row before any per-accession fetch, no
+      warning) and a first-publish bound (current+prior fiscal year,
+      mirrors the A5B builder's own candidate-lookback convention).
+      refresh()'s Phase 1 reordered (carry-forward before discover) so the
+      boundary costs zero extra GETs. Addendum (measured live): a chain
+      walk against the ~170-generation post-incident chain cost 153s for
+      ONE event; the A5B builder called it once per candidate (~8/night,
+      ~20 min against the render budget). Added ci_reader.
+      read_all_event_source_revisions (ONE shared walk harvesting every
+      requested event from one pass, O(hops) not O(events x hops));
+      read_event_source_revisions is now a thin wrapper over it; the
+      builder's run() now performs exactly one walk per run
+      (harvest_event_revisions), all 10 existing test stubs retargeted.
+      refresh_event_workspaces.py's own per-ticker walk is NOT additionally
+      batched across tickers — named judgment call (already near-zero cost
+      per ticker post-boundary-fix on a quiet night, unlike the builder's
+      unconditional every-candidate walk). Tests: boundary law (zero
+      per-accession fetches, proven mutant kill vs pre-fix TypeError),
+      forward-correction-unaffected, first-publish bound, refresh()-level
+      wiring integration test, shared-walk-equals-per-event-walks-at-half-
+      cost, builder-one-walk-per-run (proven mutant kill vs a reverted
+      per-candidate-loop). Seven-suite total 302 passed/2 skipped/0 failed;
+      contract-delta 0 introduced/0 inherited; agentos validate 0 errors.
+      DRAFT — never marked ready, armed, or merged.
 next_action: >
   Sol's FOURTH GATE (A4P.1) closes the five escalations the third gate left
   open with the returns: (1) AG14 cohort-label question SETTLED by R2's
@@ -353,13 +1276,110 @@ next_action: >
   782b6e5703505af04ba21943b7d0a332853e286d and config_hash
   05b43f9119fd1fd357d3994bd652abbc3cdff3d8. The criteria commit strictly
   precedes all outcome access (attested in commit 0ae5c413471a); outcome
-  evaluation remains FENCED until boundary receipts exist (R6). Next
-  program priority per Sol: PROSPECTIVE OBSERVATION ACTIVATION — every
-  eligible future decision-time observation not captured from first
-  availability is permanently lost evidence; boundary receipting and
-  DHI/TOL historical archaeology are named future waves that must NOT
-  delay first-availability prospective capture. No issuer truth appended;
-  no runner built; awaiting Sol's next directive.
+  evaluation remains FENCED until boundary receipts exist (R6).
+  SOL'S FIFTH GATE (A5 — prospective observation activation) IS EXECUTED
+  (2026-08-22/23): A5A merged 5b8ca994de05 (PR #6270) and PROVEN LIVE —
+  the production company-intelligence lane published R2 generation
+  d7b994675fe59d0181643b8b carrying AAPL plus all four homebuilder
+  workspaces under correct fiscal identities, and the production reader
+  serves them (verified GET /api/event-workspace/DHI); A5B merged
+  9d14a3529d1c (PR #6281), classification BUILT_NOT_PROVEN — the forward
+  ledger data/cycle_pattern/imce_prospective_observation_v1.jsonl is
+  created by the first production nightly, whose successful run stamps
+  activation_started_at; PROVEN_LIVE awaits the first natural
+  post-activation DHI/PHM/KBH/TOL earnings event (next expected: KBH
+  FY2026 Q3, ~late Sep 2026). Outcomes remain FENCED — the observation
+  schema carries zero outcome fields by whitelist-tested construction.
+  Named source-coverage gaps riding to Sol: TOL §1b sensitivity
+  prior-year comparator not extracted by A5A — CLOSED by PR #6307 (A5C,
+  DRAFT pending the commissioning session's merge): the source plane now
+  emits fact_cancellation_rate_beginning_backlog_sensitivity_prior_year
+  from the same row's prior-year cell, so
+  engine/cycle_pattern/imce_prospective.py:161's
+  TOL_SENSITIVITY_PRIOR_YEAR_FACT_ID lookup self-heals to a real value the
+  moment #6307 merges, zero consumption-side code change (see wave A5C
+  below for the receipt spans and conventions); Treasury CMT
+  C_t leg typed-absent (GO_LIMITED permits persistence; no first-party
+  fetcher exists yet — natural next increment); workspace vintage
+  retrieval is latest-generation-only (re-extraction of a past event
+  rewrites the readable facts — correction records preserve what the
+  experiment knew, but as-of retrieval does not exist). No runner built;
+  no outcome computed; awaiting Sol's next directive.
+  SOL'S A5C DIRECTIVE IS EXECUTED (2026-08-23). Four merges close it: A5C
+  gamma (TOL sensitivity prior-year + equality-ruling pin) = PR #6307 ->
+  3d35ec5cd5ae; A5C-alpha alpha (fail-closed correction detection pending
+  source-revision history) = PR #6308 -> 2ee5c16724da; A5C-chain beta+
+  delta (manifest chain/discovery/two-clock/shared-reader honest fix,
+  plus the production-incident heal) = PR #6322 -> 8c0608652652 and PR
+  #6343 -> 6fa417959bf9.
+  PRODUCTION PROOF RECEIPTS: the healed dispatch (workflow_dispatch run
+  32657963256) completed SUCCESS in 8.5 minutes. The live top-level
+  marker is generation 6d56c84a3ac23b8954e59ee7, schema
+  event_workspace_manifest.v2, event_count 5, chaining onto
+  previous_generation_id 8351f6fa8df7507c0ff842d1 with its verified sha
+  receipt. All five tickers' latest reads were verified live on
+  www.mastermind-x.com: AAPL (2026Q3), DHI (2026Q3), PHM (2026Q2), KBH
+  (2026Q2), TOL (2026Q3). The live history walk was verified end-to-end
+  (DHI 2026Q3 gives exactly 1 revision, state complete, form 8-K,
+  receipts present, walk terminates at the v1 root) -- the SAME walk
+  whose pre-optimization cost was measured at 153s against the
+  post-incident chain, the number that motivated the
+  read_all_event_source_revisions shared-walk fix in #6343.
+  THE PRODUCTION INCIDENT, STATED HONESTLY: dispatch run 32652474368 (the
+  FIRST production run of #6322, before the delta heal) crawled each
+  homebuilder issuer's SEC "recent" submissions block back to 2010 under
+  the then-unbounded discovery admission rule, and published ~170
+  historical events before the job's 25-minute timeout killed it
+  mid-step. Those ~170 events are now immutable chain history -- never
+  rewritten -- and are HARMLESS: every one is pre-activation, so A5B's
+  own activation-cutoff law makes them permanently ineligible to ever
+  become an observation. The healed dispatch (32657963256, above)
+  converged back to a normal 5-event nest on its very next run,
+  confirming the delta fix.
+  NAMED RESIDUALS (delta red-team review, not closed by this directive,
+  not hidden): MINOR-1 -- the per-issuer discovery boundary can silently
+  exclude a genuine BETWEEN-QUARTERS amendment (an out-of-window
+  correction to an already-superseded fiscal period); this is
+  fail-closed (never a false admission) but currently silent -- a
+  ::warning is recommended future work, not yet added. MINOR-2 -- the
+  shared walk's own docstring overclaims its complexity: generation
+  MANIFESTS are fetched at O(hops) as documented, but per-event
+  WORKSPACE BODIES are still fetched only where present, so the true
+  cost is O(hops) manifests + O(revisions-found) workspace reads, not a
+  flat O(hops) for everything; the docstring should be corrected to say
+  so. MINOR-3 -- the None-boundary (genuine first-publish) branch's own
+  walk cost is UNBOUNDED in principle (bounded only by the
+  current+prior-fiscal-year row filter, not by a hop cap on that branch
+  specifically); unreachable in practice today (every current issuer
+  already has a represented event), but not structurally guaranteed
+  against a future issuer onboarding with zero prior history. Chain
+  COMPACTION remains declared future work -- the incident alone consumed
+  roughly 35% of the 500-hop DEFAULT_MAX_CHAIN_HOPS bound; the bound is
+  not yet at risk but is no longer purely theoretical headroom. The
+  REPLACEMENT-8-K residual named since wave alpha is UNCHANGED and still
+  open (a same-accession-form-class replacement filing is not
+  distinguished from a genuine correction).
+  A5B STATUS: BUILT_NOT_PROVEN. Activation is NOT yet stamped -- the
+  forward ledger data/cycle_pattern/imce_prospective_observation_v1.jsonl
+  is still absent from main as of 2026-08-23T18:40Z; it is created and
+  activation_started_at is stamped by the FIRST production nightly that
+  runs after this point. Sol's own promotion precondition for A5B (A5C
+  merged AND production-verified) is NOW SATISFIED by the four merges
+  and receipts above. Natural-event proof (a real post-activation
+  DHI/PHM/KBH/TOL earnings event actually observed) remains outstanding
+  -- next expected candidate is KBH FY2026 Q3, ~late September 2026.
+  TREASURY CMT FROZEN TEMPORAL LAW, restated for the next increment
+  (unchanged by this directive, binding on any future C_t leg work):
+  only the official rate/date pair from a first-party Treasury/CMT
+  source may be used; retrieved_at/first_seen_at must be the REAL
+  wall-clock ingestion time, never inferred; publication time is NEVER
+  inferred from the ~3:30PM ET methodology-implied release convention --
+  only a genuine observed retrieval timestamp counts; a decision cutoff
+  consumes only rows whose first_seen_at is at-or-before that cutoff
+  (never the official rate/date field for eligibility); Freddie Mac PMMS
+  stays HELD (not sourced); FRED/ALFRED remain EXCLUDED (no store/cache/
+  archive of FRED content per the standing FRED clause); NAR remains
+  PROHIBITED as a source.
 landmines:
   - "DNR:KILL-OUTCOME-AUDITION is TWO-RULER — no per-name best-of-grid anywhere in IMCE; CELH may never receive a bespoke threshold/indicator/model."
   - "DNR:KILL-ROTATION-CYCLE-CONFLUENCE — no rotation x cycle-position entry confluence construction."

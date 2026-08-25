@@ -6,6 +6,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 import collectors.sec_capital_structure as sec
 from engine.capital_structure.ingestion_health import (
@@ -493,6 +494,42 @@ def test_horizon_capacity_degradation_uses_explicit_arrival_and_unserved_metrics
     assert horizon["live_tail"]["live_tail_arrival_overflow"] == 19
     assert horizon["live_tail"]["live_tail_unserved_after_selection"] == 1140
     assert "live_tail_arrival_overflow" in horizon["reason_codes"]
+    assert "live_tail_unserved_after_selection" in horizon["reason_codes"]
+
+
+@pytest.mark.parametrize(
+    ("arrivals", "pending", "selected", "state", "overflow"),
+    [
+        (500, 500, 500, "current", 0),
+        (501, 501, 500, "degraded_capacity", 1),
+    ],
+)
+def test_w2b_horizon_keeps_the_500_arrival_boundary_honest(
+    arrivals: int, pending: int, selected: int, state: str, overflow: int,
+):
+    horizon = _calculate_horizon(
+        receipt=_horizon_receipt(
+            arrivals=arrivals, capacity=500, pending=pending, selected=selected,
+        )
+    )
+
+    assert horizon["state"] == state
+    assert horizon["live_tail"]["live_tail_arrival_overflow"] == overflow
+    assert horizon["live_tail"]["live_tail_unserved_after_selection"] == overflow
+    assert ("live_tail_arrival_overflow" in horizon["reason_codes"]) is (overflow > 0)
+
+
+def test_w2b_zero_arrival_overflow_does_not_hide_inherited_live_debt():
+    horizon = _calculate_horizon(
+        receipt=_horizon_receipt(
+            arrivals=485, capacity=500, pending=1_342, selected=500,
+        )
+    )
+
+    assert horizon["state"] == "degraded_capacity"
+    assert horizon["live_tail"]["live_tail_arrival_overflow"] == 0
+    assert horizon["live_tail"]["live_tail_unserved_after_selection"] == 842
+    assert "live_tail_arrival_overflow" not in horizon["reason_codes"]
     assert "live_tail_unserved_after_selection" in horizon["reason_codes"]
 
 

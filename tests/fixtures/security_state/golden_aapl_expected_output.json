@@ -1,0 +1,448 @@
+{
+  "schema": "security_state.v1",
+  "version": "1.0.0",
+  "security_id": "SEC:US-XNAS-AAPL",
+  "issuer_id": "ISS:US-XNAS-AAPL",
+  "listing_key": "US-XNAS-AAPL",
+  "ticker_display": "AAPL",
+  "generated_at": "2026-08-23T12:00:00Z",
+  "content_sha256": "42d8696d1d3a00682fa8e0681ca01f8fe30a21797cb2a70247ab86a49fb1d3a7",
+  "as_of": {
+    "market_at": "2026-08-23",
+    "source_frontier_at": "2026-07-30T20:30:28Z",
+    "state_compiled_at": "2026-08-23T12:00:00Z"
+  },
+  "authority": {
+    "class": "context_only",
+    "display_only": true,
+    "can_rank": false,
+    "can_gate": false,
+    "can_size": false,
+    "can_originate_signal": false,
+    "can_execute": false
+  },
+  "identity_proof": {
+    "state": "PROVEN",
+    "method": "owner_backed_chain.v1",
+    "legs": [
+      {
+        "check": "R1",
+        "description": "security_master row exists, security_state/superseded_by both null",
+        "artifact": "data/reference/security_master.parquet",
+        "reader": "scripts/build_stock_library.py::_read_identity_rows (declared master artifact)",
+        "values_read": [
+          {
+            "field": "row_present",
+            "value": true
+          },
+          {
+            "field": "security_state",
+            "value": null
+          },
+          {
+            "field": "superseded_by",
+            "value": null
+          }
+        ],
+        "result": "pass",
+        "code": null
+      },
+      {
+        "check": "R2",
+        "description": "security_master.issuer_id names the pinned issuer, issuer_state RESOLVED",
+        "artifact": "data/reference/security_master.parquet",
+        "reader": "scripts/build_stock_library.py::_read_identity_rows",
+        "values_read": [
+          {
+            "field": "issuer_id",
+            "value": "ISS:US-XNAS-AAPL"
+          },
+          {
+            "field": "issuer_state",
+            "value": "RESOLVED"
+          }
+        ],
+        "result": "pass",
+        "code": null
+      },
+      {
+        "check": "R3",
+        "description": "issuer_master carries exactly one active row for the pinned CIK",
+        "artifact": "data/reference/issuer_master.parquet",
+        "reader": "scripts/build_stock_library.py::_read_identity_rows",
+        "values_read": [
+          {
+            "field": "cik",
+            "value": "0000320193"
+          },
+          {
+            "field": "matching_row_count",
+            "value": 1
+          },
+          {
+            "field": "status",
+            "value": "active"
+          }
+        ],
+        "result": "pass",
+        "code": null
+      },
+      {
+        "check": "R4",
+        "description": "the pinned issuer's CURRENT security set is exactly {SEC:US-XNAS-AAPL}",
+        "artifact": "data/reference/security_master.parquet",
+        "reader": "scripts/build_stock_library.py::_read_identity_rows",
+        "values_read": [
+          {
+            "field": "security_set",
+            "value": "SEC:US-XNAS-AAPL"
+          },
+          {
+            "field": "count",
+            "value": 1
+          }
+        ],
+        "result": "pass",
+        "code": null
+      },
+      {
+        "check": "R5",
+        "description": "listing_key round-trips to security_id via lib.dataos.identity.parse_listing_key",
+        "artifact": "data/reference/security_master.parquet",
+        "reader": "lib.dataos.identity.parse_listing_key",
+        "values_read": [
+          {
+            "field": "listing_key",
+            "value": "US-XNAS-AAPL"
+          },
+          {
+            "field": "derived_security_id",
+            "value": "SEC:US-XNAS-AAPL"
+          }
+        ],
+        "result": "pass",
+        "code": null
+      },
+      {
+        "check": "R6",
+        "description": "zero matching rows in issuer_migrations.parquet/security_migrations.parquet",
+        "artifact": "data/reference/issuer_migrations.parquet, data/reference/security_migrations.parquet",
+        "reader": "scripts/build_stock_library.py::_read_identity_rows",
+        "values_read": [
+          {
+            "field": "issuer_migration_matches",
+            "value": 0
+          },
+          {
+            "field": "security_migration_matches",
+            "value": 0
+          }
+        ],
+        "result": "pass",
+        "code": null
+      },
+      {
+        "check": "R7",
+        "description": "workspace parity: event_id/company_id/filing cik all bind to the pinned CIK (vacuous pass when no workspace is available this cycle)",
+        "artifact": "event_workspace.v1 (owner-native workspace body)",
+        "reader": "engine.neuralweb.company_intelligence_reader.load_workspace_with_disposition",
+        "values_read": [
+          {
+            "field": "workspace_available",
+            "value": true
+          },
+          {
+            "field": "event_id",
+            "value": "evt_cik0000320193_2026q3_results"
+          },
+          {
+            "field": "company_id",
+            "value": "cik:0000320193"
+          },
+          {
+            "field": "filing_cik",
+            "value": "0000320193"
+          }
+        ],
+        "result": "pass",
+        "code": null
+      },
+      {
+        "check": "R8",
+        "description": "master issuer_cik agrees with the workspace-native CIK (vacuous pass when no workspace is available this cycle)",
+        "artifact": "data/reference/security_master.parquet + event_workspace.v1",
+        "reader": "scripts/build_stock_library.py::_read_identity_rows",
+        "values_read": [
+          {
+            "field": "workspace_available",
+            "value": true
+          },
+          {
+            "field": "master_issuer_cik",
+            "value": "0000320193"
+          },
+          {
+            "field": "workspace_native_cik",
+            "value": "0000320193"
+          }
+        ],
+        "result": "pass",
+        "code": null
+      },
+      {
+        "check": "R9",
+        "description": "corroboration: workspace primary alias agrees with master (mic, inception_code)",
+        "artifact": "event_workspace.v1 issuer.listings[]",
+        "reader": "engine.neuralweb.company_intelligence_reader.load_workspace_with_disposition",
+        "values_read": [
+          {
+            "field": "corroboration_state",
+            "value": "AVAILABLE"
+          }
+        ],
+        "result": "pass",
+        "code": null
+      }
+    ],
+    "equalities": [
+      {
+        "check": "R2",
+        "left": "row.issuer_id",
+        "left_value": "ISS:US-XNAS-AAPL",
+        "right": "expected_issuer_id",
+        "right_value": "ISS:US-XNAS-AAPL",
+        "equal": true
+      },
+      {
+        "check": "R3",
+        "left": "issuer_master matching row count",
+        "left_value": 1,
+        "right": "expected_count",
+        "right_value": 1,
+        "equal": true
+      },
+      {
+        "check": "R4",
+        "left": "issuer.security_set",
+        "left_value": "SEC:US-XNAS-AAPL",
+        "right": "expected_security_set",
+        "right_value": "SEC:US-XNAS-AAPL",
+        "equal": true
+      },
+      {
+        "check": "R5",
+        "left": "parse_listing_key(row.listing_key)->security_id",
+        "left_value": "SEC:US-XNAS-AAPL",
+        "right": "row.security_id",
+        "right_value": "SEC:US-XNAS-AAPL",
+        "equal": true
+      },
+      {
+        "check": "R7a",
+        "left": "workspace.event_id matches pattern",
+        "left_value": true,
+        "right": "expected",
+        "right_value": true,
+        "equal": true
+      },
+      {
+        "check": "R7b",
+        "left": "workspace.issuer.company_id",
+        "left_value": "cik:0000320193",
+        "right": "expected_company_id",
+        "right_value": "cik:0000320193",
+        "equal": true
+      },
+      {
+        "check": "R7c",
+        "left": "workspace.completeness.filing.filing_key.cik",
+        "left_value": "0000320193",
+        "right": "expected_cik",
+        "right_value": "0000320193",
+        "equal": true
+      },
+      {
+        "check": "R8",
+        "left": "master.issuer_cik",
+        "left_value": "0000320193",
+        "right": "workspace_native_cik",
+        "right_value": "0000320193",
+        "equal": true
+      },
+      {
+        "check": "R9",
+        "left": "workspace primary alias (mic,ticker)",
+        "left_value": "XNAS:AAPL",
+        "right": "master (mic,inception_code)",
+        "right_value": "XNAS:AAPL",
+        "equal": true
+      }
+    ],
+    "refusals": [],
+    "disclosures": [
+      "CIK_LEG_UNOWNED_ACCESS: issuer_cik read from declared master artifacts (identity_seams.yml master.artifacts); SecurityIssuerRow omits the column",
+      "NO_GENERAL_NAMESPACE_RENDERER: company_identity.v1 (xnas:AAPL) and Data OS (SEC:US-XNAS-AAPL) grammars are disjoint; this proof is instance-scoped to the golden security and refuses ambiguity",
+      "ISSUERMASTER_CURRENT_IDENTITY_ONLY: no asof-scoped issuer lineage; proof is current-identity",
+      "ALIAS_EPOCH_VALID_FROM: corroboration alias window start is a placeholder floor, not evidence"
+    ]
+  },
+  "coverage": {
+    "overall_state": "PARTIAL",
+    "required_legs_total": 2,
+    "required_legs_available": 2,
+    "required_legs_nonblocking": 2,
+    "optional_legs_total": 5,
+    "optional_legs_available": 2,
+    "optional_legs_nonblocking": 3,
+    "missing_legs": [],
+    "stale_legs": [],
+    "rights_blocked_legs": [],
+    "conflicted_legs": []
+  },
+  "dominant_degradation": "PARTIAL",
+  "legs": {
+    "state": {
+      "deterministic_state_refs": [
+        "ladder.state",
+        "ladder.dir",
+        "tech.chg_1d"
+      ],
+      "ladder_state": "watch",
+      "ladder_direction": "up",
+      "values_read": [
+        {
+          "field": "tech.chg_1d",
+          "value": 0.5
+        }
+      ],
+      "summary": {
+        "en": "Ladder state: watch (up).",
+        "zh": "阶梯状态：watch（上行）。"
+      },
+      "coverage_state": "AVAILABLE"
+    },
+    "change": {
+      "economic_episode_ref": "evt_cik0000320193_2026q3_results",
+      "event_refs": [
+        "evt_cik0000320193_2026q3_results"
+      ],
+      "generation_id": "6d56c84a3ac23b8954e59ee7",
+      "source_available_at": "2026-07-30T20:30:28Z",
+      "observed_at": "2026-07-30T20:30:28Z",
+      "summary": {
+        "en": "Q3 2026 results workspace is complete: 3 fact(s), 1 delta(s), 2 guidance item(s).",
+        "zh": "Q3 2026 财报工作区状态为 complete：3 项事实、1 项变动、2 项指引。"
+      },
+      "correction_state": "none",
+      "coverage_state": "AVAILABLE",
+      "workspace_warnings": [
+        "collector_filing_unjoinable",
+        "consensus_unlicensed",
+        "questions_count_unstructured",
+        "reaction_not_joined",
+        "slides_absent",
+        "wire_record_not_found"
+      ]
+    },
+    "opportunity_context": {
+      "prophet": {
+        "ref": null,
+        "state": "UNAVAILABLE",
+        "reason": "no current Prophet US owner output for this security"
+      },
+      "entry": {
+        "state": "AVAILABLE",
+        "available": true,
+        "null_reason": null
+      },
+      "market_incorporation": {
+        "ref": null,
+        "state": "NOT_COVERED"
+      },
+      "dislocation": {
+        "ref": null,
+        "state": "NOT_COVERED"
+      },
+      "coverage_state": "AVAILABLE"
+    },
+    "risk": {
+      "risk_refs": [
+        "Valuation is rich relative to trailing five-year multiples.",
+        "alerts_n_recent:2",
+        "alerts_n_total:10"
+      ],
+      "failed_gates": [],
+      "strongest_unresolved_fact": {
+        "state": "workspace_warning",
+        "leg": "change",
+        "code": "reaction_not_joined",
+        "en": "Market reaction data has not been joined to this release yet.",
+        "zh": "市场反应数据尚未与此次发布关联。"
+      },
+      "coverage_state": "AVAILABLE"
+    },
+    "catalyst": {
+      "next_observables": [
+        {
+          "kind": "ESTIMATED_WINDOW",
+          "window_start": "2026-09-12",
+          "window_end": "2026-10-10",
+          "authoritative": false,
+          "basis": "deterministic Mastermind estimate: fiscal_period.calendar_end + ~1 fiscal quarter; no canonical earnings-calendar owner exists"
+        }
+      ],
+      "deadlines": [],
+      "coverage_state": "PARTIAL"
+    },
+    "personal_impact": {
+      "state": "NO_USER_CONTEXT",
+      "user_exposure_overlay_ref": null,
+      "coverage_state": "NOT_APPLICABLE"
+    },
+    "evidence": {
+      "evidence_block_refs": [
+        "ebl_5b86ed829a65b95f6f82bc5a856f8f74b6af2825013681b8fe2ed21b72924c97"
+      ],
+      "recipe_id": "erp_5687f42d2acac8826110a5952a4d0ba0d662453577258fe8145214ab98b90d19",
+      "compilation": {
+        "schema": "evidence_foundation.recipe_compilation_receipt.v1",
+        "version": "1.0.0",
+        "recipe_id": "erp_5687f42d2acac8826110a5952a4d0ba0d662453577258fe8145214ab98b90d19",
+        "consumer": {
+          "workstream": "WS:MARKET-OS",
+          "job": "build security_state.v1 for AAPL",
+          "output_contract": "security_state.v1"
+        },
+        "state": "partial",
+        "dominant_degradation": "unknown",
+        "block_ids": [
+          "ebl_5b86ed829a65b95f6f82bc5a856f8f74b6af2825013681b8fe2ed21b72924c97"
+        ],
+        "missing_required_blocks": [],
+        "missing_optional_blocks": [],
+        "identity_unresolved_blocks": [],
+        "denominator": {
+          "total": 1,
+          "included": 1,
+          "excluded": 0,
+          "missing": 0,
+          "stale": 0,
+          "rights_blocked": 0,
+          "fallback": 0,
+          "identity_unresolved": 0
+        },
+        "owner_payloads_persisted": false,
+        "authority": {
+          "can_rank": false,
+          "can_gate": false,
+          "can_size": false,
+          "can_originate": false,
+          "can_open_entry": false
+        }
+      },
+      "conflicts": [],
+      "coverage_state": "PARTIAL"
+    }
+  },
+  "last_good": null
+}

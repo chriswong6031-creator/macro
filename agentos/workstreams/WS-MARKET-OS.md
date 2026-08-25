@@ -22,67 +22,82 @@ waves:
     next_action: Merge the records PR; do not start runtime work from the records branch.
   - id: A1A
     title: Portfolio Population Truth + State Authority
-    status: in_progress
+    status: done
     depends_on: [M0]
     next_action: >
-      Engineering closed and live 2026-08-21 across three Sol rounds: #6098
-      (initial wave), #6109 (serving allowlist), #6136 (round-2 blockers +
-      snapshot authority; 2633380f800a), #6160 (round-3 P0 auth-generation
-      binding for every portfolio op + consumer request-generation guard, risk
-      provenance {scope,gen} minted at the FX universe resolution with
-      fail-closed consumer rejection, wl-auth AUTO_W latch clear, client-init
-      terminality; merge 9ed19a144a28; two-commit PR, adversarially reviewed,
-      every guard mutation-red-proven). The #6109 merge-over-hold incident is
-      recorded (DEC:MERGE-AUTOMATION-MUST-ENFORCE-RECORDED-HOLDS) and enforced
-      in automation (#6149, merge 8a1b93889061). Anonymous production matrix
-      PASSED live (round-2 receipts in agentos/handoffs/MARKET-OS-2026-08-21.md;
-      round-3 re-verification after render at merge sha). PD1 Terminal mutation
-      authority repair #456 is merged/deployed at 3f85efeb19bd and its bounded
-      authenticated one-sentinel create/update/failure-honesty/close/reopen/delete
-      production reproof passed with exact receipts, Macro-Terminal canonical
-      agreement, durable cleanup to the sealed 13-row multiset, and unchanged
-      Watchlists (agentos/handoffs/MARKET-OS-2026-08-22.md). Remaining before
-      status done: PR #6257 proved that the existing authenticated owner-scoped
-      path preserves explicit row identity and semantic fields but production
-      rewrites created_at and updated_at. Under
-      DEC:MARKET-OS-A1A-RESTORATION-EQUALITY-EXCLUDES-SERVER-TIMESTAMPS, those
-      two server-generated fields alone are excluded from A1A restoration
-      equality; the semantic-v2 row fingerprint plus a separate authoritative
-      ordered-id seal remain exact. Before any canonical evacuation, execute one
-      new temporary-row delete-and-restore proof under ordinary owner RLS, remove
-      the probe permanently, prove the 13-row semantic-v2 and ordered-id seals plus
-      both Watchlist seals unchanged, and return for fresh destructive authority.
-      Do not execute Scene 9 or begin A1B without separate authority, and do not
-      mark A1A done before Sol accepts it.
+      ACCEPTED IN PRODUCTION by Sol on 2026-08-23 under
+      DEC:MARKET-OS-A1A-ACCEPTED-IN-PRODUCTION. Engineering closed across #6098,
+      #6109, #6136, and #6160; PD1 Terminal mutation authority repair #456 is
+      merged/deployed; the semantic-v2 restoration blocker was resolved under
+      DEC:MARKET-OS-A1A-RESTORATION-EQUALITY-EXCLUDES-SERVER-TIMESTAMPS; the
+      one-row restoration probe passed; and the final authenticated production matrix
+      passed true-zero, one-position, all-unsized equal-assumption, mixed-sizing
+      abstention, degraded-last-good, first-read explicit unknown, continuous
+      Macro-Terminal conformance, privacy, exact temporary cleanup, sequential
+      semantic-v2 restoration, and immediate plus delayed reconciliation. The sealed
+      canonical 13-row Portfolio and four-list/134-membership Watchlist baselines were
+      restored with no temporary residue. Do not repeat the matrix absent contradictory
+      production evidence or explicit recommission. A1A acceptance does not implement
+      or automatically start A1B. Scene 9 was intentionally prohibited by the later,
+      specific authenticated-matrix authorities and was not executed; Sol's final
+      acceptance supersedes the older account-transition production-proof clause in
+      DEC:MARKET-OS-A1A-MERGED-PRODUCTION-ACCEPTANCE-REQUIRED for A1A completion.
+      That clause is not hidden A1A debt, while the merged #6160 auth-generation
+      protections remain intact.
   - id: A1B
     title: Portfolio Fast Start Import
     status: todo
     depends_on: [A1A]
     next_action: >
-      Do not start until Sol accepts A1A in production. Then ship reviewed paste to
-      canonical positions with stable identity, atomic/idempotent persistence, and
-      Macro/Terminal conformance.
+      A1A is now accepted, so A1B is eligible for a separate bounded Sol commission.
+      Before any code write, refresh current Macro main, protected Terminal master,
+      open PR/worktree/path collisions, the Active Build Map, and the canonical
+      portfolio_positions mutation/identity contracts. Then ship one reviewed paste
+      to canonical positions vertical with stable identity, atomic/idempotent
+      persistence, lost-response safety, and Macro/Terminal conformance. Do not absorb
+      A2-A6 or a broad My Market rewrite.
   - id: A2-A6
     title: Persistent sizing assumptions, CSV import, My Market rail, universal add, and Watchlist workspace
     status: todo
     depends_on: [A1B]
     next_action: Commission one independently useful vertical at a time; no broad My Market rewrite.
-  - id: B1-B6
-    title: Canonical Security State and chart-first security cockpit
-    status: todo
+  - id: B1A
+    title: security_state.v1 golden AAPL product vertical (contract + compiler + producer + dossier Decision Spine)
+    status: in_progress
     depends_on: [A1A]
     next_action: >
-      Build security_state.v1 into the existing stockdata plane and prove one real
-      dossier consumer before changing the full dossier composition.
+      DELIVERED-HELD 2026-08-24 under the Chairman dispatch of the prepared B1A
+      commission: identity gate adjudicated PASSED instance-scoped via the exact
+      owner-backed chain (DEC:MARKET-OS-B1A-IDENTITY-GATE-OWNER-BACKED-CHAIN —
+      adversarial BLOCKED verdict preserved inside as dissent), K1 evidence
+      composition runs cik-native (four-owner golden fixture untouched, still
+      REFUSED), producer is a frozen ("AAPL",) allowlist stage in
+      build_stock_library, consumer is the server-rendered Decision Spine on the
+      AAPL dossier. The B1A PR is DRAFT + HOLD-FOR-SOL — Sol reviews the
+      adjudication, implementation, and browser evidence; do not arm or merge.
+      Production proof (live object + live page) executes only after Sol accepts
+      and merges; capability is BUILT_NOT_PROVEN until then. Universe expansion
+      beyond AAPL is BLOCKED on the owner-routed ListingAlias→ListingKey
+      renderer + K1 vocabulary triple repair (named Sol item), and
+      CIK_LEG_UNOWNED_ACCESS names the reader-surface repair
+      (expose issuer_cik on lib.dataos.identity readers).
+  - id: B1B-B6
+    title: Terminal/Desk projection and chart-first security cockpit over frozen security_state.v1
+    status: todo
+    depends_on: [B1A]
+    next_action: >
+      Separate commission after Sol accepts B1A; B1B requires the frozen
+      security_state.v1 surface plus the identity-renderer repair before any
+      second issuer.
   - id: C1-C6
     title: What Changed and deterministic Market discovery
     status: todo
-    depends_on: [B1-B6]
+    depends_on: [B1B-B6]
     next_action: Use compact Security State and Change Event projections; no fused rank.
   - id: D1-D9
     title: Portfolio Brief v3, Risk Packet, Holdings Map, visible risk sections, and scenarios
     status: todo
-    depends_on: [A2-A6, B1-B6]
+    depends_on: [A2-A6, B1B-B6]
     next_action: Preserve the existing risk core and one Portfolio composer; current-context mode precedes forecast mode.
   - id: E1-E3
     title: My Market Overview, personalized change feed, alerts, and digest
@@ -92,12 +107,15 @@ waves:
   - id: F0-F5
     title: Forecast Packet, prospective ledgers, shadow evaluation, and earned promotion
     status: todo
-    depends_on: [B1-B6, D1-D9]
+    depends_on: [B1B-B6, D1-D9]
     next_action: No live forward claim before point-in-time replay, calibration, forward shadow, and explicit authority promotion.
 decisions:
+  - "DEC:MARKET-OS-B1A-IDENTITY-GATE-OWNER-BACKED-CHAIN"
   - "DEC:MARKET-OS-WATCHLIST-PORTFOLIO-SEPARATE-TRUTH-UNIFIED-EXPERIENCE"
   - "DEC:MARKET-OS-PORTFOLIO-TRUTH-PRECEDES-FAST-IMPORT"
   - "DEC:MARKET-OS-A1A-RESTORATION-EQUALITY-EXCLUDES-SERVER-TIMESTAMPS"
+  - "DEC:MARKET-OS-A1A-MERGED-PRODUCTION-ACCEPTANCE-REQUIRED"
+  - "DEC:MARKET-OS-A1A-ACCEPTED-IN-PRODUCTION"
 discoveries:
   - "DSC:MARKET-OS-PASTE-FLOW-WRITES-WATCHLIST-NOT-PORTFOLIO"
   - "DSC:MARKET-OS-AUTHENTICATED-PORTFOLIO-FAILS-OPEN-TO-LOCAL"
@@ -109,7 +127,8 @@ landmines:
     Do not restore the union; population law is §11 of the A1A freeze.
   - >-
     `templates/watchlist.js::runEntry` currently mutates the Watchlist and a temporary
-    ENTERED overlay; it is not a canonical Portfolio import.
+    ENTERED overlay; it is not a canonical Portfolio import. A1B owns the future
+    canonical paste/import path and must not reuse this mutation as Portfolio authority.
   - >-
     FIXED by A1A closure (#6136): identity decides authority (_isLocalMode := !user);
     an authenticated cloud failure resolves degraded/error (last-good read-only or
@@ -139,26 +158,29 @@ do_not_redo:
   - Do not treat the six-tab Risk Center or giant inline drawers as the final flagship design.
   - Do not call infrastructure or green CI product completion without a real production user journey.
   - Do not attempt to preserve created_at or updated_at during the bounded A1A restore; omit both and let production generate them.
-  - Do not delete a canonical Portfolio row before the new semantic-v2 temporary-row restoration proof passes and Sol grants fresh action-time authority.
+  - Do not repeat the passed semantic-v2 temporary-row restoration probe; its exact cleanup receipt is durable in the latest handoff.
+  - Do not repeat the passed final authenticated A1A production matrix unless new contradictory production evidence appears or Sol explicitly recommissions it.
+  - Do not reopen Scene 9 as hidden A1A debt; it was prohibited by the later specific matrix authorities and Sol accepted A1A without it.
+  - Do not treat merged PR #6125's pre-production-proof BUILT_NOT_PROVEN state as the current gate; preserve it as historical reconciliation evidence.
 artifacts:
   - research/market_os/MASTERMIND_MARKET_OS_ARCHITECTURE_FREEZE_AND_A1A_COMMISSIONING_2026-08-20.md
   - agentos/handoffs/MARKET-OS-2026-08-20.md
   - agentos/handoffs/MARKET-OS-2026-08-21.md
   - agentos/handoffs/MARKET-OS-2026-08-22.md
   - agentos/handoffs/MARKET-OS-2026-08-22-a1a-restoration-blocker.md
+  - agentos/handoffs/MARKET-OS-2026-08-22-a1a-restoration-v2-probe.md
+  - agentos/handoffs/MARKET-OS-2026-08-23-a1a-final-authenticated-matrix.md
+  - agentos/handoffs/MARKET-OS-2026-08-23-a1a-sol-acceptance.md
+  - agentos/handoffs/MARKET-OS-2026-08-20-a1a-merge-reconciliation.md
+  - agentos/decisions/DEC-MARKET-OS-A1A-MERGED-PRODUCTION-ACCEPTANCE-REQUIRED.md
 next_action: >
-  A1A engineering is merged and live (#6136, 2633380f800a). PD1 Terminal repair
-  #456 is also merged/live at 3f85efeb19bd, and its bounded authenticated
-  one-sentinel production reproof passed with durable cleanup and unchanged
-  Watchlists. PR #6257 then proved the ordinary authenticated owner path preserves
-  explicit identity and semantic fields while rewriting only created_at and updated_at.
-  Apply DEC:MARKET-OS-A1A-RESTORATION-EQUALITY-EXCLUDES-SERVER-TIMESTAMPS now:
-  execute exactly one new temporary-row semantic-v2 delete-and-restore proof, omit
-  both server timestamps on restore, permanently delete the probe, and prove the
-  canonical 13-row semantic-v2, ordered-id, and Watchlist seals unchanged. Return
-  that receipt for fresh destructive authorization before any canonical evacuation.
-  Scene 9 remains excluded, and A1B plus every later dependent wave remain blocked
-  on Sol accepting A1A in production.
+  PRIMARY: commission exactly A1B Portfolio Fast Start Import after a fresh current-head,
+  open-PR/worktree/path-collision, Active Build Map, and canonical mutation/identity
+  census across Macro and protected Terminal. A1B must write reviewed paste/import rows
+  to canonical portfolio_positions with stable identity, atomic/idempotent persistence,
+  lost-response safety, and Macro-Terminal conformance; do not absorb A2-A6. PARALLEL:
+  RCTX-1 remains bound to merged #6300 and its existing Fable DELIVERY_ONLY transport;
+  reconcile only when real ACK/branch/PR/return evidence appears and do not auto-failover.
 ---
 
 ## Current state
@@ -168,9 +190,13 @@ planning turns established one product with three lenses: Market, Security, and 
 Market; one shared Decision Spine; separate public intelligence and private exposure;
 and explicit fact, deterministic-state, forecast, and decision authority.
 
-The current Portfolio implementation is not a safe foundation for import or advanced
-analysis because it can describe the Watchlist, a temporary basket, or canonical
-positions through the same surface. A1A repairs that authority before adding a writer.
+A1A is accepted in production. The canonical Portfolio population/state authority seam
+is now a proven foundation for the next import wave: authenticated users do not fail open
+to local Portfolio state; Watchlists and temporary baskets do not enter Portfolio count,
+market membership, weighting, book or risk; weighting assumptions and abstention are
+explicit; and Macro/Terminal agreement has been demonstrated across the frozen live
+matrix. Fast Start Import itself is still NOT_BUILT and must arrive through A1B rather
+than by relabeling the existing Watchlist/ENTERED paste path.
 
 ## Program-parent note
 
@@ -179,4 +205,4 @@ owns the shared user-state and alert product boundary. Market OS does not transf
 identity, news, company-event, signal, risk, or forecast authority into that program;
 those domain owners remain independent and are composed through governed contracts.
 A later semantic-map amendment may introduce a dedicated flagship product program, but
-that registry change is not required to begin the bounded A1A truth repair.
+that registry change is not required to continue the bounded Market OS sequence.

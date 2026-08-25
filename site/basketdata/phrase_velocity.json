@@ -1,8 +1,8 @@
 {
   "schema": "edgar_phrase_velocity.v1",
   "vocab_version": 1,
-  "as_of": "2026-08-21",
-  "generated_at": "2026-08-22T01:19:23.957601+00:00",
+  "as_of": "2026-08-24",
+  "generated_at": "2026-08-25T01:48:31.746136+00:00",
   "authority": {
     "may_rank": false,
     "may_gate": false,
@@ -31,21 +31,21 @@
       "ticker_count": 26,
       "top_accelerating": [
         {
+          "phrase": "on allocation",
+          "recent_count": 2,
+          "prior_count": 0,
+          "recent_filers": 2,
+          "prior_filers": 0,
+          "velocity_z": 2.0,
+          "is_affinity_phrase": true
+        },
+        {
           "phrase": "extended lead times",
           "recent_count": 2,
           "prior_count": 0,
           "recent_filers": 1,
           "prior_filers": 0,
           "velocity_z": 2.0,
-          "is_affinity_phrase": true
-        },
-        {
-          "phrase": "on allocation",
-          "recent_count": 2,
-          "prior_count": 1,
-          "recent_filers": 2,
-          "prior_filers": 1,
-          "velocity_z": 1.0,
           "is_affinity_phrase": true
         }
       ],
@@ -100,11 +100,11 @@
       "top_accelerating": [
         {
           "phrase": "record backlog",
-          "recent_count": 5,
-          "prior_count": 0,
-          "recent_filers": 5,
-          "prior_filers": 0,
-          "velocity_z": 5.0,
+          "recent_count": 4,
+          "prior_count": 1,
+          "recent_filers": 4,
+          "prior_filers": 1,
+          "velocity_z": 3.0,
           "is_affinity_phrase": true
         }
       ],
@@ -186,11 +186,11 @@
           "is_affinity_phrase": false
         },
         {
-          "phrase": "record backlog",
-          "recent_count": 31,
-          "prior_count": 3,
-          "recent_filers": 30,
-          "prior_filers": 3,
+          "phrase": "extended lead times",
+          "recent_count": 24,
+          "prior_count": 4,
+          "recent_filers": 23,
+          "prior_filers": 4,
           "velocity_z": 5.0,
           "is_affinity_phrase": false
         },
@@ -205,10 +205,10 @@
         },
         {
           "phrase": "longer lead times",
-          "recent_count": 26,
-          "prior_count": 1,
-          "recent_filers": 26,
-          "prior_filers": 1,
+          "recent_count": 25,
+          "prior_count": 2,
+          "recent_filers": 25,
+          "prior_filers": 2,
           "velocity_z": 5.0,
           "is_affinity_phrase": false
         },
@@ -246,11 +246,11 @@
           "is_affinity_phrase": false
         },
         {
-          "phrase": "record backlog",
-          "recent_count": 31,
-          "prior_count": 3,
-          "recent_filers": 30,
-          "prior_filers": 3,
+          "phrase": "extended lead times",
+          "recent_count": 24,
+          "prior_count": 4,
+          "recent_filers": 23,
+          "prior_filers": 4,
           "velocity_z": 5.0,
           "is_affinity_phrase": false
         },
@@ -265,10 +265,10 @@
         },
         {
           "phrase": "longer lead times",
-          "recent_count": 26,
-          "prior_count": 1,
-          "recent_filers": 26,
-          "prior_filers": 1,
+          "recent_count": 25,
+          "prior_count": 2,
+          "recent_filers": 25,
+          "prior_filers": 2,
           "velocity_z": 5.0,
           "is_affinity_phrase": false
         },
@@ -299,11 +299,11 @@
           "is_affinity_phrase": false
         },
         {
-          "phrase": "record backlog",
-          "recent_count": 31,
-          "prior_count": 3,
-          "recent_filers": 30,
-          "prior_filers": 3,
+          "phrase": "extended lead times",
+          "recent_count": 24,
+          "prior_count": 4,
+          "recent_filers": 23,
+          "prior_filers": 4,
           "velocity_z": 5.0,
           "is_affinity_phrase": false
         },
@@ -318,10 +318,10 @@
         },
         {
           "phrase": "longer lead times",
-          "recent_count": 26,
-          "prior_count": 1,
-          "recent_filers": 26,
-          "prior_filers": 1,
+          "recent_count": 25,
+          "prior_count": 2,
+          "recent_filers": 25,
+          "prior_filers": 2,
           "velocity_z": 5.0,
           "is_affinity_phrase": false
         },
@@ -351,16 +351,6 @@
       "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
     },
     {
-      "phrase": "record backlog",
-      "recent_count": 21,
-      "prior_count": 3,
-      "recent_filers": 20,
-      "prior_filers": 3,
-      "velocity_z": 5.0,
-      "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
-      "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
-    },
-    {
       "phrase": "unable to meet demand",
       "recent_count": 21,
       "prior_count": 2,
@@ -372,10 +362,10 @@
     },
     {
       "phrase": "longer lead times",
-      "recent_count": 25,
-      "prior_count": 1,
-      "recent_filers": 25,
-      "prior_filers": 1,
+      "recent_count": 24,
+      "prior_count": 2,
+      "recent_filers": 24,
+      "prior_filers": 2,
       "velocity_z": 5.0,
       "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
       "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
@@ -391,32 +381,22 @@
       "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
     },
     {
-      "phrase": "tight supply",
-      "recent_count": 10,
-      "prior_count": 2,
-      "recent_filers": 9,
-      "prior_filers": 2,
-      "velocity_z": 4.0,
-      "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
-      "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
-    },
-    {
-      "phrase": "supply constrained",
-      "recent_count": 22,
-      "prior_count": 5,
-      "recent_filers": 22,
-      "prior_filers": 5,
-      "velocity_z": 3.4,
-      "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
-      "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
-    },
-    {
       "phrase": "extended lead times",
       "recent_count": 22,
-      "prior_count": 6,
+      "prior_count": 4,
       "recent_filers": 22,
-      "prior_filers": 6,
-      "velocity_z": 2.6666666666666665,
+      "prior_filers": 4,
+      "velocity_z": 4.5,
+      "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
+      "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
+    },
+    {
+      "phrase": "record backlog",
+      "recent_count": 19,
+      "prior_count": 5,
+      "recent_filers": 18,
+      "prior_filers": 5,
+      "velocity_z": 2.8,
       "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
       "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
     },
@@ -427,6 +407,26 @@
       "recent_filers": 13,
       "prior_filers": 3,
       "velocity_z": 2.25,
+      "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
+      "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
+    },
+    {
+      "phrase": "supply constrained",
+      "recent_count": 19,
+      "prior_count": 6,
+      "recent_filers": 19,
+      "prior_filers": 5,
+      "velocity_z": 2.1666666666666665,
+      "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
+      "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
+    },
+    {
+      "phrase": "tight supply",
+      "recent_count": 9,
+      "prior_count": 3,
+      "recent_filers": 8,
+      "prior_filers": 3,
+      "velocity_z": 2.0,
       "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
       "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
     },

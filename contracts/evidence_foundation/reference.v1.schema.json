@@ -1,0 +1,482 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/evidence_foundation/reference.v1.schema.json",
+  "title": "Evidence Foundation owner-native reference v1",
+  "description": "A pointer-only, zero-authority reference to one immutable owner-native object. This is not an evidence body, truth mirror, physical index row, or promotion path.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "version",
+    "reference_id",
+    "object_class",
+    "owner_store",
+    "native_identity",
+    "native_schema",
+    "native_digest",
+    "coverage_class",
+    "freshness",
+    "rights",
+    "authority_class",
+    "subject",
+    "secondary_subjects",
+    "clocks",
+    "provenance",
+    "relations",
+    "missingness",
+    "correction",
+    "replay",
+    "authority"
+  ],
+  "properties": {
+    "schema": {"const": "evidence_foundation.reference.v1"},
+    "version": {"const": "1.0.0"},
+    "reference_id": {"type": "string", "pattern": "^efr_[a-f0-9]{64}$"},
+    "object_class": {
+      "enum": [
+        "world_observation",
+        "derived_view",
+        "system_belief",
+        "forward_claim",
+        "instrument_state"
+      ]
+    },
+    "owner_store": {"type": "string", "minLength": 1, "maxLength": 128},
+    "native_identity": {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 8,
+      "propertyNames": {"pattern": "^[A-Za-z_][A-Za-z0-9_.-]{0,63}$"},
+      "additionalProperties": {
+        "oneOf": [
+          {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024,
+            "pattern": "^[^\\r\\n]+$"
+          },
+          {"type": "integer", "minimum": 0}
+        ]
+      }
+    },
+    "native_schema": {"type": "string", "minLength": 1, "maxLength": 256},
+    "native_digest": {"$ref": "#/$defs/nativeDigest"},
+    "coverage_class": {
+      "enum": [
+        "unknown",
+        "current_only",
+        "record_history_complete",
+        "source_release_snapshot_only",
+        "append_only_bitemporal",
+        "immutable_generation",
+        "prospective_only",
+        "reconstruction",
+        "partial"
+      ]
+    },
+    "freshness": {"$ref": "#/$defs/freshness"},
+    "rights": {"$ref": "#/$defs/rights"},
+    "authority_class": {
+      "enum": ["fact", "deterministic", "model", "human"]
+    },
+    "subject": {"$ref": "#/$defs/subject"},
+    "secondary_subjects": {
+      "type": "array",
+      "maxItems": 16,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/subject"}
+    },
+    "clocks": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 24,
+      "items": {"$ref": "#/$defs/nativeClock"}
+    },
+    "provenance": {"$ref": "#/$defs/provenance"},
+    "relations": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {"$ref": "#/$defs/relation"}
+    },
+    "missingness": {"$ref": "#/$defs/missingness"},
+    "correction": {"$ref": "#/$defs/correction"},
+    "replay": {"$ref": "#/$defs/replay"},
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "date": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})$"
+    },
+    "clockClass": {
+      "enum": [
+        "world_valid",
+        "source_published",
+        "knowable",
+        "observed",
+        "system_recorded",
+        "belief_or_build",
+        "review_due"
+      ]
+    },
+    "nativeDigest": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state", "sha256"],
+          "properties": {
+            "state": {"const": "known"},
+            "sha256": {"$ref": "#/$defs/sha256"}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state", "sha256"],
+          "properties": {
+            "state": {"const": "unknown"},
+            "sha256": {"type": "null"}
+          }
+        }
+      ]
+    },
+    "freshness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "clock_field", "policy_id"],
+      "properties": {
+        "state": {"enum": ["native_clock_bound", "unknown", "not_applicable"]},
+        "clock_field": {
+          "type": ["string", "null"],
+          "pattern": "^[A-Za-z_][A-Za-z0-9_.-]{0,127}$"
+        },
+        "policy_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 256
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"state": {"const": "native_clock_bound"}}},
+          "then": {"properties": {"clock_field": {"type": "string"}}},
+          "else": {"properties": {"clock_field": {"type": "null"}}}
+        },
+        {
+          "if": {"properties": {"state": {"const": "not_applicable"}}},
+          "then": {"properties": {"policy_id": {"type": "null"}}}
+        }
+      ]
+    },
+    "rights": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "policy_id"],
+      "properties": {
+        "state": {"enum": ["permitted", "rights_blocked", "unknown"]},
+        "policy_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 256
+        }
+      }
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key_type", "key"],
+      "properties": {
+        "key_type": {
+          "enum": [
+            "cik",
+            "issuer_id",
+            "security_id",
+            "listing_key",
+            "award_key",
+            "notice_id",
+            "nct",
+            "theme_node",
+            "chain_id",
+            "claim_id",
+            "accession",
+            "mm_subject",
+            "institutional_manager_cik",
+            "cusip",
+            "theme_evidence_id",
+            "fif_occurrence_id",
+            "fif_packet_id",
+            "institutional_catalog_generation_id",
+            "govrev_event_id",
+            "mm_outcome_record_id"
+          ]
+        },
+        "key": {"type": "string", "minLength": 1, "maxLength": 1024}
+      }
+    },
+    "nativeClock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["class", "field", "value_state", "value", "grain"],
+      "properties": {
+        "class": {"$ref": "#/$defs/clockClass"},
+        "field": {"type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_.-]{0,127}$"},
+        "value_state": {"enum": ["known", "unknown"]},
+        "value": {"type": ["string", "null"]},
+        "grain": {"enum": ["date", "datetime"]}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"value_state": {"const": "unknown"}}},
+          "then": {"properties": {"value": {"type": "null"}}}
+        },
+        {
+          "if": {
+            "properties": {
+              "value_state": {"const": "known"},
+              "grain": {"const": "date"}
+            },
+            "required": ["value_state", "grain"]
+          },
+          "then": {"properties": {"value": {"$ref": "#/$defs/date"}}}
+        },
+        {
+          "if": {
+            "properties": {
+              "value_state": {"const": "known"},
+              "grain": {"const": "datetime"}
+            },
+            "required": ["value_state", "grain"]
+          },
+          "then": {"properties": {"value": {"$ref": "#/$defs/timestamp"}}}
+        }
+      ]
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pointer_only", "body_embedded", "owner_reader", "owner_reader_kind", "pointer"],
+      "properties": {
+        "pointer_only": {"const": true},
+        "body_embedded": {"const": false},
+        "owner_reader": {"type": "string", "minLength": 1, "maxLength": 512},
+        "owner_reader_kind": {"enum": ["direct", "collection", "materializer", "parser"]},
+        "pointer": {"type": "string", "minLength": 1, "maxLength": 4096}
+      }
+    },
+    "axis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "assessment", "basis"],
+      "properties": {
+        "state": {"enum": ["independent", "shared", "unknown", "not_assessed"]},
+        "assessment": {"const": "declarative_unverified"},
+        "basis": {"type": "string", "minLength": 1, "maxLength": 1024}
+      }
+    },
+    "independence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_independence", "information_novelty", "mechanism_independence"],
+      "properties": {
+        "source_independence": {"$ref": "#/$defs/axis"},
+        "information_novelty": {"$ref": "#/$defs/axis"},
+        "mechanism_independence": {"$ref": "#/$defs/axis"}
+      }
+    },
+    "relation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target_reference_id", "type", "automatic_effect", "deterministic_key", "independence"],
+      "properties": {
+        "target_reference_id": {"type": "string", "pattern": "^efr_[a-f0-9]{64}$"},
+        "type": {
+          "enum": [
+            "exact_duplicate",
+            "same_fact",
+            "same_event",
+            "corroborates",
+            "contradicts",
+            "shares_upstream",
+            "corrects",
+            "supersedes",
+            "projects"
+          ]
+        },
+        "automatic_effect": {"const": false},
+        "deterministic_key": {"type": "null"},
+        "independence": {"$ref": "#/$defs/independence"}
+      }
+    },
+    "missingness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "reason", "zero_substituted"],
+      "properties": {
+        "state": {"enum": ["present", "absent"]},
+        "reason": {
+          "type": ["string", "null"],
+          "enum": [
+            null,
+            "explicit_none",
+            "not_applicable",
+            "not_available_for_date",
+            "source_missing",
+            "rights_blocked",
+            "unresolved_identity",
+            "stale",
+            "unsupported",
+            "reconstructed_not_operational_pit",
+            "quarantined",
+            "unknown"
+          ]
+        },
+        "zero_substituted": {"const": false}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"state": {"const": "present"}}},
+          "then": {"properties": {"reason": {"type": "null"}}}
+        },
+        {
+          "if": {"properties": {"state": {"const": "absent"}}},
+          "then": {"properties": {"reason": {"type": "string"}}}
+        }
+      ]
+    },
+    "correction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "predecessor_reference_ids", "clock_field", "chronology_state", "append_only", "mutates_predecessor"],
+      "properties": {
+        "kind": {
+          "enum": [
+            "none",
+            "amendment",
+            "restatement",
+            "source_correction",
+            "withdrawal",
+            "superseding_generation"
+          ]
+        },
+        "predecessor_reference_ids": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^efr_[a-f0-9]{64}$"}
+        },
+        "clock_field": {"type": ["string", "null"], "maxLength": 128},
+        "chronology_state": {
+          "enum": [
+            "not_applicable",
+            "owner_clock_order_verified",
+            "owner_clock_order_not_verified"
+          ]
+        },
+        "append_only": {"const": true},
+        "mutates_predecessor": {"const": false}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"kind": {"const": "none"}}, "required": ["kind"]},
+          "then": {"properties": {"chronology_state": {"const": "not_applicable"}}},
+          "else": {
+            "properties": {
+              "chronology_state": {
+                "enum": ["owner_clock_order_verified", "owner_clock_order_not_verified"]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "cutoff": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "value", "grain"],
+      "properties": {
+        "state": {"enum": ["known", "unknown"]},
+        "value": {"type": ["string", "null"]},
+        "grain": {"enum": ["date", "datetime"]}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"state": {"const": "unknown"}}},
+          "then": {"properties": {"value": {"type": "null"}}}
+        },
+        {
+          "if": {
+            "properties": {"state": {"const": "known"}, "grain": {"const": "date"}},
+            "required": ["state", "grain"]
+          },
+          "then": {"properties": {"value": {"$ref": "#/$defs/date"}}}
+        },
+        {
+          "if": {
+            "properties": {"state": {"const": "known"}, "grain": {"const": "datetime"}},
+            "required": ["state", "grain"]
+          },
+          "then": {"properties": {"value": {"$ref": "#/$defs/timestamp"}}}
+        }
+      ]
+    },
+    "cutoffs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "world_valid",
+        "source_published",
+        "knowable",
+        "observed",
+        "system_recorded",
+        "belief_or_build",
+        "review_due"
+      ],
+      "properties": {
+        "world_valid": {"$ref": "#/$defs/cutoff"},
+        "source_published": {"$ref": "#/$defs/cutoff"},
+        "knowable": {"$ref": "#/$defs/cutoff"},
+        "observed": {"$ref": "#/$defs/cutoff"},
+        "system_recorded": {"$ref": "#/$defs/cutoff"},
+        "belief_or_build": {"$ref": "#/$defs/cutoff"},
+        "review_due": {"$ref": "#/$defs/cutoff"}
+      }
+    },
+    "replay": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "cutoffs", "code_revision", "input_digest", "vintage_state"],
+      "properties": {
+        "mode": {
+          "enum": ["live", "historical_replay", "retrospective_research", "current_rule_recomputation"]
+        },
+        "cutoffs": {"$ref": "#/$defs/cutoffs"},
+        "code_revision": {"type": ["string", "null"], "maxLength": 256},
+        "input_digest": {"oneOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+        "vintage_state": {
+          "enum": [
+            "owner_native",
+            "reconstructed_not_operational_pit",
+            "current_rule_recomputation",
+            "unavailable"
+          ]
+        }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["can_rank", "can_gate", "can_size", "can_originate", "can_open_entry"],
+      "properties": {
+        "can_rank": {"const": false},
+        "can_gate": {"const": false},
+        "can_size": {"const": false},
+        "can_originate": {"const": false},
+        "can_open_entry": {"const": false}
+      }
+    }
+  }
+}

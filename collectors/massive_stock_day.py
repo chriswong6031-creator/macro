@@ -135,7 +135,9 @@ from typing import Iterator
 
 import pandas as pd
 
-from collectors.massive_flatfiles import fetch_aggs, latest_available, enabled
+from collectors.massive_flatfiles import (
+    fetch_aggs, latest_available, probe_available, enabled,
+)
 from lib import config
 from lib.massive_ticker import artifact_relative_path, iter_artifact_paths
 
@@ -697,10 +699,16 @@ def run_incremental(lookback_days: int = 5, pace_s: float = 0.05,
         log.info("massive_stock_day incremental: MASSIVE_S3_* absent — skip")
         return {"blocked": "no_creds"}
 
-    latest_ent = latest_available("stock_day", lookback=7)
+    probe = probe_available("stock_day", lookback=7)
+    latest_ent = probe.available_date
     if latest_ent is None:
-        log.warning("massive_stock_day: cannot determine latest entitled date")
-        return {"blocked": "no_entitled_date"}
+        log.warning(
+            "massive_stock_day: latest entitled date unavailable (%s %s)",
+            probe.reason, probe.detail)
+        blocked = {"blocked": probe.reason}
+        if probe.detail:
+            blocked["blocked_detail"] = probe.detail
+        return blocked
 
     processed = _processed_days()
     if processed:
@@ -760,12 +768,15 @@ class MassiveStockDayAdapter(Adapter):
             # RuntimeError below is real but INVISIBLE — the collect lane's graceful
             # degradation swallows it into run_status.json, which is how 07-04→07-29
             # froze for 21 nights under a green run.  Put it where eyes are.
+            blocked = result["blocked"]
+            detail = result.get("blocked_detail")
+            shown = f"{blocked} ({detail})" if detail else blocked
             if os.environ.get("COLLECT_LANE") == "nightly":
-                print(f"::warning title=massive_stock_day feed blocked::{result['blocked']}"
+                print(f"::warning title=massive_stock_day feed blocked::{shown}"
                       " — the whole-market daily store did not advance tonight (last "
                       "committed manifest tells the real tip); see "
                       "collectors/massive_stock_day.py + data/run_status.json", flush=True)
-            raise RuntimeError(f"massive_stock_day: {result['blocked']}")
+            raise RuntimeError(f"massive_stock_day: {shown}")
 
         n = result.get("days_fetched", 0)
         store_t = result.get("store_tickers", 0)
@@ -787,12 +798,14 @@ if __name__ == "__main__":
         # 3-day smoke test: capture the most recent 3 trading days.  Safe under the
         # v2 state: smoke days land in processed_days like any others; a later full
         # backfill still targets everything else (no high-water-mark poisoning).
-        ent = latest_available("stock_day", lookback=7)
-        if ent:
-            sm_start = ent - timedelta(days=5)
-            r = backfill(start=sm_start, end=ent, max_days=3)
+        probe = probe_available("stock_day", lookback=7)
+        if probe.available_date:
+            sm_start = probe.available_date - timedelta(days=5)
+            r = backfill(start=sm_start, end=probe.available_date, max_days=3)
         else:
-            r = {"blocked": "no_entitled_date"}
+            r = {"blocked": probe.reason}
+            if probe.detail:
+                r["blocked_detail"] = probe.detail
     elif "--rebuild-state" in args:
         # Force a truth rebuild of processed_days from the actual parquets (recovery
         # tool: use when the state file is suspected to diverge from the store).

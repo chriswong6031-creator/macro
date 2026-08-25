@@ -1,6 +1,22 @@
 {
  "status": "upstream_degraded",
- "detail": "derived over a DEGRADED same-run china_filings refresh (sse: HTTP 504 from CNInfo exchange=sse) \u2014 this run contributes no absence evidence",
- "last_attempt_utc": "2026-08-22T09:10:07.504992+00:00",
- "last_success_utc": "2026-08-21T09:29:55.187926+00:00"
+ "detail": "derived over a same-run china_filings TRANSPORT degradation (sse: HTTP 504 from CNInfo exchange=sse) \u2014 this run contributes no absence evidence",
+ "last_attempt_utc": "2026-08-25T09:05:05.220194+00:00",
+ "last_success_utc": "2026-08-23T09:07:33.022647+00:00",
+ "candidate_accounting": {
+  "eligible": 312,
+  "represented_downstream": 312,
+  "typed_exclusions": 0,
+  "exclusions_by_type": {},
+  "coverage_exceptions": {
+   "open": 0,
+   "open_scoped": 0,
+   "open_unscoped": 0,
+   "new_this_run": 0,
+   "reaffirmed_this_run": 0,
+   "resolved_this_run": 0,
+   "readable": true,
+   "boundary_persist_ok": true
+  }
+ }
 }

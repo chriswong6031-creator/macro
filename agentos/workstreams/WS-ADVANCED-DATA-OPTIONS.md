@@ -73,6 +73,40 @@ waves:
       Next: Sol decision on a spine-cadence wave (incremental refresh) +
       store-host runner topology (RE-PIN RULE) / r2sync heal. Do not start
       AD-2; do not shrink the universe.
+  - id: AD-1T1
+    title: Full-universe incremental ThetaData T1 cadence (Sol handoff 2026-08-22)
+    status: in_progress
+    pr: 6267
+    depends_on: [AD-1T0]
+    next_action: >
+      Implementation MERGED (Sol PASS 2026-08-23, release directive
+      ADVANCED_DATA_OPTIONS_AD1T1_RELEASE_AND_PRODUCTION_COMMISSIONING_
+      2026-08-23): PR 6267 squash-merged at accepted head cc2d90399bc4 ->
+      merge SHA 787787f93c8efaaf30b9cd3d32d9446596fa0925 (collision fence
+      clean; exact-head ci/fences green pre-merge; post-merge fences push
+      run green). M1 transition EXECUTED same day per runbook section 3a:
+      com.macro.thetadata-backfill booted out + plist removed + zero
+      orphans; com.macro.thetadata-daily bootstrapped from merge-SHA bytes
+      (7 files sha256-verified; streamed transfer because theta-ops-wt's
+      origin remote credential is dead — separate debt); weekend RunAtLoad
+      clean no-op proven (no receipt written); Terminal untouched (PID
+      10566, HTTP 200 before/after). State = BUILT_NOT_PROVEN, production
+      commissioning IN PROGRESS. Next: two consecutive normal healthy
+      scheduled sessions (D1 Mon 2026-08-24, D2 Tue 2026-08-25; forced=false,
+      status=healthy, ad_ready_coverage_pct >= 0.90, no deadline breach,
+      Terminal healthy, first fetching run oi_D_source=snapshot_open_
+      interest), then bounded production review + read-only AD diagnostic,
+      then return packet to Sol. NOTE-4 ruled NONBLOCKING (late-recovery
+      sentinel page is a real degraded-SLA alert — do not suppress).
+      No --force-run proof ever. AD-1T2/AD-2 stay CLOSED pending Sol.
+  - id: AD-1T2
+    title: Restore store-bearing M1 to the theta-m1 product workflow; commission AD-1 end to end
+    status: todo
+    depends_on: [AD-1T1]
+    next_action: >
+      NOT STARTED. Opens only after AD-1T1 is Sol-accepted and the T1 cadence
+      is production-proven (two consecutive normal scheduled sessions). Broken
+      R2 sync is not a prerequisite unless new evidence proves it necessary.
   - id: AD-2
     title: Evidence Receipts, Nulls, Lifecycle, Corrections
     status: todo
@@ -147,11 +181,12 @@ do_not_redo:
   - >-
     Sparse selector / W1A is RESEARCH-ONLY. Do not resurrect before the AD-9 ruling.
 next_action: >
-  Execute wave AD-1T0 (ThetaData canonical source cutover): census + PIT
-  reconciliation + identity ruling + bounded adapter + production proof against
-  the newest lawful ThetaData S/D pair. Success => AD-1 = PROVEN_LIVE; return
-  to Sol before AD-2. No Massive/Polygon restoration work belongs to this
-  workstream.
+  Execute wave AD-1T1 (full-universe incremental T1 cadence, Sol handoff
+  2026-08-22): benchmark one-day vendor throughput; extend the existing
+  one-session writer into the daily incremental maintainer; retire whole-year
+  DAILY refresh; return the bounded PR to Sol UNMERGED. AD-1 stays
+  BUILT_NOT_PROVEN until AD-1T2 restores the product workflow. Do not start
+  AD-1T2 or AD-2.
 artifacts:
   - research/ADVANCED_DATA_OPTIONS_EOD_DARK_POOL_INTELLIGENCE_OS_MASTERPLAN_2026-08-17.md
   - research/ADVANCED_DATA_OPTIONS_EOD_AD0_CURRENT_STATE_AND_CAPABILITY_LEDGER_2026-08-17.md
@@ -181,6 +216,11 @@ ThetaData-consuming jobs to the theta-m1 runner labels.
 The repo-local `data/thetadata_eod/` is an EMPTY STUB (`n_roots=0`) and must
 never be treated as production truth — the resolver refuses it by design.
 
-`site/options_intel_brief.json` remains `board_state=STALE_SOURCE` from the
-frozen legacy store (`as_of_session=2026-08-12`) until AD-1T0's cutover PR
-lands and the producer consumes the ThetaData store.
+`site/options_intel_brief.json` is built from the canonical ThetaData store
+since AD-1T0 (PR #6253, merge a45ac6f58e63): honest
+`board_state=INSUFFICIENT_COVERAGE` at 39/375 = 0.104 source coverage. The
+coverage blocker is the T1 spine's 48-root daily refresh
+(DSC:THETADATA-T1-SPINE-DAILY-REFRESH-IS-48-ROOTS); AD-1T1 replaces that
+whole-year refresh with a full-universe one-session incremental maintainer —
+the ~19h full-universe estimate was a property of the whole-year re-pull
+design, not of one-day vendor throughput (Sol ruling, AD-1T1 handoff §0).

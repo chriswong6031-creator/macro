@@ -1,0 +1,604 @@
+{
+  "activation": {
+    "activation_receipt_required": true,
+    "advanced_challenger_outcomes_inspected_before_freeze": false,
+    "freeze_boundary_rule": "first_nyse_session_open_strictly_after_origin_main_commit_containing_exact_registration_digest/v1",
+    "origin_main_required": true,
+    "pre_activation_rows": "retrospective_research_only_never_prospective_evidence",
+    "results_in_this_registration": false
+  },
+  "amendment_law": {
+    "change_policy": "new_version_new_digest_explicit_reason_and_diff",
+    "immutable_registration": true,
+    "new_forward_boundary_required": true,
+    "old_results_remain_reportable": true,
+    "outcome_seen_policy": "any_change_after_outcome_access_is_post_hoc_and_cannot_relabel_prior_holdout",
+    "supersession_required": true
+  },
+  "authority": {
+    "descriptive_context_only": true,
+    "may_claim_fair_value": false,
+    "may_create_lifecycle": false,
+    "may_gate": false,
+    "may_grant_production_authority": false,
+    "may_influence_prophet": false,
+    "may_publish_product_state": false,
+    "may_rank": false,
+    "may_size": false,
+    "may_trade": false
+  },
+  "authored_on": "2026-08-23",
+  "canonicalization": "json_utf8_sort_keys_compact_no_ascii_escape/v1",
+  "baselines": [
+    {
+      "applies_to": [
+        "T1_NEXT_REVISION_DIRECTION",
+        "T2_NEXT_REVISION_ARRIVAL",
+        "T3_REVISION_CLUSTER_ONSET",
+        "T4_CONSENSUS_CHANGE",
+        "T5_DISPERSION_DIRECTION"
+      ],
+      "definition": "Predict no eligible change after the decision cutoff; empirical class probability is fixed from development only where a probability is required.",
+      "fitted_on": "development_only",
+      "id": "B0_NO_CHANGE",
+      "trial_budget_count": 0
+    },
+    {
+      "applies_to": [
+        "T1_NEXT_REVISION_DIRECTION",
+        "T4_CONSENSUS_CHANGE",
+        "T5_DISPERSION_DIRECTION"
+      ],
+      "definition": "Carry the latest cutoff-eligible owner-native consensus and dispersion forward without using a later restatement.",
+      "fitted_on": "none",
+      "id": "B1_LATEST_ELIGIBLE_CONSENSUS",
+      "trial_budget_count": 0
+    },
+    {
+      "applies_to": [
+        "T1_NEXT_REVISION_DIRECTION",
+        "T2_NEXT_REVISION_ARRIVAL",
+        "T3_REVISION_CLUSTER_ONSET",
+        "T4_CONSENSUS_CHANGE",
+        "T5_DISPERSION_DIRECTION"
+      ],
+      "definition": "Deterministic summary of eligible nonzero changes in the trailing 30 calendar days, with absent coverage preserved.",
+      "fitted_on": "none",
+      "id": "B2_REVISION_30D",
+      "trial_budget_count": 0
+    },
+    {
+      "applies_to": [
+        "T1_NEXT_REVISION_DIRECTION",
+        "T2_NEXT_REVISION_ARRIVAL",
+        "T3_REVISION_CLUSTER_ONSET",
+        "T4_CONSENSUS_CHANGE",
+        "T5_DISPERSION_DIRECTION"
+      ],
+      "definition": "Deterministic summary of eligible nonzero changes in the trailing 90 calendar days, with absent coverage preserved.",
+      "fitted_on": "none",
+      "id": "B3_REVISION_90D",
+      "trial_budget_count": 0
+    },
+    {
+      "applies_to": [
+        "T1_NEXT_REVISION_DIRECTION",
+        "T4_CONSENSUS_CHANGE",
+        "T5_DISPERSION_DIRECTION"
+      ],
+      "definition": "Latest cutoff-eligible median among observations inside the preregistered freshness window; stale observations remain in the denominator but cannot become fresh.",
+      "fitted_on": "none",
+      "id": "B4_FRESH_MEDIAN",
+      "trial_budget_count": 0
+    },
+    {
+      "applies_to": [
+        "T1_NEXT_REVISION_DIRECTION",
+        "T2_NEXT_REVISION_ARRIVAL",
+        "T3_REVISION_CLUSTER_ONSET",
+        "T4_CONSENSUS_CHANGE",
+        "T5_DISPERSION_DIRECTION"
+      ],
+      "definition": "REV-1 deterministic wave baseline using only preregistered revision count, breadth, magnitude, coherence, and freshness components after that contract exists.",
+      "fitted_on": "none",
+      "id": "B5_DETERMINISTIC_WAVE",
+      "trial_budget_count": 0
+    },
+    {
+      "applies_to": [
+        "T1_NEXT_REVISION_DIRECTION",
+        "T2_NEXT_REVISION_ARRIVAL",
+        "T3_REVISION_CLUSTER_ONSET",
+        "T4_CONSENSUS_CHANGE",
+        "T5_DISPERSION_DIRECTION",
+        "T6_MARKET_RESIDUAL_RESPONSE",
+        "T7_EXPECTATION_MARKET_LEAD_LAG",
+        "T8_NEXT_PHASE_TRANSITION"
+      ],
+      "definition": "Development-era base rate stratified only by target, metric, horizon, and declared coverage band; no holdout frequencies enter it.",
+      "fitted_on": "development_only",
+      "id": "B6_HISTORICAL_BASE_RATE",
+      "trial_budget_count": 0
+    },
+    {
+      "applies_to": [
+        "T6_MARKET_RESIDUAL_RESPONSE",
+        "T7_EXPECTATION_MARKET_LEAD_LAG",
+        "T8_NEXT_PHASE_TRANSITION"
+      ],
+      "definition": "Owner-native raw, broad-market, and sector-relative price components only; no expectation inputs and no new residual computation.",
+      "fitted_on": "development_only",
+      "id": "B7_MARKET_SECTOR_ONLY",
+      "trial_budget_count": 0
+    },
+    {
+      "applies_to": [
+        "T6_MARKET_RESIDUAL_RESPONSE",
+        "T7_EXPECTATION_MARKET_LEAD_LAG",
+        "T8_NEXT_PHASE_TRANSITION"
+      ],
+      "definition": "Eligible deterministic expectation components only; no price, residual, options, or later event-outcome inputs.",
+      "fitted_on": "development_only",
+      "id": "B8_REVISIONS_ONLY",
+      "trial_budget_count": 0
+    }
+  ],
+  "challenger_budget": {
+    "failed_trials_count": true,
+    "families": [
+      {
+        "id": "REGULARIZED_LINEAR_OR_HAZARD",
+        "maximum_trials": 12
+      },
+      {
+        "id": "GRADIENT_BOOSTED_TREES",
+        "maximum_trials": 16
+      },
+      {
+        "id": "BAYESIAN_CHANGE_POINT",
+        "maximum_trials": 10
+      },
+      {
+        "id": "LATENT_STATE_SPACE",
+        "maximum_trials": 10
+      },
+      {
+        "id": "POINT_PROCESS_CASCADE",
+        "maximum_trials": 8
+      },
+      {
+        "id": "SEQUENCE_MODEL",
+        "maximum_trials": 8
+      }
+    ],
+    "fdr_family": "k3e_expectation_market_dynamics_v1",
+    "manual_feature_or_threshold_change_counts": true,
+    "maximum_total_trials": 64,
+    "trial_identity": "model_family+target+horizon+feature_set+preprocessing+hyperparameters+seed_policy"
+  },
+  "coverage_gate": {
+    "current_regime_required": true,
+    "hostile_cases": [
+      {
+        "expected_question": "Does thin lawful coverage abstain instead of emitting a confident phase?",
+        "expected_result_policy": "UNESTIMABLE or LOW_COVERAGE is correct; no imputation into eligibility.",
+        "id": "THIN_COVERAGE",
+        "kind": "hostile_synthetic"
+      },
+      {
+        "expected_question": "Are negative and near-zero EPS observations handled without unstable percentage transforms?",
+        "expected_result_policy": "Use owner-native scale strata or abstain; percentage division by near-zero EPS is forbidden.",
+        "id": "NEGATIVE_NEAR_ZERO_EPS",
+        "kind": "hostile_synthetic"
+      },
+      {
+        "expected_question": "Can a fiscal-period rollover be distinguished from a genuine same-period revision?",
+        "expected_result_policy": "Rollover alone is lineage, not a revision label or episode.",
+        "id": "FISCAL_ROLL",
+        "kind": "hostile_synthetic"
+      },
+      {
+        "expected_question": "Does a provider 429 become missing transport evidence rather than a neutral market datum?",
+        "expected_result_policy": "The attempt is receipted; observation state is unavailable and never zero or unchanged.",
+        "id": "PROVIDER_429",
+        "kind": "hostile_synthetic"
+      },
+      {
+        "expected_question": "Does broad-market versus sector-baseline disagreement remain printed rather than fused?",
+        "expected_result_policy": "Both owner-native components remain visible; no universal residual or scalar gap is created.",
+        "id": "MARKET_SECTOR_BASELINE_CONFLICT",
+        "kind": "hostile_synthetic"
+      },
+      {
+        "expected_question": "Does an uncovered options name remain estimable only for the components actually present?",
+        "expected_result_policy": "Options is explicitly unavailable; no synthetic uncertainty is inferred.",
+        "id": "NO_OPTIONS_COVERAGE",
+        "kind": "hostile_synthetic"
+      },
+      {
+        "expected_question": "Does a correction preserve the earlier as-known value and supersession lineage?",
+        "expected_result_policy": "Replay at each cutoff returns the version known then; later correction never rewrites the past.",
+        "id": "CORRECTION_SUPERSESSION",
+        "kind": "hostile_synthetic"
+      }
+    ],
+    "minimum_named_case_fraction_answered": 0.6,
+    "minimum_scored_fraction_of_eligible": 0.6,
+    "motivating_cases": [
+      {
+        "expected_question": "Can the live AAPL event path be reconstructed at the requested cutoff without current-state backfill?",
+        "expected_result_policy": "Answer from owner-native clocks or report the exact missing component; no expected directional winner is preregistered.",
+        "id": "AAPL_CURRENT_LIVE_EVENT_PATH",
+        "kind": "live_or_historical"
+      },
+      {
+        "expected_question": "Can the post-June-2026 MRNA revision episode be represented with honest observation and episode clocks?",
+        "expected_result_policy": "Report coverage, freshness, and revision labels without predeclaring a favorable model result.",
+        "id": "MRNA_POST_JUNE_2026_REVISION_EPISODE",
+        "kind": "live_or_historical"
+      },
+      {
+        "expected_question": "Does the NVDA 2023 historical case refuse unavailable PIT revisions or options rather than backfill current snapshots?",
+        "expected_result_policy": "UNAVAILABLE or UNESTIMABLE is a passing integrity outcome where lawful PIT inputs are absent.",
+        "id": "NVDA_2023_PIT_NEGATIVE_CONTROL",
+        "kind": "live_or_historical"
+      },
+      {
+        "expected_question": "Does GOOG/GOOGL resolve through one issuer with two securities without duplicating issuer episodes?",
+        "expected_result_policy": "Issuer evidence is shared only through the canonical identity seam; security market paths remain separate.",
+        "id": "GOOG_GOOGL_DUAL_CLASS_IDENTITY",
+        "kind": "live_or_historical"
+      }
+    ],
+    "panel_missingness_required": true
+  },
+  "decision_law": {
+    "advance_all_required": [
+      "exact_registration_digest_was_on_origin_main_before_eligible_observations",
+      "strongest_eligible_baseline_is_beaten_on_primary_loss_in_validation_and_locked_holdout",
+      "relative_primary_loss_improvement_is_at_least_0.05_in_both_validation_and_locked_holdout",
+      "issuer_episode_cluster_bootstrap_95pct_ci_for_loss_improvement_excludes_zero",
+      "benjamini_yekutieli_q_is_at_most_0.10_for_the_full_registered_family",
+      "overall_effective_n_is_at_least_100_distinct_issuer_episodes",
+      "each_promotion_bearing_subgroup_has_at_least_25_distinct_issuer_episodes",
+      "scored_fraction_and_named_case_coverage_floors_are_met_without_hiding_abstentions",
+      "current_regime_and_all_motivating_cases_are_reported_before_conclusion",
+      "calibration_and_abstention_metrics_do_not_materially_regress_vs_the_strongest_baseline",
+      "no_leakage_rights_identity_correction_or_denominator_blocker_survives_independent_review"
+    ],
+    "kill_or_revise_if": [
+      "locked_holdout_primary_loss_is_not_better_than_the_strongest_eligible_baseline",
+      "advantage_disappears_under_issuer_episode_clustering_or_date_block_sensitivity",
+      "result_requires_current_consensus_backfill_future_analyst_skill_future_membership_or_post_event_feature_selection",
+      "coverage_selection_or_survivorship_explains_the_claim",
+      "trial_budget_or_registered_FDR_family_is exceeded",
+      "motivating_cases_or_current_regime_are_systematically_refused_while_easy_historical_cases_drive_the_win"
+    ],
+    "prospective_authority_requirement": "new_explicit_promotion_decision_after_prospective_shadow_never_from_EVAL_0",
+    "research_only_if": [
+      "retrospective_gates_pass_but_prospective_shadow_floor_is_not_yet_mature",
+      "only_non_primary_subgroups_show_improvement",
+      "calibration_or_abstention_quality_is_incomplete",
+      "rights_allow_research_but_not_the_intended_product_or_derived_use"
+    ],
+    "review_requirement": "independent_adversarial_review_of_coverage_leakage_effective_n_denominators_and_actual_use_case",
+    "unestimable_if": [
+      "no_lawful_PIT_source_supports_the_registered_target",
+      "overall_effective_n_is_below_100_after_episode_clustering",
+      "scored_fraction_of_eligible_is_below_0.60",
+      "identity_or_clock_completeness_cannot_support_cutoff_replay",
+      "rights_block_the_observation_grain_or_reproducible_evaluation",
+      "all_advanced_challengers_abstain_on_more_than_0.40_of_eligible_rows"
+    ]
+  },
+  "episode_law": {
+    "cluster_keys": [
+      "issuer_ref",
+      "episode_id",
+      "event_cluster_id"
+    ],
+    "effective_n": "distinct_issuer_episodes_after_overlap_clustering",
+    "episode_identity": "sha256(issuer_ref,metric,horizon_or_fiscal_period,episode_start_nyse_session)",
+    "event_overlap_policy": "overlapping_owner_native_events_for_one_issuer_collapse_to_one_event_cluster_for_inference",
+    "fiscal_roll_policy": "new_period_identity_without_nonzero_same_period_change_does_not_start_revision_episode",
+    "minimum_overall_episodes": 100,
+    "minimum_subgroup_episodes": 25,
+    "quiet_gap_sessions": 20,
+    "raw_row_count_may_substitute": false
+  },
+  "eras": [
+    {
+      "end": "2018-12-31",
+      "id": "DEVELOPMENT",
+      "outcome_access": "tuning_allowed_within_budget",
+      "promotion_eligible": false,
+      "purpose": "Feature construction and challenger fitting only; all trials count toward the frozen budget.",
+      "start": "2012-01-03"
+    },
+    {
+      "end": "2022-12-30",
+      "id": "VALIDATION",
+      "outcome_access": "model_selection_only",
+      "promotion_eligible": false,
+      "purpose": "Select one final challenger per registered target and horizon without touching the later holdout.",
+      "start": "2019-01-02"
+    },
+    {
+      "end": "2026-08-21",
+      "id": "LOCKED_RETROSPECTIVE_HOLDOUT",
+      "outcome_access": "locked_until_single_final_evaluation",
+      "promotion_eligible": true,
+      "purpose": "One final retrospective evaluation. This era is chronologically held out by this program, not represented as an unknowable historical tape.",
+      "start": "2023-01-03"
+    },
+    {
+      "end": null,
+      "id": "PROSPECTIVE_SHADOW",
+      "outcome_access": "append_only_shadow_no_tuning",
+      "promotion_eligible": false,
+      "purpose": "Natural-time corroboration beginning only after the activation receipt; interim reads are diagnostic and cannot retune the frozen challenger.",
+      "start": null
+    }
+  ],
+  "metrics": {
+    "abstention": "risk_coverage_curve_plus_error_and_denominator_by_abstention_reason",
+    "calibration": "reliability_curve_ece_calibration_intercept_and_slope",
+    "classification_primary": "multiclass_log_loss_then_brier_score",
+    "continuous_primary": "mae_and_pinball_loss_on_owner_native_scale_with_metric_currency_strata",
+    "ranking_is_descriptive_only": true,
+    "subgroups": [
+      "market_cap_band",
+      "sector",
+      "metric",
+      "horizon",
+      "coverage_band",
+      "rights_class",
+      "region",
+      "era",
+      "event_proximity",
+      "positive_negative_near_zero_eps"
+    ],
+    "survival_primary": "ipcw_integrated_brier_score_with_censoring_preserved",
+    "uncertainty": "issuer_episode_cluster_bootstrap_95pct_ci_and_date_block_sensitivity"
+  },
+  "multiple_testing": {
+    "family_scope": "all_promotion_bearing_challenger_target_horizon_comparisons_in_K3E_EVAL_0_V1",
+    "primary_pvalue_unit": "issuer_episode_clustered_loss_difference_vs_strongest_eligible_baseline",
+    "procedure": "benjamini_yekutieli",
+    "q": 0.1,
+    "subgroup_policy": "descriptive_unless_preregistered_primary_no_subgroup_rescue_of_failed_overall_result",
+    "unregistered_comparison_policy": "exploratory_only_and_counts_toward_future_declared_budget_if_reused"
+  },
+  "null_and_adverse_law": {
+    "allowed_terminal_states": [
+      "ADVANCE_RESEARCH_ONLY",
+      "RETAIN_BASELINE",
+      "REVISE_PREREG",
+      "KILL_CONSTRUCTION",
+      "UNESTIMABLE_AS_PROGRAM",
+      "RIGHTS_BLOCKED",
+      "INSUFFICIENT_EPISODE_N"
+    ],
+    "censored_not_negative": true,
+    "missing_not_zero": true,
+    "no_winner_shopping": true,
+    "publication": "all_registered_targets_trials_abstentions_failures_nulls_and_adverse_subgroups_reported",
+    "rights_blocked_not_imputed": true
+  },
+  "owners": {
+    "binding_decisions": [
+      "DEC:K3E-EXPECTATION-MARKET-DYNAMICS-FREEZE",
+      "DEC:MARKET-BELIEF-IS-COMPOSITION-NOT-TRUTH-STORE"
+    ],
+    "common_expectation_federation": "MAS-119",
+    "evaluation_law": "WS:EVAL-OS-MEASUREMENT-LAW",
+    "family_incorporation_science": "MAS-118",
+    "forbidden_duplicates": [
+      "expectation_truth_store",
+      "identity_plane",
+      "event_system",
+      "residual_engine",
+      "ranker",
+      "evaluation_plane",
+      "lifecycle",
+      "publication_plane"
+    ],
+    "reused_planes": [
+      "existing_revisions_owner",
+      "existing_identity_owner",
+      "existing_event_owners",
+      "existing_DRL_and_residual_alpha",
+      "existing_options_owners",
+      "existing_Eval_OS_and_QLedger_for_later_prospective_claims",
+      "existing_Market_OS_for_later_product_projection"
+    ],
+    "semantic_program": "WS:ALPHA-INTELLIGENCE-INTEGRATION"
+  },
+  "population": {
+    "adr_policy": "separate_declared_subgroup_never_silently_pool_with_domestic_common",
+    "coverage_floor_policy": "no_imputation_into_eligibility_denominator_and_no_drop_without_reason",
+    "delistings_policy": "retain_if_lawfully_observable_and_report_missing_delisted_count",
+    "excluded_security_types": [
+      "etf",
+      "etn",
+      "cef",
+      "fund",
+      "preferred",
+      "warrant",
+      "unit",
+      "shell_without_operating_issuer_mapping"
+    ],
+    "identity_rule": "canonical_owner_issuer_security_mapping_at_decision_cutoff_no_ticker_guess",
+    "membership_rule": "point_in_time_membership_at_decision_cutoff_not_current_survivor_list",
+    "primary_cohort": "US_PRIMARY_LISTED_COMMON_EQUITY",
+    "region_policy": "non_us_is_separate_descriptive_subgroup_until_own_preregistered_episode_floor",
+    "rights_policy": "unlicensed_or_nonreproducible_rows_are_ineligible_and_counted_rights_blocked",
+    "security_types": [
+      "common_stock"
+    ]
+  },
+  "program": "K3E_EXPECTATION_MARKET_DYNAMICS",
+  "registration_id": "K3E-EVAL-0-V1",
+  "schema": "k3e.expectation_market_dynamics.evaluation_prereg/v1",
+  "status": "FROZEN_BEFORE_ADVANCED_TUNING",
+  "targets": [
+    {
+      "censoring": "If no later eligible changed same-period observation exists inside 63 sessions, censor at the last observable session; unchanged scheduled snapshots are FLAT, failed attempts are not FLAT.",
+      "eligible_grain": "issuer+metric+normalized_fiscal_period_or_raw_horizon at one decision cutoff",
+      "family": "expectation",
+      "horizons_sessions": [
+        1,
+        5,
+        21,
+        63
+      ],
+      "id": "T1_NEXT_REVISION_DIRECTION",
+      "label": "UP, DOWN, or FLAT from the first later eligible same-period consensus change on owner-native scale; fiscal rollover alone is not a change.",
+      "promotion_eligible": true,
+      "required_dependencies": [
+        "SRC-A1 accepted raw observations",
+        "source contract with correction and fiscal lineage",
+        "canonical identity mapping"
+      ]
+    },
+    {
+      "censoring": "Right-censor at each registered horizon; a failed or rate-limited collection attempt never becomes no-arrival.",
+      "eligible_grain": "issuer+metric+normalized_fiscal_period_or_raw_horizon at one decision cutoff",
+      "family": "expectation",
+      "horizons_sessions": [
+        5,
+        21,
+        63
+      ],
+      "id": "T2_NEXT_REVISION_ARRIVAL",
+      "label": "Time to the first later eligible nonzero same-period consensus change.",
+      "promotion_eligible": true,
+      "required_dependencies": [
+        "SRC-A1 accepted raw observations",
+        "attempt receipts separating transport nulls from observations",
+        "owner-native NYSE session mapping"
+      ]
+    },
+    {
+      "censoring": "Right-censor at 21 sessions. Consensus-snapshot and contributor-level strata never pool.",
+      "eligible_grain": "issuer+metric+normalized_fiscal_period_or_raw_horizon at one decision cutoff",
+      "family": "expectation",
+      "horizons_sessions": [
+        10,
+        21
+      ],
+      "id": "T3_REVISION_CLUSTER_ONSET",
+      "label": "Consensus-snapshot onset is at least two same-direction nonzero same-period changes inside 10 sessions; contributor-level onset is at least three distinct contributor revisions inside 5 sessions only where identity and rights allow.",
+      "promotion_eligible": true,
+      "required_dependencies": [
+        "SRC-A1 accepted raw observations",
+        "rights-declared observation granularity",
+        "fixed cluster stratum before evaluation"
+      ]
+    },
+    {
+      "censoring": "Use the latest eligible same-period value at the registered horizon; missing later value remains censored or absent, never zero.",
+      "eligible_grain": "issuer+metric+normalized_fiscal_period_or_raw_horizon at one decision cutoff",
+      "family": "expectation",
+      "horizons_sessions": [
+        21,
+        63
+      ],
+      "id": "T4_CONSENSUS_CHANGE",
+      "label": "Owner-native-scale change from cutoff consensus to the latest eligible same-period consensus at the horizon, evaluated separately by metric, units, currency, and positive/negative/near-zero EPS stratum.",
+      "promotion_eligible": true,
+      "required_dependencies": [
+        "deterministic expectation surface contract",
+        "unit currency and basis preservation",
+        "same-period fiscal mapping"
+      ]
+    },
+    {
+      "censoring": "If no lawfully comparable dispersion field exists, emit UNESTIMABLE; high-low range may not masquerade as standard deviation.",
+      "eligible_grain": "issuer+metric+normalized_fiscal_period_or_raw_horizon+dispersion_measure at one decision cutoff",
+      "family": "expectation",
+      "horizons_sessions": [
+        21,
+        63
+      ],
+      "id": "T5_DISPERSION_DIRECTION",
+      "label": "WIDEN, NARROW, or FLAT for the same owner-native dispersion measure between cutoff and horizon.",
+      "promotion_eligible": true,
+      "required_dependencies": [
+        "deterministic expectation surface contract",
+        "same-measure dispersion lineage",
+        "coverage denominator"
+      ]
+    },
+    {
+      "censoring": "If the existing residual owner cannot emit the cutoff-consistent component, grade RAW_ONLY separately or UNESTIMABLE; K3E never recomputes a residual.",
+      "eligible_grain": "issuer expectation episode with owner-native market-response imports at the same cutoff",
+      "family": "market_response",
+      "horizons_sessions": [
+        5,
+        21,
+        63
+      ],
+      "id": "T6_MARKET_RESIDUAL_RESPONSE",
+      "label": "Existing-owner issuer residual return over the registered horizon, with raw, broad-market, and sector components reported separately.",
+      "promotion_eligible": false,
+      "required_dependencies": [
+        "MKT-1 accepted market-response read-model",
+        "existing DRL or residual-alpha output",
+        "corporate-action and universe receipts"
+      ]
+    },
+    {
+      "censoring": "No lag label when either trajectory is stale, rights-blocked, or too sparsely sampled for the registered resolution.",
+      "eligible_grain": "issuer episode with accepted expectation and market-response trajectories",
+      "family": "coupling_phase",
+      "horizons_sessions": [
+        21,
+        63
+      ],
+      "id": "T7_EXPECTATION_MARKET_LEAD_LAG",
+      "label": "EXPECTATIONS_PRECEDE, MARKET_PRECEDES, SYNCHRONOUS, OPPOSING, or UNESTIMABLE from a later frozen deterministic coupling contract; the label has no fair-value meaning.",
+      "promotion_eligible": false,
+      "required_dependencies": [
+        "EXP-1 accepted expectation surface",
+        "MKT-1 accepted market-response surface",
+        "CPL-1 deterministic coupling contract"
+      ]
+    },
+    {
+      "censoring": "If the complete printed subcomponents cannot support both cutoff and future phase under the same version, emit UNESTIMABLE.",
+      "eligible_grain": "issuer episode with two version-identical descriptive phase emissions",
+      "family": "coupling_phase",
+      "horizons_sessions": [
+        21,
+        63
+      ],
+      "id": "T8_NEXT_PHASE_TRANSITION",
+      "label": "Whether and how the later descriptive phase differs from the cutoff phase; transition vocabulary is fixed by PHASE-1 before any trial starts.",
+      "promotion_eligible": false,
+      "required_dependencies": [
+        "PHASE-1 accepted descriptive projection",
+        "version-identical printed subcomponents",
+        "no hidden scalar phase classifier"
+      ]
+    }
+  ],
+  "time_law": {
+    "correction_policy": "use_only_correction_versions_known_by_cutoff_preserve_superseded_as_known_bytes",
+    "decision_cutoff": "nyse_session_close_t_on_or_after_all_input_system_observed_at",
+    "embargo_sessions": 63,
+    "feature_eligibility": "max(owner_available_at,system_observed_at)<=decision_cutoff",
+    "fiscal_clock": "fiscal_period_identity_separate_from_market_session_and_rollover_is_lineage_not_revision",
+    "label_start": "strictly_after_decision_cutoff",
+    "late_arrival_policy": "available_only_after_system_observed_at_never_backfilled_to_source_effective_at",
+    "market_clock": "owner_native_exchange_session_calendar",
+    "overlap_policy": "cluster_overlapping_labels_by_issuer_episode_and_never_count_rows_as_independent",
+    "purge_sessions": 63,
+    "distinct_source_clocks": [
+      "source_effective_at",
+      "source_published_at",
+      "provider_observed_at",
+      "system_observed_at"
+    ]
+  }
+}
