@@ -244,12 +244,60 @@ waves:
       budget-program.json sha-identical to the canonical generation;
       anonymous probes all locked (API 401 missing bearer token; site
       twin 401 locked:true). No authenticated-browser walkthrough
-      performed or required (Chairman sequencing amendment). D6-A = done /
-      Sol acceptance pending. Named unresolveds preserved (retraction
-      path before any parser-version bump; FY2026 sub-cells; E-7 null
-      ratification; NSBDF line-grain gap) in
+      performed or required (Chairman sequencing amendment). D6-A =
+      done / SOL ACCEPTED / PROVEN_LIVE (2026-08-25, macro #6385 comment
+      5404403124, protected Sol Skillpack
+      Mastermind@4d323d03e4151449a4b76abfdfefca1d56825fde). Unresolved
+      rulings in that acceptance: (1) parser-generation retraction is a
+      BINDING PRECONDITION before any parser-version bump — no future
+      parser generation ships until generation scoping/tombstones are
+      frozen; (2) FY2026 sub-cells stay unrepresented — no enum widening
+      authorized; (3) E-7 all-null RATIFIED (computed implicit zero stays
+      forbidden); (4) NSBDF zero-numbered-line partitions accepted as a
+      named coverage/grain gap, verification-only. Handoff:
       agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-24-d6a-budget-rail.md.
-      D6-B+ and D7+ remain UNAUTHORIZED until D6-A returns to Sol.
+  - id: D6-B0
+    title: FMS congressional-notification source migration + stage/contract architecture freeze
+    status: done
+    depends_on: [D6-A]
+    next_action: >
+      Sol-authorized 2026-08-25 in the D6-A acceptance ruling (macro
+      #6385 comment 5404403124): research/source-architecture wave ONLY.
+      DELIVERED 2026-08-25, awaiting Sol acceptance. The FREEZE
+      (research/defense_intelligence/DEFENSE_D6B_FMS_SOURCE_AND_STAGE_ARCHITECTURE_FREEZE_2026-08-25.md)
+      closes every commissioned decision: source boundary (State
+      PM-Bureau current surface for cases notified ≥2026-02-26 per EO
+      14383, both boundary statements receipted verbatim; DSCA
+      landing+Library history; FR as supplementary certification record
+      — 8 sha256-receipted census fetches, transport matrix proven:
+      state.gov CLI-200-deterministic, dsca.mil/media.defense.gov CLI-403
+      browser-only); identity = fms:transmittal:<yy-nn> with frozen
+      label-detection grammar, deterministic URL-path fallback, and
+      conflicted mis-key guard; SAMM-grounded six-stage namespace with
+      v1 proving ONLY congressional_notification and time NEVER
+      advancing stage; estimated_notification_value amount law with
+      cross-case aggregation forbidden; four-clock law (State-era
+      notification date null unless FR join); append-only correction law
+      grounded first-party (State edits posts in place — modified_time
+      5 months post-publication; DSCA Library preserves CNVn correction
+      versions); canonical owner = GovRev-owned FMS rail
+      (DEC:FMS-CANONICAL-OWNER-IS-GOVREV-FMS-RAIL — event.v2 rejected on
+      identity-seed evidence, its event_id seed requires award_key);
+      consumer = ninth bounded fms mode on government_revenue.html
+      (28,890 B measured headroom under the 303,104 fence, ≤8,192 B
+      shell delta); two-plane failure states mapped to canonical
+      spellings; golden canaries 26-13 (DSCA Saudi PAC-3 $9.0B) + 26-27
+      (State Sweden HIMARS $930M) + hostile stage-hold with zero
+      review-period arithmetic; fourteen merge-binding kill tests;
+      real-data reference composition. Opus adversarial review FAILed
+      the draft (5 blockers) — all repaired in c2cd79f96d3e before Sol.
+      Five unresolveds routed to Sol (U1 SAMM C5.7 receipt, U2 bulk
+      DSCA backfill depth, U3 FR join in v1, U4 boundary-window sweep,
+      U5 ZH glance vocabulary). D6-B IMPLEMENTATION REMAINS NOT
+      AUTHORIZED (paste-ready commission:
+      DEFENSE_D6B_FMS_IMPLEMENTATION_HANDOFF.md); D6-C+ and D7+ remain
+      UNAUTHORIZED. D5 remains BUILT_NOT_PROVEN (D5P deferred,
+      nonblocking; never relabel).
 landmines:
   - "Live page is government_revenue.html (underscore). government-revenue.html 404s."
   - "Access (site_full / 401 locked) is independent of epistemics (display/context_only). Do not conflate them."

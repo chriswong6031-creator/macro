@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-08-25T05:22:55.141890+00:00",
+  "generated_utc": "2026-08-25T17:00:34.377415+00:00",
   "as_of": "2026-08-25",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -28927,7 +28927,7 @@
         "ticker": "NVDA",
         "next_date": "2026-08-26",
         "days_to": 1,
-        "eps_forecast": 2.01,
+        "eps_forecast": 2.09,
         "last_surprise_pct": 10.0
       },
       {
