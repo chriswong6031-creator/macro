@@ -5,26 +5,30 @@ freshness stamp. It is deliberately thin: no indicators, no scoring — that liv
 in engine.live_overlay, which splices these prices onto the nightly close series
 and recomputes just the cheap "fast leaves".
 
-Three sources, routed by symbol:
+Four sources, routed by symbol:
   - Polygon snapshot (US equities/ETFs) when a key is present — the entitled,
     lowest-latency feed. Plain (suffix-less, non-future, non-crypto, non-caret)
     symbols go here.
-  - Tencent ``qt.gtimg.cn`` for mainland ``.SS`` / ``.SZ`` symbols — the existing
-    product's genuinely live A-share snapshot source. A successful Tencent batch
-    is authoritative for whether each requested name has a current tradable print;
-    a no-trade/suspension placeholder is omitted rather than painted as 0.00%.
-  - Yahoo ``spark`` for every other non-US market, plus US/Tencent transport
-    fallback. Yahoo can be ~15 minutes delayed, so it is availability fallback for
-    China only when the Tencent REQUEST failed, never when Tencent positively
-    answered a name with no current trade.
+  - Tushare ``rt_k`` for mainland ``.SS`` / ``.SZ`` symbols when the existing
+    ``TUSHARE_TOKEN`` is present and that account is entitled to realtime daily
+    quotes. This is the preferred paid A-share snapshot because one request can
+    cover the board and it carries the exchange trade clock.
+  - Tencent ``qt.gtimg.cn`` is the keyless genuinely-live A-share fallback. It is
+    also the live path for mainland index symbols that ``rt_k`` does not return.
+    A successful Tencent batch is authoritative for whether each requested name
+    has a current tradable print; a no-trade/suspension placeholder is omitted
+    rather than painted as 0.00%.
+  - Yahoo ``spark`` covers every other non-US market, plus US/Tencent *transport*
+    fallback. Yahoo can be ~15 minutes delayed, so it is never used to overwrite
+    a successful live-source no-trade/suspension answer.
 
-Each quote carries a ``price_basis`` (trade / minute / day / prev / regular) so a
-consumer can tell a real live trade from a prior close that merely got a fresh
-snapshot-refresh timestamp — the latter must NOT be treated as live.
+Each quote carries a ``price_basis`` (trade / minute / day / prev / regular) and a
+measured ``delay_min`` so a consumer can distinguish a near-current A-share print
+from a delayed or prior-close snapshot.
 
 Design for graceful degradation: each network call is isolated with light retry.
-Any failure -> that symbol is absent or uses the declared delayed fallback; a fully
-offline run returns ``{}`` and the caller marks everything stale.
+A missing/unenitled Tushare realtime permission falls through to Tencent; a Tencent
+transport failure may fall through to Yahoo. A fully offline run returns ``{}``.
 
 DISPLAY / FEED ONLY — never a scored input on its own.
 """
@@ -46,15 +50,16 @@ _YAHOO_SPARK = "https://query1.finance.yahoo.com/v7/finance/spark"
 _TENCENT_QUOTES = "https://qt.gtimg.cn/q="
 _POLY_SNAPSHOT = "/v2/snapshot/locale/us/markets/stocks/tickers"
 _UA = "Mozilla/5.0 (macro-dashboard live_quotes)"
-# Yahoo's spark endpoint hard-rejects (HTTP 400) a `symbols=` list longer than ~20
-# — empirically 20 OK, 21 fails. The old batch of 50 silently dropped every intl/
-# equity quote (a board like china_stocks has 100+ symbols), so the live overlay
-# looked dead off-US. Keep a safe margin below the cliff.
+# Yahoo's spark endpoint hard-rejects (HTTP 400) a `symbols=` list longer than ~20.
 _YAHOO_BATCH = 20
 # Tencent is comfortable with several dozen comma-separated quote codes. Keep the
-# same 30-name bound the Terminal quote path uses so one provider hiccup has a
-# bounded blast radius and the China Prophet board still resolves in a few calls.
+# same bound the connected Terminal quote path uses so one request hiccup is local.
 _TENCENT_BATCH = 30
+# Tushare rt_k can return the whole A-share market in one call, but its own docs
+# recommend smaller requests for performance. 300 keeps a full Prophet board to a
+# single request while a full-site snapshot stays comfortably below 50 calls/min.
+_TUSHARE_RT_K_BATCH = 300
+_TUSHARE_RT_K_GAP_S = 1.25  # official rt_k permission: 50 calls/minute
 _TENCENT_RECORD_RE = re.compile(r'v_((?:sh|sz)\d+)="([^"]*)"', re.IGNORECASE)
 _CN_TZ = ZoneInfo("Asia/Shanghai")
 
@@ -68,8 +73,7 @@ def _us_settle_window(now: datetime | None = None) -> bool:
     extended-hours prints — a snapshot built then stamps after-hours drift as
     the day's move (worst exactly on news days). Yahoo spark's
     regularMarketPrice pins the official settle (basis 'regular'), so US
-    symbols route there instead. Premarket (04:00–09:30 ET) stays on Polygon:
-    the premarket tape is a designed feature (FTR W2c).
+    symbols route there instead. Premarket (04:00–09:30 ET) stays on Polygon.
     """
     from zoneinfo import ZoneInfo
 
@@ -80,15 +84,13 @@ def _us_settle_window(now: datetime | None = None) -> bool:
 
 
 def is_us_symbol(sym: str) -> bool:
-    """US equity/ETF — Polygon-routable. Anything with a market suffix (``.``), a
-    Yahoo future (``=``), a crypto pair (``-``) or a caret index (``^``) is not
-    (indices/futures/crypto are not entitled on the stocks plan)."""
+    """US equity/ETF — Polygon-routable."""
     s = str(sym).strip().upper()
     return bool(s) and not any(c in s for c in (".", "=", "-", "^"))
 
 
 def is_cn_symbol(sym: str) -> bool:
-    """Mainland Shanghai/Shenzhen symbol supported by Tencent's live quote feed."""
+    """Mainland Shanghai/Shenzhen symbol eligible for the live A-share chain."""
     s = str(sym).strip().upper()
     return s.endswith(".SS") or s.endswith(".SZ")
 
@@ -109,6 +111,15 @@ def _tencent_symbol(code: str) -> str | None:
     if c.startswith("sz") and c[2:].isdigit():
         return c[2:] + ".SZ"
     return None
+
+
+def _tushare_code(sym: str) -> str:
+    s = str(sym).strip().upper()
+    if s.endswith(".SS"):
+        return s[:-3] + ".SH"
+    if s.endswith(".SZ"):
+        return s
+    raise ValueError(f"not a mainland Tushare symbol: {sym}")
 
 
 def _now() -> datetime:
@@ -135,34 +146,44 @@ def _pos(value: object) -> float | None:
     return out if out is not None and out > 0 else None
 
 
-def _tencent_timestamp(value: object) -> datetime | None:
+def _cn_timestamp(value: object) -> datetime | None:
+    """Parse the common China market clocks used by Tushare/Tencent -> UTC."""
     raw = str(value or "").strip()
-    if len(raw) < 14 or not raw[:14].isdigit():
+    if not raw:
         return None
-    try:
-        local = datetime.strptime(raw[:14], "%Y%m%d%H%M%S").replace(tzinfo=_CN_TZ)
-    except ValueError:
-        return None
-    return local.astimezone(timezone.utc)
+    candidates = [raw]
+    if len(raw) >= 14 and raw[:14].isdigit():
+        candidates.insert(0, f"{raw[:4]}-{raw[4:6]}-{raw[6:8]} {raw[8:10]}:{raw[10:12]}:{raw[12:14]}")
+    for candidate in candidates:
+        try:
+            local = datetime.fromisoformat(candidate.replace("Z", "+00:00"))
+        except ValueError:
+            continue
+        if local.tzinfo is None:
+            local = local.replace(tzinfo=_CN_TZ)
+        return local.astimezone(timezone.utc)
+    return None
+
+
+def _no_trade_shape(*, price: float | None, prev_close: float | None,
+                    open_px: float | None, high: float | None, low: float | None,
+                    volume: float | None, amount: float | None,
+                    chg: float | None = None) -> bool:
+    """High-confidence mainland no-trade/suspension placeholder detector."""
+    if price is None or prev_close is None:
+        return False
+    same_close = abs(price - prev_close) <= max(1e-8, abs(prev_close) * 1e-10)
+    zero_change = chg is None or abs(chg) <= 1e-12
+    no_volume = volume is None or volume <= 0
+    no_turnover = amount is None or amount <= 0
+    return (same_close and zero_change and open_px is None and high is None and low is None
+            and no_volume and no_turnover)
 
 
 # ----------------------------------------------------------- pure parsers ----
 
 def parse_polygon_snapshot(payload: dict, now: datetime | None = None) -> dict:
-    """Polygon ``/v2/snapshot/.../tickers`` -> {symbol: quote}. Price preference:
-    last trade -> last minute close -> day close -> prev-day close, recording
-    which rung won as ``price_basis``. CRITICAL: the staleness timestamp is taken
-    from the *trade/minute* time, NOT ``updated`` (which refreshes even with no
-    trade — on a delayed plan or an illiquid name that would falsely look fresh).
-    A day/prev-close basis is stamped not-live so the consumer falls back.
-
-    ``quote_ts_synthetic`` (GD-3R1 amendment F3, additive): True exactly when the
-    emitted ``quote_ts`` is NOT a real market timestamp (a trade/minute print) —
-    i.e. it fell back to the snapshot's ``updated`` refresh clock or, lacking even
-    that, this process's own wall clock. A consumer building an event-time receipt
-    (scripts/build_risk_state.py) must never treat a synthetic clock as the real
-    source-market instant (Sol's cannot-be-established -> null law). No pricing/
-    staleness behavior changes — `delay_min`/`price_basis` are unaffected."""
+    """Polygon snapshot -> {symbol: quote}, preserving the real market clock."""
     now = now or _now()
     out: dict[str, dict] = {}
     for row in (payload or {}).get("tickers", []) or []:
@@ -173,26 +194,22 @@ def parse_polygon_snapshot(payload: dict, now: datetime | None = None) -> dict:
         day, prev = row.get("day") or {}, row.get("prevDay") or {}
         price = basis = ts = None
         synthetic = False
-        if lt.get("p"):                                   # real trade
+        if lt.get("p"):
             price, basis = lt["p"], "trade"
             ts = datetime.fromtimestamp(lt["t"] / 1e9, tz=timezone.utc) if lt.get("t") else None
-        elif mn.get("c"):                                 # current minute bar
+        elif mn.get("c"):
             price, basis = mn["c"], "minute"
             ts = datetime.fromtimestamp(mn["t"] / 1e3, tz=timezone.utc) if mn.get("t") else None
-        elif day.get("c"):                                # today's session close
+        elif day.get("c"):
             price, basis = day["c"], "day"
-        elif prev.get("c"):                               # prior session close
+        elif prev.get("c"):
             price, basis = prev["c"], "prev"
         if not price:
             continue
-        if ts is None:                                    # day/prev (or trade w/o t)
-            # GD-3R1 F3: no real market timestamp exists for this print — the
-            # snapshot's `updated` refresh clock (or, lacking even that, `now`)
-            # is a SYNTHETIC clock, never eligible as a source event clock.
+        if ts is None:
             synthetic = True
             ts = (datetime.fromtimestamp(row["updated"] / 1e9, tz=timezone.utc)
                   if row.get("updated") else now)
-        # Day volume, high, low from the day bucket (zero-extra-request: already fetched).
         day_vol = day.get("v")
         day_hi = day.get("h")
         day_lo = day.get("l")
@@ -210,13 +227,7 @@ def parse_polygon_snapshot(payload: dict, now: datetime | None = None) -> dict:
 
 
 def parse_yahoo_spark(payload: dict, now: datetime | None = None) -> dict:
-    """Yahoo ``spark`` -> {symbol: quote}. ``regularMarketTime`` is epoch seconds
-    (the last regular-session print) -> basis 'regular'.
-
-    ``quote_ts_synthetic`` (GD-3R1 amendment F3, additive): True when Yahoo's own
-    meta carries no ``regularMarketTime`` and ``quote_ts`` fell back to this
-    process's wall clock — see ``parse_polygon_snapshot``'s docstring for the
-    same law. No pricing/staleness behavior changes."""
+    """Yahoo ``spark`` -> {symbol: quote}. Its market time is retained exactly."""
     now = now or _now()
     out: dict[str, dict] = {}
     for res in (payload or {}).get("spark", {}).get("result", []) or []:
@@ -228,7 +239,6 @@ def parse_yahoo_spark(payload: dict, now: datetime | None = None) -> dict:
         ts_s = meta.get("regularMarketTime")
         synthetic = not bool(ts_s)
         ts = datetime.fromtimestamp(ts_s, tz=timezone.utc) if ts_s else now
-        # Volume, high, low from same meta object — zero extra requests.
         day_vol = meta.get("regularMarketVolume")
         day_hi = meta.get("regularMarketDayHigh")
         day_lo = meta.get("regularMarketDayLow")
@@ -246,18 +256,68 @@ def parse_yahoo_spark(payload: dict, now: datetime | None = None) -> dict:
     return out
 
 
-def parse_tencent_quotes(text: str, now: datetime | None = None) -> dict:
-    """Tencent ``qt.gtimg.cn`` text -> current mainland quote records.
+def _table_records(table: object) -> list[dict]:
+    if table is None:
+        return []
+    if isinstance(table, list):
+        return [row for row in table if isinstance(row, dict)]
+    to_dict = getattr(table, "to_dict", None)
+    if callable(to_dict):
+        try:
+            rows = to_dict("records")
+        except Exception:  # noqa: BLE001 — parser boundary, degrade to fallback
+            return []
+        return [row for row in rows if isinstance(row, dict)]
+    return []
 
-    Field offsets mirror the existing Terminal adapter: 3 last, 4 previous close,
-    5 open, 6 cumulative volume in lots, 30 exchange timestamp, 32 change %, 33
-    high, 34 low, 37 turnover. The timestamp is a real Asia/Shanghai market clock.
 
-    A suspended/no-trade name can still come back as a syntactically valid record:
-    last == prevClose, change == 0, O/H/L == 0, volume == 0, turnover == 0. That
-    shape is deliberately omitted. It proves no current tradable print; it must not
-    overwrite the last real session with a fake 0.00% move or a fake candle.
+def parse_tushare_rt_k(table: object, now: datetime | None = None) -> dict:
+    """Tushare ``rt_k`` table -> current A-share quotes.
+
+    ``rt_k.close`` is the latest price (not the completed-session close). A row is
+    accepted as live only when ``trade_time`` is present and parseable; a vendor
+    refresh clock synthesized by us can never earn live authority.
     """
+    now = now or _now()
+    out: dict[str, dict] = {}
+    for row in _table_records(table):
+        sym = str(row.get("ts_code") or "").strip().upper()
+        if sym.endswith(".SH"):
+            sym = sym[:-3] + ".SS"
+        if not is_cn_symbol(sym):
+            continue
+        price = _pos(row.get("close"))
+        prev_close = _pos(row.get("pre_close"))
+        ts = _cn_timestamp(row.get("trade_time"))
+        if price is None or ts is None:
+            continue
+        open_px = _pos(row.get("open"))
+        high = _pos(row.get("high"))
+        low = _pos(row.get("low"))
+        volume = _num(row.get("vol"))
+        amount = _num(row.get("amount"))
+        chg = ((price / prev_close - 1.0) * 100.0) if prev_close else None
+        if _no_trade_shape(price=price, prev_close=prev_close, open_px=open_px,
+                           high=high, low=low, volume=volume, amount=amount, chg=chg):
+            continue
+        out[sym] = {
+            "price": round(price, 4),
+            "quote_ts": ts.isoformat(),
+            "quote_ts_synthetic": False,
+            "source": "tushare-rt-k",
+            "price_basis": "trade",
+            "delay_min": _delay_min(ts, now),
+            "prev_close": round(prev_close, 4) if prev_close is not None else None,
+            "currency": "CNY",
+            "day_volume": int(volume) if volume is not None else None,
+            "day_high": round(high, 4) if high is not None else None,
+            "day_low": round(low, 4) if low is not None else None,
+        }
+    return out
+
+
+def parse_tencent_quotes(text: str, now: datetime | None = None) -> dict:
+    """Tencent ``qt.gtimg.cn`` text -> current mainland quote records."""
     now = now or _now()
     out: dict[str, dict] = {}
     for match in _TENCENT_RECORD_RE.finditer(text or ""):
@@ -267,10 +327,9 @@ def parse_tencent_quotes(text: str, now: datetime | None = None) -> dict:
             continue
         price = _pos(fields[3] if len(fields) > 3 else None)
         prev_close = _pos(fields[4] if len(fields) > 4 else None)
-        ts = _tencent_timestamp(fields[30] if len(fields) > 30 else None)
+        ts = _cn_timestamp(fields[30] if len(fields) > 30 else None)
         if price is None or ts is None:
             continue
-
         open_px = _pos(fields[5] if len(fields) > 5 else None)
         vol_lots = _num(fields[6] if len(fields) > 6 else None)
         chg = _num(fields[32] if len(fields) > 32 else None)
@@ -279,18 +338,10 @@ def parse_tencent_quotes(text: str, now: datetime | None = None) -> dict:
         amount = _num(fields[37] if len(fields) > 37 else None)
         if chg is None and prev_close:
             chg = (price / prev_close - 1.0) * 100.0
-
-        same_close = (
-            prev_close is not None
-            and abs(price - prev_close) <= max(1e-8, abs(prev_close) * 1e-10)
-        )
-        zero_change = chg is not None and abs(chg) <= 1e-12
-        no_volume = vol_lots is None or vol_lots <= 0
-        no_turnover = amount is None or amount <= 0
-        if same_close and zero_change and open_px is None and high is None and low is None \
-                and no_volume and no_turnover:
+        volume_shares = vol_lots * 100 if vol_lots is not None else None
+        if _no_trade_shape(price=price, prev_close=prev_close, open_px=open_px,
+                           high=high, low=low, volume=volume_shares, amount=amount, chg=chg):
             continue
-
         out[sym] = {
             "price": round(price, 4),
             "quote_ts": ts.isoformat(),
@@ -300,7 +351,7 @@ def parse_tencent_quotes(text: str, now: datetime | None = None) -> dict:
             "delay_min": _delay_min(ts, now),
             "prev_close": round(prev_close, 4) if prev_close is not None else None,
             "currency": "CNY",
-            "day_volume": int(vol_lots * 100) if vol_lots is not None else None,
+            "day_volume": int(volume_shares) if volume_shares is not None else None,
             "day_high": round(high, 4) if high is not None else None,
             "day_low": round(low, 4) if low is not None else None,
         }
@@ -311,8 +362,7 @@ def parse_tencent_quotes(text: str, now: datetime | None = None) -> dict:
 
 def _http_json(url: str, params: dict, timeout: int = 12,
                retries: int = 2, backoff: float = 1.5) -> dict | None:
-    """GET + parse JSON with light retry/backoff on 429/5xx/timeout (Yahoo spark
-    and Cboe-style sources hard-limit). Returns None after exhausting retries."""
+    """GET + parse JSON with light retry/backoff on 429/5xx/timeout."""
     for attempt in range(retries + 1):
         try:
             r = requests.get(url, params=params, timeout=timeout,
@@ -361,9 +411,7 @@ def _chunks(xs: list, n: int):
 
 
 def fetch_polygon(symbols: list[str], key: str) -> tuple[dict, str]:
-    """Returns ({symbol: quote}, status) where status surfaces entitlement/auth
-    problems ('ok' | 'not_authorized' | 'error' | 'no_response') so a silent Yahoo
-    fallback doesn't hide an expired/unentitled key."""
+    """Return ({symbol: quote}, status), surfacing Polygon auth/transport state."""
     out: dict[str, dict] = {}
     status = "no_response"
     base = config.load()["polygon"]["base_url"].rstrip("/")
@@ -373,10 +421,10 @@ def fetch_polygon(symbols: list[str], key: str) -> tuple[dict, str]:
             continue
         s = str(j.get("status", "")).upper()
         if s in ("NOT_AUTHORIZED",):
-            log.error("polygon snapshot NOT_AUTHORIZED — key wrong/unentitled: %s", j.get("message"))
+            log.error("polygon snapshot NOT_AUTHORIZED")
             status = "not_authorized"
         elif s in ("ERROR",):
-            log.error("polygon snapshot ERROR: %s", j.get("message"))
+            log.error("polygon snapshot ERROR")
             status = "error" if status == "no_response" else status
         else:
             status = "ok"
@@ -394,14 +442,65 @@ def fetch_yahoo(symbols: list[str]) -> dict:
     return out
 
 
-def fetch_tencent_cn(symbols: list[str]) -> tuple[dict, list[str], str]:
-    """Return (current_quotes, transport_fallback_symbols, status) for mainland names.
+def _load_tushare_client():
+    """Lazy import: the existing canonical Tushare client owns token/auth handling."""
+    try:
+        from collectors import tushare_client
+        return tushare_client
+    except Exception:  # noqa: BLE001 — optional live source, Tencent remains available
+        return None
 
-    A successful response is authoritative even when one requested symbol produces
-    no current quote (for example a suspended/no-trade placeholder filtered by the
-    parser). Yahoo fallback is therefore used only for batches whose Tencent
-    transport/envelope failed, never to turn an explicit no-trade state back into
-    a delayed pseudo-live quote.
+
+def fetch_tushare_cn(symbols: list[str]) -> tuple[dict, list[str], str]:
+    """Preferred paid mainland snapshot; every miss falls through to Tencent.
+
+    Tushare realtime is a separately entitled product. We never infer entitlement
+    from the presence of the ordinary Tushare token: ``query('rt_k')`` must succeed
+    with a real ``trade_time``. A disabled, denied, malformed or partial response
+    therefore degrades to the keyless Tencent live leg without changing the public
+    quote contract.
+    """
+    requested = [str(s).strip().upper() for s in symbols]
+    client = _load_tushare_client()
+    if client is None or not client.enabled():
+        return {}, requested, "disabled"
+
+    out: dict[str, dict] = {}
+    successful_batches = 0
+    failed_batches = 0
+    batches = list(_chunks(requested, _TUSHARE_RT_K_BATCH))
+    fields = "ts_code,pre_close,open,high,low,close,vol,amount,num,trade_time"
+    for idx, batch in enumerate(batches):
+        if idx:
+            time.sleep(_TUSHARE_RT_K_GAP_S)
+        codes = ",".join(_tushare_code(s) for s in batch)
+        frame = client.query("rt_k", fields=fields, ts_code=codes, _return_empty=True)
+        if frame is None:
+            failed_batches += 1
+            continue
+        successful_batches += 1
+        parsed = parse_tushare_rt_k(frame)
+        for sym in batch:
+            if sym in parsed:
+                out[sym] = parsed[sym]
+
+    missing = [s for s in requested if s not in out]
+    if successful_batches == 0:
+        status = "unavailable" if failed_batches else "empty"
+    elif failed_batches:
+        status = "partial"
+    else:
+        status = "ok"
+    return out, missing, status
+
+
+def fetch_tencent_cn(symbols: list[str]) -> tuple[dict, list[str], str]:
+    """Return (current_quotes, yahoo_transport_fallback_symbols, status).
+
+    A successful Tencent envelope is authoritative even when one requested symbol
+    has no current trade (e.g. suspended/no-trade placeholder filtered by parser).
+    Yahoo fallback is used only for an entire batch whose Tencent transport/envelope
+    failed, never to turn an explicit no-trade state back into delayed pseudo-live.
     """
     out: dict[str, dict] = {}
     fallback: list[str] = []
@@ -433,15 +532,16 @@ def fetch_quotes(symbols: list[str], *, us_source: str | None = None,
                  offline: bool = False, diag: dict | None = None) -> dict:
     """Return {symbol: quote} for as many symbols as resolve.
 
-    US equities prefer Polygon when entitled; mainland .SS/.SZ symbols prefer the
-    genuinely live Tencent snapshot; all other international instruments use Yahoo
-    spark. Yahoo is a China fallback only for a failed Tencent transport batch.
-    ``offline=True`` short-circuits to ``{}``. ``diag`` exposes both provider states.
+    US: Polygon when entitled, Yahoo fallback.
+    Mainland: Tushare rt_k when actually entitled -> Tencent live fallback -> Yahoo
+    only on Tencent transport failure.
+    Other international: Yahoo spark.
     """
     if offline or not symbols:
         if diag is not None:
             state = "offline" if offline else "unused"
             diag["polygon_status"] = state
+            diag["tushare_status"] = state
             diag["tencent_status"] = state
         return {}
     cfg = config.load().get("live") or {}
@@ -449,29 +549,35 @@ def fetch_quotes(symbols: list[str], *, us_source: str | None = None,
     key = config.secret("POLYGON_API_KEY") or config.secret("MASSIVE_API_KEY")
 
     us = [s for s in symbols if is_us_symbol(s)]
-    cn = [s for s in symbols if is_cn_symbol(s)]
+    cn = [str(s).strip().upper() for s in symbols if is_cn_symbol(s)]
     intl = [s for s in symbols if not is_us_symbol(s) and not is_cn_symbol(s)]
     out: dict[str, dict] = {}
     poly_status = "unused"
+    tushare_status = "unused"
     tencent_status = "unused"
 
     if us:
         if us_source == "polygon" and key and not _us_settle_window():
-            # Settle-clean routing (TS-U5): post-close the trade/minute rungs
-            # carry extended-hours prints; Yahoo 'regular' pins the settle.
             poly_out, poly_status = fetch_polygon(us, key)
             out.update(poly_out)
-        missing = [s for s in us if s not in out]   # Yahoo fallback for any gap / no key
+        missing = [s for s in us if s not in out]
         if missing:
             out.update(fetch_yahoo(missing))
+
     if cn:
-        cn_out, cn_fallback, tencent_status = fetch_tencent_cn(cn)
-        out.update(cn_out)
-        if cn_fallback:
-            out.update(fetch_yahoo(cn_fallback))
+        ts_out, cn_for_tencent, tushare_status = fetch_tushare_cn(cn)
+        out.update(ts_out)
+        if cn_for_tencent:
+            tx_out, yahoo_fallback, tencent_status = fetch_tencent_cn(cn_for_tencent)
+            out.update(tx_out)
+            if yahoo_fallback:
+                out.update(fetch_yahoo(yahoo_fallback))
+
     if intl:
         out.update(fetch_yahoo(intl))
+
     if diag is not None:
         diag["polygon_status"] = poly_status
+        diag["tushare_status"] = tushare_status
         diag["tencent_status"] = tencent_status
     return out
