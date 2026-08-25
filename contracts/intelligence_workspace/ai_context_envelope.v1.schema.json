@@ -34,9 +34,9 @@
       "required": ["symbol", "timeframe", "page", "panel"],
       "properties": {
         "symbol": {"type": ["string", "null"], "pattern": "^[A-Z]{1,5}$"},
-        "timeframe": {"type": ["string", "null"]},
-        "page": {"type": ["string", "null"]},
-        "panel": {"type": ["string", "null"]}
+        "timeframe": {"type": ["string", "null"], "maxLength": 32},
+        "page": {"type": ["string", "null"], "maxLength": 32},
+        "panel": {"type": ["string", "null"], "maxLength": 32}
       }
     },
     "effective_context": {
@@ -52,7 +52,13 @@
             "active_selection", "ambient_context", "no_context"
           ]
         },
-        "precedence": {"type": "string", "minLength": 1, "maxLength": 64}
+        "precedence": {
+          "enum": [
+            "explicit_over_pinned", "explicit_over_active", "explicit_over_ambient",
+            "pinned_over_active", "pinned_over_ambient", "active_over_ambient",
+            "explicit_only", "pinned_only", "active_only", "ambient_only", "none"
+          ]
+        }
       }
     },
     "dropped": {
@@ -83,8 +89,8 @@
             "type": ["object", "null"],
             "additionalProperties": false,
             "properties": {
-              "type": {"type": ["string", "null"]},
-              "id": {}
+              "type": {"type": ["string", "null"], "maxLength": 64},
+              "id": {"type": ["string", "null"], "maxLength": 64}
             }
           },
           "reason": {
@@ -99,7 +105,7 @@
       "additionalProperties": false,
       "required": [
         "stale", "malformed", "malformed_reason", "ambiguous_explicit",
-        "rejected_fields", "ignored_fields"
+        "rejected_fields", "ignored_fields", "echo_sanitized"
       ],
       "properties": {
         "stale": {"type": "boolean"},
@@ -107,7 +113,8 @@
         "malformed_reason": {"type": ["string", "null"]},
         "ambiguous_explicit": {"type": "boolean"},
         "rejected_fields": {"type": "array", "items": {"type": "string"}},
-        "ignored_fields": {"type": "array", "items": {"type": "string"}}
+        "ignored_fields": {"type": "array", "items": {"type": "string"}},
+        "echo_sanitized": {"type": "boolean"}
       }
     },
     "field_requests": {"type": "array"},

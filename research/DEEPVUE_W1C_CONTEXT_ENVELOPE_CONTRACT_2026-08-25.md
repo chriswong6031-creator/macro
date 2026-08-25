@@ -82,6 +82,14 @@ per-request authority):
   origin_id, non-list pinned, >3 pins) rejects the whole `ai_context` block:
   `context_flags.malformed: true` with a reason code, and compilation
   proceeds from the legacy fields. Never a 500, never a silent success.
+- Ambient string fields (`symbol`, `timeframe`, `page`, `panel`) are
+  validated: strings ≤32 chars; non-conforming values (wrong type, oversized,
+  or matching the subscriber leak law) are nulled and the condition recorded
+  in `context_flags.echo_sanitized` (review amendment). Echoed
+  `unsupported[].entity` strings are length-capped (≤64 chars) and leak-
+  screened the same way; a non-conforming value there is replaced by a safe
+  placeholder rather than nulled, because an `unsupported` row exists
+  specifically to name what was rejected.
 
 ## Canonical envelope — `ai_context_envelope.v1` (server-compiled only)
 
@@ -102,8 +110,9 @@ per-request authority):
   },
   "dropped": [{"entity": {"type": "security", "id": "AAOI"}, "level": "active", "reason": "outranked_by_explicit"}],
   "unsupported": [],
-  "context_flags": {"stale": false, "malformed": false, "ambiguous_explicit": false,
-                     "rejected_fields": [], "ignored_fields": []},
+  "context_flags": {"stale": false, "malformed": false, "malformed_reason": null,
+                     "ambiguous_explicit": false, "rejected_fields": [], "ignored_fields": [],
+                     "echo_sanitized": false},
   "field_requests": [],
   "latency_lane": "instant_fact",
   "provenance_requirement": "field_level",
@@ -117,9 +126,23 @@ per-request authority):
   (explicit beat a differing lower level — preserves the exact W1-B string),
   `pinned_context`, `active_selection`, `ambient_context` (preserves the
   W1-B string), `no_context`.
-- Frozen `dropped[].reason` vocabulary: `outranked_by_explicit`,
-  `outranked_by_pinned`, `outranked_by_active`, `invalid_symbol`,
-  `unsupported_entity_type`.
+- Frozen `dropped[].reason` vocabulary (review amendment): `outranked_by_explicit`,
+  `outranked_by_pinned`, `outranked_by_active`. `invalid_symbol` and
+  `unsupported_entity_type` never appear here — those are `unsupported[]`
+  reasons (below); a `dropped` row exists only for a VALID lower-level entity
+  that a higher level outranked.
+- Frozen `unsupported[].reason` vocabulary (review amendment): `invalid_symbol`,
+  `unsupported_entity_type`, `invalid_entity_shape` (the raw client value was
+  not even a `{type, id}` mapping).
+- Frozen `effective_context.precedence` vocabulary (review amendment, NB-3):
+  `explicit_over_pinned`, `explicit_over_active`, `explicit_over_ambient`,
+  `pinned_over_active`, `pinned_over_ambient`, `active_over_ambient`,
+  `explicit_only`, `pinned_only`, `active_only`, `ambient_only`, `none`.
+  Names the HIGHEST lower level that actually lost an entity in this compile
+  (e.g. two pins where only the second was outranked by an explicit request
+  still reads `explicit_over_pinned`, never a blanket `explicit_over_active`
+  regardless of what was really dropped); `<source>_only` when the winning
+  source had nothing beneath it to outrank.
 - `authority` is constant and server-set. A client can never raise it.
 - The compiler performs no I/O, no identity admission, no owner reads.
   Identity admission (symbol → `SEC:*`) remains exclusively W1-A's
@@ -165,8 +188,11 @@ per-request authority):
 
 ## Receipt — `ai_context_receipt.v1`
 
-- New first-class SSE event, emitted for **every** Brain run (native and
-  deep), after `meta` and before any `delta`/`tool` event:
+- New first-class SSE event, emitted for **every routed** Brain run — a run
+  that passes message/quota/prescreen admission and reaches lane routing;
+  early refusals (empty message, research-mode rejection, quota exhaustion,
+  prescreen block) precede context consumption and carry no receipt (review
+  amendment) — after `meta` and before any `delta`/`tool` event:
   `{"type": "context_receipt", "schema": "ai_context_receipt.v1", …}` whose
   body is the envelope minus `field_requests` (which stays in the
   native-fact receipt) — context resolution only.

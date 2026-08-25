@@ -2651,9 +2651,22 @@ def test_w1c_five_fact_parity_through_explicit_context_envelope():
 
 
 def test_w1c_deep_route_request_keeps_legacy_context_byte_identical_and_carries_receipt():
-    """17: an unsupported-wording (analytical) request still deep-routes with the
-    exact legacy `context` dict the deep prompt path has always seen, and now
-    additionally carries a context_receipt — receipt-only, never a prompt change."""
+    """17: an unsupported-wording (analytical) request still deep-routes, and the
+    deep loop receives the EXACT legacy `context` dict it has always seen —
+    same keys/values, nothing added, nothing rewritten.
+
+    NB-6 docstring correction (review repair): `_run_brain_loop_stream` is
+    replaced here by `_spy_loop`, which re-implements the SSE yields itself —
+    so this test does NOT prove the real internal event ordering inside that
+    generator (meta -> context_receipt -> status/tool -> delta -> done); that
+    ordering is proven against the REAL function by
+    test_brain_gateway.py::test_status_event_sequence_two_round_tool_turn
+    (lines ~4814-4820 there, driven through the real `chat_stream()` ->
+    `_run_brain_loop_stream` path via `_stream_events()`). What THIS test
+    proves is narrower and still real: `chat_stream()` computes the envelope/
+    receipt and threads `context_receipt=` into the loop call, and the deep
+    lane's legacy `context` dict argument is byte-identical to what a caller
+    passed in — the receipt is additive, never a prompt-construction change."""
     seen_contexts: list[dict] = []
 
     def _spy_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb,

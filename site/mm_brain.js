@@ -1150,6 +1150,15 @@
      research/DEEPVUE_W1C_CONTEXT_ENVELOPE_CONTRACT_2026-08-25.md */
   var ctxState = {
     originId: mintOriginId(),
+    /* Review repair (BLK-1): a host (Terminal) supplies its OWN origin_id via
+       MM_BRAIN_CFG.getAiContext() — the server always echoes back whatever
+       origin_id rode on the wire, never the widget's own minted `originId`. So
+       the qualification check in handleContextReceipt must compare against the
+       origin_id that was ACTUALLY SENT on the last request, not the widget's
+       own mint. `sentOriginId` starts equal to the mint (the dashboard fallback
+       path, where they are the same) and is updated by buildAiContext() on
+       every call, including the host-hook path. */
+    sentOriginId: null,
     revision: 0,
     pinned: [],                 /* [{type:'security', id:'NVDA'}, ...] */
     lastAppliedRevision: -1,    /* highest context_revision applied to the live strip */
@@ -1157,6 +1166,7 @@
     lastHistoricalReceipt: null,/* a receipt that arrived but did not qualify to apply */
     lastNativeFactReceipt: null /* for the inspector's fact list */
   };
+  ctxState.sentOriginId = ctxState.originId;
   var lastCtxView = null;       /* the view object the strip is currently painting */
   function mintOriginId() {
     try { if (window.crypto && crypto.randomUUID) return crypto.randomUUID().replace(/-/g, '').slice(0, 32); } catch (e) {}
@@ -3530,9 +3540,17 @@
     if (typeof CFG.getAiContext === 'function') {
       try {
         var supplied = CFG.getAiContext();
-        if (supplied && typeof supplied === 'object') return supplied;
+        if (supplied && typeof supplied === 'object') {
+          /* Review repair (BLK-1): record the origin_id THIS block actually carries
+             — a host block's own id, never the widget's local mint — so a later
+             context_receipt echoing it back can be recognized as belonging to the
+             request just sent, on both the dashboard AND a host-integrated Terminal. */
+          ctxState.sentOriginId = supplied.origin_id || ctxState.originId;
+          return supplied;
+        }
       } catch (e) {}
     }
+    ctxState.sentOriginId = ctxState.originId;
     return {
       schema: 'ai_context_client.v1',
       origin_id: ctxState.originId,
@@ -3543,6 +3561,16 @@
       ambient: { page: (ANCHOR === 'top' ? 'terminal' : 'dashboard'), panel: explainPanel || null }
     };
   }
+  /* Review repair (NB-1): esc() escapes <, >, & (via the textContent -> innerHTML
+     round trip) but NOT the double quote, so a value landing inside an
+     ATTRIBUTE value (rather than as element text) can still break out of it
+     with an embedded ". A ticker symbol has a known-safe charset — strip
+     anything else before a symbol ever reaches an attribute, regardless of
+     whether it came from the server receipt (already validated server-side)
+     or a host's own MM_BRAIN_CFG.getAiContext() hook (never trusted: a
+     misbehaving or compromised host integration must not be able to inject
+     markup through the preview path). */
+  function attrSafe(s) { return String(s == null ? '' : s).replace(/[^A-Z0-9.\-:]/g, ''); }
   /* Client-side collapse of pinned > active > ambient — the SAME precedence the
      server compiler applies, used only to paint a pre-send PREVIEW (state 2).
      Explicit (typed-in-message) entities are never previewable client-side; the
@@ -3550,9 +3578,9 @@
   function previewEffective(block) {
     if (!block) return null;
     var pin = (block.pinned || [])[0];
-    if (pin && pin.id) return { source: 'pinned', symbol: String(pin.id).toUpperCase() };
-    if (block.active && block.active.id) return { source: 'active', symbol: String(block.active.id).toUpperCase() };
-    if (block.ambient && block.ambient.symbol) return { source: 'ambient', symbol: String(block.ambient.symbol).toUpperCase() };
+    if (pin && pin.id) return { source: 'pinned', symbol: attrSafe(String(pin.id).toUpperCase()) };
+    if (block.active && block.active.id) return { source: 'active', symbol: attrSafe(String(block.active.id).toUpperCase()) };
+    if (block.ambient && block.ambient.symbol) return { source: 'ambient', symbol: attrSafe(String(block.ambient.symbol).toUpperCase()) };
     return null;
   }
   function ctxIsPinned(symbol) {
@@ -3579,14 +3607,16 @@
     if (view.unsupported) html += '<span class="chip mut">' + esc(L('Not supported', '暂不支持')) + '</span>';
     html += '</button>';
     ctxState.pinned.forEach(function (p) {
+      var pidAttr = attrSafe(p.id);
       html += '<span class="chip pin">' + PIN_ICON + '<b>' + esc(p.id) + '</b>' +
-        '<button type="button" class="un" data-act="ctx-unpin" data-unpin-id="' + esc(p.id) + '" aria-label="' +
-        esc(L('Unpin ' + p.id, '取消固定 ' + p.id)) + '">' + UNPIN_ICON + '</button></span>';
+        '<button type="button" class="un" data-act="ctx-unpin" data-unpin-id="' + esc(pidAttr) + '" aria-label="' +
+        esc(L('Unpin ' + pidAttr, '取消固定 ' + pidAttr)) + '">' + UNPIN_ICON + '</button></span>';
     });
     var pinnedOn = ctxIsPinned(view.symbol);
+    var symAttr = attrSafe(view.symbol);
     html += '<button type="button" class="mmb-ctx-pin' + (pinnedOn ? ' on' : '') + '" data-act="ctx-pin" aria-pressed="' +
       (pinnedOn ? 'true' : 'false') + '" aria-label="' +
-      esc(pinnedOn ? L('Unpin ' + view.symbol, '取消固定 ' + view.symbol) : L('Pin ' + view.symbol, '固定 ' + view.symbol)) + '" title="' +
+      esc(pinnedOn ? L('Unpin ' + symAttr, '取消固定 ' + symAttr) : L('Pin ' + symAttr, '固定 ' + symAttr)) + '" title="' +
       esc(pinnedOn ? L('Unpin', '取消固定') : L('Pin', '固定')) + '">' + PIN_ICON + '</button>';
     ctxEl.innerHTML = html;
     if (ctxInspEl.classList.contains('on')) renderCtxInspector();   /* keep an open drawer in sync */
@@ -3638,8 +3668,22 @@
     if (!j || typeof j !== 'object') return;
     var origin = j.origin || {};
     var rev = typeof origin.context_revision === 'number' ? origin.context_revision : -1;
-    var qualifies = origin.origin_id === ctxState.originId && rev >= ctxState.lastAppliedRevision;
+    /* Review repair (BLK-1): qualify against the origin_id that was actually SENT
+       (ctxState.sentOriginId, updated by buildAiContext() on every call — a host
+       block's own id when Terminal supplies one), never the widget's own local
+       mint. Comparing against `ctxState.originId` here made every host-supplied
+       receipt fail qualification on Terminal (a different origin_id), so the
+       authoritative strip/inspector update never rendered — see PR review. */
+    var qualifies = origin.origin_id === ctxState.sentOriginId && rev >= ctxState.lastAppliedRevision;
     if (!qualifies) { ctxState.lastHistoricalReceipt = j; return; }
+    /* Review repair (MAJ-3): a STRICT duplicate — same origin_id, same revision
+       as the already-APPLIED receipt — is the same logical context event
+       re-transported (the native/instant lanes ship the receipt once as its own
+       SSE event and again inside `done`'s echo, and finalizeDone() re-feeds that
+       echo through this same function). "rev >= last applied" alone would
+       re-apply and repaint on the second copy; a strict duplicate must be a
+       no-op instead — never a second strip transition for one revision. */
+    if (ctxState.lastReceipt && rev === ctxState.lastAppliedRevision) return;
     ctxState.lastAppliedRevision = rev;
     ctxState.lastReceipt = j;
     var eff = j.effective_context || {};
@@ -3667,9 +3711,20 @@
     'earnings.latest.revenue_growth_pct': ['Revenue growth', '营收增长'],
     'theme.local.memberships': ['Themes', '主题']
   };
+  /* Review repair (NB-7): the closed fact-status vocabulary (available/unknown/
+     unavailable/stale/not_applicable/rights_blocked — datapoint_value.schema.json)
+     is mapped to plain bilingual words here — never the raw internal slug,
+     which is exactly the "untranslated state name" the front-facing plain-word
+     law bans. Anything outside the two named cases collapses to one safe,
+     generic word rather than surfacing an internal reason code. */
+  var CTX_STATUS_WORDS = { available: ['current', '最新'], stale: ['older', '较早'] };
+  function ctxStatusWord(status) {
+    var pair = CTX_STATUS_WORDS[status];
+    return pair ? L(pair[0], pair[1]) : L('unavailable', '暂缺');
+  }
   function ctxFactValue(f) {
     if (!f) return '—';
-    if (f.status && f.status !== 'available') return L(String(f.status), String(f.status));
+    if (f.status && f.status !== 'available') return ctxStatusWord(f.status);
     var v = f.value, unit = f.unit || '';
     if (f.field_id === 'theme.local.memberships') return (Array.isArray(v) && v.length) ? v.join(', ') : L('none', '无');
     if (unit === 'percent' && typeof v === 'number') return v + '%';
@@ -3720,7 +3775,10 @@
         var lbl = CTX_FIELD_LABELS[f.field_id]; var label = lbl ? L(lbl[0], lbl[1]) : f.field_id;
         var freshState = f.freshness && f.freshness.state;
         var freshWord = freshState === 'stale' ? L('stale', '较早') : L('current', '最新');
-        var family = (f.source && (f.source.source_family || f.source.owner)) || '';
+        /* Review repair (NB-7): source_family only — `owner` is an internal
+           label, not the plain-word "source family name" the design spec asks
+           for, so it is never shown even as a fallback. */
+        var family = (f.source && f.source.source_family) || '';
         html += '<div class="mmb-ctxinsp-fact"><span class="k">' + esc(label) + '</span><span class="v">' + esc(ctxFactValue(f)) + '</span>' +
           '<span class="fr">' + esc((f.as_of || '') + (f.as_of ? ' · ' : '') + freshWord + (family ? ' · ' + family : '')) + '</span></div>';
       });

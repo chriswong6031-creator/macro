@@ -308,6 +308,27 @@ def _envelope_source(envelope: Mapping[str, Any] | None) -> str | None:
     return None
 
 
+def _envelope_effective_reason(envelope: Mapping[str, Any] | None) -> str | None:
+    """The compiled envelope's own `effective_context.reason`, or ``None``.
+
+    Review repair (BLK-2): the explicit branch below must NEVER recompute
+    "wins vs request" from the single collapsed `ambient_symbol` — that value
+    reflects only ONE lower level (e.g. the first pinned entity), so it can
+    silently disagree with the envelope when a DIFFERENT lower-level entity
+    (a second pin, an active selection distinct from the first pin) was the
+    one actually outranked. Reading the envelope's own determination directly
+    is what keeps the two receipts assert-equal by construction.
+    """
+    if not isinstance(envelope, Mapping):
+        return None
+    effective = envelope.get("effective_context")
+    if isinstance(effective, Mapping):
+        reason = effective.get("reason")
+        if isinstance(reason, str):
+            return reason
+    return None
+
+
 def _field_hits(message: str) -> list[tuple[int, str]] | None:
     """Return exact W1-A IDs in user order, or None for semantic ambiguity."""
     lower = message.lower()
@@ -487,11 +508,21 @@ def plan_native_facts(
     if explicit:
         symbol = explicit[0]
         explicit_entity = True
-        reason = (
-            "explicit_entity_wins"
-            if ambient_symbol is not None and ambient_symbol != symbol
-            else "explicit_request"
-        )
+        if envelope is not None:
+            # BLK-2: derive directly from the envelope's own precedence
+            # determination so the native-fact receipt can never disagree with
+            # the context receipt (see _envelope_effective_reason).
+            reason = (
+                "explicit_entity_wins"
+                if _envelope_effective_reason(envelope) == "explicit_entity_wins"
+                else "explicit_request"
+            )
+        else:
+            reason = (
+                "explicit_entity_wins"
+                if ambient_symbol is not None and ambient_symbol != symbol
+                else "explicit_request"
+            )
     else:
         symbol = ambient_symbol
         if symbol is None:

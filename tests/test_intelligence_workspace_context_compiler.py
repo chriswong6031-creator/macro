@@ -16,6 +16,15 @@ Coverage (numbered to match the commissioning packet's TESTS section):
   11. multi-explicit is legal in the envelope; the native lane still refuses it
   15. receipt leak law (subscriber-safe: no path-like/private text)
   18. W1-A registry digest has not drifted (no W1-C-caused drift)
+
+Review-repair coverage (adversarial pass on PR #6421):
+  BLK-2: the native-fact receipt's precedence reason is DERIVED from the
+      envelope, never independently recomputed (multi-pin disagreement probe)
+  MAJ-1/MAJ-2: every echoed string (ambient fields, `unsupported[].entity`) is
+      type/length/leak validated against hostile fixtures — nested dicts,
+      oversized strings, ints, bools, path-like text, script tags
+  NB-3: the full `<source>_over_<level>` / `<source>_only` precedence
+      vocabulary names the HIGHEST level actually outranked
 """
 from __future__ import annotations
 
@@ -371,6 +380,70 @@ def test_ambiguous_uppercase_explicit_sets_flag_and_resolves_from_remaining_leve
 
 
 # ---------------------------------------------------------------------------
+# Review repair BLK-2: the native-fact receipt's precedence reason must be
+# DERIVED from the envelope, never independently recomputed — the two must
+# never disagree. Reproduces the reviewer's exact probe: pins [NVDA, AAPL]
+# (two pinned entities) + explicit "NVDA price". The old code compared the
+# explicit symbol only against the FIRST pinned entity (NVDA == NVDA, so it
+# reported "explicit_request" — nothing overridden), while the envelope
+# correctly reports "explicit_entity_wins" because the SECOND pinned entity
+# (AAPL) was outranked. The two receipts must be assert-equal.
+# ---------------------------------------------------------------------------
+
+def _pinned_two_client(pinned_ids):
+    return {
+        "schema": "ai_context_client.v1", "origin_id": "blk2-mount", "context_revision": 1,
+        "captured_at": _FRESH_CAPTURED_AT,
+        "pinned": [{"type": "security", "id": pid} for pid in pinned_ids],
+        "active": None,
+        "ambient": {"symbol": None, "timeframe": None, "page": "terminal", "panel": None},
+    }
+
+
+def test_native_receipt_reason_never_disagrees_with_envelope_multi_pin_probe():
+    context = {"ai_context": _pinned_two_client(["NVDA", "AAPL"])}
+    envelope = cc.compile_envelope("NVDA price", context, now=_NOW, request_id="blk2-r1")
+    # Confirms the envelope itself reports the override (the reviewer's premise).
+    assert envelope["effective_context"]["source"] == "explicit"
+    assert envelope["effective_context"]["reason"] == "explicit_entity_wins"
+
+    plan = nf.plan_native_facts("NVDA price", context, envelope=envelope)
+    assert plan is not None
+    assert plan.effective_context_reason == envelope["effective_context"]["reason"] == "explicit_entity_wins"
+    assert plan.envelope_source == envelope["effective_context"]["source"] == "explicit"
+
+
+def test_native_receipt_reason_agrees_with_envelope_when_nothing_is_overridden():
+    """Same shape, but the ONLY pin present matches the explicit entity — no
+    override happened, so both sides must agree on "explicit_request"."""
+    context = {"ai_context": _pinned_two_client(["NVDA"])}
+    envelope = cc.compile_envelope("NVDA price", context, now=_NOW, request_id="blk2-r2")
+    assert envelope["effective_context"]["reason"] == "explicit_request"
+    plan = nf.plan_native_facts("NVDA price", context, envelope=envelope)
+    assert plan is not None
+    assert plan.effective_context_reason == envelope["effective_context"]["reason"] == "explicit_request"
+
+
+def test_native_receipt_effective_context_block_matches_envelope_end_to_end():
+    """The full receipt-building path (execute_native_fact_plan) must carry the
+    same reason through to the native_fact_receipt.effective_context block —
+    the actual object the inspector/receipt-parity law compares against the
+    context_receipt — using the real W1-A runtime (no fixture drift)."""
+    from engine.intelligence_workspace.runtime import build_runtime
+
+    repo_root = pathlib.Path(__file__).resolve().parents[1]
+    runtime = build_runtime(repo_root=repo_root)
+    context = {"ai_context": _pinned_two_client(["NVDA", "AAPL"])}
+    envelope = cc.compile_envelope("NVDA price", context, now=_NOW, request_id="blk2-r3")
+    plan = nf.plan_native_facts("NVDA price", context, envelope=envelope)
+    assert plan is not None
+    execution = nf.execute_native_fact_plan(plan, runtime=runtime, repo_root=repo_root)
+    receipt_reason = execution.receipt["effective_context"]["reason"]
+    assert receipt_reason == envelope["effective_context"]["reason"] == "explicit_entity_wins"
+    assert execution.receipt["effective_context"]["envelope_source"] == envelope["effective_context"]["source"]
+
+
+# ---------------------------------------------------------------------------
 # 15. receipt leak law — subscriber-safe, never path-like or private text
 # ---------------------------------------------------------------------------
 
@@ -394,6 +467,155 @@ def test_context_receipt_never_carries_path_like_or_private_text(context):
     receipt = cc.compile_receipt(envelope)
     blob = json.dumps(receipt, ensure_ascii=False)
     assert _PRIVATE_SUBSCRIBER_TEXT.search(blob) is None, blob
+
+
+# ---------------------------------------------------------------------------
+# Review repair MAJ-1/MAJ-2: every echoed string (ambient fields AND
+# `unsupported[].entity`) must be validated/coerced — a hostile client must
+# never be able to smuggle a nested structure, an oversized string, or
+# subscriber-private/path-like text into the envelope. The leak/schema checks
+# above were vacuous on CLEAN fixtures (nothing there was ever going to trip
+# them); these fixtures are deliberately adversarial.
+# ---------------------------------------------------------------------------
+
+_HOSTILE_CONTEXTS = [
+    # nested dict where a pinned entity id is expected
+    {"ai_context": _client_block(
+        pinned=[{"type": "security", "id": {"nested": "/Users/attacker/.ssh/id_rsa"}}],
+    )},
+    # a list, not a scalar, as an active entity id
+    {"ai_context": _client_block(
+        active={"type": "security", "id": ["a", "b", "c"]},
+    )},
+    # path-like strings in every ambient field + an oversized one
+    {"ai_context": _client_block(
+        ambient={
+            "symbol": None,
+            "timeframe": "/Users/attacker/.ssh/id_rsa_" + ("x" * 64),
+            "page": "/Users/attacker/secret/config.yml",
+            "panel": "engine/neuralweb/brain_gateway.py",
+        },
+    )},
+    # an integer landing where a string is expected (ambient panel)
+    {"ai_context": _client_block(ambient={"symbol": None, "timeframe": None, "page": None, "panel": 1234567890})},
+    # a bool landing where an entity id is expected
+    {"ai_context": _client_block(pinned=[{"type": "security", "id": True}])},
+    # an oversized script-tag string as an unsupported entity id (type
+    # mismatch path) — long enough that, even though it is not path-like, the
+    # length ceiling still forces a truncation (never a raw >64-char echo).
+    {"ai_context": _client_block(
+        active={"type": "theme", "id": "<script>alert(document.cookie)</script>" + ("A" * 40)},
+    )},
+    # an oversized (200-char) garbage string as a pinned entity id
+    {"ai_context": _client_block(pinned=[{"type": "security", "id": "Z" * 200}])},
+    # a credentials-shaped string riding through the unsupported active slot
+    {"ai_context": _client_block(
+        active={"type": "security", "id": "api_key=sk-live-0000000000000000000000000000"},
+    )},
+]
+
+
+@pytest.fixture(scope="module")
+def _envelope_validator():
+    import json as _json
+
+    from jsonschema import Draft202012Validator
+
+    schema_path = (
+        pathlib.Path(__file__).resolve().parents[1]
+        / "contracts" / "intelligence_workspace" / "ai_context_envelope.v1.schema.json"
+    )
+    schema = _json.loads(schema_path.read_text())
+    Draft202012Validator.check_schema(schema)
+    return Draft202012Validator(schema)
+
+
+@pytest.mark.parametrize("context", _HOSTILE_CONTEXTS)
+def test_hostile_echoed_input_still_validates_against_the_committed_schema(context, _envelope_validator):
+    envelope = cc.compile_envelope("price", context, now=_NOW, request_id="hostile-schema")
+    errors = list(_envelope_validator.iter_errors(envelope))
+    assert errors == [], errors
+    # The compiler never raises and never silently drops the condition.
+    assert envelope["context_flags"]["echo_sanitized"] is True
+
+
+@pytest.mark.parametrize("context", _HOSTILE_CONTEXTS)
+def test_hostile_echoed_input_never_leaks_into_the_receipt(context):
+    envelope = cc.compile_envelope("price", context, now=_NOW, request_id="hostile-leak")
+    receipt = cc.compile_receipt(envelope)
+    blob = json.dumps(receipt, ensure_ascii=False)
+    assert _PRIVATE_SUBSCRIBER_TEXT.search(blob) is None, blob
+
+
+def test_hostile_input_never_exceeds_the_committed_length_ceilings():
+    """Belt-and-suspenders on top of the schema check: assert the ceilings by
+    number, not only by schema pattern, so a future schema loosening cannot
+    silently widen what actually gets echoed."""
+    context = {"ai_context": _client_block(
+        pinned=[{"type": "security", "id": "Z" * 200}],
+        ambient={"symbol": None, "timeframe": "y" * 99, "page": "z" * 99, "panel": None},
+    )}
+    envelope = cc.compile_envelope("price", context, now=_NOW, request_id="hostile-len")
+    for row in envelope["unsupported"]:
+        for key in ("type", "id"):
+            value = row["entity"].get(key) if row["entity"] else None
+            assert value is None or len(value) <= 64
+    ambient = envelope["ambient_widget_context"]
+    for key in ("timeframe", "page", "panel"):
+        assert ambient[key] is None or len(ambient[key]) <= 32
+
+
+# ---------------------------------------------------------------------------
+# Review repair NB-3: the full `<source>_over_<level>` / `<source>_only`
+# precedence vocabulary — the level named must be the HIGHEST one that
+# actually lost an entity, never a fixed "_over_active" regardless of what
+# (if anything) was outranked.
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize(("message", "context", "expected_precedence"), [
+    # explicit beats pinned (the highest possible lower level)
+    ("NVDA price", {"ai_context": _client_block(pinned=[{"type": "security", "id": "AAOI"}])},
+     "explicit_over_pinned"),
+    # explicit beats only active (no pins at all)
+    ("NVDA price", {"ai_context": _client_block(active={"type": "security", "id": "AAOI"})},
+     "explicit_over_active"),
+    # explicit beats only ambient (no pins, no active)
+    ("NVDA price", {"ai_context": _client_block(
+        ambient={"symbol": "AAOI", "timeframe": None, "page": None, "panel": None})},
+     "explicit_over_ambient"),
+    # explicit alone, nothing at all beneath it
+    ("NVDA price", {}, "explicit_only"),
+    # pinned beats active
+    ("price", {"ai_context": _client_block(
+        pinned=[{"type": "security", "id": "NVDA"}],
+        active={"type": "security", "id": "AAOI"})},
+     "pinned_over_active"),
+    # pinned beats only ambient (no active)
+    ("price", {"ai_context": _client_block(
+        pinned=[{"type": "security", "id": "NVDA"}],
+        ambient={"symbol": "AAOI", "timeframe": None, "page": None, "panel": None})},
+     "pinned_over_ambient"),
+    # pinned alone, nothing beneath it
+    ("price", {"ai_context": _client_block(pinned=[{"type": "security", "id": "NVDA"}])},
+     "pinned_only"),
+    # active beats ambient
+    ("price", {"ai_context": _client_block(
+        active={"type": "security", "id": "AAOI"},
+        ambient={"symbol": "MSFT", "timeframe": None, "page": None, "panel": None})},
+     "active_over_ambient"),
+    # active alone
+    ("price", {"ai_context": _client_block(active={"type": "security", "id": "AAOI"})},
+     "active_only"),
+    # ambient alone (the floor — nothing can ever be dropped beneath it)
+    ("price", {"ai_context": _client_block(
+        ambient={"symbol": "MSFT", "timeframe": None, "page": None, "panel": None})},
+     "ambient_only"),
+    # nothing anywhere
+    ("hello", {}, "none"),
+])
+def test_precedence_names_the_highest_level_actually_outranked(message, context, expected_precedence):
+    envelope = cc.compile_envelope(message, context, now=_NOW, request_id="nb3")
+    assert envelope["effective_context"]["precedence"] == expected_precedence
 
 
 # ---------------------------------------------------------------------------

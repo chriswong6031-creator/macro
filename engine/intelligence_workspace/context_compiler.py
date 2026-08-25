@@ -33,6 +33,7 @@ from datetime import datetime, timezone
 from typing import Any
 import uuid
 
+from engine.intelligence_workspace.resolver import _PRIVATE_SUBSCRIBER_TEXT
 from engine.neuralweb.native_facts import _context_symbol, _symbol_candidates
 
 ENVELOPE_SCHEMA = "ai_context_envelope.v1"
@@ -44,6 +45,12 @@ CONTEXT_STALE_BUDGET_SECONDS = 900
 
 _MAX_ORIGIN_ID_LEN = 64
 _MAX_PINNED = 3
+# Review repair (MAJ-1/MAJ-2): echoed strings are validated/coerced, never
+# passed through raw. Ambient fields are short UI labels; entity ids in
+# `unsupported` mirror the symbol length ceiling used elsewhere.
+_MAX_AMBIENT_FIELD_LEN = 32
+_MAX_UNSUPPORTED_ECHO_LEN = 64
+_UNSUPPORTED_ECHO_PLACEHOLDER = "<invalid>"
 
 # Privileged fields a client must never be able to set from inside ai_context;
 # stripped and recorded distinctly from merely-unknown keys (contract §Client
@@ -70,6 +77,51 @@ def _valid_symbol(value: Any) -> str | None:
     if not isinstance(value, str):
         return None
     return _context_symbol({"symbol": value})
+
+
+def _safe_ambient_str(value: Any, *, flags: dict[str, Any]) -> str | None:
+    """Coerce an echoed ambient field (timeframe/page/panel) to a short, safe
+    string or ``None``. Review repair (MAJ-1): a client-supplied ambient field
+    used to be echoed into the envelope RAW — an arbitrary type, an oversized
+    string, or subscriber-private/path-like text (credentials, a repo path)
+    would all have ridden straight into a persisted receipt. Non-conforming
+    input is replaced by ``None`` and the condition is recorded once in
+    ``context_flags.echo_sanitized`` (never a silent drop).
+    """
+    if value is None:
+        return None
+    if isinstance(value, bool) or not isinstance(value, str):
+        flags["echo_sanitized"] = True
+        return None
+    if len(value) > _MAX_AMBIENT_FIELD_LEN or _PRIVATE_SUBSCRIBER_TEXT.search(value):
+        flags["echo_sanitized"] = True
+        return None
+    return value
+
+
+def _safe_unsupported_echo(value: Any, *, flags: dict[str, Any]) -> str | None:
+    """Coerce a value destined for `unsupported[].entity` to a short, safe
+    string that is ALWAYS a string when the input existed at all (never a
+    silent null the way ambient fields are — an `unsupported` row exists
+    specifically to name what was rejected, so it still needs SOMETHING to
+    show). Review repair (MAJ-2): a nested dict/list, a script-tag string, or a
+    path-like string used to ride straight through into the envelope (and from
+    there into a persisted run buffer) with no type check, length cap, or leak
+    screen at all.
+    """
+    if value is None:
+        return None
+    if isinstance(value, bool) or not isinstance(value, (str, int, float)):
+        flags["echo_sanitized"] = True
+        return _UNSUPPORTED_ECHO_PLACEHOLDER
+    text = value if isinstance(value, str) else str(value)
+    if _PRIVATE_SUBSCRIBER_TEXT.search(text):
+        flags["echo_sanitized"] = True
+        return _UNSUPPORTED_ECHO_PLACEHOLDER
+    if len(text) > _MAX_UNSUPPORTED_ECHO_LEN:
+        flags["echo_sanitized"] = True
+        return text[:_MAX_UNSUPPORTED_ECHO_LEN]
+    return text
 
 
 def _parse_rfc3339(value: Any) -> datetime | None:
@@ -117,10 +169,15 @@ def _validate_client_block(block: Mapping[str, Any]) -> str | None:
     return None
 
 
-def _classify_entity(raw: Any) -> tuple[dict[str, str] | None, dict[str, Any] | None]:
+def _classify_entity(
+    raw: Any, *, flags: dict[str, Any]
+) -> tuple[dict[str, str] | None, dict[str, Any] | None]:
     """Validate one client entity block ({"type": ..., "id": ...}).
 
     Returns (entity, unsupported_row); exactly one is not None. Never raises.
+    `unsupported_row.entity` is ALWAYS a sanitized echo (MAJ-1/MAJ-2) — never
+    the raw client value, which could be a nested structure, an oversized
+    string, or subscriber-private/path-like text.
     """
     if not isinstance(raw, Mapping):
         return None, {"entity": None, "reason": "invalid_entity_shape"}
@@ -128,13 +185,19 @@ def _classify_entity(raw: Any) -> tuple[dict[str, str] | None, dict[str, Any] | 
     entity_id = raw.get("id")
     if entity_type not in _SUPPORTED_ENTITY_TYPES:
         return None, {
-            "entity": {"type": entity_type, "id": entity_id},
+            "entity": {
+                "type": _safe_unsupported_echo(entity_type, flags=flags),
+                "id": _safe_unsupported_echo(entity_id, flags=flags),
+            },
             "reason": "unsupported_entity_type",
         }
     symbol = _valid_symbol(entity_id)
     if symbol is None:
         return None, {
-            "entity": {"type": "security", "id": entity_id},
+            "entity": {
+                "type": "security",
+                "id": _safe_unsupported_echo(entity_id, flags=flags),
+            },
             "reason": "invalid_symbol",
         }
     return {"type": "security", "id": symbol}, None
@@ -168,6 +231,10 @@ def compile_envelope(
         "ambiguous_explicit": False,
         "rejected_fields": [],
         "ignored_fields": [],
+        # Review repair (MAJ-1/MAJ-2): set True whenever an echoed ambient field
+        # or `unsupported[].entity` value was type/length/leak-rejected and
+        # replaced (never a silent drop with no trace).
+        "echo_sanitized": False,
     }
 
     raw_client = context.get("ai_context")
@@ -236,7 +303,7 @@ def compile_envelope(
 
     pinned_context: list[dict[str, str]] = []
     for raw_entity in pinned_raw[:_MAX_PINNED]:
-        entity, bad = _classify_entity(raw_entity)
+        entity, bad = _classify_entity(raw_entity, flags=context_flags)
         if entity is not None:
             pinned_context.append(entity)
         elif bad is not None:
@@ -244,7 +311,7 @@ def compile_envelope(
 
     active_context: list[dict[str, str]] = []
     if active_raw is not None:
-        entity, bad = _classify_entity(active_raw)
+        entity, bad = _classify_entity(active_raw, flags=context_flags)
         if entity is not None:
             active_context.append(entity)
         elif bad is not None:
@@ -256,7 +323,10 @@ def compile_envelope(
         ambient_symbol = _valid_symbol(ambient_raw_symbol)
         if ambient_symbol is None:
             unsupported.append({
-                "entity": {"type": "security", "id": ambient_raw_symbol},
+                "entity": {
+                    "type": "security",
+                    "id": _safe_unsupported_echo(ambient_raw_symbol, flags=context_flags),
+                },
                 "reason": "invalid_symbol",
                 "level": "ambient",
             })
@@ -267,7 +337,6 @@ def compile_envelope(
     if explicit_entities:
         effective_entities = explicit_entities
         source = "explicit"
-        precedence = "explicit_over_active"
         eff_ids = _ids(effective_entities)
         lower_ids = _ids(pinned_context) | _ids(active_context) | _ids(ambient_entities)
         reason = "explicit_entity_wins" if (lower_ids - eff_ids) else "explicit_request"
@@ -284,7 +353,6 @@ def compile_envelope(
         effective_entities = pinned_context
         source = "pinned"
         reason = "pinned_context"
-        precedence = "pinned_over_active"
         eff_ids = _ids(effective_entities)
         for entity in active_context:
             if entity["id"] not in eff_ids:
@@ -296,7 +364,6 @@ def compile_envelope(
         effective_entities = active_context
         source = "active"
         reason = "active_selection"
-        precedence = "active_over_ambient"
         eff_ids = _ids(effective_entities)
         for entity in ambient_entities:
             if entity["id"] not in eff_ids:
@@ -305,11 +372,40 @@ def compile_envelope(
         effective_entities = ambient_entities
         source = "ambient"
         reason = "ambient_context"
-        precedence = "ambient_only"
     else:
         effective_entities = []
         source = "none"
         reason = "no_context"
+
+    # Review repair (NB-3): "explicit_over_active" used to be emitted for EVERY
+    # explicit win regardless of what actually got outranked, which is
+    # dishonest when nothing (or only a lower level than "active") was
+    # actually dropped. `precedence` now names the highest level that
+    # genuinely lost an entity in THIS compile, or "<source>_only" when
+    # nothing did — frozen vocabulary is the full cross product of source and
+    # outranked level (see the contract's Canonical envelope amendment).
+    dropped_levels = {row["level"] for row in dropped}
+    if source == "explicit":
+        if "pinned" in dropped_levels:
+            precedence = "explicit_over_pinned"
+        elif "active" in dropped_levels:
+            precedence = "explicit_over_active"
+        elif "ambient" in dropped_levels:
+            precedence = "explicit_over_ambient"
+        else:
+            precedence = "explicit_only"
+    elif source == "pinned":
+        if "active" in dropped_levels:
+            precedence = "pinned_over_active"
+        elif "ambient" in dropped_levels:
+            precedence = "pinned_over_ambient"
+        else:
+            precedence = "pinned_only"
+    elif source == "active":
+        precedence = "active_over_ambient" if "ambient" in dropped_levels else "active_only"
+    elif source == "ambient":
+        precedence = "ambient_only"
+    else:
         precedence = "none"
 
     captured_dt = _parse_rfc3339(origin.get("captured_at"))
@@ -326,9 +422,22 @@ def compile_envelope(
         "active_selection": active_context,
         "ambient_widget_context": {
             "symbol": ambient_symbol,
-            "timeframe": ambient_raw.get("timeframe") if isinstance(ambient_raw, Mapping) else None,
-            "page": ambient_raw.get("page") if isinstance(ambient_raw, Mapping) else None,
-            "panel": ambient_raw.get("panel") if isinstance(ambient_raw, Mapping) else None,
+            # Review repair (MAJ-1): these three ride through _safe_ambient_str —
+            # type/length/leak-checked, never the client's raw value. `symbol`
+            # above needs no separate pass: it is already either a validated
+            # ticker (via _valid_symbol) or None.
+            "timeframe": _safe_ambient_str(
+                ambient_raw.get("timeframe") if isinstance(ambient_raw, Mapping) else None,
+                flags=context_flags,
+            ),
+            "page": _safe_ambient_str(
+                ambient_raw.get("page") if isinstance(ambient_raw, Mapping) else None,
+                flags=context_flags,
+            ),
+            "panel": _safe_ambient_str(
+                ambient_raw.get("panel") if isinstance(ambient_raw, Mapping) else None,
+                flags=context_flags,
+            ),
         },
         "effective_context": {
             "entities": effective_entities,
