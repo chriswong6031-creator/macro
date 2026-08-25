@@ -54,6 +54,12 @@ EXCHANGE_KEYS = (
 )
 QUESTIONER_KEYS = ("name", "affiliation", "name_state", "affiliation_state")
 RESPONDENT_KEYS = ("name", "role", "identity_state", "span_indexes")
+NAME_STATE_SOURCE_SUPPORTED = "source_supported"
+AFFILIATION_STATES = frozenset({"source_supported", "unresolved"})
+IDENTITY_STATE_SOURCE_SUPPORTED = "source_supported"
+# Named limitation: native availability may stay unknown. Processing/generation
+# time must never be substituted for source_available_at.
+SOURCE_CLOCK_OWNER_GAP = "SOURCE_CLOCK_OWNER_GAP"
 PROVENANCE_KEYS = (
     "extractor_id",
     "provider",
@@ -176,15 +182,7 @@ def canonical_qa_exchange(
     ordinal = int(reconstructed.get("ordinal", expected_ordinal))
     if ordinal != expected_ordinal:
         raise WorkspaceError("qa_exchange ordinals are not contiguous from 0")
-    questioner_raw = _mapping(reconstructed.get("questioner"), "questioner")
-    questioner = {
-        "name": str(questioner_raw.get("name") or "").strip(),
-        "affiliation": str(questioner_raw.get("affiliation") or ""),
-        "name_state": str(questioner_raw.get("name_state") or ""),
-        "affiliation_state": str(questioner_raw.get("affiliation_state") or ""),
-    }
-    if not questioner["name"] or questioner["name_state"] != "source_supported":
-        raise WorkspaceError("qa_exchange questioner name is not source-supported")
+    questioner = _canonical_questioner(_mapping(reconstructed.get("questioner"), "questioner"))
     question_spans = [
         _canonical_span(span, segments=segments, document_id=document_id, document_sha256=document_sha256)
         for span in list(reconstructed.get("question_spans") or [])
@@ -242,6 +240,7 @@ def validate_qa_exchange(
     event_id: str,
     document_id: str,
     document_sha256: str,
+    transcript_clock: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     item = _mapping(payload, "qa_exchange")
     _reject_forbidden(item)
@@ -266,8 +265,7 @@ def validate_qa_exchange(
         raise WorkspaceError("qa_exchange taxonomy mismatch")
     questioner = _mapping(item.get("questioner"), "questioner")
     _exact_keys(questioner, QUESTIONER_KEYS, "questioner")
-    if not str(questioner.get("name") or "").strip():
-        raise WorkspaceError("qa_exchange questioner name missing")
+    _assert_questioner_identity(questioner)
     question_spans = item.get("question_spans")
     answer_spans = item.get("answer_spans")
     if not isinstance(question_spans, list) or not question_spans:
@@ -278,6 +276,7 @@ def validate_qa_exchange(
         _validate_canonical_span(span, document_id=document_id, document_sha256=document_sha256)
     for span in answer_spans:
         _validate_canonical_span(span, document_id=document_id, document_sha256=document_sha256)
+    _assert_spans_unique_and_disjoint(question_spans, answer_spans)
     respondents = item.get("respondents")
     if not isinstance(respondents, list) or not respondents:
         raise WorkspaceError("qa_exchange respondents must be a non-empty list")
@@ -285,6 +284,7 @@ def validate_qa_exchange(
     for row in respondents:
         mapped = _mapping(row, "respondent")
         _exact_keys(mapped, RESPONDENT_KEYS, "respondent")
+        _assert_respondent_identity(mapped)
         parsed.append(mapped)
     _assert_answer_ownership(parsed, len(answer_spans))
     provenance = _mapping(item.get("provenance"), "provenance")
@@ -299,10 +299,7 @@ def validate_qa_exchange(
         raise WorkspaceError("qa_exchange validation_state must be accepted")
     if provenance.get("rights_profile") != RIGHTS_PROFILE:
         raise WorkspaceError("qa_exchange rights_profile mismatch")
-    if provenance.get("clock_state") not in {CLOCK_KNOWN, CLOCK_UNKNOWN}:
-        raise WorkspaceError("qa_exchange clock_state invalid")
-    if str(provenance.get("source_available_at") or "") and str(provenance.get("source_available_at")) == str(item.get("generated_at") or ""):
-        raise WorkspaceError("generated_at cannot masquerade as source_available_at")
+    _assert_provenance_clock(provenance, transcript_clock=transcript_clock)
     validation = _mapping(item.get("validation"), "validation")
     _exact_keys(validation, VALIDATION_KEYS, "validation")
     if any(validation.get(key) is not True for key in VALIDATION_KEYS):
@@ -316,6 +313,7 @@ def validate_qa_exchanges(
     event_id: str,
     document_id: str | None,
     document_sha256: str | None,
+    transcript_clock: Mapping[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     if not isinstance(payload, list):
         raise WorkspaceError("qa_exchanges must be a list")
@@ -329,6 +327,7 @@ def validate_qa_exchanges(
             event_id=event_id,
             document_id=document_id,
             document_sha256=document_sha256,
+            transcript_clock=transcript_clock,
         )
         for item in payload
     ]
@@ -337,6 +336,13 @@ def validate_qa_exchanges(
     ids = [item["exchange_id"] for item in exchanges]
     if len(ids) != len(set(ids)):
         raise WorkspaceError("qa_exchange exchange_id values are not unique")
+    seen: set[tuple[Any, ...]] = set()
+    for item in exchanges:
+        for span in list(item["question_spans"]) + list(item["answer_spans"]):
+            ident = _span_identity(span)
+            if ident in seen:
+                raise WorkspaceError("qa_exchange spans are not unique")
+            seen.add(ident)
     return exchanges
 
 
@@ -398,6 +404,127 @@ def validate_source_clock(
     return item
 
 
+def _canonical_questioner(raw: Mapping[str, Any]) -> dict[str, Any]:
+    questioner = {
+        "name": str(raw.get("name") or "").strip(),
+        "affiliation": str(raw.get("affiliation") or ""),
+        "name_state": str(raw.get("name_state") or ""),
+        "affiliation_state": str(raw.get("affiliation_state") or ""),
+    }
+    _assert_questioner_identity(questioner)
+    return questioner
+
+
+def _canonical_respondent(raw: Mapping[str, Any], *, answer_span_count: int) -> dict[str, Any]:
+    indexes = [int(value) for value in list(raw.get("span_indexes") or [])]
+    if not indexes or indexes != sorted(set(indexes)):
+        raise WorkspaceError("respondent span_indexes must be unique and ordered")
+    if any(index < 0 or index >= answer_span_count for index in indexes):
+        raise WorkspaceError("respondent span_indexes are out of range")
+    respondent = {
+        "name": str(raw.get("name") or "").strip(),
+        "role": str(raw.get("role") or "").strip(),
+        "identity_state": str(raw.get("identity_state") or ""),
+        "span_indexes": indexes,
+    }
+    _assert_respondent_identity(respondent)
+    return respondent
+
+
+def _assert_questioner_identity(questioner: Mapping[str, Any]) -> None:
+    if not str(questioner.get("name") or "").strip():
+        raise WorkspaceError("qa_exchange questioner name missing")
+    if questioner.get("name_state") != NAME_STATE_SOURCE_SUPPORTED:
+        raise WorkspaceError("qa_exchange questioner name is not source-supported")
+    affiliation_state = str(questioner.get("affiliation_state") or "")
+    if affiliation_state not in AFFILIATION_STATES:
+        raise WorkspaceError("qa_exchange questioner affiliation_state is not closed")
+    affiliation = str(questioner.get("affiliation") or "")
+    if affiliation_state == NAME_STATE_SOURCE_SUPPORTED and not affiliation.strip():
+        raise WorkspaceError("qa_exchange questioner affiliation is not source-supported")
+    if affiliation_state == "unresolved" and affiliation.strip():
+        raise WorkspaceError("qa_exchange unresolved affiliation must be empty")
+
+
+def _assert_respondent_identity(respondent: Mapping[str, Any]) -> None:
+    if not str(respondent.get("name") or "").strip() or not str(respondent.get("role") or "").strip():
+        raise WorkspaceError("respondent name and role must be source-supported")
+    if respondent.get("identity_state") != IDENTITY_STATE_SOURCE_SUPPORTED:
+        raise WorkspaceError("qa_exchange respondent identity is not source-supported")
+
+
+def _assert_provenance_clock(
+    provenance: Mapping[str, Any],
+    *,
+    transcript_clock: Mapping[str, Any] | None,
+) -> None:
+    clock_state = provenance.get("clock_state")
+    available = provenance.get("source_available_at")
+    if clock_state not in {CLOCK_KNOWN, CLOCK_UNKNOWN}:
+        raise WorkspaceError("qa_exchange clock_state invalid")
+    if clock_state == CLOCK_UNKNOWN and available is not None:
+        raise WorkspaceError("unknown qa_exchange clock cannot claim source_available_at")
+    if clock_state == CLOCK_KNOWN and not available:
+        raise WorkspaceError("known qa_exchange clock requires source_available_at")
+    if transcript_clock is None:
+        if clock_state != CLOCK_UNKNOWN or available is not None:
+            raise WorkspaceError(
+                f"{SOURCE_CLOCK_OWNER_GAP}: qa_exchange provenance must be unknown with null availability"
+            )
+        return
+    if provenance.get("clock_state") != transcript_clock.get("clock_state"):
+        raise WorkspaceError("qa_exchange clock_state does not match transcript source clock")
+    if provenance.get("source_available_at") != transcript_clock.get("source_available_at"):
+        raise WorkspaceError("qa_exchange source_available_at does not match transcript source clock")
+    if provenance.get("rights_profile") != transcript_clock.get("rights_profile"):
+        raise WorkspaceError("qa_exchange rights_profile does not match transcript source clock")
+
+
+def _span_identity(span: Mapping[str, Any]) -> tuple[Any, ...]:
+    receipt = _mapping(span.get("receipt"), "span.receipt")
+    locator = _mapping(span.get("locator"), "span.locator")
+    try:
+        segment = int(locator.get("segment_index"))
+        start = int(locator.get("span_start_byte"))
+        end = int(locator.get("span_end_byte"))
+    except (TypeError, ValueError) as exc:
+        raise WorkspaceError("qa_exchange span locator is incomplete") from exc
+    return (
+        str(span.get("document_id") or ""),
+        str(receipt.get("source_sha256") or ""),
+        segment,
+        start,
+        end,
+    )
+
+
+def _assert_spans_unique_and_disjoint(
+    question_spans: Sequence[Mapping[str, Any]],
+    answer_spans: Sequence[Mapping[str, Any]],
+) -> None:
+    identities: list[tuple[Any, ...]] = []
+    question_count = len(question_spans)
+    for span in list(question_spans) + list(answer_spans):
+        ident = _span_identity(span)
+        if ident[3] >= ident[4]:
+            raise WorkspaceError("qa_exchange span byte range is invalid")
+        identities.append(ident)
+    if len(identities) != len(set(identities)):
+        raise WorkspaceError("qa_exchange spans are not unique")
+    for index, ident in enumerate(identities):
+        key = ident[:3]
+        start, end = ident[3], ident[4]
+        for other_index, other in enumerate(identities):
+            if other_index <= index or other[:3] != key:
+                continue
+            other_start, other_end = other[3], other[4]
+            if start < other_end and other_start < end:
+                crossed = (index < question_count) != (other_index < question_count)
+                if crossed:
+                    raise WorkspaceError("qa_exchange question and answer spans overlap")
+                raise WorkspaceError("qa_exchange spans overlap")
+
+
 def _run_id(*, event_id: str, document_id: str, document_sha256: str) -> str:
     digest = canonical_json_sha256({
         "event_id": event_id,
@@ -445,24 +572,6 @@ def _canonical_span(
     if claimed and claimed != payload.get("text_sha256"):
         raise WorkspaceError("qa_exchange span text_sha256 does not replay")
     return payload
-
-
-def _canonical_respondent(raw: Mapping[str, Any], *, answer_span_count: int) -> dict[str, Any]:
-    indexes = [int(value) for value in list(raw.get("span_indexes") or [])]
-    if not indexes or indexes != sorted(set(indexes)):
-        raise WorkspaceError("respondent span_indexes must be unique and ordered")
-    if any(index < 0 or index >= answer_span_count for index in indexes):
-        raise WorkspaceError("respondent span_indexes are out of range")
-    name = str(raw.get("name") or "").strip()
-    role = str(raw.get("role") or "").strip()
-    if not name or not role:
-        raise WorkspaceError("respondent name and role must be source-supported")
-    return {
-        "name": name,
-        "role": role,
-        "identity_state": str(raw.get("identity_state") or "source_supported"),
-        "span_indexes": indexes,
-    }
 
 
 def _assert_answer_ownership(respondents: Sequence[Mapping[str, Any]], answer_span_count: int) -> None:

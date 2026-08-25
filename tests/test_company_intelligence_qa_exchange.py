@@ -124,6 +124,11 @@ def test_flagship_workspace_publishes_seven_exchanges() -> None:
         (lambda item: item["respondents"].pop(), "owned exactly once"),
         (lambda item: item["provenance"].__setitem__("model", "qwen"), "provider or model"),
         (lambda item: item["provenance"].__setitem__("taxonomy_hash", "x") if False else item.__setitem__("prophet", True), "forbidden"),
+        (lambda item: item["provenance"].__setitem__("source_available_at", "2026-08-16T18:00:00Z"), "cannot claim source_available_at"),
+        (lambda item: item.__setitem__("generated_at", "2026-08-16T18:00:00Z"), "keys mismatch"),
+        (lambda item: item["questioner"].__setitem__("name_state", "inferred"), "source-supported"),
+        (lambda item: item["respondents"][0].__setitem__("identity_state", "inferred"), "source-supported"),
+        (lambda item: item["question_spans"].append(copy.deepcopy(item["question_spans"][0])), "not unique"),
     ],
 )
 def test_validator_rejects_hostile_mutations(mutator, match) -> None:
@@ -176,6 +181,57 @@ def test_source_clock_unknown_cannot_claim_availability() -> None:
             document_id=DOCUMENT_ID,
             source_sha256=ACCEPTED_QA_TRANSCRIPT_SHA256,
         )
+
+
+def test_question_answer_span_overlap_is_rejected() -> None:
+    item = copy.deepcopy(_accepted()[0])
+    question = item["question_spans"][0]
+    answer = item["answer_spans"][0]
+    locator = copy.deepcopy(question["locator"])
+    locator["span_end_byte"] = int(locator["span_end_byte"]) - 1
+    answer["locator"] = locator
+    with pytest.raises(WorkspaceError, match="overlap"):
+        validate_qa_exchange(
+            item,
+            event_id=EVENT_ID,
+            document_id=DOCUMENT_ID,
+            document_sha256=ACCEPTED_QA_TRANSCRIPT_SHA256,
+        )
+
+
+def test_workspace_binds_qa_provenance_to_transcript_clock_or_owner_gap() -> None:
+    payload = _build_flagship()
+    public = {key: payload[key] for key in WORKSPACE_KEYS}
+    validate_event_workspace({**public, "generation_id": "0" * 24})
+    assert all(
+        item["provenance"]["clock_state"] == "unknown"
+        and item["provenance"]["source_available_at"] is None
+        for item in payload["qa_exchanges"]
+    )
+    sources = copy.deepcopy(payload["sources"])
+    transcript = next(row for row in sources if row["kind"] == "transcript")
+    transcript["source_clock"] = {
+        "schema": "event_source_clock.v1",
+        "document_id": transcript["document_id"],
+        "source_sha256": transcript["source_sha256"],
+        "source_available_at": "2026-07-30T20:30:28Z",
+        "system_recorded_at": "2026-08-16T18:00:00Z",
+        "clock_state": "known",
+        "rights_profile": "rp_public_primary_v1",
+        "session_phase": "unknown",
+    }
+    with pytest.raises(WorkspaceError, match="does not match transcript source clock"):
+        validate_event_workspace({**public, "generation_id": "0" * 24, "sources": sources})
+    matched = copy.deepcopy(payload["qa_exchanges"])
+    for item in matched:
+        item["provenance"]["clock_state"] = "known"
+        item["provenance"]["source_available_at"] = "2026-07-30T20:30:28Z"
+    validate_event_workspace({
+        **public,
+        "generation_id": "0" * 24,
+        "sources": sources,
+        "qa_exchanges": matched,
+    })
 
 
 def test_homebuilder_without_matching_sha_stays_empty() -> None:

@@ -313,13 +313,14 @@ def validate_event_workspace(payload: object) -> None:
     )
     transcript_document_id = None
     transcript_sha256 = None
+    transcript_clock = None
     if isinstance(transcript_source, Mapping) and transcript_source.get("receipt_state") == "byte_replayed":
         transcript_document_id = transcript_source.get("document_id")
         transcript_sha256 = transcript_source.get("source_sha256")
         clock = transcript_source.get("source_clock")
         if clock is not None:
             from .qa_exchange import validate_source_clock
-            validate_source_clock(
+            transcript_clock = validate_source_clock(
                 clock,
                 document_id=str(transcript_document_id or ""),
                 source_sha256=str(transcript_sha256 or ""),
@@ -332,6 +333,7 @@ def validate_event_workspace(payload: object) -> None:
         event_id=str(item.get("event_id") or ""),
         document_id=str(transcript_document_id) if transcript_document_id else None,
         document_sha256=str(transcript_sha256) if transcript_sha256 else None,
+        transcript_clock=transcript_clock,
     )
     for delta in item["deltas"]:
         if not isinstance(delta, Mapping):

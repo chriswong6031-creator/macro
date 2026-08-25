@@ -21,9 +21,9 @@ depends_on:
 decisions:
   - DEC:E3-EVENT-INTELLIGENCE-COMPILER-NOT-SCORER
 next_action: >
-  E3-B is in_progress on held draft PRs after Chairman+Sol unlock.
-  Do not merge. Do not deploy. Do not start E3-C. Production proof
-  remains outstanding.
+  E3-B remains HOLD-FOR-SOL on the same two draft carriers after
+  Sol REQUEST_CHANGES. Trust-boundary/CI/proof repairs are on those
+  heads. Do not merge. Do not deploy. Do not start E3-C.
 owns_paths:
   - research/earnings_intelligence/e3/**
   - engine/company_intelligence/qa_reconstruction.py
@@ -45,6 +45,7 @@ artifacts:
   - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-24-e3a2.md
   - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-24-e3a2-landed.md
   - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-24-e3b.md
+  - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-24-e3b-r1.md
   - engine/company_intelligence/qa_exchange.py
   - tests/test_company_intelligence_qa_exchange.py
   - engine/company_intelligence/qa_reconstruction.py
@@ -142,10 +143,11 @@ waves:
     status: in_progress
     depends_on: [E3-A2]
     next_action: >
-      Chairman+Sol unlocked this wave. Method is deterministic
-      structural publication; topics=["unavailable"]; Terminal
-      manifest-v2 compatibility is an entrance requirement.
-      Production proof outstanding. Do not merge. Do not start E3-C.
+      Same two draft/hold carriers. Sol REQUEST_CHANGES 2026-08-24:
+      harden validators and transcript-clock binding, wire the new
+      Q&A suite into neural-web-core, update the glance regression,
+      produce fixture browser proof, green Terminal's required hosted
+      check. Do not merge. Do not start E3-C.
   - id: E3-C
     title: Second-event generalization
     status: todo
