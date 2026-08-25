@@ -6,7 +6,7 @@ objective: >
   declared authority for every decision-bearing output and advisory evidence
   unable to silently override it. Each wave is complete only at its separately
   authorized acceptance boundary.
-status: active
+status: blocked
 program: crypto-intelligence
 repos: [macro]
 owner: ceo-sol
@@ -23,27 +23,32 @@ waves:
       9ce6ce711602f6bb4986ed59ea84d70b704f3eac; release reconciliation head
       e573a341e406532748a9ba62e69e8c5444341630 passed exact-head CI, fence and
       authority workflows and PR #6294 merged at 2026-08-24T09:02:31Z as
-      f039c86ae037cf75238cfdd1f3d732d9b643dbb7. Current canonical main
-      ce4a33aeeed779530942560c5b05f4df8ab0306c independently renders Vector with
-      btc.decision/v1 status ok, one action / one sizing source and a 100% final
-      target. The accepted live ruling is not reopened by this P0B commission.
+      f039c86ae037cf75238cfdd1f3d732d9b643dbb7. Canonical main subsequently
+      rendered Vector with btc.decision/v1 status ok, one action / one sizing
+      source and a 100% final target. The accepted live ruling is not reopened by P0B.
   - id: P0B
     title: Crypto H5 authority closure
     status: in_progress
     depends_on: [P0A]
     next_action: >
-      Admit exactly one implementation attempt through Executive OS on one P0B
-      carrier after a fresh main/open-PR collision check. Implement
-      DEC:CRYPTO-H5-BTC-BUDGET-AUTHORITY so H5 total exposure consumes the
-      canonical btc.decision/v1 final state, fails closed when that decision is
-      unavailable, and leaves the existing class overlay authority-limited to
-      splitting the final budget. Return a PR, exact-head tests and real H5 browser
-      proof to Sol; do not self-accept.
+      First prove the production Executive host is on protected Mastermind release
+      51f9942733b86e550bb9169d2a43462bd28e774f with current provider readiness,
+      formal acceptance, Gate B and autonomy-control status ARMED_READY. Then perform
+      a fresh Macro main/open-PR collision fence and submit exactly one strict-v2 P0B
+      CEO intent through G7's existing local private AF_UNIX ingress. Record the
+      canonical QUEUED receipt before calling any worker active. The resulting worker
+      implements DEC:CRYPTO-H5-BTC-BUDGET-AUTHORITY and stops for Sol review.
 next_action: >
-  Execute P0B's runtime admission and bounded vertical implementation from the
-  commissioned handoff. Preserve one BTC budget authority, one implementation
-  carrier and the existing crypto cockpit projection rather than creating a new
-  allocation truth store.
+  Complete or prove Executive G7 Stage-2 host acceptance/arming for exact protected
+  release 51f9942733b86e550bb9169d2a43462bd28e774f. P0B does not wait on the separate
+  Slack B2/C2 transport, but no Executive intent may be submitted until the local G7
+  host boundary is positively proven.
+blocked_by:
+  - >
+    DSC:EXEC-G7-HOST-PROOF-ABSENT-FOR-P0B — G7 implementation is merged, but Sol has
+    no canonical positive receipt proving exact release 51f9942733b86e550bb9169d2a43462bd28e774f
+    is installed, provider-ready, formally accepted, Gate-B-bound and ARMED_READY on
+    the production Executive host.
 owns_paths:
   - "engine/btc_decision.py"
   - "contracts/btc_decision.schema.json"
@@ -56,13 +61,26 @@ owns_paths:
 decisions:
   - "DEC:BTC-MIDTERM-BLACKOUT-AUTHORITY-RETIRED"
   - "DEC:CRYPTO-H5-BTC-BUDGET-AUTHORITY"
+  - "DEC:CRYPTO-P0B-RUNTIME-INGRESS-G7-LOCAL"
 discoveries:
   - "DSC:CRYPTO-H5-BYPASSES-BTC-DECISION"
+  - "DSC:EXEC-G7-HOST-PROOF-ABSENT-FOR-P0B"
 landmines:
   - >
-    A direct H5 read of signals.alloc_optimal can produce the same happy-path
-    number as btc.decision/v1 while still bypassing its integrity gates. P0B proof
-    must include malformed and override cases, not only a 100% happy path.
+    A direct H5 read of signals.alloc_optimal can produce the same happy-path number
+    as btc.decision/v1 while still bypassing its integrity gates. P0B proof must
+    include malformed and override cases, not only a 100% happy path.
+  - >
+    Green Executive G7 code/CI is not an ARMED_READY host. Exact-root receipts and
+    current runtime status are required before a modifying P0B intent can exist.
+  - >
+    G7 local private-socket CEO intent and the separately held Personal-Pro Slack
+    B2/C2 transport are distinct. Do not make Slack completion a false predecessor
+    of the local path, and do not pretend the local path makes Slack live.
+  - >
+    Executive intent acceptance creates one QUEUED Job with dispatched=false;
+    bounded COO execution is a later lifecycle step. Never collapse admission,
+    dispatch, execution, merge, render and production acceptance.
   - >
     Economically meaningful raw/final allocation drift without an active named
     override is an integrity failure; only representation jitter is tolerated.
@@ -81,13 +99,23 @@ do_not_redo:
     Do not reopen P0A. PR #6294 and the accepted PROVEN_LIVE boundary are closed;
     P0B begins from that authority contract.
   - >
+    Do not merge or recreate stale PR #6397's old claim that Slack S0/B2/C2 is the
+    sole current P0B admission blocker. It was closed unmerged after Executive G7
+    advanced protected source law.
+  - >
+    Do not create a GitHub/Linear/Slack surrogate Job, second dispatcher or parallel
+    queue while the G7 host is unproven.
+  - >
     Do not expand P0B into alerts, a new crypto optimizer, recommender removal,
     ETH/alt model promotion, navigation work or broader cockpit redesign.
 artifacts:
   - agentos/handoffs/CRYPTO-INTELLIGENCE-2026-08-23-p0a-btc-decision.md
   - agentos/handoffs/CRYPTO-INTELLIGENCE-2026-08-24-p0a-close-p0b-commission.md
+  - agentos/handoffs/CRYPTO-INTELLIGENCE-2026-08-25-p0b-g7-host-gate.md
   - agentos/decisions/DEC-CRYPTO-H5-BTC-BUDGET-AUTHORITY.md
+  - agentos/decisions/DEC-CRYPTO-P0B-RUNTIME-INGRESS-G7-LOCAL.md
   - agentos/discoveries/DSC-CRYPTO-H5-BYPASSES-BTC-DECISION.md
+  - agentos/discoveries/DSC-EXEC-G7-HOST-PROOF-ABSENT-FOR-P0B.md
   - research/CRYPTO_COCKPIT_MASTERPLAN.md
   - contracts/btc_decision.schema.json
   - verify_shots/p0a_btc_decision/
@@ -95,29 +123,25 @@ artifacts:
 
 ## P0A close
 
-P0A is complete at its accepted production boundary. Its durable implementation
-truth is PR #6294 plus merge commit
-`f039c86ae037cf75238cfdd1f3d732d9b643dbb7`; current main continues to carry the
-single `btc.decision/v1` action and sizing projection. The public Vector URL could
-not be independently re-fetched from the current Sol tool environment during this
-reconciliation, so this record does not invent a duplicate live receipt. It preserves
-the already accepted PROVEN_LIVE ruling and adds immutable GitHub/current-main proof.
+P0A remains complete at its accepted production boundary. Its implementation truth is
+PR #6294 plus merge commit `f039c86ae037cf75238cfdd1f3d732d9b643dbb7`.
 
-## P0B commission
+## P0B architecture
 
-P0B is now separately commissioned and organizationally in progress. Its sole
-observable mission is to make Crypto H5 honor the authority claim it already shows
-the user: Bitcoin DecisionState sets the total crypto budget, while the existing
-class overlay only splits that available budget among BTC, ETH and altcoins, with
-cash as the residual.
+P0B is separately commissioned. Its observable product mission remains unchanged:
+Crypto H5 must inherit the canonical Bitcoin DecisionState total budget; the existing
+class overlay may only split an available budget among BTC, ETH and altcoins, with cash
+as residual. Integrity-invalid or unavailable DecisionState must make H5 non-actionable.
 
-The current defect is structural rather than visual. `scripts/build_crypto.py`
-currently rereads `signals.alloc_optimal` for H5 total exposure. That bypasses the
-P0A integrity projection, so an integrity-invalid state can make Vector unavailable
-while H5 remains actionable. `DEC:CRYPTO-H5-BTC-BUDGET-AUTHORITY` freezes the repair
-boundary; `DSC:CRYPTO-H5-BYPASSES-BTC-DECISION` records the falsifiable current-state
-finding.
+## Current runtime predecessor
 
-Actual worker execution is not inferred from this Agent OS state. Executive OS owns
-Job/Attempt/Worker/Event lifecycle and must admit exactly one implementation carrier
-before code work can truthfully be called queued or executing.
+Protected Mastermind advanced on 2026-08-25 through Executive G7 PR #146 to
+`51f9942733b86e550bb9169d2a43462bd28e774f`. G7's accepted architecture uses the
+existing private AF_UNIX CEO-intent ingress and the existing Executive Job/Attempt/Worker/Event
+lifecycle, then gates bounded COO progression behind receipt-gated host autonomy. It explicitly
+does not activate Slack ingress.
+
+Therefore P0B no longer waits on the separate Slack B2/C2 program. It does remain blocked on
+positive G7 host proof: exact release installation, provider readiness, formal acceptance,
+Gate B, autonomy arm/boot re-attestation and a safe `ARMED_READY` status. No such positive
+receipt is currently available to Sol, so no P0B runtime identity exists yet.
