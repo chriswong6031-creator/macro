@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-25T14:34:01.826821+00:00",
-  "count": 1832,
+  "generated_at": "2026-08-25T15:32:37.129937+00:00",
+  "count": 1834,
   "institutions": [
     "13F Summary",
     "ABN Amro",
@@ -105,6 +105,48 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-e9tnte6vqzq-39dad7",
+      "title": "Asia Pacific Portfolio Strategy Asian equity market daily update",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-25T11:55:20Z",
+      "summary_points": [
+        "**Korea/Taiwan Tech Dominance & China Correlation**: Korea (26% MXAPJ weight) drives 87% market performance via Info Tech (142% return); 83% MXAPJ-China correlation reduces diversification, amplifying China-specific risk exposure.",
+        "**FII Outflows vs.",
+        "DII Inflows**: EM Asia ex-China shows negative FII flows (Taiwan: -40.083bn, Korea: -108.388bn 2025 YTD) amid positive DII inflows (Asia: +112.778bn), signaling foreign capital exit and domestic capital entry.",
+        "**Extreme Market Breadth Contraction**: Hong Kong (-72%) and Philippines (-60%) exhibit severe breadth contraction, highlighting vulnerability to geopolitical/liquidity stress requiring defensive positioning.",
+        "**Regional Valuation Discount vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-8b6lz2dxn2p-996a2f",
+      "title": "Payments and Fintech 2Q26 Earnings Takeaways and key investor debates",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-25T11:55:16Z",
+      "summary_points": [
+        "**Earnings Momentum & Revisions**: Median stock +13% QTD; 3.5% avg FQ0 revenue/gross profit beat vs.",
+        "consensus; upward consensus revisions for CY2026/2027 (revenue +0.7%, EBITDA margin +0.2%) signal sustained growth optimism.",
+        "**Valuation Growth Correlation**: EV/EBITDA multiples (10x-22x) driven by gross profit growth expectations (10% vs.",
+        "5%), with higher EBITDA multiples correlating to stronger gross profit growth for valuation assessment.",
+        "**Critical Reporting Risk**: AFRM’s delayed CY2Q26 results create valuation uncertainty and flow volatility risk for payments/fintech holdings, absent from consensus data."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
       "language": "en",
       "needs_metadata": false
     },
