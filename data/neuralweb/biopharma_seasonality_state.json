@@ -1,9 +1,9 @@
 {
-  "as_of": "2026-08-21",
+  "as_of": "2026-08-24",
   "gaps": [],
-  "generated_at": "2026-08-23T04:03:37Z",
-  "inputs_hash": "sha256:debd7d24c2ef5a3797a201340cf2e1477dc9c8e3448341bbdd83a3f930d52eb7",
-  "produced_at": "2026-08-23T04:03:38Z",
+  "generated_at": "2026-08-25T04:57:05Z",
+  "inputs_hash": "sha256:2baf85e4d75d53e630b8e82f95b8e858ffdecec551cf28ea1e4a5cd143edb78e",
+  "produced_at": "2026-08-25T04:57:06Z",
   "produced_by": "scripts/build_seasonality_shadow_state.py",
   "schema": "neuralweb.biopharma_seasonality_state.file.v1",
   "schema_version": 1,
@@ -11,7 +11,7 @@
   "states": {
     "A": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -23,19 +23,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 111,
+            "horizon_td": 108,
             "n_years": 25
           },
           "pattern_id": "cal:A:299-344",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 109,
+            "days_to_window_end": 107,
             "end_doy": 344,
             "occurrence_end_date": "2026-12-10",
             "start_doy": 299,
@@ -66,7 +66,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -75,7 +75,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.18825,
-        "horizon_td": 111,
+        "horizon_td": 108,
         "n_years": 25,
         "p": 0.76,
         "p_baseline": 0.57175,
@@ -99,7 +99,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:58c6c850dc436344cf1ec35ec34f20ac52eeebd56204968e0462c237bb7ebccc",
+        "data_snapshot": "sha256:bc24f59a10ffb194000b1e766ee9b32e8f3245d3e36d6977c3e24c5017a0138d",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:a09acc324b29243676c53913aca60a493223c2de02f8011bfd6193b9ee52323d"
       },
@@ -116,7 +116,7 @@
     },
     "ABT": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -128,19 +128,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 132,
+            "horizon_td": 129,
             "n_years": 25
           },
           "pattern_id": "cal:ABT:345-365",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 130,
+            "days_to_window_end": 128,
             "end_doy": 365,
             "occurrence_end_date": "2026-12-31",
             "start_doy": 345,
@@ -171,7 +171,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -180,7 +180,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.228174,
-        "horizon_td": 132,
+        "horizon_td": 129,
         "n_years": 25,
         "p": 0.8,
         "p_baseline": 0.571826,
@@ -204,7 +204,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:2588a06be3f24c63c0ee62868b480846067dc4e1f2ee0d6cd214567c4467e9e5",
+        "data_snapshot": "sha256:0bd0b3516e5a977a8e9727e3197b891f095d40192928cedb740fb20c5b1628aa",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:066ba6b80381314b0e7b761b65770b416baa750c6111935a9a96babcb9d9cad9"
       },
@@ -234,7 +234,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -246,7 +246,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 38,
+            "days_to_window_end": 36,
             "end_doy": 273,
             "occurrence_end_date": "2026-09-30",
             "start_doy": 263,
@@ -277,7 +277,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -310,7 +310,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:ba4b3f50807b8f465c08b901bd0263a9f1355b34871c3b9e3ec9a1655d1dfe3b",
+        "data_snapshot": "sha256:d0f2432b5d0830d0afdf6bd35b82cd10950d23ea346560f035d008918ca2dc37",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:fec0bc07012846694e848b453b1f3944bba74a518f9b5bcbdaaf04c7f75996a5"
       },
@@ -341,7 +341,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -353,7 +353,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 50,
+            "days_to_window_end": 48,
             "end_doy": 285,
             "occurrence_end_date": "2026-10-12",
             "start_doy": 275,
@@ -384,7 +384,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -417,7 +417,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:8d566340b5a5bb6c6b486ee9d16560ca62e7adb7c324bcfcef395977796e06d5",
+        "data_snapshot": "sha256:92289fa13f80b74ff9da1c7c43446726bc06c8c2d62fe5457e39ba410b47dc23",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:d56994c51cafa5b6ad19ecf84064d6cdaa962204361aa136bc4b851bb157c2fb"
       },
@@ -448,7 +448,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -460,7 +460,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 288,
+            "days_to_window_end": 286,
             "end_doy": 158,
             "occurrence_end_date": "2027-06-07",
             "start_doy": 143,
@@ -491,7 +491,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -524,7 +524,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:29acfe5c47e6ad87e3509350938fe3f4ab14a024b020c7913a693be3f0fd94ea",
+        "data_snapshot": "sha256:0d0628de4a5c94a0ea5cd34cc01a5aa9adfffbb8f8d2030487e095567511bcce",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:70c4c3903f47e420391e3f653f2b4a685f0e4aabed563f30c802777313edf89a"
       },
@@ -555,7 +555,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -567,7 +567,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 177,
+            "days_to_window_end": 175,
             "end_doy": 47,
             "occurrence_end_date": "2027-02-16",
             "start_doy": 42,
@@ -598,7 +598,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -631,7 +631,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:337c54df82a61fd7b59d005ebe981bc4d9a6b7b1d6bd186a36d2a979378ff05f",
+        "data_snapshot": "sha256:0e9126cdb085cdd115d8372d4da93dd78bbb6e725f0b48008ccbaf474a69461c",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:3f75283d53619da402638eb76d3ff60750c93c8825384c920b28d2dcb9a6e993"
       },
@@ -650,7 +650,7 @@
     },
     "AMGN": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -662,19 +662,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 343,
+            "horizon_td": 340,
             "n_years": 25
           },
           "pattern_id": "cal:AMGN:181-211",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 341,
+            "days_to_window_end": 339,
             "end_doy": 211,
             "occurrence_end_date": "2027-07-30",
             "start_doy": 181,
@@ -705,7 +705,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -714,7 +714,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.313313,
-        "horizon_td": 343,
+        "horizon_td": 340,
         "n_years": 25,
         "p": 0.84,
         "p_baseline": 0.526687,
@@ -738,7 +738,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:53a961105b72d1b205be1d0e002f4a71eebbe24d993d1e7da230e02f18fb039f",
+        "data_snapshot": "sha256:db0a2f573302ce8e58feaf1fa7f4811f80dbb6199356932d873cca3319fbf5bc",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:febfeb9904f38de2fa3f2315e87e06de14900a61ea04c0c51384b4ca7738f924"
       },
@@ -767,7 +767,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -779,7 +779,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 288,
+            "days_to_window_end": 286,
             "end_doy": 158,
             "occurrence_end_date": "2027-06-07",
             "start_doy": 143,
@@ -810,7 +810,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -843,7 +843,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:2d8b0d639d9350d82d31df75cbf54d31ca774aea91e9aa8a7228c79c3aabbf4c",
+        "data_snapshot": "sha256:cceb05c2f3c38b49d6d3b9af5f17d632a1d368d512d5cd0230410cbfdb3fc890",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:f1641d9efd6bac06787d2e623215a710f7a6f5a07208e6655322138285af131a"
       },
@@ -872,7 +872,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -884,7 +884,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 142,
+            "days_to_window_end": 140,
             "end_doy": 12,
             "occurrence_end_date": "2027-01-12",
             "start_doy": 7,
@@ -915,7 +915,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -948,7 +948,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:268dd73e3fcb1e1d90982f0fcf63eab134fde892ccca00aa9506445d39ef55cf",
+        "data_snapshot": "sha256:d4cff6d0feeebcbc70962420d770df8f84589d16243e63dcccb28b9d0ab8a28a",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:ab44093d23e70e644d043b9b7baf6a1985d3fe78326a9487557e18bfdf6ab601"
       },
@@ -979,7 +979,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -991,7 +991,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 222,
+            "days_to_window_end": 220,
             "end_doy": 92,
             "occurrence_end_date": "2027-04-02",
             "start_doy": 82,
@@ -1022,7 +1022,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -1055,7 +1055,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:7cc6e159c0ac584753ffa3b91c01a081b3b8b5427ea48224088058782873645a",
+        "data_snapshot": "sha256:d417d79b43693661f2c9f16c690cfd2e422269ff47bd591c921892930ada5c66",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:916d3d8bedbbb2e92d117e355e55209c7e38802a683025178d903b7ccb2c98ca"
       },
@@ -1086,7 +1086,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -1098,7 +1098,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 63,
+            "days_to_window_end": 61,
             "end_doy": 298,
             "occurrence_end_date": "2026-10-25",
             "start_doy": 283,
@@ -1129,7 +1129,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -1162,7 +1162,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:73c6ee8b664ceb9916679d0f2a2eebf7f3dc0b0342edf0e33cbecf4c8ab42729",
+        "data_snapshot": "sha256:be304f21d209e1719e82ac805f3b61aa20667c2f5608114d1899ebe5d781894a",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:7b8961d27f84725b211f289ce145688986292186e7f8fea8a6d23154dbe1a16d"
       },
@@ -1181,7 +1181,7 @@
     },
     "AZN": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -1193,19 +1193,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 251,
+            "horizon_td": 248,
             "n_years": 25
           },
           "pattern_id": "cal:AZN:29-119",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 249,
+            "days_to_window_end": 247,
             "end_doy": 119,
             "occurrence_end_date": "2027-04-29",
             "start_doy": 29,
@@ -1236,7 +1236,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -1245,7 +1245,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.122182,
-        "horizon_td": 251,
+        "horizon_td": 248,
         "n_years": 25,
         "p": 0.72,
         "p_baseline": 0.597818,
@@ -1269,7 +1269,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:85f8233f5c4f8ddad490719f3dc4671a0e76660206dbba9f33270fca34d62cd3",
+        "data_snapshot": "sha256:02be213774eedb48607a271805e203c51217cee4a5a0ba43744309bce32b3f17",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:d2658a3db1c29c65c0ceafd538b234e4b5e647cef85a5e512875f3b35e5e2434"
       },
@@ -1298,7 +1298,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -1310,7 +1310,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 184,
+            "days_to_window_end": 182,
             "end_doy": 54,
             "occurrence_end_date": "2027-02-23",
             "start_doy": 49,
@@ -1341,7 +1341,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -1374,7 +1374,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:2c7f7d2b26245733c4eafcef68da36c338750ccd08337992a32fc8beb0612b94",
+        "data_snapshot": "sha256:ebcfd2e1d1a7b236ff0b69e429b6e40cd67d9f2bf6291eed8e0b86566cdb070a",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:aaaadd88ac528e6fe1aa334d4dcb462515d9b93f319be05cd53b3137cc758625"
       },
@@ -1405,7 +1405,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -1417,7 +1417,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 70,
+            "days_to_window_end": 68,
             "end_doy": 305,
             "occurrence_end_date": "2026-11-01",
             "start_doy": 260,
@@ -1448,7 +1448,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -1481,7 +1481,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:6b78b8e32ddf9ccf4acc66b1cf5102b3abd4f1690c5232e27f661527e1a87f59",
+        "data_snapshot": "sha256:edc632979f9f8dda5f42e6749f6e5e71ca9a67c79c1cce87b3e652630352bf1f",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:1f21a82db056d05660396aabd3e5783aad6c3e046acea3c67b94828c06ac390f"
       },
@@ -1499,7 +1499,7 @@
     },
     "BDX": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -1511,19 +1511,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 356,
+            "horizon_td": 353,
             "n_years": 25
           },
           "pattern_id": "cal:BDX:219-224",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 354,
+            "days_to_window_end": 352,
             "end_doy": 224,
             "occurrence_end_date": "2027-08-12",
             "start_doy": 219,
@@ -1554,7 +1554,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -1563,7 +1563,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.335778,
-        "horizon_td": 356,
+        "horizon_td": 353,
         "n_years": 25,
         "p": 0.88,
         "p_baseline": 0.544222,
@@ -1587,7 +1587,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:d8472baca2e79220a3d132fbc6737c99c32b8f4b1e4f949b2133c406445dd682",
+        "data_snapshot": "sha256:cf6d05a88bbba7e3d06673ba2814a712e4d9a8fa0c5100f9292cf61db2ee6ba9",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:e746a66676fce26c63eda779186a1d9401287443086f2f1ef3e8e2e4957d1915"
       },
@@ -1604,7 +1604,7 @@
     },
     "BIIB": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -1616,19 +1616,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 35,
+            "horizon_td": 32,
             "n_years": 25
           },
           "pattern_id": "cal:BIIB:263-268",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 33,
+            "days_to_window_end": 31,
             "end_doy": 268,
             "occurrence_end_date": "2026-09-25",
             "start_doy": 263,
@@ -1659,7 +1659,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -1668,7 +1668,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": -0.236556,
-        "horizon_td": 35,
+        "horizon_td": 32,
         "n_years": 25,
         "p": 0.28,
         "p_baseline": 0.516556,
@@ -1692,7 +1692,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:e40b05ec1e3845f53a290e047a0208d3bc33acbd355b86ccf927ad1e84796ddf",
+        "data_snapshot": "sha256:56f02f06909896d7a5229ed5467e5e5b4806873225a90b3c73f29fda706f12a6",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:3cec85ea847b5391928f0689176a9ca7c1fec7d763b5512ea92a1903df533895"
       },
@@ -1722,7 +1722,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -1734,7 +1734,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 229,
+            "days_to_window_end": 227,
             "end_doy": 99,
             "occurrence_end_date": "2027-04-09",
             "start_doy": 84,
@@ -1765,7 +1765,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -1798,7 +1798,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:fea853cd00d33e8daf5e1405d24593d92ceb873c06714d8165c574b1fe3904af",
+        "data_snapshot": "sha256:6a3a728fd80f3ae89a5d5ec3d3cb1ddc182daf5257e98dd26d270ef0067009e5",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:b1ad46cd377ce8b0d46c982b35f21635c19881b9fb03e1d07acc7a004f158332"
       },
@@ -1829,7 +1829,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -1841,7 +1841,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 287,
+            "days_to_window_end": 285,
             "end_doy": 157,
             "occurrence_end_date": "2027-06-06",
             "start_doy": 127,
@@ -1872,7 +1872,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -1905,7 +1905,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:c3dacbda4555503e2d72976ffb05911bc34500a5718a217896a72a4da8429ef8",
+        "data_snapshot": "sha256:889145ffbdbc930c68014ec73f8c205d8f134b0ee811438c8a2765c6dc622fcd",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:d53a0013e65ab7f9777f4c6e9987a1ac74d97bab57a58189c6f6f1b421cc30f8"
       },
@@ -1935,7 +1935,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -1947,7 +1947,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 125,
+            "days_to_window_end": 123,
             "end_doy": 360,
             "occurrence_end_date": "2026-12-26",
             "start_doy": 300,
@@ -1978,7 +1978,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -2011,7 +2011,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:27327c9e8e8ae1f2dd473d75518451e829560693b2a1de29bb3fa64276f7b75e",
+        "data_snapshot": "sha256:edc551b27b97e9d652b5584717e55f8ad8d245a3784a748e7f225a9c57e71ea0",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:3b1c1d68c02bffe583feaff014c07799c0a1efb3f22ec3173ad68161ec4db4c3"
       },
@@ -2028,7 +2028,7 @@
     },
     "BMY": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -2040,19 +2040,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 112,
+            "horizon_td": 109,
             "n_years": 25
           },
           "pattern_id": "cal:BMY:300-345",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 110,
+            "days_to_window_end": 108,
             "end_doy": 345,
             "occurrence_end_date": "2026-12-11",
             "start_doy": 300,
@@ -2083,7 +2083,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -2092,7 +2092,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.16175,
-        "horizon_td": 112,
+        "horizon_td": 109,
         "n_years": 25,
         "p": 0.72,
         "p_baseline": 0.55825,
@@ -2116,7 +2116,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:864f03febac528ae5b9d4c834b34fa56819711ef316397a9f8c3bb01e2ab845a",
+        "data_snapshot": "sha256:e4f0da088191f7d21271607bca40b232daa217c9233fe2b5234d628b27c9d416",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:c213ce279a0ad57fa4bddac5b3192521ee751436b8586ce967f498e47e39ae06"
       },
@@ -2145,7 +2145,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -2157,7 +2157,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 98,
+            "days_to_window_end": 96,
             "end_doy": 333,
             "occurrence_end_date": "2026-11-29",
             "start_doy": 323,
@@ -2188,7 +2188,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -2221,7 +2221,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:9c1a7674d475e952511d37462f142d857b4244206ff6cd5c0996e650e8f82290",
+        "data_snapshot": "sha256:f9a85904e9c2cce5f0871572db13d4410ee41847ba86f487d524a2ac84067226",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:4e6411bee01a56921c36429b5607e69cb41187e36d8c369cb0b1d2723a9adedc"
       },
@@ -2240,7 +2240,7 @@
     },
     "BSX": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -2252,19 +2252,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 150,
+            "horizon_td": 147,
             "n_years": 25
           },
           "pattern_id": "cal:BSX:3-18",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 148,
+            "days_to_window_end": 146,
             "end_doy": 18,
             "occurrence_end_date": "2027-01-18",
             "start_doy": 3,
@@ -2295,7 +2295,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -2304,7 +2304,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.124571,
-        "horizon_td": 150,
+        "horizon_td": 147,
         "n_years": 25,
         "p": 0.68,
         "p_baseline": 0.555429,
@@ -2328,7 +2328,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:7f8a37b2200038587309c051aca49c95f5725a0d7a999f4f99dbdc656fd3c111",
+        "data_snapshot": "sha256:1e63df54025f22bb6e986a1c4e80b8ed7161f616e226b819216f4c307355c49c",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:3ec167739aa37ae9bd3180b97fe2b5590672c4e894064e1e000be2d3f0a14398"
       },
@@ -2358,7 +2358,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -2370,7 +2370,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 186,
+            "days_to_window_end": 184,
             "end_doy": 56,
             "occurrence_end_date": "2027-02-25",
             "start_doy": 11,
@@ -2401,7 +2401,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -2434,7 +2434,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:303b644c915fe522cd638ea05b94a104109b70da94b13cc0ea56918356ff0d9e",
+        "data_snapshot": "sha256:766328cde2b149a074fbccffcd4989dc3168d2c8b169d410f55cbaf73db9431c",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:9a7194788f761833bead8e6c14682dc93634f4e5b94136ce46d50b3f338466cf"
       },
@@ -2464,7 +2464,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -2476,7 +2476,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 108,
+            "days_to_window_end": 106,
             "end_doy": 343,
             "occurrence_end_date": "2026-12-09",
             "start_doy": 283,
@@ -2507,7 +2507,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -2540,7 +2540,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:c2706583a81ab02bfe6ad6345ecb594eec2d42e2765a0ec6ac033685dd73d76a",
+        "data_snapshot": "sha256:d113a46c43294e94ceaf4b0d0351cfcfff6ea3008af4cba49fd28e5405661572",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:29a4a53a6004ee7fd05583af0ceabec99d6e3f951c78cdbde225dfc464182e19"
       },
@@ -2570,7 +2570,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -2582,7 +2582,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 93,
+            "days_to_window_end": 91,
             "end_doy": 328,
             "occurrence_end_date": "2026-11-24",
             "start_doy": 323,
@@ -2613,7 +2613,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -2646,7 +2646,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:ac0751bc6cd8490e0ef7f9dd22f974eb9a9c59ad895bd403a9d3e4baab6390ca",
+        "data_snapshot": "sha256:1655b7d3d385d29d2d02deba4bf24e96480954793a6dd1f184ffd4759629f04b",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:98df9f7298a19634a2d30e912ad6e2c55709a117b452bf0206f0671f768dd94a"
       },
@@ -2677,7 +2677,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -2689,7 +2689,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 33,
+            "days_to_window_end": 31,
             "end_doy": 268,
             "occurrence_end_date": "2026-09-25",
             "start_doy": 263,
@@ -2720,7 +2720,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -2753,7 +2753,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:9b55afcaa36f2461a58c935633e8ab1a1f6d0ac83f40a69c43c08d378dbdd55d",
+        "data_snapshot": "sha256:50cc07cae07211c58c9c7d1a0ea5acc8952af452cf1b0a06729221bd48d1cfed",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:0da93a6aa8f7f785a5c06637d1f29431cc6b22e8df80fbafab123dbb1f2c8e16"
       },
@@ -2772,7 +2772,7 @@
     },
     "COO": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -2784,19 +2784,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 195,
+            "horizon_td": 192,
             "n_years": 25
           },
           "pattern_id": "cal:COO:3-63",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 193,
+            "days_to_window_end": 191,
             "end_doy": 63,
             "occurrence_end_date": "2027-03-04",
             "start_doy": 3,
@@ -2827,7 +2827,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -2836,7 +2836,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.323148,
-        "horizon_td": 195,
+        "horizon_td": 192,
         "n_years": 25,
         "p": 0.92,
         "p_baseline": 0.596852,
@@ -2860,7 +2860,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:a04100e3f2ec8755b8b5d4d7282d7005e123945918375613bc0c74a41bf80416",
+        "data_snapshot": "sha256:cf6bdda454e85effb51f1448abdeea896d34faa5d7731f94752b9448dbb9bfd2",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:279961a0cb814efea25f9a80c7008d224e048b5281ec4ad0622eb59f8683ff4d"
       },
@@ -2878,7 +2878,7 @@
     },
     "COR": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -2890,19 +2890,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 63,
+            "horizon_td": 60,
             "n_years": 25
           },
           "pattern_id": "cal:COR:286-296",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 61,
+            "days_to_window_end": 59,
             "end_doy": 296,
             "occurrence_end_date": "2026-10-23",
             "start_doy": 286,
@@ -2933,7 +2933,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -2942,7 +2942,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.152,
-        "horizon_td": 63,
+        "horizon_td": 60,
         "n_years": 25,
         "p": 0.72,
         "p_baseline": 0.568,
@@ -2966,7 +2966,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:890875da6b4fc038d90b818df391b8242434ac66f030385a3c0048b60655587c",
+        "data_snapshot": "sha256:f9d4d5ea73844961a1d93efe5bf9d7c4edb4c750c2c65175e61f7890033d4e0b",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:0069c4f1a28de4ddab550c3f2e051343d31504981664bf6149a7d79400e7f6e4"
       },
@@ -2996,7 +2996,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -3008,7 +3008,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 268,
+            "days_to_window_end": 266,
             "end_doy": 138,
             "occurrence_end_date": "2027-05-18",
             "start_doy": 128,
@@ -3039,7 +3039,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -3072,7 +3072,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:68f095b8d06d00f9e8b672ff1b1e00ea3bcb104663581b745e25aed647f1dc6b",
+        "data_snapshot": "sha256:8411b49f5d53a9c370d03e5d42cd4c8129a1fa91149e596c7e2889775d761b7c",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:5ad10b413111ca136240f3f80d8b44e943ce27528ecd4486b9828bee1d0487d5"
       },
@@ -3103,7 +3103,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -3115,7 +3115,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 337,
+            "days_to_window_end": 335,
             "end_doy": 207,
             "occurrence_end_date": "2027-07-26",
             "start_doy": 192,
@@ -3146,7 +3146,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -3179,7 +3179,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:152c9515b5df9218000de92a568a4e5039d274647e7640f1baf02afbe4fa2763",
+        "data_snapshot": "sha256:bf875e098937326f5fd6b0cb74235614151755aabfdec972e49e93595dc9e748",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:5c40ec9dda99ef632c908bc5f0a81d36e8f59230e9cce26d1a9e7fb208d1b8c9"
       },
@@ -3198,7 +3198,7 @@
     },
     "CVS": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -3210,19 +3210,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 102,
+            "horizon_td": 99,
             "n_years": 25
           },
           "pattern_id": "cal:CVS:325-335",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 100,
+            "days_to_window_end": 98,
             "end_doy": 335,
             "occurrence_end_date": "2026-12-01",
             "start_doy": 325,
@@ -3253,7 +3253,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -3262,7 +3262,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.326986,
-        "horizon_td": 102,
+        "horizon_td": 99,
         "n_years": 25,
         "p": 0.88,
         "p_baseline": 0.553014,
@@ -3286,7 +3286,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:c09903d1fcd27e01b6e9c55cedb8f5d2a98250a81bb140c8cc08584880587469",
+        "data_snapshot": "sha256:f429320f1e8221601e23dc7170d35526a33c3ee0bd21e948280cfbfad6080d5f",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:7753c88c05d7b9d6178820e1b8912b334e2a7b8476c7fbeb86d118912cf815da"
       },
@@ -3316,7 +3316,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -3328,7 +3328,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 150,
+            "days_to_window_end": 148,
             "end_doy": 20,
             "occurrence_end_date": "2027-01-20",
             "start_doy": 10,
@@ -3359,7 +3359,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -3392,7 +3392,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:aa1499d1ca95bfa6d306b27e1eb38422521ef8d3a1c3e931986f8bf5f9a582b3",
+        "data_snapshot": "sha256:2bfb70e868e885f1b6f3d20aa6ccd8d8c31ac2ccd89d27f01a02caea3ce0bdd0",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:759a38ba6e2f6b02177ca9113d58782c3639ea17ba56d86c128867bffbffb7e2"
       },
@@ -3411,7 +3411,7 @@
     },
     "DGX": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -3423,19 +3423,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 282,
+            "horizon_td": 279,
             "n_years": 25
           },
           "pattern_id": "cal:DGX:60-150",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 280,
+            "days_to_window_end": 278,
             "end_doy": 150,
             "occurrence_end_date": "2027-05-30",
             "start_doy": 60,
@@ -3466,7 +3466,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -3475,7 +3475,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.231564,
-        "horizon_td": 282,
+        "horizon_td": 279,
         "n_years": 25,
         "p": 0.88,
         "p_baseline": 0.648436,
@@ -3499,7 +3499,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:235a69d297987c29e1f235fb3d817ba834309320e64a6768db40429c69e59a93",
+        "data_snapshot": "sha256:e0f6ccba351fa407d2eea8ff6337537250fe95a58df54adade671ccd2333d764",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:bba42b897d08a442b5ece0e5d13cc01e66f8807ed9ad77dc14b0b68ae06b7063"
       },
@@ -3515,7 +3515,7 @@
     },
     "DHR": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -3527,19 +3527,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 125,
+            "horizon_td": 122,
             "n_years": 25
           },
           "pattern_id": "cal:DHR:298-358",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 123,
+            "days_to_window_end": 121,
             "end_doy": 358,
             "occurrence_end_date": "2026-12-24",
             "start_doy": 298,
@@ -3570,7 +3570,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -3579,7 +3579,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.245115,
-        "horizon_td": 125,
+        "horizon_td": 122,
         "n_years": 25,
         "p": 0.88,
         "p_baseline": 0.634885,
@@ -3603,7 +3603,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:7803da19dc163951e54d505f0272c3df5e5776576921f794f09b90c807eea339",
+        "data_snapshot": "sha256:5e2315fb063b52c80a7655ba291760dd37f7641ef7f8e62f494320afa50a6265",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:65c80fde4b4ef43a690443f4bbd0cec953bb624dd5f6f8baaa3db52d4433e09a"
       },
@@ -3632,7 +3632,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -3644,7 +3644,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 219,
+            "days_to_window_end": 217,
             "end_doy": 89,
             "occurrence_end_date": "2027-03-30",
             "start_doy": 84,
@@ -3675,7 +3675,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -3708,7 +3708,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:24da4f9e9de85c323ddfa6061bc051b8bed0c10fc7a26a8f6bfefae6579bb1a9",
+        "data_snapshot": "sha256:7d335ca4625fa0124617a9969cf41194ce5637f39dad22fc577456043f9f1223",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:aa56be21eadda8bd6e13b734c16fbe1b1ee1f815f0beb0b7e4bf87e9236f49d8"
       },
@@ -3727,7 +3727,7 @@
     },
     "DXCM": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -3739,19 +3739,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 360,
+            "horizon_td": 357,
             "n_years": 20
           },
           "pattern_id": "cal:DXCM:223-228",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 358,
+            "days_to_window_end": 356,
             "end_doy": 228,
             "occurrence_end_date": "2027-08-16",
             "start_doy": 223,
@@ -3782,7 +3782,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -3791,7 +3791,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.227083,
-        "horizon_td": 360,
+        "horizon_td": 357,
         "n_years": 20,
         "p": 0.75,
         "p_baseline": 0.522917,
@@ -3815,7 +3815,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:343e2c7ca187edfc0104e0c57fe24203c7e883a62569dabdaf8d034b97352648",
+        "data_snapshot": "sha256:01206c4fab0f8b41fba246557f1589707c91e1095679dc52239b0604cb2e9f31",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:7436d9211c7dbff33d3fabc5be27a5a3193fd8021cf5de549f2b8c08aa112f48"
       },
@@ -3845,7 +3845,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -3857,7 +3857,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 249,
+            "days_to_window_end": 247,
             "end_doy": 119,
             "occurrence_end_date": "2027-04-29",
             "start_doy": 89,
@@ -3888,7 +3888,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -3921,7 +3921,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:a9521cdb6b3958694e2a3ced8dbff1f72016310b0f471b2fee6a9251ce4efea1",
+        "data_snapshot": "sha256:572e28c89252b883b5c822dd6174a0f86ef49c09b14db7a95199d80bcf719c7b",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:4b6e281b375ce960e709b16db07d0e259bb221a0a8db3f57d6bf1f0329f76ac9"
       },
@@ -3940,7 +3940,7 @@
     },
     "ELV": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -3952,19 +3952,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 102,
+            "horizon_td": 99,
             "n_years": 24
           },
           "pattern_id": "cal:ELV:325-335",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 100,
+            "days_to_window_end": 98,
             "end_doy": 335,
             "occurrence_end_date": "2026-12-01",
             "start_doy": 325,
@@ -3995,7 +3995,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -4004,7 +4004,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.279929,
-        "horizon_td": 102,
+        "horizon_td": 99,
         "n_years": 24,
         "p": 0.833333,
         "p_baseline": 0.553404,
@@ -4028,7 +4028,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:0058c719dea6a603d79e9807a795525e91bdb139fbc245b739d661a43895c816",
+        "data_snapshot": "sha256:5ec2d3d992774a37afac176d16108a6c364d6b0fbd5689acf88c814fc8b02dd7",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:fe46209fe86de69aacdda108fdc7f493c68c9850049244766ffffae3a00200ec"
       },
@@ -4057,7 +4057,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -4069,7 +4069,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 73,
+            "days_to_window_end": 71,
             "end_doy": 308,
             "occurrence_end_date": "2026-11-04",
             "start_doy": 303,
@@ -4100,7 +4100,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -4133,7 +4133,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:0a5097af776955fe7f9d05f6b048b1ccc116e2619af5fad28af433e783a440b3",
+        "data_snapshot": "sha256:b741b35a087f70fe51f93330eeb36386d9e8d4c10ce928d24c42559345276044",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:f962b060e0668d906ae17e690c11a8fddcc37cea18744f4d6e6bcce585696c49"
       },
@@ -4163,7 +4163,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -4175,7 +4175,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 342,
+            "days_to_window_end": 340,
             "end_doy": 212,
             "occurrence_end_date": "2027-07-31",
             "start_doy": 152,
@@ -4206,7 +4206,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -4239,7 +4239,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:1cbf48c27728f3db22cae13037cf09abaa9255889bf81dec449bd018ba9f3dcd",
+        "data_snapshot": "sha256:8c50bb9ee847f7f322929bdc4a1165702f4c701f29c3c8ad4a5a7c95402ff628",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:11524d17171c22452d3aaf69fbbd454c7ea5b610e9f292a7b9b13f13f8f8a9ac"
       },
@@ -4258,7 +4258,7 @@
     },
     "EW": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -4270,19 +4270,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 221,
+            "horizon_td": 218,
             "n_years": 25
           },
           "pattern_id": "cal:EW:74-89",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 219,
+            "days_to_window_end": 217,
             "end_doy": 89,
             "occurrence_end_date": "2027-03-30",
             "start_doy": 74,
@@ -4313,7 +4313,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -4322,7 +4322,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.173714,
-        "horizon_td": 221,
+        "horizon_td": 218,
         "n_years": 25,
         "p": 0.76,
         "p_baseline": 0.586286,
@@ -4346,7 +4346,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:e9293c402754d355bd343fd63bc55943eda89ea7855a5e7342749e258e472421",
+        "data_snapshot": "sha256:8f687b62c2b28a52651a9c21498a665883ecbd450a821b4180c4c9579b08e581",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:4889d2d5ec0339d8cae43982cc2a7c658cd51b5f9fa38d2a036664c0a8ae6817"
       },
@@ -4376,7 +4376,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -4388,7 +4388,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 37,
+            "days_to_window_end": 35,
             "end_doy": 272,
             "occurrence_end_date": "2026-09-29",
             "start_doy": 262,
@@ -4419,7 +4419,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -4452,7 +4452,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:2c7427d691d86ec9c70a73c589945e4a0f63debd5d04f8f4c06f6384d04be069",
+        "data_snapshot": "sha256:8fd22e06ca7267c4cdaa5de60027d4362b7409cde3f814f16592ddc95f2faa6b",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:cfeecabd92b258a6c3bacf19d0ac30fc749b5cf29a955184824cd4ff10741e0a"
       },
@@ -4471,7 +4471,7 @@
     },
     "GILD": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -4483,19 +4483,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 325,
+            "horizon_td": 322,
             "n_years": 25
           },
           "pattern_id": "cal:GILD:163-193",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 323,
+            "days_to_window_end": 321,
             "end_doy": 193,
             "occurrence_end_date": "2027-07-12",
             "start_doy": 163,
@@ -4526,7 +4526,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -4535,7 +4535,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.184,
-        "horizon_td": 325,
+        "horizon_td": 322,
         "n_years": 25,
         "p": 0.76,
         "p_baseline": 0.576,
@@ -4559,7 +4559,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:410bfff4f961c0e855f39db0db12041d78af99ced34f52dbe2d8e84b0b080f28",
+        "data_snapshot": "sha256:81b66c7c0f37439afaae89171db397c34c3b6951cc8502a367084d7a7e0b2b99",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:3045006415fcb0b1423338ec2378097c0280233299072b17480d65b6fccfb9e7"
       },
@@ -4588,7 +4588,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -4600,7 +4600,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 76,
+            "days_to_window_end": 74,
             "end_doy": 311,
             "occurrence_end_date": "2026-11-07",
             "start_doy": 281,
@@ -4631,7 +4631,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -4664,7 +4664,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:f9b4b532aac6790acc0ad1f6a8e2d3df1a061cb3cc7d5753c24e2f215162cb41",
+        "data_snapshot": "sha256:034b1a6f6f243990f8240cb4a4795f9fb9dfdd7864268981f1eaee313f806037",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:f943008638b11bedd6cc9f35cef49231ef2926fccbc21c9978060094973b5840"
       },
@@ -4694,7 +4694,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -4706,7 +4706,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 332,
+            "days_to_window_end": 330,
             "end_doy": 202,
             "occurrence_end_date": "2027-07-21",
             "start_doy": 142,
@@ -4737,7 +4737,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -4770,7 +4770,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:b69a5ddf0aed4225366e16e4e8810e0f5f1d70f057d476d03d7d05df95efe11e",
+        "data_snapshot": "sha256:cc01cca6d1e708c71a9d7abb92b471f3777913c4449d900f27e5dface992082a",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:aaa6e2a1163b8212a8f68a91ac1b8b516f9ba7fb0e5eabf05cfa3da1f5979768"
       },
@@ -4799,7 +4799,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -4811,7 +4811,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 221,
+            "days_to_window_end": 219,
             "end_doy": 91,
             "occurrence_end_date": "2027-04-01",
             "start_doy": 81,
@@ -4842,7 +4842,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -4875,7 +4875,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:44865dc530daffe4b3bac9177aedd5b29a69b3451fdccc0effdd5c6ededf2a3e",
+        "data_snapshot": "sha256:44ee0791fc3fe5f6acb872f8530bd8fdce7636799db91671bebc0795be70cd4e",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:f3b237d2e08e55091b72107a271a41c29175ff484da77736f4953bc3dbb0e7d1"
       },
@@ -4905,7 +4905,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -4917,7 +4917,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 283,
+            "days_to_window_end": 281,
             "end_doy": 153,
             "occurrence_end_date": "2027-06-02",
             "start_doy": 143,
@@ -4948,7 +4948,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -4981,7 +4981,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:736bfc9e756d6ca959c7899bc66dae5c8fe612d6d8a99fb596cfb0687ba71188",
+        "data_snapshot": "sha256:5074cdcf736c7f056818cdc073baad6929d357ee0c3edeecabf46bdc79024a27",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:07b6b22e8af3f0e4f108a6a7ba4cdd752b29983f5fb2368b49f1799a59be80b6"
       },
@@ -5011,7 +5011,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -5023,7 +5023,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 363,
+            "days_to_window_end": 361,
             "end_doy": 233,
             "occurrence_end_date": "2027-08-21",
             "start_doy": 213,
@@ -5054,7 +5054,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -5087,7 +5087,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:75eba4beb2db97bd1e5bbc0b5a51fcf0a8dc61e22a76311da2e4cf3b516e6b8e",
+        "data_snapshot": "sha256:10a6f84c02b05b9f7e1f60faf9b61d85b502860dba44fe878846d347e9658564",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:8e456f4106527f4c594eb7b97d29949ca430cdc609f1865a2de254213b51d8c9"
       },
@@ -5116,7 +5116,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -5128,7 +5128,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 265,
+            "days_to_window_end": 263,
             "end_doy": 135,
             "occurrence_end_date": "2027-05-15",
             "start_doy": 125,
@@ -5159,7 +5159,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -5192,7 +5192,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:0127b57f04de3f1ba5d441d5bd74598cae258cc47a8a70b235f8b0d0d5ca5f7d",
+        "data_snapshot": "sha256:dea2ec50f2f79392b2ae934e9143504fed5dc79e3974b6942e05b37593ca882d",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:cbdeb4b281a2c1e4fd65df54445df99f42e83a256187a4a858e89ea1deb76205"
       },
@@ -5210,7 +5210,7 @@
     },
     "IBB": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -5222,19 +5222,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 96,
+            "horizon_td": 93,
             "n_years": 24
           },
           "pattern_id": "cal:IBB:324-329",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 94,
+            "days_to_window_end": 92,
             "end_doy": 329,
             "occurrence_end_date": "2026-11-25",
             "start_doy": 324,
@@ -5265,7 +5265,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -5274,7 +5274,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.292014,
-        "horizon_td": 96,
+        "horizon_td": 93,
         "n_years": 24,
         "p": 0.833333,
         "p_baseline": 0.541319,
@@ -5298,7 +5298,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:e5b179bc2502226e4b1eae3472f30546b52de4046f5ceb6333dcd85e4475aec9",
+        "data_snapshot": "sha256:dfc9a52799666c606da22409da638fd992e00e8c4d6fbc0b08afd4523f25f4ad",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:e911a07010f91b3af7db6ac5477ca03a4f6687c3f0482b297d2c19f01e59e860"
       },
@@ -5328,7 +5328,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -5340,7 +5340,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 227,
+            "days_to_window_end": 225,
             "end_doy": 97,
             "occurrence_end_date": "2027-04-07",
             "start_doy": 67,
@@ -5371,7 +5371,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -5404,7 +5404,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:fd3097ae3e5017402bc4cdeb7c865669b2550beecaabe637a224da9d5353659f",
+        "data_snapshot": "sha256:523a7f07bef3abbd949c97a0a7518fe36d73b59bb9e5aa6f26a6d873ad1e7016",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:149604679b8d9c823f62637a4cd7de05cce4cdad8a5b88319d299e2e075100d5"
       },
@@ -5421,7 +5421,7 @@
     },
     "IDXX": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -5433,19 +5433,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 247,
+            "horizon_td": 244,
             "n_years": 25
           },
           "pattern_id": "cal:IDXX:105-115",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 245,
+            "days_to_window_end": 243,
             "end_doy": 115,
             "occurrence_end_date": "2027-04-25",
             "start_doy": 105,
@@ -5476,7 +5476,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -5485,7 +5485,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.275718,
-        "horizon_td": 247,
+        "horizon_td": 244,
         "n_years": 25,
         "p": 0.84,
         "p_baseline": 0.564282,
@@ -5509,7 +5509,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:b4f50df3006e6081b5a00badb1f7638cf5ece14603c8220d7efd062524860c38",
+        "data_snapshot": "sha256:28edd30c6c560bc44ff040a276525006204434739284fd899dd5325ecc96e7bf",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:fc42267a5a39a14e6924d629ab972a6c5504ff29b602fa0c0ecba70b1772e0af"
       },
@@ -5526,7 +5526,7 @@
     },
     "ILMN": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -5538,19 +5538,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 34,
+            "horizon_td": 31,
             "n_years": 25
           },
           "pattern_id": "cal:ILMN:262-267",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 32,
+            "days_to_window_end": 30,
             "end_doy": 267,
             "occurrence_end_date": "2026-09-24",
             "start_doy": 262,
@@ -5581,7 +5581,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -5590,7 +5590,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": -0.361,
-        "horizon_td": 34,
+        "horizon_td": 31,
         "n_years": 25,
         "p": 0.16,
         "p_baseline": 0.521,
@@ -5614,7 +5614,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:bd4c156b0a52aee7ee5788aba16d7ec754c935ac2d790323ba6e60c561a7a6cf",
+        "data_snapshot": "sha256:37b4466cef2a5cab377326d39e7ce4ef7ee1679c2246602107f9d399cdd5928f",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:aa6f4b962e23e331e20320bfc1d7080c547659457a25b32ddbce67ff940ddf22"
       },
@@ -5644,7 +5644,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -5656,7 +5656,7 @@
           "phase": "in_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 10,
+            "days_to_window_end": 8,
             "end_doy": 245,
             "occurrence_end_date": "2026-09-02",
             "start_doy": 225,
@@ -5687,7 +5687,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -5720,7 +5720,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:a48b0fb54e5e8358af28357b3fd7c54d57fbebea2fd5cf2b3b959d158729b0cc",
+        "data_snapshot": "sha256:51c0ea9553d04882d1caa62236b85f46e51fce1196cd812dde2e6ba3b06ce6c3",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:a531e9413158394f1512802a32d483b0e80852e44b5ff1f54b7513a47860f2ff"
       },
@@ -5738,7 +5738,7 @@
     },
     "ISRG": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -5750,19 +5750,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 285,
+            "horizon_td": 282,
             "n_years": 25
           },
           "pattern_id": "cal:ISRG:143-153",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 283,
+            "days_to_window_end": 281,
             "end_doy": 153,
             "occurrence_end_date": "2027-06-02",
             "start_doy": 143,
@@ -5793,7 +5793,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -5802,7 +5802,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.28169,
-        "horizon_td": 285,
+        "horizon_td": 282,
         "n_years": 25,
         "p": 0.84,
         "p_baseline": 0.55831,
@@ -5826,7 +5826,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:ddf1ab4e3889e32be0a581fa7d644a8ec5db021b3be219d8dd45fb0ed3cf6db6",
+        "data_snapshot": "sha256:1f5dc3e7e28aa4c8e175167654bbb0467558f28ed935daa3f72557f3ae9df509",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:ec2b4b82bf1b438d23db10da5703bbc13c201ea0cd2ecbaea16e6f91e5e35782"
       },
@@ -5856,7 +5856,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -5868,7 +5868,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 315,
+            "days_to_window_end": 313,
             "end_doy": 185,
             "occurrence_end_date": "2027-07-04",
             "start_doy": 175,
@@ -5899,7 +5899,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -5932,7 +5932,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:3713853060cea37491ef234458874c5b7afb6889396009b923d6130295f3c2a2",
+        "data_snapshot": "sha256:402a89b3229990064af0cd7fc12f138d38c07d0d6ae6487b654e5acb832bc7ad",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:927f39a215a588c52b58dd719ad1a3ef2aa995c04b57f2a937bf9e04ca542a42"
       },
@@ -5950,7 +5950,7 @@
     },
     "JNJ": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -5962,19 +5962,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 156,
+            "horizon_td": 153,
             "n_years": 25
           },
           "pattern_id": "cal:JNJ:19-24",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 154,
+            "days_to_window_end": 152,
             "end_doy": 24,
             "occurrence_end_date": "2027-01-24",
             "start_doy": 19,
@@ -6005,7 +6005,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -6014,7 +6014,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": -0.456111,
-        "horizon_td": 156,
+        "horizon_td": 153,
         "n_years": 25,
         "p": 0.08,
         "p_baseline": 0.536111,
@@ -6038,7 +6038,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:2c717c68e7f4382cf6eff406427efe342f0980f46172b89d036ac9ee512615c7",
+        "data_snapshot": "sha256:b6bab0df8af7bff06c63b1ea10505f4d581d8b052d57c9d407e29708d4327896",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:2fcc7f74e2f8061d58e1ad9cc3a76dc65978741ea7164282b85cf21bf2dac8fa"
       },
@@ -6056,7 +6056,7 @@
     },
     "LGND": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -6068,19 +6068,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 38,
+            "horizon_td": 35,
             "n_years": 25
           },
           "pattern_id": "cal:LGND:256-271",
           "phase": "pre_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 36,
+            "days_to_window_end": 34,
             "end_doy": 271,
             "occurrence_end_date": "2026-09-28",
             "start_doy": 256,
@@ -6111,7 +6111,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -6120,7 +6120,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": -0.331429,
-        "horizon_td": 38,
+        "horizon_td": 35,
         "n_years": 25,
         "p": 0.2,
         "p_baseline": 0.531429,
@@ -6144,7 +6144,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:d622b429925281f53cd5ef3e20bc7e01051c110ab19b4bb4ca70c80667249d72",
+        "data_snapshot": "sha256:c2f779c6bb6531786e1e3297cdbc9237ad554eabbbe3510d074e2c1205debc8b",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:6fb8ee2e4e1d79957d7b731a09a4e7393f14ca30019722de4da4e29cbb6bc47b"
       },
@@ -6162,7 +6162,7 @@
     },
     "LH": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -6174,19 +6174,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 224,
+            "horizon_td": 221,
             "n_years": 25
           },
           "pattern_id": "cal:LH:82-92",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 222,
+            "days_to_window_end": 220,
             "end_doy": 92,
             "occurrence_end_date": "2027-04-02",
             "start_doy": 82,
@@ -6217,7 +6217,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -6226,7 +6226,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.24,
-        "horizon_td": 224,
+        "horizon_td": 221,
         "n_years": 25,
         "p": 0.8,
         "p_baseline": 0.56,
@@ -6250,7 +6250,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:47ed0a55c955e5d18b1a87b22eec3c36469c36d9fdeb47edd3cbd50d462484d2",
+        "data_snapshot": "sha256:c8f544a7dbd4714ba890fb30b9be76ab1ce18f5f53006d3885910b584957cfbf",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:46afab5a145b835df5c621b4cf96d95fff47c4297086bb09b460b4d25bdbc598"
       },
@@ -6268,7 +6268,7 @@
     },
     "LLY": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -6280,19 +6280,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 117,
+            "horizon_td": 114,
             "n_years": 25
           },
           "pattern_id": "cal:LLY:305-350",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 115,
+            "days_to_window_end": 113,
             "end_doy": 350,
             "occurrence_end_date": "2026-12-16",
             "start_doy": 305,
@@ -6323,7 +6323,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -6332,7 +6332,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.262125,
-        "horizon_td": 117,
+        "horizon_td": 114,
         "n_years": 25,
         "p": 0.84,
         "p_baseline": 0.577875,
@@ -6356,7 +6356,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:dd5aa3bf7718bc4b7eb9f00dd7d214d4d15bdf2d1186ef8c91e32446e972608e",
+        "data_snapshot": "sha256:82536adc8bab8cee86bb4c4289bfd2f73d60cbebdeeaf49516c27d9c0e43b4a1",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:4bf44491d990fd965001d72d4e459f1d09066fde3052b90fa65fc275f4301d6a"
       },
@@ -6385,7 +6385,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -6397,7 +6397,7 @@
           "phase": "in_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 8,
+            "days_to_window_end": 6,
             "end_doy": 243,
             "occurrence_end_date": "2026-08-31",
             "start_doy": 153,
@@ -6428,7 +6428,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -6461,7 +6461,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:31e67de103d6e0fe26caaa62e75ec9fbce92ad4b80bee260c9e9531450ad85d5",
+        "data_snapshot": "sha256:62d317386268187cfb493320a3bfbbc1d27f7eca02698e6899a6e827346ea166",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:8dfcf8edc8f0c076f9b5aed590af8ca4af035808915f95ee6ac292b9c2daff98"
       },
@@ -6477,7 +6477,7 @@
     },
     "MCK": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -6489,19 +6489,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 287,
+            "horizon_td": 284,
             "n_years": 25
           },
           "pattern_id": "cal:MCK:65-155",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 285,
+            "days_to_window_end": 283,
             "end_doy": 155,
             "occurrence_end_date": "2027-06-04",
             "start_doy": 65,
@@ -6532,7 +6532,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -6541,7 +6541,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.248727,
-        "horizon_td": 287,
+        "horizon_td": 284,
         "n_years": 25,
         "p": 0.88,
         "p_baseline": 0.631273,
@@ -6565,7 +6565,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:3750158ccf9a85a680e977c597f2b9ccd656a3b30b2b1e6b155f577736aebe08",
+        "data_snapshot": "sha256:0c15d58babc5be37b3fe3470afc2c619e04a3144ef308e40757638ec72732106",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:7a07f8ef65da9ce7ce1aeb802f64dd814d87fda7a504dea4d6e71046c6e3fd9a"
       },
@@ -6593,7 +6593,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -6605,7 +6605,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 101,
+            "days_to_window_end": 99,
             "end_doy": 336,
             "occurrence_end_date": "2026-12-02",
             "start_doy": 331,
@@ -6636,7 +6636,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -6669,7 +6669,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:6113f82568472261a197cbc5bbb358031383b8f9614f6a7112b2156cb3daeb6b",
+        "data_snapshot": "sha256:e40f06f0b2d0ab0f99fe4139f5716bef3bd737829ad68c269c88d08067af74db",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:aaaca0708c1202415fe67dda2aa272a1db288636cd99c50f1d96e5159a48b8d9"
       },
@@ -6687,7 +6687,7 @@
     },
     "MDT": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -6699,19 +6699,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 144,
+            "horizon_td": 141,
             "n_years": 25
           },
           "pattern_id": "cal:MDT:7-12",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 142,
+            "days_to_window_end": 140,
             "end_doy": 12,
             "occurrence_end_date": "2027-01-12",
             "start_doy": 7,
@@ -6742,7 +6742,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -6751,7 +6751,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.235,
-        "horizon_td": 144,
+        "horizon_td": 141,
         "n_years": 25,
         "p": 0.76,
         "p_baseline": 0.525,
@@ -6775,7 +6775,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:d5849031e8f240c3bfbaaa00e8d4883b8deb3effda7f5e35e7bd924c8215b6d6",
+        "data_snapshot": "sha256:29fad69982d4478292e34cad087bdcdf85eb01dcf2a5cd8b0da215cf8195334a",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:4f982cd86375feb2a006d4c818c8924c643ad84f615a59d7f32cbf9ab33c68f8"
       },
@@ -6805,7 +6805,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -6817,7 +6817,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 326,
+            "days_to_window_end": 324,
             "end_doy": 196,
             "occurrence_end_date": "2027-07-15",
             "start_doy": 166,
@@ -6848,7 +6848,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -6881,7 +6881,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:c1323a575350f06a92676dc5a772e897a582ccc4e9620ca36e54cde9e849225c",
+        "data_snapshot": "sha256:ed1a2799b5e63def5727dadd6160c61112582c410318ab82144748f655a53694",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:5630459ea4b44bd0a263461a5a58104ccf01b152afd7474880e3d2703b65d80d"
       },
@@ -6910,7 +6910,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -6922,7 +6922,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 76,
+            "days_to_window_end": 74,
             "end_doy": 311,
             "occurrence_end_date": "2026-11-07",
             "start_doy": 306,
@@ -6953,7 +6953,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -6986,7 +6986,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:384eb984e673392496eb5080e687905119a427928271e1ac37d233a17c6e0a28",
+        "data_snapshot": "sha256:bc48445477dc822f6ba364f450e6262d2b5cf1b258791b0fa8eccd88733b2720",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:d2b948350d016e1ccbfa5783a94ccf71aee2a5177e02453c846beeabcef0a1a5"
       },
@@ -7004,7 +7004,7 @@
     },
     "MRK": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -7016,19 +7016,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 156,
+            "horizon_td": 153,
             "n_years": 25
           },
           "pattern_id": "cal:MRK:19-24",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 154,
+            "days_to_window_end": 152,
             "end_doy": 24,
             "occurrence_end_date": "2027-01-24",
             "start_doy": 19,
@@ -7059,7 +7059,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -7068,7 +7068,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": -0.283,
-        "horizon_td": 156,
+        "horizon_td": 153,
         "n_years": 25,
         "p": 0.24,
         "p_baseline": 0.523,
@@ -7092,7 +7092,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:bd958294ab58da22e8e2362c59c8d53aaab87ce4f568680929d2d49257ba12f8",
+        "data_snapshot": "sha256:6f4a8687d1b4c07bd9708514613e6ac42d8e94a811d5960afabf6e3c6751612f",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:bab1c7b255bbeab0080a2a799215da00222f17fba92ea437a58e30ecf1483b9b"
       },
@@ -7122,7 +7122,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -7134,7 +7134,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 74,
+            "days_to_window_end": 72,
             "end_doy": 309,
             "occurrence_end_date": "2026-11-05",
             "start_doy": 299,
@@ -7165,7 +7165,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -7198,7 +7198,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:6ae33f9369de1e296a4fb2683a70eb13452f7fcf09995af7d586ed40527a809b",
+        "data_snapshot": "sha256:05b48741a9149d6894d581673ee14178b2c9db273a7671886e9a86d3ad352d9d",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:8ee753e1350868e50799111c95e093caa4e8a8730d230d919ae26d5403ca518e"
       },
@@ -7226,7 +7226,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -7238,7 +7238,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 94,
+            "days_to_window_end": 92,
             "end_doy": 329,
             "occurrence_end_date": "2026-11-25",
             "start_doy": 324,
@@ -7269,7 +7269,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -7302,7 +7302,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:a90c4c08016185557408d8919f436932435d044e63f50cda970b687b3f7314b5",
+        "data_snapshot": "sha256:862173da09cfdd4e15e6e36f310803ce70a279e6915268d709ee0f114b101837",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:0776da18206143b2b1bdcc9b438435cc86b0000015e87d262d0c4dea60092793"
       },
@@ -7320,7 +7320,7 @@
     },
     "NEO": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -7332,19 +7332,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 73,
+            "horizon_td": 70,
             "n_years": 21
           },
           "pattern_id": "cal:NEO:286-306",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 71,
+            "days_to_window_end": 69,
             "end_doy": 306,
             "occurrence_end_date": "2026-11-02",
             "start_doy": 286,
@@ -7375,7 +7375,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -7384,7 +7384,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.213527,
-        "horizon_td": 73,
+        "horizon_td": 70,
         "n_years": 21,
         "p": 0.714286,
         "p_baseline": 0.500759,
@@ -7408,7 +7408,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:d1d019ab7f3b060c8db322428dd012abf061ea89b8dcd72c0938b4a86f70a9af",
+        "data_snapshot": "sha256:0e186905cb033ae2edade239991db26e99892a1f3acbff1aadcd4497dd0697c4",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:169f441f2176dd9adf79bd36a24340ccfd5b18ed404e4a732d6a7c05f340cd10"
       },
@@ -7438,7 +7438,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -7450,7 +7450,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 78,
+            "days_to_window_end": 76,
             "end_doy": 313,
             "occurrence_end_date": "2026-11-09",
             "start_doy": 298,
@@ -7481,7 +7481,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -7514,7 +7514,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:5ddb738fde38f8a849954dda6c253dce269d5384f4d9dc58837e19512ec6e448",
+        "data_snapshot": "sha256:157d5bb6b2dba849c655d1571f632d580639f3e2959a1fcf12087298238cbab9",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:45db8079c3a8e5f97001778ff30d7d166075f9eedf51c6adfb66b3c89e9d98a3"
       },
@@ -7543,7 +7543,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -7555,7 +7555,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 85,
+            "days_to_window_end": 83,
             "end_doy": 320,
             "occurrence_end_date": "2026-11-16",
             "start_doy": 300,
@@ -7586,7 +7586,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -7619,7 +7619,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:ac343cf0b5f189368ff2c3b8530baf07da36747b1355fab1927dd551149d3460",
+        "data_snapshot": "sha256:f5fa49d3c7f3fb63edbff1962ceacfdfa038910add87b77e956b8329372e07c2",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:978ed954e8adeb9dd399b44d9f6061f2ded0114a663ed689b8c64293a0f72a07"
       },
@@ -7636,7 +7636,7 @@
     },
     "NVO": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -7648,19 +7648,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 184,
+            "horizon_td": 181,
             "n_years": 25
           },
           "pattern_id": "cal:NVO:42-52",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 182,
+            "days_to_window_end": 180,
             "end_doy": 52,
             "occurrence_end_date": "2027-02-21",
             "start_doy": 42,
@@ -7691,7 +7691,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -7700,7 +7700,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.307268,
-        "horizon_td": 184,
+        "horizon_td": 181,
         "n_years": 25,
         "p": 0.88,
         "p_baseline": 0.572732,
@@ -7724,7 +7724,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:dc1678b875306c831d38ffbc9cfa0090c5ddd8f65d99212e6bba2983ade2a0d2",
+        "data_snapshot": "sha256:d5aa2bcfaf21175830e19640488cb1ec00ae5626e8d0d0991b3d4ed0732204a1",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:c334f36f2b1b22e8632300c5e9948ae5cbe82fd2d38825cab552f4faf9947e44"
       },
@@ -7754,7 +7754,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -7766,7 +7766,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 103,
+            "days_to_window_end": 101,
             "end_doy": 338,
             "occurrence_end_date": "2026-12-04",
             "start_doy": 318,
@@ -7797,7 +7797,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -7830,7 +7830,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:350e22415324cfadfc727a83726f25b3a22d9de298eaec63208fbc6fddabe724",
+        "data_snapshot": "sha256:545fce868db12d6b0631a294848ed5eaad56a0c9104370be28593db8574df6f9",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:e21b885e06ec82f2c089651c5e40da81e2cceb31e8b5d91e4541513e0c052d8f"
       },
@@ -7858,7 +7858,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -7870,7 +7870,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 125,
+            "days_to_window_end": 123,
             "end_doy": 360,
             "occurrence_end_date": "2026-12-26",
             "start_doy": 355,
@@ -7901,7 +7901,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -7934,7 +7934,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:e136cd578ec9ff57f1babb5e29b862d73f3ba57d746b9686fc377ae4de670101",
+        "data_snapshot": "sha256:f5c4fa68aed985fe451aca02fcef9db14cf6140272d7d0e37ed3faabe35abdf4",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:6d8fea87cecf962ed81c09e2110e51a8af7627958108b08524e714cff21dbcc3"
       },
@@ -7964,7 +7964,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -7976,7 +7976,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 249,
+            "days_to_window_end": 247,
             "end_doy": 119,
             "occurrence_end_date": "2027-04-29",
             "start_doy": 59,
@@ -8007,7 +8007,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -8040,7 +8040,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:0c74ebaa1160f2836d9b3d96fef47b9c01ea0ab29d127c8f6308960a5b082d67",
+        "data_snapshot": "sha256:194ac064b304e34a2c44661d8a691634a82e7b4a3280d691d0d5b4b70204d5c3",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:c1ba17a0043c82a61814f1b5a0703e322ea839f3746079996cae5d4b4ff4b8e2"
       },
@@ -8058,7 +8058,7 @@
     },
     "PFE": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -8070,19 +8070,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 101,
+            "horizon_td": 98,
             "n_years": 25
           },
           "pattern_id": "cal:PFE:324-334",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 99,
+            "days_to_window_end": 97,
             "end_doy": 334,
             "occurrence_end_date": "2026-11-30",
             "start_doy": 324,
@@ -8113,7 +8113,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -8122,7 +8122,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.246648,
-        "horizon_td": 101,
+        "horizon_td": 98,
         "n_years": 25,
         "p": 0.76,
         "p_baseline": 0.513352,
@@ -8146,7 +8146,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:3d62880aa6da21bafdfce783b5faaf72478a3d966202cdc67884b087bf4a13ef",
+        "data_snapshot": "sha256:286f5946aa51185511723de88b4710074c16cad070bfc0dcc16b097c9bd22bd7",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:f91753df2d5fb432b93758e9b9ce8e6c71f0c17ff0bf0adf129438a4d1f4ffdd"
       },
@@ -8164,7 +8164,7 @@
     },
     "PODD": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -8176,19 +8176,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 320,
+            "horizon_td": 317,
             "n_years": 18
           },
           "pattern_id": "cal:PODD:143-188",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 318,
+            "days_to_window_end": 316,
             "end_doy": 188,
             "occurrence_end_date": "2027-07-07",
             "start_doy": 143,
@@ -8219,7 +8219,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -8228,7 +8228,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.245659,
-        "horizon_td": 320,
+        "horizon_td": 317,
         "n_years": 18,
         "p": 0.833333,
         "p_baseline": 0.587674,
@@ -8252,7 +8252,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:095425e8704cf14b3591fdfe6c23f63367397df16956f7bfafe96a8dc54ad984",
+        "data_snapshot": "sha256:a0116ae0cd05be5b217f09a791be3fbc8817dd16ce78101d940f50efe2127c72",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:e9c329249775f576b7091117b37f436fd1645ef9bb23fb02f752826947401fd5"
       },
@@ -8281,7 +8281,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -8293,7 +8293,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 55,
+            "days_to_window_end": 53,
             "end_doy": 290,
             "occurrence_end_date": "2026-10-17",
             "start_doy": 285,
@@ -8324,7 +8324,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -8357,7 +8357,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:44610f5caa7a5a73519a5dc4c3ef6fd9f461333e971e3527f0bab55dc1373247",
+        "data_snapshot": "sha256:8414ca865a1f7cadb5804a7239a1a70ab70660f5cba051becae09bd261d63ae7",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:0eaa808b11831c8147d7f04e6f586972f3779dd90c5364d15bf2708ee1652c26"
       },
@@ -8387,7 +8387,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -8399,7 +8399,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 290,
+            "days_to_window_end": 288,
             "end_doy": 160,
             "occurrence_end_date": "2027-06-09",
             "start_doy": 145,
@@ -8430,7 +8430,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -8463,7 +8463,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:fe1083e38bd249ed5cc93426d6206988a44de0f79bb003b7f648d12e95ffa314",
+        "data_snapshot": "sha256:2cc130044f720a2853c764de153284afca1d79ccfc2db6b00b2968f5503e1f81",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:a7404a2cc868b358f4b097a5fe3e1492541f5926e6ba566cb953d1d2801bcf46"
       },
@@ -8481,7 +8481,7 @@
     },
     "REGN": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -8493,19 +8493,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 20,
+            "horizon_td": 17,
             "n_years": 25
           },
           "pattern_id": "cal:REGN:163-253",
           "phase": "in_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 18,
+            "days_to_window_end": 16,
             "end_doy": 253,
             "occurrence_end_date": "2026-09-10",
             "start_doy": 163,
@@ -8536,7 +8536,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -8545,7 +8545,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.247127,
-        "horizon_td": 20,
+        "horizon_td": 17,
         "n_years": 25,
         "p": 0.8,
         "p_baseline": 0.552873,
@@ -8569,7 +8569,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:bf7baee3dd718b7d5072969e0821bdf0af6dd6cad0da884f42dc56e0c1b546bd",
+        "data_snapshot": "sha256:b952b111327463eb5f6c3cc9ea6d449e09ce12431c86563a08a5ff44274ae04e",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:66f5ad8c556dedb0c5be0b4944498e64e6b423d6af7334c3fb20574e145d5693"
       },
@@ -8598,7 +8598,7 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
@@ -8610,7 +8610,7 @@
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 222,
+            "days_to_window_end": 220,
             "end_doy": 92,
             "occurrence_end_date": "2027-04-02",
             "start_doy": 87,
@@ -8641,7 +8641,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -8674,7 +8674,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:ea0cea20bfcbe9b4f77c06c22f344cfd01c873a2a0a09f7ed74da9ec66f08fe8",
+        "data_snapshot": "sha256:8632e0bf0918f1c37eb36063617b2851746791a8d4b4c1db28b3a964df3ede7d",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:6a9ef067687a1c60f59af5d4700da3cfce5eb261d8b9d326ad5b7d199bb6a11f"
       },
@@ -8692,7 +8692,7 @@
     },
     "RHHBY": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -8704,19 +8704,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 243,
+            "horizon_td": 240,
             "n_years": 22
           },
           "pattern_id": "cal:RHHBY:51-111",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 241,
+            "days_to_window_end": 239,
             "end_doy": 111,
             "occurrence_end_date": "2027-04-21",
             "start_doy": 51,
@@ -8747,7 +8747,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -8756,7 +8756,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.156632,
-        "horizon_td": 243,
+        "horizon_td": 240,
         "n_years": 22,
         "p": 0.727273,
         "p_baseline": 0.570641,
@@ -8780,7 +8780,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:4f54600a1994c5af39ed821ebfc83993d512933fdadf309da8f90c7e153f06dd",
+        "data_snapshot": "sha256:bd18c40c37987cbb0fa52a40d9c71c2edbfafb9a524a4929fe7cf44d06018d1c",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:d7b3bb8bccbdeef08a57c34c3ccbbe67f2556278a27771280da46d110cb25078"
       },
@@ -8797,7 +8797,7 @@
     },
     "RMD": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -8809,19 +8809,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 35,
+            "horizon_td": 32,
             "n_years": 25
           },
           "pattern_id": "cal:RMD:258-268",
-          "phase": "out_of_window",
+          "phase": "pre_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 33,
+            "days_to_window_end": 31,
             "end_doy": 268,
             "occurrence_end_date": "2026-09-25",
             "start_doy": 258,
@@ -8834,7 +8834,7 @@
           "calendar_clock",
           "event_clock"
         ],
-        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'pre_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
         "present": false,
         "reason_code": "event_timing_probability_absent"
       },
@@ -8852,7 +8852,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -8861,7 +8861,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": -0.354141,
-        "horizon_td": 35,
+        "horizon_td": 32,
         "n_years": 25,
         "p": 0.2,
         "p_baseline": 0.554141,
@@ -8885,7 +8885,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:33d61ba63b5364efec48742fd7fc512d560a22bbc696161addf846fd79f0bfae",
+        "data_snapshot": "sha256:c0eb1cbd0f8cc07ec439f01c9dc6b5eb9fff321e95f657938833ef98a6adfa6e",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:ac2ef8d27c16b9b0f8c1f674d5b705fcd7af9f710c2a359649ec9979b47b3795"
       },
@@ -8903,7 +8903,7 @@
     },
     "RVTY": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -8915,19 +8915,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 279,
+            "horizon_td": 276,
             "n_years": 25
           },
           "pattern_id": "cal:RVTY:137-147",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 277,
+            "days_to_window_end": 275,
             "end_doy": 147,
             "occurrence_end_date": "2027-05-27",
             "start_doy": 137,
@@ -8958,7 +8958,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -8967,7 +8967,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.302873,
-        "horizon_td": 279,
+        "horizon_td": 276,
         "n_years": 25,
         "p": 0.84,
         "p_baseline": 0.537127,
@@ -8991,7 +8991,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:ae80430c0ca343c3f36d77af16c42f18bedd8a44667ad083bbfa070598c02b9a",
+        "data_snapshot": "sha256:21c894846b38a1c002f90030525c508c37230e81e864d5a7d424d6ace3ca5fd4",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:000cfdeefa0e72b975b7fd15684684fa534327a544702b39f10d90016091b3de"
       },
@@ -9007,9 +9007,9 @@
         ]
       }
     },
-    "STE": {
+    "SRPT": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -9021,19 +9021,229 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 223,
+            "horizon_td": 87,
+            "n_years": 25
+          },
+          "pattern_id": "cal:SRPT:278-323",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 86,
+            "end_doy": 323,
+            "occurrence_end_date": "2026-11-19",
+            "start_doy": 278,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
+      },
+      "entity": {
+        "id": "ticker:SRPT",
+        "ticker": "SRPT",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.83958,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-27T04:57:05Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.15953,
+          0.443444
+        ],
+        "ci90_kind": "parameter_ci",
+        "edge": -0.205375,
+        "horizon_td": 87,
+        "n_years": 25,
+        "p": 0.28,
+        "p_baseline": 0.485375,
+        "quantiles": {
+          "q05": -0.498826,
+          "q50": -0.12155,
+          "q95": 0.133974
+        },
+        "quantiles_kind": "outcome_quantiles",
+        "target": "default_window_return_gt_0"
+      },
+      "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
+      "provenance": {
+        "data_snapshot": "sha256:afb345f0cbc312c92040f3a3d5d36f48aa1ff8ebdbc06a16e26e6614dbf3a5ce",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:3e1f32ef493f435883b0ca531e130dde804fb1bee677ebc5856fc02fdd26d6f1"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "STAA": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-24",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-25T04:57:05Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 246,
+            "n_years": 25
+          },
+          "pattern_id": "cal:STAA:87-117",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 245,
+            "end_doy": 117,
+            "occurrence_end_date": "2027-04-27",
+            "start_doy": 87,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
+      },
+      "entity": {
+        "id": "ticker:STAA",
+        "ticker": "STAA",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.832084,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-27T04:57:05Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.598739,
+          0.870473
+        ],
+        "ci90_kind": "parameter_ci",
+        "edge": 0.265552,
+        "horizon_td": 246,
+        "n_years": 25,
+        "p": 0.76,
+        "p_baseline": 0.494448,
+        "quantiles": {
+          "q05": -0.10058,
+          "q50": 0.08516,
+          "q95": 0.304562
+        },
+        "quantiles_kind": "outcome_quantiles",
+        "target": "default_window_return_gt_0"
+      },
+      "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
+      "provenance": {
+        "data_snapshot": "sha256:99a0d1d38cfcf39200c8a41f9b76b57614c3befd5fbb540be2deedb5b320408d",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:f2ce365ab886bced309b4f1e6f7c5236d6f254ce124af2eba015ddfd3ddcd711"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "STE": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-24",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-25T04:57:05Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 220,
             "n_years": 25
           },
           "pattern_id": "cal:STE:76-91",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 221,
+            "days_to_window_end": 219,
             "end_doy": 91,
             "occurrence_end_date": "2027-04-01",
             "start_doy": 76,
@@ -9064,7 +9274,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -9073,7 +9283,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.197714,
-        "horizon_td": 223,
+        "horizon_td": 220,
         "n_years": 25,
         "p": 0.76,
         "p_baseline": 0.562286,
@@ -9097,7 +9307,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:b2a631a3f06745129e8e67bcb01a51de8e0b342dbcb229d1cae5248ea196c555",
+        "data_snapshot": "sha256:4daf1aee9bf381e72e56fb57988d650783af1b1be225cba4634eb04b9c457e0e",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:8866ebddbd0626b153741bc0372484fc819f9e755e7c6ece8a8eb266b1214c9c"
       },
@@ -9115,7 +9325,7 @@
     },
     "SYK": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -9127,19 +9337,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 179,
+            "horizon_td": 176,
             "n_years": 25
           },
           "pattern_id": "cal:SYK:2-47",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 177,
+            "days_to_window_end": 175,
             "end_doy": 47,
             "occurrence_end_date": "2027-02-16",
             "start_doy": 2,
@@ -9170,7 +9380,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -9179,7 +9389,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.278,
-        "horizon_td": 179,
+        "horizon_td": 176,
         "n_years": 25,
         "p": 0.88,
         "p_baseline": 0.602,
@@ -9203,7 +9413,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:18357f74b914f2fa75dc4e74a1ef4ee4210e278e7acd7834365df52914203768",
+        "data_snapshot": "sha256:0936e7ca78f545514012ba2d7391bfb8bb61dac6a56c0ccc2b220ebd833ae3db",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:2b545b28eba57efe9913d519f150b1b9c096443df30b4c39e60d8a30585b92c8"
       },
@@ -9221,7 +9431,7 @@
     },
     "TECH": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -9233,19 +9443,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 342,
+            "horizon_td": 339,
             "n_years": 25
           },
           "pattern_id": "cal:TECH:165-210",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 340,
+            "days_to_window_end": 338,
             "end_doy": 210,
             "occurrence_end_date": "2027-07-29",
             "start_doy": 165,
@@ -9276,7 +9486,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -9285,7 +9495,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.094625,
-        "horizon_td": 342,
+        "horizon_td": 339,
         "n_years": 25,
         "p": 0.68,
         "p_baseline": 0.585375,
@@ -9309,7 +9519,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:368ed528b62fab7cacdabedd5610ae2740656314c11835b2418d883b9c17d133",
+        "data_snapshot": "sha256:3b6ac06475ad42842299f3e4df74a4054ed408663e9a2c084e5b5a4abc3d1663",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:c7e72ea296cdf1e18fa9ae2256df33115cec51a913b45065edca18be5ddf7091"
       },
@@ -9324,9 +9534,9 @@
         ]
       }
     },
-    "THC": {
+    "TFX": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -9338,19 +9548,230 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 280,
+            "horizon_td": 126,
+            "n_years": 25
+          },
+          "pattern_id": "cal:TFX:347-362",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 125,
+            "end_doy": 362,
+            "occurrence_end_date": "2026-12-28",
+            "start_doy": 347,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
+      },
+      "entity": {
+        "id": "ticker:TFX",
+        "ticker": "TFX",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.874063,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-27T04:57:05Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.51558,
+          0.809259
+        ],
+        "ci90_kind": "parameter_ci",
+        "edge": 0.111886,
+        "horizon_td": 126,
+        "n_years": 25,
+        "p": 0.68,
+        "p_baseline": 0.568114,
+        "quantiles": {
+          "q05": -0.0219,
+          "q50": 0.02321,
+          "q95": 0.05549
+        },
+        "quantiles_kind": "outcome_quantiles",
+        "target": "default_window_return_gt_0"
+      },
+      "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
+      "provenance": {
+        "data_snapshot": "sha256:c2ebe9ffdc3300c91ab380a2690a18a43abd3c7e7b741bbb4b71e013446444e7",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:0bb9ce1bee0e4cecc0fc32f7644c23035816a9d73e7b303587e388a881f31258"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "stability_fragile",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "TGTX": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-24",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-25T04:57:05Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 346,
+            "n_years": 15
+          },
+          "pattern_id": "cal:TGTX:197-217",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 345,
+            "end_doy": 217,
+            "occurrence_end_date": "2027-08-05",
+            "start_doy": 197,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
+      },
+      "entity": {
+        "id": "ticker:TGTX",
+        "ticker": "TGTX",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 15,
+        "n_independent": 15,
+        "n_issuers": 1,
+        "p_max_t": 0.216892,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-27T04:57:05Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.045147,
+          0.333595
+        ],
+        "ci90_kind": "parameter_ci",
+        "edge": -0.339324,
+        "horizon_td": 346,
+        "n_years": 15,
+        "p": 0.133333,
+        "p_baseline": 0.472657,
+        "quantiles": {
+          "q05": -0.507701,
+          "q50": -0.19099,
+          "q95": 0.011463
+        },
+        "quantiles_kind": "outcome_quantiles",
+        "target": "default_window_return_gt_0"
+      },
+      "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
+      "provenance": {
+        "data_snapshot": "sha256:240af21937b50b3163a123d3ecd0ff052a3716c5277ba3c750499a87af4c7f2e",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:7c854596eefaf5ad5617dbd4c429fe77ce6ce90eb21cc8fd0e215b214f45b59f"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "THC": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-24",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-25T04:57:05Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 277,
             "n_years": 25
           },
           "pattern_id": "cal:THC:143-148",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 278,
+            "days_to_window_end": 276,
             "end_doy": 148,
             "occurrence_end_date": "2027-05-28",
             "start_doy": 143,
@@ -9381,7 +9802,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -9390,7 +9811,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.287444,
-        "horizon_td": 280,
+        "horizon_td": 277,
         "n_years": 25,
         "p": 0.8,
         "p_baseline": 0.512556,
@@ -9414,7 +9835,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:2958ce9d3983d9e9f55b591cd80f95d90201be7d3b6ee081dee9d1c40bbb8afb",
+        "data_snapshot": "sha256:e1f734439cb07d1361a1133ea704d32e6ca389b7dba1de62ecbb9b73d5f3282f",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:3efe9d814702eea366e210900e123c17bd0b0fb118bac789eb5801a2257bcedd"
       },
@@ -9432,7 +9853,7 @@
     },
     "TMO": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -9444,19 +9865,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 338,
+            "horizon_td": 335,
             "n_years": 25
           },
           "pattern_id": "cal:TMO:191-206",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 336,
+            "days_to_window_end": 334,
             "end_doy": 206,
             "occurrence_end_date": "2027-07-25",
             "start_doy": 191,
@@ -9487,7 +9908,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -9496,7 +9917,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.237371,
-        "horizon_td": 338,
+        "horizon_td": 335,
         "n_years": 25,
         "p": 0.8,
         "p_baseline": 0.562629,
@@ -9520,7 +9941,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:93ceb47d1629015f09d7300d320f7632070a60c797a24453313c303acbc5b12d",
+        "data_snapshot": "sha256:8a885299790c762021c99a8f069164402e7d443894558b4f66321e06069210e1",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:f5ad02409f33fb6a8c7dc0661b22bfbfbee970140debca0f96cb9a2016ef92e8"
       },
@@ -9537,7 +9958,7 @@
     },
     "UNH": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -9549,19 +9970,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 102,
+            "horizon_td": 99,
             "n_years": 25
           },
           "pattern_id": "cal:UNH:325-335",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 100,
+            "days_to_window_end": 98,
             "end_doy": 335,
             "occurrence_end_date": "2026-12-01",
             "start_doy": 325,
@@ -9592,7 +10013,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -9601,7 +10022,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.389408,
-        "horizon_td": 102,
+        "horizon_td": 99,
         "n_years": 25,
         "p": 0.96,
         "p_baseline": 0.570592,
@@ -9625,7 +10046,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:16113c4b85828fe94619261d7856bebcbbf0bbe8546ab2aec7d3b894ee7b0468",
+        "data_snapshot": "sha256:8cfc24132ef328d8b7c6d394e1f678b8f5bf60eb4173b1bbca057e94ea32b324",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:a150edb8632aa17517fd2c8e3c793d1fd6dd9be65a8880bd14c553b877523077"
       },
@@ -9643,7 +10064,7 @@
     },
     "XBI": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -9655,19 +10076,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 336,
+            "horizon_td": 333,
             "n_years": 19
           },
           "pattern_id": "cal:XBI:144-204",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 334,
+            "days_to_window_end": 332,
             "end_doy": 204,
             "occurrence_end_date": "2027-07-23",
             "start_doy": 144,
@@ -9698,7 +10119,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -9707,7 +10128,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.308887,
-        "horizon_td": 336,
+        "horizon_td": 333,
         "n_years": 19,
         "p": 0.894737,
         "p_baseline": 0.58585,
@@ -9731,7 +10152,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:3a6af06eab0f0d994d4963a2816d724cb97d83bf4fbd6e34732e6fafec7fd064",
+        "data_snapshot": "sha256:409aef7571d227c12e8d275bb191eb73c356074c06d668ad8f2572f019fba325",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:bc41cdf97aa7f0995dcab1734bb05946d3c44a5266f219065dd193c7d422fea7"
       },
@@ -9748,7 +10169,7 @@
     },
     "XLV": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -9760,19 +10181,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 111,
+            "horizon_td": 108,
             "n_years": 25
           },
           "pattern_id": "cal:XLV:324-344",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 109,
+            "days_to_window_end": 107,
             "end_doy": 344,
             "occurrence_end_date": "2026-12-10",
             "start_doy": 324,
@@ -9803,7 +10224,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -9812,7 +10233,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.260174,
-        "horizon_td": 111,
+        "horizon_td": 108,
         "n_years": 25,
         "p": 0.84,
         "p_baseline": 0.579826,
@@ -9836,7 +10257,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:8479c33b48e39194239c829f64fee83ca24aecc730b4cbea401891d17f870dd1",
+        "data_snapshot": "sha256:fdbb9c1f124a9ff09456971f6b472df57bc8cc645a03aaf4fe7acea853f6b08e",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:1862218e9362fb518a5ffcd9e45b3a06e0adb5268b2eddec4969eb312a1c52ad"
       },
@@ -9853,7 +10274,7 @@
     },
     "ZBH": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-21",
+      "asof": "2026-08-24",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -9865,19 +10286,19 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-23T04:03:37Z",
+      "available_at": "2026-08-25T04:57:05Z",
       "calibrated_estimate": null,
       "clocks": [
         {
           "evidence": {
-            "horizon_td": 221,
+            "horizon_td": 218,
             "n_years": 24
           },
           "pattern_id": "cal:ZBH:84-89",
           "phase": "out_of_window",
           "type": "calendar",
           "window": {
-            "days_to_window_end": 219,
+            "days_to_window_end": 217,
             "end_doy": 89,
             "occurrence_end_date": "2027-03-30",
             "start_doy": 84,
@@ -9908,7 +10329,7 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-25T04:03:37Z",
+      "expires_at": "2026-08-27T04:57:05Z",
       "historical_up_share": {
         "basis": "same_length_all_starts_mean",
         "ci90": [
@@ -9917,7 +10338,7 @@
         ],
         "ci90_kind": "parameter_ci",
         "edge": 0.349769,
-        "horizon_td": 221,
+        "horizon_td": 218,
         "n_years": 24,
         "p": 0.875,
         "p_baseline": 0.525231,
@@ -9941,7 +10362,7 @@
         "redundancy": null
       },
       "provenance": {
-        "data_snapshot": "sha256:906884e20b3cc677a34a65175b669f0e9c9fe62c685aa48c8c3013db461f7874",
+        "data_snapshot": "sha256:aab61acaffc43e063b4e52baa96a2e54e123ea631fd9c9f8fc99602ffd2918b9",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:97d300f9207c69c77886ccfd1c31de7a09d92ea8be26c12a6f89cc3408240472"
       },
@@ -9960,8 +10381,8 @@
   },
   "tier": "shadow",
   "universe": {
-    "n_covered": 94,
-    "n_emitted": 94,
+    "n_covered": 98,
+    "n_emitted": 98,
     "n_gaps": 0,
     "sector_filter": "Health Care",
     "source": "site/seasonalitydata/index.json"

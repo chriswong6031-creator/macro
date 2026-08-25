@@ -9,7 +9,7 @@ objective: >
   can never render "could not look" as "0 violations", enforced in an isolated CI job that
   cannot mask sibling suites. Done when the fix-wave PR is merged and the guard runs green
   in its own legacy job on main.
-status: active
+status: done
 program: qualitative-intelligence
 repos:
   - macro
@@ -50,7 +50,11 @@ do_not_redo:
 landmines:
   - "The AST meta-test in tests/test_check_intelligence_registry.py enumerates live-invoking call shapes with a frozen allowlist — a new test that runs the guard/builder against the live repo must either take --root fixtures or be added to the allowlist with a justification; the detector has canned-source controls for each evasive shape it knows."
   - "engine/neuralweb/synapse.py 2k2 (scored_path_surfaces value validation) is a values-only validate-when-present hard gate in the ALWAYS-ON synapse validator — reviewed and kept 2026-08-14; requiring the key on all artifacts would change every open PR."
-next_action: "W3 shipped. Next decision is the CEO's at the next checkpoint: T4 output-health, T12 Agent OS tier interface, or let prospective evidence accrue; T7/T8 stay calendar-bound. Standing residue: 2 deliberate output_class nulls (cortex — needs a CEO ruling on the two-species cell, and its attention grader coerces direction 0 to a long bet, repair before evaluating that half; options_structure — curate when the Package D producer ships), plus the desk hit-rate metric-binding warning (hit is a non-refutation endpoint, no-skill null far above 0.5 — T7 must bind dir_accuracy or placebo-netted rates)."
+next_action: >
+  This bounded T1 workstream is complete. Preserve the landed registry/guard/overlay and its
+  two deliberate output_class nulls as durable residue. Any T4 output-health work, T12 Agent OS
+  tier interface, prospective evidence accrual, cortex two-species adjudication, options_structure
+  curation, or T7/T8 measurement belongs to its own canonical workstream/wave and does not reopen T1.
 ---
 
 ## State (2026-08-14)
@@ -62,3 +66,11 @@ commands), and a second builder wave closed every finding. T1c runs as the isola
 `intelligence-registry` legacy job (189th; 188 measured with zero exact-duplicate signatures,
 so nothing could be safely consolidated). Full session detail:
 `agentos/handoffs/WS-EVAL-OS-T1-ENGINE-REGISTRY-2026-08-14.md`.
+
+## Lifecycle reconciliation — 2026-08-24/25
+
+Sol reconciled the stale top-level `active` status after current-main validation showed all
+three declared waves terminal, no live PR carrier, and the workstream's own objective already
+satisfied. Future Eval OS choices named above are separate work and do not keep this bounded
+T1 identity active. This correction changes organizational state only; no engine, guard, CI,
+or generated registry behavior changes.

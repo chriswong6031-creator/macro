@@ -1,0 +1,152 @@
+{
+  "now": "2026-08-23T12:00:00Z",
+  "security_master_row": {
+    "security_id": "SEC:US-XNAS-AAPL",
+    "issuer_id": "ISS:US-XNAS-AAPL",
+    "issuer_state": "RESOLVED",
+    "issuer_cik": "0000320193",
+    "listing_key": "US-XNAS-AAPL",
+    "country": "US",
+    "mic": "XNAS",
+    "inception_code": "AAPL",
+    "security_state": null,
+    "superseded_by": null
+  },
+  "issuer_master_rows": [
+    {
+      "issuer_id": "ISS:US-XNAS-AAPL",
+      "cik": "0000320193",
+      "legal_name": "Apple Inc.",
+      "n_securities": 1,
+      "status": "active",
+      "era": "issuer_semantic_correction_v1"
+    }
+  ],
+  "issuer_security_ids": [
+    "SEC:US-XNAS-AAPL"
+  ],
+  "issuer_migration_matches": [],
+  "security_migration_matches": [],
+  "workspace": {
+    "schema": "event_workspace.v1",
+    "event_id": "evt_cik0000320193_2026q3_results",
+    "generation_id": "6d56c84a3ac23b8954e59ee7",
+    "issuer": {
+      "company_id": "cik:0000320193",
+      "display_name": "Apple Inc.",
+      "listings": [
+        {
+          "is_primary": true,
+          "mic": "XNAS",
+          "security_id": "xnas:AAPL",
+          "share_class": "common",
+          "ticker": "AAPL",
+          "trading_currency": "USD",
+          "valid_from": "1970-01-01",
+          "valid_to": null
+        }
+      ]
+    },
+    "fiscal_period": {
+      "calendar_end": "2026-06-27",
+      "quarter": 3,
+      "year": 2026
+    },
+    "lifecycle": {
+      "observed_at": "2026-07-30T20:30:28Z",
+      "source_available_at": "2026-07-30T20:30:28Z",
+      "state": "complete"
+    },
+    "generated_at": "2026-07-30T20:30:28Z",
+    "authority": "context_only",
+    "prophet_flags": {
+      "earnings_flagged": false
+    },
+    "claim_citations_pending": false,
+    "qa_exchanges": [],
+    "warnings": [
+      "collector_filing_unjoinable",
+      "consensus_unlicensed",
+      "questions_count_unstructured",
+      "reaction_not_joined",
+      "slides_absent",
+      "wire_record_not_found"
+    ],
+    "completeness": {
+      "filing": {
+        "filing_key": {
+          "accession": "0000320193-26-000018",
+          "cik": "0000912345"
+        }
+      }
+    },
+    "facts": [
+      {
+        "k": 1
+      },
+      {
+        "k": 2
+      },
+      {
+        "k": 3
+      }
+    ],
+    "deltas": [
+      {
+        "k": 1
+      }
+    ],
+    "guidance": [
+      {
+        "k": 1
+      },
+      {
+        "k": 2
+      }
+    ],
+    "claims": [],
+    "sources": [],
+    "aliases": {}
+  },
+  "workspace_disposition": "found",
+  "blob": {
+    "ticker": "AAPL",
+    "name": "Apple Inc.",
+    "sector": "Technology",
+    "asof": "2026-08-23",
+    "history_days": 500,
+    "tech": {
+      "chg_1d": 0.5,
+      "price": 230.1
+    },
+    "ladder": {
+      "state": "watch",
+      "dir": "up",
+      "entry": {
+        "text": "Watching for a pullback entry.",
+        "text_zh": "等待回调买点。"
+      }
+    },
+    "entry_signal": {
+      "score": 1,
+      "state": "watch"
+    },
+    "conviction": {
+      "cautions": [
+        "Valuation is rich relative to trailing five-year multiples."
+      ]
+    },
+    "alerts": {
+      "pinned": null,
+      "timeline": [],
+      "n_recent": 2,
+      "n_total": 10
+    },
+    "view": {},
+    "basket_alloc": {},
+    "alpha": {
+      "alpha": 0.1
+    }
+  },
+  "manifest_sha256": "c3b9495028c07e6bf1eb385f520f0b3c57064b84ea430540ba9a0808cd2d14db"
+}

@@ -1,0 +1,933 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     THE MAP — CONTEXT TIER (lane D2)
+     Job: "Where does each group sit right now, and what is context-worth-watching?"
+     NO call to action.  No State Ledge, no state fill, no state tint, no 3px state
+     rail, no filled control (DESIGN_SYSTEM_SPEC §6 authority table).  The heaviest
+     ink on this view is the NAME of the object, never a verdict word.
+
+     Every value is bound to the frozen fixture.  The ONE client-side transform is
+     production's own documented quadrant mapping, reproduced verbatim from
+     templates/sector_central.html.j2:2946-2956 (rvxData) — see the citation block
+     on __siRvxData below.  Nothing here re-ranks, re-counts, re-orders or
+     re-classifies (R3 design brief §8).
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="si-view r3-view--context" data-view="map">
+
+  <div class="r3-answer">
+    <h2 class="r3-answer-view"><span class="l-en">The Map</span><span class="l-zh">全景图谱</span></h2>
+    <!-- si_workspace.js:219-226 writes the composed read here; the static line
+         behind it is hidden by the shell's pure-CSS sibling rule when it lands. -->
+    <p class="si-view-read" id="si-read-map" hidden></p>
+    <p class="r3-answer-line"><span class="l-en">This view shows where every group sits right now. It makes no call.</span><span class="l-zh">此视图展示各板块当前所处位置，不作任何买卖判断。</span></p>
+    <div class="r3-answer-meta">
+      <span class="r3-asof" id="r3-map-asof"></span>
+      <span><span class="l-en">Context — where each group sits</span><span class="l-zh">背景视角 — 各板块所处位置</span></span>
+    </div>
+  </div>
+
+  <!-- ══ 1 · DOMINANT OBJECT — the rotation map, its takeaway, its selected
+          object, and its ranked text equivalent: ONE instrument, joined by rank ══
+       Legacy anchors #rotmap-section and #si-map both land here (routing_contract
+       §4). -->
+  <div class="r3-band" id="rotmap-section">
+    <div class="r3-sec">
+      <h2><span class="l-en">Where everything stands</span><span class="l-zh">全景位置</span></h2>
+      <span class="r3-sec-sub"><span class="l-en">Right = strong vs the S&amp;P. Up = gaining speed this week.</span><span class="l-zh">右 = 相对标普强。上 = 本周加速。</span></span>
+      <div class="r3-seg" role="group" id="r3-map-scope"
+           aria-label="Show themes or sectors on the rotation map">
+        <button type="button" data-scope="themes" aria-pressed="true"><span class="l-en">Themes</span><span class="l-zh">主题</span> <span class="r3-segn tnum" id="r3-scope-n-themes"></span></button>
+        <button type="button" data-scope="sectors" aria-pressed="false"><span class="l-en">Sectors</span><span class="l-zh">板块</span> <span class="r3-segn tnum" id="r3-scope-n-sectors"></span></button>
+      </div>
+    </div>
+
+    <!-- DOM order IS the phone order (commission §9): summary → selected object →
+         ranked list → the full map behind its disclosure.  Desktop re-places the
+         blocks with grid-template-areas; the figure block carries NO focusable
+         element, so moving it visually costs nothing in focus order. -->
+    <div class="r3-rmap-grid" id="si-map">
+
+      <!-- 1a · the chart's textual takeaway.  It must NOT restate the view answer
+           — the composed read above already names the leading count and the group
+           furthest along, and printing that sentence twice on one screen is the
+           repeated-caveat defect.  The tiles carry what the sentence cannot: the
+           whole distribution, with the names inside each quadrant. -->
+      <div class="r3-rmap-sum">
+        <span class="r3-eyebrow r3-rmap-take"><span class="l-en">How the field splits tonight</span><span class="l-zh">今晚的分布</span></span>
+        <div class="r3-quads" id="r3-map-quads"></div>
+      </div>
+
+      <!-- 1b · selected object.  Every value it shows is ALSO in the row of the
+           ranked list below, so this panel is a visual amplifier, never the only
+           path to a fact. -->
+      <div class="r3-panel r3-rail r3-rmap-detail">
+        <h3><span class="l-en">Selected group</span><span class="l-zh">选中板块</span></h3>
+        <div id="r3-map-detail"></div>
+      </div>
+
+      <!-- 1c · the ranked text equivalent of the chart — production's #rvx-board,
+           reading the SAME array the chart draws.  The `reco` tag is the LAST
+           column and its disclaimer sits AFTER the table in DOM order (§6). -->
+      <div class="r3-rmap-list">
+        <div class="r3-panel r3-tblbox">
+          <table class="r3-tbl r3-rmap-tbl" id="rvx-board">
+            <caption class="r3-vh"><span class="l-en">Text equivalent of the rotation map — every group, where it sits, its strength, its 20-day move against the S&amp;P and its rank move this week.</span><span class="l-zh">轮动图的文字等价表 — 每个板块所处位置、强度、20日相对标普涨跌与本周排名变化。</span></caption>
+            <thead><tr>
+              <!-- B2-08 · the rank's SCOPE travels with the rank. Under the Themes
+                   tab (the default) this column reads 1, 3, 4, 6, 7… because the
+                   rank is the group's rank across the whole board and the sector
+                   rows are filtered out of the list without renumbering. That fact
+                   used to sit in an orphan `.r3-note` 1075px below the column it
+                   explains (VTC1-004) — far enough down that a reader met the gaps
+                   first and the explanation never. It is now the header's own
+                   second line, using the two-line column-header pattern Overview
+                   already uses for its unit line, so the scope is read as part of
+                   the column name in both languages and by assistive tech. -->
+              <th class="num" data-r3b2="08"><span class="l-en">Rank</span><span class="l-zh">排名</span><em><span class="l-en">across all groups</span><span class="l-zh">在全部分组中</span></em></th>
+              <th><span class="l-en">Group</span><span class="l-zh">板块</span></th>
+              <th><span class="l-en">Where it sits</span><span class="l-zh">所处位置</span></th>
+              <!-- R3B1-06 + B2-01: `theme_intel.themes[].score` carries ONE name on
+                   EVERY surface of this build that paints it — Strength / 强度. That
+                   is here, the scatter tooltip, the selected-object list, and the
+                   Overview action board, whose `score` is a byte copy of this same
+                   field (scripts/build_site.py:1784; 33 of 33 identical on this
+                   fixture, DA1-01). The earlier carve-out claiming the action-board
+                   figure was a separate producer field was false and is withdrawn.
+                   The two genuinely different measures keep their own producer
+                   names: `conviction.score` = Conviction / 信心, and
+                   `double_gated.double_buy[].combined_score` = Conviction / 综合把握. -->
+              <th class="num" data-r3b1="06"><span class="l-en">Strength</span><span class="l-zh">强度</span></th>
+              <th class="num"><span class="l-en">20d vs S&amp;P</span><span class="l-zh">20日相对</span></th>
+              <th class="num"><span class="l-en">Rank move 5d</span><span class="l-zh">5日排名变化</span></th>
+              <th><span class="l-en">Noted</span><span class="l-zh">备注</span></th>
+            </tr></thead>
+            <tbody id="r3-map-rows"></tbody>
+          </table>
+        </div>
+        <div class="r3-rmap-foot">
+          <button type="button" class="r3-textbtn" id="r3-map-showall" hidden></button>
+          <span class="r3-asof r3-scrollhint"><span class="l-en">Scroll the table sideways for every column</span><span class="l-zh">左右滑动表格查看全部列</span></span>
+          <span class="r3-asof" id="r3-map-count"></span>
+        </div>
+        <!-- the context disclaimer, verbatim from sector_central.html.j2:2267 -->
+        <p class="r3-note">
+          <span class="l-en">Leading/Improving/Weakening/Lagging describe where a group sits vs the market right now (strength × direction). Bottoming/Prime entry/Trending/Topping/Rolling over describe where it sits in its own multi-year cycle. Only the lanes above carry a gated, graded call.</span>
+          <span class="l-zh">领先/改善/走弱/落后描述当前相对市场的位置（强度×方向）。筑底/黄金入场/趋势/见顶/回落描述其自身多年周期中的位置。仅上方操作清单为门控评分判断。</span>
+        </p>
+        <p class="r3-note">
+          <span class="l-en">Noted tags come from the rotation board and carry no graded call — only the Overview lanes do.</span>
+          <span class="l-zh">「备注」标签来自轮动看板，不构成分级判断 — 仅总览清单具此权重。</span>
+        </p>
+        <!-- B2-08: the orphan rank-scope note that used to live here is gone; the
+             scope now rides in the Rank column header itself (thead, above). -->
+      </div>
+
+      <!-- 1d · the map itself.  MOUNT-WIDTH LAW (spec §8.1): this container is
+           NEVER display:none.  The phone collapses it with max-height + clip +
+           visibility so the SVG is laid out at activation and simply hidden from
+           view; it is also viewBox-scaled, so it carries no measured-width
+           dependency at all. -->
+      <div class="r3-rmap-fig" id="r3-map-fig" data-collapsed="false">
+        <button type="button" class="r3-textbtn r3-rmap-toggle" id="r3-map-toggle"
+                aria-expanded="true" aria-controls="r3-map-plot"></button>
+        <div class="r3-rmap-frame" id="r3-map-plot">
+          <span class="r3-rmap-ylab"><span class="l-en">← Fading&nbsp;&nbsp;&nbsp;Momentum&nbsp;&nbsp;&nbsp;Rising →</span><span class="l-zh">← 转弱&nbsp;&nbsp;&nbsp;本周动能&nbsp;&nbsp;&nbsp;转强 →</span></span>
+          <div class="r3-rmap-plot">
+            <svg id="rvx-rmap" class="r3-rmap-svg" viewBox="0 0 600 400" role="img"
+                 aria-labelledby="r3-rmap-name r3-rmap-desc"></svg>
+            <span class="r3-vh" id="r3-rmap-name"><span class="l-en">Rotation map — strength against the S&amp;P on the horizontal axis, this week's change of speed on the vertical axis.</span><span class="l-zh">轮动图 — 横轴为相对标普强度，纵轴为本周速度变化。</span></span>
+            <span class="r3-vh" id="r3-rmap-desc"><span class="l-en">The same groups are listed as a ranked table above this chart, with every value it plots.</span><span class="l-zh">图中各板块已在上方排名表中逐一列出，包含所绘制的全部数值。</span></span>
+            <span class="r3-rmap-q r3-rmap-q1"><b><span class="l-en">Improving</span><span class="l-zh">改善</span></b><span class="l-en">weak but turning up</span><span class="l-zh">弱但转强</span></span>
+            <span class="r3-rmap-q r3-rmap-q2"><b><span class="l-en">Leading</span><span class="l-zh">领先</span></b><span class="l-en">strong &amp; rising</span><span class="l-zh">强且上行</span></span>
+            <span class="r3-rmap-q r3-rmap-q3"><b><span class="l-en">Lagging</span><span class="l-zh">落后</span></b><span class="l-en">weak &amp; falling</span><span class="l-zh">弱且下行</span></span>
+            <span class="r3-rmap-q r3-rmap-q4"><b><span class="l-en">Weakening</span><span class="l-zh">走弱</span></b><span class="l-en">strong but fading</span><span class="l-zh">强但转弱</span></span>
+            <div class="r3-rmap-tip" id="r3-map-tip" aria-hidden="true"></div>
+          </div>
+          <span class="r3-rmap-xlab"><span class="l-en">Relative strength vs S&amp;P 500 →</span><span class="l-zh">相对标普500强度 →</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 2 · SECTOR CYCLE CLOCK — every sector's own multi-year clock, one line
+          lit at a time, plus the MANDATORY new accessible projection of the same
+          window.SECTOR_CYCLES fields (commission §9, design brief §6). ══ -->
+  <div class="r3-band" id="sc-cyclemap">
+    <div class="r3-sec">
+      <h2><span class="l-en">Where each sector sits in its own cycle</span><span class="l-zh">各板块在自身周期中的位置</span></h2>
+      <span class="r3-sec-sub"><span class="l-en">Position, not timing</span><span class="l-zh">位置，而非时机</span></span>
+      <span class="r3-asof" id="r3-cyc-asof"></span>
+    </div>
+
+    <div class="r3-cyc">
+      <div class="r3-panel r3-cyc-figwrap">
+        <div class="r3-cyc-head">
+          <span class="r3-eyebrow"><span class="l-en">Cycle position, 0–100</span><span class="l-zh">周期位置 0–100</span></span>
+          <span class="r3-cyc-lit" id="r3-cyc-lit"></span>
+        </div>
+        <div class="r3-cyc-plot" id="sc-chart">
+          <div class="r3-cyc-y" aria-hidden="true"><span class="tnum">100</span><span class="tnum">50</span><span class="tnum">0</span></div>
+          <svg id="r3-cyc-svg" class="r3-cyc-svg" viewBox="0 0 720 240" role="img" preserveAspectRatio="none"
+               aria-labelledby="r3-cyc-name r3-cyc-desc"></svg>
+          <span class="r3-vh" id="r3-cyc-name"><span class="l-en">Sector cycle clock — every sector's 0 to 100 cycle position over the last seven years, one line per sector.</span><span class="l-zh">行业周期时钟 — 各板块过去七年的 0 至 100 周期位置，每个板块一条曲线。</span></span>
+          <span class="r3-vh" id="r3-cyc-desc"><span class="l-en">The table beneath this chart lists every sector's current position, its phase, its last confirmed turn and its next projected turn window.</span><span class="l-zh">图表下方的表格列出每个板块的当前位置、所处阶段、最近一次确认拐点与下一次预计拐点窗口。</span></span>
+        </div>
+        <div class="r3-cyc-axis" id="r3-cyc-axis"></div>
+      </div>
+
+      <div class="r3-panel r3-tblbox r3-cyc-tblbox">
+        <table class="r3-tbl r3-cyc-tbl">
+          <caption class="r3-vh"><span class="l-en">Text equivalent of the sector cycle clock — each sector's phase, cycle position, last confirmed turn and next projected turn window, from the same fields the chart draws.</span><span class="l-zh">行业周期时钟的文字等价表 — 各板块的阶段、周期位置、最近确认拐点与下一次预计拐点窗口，字段与图表一致。</span></caption>
+          <thead><tr>
+            <th><span class="l-en">Sector</span><span class="l-zh">板块</span></th>
+            <th><span class="l-en">Where in its cycle</span><span class="l-zh">周期所处阶段</span></th>
+            <th class="num"><span class="l-en">Position</span><span class="l-zh">位置</span></th>
+            <th class="num"><span class="l-en">Last confirmed turn</span><span class="l-zh">最近确认拐点</span></th>
+            <th><span class="l-en">Next window</span><span class="l-zh">下一窗口</span></th>
+          </tr></thead>
+          <tbody id="r3-cyc-rows"></tbody>
+        </table>
+        <p class="r3-note" id="r3-cyc-note">
+          <span class="l-en">Projections here are windows, not certainties — re-drawn nightly as new data lands.</span>
+          <span class="l-zh">这里的预测是时间窗口，而非确定性结论——每晚随新数据重新计算。</span>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 3 · ONE GATED READ PER SECTOR — the conviction chain, verbatim.
+          The only Action-authority field on this view (producer_binding_matrix,
+          Map row 4), so it outranks the `reco` tag by placement and by its own
+          section; it still carries NO ledge, NO state fill and NO state ink,
+          because tier devices are reserved to Overview and Confluence. ══ -->
+  <div class="r3-band" id="board">
+    <div class="r3-sec">
+      <h2><span class="l-en">One gated read per sector</span><span class="l-zh">每个板块一个门控研判</span></h2>
+      <span class="r3-sec-sub"><span class="l-en">The cycle state leads, the macro regime gates it, momentum &amp; heat confirm.</span><span class="l-zh">周期状态主导，宏观体制门控，动量与热度确认。</span></span>
+    </div>
+    <div class="r3-list" id="r3-board-rows"></div>
+    <p class="r3-note" id="r3-board-note">
+      <span class="l-en">Cards are ordered by the fast rotation lens — display only, no forward-return claim; the conviction labels are unchanged by the ordering.</span>
+      <span class="l-zh">卡片按快速轮动视角排序 — 仅作展示，无前瞻收益主张；信念标签不受排序影响。</span>
+    </p>
+  </div>
+
+  <!-- ══ 4 · DEEPER PATH — one text link, no filled control on a context view ══ -->
+  <p class="r3-band r3-deeper">
+    <a class="r3-more" href="sector_cycles.html" data-ref-nav><span class="l-en">Open the full cycle map — 11 sectors and 49 themes on one clock</span><span class="l-zh">打开完整周期图谱 — 11 个板块与 49 个主题同框</span></a>
+  </p>
+
+<style>
+/* ══════════════════════════════════════════════════════════════════════════════
+   LANE D2 · THE MAP — view-local composition only.
+   Every colour, size, radius and space below resolves to a theme.css token
+   mirrored by the shell.  No new token root, no new ramp step, no hue outside
+   theme.css, no icon outside the sanctioned monoline set.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* ── the rotation-map instrument ─────────────────────────────────────────── */
+.r3-rmap-grid{ display:grid; gap:var(--gap-grid);
+  grid-template-columns:minmax(0,1.72fr) minmax(272px,.92fr);
+  grid-template-areas:"figure detail" "summary summary" "list list"; align-items:start; }
+.r3-rmap-sum{ grid-area:summary; }
+.r3-rmap-detail{ grid-area:detail; }
+.r3-rmap-list{ grid-area:list; }
+.r3-rmap-fig{ grid-area:figure; }
+
+.r3-rmap-take{ display:block; margin:0 0 var(--sp-2); }
+.r3-quads .r3-quad{ min-height:74px; }
+@media (min-width:901px){ .r3-rmap-sum .r3-quads{ grid-template-columns:repeat(4,minmax(0,1fr)); } }
+.r3-quadn{ display:block; margin-top:4px; font-size:var(--fs-md); font-weight:700;
+  letter-spacing:-.01em; font-variant-numeric:tabular-nums; color:var(--text); }
+.r3-quad-sub{ display:block; margin-top:3px; font-size:var(--fs-sm); color:var(--muted);
+  line-height:1.4; overflow-wrap:anywhere; }
+
+/* the plot frame: axis captions are HTML, so a language switch needs no redraw
+   and the axis text is real text for a screen reader and for 200% zoom. */
+.r3-rmap-fig{ min-width:0; }
+.r3-rmap-frame{ display:grid; grid-template-columns:18px minmax(0,1fr);
+  grid-template-rows:minmax(0,1fr) auto; gap:6px 8px; }
+.r3-rmap-ylab{ grid-column:1; grid-row:1; writing-mode:vertical-rl; transform:rotate(180deg);
+  justify-self:center; align-self:center; font-size:var(--fs-micro); letter-spacing:.05em;
+  text-transform:uppercase; color:var(--muted); white-space:nowrap; }
+html[data-lang="zh"] .r3-rmap-ylab, html[data-lang="zh"] .r3-rmap-xlab{ letter-spacing:0; text-transform:none; }
+.r3-rmap-xlab{ grid-column:2; grid-row:2; text-align:right; font-size:var(--fs-micro);
+  letter-spacing:.05em; text-transform:uppercase; color:var(--muted); }
+.r3-rmap-plot{ grid-column:2; grid-row:1; position:relative; min-width:0;
+  padding:12px; background:var(--panel); border:1px solid var(--line);
+  border-radius:var(--r-panel); box-shadow:var(--card-shadow); }
+html[data-theme="light"] .r3-rmap-plot{ border-color:color-mix(in srgb, var(--text) 9%, var(--line)); }
+/* uniform scaling: preserveAspectRatio must stay at its default so a dot is a
+   circle and not an ellipse.  The viewBox fixes the plot's 3:2 proportion; the
+   box is fluid, so nothing here depends on a measured width. */
+.r3-rmap-svg{ display:block; width:100%; height:auto; overflow:visible; }
+.r3-rmap-q{ position:absolute; display:flex; flex-direction:column; gap:1px;
+  font-size:var(--fs-micro); line-height:1.3; color:var(--muted); pointer-events:none;
+  max-width:44%; }
+.r3-rmap-q b{ font-size:var(--fs-label); font-weight:700; letter-spacing:.07em;
+  text-transform:uppercase; color:color-mix(in srgb, var(--text) 72%, transparent); }
+html[data-lang="zh"] .r3-rmap-q b{ letter-spacing:0; text-transform:none; }
+.r3-rmap-q1{ top:14px; left:16px; }
+.r3-rmap-q2{ top:14px; right:16px; text-align:right; align-items:flex-end; }
+.r3-rmap-q3{ bottom:16px; left:16px; }
+.r3-rmap-q4{ bottom:16px; right:16px; text-align:right; align-items:flex-end; }
+
+.r3-rmap-svg .r3-ax{ stroke:var(--line); stroke-width:1; }
+.r3-rmap-svg .r3-dot{ fill:color-mix(in srgb, var(--muted) 62%, transparent);
+  stroke:var(--panel); stroke-width:1.4; cursor:pointer;
+  transition:fill var(--t-fast) var(--ease-std); }
+.r3-rmap-svg .r3-dot:hover{ fill:color-mix(in srgb, var(--text) 78%, transparent); }
+.r3-rmap-svg .r3-dot.is-sel{ fill:var(--text); stroke-width:2; }
+.r3-rmap-svg .r3-selring{ fill:none; stroke:color-mix(in srgb, var(--text) 40%, transparent);
+  stroke-width:1.2; }
+.r3-rmap-tip{ position:absolute; z-index:4; display:none; max-width:216px; padding:8px 11px;
+  border:1px solid var(--glass-brd); border-radius:var(--r-ctl); background:var(--glass-bg);
+  -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur);
+  box-shadow:var(--popover-shadow); font-size:var(--fs-sm); line-height:1.45;
+  color:var(--text); pointer-events:none; }
+.r3-rmap-tip.on{ display:block; }
+.r3-rmap-tip .r3-tipnm{ font-weight:700; font-size:var(--fs-body); }
+.r3-rmap-tip .r3-tipsub{ color:var(--muted); font-size:var(--fs-micro); }
+
+/* selected-object rail */
+.r3-rmap-detail .r3-selnm{ display:block; font-size:var(--fs-md); font-weight:700;
+  letter-spacing:-.008em; line-height:1.3; overflow-wrap:anywhere; }
+.r3-rmap-detail .r3-selcat{ display:block; margin-top:2px; font-size:var(--fs-micro);
+  font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); }
+html[data-lang="zh"] .r3-rmap-detail .r3-selcat{ letter-spacing:0; text-transform:none; }
+.r3-selstats{ margin-top:var(--sp-3); display:grid; grid-template-columns:minmax(0,1fr) auto;
+  gap:0; }
+.r3-selstats > dt{ font-size:var(--fs-sm); color:var(--muted); padding:7px 0;
+  border-bottom:1px solid color-mix(in srgb, var(--line) 55%, transparent); }
+.r3-selstats > dd{ margin:0; text-align:right; font-size:var(--fs-sm); font-weight:700;
+  font-variant-numeric:tabular-nums; padding:7px 0;
+  border-bottom:1px solid color-mix(in srgb, var(--line) 55%, transparent); }
+.r3-selstats > dt:last-of-type, .r3-selstats > dd:last-of-type{ border-bottom:0; }
+.r3-selwhy{ margin-top:var(--sp-3); font-size:var(--fs-sm); color:var(--muted); line-height:1.45; }
+.r3-selopen{ margin-top:var(--sp-2); }
+
+/* the signed-move ink — the ONE colour channel a context view may use, and only
+   at or below --fs-sm 12.5px, always with a sign character (spec §6). */
+.r3-mv{ font-size:var(--fs-sm); font-variant-numeric:tabular-nums; }
+.r3-mv.up{ color:var(--ink-up); } .r3-mv.dn{ color:var(--ink-down); }
+
+/* ranked list */
+.r3-rmap-tbl{ min-width:560px; }
+.r3-rmap-tbl td:first-child{ font-size:var(--fs-sm); font-weight:600; color:var(--muted);
+  text-align:right; width:1%; white-space:nowrap; }
+.r3-rmap-tbl td:nth-child(2){ font-size:var(--fs-md); font-weight:700; letter-spacing:-.008em;
+  overflow-wrap:anywhere; min-width:180px; padding:0; }
+/* the repeated primary target on this view: the anchor fills its cell so the whole
+   row-name box clears 44 CSS px at every width (spec §12). */
+.r3-rmap-tbl td:nth-child(2) a{ display:flex; align-items:center; min-height:44px;
+  padding:9px 12px; color:inherit; }
+.r3-rmap-tbl td:nth-child(2) a:hover{ color:var(--ink-link,var(--link)); }
+.r3-rmap-tbl tr.is-sel td{ background:color-mix(in srgb, var(--panel2) 72%, transparent); }
+.r3-rmap-foot{ display:flex; align-items:center; flex-wrap:wrap; gap:var(--sp-2) var(--sp-4);
+  padding:10px 2px 0; }
+.r3-rmap-foot #r3-map-count{ margin-left:auto; }
+/* B2-08 · two-line column header — the same device Overview uses for its unit line
+   ([data-view="overview"] .r3-colfig em), transposed onto a table head. Line 1 keeps
+   the `.r3-tbl th` treatment (micro, 700, uppercase, tracked); line 2 drops the
+   uppercase and the tracking so the scope reads as a phrase rather than a second
+   label, and stays on the same `--muted` rung the header already carries (no new
+   token, no literal). `white-space:nowrap` is load-bearing: the rank column's
+   min-content width is one short word, so without it the scope broke into a
+   three-line ragged stack that read as an accident rather than a second header
+   line. Held to one line it is exactly the two-line header the pattern intends,
+   and the ~48px it adds to the narrowest column is absorbed by the table box's
+   own sideways scroll, which is already discoverable on the widths where it
+   happens (`.r3-scrollhint`). */
+.r3-rmap-tbl thead em{ display:block; margin-top:2px; font-style:normal;
+  font-size:var(--fs-micro); font-weight:600; letter-spacing:.02em; text-transform:none;
+  line-height:1.25; color:var(--muted); white-space:nowrap; }
+/* the in-container scroll is lawful (the box scrolls, the page never does) but it
+   has to be discoverable, so it says so — on the widths where it actually happens. */
+.r3-scrollhint{ display:none; }
+@media (max-width:900px){ .r3-scrollhint{ display:inline; } }
+/* a slash-joined vocabulary list ("Leading/Improving/…") has no natural break
+   opportunity; at 200% zoom on a 390 phone it is wider than the column. */
+.r3-note{ margin-top:var(--sp-3); font-size:var(--fs-sm); color:var(--muted); line-height:1.5;
+  max-width:88ch; overflow-wrap:anywhere; }
+/* MAC1-002: the floor is on BOTH axes, not just the block axis. `min-height`
+   alone let the target shrink with the STRING: "Show fewer" clears 44 on its
+   own, "收起" is two glyphs and measured 39.0 x 44.0 at 320/390/820 — a
+   language-conditional target defect an EN-only sweep cannot see. `min-width`
+   sizes the box off the floor instead of off the glyph count; EN is untouched
+   because every EN twin is already wider. Declared in both partials that own
+   this component (moving.html carries the same rule) so concatenation order
+   cannot decide whether the floor exists. */
+.r3-textbtn{ display:inline-flex; align-items:center; justify-content:center; gap:7px;
+  min-height:44px; min-width:44px; padding:0;
+  border:0; background:none; color:var(--ink-link,var(--link)); font-size:var(--fs-sm);
+  font-weight:700; cursor:pointer; }
+.r3-textbtn::after{ content:""; width:6px; height:6px; flex:none;
+  border-right:1.6px solid currentColor; border-bottom:1.6px solid currentColor;
+  transform:rotate(45deg); margin-top:-3px;
+  transition:transform var(--t-fast) var(--ease-std); }
+.r3-textbtn[aria-expanded="true"]::after{ transform:rotate(-135deg); margin-top:2px; }
+
+/* ── the cycle clock ─────────────────────────────────────────────────────── */
+.r3-cyc{ display:grid; gap:var(--gap-grid); grid-template-columns:minmax(0,1fr); }
+.r3-cyc-figwrap{ padding:14px 16px 10px; }
+.r3-cyc-head{ display:flex; align-items:baseline; flex-wrap:wrap; gap:var(--sp-2) var(--sp-3);
+  margin-bottom:var(--sp-2); }
+.r3-cyc-lit{ margin-left:auto; font-size:var(--fs-sm); font-weight:700; color:var(--text);
+  min-width:0; max-width:100%; overflow-wrap:anywhere; }
+.r3-cyc-plot{ position:relative; padding-left:30px; }
+.r3-cyc-y{ position:absolute; left:0; top:0; bottom:0; width:26px;
+  display:flex; flex-direction:column; justify-content:space-between; align-items:flex-end;
+  font-size:var(--fs-micro); color:var(--muted); font-variant-numeric:tabular-nums; }
+.r3-cyc-svg{ display:block; width:100%; height:216px; }
+.r3-cyc-svg .r3-cycline{ fill:none; stroke:color-mix(in srgb, var(--muted) 26%, transparent);
+  stroke-width:1; }
+.r3-cyc-svg .r3-cycline.is-lit{ stroke:var(--text); stroke-width:1.9; }
+.r3-cyc-svg .r3-cycgrid{ stroke:var(--line); stroke-width:1; }
+.r3-cyc-svg .r3-cycnow{ stroke:var(--text); stroke-width:1.6; }
+.r3-cyc-axis{ display:flex; justify-content:space-between; margin:5px 0 0 30px;
+  font-size:var(--fs-micro); color:var(--muted); font-variant-numeric:tabular-nums;
+  white-space:nowrap; }
+/* a time tick is a reading aid, not a capability: when the plot is too narrow to
+   hold every year the axis thins to alternate years, then to its two ends.  The
+   window itself is still stated in full by the table beneath. */
+@media (max-width:767px){ .r3-cyc-axis > span:nth-child(even){ display:none; } }
+@media (max-width:359px){
+  .r3-cyc-axis > span:not(:first-child):not(:last-child){ display:none; }
+}
+/* a primary name WRAPS, it never ellipsizes — but it must not shatter into
+   five-letter shards either.  A floor on the name column keeps "Communication
+   Services" breaking at its space; the box scrolls, the page never does. */
+.r3-cyc-tbl{ min-width:560px; }
+.r3-cyc-tbl td:first-child, .r3-cyc-tbl th:first-child{ min-width:150px; }
+.r3-cyc-tbl td:first-child{ font-size:var(--fs-md); font-weight:700; overflow-wrap:anywhere; }
+.r3-cyc-tbl tr.is-lit td{ background:color-mix(in srgb, var(--panel2) 72%, transparent); }
+.r3-cyc-tbl .r3-tk{ display:block; font-size:var(--fs-micro); font-weight:600;
+  letter-spacing:.07em; color:var(--muted); }
+.r3-cyc-tblbox{ padding-bottom:2px; }
+.r3-cyc-tblbox .r3-note{ padding:0 12px 13px; margin-top:10px; }
+
+/* ── the gated-read board ────────────────────────────────────────────────── */
+.r3-gread{ border-bottom:1px solid var(--line); }
+.r3-gread:last-child{ border-bottom:0; }
+.r3-gread > summary{ display:grid; grid-template-columns:minmax(0,1.6fr) 88px minmax(0,1.25fr) 16px;
+  gap:var(--sp-4); align-items:center; min-height:58px; padding:11px 16px; cursor:pointer;
+  list-style:none; }
+.r3-gread > summary::-webkit-details-marker{ display:none; }
+.r3-gread > summary:hover{ background:color-mix(in srgb, var(--panel2) 62%, transparent); }
+.r3-greadnm{ min-width:0; font-size:var(--fs-md); font-weight:700; letter-spacing:-.008em;
+  line-height:1.3; overflow-wrap:anywhere; }
+.r3-greadtk{ display:block; margin-top:2px; font-size:var(--fs-micro); font-weight:600;
+  letter-spacing:.07em; color:var(--muted); }
+html[data-lang="zh"] .r3-greadtk{ letter-spacing:0; }
+.r3-greadfig{ text-align:right; min-width:0; }
+.r3-greadlab{ display:block; font-size:var(--fs-sm); color:var(--muted); }
+.r3-greadsc{ display:block; font-size:var(--fs-md); font-weight:700; letter-spacing:-.01em;
+  font-variant-numeric:tabular-nums; }
+.r3-greadwhy{ min-width:0; font-size:var(--fs-sm); color:var(--muted); line-height:1.4; }
+.r3-gread > summary .r3-chev{ justify-self:end; transition:transform var(--t-fast) var(--ease-std); }
+.r3-gread[open] > summary .r3-chev{ transform:rotate(135deg); }
+.r3-greadbody{ padding:2px 16px 16px; }
+.r3-chain{ display:grid; gap:0; }
+.r3-chainrow{ display:grid; grid-template-columns:118px minmax(0,1fr); gap:var(--sp-3);
+  padding:8px 0; border-top:1px solid color-mix(in srgb, var(--line) 55%, transparent); }
+.r3-chainrow:first-child{ border-top:0; }
+.r3-chainlay{ font-size:var(--fs-micro); font-weight:700; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--muted); line-height:1.4; }
+html[data-lang="zh"] .r3-chainlay{ letter-spacing:0; text-transform:none; }
+.r3-chaintx{ font-size:var(--fs-sm); color:var(--text); line-height:1.5; overflow-wrap:anywhere; }
+.r3-chaintier{ display:block; margin-top:2px; font-size:var(--fs-micro); color:var(--muted); }
+.r3-greadsplit{ margin-top:var(--sp-3); }
+.r3-deeper{ margin-top:var(--sp-6); }
+
+/* ── responsive: the phone RECOMPOSES ────────────────────────────────────── */
+@media (max-width:900px){
+  .r3-rmap-grid{ grid-template-columns:minmax(0,1fr);
+    grid-template-areas:"figure" "summary" "detail" "list"; }
+}
+@media (max-width:767px){
+  /* commission §9 phone order: answer → quadrant summary → selected object →
+     ranked list → the full map, reachable in-view behind its own disclosure. */
+  .r3-rmap-grid{ grid-template-areas:"summary" "detail" "list" "figure"; }
+  .r3-rmap-fig[data-collapsed="true"] .r3-rmap-frame{
+    /* NEVER display:none on a chart container (spec §8.1) — the SVG stays laid
+       out; only its box is clipped away. */
+    max-height:0; overflow:hidden; visibility:hidden; margin-top:0; }
+  .r3-rmap-fig[data-collapsed="false"] .r3-rmap-frame{ margin-top:var(--sp-2); }
+  .r3-quads{ grid-template-columns:1fr 1fr; }
+  .r3-rmap-tbl{ min-width:520px; }
+  .r3-gread > summary{ grid-template-columns:minmax(0,1fr) auto; row-gap:5px; min-height:64px; }
+  .r3-greadwhy{ grid-column:1 / -1; }
+  .r3-gread > summary .r3-chev{ display:none; }
+  .r3-chainrow{ grid-template-columns:minmax(0,1fr); gap:2px; }
+}
+@media (min-width:768px){
+  /* the disclosure is a phone affordance only — on the desk the map is simply
+     there.  Specificity is deliberate: every view partial carries its own
+     <style>, so a later partial's .r3-textbtn (0,1,0) would otherwise win this. */
+  .r3-rmap-fig > .r3-rmap-toggle{ display:none; }
+}
+@media (max-width:359px){
+  .r3-quads{ grid-template-columns:1fr; }
+  .r3-cyc-svg{ height:180px; }
+}
+</style>
+
+<script>
+/* ═══ THE MAP — data binding.  Fixture in, pixels out; nothing is derived. ═══ */
+(function(){
+  "use strict";
+  function isZh(){ return document.documentElement.getAttribute('data-lang')==='zh'; }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
+  /* dual-emit: every generated string ships BOTH languages, so a langchange needs
+     no re-render and neither half can go missing (spec §11). */
+  function L(en,zh){ return '<span class="l-en">'+en+'</span><span class="l-zh">'+(zh==null?en:zh)+'</span>'; }
+  function el(id){ return document.getElementById(id); }
+
+  /* F-4: the #board reasoning chain rendered `r.layer`/`r.tier` raw (esc() only,
+     no ZH resolution) — 114 leaf nodes leaking English under ZH. Bound from the
+     production China sibling's own twin map (templates/sector_central_china.html.j2
+     ~:1425, LAYER_ZH) wherever it already carries the word; "Trend gate" is
+     absent there (that map only has bare "Trend") so it is authored here, listed
+     for the copy ledger. Tier words come from the producer's own established
+     twins: confirmer/display from templates/signal_lab.html.j2:548's
+     tier_labels, validated from templates/sector_central.html.j2:3463 (the same
+     "Validated" the Money view's own tag already renders, QA2-13). */
+  var LAYER_ZH={'Cycle state':'周期状态','Regime gate':'市况把关','Momentum':'动量',
+    'Fragility':'脆弱度','Heat':'热度','Trend gate':'趋势把关'};
+  var TIER_ZH={'validated':'已验证','confirmer':'确认项','display':'仅展示'};
+
+  /* ── payload access ──────────────────────────────────────────────────────
+     window.BASKETS is the same global production's own page fetch populates.
+     runtime_shim.js already performs this exact synchronous parse for
+     resolveThemeHash(); repeating it here (guarded) makes the Map independent of
+     which view booted first.  JSON.parse of verbatim bytes is not a recompute. */
+  function baskets(){
+    if(!window.BASKETS && window.REF && REF.registry &&
+       REF.registry['basketdata/baskets.json']){
+      try{
+        window.BASKETS = REF.parseJSON(REF.registry['basketdata/baskets.json']);
+        window.THEME = window.BASKETS.theme_intel || null;
+      }catch(e){}
+    }
+    return window.BASKETS || null;
+  }
+
+  /* ── production's quadrant transform, reproduced VERBATIM ────────────────
+     templates/sector_central.html.j2:2946-2956 (rvxData) — the one client-side
+     transform this view performs, and production performs it too:
+       relPct(t,win)  :2878   score default 50, vel = pulse_rank_delta_5d,
+       falling back to (sign of r5) × min(18, |r5×100| / 1.2) when that field is
+       null; strong = score>=50; rising = vel>=0;
+       q = strong ? (rising?'lead':'weak') : (rising?'improve':'lag');
+       sorted by score descending.
+     `window.__siRvxData` is the hook si_workspace.js:166 calls to compose the
+     #si-read-map strip (sector_central.html.j2:3086 exports the same function). */
+  function relPct(t,win){ var p=t&&t.perf&&t.perf[win]; return (p&&p.rel!=null)?p.rel:null; }
+  var SCOPE='themes';
+  function rvxData(){
+    var b=baskets(), TI=(b&&b.theme_intel)||null;
+    var isEW=function(t){ return String(t.id||'').indexOf('us_sector_')===0; };
+    return ((TI&&TI.themes)||[]).filter(function(t){ return t&&t.id; })
+      .filter(function(t){ return SCOPE==='sectors'?isEW(t):!isEW(t); })
+      .map(function(t){
+        var r20=relPct(t,'20d'), r5=relPct(t,'5d'), score=(t.score==null?50:t.score);
+        var vel=t.pulse_rank_delta_5d;
+        if(vel==null) vel=(r5==null?0:(r5>0?1:r5<0?-1:0)*Math.min(18,Math.abs(r5*100)/1.2));
+        var strong=score>=50, rising=vel>=0;
+        var q=strong?(rising?'lead':'weak'):(rising?'improve':'lag');
+        return {id:t.id,name:t.name,name_zh:t.name_zh,cat:t.category||'',score:score,
+          r20:r20==null?null:r20*100, r5:r5==null?null:r5*100, vel:vel,
+          recoKey:(t.reco||'').toLowerCase(), q:q, rank:t.rank||999};
+      }).sort(function(a,b2){ return b2.score-a.score; });
+  }
+  if(typeof window.__siRvxData!=='function') window.__siRvxData=rvxData;
+
+  /* Vocabulary, verbatim from sector_central.html.j2:2937-2941.  RVX_Q's `se`/`sz`
+     stance strings ("Hold / add", "Take profits", …) are deliberately NOT rendered:
+     they are action vocabulary and this is a context view (design brief §2). */
+  var Q={ lead:['Leading','领先','strong & rising','强且上行'],
+          weak:['Weakening','走弱','strong but fading','强但转弱'],
+          improve:['Improving','改善','weak but turning up','弱但转强'],
+          lag:['Lagging','落后','weak & falling','弱且下行'] };
+  var RECO={ enter:['Buy','买入'], accumulate:['Add','加仓'], hold:['Hold','持有'],
+             trim:['Trim','减仓'], avoid:['Avoid','回避'] };
+  var QORDER=['lead','weak','improve','lag'];
+
+  function pct1(v){ return v==null?'—':((v>=0?'+':'−')+Math.abs(v).toFixed(1)+'%'); }
+  function signRanks(v){
+    var n=Math.round(v);
+    return (n>0?'+':(n<0?'−':''))+Math.abs(n);
+  }
+  function mvCls(v){ return v==null?'':(v>=0?' up':' dn'); }
+
+  /* ── state ───────────────────────────────────────────────────────────────── */
+  var D=[], SEL=null, SHOWALL=false;
+  var PAGE=10;   /* production's own default slice — sector_central.html.j2:3006 */
+
+  /* ── the scatter ─────────────────────────────────────────────────────────── */
+  var W=600, H=400, PAD=15;
+  /* production's clamps, unchanged: score 28→70 across the plot, velocity ±36 up
+     the plot (sector_central.html.j2:2965-2966).  Production insets the plotted
+     band inside a larger viewBox for the same reason this does — a clamped value
+     must land fully inside the frame, not straddling it. */
+  var HX=22, HY=36;   /* half-widths; 50±22 and 0±36 are production's own band */
+  function fitDomain(){
+    HX=22; HY=36;
+    D.forEach(function(d){
+      HX=Math.max(HX,Math.abs(d.score-50)+2);
+      HY=Math.max(HY,Math.abs(d.vel)+2);
+    });
+  }
+  function sx(s){ return PAD+(((Math.max(50-HX,Math.min(50+HX,s)))-(50-HX))/(2*HX))*(W-2*PAD); }
+  function sy(v){ return PAD+((HY-Math.max(-HY,Math.min(HY,v)))/(2*HY))*(H-2*PAD); }
+  function svgEl(t,a){ var e=document.createElementNS('http://www.w3.org/2000/svg',t);
+    for(var k in a) e.setAttribute(k,a[k]); return e; }
+
+  function drawMap(){
+    var svg=el('rvx-rmap'); if(!svg) return;
+    fitDomain();
+    while(svg.firstChild) svg.removeChild(svg.firstChild);
+    svg.appendChild(svgEl('line',{class:'r3-ax',x1:W/2,y1:0,x2:W/2,y2:H}));
+    svg.appendChild(svgEl('line',{class:'r3-ax',x1:0,y1:H/2,x2:W,y2:H/2}));
+    D.forEach(function(d){
+      var x=sx(d.score), y=sy(d.vel), r=6+Math.min(6,Math.abs(d.r20||0)/6);
+      if(SEL&&SEL.id===d.id) svg.appendChild(svgEl('circle',{class:'r3-selring',cx:x,cy:y,r:r+5}));
+      var c=svgEl('circle',{class:'r3-dot'+(SEL&&SEL.id===d.id?' is-sel':''),cx:x,cy:y,r:r,
+        'data-id':d.id});
+      c.addEventListener('mouseenter',function(ev){ showTip(d,ev); });
+      c.addEventListener('mousemove',function(ev){ moveTip(ev); });
+      c.addEventListener('mouseleave',hideTip);
+      c.addEventListener('click',function(){ select(d.id); });
+      svg.appendChild(c);
+    });
+  }
+  function showTip(d,ev){
+    var tip=el('r3-map-tip'); if(!tip) return;
+    var q=Q[d.q];
+    tip.innerHTML='<span class="r3-tipnm">'+esc(isZh()?(d.name_zh||d.name):d.name)+'</span>'
+      +'<span class="r3-tipsub"> '+esc(d.cat)+'</span><br>'
+      +L(q[0]+' — '+q[2],q[1]+' — '+q[3])+'<br>'
+      +L('Strength '+d.score+' · 20d '+pct1(d.r20),'强度 '+d.score+' · 20日 '+pct1(d.r20));
+    tip.classList.add('on'); moveTip(ev);
+  }
+  function moveTip(ev){
+    var tip=el('r3-map-tip'); if(!tip||!tip.parentElement) return;
+    var cr=tip.parentElement.getBoundingClientRect();
+    tip.style.left=Math.max(4,Math.min(ev.clientX-cr.left+14, cr.width-224))+'px';
+    tip.style.top=Math.max(4,Math.min(ev.clientY-cr.top+14, cr.height-70))+'px';
+  }
+  function hideTip(){ var t=el('r3-map-tip'); if(t) t.classList.remove('on'); }
+
+  /* ── the takeaway + quadrant tiles (the chart's textual equivalent) ──────── */
+  function drawSummary(){
+    var counts={lead:0,weak:0,improve:0,lag:0};
+    D.forEach(function(d){ counts[d.q]++; });
+    var lead=D.filter(function(d){ return d.q==='lead'; });
+    /* the chart's concise textual takeaway, carried on its accessible description
+       (§12).  Visibly the same fact is the four tiles below — the sentence itself
+       belongs to the answer line and is never printed twice. */
+    var desc=el('r3-rmap-desc');
+    if(desc) desc.innerHTML=L(
+      'Of '+D.length+' groups: '+counts.lead+' leading, '+counts.weak+' weakening, '
+        +counts.improve+' improving, '+counts.lag+' lagging. Every one of them is listed as a ranked table above this chart, with every value it plots.',
+      '共 '+D.length+' 个板块：领先 '+counts.lead+'，走弱 '+counts.weak+'，改善 '
+        +counts.improve+'，落后 '+counts.lag+'。全部板块已在上方排名表中逐一列出，包含所绘制的每一项数值。');
+    var host=el('r3-map-quads'); if(!host) return;
+    host.innerHTML=QORDER.map(function(k){
+      var q=Q[k], names=D.filter(function(d){ return d.q===k; })
+        .slice(0,2).map(function(d){ return isZh()?(d.name_zh||d.name):d.name; });
+      return '<div class="r3-quad">'
+        +'<span class="r3-eyebrow">'+L(q[0],q[1])+'</span>'
+        +'<span class="r3-quadn tnum">'+counts[k]+'</span>'
+        +'<span class="r3-quad-sub">'+(names.length?esc(names.join(' · ')):L('none','无'))+'</span>'
+        +'</div>';
+    }).join('');
+  }
+
+  /* ── selected-object rail ────────────────────────────────────────────────── */
+  function drawDetail(){
+    var host=el('r3-map-detail'); if(!host) return;
+    if(!SEL){
+      host.innerHTML='<p class="r3-selwhy">'+L('Focus a row below, or tap a dot on the map, to read a group here.',
+        '聚焦下方任一行，或点击图中圆点，即可在此查看该板块。')+'</p>';
+      return;
+    }
+    var d=SEL, q=Q[d.q];
+    host.innerHTML=''
+      +'<span class="r3-selnm">'+L(esc(d.name),esc(d.name_zh||d.name))+'</span>'
+      +'<span class="r3-selcat">'+esc(d.cat)+'</span>'
+      +'<dl class="r3-selstats">'
+      +'<dt>'+L('Where it sits','所处位置')+'</dt><dd>'+L(q[0],q[1])+'</dd>'
+      +'<dt>'+L('Rank','排名')+'</dt><dd class="tnum">'+d.rank+'</dd>'
+      /* B2-01: production's own dt reads "Strength score / 强度评分" (:2991). The
+         trailing noun is dropped here so `theme_intel.themes[].score` answers to
+         exactly ONE customer term across this reference — Strength / 强度 — and a
+         producer-path→label uniqueness check resolves to a single string. The
+         measure, the value and the field are unchanged; only the noun goes. */
+      +'<dt>'+L('Strength','强度')+'</dt><dd class="tnum">'+d.score+'</dd>'
+      +'<dt>'+L('20 days vs S&amp;P','20日相对标普')+'</dt>'
+        +'<dd class="r3-mv'+mvCls(d.r20)+'">'+pct1(d.r20)+'</dd>'
+      +'<dt>'+L('Rank move this week','本周排名变化')+'</dt>'
+        +'<dd class="r3-mv'+mvCls(d.vel)+'">'+signRanks(d.vel)+'</dd>'
+      +'</dl>'
+      +'<p class="r3-selwhy">'+L(q[0]+' — '+q[2]+'.',q[1]+' — '+q[3]+'。')+'</p>'
+      +'<p class="r3-selopen"><a class="r3-more" href="basket/'+encodeURIComponent(d.id)+'.html" data-ref-nav>'
+        +L('Open '+esc(d.name),'打开'+esc(d.name_zh||d.name))+'</a></p>';
+  }
+
+  /* ── the ranked text equivalent ──────────────────────────────────────────── */
+  function drawRows(){
+    var body=el('r3-map-rows'); if(!body) return;
+    var shown=SHOWALL?D:D.slice(0,PAGE);
+    body.innerHTML=shown.map(function(d){
+      var q=Q[d.q], tag=RECO[d.recoKey]||['—','—'];
+      return '<tr data-id="'+esc(d.id)+'"'+(SEL&&SEL.id===d.id?' class="is-sel"':'')+'>'
+        +'<td class="tnum">'+d.rank+'</td>'
+        +'<td><a href="basket/'+encodeURIComponent(d.id)+'.html" data-ref-nav>'
+          +L(esc(d.name),esc(d.name_zh||d.name))+'</a></td>'
+        +'<td>'+L(q[0],q[1])+'</td>'
+        +'<td class="num tnum">'+d.score+'</td>'
+        +'<td class="num r3-mv'+mvCls(d.r20)+'">'+pct1(d.r20)+'</td>'
+        +'<td class="num r3-mv'+mvCls(d.vel)+'">'+signRanks(d.vel)+'</td>'
+        +'<td><span class="r3-tag">'+L(tag[0],tag[1])+'</span></td>'
+        +'</tr>';
+    }).join('');
+    var cnt=el('r3-map-count');
+    if(cnt) cnt.innerHTML=L(shown.length+' of '+D.length+' shown',
+                            '已显示 '+shown.length+'/'+D.length);
+    var sa=el('r3-map-showall');
+    if(sa){
+      sa.hidden = D.length<=PAGE;
+      sa.setAttribute('aria-expanded',String(SHOWALL));
+      sa.innerHTML=SHOWALL?L('Show fewer','收起')
+                          :L('Show all '+D.length,'显示全部 '+D.length);
+    }
+  }
+
+  function select(id){
+    var d=null;
+    for(var i=0;i<D.length;i++){ if(D[i].id===id){ d=D[i]; break; } }
+    if(!d) return;
+    SEL=d; drawDetail(); drawRows(); drawMap();
+  }
+
+  function renderAll(){
+    D=rvxData();
+    if(!SEL||!D.some(function(d){ return d.id===SEL.id; })) SEL=D.length?D[0]:null;
+    drawSummary(); drawDetail(); drawRows(); drawMap();
+    var nT=el('r3-scope-n-themes'), nS=el('r3-scope-n-sectors');
+    var b=baskets(), all=((b&&b.theme_intel&&b.theme_intel.themes)||[]);
+    var nsec=all.filter(function(t){ return String(t.id||'').indexOf('us_sector_')===0; }).length;
+    if(nT) nT.textContent=String(all.length-nsec);
+    if(nS) nS.textContent=String(nsec);
+    var asof=el('r3-map-asof');
+    if(asof&&b&&b.as_of) asof.innerHTML=L('as of '+esc(b.as_of),'截至 '+esc(b.as_of));
+  }
+
+  /* ── the cycle clock (window.SECTOR_CYCLES, embedded verbatim) ───────────── */
+  var CYC=null, LIT=null;
+  var PHASE_ZH={ 'Bottoming':'筑底','Prime entry':'入场良机','Trending':'上行',
+                 'Topping':'见顶','Rolling over':'回落' };   /* sector_cycles.js:124-125 */
+  var TURN_WORD={ peak:['peak','顶部'], trough:['trough','底部'] };
+  function cycInit(){
+    var S=window.SECTOR_CYCLES;
+    if(!S||!S.sectors||!S.sectors.length) return;
+    CYC=S; LIT=S.sectors[0].id;                 /* producer order — never re-sorted */
+    var a=el('r3-cyc-asof');
+    if(a&&S.meta&&S.meta.asOf) a.innerHTML=L('as of '+esc(S.meta.asOf),'截至 '+esc(S.meta.asOf));
+    cycRows(); cycDraw();
+  }
+  function cycRows(){
+    var body=el('r3-cyc-rows'); if(!body||!CYC) return;
+    body.innerHTML=CYC.sectors.map(function(s){
+      var now=s.now||{}, proj=s.proj||{};
+      var ph=now.phaseLabel||'—';
+      var turn=TURN_WORD[proj.nextTurn]||[proj.nextTurn||'—',proj.nextTurn||'—'];
+      var win=(proj.central&&proj.high)
+        ? L(esc(proj.central)+' – '+esc(proj.high),esc(proj.central)+' – '+esc(proj.high))
+        : L('—','—');
+      return '<tr data-id="'+esc(s.id)+'"'+(LIT===s.id?' class="is-lit"':'')+'>'
+        +'<td>'+L(esc(s.name),esc(s.name_zh||s.name))
+          +'<span class="r3-tk tnum">'+esc(s.ticker||'')+'</span></td>'
+        +'<td>'+L(esc(ph),esc(PHASE_ZH[ph]||ph))+'</td>'
+        +'<td class="num tnum">'+(now.pos==null?'—':Math.round(now.pos))+'</td>'
+        +'<td class="num tnum">'+esc(proj.last_confirmed_t||'—')+'</td>'
+        +'<td>'+L('next '+turn[0]+' '+esc(proj.central||'—'),'下一'+turn[1]+' '+esc(proj.central||'—'))
+          +'<span class="r3-tk tnum">'+esc((proj.low||'—')+' – '+(proj.high||'—'))+'</span></td>'
+        +'</tr>';
+    }).join('');
+  }
+  function cycDraw(){
+    var svg=el('r3-cyc-svg'); if(!svg||!CYC) return;
+    while(svg.firstChild) svg.removeChild(svg.firstChild);
+    var CW=720, CH=240;
+    var dom=(CYC.meta&&CYC.meta.xDomainDefault)||(CYC.meta&&CYC.meta.xDomain)||[0,1];
+    var x0=dom[0], x1=dom[1], span=(x1-x0)||1;
+    /* the time axis, from the producer's own default window */
+    var ax=el('r3-cyc-axis');
+    if(ax){
+      var yrs=[], y=Math.ceil(x0);
+      while(y<=Math.floor(x1)){ yrs.push(y); y++; }
+      ax.innerHTML=yrs.map(function(v){ return '<span class="tnum">'+v+'</span>'; }).join('');
+    }
+    [0,50,100].forEach(function(v){
+      var y=CH-(v/100)*CH;
+      svg.appendChild(svgEl('line',{class:'r3-cycgrid',x1:0,y1:y,x2:CW,y2:y}));
+    });
+    var litRec=null;
+    CYC.sectors.forEach(function(s){
+      if(!s.osc||!s.osc.length) return;
+      var pts=[];
+      for(var i=0;i<s.osc.length;i++){
+        var p=s.osc[i];
+        if(p.x<x0||p.v==null) continue;
+        pts.push((((p.x-x0)/span)*CW).toFixed(1)+','+(CH-(Math.max(0,Math.min(100,p.v))/100)*CH).toFixed(1));
+      }
+      if(pts.length<2) return;
+      var lit=(LIT===s.id);
+      var path=svgEl('polyline',{class:'r3-cycline'+(lit?' is-lit':''),points:pts.join(' ')});
+      if(lit) litRec={s:s,last:pts[pts.length-1].split(',')};
+      svg.appendChild(path);
+    });
+    if(litRec) svg.appendChild(svgEl('line',{class:'r3-cycnow',
+      x1:litRec.last[0],y1:(+litRec.last[1]-13),x2:litRec.last[0],y2:(+litRec.last[1]+13),
+      'vector-effect':'non-scaling-stroke'}));
+    var lab=el('r3-cyc-lit');
+    if(lab&&litRec){
+      var now=litRec.s.now||{}, ph=now.phaseLabel||'—';
+      lab.innerHTML=L(esc(litRec.s.name)+' — '+esc(ph)+' · '+(now.pos==null?'—':Math.round(now.pos))+'/100',
+        esc(litRec.s.name_zh||litRec.s.name)+' — '+esc(PHASE_ZH[ph]||ph)+' · '
+          +(now.pos==null?'—':Math.round(now.pos))+'/100');
+    }
+  }
+  function cycLight(id){
+    if(!CYC||LIT===id) return;
+    LIT=id; cycRows(); cycDraw();
+  }
+
+  /* ── the gated-read board (window.SECTOR_CENTRAL, build-time embed) ──────── */
+  function boardRender(){
+    var host=el('r3-board-rows'); if(!host) return;
+    var Dt=window.SECTOR_CENTRAL;
+    if(!Dt||!Dt.sectors||!Dt.sectors.length){
+      host.innerHTML='<div class="r3-empty"><div class="r3-empty-line">'
+        +L('No sector reads tonight.','今晚暂无板块研判。')+'</div>'
+        +'<div class="r3-empty-why">'+L('The conviction board is built with the nightly close; it will return with the next one.',
+          '信念看板随每晚收盘构建，将于下一次构建后回归。')+'</div></div>';
+      return;
+    }
+    /* producer order preserved verbatim (meta.board_order = fast-lens) */
+    host.innerHTML=Dt.sectors.map(function(s){
+      var c=s.conviction||{}, rot=s.rotation||null, st=s.state||{};
+      var whyEn=rot&&rot.state_plain_en?rot.state_plain_en:(st.phaseLabel||'');
+      var whyZh=rot&&(rot.state_plain_zh||rot.state_plain_en)?(rot.state_plain_zh||rot.state_plain_en)
+        :(st.phaseLabel||'');
+      var chain=(s.reasoning||[]).map(function(r){
+        return '<div class="r3-chainrow">'
+          +'<span class="r3-chainlay">'+L(esc(r.layer||''),esc(LAYER_ZH[r.layer]||r.layer||''))+'</span>'
+          +'<span class="r3-chaintx">'+L(esc(r.en||''),esc(r.zh||r.en||''))
+          +'<span class="r3-chaintier">'+L(esc(r.tier||''),esc(TIER_ZH[r.tier]||r.tier||''))+'</span></span></div>';
+      }).join('');
+      var split=s.split_view
+        ? '<p class="r3-callout r3-greadsplit">'+L(esc(s.split_copy_en||''),esc(s.split_copy_zh||s.split_copy_en||''))+'</p>'
+        : '';
+      return '<details class="r3-gread"><summary>'
+        +'<span class="r3-greadnm">'+L(esc(s.name),esc(s.name_zh||s.name))
+          +'<span class="r3-greadtk tnum">'+esc(s.ticker||'')+'</span></span>'
+        +'<span class="r3-greadfig">'
+          +'<span class="r3-greadlab">'+L(esc(c.label_en||'—'),esc(c.label_zh||c.label_en||'—'))+'</span>'
+          +'<span class="r3-greadsc">'+(c.score==null?'—':c.score)+'</span></span>'
+        +'<span class="r3-greadwhy">'+L(esc(whyEn),esc(whyZh))+'</span>'
+        +'<span class="r3-chev" aria-hidden="true"></span>'
+        +'<span class="r3-vh">'+L('Open the full read for '+esc(s.name),'展开'+esc(s.name_zh||s.name)+'的完整研判')+'</span>'
+        +'</summary>'
+        +'<div class="r3-greadbody">'
+        +'<div class="r3-chain">'+chain+'</div>'
+        +split
+        +'<p class="r3-selopen"><a class="r3-more" href="sector_cycles.html#'+encodeURIComponent(s.id)+'" data-ref-nav>'
+          +L('Open the cycle for '+esc(s.name),'打开'+esc(s.name_zh||s.name)+'的周期')+'</a></p>'
+        +'</div></details>';
+    }).join('');
+  }
+
+  /* ── wiring ──────────────────────────────────────────────────────────────── */
+  function wire(){
+    var scope=el('r3-map-scope');
+    if(scope) scope.addEventListener('click',function(e){
+      var b=e.target.closest('button'); if(!b||!scope.contains(b)) return;
+      scope.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed','false'); });
+      b.setAttribute('aria-pressed','true');
+      SCOPE=b.getAttribute('data-scope'); SEL=null; SHOWALL=false; renderAll();
+      /* the answer line is composed from the SAME array the map draws
+         (si_workspace.js:166 readMap → window.__siRvxData), so a scope change has
+         to re-compose it or the answer and the view disagree. */
+      if(typeof window.__siViewReads==='function'){ try{ window.__siViewReads(); }catch(e){} }
+    });
+    var sa=el('r3-map-showall');
+    if(sa) sa.addEventListener('click',function(){ SHOWALL=!SHOWALL; drawRows(); });
+
+    /* selection follows the ranked list: hovering OR focusing a row lights the
+       matching dot.  That is the keyboard path for a chart whose dots are not in
+       the tab order — hover is never the only way in (master design system §14). */
+    var rows=el('r3-map-rows');
+    if(rows){
+      rows.addEventListener('mouseover',function(e){
+        var tr=e.target.closest('tr'); if(tr&&tr.dataset.id) select(tr.dataset.id); });
+      rows.addEventListener('focusin',function(e){
+        var tr=e.target.closest('tr'); if(tr&&tr.dataset.id) select(tr.dataset.id); });
+    }
+    var crows=el('r3-cyc-rows');
+    if(crows){
+      crows.addEventListener('mouseover',function(e){
+        var tr=e.target.closest('tr'); if(tr&&tr.dataset.id) cycLight(tr.dataset.id); });
+      crows.addEventListener('focusin',function(e){
+        var tr=e.target.closest('tr'); if(tr&&tr.dataset.id) cycLight(tr.dataset.id); });
+      crows.addEventListener('click',function(e){
+        var tr=e.target.closest('tr'); if(tr&&tr.dataset.id) cycLight(tr.dataset.id); });
+    }
+
+    /* phone disclosure for the full map.  The container is collapsed with
+       max-height/visibility, never display:none (spec §8.1). */
+    var tog=el('r3-map-toggle'), fig=el('r3-map-fig');
+    function syncToggle(){
+      if(!tog||!fig) return;
+      var open=fig.getAttribute('data-collapsed')==='false';
+      tog.setAttribute('aria-expanded',String(open));
+      tog.innerHTML=open?L('Hide the full map','收起完整轮动图')
+                        :L('Show the full map','查看完整轮动图');
+    }
+    if(tog&&fig){
+      /* default on a phone: collapsed, so the answer, the summary, the selected
+         object and the ranked list own the first screens (commission §9). */
+      if(window.matchMedia&&window.matchMedia('(max-width:767px)').matches)
+        fig.setAttribute('data-collapsed','true');
+      syncToggle();
+      tog.addEventListener('click',function(){
+        fig.setAttribute('data-collapsed',
+          fig.getAttribute('data-collapsed')==='true'?'false':'true');
+        syncToggle();
+      });
+    }
+    document.addEventListener('langchange',function(){
+      renderAll(); cycRows(); cycDraw(); boardRender(); syncToggle(); syncScopeLabel();
+    });
+  }
+
+  /* QA2-10: the universe-switch group's own accessible name was English-only
+     under ZH; the two button labels it contains already twin (主题/板块). */
+  function syncScopeLabel(){
+    var scope=el('r3-map-scope'); if(!scope) return;
+    scope.setAttribute('aria-label', isZh()
+      ? '切换轮动图的主题或板块' : 'Show themes or sectors on the rotation map');
+  }
+
+  function boot(){
+    renderAll(); cycInit(); boardRender(); wire(); syncScopeLabel();
+    /* the composed read strip can only be built once __siRvxData answers */
+    if(typeof window.__siViewReads==='function'){ try{ window.__siViewReads(); }catch(e){} }
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot);
+  else boot();
+})();
+</script>
+</section>

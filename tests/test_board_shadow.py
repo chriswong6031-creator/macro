@@ -33,6 +33,23 @@ from lib import config  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
+# Shared session date
+# ---------------------------------------------------------------------------
+# ``write_shadow`` stamps itself from the real wall clock and refuses any row
+# whose ``session_date`` trails that stamp by more than
+# ``bs.SETTLE_WINDOW_DAYS`` (K8b/F10).  A hard-coded session date is therefore a
+# time bomb: it passes until it ages out, then every POSITIVE CONTROL in this
+# file -- the arms that assert the writer wrote > 0 rows -- flips red on a UTC
+# date rollover with no commit anywhere near this substrate.  A literal
+# ``2026-08-21`` did exactly that at 2026-08-25T00:00Z, reddening
+# ``board-shadow-substrate`` on main and on every branch cut from it.  Deriving
+# the date from the clock keeps the settle-window fence itself under test --
+# the ancient ``2020-01-01`` stale-refusal control below is deliberately NOT
+# derived, so the negative arm still proves the fence refuses.
+ASOF = (dt.date.today() - dt.timedelta(days=1)).isoformat()
+
+
+# ---------------------------------------------------------------------------
 # Shared fixtures / helpers
 # ---------------------------------------------------------------------------
 @pytest.fixture(autouse=True)
@@ -162,7 +179,7 @@ def test_k1_ca_zero_authority_breach_and_non_vacuity(tmp_path, monkeypatch):
             import engine.board_shadow  # noqa: F401,PLC0415 — re-import after delitem
 
         setups = {"buy": copy.deepcopy(_population())}
-        latest = {"date": "2026-08-21"}
+        latest = {"date": ASOF}
         health = build_canada._canada_board_ledger(setups, latest)
         assert not any(h.get("status") == "ERROR" for h in health), health
 
@@ -193,9 +210,9 @@ def test_k1_ca_zero_authority_breach_and_non_vacuity(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "data_dir", lambda: tmp_path / "nonvacuity")
     bs.CHALLENGER_REGISTRY.clear()
     _lane_on(monkeypatch, "CA")
-    _seed_board_ledger(monkeypatch, "CA", "2026-08-21", _population())
+    _seed_board_ledger(monkeypatch, "CA", ASOF, _population())
     _register_adversarial()
-    result = bs.write_shadow(_population(), market="CA", asof="2026-08-21")
+    result = bs.write_shadow(_population(), market="CA", asof=ASOF)
     assert result["written"] > 0, "POSITIVE CONTROL: the adversarial write must write > 0 rows"
     lane_a = _lane_a_frame("CA")
     assert lane_a is not None and len(lane_a) == 4
@@ -240,14 +257,14 @@ def test_k1_hk_zero_authority_byte_identity(monkeypatch):
     out = {"buy": buys, "board_definition": "hk_prophet_v1"}
     before = json.dumps(out, sort_keys=True, default=str)
 
-    _seed_board_ledger(monkeypatch, "HK", "2026-08-21", calls)
+    _seed_board_ledger(monkeypatch, "HK", ASOF, calls)
 
     def _hostile_rank_fn(inner_calls):
         inner_calls[0]["ticker"] = "HACKED"  # attempt to mutate the writer's population
         return _reversed_rank_fn(inner_calls)
 
     bs.register_challenger("HK", "hostile_v1", rank_fn=_hostile_rank_fn)
-    result = bs.write_shadow(calls, market="HK", asof="2026-08-21")
+    result = bs.write_shadow(calls, market="HK", asof=ASOF)
     assert result["written"] > 0  # POSITIVE CONTROL
 
     after = json.dumps(out, sort_keys=True, default=str)
@@ -309,7 +326,7 @@ def test_write_surface_fence_only_data_prophet_shadow_is_touched(tmp_path, monke
     # Seed board_ledger's own store FIRST (a legitimate prior write) so its
     # mtime/size are already part of the "before" snapshot — write_shadow
     # itself must not re-touch it either.
-    n = board_ledger.append_board(copy.deepcopy(calls), market="CA", asof="2026-08-21")
+    n = board_ledger.append_board(copy.deepcopy(calls), market="CA", asof=ASOF)
     assert n > 0
 
     def _snapshot() -> dict[str, tuple[int, int]]:
@@ -322,7 +339,7 @@ def test_write_surface_fence_only_data_prophet_shadow_is_touched(tmp_path, monke
 
     before = _snapshot()
     _register_adversarial()
-    result = bs.write_shadow(calls, market="CA", asof="2026-08-21")
+    result = bs.write_shadow(calls, market="CA", asof=ASOF)
     assert result["written"] > 0  # POSITIVE CONTROL
     after = _snapshot()
 
@@ -395,7 +412,7 @@ def test_write_surface_fence_only_data_prophet_shadow_is_touched_hk(tmp_path, mo
 
     before = _snapshot()
     bs.register_challenger("HK", "hk_discovery_v1", discovery_fn=_discovery_fn_ok)
-    result = bs.write_shadow([], market="HK", asof="2026-08-21")
+    result = bs.write_shadow([], market="HK", asof=ASOF)
     assert result["written"] > 0  # POSITIVE CONTROL
     after = _snapshot()
 
@@ -424,7 +441,7 @@ def test_k2_population_is_never_reoriginated_from_the_challenger(monkeypatch):
     monkeypatch  # noqa: B018
     _lane_on(monkeypatch, "CA")
     calls = _population()
-    _seed_board_ledger(monkeypatch, "CA", "2026-08-21", calls)
+    _seed_board_ledger(monkeypatch, "CA", ASOF, calls)
 
     def _rank_fn(_calls):
         base = _reversed_rank_fn(_calls)
@@ -432,7 +449,7 @@ def test_k2_population_is_never_reoriginated_from_the_challenger(monkeypatch):
         return base
 
     bs.register_challenger("CA", "offlist_v1", rank_fn=_rank_fn)
-    result = bs.write_shadow(calls, market="CA", asof="2026-08-21")
+    result = bs.write_shadow(calls, market="CA", asof=ASOF)
     assert result["written"] > 0  # POSITIVE CONTROL
 
     frame = _lane_a_frame("CA")
@@ -542,7 +559,7 @@ def test_k3_private_grader_runtime_guard(monkeypatch):
     """
     _lane_on(monkeypatch, "CA")
     calls = _population()
-    _seed_board_ledger(monkeypatch, "CA", "2026-08-21", calls)
+    _seed_board_ledger(monkeypatch, "CA", ASOF, calls)
     board_path = board_ledger._store_path("CA")
 
     real_read_parquet = pd.read_parquet
@@ -564,7 +581,7 @@ def test_k3_private_grader_runtime_guard(monkeypatch):
     monkeypatch.setattr(bs.pd, "read_parquet", _guarded_read_parquet)
     monkeypatch.setattr(_store_module, "read", _guarded_store_read)
     _register_adversarial()
-    result = bs.write_shadow(calls, market="CA", asof="2026-08-21")
+    result = bs.write_shadow(calls, market="CA", asof=ASOF)
     assert result["written"] > 0, "POSITIVE CONTROL: writer must still succeed under the guard"
 
 
@@ -620,9 +637,9 @@ def test_k4_whitespace_bearing_definition_is_normalised(monkeypatch):
     call.get('board_definition') raw."""
     _lane_on(monkeypatch, "CA")
     calls = [{"ticker": "AAA", "group": "entry_open", "board_definition": " test_board_v1 "}]
-    _seed_board_ledger(monkeypatch, "CA", "2026-08-21", calls)
+    _seed_board_ledger(monkeypatch, "CA", ASOF, calls)
     _register_adversarial()
-    result = bs.write_shadow(calls, market="CA", asof="2026-08-21")
+    result = bs.write_shadow(calls, market="CA", asof=ASOF)
     assert result["written"] > 0  # POSITIVE CONTROL
     frame = _lane_a_frame("CA")
     assert frame is not None
@@ -664,7 +681,7 @@ def test_k5_missing_challenger_score_is_null_not_zero(monkeypatch):
     `_finite(...)` (None stays None)."""
     _lane_on(monkeypatch, "CA")
     calls = _population()
-    _seed_board_ledger(monkeypatch, "CA", "2026-08-21", calls)
+    _seed_board_ledger(monkeypatch, "CA", ASOF, calls)
 
     def _partial_rank_fn(_calls):
         # Only scores AAA and BBB — CCC/DDD are unscored (missing, not 0).
@@ -674,7 +691,7 @@ def test_k5_missing_challenger_score_is_null_not_zero(monkeypatch):
         }
 
     bs.register_challenger("CA", "partial_v1", rank_fn=_partial_rank_fn)
-    result = bs.write_shadow(calls, market="CA", asof="2026-08-21")
+    result = bs.write_shadow(calls, market="CA", asof=ASOF)
     assert result["written"] > 0  # POSITIVE CONTROL
 
     frame = _lane_a_frame("CA").set_index("ticker")
@@ -935,12 +952,12 @@ def test_k7_shadow_writer_never_touches_board_ledger_store(monkeypatch):
     grade() legitimately rewrites that parquet on-lane (F-K7)."""
     _lane_on(monkeypatch, "CA")
     calls = _population()
-    _seed_board_ledger(monkeypatch, "CA", "2026-08-21", calls)
+    _seed_board_ledger(monkeypatch, "CA", ASOF, calls)
     board_path = board_ledger._store_path("CA")
     before = pd.read_parquet(board_path)
 
     _register_adversarial()
-    result = bs.write_shadow(calls, market="CA", asof="2026-08-21")
+    result = bs.write_shadow(calls, market="CA", asof=ASOF)
     assert result["written"] > 0  # POSITIVE CONTROL
 
     after = pd.read_parquet(board_path)
@@ -1145,13 +1162,13 @@ def test_k10_coverage_denominator_is_population_n_only(monkeypatch):
     validator identities fail on any other denominator (e.g. buy-lane-only)."""
     _lane_on(monkeypatch, "CA")
     calls = _population()  # 4 names, 1 of which is 'watch'
-    _seed_board_ledger(monkeypatch, "CA", "2026-08-21", calls)
+    _seed_board_ledger(monkeypatch, "CA", ASOF, calls)
 
     def _rank_fn(_calls):
         return {"AAA": {"score_raw": 1.0}, "BBB": {"score_raw": 2.0}}  # 2 of 4 scored
 
     bs.register_challenger("CA", "cov_v1", rank_fn=_rank_fn)
-    result = bs.write_shadow(calls, market="CA", asof="2026-08-21")
+    result = bs.write_shadow(calls, market="CA", asof=ASOF)
     assert result["written"] > 0  # POSITIVE CONTROL
 
     frame = _lane_a_frame("CA")
@@ -1169,7 +1186,7 @@ def test_k10_store_validator_catches_a_bad_denominator():
     monkeypatch_path = bs._lane_a_path("CA")
     monkeypatch_path.parent.mkdir(parents=True, exist_ok=True)
     bad = pd.DataFrame([
-        {"date": "2026-08-21", "market": "CA", "ticker": "AAA",
+        {"date": ASOF, "market": "CA", "ticker": "AAA",
          "challenger_definition": "bad_v1", "population_n": 4,
          "challenger_rank": 1, "challenger_coverage": 0.5},  # should be 1/4=0.25
     ])
@@ -1230,13 +1247,13 @@ def test_k12_incumbent_rank_matches_board_pos_with_a_ticker_less_row(monkeypatch
         {"ticker": "AAA", "group": "entry_open", "board_definition": "test_board_v1"},
         {"ticker": "BBB", "group": "entry_open", "board_definition": "test_board_v1"},
     ]
-    _seed_board_ledger(monkeypatch, "CA", "2026-08-21", calls_with_gap)
+    _seed_board_ledger(monkeypatch, "CA", ASOF, calls_with_gap)
     board_frame = pd.read_parquet(board_ledger._store_path("CA"))
     real_positions = dict(zip(board_frame["ticker"].astype(str), board_frame["board_pos"]))
     assert real_positions == {"AAA": 2, "BBB": 3}  # the gap at pos=1 is real, not a bug
 
     _register_adversarial()
-    result = bs.write_shadow(calls_with_gap, market="CA", asof="2026-08-21")
+    result = bs.write_shadow(calls_with_gap, market="CA", asof=ASOF)
     assert result["written"] > 0  # POSITIVE CONTROL
 
     frame = _lane_a_frame("CA").set_index("ticker")
@@ -1261,7 +1278,7 @@ def test_k13_challenger_rank_is_dense_over_the_minted_population_with_nulls(monk
     exists to KILL, not an equally valid interpretation."""
     _lane_on(monkeypatch, "CA")
     calls = _population()  # population_n = 4
-    _seed_board_ledger(monkeypatch, "CA", "2026-08-21", calls)
+    _seed_board_ledger(monkeypatch, "CA", ASOF, calls)
 
     def _rank_fn(_calls):
         # Only 2 of 4 scored, with a TIE, to also assert dense (not skip) ranking.
@@ -1271,7 +1288,7 @@ def test_k13_challenger_rank_is_dense_over_the_minted_population_with_nulls(monk
         }
 
     bs.register_challenger("CA", "dense_v1", rank_fn=_rank_fn)
-    result = bs.write_shadow(calls, market="CA", asof="2026-08-21")
+    result = bs.write_shadow(calls, market="CA", asof=ASOF)
     assert result["written"] > 0  # POSITIVE CONTROL
 
     frame = _lane_a_frame("CA").set_index("ticker")
@@ -1465,8 +1482,8 @@ def test_k17_lane_a_rank_challenger_market_isolation(monkeypatch):
     bs.register_challenger("CA", "ca_only_rank_v1", rank_fn=_ca_only_rank_fn)
 
     # CA leg — must invoke ONLY the CA-registered rank_fn.
-    _seed_board_ledger(monkeypatch, "CA", "2026-08-21", calls)
-    result_ca = bs.write_shadow(calls, market="CA", asof="2026-08-21")
+    _seed_board_ledger(monkeypatch, "CA", ASOF, calls)
+    result_ca = bs.write_shadow(calls, market="CA", asof=ASOF)
     assert hk_invocations == [], "an HK-only rank_fn must never be invoked by a CA write_shadow call"
     assert ca_invocations == ["called"]
     assert result_ca["written"] > 0  # POSITIVE CONTROL
@@ -1475,8 +1492,8 @@ def test_k17_lane_a_rank_challenger_market_isolation(monkeypatch):
 
     # HK leg (mirror) — must invoke ONLY the HK-registered rank_fn, and the
     # CA-only rank_fn must not fire again either.
-    _seed_board_ledger(monkeypatch, "HK", "2026-08-21", calls)
-    result_hk = bs.write_shadow(calls, market="HK", asof="2026-08-21")
+    _seed_board_ledger(monkeypatch, "HK", ASOF, calls)
+    result_hk = bs.write_shadow(calls, market="HK", asof=ASOF)
     assert hk_invocations == ["called"]
     assert ca_invocations == ["called"], "the CA-only rank_fn must not be invoked again by the HK call"
     assert result_hk["written"] > 0  # POSITIVE CONTROL
@@ -1855,7 +1872,7 @@ def test_empty_registry_is_distinguishable_from_a_broken_writer(monkeypatch, cap
     distinguishable from a broken writer, not silently indistinguishable."""
     _lane_on(monkeypatch, "CA")
     with caplog.at_level("INFO"):
-        result = bs.write_shadow(_population(), market="CA", asof="2026-08-21")
+        result = bs.write_shadow(_population(), market="CA", asof=ASOF)
     assert result["registry_state"] == "no_challenger_registered"
     assert result["written"] == 0
 
@@ -1864,9 +1881,9 @@ def test_populated_pass_logs_wrote_n_rows(monkeypatch):
     """F16 mirror: a populated pass logs registry_state=wrote_n_rows n=<n>."""
     _lane_on(monkeypatch, "CA")
     calls = _population()
-    _seed_board_ledger(monkeypatch, "CA", "2026-08-21", calls)
+    _seed_board_ledger(monkeypatch, "CA", ASOF, calls)
     _register_adversarial()
-    result = bs.write_shadow(calls, market="CA", asof="2026-08-21")
+    result = bs.write_shadow(calls, market="CA", asof=ASOF)
     assert result["registry_state"].startswith("wrote_n_rows n=")
     assert result["written"] > 0
 
@@ -1877,7 +1894,7 @@ def test_off_lane_ca_is_a_fail_soft_no_op(monkeypatch):
     monkeypatch.delenv("COLLECT_LANE", raising=False)
     monkeypatch.delenv("CN_LANE", raising=False)
     _register_adversarial()
-    result = bs.write_shadow(_population(), market="CA", asof="2026-08-21")
+    result = bs.write_shadow(_population(), market="CA", asof=ASOF)
     assert result["written"] == 0
     assert result["registry_state"] == "off_lane"
 
@@ -1886,7 +1903,7 @@ def test_off_lane_hk_is_a_fail_soft_no_op(monkeypatch):
     monkeypatch.delenv("COLLECT_LANE", raising=False)
     monkeypatch.delenv("CN_LANE", raising=False)
     _register_adversarial(market="HK")
-    result = bs.write_shadow(_population(), market="HK", asof="2026-08-21")
+    result = bs.write_shadow(_population(), market="HK", asof=ASOF)
     assert result["written"] == 0
     assert result["registry_state"] == "off_lane"
 
@@ -1898,7 +1915,7 @@ def test_ledger_lane_import_failure_is_fail_closed(monkeypatch):
     monkeypatch.setitem(sys.modules, "engine.ledger_lane", None)
     try:
         _register_adversarial()
-        result = bs.write_shadow(_population(), market="CA", asof="2026-08-21")
+        result = bs.write_shadow(_population(), market="CA", asof=ASOF)
         assert result["written"] == 0
         assert result["registry_state"] == "off_lane"
     finally:
@@ -1910,13 +1927,13 @@ def test_write_shadow_never_raises_on_a_hostile_registered_challenger(monkeypatc
     build — write_shadow degrades to null-scored rows (or zero rows) and
     continues, never propagating the exception."""
     _lane_on(monkeypatch, "CA")
-    _seed_board_ledger(monkeypatch, "CA", "2026-08-21", _population())
+    _seed_board_ledger(monkeypatch, "CA", ASOF, _population())
 
     def _boom(_calls):
         raise RuntimeError("boom")
 
     bs.register_challenger("CA", "boom_v1", rank_fn=_boom)
-    result = bs.write_shadow(_population(), market="CA", asof="2026-08-21")  # must not raise
+    result = bs.write_shadow(_population(), market="CA", asof=ASOF)  # must not raise
     assert result["registry_state"].startswith("wrote_n_rows")
     frame = _lane_a_frame("CA")
     if frame is not None and len(frame):
@@ -1932,9 +1949,9 @@ def test_cross_store_validator_clean_case(monkeypatch):
     board_pos and board_definition, in the ordinary case."""
     _lane_on(monkeypatch, "CA")
     calls = _population()
-    _seed_board_ledger(monkeypatch, "CA", "2026-08-21", calls)
+    _seed_board_ledger(monkeypatch, "CA", ASOF, calls)
     _register_adversarial()
-    bs.write_shadow(calls, market="CA", asof="2026-08-21")
+    bs.write_shadow(calls, market="CA", asof=ASOF)
     violations = bs.validate_lane_a_against_board_ledger("CA")
     assert violations == [], violations
 
@@ -1947,13 +1964,13 @@ def test_cross_store_validator_catches_a_mismatch():
     board_path = board_ledger._store_path("CA")
     board_path.parent.mkdir(parents=True, exist_ok=True)
     pd.DataFrame([
-        {"date": "2026-08-21", "ticker": "AAA", "board_pos": 1, "board_definition": "test_board_v1"},
+        {"date": ASOF, "ticker": "AAA", "board_pos": 1, "board_definition": "test_board_v1"},
     ]).to_parquet(board_path, index=False)
 
     lane_a_path = bs._lane_a_path("CA")
     lane_a_path.parent.mkdir(parents=True, exist_ok=True)
     pd.DataFrame([
-        {"date": "2026-08-21", "market": "CA", "ticker": "AAA",
+        {"date": ASOF, "market": "CA", "ticker": "AAA",
          "incumbent_definition": "test_board_v1", "incumbent_rank": 99,  # WRONG — should be 1
          "challenger_definition": "x"},
     ]).to_parquet(lane_a_path, index=False)
@@ -2035,14 +2052,14 @@ def _receipt_path(market: str) -> Path:
 def test_discovery_receipt_written_on_a_successful_pass(monkeypatch):
     _lane_on(monkeypatch, "HK")
     bs.register_challenger("HK", "hk_discovery_v1", discovery_fn=_discovery_fn_ok)
-    result = bs.write_shadow([], market="HK", asof="2026-08-21")
+    result = bs.write_shadow([], market="HK", asof=ASOF)
     assert result["written"] == 1  # POSITIVE CONTROL
 
     path = _receipt_path("HK")
     assert path.exists()
     payload = json.loads(path.read_text())
     assert payload["market"] == "HK"
-    assert payload["as_of"] == "2026-08-21"
+    assert payload["as_of"] == ASOF
     assert payload["registry_state"] == "wrote_n_rows n=1"
     assert payload["written"] == 1
     assert payload["definitions"] == ["hk_discovery_v1"]
@@ -2056,7 +2073,7 @@ def test_discovery_receipt_not_written_when_the_market_has_no_registration(monke
     for THIS market's own call."""
     _lane_on(monkeypatch, "CA")
     bs.register_challenger("HK", "hk_discovery_v1", discovery_fn=_discovery_fn_ok)
-    result = bs.write_shadow([], market="CA", asof="2026-08-21")
+    result = bs.write_shadow([], market="CA", asof=ASOF)
     assert result["registry_state"] == "no_challenger_for_market"
     assert not _receipt_path("CA").exists()
 
@@ -2072,7 +2089,7 @@ def test_discovery_receipt_written_on_the_error_path(monkeypatch):
         raise RuntimeError("synthetic substrate failure")
 
     monkeypatch.setattr(bs, "_read_incumbent_positions", _boom)
-    result = bs.write_shadow([], market="HK", asof="2026-08-21")
+    result = bs.write_shadow([], market="HK", asof=ASOF)
     assert result["registry_state"] == "error"
 
     path = _receipt_path("HK")
@@ -2090,7 +2107,7 @@ def test_discovery_receipt_names_a_per_registration_challenger_failure(monkeypat
         raise RuntimeError("challenger exploded")
 
     bs.register_challenger("HK", "hk_discovery_v1", discovery_fn=_boom_discovery)
-    result = bs.write_shadow([], market="HK", asof="2026-08-21")
+    result = bs.write_shadow([], market="HK", asof=ASOF)
     assert result["registry_state"] == "wrote_n_rows n=0"
 
     payload = json.loads(_receipt_path("HK").read_text())
@@ -2116,10 +2133,50 @@ def test_write_surface_fence_accepts_the_hk_discovery_receipt_path(monkeypatch):
     below."""
     _lane_on(monkeypatch, "HK")
     bs.register_challenger("HK", "hk_discovery_v1", discovery_fn=_discovery_fn_ok)
-    result = bs.write_shadow([], market="HK", asof="2026-08-21")
+    result = bs.write_shadow([], market="HK", asof=ASOF)
     assert result["written"] == 1  # POSITIVE CONTROL
 
     changed = {"prophet_shadow/hk_discovery_receipt.json", "prophet_shadow/hk_discovery.parquet"}
     assert _offenders_for_market(changed, "HK") == []
     # Mirror: a CA pass must reject an HK-named receipt as a foreign file.
     assert _offenders_for_market(changed, "CA") == list(sorted(changed))
+
+
+# ---------------------------------------------------------------------------
+# Regression: the shared session date must never age out of the settle window
+# ---------------------------------------------------------------------------
+def test_shared_session_date_can_never_age_out_of_the_settle_window():
+    """A literal session date silently disarms every POSITIVE CONTROL here.
+
+    ``_settle_violation`` compares ``session_date`` against a stamp taken from
+    the real wall clock, so a hard-coded date passes only until it drifts past
+    ``SETTLE_WINDOW_DAYS``.  A literal ``2026-08-21`` aged out at
+    ``2026-08-25T00:00Z`` and turned ``board-shadow-substrate`` red on main and
+    on every branch cut from it, with no commit touching this substrate --
+    exactly the failure mode a POSITIVE CONTROL exists to make loud.  Pin the
+    property rather than the date, and keep the stale arm genuinely stale so
+    the fence itself is still under test in both directions.
+    """
+    today = dt.date.today().isoformat()
+    age = (dt.date.today() - dt.date.fromisoformat(ASOF)).days
+    assert 0 <= age <= bs.SETTLE_WINDOW_DAYS
+    assert not bs._settle_violation(ASOF, today)
+    # the deliberately ancient negative arm must still be refused
+    assert bs._settle_violation("2020-01-01", today)
+    # and the fence must still bite one day past the window
+    just_past = (dt.date.today() - dt.timedelta(days=bs.SETTLE_WINDOW_DAYS + 1)).isoformat()
+    assert bs._settle_violation(just_past, today)
+
+
+def test_no_bare_session_date_literal_reintroduces_the_time_bomb():
+    """Guard the repair: only the ancient stale arm may be a bare date literal."""
+    source = (ROOT / "tests/test_board_shadow.py").read_text()
+    code = "\n".join(
+        line.split("#", 1)[0] for line in source.splitlines()
+        if not line.lstrip().startswith("#")
+    )
+    literals = set(re.findall(r'"(20\d{2}-\d{2}-\d{2})"', code))
+    assert literals <= {"2020-01-01"}, (
+        f"bare session-date literal(s) {sorted(literals - {'2020-01-01'})} will age out of "
+        "SETTLE_WINDOW_DAYS and red this pack on a date rollover -- use ASOF"
+    )

@@ -199,7 +199,7 @@ waves:
       agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-23-d5-implementation.md.
   - id: D6-A
     title: DoD P-1/R-1 budget rail activation (official source expansion, first rail)
-    status: in_progress
+    status: done
     depends_on: [D5]
     next_action: >
       Sol-authorized 2026-08-24 (macro PR #6355 comment 5395051048) under
@@ -227,13 +227,77 @@ waves:
       dod-budget-401e0479c00c449c3b4bd7e0), graph builds+validates locally
       (grbg1-125cd95cc0e78c5f459c1ad2, 2,143 programs), opus adversarial
       review FAIL→repaired (e0095c1299f1; component-leak + E-7 blockers
-      fixed with mutation-proven tests). Production proof (live twins via
-      government-revenue-live, nonzero API, served Budget & Programs bytes,
-      anonymous 401 boundary) completes post-merge and goes to Sol in the
-      return. Named unresolveds (retraction path before any parser-version
-      bump; FY2026 sub-cells; E-7 null ratification; NSBDF line-grain gap)
-      in agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-24-d6a-budget-rail.md.
-      D6-B+ and D7+ remain UNAUTHORIZED until D6-A returns to Sol.
+      fixed with mutation-proven tests). Carrier PR #6377 MERGED
+      2026-08-24T23:10:48Z as 2cfc5c73bd09 (head 49b3eb82c29b, CI runs
+      32769121453 + 32784681614 SUCCESS). PRODUCTION PROOF COMPLETE
+      2026-08-25T00:29Z: government-revenue-live run 32788159575 SUCCESS
+      published the graph twins in commit da305fa5a5e2 (descendant of the
+      merge; both twins sha256 a889ca79b967…, content_id
+      grbg1-125cd95cc0e78c5f459c1ad2, 2,143 programs / 2,172 lines /
+      2,172 edges); /api/health commit=2cfc5c73bd0 checkout=6af1ccd17c0
+      (descendant of da305fa5a5e2); in-process production handlers served
+      budget-programs total 2143 and both canaries (P-1 Virginia line 6
+      FY27 disc/total 8,402,316,000 qty FY25 1/FY26 2/FY27-total 2; R-1
+      0604558N New Design SSN FY27 237,103,000, no invented quantities)
+      byte-consistent with the committed receipt-bound triad rows;
+      Caddy-served /opt/macro/site.served/government-revenue-data/
+      budget-program.json sha-identical to the canonical generation;
+      anonymous probes all locked (API 401 missing bearer token; site
+      twin 401 locked:true). No authenticated-browser walkthrough
+      performed or required (Chairman sequencing amendment). D6-A =
+      done / SOL ACCEPTED / PROVEN_LIVE (2026-08-25, macro #6385 comment
+      5404403124, protected Sol Skillpack
+      Mastermind@4d323d03e4151449a4b76abfdfefca1d56825fde). Unresolved
+      rulings in that acceptance: (1) parser-generation retraction is a
+      BINDING PRECONDITION before any parser-version bump — no future
+      parser generation ships until generation scoping/tombstones are
+      frozen; (2) FY2026 sub-cells stay unrepresented — no enum widening
+      authorized; (3) E-7 all-null RATIFIED (computed implicit zero stays
+      forbidden); (4) NSBDF zero-numbered-line partitions accepted as a
+      named coverage/grain gap, verification-only. Handoff:
+      agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-24-d6a-budget-rail.md.
+  - id: D6-B0
+    title: FMS congressional-notification source migration + stage/contract architecture freeze
+    status: done
+    depends_on: [D6-A]
+    next_action: >
+      Sol-authorized 2026-08-25 in the D6-A acceptance ruling (macro
+      #6385 comment 5404403124): research/source-architecture wave ONLY.
+      DELIVERED 2026-08-25, awaiting Sol acceptance. The FREEZE
+      (research/defense_intelligence/DEFENSE_D6B_FMS_SOURCE_AND_STAGE_ARCHITECTURE_FREEZE_2026-08-25.md)
+      closes every commissioned decision: source boundary (State
+      PM-Bureau current surface for cases notified ≥2026-02-26 per EO
+      14383, both boundary statements receipted verbatim; DSCA
+      landing+Library history; FR as supplementary certification record
+      — 8 sha256-receipted census fetches, transport matrix proven:
+      state.gov CLI-200-deterministic, dsca.mil/media.defense.gov CLI-403
+      browser-only); identity = fms:transmittal:<yy-nn> with frozen
+      label-detection grammar, deterministic URL-path fallback, and
+      conflicted mis-key guard; SAMM-grounded six-stage namespace with
+      v1 proving ONLY congressional_notification and time NEVER
+      advancing stage; estimated_notification_value amount law with
+      cross-case aggregation forbidden; four-clock law (State-era
+      notification date null unless FR join); append-only correction law
+      grounded first-party (State edits posts in place — modified_time
+      5 months post-publication; DSCA Library preserves CNVn correction
+      versions); canonical owner = GovRev-owned FMS rail
+      (DEC:FMS-CANONICAL-OWNER-IS-GOVREV-FMS-RAIL — event.v2 rejected on
+      identity-seed evidence, its event_id seed requires award_key);
+      consumer = ninth bounded fms mode on government_revenue.html
+      (28,890 B measured headroom under the 303,104 fence, ≤8,192 B
+      shell delta); two-plane failure states mapped to canonical
+      spellings; golden canaries 26-13 (DSCA Saudi PAC-3 $9.0B) + 26-27
+      (State Sweden HIMARS $930M) + hostile stage-hold with zero
+      review-period arithmetic; fourteen merge-binding kill tests;
+      real-data reference composition. Opus adversarial review FAILed
+      the draft (5 blockers) — all repaired in c2cd79f96d3e before Sol.
+      Five unresolveds routed to Sol (U1 SAMM C5.7 receipt, U2 bulk
+      DSCA backfill depth, U3 FR join in v1, U4 boundary-window sweep,
+      U5 ZH glance vocabulary). D6-B IMPLEMENTATION REMAINS NOT
+      AUTHORIZED (paste-ready commission:
+      DEFENSE_D6B_FMS_IMPLEMENTATION_HANDOFF.md); D6-C+ and D7+ remain
+      UNAUTHORIZED. D5 remains BUILT_NOT_PROVEN (D5P deferred,
+      nonblocking; never relabel).
 landmines:
   - "Live page is government_revenue.html (underscore). government-revenue.html 404s."
   - "Access (site_full / 401 locked) is independent of epistemics (display/context_only). Do not conflate them."

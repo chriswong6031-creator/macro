@@ -1,0 +1,114 @@
+{
+  "adapter_repair_permitted": false,
+  "attempt_id": "S1F-OWNER-ATTEMPT-02",
+  "attempt_ordinal": 2,
+  "authority": {
+    "can_escalate": false,
+    "can_gate": false,
+    "can_originate_signal": false,
+    "can_rank": false,
+    "can_size": false
+  },
+  "canonical_owner_failed": false,
+  "classification": "COMPLETE_CANONICAL_OWNER_REPLAY",
+  "firewall": {
+    "forbidden_dirs_present": [],
+    "market_or_outcome_access": false,
+    "official_sec_hosts": [
+      "data.sec.gov",
+      "www.sec.gov"
+    ],
+    "price_counterfactual_rank_size_execution_mounts": []
+  },
+  "frozen_bindings": {
+    "audit_batch_plan_file_sha256": "6363ceb88aceb61cb7de5a7e5dbd40a325adb0e7aea3db36f1ad801a4f8b248c",
+    "audit_batch_plan_logical_sha256": "12b05972e24337dd008c4dc96e3e9a0aace30b6491a7b4ccbbde95c0e7f77bf7",
+    "contract_set_sha256": "d18011cc9cf5b1ece0fcb00a5b5283b6543bf2939f0d8195bba73d7c002293cc",
+    "exact70_selection_file_sha256": "6ff41a366bc4a6adc68abc2be374f5e0cbc01037a95dbc4f05b280f9cceee181",
+    "exact70_selection_logical_sha256": "2e852c8999a85e5039af4d3d49fa00e98b9774c60ddcb3bc41acebb3fb9d1cc1",
+    "exact70_selection_manifest_logical_sha256": "60296fcc12efa261a4e82ed2b8251572a155f22f2e501ae1881b860ed07aceda",
+    "owner_adapter_head_sha": "261e85cc5298982c3f157620c7ce1ac1ac27761d",
+    "selection_receipt_file_sha256": "39f9b7aaeb0f9ffd5443f9151fd82163c58b185b8092999a56ec19f912ceda56",
+    "selection_receipt_logical_sha256": "b84a61a3f8dcf7cd643d07163849194d5a00d97dbe42342f892c728036555bb4",
+    "triage_rule_file_sha256": "fda0746260e1d6faa3d96164032a6f6ae7d97e3d222e28a2c3ca9c432035b0af",
+    "triage_rule_logical_sha256": "ae50a6d6b20e09a255e1755217018739a7ad0699d9b63c546c413583aedc10ed"
+  },
+  "historical_owner_evidence": {
+    "accession": "0001069533-18-000041",
+    "cik": "0001069533",
+    "declared_filing_from": "2005-06-03",
+    "declared_filing_to": "2019-04-30",
+    "declared_source_name": "CIK0001069533-submissions-001.json",
+    "derived_canonical_url": "https://data.sec.gov/submissions/CIK0001069533-submissions-001.json",
+    "historical_receipt_file_sha256": "ee82fae03e87aef659ab928d0841c139b9ecc37c42239ef17c68eb19485700b1",
+    "historical_response_bytes": 321232,
+    "historical_response_sha256": "56f9b50eca1a13fc9fce2826162b92f1f7751eb94b6cbaa8e2a6aa2f37c10b11",
+    "source_kind": "historical"
+  },
+  "local_source_fallback_permitted": false,
+  "outputs": {
+    "canonical_owner_replay_proof_file": "S1F_CANONICAL_OWNER_REPLAY_PROOF.json",
+    "canonical_owner_replay_proof_file_sha256": "3442b88605a296b2fa56147414740e4710746cd5b96c694612f0a2c86249ebc2",
+    "canonical_source_manifest_file": "S1F_CANONICAL_SOURCE_PACKET_MANIFEST.json",
+    "canonical_source_manifest_file_sha256": "25d3c0482959c150ce676bac7051cc51073f63bd67e367254eb5b7d59ce0f947",
+    "canonical_source_manifest_logical_sha256": "98740d5aeee8e0e3ae3bb8408498b72db839cdc3686b8b3994b416c99cd7a3e4",
+    "model_packet_index_file_sha256": "f602765e42a8a3c8c327cdd32e579ccbed56dfbce13f58bbc26d23f281e9734d"
+  },
+  "prior_attempt": {
+    "classification": "STOPPED_ADAPTER_CAPABILITY_OMISSION",
+    "gap_file": "S1F_CANONICAL_OWNER_GAP_ATTEMPT1.json",
+    "gap_file_sha256": "4d5991a573c108ee1b4a25fb6adc663c06cb74f9b2c8799dc8a1a0f25554ae97",
+    "reconciliation_file": "S1F_CANONICAL_OWNER_ATTEMPT1_RECONCILIATION.json",
+    "reconciliation_file_sha256": "664c23d3ba973479aa54200b6ea3afec38e4771b26c89224e42a49930ec94475"
+  },
+  "progress": {
+    "additive_primary_context_documents": 70,
+    "all_unique_source_documents": 183,
+    "current_submissions_receipts": 69,
+    "exact_matched_document_bytes": 58029661,
+    "exact_matched_documents": 129,
+    "fully_materialized_packet_refs": 70,
+    "fully_replayed_packets": 70,
+    "historical_submissions_receipts": 1,
+    "primary_context_bytes": 7583460,
+    "selected_packets": 70,
+    "unique_selected_ciks": 69
+  },
+  "recorded_at": "2026-08-23T14:27:31.833606Z",
+  "resume_condition": "Canonical materialization and byte-identical replay are complete for the unchanged exact seventy; the next lawful stage is frozen shadow triage over all seventy, still without model, market, or outcome inputs.",
+  "rule_mutation_permitted": false,
+  "schema": "mastermind.dislocation_p0.s1f_owner_attempt_receipt.v1",
+  "selection_mutation_permitted": false,
+  "stage_execution": {
+    "canonical_replay": {
+      "attempted": true,
+      "completed": true
+    },
+    "final_relationship_reconciliation": {
+      "attempted": false,
+      "completed": false
+    },
+    "grok": {
+      "attempted": false,
+      "completed": false
+    },
+    "independent_opus": {
+      "attempted": false,
+      "completed": false
+    },
+    "measurement": {
+      "attempted": false,
+      "completed": false
+    },
+    "source_materialization": {
+      "attempted": true,
+      "completed": true
+    },
+    "triage": {
+      "attempted": false,
+      "completed": false
+    }
+  },
+  "status": "COMPLETE",
+  "top_up_permitted": false
+}
