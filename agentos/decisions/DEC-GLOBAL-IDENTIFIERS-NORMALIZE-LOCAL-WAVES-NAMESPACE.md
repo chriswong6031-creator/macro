@@ -177,7 +177,8 @@ Chairman approval was given directly on 2026-08-25 after a live Linear audit.
 Procedure pin used for this decision:
 
 - protected Mastermind Sol Skillpack: `51f9942733b86e550bb9169d2a43462bd28e774f`;
-- Macro pickup before modification: `221f72b413ed8250548f6393ecb665ea894ee293`.
+- Macro pickup before modification: `221f72b413ed8250548f6393ecb665ea894ee293`;
+- records carrier: Macro PR `#6419`.
 
 The Linear audit found no current issue/project named `K3-E` or `K3E`, so the Alpha
 collision had not yet propagated into Linear. It did confirm both legitimate
