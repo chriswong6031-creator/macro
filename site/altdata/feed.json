@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-08-25T05:22:55.141890+00:00",
+  "generated_utc": "2026-08-25T20:44:34.285710+00:00",
   "as_of": "2026-08-25",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -10406,11 +10406,11 @@
       },
       {
         "ticker": "MDV",
-        "category": "Acquisitions",
+        "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Acquisitions"
+        "detail": "Delistings"
       },
       {
         "ticker": "NSTS",
@@ -14365,6 +14365,14 @@
         "detail": "Tender Offers"
       },
       {
+        "ticker": "ENZN",
+        "category": "M&A / Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "M&A / Divestitures"
+      },
+      {
         "ticker": "ESQ",
         "category": "Acquisitions",
         "confidence": "high",
@@ -14867,6 +14875,14 @@
         "activist": false,
         "filer": null,
         "detail": "M&A / Divestitures"
+      },
+      {
+        "ticker": "RBOT",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
       },
       {
         "ticker": "CYTO",
@@ -17374,11 +17390,11 @@
       },
       {
         "ticker": "SOCGP",
-        "category": "Delistings",
+        "category": "Going-Private",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Delistings"
+        "detail": "Going-Private"
       },
       {
         "ticker": "ATIN",
@@ -17733,7 +17749,7 @@
         "detail": "Divestitures"
       },
       {
-        "ticker": "MNTSW",
+        "ticker": "MNTS",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
@@ -17957,7 +17973,7 @@
         "detail": "Delistings"
       },
       {
-        "ticker": "NHPAP",
+        "ticker": "NHPBP",
         "category": "Issuer Tenders",
         "confidence": "high",
         "activist": false,
@@ -18261,7 +18277,7 @@
         "detail": "Acquisitions"
       },
       {
-        "ticker": "CSCID",
+        "ticker": "CSCIF",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
@@ -18453,7 +18469,7 @@
         "detail": "Divestitures"
       },
       {
-        "ticker": "IPCXR",
+        "ticker": "IPCXU",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
@@ -19317,7 +19333,7 @@
         "detail": "Acquisitions"
       },
       {
-        "ticker": "KTTA",
+        "ticker": "KTTAW",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
@@ -19469,7 +19485,7 @@
         "detail": "Divestitures"
       },
       {
-        "ticker": "BERZ",
+        "ticker": "OILU",
         "category": "Divestitures",
         "confidence": "high",
         "activist": false,
@@ -19549,7 +19565,7 @@
         "detail": "Delistings"
       },
       {
-        "ticker": "EFC-PC",
+        "ticker": "EFC-PD",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
@@ -19667,14 +19683,6 @@
         "activist": false,
         "filer": null,
         "detail": "Divestitures"
-      },
-      {
-        "ticker": "RBOTW",
-        "category": "Delistings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Delistings"
       },
       {
         "ticker": "XWEL",
@@ -20021,7 +20029,7 @@
         "detail": "Spin-Offs"
       },
       {
-        "ticker": "GFR-RW",
+        "ticker": "GFRWF",
         "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
@@ -20029,7 +20037,7 @@
         "detail": "Acquisitions"
       },
       {
-        "ticker": "SUNFF",
+        "ticker": "SLFQF",
         "category": "Tender Offers",
         "confidence": "high",
         "activist": false,
@@ -20605,7 +20613,7 @@
         "detail": "Acquisitions"
       },
       {
-        "ticker": "DCOM-P",
+        "ticker": "DCBG",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
@@ -20789,14 +20797,6 @@
         "detail": "Delistings"
       },
       {
-        "ticker": "PLMJF",
-        "category": "Delistings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Delistings"
-      },
-      {
         "ticker": "TRAW",
         "category": "Delistings",
         "confidence": "high",
@@ -20821,7 +20821,7 @@
         "detail": "Delistings"
       },
       {
-        "ticker": "FACTW",
+        "ticker": "FACTU",
         "category": "Deal Terminations",
         "confidence": "high",
         "activist": false,
@@ -21197,7 +21197,7 @@
         "detail": "Acquisitions"
       },
       {
-        "ticker": "GECCI",
+        "ticker": "GECCG",
         "category": "Issuer Tenders",
         "confidence": "high",
         "activist": false,
@@ -21213,7 +21213,7 @@
         "detail": "Delistings"
       },
       {
-        "ticker": "LGNYZ",
+        "ticker": "LGNZZ",
         "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
@@ -21461,7 +21461,7 @@
         "detail": "Delistings"
       },
       {
-        "ticker": "FHN-PF",
+        "ticker": "FHN-PH",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
@@ -21493,7 +21493,7 @@
         "detail": "Acquisitions"
       },
       {
-        "ticker": "STNDF",
+        "ticker": "SNTUF",
         "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
@@ -21603,14 +21603,6 @@
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
-      },
-      {
-        "ticker": "MDV-PA",
-        "category": "Delistings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Delistings"
       },
       {
         "ticker": "UONEK",
@@ -21789,7 +21781,7 @@
         "detail": "Acquisitions"
       },
       {
-        "ticker": "UZF",
+        "ticker": "UZD",
         "category": "Divestitures",
         "confidence": "high",
         "activist": false,
@@ -21965,7 +21957,7 @@
         "detail": "Acquisitions"
       },
       {
-        "ticker": "BXDIF",
+        "ticker": "BKFDF",
         "category": "Issuer Tenders",
         "confidence": "high",
         "activist": false,
@@ -22085,7 +22077,7 @@
         "detail": "Delistings"
       },
       {
-        "ticker": "SCCE",
+        "ticker": "SCCG",
         "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
@@ -23597,7 +23589,7 @@
         "detail": "Acquisitions"
       },
       {
-        "ticker": "ORIQW",
+        "ticker": "ORIQU",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
@@ -23925,14 +23917,6 @@
         "detail": "Delistings"
       },
       {
-        "ticker": "ANSCW",
-        "category": "Delistings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Delistings"
-      },
-      {
         "ticker": "CNNE",
         "category": "Divestitures",
         "confidence": "high",
@@ -24237,7 +24221,7 @@
         "detail": "Delistings"
       },
       {
-        "ticker": "LIDRW",
+        "ticker": "LIDR",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
@@ -24309,7 +24293,7 @@
         "detail": "Delistings"
       },
       {
-        "ticker": "EQR",
+        "ticker": "VRMK",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
@@ -24331,6 +24315,14 @@
         "activist": false,
         "filer": null,
         "detail": "Divestitures"
+      },
+      {
+        "ticker": "FTRKF",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
       },
       {
         "ticker": "OGC",
@@ -27227,14 +27219,14 @@
         "sentiment": 0.107
       },
       {
-        "ticker": "MSFT",
-        "mentions": 25,
-        "sentiment": 0.015
-      },
-      {
         "ticker": "QQQ",
         "mentions": 25,
         "sentiment": 0.074
+      },
+      {
+        "ticker": "MSFT",
+        "mentions": 25,
+        "sentiment": 0.015
       },
       {
         "ticker": "OKLO",
@@ -28927,7 +28919,7 @@
         "ticker": "NVDA",
         "next_date": "2026-08-26",
         "days_to": 1,
-        "eps_forecast": 2.01,
+        "eps_forecast": 2.09,
         "last_surprise_pct": 10.0
       },
       {

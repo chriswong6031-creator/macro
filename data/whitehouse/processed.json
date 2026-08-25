@@ -797,6 +797,18 @@
       "at": "2026-08-25T14:06:24.587629+00:00",
       "activated": false,
       "importance": 18
+    },
+    "https://www.whitehouse.gov/?p=49065": {
+      "id": "wh-2026-08-25-president-trump-is-finally-ending-canadas-free-ride",
+      "at": "2026-08-25T18:56:28.690104+00:00",
+      "activated": false,
+      "importance": 45
+    },
+    "https://www.whitehouse.gov/?p=49072": {
+      "id": "wh-2026-08-25-honoring-the-memory-of-dolly-parton",
+      "at": "2026-08-25T20:45:33.508924+00:00",
+      "activated": false,
+      "importance": 1
     }
   },
   "_note": "W5 baseline \u2014 no items evaluated yet; provider absent in build env (no CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY / DEEPSEEK_API_KEY). Created 2026-07-02 to make dark-vs-quiet distinguishable: an empty seen={} here means the desk ran but had no provider, not that it was never invoked."
