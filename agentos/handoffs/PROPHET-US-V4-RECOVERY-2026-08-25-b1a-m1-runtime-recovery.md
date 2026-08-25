@@ -2,7 +2,7 @@
 workstream: WS:PROPHET-US-V4-RECOVERY
 session: b1a-m1-runtime-recovery
 model: fable
-ended_because: complete
+ended_because: blocked
 
 mission: >
   B1-A: recover the governed M1 publisher runtime if recoverable, or ratify a
@@ -119,6 +119,15 @@ decisions:
 ---
 
 # Handoff — B1-A M1 runtime recovery + #6363 commissioning · 2026-08-25
+
+> **State at merge:** recovery and commissioning are DONE and receipted. The one
+> remaining gate is an external scheduler clock that cannot be accelerated: the
+> theme-options-witness lane fires Mon–Fri 17:15 America/Vancouver and the
+> index/GEX lane fires Sundays 20:00. `ended_because: blocked` names exactly that
+> clock — not a defect, not a missing capability, and not a reason for another
+> session to re-open the recovery question. The natural receipts are banked in a
+> follow-up records PR by this same session; do NOT hand-run either lane.
+
 
 The governed M1 publisher runtime was **recovered, not replaced**. It was never
 lost: `/Users/chriswong/flow-ops-wt` sits on the M1 exactly where the Day-6
