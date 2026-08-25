@@ -45,6 +45,27 @@ def test_hidden_attribute_overrides_ship_in_composer_style():
         )
 
 
+LOADER = Path(__file__).resolve().parents[1] / "templates" / "dashboard-icons.js"
+
+
+def test_loader_retries_transient_entitled_fetch_failures():
+    """The composer asset is entitled-only and its gate consults the auth
+    backend per request; a transient 401/503 there used to strand an entitled
+    visitor on the legacy page with no retry (2026-08-25 acceptance, twice in
+    ~7 loads).  Pin the bounded onerror retry in the loader — both the
+    template and (when checked out) the shipped site pair."""
+    for path in [LOADER, LOADER.parents[1] / "site" / "dashboard-icons.js"]:
+        if not path.exists():
+            continue  # sparse checkout omits site/; templates/ always present
+        text = path.read_text(encoding="utf-8")
+        block = text[text.find("__mmCanadaStockV36Loader"):]
+        assert "script.onerror" in block, f"{path.name}: loader lost its onerror retry"
+        assert "attempt < 3" in block, f"{path.name}: loader retry is no longer bounded"
+        assert "!window.__mmCanadaStockV36" in block, (
+            f"{path.name}: retry must not re-inject after a successful mount"
+        )
+
+
 def test_composer_still_hides_via_hidden_attribute():
     """The overrides above only matter while the composer hides with
     ``.hidden`` / ``hidden`` attribute semantics.  If the hide mechanism ever
