@@ -41,13 +41,18 @@ pointer is context, not enforcement; these gates are the enforcement.
 6. **No duplicate planes**: no new general event store, no second identity/correction/
    publication plane, no `government_procurement_event.v2` rows minted (§9), no D5
    contract modification, no `government_program_dossier.v1` widening.
-7. **Consumer proven**: the frozen consumer (§13) renders both §15 canaries from the
-   real read model in production, inside the existing page-weight fence, with the
-   anonymous entitlement boundary intact (API + site data 401/locked), and the
-   five-second user answers (§13.4) actually answerable on the card.
-8. **Hostile canary proven**: Transmittal 26-13 (notified 2026-01-30, review period long
-   elapsed) publishes with `congressional_notification` as its highest proven stage and
-   an explicit advancement condition, not an inferred sale (§15.3).
+7. **Consumer proven**: the frozen consumer (§13) serves both §15 canaries from the
+   real production read model, inside the existing page-weight fence, with the
+   anonymous entitlement boundary intact (API + site data 401/locked), and the card
+   template provably renders every §13.4 answer from real read-model fields. Proof
+   standard = the D6-A standard (production handlers + served-bytes + template/JS
+   consumer-chain proof); an authenticated-browser walkthrough is required only if
+   Sol's D6-B authorization demands one — the Chairman sequencing amendment's
+   no-walkthrough form remains the default.
+8. **Hostile canary proven**: Transmittal 26-13 (notified 2026-01-30, ~7 months before
+   this freeze) publishes with `congressional_notification` as its highest proven stage
+   and an explicit advancement condition, not an inferred sale (§15.3) — with no
+   review-period arithmetic anywhere in the pipeline.
 9. **Kill tests shipped**: every §16 adversarial test exists as a real failing-by-
    mutation test wired into a merge-binding CI pack.
 10. **Production proof**: same standard as D6-A — acquisition receipts, committed
@@ -86,7 +91,7 @@ transport where Akamai rejects CLI TLS fingerprints, per the standing census law
 | R5 | State post-migration notice (canary B) | `https://www.state.gov/releases/bureau-of-political-military-affairs/2026/03/sweden-m142-high-mobility-artillery-rocket-systems/` | browser | 200 | 176,925 | `a2caf669c2e06ac52b60ff0c76faf7f6ea4353c160ed1f0f9c69943931da42eb` | 15:16:27Z |
 | R5c | Same URL as R5 | (same) | cli | 200 | 176,926 | `692236b01d40430f77aaab33a197c7d0e79e7931cdf4423c0858f1e076fbd37a` (two consecutive CLI fetches byte-identical) | 15:18:06Z |
 | R6 | DSCA Major Arms Sales Library (pre-Dec-2024 archive + version files) | `https://www.dsca.mil/Press-Media/Major-Arms-Sales/Major-Arms-Sales-Library` | browser | 200 | 110,947 | `684a3655581a574a76541e156d888e31f6898ca835263cd604804271cc484740` | 15:17:15Z |
-| R7 | Federal Register 36(b) reprint (third surface) | `https://www.federalregister.gov/documents/2026/07/22/2026-14768/arms-sales-notification` (API + raw text probed) | cli | 200 | — (grep-probed, not archived) | citation `91 FR 46080`, pub 2026-07-22 | 15:19Z |
+| R7 | Federal Register 36(b) reprint (third surface) | `https://www.federalregister.gov/documents/full_text/text/2026/07/22/2026-14768.txt` (raw text of doc 2026-14768; citation `91 FR 46080`, pub 2026-07-22) | cli | 200 | 9,571 | `6460ef5b7f1e48f2716e6696e239691dcd5bc53586c104b580702974771c8142` (carries "Transmittal No. 26-74" ×3 + "Date Report Delivered to Congress: June 5, 2026") | 15:43:55Z |
 
 **Migration statement (R1, verbatim):** "In accordance with Executive Order 14383
 'ESTABLISHING AN AMERICA FIRST ARMS TRANSFER STRATEGY' signed on February 6, 2026, all
@@ -174,11 +179,21 @@ Census facts the implementation may rely on (each observed directly this census)
 4. **Transport law:** current-source production collection uses ordinary CLI HTTP
    (proven 200 + byte-deterministic, R5c) from the existing runner infrastructure, with
    the D6-A fetch discipline (allowlisted hosts, no redirect following across hosts,
-   size caps, content-type checks). DSCA/media.defense.gov historical backfill cannot
-   use CLI (403); it is EITHER executed with browser transport under the standing
-   in-browser receipt law, OR deferred — the freeze does not require historical
-   backfill for D6-B v1 (§17-U2). No credentials or login exist anywhere on this path;
-   none may be invented or requested.
+   size caps, content-type checks). DSCA/media.defense.gov cannot be fetched by CLI
+   (403). **Frozen v1 scope:** the current State surface in full, PLUS canary A
+   (Transmittal 26-13) acquired once through the **bounded browser-transport archival
+   path** — required, because §0.7/§0.8 gate on both canaries. That path is: fetch the
+   DSCA article + certification PDF in the Browser pane under the standing in-browser
+   receipt law (in-page `fetch` + `crypto.subtle` sha256, receipts recorded); stage the
+   exact bytes locally; put them into the canonical R2 immutable store through the
+   standard put + strict-readback + byte/sha-equality lane (R2 is not a blocked host —
+   only the *fetch* needs the browser); commit the observation with
+   `transport: browser_in_page_fetch` recorded on its receipt. Browser-acquired
+   observations are archival: they are not polled, and the §8 idempotence law applies
+   to whichever transport performs any later re-observation. **Bulk historical
+   backfill beyond canary A** (the Dec-2024→Feb-2026 widget and the pre-Dec-2024
+   Library corpus) is deferred to Sol (§17-U2). No credentials or login exist anywhere
+   on this path; none may be invented or requested.
 5. **Federal Register (supplementary official record, not a third collection plane):**
    FR reprints of 36(b) certifications may be attached as *additional observations* on
    an existing case identity — they are the only routinely published official source of
@@ -248,6 +263,13 @@ derive stage from it. (§16 test T3.)
   award, company backlog, company revenue, or cash. It never sums into any award-tape,
   backlog, or revenue aggregate. Display copy must carry the negative ("what this
   amount does NOT mean") per §13.4.
+- **No in-plane aggregation:** cross-case summation or aggregation of
+  `estimated_notification_value` — totals, by-country totals, by-period totals,
+  "pipeline" figures — is FORBIDDEN everywhere in v1 (read model, API, UI). Summing
+  highest-estimate values across heterogeneous proposed sales manufactures a
+  pseudo-backlog number, the exact semantic this vertical exists to prevent. Any
+  future aggregate is a separate Sol decision with its own semantic name and caveat
+  law. (§16 test T13.)
 - **Caveat preservation:** the DSCA/FR caveat ("…for the highest estimated quantity and
   dollar value… Actual dollar value will be lower…") is captured verbatim as
   `source_caveat` when the notice body carries it. Census fact: **State posts do not
@@ -267,9 +289,28 @@ derive stage from it. (§16 test T3.)
   The DSCA Library confirms it is the archive's own retrieval key ("Search the library
   by Country name, CN number, or…"). Observed grammar: `YY-NN` (two-digit FY-style year,
   dash, sequence number).
-- **Case key:** `fms:transmittal:<yy-nn>` (lowercased, whitespace-normalized, the
-  number exactly as printed after the label). One transmittal = one case, regardless of
+- **Case key:** `fms:transmittal:<yy-nn>`. One transmittal = one case, regardless of
   how many surfaces/versions expose it (§16 test T11).
+- **Frozen label-detection + normalization grammar** (so a variant miss cannot
+  silently mint a fallback identity):
+  - Admitted label sites, in precedence order: (1) notice body text; (2) FR document
+    heading/body; (3) an attachment/Library filename matching
+    `\b(\d{2})-(\d{1,3})\s*CN(?:V\d+)?\.PDF` (case-insensitive).
+  - Body/heading detection regex (case-insensitive, applied to visible text):
+    `transmittal\s*(?:no\.?|number|num\.?|#)?\s*[:\-]?\s*(\d{2})\s*[-‐-―]\s*(\d{1,3})`
+    — covers the three observed grammars ("Transmittal No. 26-13",
+    "Transmittal #26-27", "[Transmittal No. 26-74]") and tolerates unicode dash
+    variants.
+  - Normalization: `<yy>-<n>` with the year kept as printed (two digits) and the
+    sequence number stripped of leading zeros; every dash variant normalizes to ASCII
+    hyphen; surrounding whitespace removed.
+  - Multiple distinct transmittal numbers detected in one notice → `conflicted` for
+    review, never a guess.
+  - **Mis-key guard:** whenever an observation binds to an existing case key but its
+    `customer_country` differs materially from the case's, the case is flagged
+    `conflicted` for review — never auto-merged. This is also the named guard for the
+    (distant) two-digit-year reuse collision class: a future `YY-NN` reissue colliding
+    with an archived case surfaces as `conflicted` instead of silently merging.
 - **Fallback identity** (only when a notice page carries NO transmittal label anywhere
   in body or attachments): `fms:urlpath:<sha256(canonical URL path)[:24]>` where the
   canonical URL path is the article path lowercased without scheme/host/query/fragment
@@ -387,20 +428,29 @@ Decision record: `DEC:FMS-CANONICAL-OWNER-IS-GOVREV-FMS-RAIL`
 Case record (`government_fms_case.v1`-class), one per case key:
 
 - identity: `case_key` (§6), `transmittal_number` | null, `identity_basis`
-  (`transmittal` | `url_fallback`), `identity_state` (`resolved` | `identity_unresolved`
-  | `conflicted`), aliases.
+  (`transmittal` | `url_fallback`), `case_identity_state` (`resolved` |
+  `identity_unresolved` | `conflicted` — case tier; deliberately a different field
+  name from the contractor-tier `identity_state`, whose vocabulary is the reviewed
+  four-state set), aliases.
 - customer: `customer_country` (source-printed name; no ISO normalization without a
   reviewed table), region/COCOM only if source-printed.
-- capability: `capability_title` (source-printed post title), source-printed item
-  enumeration (verbatim capture, no summarization).
+- capability: `capability_title` (the FULL source-printed post title, verbatim — no
+  splitting parse; any customer/capability split on the card is a design-lane
+  *presentation* of this one verbatim field, never a second data field), plus
+  `source_item_enumeration` (the notice's itemized articles/services list, verbatim
+  capture, no summarization).
 - stage: `stage` (§4; v1 always `congressional_notification`), `stage_evidence`
   (per-stage receipt refs), `later_stages: stage_not_observed`, `advancement_condition`
-  (typed, from a fixed catalog — not free text).
+  (typed, from the frozen catalog — v1 catalog has EXACTLY ONE member,
+  `official_evidence_of_offered_accepted_or_implemented_loa`; adding members requires
+  the §4.3 evidence-class design, never ad-hoc strings).
 - amount: `estimated_notification_value` | null, `currency: USD`, `source_caveat`
-  (verbatim | null), amount receipt ref.
+  (verbatim | null), amount receipt ref. No aggregates (§5).
 - contractors: list of `{name_as_printed, location_as_printed, identity_state
   (not_reviewed | reviewed | reviewed_none | conflicted), issuer_ref | null}` (§11).
-- program links: D5-shaped five-key pointer state (§12).
+- program links: `program_links` — a LIST of five-key pointer objects (§12); v1
+  publishes exactly one entry (the whole-case link state, `not_reviewed`); reviewed
+  curation may later carry one entry per named system.
 - clocks (§7) + observations[] (append-only version history, §8) + per-observation
   receipts (§8 conventions) + `source_surface` (`dsca` | `state` | `federal_register`).
 - rail-level artifact: `content_id` + generation id per the D6-A graph conventions.
@@ -428,16 +478,31 @@ Prairie, Texas" (R5) — free-text name forms are not identity. Frozen:
 A system/product name in a notification (e.g. "PATRIOT Advanced Capability-3", "M142")
 may be *proposed* for review against the D5 ontology; **no automatic string link** (§16
 test T5). Of the three commissioned homes, frozen: **an FMS read-model pointer to a D5
-program**, using the exact admitted-state shape already frozen in
-`government_procurement_event.v2`'s `$defs/programLink` (five keys: `state`,
-`reason_code`, `program_id`, `program_event_link_id` analog, `ontology_graph_id`;
-states `reviewed` / `not_reviewed` / `reviewed_none` / `conflicted` /
-`source_unavailable`) — the same pattern the workspace already renders for IRDM P00032's
-hostile null. Rationale: reuses the reviewed-linkage vocabulary without touching the D5
-contract or its curated relation store; the D5 curator remains the only mint for
-`reviewed`. v1 ships every case `not_reviewed`. **D5 is not modified in B0 or D6-B v1**;
-`government_program_ontology.v1.budget_program_keys` stays `const []` (confirmed on
-head: schema line 221 `maxItems: 0` + runtime assertion `program_ontology.py:636`).
+program** — an **FMS-owned five-key link object** that reuses the admitted-state
+*pattern* of `government_procurement_event.v2`'s `$defs/programLink` but is defined in
+the FMS contract, NOT schema-reused by reference. (The event plane's `not_reviewed`
+branch requires a non-null `ontology_graph_id` because the workspace builder always has
+the ontology graph loaded; the FMS v1 builder does not consult D5 at all, so verbatim
+reuse would be unsatisfiable.) Frozen FMS shape — exactly five keys:
+
+```
+state:                reviewed | not_reviewed | reviewed_none | conflicted | source_unavailable
+reason_code:          "no_reviewed_program_link" when state ∈ {not_reviewed, reviewed_none};
+                      "ontology_unavailable" when state = source_unavailable; null otherwise
+program_id:           ^acq-program:[a-z0-9][a-z0-9:-]*$ when reviewed; null otherwise
+program_case_link_id: ^prog-case:[a-f0-9]{12}$ when reviewed; null otherwise
+ontology_graph_id:    ^program-ontology:… of the graph generation actually consulted;
+                      null when no consult occurred (the v1 constant case)
+```
+
+v1 ships every case with the single entry
+`{state: not_reviewed, reason_code: no_reviewed_program_link, program_id: null,
+program_case_link_id: null, ontology_graph_id: null}` — null `ontology_graph_id` is the
+honest v1 value because no ontology consult occurs. `reviewed` may ONLY ever be minted
+by the D5 curator flow in a later authorized wave, which then also stamps the consulted
+`ontology_graph_id`. **D5 is not modified in B0 or D6-B v1**;
+`government_program_ontology.v1.budget_program_keys` stays empty-enforced (schema line
+221 `{"type": "array", "maxItems": 0}` + runtime assertion `program_ontology.py:636`).
 
 ## §13 — Frozen product consumer
 
@@ -502,22 +567,38 @@ the commissioned names:
 
 | Commissioned name | Frozen token | Tier | Canonical home / status |
 |---|---|---|---|
-| CURRENT | `current` | rail freshness | existing (`program_dossier.py:115`) |
-| SOURCE_UNAVAILABLE | `source_unavailable` | rail freshness | existing |
-| SOURCE_STALE | `stale` | rail freshness | existing |
-| RIGHTS_BLOCKED | `rights_blocked` | rail freshness | D0R display-tier vocab; new lowercase token at contract tier |
-| VALID_EMPTY | `empty_valid` | rail freshness | D0R display-tier spelling adopted (a truly empty official listing is a valid state, never coerced from unavailability) |
-| IDENTITY_UNRESOLVED | `identity_unresolved` | case | new (fallback-identity in force, §6) |
-| PROGRAM_UNRESOLVED | `not_reviewed` (programLink state) | linkage | existing (D5 admitted states, §12) |
+| CURRENT | `current` | dossier/display | existing display mapping (`program_dossier.py:115`) |
+| SOURCE_UNAVAILABLE | `source_unavailable` | dossier/display | existing (same mapping's fail branch) |
+| SOURCE_STALE | `stale` | dossier/display + freshness | existing (both tiers) |
+| RIGHTS_BLOCKED | `rights_blocked` | dossier/display | D0R display-tier vocab; new lowercase token at contract tier |
+| VALID_EMPTY | `empty_valid` | dossier/display | D0R display-tier spelling adopted (a truly empty official listing is a valid state, never coerced from unavailability) |
+| IDENTITY_UNRESOLVED | `identity_unresolved` | case (`case_identity_state`) | new (fallback-identity in force, §6); the third case-tier token is `resolved`, the healthy default |
+| PROGRAM_UNRESOLVED | `not_reviewed` (`program_links[].state`) | linkage | pattern per §12 |
 | CONTRACTOR_IDENTITY_UNRESOLVED | `not_reviewed` (contractor `identity_state`) | linkage | pattern reuse (§11) |
 | STAGE_NOT_OBSERVED | `stage_not_observed` | case/stage | new (§4.3) |
-| CORRECTED | `corrected` | case/observation | existing (`award_events.py:190`, `candidates.py:953`) |
+| CORRECTED | `corrected` | case/observation | existing published state (`candidates.py:953`; note `award_events.py:190` is an upstream input-token set for *detecting* source correction language, not a published state — the FMS `corrected` is OUR appended-observation state, §8) |
 | CONFLICTED | `conflicted` | case + linkage | existing (workspace/entity_resolution/programLink) |
 
-Rules: `partial` (existing) remains available for a listing that loads while some
-articles fail. `empty_valid` is only lawful when the listing itself was fetched
-successfully and genuinely contains zero qualifying items. 0-plus-unavailable is never
-`empty_valid` (D0R failure-behavior law). Display tier renders these through the
+**Two state planes, deliberately distinct vocabularies:**
+
+1. **Workspace freshness plane** (what the rail writes into the workspace `freshness.fms`
+   block): the EXISTING `freshness.py` vocabulary — `ok` / `partial` / `stale` /
+   `unavailable` / `blocked` / `failed` / `unknown` (`freshness.py:14-21`,
+   `_STATUS_RANK`). The FMS rail writes THESE tokens there (writing `current` into that
+   plane would rank as `unknown`). An empty-but-healthy listing is `status: ok` with a
+   zero visible-record count (the SAM `latest.json` pattern) — the never-coerce rule
+   binds the writer: a fetch/parse failure is `unavailable`/`failed`, never ok-with-zero.
+2. **Dossier/display + FMS contract tier**: the table above; `program_dossier.py:115`'s
+   existing mapping (`ok→current`, `partial→partial`, `stale→stale`, else
+   `source_unavailable`) carries plane 1 into plane 2.
+
+Rules: `partial` remains available for a listing that loads while some articles fail.
+`empty_valid` is only lawful when the listing itself was fetched and parsed successfully
+and genuinely contains zero **qualifying items** — frozen predicate: a listing entry
+carrying the type label "FOREIGN MILITARY SALES: CONGRESSIONAL NOTIFICATION" on the
+PM-Bureau notifications listing (non-FMS PM releases share the `/releases/` namespace
+and never qualify by URL shape alone). 0-plus-unavailable is never `empty_valid` (D0R
+failure-behavior law; §16 test T14). Display tier renders all of these through the
 existing glance-tier plain-word treatment, never as raw tokens.
 
 ## §15 — Frozen pilot canaries
@@ -532,8 +613,12 @@ Receipt-bound expected values: `estimated_notification_value` = $9,000,000,000
 ("estimated cost of $9.0 billion"); customer "Kingdom of Saudi Arabia"; principal
 contractor as printed "Lockheed-Martin Corporation, located in Dallas, TX"
 (`not_reviewed`); `source_caveat` = the "highest estimated quantity…" paragraph
-verbatim; `official_notification_date` 2026-01-30 (DSCA dateline + certification
-sentence); stage `congressional_notification`.
+verbatim; `official_notification_date` 2026-01-30 (DSCA body dateline + certification
+sentence); `official_web_publication_date` 2026-01-30 (independently printed as the
+article's own date — "NEWS | Jan. 30, 2026" page header and the landing listing's date,
+R1/R2 — the two clocks coincide here but each has its own printed source, per §7);
+stage `congressional_notification`. Production acquisition: the §3.4 bounded
+browser-transport archival path.
 
 ### §15.2 Canary B — current, State-hosted
 
@@ -548,15 +633,18 @@ in v1 (the State post does not assert it; §7); `official_web_publication_date`
 2026-03-10; stage `congressional_notification`. Both canaries are golden-program
 first-party fits — nothing was contorted.
 
-### §15.3 Hostile state — review period elapsed, no advancement evidence
+### §15.3 Hostile state — months elapsed, no advancement evidence
 
-Case 26-13 (notified 2026-01-30): every applicable congressional review period has long
-elapsed at freeze time (census 2026-08-25, ~207 days later), and no official public
-evidence of an offered/accepted/implemented LOA exists on any censused surface.
-**Expected published result: `stage = congressional_notification` remains the highest
-proven stage**, later stages `stage_not_observed`, advancement condition displayed. Any
-implementation that shows 26-13 as a sale, an award, or "review complete → advanced"
-fails the wave.
+Case 26-13 was notified 2026-01-30 — ~207 days before this freeze's census — and no
+official public evidence of an offered/accepted/implemented LOA exists on any censused
+surface. Whatever statutory review period applies (deliberately NOT computed here —
+the per-country review classes are unreceipted, §17-U1, and the law forbids deriving
+anything from them, §4.4), more than enough calendar time has passed that a
+time-advances-stage bug WOULD have advanced this case. **Expected published result:
+`stage = congressional_notification` remains the highest proven stage**, later stages
+`stage_not_observed`, advancement condition displayed. Any implementation that shows
+26-13 as a sale, an award, or "review complete → advanced" — or that stores/renders
+any review-period-elapsed conclusion at all — fails the wave.
 
 Reference composition (real receipted data, frozen §10 shape):
 `research/defense_intelligence/evidence/fms_reference_composition_2026-08-25.json`.
@@ -589,6 +677,11 @@ mutation, wired merge-binding (D6-A discipline):
   → fail.
 - **T12** — an FMS record emitted as `government_procurement_event.v2` (any kind,
   including `award_change`) → fail.
+- **T13** (freeze-added, §5) — any cross-case sum/aggregate of
+  `estimated_notification_value` anywhere in the read model, API, or UI → fail.
+- **T14** (freeze-added, §14) — a listing fetch/parse failure, or a zero-row parse of
+  a listing whose fetch failed, published as `empty_valid` / freshness `ok` (the
+  0-plus-unavailable coercion) → fail.
 
 ## §17 — Unresolveds preserved for Sol (named; not silently resolved)
 
@@ -596,10 +689,11 @@ mutation, wired merge-binding (D6-A discipline):
   days; country classes; thresholds) were not captured verbatim this census (chapter
   page truncates before C5.7). v1 does not need them (no time-based logic is lawful,
   §4.4); any display of review-period context requires receipting C5.7 first.
-- **U2 — Historical backfill depth:** DSCA CLI transport is 403; the Library's
+- **U2 — Bulk historical backfill depth:** DSCA CLI transport is 403; the Library's
   pre-Dec-2024 PDF corpus and the Dec-2024→Feb-2026 widget were censused but not
-  acquired. v1 scope (current State surface + the two canaries) vs. full archival
-  backfill is Sol's call; the freeze binds the mechanics either way.
+  acquired. The v1 floor is FROZEN (§3.4: full current State surface + canary A via
+  the bounded browser-transport archival path); whether to backfill the DSCA archive
+  beyond canary A is Sol's call; the freeze binds the mechanics either way.
 - **U3 — Federal Register join:** FR is the only routine official source of
   `official_notification_date` for State-era cases (§7) and of itemized certification
   detail. Joining it (attach-by-transmittal observations) is designed (§3.5) but not
@@ -615,4 +709,8 @@ mutation, wired merge-binding (D6-A discipline):
 
 *Companion:* `DEFENSE_D6B_FMS_IMPLEMENTATION_HANDOFF.md` (paste-ready D6-B commission).
 *Decision:* `DEC:FMS-CANONICAL-OWNER-IS-GOVREV-FMS-RAIL`.
-*Registry:* `D0R_SOURCE_RIGHTS_AND_PIT_REGISTRY.md` E2 re-census rows added 2026-08-25.
+*Registry:* `D0R_SOURCE_RIGHTS_AND_PIT_REGISTRY.md` — one E2 re-census row added and
+the main-registry DSCA row rewritten, 2026-08-25.
+*Review:* the freeze package was adversarially reviewed (opus) before Sol — 5 blockers
+/ 11 mediums / 6 lows found and repaired in this document's final form; the
+contract-owner adjudication (§9/DEC) and source law survived attack unchanged.
