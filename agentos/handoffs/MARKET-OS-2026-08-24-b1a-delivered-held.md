@@ -204,3 +204,15 @@ than rewrites, fix belongs contract-side; 390px captures are width-clamped,
 not device-emulated; last-good/compiler-failure capture families use
 display-level overrides on a real compiled golden (compiler has no failing
 input fixture).
+
+## Amendment — Sol final acceptance + merge (2026-08-25)
+
+Sol final review PASS on exact head `003c364ea0aa07598c3bab2a3eb8538f29053592`; hold released per Sol's release condition. Pre-merge collision check: 141 main commits since accepted head, zero changes to B1A contract/producer/dossier/K1/identity code surfaces, merge-tree clean.
+
+- **Merged**: PR #6371 squash-merged with exact-head guard (`--match-head-commit 003c364e`), merge SHA `10b54a12828b14af0e99541a83c8d0638e64145e`, verified ancestor of origin/main.
+- **Integration CI**: pre-merge ci.yml run 32808719705 SUCCESS on the exact accepted head; at the merge SHA: fences 32874956433 SUCCESS, integration-baseline 32874956378 SUCCESS, render 32874956426 SUCCESS, engine-render 32874956298 SUCCESS. Only non-green anywhere: `ci-authority/codex/merge-queue-pilot` (red by design).
+- **Production page (verified live 2026-08-25 ~18:30Z)**: https://mastermind-x.com/stocks/AAPL.html serves the Decision Spine — six axes rendered, real recipe `erp_5687f42d…`, EvidenceBlock `ebl_5b86ed82…`, CIK 0000320193 ×13, R1–R9 receipts, ESTIMATED_WINDOW 2026-09-12→2026-10-10 labeled non-authoritative, provenance registers (worked out here/本页推算, counted here/本页统计), evidence drilldown opens on click with the fixed-rule footer. Widths: 1440 three-column, 768 two-column (production captures), 390 verified in a real 390 viewport (single column, no horizontal overflow; headless 390 capture width-clamped as previously disclosed). MSFT control: zero B1A markers. Leakage scan: zero portfolio/watchlist/composite-score/申报 hits.
+- **Capability state: B1A = BUILT_NOT_PROVEN.** The served `/stockdata/AAPL.json` payload (auth-gated; VPS sha256 40db13e8a556…, mtime 2026-08-25T02:15:39Z) is the PRE-merge nightly's object and carries no `security_state` yet: `site/stockdata/*.json` is gitignored, written in-lane, and delivered by the nightly `daily.yml` only — render lanes ship pages, not blobs. Exact blocker = next scheduled nightly (~2026-08-26T02:15Z). Do NOT dispatch daily.yml for this; wait for the scheduled run (Sol's directive and house law both forbid an ad-hoc second publisher).
+
+### next_action
+After the first natural nightly completes: verify served `/stockdata/AAPL.json` (VPS `/opt/macro/site.served/stockdata/AAPL.json`) contains `security_state` with identity proof PROVEN, state+change legs, recipe/EvidenceBlock ids, six coverage counts, dominant degradation, and catalyst ESTIMATED_WINDOW `authoritative:false`; capture sha256; re-check MSFT.json has no `security_state`; then and only then record `B1A = DONE / PROVEN_LIVE` (Sol protocol). Expansion gates preserved: `CIK_LEG_UNOWNED_ACCESS`, `NO_GENERAL_NAMESPACE_RENDERER`. No B1B/B2/K3/K5/valuation/Portfolio/second issuer.
