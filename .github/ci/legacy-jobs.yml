@@ -2203,10 +2203,15 @@ jobs:
       # install this step already owns (it also imports engine.board_ledger,
       # already exercised by tests/test_board_ledger.py further down this same
       # step). No new job.
+      # tests/test_canada_v36_composer.py (V3.6 acceptance repair, 2026-08-25)
+      # rides the same Canada subject: byte pins on site/canada-stock-v36.js
+      # ([hidden] display overrides + the card.hidden mechanism they cover).
+      # stdlib-only (pathlib), full checkout has site/. No new job.
       - name: render-guard + engine-contract tests (rot sweep 2026-07-02)
         run: >
           python -m pytest
           tests/test_canada_build.py tests/test_canada_canonical_board.py
+          tests/test_canada_v36_composer.py
           tests/test_commodity_signals.py
           tests/test_commodity_index.py
           tests/test_commodity_confluence.py
