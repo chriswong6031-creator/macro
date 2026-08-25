@@ -63,11 +63,11 @@ changed:
       test_ci_canary_workflows.py, test_ci_semantic_proof.py.
   - path: agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-25-d6b0-sol-acceptance-d6b-authorization.md
     what: >
-      One-PR-per-pack heal of the schema defects redding agentos validate on
-      main: ended_because mapped to the allowed enum, two claims re-verified
-      with real commands, three preserved as unverified with exact
-      re-verification commands, danger_areas added from the record's own
-      warnings. No claim altered or discarded.
+      Initially carried a one-PR-per-pack heal of the schema defects redding
+      agentos validate on main; sibling PR #6425 repaired the same record and
+      landed on main first, so this branch YIELDED and took main's ratified
+      copy verbatim (commit 246af73e4c63) rather than forcing a superseded
+      regeneration over it. Net content change from this PR: none.
   - path: agentos/workstreams/WS-CI-MERGE-CONTROL-PLANE.md
     what: >
       W3-PLANNER-CONTAINMENT recorded done (PR #6286 receipts); new
