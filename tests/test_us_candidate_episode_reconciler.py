@@ -84,6 +84,40 @@ def _generation(repo_root: Path) -> Path:
     return _episode_root(repo_root) / "generations" / str(_head(repo_root)["generation_id"])
 
 
+def _readdress_current_generation(repo_root: Path) -> Path:
+    """Forge a self-consistent manifest/HEAD around deliberately changed generation bytes."""
+    generation = _generation(repo_root)
+    files: dict[str, dict[str, object]] = {}
+    for path in sorted(generation.rglob("*")):
+        relative = str(path.relative_to(generation))
+        if not path.is_file() or relative == "manifest.json":
+            continue
+        payload = path.read_bytes()
+        files[relative] = {
+            "sha256": "sha256:" + sha256(payload).hexdigest(),
+            "bytes": len(payload),
+        }
+    material = {
+        "schema": "prophet.candidate_episode_generation_manifest/v1",
+        "files": files,
+    }
+    generation_id = "peg:" + sha256(canonical_json(material).encode("utf-8")).hexdigest()
+    manifest = {**material, "generation_id": generation_id}
+    manifest["content_sha256"] = sha256(canonical_json(manifest).encode("utf-8")).hexdigest()
+    manifest_bytes = (canonical_json(manifest) + "\n").encode("utf-8")
+    (generation / "manifest.json").write_bytes(manifest_bytes)
+    destination = generation.parent / generation_id
+    generation.rename(destination)
+    head = {
+        "schema": "prophet.candidate_episode_head/v1",
+        "generation_id": generation_id,
+        "manifest_sha256": "sha256:" + sha256(manifest_bytes).hexdigest(),
+    }
+    head["content_sha256"] = sha256(canonical_json(head).encode("utf-8")).hexdigest()
+    (_episode_root(repo_root) / "HEAD.json").write_text(canonical_json(head) + "\n")
+    return destination
+
+
 def _event_rows(repo_root: Path) -> list[dict[str, object]]:
     paths = sorted((_generation(repo_root) / "events").glob("*.jsonl"))
     return [json.loads(line) for path in paths for line in path.read_text().splitlines() if line]
@@ -253,6 +287,46 @@ def test_first_publication_has_no_current_generation_until_head_swap(tmp_path: P
         load_candidate_episode_store(_episode_root(tmp_path))
 
 
+def test_first_publication_fsyncs_new_store_parent_before_head_replace(tmp_path: Path, monkeypatch):
+    """Omitting the store parent's fsync can lose the new episodes directory after success."""
+    _seed_sources(tmp_path)
+    parent = tmp_path / "data" / "us_prophet_rank"
+    fsynced: list[Path] = []
+    real_fsync = writer._fsync_directory
+    real_replace = writer._replace_head
+
+    def record_fsync(path: Path) -> None:
+        fsynced.append(Path(path))
+        real_fsync(path)
+
+    def replace_after_parent_fsync(source: Path, target: Path) -> None:
+        assert parent in fsynced
+        real_replace(source, target)
+
+    monkeypatch.setattr(writer, "_fsync_directory", record_fsync)
+    monkeypatch.setattr(writer, "_replace_head", replace_after_parent_fsync)
+    _run_nightly(tmp_path, monkeypatch)
+
+    assert load_candidate_episode_store(_episode_root(tmp_path))
+
+
+def test_first_publication_parent_fsync_failure_never_publishes_head(tmp_path: Path, monkeypatch):
+    """A failed durability fence must abort before the sole visibility boundary."""
+    _seed_sources(tmp_path)
+    parent = tmp_path / "data" / "us_prophet_rank"
+    real_fsync = writer._fsync_directory
+
+    def fail_store_parent(path: Path) -> None:
+        if Path(path) == parent:
+            raise OSError("injected episodes parent fsync failure")
+        real_fsync(path)
+
+    monkeypatch.setattr(writer, "_fsync_directory", fail_store_parent)
+    with pytest.raises(OSError, match="episodes parent fsync failure"):
+        _run_nightly(tmp_path, monkeypatch)
+    assert not (_episode_root(tmp_path) / "HEAD.json").exists()
+
+
 def test_reader_observes_only_old_or_new_generation_across_one_head_replace(tmp_path: Path, monkeypatch):
     """Any multi-file visibility boundary would expose a mixed ledger/projection set here."""
     _seed_sources(tmp_path)
@@ -276,6 +350,34 @@ def test_reader_observes_only_old_or_new_generation_across_one_head_replace(tmp_
     assert observed == [old_rows, new_rows]
     assert old_rows[0]["observation_count"] == 0
     assert new_rows[0]["observation_count"] == 1
+
+
+def test_existing_store_uses_the_same_validated_head_snapshot_it_opened(tmp_path: Path, monkeypatch):
+    """Reopening HEAD after validation can select a concurrent, unvalidated generation."""
+    _seed_sources(tmp_path)
+    _run_nightly(tmp_path, monkeypatch)
+    head_path = _episode_root(tmp_path) / "HEAD.json"
+    head_a = head_path.read_bytes()
+    generation_a = str(json.loads(head_a)["generation_id"])
+
+    document = json.loads(_turn_path(tmp_path).read_text())
+    document["rows"][0]["observation_revision"] = 2
+    _turn_path(tmp_path).write_text(canonical_json(_rehash_turn_watch(document)) + "\n")
+    _run_nightly(tmp_path, monkeypatch)
+    head_b = head_path.read_text()
+    head_path.write_bytes(head_a)
+    real_read_text = Path.read_text
+
+    def concurrent_head_text(path: Path, *args, **kwargs):
+        if path == head_path:
+            return head_b
+        return real_read_text(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", concurrent_head_text)
+    loaded = writer._load_existing_ledgers(_episode_root(tmp_path))
+
+    assert loaded[2] == _episode_root(tmp_path) / "generations" / generation_a
+    assert len(loaded[0]) == 1
 
 
 def test_failure_during_atomic_head_replace_keeps_old_generation_current(tmp_path: Path, monkeypatch):
@@ -589,6 +691,42 @@ def test_generation_manifest_rejects_extra_or_hash_changed_files(tmp_path: Path,
     all_candidates = generation / "all_candidates.json"
     all_candidates.write_bytes(all_candidates.read_bytes() + b" ")
     with pytest.raises(EpisodeContractError, match="manifest"):
+        load_candidate_episode_store(_episode_root(tmp_path))
+
+
+def test_nested_manifest_named_file_is_not_exempt_from_exact_generation_membership(
+    tmp_path: Path, monkeypatch,
+):
+    """Exempting by basename lets an unauthenticated nested file evade the generation address."""
+    _seed_sources(tmp_path)
+    _run_nightly(tmp_path, monkeypatch)
+    generation = _generation(tmp_path)
+    (generation / "events" / "manifest.json").write_text("{}\n")
+
+    with pytest.raises(EpisodeContractError, match="unexpected file|file set"):
+        load_candidate_episode_store(_episode_root(tmp_path))
+    with pytest.raises(EpisodeContractError, match="unexpected file|content address"):
+        writer._validate_generation_directory(generation, generation.name)
+
+
+@pytest.mark.parametrize("target", ["parquet", "receipt"])
+def test_canonical_reader_rejects_self_addressed_generation_with_cross_file_semantic_drift(
+    tmp_path: Path, monkeypatch, target: str,
+):
+    """A manifest authenticates bytes; it cannot substitute for projection/receipt semantics."""
+    _seed_sources(tmp_path)
+    _run_nightly(tmp_path, monkeypatch)
+    generation = _generation(tmp_path)
+    if target == "parquet":
+        pd.DataFrame([]).to_parquet(generation / "current.parquet", index=False)
+    else:
+        receipt_path = generation / "latest_receipt.json"
+        receipt = json.loads(receipt_path.read_text())
+        receipt["counts"]["old_events"] += 1
+        receipt_path.write_text(canonical_json(receipt) + "\n")
+    _readdress_current_generation(tmp_path)
+
+    with pytest.raises(EpisodeContractError, match="parquet|receipt"):
         load_candidate_episode_store(_episode_root(tmp_path))
 
 

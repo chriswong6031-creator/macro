@@ -20,18 +20,20 @@ from engine.us_candidate_episode import (
     DEFAULT_DEFINITION_ERA,
     GENERATION_MANIFEST_SCHEMA,
     HEAD_SCHEMA,
+    PARQUET_JSON_FIELDS,
+    RECONCILE_RECEIPT_SCHEMA,
     SUPPRESSION_REASONS,
     SUPPRESSION_SCHEMA,
     EpisodeContractError,
-    _validate_generation_file_set,
     _load_partitioned_events as _core_load_event_partitions,
     _load_partitioned_suppressions as _core_load_suppression_partitions,
     apply_commands,
     build_all_candidates,
     canonical_json,
-    load_all_candidates,
-    load_candidate_episode_store,
+    load_candidate_episode_store_snapshot,
     reconcile_observations,
+    validate_candidate_episode_generation,
+    validate_candidate_episode_generation_payload,
     validate_events,
     validate_suppressions,
 )
@@ -45,10 +47,8 @@ from engine.us_candidate_episode_intake import (
 )
 
 
-RECEIPT_SCHEMA = "prophet.candidate_episode_reconcile_receipt/v1"
-_PARQUET_JSON_FIELDS = frozenset({
-    "intake_classes", "structural_anchor", "expert_events", "source_event_ids",
-})
+RECEIPT_SCHEMA = RECONCILE_RECEIPT_SCHEMA
+_PARQUET_JSON_FIELDS = PARQUET_JSON_FIELDS
 _SUPPRESSION_REASON_MAP = {
     "MISSING_TRIGGER": "NO_EVALUATED_TRIGGER",
     "UNEVALUATED_TRIGGER": "NO_EVALUATED_TRIGGER",
@@ -178,23 +178,23 @@ def _load_suppression_partitions(directory: Path) -> list[dict[str, object]]:
     return _core_load_suppression_partitions(directory)
 
 
-def _resolve_current_generation(episode_root: Path) -> Path | None:
+def _resolve_current_generation(episode_root: Path):
     head_path = episode_root / "HEAD.json"
     if not head_path.exists():
         return None
-    load_candidate_episode_store(episode_root)
-    head = json.loads(head_path.read_text(encoding="utf-8"))
-    return episode_root / "generations" / str(head["generation_id"])
+    return load_candidate_episode_store_snapshot(episode_root)
 
 
 def _load_existing_ledgers(episode_root: Path):
-    generation = _resolve_current_generation(episode_root)
-    if generation is None:
-        return [], [], None
+    snapshot = _resolve_current_generation(episode_root)
+    if snapshot is None:
+        return [], [], None, None
+    generation = snapshot.generation
     return (
-        _load_event_partitions(generation / "events"),
-        _load_suppression_partitions(generation / "suppressions"),
-        generation,
+        list(generation.events),
+        list(generation.suppressions),
+        generation.path,
+        dict(generation.receipt),
     )
 
 
@@ -307,11 +307,6 @@ def _parquet_bytes(rows: Sequence[Mapping[str, object]]) -> bytes:
     return sink.getvalue().to_pybytes()
 
 
-def _decode_parquet(path: Path) -> list[dict[str, object]]:
-    return [{key: json.loads(value) if key in _PARQUET_JSON_FIELDS and isinstance(value, str) else value
-             for key, value in row.items()} for row in pq.read_table(path).to_pylist()]
-
-
 def _source_accounting(batches: Sequence[IntakeBatch], reconciled_suppressions):
     suppression_keys = {(row.get("source_system"), row.get("source_schema"), row.get("source_event_id"))
                         for row in reconciled_suppressions}
@@ -338,7 +333,8 @@ def _stable_receipt(old: Mapping[str, object], new: Mapping[str, object]) -> boo
 def _load_and_build(*, repo_root: Path, recorded_at: str, correction_path: Path | None, mode: str):
     data_root = repo_root / "data"
     episode_root = data_root / "us_prophet_rank" / "episodes"
-    existing_events, existing_suppressions, current_generation = _load_existing_ledgers(episode_root)
+    (existing_events, existing_suppressions, current_generation,
+     previous_receipt) = _load_existing_ledgers(episode_root)
     identity_receipts, batches = _load_intakes(data_root, allow_degraded_identity=mode != "nightly")
     observations = [row for batch in batches for row in batch.observations]
     intake_suppressions = [row for batch in batches for row in batch.suppressions]
@@ -383,9 +379,6 @@ def _load_and_build(*, repo_root: Path, recorded_at: str, correction_path: Path 
         },
         "source_receipts": [receipt for batch in batches for receipt in batch.source_receipts],
     }
-    previous_receipt = None
-    if current_generation is not None:
-        previous_receipt = json.loads((current_generation / "latest_receipt.json").read_text())
     return (receipt, projection, list(commanded.events), suppressions, projection_parquet,
             current_generation, previous_receipt)
 
@@ -433,105 +426,43 @@ def _fsync_directory(path: Path) -> None:
         os.close(descriptor)
 
 
+def _mkdirs_fsynced(path: Path) -> None:
+    """Create each missing directory and durably persist its parent entry before continuing."""
+    target = Path(path)
+    missing: list[Path] = []
+    cursor = target
+    while not cursor.exists():
+        missing.append(cursor)
+        if cursor == cursor.parent:
+            raise EpisodeContractError("cannot find an existing parent for durable directory creation")
+        cursor = cursor.parent
+    if not cursor.is_dir():
+        raise EpisodeContractError("durable directory parent is not a directory")
+    for directory in reversed(missing):
+        directory.mkdir()
+        _fsync_directory(directory.parent)
+    if not target.is_dir():
+        raise EpisodeContractError("durable directory target is not a directory")
+
+
 def _fsync_tree(root: Path) -> None:
     directories = [root, *(path for path in root.rglob("*") if path.is_dir())]
     for directory in sorted(directories, key=lambda item: len(item.parts), reverse=True):
         _fsync_directory(directory)
 
 
-def _validate_receipt(receipt: Mapping[str, object], *, events, suppressions, projection_json,
-                      parquet_bytes) -> None:
-    required = {"schema", "mode", "gate", "durable_write", "recorded_at", "definition_era",
-                "source_hashes", "source_counts", "counts", "ledger_sha256",
-                "projection_hashes", "source_receipts"}
-    if set(receipt) != required or receipt.get("schema") != RECEIPT_SCHEMA:
-        raise EpisodeContractError("reconcile receipt envelope is invalid")
-    if receipt.get("mode") != "nightly" or receipt.get("gate") != {
-        "nightly_requested": True, "nightly_advance_enabled": True,
-    } or receipt.get("durable_write") is not True:
-        raise EpisodeContractError("reconcile receipt durable gate is invalid")
-    if receipt.get("definition_era") != DEFAULT_DEFINITION_ERA:
-        raise EpisodeContractError("reconcile receipt definition era is invalid")
-    _canonical_recorded_at(receipt.get("recorded_at"))
-    source_counts = receipt.get("source_counts")
-    counts = receipt.get("counts")
-    if not isinstance(source_counts, Mapping) or not isinstance(counts, Mapping):
-        raise EpisodeContractError("reconcile receipt counts are invalid")
-    required_counts = {
-        "input", "mapped", "suppressed", "ledger_suppressions", "old_events",
-        "new_events", "appended_events",
-    }
-    if set(counts) != required_counts:
-        raise EpisodeContractError("reconcile receipt count envelope is invalid")
-    for row in source_counts.values():
-        if not isinstance(row, Mapping) or set(row) != {"input", "mapped", "suppressed"}:
-            raise EpisodeContractError("receipt per-source counts are invalid")
-        if row["input"] != row["mapped"] + row["suppressed"]:
-            raise EpisodeContractError("receipt per-source counts are unbalanced")
-    if counts.get("input") != sum(row["input"] for row in source_counts.values()):
-        raise EpisodeContractError("receipt aggregate input count is invalid")
-    if counts.get("mapped") != sum(row["mapped"] for row in source_counts.values()):
-        raise EpisodeContractError("receipt aggregate mapped count is invalid")
-    if counts.get("suppressed") != sum(row["suppressed"] for row in source_counts.values()):
-        raise EpisodeContractError("receipt aggregate suppressed count is invalid")
-    if counts.get("new_events") != len(events) or counts.get("ledger_suppressions") != len(suppressions):
-        raise EpisodeContractError("receipt ledger counts are invalid")
-    if counts.get("old_events", -1) + counts.get("appended_events", -1) != len(events):
-        raise EpisodeContractError("receipt event delta is invalid")
-    ledger_hash = _sha_receipt(canonical_json(tuple(events)).encode())
-    if receipt.get("ledger_sha256") != ledger_hash:
-        raise EpisodeContractError("receipt ledger hash is invalid")
-    expected = {"all_candidates.json": _sha_receipt(projection_json),
-                "current.parquet": _sha_receipt(parquet_bytes)}
-    if receipt.get("projection_hashes") != expected:
-        raise EpisodeContractError("receipt projection hashes are invalid")
-    source_hashes = receipt.get("source_hashes")
-    if not isinstance(source_hashes, Mapping) or any(
-        not isinstance(path, str) or not path or not isinstance(value, str)
-        or not re.fullmatch(r"sha256:[0-9a-f]{64}", value)
-        for path, value in source_hashes.items()
-    ):
-        raise EpisodeContractError("receipt source hashes are invalid")
-
-
 def _validate_generation_payload(directory: Path) -> None:
-    relative_files = {
-        str(path.relative_to(directory)) for path in directory.rglob("*")
-        if path.is_file() and path.name != "manifest.json"
-    }
-    _validate_generation_file_set(directory, relative_files)
-    events = _load_event_partitions(directory / "events")
-    suppressions = _load_suppression_partitions(directory / "suppressions")
-    all_path = directory / "all_candidates.json"
-    all_bytes = all_path.read_bytes()
-    projection = json.loads(all_bytes)
-    if all_bytes != (canonical_json(projection) + "\n").encode():
-        raise EpisodeContractError("All Candidates bytes are not canonical")
-    logical_json = load_all_candidates(all_path)
-    logical_parquet = _decode_parquet(directory / "current.parquet")
-    if canonical_json(logical_json) != canonical_json(logical_parquet):
-        raise EpisodeContractError("current.parquet differs from All Candidates rows")
-    ledger_hash = _sha_receipt(canonical_json(tuple(events)).encode())
-    if projection["generated_from"] != {"event_count": len(events), "ledger_sha256": ledger_hash}:
-        raise EpisodeContractError("All Candidates metadata differs from staged ledger")
-    if projection["coverage"].get("suppressed_inputs") != len(suppressions):
-        raise EpisodeContractError("All Candidates suppression count differs from staged ledger")
-    receipt_path = directory / "latest_receipt.json"
-    receipt_bytes = receipt_path.read_bytes()
-    receipt = json.loads(receipt_bytes)
-    if receipt_bytes != (canonical_json(receipt) + "\n").encode():
-        raise EpisodeContractError("reconcile receipt bytes are not canonical")
-    _validate_receipt(receipt, events=events, suppressions=suppressions,
-                      projection_json=all_bytes, parquet_bytes=(directory / "current.parquet").read_bytes())
+    validate_candidate_episode_generation_payload(directory)
 
 
 def _manifest_for(directory: Path):
     files: dict[str, dict[str, object]] = {}
     for path in sorted(directory.rglob("*")):
-        if not path.is_file() or path.name == "manifest.json":
+        relative = str(path.relative_to(directory))
+        if not path.is_file() or relative == "manifest.json":
             continue
         payload = path.read_bytes()
-        files[str(path.relative_to(directory))] = {
+        files[relative] = {
             "sha256": _sha_receipt(payload), "bytes": len(payload),
         }
     material = {"schema": GENERATION_MANIFEST_SCHEMA, "files": files}
@@ -542,15 +473,7 @@ def _manifest_for(directory: Path):
 
 
 def _validate_generation_directory(directory: Path, expected_generation_id: str) -> None:
-    manifest_path = directory / "manifest.json"
-    manifest_bytes = manifest_path.read_bytes()
-    manifest = json.loads(manifest_bytes)
-    if manifest_bytes != (canonical_json(manifest) + "\n").encode():
-        raise EpisodeContractError("generation manifest bytes are not canonical")
-    actual_id, expected_manifest = _manifest_for(directory)
-    if actual_id != expected_generation_id or manifest != expected_manifest:
-        raise EpisodeContractError("generation manifest or content address is invalid")
-    _validate_generation_payload(directory)
+    validate_candidate_episode_generation(directory, expected_generation_id=expected_generation_id)
 
 
 def _install_generation(stage: Path, destination: Path) -> None:
@@ -595,7 +518,7 @@ def _publish_transaction(repo_root: Path, receipt, projection, events, suppressi
                          projection_parquet):
     episode_root = repo_root / "data" / "us_prophet_rank" / "episodes"
     generations = episode_root / "generations"
-    generations.mkdir(parents=True, exist_ok=True)
+    _mkdirs_fsynced(generations)
     durable_receipt = {**receipt, "durable_write": True}
     payloads = _generation_payloads(durable_receipt, projection, events, suppressions,
                                     projection_parquet)

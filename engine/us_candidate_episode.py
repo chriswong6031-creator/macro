@@ -16,6 +16,9 @@ from pathlib import Path
 import re
 from typing import Mapping, Sequence
 
+import pyarrow as pa
+import pyarrow.parquet as pq
+
 from engine.stock_identity import fingerprint
 from lib.dataos.identity import IdentityError, issuer_id as dataos_issuer_id, parse_id, security_id as dataos_security_id
 
@@ -26,6 +29,7 @@ ALL_CANDIDATES_SCHEMA = "prophet.all_candidates/v1"
 HEAD_SCHEMA = "prophet.candidate_episode_head/v1"
 GENERATION_MANIFEST_SCHEMA = "prophet.candidate_episode_generation_manifest/v1"
 SUPPRESSION_SCHEMA = "prophet.candidate_episode_suppression/v1"
+RECONCILE_RECEIPT_SCHEMA = "prophet.candidate_episode_reconcile_receipt/v1"
 DEFAULT_DEFINITION_ERA = "candidate-episode-v1-2026-08-25"
 EVENT_TYPES = frozenset({
     "OPENED",
@@ -66,6 +70,9 @@ SUPPRESSION_REASONS = frozenset({
     "SOURCE_SCHEMA_UNSUPPORTED",
     "SOURCE_RECEIPT_INVALID",
 })
+PARQUET_JSON_FIELDS = frozenset({
+    "intake_classes", "structural_anchor", "expert_events", "source_event_ids",
+})
 
 
 class EpisodeContractError(ValueError):
@@ -78,6 +85,21 @@ class ReconcileResult:
     new_events: tuple[dict[str, object], ...]
     suppressions: tuple[dict[str, object], ...]
     episodes: tuple[dict[str, object], ...]
+
+
+@dataclass(frozen=True)
+class ValidatedCandidateEpisodeGeneration:
+    path: Path
+    events: tuple[dict[str, object], ...]
+    suppressions: tuple[dict[str, object], ...]
+    episodes: tuple[dict[str, object], ...]
+    receipt: dict[str, object]
+
+
+@dataclass(frozen=True)
+class CandidateEpisodeStoreSnapshot:
+    generation_id: str
+    generation: ValidatedCandidateEpisodeGeneration
 
 
 def canonical_json(value: object) -> str:
@@ -793,10 +815,10 @@ def build_all_candidates(events: Sequence[Mapping[str, object]], *, suppression_
     }
 
 
-def load_all_candidates(path: Path) -> list[dict[str, object]]:
+def load_all_candidates(path: Path, *, payload: bytes | None = None) -> list[dict[str, object]]:
     """The sole downstream B1 reader for the canonical All Candidates projection."""
     try:
-        document = json.loads(path.read_text(encoding="utf-8"))
+        document = json.loads(path.read_bytes() if payload is None else payload)
     except (OSError, json.JSONDecodeError) as exc:
         raise EpisodeContractError(f"cannot load all candidates: {exc}") from exc
     if not isinstance(document, Mapping) or document.get("schema") != ALL_CANDIDATES_SCHEMA:
@@ -972,8 +994,280 @@ def _validate_generation_file_set(generation: Path, relative_files: set[str]) ->
         raise EpisodeContractError("generation contains an unexpected file")
 
 
-def load_candidate_episode_store(root: Path) -> list[dict[str, object]]:
-    """Resolve and validate the sole atomic HEAD before loading All Candidates."""
+def _decode_candidate_parquet(payload: bytes) -> list[dict[str, object]]:
+    try:
+        physical_rows = pq.read_table(pa.BufferReader(payload)).to_pylist()
+    except Exception as exc:
+        raise EpisodeContractError("current.parquet is not a valid Parquet projection") from exc
+    logical_rows: list[dict[str, object]] = []
+    for physical in physical_rows:
+        row: dict[str, object] = {}
+        for key, value in physical.items():
+            if key not in PARQUET_JSON_FIELDS:
+                row[key] = value
+                continue
+            if not isinstance(value, str):
+                raise EpisodeContractError("current.parquet nested values are not canonical JSON strings")
+            try:
+                decoded = json.loads(value)
+            except json.JSONDecodeError as exc:
+                raise EpisodeContractError("current.parquet contains invalid nested JSON") from exc
+            if canonical_json(decoded) != value:
+                raise EpisodeContractError("current.parquet nested JSON is not canonical")
+            row[key] = decoded
+        logical_rows.append(row)
+    return logical_rows
+
+
+def _non_negative_count(value: object, *, field: str) -> int:
+    if type(value) is not int or value < 0:
+        raise EpisodeContractError(f"reconcile receipt {field} is not a non-negative integer")
+    return value
+
+
+def validate_reconciliation_receipt(
+    receipt: Mapping[str, object], *, events: Sequence[Mapping[str, object]],
+    suppressions: Sequence[Mapping[str, object]], all_candidates_bytes: bytes,
+    parquet_bytes: bytes,
+) -> dict[str, object]:
+    """Validate the exact durable receipt and every declared cross-file invariant."""
+    required = {
+        "schema", "mode", "gate", "durable_write", "recorded_at", "definition_era",
+        "source_hashes", "source_counts", "counts", "ledger_sha256",
+        "projection_hashes", "source_receipts",
+    }
+    row = dict(receipt)
+    if set(row) != required or row.get("schema") != RECONCILE_RECEIPT_SCHEMA:
+        raise EpisodeContractError("reconcile receipt envelope is invalid")
+    if row.get("mode") != "nightly" or row.get("gate") != {
+        "nightly_requested": True, "nightly_advance_enabled": True,
+    } or row.get("durable_write") is not True:
+        raise EpisodeContractError("reconcile receipt durable gate is invalid")
+    if row.get("definition_era") != DEFAULT_DEFINITION_ERA:
+        raise EpisodeContractError("reconcile receipt definition era is invalid")
+    recorded = _timestamp(row.get("recorded_at"), field="reconcile receipt recorded_at")
+    if recorded != row["recorded_at"]:
+        raise EpisodeContractError("reconcile receipt recorded_at is not canonical")
+
+    source_counts = row.get("source_counts")
+    counts = row.get("counts")
+    if not isinstance(source_counts, Mapping) or not isinstance(counts, Mapping):
+        raise EpisodeContractError("reconcile receipt counts are invalid")
+    expected_sources = {"turn_watch", "candidate", "doors", "entry_radar"}
+    if set(source_counts) != expected_sources:
+        raise EpisodeContractError("reconcile receipt source accounting set is invalid")
+    required_counts = {
+        "input", "mapped", "suppressed", "ledger_suppressions", "old_events",
+        "new_events", "appended_events",
+    }
+    if set(counts) != required_counts:
+        raise EpisodeContractError("reconcile receipt count envelope is invalid")
+    normalized_counts = {
+        field: _non_negative_count(counts[field], field=field) for field in required_counts
+    }
+    normalized_sources: list[Mapping[str, object]] = []
+    for source, accounting in source_counts.items():
+        if not isinstance(source, str) or not source or not isinstance(accounting, Mapping):
+            raise EpisodeContractError("reconcile receipt per-source counts are invalid")
+        if set(accounting) != {"input", "mapped", "suppressed"}:
+            raise EpisodeContractError("reconcile receipt per-source count envelope is invalid")
+        values = {
+            field: _non_negative_count(accounting[field], field=f"{source}.{field}")
+            for field in ("input", "mapped", "suppressed")
+        }
+        if values["input"] != values["mapped"] + values["suppressed"]:
+            raise EpisodeContractError("reconcile receipt per-source counts are unbalanced")
+        normalized_sources.append(values)
+    for field in ("input", "mapped", "suppressed"):
+        if normalized_counts[field] != sum(source[field] for source in normalized_sources):
+            raise EpisodeContractError(f"reconcile receipt aggregate {field} count is invalid")
+    if normalized_counts["new_events"] != len(events) or normalized_counts[
+        "ledger_suppressions"
+    ] != len(suppressions):
+        raise EpisodeContractError("reconcile receipt ledger counts are invalid")
+    if normalized_counts["old_events"] + normalized_counts["appended_events"] != len(events):
+        raise EpisodeContractError("reconcile receipt event delta is invalid")
+
+    ledger_hash = _sha_receipt(canonical_json(tuple(events)).encode("utf-8"))
+    if row.get("ledger_sha256") != ledger_hash:
+        raise EpisodeContractError("reconcile receipt ledger hash is invalid")
+    if row.get("projection_hashes") != {
+        "all_candidates.json": _sha_receipt(all_candidates_bytes),
+        "current.parquet": _sha_receipt(parquet_bytes),
+    }:
+        raise EpisodeContractError("reconcile receipt projection hashes are invalid")
+    source_hashes = row.get("source_hashes")
+    if not isinstance(source_hashes, Mapping) or any(
+        not isinstance(path, str) or not path or not isinstance(value, str)
+        or _SHA256_RECEIPT_RE.fullmatch(value) is None
+        for path, value in source_hashes.items()
+    ):
+        raise EpisodeContractError("reconcile receipt source hashes are invalid")
+    source_receipts = row.get("source_receipts")
+    expected_source_order = ["turn_watch", "candidate", "doors", "entry_radar"]
+    if not isinstance(source_receipts, list) or [
+        receipt_row.get("source") if isinstance(receipt_row, Mapping) else None
+        for receipt_row in source_receipts
+    ] != expected_source_order:
+        raise EpisodeContractError("reconcile receipt source status rows are invalid")
+    for receipt_row in source_receipts:
+        assert isinstance(receipt_row, Mapping)
+        status = receipt_row.get("status")
+        if status == "ok":
+            if set(receipt_row) != {"source", "status", "rows", "files"}:
+                raise EpisodeContractError("reconcile receipt source status envelope is invalid")
+            _non_negative_count(receipt_row.get("rows"), field="source rows")
+        elif status == "degraded":
+            if set(receipt_row) not in (
+                {"source", "status", "reason"},
+                {"source", "status", "reason", "files"},
+            ) or not isinstance(receipt_row.get("reason"), str) or not receipt_row["reason"]:
+                raise EpisodeContractError("reconcile receipt degraded source status is invalid")
+        else:
+            raise EpisodeContractError("reconcile receipt source status is invalid")
+        files = receipt_row.get("files", [])
+        if not isinstance(files, list) or any(
+            not isinstance(file_row, Mapping) or set(file_row) != {"path", "sha256"}
+            or not isinstance(file_row["path"], str) or not file_row["path"]
+            or not isinstance(file_row["sha256"], str)
+            or _SHA256_RECEIPT_RE.fullmatch(file_row["sha256"]) is None
+            for file_row in files
+        ):
+            raise EpisodeContractError("reconcile receipt source file receipts are invalid")
+    return row
+
+
+def validate_candidate_episode_generation_payload(directory: Path) -> ValidatedCandidateEpisodeGeneration:
+    """Validate the ledger, projection, and receipt semantics of one generation payload."""
+    generation = Path(directory)
+    relative_files = {
+        str(path.relative_to(generation)) for path in generation.rglob("*")
+        if path.is_file() and str(path.relative_to(generation)) != "manifest.json"
+    }
+    _validate_generation_file_set(generation, relative_files)
+    events = _load_partitioned_events(generation / "events")
+    suppressions = _load_partitioned_suppressions(generation / "suppressions")
+
+    all_path = generation / "all_candidates.json"
+    try:
+        all_bytes = all_path.read_bytes()
+        projection = json.loads(all_bytes)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise EpisodeContractError("All Candidates projection is unreadable") from exc
+    if not isinstance(projection, Mapping) or all_bytes != (
+        canonical_json(projection) + "\n"
+    ).encode("utf-8"):
+        raise EpisodeContractError("All Candidates bytes are not canonical")
+    if set(projection) != {"schema", "definition_era", "generated_from", "coverage", "episodes"}:
+        raise EpisodeContractError("All Candidates envelope is invalid")
+    rows = load_all_candidates(all_path, payload=all_bytes)
+    ledger_hash = _sha_receipt(canonical_json(tuple(events)).encode("utf-8"))
+    if projection.get("generated_from") != {
+        "event_count": len(events), "ledger_sha256": ledger_hash,
+    }:
+        raise EpisodeContractError("All Candidates metadata differs from generation ledger")
+    expected_coverage = {
+        "episodes": len(rows),
+        "active": sum(row["episode_state"] not in TERMINAL_STATES for row in rows),
+        "suppressed_inputs": len(suppressions),
+    }
+    if projection.get("coverage") != expected_coverage:
+        raise EpisodeContractError("All Candidates coverage differs from generation truth")
+
+    parquet_path = generation / "current.parquet"
+    try:
+        parquet_bytes = parquet_path.read_bytes()
+    except OSError as exc:
+        raise EpisodeContractError("current.parquet is unreadable") from exc
+    parquet_rows = _decode_candidate_parquet(parquet_bytes)
+    if canonical_json(parquet_rows) != canonical_json(rows):
+        raise EpisodeContractError("current.parquet differs from All Candidates rows")
+
+    receipt_path = generation / "latest_receipt.json"
+    try:
+        receipt_bytes = receipt_path.read_bytes()
+        receipt = json.loads(receipt_bytes)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise EpisodeContractError("reconcile receipt is unreadable") from exc
+    if not isinstance(receipt, Mapping) or receipt_bytes != (
+        canonical_json(receipt) + "\n"
+    ).encode("utf-8"):
+        raise EpisodeContractError("reconcile receipt bytes are not canonical")
+    validated_receipt = validate_reconciliation_receipt(
+        receipt, events=events, suppressions=suppressions,
+        all_candidates_bytes=all_bytes, parquet_bytes=parquet_bytes,
+    )
+    return ValidatedCandidateEpisodeGeneration(
+        path=generation,
+        events=tuple(events),
+        suppressions=tuple(suppressions),
+        episodes=tuple(rows),
+        receipt=validated_receipt,
+    )
+
+
+def validate_candidate_episode_generation(
+    directory: Path, *, expected_generation_id: str | None = None,
+    expected_manifest_sha256: str | None = None,
+) -> ValidatedCandidateEpisodeGeneration:
+    """Validate one complete manifest-addressed generation through the shared canonical path."""
+    generation = Path(directory)
+    manifest_path = generation / "manifest.json"
+    try:
+        manifest_bytes = manifest_path.read_bytes()
+        manifest = json.loads(manifest_bytes)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise EpisodeContractError("generation manifest is unreadable") from exc
+    if not isinstance(manifest, Mapping) or manifest_bytes != (
+        canonical_json(manifest) + "\n"
+    ).encode("utf-8"):
+        raise EpisodeContractError("generation manifest bytes are not canonical")
+    required = {"schema", "generation_id", "files", "content_sha256"}
+    if set(manifest) != required or manifest.get("schema") != GENERATION_MANIFEST_SCHEMA:
+        raise EpisodeContractError("generation manifest envelope is invalid")
+    files = manifest.get("files")
+    generation_id = manifest.get("generation_id")
+    if not isinstance(files, Mapping) or not isinstance(generation_id, str):
+        raise EpisodeContractError("generation manifest identity is invalid")
+    material = {"schema": GENERATION_MANIFEST_SCHEMA, "files": files}
+    actual_generation_id = "peg:" + sha256(canonical_json(material).encode("utf-8")).hexdigest()
+    content = {key: value for key, value in manifest.items() if key != "content_sha256"}
+    if generation_id != actual_generation_id or manifest.get("content_sha256") != sha256(
+        canonical_json(content).encode("utf-8")
+    ).hexdigest():
+        raise EpisodeContractError("generation manifest content address is invalid")
+    if expected_generation_id is not None and generation_id != expected_generation_id:
+        raise EpisodeContractError("generation manifest differs from the expected generation")
+    if expected_manifest_sha256 is not None and _sha_receipt(manifest_bytes) != expected_manifest_sha256:
+        raise EpisodeContractError("generation manifest hash differs from HEAD")
+
+    actual_files = {
+        str(path.relative_to(generation)): path
+        for path in generation.rglob("*")
+        if path.is_file() and str(path.relative_to(generation)) != "manifest.json"
+    }
+    _validate_generation_file_set(generation, set(actual_files))
+    if set(files) != set(actual_files):
+        raise EpisodeContractError("generation manifest file set is not exact")
+    for relative, descriptor in files.items():
+        if (
+            not isinstance(relative, str)
+            or not isinstance(descriptor, Mapping)
+            or set(descriptor) != {"sha256", "bytes"}
+            or not isinstance(descriptor.get("sha256"), str)
+            or _SHA256_RECEIPT_RE.fullmatch(descriptor["sha256"]) is None
+            or type(descriptor.get("bytes")) is not int
+            or descriptor["bytes"] < 0
+        ):
+            raise EpisodeContractError("generation manifest file descriptor is invalid")
+        payload = actual_files[relative].read_bytes()
+        if descriptor["sha256"] != _sha_receipt(payload) or descriptor["bytes"] != len(payload):
+            raise EpisodeContractError("generation manifest file hash is invalid")
+    return validate_candidate_episode_generation_payload(generation)
+
+
+def load_candidate_episode_store_snapshot(root: Path) -> CandidateEpisodeStoreSnapshot:
+    """Resolve one HEAD byte snapshot and fully validate exactly its named generation."""
     store = Path(root)
     head_path = store / "HEAD.json"
     head = _canonical_file(head_path)
@@ -983,51 +1277,23 @@ def load_candidate_episode_store(root: Path) -> list[dict[str, object]]:
     generation_id = head.get("generation_id")
     if not isinstance(generation_id, str) or not re.fullmatch(r"peg:[0-9a-f]{64}", generation_id):
         raise EpisodeContractError("HEAD generation_id is invalid")
+    manifest_sha256 = head.get("manifest_sha256")
+    if not isinstance(manifest_sha256, str) or _SHA256_RECEIPT_RE.fullmatch(manifest_sha256) is None:
+        raise EpisodeContractError("HEAD manifest hash is invalid")
     head_content = {key: value for key, value in head.items() if key != "content_sha256"}
     if head.get("content_sha256") != sha256(canonical_json(head_content).encode("utf-8")).hexdigest():
         raise EpisodeContractError("HEAD content hash is invalid")
     generation = store / "generations" / generation_id
     if not generation.is_dir():
         raise EpisodeContractError("HEAD references a missing generation")
-    manifest_path = generation / "manifest.json"
-    manifest_bytes = manifest_path.read_bytes() if manifest_path.is_file() else b""
-    if head.get("manifest_sha256") != _sha_receipt(manifest_bytes):
-        raise EpisodeContractError("HEAD manifest hash is invalid")
-    manifest = _canonical_file(manifest_path)
-    manifest_required = {"schema", "generation_id", "files", "content_sha256"}
-    if set(manifest) != manifest_required or manifest.get("schema") != GENERATION_MANIFEST_SCHEMA:
-        raise EpisodeContractError("generation manifest envelope is invalid")
-    files = manifest.get("files")
-    if not isinstance(files, Mapping) or manifest.get("generation_id") != generation_id:
-        raise EpisodeContractError("generation manifest identity is invalid")
-    material = {"schema": GENERATION_MANIFEST_SCHEMA, "files": files}
-    expected_generation = "peg:" + sha256(canonical_json(material).encode("utf-8")).hexdigest()
-    content = {key: value for key, value in manifest.items() if key != "content_sha256"}
-    if expected_generation != generation_id or manifest.get("content_sha256") != sha256(
-        canonical_json(content).encode("utf-8")
-    ).hexdigest():
-        raise EpisodeContractError("generation manifest content address is invalid")
-    actual_files = {
-        str(path.relative_to(generation)): path
-        for path in generation.rglob("*") if path.is_file() and path.name != "manifest.json"
-    }
-    _validate_generation_file_set(generation, set(actual_files))
-    if set(files) != set(actual_files):
-        raise EpisodeContractError("generation manifest file set is not exact")
-    for relative, descriptor in files.items():
-        if not isinstance(relative, str) or not isinstance(descriptor, Mapping) or set(descriptor) != {"sha256", "bytes"}:
-            raise EpisodeContractError("generation manifest file descriptor is invalid")
-        payload = actual_files[relative].read_bytes()
-        if descriptor.get("sha256") != _sha_receipt(payload) or descriptor.get("bytes") != len(payload):
-            raise EpisodeContractError("generation manifest file hash is invalid")
-    events = _load_partitioned_events(generation / "events")
-    suppressions = _load_partitioned_suppressions(generation / "suppressions")
-    rows = load_all_candidates(generation / "all_candidates.json")
-    projection = json.loads((generation / "all_candidates.json").read_text(encoding="utf-8"))
-    generated = projection["generated_from"]
-    ledger_hash = "sha256:" + sha256(canonical_json(tuple(events)).encode("utf-8")).hexdigest()
-    if generated.get("event_count") != len(events) or generated.get("ledger_sha256") != ledger_hash:
-        raise EpisodeContractError("All Candidates metadata differs from generation ledger")
-    if projection["coverage"].get("suppressed_inputs") != len(suppressions):
-        raise EpisodeContractError("All Candidates suppression count differs from generation ledger")
-    return rows
+    validated = validate_candidate_episode_generation(
+        generation,
+        expected_generation_id=generation_id,
+        expected_manifest_sha256=manifest_sha256,
+    )
+    return CandidateEpisodeStoreSnapshot(generation_id=generation_id, generation=validated)
+
+
+def load_candidate_episode_store(root: Path) -> list[dict[str, object]]:
+    """Load All Candidates only after validating one atomic HEAD-backed store snapshot."""
+    return list(load_candidate_episode_store_snapshot(root).generation.episodes)
