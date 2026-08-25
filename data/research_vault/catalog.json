@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-25T12:23:27.466173+00:00",
-  "count": 1825,
+  "generated_at": "2026-08-25T13:39:39.512713+00:00",
+  "count": 1829,
   "institutions": [
     "13F Summary",
     "ABN Amro",
@@ -90,6 +90,25 @@
   ],
   "items": [
     {
+      "id": "marketdesk-tojlwecvx1a-1cf993",
+      "title": "GS Novak US Industrials Materials events corn HEI 25 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-25T11:48:51Z",
+      "summary_points": [
+        "**Valuation Disparity**: HEI US Equity trades at 27.5x EV/EBITDA vs RIV Index’s 2.0x and 52.0x PE vs RIV’s 2.7x, signaling severe overvaluation risk relative to benchmark.",
+        "**HEI Squeeze Catalyst**: HEI faces 3mm short position with 7% float shorted, flatlined valuation vs aerospace re-rating, creating high-risk short squeeze potential.",
+        "**Critical Data Releases**: Tuesday 8/25 ADP, FHFA House Price Index, Richmond Fed, Consumer Confidence, and New Home Sales are key macro drivers for equity pricing and sentiment."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-vjmlbv6c3xh-e058fd",
       "title": "GS Duttenhoefer Duttenhoefers Daily 25 Aug 2026",
       "institution": "S&T",
@@ -105,6 +124,64 @@
       "tickers": [],
       "top_pick": false,
       "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-kbssgxbraax-628837",
+      "title": "GS Privorotsky GS Basics De Rating Invoice Not a Crisis Raising WFE Forecasts 25 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-25T11:48:48Z",
+      "summary_points": [
+        "**Tech Valuation Pressure**: SOX forward P/E down to 15x (from 21-22) amid NVDA/Broadcom CDS widening, semi inventory builds, and policy pushback on data centers.",
+        "**Oil Policy Containment**: Treasury excludes Chinese financial institutions from Iran oil sanctions; Bessest avoids targeting nations to prevent global financial system disruption, prioritizing oil price stability.",
+        "**Semiconductor Growth Outlook**: DRAM (3%-31% CAGR), Foundry (12%-39%), and Logic & Other (6%-43%) segments show robust AI-driven expansion through 2028 despite cyclical headwinds."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-1kwum2sd4k8-65c7c1",
+      "title": "GS McGeoch GS Materials August 25 Copper positioning VALE technicals 25 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-25T11:48:46Z",
+      "summary_points": [
+        "**Copper Tightness & Supply Dynamics**: Supply constraints driving exponential price moves (vs linear demand), shifting focus from oil to copper with rapid ATH retesting.",
+        "**Gold as Primary Driver**: Gold leads commodity trades due to tight supply, China demand stimulus, SWF allocations (<2.5% un-audited), and forward market impacts.",
+        "**US-China Trade Policy Risks**: 7.5% tariffs on Chinese manufacturing, Xi-Trump summit, and Nov 10 trade pact expiry creating critical volatility catalysts for China markets and gold miners."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-9mzmocnqhq6-c0e38c",
+      "title": "GS Blekos Marketcolour Naturgy Nebius FLSmidth SMG 25 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-25T11:48:45Z",
+      "summary_points": [
+        "**Tech Sector Drag & NVDA's Streak**: US equities pressured by tech/momentum (SPX -28bps, NDX -97bps); NVDA's 7th consecutive decline ahead of EPS print poses key risk for tech-heavy portfolios.",
+        "**AI Infrastructure Fund Flows**: Institutional positioning shifts (NVDA/AMD cuts; CSco/MSFT adds) signal critical sentiment changes for AI sector allocation.",
+        "**Buyback Liquidity Surge**: $1.08T S&P 500 buybacks backing 98% of index, with execution volumes at 1.7x YTD ADTV, driving critical liquidity in thin summer markets.",
+        "**China Demand-Driven Weakness**: July data shows real GDP ~4% yoy in early Q3, with lower volumes/prices indicating renewed demand-driven weakness."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },
