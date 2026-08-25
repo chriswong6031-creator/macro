@@ -1,0 +1,46 @@
+# Approval receipt (RIG V1 §7/§12) — exists ONLY when manifest status is approved.
+# This receipt is generated from the final Sol design-authority ruling recorded on PR #6337
+# issuecomment-5404196829 on 2026-08-24 ET under protected Skillpack
+# mastermindx-market-intelligence/Mastermind@4d323d03e4151449a4b76abfdfefca1d56825fde.
+#
+# XPV2-SC-R3B.2 US Sector Central six-view workspace. Final verdict:
+# APPROVE_WITH_CONDITIONS for REFERENCE LAW ONLY. It is not production deployment and does not
+# authorize R3C implementation.
+#
+# Bound candidate:
+# mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/proposal/MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html
+# sha256 4adb4b6245e8e4aa5b68c850a615461327c0a5d2e672e4c203d6ba32a3b8d53c, 5,506,871 bytes.
+# artifact_sha below equals the proposal frozen_sha and the artifact binding in the formal
+# Product Regression and Visual/Taste critic receipts.
+schema: mastermind.rig_approval.v1
+reference_id: mastermind-xpv2-sector-r3b-2
+approved_at: '2026-08-24'
+verdict: APPROVE_WITH_CONDITIONS
+artifact_sha: d0830a374795925ee1e55b66c0cc42e329ac172d
+authority:
+  identity: Sol (AI CEO, mastermindx-market-intelligence) as design authority for the Sector Central reference line -- APPROVE_WITH_CONDITIONS ruling recorded on PR #6337 issuecomment-5404196829 on 2026-08-24 ET, under protected Sol Skillpack mastermindx-market-intelligence/Mastermind@4d323d03e4151449a4b76abfdfefca1d56825fde (mastermind.sol_skillpack.v1 v1.0.0). Authored zero candidate bytes and occupied no critic seat.
+  role: design_authority
+reviewers:
+- identity: codex-product-regression-final-fresh-2026-08-24
+  role: product_regression
+- identity: Fresh independent Codex Visual / Taste critic commissioned by Chris under Sol dispatch
+  role: visual_taste
+author:
+  identity: XPV2-SC-R3B.2 final surgical closure -- returning R3B/R3B.1 Fable orchestrator with delegated Opus design + Sonnet build/QA lanes (COMMISSION.md, Sol + Chairman 2026-08-23)
+conditions:
+- id: R3C-HEATMAP-LEGIBILITY
+  text: >
+    Heatmap colour-field glyph legibility remains UNMEASURED, never PASS. No seat in this cycle held a valid blended/painted-substrate method, and the Mobile seat explicitly declined an invalid flat-surface substitution (MA2-002). R3C must obtain an appropriate composited-background or human-equivalent determination before production acceptance; failure blocks shipping until a bounded treatment is adjudicated by design authority.
+- id: R3C-AUTH-PREMIUM
+  text: >
+    R3C must prove real auth settlement, /premiumdata/sector_central.json authorization, successful hydrate, preview preservation for the ungated state, and 401 / 403 / offline / malformed behavior against the live surface. The static reference cannot establish any of these and does not claim to.
+- id: R3C-TIME-MACHINE
+  text: >
+    R3C must prove live Time Machine behavior end to end: manifest, episode feed, per-period and per-year chunks, and the empty, missing and failure paths. Recorded-not-executed evidence is not production proof.
+- id: R3C-VALIDATED-21D
+  text: >
+    R3C must resolve the broader production-owned "Forward track record: Validated" wording, the unproven-21d horizon, and the overloaded customer word "validated" -- while preserving the candidate's explicit and narrower disclosure, "Context only · evidence proven at 5d · never sizes decisions", together with its native ZH twin and the visual separation from explicitly labelled 21d figures.
+- id: R3C-NO-UNSUPPORTED-INVENTION
+  text: >
+    Baskets thin/gateable disclosure and any correction/revision UI remain FORBIDDEN until real producer contracts exist. No implementation may invent local producer truth, local rank, local state or local score to satisfy a surface.
+overrides: []

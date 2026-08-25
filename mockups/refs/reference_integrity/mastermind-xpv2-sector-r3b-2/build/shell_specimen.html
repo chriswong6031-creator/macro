@@ -1,0 +1,1194 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sector Central R3 — Shell Specimen</title>
+<!--
+  XPV2-SC-R3B · SHELL SPECIMEN (Principal Design Lead deliverable 2 of 2)
+  Companion law: ./DESIGN_SYSTEM_SPEC.md — that document binds; this file proves it.
+
+  WHAT THIS IS.  The global visual system for the six-view US Sector Central
+  workspace: chrome, tokens, page grammar, authority-weight system, view
+  navigation (desktop + phone), component vocabulary. It is NOT the six-view
+  reference — lanes D1 (Overview+Confluence), D2 (Map+Moving), D3 (Money+Explore)
+  compose the views INSIDE this shell, bound by the spec.
+
+  WHAT IS REAL vs PLACEHOLDER.  Every token, every geometry, every component, the
+  full si_workspace.js DOM contract and all EN/ZH chrome strings are REAL and
+  binding.  Every business VALUE (names, counts, figures, dates) is a SPECIMEN
+  PLACEHOLDER, marked `data-specimen` and quarantined by the banner below — the
+  R3 reference binds each one to the frozen fixture at
+  4c55fe433490adfd75fd901ef25f5793db2202db.  Nothing here is a business fact.
+
+  SELF-CONTAINED.  No external fetch of any kind: no webfont link, no stylesheet
+  link, no image request.  The token block below is a VERBATIM MIRROR of
+  templates/theme.css (:root, html[data-theme=light], html[data-lang=zh],
+  html[data-theme=light][data-lang=zh], the --ink-*/--fill-* rungs) plus the
+  DS-PR-0 scales exactly as mockups/design_system/specimen.html carries them.
+  It is a MIRROR, not a fork: no value is retuned, no new token root is minted.
+  Icon masks are copied byte-verbatim out of templates/dashboard-icons.css and
+  templates/product-nav-icons.css so the sanctioned monoline set renders with no
+  network request.  Type: --font-ui (system SF → Inter), one family, per master
+  design system §1.  No Google Fonts, no second face.
+-->
+<style>
+/* ══════════════════════════════════════════════════════════════════════════════
+   1 · TOKENS — verbatim mirror of templates/theme.css.  DO NOT RETUNE HERE.
+   ════════════════════════════════════════════════════════════════════════════ */
+:root{
+  --font-ui:-apple-system, BlinkMacSystemFont, Inter, "Segoe UI", Roboto,
+    "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    "Noto Sans CJK SC", sans-serif;
+  --font-mono:ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono",
+    Menlo, Consolas, "DejaVu Sans Mono", monospace;
+  --num:var(--font-ui);
+  /* type ramp — theme.css:52-63 */
+  --fs-display:46px; --fs-num-xl:38px; --fs-h1:28px; --fs-num-lg:22px;
+  --fs-h2:17px; --fs-md:15px; --fs-body:14px; --fs-h3:14px;
+  --fs-sm:12.5px; --fs-label:11px; --fs-micro:10px;
+  /* surfaces / palette — theme.css:64-72 */
+  --bg:#0f1115; --panel:#181b21; --panel2:#1e222a; --text:#d7dce3; --muted:#8b93a1;
+  --line:#3a4150;
+  --q1:#2e9e4f; --q2:#d4a017; --q3:#d04545; --q4:#3f78d8;
+  --warn:#e0a030; --act:#e05555; --ok:#3da564;
+  --up:#45b873; --down:#e06464; --orange:#e08b45;
+  --info:#5b9bf0; --link:#7aa7e0;
+  --chart-bg:transparent;
+  --card-shadow:0 1px 0 rgba(255,255,255,.02);
+  --popover-shadow:0 6px 18px rgba(0,0,0,.5);
+  --glass-bg:color-mix(in srgb, var(--panel) 86%, transparent);
+  --glass-brd:color-mix(in srgb, var(--text) 14%, transparent);
+  --glass-blur:saturate(180%) blur(22px);
+  --gbtn-bg:color-mix(in srgb, var(--panel2) 52%, transparent);
+  --gbtn-bg-hover:color-mix(in srgb, var(--panel2) 76%, transparent);
+  --gbtn-brd:color-mix(in srgb, var(--text) 12%, transparent);
+  --gbtn-brd-hover:color-mix(in srgb, var(--text) 24%, transparent);
+  --gbtn-sheen:rgba(255,255,255,.09);
+  /* DS-PR-0 scales — master design system §2.2, as the design-system specimen carries them */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-7:32px; --sp-8:44px;
+  --gap-grid:18px;
+  --r-ctl:8px; --r-btn:10px; --r-card:12px; --r-panel:14px; --r-pill:999px;
+  --t-fast:.16s; --t-med:.2s; --t-slow:.55s;
+  --ease-std:ease; --ease-lift:cubic-bezier(.2,.7,.3,1);
+  --shadow-hover:0 14px 30px -16px color-mix(in srgb, var(--link) 40%, transparent);
+  --ser-1:#5b9bf0; --ser-2:#d4a017; --ser-3:#0ea5e9; --ser-4:#e08b45;
+}
+html[data-theme="light"]{
+  --bg:#f7f8fa; --panel:#ffffff; --panel2:#eef1f6; --text:#1c2430; --muted:#5d6b7e;
+  --line:color-mix(in srgb, #1c2430 16%, #eaecf0);
+  --q1:#1f8b41; --q2:#b07d05; --q3:#c12f2f; --q4:#2f63c4;
+  --warn:#b9791a; --act:#c43d3d; --ok:#2f8a52;
+  --up:#1f9a55; --down:#cf4040; --orange:#c4781f;
+  --info:#285fff; --link:#285fff;
+  --chart-bg:#11151c;
+  --card-shadow:0 1px 3px rgba(20,30,50,.07);
+  --popover-shadow:0 4px 10px rgba(20,30,50,.06), 0 12px 28px rgba(20,30,50,.14);
+  --glass-bg:color-mix(in srgb, var(--panel) 90%, transparent);
+  --glass-brd:color-mix(in srgb, #1c2430 9%, transparent);
+  --gbtn-bg:color-mix(in srgb, var(--panel2) 78%, var(--panel));
+  --gbtn-bg-hover:color-mix(in srgb, var(--panel2) 96%, var(--panel));
+  --gbtn-brd:color-mix(in srgb, #1c2430 50%, transparent);
+  --gbtn-brd-hover:color-mix(in srgb, #1c2430 66%, transparent);
+  --gbtn-sheen:rgba(255,255,255,.7);
+  --ser-1:#2f63c4; --ser-2:#8f6a04; --ser-3:#0284c7; --ser-4:#b06a25;
+}
+/* zh 红涨绿跌 — theme.css:217-228 / :229-233 */
+html[data-lang="zh"]{ --up:#e06464; --down:#45b873; --q1:#d04545; --q3:#2e9e4f; }
+html[data-theme="light"][data-lang="zh"]{ --up:#cf4040; --down:#1f9a55; --q1:#c12f2f; --q3:#1f8b41; }
+/* text-grade ink rungs — theme.css:303-323 */
+:root{ --ink-mix-up:100%; --ink-mix-down:100%; --ink-mix-warn:100%; --ink-mix-ok:100%;
+  --ink-mix-act:100%; --ink-mix-orange:100%; --ink-mix-link:100%; --ink-mix-info:100%; }
+html[data-theme="light"]{ --ink-mix-up:62%; --ink-mix-down:84%; --ink-mix-warn:62%; --ink-mix-ok:70%;
+  --ink-mix-act:88%; --ink-mix-orange:58%; --ink-mix-link:88%; --ink-mix-info:88%; }
+html[data-theme="light"][data-lang="zh"]{ --ink-mix-up:84%; --ink-mix-down:62%; }
+:root{
+  --ink-up:color-mix(in srgb, var(--up) var(--ink-mix-up), var(--text));
+  --ink-down:color-mix(in srgb, var(--down) var(--ink-mix-down), var(--text));
+  --ink-warn:color-mix(in srgb, var(--warn) var(--ink-mix-warn), var(--text));
+  --ink-ok:color-mix(in srgb, var(--ok) var(--ink-mix-ok), var(--text));
+  --ink-act:color-mix(in srgb, var(--act) var(--ink-mix-act), var(--text));
+  --ink-orange:color-mix(in srgb, var(--orange) var(--ink-mix-orange), var(--text));
+  --ink-link:color-mix(in srgb, var(--link) var(--ink-mix-link), var(--text));
+  --ink-info:color-mix(in srgb, var(--info) var(--ink-mix-info), var(--text));
+}
+/* solid-fill rung (white text) — theme.css:346-357 */
+:root{
+  --fill-mix:64%;
+  --fill-up:color-mix(in srgb, var(--up) var(--fill-mix), #000);
+  --fill-down:color-mix(in srgb, var(--down) var(--fill-mix), #000);
+  --fill-warn:color-mix(in srgb, var(--warn) var(--fill-mix), #000);
+  --fill-ok:color-mix(in srgb, var(--ok) var(--fill-mix), #000);
+  --fill-act:color-mix(in srgb, var(--act) var(--fill-mix), #000);
+  --fill-link:color-mix(in srgb, var(--link) var(--fill-mix), #000);
+  --fill-info:color-mix(in srgb, var(--info) var(--fill-mix), #000);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   2 · ICONOGRAPHY — sanctioned monoline set only.
+   .dash-icon base + masks copied byte-verbatim from templates/dashboard-icons.css
+   and templates/product-nav-icons.css.  No emoji, no Unicode stars, no glyph
+   improvisation anywhere in this file (commission §18).
+   ════════════════════════════════════════════════════════════════════════════ */
+.dash-icon{ position:relative; display:inline-grid; place-items:center;
+  width:1.08em; height:1.08em; margin:0 .14em; color:var(--dash-icon-color,currentColor);
+  vertical-align:-.16em; flex:none; opacity:.88; }
+.dash-icon::before{ content:""; width:100%; height:100%; background:currentColor;
+  -webkit-mask:var(--dash-icon-mask,var(--submenu-icon-mask)) center / contain no-repeat;
+  mask:var(--dash-icon-mask,var(--submenu-icon-mask)) center / contain no-repeat; }
+.submenu-icon-intelligence{ --submenu-icon-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='2.25'/%3E%3Ccircle cx='6' cy='7' r='1.5'/%3E%3Ccircle cx='18' cy='7' r='1.5'/%3E%3Ccircle cx='6' cy='17' r='1.5'/%3E%3Ccircle cx='18' cy='17' r='1.5'/%3E%3Cpath d='m7.2 8 3.1 2.6m3.4 0L16.8 8m-6.5 5.4L7.2 16m6.5-2.6 3.1 2.6'/%3E%3C/g%3E%3C/svg%3E"); }
+.submenu-icon-rotation{ --submenu-icon-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='black' stroke-width='1.65' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18.2 8.2A7 7 0 0 0 6.4 6.7L4.5 8.5M5.8 15.8a7 7 0 0 0 11.8 1.5l1.9-1.8'/%3E%3Cpath d='M4.5 5v3.5H8m12 6.9h-3.5V19'/%3E%3Ccircle cx='12' cy='12' r='2'/%3E%3C/g%3E%3C/svg%3E"); }
+.submenu-icon-flow{ --submenu-icon-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='black' stroke-width='1.65' stroke-linecap='round'%3E%3Cpath d='M3.5 9.2c2.2 0 2.2-2.4 4.4-2.4s2.2 2.4 4.4 2.4 2.2-2.4 4.4-2.4 2.2 2.4 4.4 2.4M3.5 14.8c2.2 0 2.2-2.4 4.4-2.4s2.2 2.4 4.4 2.4 2.2-2.4 4.4-2.4 2.2 2.4 4.4 2.4'/%3E%3C/g%3E%3C/svg%3E"); }
+.submenu-icon-confluence{ --submenu-icon-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='2.2'/%3E%3Ccircle cx='5' cy='6' r='1.4'/%3E%3Ccircle cx='5' cy='18' r='1.4'/%3E%3Ccircle cx='19' cy='12' r='1.4'/%3E%3Cpath d='m6.1 6.9 4.2 3.6m-4.2 6.6 4.2-3.6m3.9-1.5h3.4'/%3E%3C/g%3E%3C/svg%3E"); }
+.dash-icon-compass{ --dash-icon-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='black' stroke-width='1.55' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='8.5'/%3E%3Cpath d='m15.5 8.5-2.1 4.9-4.9 2.1 2.1-4.9 4.9-2.1Z'/%3E%3Ccircle cx='12' cy='12' r='1.1'/%3E%3C/g%3E%3C/svg%3E"); }
+.dash-icon-search{ --dash-icon-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6.2'/%3E%3Cpath d='m15 15 4.8 4.8'/%3E%3C/g%3E%3C/svg%3E"); }
+.dash-icon-table{ --dash-icon-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='black' stroke-width='1.55' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3.5' y='4' width='17' height='16' rx='2'/%3E%3Cpath d='M3.5 9.3h17M3.5 14.7h17M9 4v16'/%3E%3C/g%3E%3C/svg%3E"); }
+.dash-icon-info{ --dash-icon-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='black' stroke-width='1.65' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='8.5'/%3E%3Cpath d='M12 10.5V17M12 7h.01'/%3E%3C/g%3E%3C/svg%3E"); }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   3 · BASE + BILINGUAL
+   ════════════════════════════════════════════════════════════════════════════ */
+*{ box-sizing:border-box; }
+html,body{ min-height:100%; }
+body{ margin:0; background:var(--bg); color:var(--text);
+  font-family:var(--font-ui); font-size:var(--fs-body); line-height:1.55;
+  -webkit-font-smoothing:antialiased; }
+a{ color:inherit; text-decoration:none; }
+button{ font:inherit; color:inherit; }
+h1,h2,h3{ margin:0; }
+p{ margin:0; }
+.tnum{ font-variant-numeric:tabular-nums; }
+/* BILINGUAL SWITCH — specificity is load-bearing.  A bare `.l-zh{display:none}`
+   is (0,1,0) and loses to any layout rule of the shape `.block span{display:block}`
+   (0,1,1), which silently prints the ZH twin next to the EN one on that component
+   only.  Measured here on the watch strip before the fix.  Two defences, both
+   applied: bind the switch at (0,2,1), and scope layout rules to direct children
+   so they cannot reach a language span at all. */
+html[data-lang] .l-zh{ display:none; }
+html[data-lang="zh"] .l-en{ display:none; }
+html[data-lang="zh"] .l-zh{ display:inline; }
+/* zh typography law: CJK stack leads, tracking reset, no uppercase mangling.
+   The -.02em/-.03em display tracking is EN-only (master design system §4). */
+html[data-lang="zh"] body{ font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",
+  "Noto Sans CJK SC", var(--font-ui); }
+html[data-lang="zh"] :is(h1,h2,h3,.r3-eyebrow,.r3-answer-view,.r3-ledge-name,.r3-sec h2,
+  .r3-kicker,.r3-mark,.r3-cellname){ letter-spacing:0; text-transform:none; }
+html[data-lang="zh"] :is(.r3-eyebrow,.r3-answer-view,.r3-ledge-name,.r3-kicker,.r3-cellname){ font-weight:700; }
+:where(a,button,summary,[tabindex]):focus-visible{
+  outline:2px solid color-mix(in srgb, var(--link) 70%, transparent); outline-offset:2px;
+  border-radius:var(--r-ctl); }
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{ animation-duration:.001ms !important; animation-iteration-count:1 !important;
+    transition-duration:.001ms !important; scroll-behavior:auto !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   4 · QUARANTINED REFERENCE FRAME  (commission §6: never a proposed product topbar)
+   Deliberately un-productlike: mono, dashed underline, "REFERENCE" mark. It is
+   NOT a design proposal for global Mastermind navigation, and it carries the
+   specimen's own theme / language / width controls.
+   ════════════════════════════════════════════════════════════════════════════ */
+:root{ --r3-chrome-h:40px; --r3-mnav-h:0px;
+  /* the ANSWER THREAD ink — one name, two consumers (active rail item, view
+     answer).  Dark carries it at full accent; light softens it toward --line
+     because light earns depth with STRUCTURE, not saturation — a 3px #285fff
+     rail is the loudest mark on a paper canvas and reads as a web app, not as
+     an institutional note. */
+  --r3-thread:var(--link); }
+html[data-theme="light"]{ --r3-thread:color-mix(in srgb, var(--link) 74%, var(--line)); }
+.r3-frame{ position:sticky; top:0; z-index:60; height:var(--r3-chrome-h);
+  display:flex; align-items:center; gap:var(--sp-3); padding:0 var(--sp-4);
+  background:var(--glass-bg); -webkit-backdrop-filter:var(--glass-blur);
+  backdrop-filter:var(--glass-blur);
+  border-bottom:1px dashed color-mix(in srgb, var(--muted) 55%, transparent); }
+.r3-mark{ font-family:var(--font-mono); font-size:var(--fs-micro); letter-spacing:.11em;
+  text-transform:uppercase; color:var(--muted); min-width:0; overflow:hidden;
+  text-overflow:ellipsis; white-space:nowrap; }
+.r3-mark b{ color:var(--ink-warn); font-weight:700; }
+.r3-mark-long{ display:inline; }
+@media (max-width:767px){ .r3-mark-long{ display:none; } }
+.r3-frame-sp{ flex:1 1 auto; }
+.r3-fbtn{ min-height:28px; padding:0 10px; border-radius:var(--r-ctl);
+  border:1px solid var(--gbtn-brd); background:var(--gbtn-bg); color:var(--muted);
+  font-size:var(--fs-micro); font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+  cursor:pointer; transition:color var(--t-fast) var(--ease-std), border-color var(--t-fast) var(--ease-std); }
+.r3-fbtn:hover{ color:var(--text); border-color:var(--gbtn-brd-hover); }
+.r3-fbtn[aria-pressed="true"]{ color:var(--text); border-color:color-mix(in srgb,var(--link) 50%,var(--line)); }
+
+/* specimen quarantine banner — design meta-copy is NEVER customer copy */
+.r3-specnote{ max-width:1440px; margin:var(--sp-4) auto 0; padding:9px var(--sp-4);
+  border:1px dashed color-mix(in srgb, var(--muted) 45%, transparent); border-radius:var(--r-ctl);
+  font-family:var(--font-mono); font-size:var(--fs-micro); line-height:1.6; color:var(--muted); }
+.r3-specnote b{ color:var(--text); }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   5 · PAGE HEADER — one h1 for the whole document, chrome-weight not hero-weight.
+   The first-screen budget belongs to the VIEW ANSWER, not to the page title.
+   ════════════════════════════════════════════════════════════════════════════ */
+.r3-pagehead{ max-width:1440px; margin:0 auto; padding:var(--sp-5) var(--sp-4) var(--sp-4);
+  display:flex; align-items:baseline; flex-wrap:wrap; gap:var(--sp-3) var(--sp-4); }
+.r3-pagehead h1{ font-size:var(--fs-md); font-weight:800; letter-spacing:.02em;
+  text-transform:uppercase; }
+.r3-pagehead h1 .r3-h1-mkt{ color:var(--muted); font-weight:700; }
+.r3-pagehead .r3-asof{ margin-left:auto; }
+.r3-asof{ font-family:var(--font-mono); font-size:var(--fs-micro); letter-spacing:.05em;
+  color:var(--muted); font-variant-numeric:tabular-nums; }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   6 · THE SHELL — si_workspace.js DOM contract, satisfied exactly.
+   .si-shell / .si-side / .si-view-btn / .si-stage / .si-view[data-view] /
+   .si-view-read / .si-vr-g|t|q / #si-side-asof / #si-side-grade
+   ════════════════════════════════════════════════════════════════════════════ */
+.si-shell{ max-width:1440px; margin:0 auto; display:grid;
+  grid-template-columns:var(--si-rail-w,200px) minmax(0,1fr); align-items:start; }
+.si-side{ position:sticky; top:var(--r3-chrome-h); align-self:start;
+  height:calc(100vh - var(--r3-chrome-h)); box-sizing:border-box; z-index:30;
+  display:flex; flex-direction:column; gap:2px; padding:var(--sp-3) 11px;
+  background:var(--panel); border-right:1px solid var(--line); }
+.si-rail-eyebrow{ display:block; padding:2px 10px var(--sp-2);
+  font-size:var(--fs-micro); font-weight:700; letter-spacing:.11em; text-transform:uppercase;
+  color:var(--muted); }
+.si-view-btn{ position:relative; display:flex; align-items:center; gap:10px;
+  min-height:38px; padding:8px 10px; border-radius:9px; border-left:3px solid transparent;
+  line-height:1.25; font-size:13px; font-weight:600; color:var(--muted);
+  transition:color var(--t-fast) var(--ease-std), background var(--t-fast) var(--ease-std); }
+.si-vb-g{ flex:none; font-size:17px; line-height:1; color:var(--muted); }
+.si-view-btn:hover{ color:var(--text); background:color-mix(in srgb, var(--link) 6%, transparent); }
+.si-view-btn:hover .si-vb-g{ color:var(--ink-link,var(--link)); }
+.si-view-btn.on{ color:var(--text); background:color-mix(in srgb, var(--link) 11%, var(--panel));
+  border-left-color:var(--r3-thread); font-weight:700; }
+/* light art direction: the rail is the tinted PAPER surface and the content
+   panels are the white ones.  A white rail on a #f7f8fa canvas is the flatness
+   bug the doctrine names (panel ≈ bg) — dark gets its separation from luminance,
+   light has to get it from surface + hairline. */
+html[data-theme="light"] .si-side{ background:color-mix(in srgb, var(--panel2) 62%, var(--panel)); }
+.si-view-btn.on .si-vb-g{ color:var(--ink-link,var(--link)); }
+.si-vb-l{ min-width:0; }
+/* rail footer — provenance travels with the navigation (production §1b) */
+.si-side-foot{ margin-top:auto; padding-top:10px; border-top:1px solid var(--line);
+  display:flex; flex-direction:column; gap:3px;
+  font-size:10.5px; line-height:1.45; color:var(--muted); }
+.si-stage{ min-width:0; padding:var(--sp-6) var(--sp-7) var(--sp-8) var(--sp-6); }
+.si-view{ display:none; }
+.si-view.on{ display:block; }
+/* §14 scroll-offset law: every hash landing target clears the sticky chrome, so a
+   legacy anchor NEVER buries the view answer.  scrollIntoView({block:'start'})
+   honours scroll-margin-top, which is why this one property is the whole repair. */
+.si-view [id], .si-view[id]{ scroll-margin-top:calc(var(--r3-chrome-h) + var(--r3-mnav-h) + 16px); }
+
+/* the composed read line — router writes .si-vr-g / .si-vr-t / .si-vr-q into it */
+.si-view-read{ display:flex; align-items:flex-start; gap:9px; margin:0 0 var(--sp-5);
+  padding:9px 13px; font-size:13.5px; line-height:1.5; color:var(--text);
+  background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--link);
+  border-radius:var(--r-btn); }
+.si-view-read[hidden]{ display:none; }
+.si-vr-g{ width:16px; height:16px; flex:none; margin-top:1px; color:var(--ink-link,var(--link)); }
+.si-vr-t{ flex:1 1 auto; min-width:0; }
+.si-vr-q{ flex:none; display:inline-flex; align-items:center; justify-content:center;
+  width:16px; height:16px; border:1px solid var(--line); border-radius:50%;
+  font-size:9.5px; font-weight:700; color:var(--muted); cursor:help; }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   7 · PAGE GRAMMAR (commission §6.2)
+   view answer  →  [state ledge, ACTION TIER ONLY]  →  dominant object  →
+   evidence rail  →  deeper path.  Never many equal-weight boxes.
+   ════════════════════════════════════════════════════════════════════════════ */
+.r3-eyebrow{ display:block; font-size:var(--fs-label); font-weight:600; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--muted); }
+
+/* 7.1 view answer — the ANSWER THREAD.  A 3px --link left rail is reserved for
+   exactly two elements on this product: the active rail item, and the view
+   answer.  Nothing else may draw one.
+
+   ONE ANSWER PER VIEW, ONE VOICE.  The nightly composed read (.si-view-read,
+   written by si_workspace.js) IS the answer line — it is not a second sentence
+   stacked beneath one.  A static fallback line sits behind it and appears only
+   when the composer returns null, so absence is never dressed as a reading and
+   the view is never answerless.  Production hides its own read on Overview
+   (sector_central.html.j2:1620) precisely because a hero duplicated it; merging
+   the two slots retires that duplication instead of re-creating it. */
+.r3-answer{ border-left:3px solid var(--r3-thread); padding:2px 0 2px var(--sp-4);
+  margin:0 0 var(--sp-6); }
+.r3-answer-view{ font-size:var(--fs-label); font-weight:700; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--muted); margin-bottom:7px; }
+.r3-answer-line, .r3-answer .si-view-read{
+  font-size:var(--fs-num-lg); font-weight:500; line-height:1.36;
+  letter-spacing:-.01em; color:var(--text); max-width:62ch; }
+html[data-lang="zh"] :is(.r3-answer-line,.r3-answer .si-view-read){
+  letter-spacing:0; line-height:1.55; max-width:34em; }
+.r3-answer-line b{ font-weight:700; }
+/* the read slot, worn as the answer: no panel, no border, no second box */
+.r3-answer .si-view-read{ display:flex; align-items:flex-start; gap:11px;
+  margin:0; padding:0; background:none; border:0; border-radius:0; }
+.r3-answer .si-vr-g{ width:20px; height:20px; margin-top:5px; }
+.r3-answer .si-vr-t{ flex:0 1 auto; }
+.r3-answer .si-vr-q{ margin-top:7px; }
+/* pure-CSS fallback: hide the static line whenever a composed read is present */
+.r3-answer .si-view-read:not([hidden]) ~ .r3-answer-line{ display:none; }
+.r3-answer-meta{ display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2) var(--sp-4);
+  margin-top:12px; font-size:var(--fs-sm); color:var(--muted); }
+.r3-q{ display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px;
+  border:1px solid var(--line); border-radius:50%; font-size:9.5px; font-weight:700;
+  color:var(--muted); cursor:help; }
+
+/* 7.2 section header (canonical .mx-sec anatomy, reference-scoped name) */
+.r3-sec{ display:flex; align-items:baseline; flex-wrap:wrap; gap:var(--sp-2) var(--sp-3);
+  margin:0 0 var(--sp-3); }
+.r3-sec h2{ font-size:var(--fs-h2); font-weight:700; letter-spacing:-.01em; }
+.r3-sec .r3-sec-sub{ font-size:var(--fs-sm); color:var(--muted); }
+.r3-sec .r3-asof{ margin-left:auto; }
+/* DENSITY BUDGET BY TIER.  Action views hold 5 L1 sections at 32px apart; context
+   views hold 4 at 44px apart — calm is bought with AIR, not with fewer words. */
+.r3-band{ margin-top:var(--sp-7); }
+.r3-view--context .r3-band{ margin-top:var(--sp-8); }
+.r3-view--context .r3-answer{ margin-bottom:var(--sp-7); }
+
+.r3-panel{ background:var(--panel); border:1px solid var(--line);
+  border-radius:var(--r-panel); box-shadow:var(--card-shadow); }
+.r3-panel--pad{ padding:16px 18px; }
+
+/* 7.3 deeper-path affordance — a text link with a hairline chevron.
+   CONTEXT VIEWS MAY USE NOTHING ELSE: no filled button is permitted outside the
+   two Action views (§7 authority law). */
+.r3-more{ display:inline-flex; align-items:center; gap:7px; min-height:44px;
+  font-size:var(--fs-sm); font-weight:700; color:var(--ink-link,var(--link)); }
+.r3-more::after{ content:""; width:6px; height:6px; flex:none; border-right:1.6px solid currentColor;
+  border-top:1.6px solid currentColor; transform:rotate(45deg); transition:transform var(--t-fast) var(--ease-std); }
+.r3-more:hover::after{ transform:translateX(2px) rotate(45deg); }
+/* the ONE filled control, Action tier only */
+.r3-cta{ display:inline-flex; align-items:center; gap:8px; min-height:44px; padding:0 18px;
+  border-radius:var(--r-btn); border:1px solid var(--gbtn-brd-hover);
+  background:var(--gbtn-bg-hover); color:var(--text); font-size:var(--fs-sm); font-weight:700;
+  cursor:pointer; transition:transform var(--t-med) var(--ease-lift), border-color var(--t-fast) var(--ease-std); }
+.r3-cta:hover{ transform:translateY(-1px); border-color:color-mix(in srgb,var(--link) 55%,var(--line)); }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   8 · THE STATE LEDGE — the authority-tier device.
+   Present on Overview and Confluence ONLY.  Its absence is how a cold reader
+   knows a view carries no call, before reading one word.
+   Sol amendment: fixed readable cells — labels and counts are NEVER scaled by
+   population, and never clipped or hidden offscreen.
+   ════════════════════════════════════════════════════════════════════════════ */
+/* .r3-board = ledge + its selected list, ONE object with one border and one
+   radius.  A separate "Buy now" section header under a "Buy now" ledge cell is
+   the same answer printed twice; the ledge IS the header. */
+.r3-board{ background:var(--panel); border:1px solid var(--line); border-radius:var(--r-panel);
+  overflow:hidden; box-shadow:var(--card-shadow);
+  border-top:3px solid var(--c,var(--line)); }
+.r3-ledge-grid{ display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); }
+.r3-ledge-cell{ display:block; text-align:left; min-height:82px; padding:13px 14px 12px;
+  background:transparent; border:0; border-right:1px solid var(--line); cursor:pointer;
+  transition:background var(--t-fast) var(--ease-std); }
+.r3-ledge-cell:last-child{ border-right:0; }
+.r3-ledge-cell:hover{ background:color-mix(in srgb, var(--panel2) 60%, transparent); }
+.r3-ledge-name{ display:block; font-size:var(--fs-label); font-weight:700; letter-spacing:.055em;
+  text-transform:uppercase; line-height:1.3; color:var(--muted); }
+.r3-ledge-count{ display:block; margin-top:7px; font-size:var(--fs-num-lg); font-weight:800;
+  letter-spacing:-.02em; color:var(--text); font-variant-numeric:tabular-nums; }
+.r3-ledge-cell[aria-selected="true"]{ background:color-mix(in srgb, var(--c) 8%, var(--panel2));
+  box-shadow:inset 0 -3px 0 var(--c); }
+.r3-ledge-cell[aria-selected="true"] .r3-ledge-name{ color:var(--c); }
+.r3-ledge-cell[aria-selected="true"] .r3-ledge-count{ font-weight:800; }
+/* light: the dominant object earns a firmer edge instead of a heavier shadow —
+   a printed institutional note, not a floating web card. */
+html[data-theme="light"] :is(.r3-board,.r3-list,.r3-panel,.r3-quads){
+  border-color:color-mix(in srgb, var(--text) 9%, var(--line)); }
+/* `border-color` is a FOUR-SIDE shorthand: the rule above silently repainted the
+   board's 3px state rail as a hairline in light only.  Restore it by name. */
+html[data-theme="light"] .r3-board{ border-top-color:var(--c,var(--line)); }
+.r3-board-foot{ display:flex; align-items:center; flex-wrap:wrap; gap:var(--sp-2) var(--sp-4);
+  padding:10px 16px; border-top:1px solid var(--line);
+  background:color-mix(in srgb,var(--panel2) 45%,transparent);
+  font-size:var(--fs-sm); font-weight:600; color:var(--text); }
+.r3-board-foot .r3-asof{ margin-left:auto; font-weight:400; }
+.r3-board .r3-row{ padding-left:16px; padding-right:16px; }
+.r3-board .r3-row:first-of-type{ border-top:0; }
+/* column legend — a figure column may never be unlabelled (doctrine Law 3).
+   Same grid as .r3-row so the label sits over its own column. */
+.r3-cols{ display:grid; grid-template-columns:minmax(0,1.6fr) 74px minmax(0,1.25fr) 16px;
+  gap:var(--sp-4); padding:7px 16px; border-bottom:1px solid var(--line);
+  font-size:var(--fs-micro); font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--muted); }
+.r3-cols > span:nth-child(2){ text-align:right; }
+@media (max-width:640px){ .r3-cols{ display:none; } }
+/* the five graded-call inks — RESERVED.  Nothing outside .r3-ledge / an Action
+   view's row stance may bind these. */
+.st-buy{ --c:var(--ink-up); } .st-soon{ --c:var(--ink-info); } .st-run{ --c:var(--ink-link); }
+.st-trim{ --c:var(--ink-warn); } .st-aside{ --c:var(--muted); }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   9 · RESOURCE LIST — the workhorse row.  Names WRAP; figures compress.
+   No ellipsis is permitted on a primary name anywhere in this system.
+   ════════════════════════════════════════════════════════════════════════════ */
+.r3-list{ background:var(--panel); border:1px solid var(--line); border-radius:var(--r-panel);
+  overflow:hidden; box-shadow:var(--card-shadow); }
+.r3-row{ display:grid; grid-template-columns:minmax(0,1.6fr) 74px minmax(0,1.25fr) 16px;
+  gap:var(--sp-4); align-items:center; min-height:58px; padding:11px 16px;
+  border-bottom:1px solid var(--line); }
+.r3-row:last-child{ border-bottom:0; }
+.r3-row:hover{ background:color-mix(in srgb, var(--panel2) 62%, transparent); }
+.r3-name{ min-width:0; font-size:var(--fs-md); font-weight:700; letter-spacing:-.008em;
+  line-height:1.3; overflow-wrap:anywhere; }
+/* transition mark — a source>destination row draws its arrow, it does not TYPE it.
+   No Unicode arrow, star or glyph is used as a mark anywhere in this system
+   (commission §18); chevrons and arrows are CSS borders. */
+.r3-arrow{ display:inline-block; position:relative; width:19px; height:.62em;
+  margin:0 7px; vertical-align:baseline; color:var(--muted); }
+.r3-arrow::before{ content:""; position:absolute; left:0; top:50%; width:100%;
+  border-top:1.5px solid currentColor; }
+.r3-arrow::after{ content:""; position:absolute; right:0; top:50%; width:6px; height:6px;
+  margin-top:-3px; border-right:1.5px solid currentColor; border-top:1.5px solid currentColor;
+  transform:rotate(45deg); }
+.r3-sub{ display:block; margin-top:2px; font-size:var(--fs-micro); font-weight:600;
+  letter-spacing:.07em; text-transform:uppercase; color:var(--muted); }
+.r3-fig{ text-align:right; font-size:var(--fs-md); font-weight:700;
+  font-variant-numeric:tabular-nums; letter-spacing:-.01em; }
+.r3-why{ min-width:0; font-size:var(--fs-sm); color:var(--muted); line-height:1.4; }
+.r3-chev{ justify-self:end; width:7px; height:7px; border-right:1.6px solid var(--muted);
+  border-top:1.6px solid var(--muted); transform:rotate(45deg); }
+.r3-row:hover .r3-chev{ border-color:var(--ink-link,var(--link)); }
+@media (max-width:640px){
+  .r3-row{ grid-template-columns:minmax(0,1fr) auto; row-gap:5px; min-height:64px; }
+  .r3-why{ grid-column:1 / -1; }
+  .r3-chev{ display:none; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   10 · TABLES · CHIPS · DISCLOSURE · STATES
+   ════════════════════════════════════════════════════════════════════════════ */
+/* visually-hidden: the bilingual home for an accessible name.  Never `title=`
+   (CI-guarded), and never a single-language aria-label on a bilingual surface. */
+.r3-vh{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden;
+  clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; border:0; }
+.r3-tblbox{ overflow-x:auto; }
+.r3-tbl{ width:100%; min-width:420px; border-collapse:collapse; font-size:var(--fs-sm); }
+.r3-tbl th{ font-size:var(--fs-micro); font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--muted); text-align:left; padding:8px 12px; border-bottom:1px solid var(--line); }
+.r3-tbl td{ padding:9px 12px; border-bottom:1px solid color-mix(in srgb, var(--line) 55%, transparent);
+  font-variant-numeric:tabular-nums; }
+.r3-tbl td:first-child{ font-weight:700; font-size:var(--fs-body); }
+.r3-tbl tr:last-child td{ border-bottom:0; }
+.r3-tbl tr:hover td{ background:color-mix(in srgb, var(--panel2) 60%, transparent); }
+.r3-tbl .num{ text-align:right; }
+
+/* chip budget: ≤2 visible per L1 section at rest, ≤6 per view (spec §9) */
+.r3-chip{ display:inline-flex; align-items:center; gap:6px; padding:3px 9px;
+  border-radius:var(--r-pill); border:1px solid color-mix(in srgb, var(--c,var(--muted)) 34%, transparent);
+  background:color-mix(in srgb, var(--c,var(--muted)) 11%, var(--panel));
+  color:var(--c,var(--muted)); font-size:var(--fs-label); font-weight:700;
+  letter-spacing:.05em; text-transform:uppercase; white-space:nowrap; }
+/* the tertiary treatment reserved for the Map's recorded reco conflict: no hue,
+   no fill, smallest step on the ramp, and it sits AFTER its own disclaimer. */
+.r3-tag{ display:inline-flex; align-items:center; padding:1px 7px; border-radius:var(--r-ctl);
+  border:1px solid var(--line); color:var(--muted); font-size:var(--fs-micro);
+  font-weight:600; letter-spacing:.05em; white-space:nowrap; }
+
+.r3-callout{ border-left:3px solid var(--c,var(--ink-info)); border-radius:0 var(--r-ctl) var(--r-ctl) 0;
+  background:color-mix(in srgb, var(--c,var(--ink-info)) 8%, var(--panel));
+  padding:11px 15px; font-size:var(--fs-sm); line-height:1.5; }
+
+.r3-disc{ border:1px solid var(--line); border-radius:var(--r-card); background:var(--panel); }
+.r3-disc summary{ cursor:pointer; padding:12px 15px; font-size:var(--fs-sm); font-weight:700;
+  min-height:44px; display:flex; align-items:center; gap:8px; }
+.r3-disc summary small{ color:var(--muted); font-weight:400; }
+.r3-disc .r3-disc-body{ padding:0 15px 14px; color:var(--muted); font-size:var(--fs-sm); }
+
+.r3-empty{ padding:var(--sp-7) var(--sp-4); text-align:center; }
+.r3-empty-line{ font-size:var(--fs-md); font-weight:700; }
+.r3-empty-why{ color:var(--muted); font-size:var(--fs-sm); margin-top:5px; }
+/* loading = reserved geometry + one quiet line.  NO shimmer: motion is a status
+   channel and a mount is not a live fact (master design system §7). */
+.r3-mount{ display:grid; place-items:center; gap:6px; min-height:var(--h,300px);
+  border:1px dashed color-mix(in srgb, var(--muted) 40%, transparent);
+  border-radius:var(--r-panel); background:color-mix(in srgb, var(--panel) 70%, transparent);
+  color:var(--muted); font-size:var(--fs-sm); text-align:center; padding:var(--sp-4); }
+.r3-mount .r3-eyebrow{ color:color-mix(in srgb, var(--muted) 80%, transparent); }
+.r3-mount b{ color:var(--text); font-weight:700; font-size:var(--fs-body); }
+.r3-stale{ --c:var(--ink-warn); }
+
+/* segmented control (filters): role=group + aria-pressed, never faked tabs */
+.r3-seg{ display:inline-flex; flex-wrap:wrap; gap:6px; }
+.r3-seg button{ min-height:40px; padding:0 14px; border-radius:var(--r-ctl);
+  border:1px solid var(--gbtn-brd); background:var(--gbtn-bg); color:var(--muted);
+  font-size:var(--fs-sm); font-weight:600; cursor:pointer; }
+.r3-seg button[aria-pressed="true"]{ color:var(--text); background:var(--panel2);
+  border-color:color-mix(in srgb, var(--link) 45%, var(--line)); }
+/* universe tabs (real tab semantics) */
+.r3-tabs{ display:flex; flex-wrap:wrap; gap:2px; border-bottom:1px solid var(--line); }
+.r3-tabs button{ appearance:none; background:none; border:0; border-bottom:2px solid transparent;
+  min-height:44px; padding:0 15px; color:var(--muted); font-size:var(--fs-sm); font-weight:600;
+  cursor:pointer; transition:color var(--t-fast) var(--ease-std); }
+.r3-tabs button[aria-selected="true"]{ color:var(--text); font-weight:700; border-bottom-color:var(--link); }
+
+/* two-column evidence layout: dominant object + evidence rail */
+.r3-stagegrid{ display:grid; grid-template-columns:minmax(0,1.85fr) minmax(268px,.85fr);
+  gap:var(--gap-grid); align-items:start; }
+.r3-rail{ padding:15px 16px; }
+.r3-rail h3{ font-size:var(--fs-label); font-weight:700; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--muted); margin-bottom:var(--sp-3); }
+.r3-rail-item{ padding:11px 0; border-bottom:1px solid var(--line); }
+.r3-rail-item:last-child{ border-bottom:0; padding-bottom:0; }
+.r3-rail-item strong{ font-size:var(--fs-body); font-weight:700; }
+.r3-rail-item > p{ margin-top:4px; font-size:var(--fs-sm); color:var(--muted); line-height:1.45; }
+.r3-quads{ display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line);
+  border-radius:var(--r-card); overflow:hidden; }
+.r3-quad{ background:var(--panel); padding:13px 14px; min-height:88px; }
+.r3-quad .r3-eyebrow{ color:var(--c,var(--muted)); }
+.r3-quad strong{ display:block; margin-top:5px; font-size:var(--fs-body); font-weight:700; line-height:1.3; }
+.r3-quad > span:last-child{ display:block; margin-top:3px; font-size:var(--fs-sm); color:var(--muted); }
+
+/* Bottoming watch — a full-width WATCH strip under the lanes, never a sixth lane.
+   No state ink, no count cell, no filled control, no entry vocabulary. */
+.r3-watch{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1px; background:var(--line); }
+.r3-watch-cell{ background:var(--panel); padding:15px 18px; }
+.r3-watch-cell strong{ display:block; font-size:var(--fs-md); font-weight:700;
+  letter-spacing:-.008em; line-height:1.3; overflow-wrap:anywhere; }
+.r3-watch-cell > span{ display:block; margin-top:4px; font-size:var(--fs-sm); color:var(--muted); }
+.r3-watch-foot{ padding:11px 18px; border-top:1px solid var(--line);
+  font-size:var(--fs-sm); color:var(--muted); }
+@media (max-width:767px){ .r3-watch{ grid-template-columns:1fr; } }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   11 · RESPONSIVE — the phone RECOMPOSES.  It never scales the desk down.
+   ════════════════════════════════════════════════════════════════════════════ */
+@media (max-width:1100px){
+  .si-shell{ --si-rail-w:172px; }
+  .si-side{ padding:var(--sp-3) 9px; }
+  .si-view-btn{ font-size:12.5px; padding:8px; gap:8px; }
+  .si-stage{ padding:var(--sp-5) var(--sp-5) var(--sp-8) var(--sp-5); }
+  .r3-stagegrid{ grid-template-columns:minmax(0,1fr); }
+}
+@media (max-width:767px){
+  :root{ --r3-mnav-h:104px; }
+  .si-shell{ display:block; max-width:none; }
+  /* the six views become a 3x2 grid: every destination visible, nothing offscreen,
+     no horizontal scroll, every target >=44px.  Production's overflow-x:auto strip
+     put Explore and Confluence off the right edge at 320-390 — Confluence is an
+     ACTION view, so that was a hidden capability, not a layout nicety. */
+  .si-side{ position:sticky; top:var(--r3-chrome-h); height:auto; z-index:30;
+    display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1px;
+    padding:0; background:var(--line); border-right:0; border-bottom:1px solid var(--line); }
+  .si-rail-eyebrow, .si-side-foot{ display:none; }
+  .si-view-btn{ flex-direction:column; justify-content:center; gap:4px; min-height:52px;
+    padding:8px 4px; text-align:center; border-radius:0; border-left:0;
+    border-bottom:3px solid transparent; background:var(--panel); }
+  .si-view-btn:hover{ background:var(--panel); }
+  .si-view-btn.on{ background:var(--panel2); border-left:0; border-bottom-color:var(--link); }
+  .si-vb-g{ font-size:16px; }
+  .si-vb-l{ display:block; font-size:10.5px; font-weight:700; line-height:1.25; }
+  .si-stage{ padding:var(--sp-5) var(--sp-4) var(--sp-8); }
+  .r3-answer{ padding-left:var(--sp-3); margin-bottom:var(--sp-5); }
+  .r3-answer-line{ font-size:19px; }
+  /* Sol amendment: all five states legible at once — two columns, Stand aside
+     spans.  Count right-aligned against the name so 320px never clips a label. */
+  .r3-ledge-grid{ grid-template-columns:1fr 1fr; }
+  .r3-ledge-cell{ display:flex; align-items:center; justify-content:space-between; gap:10px;
+    min-height:56px; padding:10px 13px; border-right:1px solid var(--line);
+    border-bottom:1px solid var(--line); }
+  .r3-ledge-cell:nth-child(2n){ border-right:0; }
+  .r3-ledge-cell:last-child{ grid-column:1 / -1; border-right:0; border-bottom:0; }
+  .r3-ledge-name{ letter-spacing:.04em; }
+  .r3-ledge-count{ margin-top:0; font-size:var(--fs-md); }
+  .r3-ledge-cell[aria-selected="true"]{ box-shadow:inset 3px 0 0 var(--c); }
+  .r3-band{ margin-top:var(--sp-6); }
+  .r3-view--context .r3-band{ margin-top:var(--sp-7); }
+  /* the page title is CHROME: on a phone it gives its vertical budget back to
+     the answer.  One line, left-aligned, stamp directly under it. */
+  .r3-pagehead{ padding:var(--sp-3) var(--sp-4) 10px; gap:2px var(--sp-3); }
+  .r3-pagehead h1{ font-size:var(--fs-body); }
+  .r3-pagehead .r3-asof{ margin-left:0; flex-basis:100%; }
+  .r3-specnote{ margin-top:10px; padding:8px 12px; }
+  /* every repeated touch target clears 44 CSS px on a phone */
+  .r3-seg button{ min-height:44px; }
+}
+@media (max-width:359px){
+  /* 320px and 200% zoom: two columns of three, and the ledge stacks one-up.
+     Nothing is removed — the reduction is a re-composition, never a deletion. */
+  .si-side{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+  :root{ --r3-mnav-h:158px; }
+  .r3-ledge-grid{ grid-template-columns:1fr; }
+  .r3-ledge-cell{ border-right:0; }
+  .r3-ledge-cell:nth-child(2n){ border-right:0; }
+  .si-stage{ padding:var(--sp-4) var(--sp-3) var(--sp-7); }
+  .r3-answer-line{ font-size:17.5px; }
+  .r3-tbl{ min-width:0; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ quarantined reference frame — NOT a product topbar proposal ═══ -->
+<div class="r3-frame">
+  <span class="r3-mark"><b>Reference</b> · XPV2-SC-R3B<span class="r3-mark-long"> shell specimen · not product chrome</span></span>
+  <span class="r3-frame-sp"></span>
+  <button class="r3-fbtn" id="t-theme" type="button">Light</button>
+  <button class="r3-fbtn" id="t-lang" type="button">中文</button>
+</div>
+
+<p class="r3-specnote">
+  Design specimen — chrome, tokens and components are binding law (<b>DESIGN_SYSTEM_SPEC.md</b>);
+  every name, count, figure and date below is a <b>placeholder</b>, not a market claim.
+</p>
+
+<header class="r3-pagehead">
+  <h1><span class="l-en">Sector Central <span class="r3-h1-mkt">· United States</span></span><span class="l-zh">行业中枢 <span class="r3-h1-mkt">· 美国</span></span></h1>
+  <span class="r3-asof" data-specimen><span class="l-en">as of 2026-08-20 · 16:00 ET</span><span class="l-zh">截至 2026-08-20 · 美东 16:00</span></span>
+</header>
+
+<div class="si-shell">
+
+  <!-- ═══ view rail — si_workspace.js binds .si-view-btn[data-view] ═══ -->
+  <nav class="si-side" aria-label="Sector Intelligence views">
+    <span class="si-rail-eyebrow"><span class="l-en">Views</span><span class="l-zh">视图</span></span>
+    <a class="si-view-btn on" data-view="overview" href="#overview" aria-current="page"><span class="si-vb-g dash-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">Overview</span><span class="l-zh">总览</span></span></a>
+    <a class="si-view-btn" data-view="map" href="#map"><span class="si-vb-g dash-icon dash-icon-compass" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">The Map</span><span class="l-zh">全景图谱</span></span></a>
+    <a class="si-view-btn" data-view="moving" href="#moving"><span class="si-vb-g dash-icon submenu-icon-rotation" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">What&#39;s Moving</span><span class="l-zh">正在轮动</span></span></a>
+    <a class="si-view-btn" data-view="money" href="#money"><span class="si-vb-g dash-icon submenu-icon-flow" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">Money &amp; Breadth</span><span class="l-zh">资金与广度</span></span></a>
+    <a class="si-view-btn" data-view="explore" href="#explore"><span class="si-vb-g dash-icon dash-icon-search" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">Explore</span><span class="l-zh">深入探索</span></span></a>
+    <a class="si-view-btn" data-view="confluence" href="#confluence"><span class="si-vb-g dash-icon submenu-icon-confluence" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">Confluence</span><span class="l-zh">子行业汇聚</span></span></a>
+    <div class="si-side-foot">
+      <span id="si-side-asof"></span>
+      <span id="si-side-grade"></span>
+    </div>
+  </nav>
+
+  <div class="si-stage">
+
+  <!-- ══════════════ OVERVIEW — ACTION TIER ══════════════ -->
+  <section class="si-view on r3-view--action" data-view="overview">
+    <div class="r3-answer">
+      <h2 class="r3-answer-view"><span class="l-en">Overview</span><span class="l-zh">总览</span></h2>
+      <p class="si-view-read" id="si-read-overview" hidden
+         data-from-en="Industrials" data-to-en="Health Care"
+         data-from-zh="工业" data-to-zh="医疗保健"></p>
+      <p class="r3-answer-line"><span class="l-en">Tonight&#39;s read is being updated. The graded lanes below are today&#39;s board.</span><span class="l-zh">今晚的研判正在更新。下方分级清单即为今日看板。</span></p>
+      <div class="r3-answer-meta">
+        <span class="r3-asof" data-specimen><span class="l-en">board as of 2026-08-20</span><span class="l-zh">看板截至 2026-08-20</span></span>
+        <span><span class="l-en">Graded call · this view only</span><span class="l-zh">分级判断 · 仅此视图</span>
+          <span class="r3-q" role="img" aria-label="Where this reading comes from">?</span></span>
+      </div>
+    </div>
+
+    <!-- THE STATE LEDGE — Action tier device.  Five fixed cells, five keys folded
+         from six (hold + avoid share Stand aside).  Labels are producer vocabulary,
+         verbatim EN/ZH.  Never proportional, never clipped. -->
+    <div class="r3-board st-buy" id="actnow-section">
+      <div class="r3-ledge-grid" role="tablist" aria-label="Action lanes">
+        <button class="r3-ledge-cell st-buy" role="tab" aria-selected="true" type="button">
+          <span class="r3-ledge-name"><span class="l-en">Buy now</span><span class="l-zh">立即买入</span></span>
+          <span class="r3-ledge-count tnum" data-specimen>3</span>
+        </button>
+        <button class="r3-ledge-cell st-soon" role="tab" aria-selected="false" type="button">
+          <span class="r3-ledge-name"><span class="l-en">Almost ready</span><span class="l-zh">接近就绪</span></span>
+          <span class="r3-ledge-count tnum" data-specimen>7</span>
+        </button>
+        <button class="r3-ledge-cell st-run" role="tab" aria-selected="false" type="button">
+          <span class="r3-ledge-name"><span class="l-en">In favour — don&#39;t chase</span><span class="l-zh">看好 — 勿追高</span></span>
+          <span class="r3-ledge-count tnum" data-specimen>11</span>
+        </button>
+        <button class="r3-ledge-cell st-trim" role="tab" aria-selected="false" type="button">
+          <span class="r3-ledge-name"><span class="l-en">Take profits</span><span class="l-zh">止盈</span></span>
+          <span class="r3-ledge-count tnum" data-specimen>4</span>
+        </button>
+        <button class="r3-ledge-cell st-aside" role="tab" aria-selected="false" type="button">
+          <span class="r3-ledge-name"><span class="l-en">Stand aside</span><span class="l-zh">观望</span></span>
+          <span class="r3-ledge-count tnum" data-specimen>28</span>
+        </button>
+      </div>
+      <p class="r3-board-foot">
+        <span class="l-en">Entry confirmed today</span><span class="l-zh">今日已确认入场</span>
+        <span class="r3-q" role="img" aria-label="How lanes are graded">?</span>
+        <span class="r3-asof" data-specimen><span class="l-en">3 of 3 shown</span><span class="l-zh">已显示 3 / 3</span></span>
+      </p>
+      <div role="tabpanel" aria-label="Buy now rows">
+        <div class="r3-cols" aria-hidden="true">
+          <span><span class="l-en">Group</span><span class="l-zh">板块</span></span>
+          <span><span class="l-en">Conviction</span><span class="l-zh">信心分</span></span>
+          <span><span class="l-en">Why it is here</span><span class="l-zh">入选原因</span></span><span></span>
+        </div>
+        <a class="r3-row" href="#read-specimen-a">
+          <span class="r3-name">Semiconductors &amp; Semiconductor Equipment</span>
+          <span class="r3-fig tnum" data-specimen>82</span>
+          <span class="r3-why"><span class="l-en">Fresh cycle low confirmed on today&#39;s close.</span><span class="l-zh">今日收盘确认新的周期低点。</span></span>
+          <span class="r3-chev" aria-hidden="true"></span>
+        </a>
+        <a class="r3-row" href="#read-specimen-b">
+          <span class="r3-name">Health Care Providers &amp; Services</span>
+          <span class="r3-fig tnum" data-specimen>77</span>
+          <span class="r3-why"><span class="l-en">Broad participation behind the move, not two names.</span><span class="l-zh">上涨由广泛成分推动，而非少数标的。</span></span>
+          <span class="r3-chev" aria-hidden="true"></span>
+        </a>
+        <a class="r3-row" href="#read-specimen-c">
+          <span class="r3-name">Electrical Equipment</span>
+          <span class="r3-fig tnum" data-specimen>74</span>
+          <span class="r3-why"><span class="l-en">Trend and volume agree for a third week.</span><span class="l-zh">趋势与成交量连续第三周一致。</span></span>
+          <span class="r3-chev" aria-hidden="true"></span>
+        </a>
+      </div>
+    </div>
+
+    <div class="r3-band">
+      <div class="r3-sec">
+        <h2><span class="l-en">Bottoming watch</span><span class="l-zh">筑底观察</span></h2>
+        <span class="r3-sec-sub"><span class="l-en">Cycle lows forming — watch, don&#39;t chase</span><span class="l-zh">周期底部形成中 — 观察，勿追</span></span>
+      </div>
+      <!-- watch-only, display-only, NOT a sixth lane: full-width strip UNDER the
+           ledge, no state ink, no count cell, no filled control. -->
+      <div class="r3-panel">
+        <div class="r3-watch">
+          <div class="r3-watch-cell"><strong data-specimen>Metals &amp; Mining</strong><span><span class="l-en">Low forming, four weeks in</span><span class="l-zh">底部形成中，已历四周</span></span></div>
+          <div class="r3-watch-cell"><strong data-specimen>Household Durables</strong><span><span class="l-en">Low forming, two weeks in</span><span class="l-zh">底部形成中，已历两周</span></span></div>
+          <div class="r3-watch-cell"><strong data-specimen>Communications Equipment</strong><span><span class="l-en">Low forming, first week</span><span class="l-zh">底部形成中，第一周</span></span></div>
+        </div>
+        <p class="r3-watch-foot"><span class="l-en">Watch list, not an entry list. Nothing here becomes a call until the lanes above say so.</span><span class="l-zh">此为观察清单，非入场清单。在上方清单给出判断前，此处不构成任何买卖判断。</span></p>
+      </div>
+    </div>
+
+    <div class="r3-band">
+      <a class="r3-more" href="#grader"><span class="l-en">Track record — how these calls have graded</span><span class="l-zh">历史记录 — 这些判断的评分情况</span></a>
+    </div>
+  </section>
+
+  <!-- ══════════════ THE MAP — CONTEXT TIER ══════════════ -->
+  <section class="si-view r3-view--context" data-view="map">
+    <div class="r3-answer">
+      <h2 class="r3-answer-view"><span class="l-en">The Map</span><span class="l-zh">全景图谱</span></h2>
+      <p class="si-view-read" id="si-read-map" hidden></p>
+      <p class="r3-answer-line"><span class="l-en">This view shows where every group sits right now. It makes no call.</span><span class="l-zh">此视图展示各板块当前所处位置，不作任何买卖判断。</span></p>
+      <div class="r3-answer-meta">
+        <span class="r3-asof" data-specimen><span class="l-en">as of 2026-08-20</span><span class="l-zh">截至 2026-08-20</span></span>
+        <span><span class="l-en">Context — where each group sits</span><span class="l-zh">背景视角 — 各板块所处位置</span></span>
+      </div>
+    </div>
+
+    <div class="r3-stagegrid" id="si-map">
+      <div>
+        <div class="r3-sec">
+          <h2><span class="l-en">Sector cycle clock</span><span class="l-zh">行业周期时钟</span></h2>
+          <span class="r3-sec-sub"><span class="l-en">Position, not timing</span><span class="l-zh">位置，而非时机</span></span>
+        </div>
+        <!-- Organ mount slot.  D2 owns what draws here.  It must be laid out at
+             view activation — see the spec's mount-width law. -->
+        <div class="r3-mount" style="--h:340px" id="sc-cyclemap">
+          <span class="r3-eyebrow">Lane D2 · dominant object</span>
+          <b><span class="l-en">Sector cycle chart mounts here</span><span class="l-zh">行业周期图在此加载</span></b>
+          <span><span class="l-en">Quadrant frame, restrained annotation, selected-object detail.</span><span class="l-zh">象限框架、克制的标注、选中对象详情。</span></span>
+        </div>
+      </div>
+      <div class="r3-panel r3-rail">
+        <h3><span class="l-en">Strongest right now</span><span class="l-zh">当前最强</span></h3>
+        <div class="r3-rail-item">
+          <strong data-specimen>Semiconductors &amp; Semiconductor Equipment</strong>
+          <p><span class="l-en">Top-right — strong and still rising.</span><span class="l-zh">位于右上 — 强势且仍在上行。</span></p>
+        </div>
+        <div class="r3-rail-item">
+          <strong data-specimen>Health Care Providers &amp; Services</strong>
+          <p><span class="l-en">Top-right, second furthest along.</span><span class="l-zh">位于右上，进展次之。</span></p>
+        </div>
+        <div class="r3-rail-item">
+          <strong data-specimen>Electrical Equipment</strong>
+          <p><span class="l-en">Improving from the lower half.</span><span class="l-zh">自下半区改善中。</span></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="r3-band" id="board">
+      <div class="r3-sec">
+        <h2><span class="l-en">Every group, as a list</span><span class="l-zh">全部板块列表</span></h2>
+        <span class="r3-sec-sub"><span class="l-en">The same fields the chart draws</span><span class="l-zh">与图表相同的字段</span></span>
+      </div>
+      <div class="r3-panel r3-tblbox">
+        <table class="r3-tbl">
+          <caption class="r3-vh"><span class="l-en">Text equivalent of the sector cycle chart — every group, where it sits, and its rank</span><span class="l-zh">行业周期图的文字等价表 — 每个板块的位置与排名</span></caption>
+          <thead><tr>
+            <th><span class="l-en">Group</span><span class="l-zh">板块</span></th>
+            <th><span class="l-en">Where it sits</span><span class="l-zh">所处位置</span></th>
+            <th class="num"><span class="l-en">Rank</span><span class="l-zh">排名</span></th>
+            <th><span class="l-en">Noted</span><span class="l-zh">备注</span></th>
+          </tr></thead>
+          <tbody>
+            <tr><td data-specimen>Semiconductors &amp; Semiconductor Equipment</td><td><span class="l-en">Strong, still rising</span><span class="l-zh">强势，仍在上行</span></td><td class="num tnum" data-specimen>1</td><td><span class="r3-tag" data-specimen>Add</span></td></tr>
+            <tr><td data-specimen>Health Care Providers &amp; Services</td><td><span class="l-en">Strong, still rising</span><span class="l-zh">强势，仍在上行</span></td><td class="num tnum" data-specimen>2</td><td><span class="r3-tag" data-specimen>Hold</span></td></tr>
+            <tr><td data-specimen>Electrical Equipment</td><td><span class="l-en">Improving</span><span class="l-zh">改善中</span></td><td class="num tnum" data-specimen>3</td><td><span class="r3-tag" data-specimen>Hold</span></td></tr>
+            <tr><td data-specimen>Metals &amp; Mining</td><td><span class="l-en">Weak, still falling</span><span class="l-zh">弱势，仍在下行</span></td><td class="num tnum" data-specimen>19</td><td><span class="r3-tag" data-specimen>Trim</span></td></tr>
+          </tbody>
+        </table>
+        <p style="padding:10px 12px 13px;font-size:var(--fs-sm);color:var(--muted)">
+          <span class="l-en">Noted tags come from the rotation board and carry no graded call — only the Overview lanes do.</span><span class="l-zh">「备注」标签来自轮动看板，不构成分级判断 — 仅总览清单具此权重。</span>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════ WHAT'S MOVING — CONTEXT TIER ══════════════ -->
+  <section class="si-view r3-view--context" data-view="moving">
+    <div class="r3-answer">
+      <h2 class="r3-answer-view"><span class="l-en">What&#39;s Moving</span><span class="l-zh">正在轮动</span></h2>
+      <p class="si-view-read" id="si-read-moving" hidden></p>
+      <p class="r3-answer-line"><span class="l-en">This view shows what changed in the last few sessions. It makes no call.</span><span class="l-zh">此视图展示近几个交易日的变化，不作任何买卖判断。</span></p>
+      <div class="r3-answer-meta">
+        <span class="r3-asof" data-specimen><span class="l-en">week to 2026-08-20</span><span class="l-zh">截至 2026-08-20 当周</span></span>
+        <span><span class="l-en">Context — what changed recently</span><span class="l-zh">背景视角 — 近期变化</span></span>
+      </div>
+    </div>
+
+    <div class="r3-band" id="si-movement">
+      <div class="r3-sec">
+        <h2><span class="l-en">Where leadership moved</span><span class="l-zh">领先位置的转移</span></h2>
+        <span class="r3-asof" data-specimen><span class="l-en">4 changes</span><span class="l-zh">4 项变化</span></span>
+      </div>
+      <div class="r3-list">
+        <div class="r3-row">
+          <span class="r3-name" data-specimen>Industrials<span class="r3-arrow" role="img" aria-label="moved to"></span>Health Care</span>
+          <span class="r3-fig tnum" data-specimen>2d</span>
+          <span class="r3-why"><span class="l-en">Handoff held for two sessions.</span><span class="l-zh">交棒已持续两个交易日。</span></span>
+          <span class="r3-chev" aria-hidden="true"></span>
+        </div>
+        <div class="r3-row">
+          <span class="r3-name" data-specimen>Energy<span class="r3-arrow" role="img" aria-label="moved to"></span>Utilities</span>
+          <span class="r3-fig tnum" data-specimen>5d</span>
+          <span class="r3-why"><span class="l-en">Narrower than the last handoff.</span><span class="l-zh">较上一次交棒更为集中。</span></span>
+          <span class="r3-chev" aria-hidden="true"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="r3-band" id="rotation-app">
+      <div class="r3-sec">
+        <h2><span class="l-en">Rotation map</span><span class="l-zh">轮动图</span></h2>
+      </div>
+      <div class="r3-mount" style="--h:280px">
+        <span class="r3-eyebrow">Lane D2 · dominant object</span>
+        <b><span class="l-en">Rotation map mounts here</span><span class="l-zh">轮动图在此加载</span></b>
+        <span><span class="l-en">Emerging and fading chip lists sit beside it, never behind it.</span><span class="l-zh">新兴与消退列表与其并列，而非隐藏其后。</span></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════ MONEY & BREADTH — CONTEXT / DENSE ══════════════ -->
+  <section class="si-view r3-view--context" data-view="money">
+    <div class="r3-answer">
+      <h2 class="r3-answer-view"><span class="l-en">Money &amp; Breadth</span><span class="l-zh">资金与广度</span></h2>
+      <p class="si-view-read" id="si-read-money" hidden data-regime="broad"></p>
+      <p class="r3-answer-line"><span class="l-en">This view shows where money is going and how many names are joining in.</span><span class="l-zh">此视图展示资金流向，以及有多少标的参与其中。</span></p>
+      <div class="r3-answer-meta">
+        <span class="r3-asof" data-specimen><span class="l-en">as of 2026-08-20</span><span class="l-zh">截至 2026-08-20</span></span>
+        <span><span class="l-en">Context — flow and participation</span><span class="l-zh">背景视角 — 资金与参与度</span></span>
+      </div>
+    </div>
+
+    <div class="r3-band" id="si-money">
+      <div class="r3-sec">
+        <h2><span class="l-en">Three reads</span><span class="l-zh">三项读数</span></h2>
+        <span class="r3-asof r3-stale" style="color:var(--c)" data-specimen><span class="l-en">one read is behind · 2026-08-19</span><span class="l-zh">一项读数滞后 · 2026-08-19</span></span>
+      </div>
+      <div class="r3-quads">
+        <div class="r3-quad"><span class="r3-eyebrow"><span class="l-en">Breadth</span><span class="l-zh">广度</span></span><strong data-specimen>Broad</strong><span><span class="l-en">Most groups are participating.</span><span class="l-zh">多数板块参与其中。</span></span></div>
+        <div class="r3-quad"><span class="r3-eyebrow"><span class="l-en">Flow</span><span class="l-zh">资金流</span></span><strong data-specimen>Spread</strong><span><span class="l-en">No single group is taking the money.</span><span class="l-zh">没有单一板块主导资金流向。</span></span></div>
+        <div class="r3-quad"><span class="r3-eyebrow"><span class="l-en">Participation</span><span class="l-zh">参与度</span></span><strong data-specimen>Improving</strong><span><span class="l-en">More names are joining than leaving.</span><span class="l-zh">加入的标的多于退出的标的。</span></span></div>
+        <div class="r3-quad"><span class="r3-eyebrow"><span class="l-en">Disagreement</span><span class="l-zh">分歧</span></span><strong><span class="l-en">Being updated</span><span class="l-zh">读数更新中</span></strong><span><span class="l-en">Yesterday&#39;s reading still shows; today&#39;s has not arrived.</span><span class="l-zh">当前显示昨日读数；今日读数尚未送达。</span></span></div>
+      </div>
+    </div>
+
+    <div class="r3-band" id="internals-section">
+      <div class="r3-sec">
+        <h2><span class="l-en">Market heat</span><span class="l-zh">市场热度</span></h2>
+        <span class="r3-sec-sub"><span class="l-en">Chart and table say the same thing</span><span class="l-zh">图表与表格内容一致</span></span>
+      </div>
+      <div class="r3-mount" style="--h:260px">
+        <span class="r3-eyebrow">Lane D3 · dominant object</span>
+        <b><span class="l-en">Market-heat treemap mounts here</span><span class="l-zh">市场热度树状图在此加载</span></b>
+      </div>
+      <details class="r3-disc" style="margin-top:var(--sp-4)">
+        <summary><span class="dash-icon dash-icon-table" aria-hidden="true"></span><span class="l-en">Read the heat as a table</span><span class="l-zh">以表格形式查看热度</span> <small><span class="l-en">— same fields, no chart needed</span><span class="l-zh">— 相同字段，无需图表</span></small></summary>
+        <div class="r3-disc-body">
+          <span class="l-en">Every cell the treemap paints, as a ranked list of groups with their share and move.</span><span class="l-zh">树状图中的每个单元，以板块、占比与涨跌的排序列表呈现。</span>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ══════════════ EXPLORE — CONTEXT / DENSE RESEARCH ══════════════ -->
+  <section class="si-view r3-view--context" data-view="explore">
+    <div class="r3-answer">
+      <h2 class="r3-answer-view"><span class="l-en">Explore</span><span class="l-zh">深入探索</span></h2>
+      <p class="si-view-read" id="si-read-explore" hidden></p>
+      <p class="r3-answer-line"><span class="l-en">Every group and basket the desk tracks, with its members and its record.</span><span class="l-zh">本工作台跟踪的全部板块与篮子，含成分与历史记录。</span></p>
+      <div class="r3-answer-meta">
+        <span class="r3-asof" data-specimen><span class="l-en">as of 2026-08-20</span><span class="l-zh">截至 2026-08-20</span></span>
+        <span><span class="l-en">Research — look under the hood</span><span class="l-zh">研究 — 深入了解细节</span></span>
+      </div>
+    </div>
+
+    <div class="r3-band" id="explore-section">
+      <div class="r3-sec">
+        <h2><span class="l-en">Compare</span><span class="l-zh">比较</span></h2>
+        <span class="r3-sec-sub"><span class="l-en">Top and bottom eight by default</span><span class="l-zh">默认显示前八与后八</span></span>
+      </div>
+      <div class="r3-seg" role="group" aria-label="Filters" style="margin-bottom:var(--sp-3)">
+        <button type="button" aria-pressed="true"><span class="l-en">All</span><span class="l-zh">全部</span></button>
+        <button type="button" aria-pressed="false"><span class="l-en">Sectors</span><span class="l-zh">行业</span></button>
+        <button type="button" aria-pressed="false"><span class="l-en">Themes</span><span class="l-zh">主题</span></button>
+        <button type="button" aria-pressed="false"><span class="l-en">Baskets</span><span class="l-zh">篮子</span></button>
+      </div>
+      <div class="r3-panel r3-tblbox" id="table-section">
+        <table class="r3-tbl">
+          <thead><tr>
+            <th><span class="l-en">Name</span><span class="l-zh">名称</span></th>
+            <th class="num"><span class="l-en">1M</span><span class="l-zh">近一月</span></th>
+            <th class="num"><span class="l-en">3M</span><span class="l-zh">近三月</span></th>
+            <th class="num"><span class="l-en">Members</span><span class="l-zh">成分数</span></th>
+          </tr></thead>
+          <tbody>
+            <tr><td data-specimen>Semiconductors &amp; Semiconductor Equipment</td><td class="num tnum" style="color:var(--ink-up)" data-specimen>+4.2%</td><td class="num tnum" style="color:var(--ink-up)" data-specimen>+11.8%</td><td class="num tnum" data-specimen>28</td></tr>
+            <tr><td data-specimen>Health Care Providers &amp; Services</td><td class="num tnum" style="color:var(--ink-up)" data-specimen>+3.1%</td><td class="num tnum" style="color:var(--ink-up)" data-specimen>+6.4%</td><td class="num tnum" data-specimen>34</td></tr>
+            <tr><td data-specimen>Electrical Equipment</td><td class="num tnum" style="color:var(--ink-up)" data-specimen>+2.6%</td><td class="num tnum" style="color:var(--ink-down)" data-specimen>−1.2%</td><td class="num tnum" data-specimen>19</td></tr>
+            <tr><td data-specimen>Metals &amp; Mining</td><td class="num tnum" style="color:var(--ink-down)" data-specimen>−2.9%</td><td class="num tnum" style="color:var(--ink-down)" data-specimen>−7.5%</td><td class="num tnum" data-specimen>22</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <a class="r3-more" href="#table-section"><span class="l-en">Show all 34</span><span class="l-zh">显示全部 34 个</span></a>
+    </div>
+
+    <div class="r3-band" id="forming-narratives">
+      <div class="r3-sec">
+        <h2><span class="l-en">Forming narratives</span><span class="l-zh">正在形成的叙事</span></h2>
+      </div>
+      <div class="r3-panel r3-panel--pad">
+        <p class="r3-name" style="font-size:var(--fs-body)" data-specimen>Grid build-out</p>
+        <p style="margin-top:6px;font-size:var(--fs-sm);color:var(--muted)">
+          <span class="r3-chip" style="--c:var(--muted)"><span class="l-en">Model analysis</span><span class="l-zh">模型分析</span></span>
+          <span data-specimen style="margin-left:8px"><span class="l-en">Watching for: a second week of the same buyers.</span><span class="l-zh">关注：同批买盘是否持续第二周。</span></span>
+        </p>
+      </div>
+    </div>
+
+    <div class="r3-band">
+      <details class="r3-disc" id="tm-mount">
+        <summary><span class="l-en">Time machine</span><span class="l-zh">时光机</span> <small><span class="l-en">— replay any past week&#39;s board</span><span class="l-zh">— 回放任一历史周的看板</span></small></summary>
+        <div class="r3-disc-body"><span class="l-en">Loads only when opened.</span><span class="l-zh">仅在展开时加载。</span></div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ══════════════ CONFLUENCE — ACTION TIER ══════════════ -->
+  <section class="si-view r3-view--action" data-view="confluence" id="si-confluence">
+    <div class="r3-answer">
+      <h2 class="r3-answer-view"><span class="l-en">Confluence</span><span class="l-zh">子行业汇聚</span></h2>
+      <p class="r3-answer-line"><span class="l-en">Six subsectors have timing support right now, inside the S&amp;P set.</span><span class="l-zh">标普范围内，当前六个子行业获得时机支持。</span></p>
+      <div class="r3-answer-meta">
+        <span class="r3-asof" data-specimen><span class="l-en">as of 2026-08-20</span><span class="l-zh">截至 2026-08-20</span></span>
+        <span><span class="l-en">Graded call · this view only</span><span class="l-zh">分级判断 · 仅此视图</span></span>
+      </div>
+    </div>
+
+    <div class="r3-tabs" role="tablist" aria-label="Universe" id="sc-top" style="margin-bottom:var(--sp-4)">
+      <button type="button" role="tab" aria-selected="true">S&amp;P</button>
+      <button type="button" role="tab" aria-selected="false">Nasdaq</button>
+      <button type="button" role="tab" aria-selected="false">Russell</button>
+      <button type="button" role="tab" aria-selected="false"><span class="l-en">Baskets</span><span class="l-zh">篮子</span></button>
+    </div>
+
+    <div class="r3-board st-buy" id="sc-app">
+      <div class="r3-ledge-grid" role="tablist" aria-label="Timing states">
+        <button class="r3-ledge-cell st-buy" role="tab" aria-selected="true" type="button">
+          <span class="r3-ledge-name"><span class="l-en">Entry now</span><span class="l-zh">当前入场</span></span>
+          <span class="r3-ledge-count tnum" data-specimen>6</span>
+        </button>
+        <button class="r3-ledge-cell st-soon" role="tab" aria-selected="false" type="button">
+          <span class="r3-ledge-name"><span class="l-en">Forming</span><span class="l-zh">形成中</span></span>
+          <span class="r3-ledge-count tnum" data-specimen>9</span>
+        </button>
+        <button class="r3-ledge-cell st-run" role="tab" aria-selected="false" type="button">
+          <span class="r3-ledge-name"><span class="l-en">Tailwind</span><span class="l-zh">顺风</span></span>
+          <span class="r3-ledge-count tnum" data-specimen>14</span>
+        </button>
+        <button class="r3-ledge-cell st-trim" role="tab" aria-selected="false" type="button">
+          <span class="r3-ledge-name"><span class="l-en">Late</span><span class="l-zh">偏晚</span></span>
+          <span class="r3-ledge-count tnum" data-specimen>7</span>
+        </button>
+        <button class="r3-ledge-cell st-aside" role="tab" aria-selected="false" type="button">
+          <span class="r3-ledge-name"><span class="l-en">Headwind</span><span class="l-zh">逆风</span></span>
+          <span class="r3-ledge-count tnum" data-specimen>21</span>
+        </button>
+      </div>
+      <p class="r3-board-foot">
+        <span class="l-en">Counts and rows both come from the S&amp;P set</span><span class="l-zh">计数与行均来自标普范围</span>
+        <span class="r3-q" role="img" aria-label="How timing support is graded">?</span>
+        <span class="r3-asof" data-specimen><span class="l-en">6 subsectors</span><span class="l-zh">6 个子行业</span></span>
+      </p>
+      <div role="tabpanel" aria-label="Entry now rows">
+        <div class="r3-cols" aria-hidden="true">
+          <span><span class="l-en">Subsector</span><span class="l-zh">子行业</span></span>
+          <span><span class="l-en">Tier</span><span class="l-zh">层级</span></span>
+          <span><span class="l-en">Why it is here</span><span class="l-zh">入选原因</span></span><span></span>
+        </div>
+        <a class="r3-row" href="#sc-app">
+          <span class="r3-name">Semiconductor Materials &amp; Equipment<span class="r3-sub" data-specimen>S&amp;P · 12 members</span></span>
+          <span class="r3-fig tnum" data-specimen>T1</span>
+          <span class="r3-why"><span class="l-en">Timing and trend line up on the same week.</span><span class="l-zh">时机与趋势在同一周内一致。</span></span>
+          <span class="r3-chev" aria-hidden="true"></span>
+        </a>
+        <a class="r3-row" href="#sc-app">
+          <span class="r3-name">Managed Health Care<span class="r3-sub" data-specimen>S&amp;P · 8 members</span></span>
+          <span class="r3-fig tnum" data-specimen>T2</span>
+          <span class="r3-why"><span class="l-en">Support is there; the move is younger.</span><span class="l-zh">支持已具备；上行启动较晚。</span></span>
+          <span class="r3-chev" aria-hidden="true"></span>
+        </a>
+      </div>
+    </div>
+
+    <div class="r3-band">
+      <div class="r3-sec">
+        <h2><span class="l-en">Late</span><span class="l-zh">偏晚</span></h2>
+        <span class="r3-sec-sub"><span class="l-en">Nothing in this lane today</span><span class="l-zh">今日此清单为空</span></span>
+      </div>
+      <div class="r3-empty r3-panel">
+        <p class="r3-empty-line"><span class="l-en">No subsectors are late in this set today</span><span class="l-zh">今日此范围内没有偏晚的子行业</span></p>
+        <p class="r3-empty-why"><span class="l-en">Nothing has run far enough for the late reading to apply — an empty lane, not a missing one.</span><span class="l-zh">尚无标的运行至可判定「偏晚」的程度 — 此为空清单，而非数据缺失。</span></p>
+      </div>
+    </div>
+  </section>
+
+  </div><!-- /si-stage -->
+</div><!-- /si-shell -->
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════════════
+   SPECIMEN ROUTER — a contract-faithful stand-in for templates/si_workspace.js.
+   It performs exactly the DOM operations the real router performs, and nothing
+   else: the R3 reference and production BOTH load si_workspace.js VERBATIM, and
+   this file exists to prove the shell satisfies its contract without the
+   payload globals (window.BASKETS / SECTOR_CENTRAL / __siRvxData) and without
+   injecting the lazy organ scripts.  Every operation below is annotated with the
+   si_workspace.js line it mirrors.
+   ════════════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+var VIEWS=['overview','map','moving','money','explore','confluence'];              /* :17 */
+var TITLES={overview:['Overview','总览'],map:['The Map','全景图谱'],
+  moving:["What's Moving",'正在轮动'],money:['Money & Breadth','资金与广度'],
+  explore:['Explore','深入探索'],confluence:['Confluence','子行业汇聚']};          /* :18-20 */
+var GLYPH={overview:'dash-icon submenu-icon-intelligence',map:'dash-icon dash-icon-compass',
+  moving:'dash-icon submenu-icon-rotation',money:'dash-icon submenu-icon-flow',
+  explore:'dash-icon dash-icon-search',confluence:'dash-icon submenu-icon-confluence'}; /* :24-30 */
+var LEGACY_ANCHORS={                                                               /* :40-64 */
+  'actnow-section':['overview','actnow-section'],'regime':['overview','regime'],
+  'grader':['overview','grader'],'si-map':['map','si-map'],
+  'rotmap-section':['map','rotmap-section'],'sc-cyclemap':['map','sc-cyclemap'],
+  'board':['map','board'],'si-movement':['moving','si-movement'],
+  'rc-events-mount':['moving','rc-events-mount'],'rotation-app':['moving','rotation-app'],
+  'si-money':['money','si-money'],'internals-section':['money','internals-section'],
+  'scc-leadership':['money','scc-leadership'],'explore-section':['explore','explore-section'],
+  'table-section':['explore','table-section'],'chart-section':['explore','chart-section'],
+  'forming-narratives':['explore','forming-narratives'],'tm-mount':['explore','tm-mount'],
+  'confluence':['confluence','si-confluence'],'sc-app':['confluence','sc-app'],
+  'sc-top':['confluence','sc-top']};
+function isZh(){ return document.documentElement.getAttribute('data-lang')==='zh'; } /* :123 */
+function L(en,zh){ return '<span class="l-en">'+en+'</span><span class="l-zh">'+(zh==null?en:zh)+'</span>'; }
+/* specimen reads — same innerHTML SHAPE the real composer writes (:218-227). */
+var READS={
+  overview:['Industrials is handing leadership to Health Care. 3 names sit in the Buy lane.',
+            '工业正把领先交给医疗保健。3 个标的在「立即买入」清单。'],
+  map:['4 groups sit top-right — strong and still rising.','4 个板块位于右上 — 强势且仍在上行。'],
+  moving:['7 groups moved up the ranking this week, 5 slipped.','本周 7 个板块排名上升，5 个下滑。'],
+  money:['Money is spread across many groups — a broad tide, not a narrow few.',
+         '资金广泛分布于多个板块 — 全面上涨，而非少数领涨。'],
+  explore:['34 baskets — every member, every record.','34 个篮子 — 全部成分，全部记录。']};
+var RECEIPT=['Where this line comes from','这句话的来源'];
+function paint(view){                                                              /* :218-227 */
+  var el=document.getElementById('si-read-'+view); if(!el) return;
+  var pair=READS[view]; if(!pair){ el.hidden=true; el.innerHTML=''; return; }
+  el.innerHTML='<span class="si-vr-g '+GLYPH[view]+'" aria-hidden="true"></span>'
+    +'<span class="si-vr-t">'+L(pair[0],pair[1])+'</span>'
+    +'<span class="si-vr-q" data-tip-t-en="'+RECEIPT[0]+'" data-tip-t-zh="'+RECEIPT[1]+'">?</span>';
+  el.hidden=false;
+}
+function paintFoot(){                                                              /* :229-245 */
+  var a=document.getElementById('si-side-asof');
+  if(a) a.innerHTML=L('as of 2026-08-20','截至 2026-08-20');
+  var g=document.getElementById('si-side-grade');
+  if(g) g.innerHTML=L('Self-grader: 58% hit · n=124','自评分器：命中 58% · n=124');
+}
+var BASE_TITLE=(document.title||'').split(' · ')[0];                                /* :271 */
+var current=null;
+function activate(view,target){                                                    /* :273-309 */
+  if(VIEWS.indexOf(view)<0) view='overview';
+  var i,secs=document.querySelectorAll('.si-view'),btns=document.querySelectorAll('.si-view-btn');
+  for(i=0;i<secs.length;i++) secs[i].classList.toggle('on',secs[i].getAttribute('data-view')===view);
+  for(i=0;i<btns.length;i++){
+    var on=btns[i].getAttribute('data-view')===view;
+    btns[i].classList.toggle('on',on);
+    if(on) btns[i].setAttribute('aria-current','page'); else btns[i].removeAttribute('aria-current');
+  }
+  try{ document.title=BASE_TITLE+' · '+TITLES[view][isZh()?1:0]; }catch(e){}
+  current=view;
+  var sec=document.querySelector('.si-view[data-view="'+view+'"]');
+  if(sec) void sec.offsetHeight;                     /* forced reflow before organ mount */
+  try{ document.dispatchEvent(new CustomEvent('si:view',{detail:view})); }catch(e){}
+  VIEWS.forEach(paint); paintFoot();
+  if(target){
+    var el=document.getElementById(target);
+    if(el){ try{ el.scrollIntoView({block:'start'}); }catch(e){ el.scrollIntoView(); } }
+    else if(history.replaceState) history.replaceState(null,'','#'+view);
+  }
+}
+function route(){                                                                  /* :310-319 */
+  var h=(location.hash||'').replace(/^#/,'');
+  try{ h=decodeURIComponent(h); }catch(e){}
+  if(h.indexOf('theme-')===0){ activate('overview',null); return; }
+  if(h.indexOf('read-')===0){ activate('overview',null); return; }
+  if(VIEWS.indexOf(h)>=0){ activate(h,null); return; }
+  if(LEGACY_ANCHORS[h]){ activate(LEGACY_ANCHORS[h][0],LEGACY_ANCHORS[h][1]); return; }
+  activate('overview',null);
+  if(!h&&history.replaceState) history.replaceState(null,'','#overview');
+}
+window.addEventListener('hashchange',route);
+document.addEventListener('langchange',function(){
+  try{ document.title=BASE_TITLE+' · '+TITLES[current||'overview'][isZh()?1:0]; }catch(e){}
+});
+route();
+
+/* specimen-only chrome: theme / language toggles (the reference frame, not product).
+   ?theme=light|dark & ?lang=en|zh bootstrap the state so every evidence capture is
+   reproducible from a URL — the four acceptance quadrants without a click. */
+var H=document.documentElement;
+try{
+  var Q=new URLSearchParams(location.search);
+  if(Q.get('theme')==='light'||Q.get('theme')==='dark') H.setAttribute('data-theme',Q.get('theme'));
+  if(Q.get('lang')==='zh'||Q.get('lang')==='en'){ H.setAttribute('data-lang',Q.get('lang'));
+    document.dispatchEvent(new CustomEvent('langchange')); }
+}catch(e){}
+function syncBtns(){
+  document.getElementById('t-theme').textContent=H.getAttribute('data-theme')==='light'?'Dark':'Light';
+  document.getElementById('t-lang').textContent=H.getAttribute('data-lang')==='zh'?'EN':'中文';
+}
+document.getElementById('t-theme').addEventListener('click',function(){
+  H.setAttribute('data-theme',H.getAttribute('data-theme')==='light'?'dark':'light'); syncBtns(); });
+document.getElementById('t-lang').addEventListener('click',function(){
+  H.setAttribute('data-lang',H.getAttribute('data-lang')==='zh'?'en':'zh');
+  document.dispatchEvent(new CustomEvent('langchange')); syncBtns(); });
+syncBtns();
+
+/* ledge + tabs + filters: local selection only — no count, rank or lane is ever
+   recomputed here (R3 design brief §8 forbidden local recomputation). */
+document.querySelectorAll('[role="tablist"]').forEach(function(tl){
+  tl.addEventListener('click',function(e){
+    var b=e.target.closest('[role="tab"]'); if(!b||!tl.contains(b)) return;
+    tl.querySelectorAll('[role="tab"]').forEach(function(x){ x.setAttribute('aria-selected','false'); });
+    b.setAttribute('aria-selected','true');
+    var ledge=tl.closest('.r3-ledge');
+    if(ledge){ ledge.className='r3-ledge '+(b.className.match(/st-[a-z]+/)||['st-buy'])[0]; }
+  });
+});
+document.querySelectorAll('.r3-seg').forEach(function(g){
+  g.addEventListener('click',function(e){
+    var b=e.target.closest('button'); if(!b) return;
+    g.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed','false'); });
+    b.setAttribute('aria-pressed','true');
+  });
+});
+})();
+</script>
+</body>
+</html>
