@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import ast
 import importlib.util
 import json
 import os
 import stat
 import subprocess
 from pathlib import Path
+
+import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -32,6 +35,8 @@ RESOURCE_GUARD = load(
     "mastermind_ci_resource_guard",
     ROOT / "ops" / "runner-host" / "pc" / "mastermind_ci_resource_guard.py",
 )
+COMPARE = load("compare_ci_canary_receipts", ROOT / "scripts" / "compare_ci_canary_receipts.py")
+CAPTURE = load("capture_ci_canary_receipt", ROOT / "scripts" / "capture_ci_canary_receipt.py")
 
 
 def git(cwd: Path, *args: str) -> str:
@@ -120,7 +125,7 @@ def test_wrong_cache_identity_fails_closed(tmp_path: Path) -> None:
 
 def test_selector_uses_current_weights_not_a_fixed_pack_number() -> None:
     plan = {
-        "schema": "ci.pack_plan.v1",
+        "schema": SELECT._PLAN_SCHEMA,
         "packs": [
             {"index": 0, "weight": 2, "jobs": ["small"]},
             {"index": 7, "weight": 99, "jobs": ["heavy"]},
@@ -129,6 +134,205 @@ def test_selector_uses_current_weights_not_a_fixed_pack_number() -> None:
     }
     assert [item["index"] for item in SELECT.select(plan, 1)] == [7]
     assert [item["index"] for item in SELECT.select(plan, 3)] == [7, 4, 0]
+
+
+def test_selector_schema_literal_matches_the_live_planner_and_refuses_a_stale_one() -> None:
+    """The 2026-08-25 (#6351) defect: a hardcoded 'ci.pack_plan.v1' literal here
+    rejected every plan.json the pack runner actually emits (schema
+    'ci.pack_plan.v2'), so the canary's own `select` step could never
+    succeed. This selector must stay a stdlib-only self-contained script (it
+    is copied alone into a trusted-control directory outside the untrusted
+    candidate checkout — see the comment in select_ci_canary_packs.py), so it
+    cannot import scripts.ci_semantic_proof.PLAN_SCHEMA directly; pin the
+    literal against the live constant here instead, and pin that a
+    stale/foreign schema is still refused.
+    """
+    from scripts import ci_semantic_proof as SEMANTIC
+
+    assert SELECT._PLAN_SCHEMA == SEMANTIC.PLAN_SCHEMA == "ci.pack_plan.v2"
+    stale_plan = {
+        "schema": "ci.pack_plan.v1",
+        "packs": [{"index": 0, "weight": 1, "jobs": ["only"]}],
+    }
+    with pytest.raises(ValueError, match="unexpected CI plan schema"):
+        SELECT.select(stale_plan, 1)
+
+
+def _fragment(**overrides: object) -> dict:
+    base = {
+        "schema": "ci.semantic_fragment.v1",
+        "workflow_run_id": "123",
+        "workflow": "infrastructure-selfhosted-ci-canary",
+        "event": "workflow_dispatch",
+        "role": "pr_head",
+        "tested_tree_sha": "a" * 40,
+        "subject_head_sha": "b" * 40,
+        "base_sha": "c" * 40,
+        "plan_sha256": "d" * 64,
+        "pack_index": 0,
+        "infrastructure": [],
+        "jobs": [{"logical_job_id": "demo", "outcome": "passed"}],
+    }
+    base.update(overrides)
+    return base
+
+
+def _receipt(**overrides: object) -> dict:
+    base = {
+        "tested_sha": "a" * 40,
+        "base_sha": "c" * 40,
+        "pack": 0,
+        "plan_sha256": "d" * 64,
+        "logical_jobs": ["demo"],
+        "executed_jobs": ["demo"],
+        "failed_jobs": [],
+        "result": "passed",
+    }
+    base.update(overrides)
+    return base
+
+
+def test_compare_never_touches_merge_authority_reconciliation() -> None:
+    """Diagnostic-only comparator (#6351 spec C.6): this workflow never calls
+    scripts.merge_on_green, and the comparator must never import
+    ci_semantic_proof.reconcile_evidence or any other merge-gating entry
+    point — only the pure canonicalization helpers.
+    """
+    assert not hasattr(COMPARE, "reconcile_evidence")
+    assert not hasattr(COMPARE, "merge_on_green")
+    tree = ast.parse(
+        (ROOT / "scripts" / "compare_ci_canary_receipts.py").read_text(encoding="utf-8")
+    )
+    imported_names = {
+        alias.asname or alias.name.split(".")[0]
+        for node in ast.walk(tree)
+        if isinstance(node, (ast.Import, ast.ImportFrom))
+        for alias in node.names
+    }
+    assert "merge_on_green" not in imported_names
+    assert "reconcile_evidence" not in imported_names
+
+
+def test_compare_requires_strict_canonical_fragment_equality() -> None:
+    hosted = _receipt()
+    selfhosted = _receipt()
+    hosted_fragment = _fragment()
+    selfhosted_fragment = _fragment()
+    assert COMPARE.compare(hosted, selfhosted, hosted_fragment, selfhosted_fragment) == {}
+
+    # Identical identity, different content -> canonical digest catches it.
+    diverged = _fragment(jobs=[{"logical_job_id": "demo", "outcome": "failed"}])
+    mismatches = COMPARE.compare(hosted, selfhosted, hosted_fragment, diverged)
+    assert "fragment_canonical_sha256" in mismatches
+
+
+def test_compare_flags_fragment_identity_mismatch_before_the_digest() -> None:
+    hosted = _receipt()
+    selfhosted = _receipt()
+    hosted_fragment = _fragment()
+    wrong_identity = _fragment(tested_tree_sha="f" * 40)
+    mismatches = COMPARE.compare(hosted, selfhosted, hosted_fragment, wrong_identity)
+    assert "fragment_tested_tree_sha" in mismatches
+    # Identity validation happens FIRST and short-circuits the byte compare.
+    assert "fragment_canonical_sha256" not in mismatches
+
+
+def test_compare_flags_wrong_fragment_schema() -> None:
+    hosted = _receipt()
+    selfhosted = _receipt()
+    hosted_fragment = _fragment()
+    bad_schema = _fragment(schema="ci.semantic_fragment.v0")
+    mismatches = COMPARE.compare(hosted, selfhosted, hosted_fragment, bad_schema)
+    assert "selfhosted_fragment_schema" in mismatches
+
+
+def test_compare_cross_checks_fragment_identity_against_the_receipt() -> None:
+    hosted = _receipt(tested_sha="a" * 40)
+    selfhosted = _receipt(tested_sha="a" * 40)
+    hosted_fragment = _fragment(tested_tree_sha="e" * 40)
+    selfhosted_fragment = _fragment(tested_tree_sha="e" * 40)
+    mismatches = COMPARE.compare(hosted, selfhosted, hosted_fragment, selfhosted_fragment)
+    assert mismatches == {
+        "fragment_receipt_identity": {
+            "hosted_fragment_tested_tree_sha": "e" * 40,
+            "hosted_receipt_tested_sha": "a" * 40,
+        }
+    }
+
+
+def test_capture_receipt_records_fragment_reference_and_bumps_schema(tmp_path: Path) -> None:
+    """Materialization-receipt amendment (D, #6351): the receipt now carries
+    a v2 schema and a reference to the semantic fragment the same pack
+    invocation emitted, so a reader can cross-check receipt identity
+    against fragment identity without re-deriving it.
+    """
+    plan = {"plan_sha256": "d" * 64, "packs": [{"index": 0, "jobs": ["demo"]}]}
+    plan_path = tmp_path / "plan.json"
+    plan_path.write_text(json.dumps(plan), encoding="utf-8")
+    log_path = tmp_path / "pack.log"
+    log_path.write_text("::group::demo — proof\nok\nCI_PACK_FAILED_JOBS=[]\n", encoding="utf-8")
+    fragment_path = tmp_path / "fragment.json"
+    fragment_path.write_text(
+        json.dumps({"schema": "ci.semantic_fragment.v1", "plan_sha256": "d" * 64}),
+        encoding="utf-8",
+    )
+    output_path = tmp_path / "receipt.json"
+    result = subprocess.run(
+        [
+            "python3",
+            str(ROOT / "scripts" / "capture_ci_canary_receipt.py"),
+            "--log", str(log_path),
+            "--plan", str(plan_path),
+            "--pack", "0",
+            "--exit-code", "0",
+            "--tested-sha", "a" * 40,
+            "--base-sha", "b" * 40,
+            "--runner-kind", "selfhosted",
+            "--runner-name", "test-runner",
+            "--fragment", str(fragment_path),
+            "--output", str(output_path),
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    receipt = json.loads(output_path.read_text(encoding="utf-8"))
+    assert receipt["schema"] == "ci.selfhosted_canary_receipt.v2"
+    assert receipt["fragment_schema"] == "ci.semantic_fragment.v1"
+    assert receipt["fragment_plan_sha256"] == "d" * 64
+    assert receipt["prewarm_seconds"] is None
+
+
+def test_capture_receipt_tolerates_a_missing_fragment_reference(tmp_path: Path) -> None:
+    plan = {"plan_sha256": "d" * 64, "packs": [{"index": 0, "jobs": ["demo"]}]}
+    plan_path = tmp_path / "plan.json"
+    plan_path.write_text(json.dumps(plan), encoding="utf-8")
+    log_path = tmp_path / "pack.log"
+    log_path.write_text("ok\n", encoding="utf-8")
+    output_path = tmp_path / "receipt.json"
+    result = subprocess.run(
+        [
+            "python3",
+            str(ROOT / "scripts" / "capture_ci_canary_receipt.py"),
+            "--log", str(log_path),
+            "--plan", str(plan_path),
+            "--pack", "0",
+            "--exit-code", "0",
+            "--tested-sha", "a" * 40,
+            "--base-sha", "b" * 40,
+            "--runner-kind", "hosted",
+            "--runner-name", "test-runner",
+            "--output", str(output_path),
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    receipt = json.loads(output_path.read_text(encoding="utf-8"))
+    assert receipt["fragment_schema"] is None
+    assert receipt["fragment_plan_sha256"] is None
 
 
 def test_main_dispatch_freezes_parent_as_the_changed_from_base(monkeypatch) -> None:

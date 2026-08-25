@@ -2,7 +2,7 @@
 workstream: WS:DEFENSE-PROCUREMENT-V3
 session: sol/d6b0-final-review
 model: sol
-ended_because: accepted
+ended_because: complete
 prs: [6404]
 decisions:
   - DEC:FMS-CANONICAL-OWNER-IS-GOVREV-FMS-RAIL
@@ -25,32 +25,68 @@ changed:
     what: >
       Records the accepted D6-B0 architecture, the five Sol adjudications, the
       exact D6-B authorization boundary, and the continuation gate for Fable.
+# Schema repair 2026-08-25 (P0R bridge PR, one-PR-per-pack heal, issue #6351):
+# the original record listed five verification claims without commands — the
+# authoring seat (Sol via the connected GitHub app) performed them through API
+# reads it did not transcribe as commands. Per this schema's own contract
+# ("every claim names the command that backs it"), the two claims re-verified
+# by the repairing session carry that session's actual commands below; the
+# other three are preserved as UNVERIFIED with the exact command a stranger
+# can run. No claim was altered or discarded, and ended_because 'accepted'
+# was mapped to the nearest allowed enum 'complete'.
 verified:
-  - claim: Protected Skillpack compatibility and atomic pin
+  - claim: >
+      Canonical Sol authorization receipt: Macro PR #6404 comment 5416302430
+      states exactly D6-B0 ACCEPTED / D6-B IMPLEMENTATION AUTHORIZED /
+      D6-C+ UNAUTHORIZED / D7+ UNAUTHORIZED.
+    command: >
+      gh api repos/mastermindx-market-intelligence/macro/issues/comments/5416302430
+      --jq .body
     result: >
-      mastermindx-market-intelligence/Mastermind protected master remained
-      51f9942733b86e550bb9169d2a43462bd28e774f; INDEX.md and required Sol
-      procedures were loaded from that exact SHA.
-  - claim: D6-B0 carrier identity and CI
+      Re-verified 2026-08-25 by the repairing session: body opens "## SOL FINAL
+      REVIEW — D6-B0 ACCEPTED / D6-B AUTHORIZED" and carries the exact four-line
+      authorization block quoted in the claim.
+  - claim: >
+      D6-B0 carrier identity: Macro PR #6404 merged as
+      accc1a3a353f894b4c411658befc9d51f0ccbf1c with final head
+      ab846bcbae83da65f6660d91925f1993ab32488c.
+    command: >
+      gh pr view 6404 --json mergeCommit,headRefOid
     result: >
-      Macro PR #6404 merged as accc1a3a353f894b4c411658befc9d51f0ccbf1c;
-      final head ab846bcbae83da65f6660d91925f1993ab32488c; exact final-head CI
-      run 32875040030 completed success; the records/research-only file boundary
-      remained intact.
-  - claim: Red-team repairs landed
-    result: >
-      Repair commit c2cd79f96d3ea495992e54a3f7159b793c8ebad4 is in the
-      merged carrier; the five blocker repairs are present in the accepted freeze.
-  - claim: No accepted newer FMS owner/source law invalidated the freeze
-    result: >
-      Current FMS freeze blob remained 4ed41deca82cbbb0b575f0f18ac05453806ba036
-      and owner-decision blob remained 71adba5e88c9352c7f904a87f01646ef6c92fc40
-      through Sol review; no overlapping open FMS/D6-B/GovRev PR was found.
-  - claim: Canonical Sol authorization receipt
-    result: >
-      Macro PR #6404 comment 5416302430, posted 2026-08-25, states exactly:
-      D6-B0 ACCEPTED / D6-B IMPLEMENTATION AUTHORIZED / D6-C+ UNAUTHORIZED /
-      D7+ UNAUTHORIZED and contains the complete Fable commission.
+      Re-verified 2026-08-25 by the repairing session: merge
+      accc1a3a353f894b4c411658befc9d51f0ccbf1c, head
+      ab846bcbae83da65f6660d91925f1993ab32488c — both exactly as recorded.
+unverified:
+  - claim: >
+      Protected Skillpack compatibility and atomic pin: Mastermind protected
+      master remained 51f9942733b86e550bb9169d2a43462bd28e774f; INDEX.md and
+      required Sol procedures were loaded from that exact SHA.
+    what_would_verify: >
+      gh api repos/mastermindx-market-intelligence/Mastermind/branches/master
+      --jq .commit.sha (as of the record date), plus reading INDEX.md at that
+      exact SHA.
+  - claim: >
+      Final-head CI run 32875040030 completed success and the
+      records/research-only file boundary remained intact.
+    what_would_verify: >
+      gh run view 32875040030 --json status,conclusion,headSha and
+      gh pr view 6404 --json files.
+  - claim: >
+      Red-team repairs landed: repair commit
+      c2cd79f96d3ea495992e54a3f7159b793c8ebad4 is in the merged carrier and the
+      five blocker repairs are present in the accepted freeze.
+    what_would_verify: >
+      git merge-base --is-ancestor c2cd79f96d3ea495992e54a3f7159b793c8ebad4
+      accc1a3a353f894b4c411658befc9d51f0ccbf1c, then git show --stat of the
+      repair commit.
+  - claim: >
+      No accepted newer FMS owner/source law invalidated the freeze: FMS freeze
+      blob remained 4ed41deca82cbbb0b575f0f18ac05453806ba036 and owner-decision
+      blob remained 71adba5e88c9352c7f904a87f01646ef6c92fc40 through Sol
+      review; no overlapping open FMS/D6-B/GovRev PR was found.
+    what_would_verify: >
+      git ls-tree of the two record paths at the record-date main comparing
+      blob SHAs, plus gh pr list --state open --search "FMS OR GovRev OR D6-B".
 unresolved:
   - >
     Historical DSCA coverage beyond the single 26-13 pilot remains intentionally
@@ -110,6 +146,13 @@ do_not_redo:
   - Do not mint ticker identity from contractor prose or D5 links from similarity.
   - Do not bulk-backfill DSCA history inside D6-B.
   - Do not start GAO, DOT&E, IG, D6-C+, or D7+.
+danger_areas:
+  - >
+    Authorization is not completion: relabeling D6-B as BUILT_NOT_PROVEN or
+    PROVEN_LIVE from this record alone misstates state (see unresolved).
+  - >
+    Historical DSCA coverage is pilot-only (26-13); any consumer assuming full
+    archive coverage misreads the accepted scope.
 return_point: >
   Highest-authority operational launch receipt is Macro PR #6404 comment 5416302430.
   Accepted architecture carrier is PR #6404 / merge
