@@ -13,7 +13,10 @@ from hashlib import sha256
 import json
 import math
 from pathlib import Path
+import re
 from typing import Mapping, Sequence
+
+from engine.stock_identity import fingerprint
 
 
 EVENT_SCHEMA = "prophet.candidate_episode_event/v1"
@@ -31,6 +34,16 @@ EVENT_TYPES = frozenset({
     "IDENTITY_SUPERSEDED",
 })
 TERMINAL_STATES = frozenset({"RESOLVED", "INVALIDATED", "EXPIRED", "RETRACTED"})
+ACTIVE_STATE = "ACTIVE"
+EPISODE_STATES = frozenset({ACTIVE_STATE, *TERMINAL_STATES})
+STOCK_IDENTITY_SCHEMA = "stock_identity.fingerprint_spec.v1"
+STOCK_IDENTITY_SPEC_HASH = fingerprint.spec_hash()
+_SECURITY_ID_RE = re.compile(r"^SEC:[A-Z]{2}-[A-Z0-9]+(?:-[A-Z0-9]+)+$")
+_COMPANY_ID_RE = re.compile(r"^ISS:[A-Z]{2}-[A-Z0-9]+(?:-[A-Z0-9]+)*$")
+_EPISODE_ID_RE = re.compile(
+    r"^pe:(SEC:[A-Z]{2}-[A-Z0-9]+(?:-[A-Z0-9]+)+):([^:]+):(sa:[0-9a-f]{24}):([1-9][0-9]*)$"
+)
+_SHA256_RECEIPT_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
 PATCHABLE_FIELDS = frozenset({
     "company_id",
     "ticker_at_observation",
@@ -41,7 +54,6 @@ PATCHABLE_FIELDS = frozenset({
     "opened_session",
     "intake_classes",
     "terminal_reason",
-    "correction_state",
 })
 
 
@@ -98,14 +110,30 @@ def _decimal_price(value: object) -> str:
 
 
 def _security_id(value: object) -> str:
-    if not isinstance(value, str) or not value.startswith("SEC:") or len(value) <= 4 or any(c.isspace() for c in value):
+    if not isinstance(value, str) or not _SECURITY_ID_RE.fullmatch(value):
         raise EpisodeContractError("security_id must be an exact Data OS SEC: identifier")
     return value
 
 
 def _company_id(value: object) -> str:
-    if not isinstance(value, str) or not value.startswith("ISS:") or len(value) <= 4 or any(c.isspace() for c in value):
+    if not isinstance(value, str) or not _COMPANY_ID_RE.fullmatch(value):
         raise EpisodeContractError("company_id must be an exact Data OS ISS: identifier")
+    return value
+
+
+def _identity_provenance(identity_epoch: object, state: object, schema: object, spec_hash: object) -> None:
+    if not isinstance(identity_epoch, str) or not identity_epoch:
+        raise EpisodeContractError("identity_epoch must be a non-empty string")
+    if identity_epoch == "epoch_0":
+        if state != "provisional":
+            raise EpisodeContractError("epoch_0 must carry identity_epoch_state=provisional")
+        if schema != STOCK_IDENTITY_SCHEMA or spec_hash != STOCK_IDENTITY_SPEC_HASH:
+            raise EpisodeContractError("epoch_0 requires the exact live Stock Identity provenance")
+
+
+def _require_sha256_receipt(value: object, *, field: str) -> str:
+    if not isinstance(value, str) or not _SHA256_RECEIPT_RE.fullmatch(value):
+        raise EpisodeContractError(f"{field} must be a sha256 provenance receipt")
     return value
 
 
@@ -218,13 +246,7 @@ def make_event(
 
 
 def _valid_episode_id(value: object) -> bool:
-    if not isinstance(value, str) or not value.startswith("pe:SEC:"):
-        return False
-    try:
-        prefix, generation = value.rsplit(":", 1)
-        return bool(prefix) and int(generation) > 0 and ":sa:" in prefix
-    except (TypeError, ValueError):
-        return False
+    return isinstance(value, str) and _EPISODE_ID_RE.fullmatch(value) is not None
 
 
 def validate_events(events: Sequence[Mapping[str, object]]) -> list[dict[str, object]]:
@@ -269,8 +291,13 @@ def validate_events(events: Sequence[Mapping[str, object]]) -> list[dict[str, ob
     return validated
 
 
-def _event_order(event: Mapping[str, object]) -> tuple[str, str]:
-    return (str(event["known_at"]), str(event["event_id"]))
+def _event_order(event: Mapping[str, object]) -> tuple[str, str, str]:
+    """The frozen ledger/replay order, independent of content-address hashes."""
+    return (
+        str(event["known_at"]),
+        str(event["source_system"]),
+        str(event["source_event_id"]),
+    )
 
 
 def _row_from_open(event: Mapping[str, object]) -> dict[str, object]:
@@ -280,12 +307,13 @@ def _row_from_open(event: Mapping[str, object]) -> dict[str, object]:
     security = _security_id(payload.get("security_id"))
     company = _company_id(payload.get("company_id"))
     epoch = payload.get("identity_epoch")
-    if not isinstance(epoch, str) or not epoch:
-        raise EpisodeContractError("OPENED payload requires identity_epoch")
-    if epoch == "epoch_0" and payload.get("identity_epoch_state") != "provisional":
-        raise EpisodeContractError("epoch_0 must carry provisional Stock Identity provenance")
-    if epoch == "epoch_0" and (payload.get("identity_spec_schema") != "stock_identity.fingerprint_spec.v1" or not payload.get("identity_spec_hash")):
-        raise EpisodeContractError("epoch_0 requires Stock Identity spec provenance")
+    _identity_provenance(
+        epoch,
+        payload.get("identity_epoch_state"),
+        payload.get("identity_spec_schema"),
+        payload.get("identity_spec_hash"),
+    )
+    assert isinstance(epoch, str)  # established by _identity_provenance
     anchor = payload.get("structural_anchor", payload.get("anchor"))
     canonical = canonical_anchor(anchor)  # type: ignore[arg-type]
     stored_anchor = dict(canonical)
@@ -317,7 +345,7 @@ def _row_from_open(event: Mapping[str, object]) -> dict[str, object]:
         "intake_classes": sorted(set(intake_classes)),
         "structural_anchor": stored_anchor,
         "expert_events": [],
-        "episode_state": "ACTIVE",
+        "episode_state": ACTIVE_STATE,
         "terminal_reason": None,
         "rearm_of": payload.get("rearm_of"),
         "definition_era": event["definition_era"],
@@ -340,15 +368,49 @@ def _episode_generation(value: str) -> int:
         raise EpisodeContractError("episode_id has no positive generation") from exc
 
 
+def _validate_correction_patch(row: Mapping[str, object], patch: Mapping[str, object]) -> dict[str, object]:
+    if not patch:
+        raise EpisodeContractError("correction requires a non-empty patch")
+    if set(patch) - PATCHABLE_FIELDS:
+        raise EpisodeContractError("correction attempts to mutate immutable episode identity or anchor")
+    normalized = dict(patch)
+    if "company_id" in normalized:
+        normalized["company_id"] = _company_id(normalized["company_id"])
+    if "ticker_at_observation" in normalized and (not isinstance(normalized["ticker_at_observation"], str) or not normalized["ticker_at_observation"]):
+        raise EpisodeContractError("ticker_at_observation correction must be a non-empty string")
+    if "opened_at" in normalized:
+        normalized["opened_at"] = _timestamp(normalized["opened_at"], field="correction.opened_at")
+    session_opened_at = str(normalized.get("opened_at", row["opened_at"]))
+    if "opened_session" in normalized:
+        if not isinstance(normalized["opened_session"], str) or normalized["opened_session"] != session_opened_at[:10]:
+            raise EpisodeContractError("opened_session correction must match the frozen opened_at session")
+    elif "opened_at" in normalized and row["opened_session"] != session_opened_at[:10]:
+        raise EpisodeContractError("opened_at correction requires its matching opened_session")
+    if "intake_classes" in normalized:
+        values = normalized["intake_classes"]
+        if not isinstance(values, list) or not values or not all(isinstance(value, str) and value for value in values):
+            raise EpisodeContractError("intake_classes correction must be non-empty strings")
+        normalized["intake_classes"] = sorted(set(values))
+    if "terminal_reason" in normalized and normalized["terminal_reason"] is not None and (not isinstance(normalized["terminal_reason"], str) or not normalized["terminal_reason"]):
+        raise EpisodeContractError("terminal_reason correction must be null or a non-empty string")
+    if {"identity_epoch_state", "identity_spec_schema", "identity_spec_hash"} & set(normalized):
+        _identity_provenance(
+            row["identity_epoch"],
+            normalized.get("identity_epoch_state", row["identity_epoch_state"]),
+            normalized.get("identity_spec_schema", row["identity_spec_schema"]),
+            normalized.get("identity_spec_hash", row["identity_spec_hash"]),
+        )
+    return normalized
+
+
 def project_events(events: Sequence[Mapping[str, object]]) -> list[dict[str, object]]:
     """Replay immutable events into the canonical current episode projection."""
     ordered = sorted(validate_events(events), key=_event_order)
     rows: dict[str, dict[str, object]] = {}
     relations: dict[str, Mapping[str, object]] = {}
     retracted: set[str] = set()
-    # The ledger order is exactly ``(known_at, event_id)``.  Content-addressed
-    # IDs do not encode causal parents, so same-clock dependent events wait for
-    # their immutable parent rather than relying on an accidental hash ordering.
+    # Same-clock causal parents wait in the deferred queue; the published ledger
+    # remains ordered only by (known_at, source_system, source_event_id).
     remaining = list(ordered)
     while remaining:
         deferred: list[dict[str, object]] = []
@@ -377,28 +439,34 @@ def project_events(events: Sequence[Mapping[str, object]]) -> list[dict[str, obj
                 if not isinstance(payload, Mapping):
                     raise EpisodeContractError("state transition payload is invalid")
                 state = payload.get("episode_state")
-                if not isinstance(state, str) or not state:
-                    raise EpisodeContractError("state transition requires episode_state")
+                if state not in EPISODE_STATES:
+                    raise EpisodeContractError("state transition has an unknown episode state")
+                if rows[episode]["episode_state"] != ACTIVE_STATE:
+                    raise EpisodeContractError("terminal episode cannot reactivate in the same generation")
+                if state == ACTIVE_STATE:
+                    raise EpisodeContractError("state transition must leave ACTIVE for a terminal state")
+                if not isinstance(payload.get("terminal_reason"), str) or not payload["terminal_reason"]:
+                    raise EpisodeContractError("terminal state transition requires terminal_reason")
                 rows[episode]["episode_state"] = state
-                rows[episode]["terminal_reason"] = payload.get("terminal_reason") if state in TERMINAL_STATES else None
+                rows[episode]["terminal_reason"] = payload["terminal_reason"]
             elif event_type == "CORRECTED":
                 target = event["correction_of"]
                 if not isinstance(target, str) or not isinstance(payload, Mapping):
                     raise EpisodeContractError("correction references an unknown event")
                 patch = payload.get("patch")
-                if not isinstance(patch, Mapping) or not patch:
+                if not isinstance(patch, Mapping):
                     raise EpisodeContractError("correction requires a non-empty patch")
-                if set(patch) - PATCHABLE_FIELDS:
-                    raise EpisodeContractError("correction attempts to mutate immutable episode identity")
                 target_episode = str(relations[target]["episode_id"])
                 if episode != target_episode:
                     raise EpisodeContractError("correction episode does not match correction target")
-                rows[target_episode].update(dict(patch))
+                rows[target_episode].update(_validate_correction_patch(rows[target_episode], patch))
                 rows[target_episode]["correction_state"] = "corrected"
             elif event_type == "RETRACTED":
                 target = event["correction_of"]
-                if not isinstance(target, str) or not isinstance(payload, Mapping) or not payload.get("reason"):
+                if not isinstance(target, str) or not isinstance(payload, Mapping) or not isinstance(payload.get("reason"), str) or not payload["reason"]:
                     raise EpisodeContractError("retraction requires an existing target and reason")
+                if episode != str(relations[target]["episode_id"]):
+                    raise EpisodeContractError("retraction episode does not match retraction target")
                 retracted.add(target)
             elif event_type == "IDENTITY_SUPERSEDED":
                 if not isinstance(payload, Mapping):
@@ -406,11 +474,16 @@ def project_events(events: Sequence[Mapping[str, object]]) -> list[dict[str, obj
                 successor, reason = payload.get("successor_episode_id"), payload.get("reason")
                 if not _valid_episode_id(successor) or not isinstance(reason, str) or not reason:
                     raise EpisodeContractError("identity supersession requires successor episode and reason")
+                if successor == episode:
+                    raise EpisodeContractError("identity supersession requires a different successor episode")
+                if rows[episode]["identity_epoch_state"] != "provisional":
+                    raise EpisodeContractError("identity supersession requires a provisional source episode")
                 rows[episode]["superseded_by"] = successor
             elif event_type == "REARM_SUPPRESSED":
                 continue
             else:  # make_event prevents this; retained as a fail-closed replay guard.
                 raise EpisodeContractError(f"unknown event type: {event_type!r}")
+            relations[str(event["event_id"])] = event
         if not progressed:
             raise EpisodeContractError("event references an unknown event or unopened episode")
         remaining = deferred
@@ -498,8 +571,13 @@ def reconcile_observations(
         security = _security_id(observation.get("security_id"))
         company = _company_id(observation.get("company_id"))
         epoch = observation.get("identity_epoch")
-        if not isinstance(epoch, str) or not epoch:
-            raise EpisodeContractError("observation requires identity_epoch")
+        _identity_provenance(
+            epoch,
+            observation.get("identity_epoch_state"),
+            observation.get("identity_spec_schema"),
+            observation.get("identity_spec_hash"),
+        )
+        assert isinstance(epoch, str)  # established by _identity_provenance
         occurred = _timestamp(observation.get("occurred_at"), field="observation.occurred_at")
         known = _timestamp(observation.get("known_at"), field="observation.known_at")
         source_system = observation.get("source_system")
@@ -514,7 +592,7 @@ def reconcile_observations(
         seen_source_keys.add(source_key)
         anchor = observation.get("anchor")
         canonical = canonical_anchor(anchor) if anchor is not None else None  # type: ignore[arg-type]
-        active = next((row for row in projected if row["security_id"] == security and row["identity_epoch"] == epoch and row["episode_state"] not in TERMINAL_STATES), None)
+        active = next((row for row in projected if row["security_id"] == security and row["identity_epoch"] == epoch and row["episode_state"] == ACTIVE_STATE), None)
         if active is not None and canonical is not None and canonical != canonical_anchor(active["structural_anchor"]):
             suppressions.append(_suppression(observation, "ACTIVE_EPISODE_DIFFERENT_ANCHOR"))
             continue
@@ -554,7 +632,8 @@ def reconcile_observations(
             ))
             projected = project_events([*base, *additions])
             continue
-        event_type = "EXPERT_EVENT_ATTACHED" if observation.get("expert_event_id") else "OBSERVED"
+        expert = observation.get("expert_event_id")
+        event_type = "EXPERT_EVENT_ATTACHED" if expert is not None else "OBSERVED"
         payload = {
             "intake_class": observation.get("intake_class"),
             "source_relationship": {
@@ -564,9 +643,14 @@ def reconcile_observations(
             },
         }
         if event_type == "EXPERT_EVENT_ATTACHED":
-            expert = observation.get("expert_event_id")
-            if not isinstance(expert, str) or not expert:
-                raise EpisodeContractError("expert attachment requires exact Radar event_id")
+            if (
+                source_system != "entry_radar"
+                or source_schema != "mastermind.entry_event.v1"
+                or not isinstance(expert, str)
+                or not expert
+                or expert != source_event_id
+            ):
+                raise EpisodeContractError("expert attachment requires the exact Radar mastermind.entry_event.v1 event_id")
             payload["expert_event_id"] = expert
         additions.append(make_event(
             event_type=event_type, episode_id=str(active["episode_id"]), source_system=source_system,
@@ -638,6 +722,9 @@ def load_all_candidates(path: Path) -> list[dict[str, object]]:
     generated = document.get("generated_from")
     if not isinstance(episodes, list) or not isinstance(coverage, Mapping) or not isinstance(generated, Mapping):
         raise EpisodeContractError("all candidates document is incomplete")
+    if not isinstance(generated.get("event_count"), int) or generated["event_count"] < 0:
+        raise EpisodeContractError("all candidates event count is invalid")
+    _require_sha256_receipt(generated.get("ledger_sha256"), field="all candidates ledger_sha256")
     seen: set[str] = set()
     rows: list[dict[str, object]] = []
     for raw in episodes:
@@ -650,11 +737,28 @@ def load_all_candidates(path: Path) -> list[dict[str, object]]:
         if episode in seen:
             raise EpisodeContractError("all candidates contains duplicate episode_id")
         seen.add(episode)
-        _security_id(row.get("security_id"))
+        security = _security_id(row.get("security_id"))
         _company_id(row.get("company_id"))
         if row.get("definition_era") != document["definition_era"]:
             raise EpisodeContractError("episode definition era differs from document")
-        canonical_anchor(row.get("structural_anchor"))  # type: ignore[arg-type]
+        epoch = row.get("identity_epoch")
+        _identity_provenance(
+            epoch,
+            row.get("identity_epoch_state"),
+            row.get("identity_spec_schema"),
+            row.get("identity_spec_hash"),
+        )
+        assert isinstance(epoch, str)  # established by _identity_provenance
+        anchor = row.get("structural_anchor")
+        canonical_anchor(anchor)  # type: ignore[arg-type]
+        if not isinstance(anchor, Mapping):
+            raise EpisodeContractError("episode structural anchor is invalid")
+        _require_sha256_receipt(anchor.get("source_receipt"), field="structural anchor source_receipt")
+        if episode_id(security, epoch, anchor, _episode_generation(episode)) != episode:
+            raise EpisodeContractError("all candidates episode_id does not match frozen identity and anchor")
         _timestamp(row.get("opened_at"), field="opened_at")
         rows.append(row)
-    return sorted(rows, key=lambda row: (str(row["opened_at"]), str(row["episode_id"])))
+    expected = sorted(rows, key=lambda row: (str(row["opened_at"]), str(row["episode_id"])))
+    if canonical_json(rows) != canonical_json(expected):
+        raise EpisodeContractError("all candidates episodes are not in canonical order")
+    return rows

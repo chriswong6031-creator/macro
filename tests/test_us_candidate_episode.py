@@ -2,11 +2,13 @@
 from __future__ import annotations
 
 import copy
+from hashlib import sha256
 import json
 from pathlib import Path
 
 import pytest
 
+from engine.stock_identity import fingerprint
 from engine.us_candidate_episode import (
     EpisodeContractError,
     anchor_token,
@@ -44,7 +46,7 @@ def _observation(*, source_event_id: str = "turn-watch:XYZ:2026-08-24", anchor=A
         "identity_epoch": "epoch_0",
         "identity_epoch_state": "provisional",
         "identity_spec_schema": "stock_identity.fingerprint_spec.v1",
-        "identity_spec_hash": "sha256:stock-identity-spec",
+        "identity_spec_hash": fingerprint.spec_hash(),
         "anchor": anchor,
         "intake_class": "technical_emergence",
         "occurred_at": "2026-08-24T20:00:00Z",
@@ -158,7 +160,7 @@ def test_reconciliation_deduplicates_a_repeated_source_input_and_rejects_bad_iss
 def test_expert_events_use_exact_radar_event_id_and_unanchored_input_needs_active_episode():
     expert = _observation(
         anchor=None,
-        source_event_id="radar:source:1",
+        source_event_id="radar:event:content-addressed-1",
         source_system="entry_radar",
         source_schema="mastermind.entry_event.v1",
         expert_event_id="radar:event:content-addressed-1",
@@ -246,14 +248,14 @@ def test_projection_corrections_retractions_and_supersession_append_immutable_ev
             "source_receipt": "sha256:identity",
             "occurred_at": "2026-08-24T20:00:00Z",
             "known_at": "2026-08-24T20:00:00Z",
-            "payload": {"successor_episode_id": "pe:SEC:US-XNAS-XYZ:epoch_1:sa:successor:1", "reason": "epoch detected"},
+            "payload": {"successor_episode_id": episode_id(SECURITY_ID, "epoch_1", ANCHOR, 1), "reason": "epoch detected"},
         },
     ]
     result = apply_commands([*opened.events, observed], commands, recorded_at=RECORDED_AT, definition_era=ERA)
     assert result.episodes[0]["ticker_at_observation"] == "XYZZ"
     assert result.episodes[0]["correction_state"] == "corrected"
     assert result.episodes[0]["observation_count"] == 0
-    assert result.episodes[0]["superseded_by"] == "pe:SEC:US-XNAS-XYZ:epoch_1:sa:successor:1"
+    assert result.episodes[0]["superseded_by"] == episode_id(SECURITY_ID, "epoch_1", ANCHOR, 1)
     assert observed in result.events
 
     invalid = copy.deepcopy(commands[0])
@@ -293,3 +295,191 @@ def test_all_candidates_is_uncapped_and_loader_uses_canonical_fixture(tmp_path: 
     duplicate_path.write_text(json.dumps(duplicate))
     with pytest.raises(EpisodeContractError, match="duplicate"):
         load_all_candidates(duplicate_path)
+
+
+def test_replay_and_ledger_hash_use_known_at_source_system_source_event_id_order():
+    """Changing source ordering, rather than a hash, changes canonical ledger order."""
+    first_anchor = {**ANCHOR, "time": "2026-08-24T19:00:00Z"}
+    second_anchor = {**ANCHOR, "time": "2026-08-24T19:30:00Z"}
+    first = _event(
+        "OPENED",
+        episode_id("SEC:US-XNAS-AAA", "epoch_0", first_anchor, 1),
+        source_event_id="z-event",
+        payload={**_observation(anchor=first_anchor, security_id="SEC:US-XNAS-AAA", company_id="ISS:US-AAA", ticker_at_observation="AAA"), "structural_anchor": first_anchor},
+    )
+    second = _event(
+        "OPENED",
+        episode_id("SEC:US-XNAS-BBB", "epoch_0", second_anchor, 1),
+        source_event_id="a-event",
+        payload={**_observation(anchor=second_anchor, security_id="SEC:US-XNAS-BBB", company_id="ISS:US-BBB", ticker_at_observation="BBB"), "structural_anchor": second_anchor},
+    )
+    # Deliberately choose source systems whose declared order differs from event hashes.
+    first["source_system"] = "z_source"
+    second["source_system"] = "a_source"
+    for event in (first, second):
+        semantic = {key: event[key] for key in ("event_type", "episode_id", "source_system", "source_schema", "source_event_id", "occurred_at", "known_at", "definition_era", "correction_of", "payload")}
+        event["event_id"] = "pee:" + sha256(canonical_json(semantic).encode()).hexdigest()
+        event["content_sha256"] = sha256(canonical_json({key: value for key, value in event.items() if key != "content_sha256"}).encode()).hexdigest()
+    document = build_all_candidates([first, second], suppression_count=0)
+    expected = [second, first]
+    assert document["generated_from"]["ledger_sha256"] == "sha256:" + sha256(canonical_json(expected).encode()).hexdigest()
+
+
+def test_data_os_identity_and_epoch_zero_stock_identity_provenance_fail_closed():
+    with pytest.raises(EpisodeContractError):
+        episode_id("SEC::", "epoch_0", ANCHOR, 1)
+    with pytest.raises(EpisodeContractError):
+        reconcile_observations(
+            [], [_observation(company_id="ISS::")], recorded_at=RECORDED_AT, definition_era=ERA
+        )
+    with pytest.raises(EpisodeContractError, match="Stock Identity"):
+        reconcile_observations(
+            [], [_observation(identity_spec_hash="not-the-live-spec-hash")], recorded_at=RECORDED_AT, definition_era=ERA
+        )
+
+
+def test_expert_attachment_requires_exact_radar_contract_and_keeps_two_events_on_one_episode():
+    opened = reconcile_observations([], [_observation()], recorded_at=RECORDED_AT, definition_era=ERA)
+    foreign = _observation(
+        anchor=None,
+        source_system="not_radar",
+        source_schema="not.mastermind.entry_event",
+        source_event_id="radar:event:foreign",
+        expert_event_id="radar:event:foreign",
+    )
+    with pytest.raises(EpisodeContractError, match="Radar"):
+        reconcile_observations(opened.events, [foreign], recorded_at=RECORDED_AT, definition_era=ERA)
+    experts = [
+        _observation(
+            anchor=None,
+            source_system="entry_radar",
+            source_schema="mastermind.entry_event.v1",
+            source_event_id=f"radar:event:{ordinal}",
+            expert_event_id=f"radar:event:{ordinal}",
+            intake_class="radar_expert",
+        )
+        for ordinal in ("one", "two")
+    ]
+    attached = reconcile_observations(opened.events, experts, recorded_at=RECORDED_AT, definition_era=ERA)
+    assert len(attached.episodes) == 1
+    assert attached.episodes[0]["expert_events"] == ["radar:event:one", "radar:event:two"]
+
+
+def test_replay_rejects_unknown_and_terminal_to_active_same_generation_transitions():
+    opened = reconcile_observations([], [_observation()], recorded_at=RECORDED_AT, definition_era=ERA)
+    episode = opened.episodes[0]["episode_id"]
+    resolved = _event("STATE_TRANSITIONED", episode, source_event_id="state:resolved", payload={"episode_state": "RESOLVED", "terminal_reason": "expired"})
+    active = _event("STATE_TRANSITIONED", episode, source_event_id="state:active", payload={"episode_state": "ACTIVE"})
+    unknown = _event("STATE_TRANSITIONED", episode, source_event_id="state:unknown", payload={"episode_state": "MAYBE"})
+    with pytest.raises(EpisodeContractError, match="terminal"):
+        project_events([*opened.events, resolved, active])
+    with pytest.raises(EpisodeContractError, match="unknown episode state"):
+        project_events([*opened.events, unknown])
+
+
+def test_commands_validate_values_targets_and_identity_supersession_invariants():
+    opened = reconcile_observations([], [_observation()], recorded_at=RECORDED_AT, definition_era=ERA)
+    episode = opened.episodes[0]["episode_id"]
+    transition = _event("STATE_TRANSITIONED", episode, source_event_id="state:resolved", payload={"episode_state": "RESOLVED", "terminal_reason": "expired"})
+    correction = {
+        "event_type": "CORRECTED", "episode_id": episode, "source_system": "operator",
+        "source_schema": "candidate-command/v1", "source_event_id": "correct:transition",
+        "source_receipt": "sha256:operator", "occurred_at": "2026-08-24T20:00:00Z",
+        "known_at": "2026-08-24T20:00:00Z", "correction_of": transition["event_id"],
+        "payload": {"patch": {"terminal_reason": "reclassified"}},
+    }
+    assert apply_commands([*opened.events, transition], [correction], recorded_at=RECORDED_AT, definition_era=ERA).episodes[0]["terminal_reason"] == "reclassified"
+
+    invalid_patch = copy.deepcopy(correction)
+    invalid_patch["source_event_id"] = "correct:invalid-company"
+    invalid_patch["payload"] = {"patch": {"company_id": "ISS::"}}
+    with pytest.raises(EpisodeContractError, match="company_id"):
+        apply_commands([*opened.events, transition], [invalid_patch], recorded_at=RECORDED_AT, definition_era=ERA)
+
+    forbidden_patch = copy.deepcopy(correction)
+    forbidden_patch["source_event_id"] = "correct:immutable-anchor"
+    forbidden_patch["payload"] = {"patch": {"structural_anchor": {"kind": "replacement"}}}
+    with pytest.raises(EpisodeContractError, match="immutable"):
+        apply_commands([*opened.events, transition], [forbidden_patch], recorded_at=RECORDED_AT, definition_era=ERA)
+
+    other = episode_id("SEC:US-XNAS-OTHER", "epoch_0", ANCHOR, 1)
+    cross_retraction = {
+        "event_type": "RETRACTED", "episode_id": other, "source_system": "operator",
+        "source_schema": "candidate-command/v1", "source_event_id": "retract:cross",
+        "source_receipt": "sha256:operator", "occurred_at": "2026-08-24T20:00:00Z",
+        "known_at": "2026-08-24T20:00:00Z", "correction_of": transition["event_id"],
+        "payload": {"reason": "wrong episode"},
+    }
+    with pytest.raises(EpisodeContractError, match="retraction episode"):
+        apply_commands([*opened.events, transition], [cross_retraction], recorded_at=RECORDED_AT, definition_era=ERA)
+
+    missing_reason = copy.deepcopy(cross_retraction)
+    missing_reason["episode_id"] = episode
+    missing_reason["source_event_id"] = "retract:missing-reason"
+    missing_reason["payload"] = {}
+    with pytest.raises(EpisodeContractError, match="reason"):
+        apply_commands([*opened.events, transition], [missing_reason], recorded_at=RECORDED_AT, definition_era=ERA)
+
+    missing_receipt = copy.deepcopy(correction)
+    missing_receipt["source_event_id"] = "correct:missing-receipt"
+    missing_receipt["source_receipt"] = ""
+    with pytest.raises(EpisodeContractError, match="source_receipt"):
+        apply_commands([*opened.events, transition], [missing_receipt], recorded_at=RECORDED_AT, definition_era=ERA)
+
+    for source_provenance in ("provisional", "confirmed"):
+        if source_provenance == "provisional":
+            source = opened.events
+            source_episode = episode
+            successor = episode
+        else:
+            alternate = reconcile_observations(
+                [], [_observation(identity_epoch="epoch_1", identity_epoch_state="confirmed")],
+                recorded_at=RECORDED_AT, definition_era=ERA,
+            )
+            source = alternate.events
+            source_episode = alternate.episodes[0]["episode_id"]
+            successor = episode_id(SECURITY_ID, "epoch_2", ANCHOR, 1)
+        supersession = {
+            "event_type": "IDENTITY_SUPERSEDED", "episode_id": source_episode, "source_system": "stock_identity",
+            "source_schema": "stock_identity.epoch/v1", "source_event_id": f"identity:{source_provenance}:{successor}",
+            "source_receipt": "sha256:identity", "occurred_at": "2026-08-24T20:00:00Z",
+            "known_at": "2026-08-24T20:00:00Z", "payload": {"successor_episode_id": successor, "reason": "epoch detected"},
+        }
+        with pytest.raises(EpisodeContractError, match="supersession"):
+            apply_commands(source, [supersession], recorded_at=RECORDED_AT, definition_era=ERA)
+
+
+def test_all_candidates_reader_verifies_identity_id_provenance_and_canonical_order(tmp_path: Path):
+    fixture = Path(__file__).parent / "fixtures/us_candidate_episode/all_candidates.json"
+    document = json.loads(fixture.read_text())
+    for mutation in (
+        lambda value: value.update({"schema": "wrong"}),
+        lambda value: value.update({"definition_era": "wrong"}),
+        lambda value: value["episodes"][0].update({"security_id": "SEC::"}),
+        lambda value: value["episodes"][0].update({"identity_spec_hash": "wrong"}),
+        lambda value: value["episodes"][0].update({"identity_epoch_state": "confirmed"}),
+        lambda value: value["episodes"][0].update({"episode_id": "pe:SEC:US-XNAS-AAA:epoch_0:sa:wrong:1"}),
+        lambda value: value["episodes"][0]["structural_anchor"].update({"source_receipt": "placeholder"}),
+        lambda value: value["generated_from"].update({"ledger_sha256": "sha256:fixture"}),
+        lambda value: value.update({"episodes": list(reversed(value["episodes"]))}),
+    ):
+        invalid = copy.deepcopy(document)
+        mutation(invalid)
+        path = tmp_path / f"invalid-{len(list(tmp_path.iterdir()))}.json"
+        path.write_text(json.dumps(invalid))
+        with pytest.raises(EpisodeContractError):
+            load_all_candidates(path)
+
+
+def test_all_candidates_projection_is_not_capped_at_a_small_episode_count():
+    observations = [
+        _observation(
+            source_event_id=f"turn-watch:scale:{index}", security_id=f"SEC:US-XNAS-X{index:03d}",
+            company_id=f"ISS:US-X{index:03d}", ticker_at_observation=f"X{index:03d}",
+        )
+        for index in range(300)
+    ]
+    result = reconcile_observations([], observations, recorded_at=RECORDED_AT, definition_era=ERA)
+    document = build_all_candidates(result.events, suppression_count=0)
+    assert document["coverage"]["episodes"] == 300
+    assert len(document["episodes"]) == 300
