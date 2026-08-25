@@ -9,11 +9,15 @@ import os
 from pathlib import Path
 import re
 import shutil
+import sys
 import tempfile
 from typing import Mapping, Sequence
 
 import pyarrow as pa
 import pyarrow.parquet as pq
+
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 
 from engine.ledger_lane import nightly_advance_enabled
 from engine.us_candidate_episode import (
