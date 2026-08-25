@@ -212,19 +212,36 @@ def _visible_lines(body: str, limits: dict[str, int]) -> tuple[list[tuple[int, s
     quote_pending = False
 
     def measure_field_candidate(candidate: str) -> str | None:
-        """Bound one visible physical field candidate and return its label."""
+        """Bound one visible physical field candidate and return its label.
+
+        W0 section 16.3 caps *visible lexical occurrences* of each recognized
+        label over the whole normalized body, independent of the six-line
+        authority block, so a label carrying the CommonMark-legal zero-to-three
+        leading spaces is an occurrence even though it can never be authority.
+        Four or more spaces is an indented code block -- one of the ignored
+        Markdown states -- and the pattern excludes it along with tabs.  The
+        80-byte value cap stays column-zero because only a column-zero line can
+        ever supply a declaration value.
+
+        Returns the label for a column-zero candidate, ``""`` for an indented
+        candidate that was counted but can never be a declaration source, and
+        ``None`` when the line is not a recognized label at all.  Only the
+        column-zero form drives downstream defect routing.
+        """
         lexical = re.match(
-            r"^(Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion):(.*)$",
+            r"^( {0,3})(Workstream|Linear|Portfolio-Mode|Wave|Authority|Completion):(.*)$",
             candidate,
         )
         if not lexical:
             return None
-        field, tail = lexical.groups()
+        indent, field, tail = lexical.groups()
         lexical_occurrences[field] += 1
         if lexical_occurrences[field] > limits["field_occurrences"]:
             raise ResourceLimitError(
                 "field_occurrences", limits["field_occurrences"], lexical_occurrences[field]
             )
+        if indent:
+            return ""
         lexical_value = tail[1:] if tail.startswith(" ") else tail
         if (len(lexical_value) >= 2 and lexical_value.startswith("`")
                 and lexical_value.endswith("`") and lexical_value.count("`") == 2):
@@ -338,7 +355,7 @@ def _visible_lines(body: str, limits: dict[str, int]) -> tuple[list[tuple[int, s
                 line,
             )
             if field_match:
-                if raw_field is None and not line.startswith((" ", "\t")):
+                if raw_field is None:
                     measure_field_candidate(line)
                 defects.append(f"FIELD_COMMENT@{n}:{field_match.group(1)}")
                 quote_pending = False
@@ -367,7 +384,7 @@ def _visible_lines(body: str, limits: dict[str, int]) -> tuple[list[tuple[int, s
     return visible, defects
 
 
-def parse_header(body: str, limits: dict[str, int]) -> tuple[dict[str, str | None], dict[str, list[int]], list[tuple[str, int]], list[str], list[tuple[str, str, int]]]:
+def parse_header(body: str, limits: dict[str, int], *, infer_scattered: bool = True) -> tuple[dict[str, str | None], dict[str, list[int]], list[tuple[str, int]], list[str], list[tuple[str, str, int]]]:
     try:
         body_size = len(body.encode("utf-8"))
     except UnicodeEncodeError as exc:
@@ -409,9 +426,13 @@ def parse_header(body: str, limits: dict[str, int]) -> tuple[dict[str, str | Non
             values[field], locs[field] = val, [n]
     else:
         defects.append("NO_CONTIGUOUS_BLOCK")
-        for n, field, val in headers:
-            if values[field] is None:
-                values[field], locs[field] = val, [n]
+        # W0 section 5.10 forbids globally regex-inferring a declaration out of a
+        # noncanonical pre-cutover body; scattered labels are then evidence of a
+        # legacy body, never a resolved authority.
+        if infer_scattered:
+            for n, field, val in headers:
+                if values[field] is None:
+                    values[field], locs[field] = val, [n]
     for f, entries in occ.items():
         if len([x for x in entries if x[0] in {n for n, _, _ in headers}]) > 1:
             locs[f] = [n for n, _ in entries]
@@ -1026,7 +1047,7 @@ def _validate_top(observation: dict[str, Any], manifest: dict[str, Any]) -> None
     if not isinstance(observation.get("repository"), dict) or set(observation["repository"]) != {"name"} or not isinstance(observation["repository"]["name"], str) or not atom_re.fullmatch(observation["repository"]["name"]):
         raise ValidationError("TYPE_MISMATCH")
     pr = observation.get("pull_request")
-    if not isinstance(pr, dict) or set(pr) != {"number","title","body","branch","base_ref","head_ref"} or not isinstance(pr.get("number"), int) or pr["number"] < 1 or not all(isinstance(pr.get(k), str) for k in ("title","body")) or not all(isinstance(pr.get(k), str) and pr[k] and pr[k].isascii() and pr[k].isprintable() and not any(c.isspace() for c in pr[k]) for k in ("branch","base_ref","head_ref")):
+    if not isinstance(pr, dict) or set(pr) != {"number","title","body","branch","base_ref","head_ref"} or not _positive_int(pr.get("number")) or not all(isinstance(pr.get(k), str) for k in ("title","body")) or not all(isinstance(pr.get(k), str) and pr[k] and pr[k].isascii() and pr[k].isprintable() and not any(c.isspace() for c in pr[k]) for k in ("branch","base_ref","head_ref")):
         raise ValidationError("TYPE_MISMATCH")
     if not isinstance(observation.get("ruleset_digest"), str) or not digest_re.fullmatch(observation["ruleset_digest"]): raise ValidationError("TYPE_MISMATCH")
     snapshot_keys = {
@@ -1276,7 +1297,23 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
     """Analyze an already-decoded frozen observation. It is referentially transparent."""
     _validate_top(observation, manifest)
     rules = _rule_map(manifest)
-    values, locs, _, defects, body_relationships = parse_header(observation["pull_request"]["body"], manifest["limits"])
+    # W0 section 5.10: a non-permitted top-level preamble line invalidates the
+    # authority zone only for a post-cutover observation.  A receipt-bound
+    # pre-cutover body stays visible as legacy instead of being refused for
+    # prose it was authored before the grammar existed, and is never globally
+    # regex-inferred.  The cohort is immutable receipt identity, never a clock,
+    # so this can only widen for PRs W0B already froze as legacy.
+    epoch = observation["authoring_epoch"]
+    legacy_epoch = epoch.get("state") == "PRESENT" and epoch.get("relation") == "PRE_CUTOVER"
+    values, locs, _, defects, body_relationships = parse_header(
+        observation["pull_request"]["body"], manifest["limits"], infer_scattered=not legacy_epoch
+    )
+    if legacy_epoch:
+        # Exempt exactly the two section 5.10 defects.  Unclosed fences/comments
+        # (5.6), lazy blockquote continuation (5.4), comment splices, field
+        # syntax, duplicates and placeholders carry no pre-cutover exemption.
+        defects = [d for d in defects
+                   if not d.endswith(":NONPERMITTED_PREAMBLE") and d != "NO_CONTIGUOUS_BLOCK"]
     findings: list[dict[str, Any]] = []
     def add(rule: str, ev: dict[str, Any], field: str | None = None):
         findings.append(_finding(rules, rule, ev, field=field, line=(locs.get(field) or [None])[0] if field else None))
@@ -1308,7 +1345,6 @@ def analyze(observation: dict[str, Any], manifest: dict[str, Any]) -> dict[str, 
             findings.append(_finding(rules, "R003", {"location":"DECLARATION:BLOCK","reason":defect.split(":", 1)[-1]}))
     normalized = dict(values)
     invalid_fields: set[str] = set()
-    epoch = observation["authoring_epoch"]
     authorized_alias = False
     for f in FIELDS:
         v = values[f]
