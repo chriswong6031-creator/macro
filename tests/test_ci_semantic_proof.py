@@ -455,6 +455,37 @@ def test_plan_digest_and_role_event_are_recomputed_not_trusted() -> None:
         proof.authoritative_plan_sha256(invalid_event)
 
 
+def test_diagnostic_pr_candidate_plan_is_double_refused_before_workflow_even_applies() -> None:
+    """A pr_head/workflow_dispatch diagnostic-canary plan must never pose as
+    merge-gating ``ci.semantic_evidence.v1`` (#6351 P0R bridge addendum). The
+    pair-set gate inside ``_identity`` fires FIRST — pr_head/workflow_dispatch
+    is not an authoritative pair no matter what ``workflow`` says — so the
+    separate ``workflow == "ci"`` assertion never even gets evaluated. This
+    module (scripts/ci_semantic_proof.py) is UNCHANGED by the bridge; this
+    pins that its existing, narrower pair set already closes this shape.
+    """
+    plan = _plan(role="pr_head")
+    plan["event"] = "workflow_dispatch"
+    plan["workflow"] = "infrastructure-selfhosted-ci-canary"
+    with pytest.raises(proof.SemanticProofError, match="role/event combination"):
+        proof.authoritative_plan_sha256(plan)
+
+
+def test_pr0_canary_main_dispatch_plan_is_refused_by_the_workflow_gate_alone() -> None:
+    """The single-closed case the addendum calls out by name: role=main /
+    event=workflow_dispatch (the pr_number=0 canary shape: one identical
+    tree/head/base SHA, no changed_from) IS an authoritative pair, so it
+    passes ``_identity``'s pair-set gate — and is refused ONLY by the
+    separate ``workflow == "ci"`` assertion a few lines later. A hostile
+    regression covering only the double-refused PR-candidate case above
+    would miss a defect that widened this one gate alone.
+    """
+    plan = _plan(role="main")
+    plan["workflow"] = "infrastructure-selfhosted-ci-canary"
+    with pytest.raises(proof.SemanticProofError, match="workflow must be ci"):
+        proof.authoritative_plan_sha256(plan)
+
+
 def test_legacy_absence_is_distinct_from_advertised_missing_or_malformed() -> None:
     assert proof.load_semantic_evidence(None, advertised=False).mode == "legacy_absent"
     with pytest.raises(proof.SemanticProofError, match="missing"):
