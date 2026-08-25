@@ -1,17 +1,23 @@
 # FIF-3A4R — Cross-filing fact lineage protocol
 
-Status: **SPEC_ONLY / CANDIDATE FOR SOL**. Not accepted AgentOS authority.
-Not built. Not shipped. Not a runtime provider. Not a second ledger.
+Status: **SPEC_ONLY / SOL PASS WITH BOUNDED AMENDMENTS / HOLD-FOR-SOL**.
+Not an accepted AgentOS `DEC`. Not built. Not shipped. Not a runtime
+provider. Not a second ledger. Do not merge. Do not code FIF-3A4.
 
-Research wave only. Do not code FIF-3A4 from this file until Sol accepts or
-amends the candidate.
+Sol architecture review of PR #6382 (2026-08-25): **PASS WITH BOUNDED
+AMENDMENTS**. Not `LINEAGE_ARCHITECTURE_BLOCKED`. The winning architecture
+is accepted **in principle**: unchanged `FILED` `RawFactOccurrence`s +
+immutable cutoff-visible lineage-evidence overlay + effective-root
+unification inside the existing query kernel. This file freezes the
+bounded amendments. It does not mint architecture authority.
 
 Replay census: `research/financial_intelligence_fabric/FIF_3A4R_AAPL_OVERLAP_CENSUS.json`
 Replay tool: `research/financial_intelligence_fabric/replay_fif3a4r_aapl_overlap_census.py`
 
-Base HEAD at freeze: `2df738a154acc6feae96e2ad0a6d289d3ab0f4a7`.
-Sol-observed main at commission: `cda4bd5e9fa7e7dc69eb8e0ebe55185b5efa9208`
-(ancestor of freeze HEAD; A3 product owners empty-diff).
+Original freeze HEAD: `2df738a154acc6feae96e2ad0a6d289d3ab0f4a7`.
+Sol-observed main at commission: `cda4bd5e9fa7e7dc69eb8e0ebe55185b5efa9208`.
+This amendment re-merges current `origin/main` and drops the unrelated
+board-shadow carrier (#6386 already derived `ASOF` on main).
 
 ---
 
@@ -27,20 +33,49 @@ does not leak into `LATEST_RESTATED` or `revisions[]` if the overlay never
 mints a reported-revision `event_type`.
 
 **Rejected:** reminting/reclassifying the A2 `FILED` occurrence as
-`XBRL_CONFIRMATION`. That changes `occurrence_id` (identity payload includes
-`event_type` and `revision_of`) and rewrites accepted A3 source identity.
+`FactEventType.XBRL_CONFIRMATION`. That changes `occurrence_id` (identity
+payload includes `event_type` and `revision_of`) and rewrites accepted A3
+source identity. A1 and A2 remain `event_type=FILED`. No
+`RawFactOccurrence` is reminted. No raw-ledger identity changes.
 
-**Rejected:** appending a third `XBRL_CONFIRMATION` `RawFactOccurrence` while
+**Rejected:** appending a third confirmation `RawFactOccurrence` while
 keeping A2 `FILED`. After the confirmation clock, `_select_source_group`
 still sees two roots unless a suppression law hides A2 `FILED`. That is two
 identities for one physical fact, plus a ledger-SHA change.
 
-`FactEventType.XBRL_CONFIRMATION` already exists on the kernel as a revision
-type that requires `revision_of` and is **absent** from
-`_REPORTED_REVISION_EVENT_TYPES` / packet `REPORTED_REVISION_EVENT_TYPES`.
-Keep that enum as a reserved conversion-time exclusive type. A4R v1 must
-**not** stamp it onto accepted A2 `FILED` rows. The v1 relation name lives on
-the evidence receipt, not on the occurrence.
+The lineage relation is `xbrl_confirmation`. That name is **not**
+`FactEventType.XBRL_CONFIRMATION`. The kernel enum remains a reserved
+conversion-time exclusive type, absent from `_REPORTED_REVISION_EVENT_TYPES`
+/ packet `REPORTED_REVISION_EVENT_TYPES`. A4R v1 must not stamp it onto
+accepted A2 `FILED` rows. The v1 relation lives on the evidence receipt.
+
+### 0.1 Sol 2026-08-25 bounded amendments
+
+1. **v1 stays exact.** Do not widen cross-filing confirmation to
+   `_duplicates_agree`. Exact parsed numeric value + exact accuracy metadata
+   is the v1 positive rule. `us-gaap:LongTermDebt` 90.678B / 90.7B remains
+   `precision_consistent_unconfirmed`. XBRL duplicate consistency is useful
+   evidence but does not prove cross-filing equality.
+2. **Source lineage is not metric eligibility.** Preserve all lawful exact
+   confirmation candidates, including dimensioned facts. Current
+   consolidated query may use only facts independently admitted by the
+   existing metric dimensional contract. Do not discard dimensioned lineage
+   because today's core catalog is consolidated-only.
+3. **Tighten positive v1 guards** as listed in §5. Nil facts stay out of v1
+   unless a separate nil-confirmation contract is specified.
+4. **Relation vocabulary** is lineage `xbrl_confirmation`, not occurrence
+   `FactEventType.XBRL_CONFIRMATION`.
+5. **Clock law** as in §8. The A4R research census timestamp does not
+   authorize runtime lineage.
+6. **Runtime evidence remains small.** The research census may retain
+   positive and refused classifications. Runtime
+   `FinancialQueryDataset.lineage_evidence` carries only accepted positive
+   immutable relations. Research JSON must never be loaded by the
+   production/query provider.
+7. **Policy isolation.** Confirmation can affect `LATEST_KNOWN_AS_OF`.
+   `AS_REPORTED` remains the original A1 `FILED` root. `LATEST_RESTATED`
+   must ignore confirmations. FIF packet/revision projection must not emit
+   confirmation as a reported revision.
 
 ---
 
@@ -100,13 +135,17 @@ Duration overlap count is **0**. Every overlapping logical key is an instant.
 | A1-only logical keys | 742 |
 | A2-only logical keys | 549 |
 | `no_relation` (A1-only + A2-only) | 1291 |
-| `exact_complete_confirmation_candidate` | **131** |
-| of which empty-dimension | 38 |
-| of which dimensioned | 93 |
+| Prior (pre-amendment) exact complete candidates | 131 |
+| `exact_complete_confirmation_candidate` after tightened v1 | **130** |
+| of which empty-dimension | 37 |
+| of which dimensioned | **93** |
 | of which core-mapped (any dimensions) | 46 |
 | of which **query-relevant** (empty-dimension, core-mapped, non-nil) | **15** |
-| `precision_different_value_consistent` | 1 |
+| `nil_confirmation_unspecified` | **1** |
+| `precision_consistent_unconfirmed` | 1 |
 | `changed_value` | 1 |
+| `source_taxonomy_namespace_version_mismatch` | 0 |
+| `event_type_not_filed` / `same_accession` / `source_family_mismatch` / `parent_not_before_child` | 0 |
 | `incomplete_dimensional_scope` | 0 |
 | `custom_unmapped_taxonomy` | 0 |
 | `ambiguous_duplicate_group` | 0 |
@@ -114,24 +153,38 @@ Duration overlap count is **0**. Every overlapping logical key is an instant.
 | `nil_state_difference` | 0 |
 | `unit_context_concept_mismatch` at logical-key overlap | 0 |
 
+The 131 total **changes**. Tightened eligibility excludes the one nil-nil
+pair `us-gaap:CommitmentsAndContingencies` instant `2025-09-27`
+(A1 `f-203`, A2 `f-211`). Nil facts are not needed to unlock A4 numeric
+query behavior and have no v1 nil-confirmation contract.
+
+**Source-namespace-version proof:** all 133 logical-key overlaps, including
+the 130 v1 exact numeric candidates, carry original Clark concept URI
+`http://fasb.org/us-gaap/2025` on both A1 and A2. Mismatch count is **0**.
+A2's filing-level families also include Apple custom `20260627`, but those
+namespaces do not appear on the overlapping us-gaap concepts. Both golden
+filings tag the overlapping us-gaap facts in the 2025 taxonomy year.
+
 Ledger SHA of the replayed A3 ledger remains
 `ba149bd55d929d843f353e91bbf68147791fb8b4a20c258426ea2eb7527019d8`.
 
+Census schema: `fif3a4r.aapl_overlap_census/v1.1`.
 Census payload SHA-256 (canonical JSON excluding the digest field):
-`d705de0dddab9761441aa9649b973dcd2f7ac2c265282658446b8bba6a8d4be0`.
+`b1577b04f553c56ba278d2057ecc07a0d23159a1d20a41339b39da4ed24c12a9`.
 Written file SHA-256:
-`e405b4094e8905a9384fb1aef3c694c2e6b7244eabd7164ba3f73082822d0018`.
+`f1481fffa18720209ba98d463c25a52b4e497bff89b2159cfa3b2d74ea63ab58`.
 
 ### 2.1 Safe v1 confirmation candidates
 
-**All 131** `exact_complete_confirmation_candidate` rows are lawful fact-level
-confirmation candidates: same filer family (`sec-edgar` / CIK `0000320193`),
-same `logical_key`, `dimensions_known=true`, unique parent/child after the
-existing within-document duplicate collapse, identical `parsed_value` and
-identical `decimals`/`precision` tokens, taxonomy `us-gaap` or `dei`.
+**All 130** `exact_complete_confirmation_candidate` rows are lawful
+fact-level confirmation candidates under the tightened v1 guards in §5,
+including the **93 dimensioned** rows. Source lineage is not metric
+eligibility. Do not discard dimensioned lineage because today's core
+catalog is `consolidated_only`.
 
 They are **not** SEC-called confirmations. They are Mastermind typed lineage
-interpretations.
+interpretations. The lineage relation, if later minted, is
+`xbrl_confirmation`. It is not `FactEventType.XBRL_CONFIRMATION`.
 
 **Query-relevant v1 subset (15)** — empty explicit/typed dimensions, core
 catalog alias, non-nil. These are the facts that
@@ -160,12 +213,19 @@ Multiple parser ids on one side are **within-document complete duplicates**
 that already agree under `_duplicates_agree`. They collapse to one
 representative. They are not multiple parents.
 
-The other 116 exact candidates remain lawful **dimensional or unmapped**
-confirmations. They must not be used as consolidated core-metric parents.
-`consolidated_only` already ignores non-empty dimensions
-(`query.py` `_fact_dimensions_allowed`).
+The other 115 exact candidates remain lawful **dimensional or unmapped**
+confirmations. They are retained as lineage candidates. They must not be
+used as consolidated core-metric parents unless independently admitted by
+the existing metric dimensional contract. `consolidated_only` already
+ignores non-empty dimensions (`query.py` `_fact_dimensions_allowed`).
 
 ### 2.2 Not confirmation
+
+**Nil, excluded from v1 (1):** `us-gaap:CommitmentsAndContingencies`
+instant `2025-09-27`. A1 `f-203` and A2 `f-211` are both nil. Exact
+namespace/version and empty dimensions match, but v1 has no nil-confirmation
+contract. Class: `nil_confirmation_unspecified`. Do not mint
+`xbrl_confirmation`.
 
 **Changed value (1):** `us-gaap:OtherAssetsNoncurrent` instant `2025-09-27`.
 A1 `83727000000` (`f-177`, `f-674`, agreeing within-document duplicates).
@@ -174,13 +234,15 @@ No confirmation edge. No automatic `AMENDMENT`, `COMPARATIVE_RECAST`,
 `RESTATEMENT`, or `SOURCE_CORRECTION`. Separate auditable evidence would be
 required to type a reported revision.
 
-**Precision-different, value-consistent (1):** `us-gaap:LongTermDebt`
+**Precision-consistent, unconfirmed (1):** `us-gaap:LongTermDebt`
 instant `2025-09-27`. A1 `90678000000` `decimals=-6`. A2 `90700000000`
-`decimals=-8`. `_duplicates_agree` is true (existing interval law). Exact
-parsed-value and accuracy-token equality is false. **v1 confirmation
-excludes this.** A later expansion may reuse `_duplicates_agree` rather than
-invent a second tolerance. Unmapped; not the core `long_term_debt` alias
-(`us-gaap:LongTermDebtNoncurrent` `78328000000` is the mapped exact row).
+`decimals=-8`. Intra-instance `_duplicates_agree` is true. Exact
+parsed-value and accuracy-token equality is false. **v1 stays exact and
+does not widen to `_duplicates_agree`.** Class:
+`precision_consistent_unconfirmed`. Duplicate consistency is useful
+evidence but does not prove cross-filing equality. Unmapped; not the core
+`long_term_debt` alias (`us-gaap:LongTermDebtNoncurrent` `78328000000` is
+the mapped exact row).
 
 **No relation (1291):** logical keys present in only one filing. Includes
 A2 current-quarter facts with no A1 counterpart and A1 facts the 10-Q does
@@ -267,7 +329,8 @@ implied by value equality, later acceptance time, same concept, or same
 report period.
 
 No opened primary source names a later identical reprint a “confirmation”.
-`XBRL_CONFIRMATION` is therefore a **Mastermind** relation type.
+`xbrl_confirmation` is therefore a **Mastermind** lineage relation type. It
+is not `FactEventType.XBRL_CONFIRMATION`.
 
 Company Facts `RevisionEvidence` is a house precedent for **explicit
 evidence + `available_at` + fail-closed unique logical-key pairing**. It is
@@ -286,11 +349,15 @@ Default: `NO_RELATION`.
 | Type | Grain | v1 AAPL A1↔A2 | Selector effect |
 |---|---|---|---|
 | `NO_RELATION` | fact | default, including the 1291 non-overlaps and the changed Other Assets row | unlinked roots remain N/E |
-| `XBRL_CONFIRMATION` | fact | 131 exact candidates; query uses the 15 consolidated mapped rows | links roots for `LATEST_KNOWN_AS_OF` only after evidence clock; not a restatement |
+| `xbrl_confirmation` | fact | 130 exact numeric candidates; query uses the 15 consolidated mapped rows; 93 dimensioned receipts are retained as lineage | links roots for `LATEST_KNOWN_AS_OF` only after evidence clock; not a restatement |
 | `AMENDMENT` | fact, requires filing-level `/A` **and** fact-level evidence | none | reported revision |
 | `COMPARATIVE_RECAST` | fact, requires explicit recast evidence | none (Other Assets is a changed value without evidence) | reported revision |
 | `RESTATEMENT` | fact, requires ASC 250-class evidence | none | reported revision |
 | `SOURCE_CORRECTION` | fact, requires source-correction evidence | none | reported revision |
+
+`xbrl_confirmation` is a lineage-evidence `relation_type`. It is **not**
+`FactEventType.XBRL_CONFIRMATION`. A1 and A2 remain `event_type=FILED`. No
+occurrence is reminted. No raw-ledger identity changes.
 
 Form `/A`, later `accepted_at`, same report period, same concept, or same
 value **alone** cannot mint any reported-revision type.
@@ -300,28 +367,36 @@ relationships stay on lineage-evidence receipts pointing at occurrence ids.
 
 ---
 
-## 5. v1 confirmation rule (conservative)
+## 5. v1 confirmation rule (exact; Sol 2026-08-25)
 
-Mint `XBRL_CONFIRMATION` evidence iff all of:
+Mint lineage `xbrl_confirmation` evidence iff **all** of:
 
-1. Same `SourceIdentity.source` family and same `entity_id`.
-2. Same `logical_key`.
-3. `dimensions_known is True` on every participating occurrence.
-4. After `_duplicates_agree` collapse, each filing has exactly one
-   duplicate group (unique parent, unique child).
-5. Same unit semantic key (already implied by `logical_key`).
-6. Complete numeric equality: identical nil state, identical canonical
-   `parsed_value`, identical `decimals` and `precision` tokens.
-7. Child `accepted_at` is not before parent `accepted_at`.
-8. Taxonomy is `us-gaap` or `dei` (custom overlap is a separate class; AAPL
-   had zero custom overlaps).
+1. Parent and child `event_type` are `FILED`.
+2. Distinct accessions.
+3. Same filer/source family (`sec-edgar` and the same `entity_id`).
+4. Parent `accepted_at` is strictly before child `accepted_at`.
+5. Same canonical `logical_key`.
+6. `dimensions_known=true` on every participating occurrence.
+7. Duplicate groups are individually adjudicated with the existing
+   within-document `_duplicates_agree` collapse; each filing then has
+   exactly one representative (unique parent, unique child).
+8. Exact parsed numeric value (`Decimal` equality).
+9. Exact `decimals`/`precision` tokens.
+10. Approved standard concept namespace (`TAXONOMY_NAMESPACE_POLICY` →
+    `us-gaap` or `dei`).
+11. Exact original source taxonomy namespace/version: parent and child
+    original Clark concept URIs are identical (AAPL proof:
+    `http://fasb.org/us-gaap/2025` on both sides for every overlap).
+12. Neither fact is nil. Nil facts are out of v1 unless a separate
+    nil-confirmation contract is specified.
 
 Fail closed otherwise. Do not invent `revision_of` because a later filing
-repeats the period.
+repeats the period. Do not widen the positive rule to `_duplicates_agree`.
+Do not treat metric-catalog admission as a lineage filter.
 
-Precision-different consistent values reuse `_duplicates_agree` if Sol later
-widens v1. Do not add a second tolerance algorithm. AAPL has exactly one
-such row (`us-gaap:LongTermDebt`).
+`_duplicates_agree` remains the intra-instance diagnostic that classifies
+`precision_consistent_unconfirmed` versus `changed_value`. It is not
+cross-filing equality and does not mint `xbrl_confirmation`.
 
 ---
 
@@ -329,7 +404,7 @@ such row (`us-gaap:LongTermDebt`).
 
 ### 6.1 Remint / reclassify the child occurrence
 
-Mechanism: change A2 `FILED` into `XBRL_CONFIRMATION` with `revision_of=A1`.
+Mechanism: change A2 `FILED` into `FactEventType.XBRL_CONFIRMATION` with `revision_of=A1`.
 
 Breaks:
 
@@ -388,14 +463,13 @@ After a valid confirmation is visible:
   then min `source_ready` → A1, the original filed root.
 - `LATEST_RESTATED` still requires
   `event_type in _REPORTED_REVISION_EVENT_TYPES`. `FILED` is not in that
-  set. `XBRL_CONFIRMATION` as a receipt type is not an occurrence
-  `event_type`. Result remains “no eligible explicitly typed reported
-  revision vintage”.
+  set. Lineage `xbrl_confirmation` is not an occurrence `event_type`.
+  Result remains “no eligible explicitly typed reported revision vintage”.
 - Packet `revisions[]` iterates ledger events whose `event_type` is in
   `REPORTED_REVISION_EVENT_TYPES`. Confirmation receipts are not those
   events. They do not appear.
 
-If instead a third `XBRL_CONFIRMATION` occurrence is minted **and** A2
+If instead a third confirmation occurrence is minted **and** A2
 `FILED` remains, `root_ids` stays size 2 unless A2 `FILED` is suppressed.
 Suppression of a true `FILED` occurrence as if withdrawn is a lie.
 **Reject that design.**
@@ -417,13 +491,20 @@ evidence_rule_id        # e.g. mmx.fif.xbrl_confirmation
 evidence_rule_version   # integer, immutable per receipt
 evidence_digest         # sha256 of positive evidence or refusal body
 source_known_at         # max(parent.accepted_at, child.accepted_at)
-system_available_at     # when this rule/receipt became system-known
-comparison_basis        # exact_parsed_value_and_accuracy_tokens
-                        # (v1.1 may add duplicate_consistency_interval)
+system_available_at     # first implementation: no earlier than parent/child
+                        # recorded clocks, accepted A4R lineage-rule
+                        # availability, and immutable receipt recording
+comparison_basis        # exact_parsed_value_and_accuracy_tokens only
 logical_key
 positive_evidence       # object or null
 refusal_reason          # string or null
 ```
+
+Runtime `FinancialQueryDataset.lineage_evidence` carries **only accepted
+positive immutable relations**. The research census may retain positive and
+refused classifications. The census JSON is not a provider input and must
+never be loaded by production/query code. The census timestamp does not
+authorize runtime lineage.
 
 `positive_evidence` (when `relation_type=xbrl_confirmation`) includes parent
 and child accession, document id, parser fact ids, source spans, concept,
@@ -453,6 +534,22 @@ are unavailable.
 
 ## 8. Clock law — three states
 
+`source_known_at = max(parent.accepted_at, child.accepted_at)`.
+
+For AAPL Assets: `max(2025-10-31T10:01:26.000000Z, 2026-07-31T10:01:02.000000Z)`
+= `2026-07-31T10:01:02.000000Z`.
+
+First-implementation `system_available_at` must be **no earlier than all of**:
+
+- parent and child recorded clocks (`A1 recorded_at`
+  `2026-08-23T00:32:31.000000Z`, `A2 recorded_at`
+  `2026-08-23T07:02:13.000000Z`);
+- accepted A4R lineage-rule availability (this Sol 2026-08-25 bounded
+  amendment, not the 2026-08-24 research freeze);
+- immutable lineage-evidence receipt recording.
+
+The A4R research census timestamp itself does not authorize runtime lineage.
+
 | State | What is visible | `total_assets` 2025-09-27 |
 |---|---|---|
 | Before A2 is knowable | only A1 `FILED` | VALUE from A1 |
@@ -473,8 +570,8 @@ That changes ledger SHA `ba149bd…`.
 
 `source_known_at` is the SEC-knowledge bound (both filings accepted).
 `system_available_at` is the Mastermind-knowledge bound (the confirmation
-rule/receipt exists). Both must pass, mirroring occurrence lineage-ready
-clocks.
+rule and the immutable receipt exist). Both must pass, mirroring occurrence
+lineage-ready clocks.
 
 ---
 
@@ -502,23 +599,31 @@ and pass only after evidence is wired. Do not add them in A4R.
    disagreeing within-document duplicates, and multiple possible parents
    fail closed (AAPL currently has 0 of those at logical-key overlap except
    as already classified).
-8. `us-gaap:OtherAssetsNoncurrent` never receives `XBRL_CONFIRMATION`.
+8. `us-gaap:OtherAssetsNoncurrent` never receives `xbrl_confirmation`.
 9. `us-gaap:LongTermDebt` 90,678M vs 90,700M is refused by v1 exact equality
-   even though `_duplicates_agree` is true.
+   even though `_duplicates_agree` is true. Class remains
+   `precision_consistent_unconfirmed`.
 10. FIP1 hashes remain byte-identical when `lineage_evidence` is absent.
 11. Hostile extra keys / true attestation flags on the evidence collection
     are private 503, matching delivery fail-closed.
 12. Querying A2-only before A2 `accepted_at` cannot see A2 or the receipt.
+13. `us-gaap:CommitmentsAndContingencies` nil-nil never receives v1
+    `xbrl_confirmation`.
+14. A historical cutoff whose `recorded_at` predates `system_available_at`
+    preserves A3 N/E even after receipts exist in a later dataset.
+15. Runtime `lineage_evidence` containing a refused/nil/precision row is
+    unavailable; only accepted positive immutable relations are legal.
 
-Do not modify `query.py` in A4R to make the golden example pass. The later
-build may change `query.py` only to consume cutoff-visible evidence as a
-general root-unification law, never as an AAPL special case.
+Do not modify `query.py`, `raw_ledger.py`, or `metric_registry.py` in A4R
+to make the golden example pass. The later build may change `query.py` only
+to consume cutoff-visible evidence as a general root-unification law, never
+as an AAPL special case.
 
 ---
 
 ## 10. Expected implementation paths (FIF-3A4, not this wave)
 
-**Would need to change (after Sol accepts):**
+**Would need to change (after Sol releases HOLD-FOR-SOL and authorizes FIF-3A4):**
 
 - `engine/fundamental_forensics/query.py` — `_select_source_group` effective-root
   unification from eligible receipts; no golden special case.
@@ -532,11 +637,13 @@ general root-unification law, never as an AAPL special case.
   evidence tuple today and a later explicit bundle — without altering
   `GOLDEN_AAPL_QUERY_ACCESSIONS` or converting A2 as a revision.
 
-**Must not change:**
+**Must not change in A4R, and A4 must not change these identities:**
 
 - `engine/fundamental_forensics/raw_ledger.py` occurrence identity,
   `logical_key`, `_duplicates_agree`, `FactEventType` membership of
-  `XBRL_CONFIRMATION` in `_REVISION_TYPES`.
+  `XBRL_CONFIRMATION` in `_REVISION_TYPES`. A4R itself makes **no**
+  product modification to `query.py`, `raw_ledger.py`, or
+  `metric_registry.py`.
 - `engine/fundamental_forensics/metric_registry.py`.
 - Frozen FIF-1 packet contract and FIP1 hashes.
 - A1/A2 statement composition and statement SHAs.
@@ -553,40 +660,41 @@ general root-unification law, never as an AAPL special case.
 - Activating `/financial/revisions` or `/financial/packet` for AAPL.
 - Feeding Company Facts into AAPL core metric truth.
 - Treating research census JSON as a runtime provider input.
+- Loading refused census classes into runtime `lineage_evidence`.
 
 ---
 
-## 11. Unresolved questions for Sol
+## 11. Sol answers (2026-08-25) and remaining holds
 
-1. Accept cutoff-visible evidence overlay as the architecture, or reject in
-   favor of `LINEAGE_ARCHITECTURE_BLOCKED`?
-2. Keep v1 confirmation at exact parsed-value and accuracy tokens (131 AAPL
-   rows; 15 query-relevant), or widen immediately to `_duplicates_agree`
-   (adds the one `LongTermDebt` 90,678M vs 90,700M row)?
-3. Should query-relevant confirmation be further restricted to empty
-   dimensions (recommended: yes, because `consolidated_only` already does
-   that), while still recording dimensional exact matches as fact-level
-   receipts that do not feed core metrics?
-4. Where should `system_available_at` for the first AAPL receipts be
-   pinned — implementation merge time, a dedicated rule `available_at` in
-   governance, or a golden fixture clock after `2026-08-23T07:02:13Z`?
-5. Sequence next: implement FIF-3A4 against AAPL only, or freeze this
-   protocol and keep FIF-3 on another issuer without lineage?
+Sol ruled **PASS WITH BOUNDED AMENDMENTS**. Remaining holds, not open
+architecture forks:
 
-This file is not an accepted `DEC`. Sol rules.
+1. Architecture: cutoff-visible overlay is accepted **in principle**. Not
+   `LINEAGE_ARCHITECTURE_BLOCKED`. No accepted AgentOS `DEC` until Sol
+   releases HOLD-FOR-SOL.
+2. v1 stays exact. Do not widen to `_duplicates_agree`. LongTermDebt remains
+   `precision_consistent_unconfirmed`.
+3. Preserve dimensioned exact candidates as lineage. Query eligibility stays
+   the existing metric dimensional contract. Query-relevant subset remains
+   the 15 consolidated mapped empty-dimension rows.
+4. `system_available_at` floor is parent/child recorded clocks, accepted A4R
+   lineage-rule availability, and immutable receipt recording. The research
+   census timestamp does not authorize runtime lineage.
+5. Sequence: do **not** start FIF-3A4 or another issuer from this amendment.
+   HOLD-FOR-SOL remains. Do not merge.
+
+This file is still **not** an accepted `DEC`.
 
 ---
 
 ## 12. Current-main collision
 
-Sol-observed: `cda4bd5e9fa7e7dc69eb8e0ebe55185b5efa9208`.
-Freeze HEAD / current `origin/main` at research closeout:
-`2df738a154acc6feae96e2ad0a6d289d3ab0f4a7`.
-Sol-observed is an ancestor of freeze HEAD. STOP-file diff against
-`origin/main` for
+Sol-observed at original commission: `cda4bd5e9fa7e7dc69eb8e0ebe55185b5efa9208`.
+Original freeze HEAD: `2df738a154acc6feae96e2ad0a6d289d3ab0f4a7`.
+Board-shadow date-bomb carrier on #6382 is **removed**. The required
+maintenance already landed as PR #6386 (`ASOF` derived from the clock).
+STOP-file diff against `origin/main` for
 `ixbrl_raw_ledger.py`, `query_service.py`, `sec_document_spine.py`,
 `app/forensics.py`, `query.py`, `raw_ledger.py`, `metric_registry.py`,
 and A1/A2 fixtures: **empty**.
-Main moved past Sol-observed on skip-ci / government-revenue / marketing
-paths only.
 No A3 product collision. No runtime query behavior change in this wave.

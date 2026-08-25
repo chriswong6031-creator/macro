@@ -59,12 +59,6 @@ def _isolated_store(tmp_path, monkeypatch):
     test's fixture challenger silently backstop another's positive control)."""
     data_root = tmp_path / "data"
     monkeypatch.setattr(config, "data_dir", lambda: data_root)
-    # Lane B stamps with _now_iso(). Several tests still pass asof="2026-08-21".
-    # SETTLE_WINDOW_DAYS is 3, so a live UTC date of 2026-08-25 refuses those
-    # rows (wallclock_fence) even though the tests are not about the fence.
-    # Pin the stamp to the fixture asof. test_k8a/k8c keep live session dates;
-    # a stamp earlier than session_date is not a settle violation.
-    monkeypatch.setattr(bs, "_now_iso", lambda: "2026-08-21T12:00:00+00:00")
     bs.CHALLENGER_REGISTRY.clear()
     monkeypatch.delenv("CN_LANE", raising=False)
     monkeypatch.delenv("COLLECT_LANE", raising=False)

@@ -2,8 +2,10 @@
 
 Replay tool. Not a runtime provider. Does not import into engine/.
 Reads accepted golden packages through parse_and_convert_golden_packages
-and classifies every raw-ledger logical_key using existing duplicate-consistency
-helpers. Does not mint revision_of, does not query, does not write engine state.
+and classifies every raw-ledger logical_key using Sol's 2026-08-25 v1
+positive guards. Does not mint revision_of, does not query, does not write
+engine state. Research JSON must never be loaded by a production/query
+provider.
 """
 from __future__ import annotations
 
@@ -12,21 +14,25 @@ import json
 import subprocess
 import sys
 from collections import Counter, defaultdict
-from datetime import date, datetime, timezone
+from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any, Mapping, Sequence
 
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from collectors.sec_filing_parser import parse_sec_filing_document
+from engine.fundamental_forensics.filing_attestation import TAXONOMY_NAMESPACE_POLICY
 from engine.fundamental_forensics.financial_intelligence_packet import load_core_registry
 from engine.fundamental_forensics.ixbrl_raw_ledger import (
     GOLDEN_AAPL_QUERY_ACCESSIONS,
+    _clark_parts,
     parse_and_convert_golden_packages,
 )
 from engine.fundamental_forensics.raw_ledger import (
+    FactEventType,
     RawFactOccurrence,
     _canonical_duplicate_representative,
     _duplicates_agree,
@@ -38,23 +44,25 @@ from engine.fundamental_forensics.statement_graph import load_golden_aapl_packag
 A1 = "0000320193-25-000079"
 A2 = "0000320193-26-000020"
 EXPECTED_LEDGER_SHA = "ba149bd55d929d843f353e91bbf68147791fb8b4a20c258426ea2eb7527019d8"
-CORE_TAXONOMIES = frozenset({"us-gaap", "dei"})
+APPROVED_PREFIXES = frozenset({"us-gaap", "dei"})
 CLASS_ORDER = (
+    "event_type_not_filed",
+    "same_accession",
+    "source_family_mismatch",
+    "parent_not_before_child",
     "incomplete_dimensional_scope",
+    "source_taxonomy_namespace_version_mismatch",
     "custom_unmapped_taxonomy",
     "ambiguous_duplicate_group",
     "multiple_possible_parent",
-    "nil_state_difference",
-    "changed_value",
-    "precision_different_value_consistent",
-    "exact_complete_confirmation_candidate",
     "unit_context_concept_mismatch",
+    "nil_state_difference",
+    "nil_confirmation_unspecified",
+    "changed_value",
+    "precision_consistent_unconfirmed",
+    "exact_complete_confirmation_candidate",
     "no_relation",
 )
-
-
-def _iso_date(value: date | None) -> str | None:
-    return value.isoformat() if value is not None else None
 
 
 def _taxonomy(concept_qname: str) -> str:
@@ -97,6 +105,44 @@ def _decimal_text(value: Decimal | str | int | None) -> str | None:
     if isinstance(value, Decimal):
         return format(value, "f")
     return str(value)
+
+
+def _clark_namespace_uri(concept_qname: str | None) -> str | None:
+    if not isinstance(concept_qname, str) or not concept_qname:
+        return None
+    parts = _clark_parts(concept_qname)
+    if parts is None:
+        return None
+    return parts[0]
+
+
+def _load_original_concept_namespaces(
+    packages: Sequence[Any],
+) -> dict[tuple[str, str], str]:
+    """Map (accession, parser fact_id) to the original Clark namespace URI."""
+    mapping: dict[tuple[str, str], str] = {}
+    for package in packages:
+        accession = str(package.manifest["accession"])
+        primary = package.manifest["primary_document"]
+        parsed = parse_sec_filing_document(package.members[primary], document_name=primary)
+        for fact in parsed.get("facts") or []:
+            if not isinstance(fact, Mapping):
+                continue
+            fact_id = fact.get("fact_id")
+            uri = _clark_namespace_uri(fact.get("concept_qname"))
+            if fact_id and uri:
+                mapping[(accession, str(fact_id))] = uri
+    return mapping
+
+
+def _original_uri(
+    event: RawFactOccurrence,
+    original_namespaces: Mapping[tuple[str, str], str],
+) -> str | None:
+    fact_id = event.source_occurrence_key
+    if not fact_id:
+        return None
+    return original_namespaces.get((event.source.accession, fact_id))
 
 
 def _occurrence_payload(event: RawFactOccurrence) -> dict[str, Any]:
@@ -156,10 +202,8 @@ def _side_state(events: Sequence[RawFactOccurrence]) -> dict[str, Any]:
 
 
 def _exact_numeric_equality(left: RawFactOccurrence, right: RawFactOccurrence) -> bool:
-    if left.is_nil != right.is_nil:
+    if left.is_nil or right.is_nil:
         return False
-    if left.is_nil:
-        return True
     if left.parsed_value is None or right.parsed_value is None:
         return False
     if Decimal(left.parsed_value) != Decimal(right.parsed_value):
@@ -170,38 +214,74 @@ def _exact_numeric_equality(left: RawFactOccurrence, right: RawFactOccurrence) -
 def _classify_overlap(
     a1_events: Sequence[RawFactOccurrence],
     a2_events: Sequence[RawFactOccurrence],
+    original_namespaces: Mapping[tuple[str, str], str],
 ) -> tuple[str, str]:
     sample = a1_events[0]
     a1 = _side_state(a1_events)
     a2 = _side_state(a2_events)
     all_events = [*a1_events, *a2_events]
+    if any(item.event_type != FactEventType.FILED for item in all_events):
+        return "event_type_not_filed", "v1 confirmation requires FILED to FILED"
+    a1_accessions = {item.source.accession for item in a1_events}
+    a2_accessions = {item.source.accession for item in a2_events}
+    if a1_accessions & a2_accessions or len(a1_accessions) != 1 or len(a2_accessions) != 1:
+        return "same_accession", "v1 confirmation requires distinct accessions"
+    sources = {item.source.source for item in all_events}
+    entities = {item.source.entity_id for item in all_events}
+    if sources != {"sec-edgar"} or len(entities) != 1:
+        return "source_family_mismatch", "v1 confirmation requires same filer/source family"
     if any(not item.dimensions_known for item in all_events):
         return "incomplete_dimensional_scope", "at least one overlapping occurrence has dimensions_known=false"
-    if _taxonomy(sample.concept_qname) not in CORE_TAXONOMIES:
-        return "custom_unmapped_taxonomy", "overlapping concept is outside us-gaap/dei"
     if a1["ambiguous"] or a2["ambiguous"]:
         return "ambiguous_duplicate_group", "within-filing duplicate group fails existing _duplicates_agree"
     if a1["multiple_groups"] or a2["multiple_groups"]:
         return "multiple_possible_parent", "more than one duplicate_group_key remains on a side after collapse"
     a1_rep: RawFactOccurrence = a1["representatives"][0]
     a2_rep: RawFactOccurrence = a2["representatives"][0]
+    if not (a1_rep.accepted_at < a2_rep.accepted_at):
+        return "parent_not_before_child", "v1 confirmation requires parent accepted_at before child"
+    if a1_rep.logical_key != a2_rep.logical_key:
+        return "unit_context_concept_mismatch", "logical_key collision with divergent canonical identity"
     if a1_rep.concept_qname != a2_rep.concept_qname or a1_rep.context.semantic_key != a2_rep.context.semantic_key:
         return "unit_context_concept_mismatch", "logical_key collision with divergent concept or context"
     if (a1_rep.unit.semantic_key if a1_rep.unit else None) != (a2_rep.unit.semantic_key if a2_rep.unit else None):
         return "unit_context_concept_mismatch", "logical_key collision with divergent unit"
+    a1_uri = _original_uri(a1_rep, original_namespaces)
+    a2_uri = _original_uri(a2_rep, original_namespaces)
+    a1_prefix = TAXONOMY_NAMESPACE_POLICY.get(a1_uri or "")
+    a2_prefix = TAXONOMY_NAMESPACE_POLICY.get(a2_uri or "")
+    if not a1_uri or not a2_uri or a1_prefix is None or a2_prefix is None:
+        if _taxonomy(sample.concept_qname) not in APPROVED_PREFIXES:
+            return "custom_unmapped_taxonomy", "overlapping concept is outside approved us-gaap/dei namespaces"
+        return (
+            "source_taxonomy_namespace_version_mismatch",
+            "original source taxonomy namespace/version is missing or not an approved standard URI",
+        )
+    if a1_uri != a2_uri or a1_prefix != a2_prefix:
+        return (
+            "source_taxonomy_namespace_version_mismatch",
+            "v1 requires exact original source taxonomy namespace/version on parent and child",
+        )
+    if a1_prefix not in APPROVED_PREFIXES or a2_prefix not in APPROVED_PREFIXES:
+        return "custom_unmapped_taxonomy", "overlapping concept is outside approved us-gaap/dei namespaces"
     if a1_rep.is_nil != a2_rep.is_nil or (a1_rep.parsed_value is None) != (a2_rep.parsed_value is None):
         return "nil_state_difference", "nil/numeric state differs across filings"
-    if not _duplicates_agree((a1_rep, a2_rep)):
-        return "changed_value", "A1 and A2 representatives fail existing duplicate-consistency law"
-    if not _exact_numeric_equality(a1_rep, a2_rep):
+    if a1_rep.is_nil and a2_rep.is_nil:
         return (
-            "precision_different_value_consistent",
-            "representatives agree under _duplicates_agree but parsed_value or decimals/precision tokens differ",
+            "nil_confirmation_unspecified",
+            "both facts are nil; v1 has no nil-confirmation contract",
         )
-    return (
-        "exact_complete_confirmation_candidate",
-        "same filer family, same logical_key, complete dimensions, unique parent/child, exact numeric equality at declared accuracy",
-    )
+    if _exact_numeric_equality(a1_rep, a2_rep):
+        return (
+            "exact_complete_confirmation_candidate",
+            "FILED to FILED, distinct accessions, same filer family, parent accepted before child, same logical_key, dimensions_known, unique adjudicated duplicate groups, exact parsed value, exact decimals/precision, approved standard namespace, exact original taxonomy URI/version",
+        )
+    if _duplicates_agree((a1_rep, a2_rep)):
+        return (
+            "precision_consistent_unconfirmed",
+            "representatives agree under intra-instance _duplicates_agree but parsed_value or decimals/precision tokens differ; v1 stays exact and does not widen",
+        )
+    return "changed_value", "A1 and A2 representatives are not exactly equal"
 
 
 def _compact_overlap(
@@ -211,6 +291,7 @@ def _compact_overlap(
     a1_events: Sequence[RawFactOccurrence],
     a2_events: Sequence[RawFactOccurrence],
     mapped: Mapping[str, tuple[str, ...]],
+    original_namespaces: Mapping[tuple[str, str], str],
 ) -> dict[str, Any]:
     sample = a1_events[0]
     a1_rep = _canonical_duplicate_representative(a1_events)
@@ -224,6 +305,8 @@ def _compact_overlap(
         "logical_key": sample.logical_key,
         "concept_qname": sample.concept_qname,
         "taxonomy": _taxonomy(sample.concept_qname),
+        "a1_original_taxonomy_namespace_uri": _original_uri(a1_rep, original_namespaces),
+        "a2_original_taxonomy_namespace_uri": _original_uri(a2_rep, original_namespaces),
         "empty_dimensions": empty_dimensions,
         "period": _period(sample),
         "unit_semantic_key": sample.unit.semantic_key if sample.unit else None,
@@ -240,8 +323,12 @@ def _compact_overlap(
         "a2_precision": a2_rep.precision,
         "a1_is_nil": a1_rep.is_nil,
         "a2_is_nil": a2_rep.is_nil,
+        "a1_event_type": a1_rep.event_type.value,
+        "a2_event_type": a2_rep.event_type.value,
         "a1_document_id": a1_rep.source.document_id,
         "a2_document_id": a2_rep.source.document_id,
+        "lineage_relation_if_positive": "xbrl_confirmation",
+        "not_fact_event_type_xbrl_confirmation": True,
     }
 
 
@@ -290,6 +377,7 @@ def main() -> int:
     ledger, metadata, report = parse_and_convert_golden_packages(packages)
     if report.ledger_sha256 != EXPECTED_LEDGER_SHA:
         raise SystemExit(f"A3 ledger SHA drifted: {report.ledger_sha256}")
+    original_namespaces = _load_original_concept_namespaces(packages)
     recorded_at = max(event.recorded_at for event in ledger.events)
     mapped = _concept_map(ROOT, recorded_at)
 
@@ -311,11 +399,12 @@ def main() -> int:
     compact_by_class: dict[str, list[dict[str, Any]]] = {name: [] for name in CLASS_ORDER}
     representatives: dict[str, list[dict[str, Any]]] = {name: [] for name in CLASS_ORDER}
     control_assets = None
+    uri_pairs: Counter[str] = Counter()
 
     for key in overlap_keys:
         a1_events = tuple(a1_by_key[key])
         a2_events = tuple(a2_by_key[key])
-        class_name, reason = _classify_overlap(a1_events, a2_events)
+        class_name, reason = _classify_overlap(a1_events, a2_events, original_namespaces)
         class_counts[class_name] += 1
         row = _compact_overlap(
             class_name=class_name,
@@ -323,8 +412,10 @@ def main() -> int:
             a1_events=a1_events,
             a2_events=a2_events,
             mapped=mapped,
+            original_namespaces=original_namespaces,
         )
         compact_by_class[class_name].append(row)
+        uri_pairs[f"{row['a1_original_taxonomy_namespace_uri']}|{row['a2_original_taxonomy_namespace_uri']}"] += 1
         sample = a1_events[0]
         if (
             sample.concept_qname == "us-gaap:Assets"
@@ -348,6 +439,8 @@ def main() -> int:
                     if row not in chosen:
                         chosen.append(row)
                     break
+        if class_name == "nil_confirmation_unspecified":
+            chosen = rows
         for row in chosen:
             representatives[class_name].append(
                 {
@@ -378,7 +471,6 @@ def main() -> int:
         elif "concept" in kinds:
             mismatch_counts["concept"] += 1
 
-    class_counts["unit_context_concept_mismatch"] = 0
     class_counts["no_relation"] = len(a1_only) + len(a2_only)
 
     exact_rows = compact_by_class["exact_complete_confirmation_candidate"]
@@ -394,10 +486,17 @@ def main() -> int:
         for metric_id in row["mapped_metric_ids"]:
             confirmation_metric_counts[metric_id] += 1
 
+    nil_rows = compact_by_class["nil_confirmation_unspecified"]
+    exact_uri_pairs: Counter[str] = Counter()
+    for row in exact_rows:
+        exact_uri_pairs[f"{row['a1_original_taxonomy_namespace_uri']}|{row['a2_original_taxonomy_namespace_uri']}"] += 1
+
     receipt = {
-        "schema": "fif3a4r.aapl_overlap_census/v1",
+        "schema": "fif3a4r.aapl_overlap_census/v1.1",
         "research_only": True,
         "not_a_runtime_provider": True,
+        "census_timestamp_does_not_authorize_runtime_lineage": True,
+        "sol_bounded_amendments_applied": "2026-08-25",
         "base_main": subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
         ).strip(),
@@ -416,6 +515,10 @@ def main() -> int:
             "a2_only": len(a2_only),
         },
         "class_counts": {name: int(class_counts.get(name, 0)) for name in CLASS_ORDER},
+        "prior_v1_exact_complete_confirmation_candidate_count": 131,
+        "v1_exact_numeric_confirmation_count": len(exact_rows),
+        "nil_pair_count": len(nil_rows),
+        "nil_pairs_excluded_from_v1": len(nil_rows),
         "weak_non_logical_mismatch_fact_counts": dict(sorted(mismatch_counts.items())),
         "core_mapped_exact_confirmation_count": len(mapped_confirmation),
         "core_mapped_exact_confirmation_by_metric": dict(sorted(confirmation_metric_counts.items())),
@@ -428,6 +531,19 @@ def main() -> int:
         ),
         "control_total_assets_instant_2025_09_27": control_assets,
         "source_namespace_families": list(report.source_namespace_families),
+        "source_namespace_version_proof": {
+            "rule": "exact original Clark concept namespace URI approved by TAXONOMY_NAMESPACE_POLICY; parent URI equals child URI",
+            "overlap_concept_uri_pairs": dict(sorted(uri_pairs.items())),
+            "v1_exact_uri_pairs": dict(sorted(exact_uri_pairs.items())),
+            "mismatch_count": int(class_counts.get("source_taxonomy_namespace_version_mismatch", 0)),
+            "a1_filing_families": list(report.filings[0].source_namespace_families),
+            "a2_filing_families": list(report.filings[1].source_namespace_families),
+        },
+        "runtime_evidence_policy": {
+            "research_census_may_retain_positive_and_refused": True,
+            "runtime_lineage_evidence_carries_only_accepted_positive_immutable_relations": True,
+            "research_json_must_never_be_loaded_by_production_or_query_provider": True,
+        },
         "conversion_receipts": [item.to_dict() if hasattr(item, "to_dict") else {
             "accession": item.accession,
             "parser_numeric_fact_count": item.parser_numeric_fact_count,
@@ -437,13 +553,16 @@ def main() -> int:
             "source_namespace_families": list(item.source_namespace_families),
         } for item in report.filings],
         "representatives": representatives,
-        "overlap_rows": {name: compact_by_class[name] for name in CLASS_ORDER if name not in {"no_relation", "unit_context_concept_mismatch"}},
+        "overlap_rows": {name: compact_by_class[name] for name in CLASS_ORDER if name != "no_relation"},
         "no_relation_counts_only": True,
         "classification_law": {
             "overlap_identity": "RawFactOccurrence.logical_key",
-            "duplicate_consistency": "engine.fundamental_forensics.raw_ledger._duplicates_agree",
-            "v1_confirmation": "exact parsed_value and identical decimals/precision tokens; complete dimensions_known; unique parent/child; us-gaap or dei",
-            "precision_class": "reuses _duplicates_agree; does not invent a second tolerance",
+            "within_document_duplicate_adjudication": "engine.fundamental_forensics.raw_ledger._duplicates_agree",
+            "v1_positive_rule": "exact parsed numeric value and exact decimals/precision tokens; not _duplicates_agree",
+            "v1_confirmation_relation": "xbrl_confirmation",
+            "v1_confirmation_is_not_fact_event_type": True,
+            "precision_class": "precision_consistent_unconfirmed; _duplicates_agree is diagnostic evidence only",
+            "nil_policy": "nil pairs are counted and excluded from v1 unless a separate nil-confirmation contract is specified",
             "default_relation": "NO_RELATION",
         },
     }
@@ -460,9 +579,14 @@ def main() -> int:
         "census_file_sha256": hashlib.sha256((encoded + "\n").encode("utf-8")).hexdigest(),
         "class_counts": receipt["class_counts"],
         "logical_key_counts": receipt["logical_key_counts"],
+        "prior_v1_exact_complete_confirmation_candidate_count": 131,
+        "v1_exact_numeric_confirmation_count": receipt["v1_exact_numeric_confirmation_count"],
+        "nil_pair_count": receipt["nil_pair_count"],
         "core_mapped_exact_confirmation_count": receipt["core_mapped_exact_confirmation_count"],
         "query_relevant_consolidated_mapped_exact_count": receipt["query_relevant_consolidated_mapped_exact_count"],
         "exact_confirmation_empty_dimension_count": receipt["exact_confirmation_empty_dimension_count"],
+        "exact_confirmation_dimensioned_count": receipt["exact_confirmation_dimensioned_count"],
+        "source_namespace_version_proof": receipt["source_namespace_version_proof"],
         "control_class": None if control_assets is None else control_assets["class"],
         "weak_non_logical_mismatch_fact_counts": receipt["weak_non_logical_mismatch_fact_counts"],
     }, indent=2, sort_keys=True))

@@ -51,9 +51,6 @@ ASOF = (dt.date.today() - dt.timedelta(days=1)).isoformat()
 def _isolated_registry(tmp_path, monkeypatch):
     data_root = tmp_path / "data"
     monkeypatch.setattr(config, "data_dir", lambda: data_root)
-    # Same 2026-08-21 Lane B asof date-bomb as tests/test_board_shadow.py:
-    # SETTLE_WINDOW_DAYS=3, so a live UTC stamp of 2026-08-25 refuses writes.
-    monkeypatch.setattr(bs, "_now_iso", lambda: "2026-08-21T12:00:00+00:00")
     bs.CHALLENGER_REGISTRY.clear()
     monkeypatch.delenv("CN_LANE", raising=False)
     monkeypatch.delenv("COLLECT_LANE", raising=False)
