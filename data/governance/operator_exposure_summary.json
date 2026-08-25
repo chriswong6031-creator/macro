@@ -1,8 +1,8 @@
 {
   "schema": "operator_exposure_summary.v1",
-  "generated_at": "2026-08-24T09:13:42.928381+00:00",
+  "generated_at": "2026-08-25T01:08:13.077145+00:00",
   "window_days": 90,
-  "n_rows_in_window": 381,
+  "n_rows_in_window": 382,
   "by_day": [
     {
       "as_of": "2026-08-20",
@@ -18,9 +18,10 @@
       }
     },
     {
-      "as_of": "2026-08-23",
+      "as_of": "2026-08-24",
       "counts": {
-        "experiment": 271
+        "experiment": 271,
+        "alert_wh": 1
       }
     }
   ]
