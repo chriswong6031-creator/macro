@@ -22,3 +22,4 @@ boto3>=1.34        # collectors/massive_flatfiles.py — S3 client for massive.c
 google-auth>=2.29  # engine/marketing/seo_search_console.py — service-account bearer tokens for GSC REST API (Search Analytics); credentials-gated, adapter degrades gracefully when not installed
 pypdf>=4.0             # research-vault download watermark (engine/research_vault/watermark.py) — SOFT dep, imported lazily; the code degrades to the un-watermarked original PDF bytes if absent (a failed stamp never blocks a paid download)
 reportlab>=4.0         # research-vault download watermark (engine/research_vault/watermark.py) — SOFT dep, builds the faint per-user footer overlay merged by pypdf; degrades gracefully if absent
+pdfplumber>=0.11        # collectors/dod_budget_live.py — deterministic D6-A DoD P-1/R-1 exhibit page-text + words-with-coordinates extractor (MIT; pdfminer.six-based, PyMuPDF deliberately not chosen for its AGPL license)

@@ -1,0 +1,63 @@
+{
+  "schema": "mastermind.market_intelligence_productization.packet_manifest.v0",
+  "generated_at": "2026-08-23",
+  "pins": {
+    "skillpack": "mastermindx-market-intelligence/Mastermind@db0bac5fe3f72348262d42c8bd26b836bda9f61d",
+    "macro": "mastermindx-market-intelligence/macro@fb2375441f21b94201edc4ed6ac2c40f67274cde",
+    "terminal": "mastermindx-market-intelligence/mastermind-terminal@449439c690e93ba968185499af4041c2f512b659"
+  },
+  "program_ruling": {
+    "product_owner": "WS:MARKET-OS",
+    "semantic_owner": "WS:ALPHA-INTELLIGENCE-INTEGRATION",
+    "new_workstream": false
+  },
+  "next_action": "COMMISSION_FABLE_A_K1_EVIDENCE_FOUNDATION",
+  "prepared_next_product_wave": "MARKET_OS_B1A_SECURITY_STATE_AAPL_GOLDEN_VERTICAL",
+  "files": [
+    {
+      "name": "MASTERMIND_MARKET_INTELLIGENCE_PRODUCTIZATION_MASTERPLAN_2026-08-23.md",
+      "bytes": 22768,
+      "sha256": "545afc957a27fd94a7a0bc04b0af51b843e6809248cc73b33669636b7d010789"
+    },
+    {
+      "name": "MASTERMIND_MARKET_INTELLIGENCE_PRODUCTIZATION_CAPABILITY_LEDGER_2026-08-23.csv",
+      "bytes": 2150,
+      "sha256": "a3c7e109c02ea1349aa4707eeca943771d26d54b4607a65873042be995bc5c24"
+    },
+    {
+      "name": "MASTERMIND_MARKET_INTELLIGENCE_PRODUCTIZATION_CAPABILITY_LEDGER_2026-08-23.json",
+      "bytes": 5165,
+      "sha256": "b734cebbc0c7fc58018ab51dd4db7cc8ff5c29464169b2275edef1442c62105f"
+    },
+    {
+      "name": "MASTERMIND_MARKET_INTELLIGENCE_PRODUCTIZATION_WAVE_GRAPH_2026-08-23.json",
+      "bytes": 3708,
+      "sha256": "5b2dc3e3b5dbffc737bb8f6154c59ef6eae8ba5e7aaa780459f6d3ab84d16c25"
+    },
+    {
+      "name": "FABLE_A_K1_EVIDENCE_FOUNDATION_COMMISSION_WITH_AUTHENTICATED_MO_RIDER_2026-08-23.md",
+      "bytes": 16240,
+      "sha256": "dbb4a1490634ec035e181ba849124d0661a263c4de1807e0f4c30d1b2f6bfd3c"
+    },
+    {
+      "name": "MARKET_OS_B1A_SECURITY_STATE_AAPL_GOLDEN_VERTICAL_COMMISSION_2026-08-23.md",
+      "bytes": 16690,
+      "sha256": "2024f99593c3ada69e0c4d8a57a27cbb194532ee3fe07a88ec4382c982a038dd"
+    },
+    {
+      "name": "MARKET_OS_B1A_AAPL_SECURITY_STATE_REFERENCE_COMPOSITION_2026-08-23.md",
+      "bytes": 4837,
+      "sha256": "fd5d28bc179a5e125d1c67d9413a1702737cb0238ee94610af08ced751a32606"
+    },
+    {
+      "name": "MARKET_ONTOLOGY_AUTHENTICATED_P1_FINAL_SOL_ADJUDICATION_2026-08-23.md",
+      "bytes": 8844,
+      "sha256": "1c7fe3389ded30b5f40c40d81e803c5e1c411f2e1ed9fe9d1768256f571f2f1e"
+    },
+    {
+      "name": "ALPHA_INTELLIGENCE_K1_K3_K5_AUTHENTICATED_MO_RIDER_2026-08-23.md",
+      "bytes": 2335,
+      "sha256": "02a77776e65cbc9bb0b213e7959990a1f4bd657c2059bc7d50019b7c5d73d898"
+    }
+  ]
+}

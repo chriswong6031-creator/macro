@@ -25,6 +25,9 @@ owns_paths:
   - templates/government_revenue.html.j2
   - templates/government-revenue-candidate-radar.js
   - templates/government-revenue-dossiers.js
+  - collectors/dod_budget.py
+  - collectors/dod_budget_live.py
+  - contracts/government_revenue/
 waves:
   - id: D0R
     title: Financial-alpha reconnaissance and architecture freeze
@@ -140,30 +143,113 @@ waves:
       acceptance. D5 remains unauthorized and unstarted.
   - id: D5R
     title: Program/mission/capability/product graph architecture freeze (research only)
-    status: in_progress
+    status: done
     depends_on: [D4]
     next_action: >
+      DONE — Sol ACCEPTED D5R 2026-08-23 (accepted chain = #6209 + #6219 +
+      #6247; authorization receipt = macro PR #6247 comment 5384728488).
       D5R core architecture merged on #6209 and PASSED Sol review (D5R.1
-      six-repair consistency close merged on #6219). D5R.2 is the FINAL
+      six-repair consistency close merged on #6219). D5R.2 was the FINAL
       CONTRACT-REPRESENTABILITY SEAL (Sol 2026-08-22): seventeen-key
       top-level skeleton with reference JSON, program_capability_links,
-      program_event_links (exact event-identity+hash pointer; census —
-      NO Virginia Block VI v2 event exists on main 7e00f874),
+      program_event_links (exact event-identity+hash pointer; census at
+      D5R.2 time — NO Virginia Block VI v2 event existed on main 7e00f874;
+      historical fact, re-censused at D5 start),
       review_coverage with the four-state derivation law, milestone
       date/window XOR preimage, logical-id + revision law, frozen dossier
-      bundle + five-key program_link shapes, fixtures A-H with computed
-      sha12 ids, adversarial representability review to YES. FINAL D5R
-      ACCEPTANCE still held by Sol. Owner adjudication and Virginia pilot
-      remain frozen — do not reopen. Handoffs:
+      bundle + five-key program_link shapes, fixtures A-I with computed
+      sha12 ids, adversarial representability review to YES. Owner
+      adjudication and Virginia pilot remain frozen — do not reopen.
+      Handoffs:
       agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-22-d5r1-docs-consistency.md,
       agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-22-d5r2-representability-seal.md.
   - id: D5
     title: Program, mission, capability, and product graph (implementation)
-    status: todo
+    status: done
     depends_on: [D5R]
     next_action: >
-      UNAUTHORIZED. D5 implementation may not start until Sol accepts D5R and
-      explicitly authorizes D5. D6+ likewise unauthorized.
+      CLOSED FOR PROGRAM SEQUENCING (Chairman amendment 2026-08-24; Sol
+      ruling macro PR #6355 comment 5395051048). Capability remains
+      BUILT_NOT_PROVEN: the entitled live-route walkthrough (D5P) never
+      occurred and is DEFERRED / NONBLOCKING by explicit Chairman
+      direction — a sequencing waiver, NOT a proof upgrade. Do not
+      relabel PROVEN_LIVE; do not fabricate a browser receipt. The prior
+      clause making authenticated D5P the next prerequisite is superseded
+      AS A SEQUENCING GATE ONLY; the evidence gap itself remains durable,
+      and D5P should still be executed when an authenticated browser
+      session exists. Implementation is merged: full vertical on PR 6312
+      (merge 57ab8b9130b0) — frozen contracts, program_ontology.py
+      loader + derivations, propose/curate admission with evidence +
+      conflict/override lifecycles, REAL Virginia pilot admitted (graph
+      program-ontology:reviewed:2026-08-23:virginia-pilot, 14 admitted /
+      1 rejected / 6 coverage rows, all evidence byte-receipted),
+      program_dossier composer (gpd1-dcacffc7799b8448285bc19e) + site
+      twins on BOTH build paths, workspace program_link (IRDM P00032
+      derives the exact reviewed_none hostile-null shape), mode=programs
+      surface EN/ZH within the 296 KiB ratchet, T1-T17 gate-code battery
+      (181 passed), opus adversarial review repaired. Non-browser
+      post-merge receipts hold: /api/health restarted at the merge SHA,
+      covering render run 32637298811 success, VPS-served twins
+      byte-identical to committed canonical, anonymous negative (both
+      twins 401, locked treatment, zero Virginia leakage), local
+      1440/820/390 EN + ZH crops committed. D5P blocker context:
+      claude-in-chrome list_connected_browsers = [] on 2026-08-23 twice
+      and 2026-08-24 twice; credential entry is prohibited, proof is
+      never simulated. Handoff:
+      agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-23-d5-implementation.md.
+  - id: D6-A
+    title: DoD P-1/R-1 budget rail activation (official source expansion, first rail)
+    status: done
+    depends_on: [D5]
+    next_action: >
+      Sol-authorized 2026-08-24 (macro PR #6355 comment 5395051048) under
+      the Chairman sequencing amendment. Activate the EXISTING budget
+      plane — no new budget system: official Comptroller FY2027 P-1/R-1
+      acquisition → existing canonical R2 object store
+      (content-addressed, readback-proven) → receipt-bound deterministic
+      extraction → append-only source triad → government_budget_program_graph.v1
+      → existing Budget & Programs API/UI consumer → production proof.
+      Frozen design:
+      research/defense_intelligence/DEFENSE_D6A_BUDGET_RAIL_DESIGN_2026-08-24.md.
+      Source census 2026-08-24: the Comptroller host MIGRATED —
+      comptroller.defense.gov now 403s (Akamai, no redirect);
+      comptroller.war.gov is the live official host (already
+      allowlisted); current cycle is the FY2027 President's Budget
+      (FY2027_p1.pdf sha256 b8d5248257590856ee33ddb1b401ec2efcdfea219c05b5bc8ea1068d9000d0a6,
+      FY2027_r1.pdf sha256 1aa8846edb69d4c3a54e03b383b0cabb77f93433162b8139ab8cbb55bcc7882a).
+      Semantic firewall unchanged (request ≠ appropriation ≠ obligation ≠
+      revenue); authority stays display/evidence-only; D5 v1
+      budget_program_keys stays const []. DELIVERED 2026-08-24 on the
+      carrier PR #6377 chain (+ dispatch lane #6378 merged): real runner
+      acquisition run 32764547804 (canary sha256s byte-identical to the
+      pinned census, R2 content-addressed write + strict readback proven),
+      committed triad 94ab73114336 (2 receipts / 2,172 lines, generation
+      dod-budget-401e0479c00c449c3b4bd7e0), graph builds+validates locally
+      (grbg1-125cd95cc0e78c5f459c1ad2, 2,143 programs), opus adversarial
+      review FAIL→repaired (e0095c1299f1; component-leak + E-7 blockers
+      fixed with mutation-proven tests). Carrier PR #6377 MERGED
+      2026-08-24T23:10:48Z as 2cfc5c73bd09 (head 49b3eb82c29b, CI runs
+      32769121453 + 32784681614 SUCCESS). PRODUCTION PROOF COMPLETE
+      2026-08-25T00:29Z: government-revenue-live run 32788159575 SUCCESS
+      published the graph twins in commit da305fa5a5e2 (descendant of the
+      merge; both twins sha256 a889ca79b967…, content_id
+      grbg1-125cd95cc0e78c5f459c1ad2, 2,143 programs / 2,172 lines /
+      2,172 edges); /api/health commit=2cfc5c73bd0 checkout=6af1ccd17c0
+      (descendant of da305fa5a5e2); in-process production handlers served
+      budget-programs total 2143 and both canaries (P-1 Virginia line 6
+      FY27 disc/total 8,402,316,000 qty FY25 1/FY26 2/FY27-total 2; R-1
+      0604558N New Design SSN FY27 237,103,000, no invented quantities)
+      byte-consistent with the committed receipt-bound triad rows;
+      Caddy-served /opt/macro/site.served/government-revenue-data/
+      budget-program.json sha-identical to the canonical generation;
+      anonymous probes all locked (API 401 missing bearer token; site
+      twin 401 locked:true). No authenticated-browser walkthrough
+      performed or required (Chairman sequencing amendment). D6-A = done /
+      Sol acceptance pending. Named unresolveds preserved (retraction
+      path before any parser-version bump; FY2026 sub-cells; E-7 null
+      ratification; NSBDF line-grain gap) in
+      agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-24-d6a-budget-rail.md.
+      D6-B+ and D7+ remain UNAUTHORIZED until D6-A returns to Sol.
 landmines:
   - "Live page is government_revenue.html (underscore). government-revenue.html 404s."
   - "Access (site_full / 401 locked) is independent of epistemics (display/context_only). Do not conflate them."
@@ -199,6 +285,7 @@ decisions:
   - DEC:GOVREV-EVENT-IDENTITY-KEEPS-THE-KNOWN-AT-FOLD
   - DEC:GOVREV-CANDIDATE-LEDGER-STAYS-APPEND-ONLY
 discoveries:
+  - DSC:DOD-COMPTROLLER-HOST-MIGRATED-TO-WAR-GOV
   - DSC:GOVREV-COMPACT-TEASER-IS-THE-LIVE-DEFAULT
   - DSC:GOVREV-MAY-ACTION-AUGUST-KNOWN-AT
   - DSC:GOVREV-COOKIE-JSON-AND-BEARER-API-ARE-TWO-PLANES
@@ -207,11 +294,16 @@ discoveries:
   - DSC:GOVREV-CANDIDATE-RADAR-STAYS-LOCKED-AFTER-SITE-FULL-200
   - DSC:GOVREV-AGENCY-STRINGIFY-IS-COLLECTOR-THEN-ACTION-OMIT
 next_action: >
-  D4 is done and Sol accepted (2026-08-21). D5R (research/architecture
-  freeze only) is in progress under Sol authorization — owner architecture,
-  pilot, negative control, temporal semantics, experience composition, and
-  the D5 implementation handoff. D5 implementation and D6+ remain
-  unauthorized. #5424 is closed/superseded by defense21-v1.
+  D5 is CLOSED FOR PROGRAM SEQUENCING (Chairman amendment 2026-08-24;
+  Sol ruling macro PR #6355 comment 5395051048): capability remains
+  BUILT_NOT_PROVEN, the authenticated D5P walkthrough is
+  DEFERRED / NONBLOCKING, and it must never be relabeled PROVEN_LIVE
+  without a real entitled browser proof. D6-A (DoD P-1/R-1 budget rail
+  activation) is in_progress and Sol-authorized under that amendment;
+  frozen design at
+  research/defense_intelligence/DEFENSE_D6A_BUDGET_RAIL_DESIGN_2026-08-24.md.
+  D6-B+ and D7+ remain UNAUTHORIZED until D6-A returns to Sol. #5424
+  stays closed/superseded by defense21-v1.
   Publisher-vintage alarm and fixture-freezing the D2/D3 law suites out of
   the unrun-government-revenue holding pen remain separate follow-ups — do
   not fold them into the D5R close.

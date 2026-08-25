@@ -686,6 +686,24 @@ jobs:
           tests/test_fundamental_forensics_detectors.py
           tests/test_fundamental_forensics_contract.py
           tests/test_fundamental_forensics_disclosure_bundle.py -q
+      # K1 Evidence Foundation is a pointer contract spanning owner-native FIF,
+      # Earnings, Theme Graph, Institutional 13F, GovRev, BioCatalyst, TXI, QLedger,
+      # Market Memory objects, plus the Data OS no-I/O negative control. It rides this
+      # existing contract job rather
+      # than creating a new job: the install line already supplies the complete import
+      # closure, and the suite resolves every declared owner reader on the checked-out
+      # base in addition to schema/fixture semantics. Appended after the FIF owner step
+      # so an owner regression is reported before an interoperability regression.
+      - name: K1 Evidence Foundation ref, block, recipe, and hostile-fixture contracts
+        run: >
+          python -m pytest
+          tests/test_evidence_foundation_contract.py
+          tests/test_evidence_foundation_product_contract.py -q
+      # K2-B is a pure contract/fixture compiler which deliberately does not import
+      # an institutional owner or materialize a store. Keeping its hostile contract
+      # suite adjacent to K1 makes the pointer-only boundary visible in CI.
+      - name: K2-B manager-complex and research-intent hostile contracts
+        run: python -m pytest tests/test_institutional_manager_intent_contract.py -q
       # Four detector ids exist as byte-identical strings in THREE implementations
       # with three separate threshold stores: scripts/build_fundamental_forensics.py
       # (inline FRACTION literals, Filing Forensics workbench),
@@ -1485,6 +1503,13 @@ jobs:
     # 846 tracked / 127 concrete. Subject packages stay globbed.
     scope: exclusive
     paths:
+      - "engine/quote_resolution.py"
+      # W1-B wires Brain's native-fact serve to the frozen W1-A runtime. This
+      # job's own app/neuralweb import closure now reaches those packages, so
+      # its curated scope must retain their real dependency ownership.
+      - "engine/intelligence_workspace/**"
+      - "engine/theme_graph/**"
+      - "lib/dataos/**"
       - "app/*"
       - "collectors/*"
       - "collectors/biocatalyst/**"
@@ -1777,6 +1802,7 @@ jobs:
       - "ops/launchd/com.mastermind.liveflow.plist"
       - "ops/launchd/com.mastermind.optionssparseselector.plist"
       - "ops/launchd/com.mastermind.prophetmarks.plist"
+      - "ops/launchd/run_with_env.sh"
       - "ops/launchd/run_options_sparse_selector_loop.sh"
       - "ops/launchd/run_options_sparse_selector_verified.py"
       - "ops/launchd/run_prophet_marks_loop.sh"
@@ -1804,6 +1830,7 @@ jobs:
       - "scripts/build_options_structure_intraday.py"
       - "scripts/build_prophet_marks.py"
       - "scripts/build_prophet_option_shadow_lifecycle.py"
+      - "scripts/prophet_canonical_git.py"
       - "scripts/capture_market_memory_context.py"
       - "scripts/capture_market_memory_options_episodes.py"
       - "scripts/chain_snapshot_poller.py"
@@ -2201,6 +2228,7 @@ jobs:
           tests/test_fundamental_forensics_filing_package.py
           tests/test_fundamental_forensics_financial_query_service.py
           tests/test_fundamental_forensics_financial_query_api.py
+          tests/test_fundamental_forensics_ixbrl_raw_ledger.py
           tests/test_fundamental_forensics_financial_revision_service.py
           tests/test_fundamental_forensics_financial_revision_api.py
           tests/test_fundamental_forensics_financial_packet_service.py
@@ -3355,7 +3383,7 @@ jobs:
         #    exercises that degraded branch instead of the shipped one.
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 requests
       - name: neural-web core suite (mastermind context + confluence + spine query + ask brain + world state + R5 macro context + ADB-W1 brief context + ADB-W2 forward calendar + Analyst OS P0 + W2)
-        run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_company_intelligence_neural_reader.py tests/test_company_intelligence_event_workspace.py tests/test_company_intelligence_event_compiler_e3a.py tests/test_refresh_event_workspaces.py tests/test_issuer_profiles_a5a.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py tests/test_neuralweb_health.py tests/test_neuralweb_daily_brief.py tests/test_brief_context.py tests/test_forward_calendar.py tests/test_orchestrator_log.py tests/test_mastermind_feedback.py tests/test_admin_orchestrator.py tests/test_admin_prophet.py tests/test_admin_trade_memory.py tests/test_macro_thesis.py tests/test_brain_doctrine.py tests/test_mastermind_response_log.py tests/test_admin_mastermind_logs.py tests/test_brain_analyst_doctrine.py tests/test_brain_analyst_wiring.py tests/test_market_packet.py tests/test_brain_market_intel.py tests/test_brain_seed_router.py tests/test_brain_analogues.py tests/test_brain_curve.py tests/test_response_eval.py tests/test_brain_user_memory.py tests/test_user_prefs.py -q
+        run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_company_intelligence_neural_reader.py tests/test_company_intelligence_workspace_chain.py tests/test_company_intelligence_event_workspace.py tests/test_company_intelligence_event_compiler_e3a.py tests/test_company_intelligence_qa_reconstruction.py tests/test_refresh_event_workspaces.py tests/test_issuer_profiles_a5a.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py tests/test_neuralweb_health.py tests/test_neuralweb_daily_brief.py tests/test_brief_context.py tests/test_forward_calendar.py tests/test_orchestrator_log.py tests/test_mastermind_feedback.py tests/test_admin_orchestrator.py tests/test_admin_prophet.py tests/test_admin_trade_memory.py tests/test_macro_thesis.py tests/test_brain_doctrine.py tests/test_mastermind_response_log.py tests/test_admin_mastermind_logs.py tests/test_brain_analyst_doctrine.py tests/test_brain_analyst_wiring.py tests/test_market_packet.py tests/test_brain_market_intel.py tests/test_brain_seed_router.py tests/test_brain_analogues.py tests/test_brain_curve.py tests/test_response_eval.py tests/test_brain_user_memory.py tests/test_user_prefs.py -q
 
   cn-standout-audit:
     if: ${{ false }}
@@ -3691,8 +3719,8 @@ jobs:
       # scripts/worktree_sparse.py + the WorktreeCreate hook, and the sibling
       # vacuous-refusal suite below already owns the R8 honesty rule. stdlib +
       # pytest; synthetic git repos under tmp_path, no data/ or site/ reads.
-      - name: sparse session-worktree profile (config ↔ fallback, husk detector, hook wiring)
-        run: python -m pytest tests/test_sparse_worktree_profile.py -q
+      - name: sparse session-worktree profile + Warp conversation-carrier lifecycle
+        run: python -m pytest tests/test_sparse_worktree_profile.py tests/test_warp_session_start_sparse.py -q
       # Same subject (scripts/worktree_sparse.py), same job, for the same reason
       # the step above exists: #5531 landed its suite named by no run: step and
       # pack-1 went red on every PR the moment it merged. This suite owns the
@@ -4901,6 +4929,7 @@ jobs:
       - tests/test_ship_loop_guard.py
       - tests/test_ship_loop_semantic.py
       - tests/test_sparse_worktree_profile.py
+      - tests/test_warp_session_start_sparse.py
       - tests/test_worktree_gc.py
       - tests/test_worktree_placement.py
     # F2 (Metabolism Phase 0 / R-AUT-5): self-modification fence.
@@ -4937,7 +4966,7 @@ jobs:
         # host that has hit runner ENOSPC twice. tests/test_worktree_gc.py ran in NO
         # workflow before this line; it is grandfathered-dark rather than waived, so
         # contract-delta never asked for it.
-        run: python -m pytest tests/test_ship_loop_guard.py tests/test_ship_loop_semantic.py tests/test_agent_worktree_roots.py tests/test_sparse_worktree_profile.py tests/test_worktree_gc.py tests/test_worktree_placement.py -q
+        run: python -m pytest tests/test_ship_loop_guard.py tests/test_ship_loop_semantic.py tests/test_agent_worktree_roots.py tests/test_sparse_worktree_profile.py tests/test_warp_session_start_sparse.py tests/test_worktree_gc.py tests/test_worktree_placement.py -q
       - name: self-mod-fence live check (loop PR + immutable → BLOCKED)
         run: |
           BRANCH="${{ github.head_ref }}"
@@ -6256,6 +6285,13 @@ jobs:
     # genuine import edges.
     scope: exclusive
     paths:
+      - "engine/quote_resolution.py"
+      # W1-B wires Brain's native-fact serve to the frozen W1-A runtime. This
+      # job's own app/neuralweb import closure now reaches those packages, so
+      # its curated scope must retain their real dependency ownership.
+      - "engine/intelligence_workspace/**"
+      - "engine/theme_graph/**"
+      - "lib/dataos/**"
       - "app/*"
       - "collectors/*"
       - "collectors/biocatalyst/**"
@@ -6799,6 +6835,13 @@ jobs:
     # 846 tracked / 74 concrete.
     scope: exclusive
     paths:
+      - "engine/quote_resolution.py"
+      # W1-B wires Brain's native-fact serve to the frozen W1-A runtime. This
+      # job's own app/neuralweb import closure now reaches those packages, so
+      # its curated scope must retain their real dependency ownership.
+      - "engine/intelligence_workspace/**"
+      - "engine/theme_graph/**"
+      - "lib/dataos/**"
       - "app/*"
       - "collectors/*"
       - "collectors/biocatalyst/**"
@@ -8414,7 +8457,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn fastapi httpx
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn fastapi httpx jsonschema
       # P1 unrun backfill 2026-08-14: two more scripts/build_vector.py organs join the
       # step that already owns the vector page's organs.  Both import straight from
       # scripts.build_vector (_g_alerts and the market-card renderer) and both were
@@ -8431,8 +8474,8 @@ jobs:
       # No dependency widened: probed at RUN time both load only pandas/numpy/pyarrow/
       # pyyaml — PIL is imported transitively but blocking it leaves them 6-passed and
       # 1-passed, so it is optional, and it is not on this install line.
-      - name: vector page organs — catalyst, forward-risk, Kelly, gated timeline
-        run: python -m pytest tests/test_vector_catalyst.py tests/test_vector_forward_risk.py tests/test_vector_kelly.py tests/test_vector_timeline_gated.py tests/test_hub_alerts_explanation.py tests/test_hub_market_card_labels.py -q
+      - name: vector page organs — decision authority, catalyst, forward-risk, Kelly, gated timeline
+        run: python -m pytest tests/test_btc_decision.py tests/test_vector_catalyst.py tests/test_vector_forward_risk.py tests/test_vector_kelly.py tests/test_vector_timeline_gated.py tests/test_hub_alerts_explanation.py tests/test_hub_market_card_labels.py -q
       - name: DSR / override-registry trial budget (dof charged must equal dof declared)
         run: python -m pytest tests/test_btc_vector_w1.py tests/test_deflated_sharpe.py -q
       - name: settled-close tape — the basket pulse the closing-bell lane publishes
@@ -8733,7 +8776,10 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps plus the schema/API wheels
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn jsonschema fastapi httpx2
+        # pdfplumber: the D6-A DoD budget live suite imports
+        # collectors/dod_budget_live.py, whose deterministic extractor is
+        # pdfplumber (frozen choice, design doc §5).
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn jsonschema fastapi httpx2 pdfplumber
       # Wave 9D: the admissibility fences on issuer graph expansion — exact
       # identifier + verbatim Exhibit 21 name only, no discovery_query_ticker, no
       # similarity, no LLM assertion; PIT; the proposed-edge-cannot-become-a-
@@ -8746,6 +8792,14 @@ jobs:
         run: python -m pytest tests/test_government_revenue_issuer_graph_expansion.py -q
       - name: builder envelope + publication fence + dossier/subaward rails
         run: python -m pytest tests/test_build_government_revenue.py tests/test_check_government_revenue_projection.py tests/test_government_revenue_dossiers.py tests/test_government_revenue_subaward_api.py -q
+      # D6-A DoD budget live rail (PR #6377): the hostile law battery for the
+      # production P-1/R-1 acquisition + parser — fetch/R2-readback order, no
+      # receipt without readback proof, §5b/§5b.1 row-model refusals (sign law,
+      # printed-addend grain, boundary buckets, page-pair joins, 0400D
+      # consolidated-only), idempotence, and the activation fence. Merge-binding
+      # per the commission ("do not rely on an unrun test holding pen").
+      - name: DoD budget live acquisition + parser law suite (D6-A)
+        run: python -m pytest tests/test_dod_budget_live.py -q
       # The prophet↔government-revenue context bridge. Named by NOTHING in
       # .github/ before this line — not this manifest, not any workflow, and not
       # even a ci.yml trigger path — so the one suite proving the Prophet side
@@ -8890,6 +8944,47 @@ jobs:
         run: pip install pytest
       - name: D4 company financial truth bridge — IRDM-only, hostile families T1-T10 + R2/R4/R5/R7/R9/R10/R12
         run: python -m pytest tests/test_government_revenue_company_bridge.py -q
+
+  govrev-program-ontology:
+    # D5 Program/Mission/Capability/Product graph (research/defense_intelligence/
+    # DEFENSE_D5_PROGRAM_GRAPH_ARCHITECTURE_FREEZE.md): the reviewed acquisition-
+    # domain ontology contract, its propose/curate admission scripts, and the
+    # composed Program Dossier read model. Must be merge-binding (freeze SS8's
+    # T1-T17 adversarial battery is the acceptance gate for the whole vertical),
+    # so this rides `gate: code` with frozen committed fixtures per the D4
+    # CI-wiring law — never `gate: data`, and never reading nightly-rewritten
+    # site/government-revenue-data/ or data/government_revenue/ artifacts.
+    #
+    # Deliberately NOT `scope: exclusive`: this suite imports
+    # engine/government_revenue/program_ontology.py's sibling modules
+    # (award_events/entity_resolution/workspace/budget_program/metrics,
+    # their contracts, and the collectors those touch) -- a closure real but
+    # narrower than it once was. It no longer needs scripts/build_government_
+    # revenue.py's own much larger transitive closure at all: the five D5
+    # composer end-to-end tests that used to pull it in were relocated to
+    # tests/test_build_government_revenue.py (2026-08-23 CI repair, PR #6312
+    # ci-pack-7 red -- that import needs `requests`, which this job's install
+    # line does not carry, while test_build_government_revenue.py's lane
+    # already provisions it). Left inferred rather than curated: the
+    # remaining closure still touches collectors/base.py's/dod_budget.py's
+    # own filesystem-ambiguity widen-to-roots edges, which would need
+    # constant upkeep to hand-curate as those modules evolve; automatic
+    # scope inference (the same machinery `scope: exclusive` opts OUT of)
+    # derives and keeps it current instead.
+    if: ${{ false }}
+    gate: code
+    timeout-minutes: 8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: install test deps
+        run: pip install pytest jsonschema pandas numpy pyarrow jinja2
+      - name: D5 program ontology — T1-T17 adversarial battery + dossier composer
+        run: python -m pytest tests/test_government_program_ontology.py -q
+      - name: D5 program ontology — propose/curate admission scripts
+        run: python -m pytest tests/test_government_program_ontology_scripts.py -q
 
   unrun-government-revenue-candidate-projection:
     # The projection matrix is the slower half of the candidate contract. It
@@ -9780,6 +9875,10 @@ jobs:
       - "engine/btc_correlation_regime.py"
       - "engine/btc_cycle_thesis.py"
       - "engine/btc_dat.py"
+      # P0A: tests/test_btc_decision.py reaches this module through the Vector
+      # builder. This curated scope replaces inference, so the closure entry is
+      # explicit; widening is the safe direction.
+      - "engine/btc_decision.py"
       - "engine/btc_impulse_ledger.py"
       - "engine/btc_impulse_radar.py"
       - "engine/btc_impulse_radar_backtest.py"
@@ -10637,9 +10736,20 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn fastapi httpx
+        run: pip install pytest pandas numpy pyarrow pyyaml jsonschema jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn fastapi httpx
       - name: brain gateway — lane routing, quota ledger, tool allowlist, SSE event order
         run: python -m pytest tests/test_brain_gateway.py tests/test_brain_gateway_quota_safety.py tests/test_brain_streaming.py tests/test_brain_tool_economics.py tests/test_brain_instant_lane.py -q
+      - name: W1-A typed datapoint registry — owners, PIT, rights, consumers, mutations, batching
+        run: >-
+          python -m pytest
+          tests/test_datapoint_registry.py
+          tests/test_quote_resolution.py
+          tests/test_intelligence_workspace_identity_market.py
+          tests/test_intelligence_workspace_owner_adapters.py
+          tests/test_intelligence_workspace_consumers.py
+          tests/test_intelligence_workspace_mutations.py
+          tests/test_intelligence_workspace_cli.py
+          tests/test_intelligence_workspace_performance.py -q
 
   unrun-macro-panels:
     # commodities / forex / rates / news / policy panels and their calibration guards.
@@ -11512,6 +11622,13 @@ jobs:
     # 846 tracked / 74 concrete. Subject packages stay globbed.
     scope: exclusive
     paths:
+      - "engine/quote_resolution.py"
+      # W1-B wires Brain's native-fact serve to the frozen W1-A runtime. This
+      # job's own app/neuralweb import closure now reaches those packages, so
+      # its curated scope must retain their real dependency ownership.
+      - "engine/intelligence_workspace/**"
+      - "engine/theme_graph/**"
+      - "lib/dataos/**"
       - "app/*"
       - "collectors/*"
       - "collectors/biocatalyst/**"
@@ -12704,14 +12821,29 @@ jobs:
       - scripts/research/dislocation_p0_a1r_semantic_contract.py
       - scripts/research/dislocation_p0_a1r_semantic_run.py
       - scripts/research/dislocation_p0_a1r_source_run.py
+      - scripts/research/dislocation_p0_s1f_finalize_measurement.py
+      - scripts/research/dislocation_p0_s1f_measurement.py
+      - scripts/research/dislocation_p0_s1f_model_transport.py
+      - scripts/research/dislocation_p0_s1f_owner_run.py
+      - scripts/research/dislocation_p0_s1f_runner.py
+      - scripts/research/dislocation_p0_s1f_selection.py
+      - scripts/research/dislocation_p0_s1f_semantic_contract.py
+      - scripts/research/dislocation_p0_s1f_shadow_triage.py
+      - scripts/research/dislocation_p0_s1f_triage.py
       - scripts/research/dislocation_p0_source_adapter.py
       - scripts/research/dislocation_p0_source_materializer.py
       - collectors/edgar_forensics.py
+      - collectors/fundamental_forensics_acquisition.py
+      - collectors/fundamental_forensics_companyfacts.py
       - collectors/sec_document_spine.py
+      - contracts/fundamental_forensics_broad_sec_issuer_manifest.schema.json
+      - engine/fundamental_forensics/broad_sec_store.py
       - engine/fundamental_forensics/models.py
       - engine/fundamental_forensics/sec_document_spine.py
+      - engine/research_vault/r2_store.py
       - lib/__init__.py
       - lib/config.py
+      - tests/__init__.py
       - tests/test_dislocation_p0_a1_blind_harvest.py
       - tests/test_dislocation_p0_a1r_evidence_catalog.py
       - tests/test_dislocation_p0_a1r_owner_run.py
@@ -12720,6 +12852,11 @@ jobs:
       - tests/test_dislocation_p0_a1r_semantic_run.py
       - tests/test_dislocation_p0_source_adapter.py
       - tests/test_dislocation_p0_source_materializer.py
+      - tests/test_dislocation_p0_s1f.py
+      - tests/test_dislocation_p0_s1f_finalize_measurement.py
+      - tests/test_dislocation_p0_s1f_model_transport.py
+      - tests/test_dislocation_p0_s1f_owner_run.py
+      - tests/test_dislocation_p0_s1f_shadow_triage.py
       - research/dislocation_intelligence/**
     timeout-minutes: 8
     runs-on: ubuntu-latest
@@ -12729,10 +12866,10 @@ jobs:
         with:
           python-version: "3.12"
       - name: install source-owner test deps
-        # The bounded A1R adapters import the canonical raw SEC owner, whose
-        # module boundary declares pandas/requests/PyYAML even though these
-        # focused tests never perform a network call.
-        run: pip install pytest pandas requests pyyaml
+        # The bounded A1R/S1F adapters import the canonical raw SEC owner,
+        # including its Draft202012Validator boundary; these focused tests
+        # still perform no network call.
+        run: pip install pytest pandas requests pyyaml scipy jsonschema==4.26.0
       - name: Dislocation P0-A1 price-blind source-integrity primitives
         run: >-
           python -m pytest
@@ -12744,4 +12881,27 @@ jobs:
           tests/test_dislocation_p0_a1r_semantic_run.py
           tests/test_dislocation_p0_source_adapter.py
           tests/test_dislocation_p0_source_materializer.py
+          tests/test_dislocation_p0_s1f.py
+          tests/test_dislocation_p0_s1f_finalize_measurement.py
+          tests/test_dislocation_p0_s1f_model_transport.py
+          tests/test_dislocation_p0_s1f_owner_run.py
+          tests/test_dislocation_p0_s1f_shadow_triage.py
           -q
+
+  unrun-cell-b-v2-buyback-census:
+    # Owns scripts/cell_b_v2_buyback_source_census.py — the price-blind Cell B
+    # V2 buyback source-capacity census. Dedicated job because no existing
+    # cell-B/buyback owner exists on the pack runner.
+    if: ${{ false }}
+    gate: code
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: Cell B V2 buyback source-capacity census
+        run: python -m pytest tests/test_cell_b_v2_buyback_source_census.py -q

@@ -1,0 +1,132 @@
+{
+  "schema": "evidence_foundation.reference.v1",
+  "version": "1.0.0",
+  "reference_id": "efr_7af53457fc7ab5ebcb8b79d09ebb97b28ebed800704294cafa78fb5e40217a58",
+  "object_class": "derived_view",
+  "owner_store": "fif.packet",
+  "native_identity": {
+    "packet_id": "fip_666666666666666666666666"
+  },
+  "native_schema": "financial_intelligence_packet.v1",
+  "native_digest": {
+    "state": "known",
+    "sha256": "6666666666666666666666666666666666666666666666666666666666666666"
+  },
+  "coverage_class": "source_release_snapshot_only",
+  "freshness": {
+    "state": "unknown",
+    "clock_field": null,
+    "policy_id": null
+  },
+  "rights": {
+    "state": "rights_blocked",
+    "policy_id": "FIF_FIXTURE_ONLY"
+  },
+  "authority_class": "deterministic",
+  "subject": {
+    "key_type": "fif_packet_id",
+    "key": "fip_666666666666666666666666"
+  },
+  "secondary_subjects": [],
+  "clocks": [
+    {
+      "class": "source_published",
+      "field": "query.source_event_cutoff",
+      "value_state": "unknown",
+      "value": null,
+      "grain": "datetime"
+    },
+    {
+      "class": "system_recorded",
+      "field": "query.system_recorded_cutoff",
+      "value_state": "unknown",
+      "value": null,
+      "grain": "datetime"
+    },
+    {
+      "class": "system_recorded",
+      "field": "governance.governance_recorded_at",
+      "value_state": "unknown",
+      "value": null,
+      "grain": "datetime"
+    },
+    {
+      "class": "belief_or_build",
+      "field": "built_at",
+      "value_state": "unknown",
+      "value": null,
+      "grain": "datetime"
+    }
+  ],
+  "provenance": {
+    "pointer_only": true,
+    "body_embedded": false,
+    "owner_reader": "engine.fundamental_forensics.financial_intelligence_packet.validate_packet_semantics",
+    "owner_reader_kind": "parser",
+    "pointer": "financial-packet://packet_id=fip_666666666666666666666666"
+  },
+  "relations": [],
+  "missingness": {
+    "state": "absent",
+    "reason": "rights_blocked",
+    "zero_substituted": false
+  },
+  "correction": {
+    "kind": "none",
+    "predecessor_reference_ids": [],
+    "clock_field": null,
+    "chronology_state": "not_applicable",
+    "append_only": true,
+    "mutates_predecessor": false
+  },
+  "replay": {
+    "mode": "live",
+    "cutoffs": {
+      "world_valid": {
+        "state": "unknown",
+        "value": null,
+        "grain": "date"
+      },
+      "source_published": {
+        "state": "unknown",
+        "value": null,
+        "grain": "date"
+      },
+      "knowable": {
+        "state": "unknown",
+        "value": null,
+        "grain": "date"
+      },
+      "observed": {
+        "state": "unknown",
+        "value": null,
+        "grain": "date"
+      },
+      "system_recorded": {
+        "state": "unknown",
+        "value": null,
+        "grain": "date"
+      },
+      "belief_or_build": {
+        "state": "unknown",
+        "value": null,
+        "grain": "date"
+      },
+      "review_due": {
+        "state": "unknown",
+        "value": null,
+        "grain": "date"
+      }
+    },
+    "code_revision": null,
+    "input_digest": null,
+    "vintage_state": "owner_native"
+  },
+  "authority": {
+    "can_rank": false,
+    "can_gate": false,
+    "can_size": false,
+    "can_originate": false,
+    "can_open_entry": false
+  }
+}

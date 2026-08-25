@@ -625,6 +625,8 @@ def mint_session_worktree(
     base: str = "refs/remotes/origin/main",
     fetch: bool = True,
     config_path: Path | None = None,
+    reuse_existing: bool = True,
+    strict: bool = False,
 ) -> int:
     """Mint a sparse linked worktree the way Claude's WorktreeCreate hook does.
 
@@ -632,7 +634,11 @@ def mint_session_worktree(
     the usual one). ``dest`` must sit under a session worktree root. Uses
     ``git worktree add --no-checkout`` so the heavy generated trees are never
     materialized, then applies the configured sparse profile and populates
-    only the included paths.
+    only the included paths. Generic callers retain historical same-path reuse
+    plus best-effort fetch/base behavior. Lifecycles that must prove ownership
+    first (Warp/Oz) pass both ``reuse_existing=False`` and ``strict=True``;
+    they handle authenticated reuse before calling this function and refuse a
+    failed fetch, missing requested base, or already-existing branch.
     """
     dest = Path(dest)
     donor = Path(donor)
@@ -644,23 +650,40 @@ def mint_session_worktree(
     profile = load_profile(config_path or donor / "config" / "sparse_worktree.json")
     if not profile["enabled"]:
         print("worktree-sparse: mint disabled by config/sparse_worktree.json")
-        return 0
+        return 1 if strict else 0
 
     if dest.exists():
         if is_linked_worktree(dest):
-            print(f"worktree-sparse: reusing existing worktree {dest}")
-            return auto_profile(dest, config_path or dest / "config" / "sparse_worktree.json")
+            if reuse_existing:
+                print(f"worktree-sparse: reusing existing worktree {dest}")
+                return auto_profile(dest, config_path or dest / "config" / "sparse_worktree.json")
+            print(f"worktree-sparse: mint refused — {dest} is an existing worktree; "
+                  "the caller must establish current-session ownership before reuse",
+                  file=sys.stderr)
+            return 1
         print(f"worktree-sparse: mint refused — {dest} exists and is not a worktree",
               file=sys.stderr)
         return 1
 
     if fetch:
         if _git(donor, "fetch", "--prune", "origin", "main") is None:
+            if strict:
+                print("worktree-sparse: mint refused — fetch origin main failed; "
+                      "refusing to mint from stale refs", file=sys.stderr)
+                return 1
             print("worktree-sparse: warning — fetch origin main failed; "
                   "minting from the donor's current refs", file=sys.stderr)
     if _git(donor, "rev-parse", "--verify", base) is None:
+        if strict:
+            print(f"worktree-sparse: mint refused — required base {base} is missing",
+                  file=sys.stderr)
+            return 1
         print(f"worktree-sparse: {base} missing; minting from HEAD")
         base = "HEAD"
+    if strict and _git(donor, "show-ref", "--verify", "--quiet", f"refs/heads/{branch}") is not None:
+        print(f"worktree-sparse: mint refused — branch {branch} already exists",
+              file=sys.stderr)
+        return 1
 
     dest.parent.mkdir(parents=True, exist_ok=True)
     created = _git(

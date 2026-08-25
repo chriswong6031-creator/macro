@@ -13,16 +13,18 @@
 # The explicit TZ is load-bearing: the production M1 is America/Vancouver.  Never
 # replace this with the host-local clock or a launchd CalendarInterval hour.
 #
-# PYTHONPATH must include the repo root (set in the plist EnvironmentVariables).
+# PYTHONPATH must include this runtime's repo root.  The plist applies it with
+# /usr/bin/env AFTER run_with_env.sh sources the retained operator env file, so a
+# stale PYTHONPATH in that file cannot redirect imports into flow-ops-wt.
 
 export TZ=America/New_York
 
 PYTHON="/opt/homebrew/Caskroom/miniconda/base/bin/python"
 MARKS_MODULE="scripts.build_prophet_marks"
 LIFECYCLE_MODULE="scripts.build_prophet_option_shadow_lifecycle"
-# Run the module from the same checkout that owns this launcher.  M1 installs
-# this file from flow-ops-wt; a workstation-only absolute path makes every
-# five-minute cycle fail before Python starts.
+# Run both modules from the same disposable current checkout that owns this
+# launcher; a workstation-only absolute path makes every five-minute cycle fail
+# before Python starts.
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
 LIFECYCLE_PRIVATE_ROOT="${PROPHET_OPTION_SHADOW_LIFECYCLE_STATE_ROOT:-/Users/chriswong/.mastermind_private/prophet_option_shadow_lifecycle_v1}"

@@ -78,7 +78,7 @@
       "type": "object", "additionalProperties": false,
       "required": ["publisher", "source_url", "document_sha256", "receipt_id"],
       "properties": {
-        "publisher": {"const": "Office of the Under Secretary of Defense (Comptroller)"},
+        "publisher": {"const": "Office of the Under Secretary of War (Comptroller)"},
         "source_url": {"type": "string", "format": "uri", "maxLength": 2000},
         "document_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
         "receipt_id": {"type": "string", "pattern": "^dod-budget:[a-f0-9]{64}$"}
