@@ -47,7 +47,7 @@ changed:
     what: Exact input/output receipts, scope law, contract freeze, fixed-point proof, and accepted controlled Chromium evidence.
   - path: agentos/workstreams/WS-BPC-JV-RECON.md
     what: Commissioned in-progress SNAPSHOT-ONBOARD A state plus W4-only and no-expansion boundaries.
-prs: []
+prs: [6389]
 verified:
   - claim: "Canonical W4 plus four CSV inputs are exact-byte admitted."
     command: "From the approved local input directory: shasum -a 256 BioPharmCatalyst_Tables.xlsx BioPharmCatalyst_All_Companies_Sorted_By_Ticker.csv biopharmcatalyst_historical_fda_all_verified_2009_2026.csv biopharmcatalyst_mergers_acquisitions.csv biopharmcatalyst_hedge_funds.csv"
@@ -80,11 +80,11 @@ discoveries:
   - "DSC:BPC-HISTORICAL-FDA-CSV-LEFT-SHIFT"
   - "DSC:BPC-JV-PREDECESSOR-WORKBOOKS-NOT-ON-DISK"
 unresolved:
-  - "Sol has not yet reviewed or released the exact held PR head."
+  - "Sol has not yet reviewed or released the exact held PR #6389 head."
   - "No private R2 upload, public projection publication, deployment, or real entitled production acceptance has occurred."
   - "Runtime source-registry insertion and CONTINUOUS-RECON remain separately gated and uncommissioned."
 next_actions:
-  - "Sol reviews the exact held PR head and either releases or returns findings."
+  - "Sol reviews the exact held PR #6389 head and either releases or returns findings."
   - "Only after explicit Sol release: merge the same PR, publish the exact private/public generation through the armed lanes, deploy normally, and run the freeze's real entitled production-acceptance matrix."
   - "Do not start CONTINUOUS-RECON, a successor snapshot wave, source/cohort/cadence expansion, or any continuous BPC collection from this handoff."
 do_not_redo:

@@ -30,10 +30,11 @@ waves:
   - id: SNAPSHOT-ONBOARD
     title: Licensed snapshot corpus onboarding — bounded Historical Event History vertical
     status: in_progress
+    pr: 6389
     depends_on: [RECON-0]
     next_action: >
       SNAPSHOT-ONBOARD A is commissioned by Macro issue #6374 and implemented in
-      the current HOLD-FOR-SOL delivery lane. Sol reviews the exact held head.
+      HOLD-FOR-SOL PR #6389. Sol reviews the exact held head.
       Only an explicit Sol release may merge it, publish the private R2 snapshot,
       deploy the public projection, and begin real entitled production acceptance.
       This bounded vertical grants no CONTINUOUS-RECON, source-registry, cohort,
@@ -131,7 +132,8 @@ do_not_redo:
     registration waits for the post-soak successor registry / successor
     launch-manifest transition.
 next_action: >
-  Sol reviews the exact HOLD-FOR-SOL head for commissioned SNAPSHOT-ONBOARD A.
+  Sol reviews the exact HOLD-FOR-SOL head of PR #6389 for commissioned
+  SNAPSHOT-ONBOARD A.
   Only explicit Sol approval releases the same lane to merge, publish the
   private R2 snapshot, deploy its pointer-bound public projection, and run real
   entitled production acceptance. Runtime biopharmcatalyst_jv_snapshot registry

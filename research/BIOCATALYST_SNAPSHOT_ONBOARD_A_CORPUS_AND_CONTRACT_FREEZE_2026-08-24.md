@@ -8,6 +8,8 @@
 
 **Fresh Macro implementation base:** `6af1ccd17c0a00840e6eb29f627387b1ccd30b1f`
 
+**Final pre-PR rebase base:** `f884a5ee1ebeda155f0b77f622f14ccffccf8ab9`
+
 **Authority correction:** [Chairman input ruling on #6374](https://github.com/mastermindx-market-intelligence/macro/issues/6374#issuecomment-5403214136)
 
 This receipt freezes the smallest lawful vertical: finite licensed bytes become immutable private source artifacts, deterministic normalized historical catalyst records, one entitlement-gated read projection, and one in-place BioCatalyst Historical Event History consumer. It is not a general BPC warehouse, live source registration, company-event replacement, security master, prediction surface, or authority expansion.
