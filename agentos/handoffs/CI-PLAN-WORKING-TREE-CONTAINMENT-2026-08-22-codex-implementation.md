@@ -413,3 +413,59 @@ census is empty, the Chairman override authorizes removing draft/hold state,
 arming the normal merge lane, merging this same PR, and verifying the W3 merge
 on canonical `origin/main`. B1 must then refresh from that descendant main and
 obtain a new exact-head CI run; the cancelled pre-W3 attempts are never reused.
+
+## 7. Chairman performance adjudication and final current-main refresh (2026-08-25)
+
+The Chairman's end-to-end execution authority is now exercised on the W3
+performance gate, after current production observations separated implementation
+cost from GitHub transport variance. The earlier requirement for three
+sub-60-second observations on every receipt-only reconciliation head is
+superseded. This is not a claim that the current observations met that threshold;
+they did not. It is a release adjudication that accepts the already-proven,
+byte-identical W3 mechanism while retaining exact-head correctness and binding
+CI as mandatory gates.
+
+The protected W3 implementation/test blobs on the current carrier are still the
+same four blobs listed in section 6. On exact implementation head
+`7fe2a5604f4938161b2630f6f6c15d8d436a3822`, production run `32714285706`
+provided three successful hosted `ci-plan` observations of 48, 45, and 40
+seconds (jobs `97392131348`, `97399164714`, and `97405834831`) plus complete
+green binding graphs. Those observations remain the performance-mechanism proof;
+later reconciliations did not change any of the four implementation/test blobs.
+
+Current receipt head `f99594c8c21bc14cb34d6f7c2a5ac8770a1dcbb3`
+then produced successful `ci-plan` jobs `97917772127`, `97941939282`, and
+`97944842717` in 653, 111, and 91 seconds. The planner and exact-tree inventory
+remained a few seconds. The variance was in GitHub transport and checkout: the
+first observation spent 632 seconds in checkout; the next two improved while
+all-ref fetch plus sparse materialization still exceeded the old end-to-end
+threshold. In the same first graph, full-checkout packs 1 and 3 fetched the
+commit promptly, then spent about 65 minutes requesting promised blobs before
+GitHub disconnected both streams with `early EOF`; neither job reached setup or
+tests. This is external materialization evidence, not a silent W3 performance
+pass and not a product/test failure.
+
+Release therefore requires all of the following on the final pushed head:
+
+1. the six-path carrier and four protected implementation/test blob identities
+   remain exact;
+2. current-manifest local validation and fail-closed parity/mutation proof pass;
+3. one exact-head `ci` graph concludes with `ci-plan`, every selected pack, and
+   `ci-gate` green, plus green contract-delta, fences, and active-main authority;
+4. the current `ci-plan` job successfully binds the tested tree, emits the exact
+   inventory and authoritative plan, and completes below the 30-minute hang
+   bound; its actual timings are reported without converting them to a
+   sub-60-second claim; and
+5. a fresh relevant-input collision census is empty immediately before release.
+
+The current-main refresh before this receipt is merge commit
+`ea59335e0cebee07dce0bf8cce5721d1f071bd03`, whose second parent is canonical
+main snapshot `823b62940013279cec8a956f3007be95c534160f`. It was created by a
+concurrent local audit on this same existing carrier, remained unpushed when
+found, and was preserved rather than reset or overwritten. The merge is clean;
+the branch-relative surface remains the same six W3 paths and the four protected
+blobs remain byte-identical. Because `.github/ci/legacy-jobs.yml` moved on that
+main parent, its current manifest must be revalidated before this receipt is
+pushed. Once the revised gates above pass, the Chairman override authorizes
+readying and arming this same PR #6286 for the normal merge lane. No W4, pack
+checkout, runner-routing, topology, product, or data change is authorized here.
