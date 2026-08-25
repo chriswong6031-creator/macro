@@ -6653,11 +6653,20 @@ def _run_brain_loop_stream(
     effort: str | None = None,
     thinking_mode: str | None = None,
     deepseek_thinking: str | None = None,
+    context_receipt: dict | None = None,
 ) -> Generator[str, None, None]:
     """Run the brain loop; yield SSE events per contract.
 
-    Event sequence: meta (first) → status*/tool*/annotate*/command*/chart* (0+) →
+    Event sequence: meta (first) → context_receipt (W1-C, 0/1 — only when the
+    caller supplies one; see below) → status*/tool*/annotate*/command*/chart* (0+) →
     delta+ (1 or more, W5) → retract (0/1) → suggest (0/1, W6d) → done (last).
+
+    context_receipt: optional pre-compiled `ai_context_receipt.v1` body (see
+        `engine/intelligence_workspace/context_compiler.py`). When provided, it is
+        yielded as one `{"type": "context_receipt", ...}` event immediately after
+        `meta` and before any status/tool event — every real `chat_stream()` deep
+        turn supplies one. Defaults to `None` (no event emitted) so every existing
+        direct caller of this generator keeps today's exact event sequence.
     `status` events are ADDITIVE reasoning transparency; their copy comes from
     _STAGE_LABELS/_TOOL_LABELS and costs no network or file I/O — see the leak note above
     those tables.
@@ -6730,6 +6739,8 @@ def _run_brain_loop_stream(
 
     # Emit meta first (always)
     yield f"data: {json.dumps(meta_event)}\n\n"
+    if context_receipt is not None:
+        yield "data: " + json.dumps({"type": "context_receipt", **context_receipt}) + "\n\n"
     yield _status_event("start", _t0, _STAGE_LABELS["start"])
 
     annotations: list[dict] = []
@@ -8548,14 +8559,24 @@ def chat(
             "screened": True,
         }
 
-    # 3c. Instant routing decision. W1-B plans registered native facts first; the
+    # 3c. W1-C: compile the deterministic visible-context envelope ONCE per request,
+    #     at the same point `context` is first consumed for routing — see
+    #     research/DEEPVUE_W1C_CONTEXT_ENVELOPE_CONTRACT_2026-08-25.md. Lazy import:
+    #     `engine.intelligence_workspace` pulls in the W1-A registry/jsonschema
+    #     validators, so this is deferred to first actual request exactly like the
+    #     existing native-fact execution import below (never at API import time).
+    from engine.intelligence_workspace import context_compiler as _ctx_compiler  # noqa: PLC0415
+    _ctx_envelope = _ctx_compiler.compile_envelope(clean_msg, context)
+    _ctx_receipt = _ctx_compiler.compile_receipt(_ctx_envelope)
+
+    # 3d. Instant routing decision. W1-B plans registered native facts first; the
     #     existing quote-only W5 route remains the non-US compatibility island. Both
     #     decisions are pure and happen after quota/prescreen but before providers.
     _instant_t0 = time.monotonic()
     _native_plan_t0 = time.monotonic()
     _native_plan_hit = (
         None if images or mode == "research"
-        else _native_facts.plan_native_facts(clean_msg, context)
+        else _native_facts.plan_native_facts(clean_msg, context, envelope=_ctx_envelope)
     )
     _native_route_decision_ms = _ms_since(_native_plan_t0)
     _instant_route_hit = (
@@ -8563,7 +8584,7 @@ def chat(
         else _instant_route(clean_msg, context)
     )
 
-    # 3d. W1-B deterministic native serve. This branch intentionally precedes
+    # 3e. W1-B deterministic native serve. This branch intentionally precedes
     #     provider construction: canonical local truth cannot depend on model health,
     #     and a typed stale/null/rights-blocked result must not fall into a model loop.
     if _native_plan_hit is not None:
@@ -8616,6 +8637,7 @@ def chat(
             "route": _native_facts.NATIVE_FACT_ROUTE,
             "symbol": _native_plan_hit.symbol,
             "native_fact_receipt": _nf_receipt,
+            "context_receipt": _ctx_receipt,
         }
 
     # 4. Build providers
@@ -8747,6 +8769,7 @@ def chat(
                 "is_context_only": True,
                 "route": "instant",
                 "latency": _i_timing,
+                "context_receipt": _ctx_receipt,
             }
             if _i_res.get("symbol"):
                 _i_result["symbol"] = _i_res["symbol"]
@@ -8843,6 +8866,7 @@ def chat(
         # hands the record back on the usage dict; see _run_brain_loop's docstring).
         "route": "deep",
         "latency": usage_dict.get("latency") or _new_turn_timing("deep"),
+        "context_receipt": _ctx_receipt,
     }
     if all_annotations:
         result["annotations"] = all_annotations
@@ -8996,13 +9020,22 @@ def chat_stream(
             flags={"screened": True})
         return
 
-    # 2c. Instant routing decision — W1-B native facts first, then the preserved
+    # 2c. W1-C: compile the deterministic visible-context envelope ONCE per request
+    #     — see research/DEEPVUE_W1C_CONTEXT_ENVELOPE_CONTRACT_2026-08-25.md. Lazy
+    #     import for the same reason as chat(): defer the W1-A registry/jsonschema
+    #     pull to first actual request, never API import time.
+    from engine.intelligence_workspace import context_compiler as _ctx_compiler  # noqa: PLC0415
+    _ctx_envelope = _ctx_compiler.compile_envelope(clean_msg, context)
+    _ctx_receipt = _ctx_compiler.compile_receipt(_ctx_envelope)
+    _ctx_receipt_event = "data: " + json.dumps({"type": "context_receipt", **_ctx_receipt}) + "\n\n"
+
+    # 2d. Instant routing decision — W1-B native facts first, then the preserved
     #     quote-only compatibility route. Both remain behind quota and prescreen.
     _instant_t0 = time.monotonic()
     _native_plan_t0 = time.monotonic()
     _native_plan_hit = (
         None if images or mode == "research"
-        else _native_facts.plan_native_facts(clean_msg, context)
+        else _native_facts.plan_native_facts(clean_msg, context, envelope=_ctx_envelope)
     )
     _native_route_decision_ms = _ms_since(_native_plan_t0)
     _instant_route_hit = (
@@ -9010,7 +9043,7 @@ def chat_stream(
         else _instant_route(clean_msg, context)
     )
 
-    # 2d. Deterministic W1-B native stream. Meta/status go out before owner I/O;
+    # 2e. Deterministic W1-B native stream. Meta/status go out before owner I/O;
     #     the first delta already contains a typed fact, so TTFV is never gamed by
     #     content-free progress. Typed unavailability stays on this route.
     if _native_plan_hit is not None:
@@ -9020,6 +9053,7 @@ def chat_stream(
             if _nf_thread_id:
                 _append_message(_nf_thread_id, "user", clean_msg)
         yield f"data: {json.dumps({'type': 'meta', 'lane': lane, 'model': 'native-fact.v1', 'thread_id': _nf_thread_id, 'quota': quota_info})}\n\n"
+        yield _ctx_receipt_event
         yield _status_event("native", _instant_t0, _STAGE_LABELS["native"],
                             detail=_native_plan_hit.symbol)
         _nf_exec = _native_facts.execute_native_fact_plan(
@@ -9047,6 +9081,7 @@ def chat_stream(
             "degraded": bool(_nf_receipt.get("failure")),
             "is_context_only": True,
             "native_fact_receipt": _nf_receipt,
+            "context_receipt": _ctx_receipt,
         }) + "\n\n"
         if _nf_thread_id:
             try:
@@ -9163,11 +9198,13 @@ def chat_stream(
             _i_model = _i_res.get("model") or model
             _i_usage = dict(_i_res.get("usage") or {})
             yield f"data: {json.dumps({**meta_event, 'model': _i_model})}\n\n"
+            yield _ctx_receipt_event
             yield _delta_sse(_i_res["text"], _i_timing, _instant_t0)
             _timing_stamp(_i_timing, "total_ms", _instant_t0)
             _i_usage["latency"] = _i_timing
             yield "data: " + json.dumps({
                 "type": "done", "route": "instant", "citations": [],
+                "context_receipt": _ctx_receipt,
                 "quota": quota_info, "usage": _i_usage, "filtered": False,
                 "degraded": False, "is_context_only": True}) + "\n\n"
 
@@ -9226,6 +9263,7 @@ def chat_stream(
             user_id=user_id, user_email=user_email,
             effort=effort, thinking_mode=thinking_mode,
             deepseek_thinking=deepseek_thinking,
+            context_receipt=_ctx_receipt,
         )
     except Exception as exc:  # noqa: BLE001
         log.warning("brain_gateway: stream loop failed (%s)", exc)
