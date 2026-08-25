@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-25T00:35:00.170759+00:00",
-  "count": 1791,
+  "generated_at": "2026-08-25T02:11:19.198655+00:00",
+  "count": 1796,
   "institutions": [
     "13F Summary",
     "ABN Amro",
@@ -89,6 +89,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-4qm9hr4e26e-c00fe9",
+      "title": "JPM US Market Intelligence Afternoon Briefing Aug 24",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-25T00:49:48Z",
+      "summary_points": [
+        "**Geopolitical Risk & Oil Volatility**: US-Iran tensions (Houthi tanker attack) drove WTI/Brent down 2.5% amid Strait of Hormuz concerns; US-Canada trade fight as macro overhang, directly impacting energy and bank sectors.",
+        "**NVDA Earnings Catalyst**: Beat consensus ($94–95B revenue vs.",
+        "$91.80B) with 4.6% implied move; strong GB300 growth and AI cloud story support near-term AI trade, though no Semis boost expected.",
+        "**Gold Narrative & Macro Hedge**: Middle East tensions elevate risk premium; gold trades $4.5k–$5k with $5k move potential next week due to PCE/Jackson Hole catalysts and momentum (post-$1k Jan surge).",
+        "**GOOGL Partnership Upside**: $20B p.a."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-vwrgnj7krwl-f56c80",
       "title": "Global daily two wars and two economic wars",
@@ -288,6 +309,25 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-ym6hnhqsnnf-ffa83d",
+      "title": "Macro Volatility Digest 2026 Aug 24",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-24T22:07:31Z",
+      "summary_points": [
+        "**Treasury Yield Surge**: 30-yr yield hits 5.33% (2007 high), MOVE Index reverses decline (73rd percentile), signaling yield-driven risk over credit quality.",
+        "**Equity-Rates Negative Correlation**: Persistent inverse movement between SPX and 10Y Treasuries critical for duration management and hedging amid rate-sensitive shifts.",
+        "**Volatility Mispricing**: SPX \"cheap\" (implied < realized volatility), MXF/EWZ \"rich\" (implied > realized), highlighting directional risk and options positioning opportunities."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-2kawxzdsjcl-92eef9",
       "title": "Mi weekly market brief",
       "institution": "J.P. Morgan",
@@ -303,6 +343,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-x1rp0yshst7-41701c",
+      "title": "market monitor",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T22:06:36Z",
+      "summary_points": [
+        "**Treasury Curve Steepening Drivers**: Persistent fiscal deficit (5.6% GDP) and hyperscaler issuance sustain structural curve steepening; 30-year yield at 19-year high (5.3%+) limits intervention efficacy.",
+        "**Energy Sector Leadership**: S&P 500 Energy at 44.0% YTD and MSCI World Energy at 38.3% YTD, outperforming all other sectors due to robust fundamentals.",
+        "**Critical Central Bank Meetings**: ECB (Sept 10), FOMC (Sept 16), BOE (Sept 17), BOJ (Sept 18) will drive rate policy shifts with global market implications.",
+        "**Equity Rotation & Valuation Risk**: Russell 2000/MSCI EM outperform S&P 500/Nasdaq; USA 12m Forward P/E at 21.5 vs.",
+        "EM at 10.9 signals US overvaluation risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
@@ -405,6 +466,48 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-qg7qwsrjhvp-c1b3f9",
+      "title": "Phillips 66 (PSX) Takeaways from Management Meetings Positive Rate",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T16:57:44Z",
+      "summary_points": [
+        "**Capital Allocation Shift**: Leverage reduction limits H1 2026 buybacks but accelerates share repurchases via incremental debt payoff in H2 2026.",
+        "**Return of Capital Acceleration**: Targets >50% of net operating cash flow (excl.",
+        "working capital) to shareholders, with $12bn cash flow estimate (vs.",
+        "$6bn in 2026), reducing net debt to $13.5–$14bn by early 2027.",
+        "**Operational & Macro Improvements**: Enhanced utilization, safety, midstream growth, and refining macro resilience with volatility persisting despite margin declines."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-9b3ihouj5ox-b3f8b1",
+      "title": "Goal Kickstart Summer data only update",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-24T16:57:41Z",
+      "summary_points": [
+        "**Asia-Pacific Equity Upside Dominance**: MSCI Asia-Pacific ex-JP and Topix show aggressive 12m upside forecasts (22.2% and 12.9% total return), outpacing US/Europe equities, signaling potential rotation toward emerging markets amid strong growth expectations.",
+        "**Cross-Asset Valuation Extremes**: S&P 500 at 19.7x (58th percentile, near 95th at 22.4x), US 10y yield at 4.7% (1st percentile), US IG credit spreads at 80bp (89th percentile), EUR HY at 270bp (97th percentile), indicating equities/credit overvaluation vs.",
+        "cheap bonds.",
+        "**Equity-Credit Relative Valuation Divergence**: US DY minus USD HY Credit Spreads (RMS) in negative territory, showing equities relatively more expensive than credit, suggesting potential overvaluation in equities versus credit markets.",
+        "**US 10y Yield Volatility Threshold**: 10th percentile yield at 1.0% (vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 25,
       "language": "en",
       "needs_metadata": false
     },
