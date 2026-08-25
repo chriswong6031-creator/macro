@@ -1,17 +1,10 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-08-25T20:45:33.511403+00:00",
+  "as_of": "2026-08-25T21:43:33.103212+00:00",
   "posts_seen": 6,
   "seen_total": 135,
-  "evaluated": 1,
+  "evaluated": 0,
   "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": [
-    {
-      "id": "wh-2026-08-25-honoring-the-memory-of-dolly-parton",
-      "importance": 1,
-      "activated": false,
-      "degraded_reason": "served_by:codex"
-    }
-  ]
+  "gate_scores": []
 }
