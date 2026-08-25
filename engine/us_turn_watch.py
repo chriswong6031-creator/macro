@@ -1329,9 +1329,13 @@ def write_artifact(artifact: dict[str, Any], site_root: Path | None = None) -> P
     out_dir = site_root / "turn_watch"
     out_dir.mkdir(parents=True, exist_ok=True)
     out = out_dir / "turn_watch.json"
-    out.write_text(json.dumps(artifact, separators=(",", ":"), default=str) + "\n",
-                   encoding="utf-8")
+    out.write_bytes(artifact_bytes(artifact))
     return out
+
+
+def artifact_bytes(artifact: dict[str, Any]) -> bytes:
+    """Exact public artifact bytes, shared with sidecar provenance receipts."""
+    return (json.dumps(artifact, separators=(",", ":"), default=str) + "\n").encode("utf-8")
 
 
 # ---------------------------------------------------------------------------

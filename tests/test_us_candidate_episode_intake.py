@@ -3,12 +3,14 @@ from __future__ import annotations
 
 import json
 from datetime import date
+from hashlib import sha256
 from pathlib import Path
 
 import pandas as pd
 import pytest
 
 from engine.stock_identity.fingerprint import spec_hash
+from engine import us_turn_watch as turn_watch
 from engine.us_candidate_episode import reconcile_observations
 from engine.us_candidate_episode_intake import (
     candidate_observations,
@@ -90,6 +92,7 @@ def test_turn_watch_sidecar_and_identity_spine_open_at_the_nyse_early_close(tmp_
 @pytest.mark.parametrize(
     ("row", "issuer", "reason"),
     [
+        (_turn_row(triggers={}), "ISS:US-XNAS-ALFA", "MISSING_TRIGGER"),
         (_turn_row(triggers={"dot_1d": {"fired": True, "evaluated": False}}),
          "ISS:US-XNAS-ALFA", "UNEVALUATED_TRIGGER"),
         (_turn_row(reset={"reset_low": None, "reset_low_date": None}),
@@ -121,6 +124,44 @@ def test_turn_watch_content_hash_mismatch_is_a_per_row_malformed_receipt(tmp_pat
     assert [entry["reason"] for entry in batch.suppressions] == ["MALFORMED_RECEIPT"]
 
 
+def test_nonobject_turn_watch_json_is_named_degraded_source(tmp_path: Path):
+    data = tmp_path / "data"
+    _identity_spine(data)
+    path = tmp_path / "sidecar.json"
+    path.write_text("[]")
+    batch = turn_watch_observations(path, load_identity_spine(data))
+    assert batch.source_receipts == ({"source": "turn_watch", "status": "degraded",
+                                      "reason": "MALFORMED_SOURCE"},)
+
+
+def test_turn_watch_open_time_uses_the_later_of_reset_and_earliest_trigger_close(tmp_path: Path):
+    """A current sidecar session must not move a prior trigger's episode clock forward."""
+    data = tmp_path / "data"
+    _identity_spine(data)
+    artifact = {**_turn_artifact(), "data_session": "2026-11-28"}
+    row = _turn_row(
+        triggers={"dot_1d": {"fired": True, "evaluated": True, "last_date": "2026-11-25"}},
+        reset={"reset_low": 42.1, "reset_low_date": "2026-11-24"},
+    )
+    batch = turn_watch_observations(write_candidate_episode_input(artifact, [row], data),
+                                    load_identity_spine(data))
+    observed = batch.observations[0]
+    assert observed["occurred_at"] == "2026-11-25T21:00:00Z"
+    assert observed["known_at"] == "2026-11-25T21:00:00Z"
+    result = reconcile_observations([], batch.observations,
+                                    recorded_at="2026-11-28T18:00:00Z",
+                                    definition_era="candidate-episode-v1-2026-08-25")
+    assert result.episodes[0]["opened_at"] == "2026-11-25T21:00:00Z"
+
+
+def test_sidecar_source_artifact_hashes_the_exact_public_file_bytes(tmp_path: Path):
+    artifact = _turn_artifact()
+    public = turn_watch.write_artifact(artifact, tmp_path / "site")
+    sidecar = write_candidate_episode_input(artifact, [], tmp_path / "data")
+    document = json.loads(sidecar.read_text())
+    assert document["source_artifact_sha256"] == "sha256:" + sha256(public.read_bytes()).hexdigest()
+
+
 def test_non_anchor_sources_attach_or_suppress_and_preserve_exact_radar_event_id(tmp_path: Path):
     """Only TURN WATCH may open; all other rows retain one unambiguous disposition."""
     data = tmp_path / "data"
@@ -128,7 +169,10 @@ def test_non_anchor_sources_attach_or_suppress_and_preserve_exact_radar_event_id
     spine = load_identity_spine(data)
     candidates = data / "us_prophet_rank" / "candidates"
     candidates.mkdir(parents=True)
-    pd.DataFrame([{"ticker": "ALFA", "as_of": "2026-11-27"}]).to_parquet(
+    pd.DataFrame([{
+        "stamp_date": "2026-11-27", "ticker": "ALFA", "board_definition": "us_prophet_v2",
+        "tier": "curated", "pool_lane": None, "prophet_score": float("nan"),
+    }]).to_parquet(
         candidates / "2026-11.parquet", index=False)
     doors = data / "prophet_doors" / "flags.jsonl"
     doors.parent.mkdir(parents=True)
@@ -137,8 +181,11 @@ def test_non_anchor_sources_attach_or_suppress_and_preserve_exact_radar_event_id
     radar = data / "entry_radar" / "forward.parquet"
     radar.parent.mkdir(parents=True)
     pd.DataFrame([{
-        "ticker": "ALFA", "event_id": "radar-expert-17",
-        "signal_ts": "2026-11-27T18:00:00Z", "signal_known_ts": "2026-11-27T18:00:00Z",
+        "episode_address": "radar-expert-17", "ticker": "ALFA", "detector_id": "G0_GREY_DOT@1",
+        "family": "g0_grey_dot", "subtype": "g0", "decision_session": "2026-11-27",
+        "signal_ts": "2026-11-27T17:01:00+00:00",
+        "signal_known_ts": "2026-11-27T17:02:00+00:00",
+        "observed_at": "2026-11-27T17:03:00+00:00", "state": "LIVE_FORWARD",
     }]).to_parquet(radar, index=False)
 
     candidate_batch = candidate_observations(data, spine)
@@ -149,6 +196,8 @@ def test_non_anchor_sources_attach_or_suppress_and_preserve_exact_radar_event_id
     assert door_batch.observations[0]["anchor"] is None
     assert radar_batch.observations[0]["source_event_id"] == "radar-expert-17"
     assert radar_batch.observations[0]["expert_event_id"] == "radar-expert-17"
+    assert radar_batch.observations[0]["occurred_at"] == "2026-11-27T17:01:00Z"
+    assert radar_batch.observations[0]["known_at"] == "2026-11-27T17:02:00Z"
     assert radar_batch.observations[0]["anchor"] is None
     assert reconcile_observations([], [*candidate_batch.observations, *door_batch.observations,
                                        *radar_batch.observations],
@@ -157,6 +206,65 @@ def test_non_anchor_sources_attach_or_suppress_and_preserve_exact_radar_event_id
     assert _ids(candidate_batch) == {candidate_batch.observations[0]["source_event_id"]}
     assert _ids(door_batch) == {door_batch.observations[0]["source_event_id"]}
     assert _ids(radar_batch) == {"radar-expert-17"}
+
+
+def test_canonical_source_keys_and_multirow_accounting_are_stable(tmp_path: Path):
+    """Mutable feature/null changes cannot mint a second source identity or drop a row."""
+    data = tmp_path / "data"
+    _identity_spine(data)
+    spine = load_identity_spine(data)
+    candidates = data / "us_prophet_rank" / "candidates"
+    candidates.mkdir(parents=True)
+    pd.DataFrame([
+        {"stamp_date": "2026-11-27", "ticker": "ALFA", "board_definition": "us_prophet_v2",
+         "prophet_score": float("nan"), "pool_lane": None},
+        {"stamp_date": "2026-11-27", "ticker": "UNKNOWN", "board_definition": "us_prophet_v2",
+         "prophet_score": 77.0, "pool_lane": "featured"},
+    ]).to_parquet(candidates / "2026-11.parquet", index=False)
+    doors = data / "prophet_doors" / "flags.jsonl"
+    doors.parent.mkdir(parents=True)
+    doors.write_text("\n".join(json.dumps(row) for row in [
+        {"schema": "prophet_doors/v1", "date": "2026-11-27", "door": "T", "ticker": "ALFA", "features": {"x": 1}},
+        {"schema": "prophet_doors/v1", "date": "2026-11-27", "door": "R", "ticker": "UNKNOWN", "features": {"x": 2}},
+    ]) + "\n")
+    radar = data / "entry_radar" / "forward.parquet"
+    radar.parent.mkdir(parents=True)
+    pd.DataFrame([
+        {"episode_address": "radar-a", "ticker": "ALFA", "decision_session": "2026-11-27",
+         "signal_ts": "2026-11-27T17:00:00+00:00", "signal_known_ts": "2026-11-27T17:01:00+00:00"},
+        {"episode_address": "radar-b", "ticker": "UNKNOWN", "decision_session": "2026-11-27",
+         "signal_ts": "2026-11-27T17:00:00+00:00", "signal_known_ts": "2026-11-27T17:01:00+00:00"},
+    ]).to_parquet(radar, index=False)
+    candidate_batch = candidate_observations(data, spine)
+    door_batch = door_observations(doors, spine)
+    radar_batch = radar_observations(radar, spine)
+    assert len(candidate_batch.observations) + len(candidate_batch.suppressions) == 2
+    assert len(door_batch.observations) + len(door_batch.suppressions) == 2
+    assert len(radar_batch.observations) + len(radar_batch.suppressions) == 2
+    assert candidate_batch.observations[0]["source_event_id"] == "candidate:2026-11-27:ALFA:us_prophet_v2"
+    assert door_batch.observations[0]["source_event_id"] == "doors:2026-11-27:T:ALFA"
+
+
+def test_turn_watch_multirow_accounting_covers_observation_and_suppression(tmp_path: Path):
+    data = tmp_path / "data"
+    _identity_spine(data)
+    batch = turn_watch_observations(
+        write_candidate_episode_input(_turn_artifact(), [_turn_row(), _turn_row(ticker="UNKNOWN")], data),
+        load_identity_spine(data),
+    )
+    assert len(batch.observations) + len(batch.suppressions) == 2
+
+
+def test_historical_candidate_without_pinned_identity_suppresses(tmp_path: Path):
+    data = tmp_path / "data"
+    _identity_spine(data)
+    candidates = data / "us_prophet_rank" / "candidates"
+    candidates.mkdir(parents=True)
+    pd.DataFrame([{"stamp_date": "2026-11-27", "ticker": "ALFA",
+                   "board_definition": "us_prophet_v2", "replay": True}]).to_parquet(
+        candidates / "2026-11.parquet", index=False)
+    batch = candidate_observations(data, load_identity_spine(data))
+    assert [row["reason"] for row in batch.suppressions] == ["HISTORICAL_IDENTITY_UNPROVEN"]
 
 
 def test_missing_optional_source_is_named_degraded_receipt(tmp_path: Path):

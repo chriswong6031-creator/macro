@@ -10,13 +10,13 @@ from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from hashlib import sha256
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Callable, Mapping
 
 import pandas as pd
 
 from engine.session_digest import session_window_et
 from engine.stock_identity.fingerprint import spec_hash
-from engine.us_candidate_episode import anchor_token, canonical_json
+from engine.us_candidate_episode import canonical_json
 from lib.dataos.identity import IssuerMaster, VendorAliasTable
 
 
@@ -38,7 +38,22 @@ class IntakeBatch:
 
 
 def _records(path: Path) -> list[dict[str, object]]:
-    return [dict(row) for row in pd.read_parquet(path).to_dict("records")]
+    return [_json_safe(dict(row)) for row in pd.read_parquet(path).to_dict("records")]
+
+
+def _json_safe(value: object) -> object:
+    """Normalize pandas scalar nulls and times before any canonical JSON boundary."""
+    if value is None or value is pd.NA or value is pd.NaT:
+        return None
+    if isinstance(value, Mapping):
+        return {str(key): _json_safe(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_safe(item) for item in value]
+    if isinstance(value, (datetime, date, pd.Timestamp)):
+        return value.isoformat()
+    if isinstance(value, float) and not pd.notna(value):
+        return None
+    return value
 
 
 def load_identity_spine(data_root: Path) -> IdentitySpine:
@@ -64,10 +79,14 @@ def _close(value: object) -> str | None:
 
 
 def _timestamp(value: object, session: object) -> str | None:
-    if isinstance(value, str) and value.endswith("Z"):
+    if isinstance(value, str):
+        if len(value) == 10 and _session(value) is not None:
+            return _close(value)
         try:
-            datetime.fromisoformat(value.replace("Z", "+00:00"))
-            return value
+            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            if parsed.tzinfo is None:
+                return None
+            return parsed.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         except ValueError:
             return None
     return _close(session)
@@ -139,8 +158,10 @@ def turn_watch_observations(path: Path, spine: IdentitySpine) -> IntakeBatch:
         document = json.loads(Path(path).read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return IntakeBatch((), (), ({"source": source, "status": "degraded", "reason": "UNREADABLE_SOURCE"},))
-    rows = document.get("rows") if isinstance(document, Mapping) else None
-    digest = document.get("content_sha256") if isinstance(document, Mapping) else None
+    if not isinstance(document, Mapping):
+        return IntakeBatch((), (), ({"source": source, "status": "degraded", "reason": "MALFORMED_SOURCE"},))
+    rows = document.get("rows")
+    digest = document.get("content_sha256")
     receipt = _receipt(f"sha256:{digest}" if isinstance(digest, str) else None)
     if document.get("schema") != TURN_WATCH_SCHEMA or not isinstance(rows, list):
         return IntakeBatch((), (), ({"source": source, "status": "degraded", "reason": "MALFORMED_SOURCE"},))
@@ -159,7 +180,6 @@ def turn_watch_observations(path: Path, spine: IdentitySpine) -> IntakeBatch:
     observations: list[dict[str, object]] = []
     suppressions: list[dict[str, object]] = []
     session = document.get("data_session")
-    known = document.get("known_at")
     for raw in rows:
         row = dict(raw) if isinstance(raw, Mapping) else {}
         event_id = _source_id(source, {"data_session": session, "row": row})
@@ -186,9 +206,13 @@ def turn_watch_observations(path: Path, spine: IdentitySpine) -> IntakeBatch:
         observation, reason = _observation(
             source=source, schema=schema, source_event_id=event_id, receipt=receipt,
             ticker=ticker, session=session, spine=spine, intake_class="technical_emergence",
-            anchor=anchor, occurred_at=min((v.get("last_date") for v in fired.values()
-                                            if isinstance(v, Mapping) and v.get("fired") and v.get("last_date")),
-                                           default=session), known_at=known,
+            anchor=anchor,
+            occurred_at=min((v.get("last_date") for v in fired.values()
+                             if isinstance(v, Mapping) and v.get("fired") and v.get("last_date")),
+                            default=session),
+            known_at=min((v.get("last_date") for v in fired.values()
+                          if isinstance(v, Mapping) and v.get("fired") and v.get("last_date")),
+                         default=session),
         )
         if observation is None:
             suppressions.append(_suppression(source, schema, event_id, receipt, ticker, str(reason)))
@@ -200,6 +224,7 @@ def turn_watch_observations(path: Path, spine: IdentitySpine) -> IntakeBatch:
 
 def _unanchored_batch(source: str, schema: str, rows: list[dict[str, object]], spine: IdentitySpine,
                       *, ticker_key: str = "ticker", session_key: str = "as_of",
+                      source_id: Callable[[dict[str, object]], str] | None = None,
                       radar: bool = False) -> IntakeBatch:
     observations: list[dict[str, object]] = []
     suppressions: list[dict[str, object]] = []
@@ -207,8 +232,8 @@ def _unanchored_batch(source: str, schema: str, rows: list[dict[str, object]], s
         ticker, session = row.get(ticker_key), (row.get(session_key) or row.get("date")
                                                  or row.get("decision_session")
                                                  or row.get("signal_ts"))
-        event_id = str(row.get("event_id") or _source_id(source, row))
-        if radar and not row.get("event_id"):
+        event_id = source_id(row) if source_id is not None else _source_id(source, row)
+        if radar and not event_id:
             receipt = "sha256:" + sha256(canonical_json(row).encode("utf-8")).hexdigest()
             suppressions.append(_suppression(source, schema, event_id, receipt, ticker,
                                              "MISSING_EXPERT_EVENT_ID"))
@@ -236,11 +261,16 @@ def candidate_observations(data_root: Path, spine: IdentitySpine) -> IntakeBatch
     if not paths:
         return IntakeBatch((), (), ({"source": "candidate", "status": "degraded", "reason": "MISSING_SOURCE_FILE"},))
     rows = [row for path in paths for row in _records(path)]
-    sessions = [str(row.get("as_of") or row.get("data_session") or "") for row in rows]
+    sessions = [str(row.get("stamp_date") or "") for row in rows]
     current = max((value for value in sessions if _session(value) is not None), default=None)
     if current is not None:
-        rows = [row for row in rows if str(row.get("as_of") or row.get("data_session")) == current]
-    return _unanchored_batch("candidate", "us_candidate_pool_v1", rows, spine)
+        rows = [row for row in rows if str(row.get("stamp_date")) == current]
+    return _unanchored_batch(
+        "candidate", "us_prophet_rank.candidates/v1", rows, spine, session_key="stamp_date",
+        source_id=lambda row: "candidate:{stamp_date}:{ticker}:{board_definition}".format(
+            stamp_date=row.get("stamp_date"), ticker=row.get("ticker"),
+            board_definition=row.get("board_definition")),
+    )
 
 
 def door_observations(path: Path, spine: IdentitySpine) -> IntakeBatch:
@@ -250,11 +280,18 @@ def door_observations(path: Path, spine: IdentitySpine) -> IntakeBatch:
     current = max((str(row.get("date") or "") for row in rows if _session(row.get("date")) is not None), default=None)
     if current is not None:
         rows = [row for row in rows if str(row.get("date")) == current]
-    return _unanchored_batch("doors", "prophet_doors/v1", rows, spine, session_key="date")
+    return _unanchored_batch(
+        "doors", "prophet_doors/v1", rows, spine, session_key="date",
+        source_id=lambda row: "doors:{date}:{door}:{ticker}".format(
+            date=row.get("date"), door=row.get("door"), ticker=row.get("ticker")),
+    )
 
 
 def radar_observations(path: Path, spine: IdentitySpine) -> IntakeBatch:
     if not Path(path).exists():
         return IntakeBatch((), (), ({"source": "entry_radar", "status": "degraded", "reason": "MISSING_SOURCE_FILE"},))
-    return _unanchored_batch("entry_radar", "mastermind.entry_event.v1", _records(Path(path)), spine,
-                             session_key="decision_session", radar=True)
+    return _unanchored_batch(
+        "entry_radar", "mastermind.entry_event.v1", _records(Path(path)), spine,
+        session_key="decision_session", source_id=lambda row: str(row.get("episode_address") or ""),
+        radar=True,
+    )

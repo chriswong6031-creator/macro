@@ -67,7 +67,7 @@ def write_candidate_episode_input(artifact: dict, rows: list[dict], data_root: P
     if not isinstance(session, str) or not session:
         raise ValueError("TURN WATCH data_session is required for candidate episode input")
     known_at = session_window_et(session)[1].astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    artifact_sha = sha256(canonical_json(artifact).encode("utf-8")).hexdigest()
+    artifact_sha = sha256(turn_watch.artifact_bytes(artifact)).hexdigest()
     document = {
         "schema": "prophet.candidate_episode_input.turn_watch/v1",
         "data_session": session,
