@@ -1,0 +1,188 @@
+schema: mastermind.rig_review.v1
+reference_id: mastermind-xpv2-sector-r3b-2
+role: visual_taste
+artifact_sha: d0830a374795925ee1e55b66c0cc42e329ac172d
+verdict: PASS
+
+identity:
+  repository: mastermindx-market-intelligence/macro
+  canonical_pr: 6337
+  canonical_branch: claude/xpv2-sc-r3b2-build
+  dispatch_head: 0e542f3eda09721f8a255a08bb9db09070090871
+  frozen_sha: d0830a374795925ee1e55b66c0cc42e329ac172d
+  artifact_sha: d0830a374795925ee1e55b66c0cc42e329ac172d
+  candidate_sha256: 4adb4b6245e8e4aa5b68c850a615461327c0a5d2e672e4c203d6ba32a3b8d53c
+  candidate_size_bytes: 5506871
+  manifest_status: in_review
+  exact_head_ci:
+    run: 32702450784
+    conclusion: success
+  skillpack:
+    repository: Mastermind
+    commit: 9b55edccc3f7f7973f73b85c34ba38107b577e33
+    schema: mastermind.sol_skillpack.v1
+    version: 1.0.0
+  superseded_carrier_excluded:
+    pr: 6336
+    branch: codex/xpv2-sc-r3b2-final-continuation
+    head: d4863b6cdfcc279da347abc111b1d43fc0646415
+
+reviewer:
+  identity: Fresh independent Codex Visual / Taste critic commissioned by Chris under Sol dispatch
+  independent_of_author: true
+  freshness: FRESH
+  prior_sector_central_r3_family_participation: false
+
+verification:
+  detached_head_matches_dispatch: true
+  pr_head_matches_dispatch: true
+  frozen_sha_resolves_in_head: true
+  candidate_sha256_recomputed: 4adb4b6245e8e4aa5b68c850a615461327c0a5d2e672e4c203d6ba32a3b8d53c
+  candidate_size_recomputed: 5506871
+  current_origin_main_at_claim: 263e7719c640517ca88504f1161d5abb75ccb1c4
+  post_freeze_material_drift: false
+  material_paths_checked:
+    - scripts/build_sector_central.py
+    - engine/sector_central.py
+    - engine/us_act_now.py
+    - scripts/build_baskets.py
+    - templates/sector_central.html.j2
+    - templates/_us_act_now_board.html.j2
+    - templates/subsectors.js
+    - docs/DESIGN_DOCTRINE.md
+    - research/MASTER_PRODUCT_DESIGN_SYSTEM_V1.md
+    - RIG authority paths
+
+quarantine:
+  honoured: true
+  first_pass_frozen_at: "2026-08-24T10:19:36Z"
+  first_pass_record: critic_return/first_pass_visual_taste.md
+  first_pass_verdict: PASS
+  rationale_received_after_first_pass: true
+  substantive_preloaded_findings: false
+
+first_pass_matrix:
+  - {id: VT-MX-01, viewport: 1440, theme: dark, locale: en, view: overview, evidence: critic_return/scratch/first_1440_dark_en_overview.png}
+  - {id: VT-MX-02, viewport: 1440, theme: light, locale: en, view: moving, evidence: critic_return/scratch/first_1440_light_en_moving.png}
+  - {id: VT-MX-03, viewport: 390, theme: dark, locale: en, view: money, evidence: critic_return/scratch/first_390_dark_en_money.png}
+  - {id: VT-MX-04, viewport: 390, theme: dark, locale: zh, view: confluence, evidence: critic_return/scratch/first_390_dark_zh_confluence.png}
+  - {id: VT-MX-05, viewport: 320, theme: dark, locale: en, view: overview, evidence: critic_return/scratch/first_320_dark_en_overview.png}
+  - {id: VT-MX-06, viewport: 320, theme: dark, locale: zh, view: moving, evidence: critic_return/scratch/first_320_dark_zh_moving.png}
+
+amendment_accounting:
+  upheld: [VT-FP-001, VT-FP-002, VT-FP-003, VT-FP-004, VT-FP-005, VT-FP-006]
+  downgraded: []
+  withdrawn: []
+  new_after_reveal: []
+  final_verdict_changed: false
+
+findings: []
+
+verified_conditions:
+  - id: VT2-B2-05
+    severity: minor
+    attribution: candidate_strength
+    evidence: Mobile figures paint compact localized labels where desktop headers disappear; 320/390 Overview and Confluence retain primary-name dominance and meaningful figure labels without page overflow.
+    smallest_remedy: none
+  - id: VT2-B2-06
+    severity: minor
+    attribution: candidate_strength
+    evidence: Independent 390 EN and 320 ZH treemap renders show painted-width label pruning; primary identities survive and no sector/group collision is visible.
+    smallest_remedy: none
+  - id: VT2-B2-08
+    severity: minor
+    attribution: candidate_strength
+    evidence: Map scope and rank hierarchy remain adjacent and legible; desktop detail and mobile field summary do not orphan the explanation.
+    smallest_remedy: none
+  - id: VT2-B2-09
+    severity: minor
+    attribution: candidate_strength
+    evidence: Recent Wrong reads in neutral log ink in light and dark Track record renders; no positive/up-green endorsement is implied.
+    smallest_remedy: none
+  - id: VT2-B2-10
+    severity: minor
+    attribution: candidate_strength
+    evidence: Confluence mobile state cells recompose as a 2-column stack without the meaningless desktop horizontal ramp.
+    smallest_remedy: none
+  - id: VT2-B2-11
+    severity: minor
+    attribution: candidate_strength
+    evidence: Overview headline and its receipts remain in the same text flow at 320/390 EN/ZH; no detached line-one anchor was observed.
+    smallest_remedy: none
+  - id: VT2-B2-12
+    severity: minor
+    attribution: candidate_strength
+    evidence: Low confidence is visually separated from the 48-row omission sentence; the screen no longer asks one customer term to carry two facts.
+    smallest_remedy: none
+  - id: VT2-B2-15
+    severity: minor
+    attribution: candidate_strength
+    evidence: Context-only, proven-horizon, and never-sizes qualification is structured beside the track-record badge; adjacent 21d numbers remain a separate line.
+    smallest_remedy: none
+  - id: VT2-EMOJI
+    severity: minor
+    attribution: candidate_strength
+    evidence: Track record / 跟踪记录 remains intentional after emoji removal through type weight, measuring badge, metadata, table rules, and receipt footer; no childish garnish is needed.
+    smallest_remedy: none
+
+post_reveal_smoke:
+  views: [overview, map, moving, money, explore, confluence]
+  desktop: {viewport: 1440, theme: dark, locale: en, passed: true}
+  mobile: {viewport: 390, theme: dark, locales: [en, zh], passed: true}
+  page_level_horizontal_overflow_cells: 0
+  evidence_prefix: critic_return/scratch/post_smoke_
+
+strengths_not_to_disturb:
+  - Restrained blue thread and largely achromatic chrome; semantic hues remain meaningful.
+  - One dominant answer per view, strong primary-name hierarchy, compact mono receipts, and disciplined density.
+  - Light mode earns depth through surface and border structure rather than saturation.
+  - Mobile is a genuine recomposition: 2x3 navigation, stacked state cells, inline figure labels, and selective treemap naming.
+  - Emoji-free Track record is more institutional and remains clearly authored.
+  - EN/ZH typography and direction-color behavior feel intentional rather than mechanically translated.
+  - No sci-fi glow, novelty gradient, decorative badge inflation, or childish garnish.
+
+upstream_and_r3c_residue:
+  - id: VT2-R3C-01
+    attribution: upstream_production
+    residue: sc_flows byte-verbatim fragment has separately measured contrast/magnitude debt; it is not candidate-owned.
+  - id: VT2-R3C-02
+    attribution: upstream_producer
+    residue: Conviction naming collision, producer English-only category/reason strings, and generic reco_why remain upstream.
+  - id: VT2-R3C-03
+    attribution: upstream_production
+    residue: Broader production Forward track record Validated semantics and 21d pairing remain an owner repair beyond this reference qualification.
+  - id: VT2-GOV-01
+    attribution: governance_documentation
+    residue: Historical B2-01..11 shorthand in carried comments is stale governance residue, not candidate-byte visual debt.
+
+not_evaluable:
+  - id: VT2-NE-01
+    axis: heatmap_color_field_accessibility
+    status: UNMEASURED
+    note: Visually inspected only. No valid numeric method was established here, so no accessibility PASS or FAIL is claimed.
+  - id: VT2-NE-02
+    axis: production_runtime
+    status: NOT_EVALUABLE
+    note: Live Time Machine, real auth settlement, premiumdata enforcement, and production router behavior are outside this reference-only visual seat.
+  - id: VT2-NE-03
+    axis: assistive_technology_certification
+    status: NOT_EVALUABLE
+    note: Visual labels were inspected, but this seat does not replace the Mobile / Accessibility critic.
+
+strongest_counterargument: >
+  The 390 ZH Track record preserves a horizontally scrollable dense table whose scrollbar
+  competes visually with the logged-results row, and the 320 2x3 navigation consumes a
+  substantial part of the first viewport. A stricter taste critic could condition approval
+  on a quieter overflow affordance or less chrome. I do not: preserving column geometry is
+  preferable to crushing or hiding evidence, the page itself never overflows, all six tasks
+  remain immediately discoverable, and the primary answer still arrives within the first view.
+
+standing_prohibitions_honoured:
+  governed_candidate_modified: false
+  build_fixture_baseline_proposal_continuity_manifest_production_modified: false
+  github_mutation: false
+  commit_push_pr_merge: false
+  approval_yml_produced: false
+  r3c_started: false
+  sibling_results_read: false
+

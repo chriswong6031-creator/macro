@@ -1,0 +1,142 @@
+# Design-authority verdict packet (RIG V1 §7) — the forced comparison. Never "checks green, looks good."
+#
+# XPV2-SC-R3B.2, US Sector Central six-view workspace. Sol final substantive ruling is
+# PR #6337 issuecomment-5404196829, issued 2026-08-24 ET after direct review of the four
+# FRESH final critic receipts under protected Skillpack
+# mastermindx-market-intelligence/Mastermind@4d323d03e4151449a4b76abfdfefca1d56825fde.
+# Seat verdicts: product_regression PASS_WITH_CONDITIONS, visual_taste PASS,
+# mobile_accessibility PASS_WITH_CONDITIONS, data_authority PASS_WITH_CONDITIONS.
+# No surviving blocker, major or minor is attributable to the frozen candidate bytes.
+#
+# Bound artifact: frozen content commit d0830a374795925ee1e55b66c0cc42e329ac172d,
+# candidate MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html
+# sha256 4adb4b6245e8e4aa5b68c850a615461327c0a5d2e672e4c203d6ba32a3b8d53c, 5,506,871 bytes.
+# This verdict approves REFERENCE LAW ONLY. It is not production deployment and does not
+# authorize R3C implementation.
+schema: mastermind.rig_verdict.v1
+reference_id: mastermind-xpv2-sector-r3b-2
+
+authority:
+  identity: "Sol (AI CEO, mastermindx-market-intelligence) as design authority for the Sector Central reference line -- APPROVE_WITH_CONDITIONS ruling recorded on PR #6337 issuecomment-5404196829 on 2026-08-24 ET, under protected Sol Skillpack mastermindx-market-intelligence/Mastermind@4d323d03e4151449a4b76abfdfefca1d56825fde (mastermind.sol_skillpack.v1 v1.0.0). Authored zero candidate bytes and occupied no critic seat."
+  role: design_authority
+
+packet:
+  materially_improved: >
+    The six-view task architecture (Overview / Map / Moving / Money & Breadth / Explore /
+    Confluence) now carries one dominant answer per view with a legible scanning hierarchy
+    instead of competing panels. Mobile figure naming is repaired at the root: all 18 .r3-fig
+    instances are accessibly named at ALL widths via one semantic carrier, closing VTC1-001
+    together with MAC1-001 and PRC1R-002 rather than papering over them. Semantic clarity is
+    materially better -- theme_intel.themes[].score reads as Strength / 强度 at every binding
+    site, so one producer measure no longer wears two customer names; the thin/reliability
+    collision is resolved to the Sol-canonical Low confidence / 低置信度. Rank scope moved to
+    the point of use (Rank across all groups / 在全部分组中 in the Map/Themes rank header).
+    Recently-wrong history now reads in neutral ink instead of reserved up/positive/Buy colour.
+    The Money & Breadth track record paints the payload's own qualification --
+    "Context only · evidence proven at 5d · never sizes decisions" plus its native ZH twin --
+    adjacent to the badge and visually separate from explicitly labelled 21d figures. Tone is
+    institutional throughout: the decoded chart emoji is gone from the Track record heading and
+    a decoded-output guard now prevents its return. All of this holds while the bidirectional
+    capability inventory proves zero production capability was lost.
+  materially_worsened: >
+    Nothing material attributable to the frozen candidate. The four independent final seats
+    found no surviving candidate-owned blocker, major or minor. The residual conditions below
+    are live-integration proof, upstream producer ownership, or an explicit measurement limit;
+    none is a defect introduced by these candidate bytes.
+  disappeared: >
+    No producer-backed capability disappeared. The bidirectional inventory check runs in both
+    directions -- expected production inventory into the candidate, and candidate back into the
+    allowed production/projection inventory -- and passes, with a unique-kill mutation suite
+    proving each pinned hero capability's removal produces its own distinct red. The single
+    intentional removal is the decorative chart emoji in the Moving Track Record heading, which
+    carried no information; its removal is audited across source, numeric entities, DOM text,
+    accessible names and generated content, 12/12 EN/ZH six-view cells, zero violations.
+  behavior_harder: >
+    No important customer task was shown materially harder by any seat. The candidate is a
+    static reference, so live auth settlement, /premiumdata/ authorization and Time Machine
+    episode loading are outside what it can prove either way -- that is a limit of the proof
+    surface, not an observed regression, and it is carried below as R3C-AUTH-PREMIUM and
+    R3C-TIME-MACHINE rather than silently assumed good.
+  stronger_claims: >
+    The candidate makes no unwarranted authority claim; it narrows authority where production
+    overclaims. It invents no local rank, state or score, and it paints the track record's own
+    qualification -- context only, evidence proven at 5d, never sizes decisions -- instead of
+    letting a badge imply a proven horizon. The broader production-owned
+    "Forward track record: Validated" wording, the unproven 21d horizon and the overloaded
+    customer word "validated" remain a future-owner condition (R3C-VALIDATED-21D), not
+    something this reference certifies or repairs.
+  intent_vs_convenience: >
+    Every repair traces to product and authority intent rather than implementation convenience.
+    The figure-label fix uses one semantic carrier with responsive presentation instead of the
+    cheaper duplicate-announcement idiom. Treemap collision handling is painted-width based
+    rather than guessed from character count. The state ramp is suppressed exactly when its
+    spatial reference disappears, not at an arbitrary breakpoint. The B2-01 naming repair
+    amended an instruction whose premise the Data seat had proven false, rather than obeying it
+    for convenience. No local producer truth was invented anywhere.
+  production_preferable_for: >
+    Only the live runtime integrations a static reference cannot carry: real authenticated
+    hydrate of /premiumdata/sector_central.json with its 401/403/offline/malformed behavior,
+    and live Time Machine manifest/feed/chunk loading. Production is NOT preferable for the
+    information or interaction architecture: on every compared surface the seats found the
+    reference equal to or more honest than production, including one place where the reference
+    proved a production falsehood that still ships to customers.
+  strongest_argument_against: >
+    Two things are approved without being proven. Heatmap colour-field glyph legibility is
+    UNMEASURED -- not PASS -- because no seat had a valid composited-background method, and a
+    reference that becomes migration law while one of its dense surfaces is unmeasured is
+    taking that risk forward. And the broader production-owned "Validated" / unproven-21d
+    semantics remain unrepaired upstream, so a customer can still meet an overclaiming word on
+    a neighbouring production surface. Both are carried as binding conditions rather than
+    waived, and neither is a defect of these candidate bytes -- but an approval that did not
+    name them would overstate what was established.
+
+blocking_findings: []
+
+overrides: []
+
+verdict: APPROVE_WITH_CONDITIONS
+
+conditions:
+  - id: R3C-HEATMAP-LEGIBILITY
+    text: >
+      Heatmap colour-field glyph legibility remains UNMEASURED, never PASS. No seat in this
+      cycle held a valid blended/painted-substrate method, and the Mobile seat explicitly
+      declined an invalid flat-surface substitution (MA2-002). R3C must obtain an appropriate
+      composited-background or human-equivalent determination before production acceptance;
+      failure blocks shipping until a bounded treatment is adjudicated by design authority.
+  - id: R3C-AUTH-PREMIUM
+    text: >
+      R3C must prove real auth settlement, /premiumdata/sector_central.json authorization,
+      successful hydrate, preview preservation for the ungated state, and 401 / 403 / offline /
+      malformed behavior against the live surface. The static reference cannot establish any of
+      these and does not claim to.
+  - id: R3C-TIME-MACHINE
+    text: >
+      R3C must prove live Time Machine behavior end to end: manifest, episode feed, per-period
+      and per-year chunks, and the empty, missing and failure paths. Recorded-not-executed
+      evidence is not production proof.
+  - id: R3C-VALIDATED-21D
+    text: >
+      R3C must resolve the broader production-owned "Forward track record: Validated" wording,
+      the unproven-21d horizon, and the overloaded customer word "validated" -- while
+      preserving the candidate's explicit and narrower disclosure,
+      "Context only · evidence proven at 5d · never sizes decisions", together with its native
+      ZH twin and the visual separation from explicitly labelled 21d figures.
+  - id: R3C-NO-UNSUPPORTED-INVENTION
+    text: >
+      Baskets thin/gateable disclosure and any correction/revision UI remain FORBIDDEN until
+      real producer contracts exist. No implementation may invent local producer truth,
+      local rank, local state or local score to satisfy a surface.
+
+preserved_strengths:
+  - "Quiet Conviction: one dominant answer per view, no competing focal points."
+  - "The six-view task architecture (Overview / Map / Moving / Money & Breadth / Explore / Confluence) as the desk's information spine."
+  - "Restrained blue / achromatic chrome; colour spent only where it carries meaning."
+  - "Semantic colour only -- direction and health tokens kept separate, never decorative."
+  - "Real mobile recomposition rather than a scaled-down desktop: six task destinations stay immediately discoverable at the smallest viewport."
+  - "Strong primary-name hierarchy so identity survives before any number is read."
+  - "Compact receipts: methodology stays one interaction away, coherently wired via aria-expanded / aria-controls."
+  - "Exact producer ownership -- every number, state, universe, route and clock traceable to its frozen canonical producer."
+  - "EN/ZH parity including native ZH twins and correct direction-colour inversion."
+  - "No emoji, glow, novelty gradient or badge inflation anywhere in the surface."
+  - "No local rank, state or score authority invented by the reference."
