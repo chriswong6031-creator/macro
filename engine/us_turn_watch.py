@@ -1156,10 +1156,16 @@ def _source_counts(rows: list[dict[str, Any]]) -> dict[str, int]:
     return dict(sorted(counts.items(), key=lambda kv: (-kv[1], kv[0])))
 
 
-def compute_deck(data_root: Path | None = None, site_root: Path | None = None, *,
-                 universe_limit: int | None = None, cap: int = DECK_CAP,
-                 lane_floor: int = LANE_FLOOR, market: str = "US") -> dict[str, Any]:
-    """Build the whole deck. Never raises; returns the artifact dict.
+def compute_deck_with_candidates(
+    data_root: Path | None = None,
+    site_root: Path | None = None,
+    *,
+    universe_limit: int | None = None,
+    cap: int = DECK_CAP,
+    lane_floor: int = LANE_FLOOR,
+    market: str = "US",
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """Build the public deck and its private, uncapped triggered-row sidecar.
 
     Schema (published; the page ships next session under the design lane):
 
@@ -1239,7 +1245,7 @@ def compute_deck(data_root: Path | None = None, site_root: Path | None = None, *
               f"(> {RUNTIME_WARN_SECONDS}s) over {len(closes)} graded names — "
               f"consider universe_limit", flush=True)
 
-    return {
+    artifact = {
         "schema": SCHEMA,
         "as_of": session or datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         # MAJORITY session, never the universe max — see `_session_stamp`. `max_session` is
@@ -1293,6 +1299,18 @@ def compute_deck(data_root: Path | None = None, site_root: Path | None = None, *
                         "triggers_fired": list(r.get("triggers_fired") or []),
                         "basket": r.get("basket")} for r in beyond],
     }
+    return artifact, rows
+
+
+def compute_deck(data_root: Path | None = None, site_root: Path | None = None, *,
+                 universe_limit: int | None = None, cap: int = DECK_CAP,
+                 lane_floor: int = LANE_FLOOR, market: str = "US") -> dict[str, Any]:
+    """Compatibility wrapper for the public, capped TURN WATCH artifact."""
+    artifact, _rows = compute_deck_with_candidates(
+        data_root, site_root, universe_limit=universe_limit, cap=cap,
+        lane_floor=lane_floor, market=market,
+    )
+    return artifact
 
 
 def write_artifact(artifact: dict[str, Any], site_root: Path | None = None) -> Path:

@@ -1,0 +1,260 @@
+"""Canonical, source-specific intake for B1 candidate-episode observations.
+
+This module only normalizes producer records for ``us_candidate_episode``.  It never
+re-ranks, re-gates, or owns an episode lifecycle; reconciliation remains the sole writer.
+"""
+from __future__ import annotations
+
+import json
+from dataclasses import dataclass
+from datetime import date, datetime, timezone
+from hashlib import sha256
+from pathlib import Path
+from typing import Any, Mapping
+
+import pandas as pd
+
+from engine.session_digest import session_window_et
+from engine.stock_identity.fingerprint import spec_hash
+from engine.us_candidate_episode import anchor_token, canonical_json
+from lib.dataos.identity import IssuerMaster, VendorAliasTable
+
+
+TURN_WATCH_SCHEMA = "prophet.candidate_episode_input.turn_watch/v1"
+IDENTITY_SCHEMA = "stock_identity.fingerprint_spec.v1"
+
+
+@dataclass(frozen=True)
+class IdentitySpine:
+    aliases: VendorAliasTable
+    issuers: IssuerMaster
+
+
+@dataclass(frozen=True)
+class IntakeBatch:
+    observations: tuple[dict[str, object], ...]
+    suppressions: tuple[dict[str, object], ...]
+    source_receipts: tuple[dict[str, object], ...]
+
+
+def _records(path: Path) -> list[dict[str, object]]:
+    return [dict(row) for row in pd.read_parquet(path).to_dict("records")]
+
+
+def load_identity_spine(data_root: Path) -> IdentitySpine:
+    """Load the one Data OS alias/issuer reader pair; never recreate identity locally."""
+    reference = Path(data_root) / "reference"
+    aliases = VendorAliasTable.from_records(_records(reference / "vendor_aliases.parquet"))
+    issuers = IssuerMaster.from_records(_records(reference / "security_master.parquet"))
+    return IdentitySpine(aliases=aliases, issuers=issuers)
+
+
+def _session(value: object) -> date | None:
+    try:
+        return datetime.fromisoformat(str(value)[:10]).date()
+    except (TypeError, ValueError):
+        return None
+
+
+def _close(value: object) -> str | None:
+    session = _session(value)
+    if session is None:
+        return None
+    return session_window_et(session)[1].astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _timestamp(value: object, session: object) -> str | None:
+    if isinstance(value, str) and value.endswith("Z"):
+        try:
+            datetime.fromisoformat(value.replace("Z", "+00:00"))
+            return value
+        except ValueError:
+            return None
+    return _close(session)
+
+
+def _receipt(value: object) -> str | None:
+    text = str(value or "")
+    if text.startswith("sha256:") and len(text) == 71 and all(c in "0123456789abcdef" for c in text[7:]):
+        return text
+    return None
+
+
+def _source_id(source: str, row: Mapping[str, object]) -> str:
+    return f"{source}:" + sha256(canonical_json(dict(row)).encode("utf-8")).hexdigest()
+
+
+def _suppression(source: str, schema: str, source_event_id: str, receipt: str | None,
+                 ticker: object, reason: str) -> dict[str, object]:
+    return {
+        "schema": "prophet.candidate_episode_suppression/v1",
+        "source_system": source,
+        "source_schema": schema,
+        "source_event_id": source_event_id,
+        "source_receipt": receipt,
+        "ticker_at_observation": str(ticker or "") or None,
+        "reason": reason,
+    }
+
+
+def _identity(spine: IdentitySpine, ticker: object, on: object) -> tuple[str | None, str | None]:
+    session = _session(on)
+    if session is None:
+        return None, None
+    security = spine.aliases.resolve("membership", str(ticker or ""), on=session)
+    return security, spine.issuers.issuer_of_security(security) if security else None
+
+
+def _observation(*, source: str, schema: str, source_event_id: str, receipt: str,
+                 ticker: object, session: object, spine: IdentitySpine,
+                 intake_class: str, anchor: dict[str, object] | None = None,
+                 occurred_at: object = None, known_at: object = None,
+                 expert_event_id: str | None = None) -> tuple[dict[str, object] | None, str | None]:
+    security, company = _identity(spine, ticker, session)
+    if security is None:
+        return None, "IDENTITY_UNRESOLVED"
+    if company is None:
+        return None, "ISSUER_UNRESOLVED"
+    occurred = _timestamp(occurred_at, session)
+    known = _timestamp(known_at, session)
+    if occurred is None or known is None:
+        return None, "MALFORMED_RECEIPT"
+    result: dict[str, object] = {
+        "security_id": security, "company_id": company,
+        "ticker_at_observation": str(ticker), "identity_epoch": "epoch_0",
+        "identity_epoch_state": "provisional", "identity_spec_schema": IDENTITY_SCHEMA,
+        "identity_spec_hash": spec_hash(), "anchor": anchor, "intake_class": intake_class,
+        "occurred_at": occurred, "known_at": known, "source_system": source,
+        "source_schema": schema, "source_event_id": source_event_id, "source_receipt": receipt,
+    }
+    if expert_event_id is not None:
+        result["expert_event_id"] = expert_event_id
+    return result, None
+
+
+def turn_watch_observations(path: Path, spine: IdentitySpine) -> IntakeBatch:
+    """Normalize full private TURN WATCH rows; only this source provides a structural anchor."""
+    source, schema = "turn_watch", TURN_WATCH_SCHEMA
+    try:
+        document = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return IntakeBatch((), (), ({"source": source, "status": "degraded", "reason": "UNREADABLE_SOURCE"},))
+    rows = document.get("rows") if isinstance(document, Mapping) else None
+    digest = document.get("content_sha256") if isinstance(document, Mapping) else None
+    receipt = _receipt(f"sha256:{digest}" if isinstance(digest, str) else None)
+    if document.get("schema") != TURN_WATCH_SCHEMA or not isinstance(rows, list):
+        return IntakeBatch((), (), ({"source": source, "status": "degraded", "reason": "MALFORMED_SOURCE"},))
+    expected_digest = sha256(canonical_json({key: value for key, value in document.items()
+                                              if key != "content_sha256"}).encode("utf-8")).hexdigest()
+    if receipt is None or digest != expected_digest:
+        suppressions = tuple(
+            _suppression(source, schema, _source_id(source, {"data_session": document.get("data_session"),
+                                                               "row": dict(row) if isinstance(row, Mapping) else {}}),
+                         None, row.get("ticker") if isinstance(row, Mapping) else None,
+                         "MALFORMED_RECEIPT")
+            for row in rows
+        )
+        return IntakeBatch((), suppressions,
+                           ({"source": source, "status": "degraded", "reason": "MALFORMED_RECEIPT"},))
+    observations: list[dict[str, object]] = []
+    suppressions: list[dict[str, object]] = []
+    session = document.get("data_session")
+    known = document.get("known_at")
+    for raw in rows:
+        row = dict(raw) if isinstance(raw, Mapping) else {}
+        event_id = _source_id(source, {"data_session": session, "row": row})
+        ticker = row.get("ticker")
+        fired = row.get("triggers")
+        if not isinstance(fired, Mapping) or not any(isinstance(v, Mapping) and v.get("fired")
+                                                     for v in fired.values()):
+            suppressions.append(_suppression(source, schema, event_id, receipt, ticker, "MISSING_TRIGGER"))
+            continue
+        if any(isinstance(v, Mapping) and v.get("fired") and not v.get("evaluated", False)
+               for v in fired.values()):
+            suppressions.append(_suppression(source, schema, event_id, receipt, ticker, "UNEVALUATED_TRIGGER"))
+            continue
+        reset = row.get("reset")
+        if not isinstance(reset, Mapping) or reset.get("reset_low") is None or not reset.get("reset_low_date"):
+            suppressions.append(_suppression(source, schema, event_id, receipt, ticker, "MISSING_RESET_LOW"))
+            continue
+        anchor_time = _close(reset.get("reset_low_date"))
+        if anchor_time is None:
+            suppressions.append(_suppression(source, schema, event_id, receipt, ticker, "MALFORMED_RECEIPT"))
+            continue
+        anchor = {"kind": "turn_watch_reset_low", "time": anchor_time,
+                  "price": reset["reset_low"], "basis": "adjusted_close", "source_receipt": receipt}
+        observation, reason = _observation(
+            source=source, schema=schema, source_event_id=event_id, receipt=receipt,
+            ticker=ticker, session=session, spine=spine, intake_class="technical_emergence",
+            anchor=anchor, occurred_at=min((v.get("last_date") for v in fired.values()
+                                            if isinstance(v, Mapping) and v.get("fired") and v.get("last_date")),
+                                           default=session), known_at=known,
+        )
+        if observation is None:
+            suppressions.append(_suppression(source, schema, event_id, receipt, ticker, str(reason)))
+        else:
+            observations.append(observation)
+    return IntakeBatch(tuple(observations), tuple(suppressions),
+                       ({"source": source, "status": "ok", "rows": len(rows)},))
+
+
+def _unanchored_batch(source: str, schema: str, rows: list[dict[str, object]], spine: IdentitySpine,
+                      *, ticker_key: str = "ticker", session_key: str = "as_of",
+                      radar: bool = False) -> IntakeBatch:
+    observations: list[dict[str, object]] = []
+    suppressions: list[dict[str, object]] = []
+    for row in rows:
+        ticker, session = row.get(ticker_key), (row.get(session_key) or row.get("date")
+                                                 or row.get("decision_session")
+                                                 or row.get("signal_ts"))
+        event_id = str(row.get("event_id") or _source_id(source, row))
+        if radar and not row.get("event_id"):
+            receipt = "sha256:" + sha256(canonical_json(row).encode("utf-8")).hexdigest()
+            suppressions.append(_suppression(source, schema, event_id, receipt, ticker,
+                                             "MISSING_EXPERT_EVENT_ID"))
+            continue
+        receipt = "sha256:" + sha256(canonical_json(row).encode("utf-8")).hexdigest()
+        if bool(row.get("historical") or row.get("replay")) and not str(row.get("security_id") or "").startswith("SEC:"):
+            suppressions.append(_suppression(source, schema, event_id, receipt, ticker, "HISTORICAL_IDENTITY_UNPROVEN"))
+            continue
+        observation, reason = _observation(
+            source=source, schema=schema, source_event_id=event_id, receipt=receipt, ticker=ticker,
+            session=session, spine=spine, intake_class="technical_emergence", anchor=None,
+            occurred_at=row.get("signal_ts"), known_at=row.get("signal_known_ts") or row.get("observed_at"),
+            expert_event_id=event_id if radar else None,
+        )
+        if observation is None:
+            suppressions.append(_suppression(source, schema, event_id, receipt, ticker, str(reason)))
+        else:
+            observations.append(observation)
+    return IntakeBatch(tuple(observations), tuple(suppressions),
+                       ({"source": source, "status": "ok", "rows": len(rows)},))
+
+
+def candidate_observations(data_root: Path, spine: IdentitySpine) -> IntakeBatch:
+    paths = sorted((Path(data_root) / "us_prophet_rank" / "candidates").glob("*.parquet"))
+    if not paths:
+        return IntakeBatch((), (), ({"source": "candidate", "status": "degraded", "reason": "MISSING_SOURCE_FILE"},))
+    rows = [row for path in paths for row in _records(path)]
+    sessions = [str(row.get("as_of") or row.get("data_session") or "") for row in rows]
+    current = max((value for value in sessions if _session(value) is not None), default=None)
+    if current is not None:
+        rows = [row for row in rows if str(row.get("as_of") or row.get("data_session")) == current]
+    return _unanchored_batch("candidate", "us_candidate_pool_v1", rows, spine)
+
+
+def door_observations(path: Path, spine: IdentitySpine) -> IntakeBatch:
+    if not Path(path).exists():
+        return IntakeBatch((), (), ({"source": "doors", "status": "degraded", "reason": "MISSING_SOURCE_FILE"},))
+    rows = [json.loads(line) for line in Path(path).read_text(encoding="utf-8").splitlines() if line.strip()]
+    current = max((str(row.get("date") or "") for row in rows if _session(row.get("date")) is not None), default=None)
+    if current is not None:
+        rows = [row for row in rows if str(row.get("date")) == current]
+    return _unanchored_batch("doors", "prophet_doors/v1", rows, spine, session_key="date")
+
+
+def radar_observations(path: Path, spine: IdentitySpine) -> IntakeBatch:
+    if not Path(path).exists():
+        return IntakeBatch((), (), ({"source": "entry_radar", "status": "degraded", "reason": "MISSING_SOURCE_FILE"},))
+    return _unanchored_batch("entry_radar", "mastermind.entry_event.v1", _records(Path(path)), spine,
+                             session_key="decision_session", radar=True)
