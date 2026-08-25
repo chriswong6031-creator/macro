@@ -13,6 +13,8 @@ owner: coo-fable
 class: build
 blast_radius: reversible
 ambiguity: open
+decisions:
+  - "DEC:CI-EXECUTION-PROFILE-V2"
 discoveries:
   - "DSC:CI-CHANGED-FILES-ENV-HAS-AN-EXECVE-CEILING"
   - "DSC:GITHUB-CONCURRENCY-SUPERSEDES-PENDING"
@@ -126,6 +128,44 @@ waves:
       dossier_identity_end_to_end, dossier_numeric_contract) - they red only
       the data-gated workflow-yaml job (data-health lane); owners' follow-up,
       deliberately not absorbed.
+  - id: W3-PLANNER-CONTAINMENT
+    title: ci-plan working-tree containment on the sole ci.yml carrier
+    status: done
+    pr: 6286
+    note: >
+      PR #6286 merged 2026-08-25T22:36:54Z as
+      fafe8d7ee775f8b60a0229c085fb7aee6d4349e7 on exact head
+      a8842dd5c6db23753c916aa27005aa7cab0c88ab under Sol's corrected W3
+      acceptance law (review 5023367453) and the Chairman release recorded
+      on the carrier. The corrected gate replaced the sub-60s ci-plan timing
+      metric (hosted ref-fetch latency is not W3's capability) with one
+      truthful terminal same-head binding graph: run 32893976114 attempt 2
+      concluded SUCCESS at 22:19:30Z after attempt 1's ci-pack-6 died inside
+      actions/checkout for ~64 minutes with zero tests executed — a
+      checkout-only infrastructure failure recorded as issue #6351 evidence,
+      healed by the one permitted same-head targeted retry. W3 deliberately
+      fixed ci-plan only: the planner runs in a sparse tracked-paths
+      checkout (--tracked-paths-file, scripts/ci_scope_dependencies) while
+      ci-pack materialization remains the old hosted blob:none full-tree
+      path, now explicitly owned by the #6351 trusted self-hosted promotion.
+  - id: W-SELFHOSTED-BRIDGE
+    title: P0R diagnostic bridge — canary reconciled to the current semantic contract
+    status: in_progress
+    note: >
+      Issue #6351 is the sole coordination/evidence carrier for trusted
+      self-hosted CI promotion (Sol CEO incident command 2026-08-25T19:52Z;
+      Fable COO is the single principal owner bridge through P4). The bridge
+      implements Sol's frozen design: one narrowly admitted diagnostic plan
+      pair (pr_head/workflow_dispatch, valid ONLY for workflow
+      infrastructure-selfhosted-ci-canary) in build_plan and
+      load_authoritative_plan; ci_semantic_proof byte-unchanged and
+      hostile-tested closed; canary pinned to Python 3.12.13 and gate code;
+      hosted and self-hosted canary consumers consume ONE frozen plan via
+      --plan-json with strict semantic-fragment parity; portable Linux
+      execution profile v2 per DEC:CI-EXECUTION-PROFILE-V2. Sequence after
+      the bridge: live runner/group census, P1 one-slot, P2 three CI slots
+      plus render reservation, P3A inert trusted executor, P3B production
+      route with hosted ci-pack-N anchors, P4 three natural PR proofs.
 next_action: >
   W-TRANSPORT and W-PR-EVENT-CAUSALITY are closed. Do not reopen either for a
   new CI-speed, runner, branch-protection, or cancellation-system proposal.
@@ -139,6 +179,11 @@ next_action: >
   scripts/ci_gate_reliability_report.py plus two consecutive ordinary PRs
   merged with no main-red-repair. W-SEMANTIC-PROOF remains stopped; W-REWRITE
   remains separately commissioned.
+  W3-PLANNER-CONTAINMENT is closed; W-SELFHOSTED-BRIDGE (issue #6351, Fable
+  COO principal) owns the permanent ci-pack materialization repair — hosted
+  packs still run the blob:none full-tree checkout that produced the #6406
+  and #6286 attempt-1 checkout-only failures; do not absorb pack-checkout
+  repairs into product PRs or reopen them here outside the #6351 sequence.
 owns_paths:
   - ".github/workflows/ci.yml"
   - ".github/workflows/merge-on-green.yml"

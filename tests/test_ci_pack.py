@@ -1764,6 +1764,196 @@ def test_the_supported_role_event_set_stays_closed() -> None:
     assert source.count("(role, event) not in SUPPORTED_PLAN_ROLE_EVENTS") == 2
 
 
+def test_runner_contract_is_the_v2_linux_x86_64_string() -> None:
+    """RUNNER_CONTRACT v2 (#6351 P0R bridge): a truthful logical claim about
+    the runtime `attest_execution_profile` enforces, replacing the
+    "ubuntu-latest" image name the v1 string aspirationally described.
+    """
+    assert PACK.RUNNER_CONTRACT == "ci-pack/linux-x86_64/python-3.12.13/node-20/v2"
+
+
+def test_diagnostic_canary_workflow_constant_names_the_exact_workflow() -> None:
+    assert PACK.DIAGNOSTIC_CANARY_WORKFLOW == "infrastructure-selfhosted-ci-canary"
+
+
+def test_runner_contract_v2_participates_in_the_job_semantic_digest(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Changing the runtime contract must change what every job's digest
+    means — that is the whole point of a semantic contract version bump.
+    """
+    job = _plan_job("demo", 0)
+    before = PACK.semantic_job_digest(job)
+    monkeypatch.setattr(
+        PACK, "RUNNER_CONTRACT", "ci-pack/linux-x86_64/python-3.12.13/node-20/v3"
+    )
+    after = PACK.semantic_job_digest(job)
+    assert before != after
+
+
+def test_build_plan_admits_the_diagnostic_pair_only_for_its_exact_workflow_name(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """``(pr_head, workflow_dispatch)`` is admitted ONLY when ``workflow``
+    equals the exact canary name — SUPPORTED_PLAN_ROLE_EVENTS itself stays
+    closed (pinned separately by test_the_supported_role_event_set_stays_closed).
+    """
+    _freeze_scope_inference(monkeypatch)
+    jobs = [_plan_job("demo", 0)]
+    base = "b" * 40
+    plan = PACK.build_plan(
+        jobs,
+        ["engine/example.py"],
+        changed_from=base,
+        scope_mode="active",
+        pack_count=1,
+        workflow=PACK.DIAGNOSTIC_CANARY_WORKFLOW,
+        event="workflow_dispatch",
+        role="pr_head",
+        tested_tree_sha="a" * 40,
+        subject_head_sha="c" * 40,
+        base_sha=base,
+    )
+    assert plan.role == "pr_head"
+    assert plan.event == "workflow_dispatch"
+    assert plan.workflow == PACK.DIAGNOSTIC_CANARY_WORKFLOW
+
+    for other_workflow in ("ci", "some-other-workflow"):
+        with pytest.raises(PACK.ManifestError, match="unsupported"):
+            PACK.build_plan(
+                jobs,
+                ["engine/example.py"],
+                changed_from=base,
+                scope_mode="active",
+                pack_count=1,
+                workflow=other_workflow,
+                event="workflow_dispatch",
+                role="pr_head",
+                tested_tree_sha="a" * 40,
+                subject_head_sha="c" * 40,
+                base_sha=base,
+            )
+
+
+def test_build_plan_still_requires_every_pr_head_invariant_for_the_diagnostic_pair(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The diagnostic pair is a narrower ADMISSION, not a relaxed invariant:
+    exact changed-file inventory and changed_from == base_sha still apply
+    (spec item A.2).
+    """
+    _freeze_scope_inference(monkeypatch)
+    jobs = [_plan_job("demo", 0)]
+    with pytest.raises(PACK.ManifestError, match="exact changed-file inventory"):
+        PACK.build_plan(
+            jobs,
+            None,
+            changed_from="b" * 40,
+            scope_mode="active",
+            pack_count=1,
+            workflow=PACK.DIAGNOSTIC_CANARY_WORKFLOW,
+            event="workflow_dispatch",
+            role="pr_head",
+            tested_tree_sha="a" * 40,
+            subject_head_sha="c" * 40,
+            base_sha="b" * 40,
+        )
+    with pytest.raises(PACK.ManifestError, match="changed_from must equal"):
+        PACK.build_plan(
+            jobs,
+            ["engine/example.py"],
+            changed_from="b" * 40,
+            scope_mode="active",
+            pack_count=1,
+            workflow=PACK.DIAGNOSTIC_CANARY_WORKFLOW,
+            event="workflow_dispatch",
+            role="pr_head",
+            tested_tree_sha="a" * 40,
+            subject_head_sha="c" * 40,
+            base_sha="f" * 40,
+        )
+
+
+def test_build_plan_refuses_the_old_broken_main_dispatch_with_changed_from(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Mutation-lock (#6351 addendum): the pre-fix canary passed
+    ``--changed-from`` unconditionally, including for the ``pr_number=0``
+    main dispatch. That shape must stay refused — the fix is to stop
+    sending it for pr0, never to admit it.
+    """
+    _freeze_scope_inference(monkeypatch)
+    jobs = [_plan_job("demo", 0)]
+    with pytest.raises(PACK.ManifestError, match="main semantic plan"):
+        PACK.build_plan(
+            jobs,
+            ["engine/example.py"],
+            changed_from="a" * 40,
+            scope_mode="active",
+            pack_count=1,
+            workflow=PACK.DIAGNOSTIC_CANARY_WORKFLOW,
+            event="workflow_dispatch",
+            role="main",
+            tested_tree_sha="a" * 40,
+            subject_head_sha="a" * 40,
+            base_sha="a" * 40,
+        )
+
+
+def test_attest_execution_profile_refuses_on_this_real_non_linux_host() -> None:
+    """Real, un-mocked function on the real (macOS) host — the frozen spec
+    requires at least one test exercising the genuine refusal path via
+    faked ``platform`` attrs, never by actually running on Linux. This one
+    needs no faking at all: this Mac is not Linux.
+    """
+    with pytest.raises(PACK.ExecutionProfileError, match="Linux"):
+        PACK.attest_execution_profile(None)
+
+
+def test_attest_execution_profile_checks_system_machine_python_node_in_order(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(PACK.platform, "system", lambda: "Darwin")
+    with pytest.raises(PACK.ExecutionProfileError, match="Linux"):
+        PACK.attest_execution_profile(None)
+
+    monkeypatch.setattr(PACK.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(PACK.platform, "machine", lambda: "arm64")
+    with pytest.raises(PACK.ExecutionProfileError, match="x86_64"):
+        PACK.attest_execution_profile(None)
+
+    monkeypatch.setattr(PACK.platform, "machine", lambda: "x86_64")
+    monkeypatch.setattr(PACK.platform, "python_version", lambda: "3.12.14")
+    with pytest.raises(PACK.ExecutionProfileError, match="3.12.13"):
+        PACK.attest_execution_profile(None)
+
+    monkeypatch.setattr(PACK.platform, "python_version", lambda: "3.12.13")
+    monkeypatch.setattr(PACK, "_node_major_version", lambda: 18)
+    with pytest.raises(PACK.ExecutionProfileError, match="node 20"):
+        PACK.attest_execution_profile(None)
+
+    monkeypatch.setattr(PACK, "_node_major_version", lambda: 20)
+    # All four checks satisfied and no plan -> success (tree-sha check skipped).
+    PACK.attest_execution_profile(None)
+
+
+def test_attest_execution_profile_checks_checkout_head_against_the_plan(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(PACK.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(PACK.platform, "machine", lambda: "x86_64")
+    monkeypatch.setattr(PACK.platform, "python_version", lambda: "3.12.13")
+    monkeypatch.setattr(PACK, "_node_major_version", lambda: 20)
+    plan = _full_plan()
+    monkeypatch.setattr(PACK, "_workspace_root", lambda: Path("/tmp"))
+    monkeypatch.setattr(PACK, "_current_commit_sha", lambda root: "0" * 40)
+    with pytest.raises(PACK.ExecutionProfileError, match="does not match attested"):
+        PACK.attest_execution_profile(plan)
+
+    monkeypatch.setattr(PACK, "_current_commit_sha", lambda root: plan.tested_tree_sha)
+    PACK.attest_execution_profile(plan)  # no raise
+
+
 def test_plan_is_deterministic() -> None:
     first = _full_plan()
     second = _full_plan()
