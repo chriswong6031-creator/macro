@@ -177,7 +177,10 @@ waves:
       HEAD-referenced immutable generation, receipt/source hashes, workflow ancestry,
       and read-only canonical-reader proof. The B1 step itself is schedule-only and is
       skipped by daily workflow_dispatch; a manual dispatch, rerun, replay, report mode,
-      or CI fixture is not natural acceptance. D5 remains blocked until then.
+      or CI fixture is not natural acceptance. The Radar lineage input remains
+      PROPOSED/STAGED_NOT_ARMED: only WS:LIVE-ENTRY-RADAR may freeze and validate its
+      forward-projection contract and require exact immutable event_id before PRODUCED.
+      Do not arm or manufacture that store here. D5 remains blocked until then.
   - id: b2
     depends_on: [b1]
     title: "V4-B2 — entry-event correction hardening (B-15..B-19)"
@@ -586,7 +589,8 @@ next_action: >
   then wait for the first ordinary scheduled nightly descendant and validate the exact
   HEAD-selected immutable generation, receipt/source hashes, ancestry, and canonical
   read path. The B1 workflow step is schedule-only; do not dispatch, rerun, or replay as
-  a substitute. D5 remains blocked;
+  a substitute. Radar forward lineage remains PROPOSED/STAGED_NOT_ARMED until its owner
+  freezes and validates an exact immutable-event relationship contract. D5 remains blocked;
   PR #6275 stays a contract-only carrier to reconcile only after B1 acceptance without
   losing its frozen D5 evidence terms. A2/A3/A4 and all other V4 waves remain separate.
 ---

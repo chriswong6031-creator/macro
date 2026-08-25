@@ -41,11 +41,13 @@ changed:
       prophet-us-context-and-grades while TURN WATCH stays in its existing owner.
   - path: config/dataset_registry.yml
     what: >
-      Registers six proposed B1 input/output contracts plus the three existing produced
-      inputs B1 actually loads: context-vector candidates, Door flags, and Radar forward
-      events. Their incumbent owners remain explicit, event identity is event_id/content_address,
-      both event and suppression lineage list every intake, and only the generation selected
-      by validated HEAD.json is canonical.
+      Registers six proposed B1 input/output contracts plus every upstream path B1 loads:
+      two produced incumbent inputs (context-vector candidates and Door flags) and one
+      PROPOSED/STAGED_NOT_ARMED Radar forward projection. Their incumbent owners remain
+      explicit, B1 event identity is event_id/content_address, both event and suppression
+      lineage list every intake, and only the generation selected by validated HEAD.json
+      is canonical. The Radar projection cannot become PRODUCED until its owner freezes and
+      validates an exact immutable-event relationship contract.
   - path: tests/test_us_candidate_episode.py, tests/test_us_candidate_episode_intake.py, tests/test_us_candidate_episode_reconciler.py, tests/test_us_candidate_episode_wiring.py, tests/test_us_turn_watch.py
     what: >
       Pins event identity, PIT intake, atomic publication, natural-lane wiring,
@@ -149,6 +151,16 @@ verified:
       remained green at 378 and 189 passes; all twelve validate-only packs accepted
       203/203 jobs with daily.yml correctly widening scope to all packs.
   - claim: >
+      Fix round 2 removes the false Radar production/schema/identity claims while retaining
+      its exact lineage edge, incumbent owner, producer, and path.
+    command: >
+      PYTHONDONTWRITEBYTECODE=1 /opt/homebrew/bin/python3.12 -m pytest
+      tests/test_us_candidate_episode_wiring.py -q
+    result: >
+      Before the registry correction: 1 failed and 15 passed at the Radar status assertion.
+      After the registry correction: 16 passed. Shared pytest temporary-directory cleanup
+      warnings were unrelated to the B1 contract.
+  - claim: >
       Independent Task 3 review closed every original and follow-on atomicity,
       durability, validation, retry, and provenance finding before integration began.
     command: >
@@ -202,6 +214,7 @@ danger_areas:
   - "epoch_0 is provisional. A real Stock Identity epoch appends IDENTITY_SUPERSEDED; it never edits or recycles the old episode."
   - "The input sidecar is full and private; site/turn_watch remains capped display evidence and is not the B1 anchor store."
   - "Registry paths beneath generations are resolved through HEAD.generation_id; orphan bytes are noncanonical even when internally valid."
+  - "Radar forward lineage is declared but PROPOSED/STAGED_NOT_ARMED. mastermind.entry_event.v1 is source provenance, not the unversioned W5 projection schema; do not promote the row until the Radar owner freezes exact immutable event_id semantics."
 decisions:
   - DEC:PROPHET-B1-CANONICAL-EPISODE-BINDINGS
 ---

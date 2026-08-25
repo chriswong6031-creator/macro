@@ -10,9 +10,12 @@ answer: >
   company_id carries the exact Data OS ISS value; no Prophet-local identifier is
   minted. R2: identity_epoch is epoch_0 only as an explicitly provisional epoch,
   bound to stock_identity.fingerprint_spec.v1 and its exact spec hash; a future real
-  epoch appends IDENTITY_SUPERSEDED and never edits or recycles history. R3: Radar
-  relationships retain the exact content-addressed mastermind.entry_event.v1 event_id,
-  never Radar's ephemeral runtime episode_id or a reconstructed tuple. R4: only a full
+  epoch appends IDENTITY_SUPERSEDED and never edits or recycles history. R3: the accepted
+  Radar relationship target is the exact content-addressed mastermind.entry_event.v1
+  event_id, never Radar's ephemeral runtime episode_id or a reconstructed tuple. The
+  current PROPOSED/STAGED_NOT_ARMED W5 projection instead exposes an unversioned
+  episode_address that may be a legacy natural-key fallback; B1 accepts a nonempty value
+  only as a provisional relation, not as proven immutable event identity. R4: only a full
   uncapped TURN WATCH row with an evaluated fired trigger and complete reset-low anchor
   may open a natural B1 episode; candidate, Door, and unanchored Radar observations may
   attach to an active episode or emit a closed suppression, and Door R is not B1 re-arm
@@ -25,8 +28,9 @@ rationale: >
   The V4 freeze requires one episode at the grain security identity epoch x structural
   anchor x lifecycle. Data OS already owns security/issuer identity, Stock Identity
   owns epoch semantics, Radar owns expert events, and TURN WATCH owns structural
-  discovery. Reusing their exact addresses preserves point-in-time joins and prevents
-  ticker/date, expert-key, or runtime-ledger forks. A canonical event address must be
+  discovery. Reusing exact addresses where they are validated preserves point-in-time
+  joins and prevents ticker/date, expert-key, or runtime-ledger forks; the current Radar
+  fallback is therefore explicitly provisional rather than relabelled exact. A canonical event address must be
   stable across harmless retries, so the writer clock cannot participate. Finally,
   sequential replacement of ledgers, projections, and receipts cannot be crash-atomic:
   only an immutable complete generation plus one atomic pointer provides a single
@@ -34,6 +38,12 @@ rationale: >
   gate, plan, Availability, or market-verdict authority. Declaring context-vector
   candidates, Door flags, and Radar forward events as registry inputs preserves their
   incumbent producers and owners; lineage is not an ownership transfer.
+  Context-vector candidates and Door flags are produced inputs. Radar forward events remain
+  a PROPOSED/STAGED_NOT_ARMED lineage declaration: its current W5 projection has an
+  unversioned episode_address that prefers event_id but may fall back to
+  ticker|detector_id|decision_session. B1 accepts only a nonempty relation today. The Radar
+  owner must freeze and validate a forward-projection contract that guarantees the exact
+  immutable event_id before the registry row can become PRODUCED.
 alternatives:
   - option: Key episodes by ticker/date or by an expert detector identifier
     why_not: >

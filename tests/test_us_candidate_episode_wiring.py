@@ -91,8 +91,7 @@ UPSTREAM_DATASETS = {
         "owner": "WS:LIVE-ENTRY-RADAR",
         "producer": "scripts/reconcile_entry_radar.py",
         "storage": "data/entry_radar/forward.parquet",
-        "status": "PRODUCED",
-        "schema_name": "mastermind.entry_event.v1",
+        "status": "PROPOSED",
     },
 }
 
@@ -246,14 +245,31 @@ def test_registry_declares_all_six_b1_contracts_and_clocks() -> None:
         assert "present-day state backward" in row["notes"]
 
 
-def test_registry_declares_the_three_existing_b1_upstream_stores_without_absorbing_ownership() -> None:
+def test_registry_declares_two_produced_upstreams_and_one_proposed_radar_input() -> None:
     contracts = {row["dataset_id"]: row for row in _load(REGISTRY)["datasets"]}
     assert UPSTREAM_DATASETS.keys() <= contracts.keys()
     for dataset_id, expected in UPSTREAM_DATASETS.items():
         row = contracts[dataset_id]
         for field in ("owner", "producer", "storage", "status"):
             assert row[field] == expected[field], f"{dataset_id}:{field}"
-        assert row["schema"]["contract_schema"]["value"] == expected["schema_name"]
+    for dataset_id in (
+        "prophet.us.context_vector.candidates",
+        "prophet.us.doors.flags",
+    ):
+        row = contracts[dataset_id]
+        assert row["schema"]["contract_schema"]["value"] == UPSTREAM_DATASETS[dataset_id]["schema_name"]
+
+    radar = contracts["entry_radar.forward_events"]
+    assert "identity" not in radar
+    assert "contract_schema" not in radar["schema"]
+    notes = radar["notes"]
+    assert "mastermind.entry_event.v1 is source provenance only" in notes
+    assert "event_id when present" in notes
+    assert "ticker|detector_id|decision_session" in notes
+    assert "nonempty episode_address relation" in notes
+    assert "WS:LIVE-ENTRY-RADAR must freeze and validate" in notes
+    assert "exact immutable event_id" in notes
+    assert "PRODUCED" in notes
 
 
 def test_every_b1_identity_column_exists_in_its_declared_schema_or_grain() -> None:

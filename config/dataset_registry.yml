@@ -622,13 +622,12 @@ datasets:
 
   - dataset_id: entry_radar.forward_events
     layer: L2
-    status: PRODUCED
+    status: PROPOSED
     owner: WS:LIVE-ENTRY-RADAR
     producer: scripts/reconcile_entry_radar.py
     storage: data/entry_radar/forward.parquet
     format: parquet
     grain: [episode_address]
-    identity: {id_column: episode_address, id_type: content_address}
     temporal_profile: EVENT
     timezone: UTC
     frequency: nightly
@@ -636,17 +635,24 @@ datasets:
     quality_checks: [uniqueness, temporal_integrity, referential]
     version: "1.0.0"
     schema:
-      contract_schema: {dtype: string, nullable: false, value: mastermind.entry_event.v1}
-      episode_address: {dtype: string, nullable: false, note: "Radar-owned expert event address"}
+      episode_address: {dtype: string, nullable: false, note: "unversioned W5 relation key; not yet a frozen immutable identity contract"}
       ticker: {dtype: string, nullable: false}
       decision_session: {dtype: date, nullable: false, clock: point_in_time}
       signal_ts: {dtype: RFC3339_UTC, nullable: true}
       signal_known_ts: {dtype: RFC3339_UTC, nullable: true, clock: point_in_time}
     code_consumers: [engine/us_candidate_episode_intake.py]
     notes: >
-      Existing Radar forward projection. B1 may relate a registered expert event to a
-      canonical episode or emit a suppression, but Radar retains detector, event-minting,
-      forward-ledger, and promotion authority under WS:LIVE-ENTRY-RADAR.
+      STAGED_NOT_ARMED: data/entry_radar/forward.parquet is absent and the reconciler
+      deliberately creates no store while there are no rows. mastermind.entry_event.v1 is
+      source provenance only, not the schema of this unversioned W5 forward projection.
+      episode_address uses event_id when present, otherwise the legacy
+      ticker|detector_id|decision_session fallback; B1 accepts only a nonempty
+      episode_address relation today and does not treat that fallback as immutable event
+      identity. B1 may relate such an observation to a canonical episode or emit a
+      suppression, but Radar retains detector, event-minting, forward-ledger, and promotion
+      authority. Before this row may become PRODUCED, WS:LIVE-ENTRY-RADAR must freeze and
+      validate the actual forward-projection contract and guarantee the B1-consumed relation
+      is the exact immutable event_id rather than the legacy fallback.
 
   # ── Prophet US V4-B1 canonical candidate episodes ─────────────────────────
   # BUILT_PENDING_NATURAL_ACCEPTANCE: these contracts are PROPOSED until the first
