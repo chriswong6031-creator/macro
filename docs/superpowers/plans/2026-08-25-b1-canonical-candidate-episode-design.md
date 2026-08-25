@@ -1,9 +1,9 @@
 # B1 Canonical Candidate Episode Design
 
-**Status:** Chairman-ratified implementation design for V4-B1  
+**Status:** Chairman-ratified implementation design for V4-B1
 **Authority:** the direct 2026-08-25 Chairman commission, the B1 build-pack handoff,
 `research/prophet_v4/ARCHITECTURE_FREEZE.md`, and
-`research/prophet_v4/PROPHET_US_V4_RECOVERY_AND_INTELLIGENCE_GRAPH_OS_MASTERPLAN_BY_SOL_2026-08-17.md`  
+`research/prophet_v4/PROPHET_US_V4_RECOVERY_AND_INTELLIGENCE_GRAPH_OS_MASTERPLAN_BY_SOL_2026-08-17.md`
 **Dependency:** A1 accepted by PR #6399; B1 may execute. D5 runtime remains blocked until
 B1 is accepted from a natural nightly receipt.
 
