@@ -192,7 +192,8 @@ Create one new handoff that records:
 - operation key `MAS-126-CF1-RECONCILE-20260825`;
 - PR #6297 and unchanged branch/worktree identity;
 - pre-reconciliation head `2df53626bae9b1a5efdf6f822a54997c0fdc3cd3`;
-- the exact `origin/main` SHA merged and the resulting candidate SHA from `git rev-parse`;
+- the exact `origin/main` SHA merged and the exact pre-record reconciled implementation head from `git rev-parse`;
+- the fact that a Git record cannot contain its own commit SHA, so the final record-bearing candidate head is resolved after commit and bound by PR #6297 plus its exact-head hosted receipts rather than guessed inside the file;
 - changed-file/import census relative to current main;
 - exact local test commands, pass counts, warnings, Agent OS result, sanitized CLI census, semantic hash, grounding, and no-write receipt;
 - hosted proof state `PENDING_EXACT_HEAD` and canonical evidence location PR #6297; do not commit guessed or pre-head hosted results into the handoff;
