@@ -346,3 +346,70 @@ this carrier, obtain three same-head successful `ci-plan` observations under
 60 seconds, wait for the concluded binding packet, write the volatile receipts
 to PR #6286, and leave it `OPEN / DRAFT / HOLD-FOR-SOL` with no labels and
 native auto-merge null. Do not merge.
+
+## 6. Chairman release override and current-main candidate (2026-08-25)
+
+The Chairman explicitly released the prior Sol-review stop for completion of
+the Mastermind Next Build Pack and authorized the executing agent to exercise
+its own release discretion end to end. That instruction supersedes only the
+W3 `HOLD-FOR-SOL` merge barrier recorded above. It does not relax the one-carrier
+law, the six-path scope, full-versus-sparse parity, fail-closed inventory
+semantics, current-main freshness, the three-observation production SLO, or the
+binding-check requirement.
+
+The canonical carrier remains PR #6286 and branch
+`codex/ci-plan-working-tree-containment-w3-20260822`; no replacement carrier was
+created. Two exact-head B1 CI observations on run `32874777094`, attempts 1 and
+2, independently reached the authoritative `ci-plan` checkout and were
+cancelled at the job's 30-minute hang bound while executing `git checkout
+--force 601424066959d9cb24564c06ea5b1ffe8948541f`. Neither attempt reached
+identity binding, planner execution, pack selection, or any B1 test. This is the
+live failure W3 is required to remove before B1 can obtain admissible CI proof.
+
+The current-main W3 candidate before this receipt commit is
+`9451ef8c99471fbb31ff2da5ab45434ac5c23b9f`, with current-main parent
+`c0a25c2fbe4f211a111778eed09cbd7feda11447`. Reconciliation was merge-only and
+conflict-free. The branch-relative diff remains exactly the canonical six paths,
+and the four protected implementation/test blobs remain byte-identical to the
+previous production-proven PR head:
+
+```text
+scripts/ci_scope_dependencies.py  1be36fb466d4c044018145c87d596a1ae3d7b154
+scripts/run_ci_pack.py            fda27bd3293b50cb72deaae62e24865b84d346a8
+tests/test_ci_pack.py             bb0005e2127f4cee8b7352e1a68ccfbacc009d35
+tests/test_ci_plan_workflow.py    14b4f81ad5386ef41c39f77cc3105929766a2195
+```
+
+Fresh local proof on that candidate:
+
+```text
+python3 -m pytest tests/test_ci_plan_workflow.py tests/test_ci_pack.py tests/test_audit_unrun_tests.py -q
+184 passed, 3 temporary-cleanup warnings in 627.05s
+
+python3 -m pytest tests/test_ci_pack.py tests/test_ci_plan_workflow.py -q \
+  -k 'inventory or virtual_existence or depth_two_merge or sparse_profile or bounded_exact_tree or partial_clone_keeps_history or full_and_sparse'
+10 passed, 120 deselected, 3 temporary-cleanup warnings in 6.36s
+
+python3 scripts/check_workflow_yaml.py
+OK: 94 workflow file(s) parse with on: + jobs: blocks.
+python3 scripts/check_workflow_yaml.py --selftest
+SELFTEST OK: 4 cases.
+
+all twelve validate-only pack invocations
+Validated 203 legacy jobs; 203 in scope.
+pack weights: [860, 618, 618, 619, 618, 618, 617, 617, 617, 618, 618, 618]
+
+python3 scripts/agentos.py validate
+702 records; 0 errors; 35 estate warnings.
+```
+
+This receipt commit becomes the final production subject, so its exact SHA and
+synthetic merge identity cannot be embedded here without changing them. The
+hosted timing and binding receipts belong in PR #6286 after that immutable head
+exists. Release now requires three successful same-head `ci-plan` observations
+under 60 seconds plus concluded `ci`, fences, active-main authority, and
+contract-delta proof. Once those gates pass and a fresh relevant-input collision
+census is empty, the Chairman override authorizes removing draft/hold state,
+arming the normal merge lane, merging this same PR, and verifying the W3 merge
+on canonical `origin/main`. B1 must then refresh from that descendant main and
+obtain a new exact-head CI run; the cancelled pre-W3 attempts are never reused.
