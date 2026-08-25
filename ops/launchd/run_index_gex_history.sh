@@ -47,20 +47,36 @@
 #
 # SMOKE-TESTING THE TAIL ALONE (skips the ~20 min rebuild; pushes whatever
 # parquets are already in flow-ops-wt):
-#   INDEXGEX_SKIP_ENGINE=1 /Users/chriswong/flow-ops-wt/ops/launchd/run_with_env.sh \
+#   INDEXGEX_SKIP_ENGINE=1 /Users/chriswong/macro-publisher-runtime/ops/launchd/run_with_env.sh \
 #     /Users/chriswong/flow-ops-wt/.env \
-#     /Users/chriswong/flow-ops-wt/ops/launchd/run_index_gex_history.sh
+#     /usr/bin/env \
+#     MACRO_PUBLISH_GIT_SSH_KEY=/Users/chriswong/.ssh/macro_dashboard_deploy \
+#     PYTHONPATH=/Users/chriswong/flow-ops-wt \
+#     /bin/sh \
+#     /Users/chriswong/macro-publisher-runtime/ops/launchd/run_index_gex_history.sh
 #
 # LOG TAILING:
 #   tail -f /tmp/index_gex_history.stdout.log /tmp/index_gex_history.stderr.log
 
-set -u
+set -eu
 
 REPO="/Users/chriswong/flow-ops-wt"
-PUSH_REPO="/Users/chriswong/indexgex-push-repo"
-REMOTE_URL="https://github.com/mastermindx-market-intelligence/macro.git"
+RUNTIME="/Users/chriswong/macro-publisher-runtime"
+PUSH_REPO="/Users/chriswong/indexgex-push-repo-private"
+REMOTE_URL="git@github.com:mastermindx-market-intelligence/macro.git"
+MACHINE_GIT="$RUNTIME/scripts/macro_machine_git.py"
 PYTHON="/opt/homebrew/Caskroom/miniconda/base/bin/python"
 ART_DIR="data/index_gex_history"
+
+: "${MACRO_PUBLISH_GIT_SSH_KEY:?MACRO_PUBLISH_GIT_SSH_KEY is required}"
+[ -f "$MACHINE_GIT" ] || { echo "[index_gex_history] ERROR: machine Git helper missing"; exit 1; }
+
+machine_git() {
+    /usr/bin/python3 "$MACHINE_GIT" "$@"
+}
+
+# The launcher is current and disposable; the engine remains deliberately pinned.
+export PYTHONPATH="$REPO"
 
 cd "$REPO" || { echo "[index_gex_history] ERROR: cannot cd $REPO"; exit 1; }
 
@@ -126,10 +142,12 @@ fi
 # ── commit tail (in the $HOME push repo — see TCC LAW above) ─────────────────
 if [ ! -d "$PUSH_REPO/.git" ]; then
     echo "[index_gex_history] push repo absent — cloning (sparse, blob-less, depth 1)"
-    git clone --depth 1 --filter=blob:none --sparse "$REMOTE_URL" "$PUSH_REPO" \
+    machine_git clone --depth 1 --filter=blob:none --sparse "$REMOTE_URL" "$PUSH_REPO" \
         || { echo "[index_gex_history] ERROR: clone failed"; exit 1; }
-    git -C "$PUSH_REPO" sparse-checkout set "$ART_DIR" \
+    machine_git -C "$PUSH_REPO" sparse-checkout set "$ART_DIR" \
         || { echo "[index_gex_history] ERROR: sparse-checkout failed"; exit 1; }
+    [ -d "$PUSH_REPO/$ART_DIR" ] \
+        || { echo "[index_gex_history] ERROR: sparse projection did not materialize"; exit 1; }
 fi
 
 cd "$PUSH_REPO" || { echo "[index_gex_history] ERROR: cannot cd $PUSH_REPO"; exit 1; }
@@ -137,8 +155,8 @@ cd "$PUSH_REPO" || { echo "[index_gex_history] ERROR: cannot cd $PUSH_REPO"; exi
 # Standalone-repo guard: gitdir must resolve INSIDE the push repo. A gitdir anywhere
 # else (worktree layout, or fall-through to an enclosing repo) would reintroduce the
 # TCC failure or commit into the wrong tree.
-TOPLEVEL=$(git rev-parse --show-toplevel 2>/dev/null || echo "")
-GITDIR=$(git rev-parse --absolute-git-dir 2>/dev/null || echo "")
+TOPLEVEL=$(machine_git -C "$PUSH_REPO" rev-parse --show-toplevel 2>/dev/null || echo "")
+GITDIR=$(machine_git -C "$PUSH_REPO" rev-parse --absolute-git-dir 2>/dev/null || echo "")
 if [ "$TOPLEVEL" != "$PUSH_REPO" ] || [ "$GITDIR" != "$PUSH_REPO/.git" ]; then
     echo "[index_gex_history] ERROR: push repo layout wrong (toplevel='$TOPLEVEL' gitdir='$GITDIR') — aborting"
     exit 1
@@ -146,20 +164,21 @@ fi
 
 n=1
 while [ "$n" -le 5 ]; do
-    if git fetch --depth 1 origin main \
-        && git reset --hard refs/remotes/origin/main >/dev/null; then
+    if machine_git -C "$PUSH_REPO" fetch --no-tags --no-recurse-submodules --depth 1 "$REMOTE_URL" \
+            +refs/heads/main:refs/remotes/origin/main \
+        && machine_git -C "$PUSH_REPO" reset --hard refs/remotes/origin/main >/dev/null; then
         mkdir -p "$ART_DIR" || exit 1
         for f in SPY.parquet QQQ.parquet IWM.parquet DIA.parquet _manifest.json; do
             cp "$REPO/$ART_DIR/$f" "$ART_DIR/$f" || exit 1
         done
-        git add -- "$ART_DIR"
-        if git diff --cached --quiet -- "$ART_DIR"; then
+        machine_git -C "$PUSH_REPO" add -- "$ART_DIR"
+        if machine_git -C "$PUSH_REPO" diff --cached --quiet -- "$ART_DIR"; then
             echo "[index_gex_history] parquets identical to origin/main — nothing to push"
             exit 0
         fi
-        if git -c user.name="dashboard-bot" -c user.email="actions@users.noreply.github.com" \
+        if machine_git -C "$PUSH_REPO" -c user.name="dashboard-bot" -c user.email="actions@users.noreply.github.com" \
                 commit -q -m "data: index dealer-gamma history rebuild $(date -u +%F)" -- "$ART_DIR" \
-            && git push origin main; then
+            && machine_git -C "$PUSH_REPO" push --recurse-submodules=no "$REMOTE_URL" HEAD:refs/heads/main; then
             echo "[index_gex_history] pushed parquets on attempt $n"
             exit 0
         fi

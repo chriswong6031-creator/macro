@@ -6,7 +6,7 @@
 (function(){
   "use strict";
   window.MARKET_META = {
-  "asOf": "2026-08-23",
+  "asOf": "2026-08-26",
   "today": 2026.48,
   "xDomain": [
     2000,
@@ -209,11 +209,11 @@
       }
     ],
     "now": {
-      "level": 7674.37,
-      "asOf": "2026-08-21",
+      "level": 7652.86,
+      "asOf": "2026-08-24",
       "ath": 7798.99,
       "athDate": "2026-08",
-      "pctFromATH": -1.6,
+      "pctFromATH": -1.9,
       "ytd": 10.9,
       "ret1y": 25,
       "pos": 82,
@@ -388,11 +388,11 @@
       }
     ],
     "now": {
-      "level": 62.36,
-      "asOf": "2026-08-21",
+      "level": 62.12,
+      "asOf": "2026-08-24",
       "ath": 62.36,
       "athDate": "2026-08",
-      "pctFromATH": 0.0,
+      "pctFromATH": -0.4,
       "ytd": 9.9,
       "ret1y": 22.5,
       "pos": 82,
@@ -1754,11 +1754,11 @@
       }
     ],
     "now": {
-      "level": 23.35,
-      "asOf": "2026-08-21",
+      "level": 23.24,
+      "asOf": "2026-08-24",
       "ath": 24.16,
       "athDate": "2026-05",
-      "pctFromATH": -3.4,
+      "pctFromATH": -3.8,
       "ytd": -6.9,
       "ret1y": 4,
       "pos": 44,

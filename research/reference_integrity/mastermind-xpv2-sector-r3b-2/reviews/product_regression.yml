@@ -1,0 +1,199 @@
+schema: mastermind.rig_review.v1
+reference_id: mastermind-xpv2-sector-r3b-2
+role: product_regression
+artifact_sha: d0830a374795925ee1e55b66c0cc42e329ac172d
+
+quarantine:
+  rationale_received_after_first_pass: true
+  first_pass_path: critic_return/first_pass_product_regression.md
+  frozen_at: "2026-08-24T10:14:57Z"
+
+reviewer:
+  identity: codex-product-regression-final-fresh-2026-08-24
+  independent_of_author: true
+  prior_sector_central_r3_participation: false
+  prior_sector_central_r3b_participation: false
+  prior_sector_central_r3b1_participation: false
+  prior_sector_central_r3b2_participation: false
+  sibling_results_read: false
+
+identity:
+  repository: mastermindx-market-intelligence/macro
+  canonical_pr: 6337
+  canonical_branch: claude/xpv2-sc-r3b2-build
+  dispatch_head: 0e542f3eda09721f8a255a08bb9db09070090871
+  frozen_sha: d0830a374795925ee1e55b66c0cc42e329ac172d
+  candidate_path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/proposal/MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html
+  candidate_sha256: 4adb4b6245e8e4aa5b68c850a615461327c0a5d2e672e4c203d6ba32a3b8d53c
+  candidate_size: 5506871
+  manifest_status: in_review
+  exact_head_ci_run: 32702450784
+  exact_head_ci_conclusion: success
+  superseded_pr_excluded: 6336
+  skillpack_pin: 9b55edccc3f7f7973f73b85c34ba38107b577e33
+  skillpack_schema: mastermind.sol_skillpack.v1
+  skillpack_version: 1.0.0
+  all_pins_verified: true
+
+drift_gate:
+  origin_main_re_pinned: true
+  material_drift: false
+  compared_paths:
+    - scripts/build_sector_central.py
+    - engine/sector_central.py
+    - engine/us_act_now.py
+    - scripts/build_baskets.py
+    - templates/sector_central.html.j2
+    - templates/_us_act_now_board.html.j2
+    - templates/subsectors.js
+    - docs/DESIGN_DOCTRINE.md
+    - research/MASTER_PRODUCT_DESIGN_SYSTEM_V1.md
+    - research/REFERENCE_INTEGRITY_GATE_V1.md
+    - scripts/check_reference_integrity.py
+  conclusion: No POST_FREEZE_MATERIAL_DRIFT; current-main changes were unrelated data/program and review-document churn.
+
+verdict: PASS_WITH_CONDITIONS
+
+summary: >
+  The corrected six-view reference preserves the complete customer workflow and materially
+  reduces first-screen reading cost. Independent exact-byte desktop renders exercised all six
+  canonical views; production-before comparison and a broad source/DOM-contract smoke found no
+  lost capability family, destination family, access boundary, routing family, universe, or
+  authority distinction. The 12 final obligations are visibly/structurally closed, including
+  decoded-emoji removal. No candidate-owned blocker, major, or minor finding remains. Conditions
+  are limited to axes that this reference cannot prove or this safe-mode seat could not independently
+  execute: true 320/390 browser geometry, live authentication and /premiumdata/ enforcement, live
+  Time Machine episode/chunk behavior, and the explicitly UNMEASURED heatmap colour-field text.
+
+findings: []
+
+conditions:
+  - id: PR2-C01
+    severity: major
+    attribution: R3C_live_integration
+    statement: Real auth settlement, URL-level premium enforcement, 401/403/offline behavior, and successful production hydration are not proven by an embedded reference harness.
+    evidence: The candidate models gated/hydrated/ungated states and fetch-fail preservation, but the reference has no real identity session or server enforcement boundary.
+    smallest_remedy: In R3C, run a real anonymous, authenticated, 401, 403, offline, malformed-payload, and successful-hydrate matrix against `/premiumdata/sector_central.json`; require full-count arithmetic and preview preservation.
+  - id: PR2-C02
+    severity: major
+    attribution: R3C_live_integration
+    statement: Time Machine is correctly bounded as manifest-driven/recorded-not-executed here; live episodes and year chunks remain outside the frozen reference.
+    evidence: The candidate exposes the Time Machine boundary without fabricating success, while the episode feed and per-period files are intentionally absent.
+    smallest_remedy: In R3C, test manifest, episode-feed, per-year chunk, empty, missing, and failure paths without expanding predictive claims.
+  - id: PR2-C03
+    severity: major
+    attribution: design_system_R3C
+    statement: Heatmap colour-field text remains UNMEASURED, not PASS.
+    evidence: The flat-surface method excludes approximately 440 shadowed `.hm-t` glyphs; the final packet explicitly preserves this as an unmeasured axis.
+    smallest_remedy: Apply an appropriate composited-background contrast/legibility method or human-equivalent review in R3C and remediate only if it proves a failure.
+  - id: PR2-C04
+    severity: minor
+    attribution: final_review_limit
+    statement: This seat could not independently rerun true 320/390 Playwright geometry because the local Playwright module was unavailable and Chrome CLI imposed a larger CSS viewport.
+    evidence: The apparent right-edge crops were rejected as invalid evidence; committed audits report 320/390 cells, but those historical receipts are not relabeled as this seat's independent measurement.
+    smallest_remedy: A final mobile/accessibility seat with real viewport emulation must independently own mobile geometry; do not infer a product defect from the retained CLI crops.
+
+obligation_attack:
+  - {id: VTC1-001, result: CLOSED, evidence: per-figure localized naming mechanism plus visible mobile labels; 18 figure classes represented without desktop double-labeling}
+  - {id: B2-01, result: CLOSED, evidence: theme score consistently presented as Strength / 强度; no independent-score claim retained}
+  - {id: B2-05, result: CLOSED, evidence: Strength, 20d-vs-market, Entry tier, and Conviction meanings travel with their figures}
+  - {id: B2-06, result: CLOSED_WITH_R3C_LIMIT, evidence: painted-width label suppression retains primary identity and accessible/list equivalents; true mobile geometry delegated to mobile seat}
+  - {id: B2-08, result: CLOSED, evidence: Map rank scope appears at point of use as rank across all groups with ZH twin}
+  - {id: B2-09, result: CLOSED, evidence: Recent Wrong uses neutral history/error treatment rather than reserved positive/action ink}
+  - {id: B2-10, result: CLOSED, evidence: five-state ramp is absent when the state ledge stacks and remains only where spatial mapping is meaningful}
+  - {id: B2-11, result: CLOSED_WITH_R3C_LIMIT, evidence: receipt is associated with the complete wrapped headline mechanism; true 320/390 geometry delegated to mobile seat}
+  - {id: B2-12, result: CLOSED, evidence: coverage.n_thin omission language remains distinct from in-table Low confidence / 低置信度 reliability}
+  - {id: B2-13, result: CLOSED, evidence: named methodology controls target shared panel r3-receipt with aria-controls}
+  - {id: B2-14, result: CLOSED_WITH_R3C_LIMIT, evidence: control floor is encoded at 44px; true ZH viewport measurement delegated to mobile seat}
+  - {id: B2-15, result: CLOSED, evidence: Money Track record qualification states context only, 5d evidence, and never sizes decisions; adjacent 21d remains separately labelled}
+  - {id: decoded_emoji, result: CLOSED, evidence: Moving heading is plain Track record / 跟踪记录; no chart emoji appears in independent six-view desktop renders or decoded source scan}
+
+capability_smoke:
+  overview: PASS
+  map: PASS
+  moving: PASS
+  money: PASS
+  explore: PASS
+  confluence: PASS
+  primary_destination_families: PASS
+  zero_href_hash_placeholder: PASS
+  canonical_hashes: PASS_STRUCTURAL
+  legacy_hashes: PASS_STRUCTURAL
+  unknown_hash_fail_open: PASS_STRUCTURAL
+  gated_hydrated_ungated: PASS_STRUCTURAL_R3C_RUNTIME_REQUIRED
+  premium_arithmetic: PASS_STRUCTURAL_R3C_RUNTIME_REQUIRED
+  confluence_universes:
+    sp500: PASS_STRUCTURAL
+    nasdaq100: PASS_STRUCTURAL
+    russell2000: PASS_STRUCTURAL
+    thematic_baskets: PASS_STRUCTURAL
+  time_machine_boundary: PASS_RECORDED_NOT_EXECUTED
+  plain_track_record: PASS
+
+strengths_not_to_disturb:
+  - id: PR2-S01
+    statement: The six-view desk now answers the user's immediate question before presenting evidence, materially lowering scan and reading cost versus production-before.
+  - id: PR2-S02
+    statement: Action authority remains confined to the Overview lanes and Confluence entry read; context views repeatedly disclose that they do not rank, gate, or size decisions.
+  - id: PR2-S03
+    statement: Progressive disclosure compresses dense production capability without removing deeper destinations, tables, accessible equivalents, or the four Confluence universes.
+  - id: PR2-S04
+    statement: Plain Track record is intentional and sober after decoded-emoji removal; it improves product tone without weakening meaning.
+  - id: PR2-S05
+    statement: The candidate preserves fail-open preview behavior and explicitly refuses to fake Time Machine success where fixture data is absent.
+
+upstream_r3c_residue:
+  - production Conviction naming collision
+  - producer English-only grader/category strings and missing category_zh/note_zh language-of-parts
+  - sc_flows contrast and magnitude presentation debt
+  - production Forward track record Validated badge and 21d pairing
+  - overloaded validated and REGIME BUY vocabulary
+  - producer reco_why
+  - live Time Machine episodes/chunks
+  - real auth settlement and /premiumdata/ enforcement
+  - production router integration
+  - correction/revision authority
+  - Baskets thin/gateable producer disclosure
+  - relative-unit typography debt
+
+not_evaluable:
+  - id: PR2-L01
+    limit: True 320/390/200%-zoom geometry was not independently rendered by this seat.
+    impact: Mobile label scan cost, treemap collision, headline receipt flow, and ZH target dimensions are conditional on the separate mobile/accessibility review.
+  - id: PR2-L02
+    limit: Real authentication, HTTP authorization, and network failure behavior do not exist in the standalone reference.
+    impact: Access correctness is structurally credible but requires R3C integration proof.
+  - id: PR2-L03
+    limit: Time Machine episode and per-year chunk data are intentionally absent.
+    impact: The boundary is honest; live replay correctness is not established.
+  - id: PR2-L04
+    limit: Heatmap colour-field glyph contrast is unmeasured by the accepted method.
+    impact: Neither PASS nor FAIL is claimed for that axis.
+
+amendment_accounting:
+  upheld:
+    - First-pass conclusion that no desktop workflow/capability blocker exists.
+    - First-pass strength that information economics materially improve over production-before.
+    - First-pass structural access, routing, and plain Track record observations.
+  downgraded: []
+  withdrawn: []
+  narrowed_limits:
+    - Historical committed receipts support, but do not replace, independent mobile and live-integration proof.
+
+strongest_counterargument: >
+  The strongest argument against PASS_WITH_CONDITIONS is that a reference intended to become
+  migration law should not pass while its primary mobile geometry is independently unevaluated by
+  this seat and while the heatmap colour-field axis remains explicitly UNMEASURED. A stricter critic
+  could require an independent true-viewport rerun and an accepted composited-contrast method before
+  returning any passing verdict. I do not elevate that to BLOCK because those axes are separately
+  owned final-review/R3C boundaries, the exact candidate has binding committed measurements for the
+  mobile mechanisms, and this review found no contrary candidate evidence.
+
+scope_compliance:
+  candidate_bytes_changed: false
+  production_bytes_changed: false
+  governed_build_fixture_baseline_proposal_continuity_manifest_changed: false
+  github_mutation: false
+  approval_created: false
+  r3c_started: false
+  commit_push_pr_merge_deploy: false

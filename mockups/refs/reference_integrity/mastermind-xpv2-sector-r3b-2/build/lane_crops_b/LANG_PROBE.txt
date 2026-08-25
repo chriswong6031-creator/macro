@@ -1,0 +1,11 @@
+candidate: MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html
+[PASS] boot                                                       lang='en' data-lang='en' nav aria-label='Sector Intelligence views'
+[PASS] after the page's OWN language control -> zh                lang='zh-CN' data-lang='zh' nav aria-label='板块情报视图'
+[PASS] after activating all six views                             lang='zh-CN' data-lang='zh' nav aria-label='板块情报视图'
+[PASS] after two legacy/canonical hash repaints                   lang='zh-CN' data-lang='zh' nav aria-label='板块情报视图'
+[PASS] REF.setLang('en')                                          lang='en' data-lang='en' nav aria-label='Sector Intelligence views'
+[PASS] bare setAttribute('data-lang','zh') by an external driver  lang='zh-CN' data-lang='zh' nav aria-label='板块情报视图'
+[PASS] after a full reload (back to the EN default)               lang='en' data-lang='en' nav aria-label='Sector Intelligence views'
+
+expected Chinese tag: zh-CN (production parity: templates/theme.js:600, :614; templates/_public_chrome_js.html.j2:110)
+RESULT: PASS

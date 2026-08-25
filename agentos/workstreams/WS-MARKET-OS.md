@@ -64,22 +64,43 @@ waves:
     status: todo
     depends_on: [A1B]
     next_action: Commission one independently useful vertical at a time; no broad My Market rewrite.
-  - id: B1-B6
-    title: Canonical Security State and chart-first security cockpit
-    status: todo
+  - id: B1A
+    title: security_state.v1 golden AAPL product vertical (contract + compiler + producer + dossier Decision Spine)
+    status: in_progress
     depends_on: [A1A]
     next_action: >
-      Build security_state.v1 into the existing stockdata plane and prove one real
-      dossier consumer before changing the full dossier composition.
+      DELIVERED-HELD 2026-08-24 under the Chairman dispatch of the prepared B1A
+      commission: identity gate adjudicated PASSED instance-scoped via the exact
+      owner-backed chain (DEC:MARKET-OS-B1A-IDENTITY-GATE-OWNER-BACKED-CHAIN —
+      adversarial BLOCKED verdict preserved inside as dissent), K1 evidence
+      composition runs cik-native (four-owner golden fixture untouched, still
+      REFUSED), producer is a frozen ("AAPL",) allowlist stage in
+      build_stock_library, consumer is the server-rendered Decision Spine on the
+      AAPL dossier. The B1A PR is DRAFT + HOLD-FOR-SOL — Sol reviews the
+      adjudication, implementation, and browser evidence; do not arm or merge.
+      Production proof (live object + live page) executes only after Sol accepts
+      and merges; capability is BUILT_NOT_PROVEN until then. Universe expansion
+      beyond AAPL is BLOCKED on the owner-routed ListingAlias→ListingKey
+      renderer + K1 vocabulary triple repair (named Sol item), and
+      CIK_LEG_UNOWNED_ACCESS names the reader-surface repair
+      (expose issuer_cik on lib.dataos.identity readers).
+  - id: B1B-B6
+    title: Terminal/Desk projection and chart-first security cockpit over frozen security_state.v1
+    status: todo
+    depends_on: [B1A]
+    next_action: >
+      Separate commission after Sol accepts B1A; B1B requires the frozen
+      security_state.v1 surface plus the identity-renderer repair before any
+      second issuer.
   - id: C1-C6
     title: What Changed and deterministic Market discovery
     status: todo
-    depends_on: [B1-B6]
+    depends_on: [B1B-B6]
     next_action: Use compact Security State and Change Event projections; no fused rank.
   - id: D1-D9
     title: Portfolio Brief v3, Risk Packet, Holdings Map, visible risk sections, and scenarios
     status: todo
-    depends_on: [A2-A6, B1-B6]
+    depends_on: [A2-A6, B1B-B6]
     next_action: Preserve the existing risk core and one Portfolio composer; current-context mode precedes forecast mode.
   - id: E1-E3
     title: My Market Overview, personalized change feed, alerts, and digest
@@ -89,9 +110,10 @@ waves:
   - id: F0-F5
     title: Forecast Packet, prospective ledgers, shadow evaluation, and earned promotion
     status: todo
-    depends_on: [B1-B6, D1-D9]
+    depends_on: [B1B-B6, D1-D9]
     next_action: No live forward claim before point-in-time replay, calibration, forward shadow, and explicit authority promotion.
 decisions:
+  - "DEC:MARKET-OS-B1A-IDENTITY-GATE-OWNER-BACKED-CHAIN"
   - "DEC:MARKET-OS-WATCHLIST-PORTFOLIO-SEPARATE-TRUTH-UNIFIED-EXPERIENCE"
   - "DEC:MARKET-OS-PORTFOLIO-TRUTH-PRECEDES-FAST-IMPORT"
   - "DEC:MARKET-OS-A1A-RESTORATION-EQUALITY-EXCLUDES-SERVER-TIMESTAMPS"

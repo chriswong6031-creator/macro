@@ -1,42 +1,35 @@
 {
-  "date": "2026-08-19",
+  "date": "2026-08-24",
   "authority": {
     "tier": "context_only"
   },
-  "turnover_z20": 0.8429518710284244,
-  "turnover_z60": -0.6100044949129332,
-  "margin_balance": 26676.04577747,
-  "margin_chg_5d": -0.20830187783331677,
-  "margin_to_mcap": 2.668862,
-  "southbound_net": -10620.78,
-  "southbound_z": -1.6742202635636956,
-  "etf_share_chg": 0.7071067811865475,
+  "turnover_z20": -1.273184129615674,
+  "turnover_z60": -1.5039132245034903,
+  "margin_balance": 26564.94252889,
+  "margin_chg_5d": -1.3362935139188625,
+  "margin_to_mcap": 2.665023,
+  "southbound_net": 11566.74,
+  "southbound_z": 1.2920003286935855,
+  "etf_share_chg": 0.38729833462074165,
   "zt_breadth": null,
   "failed_seal_ratio": null,
-  "qvix": 20.35,
-  "qvix_z": -0.3648700981332773,
-  "broker_rs": 0.04405717744679545,
-  "regime": "unclear",
+  "qvix": null,
+  "qvix_z": null,
+  "broker_rs": 0.028394827216195018,
+  "regime": "dormant",
   "who_controls": "mixed",
-  "risk": "normal",
+  "risk": "low",
   "evidence": [
-    "turnover_z20=0.84",
+    "turnover_z20=-1.27",
+    "southbound_net z=1.29 (hot inflow)",
     "fin_pct_float=2.67%",
-    "broker_rs=0.0441 (positive, sector leading)",
-    "qvix_z=-0.36 (inverted-semantics: high=stress)"
+    "broker_rs=0.0284 (positive, sector leading)"
   ],
-  "contradictions": [
-    {
-      "a": "southbound_z=-1.67 (outflow)",
-      "b": "turnover_z20=0.84 (hot)",
-      "detail": "offshore selling into retail-driven volume — potential distribution"
-    }
-  ],
+  "contradictions": [],
   "data_gaps": [
-    "zt_breadth:null on 2026-08-19",
-    "northbound:DEAD post-2024-08-16 SLF-050",
-    "snapshot_staleness:published row 2026-08-19 is 3d behind tape tail 2026-08-22; tail row missing core legs (turnover_z20, margin_chg_5d) — union-index freshness lag"
+    "zt_breadth:null on 2026-08-24",
+    "qvix_z:null on 2026-08-24",
+    "northbound:DEAD post-2024-08-16 SLF-050"
   ],
-  "backfill": false,
-  "snapshot_note": "core legs null on 2026-08-22; publishing last fully-populated row (2026-08-19)"
+  "backfill": false
 }

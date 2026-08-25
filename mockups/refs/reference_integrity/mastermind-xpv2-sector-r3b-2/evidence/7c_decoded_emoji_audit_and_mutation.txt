@@ -1,0 +1,34 @@
+XPV2-SC-R3B.2 pre-final decoded-output no-emoji audit
+Candidate sha256: 4adb4b6245e8e4aa5b68c850a615461327c0a5d2e672e4c203d6ba32a3b8d53c
+Candidate size: 5,506,871 bytes
+
+Pristine audit command:
+  <playwright-python> build/decoded_emoji_audit.py
+
+Pristine result:
+  PASS — 12/12 cells (six views x EN/ZH), 0 violations
+  Source census: 7 files, 5,979,332 bytes
+  Candidate-owned view-source literal non-ASCII occurrences: 6,019
+  Decimal numeric entities decoded: 49
+  Hexadecimal numeric entities decoded: 0
+  Rendered DOM text-node census: 8,312
+  Chromium-computed accessible-name census: 8,795
+  Observable generated-content census: 64
+  Detector self-test: literal U+1F4CA PASS; decimal &#128202; PASS;
+    hexadecimal &#x1F4CA; PASS
+
+Mutation command:
+  <playwright-python> build/decoded_emoji_audit.py --mutate
+
+Mutation result:
+  PASS — pristine baseline stayed green; temporary reinsertion of &#128202;
+  produced one semantic-owner red and did not change governed bytes.
+  Unique violation owner: moving.track_record_heading
+  Axis counts: accessible_name=4, decimal_numeric_entity=2,
+    rendered_dom_text=2
+  Rendered DOM languages hit: EN, ZH
+  Accessible-name languages hit: EN, ZH
+
+Committed machine receipts:
+  build/decoded_emoji_audit.json
+  build/DECODED_EMOJI_MUTATION.md

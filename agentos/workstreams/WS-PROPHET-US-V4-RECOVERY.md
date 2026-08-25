@@ -42,13 +42,12 @@ decisions:
   - DEC:PROPHET-V4-THEIA-SOURCE-RIGHTS
   - DEC:PROPHET-LAB-B5A-RECUT
 landmines:
-  - "THE OUTAGE was LIVE at 0A (2026-08-17) and STILL UNRESOLVED on the reader at the
-    0B pin (2026-08-18T00Z: source_asof=2026-08-13, 206 plans): #5742 open; sibling
-    sessions + operator own recovery (triage: push-freeze ruleset GH013, theta-m1
-    label pin, runner saturation; overlapping bakes at 23:56Z). The candidate store
-    data/us_prophet_rank/candidates/ + legacy-shadow parts remain stalled with it.
-    V4 does NOT implement — a1 is acceptance-by-adoption. Current deltas:
-    research/prophet_v4/POST_0A_RECONCILIATION_2026-08-17.md."
+  - "THE OUTAGE was LIVE at 0A (2026-08-17) and still unresolved at the 0B pin
+    (2026-08-18T00Z: source_asof=2026-08-13, 206 plans). That historical fact is
+    preserved. A1 is now RESOLVED by adoption of A1R #6320 plus the ordinary scheduled
+    run 32786919396 and private served-byte proof on 2026-08-25. Exact receipts and the
+    unrelated late Marketing cancellation boundary are indexed in
+    agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-25-a1-acceptance.md."
   - "Prophet index top-level asof is WALL-CLOCK (DSC:PROPHET-ASOF-IS-WALL-CLOCK);
     freshness = source_asof + per-plan cohorts. Run conclusions decouple from Prophet
     delivery in both directions (DSC:CANCELLED-DAILY-RUN-CAN-STILL-DELIVER-PROPHET)."
@@ -69,8 +68,10 @@ landmines:
     prophet_arena C0-C7 execution policies vs audit C0-C4; two same-named 'arena'
     systems; _v2 paths are SCHEMA versions, not the v2 ranker era; two 'board history'
     stores. Disambiguation table: CURRENT_STATE §9 — binding on every handoff."
-  - "TURN WATCH is an orphan desk this WS now owns: artifact stale (data_session
-    2026-08-13), page never built, engine copy has zero template consumers."
+  - "TURN WATCH is owned by this WS and its canonical artifacts are current at
+    data_session=2026-08-24 after the accepted A1 natural run. The page is still NOT
+    BUILT and the engine copy still has zero template consumers; artifact freshness is
+    not B5B product proof."
   - "MP-1 (research/migration_packets/MP-1-prophet-board.md) is design-ratified with
     all spawn gates satisfied and NOT executed — B5/E2 build against it; its
     population re-source must be checked against DNR:KILL-PROPHET-POP-MERGE first."
@@ -96,6 +97,10 @@ do_not_redo:
     entry-detector fusion is Radar's reserved F1_FUSION slot."
   - "Do not synthesize the missed Aug-14 session from later knowledge — exact
     reconstruction from Aug-14-knowable data or an explicit unrecoverable receipt."
+  - "Do not replay US 2026-08-14 again. DEC:FORCE-MAJEURE-SESSIONS-ARE-BACKFILLED-BY-DEFAULT
+    authorized one PIT reconstruction; A1R #6320 executed it, and natural run 32786919396
+    absorbed it. Reconstructed rows remain unmarked and this authority does not extend
+    to data-defect windows or a second replay."
 artifacts:
   - research/prophet_v4/LAB0_B5_RECUT_OPERATOR_LAB_2026-08-18.md
   - research/prophet_v4/PROPHET_US_V4_RECOVERY_AND_INTELLIGENCE_GRAPH_OS_MASTERPLAN_BY_SOL_2026-08-17.md
@@ -108,6 +113,7 @@ artifacts:
   - research/prophet_v4/EXPERIENCE_REFERENCE_COMPOSITIONS.md
   - research/prophet_v4/WAVE_GRAPH_AND_MERGE_ORDER.md
   - research/prophet_v4/V4_A1_AVAILABILITY_RECOVERY_HANDOFF.md
+  - agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-25-a1-acceptance.md
 waves:
   - id: 0a
     title: "V4-0A — estate archaeology + architecture freeze. Merged #5832
@@ -123,15 +129,14 @@ waves:
     pr: 5847
   - id: a1
     depends_on: [0a]
-    title: "V4-A1 — owed-session settlement recovery. DO NOT SPAWN: implementation is
-      owned by the active Availability/outage sessions (incident receipt #5742);
-      V4_A1_AVAILABILITY_RECOVERY_HANDOFF.md is the ACCEPTANCE CONTRACT Sol reviews
-      the sibling return against — never a command to launch a competing session."
-    status: todo
+    title: "V4-A1 — owed-session settlement recovery. Accepted by Chairman-authorized
+      adoption on 2026-08-25 from A1R #6320 plus the ordinary natural-run and private
+      reader packet; this is not a claim of separate Sol review."
+    status: done
     next_action: >
-      Acceptance-by-adoption only: when the Availability/outage return arrives, map it
-      to the A1 gates and route to Sol for acceptance. A fresh board or a green run
-      alone does not close this wave.
+      DONE. Preserve the exact receipt in
+      agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-25-a1-acceptance.md; never rerun
+      the Aug-14 replay. B1 is dependency-ready. A2/A3/A4 remain distinct waves.
   - id: a2
     depends_on: [a1]
     title: "V4-A2 — canonical settlement manifest (prophet.settlement_manifest/v1)"
@@ -511,7 +516,7 @@ waves:
     title: "V4-D4 — peer and transmission features"
     status: todo
   - id: d5
-    depends_on: [d1]
+    depends_on: [b1]
     title: "V4-D5 — V4 intelligence-vector contract (prophet.intelligence_vector/v1).
       Sol ADJUDICATED 2026-08-18 (D2A commission §19): D1's readiness ruling
       ACCEPTED WITH BOUNDARY — contract work may later proceed in parallel once Sol
@@ -559,18 +564,13 @@ waves:
     title: "V4-E6 — promotion gauntlet + V3 retirement ruling"
     status: todo
 next_action: >
-  V4-D1 complete. Route to Sol for three adjudications: (1) commission d2 with GMI
-  per research/prophet_v4/V4_D2_ONTOLOGY_AND_PROBATION_HANDOFF.md; (2) ratify the
-  D3/W3B merge-order recommendation with GMI; (3) optionally commission the d5
-  contract-only lane in parallel (D1_D5_READINESS_RULING.md). Rights decisions
-  routed in the census §7 await Chairman/Sol. A-lane unchanged: DO NOT SPAWN A1 —
-  sibling-owned, acceptance-by-adoption (#5742); a2/a3 adopt-first. B5A LAB lane
-  (Chairman 2026-08-18): day-1 wave COMPLETE 2026-08-19 — W4.1 #5929 + P-LAB-API
-  #5928 built, twice-reviewed MERGE-SAFE, armed (merge gated on the house-law-registry
-  VMRK self-heal at the next nightly snapshot); R5 RIG cycle verdict REVISE recorded
-  on #5931 (armed); R5.1+R5.2 revision built on #5940 at frozen SHA f40ae70ac989 with
-  its two-pass critic cycle + verdict OWED. Next session: execute
-  agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-19-lab-day1.md §1 in order.
+  A1 is accepted by Chairman-authorized adoption from the exact 2026-08-25 natural-run
+  and private-reader packet. Execute B1 next: build the one canonical
+  prophet.candidate_episode/v1 registry from the frozen handoff, preserving Radar,
+  origination-door, candidate-pool, identity, and grading ownership. Do not execute D5
+  before B1; PR #6275 remains a contract-only carrier that must be reconciled after B1
+  without losing its frozen D5 evidence terms. A2/A3/A4 and all other V4 waves remain
+  separately governed and unchanged by this dependency release.
 ---
 
 ## Context

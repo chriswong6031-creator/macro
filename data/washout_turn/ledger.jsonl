@@ -219,3 +219,4 @@
 {"session": "2026-08-21", "symbol": "URG", "state": "NONE", "prior_state": "TURN_WATCH", "since": null, "depth_pctile": null, "line": null, "hist": null, "data_through": "2026-08-21", "reason": "graduated"}
 {"session": "2026-08-21", "symbol": "WDC", "state": "TURN_WATCH", "prior_state": "NONE", "since": null, "depth_pctile": 10.8, "line": -7.348, "hist": -2.847, "data_through": "2026-08-21", "reason": null}
 {"session": "2026-08-21", "symbol": "WMT", "state": "NONE", "prior_state": "TURN_WATCH", "since": null, "depth_pctile": null, "line": null, "hist": null, "data_through": "2026-08-21", "reason": "graduated"}
+{"session": "2026-08-24", "symbol": "SSRM", "state": "NONE", "prior_state": "WASHOUT_TURN", "since": null, "depth_pctile": null, "line": null, "hist": null, "data_through": "2026-08-24", "reason": "graduated"}
