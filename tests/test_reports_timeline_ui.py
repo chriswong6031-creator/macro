@@ -164,6 +164,13 @@ def _price_source() -> str:
     return PRICE_TEMPLATE.read_text(encoding="utf-8")
 
 
+def _price_figure_source(figure_id: str) -> str:
+    source = _price_source()
+    start = source.index(f'id="{figure_id}"')
+    end = source.index("</figure>", start)
+    return source[start:end]
+
+
 def test_price_of_duration_is_registered_as_newest_bilingual_archive_entry() -> None:
     source = REGISTRY.read_text(encoding="utf-8")
 
@@ -222,6 +229,109 @@ def test_price_of_duration_svg_language_markup_is_legal_and_independently_spaced
         source,
         flags=re.DOTALL,
     ), "Chinese line spacing must not depend on a hidden English tspan"
+
+
+def test_price_of_duration_collision_circle_uses_bilingual_three_line_label_blocks() -> None:
+    figure = _price_figure_source("fig-collision")
+    svg = ET.fromstring(re.search(r"<svg\b.*?</svg>", figure, flags=re.DOTALL).group(0))
+    label_blocks = [
+        element
+        for element in svg.iter()
+        if element.tag.endswith("text")
+        and "pod-collision-meta" in element.attrib.get("class", "").split()
+    ]
+
+    assert len(label_blocks) == 2
+    assert {"l-en", "l-zh"} == {
+        classes
+        for element in label_blocks
+        for classes in element.attrib.get("class", "").split()
+        if classes in {"l-en", "l-zh"}
+    }
+    for block in label_blocks:
+        rows = [child for child in block if child.tag.endswith("tspan")]
+        assert len(rows) == 3
+        assert [row.attrib.get("x") for row in rows] == ["410", "410", "410"]
+        assert [row.attrib.get("y") for row in rows] == ["242", "257", "272"]
+        assert all((row.text or "").strip() for row in rows)
+
+    rows_by_language = {
+        "l-en": [child.text for child in label_blocks[0] if child.tag.endswith("tspan")],
+        "l-zh": [child.text for child in label_blocks[1] if child.tag.endswith("tspan")],
+    }
+    assert rows_by_language["l-en"] == [
+        "pensions · insurers",
+        "banks · FX reserves",
+        "households",
+    ]
+    assert rows_by_language["l-zh"] == ["养老金 · 保险", "银行 · 外汇储备", "家庭"]
+    assert '<tspan class="l-zh">全球久期</tspan>' in figure
+    assert figure.count('<tspan class="l-zh">需求</tspan>') == 1
+
+
+def test_price_of_duration_all_ten_figures_have_distinct_explanatory_motion() -> None:
+    expected_scenes = {
+        "fig-quadrant": ("sovereign-signal", "pod-motion-point"),
+        "fig-timeline": ("collapsed-timeline", "pod-motion-collapse"),
+        "fig-collision": ("capital-collision", "pod-motion-accumulator"),
+        "fig-reactions": ("reaction-functions", "pod-motion-convergence"),
+        "fig-stablecoin": ("stablecoin-machine", "pod-motion-machine"),
+        "fig-ai-frontier": ("ai-frontier", "pod-motion-frontier"),
+        "fig-memory": ("memory-clocks", "pod-motion-clock"),
+        "fig-triangle": ("duration-triangle", "pod-motion-synapse"),
+        "fig-regimes": ("regime-tree", "pod-motion-probability"),
+        "fig-cockpit": ("six-gauge-cockpit", "pod-motion-gauge"),
+    }
+
+    for figure_id, (scene, motion_class) in expected_scenes.items():
+        figure = _price_figure_source(figure_id)
+        assert f'data-motion-scene="{scene}"' in figure
+        assert motion_class in figure
+
+
+def test_price_of_duration_motion_runtime_pauses_offscreen_and_in_hidden_tabs() -> None:
+    source = _price_source()
+
+    assert "is-motion-active" in source
+    assert "var active=!reduced&&!motionPaused&&!document.hidden" in source
+    assert "entry.target.setAttribute('data-motion-in-view',entry.isIntersecting?'true':'false')" in source
+    assert "document.addEventListener('visibilitychange',syncMotionActivity)" in source
+    assert "io.unobserve" not in source
+    assert ".pod-figure[data-motion-scene]" in source
+
+
+def test_price_of_duration_motion_has_user_pause_and_static_legacy_fallback() -> None:
+    source = _price_source()
+
+    assert 'id="pod-motion-toggle"' in source
+    assert 'aria-pressed="false"' in source
+    assert "motionPaused" in source
+    assert "motionToggle.addEventListener('click'" in source
+    assert "!motionPaused" in source
+    no_observer = source.split("if(!('IntersectionObserver' in window)){", 1)[1].split(
+        "var io=new IntersectionObserver", 1
+    )[0]
+    assert "data-motion-in-view','true'" not in no_observer
+    assert "is-motion-active" not in no_observer
+    assert "f.classList.add('is-visible')" in no_observer
+
+
+def test_price_of_duration_flow_directions_preserve_causal_meaning() -> None:
+    stablecoin = _price_figure_source("fig-stablecoin")
+    cockpit = _price_figure_source("fig-cockpit")
+
+    assert "M311 121 C311 139 334 145 350 153" in stablecoin
+    assert "M755 121 C755 178 649 177 591 177" not in stablecoin
+    assert 'd="M485 336 H557" marker-end="url(#f5r)"' in stablecoin
+    for path in (
+        "M254 173 L327 239",
+        "M410 143 V197",
+        "M566 173 L493 239",
+        "M566 437 L493 371",
+        "M410 467 V413",
+        "M254 437 L327 371",
+    ):
+        assert path in cockpit
 
 
 def test_price_of_duration_publishes_complete_editorial_v2_not_the_wave_one_shell() -> None:
@@ -350,10 +460,13 @@ def test_price_of_duration_reduced_motion_forces_final_state() -> None:
     compact = re.sub(r"\s+", " ", _price_source())
 
     assert "@media(prefers-reduced-motion:reduce)" in compact
+    assert '.pod .pod-figure [class*="pod-motion-"]' in compact
     assert "opacity:1 !important" in compact
     assert "transform:none !important" in compact
     assert "transition:none !important" in compact
+    assert "animation:none !important" in compact
     assert "stroke-dashoffset:0 !important" in compact
+    assert ".pod .pod-motion-flow { display:none !important; }" in compact
     assert "matchMedia('(prefers-reduced-motion: reduce)')" in compact
 
 
