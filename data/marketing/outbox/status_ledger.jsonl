@@ -3852,3 +3852,10 @@
 {"id":"ob-2026-08-25-d607738c71","from":"posting","to":"posted","at":"2026-08-25T17:45:55Z","actor":"publisher","note":"published","receipt":{"backend":"buffer","external_id":"6a8dd4d293640611fe06f29e","external_url":null,"at":"2026-08-25T17:45:32Z","booked_at":"2026-08-25T17:45:32Z"}}
 {"id":"ob-2026-08-25-a6000a512d","from":"queued","to":"approved","at":"2026-08-25T18:00:32Z","actor":"approval-desk","note":"approval-desk: payload, session_language, expired_session, number_sanity, liveness, chart_law, banned_language, dedup","receipt":null}
 {"id":"ob-2026-08-25-a6000a512d","from":"approved","to":"quarantined","at":"2026-08-25T18:00:58Z","actor":"publisher","note":"unknown cashtag(s): USO","receipt":null}
+{"id":"ob-2026-08-25-a6000a512d","from":"queued","to":"approved","at":"2026-08-25T18:01:39Z","actor":"approval-desk","note":"approval-desk: payload, session_language, expired_session, number_sanity, liveness, chart_law, banned_language, dedup","receipt":null}
+{"id":"ob-2026-08-25-5e41443d19","from":"queued","to":"approved","at":"2026-08-25T18:01:55Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
+{"id":"ob-2026-08-25-b0dcfb9aa2","from":"queued","to":"approved","at":"2026-08-25T18:01:55Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
+{"id":"ob-2026-08-25-f18ef11038","from":"queued","to":"approved","at":"2026-08-25T18:01:56Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
+{"id":"ob-2026-08-25-5e41443d19","from":"approved","to":"quarantined","at":"2026-08-25T18:01:56Z","actor":"publisher","note":"clock: yesterday_word_off_session:yesterday","receipt":null}
+{"id":"ob-2026-08-25-b0dcfb9aa2","from":"approved","to":"quarantined","at":"2026-08-25T18:01:56Z","actor":"publisher","note":"clock: yesterday_word_off_session:yesterday","receipt":null}
+{"id":"ob-2026-08-25-f18ef11038","from":"approved","to":"quarantined","at":"2026-08-25T18:01:56Z","actor":"publisher","note":"clock: yesterday_word_off_session:yesterday","receipt":null}
