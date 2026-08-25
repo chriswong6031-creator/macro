@@ -91,13 +91,81 @@ dark + light; desktop + 390 px; leadership empty states degrade quietly;
 no console errors; no horizontal overflow; no official-pick implication in
 the Top Picks treatment.
 
+## Leg 2 — EXECUTED 2026-08-25 (entitled Claude-in-Chrome session, demo@mastermind.test)
+
+The operator connected the Claude-in-Chrome extension 2026-08-25 ~17:00Z and
+the full matrix ran against production (`www.mastermind-x.com`). First pass
+surfaced **two real defects**; both were repaired, the first re-verified on
+production, the second armed to merge behind the fleet CI heal.
+
+### Defect 1 — [hidden] hiding visually inert on the grid (FIXED + LIVE)
+
+The composer hides grid cards (`card.hidden = !show`) and the grid pane with
+the HTML `hidden` attribute; the UA `[hidden]{display:none}` loses to the
+page's `.pvcard{display:flex}` and the composer's own
+`.ca-v36-card-grid{display:grid}`. Observed on production: Top Picks showed
+all 6 cards under a "5 shown" counter; the leadership filter painted
+"0 shown" + the empty-state message over six visible cards; Table view kept
+the grid rendered underneath. State/counter/aria and the table rows'
+class-based hiding were correct throughout. Repair: scoped
+`[hidden]{display:none!important}` overrides in the composer style —
+PR #6406, merged `505efbc1a4bf`, byte-verified on the VPS, then **re-run on
+production entitled: Top Picks 5/5, All 6/6, Table view grid display:none,
+filter 0-state + empty message only, clear 6/6, one board
+(#standouts display:none/empty, grid owns all 6), zero overflow.**
+Pinned by `tests/test_canada_v36_composer.py`.
+
+### Defect 2 — loader stranded entitled visitors on transient auth hiccups (FIX ARMED)
+
+`dashboard-icons.js`'s composer loader was fire-and-forget (no `onerror`).
+The entitled asset's gate consults the auth backend per request;
+`/api/regwall/check` intermittently answered **503** during the acceptance,
+and on two of ~7 entitled loads the composer script fetch failed the same
+way — tag injected, body never executed, visitor silently on legacy until a
+manual reload. Repair: bounded onerror retry (3 attempts, 1.5s/3s backoff,
+mount-guarded) — PR #6409, armed `merge-on-green` behind the fleet ci-pack
+heal (another session owns that heal; per operator, not chased here).
+Residual until the next render re-stamp: warm caches keep the old loader
+(dashboard-icons.js is `@public_versioned` immutable).
+
+### Matrix results (production, entitled)
+
+| Cell | Result |
+|---|---|
+| Exactly one board | **PASS** (legacy `#standouts` display:none + 0 cards; grid owns 6) |
+| Hierarchy Header → Leading Now → Prophet → Leadership → Tools | **PASS** (DOM order verified) |
+| Top Picks (first 5, halo) / All Candidates | **PASS** after #6406 (5/5 ↔ 6/6; halo, copy "Top Picks/首选" only — no official-pick implication) |
+| Grid / Table | **PASS** after #6406 (table=StockTable pane, 21 controls; grid display:none under Table) |
+| Leadership filter + Expand modal | **PASS** (modal flex, 28 rows, row-click sets filter + auto-switch to All + closes; pill clears; 0-state quiet) |
+| Live quote/change patching | **MECHANISM PROVEN** — `live/quotes.json` fresh (all 6 .TO tickers, changePct, age ≈1 min), `.nb-px/.nb-chg[data-sym]` targets present in moved DOM, live.js re-queries per tick + ticks on visibilitychange (deployed bytes). Final paint requires a humanly-visible tab; the automation window stayed on a hidden Space all session (screen-control was declined — operator's call). 10-second confirm: view the page during TSX hours, change chips populate green/red. |
+| Green-up/red-down under EN **and** ZH | **PASS** (in-card computed: up rgb(47,138,82), down rgb(196,61,61) under ZH — composer's Western pin `.ca-v36 .nb-chg.up{--ok}` active) |
+| `Board Aug 24, 2026` vs `● LIVE · Aug 25, 2026` chips | **PASS** (distinct, both rendered) |
+| StockTable controls | **PASS** (21 controls intact in Table pane) |
+| Terminal routing | **PASS** (nav Terminal → app.mastermind-x.com; cards → canada_stock.html#TICKER) |
+| Dark + Light | **PASS** (screenshots both themes; nav keeps dark chrome by design) |
+| EN + ZH | **PASS** (full bilingual copy, no raw slugs; settings popover ZH; prefs persist across reloads) |
+| Desktop + 390px | Desktop **PASS** (0 overflow). 390: **bytes-proven** — single `@media(max-width:680px)` fluid single-column block governs 680→390, no fixed-width child; exact-390 pixel pass not executable (OS ignores resize on hidden Space, self-framing denied by security headers, extension blocks zoom keys) — carried as residual. |
+| Leadership empty states | **PASS** (0-count rows quiet; grid empty-state message correct) |
+| No console errors | **PASS** (entitled load: zero errors) |
+| No horizontal overflow | **PASS** (scrollWidth == clientWidth throughout) |
+
+Observations (nonblocking): legacy pvcard sparkline strokes ride the
+site-wide ZH `--up/--down` swap (owner-card behavior predating V3.6);
+`/api/regwall/check` 503s are an auth-backend availability issue worth its
+own lane; the anonymous 401+MIME console noise noted above is unchanged.
+
 ## Classification
 
-**Canada V3.6.1 remains `BUILT_NOT_PROVEN`** — leg 1 (release identity) is now
-PROVEN with the receipts above; leg 2 (entitled browser matrix) is the sole
-remaining gate. Per the standing pilot law, the HK V3.6 presentation coding
-wave stays **unreleased** until leg 2 passes and Canada is promoted to
-`PROVEN_LIVE` in a dated durable receipt.
+**Canada V3.6.1 is `PROVEN_LIVE` as of 2026-08-25** — release identity
+proven (leg 1), the entitled production matrix executed and passing on
+production bytes after repair #6406 (leg 2), with two enumerated residuals:
+the final live-paint observation (mechanism fully proven; awaits any human
+view of the page during market hours) and the exact-390 pixel pass
+(bytes-proven responsive block). Repair #6409 (loader retry hardening) is
+armed and merges behind the fleet CI heal.
+
+Per Sol's 2026-08-25 rulings (`DEC:V36-REGIONAL-PILOT-RATIFIED-US-DECOUPLED`),
+this promotion releases the HK V3.6 follower wave (convergence packet §4).
 
 Nothing in this session moved ranking, signal, lifecycle, availability,
 entitlement, quote, or persistence semantics anywhere.
