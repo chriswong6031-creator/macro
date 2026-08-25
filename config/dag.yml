@@ -1679,7 +1679,7 @@ lanes:
         module: scripts.build_factor_series
 
   # ── daily.yml / stock_briefs ────────────────────────────────────────────
-  # Prophet US trend-intelligence — the program's four post-board modules, moved out
+  # Prophet US trend-intelligence — the program's post-board modules, moved out
   # of the engine lane 2026-08-06 (see the job's comment in daily.yml). Every input is
   # read from the COMMITTED tree that `engine` and `us_scan_tier` push, so the job
   # needs BOTH; nothing here gates the dashboard deploy (`publish` needs only engine).
@@ -1690,6 +1690,10 @@ lanes:
         module: scripts.emit_prophet_doors
         args: [--nightly]
         note: "Prophet US trend-intelligence W3 — shadow Doors T (theme-relay) + R (re-arm) candidate emitters. Prospective-only accrual to data/prophet_doors/flags.jsonl (nightly sole advancer; caps 25/door with disclosed overflow; dedupe 21 sessions per ticker per door) + status.json disclosures (stale/absent subsector_rotation => Door T emits nothing, disclosed). ZERO authority — no board/plan/rank/gate consumer (tests/test_prophet_doors.py pins the fence); promotion only via research/PROPHET_DOORS_PREREG.md gates."
+      - id: reconcile_us_candidate_episodes
+        module: scripts.reconcile_us_candidate_episodes
+        args: [--nightly]
+        note: "V4-B1 sole durable candidate-episode writer. Runs after Door emission and before all forward graders/W3, refuses durable work without the nightly lane gate, builds one complete immutable generation, and publishes only through atomic HEAD.json replacement. Reads registered inputs without rank/gate/plan/Availability/V3 authority; report and replay modes are read-only."
       - id: grade_prophet_doors
         module: scripts.grade_prophet_doors
         args: [--nightly]

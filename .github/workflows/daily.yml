@@ -6389,10 +6389,11 @@ jobs:
   # safe (doors dedupe 21 sessions/ticker, grades freeze on their key, the miss-audit is
   # idempotent on price_through).
   # env COLLECT_LANE=nightly is LOAD-BEARING, not decoration: emit_prophet_doors,
-  # grade_prophet_doors and grade_us_prophet_candidates all gate their forward advance on
+  # reconcile_us_candidate_episodes, grade_prophet_doors, grade_us_prophet_candidates,
+  # and accrue_us_prophet_w3 all gate their forward advance on
   # engine.ledger_lane.nightly_advance_enabled() (COLLECT_LANE/US_LANE == "nightly") on top
-  # of --nightly. Without it these three would run green and write NOTHING — pinned by
-  # tests/test_prophet_off_engine_lane.py.
+  # of --nightly. Without it these writers would run green and write NOTHING — pinned by
+  # tests/test_prophet_off_engine_lane.py and tests/test_us_candidate_episode_wiring.py.
   us_prophet_ledgers:
     needs: [et_gate, engine, us_scan_tier]
     if: always() && needs.et_gate.outputs.run != 'false'
@@ -6403,7 +6404,7 @@ jobs:
     timeout-minutes: 60
     env:
       COLLECT_LANE: nightly   # job-level sentinel — see the note above; the forward-ledger
-                              # advance gate for three of the four steps below.
+                              # advance gate for five of the six writer steps below.
     steps:
       - name: timings — job start mark (W2)
         run: date +%s > "${RUNNER_TEMP}/nightly-timings-${GITHUB_RUN_ID}-${GITHUB_JOB}-start"
@@ -6428,6 +6429,17 @@ jobs:
         # the module already degrades internally to a disclosed null, so a non-zero exit is a
         # real crash and must be visible — and it can no longer cost anything but this job.
         run: python -m scripts.emit_prophet_doors --nightly
+      - name: Prophet B1 — reconcile canonical candidate episodes (immutable generation + atomic HEAD)
+        # V4-B1 is the sole durable candidate-episode writer. It reads the engine-owned
+        # full TURN WATCH sidecar plus the committed candidate/Doors/Radar inputs, validates
+        # one complete immutable generation, and makes it visible with one atomic HEAD.json
+        # replacement. The command itself refuses durable work without BOTH --nightly and
+        # COLLECT_LANE=nightly. No continue-on-error: corrupt prior truth, an invalid source,
+        # or a failed publication is a real red. A manual report/replay remains read-only.
+        # Runs after Door emission and before all forward graders/W3 so those remain
+        # independent measurement consumers rather than episode authorities.
+        if: always()
+        run: python -m scripts.reconcile_us_candidate_episodes --nightly
       - name: Prophet doors — grade matured flags at H=10/21 vs SPY (policy-free marks)
         # Grades data/prophet_doors/flags.jsonl into grades.jsonl via engine.grading.forward_metrics
         # (next-bar fill, positional session horizons, excess vs SPY) — the SAME ruler grade_us_board
@@ -6496,10 +6508,11 @@ jobs:
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          # Every path below is written ONLY by the five steps above (no other lane writes
+          # Every path below is written ONLY by the six steps above (no other lane writes
           # them), so the add list is exact rather than a broad `git add data/`: this job
           # must never carry another lane's stray runner-tree bytes to main.
           git add data/prophet_doors 2>/dev/null || true
+          git add data/us_prophet_rank/episodes 2>/dev/null || true
           git add data/us_prophet_rank/grades 2>/dev/null || true
           git add data/us_prophet_rank/w3 2>/dev/null || true
           git add data/prophet_miss_audit 2>/dev/null || true

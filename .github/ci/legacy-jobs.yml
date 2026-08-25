@@ -10575,6 +10575,12 @@ jobs:
       # check on prophet_bridge.select_candidates.
       - name: US candidate-pool lanes (lossless partition + store columns + no authority leak)
         run: python -m pytest tests/test_us_candidate_lanes.py -q
+      # V4-B1 canonical candidate episodes: pure event contract, source-specific intake,
+      # immutable-generation/atomic-HEAD publication, and this workflow/registry authority
+      # fence. TURN WATCH's own discovery suite stays in its existing engine owner; B1 reads
+      # its sidecar and does not absorb the producer.
+      - name: US B1 canonical candidate episodes (contract + intake + reconciler + wiring)
+        run: python -m pytest tests/test_us_candidate_episode.py tests/test_us_candidate_episode_intake.py tests/test_us_candidate_episode_reconciler.py tests/test_us_candidate_episode_wiring.py -q
       # W1.5 board-session anchor (#5303/#5307): the earnings-blackout gate and the
       # display-tier chip read the BOARD's session, never the render host's wall
       # clock — hosts straddling local midnight flipped membership (78 vs 81 buy
