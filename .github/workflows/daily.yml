@@ -3626,12 +3626,12 @@ jobs:
           if [ "$rc" -ne 0 ]; then echo "::warning title=reconcile_prophet_live::rc=$rc (non-fatal — the R2 spool is durable, tomorrow picks the day back up)"; fi
           exit 0
       - name: TURN WATCH desk (early-surfacing deck — display tier)
-        # ANTICIPATION §6.9 R8. Rebuilds site/turn_watch/turn_watch.json: every name whose
-        # earliest turn evidence fired in the last 5 sessions, with the operator's review
-        # checklist pre-computed. Reads committed stores only (data/yahoo, membership.json,
-        # site/basketdata/us_basket_turn.json); writes ONE site/ artifact and advances NO
-        # ledger, so a re-run is idempotent and a failed run costs a day's refresh — the
-        # deck keeps yesterday's committed artifact and tomorrow's run replaces it.
+        # ANTICIPATION §6.9 R8. Rebuilds the capped public
+        # site/turn_watch/turn_watch.json deck and writes the private, uncapped B1 intake
+        # sidecar at data/us_prophet_rank/episode_inputs/turn_watch/<session>.json from the
+        # same in-memory rows. The existing engine broad-data commit owns both artifacts.
+        # Neither artifact is a ledger or authority surface, so a failed run costs a day's
+        # refresh and the next engine run replaces the prior session's public deck.
         #
         # PATH IS LOAD-BEARING — site/turn_watch/, never site/prophet/. The "commit engine
         # outputs" step below restores site/prophet from HEAD (`git checkout HEAD --
@@ -6435,10 +6435,12 @@ jobs:
         # one complete immutable generation, and makes it visible with one atomic HEAD.json
         # replacement. The command itself refuses durable work without BOTH --nightly and
         # COLLECT_LANE=nightly. No continue-on-error: corrupt prior truth, an invalid source,
-        # or a failed publication is a real red. A manual report/replay remains read-only.
+        # or a failed publication is a real red. This step is schedule-only: a manual daily
+        # dispatch must skip it, while `always()` preserves visibility after an earlier
+        # scheduled sibling fails. Manual report/replay modes remain read-only.
         # Runs after Door emission and before all forward graders/W3 so those remain
         # independent measurement consumers rather than episode authorities.
-        if: always()
+        if: always() && github.event_name == 'schedule'
         run: python -m scripts.reconcile_us_candidate_episodes --nightly
       - name: Prophet doors — grade matured flags at H=10/21 vs SPY (policy-free marks)
         # Grades data/prophet_doors/flags.jsonl into grades.jsonl via engine.grading.forward_metrics

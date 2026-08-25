@@ -175,8 +175,9 @@ waves:
       BUILT_PENDING_NATURAL_ACCEPTANCE. Merge the reviewed B1 code/wiring, then wait
       for the first ordinary scheduled nightly descendant. Accept only from its exact
       HEAD-referenced immutable generation, receipt/source hashes, workflow ancestry,
-      and read-only canonical-reader proof. A manual dispatch, rerun, replay, report
-      mode, or CI fixture is not natural acceptance. D5 remains blocked until then.
+      and read-only canonical-reader proof. The B1 step itself is schedule-only and is
+      skipped by daily workflow_dispatch; a manual dispatch, rerun, replay, report mode,
+      or CI fixture is not natural acceptance. D5 remains blocked until then.
   - id: b2
     depends_on: [b1]
     title: "V4-B2 — entry-event correction hardening (B-15..B-19)"
@@ -584,7 +585,8 @@ next_action: >
   B1 is BUILT_PENDING_NATURAL_ACCEPTANCE on its single reviewed carrier. Merge it,
   then wait for the first ordinary scheduled nightly descendant and validate the exact
   HEAD-selected immutable generation, receipt/source hashes, ancestry, and canonical
-  read path. Do not dispatch, rerun, or replay as a substitute. D5 remains blocked;
+  read path. The B1 workflow step is schedule-only; do not dispatch, rerun, or replay as
+  a substitute. D5 remains blocked;
   PR #6275 stays a contract-only carrier to reconcile only after B1 acceptance without
   losing its frozen D5 evidence terms. A2/A3/A4 and all other V4 waves remain separate.
 ---

@@ -10,6 +10,7 @@ from __future__ import annotations
 from pathlib import Path
 import re
 
+import pytest
 import yaml
 
 
@@ -71,6 +72,35 @@ B1_DATASETS = {
     },
 }
 
+UPSTREAM_DATASETS = {
+    "prophet.us.context_vector.candidates": {
+        "owner": "prophet-us-context-vector",
+        "producer": "engine/us_context_vector.py::append_candidates",
+        "storage": "data/us_prophet_rank/candidates/{month}.parquet",
+        "status": "PRODUCED",
+        "schema_name": "us_prophet_rank.candidates/v1",
+    },
+    "prophet.us.doors.flags": {
+        "owner": "WS:PROPHET-US-ENTRY-TIMING",
+        "producer": "scripts/emit_prophet_doors.py",
+        "storage": "data/prophet_doors/flags.jsonl",
+        "status": "PRODUCED",
+        "schema_name": "prophet_doors/v1",
+    },
+    "entry_radar.forward_events": {
+        "owner": "WS:LIVE-ENTRY-RADAR",
+        "producer": "scripts/reconcile_entry_radar.py",
+        "storage": "data/entry_radar/forward.parquet",
+        "status": "PRODUCED",
+        "schema_name": "mastermind.entry_event.v1",
+    },
+}
+
+FORBIDDEN_B1_AUTHORITY_TOKENS = (
+    "us_candidate_episode",
+    "data/us_prophet_rank/episodes",
+)
+
 
 def _load(path: Path):
     return yaml.safe_load(path.read_text(encoding="utf-8"))
@@ -86,6 +116,22 @@ def _step_index(steps: list[dict[str, object]], needle: str) -> int:
     return hits[0]
 
 
+def _workflow_triggers(workflow: dict[str, object]) -> dict[str, object]:
+    # PyYAML 1.1 resolves the unquoted GitHub Actions key ``on`` as boolean true.
+    triggers = workflow.get("on") or workflow.get(True)
+    assert isinstance(triggers, dict)
+    return triggers
+
+
+def _assert_no_b1_authority(paths: list[Path]) -> None:
+    assert paths, "authority fence resolved no source files"
+    for path in paths:
+        assert path.is_file(), f"authority owner missing from scan: {path}"
+        text = path.read_text(encoding="utf-8")
+        for token in FORBIDDEN_B1_AUTHORITY_TOKENS:
+            assert token not in text, f"{path}: acquired B1 authority token {token!r}"
+
+
 def test_natural_nightly_is_the_only_durable_b1_workflow_entrypoint() -> None:
     workflow_hits: list[tuple[Path, str]] = []
     for path in (ROOT / ".github" / "workflows").glob("*.yml"):
@@ -97,6 +143,30 @@ def test_natural_nightly_is_the_only_durable_b1_workflow_entrypoint() -> None:
     text = workflow_hits[0][1]
     assert text.count(B1_COMMAND) == 1
     assert "scripts.reconcile_us_candidate_episodes --replay" not in text
+
+
+def test_manual_daily_dispatch_exists_but_cannot_reach_the_b1_writer() -> None:
+    workflow = _load(DAILY)
+    triggers = _workflow_triggers(workflow)
+    assert "workflow_dispatch" in triggers
+
+    job = workflow["jobs"]["us_prophet_ledgers"]
+    b1_step = job["steps"][_step_index(job["steps"], B1_COMMAND)]
+    assert b1_step["if"] == "always() && github.event_name == 'schedule'"
+
+
+def test_every_declared_daily_cron_can_reach_the_schedule_only_b1_step() -> None:
+    workflow = _load(DAILY)
+    schedules = _workflow_triggers(workflow)["schedule"]
+    assert isinstance(schedules, list) and schedules
+    assert all(isinstance(row.get("cron"), str) and row["cron"] for row in schedules)
+
+    job = workflow["jobs"]["us_prophet_ledgers"]
+    b1_step = job["steps"][_step_index(job["steps"], B1_COMMAND)]
+    condition = str(b1_step["if"])
+    assert condition == "always() && github.event_name == 'schedule'"
+    assert "github.event.schedule" not in condition
+    assert job["if"] == "always() && needs.et_gate.outputs.run != 'false'"
 
 
 def test_b1_runs_after_both_doors_steps_and_before_grades_and_w3() -> None:
@@ -176,6 +246,31 @@ def test_registry_declares_all_six_b1_contracts_and_clocks() -> None:
         assert "present-day state backward" in row["notes"]
 
 
+def test_registry_declares_the_three_existing_b1_upstream_stores_without_absorbing_ownership() -> None:
+    contracts = {row["dataset_id"]: row for row in _load(REGISTRY)["datasets"]}
+    assert UPSTREAM_DATASETS.keys() <= contracts.keys()
+    for dataset_id, expected in UPSTREAM_DATASETS.items():
+        row = contracts[dataset_id]
+        for field in ("owner", "producer", "storage", "status"):
+            assert row[field] == expected[field], f"{dataset_id}:{field}"
+        assert row["schema"]["contract_schema"]["value"] == expected["schema_name"]
+
+
+def test_every_b1_identity_column_exists_in_its_declared_schema_or_grain() -> None:
+    contracts = {row["dataset_id"]: row for row in _load(REGISTRY)["datasets"]}
+    for dataset_id in B1_DATASETS:
+        row = contracts[dataset_id]
+        identity = row.get("identity")
+        if not identity:
+            continue
+        id_column = identity["id_column"]
+        assert id_column in set(row["grain"]) | set(row["schema"]), dataset_id
+    assert contracts["prophet.us.candidate_episode.events"]["identity"] == {
+        "id_column": "event_id",
+        "id_type": "content_address",
+    }
+
+
 def test_registry_resolves_one_head_and_rejects_orphan_generations_as_canonical() -> None:
     contracts = {row["dataset_id"]: row for row in _load(REGISTRY)["datasets"]}
     for dataset_id in set(B1_DATASETS) - {"prophet.us.candidate_episode.turn_watch_input"}:
@@ -193,6 +288,9 @@ def test_registry_lineage_binds_b1_to_identity_and_immutable_truth() -> None:
         "reference.vendor_aliases",
         "reference.issuer_master",
         "prophet.us.candidate_episode.turn_watch_input",
+        "prophet.us.context_vector.candidates",
+        "prophet.us.doors.flags",
+        "entry_radar.forward_events",
     }
     assert set(contracts["prophet.us.candidate_episode.events"]["inputs"]) == identity_and_anchor
     assert set(contracts["prophet.us.candidate_episode.suppressions"]["inputs"]) == identity_and_anchor
@@ -206,16 +304,42 @@ def test_registry_lineage_binds_b1_to_identity_and_immutable_truth() -> None:
 
 
 def test_b1_does_not_become_rank_plan_availability_radar_or_v3_authority() -> None:
-    guarded = [
+    canonical_owners = [
         ROOT / "engine" / "prophet_bridge.py",
         ROOT / "engine" / "us_board_rank.py",
-        ROOT / "engine" / "us_entry_status.py",
+        ROOT / "engine" / "us_prophet_fusion.py",
+        ROOT / "engine" / "entry_signal.py",
+        ROOT / "engine" / "prophet_live" / "live_states.py",
     ]
-    guarded.extend(sorted((ROOT / "engine" / "entry_radar").glob("*.py")))
-    guarded.extend(sorted((ROOT / "engine").glob("*prophet*v3*.py")))
-    for path in guarded:
-        if not path.is_file():
+    assert all(path.is_file() for path in canonical_owners)
+
+    radar = sorted((ROOT / "engine" / "entry_radar").rglob("*.py"))
+    assert radar and any(path.parent != ROOT / "engine" / "entry_radar" for path in radar)
+
+    scripts = sorted((ROOT / "scripts").rglob("*.py"))
+    assert scripts
+    plan_selection = []
+    for path in scripts:
+        if path == ROOT / "scripts" / "reconcile_us_candidate_episodes.py":
             continue
         text = path.read_text(encoding="utf-8")
-        assert "us_candidate_episode" not in text, path
-        assert "data/us_prophet_rank/episodes" not in text, path
+        if "originate_plans(" in text or "select_candidates(" in text:
+            plan_selection.append(path)
+    assert plan_selection
+    assert ROOT / "scripts" / "build_prophet.py" in plan_selection
+
+    _assert_no_b1_authority(sorted(set(canonical_owners + radar + plan_selection)))
+
+
+@pytest.mark.parametrize(
+    "relative",
+    ("engine/entry_radar/producers/future.py", "engine/us_prophet_fusion.py"),
+)
+def test_authority_fence_refutes_nested_radar_and_v3_owner_leaks(
+    tmp_path: Path, relative: str
+) -> None:
+    path = tmp_path / relative
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("from engine import us_candidate_episode\n", encoding="utf-8")
+    with pytest.raises(AssertionError, match="acquired B1 authority token"):
+        _assert_no_b1_authority([path])

@@ -31,7 +31,9 @@ rationale: >
   sequential replacement of ledgers, projections, and receipts cannot be crash-atomic:
   only an immutable complete generation plus one atomic pointer provides a single
   visibility boundary. These bindings keep B1 a canonicalization plane with no rank,
-  gate, plan, Availability, or market-verdict authority.
+  gate, plan, Availability, or market-verdict authority. Declaring context-vector
+  candidates, Door flags, and Radar forward events as registry inputs preserves their
+  incumbent producers and owners; lineage is not an ownership transfer.
 alternatives:
   - option: Key episodes by ticker/date or by an expert detector identifier
     why_not: >
@@ -64,6 +66,7 @@ evidence:
   - "Canonical intake and exact producer identities: commits 756daff72b97, 642df24bd3a8; tests/test_us_candidate_episode_intake.py and tests/test_us_turn_watch.py"
   - "Immutable-generation writer and independent fix reviews: commits 982422be1e8f, 4535a5237309, cde1c285bed2, 0ecd1d193617; tests/test_us_candidate_episode_reconciler.py"
   - "Workflow, CI, and registry authority fence: tests/test_us_candidate_episode_wiring.py"
+  - "Incumbent upstream ownership map: research/prophet_v4/CONTRACT_AND_OWNER_MAP.md sections 1-2 and config/dataset_registry.yml"
 affects:
   - WS:PROPHET-US-V4-RECOVERY
   - engine/us_candidate_episode.py

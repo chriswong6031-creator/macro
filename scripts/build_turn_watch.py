@@ -2,14 +2,17 @@
 """build_turn_watch.py — nightly builder for the TURN WATCH desk (ANTICIPATION §6.9 R8).
 
 Writes:
-  site/turn_watch/turn_watch.json  — the early-surfacing deck + its whole disclosure block
+  site/turn_watch/turn_watch.json
+      Public capped early-surfacing deck plus its whole disclosure block.
+  data/us_prophet_rank/episode_inputs/turn_watch/<session>.json
+      Private uncapped B1 intake sidecar built from the same in-memory candidate rows.
 
   NOT site/prophet/ — that root is exclusive Prophet publisher authority and the nightly
   engine job restores it from HEAD before staging, so a deck written there is reverted on a
   SUCCESSFUL night too. This desk owns its own site root; see engine.us_turn_watch
   .write_artifact.
 
-Reads (all committed, no network, no data/ mutations):
+Reads (all committed, no network; the private sidecar above is the only data/ mutation):
   data/yahoo/*.parquet                     the graded deck universe + the SPY benchmark
   data/baskets/membership.json             group names (EN/ZH) and member lists
   site/basketdata/us_basket_turn.json      the group lifecycle states (that organ's artifact)
@@ -17,9 +20,9 @@ Reads (all committed, no network, no data/ mutations):
 Spec: research/PROPHET_US_EYES_OPEN_MASTERPLAN_BY_FABLE.md §6.9 R8.
 Schema + the whole trigger/scoring definition: engine/us_turn_watch.py.
 
-DISPLAY TIER, ZERO SCORED AUTHORITY. This builder writes one artifact and advances NO
-ledger — the nightly is the sole ledger advancer and this desk keeps no ledger of its own.
-Nothing it emits ranks, gates or sizes a graded position.
+DISPLAY TIER, ZERO SCORED AUTHORITY. This builder writes the public artifact and its private
+input snapshot but advances NO ledger — the nightly is the sole ledger advancer and this
+desk keeps no ledger of its own. Nothing it emits ranks, gates or sizes a graded position.
 
 Never-raise contract: a missing input degrades the deck (fewer rows, printed nulls), it
 never fails the nightly. The process exit code is 0 unless the artifact could not be

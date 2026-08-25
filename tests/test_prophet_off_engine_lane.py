@@ -302,13 +302,20 @@ class TestFailureIsolation:
             "was necessary; here it turns the isolated job into a permanently green one")
 
     def test_a_crashed_module_does_not_silently_stop_an_independent_ledger(self, job):
-        """`if: always()` on the later steps is per-module accrual, not error masking."""
+        """Later steps retain ``always()``; B1 additionally excludes manual dispatch."""
         moved_steps = [s for s in job["steps"]
                        if any(f"python -m {m} --nightly" in _runs(s) for m, _ in MOVED)]
         for step in moved_steps[1:]:
-            assert (step.get("if") or "").strip() == "always()", (
+            condition = (step.get("if") or "").strip()
+            expected = (
+                "always() && github.event_name == 'schedule'"
+                if "scripts.reconcile_us_candidate_episodes" in _runs(step)
+                else "always()"
+            )
+            assert condition == expected, (
                 f"{step.get('name')!r}: without always() a crashed sibling skips this "
-                "module and its ledger silently stops advancing")
+                "module and its ledger silently stops advancing; B1 must also remain "
+                "schedule-only")
 
     def test_the_commit_runs_even_when_a_module_failed(self, job):
         commit = next(s for s in job["steps"]

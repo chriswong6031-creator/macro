@@ -564,6 +564,90 @@ datasets:
       disclosed in _receipt.json's `pending_transition_refusals`/`listing_continuity`
       blocks, not written here — this dataset records only a REALIZED correction.
 
+  # ── Existing Prophet inputs consumed by V4-B1 ─────────────────────────────
+  # These stores retain their incumbent producers and owners. Registration as B1
+  # lineage does not transfer ranking, Door, or Radar authority to B1.
+  - dataset_id: prophet.us.context_vector.candidates
+    layer: L1
+    status: PRODUCED
+    owner: prophet-us-context-vector
+    producer: engine/us_context_vector.py::append_candidates
+    storage: data/us_prophet_rank/candidates/{month}.parquet
+    format: parquet
+    grain: [stamp_date, ticker, board_definition]
+    identity: {id_column: ticker, id_type: membership_symbol_at_observation}
+    temporal_profile: SNAPSHOT_SERIES
+    timezone: America/New_York
+    frequency: nightly
+    conflict_policy: DOMAIN_AUTHORITY
+    quality_checks: [uniqueness, temporal_integrity, completeness]
+    version: "1.0.0"
+    schema:
+      contract_schema: {dtype: string, nullable: false, value: us_prophet_rank.candidates/v1}
+      stamp_date: {dtype: date, nullable: false, clock: point_in_time, note: "observation session; keep-first at the declared grain"}
+      ticker: {dtype: string, nullable: false}
+      board_definition: {dtype: string, nullable: false}
+    code_consumers: [engine/us_candidate_episode_intake.py]
+    notes: >
+      Existing monthly sensory-spine snapshots produced by us_context_vector. The B1
+      intake reads only the latest valid stamp_date and does not acquire board, rank,
+      candidate-membership, or context-vector ownership.
+
+  - dataset_id: prophet.us.doors.flags
+    layer: L2
+    status: PRODUCED
+    owner: WS:PROPHET-US-ENTRY-TIMING
+    producer: scripts/emit_prophet_doors.py
+    storage: data/prophet_doors/flags.jsonl
+    format: jsonl
+    grain: [date, door, ticker]
+    identity: {id_column: ticker, id_type: membership_symbol_at_observation}
+    temporal_profile: EVENT
+    timezone: America/New_York
+    frequency: nightly
+    conflict_policy: DOMAIN_AUTHORITY
+    quality_checks: [uniqueness, temporal_integrity]
+    version: "1.0.0"
+    schema:
+      contract_schema: {dtype: string, nullable: false, value: prophet_doors/v1}
+      date: {dtype: date, nullable: false, clock: point_in_time, note: "nightly flag session"}
+      door: {dtype: string, nullable: false}
+      ticker: {dtype: string, nullable: false}
+      features: {dtype: object, nullable: false}
+    code_consumers: [engine/us_candidate_episode_intake.py]
+    notes: >
+      Existing append-only Door flag ledger. B1 may normalize current observations or
+      suppressions from it but never owns Door definitions, preregistration, grading,
+      re-arm semantics, or plan admission.
+
+  - dataset_id: entry_radar.forward_events
+    layer: L2
+    status: PRODUCED
+    owner: WS:LIVE-ENTRY-RADAR
+    producer: scripts/reconcile_entry_radar.py
+    storage: data/entry_radar/forward.parquet
+    format: parquet
+    grain: [episode_address]
+    identity: {id_column: episode_address, id_type: content_address}
+    temporal_profile: EVENT
+    timezone: UTC
+    frequency: nightly
+    conflict_policy: DOMAIN_AUTHORITY
+    quality_checks: [uniqueness, temporal_integrity, referential]
+    version: "1.0.0"
+    schema:
+      contract_schema: {dtype: string, nullable: false, value: mastermind.entry_event.v1}
+      episode_address: {dtype: string, nullable: false, note: "Radar-owned expert event address"}
+      ticker: {dtype: string, nullable: false}
+      decision_session: {dtype: date, nullable: false, clock: point_in_time}
+      signal_ts: {dtype: RFC3339_UTC, nullable: true}
+      signal_known_ts: {dtype: RFC3339_UTC, nullable: true, clock: point_in_time}
+    code_consumers: [engine/us_candidate_episode_intake.py]
+    notes: >
+      Existing Radar forward projection. B1 may relate a registered expert event to a
+      canonical episode or emit a suppression, but Radar retains detector, event-minting,
+      forward-ledger, and promotion authority under WS:LIVE-ENTRY-RADAR.
+
   # ── Prophet US V4-B1 canonical candidate episodes ─────────────────────────
   # BUILT_PENDING_NATURAL_ACCEPTANCE: these contracts are PROPOSED until the first
   # ordinary scheduled nightly creates and validates the production generation.
@@ -604,14 +688,14 @@ datasets:
     storage: data/us_prophet_rank/episodes/generations/<HEAD.generation_id>/events/{month}.jsonl
     format: jsonl
     grain: [event_id]
-    identity: {id_column: security_id, id_type: SEC}
+    identity: {id_column: event_id, id_type: content_address}
     temporal_profile: EVENT
     timezone: UTC
     frequency: nightly
     conflict_policy: DOMAIN_AUTHORITY
     quality_checks: [uniqueness, temporal_integrity, referential]
     version: "1.0.0"
-    inputs: [reference.security_master, reference.vendor_aliases, reference.issuer_master, prophet.us.candidate_episode.turn_watch_input]
+    inputs: [reference.security_master, reference.vendor_aliases, reference.issuer_master, prophet.us.candidate_episode.turn_watch_input, prophet.us.context_vector.candidates, prophet.us.doors.flags, entry_radar.forward_events]
     schema:
       contract_schema: {dtype: string, nullable: false, value: prophet.candidate_episode_event/v1}
       event_id: {dtype: string, nullable: false, note: "content address over semantic identity; recorded_at is excluded"}
@@ -642,10 +726,11 @@ datasets:
     conflict_policy: DOMAIN_AUTHORITY
     quality_checks: [uniqueness, temporal_integrity]
     version: "1.0.0"
-    inputs: [reference.security_master, reference.vendor_aliases, reference.issuer_master, prophet.us.candidate_episode.turn_watch_input]
+    inputs: [reference.security_master, reference.vendor_aliases, reference.issuer_master, prophet.us.candidate_episode.turn_watch_input, prophet.us.context_vector.candidates, prophet.us.doors.flags, entry_radar.forward_events]
     schema:
       contract_schema: {dtype: string, nullable: false, value: prophet.candidate_episode_suppression/v1}
       suppression_id: {dtype: string, nullable: false}
+      security_id: {dtype: string, nullable: true, note: "resolved Data OS security when the rejected source could be mapped; null for identity failures"}
       reason: {dtype: string, nullable: false, note: "closed suppression enum; evidence, not a market verdict"}
       recorded_at: {dtype: RFC3339_UTC, nullable: false, clock: point_in_time, note: "nightly materialization time"}
     code_consumers: [engine/us_candidate_episode.py, scripts/reconcile_us_candidate_episodes.py]
@@ -693,7 +778,7 @@ datasets:
     storage: data/us_prophet_rank/episodes/generations/<HEAD.generation_id>/all_candidates.json
     format: json
     grain: [episode_id]
-    identity: {id_column: security_id, id_type: SEC}
+    identity: {id_column: episode_id, id_type: candidate_episode_id}
     temporal_profile: DERIVED
     timezone: UTC
     frequency: nightly

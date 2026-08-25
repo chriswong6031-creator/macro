@@ -34,13 +34,18 @@ changed:
   - path: .github/workflows/daily.yml, .github/ci/legacy-jobs.yml, and config/dag.yml
     what: >
       Places one hard-failing B1 natural writer after Door emission and before every
-      forward grader/W3, stages only data/us_prophet_rank/episodes, declares the exact
-      DAG order/--nightly arguments, and runs the four B1 suites in
+      forward grader/W3. The step retains failure visibility but is explicitly limited
+      to schedule events, so daily workflow_dispatch skips B1. It stages only
+      data/us_prophet_rank/episodes, declares the exact DAG order/--nightly arguments,
+      and runs the four B1 suites in
       prophet-us-context-and-grades while TURN WATCH stays in its existing owner.
   - path: config/dataset_registry.yml
     what: >
-      Registers six proposed B1 input/output contracts, exact clocks and lineage, and
-      the rule that only the generation selected by validated HEAD.json is canonical.
+      Registers six proposed B1 input/output contracts plus the three existing produced
+      inputs B1 actually loads: context-vector candidates, Door flags, and Radar forward
+      events. Their incumbent owners remain explicit, event identity is event_id/content_address,
+      both event and suppression lineage list every intake, and only the generation selected
+      by validated HEAD.json is canonical.
   - path: tests/test_us_candidate_episode.py, tests/test_us_candidate_episode_intake.py, tests/test_us_candidate_episode_reconciler.py, tests/test_us_candidate_episode_wiring.py, tests/test_us_turn_watch.py
     what: >
       Pins event identity, PIT intake, atomic publication, natural-lane wiring,
@@ -58,8 +63,17 @@ changed:
       BUILT_PENDING_NATURAL_ACCEPTANCE state while preserving D5 todo/blocking prose.
 verified:
   - claim: >
+      Review-fix coverage demonstrated the manual-dispatch, event-identity, missing-lineage,
+      and authority-fence gaps before the schedule-only and registry repairs made it green.
+    command: >
+      PYTHONDONTWRITEBYTECODE=1 /opt/homebrew/bin/python3.12 -m pytest
+      tests/test_us_candidate_episode_wiring.py -q
+    result: >
+      Before the fix: 5 failed and 11 passed for the intended review gaps. After the fix:
+      16 passed. Three shared pytest temporary-directory cleanup warnings were unrelated.
+  - claim: >
       The B1 workflow/CI/registry tests were observed red for the missing integration
-      and then green after the exact wiring and six contracts were added.
+      and then green after the exact wiring and six B1 contracts were added.
     command: >
       /opt/homebrew/bin/python3.12 -m pytest
       tests/test_us_candidate_episode_wiring.py tests/test_dataos_registry.py -q
@@ -118,6 +132,22 @@ verified:
       are in scope; prophet-us-context-and-grades maps to pack 2, dataos-foundation to
       pack 7, and dag-conformance to pack 10. Their exact affected commands were run
       locally above; full pack execution was intentionally not used in the sparse tree.
+  - claim: >
+      Fix round 1 closes the schedule, registry, lineage, recursive authority-fence, and
+      TURN WATCH documentation review findings without changing B1 acceptance state.
+    command: >
+      PYTHONDONTWRITEBYTECODE=1 /opt/homebrew/bin/python3.12 -m pytest
+      tests/test_us_candidate_episode.py tests/test_us_candidate_episode_intake.py
+      tests/test_us_candidate_episode_reconciler.py tests/test_us_candidate_episode_wiring.py
+      tests/test_us_turn_watch.py -q; PYTHONDONTWRITEBYTECODE=1
+      /opt/homebrew/bin/python3.12 -m pytest tests/test_us_candidate_episode_wiring.py
+      tests/test_dataos_registry.py tests/test_prophet_off_engine_lane.py -q;
+      python3 scripts/agentos.py validate
+    result: >
+      170 focused passes; 89 structural passes; Agent OS 700 records, 0 errors, and
+      37 advisory/pre-existing warnings. Data OS and DAG owner commands separately
+      remained green at 378 and 189 passes; all twelve validate-only packs accepted
+      203/203 jobs with daily.yml correctly widening scope to all packs.
   - claim: >
       Independent Task 3 review closed every original and follow-on atomicity,
       durability, validation, retry, and provenance finding before integration began.
