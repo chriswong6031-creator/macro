@@ -3,7 +3,7 @@ workstream: WS:DEFENSE-PROCUREMENT-V3
 session: claude/d6b0-fms-architecture
 model: fable
 ended_because: complete
-prs: []
+prs: [6404]
 decisions:
   - DEC:FMS-CANONICAL-OWNER-IS-GOVREV-FMS-RAIL
 discoveries: []
