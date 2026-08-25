@@ -772,6 +772,36 @@ def test_canonical_reader_rejects_self_addressed_generation_with_cross_file_sema
         load_candidate_episode_store(_episode_root(tmp_path))
 
 
+def test_canonical_reader_rejects_projection_not_recomputed_from_immutable_events(
+    tmp_path: Path, monkeypatch,
+):
+    """Projection bytes and their hashes cannot replace the immutable event ledger."""
+    _seed_sources(tmp_path)
+    _run_nightly(tmp_path, monkeypatch)
+    generation = _generation(tmp_path)
+    projection_path = generation / "all_candidates.json"
+    projection = json.loads(projection_path.read_text())
+    projection["episodes"][0]["ticker_at_observation"] = "ALFA.LEDGER-DRIFT"
+    projection_bytes = (canonical_json(projection) + "\n").encode("utf-8")
+    projection_path.write_bytes(projection_bytes)
+
+    parquet_path = generation / "current.parquet"
+    parquet_bytes = writer._parquet_bytes(projection["episodes"])
+    parquet_path.write_bytes(parquet_bytes)
+
+    receipt_path = generation / "latest_receipt.json"
+    receipt = json.loads(receipt_path.read_text())
+    receipt["projection_hashes"] = {
+        "all_candidates.json": "sha256:" + sha256(projection_bytes).hexdigest(),
+        "current.parquet": "sha256:" + sha256(parquet_bytes).hexdigest(),
+    }
+    receipt_path.write_text(canonical_json(receipt) + "\n")
+    _readdress_current_generation(tmp_path)
+
+    with pytest.raises(EpisodeContractError, match="immutable event ledger projection"):
+        load_candidate_episode_store(_episode_root(tmp_path))
+
+
 def test_event_partition_loader_rejects_noncanonical_wrong_month_and_duplicate_rows(
     tmp_path: Path, monkeypatch,
 ):

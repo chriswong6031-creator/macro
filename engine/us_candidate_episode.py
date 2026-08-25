@@ -1161,6 +1161,8 @@ def validate_candidate_episode_generation_payload(directory: Path) -> ValidatedC
     if set(projection) != {"schema", "definition_era", "generated_from", "coverage", "episodes"}:
         raise EpisodeContractError("All Candidates envelope is invalid")
     rows = load_all_candidates(all_path, payload=all_bytes)
+    if canonical_json(project_events(events)) != canonical_json(rows):
+        raise EpisodeContractError("All Candidates rows differ from immutable event ledger projection")
     ledger_hash = _sha_receipt(canonical_json(tuple(events)).encode("utf-8"))
     if projection.get("generated_from") != {
         "event_count": len(events), "ledger_sha256": ledger_hash,
