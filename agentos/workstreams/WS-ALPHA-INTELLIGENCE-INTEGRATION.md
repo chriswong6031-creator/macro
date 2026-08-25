@@ -187,8 +187,21 @@ waves:
       and remains contract-only with no K2-C adapter authority.
   - id: k3
     title: K3 Opportunity Semantics — propagation contract (D), opportunity evidence vector (E)
-    status: todo
+    status: in_progress
     depends_on: [k1]
+    next_action: >
+      K3-E (opportunity evidence vector) contract freeze is delivered on a single
+      bounded carrier held DRAFT / HOLD-FOR-SOL by the commissioning session:
+      opportunity_evidence.vector.v1 wire + slot registry
+      (contracts/opportunity_evidence/), fail-closed validator + composer
+      (lib/opportunity_evidence.py), golden/hostile fixture packet with the
+      ten commissioned mutation kills, and
+      research/opportunity_evidence/K3E_OPPORTUNITY_EVIDENCE_VECTOR_CONTRACT_FREEZE_2026-08-25.md
+      (DEC:K3E-OPPORTUNITY-EVIDENCE-VECTOR-CONTRACT). Sol acceptance releases the
+      hold; nothing merges before it. K3-D remains todo and is NOT started or
+      authorized by the K3-E carrier. This is canonical K3-E — distinct from the
+      K3E Expectation-Market-Dynamics child program
+      (DEC:K3E-EXPECTATION-MARKET-DYNAMICS-FREEZE); neither replaces the other.
   - id: k4
     title: K4 Path/Event Intelligence — holdability extension (F), earnings event-clock waves (G)
     status: todo
