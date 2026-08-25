@@ -519,6 +519,7 @@ def _publish_transaction(repo_root: Path, receipt, projection, events, suppressi
     episode_root = repo_root / "data" / "us_prophet_rank" / "episodes"
     generations = episode_root / "generations"
     _mkdirs_fsynced(generations)
+    _fsync_directory(episode_root.parent)
     durable_receipt = {**receipt, "durable_write": True}
     payloads = _generation_payloads(durable_receipt, projection, events, suppressions,
                                     projection_parquet)

@@ -327,6 +327,48 @@ def test_first_publication_parent_fsync_failure_never_publishes_head(tmp_path: P
     assert not (_episode_root(tmp_path) / "HEAD.json").exists()
 
 
+def test_retry_after_failed_first_parent_fsync_fences_episodes_before_head(
+    tmp_path: Path, monkeypatch,
+):
+    """Filesystem existence cannot stand in for retrying a failed parent durability fence."""
+    _seed_sources(tmp_path)
+    episode_root = _episode_root(tmp_path)
+    parent = episode_root.parent
+    real_fsync = writer._fsync_directory
+
+    def fail_first_parent_fsync(path: Path) -> None:
+        if Path(path) == parent:
+            raise OSError("injected first episodes parent fsync failure")
+        real_fsync(path)
+
+    monkeypatch.setattr(writer, "_fsync_directory", fail_first_parent_fsync)
+    with pytest.raises(OSError, match="first episodes parent fsync failure"):
+        _run_nightly(tmp_path, monkeypatch)
+    assert episode_root.is_dir()
+    assert not (episode_root / "HEAD.json").exists()
+
+    retry_parent_fsyncs = 0
+    real_replace = writer._replace_head
+
+    def record_retry_fsync(path: Path) -> None:
+        nonlocal retry_parent_fsyncs
+        if Path(path) == parent:
+            retry_parent_fsyncs += 1
+        real_fsync(path)
+
+    def replace_after_retry_fence(source: Path, target: Path) -> None:
+        assert retry_parent_fsyncs >= 1
+        real_replace(source, target)
+
+    monkeypatch.setattr(writer, "_fsync_directory", record_retry_fsync)
+    monkeypatch.setattr(writer, "_replace_head", replace_after_retry_fence)
+    receipt = _run_nightly(tmp_path, monkeypatch)
+
+    assert retry_parent_fsyncs >= 1
+    assert receipt["durable_write"] is True
+    assert load_candidate_episode_store(episode_root)
+
+
 def test_reader_observes_only_old_or_new_generation_across_one_head_replace(tmp_path: Path, monkeypatch):
     """Any multi-file visibility boundary would expose a mixed ledger/projection set here."""
     _seed_sources(tmp_path)
