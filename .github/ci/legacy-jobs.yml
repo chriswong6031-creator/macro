@@ -4549,6 +4549,11 @@ jobs:
       # init, and write-failure honesty (blocker 3) end to end.
       - name: portfolio auth-transition — consumer-level proof (A1A closure)
         run: python -m pytest tests/test_portfolio_auth_transition_js.py -q
+      # A1B fast start: the frozen paste grammar plus the REAL Portfolio store's
+      # atomic local save, N-row cloud receipt, lost-response reconciliation,
+      # auth-generation fence, and UUID-preserving local-to-cloud fold.
+      - name: portfolio import — exact draft + failure-safe batch persistence (A1B)
+        run: python -m pytest tests/test_portfolio_import_a1b_js.py -q
       # Repo hygiene, wired here because this wave introduced the class it closes: a crop
       # harness borrows site/stockdata/ from the main checkout for the duration of a
       # shoot, and an aborted run once left the symlink behind long enough for a broad

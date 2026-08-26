@@ -46,16 +46,19 @@ waves:
       protections remain intact.
   - id: A1B
     title: Portfolio Fast Start Import
-    status: todo
+    status: in_progress
     depends_on: [A1A]
     next_action: >
-      A1A is now accepted, so A1B is eligible for a separate bounded Sol commission.
-      Before any code write, refresh current Macro main, protected Terminal master,
-      open PR/worktree/path collisions, the Active Build Map, and the canonical
-      portfolio_positions mutation/identity contracts. Then ship one reviewed paste
-      to canonical positions vertical with stable identity, atomic/idempotent
-      persistence, lost-response safety, and Macro/Terminal conformance. Do not absorb
-      A2-A6 or a broad My Market rewrite.
+      Sol reviewed A1B PR #6335 at ff03e0aa28a2a3ece4293505812b1a848b2c23e8
+      and accepted the architecture in direction while requesting exactly two repairs:
+      freeze the reviewed draft throughout an in-flight Save, and classify a successful
+      local write followed by verification disagreement as terminal effect/state unknown.
+      Both bounded repairs and their discriminating regressions are now on the same
+      carrier, reconciled onto fresh Macro main, with served assets regenerated. Return
+      the new exact head only after its CI/fence/authority checks conclude, and preserve
+      the PR as DRAFT / HOLD-FOR-SOL. Sol re-review remains the sole next gate. Do not
+      merge, deploy, mutate production Portfolio rows, begin production acceptance,
+      change Terminal, or absorb A2-A6 from this carrier.
   - id: A2-A6
     title: Persistent sizing assumptions, CSV import, My Market rail, universal add, and Watchlist workspace
     status: todo
@@ -171,14 +174,15 @@ artifacts:
   - agentos/handoffs/MARKET-OS-2026-08-22-a1a-restoration-v2-probe.md
   - agentos/handoffs/MARKET-OS-2026-08-23-a1a-final-authenticated-matrix.md
   - agentos/handoffs/MARKET-OS-2026-08-23-a1a-sol-acceptance.md
+  - agentos/handoffs/MARKET-OS-2026-08-23-a1b-implementation.md
+  - agentos/handoffs/MARKET-OS-2026-08-24-a1b-sol-review-repair.md
   - agentos/handoffs/MARKET-OS-2026-08-20-a1a-merge-reconciliation.md
   - agentos/decisions/DEC-MARKET-OS-A1A-MERGED-PRODUCTION-ACCEPTANCE-REQUIRED.md
 next_action: >
-  PRIMARY: commission exactly A1B Portfolio Fast Start Import after a fresh current-head,
-  open-PR/worktree/path-collision, Active Build Map, and canonical mutation/identity
-  census across Macro and protected Terminal. A1B must write reviewed paste/import rows
-  to canonical portfolio_positions with stable identity, atomic/idempotent persistence,
-  lost-response safety, and Macro-Terminal conformance; do not absorb A2-A6. PARALLEL:
+  PRIMARY: Return the reconciled A1B repair head on DRAFT PR #6335 with exact-head
+  CI/fence/authority and browser receipts for Sol re-review. The carrier must remain
+  unmerged, undeployed, and production-unrun until Sol explicitly authorizes the next
+  action; do not absorb A2-A6. PARALLEL:
   RCTX-1 remains bound to merged #6300 and its existing Fable DELIVERY_ONLY transport;
   reconcile only when real ACK/branch/PR/return evidence appears and do not auto-failover.
 ---
@@ -191,12 +195,15 @@ Market; one shared Decision Spine; separate public intelligence and private expo
 and explicit fact, deterministic-state, forecast, and decision authority.
 
 A1A is accepted in production. The canonical Portfolio population/state authority seam
-is now a proven foundation for the next import wave: authenticated users do not fail open
+is the proven foundation for the import wave: authenticated users do not fail open
 to local Portfolio state; Watchlists and temporary baskets do not enter Portfolio count,
 market membership, weighting, book or risk; weighting assumptions and abstention are
 explicit; and Macro/Terminal agreement has been demonstrated across the frozen live
-matrix. Fast Start Import itself is still NOT_BUILT and must arrive through A1B rather
-than by relabeling the existing Watchlist/ENTERED paste path.
+matrix. A1B is implemented and its two bounded Sol review blockers are repaired on the
+same locally verified review carrier, but the new exact head still requires Sol re-review
+and remains unmerged, undeployed, production-unproven, and unaccepted. It writes canonical
+Portfolio positions rather than relabeling the existing Watchlist/ENTERED paste path;
+the next authority is Sol code review of the exact draft head.
 
 ## Program-parent note
 
