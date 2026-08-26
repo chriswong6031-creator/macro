@@ -1,0 +1,4 @@
+Accepted CF1 PR: #6297
+Accepted exact head: fc12904f59a5758817aa2c76ffaa40bb1ebcbf8e
+Accepted merge: dcdd939c45b23abce5ba04f95e330ac914a3904b
+Next wave: WS:EXECUTIVE-CAPACITY-FABRIC::CF2-F — Freeze Executive claim-time capacity evidence and acquisition
