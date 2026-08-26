@@ -1725,6 +1725,7 @@ on:
       - "tests/test_company_intelligence_neural_reader.py"
       - "tests/test_company_intelligence_event_workspace.py"
       - "tests/test_company_intelligence_qa_reconstruction.py"
+      - "tests/test_company_intelligence_qa_exchange.py"
       - "tests/test_world_state.py"
       # PR-C health builder tests (weekend-aware staleness, cadence exclusion, staleness_from).
       - "tests/test_neuralweb_health.py"
@@ -2124,6 +2125,14 @@ on:
       - "tests/test_prophet_live_pack.py"
       - "tests/test_prophet_live_evaluator.py"
       - "tests/test_prophet_live_reconcile.py"
+      # SILENT-FREEZE guard (2026-08 incident). The lane froze for 27 days because
+      # the producer, the status surface and the external dead-man each reported
+      # success independently. The guard therefore spans all three owners, so an
+      # edit to ANY of them must retrigger it — a guard that does not run on the
+      # file it guards fires on somebody else's PR instead (the #3488 failure mode).
+      - "tests/test_prophet_live_silent_freeze.py"
+      - "scripts/check_vps_live_health.py"
+      - "app/main.py"
       - "tests/fixtures/prophet_live/import_probe.py"
       # PROPHET LIVE VPS lane (§4.2a/§4.4a). The unit files, the reconciler that
       # installs them and the provisioner that arms them are the subjects of

@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-08-25",
+  "as_of": "2026-08-26",
   "authority": {
     "may_alert": false,
     "may_auto_promote": false,
@@ -38,20 +38,20 @@
   },
   "family": "pss_cr1_challenge_resilience_prospective",
   "gate_open": true,
-  "generated_utc": "2026-08-25T03:24:18.696138+00:00",
+  "generated_utc": "2026-08-26T03:31:45.891947+00:00",
   "ledger": {
     "advanced_today": 0,
     "appended_today": 1,
     "challenged_control": 8,
     "earliest_action": "2026-08-18",
-    "events": 12,
-    "failed_hold_diagnostic": 2,
-    "latest_action": "2026-08-24",
+    "events": 13,
+    "failed_hold_diagnostic": 3,
+    "latest_action": "2026-08-25",
     "matured": 0,
     "primary_events": 10,
     "rejected_pre_cutoff_today": 0,
     "resilient_leader": 2,
-    "ungraded": 12
+    "ungraded": 13
   },
   "manifest_sha256": "0b520e60616d60f4c4182e9796bbf4e23cc58279ccf2b0b2d03eb3cec3c352e1",
   "membership_sha256": "f00c9d70e0c554213d6aa9a82fecc1492bcedc49c04ce36d4a14647f85713baf",
@@ -61,9 +61,9 @@
   "registration_ok": true,
   "scan_census": {
     "derived_events": 1,
-    "eligible_future_rh1_sources": 3,
+    "eligible_future_rh1_sources": 2,
     "reasons": {
-      "awaiting_challenge_window": 2,
+      "awaiting_challenge_window": 1,
       "group_failed_hold_diagnostic": 1
     }
   },

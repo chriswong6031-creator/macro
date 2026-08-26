@@ -142,7 +142,31 @@ SAFE_MAX_REQUESTS = 100
 ST_DAILY_START = date(2016, 1, 1)
 PIT_UNIVERSE_START = date(2016, 1, 1)
 BSE_LAUNCH = date(2021, 11, 15)
-CALENDAR_HISTORY_START = date(1991, 1, 1)
+# --- Mainland session-clock epoch (frozen, definition-versioned) -------------
+# The canonical mainland session axis begins at a FROZEN epoch, not at the first
+# date any venue happens to publish.  The epoch is the earliest calendar year for
+# which TuShare `trade_cal` supplies a JOINTLY complete SSE+SZSE calendar; it is
+# frozen in source and is never selected at runtime, so two runs over the same
+# store can never disagree about which date owns which ordinal.
+#
+# 1992-01-01 was established by an outcome-blind source census over the landed
+# calendar partitions (`scripts/research/cn_limit_calendar_epoch_census.py`):
+# SSE and SZSE each return 366 of 366 unique civil dates for 1992, every year
+# 1992..2023 is jointly complete with zero open/closed parity mismatches, and
+# both exchanges show zero `pretrade_date` chain violations and zero missing
+# civil dates.  1991 fails only because TuShare returns 182 of 365 days for SZSE.
+#
+# That 182-day shortfall is SOURCE-HISTORY TRUNCATION, not evidence that the
+# missing civil dates fell outside the trading system.  Pre-epoch history is
+# therefore typed `PRE_EPOCH_SOURCE_UNSUPPORTED`: it is never imputed as closed,
+# never assigned an ordinal, and SSE history is never borrowed as exact SZSE
+# history.  Bump the definition string, never mutate the date in place, if a
+# future authority moves the epoch — artifacts stamped under different
+# definitions must stay distinguishable.
+MAINLAND_CALENDAR_EPOCH_DEFINITION = "mainland-joint-complete-v1"
+MAINLAND_CALENDAR_EPOCH = date(1992, 1, 1)
+PRE_EPOCH_SOURCE_STATE = "PRE_EPOCH_SOURCE_UNSUPPORTED"
+CALENDAR_HISTORY_START = MAINLAND_CALENDAR_EPOCH
 NAME_HISTORY_START_YEAR = 1990
 NAMECHANGE_MAX_PER_RUN = 5
 FUND_STATUSES = ("L", "D", "I")
@@ -426,6 +450,23 @@ def _iso(value: Any) -> str | None:
         pass
     text = str(value).strip()
     if not text or text.lower() in {"none", "nan", "nat"}:
+        return None
+    # TuShare's ZERO SENTINEL for an unpublished date.  `stock_basic` returns an
+    # empty string, already covered above, but `bak_basic` returns "0" -- which
+    # reached this function as a hard SpineError the first time pit_universe ever
+    # ran against the real vendor, killing the whole unit over one descriptive
+    # field on an otherwise valid A-share row.
+    #
+    # This is fail-CLOSED, not an imputation.  A null date is an EXPECTED state
+    # the callers already model: a row whose list_date is null "remains in the
+    # master but cannot enter a historical eligible universe" (see the
+    # effective_from branch in the stock_basic normaliser).  Nulling the sentinel
+    # therefore narrows eligibility; inventing a date would have widened it.
+    #
+    # An all-zero run is the only safe spelling of this test: every real date has
+    # a non-zero digit in its year, so this can never swallow one.  A malformed
+    # date that is merely wrong ("202401", "0000-00-00") still raises below.
+    if set(text) == {"0"}:
         return None
     return _parse_date(text).isoformat()
 
@@ -1834,6 +1875,40 @@ def compile_market_sessions(store: Path, start: date, end: date) -> pd.DataFrame
     calendar = pd.concat(frames, ignore_index=True)
     calendar = calendar.drop_duplicates(["exchange", "cal_date"], keep="last")
     calendar["cal_date"] = calendar["cal_date"].astype(str)
+
+    # The epoch bounds the AXIS, not merely the request.  Every set below was
+    # previously derived from all landed partitions regardless of the requested
+    # range, so a pre-epoch partition sitting on disk would silently occupy the
+    # low ordinals and shift every position -- moving the collection constant
+    # alone would not re-anchor anything.  Pre-epoch rows are therefore removed
+    # here, by definition, and reported rather than silently dropped.
+    epoch_iso = MAINLAND_CALENDAR_EPOCH.isoformat()
+    if start < MAINLAND_CALENDAR_EPOCH:
+        raise SpineError(
+            f"{PRE_EPOCH_SOURCE_STATE}: the mainland session axis is frozen at "
+            f"{epoch_iso} under definition {MAINLAND_CALENDAR_EPOCH_DEFINITION}; "
+            f"refusing to compile from {start.isoformat()}. Pre-epoch history is "
+            "unsupported source, not closed sessions -- it is never imputed and "
+            "never assigned a session position."
+        )
+    pre_epoch = calendar[calendar["cal_date"] < epoch_iso]
+    if not pre_epoch.empty:
+        excluded = {
+            exchange: int((pre_epoch["exchange"] == exchange).sum())
+            for exchange in CALENDAR_EXCHANGES
+        }
+        log.info(
+            "%s: excluded %d landed calendar row(s) before epoch %s from the "
+            "session axis (%s)",
+            PRE_EPOCH_SOURCE_STATE, len(pre_epoch), epoch_iso, excluded,
+        )
+        calendar = calendar[calendar["cal_date"] >= epoch_iso]
+        if calendar.empty:
+            raise SpineError(
+                f"every landed calendar row precedes the {epoch_iso} epoch; "
+                "no session axis can be compiled"
+            )
+
     requested_dates = {d.date().isoformat() for d in pd.date_range(start, end, freq="D")}
     calendar_dates: dict[str, set[str]] = {}
     opens: dict[str, set[str]] = {}
@@ -1869,12 +1944,19 @@ def compile_market_sessions(store: Path, start: date, end: date) -> pd.DataFrame
                 )
             previous = current
 
+    # Safe to read one venue: the equality checks above already proved
+    # opens["SSE"] == opens["SZSE"], so this is a proven-identical set rather
+    # than SSE history standing in for SZSE history.
     all_calendar_dates = sorted(opens["SSE"])
     position = {session: idx for idx, session in enumerate(all_calendar_dates)}
     sessions = pd.DataFrame({"trade_date": all_calendar_dates})
     sessions["market_session_position"] = sessions["trade_date"].map(position).astype("int64")
     sessions["calendar_provenance"] = "tushare.trade_cal:SSE=SZSE"
     sessions["bse_calendar_provenance"] = "derived_from_attested_SSE_SZSE_consensus"
+    # Stamp the axis definition so an artifact can never be silently compared
+    # against one minted under a different epoch.
+    sessions["calendar_epoch"] = epoch_iso
+    sessions["calendar_epoch_definition"] = MAINLAND_CALENDAR_EPOCH_DEFINITION
     _atomic_parquet(store / "reference" / "market_sessions.parquet", sessions)
     return sessions
 
@@ -3007,35 +3089,35 @@ class TushareAShareSpineCollector:
                 if not _unit_done(self.state, self.store, "trade_cal", unit):
                     retry = 1 if _unit_record(self.state, "trade_cal", unit) else 0
                     work.append((retry, -year, exchange, segment_start, segment_end))
-        for _, _, exchange, segment_start, segment_end in sorted(work):
-                unit = f"{exchange}:{_compact(segment_start)}:{_compact(segment_end)}"
-                response = self._call(
-                    "trade_cal", unit, exchange=exchange,
-                    start_date=_compact(segment_start), end_date=_compact(segment_end),
-                )
-                frame = response.frame
-                if frame is None:
-                    self._mark_failed(
-                        "trade_cal", unit, "vendor_unavailable_or_unlicensed",
-                        request_receipts=[response.receipt],
-                    )
-                    continue
-                try:
-                    normal = _normalise_calendar(frame, exchange, segment_start, segment_end)
-                except SpineError:
-                    self._mark_failed("trade_cal", unit, "calendar_contract_failed")
-                    raise
-                path = _calendar_partition(self.store, year)
-                rows, revised = _upsert_partition(
-                    path, normal, keys=KEY_COLUMNS["trade_calendar"],
-                )
-                _set_unit(
-                    self.state, self.store, "trade_cal", unit, status="complete",
-                    observed_at=self.observed_at, row_count=len(normal), source_row_count=len(frame),
-                    revised_key_count=revised, partition=path,
+        for _, neg_sort_year, exchange, segment_start, segment_end in sorted(work):
+            unit = f"{exchange}:{_compact(segment_start)}:{_compact(segment_end)}"
+            response = self._call(
+                "trade_cal", unit, exchange=exchange,
+                start_date=_compact(segment_start), end_date=_compact(segment_end),
+            )
+            frame = response.frame
+            if frame is None:
+                self._mark_failed(
+                    "trade_cal", unit, "vendor_unavailable_or_unlicensed",
                     request_receipts=[response.receipt],
                 )
-                log.debug("trade_cal %s landed (%d partition rows)", unit, rows)
+                continue
+            try:
+                normal = _normalise_calendar(frame, exchange, segment_start, segment_end)
+            except SpineError:
+                self._mark_failed("trade_cal", unit, "calendar_contract_failed")
+                raise
+            path = _calendar_partition(self.store, segment_start.year)
+            rows, revised = _upsert_partition(
+                path, normal, keys=KEY_COLUMNS["trade_calendar"],
+            )
+            _set_unit(
+                self.state, self.store, "trade_cal", unit, status="complete",
+                observed_at=self.observed_at, row_count=len(normal), source_row_count=len(frame),
+                revised_key_count=revised, partition=path,
+                request_receipts=[response.receipt],
+            )
+            log.debug("trade_cal %s landed (%d partition rows)", unit, rows)
         ready = all(
             _unit_done(
                 self.state, self.store, "trade_cal",

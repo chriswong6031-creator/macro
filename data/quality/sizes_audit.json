@@ -5,8 +5,8 @@
       "exists": true,
       "warn_mb": 20,
       "fail_mb": 50,
-      "size_mb": 10.194,
-      "row_count": 59401,
+      "size_mb": 10.26,
+      "row_count": 59784,
       "verdict": "OK"
     }
   ],

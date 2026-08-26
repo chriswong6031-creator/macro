@@ -5753,7 +5753,9 @@ def main() -> int:
                   # portfolio cockpit, and the market-books derived view. These shipped
                   # ONLY as committed templates/->site/ pairs; copying them here too means
                   # a render self-heals them like every other page asset.
-                  "watchstore.js", "portfolio.js", "market_books.js",
+                  "portfolio_import.css", "portfolio_import.js", "watchstore.js", "portfolio.js",
+                  "portfolio_import_ui.js",
+                  "market_books.js",
                   "tablesort.js", "charts.js",
                   "aibrief.js", "stockbrief.js", "aidesk_lean.js",
                   "stockview.js",

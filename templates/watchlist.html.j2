@@ -15,6 +15,7 @@
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <link rel="stylesheet" href="tier_preview.css">
+<link rel="stylesheet" href="portfolio_import.css?v=1">
 <script>
   // engine + page config injected at build time (the workspace is pure client
   // state — these globals are the only server-provided inputs)
@@ -938,6 +939,7 @@
                    data-ph-en="Filter positions" data-ph-zh="筛选持仓">
             <span class="tbl-scope" id="pf_scope"></span>
             <span class="tbl-tools">
+              <button class="gbtn gbtn-sm gbtn-cta" type="button" id="pf_import">{{ t('Import holdings', '导入持仓') }}</button>
               <button class="gbtn gbtn-sm" type="button" id="pf_add">{{ t('Add position', '添加持仓') }}</button>
             </span>
           </div>
@@ -1084,6 +1086,47 @@
   </div>
 </div>
 
+<!-- ---- A1B holding import modal: paste -> exact editable review -> one batch save ---- -->
+<div id="dlg-import" class="mx5-dlg" role="dialog" aria-modal="true" aria-labelledby="pfi_title" tabindex="-1">
+  <div class="mx5-dlg-backdrop" data-pfi-close></div>
+  <div class="mx5-dlg-panel pfi-panel">
+    <div class="mx5-dlg-header">
+      <span class="mx5-dlg-title" id="pfi_title">{{ t('Import holdings', '导入持仓') }}</span>
+      <button class="mx5-dlg-close" type="button" data-pfi-close aria-label="Close">✕</button>
+    </div>
+    <div class="mx5-dlg-body">
+      <div id="pfi_paste_view">
+        <p class="pfi-lede" id="pfi_intro">{{ t(
+          'Paste one holding per line. Blank shares, entry price, and entry date stay blank.',
+          '每行粘贴一笔持仓。股数、入场价和入场日期留空时会继续保持为空。') }}</p>
+        <p class="pfi-grammar" id="pfi_grammar">{{ t(
+          'Accepted: TICKER · TICKER SHARES · TICKER SHARES ENTRY_PRICE · TICKER SHARES ENTRY_PRICE YYYY-MM-DD',
+          '支持：代码 · 代码 股数 · 代码 股数 入场价 · 代码 股数 入场价 YYYY-MM-DD') }}</p>
+        <textarea class="pfi-paste" id="pfi_paste" autocomplete="off" autocapitalize="characters"
+                  spellcheck="false" aria-describedby="pfi_grammar"></textarea>
+        <div class="pfi-actions">
+          <button class="gbtn gbtn-cta" type="button" id="pfi_review">{{ t('Review holdings', '核对持仓') }}</button>
+        </div>
+      </div>
+      <div id="pfi_review_view" style="display:none">
+        <div class="pfi-review-head">
+          <p id="pfi_exact">{{ t(
+            'Review every row before saving. Duplicate tickers and lots remain separate positions.',
+            '保存前逐行核对。重复代码与重复批次会保留为独立持仓。') }}</p>
+          <span class="pfi-count" id="pfi_count"></span>
+        </div>
+        <div class="pfi-rows" id="pfi_rows"></div>
+        <div class="pfi-errors" id="pfi_errors" role="alert"></div>
+        <div class="pfi-status" id="pfi_status" role="status" aria-live="polite"></div>
+        <div class="pfi-actions">
+          <button class="gbtn pfi-back" type="button" id="pfi_back">{{ t('Back to paste', '返回粘贴') }}</button>
+          <button class="gbtn gbtn-cta" type="button" id="pfi_save">{{ t('Save Portfolio', '保存持仓') }}</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- factor_exposure.js host. The FX layer is load-bearing — it resolves the weights
      the Book Seam's risk rail and the Concentration tab are computed from — but its
      OWN panel belongs to the Factors & macro tab, which is a declared W3 shell. It
@@ -1111,8 +1154,10 @@
      boots without them and the Risk rails render as lock shells (packet A9). -->
 <script src="risk_core.js?v=2"></script>
 <script src="watchlist_risk.js?v=7"></script>
-<script src="watchstore.js?v=9"></script>
-<script src="portfolio.js?v=9"></script>
+<script src="portfolio_import.js?v=1"></script>
+<script src="watchstore.js?v=11"></script>
+<script src="portfolio.js?v=10"></script>
+<script src="portfolio_import_ui.js?v=2"></script>
 <script src="mtf.js"></script>
 <script src="theme.js"></script>
 <p class="muted" style="font-size:12px; text-align:center">{{ t('Generated', '生成于') }} {{ generated_utc }} UTC</p>

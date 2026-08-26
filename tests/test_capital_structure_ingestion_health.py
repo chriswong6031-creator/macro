@@ -20,7 +20,7 @@ from engine.capital_structure.source_ledger_io import read_source_ledger, source
 from engine.capital_structure.source_store import ContentAddressedSourceStore
 from engine.research_vault.r2_store import LocalStore
 from scripts.check_capital_structure_health import main as health_main
-from tests.test_sec_capital_structure import OneDayAdapter
+from tests.test_sec_capital_structure import INDEX, OneDayAdapter
 
 
 ACCESSION = "0001234567-26-000001"
@@ -48,18 +48,28 @@ class ReadbackFailStore:
 
 
 def _prepare_adapter(tmp_path, monkeypatch, source_store, *, max_filings=1):
+    business_day_index = INDEX
+    for filing_date in ("20260801", "20260802", "20260803", "20260804", "20260805"):
+        business_day_index = business_day_index.replace(filing_date, "20260814")
+    monkeypatch.setattr(
+        OneDayAdapter,
+        "_fetch_index",
+        lambda self, value, ua: business_day_index,
+    )
     monkeypatch.setattr(sec, "_data_dir", lambda: tmp_path / "capital_structure")
     monkeypatch.setattr(sec, "_cik_map", lambda: {1234567: "ACME"})
     monkeypatch.setattr(sec, "_ua", lambda: "test@example.com")
     monkeypatch.setattr(sec, "PACE_SECONDS", 0)
     monkeypatch.setattr(
-        sec, "due_index_dates", lambda *args, **kwargs: [date(2026, 8, 1)]
+        sec, "due_index_dates", lambda *args, **kwargs: [date(2026, 8, 14)]
     )
-    return OneDayAdapter(
+    adapter = OneDayAdapter(
         source_store=source_store,
         now_fn=lambda: datetime(2026, 8, 16, 13, 0, tzinfo=timezone.utc),
         max_filings_per_run=max_filings,
     )
+    adapter.latest_filings_enabled = False
+    return adapter
 
 
 def test_broken_storage_path_fails_the_health_gate(tmp_path, monkeypatch):
@@ -601,6 +611,146 @@ def test_horizon_discovery_retry_outranks_capacity_and_lagging_states():
     assert horizon["watermarks"]["latest_expected_sec_index_date"] == "2026-08-21"
     assert horizon["watermarks"]["latest_expected_sec_index_status"] == "retry"
     assert "latest_expected_index_not_complete" in horizon["reason_codes"]
+
+
+def _w2d_receipt(*, filing_date: str, observed_at: str) -> dict:
+    receipt = _horizon_receipt()
+    receipt["discovery_clock_policy_version"] = (
+        "capital-structure-sec-discovery-clock/1.0.0"
+    )
+    receipt["latest_discovered_in_policy_filing_date"] = filing_date
+    receipt["latest_discovered_in_policy_observed_at"] = observed_at
+    return receipt
+
+
+def _w2d_horizon(
+    *,
+    calculated_at: str,
+    filing_date: str,
+    daily_rows: list[dict],
+    overlay_rows: list[dict],
+) -> dict:
+    policy = "fixture-policy/1"
+    coverage = [
+        row | {"policy_version": policy}
+        for row in [*daily_rows, *overlay_rows]
+    ]
+    return calculate_horizon(
+        discovery=[],
+        index_coverage=coverage,
+        manifests=[_horizon_manifest(filing_date)],
+        events=[{"filing_date": filing_date}],
+        telemetry={
+            "generation_id": "generation:cs:" + "d" * 24,
+            "as_of": calculated_at,
+        },
+        queue_receipt=_w2d_receipt(
+            filing_date=filing_date, observed_at=calculated_at,
+        ) | {"policy_version": policy},
+        calculated_at=calculated_at,
+    )
+
+
+def test_w2d_monday_evening_ignores_not_yet_ready_monday_index_but_requires_overlay():
+    horizon = _w2d_horizon(
+        calculated_at="2026-08-24T22:30:00Z",  # Monday 18:30 ET
+        filing_date="2026-08-24",
+        daily_rows=[
+            {"coverage_kind": "daily_index", "index_date": "2026-08-21", "status": "complete"},
+            {"coverage_kind": "daily_index", "index_date": "2026-08-24", "status": "retry"},
+        ],
+        overlay_rows=[{
+            "coverage_kind": "latest_filings", "index_date": "2026-08-24",
+            "status": "complete", "observed_through": "2026-08-24T22:29:59Z",
+        }],
+    )
+
+    assert horizon["state"] == "current"
+    assert horizon["watermarks"]["latest_expected_sec_index_date"] == "2026-08-21"
+    assert horizon["watermarks"]["latest_expected_sec_index_status"] == "complete"
+    assert horizon["watermarks"]["latest_expected_realtime_filing_date"] == "2026-08-24"
+    assert horizon["watermarks"]["latest_filings_status"] == "complete"
+    assert "latest_expected_index_not_complete" not in horizon["reason_codes"]
+
+
+def test_w2d_overlay_unavailable_degrades_even_when_daily_reconciliation_is_complete():
+    horizon = _w2d_horizon(
+        calculated_at="2026-08-24T22:30:00Z",
+        filing_date="2026-08-24",
+        daily_rows=[{
+            "coverage_kind": "daily_index", "index_date": "2026-08-21",
+            "status": "complete",
+        }],
+        overlay_rows=[{
+            "coverage_kind": "latest_filings", "index_date": "2026-08-24",
+            "status": "retry", "observed_through": None,
+            "last_error": "HTTPError: HTTP 503",
+        }],
+    )
+
+    assert horizon["state"] == "degraded_discovery"
+    assert "latest_filings_observation_not_complete" in horizon["reason_codes"]
+
+
+def test_w2d_missing_overlay_never_false_currents_on_yesterdays_index():
+    horizon = _w2d_horizon(
+        calculated_at="2026-08-24T22:30:00Z",
+        filing_date="2026-08-24",
+        daily_rows=[{
+            "coverage_kind": "daily_index", "index_date": "2026-08-21",
+            "status": "complete",
+        }],
+        overlay_rows=[],
+    )
+
+    assert horizon["state"] == "degraded_discovery"
+    assert "latest_filings_observation_missing" in horizon["reason_codes"]
+
+
+def test_w2d_after_readiness_missing_prior_day_daily_index_degrades():
+    horizon = _w2d_horizon(
+        calculated_at="2026-08-25T10:30:00Z",  # Tuesday 06:30 ET
+        filing_date="2026-08-25",
+        daily_rows=[{
+            "coverage_kind": "daily_index", "index_date": "2026-08-24",
+            "status": "retry",
+        }],
+        overlay_rows=[{
+            "coverage_kind": "latest_filings", "index_date": "2026-08-25",
+            "status": "complete", "observed_through": "2026-08-25T10:29:59Z",
+        }],
+    )
+
+    assert horizon["state"] == "degraded_discovery"
+    assert horizon["watermarks"]["latest_expected_sec_index_date"] == "2026-08-24"
+    assert "latest_expected_index_not_complete" in horizon["reason_codes"]
+
+
+@pytest.mark.parametrize(
+    ("calculated_at", "expected_day"),
+    [
+        ("2026-08-29T16:00:00Z", "2026-08-28"),  # Saturday noon ET
+        ("2026-09-07T22:30:00Z", "2026-09-04"),  # Labor Day evening ET
+    ],
+)
+def test_w2d_weekend_and_holiday_use_last_real_filing_day(
+    calculated_at: str, expected_day: str,
+):
+    horizon = _w2d_horizon(
+        calculated_at=calculated_at,
+        filing_date=expected_day,
+        daily_rows=[{
+            "coverage_kind": "daily_index", "index_date": expected_day,
+            "status": "complete",
+        }],
+        overlay_rows=[{
+            "coverage_kind": "latest_filings", "index_date": expected_day,
+            "status": "complete", "observed_through": calculated_at,
+        }],
+    )
+
+    assert horizon["state"] == "current"
+    assert horizon["watermarks"]["latest_expected_realtime_filing_date"] == expected_day
 
 
 def test_horizon_observed_sec_closed_day_is_not_a_discovery_failure():

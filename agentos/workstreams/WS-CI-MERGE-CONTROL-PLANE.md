@@ -163,10 +163,32 @@ waves:
       hostile-tested closed; canary pinned to Python 3.12.13 and gate code;
       hosted and self-hosted canary consumers consume ONE frozen plan via
       --plan-json with strict semantic-fragment parity; portable Linux
-      execution profile v2 per DEC:CI-EXECUTION-PROFILE-V2. Sequence after
-      the bridge: live runner/group census, P1 one-slot, P2 three CI slots
-      plus render reservation, P3A inert trusted executor, P3B production
-      route with hosted ci-pack-N anchors, P4 three natural PR proofs.
+      execution profile v2 per DEC:CI-EXECUTION-PROFILE-V2. P0R/current-main
+      closure is green through merge baseline 32942786458. P1 run 32945782277
+      then failed before PC pickup because the canary resolver treated the PR
+      API's stale base.sha as the synthetic merge ref's authoritative first
+      parent (the observed API base lagged that exact parent by 23 commits).
+      Production ci.yml already derives tested_base_sha from merge parent 1;
+      #6351's bounded resolver correction merged through PR #6467 as
+      b6b2307d34110052eaedd1a3779353b1779c3308. P1 run 32957250432 then
+      proved exact hosted/self-hosted pack-0 semantic parity, missing-cache
+      refusal, different-tree contamination isolation, and one PC CI slot at
+      220.080s versus hosted 799.132s (3.63x). P2 run 32960314514 proved
+      three distinct sealed PC slots concurrently at 174.986-254.000s,
+      byte-stable shared cache, load-1m peak 4.053 on 16 CPUs, at least
+      42.77GB memory available, and an independently routable render slot
+      while pc-render-1 executed real production render work. Exact trusted
+      manual comparison of the uploaded pack 0/1/9 receipts returned parity
+      true for all three. The run wrapper concluded cancelled only because
+      pack-9's receipt-only hosted compare job spent its full ten-minute
+      budget materializing a redundant full repository checkout. The bounded
+      P2R repair now publishes a runtime-complete, package-shaped
+      main-defined comparator artifact before candidate checkout or any
+      candidate-authored execution, and removes that compare-only checkout;
+      executable tests lock both bundle imports and upload ordering. It does
+      not change production routing or semantic authority. Sequence after P2R:
+      P3A inert trusted executor, P3B production route with hosted ci-pack-N
+      anchors, then P4 three natural PR proofs.
   - id: W-QUIESCENCE
     title: Ship-loop watcher quiescence after PARKED / external ladder exit
     status: awaiting_ci

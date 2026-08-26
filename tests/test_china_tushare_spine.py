@@ -352,6 +352,88 @@ def test_calendar_requires_full_calendar_days_and_sse_szse_equality(tmp_path):
         spine._normalise_calendar(missing, "SSE", date(2024, 1, 1), date(2024, 1, 3))
 
 
+def _full_calendar_frame(exchange: str, start_compact: str, end_compact: str) -> pd.DataFrame:
+    """A vendor trade_cal response covering every calendar day in [start, end],
+    with every day marked open and an exact-adjacency pretrade_date (every
+    day's previous session is the immediately preceding calendar day) so
+    ``compile_market_sessions`` accepts the synthesized clock unmodified.
+    """
+    start = spine._parse_date(start_compact)
+    end = spine._parse_date(end_compact)
+    days = pd.date_range(start, end, freq="D")
+    return pd.DataFrame([
+        {
+            "exchange": exchange,
+            "cal_date": day.strftime("%Y%m%d"),
+            "is_open": 1,
+            "pretrade_date": (day - pd.Timedelta(days=1)).strftime("%Y%m%d"),
+        }
+        for day in days
+    ])
+
+
+def test_collect_calendars_writes_each_unit_to_its_own_year_partition(tmp_path):
+    """Regression pin for the leaked-`year` defect: a multi-year calendar
+    collection must land each unit's rows in ITS OWN year partition, never
+    a neighboring year's file (the corruption exposed by canary run
+    32921678076: SSE 2023's rows were written into year=2024.parquet).
+    """
+    def fake(endpoint, fields="", **params):
+        assert endpoint == "trade_cal"
+        return _full_calendar_frame(
+            params["exchange"], params["start_date"], params["end_date"],
+        )
+
+    collector = spine.TushareAShareSpineCollector(tmp_path, query=fake, now=lambda: NOW)
+    assert collector.collect_calendars(date(2023, 1, 1), date(2024, 1, 2)) is True
+
+    year_2023 = pd.read_parquet(
+        tmp_path / "reference" / "trade_calendar" / "year=2023.parquet",
+    )
+    year_2024 = pd.read_parquet(
+        tmp_path / "reference" / "trade_calendar" / "year=2024.parquet",
+    )
+    # No cross-year pollution: each partition holds only its own year's dates.
+    assert set(year_2023["cal_date"].astype(str).str[:4]) == {"2023"}
+    assert set(year_2024["cal_date"].astype(str).str[:4]) == {"2024"}
+    assert len(year_2023) == len(spine.CALENDAR_EXCHANGES) * 365
+    assert len(year_2024) == len(spine.CALENDAR_EXCHANGES) * 2
+
+    state = spine.load_state(tmp_path)
+    units = [
+        f"{exchange}:20230101:20231231" for exchange in spine.CALENDAR_EXCHANGES
+    ] + [
+        f"{exchange}:20240101:20240102" for exchange in spine.CALENDAR_EXCHANGES
+    ]
+    for unit in units:
+        assert spine._unit_done(state, tmp_path, "trade_cal", unit) is True
+
+
+def test_collect_calendars_writer_and_verifier_derive_the_same_partition(tmp_path):
+    """`_expected_unit_partition_path` (the verifier) must agree with the
+    partition the writer actually recorded for every collected unit --
+    the invariant that lets `_set_unit`/`_unit_artifact_receipt` certify a
+    unit without raising `SpineError: ... partition path disagrees with
+    its unit`.
+    """
+    def fake(endpoint, fields="", **params):
+        return _full_calendar_frame(
+            params["exchange"], params["start_date"], params["end_date"],
+        )
+
+    collector = spine.TushareAShareSpineCollector(tmp_path, query=fake, now=lambda: NOW)
+    assert collector.collect_calendars(date(2023, 1, 1), date(2024, 1, 2)) is True
+
+    state = spine.load_state(tmp_path)
+    units = state["units"]["trade_cal"]
+    assert len(units) == 4
+    for unit, record in units.items():
+        expected = spine._expected_unit_partition_path(tmp_path, "trade_cal", unit, record)
+        recorded = spine._contained_store_path(tmp_path, record["partition"])
+        assert expected is not None
+        assert expected.resolve(strict=False) == recorded.resolve(strict=False)
+
+
 def test_daily_normalisation_preserves_source_volume_truth_and_exact_session(tmp_path):
     _seed_spine(tmp_path)
     frame = pd.concat([
@@ -2307,3 +2389,160 @@ def test_bulk_readiness_gate_is_documented_as_technical_only():
     # module attribute: the autouse fixture flips the runtime value so synthetic
     # collectors can exercise mechanics.
     assert "BULK_HISTORICAL_BACKFILL_READY = True" not in source
+
+
+# --- Mainland session-clock epoch --------------------------------------------
+# The axis is frozen at MAINLAND_CALENDAR_EPOCH by DEFINITION, not by the
+# absence of a pre-epoch partition on disk.  These pin that distinction: the
+# hazard is a landed pre-epoch year silently occupying the low ordinals and
+# shifting every session position with no error raised.
+
+def _pre_epoch_calendar_frame(exchange: str) -> pd.DataFrame:
+    return pd.DataFrame([
+        {"exchange": exchange, "cal_date": "19910101", "is_open": 0, "pretrade_date": "19901231"},
+        {"exchange": exchange, "cal_date": "19910102", "is_open": 1, "pretrade_date": "19901231"},
+        {"exchange": exchange, "cal_date": "19910103", "is_open": 1, "pretrade_date": "19910102"},
+    ])
+
+
+def _seed_pre_epoch_calendar(store: Path) -> None:
+    """Land a pre-epoch partition for BOTH exchanges.
+
+    Both venues are seeded on purpose: an asymmetric seed would be caught by the
+    existing SSE/SZSE coverage-equality check, so it would not exercise the
+    silent path this guards.
+    """
+    path = store / "reference" / "trade_calendar" / "year=1991.parquet"
+    for exchange in spine.CALENDAR_EXCHANGES:
+        frame = spine._normalise_calendar(
+            _pre_epoch_calendar_frame(exchange), exchange, date(1991, 1, 1), date(1991, 1, 3),
+        )
+        spine._upsert_partition(path, frame, keys=spine.KEY_COLUMNS["trade_calendar"])
+
+
+def test_collection_start_follows_the_frozen_epoch():
+    assert spine.MAINLAND_CALENDAR_EPOCH == date(1992, 1, 1)
+    assert spine.CALENDAR_HISTORY_START == spine.MAINLAND_CALENDAR_EPOCH
+    assert spine.MAINLAND_CALENDAR_EPOCH_DEFINITION == "mainland-joint-complete-v1"
+    assert spine.PRE_EPOCH_SOURCE_STATE == "PRE_EPOCH_SOURCE_UNSUPPORTED"
+
+
+def test_compile_market_sessions_refuses_a_pre_epoch_start(tmp_path):
+    _seed_calendar(tmp_path)
+    with pytest.raises(spine.SpineError, match="PRE_EPOCH_SOURCE_UNSUPPORTED"):
+        spine.compile_market_sessions(tmp_path, date(1991, 1, 1), date(2024, 1, 3))
+
+
+def test_landed_pre_epoch_partition_never_enters_the_session_axis(tmp_path):
+    """A pre-epoch year on disk must not shift a single ordinal."""
+    baseline = _seed_calendar(tmp_path)
+    assert list(baseline["trade_date"]) == ["2024-01-02", "2024-01-03"]
+    assert list(baseline["market_session_position"]) == [0, 1]
+
+    _seed_pre_epoch_calendar(tmp_path)
+    recompiled = spine.compile_market_sessions(tmp_path, date(2024, 1, 1), date(2024, 1, 3))
+
+    # Identical axis: the 1991 open sessions are excluded by definition, so
+    # ordinal 0 still belongs to 2024-01-02 rather than 1991-01-02.
+    assert list(recompiled["trade_date"]) == ["2024-01-02", "2024-01-03"]
+    assert list(recompiled["market_session_position"]) == [0, 1]
+    assert not (recompiled["trade_date"] < "1992-01-01").any()
+
+
+def test_compiled_sessions_are_stamped_with_the_epoch_definition(tmp_path):
+    sessions = _seed_calendar(tmp_path)
+    assert set(sessions["calendar_epoch"]) == {"1992-01-01"}
+    assert set(sessions["calendar_epoch_definition"]) == {"mainland-joint-complete-v1"}
+
+
+def test_epoch_is_frozen_in_source_not_selected_at_runtime():
+    """No runtime input may move the epoch."""
+    source = Path("collectors/china_tushare_spine.py").read_text(encoding="utf-8")
+    assert "MAINLAND_CALENDAR_EPOCH = date(1992, 1, 1)" in source
+    # The epoch must never be derived from a store, an argument, or the clock.
+    for forbidden in (
+        "MAINLAND_CALENDAR_EPOCH =os.environ",
+        'MAINLAND_CALENDAR_EPOCH = os.environ',
+        "MAINLAND_CALENDAR_EPOCH = min(",
+        "MAINLAND_CALENDAR_EPOCH = max(",
+    ):
+        assert forbidden not in source
+
+
+def test_pre_epoch_exclusion_is_the_sole_cause_on_contiguous_history(tmp_path, monkeypatch):
+    """Isolate the epoch filter from the other calendar guards.
+
+    The 1991-vs-2024 fixture above is DISCONTINUOUS, so the pretrade_date
+    adjacency check would also reject it -- that test proves the outcome but not
+    the cause.  Real pre-epoch history is contiguous with the epoch year and
+    sails past adjacency and both equality checks, which is exactly why the
+    silent-ordinal-shift hazard exists.  Here the epoch is moved onto a
+    contiguous fixture so nothing but the epoch filter can explain the result.
+    """
+    _seed_calendar(tmp_path)
+    monkeypatch.setattr(spine, "MAINLAND_CALENDAR_EPOCH", date(2024, 1, 3))
+
+    sessions = spine.compile_market_sessions(tmp_path, date(2024, 1, 3), date(2024, 1, 3))
+
+    # 2024-01-02 is an open, contiguous, fully-attested session that every other
+    # guard accepts.  Only the epoch keeps it off the axis.
+    assert list(sessions["trade_date"]) == ["2024-01-03"]
+    assert list(sessions["market_session_position"]) == [0]
+    assert set(sessions["calendar_epoch"]) == {"2024-01-03"}
+
+
+# --- vendor zero-sentinel dates ----------------------------------------------
+# bak_basic returns "0" for an unpublished date where stock_basic returns "".
+# Found the first time pit_universe ran against the real vendor: one descriptive
+# field killed the whole unit.
+
+def test_iso_treats_the_vendor_zero_sentinel_as_a_null_date():
+    assert spine._iso("0") is None
+    assert spine._iso(0) is None
+    assert spine._iso("00000000") is None
+    assert spine._iso("  0  ") is None
+
+
+def test_iso_still_parses_real_dates_including_zero_heavy_ones():
+    assert spine._iso("20240102") == "2024-01-02"
+    assert spine._iso("1992-01-02") == "1992-01-02"
+    # A zero-heavy but genuine date must survive: only an ALL-zero run is a
+    # sentinel, and every real year carries a non-zero digit.
+    assert spine._iso("20001010") == "2000-10-10"
+
+
+def test_iso_still_refuses_a_malformed_date_rather_than_nulling_it():
+    """The sentinel must not become a swallow-everything branch."""
+    for bad in ("202401", "0000-00-00", "not-a-date", "20241301"):
+        with pytest.raises(spine.SpineError, match="invalid date"):
+            spine._iso(bad)
+
+
+def test_bak_basic_row_with_a_zero_list_date_still_lands(tmp_path):
+    """The row is a valid A-share; one unpublished field may not kill the unit.
+
+    This is the exact shape that broke the first real pit_universe run: a
+    `bak_basic` payload carrying list_date "0". Before the sentinel was
+    recognised, normalise_bak_basic raised SpineError and took the whole unit
+    with it.
+    """
+    _seed_reference(tmp_path)
+    _seed_calendar(tmp_path)
+    raw = _bak_rows("20240102")
+    raw.loc[raw["ts_code"] == "600519.SH", "list_date"] = "0"
+
+    normal = spine.normalise_bak_basic(raw, "20240102", tmp_path)
+
+    landed = normal.landed_a.set_index("ticker")
+    # It lands, with identity and session position intact...
+    assert "600519.SS" in landed.index
+    assert landed.loc["600519.SS", "market_session_position"] == 0
+    # ...and the unpublished field is NULL, never invented. Assert nullness
+    # rather than a particular spelling: pandas stores the None as NaN once the
+    # column holds real date strings alongside it.
+    assert pd.isna(landed.loc["600519.SS", "list_date"])
+    # A sibling with a real list_date is untouched.
+    assert landed.loc["000001.SZ", "list_date"] == "1991-04-03"
+    # Source accounting still balances: nothing was dropped or quarantined.
+    assert len(normal.quarantined_unknown) == 0
+    assert len(normal.landed_a) == len(raw)

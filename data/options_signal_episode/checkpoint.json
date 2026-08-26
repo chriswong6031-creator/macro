@@ -24,6 +24,10 @@
     "2026-08-24": {
       "prefix_sha256": "09fc34b98ff99cbc9616fb3e5a10d9acc679500f9154b0cf6e967924936d1661",
       "records": 964
+    },
+    "2026-08-25": {
+      "prefix_sha256": "a058c9125b0a43d6d232182dd351d72c499ecbfe727dde7e94f7f673d3b5290a",
+      "records": 818
     }
   }
 }

@@ -1,36 +1,36 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "RGTI-BULL-20260805",
-  "asof": "2026-08-24",
+  "asof": "2026-08-25",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 45.0,
-  "raw_confidence": 39.1,
-  "delta_vs_base": -15.0,
+  "management_confidence": 43.3,
+  "raw_confidence": 41.3,
+  "delta_vs_base": -16.7,
   "recommended_action": "hold",
   "human_state": "Stalling",
   "components": {
-    "validity": 63.1,
+    "validity": 76.0,
     "progress": 0.0,
-    "pace": 35.3,
+    "pace": 29.9,
     "retention": 50.0,
-    "overlay": 61.0
+    "overlay": 67.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.711,
+    "dist_to_stop_r": 0.816,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 37.8,
-    "p1": -0.1928,
-    "p2": -0.0964,
+    "horizon_pct_used": 40.0,
+    "p1": -0.1228,
+    "p2": -0.0614,
     "p3": null,
-    "move_r": -0.289,
+    "move_r": -0.184,
     "mfe_r": 0.134,
     "mae_r": -0.345
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Weakening",
+  "change_reason": "Moving Away from Stop",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-12",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 17,
-  "tau": 0.3778
+  "days_elapsed": 18,
+  "tau": 0.4
 }

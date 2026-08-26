@@ -46,6 +46,21 @@ The 30d/90d revenue drift columns are structurally unavailable; they are NOT emi
 
 All four W0.6b fields are ADDITIVE to the existing schema; no existing field is renamed or
 removed.  PIT history behavior is unchanged (append-only history.parquet).
+
+SRC-A1 fiscal period-end anchor (DATA_CLOCK_RIGHTS_MATRIX.md mutation gate 3): each
+`earningsTrend` item Yahoo returns carries a top-level `endDate` (the provider's own
+fiscal period end for that horizon) alongside `period`; yfinance's public
+earnings_estimate/revenue_estimate accessors lift only `period` and discard `endDate`.
+`_raw_earnings_trend_items` reads it back from the private `Analysis` attribute the
+accessors themselves populate, fully guarded so any failure yields no anchor rather than
+raising.  `_period_end_anchors` maps the verbatim provider `endDate` string onto
+`period_end` in `_expectation_rows`, keyed on the raw horizon label — never parsed,
+never timezone-adjusted, never used to derive `fiscal_period`/`fiscal_year` (those stay
+null: deriving them would be a guessed fiscal mapping, which the contract forbids).
+`_apply_lineage` then refuses to record a fiscal rollover (same relative horizon label,
+different underlying period) as an analyst revision: when the prior and current rows
+both carry a real, differing `period_end`, the new row stays a new original instead of a
+fabricated `supersedes`.
 """
 from __future__ import annotations
 
@@ -198,6 +213,61 @@ def _market_session(system_observed_at: str) -> str | None:
         return None
 
 
+def _raw_earnings_trend_items(client: Any) -> list[dict[str, Any]]:
+    """Best-effort read of yfinance's raw earningsTrend items.
+
+    Each item Yahoo returns for `earningsTrend` carries a top-level `endDate` — the
+    provider's own fiscal period end for that horizon — alongside `period` (e.g.
+    "0q").  yfinance's `Analysis._get_periodic_df` lifts only `period` when it
+    builds the public `earnings_estimate`/`revenue_estimate` accessors and discards
+    every other item-level key, including `endDate`.  The only known route back to
+    the raw items is the private `Analysis` attribute those accessors populate as a
+    side effect (`client._analysis._earnings_trend`).
+
+    This function must NEVER raise: a missing attribute, an unexpected shape, an
+    absent key, or any other failure yields an empty list rather than failing the
+    collection, changing the attempt status, or altering any other field.  This is
+    a best-effort anchor read, not a new provider contract.
+    """
+    try:
+        analysis = getattr(client, "_analysis", None)
+        raw = getattr(analysis, "_earnings_trend", None) if analysis is not None else None
+        if raw is None:
+            return []
+        if hasattr(raw, "to_dict"):
+            records = raw.to_dict(orient="records")
+        elif isinstance(raw, list):
+            records = raw
+        else:
+            return []
+        return [record for record in records if isinstance(record, dict)]
+    except Exception:  # noqa: BLE001 - anchors are best-effort, never fatal
+        return []
+
+
+def _period_end_anchors(items: list[dict[str, Any]]) -> dict[str, str]:
+    """Map raw provider horizon label (`period`, e.g. "0q") -> raw `endDate`.
+
+    The provider's value is kept verbatim: no parsing into components, no
+    timezone assumptions, no reformatting beyond ensuring it is a plain string.
+    A horizon whose item lacks `endDate` simply has no anchor.
+    """
+    anchors: dict[str, str] = {}
+    for item in items:
+        try:
+            # _json_scalar folds NaN/NaT/None to None uniformly, so a pandas-typed
+            # missing endDate (not merely a Python None) is also treated as "no
+            # anchor" rather than being stringified into a fake "nan" value.
+            period = _json_scalar(item.get("period"))
+            end_date = _json_scalar(item.get("endDate"))
+            if period is None or end_date is None:
+                continue
+            anchors[str(period)] = str(end_date)
+        except Exception:  # noqa: BLE001 - a single malformed item must not drop the rest
+            continue
+    return anchors
+
+
 def _default_collection_session_id(now: object | None = None, environ: dict[str, str] | None = None) -> str:
     """Stable run identity, falling back to the unchanged hourly collection bucket."""
     run_id = (os.environ if environ is None else environ).get("GITHUB_RUN_ID")
@@ -217,16 +287,36 @@ def _expectation_rows(
     frames: dict[str, Any],
     provider_observed_at: str,
     system_observed_at: str,
+    period_end_by_horizon: dict[str, str] | None = None,
 ) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
+    anchors = period_end_by_horizon or {}
     for metric, record_class in (("EPS", "earnings_estimate"), ("revenue", "revenue_estimate")):
         frame = frames.get(record_class)
         if frame is None or not hasattr(frame, "index") or not hasattr(frame, "columns"):
             continue
         for horizon in sorted(frame.index, key=str):
             raw_horizon = str(horizon)
+            # A group (metric, horizon) is NON-ESTIMABLE when the provider's own
+            # covering-analyst count is unavailable or zero — the provider's empty-
+            # response shape (see mutation gate 1).  In such a group, every other
+            # observation_type that _field_value resolved as PRESENT (missingness
+            # None — an interpretable value, the actual mutation-gate violation) is
+            # forced to typed missingness, regardless of what number the provider
+            # returned.  A field that _field_value already typed as missing (e.g.
+            # NOT_APPLICABLE because the provider exposes no such column at all, or
+            # an existing UNESTIMABLE) is left exactly as returned — that reason is
+            # already lawful and more specific than a blanket UNESTIMABLE would be.
+            # covering_analyst_count itself always keeps its literal provider value
+            # (including a genuine 0) via _field_value below.
+            covering_value, _covering_missingness = _field_value(
+                frame, horizon, "covering_analyst_count", metric
+            )
+            non_estimable_group = covering_value is None or covering_value == 0
             for observation_type in _OBSERVATION_TYPES:
                 value, missingness = _field_value(frame, horizon, observation_type, metric)
+                if non_estimable_group and observation_type != "covering_analyst_count" and missingness is None:
+                    value, missingness = None, "UNESTIMABLE"
                 observation_id = _canonical_sha256((
                     collection_session_id, _EXPECTATION_PROVIDER, record_class, payload_hash,
                     ticker, metric, raw_horizon, observation_type,
@@ -243,7 +333,15 @@ def _expectation_rows(
                     "security_ref": None,
                     "metric": metric,
                     "horizon_label_raw": raw_horizon,
-                    "period_end": None,
+                    # A provider fact, captured verbatim when the anchor is available
+                    # (see _period_end_anchors); never guessed, never parsed.  It does
+                    # NOT get its own missingness_reason and does not participate in
+                    # the non_estimable_group typed-missingness logic above — a row
+                    # can carry a real period_end alongside a typed-missing value.
+                    "period_end": anchors.get(raw_horizon),
+                    # fiscal_period/fiscal_year remain unconditionally null: deriving
+                    # them from period_end would be a guessed fiscal mapping, which
+                    # the contract forbids (DATA_CLOCK_RIGHTS_MATRIX.md SRC-A1).
                     "fiscal_period": None,
                     "fiscal_year": None,
                     "observation_type": observation_type,
@@ -299,6 +397,18 @@ def _apply_lineage(rows: list[dict[str, Any]], existing: pd.DataFrame) -> None:
         if prior.empty:
             continue
         newest = prior.sort_values("system_observed_at", kind="stable").iloc[-1]
+        # Mutation gate 3: a fiscal rollover is not a revision.  horizon_label_raw
+        # is a RELATIVE provider label (e.g. "0q" always means "the current
+        # quarter"), so the same key can legitimately refer to a different
+        # underlying fiscal period across two observations.  When both the prior
+        # and the current row carry a real (non-null) period_end and those differ,
+        # this is a rollover: leave the row a new original rather than fabricating
+        # a supersession.  A null on either side, or equal non-null period_ends,
+        # falls through to the existing value comparison exactly as today.
+        prior_period_end = _json_scalar(newest["period_end"])
+        current_period_end = _json_scalar(row["period_end"])
+        if prior_period_end is not None and current_period_end is not None and prior_period_end != current_period_end:
+            continue
         same_value = (
             _json_scalar(newest["value"]) == _json_scalar(row["value"])
             and _json_scalar(newest["unit"]) == _json_scalar(row["unit"])
@@ -358,6 +468,13 @@ def accrue_expectation_observations(
                     accessor_errors.append(exc)
                     frames[record_class] = None
             provider_observed_at = _iso8601()
+            # Fiscal period-end anchor read is fully guarded on top of its own
+            # internal guarding: it must never fail this attempt, never change its
+            # status, and never touch any other field (mutation gate 3).
+            try:
+                period_end_by_horizon = _period_end_anchors(_raw_earnings_trend_items(client))
+            except Exception:  # noqa: BLE001 - anchors are best-effort, never fatal
+                period_end_by_horizon = {}
         except Exception as exc:  # noqa: BLE001 - provider construction/request failure
             completed_at = _iso8601()
             status, http_status, error_class, error_detail = _safe_http_failure(exc)
@@ -384,7 +501,7 @@ def accrue_expectation_observations(
         response_rows = _expectation_rows(
             ticker=ticker, collection_session_id=session_id, attempt_id=attempt_id,
             payload_hash=payload_hash, frames=frames, provider_observed_at=provider_observed_at,
-            system_observed_at=system_observed_at,
+            system_observed_at=system_observed_at, period_end_by_horizon=period_end_by_horizon,
         )
         _apply_lineage(response_rows, existing_observations)
         deduped_rows = [

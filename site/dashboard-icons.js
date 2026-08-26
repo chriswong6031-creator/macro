@@ -218,3 +218,28 @@
   }
   inject();
 }());
+
+/* HK Stock Dashboard V3.7 follower composer. Strict no-op elsewhere. Same
+   entitled-only, bounded-backoff retry shape as the Canada loader above
+   (SOL-HK-V37-FOLLOWER architecture, research/SOL_HK_V37_FOLLOWER_ARCHITECTURE.md) —
+   own IIFE guard flag, own retry guard on the composer's own idempotency flag,
+   never shares state with the Canada loader. */
+(function () {
+  "use strict";
+  if (!/(^|\/)hk_stocks\.html$/.test(location.pathname)) return;
+  if (window.__mmHKStockV36Loader) return;
+  window.__mmHKStockV36Loader = true;
+  var attempt = 0;
+  function inject() {
+    attempt += 1;
+    var script = document.createElement("script");
+    script.src = "hk-stock-v36.js?v=20260825";
+    script.async = false;
+    script.onerror = function () {
+      if (script.parentNode) script.parentNode.removeChild(script);
+      if (attempt < 3 && !window.__mmHKStockV36) setTimeout(inject, 1500 * attempt);
+    };
+    (document.head || document.documentElement).appendChild(script);
+  }
+  inject();
+}());

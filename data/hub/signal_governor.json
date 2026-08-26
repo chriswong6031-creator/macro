@@ -1,7 +1,7 @@
 {
   "schema": "signal_governor.v1",
-  "as_of": "2026-08-24",
-  "generated_at": "2026-08-25T05:27:27.163928+00:00",
+  "as_of": "2026-08-25",
+  "generated_at": "2026-08-26T05:57:06.004147+00:00",
   "region": "us",
   "gate": {
     "min_n": 150,
@@ -17,29 +17,29 @@
   "signals": {
     "radar": {
       "signal": "radar",
-      "n_matured": 8215,
-      "ic": -0.0319,
-      "t_hac": -0.471,
+      "n_matured": 8229,
+      "ic": -0.0326,
+      "t_hac": -0.479,
       "horizon": "21",
       "demoted": false,
       "trust": 1.0,
-      "reason": "not significant: 21d t=-0.471 (need |t|\u22652.0) \u2014 trust 1.0",
+      "reason": "not significant: 21d t=-0.479 (need |t|\u22652.0) \u2014 trust 1.0",
       "input": {
         "source": "site/basketdata/radar_ic.json",
-        "as_of": "2026-08-24",
+        "as_of": "2026-08-25",
         "age_days": 0,
         "stale": false
       }
     },
     "hub": {
       "signal": "hub",
-      "n_matured": 74856,
-      "ic": -0.0386,
-      "t_hac": -1.333,
+      "n_matured": 79126,
+      "ic": -0.0358,
+      "t_hac": -1.196,
       "horizon": "21",
       "demoted": false,
       "trust": 1.0,
-      "reason": "not significant: 21d t=-1.333 (need |t|\u22652.0) \u2014 trust 1.0"
+      "reason": "not significant: 21d t=-1.196 (need |t|\u22652.0) \u2014 trust 1.0"
     }
   },
   "n_demoted": 0,
@@ -47,7 +47,7 @@
   "inputs": {
     "radar": {
       "source": "site/basketdata/radar_ic.json",
-      "as_of": "2026-08-24",
+      "as_of": "2026-08-25",
       "age_days": 0,
       "stale": false
     }

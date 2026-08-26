@@ -73,6 +73,10 @@ on:
       - "data/government_revenue/dod_budget_line_snapshots.jsonl"
       - "data/government_revenue/dod_budget_collection_receipts.jsonl"
       - "data/government_revenue/dod_budget_projection_state.json"
+      - "data/government_revenue/fms_collection_receipts.jsonl"
+      - "data/government_revenue/fms_observations.jsonl"
+      - "data/government_revenue/fms_projection_state.json"
+      - "data/government_revenue/fms_case_graph.json"
       - "data/government_revenue/opportunities.parquet"
       - "data/government_revenue/opportunity_revisions.parquet"
       - "data/government_revenue/opportunity_documents.parquet"
@@ -85,6 +89,8 @@ on:
       - "collectors/usaspending_subawards.py"
       - "collectors/usaspending_idv_graph.py"
       - "collectors/dod_budget.py"
+      - "collectors/fms_notifications.py"
+      - "collectors/fms_notifications_live.py"
       - "engine/government_revenue/**"
       - "config/government_revenue/budget_program_reviewed_edges.v1.json"
       - "config/government_revenue/candidate_historical_suppressions.v1.json"
@@ -658,6 +664,7 @@ jobs:
             data/government_revenue/dod_budget_collection_receipts.jsonl
             data/government_revenue/dod_budget_projection_state.json
           )
+          fq() { python scripts/check_fms_bundle.py "$1"; }
 
           assert_award_event_bundle() {
             local present=0 tracked=0 path
@@ -914,6 +921,7 @@ jobs:
           assert_idv_source_clean
           assert_dod_budget_bundle
           assert_dod_budget_source_clean
+          fq p
           assert_recipient_graph_source_clean
           assert_historical_suppression_source_clean
           assert_issuance_correction_source_clean
@@ -921,6 +929,7 @@ jobs:
           assert_idv_dossier_twins
           assert_candidate_twins
           assert_optional_budget_graph_twins
+          fq t
 
           stage_candidates=(
             data/government_revenue/opportunities.parquet
@@ -934,6 +943,7 @@ jobs:
             data/government_revenue/subaward_dossiers.json
             data/government_revenue/idv_dossiers.json
             data/government_revenue/budget_program_graph.json
+            data/government_revenue/fms_case_graph.json
             data/government_revenue/recipient_resolution_coverage.json
             data/government_revenue/candidate_ledger.jsonl
             data/government_revenue/candidate_queue.json
@@ -945,6 +955,7 @@ jobs:
             site/government-revenue-data/subaward-dossiers.json
             site/government-revenue-data/idv-dossiers.json
             site/government-revenue-data/budget-program.json
+            site/government-revenue-data/fms-cases.json
             site/government-revenue-data/candidates.json
             site/government_revenue.html
           )
@@ -977,6 +988,7 @@ jobs:
             data/government_revenue/subaward_dossiers.json \
             data/government_revenue/idv_dossiers.json \
             data/government_revenue/budget_program_graph.json \
+            data/government_revenue/fms_case_graph.json \
             data/government_revenue/recipient_resolution_coverage.json \
             data/government_revenue/candidate_ledger.jsonl \
             data/government_revenue/candidate_queue.json \
@@ -988,6 +1000,7 @@ jobs:
             site/government-revenue-data/subaward-dossiers.json \
             site/government-revenue-data/idv-dossiers.json \
             site/government-revenue-data/budget-program.json \
+            site/government-revenue-data/fms-cases.json \
             site/government-revenue-data/candidates.json \
             site/government_revenue.html
           git commit -m "govrev: SAM opportunity evidence $(date -u +%FT%H:%MZ)"
@@ -1014,6 +1027,7 @@ jobs:
               assert_idv_source_clean
               assert_dod_budget_bundle
               assert_dod_budget_source_clean
+              fq p
               assert_recipient_graph_source_clean
               assert_historical_suppression_source_clean
               assert_issuance_correction_source_clean
@@ -1026,6 +1040,7 @@ jobs:
               assert_idv_dossier_twins
               assert_candidate_twins
               assert_optional_budget_graph_twins
+              fq t
               git add \
                 data/government_revenue/latest.json \
                 data/government_revenue/workspace.json \
@@ -1049,6 +1064,7 @@ jobs:
                   data/government_revenue/budget_program_graph.json \
                   site/government-revenue-data/budget-program.json
               fi
+              fq s
               push_staged_clean \
                 data/government_revenue/award_event_snapshots.parquet \
                 data/government_revenue/award_action_versions.parquet \
@@ -1059,6 +1075,7 @@ jobs:
                 data/government_revenue/subaward_dossiers.json \
                 data/government_revenue/idv_dossiers.json \
                 data/government_revenue/budget_program_graph.json \
+                data/government_revenue/fms_case_graph.json \
                 data/government_revenue/recipient_resolution_coverage.json \
                 data/government_revenue/candidate_ledger.jsonl \
                 data/government_revenue/candidate_queue.json \
@@ -1070,6 +1087,7 @@ jobs:
                 site/government-revenue-data/subaward-dossiers.json \
                 site/government-revenue-data/idv-dossiers.json \
                 site/government-revenue-data/budget-program.json \
+                site/government-revenue-data/fms-cases.json \
                 site/government-revenue-data/candidates.json \
                 site/government_revenue.html
               if ! git diff --cached --quiet; then

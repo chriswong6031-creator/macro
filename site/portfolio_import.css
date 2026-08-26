@@ -1,0 +1,49 @@
+/* A1B Portfolio fast-start review. Page-scoped composition only: every color,
+   typeface, radius, and surface comes from the established product tokens. */
+.mx5-dlg-panel.pfi-panel { max-width:900px; }
+/* The injected Brain launcher deliberately sits at a near-maximum global z-index.
+   A modal is the active task and must own the narrow viewport; hide only that
+   launcher while the existing dialog-lock class is present, then restore it. */
+html.mx5-dlg-lock #mmb-boot { visibility:hidden; }
+.pfi-lede { margin:0 0 5px; color:var(--text); font-size:14px; line-height:1.45; }
+.pfi-grammar { margin:0 0 14px; color:var(--muted); font-size:11.5px; line-height:1.45; }
+.pfi-paste { width:100%; min-height:210px; resize:vertical; padding:13px 14px;
+  border-radius:11px; border:1px solid var(--line); background:var(--panel2); color:var(--text);
+  font:13px/1.55 var(--font-mono); font-variant-numeric:tabular-nums; outline:none; }
+.pfi-paste:focus { border-color:var(--link); box-shadow:0 0 0 3px color-mix(in srgb,var(--link) 18%,transparent); }
+.pfi-actions { display:flex; justify-content:flex-end; align-items:center; gap:8px; margin-top:14px; }
+.pfi-actions .pfi-back { margin-right:auto; }
+.pfi-review-head { display:flex; gap:12px; align-items:baseline; justify-content:space-between;
+  padding-bottom:11px; border-bottom:1px solid var(--line); }
+.pfi-review-head p { margin:0; color:var(--muted); font-size:12px; line-height:1.4; }
+.pfi-count { flex:none; color:var(--text); font:700 12px/1 var(--font-mono); }
+.pfi-rows { display:grid; }
+.pfi-review-row { display:grid; grid-template-columns:minmax(100px,1.1fr) minmax(82px,.8fr)
+    minmax(96px,.9fr) minmax(132px,1fr) minmax(160px,1.35fr) auto;
+  gap:8px; align-items:end; padding:12px 0; border-bottom:1px solid var(--line); }
+.pfi-review-row label > span { display:block; margin:0 0 4px; color:var(--muted);
+  font-size:10px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; }
+.pfi-review-row .wl-in { min-width:0; padding:7px 9px; font-size:12.5px; }
+.pfi-row-meta { display:flex; flex-direction:column; align-items:flex-start; gap:4px;
+  align-self:center; min-width:0; }
+.pfi-coverage, .pfi-warning { display:inline-flex; max-width:100%; padding:2px 7px;
+  border-radius:99px; border:1px solid var(--line); color:var(--muted); font-size:10px;
+  font-weight:650; line-height:1.3; }
+.pfi-coverage.is-covered { color:var(--ink-ok); border-color:color-mix(in srgb,var(--ok) 34%,var(--line)); }
+.pfi-coverage.is-uncovered, .pfi-warning { color:var(--ink-warn);
+  border-color:color-mix(in srgb,var(--warn) 34%,var(--line)); }
+.pfi-remove { align-self:center; }
+.pfi-errors, .pfi-status { display:none; margin:12px 0 0; padding:9px 11px; border-radius:9px;
+  color:var(--ink-down); background:color-mix(in srgb,var(--down) 8%,var(--panel));
+  border:1px solid color-mix(in srgb,var(--down) 30%,var(--line)); font-size:12px; line-height:1.45; }
+.pfi-errors ul { margin:0; padding-left:18px; }
+.pfi-status.is-good { color:var(--ink-ok); background:color-mix(in srgb,var(--ok) 8%,var(--panel));
+  border-color:color-mix(in srgb,var(--ok) 30%,var(--line)); }
+@media (max-width:700px) {
+  .mx5-dlg-panel.pfi-panel { max-height:92vh; }
+  .pfi-review-row { grid-template-columns:1fr 1fr; gap:9px 8px; }
+  .pfi-row-meta { grid-column:1 / -1; }
+  .pfi-remove { justify-self:start; }
+  .pfi-actions { flex-wrap:wrap; }
+  .pfi-actions .gbtn-cta { flex:1; }
+}

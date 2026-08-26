@@ -516,6 +516,12 @@ public:
     - /watchstore.js
     - /market_books.js
     - /portfolio.js
+    # A1B fast start is the same visitor-owned funnel surface: pure parsing/CSS
+    # plus a UI client that delegates only to WatchStore.portfolio. None reads a
+    # gated signal source, publishes holdings, or touches Watchlists.
+    - /portfolio_import.css
+    - /portfolio_import.js
+    - /portfolio_import_ui.js
     # A1A (#6109) added /portfolio_state.js to the Caddyfile's public matchers
     # and to @watchlist_shell_versioned, but never here — so the edge served it
     # anonymously while the reviewed policy still called it non-public. The

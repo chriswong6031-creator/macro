@@ -53,7 +53,7 @@ ACCESSION = "0001234567-26-000001"
 SINGLE_INDEX = """\
 Form Type                            Company Name                              CIK         Date Filed  Filename
 -------------------------------------------------------------------------------------------------------------------------------------------
-S-3                                  ACME CORP                                 1234567     20260801    edgar/data/1234567/0001234567-26-000001.txt
+S-3                                  ACME CORP                                 1234567     20260731    edgar/data/1234567/0001234567-26-000001.txt
 """
 
 SUBMISSION = b"""\
@@ -107,7 +107,7 @@ def _wire_collector(tmp_path, monkeypatch, clock: dict):
     monkeypatch.setattr(sec, "_ua", lambda: "test@example.com")
     monkeypatch.setattr(sec, "PACE_SECONDS", 0)
     monkeypatch.setattr(
-        sec, "due_index_dates", lambda *args, **kwargs: [date(2026, 8, 1)]
+        sec, "due_index_dates", lambda *args, **kwargs: [date(2026, 7, 31)]
     )
     store = ContentAddressedSourceStore(
         LocalStore(tmp_path / "objects"), backend="local"
@@ -117,6 +117,7 @@ def _wire_collector(tmp_path, monkeypatch, clock: dict):
         now_fn=_now_fn(clock),
         max_filings_per_run=1,
     )
+    adapter.latest_filings_enabled = False
     return adapter, tmp_path / "capital_structure"
 
 

@@ -17,3 +17,4 @@
 {"schema": "deterioration_cascade.v1", "asof": "2026-08-20", "state": "STEADY", "n_alert": 0, "n_escalating": 0, "d3_alert": 0, "n_mature": 10, "alerts": [], "immature": [], "logged_at": "2026-08-20T06:53:28+00:00"}
 {"schema": "deterioration_cascade.v1", "asof": "2026-08-21", "state": "STEADY", "n_alert": 0, "n_escalating": 0, "d3_alert": 0, "n_mature": 10, "alerts": [], "immature": [], "logged_at": "2026-08-22T02:31:41+00:00"}
 {"schema": "deterioration_cascade.v1", "asof": "2026-08-24", "state": "STEADY", "n_alert": 0, "n_escalating": 0, "d3_alert": 0, "n_mature": 10, "alerts": [], "immature": [], "logged_at": "2026-08-25T03:24:21+00:00"}
+{"schema": "deterioration_cascade.v1", "asof": "2026-08-25", "state": "STEADY", "n_alert": 0, "n_escalating": 1, "d3_alert": 0, "n_mature": 10, "alerts": [], "immature": [], "logged_at": "2026-08-26T03:31:48+00:00"}

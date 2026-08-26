@@ -216,11 +216,27 @@ verified:
       tests/test_agent_routing_control.py tests/test_sparse_worktree_profile.py;
       python3.12 scripts/check_self_mod_fence.py --selftest
     result: 136 passed; self-mod 16/16 PASS
+  - claim: same-carrier current-main reconciliation preserves the full quiescence contract
+    command: >
+      merge origin/main@39b30673a2015cb16dccab7d99ab77df1e6b2971 into
+      claude/ship-loop-quiescence-20260824; resolve the sole conflict in
+      WS-CI-MERGE-CONTROL-PLANE by retaining both current P0R/P1/P2/P2R
+      receipts and W-QUIESCENCE; git diff --check
+    result: clean reconciliation; no unresolved paths and no whitespace errors
+  - claim: exact current-main quiescence and adjacent governance suites are green
+    command: >
+      python3.12 -m pytest -q tests/test_ship_loop_guard.py
+      tests/test_ship_loop_hold_wrapper.py tests/test_gh_quota_guard.py
+      --maxfail=10; python3.12 -m pytest -q tests/test_self_mod_fence.py
+      tests/test_agent_routing_control.py tests/test_sparse_worktree_profile.py;
+      python3.12 scripts/check_self_mod_fence.py --selftest;
+      python3.12 scripts/agentos.py validate
+    result: >
+      495 passed, 1 skipped; 136 passed; self-mod 16/16 PASS; Agent OS
+      0 errors with 43 inherited warnings
 unverified:
   - claim: hosted CI green on the exact PR head
     what_would_verify: ci.yml + fences.yml runs on the PR head after push (watched to conclusion before parking)
-  - claim: remote/hosted second-return proof
-    what_would_verify: only after local Sol review PASS; this carrier remains local-only and unpushed
 unresolved:
   - >
     tests/test_ship_loop_hold_wrapper.py remains waived-unwired in CI
@@ -234,8 +250,10 @@ unresolved:
     guarantees the hooks stay silent and refuse new watchers, and standing
     law now instructs sessions to end wake turns without re-reporting.
 next_actions:
-  - Sol review of the held PR; on acceptance, squash-merge and (optionally
-    same PR) wire test_ship_loop_hold_wrapper.py into the fence job pytest line.
+  - Push the reconciled exact head to the existing PR #6381 carrier, return it
+    from HOLD-FOR-SOL, and require authoritative ci.yml + fences.yml proof.
+  - On exact-head acceptance, squash-merge without absorbing the separately
+    waived hold-wrapper CI wiring into this carrier.
   - After merge, flip W-QUIESCENCE to done with the merge sha.
 do_not_redo:
   - Do not attempt hook-side cancellation/enumeration of Claude-native

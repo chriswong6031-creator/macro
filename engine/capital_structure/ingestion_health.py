@@ -15,6 +15,12 @@ from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker
 
+from engine.capital_structure.sec_discovery_clock import (
+    SEC_TIMEZONE,
+    latest_expected_daily_index_date,
+    latest_expected_realtime_filing_date,
+)
+
 HEALTH_SCHEMA = "capital_structure.ingestion_health/v1"
 INGESTION_RUN_SCHEMA = "capital_structure.ingestion_run/v1"
 HEALTH_FILENAME = "health.json"
@@ -254,12 +260,24 @@ def calculate_horizon(
 ) -> dict[str, Any]:
     """Calculate the one canonical discovery-to-compiled information horizon."""
     policy_version = _opt_str((queue_receipt or {}).get("policy_version"))
+    discovery_clock_policy_version = _opt_str(
+        (queue_receipt or {}).get("discovery_clock_policy_version")
+    )
+    clock_contract_active = discovery_clock_policy_version is not None
+    calculated_clock = datetime.fromisoformat(calculated_at.replace("Z", "+00:00"))
+    if calculated_clock.tzinfo is None:
+        raise ValueError("calculated_at must include a timezone")
     coverage_rows = [dict(row) for row in index_coverage]
     if policy_version:
         coverage_rows = [
             row for row in coverage_rows
             if _opt_str(row.get("policy_version")) == policy_version
         ]
+    coverage_kind_invalid = clock_contract_active and any(
+        (_opt_str(row.get("coverage_kind")) or "daily_index")
+        not in {"daily_index", "latest_filings"}
+        for row in coverage_rows
+    )
     coverage_date_invalid = any(
         _opt_str(row.get("index_date")) is not None
         and _opt_iso_date(row.get("index_date")) is None
@@ -270,8 +288,47 @@ def calculate_horizon(
         if _opt_iso_date(row.get("index_date")) is not None
     ]
     coverage_rows.sort(key=lambda row: _opt_iso_date(row.get("index_date")) or "")
-    latest_expected = coverage_rows[-1] if coverage_rows else None
-    complete_rows = [row for row in coverage_rows if _opt_str(row.get("status")) == "complete"]
+    latest_expected_date: str | None = None
+    latest_realtime_date: str | None = None
+    latest_overlay: Mapping[str, Any] | None = None
+    if clock_contract_active:
+        expected_daily = latest_expected_daily_index_date(calculated_clock)
+        expected_realtime = latest_expected_realtime_filing_date(calculated_clock)
+        latest_expected_date = expected_daily.isoformat()
+        latest_realtime_date = expected_realtime.isoformat()
+        daily_rows = [
+            row for row in coverage_rows
+            if (_opt_str(row.get("coverage_kind")) or "daily_index") == "daily_index"
+        ]
+        overlay_rows = [
+            row for row in coverage_rows
+            if _opt_str(row.get("coverage_kind")) == "latest_filings"
+        ]
+        expected_daily_rows = [
+            row for row in daily_rows
+            if _opt_iso_date(row.get("index_date")) == latest_expected_date
+        ]
+        latest_expected = expected_daily_rows[-1] if expected_daily_rows else None
+        expected_overlay_rows = [
+            row for row in overlay_rows
+            if _opt_iso_date(row.get("index_date")) == latest_realtime_date
+        ]
+        latest_overlay = expected_overlay_rows[-1] if expected_overlay_rows else None
+        complete_rows = [
+            row for row in daily_rows
+            if _opt_str(row.get("status")) == "complete"
+            and (_opt_iso_date(row.get("index_date")) or "") <= latest_expected_date
+        ]
+    else:
+        latest_expected = coverage_rows[-1] if coverage_rows else None
+        latest_expected_date = (
+            _opt_iso_date(latest_expected.get("index_date"))
+            if latest_expected else None
+        )
+        complete_rows = [
+            row for row in coverage_rows
+            if _opt_str(row.get("status")) == "complete"
+        ]
     latest_complete = complete_rows[-1] if complete_rows else None
     completed_dates = [str(row.get("index_date"))[:10] for row in complete_rows if _opt_str(row.get("index_date"))]
 
@@ -393,7 +450,13 @@ def calculate_horizon(
     if coverage_date_invalid:
         unavailable = True
         reasons.append("discovery_coverage_date_invalid")
-    if not latest_expected:
+    if coverage_kind_invalid:
+        unavailable = True
+        reasons.append("discovery_coverage_kind_invalid")
+    if not latest_expected and clock_contract_active:
+        degraded_discovery = True
+        reasons.append("latest_expected_index_not_observed")
+    elif not latest_expected:
         unavailable = True
         reasons.append("discovery_coverage_missing")
     elif _opt_str(latest_expected.get("status")) == "not_published" and not (
@@ -406,6 +469,30 @@ def calculate_horizon(
     }:
         degraded_discovery = True
         reasons.append("latest_expected_index_not_complete")
+    overlay_observed_raw = (
+        _opt_str(latest_overlay.get("observed_through"))
+        if latest_overlay else None
+    )
+    overlay_observed = _opt_iso_datetime(overlay_observed_raw)
+    if clock_contract_active and not latest_overlay:
+        degraded_discovery = True
+        reasons.append("latest_filings_observation_missing")
+    elif clock_contract_active and _opt_str(latest_overlay.get("status")) != "complete":
+        degraded_discovery = True
+        reasons.append("latest_filings_observation_not_complete")
+    elif clock_contract_active and overlay_observed_raw is None:
+        degraded_discovery = True
+        reasons.append("latest_filings_observed_through_missing")
+    elif clock_contract_active and overlay_observed is None:
+        unavailable = True
+        reasons.append("latest_filings_observed_through_invalid")
+    elif clock_contract_active and (
+        datetime.fromisoformat(str(overlay_observed).replace("Z", "+00:00"))
+        .astimezone(SEC_TIMEZONE).date().isoformat()
+        < str(latest_realtime_date)
+    ):
+        degraded_discovery = True
+        reasons.append("latest_filings_observation_stale")
     if not discovered_filing:
         unavailable = True
         reasons.append("discovered_watermark_missing")
@@ -473,13 +560,17 @@ def calculate_horizon(
         "target_sla_hours": HORIZON_SLA_HOURS,
         "target_next_downstream_job": "capital-structure",
         "policy_version": policy_version,
+        "discovery_clock_policy_version": discovery_clock_policy_version,
         "compiler_generation_id": generation_id,
         "compiler_as_of": compiler_as_of,
         "calculated_at": calculated_at,
         "watermarks": {
-            "latest_expected_sec_index_date": _opt_str(latest_expected.get("index_date")) if latest_expected else None,
+            "latest_expected_sec_index_date": latest_expected_date,
             "latest_expected_sec_index_status": _opt_str(latest_expected.get("status")) if latest_expected else None,
             "latest_completed_sec_index_date": _opt_str(latest_complete.get("index_date")) if latest_complete else None,
+            "latest_expected_realtime_filing_date": latest_realtime_date,
+            "latest_filings_status": _opt_str(latest_overlay.get("status")) if latest_overlay else None,
+            "latest_filings_observed_through": overlay_observed,
             "latest_discovered_in_policy_filing_date": discovered_filing,
             "latest_discovered_observed_at": discovered_at,
             "latest_eligible_retained_filing_date": retained_filing,

@@ -1,0 +1,158 @@
+<html>
+<head>
+<title>Federal Register, Volume 91 Issue 88 (Thursday, May 7, 2026)</title>
+</head>
+<body><pre>
+[Federal Register Volume 91, Number 88 (Thursday, May 7, 2026)]
+[Notices]
+[Pages 24849-24850]
+From the Federal Register Online via the Government Publishing Office [<a href="http://www.gpo.gov">www.gpo.gov</a>]
+[FR Doc No: 2026-09003]
+
+
+-----------------------------------------------------------------------
+
+DEPARTMENT OF DEFENSE
+
+Office of the Secretary
+
+[Transmittal No. 26-24]
+
+
+Arms Sales Notification
+
+AGENCY: Defense Security Cooperation Agency, Department of Defense 
+(DoD).
+
+ACTION: Arms sales notice.
+
+-----------------------------------------------------------------------
+
+SUMMARY: The DoW is publishing the unclassified text of an arms sales 
+notification.
+
+FOR FURTHER INFORMATION CONTACT: Urooj Zahra at (703) 695-6233, 
+<a href="/cdn-cgi/l/email-protection#80f5f2efefeaaefae1e8f2e1aee3e9f6c0ede1e9ecaeede9ec"><span class="__cf_email__" data-cfemail="1560677a7a7f3b6f747d67743b767c635578747c793b787c79">[email&#160;protected]</span></a>, or <a href="/cdn-cgi/l/email-protection#45213626246b2b26376b37363726282228316b292c36316b262b366828273d0528242c296b282c29"><span class="__cf_email__" data-cfemail="76120515175818150458040504151b111b02581a1f0502581518055b1b140e361b171f1a581b1f1a">[email&#160;protected]</span></a>.
+
+SUPPLEMENTARY INFORMATION: This 36(b) arms sales notification is 
+published to fulfill the requirements of section 155 of Public Law 104-
+164 dated July 21, 1996. The following is a copy of the attached 
+Transmittal 26-24, Policy Justification, and Sensitivity of Technology.
+
+    Dated: May 4, 2026.
+Stephanie J. Bost,
+Alternate OSD Federal Register Liaison Officer, Department of Defense.
+DEPARTMENT OF STATE
+TRANSMITTAL NO. RSAT 26-24
+Notice of Proposed Issuance of Letter of Offer Pursuant to Section 
+36(b)(1) of the Arms Export Control Act, as amended
+    (i) (U) Prospective Purchaser: Government of Singapore
+    (ii) (U) Total Estimated Value:
+
+Major Defense Equipment *...............  $82.50 million
+Other...................................  $ 0.64 million
+                                         -------------------------------
+
+[[Page 24850]]
+
+ 
+  TOTAL.................................  $83.14 million
+ 
+
+    Funding Source: National Funds
+    (iii) (U) Description and Quantity or Quantities of Articles or 
+Services under Consideration for Purchase:
+
+Major Defense Equipment (MDE):
+    Forty-five (45) M30A2 guided multiple launch rocket system-
+alternative warhead pods
+Non-MDE:
+    The following non-MDE items will also be included: telemetry kits; 
+engineering services; technical assistance; and other related elements 
+of logistics and program support.
+
+    (iv) (U) Military Department: Army (SN-B-VIW)
+    (v) (U) Prior Related Cases, if any: None
+    (vi) (U) Sales Commission, Fee, etc., Paid, Offered, or Agreed to 
+be Paid: None known at this time
+    (vii) (U) Sensitivity of Technology Contained in the Defense 
+Article or Defense Services Proposed to be Sold: See Attached Annex
+    (viii) (U) Date Report Delivered to Congress: April 1, 2026
+    * as defined in Section 47(6) of the Arms Export Control Act.
+
+POLICY JUSTIFICATION
+
+(U) Singapore--Guided Multiple Launch Rocket System-Alternative Warhead
+
+    (U) The Government of Singapore has requested to buy forty-five 
+(45) pods of M30A2 guided multiple launch rocket system-alternative. 
+The following non-major defense equipment items will also be included: 
+telemetry kits; engineering services; technical assistance; and other 
+related elements of logistics and program support. The estimated total 
+cost is $83.14 million.
+    (U) This proposed sale will enhance the foreign policy and national 
+security objectives of the United States by improving the security of a 
+strategic partner that is an important force for political stability 
+and economic progress in Asia.
+    (U) The proposed sale will improve Singapore's defensive capability 
+to guard against hostile aggression and shield the allies who train and 
+operate within their borders and improve its ability to defend its 
+territorial integrity and deter regional threats, thereby increasing 
+regional stability. Singapore will have no difficulty absorbing these 
+articles and services into its armed forces.
+    (U) The proposed sale of this equipment and support will not alter 
+the basic military balance in the region.
+    (U) The principal contractor(s) will be selected through 
+competitive procurements conducted by the U.S. Government in accordance 
+with the Federal Acquisition Regulation. At this time, the U.S. 
+Government is not aware of any offset agreement proposed in connection 
+with this potential sale. Any offset agreement will be defined in 
+negotiations between the purchaser and the contractor.
+    (U) Implementation of this proposed sale will require the 
+assignment of two (2) additional U.S. Government and two (2) contractor 
+representatives to Singapore, as required, for a duration of ten (10) 
+days to provide engineering and technical support services as well as 
+program and technical reviews.
+    (U) There will be no adverse impact on U.S. defense readiness as a 
+result of this proposed sale.
+Transmittal No. 26-24
+Notice of Proposed Issuance of Letter of Offer Pursuant to Section 
+36(b)(1) of the Arms Export Control Act
+Annex
+Item No. vii
+    (vii) Sensitivity of Technology:
+    1. (U) The M30A2 guided multiple launch rocket system-alternative 
+warhead (GMLRS-AW) is a program of record for the U.S. Department of 
+War. The M30A2 GMLRS-AW shares a greater than 90% commonality with the 
+M31A1 guided multiple launch rocket system-unitary (GMLRS-U). The 
+primary difference between the GMLRS-U and GMLRS-AW is the replacement 
+of the GMLRS-U's high explosive warhead with a 200-pound fragmentation 
+warhead of pre-formed tungsten penetrators, which is optimized for 
+effectiveness against large area and imprecisely located targets. The 
+munitions otherwise share a common motor, global positioning system and 
+precise positioning service (GPS/PPS)-aided inertial guidance provided 
+by selective availability anti-spoofing module or M-Code, control 
+system, fusing mechanism, multi-option height of burst capability, and 
+an effective range between 15 and 70 kilometers.
+    2. (U) The highest level of classification of defense articles, 
+components, and services included in this potential sale is SECRET.
+    3. (U) If a technologically advanced adversary were to obtain 
+knowledge of the specific hardware and software elements, the 
+information could be used to develop countermeasures that might reduce 
+system effectiveness or be used in the development of a system with 
+similar or advanced capabilities.
+    4. (U) A determination has been made that Singapore can provide 
+substantially the same degree of protection for the sensitive 
+technology being released as the U.S. Government. This proposed sale is 
+necessary in furtherance of the U.S. foreign policy and national 
+security objectives outlined in the Policy Justification.
+    5. (U) All defense articles and services listed in this transmittal 
+have been authorized for release and export to the Government of 
+Singapore.
+
+[FR Doc. 2026-09003 Filed 5-6-26; 8:45 am]
+BILLING CODE 6001-FR-P
+
+
+</pre><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script></body>
+</html>

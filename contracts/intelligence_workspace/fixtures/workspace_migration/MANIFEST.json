@@ -1,0 +1,105 @@
+{
+  "files": [
+    {
+      "name": "chart_layout_v1_sparse.json",
+      "sha256": "6a674edbeaa99f6c693a3ee6a23a8050ec90ee3b3398b5bf058f69a4f0d012f4"
+    },
+    {
+      "name": "chart_layout_v1_typical.json",
+      "sha256": "9676b59c68d6a08ccd9165abefb110177fa7753d1dca6e045e23b07fd176cb2b"
+    },
+    {
+      "name": "chart_layout_v2_full.json",
+      "sha256": "e0f237c4ec339a9f274ca67f493c74aec8889e92248238ec1dcd44e3804b9b7d"
+    },
+    {
+      "name": "chart_layout_v2_real_capture.json",
+      "sha256": "744175d97ad212a2da6e4ec5aa65bb239138e79ad137140888dcb1b889f12c22"
+    },
+    {
+      "name": "chart_layout_v2_sparse.json",
+      "sha256": "9ea18ef644122b0a9d85f91a33c0e371001a396b0a439ddb903bb1648599856c"
+    },
+    {
+      "name": "invalid_duplicate_widget_id.json",
+      "sha256": "e53ec798f9da8b638d0a07010b5b087c2f08ad2122b0eec51335242504f1b53b"
+    },
+    {
+      "name": "invalid_floor_unsupported.json",
+      "sha256": "9d83fb554bc23f7143546308ad152a52f5d1398c9c747a6c603128fce9a2441e"
+    },
+    {
+      "name": "invalid_lane.json",
+      "sha256": "f48e2961b7906803116b94199b6236883b8f8a923cdababf1ac92f095a850126"
+    },
+    {
+      "name": "invalid_non_dict_input.json",
+      "sha256": "9c800bb8007fb9facec28ce0faaac8cf45acb6ef0d0968112f7df50ce613a23d"
+    },
+    {
+      "name": "invalid_non_null_name.json",
+      "sha256": "0f6894de6ba528b16d07684f503798b6025635a8455a338e1c948e32f586504a"
+    },
+    {
+      "name": "invalid_oversized_workspace.json",
+      "sha256": "75120853c7d44b91a618f4cbbe07fb571e259e45645403b1f615a29c045fa5a3"
+    },
+    {
+      "name": "invalid_port.json",
+      "sha256": "83aa2c1cdffa2d4d0ebd98af4fb70f75c3a686b8826d936c7bf0cb40a01d7c0b"
+    },
+    {
+      "name": "invalid_too_many_widgets.json",
+      "sha256": "b099d7b882d75dbf6ce4546db8e0d2836d78e970296f4401d73f6496ee096308"
+    },
+    {
+      "name": "invalid_unknown_chart_config_key.json",
+      "sha256": "69ae9a34a505d895c8aee5ba29377da483af30229b1bd0ca2e81f93c0a198c37"
+    },
+    {
+      "name": "invalid_unknown_schema.json",
+      "sha256": "a8801caf07bcabf22ecca6e8c6e6d514e01ca933868b85acb9749141e3553389"
+    },
+    {
+      "name": "invalid_unknown_top_level_key.json",
+      "sha256": "572fc7c8e179f1feb71b7f8946b35c215389ba88d4406d0e1ec65e4c6f2e998e"
+    },
+    {
+      "name": "invalid_unknown_widget_type.json",
+      "sha256": "74fdba33b1f103abdf5d8158b82b7f48bb484a535fd07a0d10fcc9a80cc20845"
+    },
+    {
+      "name": "legacy_v0_bare.json",
+      "sha256": "5efbafe9b3d96a713142fff5dd4ad8f2c6353733a7bb68171739a63b194b9c43"
+    },
+    {
+      "name": "legacy_v0_minimal.json",
+      "sha256": "a0b825876db62d2df5a499fcf9495c952824725052d29a30f04e0378c2526dba"
+    },
+    {
+      "name": "tolerant_v2_activepane7.json",
+      "sha256": "c274dd8e7572a440332fc9c18d22dfeb294d2b4848aba90ac4b087d371d20487"
+    },
+    {
+      "name": "tolerant_v2_charttype_empty.json",
+      "sha256": "2ced6f319d5a30434ff770b002781b45c2945900b10ca25680c48307468ed403"
+    },
+    {
+      "name": "tolerant_v2_comparecfg_junk.json",
+      "sha256": "3e637a103dab2f9528c52ddbafeb5c8cecd890e97c563cad1cbdd729d6523210"
+    },
+    {
+      "name": "tolerant_v2_inds_mixed.json",
+      "sha256": "fbaee4752bcf216b2bdf360a2183113f566dfc537d9ced3e3c2d1009fc849314"
+    },
+    {
+      "name": "tolerant_v2_panes_empty.json",
+      "sha256": "c5eba27f369d3997a40357e3b9c7d3ed5fc1ac4fc248ef2c09d464fada44fe1a"
+    },
+    {
+      "name": "tolerant_v2_split3.json",
+      "sha256": "db6db0f5cdb76810f948da430b564235a2e9680d7d70864dbe276f4d2cc9b8d5"
+    }
+  ],
+  "vectors_digest": "3e7c1c50faf8b03b4fa2f3ad2c66db3ebf9ba3ebd93bbb15b228654c382ff339"
+}

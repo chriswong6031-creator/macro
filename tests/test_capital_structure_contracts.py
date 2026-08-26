@@ -316,6 +316,9 @@ def _retrieval_queue_receipt() -> dict:
         "schema": "capital_structure.retrieval_queue_receipt.v1",
         "as_of": "2026-08-01T12:00:00Z",
         "policy_version": "capital-structure-sec-form-policy/1.2.0",
+        "discovery_clock_policy_version": (
+            "capital-structure-sec-discovery-clock/1.0.0"
+        ),
         "max_filings": 14,
         "selected_count": 0,
         "deferred_count": 0,
