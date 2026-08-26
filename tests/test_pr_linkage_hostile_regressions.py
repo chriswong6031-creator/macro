@@ -1184,3 +1184,330 @@ def test_release_atomic_writer_rejects_bool_and_overlong_write_results(monkeypat
         with pytest.raises(cli.PhaseFailure) as caught:
             cli.write_stream(RawStream(result), b"abc")
         assert caught.value.reason == "OUTPUT_WRITE_FAILED"
+
+
+# ---------------------------------------------------------------------------
+# MAS-28 W1 consolidated repair: three BLOCKER families, hostile + paired
+# controls.  (A) W0 5.10 pre-cutover legacy, (B) strict integer parity at every
+# positive-integer surface, (C) the 0-3-space field-label occurrence ceiling.
+# ---------------------------------------------------------------------------
+
+FIELD_LABELS = ("Workstream", "Linear", "Portfolio-Mode", "Wave", "Authority", "Completion")
+ALIAS_BODY = replace_field(VALID, "Authority", "runtime")
+
+
+def label_body(count: int, indent: str, *, label: str = "Workstream", wrap=None) -> str:
+    """VALID plus ``count`` extra lexical labels below the authority zone."""
+    line = f"{indent}{label}: WS:X"
+    rows = [wrap(line) if wrap else line for _ in range(count)]
+    return VALID + "\n\n## Body\n" + "\n".join(rows)
+
+
+def occurrence_outcome(body: str) -> str:
+    try:
+        v.analyze(observation(body), MANIFEST)
+    except v.ResourceLimitError as exc:
+        return f"LIMIT:{exc.key}:{exc.limit}:{exc.observed}"
+    return "ACCEPTED"
+
+
+# --- (C) occurrence ceiling ------------------------------------------------
+
+@pytest.mark.parametrize("indent", ["", " ", "  ", "   "])
+def test_field_label_ceiling_counts_every_applicable_zero_to_three_space_label(indent):
+    """W0 16.3: exactly 100 visible labels is valid, 101 is a resource limit.
+
+    ``VALID`` already contributes one column-zero ``Workstream:`` occurrence, so
+    the generated rows run to 99 for the 100th and 100 for the 101st.
+    """
+    assert occurrence_outcome(label_body(98, indent)) == "ACCEPTED"
+    assert occurrence_outcome(label_body(99, indent)) == "ACCEPTED"
+    assert occurrence_outcome(label_body(100, indent)) == "LIMIT:field_occurrences:100:101"
+
+
+@pytest.mark.parametrize("label", FIELD_LABELS)
+def test_every_recognized_label_is_capped_independently_at_three_spaces(label):
+    """Each label has its own counter; ``VALID`` seeds all six with one each."""
+    assert occurrence_outcome(label_body(98, "   ", label=label)) == "ACCEPTED"
+    assert occurrence_outcome(label_body(99, "   ", label=label)) == "ACCEPTED"
+    assert occurrence_outcome(label_body(100, "   ", label=label)) == "LIMIT:field_occurrences:100:101"
+    # a sibling label at 100 does not spend this label's budget
+    other = "Linear" if label != "Linear" else "Wave"
+    assert occurrence_outcome(label_body(99, "   ", label=label) + "\n"
+                              + "\n".join(f"   {other}: WS:X" for _ in range(99))) == "ACCEPTED"
+
+
+@pytest.mark.parametrize("indent", ["    ", "     ", "\t"])
+def test_indented_code_and_tab_labels_are_not_countable_occurrences(indent):
+    """Four spaces or a tab is an indented code block: an ignored Markdown state."""
+    assert occurrence_outcome(label_body(400, indent)) == "ACCEPTED"
+
+
+@pytest.mark.parametrize("state,wrap", [
+    ("fenced", lambda line: f"```\n{line}\n```"),
+    ("html_comment", lambda line: f"<!--\n{line}\n-->"),
+    ("blockquote", lambda line: f"> {line}"),
+])
+def test_ignored_markdown_states_stay_excluded_from_the_ceiling(state, wrap):
+    assert occurrence_outcome(label_body(400, "", wrap=wrap)) == "ACCEPTED"
+    assert occurrence_outcome(label_body(400, "   ", wrap=wrap)) == "ACCEPTED"
+
+
+def test_lazy_blockquote_continuation_is_diagnosed_not_counted():
+    """A lazy continuation is line-addressable invalid metadata, never an occurrence."""
+    body = VALID + "\n\n## Body\n" + "\n".join("> quoted\n   Workstream: WS:X" for _ in range(200))
+    assert occurrence_outcome(body) == "ACCEPTED"
+
+
+@pytest.mark.parametrize("indent", [" ", "  ", "   "])
+def test_canonical_authority_stays_column_zero_while_indented_labels_count(indent):
+    """An indented six-line block is countable prose, never a resolved declaration."""
+    indented = "\n".join(f"{indent}{line}" for line in VALID.splitlines())
+    result = v.analyze(observation(indented), MANIFEST)["semantic"]
+    assert result["declaration"]["authoring_state"] == "MISSING"
+    assert result["declaration"]["portfolio_mode"] is None
+    assert "R001" in {f["rule_id"] for f in result["findings"]}
+    # ...and the same indented lines are still charged to the ceiling.
+    flood = indented + "\n\n## Body\n" + "\n".join(f"{indent}Workstream: WS:X" for _ in range(100))
+    assert occurrence_outcome(flood).startswith("LIMIT:field_occurrences:100:101")
+
+
+def test_label_ceiling_overflow_is_the_exit_two_resource_envelope(tmp_path):
+    """W0 16.3 routes 101 to exit 2 with exact limit/observed, never a report."""
+    raw = v.canonical_json(observation(label_body(100, "   ")))
+    path = tmp_path / "input.json"; path.write_bytes(raw)
+    done = subprocess.run([sys.executable, "scripts/pr_linkage_validator.py", str(path)],
+                          cwd=ROOT, capture_output=True)
+    assert done.returncode == 2 and done.stdout == b""
+    error = json.loads(done.stderr)["error"]
+    assert error["reason_code"] == "RESOURCE_LIMIT"
+    assert (error["limit"], error["observed"]) == (100, 101)
+
+
+# --- (B) strict integer parity --------------------------------------------
+
+def grounded(mutate, *, epoch="AT_OR_POST_CUTOVER"):
+    """Finalize, mutate, then re-stamp only the observation hash."""
+    o = finish(clone(observation(VALID, epoch=epoch)))
+    mutate(o)
+    o["receipt"]["observation_sha256"] = v.receipt_projection(o, MANIFEST)["OBSERVATION"]
+    return o
+
+
+def parity(o) -> tuple[str, str]:
+    schema = "REJECT" if list(OBSERVATION_VALIDATOR.iter_errors(o)) else "ACCEPT"
+    try:
+        v.analyze(o, MANIFEST)
+    except v.ValidationError:
+        return schema, "REJECT"
+    return schema, "ACCEPT"
+
+
+def set_pr_number(value):
+    def apply(o):
+        o["pull_request"]["number"] = value
+        o["receipt"]["pr_number"] = 1 if isinstance(value, bool) else value
+    return apply
+
+
+def set_first_strict(value):
+    def apply(o):
+        o["authoring_epoch"]["first_strict_pr_number"] = value
+        o["authoring_epoch"]["cutover_receipt_sha256"] = v.cutover_digest(o)
+        o["receipt"]["cutover_receipt_sha256"] = o["authoring_epoch"]["cutover_receipt_sha256"]
+        o["receipt"]["snapshot_digests"]["authoring_epoch"] = v.receipt_projection(o, MANIFEST)["AUTHORING_EPOCH"]
+    return apply
+
+
+def set_legacy_cohort(value):
+    def apply(o):
+        o["authoring_epoch"]["legacy_open_pr_numbers"] = [value]
+        o["authoring_epoch"]["cutover_receipt_sha256"] = v.cutover_digest(o)
+        o["receipt"]["cutover_receipt_sha256"] = o["authoring_epoch"]["cutover_receipt_sha256"]
+        o["receipt"]["snapshot_digests"]["authoring_epoch"] = v.receipt_projection(o, MANIFEST)["AUTHORING_EPOCH"]
+    return apply
+
+
+INTEGER_SURFACES = {
+    "pull_request.number": set_pr_number,
+    "receipt.pr_number": lambda value: (lambda o: o["receipt"].__setitem__("pr_number", value)),
+    "authoring_epoch.first_strict_pr_number": set_first_strict,
+    "authoring_epoch.legacy_open_pr_numbers[0]": set_legacy_cohort,
+}
+
+
+@pytest.mark.parametrize("surface", sorted(INTEGER_SURFACES))
+@pytest.mark.parametrize("value", [True, False])
+def test_no_positive_integer_surface_accepts_a_boolean(surface, value):
+    """``pull_request.number: true`` must fail identically in schema and runtime.
+
+    Python makes ``bool`` a subclass of ``int``; JSON Schema does not.  A bare
+    ``isinstance(x, int)`` is therefore a silent parity break at every one of
+    these surfaces.
+    """
+    o = grounded(INTEGER_SURFACES[surface](value), epoch="PRE_CUTOVER" if "legacy" in surface else "AT_OR_POST_CUTOVER")
+    assert parity(o) == ("REJECT", "REJECT"), surface
+
+
+@pytest.mark.parametrize("surface", sorted(INTEGER_SURFACES))
+@pytest.mark.parametrize("value", [0, -1, "1", None])
+def test_no_positive_integer_surface_accepts_a_nonpositive_or_mistyped_value(surface, value):
+    if surface == "authoring_epoch.first_strict_pr_number" and value is None:
+        return  # the frozen schema types this one integer|null
+    o = grounded(INTEGER_SURFACES[surface](value), epoch="PRE_CUTOVER" if "legacy" in surface else "AT_OR_POST_CUTOVER")
+    assert parity(o) == ("REJECT", "REJECT"), surface
+
+
+@pytest.mark.parametrize("surface", sorted(INTEGER_SURFACES))
+def test_runtime_is_never_laxer_than_the_schema_on_integer_valued_floats(surface):
+    """JSON Schema calls ``1.0`` an integer; canonical JSON bytes do not.
+
+    Parity is the one-way law "the runtime never accepts what the schema
+    rejects".  Staying stricter here is deliberate: a float would round-trip as
+    ``1.0`` and break the grounding digest it is supposed to certify.
+    """
+    o = grounded(INTEGER_SURFACES[surface](1.0), epoch="PRE_CUTOVER" if "legacy" in surface else "AT_OR_POST_CUTOVER")
+    schema, runtime = parity(o)
+    assert runtime == "REJECT"
+    assert not (schema == "REJECT" and runtime == "ACCEPT")
+
+
+def test_paired_integer_control_still_accepts_a_real_positive_int():
+    o = grounded(set_pr_number(7))
+    assert parity(o) == ("ACCEPT", "ACCEPT")
+    assert v.analyze(o, MANIFEST)["semantic"]["verdict"] == "CONFORMANT"
+
+
+def test_bool_is_rejected_before_it_can_reach_a_receipt_or_report():
+    o = grounded(set_pr_number(True))
+    with pytest.raises(v.ValidationError, match="TYPE_MISMATCH"):
+        v.analyze(o, MANIFEST)
+
+
+# --- (A) W0 5.10 pre-cutover legacy ---------------------------------------
+
+def semantic(body, epoch):
+    return v.analyze(observation(body, epoch=epoch), MANIFEST)["semantic"]
+
+
+PREAMBLE = "This legacy PR predates the canonical grammar.\n\n"
+
+
+def test_pre_cutover_preamble_is_legacy_visible_not_authority_zone_invalid():
+    """W0 5.10: R003 for a non-permitted preamble is a post-cutover law only."""
+    pre = semantic(PREAMBLE + VALID, "PRE_CUTOVER")
+    assert "R003" not in {f["rule_id"] for f in pre["findings"]}
+    assert pre["verdict"] == "CONFORMANT"
+    assert pre["declaration"]["authoring_state"] == "CANONICAL"
+    post = semantic(PREAMBLE + VALID, "AT_OR_POST_CUTOVER")
+    assert "R003" in {f["rule_id"] for f in post["findings"]}
+    assert post["verdict"] == "REFUSE_METADATA"
+
+
+def test_pre_cutover_preamble_plus_alias_reaches_truthful_unclassified_legacy():
+    """The 5.10 repair is what makes W0 8's UNCLASSIFIED_LEGACY/WARN reachable."""
+    pre = semantic(PREAMBLE + ALIAS_BODY, "PRE_CUTOVER")
+    assert {f["rule_id"] for f in pre["findings"]} == {"R021"}
+    assert pre["declaration"]["authoring_state"] == "LEGACY"
+    assert pre["classification"] == "UNCLASSIFIED_LEGACY"
+    assert pre["verdict"] == "WARN"
+    post = semantic(PREAMBLE + ALIAS_BODY, "AT_OR_POST_CUTOVER")
+    assert {"R003", "R020"} <= {f["rule_id"] for f in post["findings"]}
+    assert post["classification"] == "UNKNOWN" and post["verdict"] == "REFUSE_METADATA"
+
+
+def test_pre_cutover_relationship_shaped_preamble_is_also_exempt():
+    body = "Closes something untyped\n\n" + VALID
+    assert "R003" not in {f["rule_id"] for f in semantic(body, "PRE_CUTOVER")["findings"]}
+    assert "R003" in {f["rule_id"] for f in semantic(body, "AT_OR_POST_CUTOVER")["findings"]}
+
+
+def test_pre_cutover_noncanonical_body_is_never_globally_regex_inferred():
+    """5.10 second sentence: scattered labels stay legacy evidence, not authority."""
+    scattered = "intro\nWorkstream: WS:AGENT-OS\n\nLinear: MAS-28\n"
+    pre = semantic(scattered, "PRE_CUTOVER")
+    assert pre["declaration"]["workstream"] is None and pre["declaration"]["linear"] is None
+    assert "R003" not in {f["rule_id"] for f in pre["findings"]}
+    post = semantic(scattered, "AT_OR_POST_CUTOVER")
+    assert post["declaration"]["workstream"] == "WS:AGENT-OS"
+    assert "R003" in {f["rule_id"] for f in post["findings"]}
+
+
+def test_missing_header_stays_r001_missing_unknown_in_both_epochs():
+    """Report schema allOf[17]+allOf[1] bind MISSING to R001 and UNKNOWN.
+
+    The 5.10 repair removes the false R003, never the truthful HEADER_MISSING;
+    relaxing that would need a W0 contract amendment, not a W1 repair.
+    """
+    for epoch in ("PRE_CUTOVER", "AT_OR_POST_CUTOVER"):
+        result = semantic("Legacy prose only.\n", epoch)
+        assert result["declaration"]["authoring_state"] == "MISSING"
+        assert result["classification"] == "UNKNOWN"
+        assert "R001" in {f["rule_id"] for f in result["findings"]}
+
+
+@pytest.mark.parametrize("body,defect", [
+    ("```\n" + VALID, "unclosed fence"),
+    ("<!-- open\n" + VALID, "unclosed comment"),
+    ("> quoted\nWorkstream: WS:AGENT-OS\n" + VALID, "lazy continuation"),
+    (VALID + "\nWorkstream:WS:AGENT-OS", "field syntax"),
+])
+def test_pre_cutover_exemption_does_not_leak_to_other_section_five_defects(body, defect):
+    """Only 5.10 is epoch-conditional; 5.4/5.6 and syntax defects are absolute."""
+    assert "R003" in {f["rule_id"] for f in semantic(body, "PRE_CUTOVER")["findings"]}, defect
+    assert "R003" in {f["rule_id"] for f in semantic(body, "AT_OR_POST_CUTOVER")["findings"]}, defect
+
+
+@pytest.mark.parametrize("state", ["UNAVAILABLE", "PARTIAL"])
+def test_only_a_present_pre_cutover_receipt_can_authorize_the_legacy_path(state):
+    """A guessable epoch never buys the 5.10 exemption."""
+    o = clone(observation(PREAMBLE + VALID))
+    o["authoring_epoch"] = {"state": state, "relation": "UNKNOWN", "default_ref": None,
+                            "cutover_merge_sha": None, "template_blobs": [],
+                            "first_strict_pr_number": None, "legacy_open_pr_numbers": [],
+                            "receipt_ruleset_digest": None, "cutover_receipt_sha256": None,
+                            "diagnostics": ["UNRESOLVED"]}
+    assert "R003" in {f["rule_id"] for f in v.analyze(finish(o), MANIFEST)["semantic"]["findings"]}
+
+
+def test_repaired_reports_still_satisfy_the_frozen_report_schema_and_wire_law():
+    for body, epoch in ((PREAMBLE + VALID, "PRE_CUTOVER"), (PREAMBLE + ALIAS_BODY, "PRE_CUTOVER"),
+                        ("intro\nWorkstream: WS:AGENT-OS\n", "PRE_CUTOVER"),
+                        (PREAMBLE + VALID, "AT_OR_POST_CUTOVER")):
+        report = v.analyze(observation(body, epoch=epoch), MANIFEST)
+        REPORT_VALIDATOR.validate(report)
+        v.validate_report(report)
+        assert report["semantic_hash"] == v.digest(report["semantic"])
+
+
+def test_a_contradictory_authoring_epoch_is_a_typed_invalid_snapshot_state():
+    """It can never reach the 5.10 branch because it never becomes an epoch."""
+    o = clone(observation(PREAMBLE + VALID))
+    o["authoring_epoch"] = {"state": "CONTRADICTORY", "relation": "UNKNOWN", "default_ref": None,
+                            "cutover_merge_sha": None, "template_blobs": [],
+                            "first_strict_pr_number": None, "legacy_open_pr_numbers": [],
+                            "receipt_ruleset_digest": None, "cutover_receipt_sha256": None,
+                            "diagnostics": ["CONTRADICTORY"]}
+    with pytest.raises(v.ValidationError, match="INVALID_SNAPSHOT_STATE"):
+        v.analyze(finish(o), MANIFEST)
+
+
+def r003_reasons(body: str, epoch: str = "AT_OR_POST_CUTOVER"):
+    findings = v.analyze(observation(body, epoch=epoch), MANIFEST)["semantic"]["findings"]
+    return [f["evidence"].get("reason") for f in findings if f["rule_id"] == "R003"]
+
+
+def test_counting_an_indented_label_never_reroutes_a_defect():
+    """The ceiling widened to 0-3 spaces; defect routing stays column-zero.
+
+    A comment-close tail is only a ``COMMENT_CLOSE_TAIL`` splice when the label
+    itself starts at column zero, exactly as before the ceiling repair.
+    """
+    assert r003_reasons("<!-- open\n-->Workstream: WS:A\n" + VALID) == ["COMMENT_CLOSE_TAIL"]
+    assert r003_reasons("<!-- open\n--> Workstream: WS:A\n" + VALID) == ["NONPERMITTED_PREAMBLE"]
+    assert r003_reasons("<!-- open\n-->    Workstream: WS:A\n" + VALID) == []
+    # ...while the indented tails are still charged to the ceiling.
+    flood = VALID + "\n\n## Body\n" + "\n".join("<!-- o\n-->   Workstream: WS:X" for _ in range(100))
+    assert occurrence_outcome(flood) == "LIMIT:field_occurrences:100:101"
+    assert occurrence_outcome(VALID + "\n\n## Body\n"
+                              + "\n".join("<!-- o\n-->   Workstream: WS:X" for _ in range(99))) == "ACCEPTED"

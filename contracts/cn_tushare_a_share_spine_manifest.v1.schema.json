@@ -11,8 +11,6 @@
     "source",
     "deployment_status",
     "bulk_historical_backfill_ready",
-    "authorization",
-    "authorization_ready",
     "provenance",
     "request_receipts",
     "collection_state",
@@ -43,13 +41,6 @@
       ]
     },
     "bulk_historical_backfill_ready": {"type": "boolean"},
-    "authorization": {
-      "oneOf": [
-        {"type": "null"},
-        {"$ref": "#/$defs/authorizationReceipt"}
-      ]
-    },
-    "authorization_ready": {"type": "boolean"},
     "provenance": {"$ref": "#/$defs/provenance"},
     "request_receipts": {"$ref": "#/$defs/requestReceiptSummary"},
     "collection_state": {"$ref": "#/$defs/jsonFileReceiptOrNull"},
@@ -92,7 +83,7 @@
         "st",
         "point_in_time_universe",
         "source_row_accounting",
-        "authorization",
+        "compliance",
         "cap_fallback",
         "price_basis",
         "price_limit"
@@ -104,7 +95,7 @@
         "st": {"type": "object", "minProperties": 1},
         "point_in_time_universe": {"type": "object", "minProperties": 1},
         "source_row_accounting": {"type": "object", "minProperties": 1},
-        "authorization": {"type": "object", "minProperties": 1},
+        "compliance": {"$ref": "#/$defs/settledComplianceStatus"},
         "cap_fallback": {"$ref": "#/$defs/capFallbackContract"},
         "price_basis": {"type": "object", "minProperties": 1},
         "price_limit": {"type": "object", "minProperties": 1}
@@ -141,61 +132,15 @@
       "type": "object",
       "additionalProperties": {"$ref": "#/$defs/counter"}
     },
-    "authorizationReceipt": {
+    "settledComplianceStatus": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "schema_version",
-        "receipt_sha256",
-        "grant_document_sha256",
-        "trust_allowlist_sha256",
-        "trust_entry_sha256",
-        "vendor_entitlement_document_sha256",
-        "vendor_delegation_document_sha256",
-        "issued_on",
-        "expires_on",
-        "granted_by",
-        "scope",
-        "required_scope_satisfied"
-      ],
+      "required": ["status", "evidence_scope", "runtime_gate"],
+      "description": "Vendor compliance is settled outside this repository. The manifest records the fact only; supporting evidence is confidential and is never collected, hashed, or gated on here (DEC:CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE).",
       "properties": {
-        "schema_version": {"const": "cn_tushare_written_authorization.v1"},
-        "receipt_sha256": {"$ref": "#/$defs/sha256"},
-        "grant_document_sha256": {"$ref": "#/$defs/sha256"},
-        "trust_allowlist_sha256": {"$ref": "#/$defs/sha256"},
-        "trust_entry_sha256": {"$ref": "#/$defs/sha256"},
-        "vendor_entitlement_document_sha256": {
-          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/sha256"}]
-        },
-        "vendor_delegation_document_sha256": {
-          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/sha256"}]
-        },
-        "issued_on": {"type": "string", "format": "date"},
-        "expires_on": {"type": "string", "format": "date"},
-        "granted_by": {"enum": ["vendor", "institution"]},
-        "scope": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "api_access",
-            "bulk_local_retention",
-            "quantitative_strategy_research",
-            "commercial_use",
-            "private_internal_derivatives",
-            "redistribution",
-            "public_derivatives"
-          ],
-          "properties": {
-            "api_access": {"type": "boolean"},
-            "bulk_local_retention": {"type": "boolean"},
-            "quantitative_strategy_research": {"type": "boolean"},
-            "commercial_use": {"type": "boolean"},
-            "private_internal_derivatives": {"type": "boolean"},
-            "redistribution": {"type": "boolean"},
-            "public_derivatives": {"type": "boolean"}
-          }
-        },
-        "required_scope_satisfied": {"type": "boolean"}
+        "status": {"const": "CHAIRMAN_VERIFIED_PRIVATE / SATISFIED"},
+        "evidence_scope": {"const": "confidential_outside_coding_scope_nda_privacy"},
+        "runtime_gate": {"const": false}
       }
     },
     "provenance": {
@@ -668,7 +613,7 @@
         "request_estimate_formula",
         "range_shard_implemented",
         "synthetic_verification_complete",
-        "licensed_live_canary_complete",
+        "live_canary_complete",
         "live_canary_required_for_promotion"
       ],
       "properties": {
@@ -704,7 +649,7 @@
         },
         "range_shard_implemented": {"type": "boolean"},
         "synthetic_verification_complete": {"type": "boolean"},
-        "licensed_live_canary_complete": {"type": "boolean"},
+        "live_canary_complete": {"type": "boolean"},
         "live_canary_required_for_promotion": {"type": "boolean"}
       }
     },

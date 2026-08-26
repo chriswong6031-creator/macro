@@ -1,0 +1,232 @@
+{
+  "authority": {
+    "can_escalate": false,
+    "can_gate": false,
+    "can_originate_signal": false,
+    "can_rank": false,
+    "can_size": false
+  },
+  "default": {
+    "category": "UNRESOLVED_SOURCE_CONTEXT",
+    "disposition": "DEFER",
+    "rule_id": "S1F-DEFAULT-DEFER"
+  },
+  "dispositions": [
+    "RETAIN",
+    "DEFER",
+    "HARD_REFUSAL"
+  ],
+  "forbidden_output_fields": [
+    "event_family",
+    "episode",
+    "episode_id",
+    "episode_relationship",
+    "probability",
+    "score",
+    "rank",
+    "market_expectation",
+    "price",
+    "outcome",
+    "counterfactual",
+    "trade",
+    "position",
+    "sizing",
+    "execution",
+    "prophet",
+    "radar",
+    "fusion"
+  ],
+  "hard_refusal_requirements": {
+    "all_query_phrase_occurrences_byte_accounted": true,
+    "all_exact_fts_matched_documents_replayed": true,
+    "allowed_exclusive_categories": [
+      "CERTIFICATION_ONLY",
+      "AGREEMENT_COVENANT_DEFINITION_ONLY",
+      "HYPOTHETICAL_RISK_ONLY"
+    ],
+    "mixed_context_action": "DEFER",
+    "no_higher_precedence_anchor": true,
+    "no_realized_context_signature": true,
+    "offset_unit": "raw_byte"
+  },
+  "normalization": {
+    "case_folding": "ASCII_ONLY",
+    "decode_authority": "NONE",
+    "offset_unit": "raw_byte",
+    "phrase_source": "frozen_query_edges_exact_phrase",
+    "window_bytes_after": 768,
+    "window_bytes_before": 768
+  },
+  "precedence": [
+    "S1F-SOURCE-GAP-DEFER",
+    "S1F-8K-STRONG-CURRENT-ITEM",
+    "S1F-REALIZED-CURRENT-CONTEXT",
+    "S1F-CERTIFICATION-ONLY",
+    "S1F-AGREEMENT-DEFINITION-ONLY",
+    "S1F-HYPOTHETICAL-RISK-ONLY",
+    "S1F-ORDINARY-FINANCING-DEFER",
+    "S1F-COMPLETED-RESULTS-DEFER",
+    "S1F-DEFAULT-DEFER"
+  ],
+  "rules": [
+    {
+      "category": "SOURCE_CONTEXT_INCOMPLETE",
+      "disposition": "DEFER",
+      "id": "S1F-SOURCE-GAP-DEFER",
+      "if_any": [
+        "EXACT_ACCEPTED_AT_MISSING",
+        "EXACT_MATCHED_DOCUMENT_MISSING",
+        "EXACT_MATCHED_DOCUMENT_UNREPLAYABLE",
+        "OWNER_IDENTITY_UNRESOLVED",
+        "PHRASE_OCCURRENCE_UNLOCATED",
+        "BYTE_ACCOUNTING_INCOMPLETE"
+      ],
+      "terminal": true
+    },
+    {
+      "accepted_at_not_before_by_item": {
+        "1.05": "2023-12-18T00:00:00Z",
+        "2.04": "1900-01-01T00:00:00Z",
+        "2.05": "1900-01-01T00:00:00Z",
+        "2.06": "1900-01-01T00:00:00Z",
+        "4.02": "1900-01-01T00:00:00Z"
+      },
+      "category": "REALIZED_CURRENT_EVENT_ITEM",
+      "disposition": "RETAIN",
+      "form": "8-K",
+      "id": "S1F-8K-STRONG-CURRENT-ITEM",
+      "items_any": [
+        "1.05",
+        "2.04",
+        "2.05",
+        "2.06",
+        "4.02"
+      ],
+      "terminal": true
+    },
+    {
+      "category": "REALIZED_CURRENT_REPORT_CONTEXT",
+      "context_scope": [
+        "CANONICAL_PRIMARY_CURRENT_REPORT",
+        "CANONICAL_EVENT_OR_PRESS_RELEASE_EXHIBIT"
+      ],
+      "disposition": "RETAIN",
+      "id": "S1F-REALIZED-CURRENT-CONTEXT",
+      "realized_signatures_ascii": [
+        "has experienced",
+        "experienced a",
+        "has occurred",
+        "occurred on",
+        "suffered a",
+        "resulted in",
+        "caused the",
+        "was shut down",
+        "were shut down",
+        "temporarily shut down",
+        "suspended operations",
+        "halted operations",
+        "ceased operations",
+        "operations were interrupted",
+        "operations have been interrupted",
+        "triggering event occurred",
+        "determined that it has experienced"
+      ],
+      "terminal": true
+    },
+    {
+      "category": "CERTIFICATION_ONLY",
+      "disposition": "HARD_REFUSAL",
+      "document_signatures_ascii_all_groups": [
+        [
+          "certification"
+        ],
+        [
+          "section 302",
+          "section 906",
+          "rule 13a-14",
+          "rule 15d-14"
+        ]
+      ],
+      "id": "S1F-CERTIFICATION-ONLY",
+      "terminal": true
+    },
+    {
+      "category": "AGREEMENT_COVENANT_DEFINITION_ONLY",
+      "disposition": "HARD_REFUSAL",
+      "id": "S1F-AGREEMENT-DEFINITION-ONLY",
+      "occurrence_context_signatures_ascii": [
+        "means any",
+        "shall mean",
+        "for purposes of this agreement",
+        "event of default",
+        "force majeure event",
+        "subject to the terms",
+        "representations and warranties",
+        "covenants of the"
+      ],
+      "structural_document_signatures_ascii": [
+        "this agreement",
+        "this indenture",
+        "credit agreement",
+        "purchase agreement",
+        "license agreement",
+        "repurchase agreement",
+        "warrant agreement"
+      ],
+      "terminal": true
+    },
+    {
+      "category": "HYPOTHETICAL_RISK_ONLY",
+      "disposition": "HARD_REFUSAL",
+      "id": "S1F-HYPOTHETICAL-RISK-ONLY",
+      "occurrence_context_signatures_ascii": [
+        "may experience",
+        "could experience",
+        "might experience",
+        "may result in",
+        "could result in",
+        "could adversely affect",
+        "may adversely affect",
+        "including but not limited to",
+        "risks include"
+      ],
+      "terminal": true
+    },
+    {
+      "category": "ORDINARY_FINANCING_OR_TRANSACTION_CONTEXT",
+      "disposition": "DEFER",
+      "id": "S1F-ORDINARY-FINANCING-DEFER",
+      "signatures_ascii": [
+        "at-the-market offering",
+        "underwriting agreement",
+        "securities purchase agreement",
+        "private placement",
+        "stock repurchase",
+        "share repurchase",
+        "convertible notes",
+        "warrant agreement",
+        "equity contribution agreement",
+        "dividend"
+      ],
+      "terminal": true
+    },
+    {
+      "category": "COMPLETED_PERIOD_RESULTS_CONTEXT",
+      "disposition": "DEFER",
+      "id": "S1F-COMPLETED-RESULTS-DEFER",
+      "item_supporting_only": "2.02",
+      "signatures_ascii": [
+        "results of operations",
+        "quarter ended",
+        "year ended",
+        "earnings release",
+        "financial results"
+      ],
+      "terminal": true
+    }
+  ],
+  "schema": "mastermind.dislocation_p0.s1f_triage_ruleset.v1",
+  "semantic_admission_authority": "NONE",
+  "triage_skip_authority": "NONE",
+  "version": "S1F-TRIAGE-2026-08-23-v1"
+}

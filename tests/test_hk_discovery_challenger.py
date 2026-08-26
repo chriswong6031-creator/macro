@@ -12,6 +12,7 @@ never pass every kill vacuously.
 """
 from __future__ import annotations
 
+import datetime as dt
 import json
 import re
 import sys
@@ -27,6 +28,20 @@ from engine import board_shadow as bs  # noqa: E402
 from engine import hk_board_rank as hbr  # noqa: E402
 from engine import hk_discovery_challenger as hkdc  # noqa: E402
 from lib import config  # noqa: E402
+
+
+# ---------------------------------------------------------------------------
+# Shared session date
+# ---------------------------------------------------------------------------
+# Same wall-clock hazard as tests/test_board_shadow.py: the substrate stamps
+# itself from the real clock and refuses any row whose ``session_date`` trails
+# that stamp by more than ``bs.SETTLE_WINDOW_DAYS`` (K8b/F10).  A hard-coded
+# session date therefore passes only until it ages out, then every registration
+# these K-D kills exercise is refused and the whole ``board-shadow-substrate``
+# job reds with no commit near this lane.  A literal ``2026-08-21`` did exactly
+# that at 2026-08-25T00:00Z.  The ancient ``2020-01-01`` backfill-refusal arm is
+# deliberately NOT derived, so the fence stays under test in both directions.
+ASOF = (dt.date.today() - dt.timedelta(days=1)).isoformat()
 
 
 # ---------------------------------------------------------------------------
@@ -79,7 +94,7 @@ def test_k_d1_no_producer_cap_on_the_candidate_population():
     n = max(hbr.RAN_CAP, hbr.VETOED_CAP, hbr.RIPENING_CAP, hbr.LEADERS_CAP) + 25
     tickers = [f"T{i}.HK" for i in range(n)]
     evidence = {"washout_2w": {t: True for t in tickers}}
-    rows = hkdc.build_candidates(evidence, "2026-08-21")
+    rows = hkdc.build_candidates(evidence, ASOF)
     assert len(rows) == n, (
         f"expected all {n} firing names uncapped, got {len(rows)} — a cap "
         "was applied to the candidate population"
@@ -107,8 +122,8 @@ def test_k_d2_output_invariant_under_permuted_board_fields():
         "featured": {"AAA": False},
         "membership": [],
     }
-    rows_a = hkdc.build_candidates(evidence_a, "2026-08-21")
-    rows_b = hkdc.build_candidates(evidence_b, "2026-08-21")
+    rows_a = hkdc.build_candidates(evidence_a, ASOF)
+    rows_b = hkdc.build_candidates(evidence_b, ASOF)
     assert rows_a == rows_b
 
 
@@ -127,7 +142,7 @@ def test_k_d3_no_ah_twin_fires_nothing_no_fabricated_zero():
     mentioned anywhere (no twin) — BBB must not appear as a candidate at all,
     and must never fire ah_dislocation."""
     evidence = {"ah_value": {"AAA": {"cheap": True, "z": 1.2}}}
-    rows = hkdc.build_candidates(evidence, "2026-08-21")
+    rows = hkdc.build_candidates(evidence, ASOF)
     tickers = {r["security_ref_raw"] for r in rows}
     assert "AAA" in tickers
     assert "BBB" not in tickers
@@ -139,7 +154,7 @@ def test_k_d3_ah_present_but_not_cheap_never_fires():
     """A name WITH a twin whose read is not 'cheap' fires no ah_dislocation —
     the leg is a strict boolean read, never a fabricated near-miss."""
     evidence = {"ah_value": {"AAA": {"cheap": False, "z": -0.2}}}
-    rows = hkdc.build_candidates(evidence, "2026-08-21")
+    rows = hkdc.build_candidates(evidence, ASOF)
     assert rows == []
 
 
@@ -148,7 +163,7 @@ def test_k_d3_ah_present_but_not_cheap_never_fires():
 # ---------------------------------------------------------------------------
 def test_k_d4_no_gate_verdict_is_never_entry_open():
     evidence = {"washout_2w": {"AAA": True}, "sig_verdict": {}}
-    rows = hkdc.build_candidates(evidence, "2026-08-21")
+    rows = hkdc.build_candidates(evidence, ASOF)
     aaa = next(r for r in rows if r["security_ref_raw"] == "AAA")
     assert aaa["availability_status"] == hkdc.UNAVAILABLE_DATA
     assert aaa["availability_status"] != hkdc.ENTRY_OPEN
@@ -174,7 +189,7 @@ def _entry_open_base_evidence():
 
 
 def _aaa_row(evidence):
-    rows = hkdc.build_candidates(evidence, "2026-08-21")
+    rows = hkdc.build_candidates(evidence, ASOF)
     return next(r for r in rows if r["security_ref_raw"] == "AAA")
 
 
@@ -268,7 +283,7 @@ def test_k_d4_knife_read_true_still_wins_over_availability():
         "knife_available": True,
         "knife_risk": {"AAA": True},
     }
-    rows = hkdc.build_candidates(evidence, "2026-08-21")
+    rows = hkdc.build_candidates(evidence, ASOF)
     aaa = next(r for r in rows if r["security_ref_raw"] == "AAA")
     assert aaa["availability_status"] == hkdc.WAIT_PULLBACK
     assert aaa["availability_source"] == "knife_read"
@@ -293,7 +308,7 @@ def test_k_d4_extension_read_true_still_wins_over_availability():
         "extension_available": True,
         "extended": {"AAA": True},
     }
-    rows = hkdc.build_candidates(evidence, "2026-08-21")
+    rows = hkdc.build_candidates(evidence, ASOF)
     aaa = next(r for r in rows if r["security_ref_raw"] == "AAA")
     assert aaa["availability_status"] == hkdc.RAN_DONT_CHASE
     assert aaa["availability_source"] == "extension_read"
@@ -313,7 +328,7 @@ def test_r2_ancient_veto_does_not_fire_blocked_signal():
         )},
         "dir_by_ticker": {"AAA": "up"},
     }
-    rows = hkdc.build_candidates(evidence, "2026-08-21")
+    rows = hkdc.build_candidates(evidence, ASOF)
     origins = next((r["candidate_origin"] for r in rows if r["security_ref_raw"] == "AAA"), "")
     assert "blocked_signal" not in origins
 
@@ -328,7 +343,7 @@ def test_r2_fresh_veto_fires_blocked_signal():
         )},
         "dir_by_ticker": {"AAA": "up"},
     }
-    rows = hkdc.build_candidates(evidence, "2026-08-21")
+    rows = hkdc.build_candidates(evidence, ASOF)
     aaa = next(r for r in rows if r["security_ref_raw"] == "AAA")
     assert "blocked_signal(counter_trend)" in aaa["candidate_origin"]
 
@@ -345,7 +360,7 @@ def test_r2_unknown_age_veto_still_fires_blocked_signal():
         )},
         "dir_by_ticker": {"AAA": "up"},
     }
-    rows = hkdc.build_candidates(evidence, "2026-08-21")
+    rows = hkdc.build_candidates(evidence, ASOF)
     aaa = next(r for r in rows if r["security_ref_raw"] == "AAA")
     assert "blocked_signal(counter_trend)" in aaa["candidate_origin"]
 
@@ -365,14 +380,14 @@ def test_k_d5_historical_backfill_refused_by_the_substrate(monkeypatch):
         }]
 
     bs.register_challenger("HK", hkdc.DEFINITION, discovery_fn=_backdated)
-    result = bs.write_shadow([], market="HK", asof="2026-08-21")
+    result = bs.write_shadow([], market="HK", asof=ASOF)
     assert result["registry_state"] == "wrote_n_rows n=0"
     assert not bs._lane_b_path("HK").exists()
 
     # POSITIVE CONTROL: a same-session row lands.
     bs.CHALLENGER_REGISTRY.clear()
     bs.register_challenger("HK", hkdc.DEFINITION, discovery_fn=_discovery_fn_ok)
-    result2 = bs.write_shadow([], market="HK", asof="2026-08-21")
+    result2 = bs.write_shadow([], market="HK", asof=ASOF)
     assert result2["written"] == 1
     assert bs._lane_b_path("HK").exists()
 
@@ -399,11 +414,11 @@ def test_k_d6_output_identical_under_a_mutated_ambient_market_env_var(monkeypatc
         "washout_2w": {"AAA": True},
         "sig_verdict": {"AAA": _verdict(eligible=True)},
     }
-    before = hkdc.build_candidates(evidence, "2026-08-21")
+    before = hkdc.build_candidates(evidence, ASOF)
     monkeypatch.setenv("CN_LANE", "asia")
     monkeypatch.setenv("COLLECT_LANE", "nightly")
     monkeypatch.setenv("MACRO_MARKET", "CA")
-    after = hkdc.build_candidates(evidence, "2026-08-21")
+    after = hkdc.build_candidates(evidence, ASOF)
     assert before == after
 
 
@@ -420,7 +435,7 @@ def test_k_d7_foreign_market_isolation_with_the_real_registration(monkeypatch):
     bs.register_challenger("HK", hkdc.DEFINITION, discovery_fn=_discovery_fn)
 
     _ca_on(monkeypatch)
-    result_ca = bs.write_shadow([], market="CA", asof="2026-08-21")
+    result_ca = bs.write_shadow([], market="CA", asof=ASOF)
     assert result_ca["registry_state"] == "no_challenger_for_market"
     assert calls_seen == [], "the HK-only discovery_fn must never be invoked during a CA pass"
     assert not bs._lane_b_path("CA").exists()
@@ -429,9 +444,9 @@ def test_k_d7_foreign_market_isolation_with_the_real_registration(monkeypatch):
     # POSITIVE CONTROL: the same registration fires and writes under HK.
     monkeypatch.delenv("COLLECT_LANE", raising=False)
     _hk_on(monkeypatch)
-    result_hk = bs.write_shadow([], market="HK", asof="2026-08-21")
+    result_hk = bs.write_shadow([], market="HK", asof=ASOF)
     assert result_hk["written"] == 1
-    assert calls_seen == ["2026-08-21"]
+    assert calls_seen == [ASOF]
     assert (config.data_dir() / "prophet_shadow" / "hk_discovery_receipt.json").exists()
 
 
@@ -522,7 +537,7 @@ def test_r5_build_candidates_rejects_a_raw_set_for_ripening_tickers():
     R5's fix, independent of the build_hk_library source pin above."""
     evidence = {"ripening_tickers": {"AAA", "BBB"}}
     with pytest.raises(AssertionError):
-        hkdc.build_candidates(evidence, "2026-08-21")
+        hkdc.build_candidates(evidence, ASOF)
 
 
 def test_r5_candidate_row_order_is_deterministic_across_repeated_calls():
@@ -534,8 +549,8 @@ def test_r5_candidate_row_order_is_deterministic_across_repeated_calls():
         "washout_2w": {f"T{i}.HK": True for i in range(30)},
         "ripening_tickers": sorted(f"R{i}.HK" for i in range(30)),
     }
-    rows_a = hkdc.build_candidates(evidence, "2026-08-21")
-    rows_b = hkdc.build_candidates(evidence, "2026-08-21")
+    rows_a = hkdc.build_candidates(evidence, ASOF)
+    rows_b = hkdc.build_candidates(evidence, ASOF)
     order_a = [r["security_ref_raw"] for r in rows_a]
     order_b = [r["security_ref_raw"] for r in rows_b]
     assert order_a == order_b
@@ -568,8 +583,39 @@ def test_k_d9_publication_isolation_with_the_real_challenger(monkeypatch):
     bs.register_challenger("HK", hkdc.DEFINITION, discovery_fn=_discovery_fn)
     calls = [{"ticker": "AAA", "group": "entry_open", "board_definition": "hk_prophet_v2"},
              {"ticker": "BBB", "group": "watch", "board_definition": "hk_prophet_v2"}]
-    result = bs.write_shadow(calls, market="HK", asof="2026-08-21")
+    result = bs.write_shadow(calls, market="HK", asof=ASOF)
     assert result["written"] >= 1  # POSITIVE CONTROL — the substrate actually ran
 
     after = json.dumps(out, sort_keys=True, default=str)
     assert before == after, "the hk_standouts-shaped payload must be byte-identical"
+
+
+# ---------------------------------------------------------------------------
+# Regression: the shared session date must never age out of the settle window
+# ---------------------------------------------------------------------------
+def test_shared_session_date_can_never_age_out_of_the_settle_window():
+    """Companion to the same guard in tests/test_board_shadow.py.
+
+    Both steps of the ``board-shadow-substrate`` job share one substrate and one
+    wall-clock fence, so a literal that ages out here reds the job just as surely
+    as one in the K1-K20 suite -- and healing only one file leaves the job red.
+    """
+    today = dt.date.today().isoformat()
+    age = (dt.date.today() - dt.date.fromisoformat(ASOF)).days
+    assert 0 <= age <= bs.SETTLE_WINDOW_DAYS
+    assert not bs._settle_violation(ASOF, today)
+    assert bs._settle_violation("2020-01-01", today)
+
+
+def test_no_bare_session_date_literal_reintroduces_the_time_bomb():
+    """Guard the repair: only the ancient backfill arm may be a bare literal."""
+    source = (ROOT / "tests/test_hk_discovery_challenger.py").read_text()
+    code = "\n".join(
+        line.split("#", 1)[0] for line in source.splitlines()
+        if not line.lstrip().startswith("#")
+    )
+    literals = set(re.findall(r'"(20\d{2}-\d{2}-\d{2})"', code))
+    assert literals <= {"2020-01-01"}, (
+        f"bare session-date literal(s) {sorted(literals - {'2020-01-01'})} will age out of "
+        "SETTLE_WINDOW_DAYS and red board-shadow-substrate on a date rollover -- use ASOF"
+    )

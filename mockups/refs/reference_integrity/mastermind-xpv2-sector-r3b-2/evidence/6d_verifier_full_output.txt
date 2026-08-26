@@ -1,0 +1,54 @@
+[PASS] (a) rebuild determinism (2 rebuilds byte-identical) — before=ea2e09b812d1 run1=ea2e09b812d1 run2=ea2e09b812d1
+[PASS] (b1) R3A fixture receipts verify — 18 entries checked
+[PASS] (b2) R3B supplement receipts verify — 6 entries checked
+[PASS] (c1) one data block per required production-relative path — 21 present
+[PASS] (c1b) sc_flows.html fragment block present
+[PASS] (c1c) sector_cycles_data.js embedded as plain executed script
+[PASS] (c1d) window.SECTOR_CENTRAL baked from fixture bytes
+[PASS] (c2) zero href="#" placeholders — found 0
+[PASS] (d) si_workspace.js embedded verbatim — manifest sha256=dfab9118d2b2184bdbc780699678f1fc9ce73ff80688deb673fbb8622eacca88, recomputed=dfab9118d2b2184bdbc780699678f1fc9ce73ff80688deb673fbb8622eacca88, substring present=True
+[PASS] (e) output size under limit — 5506891 bytes (5.25 MiB) vs 6291456 byte limit
+[PASS] (f) R3B1-14 bidirectional capability inventory (both directions) — direction1(expected->candidate) 15 pass / 0 fail; direction2(candidate->allowed) 11 pass / 0 fail; 26/26 inventory checks passed.
+[PASS] (g) R3B1-14 unique-kill mutation suite (every capability's removal is a unique red) — 11 mutation lines evaluated; 13/13 mutation-suite checks passed.
+[PASS] (h) duplicate-ID / ARIA-reference audit (aria_id_audit.py) — [aria-id] lang=en: 253 ids, 0 duplicated, 75 ARIA/label references resolved, 0 unresolved | [aria-id] lang=zh: 253 ids, 0 duplicated, 75 ARIA/label references resolved, 0 unresolved | [aria-id] json → /Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/xpv2-sc-r3b-resume/mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b/aria_id_audit.json
+[PASS] (i) EN/ZH document-language probe (lang_probe.py) — expected Chinese tag: zh-CN (production parity: templates/theme.js:600, :614; templates/_public_chrome_js.html.j2:110) | RESULT: PASS | [lang] → /Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/xpv2-sc-r3b-resume/mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b/LANG_PROBE.txt
+[PASS] (j) severe zoom matrix (from committed artifact) — 48 cells swept, 0 failing (lane_crops_b/zoom_sweep.json, reproduce with `<playwright-python> zoom_sweep.py`)
+[PASS] (k) contrast matrix (from committed artifact) — CONTRAST_TABLE.md declares AA failures=0; contrast_audit.json recomputes 0 failing of 15388 reference-authored cells (reproduce with `<playwright-python> contrast_audit.py`)
+NOTE  heatmap colour-field axis: UNMEASURED by flat-surface method (~440 shadowed .hm-t glyphs) — reported, not scored; never PASS (Sol handoff S4; final review carried to R3C/design-system)
+[PASS] (m) B2-05 .r3-fig visible/AT naming by breakpoint (from committed artifact) — 6 cells (1440/390/320 x EN/ZH, six views each), census 18/cell, 0 valued figure(s) with no accessible name, 0 painted figure(s) with no visible name at <=640px, 0 double-labelled above the breakpoint, commissioned visible-label proofs 16/16 passing, 0 failing cell(s) (reproduce with `<playwright-python> fig_naming_audit.py`)
+[PASS] (n) B2-06 treemap painted-label collision (+ reported interactive census) (from committed artifact) — 12 cells (320/390/820 x EN/ZH x dark/light), 5928 tiles and 288 painted labels measured, 0 cross-owner label overlap(s), 0 interactive element(s) inside the treemap, 0 under the 24.0px target floor, 0 cell(s) with an empty census, 0 failing cell(s) (reproduce with `<playwright-python> treemap_labels_audit.py`)
+[PASS] (o) B2-10/B2-11 mobile ramp + headline-receipt flow geometry (from committed artifact) — 10 cells (1440/390/320 at 100% + 390/320 at 200% zoom, x EN/ZH); B2-10 ramp painted in 2 five-track cell(s) and suppressed in 8 stacked cell(s); B2-11 receipt flows with the final wrapped line in 10/10; MAC1-002 36 .r3-textbtn measured (13 ZH 收起), 0 under the 44.0px floor; PRC1R-001 aria-controls resolved in 10/10; 0 failing cell(s) (reproduce with `<playwright-python> mobile_geometry_audit.py`)
+[PASS] (p) B2-01 producer-path -> customer-label map (from committed artifact) — 2 cell(s) (en/zh), 8 sites/cell censused, 0 cell(s) with an empty-census site, 0 failing assertion(s) (reproduce with `<playwright-python> label_map_audit.py`)
+[PASS] (q) B2-12 thin/reliability semantic-collision guard (from committed artifact) — 2 cell(s) (en/zh), 10 reliability chip(s) censused, 0 cell(s) with zero chip census, 0 failing assertion(s) (reproduce with `<playwright-python> thin_reliability_audit.py`)
+[PASS] (r) B2-13 methodology-receipt aria-controls census (from committed artifact) — 2 cell(s) (en/zh), expected 4 shared-panel control(s)/cell, 0 cell(s) with zero [aria-expanded] census, 0 cell(s) with wrong shared-panel count, 0 failing assertion(s) (reproduce with `<playwright-python> aria_receipt_audit.py`)
+
+22/22 checks passed.
+
+==============================================================================
+R3B1-14 VERIFICATION SUMMARY — quotable
+==============================================================================
+ 1. [PASS] (a) rebuild determinism (2 rebuilds byte-identical)
+ 2. [PASS] (b1) R3A fixture receipts verify
+ 3. [PASS] (b2) R3B supplement receipts verify
+ 4. [PASS] (c1) one data block per required production-relative path
+ 5. [PASS] (c1b) sc_flows.html fragment block present
+ 6. [PASS] (c1c) sector_cycles_data.js embedded as plain executed script
+ 7. [PASS] (c1d) window.SECTOR_CENTRAL baked from fixture bytes
+ 8. [PASS] (c2) zero href="#" placeholders
+ 9. [PASS] (d) si_workspace.js embedded verbatim
+10. [PASS] (e) output size under limit
+11. [PASS] (f) R3B1-14 bidirectional capability inventory (both directions)
+12. [PASS] (g) R3B1-14 unique-kill mutation suite (every capability's removal is a unique red)
+13. [PASS] (h) duplicate-ID / ARIA-reference audit (aria_id_audit.py)
+14. [PASS] (i) EN/ZH document-language probe (lang_probe.py)
+15. [PASS] (j) severe zoom matrix (from committed artifact)
+16. [PASS] (k) contrast matrix (from committed artifact)
+17. [PASS] (m) B2-05 .r3-fig visible/AT naming by breakpoint (from committed artifact)
+18. [PASS] (n) B2-06 treemap painted-label collision (+ reported interactive census) (from committed artifact)
+19. [PASS] (o) B2-10/B2-11 mobile ramp + headline-receipt flow geometry (from committed artifact)
+20. [PASS] (p) B2-01 producer-path -> customer-label map (from committed artifact)
+21. [PASS] (q) B2-12 thin/reliability semantic-collision guard (from committed artifact)
+22. [PASS] (r) B2-13 methodology-receipt aria-controls census (from committed artifact)
+------------------------------------------------------------------------------
+RESULT: ALL GREEN — 22/22 checks passed (candidate MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html)
+==============================================================================

@@ -10,7 +10,9 @@ from engine.fundamental_forensics.sec_document_spine import (
     with_archive_documents,
     with_document_retrievals,
 )
-from scripts.research.dislocation_p0_source_adapter import CanonicalSpineRef, read_exact_p0_source_packets
+from scripts.research.dislocation_p0_source_adapter import (
+    CanonicalSpineRef, read_exact_p0_source_packets, read_source_packets,
+)
 
 
 RECORDED = "2026-08-22T12:00:00Z"
@@ -168,3 +170,19 @@ def test_filing_cover_cannot_replace_missing_fts_exhibit(tmp_path: Path) -> None
     result = read_exact_p0_source_packets(archive_root=tmp_path, refs=refs)
     assert result.packets == ()
     assert result.gaps[0].code == "OWNER_FTS_DOCUMENT_NOT_IN_INDEX"
+
+
+def test_generic_cardinality_and_primary_configuration_are_typed(tmp_path: Path) -> None:
+    refs, _ = _panel(tmp_path)
+    result = read_source_packets(
+        archive_root=tmp_path, refs=refs[:2], required_packet_count=2,
+        include_primary_context=False, primary_context_required=True,
+    )
+    assert result.packets == ()
+    assert result.gaps[0].code == "OWNER_PRIMARY_CONTEXT_CONFIGURATION_INVALID"
+
+    result = read_source_packets(
+        archive_root=tmp_path, refs=refs[:2], required_packet_count=3,
+    )
+    assert result.packets == ()
+    assert result.gaps[0].code == "EXACT_CARDINALITY_UNSATISFIED"

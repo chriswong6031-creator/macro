@@ -1,197 +1,181 @@
 ---
 key: MAS48-CEO-INGRESS-V1-ACCEPTED-ARCHITECTURE
 question: >
-  What exact architecture and implementation law now govern the first Personal-Pro
-  Sol Executive writeback path, what is actually built/proven, and which earlier
-  Slack/MCP sequencing assumptions are superseded?
+  What architecture, implementation state and transport proof law now govern the
+  Personal-Pro Sol Executive writeback path after PR-A/R0 and the real S0 carrier
+  falsifier?
 answer: >
-  Mastermind PR #91, merged as e61e48904302d0aae53baeab0e2681ee3fbec97d,
-  remains the accepted parent dedicated-ingress architecture for MAS-48. Mastermind
-  PR #96, merged as 5f9016f2db45acf60d4344656d85dfc496b87252,
-  remains the exact PR-A implementation/security/lifecycle law. Mastermind PR #99,
-  merged as b02630fc1f3587672390b383998b28cb3206202f, supersedes only the
-  Personal-Pro shell/read-path and downstream sequencing assumptions: protected Sol
-  Skillpack + private SOL_STATE become the intended Pro-native shell, existing MCP is
-  retained as optional independent audit infrastructure rather than a mandatory
-  Personal-Pro dependency, and the old monolithic PR-B -> PR-C sequence is replaced
-  by PR-A -> R0 -> B1 -> C1 -> B2 -> C2 with S0 as an independent transport kill gate
-  required before B2, not before C1. PR-A is now implemented and Sol-accepted in
-  Mastermind PR #100, squash-merged as ada77ab927394c5e406108f2e0d48d96bd89a785.
-  It provides the hermetic two-schema dedicated CeoIngress and one shared high-level
-  CEO-request law, creates/reconciles exactly one canonical QUEUED Job/JOB_CREATED
-  with zero Attempts/workers/providers, and remains BUILT_NOT_PROVEN because no
-  production Slack journey is installed. R0 is accepted records-only source law in
-  Mastermind PR #103, merged as 974b809f6861dab064bb24224df2ba6f8dfa3c91:
-  it authorizes, but does not implement, the later diagnostic state frame and
-  mastermind.executive_hot_state.v1 contract. B1 / MAS-108 is therefore the next
-  critical implementation wave: it has been commissioned but has no builder ACK,
-  branch or PR and remains NOT_BUILT. S0 / MAS-106 is independently In Progress;
-  its private four-seat test channel exists but the disposable fixture app remains an
-  admin prerequisite. Executive SQLite remains the sole Job/Attempt/Worker/Event
-  lifecycle authority and Slack remains transport/hot-state projection, never a
-  second control or lifecycle plane.
+  Mastermind PR #91 remains the parent dedicated-ingress architecture; #96 remains
+  the exact PR-A security/lifecycle/implementation law; #99 remains the Personal-Pro
+  shell, hot-state and read-before-write amendment; #100 merged the hermetic PR-A
+  implementation; and #103 accepted the additive diagnostic state-read law. The real
+  MAS-106 S0 experiment has now falsified one narrower assumption from #99: the hosted
+  ChatGPT Slack send action is not byte-transparent for the complete source message.
+  In private channel C0BRUL9F2V7, ChatGPT2's intended two-line inert request arrived
+  with an appended `Sent using @ChatGPT` attribution line before the fixture bot
+  consumed it. MAS-106 therefore closes BLOCK / REJECTED_BY_DESIGN for the original
+  exact-whole-message carrier. Mastermind PR #107, merged as
+  013cff6e84e738494b2aa502b9d04fbef920fff8, is the accepted narrow response: the
+  canonical command payload is exactly the first two lines (discriminator + one
+  single-line JSON object) and a platform attribution may exist only as a strictly
+  validated, non-authoritative trailer. MAS-112 / S0-R1 owns the one allowed framed
+  retry. If S0-R1 blocks on any approved seat, direct ChatGPT-to-Slack command
+  transport is rejected for V1; there is no S0-R2 special-case spiral. B1/C1 read-side
+  work remains independent. B1 now exists as Mastermind draft PR #106 but is not
+  accepted: Sol found a wrapper-hash architecture blocker at head
+  462fe2d55a3314e8360df45d46a665a4fa96a71b and issued REQUEST_CHANGES. B2 remains
+  held until accepted C1 + S0-R1 PASS + explicit Sol release. Executive SQLite remains
+  the sole Job/Attempt/Worker/Event lifecycle authority; Slack remains transport/hot
+  state, never a second lifecycle or authority store.
 rationale: >
-  The accepted design solves the Chairman's actual product job: keep the highest-value
-  Personal-Pro Sol cognition seat while giving fresh Sol sessions a safe, recoverable
-  route from protected procedure and canonical company context to bounded Executive
-  admission without depending on Business/private-Plugin write access or on worker
-  provider readiness. PR-A proved the local authority boundary first. F0 then separated
-  frequent diagnostic read/hot-state projection from inbound write transport so the
-  read plane can be built and production-proven before write arming. R0 makes that
-  additive read contract explicit without retroactively widening PR-A. This preserves
-  one Executive runtime, one canonical CEO-intent sink, one operation identity per
-  carrier, no blind retry, no Slack lifecycle store, and honest distinctions between
-  built, spec-only, production-proven, queued, dispatched and executed.
+  The Chairman's product job remains preserving the Personal-Pro cognition seat while
+  giving it one recoverable, least-privilege path into canonical Executive admission.
+  The S0 result is valuable because it found a platform transformation before any
+  production write authority existed. Treating the failure as evidence and amending
+  only the transport framing preserves the product thesis without laundering a failed
+  test into success. The payload/trailer split is acceptable only because business
+  meaning, operation identity and future Executive fingerprinting derive exclusively
+  from the exact two-line payload span; the attribution trailer grants no authority and
+  is not a signature. A second framing failure would show the direct Slack action is too
+  unstable for V1 and must trigger a different carrier architecture rather than more
+  string-specific exceptions or persistence.
 alternatives:
-  - option: Jump directly from merged PR-A to inbound Slack Socket Mode / B2
+  - option: Keep the old exact-whole-message contract and call the attribution harmless
     why_not: >
-      Rejected by the accepted #99 read-before-write architecture. B2 requires a
-      proven private SOL_STATE read plane (B1 + C1) and successful S0 carrier proof,
-      otherwise Sol would be asked to mutate before it has a production-proven fresh
-      Executive hot-state surface and deterministic transport semantics.
-  - option: Keep existing Executive MCP as the mandatory Personal-Pro state/read path
+      The frozen S0 kill gate explicitly required message preservation. The platform
+      altered the source before the consumer boundary, so calling the original test a
+      pass would erase the falsifier and weaken future review.
+  - option: Strip `Sent using @ChatGPT` ad hoc inside B2
     why_not: >
-      Existing MCP remains useful independent audit infrastructure, but the Pro-native
-      product must not depend on private/custom MCP write/read availability. The accepted
-      shell instead uses a bounded Executive hot-state projection wrapped as SOL_STATE.
-  - option: Give the future Relay the broad Operator socket or direct SQLite access
+      Hidden suffix stripping would silently change an accepted carrier contract in
+      implementation, accept unreviewed trailing content, and turn platform-specific
+      text into an undocumented normalization authority. Framing must be reviewed and
+      proven separately first.
+  - option: Use another Slack action path because it happens not to append attribution
     why_not: >
-      Violates least privilege and the one-control-plane law. The Relay needs only the
-      dedicated CEO-facing read/submit/status surface; broad Operator or raw database
-      access would turn transport compromise into unrelated Executive authority.
-  - option: Persist Slack lifecycle, dedupe, grounding, retry, state-message or replay-cursor state in a new database
+      An implementation inconsistency is not a reviewed carrier contract. Switching
+      actions merely to dodge the footer would bypass S0 rather than solve the product
+      requirement.
+  - option: Add a Slack lifecycle/dedupe/replay database to absorb transport instability
     why_not: >
-      Executive OS already owns canonical lifecycle/idempotency. Slack bounded history,
-      deterministic intent identity and canonical status are sufficient transport
-      evidence; another database would create a competing authority plane.
+      Executive OS already owns canonical lifecycle/idempotency. A second durable store
+      would create a competing control plane and does not solve payload authenticity.
+  - option: Block B1/C1 because inbound S0 failed
+    why_not: >
+      B1/C1 are the outbound read plane. Their capability and security boundaries do not
+      depend on ChatGPT-authored inbound command bytes; the read lane remains independently
+      useful and should continue while B2 stays held.
 evidence:
   - "Mastermind PR #91 merged e61e48904302d0aae53baeab0e2681ee3fbec97d — parent dedicated CeoIngress architecture"
-  - "Mastermind PR #96 merged 5f9016f2db45acf60d4344656d85dfc496b87252 — exact PR-A implementation/security/lifecycle law"
-  - "Mastermind PR #99 merged b02630fc1f3587672390b383998b28cb3206202f — Personal-Pro shell, hot-state and read-before-write amendment"
-  - "Mastermind PR #100 final approved head 5185bb52e0b2f3aeb9f17f95a3b468298c689661; squash merge ada77ab927394c5e406108f2e0d48d96bd89a785; exactly 8 implementation/test files"
-  - "Mastermind #100 exact-head CI run 32468367040 SUCCESS — discovered=274 excluded=0 running=274; compile and shell validation PASS"
-  - "Mastermind #100 CodeQL run 32468363790 SUCCESS; final head and merge share tree 450bfba9f9058f47c9565d50d0aca919d29c06b0"
-  - "Mastermind PR #103 merged 974b809f6861dab064bb24224df2ba6f8dfa3c91 — records-only R0 hot-state authorization; exact-head CI run 32469401632 SUCCESS"
-  - "Linear MAS-75 Done / BUILT_NOT_PROVEN; MAS-107 Done / SPEC_ONLY; MAS-110 Done / PROVEN_LIVE; MAS-106 In Progress; MAS-108 Todo / NOT_BUILT / Awaiting Runtime Claim with no builder claim"
-  - "Slack private S0 channel C0BRUL9F2V7 exists for Chris + ChatGPT1/2/3; disposable fixture app remains the setup gate"
-  - "B1 commission transported through #agent-dispatch with explicit no-execution semantics; no ACK, branch or PR exists at reconciliation"
-  - "Linear MAS-109 hard prerequisites require B1 but not S0; stale S0 blocking relation was removed. MAS-102 remains blocked by C1 + S0."
-  - "Mastermind protected Sol Skillpack 1.0.0 is live under docs/sol_skills; Linear MAS-110 records SHELL-1 PROVEN_LIVE"
-  - "Macro PR #6071 merged 58da4615788e219634a6d8defc09d1e5c80f62d5 — Linear/Slack layer law"
+  - "Mastermind PR #96 merged 5f9016f2db45acf60d4344656d85dfc496b87252 — exact PR-A law"
+  - "Mastermind PR #99 merged b02630fc1f3587672390b383998b28cb3206202f — Personal-Pro shell/read-before-write amendment"
+  - "Mastermind PR #100 merged ada77ab927394c5e406108f2e0d48d96bd89a785 — hermetic PR-A implementation"
+  - "Mastermind PR #103 merged 974b809f6861dab064bb24224df2ba6f8dfa3c91 — records-only R0 state-read law"
+  - "MAS-106 live Slack source parent 1787365906.166729 from ChatGPT2 U0BSB73JWNL included platform attribution after the intended two-line payload"
+  - "S0 fixture receipt event Ev0BRSHM32MR / reply 1787365907.186509 measured received bytes=238 and SHA-256=7819e97f6920221d18f05bb28cd29cf6645f3a99e39de1fb6180479f20f0546f"
+  - "MAS-106 is Done / REJECTED_BY_DESIGN for the original exact-whole-message carrier"
+  - "Mastermind PR #107 merged 013cff6e84e738494b2aa502b9d04fbef920fff8 — carrier framing amendment; exact-head CI 32547727757 PASS"
+  - "Linear MAS-112 is the distinct S0-R1 framed-carrier proof and blocks MAS-102/B2"
+  - "Mastermind PR #106 is draft/HOLD-FOR-SOL B1 implementation; CI 32480617183 PASS on original head 462fe2d55a3314e8360df45d46a665a4fa96a71b, but Sol REQUEST_CHANGES remains current for the outer SOL_STATE wrapper-hash defect"
+  - "Linear MAS-109/C1 depends on accepted B1 but not S0-R1; MAS-102/B2 depends on C1 + S0-R1 + explicit Sol release"
 affects:
   - WS:AGENT-OS
   - MAS-9
   - MAS-48
   - MAS-75
-  - MAS-105
+  - MAS-101
+  - MAS-102
   - MAS-106
   - MAS-107
   - MAS-108
   - MAS-109
-  - MAS-102
-  - MAS-101
-  - MAS-29
-  - MAS-30
-  - MAS-31
+  - MAS-110
+  - MAS-112
   - agentos/decisions/DEC-SLACK-IS-EVENT-TRANSPORT-NOT-RUNTIME-DELIVERY.md
   - research/MASTERMIND_SLACK_AGENT_EVENT_BRIDGE_CONTRACT_2026-08-20.md
 confidence: high
 reversibility: costly
 decided_by: ceo-sol
-decided_at: 2026-08-21
+decided_at: 2026-08-22
 ---
 
-## Authority and narrow supersession scope
+## Authority and supersession scope
 
 This decision does **not** reverse `DEC:SLACK-IS-EVENT-TRANSPORT-NOT-RUNTIME-DELIVERY`.
-Slack remains transport/acknowledgement and hot-state projection, not runtime or canonical
-lifecycle state.
+Slack remains transport/acknowledgement/hot-state projection, not runtime or canonical lifecycle.
 
 Technical precedence is now:
 
-1. Chairman/Sol product outcome and Mastermind PR #91 parent architecture;
-2. Mastermind PR #96 PR-A law, with R2 lifecycle > R1 security > parent implementation adjudication in their respective scopes;
-3. Mastermind PR #99 for the Personal-Pro shell, hot-state/read-before-write architecture and post-PR-A sequence;
-4. merged Mastermind source at PR #100 for what PR-A actually implements;
-5. Mastermind PR #103 / R0 for the later additive diagnostic state-read contract;
-6. current source contracts and Macro #6071 layer law;
-7. Linear/Slack as projection/transport only.
+1. Chairman/Sol product outcome and Mastermind #91 parent architecture;
+2. Mastermind #96 PR-A law, including its R2/R1 precedence in their scopes;
+3. Mastermind #99 Personal-Pro shell/read-before-write/evaluation law;
+4. merged PR-A source from #100;
+5. Mastermind #103 R0 diagnostic read law;
+6. **Mastermind #107 carrier-framing amendment for inbound Slack source-message semantics**;
+7. current source contracts and Macro #6071 layer law;
+8. Linear/Slack as projection/transport evidence only.
 
-#99 supersedes only these earlier assumptions:
-
-- existing MCP is no longer a mandatory Personal-Pro dependency; it remains optional independent audit/readback infrastructure;
-- the downstream sequence is no longer monolithic PR-B -> PR-C;
-- a production write carrier must wait for the read plane and S0 transport proof.
-
-#99 does **not** invalidate the dedicated CeoIngress, canonical `ceo_intent.submit_intent`,
-trusted grounding, replay/idempotency, peer-auth, startup/drain, fixed-error, effect-unknown,
-no-new-store, or admission-vs-execution laws of #91/#96/#100.
+#107 supersedes only the #99/MAS-106 assumption that the complete ChatGPT-authored Slack source
+must arrive byte-identical. It does not weaken sender/channel/event eligibility, Executive policy,
+grounding, replay/idempotency, effect-unknown reconciliation, no-new-store law, or PR-A/R0.
 
 ## Current capability ledger
 
-- `SHELL-1 / MAS-110`: `PROVEN_LIVE` for protected Skillpack + fresh-session cold-start procedure/evaluation.
-- `PR-A / MAS-75`: `BUILT_NOT_PROVEN` — hermetic dedicated submit/status + shared CEO-request law is merged and tested; production Slack transport/install is absent.
-- `R0 / MAS-107`: `SPEC_ONLY` — state-read architecture/source law is merged; the third state schema does not yet exist in runtime.
-- `S0 / MAS-106`: `NOT_BUILT` as a proven capability; experiment is In Progress, the private four-seat test channel exists, and the disposable fixture app is still required before fixtures run.
-- `B1 / MAS-108`: `NOT_BUILT` — commissioned against current R0 authority, but no principal-builder ACK/branch/PR exists; Slack handoff delivery is not execution.
-- `C1 / MAS-109`: `NOT_BUILT` — production private read proof; blocked behind accepted B1. S0 is not a C1 prerequisite.
-- `B2 / MAS-102`: `NOT_BUILT` — inbound write transport remains held until accepted C1 + successful S0 + explicit Sol release.
-- `C2 / MAS-101`: `NOT_BUILT` — first real Personal-Pro modifying canary; held behind B2.
-- `MAS-48`: `PARTIAL` — end-to-end Personal-Pro writeback is not production-proven.
+- `SHELL-1 / MAS-110`: `PROVEN_LIVE`.
+- `PR-A / MAS-75`: `BUILT_NOT_PROVEN` at the product level; local admission/status is merged.
+- `R0 / MAS-107`: `SPEC_ONLY`; source law is merged.
+- `B1 / MAS-108`: `BUILT_NOT_PROVEN` candidate only on draft PR #106; **not accepted** while Sol's wrapper-hash REQUEST_CHANGES is open.
+- `C1 / MAS-109`: `NOT_BUILT`; starts only after B1 acceptance/merge and owns production read proof.
+- `S0 V1 / MAS-106`: `REJECTED_BY_DESIGN` for exact-whole-message ChatGPT→Slack command transport.
+- `S0-R1 / MAS-112`: `NOT_BUILT`; one framed-carrier proof is authorized.
+- `B2 / MAS-102`: `NOT_BUILT / HELD` behind accepted C1 + S0-R1 PASS + explicit Sol release.
+- `C2 / MAS-101`: `NOT_BUILT / HELD` behind accepted B2.
+- `MAS-48`: `PARTIAL`.
 
-## Binding control-plane facts that remain unchanged
+## Framed carrier law
+
+For S0-R1 and any later B2 only after explicit release:
+
+```text
+EXECOS/CEO_REQUEST_V1
+{one canonical single-line JSON object}
+<optional exact reviewed platform attribution trailer>
+```
+
+The **canonical payload span** is exactly lines 1 and 2. The trailer is transport evidence only.
+It grants no authority, is not a signature, and is excluded from business normalization,
+operation identity, request fingerprinting and future deterministic `slack-*` intent identity.
+
+Unknown/additional trailer text, leading prose, raw third business lines, a second discriminator,
+or platform mutation inside either payload line must refuse.
+
+Full received Slack text remains bounded at 4,500 UTF-8 bytes; the two-line payload span is bounded
+at 4,350 bytes to reserve measured attribution overhead. No truncation.
+
+Before canonical submit, the Relay must reread the exact source and rerun the same strict framing
+parser. Payload drift or invalid trailer refuses. Once canonical synchronous submit starts, later
+edit/delete still cannot cancel it; canonical Executive status wins.
+
+If S0-R1 blocks, direct ChatGPT→Slack command transport is rejected for V1. Do not add S0-R2,
+change Slack action paths opportunistically, or fail over to MCP/GitHub/Linear/file comments.
+
+## Binding control-plane laws that remain unchanged
 
 - Executive SQLite is the sole Job/Attempt/Worker/Event lifecycle authority.
 - `control_plane.ceo_intent.submit_intent` remains the canonical v1 mutation sink.
-- merged PR-A submit/status use the dedicated CEO-facing AF_UNIX surface and never the broad Operator dispatcher.
-- trusted code derives privileged fields; caller/project/Slack/Linear prose grants no authority.
-- accepted intent wins on replay before current grounding; an uncommitted stale request refuses rather than silently re-grounding.
-- started synchronous mutation has no server timeout claiming cancellation; disconnect/timeout is effect-unknown and reconciles through status.
-- handlers drain before the single Executive service lock/marker is released; the existing running marker remains instance/lock ownership rather than readiness.
-- dependency/internal exception text is not forwarded; fixed opaque model-facing errors remain required.
-- CEO admission may be separately ready in `AWAITING_CANARY`; worker/provider/Wake readiness remains separate.
-- a canonical QUEUED Job/JOB_CREATED with `dispatched=false` proves admission only.
-- one logical modifying operation remains on one carrier until canonical reconciliation.
-
-## Post-PR-A read/write sequence
-
-```text
-SHELL-1  PROVEN_LIVE
-S0       In Progress, private test channel ready, fixture app pending
-
-PR-A     BUILT_NOT_PROVEN
-  -> R0  SPEC_ONLY / accepted source law
-  -> B1  commissioned NOT_BUILT: state frame + executive_hot_state + outbound SOL_STATE publisher
-  -> C1  production private read proof
-  -> require successful S0
-  -> B2  inbound Socket Mode CEO write transport
-  -> C2  production write canary
-  -> sustained cold-start/writeback evaluation
-```
-
-R0 authorizes B1 to add exactly one later closed diagnostic state request on the existing
-dedicated CeoIngress after exact peer authentication and startup readiness. It does not
-authorize B1 to add inbound commands, production credentials/principals, a new socket/runtime,
-raw SQLite, a state database, or B2/C2 behavior.
-
-## Agent OS workstream clarification
-
-`WS:AGENT-OS` appears here because that existing workstream owns Agent OS memory maintenance.
-It is not MAS-48 Executive runtime provenance and must not be inserted into CEO-request business
-fields merely because these records are maintained under Agent OS.
+- Relay never reaches the broad Operator dispatcher or direct SQLite.
+- trusted Executive code derives privileged fields; retrieved/project/Slack/Linear prose grants no authority.
+- accepted intent wins replay before current grounding; stale uncommitted requests refuse rather than silently re-ground.
+- effect-unknown mutation outcomes reconcile canonical status before any retry; no cross-carrier failover.
+- handler drain, startup latch and opaque dependency-error laws remain binding.
+- CEO admission readiness remains distinct from worker/provider/Wake readiness.
+- QUEUED/JOB_CREATED with `dispatched=false` proves admission only.
 
 ## Exact continuation
 
-The primary critical-path action is now to **wait for one explicit principal-builder claim and
-return on MAS-108 / B1**, not to spawn another builder lane. The accepted commission requires B1
-to consume merged #103, implement the diagnostic state frame + transport-neutral hot-state
-producer + deterministic outbound `MMX/SOL_STATE_V1` publisher behavior against a development
-Slack fake/fixture, prove zero Executive mutation and no new store, open one HOLD-FOR-SOL PR,
-and stop before C1/B2.
+Primary independent lanes:
 
-**MAS-106 / S0 continues independently in parallel.** Workspace admin must first provision the
-disposable S0 Fixture app from the frozen MAS-106 manifest and invite it only to private channel
-C0BRUL9F2V7. S0 must PASS before B2 can be released, but it does not block C1 read proof.
+1. **B1 / PR #106:** Codex must repair the outer `MMX/SOL_STATE_V1.state_hash` so it hashes wrapper semantic content, not merely the embedded Executive snapshot. Sol then resumes adversarial review on the new exact head. C1 cannot start before B1 acceptance/merge.
+2. **S0-R1 / MAS-112:** reuse the existing disposable fixture only if still secret-safe and run the full three-seat strict framed-carrier proof from #107. Zero Executive mutation. On PASS, preserve the receipt for later B2; on BLOCK, reject direct Slack command transport for V1.
 
-After B1 Sol acceptance, C1 owns production private #sol-runtime/app/principal/read proof. Do not
-start B2 or C2 merely because PR-A/R0 are merged or because Slack APIs are technically available.
+Only after accepted C1 **and** S0-R1 PASS may Sol explicitly release B2. C2 remains after B2 only.

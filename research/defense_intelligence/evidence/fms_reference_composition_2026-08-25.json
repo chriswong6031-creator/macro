@@ -1,0 +1,132 @@
+{
+  "_meta": {
+    "what": "D6-B0 reference composition: the two frozen pilot canaries rendered in the frozen government_fms_case.v1-class shape (FREEZE §10), from real receipted 2026-08-25 census observations. Research evidence only — NOT production data, NOT consumed by any builder, NOT a schema.",
+    "match_law": "The D6-B implementation must reproduce these cases from its OWN acquisition receipts and match every SOURCE-BOUND VALUE (transmittal, customer, title, amounts, caveat, stage, printed dates, contractor names-as-printed). It must NOT match the transport-scoped observation bytes below: response_sha256/response_bytes here are browser-transport census values, production transport differs (FREEZE §3.4), and the same URL returns different bytes per transport (FREEZE §2 R5 vs R5c). Production observations must additionally carry the §8 receipt fields this census composition legitimately lacks (receipt_id, final_url, extractor_version, parser_version) — no production extractor exists yet; B0 ships none.",
+    "freeze": "research/defense_intelligence/DEFENSE_D6B_FMS_SOURCE_AND_STAGE_ARCHITECTURE_FREEZE_2026-08-25.md",
+    "census_receipts": "FREEZE §2 R1-R7",
+    "composed_at": "2026-08-25T15:20:00Z",
+    "hostile_expectation": "Case fms:transmittal:26-13 was notified 2026-01-30, ~207 days before this census, and NO official evidence of an offered/accepted/implemented LOA exists on any censused surface. Expected published result: stage = congressional_notification remains the highest proven stage, later stages stage_not_observed, advancement condition displayed. No review-period arithmetic or review-period-elapsed conclusion may be computed, stored, or rendered anywhere (FREEZE §4.4, §15.3, kill test T3)."
+  },
+  "cases": [
+    {
+      "case_key": "fms:transmittal:26-13",
+      "transmittal_number": "26-13",
+      "identity_basis": "transmittal",
+      "case_identity_state": "resolved",
+      "aliases": [],
+      "source_surface": "dsca",
+      "customer_country": "Kingdom of Saudi Arabia",
+      "capability_title": "Kingdom of Saudi Arabia – PATRIOT Advanced Capability-3 Missile Segment Enhancement Missiles",
+      "source_item_enumeration": "seven hundred thirty (730) PATRIOT Advanced Capability-3 Missile Segment Enhancement (PAC-3 MSE) missiles; plus non-MDE items as printed (launcher conversion kits; automated logistics systems kits; telemetry kits; shorting plug accumulation kit; missile skid kits; missiles round trainer; empty round trainer; spare parts; canister consumables; field surveillance program; integration and test support; munitions support; classified software delivery and support; publications; training; studies and surveys; contractor logistics support; USG and contractor support services; related program support)",
+      "stage": "congressional_notification",
+      "later_stages": "stage_not_observed",
+      "advancement_condition": "official_evidence_of_offered_accepted_or_implemented_loa",
+      "estimated_notification_value": 9000000000,
+      "currency": "USD",
+      "amount_source_text": "estimated cost of $9.0 billion",
+      "source_caveat": "The description and dollar value are for the highest estimated quantity and dollar value based on initial requirements. Actual dollar value will be lower depending on final requirements, budget authority, and signed sales agreement(s), if and when concluded.",
+      "contractors": [
+        {
+          "name_as_printed": "Lockheed-Martin Corporation",
+          "location_as_printed": "Dallas, TX",
+          "identity_state": "not_reviewed",
+          "issuer_ref": null
+        }
+      ],
+      "program_links": [
+        {
+          "state": "not_reviewed",
+          "reason_code": "no_reviewed_program_link",
+          "program_id": null,
+          "program_case_link_id": null,
+          "ontology_graph_id": null
+        }
+      ],
+      "clocks": {
+        "official_notification_date": "2026-01-30",
+        "official_notification_date_provenance": "dsca_body_dateline_plus_certification_sentence",
+        "official_web_publication_date": "2026-01-30",
+        "official_web_publication_date_provenance": "dsca_article_page_header_date_and_landing_listing_date",
+        "first_observed_at": "2026-08-25T15:13:34Z",
+        "known_at": "2026-08-25T15:13:34Z"
+      },
+      "observations": [
+        {
+          "version": 1,
+          "source_url": "https://www.dsca.mil/Press-Media/Major-Arms-Sales/Article-Display/Article/4394629/kingdom-of-saudi-arabia-patriot-advanced-capability-3-missile-segment-enhanceme",
+          "observed_at": "2026-08-25T15:13:34Z",
+          "transport": "browser_in_page_fetch",
+          "response_sha256": "d53b9e978aaf5019df381265b27a82278e819f26f7e93395b8c82c9a66cecc6b",
+          "response_bytes": 64958,
+          "publisher": "Defense Security Cooperation Agency",
+          "attachments": [
+            {
+              "title": "PRESS RELEASE - SAUDI ARABIA 26-13 CN.PDF",
+              "url": "https://media.defense.gov/2026/Jan/30/2003868787/-1/-1/1/PRESS%20RELEASE%20-%20SAUDI%20ARABIA%2026-13%20CN.PDF",
+              "sha256": "c7e3bcadda94f4f9014bd9eac70827f57bc1e60fe67c20a273074732a8af9c55",
+              "bytes": 133064,
+              "magic": "%PDF-"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case_key": "fms:transmittal:26-27",
+      "transmittal_number": "26-27",
+      "identity_basis": "transmittal",
+      "case_identity_state": "resolved",
+      "aliases": [],
+      "source_surface": "state",
+      "customer_country": "Government of Sweden",
+      "capability_title": "Sweden – M142 High Mobility Artillery Rocket Systems",
+      "source_item_enumeration": "twenty (20) M142 high mobility artillery rocket systems; thirty-five (35) M31A2 GMLRS unitary pods with IMPS; thirty-five (35) M30A2 GMLRS AW pods with IMPS; thirty-five (35) M403 ER GMLRS AW pods with IMPS; thirty-five (35) M404 ER GMLRS unitary pods with IMPS; twenty (20) M57 ATACMS pods; twenty-four (24) international field artillery tactical data systems; plus non-MDE items as printed",
+      "stage": "congressional_notification",
+      "later_stages": "stage_not_observed",
+      "advancement_condition": "official_evidence_of_offered_accepted_or_implemented_loa",
+      "estimated_notification_value": 930000000,
+      "currency": "USD",
+      "amount_source_text": "The estimated total cost is $930 million.",
+      "source_caveat": null,
+      "source_caveat_note": "Census fact: State-era posts do not carry the DSCA-era 'highest estimated quantity' caveat paragraph; the caveat semantics are carried by the estimated_notification_value semantic itself and the card's standing negative (FREEZE §5). Null is the honest value — never synthesized.",
+      "contractors": [
+        {
+          "name_as_printed": "Lockheed Martin",
+          "location_as_printed": "Grand Prairie, Texas",
+          "identity_state": "not_reviewed",
+          "issuer_ref": null
+        }
+      ],
+      "program_links": [
+        {
+          "state": "not_reviewed",
+          "reason_code": "no_reviewed_program_link",
+          "program_id": null,
+          "program_case_link_id": null,
+          "ontology_graph_id": null
+        }
+      ],
+      "clocks": {
+        "official_notification_date": null,
+        "official_notification_date_provenance": "not_asserted_by_state_post_null_unless_federal_register_join",
+        "official_web_publication_date": "2026-03-10",
+        "official_web_publication_date_provenance": "state_article_header_date",
+        "first_observed_at": "2026-08-25T15:16:27Z",
+        "known_at": "2026-08-25T15:16:27Z"
+      },
+      "observations": [
+        {
+          "version": 1,
+          "source_url": "https://www.state.gov/releases/bureau-of-political-military-affairs/2026/03/sweden-m142-high-mobility-artillery-rocket-systems/",
+          "observed_at": "2026-08-25T15:16:27Z",
+          "transport": "browser_in_page_fetch",
+          "response_sha256": "a2caf669c2e06ac52b60ff0c76faf7f6ea4353c160ed1f0f9c69943931da42eb",
+          "response_bytes": 176925,
+          "publisher": "U.S. Department of State, Bureau of Political-Military Affairs",
+          "source_modified_time_meta": "2026-08-21T18:27:14+00:00",
+          "note": "article:modified_time shows this March post was edited in place five months later — first-party grounding for the correction law (FREEZE §8). CLI transport of the same URL at 15:18:06Z returned different, byte-deterministic bytes (sha256 692236b01d40430f77aaab33a197c7d0e79e7931cdf4423c0858f1e076fbd37a, 176926 bytes) — receipts are transport-scoped; production canonical transport is CLI."
+        }
+      ]
+    }
+  ]
+}

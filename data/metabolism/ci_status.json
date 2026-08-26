@@ -1,43 +1,43 @@
 {
-  "ts": "2026-08-24T17:13:30+00:00",
-  "main_sha": "928750598a01738600bb618b5ad8c8ff576c91be",
+  "ts": "2026-08-26T02:14:01+00:00",
+  "main_sha": "a50404c0d4db94392072771daad907b43848650e",
   "red_required": [
     {
-      "name": "sweep",
+      "name": "health",
       "conclusion": "cancelled",
       "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32731898561/job/97445751486"
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32921658582/job/98036262482"
     },
     {
-      "name": "font-ui-defined",
-      "conclusion": "cancelled",
-      "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32731565216/job/97444722076"
-    },
-    {
-      "name": "engine-render-guards",
+      "name": "publish",
       "conclusion": "failure",
       "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32731565216/job/97444721984"
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32921113794/job/98034727388"
     },
     {
       "name": "tier-gate",
       "conclusion": "failure",
       "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32731565216/job/97444721982"
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32921029323/job/98034495873"
     },
     {
-      "name": "contract-drift",
+      "name": "engine-render-guards",
+      "conclusion": "failure",
+      "status": "completed",
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32921029323/job/98034495803"
+    },
+    {
+      "name": "font-ui-defined",
       "conclusion": "cancelled",
       "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32731565216/job/97444721626"
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32921029323/job/98034495699"
     }
   ],
   "green": false,
-  "consecutive_failures": 49,
+  "consecutive_failures": 58,
   "sensed_shas": [
-    "928750598a01738600bb618b5ad8c8ff576c91be",
-    "d16cbf3e39495ab86b8a7581d02ce6c0c2aea3c8"
+    "a50404c0d4db94392072771daad907b43848650e",
+    "5929d55dd6d70f4cc35a661aca356803e8ad1df7"
   ],
   "heartbeat_degraded": false
 }

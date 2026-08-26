@@ -1,0 +1,161 @@
+XPV2-SC-R3B.2 — LANE F RECEIPT
+B2-05 STRENGTHENING + B2-15 (the two remaining content items of Sol's
+FINAL CONTINUATION HANDOFF §5 eleven-item closure)
+
+CANDIDATE (deterministic, two consecutive builds)
+  MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html
+  5,506,891 bytes
+  build 1  sha256=ea2e09b812d1435103e491973ae01d2c4fca63c3a29186023f40f137fc10aba8
+  build 2  sha256=ea2e09b812d1435103e491973ae01d2c4fca63c3a29186023f40f137fc10aba8
+
+------------------------------------------------------------------------------
+B2-05 STRENGTHENING — the 20-day delta gets a VISIBLE mobile label
+------------------------------------------------------------------------------
+Sol's amended law supersedes Lane B's density judgment: at <=640 every figure
+whose visual header disappears is visibly labelled, this one by name.
+
+  views/overview.html:722   carrier `.r3-vh` -> `.r3-figlab` (string unchanged),
+                            `data-r3b2="05"` on `.r3-delta`
+  views/overview.html:734   Strength caption now gated on `sc` alone, not
+                            `sc || p20` — a delta cannot inherit the score's name
+  views/overview.html:343-366  new `@media (max-width:640px)` block, placed AFTER
+                            the 767 block so it wins the cascade at equal
+                            specificity (CSS source-order trap)
+
+COMPOSITION — two named figures in one cell at 320
+  Caption OVER figure, not inline before it. Inline saves one line but costs
+  ~130px of a 320 viewport's 288px content width, taken out of the name column,
+  where a primary name WRAPS and never ellipsizes (spec §9). Stacked: cell is
+  94px (EN) / 62px (ZH), name keeps ~190px, row grows one micro line.
+  9px between tiles against 1px caption-to-figure = a 9:1 proximity ratio, so
+  four alternating lines can only group one way.
+  Hierarchy preserved: score --fs-md/700 on --text; delta --fs-micro on its own
+  direction ink; both captions --muted/micro. Labelled, never peers.
+  Nothing abbreviated in either language.
+
+MEASURED (fig_naming_audit.py, 6 cells = 1440/390/320 x EN/ZH, six views each)
+  .r3-fig census                                       108 total, 18 per cell
+  .r3-delta census (2nd figure per Overview cell)        66 total, 11 per cell
+  valued figures with no accessible name                              0
+  painted figures with no visible name at <=640                       0
+  figures double-labelled above the breakpoint                        0
+  deltas with no accessible name                                      0
+  painted deltas with no visible name at <=640                        0
+  deltas double-labelled above the breakpoint                         0
+  commissioned visible-label proofs                        16/16 passing
+  cells failing                                                     0/6
+  document overflow at 320 / 390, EN + ZH                          0 px
+
+AUDIT EXTENSION (commissioned under B2-05; fig_naming_audit.py)
+  check 7 · the delta is censused and judged in its own right. Checks 2-4
+    resolve per `.r3-fig`, and an Overview cell holds TWO figures inside one
+    `.r3-fig`, so the Strength caption alone satisfied them whether or not the
+    delta was named. This is the hole Sol's law closed.
+  check 5 extended · the delta's label is asserted EQUAL to the legend's own
+    `<em>` second line (`header_unit`), the same way the score's is asserted
+    against the header itself.
+  check 6 extended · DELTA_PHRASE proof — the painted phrase must be exactly
+    `20d vs market +27.2%` / `20日对比市场 +27.2%`, WITH `name_painted` true.
+    The conjunct is load-bearing: `.r3-vh` is clipped, not `display:none`, so
+    its words still resolve into the phrase.
+
+DISCRIMINATION (both mutations run in scratch, never against the frozen tree)
+  mut-1 delta carrier reverted `.r3-figlab` -> `.r3-vh` (the pre-Sol state)
+        RED 4/6 cells · "3 painted delta(s) with no visible name at <=640"
+                      + "proof failed: delta-phrase …" in all four mobile cells
+  mut-2 delta label abbreviated `20d vs market` -> `20d` / `20日对比市场` -> `20日`
+        RED 6/6 cells · "delta label(s) ['20d'] != header unit line
+                         '20d vs market'" (+ phrase proof in the mobile four)
+
+------------------------------------------------------------------------------
+B2-15 — context-only / 5d evidence disclosure beside the track-record badge
+------------------------------------------------------------------------------
+Site is Money & Breadth (`.lead-foot`), the surface DA1-03 charges — NOT Moving.
+Moving's `.r3-tr` scorecard is a different producer payload with its own
+per-horizon `cleared` marks and already paints its note.
+
+PRODUCER FIELDS — VERIFIED BEFORE PAINTING
+  research/reference_integrity/mastermind-xpv2-sector-r3/fixture/
+    marketdata/index_leadership.json
+  sha256 d95fe2e7b28fda138f9834e424b358d590e514d2484cde9da90bf4260b20b50b
+  JSON path `track_record`:
+      schema           = "index_leadership.track_record.v1"
+      is_context_only  = True
+      verdict          = "validated"
+      proven           = {"5": True, "10": False, "21": False, "63": False}
+      note             = "Call-score IC is significant at the 5d horizon
+                          (measured). Context-only — informs the read, never sizes."
+      note_zh          = ABSENT
+  All three fields the commission names are present with the stated values.
+  `note_zh` being absent is why the qualification is authored rather than a
+  translation of `note` — producer strings stay upstream-owned (Sol §4).
+
+  views/money.html:1260-1276  `trQualHtml()` — renders only while
+                              `is_context_only === true`; the horizon comes from
+                              `Object.keys(proven).filter(v => v === true)`.
+                              Marker `data-r3b2="15"` on `.lead-tr-qual`.
+  views/money.html:1282       call site, immediately after the badge span
+  views/money.html:1297-1299  the 21d statistics re-classed `.lead-tr-h21`
+  views/money.html:403-413    CSS: qualification register + 21d separation
+
+PAINTED (both themes, both languages)
+  EN  Forward track record: Validated | Context only · evidence proven at 5d ·
+                                        never sizes decisions
+      ──────────────────────────────────────────────────────────────────
+      21d hit-rate: running 46% (24), coiling 57% (7)
+  ZH  前瞻战绩：已验证 | 仅为背景 · 仅 5 日周期有实测证据 · 从不用于仓位决策
+      ──────────────────────────────────────────────────────────────────
+      21日命中率：running 46% (24), coiling 57% (7)
+
+GEOMETRY (measured)
+  1440 EN  badge top 2929 · qualification top 2931  -> BESIDE the badge
+           21d line top 2959                        -> own line, under hairline
+  1440 ZH  badge top 2898 · qualification top 2900 · 21d top 2928
+   390 EN  badge top 4405 · qualification top 4433 -> wraps directly beneath
+           21d line top 4483
+   390 ZH  badge top 4162 · qualification top 4190 · 21d top 4240
+  document overflow at 390, EN + ZH                                   0 px
+
+BADGE UNTOUCHED. `Forward track record: Validated` / `前瞻战绩：已验证` reads
+exactly as production authors it (sector_central.html.j2:3460-3468). Nothing
+here claims the 21d horizon is validated; the ZH twin deliberately avoids
+`验证` so it cannot be read as extending the badge's word to that horizon.
+
+------------------------------------------------------------------------------
+CONTRAST — the nodes this lane newly paints (build's own contrast_audit.py,
+--json redirected to scratch per the harness-safety rule)
+------------------------------------------------------------------------------
+  B2-15 qualification, all three clauses, EN + ZH
+      dark  12.09:1   light 14.78:1     (10px/600, --text)          PASS
+  B2-15 21d line, EN + ZH
+      dark   5.39:1   light  5.14:1     (--muted, inherited)        PASS
+  B2-05 delta figure `+27.2%`, EN + ZH
+      dark 6.86 / 5.79:1   light 6.29 / 5.82:1                      PASS
+  Samples touching this lane's classes: 16 measured, 0 failing.
+  Mobile `.r3-figlab` captions bind the same --muted/micro/700 rung Lane B's
+  Strength caption already used; measured 5.57:1 dark / 5.43:1 light.
+  The 189 failing samples in that run are all `sym` / `scf-c` / `pc` — the
+  byte-verbatim sc_flows fragment, upstream/R3C per Sol §4. None are this lane's.
+
+------------------------------------------------------------------------------
+SUITE / VERIFIER
+------------------------------------------------------------------------------
+  tests/test_xpv2_sector_r3_fixture.py            59 passed
+  verify_reference.py (under the Playwright venv) 17/19
+      (j) severe zoom matrix    FAIL — missing build/lane_crops_b/zoom_sweep.json
+      (k) contrast matrix       FAIL — missing build/lane_crops_b/contrast_audit.json
+      Both consume a PREDECESSOR-named artifact directory that does not exist in
+      this successor tree; verify_reference.py, zoom_sweep.py and contrast_audit.py
+      are unmodified by this lane. Lane E owns them. Not chased.
+  Run with the system python3 instead, (f)(g)(h)(i) also go red on
+  `ModuleNotFoundError: No module named 'playwright'` — environment, not content.
+
+CROPS (build/lane_crops_f2/)
+  b2-05_overview-actionrow_{320,390,1440}_{en,zh}.png
+      320/390: BOTH labels visible and unclipped (STRENGTH 76 · 20D VS MARKET
+      +27.2% / 强度 76 · 20日对比市场 +27.2%)
+      1440: legend paints the names, figures carry no caption — desktop
+      composition unchanged
+  b2-15_money-trackrecord_{1440,390}_{en,zh}.png
+      qualification beside/beneath the badge; 21d figures labelled and
+      separated by their own hairline

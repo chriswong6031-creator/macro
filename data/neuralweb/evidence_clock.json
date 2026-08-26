@@ -1,12 +1,12 @@
 {
   "schema": "neuralweb.evidence_clock.v1",
-  "as_of": "2026-08-23",
-  "generated_utc": "2026-08-23T04:57:43Z",
+  "as_of": "2026-08-25",
+  "generated_utc": "2026-08-25T05:40:48Z",
   "authority": "display_only",
   "summary": {
-    "n_rows": 311,
+    "n_rows": 312,
     "by_state": {
-      "overdue": 26,
+      "overdue": 30,
       "due": 53,
       "human_review": 0,
       "missing": 1,
@@ -14,7 +14,7 @@
       "blocked": 2,
       "not_ready": 0,
       "promotion_eligible": 0,
-      "accruing": 228
+      "accruing": 225
     },
     "n_acknowledged": 0,
     "top_due": {
@@ -22,7 +22,7 @@
       "due_at": "2026-06-22",
       "owner_program": "qualitative-intelligence"
     },
-    "morning_line": "79 due/overdue, 1 missing, 228 accruing, 1 stale, 2 blocked. Top due: qledger:placebo."
+    "morning_line": "83 due/overdue, 1 missing, 225 accruing, 1 stale, 2 blocked. Top due: qledger:placebo."
   },
   "rows": [
     {
@@ -133,8 +133,8 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 2820,
-        "n_past_check_by": 2049
+        "n_open": 2956,
+        "n_past_check_by": 2122
       },
       "allowed_actions": [
         "inspect",
@@ -181,8 +181,8 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 2820,
-        "n_past_check_by": 2049
+        "n_open": 2956,
+        "n_past_check_by": 2122
       },
       "allowed_actions": [
         "inspect",
@@ -229,8 +229,8 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 18242,
-        "n_past_check_by": 13301
+        "n_open": 19546,
+        "n_past_check_by": 14379
       },
       "allowed_actions": [
         "inspect",
@@ -277,8 +277,8 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 18242,
-        "n_past_check_by": 13301
+        "n_open": 19546,
+        "n_past_check_by": 14379
       },
       "allowed_actions": [
         "inspect",
@@ -417,8 +417,8 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 130,
-        "n_past_check_by": 112
+        "n_open": 136,
+        "n_past_check_by": 124
       },
       "allowed_actions": [
         "inspect",
@@ -465,8 +465,8 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 3090,
-        "n_past_check_by": 1754
+        "n_open": 3170,
+        "n_past_check_by": 1899
       },
       "allowed_actions": [
         "inspect",
@@ -513,8 +513,8 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 76,
-        "n_past_check_by": 45
+        "n_open": 77,
+        "n_past_check_by": 50
       },
       "allowed_actions": [
         "inspect",
@@ -737,8 +737,8 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 1225,
-        "n_past_check_by": 309
+        "n_open": 1252,
+        "n_past_check_by": 327
       },
       "allowed_actions": [
         "inspect",
@@ -950,70 +950,6 @@
       "packet": null
     },
     {
-      "clock_id": "qledger:narrative",
-      "source_system": "qledger",
-      "subject_id": "narrative",
-      "subject_type": "claim_family",
-      "owner_program": null,
-      "clock_type": "check_by",
-      "due_at": "2026-08-18",
-      "as_of": null,
-      "state": "overdue",
-      "date_state": "overdue",
-      "readiness": {
-        "n_open": 337,
-        "n_past_check_by": 300
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [
-        "data/qledger/claims.jsonl"
-      ],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "qledger:policy",
-      "source_system": "qledger",
-      "subject_id": "policy",
-      "subject_type": "claim_family",
-      "owner_program": null,
-      "clock_type": "check_by",
-      "due_at": "2026-08-21",
-      "as_of": null,
-      "state": "overdue",
-      "date_state": "overdue",
-      "readiness": {
-        "n_open": 38,
-        "n_past_check_by": 2
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [
-        "data/qledger/claims.jsonl"
-      ],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
       "clock_id": "experiments:qledger-w6-radar",
       "source_system": "experiments",
       "subject_id": "qledger-w6-radar",
@@ -1022,8 +958,8 @@
       "clock_type": "come_back_on",
       "due_at": "2026-08-16",
       "as_of": "2026-07-02",
-      "state": "due",
-      "date_state": "due",
+      "state": "overdue",
+      "date_state": "overdue",
       "readiness": {
         "maturation": "n_dates>=25 AND Wilson-CI lower bound >0 vs matched control (§3 gate).",
         "cadence": "daily",
@@ -1055,8 +991,8 @@
       "clock_type": "come_back_on",
       "due_at": "2026-08-16",
       "as_of": "2026-06-28",
-      "state": "due",
-      "date_state": "due",
+      "state": "overdue",
+      "date_state": "overdue",
       "readiness": {
         "maturation": "grade() needs >=3 matured obs/horizon; cross-sectional rank-IC needs distinct call-dates each >=3 scores; stable IC target >=100 obs.",
         "cadence": "daily",
@@ -1087,8 +1023,8 @@
       "clock_type": "come_back_on",
       "due_at": "2026-08-17",
       "as_of": "2026-06-15",
-      "state": "due",
-      "date_state": "due",
+      "state": "overdue",
+      "date_state": "overdue",
       "readiness": {
         "maturation": "The real gate is engine/calibration_hub.py:165-259 — cold n<10; inverted if dir_acc<null_dir or conviction verdict False; weak if hit<null_hit; calibrated only when the desk placebo is available AND hit-null >= 5pp AND Holm-adjusted p < 0.05 AND independent_blocks >= 10. hit_rate>=0.5 is the demotion floor (:56), never the promotion bar. (Seed text corrected 2026-08-03; the prior 'hit_rate>=0.5 AND conviction monotone' description was wrong in both clauses.)",
         "cadence": "on-build",
@@ -1120,8 +1056,8 @@
       "clock_type": "come_back_on",
       "due_at": "2026-08-17",
       "as_of": "2026-07-08",
-      "state": "due",
-      "date_state": "due",
+      "state": "overdue",
+      "date_state": "overdue",
       "readiness": {
         "maturation": "see masterplan section 4",
         "cadence": "one-time",
@@ -1138,6 +1074,70 @@
         "score"
       ],
       "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "qledger:narrative",
+      "source_system": "qledger",
+      "subject_id": "narrative",
+      "subject_type": "claim_family",
+      "owner_program": null,
+      "clock_type": "check_by",
+      "due_at": "2026-08-18",
+      "as_of": null,
+      "state": "overdue",
+      "date_state": "overdue",
+      "readiness": {
+        "n_open": 337,
+        "n_past_check_by": 304
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/qledger/claims.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "qledger:policy",
+      "source_system": "qledger",
+      "subject_id": "policy",
+      "subject_type": "claim_family",
+      "owner_program": null,
+      "clock_type": "check_by",
+      "due_at": "2026-08-21",
+      "as_of": null,
+      "state": "overdue",
+      "date_state": "overdue",
+      "readiness": {
+        "n_open": 38,
+        "n_past_check_by": 4
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/qledger/claims.jsonl"
+      ],
       "regenerate_cmd": null,
       "acknowledged": false,
       "review": null,
@@ -2584,13 +2584,142 @@
       "packet": null
     },
     {
+      "clock_id": "experiments:ai-desk-tracker",
+      "source_system": "experiments",
+      "subject_id": "ai-desk-tracker",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-08-24",
+      "as_of": "2026-06-15",
+      "state": "due",
+      "date_state": "due",
+      "readiness": {
+        "maturation": "Call matures at check_by; promotion runs through calibration_hub's gate (placebo-paired hit-null >= 5pp, Holm p < 0.05, independent_blocks >= 10). The former '>55% high-conviction hit' upgrade trigger is RETIRED 2026-08-03: 55% sits 31pp below this desk's measured placebo null (86.2%), so it would promote leniency, not skill.",
+        "cadence": "daily",
+        "status": "measuring"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/ai_desk/track_record.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:ca-confluence-gate-calibration",
+      "source_system": "experiments",
+      "subject_id": "ca-confluence-gate-calibration",
+      "subject_type": "phase0_followup",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-08-24",
+      "as_of": "2026-07-03",
+      "state": "due",
+      "date_state": "due",
+      "readiness": {
+        "maturation": "stable-negative T3 on live cohort => wire per-market demote; sign-flip/null => clear flag",
+        "cadence": "once",
+        "status": "accruing",
+        "floor": "undeclared"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:hkca-board-forward-ledger",
+      "source_system": "experiments",
+      "subject_id": "hkca-board-forward-ledger",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-08-24",
+      "as_of": "2026-07-03",
+      "state": "due",
+      "date_state": "due",
+      "readiness": {
+        "maturation": "First single 21d grade: ~21 trading days after first render write (~2026-07-27 per market). Stable rank-IC read (>=5 matured IC dates with >=5 names each): approx 2026-08-24. 63d read: approx 2026-10. Graduation (W7) is a 2026-Q4 event gated on ledger maturity. scorecard() returns status='accruing' until gate is met.",
+        "cadence": "daily",
+        "status": "registered",
+        "floor": "undeclared"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:next3-reason-codes-after-c4",
+      "source_system": "experiments",
+      "subject_id": "next3-reason-codes-after-c4",
+      "subject_type": "re-check",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-08-24",
+      "as_of": "2026-07-06",
+      "state": "due",
+      "date_state": "due",
+      "readiness": {
+        "maturation": "Blocked on PR-C4 (not started as of 2026-07-06).",
+        "cadence": "once",
+        "status": "registered",
+        "floor": "undeclared"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
       "clock_id": "rule_experiments:disp_gate_1",
       "source_system": "rule_experiments",
       "subject_id": "disp_gate_1",
       "subject_type": "experiment",
       "owner_program": "engine-fix",
       "clock_type": "awaiting_execution",
-      "due_at": "2026-08-23",
+      "due_at": "2026-08-25",
       "as_of": "2026-07-06",
       "state": "due",
       "date_state": "due",
@@ -2622,7 +2751,7 @@
       "subject_type": "experiment",
       "owner_program": "engine-fix",
       "clock_type": "awaiting_execution",
-      "due_at": "2026-08-23",
+      "due_at": "2026-08-25",
       "as_of": "2026-07-06",
       "state": "due",
       "date_state": "due",
@@ -2654,7 +2783,7 @@
       "subject_type": "experiment",
       "owner_program": "engine-fix",
       "clock_type": "awaiting_execution",
-      "due_at": "2026-08-23",
+      "due_at": "2026-08-25",
       "as_of": "2026-07-06",
       "state": "due",
       "date_state": "due",
@@ -2686,7 +2815,7 @@
       "subject_type": "experiment",
       "owner_program": "engine-fix",
       "clock_type": "awaiting_execution",
-      "due_at": "2026-08-23",
+      "due_at": "2026-08-25",
       "as_of": "2026-07-06",
       "state": "due",
       "date_state": "due",
@@ -2751,11 +2880,11 @@
       "owner_program": "nw-mastermind-bridge",
       "clock_type": "freshness_sla",
       "due_at": null,
-      "as_of": "2026-08-21",
+      "as_of": "2026-08-23",
       "state": "stale",
       "date_state": "stale",
       "readiness": {
-        "as_of": "2026-08-21",
+        "as_of": "2026-08-23",
         "stale_chips": [
           "reliability",
           "contradictions"
@@ -2838,10 +2967,10 @@
       "state": "blocked",
       "date_state": "accruing",
       "readiness": {
-        "n_claims": 59137,
-        "n_with_falsifier": 631,
-        "falsifier_coverage": "1.1%",
-        "blocking_reason": "falsifier coverage 1.1%; not a promotion-grade substrate"
+        "n_claims": 62340,
+        "n_with_falsifier": 644,
+        "falsifier_coverage": "1.0%",
+        "blocking_reason": "falsifier coverage 1.0%; not a promotion-grade substrate"
       },
       "allowed_actions": [
         "inspect",
@@ -2855,132 +2984,6 @@
       "evidence_refs": [
         "data/qledger/claims.jsonl"
       ],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:ai-desk-tracker",
-      "source_system": "experiments",
-      "subject_id": "ai-desk-tracker",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-24",
-      "as_of": "2026-06-15",
-      "state": "accruing",
-      "date_state": "accruing",
-      "readiness": {
-        "maturation": "Call matures at check_by; promotion runs through calibration_hub's gate (placebo-paired hit-null >= 5pp, Holm p < 0.05, independent_blocks >= 10). The former '>55% high-conviction hit' upgrade trigger is RETIRED 2026-08-03: 55% sits 31pp below this desk's measured placebo null (86.2%), so it would promote leniency, not skill.",
-        "cadence": "daily",
-        "status": "measuring"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [
-        "data/ai_desk/track_record.json"
-      ],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:ca-confluence-gate-calibration",
-      "source_system": "experiments",
-      "subject_id": "ca-confluence-gate-calibration",
-      "subject_type": "phase0_followup",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-24",
-      "as_of": "2026-07-03",
-      "state": "accruing",
-      "date_state": "accruing",
-      "readiness": {
-        "maturation": "stable-negative T3 on live cohort => wire per-market demote; sign-flip/null => clear flag",
-        "cadence": "once",
-        "status": "accruing"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:hkca-board-forward-ledger",
-      "source_system": "experiments",
-      "subject_id": "hkca-board-forward-ledger",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-24",
-      "as_of": "2026-07-03",
-      "state": "accruing",
-      "date_state": "accruing",
-      "readiness": {
-        "maturation": "First single 21d grade: ~21 trading days after first render write (~2026-07-27 per market). Stable rank-IC read (>=5 matured IC dates with >=5 names each): approx 2026-08-24. 63d read: approx 2026-10. Graduation (W7) is a 2026-Q4 event gated on ledger maturity. scorecard() returns status='accruing' until gate is met.",
-        "cadence": "daily",
-        "status": "registered"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:next3-reason-codes-after-c4",
-      "source_system": "experiments",
-      "subject_id": "next3-reason-codes-after-c4",
-      "subject_type": "re-check",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-24",
-      "as_of": "2026-07-06",
-      "state": "accruing",
-      "date_state": "accruing",
-      "readiness": {
-        "maturation": "Blocked on PR-C4 (not started as of 2026-07-06).",
-        "cadence": "once",
-        "status": "registered"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
       "regenerate_cmd": null,
       "acknowledged": false,
       "review": null,
@@ -4238,6 +4241,38 @@
       "clock_type": "come_back_on",
       "due_at": "2026-09-19",
       "as_of": "2026-08-22",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "horizon_d": 21,
+        "status": "registered"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/neuralweb/machine_registry.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "cortex:cortex-2026-08-23-when-a-risk-on-tape-with-broad-participa-e4a85a",
+      "source_system": "cortex",
+      "subject_id": "cortex-2026-08-23-when-a-risk-on-tape-with-broad-participa-e4a85a",
+      "subject_type": "hypothesis",
+      "owner_program": "neural-web",
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-20",
+      "as_of": "2026-08-23",
       "state": "accruing",
       "date_state": "accruing",
       "readiness": {
@@ -9568,7 +9603,7 @@
       "state": "accruing",
       "date_state": "accruing",
       "readiness": {
-        "n_open": 10938,
+        "n_open": 11147,
         "n_past_check_by": 0
       },
       "allowed_actions": [
@@ -9788,11 +9823,11 @@
       "owner_program": null,
       "clock_type": "fdr_batch_due",
       "due_at": null,
-      "as_of": "2026-08-22",
+      "as_of": "2026-08-23",
       "state": "accruing",
       "date_state": "accruing",
       "readiness": {
-        "n_trials": 483,
+        "n_trials": 484,
         "n_families": 134
       },
       "allowed_actions": [
