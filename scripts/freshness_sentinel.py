@@ -138,9 +138,15 @@ Outputs:
     dashboard actually paints from is merged into live/prophet_live.json by a
     LATER, SEPARATE step that fails DARK by design
     (scripts/close_pass_mirror.annotate_live_strip returns False and writes
-    nothing when the evaluator's artifact is absent or unparseable, and its
-    caller discards that result). So the board can land fresh and on time while
-    no reader sees anything — and without this condition the SLA would score
+    nothing when the evaluator's artifact is absent or unparseable). Until
+    2026-08-26 that step's caller also DISCARDED the result outright, so a
+    material failure there — the served file absent, exactly the shape of the
+    27-day US Prophet Live freeze this module's ``prophet_live`` SURFACES entry
+    now closes independently — produced no signal anywhere on this path; the
+    caller now emits a loud ``::warning`` for exactly that class of failure
+    (scripts/close_pass_mirror.py module docstring, "THE CALLER USED TO
+    DISCARD ALL OF THAT"). So the board can land fresh and on time while no
+    reader sees anything — and without this condition the SLA would score
     those sessions as passes. An SLA that can pass while the feature is
     invisible measures the wrong thing.
 
@@ -296,6 +302,25 @@ VISIBLE_RESOLUTION_SECONDS = 1800
 #: month of real landing times rather than to this one.
 ARMED_PACK_MAX_SESSIONS_BEHIND = 1
 
+#: Minutes ``live/prophet_live.json``'s own semantic clock (``meta.pass_ts``) may
+#: lag, DURING the ET live window, before it is a breach (FROZEN SPEC Part A). Two
+#: missed 5-minute evaluator passes: the evaluator ticks every 5 minutes in RTH, so
+#: one missed pass is absorbed and the second is a definitive breach — the same
+#: "breach by the second miss" shape PROPHET_MAX_SESSIONS_BEHIND and
+#: ARMED_PACK_MAX_SESSIONS_BEHIND already use, translated into the minute grain this
+#: artifact's own cadence runs at. At the sentinel's real ~15-minute cadence
+#: (app/deploy/macro-sentinel.timer) a freeze is caught within two sentinel passes —
+#: the tight-latency instrument this incident needed and the GitHub heartbeat's
+#: */10 cron (measured 26-105 minute actual delivery) structurally cannot be.
+#:
+#: NEVER file mtime. The 27-day freeze this entry exists to catch (pass_ts stuck at
+#: 2026-07-30T17:20:53Z, discovered 2026-08-26) shipped with the SERVED file's mtime
+#: moving fine the entire time — the evaluator rewrote the file whole every five
+#: minutes with the SAME frozen payload, over and over. A budget keyed on mtime
+#: would have stayed green through the whole incident; this one is keyed on
+#: meta.pass_ts alone, by construction (see _check_live_window_surface).
+PROPHET_LIVE_MAX_AGE_MINUTES = 10.0
+
 # Per-surface freshness budgets. ``delay_budget_days`` applies to the board's own
 # delayed-board disclosure (see module docstring): the marker only renders when
 # the ENGINE says prices lag, so its presence is already trading-day aware —
@@ -401,9 +426,15 @@ SURFACES: list[dict] = [
     # absent or unparseable evaluator artifact. Both files are written by the
     # same 5-minute timer seconds apart, which is precisely why the divergence is
     # invisible until it happens: the board publishes FIRST and unconditionally,
-    # the annotate runs SECOND and its False return is discarded by the caller,
-    # so a dark surface leaves this artifact looking perfect. See the module
-    # docstring for why this read is not a surface of its own.
+    # the annotate runs SECOND, and — until 2026-08-26 — its caller discarded
+    # the return outright. See the module docstring for why THIS client-side
+    # read stays a non-surface (the reader-visibility question, deliberately
+    # withhold-only so it can never page). The artifact's OWN clock is a
+    # different question, closed below by the dedicated ``prophet_live``
+    # SURFACES entry: that one IS a first-class surface, grading
+    # live/prophet_live.json's ``meta.pass_ts`` directly rather than through
+    # this client-side detour, which is exactly what let the 27-day freeze
+    # (2026-07-30→08-26) go unseen by every instrument on this path.
     {
         "id": "us_board_provisional",
         "kind": "live_file",
@@ -534,6 +565,62 @@ SURFACES: list[dict] = [
             "by_cst": "15:20",
             "sessions_required": 3,
         },
+    },
+    # US Prophet Live — the EVALUATOR'S OWN served artifact, /live/prophet_live.json,
+    # closing the blind spot the 27-day 2026-07-30→08-26 freeze exposed. pass_ts froze
+    # at 2026-07-30T17:20:53Z and stayed there for 27 days while THREE separate
+    # instruments read the estate as healthy: this module's own us_board_provisional
+    # entry above (module docstring, the close-pass paragraph) grades the ADJACENT
+    # provisional-board artifact and never this one; the on-site VPS health checker
+    # carries no US prophet_live check at all; and close_pass_mirror's caller used to
+    # discard annotate_live_strip's boolean outright (fixed the same day — see that
+    # module's docstring). None of the three could have caught THIS artifact freezing,
+    # because none of them read its own semantic clock.
+    #
+    # THE BUDGET SHAPE IS A DELIBERATE EXTENSION, not a reuse of an existing one.
+    # Every budget above this entry is either session-grained
+    # (``asof_max_sessions_behind`` — the right grain for a once-a-day publish) or
+    # hour-grained (``bake_budget_hours`` — the right grain for a nightly bake).
+    # Neither can express "no older than 10 minutes" without abusing its own unit: a
+    # sessions-behind budget would either never fire during the session (0 sessions
+    # behind all day) or fire on every session boundary, and an hours budget rounds
+    # ten minutes to zero. ``asof_max_age_minutes`` is therefore a NEW key, read by a
+    # dedicated evaluation path (``_check_live_window_surface``) instead of being bent
+    # into check_surface's existing session/hours branches — see that function's own
+    # docstring for why it is a separate path rather than a third branch grafted on.
+    #
+    # ``asof_field`` is a TUPLE here — also new. Every ``asof_field`` above this entry
+    # names a top-level key; this artifact's clock is nested (``meta.pass_ts``).
+    # ``_asof_field_value`` accepts either a bare string (top-level, every existing
+    # surface, unchanged) or a tuple/list (nested path) — the minimal extension nested
+    # access needed, nothing else in SURFACES required it until now.
+    #
+    # ``live_window_gate`` is the falsifier-law discipline the module docstring
+    # states everywhere else: the evaluator itself only runs 09:25-16:15 ET
+    # (config.yml ``prophet_live.window_et`` / ``window_grace_min``), so outside that
+    # window — overnight, weekends, NYSE holidays — the artifact is LEGITIMATELY
+    # absent or stale, and grading it on a 24/7 clock would page every single morning
+    # by construction. The window/session test is delegated to
+    # ``engine.prophet_live.live_states.in_window`` + ``live_cfg`` — the SAME
+    # NYSE-calendar-aware helper the evaluator itself gates its own passes on — rather
+    # than a hand-rolled hour band, so a holiday or a DST boundary can never disagree
+    # between the two. See ``_prophet_live_window_open``.
+    #
+    # NEVER mtime. ``bake_age_hours`` is still recorded on this entry's report for the
+    # operator line, but the verdict is computed from ``meta.pass_ts`` alone: the
+    # served file's mtime moved on schedule for all 27 days of the freeze (the
+    # evaluator rewrote the file whole every five minutes with the SAME frozen
+    # payload), so a budget keyed on mtime would have stayed green through the entire
+    # incident. This is the one property Part A exists to guarantee.
+    {
+        "id": "prophet_live",
+        "kind": "live_file",
+        "path": "/live/prophet_live.json",
+        "bake_budget_hours": None,
+        "delay_budget_days": None,
+        "asof_field": ("meta", "pass_ts"),
+        "asof_max_age_minutes": PROPHET_LIVE_MAX_AGE_MINUTES,
+        "live_window_gate": True,
     },
 ]
 
@@ -825,8 +912,166 @@ def _seconds_between(earlier: object, later: object) -> float | None:
 # --------------------------------------------------------------------------- #
 # Pure evaluation core
 # --------------------------------------------------------------------------- #
+def _asof_field_value(doc: object, field: str | tuple | list) -> object:
+    """One value out of ``doc``, by a top-level key (str — every surface above
+    the prophet_live entry uses this shape, unchanged) or a nested path
+    (tuple/list — the minimal extension nested access needed: nothing else in
+    SURFACES nests its clock, so nothing else needed this until prophet_live's
+    ``meta.pass_ts``). Fails dark to None on any shape mismatch, the same
+    discipline every other optional-field reader in this module uses.
+    """
+    if isinstance(field, (tuple, list)):
+        node = doc
+        for step in field:
+            if not isinstance(node, dict):
+                return None
+            node = node.get(step)
+        return node
+    return doc.get(field) if isinstance(doc, dict) else None
+
+
+def _prophet_live_window_open(now: datetime) -> bool | None:
+    """Whether ``now`` is inside the Prophet Live evaluator's own ET window.
+
+    Delegates to ``engine.prophet_live.live_states.in_window`` + ``live_cfg`` —
+    the SAME NYSE-calendar-aware helper the evaluator itself gates its passes
+    on (FROZEN SPEC Part A #4) — rather than a hand-rolled hour band, so a
+    holiday or a DST boundary can never disagree between the two. ``live_cfg(None)``
+    resolves to config.yml's own defaults (window_et 09:25-16:15, 10 min grace),
+    the same values production carries today, without this module having to
+    parse config.yml itself.
+
+    Lazy, failure-guarded for the same reason lib.nyse_calendar's import is
+    (module docstring): a broken or half-pulled engine/ tree must degrade this
+    ONE surface to indeterminate, never take the whole watchdog down. None
+    means unknowable; the caller must never fold that into either a breach or
+    a false-clean.
+    """
+    try:
+        from engine.prophet_live.live_states import in_window, live_cfg  # noqa: PLC0415
+        return in_window(now, live_cfg(None))
+    except Exception as exc:  # noqa: BLE001
+        print(
+            "sentinel: prophet_live window check unavailable "
+            f"({type(exc).__name__}: {exc})",
+            file=sys.stderr,
+        )
+        return None
+
+
+def _check_live_window_surface(surface: dict, fr: FetchResult, now: datetime) -> dict:
+    """Minute-grained intraday freshness, gated to the ET live window.
+
+    See PROPHET_LIVE_MAX_AGE_MINUTES and the ``prophet_live`` SURFACES entry for
+    the incident and the budget this closes. A DIFFERENT verdict shape than
+    every check above: none of check_surface's session/hours budgets can
+    express "no older than 10 minutes, except overnight/weekends/holidays", so
+    this surface is evaluated on its own path instead of being bent to fit the
+    general machinery (FROZEN SPEC Part A #5).
+    """
+    out: dict = {
+        "id": surface["id"],
+        "kind": surface["kind"],
+        "status": "ok",
+        "bake_budget_hours": surface["bake_budget_hours"],
+        "delay_budget_days": surface["delay_budget_days"],
+        "bake_stamp": None,
+        "bake_age_hours": None,
+        "board_delayed": False,
+        "board_price_through": None,
+        "board_delay_days": None,
+        "asof": None,
+        "asof_sessions_behind": None,
+        "asof_age_minutes": None,
+        "absent": False,
+        "facts": {},
+        "detail": "",
+    }
+    if fr.last_modified is not None:
+        out["bake_stamp"] = fr.last_modified.isoformat()
+        out["bake_age_hours"] = round(
+            (now - fr.last_modified).total_seconds() / 3600.0, 1
+        )
+
+    window = _prophet_live_window_open(now)
+    if window is None:
+        out["status"] = "indeterminate"
+        out["detail"] = (
+            "cannot evaluate the ET live window"
+            " (engine.prophet_live.live_states unavailable)"
+        )
+        return out
+    if not window:
+        # Outside 09:25-16:15 ET (+grace) — overnight, weekends, NYSE holidays.
+        # The evaluator itself does not run out here, so absence and staleness
+        # are the ORDINARY state, never a breach (falsifier law, module
+        # docstring): paging every morning by construction is the exact
+        # factory this discipline forbids.
+        out["detail"] = "outside the ET live window — not evaluated"
+        return out
+
+    # Inside the window: the artifact MUST exist and answer with a usable body.
+    if fr.error or fr.status != 200:
+        out["absent"] = "FileNotFoundError" in (fr.error or "")
+        reason = fr.error or f"HTTP {fr.status}"
+        out["status"] = "stale"
+        out["detail"] = (
+            f"absent during the live window ({reason}) — the evaluator should"
+            " be publishing a pass every 5 minutes right now"
+            if out["absent"] else
+            f"unreadable during the live window ({reason})"
+        )
+        return out
+
+    try:
+        doc = json.loads(fr.body or "")
+    except ValueError as exc:
+        # Unlike the general check_surface path, an unparseable body here is a
+        # BREACH, not indeterminate: inside the window the evaluator is meant
+        # to be writing a fresh document every 5 minutes, so a body that fails
+        # to parse is itself evidence the write is broken right now, not a
+        # transport hiccup to wait out via the blindness counter.
+        out["status"] = "stale"
+        out["detail"] = f"served body is not JSON during the live window ({exc})"
+        return out
+
+    stamp = _asof_field_value(doc, surface["asof_field"])
+    if not isinstance(stamp, str) or not stamp:
+        out["status"] = "stale"
+        out["detail"] = (
+            "served payload carries no usable meta.pass_ts field during the"
+            " live window — the artifact cannot vouch for its own clock"
+        )
+        return out
+    out["asof"] = stamp
+    pass_ts = _instant(stamp)
+    if pass_ts is None:
+        out["status"] = "stale"
+        out["detail"] = f"unparseable meta.pass_ts {stamp!r} during the live window"
+        return out
+
+    age_min = (now - pass_ts).total_seconds() / 60.0
+    out["asof_age_minutes"] = round(age_min, 1)
+    budget = surface["asof_max_age_minutes"]
+    if age_min > budget:
+        msg = (
+            f"meta.pass_ts {stamp} is {age_min:.1f} min old during the live"
+            f" window (budget {budget:.0f} min)"
+        )
+        if out["bake_age_hours"] is not None and out["bake_age_hours"] < 1.0:
+            # The re-stamp trap one layer down: the served file's mtime is
+            # moving (the evaluator rewrote it), the SEMANTIC clock inside it
+            # is not — the exact shape of the 27-day freeze this entry closes.
+            msg += "; mtime is fresh, the semantic clock is not"
+        out["status"] = "stale"
+        out["detail"] = msg
+    return out
+
+
 def check_surface(surface: dict, fr: FetchResult, now: datetime) -> dict:
     """One surface → {id, status ∈ ok|stale|indeterminate, ages, detail}."""
+    if surface.get("live_window_gate"):
+        return _check_live_window_surface(surface, fr, now)
     out: dict = {
         "id": surface["id"],
         "kind": surface["kind"],
@@ -1758,9 +2003,15 @@ def run(now: datetime, base: str, r2_base: str, public_dir: Path, state_dir: Pat
     report = evaluate(results, now, client_reads=client_reads)
     for sid, c in sorted(report["surfaces"].items()):
         if c.get("asof"):
-            label, content = "store", (
-                f"asof@{c['asof']} ({c['asof_sessions_behind']} session(s) behind)"
-            )
+            # asof_age_minutes ⇒ a minute-grained live-window budget (prophet_live
+            # — see PROPHET_LIVE_MAX_AGE_MINUTES); every other asof-bearing surface
+            # carries a session-grained budget instead, so the two never both read.
+            if c.get("asof_age_minutes") is not None:
+                label, content = "store", f"asof@{c['asof']} ({c['asof_age_minutes']:.1f} min old)"
+            else:
+                label, content = "store", (
+                    f"asof@{c['asof']} ({c['asof_sessions_behind']} session(s) behind)"
+                )
         else:
             label = "board"
             content = "delayed@" + c["board_price_through"] if c["board_delayed"] else "current"
