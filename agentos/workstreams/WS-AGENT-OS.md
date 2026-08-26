@@ -76,6 +76,21 @@ waves:
       squash carried the rejected defect shape and is historical evidence, not W1
       acceptance. Enforcement remains REPORT_ONLY. MAS-28 itself remains
       BUILT_NOT_PROVEN until the separate calibration stop condition is satisfied.
+  - id: MAS65-P0
+    title: "MAS-65 — deterministic report-only Agent OS to Linear desired-state compiler"
+    status: in_progress
+    pr: 6182
+    depends_on: [W3]
+    next_action: >
+      Stay on the sole existing #6182 carrier. Exact frozen Stage-1 candidate is
+      db9123181b2d042e1ae53477d066a308284ad73c, reconciled onto Macro main
+      571e5c89278feb57648e6b8df1d68e1624b3d0e7 with exactly six P0-owned files.
+      Fresh fences 32922618881 are green and semantic CI 32922618935 is running.
+      On complete green, persist the exact machine-emitted
+      MAS65_LINEAR_PORTFOLIO_PLAN_RECEIPT as one evidence-only seventh file,
+      rerun exact-head fences + semantic CI, and return for final Sol P0 review.
+      Ordinary later workstream-state movement is expected projector input drift and
+      does not by itself invalidate the immutable exact-revision implementation receipt.
 decisions:
   - DEC:AGENTOS-CXI-R12-OVERRULED
   - DEC:AGENTOS-CLAIMS-ARE-NOT-LIVE-ACTIVITY
@@ -98,9 +113,13 @@ landmines:
   - "PROVISIONAL PARENT: project-active-build-control's registry row says it does_not_own 'Durable program truth', which is exactly what this workstream owns. No agent-os row exists (see DSC:EXECUTIVE-OS-NO-PROGRAM-ROW for the same gap). Minting one was reverted deliberately: config/mastermind_programs.yml and its generated docs/MASTERMIND_SYSTEM_MAP.md belong to the semantic-system-mapping workstream, which the commissioning brief marks ALREADY ASSIGNED, and editing the generated map conflicted with main within hours. The row is that owner's to add."
   - "Two execution control planes already exist. Anything that gates or dispatches belongs in Mastermind control_plane/ or the Macro hook layer — see invariant I1."
   - "Census §6 non-goals are binding and postdate Phase 1A/1B — see DSC:CENSUS-POSTDATES-PHASE1B."
+  - "Mastermind #147 Continuation Delta is constitutional procedure, not a new Agent OS runtime/control plane. Its deterministic implementation is green; its fresh-Sol behavioral release corpus is still unproven and must not be inferred from Slack delivery."
 do_not_redo:
   - "Repository reconnaissance: research/EXECUTIVE_OS_PHASE0_CENSUS.md (#5356) censused ~45 components 12h before this session. Do not re-census."
   - "Task leases, heartbeats, LOST reconciliation, CI watchers: all built. executive_runtime.py + executive_supervisor.py (processes); ci_handoff.py + merge-on-green.yml (sessions)."
+  - "Do not create a second MAS-65 projector carrier or second Agent OS parser. Continue only on Macro #6182 and reuse scripts.agentos semantics."
+  - "Do not restart Mastermind #147 deterministic linter/incident/grounding work absent a concrete receipt-invalidating change; exact head 8209e1f31da15f8effc23a9899a5c5a02d30cab4 passed hosted CI 32911519256."
+  - "Do not duplicate/fail over the #147 behavioral-proof operation merely because Slack delivery is idle; MAS-136 records the single delivery carrier and remains blocked on genuine fresh-session evidence."
 artifacts:
   - research/MASTERMIND_AGENT_OS_ARCHITECTURE.md
   - research/MASTERMIND_AGENT_OS_STATE_SCHEMA.md
@@ -108,13 +127,17 @@ artifacts:
   - research/MASTERMIND_AGENT_OS_V1_IMPLEMENTATION_PLAN.md
   - research/MASTERMIND_CEO_BRIEF_SPEC.md
 next_action: >
-  MAS-28 W1 implementation is merged and accepted as report-only / BUILT_NOT_PROVEN.
-  The next MAS-28 operation is calibration only: run the representative frozen corpus
-  required by MAS-28, record false positives, false negatives and incomplete observations,
-  and return a recommendation to remain report-only, amend rules, or propose a separate
-  bounded enforcement review. Do not arm a hard gate from W1. The pre-existing Agent OS
-  Phase 4 W4 remains a separate high-blast-radius report-only hook wave and is still todo;
-  this records correction does not commission it.
+  Primary: finish MAS-65 P0 on the sole Macro #6182 carrier. Frozen Stage-1 head
+  db9123181b2d042e1ae53477d066a308284ad73c has fresh fences green and semantic
+  CI 32922618935 in progress. On green, persist the exact emitted current-revision
+  drift receipt as the seventh evidence file, rerun exact-head gates, and return to
+  Sol for final P0 acceptance. Do not start MAS-66/P1 until P0 is accepted and the
+  dedicated Linear app-actor prerequisite MAS-64 is proven. Independently, MAS-28
+  remains calibration-only / report-only. Mastermind #147 / Linear MAS-136 remains
+  a separate constitutional replay-prevention release gate: deterministic code is
+  PASS, but the required genuine fresh-Sol S1-S8 corpus has no verified ACK/return.
+  Agent OS W4 remains separate high-blast-radius report-only hook work and is not
+  commissioned by this reconciliation.
 ---
 
 ## Context
