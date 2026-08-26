@@ -49,16 +49,21 @@ waves:
     status: in_progress
     depends_on: [A1A]
     next_action: >
-      Sol reviewed A1B PR #6335 at ff03e0aa28a2a3ece4293505812b1a848b2c23e8
-      and accepted the architecture in direction while requesting exactly two repairs:
-      freeze the reviewed draft throughout an in-flight Save, and classify a successful
-      local write followed by verification disagreement as terminal effect/state unknown.
-      Both bounded repairs and their discriminating regressions are now on the same
-      carrier, reconciled onto fresh Macro main, with served assets regenerated. Return
-      the new exact head only after its CI/fence/authority checks conclude, and preserve
-      the PR as DRAFT / HOLD-FOR-SOL. Sol re-review remains the sole next gate. Do not
-      merge, deploy, mutate production Portfolio rows, begin production acceptance,
-      change Terminal, or absorb A2-A6 from this carrier.
+      MERGED AND DEPLOYED 2026-08-26: Sol FINAL REVIEW PASS (PR #6335 comment
+      5417266507) accepted exact head 2bf5d335e5adf742486e0c2aca50b0765617da2d; after a
+      clean final collision check it squash-merged with an exact-head guard as
+      dd66f934e35a4629281656e854c6cc028dbd66d7 and the A1B assets are live on
+      production watchlist.html (VPS + HTTP receipts). The bounded anonymous
+      production vertical passed with exact cleanup (one canonical mdash.pf.v1
+      whole-book write, duplicate lot preserved, UUID ids, zero Watchlist mutation,
+      before-state restored). Capability remains BUILT_NOT_PROVEN: the authenticated
+      vertical stopped at PRODUCTION_WRITE_AUTH_REQUIRED because no authorized
+      production test/write identity was available. Next: operator supplies the
+      authorized test identity vehicle; a session then runs the authenticated
+      paste->review->portfolio_positions batch write->authoritative reread vertical
+      with temporary rows and exact cleanup, then advances A1B to DONE / PROVEN_LIVE.
+      See agentos/handoffs/MARKET-OS-2026-08-26-a1b-merged-deployed.md. Do not start
+      A2-A6 from this closure.
   - id: A2-A6
     title: Persistent sizing assumptions, CSV import, My Market rail, universal add, and Watchlist workspace
     status: todo
