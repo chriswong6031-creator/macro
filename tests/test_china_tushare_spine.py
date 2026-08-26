@@ -5,6 +5,7 @@ import json
 from datetime import date, datetime, timezone
 from decimal import Decimal
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 import pytest
@@ -528,6 +529,146 @@ def test_response_schema_and_request_binding_fail_closed():
         spine._validate_response_binding(
             "namechange", name, {"start_date": "20240101", "end_date": "20241231"},
         )
+
+
+def _non_canonical_stock_basic_row(**overrides: Any) -> dict:
+    row = {
+        "ts_code": "T600018.SS", "symbol": "600018", "name": "早期退市样本",
+        "area": "上海", "industry": "工业", "market": "主板", "exchange": "SSE",
+        "curr_type": "CNY", "list_status": "D", "list_date": "19940101",
+        "delist_date": "19990101", "is_hs": "N",
+    }
+    row.update(overrides)
+    return row
+
+
+def test_stock_basic_non_canonical_identity_quarantined_not_fatal():
+    """A legacy/delisted-era vendor code (T-prefix) is quarantined, not a crash."""
+    columns = spine.ENDPOINT_FIELDS["stock_basic"].split(",")
+    stock = _stock_basic_rows()[("SSE", "D")].copy()
+    contaminated = pd.concat(
+        [stock, pd.DataFrame([_non_canonical_stock_basic_row()], columns=columns)],
+        ignore_index=True,
+    )
+    non_canonical = spine._validate_response_binding(
+        "stock_basic", contaminated, {"exchange": "SSE", "list_status": "D"},
+    )
+    assert non_canonical == [1]
+
+
+def test_stock_basic_non_canonical_row_still_binds_request_literals():
+    """A quarantine-eligible row still fails closed on a cross-wired response."""
+    columns = spine.ENDPOINT_FIELDS["stock_basic"].split(",")
+    wrong_exchange = pd.DataFrame(
+        [_non_canonical_stock_basic_row(exchange="SZSE")], columns=columns,
+    )
+    with pytest.raises(spine.SpineError, match="requested exchange"):
+        spine._validate_response_binding(
+            "stock_basic", wrong_exchange, {"exchange": "SSE", "list_status": "D"},
+        )
+
+    wrong_status = pd.DataFrame(
+        [_non_canonical_stock_basic_row(list_status="L")], columns=columns,
+    )
+    with pytest.raises(spine.SpineError, match="requested list_status"):
+        spine._validate_response_binding(
+            "stock_basic", wrong_status, {"exchange": "SSE", "list_status": "D"},
+        )
+
+
+def test_stock_basic_schema_mismatch_stays_fatal_even_with_a_non_canonical_row():
+    columns = spine.ENDPOINT_FIELDS["stock_basic"].split(",")
+    contaminated = pd.DataFrame([_non_canonical_stock_basic_row()], columns=columns)
+    with pytest.raises(spine.SpineError, match="schema"):
+        spine._validate_response_binding(
+            "stock_basic", contaminated.drop(columns="symbol"),
+            {"exchange": "SSE", "list_status": "D"},
+        )
+
+
+def test_stock_basic_all_canonical_response_reports_zero_non_canonical_and_stays_fatal_on_other_defects():
+    stock = _stock_basic_rows()[("SSE", "L")].copy()
+    non_canonical = spine._validate_response_binding(
+        "stock_basic", stock, {"exchange": "SSE", "list_status": "L"},
+    )
+    assert non_canonical == []
+
+    bad_currency = stock.copy()
+    bad_currency.loc[0, "curr_type"] = "USD"
+    with pytest.raises(spine.SpineError, match="non-CNY"):
+        spine._validate_response_binding(
+            "stock_basic", bad_currency, {"exchange": "SSE", "list_status": "L"},
+        )
+
+
+def test_stock_basic_non_canonical_identity_end_to_end_quarantine_and_master_exclusion(tmp_path):
+    """Full collect_reference -> compile_security_master path for run 32914960162's row."""
+    columns = spine.ENDPOINT_FIELDS["stock_basic"].split(",")
+    basic = _stock_basic_rows()
+    basic[("SSE", "D")] = pd.concat(
+        [basic[("SSE", "D")], pd.DataFrame([_non_canonical_stock_basic_row()], columns=columns)],
+        ignore_index=True,
+    )
+
+    def fake(endpoint, fields="", **params):
+        if endpoint == "bse_mapping":
+            return pd.DataFrame([{
+                "name": "方大新材", "o_code": "838163.BJ", "n_code": "920163.BJ",
+                "list_date": "20200727",
+            }])
+        if endpoint == "stock_basic":
+            return basic[(params["exchange"], params["list_status"])].copy()
+        if endpoint == "fund_basic":
+            return _fund_basic_rows()[params["status"]].copy()
+        raise AssertionError(f"unexpected endpoint in reference-only test: {endpoint}")
+
+    collector = spine.TushareAShareSpineCollector(tmp_path, query=fake, now=lambda: NOW)
+    # The call itself must not raise -- this is the exact scenario that crashed
+    # the reference stage in run 32914960162.
+    ready = collector.collect_reference()
+    # Quarantined rows keep completeness false (frozen law): the unit -- and
+    # therefore the whole staging generation -- never claims to be "done".
+    assert ready is False
+
+    staging = collector.state["reference_generation"]["staging_id"]
+    assert staging
+
+    contaminated_unit = collector.state["units"]["stock_basic"][f"{staging}:SSE:D"]
+    assert contaminated_unit["status"] == "complete"
+    assert contaminated_unit["source_row_count"] == 2
+    assert contaminated_unit["row_count"] == 1
+    assert contaminated_unit["quarantined_unknown_row_count"] == 1
+    assert contaminated_unit["source_accounting_complete"] is True
+    assert (
+        contaminated_unit["source_row_count"]
+        == contaminated_unit["row_count"]
+        + contaminated_unit["known_excluded_row_count"]
+        + contaminated_unit["quarantined_unknown_row_count"]
+    )
+    contaminated_receipt = contaminated_unit["request_receipts"][0]
+    assert contaminated_receipt["non_canonical_identity_row_count"] == 1
+
+    clean_unit = collector.state["units"]["stock_basic"][f"{staging}:SSE:L"]
+    assert clean_unit["quarantined_unknown_row_count"] == 0
+    clean_receipt = clean_unit["request_receipts"][0]
+    assert clean_receipt["non_canonical_identity_row_count"] == 0
+
+    master, _ = spine.compile_security_master(tmp_path, staging)
+    assert "T600018.SS" not in set(master["source_ts_code"])
+    assert "T600018.SS" not in set(master["ticker"])
+    # The normal rows in the same contaminated unit, and every other unit,
+    # still land.
+    assert "600001.SS" in set(master["ticker"])
+    assert "600519.SS" in set(master["ticker"])
+    assert "000001.SZ" in set(master["ticker"])
+    assert "920163.BJ" in set(master["ticker"])
+
+    classifications = spine._read_parquet_strict(
+        spine._reference_derived_path(tmp_path, "instrument_classification.parquet", staging)
+    )
+    quarantined = classifications[classifications["scope_classification"] == "quarantined_unknown"]
+    assert quarantined["ticker"].tolist() == ["T600018.SS"]
+    assert quarantined["source_ts_code"].tolist() == ["T600018.SS"]
 
 
 def test_rejected_response_receipt_preserves_observed_rows_columns_and_hash(tmp_path):
