@@ -87,7 +87,12 @@ waves:
       34e417cac98d24073f146bf8949ce33304e02ff8041f041aa5aec80b4894dc6c), and the
       canonical R2 data-plane object the dossier renders (Last-Modified
       2026-08-26T07:53:04Z, generated_at 2026-08-26T07:07:49Z, content_sha256
-      abf598ea915c694c14118b2839ca718e6a0db69e4760a1d499c6fe153afe4c40). Both
+      abf598ea915c694c14118b2839ca718e6a0db69e4760a1d499c6fe153afe4c40).
+      Attribution correction carried in the handoff: both objects were compiled
+      by engine-render runs (32912667077 and 32938845408) — render.yml:1229 and
+      engine-render.yml:833 also build_site and publish stockdata to R2, so
+      daily.yml is not the only lane that delivers the blob; the nightly's own
+      owning steps concluded SUCCESS on the same code path. Both
       carry identity PROVEN via owner_backed_chain.v1 (9 legs, 9 equalities, 0
       refusals, SEC:US-XNAS-AAPL / ISS:US-XNAS-AAPL / CIK 0000320193), real
       State and Change, the K1 recipe erp_5687f42d... with an EvidenceBlock ref

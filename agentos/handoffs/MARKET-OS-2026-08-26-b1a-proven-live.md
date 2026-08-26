@@ -63,8 +63,9 @@ verified:
       Both name exactly one commit — 10b54a12828b. The producer stage and the
       compiler entered the tree in that single squash and nowhere earlier.
   - claim: >
-      Production /stockdata/AAPL.json is post-merge and post-run, and its
-      security_state.v1 block is cryptographically self-consistent.
+      Production /stockdata/AAPL.json is post-merge, carries a generated_at
+      inside the natural nightly's window, and its security_state.v1 block is
+      cryptographically self-consistent.
     command: >
       ssh root@146.190.142.17 'stat/sha256sum /opt/macro/site.served/stockdata/AAPL.json' ;
       local re-implementation of engine.security_state._content_sha256 over the
@@ -74,7 +75,9 @@ verified:
       mtime 2026-08-26T02:22:47.244205313Z, 126176 bytes, file sha256
       3958897edf087e2c585acdb45e5e4ec0140e61acc287b408f3fe89caed3351bc.
       security_state.generated_at 2026-08-26T01:01:51.527077+00:00 — inside run
-      32908543584's window (22:57:01Z -> 07:55:45Z). content_sha256
+      32908543584's window (22:57:01Z -> 07:55:45Z), and compiled by
+      engine-render run 32912667077 (push, SUCCESS, 2026-08-25T23:52:22Z ->
+      2026-08-26T01:19:01Z), whose window contains that stamp. content_sha256
       34e417cac98d24073f146bf8949ce33304e02ff8041f041aa5aec80b4894dc6c
       recomputed MATCH; the positive control (one leaf mutated) produced a
       different digest, and the stability control (generated_at plus
@@ -92,7 +95,9 @@ verified:
       e1e1f41c627fe9a5ecc452ed056a5415758de33304ecff657a3cf30dbd185789.
       generated_at 2026-08-26T07:07:49.196633+00:00, content_sha256
       abf598ea915c694c14118b2839ca718e6a0db69e4760a1d499c6fe153afe4c40
-      recomputed MATCH.
+      recomputed MATCH. Compiled by engine-render run 32938845408 (push,
+      SUCCESS, 06:35:56Z -> 07:53:53Z) — its window contains the generated_at
+      stamp and its end matches the object's Last-Modified.
   - claim: >
       Both live objects satisfy every B1A content requirement — canonical
       identity PROVEN, real State and Change, real K1 EvidenceRecipe and
@@ -191,6 +196,26 @@ verified:
       ALIAS_EPOCH_VALID_FROM. Both gate names appear once each in the served
       AAPL HTML and zero times in the MSFT HTML.
   - claim: >
+      daily.yml is NOT the only lane that delivers a stockdata blob — both
+      render.yml and engine-render.yml run build_site (hence
+      build_stock_library, hence the B1A producer stage) and publish stockdata
+      to R2. So a live blob's producing lane must be attributed from its own
+      generated_at against run windows, never assumed to be the nightly.
+    command: >
+      grep -nE "publish_r2.*--dirs" .github/workflows/engine-render.yml .github/workflows/render.yml ;
+      grep -n "build_site" .github/workflows/engine-render.yml ;
+      gh run list --workflow engine-render.yml --limit 12
+    result: >
+      engine-render.yml:833 and render.yml:1229 both run
+      `python -m scripts.publish_r2 --dirs stockdata --no-manifest`;
+      engine-render.yml:404 runs scripts.build_site. Neither live object
+      observed here is provably the nightly's own compile: run 32908543584's
+      engine job published at 06:17:23Z->06:21:49Z on the same code path and
+      concluded SUCCESS, but R2's current object was overwritten by the
+      07:53Z engine-render publish before observation. B1A is proven live on
+      post-merge code either way; the attribution is what changes.
+
+  - claim: >
       The VPS private serving mirror of site/stockdata is a once-daily sweep,
       which is why the regwalled /stockdata/*.json path can trail the R2 data
       plane. This is a data-plane cadence property across all tickers, not a
@@ -276,6 +301,12 @@ danger_areas:
     engine-render lanes) and the VPS mirror at /opt/macro/site.served/stockdata
     (once daily). Comparing a dossier against the VPS mirror will show a false
     mismatch for most of the day. Compare against R2.
+  - >-
+    A prior record claimed "ONLY the nightly daily.yml delivers the stockdata
+    blob; render lanes ship pages, not blobs." That is FALSE — render.yml and
+    engine-render.yml both build_site and publish stockdata to R2, and in this
+    window they produced both live objects. The correct standing rule is the
+    other half of that record: never DISPATCH daily.yml to force a blob.
   - >-
     site/stockdata is gitignored (.gitignore:42) and 0 files are tracked, so
     `git log -- site/stockdata/<T>.json` returns nothing and proves nothing
