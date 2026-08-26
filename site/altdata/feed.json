@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-08-25T23:55:07.171086+00:00",
-  "as_of": "2026-08-25",
+  "generated_utc": "2026-08-26T00:29:03.871504+00:00",
+  "as_of": "2026-08-26",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
   "note": "Deterministic alt-data signals + normalized event feed for the reasoning brain. Display/context-only \u2014 not a scored axis.",
@@ -5932,20 +5932,11 @@
         },
         {
           "ticker": "HUBB",
-          "net": 16,
-          "buys": 16,
+          "net": 14,
+          "buys": 14,
           "sells": 0,
           "members": 1,
-          "est_usd": 177008.0,
-          "parties": "D"
-        },
-        {
-          "ticker": "CHRW",
-          "net": 12,
-          "buys": 12,
-          "sells": 0,
-          "members": 1,
-          "est_usd": 194006.0,
+          "est_usd": 161007.0,
           "parties": "D"
         },
         {
@@ -5965,6 +5956,15 @@
           "members": 1,
           "est_usd": 129005.0,
           "parties": "R"
+        },
+        {
+          "ticker": "CHRW",
+          "net": 10,
+          "buys": 10,
+          "sells": 0,
+          "members": 1,
+          "est_usd": 178005.0,
+          "parties": "D"
         },
         {
           "ticker": "SPCX",
@@ -5994,15 +5994,6 @@
           "parties": "D"
         },
         {
-          "ticker": "MLM",
-          "net": 8,
-          "buys": 8,
-          "sells": 0,
-          "members": 1,
-          "est_usd": 113004.0,
-          "parties": "D"
-        },
-        {
           "ticker": "BWXT",
           "net": 6,
           "buys": 6,
@@ -6019,6 +6010,15 @@
           "members": 1,
           "est_usd": 48003.0,
           "parties": "R"
+        },
+        {
+          "ticker": "MLM",
+          "net": 6,
+          "buys": 6,
+          "sells": 0,
+          "members": 1,
+          "est_usd": 97003.0,
+          "parties": "D"
         },
         {
           "ticker": "MU",
@@ -6150,12 +6150,12 @@
         },
         {
           "ticker": "AMZN",
-          "net": -7,
+          "net": -6,
           "buys": 2,
-          "sells": 9,
-          "members": 6,
+          "sells": 8,
+          "members": 5,
           "est_usd": 16001.0,
-          "parties": "R/Republican"
+          "parties": "R"
         },
         {
           "ticker": "UNH",
@@ -6455,7 +6455,7 @@
     "material_8k": [
       {
         "ticker": "NWS",
-        "count": 21,
+        "count": 20,
         "items": "8.01"
       },
       {
@@ -6474,11 +6474,6 @@
         "items": "1.01, 2.01, 2.03, 5.02, 7.01, 8.01"
       },
       {
-        "ticker": "MSTR",
-        "count": 6,
-        "items": "7.01, 8.01"
-      },
-      {
         "ticker": "BAX",
         "count": 5,
         "items": "1.01, 5.02, 7.01, 8.01"
@@ -6489,9 +6484,9 @@
         "items": "1.01, 2.01, 2.03, 5.02, 7.01, 8.01"
       },
       {
-        "ticker": "QBTS",
+        "ticker": "MSTR",
         "count": 5,
-        "items": "5.02, 7.01"
+        "items": "7.01, 8.01"
       },
       {
         "ticker": "SWKS",
@@ -6527,6 +6522,11 @@
         "ticker": "O",
         "count": 4,
         "items": "2.03, 7.01, 8.01"
+      },
+      {
+        "ticker": "QBTS",
+        "count": 4,
+        "items": "5.02, 7.01"
       },
       {
         "ticker": "AEE",
@@ -25518,13 +25518,6 @@
         "sample": "Research Study on How Well Oral Semaglutide Works for Weight Loss in Adults With Excess Body Weight"
       },
       {
-        "ticker": "MRK",
-        "phase3_starts": 10,
-        "halts": 4,
-        "hot": true,
-        "sample": "A Study of Raludotatug Deruxtecan With or Without Bevacizumab as First-Line Maintenance Treatment in Non-HRD-Positive Advanced Ovarian Cancer (MK-5909-006, (ENG"
-      },
-      {
         "ticker": "LLY",
         "phase3_starts": 9,
         "halts": 1,
@@ -25537,6 +25530,13 @@
         "halts": 4,
         "hot": true,
         "sample": "Phase 3 Trial of Tarlatamab (SC vs IV) in Extensive-Stage Small Cell Lung Cancer After Platinum Based First-line Chemotherapy (ES-SCLC)"
+      },
+      {
+        "ticker": "MRK",
+        "phase3_starts": 9,
+        "halts": 4,
+        "hot": true,
+        "sample": "A Study of Raludotatug Deruxtecan With or Without Bevacizumab as First-Line Maintenance Treatment in Non-HRD-Positive Advanced Ovarian Cancer (MK-5909-006, (ENG"
       },
       {
         "ticker": "NVS",
@@ -28888,186 +28888,186 @@
     ],
     "earnings": [
       {
-        "ticker": "INTU",
-        "next_date": "2026-08-25",
-        "days_to": 0,
-        "eps_forecast": 2.12,
-        "last_surprise_pct": 2.7
-      },
-      {
         "ticker": "A",
         "next_date": "2026-08-26",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 1.48,
         "last_surprise_pct": 6.4
       },
       {
         "ticker": "CRM",
         "next_date": "2026-08-26",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 2.35,
         "last_surprise_pct": 32.6
       },
       {
         "ticker": "CRWD",
         "next_date": "2026-08-26",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 0.05,
         "last_surprise_pct": 33.3
       },
       {
         "ticker": "NVDA",
         "next_date": "2026-08-26",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 2.09,
         "last_surprise_pct": 10.0
       },
       {
         "ticker": "VEEV",
         "next_date": "2026-08-26",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 1.62,
         "last_surprise_pct": 2.6
       },
       {
         "ticker": "DG",
         "next_date": "2026-08-27",
-        "days_to": 2,
+        "days_to": 1,
         "eps_forecast": 2.0,
         "last_surprise_pct": 5.8
       },
       {
         "ticker": "WDAY",
         "next_date": "2026-08-27",
-        "days_to": 2,
+        "days_to": 1,
         "eps_forecast": 1.26,
         "last_surprise_pct": -3.4
       },
       {
         "ticker": "ESTC",
         "next_date": "2026-08-27",
-        "days_to": 2,
+        "days_to": 1,
         "eps_forecast": null,
         "last_surprise_pct": 88.9
       },
       {
         "ticker": "SAIC",
         "next_date": "2026-08-31",
-        "days_to": 6,
+        "days_to": 5,
         "eps_forecast": 2.25,
         "last_surprise_pct": 42.9
       },
       {
         "ticker": "ASO",
         "next_date": "2026-09-01",
-        "days_to": 7,
+        "days_to": 6,
         "eps_forecast": 2.07,
         "last_surprise_pct": -3.6
       },
       {
         "ticker": "CRDO",
         "next_date": "2026-09-01",
-        "days_to": 7,
+        "days_to": 6,
         "eps_forecast": 0.91,
         "last_surprise_pct": 19.5
       },
       {
         "ticker": "DELL",
         "next_date": "2026-09-01",
-        "days_to": 7,
+        "days_to": 6,
         "eps_forecast": 4.63,
         "last_surprise_pct": 66.0
       },
       {
         "ticker": "MDB",
         "next_date": "2026-09-01",
-        "days_to": 7,
+        "days_to": 6,
         "eps_forecast": 0.08,
         "last_surprise_pct": -50.0
       },
       {
         "ticker": "GTLB",
         "next_date": "2026-09-01",
-        "days_to": 7,
+        "days_to": 6,
         "eps_forecast": null,
         "last_surprise_pct": 66.7
       },
       {
         "ticker": "AVGO",
         "next_date": "2026-09-02",
-        "days_to": 8,
+        "days_to": 7,
         "eps_forecast": 2.83,
         "last_surprise_pct": 7.4
       },
       {
         "ticker": "HPE",
         "next_date": "2026-09-02",
-        "days_to": 8,
+        "days_to": 7,
         "eps_forecast": 0.81,
         "last_surprise_pct": 52.3
       },
       {
         "ticker": "AI",
         "next_date": "2026-09-02",
-        "days_to": 8,
+        "days_to": 7,
         "eps_forecast": null,
         "last_surprise_pct": 2.7
       },
       {
         "ticker": "SNOW",
         "next_date": "2026-09-02",
-        "days_to": 8,
+        "days_to": 7,
         "eps_forecast": null,
         "last_surprise_pct": -18.6
       },
       {
         "ticker": "DOCU",
         "next_date": "2026-09-03",
-        "days_to": 9,
+        "days_to": 8,
         "eps_forecast": 0.44,
         "last_surprise_pct": 18.4
       },
       {
         "ticker": "GIII",
         "next_date": "2026-09-03",
-        "days_to": 9,
+        "days_to": 8,
         "eps_forecast": 0.25,
         "last_surprise_pct": 30.0
       },
       {
         "ticker": "PATH",
         "next_date": "2026-09-03",
-        "days_to": 9,
+        "days_to": 8,
         "eps_forecast": 0.04,
         "last_surprise_pct": 50.0
       },
       {
         "ticker": "ZS",
         "next_date": "2026-09-03",
-        "days_to": 9,
+        "days_to": 8,
         "eps_forecast": 0.06,
         "last_surprise_pct": 25.0
       },
       {
         "ticker": "ORCL",
         "next_date": "2026-09-08",
-        "days_to": 14,
+        "days_to": 13,
         "eps_forecast": 1.4,
         "last_surprise_pct": 13.3
       },
       {
         "ticker": "GME",
         "next_date": "2026-09-08",
-        "days_to": 14,
+        "days_to": 13,
         "eps_forecast": null,
         "last_surprise_pct": null
       },
       {
         "ticker": "ADBE",
         "next_date": "2026-09-10",
-        "days_to": 16,
+        "days_to": 15,
         "eps_forecast": 4.86,
         "last_surprise_pct": -3.4
+      },
+      {
+        "ticker": "GIS",
+        "next_date": "2026-09-16",
+        "days_to": 21,
+        "eps_forecast": 0.73,
+        "last_surprise_pct": 15.8
       }
     ],
     "retail": [
@@ -29174,7 +29174,7 @@
           "special_situation",
           "trump"
         ],
-        "why": "clinical_phase3_start: 10 new Phase-3, 4 halt(s) \u00b7 fda_label_expansion: KEYTRUDA QLEX \u00b7 lobbying: $2,970,000 lobbied \u00b7 special_situation: Tender Offers \u00b7 trump: MERCK & COMPANY INC"
+        "why": "clinical_phase3_start: 9 new Phase-3, 4 halt(s) \u00b7 fda_label_expansion: KEYTRUDA QLEX \u00b7 lobbying: $2,970,000 lobbied \u00b7 special_situation: Tender Offers \u00b7 trump: MERCK & COMPANY INC"
       },
       {
         "ticker": "MU",
@@ -29369,7 +29369,7 @@
           "congress_buy",
           "material_8k"
         ],
-        "why": "congress_buy: 1 member(s) net +8 \u00b7 material_8k: 8 material 8-Ks (items 1.01, 2.01, 2.03, 5.02, 7.01, 8.01)"
+        "why": "congress_buy: 1 member(s) net +6 \u00b7 material_8k: 8 material 8-Ks (items 1.01, 2.01, 2.03, 5.02, 7.01, 8.01)"
       },
       {
         "ticker": "RTX",
