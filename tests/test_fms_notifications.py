@@ -14,7 +14,9 @@ Every fixture under ``tests/fixtures/fms/`` is real receipted bytes (see
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
+import shutil
 from pathlib import Path
 
 import jsonschema
@@ -366,39 +368,30 @@ class TestFreezeKillTests:
             _validate_graph(mutated)
 
     def test_t6_state_fetch_failure_is_typed_source_unavailable_never_stale_as_current(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+        self, tmp_path: Path,
     ) -> None:
-        class _RaisingSession:
-            def get(self, url, **kwargs):
-                if "state.gov" in url:
-                    raise ConnectionError("simulated State outage")
-                raise AssertionError(f"unexpected fetch in this test: {url}")
+        """§6b staged form of the T6 law: CI never fetches state.gov, so the
+        failure that could stale-serve a broken State surface is a staged
+        capture whose bytes no longer match their manifest sha -- and that
+        is a TYPED refusal of the whole run (mirroring the frozen B10 DSCA
+        law), never an ok/partial publish over corrupt State evidence."""
+        staged = tmp_path / "staged"
+        shutil.copytree((FIXTURES / "dsca").resolve(), staged)
+        sweden = staged / "state-sweden-m142.html"
+        sweden.write_bytes(sweden.read_bytes() + b"<!-- corrupted -->")
 
-        # DSCA staged replay comes from the real committed bytes; FR from a
-        # local fixture-backed fake session so the test never hits the network.
-        class _FrOnlySession(_RaisingSession):
+        class _FrOnlySession:
             def get(self, url, **kwargs):
                 if "federalregister.gov" in url and "documents.json" in url:
                     return _JsonResponse({"results": []})
-                if "state.gov" in url:
-                    raise ConnectionError("simulated State outage")
                 raise AssertionError(f"unexpected fetch: {url}")
 
-        captured = _capture_build_kwargs(monkeypatch)
         rc = live.run_fms_acquisition(
             root=tmp_path, store=None, session=_FrOnlySession(),
-            observed_at=RECEIPT_AT,
-            staged_dir=Path("data/government_revenue/fms_staged_objects").resolve(),
+            observed_at=RECEIPT_AT, staged_dir=staged,
             publication_from="2026-01-01", publication_through="2026-08-25",
         )
-        # FR sweep found zero docs -> denominator empty -> coverage gate
-        # refuses regardless of the State failure; the key assertion binds
-        # `state_pm_bureau`'s typed status DIRECTLY (spec §11b.13) -- the
-        # State branch must record "unavailable", never "ok", regardless of
-        # whether the overall run goes on to publish or refuse.
         assert rc == 1
-        assert captured["state_status"] == "unavailable"
-        assert captured["state_status"] != "ok"
         graph_path = tmp_path / "data" / "government_revenue" / "fms_case_graph.json"
         assert not graph_path.exists()  # refused publish leaves nothing written
 
@@ -522,30 +515,32 @@ class TestFreezeKillTests:
             _validate_graph(mutated)
 
     def test_t14_listing_fetch_failure_never_becomes_empty_valid(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+        self, tmp_path: Path,
     ) -> None:
-        class _FailingStateSession:
+        """§6b staged form of the T14 law: an ABSENT staged State capture
+        (no ``state_manifest.json``) can never encode as the empty_valid
+        ok+0 state -- it is a typed refusal of the whole run. Production
+        run 32952963771 is the motivating exemplar: the live listing served
+        a datacenter runner bytes parsing to zero and the old empty_valid
+        law published ``ok`` over an unseen surface."""
+        staged = tmp_path / "staged"
+        shutil.copytree((FIXTURES / "dsca").resolve(), staged)
+        (staged / live.STATE_STAGED_MANIFEST_NAME).unlink()
+
+        class _FrOnlySession:
             def get(self, url, **kwargs):
-                if "state.gov" in url:
-                    raise ConnectionError("simulated State outage")
                 if "federalregister.gov" in url and "documents.json" in url:
                     return _JsonResponse({"results": []})
                 raise AssertionError(f"unexpected fetch: {url}")
 
-        captured = _capture_build_kwargs(monkeypatch)
         rc = live.run_fms_acquisition(
-            root=tmp_path, store=None, session=_FailingStateSession(),
-            observed_at=RECEIPT_AT,
-            staged_dir=Path("data/government_revenue/fms_staged_objects").resolve(),
+            root=tmp_path, store=None, session=_FrOnlySession(),
+            observed_at=RECEIPT_AT, staged_dir=staged,
             publication_from="2026-01-01", publication_through="2026-08-25",
         )
-        assert rc == 1  # FR denominator empty -> refused; never publishes a
-        # zero-row "current" graph.
-        # Direct proof (spec §11b.13, §11b.6): the State branch's own typed
-        # status is "unavailable", never "ok" -- a listing fetch failure can
-        # never encode as the empty_valid ok+0 state.
-        assert captured["state_status"] == "unavailable"
-        assert captured["state_status"] != "ok"
+        assert rc == 1
+        graph_path = tmp_path / "data" / "government_revenue" / "fms_case_graph.json"
+        assert not graph_path.exists()
 
 
 class _JsonResponse:
@@ -641,14 +636,18 @@ class TestD6B1Battery:
         blob = json.dumps(case["clocks"])
         assert "2026-05-07" not in blob
 
-    def test_b6_state_unavailable_still_publishes_fr_dsca_truth(self, tmp_path: Path) -> None:
-        calls: list[str] = []
+    def test_b6_staged_state_replays_and_integrity_failure_refuses(self, tmp_path: Path) -> None:
+        """§6b supersession of the old B6 ("State unavailable still
+        publishes FR/DSCA truth"): a live State OUTAGE is impossible in CI
+        because CI never fetches state.gov -- it replays the sha-frozen
+        residential capture. The two lawful outcomes are (a) an intact
+        capture replays into observations alongside FR/DSCA truth, and
+        (b) an integrity failure refuses the whole run, exactly like the
+        frozen B10 DSCA staged law -- never a partial publish over corrupt
+        State evidence."""
 
-        class _FrOkStateDownSession:
+        class _FrOkSession:
             def get(self, url, **kwargs):
-                calls.append(url)
-                if "state.gov" in url:
-                    raise ConnectionError("simulated State outage")
                 if "federalregister.gov" in url and "documents.json" in url:
                     return _JsonResponse({
                         "results": [{
@@ -660,17 +659,37 @@ class TestD6B1Battery:
                     return _TextResponse(_read_bytes("fr/2026-07278.txt"))
                 raise AssertionError(f"unexpected fetch: {url}")
 
+        # (a) intact staged capture -> publishes, and the staged Sweden
+        # article lands as a real state observation on case 26-27.
         rc = live.run_fms_acquisition(
-            root=tmp_path, store=None, session=_FrOkStateDownSession(),
-            observed_at=RECEIPT_AT,
-            staged_dir=Path("data/government_revenue/fms_staged_objects").resolve(),
+            root=tmp_path, store=None, session=_FrOkSession(),
+            observed_at=RECEIPT_AT, staged_dir=(FIXTURES / "dsca").resolve(),
             publication_from="2026-01-01", publication_through="2026-08-25",
         )
-        assert rc == 0  # FR/DSCA denominator is non-empty and fully built -> publishes
+        assert rc == 0
         graph = json.loads((tmp_path / "data" / "government_revenue" / "fms_case_graph.json").read_text())
-        assert graph["coverage"]["sources"]["state_pm_bureau"]["status"] == "unavailable"
+        state_source = graph["coverage"]["sources"]["state_pm_bureau"]
+        assert state_source["status"] == "ok"
+        assert state_source["role"] == "current_presentation_staged"
+        assert state_source["qualifying_articles"] == 1
         assert graph["coverage"]["sources"]["federal_register"]["status"] == "ok"
         assert any(c["transmittal_number"] == "26-23" for c in graph["cases"])
+        sweden = next(c for c in graph["cases"] if c["transmittal_number"] == "26-27")
+        assert sweden["source_coverage"]["web_presence"] is True
+        assert "state" in sweden["source_coverage"]["surfaces"]
+
+        # (b) corrupt one staged State article -> the whole run refuses.
+        staged = tmp_path / "staged"
+        shutil.copytree((FIXTURES / "dsca").resolve(), staged)
+        sweden_file = staged / "state-sweden-m142.html"
+        sweden_file.write_bytes(sweden_file.read_bytes() + b"<!-- flipped -->")
+        rc2 = live.run_fms_acquisition(
+            root=tmp_path / "second", store=None, session=_FrOkSession(),
+            observed_at=RECEIPT_AT, staged_dir=staged,
+            publication_from="2026-01-01", publication_through="2026-08-25",
+        )
+        assert rc2 == 1
+        assert not (tmp_path / "second" / "data" / "government_revenue" / "fms_case_graph.json").exists()
 
     def test_b7_zero_or_unreconciled_denominator_refuses_to_publish(self) -> None:
         # (a) zero-doc FR sweep -> refuse
@@ -1137,8 +1156,16 @@ class TestPostRedTeamAmendments:
         assert rc1 == 0
         first_receipts = len(receipts_path.read_text().splitlines())
         first_observations = len(observations_path.read_text().splitlines())
-        # 14 real staged DSCA articles + 1 certification PDF + 1 FR original.
-        assert first_receipts == 16
+        # 14 real staged DSCA articles + 1 certification PDF + 1 FR original
+        # + every article in the committed staged State capture (§6b) -- read
+        # from the real manifest so a `stage-state` refresh moves this pin
+        # with the capture instead of silently breaking it.
+        staged_state = json.loads(
+            (Path("data/government_revenue/fms_staged_objects") / live.STATE_STAGED_MANIFEST_NAME)
+            .read_text(encoding="utf-8")
+        )
+        expected_first = 16 + len(staged_state["articles"])
+        assert first_receipts == expected_first
 
         # Second run: SAME bytes, a LATER observed_at (the realistic re-run
         # shape -- only the wall-clock timestamp changes).
@@ -1146,20 +1173,28 @@ class TestPostRedTeamAmendments:
         assert rc2 == 0
         second_receipts = len(receipts_path.read_text().splitlines())
         second_observations = len(observations_path.read_text().splitlines())
-        assert second_receipts == first_receipts == 16  # 16 -> 16, never 16 -> 32
+        assert second_receipts == first_receipts == expected_first  # never doubles
         assert second_observations == first_observations  # observations plane already no-oped
 
-    def test_m5_empty_valid_only_when_listing_fetch_and_parse_succeeded(self, tmp_path: Path) -> None:
-        """spec §11b.6: ``state_pm_bureau.status`` may be ``ok`` with
-        ``qualifying_articles: 0`` ONLY when the listing fetch+parse
-        succeeded; a fetch failure with zero rows must be ``unavailable``,
-        never ``ok``."""
-        empty_listing_html = b"<html><body>No releases posted this month.</body></html>"
+    def test_m5_empty_staged_listing_refuses_never_ok_with_zero(self, tmp_path: Path) -> None:
+        """§6b supersession of the old §11b.6 empty_valid law: production
+        run 32952963771 published ``ok`` + ``qualifying_articles: 0`` while
+        the real surface presented 11 articles, because the datacenter edge
+        served challenge bytes that parse to zero. An ok-with-zero State
+        surface is therefore UNPUBLISHABLE: a staged listing whose bytes
+        sha-match the manifest but parse to zero qualifying entries is a
+        staging error and refuses the whole run."""
+        staged = tmp_path / "staged"
+        shutil.copytree((FIXTURES / "dsca").resolve(), staged)
+        empty_listing = b"<html><body>No releases posted this month.</body></html>"
+        (staged / "state-listing.html").write_bytes(empty_listing)
+        manifest_path = staged / live.STATE_STAGED_MANIFEST_NAME
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["listing"]["sha256"] = hashlib.sha256(empty_listing).hexdigest()
+        manifest_path.write_text(json.dumps(manifest, indent=1, sort_keys=True), encoding="utf-8")
 
-        class _EmptyButOkListingSession:
+        class _FrOkSession:
             def get(self, url, **kwargs):
-                if "state.gov" in url:
-                    return _HtmlResponse(empty_listing_html)
                 if "federalregister.gov" in url and "documents.json" in url:
                     return _JsonResponse({
                         "results": [{
@@ -1172,41 +1207,12 @@ class TestPostRedTeamAmendments:
                 raise AssertionError(f"unexpected fetch: {url}")
 
         rc = live.run_fms_acquisition(
-            root=tmp_path, store=None, session=_EmptyButOkListingSession(),
-            observed_at=RECEIPT_AT, staged_dir=(FIXTURES / "dsca").resolve(),
+            root=tmp_path, store=None, session=_FrOkSession(),
+            observed_at=RECEIPT_AT, staged_dir=staged,
             publication_from="2026-01-01", publication_through="2026-08-25",
         )
-        assert rc == 0
-        graph = json.loads((tmp_path / "data" / "government_revenue" / "fms_case_graph.json").read_text())
-        state_source = graph["coverage"]["sources"]["state_pm_bureau"]
-        assert state_source["status"] == "ok"
-        assert state_source["qualifying_articles"] == 0
-
-        class _FailingListingSession:
-            def get(self, url, **kwargs):
-                if "state.gov" in url:
-                    raise ConnectionError("simulated State outage")
-                if "federalregister.gov" in url and "documents.json" in url:
-                    return _JsonResponse({
-                        "results": [{
-                            "document_number": "2026-07278",
-                            "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/x/2026-07278.txt",
-                        }],
-                    })
-                if "2026-07278.txt" in url:
-                    return _TextResponse(_read_bytes("fr/2026-07278.txt"))
-                raise AssertionError(f"unexpected fetch: {url}")
-
-        rc2 = live.run_fms_acquisition(
-            root=tmp_path / "second", store=None, session=_FailingListingSession(),
-            observed_at=RECEIPT_AT, staged_dir=(FIXTURES / "dsca").resolve(),
-            publication_from="2026-01-01", publication_through="2026-08-25",
-        )
-        assert rc2 == 0
-        graph2 = json.loads((tmp_path / "second" / "data" / "government_revenue" / "fms_case_graph.json").read_text())
-        state_source2 = graph2["coverage"]["sources"]["state_pm_bureau"]
-        assert state_source2["status"] == "unavailable"
-        assert state_source2["qualifying_articles"] == 0
+        assert rc == 1  # sha-valid but zero-qualifying -> typed refusal
+        assert not (tmp_path / "data" / "government_revenue" / "fms_case_graph.json").exists()
 
     def test_m6_correction_with_letter_suffixed_bracket_is_excluded_not_crashed(self, tmp_path: Path) -> None:
         """spec §11b.9: a correction doc whose OWN bracket fails the numeric
@@ -1617,3 +1623,81 @@ class TestFrLagDenominatorPredicate:
                 observations=[in_scope_case, filler_fr, out_of_window_fr_obs],
                 **_base_graph_kwargs(fr_denominator_transmittals=["26-23", "26-5"]),
             )
+
+
+class TestProductionAmendments6b:
+    """§11c production amendments (2026-08-26), each pinned by the live
+    exemplar that motivated it: run 32952963771 (State edge variance) and
+    the published 26-13 case (country precedence shadowing)."""
+
+    def test_c1_customer_country_falls_through_a_none_web_parse_to_fr_purchaser(self) -> None:
+        """Production 26-13: the DSCA certification press release parses no
+        title-prefix country, and the old `elif` precedence silently
+        discarded the FR annex's "Kingdom of Saudi Arabia". Precedence is a
+        fall-through -- a web surface's None must never shadow a real FR
+        purchaser."""
+        case_key = fms.case_key_for_transmittal("31-9")
+        web_obs = _make_observation(
+            case_key=case_key, source_surface="dsca", kind="listing_article",
+            source_url="https://www.dsca.mil/x/31-9/", content=b"cert-pr",
+            fields={
+                "transmittal_number": "31-9", "identity_conflicted": False,
+                "customer_country": None, "title": None,
+                "official_notification_date": "2026-03-03", "official_web_publication_date": None,
+                "estimated_notification_value": None, "value_provenance": None,
+                "source_caveat": None, "contractors": [], "contractor_note": None,
+            },
+        )
+        fr_obs = _make_observation(
+            case_key=case_key, source_surface="federal_register", kind="fr_raw_text",
+            source_url="https://www.federalregister.gov/x/31-9/", content=b"fr-31-9",
+            fields={
+                "transmittal_number": "31-9", "identity_conflicted": False,
+                "customer_country": "Kingdom of Saudi Arabia",
+                "official_notification_date": "2026-03-01",
+                "estimated_notification_value": "9000000000",
+                "value_provenance": "fr_total_estimated_value",
+                "source_item_enumeration": "PAC-3 MSE missiles",
+                "source_caveat": None, "contractors": [], "contractor_note": None,
+            },
+        )
+        filler = _fr_observation("2026-07278", "https://www.federalregister.gov/d/2026-07278")
+        graph = fms_cases.build_fms_case_graph(
+            observations=[web_obs, fr_obs, filler],
+            **_base_graph_kwargs(fr_denominator_transmittals=["26-23", "31-9"]),
+        )
+        case = _case(graph, case_key)
+        assert case["customer_country"] == "Kingdom of Saudi Arabia"
+        assert case["capability_title"] is None  # title stays web-only (spec §4)
+        assert case["case_identity_state"] == "resolved"  # None is absence, not conflict
+
+    def test_c2_incomplete_staged_state_capture_refuses(self, tmp_path: Path) -> None:
+        """A staged listing entry with no staged article bytes would
+        silently shrink the presented surface -- typed refusal instead."""
+        staged = tmp_path / "staged"
+        shutil.copytree((FIXTURES / "dsca").resolve(), staged)
+        manifest_path = staged / live.STATE_STAGED_MANIFEST_NAME
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["articles"] = []  # listing still presents Sweden
+        manifest_path.write_text(json.dumps(manifest, indent=1, sort_keys=True), encoding="utf-8")
+        with pytest.raises(live.FmsStagedIntegrityFailed):
+            live.replay_staged_state_objects(staged, store=None, observed_at=RECEIPT_AT)
+
+    def test_c3_stage_state_refuses_to_capture_an_empty_live_listing(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """The capture CLI itself must refuse the exact bytes production
+        received (a listing parsing to zero qualifying entries) instead of
+        minting a staged-empty capture that CI would then replay."""
+        challenge = b"<html><body>Access Denied</body></html>"
+        monkeypatch.setattr(
+            live, "fetch_state_listing_page",
+            lambda page, session=None: live.FetchedResource(
+                source_url=live.STATE_LISTING_URL, final_url=live.STATE_LISTING_URL,
+                content=challenge, sha256=hashlib.sha256(challenge).hexdigest(),
+                content_type="text/html", http_status=200,
+            ),
+        )
+        rc = live.stage_state(["--staged-dir", str(tmp_path / "capture")])
+        assert rc == 1
+        assert not (tmp_path / "capture" / live.STATE_STAGED_MANIFEST_NAME).exists()

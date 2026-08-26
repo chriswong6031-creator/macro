@@ -16,6 +16,7 @@ fail-open local-store fallback anywhere in this module's production path.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import tempfile
@@ -384,6 +385,180 @@ def sweep_state_qualifying_articles(
 
 
 # ---------------------------------------------------------------------------
+# State PM-Bureau STAGED replay (production amendment §6b, 2026-08-26)
+#
+# The first production dispatch (run 32952963771) proved the live CLI leg
+# blind from a hosted runner: the same listing URL that presents 11
+# qualifying articles to a residential fetch served the datacenter runner
+# bytes that parse to ZERO, and the empty_valid law then published
+# `status: ok, qualifying_articles: 0` with no byte receipt. In CI the
+# State family therefore acquires exactly like DSCA: sha-frozen staged
+# bytes captured from a residential CLI (`stage-state` below), replayed
+# with R2 put + strict readback. A staged listing that parses to zero
+# qualifying entries is a STAGING ERROR and refuses -- the ok-with-zero
+# hole is closed; "the surface really is empty" must be proven by staging
+# the listing bytes that show it, and those bytes then fail the
+# >=1-qualifying check only when genuinely empty, which flips this refusal
+# into the one deliberate exception below.
+# ---------------------------------------------------------------------------
+
+STATE_STAGED_MANIFEST_NAME = "state_manifest.json"
+STATE_STAGED_TRANSPORT = "cli_residential_staged"
+# The capture UA is part of the staging tool's provenance (recorded in the
+# manifest): state.gov's edge serves the python-requests default UA a
+# challenge page that parses to zero entries even from a residential
+# network, while a mainstream desktop UA receives the real listing. The
+# production path never uses this -- CI replays the sha-frozen bytes.
+STATE_CAPTURE_USER_AGENT = (
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/127.0 Safari/537.36"
+)
+
+
+def load_staged_state_manifest(staged_dir: Path) -> dict[str, Any]:
+    manifest_path = staged_dir / STATE_STAGED_MANIFEST_NAME
+    if not manifest_path.is_file():
+        raise FmsStagedIntegrityFailed(
+            f"staged State manifest not found: {manifest_path} -- run "
+            "`python3 -m collectors.fms_notifications_live stage-state` from a "
+            "residential network and commit the capture"
+        )
+    return json.loads(manifest_path.read_text(encoding="utf-8"))
+
+
+def replay_staged_state_objects(
+    staged_dir: Path, *, store: Store | None, observed_at: str | datetime,
+) -> tuple[list[tuple[dict[str, Any], dict[str, Any], str]], int]:
+    """Verify + durably replay the staged State capture.
+
+    Returns ``([(receipt, parsed_fields, source_url), ...], listing_pages)``.
+    Refusals (all ``FmsStagedIntegrityFailed``): missing manifest, any sha
+    mismatch, a staged listing that parses to zero qualifying entries, or a
+    listing entry with no staged article bytes (an incomplete capture would
+    silently shrink the presented surface).
+    """
+    manifest = load_staged_state_manifest(staged_dir)
+    listing = manifest["listing"]
+    listing_bytes = verify_staged_bytes(
+        staged_dir, local_path=listing["local_path"], expected_sha256=listing["sha256"],
+    )
+    entries = fms.parse_state_listing(listing_bytes.decode("utf-8", errors="replace"))
+    qualifying = [entry for entry in entries if entry["is_qualifying"]]
+    if not qualifying:
+        raise FmsStagedIntegrityFailed(
+            "staged State listing parses to zero qualifying entries -- an empty "
+            "staged capture is a staging error, never a publishable empty surface"
+        )
+    staged_by_url = {article["url"]: article for article in manifest.get("articles", [])}
+    missing = [e["source_url"] for e in qualifying if e["source_url"] not in staged_by_url]
+    if missing:
+        raise FmsStagedIntegrityFailed(
+            f"staged State capture is incomplete -- listing presents {len(missing)} "
+            f"qualifying article(s) with no staged bytes: {missing[:3]}"
+        )
+    pairs: list[tuple[dict[str, Any], dict[str, Any], str]] = []
+    for entry in qualifying:
+        article = staged_by_url[entry["source_url"]]
+        content = verify_staged_bytes(
+            staged_dir, local_path=article["local_path"], expected_sha256=article["sha256"],
+        )
+        fields = fms.parse_state_article(
+            content.decode("utf-8", errors="replace"), source_url=article["url"],
+        )
+        r2_key = None
+        if store is not None:
+            r2_key = put_and_verify_object(store, content, ext="html")
+        receipt = fms.build_receipt(
+            source_url=article["url"], final_url=article.get("final_url", article["url"]),
+            content=content, publisher=FR_STATE_PUBLISHER, transport=STATE_STAGED_TRANSPORT,
+            content_type="text/html", http_status=int(article.get("http_status", 200)),
+            observed_at=observed_at, extractor_version=FMS_STATE_EXTRACTOR_VERSION,
+            parser_version=FMS_STATE_PARSER_VERSION, r2_object_key=r2_key,
+        )
+        pairs.append((receipt, fields, article["url"]))
+    return pairs, 1
+
+
+def stage_state(argv: list[str] | None = None) -> int:
+    """Capture the live State presentation into the staged-objects dir.
+
+    Run from a RESIDENTIAL network (the Mac), never from CI: fetches the
+    listing plus every qualifying article over the ordinary CLI transport,
+    writes their bytes next to the DSCA staged objects, and rewrites
+    ``state_manifest.json`` with per-file sha256s. Refuses to stage a
+    capture whose listing parses to zero qualifying entries.
+    """
+    parser = argparse.ArgumentParser(prog="fms-stage-state")
+    parser.add_argument(
+        "--staged-dir",
+        default="data/government_revenue/fms_staged_objects",
+        help="directory holding the committed staged objects + manifests",
+    )
+    args = parser.parse_args(argv)
+    staged_dir = Path(args.staged_dir).resolve()
+    staged_dir.mkdir(parents=True, exist_ok=True)
+
+    import requests as _requests
+
+    capture_session = _requests.Session()
+    capture_session.headers.update({
+        "User-Agent": STATE_CAPTURE_USER_AGENT,
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+    })
+    captured_at = datetime.now(timezone.utc).isoformat()
+    listing_fetched = fetch_state_listing_page(1, session=capture_session)
+    entries = fms.parse_state_listing(listing_fetched.content.decode("utf-8", errors="replace"))
+    qualifying = [entry for entry in entries if entry["is_qualifying"]]
+    if not qualifying:
+        print(
+            "::error title=fms-stage-state::live State listing parsed to zero "
+            "qualifying entries -- refusing to stage an empty capture",
+            flush=True,
+        )
+        return 1
+    listing_name = "state-listing.html"
+    (staged_dir / listing_name).write_bytes(listing_fetched.content)
+    manifest: dict[str, Any] = {
+        "kind": "fms_state_staged_v1",
+        "captured_at": captured_at,
+        "transport": "cli_residential",
+        "user_agent": STATE_CAPTURE_USER_AGENT,
+        "listing": {
+            "url": listing_fetched.source_url,
+            "final_url": listing_fetched.final_url,
+            "http_status": listing_fetched.http_status,
+            "local_path": listing_name,
+            "sha256": hashlib.sha256(listing_fetched.content).hexdigest(),
+        },
+        "articles": [],
+    }
+    for entry in qualifying:
+        fetched = fetch_state_article(entry["source_url"], session=capture_session)
+        slug = entry["source_url"].rstrip("/").rsplit("/", 1)[-1][:80] or "article"
+        local_name = f"state-{slug}.html"
+        (staged_dir / local_name).write_bytes(fetched.content)
+        manifest["articles"].append({
+            "url": entry["source_url"],
+            "final_url": fetched.final_url,
+            "http_status": fetched.http_status,
+            "local_path": local_name,
+            "sha256": hashlib.sha256(fetched.content).hexdigest(),
+        })
+        print(f"staged {local_name} ({len(fetched.content)} bytes)", flush=True)
+    manifest_path = staged_dir / STATE_STAGED_MANIFEST_NAME
+    manifest_path.write_text(
+        json.dumps(manifest, indent=1, sort_keys=True) + "\n", encoding="utf-8",
+    )
+    print(
+        f"staged State capture: {len(manifest['articles'])} article(s) + listing "
+        f"-> {manifest_path}",
+        flush=True,
+    )
+    return 0
+
+
+# ---------------------------------------------------------------------------
 # Federal Register API sweep + raw-text fetch
 # ---------------------------------------------------------------------------
 
@@ -573,51 +748,34 @@ def run_fms_acquisition(
         print(f"::error title=fms-dsca-staged-refused::{exc}", flush=True)
         return 1
 
-    # --- State listing + articles ---
+    # --- State STAGED replay (production amendment §6b, 2026-08-26) ---
+    # The live CLI sweep proved blind from a hosted runner (run 32952963771:
+    # the listing that presents 11 qualifying articles to a residential
+    # fetch parsed to ZERO from the datacenter, and empty_valid published
+    # `ok` with no byte receipt). CI replays the sha-frozen residential
+    # capture instead -- same fail-closed discipline as the DSCA leg; the
+    # live sweep survives only inside the `stage-state` capture CLI.
     try:
-        qualifying, state_listing_pages = sweep_state_qualifying_articles(session=session)
-        state_qualifying_articles = len(qualifying)
-        for entry in qualifying:
-            # Partial-failure law (spec §11b.5): one bad article fetch never
-            # aborts the sweep -- record it and keep acquiring the rest. Only
-            # a TOTAL listing failure (the sweep call itself raising, caught
-            # by the outer except below) is "unavailable".
-            try:
-                fetched = fetch_state_article(entry["source_url"], session=session)
-                fields = fms.parse_state_article(
-                    fetched.content.decode("utf-8", errors="replace"), source_url=entry["source_url"],
-                )
-                case_key = (
-                    fms.case_key_for_transmittal(fields["transmittal_number"])
-                    if fields["transmittal_number"] and not fields["identity_conflicted"]
-                    else fms.case_key_fallback(entry["source_url"])
-                )
-                receipt = fms.build_receipt(
-                    source_url=fetched.source_url, final_url=fetched.final_url, content=fetched.content,
-                    publisher=FR_STATE_PUBLISHER, transport="cli", content_type=fetched.content_type,
-                    http_status=fetched.http_status, observed_at=observed_at,
-                    extractor_version=FMS_STATE_EXTRACTOR_VERSION, parser_version=FMS_STATE_PARSER_VERSION,
-                    r2_object_key=None,
-                )
-            except FmsFetchRefused as exc:
-                state_articles_failed += 1
-                print(
-                    f"::warning title=fms-state-article-refused::{entry['source_url']}: {exc}",
-                    flush=True,
-                )
-                continue
+        state_pairs, state_listing_pages = replay_staged_state_objects(
+            staged_dir, store=store, observed_at=observed_at,
+        )
+        state_qualifying_articles = len(state_pairs)
+        for receipt, fields, source_url in state_pairs:
+            case_key = (
+                fms.case_key_for_transmittal(fields["transmittal_number"])
+                if fields["transmittal_number"] and not fields["identity_conflicted"]
+                else fms.case_key_fallback(source_url)
+            )
             state_articles_succeeded += 1
             _append_new_receipt(new_receipts, existing_receipts, receipt)
             new_observations.append(fms.build_observation(
                 case_key=case_key, source_surface="state", kind="listing_article",
                 receipt=receipt, known_at=observed_at, version=1, fields=fields,
             ))
-        # listing ok + >=1 article failed -> partial; listing ok + zero
-        # failures (including the empty_valid zero-qualifying case) -> ok.
-        state_status = "ok" if state_articles_failed == 0 else "partial"
-    except FmsFetchRefused as exc:
-        print(f"::warning title=fms-state-source-unavailable::{exc}", flush=True)
-        state_status = "unavailable"
+        state_status = "ok"
+    except (FmsStagedIntegrityFailed, OSError, ValueError) as exc:
+        print(f"::error title=fms-state-staged-refused::{exc}", flush=True)
+        return 1
 
     # --- Federal Register sweep ---
     try:
@@ -793,7 +951,11 @@ def acquire(argv: list[str] | None = None) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    return acquire(argv)
+    import sys
+    args = list(sys.argv[1:]) if argv is None else list(argv)
+    if args and args[0] == "stage-state":
+        return stage_state(args[1:])
+    return acquire(args)
 
 
 if __name__ == "__main__":
