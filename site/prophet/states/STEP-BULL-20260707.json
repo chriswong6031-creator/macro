@@ -1,30 +1,30 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "STEP-BULL-20260707",
-  "asof": "2026-08-24",
+  "asof": "2026-08-25",
   "phase": "at_t1",
   "detection_phase": "at_t1",
-  "management_confidence": 69.8,
-  "raw_confidence": 68.0,
-  "delta_vs_base": 9.8,
+  "management_confidence": 70.4,
+  "raw_confidence": 71.2,
+  "delta_vs_base": 10.4,
   "recommended_action": "hold",
   "human_state": "T1 Hit \u2014 Holding",
   "components": {
     "validity": 100.0,
-    "progress": 59.0,
-    "pace": 53.2,
-    "retention": 67.7,
-    "overlay": 61.0
+    "progress": 60.9,
+    "pace": 58.4,
+    "retention": 74.4,
+    "overlay": 67.0
   },
   "geometry": {
-    "dist_to_stop_r": 2.14,
-    "dist_to_t1_r": 0.36,
-    "dist_to_t2_r": 1.86,
-    "horizon_pct_used": 88.9,
-    "p1": 0.76,
-    "p2": 0.38,
+    "dist_to_stop_r": 2.252,
+    "dist_to_t1_r": 0.248,
+    "dist_to_t2_r": 1.748,
+    "horizon_pct_used": 91.1,
+    "p1": 0.835,
+    "p2": 0.4175,
     "p3": null,
-    "move_r": 1.14,
+    "move_r": 1.252,
     "mfe_r": 1.684,
     "mae_r": -0.231
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-15",
   "_first_t1_ts": "2026-08-13",
   "_first_t2_ts": null,
-  "days_elapsed": 40,
-  "tau": 0.8889
+  "days_elapsed": 41,
+  "tau": 0.9111
 }

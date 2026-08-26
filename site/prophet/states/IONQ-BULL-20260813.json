@@ -1,36 +1,36 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "IONQ-BULL-20260813",
-  "asof": "2026-08-24",
+  "asof": "2026-08-25",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 53.8,
-  "raw_confidence": 48.8,
-  "delta_vs_base": -6.2,
+  "management_confidence": 51.9,
+  "raw_confidence": 49.6,
+  "delta_vs_base": -8.1,
   "recommended_action": "hold",
   "human_state": "Needs Follow-Through",
   "components": {
-    "validity": 71.4,
+    "validity": 78.4,
     "progress": 0.0,
-    "pace": 70.5,
+    "pace": 64.7,
     "retention": 50.0,
-    "overlay": 61.0
+    "overlay": 67.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.779,
+    "dist_to_stop_r": 0.835,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 24.4,
-    "p1": -0.1473,
-    "p2": -0.0737,
+    "horizon_pct_used": 26.7,
+    "p1": -0.1101,
+    "p2": -0.0551,
     "p3": null,
-    "move_r": -0.221,
+    "move_r": -0.165,
     "mfe_r": 0.105,
     "mae_r": -0.221
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Weakening",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-17",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 11,
-  "tau": 0.2444
+  "days_elapsed": 12,
+  "tau": 0.2667
 }

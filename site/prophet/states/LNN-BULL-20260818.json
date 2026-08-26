@@ -1,36 +1,36 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "LNN-BULL-20260818",
-  "asof": "2026-08-24",
+  "asof": "2026-08-25",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
-  "management_confidence": 68.0,
-  "raw_confidence": 68.0,
-  "delta_vs_base": 8.0,
+  "management_confidence": 65.6,
+  "raw_confidence": 62.6,
+  "delta_vs_base": 5.6,
   "recommended_action": "wait",
   "human_state": "Awaiting Trigger",
   "components": {
-    "validity": 100.0,
-    "progress": 0.6,
-    "pace": 99.9,
+    "validity": 81.2,
+    "progress": 0.0,
+    "pace": 98.5,
     "retention": 50.0,
-    "overlay": 58.0
+    "overlay": 55.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.003,
-    "dist_to_t1_r": 1.497,
-    "dist_to_t2_r": 2.997,
-    "horizon_pct_used": 6.7,
-    "p1": 0.0019,
-    "p2": 0.0009,
+    "dist_to_stop_r": 0.857,
+    "dist_to_t1_r": 1.5,
+    "dist_to_t2_r": 3.0,
+    "horizon_pct_used": 8.9,
+    "p1": -0.0952,
+    "p2": -0.0476,
     "p3": null,
-    "move_r": 0.003,
+    "move_r": -0.143,
     "mfe_r": 0.003,
-    "mae_r": -0.002
+    "mae_r": -0.143
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "",
+  "change_reason": "Moving Away from Stop",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -40,11 +40,11 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 0.03999786376952841,
-  "_mae": -0.030001831054690342,
+  "_mae": -2.0300018310546903,
   "_max_p1": 0.0018751928630815007,
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 3,
-  "tau": 0.0667
+  "days_elapsed": 4,
+  "tau": 0.0889
 }

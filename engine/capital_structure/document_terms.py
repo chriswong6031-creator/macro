@@ -2889,6 +2889,56 @@ def _self_check_parser_registry() -> None:
             )
 
 
+def _validate_observation_source_dependency_core(
+    record: Mapping[str, Any],
+    manifest: Mapping[str, Any],
+) -> None:
+    """Validate the deterministic dependency identity without reading source bytes.
+
+    ``manifest_id`` is the closed manifest/evidence identity and binds the
+    retained content digest, source occurrence, filing identity, parser input,
+    and storage locator.  The document-term row additionally closes the exact
+    source digest and every mirrored filing field.  Reuse is therefore legal
+    only while this complete dependency tuple and the registered parser version
+    remain unchanged; a new/corrected manifest or parser version is selected for
+    materialization and passes the retained-byte source gate below.
+    """
+    manifest_id = str(manifest.get("manifest_id") or "")
+    filing = record.get("filing") or {}
+    manifest_filing = manifest.get("filing") or {}
+    document = record.get("document") or {}
+    manifest_document = manifest.get("document") or {}
+    evidence = record.get("evidence") or {}
+    expected_pairs = (
+        (record.get("issuer_id"), (manifest.get("issuer") or {}).get("issuer_id"), "issuer_id"),
+        (filing.get("accession"), manifest_filing.get("accession"), "filing.accession"),
+        (filing.get("form"), manifest_filing.get("form"), "filing.form"),
+        (filing.get("filing_date"), manifest_filing.get("filing_date"), "filing.filing_date"),
+        (filing.get("accepted_at"), manifest_filing.get("accepted_at"), "filing.accepted_at"),
+        (document.get("source_manifest_id"), manifest_id, "document.source_manifest_id"),
+        (document.get("source_id"), manifest.get("source_id"), "document.source_id"),
+        (document.get("canonical_url"), manifest_document.get("canonical_url"), "document.canonical_url"),
+        (str(document.get("content_sha256") or "").lower(), str(manifest_document.get("content_sha256") or "").lower(), "document.content_sha256"),
+        (evidence.get("source_manifest_id"), manifest_id, "evidence.source_manifest_id"),
+        (str(evidence.get("source_document_sha256") or "").lower(), str(manifest_document.get("content_sha256") or "").lower(), "evidence.source_document_sha256"),
+    )
+    for actual, expected, label in expected_pairs:
+        if actual != expected:
+            raise ValueError(
+                f"document term {label} is detached from source dependency"
+            )
+    if str(manifest_document.get("document_role") or "") != "complete_submission":
+        raise ValueError("document term source dependency is not a complete submission")
+    manifest_source_time = _iso(
+        (manifest.get("retrieval") or {}).get("first_seen_at"),
+        "manifest.retrieval.first_seen_at",
+    )
+    if (record.get("point_in_time") or {}).get("source_available_at") != manifest_source_time:
+        raise ValueError(
+            "document term source_available_at is detached from source dependency"
+        )
+
+
 def _validate_observation_source_binding_core(
     record: Mapping[str, Any],
     manifest: Mapping[str, Any],
@@ -3420,6 +3470,20 @@ def _compile_document_term_records_core(
         existing, parser_resolver=parser_resolver,
     )
 
+    manifests_by_id = {
+        str(manifest["manifest_id"]): manifest for manifest in manifest_rows
+    }
+    for index, source in enumerate(existing):
+        manifest_id = str(
+            (source.get("document") or {}).get("source_manifest_id") or ""
+        )
+        manifest = manifests_by_id.get(manifest_id)
+        if manifest is None:
+            raise ValueError(
+                f"document term row {index} source dependency manifest is absent"
+            )
+        _validate_observation_source_dependency_core(source, manifest)
+
     current_by_logical: dict[str, Mapping[str, Any]] = {}
     for record in existing:
         logical = str(record["logical_observation_id"])
@@ -3431,14 +3495,21 @@ def _compile_document_term_records_core(
     current_by_manifest: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
     for prior in current_by_logical.values():
         current_by_manifest[str((prior.get("document") or {}).get("source_manifest_id") or "")].append(prior)
+    parser_invalidated_manifest_ids = {
+        str(manifest["manifest_id"])
+        for manifest in selected
+        if current_by_manifest.get(str(manifest["manifest_id"]))
+        and any(
+            str((prior.get("extraction") or {}).get("parser_version") or "")
+            != active_parser_version
+            for prior in current_by_manifest[str(manifest["manifest_id"])]
+        )
+    }
     materialize = [
         manifest for manifest in selected
         if rebuild
         or not current_by_manifest.get(str(manifest["manifest_id"]))
-        or any(
-            str((prior.get("extraction") or {}).get("parser_version") or "") != active_parser_version
-            for prior in current_by_manifest[str(manifest["manifest_id"])]
-        )
+        or str(manifest["manifest_id"]) in parser_invalidated_manifest_ids
     ]
     failures: list[dict[str, Any]] = []
     source_bytes: dict[str, bytes] = {}
@@ -3493,19 +3564,34 @@ def _compile_document_term_records_core(
     _validate_document_term_records_contract(
         output, label="document-term compiler output",
     )
-    _validate_document_term_source_authority_core(
-        output,
-        source_manifests=manifest_rows,
-        source_reader=source_reader,
-        parser_resolver=parser_resolver,
-        policy=policy,
-    )
+    # Incremental publication trusts only rows whose exact closed manifest,
+    # retained-content digest, evidence identity and registered parser version
+    # were admitted above.  New/corrected/parser-invalidated roots pass the
+    # retained-byte source gate candidate-by-candidate while materializing.
+    # ``--rebuild`` deliberately keeps the expensive whole-ledger source audit
+    # as the byte/semantic parity authority; nightly no-op reuse never performs
+    # that estate-wide R2 reread.
+    if rebuild:
+        _validate_document_term_source_authority_core(
+            output,
+            source_manifests=manifest_rows,
+            source_reader=source_reader,
+            parser_resolver=parser_resolver,
+            policy=policy,
+        )
     return {
         "observations": output,
         "new_observations": incoming,
         "counts": {
             "eligible_complete_submissions": len(selected),
             "processed_complete_submissions": len(materialize),
+            "reused_complete_submissions": len(selected) - len(materialize),
+            "source_reads": len(materialize),
+            "dependency_validated_observations": len(existing),
+            "source_validated_observations": (
+                len(output) if rebuild else len(incoming)
+            ),
+            "parser_version_invalidations": len(parser_invalidated_manifest_ids),
             "observations": len(output),
             "new_observations": len(incoming),
             "unchanged_observations": unchanged,
@@ -3678,12 +3764,12 @@ def _authority_policy_entrypoints() -> tuple[SemanticEntrypoint, ...]:
 #   4. Import the real module to confirm the startup self-check passes, and
 #      re-check the digests on every reviewed runtime -- they are portable
 #      across CPython 3.12 patch releases by design.
-_AUTHORITY_POLICY_DEPENDENCY_COUNT = 426
+_AUTHORITY_POLICY_DEPENDENCY_COUNT = 432
 _AUTHORITY_POLICY_DEPENDENCY_MANIFEST_SHA256 = (
-    "52b07cecee3990eba3d059ad5cce51f5d1b75a1d278af06db13a56bacbaee23a"
+    "ce4537defd873c1f1406ea8b4e3709ef0e33c8e034c9d6c2b632b3af546c0425"
 )
 _AUTHORITY_POLICY_IMPLEMENTATION_SHA256 = (
-    "a5f1ef92d101b0028d234219247613b7812350e9938a768f606ceade9d3db4ba"
+    "b08d50df113550f4faea3ff676e48718355e04b95c89b5b1a7ff53ae4e09b32f"
 )
 
 _AUTHORITY_POLICY = _AuthorityPolicy(

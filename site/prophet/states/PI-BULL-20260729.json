@@ -1,30 +1,30 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "PI-BULL-20260729",
-  "asof": "2026-08-24",
+  "asof": "2026-08-25",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 54.1,
-  "raw_confidence": 52.1,
-  "delta_vs_base": -5.9,
+  "management_confidence": 54.6,
+  "raw_confidence": 55.1,
+  "delta_vs_base": -5.4,
   "recommended_action": "hold",
   "human_state": "Needs Follow-Through",
   "components": {
     "validity": 100.0,
-    "progress": 17.7,
-    "pace": 22.1,
+    "progress": 22.6,
+    "pace": 27.1,
     "retention": 50.0,
-    "overlay": 61.0
+    "overlay": 67.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.249,
-    "dist_to_t1_r": 1.251,
-    "dist_to_t2_r": 2.751,
-    "horizon_pct_used": 55.6,
-    "p1": 0.1658,
-    "p2": 0.0829,
+    "dist_to_stop_r": 1.345,
+    "dist_to_t1_r": 1.155,
+    "dist_to_t2_r": 2.655,
+    "horizon_pct_used": 57.8,
+    "p1": 0.2298,
+    "p2": 0.1149,
     "p3": null,
-    "move_r": 0.249,
+    "move_r": 0.345,
     "mfe_r": 0.66,
     "mae_r": -0.0
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-31",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 25,
-  "tau": 0.5556
+  "days_elapsed": 26,
+  "tau": 0.5778
 }

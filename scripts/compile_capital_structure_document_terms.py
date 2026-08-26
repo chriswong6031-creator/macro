@@ -35,7 +35,6 @@ from engine.capital_structure.document_terms import (
     DocumentTermCompileDegraded,
     compile_document_term_records,
     observation_id_for,
-    validate_observation_source_binding,
     validate_document_term_history,
 )  # noqa: E402
 from engine.capital_structure.source_identity import (
@@ -174,7 +173,6 @@ def _validate_observation_lineage(
     schema: Mapping[str, Any], *, source_reader,
 ) -> None:
     by_manifest = {str(row["manifest_id"]): row for row in manifests}
-    source_cache: dict[str, bytes | None] = {}
     for index, raw in enumerate(observations):
         observation = dict(raw)
         _validate_schema(observation, schema, f"output document-term {index}")
@@ -195,34 +193,12 @@ def _validate_observation_lineage(
             raise ValueError(f"output document-term {index} has detached source evidence")
         if (source_document.get("document_role") or "") != "complete_submission":
             raise ValueError(f"output document-term {index} source is not a complete submission")
-        # Every row is bound against its exact retained bytes, with no shape
-        # exempted. ``validate_observation_source_binding`` re-derives the
-        # manifest identity from the submission envelope before it looks at a
-        # single span, so it requires the bytes UNCONDITIONALLY -- a row whose
-        # only span is the document root is not a row that needs less proof, it
-        # is a row that has less to prove.
-        #
-        # This used to read the bytes only when a span was narrower than the
-        # whole document (`child_document_type`, or a table/text_range locator),
-        # and hand `None` in otherwise. That is the 2026-08-06 nightly abort:
-        # the four deferral branches in ``_records_for_manifest_v1_1_0``
-        # (manifest_corruption_not_clean, manifest_parser_not_eligible,
-        # eligible_document_not_found, and multi-document fee_table_not_detected)
-        # all emit root-span-only rows with no child document, so the binder was
-        # handed `None` and raised ManifestIdentityError("retained source bytes
-        # are required") from inside a validator this caller believed tolerated
-        # absence.
-        #
-        # Reading unconditionally costs nothing: ``compile_document_term_records``
-        # has already run the sealed source-authority pass over these same rows,
-        # which loads every referenced manifest through this same memoized
-        # reader. By the time this loop runs the bytes are a dict hit, not I/O.
-        if manifest_id not in source_cache:
-            source_cache[manifest_id] = source_reader(manifest)
-        source_bytes = source_cache[manifest_id]
-        if source_bytes is None:
-            raise ValueError(f"output document-term {index} source bytes are unavailable")
-        validate_observation_source_binding(observation, manifest, source_bytes)
+        # The sealed compiler has already source-validated every new, corrected,
+        # or parser-invalidated root before returning it.  Reused immutable rows
+        # are admitted only when this exact manifest/content dependency and the
+        # registered parser version remain unchanged.  Re-reading and reparsing
+        # every historical root here would duplicate that authority pass and
+        # make nightly cost scale with the full estate rather than the dirty set.
     validate_document_term_history(observations)
 
 

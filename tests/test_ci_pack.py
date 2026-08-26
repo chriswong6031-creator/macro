@@ -1900,12 +1900,11 @@ def test_build_plan_refuses_the_old_broken_main_dispatch_with_changed_from(
         )
 
 
-def test_attest_execution_profile_refuses_on_this_real_non_linux_host() -> None:
-    """Real, un-mocked function on the real (macOS) host — the frozen spec
-    requires at least one test exercising the genuine refusal path via
-    faked ``platform`` attrs, never by actually running on Linux. This one
-    needs no faking at all: this Mac is not Linux.
-    """
+def test_attest_execution_profile_refuses_on_a_non_linux_host(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The real guard refuses a deterministically simulated non-Linux host."""
+    monkeypatch.setattr(PACK.platform, "system", lambda: "Darwin")
     with pytest.raises(PACK.ExecutionProfileError, match="Linux"):
         PACK.attest_execution_profile(None)
 

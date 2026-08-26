@@ -3007,35 +3007,35 @@ class TushareAShareSpineCollector:
                 if not _unit_done(self.state, self.store, "trade_cal", unit):
                     retry = 1 if _unit_record(self.state, "trade_cal", unit) else 0
                     work.append((retry, -year, exchange, segment_start, segment_end))
-        for _, _, exchange, segment_start, segment_end in sorted(work):
-                unit = f"{exchange}:{_compact(segment_start)}:{_compact(segment_end)}"
-                response = self._call(
-                    "trade_cal", unit, exchange=exchange,
-                    start_date=_compact(segment_start), end_date=_compact(segment_end),
-                )
-                frame = response.frame
-                if frame is None:
-                    self._mark_failed(
-                        "trade_cal", unit, "vendor_unavailable_or_unlicensed",
-                        request_receipts=[response.receipt],
-                    )
-                    continue
-                try:
-                    normal = _normalise_calendar(frame, exchange, segment_start, segment_end)
-                except SpineError:
-                    self._mark_failed("trade_cal", unit, "calendar_contract_failed")
-                    raise
-                path = _calendar_partition(self.store, year)
-                rows, revised = _upsert_partition(
-                    path, normal, keys=KEY_COLUMNS["trade_calendar"],
-                )
-                _set_unit(
-                    self.state, self.store, "trade_cal", unit, status="complete",
-                    observed_at=self.observed_at, row_count=len(normal), source_row_count=len(frame),
-                    revised_key_count=revised, partition=path,
+        for _, neg_sort_year, exchange, segment_start, segment_end in sorted(work):
+            unit = f"{exchange}:{_compact(segment_start)}:{_compact(segment_end)}"
+            response = self._call(
+                "trade_cal", unit, exchange=exchange,
+                start_date=_compact(segment_start), end_date=_compact(segment_end),
+            )
+            frame = response.frame
+            if frame is None:
+                self._mark_failed(
+                    "trade_cal", unit, "vendor_unavailable_or_unlicensed",
                     request_receipts=[response.receipt],
                 )
-                log.debug("trade_cal %s landed (%d partition rows)", unit, rows)
+                continue
+            try:
+                normal = _normalise_calendar(frame, exchange, segment_start, segment_end)
+            except SpineError:
+                self._mark_failed("trade_cal", unit, "calendar_contract_failed")
+                raise
+            path = _calendar_partition(self.store, segment_start.year)
+            rows, revised = _upsert_partition(
+                path, normal, keys=KEY_COLUMNS["trade_calendar"],
+            )
+            _set_unit(
+                self.state, self.store, "trade_cal", unit, status="complete",
+                observed_at=self.observed_at, row_count=len(normal), source_row_count=len(frame),
+                revised_key_count=revised, partition=path,
+                request_receipts=[response.receipt],
+            )
+            log.debug("trade_cal %s landed (%d partition rows)", unit, rows)
         ready = all(
             _unit_done(
                 self.state, self.store, "trade_cal",

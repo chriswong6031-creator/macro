@@ -1,9 +1,9 @@
 {
   "schema": "news_event_calibration.v1",
   "is_context_only": true,
-  "asof": "2026-08-24",
-  "n_events_logged": 407,
-  "n_events_graded": 261,
+  "asof": "2026-08-25",
+  "n_events_logged": 413,
+  "n_events_graded": 265,
   "classes": [
     {
       "event_type": "activist_campaign",
@@ -21,7 +21,7 @@
     {
       "event_type": "bankruptcy_restructuring",
       "direction": "bearish",
-      "n": 6,
+      "n": 7,
       "n_graded": 5,
       "hit_5d": 0.4,
       "hit_21d": 1.0,
@@ -87,11 +87,11 @@
       "event_type": "earnings_result",
       "direction": "mixed",
       "n": 92,
-      "n_graded": 54,
+      "n_graded": 56,
       "hit_5d": 0.0,
       "hit_21d": 0.0,
-      "avg_rel_5d": 0.008999755144032921,
-      "avg_rel_21d": 0.007229044117647058,
+      "avg_rel_5d": 0.010039504960317459,
+      "avg_rel_21d": 0.0063992499999999996,
       "wilson_low_5d": null,
       "wilson_high_5d": null,
       "verdict": "context_only"
@@ -139,13 +139,13 @@
       "event_type": "litigation",
       "direction": "bearish",
       "n": 124,
-      "n_graded": 116,
-      "hit_5d": 0.46551724137931033,
-      "hit_21d": 0.358695652173913,
-      "avg_rel_5d": 0.004541097701149425,
-      "avg_rel_21d": 0.027455942028985506,
-      "wilson_low_5d": 0.377308,
-      "wilson_high_5d": 0.555937,
+      "n_graded": 118,
+      "hit_5d": 0.4576271186440678,
+      "hit_21d": 0.3548387096774194,
+      "avg_rel_5d": 0.005031197740112994,
+      "avg_rel_21d": 0.029220840501792113,
+      "wilson_low_5d": 0.37049,
+      "wilson_high_5d": 0.547437,
       "verdict": "context_only"
     },
     {
@@ -156,7 +156,7 @@
       "hit_5d": 0.0,
       "hit_21d": 0.0,
       "avg_rel_5d": -0.034045599999999995,
-      "avg_rel_21d": -0.09050716666666668,
+      "avg_rel_21d": -0.0905055,
       "wilson_low_5d": null,
       "wilson_high_5d": null,
       "verdict": "insufficient"
@@ -203,12 +203,12 @@
     {
       "event_type": "policy_trade_control",
       "direction": "mixed",
-      "n": 45,
+      "n": 47,
       "n_graded": 13,
       "hit_5d": 0.0,
       "hit_21d": 0.0,
-      "avg_rel_5d": -0.012899414835164835,
-      "avg_rel_21d": 0.036146285714285714,
+      "avg_rel_5d": -0.01298851862026862,
+      "avg_rel_21d": 0.03483594246031746,
       "wilson_low_5d": null,
       "wilson_high_5d": null,
       "verdict": "insufficient"
@@ -255,7 +255,7 @@
     {
       "event_type": "rating_change",
       "direction": "mixed",
-      "n": 5,
+      "n": 8,
       "n_graded": 5,
       "hit_5d": 0.0,
       "hit_21d": 0.0,
@@ -272,15 +272,15 @@
       "n_graded": 4,
       "hit_5d": 0.75,
       "hit_21d": 0.6666666666666666,
-      "avg_rel_5d": -0.017236374999999998,
-      "avg_rel_21d": -0.05867616666666667,
+      "avg_rel_5d": -0.0090145,
+      "avg_rel_21d": -0.033869888888888894,
       "wilson_low_5d": 0.300636,
       "wilson_high_5d": 0.954414,
       "verdict": "insufficient"
     }
   ],
   "reject_audit": {
-    "n_sampled": 829,
+    "n_sampled": 848,
     "n_graded": 0,
     "classes": []
   }

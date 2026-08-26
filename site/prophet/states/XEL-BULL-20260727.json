@@ -1,36 +1,36 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "XEL-BULL-20260727",
-  "asof": "2026-08-24",
+  "asof": "2026-08-25",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 48.1,
-  "raw_confidence": 46.7,
-  "delta_vs_base": -11.9,
+  "management_confidence": 46.5,
+  "raw_confidence": 44.5,
+  "delta_vs_base": -13.5,
   "recommended_action": "hold",
   "human_state": "Needs Follow-Through",
   "components": {
-    "validity": 61.3,
+    "validity": 58.2,
     "progress": 0.0,
-    "pace": 70.5,
+    "pace": 64.7,
     "retention": 50.0,
-    "overlay": 67.0
+    "overlay": 64.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.696,
+    "dist_to_stop_r": 0.67,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 24.4,
-    "p1": -0.203,
-    "p2": -0.1015,
+    "horizon_pct_used": 26.7,
+    "p1": -0.2202,
+    "p2": -0.1101,
     "p3": null,
-    "move_r": -0.304,
+    "move_r": -0.33,
     "mfe_r": 0.079,
     "mae_r": -0.494
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Macro Tailwind",
+  "change_reason": "Weakening",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-13",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 11,
-  "tau": 0.2444
+  "days_elapsed": 12,
+  "tau": 0.2667
 }

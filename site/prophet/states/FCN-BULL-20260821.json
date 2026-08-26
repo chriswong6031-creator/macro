@@ -1,36 +1,36 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "FCN-BULL-20260821",
-  "asof": "2026-08-24",
+  "asof": "2026-08-25",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 62.4,
-  "raw_confidence": 62.0,
-  "delta_vs_base": 2.4,
+  "management_confidence": 59.3,
+  "raw_confidence": 55.4,
+  "delta_vs_base": -0.7,
   "recommended_action": "hold",
   "human_state": "Needs Follow-Through",
   "components": {
-    "validity": 98.8,
+    "validity": 73.2,
     "progress": 0.0,
-    "pace": 99.7,
+    "pace": 98.5,
     "retention": 50.0,
-    "overlay": 64.0
+    "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.991,
+    "dist_to_stop_r": 0.794,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 6.7,
-    "p1": -0.0062,
-    "p2": -0.0031,
+    "horizon_pct_used": 8.9,
+    "p1": -0.1374,
+    "p2": -0.0687,
     "p3": null,
-    "move_r": -0.009,
+    "move_r": -0.206,
     "mfe_r": 0.002,
-    "mae_r": -0.009
+    "mae_r": -0.206
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "",
+  "change_reason": "Ahead of Schedule",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -40,11 +40,11 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 0.04000549316407387,
-  "_mae": -0.17999572753905113,
+  "_mae": -4.020007324218739,
   "_max_p1": 0.0013670081381880693,
   "_first_trigger_ts": "2026-08-21",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 3,
-  "tau": 0.0667
+  "days_elapsed": 4,
+  "tau": 0.0889
 }

@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-08-26T02:19:44.431078+00:00",
+  "generated_utc": "2026-08-26T05:51:37.683264+00:00",
   "as_of": "2026-08-26",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -6988,6 +6988,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "LRHC",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
         "ticker": "SBDS",
         "category": "Delistings",
         "confidence": "high",
@@ -7653,14 +7661,6 @@
       },
       {
         "ticker": "CP8",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
-      },
-      {
-        "ticker": "D",
         "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
@@ -8533,11 +8533,11 @@
       },
       {
         "ticker": "FTHM",
-        "category": "Acquisitions",
+        "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Acquisitions"
+        "detail": "Delistings"
       },
       {
         "ticker": "OPTU",
@@ -8941,11 +8941,11 @@
       },
       {
         "ticker": "BRTX",
-        "category": "Activist Campaigns",
+        "category": "Delistings",
         "confidence": "high",
-        "activist": true,
+        "activist": false,
         "filer": null,
-        "detail": "Activist Campaigns"
+        "detail": "Delistings"
       },
       {
         "ticker": "FIG",
@@ -10733,11 +10733,11 @@
       },
       {
         "ticker": "MSS",
-        "category": "Divestitures",
+        "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Divestitures"
+        "detail": "Delistings"
       },
       {
         "ticker": "NLFSK",
@@ -14912,7 +14912,7 @@
         "category": "Activist Campaigns",
         "confidence": "high",
         "activist": true,
-        "filer": "ATG Capital Opportunities Fund LP",
+        "filer": null,
         "detail": "Activist Campaigns"
       },
       {
@@ -17836,14 +17836,6 @@
         "detail": "Acquisitions"
       },
       {
-        "ticker": "NEE-PS",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
-      },
-      {
         "ticker": "PDSB",
         "category": "Delistings",
         "confidence": "high",
@@ -18004,15 +17996,15 @@
         "detail": "Divestitures"
       },
       {
-        "ticker": "BGMSP",
-        "category": "Acquisitions",
+        "ticker": "QSEAU",
+        "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Acquisitions"
+        "detail": "Delistings"
       },
       {
-        "ticker": "DKS",
+        "ticker": "BGMSP",
         "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
@@ -18333,11 +18325,11 @@
       },
       {
         "ticker": "TWOD",
-        "category": "Acquisitions",
+        "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Acquisitions"
+        "detail": "Delistings"
       },
       {
         "ticker": "VRRM",
@@ -18562,14 +18554,6 @@
         "activist": false,
         "filer": null,
         "detail": "Divestitures"
-      },
-      {
-        "ticker": "ZOOZW",
-        "category": "Strategic Reviews",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Strategic Reviews"
       },
       {
         "ticker": "BHR-PD",
@@ -19476,14 +19460,6 @@
         "detail": "Divestitures"
       },
       {
-        "ticker": "OILU",
-        "category": "Divestitures",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Divestitures"
-      },
-      {
         "ticker": "EHLD",
         "category": "Acquisitions",
         "confidence": "high",
@@ -19557,6 +19533,14 @@
       },
       {
         "ticker": "EFC-PD",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
+        "ticker": "DVLT",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
@@ -20028,14 +20012,6 @@
         "detail": "Acquisitions"
       },
       {
-        "ticker": "SLFQF",
-        "category": "Tender Offers",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Tender Offers"
-      },
-      {
         "ticker": "AZTR",
         "category": "Delistings",
         "confidence": "high",
@@ -20106,14 +20082,6 @@
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
-      },
-      {
-        "ticker": "DTSQU",
-        "category": "Delistings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Delistings"
       },
       {
         "ticker": "UUUU",
@@ -20957,11 +20925,11 @@
       },
       {
         "ticker": "AFJKU",
-        "category": "Deal Terminations",
+        "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Deal Terminations"
+        "detail": "Delistings"
       },
       {
         "ticker": "HHH",
@@ -21284,14 +21252,6 @@
         "detail": "Delistings"
       },
       {
-        "ticker": "TTE",
-        "category": "Divestitures",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Divestitures"
-      },
-      {
         "ticker": "UCFIW",
         "category": "Delistings",
         "confidence": "high",
@@ -21429,11 +21389,11 @@
       },
       {
         "ticker": "BRNS",
-        "category": "Acquisitions",
+        "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Acquisitions"
+        "detail": "Delistings"
       },
       {
         "ticker": "EVF",
@@ -22186,6 +22146,14 @@
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
+      },
+      {
+        "ticker": "LXU",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
       },
       {
         "ticker": "NNUP",
@@ -24490,6 +24458,38 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "NBND",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
+        "ticker": "GDEVW",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
+        "ticker": "BSAAU",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
+        "ticker": "RGEN",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       }
     ],
     "unusual_options": [
@@ -24736,7 +24736,7 @@
         "ticker": "CTSH",
         "net_up_30d": 25,
         "breadth": 1.0,
-        "est_chg_30d": 2.12,
+        "est_chg_30d": 2.06,
         "n_analysts": 25,
         "bull_ratio": 1.0,
         "rising": true,
@@ -24832,6 +24832,17 @@
         "hot": true
       },
       {
+        "ticker": "RTX",
+        "net_up_30d": 22,
+        "breadth": 1.0,
+        "est_chg_30d": 3.53,
+        "n_analysts": 22,
+        "bull_ratio": 1.0,
+        "rising": true,
+        "revision_delta": 22,
+        "hot": true
+      },
+      {
         "ticker": "CARR",
         "net_up_30d": 22,
         "breadth": 1.0,
@@ -24846,18 +24857,7 @@
         "ticker": "CSX",
         "net_up_30d": 22,
         "breadth": 1.0,
-        "est_chg_30d": 3.68,
-        "n_analysts": 22,
-        "bull_ratio": 1.0,
-        "rising": true,
-        "revision_delta": 22,
-        "hot": true
-      },
-      {
-        "ticker": "RTX",
-        "net_up_30d": 22,
-        "breadth": 1.0,
-        "est_chg_30d": 3.53,
+        "est_chg_30d": 2.26,
         "n_analysts": 22,
         "bull_ratio": 1.0,
         "rising": true,
@@ -25060,163 +25060,163 @@
     ],
     "short_interest": [
       {
-        "ticker": "MPT",
-        "days_to_cover": 30.8,
-        "si_change_pct": 4.4,
-        "short_shares": 144272892.0,
-        "settlement": "2026-07-31",
-        "hot": true
-      },
-      {
-        "ticker": "OTTR",
-        "days_to_cover": 22.9,
-        "si_change_pct": -4.1,
-        "short_shares": 5092017.0,
-        "settlement": "2026-07-31",
-        "hot": true
-      },
-      {
-        "ticker": "JBGS",
-        "days_to_cover": 22.4,
-        "si_change_pct": 5.2,
-        "short_shares": 11010959.0,
-        "settlement": "2026-07-31",
-        "hot": true
-      },
-      {
         "ticker": "NTST",
-        "days_to_cover": 22.1,
-        "si_change_pct": -5.1,
-        "short_shares": 31437400.0,
-        "settlement": "2026-07-31",
+        "days_to_cover": 27.9,
+        "si_change_pct": -0.7,
+        "short_shares": 31209261.0,
+        "settlement": "2026-08-14",
+        "hot": true
+      },
+      {
+        "ticker": "GTY",
+        "days_to_cover": 24.3,
+        "si_change_pct": 5.2,
+        "short_shares": 8199708.0,
+        "settlement": "2026-08-14",
+        "hot": true
+      },
+      {
+        "ticker": "OZK",
+        "days_to_cover": 19.4,
+        "si_change_pct": -7.3,
+        "short_shares": 15785791.0,
+        "settlement": "2026-08-14",
         "hot": true
       },
       {
         "ticker": "GIII",
-        "days_to_cover": 19.9,
-        "si_change_pct": 5.5,
-        "short_shares": 7856909.0,
-        "settlement": "2026-07-31",
+        "days_to_cover": 18.6,
+        "si_change_pct": -3.4,
+        "short_shares": 7589218.0,
+        "settlement": "2026-08-14",
         "hot": true
       },
       {
-        "ticker": "COLL",
-        "days_to_cover": 17.4,
-        "si_change_pct": -2.9,
-        "short_shares": 5080634.0,
-        "settlement": "2026-07-31",
+        "ticker": "CASH",
+        "days_to_cover": 17.9,
+        "si_change_pct": 0.5,
+        "short_shares": 2206551.0,
+        "settlement": "2026-08-14",
         "hot": true
       },
       {
-        "ticker": "GME",
-        "days_to_cover": 17.1,
-        "si_change_pct": -3.0,
-        "short_shares": 53736062.0,
-        "settlement": "2026-07-31",
+        "ticker": "OTTR",
+        "days_to_cover": 17.3,
+        "si_change_pct": -4.1,
+        "short_shares": 4881890.0,
+        "settlement": "2026-08-14",
         "hot": true
       },
       {
-        "ticker": "RDNT",
+        "ticker": "CURB",
         "days_to_cover": 16.9,
-        "si_change_pct": 3.9,
-        "short_shares": 10425092.0,
-        "settlement": "2026-07-31",
-        "hot": true
-      },
-      {
-        "ticker": "VYX",
-        "days_to_cover": 16.6,
-        "si_change_pct": 5.5,
-        "short_shares": 28539449.0,
-        "settlement": "2026-07-31",
-        "hot": true
-      },
-      {
-        "ticker": "DEI",
-        "days_to_cover": 16.5,
-        "si_change_pct": -1.2,
-        "short_shares": 28292775.0,
-        "settlement": "2026-07-31",
-        "hot": true
-      },
-      {
-        "ticker": "SBH",
-        "days_to_cover": 15.9,
-        "si_change_pct": -1.1,
-        "short_shares": 19832227.0,
-        "settlement": "2026-07-31",
-        "hot": true
-      },
-      {
-        "ticker": "LIF",
-        "days_to_cover": 15.8,
-        "si_change_pct": -6.8,
-        "short_shares": 8436990.0,
-        "settlement": "2026-07-31",
-        "hot": true
-      },
-      {
-        "ticker": "TPL",
-        "days_to_cover": 15.8,
-        "si_change_pct": 0.3,
-        "short_shares": 4302685.0,
-        "settlement": "2026-07-31",
-        "hot": true
-      },
-      {
-        "ticker": "EZPW",
-        "days_to_cover": 15.6,
-        "si_change_pct": 7.8,
-        "short_shares": 12230478.0,
-        "settlement": "2026-07-31",
-        "hot": true
-      },
-      {
-        "ticker": "FOUR",
-        "days_to_cover": 15.5,
-        "si_change_pct": -2.9,
-        "short_shares": 15201093.0,
-        "settlement": "2026-07-31",
-        "hot": true
-      },
-      {
-        "ticker": "KMB",
-        "days_to_cover": 14.7,
-        "si_change_pct": 1.7,
-        "short_shares": 43953032.0,
-        "settlement": "2026-07-31",
-        "hot": true
-      },
-      {
-        "ticker": "TR",
-        "days_to_cover": 14.4,
-        "si_change_pct": 2.3,
-        "short_shares": 2354672.0,
-        "settlement": "2026-07-31",
-        "hot": true
-      },
-      {
-        "ticker": "HASI",
-        "days_to_cover": 14.2,
-        "si_change_pct": 8.3,
-        "short_shares": 11832481.0,
-        "settlement": "2026-07-31",
+        "si_change_pct": 3.8,
+        "short_shares": 19038889.0,
+        "settlement": "2026-08-14",
         "hot": true
       },
       {
         "ticker": "PTGX",
-        "days_to_cover": 14.2,
-        "si_change_pct": -9.0,
-        "short_shares": 7543109.0,
-        "settlement": "2026-07-31",
+        "days_to_cover": 16.4,
+        "si_change_pct": 3.3,
+        "short_shares": 7791795.0,
+        "settlement": "2026-08-14",
         "hot": true
       },
       {
-        "ticker": "RBA",
-        "days_to_cover": 14.2,
+        "ticker": "EPRT",
+        "days_to_cover": 16.1,
+        "si_change_pct": 5.3,
+        "short_shares": 18873522.0,
+        "settlement": "2026-08-14",
+        "hot": true
+      },
+      {
+        "ticker": "CAR",
+        "days_to_cover": 15.8,
         "si_change_pct": -1.7,
-        "short_shares": 13162440.0,
-        "settlement": "2026-07-31",
+        "short_shares": 5447674.0,
+        "settlement": "2026-08-14",
+        "hot": true
+      },
+      {
+        "ticker": "TR",
+        "days_to_cover": 15.8,
+        "si_change_pct": -7.2,
+        "short_shares": 2186345.0,
+        "settlement": "2026-08-14",
+        "hot": true
+      },
+      {
+        "ticker": "MPT",
+        "days_to_cover": 15.6,
+        "si_change_pct": 0.2,
+        "short_shares": 144500823.0,
+        "settlement": "2026-08-14",
+        "hot": true
+      },
+      {
+        "ticker": "LKFN",
+        "days_to_cover": 14.9,
+        "si_change_pct": 4.8,
+        "short_shares": 2277076.0,
+        "settlement": "2026-08-14",
+        "hot": true
+      },
+      {
+        "ticker": "PFBC",
+        "days_to_cover": 14.6,
+        "si_change_pct": 0.0,
+        "short_shares": 1245273.0,
+        "settlement": "2026-08-14",
+        "hot": true
+      },
+      {
+        "ticker": "FIZZ",
+        "days_to_cover": 14.5,
+        "si_change_pct": -0.7,
+        "short_shares": 4302830.0,
+        "settlement": "2026-08-14",
+        "hot": true
+      },
+      {
+        "ticker": "SLAB",
+        "days_to_cover": 14.5,
+        "si_change_pct": -1.3,
+        "short_shares": 2824801.0,
+        "settlement": "2026-08-14",
+        "hot": true
+      },
+      {
+        "ticker": "TROW",
+        "days_to_cover": 14.4,
+        "si_change_pct": -2.1,
+        "short_shares": 24946105.0,
+        "settlement": "2026-08-14",
+        "hot": true
+      },
+      {
+        "ticker": "DEI",
+        "days_to_cover": 14.1,
+        "si_change_pct": 1.9,
+        "short_shares": 28827633.0,
+        "settlement": "2026-08-14",
+        "hot": true
+      },
+      {
+        "ticker": "FFIN",
+        "days_to_cover": 14.1,
+        "si_change_pct": -0.3,
+        "short_shares": 8377182.0,
+        "settlement": "2026-08-14",
+        "hot": true
+      },
+      {
+        "ticker": "HTO",
+        "days_to_cover": 14.1,
+        "si_change_pct": -4.3,
+        "short_shares": 4865882.0,
+        "settlement": "2026-08-14",
         "hot": true
       }
     ],
@@ -27210,14 +27210,14 @@
         "sentiment": 0.107
       },
       {
-        "ticker": "MSFT",
-        "mentions": 25,
-        "sentiment": 0.015
-      },
-      {
         "ticker": "QQQ",
         "mentions": 25,
         "sentiment": 0.074
+      },
+      {
+        "ticker": "MSFT",
+        "mentions": 25,
+        "sentiment": 0.015
       },
       {
         "ticker": "OKLO",
@@ -29047,18 +29047,18 @@
         "last_surprise_pct": 13.3
       },
       {
-        "ticker": "GME",
-        "next_date": "2026-09-08",
-        "days_to": 13,
-        "eps_forecast": null,
-        "last_surprise_pct": null
-      },
-      {
         "ticker": "ADBE",
         "next_date": "2026-09-10",
         "days_to": 15,
         "eps_forecast": 4.86,
         "last_surprise_pct": -3.4
+      },
+      {
+        "ticker": "FIZZ",
+        "next_date": "2026-09-10",
+        "days_to": 15,
+        "eps_forecast": null,
+        "last_surprise_pct": null
       },
       {
         "ticker": "GIS",
