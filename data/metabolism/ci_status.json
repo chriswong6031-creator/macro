@@ -1,7 +1,25 @@
 {
-  "ts": "2026-08-26T13:32:16+00:00",
-  "main_sha": "90a5620e55625d9f0b29a021380532c73d284fe2",
+  "ts": "2026-08-26T16:17:19+00:00",
+  "main_sha": "fdcc59327cf7558cebd16ed36111dd667f095be6",
   "red_required": [
+    {
+      "name": "ci-gate",
+      "conclusion": "failure",
+      "status": "completed",
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32974216402/job/98216964002"
+    },
+    {
+      "name": "ci-pack-3",
+      "conclusion": "failure",
+      "status": "completed",
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32974216402/job/98195120067"
+    },
+    {
+      "name": "ci-pack-2",
+      "conclusion": "failure",
+      "status": "completed",
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32974216402/job/98195120049"
+    },
     {
       "name": "publish",
       "conclusion": "failure",
@@ -34,9 +52,9 @@
     }
   ],
   "green": false,
-  "consecutive_failures": 64,
+  "consecutive_failures": 65,
   "sensed_shas": [
-    "90a5620e55625d9f0b29a021380532c73d284fe2",
+    "fdcc59327cf7558cebd16ed36111dd667f095be6",
     "a508953fc777848d26cb6856c8696419d87d272a"
   ],
   "heartbeat_degraded": false
