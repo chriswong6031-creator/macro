@@ -112,10 +112,9 @@ next_actions: >
      the (ticker,kind) set matches the journal exactly — and refuse rather than
      widen. Lawful scope is the 7 Class-R sessions / 598 keys ONLY.
 unverified:
-  - "PR #6464 is BUILT_NOT_PROVEN: merged/deployed production behaviour is not yet observed. CI green is NOT production proof."
-  - "The §9 live proof (two consecutive natural in-window invocations advancing the served and R2 objects) has not been held — the next NYSE window opens 13:25Z 2026-08-26."
-  - "The 15m pass_ts and 25m quote thresholds are reasoned from the 5-minute timer and the lane's own freshness gate, but have not yet been observed against a full real session."
   - "Whether a reconstructed armed pack can reproduce production's cohort for any Class-R session is UNTESTED; §10.5 is the gate, not a result."
+  - "The 15m pass_ts / 25m quote thresholds held green across a live session but have not been observed against an early-close or DST-boundary session."
+  - "D12 remains unreproduced: today's pack was clean (0 names ahead of as_of), so the mis-stamp mechanism is proven from code + journal but its upstream trigger is not identified."
 unresolved:
   - "Who seeded /etc/macro-live.env at 2026-08-26T07:43:28Z. It happened ~3 minutes before this session's first VPS connection, from this operator machine, with no PR or Agent OS record. Needs operator acknowledgement."
   - "D12 ownership: the armed pack's as_of inherits the close-series tip (build_prophet_live_pack.py:167). Visible now via pack_ok; unrepaired and will recur."
@@ -153,7 +152,28 @@ an outage from the date a human noticed is exactly the failure
   armed — data manufacture, not infrastructure reconstruction, and outside
   `DEC:FORCE-MAJEURE-SESSIONS-ARE-BACKFILLED-BY-DEFAULT`.
 
-## What is proven vs merely built
+## PROVEN_LIVE as of 2026-08-26T15:23Z
+
+Both carriers are merged, deployed and verified against real production during a
+live NYSE session — not from CI:
+
+- **#6464** `9eea7386c1f2` — silent-freeze elimination.
+- **#6482** `e01895f5fcc4` — `meta.producer` stamp (see below).
+
+§9 proof at the 13:28:05Z / 13:33:05Z natural passes: first publication since
+2026-07-30, R2 object advancing, a served copy that had never existed (21,247 B),
+zero `no R2 credentials` warnings, `pack_ok=True`, and events accruing again
+(25 then 15). Mid-session re-check at 15:23:00Z: `status=live`,
+`pass_age_min=2.5`, `quote_age_min=3.2`, `producer=scripts/prophet_live_evaluator.py`,
+external dead-man `VPS live plane healthy`.
+
+**The proof earned its keep.** #6464 shipped with every check green and a
+mutation matrix that passed against pristine modules, and the first real session
+still went red — `prophet_live: missing producer (unowned lane)` — because the
+dead-man graded a field nothing wrote. A guard that cannot go green is worse than
+no guard. #6482 repaired it. Nothing but a live session would have found it.
+
+## What was proven vs merely built
 
 `PR #6464` is BUILT_NOT_PROVEN until it is merged, deployed to `/opt/macro`, and
 a real in-window pass advances the served and R2 objects. CI green is not
