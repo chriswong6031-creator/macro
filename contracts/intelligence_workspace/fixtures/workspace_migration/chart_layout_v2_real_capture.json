@@ -1,0 +1,191 @@
+{
+  "expected": {
+    "link_groups": {
+      "primary_security": {
+        "entity_type": "security"
+      }
+    },
+    "migration": {
+      "source": "chart_layout_v2",
+      "source_revision": 2
+    },
+    "name": null,
+    "requires": {
+      "floor": 1
+    },
+    "revision": 1,
+    "schema": "workspace_layout.v1",
+    "widgets": [
+      {
+        "config": {
+          "activePane": 0,
+          "chartType": "line-markers",
+          "compare": [
+            "QQQ"
+          ],
+          "compareCfg": {
+            "QQQ": {
+              "color": "#26c281",
+              "lineStyle": 0,
+              "lineWidth": 2,
+              "mode": "percent"
+            }
+          },
+          "hidden": [
+            "_lab"
+          ],
+          "indParams": {
+            "bb": {
+              "bandCol": "rgba(77,130,255,0.55)",
+              "basisCol": "rgba(214,218,227,0.45)",
+              "length": 20,
+              "mult": 1.5,
+              "width": 1
+            },
+            "ema": {
+              "_vis": {
+                "days": {
+                  "max": 366,
+                  "min": 1,
+                  "on": true
+                },
+                "months": {
+                  "max": 12,
+                  "min": 1,
+                  "on": true
+                },
+                "weeks": {
+                  "max": 52,
+                  "min": 1,
+                  "on": true
+                }
+              },
+              "ma1Col": "#e8a33d",
+              "ma1Len": 20,
+              "ma1On": true,
+              "ma2Col": "#4d82ff",
+              "ma2Len": 50,
+              "ma2On": true,
+              "ma3Col": "rgba(177,181,190,0.38)",
+              "ma3Len": 200,
+              "ma3On": true,
+              "width": 1
+            },
+            "structure": {
+              "ob.kImpulse": 1.6,
+              "ob.method": "volume",
+              "ob.on": true,
+              "ob.showLast": 6
+            }
+          },
+          "inds": [
+            "ema",
+            "bb",
+            "_lab",
+            "structure"
+          ],
+          "lockedVLine": "2026-08-12T14:30:00Z",
+          "paneTfs": [
+            "1D",
+            "1D"
+          ],
+          "panes": [
+            "NVDA+AMD",
+            "^NDX"
+          ],
+          "split": 2,
+          "sync": true
+        },
+        "context_in": [
+          "primary_security"
+        ],
+        "context_out": [
+          "primary_security"
+        ],
+        "id": "chart-main",
+        "semantic_lane": "primary",
+        "type": "chart"
+      }
+    ]
+  },
+  "input": {
+    "activePane": 0,
+    "chartType": "line-markers",
+    "compare": [
+      "QQQ"
+    ],
+    "compareCfg": {
+      "QQQ": {
+        "color": "#26c281",
+        "lineStyle": 0,
+        "lineWidth": 2,
+        "mode": "percent"
+      }
+    },
+    "hidden": [
+      "_lab"
+    ],
+    "indParams": {
+      "bb": {
+        "bandCol": "rgba(77,130,255,0.55)",
+        "basisCol": "rgba(214,218,227,0.45)",
+        "length": 20,
+        "mult": 1.5,
+        "width": 1
+      },
+      "ema": {
+        "_vis": {
+          "days": {
+            "max": 366,
+            "min": 1,
+            "on": true
+          },
+          "months": {
+            "max": 12,
+            "min": 1,
+            "on": true
+          },
+          "weeks": {
+            "max": 52,
+            "min": 1,
+            "on": true
+          }
+        },
+        "ma1Col": "#e8a33d",
+        "ma1Len": 20,
+        "ma1On": true,
+        "ma2Col": "#4d82ff",
+        "ma2Len": 50,
+        "ma2On": true,
+        "ma3Col": "rgba(177,181,190,0.38)",
+        "ma3Len": 200,
+        "ma3On": true,
+        "width": 1
+      },
+      "structure": {
+        "ob.kImpulse": 1.6,
+        "ob.method": "volume",
+        "ob.on": true,
+        "ob.showLast": 6
+      }
+    },
+    "inds": [
+      "ema",
+      "bb",
+      "_lab",
+      "structure"
+    ],
+    "lockedVLine": "2026-08-12T14:30:00Z",
+    "paneTfs": [
+      "1D",
+      "1D"
+    ],
+    "panes": [
+      "NVDA+AMD",
+      "^NDX"
+    ],
+    "schemaVersion": 2,
+    "split": 2,
+    "sync": true
+  }
+}

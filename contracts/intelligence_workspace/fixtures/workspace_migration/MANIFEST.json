@@ -2,15 +2,19 @@
   "files": [
     {
       "name": "chart_layout_v1_sparse.json",
-      "sha256": "3b1cd883f681e33b6ba62c543b684d972b811b1e21d90c47cd870949e72f39b3"
+      "sha256": "6a674edbeaa99f6c693a3ee6a23a8050ec90ee3b3398b5bf058f69a4f0d012f4"
     },
     {
       "name": "chart_layout_v1_typical.json",
-      "sha256": "5000057aca7b6dbbe75e566ef47eecef525c9f5341d24369db91770dbdad7286"
+      "sha256": "9676b59c68d6a08ccd9165abefb110177fa7753d1dca6e045e23b07fd176cb2b"
     },
     {
       "name": "chart_layout_v2_full.json",
       "sha256": "e0f237c4ec339a9f274ca67f493c74aec8889e92248238ec1dcd44e3804b9b7d"
+    },
+    {
+      "name": "chart_layout_v2_real_capture.json",
+      "sha256": "744175d97ad212a2da6e4ec5aa65bb239138e79ad137140888dcb1b889f12c22"
     },
     {
       "name": "chart_layout_v2_sparse.json",
@@ -38,7 +42,7 @@
     },
     {
       "name": "invalid_oversized_workspace.json",
-      "sha256": "7838911549ad91c800e6b3303204d508859350a823838cfdac5a7e3d78fdf77b"
+      "sha256": "75120853c7d44b91a618f4cbbe07fb571e259e45645403b1f615a29c045fa5a3"
     },
     {
       "name": "invalid_port.json",
@@ -73,5 +77,5 @@
       "sha256": "a0b825876db62d2df5a499fcf9495c952824725052d29a30f04e0378c2526dba"
     }
   ],
-  "vectors_digest": "9eeef5b4b055e3ffa407f76d8e3a6ee70c2ab064194983391062d29ec4b701ab"
+  "vectors_digest": "d8bc519a3e2f959115724ed20d4b214d8a729afd1b0de2aaad21a02013af4e5d"
 }

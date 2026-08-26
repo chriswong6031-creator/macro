@@ -1,6 +1,10 @@
 """Deterministic W2-A versioned workspace layout contract (`workspace_layout.v1`).
 
-Frozen contract: research/DEEPVUE_W2A_WORKSPACE_LAYOUT_CONTRACT_2026-08-26.md.
+Frozen contract: research/DEEPVUE_W2A_WORKSPACE_LAYOUT_CONTRACT_2026-08-26.md
+(as amended by Amendment A1 — `lockedVLine`/`split` real-runtime types — and
+Amendment A2 — Phase 6 adversarial review rulings: real-runtime grammar,
+lossless-or-refuse migration, canonicalization, wire mode, fail-closed
+projection, key deny-list, optional `requires`, honest provenance).
 
 This module is Macro's OWNED half of the W2-A ownership split (contract §10):
 the frozen vocabularies, a pure structural+cross-field validator, a reference
@@ -21,8 +25,10 @@ has no runtime coupling to `chart_layouts` or any HTTP route.
 from __future__ import annotations
 
 from collections.abc import Mapping
+import copy
 import hashlib
 import json
+import math
 import re
 from typing import Any
 
@@ -53,6 +59,10 @@ MAX_ENVELOPE_BYTES = 65536
 MAX_LINK_GROUPS = 8
 MAX_PORTS = 8
 FLOOR_SUPPORTED = 1
+# Amendment A2 ruling 1: bounded map nesting — 64 keys per level, depth <=3
+# below the per-indicator/per-symbol object inside indParams/compareCfg.
+MAX_PARAM_KEYS_PER_LEVEL = 64
+MAX_PARAM_NEST_DEPTH = 3
 
 # The 12 chart-config fields owned verbatim by the existing Terminal
 # chart-layout contract (contract §2). Order is the frozen canonical order
@@ -66,6 +76,8 @@ CHART_CONFIG_FIELDS = (
 _TOP_LEVEL_KEYS = frozenset({
     "schema", "requires", "revision", "name", "link_groups", "widgets", "migration",
 })
+# Amendment A2 ruling 11: `requires` is optional (absent -> floor 1).
+_REQUIRED_TOP_LEVEL_KEYS = frozenset(_TOP_LEVEL_KEYS - {"requires"})
 _WIDGET_KEYS = frozenset({
     "id", "type", "semantic_lane", "grid", "context_in", "context_out", "config",
 })
@@ -73,13 +85,24 @@ _GRID_KEYS = frozenset({"x", "y", "w", "h"})
 _MIGRATION_KEYS = frozenset({"source", "source_revision"})
 _LINK_GROUP_KEYS = frozenset({"entity_type"})
 
+# Amendment A2 ruling 10: prototype-pollution-shaped keys are never valid
+# identifiers anywhere a key/id is accepted (widget ids, link-group names,
+# indParams/compareCfg identifiers and nested param keys).
+_DENIED_KEYS = frozenset({"__proto__", "constructor", "prototype"})
+
 _WIDGET_ID_RE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 _LINK_GROUP_NAME_RE = re.compile(r"^[a-z][a-z0-9_]{0,31}$")
-_SYMBOL_RE = re.compile(r"^[A-Z0-9._:-]{1,12}$")
 _TIMEFRAME_RE = re.compile(r"^[A-Za-z0-9]{1,8}$")
-_CHART_TYPE_RE = re.compile(r"^[a-z][a-z0-9_]{0,31}$")
-_INDICATOR_ID_RE = re.compile(r"^[a-z][a-z0-9_]{0,31}$")
-_PARAM_KEY_RE = re.compile(r"^[A-Za-z0-9_]{1,32}$")
+# Amendment A2 ruling 1 (real-runtime grammar, Phase 6 review):
+#   symbol       — covers composite panes ("NVDA+AMD"), caret index panes
+#                  ("^NDX"), and colon venue-qualified tickers ("BINANCE:BTCUSDT").
+#   chart_type   — covers hyphenated chart types ("line-markers").
+#   indicator_id — covers underscore-prefixed ids ("_lab").
+#   param_key    — covers dotted premium-suite keys ("ob.showLast").
+_SYMBOL_RE = re.compile(r"^[\^A-Z0-9.+:_-]{1,24}$")
+_CHART_TYPE_RE = re.compile(r"^[a-z][a-z0-9_-]{0,31}$")
+_INDICATOR_ID_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,31}$")
+_PARAM_KEY_RE = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9_.]{0,63}$")
 # Amendment A1: 1..64 chars, no ASCII control characters (0x00-0x1f, 0x7f).
 _LOCKED_VLINE_RE = re.compile(r"^[^\x00-\x1f\x7f]{1,64}$")
 
@@ -94,35 +117,72 @@ def _is_int(value: Any) -> bool:
     return isinstance(value, int) and not isinstance(value, bool)
 
 
+def _is_denied_key(key: Any) -> bool:
+    return key in _DENIED_KEYS
+
+
 def _is_bounded_primitive(value: Any) -> bool:
+    """A data-typed leaf value: bool/int/finite-float/None, or a string
+    <=64 chars. NaN/Infinity are never valid (Amendment A2 ruling 4) — no
+    executable payloads, no non-finite numerics, anywhere (contract §3)."""
     if value is None or isinstance(value, bool):
         return True
-    if isinstance(value, (int, float)):
+    if isinstance(value, int):
         return True
+    if isinstance(value, float):
+        return math.isfinite(value)
     if isinstance(value, str):
         return len(value) <= 64
     return False
 
 
+def _validate_param_leaf_or_nested(value: Any, remaining_depth: int) -> Any:
+    """A value inside a per-indicator/per-symbol params object: either a
+    bounded primitive leaf, or — while `remaining_depth` budget remains — a
+    further bounded nested object whose own keys/values recurse the same
+    rule (Amendment A2 ruling 1: nesting depth <=3 below the per-indicator
+    object, e.g. the real `_vis` visibility-range shape)."""
+    if isinstance(value, dict):
+        if remaining_depth <= 0:
+            return _INVALID
+        if len(value) > MAX_PARAM_KEYS_PER_LEVEL:
+            return _INVALID
+        out: dict[str, Any] = {}
+        for key, sub in value.items():
+            if not isinstance(key, str) or not _PARAM_KEY_RE.match(key) or _is_denied_key(key):
+                return _INVALID
+            normalized = _validate_param_leaf_or_nested(sub, remaining_depth - 1)
+            if normalized is _INVALID:
+                return _INVALID
+            out[key] = normalized
+        return out
+    if not _is_bounded_primitive(value):
+        return _INVALID
+    return value
+
+
 def _validate_param_block(value: Any, *, key_pattern: "re.Pattern[str]") -> Any:
     """Shared shape for `indParams`/`compareCfg`: a bounded map of
-    identifier -> bounded map of param-name -> data-typed primitive. No
-    executable payloads anywhere (contract §3)."""
-    if not isinstance(value, dict) or len(value) > 32:
+    identifier -> bounded map of param-name -> (bounded primitive | nested
+    object up to depth 3, Amendment A2 ruling 1). No executable payloads
+    anywhere (contract §3); prototype-pollution-shaped keys denied at every
+    level (Amendment A2 ruling 10)."""
+    if not isinstance(value, dict) or len(value) > MAX_PARAM_KEYS_PER_LEVEL:
         return _INVALID
     out: dict[str, dict[str, Any]] = {}
     for key, sub in value.items():
-        if not isinstance(key, str) or not key_pattern.match(key):
+        if not isinstance(key, str) or not key_pattern.match(key) or _is_denied_key(key):
             return _INVALID
-        if not isinstance(sub, dict) or len(sub) > 16:
+        if not isinstance(sub, dict) or len(sub) > MAX_PARAM_KEYS_PER_LEVEL:
             return _INVALID
         sub_out: dict[str, Any] = {}
         for sub_key, sub_val in sub.items():
-            if not isinstance(sub_key, str) or not _PARAM_KEY_RE.match(sub_key):
+            if not isinstance(sub_key, str) or not _PARAM_KEY_RE.match(sub_key) or _is_denied_key(sub_key):
                 return _INVALID
-            if not _is_bounded_primitive(sub_val):
+            normalized = _validate_param_leaf_or_nested(sub_val, MAX_PARAM_NEST_DEPTH)
+            if normalized is _INVALID:
                 return _INVALID
-            sub_out[sub_key] = sub_val
+            sub_out[sub_key] = normalized
         out[key] = sub_out
     return out
 
@@ -153,10 +213,10 @@ _VALID_SPLITS = (1, 2, 4)
 
 
 def _v_split(value: Any) -> Any:
-    """Amendment A1 (2026-08-26): `split` is Terminal's discrete pane-split
-    selector (`VALID_SPLITS = {1, 2, 4}`), never a 0-100 percentage — the
-    original freeze's `0..100` bound was an authoring error that would have
-    rejected every real Terminal v2 layout."""
+    """Amendment A1: `split` is Terminal's discrete pane-split selector
+    (`VALID_SPLITS = {1, 2, 4}`), never a 0-100 percentage — the original
+    freeze's `0..100` bound was an authoring error that would have rejected
+    every real Terminal v2 layout."""
     if not _is_int(value) or value not in _VALID_SPLITS:
         return _INVALID
     return value
@@ -185,7 +245,7 @@ def _v_inds(value: Any) -> Any:
         return _INVALID
     out = []
     for item in value:
-        if not isinstance(item, str) or not _INDICATOR_ID_RE.match(item):
+        if not isinstance(item, str) or not _INDICATOR_ID_RE.match(item) or _is_denied_key(item):
             return _INVALID
         out.append(item)
     return out
@@ -215,9 +275,9 @@ def _v_compare_cfg(value: Any) -> Any:
 
 
 def _v_locked_vline(value: Any) -> Any:
-    """Amendment A1 (2026-08-26): `lockedVLine` is `string | null` in the
-    real Terminal runtime (TerminalShell/ChartPanel own it as a string key),
-    never a number — the original freeze's `number | null` bound would have
+    """Amendment A1: `lockedVLine` is `string | null` in the real Terminal
+    runtime (TerminalShell/ChartPanel own it as a string key), never a
+    number — the original freeze's `number | null` bound would have
     rejected every real Terminal v2 layout that used it."""
     if value is None:
         return None
@@ -282,9 +342,78 @@ def _validate_widget_config(widget_type: Any, config: Any, *, path: str) -> list
     return errors
 
 
-def validate_envelope(obj: Any) -> dict[str, Any]:
+def _normalize_numeric(value: Any) -> Any:
+    """Amendment A2 ruling 4: integral-valued floats normalize to `int`
+    before canonical serialization (closes the Python `20.0` vs JS `20`
+    digest split — JS has no separate float type, so this asymmetry is
+    purely a Python artifact). Non-integral floats are left as-is (Python's
+    shortest-round-trip `repr`, used by `json.dumps`, already matches JS's
+    own shortest-repr algorithm for the general case). Raises `ValueError`
+    on a non-finite float — the caller is expected to treat that as
+    `malformed_workspace`, never to let it escape as an uncaught crash."""
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, float):
+        if not math.isfinite(value):
+            raise ValueError("non-finite float is not a valid canonical value")
+        if value == int(value):
+            return int(value)
+        return value
+    if isinstance(value, dict):
+        return {key: _normalize_numeric(sub) for key, sub in value.items()}
+    if isinstance(value, list):
+        return [_normalize_numeric(item) for item in value]
+    return value
+
+
+def _canonical_dumps(obj: Any) -> str:
+    """Amendment A2 ruling 4: canonical JSON is `ensure_ascii=False,
+    allow_nan=False, sort_keys=True, separators=(",", ":")`, over the
+    numeric-normalized structure. Raises `ValueError`/`TypeError` on
+    non-finite floats or otherwise non-serializable content — callers
+    convert that into `malformed_workspace` rather than letting it escape.
+    """
+    normalized = _normalize_numeric(obj)
+    return json.dumps(normalized, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False)
+
+
+def _is_normalized_name(value: Any) -> bool:
+    """Wire-mode name law (Amendment A2 ruling 5/14): already trimmed, no
+    internal whitespace runs collapsed away, 1..60 chars."""
+    if not isinstance(value, str):
+        return False
+    if not (1 <= len(value) <= 60):
+        return False
+    if value != value.strip():
+        return False
+    if re.search(r"\s{2,}", value):
+        return False
+    return True
+
+
+def _normalize_name(value: Any) -> str | None:
+    """Trim + collapse internal whitespace runs + bound to 1..60 chars.
+    Returns `None` when the input is not a usable name at all (not a
+    string, or empty/oversized after normalization) — the caller refuses
+    rather than store/echo an unusable name (Amendment A2 ruling 14)."""
+    if not isinstance(value, str):
+        return None
+    collapsed = re.sub(r"\s+", " ", value.strip())
+    if not (1 <= len(collapsed) <= 60):
+        return None
+    return collapsed
+
+
+def validate_envelope(obj: Any, wire: bool = False) -> dict[str, Any]:
     """Validate a `workspace_layout.v1` envelope: schema shape AND the
-    cross-field laws the JSON Schema alone cannot express (contract §1-§8).
+    cross-field laws the JSON Schema alone cannot express (contract §1-§8,
+    amended by A1/A2).
+
+    ``wire=False`` (default) is the STORED-row law: `name` must be `null`.
+    ``wire=True`` (Amendment A2 ruling 5) is the wire/export law: `name` may
+    additionally be a normalized non-null string (trim/collapse/1..60,
+    ruling 14) — used to validate the read/export projection and import
+    payloads, never the stored row itself.
 
     Returns ``{"ok": bool, "errors": [{"code": ..., "path": ...}]}``. Never
     raises — every branch is a type/membership check on already-untrusted
@@ -298,7 +427,7 @@ def validate_envelope(obj: Any) -> dict[str, Any]:
     for key in obj:
         if not isinstance(key, str) or key not in _TOP_LEVEL_KEYS:
             errors.append(_error("malformed_workspace", f"$.{key}"))
-    for key in _TOP_LEVEL_KEYS:
+    for key in _REQUIRED_TOP_LEVEL_KEYS:
         if key not in obj:
             errors.append(_error("malformed_workspace", f"$.{key}"))
 
@@ -309,11 +438,13 @@ def validate_envelope(obj: Any) -> dict[str, Any]:
         # object once the schema tag itself disagrees.
         return {"ok": False, "errors": errors}
 
-    requires = obj.get("requires")
-    if not isinstance(requires, Mapping) or set(requires.keys()) != {"floor"}:
+    # Amendment A2 ruling 11: `requires` (and `requires.floor`) are optional
+    # — absent defaults to floor 1.
+    requires = obj.get("requires", {})
+    if not isinstance(requires, Mapping) or (set(requires.keys()) - {"floor"}):
         errors.append(_error("malformed_workspace", "$.requires"))
     else:
-        floor = requires.get("floor")
+        floor = requires.get("floor", FLOOR_SUPPORTED)
         if not _is_int(floor) or floor < 1:
             errors.append(_error("malformed_workspace", "$.requires.floor"))
         elif floor > FLOOR_SUPPORTED:
@@ -324,8 +455,12 @@ def validate_envelope(obj: Any) -> dict[str, Any]:
         errors.append(_error("malformed_workspace", "$.revision"))
 
     name = obj.get("name")
-    if name is not None:
-        errors.append(_error("malformed_workspace", "$.name"))
+    if wire:
+        if name is not None and not _is_normalized_name(name):
+            errors.append(_error("malformed_workspace", "$.name"))
+    else:
+        if name is not None:
+            errors.append(_error("malformed_workspace", "$.name"))
 
     link_groups = obj.get("link_groups")
     declared_groups: set[str] = set()
@@ -335,7 +470,11 @@ def validate_envelope(obj: Any) -> dict[str, Any]:
         if len(link_groups) > MAX_LINK_GROUPS:
             errors.append(_error("malformed_workspace", "$.link_groups"))
         for group_name, group in link_groups.items():
-            if not isinstance(group_name, str) or not _LINK_GROUP_NAME_RE.match(group_name):
+            if (
+                not isinstance(group_name, str)
+                or not _LINK_GROUP_NAME_RE.match(group_name)
+                or _is_denied_key(group_name)
+            ):
                 errors.append(_error("malformed_workspace", f"$.link_groups.{group_name!r}"))
                 continue
             declared_groups.add(group_name)
@@ -368,7 +507,11 @@ def validate_envelope(obj: Any) -> dict[str, Any]:
                 errors.append(_error("invalid_widget_config", f"{path}.{key}"))
 
         widget_id = widget.get("id")
-        if not isinstance(widget_id, str) or not _WIDGET_ID_RE.match(widget_id):
+        if (
+            not isinstance(widget_id, str)
+            or not _WIDGET_ID_RE.match(widget_id)
+            or _is_denied_key(widget_id)
+        ):
             errors.append(_error("invalid_widget_config", f"{path}.id"))
         else:
             if widget_id in seen_ids:
@@ -408,31 +551,41 @@ def validate_envelope(obj: Any) -> dict[str, Any]:
         if source not in MIGRATION_SOURCES:
             errors.append(_error("malformed_workspace", "$.migration.source"))
         source_revision = migration.get("source_revision")
-        if source_revision is not None and not _is_int(source_revision):
+        # Amendment A2 ruling 12: source_revision >= 1 (validator/schema agree).
+        if source_revision is not None and (not _is_int(source_revision) or source_revision < 1):
             errors.append(_error("malformed_workspace", "$.migration.source_revision"))
 
     try:
-        canonical = json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+        canonical = _canonical_dumps(obj)
+        encoded = canonical.encode("utf-8")
     except (TypeError, ValueError):
+        # Amendment A2 ruling 4: NaN/Infinity anywhere in the structure, or a
+        # lone UTF-16 surrogate in any string (UnicodeEncodeError is a
+        # ValueError subclass), both land here as malformed, never a crash.
         errors.append(_error("malformed_workspace", "$"))
     else:
-        if len(canonical.encode("utf-8")) > MAX_ENVELOPE_BYTES:
+        if len(encoded) > MAX_ENVELOPE_BYTES:
             errors.append(_error("oversized_workspace", "$"))
 
     return {"ok": len(errors) == 0, "errors": errors}
 
 
 def _recognize_legacy(config: Mapping[str, Any]) -> tuple[str, int | None] | None:
-    """Contract §6 recognizer table, rows 0-2. Returns (source, source_revision)
-    or None when the shape is not one of the recognized legacy formats."""
+    """Contract §6 recognizer table, rows 0-2 (Amendment A2 ruling 13: honest
+    provenance — `source_revision` is null unless the payload actually
+    carried a valid integer `schemaVersion`; a boolean is never treated as a
+    version number). Returns (source, source_revision), or None when the
+    shape is not one of the recognized legacy formats."""
     has_schema_version = "schemaVersion" in config
     schema_version = config.get("schemaVersion")
+    version_is_int = _is_int(schema_version)
 
     if "active" in config and not has_schema_version:
         return "legacy_v0", None
-    if "panes" in config and (not has_schema_version or schema_version == 1):
-        return "chart_layout_v1", 1
-    if has_schema_version and schema_version == 2:
+    if "panes" in config and (not has_schema_version or (version_is_int and schema_version == 1)):
+        source_revision = 1 if (has_schema_version and version_is_int and schema_version == 1) else None
+        return "chart_layout_v1", source_revision
+    if has_schema_version and version_is_int and schema_version == 2:
         return "chart_layout_v2", 2
     return None
 
@@ -443,10 +596,15 @@ def migrate_legacy(config: Any) -> dict[str, Any]:
     envelope, or a structured failure. Never raises.
 
     Claim semantics: ONLY present, correctly-typed chart fields enter the
-    migrated widget config; unclaimed fields are ABSENT (never null, never
-    invented). `sync` defaults to `True` only when the source predates v2
-    AND `panes` was claimed (verbatim contract rule) — v2 never gets an
-    injected default; it owns its own `sync` value or leaves it unclaimed.
+    migrated widget config; unclaimed (ABSENT) fields are never invented.
+    `sync` defaults to `True` only when the source predates v2 AND `panes`
+    was claimed (verbatim contract rule) — v2 never gets an injected
+    default; it owns its own `sync` value or leaves it unclaimed.
+
+    Lossless-or-refuse (Amendment A2 ruling 2): a field the source format
+    OWNS but that fails its validator is never silently dropped — migration
+    refuses outright with `{"ok": False, "code": "invalid_widget_config"}`.
+    There is no third state between "migrated losslessly" and "refused".
     """
     if not isinstance(config, Mapping):
         return {"ok": False, "code": "malformed_workspace"}
@@ -468,21 +626,33 @@ def migrate_legacy(config: Any) -> dict[str, Any]:
     for field in CHART_CONFIG_FIELDS:
         if field in config:
             normalized = _CHART_FIELD_VALIDATORS[field](config[field])
-            if normalized is not _INVALID:
-                claims[field] = normalized
+            if normalized is _INVALID:
+                # Lossless-or-refuse: an owned field is PRESENT but invalid —
+                # refuse loudly rather than silently omit it (ruling 2).
+                return {"ok": False, "code": "invalid_widget_config"}
+            claims[field] = normalized
 
     # Legacy scalar -> canonical array mappings (contract §6, v0/v1 only):
     # only applied when the canonical array field was not already directly
     # claimed above, and never for v2 (which owns `panes`/`paneTfs` natively
-    # and never carried the singular `active`/`tf` legacy keys).
-    if version < 2 and "panes" not in claims and isinstance(config.get("active"), str):
-        normalized = _v_panes([config["active"]])
-        if normalized is not _INVALID:
-            claims["panes"] = normalized
-    if version < 2 and "paneTfs" not in claims and isinstance(config.get("tf"), str):
-        normalized = _v_pane_tfs([config["tf"]])
-        if normalized is not _INVALID:
-            claims["paneTfs"] = normalized
+    # and never carried the singular `active`/`tf` legacy keys). Same
+    # lossless-or-refuse law applies to these legacy-named owned fields.
+    if version < 2 and "panes" not in claims and "active" in config:
+        raw_active = config["active"]
+        if not isinstance(raw_active, str):
+            return {"ok": False, "code": "invalid_widget_config"}
+        normalized = _v_panes([raw_active])
+        if normalized is _INVALID:
+            return {"ok": False, "code": "invalid_widget_config"}
+        claims["panes"] = normalized
+    if version < 2 and "paneTfs" not in claims and "tf" in config:
+        raw_tf = config["tf"]
+        if not isinstance(raw_tf, str):
+            return {"ok": False, "code": "invalid_widget_config"}
+        normalized = _v_pane_tfs([raw_tf])
+        if normalized is _INVALID:
+            return {"ok": False, "code": "invalid_widget_config"}
+        claims["paneTfs"] = normalized
 
     # sync defaults true ONLY when version<2 AND panes claimed (verbatim).
     if version < 2 and "panes" in claims and "sync" not in claims:
@@ -509,121 +679,51 @@ def migrate_legacy(config: Any) -> dict[str, Any]:
     return {"ok": True, "envelope": envelope}
 
 
-def _project_ports(raw: Any) -> list[str]:
-    if not isinstance(raw, list):
-        return []
-    out = []
-    for item in raw[:MAX_PORTS]:
-        if isinstance(item, str) and _LINK_GROUP_NAME_RE.match(item):
-            out.append(item)
-    return out
-
-
-def _project_widget(widget: Any) -> dict[str, Any] | None:
-    if not isinstance(widget, Mapping):
-        return None
-    widget_id = widget.get("id")
-    if not isinstance(widget_id, str) or not _WIDGET_ID_RE.match(widget_id):
-        return None
-    widget_type = widget.get("type")
-    if widget_type not in WIDGET_TYPES:
-        return None
-    lane = widget.get("semantic_lane")
-    if lane not in SEMANTIC_LANES:
-        return None
-
-    config_raw = widget.get("config")
-    config: dict[str, Any] = {}
-    if widget_type == "chart" and isinstance(config_raw, Mapping):
-        for field in CHART_CONFIG_FIELDS:
-            if field in config_raw:
-                normalized = _CHART_FIELD_VALIDATORS[field](config_raw[field])
-                if normalized is not _INVALID:
-                    config[field] = normalized
-
-    out: dict[str, Any] = {
-        "id": widget_id,
-        "type": widget_type,
-        "semantic_lane": lane,
-        "context_in": _project_ports(widget.get("context_in")),
-        "context_out": _project_ports(widget.get("context_out")),
-        "config": config,
-    }
-    grid_raw = widget.get("grid")
-    if _validate_grid(grid_raw):
-        out["grid"] = {key: grid_raw[key] for key in ("x", "y", "w", "h")}
-    return out
-
-
 def subscriber_safe_projection(envelope: Any, row_name: Any) -> dict[str, Any]:
-    """Rebuild the wire/export projection of a stored envelope with `name`
-    filled from the owning row (contract §5/§11). Rebuilt entirely from
-    schema-known fields — an unknown top-level, widget-level, or nested key
-    injected into `envelope` cannot ride through, and no row uuid/user id/
-    path is ever consulted or echoed (this function never receives them).
+    """Read/export projection of a stored envelope with `name` filled from
+    the owning row (contract §5/§11, amended by A2 rulings 6/14).
+
+    FAIL-CLOSED (ruling 6): the input is first validated in STORED mode
+    (`wire=False` — the stored row's own `name` must be `null`). ANY
+    failure returns ``{"ok": False, "code": ...}`` — the payload is never
+    rewritten, downgraded, or partially projected; a blocked row's export
+    is the caller's problem to solve some other way (Terminal exports the
+    raw stored bytes instead), never this function's job to paper over.
+
+    On success the output is the input 1:1 plus a NORMALIZED `name`
+    (trim/collapse whitespace, 1..60 chars, ruling 14) — an unnormalizable
+    `row_name` (not a string, or empty/oversized after normalization) is
+    itself a refusal (`malformed_workspace`), never a silent blank/garbled
+    echo. Because the input already passed strict stored-mode validation,
+    the output is wire-valid (`validate_envelope(..., wire=True)`) by
+    construction — no unknown key can have been present to smuggle through.
     """
-    envelope = envelope if isinstance(envelope, Mapping) else {}
+    stored = validate_envelope(envelope, wire=False)
+    if not stored["ok"]:
+        return {"ok": False, "code": stored["errors"][0]["code"]}
 
-    requires_raw = envelope.get("requires")
-    floor = requires_raw.get("floor") if isinstance(requires_raw, Mapping) else None
-    if not _is_int(floor) or floor < 1:
-        floor = FLOOR_SUPPORTED
+    normalized_name = _normalize_name(row_name)
+    if normalized_name is None:
+        return {"ok": False, "code": "malformed_workspace"}
 
-    revision = envelope.get("revision")
-    if not _is_int(revision) or revision < 1:
-        revision = 1
-
-    link_groups: dict[str, Any] = {}
-    raw_groups = envelope.get("link_groups")
-    if isinstance(raw_groups, Mapping):
-        for group_name, group in raw_groups.items():
-            if not isinstance(group_name, str) or not _LINK_GROUP_NAME_RE.match(group_name):
-                continue
-            if len(link_groups) >= MAX_LINK_GROUPS:
-                break
-            if not isinstance(group, Mapping):
-                continue
-            entity_type = group.get("entity_type")
-            if entity_type in ENTITY_TYPES:
-                link_groups[group_name] = {"entity_type": entity_type}
-
-    widgets: list[dict[str, Any]] = []
-    raw_widgets = envelope.get("widgets")
-    if isinstance(raw_widgets, list):
-        for widget in raw_widgets[:MAX_WIDGETS]:
-            projected = _project_widget(widget)
-            if projected is not None:
-                widgets.append(projected)
-
-    migration = {"source": "none", "source_revision": None}
-    raw_migration = envelope.get("migration")
-    if isinstance(raw_migration, Mapping):
-        source = raw_migration.get("source")
-        if source in MIGRATION_SOURCES:
-            migration["source"] = source
-        source_revision = raw_migration.get("source_revision")
-        if source_revision is None or _is_int(source_revision):
-            migration["source_revision"] = source_revision
-
-    name = row_name if isinstance(row_name, str) and row_name else None
-
-    return {
-        "schema": SCHEMA,
-        "requires": {"floor": floor},
-        "revision": revision,
-        "name": name,
-        "link_groups": link_groups,
-        "widgets": widgets,
-        "migration": migration,
-    }
+    projected = copy.deepcopy(dict(envelope))
+    projected["name"] = normalized_name
+    return {"ok": True, "envelope": projected}
 
 
 def envelope_digest(envelope: Any) -> str:
-    """SHA-256 over the canonical (sorted-key, compact) JSON serialization —
-    the digest used to pin golden vectors and to prove Terminal's TS mirror
-    byte-identical (contract §10)."""
-    canonical = json.dumps(envelope, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
-    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+    """SHA-256 over the canonical (sorted-key, compact, numeric-normalized)
+    JSON serialization — the digest used to pin golden vectors and to prove
+    Terminal's TS mirror byte-identical (contract §10). Never raises: an
+    undigestable structure (non-finite float, lone surrogate) still returns
+    a stable 64-char hex string rather than crashing — callers are expected
+    to validate with `validate_envelope` first."""
+    try:
+        canonical = _canonical_dumps(envelope)
+        encoded = canonical.encode("utf-8")
+    except (TypeError, ValueError):
+        encoded = b"\x00invalid-envelope"
+    return hashlib.sha256(encoded).hexdigest()
 
 
 __all__ = [
@@ -638,6 +738,8 @@ __all__ = [
     "MAX_LINK_GROUPS",
     "MAX_PORTS",
     "FLOOR_SUPPORTED",
+    "MAX_PARAM_KEYS_PER_LEVEL",
+    "MAX_PARAM_NEST_DEPTH",
     "CHART_CONFIG_FIELDS",
     "validate_envelope",
     "migrate_legacy",

@@ -1,22 +1,36 @@
 """Hostile tests for the W2-A versioned workspace layout contract
 (`workspace_layout.v1`).
 
-Frozen contract: research/DEEPVUE_W2A_WORKSPACE_LAYOUT_CONTRACT_2026-08-26.md.
+Frozen contract: research/DEEPVUE_W2A_WORKSPACE_LAYOUT_CONTRACT_2026-08-26.md,
+as amended by Amendment A1 (`lockedVLine`/`split` real-runtime types) and
+Amendment A2 (Phase 6 adversarial review of head 8b4d326514f6: real-runtime
+grammar, lossless-or-refuse migration, canonicalization, wire mode,
+fail-closed projection, key deny-list, optional `requires`, honest
+provenance).
 
 Coverage:
   1. schema parses + validates the freeze §1 canonical example
-  2. every valid migration vector: migrate_legacy(input) deep-equals the
+  2. every valid migration vector (incl. the real-Terminal-shaped
+     `chart_layout_v2_real_capture`): migrate_legacy(input) deep-equals the
      committed `expected` envelope, twice in a row (determinism)
   3. no-claim law: unclaimed chart-config fields are ABSENT, never null
   4. validate_envelope is `ok` on every valid vector's expected envelope
   5. every invalid vector -> its exact committed `expected_code`, never raises
-  6. subscriber_safe_projection: name filled, unknown injected key dropped,
-     no user_id/uuid-shaped key ever survives
+  6. subscriber_safe_projection: fail-closed result shape, wire-mode output,
+     normalized name, no injected key/value ever survives
   7. MANIFEST.json digest recomputes to the pinned `vectors_digest` literal
-  8. hostile fuzz across both validate_envelope and migrate_legacy never raises
+  8. hostile fuzz across validate_envelope/migrate_legacy/
+     subscriber_safe_projection never raises
+  A1. `lockedVLine` string|null, `split` enum {1,2,4}
+  A2. real-runtime grammar (ruling 1), lossless-or-refuse (ruling 2),
+      canonicalization/NaN/surrogates (ruling 4), wire mode (ruling 5),
+      fail-closed projection (rulings 6/14), key deny-list (ruling 10),
+      optional `requires` (ruling 11), source_revision >=1 + honest
+      provenance (rulings 12/13)
 """
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import pathlib
@@ -34,11 +48,11 @@ SCHEMA_PATH = REPO_ROOT / "contracts" / "intelligence_workspace" / "workspace_la
 
 # Pinned hard literal (contract §10/#SCOPE-item-3): a MANIFEST digest drift
 # without a matching edit here means the fixtures changed silently.
-# Re-pinned under Amendment A1 (2026-08-26): `lockedVLine` is string|null (was
-# number|null) and `split` is the discrete enum {1, 2, 4} (was 0-100) — both
-# falsified against the real Terminal runtime; the pre-amendment digest is
-# void (research/DEEPVUE_W2A_WORKSPACE_LAYOUT_CONTRACT_2026-08-26.md).
-PINNED_VECTORS_DIGEST = "9eeef5b4b055e3ffa407f76d8e3a6ee70c2ab064194983391062d29ec4b701ab"
+# Re-pinned under Amendment A2 (2026-08-26, Phase 6 review of 8b4d326514f6):
+# real-runtime grammar (indicator id/param key/chart type/symbol patterns),
+# honest v1 provenance (source_revision null when schemaVersion was absent),
+# and the new `chart_layout_v2_real_capture` vector. Prior digests are void.
+PINNED_VECTORS_DIGEST = "d8bc519a3e2f959115724ed20d4b214d8a729afd1b0de2aaad21a02013af4e5d"
 
 # The freeze doc's §1 canonical example, verbatim.
 FREEZE_SECTION_1_EXAMPLE = {
@@ -88,6 +102,7 @@ VALID_VECTOR_NAMES = [
     "chart_layout_v1_sparse.json",
     "chart_layout_v2_full.json",
     "chart_layout_v2_sparse.json",
+    "chart_layout_v2_real_capture.json",
 ]
 
 INVALID_VECTOR_NAMES = [
@@ -104,6 +119,31 @@ INVALID_VECTOR_NAMES = [
     "invalid_unknown_chart_config_key.json",
     "invalid_non_dict_input.json",
 ]
+
+
+def _widget_config(**overrides):
+    """Minimal valid envelope wrapper around one `chart` widget's config,
+    used by field-level regression tests (Amendment A1/A2)."""
+    config = {"panes": ["NVDA"]}
+    config.update(overrides)
+    return {
+        "schema": "workspace_layout.v1",
+        "requires": {"floor": 1},
+        "revision": 1,
+        "name": None,
+        "link_groups": {"primary_security": {"entity_type": "security"}},
+        "widgets": [
+            {
+                "id": "chart-main",
+                "type": "chart",
+                "semantic_lane": "primary",
+                "context_in": ["primary_security"],
+                "context_out": ["primary_security"],
+                "config": config,
+            },
+        ],
+        "migration": {"source": "none", "source_revision": None},
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -211,29 +251,6 @@ def test_unclaimed_field_is_missing_key_not_none_value():
 # rejected every real v2 layout under the original (pre-amendment) law.
 # ---------------------------------------------------------------------------
 
-def _widget_config(**overrides):
-    config = {"panes": ["NVDA"]}
-    config.update(overrides)
-    return {
-        "schema": "workspace_layout.v1",
-        "requires": {"floor": 1},
-        "revision": 1,
-        "name": None,
-        "link_groups": {"primary_security": {"entity_type": "security"}},
-        "widgets": [
-            {
-                "id": "chart-main",
-                "type": "chart",
-                "semantic_lane": "primary",
-                "context_in": ["primary_security"],
-                "context_out": ["primary_security"],
-                "config": config,
-            },
-        ],
-        "migration": {"source": "none", "source_revision": None},
-    }
-
-
 def test_amendment_a1_string_locked_vline_validates():
     envelope = _widget_config(lockedVLine="2026-08-12T14:30:00Z")
     result = wl.validate_envelope(envelope)
@@ -306,56 +323,117 @@ def test_every_invalid_vector_names_a_frozen_failure_code():
 
 
 # ---------------------------------------------------------------------------
-# 6. subscriber-safe projection
+# 6. subscriber-safe projection — Amendment A2 rulings 6/14: FAIL-CLOSED
+# result shape ({"ok": True, "envelope": ...} | {"ok": False, "code": ...}).
+# The function validates the input in STORED mode first; any failure at all
+# refuses outright — never rewrites, downgrades, or partially projects.
 # ---------------------------------------------------------------------------
 
-def test_projection_fills_name_from_row_and_matches_otherwise():
+def test_projection_fills_name_and_is_otherwise_1to1():
     envelope = dict(FREEZE_SECTION_1_EXAMPLE)
-    projected = wl.subscriber_safe_projection(envelope, "My Chart Workspace")
+    result = wl.subscriber_safe_projection(envelope, "My Chart Workspace")
+    assert result["ok"] is True
+    projected = result["envelope"]
     assert projected["name"] == "My Chart Workspace"
     without_name = {**projected, "name": None}
     assert without_name == envelope
 
 
-def test_projection_drops_injected_unknown_top_level_key():
+def test_projection_output_validates_in_wire_mode():
+    envelope = dict(FREEZE_SECTION_1_EXAMPLE)
+    result = wl.subscriber_safe_projection(envelope, "My Chart Workspace")
+    assert result["ok"] is True
+    assert wl.validate_envelope(result["envelope"], wire=True) == {"ok": True, "errors": []}
+
+
+def test_stored_non_null_name_still_refuses_in_stored_mode():
+    """Amendment A2 ruling 5: wire mode is an ADDITIONAL allowance, never a
+    relaxation of the stored-row law. The exact envelope a hostile/buggy
+    caller might pass to projection — one whose STORED `name` is already
+    non-null — is refused by validate_envelope in (default) stored mode."""
+    hostile_stored = {**FREEZE_SECTION_1_EXAMPLE, "name": "should-be-null"}
+    assert wl.validate_envelope(hostile_stored)["ok"] is False
+    assert wl.validate_envelope(hostile_stored, wire=False)["ok"] is False
+    result = wl.subscriber_safe_projection(hostile_stored, "row-name")
+    assert result == {"ok": False, "code": "malformed_workspace"}
+
+
+def test_wire_mode_accepts_a_normalized_non_null_name():
+    wire_envelope = {**FREEZE_SECTION_1_EXAMPLE, "name": "My Workspace"}
+    assert wl.validate_envelope(wire_envelope, wire=True) == {"ok": True, "errors": []}
+    # ...but the SAME object is still refused in stored (default) mode.
+    assert wl.validate_envelope(wire_envelope)["ok"] is False
+
+
+def test_wire_mode_still_refuses_an_unnormalized_name():
+    """Wire mode accepts a non-null name, but only an already-normalized
+    one — it is not a laxer parser, just a different allowed value."""
+    for bad_name in ("  leading space", "trailing space  ", "double  space", "", "x" * 61):
+        wire_envelope = {**FREEZE_SECTION_1_EXAMPLE, "name": bad_name}
+        result = wl.validate_envelope(wire_envelope, wire=True)
+        assert result["ok"] is False, bad_name
+
+
+def test_projection_refuses_injected_unknown_top_level_key():
     hostile = {**FREEZE_SECTION_1_EXAMPLE, "user_id": "11111111-1111-1111-1111-111111111111"}
-    projected = wl.subscriber_safe_projection(hostile, "row-name")
-    assert "user_id" not in projected
-    blob = json.dumps(projected)
-    assert "11111111-1111-1111-1111-111111111111" not in blob
+    result = wl.subscriber_safe_projection(hostile, "row-name")
+    assert result == {"ok": False, "code": "malformed_workspace"}
 
 
-def test_projection_drops_injected_unknown_widget_key():
-    import copy
-
+def test_projection_refuses_injected_unknown_widget_key():
     hostile = copy.deepcopy(FREEZE_SECTION_1_EXAMPLE)
     hostile["widgets"][0]["owner_uuid"] = "22222222-2222-2222-2222-222222222222"
-    hostile["widgets"][0]["config"]["path_leak"] = "/Users/attacker/.ssh/id_rsa"
-    projected = wl.subscriber_safe_projection(hostile, "row-name")
-    blob = json.dumps(projected)
-    assert "owner_uuid" not in blob
-    assert "22222222" not in blob
-    assert "path_leak" not in blob
-    assert "attacker" not in blob
+    result = wl.subscriber_safe_projection(hostile, "row-name")
+    assert result["ok"] is False
+    assert result["code"] in wl.FAILURE_CODES
 
 
-def test_projection_never_carries_uuid_or_path_shaped_injected_values():
-    import copy
-
+def test_projection_refuses_injected_path_leak_in_config():
     hostile = copy.deepcopy(FREEZE_SECTION_1_EXAMPLE)
-    hostile["row_uuid"] = "33333333-3333-3333-3333-333333333333"
-    hostile["source_path"] = "/etc/passwd"
-    projected = wl.subscriber_safe_projection(hostile, "row-name")
-    blob = json.dumps(projected)
-    assert "33333333" not in blob
-    assert "/etc/passwd" not in blob
+    hostile["widgets"][0]["config"]["path_leak"] = "/Users/attacker/.ssh/id_rsa"
+    result = wl.subscriber_safe_projection(hostile, "row-name")
+    assert result == {"ok": False, "code": "invalid_widget_config"}
 
 
-def test_projection_on_hostile_non_mapping_envelope_never_raises():
+def test_projection_p7_refuses_a_future_unknown_schema():
+    hostile = {**FREEZE_SECTION_1_EXAMPLE, "schema": "workspace_layout.v2"}
+    result = wl.subscriber_safe_projection(hostile, "row-name")
+    assert result == {"ok": False, "code": "unsupported_schema"}
+
+
+def test_projection_p8_refuses_an_invalid_port_envelope():
+    hostile = copy.deepcopy(FREEZE_SECTION_1_EXAMPLE)
+    hostile["widgets"][0]["context_in"] = ["no_such_group"]
+    result = wl.subscriber_safe_projection(hostile, "row-name")
+    assert result == {"ok": False, "code": "invalid_port"}
+
+
+def test_projection_p10_normalizes_a_whitespace_padded_row_name():
+    envelope = dict(FREEZE_SECTION_1_EXAMPLE)
+    result = wl.subscriber_safe_projection(envelope, "  My   Workspace   Name  ")
+    assert result["ok"] is True
+    assert result["envelope"]["name"] == "My Workspace Name"
+
+
+def test_projection_p10_refuses_an_oversized_row_name_even_after_normalization():
+    envelope = dict(FREEZE_SECTION_1_EXAMPLE)
+    oversized = "/Users/attacker/" + ("x" * 80)
+    result = wl.subscriber_safe_projection(envelope, oversized)
+    assert result == {"ok": False, "code": "malformed_workspace"}
+
+
+def test_projection_refuses_a_non_string_row_name():
+    envelope = dict(FREEZE_SECTION_1_EXAMPLE)
+    for bad_name in (None, 123, ["a"], {"n": "x"}, ""):
+        result = wl.subscriber_safe_projection(envelope, bad_name)
+        assert result == {"ok": False, "code": "malformed_workspace"}, bad_name
+
+
+def test_projection_on_hostile_non_mapping_envelope_refuses_rather_than_raising():
     for hostile in (None, [], 1, "garbage", {"schema": {}}):
-        projected = wl.subscriber_safe_projection(hostile, "row-name")
-        assert projected["schema"] == wl.SCHEMA
-        assert projected["widgets"] == []
+        result = wl.subscriber_safe_projection(hostile, "row-name")
+        assert result["ok"] is False
+        assert result["code"] == "malformed_workspace"
 
 
 # ---------------------------------------------------------------------------
@@ -422,6 +500,13 @@ def test_validate_envelope_never_raises_on_hostile_input(hostile):
 
 
 @pytest.mark.parametrize("hostile", _HOSTILE_INPUTS)
+def test_validate_envelope_wire_mode_never_raises_on_hostile_input(hostile):
+    result = wl.validate_envelope(hostile, wire=True)
+    assert isinstance(result, dict)
+    assert isinstance(result["ok"], bool)
+
+
+@pytest.mark.parametrize("hostile", _HOSTILE_INPUTS)
 def test_migrate_legacy_never_raises_on_hostile_input(hostile):
     result = wl.migrate_legacy(hostile)
     assert isinstance(result, dict)
@@ -434,8 +519,13 @@ def test_migrate_legacy_never_raises_on_hostile_input(hostile):
 
 @pytest.mark.parametrize("hostile", _HOSTILE_INPUTS)
 def test_subscriber_safe_projection_never_raises_on_hostile_input(hostile):
-    projected = wl.subscriber_safe_projection(hostile, "row-name")
-    assert projected["schema"] == wl.SCHEMA
+    result = wl.subscriber_safe_projection(hostile, "row-name")
+    assert isinstance(result, dict)
+    assert isinstance(result["ok"], bool)
+    if result["ok"]:
+        assert result["envelope"]["schema"] == wl.SCHEMA
+    else:
+        assert result["code"] in wl.FAILURE_CODES
 
 
 def test_envelope_digest_is_deterministic_and_order_independent():
@@ -446,15 +536,8 @@ def test_envelope_digest_is_deterministic_and_order_independent():
 
 
 def test_envelope_digest_never_raises_on_hostile_input():
-    for hostile in (None, [], "x", {"a": float("nan")}):
-        try:
-            digest = wl.envelope_digest(hostile)
-        except (TypeError, ValueError):
-            # float("nan") is not valid JSON under default json.dumps
-            # settings unless allow_nan permits it (it does, by default) —
-            # this branch exists purely so a future stricter serialization
-            # choice cannot turn into an uncaught crash here.
-            continue
+    for hostile in (None, [], "x", {"a": float("nan")}, {"a": float("inf")}, {"\ud800": "x"}):
+        digest = wl.envelope_digest(hostile)
         assert isinstance(digest, str) and len(digest) == 64
 
 
@@ -477,3 +560,302 @@ def test_already_canonical_but_invalid_input_surfaces_its_code():
     hostile = {**FREEZE_SECTION_1_EXAMPLE, "name": "not-null"}
     result = wl.migrate_legacy(hostile)
     assert result == {"ok": False, "code": "malformed_workspace"}
+
+
+# ---------------------------------------------------------------------------
+# Amendment A2 ruling 1: real-runtime grammar (Phase 6 review B1/M3).
+# ---------------------------------------------------------------------------
+
+def test_composite_and_caret_pane_symbols_are_valid():
+    envelope = _widget_config(panes=["NVDA+AMD", "^NDX"])
+    assert wl.validate_envelope(envelope) == {"ok": True, "errors": []}
+
+
+def test_venue_qualified_symbol_is_valid():
+    envelope = _widget_config(compare=["BINANCE:BTCUSDT"])
+    assert wl.validate_envelope(envelope) == {"ok": True, "errors": []}
+
+
+def test_hyphenated_chart_type_is_valid():
+    envelope = _widget_config(chartType="line-markers")
+    assert wl.validate_envelope(envelope) == {"ok": True, "errors": []}
+
+
+def test_underscore_prefixed_indicator_id_is_valid():
+    envelope = _widget_config(inds=["_lab"])
+    assert wl.validate_envelope(envelope) == {"ok": True, "errors": []}
+
+
+def test_dotted_suite_param_key_is_valid():
+    envelope = _widget_config(indParams={"structure": {"ob.on": True, "ob.showLast": 6}})
+    assert wl.validate_envelope(envelope) == {"ok": True, "errors": []}
+
+
+def test_nested_vis_shape_at_depth_2_is_valid():
+    envelope = _widget_config(indParams={
+        "ema": {"_vis": {"days": {"on": True, "min": 1, "max": 366}}},
+    })
+    assert wl.validate_envelope(envelope) == {"ok": True, "errors": []}
+
+
+def test_param_nesting_at_the_depth_3_boundary_is_valid():
+    """depth 1 = `_vis`, depth 2 = `days`, depth 3 = one more wrapper whose
+    OWN values must then be leaves — exactly at the allowed boundary."""
+    envelope = _widget_config(indParams={
+        "ema": {"_vis": {"days": {"extra": {"leaf": 1}}}},
+    })
+    assert wl.validate_envelope(envelope) == {"ok": True, "errors": []}
+
+
+def test_param_nesting_beyond_depth_3_is_invalid():
+    envelope = _widget_config(indParams={
+        "ema": {"_vis": {"days": {"extra": {"deeper": {"leaf": 1}}}}},
+    })
+    result = wl.validate_envelope(envelope)
+    assert result["ok"] is False
+    assert {e["code"] for e in result["errors"]} == {"invalid_widget_config"}
+
+
+def test_too_many_keys_at_a_param_level_is_invalid():
+    envelope = _widget_config(indParams={
+        "ema": {f"k{i}": i for i in range(65)},
+    })
+    result = wl.validate_envelope(envelope)
+    assert result["ok"] is False
+    assert {e["code"] for e in result["errors"]} == {"invalid_widget_config"}
+
+
+def test_real_capture_vector_preserves_the_non_integral_float():
+    vector = _load("chart_layout_v2_real_capture.json")
+    assert vector["expected"]["widgets"][0]["config"]["indParams"]["bb"]["mult"] == 1.5
+
+
+def test_real_capture_vector_preserves_the_real_cmp_cfg_shape():
+    vector = _load("chart_layout_v2_real_capture.json")
+    cmp_cfg = vector["expected"]["widgets"][0]["config"]["compareCfg"]["QQQ"]
+    assert set(cmp_cfg.keys()) == {"color", "lineStyle", "lineWidth", "mode"}
+
+
+def test_real_capture_vector_includes_lab_indicator_and_line_markers():
+    vector = _load("chart_layout_v2_real_capture.json")
+    config = vector["expected"]["widgets"][0]["config"]
+    assert "_lab" in config["inds"]
+    assert config["chartType"] == "line-markers"
+    assert config["panes"] == ["NVDA+AMD", "^NDX"]
+
+
+# ---------------------------------------------------------------------------
+# Amendment A2 ruling 2: lossless-or-refuse — migrate_legacy MUST NOT
+# silently drop a present-but-invalid owned field.
+# ---------------------------------------------------------------------------
+
+def test_realistic_capture_migrates_successfully_under_the_amended_grammar():
+    real_capture_input = _load("chart_layout_v2_real_capture.json")["input"]
+    result = wl.migrate_legacy(real_capture_input)
+    assert result["ok"] is True, result
+
+
+def test_realistic_capture_with_one_hostile_field_refuses_rather_than_drops():
+    """Same real-Terminal-shaped input, but ONE owned field (`bb.mult`) is
+    corrupted (a NaN, non-finite float). The old (pre-ruling-2) behavior
+    would have silently produced an envelope missing `indParams.bb` (or
+    the whole `bb` entry); the amended law refuses outright instead."""
+    real_capture_input = copy.deepcopy(_load("chart_layout_v2_real_capture.json")["input"])
+    real_capture_input["indParams"]["bb"]["mult"] = float("nan")
+    result = wl.migrate_legacy(real_capture_input)
+    assert result == {"ok": False, "code": "invalid_widget_config"}
+
+
+def test_realistic_capture_with_hostile_pane_symbol_refuses():
+    real_capture_input = copy.deepcopy(_load("chart_layout_v2_real_capture.json")["input"])
+    real_capture_input["panes"] = ["this-is-way-too-long-to-be-a-real-symbol-string"]
+    result = wl.migrate_legacy(real_capture_input)
+    assert result == {"ok": False, "code": "invalid_widget_config"}
+
+
+def test_legacy_active_present_but_wrong_type_refuses_rather_than_drops():
+    result = wl.migrate_legacy({"active": 12345, "tf": "1D"})
+    assert result == {"ok": False, "code": "invalid_widget_config"}
+
+
+def test_legacy_tf_present_but_wrong_type_refuses_rather_than_drops():
+    result = wl.migrate_legacy({"active": "AAPL", "tf": 999})
+    assert result == {"ok": False, "code": "invalid_widget_config"}
+
+
+# ---------------------------------------------------------------------------
+# Amendment A2 ruling 4: canonicalization — ensure_ascii=False/allow_nan=False,
+# integral-float normalization, lone-surrogate/NaN/Inf handling.
+# ---------------------------------------------------------------------------
+
+def test_cjk_string_digest_is_stable_and_does_not_raise():
+    envelope = {"widgets": [{"config": {"chartType": "蜡烛图"}}]}
+    first = wl.envelope_digest(envelope)
+    second = wl.envelope_digest(envelope)
+    assert first == second
+    assert len(first) == 64
+
+
+def test_integral_valued_float_digests_identically_to_the_equivalent_int():
+    """Closes the Python `20.0` vs JS `20` split (JS has one number type)."""
+    with_float = {"widgets": [{"config": {"split": 2.0}}]}
+    with_int = {"widgets": [{"config": {"split": 2}}]}
+    assert wl.envelope_digest(with_float) == wl.envelope_digest(with_int)
+
+
+def test_non_integral_float_is_preserved_and_digests_distinctly():
+    one_point_five = wl.envelope_digest({"a": 1.5})
+    one = wl.envelope_digest({"a": 1})
+    two = wl.envelope_digest({"a": 2})
+    assert one_point_five not in (one, two)
+
+
+def test_lone_surrogate_in_an_otherwise_valid_field_is_malformed_workspace():
+    """A lone UTF-16 surrogate passes every per-field regex/length check
+    (Python `str` can hold one), but can never round-trip through UTF-8 —
+    caught only at the whole-envelope canonicalization step."""
+    envelope = _widget_config(lockedVLine="\ud800")
+    result = wl.validate_envelope(envelope)
+    assert result["ok"] is False
+    assert "malformed_workspace" in {e["code"] for e in result["errors"]}
+
+
+def test_nan_indicator_param_is_refused_via_migrate_legacy():
+    config = {"panes": ["AAPL"], "indParams": {"ema21": {"period": float("nan")}}}
+    result = wl.migrate_legacy(config)
+    assert result == {"ok": False, "code": "invalid_widget_config"}
+
+
+def test_infinite_indicator_param_is_refused_via_migrate_legacy():
+    config = {"panes": ["AAPL"], "indParams": {"ema21": {"period": float("inf")}}}
+    result = wl.migrate_legacy(config)
+    assert result == {"ok": False, "code": "invalid_widget_config"}
+
+
+def test_nan_indicator_param_is_refused_via_validate_envelope():
+    envelope = _widget_config(indParams={"ema21": {"period": float("nan")}})
+    result = wl.validate_envelope(envelope)
+    assert result["ok"] is False
+    assert "invalid_widget_config" in {e["code"] for e in result["errors"]}
+
+
+# ---------------------------------------------------------------------------
+# Amendment A2 ruling 10: key deny-list — __proto__/constructor/prototype
+# are never valid identifiers anywhere a key/id is accepted.
+# ---------------------------------------------------------------------------
+
+def test_denied_widget_id_is_invalid():
+    envelope = copy.deepcopy(FREEZE_SECTION_1_EXAMPLE)
+    envelope["widgets"][0]["id"] = "__proto__"
+    result = wl.validate_envelope(envelope)
+    assert result["ok"] is False
+    assert "invalid_widget_config" in {e["code"] for e in result["errors"]}
+
+
+def test_denied_link_group_name_is_invalid():
+    envelope = copy.deepcopy(FREEZE_SECTION_1_EXAMPLE)
+    # Added alongside the real group (not referenced by any port), so the
+    # ONLY issue this envelope has is the denied group name itself.
+    envelope["link_groups"]["constructor"] = {"entity_type": "security"}
+    result = wl.validate_envelope(envelope)
+    assert result["ok"] is False
+    assert "malformed_workspace" in {e["code"] for e in result["errors"]}
+
+
+def test_denied_indparams_indicator_key_is_invalid():
+    envelope = _widget_config(indParams={"prototype": {"length": 20}})
+    result = wl.validate_envelope(envelope)
+    assert result["ok"] is False
+    assert {e["code"] for e in result["errors"]} == {"invalid_widget_config"}
+
+
+def test_denied_nested_param_key_is_invalid():
+    envelope = _widget_config(indParams={"ema21": {"__proto__": {"x": 1}}})
+    result = wl.validate_envelope(envelope)
+    assert result["ok"] is False
+    assert {e["code"] for e in result["errors"]} == {"invalid_widget_config"}
+
+
+def test_denied_compare_cfg_nested_param_key_is_invalid():
+    """compareCfg's OUTER key must already look like a symbol (uppercase),
+    so a lowercase `constructor` there is caught by the ordinary pattern
+    mismatch, not meaningfully by the deny-list. Exercise the deny-list on
+    the nested per-symbol param key instead, where a real field name could
+    plausibly collide with it."""
+    envelope = _widget_config(compareCfg={"QQQ": {"constructor": "x"}})
+    result = wl.validate_envelope(envelope)
+    assert result["ok"] is False
+    assert {e["code"] for e in result["errors"]} == {"invalid_widget_config"}
+
+
+# ---------------------------------------------------------------------------
+# Amendment A2 ruling 11: `requires` is optional — absent (or empty)
+# defaults to floor 1.
+# ---------------------------------------------------------------------------
+
+def test_missing_requires_key_entirely_defaults_to_floor_1():
+    envelope = copy.deepcopy(FREEZE_SECTION_1_EXAMPLE)
+    del envelope["requires"]
+    assert wl.validate_envelope(envelope) == {"ok": True, "errors": []}
+
+
+def test_empty_requires_object_defaults_to_floor_1():
+    envelope = copy.deepcopy(FREEZE_SECTION_1_EXAMPLE)
+    envelope["requires"] = {}
+    assert wl.validate_envelope(envelope) == {"ok": True, "errors": []}
+
+
+def test_requires_with_unknown_key_is_still_malformed():
+    envelope = copy.deepcopy(FREEZE_SECTION_1_EXAMPLE)
+    envelope["requires"] = {"floor": 1, "ceiling": 9}
+    result = wl.validate_envelope(envelope)
+    assert result["ok"] is False
+    assert "malformed_workspace" in {e["code"] for e in result["errors"]}
+
+
+# ---------------------------------------------------------------------------
+# Amendment A2 rulings 12/13: source_revision >= 1, and honest provenance
+# (null unless the payload actually carried a valid integer schemaVersion;
+# a bool is never treated as a version number).
+# ---------------------------------------------------------------------------
+
+def test_source_revision_zero_is_malformed():
+    envelope = copy.deepcopy(FREEZE_SECTION_1_EXAMPLE)
+    envelope["migration"]["source_revision"] = 0
+    result = wl.validate_envelope(envelope)
+    assert result["ok"] is False
+    assert "malformed_workspace" in {e["code"] for e in result["errors"]}
+
+
+def test_source_revision_negative_is_malformed():
+    envelope = copy.deepcopy(FREEZE_SECTION_1_EXAMPLE)
+    envelope["migration"]["source_revision"] = -1
+    result = wl.validate_envelope(envelope)
+    assert result["ok"] is False
+    assert "malformed_workspace" in {e["code"] for e in result["errors"]}
+
+
+def test_v1_without_schema_version_key_gets_null_source_revision():
+    result = wl.migrate_legacy({"panes": ["AAPL"]})
+    assert result["ok"] is True
+    assert result["envelope"]["migration"] == {"source": "chart_layout_v1", "source_revision": None}
+
+
+def test_v1_with_explicit_schema_version_one_gets_honest_source_revision_one():
+    result = wl.migrate_legacy({"panes": ["AAPL"], "schemaVersion": 1})
+    assert result["ok"] is True
+    assert result["envelope"]["migration"] == {"source": "chart_layout_v1", "source_revision": 1}
+
+
+def test_boolean_schema_version_is_never_treated_as_a_version_number():
+    """`True == 1` in Python, but a boolean is not a version — this must
+    fall through to `unsupported_schema`, never be silently coerced."""
+    result = wl.migrate_legacy({"panes": ["AAPL"], "schemaVersion": True})
+    assert result == {"ok": False, "code": "unsupported_schema"}
+
+
+def test_boolean_schema_version_two_is_never_treated_as_v2_either():
+    # Python has no `bool` equal to 2, but guard the general principle:
+    # a non-plain-int schemaVersion must never satisfy the v2 recognizer.
+    result = wl.migrate_legacy({"schemaVersion": 2.0, "panes": ["AAPL"]})
+    assert result == {"ok": False, "code": "unsupported_schema"}

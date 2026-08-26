@@ -2,16 +2,15 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mastermindx.ai/contracts/intelligence_workspace/workspace_layout.v1.schema.json",
   "title": "DeepVue W2-A versioned workspace layout v1",
-  "description": "Canonical envelope for a named intelligence workspace (widgets + static link-group graph). See research/DEEPVUE_W2A_WORKSPACE_LAYOUT_CONTRACT_2026-08-26.md. Structural shape only — cross-field laws (stored name must be null, duplicate widget ids, undeclared port references, size/count limits) are enforced by engine/intelligence_workspace/workspace_layout.py:validate_envelope, not by this schema alone.",
+  "description": "Canonical envelope for a named intelligence workspace (widgets + static link-group graph). See research/DEEPVUE_W2A_WORKSPACE_LAYOUT_CONTRACT_2026-08-26.md (as amended by Amendment A1 and Amendment A2). Structural shape only — cross-field laws (stored-vs-wire name law, duplicate widget ids, undeclared port references, size/count limits, honest provenance) are enforced by engine/intelligence_workspace/workspace_layout.py:validate_envelope, not by this schema alone. `requires` is OPTIONAL (Amendment A2 ruling 11: absent defaults to floor 1); `name` structurally allows a non-null string here because this schema also describes the wire/export shape — validate_envelope's stored mode is what actually requires `null`.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema", "requires", "revision", "name", "link_groups", "widgets", "migration"],
+  "required": ["schema", "revision", "name", "link_groups", "widgets", "migration"],
   "properties": {
     "schema": {"const": "workspace_layout.v1"},
     "requires": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["floor"],
       "properties": {
         "floor": {"type": "integer", "minimum": 1}
       }
@@ -21,7 +20,7 @@
     "link_groups": {
       "type": "object",
       "additionalProperties": {"$ref": "#/$defs/link_group"},
-      "propertyNames": {"pattern": "^[a-z][a-z0-9_]{0,31}$"},
+      "propertyNames": {"$ref": "#/$defs/link_group_name"},
       "maxProperties": 8
     },
     "widgets": {
@@ -41,6 +40,7 @@
     }
   },
   "$defs": {
+    "not_denied_key": {"not": {"enum": ["__proto__", "constructor", "prototype"]}},
     "link_group": {
       "type": "object",
       "additionalProperties": false,
@@ -49,8 +49,18 @@
         "entity_type": {"enum": ["security", "industry", "theme", "portfolio", "event"]}
       }
     },
-    "link_group_name": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,31}$"},
-    "widget_id": {"type": "string", "pattern": "^[A-Za-z0-9_-]{1,64}$"},
+    "link_group_name": {
+      "allOf": [
+        {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,31}$"},
+        {"$ref": "#/$defs/not_denied_key"}
+      ]
+    },
+    "widget_id": {
+      "allOf": [
+        {"type": "string", "pattern": "^[A-Za-z0-9_-]{1,64}$"},
+        {"$ref": "#/$defs/not_denied_key"}
+      ]
+    },
     "grid_axis": {"type": "integer", "minimum": 0, "maximum": 64},
     "widget": {
       "type": "object",
@@ -90,30 +100,93 @@
         }
       ]
     },
-    "symbol": {"type": "string", "pattern": "^[A-Z0-9._:-]{1,12}$"},
+    "symbol": {
+      "type": "string",
+      "pattern": "^[\\^A-Z0-9.+:_-]{1,24}$",
+      "description": "Amendment A2 ruling 1: covers composite panes (NVDA+AMD), caret index panes (^NDX), and colon venue-qualified tickers (BINANCE:BTCUSDT)."
+    },
     "timeframe": {"type": "string", "pattern": "^[A-Za-z0-9]{1,8}$"},
-    "chart_type": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,31}$"},
-    "indicator_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,31}$"},
+    "chart_type": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]{0,31}$",
+      "description": "Amendment A2 ruling 1: covers hyphenated chart types (line-markers)."
+    },
+    "indicator_id": {
+      "allOf": [
+        {
+          "type": "string",
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,31}$",
+          "description": "Amendment A2 ruling 1: covers underscore-prefixed ids (_lab)."
+        },
+        {"$ref": "#/$defs/not_denied_key"}
+      ]
+    },
+    "param_key": {
+      "allOf": [
+        {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_][A-Za-z0-9_.]{0,63}$",
+          "description": "Amendment A2 ruling 1: covers dotted premium-suite keys (ob.showLast)."
+        },
+        {"$ref": "#/$defs/not_denied_key"}
+      ]
+    },
+    "bounded_primitive": {"type": ["string", "number", "boolean", "null"], "maxLength": 64},
+    "param_value_d0": {"$ref": "#/$defs/bounded_primitive"},
+    "param_value_d1": {
+      "anyOf": [
+        {"$ref": "#/$defs/bounded_primitive"},
+        {
+          "type": "object",
+          "maxProperties": 64,
+          "propertyNames": {"$ref": "#/$defs/param_key"},
+          "additionalProperties": {"$ref": "#/$defs/param_value_d0"}
+        }
+      ]
+    },
+    "param_value_d2": {
+      "anyOf": [
+        {"$ref": "#/$defs/bounded_primitive"},
+        {
+          "type": "object",
+          "maxProperties": 64,
+          "propertyNames": {"$ref": "#/$defs/param_key"},
+          "additionalProperties": {"$ref": "#/$defs/param_value_d1"}
+        }
+      ]
+    },
+    "param_value_d3": {
+      "anyOf": [
+        {"$ref": "#/$defs/bounded_primitive"},
+        {
+          "type": "object",
+          "maxProperties": 64,
+          "propertyNames": {"$ref": "#/$defs/param_key"},
+          "additionalProperties": {"$ref": "#/$defs/param_value_d2"}
+        }
+      ],
+      "description": "Amendment A2 ruling 1: a per-indicator/per-symbol param's value may nest up to 3 levels deep below the per-indicator object (covers the real `_vis` visibility-range shape)."
+    },
     "indicator_params": {
       "type": "object",
-      "maxProperties": 32,
-      "propertyNames": {"pattern": "^[a-z][a-z0-9_]{0,31}$"},
+      "maxProperties": 64,
+      "propertyNames": {"$ref": "#/$defs/indicator_id"},
       "additionalProperties": {
         "type": "object",
-        "maxProperties": 16,
-        "propertyNames": {"pattern": "^[A-Za-z0-9_]{1,32}$"},
-        "additionalProperties": {"type": ["string", "number", "boolean", "null"]}
+        "maxProperties": 64,
+        "propertyNames": {"$ref": "#/$defs/param_key"},
+        "additionalProperties": {"$ref": "#/$defs/param_value_d3"}
       }
     },
     "compare_config": {
       "type": "object",
-      "maxProperties": 32,
-      "propertyNames": {"pattern": "^[A-Z0-9._:-]{1,12}$"},
+      "maxProperties": 64,
+      "propertyNames": {"$ref": "#/$defs/symbol"},
       "additionalProperties": {
         "type": "object",
-        "maxProperties": 16,
-        "propertyNames": {"pattern": "^[A-Za-z0-9_]{1,32}$"},
-        "additionalProperties": {"type": ["string", "number", "boolean", "null"]}
+        "maxProperties": 64,
+        "propertyNames": {"$ref": "#/$defs/param_key"},
+        "additionalProperties": {"$ref": "#/$defs/param_value_d3"}
       }
     },
     "brain_config": {
