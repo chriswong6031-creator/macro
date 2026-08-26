@@ -702,11 +702,13 @@ pruned branch clears the latch and ordinary fail-closed law resumes, while an
 unanswerable GitHub layer delegates to the canonical guard's own escapeable
 outage block (the latch survives, but an outage is never terminal evidence).
 Internal codes (`unmerged`, `ci_failed_unmerged`, …) never latch. One-watcher
-law: a background command with a literal `sleep` delay ≥60s is a ship watcher; a
-session carries at most one live watcher reservation, coalescing until the
-timer's nominal fire time (a second overlapping timer is refused; the fired
-watcher's successor is admitted), and none may be created at a PARKED-latched
-HEAD. Hooks cannot enumerate or cancel Claude-native background tasks
+law: a background command with a literal `sleep` delay ≥60s is a ship watcher;
+acquisition is serialized under one cross-process lock, and a session carries at
+most one LIVE watcher — after a short start grace, occupancy is governed by the
+reserved command's observable process, so neither a head move nor the nominal
+sleep deadline frees a running watcher, an unanswerable process table refuses,
+and the fired watcher's successor is admitted once its process is gone. None may
+be created at a PARKED-latched HEAD. Hooks cannot enumerate or cancel Claude-native background tasks
 (`DSC:CLAUDE-TASK-WAKES-OUTLIVE-TERMINAL-SHIP-STATES`), so never design around
 cancellation: create at most one watcher, and end post-terminal wake turns
 without re-reporting. The CI gate remains

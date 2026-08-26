@@ -183,9 +183,12 @@ waves:
       silently, clearing the latch on any positively changed hold state —
       an unanswerable probe never silences (delegates to the guard's own
       escapeable outage block; opus red-team F1/F2); (3) a PreToolUse:Bash
-      branch of the guard enforces at most one live delayed-wake reservation
-      per session, coalescing until the nominal fire time, and refuses new
-      watchers only at a PARKED-latched HEAD — fail-open, never kills tasks.
+      branch of the guard enforces at most one LIVE delayed-wake watcher per
+      session — acquisition linearized under one flock, occupancy bound to
+      the reserved command's observable process lifetime after a start grace
+      (Sol re-review blocker 2026-08-25: head moves and nominal sleep
+      deadlines never free a live watcher; unknown liveness refuses) — and
+      refuses new watchers only at a PARKED-latched HEAD; never kills tasks.
       Internal codes byte-unchanged (Journey C). PR #6381 held HOLD-FOR-SOL
       per commission stop condition; mutation receipts + replayed-incident
       proof in the PR body and the

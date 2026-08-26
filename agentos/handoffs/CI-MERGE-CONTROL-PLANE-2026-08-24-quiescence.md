@@ -31,12 +31,17 @@ changed:
       branch (_pre_tool_use/_watcher_request/_watcher_gate/
       _latched_terminal_heads/_deny_watcher): one live delayed-wake
       reservation per session ledger; fail-open, kills nothing; non-watcher
-      Bash returns before delegation. After the opus red-team: reservations
-      expire at the NOMINAL FIRE TIME, no slack, so a fired watcher's
-      successor is admitted (F3); only the parked_latch refuses creation —
-      ladder exits do not, having no clearing path (F4); sleep parsing is
-      suffix-aware s/m/h/d (F5); _save uses a per-PID temp name against
-      concurrent PreToolUse writers (F6).
+      Bash returns before delegation. After the opus red-team: only the
+      parked_latch refuses creation — ladder exits do not, having no
+      clearing path (F4); sleep parsing is suffix-aware s/m/h/d (F5); _save
+      uses a per-PID temp name (F6). After Sol's 2026-08-25 re-review
+      blocker: acquisition is linearizable (exclusive flock around the
+      ledger read-check-write, state loaded inside the lock), and occupancy
+      binds to the REAL watcher lifetime — start grace, then the reserved
+      command's observable process (ps) governs; head moves and the nominal
+      sleep deadline never free a live watcher; unknown liveness refuses;
+      the fired watcher's successor is admitted by process absence (F3's
+      lawful successor, now on evidence instead of a clock).
   - path: scripts/ship_loop_hold_wrapper.py
     what: >
       _handle_stop: first lawful PARKED writes parked_latch
@@ -131,10 +136,16 @@ danger_areas:
     2026-08-24, session transcript).
   - _watcher_gate must stay fail-open; a crash-deny would block ordinary Bash
     fleet-wide via settings.json PreToolUse wiring.
-  - Do not add slack to the watcher reservation expiry and do not let
-    ladder_exits refuse watcher creation — both were shipped and reverted on
-    red-team findings F3/F4 (permanent false-DENY of the lawful successor
-    watcher / of a resumed transient-escape session).
+  - >
+    Do not let ladder_exits refuse watcher creation (red-team F4 — permanent
+    false-DENY of a resumed transient-escape session), and do not free the
+    watcher slot on head moves or clock deadlines (Sol's 2026-08-25 blocker —
+    the old task may still be alive); only observed process absence after the
+    start grace frees it, and unknown liveness refuses.
+  - >
+    Run every mutation receipt against COMMITTED code — `git checkout --` as
+    the mutation restore silently reverts any uncommitted repair (this
+    session lost and re-applied the acquisition rewrite exactly that way).
 ---
 
 Root cause, one line: terminal ship states were derived statelessly per Stop
