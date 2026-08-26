@@ -427,12 +427,27 @@ def test_t5_budget_rail_carries_no_numeric_or_request_fields():
 def _program_dossier_factory_source() -> str:
     """The D5 `mode=programs` UI module, as committed (D4 CI-wiring law:
     a render-law test reads committed template/JS sources, never a
-    nightly-rewritten site/data artifact)."""
+    nightly-rewritten site/data artifact).
+
+    All `global.createGovernmentRevenue*` factories in this file share ONE
+    top-level IIFE, so the file's `\\n})(window);` closing marker is a
+    single EOF-anchored point regardless of how many sibling factories are
+    appended after this one (e.g. the D6-B1 FMS factory). Bounding the
+    slice there would bleed every later factory's source into this D5
+    scan. Bound the slice at the NEXT `global.createGovernmentRevenue`
+    marker after this factory's own start when one exists before the
+    file's closing bracket, so this always returns exactly this factory's
+    own source regardless of factory order or how many more get appended.
+    """
     js_source = (
         Path(__file__).parents[1] / "templates" / "government-revenue-dossiers.js"
     ).read_text(encoding="utf-8")
-    start = js_source.index("global.createGovernmentRevenueProgramDossier=function(api){")
+    marker = "global.createGovernmentRevenueProgramDossier=function(api){"
+    start = js_source.index(marker)
     end = js_source.index("\n})(window);", start)
+    next_factory = js_source.find("global.createGovernmentRevenue", start + len(marker))
+    if next_factory != -1 and next_factory < end:
+        end = next_factory
     return js_source[start:end]
 
 
