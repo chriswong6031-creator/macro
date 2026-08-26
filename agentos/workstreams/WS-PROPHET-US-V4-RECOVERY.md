@@ -51,6 +51,7 @@ decisions:
   - DEC:PROPHET-V4-THEIA-SOURCE-RIGHTS
   - DEC:PROPHET-LAB-B5A-RECUT
   - DEC:PROPHET-B1-CANONICAL-EPISODE-BINDINGS
+  - DEC:PROPHET-D5-PRESERVES-CONTEXT-VECTOR-AND-SEPARATES-EVIDENCE-AUTHORITY
 landmines:
   - "THE OUTAGE was LIVE at 0A (2026-08-17) and still unresolved at the 0B pin
     (2026-08-18T00Z: source_asof=2026-08-13, 206 plans). That historical fact is
@@ -92,6 +93,23 @@ landmines:
     ENTRY_RADAR_LIVE_ENABLE); B-15..B-19 dispositions post-#5370-heal are UNKNOWN —
     B2 opens with the matrix, do not assume the heal closed them."
 do_not_redo:
+  - "D5 v1 does NOT mutate or widen engine/us_context_vector.py; Context Vector is a
+    read/reference-only PIT history/research substrate for D5."
+  - "An unbuilt D5 adapter emits no evidence-family envelope. Adapter readiness may accrue
+    outside evidence_families[], but missing/unbuilt is never zero or neutral."
+  - "Runtime D5 requires the owner-issued canonical prophet.candidate_episode/v1 from B1.
+    Never alias mastermind.live_entry_episode.v1 or mint ticker/date surrogate episodes."
+  - "Do not read Earnings decision-time evidence through read_event_workspace /
+    read_current_event_workspace. They resolve the CURRENT generation and take no as-of
+    argument, so they present post-cut corrected values as decision-time belief while passing
+    the contracts stated admissibility test. Decision-time access is
+    read_event_source_revisions / read_all_event_source_revisions only."
+  - "Do not admit an Earnings revision on source_available_at alone. Admission is the
+    CONJUNCTION source_available_at <= cut AND observed_at <= cut, because the owner enforces
+    only observed_at >= source_available_at (events.py:249-252), so a filing available before
+    the cut but observed after it is a legal state and admitting it is lookahead. That case is
+    NOT_CAPTURED_AT_DECISION; a null or unknown admission clock is UNKNOWN, never a silent
+    skip. See CELL_F_D5_CONTRACT_AMENDMENTS_2026-08-26.md A7."
   - "Do not spend a PR removing the bridge candidate cap: N_CANDIDATES=12 survives
     only as an OVERRIDDEN DEFAULT (prophet_bridge.py:146,1147) — production passes
     n=None (:4127; daily.yml:2270). A grep hitting the constant does not contradict
@@ -119,6 +137,12 @@ artifacts:
   - research/prophet_v4/CAPABILITY_LEDGER.md
   - research/prophet_v4/ARCHITECTURE_FREEZE.md
   - research/prophet_v4/CONTRACT_AND_OWNER_MAP.md
+  - research/prophet_v4/D1_D5_READINESS_RULING.md
+  - research/prophet_v4/B1_NATURAL_ACCEPTANCE_PROBE.md
+  - research/prophet_v4/flagship_cells/CELL_F_D5_EVIDENCE_TRANSLATION_AND_TRAJECTORY_CONTRACT_2026-08-22.md
+  - research/prophet_v4/flagship_cells/CELL_F_D5_ADVERSARIAL_REVIEW_AMENDMENTS_2026-08-22.md
+  - research/prophet_v4/flagship_cells/CELL_F_D5_CANDIDATE_REFERENCE_COMPOSITIONS_AND_E1_BASELINE_2026-08-23.md
+  - research/prophet_v4/flagship_cells/CELL_F_D5_CONTRACT_AMENDMENTS_2026-08-26.md
   - research/prophet_v4/SOURCE_RIGHTS_AND_COVERAGE_REGISTRY.md
   - research/prophet_v4/EXPERIENCE_REFERENCE_COMPOSITIONS.md
   - research/prophet_v4/WAVE_GRAPH_AND_MERGE_ORDER.md
@@ -553,7 +577,15 @@ waves:
       measured fields = null, contribution = none; no provisional theme score, no
       fake zero, no rank authority. Execution NOT authorized during D2A. Original
       ruling: research/prophet_v4/D1_D5_READINESS_RULING.md (no ticker-string joins;
-      SPARSE coverage band is the honest scan-tier default)."
+      SPARSE coverage band is the honest scan-tier default). ARCHITECTURE RECONCILED
+      2026-08-26 (PR #6275 amended, not superseded): the 2026-08-22 Cell F contract's
+      epistemic core stands; three BLOCKING defects repaired in
+      research/prophet_v4/flagship_cells/CELL_F_D5_CONTRACT_AMENDMENTS_2026-08-26.md —
+      A7 binds Earnings decision-time reads to the revision-chain reader and FORBIDS
+      read_event_workspace there; A8 binds decision_cut to B1-owned opened_at/opened_session
+      and sets tradable_at NOT_ASSERTED until B4; A9 requires episode_ref to pin the B1
+      generation_id. Runtime D5 stays gated on B1 natural-production acceptance (B1 is
+      MERGED / BUILT_NOT_PROVEN as 878930b3b2f9)."
     status: todo
   - id: d6
     depends_on: [d5]
