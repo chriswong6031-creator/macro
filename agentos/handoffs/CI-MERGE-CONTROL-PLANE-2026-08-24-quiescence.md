@@ -250,7 +250,8 @@ unresolved:
     guarantees the hooks stay silent and refuse new watchers, and standing
     law now instructs sessions to end wake turns without re-reporting.
 next_actions:
-  - Push the reconciled exact head to the existing PR #6381 carrier, return it
+  - >
+    Push the reconciled exact head to the existing PR #6381 carrier, return it
     from HOLD-FOR-SOL, and require authoritative ci.yml + fences.yml proof.
   - On exact-head acceptance, squash-merge without absorbing the separately
     waived hold-wrapper CI wiring into this carrier.
