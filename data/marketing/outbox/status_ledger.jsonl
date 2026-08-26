@@ -4076,3 +4076,4 @@
 {"id":"ob-2026-08-26-e62317b95c","from":"queued","to":"approved","at":"2026-08-26T17:58:01Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
 {"id":"ob-2026-08-26-9e562eeaeb","from":"approved","to":"quarantined","at":"2026-08-26T17:58:02Z","actor":"publisher","note":"clock: yesterday_word_off_session:yesterday","receipt":null}
 {"id":"ob-2026-08-26-e62317b95c","from":"approved","to":"quarantined","at":"2026-08-26T17:58:02Z","actor":"publisher","note":"clock: yesterday_word_off_session:yesterday","receipt":null}
+{"id":"ob-2026-08-26-f346348c8c","from":"queued","to":"approved","at":"2026-08-26T18:14:34Z","actor":"approval-desk","note":"approval-desk: payload, session_language, expired_session, number_sanity, liveness, chart_law, banned_language, dedup","receipt":null}
