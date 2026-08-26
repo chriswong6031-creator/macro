@@ -7,7 +7,7 @@ objective: >
 status: active
 program: china-system
 repos: [macro]
-owner: chairman
+owner: fable
 class: research
 blast_radius: reversible
 owns_paths:
@@ -177,48 +177,46 @@ waves:
       intel_* telemetry and canonical CN identity under the R6 contracts.
       DEP-ID-ELIG remains gated on DEP-EXACT.
   - id: DEP-EXACT
-    title: Exact-plane authorization, live canary, range campaign, completeness
+    title: Exact-plane technical readiness, live canary, range campaign, completeness
     status: todo
     depends_on: [R6-0]
     next_action: >-
-      WAITING_FOR_WRITTEN_VENDOR_GRANT (authority decision TAKEN 2026-08-21:
-      DEC:CNLI-EXACT-PLANE-REQUIRES-WRITTEN-COMMERCIAL-GRANT, ceo-sol — the
-      written vendor/institutional grant + cryptographically pinned receipt
-      path is binding for the full-A authority-grade exact plane; the
-      ruling-3 plain-provenance alternative is REJECTED because current
-      Tushare terms grant personal/non-commercial service and the 2026-08-09
-      wiring ruling is an access instruction, not a vendor commercial
-      grant). The DEC alone does NOT satisfy the runtime authorization gate:
-      the gate reads bytes, and both fail-closed constants remain exactly as
-      designed — CODE_REVIEWED_AUTHORIZATION_TRUST_ALLOWLIST_SHA256 =
-      frozenset() and BULK_HISTORICAL_BACKFILL_READY = False
-      (collectors/china_tushare_spine.py; receipt schema
-      cn_tushare_written_authorization.v1 in load_authorization_grant). No
-      live canary has ever run; no completeness manifest exists; the
-      dispatch-only campaign lane .github/workflows/
-      tushare-spine-backfill.yml stays ready but unauthorized. SINGLE
-      BLOCKING ARTIFACT: the vendor's written reply to the five-question
-      letter in
-      research/cn_limit/TUSHARE_VENDOR_LETTER_PACKET_2026-08-21.md (¥0
-      cash; questions map 1:1 onto the receipt's required scope booleans:
-      api_access, bulk_local_retention, quantitative_strategy_research,
-      commercial_use, private_internal_derivatives). EXACT OPERATOR ACTION:
-      send that packet's §1 Chinese letter from the account-holder
-      identity. Post-grant procedure is PRE-STAGED, NOT ACTIVATED (packet
-      §3, each step gated on the previous artifact + its own review):
-      private written grant -> authorization receipt -> independent
-      allowlist -> reviewed trust-root pin -> licensed canary (plan ->
-      bounded execute) -> canary review -> separately reviewed READY flip
-      -> range campaign -> sanitized completeness manifest (the artifact
-      that flips this row done and, with DEP-CAI already done, opens
-      DEP-ID-ELIG). The identity half of the eligibility substrate exists
+      TECHNICAL_CANARY_REQUIRED (reclassified 2026-08-21 under the Chairman
+      override DEC:CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE).
+      TuShare licensing/compliance is CHAIRMAN_VERIFIED_PRIVATE / SATISFIED:
+      the controlling agreement and its evidence are confidential and outside
+      coding/agent scope under NDA/privacy constraints, and no coding session
+      or runtime gate may request, upload, inspect, persist, hash, quote, or
+      re-verify them. Compliance is therefore NOT a blocker and this row is no
+      longer WAITING_FOR_WRITTEN_VENDOR_GRANT; the superseded
+      DEC:CNLI-EXACT-PLANE-REQUIRES-WRITTEN-COMMERCIAL-GRANT and the cancelled
+      vendor-letter packet are historical tombstones only. The license-document
+      authorization subsystem (receipt schema, AuthorizationGrant, trust
+      allowlist, grant-document hashes/chains, the empty code-reviewed trust
+      root, and the --authorization-receipt / --authorization-trust-allowlist
+      CLI requirements) has been REMOVED from collectors/china_tushare_spine.py
+      and is held out by anti-resurrection tests in
+      tests/test_china_tushare_spine.py. WHAT ACTUALLY REMAINS, all technical:
+      BULK_HISTORICAL_BACKFILL_READY = False in
+      collectors/china_tushare_spine.py is a TECHNICAL readiness gate (live
+      canary parity, sustained throughput, range/completeness correctness) and
+      must never be re-read as a licensing gate; no live canary has ever run
+      (manifest cap_fallback.live_canary_complete false); no sanitized
+      completeness manifest exists because the private store has never been
+      built; the dispatch-only lane .github/workflows/tushare-spine-backfill.yml
+      is wired (modes plan | canary | backfill) and TUSHARE_TOKEN is alive; a red
+      mode=backfill run while the technical gate is shut is the gate working.
+      EXACT NEXT TECHNICAL ACTION: dispatch .github/workflows/tushare-spine-backfill.yml with mode=plan (network-free), then mode=canary -- a REAL but hard-bounded window that collect(canary=True) permits while BULK_HISTORICAL_BACKFILL_READY is still False (<=12 requests, <=5 calendar days, never allow_bulk, and a documented row cap refuses instead of starting the unproven ticker-range campaign). The canary is runnable BEFORE the gate opens by design: the gate waits on canary evidence, so gating the canary on the gate would be circular. Only on canary parity/throughput/error-taxonomy receipts may a SEPARATE reviewed change flip BULK_HISTORICAL_BACKFILL_READY; mode=backfill (the full range campaign) stays refused until then. After the flip the
+      range-shard campaign runs and the sanitized completeness manifest closes
+      this row. The identity half of the eligibility substrate exists
       (984 CN + 147 HK canonical, see DEP-CAI); the PIT
       membership/suspension/ST-history substrate remains NOT_BUILT and is
-      DEP-ID-ELIG's remainder. Standing prohibitions unchanged: no
-      self-authored authorization; no session-side gate-constant edits; a
-      vendor "no" returns to the operator (institutional contract or stop),
-      never to a coding workaround; a red execute run on the campaign lane
-      is the gate working. DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT untouched.
+      DEP-ID-ELIG's remainder. Standing prohibitions: no request for or
+      inspection of the private agreement; no reintroduced
+      authorization-receipt/trust-allowlist/license-document gate under any
+      name; no gate-constant edit without reviewed technical evidence; no
+      public redistribution of raw vendor data.
+      DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT untouched.
   - id: DEP-ID-ELIG
     title: Canonical China identity, PIT membership, eligibility overlay
     status: todo
@@ -427,12 +425,20 @@ artifacts:
   - research/cn_limit/CN_LIMIT_R6_EXECUTIVE_HANDOFF_INDEX_2026-08-19.md
   - research/cn_limit/CN_LIMIT_R6_ARTIFACT_MANIFEST_2026-08-19.json
 next_action: >-
-  R6-0 lands with this PR (records only). Then commission P0-ST, DEP-CAI, and
-  DEP-EXACT as separate sessions per
-  research/cn_limit/CN_LIMIT_R6_FABLE_EXECUTION_COMMAND_PACKET_2026-08-19.md —
-  P0-ST first (program P0). No CN-Limit runtime feature wave starts before its
-  named dependency gates close; no live rank, score, gate, size, or public
-  probability is authorized by any R6 record.
+  Execution owner is Fable COO under DEC:CNLI-FABLE-COO-AUTONOMOUS-EXECUTION
+  (Chairman delegation 2026-08-25; Sol retains product thesis, architecture,
+  evaluation law and final milestone acceptance; A5 stays Sol/Chairman).
+  R6-0, P0-ST and DEP-CAI are done with production receipts. This PR (#6207)
+  lands the Chairman TuShare compliance override reconciled onto current main.
+  Next: execute DEP-EXACT per its row — dispatch tushare-spine-backfill
+  mode=plan, then ONE bounded mode=canary, then a separate reviewed technical
+  flip of BULK_HISTORICAL_BACKFILL_READY on canary evidence, then the resumable
+  full-A range campaign and the sanitized completeness manifest. After
+  DEP-EXACT: DEP-ID-ELIG, then I1A-T1..T4 / I1B / M2-R4-BATTERY / I1C-G6 / I2A
+  per the frozen R6 wave graph. Milestone bundles return to Sol per
+  agentos/handoffs/CN-LIMIT-ALPHA-2026-08-25-fable-coo-program.md. No live
+  rank, score, gate, size, or public probability is authorized by any R6
+  record.
 ---
 
 ## Context

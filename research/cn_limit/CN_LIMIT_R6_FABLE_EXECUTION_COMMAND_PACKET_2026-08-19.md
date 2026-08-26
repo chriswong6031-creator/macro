@@ -47,7 +47,7 @@ Where a current owner contract conflicts with a stale path citation, preserve th
 - No restored adjusted-plane artifact, row, probability, grade, page, reader, or reproducer.
 - No duplicate candidate store, grader, identity, event store, Intelligence composite, or lifecycle.
 - No candidate-plane runtime edit before PR-0B lands and is proven live.
-- No full-A gate constant change without reviewed authorization/canary evidence.
+- No full-A gate constant change without reviewed canary/throughput/correctness evidence.
 - No static-washout rescue or unordered factor-count scorer.
 - No same-session seal/LHB leakage for the same first-board target.
 - No manipulation/insider labels from charts.
@@ -315,15 +315,15 @@ CN-Limit candidate-plane work remains blocked until PR-0B is PROVEN_LIVE, not me
 
 Return `STATUS / RESULT / EVIDENCE / PRODUCTION PROOF / GAPS / DEVIATIONS / DISCOVERIES / EXACT NEXT ACTION`. Name every changed path, definition hash, source clock, unavailable state, and owner collision. Do not launch the next wave in the same session unless this packet explicitly marks it parallel and its dependencies are already proven.
 
-## DEP-EXACT — Exact-plane authorization, live canary, range campaign, and completeness
+## DEP-EXACT — Exact-plane technical readiness, live canary, range campaign, and completeness
 
-**Status:** `BLOCKED_RIGHTS_AND_AUTHORITY`  
+**Status:** `TECHNICAL_CANARY_REQUIRED`  
 **Owner:** Fable with exact-plane authority owner/operator  
 **Dependencies:** R6-0
 
 ### Observable mission
 
-Close written authorization/trust-root governance, run licensed canaries, promote the operational range campaign only through reviewed gates, and produce a complete sanitized exact-plane manifest.
+Run the live technical canary, promote the operational range campaign only through reviewed technical gates, and produce a complete sanitized exact-plane manifest. TuShare licensing/compliance is `CHAIRMAN_VERIFIED_PRIVATE / SATISFIED` (`DEC:CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE`); its evidence is confidential and outside coding scope, so no licensing artifact is part of this wave.
 
 ### Why it matters
 
@@ -332,15 +332,17 @@ Authority-grade full-A nominal daily, exact legal limits, sessions, suspensions,
 ### Exact scope
 
 - existing fail-closed spine and range-shard path
-- private authorization receipts/allowlist review
-- licensed canary and throughput evidence
+- the bounded canary path (`collect(canary=True)` / lane `mode=canary`): real, hard-bounded (<=12 requests, <=5 calendar days, no `allow_bulk`), permitted while `BULK_HISTORICAL_BACKFILL_READY` is still `False`, and refusing a documented row cap rather than starting the unproven ticker-range campaign
+- live canary parity, throughput, and correctness evidence
+- reviewed `BULK_HISTORICAL_BACKFILL_READY` promotion on that evidence
 - completeness manifest
 
 ### Explicit non-goals
 
-- no self-authored authorization
-- no gate constant edits without reviewed evidence
-- no public redistribution of licensed raw data
+- no request for, inspection of, or gating on the private compliance agreement
+- no reintroduced authorization-receipt/trust-allowlist/license-document gate
+- no gate constant edits without reviewed technical evidence
+- no public redistribution of raw vendor data
 - no CN-Limit model
 
 ### Complete user and machine journey
