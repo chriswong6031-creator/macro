@@ -1474,7 +1474,7 @@ class TestVerifyCollisionsAheadOfIdempotence:
         assert proc.returncode == 0, proc.stdout + proc.stderr
         assert "re-verified zero minted plans" in proc.stdout
 
-    def test_committed_legacy_augmentation_matches_immutable_root(self):
+    def test_committed_legacy_augmentation_settled_once_and_is_no_longer_live(self):
         receipt_path = (
             _REPO / ppr.PIT_RECEIPTS_RELDIR
             / "us-2026-08-14-a76ad8f34ad360cd.json"
@@ -1489,8 +1489,27 @@ class TestVerifyCollisionsAheadOfIdempotence:
         )
 
         assert root == ppr._LEGACY_AUGMENTATION_ROOTS[key]
-        assert ppr._is_admissible_zero_mint_execute_receipt(
+        pending_path = _REPO / root["pending_entry"]["path"]
+        assert not pending_path.exists()
+        assert not ppr._is_admissible_zero_mint_execute_receipt(
             _REPO, receipt_path, receipt, market="us", session="2026-08-14",
+        )
+
+        snapshot_lines = [
+            line
+            for line in (
+                _REPO / "data/us_board_ledger/snapshots.jsonl"
+            ).read_bytes().splitlines()
+            if line.strip()
+        ]
+        settled_rows = [
+            line
+            for line in snapshot_lines
+            if json.loads(line).get("as_of") == "2026-08-14"
+        ]
+        assert len(settled_rows) == 1
+        assert hashlib.sha256(settled_rows[0]).hexdigest() == (
+            "6160a5032f94b7a666eff6e0bbdf8ea36b61afc9656e7b0be3472c7bc2b43b54"
         )
 
     def test_legacy_receipt_without_provenance_refuses(self, tmp_path):

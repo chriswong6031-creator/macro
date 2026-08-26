@@ -82,7 +82,7 @@ do_not_redo:
     (DSC:CN-F-ONLY-BIO-AND-EV-PIN-UNIQUE-CLOCKS)."
   - "Do not re-derive the Tushare entitlement matrix — CN-A #5945
     (research/TUSHARE_P0_ENTITLEMENT_RIGHTS_MATRIX_2026-08-19.md) is the
-    rights authority; ¥0 outlay stands until the operator's vendor letter."
+    rights authority; ¥0 outlay stands. TuShare licensing SUPERSEDED 2026-08-21 by DEC:CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE — compliance is CHAIRMAN_VERIFIED_PRIVATE / SATISFIED and no vendor letter is required or may be requested; remaining gaps are collector/coverage work only."
   - "No second China rank-training candidate store —
     data/china_prophet_rank/candidates.parquet (writer
     engine/china_prophet_shadow.py) is canonical."

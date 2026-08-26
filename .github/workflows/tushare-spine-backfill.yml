@@ -6,15 +6,20 @@ name: tushare-spine-backfill
 # trigger — so it can never enter the nightly render budget. It writes only to the
 # private store below and never to `data/`, `site/`, or the repo.
 #
-# WHY THIS EXISTS WHILE THE GATE IS SHUT
-# `collect()` refuses every execute run today: `BULK_HISTORICAL_BACKFILL_READY` is
-# code-reviewed `False` in collectors/china_tushare_spine.py, so an `execute`
-# dispatch raises SpineError before any store or network use (and refuses earlier
-# still without an authorization receipt + separately controlled trust allowlist).
-# THAT REFUSAL IS THE CORRECT AND EXPECTED RESULT — a red `execute` run here is the
-# gate working, not a broken lane. The lane is pre-wired so the licensed live canary
-# can be dispatched the moment a SEPARATE, separately reviewed authority change opens
-# the gate. Do not "fix" an execute failure by touching the gate constants.
+# THE THREE MODES AND WHICH ONE IS GATED
+# `plan` is network-free. `canary` is a REAL but hard-bounded window that
+# `collect(canary=True)` permits while `BULK_HISTORICAL_BACKFILL_READY` is still
+# `False` — at most 12 requests over at most 5 calendar days, never with
+# --allow-bulk, and a documented row cap REFUSES rather than starting the unproven
+# ticker-range campaign. `backfill` is the full range campaign and stays refused:
+# `collect()` raises SpineError before any store or network use until that gate is
+# promoted in a SEPARATE reviewed change citing canary receipts.
+# A red `backfill` run here is therefore the gate working, not a broken lane — do
+# not "fix" it by touching the gate constant.
+# The gate is purely TECHNICAL (canary parity, throughput, range/completeness
+# correctness) and is never a licensing gate: TuShare compliance is
+# CHAIRMAN_VERIFIED_PRIVATE / SATISFIED, settled outside this repository
+# (DEC:CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE).
 #
 # SELF-HOSTED IS LOAD-BEARING, NOT A PREFERENCE: the store root
 # ~/.local/share/macro-dashboard/china_tushare_spine/ must PERSIST across runs for the
@@ -25,15 +30,18 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "plan = network-free dry run; execute = real collection (refused while the gate is False)"
+        description: "plan = network-free dry run; canary = real HARD-BOUNDED window (<=12 requests, <=5 days); backfill = full range campaign (refused while BULK_HISTORICAL_BACKFILL_READY is False)"
         type: choice
-        options: [plan, execute]
+        options: [plan, canary, backfill]
         default: plan
         required: true
       max_requests:
-        description: "bounded calls this run (safety ceiling is 100)"
+        # CANARY-SAFE DEFAULT. The collector hard-caps a canary at 12 requests, so a
+        # larger default made `mode=canary` with untouched inputs fail on the first
+        # line -- a trap, not a gate. 12 is legal in all three modes.
+        description: "bounded calls this run (canary hard-caps at 12; plan/backfill may raise it up to the 100 safety ceiling)"
         required: false
-        default: "50"
+        default: "12"
       start:
         description: "first requested session, YYYY-MM-DD"
         required: false
@@ -74,13 +82,31 @@ jobs:
           END: ${{ github.event.inputs.end }}
         run: |
           set -euo pipefail
+          # Read the canary ceiling FROM the collector so the lane can never drift
+          # above it: the constant has exactly one home.
+          CANARY_MAX_REQUESTS="$(python -c 'import collectors.china_tushare_spine as s; print(s.CANARY_MAX_REQUESTS)')"
+          case "$MAX_REQUESTS" in
+            ''|*[!0-9]*) echo "::error title=tushare-spine-mode::max_requests must be a positive integer, got '$MAX_REQUESTS'"; exit 2 ;;
+          esac
+          # Mode-aware normalisation, one direction only: an operator who typed a larger
+          # budget and then chose `canary` gets it CLAMPED to the documented ceiling,
+          # never raised. This is convenience on top of the real control -- collect()
+          # still refuses anything over CANARY_MAX_REQUESTS before any store or network
+          # use, and this clamp can never widen that.
+          if [ "$MODE" = "canary" ] && [ "$MAX_REQUESTS" -gt "$CANARY_MAX_REQUESTS" ]; then
+            echo "::notice title=tushare-spine-canary::clamping max_requests $MAX_REQUESTS -> $CANARY_MAX_REQUESTS (canary ceiling)"
+            MAX_REQUESTS="$CANARY_MAX_REQUESTS"
+          fi
           ARGS=(--start "$START" --max-requests "$MAX_REQUESTS")
           # A bare `[ -n "$END" ] && ARGS+=(...)` would return 1 on an empty END and
           # `set -e` would kill the step; use a full if.
           if [ -n "$END" ]; then
             ARGS+=(--end "$END")
           fi
-          if [ "$MODE" = "plan" ]; then
-            ARGS+=(--dry-run)
-          fi
+          case "$MODE" in
+            plan)     ARGS+=(--dry-run) ;;
+            canary)   ARGS+=(--canary) ;;
+            backfill) : ;;  # gated: collect() refuses until the bulk gate is promoted
+            *) echo "::error title=tushare-spine-mode::unknown mode '$MODE'"; exit 2 ;;
+          esac
           python -m collectors.china_tushare_spine "${ARGS[@]}"

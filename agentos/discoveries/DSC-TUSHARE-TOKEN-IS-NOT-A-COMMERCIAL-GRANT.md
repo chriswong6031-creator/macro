@@ -1,41 +1,43 @@
 ---
 key: TUSHARE-TOKEN-IS-NOT-A-COMMERCIAL-GRANT
 claim: >
-  A live TUSHARE_TOKEN, a successful Tushare probe, and the 2026-08-09 "license
-  topic is closed" collector ruling are access facts, not a commercial-use grant.
-  The click-through Tushare service agreement (doc 405) is personal, non-commercial,
-  view-only; institutional list price is 10× personal; no written institutional
-  receipt exists in this repository.
+  SUPERSEDED / NON-AUTHORITATIVE for Mastermind-X compliance decisions. The earlier
+  public-terms inference in this discovery cannot determine the company's controlling
+  TuShare licensing status because the relevant private agreement and compliance evidence
+  are intentionally unavailable to coding sessions. Chairman decision
+  DEC:CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE records the binding state:
+  compliance has already been verified internally and privately and is SATISFIED.
 falsifier: >
-  A written vendor or institutional grant on disk whose scopes explicitly cover
-  API access, bulk local retention, quantitative research, commercial use, and
-  private internal derivatives, pinned the way collectors/china_tushare_spine.py
-  already requires — or a replacement of doc 405 that states the personal SKU
-  is commercial. A 200 from api.tushare.pro does not falsify this.
+  Only a later explicit Chairman/compliance-owner decision superseding
+  agentos/decisions/DEC-CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE.md:1.
+  Public web terms, token behavior, a coding-agent audit, or absence of license bytes in
+  the repository do not reopen the private compliance question.
 so_what: >
-  Future China P0 collector or product-surface sessions must not treat "the
-  token works" or "operator said collect" as permission to redistribute raw
-  Tushare rows (PDFs, Q&A text, report abstracts, named 游资) or to ship a
-  customer-facing commercial widget. Purchase decisions go through
-  research/TUSHARE_P0_ENTITLEMENT_RIGHTS_MATRIX_2026-08-19.md; commercial
-  display waits on a vendor letter. Do not buy table-2 SKUs (anns_d,
-  irm_qa_*, research_report) to cover planes native collectors already run.
+  Do not use this historical discovery to demand a vendor letter, license upload,
+  authorization receipt, grant-document hash, trust allowlist, or any other disclosure of
+  the private agreement. Coding sessions must not request, inspect, persist, hash, quote,
+  or summarize the confidential licensing evidence. Engineering may still observe
+  endpoint access, entitlements, quotas and technical failures for operational purposes;
+  those observations do not adjudicate licensing compliance.
 kind: constraint
-verified_at: 2026-08-19
+verified_at: 2026-08-21
 verified_by: >
-  Official docs fetched 2026-08-19: tushare.pro/document/1?doc_id=405 (personal
-  non-commercial grant), tushare.pro/document/1?doc_id=290 (10× institutional
-  footnote + table-2 SKUs). Repo: research/TUSHARE_WIRING_TAKEOVER_2026-08-09.md
-  ruling 3 (license machinery closed, not a vendor grant);
-  research/CN_TUSHARE_FULL_A_SPINE_CONTRACT_2026-08-08.md ("a token or boolean
-  is not permission"); gh api secret metadata TUSHARE_TOKEN present
-  updated_at=2026-08-08T08:08:40Z (value unread). No API call this session.
+  Chairman operator override 2026-08-21, recorded at
+  agentos/decisions/DEC-CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE.md:1
+  (#6207); licensing/compliance verified internally and privately.
 scope: [macro, mastermind]
 confidence: verified
 ---
 
-The GROK-CN-A census that minted this is
-`research/TUSHARE_P0_ENTITLEMENT_RIGHTS_MATRIX_2026-08-19.md`. Access SKUs the
-operator claimed on 2026-08-09 (常规无上限, 特色 300/min, minutes, premarket,
-auction trio) remain access claims until the privilege page or a vendor letter
-says otherwise.
+## Historical-status tombstone
+
+Schema note: this record carries no `superseded_by` because its replacement is a
+DECISION (`DEC:CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE`), not a
+discovery, and `superseded_by` accepts only a `DSC:` key. The tombstone therefore
+lives in the claim itself so the record stays visible in compiled bundles while
+being unusable as active authority.
+
+The original 2026-08-19 public-terms inference remains visible in git history only. It is
+not an active compliance rule and must not be revived by Sol, Codex, Fable, research
+sessions, CI, or later web research. Private licensing details are outside coding-session
+scope because of confidentiality/NDA and privacy constraints.

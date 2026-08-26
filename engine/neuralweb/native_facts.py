@@ -127,6 +127,12 @@ class NativeFactPlan:
     explicit_entity: bool
     effective_context_reason: str
     ambient_symbol: str | None = None
+    # W1-C (additive, default None — every existing caller is unaffected):
+    # the compiled ai_context_envelope.v1's effective_context.source, carried
+    # through so the native-fact receipt's effective_context block can be
+    # cross-checked against the context_receipt without ever disagreeing.
+    # See research/DEEPVUE_W1C_CONTEXT_ENVELOPE_CONTRACT_2026-08-25.md.
+    envelope_source: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -263,6 +269,66 @@ def _context_symbol(context: Mapping[str, Any] | None) -> str | None:
     return symbol
 
 
+def _envelope_ambient_symbol(envelope: Mapping[str, Any] | None) -> str | None:
+    """Collapse a W1-C `ai_context_envelope.v1`'s pinned > active > ambient levels
+    into the single symbol this module's ambient-context law expects.
+
+    Explicit entities are deliberately excluded here: this module re-derives
+    explicit entities from the message text itself via `_symbol_candidates`
+    (unchanged), so this helper only replaces what a legacy `context["symbol"]`
+    used to carry — the non-explicit signal — while leaving the field grammar,
+    single-entity lane law, and uppercase-ambiguity refusal exactly as today.
+    """
+    if not isinstance(envelope, Mapping):
+        return None
+    for key in ("pinned_context", "active_selection"):
+        entities = envelope.get(key)
+        if isinstance(entities, list) and entities:
+            first = entities[0]
+            if isinstance(first, Mapping):
+                symbol = first.get("id")
+                if isinstance(symbol, str):
+                    return symbol
+    ambient = envelope.get("ambient_widget_context")
+    if isinstance(ambient, Mapping):
+        symbol = ambient.get("symbol")
+        if isinstance(symbol, str):
+            return _context_symbol({"symbol": symbol})
+    return None
+
+
+def _envelope_source(envelope: Mapping[str, Any] | None) -> str | None:
+    if not isinstance(envelope, Mapping):
+        return None
+    effective = envelope.get("effective_context")
+    if isinstance(effective, Mapping):
+        source = effective.get("source")
+        if isinstance(source, str):
+            return source
+    return None
+
+
+def _envelope_effective_reason(envelope: Mapping[str, Any] | None) -> str | None:
+    """The compiled envelope's own `effective_context.reason`, or ``None``.
+
+    Review repair (BLK-2): the explicit branch below must NEVER recompute
+    "wins vs request" from the single collapsed `ambient_symbol` — that value
+    reflects only ONE lower level (e.g. the first pinned entity), so it can
+    silently disagree with the envelope when a DIFFERENT lower-level entity
+    (a second pin, an active selection distinct from the first pin) was the
+    one actually outranked. Reading the envelope's own determination directly
+    is what keeps the two receipts assert-equal by construction.
+    """
+    if not isinstance(envelope, Mapping):
+        return None
+    effective = envelope.get("effective_context")
+    if isinstance(effective, Mapping):
+        reason = effective.get("reason")
+        if isinstance(reason, str):
+            return reason
+    return None
+
+
 def _field_hits(message: str) -> list[tuple[int, str]] | None:
     """Return exact W1-A IDs in user order, or None for semantic ambiguity."""
     lower = message.lower()
@@ -395,12 +461,27 @@ def _field_hits(message: str) -> list[tuple[int, str]] | None:
     return [(index, field_id) for index, field_id in enumerate(ordered)]
 
 
-def plan_native_facts(message: str, context: Mapping[str, Any] | None = None) -> NativeFactPlan | None:
+def plan_native_facts(
+    message: str,
+    context: Mapping[str, Any] | None = None,
+    *,
+    envelope: Mapping[str, Any] | None = None,
+) -> NativeFactPlan | None:
     """Plan only precise current native facts; otherwise return ``None``.
 
     ``None`` is a purposeful deep-route fallthrough, never an unavailable fact.
     Unknown identity is intentionally deferred to W1-A execution so it can be
     represented as an honest deterministic unavailable result.
+
+    envelope: optional W1-C `ai_context_envelope.v1` (see
+        `engine/intelligence_workspace/context_compiler.py`). When provided,
+        its compiled pinned > active > ambient precedence supplies the single
+        ambient-context symbol instead of raw `context["symbol"]` — this is
+        the ONLY thing that changes; field grammar, the single-entity lane
+        law, and uppercase-ambiguity refusal are unchanged, and explicit
+        entities are still derived from the message text alone. ``None``
+        (the default) preserves today's exact behavior for every existing
+        caller.
     """
     if not isinstance(message, str) or not message.strip():
         return None
@@ -421,15 +502,27 @@ def plan_native_facts(message: str, context: Mapping[str, Any] | None = None) ->
         return None
     if _has_unsupported_residue(message, explicit):
         return None
-    ambient_symbol = _context_symbol(context)
+    ambient_symbol = (
+        _envelope_ambient_symbol(envelope) if envelope is not None else _context_symbol(context)
+    )
     if explicit:
         symbol = explicit[0]
         explicit_entity = True
-        reason = (
-            "explicit_entity_wins"
-            if ambient_symbol is not None and ambient_symbol != symbol
-            else "explicit_request"
-        )
+        if envelope is not None:
+            # BLK-2: derive directly from the envelope's own precedence
+            # determination so the native-fact receipt can never disagree with
+            # the context receipt (see _envelope_effective_reason).
+            reason = (
+                "explicit_entity_wins"
+                if _envelope_effective_reason(envelope) == "explicit_entity_wins"
+                else "explicit_request"
+            )
+        else:
+            reason = (
+                "explicit_entity_wins"
+                if ambient_symbol is not None and ambient_symbol != symbol
+                else "explicit_request"
+            )
     else:
         symbol = ambient_symbol
         if symbol is None:
@@ -442,6 +535,7 @@ def plan_native_facts(message: str, context: Mapping[str, Any] | None = None) ->
         explicit_entity=explicit_entity,
         effective_context_reason=reason,
         ambient_symbol=ambient_symbol,
+        envelope_source=_envelope_source(envelope),
     )
 
 
@@ -480,6 +574,7 @@ def _unavailable_execution(
             "precedence_reason": plan.effective_context_reason,
             "ambient_symbol": plan.ambient_symbol,
             "ambient_used": not plan.explicit_entity,
+            "envelope_source": plan.envelope_source,
         },
         "relationship_receipt": None,
         "facts": [],
@@ -743,6 +838,7 @@ def execute_native_fact_plan(
             "precedence_reason": plan.effective_context_reason,
             "ambient_symbol": plan.ambient_symbol,
             "ambient_used": not plan.explicit_entity,
+            "envelope_source": plan.envelope_source,
         },
         "relationship_receipt": relationship,
         "rank_resolution_failure": rank_resolution_failure,
