@@ -89,6 +89,12 @@ unverified:
       temporary rows, exact before/after receipts, duplicate-lot preservation,
       no-Watchlist-mutation seals, and exact cleanup; only then may A1B advance to
       DONE / PROVEN_LIVE.
+unresolved:
+  - >
+    The authenticated production-acceptance vertical is blocked on
+    PRODUCTION_WRITE_AUTH_REQUIRED: no authorized production test/write identity
+    (Chrome extension session or designated test account) was available. A1B holds
+    at BUILT_NOT_PROVEN until that vertical passes with exact cleanup.
 do_not_redo:
   - "Do not merge anything further for A1B; the carrier is merged and closed."
   - "Do not re-run the anonymous vertical; its receipt is complete."
