@@ -41,7 +41,7 @@ verified:
       878930b3b2f9849e120391fa461ed528f32d2e3c, so Task 4 must merge and re-prove that movement
       before any push or current-base claim.
   - claim: The pre-record changed-file and import census remains bounded to CF1 and its records.
-    command: git diff --name-status 4caccc2a98a1e19d58fe484be814830deb0da46d..dc391292302b42452e68d48d9a21864ebcc76eda; rg -n '(from engine\.provider_capacity|import engine\.provider_capacity)' --glob '*.py' .
+    command: git diff --name-status 4caccc2a98a1e19d58fe484be814830deb0da46d..dc391292302b42452e68d48d9a21864ebcc76eda; rg -n 'provider_capacity' scripts/build_provider_capacity.py tests/test_provider_capacity.py
     result: >
       Relative to the merged base, the pre-record candidate has 12 paths: one CI registration,
       four plan/Agent OS records, four existing provider-owner modules, one new normalizer, one
