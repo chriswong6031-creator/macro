@@ -395,6 +395,62 @@ Freeze T1–T14 verbatim, plus (D6-B1 + Sol acceptance list):
 - B13: fence: baked page ≤ 303,104 and FMS shell delta ≤ 8,192.
 - B14: anonymous 401/locked on both routes + site twin; no case bodies in HTML.
 
+## §11b Post-red-team amendments (adjudicated 2026-08-26 after the independent
+opus review; these are frozen law equal to the sections they amend)
+
+1. **Paired plain-copy law**: `templates/government-revenue-dossiers.js` ships
+   with its byte-matching `site/government-revenue-dossiers.js` twin in the
+   same PR (`python -m scripts.check_template_site_sync --fix`). The rendered
+   `site/government_revenue.html` page stays live-lane-owned and is NOT
+   committed by the carrier.
+2. **Evidence drawer**: the FMS inspector MUST emit the `data-fms-evidence`
+   action button (mirror the budget inspector's actions block) so the
+   receipts/observation-history drawer is reachable — journey step 6.
+3. **Receipt idempotence**: acquisition receipts join observations under the
+   same-URL-same-bytes idempotence law — a re-run against unchanged bytes
+   appends ZERO receipt rows (timestamp-free duplicate predicate consulted
+   before append, mirroring `dod_budget_live`); the acquire lane's no-op
+   early-exit must be genuinely reachable, with a two-run test proving it.
+4. **Population-clock window (§2) is enforced in the engine**: a case whose
+   population clock falls outside [2026-01-01, as_of] is excluded from the
+   graph; `scope.delivered_from/delivered_through` publish the POPULATION
+   window, never the FR publication-query bounds (those stay in
+   `coverage.sources.federal_register.publication_window`). State sweep
+   page-cap exhaustion (a page limit reached while entries keep appearing) is
+   a typed failure, never `ok`.
+5. **Partial-failure law (freeze §14 `partial`)**: a per-article State fetch
+   failure does not abort the sweep — remaining articles still acquire, the
+   failure list is recorded, and `state_pm_bureau.status = "partial"` (with
+   failed/succeeded counts) when the listing succeeded but ≥1 article failed.
+   Total listing failure remains `unavailable`.
+6. **`empty_valid` encoding (v1)**: the frozen predicate is encoded as
+   `state_pm_bureau.status: "ok"` + `qualifying_articles: 0`, lawful ONLY when
+   the listing fetch+parse succeeded; the display tier renders the plain-word
+   empty state from it. `stale` / `rights_blocked` remain vocabulary homes with
+   no lawful v1 emitter (no staleness clock is authorized until Sol sets an
+   acquisition cadence; no rights block exists on these public sources).
+7. **Freshness derivation**: `freshness.fms.status` = worst-of the FR and
+   State source statuses mapped into the freshness vocabulary (never
+   FR-alone); staleness/age logic stays out of v1 pending Sol's cadence.
+8. **`multi_surface` classification**: `source_coverage.classification` gains
+   the value `multi_surface` for any surface combination not named by the six
+   §2 classes (e.g. a transition-window case observed on both webs plus FR);
+   the `surfaces[]` array remains the exhaustive truth. Classification
+   precedence must never drop an observed surface silently.
+9. **Correction-to-amendment brackets**: an FR correction whose bracket fails
+   the numeric original grammar (e.g. `26-1C`, `0M-25` family) is excluded
+   with reason exactly like amendment notices — typed, no crash, `::error`/
+   `::warning` annotations printed line-start with flush.
+10. **`case_key_for_transmittal` normalizes** (leading-zero strip) before
+    minting a key — `26-013` and `26-13` can never mint distinct identities.
+11. **Graph `known_at`** = the latest observation `known_at` in the build
+    (never null in a production build with observations).
+12. **Fence measurement**: the UI fence test measures a freshly RENDERED page
+    (template + current committed data), not the committed `site/` page.
+13. Vacuous-test repairs: T6/T14 assert `state_pm_bureau.status` directly; the
+    U5-mutation test must exercise the real check; a 422 malformed-case-key
+    test runs authenticated; a case-graph-level mis-key conflict test exists.
+
 ## §12 Production-proof sequence (after merge)
 
 1. Dispatch `fms-acquire.yml` on main (preflight the shared concurrency group; never
