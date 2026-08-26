@@ -2207,11 +2207,18 @@ jobs:
       # rides the same Canada subject: byte pins on site/canada-stock-v36.js
       # ([hidden] display overrides + the card.hidden mechanism they cover).
       # stdlib-only (pathlib), full checkout has site/. No new job.
+      # tests/test_hk_v37_composer.py (HK V3.7 follower, SOL-HK-V37-FOLLOWER,
+      # 2026-08-25) rides the same step as its Canada sibling: byte pins on
+      # site/hk-stock-v36.js (Featured-cohort selection, no-LIVE/zero-fetch
+      # invariants, trd-wrap evidence move, [hidden] XOR overrides) plus the
+      # HK loader block in templates/dashboard-icons.js. stdlib-only
+      # (pathlib/re), full checkout has site/. No new job.
       - name: render-guard + engine-contract tests (rot sweep 2026-07-02)
         run: >
           python -m pytest
           tests/test_canada_build.py tests/test_canada_canonical_board.py
           tests/test_canada_v36_composer.py
+          tests/test_hk_v37_composer.py
           tests/test_commodity_signals.py
           tests/test_commodity_index.py
           tests/test_commodity_confluence.py
