@@ -4079,3 +4079,4 @@
 {"id":"ob-2026-08-26-f346348c8c","from":"queued","to":"approved","at":"2026-08-26T18:14:34Z","actor":"approval-desk","note":"approval-desk: payload, session_language, expired_session, number_sanity, liveness, chart_law, banned_language, dedup","receipt":null}
 {"id":"ob-2026-08-26-f346348c8c","from":"approved","to":"posting","at":"2026-08-26T18:19:18Z","actor":"publisher","note":"in-flight (pre-publish)","receipt":null}
 {"id":"ob-2026-08-26-f346348c8c","from":"posting","to":"posted","at":"2026-08-26T18:19:19Z","actor":"publisher","note":"published","receipt":{"backend":"buffer","external_id":"6a8f2e27114fe1e8fd77560f","external_url":null,"at":"2026-08-26T18:19:11Z","booked_at":"2026-08-26T18:19:11Z"}}
+{"id":"ob-2026-08-26-2d72ae93fb","from":"approved","to":"quarantined","at":"2026-08-26T21:00:13Z","actor":"wire_expiry","note":"expired_stale_wire: breaking sat untouched 3.0h (ttl 3h) — the moment it was written about is gone","receipt":null}
