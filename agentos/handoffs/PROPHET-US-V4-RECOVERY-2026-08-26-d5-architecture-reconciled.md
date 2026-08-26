@@ -170,7 +170,11 @@ do_not_redo:
     read_current_event_workspace, and do not "simplify" the revision-chain filter back to
     them. They resolve the current generation while still carrying a pre-cut
     lifecycle.source_available_at, so the wrong reading passes every stated acceptance
-    test while shipping post-cut corrected values as decision-time belief.
+    test while shipping post-cut corrected values as decision-time belief. Equally, do not
+    filter admission on source_available_at alone: admission is the conjunction with
+    observed_at <= cut. An independent review caught the single-clock version of this rule in
+    the first draft of A7, where it would have re-opened the very lookahead hole the
+    amendment exists to close.
   - >
     Do not join B1 episodes to Earnings events on company_id equality, and do not fall
     back to a ticker-string join when the issuer bridge fails. The two company_id fields
@@ -193,6 +197,13 @@ danger_areas:
     The B1 nightly step is schedule-only and hard-failing by design. A crash there reds
     us_prophet_ledgers rather than degrading quietly, which is intended - do not add
     continue-on-error to make a red go away.
+  - >
+    The Earnings revision walk is a SOURCE-revision reader, not a body-revision reader.
+    _receipt_from_revision derives source_sha256 only from a source whose kind is
+    issuer_release, and _dedupe_carry_forward_hops collapses consecutive equal values, so an
+    event with no issuer_release source collapses to one revision and body-only corrections
+    are invisible through the only lawful decision-time path. That is why A7 requires a typed
+    correction_lineage_state and forbids rendering NOT_OBSERVABLE as "no correction".
   - >
     The Earnings correction path is UNEXERCISED in production. A live read of
     read_event_source_revisions on the AAPL event returns exactly one revision in

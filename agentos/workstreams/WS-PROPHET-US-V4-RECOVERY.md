@@ -103,8 +103,13 @@ do_not_redo:
     read_current_event_workspace. They resolve the CURRENT generation and take no as-of
     argument, so they present post-cut corrected values as decision-time belief while passing
     the contracts stated admissibility test. Decision-time access is
-    read_event_source_revisions / read_all_event_source_revisions only, filtered
-    source_available_at <= decision_cut. See CELL_F_D5_CONTRACT_AMENDMENTS_2026-08-26.md A7."
+    read_event_source_revisions / read_all_event_source_revisions only."
+  - "Do not admit an Earnings revision on source_available_at alone. Admission is the
+    CONJUNCTION source_available_at <= cut AND observed_at <= cut, because the owner enforces
+    only observed_at >= source_available_at (events.py:249-252), so a filing available before
+    the cut but observed after it is a legal state and admitting it is lookahead. That case is
+    NOT_CAPTURED_AT_DECISION; a null or unknown admission clock is UNKNOWN, never a silent
+    skip. See CELL_F_D5_CONTRACT_AMENDMENTS_2026-08-26.md A7."
   - "Do not spend a PR removing the bridge candidate cap: N_CANDIDATES=12 survives
     only as an OVERRIDDEN DEFAULT (prophet_bridge.py:146,1147) — production passes
     n=None (:4127; daily.yml:2270). A grep hitting the constant does not contradict

@@ -346,8 +346,11 @@ Freshness carries owner-native source watermark/SLA references, not a D5-wide ha
 ### 8.2 Observation value state
 
 > **AMENDED 2026-08-26 — see `CELL_F_D5_CONTRACT_AMENDMENTS_2026-08-26.md` A10.** This vocabulary is a superset ACROSS families,
-> not a per-family menu. Ten of these reasons are unmintable by the Earnings owner today; an
-> adapter may emit only what its owner can actually mint, and must carry that register.
+> not a per-family menu. A10 classifies all fifteen for Earnings v1: three owner-backed, one
+> partial, six D5-originated states about D5's own access or join, and five not mintable at
+> all. `absence_reasons[]` carries only §8.2 members — `AFTER_DECISION_CUT` is a
+> `decision_admissibility` value, `MEASURED_NEUTRAL` is a `value_state`, and owner warning
+> strings pass through a separate field.
 
 Every `observations[]` row declares:
 

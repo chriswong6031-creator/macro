@@ -35,7 +35,7 @@ apply to decision-time observations.
 **Defect being repaired.** The canonical Earnings reader
 `read_event_workspace` (`engine/neuralweb/company_intelligence_reader.py:581-622`) honours only
 `event_id` (`:589`) and resolves the **current** published marker/generation via
-`_load_event_workspace` (`:604`, `:524-548`). It takes no as-of, cutoff, generation or clock
+`_load_event_workspace` (called at `:599`; defined `:524-548`). It takes no as-of, cutoff, generation or clock
 parameter. Because the body it returns still carries `lifecycle.source_available_at` and
 `lifecycle.observed_at` (`engine/company_intelligence/event_workspace.py:269-276`) from the
 original release, a builder can read a **post-cut corrected** body, observe a pre-cut
@@ -51,18 +51,59 @@ reconstructed) never fires, because that reader cannot reveal that a correction 
    (`engine/neuralweb/company_intelligence_reader.py:1150-1276`), which walks
    `previous_generation_id` and verifies each predecessor's bytes against
    `previous_manifest_sha256`.
-2. `read_event_workspace` and `read_current_event_workspace` are **FORBIDDEN** in any
-   decision-time D5 path. They may serve only a separately and visibly labelled
-   "known now" research view, never `decision_admissibility = ADMISSIBLE`.
-3. Selection rule: admit only revisions whose `source_available_at` is at or before the
-   episode's decision cut; among those take the latest. Re-sort by `source_available_at`
-   before selecting — do NOT rely on the walk's return order. Proven precedent in-house:
-   `scripts/build_cycle_pattern_imce_prospective.py:214-244` and `:388-397`.
-4. `WorkspaceChainIntegrityError` (`company_intelligence_reader.py:1200-1204`, `:1246-1249`)
-   is a first-class outcome: a broken or dangling chain yields `UNESTIMABLE` /
-   `CORRECTION_PENDING` per §13. Falling back to `read_event_workspace` is forbidden.
-5. A revision that exists only after the decision cut is not discarded — it is the
-   correction lineage of §13, carried beside the decision observation as later knowledge.
+2. `read_event_workspace` (`:581-622`; it calls `_load_event_workspace` at `:599`) and
+   `read_current_event_workspace` are **FORBIDDEN** in any decision-time D5 path. They may
+   serve only a separately and visibly labelled "known now" research view, never
+   `decision_admissibility = ADMISSIBLE`.
+3. **Admission is a CONJUNCTION over both clocks — never `source_available_at` alone.** A
+   revision is admissible at cut `C` only if `source_available_at <= C` **AND**
+   `observed_at <= C`; for a correction generation, also `generated_at <= C`. The owner
+   enforces only the one-sided relation `observed_at >= source_available_at`
+   (`engine/company_intelligence/events.py:249-252`), so `source_available_at <= C < observed_at`
+   is a legal and expected state — a filing available 16:05 ET that the nightly collector
+   observed at 22:00 ET, judged against a 16:30 ET cut. Admitting on `source_available_at`
+   alone ships evidence the running system did not possess, which is lookahead: the exact
+   defect this amendment exists to close. A revision failing only the `observed_at` test is
+   `NOT_CAPTURED_AT_DECISION`, not absent and not admissible. The clocks currently collapse on
+   the live object (`G0_EVENT_CLOCK_AND_CONTRACT_CENSUS.md:98`), so this defect is **latent
+   today** — the law must be correct for when that degradation is repaired, and a builder may
+   not lean on the collapse.
+4. **Selection among admissible revisions.** Take the greatest `source_available_at`; break a
+   tie on the greatest `observed_at`; if a tie still remains, fail closed with `CONFLICTED`
+   rather than picking a winner. Order explicitly by clock — never by the walk's return order,
+   and never by position, which a non-consecutive `A -> B -> A` source revert would make
+   meaningless. Proven precedent: `scripts/build_cycle_pattern_imce_prospective.py:214-244`
+   and `:388-397`.
+5. **Null and unknown clocks are NAMED, never silently skipped.** The owner emits
+   `lifecycle.source_available_at` as `None` when it has no clock
+   (`engine/company_intelligence/event_workspace.py:269-276`), and forbids the field entirely
+   when `clock_state == "unknown"` (`engine/company_intelligence/qa_exchange.py:396-399`). A
+   revision missing either admission clock cannot be proven pre-cut, so it is **not
+   admissible**, and its exclusion is reported as `UNKNOWN` with the missing clock named. The
+   cited precedent skips such rows silently (`build_cycle_pattern_imce_prospective.py:237-239`,
+   `:396`); D5 may reuse its ordering discipline but NOT its silence — an unnamed skip produces
+   "no admissible revision", which is the absence-masquerade §8 forbids.
+6. **The mandated reader is a SOURCE-revision reader, not a BODY-revision reader — say so to
+   the consumer.** `_dedupe_carry_forward_hops` (`company_intelligence_reader.py:1136-1147`)
+   collapses consecutive revisions sharing a `source_sha256`, and `_receipt_from_revision`
+   (`:1110-1134`) derives `source_sha256` ONLY from a source whose `kind == "issuer_release"`,
+   defaulting to `None`. Consequences that MUST be modelled rather than assumed away: for an
+   event with no `issuer_release` source every generation's `source_sha256` is `None`, so the
+   whole chain collapses to one revision and a genuine correction to `facts`/`deltas`/
+   `guidance` is **invisible to the only reader this law permits**. D5 therefore carries a
+   typed `correction_lineage_state` per observation: `OBSERVED` (a distinct source revision was
+   seen), `NONE_IN_CHAIN` (chain walked, no correction), or `NOT_OBSERVABLE` (no
+   `issuer_release` source, so corrections cannot be detected through this path). Rendering
+   `NOT_OBSERVABLE` as "no correction" is forbidden.
+7. `WorkspaceChainIntegrityError` is a first-class outcome. It is raised at
+   `company_intelligence_reader.py:1194`, `:1208`, `:1232` and `:1241` in the chain walk, and
+   at `:1065`, `:1070`, `:1075` in the snapshot loader. A broken or dangling chain yields
+   `UNESTIMABLE` / `CORRECTION_PENDING` per §13, and **the raised exception's message must be
+   recorded in the observation receipt** — those two states may be emitted only with that
+   receipt present, so a builder cannot reach for them whenever a read is inconvenient.
+   Falling back to `read_event_workspace` is forbidden.
+8. A revision that exists only after the decision cut is not discarded — it is the correction
+   lineage of §13, carried beside the decision observation as later knowledge.
 
 **Clock binding table.** The 2026-08-22 contract names clocks abstractly (§7); the Earnings
 owner's real field names differ. This binding is normative — a builder may not guess it.
@@ -85,7 +126,11 @@ clocks agree. A builder must not infer distinctness it has not observed.
 
 **Acceptance test (required, not optional).** Construct a two-generation chain for one event
 where generation N and generation N+1 disagree on a fact, and drive it through the REAL reader
-rather than a stub. Assert that the D5 decision observation equals generation N's value, that
+rather than a stub. Cover BOTH event classes: one event WITH an `issuer_release` source (where
+the correction is visible and `correction_lineage_state = OBSERVED`) and one WITHOUT (where the
+chain collapses and the honest answer is `NOT_OBSERVABLE`, never "no correction"). Add a third
+case where `source_available_at <= cut < observed_at`, asserting `NOT_CAPTURED_AT_DECISION`
+rather than admission. Assert that the D5 decision observation equals generation N's value, that
 the current body differs, that the correction appears as later knowledge with its own
 `corrected_at` and `generation_id`, and that no field of the decision observation changed. A
 test that exercises only one generation does not satisfy this.
@@ -109,7 +154,7 @@ normative rather than advisory.
 ## A8 — `decision_cut` is bound to B1-owned clocks; `tradable_at` is NOT_ASSERTED
 
 **Supersedes:** §4/§5 insofar as they assume an availability owner exists for `tradable_at`,
-and §5 `:158` insofar as `decision_cut` is left unbound.
+and §5's REQUIRED `decision_cut` row insofar as it is left unbound.
 
 **Defect being repaired.** §5 makes `decision_cut` REQUIRED and §7 lists `decision_at` and
 `tradable_at` as "episode-owned" / "episode/availability-owned". B1 as merged
@@ -130,14 +175,26 @@ and `scripts/build_canada_library.py`. V4-B4 is not built.
 3. A builder may NOT synthesise a decision cut from any other source. Deriving a cut from a
    ranking, a board, a plan, a session calendar, or a Radar row would mint the second candidate
    lifecycle that §21 and `DSC:PROPHET-D5-BLOCKED-ON-CANONICAL-CANDIDATE-EPISODE-B1` forbid.
-4. When B4 lands, `tradable_at` is filled by its owner and this amendment's clause 2 is
+4. **The cut is pinned to one episode generation.** `opened_at` and `opened_session` are both
+   members of `PATCHABLE_FIELDS` (`engine/us_candidate_episode.py:50-60`), so a later
+   correction generation may legitimately change them. A D5 object therefore states the cut
+   together with the B1 `generation_id` it was read from, per A9. A cut quoted without its
+   generation is unpinned and may silently drift.
+5. **Disclose what `opened_at` is.** It is composed, not raw:
+   `opened_at = max(anchor.time, known_at)` (`engine/us_candidate_episode.py:897`, and `:724`
+   on the re-arm path). That is exactly why referencing it mints nothing and why it can never
+   precede knowledge — but it also means the interval `(known_at, anchor.time]` is a real
+   window in which the structural anchor predates the moment the system knew of it. D5 carries
+   `anchor.time` and `known_at` alongside the cut so a consumer can see that window rather
+   than inferring a single instant.
+6. When B4 lands, `tradable_at` is filled by its owner and this amendment's clause 2 is
    reopened — nothing else here is.
 
 ---
 
 ## A9 — `episode_ref` must pin the immutable generation
 
-**Supersedes:** §4 `:119-124` `episode_ref`.
+**Supersedes:** §4's `episode_ref` definition. (Cited by section, not line: the inline markers this commit adds shift the 2026-08-22 file's line numbers.)
 
 **Defect being repaired.** As written, `episode_ref` cannot pin an immutable parent: it
 carries no `generation_id`, and B1's `PATCHABLE_FIELDS` permit `opened_at` to change across
@@ -156,33 +213,61 @@ marked superseded, per the §13 append law.
 
 **Supersedes:** §8.2 insofar as it implies every absence reason is available for every family.
 
-**Defect being repaired.** Ten of the fifteen §8.2 absence reasons cannot be produced by the
-Earnings owner today: `RIGHTS_BLOCKED`, `PRODUCER_DEGRADED`, `CONFLICTED`,
-`CORRECTION_PENDING`, `NOT_CAPTURED_AT_DECISION`, `INSUFFICIENT_HISTORY`, `UNESTIMABLE`,
-`ACCRUING`, `NOT_COMPUTED`, plus `rights.state = BLOCKED`; `STALE` is only partially
-expressible. Notably `blocked_rights` is a RESERVED, non-mintable status by deliberate design
-(`engine/company_intelligence/events.py:79-83` — "a status no code path can produce is a lie in
-a dropdown"), and the enforced manifest status enum is `{ready, degraded, partial, empty}`
-(`engine/company_intelligence/event_workspace.py:362`).
+**Defect being repaired.** §8.2 lists fifteen typed absence reasons as one closed vocabulary,
+which reads as a per-family menu. It is not. Most of them have no Earnings owner behind them —
+notably `RIGHTS_BLOCKED`, whose owner-side analogue `blocked_rights` is a RESERVED,
+deliberately non-mintable status (`engine/company_intelligence/events.py:83`, subtracted from
+`INTELLIGENCE_STATUS` at `:84`, on the stated ground at `:76-77` that "a status no code path
+can produce is a lie in a dropdown"). The enforced manifest status enum is
+`{ready, degraded, partial, empty}` (`engine/company_intelligence/event_workspace.py:362`), and
+the owner's closed warning vocabulary is `WORKSPACE_WARNINGS` (`:99-106`), whose
+rights-relevant member is `consensus_unlicensed` (`:102`).
 
 **The law.**
 
-1. §8.2 is a **vocabulary superset across families**, not a per-family menu. A family adapter
-   may emit only those states its owner can actually mint, and the adapter must carry an
-   explicit register of which ones those are.
-2. Earnings v1 mintable set: `NOT_APPLICABLE`, `NOT_COVERED`, `SOURCE_UNAVAILABLE`,
-   `AFTER_DECISION_CUT`, `MEASURED_NEUTRAL` (only under a named owner definition), plus the
-   owner's own closed warning vocabulary `WORKSPACE_WARNINGS`
-   (`event_workspace.py:99-106`) — of which `consensus_unlicensed` is the rights-relevant
-   member and is how an unlicensed-consensus absence is expressed. Everything else in §8.2 is
-   **unavailable to the Earnings adapter in v1** and must not be emitted.
-3. A9/A7 create two exceptions that ARE mintable by D5 itself because they describe D5's own
-   access outcome, not an owner state: `UNESTIMABLE` / `CORRECTION_PENDING` when the revision
-   chain is broken (A7 clause 4). These are the only D5-originated absence states permitted.
-4. Because `UNESTIMABLE` is otherwise unmintable, §13 `:542`'s escape hatch is load-bearing
-   ONLY via A7 clause 4. Without A7 it is dead law.
+1. §8.2 is a **vocabulary superset ACROSS families**, not a per-family menu. Each family
+   adapter carries an explicit register classifying every one of the fifteen reasons.
+2. **Vocabulary separation is normative.** `absence_reasons[]` carries ONLY §8.2 members.
+   `AFTER_DECISION_CUT` is a `decision_admissibility` value (§7.1) and belongs in that field.
+   `MEASURED_NEUTRAL` is a `value_state` (§8.2) and belongs in that field. Owner warning
+   strings (`consensus_unlicensed`, ...) are neither — they pass through in a distinct
+   `owner_warnings[]` field, unaltered and untranslated. Mixing these three vocabularies into
+   `absence_reasons[]` would force a builder to invent the mapping, which this contract
+   forbids.
+3. **Earnings v1 register — all fifteen classified, no residue.**
 
----
+   *Owner-backed and mintable (3):* `NOT_APPLICABLE` (the event type does not apply to the
+   subject), `NOT_COVERED` (issuer outside the owner's coverage set), `SOURCE_UNAVAILABLE`
+   (the reader's `fetch_failed` disposition, `company_intelligence_reader.py:1012-1033`,
+   which is distinct from `not_published`).
+
+   *Owner-backed but only PARTIAL (1):* `STALE` — the owner has no staleness clock; it is
+   expressible only as a coarse `completeness.<axis>.status` degradation, so it may be emitted
+   only with that owner status quoted as its basis, never from a D5-invented freshness rule.
+
+   *D5-originated, describing D5's OWN access or join outcome (6):* `UNESTIMABLE` and
+   `CORRECTION_PENDING` (A7 clause 7 chain break — permitted ONLY with the raised
+   `WorkspaceChainIntegrityError` message in the receipt), `NOT_CAPTURED_AT_DECISION`
+   (A7 clause 3, `source_available_at <= cut < observed_at`), `UNKNOWN` (A7 clause 5, an
+   admission clock is null or `clock_state == "unknown"`), `IDENTITY_UNRESOLVED` (A13 clause 3,
+   the issuer bridge does not resolve), and `CONFLICTED` (A7 clause 4 unbreakable tie, or A13
+   clause 4 identity ambiguity).
+
+   *Not mintable in Earnings v1 (5):* `RIGHTS_BLOCKED` (owner analogue is RESERVED; an
+   unlicensed-consensus absence is carried as the owner warning `consensus_unlicensed` in
+   `owner_warnings[]`, never as this reason), `INSUFFICIENT_HISTORY`, `ACCRUING`,
+   `PRODUCER_DEGRADED`, `NOT_COMPUTED` — the owner defines none of these and D5 may not
+   originate them.
+
+   3 + 1 + 6 + 5 = 15. A reason absent from this register is a contract error, not a builder's
+   judgement call.
+4. The six D5-originated states are consistent with "D5 never originates domain facts" because
+   each describes D5's own access or join outcome, not an owner state — the same distinction
+   B1 already makes when it mints `IDENTITY_UNRESOLVED` / `ISSUER_UNRESOLVED` about its own
+   intake (`engine/us_candidate_episode_intake.py:153-156`). None of them may be used to
+   characterise the subject, the issuer, or the market.
+5. Because `UNESTIMABLE` is otherwise unmintable, §13's escape hatch is reachable ONLY via A7
+   clause 7. Without A7 it is dead law.
 
 ## A11 — §19.1 canonical episode gate: status corrected
 
@@ -277,20 +362,24 @@ Two constraints on using it:
 
 1. The episode-to-Earnings binding is resolved ONLY through the issuer_id -> cik -> `cik:` path
    above, through the canonical Data OS issuer reader.
-2. A **ticker-string join is forbidden** in every form — including the owner's own
+2. A **ticker-string join is forbidden here**, in every form — including the owner's own
    `select_current_event_from_aliases` `TICKER/YYYYQn` alias path
-   (`engine/company_intelligence/event_workspace.py:632-712`) — per
-   `research/prophet_v4/D1_D5_READINESS_RULING.md` ("no ticker-string joins"). That the owner
-   offers a ticker alias API does not make it lawful for D5.
+   (`engine/company_intelligence/event_workspace.py:632-712`). The governing ruling is
+   conditional, not blanket: `research/prophet_v4/D1_D5_READINESS_RULING.md:52` reads "no
+   family joins on ticker strings **when canonical identity is required**". Binding a canonical
+   episode to a canonical evidence object is precisely a case where canonical identity is
+   required, so the condition is met and the join is forbidden. That the owner offers a ticker
+   alias API for its own display purposes does not make it lawful for D5.
 3. Where the bridge cannot be resolved, the family is `IDENTITY_UNRESOLVED` with the reason
    named. B1 already models exactly this distinction with two typed states,
    `IDENTITY_UNRESOLVED` and `ISSUER_UNRESOLVED`
    (`engine/us_candidate_episode_intake.py:153-156`); D5 mirrors that vocabulary rather than
-   inventing one. Per A10 clause 3 this is a D5-originated state about D5's own join, not a
-   claim about an owner fact.
+   inventing one. A10 clause 3 classifies this as a D5-originated state about D5's own join,
+   not a claim about an owner fact, and clause 3 of that register explicitly admits it.
 4. Identity ambiguity fails **closed**. The Earnings owner already raises on an ambiguous
-   fiscal-period mapping (`event_workspace.py:693-699`) and on alias collision (`:429-447`);
-   D5 propagates that as `IDENTITY_AMBIGUOUS`, never picking a winner.
+   fiscal-period mapping (`event_workspace.py:693-699`) and on alias collision (`:429-447`).
+   D5 propagates that as `CONFLICTED` — an existing §8.2 member — never picking a winner and
+   never inventing a new absence reason for it.
 5. An unresolved or ambiguous identity is never rendered as "no evidence". The consumer must be
    able to tell "we could not bind this episode to an issuer" from "this issuer had no earnings
    evidence by the decision cut".
