@@ -71,7 +71,7 @@ unverified:
       Production browser proof on AAPL Company Intelligence / Results / Analyst Q&A,
       including analyst identity, ordered management answer turns, transcript jump,
       no Operator intro as question, no fake unavailable chips, no console error/overflow.
-  - claim: Public AAPL derivative exposes only "Analyst questions: 7 exchanges" and regressions remain lawful.
+  - claim: 'Public AAPL derivative exposes only "Analyst questions: 7 exchanges" and regressions remain lawful.'
     what_would_verify: >
       Production public/API proof plus LMND fallback, AAPL E2 fact/guidance preservation,
       Prophet false/context_only, no beat/miss, no fake Q&A on no-transcript events.
