@@ -39,6 +39,18 @@ changed:
       condition change can reserve a later owner after the old identity exits.
       Ledger/lock files are owned regular files in a 0700 directory, opened
       no-follow and saved through unique atomic temp files.
+      Second adversarial return: heredoc bodies are structurally removed as
+      data while executable headers stay classified; eval/exec/nohup/env -S/
+      PowerShell transports fail closed or resolve to the one native condition
+      owner; gh flag arity yields canonical repository + run/PR subject
+      identity. Because Bash PreToolUse hooks decide in parallel, acquisition
+      is now a two-phase transaction inside the same ledger: the hook writes a
+      pending marker, and only the aggregate-allowed updated command confirms
+      its exact shell PID/start identity before GitHub executes. A quota-denied
+      command cannot leave a consumed phantom; a late stale command cannot
+      confirm after replacement. Unsafe existing ledger state is distinct from
+      genuine absence and blocks Stop / reports SessionStart without following
+      planted state or lock symlinks.
   - path: scripts/ship_loop_hold_wrapper.py
     what: >
       _handle_stop: first lawful PARKED writes parked_latch
@@ -59,7 +71,11 @@ changed:
       sleep/gh spellings, inert quoted-text negative controls, evaluated-hook
       delegation failure, concurrent ledger writers, marker/PID/start identity,
       PID reuse and sibling-session isolation, filesystem symlinks/modes, and
-      standing-law parity.
+      standing-law parity. Second return adds executable wrapper and heredoc
+      negative controls, option-arity/digest identities, real parallel
+      quota+ship-hook denial/retry, command-side confirmation, unsafe-ledger
+      entrypoints, five unchanged observations with zero admitted successors,
+      one material-change owner, and distinct-session isolation.
   - path: tests/test_ship_loop_hold_wrapper.py
     what: >
       Existing narrate-once/release/outage tests plus the complete PARKED →
@@ -101,9 +117,27 @@ verified:
   - claim: Agent OS records validate
     command: python3.12 scripts/agentos.py validate
     result: 0 errors (43 inherited warnings; review-date rollover and unrelated phantom-path records)
+  - claim: second-return focused red tests reproduced every binding defect
+    command: python3 -m pytest -q tests/test_ship_loop_guard.py with classifier/state/parallel-hook selections
+    result: >
+      executable wrappers and heredocs failed at the intended classifier
+      boundary; repository/subject identities were wrong; unsafe Stop and
+      SessionStart were silent; path resolution escaped the router; and the
+      quota-denied hook path left an unconfirmed condition consumed.
+  - claim: second-return focused repair and adjacent suites are green locally
+    command: >
+      python3.12 -m pytest -q tests/test_ship_loop_hold_wrapper.py
+      tests/test_gh_quota_guard.py tests/test_self_mod_fence.py
+      tests/test_agent_routing_control.py tests/test_sparse_worktree_profile.py
+    result: 257 passed; 3 inherited non-failing pytest temp-cleanup warnings
+  - claim: exact guard + wrapper regression suite is green on the second-return tree
+    command: python3.12 -m pytest -q tests/test_ship_loop_guard.py tests/test_ship_loop_hold_wrapper.py --maxfail=10
+    result: 381 passed, 1 skipped; 3 inherited non-failing pytest temp-cleanup warnings
 unverified:
   - claim: hosted CI green on the exact PR head
     what_would_verify: ci.yml + fences.yml runs on the PR head after push (watched to conclusion before parking)
+  - claim: remote/hosted second-return proof
+    what_would_verify: only after local Sol review PASS; this carrier remains local-only and unpushed
 unresolved:
   - >
     tests/test_ship_loop_hold_wrapper.py remains waived-unwired in CI
@@ -141,6 +175,11 @@ danger_areas:
     2026-08-24, session transcript).
   - Ordinary non-watcher Bash must stay fail-open before delegation/state, but
     once classified watcher-shaped, unanswerable admission must fail closed.
+  - >
+    PreToolUse allow is not aggregate permission: keep the pending-marker +
+    command-side confirmation seam. Never let an unconfirmed parallel-hook
+    claim consume a condition, and never start GitHub before the exact marker,
+    PID, and process-start identity are committed under the shared ledger lock.
   - >
     Do not let ladder_exits refuse watcher creation (red-team F4 — permanent
     false-DENY of a resumed transient-escape session), and do not free the

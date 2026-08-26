@@ -197,6 +197,16 @@ waves:
       preserved exact PARKED latches across outage blocker mutation, made
       evaluated-tree watcher delegation fail closed, and hardened the ledger
       directory/lock/atomic-save paths against symlink substitution.
+      The second same-carrier adversarial return (2026-08-26) structurally
+      strips heredoc data while classifying executable eval/exec/nohup/env -S/
+      PowerShell transports; parses gh option arity into repository + subject
+      condition identity; and closes the parallel-hook phantom reservation.
+      PreToolUse now writes only a pending claim, while the aggregate-allowed
+      command confirms its exact shell PID/start identity before GitHub starts;
+      a sibling-hook denial therefore cannot consume the condition. Existing
+      unsafe/malformed/symlink ledger state is fail-closed at Stop and visible
+      at SessionStart, while the narrow never-installed legacy Stop remains the
+      sole absence fail-open.
       Internal codes byte-unchanged (Journey C). PR #6381 held HOLD-FOR-SOL
       per commission stop condition; mutation receipts + replayed-incident
       proof in the PR body and the
