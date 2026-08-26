@@ -1,49 +1,43 @@
 {
-  "ts": "2026-08-26T11:07:04+00:00",
-  "main_sha": "d90d63c782668c6adfa9697563349412292153ae",
+  "ts": "2026-08-26T13:32:16+00:00",
+  "main_sha": "90a5620e55625d9f0b29a021380532c73d284fe2",
   "red_required": [
     {
-      "name": "discover_retain_publish",
+      "name": "publish",
       "conclusion": "failure",
       "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32941539563/job/98093341094"
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32974026433/job/98194260200"
     },
     {
-      "name": "workflow-yaml",
+      "name": "tier-gate",
       "conclusion": "cancelled",
       "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32941440158/job/98093054492"
-    },
-    {
-      "name": "font-ui-defined",
-      "conclusion": "cancelled",
-      "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32941440158/job/98093054489"
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32973344384/job/98192004547"
     },
     {
       "name": "engine-render-guards",
       "conclusion": "failure",
       "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32941440158/job/98093054410"
-    },
-    {
-      "name": "tier-gate",
-      "conclusion": "failure",
-      "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32941440158/job/98093054402"
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32973344384/job/98192004340"
     },
     {
       "name": "free-content-estate",
       "conclusion": "cancelled",
       "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32941440158/job/98093054367"
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32973344384/job/98192004257"
+    },
+    {
+      "name": "dag-conformance",
+      "conclusion": "cancelled",
+      "status": "completed",
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/32973344384/job/98192004097"
     }
   ],
   "green": false,
-  "consecutive_failures": 63,
+  "consecutive_failures": 64,
   "sensed_shas": [
-    "d90d63c782668c6adfa9697563349412292153ae",
-    "919d0e66871fc9a32e51882c6337fbbf32a06e62"
+    "90a5620e55625d9f0b29a021380532c73d284fe2",
+    "a508953fc777848d26cb6856c8696419d87d272a"
   ],
   "heartbeat_degraded": false
 }
