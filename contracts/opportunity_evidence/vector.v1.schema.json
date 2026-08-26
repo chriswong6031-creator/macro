@@ -152,7 +152,7 @@
         },
         "grain": {"enum": ["date", "datetime"]},
         "t0_source": {
-          "description": "The decision date must come from an existing PIT object, never optimized after seeing forward returns (E0 §4.1). Every source is authenticated by t0_evidence_ref against the registry t0_sources pins (semantic K3E_R021). The retired caller_named_pit_object free string is replaced by owner_pit_reference, which additionally REQUIRES a known native_digest immutability receipt (Sol REQUEST_CHANGES 2026-08-25 item 1).",
+          "description": "The decision date must come from an existing PIT object, never optimized after seeing forward returns (E0 §4.1). Every source is authenticated by t0_evidence_ref against the registry t0_sources pins (semantic K3E_R021). The retired caller_named_pit_object free string is replaced by owner_pit_reference, which additionally REQUIRES a known native_digest immutability receipt (Sol REQUEST_CHANGES 2026-08-25 item 1). The four named sources are validation-checkable: the registry pins their owner_store and recorded clock class. owner_pit_reference is NOT — its store, clock class and referenced bytes are all caller-declared — so it is an accountability receipt rather than a verification, and the registry restricts it to t0_mode 'retrospective_research' (Sol REQUEST_CHANGES 2026-08-26 item A). No source on this wire is 'fully authenticated' in the sense of validation reading the owner's bytes; this contract holds no owner I/O.",
           "enum": [
             "winner_case_t0_hypothesis",
             "drl_event_date",
@@ -162,7 +162,7 @@
           ]
         },
         "t0_mode": {
-          "description": "K1 reference.v1 replay.mode vocabulary, verbatim two-member subset lawful for a decision clock. 'live': the vector claims operational PIT — the recorded_clock must sit within the registry-pinned max_recording_lag_days of t0 (semantic K3E_R021), so a decision-time object minted after the fact fails closed. 'retrospective_research': declared research over a past t0 — the lag law is replaced by this visible declaration; authentication (owner pins, digest requirement, known recorded clock) still binds in full. There is no silent third mode.",
+          "description": "K1 reference.v1 replay.mode vocabulary, verbatim two-member subset lawful for a decision clock. 'live': the vector claims operational PIT — the recorded_clock must sit within the registry-pinned max_recording_lag_days of t0 (semantic K3E_R021), so a decision-time object minted after the fact fails closed. 'retrospective_research': declared research over a past t0 — the lag law is replaced by this visible declaration; authentication (owner pins, digest requirement, known recorded clock) still binds in full. There is no silent third mode. Membership in this enum is wire-level only and never per-source permission: the registry t0_sources.lawful_t0_modes decides which modes a given t0_source may claim, and K3E_R021 enforces it. Only sources whose owner_store and clock class validation can actually check may claim 'live'; the generic owner_pit_reference may not (Sol REQUEST_CHANGES 2026-08-26 item A), and a source carrying no lawful_t0_modes pin may claim only 'retrospective_research'.",
           "enum": ["live", "retrospective_research"]
         },
         "t0_evidence_ref": {"$ref": "#/$defs/t0EvidenceRef"}

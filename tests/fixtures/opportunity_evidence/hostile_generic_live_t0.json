@@ -3,25 +3,25 @@
     "grain": "date",
     "t0_evidence_ref": {
       "native_digest": {
-        "sha256": "4baa27cc3ae84422b4a252bf6b45af9c3708099f44ce51318b7d128c13c025ca",
+        "sha256": "f8f5d7443b23a75ae70cadf69768026528932f91a51c730cd0e4540bc4a97592",
         "state": "known"
       },
       "native_identity": {
-        "document": "CASE_STUDY_GOLD_REAL_RATE_PEAK_2026_08.md",
-        "subject": "NEM"
+        "document": "E0_PEER_RELATIVE_CASEBOOK.md",
+        "subject": "IMXI"
       },
-      "owner_store": "research/",
+      "owner_store": "research/opportunity_evidence/",
       "recorded_clock": {
         "clock_class": "belief_or_build",
         "grain": "date",
         "native_field": "git_committer_date",
         "state": "known",
-        "value": "2026-08-09"
+        "value": "2026-08-14"
       }
     },
-    "t0_mode": "retrospective_research",
+    "t0_mode": "live",
     "t0_source": "owner_pit_reference",
-    "value": "2026-08-09"
+    "value": "2026-08-14"
   },
   "authority": {
     "can_gate": false,
@@ -31,13 +31,13 @@
     "can_size": false
   },
   "compilation_state": "partial",
-  "content_sha256": "dae18bfd11298936d5bddf12048fd0c09c85210a15fb87e3576d52083f95accd",
+  "content_sha256": "4c9770548041510ea4fdd533fa2828767ceb919f3a8cb8a6ea625df84a11b9d9",
   "denominator": {
     "conflicted": 0,
-    "excluded": 2,
+    "excluded": 3,
     "identity_unresolved": 0,
-    "included": 2,
-    "missing": 2,
+    "included": 1,
+    "missing": 3,
     "rights_blocked": 0,
     "stale": 0,
     "total": 4,
@@ -47,7 +47,7 @@
   "display_only": true,
   "dominant_degradation": "missing",
   "economic_cause_hypothesis": null,
-  "generated_at": "2026-08-09T00:00:00Z",
+  "generated_at": "2026-08-14T00:00:00Z",
   "permitted_consumers": [
     "research_session"
   ],
@@ -68,17 +68,10 @@
     "failed_or_unavailable_gates": {
       "denominator": {
         "excluded": 0,
-        "included": 1,
-        "total": 1
+        "included": 0,
+        "total": 0
       },
-      "gates": [
-        {
-          "gate": "real_rate_peak_chain_63d",
-          "owner": "engine chain",
-          "reason": "63d window verdict FAILED while tape advanced \u2014 instrument verdict is not a market verdict",
-          "state": "failed"
-        }
-      ]
+      "gates": []
     },
     "inferred": {
       "denominator": {
@@ -122,7 +115,9 @@
         },
         {
           "leg": "I5_attention",
-          "slot_refs": [],
+          "slot_refs": [
+            "attention_views"
+          ],
           "state": "missing"
         },
         {
@@ -152,9 +147,11 @@
       "slot_refs": []
     },
     "strongest_unresolved_fact": {
-      "fact": null,
-      "slot_refs": [],
-      "state": "none_open"
+      "fact": "attention_views unresolved: source_missing",
+      "slot_refs": [
+        "attention_views"
+      ],
+      "state": "named"
     }
   },
   "schema": "opportunity_evidence.vector.v1",
@@ -165,10 +162,10 @@
         "grain": "date",
         "native_field": "date",
         "state": "known",
-        "value": "2026-08-09"
+        "value": "2026-08-14"
       },
       "basis": {
-        "peer_basis": "sector"
+        "peer_basis": "market"
       },
       "construct": "drl_resid_shock",
       "coverage_flag": {
@@ -188,7 +185,7 @@
         "grain": "date",
         "native_field": "harvested_asof",
         "state": "known",
-        "value": "2026-08-09"
+        "value": "2026-08-14"
       },
       "missingness": {
         "reason": null,
@@ -205,10 +202,10 @@
       "provenance_class": "owner_artifact",
       "state": "observed",
       "value_or_null": {
-        "peer_ret": 0.011,
-        "resid": 0.05,
-        "resid_z": 3.4,
-        "ret": 0.061
+        "peer_ret": 0.0014,
+        "resid": 0.2456,
+        "resid_z": 11.85,
+        "ret": 0.247
       },
       "variation_receipt": null
     },
@@ -216,49 +213,46 @@
       "asof": {
         "clock_class": "belief_or_build",
         "grain": "date",
-        "native_field": "asof",
-        "state": "known",
-        "value": "2026-08-09"
+        "native_field": null,
+        "state": "unknown",
+        "value": null
       },
       "basis": null,
-      "construct": "macro_chain_state",
+      "construct": "attention_views",
       "coverage_flag": {
         "note": null,
-        "state": "full"
+        "state": "not_applicable"
       },
       "derivation": "owner_read",
-      "exclusion_reason": null,
+      "exclusion_reason": "source_missing",
       "family_binding": {
-        "family_id": null,
-        "kind": "research_only",
+        "family_id": "F8_ATTENTION_CROWDING",
+        "kind": "governed_family",
         "routed_to": null
       },
-      "included_in_composition": true,
+      "included_in_composition": false,
       "known_at": {
         "clock_class": "knowable",
         "grain": "date",
-        "native_field": "asof",
-        "state": "known",
-        "value": "2026-08-09"
+        "native_field": null,
+        "state": "unknown",
+        "value": null
       },
       "missingness": {
-        "reason": null,
-        "state": "present",
+        "reason": "source_missing",
+        "state": "absent",
         "zero_substituted": false
       },
-      "object_class": "instrument_state",
+      "object_class": "world_observation",
       "owner_ref": {
-        "artifact": "chain state artifacts (per chain)",
+        "artifact": "data/us_prophet_rank/candidates/ columns attention__views, attention__log_views",
         "evidence_ref_id": null,
-        "owner": "engine cycle/chain artifacts (per-chain owners)",
-        "reader": "owner chain readers"
+        "owner": "attention/altdata owners",
+        "reader": "engine.us_context_vector.load_candidates"
       },
       "provenance_class": "owner_artifact",
-      "state": "observed",
-      "value_or_null": {
-        "chain": "real_rate_peak",
-        "window_verdict": "FAILED_63D_WINDOW"
-      },
+      "state": "missing",
+      "value_or_null": null,
       "variation_receipt": null
     },
     {
@@ -355,13 +349,10 @@
     }
   ],
   "subject": {
-    "identity_bridge": {
-      "method": "owner_native_same_key",
-      "receipt": "theme membership gold_miners@2026-08-09"
-    },
-    "identity_state": "bridge_validated",
+    "identity_bridge": null,
+    "identity_state": "single_owner_native",
     "subject_type": "us_listing_symbol",
-    "value": "NEM"
+    "value": "IMXI"
   },
   "version": "1.0.0"
 }

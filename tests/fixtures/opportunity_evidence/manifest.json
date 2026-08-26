@@ -1,13 +1,13 @@
 {
   "fixtures": {
     "golden_dual_read": {
-      "bytes": 9602,
+      "bytes": 9620,
       "kind": "golden",
       "receipts": [
         "Dual-read law receipt: constructs.macro_chain_state note (operator 2026-08-09 gold/real-rate case) plus CLAUDE.md 'Instrument verdicts are NOT market verdicts'.",
         "t0 authentication: owner_pit_reference digest-pinned to research/CASE_STUDY_GOLD_REAL_RATE_PEAK_2026_08.md (sha256 4baa27cc...13c025ca), git committer date 2026-08-09 = t0 -> zero recording lag, lawfully live."
       ],
-      "sha256": "dbf98b39dae059c68664ca9a75bb07b0d943c9d5a1f6ff2a607e844448d72182"
+      "sha256": "b84cba6822f43a94fb8a049c63d7a93095c1d861fd39193d07678111d6c19fd4"
     },
     "golden_fpi_absence": {
       "bytes": 9290,
@@ -28,13 +28,13 @@
       "sha256": "65460501d4c4d454c919b070b26662780e6e15d78af57669c200cf57fb8f5bde"
     },
     "golden_optional_expectation": {
-      "bytes": 8013,
+      "bytes": 8031,
       "kind": "golden",
       "receipts": [
         "constructs.prospective_expectation_src_a1 note: 'OPTIONAL evidence family only ... never a prerequisite for composition'.",
         "t0 authentication: the native_digest on this fixture's t0_evidence_ref is ILLUSTRATIVE. SRC-A1 observation artifacts live at a configurable, append-only path and are not committed to this repository, so the reference proves the required SHAPE (a generic owner_pit_reference must carry a KNOWN immutability receipt) and not a specific committed object. Every other golden's digest is the real sha256 of real committed bytes."
       ],
-      "sha256": "6f17a002dbc7197c29239dc67d0150c64fa176ce98d2222cbd4240910c91568c"
+      "sha256": "7b38eb3144dde5a5a7dff93d11e41ef012ba0da9eda10403a24a7ba566f0a897"
     },
     "hostile_admission_as_entry": {
       "bytes": 10731,
@@ -109,6 +109,14 @@
       ],
       "kind": "hostile",
       "sha256": "329bd3b930c42f5738680e3423653ab873c4e76294a987185c13d4dffe6303c5"
+    },
+    "hostile_generic_live_t0": {
+      "bytes": 9367,
+      "expected_codes": [
+        "K3E_R021"
+      ],
+      "kind": "hostile",
+      "sha256": "13e45c64ddefc8a560c78aaa41661b99844017b95f26fea5c0f4d8d74462112a"
     },
     "hostile_identity_launder": {
       "bytes": 10623,

@@ -271,10 +271,18 @@ def _build_golden_dual_read():
         "grain": "date",
         "t0_source": "owner_pit_reference",
         # The operator's real-rate-peak dual-read case study was committed on
-        # 2026-08-09 — the decision date itself. Zero recording lag, so this
-        # golden is lawfully "live": the decision-time object provably existed
-        # at t0 and its bytes are digest-pinned.
-        "t0_mode": "live",
+        # 2026-08-09 — the decision date itself, so the recording lag is zero.
+        #
+        # This golden USED to claim t0_mode "live" on that basis, reasoning that
+        # the object "provably existed at t0". Sol REQUEST_CHANGES 2026-08-26
+        # item A struck that down and was right: nothing here is proven at
+        # validation time. owner_pit_reference pins no owner_store and no clock
+        # class, so the store, the recording date and the bytes behind the
+        # digest are all caller-declared — a zero lag computed from a
+        # caller-supplied clock is not evidence, and "live" would have been the
+        # caller vouching for the caller. The generic source is now restricted
+        # to retrospective_research, and this golden declares it.
+        "t0_mode": "retrospective_research",
         "t0_evidence_ref": _t0_ref(
             "research/",
             {"document": "CASE_STUDY_GOLD_REAL_RATE_PEAK_2026_08.md", "subject": "NEM"},
@@ -338,7 +346,12 @@ def _build_golden_optional_expectation():
         # ILLUSTRATIVE digest (disclosed in the fixture manifest receipt). It
         # proves the required shape — a generic owner reference must carry a
         # KNOWN immutability receipt — not a specific committed object.
-        "t0_mode": "live",
+        #
+        # An illustrative digest over an uncommitted store is the clearest case
+        # for Sol's 2026-08-26 item A ceiling: this reference could not be
+        # checked by anyone, so claiming operational PIT here was indefensible.
+        # The generic source is restricted to retrospective_research.
+        "t0_mode": "retrospective_research",
         "t0_evidence_ref": _t0_ref(
             "SRC-A1 observation store (configurable path, append-only)",
             {"symbol": "AAPL", "observation_date": "2026-08-09"},
@@ -609,6 +622,39 @@ def _build_hostile_retrospective_t0():
     return _rehash(v)
 
 
+def _build_hostile_generic_live_t0():
+    """Sol REQUEST_CHANGES 2026-08-26 item A: the generic owner_pit_reference is
+    an accountability receipt, not a validation-time verification, so it may not
+    claim operational point-in-time.
+
+    Everything else about this reference is maximally well-formed — a known
+    64-hex immutability digest, a known minting clock, and ZERO recording lag
+    (the object is declared recorded on t0 itself, which would clear any lag
+    budget). That is the point of the mutation: the defect is not sloppiness
+    that a stricter lag rule would catch, it is the assurance CLAIM. Nothing
+    here is checkable — owner_store, clock class and the bytes behind the digest
+    are all caller-declared — so 'live' would be the caller vouching for the
+    caller, and it fails closed on K3E_R021 regardless of how clean the rest of
+    the reference looks."""
+
+    subject, asof, slots = _base_vector()
+    asof = dict(
+        asof,
+        t0_source="owner_pit_reference",
+        t0_mode="live",
+        t0_evidence_ref=_t0_ref(
+            "research/opportunity_evidence/",
+            {"document": "E0_PEER_RELATIVE_CASEBOOK.md", "subject": "IMXI"},
+            asof["value"],  # zero lag: recorded on t0 itself
+            clock_class="belief_or_build",
+            native_field="git_committer_date",
+            sha256="f8f5d7443b23a75ae70cadf69768026528932f91a51c730cd0e4540bc4a97592",
+        ),
+    )
+    v = compose_vector(subject, asof, slots)
+    return _rehash(v)
+
+
 def _build_hostile_denominator_tamper():
     """Sol item 2: both mandatory aggregate denominators tampered
     independently — market_reflection recounted so a modeled leg is dropped
@@ -701,6 +747,8 @@ HOSTILE_BUILDERS = {
     "hostile_admission_as_entry": (_build_hostile_admission_as_entry, {"K3E_R011"}),
     "hostile_retrospective_t0": (_build_hostile_retrospective_t0, {"K3E_R021"}),
     "hostile_denominator_tamper": (_build_hostile_denominator_tamper, {"K3E_R015"}),
+    # Sol REQUEST_CHANGES 2026-08-26 repair wave.
+    "hostile_generic_live_t0": (_build_hostile_generic_live_t0, {"K3E_R021"}),
 }
 
 
@@ -1335,6 +1383,149 @@ def test_s1_mutation_generic_owner_reference_without_digest_fires_r021():
     v["asof"]["t0_evidence_ref"]["native_digest"] = {"state": "unknown", "sha256": None}
     codes = _codes(validate_vector(_rehash(v)))
     assert "K3E_R021" in codes
+
+
+# ---------------------------------------------------------------------------
+# Sol REQUEST_CHANGES 2026-08-26 item A — generic t0 assurance ceiling.
+# owner_pit_reference is an accountability receipt, not a validation-time
+# verification, so it may not claim operational point-in-time.
+# ---------------------------------------------------------------------------
+
+
+def test_a1_generic_source_may_not_claim_live_t0():
+    """The commissioned mutation: owner_pit_reference + t0_mode 'live' fails
+    closed on K3E_R021, and the finding names the mode rather than blaming some
+    incidental field."""
+
+    v = _load_fixture("hostile_generic_live_t0")
+    assert v["asof"]["t0_source"] == "owner_pit_reference"
+    assert v["asof"]["t0_mode"] == "live"
+    findings = validate_vector(v)
+    assert "K3E_R021" in _codes(findings)
+    mode_findings = [f for f in findings if f.code == "K3E_R021" and f.path == "$.asof.t0_mode"]
+    assert mode_findings, f"no K3E_R021 finding on $.asof.t0_mode: {[(f.code, f.path) for f in findings]}"
+    assert "may not claim t0_mode 'live'" in mode_findings[0].message
+
+
+def test_a1_the_defect_is_the_claim_not_the_lag():
+    """Proof the ceiling is not just the lag law wearing a different hat: this
+    reference has ZERO recording lag, which clears every budget in the registry.
+    Flip only the mode and the identical reference validates clean."""
+
+    v = _load_fixture("hostile_generic_live_t0")
+    assert v["asof"]["t0_evidence_ref"]["recorded_clock"]["value"] == v["asof"]["value"], "fixture must have zero lag for this proof to mean anything"
+    assert "K3E_R021" in _codes(validate_vector(v))
+    v["asof"]["t0_mode"] = "retrospective_research"
+    assert validate_vector(_rehash(v)) == []
+
+
+def test_a2_registry_restricts_the_generic_source_and_keeps_the_pinned_four_live_capable():
+    """The rule lives in the registry, not in a hardcoded source name: the
+    generic row may claim only retrospective_research, and the four rows whose
+    owner_store and clock class validation actually checks keep 'live'."""
+
+    sources = load_slot_registry()["t0_sources"]["sources"]
+    assert sources["owner_pit_reference"]["lawful_t0_modes"] == ["retrospective_research"]
+    # ...and its lag budget is null by construction, since 'live' is the only
+    # mode that ever consults it. That null is the second, independent fence.
+    assert sources["owner_pit_reference"]["max_recording_lag_days"] is None
+    for name, pin in sources.items():
+        if name == "owner_pit_reference":
+            continue
+        assert "live" in pin["lawful_t0_modes"], f"{name} lost its live capability"
+        # A source that may claim live must be checkable AND budgeted.
+        assert pin["owner_store"] is not None, f"{name} may claim live with no owner_store pin"
+        assert pin["recorded_clock_class"] is not None, f"{name} may claim live with no clock-class pin"
+        assert pin["max_recording_lag_days"] is not None, f"{name} may claim live with no lag budget"
+
+
+def test_a2_pinned_source_still_validates_live():
+    """Guard against over-correcting: the repair must not quietly disarm 'live'
+    for the sources that legitimately carry it."""
+
+    v = _golden_imxi_vector()
+    assert v["asof"]["t0_source"] == "drl_event_date"
+    assert v["asof"]["t0_mode"] == "live"
+    assert validate_vector(v) == []
+
+
+def test_a3_a_missing_lawful_modes_pin_denies_live_rather_than_granting_it():
+    """Fail-closed direction. If the pin is deleted, the affected source drops
+    to the WEAKER claim — a missing pin never hands out operational PIT."""
+
+    import lib.opportunity_evidence as oe
+
+    registry = copy.deepcopy(oe.load_slot_registry())
+    del registry["t0_sources"]["sources"]["drl_event_date"]["lawful_t0_modes"]
+    real = oe.load_slot_registry
+    try:
+        oe.load_slot_registry = lambda: registry
+        live = _golden_imxi_vector()
+        assert "K3E_R021" in _codes(validate_vector(live))
+        retro = _golden_imxi_vector()
+        retro["asof"]["t0_mode"] = "retrospective_research"
+        assert validate_vector(_rehash(retro)) == []
+    finally:
+        oe.load_slot_registry = real
+
+
+@pytest.mark.parametrize("bad_pin", ["live", 1, {"live": True}])
+def test_a3_a_malformed_lawful_modes_pin_is_a_finding_not_a_crash(bad_pin):
+    """`x in y` raises on a non-container and substring-matches on a bare
+    string, so a drifted pin could either crash `validate_vector` — which
+    documents that it never raises (red-team MAJOR 6) — or accept 'live' as a
+    substring of some longer value. A malformed pin behaves as a missing one."""
+
+    import lib.opportunity_evidence as oe
+
+    registry = copy.deepcopy(oe.load_slot_registry())
+    registry["t0_sources"]["sources"]["drl_event_date"]["lawful_t0_modes"] = bad_pin
+    real = oe.load_slot_registry
+    try:
+        oe.load_slot_registry = lambda: registry
+        assert "K3E_R021" in _codes(validate_vector(_golden_imxi_vector()))
+    finally:
+        oe.load_slot_registry = real
+
+
+def test_a3_reopening_live_on_the_generic_source_needs_more_than_one_list_edit():
+    """The null budget is load-bearing. Widening lawful_t0_modes ALONE does not
+    resurrect a live generic t0 — the missing lag budget still fails closed, so
+    a future wave has to mint a budget deliberately rather than edit one list."""
+
+    import lib.opportunity_evidence as oe
+
+    registry = copy.deepcopy(oe.load_slot_registry())
+    registry["t0_sources"]["sources"]["owner_pit_reference"]["lawful_t0_modes"] = ["live", "retrospective_research"]
+    real = oe.load_slot_registry
+    try:
+        oe.load_slot_registry = lambda: registry
+        v = _load_fixture("hostile_generic_live_t0")
+        findings = validate_vector(v)
+        assert "K3E_R021" in _codes(findings), "widening the mode list alone re-opened live on the generic source"
+        assert any("max_recording_lag_days" in f.message for f in findings), [f.message for f in findings]
+    finally:
+        oe.load_slot_registry = real
+
+
+def test_a4_no_durable_artifact_calls_the_generic_path_fully_authenticated():
+    """Sol item A's reconciliation leg. The overclaim must be gone from the
+    artifacts a reader actually consults, and no shipped fixture may pair the
+    generic source with an operational-PIT claim."""
+
+    for path in (VECTOR_SCHEMA_PATH, SLOT_REGISTRY_PATH):
+        text = path.read_text(encoding="utf-8")
+        assert "provably existed at t0" not in text, path
+        for claim in ("fully authenticated", "fully-authenticated"):
+            for line in text.splitlines():
+                if claim in line.lower():
+                    # The phrase may only appear in a sentence that DENIES it.
+                    assert any(w in line.lower() for w in ("no ", "not ", "never ")), f"{path}: unqualified {claim!r}: {line.strip()[:160]}"
+
+    for name in ALL_FIXTURE_NAMES:
+        asof = _load_fixture(name)["asof"]
+        if asof["t0_source"] == "owner_pit_reference" and name != "hostile_generic_live_t0":
+            assert asof["t0_mode"] == "retrospective_research", f"{name} claims operational PIT on the generic source"
 
 
 def test_s1_mutation_unpinned_t0_source_fires_r021():

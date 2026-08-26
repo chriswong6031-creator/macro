@@ -171,6 +171,7 @@ none hideable behind a composite.
 | Epistemics: display-tier ships freely; gauntlet is a promotion gate | **PRESERVED.** Everything here is display/research tier with zero authority; any promotion of any slot family to rank/gate/size runs through K5 / Eval OS by its own commission | registry `candidate_new_family` routing |
 | **Sol item 1 — decision-time origin must be authenticated, not trusted from a string** | **SATISFIED.** `caller_named_pit_object` and the free-string `t0_source_object` are deleted from the wire (unrepresentable, not merely discouraged). Every t0 now carries an immutable owner-backed `t0_evidence_ref` in K1 EvidenceRef shape; `K3E_R021` checks it against the registry `t0_sources` pins (owner store, minting clock class, mandatory digest for the generic source, native-identity key grammar) and fails closed on a `live` t0 whose object was minted past that source's lag budget | `t0_sources` registry section; `K3E_R021`; `hostile_retrospective_t0` + 10 programmatic S-1 proofs |
 | **Sol item 2 — denominator integrity: public validation must recompute EVERY mandatory denominator** | **SATISFIED.** All five (`$.denominator`, observed, inferred, `market_reflection`, `failed_or_unavailable_gates`) are recomputed by `validate_vector` under frozen included/excluded semantics that the composer shares, so a composed vector can never disagree with the recomputation judging it. **Modeled market-reflection evidence counts as INCLUDED** — it is not silently excluded for not being observed — and gate entries count `failed`/`unavailable` as included with `not_evaluated` excluded | `K3E_R015`; `hostile_denominator_tamper`; the five-way independent tamper sweep |
+| **Sol item A (2026-08-26) — the generic t0 path may not claim operational PIT** | **SATISFIED.** `owner_pit_reference` is an accountability receipt, not a validation-time verification, so the registry restricts it to `lawful_t0_modes: ["retrospective_research"]` and `K3E_R021` fails a generic+`live` vector closed. Its `max_recording_lag_days` is `null` by construction — the budget is consulted only in `live` — which is a second, independent fence: re-opening `live` by widening the mode list alone still fails closed on the missing budget. The four registry-pinned sources keep `live` because validation actually checks their `owner_store` and clock class | registry `lawful_t0_modes`; `hostile_generic_live_t0` (`K3E_R021`); 6 programmatic A-item proofs |
 | **Sol item 3 — Entry Availability ownership: admission ≠ actionability** | **SATISFIED.** The legs are re-cut to `entry_signal` (reads ONLY `prophet_entry_signal` = `engine.entry_signal.assess` → `prophet.board_read/v1` `entry_signal.status`, registry `entry_role: actionability`) and `radar_probe_coverage` (typed `probe_coverage_state_not_trade_entry` on the wire). `prophet_board_lane` (lane / buyable / eligible) is re-classed `entry_role: admission_context`, owns **no** leg, and may not be referenced from any leg at all. When the actionability surface is unavailable the leg stays explicitly `missing`/`unknown` — never inferred from admission | schema `verdict_class` consts; registry `entry_role`; `K3E_R011`; `hostile_admission_as_entry` + 8 programmatic S-3 proofs |
 
 ## 6. Family-mapping receipt (executable)
@@ -224,6 +225,7 @@ mutation asserting the exact code:
 | Prophet/Radar authority leakage | `K3E_R011` + closed consumer enum + all-false envelope | `hostile_authority_leak` + consumer mutation |
 | Board admission passed off as an entry verdict | `K3E_R011` | `hostile_admission_as_entry` |
 | Retrospective t0 claiming operational PIT | `K3E_R021` | `hostile_retrospective_t0` |
+| Unverifiable generic t0 claiming operational PIT | `K3E_R021` | `hostile_generic_live_t0` |
 | Denominator tampering (either mandatory aggregate) | `K3E_R015` | `hostile_denominator_tamper` |
 | Outcome audition / look-ahead | `K3E_R007` + no outcome field on the closed wire | `hostile_lookahead` + I7 structural exclusion |
 | LLM origination | schema (no LLM provenance member exists) | `hostile_llm_provenance` |
@@ -297,8 +299,9 @@ exploit was re-run against the fix:
 | **m12** | The self-named-gate fence matched only two spellings, so `"self"`, `"internal"`, `"this rule"` passed as canonical gate owners | Authority leak via prose | Fence broadened. `test_rt2_minor12_self_named_gate_owners_are_refused` |
 | **n14** | `assert "radar" not in entry` was **vacuous** — the recut key is `radar_probe_coverage`, so it could never fail | A test that could not detect the regression it named | Replaced with an exact key-set assertion |
 
-Suite: **100 passed**. Two reviewer NO-FINDING areas are recorded as verified
-rather than assumed: fixture honesty (all 20 fixtures match `manifest.json` on
+Suite: **111 passed** (re-run on the current head; the count was 100 when this
+wave concluded). Two reviewer NO-FINDING areas are recorded as verified
+rather than assumed: fixture honesty (all 21 fixtures match `manifest.json` on
 `sha256` and `bytes`; both real digests independently confirmed with `shasum`;
 the one illustrative digest is disclosed, not passed off as real) and the
 completeness of the mandatory-denominator inventory.
@@ -310,6 +313,21 @@ the *correct* canonical actionability surface is an owner question the reviewer
 could not settle and this session asserts only from the two string pins in
 `engine/prophet_board_read.py`; and K1 EvidenceRef fields beyond the three
 compared field-for-field were not audited for load-bearing omissions.
+
+### 7.4 Sol REQUEST_CHANGES disposition (2026-08-26, held head `2d9b72c61325`)
+
+Sol ruled **§§7.2–7.3 PASS for items 2 and 3** (no redesign) and returned two
+remaining blockers, both repaired on this same carrier:
+
+| Sol item | What was wrong | Repair + named receipts |
+|---|---|---|
+| **A. Generic t0 assurance** | §7.3 M3 corrected the registry's overclaim about `owner_pit_reference` by DISCLOSING that it is an accountability receipt rather than a verification — but left it free to claim `t0_mode: "live"`, i.e. operational point-in-time. Sol's point is that a disclosure is not a constraint: the store, the minting clock class and the bytes behind the digest are all caller-declared for this source, so a live claim there is the caller vouching for the caller. **Two shipped goldens were making exactly that claim** (`golden_dual_read` on a zero-lag committed case study; `golden_optional_expectation` on an uncommitted store with an illustrative digest), and `golden_dual_read` carried a comment asserting the object "provably existed at t0" — which validation cannot know | The boundary is now enforced, not narrated. Registry gains `lawful_t0_modes` per source; `owner_pit_reference` is `["retrospective_research"]` and `K3E_R021` fails a generic+live vector closed. Its `max_recording_lag_days` is `null` **by construction** (the budget is consulted only in `live`), which is a second independent fence — widening the mode list alone still fails closed on the missing budget, so re-opening `live` requires deliberately minting one. Both goldens now declare `retrospective_research`. Receipts: `hostile_generic_live_t0` (fires exactly `K3E_R021`), `test_a1_generic_source_may_not_claim_live_t0`, `test_a1_the_defect_is_the_claim_not_the_lag` (the fixture has ZERO recording lag, so it clears every budget in the registry — proving the kill is the assurance claim and not the lag law renamed), `test_a2_registry_restricts_the_generic_source_and_keeps_the_pinned_four_live_capable`, `test_a2_pinned_source_still_validates_live` (guards against over-correcting), `test_a3_a_missing_lawful_modes_pin_denies_live_rather_than_granting_it`, `test_a3_reopening_live_on_the_generic_source_needs_more_than_one_list_edit`, `test_a4_no_durable_artifact_calls_the_generic_path_fully_authenticated` |
+| **B. Receipt truth** | This packet and the handoff claimed contract-delta `0 introduced, 0 inherited`. The exact hosted result on the held head was **`0 introduced, 4 inherited`** — the "0 inherited" half was never true, and stating it erased four real main-side findings from the record | Corrected in §10 below, in the DEC, and in the handoff, with the four named and attributed to their owning lane. They are **not** healed here (§10) |
+
+**Scope note.** Item A restricts an assurance CLAIM; it adds no owner I/O, no
+producer, and no second truth plane. The generic path still cannot be verified
+at validation time — that remains the named gap in §8.8, and this repair is
+precisely the decision not to let an unverifiable path claim otherwise.
 
 ## 8. Remaining owner gaps (named, not papered over)
 
@@ -338,6 +356,18 @@ compared field-for-field were not audited for load-bearing omissions.
    (E0 Q6); lifecycle staging stays outside this wire.
 7. **No licensed consensus history before 2026-06-16**; `estimate_revisions` is
    typed `not_available_for_date` there, never backfilled.
+8. **The generic t0 path cannot be verified at validation time, and is now
+   capped rather than trusted.** `owner_pit_reference` declares its own
+   `owner_store`, its own minting clock class, and a digest over bytes this
+   contract never reads — it holds no owner imports and no I/O by design. So it
+   is an accountability receipt (a falsifiable commitment anyone who fetches the
+   object can check) and not a verification, and per Sol item A it may claim only
+   `t0_mode: "retrospective_research"`. Closing the gap for real means either
+   pinning more owner stores in `t0_sources` or giving the validator an
+   owner-read seam; the latter is a producer decision outside this contract's
+   authority. Until then, **no artifact here describes the generic path as fully
+   authenticated**, and a t0 that must be checkable belongs on one of the four
+   pinned sources.
 
 ## 9. The exact capability this contract unlocks
 
@@ -364,19 +394,36 @@ python3 scripts/agentos.py validate
 
 Receipts (exact, this candidate):
 
-- Contract suite: **100 passed** (post-Sol-repair candidate; includes all ten
+- Contract suite: **111 passed** (post-Sol-2026-08-26 candidate; includes all ten
   commissioned mutation kills, the 19 red-team repair proofs, the 22 Sol
-  REQUEST_CHANGES proofs of §7.2, the 16 second-red-team regression proofs of §7.3, the families.yml join, both K1 enum-equality
-  pins, the K1 EvidenceRef shape-equality pin, the security_state
-  compilation-state pin, the grain-delta pin, determinism round-trips, and the
-  no-store scans)
-- Fixture packet: 4 goldens + **16** hostiles + manifest, every hostile
+  REQUEST_CHANGES proofs of §7.2, the 16 second-red-team regression proofs of
+  §7.3, the 8 item-A assurance-ceiling proof functions of §7.4 (11 cases with parametrization), the families.yml join,
+  both K1 enum-equality pins, the K1 EvidenceRef shape-equality pin, the
+  security_state compilation-state pin, the grain-delta pin, determinism
+  round-trips, and the no-store scans)
+- Fixture packet: 4 goldens + **17** hostiles + manifest, every hostile
   independently re-validated to fire its commissioned code and every golden to
   validate clean (verified by direct `validate_vector` sweep, not only via the
-  suite's own assertions)
-- Contract-delta vs current main: `0 introduced, 0 inherited` (differential
-  gate; base `ffd567cff0ba` — main has advanced from the census pin, and the
-  gate is clean against the newer base)
+  suite's own assertions); all 21 fixtures match `manifest.json` on `sha256` and
+  `bytes`
+- **Contract-delta — corrected on Sol REQUEST_CHANGES 2026-08-26 item B.** This
+  section previously claimed `0 introduced, 0 inherited`. The second half was
+  never true. The exact HOSTED result on held head `2d9b72c6132518` was
+  **`0 introduced, 4 inherited`** (base `fe84261a206e`), gate **PASS** — the gate
+  is differential and keys only on the introduced count, which is precisely what
+  made the wrong half easy to round off. The four inherited findings are
+  **main-side, separate-lane debt that this carrier neither caused nor healed**:
+  jobs `conviction-profile` and `unrun-picks-boards` each missing
+  `engine/company_intelligence/qa_exchange.py` and
+  `engine/company_intelligence/qa_reconstruction.py` from their declared `paths:`
+  (2 jobs × 2 files). The gate names this disposition itself — "already uncovered
+  on this PR's base — pre-existing, not introduced by this PR; heal separately" —
+  and on a held PR, widening another job's `paths:` from this carrier would be
+  both scope creep and a hold violation. Main has since closed all four on its
+  own in `ad36de0f6aa3` (PR #6451, merged 2026-08-26T07:26:39Z), so a run against
+  a newer main reports a smaller inherited count; every contract-delta receipt
+  must therefore name its head and base, because the number alone is a fact about
+  the run, not about this PR
 - Agent OS validate: 0 errors (710 records; inherited repository warnings only)
 - Registry ↔ families.yml join: asserted inside the suite on every run
 - Carrier: PR #6417 (DRAFT / HOLD-FOR-SOL from its first revision)
@@ -395,10 +442,39 @@ tuning. This PR merges nothing and starts no dependent wave.
 ## 12. Exact acceptance request to Sol
 
 > Sol, this is the K3-E re-park answering your REQUEST_CHANGES on held head
-> `ac2be650a360`. Architecture unchanged, repaired on PR #6417 only — no redesign,
-> no second carrier.
+> `2d9b72c6132518`, which ruled §§7.2–7.3 PASS for items 2 and 3 and returned two
+> remaining blockers. Both are repaired on PR #6417 only — no redesign, no second
+> carrier, and items 2 and 3 are untouched apart from the receipt correction.
 >
-> **Item 1 (authenticate decision-time origin):** `caller_named_pit_object` and the
+> **Item A (generic t0 assurance):** `owner_pit_reference` is now capped, not just
+> annotated. The registry carries `lawful_t0_modes` per source; the generic source
+> is `["retrospective_research"]` and `K3E_R021` fails a generic+`live` vector
+> closed. Its `max_recording_lag_days` is `null` **by construction** — the budget
+> is only ever consulted in `live` — which is a second, independent fence: widening
+> the mode list alone still fails closed on the missing budget, so re-opening
+> `live` requires deliberately minting one. The commissioned mutation
+> `hostile_generic_live_t0` carries a maximally clean reference (known 64-hex
+> digest, known minting clock, **zero** recording lag, which clears every budget in
+> the registry) and still dies on `K3E_R021` — the kill is the assurance claim, not
+> the lag law renamed. Reconciled across schema, registry, freeze §5/§7/§8.8/§10,
+> and the DEC: no durable artifact now calls the generic path fully authenticated,
+> and a test asserts that. **Two shipped goldens had in fact been claiming
+> operational PIT on that path** — `golden_dual_read` and
+> `golden_optional_expectation`, the latter over an uncommitted store with an
+> illustrative digest — and both now declare `retrospective_research`. This adds no
+> owner I/O, no producer, and no second truth plane; the unverifiability itself
+> stays a named gap (§8.8).
+>
+> **Item B (receipt truth):** corrected. The exact hosted result on the held head
+> was `0 introduced, **4 inherited**` (base `fe84261a206e`), not `0/0`. The four
+> are `conviction-profile` and `unrun-picks-boards` each missing
+> `engine/company_intelligence/qa_exchange.py` and `qa_reconstruction.py` from
+> their declared `paths:` — **main-side separate-lane debt, not healed here**, per
+> the gate's own "heal separately" instruction and the hold. Main has since closed
+> all four itself in `ad36de0f6aa3` (PR #6451). Corrected in freeze §10, the DEC,
+> and the handoff, each receipt now naming its head and base.
+>
+> **Item 1 (authenticate decision-time origin), as accepted:** `caller_named_pit_object` and the
 > free-string `t0_source_object` are deleted from the wire — structurally
 > unrepresentable, test-pinned. Every t0 now binds to an immutable owner-backed
 > `t0_evidence_ref` reusing K1 `reference.v1` EvidenceRef semantics field-for-field
@@ -423,13 +499,17 @@ tuning. This PR merges nothing and starts no dependent wave.
 > any leg; an unavailable owner leaves the leg explicitly `missing`/`unknown`. Radar
 > probe availability is typed probe/coverage state, never a trade-entry verdict.
 >
-> Receipts: 100 passed; 4 goldens clean and 16 hostiles each firing their
-> commissioned code on an independent re-validation sweep; contract-delta `0
-> introduced, 0 inherited`; Agent OS validate 0 errors. Schema, registry,
-> validator/composer, goldens/hostiles, freeze §5/§7.2/§8/§12, DEC, WS and handoff
-> are all updated. One self-found defect is disclosed in §7.2 rather than quietly
-> fixed: the leg-membership pass still addressed the retired leg keys after the
-> re-cut, leaving both entry legs unpoliced for dangling refs — fixed and pinned.
+> Receipts: **111 passed**; 4 goldens clean and **17** hostiles each firing their
+> commissioned code on an independent re-validation sweep (the new
+> `hostile_generic_live_t0` fires exactly `K3E_R021`); all 21 fixtures match the
+> manifest on `sha256` and `bytes`; Agent OS validate 0 errors; contract-delta as
+> corrected under item B above. Schema, registry, validator/composer,
+> goldens/hostiles, freeze §5/§7/§8/§10/§12, DEC, WS and handoff are all updated.
+> Two things are disclosed rather than quietly fixed: the earlier self-found
+> leg-membership defect (§7.2), and the fact that item A's defect was **live in
+> two shipped goldens of mine**, not merely latent in the schema — §7.4 records
+> that, including the `golden_dual_read` comment which asserted the referenced
+> object "provably existed at t0", something validation has no way to know.
 > The exact re-parked head and its concluded hosted CI/fences run ids are in PR
 > #6417's conversation.
 >

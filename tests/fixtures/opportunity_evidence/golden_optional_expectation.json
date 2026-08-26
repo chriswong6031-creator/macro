@@ -19,7 +19,7 @@
         "value": "2026-08-10"
       }
     },
-    "t0_mode": "live",
+    "t0_mode": "retrospective_research",
     "t0_source": "owner_pit_reference",
     "value": "2026-08-10"
   },
@@ -31,7 +31,7 @@
     "can_size": false
   },
   "compilation_state": "partial",
-  "content_sha256": "b22dd7047c0e7ff34f4171c2ad087f089105e0b1ea87d3133d16806eab537382",
+  "content_sha256": "334329aacd6703ecd955b358469f6b53128496bacba77e1e31808ec1045d1fa0",
   "denominator": {
     "conflicted": 0,
     "excluded": 3,

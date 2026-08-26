@@ -51,11 +51,12 @@
     ]
   },
   "t0_sources": {
-    "law": "Decision-time authentication pins (Sol REQUEST_CHANGES 2026-08-25 item 1; semantic K3E_R021). Every vector's asof.t0_evidence_ref is checked against its t0_source row here: owner_store must equal the pin (when non-null), recorded_clock.clock_class must equal the pin (when non-null), digest_required sources must carry native_digest state 'known', and in t0_mode 'live' the recorded clock may not postdate t0 by more than max_recording_lag_days — a decision-time object minted after the fact fails closed. t0_mode 'retrospective_research' replaces the lag law with the visible declaration; every other authentication check still binds.",
+    "law": "Decision-time authentication pins (Sol REQUEST_CHANGES 2026-08-25 item 1, 2026-08-26 item A; semantic K3E_R021). Every vector's asof.t0_evidence_ref is checked against its t0_source row here: t0_mode must be a member of lawful_t0_modes, owner_store must equal the pin (when non-null), recorded_clock.clock_class must equal the pin (when non-null), digest_required sources must carry native_digest state 'known', and in t0_mode 'live' the recorded clock may not postdate t0 by more than max_recording_lag_days — a decision-time object minted after the fact fails closed. t0_mode 'retrospective_research' replaces the lag law with the visible declaration; every other authentication check still binds. ASSURANCE LAW (Sol 2026-08-26 item A): 'live' is a claim of OPERATIONAL point-in-time, and this contract may only permit it where validation itself can check the pointer — i.e. where owner_store and recorded_clock_class are pinned here. The generic source authenticates nothing at validation time, so lawful_t0_modes excludes 'live' for it. A source with no lawful_t0_modes key may claim only 'retrospective_research': a missing pin never grants the stronger claim.",
     "sources": {
       "winner_case_t0_hypothesis": {
         "owner_store": "research/winners/cases/",
         "recorded_clock_class": "belief_or_build",
+        "lawful_t0_modes": ["live", "retrospective_research"],
         "max_recording_lag_days": 7,
         "digest_required": false,
         "notes": ["winner_case.v1 files. A pre-registered t0 hypothesis may be recorded BEFORE its t0 (prospective registration): negative lag is lawful and is the good case."]
@@ -63,6 +64,7 @@
       "drl_event_date": {
         "owner_store": "data/price_pressure/",
         "recorded_clock_class": "observed",
+        "lawful_t0_modes": ["live", "retrospective_research"],
         "max_recording_lag_days": 4,
         "digest_required": false,
         "notes": ["DRL ledger event rows (engine.price_pressure.ledger.read_ledger); the minting clock is the ledger's own harvested_asof, classed observed exactly as the drl_resid_shock slot clocks class it — one native field never carries two classes on this wire."]
@@ -70,24 +72,29 @@
       "prophet_stamp_date": {
         "owner_store": "data/us_prophet_rank/candidates/",
         "recorded_clock_class": "belief_or_build",
+        "lawful_t0_modes": ["live", "retrospective_research"],
         "max_recording_lag_days": 2,
         "digest_required": false
       },
       "radar_observed_at": {
         "owner_store": "data/entry_radar/",
         "recorded_clock_class": "belief_or_build",
+        "lawful_t0_modes": ["live", "retrospective_research"],
         "max_recording_lag_days": 1,
         "digest_required": false
       },
       "owner_pit_reference": {
         "owner_store": null,
         "recorded_clock_class": null,
-        "max_recording_lag_days": 5,
+        "lawful_t0_modes": ["retrospective_research"],
+        "max_recording_lag_days": null,
         "digest_required": true,
         "notes": [
           "The generic source: any owner-backed PIT object, carrying a MANDATORY immutability receipt (native_digest state 'known') plus a known minting clock and a declared owner_store.",
           "HONEST BOUNDARY (red-team 2026-08-25, correcting an earlier overclaim). This row does NOT prove the referenced object exists or that the digest is its true hash: with owner_store and recorded_clock_class unpinned, both are caller-declared. What it changes versus the retired caller_named_pit_object free string is (a) the reference is structurally decomposed into K1 EvidenceRef fields instead of one opaque label, (b) a specific 64-hex digest must be committed to, so the claim is falsifiable by anyone who fetches the object, and (c) the minting clock is mandatory, so the retrospective-t0 fence applies. It is an ACCOUNTABILITY receipt, not a verification. A t0 that must be verifiable at validation time belongs on one of the four pinned owner sources above, which do bind owner_store and clock class.",
-          "Consequence a future wave may close: verifying a digest requires reading the owner's bytes, which this contract cannot do — it is a pure in-memory view with no owner imports and no I/O. Binding this source harder means either pinning more owner stores here or giving the validator an owner-read seam, and the latter is a producer decision outside this contract's authority."
+          "ASSURANCE CEILING (Sol REQUEST_CHANGES 2026-08-26 item A). The boundary above is now enforced instead of merely disclosed: because this source is an accountability receipt and not a validation-time verification, it MAY NOT claim t0_mode 'live'. lawful_t0_modes is ['retrospective_research'] and K3E_R021 fails a generic+live vector closed. Rationale: 'live' asserts operational point-in-time, and every input that would substantiate it here — the store, the minting clock class, the bytes behind the digest — is caller-declared, so a live claim on this source would be the caller vouching for the caller. The four pinned sources above may claim 'live' because validation checks their owner_store and clock class against these pins.",
+          "max_recording_lag_days is null BY CONSTRUCTION, not by omission: the lag budget is only ever consulted in 'live' mode, which this source cannot enter. The null is also a second, independent fence — a future wave that re-opens 'live' here by widening lawful_t0_modes alone still fails closed on the missing budget (the K3E_R021 MINOR-11 path), so re-opening requires deliberately minting a budget rather than editing one list.",
+          "Consequence a future wave may close: verifying a digest requires reading the owner's bytes, which this contract cannot do — it is a pure in-memory view with no owner imports and no I/O. Binding this source harder means either pinning more owner stores here or giving the validator an owner-read seam, and the latter is a producer decision outside this contract's authority. Until one of those lands, no artifact in this contract may describe the generic path as fully authenticated."
         ]
       }
     }

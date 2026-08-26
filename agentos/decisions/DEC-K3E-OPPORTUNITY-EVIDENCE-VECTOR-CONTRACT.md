@@ -52,6 +52,26 @@ answer: >
   none, Radar probe availability is typed probe/coverage state and never a
   trade-entry verdict, and an unavailable owner leaves the leg explicitly
   missing/unknown rather than inferred from admission.
+  Amended again 2026-08-26 by Sol REQUEST_CHANGES on head 2d9b72c6132518
+  (items 2 and 3 ruled PASS; two remaining blockers repaired on the same
+  carrier): (A) the GENERIC decision-time path may no longer claim operational
+  point-in-time. owner_pit_reference pins no owner_store and no clock class, so
+  its store, its minting clock and the bytes behind its digest are all
+  caller-declared — it is an accountability receipt (a falsifiable commitment,
+  checkable by anyone who fetches the object) and NOT a validation-time
+  verification. The registry therefore carries lawful_t0_modes per source,
+  owner_pit_reference is restricted to ['retrospective_research'], and K3E_R021
+  fails a generic+live vector closed; its max_recording_lag_days is null by
+  construction, which is a second independent fence because widening the mode
+  list alone still fails closed on the missing budget. Only the four sources
+  whose owner_store and clock class validation actually checks may claim 'live',
+  and a source with no lawful_t0_modes pin may claim only the weaker mode. No
+  owner I/O, producer, or second truth plane is added — the unverifiability is
+  named as a standing gap rather than papered over. (B) receipt truth: the
+  packet's contract-delta claim of '0 introduced, 0 inherited' was false in its
+  second half and is corrected to the exact hosted result on the held head,
+  0 introduced / 4 inherited, with the four findings named and attributed to the
+  main-side lane that owns them rather than healed from this carrier.
 rationale: >
   Sol's K3-E commission (2026-08-25) binds the accepted E0 laws and C0 §4.1
   rulings 1–6 plus the authenticated-MO rider. The E0 census already ruled the
@@ -141,6 +161,32 @@ board ADMISSION (is this name on the board) as if it answered ACTIONABILITY (is 
 entry open now) would have let a consumer infer a trade verdict this contract has no
 authority to express — so the two roles are now separate registry roles, and
 admission owns no leg at all.
+
+Sol's second REQUEST_CHANGES (2026-08-26) closed the one place where that lesson
+had been learned only halfway. The second red-team caught the registry
+overclaiming what the generic `owner_pit_reference` proves, and the repair
+corrected the *description* — an honest boundary note saying the source is an
+accountability receipt, not a verification — while leaving that same source free
+to declare `t0_mode: "live"`, the wire's word for operational point-in-time. Two
+shipped goldens promptly did, one of them justifying it in a comment with "the
+decision-time object provably existed at t0," which validation has no way to
+know: the store, the recording date, and the bytes behind the digest are all
+caller-supplied there, so a zero recording lag computed from a caller's own clock
+is arithmetic, not evidence. The durable generalization: **disclosing a limit is
+not enforcing it — an artifact that documents its own unverifiability and then
+ships the strong claim anyway has documented nothing.** The fix is a permission,
+not a warning (`lawful_t0_modes`), and it is deliberately awkward to undo: the
+lag budget for that source is null, so re-opening `live` by editing the mode list
+alone still fails closed, and a future wave must mint a budget on purpose.
+
+The same standard applies to this session's own receipts. The packet claimed
+contract-delta `0 introduced, 0 inherited` when the hosted gate had actually
+returned `0 introduced, 4 inherited`; the differential gate's PASS depends only
+on the first number, which is exactly why the second one is easy to round off.
+Four real main-side findings were erased from the record by a receipt that was
+half true. **A receipt that reports only the half that decides the gate is a
+summary, not a receipt** — record what the run returned, name what it named, and
+attribute it to the lane that owns it.
 
 ## Boundaries
 

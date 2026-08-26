@@ -50,10 +50,11 @@ changed:
   - path: tests/fixtures/opportunity_evidence/
     what: >
       Golden fixtures (IMXI DRL event; FPI absence typing; gold/real-rate
-      dual-read; optional SRC-A1 prospective-expectation family) and 16 hostile
+      dual-read; optional SRC-A1 prospective-expectation family) and 17 hostile
       fixtures covering all ten commissioned mutation classes plus the three
       Sol REQUEST_CHANGES classes (admission-as-entry, retrospective-t0,
-      denominator-tamper), with byte/SHA-256 manifest receipts. Fixtures are
+      denominator-tamper) and the Sol-2026-08-26 assurance-ceiling class
+      (generic-live-t0), with byte/SHA-256 manifest receipts. Fixtures are
       GENERATED from the builders in the test file — regenerate with
       `python3 -m tests.test_opportunity_evidence_vector_contract`, never
       hand-edit a fixture or the manifest.
@@ -93,13 +94,14 @@ verified:
     result: 0 errors (inherited repository warnings only).
   - claim: The contract suite (mutation kills, family join, K1 pins, determinism, no-store) is green on the final candidate.
     command: python3 -m pytest -q tests/test_opportunity_evidence_vector_contract.py
-    result: 100 passed (post-second-red-team; 22 Sol REQUEST_CHANGES proofs + 16 RT2 regression proofs).
+    result: 111 passed (post-Sol-2026-08-26; 22 Sol REQUEST_CHANGES proofs + 16 RT2 regression proofs + 8 item-A assurance-ceiling proof functions).
   - claim: Every hostile fixture fires its commissioned code and every golden validates clean, verified independently of the suite's own assertions.
     command: python3 -c "import json,glob; from lib.opportunity_evidence import validate_vector; ..." (direct validate_vector sweep over tests/fixtures/opportunity_evidence/)
     result: >
-      16/16 hostiles fired their commissioned codes (the three new ones —
-      admission_as_entry K3E_R011, retrospective_t0 K3E_R021, denominator_tamper
-      K3E_R015 — each fired exactly one code); 4/4 goldens CLEAN.
+      17/17 hostiles fired their commissioned codes (admission_as_entry
+      K3E_R011, retrospective_t0 K3E_R021, denominator_tamper K3E_R015, and the
+      Sol-2026-08-26 addition generic_live_t0 K3E_R021 — each fired exactly one
+      code); 4/4 goldens CLEAN.
   - claim: Sol's three REQUEST_CHANGES items were repaired on the same carrier with no redesign and no second PR.
     command: git log --oneline claude/alpha-k3e-opportunity-evidence-vector; gh pr view 6417
     result: >
@@ -107,7 +109,21 @@ verified:
       with per-item mutation receipts in the freeze packet §7.2.
   - claim: The differential contract gate introduces nothing vs current main.
     command: python3 scripts/check_contract_delta.py --base origin/main
-    result: "contract-delta: 0 introduced, 0 inherited (run twice: builder + independent)."
+    result: >
+      CORRECTED 2026-08-26 on Sol REQUEST_CHANGES item B. This previously read
+      "0 introduced, 0 inherited"; the second half was never true. The exact
+      HOSTED result on held head 2d9b72c6132518 was "0 introduced, 4 inherited"
+      (base fe84261a206e), gate PASS — the gate is differential and keys only on
+      the introduced count, which is what made the wrong half easy to round off.
+      The four inherited findings are main-side debt this carrier neither caused
+      nor healed: jobs conviction-profile and unrun-picks-boards each missing
+      engine/company_intelligence/qa_exchange.py and qa_reconstruction.py from
+      their declared paths (2 jobs x 2 files). Separate lane by the gate's own
+      instruction ("heal separately"); main subsequently closed all four itself
+      in ad36de0f6aa3 (PR #6451, merged 2026-08-26T07:26:39Z), which is why a
+      re-run against a newer main reports a smaller inherited count. Every
+      contract-delta receipt must therefore name the head and base it was
+      measured on — the number alone is not a fact about this PR.
   - claim: An independent opus red-team attacked the artifact across six lines; every finding was adjudicated and repaired.
     command: routed opus reviewer, findings 3 BLOCKER / 6 MAJOR / 5 MINOR
     result: all repaired or dispositioned; full table in the freeze packet §7.1.
@@ -123,7 +139,13 @@ verified:
       per-finding regression tests in freeze packet §7.3.
 unverified:
   - claim: Sol accepts the K3-E freeze clause-by-clause.
-    what_would_verify: Sol's ACCEPT (or exact amendments) against the exact re-parked head of PR #6417. Sol's first review returned REQUEST_CHANGES on head ac2be650a360 with three required repairs; all three are repaired on the same carrier (freeze packet §7.2) and await the next ruling.
+    what_would_verify: >
+      Sol's ACCEPT (or exact amendments) against the exact re-parked head of PR
+      #6417. Review 1 (head ac2be650a360) returned REQUEST_CHANGES with three
+      repairs — all three repaired on the same carrier (freeze §7.2). Review 2
+      (head 2d9b72c6132518) ruled items 2 and 3 PASS and returned two remaining
+      blockers, A (generic t0 assurance ceiling) and B (receipt truth) — both
+      repaired on the same carrier (freeze §7.4). Awaiting the next ruling.
   - claim: Hosted CI concludes green on the exact final head.
     what_would_verify: concluded pull_request checks on PR #6417's final head (recorded in the PR body/comments at park time).
   - claim: The actionability surface covers any given subject.
@@ -141,7 +163,7 @@ unresolved:
     verdict from board admission. Measuring coverage is a separate commission.
   - Radar live spool had zero envelopes ever written as of 2026-08-20; radar slots type missing.
 next_actions:
-  - Sol reviews the re-parked PR #6417 (DRAFT / HOLD-FOR-SOL) against freeze packet §12 plus the §7.2 REQUEST_CHANGES disposition; ACCEPT releases the hold, then an ordinary session completes squash-merge + post-merge verification.
+  - Sol reviews the re-parked PR #6417 (DRAFT / HOLD-FOR-SOL) against freeze packet §12 plus the §7.2 and §7.4 REQUEST_CHANGES dispositions; ACCEPT releases the hold, then an ordinary session completes squash-merge + post-merge verification.
   - On amendments, one session repairs on the SAME carrier; never a second K3-E PR.
   - K3-D, K5 OpportunityCase, and any consumer wiring (security_state.v1 opportunity_context refs) each require their own Sol commission — none is authorized by this delivery.
 do_not_redo:
@@ -151,6 +173,22 @@ do_not_redo:
   - Do not weaken the registry-pin enforcement on owner_ref/object_class (K3E_R008). Construct NAME alone once separated the actionability owner from board admission, and a slot wearing the wrong owner's name defeated Sol item 3 with zero findings.
   - Do not re-introduce a variable market_reflection leg set. The seven I1-I7 legs are fixed, exactly once, in order; a recomputed denominator over an attacker-controlled leg set is not integrity (deleting the adverse legs reported 2/7 coverage as 100%).
   - Do not claim owner_pit_reference VERIFIES anything. It is an accountability receipt (a committed, falsifiable digest); its owner_store and clock class are caller-declared. Verifying a digest needs an owner-read seam this contract deliberately lacks.
+  - >
+    Do not let owner_pit_reference claim t0_mode "live" again (Sol 2026-08-26
+    item A). Registry lawful_t0_modes caps it at retrospective_research and
+    K3E_R021 fails generic+live closed. Its max_recording_lag_days is null BY
+    CONSTRUCTION, not by oversight — do not "fix" that null: it is the second
+    fence, so widening the mode list alone still fails closed and re-opening
+    live has to mint a budget deliberately. The lesson generalizes: disclosing a
+    limit in a notes field is not enforcing it, and the previous wave had
+    documented this exact unverifiability while still shipping two goldens that
+    claimed operational PIT on it.
+  - >
+    Do not restate a contract-delta receipt as a bare pass or a single number.
+    The gate is differential and keys only on the INTRODUCED count, so an
+    inherited count is easy to round off to zero — which is exactly the false
+    receipt Sol caught (item B). Record head, base, both numbers, and the named
+    findings with their owning lane.
   - Do not build a data/opportunity_vector/ store or extend the US Context Vector producer for this object without its own commission.
   - Do not re-derive residuals, re-home fusion columns, or add any composite/scalar field to the wire (v2 + promotion ruling required).
   - Do not confuse this with the K3E Expectation-Market-Dynamics child program; both stand.

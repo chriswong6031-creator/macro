@@ -724,6 +724,9 @@ def _check_t0_authentication(vector: dict, registry: dict) -> list[Finding]:
     reference.v1 EvidenceRef shape, and this pass checks it against the frozen
     registry `t0_sources` pins:
 
+      * t0_mode is a member of the pin's lawful_t0_modes — the generic
+        owner_pit_reference may not claim "live" at all (Sol REQUEST_CHANGES
+        2026-08-26 item A), because nothing about it is checkable here
       * owner_store equals the pin for that t0_source (when the pin is not null)
       * recorded_clock.clock_class equals the pin (when not null)
       * digest_required sources carry native_digest state "known"
@@ -751,6 +754,30 @@ def _check_t0_authentication(vector: dict, registry: dict) -> list[Finding]:
     pin = sources.get(t0_source)
     if pin is None:
         return [_f("K3E_R021", "$.asof.t0_source", f"t0_source {t0_source!r} has no registry t0_sources pin")]
+
+    # Sol REQUEST_CHANGES 2026-08-26 item A — assurance ceiling. t0_mode "live"
+    # asserts operational point-in-time, and this contract may only let a source
+    # claim it where validation can actually check the pointer (owner_store and
+    # clock class pinned in the registry). owner_pit_reference pins neither: its
+    # store, clock class and referenced bytes are all caller-declared, so a live
+    # claim there is the caller vouching for the caller. It is an accountability
+    # receipt, not a verification, and the registry restricts it to
+    # "retrospective_research". Fail closed on a missing pin: an unpinned source
+    # may claim only the weaker mode, never the stronger one.
+    #
+    # The membership test is guarded on the pin's TYPE, not just its presence.
+    # `x in y` raises on a non-container and does substring matching on a bare
+    # string, so a drifted registry could crash validate_vector (violating its
+    # never-raises contract, red-team MAJOR 6) or silently accept "live" as a
+    # substring. A malformed pin is treated exactly like a missing one.
+    lawful_modes = pin.get("lawful_t0_modes")
+    if not isinstance(lawful_modes, (list, tuple)):
+        if lawful_modes is not None:
+            findings.append(_f("K3E_R021", "$.asof.t0_source", f"registry t0_sources pin for {t0_source!r} declares a malformed lawful_t0_modes ({type(lawful_modes).__name__}); it must be a list of modes"))
+        if t0_mode != "retrospective_research":
+            findings.append(_f("K3E_R021", "$.asof.t0_mode", f"registry t0_sources pin for {t0_source!r} declares no usable lawful_t0_modes; only 'retrospective_research' may be claimed against a missing pin, got {t0_mode!r}"))
+    elif t0_mode not in lawful_modes:
+        findings.append(_f("K3E_R021", "$.asof.t0_mode", f"t0_source {t0_source!r} may not claim t0_mode {t0_mode!r}: the registry pins lawful modes {sorted(lawful_modes)!r}. A source whose owner_store and clock class this contract cannot check is an accountability receipt, not a validation-time verification, so it cannot assert operational point-in-time"))
 
     pinned_store = pin.get("owner_store")
     owner_store = ref.get("owner_store")
