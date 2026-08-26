@@ -206,7 +206,18 @@ waves:
       a sibling-hook denial therefore cannot consume the condition. Existing
       unsafe/malformed/symlink ledger state is fail-closed at Stop and visible
       at SessionStart, while the narrow never-installed legacy Stop remains the
-      sole absence fail-open.
+      sole absence fail-open. The third same-carrier return distinguishes
+      executable bash/sh/zsh/Python stdin heredocs from data-only heredocs;
+      computed watcher command positions fail closed; normalized executed gh
+      watches consult the quota guard's canonical hot-watch helper before any
+      pending claim is written, so a denied default-interval watch cannot delay
+      an immediate lawful retry. Session-ledger directories are now traversed
+      component-by-component with dir_fd + O_NOFOLLOW, including the
+      macro-claude-ship-sessions ancestor. Local proof is deliberately bounded
+      to hook-observable behavior: five unchanged PreToolUse requests yielded
+      five denies/no updatedInput, and five unchanged post-PARKED wrapper
+      observations yielded action=silent while still re-probing; this does not
+      claim repository hooks control client model-turn creation.
       Internal codes byte-unchanged (Journey C). PR #6381 held HOLD-FOR-SOL
       per commission stop condition; mutation receipts + replayed-incident
       proof in the PR body and the

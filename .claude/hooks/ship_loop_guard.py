@@ -523,9 +523,22 @@ def _repo_root(payload: dict[str, Any]) -> Path | None:
 def _state_path(root: Path, payload: dict[str, Any]) -> Path:
     session = re.sub(r"[^A-Za-z0-9_.-]", "_", str(payload.get("session_id") or "default"))
     repo_key = hashlib.sha256(str(root).encode()).hexdigest()[:16]
-    directory = Path(tempfile.gettempdir()) / "macro-claude-ship-sessions" / repo_key
-    directory_fd = _private_directory_fd(directory, create=True)
-    os.close(directory_fd)
+    temp_root = Path(tempfile.gettempdir())
+    root_fd = _private_directory_fd(temp_root, create=False)
+    ledger_fd = -1
+    directory_fd = -1
+    try:
+        ledger_fd = _private_child_directory_fd(
+            root_fd, "macro-claude-ship-sessions", create=True
+        )
+        directory_fd = _private_child_directory_fd(ledger_fd, repo_key, create=True)
+    finally:
+        if directory_fd >= 0:
+            os.close(directory_fd)
+        if ledger_fd >= 0:
+            os.close(ledger_fd)
+        os.close(root_fd)
+    directory = temp_root / "macro-claude-ship-sessions" / repo_key
     return directory / f"{session}.json"
 
 
@@ -930,6 +943,37 @@ def _private_directory_fd(directory: Path, *, create: bool) -> int:
         raise
 
 
+def _private_child_directory_fd(parent_fd: int, name: str, *, create: bool) -> int:
+    """Open one private child directory relative to a verified parent.
+
+    Component-at-a-time ``dir_fd`` traversal is load-bearing: applying
+    ``O_NOFOLLOW`` only to the final repo-key directory still follows a planted
+    ``macro-claude-ship-sessions`` ancestor symlink before reaching it.
+    """
+    if not name or name in {".", ".."} or "/" in name:
+        raise OSError("unsafe ship ledger directory component")
+    if create:
+        try:
+            os.mkdir(name, mode=0o700, dir_fd=parent_fd)
+        except FileExistsError:
+            pass
+    descriptor = os.open(
+        name,
+        os.O_RDONLY | _OPEN_CLOEXEC | _OPEN_DIRECTORY | _OPEN_NOFOLLOW,
+        dir_fd=parent_fd,
+    )
+    try:
+        info = os.fstat(descriptor)
+        if not stat.S_ISDIR(info.st_mode) or info.st_uid != os.geteuid():
+            raise OSError("ship ledger directory is not a user-owned directory")
+        if create:
+            os.fchmod(descriptor, 0o700)
+        return descriptor
+    except Exception:
+        os.close(descriptor)
+        raise
+
+
 def _validate_owned_regular(descriptor: int, label: str) -> None:
     info = os.fstat(descriptor)
     if not stat.S_ISREG(info.st_mode) or info.st_uid != os.geteuid():
@@ -1237,25 +1281,94 @@ def _heredoc_delimiters(line: str) -> list[tuple[str, bool]]:
     return found
 
 
-def _strip_shell_heredoc_bodies(command: str) -> str:
-    """Remove here-document DATA while retaining every executable header."""
-    pending: list[tuple[str, bool]] = []
+def _shell_heredoc_parts(command: str) -> tuple[str, list[tuple[str, str, int]]]:
+    """Split shell headers from heredoc bodies without deciding body semantics.
+
+    Each document retains its header and declaration ordinal. The caller can
+    therefore keep ``cat``/``printf`` bodies as data while classifying stdin to
+    ``sh``/``bash``/``python`` as executable code.
+    """
+    pending: list[dict[str, Any]] = []
+    documents: list[tuple[str, str, int]] = []
     kept: list[str] = []
     for line in command.splitlines(keepends=True):
         if pending:
-            delimiter, strip_tabs = pending[0]
+            current = pending[0]
+            delimiter = str(current["delimiter"])
+            strip_tabs = bool(current["strip_tabs"])
             candidate = line.rstrip("\r\n")
             if strip_tabs:
                 candidate = candidate.lstrip("\t")
             if candidate == delimiter:
+                documents.append(
+                    (
+                        str(current["header"]),
+                        "".join(current["body"]),
+                        int(current["ordinal"]),
+                    )
+                )
                 pending.pop(0)
+            else:
+                current["body"].append(line)
             # Preserve a command boundary without exposing body text as code.
             if line.endswith(("\n", "\r")):
                 kept.append("\n")
             continue
         kept.append(line)
-        pending.extend(_heredoc_delimiters(line))
-    return "".join(kept)
+        for ordinal, (delimiter, strip_tabs) in enumerate(_heredoc_delimiters(line)):
+            pending.append(
+                {
+                    "delimiter": delimiter,
+                    "strip_tabs": strip_tabs,
+                    "header": line,
+                    "ordinal": ordinal,
+                    "body": [],
+                }
+            )
+    for current in pending:
+        documents.append(
+            (
+                str(current["header"]),
+                "".join(current["body"]),
+                int(current["ordinal"]),
+            )
+        )
+    return "".join(kept), documents
+
+
+def _strip_shell_heredoc_bodies(command: str) -> str:
+    """Remove here-document bodies while retaining every executable header."""
+    return _shell_heredoc_parts(command)[0]
+
+
+def _heredoc_interpreter(header: str, ordinal: int) -> str | None:
+    """Return the interpreter consuming one heredoc, otherwise DATA/unknown."""
+    parsed = _shell_segments(header)
+    if parsed is None:
+        return None
+    candidates: list[list[str]] = []
+    for segment in parsed[0]:
+        if any(word.startswith("<<") and not word.startswith("<<<") for word in segment):
+            candidates.append(list(segment))
+    if ordinal >= len(candidates):
+        return None
+    words = candidates[ordinal]
+    assignment = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
+    while words and (assignment.match(words[0]) or words[0] in {"command", "builtin"}):
+        words.pop(0)
+    while words and os.path.basename(words[0]).lower() in {"env", "nohup", "time"}:
+        words.pop(0)
+        while words and (words[0].startswith("-") or assignment.match(words[0])):
+            words.pop(0)
+    if not words:
+        return None
+    executable = os.path.basename(words.pop(0)).lower()
+    arguments = [word for word in words if not word.startswith("<<")]
+    if executable in {"bash", "sh", "zsh"} and "-c" not in arguments:
+        return "shell"
+    if re.fullmatch(r"python(?:3(?:\.\d+)?)?", executable) and "-c" not in arguments:
+        return "python"
+    return None
 
 
 def _shell_segments(command: str) -> tuple[list[list[str]], list[str]] | None:
@@ -1389,10 +1502,36 @@ def _gh_wait_condition(words: list[str]) -> tuple[str | None, bool]:
     return None, False
 
 
-def _shell_wait_classification(command: str, *, depth: int = 0) -> tuple[str, str] | None:
+def _shell_wait_classification(
+    command: str,
+    *,
+    depth: int = 0,
+    watch_commands: list[str] | None = None,
+) -> tuple[str, str] | None:
     """Return ``(admission, condition)`` for supported executed wait forms."""
     if depth > 3:
         return ("deny_uncertain", "nested-shell-wait")
+    _, heredocs = _shell_heredoc_parts(command)
+    heredoc_watches: list[str] = []
+    heredoc_uncertain = False
+    for header, body, ordinal in heredocs:
+        interpreter = _heredoc_interpreter(header, ordinal)
+        if interpreter == "shell":
+            nested = _shell_wait_classification(
+                body, depth=depth + 1, watch_commands=watch_commands
+            )
+            if nested is None:
+                continue
+            if nested[0] == "reserve_condition":
+                heredoc_watches.append(nested[1])
+            else:
+                return nested
+        elif interpreter == "python":
+            python_wait = _python_executes_sleep(body)
+            if python_wait is True:
+                return ("deny_timer", "timer-poll")
+            if python_wait is None and re.search(r"(?i)\bsleep\b", body):
+                heredoc_uncertain = True
     parsed = _shell_segments(command)
     if parsed is None:
         # A malformed watcher-shaped shell command is uncertainty, not an
@@ -1405,8 +1544,8 @@ def _shell_wait_classification(command: str, *, depth: int = 0) -> tuple[str, st
     detached = any("&" in token and token != "&&" for token in separators)
     aliases: dict[str, str] = {}
     variables: dict[str, str] = {}
-    watches: list[str] = []
-    uncertain = False
+    watches: list[str] = list(heredoc_watches)
+    uncertain = heredoc_uncertain
     in_loop = False
     saw_loop_gh = False
     assignment = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=(.*)$", re.DOTALL)
@@ -1442,6 +1581,13 @@ def _shell_wait_classification(command: str, *, depth: int = 0) -> tuple[str, st
             continue
 
         executable = words.pop(0)
+        if executable == "$":
+            # An unquoted command substitution at command position computes
+            # the executable only at runtime. Quoted substitutions remain an
+            # ordinary argument token and never reach this branch.
+            if re.search(r"(?i)\b(?:sleep|start-sleep|gh)\b", command):
+                uncertain = True
+            continue
         if executable in aliases:
             try:
                 words = shlex.split(aliases[executable], posix=True) + words
@@ -1455,11 +1601,24 @@ def _shell_wait_classification(command: str, *, depth: int = 0) -> tuple[str, st
 
         if executable.startswith("$"):
             name = executable.lstrip("${").rstrip("}")
-            assigned = os.path.basename(variables.get(name, "")).lower()
-            if assigned in {"sleep", "gh", "start-sleep"} or words[:2] in (
-                ["run", "watch"],
-                ["pr", "checks"],
-            ):
+            assigned = variables.get(name, "")
+            if assigned:
+                nested_command = " ".join(
+                    part for part in (assigned, shlex.join(words)) if part
+                )
+                nested = _shell_wait_classification(
+                    nested_command,
+                    depth=depth + 1,
+                    watch_commands=watch_commands,
+                )
+                if nested is not None:
+                    # Even a literal assignment is expanded by the shell into
+                    # an executable/argv boundary the admission hook cannot
+                    # preserve or mark. It is watcher-shaped uncertainty, not
+                    # a native owner and not an ordinary command.
+                    uncertain = True
+                continue
+            if words[:2] in (["run", "watch"], ["pr", "checks"]):
                 uncertain = True
             continue
 
@@ -1493,7 +1652,11 @@ def _shell_wait_classification(command: str, *, depth: int = 0) -> tuple[str, st
             for word in words:
                 match = re.fullmatch(r"\$\{?([A-Za-z_][A-Za-z0-9_]*)\}?", word)
                 expanded.append(variables.get(match.group(1), word) if match else word)
-            nested = _shell_wait_classification(" ".join(expanded), depth=depth + 1)
+            nested = _shell_wait_classification(
+                " ".join(expanded),
+                depth=depth + 1,
+                watch_commands=watch_commands,
+            )
             if nested is not None:
                 return nested
             continue
@@ -1501,7 +1664,11 @@ def _shell_wait_classification(command: str, *, depth: int = 0) -> tuple[str, st
         if base == "exec":
             if not words:
                 continue
-            nested = _shell_wait_classification(shlex.join(words), depth=depth + 1)
+            nested = _shell_wait_classification(
+                shlex.join(words),
+                depth=depth + 1,
+                watch_commands=watch_commands,
+            )
             if nested is None:
                 continue
             if nested[0] in {"reserve_condition", "deny_detached"}:
@@ -1513,7 +1680,11 @@ def _shell_wait_classification(command: str, *, depth: int = 0) -> tuple[str, st
             if index + 1 >= len(words):
                 uncertain = True
             else:
-                nested = _shell_wait_classification(words[index + 1], depth=depth + 1)
+                nested = _shell_wait_classification(
+                    words[index + 1],
+                    depth=depth + 1,
+                    watch_commands=watch_commands,
+                )
                 if nested is not None:
                     return nested
             continue
@@ -1533,7 +1704,9 @@ def _shell_wait_classification(command: str, *, depth: int = 0) -> tuple[str, st
                 uncertain = True
                 continue
             nested = _shell_wait_classification(
-                " ".join(words[index + 1 :]), depth=depth + 1
+                " ".join(words[index + 1 :]),
+                depth=depth + 1,
+                watch_commands=watch_commands,
             )
             if nested is not None:
                 return nested
@@ -1560,6 +1733,8 @@ def _shell_wait_classification(command: str, *, depth: int = 0) -> tuple[str, st
             uncertain = True
         elif condition:
             watches.append(condition)
+            if watch_commands is not None:
+                watch_commands.append(shlex.join(["gh", *words]))
 
     if saw_loop_gh:
         return ("deny_timer", "timer-poll")
@@ -1587,7 +1762,8 @@ def _watcher_request(payload: dict[str, Any]) -> dict[str, Any] | None:
     if not isinstance(tool_input, dict):
         return None
     command = str(tool_input.get("command") or "")
-    classified = _shell_wait_classification(command)
+    watch_commands: list[str] = []
+    classified = _shell_wait_classification(command, watch_commands=watch_commands)
     if classified is None:
         return None
     admission, condition = classified
@@ -1597,7 +1773,36 @@ def _watcher_request(payload: dict[str, Any]) -> dict[str, Any] | None:
         "digest": hashlib.sha256(identity.encode("utf-8")).hexdigest()[:12],
         "admission": admission,
         "condition": condition,
+        "executed_watch_commands": watch_commands,
     }
+
+
+def _canonical_hot_watch_reason(watch: dict[str, Any]) -> str | None:
+    """Consult the configured quota rule before minting a pending claim.
+
+    Claude evaluates sibling PreToolUse hooks in parallel. Without this pure
+    preflight, the quota hook can deny execution after this hook has already
+    persisted an unconfirmed owner. Importing the quota hook's own helper keeps
+    its threshold and denial semantics authoritative and creates no retry or
+    lifecycle plane.
+    """
+    hook = Path(__file__).with_name("gh_quota_guard.py")
+    spec = importlib.util.spec_from_file_location("_ship_loop_quota_guard", hook)
+    if spec is None or spec.loader is None:
+        raise OSError("canonical GitHub quota guard cannot be loaded")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    helper = getattr(module, "hot_watch_reason", None)
+    if not callable(helper):
+        raise OSError("canonical GitHub quota helper is unavailable")
+    commands = watch.get("executed_watch_commands")
+    if not isinstance(commands, list) or not commands:
+        raise OSError("executed watcher command identity is unavailable")
+    for command in commands:
+        reason = helper(str(command))
+        if reason:
+            return str(reason)
+    return None
 
 
 def _latched_terminal_heads(state: dict[str, Any]) -> set[str]:
@@ -1992,6 +2197,18 @@ def _pre_tool_use(payload: dict[str, Any], raw: bytes) -> None:
         )
         return
     if _delegate_to_evaluated_hook(payload, raw):
+        return
+    try:
+        quota_reason = _canonical_hot_watch_reason(watch)
+    except Exception as exc:
+        _deny_watcher(
+            "SHIP WATCHER REFUSED: the canonical GitHub quota admission rule "
+            f"could not be evaluated ({exc.__class__.__name__}). A watcher "
+            "must fail closed when aggregate permission cannot be proven."
+        )
+        return
+    if quota_reason:
+        _deny_watcher(quota_reason)
         return
     root = _repo_root(payload)
     if root is None:

@@ -50,7 +50,20 @@ changed:
       command cannot leave a consumed phantom; a late stale command cannot
       confirm after replacement. Unsafe existing ledger state is distinct from
       genuine absence and blocks Stop / reports SessionStart without following
-      planted state or lock symlinks.
+      planted state or lock symlinks. Third adversarial return: heredoc bodies
+      consumed by bash/sh/zsh or Python stdin are classified as executable
+      while cat/printf/prose bodies remain data; watcher-shaped command
+      substitution and variable-executable transports fail closed. The
+      classifier carries the normalized executed gh command into the canonical
+      quota helper, so a hot nested watch cannot reserve. The session-ledger
+      root and repo-key directories are opened one component at a time with
+      dir_fd + O_NOFOLLOW, closing the ancestor-symlink traversal.
+  - path: .claude/hooks/gh_quota_guard.py
+    what: >
+      Extracted the existing hot-watch rule into a pure canonical helper. The
+      quota hook still owns the threshold and refusal text; ship-loop admission
+      consults that same helper before persisting a pending resource claim, so
+      parallel hook denial cannot strand an immediate lawful retry.
   - path: scripts/ship_loop_hold_wrapper.py
     what: >
       _handle_stop: first lawful PARKED writes parked_latch
@@ -75,7 +88,10 @@ changed:
       negative controls, option-arity/digest identities, real parallel
       quota+ship-hook denial/retry, command-side confirmation, unsafe-ledger
       entrypoints, five unchanged observations with zero admitted successors,
-      one material-change owner, and distinct-session isolation.
+      one material-change owner, and distinct-session isolation. Third return
+      adds executable-interpreter heredocs, computed command positions,
+      data-only negative controls, immediate quota-denial retirement, and a
+      planted session-root ancestor symlink.
   - path: tests/test_ship_loop_hold_wrapper.py
     what: >
       Existing narrate-once/release/outage tests plus the complete PARKED →
@@ -133,6 +149,43 @@ verified:
   - claim: exact guard + wrapper regression suite is green on the second-return tree
     command: python3.12 -m pytest -q tests/test_ship_loop_guard.py tests/test_ship_loop_hold_wrapper.py --maxfail=10
     result: 381 passed, 1 skipped; 3 inherited non-failing pytest temp-cleanup warnings
+  - claim: third-return defects reproduced before repair
+    command: >
+      python3.12 -m pytest -q tests/test_ship_loop_guard.py with executable
+      stdin heredoc, computed command, immediate parallel quota retry, and
+      ancestor-symlink selections
+    result: >
+      8 intended failures: all three interpreter heredocs and four computed
+      command forms bypassed admission, and the planted ledger-root symlink was
+      followed. The immediate retry test also failed until quota preflight was
+      moved before reservation. Data-only and five-observation controls stayed
+      green.
+  - claim: exact quiescence and quota suites are green on the third-return tree
+    command: >
+      python3.12 -m pytest -q tests/test_ship_loop_guard.py
+      tests/test_ship_loop_hold_wrapper.py tests/test_gh_quota_guard.py
+      --maxfail=10
+    result: 486 passed, 1 skipped; 3 inherited non-failing pytest temp-cleanup warnings
+  - claim: adjacent governance suites and validators remain green
+    command: >
+      python3.12 -m pytest -q tests/test_self_mod_fence.py
+      tests/test_agent_routing_control.py tests/test_sparse_worktree_profile.py;
+      python3.12 scripts/check_self_mod_fence.py --selftest;
+      python3.12 scripts/agentos.py validate
+    result: >
+      136 passed; self-mod 16/16 PASS; Agent OS 0 errors with 43 inherited
+      unrelated warnings.
+  - claim: N>=5 proof is scoped to deterministic hook outputs
+    command: >
+      test_five_unchanged_observations_admit_zero_successor_watchers and
+      test_first_parked_stop_narrates_once_then_the_latch_silences_wakes
+    result: >
+      five unchanged PreToolUse observations each deny with no updatedInput;
+      after one PARKED emit, five unchanged wrapper observations each return
+      action=silent while all six mechanical probes run. A changed condition
+      admits exactly one owner in the separate material-change regression.
+      This is not a claim that repository hooks control client model-turn
+      creation.
 unverified:
   - claim: hosted CI green on the exact PR head
     what_would_verify: ci.yml + fences.yml runs on the PR head after push (watched to conclusion before parking)
@@ -180,6 +233,9 @@ danger_areas:
     command-side confirmation seam. Never let an unconfirmed parallel-hook
     claim consume a condition, and never start GitHub before the exact marker,
     PID, and process-start identity are committed under the shared ledger lock.
+    The canonical quota helper must run before the pending write; do not copy
+    its interval threshold into ship_loop_guard.py or reintroduce a grace-window
+    retry for a command another configured hook deterministically denies.
   - >
     Do not let ladder_exits refuse watcher creation (red-team F4 — permanent
     false-DENY of a resumed transient-escape session), and do not free the

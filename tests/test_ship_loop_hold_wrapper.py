@@ -386,10 +386,13 @@ def _ledger_guard(tmp_path: Path, *, split=None, pull="default", state_extra=Non
 
 
 def test_first_parked_stop_narrates_once_then_the_latch_silences_wakes(monkeypatch, tmp_path):
-    """Incident PR #6371's chatter: the first lawful PARKED is the ONE terminal
-    report; a later Stop (a leftover background task's wake turn) that
-    re-derives the identical hold passes silently — while still re-running the
-    full mechanical probe, so nothing is suppressed on trust."""
+    """The first lawful PARKED is the one hook-level terminal report.
+
+    Five later Stop observations that re-derive the identical hold return the
+    wrapper's deterministic ``silent`` action. This proves suppression at the
+    hook contract; the client/model-turn lifecycle remains outside this test's
+    authority. Every observation still re-runs the full mechanical probe.
+    """
     _stub_clean_pushed_git(monkeypatch)
     guard, state_path, calls = _ledger_guard(tmp_path)
 
@@ -401,10 +404,13 @@ def test_first_parked_stop_narrates_once_then_the_latch_silences_wakes(monkeypat
     state = json.loads(state_path.read_text(encoding="utf-8"))
     assert state["parked_latch"] == f"parked:6138:{HEAD}"
 
-    second = WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"})
-    assert second == {"action": "silent"}
+    unchanged = [
+        WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"})
+        for _ in range(5)
+    ]
+    assert unchanged == [{"action": "silent"}] * 5
     # Quiescence is narration-only: the hold was mechanically revalidated.
-    assert calls["open_pull"] == 2 and calls["checks"] == 2
+    assert calls["open_pull"] == 6 and calls["checks"] == 6
 
 
 def test_parked_latch_writer_preserves_a_concurrent_watcher_reservation(

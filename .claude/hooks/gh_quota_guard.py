@@ -338,6 +338,33 @@ def deny(reason):
     sys.exit(0)
 
 
+def hot_watch_reason(raw: str):
+    """Return the canonical hot ``gh run watch`` denial, if any.
+
+    Kept as one pure helper so another simultaneously configured admission
+    hook can avoid creating durable state for a command this guard will deny.
+    This is still one decision plane: the quota guard owns the rule and text;
+    callers only consult it before reserving their own resource.
+    """
+    cmd = strip_heredocs(raw)
+    match = WATCH_RE.search(cmd)
+    if not match:
+        return None
+    tail = cmd[match.start():]
+    interval = INTERVAL_RE.search(tail)
+    seconds = int(interval.group(1)) if interval else 3
+    if seconds >= MIN_WATCH_INTERVAL:
+        return None
+    return (
+        f"SHARED GITHUB QUOTA: `gh run watch` polls every {seconds}s "
+        f"(gh's default is 3s), fetching the run AND its jobs each time. "
+        f"REST's 5,000/hr is ONE bucket for every session, the babysitter, "
+        f"and ship_loop_guard.py (which fails closed when rate-limited). "
+        f"Three 10-minute windows of this emptied it on 2026-07-26.\n\n"
+        f"Use --interval {MIN_WATCH_INTERVAL} or higher, or better:\n\n{REMEDY}"
+    )
+
+
 def check(raw: str, cwd=None):
     """Return a deny reason, or None to allow.
 
@@ -350,20 +377,9 @@ def check(raw: str, cwd=None):
     cmd = strip_heredocs(raw)
 
     # 1. gh run watch at a hot interval
-    m = WATCH_RE.search(cmd)
-    if m:
-        tail = cmd[m.start():]
-        iv = INTERVAL_RE.search(tail)
-        secs = int(iv.group(1)) if iv else 3      # gh's documented default
-        if secs < MIN_WATCH_INTERVAL:
-            return (
-                f"SHARED GITHUB QUOTA: `gh run watch` polls every {secs}s "
-                f"(gh's default is 3s), fetching the run AND its jobs each time. "
-                f"REST's 5,000/hr is ONE bucket for every session, the babysitter, "
-                f"and ship_loop_guard.py (which fails closed when rate-limited). "
-                f"Three 10-minute windows of this emptied it on 2026-07-26.\n\n"
-                f"Use --interval {MIN_WATCH_INTERVAL} or higher, or better:\n\n{REMEDY}"
-            )
+    reason = hot_watch_reason(raw)
+    if reason:
+        return reason
 
     # 2. gh inside a tight poll loop — the gh call must be INSIDE the loop body,
     # not merely somewhere in the same command line.

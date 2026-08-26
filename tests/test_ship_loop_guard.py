@@ -5725,6 +5725,73 @@ def test_heredoc_wait_text_is_data_not_executable_admission(command):
 
 
 @pytest.mark.parametrize(
+    "command,admission,condition",
+    [
+        ("bash <<'EOF'\nsleep 600\nEOF", "deny_timer", "timer-poll"),
+        (
+            "sh -s <<'EOF'\ngh run watch 123 --exit-status --interval 60\nEOF",
+            "reserve_condition",
+            "gh-run:current-repo:123",
+        ),
+        (
+            "python - <<'PY'\nimport time\ntime.sleep(600)\nPY",
+            "deny_timer",
+            "timer-poll",
+        ),
+    ],
+)
+def test_executable_stdin_heredocs_are_classified_as_code(
+    command, admission, condition
+):
+    """A here-document is data only when its consumer treats it as data.
+
+    Interpreter stdin is executable code and must remain inside watcher
+    admission without reintroducing the cat/printf prose false positives.
+    """
+    request = GUARD._watcher_request(_watcher_payload(command, background=False))
+    assert request is not None
+    assert request["admission"] == admission
+    assert request["condition"] == condition
+
+
+@pytest.mark.parametrize(
+    "command,admission,condition",
+    [
+        ("CMD='sleep 600'; $CMD", "deny_uncertain", "uncertain-wait"),
+        (
+            "CMD='gh run watch 123 --exit-status --interval 60'; $CMD",
+            "deny_uncertain",
+            "uncertain-wait",
+        ),
+        ("$(printf '%s' 'sleep 600')", "deny_uncertain", "uncertain-wait"),
+        (
+            "$(printf '%s' 'gh run watch 123 --exit-status --interval 60')",
+            "deny_uncertain",
+            "uncertain-wait",
+        ),
+    ],
+)
+def test_computed_command_position_cannot_bypass_wait_admission(
+    command, admission, condition
+):
+    request = GUARD._watcher_request(_watcher_payload(command, background=False))
+    assert request is not None
+    assert request["admission"] == admission
+    assert request["condition"] == condition
+
+
+def test_command_substitution_used_as_an_ordinary_argument_is_not_execution():
+    command = "echo \"$(printf '%s' 'gh run watch 123 --exit-status')\""
+    assert GUARD._watcher_request(_watcher_payload(command, background=False)) is None
+
+
+def test_non_wait_command_substitution_at_command_position_remains_ordinary_bash():
+    assert GUARD._watcher_request(
+        _watcher_payload("$(printf '%s' 'echo ok')", background=False)
+    ) is None
+
+
+@pytest.mark.parametrize(
     "command",
     [
         "echo 'time.sleep(600)'",
@@ -5958,7 +6025,9 @@ def test_admitted_condition_watch_gets_a_unique_process_marker_in_updated_input(
     monkeypatch.setattr(GUARD, "_state_path", lambda _root, _payload: path)
     monkeypatch.setattr(GUARD, "_run", lambda _root, *_args, **_kwargs: "a" * 40)
 
-    payload = _watcher_payload("gh run watch 123 --exit-status", background=True)
+    payload = _watcher_payload(
+        "gh run watch 123 --exit-status --interval 60", background=True
+    )
     GUARD._pre_tool_use(payload, b"{}")
     output = json.loads(capsys.readouterr().out)["hookSpecificOutput"]
     assert output["permissionDecision"] == "allow"
@@ -5968,8 +6037,25 @@ def test_admitted_condition_watch_gets_a_unique_process_marker_in_updated_input(
     marker = reservation["process_marker"]
     assert marker.startswith("ship-watcher:")
     assert marker in updated["command"]
-    assert "gh run watch 123 --exit-status" in updated["command"]
+    assert "gh run watch 123 --exit-status --interval 60" in updated["command"]
     assert reservation["confirmed"] is False
+
+
+def test_hot_watch_inside_executable_heredoc_is_denied_before_reservation(
+    monkeypatch, capsys, tmp_path
+):
+    path = _watcher_state(tmp_path)
+    monkeypatch.setattr(GUARD, "_delegate_to_evaluated_hook", lambda *_args: False)
+    monkeypatch.setattr(GUARD, "_repo_root", lambda _payload: tmp_path)
+    monkeypatch.setattr(GUARD, "_state_path", lambda _root, _payload: path)
+    command = "sh -s <<'EOF'\ngh run watch 123 --exit-status\nEOF"
+
+    GUARD._pre_tool_use(_watcher_payload(command, background=False), b"{}")
+
+    verdict = json.loads(capsys.readouterr().out)["hookSpecificOutput"]
+    assert verdict["permissionDecision"] == "deny"
+    assert "SHARED GITHUB QUOTA" in verdict["permissionDecisionReason"]
+    assert "ship_watcher" not in GUARD._load(path)
 
 
 def test_allowed_watcher_confirms_the_existing_reservation_before_gh_executes(
@@ -6169,8 +6255,12 @@ def test_a_completed_watch_cannot_spawn_an_unchanged_successor_timer(
 def test_five_unchanged_observations_admit_zero_successor_watchers(
     monkeypatch, capsys, tmp_path
 ):
-    """N>=5 frozen observations stay entirely inside the already-consumed
-    condition: none is allowed to create a successor model wake."""
+    """N>=5 frozen observations produce no hook-level continuation admission.
+
+    The PreToolUse contract can deterministically prove deny decisions and the
+    absence of a rewritten command. It cannot claim ownership of the client's
+    model-turn lifecycle, which remains an external acceptance boundary.
+    """
     path = _watcher_state(tmp_path)
     _aged_reservation(path)
     before = GUARD._load(path)["ship_watcher"]
@@ -6181,6 +6271,7 @@ def test_five_unchanged_observations_admit_zero_successor_watchers(
         )
         verdict = json.loads(denied)["hookSpecificOutput"]
         assert verdict["permissionDecision"] == "deny"
+        assert "updatedInput" not in verdict
         assert "UNCHANGED WAIT REFUSED" in verdict["permissionDecisionReason"]
     assert GUARD._load(path)["ship_watcher"] == before
 
@@ -6267,6 +6358,20 @@ def test_session_ledger_directory_is_private(monkeypatch, tmp_path):
     root.mkdir()
     path = GUARD._state_path(root, {"session_id": "private-mode"})
     assert path.parent.stat().st_mode & 0o777 == 0o700
+
+
+def test_session_ledger_root_ancestor_symlink_is_never_followed(monkeypatch, tmp_path):
+    victim = tmp_path / "attacker-owned-target"
+    victim.mkdir()
+    ledger_root = tmp_path / "macro-claude-ship-sessions"
+    ledger_root.symlink_to(victim, target_is_directory=True)
+    monkeypatch.setattr(GUARD.tempfile, "gettempdir", lambda: str(tmp_path))
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    with pytest.raises(OSError):
+        GUARD._state_path(repo, {"session_id": "ancestor-symlink"})
+    assert list(victim.iterdir()) == []
 
 
 def test_state_and_lock_symlinks_fail_closed_without_touching_their_targets(tmp_path):
@@ -6455,7 +6560,9 @@ def test_watcher_admission_fails_closed_without_ledger_or_git(monkeypatch, capsy
     monkeypatch.setattr(GUARD, "_delegate_to_evaluated_hook", lambda *_a: False)
     monkeypatch.setattr(GUARD, "_repo_root", lambda _p: tmp_path)
     monkeypatch.setattr(GUARD, "_state_path", lambda _r, _p: tmp_path / "absent.json")
-    GUARD._pre_tool_use(_watcher_payload("gh run watch 1 --exit-status"), b"{}")
+    GUARD._pre_tool_use(
+        _watcher_payload("gh run watch 1 --exit-status --interval 60"), b"{}"
+    )
     assert "SHIP WATCHER REFUSED" in capsys.readouterr().out
     # A watcher-shaped request cannot be tracked safely when git is
     # unanswerable, so admission fails closed instead of recording an unknown
@@ -6497,7 +6604,7 @@ g._run = lambda _root, *a, **k: "a" * 40
 payload = {
     "hook_event_name": "PreToolUse",
     "tool_name": "Bash",
-    "tool_input": {"command": "gh run watch 1 --exit-status", "run_in_background": True},
+    "tool_input": {"command": "gh run watch 1 --exit-status --interval 60", "run_in_background": True},
 }
 g._pre_tool_use(payload, b"{}")
 """,
@@ -6520,7 +6627,7 @@ g._pre_tool_use(payload, b"{}")
     denied = [out for out in outputs if "SHIP WATCHER COALESCED" in out]
     assert len(admitted) == 1, outputs
     assert len(denied) == 13, outputs
-    assert GUARD._load(state_path)["ship_watcher"]["fragment"] == "gh run watch 1 --exit-status"
+    assert GUARD._load(state_path)["ship_watcher"]["fragment"] == "gh run watch 1 --exit-status --interval 60"
 
 
 def test_concurrent_stop_writer_cannot_erase_a_live_watcher_reservation(
@@ -6639,9 +6746,9 @@ def test_parallel_quota_denial_cannot_leave_a_phantom_consumed_reservation(
     monkeypatch, tmp_path
 ):
     """Drive the two configured hooks independently as Claude does. The ship
-    hook may allow while the quota hook denies, but that non-executed command
-    must remain only a pending claim and must not permanently consume the
-    condition for a later quota-compliant retry."""
+    hook must not reserve a command the canonical quota guard will deny. The
+    quota-compliant correction is admitted immediately, without sleeping out
+    a pending-claim grace window or creating a second lifecycle."""
     repo = _repo(tmp_path)
     scratch = tmp_path / "tmp"
     scratch.mkdir()
@@ -6679,14 +6786,11 @@ def test_parallel_quota_denial_cannot_leave_a_phantom_consumed_reservation(
     quota_verdict = json.loads(quota.stdout)["hookSpecificOutput"]
     ship_verdict = json.loads(ship.stdout)["hookSpecificOutput"]
     assert quota_verdict["permissionDecision"] == "deny"
-    assert ship_verdict["permissionDecision"] == "allow"
+    assert ship_verdict["permissionDecision"] == "deny"
 
     monkeypatch.setattr(GUARD.tempfile, "gettempdir", lambda: str(scratch))
     state_path = GUARD._state_path(repo.resolve(), start)
-    pending = GUARD._load(state_path)
-    assert pending["ship_watcher"]["confirmed"] is False
-    pending["ship_watcher"]["created"] = time.time() - 120
-    GUARD._save(state_path, pending)
+    assert "ship_watcher" not in GUARD._load(state_path)
 
     lawful = _watcher_payload(
         "gh run watch 123 --exit-status --interval 60", background=False
@@ -6697,7 +6801,7 @@ def test_parallel_quota_denial_cannot_leave_a_phantom_consumed_reservation(
     assert retry_verdict["permissionDecision"] == "allow"
     replacement = GUARD._load(state_path)["ship_watcher"]
     assert replacement["confirmed"] is False
-    assert replacement["process_marker"] != pending["ship_watcher"]["process_marker"]
+    assert replacement["condition"] == "gh-run:current-repo:123"
 
 
 def test_main_routes_a_real_pre_tool_use_payload_end_to_end(monkeypatch, capsys, tmp_path):
