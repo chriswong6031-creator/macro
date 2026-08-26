@@ -2,7 +2,7 @@
   "schema": "basket_membership_cadence.v1",
   "suite": "baskets_china_ths",
   "writer": "scripts.build_baskets_china_ths",
-  "checked_at": "2026-08-25T09:48:33Z",
+  "checked_at": "2026-08-26T09:59:49Z",
   "membership_sha": "846ba99a127c9d6144e765a75862c406c130465f598f5033e34b29b1858cb414",
   "last_snapshot_date": "2026-08-23"
 }
