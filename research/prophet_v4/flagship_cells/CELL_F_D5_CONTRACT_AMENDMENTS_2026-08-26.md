@@ -215,10 +215,83 @@ owner-native meaning, they are absent, per §14.1.
 
 ---
 
+## A13 — Episode-to-Earnings identity bridge: `company_id` is TWO different namespaces
+
+**Adds to:** §4 (identity grain) and §20 required-scope item 1. Nothing is superseded; this
+closes a gap the 2026-08-22 contract did not anticipate because B1 did not exist.
+
+**The hazard.** Both planes carry a field literally named `company_id`, and they are
+**different identifier spaces**:
+
+- B1 episode `company_id` is the Data OS **issuer_id** (ISS namespace), obtained from
+  `spine.issuers.issuer_of_security(security_id)` (`engine/us_candidate_episode_intake.py:152`,
+  `:162`), per `DEC:PROPHET-B1-CANONICAL-EPISODE-BINDINGS` R1.
+- Earnings `company_id` is CIK-anchored, `cik:` + 10 zero-padded digits
+  (`engine/company_intelligence/identity.py:50-58`).
+
+A join on `company_id == company_id` therefore returns nothing, or worse, silently matches
+nothing while looking like an honest empty family. This is precisely the "producer outage
+masquerading as sparse applicability" failure §8 forbids, arriving through identity rather than
+through coverage.
+
+**The lawful bridge, and its limit.** `reference.issuer_master` carries BOTH keys —
+`ISSUER_MASTER_COLUMNS = ("issuer_id", "cik", "legal_name", ...)`
+(`scripts/build_security_master.py:188-196`), present in production at
+`data/reference/issuer_master.parquet`. The lawful path is therefore:
+
+```
+episode.company_id (issuer_id)  ->  issuer_master.cik  ->  company_id_for_cik(cik)  ->  Earnings company_id
+```
+
+Two constraints on using it:
+
+1. **The canonical reader does not expose it.** `IssuerMaster`'s row shape
+   (`SecurityIssuerRow`, `lib/dataos/identity.py:760-779`) is deliberately narrow —
+   `security_id`, `issuer_id`, `issuer_state`, `listing_key` — and carries no `cik`. D5 may NOT
+   read `issuer_master.parquet` behind the canonical reader's back; that mints a second identity
+   reader, which §11's no-second-identity-plane rule forbids. The bridge requires a bounded,
+   owner-coordinated extension of the canonical Data OS issuer reader to expose the issuer CIK.
+   Until that exists, the join is **UNRESOLVED**.
+2. **It is a current-registrant observation, not a point-in-time lineage claim.** The issuer
+   reader deliberately carries no `asof` parameter and its own contract states the CIK evidence
+   proves who owns a ticker TODAY and "never what the issuer mapping was on a past date"
+   (`lib/dataos/identity.py:792-802`). For prospective D5 — episodes opened now against
+   current earnings events — that is adequate AND must be disclosed as an identity-resolution
+   state, never presented as a proven historical binding.
+
+**The law.**
+
+1. The episode-to-Earnings binding is resolved ONLY through the issuer_id -> cik -> `cik:` path
+   above, through the canonical Data OS issuer reader.
+2. A **ticker-string join is forbidden** in every form — including the owner's own
+   `select_current_event_from_aliases` `TICKER/YYYYQn` alias path
+   (`engine/company_intelligence/event_workspace.py:632-712`) — per
+   `research/prophet_v4/D1_D5_READINESS_RULING.md` ("no ticker-string joins"). That the owner
+   offers a ticker alias API does not make it lawful for D5.
+3. Where the bridge cannot be resolved, the family is `IDENTITY_UNRESOLVED` with the reason
+   named. B1 already models exactly this distinction with two typed states,
+   `IDENTITY_UNRESOLVED` and `ISSUER_UNRESOLVED`
+   (`engine/us_candidate_episode_intake.py:153-156`); D5 mirrors that vocabulary rather than
+   inventing one. Per A10 clause 3 this is a D5-originated state about D5's own join, not a
+   claim about an owner fact.
+4. Identity ambiguity fails **closed**. The Earnings owner already raises on an ambiguous
+   fiscal-period mapping (`event_workspace.py:693-699`) and on alias collision (`:429-447`);
+   D5 propagates that as `IDENTITY_AMBIGUOUS`, never picking a winner.
+5. An unresolved or ambiguous identity is never rendered as "no evidence". The consumer must be
+   able to tell "we could not bind this episode to an issuer" from "this issuer had no earnings
+   evidence by the decision cut".
+
+**Acceptance test.** One episode whose issuer resolves to a CIK with a real event workspace, and
+one episode whose issuer does NOT resolve — asserting the second yields `IDENTITY_UNRESOLVED`
+with a named reason and NOT an empty-but-healthy Earnings family.
+
+---
+
 ## Reopening conditions
 
 A7 reopens if the Earnings owner ships a genuinely as-of-aware reader; the binding table
 reopens per-row if the owner renames or adds a clock. A8 clause 2 reopens when V4-B4 exists.
 A10 clause 2 reopens when the owner makes a currently-reserved status mintable. A11 closes on
 B1 natural acceptance. A12 reopens if the owner licenses consensus and can mint
-`basis_match: True`. Product urgency reopens none of them.
+`basis_match: True`. A13 clause 1 closes when the canonical Data OS issuer reader exposes the
+issuer CIK; clause 2 reopens only if that reader gains a genuine as-of parameter. Product urgency reopens none of them.
