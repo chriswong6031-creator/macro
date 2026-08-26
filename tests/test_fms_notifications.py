@@ -22,7 +22,7 @@ import pytest
 
 from collectors import fms_notifications as fms
 from collectors import fms_notifications_live as live
-from engine.government_revenue import fms_cases
+from engine.government_revenue import fms_cases, metrics
 from engine.research_vault.r2_store import LocalStore
 
 FIXTURES = Path(__file__).parent / "fixtures" / "fms"
@@ -124,6 +124,8 @@ def _base_graph_kwargs(**overrides) -> dict:
         as_of="2026-08-25",
         scope_delivered_from="2026-01-01",
         scope_delivered_through="2026-08-25",
+        fr_publication_from="2026-01-01",
+        fr_publication_through="2026-08-25",
         fr_denominator_transmittals=[],
         fr_docs_scanned=267,
         fr_amendments_excluded=1,
@@ -182,6 +184,25 @@ def _case(graph: dict, case_key: str) -> dict:
         if case["case_key"] == case_key:
             return case
     raise AssertionError(f"case {case_key!r} not found in graph")
+
+
+def _capture_build_kwargs(monkeypatch: pytest.MonkeyPatch) -> dict:
+    """Capture the kwargs ``run_fms_acquisition`` calls ``build_fms_case_graph``
+    with, while still running the real function underneath (spec §11b.13:
+    T6/T14 must bind ``state_pm_bureau``'s typed status directly rather than
+    inferring it from ``rc`` alone -- and a scenario whose FR denominator is
+    empty never gets far enough to WRITE a graph, so the only way to observe
+    the State branch's own typed status is to intercept the call).
+    """
+    captured: dict = {}
+    original = fms_cases.build_fms_case_graph
+
+    def _capturing(**kwargs):
+        captured.update(kwargs)
+        return original(**kwargs)
+
+    monkeypatch.setattr(live.fms_cases, "build_fms_case_graph", _capturing)
+    return captured
 
 
 # ---------------------------------------------------------------------------
@@ -344,7 +365,7 @@ class TestFreezeKillTests:
             _validate_graph(mutated)
 
     def test_t6_state_fetch_failure_is_typed_source_unavailable_never_stale_as_current(
-        self, tmp_path: Path,
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         class _RaisingSession:
             def get(self, url, **kwargs):
@@ -362,6 +383,7 @@ class TestFreezeKillTests:
                     raise ConnectionError("simulated State outage")
                 raise AssertionError(f"unexpected fetch: {url}")
 
+        captured = _capture_build_kwargs(monkeypatch)
         rc = live.run_fms_acquisition(
             root=tmp_path, store=None, session=_FrOnlySession(),
             observed_at=RECEIPT_AT,
@@ -369,9 +391,13 @@ class TestFreezeKillTests:
             publication_from="2026-01-01", publication_through="2026-08-25",
         )
         # FR sweep found zero docs -> denominator empty -> coverage gate
-        # refuses regardless of the State failure; the key assertion is that
-        # the State branch itself recorded "unavailable", never "ok".
+        # refuses regardless of the State failure; the key assertion binds
+        # `state_pm_bureau`'s typed status DIRECTLY (spec §11b.13) -- the
+        # State branch must record "unavailable", never "ok", regardless of
+        # whether the overall run goes on to publish or refuse.
         assert rc == 1
+        assert captured["state_status"] == "unavailable"
+        assert captured["state_status"] != "ok"
         graph_path = tmp_path / "data" / "government_revenue" / "fms_case_graph.json"
         assert not graph_path.exists()  # refused publish leaves nothing written
 
@@ -494,7 +520,9 @@ class TestFreezeKillTests:
         with pytest.raises(jsonschema.ValidationError):
             _validate_graph(mutated)
 
-    def test_t14_listing_fetch_failure_never_becomes_empty_valid(self, tmp_path: Path) -> None:
+    def test_t14_listing_fetch_failure_never_becomes_empty_valid(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
         class _FailingStateSession:
             def get(self, url, **kwargs):
                 if "state.gov" in url:
@@ -503,6 +531,7 @@ class TestFreezeKillTests:
                     return _JsonResponse({"results": []})
                 raise AssertionError(f"unexpected fetch: {url}")
 
+        captured = _capture_build_kwargs(monkeypatch)
         rc = live.run_fms_acquisition(
             root=tmp_path, store=None, session=_FailingStateSession(),
             observed_at=RECEIPT_AT,
@@ -510,8 +539,12 @@ class TestFreezeKillTests:
             publication_from="2026-01-01", publication_through="2026-08-25",
         )
         assert rc == 1  # FR denominator empty -> refused; never publishes a
-        # zero-row "current" graph. (state_status "unavailable" is asserted
-        # directly against the orchestration's internal state in test_t6.)
+        # zero-row "current" graph.
+        # Direct proof (spec §11b.13, §11b.6): the State branch's own typed
+        # status is "unavailable", never "ok" -- a listing fetch failure can
+        # never encode as the empty_valid ok+0 state.
+        assert captured["state_status"] == "unavailable"
+        assert captured["state_status"] != "ok"
 
 
 class _JsonResponse:
@@ -860,6 +893,20 @@ class _TextResponse:
         pass
 
 
+class _HtmlResponse:
+    def __init__(self, content: bytes, status_code: int = 200):
+        self._content = content
+        self.status_code = status_code
+        self.url = None
+        self.headers = {"Content-Type": "text/html"}
+
+    def iter_content(self, chunk_size: int):
+        yield self._content
+
+    def close(self):
+        pass
+
+
 # ---------------------------------------------------------------------------
 # Parse-survey invariants (spec §5 grammar classes)
 # ---------------------------------------------------------------------------
@@ -1046,3 +1093,355 @@ class TestParseSurveyInvariants:
         info = fms.detect_transmittals("Transmittal No. 26-27 ... Transmittal No. 26-99")
         assert info["conflicted"] is True
         assert set(info["transmittals"]) == {"26-27", "26-99"}
+
+
+# ---------------------------------------------------------------------------
+# §11b post-red-team amendments (B3, M4-M10, L12-L17)
+# ---------------------------------------------------------------------------
+
+
+class TestPostRedTeamAmendments:
+    def test_b3_receipt_idempotence_two_run_is_a_genuine_no_op(self, tmp_path: Path) -> None:
+        """spec §11b.3: a re-run over UNCHANGED bytes appends ZERO new
+        receipt rows. The receipt's own identity folds ``observed_at``
+        (always fresh per run), so without consulting the timestamp-free
+        ``receipt_is_duplicate`` predicate before appending, every re-run
+        doubles the receipts plane regardless of the wire (review measured
+        16 -> 32 against this exact real staged/FR corpus shape)."""
+
+        class _FrOkSession:
+            def get(self, url, **kwargs):
+                if "federalregister.gov" in url and "documents.json" in url:
+                    return _JsonResponse({
+                        "results": [{
+                            "document_number": "2026-07278",
+                            "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/x/2026-07278.txt",
+                        }],
+                    })
+                if "2026-07278.txt" in url:
+                    return _TextResponse(_read_bytes("fr/2026-07278.txt"))
+                if "state.gov" in url:
+                    raise ConnectionError("irrelevant to this test")
+                raise AssertionError(f"unexpected fetch: {url}")
+
+        base_kwargs = dict(
+            root=tmp_path, store=None, session=_FrOkSession(),
+            staged_dir=Path("data/government_revenue/fms_staged_objects").resolve(),
+            publication_from="2026-01-01", publication_through="2026-08-25",
+        )
+        receipts_path = tmp_path / "data" / "government_revenue" / "fms_collection_receipts.jsonl"
+        observations_path = tmp_path / "data" / "government_revenue" / "fms_observations.jsonl"
+
+        rc1 = live.run_fms_acquisition(observed_at=RECEIPT_AT, **base_kwargs)
+        assert rc1 == 0
+        first_receipts = len(receipts_path.read_text().splitlines())
+        first_observations = len(observations_path.read_text().splitlines())
+        # 14 real staged DSCA articles + 1 certification PDF + 1 FR original.
+        assert first_receipts == 16
+
+        # Second run: SAME bytes, a LATER observed_at (the realistic re-run
+        # shape -- only the wall-clock timestamp changes).
+        rc2 = live.run_fms_acquisition(observed_at="2026-08-27T00:00:00Z", **base_kwargs)
+        assert rc2 == 0
+        second_receipts = len(receipts_path.read_text().splitlines())
+        second_observations = len(observations_path.read_text().splitlines())
+        assert second_receipts == first_receipts == 16  # 16 -> 16, never 16 -> 32
+        assert second_observations == first_observations  # observations plane already no-oped
+
+    def test_m5_empty_valid_only_when_listing_fetch_and_parse_succeeded(self, tmp_path: Path) -> None:
+        """spec §11b.6: ``state_pm_bureau.status`` may be ``ok`` with
+        ``qualifying_articles: 0`` ONLY when the listing fetch+parse
+        succeeded; a fetch failure with zero rows must be ``unavailable``,
+        never ``ok``."""
+        empty_listing_html = b"<html><body>No releases posted this month.</body></html>"
+
+        class _EmptyButOkListingSession:
+            def get(self, url, **kwargs):
+                if "state.gov" in url:
+                    return _HtmlResponse(empty_listing_html)
+                if "federalregister.gov" in url and "documents.json" in url:
+                    return _JsonResponse({
+                        "results": [{
+                            "document_number": "2026-07278",
+                            "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/x/2026-07278.txt",
+                        }],
+                    })
+                if "2026-07278.txt" in url:
+                    return _TextResponse(_read_bytes("fr/2026-07278.txt"))
+                raise AssertionError(f"unexpected fetch: {url}")
+
+        rc = live.run_fms_acquisition(
+            root=tmp_path, store=None, session=_EmptyButOkListingSession(),
+            observed_at=RECEIPT_AT, staged_dir=(FIXTURES / "dsca").resolve(),
+            publication_from="2026-01-01", publication_through="2026-08-25",
+        )
+        assert rc == 0
+        graph = json.loads((tmp_path / "data" / "government_revenue" / "fms_case_graph.json").read_text())
+        state_source = graph["coverage"]["sources"]["state_pm_bureau"]
+        assert state_source["status"] == "ok"
+        assert state_source["qualifying_articles"] == 0
+
+        class _FailingListingSession:
+            def get(self, url, **kwargs):
+                if "state.gov" in url:
+                    raise ConnectionError("simulated State outage")
+                if "federalregister.gov" in url and "documents.json" in url:
+                    return _JsonResponse({
+                        "results": [{
+                            "document_number": "2026-07278",
+                            "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/x/2026-07278.txt",
+                        }],
+                    })
+                if "2026-07278.txt" in url:
+                    return _TextResponse(_read_bytes("fr/2026-07278.txt"))
+                raise AssertionError(f"unexpected fetch: {url}")
+
+        rc2 = live.run_fms_acquisition(
+            root=tmp_path / "second", store=None, session=_FailingListingSession(),
+            observed_at=RECEIPT_AT, staged_dir=(FIXTURES / "dsca").resolve(),
+            publication_from="2026-01-01", publication_through="2026-08-25",
+        )
+        assert rc2 == 0
+        graph2 = json.loads((tmp_path / "second" / "data" / "government_revenue" / "fms_case_graph.json").read_text())
+        state_source2 = graph2["coverage"]["sources"]["state_pm_bureau"]
+        assert state_source2["status"] == "unavailable"
+        assert state_source2["qualifying_articles"] == 0
+
+    def test_m6_correction_with_letter_suffixed_bracket_is_excluded_not_crashed(self, tmp_path: Path) -> None:
+        """spec §11b.9: a correction doc whose OWN bracket fails the numeric
+        original grammar (``26-1C``, ``0M-25`` family) is excluded with a
+        typed reason exactly like an amendment notice -- never an uncaught
+        ``ValueError`` from ``normalize_transmittal`` crashing acquisition."""
+        synthetic_text = (
+            "[Public Notice: 0000]\n"
+            "[Transmittal No. 26-1C]\n"
+            "DEPARTMENT OF STATE\n"
+            "ACTION: Arms sales notice; correction\n\n"
+            "SUMMARY: This corrects a previously published amendment notice.\n"
+        ).encode("utf-8")
+
+        class _LetterSuffixCorrectionSession:
+            def get(self, url, **kwargs):
+                if "federalregister.gov" in url and "documents.json" in url:
+                    return _JsonResponse({
+                        "results": [
+                            {
+                                "document_number": "2026-07278",
+                                "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/x/2026-07278.txt",
+                            },
+                            {
+                                "document_number": "2026-99999",
+                                "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/x/2026-99999.txt",
+                            },
+                        ],
+                    })
+                if "2026-07278.txt" in url:
+                    return _TextResponse(_read_bytes("fr/2026-07278.txt"))
+                if "2026-99999.txt" in url:
+                    return _TextResponse(synthetic_text)
+                if "state.gov" in url:
+                    raise ConnectionError("irrelevant to this test")
+                raise AssertionError(f"unexpected fetch: {url}")
+
+        rc = live.run_fms_acquisition(
+            root=tmp_path, store=None, session=_LetterSuffixCorrectionSession(),
+            observed_at=RECEIPT_AT, staged_dir=(FIXTURES / "dsca").resolve(),
+            publication_from="2026-01-01", publication_through="2026-08-25",
+        )
+        assert rc == 0  # never crashes; denominator satisfied by the real 26-23 original
+        graph = json.loads((tmp_path / "data" / "government_revenue" / "fms_case_graph.json").read_text())
+        assert graph["coverage"]["sources"]["federal_register"]["amendments_excluded"] == 1
+        assert not any(c["transmittal_number"] == "26-1C" for c in graph["cases"])
+
+    def test_m8_state_sweep_hitting_max_pages_cap_with_entries_present_is_typed_failure(self) -> None:
+        """spec §11b.4: reaching the page cap while the last page STILL had
+        entries can never be confirmed complete -- typed failure, never a
+        silent partial-coverage "ok"."""
+        qualifying_html = (
+            '<li class="collection-result">'
+            '<p class="collection-result__date">Foreign Military Sales: Congressional Notification</p>'
+            '<a href="https://www.state.gov/x/still-more/" class="collection-result__link">Still More – Widget</a>'
+            '</li>'
+        ).encode("utf-8")
+
+        class _AlwaysQualifyingSession:
+            def get(self, url, **kwargs):
+                return _HtmlResponse(qualifying_html)
+
+        with pytest.raises(live.FmsFetchRefused):
+            live.sweep_state_qualifying_articles(session=_AlwaysQualifyingSession(), max_pages=2)
+
+    def test_m8_case_outside_the_population_window_is_excluded_from_the_graph(self) -> None:
+        """spec §11b.4: a case whose population clock falls outside
+        [2026-01-01, as_of] is excluded from the graph entirely."""
+        out_of_window_case_key = fms.case_key_for_transmittal("30-2")
+        out_of_window_obs = _make_observation(
+            case_key=out_of_window_case_key, source_surface="state", kind="listing_article",
+            source_url="https://www.state.gov/x/30-2/", content=b"state-out-of-window",
+            fields={
+                "transmittal_number": "30-2", "identity_conflicted": False, "value_conflicted": False,
+                "customer_country": "Testland", "title": "Testland – Old Widget",
+                "official_web_publication_date": "2025-11-01",  # before the 2026-01-01 population start
+                "estimated_notification_value": None, "value_provenance": None,
+                "source_caveat": None, "contractors": [], "contractor_note": None,
+            },
+        )
+        in_window_obs = _dsca_observation("dsca-4394629", "https://www.dsca.mil/x/26-13/")
+        graph = fms_cases.build_fms_case_graph(
+            observations=[out_of_window_obs, in_window_obs],
+            **_base_graph_kwargs(fr_denominator_transmittals=["26-13"]),
+        )
+        case_keys = {c["case_key"] for c in graph["cases"]}
+        assert "fms:transmittal:26-13" in case_keys
+        assert out_of_window_case_key not in case_keys
+
+    def test_m10_freshness_is_worst_of_fr_and_state_status(self, tmp_path: Path) -> None:
+        """spec §11b.7: ``_fms_freshness`` reports the WORST-of the FR and
+        State source statuses (via census freshness.py's ``_STATUS_RANK``),
+        never FR alone -- a State-side ``partial`` used to be invisible."""
+        import shutil
+
+        graph = _full_graph()
+        graph["coverage"]["sources"]["state_pm_bureau"]["status"] = "partial"
+        graph["content_id"] = fms_cases.fms_case_graph_content_id(graph)
+
+        contracts_dir = tmp_path / "contracts" / "government_revenue"
+        contracts_dir.mkdir(parents=True)
+        shutil.copy(SCHEMA_PATH, contracts_dir / "government_fms_case.v1.schema.json")
+        data_dir = tmp_path / "data" / "government_revenue"
+        data_dir.mkdir(parents=True)
+        (data_dir / "fms_case_graph.json").write_text(json.dumps(graph), encoding="utf-8")
+
+        result = metrics._fms_freshness(tmp_path)
+        assert result is not None
+        assert result["status"] == "partial"  # FR alone is "ok" here
+
+    def test_l14_case_key_normalizes_leading_zero_before_minting(self) -> None:
+        assert fms.case_key_for_transmittal("26-013") == fms.case_key_for_transmittal("26-13")
+        assert fms.case_key_for_transmittal("26-013") == "fms:transmittal:26-13"
+
+    def test_l15_mis_keyed_surfaces_produce_conflicted_case_identity(self) -> None:
+        """Case-graph-level proof (spec §11b.13): two surfaces disagreeing
+        materially on ``customer_country`` under one transmittal must yield
+        ``case_identity_state: conflicted`` in the BUILT graph, not merely
+        in the isolated ``check_mis_key`` unit."""
+        case_key = fms.case_key_for_transmittal("31-7")
+        state_obs = _make_observation(
+            case_key=case_key, source_surface="state", kind="listing_article",
+            source_url="https://www.state.gov/x/31-7/", content=b"state-mk",
+            fields={
+                "transmittal_number": "31-7", "identity_conflicted": False, "value_conflicted": False,
+                "customer_country": "Norway", "title": "Norway – Widget C",
+                "official_web_publication_date": "2026-03-01",
+                "estimated_notification_value": None, "value_provenance": None,
+                "source_caveat": None, "contractors": [], "contractor_note": None,
+            },
+        )
+        dsca_obs = _make_observation(
+            case_key=case_key, source_surface="dsca", kind="listing_article",
+            source_url="https://www.dsca.mil/x/31-7/", content=b"dsca-mk",
+            fields={
+                "transmittal_number": "31-7", "identity_conflicted": False,
+                "customer_country": "Denmark", "title": "Denmark – Widget C",
+                "official_notification_date": "2026-03-03", "official_web_publication_date": None,
+                "estimated_notification_value": None, "value_provenance": None,
+                "source_caveat": None, "contractors": [], "contractor_note": None,
+            },
+        )
+        filler = _fr_observation("2026-07278", "https://www.federalregister.gov/d/2026-07278")
+        graph = fms_cases.build_fms_case_graph(
+            observations=[state_obs, dsca_obs, filler],
+            **_base_graph_kwargs(fr_denominator_transmittals=["26-23"]),
+        )
+        case = _case(graph, case_key)
+        assert case["case_identity_state"] == "conflicted"
+
+    def test_l16_state_plus_dsca_without_fr_is_multi_surface(self) -> None:
+        case_key = fms.case_key_for_transmittal("30-1")
+        dsca_obs = _make_observation(
+            case_key=case_key, source_surface="dsca", kind="listing_article",
+            source_url="https://www.dsca.mil/x/30-1/", content=b"dsca-multi",
+            fields={
+                "transmittal_number": "30-1", "identity_conflicted": False,
+                "customer_country": "Testland", "title": "Testland – Widget A",
+                "official_notification_date": "2026-02-01", "official_web_publication_date": None,
+                "estimated_notification_value": None, "value_provenance": None,
+                "source_caveat": None, "contractors": [], "contractor_note": None,
+            },
+        )
+        state_obs = _make_observation(
+            case_key=case_key, source_surface="state", kind="listing_article",
+            source_url="https://www.state.gov/x/30-1/", content=b"state-multi",
+            fields={
+                "transmittal_number": "30-1", "identity_conflicted": False, "value_conflicted": False,
+                "customer_country": "Testland", "title": "Testland – Widget A",
+                "official_web_publication_date": "2026-02-05",
+                "estimated_notification_value": None, "value_provenance": None,
+                "source_caveat": None, "contractors": [], "contractor_note": None,
+            },
+        )
+        filler = _fr_observation("2026-07278", "https://www.federalregister.gov/d/2026-07278")
+        graph = fms_cases.build_fms_case_graph(
+            observations=[dsca_obs, state_obs, filler],
+            **_base_graph_kwargs(fr_denominator_transmittals=["26-23"]),
+        )
+        case = _case(graph, case_key)
+        assert case["source_coverage"]["classification"] == "multi_surface"
+        assert set(case["source_coverage"]["surfaces"]) == {"state", "dsca"}
+
+    def test_l16_state_dsca_and_fr_all_three_is_multi_surface(self) -> None:
+        case_key = fms.case_key_for_transmittal("26-23")
+        fr_obs = _fr_observation("2026-07278", "https://www.federalregister.gov/d/2026-07278")
+        dsca_obs = _make_observation(
+            case_key=case_key, source_surface="dsca", kind="listing_article",
+            source_url="https://www.dsca.mil/x/26-23/", content=b"dsca-triple",
+            fields={
+                "transmittal_number": "26-23", "identity_conflicted": False,
+                "customer_country": "Government of Jordan", "title": "Jordan – Widget B",
+                "official_notification_date": "2026-02-20", "official_web_publication_date": None,
+                "estimated_notification_value": None, "value_provenance": None,
+                "source_caveat": None, "contractors": [], "contractor_note": None,
+            },
+        )
+        state_obs = _make_observation(
+            case_key=case_key, source_surface="state", kind="listing_article",
+            source_url="https://www.state.gov/x/26-23/", content=b"state-triple",
+            fields={
+                "transmittal_number": "26-23", "identity_conflicted": False, "value_conflicted": False,
+                "customer_country": "Government of Jordan", "title": "Jordan – Widget B",
+                "official_web_publication_date": "2026-02-22",
+                "estimated_notification_value": None, "value_provenance": None,
+                "source_caveat": None, "contractors": [], "contractor_note": None,
+            },
+        )
+        graph = fms_cases.build_fms_case_graph(
+            observations=[fr_obs, dsca_obs, state_obs],
+            **_base_graph_kwargs(fr_denominator_transmittals=["26-23"]),
+        )
+        case = _case(graph, case_key)
+        assert case["source_coverage"]["classification"] == "multi_surface"
+        assert set(case["source_coverage"]["surfaces"]) == {"state", "dsca", "federal_register"}
+
+    def test_l17_graph_known_at_is_the_max_observation_known_at(self) -> None:
+        case_key = fms.case_key_for_transmittal("26-13")
+        earlier = _make_observation(
+            case_key=case_key, source_surface="dsca", kind="listing_article",
+            source_url="https://www.dsca.mil/x/26-13/", content=b"dsca-known-at-v1",
+            known_at="2026-01-30T00:00:00Z",
+            fields={
+                "transmittal_number": "26-13", "identity_conflicted": False,
+                "customer_country": "Kingdom of Saudi Arabia", "title": "Saudi Arabia – Widget",
+                "official_notification_date": "2026-01-30", "official_web_publication_date": None,
+                "estimated_notification_value": None, "value_provenance": None,
+                "source_caveat": None, "contractors": [], "contractor_note": None,
+            },
+        )
+        later = _make_observation(
+            case_key=case_key, source_surface="dsca", kind="certification_pdf",
+            source_url="https://www.dsca.mil/x/26-13-cert/", content=b"dsca-known-at-v2",
+            known_at="2026-08-20T00:00:00Z", fields={"transmittal_number": "26-13"},
+        )
+        graph = fms_cases.build_fms_case_graph(
+            observations=[earlier, later], **_base_graph_kwargs(fr_denominator_transmittals=["26-13"]),
+        )
+        assert graph["known_at"] == "2026-08-20T00:00:00+00:00"

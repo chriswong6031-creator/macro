@@ -81,12 +81,17 @@
             },
             "state_pm_bureau": {
               "type": "object", "additionalProperties": false,
-              "required": ["role", "listing_pages", "qualifying_articles", "status"],
+              "required": [
+                "role", "listing_pages", "qualifying_articles", "status",
+                "articles_succeeded", "articles_failed"
+              ],
               "properties": {
                 "role": {"const": "current_presentation"},
                 "listing_pages": {"type": "integer", "minimum": 0},
                 "qualifying_articles": {"type": "integer", "minimum": 0},
-                "status": {"$ref": "#/$defs/railStatus"}
+                "status": {"$ref": "#/$defs/railStatus"},
+                "articles_succeeded": {"type": "integer", "minimum": 0},
+                "articles_failed": {"type": "integer", "minimum": 0}
               }
             },
             "dsca_press": {
@@ -227,7 +232,7 @@
             "classification": {
               "enum": [
                 "dsca_and_fr", "state_and_fr", "fr_only",
-                "state_only", "dsca_only", "state_fallback"
+                "state_only", "dsca_only", "state_fallback", "multi_surface"
               ]
             },
             "surfaces": {

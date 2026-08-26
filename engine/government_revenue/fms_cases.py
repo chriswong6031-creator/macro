@@ -35,6 +35,11 @@ FMS_CASE_GRAPH_CONTRACT = "government_fms_case.v1"
 FMS_CASE_GRAPH_SCHEMA_VERSION = "1.0.0"
 FMS_CASE_GRAPH_CONTENT_PREFIX = "grfms1-"
 
+# D6-B1 population law (spec §2/§11b.4): the v1 population window's fixed
+# start date. The through-bound is always the caller's own "as_of" (moving
+# forward with every run) -- never hardcoded here.
+FMS_POPULATION_WINDOW_START = "2026-01-01"
+
 AUTHORITY: dict[str, Any] = {
     "tier": "display",
     "context_only": True,
@@ -134,22 +139,30 @@ def _stage_for_case(observations: Sequence[Mapping[str, Any]]) -> str:
 
 
 def _classify_surfaces(surfaces: set[str], *, is_fallback: bool) -> str:
+    """Classify a case's observed surfaces into exactly one of the frozen classes.
+
+    Spec §11b.8: classification precedence must never DROP an observed
+    surface silently. The six named classes below each describe an EXACT
+    surface set; any combination not exactly one of them (e.g. {state,
+    dsca} with no FR join, or all three surfaces at once) is
+    ``multi_surface`` -- ``surfaces[]`` on the case remains the exhaustive
+    truth regardless of which label lands here.
+    """
     if is_fallback:
         return "state_fallback"
-    has_state, has_dsca, has_fr = (
-        "state" in surfaces, "dsca" in surfaces, "federal_register" in surfaces,
-    )
-    if has_dsca and has_fr:
+    if surfaces == {"dsca", "federal_register"}:
         return "dsca_and_fr"
-    if has_state and has_fr:
+    if surfaces == {"state", "federal_register"}:
         return "state_and_fr"
-    if has_fr and not has_state and not has_dsca:
+    if surfaces == {"federal_register"}:
         return "fr_only"
-    if has_state and not has_fr:
+    if surfaces == {"state"}:
         return "state_only"
-    if has_dsca and not has_fr:
+    if surfaces == {"dsca"}:
         return "dsca_only"
-    raise ValueError(f"cannot classify FMS source coverage for surfaces={surfaces!r}")
+    if not surfaces:
+        raise ValueError(f"cannot classify FMS source coverage for surfaces={surfaces!r}")
+    return "multi_surface"
 
 
 def _build_one_case(case_key: str, observations: Sequence[Mapping[str, Any]]) -> dict[str, Any] | None:
@@ -260,6 +273,37 @@ def _build_one_case(case_key: str, observations: Sequence[Mapping[str, Any]]) ->
             official_web_publication_date = dsca_fields["official_web_publication_date"]
             web_pub_provenance = "dsca_article_date"
 
+    # Population clock (spec §2/§11b.4): FR "Date Report Delivered to
+    # Congress" when FR evidence exists, else the DSCA body dateline
+    # (DSCA-era), else the State article header date. This is DELIBERATELY
+    # computed with its own precedence (FR before DSCA) rather than reused
+    # from `official_notification_date` above, whose precedence favors DSCA
+    # over FR for the published clock field -- the population-window
+    # membership test and the displayed clock are two different questions
+    # answering to two different frozen laws. Never exposed on the public
+    # case object; the caller filters on it and discards it.
+    #
+    # Walk backward for the most-recent row that actually CARRIES the field
+    # rather than trusting the literal last row -- a case's DSCA surface can
+    # carry both a ``listing_article`` (has the dateline) and a
+    # ``certification_pdf`` (fields limited to ``transmittal_number`` only)
+    # at the same ``known_at``; the certification PDF must never blank out
+    # an otherwise-known population clock.
+    def _latest_with_field(rows: Sequence[Mapping[str, Any]], field: str) -> str | None:
+        for row in reversed(rows):
+            value = row["fields"].get(field)
+            if value:
+                return value
+        return None
+
+    population_clock = None
+    if latest_fr is not None:
+        population_clock = latest_fr.get("official_notification_date")
+    if population_clock is None and dsca_rows:
+        population_clock = _latest_with_field(dsca_rows, "official_notification_date")
+    if population_clock is None and state_rows:
+        population_clock = _latest_with_field(state_rows, "official_web_publication_date")
+
     first_observed_at = min(row["known_at"] for row in observations)
 
     case_state = "current"
@@ -274,6 +318,7 @@ def _build_one_case(case_key: str, observations: Sequence[Mapping[str, Any]]) ->
     identity_basis = "url_fallback" if is_fallback else "transmittal"
 
     return {
+        "_population_clock": population_clock,
         "case_key": case_key,
         "transmittal_number": transmittal_number,
         "identity_basis": identity_basis,
@@ -326,6 +371,8 @@ def build_fms_case_graph(
     as_of: str,
     scope_delivered_from: str,
     scope_delivered_through: str,
+    fr_publication_from: str,
+    fr_publication_through: str,
     fr_denominator_transmittals: Iterable[str],
     fr_docs_scanned: int,
     fr_amendments_excluded: int,
@@ -334,6 +381,8 @@ def build_fms_case_graph(
     state_listing_pages: int,
     state_qualifying_articles: int,
     state_status: str,
+    state_articles_succeeded: int = 0,
+    state_articles_failed: int = 0,
     dsca_articles_staged: int,
     dsca_status: str,
     history_disclosure: str,
@@ -347,6 +396,15 @@ def build_fms_case_graph(
     transmittal has no built case — spec §7's publication gate. A State
     fetch failure alone (``state_status`` != ``ok``) does NOT refuse: FR/DSCA
     truth still publishes with the State status disclosed (B6).
+
+    ``scope_delivered_from``/``scope_delivered_through`` are the D6-B1
+    POPULATION window (spec §11b.4) — never the FR publication-query bounds,
+    which are their own separate ``fr_publication_from``/
+    ``fr_publication_through`` and land only in
+    ``coverage.sources.federal_register.publication_window``. A built case
+    whose population clock falls outside the population window is excluded
+    from the graph entirely (§2/§11b.4): "nothing outside the window is
+    built in v1".
     """
     denominator = sorted({str(t) for t in fr_denominator_transmittals})
 
@@ -361,6 +419,15 @@ def build_fms_case_graph(
             cases.append(case)
     cases.sort(key=lambda c: c["case_key"])
 
+    def _in_population_window(clock_value: str | None) -> bool:
+        # A case with no population clock at all cannot be confirmed
+        # in-scope -- fails closed (excluded) rather than assumed current.
+        if clock_value is None:
+            return False
+        return scope_delivered_from <= clock_value <= scope_delivered_through
+
+    cases = [c for c in cases if _in_population_window(c.pop("_population_clock"))]
+
     _apply_fallback_recovery_collisions(cases)
 
     built_transmittals = {c["transmittal_number"] for c in cases if c["transmittal_number"]}
@@ -372,9 +439,13 @@ def build_fms_case_graph(
             f"fr_status={fr_status!r} denominator={len(denominator)} unbuilt={denominator_unbuilt!r}"
         )
 
+    # web_only: zero FEDERAL_REGISTER surface observed, derived from the
+    # exhaustive surfaces[] array rather than the classification label
+    # (spec §11b.8) -- a label alone would silently miss `multi_surface`
+    # cases that are {state, dsca} with no FR join.
     web_only_cases = sum(
         1 for c in cases
-        if c["source_coverage"]["classification"] in {"state_only", "dsca_only", "state_fallback"}
+        if "federal_register" not in c["source_coverage"]["surfaces"]
     )
     web_absent_cases = sorted(
         c["transmittal_number"] for c in cases
@@ -386,7 +457,7 @@ def build_fms_case_graph(
         "sources": {
             "federal_register": {
                 "role": "denominator_and_recovery",
-                "publication_window": [scope_delivered_from, scope_delivered_through],
+                "publication_window": [fr_publication_from, fr_publication_through],
                 "docs_scanned": fr_docs_scanned,
                 "originals": len(denominator),
                 "amendments_excluded": fr_amendments_excluded,
@@ -398,6 +469,8 @@ def build_fms_case_graph(
                 "listing_pages": state_listing_pages,
                 "qualifying_articles": state_qualifying_articles,
                 "status": state_status,
+                "articles_succeeded": state_articles_succeeded,
+                "articles_failed": state_articles_failed,
             },
             "dsca_press": {
                 "role": "historical_observations_bounded",
@@ -418,6 +491,17 @@ def build_fms_case_graph(
             "web_absent_cases": web_absent_cases,
         },
     }
+
+    # Graph known_at (spec §11b.11): the latest observation known_at among
+    # the observations actually published in this graph -- never null in a
+    # production build that has any observation at all. A caller-supplied
+    # ``known_at`` is honored when given (e.g. a test pinning an exact
+    # value); otherwise it is derived here so no caller can silently leave
+    # the graph-level clock null by forgetting to pass one through.
+    if known_at is None:
+        published_known_ats = [obs["known_at"] for case in cases for obs in case["observations"]]
+        if published_known_ats:
+            known_at = max(published_known_ats)
 
     graph: dict[str, Any] = {
         "contract": FMS_CASE_GRAPH_CONTRACT,

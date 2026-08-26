@@ -358,7 +358,16 @@ def fetch_state_article(url: str, *, session: Any = None) -> FetchedResource:
 def sweep_state_qualifying_articles(
     *, session: Any = None, max_pages: int = 20,
 ) -> tuple[list[dict[str, Any]], int]:
-    """Paginate the State listing; return (qualifying entries, pages fetched)."""
+    """Paginate the State listing; return (qualifying entries, pages fetched).
+
+    An empty page is the ONLY lawful "the listing is exhausted" signal
+    (spec §11b.4/§11b.6: a successful listing fetch+parse that finds zero
+    qualifying entries on its final page is the ``empty_valid`` state, never
+    a failure). Reaching ``max_pages`` while the last fetched page STILL had
+    entries means coverage cannot be confirmed complete -- this is a typed
+    failure (``FmsFetchRefused``), never a silent "ok" that quietly drops
+    every page beyond the cap.
+    """
     entries: list[dict[str, Any]] = []
     pages_fetched = 0
     for page in range(1, max_pages + 1):
@@ -366,9 +375,12 @@ def sweep_state_qualifying_articles(
         pages_fetched += 1
         page_entries = fms.parse_state_listing(fetched.content.decode("utf-8", errors="replace"))
         if not page_entries:
-            break
+            return entries, pages_fetched
         entries.extend(entry for entry in page_entries if entry["is_qualifying"])
-    return entries, pages_fetched
+    raise FmsFetchRefused(
+        f"FMS State listing sweep reached the {max_pages}-page cap while page {max_pages} "
+        "still had entries -- coverage cannot be confirmed complete"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -452,6 +464,25 @@ def _write_jsonl(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:
 # ---------------------------------------------------------------------------
 
 
+def _append_new_receipt(
+    new_receipts: list[dict[str, Any]],
+    existing_receipts: Sequence[Mapping[str, Any]],
+    receipt: Mapping[str, Any],
+) -> None:
+    """Append ``receipt`` only if it is not a same-URL-same-bytes duplicate.
+
+    Mirrors ``dod_budget_live.acquire_official_document``'s
+    ``receipt_is_duplicate`` discipline (spec §11b.3): the receipt's own
+    identity folds ``observed_at`` (always fresh per run), so an unguarded
+    append would double the receipts plane on every re-run regardless of
+    whether the underlying bytes changed. Consulting the timestamp-free
+    predicate BEFORE appending is what makes a re-run over unchanged bytes a
+    genuine no-op on the receipts file.
+    """
+    if not fms.receipt_is_duplicate(existing_receipts, receipt):
+        new_receipts.append(dict(receipt))
+
+
 def run_fms_acquisition(
     *,
     root: Path,
@@ -469,8 +500,9 @@ def run_fms_acquisition(
     """
     if observed_at is None:
         observed_at = datetime.now(timezone.utc)
+    as_of = date.today().isoformat()
     if publication_through is None:
-        publication_through = date.today().isoformat()
+        publication_through = as_of
     if staged_dir is None:
         staged_dir = root / "data" / "government_revenue" / _STAGED_OBJECTS_DIRNAME
 
@@ -497,6 +529,8 @@ def run_fms_acquisition(
     state_status = "unavailable"
     state_listing_pages = 0
     state_qualifying_articles = 0
+    state_articles_succeeded = 0
+    state_articles_failed = 0
     dsca_status = "unavailable"
     dsca_articles_staged = 0
 
@@ -511,7 +545,7 @@ def run_fms_acquisition(
             if fields["transmittal_number"] is None:
                 continue
             case_key = fms.case_key_for_transmittal(fields["transmittal_number"])
-            new_receipts.append(receipt)
+            _append_new_receipt(new_receipts, existing_receipts, receipt)
             new_observations.append(fms.build_observation(
                 case_key=case_key, source_surface="dsca", kind="listing_article",
                 receipt=receipt, known_at=observed_at, version=1, fields=fields,
@@ -527,7 +561,7 @@ def run_fms_acquisition(
                 *cert_manifest["transmittal"].split("-", 1)
             )
             cert_case_key = fms.case_key_for_transmittal(cert_transmittal)
-            new_receipts.append(cert_receipt)
+            _append_new_receipt(new_receipts, existing_receipts, cert_receipt)
             new_observations.append(fms.build_observation(
                 case_key=cert_case_key, source_surface="dsca", kind="certification_pdf",
                 receipt=cert_receipt, known_at=observed_at, version=1,
@@ -543,28 +577,43 @@ def run_fms_acquisition(
         qualifying, state_listing_pages = sweep_state_qualifying_articles(session=session)
         state_qualifying_articles = len(qualifying)
         for entry in qualifying:
-            fetched = fetch_state_article(entry["source_url"], session=session)
-            fields = fms.parse_state_article(
-                fetched.content.decode("utf-8", errors="replace"), source_url=entry["source_url"],
-            )
-            case_key = (
-                fms.case_key_for_transmittal(fields["transmittal_number"])
-                if fields["transmittal_number"] and not fields["identity_conflicted"]
-                else fms.case_key_fallback(entry["source_url"])
-            )
-            receipt = fms.build_receipt(
-                source_url=fetched.source_url, final_url=fetched.final_url, content=fetched.content,
-                publisher=FR_STATE_PUBLISHER, transport="cli", content_type=fetched.content_type,
-                http_status=fetched.http_status, observed_at=observed_at,
-                extractor_version=FMS_STATE_EXTRACTOR_VERSION, parser_version=FMS_STATE_PARSER_VERSION,
-                r2_object_key=None,
-            )
-            new_receipts.append(receipt)
+            # Partial-failure law (spec §11b.5): one bad article fetch never
+            # aborts the sweep -- record it and keep acquiring the rest. Only
+            # a TOTAL listing failure (the sweep call itself raising, caught
+            # by the outer except below) is "unavailable".
+            try:
+                fetched = fetch_state_article(entry["source_url"], session=session)
+                fields = fms.parse_state_article(
+                    fetched.content.decode("utf-8", errors="replace"), source_url=entry["source_url"],
+                )
+                case_key = (
+                    fms.case_key_for_transmittal(fields["transmittal_number"])
+                    if fields["transmittal_number"] and not fields["identity_conflicted"]
+                    else fms.case_key_fallback(entry["source_url"])
+                )
+                receipt = fms.build_receipt(
+                    source_url=fetched.source_url, final_url=fetched.final_url, content=fetched.content,
+                    publisher=FR_STATE_PUBLISHER, transport="cli", content_type=fetched.content_type,
+                    http_status=fetched.http_status, observed_at=observed_at,
+                    extractor_version=FMS_STATE_EXTRACTOR_VERSION, parser_version=FMS_STATE_PARSER_VERSION,
+                    r2_object_key=None,
+                )
+            except FmsFetchRefused as exc:
+                state_articles_failed += 1
+                print(
+                    f"::warning title=fms-state-article-refused::{entry['source_url']}: {exc}",
+                    flush=True,
+                )
+                continue
+            state_articles_succeeded += 1
+            _append_new_receipt(new_receipts, existing_receipts, receipt)
             new_observations.append(fms.build_observation(
                 case_key=case_key, source_surface="state", kind="listing_article",
                 receipt=receipt, known_at=observed_at, version=1, fields=fields,
             ))
-        state_status = "ok"
+        # listing ok + >=1 article failed -> partial; listing ok + zero
+        # failures (including the empty_valid zero-qualifying case) -> ok.
+        state_status = "ok" if state_articles_failed == 0 else "partial"
     except FmsFetchRefused as exc:
         print(f"::warning title=fms-state-source-unavailable::{exc}", flush=True)
         state_status = "unavailable"
@@ -591,13 +640,26 @@ def run_fms_acquisition(
                 fr_amendments_excluded += 1
                 continue
             if classification["classification"] == "correction":
+                bracket = classification["bracket"]
+                if not fms._ORIGINAL_BRACKET_RE.fullmatch(bracket):
+                    # A correction whose OWN bracket fails the numeric
+                    # original grammar (26-1C, 0M-25 family, spec §11b.9) can
+                    # never resolve a target transmittal to correct -- it is
+                    # excluded with a typed reason exactly like an amendment
+                    # notice, never a crash on the malformed bracket.
+                    fr_amendments_excluded += 1
+                    print(
+                        f"::warning title=fms-fr-correction-bracket-non-numeric::correction "
+                        f"bracket {bracket!r} is not a numeric original transmittal; excluded",
+                        flush=True,
+                    )
+                    continue
                 fr_corrections += 1
                 # A correction's own bracket IS the transmittal it corrects.
-                bracket = classification["bracket"]
                 year, seq = bracket.split("-", 1)
                 target_transmittal = fms.normalize_transmittal(year, seq)
                 case_key = fms.case_key_for_transmittal(target_transmittal)
-                new_receipts.append(receipt)
+                _append_new_receipt(new_receipts, existing_receipts, receipt)
                 new_observations.append(fms.build_observation(
                     case_key=case_key, source_surface="federal_register", kind="fr_correction",
                     receipt=receipt, known_at=observed_at, version=1,
@@ -607,7 +669,7 @@ def run_fms_acquisition(
             fields = fms.parse_fr_document(text, source_url=fetched.source_url)
             fr_denominator.append(fields["transmittal_number"])
             case_key = fms.case_key_for_transmittal(fields["transmittal_number"])
-            new_receipts.append(receipt)
+            _append_new_receipt(new_receipts, existing_receipts, receipt)
             new_observations.append(fms.build_observation(
                 case_key=case_key, source_surface="federal_register", kind="fr_raw_text",
                 receipt=receipt, known_at=observed_at, version=1, fields=fields,
@@ -634,9 +696,15 @@ def run_fms_acquisition(
     try:
         graph = fms_cases.build_fms_case_graph(
             observations=merged_observations,
-            as_of=date.today().isoformat(),
-            scope_delivered_from=publication_from,
-            scope_delivered_through=publication_through,
+            as_of=as_of,
+            # scope is the POPULATION window (spec §11b.4): a fixed v1 start
+            # date through today, NEVER the FR publication-query bounds
+            # below -- those describe only what the FR API sweep asked for
+            # and live exclusively in coverage.sources.federal_register.
+            scope_delivered_from=fms_cases.FMS_POPULATION_WINDOW_START,
+            scope_delivered_through=as_of,
+            fr_publication_from=publication_from,
+            fr_publication_through=publication_through,
             fr_denominator_transmittals=fr_denominator,
             fr_docs_scanned=fr_docs_scanned,
             fr_amendments_excluded=fr_amendments_excluded,
@@ -645,6 +713,8 @@ def run_fms_acquisition(
             state_listing_pages=state_listing_pages,
             state_qualifying_articles=state_qualifying_articles,
             state_status=state_status,
+            state_articles_succeeded=state_articles_succeeded,
+            state_articles_failed=state_articles_failed,
             dsca_articles_staged=dsca_articles_staged,
             dsca_status=dsca_status,
             history_disclosure=(

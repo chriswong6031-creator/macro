@@ -33,6 +33,7 @@ from engine.government_revenue.fms_cases import (
     FMS_CASE_GRAPH_CONTRACT as _FMS_CASE_GRAPH_CONTRACT,
     fms_case_graph_content_id as _fms_case_graph_content_id,
 )
+from engine.government_revenue.freshness import _STATUS_RANK
 from engine.government_revenue.entity_resolution import (
     attach_recipient_resolutions,
     build_recipient_resolution_coverage,
@@ -1681,14 +1682,19 @@ def _fms_freshness(repo: Path) -> dict[str, Any] | None:
         }
     coverage = graph.get("coverage") if isinstance(graph.get("coverage"), dict) else {}
     sources = coverage.get("sources") if isinstance(coverage.get("sources"), dict) else {}
-    # The FR sweep is the coverage gate's own denominator/recovery source
-    # (spec §7): its status is the most honest single "is this rail current"
-    # signal, exactly the way budget's own request-status column is reused
-    # for `_budget_freshness` above.
+    # Worst-of FR and State source status (spec §11b.7), mapped into the
+    # freshness vocabulary via the same `_STATUS_RANK` ordering
+    # `engine.government_revenue.freshness.effective_freshness` uses for its
+    # own overall determination -- FR alone used to stand in for the whole
+    # rail's health, silently hiding a State-side `partial`/`unavailable`
+    # that FR/DSCA truth would otherwise mask. No age/staleness logic here;
+    # that stays out of v1 pending Sol's cadence (spec §11b.7).
     fr_status = str((sources.get("federal_register") or {}).get("status") or "ok")
+    state_status = str((sources.get("state_pm_bureau") or {}).get("status") or "ok")
+    worst_status = max((fr_status, state_status), key=lambda status: _STATUS_RANK.get(status, 3))
     cases = graph.get("cases")
     return {
-        "status": fr_status,
+        "status": worst_status,
         "failure_state": None,
         "observed_at": graph.get("known_at") or graph.get("generated_at"),
         "records_visible": len(cases) if isinstance(cases, list) else 0,

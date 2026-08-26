@@ -177,10 +177,20 @@ def classify_fr_bracket(bracket: str) -> str:
 
 
 def case_key_for_transmittal(transmittal: str) -> str:
+    """Mint the case key for one transmittal, normalizing before minting.
+
+    Defense-in-depth (spec §11b.10): every current caller already passes a
+    value that has been through :func:`normalize_transmittal` (which strips
+    leading zeros), but this function re-normalizes its own input so it can
+    never mint two distinct case keys for the same transmittal (``26-013``
+    and ``26-13``) regardless of what a future or indirect caller passes.
+    """
     text = _text(transmittal, label="transmittal number")
-    if not re.fullmatch(r"\d{2}-\d{1,3}", text):
+    match = re.fullmatch(r"(\d{2})-(\d{1,3})", text)
+    if not match:
         raise ValueError(f"invalid normalized FMS transmittal: {transmittal!r}")
-    return f"fms:transmittal:{text}"
+    year, sequence = match.groups()
+    return f"fms:transmittal:{normalize_transmittal(year, sequence)}"
 
 
 def canonical_url_path(url: str) -> str:

@@ -89,6 +89,16 @@ def test_fms_tab_and_mode_wiring_present_in_the_shell() -> None:
     assert "fms_case" in TEMPLATE
 
 
+def _assert_u5_table_present_verbatim(haystack: str) -> None:
+    """The real verbatim-presence check, factored out so the guard-the-guard
+    test below can run it (and require it to fail) against mutated content
+    instead of merely observing that Python string removal did what it did
+    (spec §11b.13 -- the tautological U5-mutation test)."""
+    for en, zh in U5_TABLE:
+        assert en in haystack, f"missing frozen EN string: {en!r}"
+        assert zh in haystack, f"missing frozen ZH string: {zh!r}"
+
+
 def test_u5_frozen_bilingual_table_present_verbatim() -> None:
     """Every U5 EN/ZH pair (spec §9.3) is present verbatim somewhere in the mode.
 
@@ -96,10 +106,11 @@ def test_u5_frozen_bilingual_table_present_verbatim() -> None:
     (``createGovernmentRevenueFms``); only the tab label is required to live
     in the byte-fenced HTML template (spec §9.1).
     """
+    # Pin the canonical string count first -- a silently shrunk table would
+    # otherwise still "pass" the loop below trivially (spec §11b.13).
+    assert len(U5_TABLE) == 8
     haystack = TEMPLATE + DOSSIERS_JS
-    for en, zh in U5_TABLE:
-        assert en in haystack, f"missing frozen EN string: {en!r}"
-        assert zh in haystack, f"missing frozen ZH string: {zh!r}"
+    _assert_u5_table_present_verbatim(haystack)
 
 
 def test_u5_vocabulary_avoids_house_banned_words() -> None:
@@ -129,12 +140,19 @@ def test_mutating_the_frozen_negative_fails_the_verbatim_check(verbatim: str) ->
     from ever reading that as a signed sale or a funded figure. If either
     sentence silently regressed, this must fail loudly here rather than at
     the hostile-canary stage.
+
+    Runs the REAL verbatim-presence check (``_assert_u5_table_present_verbatim``)
+    against the mutated haystack and requires it to raise. The prior version of
+    this test only observed that ``str.replace`` had, in fact, replaced a
+    substring -- true by construction and independent of whether the actual
+    check function would ever notice (spec §11b.13).
     """
     assert verbatim in DOSSIERS_JS, f"test is stale -- frozen string no longer present: {verbatim!r}"
     corrupted = verbatim[:-1]  # drop the closing character -- no longer verbatim
     mutated_js = DOSSIERS_JS.replace(verbatim, corrupted)
-    haystack = TEMPLATE + mutated_js
-    assert verbatim not in haystack, "the verbatim check must fail once the frozen negative is mutated"
+    mutated_haystack = TEMPLATE + mutated_js
+    with pytest.raises(AssertionError):
+        _assert_u5_table_present_verbatim(mutated_haystack)
 
 
 # ---------------------------------------------------------------------------
@@ -143,7 +161,17 @@ def test_mutating_the_frozen_negative_fails_the_verbatim_check(verbatim: str) ->
 
 
 def test_generated_html_stays_inside_the_raw_edge_budget() -> None:
-    assert SITE_PATH.stat().st_size <= RAW_HTML_BUDGET_BYTES
+    """The baked page fence, measured against a FRESH render.
+
+    The committed ``site/government_revenue.html`` predates this packet's
+    FMS work entirely (it is rendered exclusively by the live-render lane --
+    B1/out of scope here), so checking its byte size measures nothing about
+    this branch's own impact on the fence (spec §11b.12). Re-point the
+    measurement at the same render path ``test_fms_shell_delta_stays_inside_
+    its_own_byte_budget`` below already uses for its own "with FMS" render.
+    """
+    rendered = _render(TEMPLATE).encode("utf-8")
+    assert len(rendered) <= RAW_HTML_BUDGET_BYTES
 
 
 def _strip_fms_shell(template_text: str) -> str:
@@ -237,6 +265,26 @@ def test_fms_case_key_validation_returns_422_not_500() -> None:
     # Anonymous still 401/403s first -- the router-wide dependency runs before
     # the path validator ever executes (spec §8: "no new auth").
     assert response.status_code in (401, 403)
+
+
+def _authenticated_client() -> TestClient:
+    """The house authenticated-client idiom (census: ``tests/test_capital_
+    structure_api.py``'s ``client`` fixture) -- override the router's own
+    ``require_site_full_user`` dependency so a request actually reaches the
+    route body instead of dying at the anonymous 401/403 boundary."""
+    app = FastAPI()
+    app.include_router(api.router)
+    app.dependency_overrides[api.require_site_full_user] = lambda: {"id": "paid-user"}
+    return TestClient(app)
+
+
+def test_fms_case_key_validation_returns_422_when_authenticated() -> None:
+    """spec §11b.13: the 422 malformed-case-key contract must actually be
+    exercised, not merely inferred from the anonymous 401 that always fires
+    first. ``fms_case`` validates the path param (line ~2923) BEFORE
+    touching any data file, so this needs no fixture case graph on disk."""
+    response = _authenticated_client().get("/api/government-revenue/fms-case/not-a-valid-key")
+    assert response.status_code == 422
 
 
 def test_fms_site_twin_is_not_in_the_public_allowlist() -> None:
