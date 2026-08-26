@@ -451,6 +451,23 @@ def _iso(value: Any) -> str | None:
     text = str(value).strip()
     if not text or text.lower() in {"none", "nan", "nat"}:
         return None
+    # TuShare's ZERO SENTINEL for an unpublished date.  `stock_basic` returns an
+    # empty string, already covered above, but `bak_basic` returns "0" -- which
+    # reached this function as a hard SpineError the first time pit_universe ever
+    # ran against the real vendor, killing the whole unit over one descriptive
+    # field on an otherwise valid A-share row.
+    #
+    # This is fail-CLOSED, not an imputation.  A null date is an EXPECTED state
+    # the callers already model: a row whose list_date is null "remains in the
+    # master but cannot enter a historical eligible universe" (see the
+    # effective_from branch in the stock_basic normaliser).  Nulling the sentinel
+    # therefore narrows eligibility; inventing a date would have widened it.
+    #
+    # An all-zero run is the only safe spelling of this test: every real date has
+    # a non-zero digit in its year, so this can never swallow one.  A malformed
+    # date that is merely wrong ("202401", "0000-00-00") still raises below.
+    if set(text) == {"0"}:
+        return None
     return _parse_date(text).isoformat()
 
 
