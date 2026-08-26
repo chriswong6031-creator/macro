@@ -3685,8 +3685,17 @@
        SSE event and again inside `done`'s echo, and finalizeDone() re-feeds that
        echo through this same function). "rev >= last applied" alone would
        re-apply and repaint on the second copy; a strict duplicate must be a
-       no-op instead — never a second strip transition for one revision. */
-    if (ctxState.lastReceipt && rev === ctxState.lastAppliedRevision) return;
+       no-op instead — never a second strip transition for one revision.
+       A duplicate is the SAME LOGICAL RESOLUTION re-transported, so it must
+       match on request_id as well: the chart context (and so the revision)
+       legitimately stays constant across many asks, and two different
+       requests at one revision resolve differently the moment the user names
+       a symbol in the prompt (explicit INOD at active-AAOI revision 1 —
+       production 2026-08-26). Keying the dedupe on revision alone ate every
+       later receipt at an unchanged revision and froze the strip on the
+       first resolution. */
+    if (ctxState.lastReceipt && rev === ctxState.lastAppliedRevision &&
+        j.request_id && ctxState.lastReceipt.request_id === j.request_id) return;
     ctxState.lastAppliedRevision = rev;
     ctxState.lastReceipt = j;
     var eff = j.effective_context || {};
