@@ -1,0 +1,261 @@
+# CARRIED FORWARD from mastermind-xpv2-sector-r3b-1 for the R3B.2 surgical closure -- the
+# production baseline facts and 92-row capability inventory are unchanged (same R3A
+# ledger, same frozen fixture epoch 4c55fe433490adfd75fd901ef25f5793db2202db).
+# reference_id re-stamped; artifact paths/evidence re-pointed and frozen_sha re-stamped
+# at THIS cycle's freeze. B2-01..11 repairs are recorded in continuity.yml +
+# ORCHESTRATOR_ADJUDICATIONS_R3B2.md, not as new dispositions (RETAIN capabilities).
+# CARRIED FORWARD from mastermind-xpv2-sector-r3b for the R3B.1 surgical cycle -- the
+# production baseline facts and capability inventory are unchanged (same R3A ledger, same
+# frozen fixture epoch 4c55fe433490adfd75fd901ef25f5793db2202db). Predecessor evidence
+# paths under mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/ remain valid
+# committed bytes and are cited as-is; only reference_id is re-stamped. Rows touched by
+# the R3B1-01..14 fix packet get updated proposal/evidence text at successor freeze.
+# Production Baseline Manifest (RIG V1 S4/S5) -- design memory, captured BEFORE design begins.
+# XPV2-SC-R3B -- US Sector Central six-view workspace (sector_central.html).
+# The 92-row capability ledger below is TRANSCRIBED, not re-derived, from the frozen R3A
+# authority substrate: research/reference_integrity/mastermind-xpv2-sector-r3/
+# capability_disposition_ledger.md (Deliverable 1 of WS:INSTITUTIONAL-PRODUCT-EXPERIENCE-V2
+# XPV2-SC-R3A, merged PR #6122 / f4305a4485f6df061f3a55ca6f1b0e3e53c06f66). Ids SC-001..SC-092
+# are stable and match the ledger's own row numbers 1-92 (greppable both directions). Per
+# COMMISSION.md S20/S2.2: "R3A is authority substrate, not approval" -- this baseline is the
+# production capability census the R3B proposal (proposal.yml) disposes against; R3A itself is
+# NOT a RIG artifact set (no manifest.yml) and is therefore not declared in manifest.yml lineage.
+schema: mastermind.rig_baseline.v1
+reference_id: mastermind-xpv2-sector-r3b-2
+captured_at: "2026-08-20"
+revalidation_evidence: >
+  Capability census reused unmodified from the R3A ledger, frozen at the R3A merge
+  f4305a4485f6df061f3a55ca6f1b0e3e53c06f66 (PR #6122) and the R3A frozen producer fixture
+  capture 4c55fe433490adfd75fd901ef25f5793db2202db named in COMMISSION.md. Per COMMISSION.md
+  S3: "Do not refresh the frozen fixture merely because nightly values moved" -- nightly/data
+  value movement is expected and does not invalidate this baseline; only a semantic
+  producer/schema/route/access change would, and any such change must be adjudicated (Sol/Fable)
+  before this baseline is revised, not silently re-derived.
+
+production:
+  route: sector_central.html
+  source_commit: f4305a4485f6df061f3a55ca6f1b0e3e53c06f66
+  source_paths:
+    - scripts/build_sector_central.py         # _ACTNOW_LANES (lane keys/order), lane data assembly
+    - engine/sector_central.py                # conviction chain, context-only heat/rotation authority
+    - engine/us_act_now.py                    # Act-Now board producer, Bottoming Watch binding
+    - scripts/build_baskets.py                # theme/basket row assembly feeding Overview + Explore
+    - templates/sector_central.html.j2        # page shell, six-view rail, all view markup
+    - templates/_us_act_now_board.html.j2     # Overview Act-Now board macro (lane render, hydrate)
+    - templates/subsectors.js                 # Confluence universe datasets, state buckets, sort
+  shared_surfaces: []
+    # GAP: whether macro:sector_central_china (config/product_experience/page_registry_overrides.yml,
+    # same "intelligence_desk" archetype) shares component-level code with macro:sector_central was
+    # NOT independently verified in this drafting pass -- no file:line trace was pulled. The R3B
+    # design lanes should confirm/deny blast radius before candidate freeze; recorded here as an
+    # honest gap rather than an invented shared_surfaces row.
+
+evidence:
+  screenshots:
+    # CAPTURED AND COMMITTED (records truthing, XPV2-SC-R3B.2 durability pass 2026-08-24).
+    # All six desktop-dark-EN production frames below exist on canonical origin/main: they were
+    # captured by the R3B production-evidence lane and landed in merged PR #6197 (adding commit
+    # f5b0094614b6), alongside that directory's PROVENANCE.md. Paths follow the
+    # prophet-board-5514 precedent naming convention (mockups/refs/reference_integrity/<id>/
+    # production/prod-<viewport>-<theme>-<locale>-<view>.png).
+    #
+    # WHAT WAS STALE: this block previously read "PLANNED capture set ... not yet captured" --
+    # true when written in the R3B.2 drafting pass, never updated after #6197 landed. Final
+    # Mobile/Accessibility finding MA2-001 (minor, evidence provenance, attributed upstream)
+    # read that stale prose from a sparse checkout in which mockups/ is not materialized, so
+    # neither the prose nor the filesystem showed the frames. Disposition:
+    #   MA2-001 = REFUTED_BY_CANONICAL_GITHUB_EVIDENCE
+    # The critic receipt at reviews/mobile_accessibility.md is preserved byte-exact and is NOT
+    # edited by this truthing; the refutation is recorded here, in the records layer, and
+    # carried to Sol. Verified 2026-08-24 at carrier head 0e542f3eda09 with mockups/
+    # materialized (python3 scripts/worktree_sparse.py add mockups):
+    #   git ls-tree --name-only origin/main -- \
+    #     mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/production/
+    #   -> all six named files present and tracked; byte sizes 673,713 / 2,107,497 / 2,166,511
+    #      / 1,174,134 / 1,163,766 / 2,595,814 for overview/map/moving/money/explore/confluence.
+    # No image was captured, recaptured or replaced by this pass.
+    #
+    # STILL REAL: evidence.gaps below (mobile390 + tablet820, light theme, ZH locale, gated vs
+    # authenticated access) are unchanged and remain open -- only these six desktop-dark-EN
+    # rows are trued. A full (non-sparse) checker run passes missing-baseline-evidence for the
+    # six rows; the gaps stay declared gaps, not silent absences.
+    - {path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/production/prod-desktop-dark-en-overview.png, viewport: desktop, theme: dark, locale: en, note: "Overview -- CAPTURED; committed on origin/main via merged PR #6197"}
+    - {path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/production/prod-desktop-dark-en-map.png, viewport: desktop, theme: dark, locale: en, note: "The Map -- CAPTURED; committed on origin/main via merged PR #6197"}
+    - {path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/production/prod-desktop-dark-en-moving.png, viewport: desktop, theme: dark, locale: en, note: "What's Moving -- CAPTURED; committed on origin/main via merged PR #6197"}
+    - {path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/production/prod-desktop-dark-en-money.png, viewport: desktop, theme: dark, locale: en, note: "Money & Breadth -- CAPTURED; committed on origin/main via merged PR #6197"}
+    - {path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/production/prod-desktop-dark-en-explore.png, viewport: desktop, theme: dark, locale: en, note: "Explore -- CAPTURED; committed on origin/main via merged PR #6197"}
+    - {path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b/production/prod-desktop-dark-en-confluence.png, viewport: desktop, theme: dark, locale: en, note: "Confluence -- CAPTURED; committed on origin/main via merged PR #6197"}
+  gaps:
+    - {axis: viewport, value: "mobile390 + tablet820, all six views", reason: "capture deferred to the R3B evidence lane; this drafting pass has no browser/capture tool (COMMISSION.md S22 requires 1440 dark/light/ZH + 390 dark/ZH per view, 30 primary captures minimum)"}
+    - {axis: theme, value: light, reason: "no light-theme production capture exists yet for any of the six views; deferred to the R3B evidence lane"}
+    - {axis: locale, value: zh, reason: "no ZH production capture exists yet for any of the six views; deferred to the R3B evidence lane"}
+    - {axis: access, value: "premium gated preview vs authenticated hydrate (Overview Act-Now only)", reason: "COMMISSION.md S15 requires ungated/full, gated preview, and successful-hydrate evidence; none captured in this drafting pass"}
+
+user_job: >
+  An institutional-grade US equity investor moving through six linked instruments on one desk
+  (Overview / Map / Moving / Money & Breadth / Explore / Confluence) to decide what deserves
+  attention right now, understand market rotation and breadth context, and find timing-supported
+  entries -- while every number, state, action, universe, route, access boundary, null and clock
+  stays faithful to the frozen canonical producers (COMMISSION.md S0).
+
+core_interactions:
+  - "Overview: scan the five-lane Act-Now board (buy_now/buy_soon/on_the_run/take_profits/hold+avoid), open a real row, read Bottoming Watch, reach the self-grader"
+  - "The Map: read quadrant/rotation placement, select a group, reach the accessible list/table equivalent"
+  - "What's Moving: read recent rotation/fragmentation change from the five bound nightly artifacts, reach Desk Watch"
+  - "Money & Breadth: read flow/breadth context, inspect the market-heat treemap and its accessible equivalent"
+  - "Explore: search/filter/sort the basket table, inspect a performance chart, reach Time Machine / Forming Narratives / Track Record"
+  - "Confluence: switch all four universes (S&P/Nasdaq/Russell/Baskets), read state distribution, drill into group/member/stock detail"
+
+information_hierarchy:
+  - "which of six instruments answers the current task (view/rail selection, COMMISSION.md S6.1 canonical order)"
+  - "the one dominant object per view (Overview Act-Now board / Map chart / Moving change strip / Money flow-and-breadth / Explore table+chart / Confluence universe board)"
+  - "supporting evidence beside the dominant object (counts, chips, secondary reads)"
+  - "a clear deeper path (drill to stock/group detail, history, grader) -- COMMISSION.md S6.2"
+
+design_lineage:
+  rulings:
+    - ref: "R3A capability ledger law -- 'everything working is RETAIN'"
+      evidence: "research/reference_integrity/mastermind-xpv2-sector-r3/capability_disposition_ledger.md:7-15"
+      implication: "no capability below may be silently dropped, IMPROVEd, RELOCATEd or REMOVEd without a new ADJUDICATIONS.md ruling; this wave's proposal.yml is bound to RETAIN/BLOCKED_DATA only"
+    - ref: "ADJUDICATIONS.md SA7 -- PRC-003 (r2's 'legacy hashes collapse/drop' claim) REFUTED against production"
+      evidence: "research/reference_integrity/mastermind-xpv2-sector-r3/capability_disposition_ledger.md:135 (row 81); routing_contract.md"
+      implication: "the 21-entry LEGACY_ANCHORS table is intact in production; continuity.yml PRC-003 closes as refuted, not as a live open item"
+    - ref: "ADJUDICATIONS.md SA4 -- DAC-005's tab-order drift claim REFUTED against production"
+      evidence: "research/reference_integrity/mastermind-xpv2-sector-r3/capability_disposition_ledger.md:113 (row 64)"
+      implication: "DAC's tab-order half conflated JS declaration order with rendered DOM tab order; continuity.yml DAC-005 closes with the coverage-wording half still CARRIED_BLOCK"
+    - ref: "COMMISSION.md S8 Sol amendment -- mobile Overview five-state selector, R2's clipped horizontal strip prohibited"
+      implication: "candidate mobile Overview must expose all five action states discoverable without hidden offscreen states -- binds VTC-002/MAC-001/MAC-006 closure"
+    - ref: "COMMISSION.md S13 Sol amendment -- Confluence distribution, R2's proportional labelled cells rejected"
+      implication: "candidate Confluence must keep fixed readable state/count cells; text labels/counts may not be scaled by population -- binds VTC-003 closure"
+    - ref: "COMMISSION.md S14 Sol amendment -- sticky-scroll page-answer occlusion becomes a required reference behavior"
+      implication: "candidate must demonstrate correct scroll-offset behavior on canonical and legacy hash landings without a router rewrite -- binds VTC-001 closure"
+  rejected_variants:
+    - "R2 hand-built standalone topbar/chrome idiom -- COMMISSION.md S4.2 'Must NOT inherit'; VTC-007"
+    - "R2 Unicode/glyph icon system -- COMMISSION.md S4.2, S18; VTC-008"
+    - "R2 hardcoded/static business facts and universes standing in for producer payloads -- COMMISSION.md S4.2; DAC-001/002/003/004/007"
+    - "R2 proportional Confluence label cells (population-scaled text) -- COMMISSION.md S4.2, S13; VTC-003"
+    - "R2 shrunken desktop-Map-scaled-to-mobile treatment -- COMMISSION.md S4.2, S9 'Mobile -- required redesign'; VTC-004"
+    - "R2 dead hrefs (href=\"#\") standing in for real destinations -- COMMISSION.md S4.2, S19 'Never use href=\"#\"'; MAC-003, PRC-001"
+    - "R2 incomplete ZH (English leaking through generated rows/aria/placeholders) -- COMMISSION.md S4.2; MAC-002, VTC-005"
+  comments:
+    - path: "capability_disposition_ledger.md:31 (row 7)"
+      note: "sector rows carry a qualitative stat_en/stat_zh chip, never a blended score/perf pair -- the non-obvious reason DAC-001's 'wrong blended score' finding is CONFIRMED rather than refuted: the candidate must bind Explore sector rows to the real conviction fields, not invent a blended one"
+    - path: "capability_disposition_ledger.md:67 (row 38), 71 (row 42)"
+      note: "Map's linked-board reco tags render Buy/Add/Hold/Trim/Avoid vocabulary beneath a context-only disclaimer -- a recorded CONFLICT the brief explicitly forbids amplifying, not a defect this wave repairs (COMMISSION.md S9 'Known reco conflict')"
+    - path: "capability_disposition_ledger.md:151 (row 92)"
+      note: "correction/revision representation has no producer field to mirror; COMMISSION.md S16 explicitly forbids inventing a correction badge/history -- this is why row 92 is BLOCKED_DATA, not IMPROVE"
+
+# -- Capability Ledger (RIG S5) -- transcribed verbatim-condensed from the R3A dossier ---------
+# Stable ids SC-001..SC-092 == capability_disposition_ledger.md rows 1-92. importance is this
+# drafting session's own judgment (RETURN GAPS notes this explicitly) -- core = capability whose
+# silent loss breaks the view's primary question (COMMISSION.md S8-S13); supporting = secondary
+# but real; peripheral = minor/cosmetic nuance. The RETAIN/BLOCKED_DATA disposition itself (in
+# proposal.yml) is ledger-derived, not a judgment call.
+capabilities:
+  # -- Overview (rows 1-35, COMMISSION.md S8) --
+  - {id: SC-001, name: "Six action-lane keys folding into five rendered columns (hold+avoid share Stand aside)", user_job: "see which of six producer states a name occupies, with hold+avoid sharing Stand aside", evidence: "capability_disposition_ledger.md#1 (lane A S1,A1); scripts/build_sector_central.py:67-74 _ACTNOW_LANES", importance: core}
+  - {id: SC-002, name: "Exact EN/ZH lane labels + subcopy", user_job: "read each lane's exact canonical label and subcopy in either language", evidence: "capability_disposition_ledger.md#2 (lane A S2-3)", importance: core}
+  - {id: SC-003, name: "Lane header counts computed off the FULL board, never gated", user_job: "see true full-board lane counts regardless of paywall state", evidence: "capability_disposition_ledger.md#3 (lane A S4)", importance: core}
+  - {id: SC-004, name: "Row merge order: theme rows lead, sector rows follow, within each lane", user_job: "read rows in the producer's intended priority order", evidence: "capability_disposition_ledger.md#4 (lane A S5)", importance: supporting}
+  - {id: SC-005, name: "buy_soon sector sub-list sorted by days ascending", user_job: "see the soonest buy_soon setups first", evidence: "capability_disposition_ledger.md#5 (lane A S5)", importance: supporting}
+  - {id: SC-006, name: "Theme row score + perf_20d_rel numeric fields", user_job: "see a theme row's numeric conviction score and relative performance", evidence: "capability_disposition_ledger.md#6 (lane A S6)", importance: core}
+  - {id: SC-007, name: "Sector row qualitative stat_en/stat_zh chip (no blended score/perf pair)", user_job: "read a sector row's qualitative stance chip without a fabricated blended number", evidence: "capability_disposition_ledger.md#7 (lane A S6)", importance: core}
+  - {id: SC-008, name: "Per-sector conviction score (sectordata/sector_central.json)", user_job: "see a sector's own conviction score, distinct from the action board", evidence: "capability_disposition_ledger.md#8 (lane A S6)", importance: supporting}
+  - {id: SC-009, name: "Sector row click destination (US_SECTOR_PAGE override -> sectors/<TICKER>.html)", user_job: "open the real sector detail page from a row", evidence: "capability_disposition_ledger.md#9 (lane A S7)", importance: core}
+  - {id: SC-010, name: "Theme row click destination (basket/<id>.html)", user_job: "open the real basket detail page from a row", evidence: "capability_disposition_ledger.md#10 (lane A S7)", importance: core}
+  - {id: SC-011, name: "Bottoming-watch row click destination", user_job: "open the producer-set destination from a Bottoming Watch row", evidence: "capability_disposition_ledger.md#11 (lane A S7)", importance: supporting}
+  - {id: SC-012, name: "'+N more' links to #actnow-section (same-page anchor, all five lanes)", user_job: "reveal the rest of a lane in place", evidence: "capability_disposition_ledger.md#12 (lane A S7)", importance: supporting}
+  - {id: SC-013, name: "Lane-foot 'Drill to stocks ->' to #confluence in-page view switch", user_job: "jump from a lane straight into the matching Confluence view", evidence: "capability_disposition_ledger.md#13 (lane A S7)", importance: supporting}
+  - {id: SC-014, name: "Premium gate switch + preview/locked split", user_job: "see the correct preview/locked row split under the live gate config", evidence: "capability_disposition_ledger.md#14 (lane A S8-9)", importance: core}
+  - {id: SC-015, name: "Split computed twice (Python payload + Jinja shell) from the identical source list", user_job: "trust that the shell and payload can never disagree on what is gated", evidence: "capability_disposition_ledger.md#15 (lane A S8)", importance: supporting}
+  - {id: SC-016, name: "premiumdata/sector_central.json payload, tier_payload.v1 schema, written unconditionally every build", user_job: "receive a schema-valid gated payload on every build regardless of gate state", evidence: "capability_disposition_ledger.md#16 (lane A S8)", importance: core}
+  - {id: SC-017, name: "sector_central.json payload kept separate from us_stocks.json", user_job: "never have Sector Central's gated payload clobbered by an unrelated write", evidence: "capability_disposition_ledger.md#17 (lane A S8)", importance: supporting}
+  - {id: SC-018, name: "/premiumdata/ URL-level enforcement ahead of the site-wide paywall switch", user_job: "have the gate enforced at the URL layer, not only in the UI", evidence: "capability_disposition_ledger.md#18 (lane A S8-9)", importance: core}
+  - {id: SC-019, name: "Authenticated hydration flow (whenAuthSettled -> fetch -> hydrate() -> DOM insert -> restoreFold -> disclosure removal)", user_job: "see the board upgrade to full rows on sign-in without a page reload", evidence: "capability_disposition_ledger.md#19 (lane A S8-9)", importance: core}
+  - {id: SC-020, name: "si-read-overview summary strip (readOverview(), from theme_intel.act_now.buy length + hero attrs)", user_job: "read a one-line, display-tier-only Overview summary", evidence: "capability_disposition_ledger.md#20 (lane A S9)", importance: supporting}
+  - {id: SC-021, name: "Bottoming Watch strict display-tier/watch-only contract", user_job: "trust that Bottoming Watch never silently becomes an entry pipeline", evidence: "capability_disposition_ledger.md#21 (lane A S10, capability priors)", importance: core}
+  - {id: SC-022, name: "Bottoming Watch exact EN/ZH wording (title, subcopy, chips, empty state, null disclosure)", user_job: "read Bottoming Watch's exact canonical copy in either language", evidence: "capability_disposition_ledger.md#22 (lane A S10)", importance: supporting}
+  - {id: SC-023, name: "Bottoming Watch full-width strip layout under the five lanes, not a sixth action lane", user_job: "see Bottoming Watch positioned so it cannot be mistaken for a sixth action lane", evidence: "capability_disposition_ledger.md#23 (lane A S10)", importance: core}
+  - {id: SC-024, name: "Overview hero / 'This week's handoff' / 'What changed' leadership context (si_handoff.json)", user_job: "read this week's leadership/context handoff narrative", evidence: "capability_disposition_ledger.md#24 (lane A S11, A2)", importance: core}
+  - {id: SC-025, name: "Hero fallback to generic 'US Sector Intelligence' when si_handoff.json absent/corrupt", user_job: "see a safe generic hero instead of a broken one when the source is missing", evidence: "capability_disposition_ledger.md#25 (lane A S11)", importance: supporting}
+  - {id: SC-026, name: "Structural separation: no code path connects hero leadership text to action-board lane placement", user_job: "trust that contextual leadership copy can never silently move a name's action lane", evidence: "capability_disposition_ledger.md#26 (lane A S11)", importance: core}
+  - {id: SC-027, name: "Overview absolute-clock stale guard (_dtpState, 12h threshold vs Date.now())", user_job: "be warned when the Overview read is stale", evidence: "capability_disposition_ledger.md#27 (lane F State 4, A6)", importance: core}
+  - {id: SC-028, name: "Zero-vs-missing distinction (is not none / is defined idioms, never truthiness)", user_job: "see a true zero rendered as zero, never collapsed into 'missing'", evidence: "capability_disposition_ledger.md#28 (lane F State 2, A6)", importance: core}
+  - {id: SC-029, name: "Per-lane empty-state copy via Jinja for/else (genuine zero-length construct)", user_job: "see honest empty-lane copy when a lane truly has zero rows", evidence: "capability_disposition_ledger.md#29 (lane F State 3)", importance: supporting}
+  - {id: SC-030, name: "Independent fail-soft degrade per secondary source (ctx/action_board/_bottoming/flows_html)", user_job: "have one broken secondary source degrade in isolation, not take down the page", evidence: "capability_disposition_ledger.md#30 (lane F State 5)", importance: supporting}
+  - {id: SC-031, name: "Fetch-fail / malformed-JSON collapse to one fixed 'Data failed to load' string", user_job: "see one honest, unambiguous failure message on fetch/parse failure", evidence: "capability_disposition_ledger.md#31 (lane F State 6)", importance: core}
+  - {id: SC-032, name: "401/403/offline collapse to no-op keeping the server-baked preview + sign-in disclosure", user_job: "keep seeing the baked preview and sign-in prompt through an access/offline failure, never a broken UI", evidence: "capability_disposition_ledger.md#32 (lane F State 7, A9)", importance: core}
+  - {id: SC-033, name: "dispshort() curated long-name abbreviation table + CSS ellipsis fallback", user_job: "read long names abbreviated sanely instead of broken/overflowing", evidence: "capability_disposition_ledger.md#33 (lane F State 9)", importance: supporting}
+  - {id: SC-034, name: "Fold/show-more at the 3-row threshold; DOM-side restoreFold() reimplements the same threshold for hydrate", user_job: "have the fold behave identically before and after sign-in hydration", evidence: "capability_disposition_ledger.md#34 (lane F State 10)", importance: supporting}
+  - {id: SC-035, name: "Self-grader / Track Record (#grader, nightly-sole-advancer, ledger never read back into a live score)", user_job: "judge whether the machine's calls are actually working, from an honest nightly-advanced ledger", evidence: "capability_disposition_ledger.md#35 (lane D S6a, A9)", importance: core}
+
+  # -- The Map (rows 36-42, COMMISSION.md S9) --
+  - {id: SC-036, name: "Rotation map SVG quadrant scatter (#rvx-rmap), context-labeled, no gated call", user_job: "see group rotation placement on a quadrant map", evidence: "capability_disposition_ledger.md#36 (lane C S1 row 1)", importance: core}
+  - {id: SC-037, name: "Rotation-map accessible text/table equivalent (#rvx-board, same RVX_D array)", user_job: "get the same rotation data as a ranked list/table, without needing the chart", evidence: "capability_disposition_ledger.md#37 (lane C S1 row 1)", importance: core}
+  - {id: SC-038, name: "Linked-board reco tag rendering (enter/accumulate/hold/trim/avoid -> Buy/Add/Hold/Trim/Avoid)", user_job: "read the linked board's reco tag beneath the context-only disclaimer", evidence: "capability_disposition_ledger.md#38 (lane C S1 row 2, A3) -- CONFLICT (context surface rendering action vocabulary), recorded not repaired this wave", importance: core}
+  - {id: SC-039, name: "Sector-cycle clock chart (#sc-chart, lazy-mounted @cycles)", user_job: "see a sector's position in its cycle", evidence: "capability_disposition_ledger.md#39 (lane C S1 row 3); no accessible text equivalent located -- design brief requires one added in R3", importance: core}
+  - {id: SC-040, name: "'One gated read per sector' board (#board, 11 GICS SPDRs, conviction chain)", user_job: "see the one gated conviction read for each of the 11 GICS sectors", evidence: "capability_disposition_ledger.md#40 (lane C S1 row 4)", importance: core}
+  - {id: SC-041, name: "si-read-map strip (readMap(), same theme_intel.themes source as the board)", user_job: "read a one-line Map summary sourced from the same data as the board", evidence: "capability_disposition_ledger.md#41 (lane C S1)", importance: supporting}
+  - {id: SC-042, name: "Map-view context disclaimer copy ('Only the lanes above carry a gated, graded call')", user_job: "be told explicitly that Map content is context, not a graded call", evidence: "capability_disposition_ledger.md#42 (lane C S1, A3)", importance: core}
+
+  # -- What's Moving (rows 43-47, COMMISSION.md S10) --
+  - {id: SC-043, name: "si-read-moving strip (counts up/down movers from pulse_rank_delta_5d sign only)", user_job: "read a one-line summary of recent up/down movers", evidence: "capability_disposition_ledger.md#43 (lane C S2 row 1)", importance: supporting}
+  - {id: SC-044, name: "Rotation-events / flow-lane board (#rc-events-mount)", user_job: "see recent rotation events in a dedicated board", evidence: "capability_disposition_ledger.md#44 (lane C S2 row 2)", importance: core}
+  - {id: SC-045, name: "Whole-market rotation map (#rotation-app, 269 subsectors + Mag-7 composite) with text accessible equivalents", user_job: "see whole-market rotation context with a keyboard/screen-reader-usable equivalent", evidence: "capability_disposition_ledger.md#45 (lane C S2 row 3)", importance: core}
+  - {id: SC-046, name: "Desk-watch panel (#desk-watch-mount, turn desk + tape-onset, display-only)", user_job: "see the display-only desk-watch read, with a quiet-tape sentence when nothing flagged", evidence: "capability_disposition_ledger.md#46 (lane C S2 row 4)", importance: supporting}
+  - {id: SC-047, name: "Moving's canonical binding = five nightly artifacts, NOT si_handoff.json", user_job: "trust that Moving is built from its own five bound artifacts, not a leadership-narrative source", evidence: "capability_disposition_ledger.md#47 (lane C S2a, A2); COMMISSION.md S10 'Critical source correction'", importance: core}
+
+  # -- Money & Breadth (rows 48-53, COMMISSION.md S11) --
+  - {id: SC-048, name: "si-read-money strip (data-regime attribute, baked from si_handoff.json flow.cluster.regime)", user_job: "read the one si_handoff-bound field in this view: the flow regime", evidence: "capability_disposition_ledger.md#48 (lane C S3 row 1, A2)", importance: core}
+  - {id: SC-049, name: "Money-flow verdict card (server flow.cluster.regime headline + client etf_pulse/vol_sentiment chips)", user_job: "read the flow-regime verdict plus supporting live chips", evidence: "capability_disposition_ledger.md#49 (lane C S3 row 2)", importance: core}
+  - {id: SC-050, name: "Market breadth gcards (#mkt-breadth, theme_intel.market_concentration, per-field null guards)", user_job: "read breadth/concentration context with honest nulls", evidence: "capability_disposition_ledger.md#50 (lane C S3 row 3)", importance: core}
+  - {id: SC-051, name: "Sector-ETF flow board table (#sc-flows, server-rendered, display-only)", user_job: "see the sector-ETF flow table", evidence: "capability_disposition_ledger.md#51 (lane C S3 row 4); whole section omitted (no placeholder) when flows_html is None", importance: supporting}
+  - {id: SC-052, name: "Market-heat treemap (#heatmap-scorecard) with client polling on generated_utc change", user_job: "see live market-heat context that updates on real freshness change, not a baked delta", evidence: "capability_disposition_ledger.md#52 (lane C S3 row 5)", importance: core}
+  - {id: SC-053, name: "Index-leadership strip (#scc-leadership) with self-graded Validated/Measuring/Accruing sub-line", user_job: "see index-leadership context with an honest self-graded confidence sub-line", evidence: "capability_disposition_ledger.md#53 (lane C S3 row 6)", importance: supporting}
+
+  # -- Explore (rows 54-62, COMMISSION.md S12) --
+  - {id: SC-054, name: "Client-side filter/sort controls (mode tabs, category chips, column sort, chart range) with localStorage persistence", user_job: "filter/sort the basket table client-side with settings that persist", evidence: "capability_disposition_ledger.md#54 (lane D S1); no free-text search box exists (confirmed absent)", importance: core}
+  - {id: SC-055, name: "Full basket table (#btable): name, Group-pulse, sparkline, 1d/5d/20d/60d/MTD/YTD, synthetic S&P 500 benchmark row", user_job: "compare every basket's multi-window performance in one table", evidence: "capability_disposition_ledger.md#55 (lane D S2)", importance: core}
+  - {id: SC-056, name: "Default 20d-descending sort; top-8/bottom-8 render with Show all revealing all 49 baskets", user_job: "see the strongest/weakest baskets first, then reveal the full 49 on demand", evidence: "capability_disposition_ledger.md#56 (lane D S2); Explore table does NOT read window.SECTOR_CENTRAL", importance: core}
+  - {id: SC-057, name: "Performance chart (lightweight-charts, rebased to 0% at window start, deferred-mount fix)", user_job: "see a selected basket's performance rebased to a common start", evidence: "capability_disposition_ledger.md#57 (lane D S3); no table-only fallback/aria-label summary found -- design brief requires one", importance: core}
+  - {id: SC-058, name: "Time Machine (#tm-mount, replay of measured history, unit/year/preset controls, no predictive claim)", user_job: "replay measured history with an explicit non-predictive disclosure", evidence: "capability_disposition_ledger.md#58 (lane D S4); producer runs off the 67-min render path", importance: core}
+  - {id: SC-059, name: "Forming Narratives deterministic score + 5-leg breakdown (fixed-weight formula, no LLM)", user_job: "see a deterministic, fixed-weight narrative score with its breakdown", evidence: "capability_disposition_ledger.md#59 (lane D S5, A8)", importance: core}
+  - {id: SC-060, name: "Forming Narratives ai_watch field -- LLM-sourced, printed verbatim, feeds no score/rank/gate", user_job: "read the LLM-sourced ai_watch note, clearly separated from the deterministic score", evidence: "capability_disposition_ledger.md#60 (lane D S5, A8); binding matrix/brief require the 'model analysis' label; the deterministic rank is NOT so labeled", importance: core}
+  - {id: SC-061, name: "Forming Narratives standing caveat text (non-predictive disclosure, conditional caveats)", user_job: "read the standing non-predictive caveat on Forming Narratives", evidence: "capability_disposition_ledger.md#61 (lane D S5)", importance: supporting}
+  - {id: SC-062, name: "Falsifier-register label rewrite at read time ('Kill criterion: X' -> 'Watching for: X')", user_job: "read falsifier language in front-facing, non-alarming wording", evidence: "capability_disposition_ledger.md#62 (lane D S5); 2026-07-27 operator ruling #3821", importance: core}
+
+  # -- Confluence (rows 63-79, COMMISSION.md S13) --
+  - {id: SC-063, name: "Four independent universe artifacts (S&P/Baskets/Nasdaq/Russell), one shared render engine, no client-side mixing", user_job: "trust that switching universes never mixes rows from another universe", evidence: "capability_disposition_ledger.md#63 (lane E S0)", importance: core}
+  - {id: SC-064, name: "Tab order: hard-coded DOM order S&P -> Nasdaq -> Russell -> Baskets", user_job: "find each universe tab in its canonical order", evidence: "capability_disposition_ledger.md#64 (lane E, A4); DAC-005's drift claim REFUTED -- conflated JS declaration order with tab order", importance: supporting}
+  - {id: SC-065, name: "S&P thin-but-listed wording (n_gateable/n_subsectors/n_thin)", user_job: "read S&P coverage wording distinguishing gateable from thin groups", evidence: "capability_disposition_ledger.md#65 (lane E S4, A5); wording is semantically inaccurate for the 48 gate-dropped groups (recorded, not repaired this wave)", importance: supporting}
+  - {id: SC-066, name: "Baskets-tab thin/gateable disclosure", user_job: "read a Baskets-tab thin/gateable disclosure equivalent to S&P's", evidence: "capability_disposition_ledger.md#66 (lane E S4, A5, capability priors); basket_confluence.json carries only n_baskets, no gateable/thin fields exist", importance: core}
+  - {id: SC-067, name: "Nasdaq/Russell thin-but-listed wording (code-shared with S&P, currently silent at n_thin=0)", user_job: "read Nasdaq/Russell coverage wording using the same shared code path as S&P", evidence: "capability_disposition_ledger.md#67 (lane E S4, A5); nonzero-n_thin branch never observed live for these two universes", importance: supporting}
+  - {id: SC-068, name: "State/regime label vocabulary (_STATE_META, 9 states, EN/ZH) shared across all four universes", user_job: "read the same 9-state vocabulary consistently across every universe", evidence: "capability_disposition_ledger.md#68 (lane E S5)", importance: core}
+  - {id: SC-069, name: "Coarse class/ribbon buckets (entry_now/forming/tailwind/neutral/late/headwind); forming folds into Neutral", user_job: "see rows bucketed into coarse ribbon classes", evidence: "capability_disposition_ledger.md#69 (lane E S5)", importance: core}
+  - {id: SC-070, name: "S&P row identity + producer sort order (_slug, kind=subsector, _CLASS_ORDER tuple)", user_job: "trust S&P row identity and default order are producer-derived, not client-invented", evidence: "capability_disposition_ledger.md#70 (lane E S6)", importance: core}
+  - {id: SC-071, name: "Full-table client-side re-sort (default tier-ascending, can diverge visually from producer order)", user_job: "re-sort the full table client-side when useful", evidence: "capability_disposition_ledger.md#71 (lane E S6)", importance: supporting}
+  - {id: SC-072, name: "Basket rows: basket_id stamp + b- filename-prefix disambiguation (same subsector/ directory as S&P)", user_job: "trust basket rows can never collide with S&P rows sharing a directory", evidence: "capability_disposition_ledger.md#72 (lane E S6-7)", importance: supporting}
+  - {id: SC-073, name: "Nasdaq/Russell amalgamation rows (kind=sector, amalg- id prefix, always with_members=True)", user_job: "see Nasdaq/Russell rows correctly identified as amalgamations with members", evidence: "capability_disposition_ledger.md#73 (lane E S6, S8)", importance: core}
+  - {id: SC-074, name: "Per-universe group detail pages (subsector_detail.html.j2, separate directories for Nasdaq/Russell)", user_job: "open a group's detail page for any of the four universes", evidence: "capability_disposition_ledger.md#74 (lane E S7)", importance: core}
+  - {id: SC-075, name: "Members-listing sort (own-cascade weight desc, tie-break vs_basket desc)", user_job: "see group members sorted by weight with a defined tie-break", evidence: "capability_disposition_ledger.md#75 (lane E S8)", importance: core}
+  - {id: SC-076, name: "Stock detail destination (stockHref, uniform stock.html#<TICKER> across all four universes)", user_job: "open a consistent stock detail page from any universe", evidence: "capability_disposition_ledger.md#76 (lane E S9)", importance: core}
+  - {id: SC-077, name: "Coverage wording template (verbatim EN/ZH, per-universe noun swap)", user_job: "read consistent coverage wording that only swaps the universe noun", evidence: "capability_disposition_ledger.md#77 (lane E S10)", importance: supporting}
+  - {id: SC-078, name: "S&P row-identity detector for a foreign/theme row (5-part rule)", user_job: "trust S&P rows can be mechanically distinguished from theme rows sharing the directory", evidence: "capability_disposition_ledger.md#78 (lane E S7); mechanism the ledger's own attack test pins", importance: core}
+  - {id: SC-079, name: "Confluence full-table search has NO 'no results' message on zero matches (count-only 0/N header)", user_job: "see the honest current absence of a no-results message (count-only header)", evidence: "capability_disposition_ledger.md#79 (lane F State 3); genuine production absence, opposite direction of R2's fabricated placeholder (PRC-007); not BLOCKED_DATA -- no field missing, the UI copy was simply never written", importance: peripheral}
+
+  # -- Cross-cutting: routing contract (rows 80-86, COMMISSION.md S14) --
+  - {id: SC-080, name: "Six canonical views + VIEWS array, exact-match hash dispatch", user_job: "land on the correct view from a canonical hash", evidence: "capability_disposition_ledger.md#80 (lane B S1-2)", importance: core}
+  - {id: SC-081, name: "21-entry LEGACY_ANCHORS table", user_job: "land correctly from any of 21 legacy hash anchors", evidence: "capability_disposition_ledger.md#81 (lane B S3); PRC-003's 'collapses/drops' claim REFUTED -- all four named hashes present and mapped", importance: core}
+  - {id: SC-082, name: "#theme-* boot-time-only redirect via resolveThemeHash()", user_job: "get redirected correctly from a #theme-* hash on first page load", evidence: "capability_disposition_ledger.md#82 (lane B S4, A7); seam recorded (only first-load hash redirects) -- filed separately, not repaired", importance: supporting}
+  - {id: SC-083, name: "#read-* trace-open with defer/retry (pendingTrace, held until the Act-Now board exists)", user_job: "have a #read-* trace open reliably even if the board hasn't mounted yet", evidence: "capability_disposition_ledger.md#83 (lane B S5)", importance: core}
+  - {id: SC-084, name: "Unknown/empty-hash fallback to Overview + replaceState('#overview') on empty hash", user_job: "land on Overview by default from an unknown or empty hash", evidence: "capability_disposition_ledger.md#84 (lane B S6)", importance: core}
+  - {id: SC-085, name: "Deep-link scroll mechanics: scrollIntoView({block:'start'}), no behavior key (instant, not smooth)", user_job: "land exactly at the page answer on a deep link, without an animated scroll", evidence: "capability_disposition_ledger.md#85 (lane B S7); known automation-pane smooth-scroll trap does NOT apply here", importance: supporting}
+  - {id: SC-086, name: "Per-view working-destination inventory (static + runtime-generated hrefs)", user_job: "reach every documented working destination from every view", evidence: "capability_disposition_ledger.md#86 (lane B S8)", importance: core}
+
+  # -- Cross-cutting: access/hydration contract (rows 87-92, COMMISSION.md S15-16) --
+  - {id: SC-087, name: "Single premium wall = premiumdata/sector_central.json, gating ONLY the Overview Act-Now board", user_job: "trust that only the Overview Act-Now board is gated, nothing else", evidence: "capability_disposition_ledger.md#87 (A9, lane A S8, lane D S8)", importance: core}
+  - {id: SC-088, name: "Explore/Confluence/Map/Moving/Money payloads all ungated", user_job: "reach every non-Overview view's data without an access wall", evidence: "capability_disposition_ledger.md#88 (A9, lane D S8, lane E GAP); not exhaustively HTTP-verified -- inference from config/site_access.yml, not a live curl", importance: core}
+  - {id: SC-089, name: "Nightly-sole-advancer rule for the Track Record ledger (engine.ledger_lane.nightly_advance_enabled())", user_job: "trust the Track Record ledger is advanced only by the nightly, never live", evidence: "capability_disposition_ledger.md#89 (A9, lane D S6a)", importance: core}
+  - {id: SC-090, name: "Loading state: baked HTML for Overview (no skeleton); Confluence's pre-render() static shell (no skeleton)", user_job: "see a stable baked shell rather than a skeleton loader on first paint", evidence: "capability_disposition_ledger.md#90 (lane F State 1); transient/timing state, not a distinct payload shape", importance: peripheral}
+  - {id: SC-091, name: "Cardinality-extreme capping with count-labeled controls (Overview lanes cap 3; Confluence caps 4/8/12)", user_job: "see a capped, count-labeled list instead of an unbounded one at extreme cardinality", evidence: "capability_disposition_ledger.md#91 (lane F State 10)", importance: core}
+  - {id: SC-092, name: "Correction/revision representation (a value later corrected/restated)", user_job: "see an honest correction/revision marker when a value was later corrected", evidence: "capability_disposition_ledger.md#92 (lane F State 8, A6, capability priors); no code path renders a correction marker, no producer contract exists to mirror; COMMISSION.md S16 forbids inventing one without a producer", importance: core}

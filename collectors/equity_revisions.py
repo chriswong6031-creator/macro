@@ -49,19 +49,412 @@ removed.  PIT history behavior is unchanged (append-only history.parquet).
 """
 from __future__ import annotations
 
+import hashlib
+import json
 import logging
+import math
+import os
+from pathlib import Path
+import re
+from typing import Any, Callable
 
 import pandas as pd
 
 from lib import config
+from lib.nyse_calendar import session_date
 
 log = logging.getLogger("equity_revisions")
 _FRESH_DAYS = 6
 
+# SRC-A1 is a source-owner append-only accrual.  These files deliberately sit
+# beside, rather than inside, the legacy revision-breadth artifacts below.
+_EXPECTATION_PROVIDER = "yfinance"
+_OBSERVATION_COLUMNS = [
+    "observation_id", "collection_session_id", "attempt_id", "provider",
+    "provider_record_class", "provider_payload_hash", "ticker_compat",
+    "issuer_ref", "security_ref", "metric", "horizon_label_raw", "period_end",
+    "fiscal_period", "fiscal_year", "observation_type", "value", "unit",
+    "currency", "basis", "aggregation_level", "contributor_id",
+    "source_effective_at", "source_published_at", "provider_observed_at",
+    "system_observed_at", "market_session", "missingness_reason",
+    "correction_state", "supersedes_observation_id", "rights_class",
+    "provenance_note",
+]
+_ATTEMPT_COLUMNS = [
+    "attempt_id", "collection_session_id", "provider", "ticker_compat",
+    "attempted_at", "completed_at", "status", "http_status", "latency_ms",
+    "response_payload_hash", "safe_error_class", "safe_error_detail",
+    "observation_count",
+]
+_OBSERVATION_TYPES = (
+    "average", "median", "high", "low", "covering_analyst_count", "growth", "year_ago",
+)
+_FIELD_ALIASES = {
+    "average": ("avg", "average", "mean"),
+    "median": ("median",),
+    "high": ("high",),
+    "low": ("low",),
+    "covering_analyst_count": ("numberOfAnalysts", "number_of_analysts"),
+    "growth": ("growth",),
+}
 
-def _one(ticker: str) -> dict | None:
-    import yfinance as yf
-    t = yf.Ticker(ticker)
+
+def _canonical_sha256(value: Any) -> str:
+    """Hash a JSON-safe value with stable separators and key order."""
+    encoded = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+
+
+def _utc_timestamp(value: object | None = None) -> pd.Timestamp:
+    stamp = pd.Timestamp.now(tz="UTC") if value is None else pd.Timestamp(value)
+    if stamp.tzinfo is None:
+        return stamp.tz_localize("UTC")
+    return stamp.tz_convert("UTC")
+
+
+def _iso8601(value: object | None = None) -> str:
+    return _utc_timestamp(value).isoformat().replace("+00:00", "Z")
+
+
+def _json_scalar(value: Any) -> Any:
+    """Convert provider scalar values without treating absent data as zero."""
+    if value is None:
+        return None
+    if isinstance(value, pd.Timestamp):
+        return _iso8601(value)
+    try:
+        if pd.isna(value):
+            return None
+    except (TypeError, ValueError):
+        pass
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        return value if math.isfinite(value) else None
+    return str(value)
+
+
+def _finite_number(value: Any) -> float | None:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return number if math.isfinite(number) else None
+
+
+def _normalise_column(column: object) -> str:
+    return "".join(character for character in str(column).lower() if character.isalnum())
+
+
+def _frame_payload(frame: Any) -> list[dict[str, Any]]:
+    """Return the stable, complete raw-accessor identity used for replay checks."""
+    if frame is None or not hasattr(frame, "index") or not hasattr(frame, "columns"):
+        return []
+    rows: list[dict[str, Any]] = []
+    for horizon in frame.index:
+        rows.append({
+            "horizon_label_raw": str(horizon),
+            "fields": {
+                str(column): _json_scalar(frame.loc[horizon, column])
+                for column in sorted(frame.columns, key=str)
+            },
+        })
+    return rows
+
+
+def _safe_http_failure(exc: Exception) -> tuple[str, int | None, str, str]:
+    """Classify provider errors without persisting provider bodies or exception text."""
+    candidates = [getattr(exc, "status_code", None), getattr(getattr(exc, "response", None), "status_code", None)]
+    for candidate in candidates:
+        if candidate in (401, 403, 429):
+            return f"http_{candidate}", candidate, "provider_http_error", f"http_status_{candidate}"
+    match = re.search(r"(?<![0-9])(?:http(?:[ _-]?(?:status|code))?\s*[:=]?\s*)?(401|403|429)(?![0-9])", str(exc).lower())
+    if match:
+        code = int(match.group(1))
+        return f"http_{code}", code, "provider_http_error", f"http_status_{code}"
+    return "error", None, "provider_exception", "provider_request_failed"
+
+
+def _field_value(frame: pd.DataFrame, horizon: object, observation_type: str, metric: str) -> tuple[float | None, str | None]:
+    aliases = _FIELD_ALIASES.get(observation_type)
+    if observation_type == "year_ago":
+        aliases = ("yearAgoEps",) if metric == "EPS" else ("yearAgoRevenue",)
+    assert aliases is not None
+    columns = {_normalise_column(column): column for column in frame.columns}
+    column = next((columns.get(_normalise_column(alias)) for alias in aliases if _normalise_column(alias) in columns), None)
+    if column is None:
+        return None, "NOT_APPLICABLE"
+    value = _finite_number(frame.loc[horizon, column])
+    return (value, None) if value is not None else (None, "UNESTIMABLE")
+
+
+def _market_session(system_observed_at: str) -> str | None:
+    """Use the existing NYSE owner; a calendar failure is an explicit null."""
+    try:
+        return session_date(_utc_timestamp(system_observed_at).to_pydatetime()).isoformat()
+    except Exception:  # noqa: BLE001 - a source receipt must not invent a session
+        return None
+
+
+def _default_collection_session_id(now: object | None = None, environ: dict[str, str] | None = None) -> str:
+    """Stable run identity, falling back to the unchanged hourly collection bucket."""
+    run_id = (os.environ if environ is None else environ).get("GITHUB_RUN_ID")
+    if run_id:
+        identity: tuple[str, str] = ("github_run", run_id)
+    else:
+        identity = ("hourly_bucket", _utc_timestamp(now).floor("h").isoformat())
+    return _canonical_sha256(("src-a1", _EXPECTATION_PROVIDER, identity))
+
+
+def _expectation_rows(
+    *,
+    ticker: str,
+    collection_session_id: str,
+    attempt_id: str,
+    payload_hash: str,
+    frames: dict[str, Any],
+    provider_observed_at: str,
+    system_observed_at: str,
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for metric, record_class in (("EPS", "earnings_estimate"), ("revenue", "revenue_estimate")):
+        frame = frames.get(record_class)
+        if frame is None or not hasattr(frame, "index") or not hasattr(frame, "columns"):
+            continue
+        for horizon in sorted(frame.index, key=str):
+            raw_horizon = str(horizon)
+            # A group (metric, horizon) is NON-ESTIMABLE when the provider's own
+            # covering-analyst count is unavailable or zero — the provider's empty-
+            # response shape (see mutation gate 1).  In such a group, every other
+            # observation_type that _field_value resolved as PRESENT (missingness
+            # None — an interpretable value, the actual mutation-gate violation) is
+            # forced to typed missingness, regardless of what number the provider
+            # returned.  A field that _field_value already typed as missing (e.g.
+            # NOT_APPLICABLE because the provider exposes no such column at all, or
+            # an existing UNESTIMABLE) is left exactly as returned — that reason is
+            # already lawful and more specific than a blanket UNESTIMABLE would be.
+            # covering_analyst_count itself always keeps its literal provider value
+            # (including a genuine 0) via _field_value below.
+            covering_value, _covering_missingness = _field_value(
+                frame, horizon, "covering_analyst_count", metric
+            )
+            non_estimable_group = covering_value is None or covering_value == 0
+            for observation_type in _OBSERVATION_TYPES:
+                value, missingness = _field_value(frame, horizon, observation_type, metric)
+                if non_estimable_group and observation_type != "covering_analyst_count" and missingness is None:
+                    value, missingness = None, "UNESTIMABLE"
+                observation_id = _canonical_sha256((
+                    collection_session_id, _EXPECTATION_PROVIDER, record_class, payload_hash,
+                    ticker, metric, raw_horizon, observation_type,
+                ))
+                rows.append({
+                    "observation_id": observation_id,
+                    "collection_session_id": collection_session_id,
+                    "attempt_id": attempt_id,
+                    "provider": _EXPECTATION_PROVIDER,
+                    "provider_record_class": record_class,
+                    "provider_payload_hash": payload_hash,
+                    "ticker_compat": ticker,
+                    "issuer_ref": None,
+                    "security_ref": None,
+                    "metric": metric,
+                    "horizon_label_raw": raw_horizon,
+                    "period_end": None,
+                    "fiscal_period": None,
+                    "fiscal_year": None,
+                    "observation_type": observation_type,
+                    "value": value,
+                    "unit": None,
+                    "currency": None,
+                    "basis": None,
+                    "aggregation_level": "consensus_snapshot",
+                    "contributor_id": None,
+                    # yfinance's estimate accessors do not expose source-issued clocks.
+                    "source_effective_at": None,
+                    "source_published_at": None,
+                    "provider_observed_at": provider_observed_at,
+                    "system_observed_at": system_observed_at,
+                    "market_session": _market_session(system_observed_at),
+                    "missingness_reason": missingness,
+                    "correction_state": "original",
+                    "supersedes_observation_id": None,
+                    "rights_class": "UNKNOWN",
+                    "provenance_note": f"yfinance_{record_class}_prospective_snapshot",
+                })
+    return rows
+
+
+def _read_parquet(path: Path, columns: list[str]) -> pd.DataFrame:
+    if not path.exists():
+        return pd.DataFrame(columns=columns)
+    frame = pd.read_parquet(path)
+    return frame.reindex(columns=columns)
+
+
+def _write_parquet(path: Path, frame: pd.DataFrame, columns: list[str]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    ordered = frame.reindex(columns=columns)
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    ordered.to_parquet(temporary, index=False)
+    temporary.replace(path)
+
+
+def _apply_lineage(rows: list[dict[str, Any]], existing: pd.DataFrame) -> None:
+    """Mark changed values as append-only supersessions; nulls never replace good rows."""
+    if existing.empty:
+        return
+    key_columns = ["provider", "provider_record_class", "ticker_compat", "metric", "horizon_label_raw", "observation_type"]
+    for row in rows:
+        if row["value"] is None:
+            row["correction_state"] = "missing"
+            continue
+        prior = existing
+        for column in key_columns:
+            prior = prior[prior[column] == row[column]]
+        prior = prior[prior["value"].notna()]
+        if prior.empty:
+            continue
+        newest = prior.sort_values("system_observed_at", kind="stable").iloc[-1]
+        same_value = (
+            _json_scalar(newest["value"]) == _json_scalar(row["value"])
+            and _json_scalar(newest["unit"]) == _json_scalar(row["unit"])
+            and _json_scalar(newest["currency"]) == _json_scalar(row["currency"])
+            and _json_scalar(newest["basis"]) == _json_scalar(row["basis"])
+        )
+        if same_value:
+            row["correction_state"] = "unchanged"
+        else:
+            row["correction_state"] = "supersedes"
+            row["supersedes_observation_id"] = newest["observation_id"]
+
+
+def accrue_expectation_observations(
+    tickers: list[str],
+    *,
+    output_dir: Path | None = None,
+    collection_session_id: str | None = None,
+    system_observed_at: object | None = None,
+    ticker_factory: Callable[[str], Any] | None = None,
+) -> dict[str, int]:
+    """Accrue one bounded SRC-A1 collection session without changing legacy artifacts.
+
+    Callers may inject both paths and the provider factory for hermetic tests.  The
+    default session identifier is deterministic for the collection invocation;
+    schedulers that have a stronger run identity can pass it explicitly.
+    """
+    out_dir = output_dir or (config.data_dir() / "revisions")
+    now = _utc_timestamp()
+    if system_observed_at is not None:
+        requested_clock = _utc_timestamp(system_observed_at)
+        if abs((now - requested_clock).total_seconds()) > 60:
+            raise ValueError("SRC-A1 refuses a historical system_observed_at; current snapshots cannot be backfilled")
+    session_id = collection_session_id or _default_collection_session_id(now)
+    observations_path = out_dir / "expectation_observations.parquet"
+    attempts_path = out_dir / "expectation_attempts.parquet"
+    existing_observations = _read_parquet(observations_path, _OBSERVATION_COLUMNS)
+    existing_attempts = _read_parquet(attempts_path, _ATTEMPT_COLUMNS)
+    new_observations: list[dict[str, Any]] = []
+    new_attempts: list[dict[str, Any]] = []
+
+    if ticker_factory is None:
+        import yfinance as yf
+        ticker_factory = yf.Ticker
+
+    for ticker in sorted(set(tickers)):
+        attempted_at = _iso8601()
+        started = pd.Timestamp.now(tz="UTC")
+        frames: dict[str, Any] = {}
+        accessor_errors: list[Exception] = []
+        try:
+            client = ticker_factory(ticker)
+            for record_class in ("earnings_estimate", "revenue_estimate"):
+                try:
+                    frames[record_class] = getattr(client, record_class)
+                except Exception as exc:  # noqa: BLE001 - classified below without raw text
+                    accessor_errors.append(exc)
+                    frames[record_class] = None
+            provider_observed_at = _iso8601()
+        except Exception as exc:  # noqa: BLE001 - provider construction/request failure
+            completed_at = _iso8601()
+            status, http_status, error_class, error_detail = _safe_http_failure(exc)
+            payload_hash = None
+            attempt_id = _canonical_sha256((session_id, _EXPECTATION_PROVIDER, ticker, payload_hash))
+            if attempt_id not in set(existing_attempts["attempt_id"].dropna().astype(str)):
+                new_attempts.append({
+                    "attempt_id": attempt_id, "collection_session_id": session_id,
+                    "provider": _EXPECTATION_PROVIDER, "ticker_compat": ticker,
+                    "attempted_at": attempted_at, "completed_at": completed_at,
+                    "status": status, "http_status": http_status,
+                    "latency_ms": int((pd.Timestamp.now(tz="UTC") - started).total_seconds() * 1000),
+                    "response_payload_hash": None, "safe_error_class": error_class,
+                    "safe_error_detail": error_detail, "observation_count": 0,
+                })
+            continue
+
+        payload = {record_class: _frame_payload(frame) for record_class, frame in sorted(frames.items())}
+        payload_hash = _canonical_sha256(payload)
+        attempt_id = _canonical_sha256((session_id, _EXPECTATION_PROVIDER, ticker, payload_hash))
+        if attempt_id in set(existing_attempts["attempt_id"].dropna().astype(str)):
+            continue
+        system_observed_at = _iso8601()
+        response_rows = _expectation_rows(
+            ticker=ticker, collection_session_id=session_id, attempt_id=attempt_id,
+            payload_hash=payload_hash, frames=frames, provider_observed_at=provider_observed_at,
+            system_observed_at=system_observed_at,
+        )
+        _apply_lineage(response_rows, existing_observations)
+        deduped_rows = [
+            row for row in response_rows
+            if row["observation_id"] not in set(existing_observations["observation_id"].dropna().astype(str))
+        ]
+        valid_metrics = {row["metric"] for row in response_rows if row["value"] is not None}
+        malformed_response = any(
+            frame is not None and (not hasattr(frame, "index") or not hasattr(frame, "columns"))
+            for frame in frames.values()
+        )
+        if malformed_response:
+            status, error_class, error_detail = "malformed", "malformed_response", "unsupported_estimate_shape"
+        elif not response_rows and accessor_errors:
+            status, http_status, error_class, error_detail = _safe_http_failure(accessor_errors[0])
+        elif not response_rows:
+            status, error_class, error_detail = "null", "empty_response", "no_estimate_rows"
+        elif accessor_errors or len(valid_metrics) < 2:
+            status = "partial"
+            if accessor_errors:
+                _, http_status, error_class, error_detail = _safe_http_failure(accessor_errors[0])
+            else:
+                http_status, error_class, error_detail = None, "partial_response", "one_or_more_metrics_unavailable"
+        else:
+            status, error_class, error_detail = "success", None, None
+        if not (accessor_errors and not response_rows) and not (accessor_errors and response_rows):
+            http_status = None
+        new_observations.extend(deduped_rows)
+        new_attempts.append({
+            "attempt_id": attempt_id, "collection_session_id": session_id,
+            "provider": _EXPECTATION_PROVIDER, "ticker_compat": ticker,
+            "attempted_at": attempted_at, "completed_at": _iso8601(), "status": status,
+            "http_status": http_status,
+            "latency_ms": int((pd.Timestamp.now(tz="UTC") - started).total_seconds() * 1000),
+            "response_payload_hash": payload_hash, "safe_error_class": error_class,
+            "safe_error_detail": error_detail, "observation_count": len(response_rows),
+        })
+
+    if new_observations:
+        combined_observations = pd.concat([existing_observations, pd.DataFrame(new_observations)], ignore_index=True)
+        _write_parquet(observations_path, combined_observations.drop_duplicates(subset=["observation_id"], keep="first"), _OBSERVATION_COLUMNS)
+    if new_attempts:
+        combined_attempts = pd.concat([existing_attempts, pd.DataFrame(new_attempts)], ignore_index=True)
+        _write_parquet(attempts_path, combined_attempts.drop_duplicates(subset=["attempt_id"], keep="first"), _ATTEMPT_COLUMNS)
+    return {"attempts": len(new_attempts), "observations": len(new_observations)}
+
+
+def _one(ticker: str, ticker_client: Any | None = None) -> dict | None:
+    if ticker_client is None:
+        import yfinance as yf
+        ticker_client = yf.Ticker(ticker)
+    t = ticker_client
     try:
         rev = t.eps_revisions
         trend = t.eps_trend
@@ -234,7 +627,13 @@ def _universe() -> list[str]:
     return sorted(set(tk))
 
 
-def fetch_revisions(max_new: int = 200) -> int:
+def fetch_revisions(
+    max_new: int = 200,
+    *,
+    expectation_output_dir: Path | None = None,
+    collection_session_id: str | None = None,
+    system_observed_at: object | None = None,
+) -> int:
     """Drip up to ``max_new`` STALEST names; update latest.parquet + append a dated
     snapshot to history.parquet. Best-effort — any per-name failure is skipped."""
     out_dir = config.data_dir() / "revisions"
@@ -253,6 +652,18 @@ def fetch_revisions(max_new: int = 200) -> int:
         log.info("revisions: all %d names fresh (<%dd)", len(uni), _FRESH_DAYS); return 0
 
     rows = {}
+    # SRC-A1 has the same frozen target set and cadence as this existing drip;
+    # it does not add a scheduler, broader universe, or freshness policy.
+    try:
+        expectation_result = accrue_expectation_observations(
+            todo,
+            output_dir=expectation_output_dir,
+            collection_session_id=collection_session_id,
+            system_observed_at=system_observed_at,
+        )
+    except Exception as exc:  # noqa: BLE001 - preserve legacy revisions availability
+        log.warning("SRC-A1 expectation accrual skipped (%s)", type(exc).__name__)
+        expectation_result = {"attempts": 0, "observations": 0}
     for t in todo:
         try:
             r = _one(t)
@@ -262,7 +673,11 @@ def fetch_revisions(max_new: int = 200) -> int:
             r["asof"] = today
             rows[t] = r
     if not rows:
-        log.info("revisions: drip fetched 0 of %d", len(todo)); return 0
+        log.info(
+            "revisions: drip fetched 0 of %d (SRC-A1 attempts=%d observations=%d)",
+            len(todo), expectation_result["attempts"], expectation_result["observations"],
+        )
+        return 0
     new = pd.DataFrame.from_dict(rows, orient="index")
     merged = new if latest.empty else pd.concat([latest[~latest.index.isin(new.index)], new])
     merged.to_parquet(latest_p)
@@ -274,7 +689,10 @@ def fetch_revisions(max_new: int = 200) -> int:
         snap = pd.concat([pd.read_parquet(hist_p), snap], ignore_index=True)
         snap = snap.drop_duplicates(subset=["date", "ticker"], keep="last")
     snap.to_parquet(hist_p)
-    log.info("revisions: +%d names (latest now %d, history %d rows)", len(rows), len(merged), len(snap))
+    log.info(
+        "revisions: +%d names (latest now %d, history %d rows; SRC-A1 attempts=%d observations=%d)",
+        len(rows), len(merged), len(snap), expectation_result["attempts"], expectation_result["observations"],
+    )
     return len(rows)
 
 

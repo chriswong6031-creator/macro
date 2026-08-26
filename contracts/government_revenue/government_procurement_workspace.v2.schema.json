@@ -27,6 +27,7 @@
         "recompetes": {"$ref": "#/$defs/detailFreshness"},
         "award_events": {"$ref": "#/$defs/awardEventFreshness"},
         "budget": {"$ref": "#/$defs/budgetFreshness"},
+        "fms": {"$ref": "#/$defs/fmsFreshness"},
         "mappings": {"$ref": "#/$defs/mappingFreshness"}
       }
     },
@@ -108,6 +109,17 @@
     "metadataScalar": {"type": ["string", "number", "boolean", "null"]},
     "railFailureState": {"enum": [null, "source_unavailable", "projection_missing"]},
     "budgetFreshness": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "failure_state", "observed_at", "records_visible", "reason_code"],
+      "properties": {
+        "status": {"type": "string"},
+        "failure_state": {"$ref": "#/$defs/railFailureState"},
+        "observed_at": {"type": ["string", "null"], "format": "date-time"},
+        "records_visible": {"type": ["integer", "null"], "minimum": 0},
+        "reason_code": {"type": ["string", "null"]}
+      }
+    },
+    "fmsFreshness": {
       "type": "object", "additionalProperties": false,
       "required": ["status", "failure_state", "observed_at", "records_visible", "reason_code"],
       "properties": {

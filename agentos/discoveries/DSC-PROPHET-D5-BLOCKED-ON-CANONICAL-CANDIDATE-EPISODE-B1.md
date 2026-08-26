@@ -50,3 +50,24 @@ confidence: verified
 The blocker is a no-duplicate-lifecycle safeguard, not a preference for a particular
 serialization. It clears only when the canonical B1 object exists and is production-
 proven enough for Cell F to consume without reconstructing identity itself.
+
+## Status note — 2026-08-26: falsifier HALF met, discovery still STANDS
+
+B1 merged as `878930b3b2f9849e120391fa461ed528f32d2e3c` (PR #6405) at 2026-08-26T00:13:07Z, so
+the first half of the falsifier — "a current-main implementation owned by
+WS:PROPHET-US-V4-RECOVERY that publishes and reads `prophet.candidate_episode/v1` on the
+canonical V4 identity/lifecycle" — is now satisfied.
+
+The second half — "**with real production episode proof**" — is not. `data/us_prophet_rank/episodes/`
+does not exist on `main`; B1's writer is schedule-only (`.github/workflows/daily.yml:6443-6444`)
+and has not yet executed. B1's own status is MERGED / BUILT_NOT_PROVEN.
+
+This discovery therefore **still stands** and D5 runtime remains blocked. It clears on B1
+natural-production acceptance from the first qualifying ordinary scheduled `daily.yml` run whose
+HEAD contains the B1 merge — not by dispatch, rerun, replay, or report mode. A run whose head
+predates the merge does not qualify even though the job checks out `ref: main`: the workflow
+definition is pinned to the triggering commit, so a newly merged workflow *step* cannot appear
+in an already-started run (verified against run `32908543584`).
+
+The architecture half of the blocker is now reconciled: see
+`research/prophet_v4/flagship_cells/CELL_F_D5_CONTRACT_AMENDMENTS_2026-08-26.md`.

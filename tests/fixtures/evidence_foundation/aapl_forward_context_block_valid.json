@@ -1,0 +1,110 @@
+{
+  "schema": "evidence_foundation.block.v1",
+  "version": "1.0.0",
+  "evidence_block_id": "ebl_3477ff620c494c89d518df4f978897c45cfa8efda8d57672c295b5023fb0e4f4",
+  "block_key": "forward_context",
+  "consumer": {
+    "workstream": "WS:MARKET-OS",
+    "job": "build security_state.v1 for AAPL",
+    "output_contract": "security_state.v1"
+  },
+  "supported_claim": {
+    "kind": "claim",
+    "text": "The AAPL forward-context leg is an owner-native QLedger claim and remains model authority.",
+    "state": "partial"
+  },
+  "reference_ids": [
+    "efr_33b285dfa313d7aeeca2752cf7fa8a6f36a924372ceb7b9e635bdcc231104d62"
+  ],
+  "owner_stores": [
+    "qledger.claim"
+  ],
+  "object_classes": [
+    "forward_claim"
+  ],
+  "evidence_class": "model",
+  "clock_summary": {
+    "collapsed": false,
+    "entries": [
+      {
+        "reference_id": "efr_33b285dfa313d7aeeca2752cf7fa8a6f36a924372ceb7b9e635bdcc231104d62",
+        "class": "belief_or_build",
+        "field": "asof",
+        "value_state": "known",
+        "value": "2026-08-23",
+        "grain": "date"
+      },
+      {
+        "reference_id": "efr_33b285dfa313d7aeeca2752cf7fa8a6f36a924372ceb7b9e635bdcc231104d62",
+        "class": "belief_or_build",
+        "field": "vector_asof",
+        "value_state": "known",
+        "value": "2026-08-23",
+        "grain": "date"
+      },
+      {
+        "reference_id": "efr_33b285dfa313d7aeeca2752cf7fa8a6f36a924372ceb7b9e635bdcc231104d62",
+        "class": "system_recorded",
+        "field": "timestamp",
+        "value_state": "known",
+        "value": "2026-08-23T12:00:00Z",
+        "grain": "datetime"
+      },
+      {
+        "reference_id": "efr_33b285dfa313d7aeeca2752cf7fa8a6f36a924372ceb7b9e635bdcc231104d62",
+        "class": "review_due",
+        "field": "check_by",
+        "value_state": "known",
+        "value": "2026-09-30",
+        "grain": "date"
+      }
+    ]
+  },
+  "coverage": {
+    "state": "unknown",
+    "total": 1,
+    "included": 1,
+    "excluded": 0,
+    "missing": 0,
+    "stale": 0,
+    "rights_blocked": 0,
+    "fallback": 0,
+    "basis": "all requested owner-reader fixture rows reconcile by native reference identity; freshness remains owner-policy dependent",
+    "reconciliation_state": "reconciled"
+  },
+  "uncertainty": {
+    "state": "display_only",
+    "probability": null,
+    "derivation_ref": null,
+    "calibration_ref": null
+  },
+  "dependence": {
+    "state": "independent",
+    "independent_evidence_count": 1,
+    "groups": []
+  },
+  "conflict_correction": {
+    "state": "none",
+    "reference_ids": []
+  },
+  "next_observable": {
+    "state": "known",
+    "description": "Re-evaluate the claim at its owner-native check_by clock.",
+    "owner_clock_field": "check_by"
+  },
+  "permitted_consumers": [
+    "security_state.v1"
+  ],
+  "lineage": {
+    "state": "original",
+    "predecessor_block_ids": [],
+    "invalidated_by_reference_ids": []
+  },
+  "authority": {
+    "can_rank": false,
+    "can_gate": false,
+    "can_size": false,
+    "can_originate": false,
+    "can_open_entry": false
+  }
+}

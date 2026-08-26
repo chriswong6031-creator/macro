@@ -1,0 +1,3 @@
+59 passed, 3 warnings in 7.66s
+candidate sha256: ea2e09b812d1435103e491973ae01d2c4fca63c3a29186023f40f137fc10aba8
+command: python3 -m pytest tests/test_xpv2_sector_r3_fixture.py -q

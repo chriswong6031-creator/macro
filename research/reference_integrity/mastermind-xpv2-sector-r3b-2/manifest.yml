@@ -1,0 +1,60 @@
+# RIG artifact manifest (RIG V1 S3) -- XPV2-SC-R3B.2, US Sector Central six-view workspace,
+# FINAL SURGICAL CLOSURE cycle over the REVISE'd mastermind-xpv2-sector-r3b-1 reference.
+# Commission: COMMISSION.md in this directory (Sol + Chairman execution directive,
+# 2026-08-23). The R3B product architecture is FROZEN (immutable-architecture list). This
+# cycle closes the final ratified 12-row obligation set: VTC1-001 plus
+# B2-01/05/06/08/09/10/11/12/13/14/15. Build tree started as a byte-identical copy of the
+# frozen R3B.1 build.
+schema: mastermind.rig_manifest.v1
+reference_id: mastermind-xpv2-sector-r3b-2
+scope: full
+status: approved
+# Final design-authority source: PR #6337 issuecomment-5404196829, Sol
+# APPROVE_WITH_CONDITIONS on 2026-08-24 ET under protected Skillpack
+# Mastermind@4d323d03e4151449a4b76abfdfefca1d56825fde. The five carried future
+# production-migration conditions are heatmap legibility (UNMEASURED, never PASS), real
+# auth//premiumdata/ proof, live Time Machine proof, production Validated/21d semantics,
+# and the standing prohibition on unsupported Baskets/correction-UI invention. No
+# frozen_sha moved on approval; candidate bytes are unchanged. Approval is REFERENCE LAW
+# only -- not production deployment -- and does not authorize R3C implementation.
+#
+# The corrected candidate is
+# `4adb4b6245e8e4aa5b68c850a615461327c0a5d2e672e4c203d6ba32a3b8d53c`
+# (5,506,871 bytes), verifier 23/23 ALL GREEN, with heatmap colour-field legibility still
+# UNMEASURED. Four fresh final critic receipts are durable under reviews/ and bind this exact
+# frozen artifact; verdict.yml and approval.yml carry the final Sol ruling.
+
+surface:
+  route: sector_central.html
+  registry_row: "macro:sector_central"
+  archetype: intelligence_desk
+
+author:
+  identity: "XPV2-SC-R3B.2 final surgical closure -- returning R3B/R3B.1 Fable orchestrator with delegated Opus design + Sonnet build/QA lanes (COMMISSION.md, Sol + Chairman 2026-08-23)"
+  role: designer
+
+lineage:
+  predecessors:
+    - mastermind-xpv2-turn3-r2
+    - mastermind-xpv2-sector-r3b
+    - mastermind-xpv2-sector-r3b-1
+
+reference_files:
+  - path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/proposal/MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html
+    frozen_sha: "d0830a374795925ee1e55b66c0cc42e329ac172d"
+  - path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/proposal/BUILD_MANIFEST.json
+    frozen_sha: "d0830a374795925ee1e55b66c0cc42e329ac172d"
+  - path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/
+    frozen_sha: "d0830a374795925ee1e55b66c0cc42e329ac172d"
+    note: "source directory -- byte-identical copy of the frozen R3B.1 build at cycle start; final closure changes only adjudicated targets; the pre-final reconciliation removes only the decoded chart emoji from the Moving Track Record heading and adds the decoded-output guard required by that ruling"
+  - path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/evidence/
+    frozen_sha: "d0830a374795925ee1e55b66c0cc42e329ac172d"
+    note: "historical provisional-freeze matrix plus a separately indexed pre-final correction delta; historical screenshots are not rebound to the corrected candidate"
+
+files:
+  baseline: baseline.yml
+  proposal: proposal.yml
+  continuity: continuity.yml
+  # reviews/: four FRESH final critic receipts and their first-pass evidence are durable here.
+  # verdict.yml / approval.yml: authority-bearing final Sol records, bound to
+  # PR #6337 issuecomment-5404196829. They approve reference law only.

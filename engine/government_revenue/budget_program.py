@@ -418,7 +418,9 @@ def build_budget_program_graph(
         "programs": programs,
         "edges": sorted(edges, key=lambda row: row["edge_id"]),
         "limitations": [
-            "Wave 8 supplies a fixture-only parser contract; no live PDF acquisition or real-layout extraction is activated for publication.",
+            "Live official acquisition (fetch, sha256, immutable object-store write, strict readback verification) and deterministic pdfplumber text-layer extraction are ACTIVE for the FY2027 P-1/R-1 President's Budget exhibits; this remains a display/evidence-tier feed only.",
+            "Extraction is text-layer only (no OCR), so an image-only or scanned page refuses rather than producing a plausible partial row.",
+            "Named grain gaps: zero-numbered-line totals partitions (e.g. 1612N BA01) are not represented at line grain; FY2026 sub-cell columns (Discretionary Enacted, PL 119-21 Spend Plan) are read but not published as their own semantic; the single FY2027 P-1 E-7-shape line (own value netting exactly to zero against value-bearing Less:-children with no printed net-memo row) publishes ALL-NULL amounts rather than a computed figure; and there is no retraction path yet for a line published under a since-superseded parser generation.",
             "P-1/R-1 President's Budget request evidence is not authorization, enacted appropriation, execution, obligation, award value, backlog, or revenue.",
             "Program-to-award paths require exact reviewed documentary evidence; program names and semantic similarity do not create edges.",
             "Economic weight is null in Wave 8, so this graph does not allocate a budget line to an issuer.",

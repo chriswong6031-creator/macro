@@ -223,8 +223,7 @@ def test_option_shadow_lifecycle_module_imports_cleanly() -> None:
         importlib.reload(module)
         assert not hasattr(module, "CANONICAL_LEDGER_RAW_TEMPLATE")
         assert not hasattr(module, "CANONICAL_LEDGER_GIT_REMOTE")
-        assert callable(module._resolve_current_main_commit)
-        assert callable(module._download_current_main_ledger)
+        assert callable(module.prophet_canonical_git.read_canonical_blob)
     finally:
         if str(ROOT) in sys.path:
             sys.path.remove(str(ROOT))

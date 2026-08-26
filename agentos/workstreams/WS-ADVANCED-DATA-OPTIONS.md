@@ -73,6 +73,44 @@ waves:
       Next: Sol decision on a spine-cadence wave (incremental refresh) +
       store-host runner topology (RE-PIN RULE) / r2sync heal. Do not start
       AD-2; do not shrink the universe.
+  - id: AD-1T1
+    title: Full-universe incremental ThetaData T1 cadence (Sol handoff 2026-08-22)
+    status: done
+    pr: 6267
+    depends_on: [AD-1T0]
+    next_action: >
+      PROVEN_LIVE 2026-08-25 (production packet = PR 6267
+      issuecomment-5419508761; merge SHA 787787f93c8e, merged 2026-08-23,
+      m1 transitioned same night per runbook section 3a, Terminal never
+      restarted). Proof: two consecutive normal scheduled sessions — D1
+      2026-08-24 (S 2026-08-21) healthy 98.1->98.4%, D2 2026-08-25
+      (S 2026-08-24) healthy 0.984, all 8 rungs deadline_exceeded=False,
+      forced=false, both 18:30 PT sentinel anchor evaluations PASSED K4,
+      oi_D_source=snapshot_open_interest direct in D2 receipts, OI[D]
+      rows verified lawful at the parquet level both dates; bounded
+      production acceptance review 9/10 PASS with the one finding (F1
+      second-writer flock gap: com.mastermind.levelsseal ran pre-AD-1T1
+      topup from stale hub-ops-wt without flock) REPAIRED same day
+      (4-file closure refreshed to origin/main bytes, sha256-verified,
+      live validation = next 04:30 PT fire); read-only AD diagnostic on
+      the store host: source_coverage_pct 0.9467 >= 0.90, board_state OK,
+      receipt closure intact, zero Polygon inputs, Q_flow ABSENT — the
+      AD-1T0 source blocker (0.104) is SOLVED. Open findings for their
+      own waves (never a lane redesign): F2 six dead AD-universe roots
+      masked as vendor_empty (WBS/BLD/URG/RHHBY/NVR/FI, stale since
+      <=2026-07-02); F3 sentinel structural evening greeks-WARN
+      (pre-existing); F4 timestamp-less daily_refresh.log + single-slot
+      receipt makes first-run receipts unrecoverable per day. AD-1
+      remains BUILT_NOT_PROVEN (consumer path is AD-1T2's to prove).
+      Next: Sol commissioning of AD-1T2. AD-2 stays CLOSED.
+  - id: AD-1T2
+    title: Restore store-bearing M1 to the theta-m1 product workflow; commission AD-1 end to end
+    status: todo
+    depends_on: [AD-1T1]
+    next_action: >
+      NOT STARTED. Opens only after AD-1T1 is Sol-accepted and the T1 cadence
+      is production-proven (two consecutive normal scheduled sessions). Broken
+      R2 sync is not a prerequisite unless new evidence proves it necessary.
   - id: AD-2
     title: Evidence Receipts, Nulls, Lifecycle, Corrections
     status: todo
@@ -147,11 +185,12 @@ do_not_redo:
   - >-
     Sparse selector / W1A is RESEARCH-ONLY. Do not resurrect before the AD-9 ruling.
 next_action: >
-  Execute wave AD-1T0 (ThetaData canonical source cutover): census + PIT
-  reconciliation + identity ruling + bounded adapter + production proof against
-  the newest lawful ThetaData S/D pair. Success => AD-1 = PROVEN_LIVE; return
-  to Sol before AD-2. No Massive/Polygon restoration work belongs to this
-  workstream.
+  Execute wave AD-1T1 (full-universe incremental T1 cadence, Sol handoff
+  2026-08-22): benchmark one-day vendor throughput; extend the existing
+  one-session writer into the daily incremental maintainer; retire whole-year
+  DAILY refresh; return the bounded PR to Sol UNMERGED. AD-1 stays
+  BUILT_NOT_PROVEN until AD-1T2 restores the product workflow. Do not start
+  AD-1T2 or AD-2.
 artifacts:
   - research/ADVANCED_DATA_OPTIONS_EOD_DARK_POOL_INTELLIGENCE_OS_MASTERPLAN_2026-08-17.md
   - research/ADVANCED_DATA_OPTIONS_EOD_AD0_CURRENT_STATE_AND_CAPABILITY_LEDGER_2026-08-17.md
@@ -181,6 +220,11 @@ ThetaData-consuming jobs to the theta-m1 runner labels.
 The repo-local `data/thetadata_eod/` is an EMPTY STUB (`n_roots=0`) and must
 never be treated as production truth — the resolver refuses it by design.
 
-`site/options_intel_brief.json` remains `board_state=STALE_SOURCE` from the
-frozen legacy store (`as_of_session=2026-08-12`) until AD-1T0's cutover PR
-lands and the producer consumes the ThetaData store.
+`site/options_intel_brief.json` is built from the canonical ThetaData store
+since AD-1T0 (PR #6253, merge a45ac6f58e63): honest
+`board_state=INSUFFICIENT_COVERAGE` at 39/375 = 0.104 source coverage. The
+coverage blocker is the T1 spine's 48-root daily refresh
+(DSC:THETADATA-T1-SPINE-DAILY-REFRESH-IS-48-ROOTS); AD-1T1 replaces that
+whole-year refresh with a full-universe one-session incremental maintainer —
+the ~19h full-universe estimate was a property of the whole-year re-pull
+design, not of one-day vendor throughput (Sol ruling, AD-1T1 handoff §0).

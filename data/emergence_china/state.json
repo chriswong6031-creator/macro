@@ -1,32 +1,32 @@
 {
-  "00b961196d2a": {
-    "name_en": "Emerging Industrials cluster",
-    "name_zh": "\u65b0\u5174 Industrials \u96c6\u7fa4",
-    "score": 53.7
-  },
   "25d5cedbe2b5": {
     "name_en": "Cross-sector cluster \u00b7 Communication Services + Consumer Cyclical",
     "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Communication Services + Consumer Cyclical",
-    "score": 61.0
+    "score": 60.7
   },
-  "36ef31cead36": {
-    "name_en": "Cross-sector cluster \u00b7 Consumer Cyclical + Communication Services",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Consumer Cyclical + Communication Services",
-    "score": 62.2
+  "48ee7f79bceb": {
+    "name_en": "Emerging Industrials cluster",
+    "name_zh": "\u65b0\u5174 Industrials \u96c6\u7fa4",
+    "score": 59.4
   },
-  "d7fe19ce9150": {
-    "name_en": "Cross-sector cluster \u00b7 Technology + Real Estate",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Technology + Real Estate",
-    "score": 48.1
+  "4a0628f94153": {
+    "name_en": "Cross-sector cluster \u00b7 Consumer Cyclical + Consumer Defensive",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Consumer Cyclical + Consumer Defensive",
+    "score": 61.8
   },
-  "e04b5e5e2a62": {
-    "name_en": "Cross-sector cluster \u00b7 Energy + Utilities",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Energy + Utilities",
-    "score": 54.1
-  },
-  "eaa9c5d549e3": {
+  "4aa1fd92e29e": {
     "name_en": "Cross-sector cluster \u00b7 Utilities + Industrials",
     "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Utilities + Industrials",
-    "score": 64.4
+    "score": 59.4
+  },
+  "73937d207e80": {
+    "name_en": "Cross-sector cluster \u00b7 Basic Materials + Technology",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Basic Materials + Technology",
+    "score": 68.1
+  },
+  "fb15ff35b626": {
+    "name_en": "Cross-sector cluster \u00b7 Industrials + Utilities",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Utilities",
+    "score": 59.7
   }
 }

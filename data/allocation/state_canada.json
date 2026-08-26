@@ -8,13 +8,13 @@
     "ca_consumer",
     "ca_gold",
     "ca_insurers",
-    "ca_materials",
     "ca_oil_gas",
     "ca_pipelines",
     "ca_rails_ind",
     "ca_reits",
     "ca_silver_royalty",
     "ca_tech",
+    "ca_uranium",
     "ca_utilities"
   ],
   "held": [

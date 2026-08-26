@@ -1,0 +1,7 @@
+# XPV2-SC-R3B.2 — B2-14 ZH 'Show less / 收起' target-size measurement
+candidate sha256: ea2e09b812d1435103e491973ae01d2c4fca63c3a29186023f40f137fc10aba8
+house floor: 44.0px
+
+320px: aria-expanded=true text='Show less收起' box=294.0x44.0px  PASS >= floor
+390px: aria-expanded=true text='Show less收起' box=356.0x44.0px  PASS >= floor
+820px: aria-expanded=true text='Show less收起' box=606.0x44.0px  PASS >= floor

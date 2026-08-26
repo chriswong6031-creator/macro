@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.liquidity_plumbing.v1",
-  "asof": "2026-08-21",
+  "asof": "2026-08-25",
   "phase_status": {
     "p0_p1_quantity_quality": "integrated",
     "p3_funding_spreads": "integrated",
@@ -26,15 +26,15 @@
     "assets_bn": 6745.699,
     "assets_chg_20d_bn": -1.679,
     "reserve_balances_bn": 2935.287,
-    "walcl_stale_days": 2,
+    "walcl_stale_days": 4,
     "policy_stance": "hawkish",
     "administered_rate_posture": "on_hold",
-    "asof": "2026-08-21"
+    "asof": "2026-08-25"
   },
   "treasury": {
-    "tga_bn": 935.077,
-    "tga_chg_20d_bn": 57.876,
-    "net_issuance_20d_bn": 369.136,
+    "tga_bn": 966.849,
+    "tga_chg_20d_bn": 64.098,
+    "net_issuance_20d_bn": 353.608,
     "expected_tga_pressure": "unknown_until_financing_estimates_parser",
     "coupon_supply_pressure": "context_only",
     "tga_impulse": {
@@ -47,73 +47,69 @@
       "summary_en": "No TGA impulse detected.",
       "summary_zh": "未检测到TGA冲量。"
     },
-    "asof": "2026-08-20"
+    "asof": "2026-08-24"
   },
   "rrp": {
-    "rrp_bn": 0.2,
-    "rrp_chg_20d_bn": -0.475,
+    "rrp_bn": 0.405,
+    "rrp_chg_20d_bn": -0.721,
     "buffer_state": "exhausted"
   },
   "quantity": {
-    "netliq_bn": 5810.422,
-    "netliq_chg_20d_bn": -49.981,
-    "netliq_chg_65d_bn": -96.375,
-    "netliq_pctile_expanding": 0.774945,
+    "netliq_bn": 5778.445,
+    "netliq_chg_20d_bn": -1.671,
+    "netliq_chg_65d_bn": -108.683,
+    "netliq_pctile_expanding": 0.76413,
     "overlay": "contracting"
   },
   "quality": {
     "label": "contracting",
-    "fed_share": 0.16,
+    "fed_share": 0.03,
     "mechanical": true,
     "stress_confirming": false,
     "stress_overlay": {
-      "hy_oas_pct": 2.75,
-      "hy_oas_z": -0.16,
+      "hy_oas_pct": 2.69,
+      "hy_oas_z": -0.72,
       "nfci": -0.559,
       "nfci_trend": "loose",
       "confirming_stress": false
     },
-    "walcl_stale_days": 2
+    "walcl_stale_days": 4
   },
   "funding": {
     "effr_minus_iorb_bp": -2.0,
     "effr_minus_iorb_d20_bp": 0.0,
-    "effr_minus_iorb_pctile": 0.9134,
-    "sofr_minus_iorb_bp": -2.0,
-    "sofr_minus_iorb_d20_bp": -1.0,
-    "sofr_minus_iorb_pctile": 0.8432,
-    "sofr_99pctl_minus_iorb_bp": 6.0,
-    "sofr_99pctl_minus_iorb_d20_bp": -1.0,
-    "sofr_99pctl_minus_iorb_pctile": 0.7758,
+    "effr_minus_iorb_pctile": 0.9135,
+    "sofr_minus_iorb_bp": 0.0,
+    "sofr_minus_iorb_d20_bp": 1.0,
+    "sofr_minus_iorb_pctile": 0.9107,
+    "sofr_99pctl_minus_iorb_bp": 8.0,
+    "sofr_99pctl_minus_iorb_d20_bp": 1.0,
+    "sofr_99pctl_minus_iorb_pctile": 0.8528,
     "srf_takeup_bn": null,
     "discount_window_primary_credit_bn": null,
     "reserve_scarcity_state": "tightening",
-    "asof": "2026-08-20"
+    "asof": "2026-08-24"
   },
   "components": {
     "walcl": {
       "level_bn": 6745.7,
       "d20_bn": -1.7,
       "d65_bn": 32.1,
-      "pctile": 0.7712
+      "pctile": 0.7713
     },
     "rrp": {
-      "level_bn": 0.2,
-      "d20_bn": -0.5,
-      "d65_bn": -24.7,
-      "pctile": 0.0865
+      "level_bn": 0.4,
+      "d20_bn": -0.7,
+      "d65_bn": -0.6,
+      "pctile": 0.1278
     },
     "tga": {
-      "level_bn": 935.1,
-      "d20_bn": 48.8,
-      "d65_bn": 153.1,
-      "pctile": 0.9403
+      "level_bn": 966.8,
+      "d20_bn": 0.7,
+      "d65_bn": 141.3,
+      "pctile": 0.9496
     },
     "netliq_sparkline_90d": [
-      {
-        "d": "2026-05-26",
-        "v": 5830.5
-      },
       {
         "d": "2026-05-27",
         "v": 5859.9
@@ -360,7 +356,15 @@
       },
       {
         "d": "2026-08-21",
-        "v": 5810.4
+        "v": 5812.3
+      },
+      {
+        "d": "2026-08-24",
+        "v": 5778.5
+      },
+      {
+        "d": "2026-08-25",
+        "v": 5778.4
       }
     ],
     "reserves": {
@@ -390,7 +394,7 @@
   "degraded": false,
   "schema_version": 1,
   "produced_by": "scripts/build_liquidity_plumbing.py",
-  "produced_at": "2026-08-23T04:45:21Z",
-  "inputs_hash": "sha256:b96be99e2215b2d5eb1d4fae3adf37e9769f3b79f89cf1a8a52f9138e21bd5a1",
+  "produced_at": "2026-08-26T05:59:15Z",
+  "inputs_hash": "sha256:1fe0fa9eff7949c5b46566617ae8db5db036bcf7e38284e061e2d4eb9490b152",
   "tier": "shadow"
 }

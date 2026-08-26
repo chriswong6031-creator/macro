@@ -127,7 +127,8 @@ def _asgi_post(app, path: str, *, body: bytes, extra_headers: list[tuple[bytes, 
 
 
 @pytest.fixture
-def router_app() -> FastAPI:
+def router_app(monkeypatch) -> FastAPI:
+    monkeypatch.setattr(forensics_api, "REPO", ROOT)
     app = FastAPI()
     app.include_router(forensics_api.router)
     return app
@@ -710,15 +711,14 @@ def test_exactly_64kib_body_is_not_413(paid_client, monkeypatch) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_default_unavailable_provider_returns_503(paid_client) -> None:
-    """Paid user, no FIP1 inject → default UnavailableFinancialQueryProvider → 503."""
+def test_default_golden_provider_unknown_entity_returns_400(paid_client) -> None:
+    """Paid user, default golden AAPL provider, non-AAPL issuer → private 400."""
     response = paid_client.post(
         _QUERY_PATH,
         content=_make_request(),
         headers={"content-type": "application/json"},
     )
-    _assert_error(response, 503, "financial query temporarily unavailable")
-    # Must not contain exception text
+    _assert_error(response, 400, "unknown entity")
     assert "UnavailableFinancialQueryProvider" not in response.text
     assert "FinancialQueryUnavailableError" not in response.text
 
@@ -736,6 +736,35 @@ def test_provider_generic_exception_returns_503_no_leak(paid_client, monkeypatch
     )
     _assert_error(response, 503, "financial query temporarily unavailable")
     assert "secret internal path" not in response.text
+
+
+def test_unlawful_delivery_returns_private_503(paid_client, monkeypatch) -> None:
+    base = fip1_fixture_dataset(ROOT)
+    dataset = FinancialQueryDataset(
+        binding=base.binding,
+        ledger=base.ledger,
+        filing_metadata=base.filing_metadata,
+        registry=base.registry,
+        delivery={
+            "kind": "committed_golden_fixture",
+            "attested": True,
+            "production_issuer_service": False,
+        },
+    )
+
+    class _Provider:
+        def resolve(self, entity_id: str) -> FinancialQueryDataset:
+            return dataset
+
+    monkeypatch.setattr(forensics_api, "_financial_query_provider", lambda: _Provider())
+    response = paid_client.post(
+        _QUERY_PATH,
+        content=_make_request(),
+        headers={"content-type": "application/json"},
+    )
+    _assert_error(response, 503, "financial query temporarily unavailable")
+    assert "committed_golden_fixture" not in response.text
+    assert "attested" not in response.text
 
 
 # ---------------------------------------------------------------------------

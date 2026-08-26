@@ -1,0 +1,8 @@
+dark/en: n=8 classes=[''] ink=rgb(139, 147, 161) panel=rgb(24, 27, 33) contrast=5.57:1 reserved_up=color-mix(in srgb, #45b873 100%, #d7dce3) reserved_down=color-mix(in srgb, #e06464 100%, #d7dce3) muted=#8b93a1 is_reserved=False
+          texts=['-16.0%', '+13.2%', '+12.6%', '+11.5%', '-10.5%', '+8.4%', '+8.2%', '+6.8%']
+dark/zh: n=8 classes=[''] ink=rgb(139, 147, 161) panel=rgb(24, 27, 33) contrast=5.57:1 reserved_up=color-mix(in srgb, #e06464 84%, #d7dce3) reserved_down=color-mix(in srgb, #45b873 100%, #d7dce3) muted=#8b93a1 is_reserved=False
+          texts=['-16.0%', '+13.2%', '+12.6%', '+11.5%', '-10.5%', '+8.4%', '+8.2%', '+6.8%']
+light/en: n=8 classes=[''] ink=rgb(93, 107, 126) panel=rgb(255, 255, 255) contrast=5.43:1 reserved_up=color-mix(in srgb, #1f9a55 62%, #1c2430) reserved_down=color-mix(in srgb, #cf4040 84%, #1c2430) muted=#5d6b7e is_reserved=False
+          texts=['-16.0%', '+13.2%', '+12.6%', '+11.5%', '-10.5%', '+8.4%', '+8.2%', '+6.8%']
+light/zh: n=8 classes=[''] ink=rgb(93, 107, 126) panel=rgb(255, 255, 255) contrast=5.43:1 reserved_up=color-mix(in srgb, #cf4040 84%, #1c2430) reserved_down=color-mix(in srgb, #1f9a55 62%, #1c2430) muted=#5d6b7e is_reserved=False
+          texts=['-16.0%', '+13.2%', '+12.6%', '+11.5%', '-10.5%', '+8.4%', '+8.2%', '+6.8%']

@@ -734,7 +734,7 @@ def test_row_level_discriminator_catches_the_2026_08_10_incident_class_and_excus
 
 
 def test_live_bwxt_candidates_are_excused_by_their_own_fresh_ownership_edges() -> None:
-    """FIX-A verification (a): today's two BWXT rows, against the real payload.
+    """FIX-A verification (a): current BWXT rows, against the real payload.
 
     Confirms the row-level discriminator excuses ``grc1-2431cef9…`` and
     ``grc1-81a1a8df…`` because the five BWXT identifier/ownership rows they
@@ -742,11 +742,13 @@ def test_live_bwxt_candidates_are_excused_by_their_own_fresh_ownership_edges() -
     the newest ``known_at`` the append-only ledger has already issued, not
     because of anything document-level.
 
-    The candidate ids are pinned rather than derived: they rebuild byte-stable
-    across the defense19->defense21 republish (``candidate_id`` folds only
-    ``candidate_family``/``issuer_company_id``/``event_id``, never the graph
-    digest -- see ``historical_suppression_entry_key``'s docstring), so unlike
-    a census or a vintage clock this identity is not a scheduled failure.
+    The original two candidate ids are pinned as a required subset rather than
+    derived: each rebuilds byte-stable across the defense19->defense21
+    republish (``candidate_id`` folds only ``candidate_family`` /
+    ``issuer_company_id`` / ``event_id``, never the graph digest -- see
+    ``historical_suppression_entry_key``'s docstring). The live SET is not
+    frozen: new receipt-bound BWXT events can lawfully add rows, and each new
+    row must pass the same issuance-or-edge-clock proof below.
 
     What is NOT stable is the freeze this excuse was originally checked
     against: ``candidate_projection_state.generated_at`` is the WALL clock of
@@ -757,13 +759,11 @@ def test_live_bwxt_candidates_are_excused_by_their_own_fresh_ownership_edges() -
     ``known_at`` the ledger has actually issued, which only moves when a real
     candidate is appended.
 
-    These two rows are also a known, separately-tracked non-issuance gap
-    (source observes them; the published queue currently does not carry
-    them) -- a different bug than the one this test guards, and not this
-    test's job to fix.  So the assertion below self-retires the moment that
-    gap closes: once a BWXT row is actually issued into the ledger, whether
-    it is *also* excused by the row-level clock is moot, because it is no
-    longer unaccounted at all.
+    This began with two known, separately-tracked non-issuance rows. The
+    assertion below self-retires row by row as the publisher catches up: once
+    a BWXT observation is actually issued into the ledger, whether it is
+    *also* excused by the row-level clock is moot, because it is no longer
+    unaccounted at all.
     """
     payload = build_payload(root=ROOT)
     graph = json.loads(
@@ -771,10 +771,10 @@ def test_live_bwxt_candidates_are_excused_by_their_own_fresh_ownership_edges() -
     )
     rows = build_candidate_observations(payload, graph, generated_at=payload["generated_at"])
     bwxt_rows = [row for row in rows if row["ticker"] == "BWXT"]
-    assert {row["candidate_id"] for row in bwxt_rows} == {
+    assert {
         "grc1-2431cef9fbca1f209edb0f45",
         "grc1-81a1a8df4bdb97de3b1cdfa8",
-    }
+    } <= {row["candidate_id"] for row in bwxt_rows}
     ownership_edges_by_id = {edge["edge_id"]: edge for edge in graph["ownership_edges"]}
     ledger_rows = _ledger_rows(ROOT)
     ledger_ids = {row["candidate_id"] for row in ledger_rows}

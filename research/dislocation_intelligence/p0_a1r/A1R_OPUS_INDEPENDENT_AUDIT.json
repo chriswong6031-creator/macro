@@ -1,0 +1,1971 @@
+{
+  "schema": "mastermind.dislocation_p0.a1r_opus_audit.v2",
+  "source_manifest_sha256": "97c2d8f7d518a6ae7ec25f23cb6f796f201c601277647b0bee9e917eb1add667",
+  "proposal_bundle_sha256": "98383da61ac11c072a1c0cc10a00218164fb95446c277cf4da212121250fbee2",
+  "auditor": {
+    "provider": "Anthropic",
+    "model": "opus",
+    "role": "OPUS",
+    "independent_source_only": true
+  },
+  "audits": [
+    {
+      "packet_id": "p0cand_000041da5886797dd54c82531b3071594cfd105c77ccd8f9ba16bae3c6bd939f",
+      "auditor_role": "OPUS",
+      "verdict": "REPAIR",
+      "disagreements": [
+        {
+          "field": "episode_relationship",
+          "proposal": {
+            "evidence": {
+              "document_sha256": "d7d659799f74c352539e72b2afe8e46b1d409e35f86593d4c0b7b7b3f28181a3",
+              "end": 3610,
+              "excerpt": "PARK CITY, Utah, Mar 3, 2017/PRNewswire/-Nutraceutical International Corporation (NASDAQ:  NUTR) today announced that its Board of Directors has declared a quarterly cash dividend on Nutraceutical International Corporation common stock.  The declared quarterly dividend of $0.125 per share is payable on April 5, 2017 to stockholders of record on March 20, 2017.",
+              "start": 3248
+            },
+            "value": "presently standalone episode proposal: self-contained press release announcing this quarterly dividend"
+          },
+          "audited": {
+            "state": "NOT_APPLICABLE"
+          },
+          "resolution": "REPAIR",
+          "rationale": "Proposal asserts an episode relationship (\"presently standalone episode proposal: self-contained press release announcing this quarterly dividend\") for a packet whose audited semantics carry no controlled P0 value in any admission field (adverse_information_state, structural_impairment_evidence, mitigation_resolution_transition). The source establishes: quarterly cash dividend declaration -- which under the narrowed P0 rule is an ordinary economic event rather than a P0 adverse/control episode. No episode relationship is therefore established and the field is typed NOT_APPLICABLE rather than minting episode-hood; the panel comparison also shows no other packet sharing this registrant, instrument, or disclosure chain."
+        }
+      ],
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE"
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE"
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE"
+        },
+        "mitigation": {
+          "state": "NOT_APPLICABLE"
+        },
+        "resolution": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode": {
+          "state": "NOT_APPLICABLE"
+        }
+      },
+      "final_semantic": {
+        "event_family": {
+          "evidence": {
+            "document_sha256": "d7d659799f74c352539e72b2afe8e46b1d409e35f86593d4c0b7b7b3f28181a3",
+            "end": 2974,
+            "excerpt": "NUTRACEUTICAL ANNOUNCES QUARTERLY DIVIDEND",
+            "start": 2932
+          },
+          "value": "quarterly cash dividend declaration"
+        },
+        "affected_scope": {
+          "evidence": {
+            "document_sha256": "d7d659799f74c352539e72b2afe8e46b1d409e35f86593d4c0b7b7b3f28181a3",
+            "end": 3610,
+            "excerpt": "PARK CITY, Utah, Mar 3, 2017/PRNewswire/-Nutraceutical International Corporation (NASDAQ:  NUTR) today announced that its Board of Directors has declared a quarterly cash dividend on Nutraceutical International Corporation common stock.  The declared quarterly dividend of $0.125 per share is payable on April 5, 2017 to stockholders of record on March 20, 2017.",
+            "start": 3248
+          },
+          "value": "Nutraceutical International Corporation common stock and its stockholders of record"
+        },
+        "adverse_information_state": {
+          "state": "NOT_APPLICABLE"
+        },
+        "duration_uncertainty": {
+          "state": "NOT_APPLICABLE"
+        },
+        "recoverability_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "quantified_impact": {
+          "evidence": {
+            "document_sha256": "d7d659799f74c352539e72b2afe8e46b1d409e35f86593d4c0b7b7b3f28181a3",
+            "end": 3610,
+            "excerpt": "PARK CITY, Utah, Mar 3, 2017/PRNewswire/-Nutraceutical International Corporation (NASDAQ:  NUTR) today announced that its Board of Directors has declared a quarterly cash dividend on Nutraceutical International Corporation common stock.  The declared quarterly dividend of $0.125 per share is payable on April 5, 2017 to stockholders of record on March 20, 2017.",
+            "start": 3248
+          },
+          "value": "declared quarterly cash dividend of $0.125 per share, payable April 5, 2017 to stockholders of record March 20, 2017"
+        },
+        "mitigation_resolution_transition": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode_relationship": {
+          "state": "NOT_APPLICABLE"
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_00007f6bdb6db0091de10d0cf30ded66aeef5d82314d2d10f30e4aec76686349",
+      "auditor_role": "OPUS",
+      "verdict": "REPAIR",
+      "disagreements": [
+        {
+          "field": "episode_relationship",
+          "proposal": {
+            "evidence": {
+              "document_sha256": "4cb54d03ba377d66f81dd879a11495445bdb2e0dcfe3ad7d213570cbb978d7ff",
+              "end": 2341,
+              "excerpt": "I have reviewed the interim financial report and interim MD&amp;A (together, the \"interim filings\") of Precision Drilling Corporation (the \"issuer\"), for the interim period ended September 30, 2016.",
+              "start": 2143
+            },
+            "value": "presently standalone episode proposal: officer certifications of this interim reporting period"
+          },
+          "audited": {
+            "state": "NOT_APPLICABLE"
+          },
+          "resolution": "REPAIR",
+          "rationale": "Proposal asserts an episode relationship (\"presently standalone episode proposal: officer certifications of this interim reporting period\") for a packet whose audited semantics carry no controlled P0 value in any admission field (adverse_information_state, structural_impairment_evidence, mitigation_resolution_transition). The source establishes: certification of interim filings -- which under the narrowed P0 rule is an ordinary economic event rather than a P0 adverse/control episode. No episode relationship is therefore established and the field is typed NOT_APPLICABLE rather than minting episode-hood; the panel comparison also shows no other packet sharing this registrant, instrument, or disclosure chain."
+        }
+      ],
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE"
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE"
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE"
+        },
+        "mitigation": {
+          "state": "NOT_APPLICABLE"
+        },
+        "resolution": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode": {
+          "state": "NOT_APPLICABLE"
+        }
+      },
+      "final_semantic": {
+        "event_family": {
+          "evidence": {
+            "document_sha256": "4cb54d03ba377d66f81dd879a11495445bdb2e0dcfe3ad7d213570cbb978d7ff",
+            "end": 1134,
+            "excerpt": "CERTIFICATION OF INTERIM FILINGS",
+            "start": 1102
+          },
+          "value": "certification of interim filings"
+        },
+        "affected_scope": {
+          "evidence": {
+            "document_sha256": "4cb54d03ba377d66f81dd879a11495445bdb2e0dcfe3ad7d213570cbb978d7ff",
+            "end": 2341,
+            "excerpt": "I have reviewed the interim financial report and interim MD&amp;A (together, the \"interim filings\") of Precision Drilling Corporation (the \"issuer\"), for the interim period ended September 30, 2016.",
+            "start": 2143
+          },
+          "value": "Precision Drilling Corporation interim filings for the interim period ended September 30, 2016"
+        },
+        "adverse_information_state": {
+          "state": "NOT_APPLICABLE"
+        },
+        "duration_uncertainty": {
+          "state": "NOT_APPLICABLE"
+        },
+        "recoverability_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "UNAVAILABLE"
+        },
+        "quantified_impact": {
+          "state": "NOT_APPLICABLE"
+        },
+        "mitigation_resolution_transition": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode_relationship": {
+          "state": "NOT_APPLICABLE"
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_0000ab0867dc702fb7fb21d3729de1cb2813d9d299817397448fbb5a5fc98fa9",
+      "auditor_role": "OPUS",
+      "verdict": "REPAIR",
+      "disagreements": [
+        {
+          "field": "episode_relationship",
+          "proposal": {
+            "evidence": {
+              "document_sha256": "41533c0fdd46ebcc884a4a9afec3eeb8e720d31b0ae00fb347261568cea6f58f",
+              "end": 436,
+              "excerpt": "RISK FACTORS",
+              "start": 424
+            },
+            "value": "presently standalone episode proposal: Exhibit 99.1 is a self-contained risk-factor package rather than an amendment or later pulse of another filing in this packet"
+          },
+          "audited": {
+            "state": "NOT_APPLICABLE"
+          },
+          "resolution": "REPAIR",
+          "rationale": "Proposal asserts an episode relationship (\"presently standalone episode proposal: Exhibit 99.1 is a self-contained risk-factor package rather than an amendment or later pulse of another filing in this packet\") for a packet whose audited semantics carry no controlled P0 value in any admission field (adverse_information_state, structural_impairment_evidence, mitigation_resolution_transition). The source establishes: risk-factor exhibit -- which under the narrowed P0 rule is an ordinary economic event rather than a P0 adverse/control episode. No episode relationship is therefore established and the field is typed NOT_APPLICABLE rather than minting episode-hood; the panel comparison also shows no other packet sharing this registrant, instrument, or disclosure chain."
+        }
+      ],
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE"
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE"
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE"
+        },
+        "mitigation": {
+          "state": "NOT_APPLICABLE"
+        },
+        "resolution": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode": {
+          "state": "NOT_APPLICABLE"
+        }
+      },
+      "final_semantic": {
+        "event_family": {
+          "evidence": {
+            "document_sha256": "41533c0fdd46ebcc884a4a9afec3eeb8e720d31b0ae00fb347261568cea6f58f",
+            "end": 436,
+            "excerpt": "RISK FACTORS",
+            "start": 424
+          },
+          "value": "risk-factor exhibit"
+        },
+        "affected_scope": {
+          "evidence": {
+            "document_sha256": "41533c0fdd46ebcc884a4a9afec3eeb8e720d31b0ae00fb347261568cea6f58f",
+            "end": 1356,
+            "excerpt": "Investing in our\nsecurities involves a high degree of risk and uncertainty. Before making an investment decision, you should carefully consider\nthe risks described below, and all other information contained or incorporated by reference in our filings with the SEC. We expect\nto update these Risk Factors from time to time in the periodic and current reports that we file with the SEC. Please refer to these\nsubsequent reports for additional information relating to the risks associated with investing in our common stock. If any of such\nrisks and uncertainties actually occurs, our business, financial condition, and results of operations could be severely harmed.\nThis could cause the trading price ",
+            "start": 656
+          },
+          "value": "investors in the issuer's securities and the issuer's business as addressed by the risk-factor exhibit"
+        },
+        "adverse_information_state": {
+          "evidence": {
+            "document_sha256": "41533c0fdd46ebcc884a4a9afec3eeb8e720d31b0ae00fb347261568cea6f58f",
+            "end": 53376,
+            "excerpt": "As a result of our\nfailure to timely file a periodic report with the SEC in connection with the adoption of our amended and restated bylaws, absent\na waiver of the Form S-3 eligibility requirements, upon the filing of our Annual Report on Form 10-K for the year ended December\n31, 2020, we will no longer be permitted to use our existing shelf registration statement on Form S-3 or file new short form registration\nstatements on Form S-3 until October 1, 2021. In the event of the absence of a waiver, our inability to use or file new registration\nstatements on Form S-3 may significantly impair our ability to raise necessary capital to run our operations and progress our clinical\nand product ",
+            "start": 52681
+          },
+          "value": "realized Form S-3 ineligibility after failure to timely file a periodic report, which may impair capital raising until October 1, 2021 absent a waiver"
+        },
+        "duration_uncertainty": {
+          "evidence": {
+            "document_sha256": "41533c0fdd46ebcc884a4a9afec3eeb8e720d31b0ae00fb347261568cea6f58f",
+            "end": 53376,
+            "excerpt": "As a result of our\nfailure to timely file a periodic report with the SEC in connection with the adoption of our amended and restated bylaws, absent\na waiver of the Form S-3 eligibility requirements, upon the filing of our Annual Report on Form 10-K for the year ended December\n31, 2020, we will no longer be permitted to use our existing shelf registration statement on Form S-3 or file new short form registration\nstatements on Form S-3 until October 1, 2021. In the event of the absence of a waiver, our inability to use or file new registration\nstatements on Form S-3 may significantly impair our ability to raise necessary capital to run our operations and progress our clinical\nand product ",
+            "start": 52681
+          },
+          "value": "Form S-3 use/filing restricted until October 1, 2021 absent a waiver of eligibility requirements"
+        },
+        "recoverability_evidence": {
+          "evidence": {
+            "document_sha256": "41533c0fdd46ebcc884a4a9afec3eeb8e720d31b0ae00fb347261568cea6f58f",
+            "end": 33999,
+            "excerpt": "We\ncurrently rely on a single source for our supply of EVOMELA. Due to COVID-19 we experienced a disruption to our supply chain for\nEVOMELA. That disruption, along with a recent change in the manufacturer of EVOMELA, contributed to a decrease in our revenue for\nthe second quarter of 2020. We have returned to expected levels of sales as indicated by the increase in sales in the third quarter\nand our expected sales in the fourth quarter of 2020. If suppliers refuse or are unable to provide products for any reason (including\nthe occurrence of an event like the COVID-19 pandemic that makes delivery impractical), we would be required to negotiate an agreement\nwith a substitute supplier, which ",
+            "start": 33302
+          },
+          "value": "EVOMELA sales described as having returned to expected levels after a Q2 2020 COVID-related supply disruption"
+        },
+        "structural_impairment_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "quantified_impact": {
+          "evidence": {
+            "document_sha256": "41533c0fdd46ebcc884a4a9afec3eeb8e720d31b0ae00fb347261568cea6f58f",
+            "end": 37859,
+            "excerpt": "We have experienced\nlosses in each&nbsp;year since inception. Through December&nbsp;31, 2020, we had an accumulated deficit of approximately $570.5\nmillion. We expect that we will seek to raise capital to continue our operations and, although we have been successfully funded\nto date through the sales of our equity securities, our capital-raising efforts may not produce the funding needed to sustain our\noperations. If we are unable to obtain additional funding for operations, we may not be able to continue operations as proposed,\nrequiring us to modify our business plan, curtail various aspects of our operations or cease operations. In any such event, investors\nmay lose a portion or all of ",
+            "start": 37161
+          },
+          "value": "accumulated deficit of approximately $570.5 million through December 31, 2020"
+        },
+        "mitigation_resolution_transition": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode_relationship": {
+          "state": "NOT_APPLICABLE"
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_0000fecac1deca3b7707b1adcb610dfdc7acfc3898ee09aab0541c2bec40e2a1",
+      "auditor_role": "OPUS",
+      "verdict": "REPAIR",
+      "disagreements": [
+        {
+          "field": "episode_relationship",
+          "proposal": {
+            "evidence": {
+              "document_sha256": "6a279868720d3ea6a80528c51c3bdc3b82529a249efc423c5d2115bc16385b55",
+              "end": 3357,
+              "excerpt": "Aspen Aerogels, Inc., a Delaware corporation (the &#147;Company&#148;), proposes, subject to the terms and conditions stated in this agreement\n(this &#147;Agreement&#148;), to issue and sell to the Underwriters named in Schedule I hereto (the &#147;Underwriters&#148;) an aggregate of 4,250,000 shares (the &#147;Firm Shares&#148;) and, at the election of the Underwriters, up to 637,500\nadditional shares (the &#147;Optional Shares&#148;) of common stock, par value $0.00001 per share (&#147;Stock&#148;), of the Company. The Firm Shares and the Optional Shares that the Underwriters elect to purchase pursuant to Section&nbsp;2 hereof\nare herein collectively called the &#147;Securities&#148;. To ",
+              "start": 2658
+            },
+            "value": "presently standalone episode proposal: underwriting agreement establishing this offering"
+          },
+          "audited": {
+            "state": "NOT_APPLICABLE"
+          },
+          "resolution": "REPAIR",
+          "rationale": "Proposal asserts an episode relationship (\"presently standalone episode proposal: underwriting agreement establishing this offering\") for a packet whose audited semantics carry no controlled P0 value in any admission field (adverse_information_state, structural_impairment_evidence, mitigation_resolution_transition). The source establishes: underwritten primary common-stock offering -- which under the narrowed P0 rule is an ordinary economic event rather than a P0 adverse/control episode. No episode relationship is therefore established and the field is typed NOT_APPLICABLE rather than minting episode-hood; the panel comparison also shows no other packet sharing this registrant, instrument, or disclosure chain."
+        }
+      ],
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE"
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE"
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE"
+        },
+        "mitigation": {
+          "state": "NOT_APPLICABLE"
+        },
+        "resolution": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode": {
+          "state": "NOT_APPLICABLE"
+        }
+      },
+      "final_semantic": {
+        "event_family": {
+          "evidence": {
+            "document_sha256": "6a279868720d3ea6a80528c51c3bdc3b82529a249efc423c5d2115bc16385b55",
+            "end": 3357,
+            "excerpt": "Aspen Aerogels, Inc., a Delaware corporation (the &#147;Company&#148;), proposes, subject to the terms and conditions stated in this agreement\n(this &#147;Agreement&#148;), to issue and sell to the Underwriters named in Schedule I hereto (the &#147;Underwriters&#148;) an aggregate of 4,250,000 shares (the &#147;Firm Shares&#148;) and, at the election of the Underwriters, up to 637,500\nadditional shares (the &#147;Optional Shares&#148;) of common stock, par value $0.00001 per share (&#147;Stock&#148;), of the Company. The Firm Shares and the Optional Shares that the Underwriters elect to purchase pursuant to Section&nbsp;2 hereof\nare herein collectively called the &#147;Securities&#148;. To ",
+            "start": 2658
+          },
+          "value": "underwritten primary common-stock offering"
+        },
+        "affected_scope": {
+          "evidence": {
+            "document_sha256": "6a279868720d3ea6a80528c51c3bdc3b82529a249efc423c5d2115bc16385b55",
+            "end": 3357,
+            "excerpt": "Aspen Aerogels, Inc., a Delaware corporation (the &#147;Company&#148;), proposes, subject to the terms and conditions stated in this agreement\n(this &#147;Agreement&#148;), to issue and sell to the Underwriters named in Schedule I hereto (the &#147;Underwriters&#148;) an aggregate of 4,250,000 shares (the &#147;Firm Shares&#148;) and, at the election of the Underwriters, up to 637,500\nadditional shares (the &#147;Optional Shares&#148;) of common stock, par value $0.00001 per share (&#147;Stock&#148;), of the Company. The Firm Shares and the Optional Shares that the Underwriters elect to purchase pursuant to Section&nbsp;2 hereof\nare herein collectively called the &#147;Securities&#148;. To ",
+            "start": 2658
+          },
+          "value": "Aspen Aerogels, Inc. common stock offered to the underwriters"
+        },
+        "adverse_information_state": {
+          "state": "NOT_APPLICABLE"
+        },
+        "duration_uncertainty": {
+          "state": "NOT_APPLICABLE"
+        },
+        "recoverability_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "quantified_impact": {
+          "evidence": {
+            "document_sha256": "6a279868720d3ea6a80528c51c3bdc3b82529a249efc423c5d2115bc16385b55",
+            "end": 3357,
+            "excerpt": "Aspen Aerogels, Inc., a Delaware corporation (the &#147;Company&#148;), proposes, subject to the terms and conditions stated in this agreement\n(this &#147;Agreement&#148;), to issue and sell to the Underwriters named in Schedule I hereto (the &#147;Underwriters&#148;) an aggregate of 4,250,000 shares (the &#147;Firm Shares&#148;) and, at the election of the Underwriters, up to 637,500\nadditional shares (the &#147;Optional Shares&#148;) of common stock, par value $0.00001 per share (&#147;Stock&#148;), of the Company. The Firm Shares and the Optional Shares that the Underwriters elect to purchase pursuant to Section&nbsp;2 hereof\nare herein collectively called the &#147;Securities&#148;. To ",
+            "start": 2658
+          },
+          "value": "aggregate of 4,250,000 Firm Shares and, at underwriters' election, up to 637,500 Optional Shares of common stock"
+        },
+        "mitigation_resolution_transition": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode_relationship": {
+          "state": "NOT_APPLICABLE"
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_0001101cefa880400130eb9763ee664b596ae80b49ce4cd1a0ed355c4fe0c22f",
+      "auditor_role": "OPUS",
+      "verdict": "REPAIR",
+      "disagreements": [
+        {
+          "field": "episode_relationship",
+          "proposal": {
+            "evidence": {
+              "document_sha256": "b35282a6fc58c0fb8525cb7062c0b017fb0f96bbd0b5960e265c1a2dbb2ac6bc",
+              "end": 27469,
+              "excerpt": "This Share Repurchase Agreement, dated as of December 14, 2023 (this &#8220;",
+              "start": 27393
+            },
+            "value": "presently standalone episode proposal: Share Repurchase Agreement dated December 14, 2023"
+          },
+          "audited": {
+            "state": "NOT_APPLICABLE"
+          },
+          "resolution": "REPAIR",
+          "rationale": "Proposal asserts an episode relationship (\"presently standalone episode proposal: Share Repurchase Agreement dated December 14, 2023\") for a packet whose audited semantics carry no controlled P0 value in any admission field (adverse_information_state, structural_impairment_evidence, mitigation_resolution_transition). The source establishes: share repurchase agreement -- which under the narrowed P0 rule is an ordinary economic event rather than a P0 adverse/control episode. No episode relationship is therefore established and the field is typed NOT_APPLICABLE rather than minting episode-hood; the panel comparison also shows no other packet sharing this registrant, instrument, or disclosure chain."
+        }
+      ],
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE"
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE"
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE"
+        },
+        "mitigation": {
+          "state": "NOT_APPLICABLE"
+        },
+        "resolution": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode": {
+          "state": "NOT_APPLICABLE"
+        }
+      },
+      "final_semantic": {
+        "event_family": {
+          "evidence": {
+            "document_sha256": "b35282a6fc58c0fb8525cb7062c0b017fb0f96bbd0b5960e265c1a2dbb2ac6bc",
+            "end": 753,
+            "excerpt": "SHARE REPURCHASE AGREEMENT",
+            "start": 727
+          },
+          "value": "share repurchase agreement"
+        },
+        "affected_scope": {
+          "evidence": {
+            "document_sha256": "b35282a6fc58c0fb8525cb7062c0b017fb0f96bbd0b5960e265c1a2dbb2ac6bc",
+            "end": 28200,
+            "excerpt": "&#8221;), Corebridge Financial, Inc., a Delaware corporation (the &#8220;",
+            "start": 28127
+          },
+          "value": "Corebridge Financial, Inc."
+        },
+        "adverse_information_state": {
+          "state": "NOT_APPLICABLE"
+        },
+        "duration_uncertainty": {
+          "state": "NOT_APPLICABLE"
+        },
+        "recoverability_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "quantified_impact": {
+          "evidence": {
+            "document_sha256": "b35282a6fc58c0fb8525cb7062c0b017fb0f96bbd0b5960e265c1a2dbb2ac6bc",
+            "end": 35420,
+            "excerpt": "Stockholder shall sell and transfer to the Company, and the Company shall purchase from Stockholder, at a purchase price per share equal to the Purchase Price, such number of shares of Common Stock (rounded up to the nearest share) equal to (A) the quotient of (x) $150,000,000 divided by (y) the Purchase Price, multiplied by (B) 9.95% (the &#8220;",
+            "start": 35071
+          },
+          "value": "$150,000,000 used to size the number of Corebridge shares purchased from Stockholder (9.95% of $150,000,000 divided by the Purchase Price)"
+        },
+        "mitigation_resolution_transition": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode_relationship": {
+          "state": "NOT_APPLICABLE"
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_000348339a45d1f1ffff77330ec52b06b7e4cdfd4a0b5e35e3d2ea4a4594b77b",
+      "auditor_role": "OPUS",
+      "verdict": "REPAIR",
+      "disagreements": [
+        {
+          "field": "episode_relationship",
+          "proposal": {
+            "evidence": {
+              "document_sha256": "dee203edd83d799a0089caab8ae8b35a3617132e97494294195c7c9dc1686900",
+              "end": 5233,
+              "excerpt": "THIS\nRESEARCH COLLABORATION AND LICENSE AGREEMENT",
+              "start": 5184
+            },
+            "value": "presently standalone episode proposal: collaboration effective as of the agreement date in this exhibit"
+          },
+          "audited": {
+            "state": "NOT_APPLICABLE"
+          },
+          "resolution": "REPAIR",
+          "rationale": "Proposal asserts an episode relationship (\"presently standalone episode proposal: collaboration effective as of the agreement date in this exhibit\") for a packet whose audited semantics carry no controlled P0 value in any admission field (adverse_information_state, structural_impairment_evidence, mitigation_resolution_transition). The source establishes: research collaboration and license agreement -- which under the narrowed P0 rule is an ordinary economic event rather than a P0 adverse/control episode. No episode relationship is therefore established and the field is typed NOT_APPLICABLE rather than minting episode-hood; the panel comparison also shows no other packet sharing this registrant, instrument, or disclosure chain."
+        }
+      ],
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE"
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE"
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE"
+        },
+        "mitigation": {
+          "state": "NOT_APPLICABLE"
+        },
+        "resolution": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode": {
+          "state": "NOT_APPLICABLE"
+        }
+      },
+      "final_semantic": {
+        "event_family": {
+          "evidence": {
+            "document_sha256": "dee203edd83d799a0089caab8ae8b35a3617132e97494294195c7c9dc1686900",
+            "end": 1805,
+            "excerpt": "Research\nCollaboration and License Agreement",
+            "start": 1761
+          },
+          "value": "research collaboration and license agreement"
+        },
+        "affected_scope": {
+          "evidence": {
+            "document_sha256": "dee203edd83d799a0089caab8ae8b35a3617132e97494294195c7c9dc1686900",
+            "end": 8624,
+            "excerpt": ",\nPalisade and Giiant desire to enter into a collaboration to Develop and Commercialize the Licensed Technology, Licensed Compounds, and\nLicensed Products (each as hereinafter defined) upon the terms and conditions set forth herein;",
+            "start": 8392
+          },
+          "value": "Palisade and Giiant Licensed Technology, Licensed Compounds, and Licensed Products"
+        },
+        "adverse_information_state": {
+          "state": "NOT_APPLICABLE"
+        },
+        "duration_uncertainty": {
+          "evidence": {
+            "document_sha256": "dee203edd83d799a0089caab8ae8b35a3617132e97494294195c7c9dc1686900",
+            "end": 259067,
+            "excerpt": "This Agreement may be terminated by Licensee in the event that Proof of Concept\nis not achieved within eighteen (18) months of the Effective Date; provided however that in the event of a Force Majeure Event that results\nin: (i) the temporary or permanent closure of or (ii) materially effects the business of, any of the vendors providing goods or services\nrelated to the Development Plan, such eighteen (18) month period will be extend by such time as was required to replace such vendor or\nthe time required for such vendor to regain normal operations in the event the vendor is not replaced. In the event of termination by\nLicensee pursuant to this",
+            "start": 258416
+          },
+          "value": "Licensee may terminate if Proof of Concept is not achieved within eighteen months of the Effective Date, subject to Force Majeure vendor-disruption extension"
+        },
+        "recoverability_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "quantified_impact": {
+          "state": "RIGHTS_BLOCKED"
+        },
+        "mitigation_resolution_transition": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode_relationship": {
+          "state": "NOT_APPLICABLE"
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_0003ae31d338993bd31458a79978696489adc45f115e114a5fea78f8b5fb3514",
+      "auditor_role": "OPUS",
+      "verdict": "REPAIR",
+      "disagreements": [
+        {
+          "field": "structural_impairment_evidence",
+          "proposal": {
+            "state": "NOT_APPLICABLE"
+          },
+          "audited": {
+            "state": "EXPLICIT_NONE",
+            "evidence": {
+              "document_sha256": "da4c5bd71821a66c235ae433b684927d2071f44157505159c0013ea888985e97",
+              "start": 18571,
+              "end": 19136,
+              "excerpt": "Many of our employees are currently working remotely, and our systems appear adequate to address the current demands on our employees. We do not expect that the remote working arrangements will materially and adversely impact our internal control over financial reporting and disclosure controls and procedures. While there can be no assurance, at the present time we do not expect the outbreak-related circumstances, to result in material impairments of our assets or to significantly affect management&#8217;s judgements in assessing the fair value of our assets."
+            }
+          },
+          "resolution": "REPAIR",
+          "rationale": "Source does not merely omit impairment: management expressly addresses and denies it (\"at the present time we do not expect the outbreak-related circumstances, to result in material impairments of our assets or to significantly affect management's judgements in assessing the fair value of our assets\"). An explicit sourced negative is EXPLICIT_NONE, which requires exact evidence, not NOT_APPLICABLE, which would assert the question does not arise. Precision matters here because this is the sole episode-bearing packet and structural_impairment_evidence is an episode-admission field."
+        }
+      ],
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE"
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE"
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE"
+        },
+        "mitigation": {
+          "state": "NOT_APPLICABLE"
+        },
+        "resolution": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode": {
+          "value": "P0_ADVERSE_INFORMATION episode, lawful singleton",
+          "evidence": {
+            "document_sha256": "da4c5bd71821a66c235ae433b684927d2071f44157505159c0013ea888985e97",
+            "end": 16554,
+            "excerpt": "by the Company. The situation remains highly uncertain. It is therefore difficult for the Company to estimate the negative impact on demand for its products. However, it is clear that our first and second quarter operating results will be adversely impacted in any event.",
+            "start": 16283
+          },
+          "note": "Audited final semantics carry adverse_information_state = P0_ADVERSE_INFORMATION on an exact span, satisfying P0 episode admission. No other packet in this panel shares this registrant or event, so the episode resolves as a lawful singleton."
+        }
+      },
+      "final_semantic": {
+        "event_family": {
+          "evidence": {
+            "document_sha256": "da4c5bd71821a66c235ae433b684927d2071f44157505159c0013ea888985e97",
+            "end": 12712,
+            "excerpt": "Nova LifeStyle, Inc. (the &#8220;Company&#8221; or &#8220;NVFY&#8221;) is filing this Current Report on Form 8-K in compliance with and in reliance upon the SEC Order issued pursuant to Section 36 of the Securities Exchange Act of 1934, as amended, granting Exemptions from Specified Provisions of the Exchange Act and Certain Rules thereunder (SEC Release No. 34-88465 on March 25, 2020) (the &#8220;Relief Order&#8221;). Set forth below are the Company&#8217;s (i) operational and 2019 audit related updates, (ii) the reasons for the delays in the completion of its 2019 audit and filing of the Annual Report on Form 10-K for the fiscal year ended December 31, 2019 (the &#8220;Annual ",
+            "start": 12025
+          },
+          "value": "COVID-19 operational disruption and delayed Form 10-K filing under the SEC COVID relief order"
+        },
+        "affected_scope": {
+          "evidence": {
+            "document_sha256": "da4c5bd71821a66c235ae433b684927d2071f44157505159c0013ea888985e97",
+            "end": 13990,
+            "excerpt": "The Company primarily conducts its business operations in four cities: Los Angeles, California, Hong Kong, Macao, China and Kuala Lumpur, Malaysia. In response to the evolving dynamics related to the COVID-19 outbreak, the Company is following the guidelines of local authorities as it prioritizes the health and safety of its employees, contractors, suppliers and retail partners. Our Offices located in Hong Kong and Macau were closed for the Lunar New Year Holiday Break, and remained closed as a result of the outbreak until late February. Both of those Offices are now open. The Company&#8217;s two showrooms and warehouse in Kuala Lumpur have been closed since March 18, 2020. The Los Angeles ",
+            "start": 13291
+          },
+          "value": "Nova LifeStyle, Inc. operations in Los Angeles, Hong Kong, Macao and Kuala Lumpur"
+        },
+        "adverse_information_state": {
+          "evidence": {
+            "document_sha256": "da4c5bd71821a66c235ae433b684927d2071f44157505159c0013ea888985e97",
+            "end": 16554,
+            "excerpt": "by the Company. The situation remains highly uncertain. It is therefore difficult for the Company to estimate the negative impact on demand for its products. However, it is clear that our first and second quarter operating results will be adversely impacted in any event.",
+            "start": 16283
+          },
+          "value": "P0_ADVERSE_INFORMATION"
+        },
+        "duration_uncertainty": {
+          "evidence": {
+            "document_sha256": "da4c5bd71821a66c235ae433b684927d2071f44157505159c0013ea888985e97",
+            "end": 15364,
+            "excerpt": "The COVID-19 pandemic precludes sales calls being made out of all of the Company&#8217;s offices and attendance at furniture trade shows, but the Company continues to receive orders and solicit business via telephone and email. At this juncture, the Company is unable to predict when the Kuala Lumpur and Los Angeles facilities will be able to resume ordinary operations, or whether future developments may cause the Company to curtail or suspend operations in its other facilities.",
+            "start": 14882
+          },
+          "value": "unable to predict when Kuala Lumpur and Los Angeles facilities will resume ordinary operations, and whether other facilities may yet be curtailed or suspended"
+        },
+        "recoverability_evidence": {
+          "evidence": {
+            "document_sha256": "da4c5bd71821a66c235ae433b684927d2071f44157505159c0013ea888985e97",
+            "end": 19136,
+            "excerpt": "Many of our employees are currently working remotely, and our systems appear adequate to address the current demands on our employees. We do not expect that the remote working arrangements will materially and adversely impact our internal control over financial reporting and disclosure controls and procedures. While there can be no assurance, at the present time we do not expect the outbreak-related circumstances, to result in material impairments of our assets or to significantly affect management&#8217;s judgements in assessing the fair value of our assets.",
+            "start": 18571
+          },
+          "value": "company does not presently expect outbreak-related circumstances to result in material impairments of assets or to significantly affect fair-value judgements"
+        },
+        "structural_impairment_evidence": {
+          "state": "EXPLICIT_NONE",
+          "evidence": {
+            "document_sha256": "da4c5bd71821a66c235ae433b684927d2071f44157505159c0013ea888985e97",
+            "start": 18571,
+            "end": 19136,
+            "excerpt": "Many of our employees are currently working remotely, and our systems appear adequate to address the current demands on our employees. We do not expect that the remote working arrangements will materially and adversely impact our internal control over financial reporting and disclosure controls and procedures. While there can be no assurance, at the present time we do not expect the outbreak-related circumstances, to result in material impairments of our assets or to significantly affect management&#8217;s judgements in assessing the fair value of our assets."
+          }
+        },
+        "quantified_impact": {
+          "state": "UNAVAILABLE"
+        },
+        "mitigation_resolution_transition": {
+          "evidence": {
+            "document_sha256": "da4c5bd71821a66c235ae433b684927d2071f44157505159c0013ea888985e97",
+            "end": 13990,
+            "excerpt": "The Company primarily conducts its business operations in four cities: Los Angeles, California, Hong Kong, Macao, China and Kuala Lumpur, Malaysia. In response to the evolving dynamics related to the COVID-19 outbreak, the Company is following the guidelines of local authorities as it prioritizes the health and safety of its employees, contractors, suppliers and retail partners. Our Offices located in Hong Kong and Macau were closed for the Lunar New Year Holiday Break, and remained closed as a result of the outbreak until late February. Both of those Offices are now open. The Company&#8217;s two showrooms and warehouse in Kuala Lumpur have been closed since March 18, 2020. The Los Angeles ",
+            "start": 13291
+          },
+          "value": "Hong Kong and Macau offices reopened after remaining closed until late February; Kuala Lumpur showrooms and warehouse remain closed since March 18, 2020"
+        },
+        "episode_relationship": {
+          "evidence": {
+            "document_sha256": "da4c5bd71821a66c235ae433b684927d2071f44157505159c0013ea888985e97",
+            "end": 11801,
+            "excerpt": "Item 8.01 Other Events.",
+            "start": 11778
+          },
+          "value": "presently standalone episode proposal: Item 8.01 current report giving operational, audit-delay, and COVID risk updates"
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_000600b12747a796ac9245edc8c493ac44c203433dd04bbe9beb7523d43459ec",
+      "auditor_role": "OPUS",
+      "verdict": "REPAIR",
+      "disagreements": [
+        {
+          "field": "episode_relationship",
+          "proposal": {
+            "evidence": {
+              "document_sha256": "ba2cfe874de5c3fd54c674c3681cd804ddd1a97bc3fabbc8902e7ef5c1c98b68",
+              "end": 676,
+              "excerpt": "IP LICENSING\nAND MUTUAL EXCLUSIVITY AGREEMENT",
+              "start": 631
+            },
+            "value": "presently standalone episode proposal: bundle of IP, supply, and quality agreements constituting this commercial arrangement"
+          },
+          "audited": {
+            "state": "NOT_APPLICABLE"
+          },
+          "resolution": "REPAIR",
+          "rationale": "Proposal asserts an episode relationship (\"presently standalone episode proposal: bundle of IP, supply, and quality agreements constituting this commercial arrangement\") for a packet whose audited semantics carry no controlled P0 value in any admission field (adverse_information_state, structural_impairment_evidence, mitigation_resolution_transition). The source establishes: bundle of IP, supply, and quality agreements -- which under the narrowed P0 rule is an ordinary economic event rather than a P0 adverse/control episode. No episode relationship is therefore established and the field is typed NOT_APPLICABLE rather than minting episode-hood; the panel comparison also shows no other packet sharing this registrant, instrument, or disclosure chain."
+        }
+      ],
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE"
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE"
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE"
+        },
+        "mitigation": {
+          "state": "NOT_APPLICABLE"
+        },
+        "resolution": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode": {
+          "state": "NOT_APPLICABLE"
+        }
+      },
+      "final_semantic": {
+        "event_family": {
+          "evidence": {
+            "document_sha256": "ba2cfe874de5c3fd54c674c3681cd804ddd1a97bc3fabbc8902e7ef5c1c98b68",
+            "end": 11538,
+            "excerpt": "recording the terms agreed between the parties.\nIf any conflict should exist between the provisions or interpretation of the above-mentioned agreements such conflicts shall be resolved\nby applying preference to the interpretation of the agreements in the sequence referenced above, with the Supply Agreement being given\nthe highest priority and the Quality Agreement given the lowest priority in the Bundle of Agreements.",
+            "start": 11117
+          },
+          "value": "bundle of IP, supply, and quality agreements"
+        },
+        "affected_scope": {
+          "evidence": {
+            "document_sha256": "ba2cfe874de5c3fd54c674c3681cd804ddd1a97bc3fabbc8902e7ef5c1c98b68",
+            "end": 9017,
+            "excerpt": "wishes to use the controlled substances produced by Optimi relating to botanical psilocybin containing\nmushrooms in connection with pre-clinical and clinical studies involving human subjects, for the purpose of discovering or verifying the\nsafety, pharmacokinetics or effects of such products. The trials will be conducted in multiple countries in due course in the treatment\nof anxiety and depression, including associated ailments, such as PTSD, stress, grief, and adjustment disorder, all within the exclusive\ncontext of Palliative Care.",
+            "start": 8477
+          },
+          "value": "Psyence Biomedical Limited use of Optimi Health Corp botanical psilocybin product in palliative-care clinical development, with related supply/quality obligations"
+        },
+        "adverse_information_state": {
+          "state": "NOT_APPLICABLE"
+        },
+        "duration_uncertainty": {
+          "state": "UNAVAILABLE"
+        },
+        "recoverability_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "quantified_impact": {
+          "state": "RIGHTS_BLOCKED"
+        },
+        "mitigation_resolution_transition": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode_relationship": {
+          "state": "NOT_APPLICABLE"
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_0006658b0dc071eb05d357e1c656d6fc963bcd3f2a557c3c62d7aa403da80c73",
+      "auditor_role": "OPUS",
+      "verdict": "REPAIR",
+      "disagreements": [
+        {
+          "field": "episode_relationship",
+          "proposal": {
+            "evidence": {
+              "document_sha256": "2c5c3314504155fa051388d44c8dde834734727e208a33a092d30f20f5cb0975",
+              "end": 34490,
+              "excerpt": "As previously announced, on October 24, 2022, Rockley Photonics Holdings Limited (the &#8220;Company&#8221;) entered into a repurchase and subscription agreement (the &#8220;Repurchase and Subscription Agreement&#8221;) with holders of its currently outstanding Convertible Senior Secured Notes due 2026 (the &#8220;Existing Notes&#8221;) named therein, holders of its currently outstanding Senior Secured Notes due 2022 (the &#8220;Bridge Notes&#8221;) and another investor (collectively, the &#8220;Purchasers&#8221;), relating to (i) the repurchase of all of the Bridge Notes and a portion of its outstanding Existing Notes in an aggregate original principal amount of $50.0 million (the ",
+              "start": 33799
+            },
+            "value": "later pulse: closing of a previously announced repurchase-and-subscription transaction"
+          },
+          "audited": {
+            "state": "NOT_APPLICABLE"
+          },
+          "resolution": "REPAIR",
+          "rationale": "Proposal asserts an episode relationship (\"later pulse: closing of a previously announced repurchase-and-subscription transaction\") for a packet whose audited semantics carry no controlled P0 value in any admission field (adverse_information_state, structural_impairment_evidence, mitigation_resolution_transition). The source establishes: closing of a convertible-note repurchase and sale of new notes and warrants -- which under the narrowed P0 rule is an ordinary economic event rather than a P0 adverse/control episode. No episode relationship is therefore established and the field is typed NOT_APPLICABLE rather than minting episode-hood; the panel comparison also shows no other packet sharing this registrant, instrument, or disclosure chain."
+        }
+      ],
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE"
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE"
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE"
+        },
+        "mitigation": {
+          "state": "NOT_APPLICABLE"
+        },
+        "resolution": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode": {
+          "state": "NOT_APPLICABLE"
+        }
+      },
+      "final_semantic": {
+        "event_family": {
+          "evidence": {
+            "document_sha256": "2c5c3314504155fa051388d44c8dde834734727e208a33a092d30f20f5cb0975",
+            "end": 35860,
+            "excerpt": "On October 25, 2022, the Company completed the repurchase of all of the Bridge Notes and the Specified Existing Notes and its sale to the Purchasers of the New Notes and Warrants pursuant to the Repurchase and Subscription Agreement. The New Notes are initially guaranteed by Rockley Photonics, Inc., Rockley Photonics Limited, Rockley Photonics Ireland Limited and Rockley Photonics Oy, each a wholly owned subsidiary of the Company (the &#8220;Guarantor Subsidiaries&#8221;) and will be guaranteed by the Company&#8217;s future subsidiaries (other than subsidiaries treated as excluded entities).",
+            "start": 35262
+          },
+          "value": "closing of a convertible-note repurchase and sale of new notes and warrants"
+        },
+        "affected_scope": {
+          "evidence": {
+            "document_sha256": "2c5c3314504155fa051388d44c8dde834734727e208a33a092d30f20f5cb0975",
+            "end": 35860,
+            "excerpt": "On October 25, 2022, the Company completed the repurchase of all of the Bridge Notes and the Specified Existing Notes and its sale to the Purchasers of the New Notes and Warrants pursuant to the Repurchase and Subscription Agreement. The New Notes are initially guaranteed by Rockley Photonics, Inc., Rockley Photonics Limited, Rockley Photonics Ireland Limited and Rockley Photonics Oy, each a wholly owned subsidiary of the Company (the &#8220;Guarantor Subsidiaries&#8221;) and will be guaranteed by the Company&#8217;s future subsidiaries (other than subsidiaries treated as excluded entities).",
+            "start": 35262
+          },
+          "value": "Rockley Photonics Holdings Limited, its guarantor subsidiaries, and holders of Existing Notes, Bridge Notes, New Notes, and Warrants"
+        },
+        "adverse_information_state": {
+          "state": "NOT_APPLICABLE"
+        },
+        "duration_uncertainty": {
+          "evidence": {
+            "document_sha256": "2c5c3314504155fa051388d44c8dde834734727e208a33a092d30f20f5cb0975",
+            "end": 40281,
+            "excerpt": "subject to the satisfaction of certain conditions, at a rate of 15.0% per annum payable at a rate of 5.75% per annum in cash and 9.25% per annum through the issuance of additional New Notes (&#8220;PIK Interest&#8221;), which will also bear interest. Interest on the New Notes is payable quarterly in arrears on January 15, April 15, July 15 and October 15, commencing on January 15, 2023. The New Notes will mature on May 15, 2026 (the &#8220;Maturity Date&#8221;) unless redeemed, repurchased or converted in accordance with their terms prior to such date.",
+            "start": 39723
+          },
+          "value": "New Notes mature on May 15, 2026 unless earlier redeemed, repurchased, or converted"
+        },
+        "recoverability_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "quantified_impact": {
+          "evidence": {
+            "document_sha256": "2c5c3314504155fa051388d44c8dde834734727e208a33a092d30f20f5cb0975",
+            "end": 35051,
+            "excerpt": "&#8220;Specified Existing Notes&#8221;) and (ii) the sale by the Company to the Purchasers of approximately $90.6 million aggregate original principal amount of a new series of Convertible Senior Secured Notes due 2026 (the &#8220;New Notes&#8221;) with an initial conversion price of $0.6888 and warrants (the &#8220;Warrants&#8221;) to purchase 131.6 million ordinary shares of the Company, $0.000004026575398 nominal value per share (the &#8220;Ordinary Shares&#8221;), at an exercise price of $1.1182 per share, subject to certain anti-dilution adjustments.",
+            "start": 34490
+          },
+          "value": "approximately $90.6 million aggregate original principal amount of New Notes and warrants to purchase 131.6 million ordinary shares"
+        },
+        "mitigation_resolution_transition": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode_relationship": {
+          "state": "NOT_APPLICABLE"
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_0006c0ecaaed6310e98e5a48ce08489205cd14c0fed59a341cc08b3a2b2b01da",
+      "auditor_role": "OPUS",
+      "verdict": "REPAIR",
+      "disagreements": [
+        {
+          "field": "episode_relationship",
+          "proposal": {
+            "evidence": {
+              "document_sha256": "f8c1d554b23368018c23bf53c95a4c71cdc4e7f205c6729b99d0f18669cf8ea2",
+              "end": 2024,
+              "excerpt": "FalconStor Software Announces Fourth Quarter and Fiscal Year 2020 Results",
+              "start": 1951
+            },
+            "value": "presently standalone episode proposal: earnings press release for Q4/FY 2020"
+          },
+          "audited": {
+            "state": "NOT_APPLICABLE"
+          },
+          "resolution": "REPAIR",
+          "rationale": "Proposal asserts an episode relationship (\"presently standalone episode proposal: earnings press release for Q4/FY 2020\") for a packet whose audited semantics carry no controlled P0 value in any admission field (adverse_information_state, structural_impairment_evidence, mitigation_resolution_transition). The source establishes: fourth-quarter and fiscal-year 2020 earnings results announcement -- which under the narrowed P0 rule is an ordinary economic event rather than a P0 adverse/control episode. No episode relationship is therefore established and the field is typed NOT_APPLICABLE rather than minting episode-hood; the panel comparison also shows no other packet sharing this registrant, instrument, or disclosure chain."
+        }
+      ],
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE"
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE"
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE"
+        },
+        "mitigation": {
+          "state": "NOT_APPLICABLE"
+        },
+        "resolution": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode": {
+          "state": "NOT_APPLICABLE"
+        }
+      },
+      "final_semantic": {
+        "event_family": {
+          "evidence": {
+            "document_sha256": "f8c1d554b23368018c23bf53c95a4c71cdc4e7f205c6729b99d0f18669cf8ea2",
+            "end": 2024,
+            "excerpt": "FalconStor Software Announces Fourth Quarter and Fiscal Year 2020 Results",
+            "start": 1951
+          },
+          "value": "fourth-quarter and fiscal-year 2020 earnings results announcement"
+        },
+        "affected_scope": {
+          "evidence": {
+            "document_sha256": "f8c1d554b23368018c23bf53c95a4c71cdc4e7f205c6729b99d0f18669cf8ea2",
+            "end": 2024,
+            "excerpt": "FalconStor Software Announces Fourth Quarter and Fiscal Year 2020 Results",
+            "start": 1951
+          },
+          "value": "FalconStor Software, Inc. consolidated results"
+        },
+        "adverse_information_state": {
+          "state": "NOT_APPLICABLE"
+        },
+        "duration_uncertainty": {
+          "state": "NOT_APPLICABLE"
+        },
+        "recoverability_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "quantified_impact": {
+          "evidence": {
+            "document_sha256": "f8c1d554b23368018c23bf53c95a4c71cdc4e7f205c6729b99d0f18669cf8ea2",
+            "end": 3295,
+            "excerpt": "$1.8 million in fiscal year 2020 GAAP operating income compared to $(0.7) million in fiscal year 2019",
+            "start": 3194
+          },
+          "value": "fiscal year 2020 GAAP operating income of $1.8 million compared to $(0.7) million in fiscal year 2019"
+        },
+        "mitigation_resolution_transition": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode_relationship": {
+          "state": "NOT_APPLICABLE"
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_00074fafe12768c2ffc227a9a99639ec07ffada61f672045037230b0db53885d",
+      "auditor_role": "OPUS",
+      "verdict": "REPAIR",
+      "disagreements": [
+        {
+          "field": "episode_relationship",
+          "proposal": {
+            "evidence": {
+              "document_sha256": "3e8040af4b1d241ccccfd71ae74f23980a56805ada9b49408c3d3c670df39778",
+              "end": 2136,
+              "excerpt": "Dominion Energy announces 2024 financial results",
+              "start": 2088
+            },
+            "value": "presently standalone episode proposal: year-end earnings release"
+          },
+          "audited": {
+            "state": "NOT_APPLICABLE"
+          },
+          "resolution": "REPAIR",
+          "rationale": "Proposal asserts an episode relationship (\"presently standalone episode proposal: year-end earnings release\") for a packet whose audited semantics carry no controlled P0 value in any admission field (adverse_information_state, structural_impairment_evidence, mitigation_resolution_transition). The source establishes: full-year and fourth-quarter 2024 earnings results announcement -- which under the narrowed P0 rule is an ordinary economic event rather than a P0 adverse/control episode. No episode relationship is therefore established and the field is typed NOT_APPLICABLE rather than minting episode-hood; the panel comparison also shows no other packet sharing this registrant, instrument, or disclosure chain."
+        }
+      ],
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE"
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE"
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE"
+        },
+        "mitigation": {
+          "state": "NOT_APPLICABLE"
+        },
+        "resolution": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode": {
+          "state": "NOT_APPLICABLE"
+        }
+      },
+      "final_semantic": {
+        "event_family": {
+          "evidence": {
+            "document_sha256": "3e8040af4b1d241ccccfd71ae74f23980a56805ada9b49408c3d3c670df39778",
+            "end": 2136,
+            "excerpt": "Dominion Energy announces 2024 financial results",
+            "start": 2088
+          },
+          "value": "full-year and fourth-quarter 2024 earnings results announcement"
+        },
+        "affected_scope": {
+          "evidence": {
+            "document_sha256": "3e8040af4b1d241ccccfd71ae74f23980a56805ada9b49408c3d3c670df39778",
+            "end": 2136,
+            "excerpt": "Dominion Energy announces 2024 financial results",
+            "start": 2088
+          },
+          "value": "Dominion Energy, Inc. consolidated reported and operating earnings"
+        },
+        "adverse_information_state": {
+          "state": "NOT_APPLICABLE"
+        },
+        "duration_uncertainty": {
+          "state": "NOT_APPLICABLE"
+        },
+        "recoverability_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "structural_impairment_evidence": {
+          "evidence": {
+            "document_sha256": "3e8040af4b1d241ccccfd71ae74f23980a56805ada9b49408c3d3c670df39778",
+            "end": 306540,
+            "excerpt": "$229 million of nonregulated asset impairments and other charges related to a $122 million ARO revision at Millstone nuclear power station, $60 million of impairment charges associated with certain nonregulated renewable natural gas facilities and a $47 million charge in connection with the settlement of an agreement.",
+            "start": 306221
+          },
+          "value": "2024 adjustments include $229 million of nonregulated asset impairments and other charges, including $60 million of impairment charges on certain nonregulated renewable natural gas facilities"
+        },
+        "quantified_impact": {
+          "evidence": {
+            "document_sha256": "3e8040af4b1d241ccccfd71ae74f23980a56805ada9b49408c3d3c670df39778",
+            "end": 4728,
+            "excerpt": "Company narrows 2025 operating EPS range to $3.28 to $3.52 per share; preserves original midpoint of $3.40 per share",
+            "start": 4612
+          },
+          "value": "2025 operating EPS guidance narrowed to $3.28 to $3.52 per share, preserving the original $3.40 midpoint"
+        },
+        "mitigation_resolution_transition": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode_relationship": {
+          "state": "NOT_APPLICABLE"
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_000c9cc45758b999462201d3de8baf3e573631f33a72dd0aa4917f18e47a8075",
+      "auditor_role": "OPUS",
+      "verdict": "REPAIR",
+      "disagreements": [
+        {
+          "field": "episode_relationship",
+          "proposal": {
+            "evidence": {
+              "document_sha256": "400ec564723b7c3ce9e4429e683acfa7aed595c2f7ba27c28dae5fe9b53e4096",
+              "end": 933,
+              "excerpt": "Risk and Capital Management - Pillar 3 Ita&uacute; Unibanco Holding S.A. Third Quarter of 2025 Objective 1 Key indicators 1 Prudential\nMetrics and Risk Management 2 KM1: Key metrics at consolidated level 2 OVA: Bank risk management approach 4 Scope and main characteristics\nof risk management 4 Risk and Capital Governance 5 Ituber Culture 6 Risk Appetite 7 Stress Testing 8 Recovery and Resolution Plan 8 Capital\nAdequacy Assessment 10 Capital Adequacy 10 OV1: Overview of risk-weighted assets (RWA) 10 Links between financial statements and regulatory\nexposures 11 LIA: Explanations of differences between accounting and regulatory exposure amounts 11 LI1: Differences between accounting\nand ",
+              "start": 239
+            },
+            "value": "presently standalone episode proposal: periodic Pillar 3 capital and risk disclosure"
+          },
+          "audited": {
+            "state": "NOT_APPLICABLE"
+          },
+          "resolution": "REPAIR",
+          "rationale": "Proposal asserts an episode relationship (\"presently standalone episode proposal: periodic Pillar 3 capital and risk disclosure\") for a packet whose audited semantics carry no controlled P0 value in any admission field (adverse_information_state, structural_impairment_evidence, mitigation_resolution_transition). The source establishes: Pillar 3 risk and capital management report for third quarter 2025 -- which under the narrowed P0 rule is an ordinary economic event rather than a P0 adverse/control episode. No episode relationship is therefore established and the field is typed NOT_APPLICABLE rather than minting episode-hood; the panel comparison also shows no other packet sharing this registrant, instrument, or disclosure chain."
+        }
+      ],
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE"
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE"
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE"
+        },
+        "mitigation": {
+          "state": "NOT_APPLICABLE"
+        },
+        "resolution": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode": {
+          "state": "NOT_APPLICABLE"
+        }
+      },
+      "final_semantic": {
+        "event_family": {
+          "evidence": {
+            "document_sha256": "400ec564723b7c3ce9e4429e683acfa7aed595c2f7ba27c28dae5fe9b53e4096",
+            "end": 933,
+            "excerpt": "Risk and Capital Management - Pillar 3 Ita&uacute; Unibanco Holding S.A. Third Quarter of 2025 Objective 1 Key indicators 1 Prudential\nMetrics and Risk Management 2 KM1: Key metrics at consolidated level 2 OVA: Bank risk management approach 4 Scope and main characteristics\nof risk management 4 Risk and Capital Governance 5 Ituber Culture 6 Risk Appetite 7 Stress Testing 8 Recovery and Resolution Plan 8 Capital\nAdequacy Assessment 10 Capital Adequacy 10 OV1: Overview of risk-weighted assets (RWA) 10 Links between financial statements and regulatory\nexposures 11 LIA: Explanations of differences between accounting and regulatory exposure amounts 11 LI1: Differences between accounting\nand ",
+            "start": 239
+          },
+          "value": "Pillar 3 risk and capital management report for third quarter 2025"
+        },
+        "affected_scope": {
+          "evidence": {
+            "document_sha256": "400ec564723b7c3ce9e4429e683acfa7aed595c2f7ba27c28dae5fe9b53e4096",
+            "end": 5731,
+            "excerpt": "__________________________________________________________________________________________\nIta&uacute; Unibanco 1 Objective This document presents Ita&uacute; Unibanco Holding S.A. (Ita&uacute; Unibanco) information required\nby the Central Bank of Brazil (BACEN) through Resolution BCB n&ordm; 54 and subsequent amendments, which addresses the disclosure of information\non risks and capital management, the comparison between accounting and prudential information, the liquidity and market risk indicators,\nthe calculation of risk-weighted assets (RWA), the calculation of the Total Capital (&ldquo;Patrim&ocirc;nio de Refer&ecirc;ncia&rdquo;\n- PR), and the compensation of management members. 1 The ",
+            "start": 5031
+          },
+          "value": "Itaú Unibanco Holding S.A. prudential consolidation"
+        },
+        "adverse_information_state": {
+          "state": "NOT_APPLICABLE"
+        },
+        "duration_uncertainty": {
+          "state": "NOT_APPLICABLE"
+        },
+        "recoverability_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "quantified_impact": {
+          "evidence": {
+            "document_sha256": "400ec564723b7c3ce9e4429e683acfa7aed595c2f7ba27c28dae5fe9b53e4096",
+            "end": 7126,
+            "excerpt": "information that must be disclosed and the integrity endorsement\nand approval governance, as established by the article 56 of the Resolution n&ordm;. 4,557. __________________________________________________________________________________________\n1 Compensation of management members data is reported annually. Key indicators Ita&uacute; Unibanco&rsquo;s risk and capital management\nfocuses on maintaining the institution in line with the risk strategy approved by the Board of Directors. The key indicators based on\nthe Prudential Consolidation, on September 30, 2025, are summarized below. Common Equity Tier I Ratio Tier I Ratio Total Capital Ratio\n13.5% 14.8% 16.4% June 30, 2025 13.1% June 30, ",
+            "start": 6426
+          },
+          "value": "as of September 30, 2025, Common Equity Tier I / Tier I / Total Capital ratios of 13.5% / 14.8% / 16.4% on the prudential consolidation"
+        },
+        "mitigation_resolution_transition": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode_relationship": {
+          "state": "NOT_APPLICABLE"
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_001fd449bccffebaf07e5ae749a4371d6529629a701a307d0f4c2a66ad2c022b",
+      "auditor_role": "OPUS",
+      "verdict": "REPAIR",
+      "disagreements": [
+        {
+          "field": "episode_relationship",
+          "proposal": {
+            "evidence": {
+              "document_sha256": "8956ee4583f0e211b00b58b168fefd5dc5857e0e2dcd044a9ff4c85dc988e2d6",
+              "end": 1051,
+              "excerpt": "THIRD SUPPLEMENTAL INDENTURE, dated as of November&nbsp;15, 2018 (this &#147;",
+              "start": 974
+            },
+            "value": "origin of this notes series: Third Supplemental Indenture establishing the form and terms of a new series of senior debt securities"
+          },
+          "audited": {
+            "state": "NOT_APPLICABLE"
+          },
+          "resolution": "REPAIR",
+          "rationale": "Proposal asserts an episode relationship (\"origin of this notes series: Third Supplemental Indenture establishing the form and terms of a new series of senior debt securities\") for a packet whose audited semantics carry no controlled P0 value in any admission field (adverse_information_state, structural_impairment_evidence, mitigation_resolution_transition). The source establishes: issuance of $1,000,000,000 4.796% Fixed Rate/Floating Rate Notes due November 15, 2024 under a third supplemental indenture -- which under the narrowed P0 rule is an ordinary economic event rather than a P0 adverse/control episode. No episode relationship is therefore established and the field is typed NOT_APPLICABLE rather than minting episode-hood; the panel comparison also shows no other packet sharing this registrant, instrument, or disclosure chain."
+        }
+      ],
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE"
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE"
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE"
+        },
+        "mitigation": {
+          "state": "NOT_APPLICABLE"
+        },
+        "resolution": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode": {
+          "state": "NOT_APPLICABLE"
+        }
+      },
+      "final_semantic": {
+        "event_family": {
+          "evidence": {
+            "document_sha256": "8956ee4583f0e211b00b58b168fefd5dc5857e0e2dcd044a9ff4c85dc988e2d6",
+            "end": 4594,
+            "excerpt": ", the Issuer desires to issue $1,000,000,000 4.796% Fixed Rate/Floating Rate Notes due November&nbsp;15, 2024 (such series of Senior Debt Securities, the &#147;",
+            "start": 4434
+          },
+          "value": "issuance of $1,000,000,000 4.796% Fixed Rate/Floating Rate Notes due November 15, 2024 under a third supplemental indenture"
+        },
+        "affected_scope": {
+          "evidence": {
+            "document_sha256": "8956ee4583f0e211b00b58b168fefd5dc5857e0e2dcd044a9ff4c85dc988e2d6",
+            "end": 4594,
+            "excerpt": ", the Issuer desires to issue $1,000,000,000 4.796% Fixed Rate/Floating Rate Notes due November&nbsp;15, 2024 (such series of Senior Debt Securities, the &#147;",
+            "start": 4434
+          },
+          "value": "Santander UK Group Holdings plc $1,000,000,000 4.796% Fixed Rate/Floating Rate Notes due November 15, 2024"
+        },
+        "adverse_information_state": {
+          "state": "NOT_APPLICABLE"
+        },
+        "duration_uncertainty": {
+          "evidence": {
+            "document_sha256": "8956ee4583f0e211b00b58b168fefd5dc5857e0e2dcd044a9ff4c85dc988e2d6",
+            "end": 4594,
+            "excerpt": ", the Issuer desires to issue $1,000,000,000 4.796% Fixed Rate/Floating Rate Notes due November&nbsp;15, 2024 (such series of Senior Debt Securities, the &#147;",
+            "start": 4434
+          },
+          "value": "stated maturity of November 15, 2024 for this notes series"
+        },
+        "recoverability_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "quantified_impact": {
+          "evidence": {
+            "document_sha256": "8956ee4583f0e211b00b58b168fefd5dc5857e0e2dcd044a9ff4c85dc988e2d6",
+            "end": 4594,
+            "excerpt": ", the Issuer desires to issue $1,000,000,000 4.796% Fixed Rate/Floating Rate Notes due November&nbsp;15, 2024 (such series of Senior Debt Securities, the &#147;",
+            "start": 4434
+          },
+          "value": "$1,000,000,000 aggregate principal amount of 4.796% Fixed Rate/Floating Rate Notes due November 15, 2024"
+        },
+        "mitigation_resolution_transition": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode_relationship": {
+          "state": "NOT_APPLICABLE"
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_00219a4d4f37112ffe576f7bea7acc139c026a37ab9ccaca53c94576da5258ac",
+      "auditor_role": "OPUS",
+      "verdict": "REPAIR",
+      "disagreements": [
+        {
+          "field": "episode_relationship",
+          "proposal": {
+            "evidence": {
+              "document_sha256": "8ca0c441854dd61b09728b470ceb6da511f6c5a51ca052a74d01e682160d3268",
+              "end": 1205,
+              "excerpt": "IBM RELEASES FIRST QUARTER RESULTS",
+              "start": 1171
+            },
+            "value": "presently standalone episode proposal: quarterly earnings press release (with accompanying non-GAAP explanation exhibit)"
+          },
+          "audited": {
+            "state": "NOT_APPLICABLE"
+          },
+          "resolution": "REPAIR",
+          "rationale": "Proposal asserts an episode relationship (\"presently standalone episode proposal: quarterly earnings press release (with accompanying non-GAAP explanation exhibit)\") for a packet whose audited semantics carry no controlled P0 value in any admission field (adverse_information_state, structural_impairment_evidence, mitigation_resolution_transition). The source establishes: first-quarter 2022 earnings results announcement -- which under the narrowed P0 rule is an ordinary economic event rather than a P0 adverse/control episode. No episode relationship is therefore established and the field is typed NOT_APPLICABLE rather than minting episode-hood; the panel comparison also shows no other packet sharing this registrant, instrument, or disclosure chain."
+        }
+      ],
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE"
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE"
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE"
+        },
+        "mitigation": {
+          "state": "NOT_APPLICABLE"
+        },
+        "resolution": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode": {
+          "state": "NOT_APPLICABLE"
+        }
+      },
+      "final_semantic": {
+        "event_family": {
+          "evidence": {
+            "document_sha256": "8ca0c441854dd61b09728b470ceb6da511f6c5a51ca052a74d01e682160d3268",
+            "end": 1205,
+            "excerpt": "IBM RELEASES FIRST QUARTER RESULTS",
+            "start": 1171
+          },
+          "value": "first-quarter 2022 earnings results announcement"
+        },
+        "affected_scope": {
+          "evidence": {
+            "document_sha256": "8ca0c441854dd61b09728b470ceb6da511f6c5a51ca052a74d01e682160d3268",
+            "end": 3923,
+            "excerpt": "Revenue of $14.2 billion, up 8 percent, up 11 percent at constant currency (over 5 points from incremental sales to Kyndryl)",
+            "start": 3799
+          },
+          "value": "IBM consolidated first-quarter results"
+        },
+        "adverse_information_state": {
+          "state": "NOT_APPLICABLE"
+        },
+        "duration_uncertainty": {
+          "state": "NOT_APPLICABLE"
+        },
+        "recoverability_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "quantified_impact": {
+          "evidence": {
+            "document_sha256": "8ca0c441854dd61b09728b470ceb6da511f6c5a51ca052a74d01e682160d3268",
+            "end": 3923,
+            "excerpt": "Revenue of $14.2 billion, up 8 percent, up 11 percent at constant currency (over 5 points from incremental sales to Kyndryl)",
+            "start": 3799
+          },
+          "value": "first-quarter revenue of $14.2 billion, up 8 percent, up 11 percent at constant currency"
+        },
+        "mitigation_resolution_transition": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode_relationship": {
+          "state": "NOT_APPLICABLE"
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_0031d7b733fc1a31b22d09883ae1bcb4ada957a7e851b07fcdd3bade1433a095",
+      "auditor_role": "OPUS",
+      "verdict": "REPAIR",
+      "disagreements": [
+        {
+          "field": "episode_relationship",
+          "proposal": {
+            "evidence": {
+              "document_sha256": "849247362dc2a377c0e6d8d76ec064ce3485684fedecf2b3e4bea2bcdb4d0cde",
+              "end": 7585,
+              "excerpt": "Hole APC103-D6 was drilled as a wedge hole from mother\nhole APC-103D at Pad 16 in a southwest direction and intersected the Ramp Zone 50 metres to the east from previous drill holes APC103-D1\nand APC105-D1 (see press release dated February 4, 2025 and March 12, 2025 respectively). The hole cut continuous high-grade gold mineralization\n(",
+              "start": 7247
+            },
+            "value": "later pulse: new Ramp Zone holes stepping out from prior holes APC103-D1 and APC105-D1 disclosed in February 4, 2025 and March 12, 2025 press releases"
+          },
+          "audited": {
+            "state": "NOT_APPLICABLE"
+          },
+          "resolution": "REPAIR",
+          "rationale": "Proposal asserts an episode relationship (\"later pulse: new Ramp Zone holes stepping out from prior holes APC103-D1 and APC105-D1 disclosed in February 4, 2025 and March 12, 2025 press releases\") for a packet whose audited semantics carry no controlled P0 value in any admission field (adverse_information_state, structural_impairment_evidence, mitigation_resolution_transition). The source establishes: exploration drill-result update expanding the Ramp Zone at the Apollo system -- which under the narrowed P0 rule is an ordinary economic event rather than a P0 adverse/control episode. No episode relationship is therefore established and the field is typed NOT_APPLICABLE rather than minting episode-hood; the panel comparison also shows no other packet sharing this registrant, instrument, or disclosure chain."
+        }
+      ],
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE"
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE"
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE"
+        },
+        "mitigation": {
+          "state": "NOT_APPLICABLE"
+        },
+        "resolution": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode": {
+          "state": "NOT_APPLICABLE"
+        }
+      },
+      "final_semantic": {
+        "event_family": {
+          "evidence": {
+            "document_sha256": "849247362dc2a377c0e6d8d76ec064ce3485684fedecf2b3e4bea2bcdb4d0cde",
+            "end": 1179,
+            "excerpt": "Collective Mining Announces a 200 Metre Strike\nExtension at the Ramp Zone with Results Including 50.50 Metres at 5.66 g/t Gold and 13 g/t Silver",
+            "start": 1035
+          },
+          "value": "exploration drill-result update expanding the Ramp Zone at the Apollo system"
+        },
+        "affected_scope": {
+          "evidence": {
+            "document_sha256": "849247362dc2a377c0e6d8d76ec064ce3485684fedecf2b3e4bea2bcdb4d0cde",
+            "end": 4956,
+            "excerpt": "is pleased to announce assay results for two\ndiamond drill holes designed to continue expanding the high-grade Ramp Zone, which is located at the bottom of the Apollo system (&quot;Apollo&quot;).\nApollo, which begins at surface, is strongly mineralized over 1,300 vertical metres and is open at depth. It is the most advanced discovery\nmade to date within the Company's multi-target, Guayabales Project in Caldas, Colombia.",
+            "start": 4533
+          },
+          "value": "Collective Mining Ramp Zone at the bottom of the Apollo system, Guayabales Project, Caldas, Colombia"
+        },
+        "adverse_information_state": {
+          "state": "NOT_APPLICABLE"
+        },
+        "duration_uncertainty": {
+          "state": "NOT_APPLICABLE"
+        },
+        "recoverability_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "quantified_impact": {
+          "evidence": {
+            "document_sha256": "849247362dc2a377c0e6d8d76ec064ce3485684fedecf2b3e4bea2bcdb4d0cde",
+            "end": 2282,
+            "excerpt": "APC103-D6, which was the shallower and first of the two new holes to intercept\nthe Ramp Zone, cut 50.50 metres at 5.66 g/t gold and 13 g/t silver and extended the system laterally by approximately 50 metres to the\nnortheast.",
+            "start": 2058
+          },
+          "value": "hole APC103-D6 cut 50.50 metres at 5.66 g/t gold and 13 g/t silver and extended the Ramp Zone laterally by approximately 50 metres to the northeast"
+        },
+        "mitigation_resolution_transition": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode_relationship": {
+          "state": "NOT_APPLICABLE"
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_0048ea4c26a9605bdde6755147f747fb803afa8798a2cb418ab5646ebc5d6c4b",
+      "auditor_role": "OPUS",
+      "verdict": "REPAIR",
+      "disagreements": [
+        {
+          "field": "episode_relationship",
+          "proposal": {
+            "evidence": {
+              "document_sha256": "4bd402525c3aee4a534eb20f6041fe18f49d68204d7cd2ed6a3707fa436bb978",
+              "end": 2263,
+              "excerpt": "&#8217;&#8217;), its operations, financial performance and the present and anticipated future business environment. This MD&amp;A, which has been prepared as of August&#160;8, 2023, should be read in conjunction with the unaudited condensed interim consolidated financial statements of TF Precious Metals as at and for the three and six months ended June&#160;30, 2023 (the &#8220;",
+              "start": 1882
+            },
+            "value": "presently standalone episode proposal: MD&A prepared as of August 8, 2023 for the June 30, 2023 interim period"
+          },
+          "audited": {
+            "state": "NOT_APPLICABLE"
+          },
+          "resolution": "REPAIR",
+          "rationale": "Proposal asserts an episode relationship (\"presently standalone episode proposal: MD&A prepared as of August 8, 2023 for the June 30, 2023 interim period\") for a packet whose audited semantics carry no controlled P0 value in any admission field (adverse_information_state, structural_impairment_evidence, mitigation_resolution_transition). The source establishes: interim MD&A for the three and six months ended June 30, 2023 -- which under the narrowed P0 rule is an ordinary economic event rather than a P0 adverse/control episode. No episode relationship is therefore established and the field is typed NOT_APPLICABLE rather than minting episode-hood; the panel comparison also shows no other packet sharing this registrant, instrument, or disclosure chain."
+        }
+      ],
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE"
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE"
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE"
+        },
+        "mitigation": {
+          "state": "NOT_APPLICABLE"
+        },
+        "resolution": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode": {
+          "state": "NOT_APPLICABLE"
+        }
+      },
+      "final_semantic": {
+        "event_family": {
+          "evidence": {
+            "document_sha256": "4bd402525c3aee4a534eb20f6041fe18f49d68204d7cd2ed6a3707fa436bb978",
+            "end": 2263,
+            "excerpt": "&#8217;&#8217;), its operations, financial performance and the present and anticipated future business environment. This MD&amp;A, which has been prepared as of August&#160;8, 2023, should be read in conjunction with the unaudited condensed interim consolidated financial statements of TF Precious Metals as at and for the three and six months ended June&#160;30, 2023 (the &#8220;",
+            "start": 1882
+          },
+          "value": "interim MD&A for the three and six months ended June 30, 2023"
+        },
+        "affected_scope": {
+          "evidence": {
+            "document_sha256": "4bd402525c3aee4a534eb20f6041fe18f49d68204d7cd2ed6a3707fa436bb978",
+            "end": 2263,
+            "excerpt": "&#8217;&#8217;), its operations, financial performance and the present and anticipated future business environment. This MD&amp;A, which has been prepared as of August&#160;8, 2023, should be read in conjunction with the unaudited condensed interim consolidated financial statements of TF Precious Metals as at and for the three and six months ended June&#160;30, 2023 (the &#8220;",
+            "start": 1882
+          },
+          "value": "TF Precious Metals operations and financial performance for the three and six months ended June 30, 2023"
+        },
+        "adverse_information_state": {
+          "state": "NOT_APPLICABLE"
+        },
+        "duration_uncertainty": {
+          "state": "NOT_APPLICABLE"
+        },
+        "recoverability_evidence": {
+          "evidence": {
+            "document_sha256": "4bd402525c3aee4a534eb20f6041fe18f49d68204d7cd2ed6a3707fa436bb978",
+            "end": 318490,
+            "excerpt": "Cerro Lindo was impacted in mid-March by unusual heavy rainfall levels and overflowing rivers caused by Cyclone Yaku. Following this event, operations were temporarily suspended to allow time for dewatering, which was completed within 15 days. Nexa has maintained 2023 guidance for Cerro Lindo, despite this interruption.",
+            "start": 318169
+          },
+          "value": "Cerro Lindo operations were temporarily suspended after Cyclone Yaku rainfall and dewatering was completed within 15 days; operator maintained 2023 guidance"
+        },
+        "structural_impairment_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "quantified_impact": {
+          "evidence": {
+            "document_sha256": "4bd402525c3aee4a534eb20f6041fe18f49d68204d7cd2ed6a3707fa436bb978",
+            "end": 314125,
+            "excerpt": "In connection with the closing, Triple Flag paid $86.7 million issued 45,097,390 common shares to all former Maverix shareholders and incurred $5.8 million of transaction costs. The transaction was accounted for as an asset acquisition on January 19, 2023. Following the completion of the acquisition, Maverix Metals Inc. became a wholly-owned subsidiary of Triple Flag.",
+            "start": 313755
+          },
+          "value": "Maverix acquisition consideration of $86.7 million cash plus 45,097,390 common shares and $5.8 million of transaction costs, accounted for as an asset acquisition on January 19, 2023"
+        },
+        "mitigation_resolution_transition": {
+          "evidence": {
+            "document_sha256": "4bd402525c3aee4a534eb20f6041fe18f49d68204d7cd2ed6a3707fa436bb978",
+            "end": 318490,
+            "excerpt": "Cerro Lindo was impacted in mid-March by unusual heavy rainfall levels and overflowing rivers caused by Cyclone Yaku. Following this event, operations were temporarily suspended to allow time for dewatering, which was completed within 15 days. Nexa has maintained 2023 guidance for Cerro Lindo, despite this interruption.",
+            "start": 318169
+          },
+          "value": "Cerro Lindo dewatering completed within 15 days after the Cyclone Yaku interruption"
+        },
+        "episode_relationship": {
+          "state": "NOT_APPLICABLE"
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_00535e3d17884c62f7f3087b0ed82613e045944cef39c00238ce260eb78f5124",
+      "auditor_role": "OPUS",
+      "verdict": "REPAIR",
+      "disagreements": [
+        {
+          "field": "episode_relationship",
+          "proposal": {
+            "evidence": {
+              "document_sha256": "8695f7dd747aa61cef83faf5a443674bb2787ba15b1f71700c75e337ef9868ed",
+              "end": 15952,
+              "excerpt": "Uranium\nRoyalty Corp., a corporation incorporated under the",
+              "start": 15893
+            },
+            "value": "presently standalone episode proposal: equity distribution/agency agreement for this ATM program"
+          },
+          "audited": {
+            "state": "NOT_APPLICABLE"
+          },
+          "resolution": "REPAIR",
+          "rationale": "Proposal asserts an episode relationship (\"presently standalone episode proposal: equity distribution/agency agreement for this ATM program\") for a packet whose audited semantics carry no controlled P0 value in any admission field (adverse_information_state, structural_impairment_evidence, mitigation_resolution_transition). The source establishes: at-the-market common-share offering agency agreement -- which under the narrowed P0 rule is an ordinary economic event rather than a P0 adverse/control episode. No episode relationship is therefore established and the field is typed NOT_APPLICABLE rather than minting episode-hood; the panel comparison also shows no other packet sharing this registrant, instrument, or disclosure chain."
+        }
+      ],
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE"
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE"
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE"
+        },
+        "mitigation": {
+          "state": "NOT_APPLICABLE"
+        },
+        "resolution": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode": {
+          "state": "NOT_APPLICABLE"
+        }
+      },
+      "final_semantic": {
+        "event_family": {
+          "evidence": {
+            "document_sha256": "8695f7dd747aa61cef83faf5a443674bb2787ba15b1f71700c75e337ef9868ed",
+            "end": 44262,
+            "excerpt": "The Agents, severally and not jointly, covenant that the Agents will not (nor will any affiliate thereof or person or company acting jointly\nor in concert therewith) over allot Shares in connection with the distribution of Shares in an &ldquo;at the market distribution&rdquo;\n(as defined in NI 44 102) or effect any other transactions that are intended to stabilize or maintain the market price of the Shares in\nconnection with such distribution.",
+            "start": 43815
+          },
+          "value": "at-the-market common-share offering agency agreement"
+        },
+        "affected_scope": {
+          "evidence": {
+            "document_sha256": "8695f7dd747aa61cef83faf5a443674bb2787ba15b1f71700c75e337ef9868ed",
+            "end": 17129,
+            "excerpt": "&rdquo;), having an aggregate offering price of up to US$54,000,000\n(or the equivalent in Canadian dollars determined using the daily exchange rate posted by the Bank of Canada on the date the Shares\nare sold) (the &ldquo;",
+            "start": 16907
+          },
+          "value": "Uranium Royalty Corp. common shares issuable in the at-the-market program up to the stated aggregate offering price"
+        },
+        "adverse_information_state": {
+          "state": "NOT_APPLICABLE"
+        },
+        "duration_uncertainty": {
+          "state": "UNAVAILABLE"
+        },
+        "recoverability_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "quantified_impact": {
+          "evidence": {
+            "document_sha256": "8695f7dd747aa61cef83faf5a443674bb2787ba15b1f71700c75e337ef9868ed",
+            "end": 17129,
+            "excerpt": "&rdquo;), having an aggregate offering price of up to US$54,000,000\n(or the equivalent in Canadian dollars determined using the daily exchange rate posted by the Bank of Canada on the date the Shares\nare sold) (the &ldquo;",
+            "start": 16907
+          },
+          "value": "aggregate offering price of up to US$54,000,000 (or Canadian-dollar equivalent) of common shares"
+        },
+        "mitigation_resolution_transition": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode_relationship": {
+          "state": "NOT_APPLICABLE"
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_00767e151da21cd75e1d9f7c193d21a0fdd3b95b126384cd0636bddc09e4923c",
+      "auditor_role": "OPUS",
+      "verdict": "REPAIR",
+      "disagreements": [
+        {
+          "field": "episode_relationship",
+          "proposal": {
+            "evidence": {
+              "document_sha256": "ce2e1c4c36ddeea5e04cc8094cf6c4e982946bcbb7950aee992e8f3b3869b63a",
+              "end": 2066,
+              "excerpt": "Lilly reports full Q4 2024 financial results and provides 2025 guidance",
+              "start": 1995
+            },
+            "value": "presently standalone episode proposal: quarterly/year-end earnings press release"
+          },
+          "audited": {
+            "state": "NOT_APPLICABLE"
+          },
+          "resolution": "REPAIR",
+          "rationale": "Proposal asserts an episode relationship (\"presently standalone episode proposal: quarterly/year-end earnings press release\") for a packet whose audited semantics carry no controlled P0 value in any admission field (adverse_information_state, structural_impairment_evidence, mitigation_resolution_transition). The source establishes: fourth-quarter 2024 financial results and 2025 guidance -- which under the narrowed P0 rule is an ordinary economic event rather than a P0 adverse/control episode. No episode relationship is therefore established and the field is typed NOT_APPLICABLE rather than minting episode-hood; the panel comparison also shows no other packet sharing this registrant, instrument, or disclosure chain."
+        }
+      ],
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE"
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE"
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE"
+        },
+        "mitigation": {
+          "state": "NOT_APPLICABLE"
+        },
+        "resolution": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode": {
+          "state": "NOT_APPLICABLE"
+        }
+      },
+      "final_semantic": {
+        "event_family": {
+          "evidence": {
+            "document_sha256": "ce2e1c4c36ddeea5e04cc8094cf6c4e982946bcbb7950aee992e8f3b3869b63a",
+            "end": 2066,
+            "excerpt": "Lilly reports full Q4 2024 financial results and provides 2025 guidance",
+            "start": 1995
+          },
+          "value": "fourth-quarter 2024 financial results and 2025 guidance"
+        },
+        "affected_scope": {
+          "evidence": {
+            "document_sha256": "ce2e1c4c36ddeea5e04cc8094cf6c4e982946bcbb7950aee992e8f3b3869b63a",
+            "end": 2605,
+            "excerpt": "Revenue in Q4 2024 increased 45% to $13.53 billion driven by volume growth from Mounjaro and Zepbound. Non-incretin revenue",
+            "start": 2482
+          },
+          "value": "Lilly consolidated results, with Q4 volume growth cited from Mounjaro and Zepbound"
+        },
+        "adverse_information_state": {
+          "state": "NOT_APPLICABLE"
+        },
+        "duration_uncertainty": {
+          "state": "NOT_APPLICABLE"
+        },
+        "recoverability_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "structural_impairment_evidence": {
+          "evidence": {
+            "document_sha256": "ce2e1c4c36ddeea5e04cc8094cf6c4e982946bcbb7950aee992e8f3b3869b63a",
+            "end": 35207,
+            "excerpt": "In Q4 2024, the company recognized asset impairment, restructuring and other special charges of $344.0 million, compared with $67.7 million in Q4 2023. The charges in Q4 2024 primarily included an intangible asset impairment associated with Vitrakvi.",
+            "start": 34957
+          },
+          "value": "Q4 2024 asset impairment, restructuring and other special charges of $344.0 million, primarily an intangible asset impairment associated with Vitrakvi"
+        },
+        "quantified_impact": {
+          "evidence": {
+            "document_sha256": "ce2e1c4c36ddeea5e04cc8094cf6c4e982946bcbb7950aee992e8f3b3869b63a",
+            "end": 2605,
+            "excerpt": "Revenue in Q4 2024 increased 45% to $13.53 billion driven by volume growth from Mounjaro and Zepbound. Non-incretin revenue",
+            "start": 2482
+          },
+          "value": "Q4 2024 revenue increased 45% to $13.53 billion driven by volume growth from Mounjaro and Zepbound"
+        },
+        "mitigation_resolution_transition": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode_relationship": {
+          "state": "NOT_APPLICABLE"
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_007c5c79567a1cde987f7ce9d748b2e55bebcae781fbe4e7a2ef49b0e14613d3",
+      "auditor_role": "OPUS",
+      "verdict": "REPAIR",
+      "disagreements": [
+        {
+          "field": "episode_relationship",
+          "proposal": {
+            "evidence": {
+              "document_sha256": "b1d1d1c28ba42a672a6a5e94fb1db2bf914766602763899e96c31a4e56284554",
+              "end": 77247,
+              "excerpt": "This Equity Contribution Agreement (this &#147;",
+              "start": 77200
+            },
+            "value": "presently standalone episode proposal / origin of this two-member ownership structure under the Equity Contribution Agreement"
+          },
+          "audited": {
+            "state": "NOT_APPLICABLE"
+          },
+          "resolution": "REPAIR",
+          "rationale": "Proposal asserts an episode relationship (\"presently standalone episode proposal / origin of this two-member ownership structure under the Equity Contribution Agreement\") for a packet whose audited semantics carry no controlled P0 value in any admission field (adverse_information_state, structural_impairment_evidence, mitigation_resolution_transition). The source establishes: equity contribution agreement -- which under the narrowed P0 rule is an ordinary economic event rather than a P0 adverse/control episode. No episode relationship is therefore established and the field is typed NOT_APPLICABLE rather than minting episode-hood; the panel comparison also shows no other packet sharing this registrant, instrument, or disclosure chain."
+        }
+      ],
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE"
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE"
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE"
+        },
+        "mitigation": {
+          "state": "NOT_APPLICABLE"
+        },
+        "resolution": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode": {
+          "state": "NOT_APPLICABLE"
+        }
+      },
+      "final_semantic": {
+        "event_family": {
+          "evidence": {
+            "document_sha256": "b1d1d1c28ba42a672a6a5e94fb1db2bf914766602763899e96c31a4e56284554",
+            "end": 637,
+            "excerpt": "EQUITY CONTRIBUTION AGREEMENT",
+            "start": 608
+          },
+          "value": "equity contribution agreement"
+        },
+        "affected_scope": {
+          "evidence": {
+            "document_sha256": "b1d1d1c28ba42a672a6a5e94fb1db2bf914766602763899e96c31a4e56284554",
+            "end": 80256,
+            "excerpt": ", in consideration of the contributions as described above and contemporaneously with the execution and delivery of this\nAgreement, (a)&nbsp;all of the Existing Units shall be canceled and forfeited without consideration, (b)&nbsp;Par Pacific shall cease to be the sole member of the Company and shall be issued 635 Units in the Company and shall be admitted as a Member\nof the Company and (c)&nbsp;Alohi shall be issued 365 Units in the Company and shall be admitted as a Member of the Company, upon the terms and subject to the conditions set forth herein and in that certain Amended and Restated LLC Agreement (as\ndefined below).",
+            "start": 79624
+          },
+          "value": "Hawaii Renewables, LLC, with Par Pacific issued 635 Units and Alohi Renewable Energy LLC issued 365 Units at closing"
+        },
+        "adverse_information_state": {
+          "state": "NOT_APPLICABLE"
+        },
+        "duration_uncertainty": {
+          "state": "UNAVAILABLE"
+        },
+        "recoverability_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "structural_impairment_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "quantified_impact": {
+          "evidence": {
+            "document_sha256": "b1d1d1c28ba42a672a6a5e94fb1db2bf914766602763899e96c31a4e56284554",
+            "end": 80256,
+            "excerpt": ", in consideration of the contributions as described above and contemporaneously with the execution and delivery of this\nAgreement, (a)&nbsp;all of the Existing Units shall be canceled and forfeited without consideration, (b)&nbsp;Par Pacific shall cease to be the sole member of the Company and shall be issued 635 Units in the Company and shall be admitted as a Member\nof the Company and (c)&nbsp;Alohi shall be issued 365 Units in the Company and shall be admitted as a Member of the Company, upon the terms and subject to the conditions set forth herein and in that certain Amended and Restated LLC Agreement (as\ndefined below).",
+            "start": 79624
+          },
+          "value": "at closing, existing units cancelled; Par Pacific issued 635 Units and Alohi issued 365 Units in the Company"
+        },
+        "mitigation_resolution_transition": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode_relationship": {
+          "state": "NOT_APPLICABLE"
+        }
+      }
+    },
+    {
+      "packet_id": "p0cand_02bf4b1a35ae3d90e982e2c27fbe1636fe8f6fb1c8d9a9cafe2b0859697cad59",
+      "auditor_role": "OPUS",
+      "verdict": "REPAIR",
+      "disagreements": [
+        {
+          "field": "adverse_information_state",
+          "proposal": {
+            "state": "NOT_APPLICABLE"
+          },
+          "audited": {
+            "value": "realized Hurricane Irma property damage disclosed in a dedicated section: $3.7 million of damage and restoration expense recorded in the quarter, two Florida Keys RV resorts still closed pending utility restoration, and the total financial impact still being estimated",
+            "evidence": {
+              "document_sha256": "1119d02a5ffae6dad6360668ed58829d0f2f754ccc498b5c4c121d8e07183fa0",
+              "start": 27424,
+              "end": 28055,
+              "excerpt": "Our Florida mainland properties resumed normal operations shortly after Hurricane Irma. Two RV resorts in the Florida Keys will reopen as utility services are restored. We are in the process of estimating the financial impact of the storm on our properties and we believe that we have adequate insurance, subject to deductibles, including business interruption coverage. During the quarter, we recorded expense of $3.7 million related to property damage and restoration work that has been approved and/or completed to date. In addition, we recorded revenue of $3.5 million related to the expected insurance recovery from this loss."
+            }
+          },
+          "resolution": "REPAIR",
+          "rationale": "The cited span discloses a realized, dated, quantified adverse event affecting the registrant's own properties, with residual closure and an impact estimate still open. NOT_APPLICABLE asserts no adverse information exists, which the source contradicts; the same span is relied on by the proposal for quantified_impact, duration_uncertainty, recoverability and mitigation, so treating the adverse-state field as inapplicable is internally inconsistent. Repaired to an affirmative descriptive value rather than the controlled P0 token, because the disclosure vehicle is a routine quarterly earnings release, mainland operations had resumed, and management states adequate insurance including business interruption cover."
+        },
+        {
+          "field": "episode_relationship",
+          "proposal": {
+            "evidence": {
+              "document_sha256": "1119d02a5ffae6dad6360668ed58829d0f2f754ccc498b5c4c121d8e07183fa0",
+              "end": 4374,
+              "excerpt": "&#32;Equity LifeStyle Properties, Inc. (NYSE: ELS) (referred to herein as &#8220;we,&#8221; &#8220;us,&#8221; and &#8220;our&#8221;) today announced results for the quarter and nine months ended",
+              "start": 4180
+            },
+            "value": "presently standalone episode proposal: quarterly earnings press release"
+          },
+          "audited": {
+            "state": "NOT_APPLICABLE"
+          },
+          "resolution": "REPAIR",
+          "rationale": "Proposal asserts an episode relationship (\"presently standalone episode proposal: quarterly earnings press release\") for a packet whose audited semantics carry no controlled P0 value in any admission field (adverse_information_state, structural_impairment_evidence, mitigation_resolution_transition). The source establishes: third-quarter 2017 earnings results with preliminary 2018 guidance -- which under the narrowed P0 rule is an ordinary economic event rather than a P0 adverse/control episode. No episode relationship is therefore established and the field is typed NOT_APPLICABLE rather than minting episode-hood; the panel comparison also shows no other packet sharing this registrant, instrument, or disclosure chain."
+        }
+      ],
+      "relationship_assessment": {
+        "duplicate": {
+          "state": "NOT_APPLICABLE"
+        },
+        "amendment": {
+          "state": "NOT_APPLICABLE"
+        },
+        "pulse": {
+          "state": "NOT_APPLICABLE"
+        },
+        "mitigation": {
+          "state": "NOT_APPLICABLE"
+        },
+        "resolution": {
+          "state": "NOT_APPLICABLE"
+        },
+        "episode": {
+          "state": "NOT_APPLICABLE"
+        }
+      },
+      "final_semantic": {
+        "event_family": {
+          "evidence": {
+            "document_sha256": "1119d02a5ffae6dad6360668ed58829d0f2f754ccc498b5c4c121d8e07183fa0",
+            "end": 3612,
+            "excerpt": "Continued Strong Performance; Preliminary 2018 Guidance",
+            "start": 3557
+          },
+          "value": "third-quarter 2017 earnings results with preliminary 2018 guidance"
+        },
+        "affected_scope": {
+          "evidence": {
+            "document_sha256": "1119d02a5ffae6dad6360668ed58829d0f2f754ccc498b5c4c121d8e07183fa0",
+            "end": 4374,
+            "excerpt": "&#32;Equity LifeStyle Properties, Inc. (NYSE: ELS) (referred to herein as &#8220;we,&#8221; &#8220;us,&#8221; and &#8220;our&#8221;) today announced results for the quarter and nine months ended",
+            "start": 4180
+          },
+          "value": "Equity LifeStyle Properties, Inc."
+        },
+        "adverse_information_state": {
+          "value": "realized Hurricane Irma property damage disclosed in a dedicated section: $3.7 million of damage and restoration expense recorded in the quarter, two Florida Keys RV resorts still closed pending utility restoration, and the total financial impact still being estimated",
+          "evidence": {
+            "document_sha256": "1119d02a5ffae6dad6360668ed58829d0f2f754ccc498b5c4c121d8e07183fa0",
+            "start": 27424,
+            "end": 28055,
+            "excerpt": "Our Florida mainland properties resumed normal operations shortly after Hurricane Irma. Two RV resorts in the Florida Keys will reopen as utility services are restored. We are in the process of estimating the financial impact of the storm on our properties and we believe that we have adequate insurance, subject to deductibles, including business interruption coverage. During the quarter, we recorded expense of $3.7 million related to property damage and restoration work that has been approved and/or completed to date. In addition, we recorded revenue of $3.5 million related to the expected insurance recovery from this loss."
+          }
+        },
+        "duration_uncertainty": {
+          "evidence": {
+            "document_sha256": "1119d02a5ffae6dad6360668ed58829d0f2f754ccc498b5c4c121d8e07183fa0",
+            "end": 28055,
+            "excerpt": "Our Florida mainland properties resumed normal operations shortly after Hurricane Irma. Two RV resorts in the Florida Keys will reopen as utility services are restored. We are in the process of estimating the financial impact of the storm on our properties and we believe that we have adequate insurance, subject to deductibles, including business interruption coverage. During the quarter, we recorded expense of $3.7 million related to property damage and restoration work that has been approved and/or completed to date. In addition, we recorded revenue of $3.5 million related to the expected insurance recovery from this loss.",
+            "start": 27424
+          },
+          "value": "two Florida Keys RV resorts will reopen as utility services are restored; financial impact of the storm still being estimated"
+        },
+        "recoverability_evidence": {
+          "evidence": {
+            "document_sha256": "1119d02a5ffae6dad6360668ed58829d0f2f754ccc498b5c4c121d8e07183fa0",
+            "end": 28055,
+            "excerpt": "Our Florida mainland properties resumed normal operations shortly after Hurricane Irma. Two RV resorts in the Florida Keys will reopen as utility services are restored. We are in the process of estimating the financial impact of the storm on our properties and we believe that we have adequate insurance, subject to deductibles, including business interruption coverage. During the quarter, we recorded expense of $3.7 million related to property damage and restoration work that has been approved and/or completed to date. In addition, we recorded revenue of $3.5 million related to the expected insurance recovery from this loss.",
+            "start": 27424
+          },
+          "value": "mainland Florida properties resumed normal operations shortly after Hurricane Irma; management believes insurance is adequate, including business interruption, and recorded $3.5 million of expected insurance recovery"
+        },
+        "structural_impairment_evidence": {
+          "state": "NOT_APPLICABLE"
+        },
+        "quantified_impact": {
+          "evidence": {
+            "document_sha256": "1119d02a5ffae6dad6360668ed58829d0f2f754ccc498b5c4c121d8e07183fa0",
+            "end": 28055,
+            "excerpt": "Our Florida mainland properties resumed normal operations shortly after Hurricane Irma. Two RV resorts in the Florida Keys will reopen as utility services are restored. We are in the process of estimating the financial impact of the storm on our properties and we believe that we have adequate insurance, subject to deductibles, including business interruption coverage. During the quarter, we recorded expense of $3.7 million related to property damage and restoration work that has been approved and/or completed to date. In addition, we recorded revenue of $3.5 million related to the expected insurance recovery from this loss.",
+            "start": 27424
+          },
+          "value": "$3.7 million expense for approved/completed property damage and restoration and $3.5 million revenue for expected insurance recovery"
+        },
+        "mitigation_resolution_transition": {
+          "evidence": {
+            "document_sha256": "1119d02a5ffae6dad6360668ed58829d0f2f754ccc498b5c4c121d8e07183fa0",
+            "end": 28055,
+            "excerpt": "Our Florida mainland properties resumed normal operations shortly after Hurricane Irma. Two RV resorts in the Florida Keys will reopen as utility services are restored. We are in the process of estimating the financial impact of the storm on our properties and we believe that we have adequate insurance, subject to deductibles, including business interruption coverage. During the quarter, we recorded expense of $3.7 million related to property damage and restoration work that has been approved and/or completed to date. In addition, we recorded revenue of $3.5 million related to the expected insurance recovery from this loss.",
+            "start": 27424
+          },
+          "value": "Florida mainland properties resumed normal operations shortly after Hurricane Irma"
+        },
+        "episode_relationship": {
+          "state": "NOT_APPLICABLE"
+        }
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "kind": "episode",
+      "packet_ids": [
+        "p0cand_0003ae31d338993bd31458a79978696489adc45f115e114a5fea78f8b5fb3514"
+      ],
+      "episode_id": "episode_da4c5bd71821a66c235ae433b684927d",
+      "evidence": {
+        "document_sha256": "da4c5bd71821a66c235ae433b684927d2071f44157505159c0013ea888985e97",
+        "end": 16554,
+        "excerpt": "by the Company. The situation remains highly uncertain. It is therefore difficult for the Company to estimate the negative impact on demand for its products. However, it is clear that our first and second quarter operating results will be adversely impacted in any event.",
+        "start": 16283
+      },
+      "auditor_role": "OPUS",
+      "audit_verdict": "REPAIR",
+      "resolution": "RESOLVED"
+    }
+  ]
+}

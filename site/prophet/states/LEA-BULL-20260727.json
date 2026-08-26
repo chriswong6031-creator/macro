@@ -1,32 +1,32 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "LEA-BULL-20260727",
-  "asof": "2026-08-22",
+  "asof": "2026-08-25",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 67.2,
-  "raw_confidence": 70.8,
-  "delta_vs_base": 7.2,
+  "management_confidence": 61.7,
+  "raw_confidence": 59.8,
+  "delta_vs_base": 1.7,
   "recommended_action": "hold",
   "human_state": "Needs Follow-Through",
   "components": {
-    "validity": 100.0,
-    "progress": 21.5,
-    "pace": 100.0,
+    "validity": 97.7,
+    "progress": 0.0,
+    "pace": 90.0,
     "retention": 50.0,
     "overlay": 67.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.322,
-    "dist_to_t1_r": 1.178,
-    "dist_to_t2_r": 2.678,
-    "horizon_pct_used": 8.9,
-    "p1": 0.2148,
-    "p2": 0.1074,
+    "dist_to_stop_r": 0.983,
+    "dist_to_t1_r": 1.5,
+    "dist_to_t2_r": 3.0,
+    "horizon_pct_used": 15.6,
+    "p1": -0.0116,
+    "p2": -0.0058,
     "p3": null,
-    "move_r": 0.322,
+    "move_r": -0.017,
     "mfe_r": 0.322,
-    "mae_r": 0.0
+    "mae_r": -0.069
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
@@ -40,11 +40,11 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 4.639993286132807,
-  "_mae": 0.0,
+  "_mae": -0.9999984741210994,
   "_max_p1": 0.21481450398763,
   "_first_trigger_ts": "2026-08-18",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 4,
-  "tau": 0.0889
+  "days_elapsed": 7,
+  "tau": 0.1556
 }

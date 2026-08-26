@@ -1,0 +1,212 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/government_revenue/government_program_dossier.v1.schema.json",
+  "title": "Government Program Dossier v1",
+  "description": "Composed, read-only Program/Platform Dossier bundle. Owns zero truth: every section carries the owning artifact's ids for UI deep-linking. Frozen per DEFENSE_D5_PROGRAM_GRAPH_ARCHITECTURE_FREEZE.md SS4.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract", "schema_version", "content_id", "generated_at", "as_of",
+    "ontology_graph_id", "authority", "dossiers", "limitations"
+  ],
+  "properties": {
+    "contract": {"const": "government_program_dossier.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "content_id": {"type": "string", "pattern": "^gpd1-[0-9a-f]{24}$"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "as_of": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
+    "ontology_graph_id": {
+      "oneOf": [
+        {"type": "null"},
+        {"type": "string", "pattern": "^program-ontology:(candidate|reviewed):\\d{4}-\\d{2}-\\d{2}:[a-z0-9]+(-[a-z0-9]+)*$"}
+      ]
+    },
+    "authority": {"$ref": "#/$defs/authority"},
+    "dossiers": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/dossier"}
+    },
+    "limitations": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    }
+  },
+  "$defs": {
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tier", "context_only", "can_rank", "can_size", "can_gate",
+        "can_originate_signal", "can_add_candidates", "can_escalate"
+      ],
+      "properties": {
+        "tier": {"const": "display"},
+        "context_only": {"const": true},
+        "can_rank": {"const": false},
+        "can_size": {"const": false},
+        "can_gate": {"const": false},
+        "can_originate_signal": {"const": false},
+        "can_add_candidates": {"const": false},
+        "can_escalate": {"const": false}
+      }
+    },
+    "reviewGatedState": {"enum": ["reviewed", "not_reviewed", "reviewed_none", "conflicted"]},
+    "evidenceRefs": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^ev:[0-9a-f]{12}$"}
+    },
+    "dossier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "program_id", "program_identity", "capability", "awards", "budget",
+        "participants", "economic_relationships", "milestones"
+      ],
+      "properties": {
+        "program_id": {"type": "string", "pattern": "^acq-program:[a-z0-9-]+$"},
+        "program_identity": {"$ref": "#/$defs/programIdentityRail"},
+        "capability": {"$ref": "#/$defs/capabilityRail"},
+        "awards": {"$ref": "#/$defs/awardsRail"},
+        "budget": {"$ref": "#/$defs/budgetRail"},
+        "participants": {"$ref": "#/$defs/participantsRail"},
+        "economic_relationships": {"$ref": "#/$defs/economicRelationshipsRail"},
+        "milestones": {"$ref": "#/$defs/milestonesRail"}
+      }
+    },
+    "programIdentityRail": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state", "program_id", "program_revision", "name", "phase", "sponsor_agency",
+        "latest_platform_id", "latest_platform_name", "evidence_refs"
+      ],
+      "properties": {
+        "state": {"$ref": "#/$defs/reviewGatedState"},
+        "program_id": {"oneOf": [{"type": "null"}, {"type": "string"}]},
+        "program_revision": {"oneOf": [{"type": "null"}, {"type": "integer", "minimum": 1}]},
+        "name": {"oneOf": [{"type": "null"}, {"type": "string"}]},
+        "phase": {"oneOf": [{"type": "null"}, {"type": "string"}]},
+        "sponsor_agency": {"oneOf": [{"type": "null"}, {"type": "string"}]},
+        "latest_platform_id": {"oneOf": [{"type": "null"}, {"type": "string"}]},
+        "latest_platform_name": {"oneOf": [{"type": "null"}, {"type": "string"}]},
+        "evidence_refs": {"$ref": "#/$defs/evidenceRefs"}
+      }
+    },
+    "capabilityRail": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state", "capability_id", "capability_revision", "name", "need_statement",
+        "program_capability_link_id", "evidence_refs"
+      ],
+      "properties": {
+        "state": {"$ref": "#/$defs/reviewGatedState"},
+        "capability_id": {"oneOf": [{"type": "null"}, {"type": "string"}]},
+        "capability_revision": {"oneOf": [{"type": "null"}, {"type": "integer", "minimum": 1}]},
+        "name": {"oneOf": [{"type": "null"}, {"type": "string"}]},
+        "need_statement": {"oneOf": [{"type": "null"}, {"type": "string"}]},
+        "program_capability_link_id": {"oneOf": [{"type": "null"}, {"type": "string"}]},
+        "evidence_refs": {"$ref": "#/$defs/evidenceRefs"}
+      }
+    },
+    "awardsRail": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_state", "link_state", "program_event_link_ids", "event_ids"],
+      "properties": {
+        "source_state": {"enum": ["current", "partial", "stale", "source_unavailable"]},
+        "link_state": {"$ref": "#/$defs/reviewGatedState"},
+        "program_event_link_ids": {
+          "type": "array", "uniqueItems": true, "items": {"type": "string"}
+        },
+        "event_ids": {
+          "type": "array", "uniqueItems": true, "items": {"type": "string"}
+        }
+      }
+    },
+    "budgetRail": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state"],
+      "properties": {
+        "state": {"enum": ["projection_missing", "source_unavailable"]}
+      }
+    },
+    "participantRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "role_assertion_id", "entity_id", "role", "role_scope", "shared_scope",
+        "historical", "issuer_path_state", "public_security", "central_id", "evidence_refs"
+      ],
+      "properties": {
+        "role_assertion_id": {"type": "string"},
+        "entity_id": {"type": "string"},
+        "role": {"enum": ["prime_contractor", "teaming_partner", "subcontractor", "supplier"]},
+        "role_scope": {"type": "string"},
+        "shared_scope": {"type": "boolean"},
+        "historical": {"type": "boolean"},
+        "issuer_path_state": {"enum": ["reviewed", "not_asserted"]},
+        "public_security": {
+          "oneOf": [
+            {"type": "null"},
+            {"enum": ["verified_live", "listing_terminated", "not_in_si_universe"]}
+          ]
+        },
+        "central_id": {"oneOf": [{"type": "null"}, {"type": "string"}]},
+        "evidence_refs": {"$ref": "#/$defs/evidenceRefs"}
+      }
+    },
+    "participantsRail": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "rows", "participation_limitation", "allocation_limitation"],
+      "properties": {
+        "state": {"$ref": "#/$defs/reviewGatedState"},
+        "rows": {"type": "array", "items": {"$ref": "#/$defs/participantRow"}},
+        "participation_limitation": {"type": "string"},
+        "allocation_limitation": {"type": "string"}
+      }
+    },
+    "economicRelationshipsRail": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state"],
+      "properties": {
+        "state": {"const": "not_asserted"}
+      }
+    },
+    "milestoneRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["milestone_id", "kind", "title", "temporal_kind", "evidence_refs"],
+      "properties": {
+        "milestone_id": {"type": "string"},
+        "kind": {"enum": ["budget_event", "contract_event", "delivery_event", "review_event"]},
+        "title": {"type": "string"},
+        "temporal_kind": {"enum": ["date", "window"]},
+        "date": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
+        "window": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["from", "to"],
+          "properties": {
+            "from": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
+            "to": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"}
+          }
+        },
+        "evidence_refs": {"$ref": "#/$defs/evidenceRefs"}
+      }
+    },
+    "milestonesRail": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "rows"],
+      "properties": {
+        "state": {"$ref": "#/$defs/reviewGatedState"},
+        "rows": {"type": "array", "items": {"$ref": "#/$defs/milestoneRow"}}
+      }
+    }
+  }
+}

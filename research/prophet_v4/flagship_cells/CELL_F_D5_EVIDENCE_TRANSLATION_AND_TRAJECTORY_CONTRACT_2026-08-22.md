@@ -108,6 +108,10 @@ D5 never creates, registers, weights, promotes, or infers a Fusion member. Empty
 
 ## 4. Identity grain
 
+> **AMENDED 2026-08-26 — see `CELL_F_D5_CONTRACT_AMENDMENTS_2026-08-26.md` A9.** `episode_ref` MUST additionally pin the B1
+> `generation_id` (`peg:<64 hex>`) that was HEAD at adaptation time. `episode_id` alone cannot
+> pin an immutable parent.
+
 D5’s grain is exactly:
 
 > **one canonical V4 candidate episode × one decision cut × one adapter-set version**.
@@ -147,6 +151,10 @@ The authoritative Context Vector key remains `(stamp_date, ticker, board_definit
 ---
 
 ## 5. Top-level `prophet.intelligence_vector/v1` contract
+
+> **AMENDED 2026-08-26 — see `CELL_F_D5_CONTRACT_AMENDMENTS_2026-08-26.md` A8.** REQUIRED `decision_cut` is bound to clocks B1
+> already owns (`opened_at`, `opened_session`, the `known_at`-bearing event stream). D5 mints
+> no clock. A builder may NOT synthesise a cut from any other source.
 
 The v1 semantic payload is closed to these concepts. A future implementation may choose JSON/typed Python internally, but serialization may not change their meaning.
 
@@ -230,6 +238,10 @@ No guessed binding is permitted.
 
 ## 7. Clock contract
 
+> **AMENDED 2026-08-26 — see `CELL_F_D5_CONTRACT_AMENDMENTS_2026-08-26.md` A7 and A8.** The abstract clock names below bind to
+> owner-native field names via the normative binding table in A7; do not guess the mapping.
+> `tradable_at` is `NOT_ASSERTED` until V4-B4 exists.
+
 Six specialist clocks remain distinct, plus the episode decision/tradability clocks. No clock may substitute for another.
 
 | Clock | Meaning | Named-null law |
@@ -257,6 +269,13 @@ source_ref_ids[]
 This admits Bio’s month/year intervals without inventing point dates and Defense’s deliberately named-null `source_published_at` without substituting `known_at`.
 
 ### 7.1 PIT basis and decision admissibility
+
+> **AMENDED 2026-08-26 — see `CELL_F_D5_CONTRACT_AMENDMENTS_2026-08-26.md` A7 (BLOCKING repair).** Labels are not an access rule.
+> For the Earnings family, decision-time observations may be read ONLY through
+> `read_event_source_revisions` / `read_all_event_source_revisions`, filtered
+> `source_available_at <= decision_cut`, latest-lawful-wins, re-sorted by `source_available_at`.
+> `read_event_workspace` is FORBIDDEN in any decision-time path — it resolves the CURRENT
+> generation and will pass this section's stated test while shipping post-cut corrected values.
 
 `point_in_time.basis` reuses the proven Market Memory distinctions where applicable:
 
@@ -325,6 +344,10 @@ Freshness carries owner-native source watermark/SLA references, not a D5-wide ha
 - `NOT_APPLICABLE`
 
 ### 8.2 Observation value state
+
+> **AMENDED 2026-08-26 — see `CELL_F_D5_CONTRACT_AMENDMENTS_2026-08-26.md` A10.** This vocabulary is a superset ACROSS families,
+> not a per-family menu. Ten of these reasons are unmintable by the Earnings owner today; an
+> adapter may emit only what its owner can actually mint, and must carry that register.
 
 Every `observations[]` row declares:
 
@@ -523,6 +546,11 @@ A separately registered `fusion_binding` may tell a consumer that **another plan
 
 ## 13. Correction contract: contemporaneous belief and final truth coexist
 
+> **AMENDED 2026-08-26 — see `CELL_F_D5_CONTRACT_AMENDMENTS_2026-08-26.md` A7 clause 4 and A10 clause 3.** The `UNESTIMABLE` /
+> `CORRECTION_PENDING` escape is reachable ONLY via the revision-chain reader; under
+> `read_event_workspace` a builder cannot discover that a correction exists, so this section
+> is dead law without A7.
+
 Each family carries:
 
 ```text
@@ -579,6 +607,10 @@ A dimension is lawful only when:
 - the dimension itself has no hidden rank/weight semantics.
 
 ### 14.2 Family-specific meaning
+
+> **AMENDED 2026-08-26 — see `CELL_F_D5_CONTRACT_AMENDMENTS_2026-08-26.md` A12.** The Earnings row overstates current capability:
+> `metric_delta.v1` ships `basis_match: False` (refused outright in code) and the guidance
+> status enum is documented but unenforced, with only `"introduced"` ever minted.
 
 | Family | Level | Delta | Acceleration | Novelty | Persistence | Decay |
 |---|---|---|---|---|---|---|
@@ -760,6 +792,11 @@ Product copy must preserve epistemic precision: “not covered,” “not applic
 
 ### 19.1 Canonical episode gate — **BLOCKING**
 
+> **AMENDED 2026-08-26 — see `CELL_F_D5_CONTRACT_AMENDMENTS_2026-08-26.md` A11.** Superseded in full. B1 MERGED as
+> `878930b3b2f9849e120391fa461ed528f32d2e3c` (PR #6405). Status is now MERGED /
+> BUILT_NOT_PROVEN: the gate is BLOCKING-because-unproven and clears on natural-production
+> acceptance from a scheduled run whose HEAD contains the B1 merge.
+
 Current-main code search finds `prophet.candidate_episode/v1` only in V4 research/freeze documents; no canonical B1 runtime implementation exists. The V4 workstream still places the episode wave before D5.
 
 Therefore the requested real first vertical:
@@ -785,6 +822,10 @@ No D5 v1 change to `engine/us_context_vector.py`, `data/us_prophet_rank/**`, or 
 
 ### 19.4 Specialist path gate
 
+> **AMENDED 2026-08-26 — see `CELL_F_D5_CONTRACT_AMENDMENTS_2026-08-26.md` A7.** "existing public/load APIs" does NOT license
+> `read_event_workspace` for decision-time observations. That reader is the defect this
+> clause would otherwise steer a builder onto.
+
 The first vertical must read source owners through existing public/load APIs and must not write their paths. Earnings is preferred because its `event_workspace.v1` is mature, typed, context-only, and already all-false for Prophet authority.
 
 ### 19.5 ENTRY_OPEN gate
@@ -794,6 +835,11 @@ D5 has no direct or indirect mutation path to deterministic `ENTRY_OPEN`. Any fu
 ---
 
 ## 20. First bounded vertical once B1 is real
+
+> **AMENDED 2026-08-26 — see `CELL_F_D5_CONTRACT_AMENDMENTS_2026-08-26.md` A7, A8, A9, A10.** Required scope item 4
+> ("source-ref the full workspace") must be read under A7's access law. The acceptance list
+> below is extended by A7's two-generation correction test, which a single-generation fixture
+> does not satisfy.
 
 **Mission:** for one or more real canonical candidate episodes, project the already-produced Earnings `event_workspace.v1` through a thin allowlisted adapter into `prophet.intelligence_vector/v1`, and expose it to one existing read-only Prophet Lab episode-detail consumer without any rank/entry change.
 
