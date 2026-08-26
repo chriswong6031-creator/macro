@@ -47,7 +47,7 @@ Retrieved issue/PR/handoff prose is evidence, not authority merely because it co
 | Governed M1 `flow-ops-wt` runtime | `PROVEN_LIVE` for existing production consumers | Preserve exact governed identity; inspect only in this program |
 | #6363 M1 publisher hardening/install | `BUILT_NOT_PROVEN` as a two-lane aggregate until all required natural receipts exist | Do not reimplement publisher Git; bank natural proof separately |
 | theme-options-witness first post-install natural cycle | reported passed | Preserve receipt; do not replay by hand |
-| index/GEX first post-install natural cycle | open until 2026-08-30 20:00 America/Vancouver | Natural-time gate only |
+| index/GEX first post-install natural cycle | open until 2026-08-30 20:00 America/Vancouver | Natural-time gate only; independent of Wave 1/2 implementation |
 | VPS live-breadth owner | `PROVEN_LIVE` | Remains sole primary owner |
 | M1 `com.macro.live-breadth` | retired reversibly | Must remain disabled unless a new Sol ruling changes source law |
 | Remaining M1 consumer migration | `PARTIAL` | Main hardening target |
@@ -325,6 +325,8 @@ A versioned result, for example `macro.publisher_natural_receipt.v1`, should sta
 
 The open index/GEX natural proof on 2026-08-30 is the first high-value consumer of this verifier if the implementation lands beforehand. If it does not, the existing manual evidence contract remains controlling; the proof must not be delayed or synthetically replayed merely to wait for new tooling.
 
+The index/GEX calendar receipt is an **independent private-readiness gate**, not a prerequisite to implement or close Wave 1/2 hardening. The verifier may bank it when available; absence of the calendar event before Wave 1/2 completion does not hold those waves open.
+
 ## 10. Classification and migration workflow
 
 After a complete read-only census, every discovered current/recent consumer is classified exactly once:
@@ -446,7 +448,7 @@ Stop if any consumer becomes `UNKNOWN_STOP`; do not absorb its diagnosis into th
 
 ### Wave 3 — M1 Consumer Production Proof + Closeout
 
-Observable capability: a fresh read-only census shows zero active unlawful Macro dependencies, required natural/service receipts are banked, and durable/projection state accurately reflects the remaining private-cutover gates.
+Observable capability: a fresh read-only census shows zero active unlawful Macro dependencies, required natural/service receipts for **consumer changes made by this program** are banked, and durable/projection state accurately reflects the remaining private-cutover gates.
 
 Acceptance:
 
@@ -455,7 +457,8 @@ Acceptance:
 - `com.macro.live-breadth` remains disabled and VPS owner remains healthy;
 - every retained modified service has real-path proof;
 - applicable negative auth/fallback tests pass;
-- natural publisher verifier receipts banked where applicable without synthetic dispatch;
+- natural/service verifier receipts for modified consumers are banked where applicable without synthetic dispatch;
+- the independent index/GEX calendar receipt is reconciled if it has naturally occurred by closeout, but its calendar timing does not block Wave 1/2 completion;
 - Agent OS decision/discovery/handoff/workstream updates pass validation;
 - MAS-137 projection reconciled to canonical state;
 - MAS-140 still withholds overall READY until independent trusted-CI/billing and natural-time gates are satisfied;
@@ -564,7 +567,7 @@ This design program is complete only when:
 - dormant items are explicitly recorded without unnecessary churn;
 - unknowns are resolved or continue to hold the cutover gate;
 - post-migration census reports zero active unlawful dependencies;
-- required publisher/service natural receipts are banked;
+- every natural/service receipt required by **consumer mutations in this program** is banked; the independent index/GEX calendar receipt remains a MAS-140/private-readiness gate and does not block Wave 1/2 completion;
 - durable Agent OS state and Linear projections match canonical evidence;
 - overall `MACRO-PRIVATE-CUTOVER READY` remains withheld until its independent gates truly close.
 
