@@ -377,6 +377,7 @@ def build_fms_case_graph(
     fr_docs_scanned: int,
     fr_amendments_excluded: int,
     fr_corrections: int,
+    fr_out_of_scope_originals: int = 0,
     fr_status: str,
     state_listing_pages: int,
     state_qualifying_articles: int,
@@ -405,6 +406,20 @@ def build_fms_case_graph(
     whose population clock falls outside the population window is excluded
     from the graph entirely (§2/§11b.4): "nothing outside the window is
     built in v1".
+
+    ``fr_denominator_transmittals`` MUST already be pre-filtered by the
+    caller to the same delivered-date membership predicate this function
+    applies to cases (spec §2 "originals DELIVERED in the window") — the
+    live collector (``collectors/fms_notifications_live.py``) enforces this
+    before ever appending to its denominator list. A denominator built from
+    a wider window (e.g. every FR original the publication-date QUERY
+    returned, including pre-population-window FR-lag originals) would
+    disagree with the population filter above and refuse every real
+    production run via ``denominator_unbuilt`` (measured live, run
+    32940175991: 123 FR-lag originals delivered before 2026-01-01).
+    ``fr_out_of_scope_originals`` is the caller's own honest count of
+    originals it excluded for exactly this reason (or for lacking a
+    parseable delivered date at all).
     """
     denominator = sorted({str(t) for t in fr_denominator_transmittals})
 
@@ -462,6 +477,7 @@ def build_fms_case_graph(
                 "originals": len(denominator),
                 "amendments_excluded": fr_amendments_excluded,
                 "corrections": fr_corrections,
+                "out_of_scope_originals": fr_out_of_scope_originals,
                 "status": fr_status,
             },
             "state_pm_bureau": {
