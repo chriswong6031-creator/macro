@@ -1,0 +1,113 @@
+{
+  "expected": {
+    "link_groups": {
+      "primary_security": {
+        "entity_type": "security"
+      }
+    },
+    "migration": {
+      "source": "chart_layout_v2",
+      "source_revision": 2
+    },
+    "name": null,
+    "requires": {
+      "floor": 1
+    },
+    "revision": 1,
+    "schema": "workspace_layout.v1",
+    "widgets": [
+      {
+        "config": {
+          "activePane": 1,
+          "chartType": "candles",
+          "compare": [
+            "SPY",
+            "QQQ"
+          ],
+          "compareCfg": {
+            "SPY": {
+              "color": "blue"
+            }
+          },
+          "hidden": [
+            "rsi14"
+          ],
+          "indParams": {
+            "ema21": {
+              "period": 21
+            }
+          },
+          "inds": [
+            "ema21",
+            "rsi14"
+          ],
+          "lockedVLine": 1700000000,
+          "paneTfs": [
+            "1D",
+            "1D",
+            "1H",
+            "1W"
+          ],
+          "panes": [
+            "NVDA",
+            "AMD",
+            "MSFT",
+            "AAPL"
+          ],
+          "split": 50,
+          "sync": false
+        },
+        "context_in": [
+          "primary_security"
+        ],
+        "context_out": [
+          "primary_security"
+        ],
+        "id": "chart-main",
+        "semantic_lane": "primary",
+        "type": "chart"
+      }
+    ]
+  },
+  "input": {
+    "activePane": 1,
+    "chartType": "candles",
+    "compare": [
+      "SPY",
+      "QQQ"
+    ],
+    "compareCfg": {
+      "SPY": {
+        "color": "blue"
+      }
+    },
+    "hidden": [
+      "rsi14"
+    ],
+    "indParams": {
+      "ema21": {
+        "period": 21
+      }
+    },
+    "inds": [
+      "ema21",
+      "rsi14"
+    ],
+    "lockedVLine": 1700000000,
+    "paneTfs": [
+      "1D",
+      "1D",
+      "1H",
+      "1W"
+    ],
+    "panes": [
+      "NVDA",
+      "AMD",
+      "MSFT",
+      "AAPL"
+    ],
+    "schemaVersion": 2,
+    "split": 50,
+    "sync": false
+  }
+}

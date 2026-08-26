@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermindx.ai/contracts/intelligence_workspace/workspace_layout.v1.schema.json",
+  "title": "DeepVue W2-A versioned workspace layout v1",
+  "description": "Canonical envelope for a named intelligence workspace (widgets + static link-group graph). See research/DEEPVUE_W2A_WORKSPACE_LAYOUT_CONTRACT_2026-08-26.md. Structural shape only — cross-field laws (stored name must be null, duplicate widget ids, undeclared port references, size/count limits) are enforced by engine/intelligence_workspace/workspace_layout.py:validate_envelope, not by this schema alone.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "requires", "revision", "name", "link_groups", "widgets", "migration"],
+  "properties": {
+    "schema": {"const": "workspace_layout.v1"},
+    "requires": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["floor"],
+      "properties": {
+        "floor": {"type": "integer", "minimum": 1}
+      }
+    },
+    "revision": {"type": "integer", "minimum": 1},
+    "name": {"type": ["string", "null"], "minLength": 1, "maxLength": 60},
+    "link_groups": {
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/link_group"},
+      "propertyNames": {"pattern": "^[a-z][a-z0-9_]{0,31}$"},
+      "maxProperties": 8
+    },
+    "widgets": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 12,
+      "items": {"$ref": "#/$defs/widget"}
+    },
+    "migration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "source_revision"],
+      "properties": {
+        "source": {"enum": ["legacy_v0", "chart_layout_v1", "chart_layout_v2", "none", "import"]},
+        "source_revision": {"type": ["integer", "null"], "minimum": 1}
+      }
+    }
+  },
+  "$defs": {
+    "link_group": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entity_type"],
+      "properties": {
+        "entity_type": {"enum": ["security", "industry", "theme", "portfolio", "event"]}
+      }
+    },
+    "link_group_name": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,31}$"},
+    "widget_id": {"type": "string", "pattern": "^[A-Za-z0-9_-]{1,64}$"},
+    "grid_axis": {"type": "integer", "minimum": 0, "maximum": 64},
+    "widget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "semantic_lane", "context_in", "context_out", "config"],
+      "properties": {
+        "id": {"$ref": "#/$defs/widget_id"},
+        "type": {"enum": ["chart", "brain"]},
+        "semantic_lane": {"enum": ["primary", "secondary", "rail", "dock"]},
+        "grid": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["x", "y", "w", "h"],
+          "properties": {
+            "x": {"$ref": "#/$defs/grid_axis"},
+            "y": {"$ref": "#/$defs/grid_axis"},
+            "w": {"$ref": "#/$defs/grid_axis"},
+            "h": {"$ref": "#/$defs/grid_axis"}
+          }
+        },
+        "context_in": {
+          "type": "array", "maxItems": 8, "items": {"$ref": "#/$defs/link_group_name"}
+        },
+        "context_out": {
+          "type": "array", "maxItems": 8, "items": {"$ref": "#/$defs/link_group_name"}
+        },
+        "config": {"type": "object"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"type": {"const": "chart"}}},
+          "then": {"properties": {"config": {"$ref": "#/$defs/chart_config"}}}
+        },
+        {
+          "if": {"properties": {"type": {"const": "brain"}}},
+          "then": {"properties": {"config": {"$ref": "#/$defs/brain_config"}}}
+        }
+      ]
+    },
+    "symbol": {"type": "string", "pattern": "^[A-Z0-9._:-]{1,12}$"},
+    "timeframe": {"type": "string", "pattern": "^[A-Za-z0-9]{1,8}$"},
+    "chart_type": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,31}$"},
+    "indicator_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,31}$"},
+    "indicator_params": {
+      "type": "object",
+      "maxProperties": 32,
+      "propertyNames": {"pattern": "^[a-z][a-z0-9_]{0,31}$"},
+      "additionalProperties": {
+        "type": "object",
+        "maxProperties": 16,
+        "propertyNames": {"pattern": "^[A-Za-z0-9_]{1,32}$"},
+        "additionalProperties": {"type": ["string", "number", "boolean", "null"]}
+      }
+    },
+    "compare_config": {
+      "type": "object",
+      "maxProperties": 32,
+      "propertyNames": {"pattern": "^[A-Z0-9._:-]{1,12}$"},
+      "additionalProperties": {
+        "type": "object",
+        "maxProperties": 16,
+        "propertyNames": {"pattern": "^[A-Za-z0-9_]{1,32}$"},
+        "additionalProperties": {"type": ["string", "number", "boolean", "null"]}
+      }
+    },
+    "brain_config": {
+      "type": "object",
+      "additionalProperties": false
+    },
+    "chart_config": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "panes": {"type": "array", "minItems": 1, "maxItems": 4, "items": {"$ref": "#/$defs/symbol"}},
+        "paneTfs": {"type": "array", "minItems": 1, "maxItems": 32, "items": {"$ref": "#/$defs/timeframe"}},
+        "split": {"type": "integer", "minimum": 0, "maximum": 100},
+        "activePane": {"type": "integer", "minimum": 0, "maximum": 3},
+        "sync": {"type": "boolean"},
+        "chartType": {"$ref": "#/$defs/chart_type"},
+        "inds": {"type": "array", "maxItems": 32, "items": {"$ref": "#/$defs/indicator_id"}},
+        "indParams": {"$ref": "#/$defs/indicator_params"},
+        "hidden": {"type": "array", "maxItems": 32, "items": {"$ref": "#/$defs/indicator_id"}},
+        "compare": {"type": "array", "maxItems": 32, "items": {"$ref": "#/$defs/symbol"}},
+        "compareCfg": {"$ref": "#/$defs/compare_config"},
+        "lockedVLine": {"type": ["number", "null"]}
+      }
+    }
+  }
+}

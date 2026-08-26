@@ -1,0 +1,77 @@
+{
+  "files": [
+    {
+      "name": "chart_layout_v1_sparse.json",
+      "sha256": "3b1cd883f681e33b6ba62c543b684d972b811b1e21d90c47cd870949e72f39b3"
+    },
+    {
+      "name": "chart_layout_v1_typical.json",
+      "sha256": "5000057aca7b6dbbe75e566ef47eecef525c9f5341d24369db91770dbdad7286"
+    },
+    {
+      "name": "chart_layout_v2_full.json",
+      "sha256": "42f1c3e3042ee634bdcf14ec22eb7f340c48f00cde0d4c3028bbae778acda5da"
+    },
+    {
+      "name": "chart_layout_v2_sparse.json",
+      "sha256": "9ea18ef644122b0a9d85f91a33c0e371001a396b0a439ddb903bb1648599856c"
+    },
+    {
+      "name": "invalid_duplicate_widget_id.json",
+      "sha256": "ac7f56f43da63cfe0fc8ed450f93fef5bc47ccd559873efbcf65ccd173bfcfe7"
+    },
+    {
+      "name": "invalid_floor_unsupported.json",
+      "sha256": "9738ced9892b276108c85545ba8f79d41ba80b98eb3594b3d4243128f5c565db"
+    },
+    {
+      "name": "invalid_lane.json",
+      "sha256": "8c4cadbc995239ca6f63adeab8c23edd6da9eeea18222911b97965c79f8a50b3"
+    },
+    {
+      "name": "invalid_non_dict_input.json",
+      "sha256": "9c800bb8007fb9facec28ce0faaac8cf45acb6ef0d0968112f7df50ce613a23d"
+    },
+    {
+      "name": "invalid_non_null_name.json",
+      "sha256": "7e71981460b92e20a97007283ada9c00690a7458a731db0172ccbee34a81070a"
+    },
+    {
+      "name": "invalid_oversized_workspace.json",
+      "sha256": "391e25f718c9f7e82e449a58be48b0e7bb4153674df83e3f523cd752e9280ad5"
+    },
+    {
+      "name": "invalid_port.json",
+      "sha256": "f451f15e64600d5198e941f3890f347405049e0f6e431f219b3058d14a23f275"
+    },
+    {
+      "name": "invalid_too_many_widgets.json",
+      "sha256": "29b30e24aee7507b849b2b701cad8bd00861b84b8bd148883c92ce392682bb45"
+    },
+    {
+      "name": "invalid_unknown_chart_config_key.json",
+      "sha256": "357c22135d4b103e4c6770ca07062dfbd166e4692843d58e9a38be4df7702694"
+    },
+    {
+      "name": "invalid_unknown_schema.json",
+      "sha256": "019c712fe7c0b46bd5acce1e586a666cbf8e20870e727e8452141ff853e7adf5"
+    },
+    {
+      "name": "invalid_unknown_top_level_key.json",
+      "sha256": "06cb1390eba50b99e946fd8993a1f37931cf917afe690ac8968dba1d8deb31ff"
+    },
+    {
+      "name": "invalid_unknown_widget_type.json",
+      "sha256": "99d5d15b97fc63d2585f1343338e389d3d401dc94dd0aeb71139a9644b32bce3"
+    },
+    {
+      "name": "legacy_v0_bare.json",
+      "sha256": "5efbafe9b3d96a713142fff5dd4ad8f2c6353733a7bb68171739a63b194b9c43"
+    },
+    {
+      "name": "legacy_v0_minimal.json",
+      "sha256": "a0b825876db62d2df5a499fcf9495c952824725052d29a30f04e0378c2526dba"
+    }
+  ],
+  "vectors_digest": "4111f9d28c8043facc16dda6985a86b51fd9146e50608dc76aa118b0f33fdfb8"
+}

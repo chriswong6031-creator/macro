@@ -1,0 +1,70 @@
+{
+  "expected_code": "invalid_widget_config",
+  "input": {
+    "link_groups": {
+      "primary_security": {
+        "entity_type": "security"
+      }
+    },
+    "migration": {
+      "source": "chart_layout_v2",
+      "source_revision": 2
+    },
+    "name": null,
+    "requires": {
+      "floor": 1
+    },
+    "revision": 3,
+    "schema": "workspace_layout.v1",
+    "widgets": [
+      {
+        "config": {
+          "activePane": 0,
+          "chartType": "candles",
+          "compare": [],
+          "compareCfg": {},
+          "hidden": [],
+          "indParams": {},
+          "inds": [
+            "ema21"
+          ],
+          "lockedVLine": null,
+          "paneTfs": [
+            "1D"
+          ],
+          "panes": [
+            "NVDA"
+          ],
+          "split": 50,
+          "sync": true,
+          "zzz": true
+        },
+        "context_in": [
+          "primary_security"
+        ],
+        "context_out": [
+          "primary_security"
+        ],
+        "grid": {
+          "h": 18,
+          "w": 16,
+          "x": 0,
+          "y": 0
+        },
+        "id": "chart-main",
+        "semantic_lane": "primary",
+        "type": "chart"
+      },
+      {
+        "config": {},
+        "context_in": [
+          "primary_security"
+        ],
+        "context_out": [],
+        "id": "brain-dock",
+        "semantic_lane": "dock",
+        "type": "brain"
+      }
+    ]
+  }
+}

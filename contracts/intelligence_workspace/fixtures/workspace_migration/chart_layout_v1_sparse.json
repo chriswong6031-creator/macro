@@ -1,0 +1,43 @@
+{
+  "expected": {
+    "link_groups": {
+      "primary_security": {
+        "entity_type": "security"
+      }
+    },
+    "migration": {
+      "source": "chart_layout_v1",
+      "source_revision": 1
+    },
+    "name": null,
+    "requires": {
+      "floor": 1
+    },
+    "revision": 1,
+    "schema": "workspace_layout.v1",
+    "widgets": [
+      {
+        "config": {
+          "panes": [
+            "TSLA"
+          ],
+          "sync": true
+        },
+        "context_in": [
+          "primary_security"
+        ],
+        "context_out": [
+          "primary_security"
+        ],
+        "id": "chart-main",
+        "semantic_lane": "primary",
+        "type": "chart"
+      }
+    ]
+  },
+  "input": {
+    "panes": [
+      "TSLA"
+    ]
+  }
+}
