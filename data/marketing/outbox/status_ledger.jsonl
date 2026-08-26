@@ -4070,3 +4070,9 @@
 {"id":"ob-2026-08-26-e1fb391fb9","from":"approved","to":"quarantined","at":"2026-08-26T14:39:13Z","actor":"publisher","note":"frame repeat (skeleton jaccard=0.80) of ob-2026-08-26-66b6ea7b2a posted today; same template, different ticker","receipt":null}
 {"id":"ob-2026-08-26-507c344b4d","from":"queued","to":"approved","at":"2026-08-26T14:43:31Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
 {"id":"ob-2026-08-26-507c344b4d","from":"approved","to":"quarantined","at":"2026-08-26T14:43:31Z","actor":"publisher","note":"frame repeat (skeleton jaccard=0.67) of ob-2026-08-26-66b6ea7b2a posted today; same template, different ticker","receipt":null}
+{"id":"ob-2026-08-26-2c6fd37ddf","from":"approved","to":"quarantined","at":"2026-08-26T17:58:00Z","actor":"wire_expiry","note":"expired_stale_wire: theme_list sat untouched 3.5h (ttl 3h) — the moment it was written about is gone","receipt":null}
+{"id":"ob-2026-08-26-2d72ae93fb","from":"queued","to":"approved","at":"2026-08-26T17:58:00Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
+{"id":"ob-2026-08-26-9e562eeaeb","from":"queued","to":"approved","at":"2026-08-26T17:58:00Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
+{"id":"ob-2026-08-26-e62317b95c","from":"queued","to":"approved","at":"2026-08-26T17:58:01Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
+{"id":"ob-2026-08-26-9e562eeaeb","from":"approved","to":"quarantined","at":"2026-08-26T17:58:02Z","actor":"publisher","note":"clock: yesterday_word_off_session:yesterday","receipt":null}
+{"id":"ob-2026-08-26-e62317b95c","from":"approved","to":"quarantined","at":"2026-08-26T17:58:02Z","actor":"publisher","note":"clock: yesterday_word_off_session:yesterday","receipt":null}
