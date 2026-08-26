@@ -337,6 +337,28 @@ producer, and no second truth plane. The generic path still cannot be verified
 at validation time — that remains the named gap in §8.8, and this repair is
 precisely the decision not to let an unverifiable path claim otherwise.
 
+**One judgment call, disclosed rather than smuggled.** Auditing for item A's
+reconciliation leg surfaced a *sibling* overclaim of the same class, about the
+four pinned sources rather than the generic one: the schema's `native_digest`
+description said their "owner_store/clock pins **authenticate the pointer**."
+They do not. Those pins constrain what a caller may DECLARE — validation compares
+the declared store and clock class against the registry — but nothing proves the
+referenced object exists, because no source on this wire is checked by reading
+the owner's bytes. The wording is corrected to say exactly that. This is a
+description-only change with **zero behavior change**, and the four pinned
+sources keep `live` (pinned by `test_a2_pinned_source_still_validates_live`,
+which exists to stop an over-correction). Flagged here because "preserve
+everything else" could reasonably be read to exclude it — trivially reversible if
+you consider it out of scope, but leaving a claim I now believe is false, in the
+same file, in the same round where you struck its twin, seemed the worse error.
+
+**Two proofs run rather than assumed** (the wave-2 lesson that vocabulary is not
+substance): the 17 hostiles were re-swept directly through `validate_vector`
+outside the suite's own assertions, and the new guard was checked by
+*reintroducing the shipped defect* — flipping `golden_dual_read` back to
+`t0_mode: "live"` fails 3 tests, so the guard detects the thing it is named for
+rather than merely passing.
+
 ## 8. Remaining owner gaps (named, not papered over)
 
 1. **Windowed dislocation attribution has no producer.** The 5-layer per-window

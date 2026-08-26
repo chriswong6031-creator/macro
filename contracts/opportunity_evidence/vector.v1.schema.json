@@ -194,7 +194,7 @@
           "description": "reference.v1 native_identity, verbatim shape: the owner-native identity of the PIT object. Key names are re-checked semantically by K3E_R021 because the structural validator does not implement propertyNames."
         },
         "native_digest": {
-          "description": "reference.v1 nativeDigest, verbatim shape — the immutability receipt over the referenced object's bytes. Registry law (t0_sources.digest_required): owner_pit_reference, the generic source, REQUIRES state 'known'; the four registry-pinned owner sources may carry state 'unknown' because their owner_store/clock pins authenticate the pointer.",
+          "description": "reference.v1 nativeDigest, verbatim shape — the immutability receipt over the referenced object's bytes. Registry law (t0_sources.digest_required): owner_pit_reference, the generic source, REQUIRES state 'known'; the four registry-pinned owner sources may carry state 'unknown' because validation checks their declared owner_store and clock class against the registry pins, which the generic source has none of. Stated precisely (Sol REQUEST_CHANGES 2026-08-26 item A, applied to this sibling claim too): those pins constrain what a caller may DECLARE, they do not prove the referenced object exists — no source on this wire is verified by reading the owner's bytes, because this contract holds no owner I/O.",
           "oneOf": [
             {
               "type": "object",
