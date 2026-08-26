@@ -112,10 +112,20 @@ Required behaviors:
   grade can be re-derived against the exact calendar that produced it.
 
 Under the exact plane the calendar must additionally reconcile with the substrate contract's
-canonical market clock (fixed 1991-01-01 anchor, exact SSE/SZSE calendar-day and
-open-session equality, `pretrade_date` adjacency, one immutable `market_session_position`),
+canonical market clock (frozen definition-versioned epoch `mainland-joint-complete-v1` at
+`1992-01-01`, exact SSE/SZSE calendar-day and open-session equality, `pretrade_date`
+adjacency, one immutable `market_session_position` counted from that epoch),
 with BSE inheriting the documented consensus from launch. Where the attested artifact and
 the spine clock disagree, the run fails; it does not pick a winner.
+
+The epoch supersedes the previous fixed 1991-01-01 anchor; history before it is typed
+`PRE_EPOCH_SOURCE_UNSUPPORTED` and carries no session position. This costs the frozen
+evaluation nothing: the adopted split begins at train 2011, whose deepest lookback is the
+21-session reset window reaching late 2010 — nineteen years after the epoch — so no frozen
+construction requires an authority-grade outcome dated before it. Because re-anchoring
+shifts every ordinal by a constant, window and horizon boundaries must be expressed as
+session-position DIFFERENCES; no construction may attach economic or target meaning to an
+absolute ordinal magnitude.
 
 ### §2.2 Monthly-partitioned Parquet with atomic installation
 

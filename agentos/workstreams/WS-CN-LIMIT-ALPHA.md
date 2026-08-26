@@ -200,13 +200,16 @@ waves:
       BULK_HISTORICAL_BACKFILL_READY = False in
       collectors/china_tushare_spine.py is a TECHNICAL readiness gate (live
       canary parity, sustained throughput, range/completeness correctness) and
-      must never be re-read as a licensing gate; no live canary has ever run
-      (manifest cap_fallback.live_canary_complete false); no sanitized
+      must never be re-read as a licensing gate; bounded live canary windows HAVE
+      now run (2026-08-26: 84 request receipts, 32,932 source rows, ~1.3 s/request,
+      the full 1992..2023 reference calendar landed) but NO canary has yet reached
+      stage=complete — pit_universe, name_history and all five daily endpoints have
+      still never executed against the vendor; no sanitized
       completeness manifest exists because the private store has never been
       built; the dispatch-only lane .github/workflows/tushare-spine-backfill.yml
       is wired (modes plan | canary | backfill) and TUSHARE_TOKEN is alive; a red
       mode=backfill run while the technical gate is shut is the gate working.
-      EXACT NEXT TECHNICAL ACTION: dispatch .github/workflows/tushare-spine-backfill.yml with mode=plan (network-free), then mode=canary -- a REAL but hard-bounded window that collect(canary=True) permits while BULK_HISTORICAL_BACKFILL_READY is still False (<=12 requests, <=5 calendar days, never allow_bulk, and a documented row cap refuses instead of starting the unproven ticker-range campaign). The canary is runnable BEFORE the gate opens by design: the gate waits on canary evidence, so gating the canary on the gate would be circular. Only on canary parity/throughput/error-taxonomy receipts may a SEPARATE reviewed change flip BULK_HISTORICAL_BACKFILL_READY; mode=backfill (the full range campaign) stays refused until then. After the flip the
+      The canary is runnable BEFORE the gate opens by design: the gate waits on canary evidence, so gating the canary on the gate would be circular. The bounded envelope (<=12 requests, <=5 calendar days, never allow_bulk, documented row cap refusing rather than starting the unproven ticker-range campaign) has held on every run. EXACT NEXT TECHNICAL ACTION (2026-08-26, executing Sol's calendar-epoch ruling): the mainland session axis is now frozen at the definition-versioned epoch mainland-joint-complete-v1 / 1992-01-01, established by outcome-blind census (scripts/research/cn_limit_calendar_epoch_census.py) and superseding the 1991-01-01 anchor that had blocked collect_calendars; pre-epoch history is typed PRE_EPOCH_SOURCE_UNSUPPORTED and never imputed. Next: (1) CLEAN-REBUILD the calendar partitions under the new definition -- never promote the repaired-in-place store, which carries two units marked complete with no artifact (DSC:CNLI-REPAIRED-SPINE-LEDGER-DIVERGES-FROM-ARTIFACTS); (2) run exactly ONE bounded canary reaching stage=complete across the previously unvisited stages. Only on that complete canary's request/schema/source-row/accounting/cap/refusal/throughput receipts may a SEPARATE reviewed change flip BULK_HISTORICAL_BACKFILL_READY; mode=backfill (the full range campaign) stays refused until then. After the flip the
       range-shard campaign runs and the sanitized completeness manifest closes
       this row. The identity half of the eligibility substrate exists
       (984 CN + 147 HK canonical, see DEP-CAI); the PIT

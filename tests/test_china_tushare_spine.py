@@ -2389,3 +2389,103 @@ def test_bulk_readiness_gate_is_documented_as_technical_only():
     # module attribute: the autouse fixture flips the runtime value so synthetic
     # collectors can exercise mechanics.
     assert "BULK_HISTORICAL_BACKFILL_READY = True" not in source
+
+
+# --- Mainland session-clock epoch --------------------------------------------
+# The axis is frozen at MAINLAND_CALENDAR_EPOCH by DEFINITION, not by the
+# absence of a pre-epoch partition on disk.  These pin that distinction: the
+# hazard is a landed pre-epoch year silently occupying the low ordinals and
+# shifting every session position with no error raised.
+
+def _pre_epoch_calendar_frame(exchange: str) -> pd.DataFrame:
+    return pd.DataFrame([
+        {"exchange": exchange, "cal_date": "19910101", "is_open": 0, "pretrade_date": "19901231"},
+        {"exchange": exchange, "cal_date": "19910102", "is_open": 1, "pretrade_date": "19901231"},
+        {"exchange": exchange, "cal_date": "19910103", "is_open": 1, "pretrade_date": "19910102"},
+    ])
+
+
+def _seed_pre_epoch_calendar(store: Path) -> None:
+    """Land a pre-epoch partition for BOTH exchanges.
+
+    Both venues are seeded on purpose: an asymmetric seed would be caught by the
+    existing SSE/SZSE coverage-equality check, so it would not exercise the
+    silent path this guards.
+    """
+    path = store / "reference" / "trade_calendar" / "year=1991.parquet"
+    for exchange in spine.CALENDAR_EXCHANGES:
+        frame = spine._normalise_calendar(
+            _pre_epoch_calendar_frame(exchange), exchange, date(1991, 1, 1), date(1991, 1, 3),
+        )
+        spine._upsert_partition(path, frame, keys=spine.KEY_COLUMNS["trade_calendar"])
+
+
+def test_collection_start_follows_the_frozen_epoch():
+    assert spine.MAINLAND_CALENDAR_EPOCH == date(1992, 1, 1)
+    assert spine.CALENDAR_HISTORY_START == spine.MAINLAND_CALENDAR_EPOCH
+    assert spine.MAINLAND_CALENDAR_EPOCH_DEFINITION == "mainland-joint-complete-v1"
+    assert spine.PRE_EPOCH_SOURCE_STATE == "PRE_EPOCH_SOURCE_UNSUPPORTED"
+
+
+def test_compile_market_sessions_refuses_a_pre_epoch_start(tmp_path):
+    _seed_calendar(tmp_path)
+    with pytest.raises(spine.SpineError, match="PRE_EPOCH_SOURCE_UNSUPPORTED"):
+        spine.compile_market_sessions(tmp_path, date(1991, 1, 1), date(2024, 1, 3))
+
+
+def test_landed_pre_epoch_partition_never_enters_the_session_axis(tmp_path):
+    """A pre-epoch year on disk must not shift a single ordinal."""
+    baseline = _seed_calendar(tmp_path)
+    assert list(baseline["trade_date"]) == ["2024-01-02", "2024-01-03"]
+    assert list(baseline["market_session_position"]) == [0, 1]
+
+    _seed_pre_epoch_calendar(tmp_path)
+    recompiled = spine.compile_market_sessions(tmp_path, date(2024, 1, 1), date(2024, 1, 3))
+
+    # Identical axis: the 1991 open sessions are excluded by definition, so
+    # ordinal 0 still belongs to 2024-01-02 rather than 1991-01-02.
+    assert list(recompiled["trade_date"]) == ["2024-01-02", "2024-01-03"]
+    assert list(recompiled["market_session_position"]) == [0, 1]
+    assert not (recompiled["trade_date"] < "1992-01-01").any()
+
+
+def test_compiled_sessions_are_stamped_with_the_epoch_definition(tmp_path):
+    sessions = _seed_calendar(tmp_path)
+    assert set(sessions["calendar_epoch"]) == {"1992-01-01"}
+    assert set(sessions["calendar_epoch_definition"]) == {"mainland-joint-complete-v1"}
+
+
+def test_epoch_is_frozen_in_source_not_selected_at_runtime():
+    """No runtime input may move the epoch."""
+    source = Path("collectors/china_tushare_spine.py").read_text(encoding="utf-8")
+    assert "MAINLAND_CALENDAR_EPOCH = date(1992, 1, 1)" in source
+    # The epoch must never be derived from a store, an argument, or the clock.
+    for forbidden in (
+        "MAINLAND_CALENDAR_EPOCH =os.environ",
+        'MAINLAND_CALENDAR_EPOCH = os.environ',
+        "MAINLAND_CALENDAR_EPOCH = min(",
+        "MAINLAND_CALENDAR_EPOCH = max(",
+    ):
+        assert forbidden not in source
+
+
+def test_pre_epoch_exclusion_is_the_sole_cause_on_contiguous_history(tmp_path, monkeypatch):
+    """Isolate the epoch filter from the other calendar guards.
+
+    The 1991-vs-2024 fixture above is DISCONTINUOUS, so the pretrade_date
+    adjacency check would also reject it -- that test proves the outcome but not
+    the cause.  Real pre-epoch history is contiguous with the epoch year and
+    sails past adjacency and both equality checks, which is exactly why the
+    silent-ordinal-shift hazard exists.  Here the epoch is moved onto a
+    contiguous fixture so nothing but the epoch filter can explain the result.
+    """
+    _seed_calendar(tmp_path)
+    monkeypatch.setattr(spine, "MAINLAND_CALENDAR_EPOCH", date(2024, 1, 3))
+
+    sessions = spine.compile_market_sessions(tmp_path, date(2024, 1, 3), date(2024, 1, 3))
+
+    # 2024-01-02 is an open, contiguous, fully-attested session that every other
+    # guard accepts.  Only the epoch keeps it off the axis.
+    assert list(sessions["trade_date"]) == ["2024-01-03"]
+    assert list(sessions["market_session_position"]) == [0]
+    assert set(sessions["calendar_epoch"]) == {"2024-01-03"}
