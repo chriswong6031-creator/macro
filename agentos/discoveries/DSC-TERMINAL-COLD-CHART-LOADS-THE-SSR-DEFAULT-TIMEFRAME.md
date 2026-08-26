@@ -74,6 +74,26 @@ At 4x CPU throttle: 0 of 4 runs reached a first live candle before; 3 of 3 after
   +130ms and the commit at +1178ms.
 - **Chart invalidation.** The chart repaints the moment state changes.
 
+## The SECONDS path is not reachable in production at all — the bug is not about seconds
+
+`HUB_REALTIME_QUOTES` is absent from production: not in `/opt/terminal/*.env`, not in the
+systemd unit (`Environment=PORT=3000`, `Environment=NODE_ENV=production` only), and not in the
+running process's `/proc/<pid>/environ`. `app/terminal/page.tsx` reads
+`secondBarsEnabled = process.env.HUB_REALTIME_QUOTES === "1"`, so in production
+`functionalSet()` omits the whole second band and `resolveStartTf` can never return `1s`.
+`playwright.config.ts` sets that lever for the suite, which is why `live-candle.spec.ts` can
+exercise a path production does not currently serve.
+
+So do not describe this defect as a seconds-timeframe bug. It fires for **any** user whose
+persisted startup timeframe differs from the SSR default `3D` — `D`, `W`, `1M`, `5m`, `1h` are
+all functional in production — and every such user pays one complete discarded load per cold
+chart open. A user who never changed Settings -> Terminal -> Default timeframe reads `3D`,
+matches the SSR default, and was never affected.
+
+That also makes the fix live-provable WITHOUT a real-time feed: set the startup timeframe to
+any non-`3D` value, open a cold chart with `?boottrace=1`, and read the FIRST
+`chart-effect2-start[SYM@tf]` mark. Before: `@3D` then the real one. After: the real one only.
+
 ## Proving this live is gated by the FEED, not by market hours
 
 `https://app.mastermind-x.com/api/quote?syms=NVDA` is anonymously reachable (200), so packet
