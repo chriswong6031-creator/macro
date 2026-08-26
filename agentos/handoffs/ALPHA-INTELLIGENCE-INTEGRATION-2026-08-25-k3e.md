@@ -155,6 +155,17 @@ do_not_redo:
   - Do not re-derive residuals, re-home fusion columns, or add any composite/scalar field to the wire (v2 + promotion ruling required).
   - Do not confuse this with the K3E Expectation-Market-Dynamics child program; both stand.
 danger_areas:
+  - >
+    contract-delta can red this PR for a defect on MAIN. Measured 2026-08-26: it
+    reported "4 introduced" naming conviction-profile / unrun-picks-boards
+    reaching engine/company_intelligence/qa_exchange.py and qa_reconstruction.py
+    — two jobs and two files this PR never touches. Those landed on main via
+    #6376/#6306 AFTER this branch's base, and CI tests the MERGE REF, so main's
+    debt scored as "introduced". Fix is to merge fresh origin/main (done at
+    a250ccb6b906): the findings reclassify as inherited and the gate exits 0
+    ("0 introduced, 4 inherited"). Do NOT widen another job's `paths:` from this
+    carrier — the gate itself says "heal separately", and on a held PR that is
+    both scope creep and a hold violation.
   - The WS record is shared with the live K2-B lane — reconcile by superset if a Sol records-carrier lands touching the same file (memory: sol-opens-parallel-records-carriers).
   - Arming merge-on-green or marking #6417 ready is a hold violation (DEC:SOL-HOLD-IS-A-MERGE-BARRIER).
   - The signal-contract CI lane is CI authority (.github/ci/**): the eventual merge carries authority_changed=true and needs a main-descendant ci.yml success for final delivery.
