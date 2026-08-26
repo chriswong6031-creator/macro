@@ -55,6 +55,7 @@ RUNTIME_WORKFLOWS = {
     "mastermindx-market-intelligence/macro/.github/workflows/m1-runner-canary.yml@refs/heads/main",
     "mastermindx-market-intelligence/macro/.github/workflows/engine-render.yml@refs/heads/main",
     "mastermindx-market-intelligence/macro/.github/workflows/render.yml@refs/heads/main",
+    "mastermindx-market-intelligence/macro/.github/workflows/trusted-ci-executor.yml@refs/heads/main",
 }
 LABEL_REGISTRY_VALID_STATUS = {"live", "github-hosted", "offline", "orphaned"}
 # Every single-quoted literal inside a `${{ }}` expression. Never matches a bare
@@ -95,6 +96,11 @@ def triggers(document: dict) -> set[str]:
 
 def runs_on_text(job: dict) -> str:
     value = job.get("runs-on", "")
+    if isinstance(value, dict):
+        return " ".join(
+            str(item)
+            for item in (value.get("group", ""), value.get("labels", ""))
+        )
     if isinstance(value, list):
         return " ".join(str(item) for item in value)
     return str(value)
@@ -149,6 +155,14 @@ def runs_on_labels(job: dict) -> set[str]:
         for item in value:
             labels |= _labels_from_scalar(str(item))
         return labels
+    if isinstance(value, dict):
+        labels = value.get("labels")
+        if isinstance(labels, list):
+            found: set[str] = set()
+            for item in labels:
+                found |= _labels_from_scalar(str(item))
+            return found
+        return _labels_from_scalar(str(labels or ""))
     return set()
 
 
@@ -349,14 +363,15 @@ def evaluate(root: Path, registry_path: Path, workflows_dir: Path) -> list[Findi
     findings: list[Finding] = []
     if registry.get("schema") != "runner_policy.v2":
         findings.append(Finding("R0", "runner policy schema must be runner_policy.v2"))
-    if registry.get("phase") != "wave-bc-canary":
-        findings.append(Finding("R0", "runner policy must describe Wave B/C canary phase"))
+    if registry.get("phase") != "p3a-inert-trusted-executor":
+        findings.append(Finding("R0", "runner policy must describe the P3A inert executor phase"))
     if registry.get("repository_visibility") != "public":
         findings.append(Finding("R0", "repository visibility boundary must remain public"))
     expected_scenarios = {
         "same_repo_ordinary_pr": "github-hosted",
         "fork_pr": "github-hosted",
         "trusted_dispatch_canary": "pc-ci-canary",
+        "trusted_executor_dispatch": "pc-ci",
     }
     if registry.get("scenario_routes") != expected_scenarios:
         findings.append(Finding("R1", "synthetic trust-routing scenarios drifted"))
@@ -464,6 +479,111 @@ def evaluate(root: Path, registry_path: Path, workflows_dir: Path) -> list[Findi
                         f"{workflow}:{job_id} leaked generic M1 production label(s): {sorted(leaked)}",
                     )
                 )
+
+    trusted_route = registry.get("trusted_executor_route") or {}
+    expected_trusted_route = {
+        "workflow": ".github/workflows/trusted-ci-executor.yml",
+        "job": "trusted-pack",
+        "group": "macro-home-canary",
+        "labels": ["ci-linux"],
+        "production_enabled": False,
+    }
+    if trusted_route != expected_trusted_route:
+        findings.append(
+            Finding("R13", "P3A trusted executor declaration drifted or enabled production early")
+        )
+    trusted_workflow = str(trusted_route.get("workflow", ""))
+    trusted_job_id = str(trusted_route.get("job", ""))
+    if trusted_workflow and trusted_job_id:
+        allowed_custom.add((trusted_workflow, trusted_job_id))
+    trusted_document = documents.get(trusted_workflow)
+    if trusted_document is None:
+        findings.append(Finding("R13", "P3A trusted executor workflow is missing"))
+    else:
+        trusted_jobs = trusted_document.get("jobs") or {}
+        trust_gate = trusted_jobs.get("trust-gate") or {}
+        plan_job = trusted_jobs.get("plan") or {}
+        trusted_job = trusted_jobs.get(trusted_job_id) or {}
+        trigger_config = trusted_document.get(
+            "on", trusted_document.get(True, {})
+        )
+        exact_inputs = {"pr_number"}
+        trigger_inputs_are_exact = (
+            isinstance(trigger_config, dict)
+            and all(
+                isinstance(trigger_config.get(event), dict)
+                and set((trigger_config[event].get("inputs") or {})) == exact_inputs
+                for event in ("workflow_call", "workflow_dispatch")
+            )
+        )
+        trust_steps = trust_gate.get("steps") or []
+        gate_step = next(
+            (
+                step
+                for step in trust_steps
+                if isinstance(step, dict)
+                and step.get("name") == "keep P3A dispatch-provable and production-inert"
+            ),
+            {},
+        )
+        gate_lines = {
+            line.strip() for line in str(gate_step.get("run", "")).splitlines()
+        }
+        gate_env_is_exact = gate_step.get("env") == {
+            "EVENT_NAME": "${{ github.event_name }}",
+            "TRUSTED_REF": "${{ github.ref }}",
+            "TRUSTED_WORKFLOW_REF": "${{ github.workflow_ref }}",
+            "PR_NUMBER": "${{ inputs.pr_number }}",
+        }
+        executable_refusals_are_exact = {
+            'test "$EVENT_NAME" = workflow_dispatch || {',
+            'test "$TRUSTED_REF" = refs/heads/main || {',
+            (
+                'test "$TRUSTED_WORKFLOW_REF" = mastermindx-market-intelligence/'
+                "macro/.github/workflows/trusted-ci-executor.yml@refs/heads/main || {"
+            ),
+        } <= gate_lines
+        if triggers(trusted_document) != {"workflow_call", "workflow_dispatch"}:
+            findings.append(Finding("R13", "P3A executor triggers must stay call-capable and dispatch-provable"))
+        if not trigger_inputs_are_exact:
+            findings.append(Finding("R13", "P3A executor may accept only the pr_number input"))
+        if (
+            trust_gate.get("runs-on") != HOSTED
+            or not gate_env_is_exact
+            or not executable_refusals_are_exact
+            or plan_job.get("runs-on") != HOSTED
+            or plan_job.get("needs") != "trust-gate"
+        ):
+            findings.append(Finding("R13", "P3A hosted trust and planner boundary drifted"))
+        if (
+            not isinstance(trusted_job, dict)
+            or trusted_job.get("needs") != "plan"
+            or trusted_job.get("runs-on")
+            != {"group": "macro-home-canary", "labels": "ci-linux"}
+        ):
+            findings.append(Finding("R13", "P3A trusted pack lost its selected group and exact label"))
+        ci_document = documents.get(".github/workflows/ci.yml") or {}
+        if "trusted-ci-executor.yml" in str(ci_document):
+            findings.append(Finding("R13", "P3A must not route production ci.yml through the executor"))
+
+    runner_group_name = str(runtime_group.get("name", ""))
+    runner_group_consumers = {
+        (workflow, str(job_id))
+        for workflow, document in documents.items()
+        for job_id, job in (document.get("jobs") or {}).items()
+        if isinstance(job, dict)
+        and isinstance(job.get("runs-on"), dict)
+        and job["runs-on"].get("group") == runner_group_name
+    }
+    expected_group_consumers = {(trusted_workflow, trusted_job_id)}
+    if runner_group_consumers != expected_group_consumers:
+        findings.append(
+            Finding(
+                "R13",
+                "P3A runner-group consumer set must be exactly "
+                f"{sorted(expected_group_consumers)}; found {sorted(runner_group_consumers)}",
+            )
+        )
 
     for workflow, document in documents.items():
         for job_id, job in (document.get("jobs") or {}).items():
@@ -621,7 +741,7 @@ def main(argv: list[str] | None = None) -> int:
     if findings:
         print(f"FAIL: {len(findings)} runner-policy finding(s)")
         return 1
-    print("OK: Wave B/C runner routing is hosted-by-default and canary-only self-hosted.")
+    print("OK: P3A runner routing is hosted-by-default with an inert main-selected executor.")
     return 0
 
 

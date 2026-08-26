@@ -465,6 +465,39 @@ def test_host_admission_accepts_only_the_main_dispatch_canary() -> None:
         assert not ADMISSION.decision(mutated)[0]
 
 
+def test_host_admission_accepts_only_the_main_dispatch_trusted_executor_pack() -> None:
+    allowed = {
+        "MASTERMIND_CI_PROFILE": "pc-ci",
+        "GITHUB_REPOSITORY": "mastermindx-market-intelligence/macro",
+        "GITHUB_EVENT_NAME": "workflow_dispatch",
+        "GITHUB_REF": "refs/heads/main",
+        "GITHUB_WORKFLOW_REF": (
+            "mastermindx-market-intelligence/macro/.github/workflows/"
+            "trusted-ci-executor.yml@refs/heads/main"
+        ),
+        "GITHUB_JOB": "trusted-pack",
+    }
+    assert ADMISSION.decision(allowed)[0]
+    for key, value in (
+        ("GITHUB_EVENT_NAME", "workflow_call"),
+        ("GITHUB_REF", "refs/pull/7/merge"),
+        (
+            "GITHUB_WORKFLOW_REF",
+            "mastermindx-market-intelligence/macro/.github/workflows/"
+            "trusted-ci-executor.yml@refs/heads/candidate",
+        ),
+        (
+            "GITHUB_WORKFLOW_REF",
+            "mastermindx-market-intelligence/macro/.github/workflows/"
+            "hostile-main-caller.yml@refs/heads/main",
+        ),
+        ("GITHUB_REPOSITORY", "attacker/fork"),
+        ("GITHUB_JOB", "rogue-pack"),
+    ):
+        mutated = {**allowed, key: value}
+        assert not ADMISSION.decision(mutated)[0]
+
+
 def test_cache_update_disables_automatic_maintenance() -> None:
     script = (ROOT / "ops" / "runner-host" / "pc" / "mastermind_ci_cache_update.sh").read_text(
         encoding="utf-8"

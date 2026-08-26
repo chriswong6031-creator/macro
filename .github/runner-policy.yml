@@ -1,5 +1,5 @@
 schema: runner_policy.v2
-phase: wave-bc-canary
+phase: p3a-inert-trusted-executor
 repository_visibility: public
 ordinary_pr_ci: github-hosted
 
@@ -13,11 +13,20 @@ runtime_runner_group:
     - mastermindx-market-intelligence/macro/.github/workflows/m1-runner-canary.yml@refs/heads/main
     - mastermindx-market-intelligence/macro/.github/workflows/engine-render.yml@refs/heads/main
     - mastermindx-market-intelligence/macro/.github/workflows/render.yml@refs/heads/main
+    - mastermindx-market-intelligence/macro/.github/workflows/trusted-ci-executor.yml@refs/heads/main
 
 scenario_routes:
   same_repo_ordinary_pr: github-hosted
   fork_pr: github-hosted
   trusted_dispatch_canary: pc-ci-canary
+  trusted_executor_dispatch: pc-ci
+
+trusted_executor_route:
+  workflow: .github/workflows/trusted-ci-executor.yml
+  job: trusted-pack
+  group: macro-home-canary
+  labels: [ci-linux]
+  production_enabled: false
 
 protected_hosted_routes:
   - workflow: .github/workflows/ci.yml
@@ -177,16 +186,16 @@ label_registry:
       job routed here queues until a host returns. Neither consumer carries a
       `schedule:` trigger, which is what keeps this out of R12.
   ci-linux:
-    status: orphaned
-    carried_by: []
+    status: live
+    carried_by: [pc-ci-1, pc-ci-2, pc-ci-3]
     note: >
-      Wave B/C PC CI pool, not yet stood up. Dispatch-only consumer
-      (selfhosted-ci-canary.yml), so a queued job cannot take a cron hostage.
+      P2-accepted three-slot PC CI pool. Production routing remains disabled in
+      P3A; only the main-selected canary and inert trusted executor may use it.
   ci-linux-canary:
-    status: orphaned
-    carried_by: []
+    status: live
+    carried_by: [pc-ci-1]
     note: >
-      Wave B/C single-slot PC canary, not yet stood up. Dispatch-only consumer.
+      P1-accepted single-slot PC canary carried by pc-ci-1; dispatch-only.
   m1-theta:
     status: orphaned
     carried_by: []

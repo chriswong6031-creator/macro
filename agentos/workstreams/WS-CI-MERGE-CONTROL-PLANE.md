@@ -187,7 +187,18 @@ waves:
       executable tests lock both bundle imports and upload ordering. It does
       not change production routing or semantic authority. Sequence after P2R:
       P3A inert trusted executor, P3B production route with hosted ci-pack-N
-      anchors, then P4 three natural PR proofs.
+      anchors, then P4 three natural PR proofs. P2 is now accepted from the
+      combined receipts: run 32960314514 proved three concurrent PC CI slots and
+      an independently acquired pc-render-4 reservation; run 32964925696 made
+      checkoutless parity green for packs 0/1/9 on one exact tree and plan. PC
+      wall time was 164.689-216.668s versus hosted 680.467-2050.9s, all semantic
+      fragments were byte-identical, cache bytes were unchanged and the resource
+      envelope stayed safe. P3A is built locally on the canonical #6351 program:
+      one main-selected reusable executor, production_enabled=false, one hosted
+      plan and one PC proof pack. Its direct-dispatch gate and the root-owned PC
+      job-start hook both require the exact main workflow identity; hostile caller,
+      workflow_call, PR-ref and fork forms stay closed. Production ci.yml remains
+      byte-unchanged.
 next_action: >
   W-TRANSPORT and W-PR-EVENT-CAUSALITY are closed. Do not reopen either for a
   new CI-speed, runner, branch-protection, or cancellation-system proposal.
@@ -214,6 +225,7 @@ owns_paths:
   - "scripts/run_ci_pack.py"
   - "scripts/merge_on_green.py"
   - "scripts/check_self_mod_fence.py"
+  - ".github/workflows/trusted-ci-executor.yml"
 ---
 
 The E2BIG incident model and receipts live in
