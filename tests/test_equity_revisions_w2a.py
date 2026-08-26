@@ -252,6 +252,29 @@ class _Ticker:
         return self._revenue
 
 
+class _AnalysisStub:
+    """Minimal stub of yfinance's private Analysis object, holding only the raw
+    `_earnings_trend` attribute the collector's guarded anchor read looks for."""
+
+    def __init__(self, earnings_trend):
+        self._earnings_trend = earnings_trend
+
+
+def _trend_frame(pairs: dict[str, str | None]) -> pd.DataFrame:
+    """Synthetic raw earningsTrend items: one row per (period, endDate) pair,
+    mirroring yfinance's `Analysis._earnings_trend` shape closely enough for
+    `.to_dict(orient="records")` to yield `{"period": ..., "endDate": ...}` dicts."""
+    return pd.DataFrame({"period": list(pairs.keys()), "endDate": list(pairs.values())})
+
+
+class _TickerWithAnchors(_Ticker):
+    """`_Ticker` plus a synthetic private `_analysis._earnings_trend` anchor source."""
+
+    def __init__(self, *, earnings=None, revenue=None, earnings_trend=None):
+        super().__init__(earnings=earnings, revenue=revenue)
+        self._analysis = _AnalysisStub(earnings_trend) if earnings_trend is not None else None
+
+
 def _run(
     tmp_path: Path,
     session: str,
@@ -683,3 +706,208 @@ def test_legacy_latest_and_history_contract_is_unchanged(monkeypatch, tmp_path: 
     assert list(latest.columns) == ["breadth", "n_analysts", "asof"]
     assert list(history.columns) == ["ticker", "breadth", "n_analysts", "asof", "date"]
     assert history["ticker"].tolist() == ["ACME"]
+
+
+# ---------------------------------------------------------------------------
+# SRC-A1 fiscal period-end anchor (DATA_CLOCK_RIGHTS_MATRIX.md mutation gate 3):
+# capture the provider's own `endDate` into `period_end`, and refuse to record a
+# fiscal rollover (same relative horizon label, different underlying period) as
+# an analyst revision.  Synthetic frames + synthetic prior-state DataFrames only
+# — no network, no reads from data/.
+# ---------------------------------------------------------------------------
+
+
+def test_period_end_populated_verbatim_from_anchor_for_both_metrics(tmp_path: Path):
+    """(a) period_end is populated verbatim from the supplied anchor mapping, for
+    the correct horizon, on both EPS and revenue rows."""
+    ticker = _TickerWithAnchors(
+        earnings=_estimate_frame(),
+        revenue=_revenue_frame(),
+        earnings_trend=_trend_frame({"0q": "2026-09-30", "+1y": "2027-09-30"}),
+    )
+    _run(tmp_path, "scheduled-1", ticker)
+    rows = _observations(tmp_path)
+
+    for metric in ("EPS", "revenue"):
+        zeroq = rows[(rows["metric"] == metric) & (rows["horizon_label_raw"] == "0q") & (rows["observation_type"] == "average")].iloc[0]
+        plus1y = rows[(rows["metric"] == metric) & (rows["horizon_label_raw"] == "+1y") & (rows["observation_type"] == "average")].iloc[0]
+        assert zeroq["period_end"] == "2026-09-30"
+        assert plus1y["period_end"] == "2027-09-30"
+
+
+def test_fiscal_period_and_fiscal_year_stay_null_even_with_an_anchor_present(tmp_path: Path):
+    """(b) fiscal_period and fiscal_year remain None unconditionally, even when a
+    real period_end anchor is present — deriving them would be a guessed fiscal
+    mapping, which the contract forbids."""
+    ticker = _TickerWithAnchors(
+        earnings=_estimate_frame(),
+        revenue=_revenue_frame(),
+        earnings_trend=_trend_frame({"0q": "2026-09-30", "+1y": "2027-09-30"}),
+    )
+    _run(tmp_path, "scheduled-1", ticker)
+    rows = _observations(tmp_path)
+    assert rows["period_end"].notna().all()
+    assert rows["fiscal_period"].isna().all()
+    assert rows["fiscal_year"].isna().all()
+
+
+def test_unanchored_horizon_stays_null_while_anchored_siblings_are_populated(tmp_path: Path):
+    """(c) A horizon with no anchor (its item is simply absent from the raw
+    earningsTrend items) yields period_end None, while sibling horizons that do
+    have an anchor are still populated."""
+    ticker = _TickerWithAnchors(
+        earnings=_estimate_frame(),
+        revenue=_revenue_frame(),
+        earnings_trend=_trend_frame({"+1y": "2027-09-30"}),  # "0q" has no item at all
+    )
+    _run(tmp_path, "scheduled-1", ticker)
+    rows = _observations(tmp_path)
+
+    zeroq = rows[(rows["metric"] == "EPS") & (rows["horizon_label_raw"] == "0q") & (rows["observation_type"] == "average")].iloc[0]
+    plus1y = rows[(rows["metric"] == "EPS") & (rows["horizon_label_raw"] == "+1y") & (rows["observation_type"] == "average")].iloc[0]
+    assert pd.isna(zeroq["period_end"])
+    assert plus1y["period_end"] == "2027-09-30"
+
+
+def test_gate3_fiscal_rollover_is_not_recorded_as_a_revision(tmp_path: Path):
+    """(d) THE GATE-3 TEST: a prior "0q" observation with an earlier period_end and
+    a different value, followed by a new "0q" observation with a later period_end,
+    must be left a new original — never a fabricated supersession."""
+    session1 = _TickerWithAnchors(
+        earnings=_estimate_frame(average=10.0, second_average=11.0),
+        revenue=_revenue_frame(),
+        earnings_trend=_trend_frame({"0q": "2026-09-30", "+1y": "2027-09-30"}),
+    )
+    _run(tmp_path, "scheduled-1", session1)
+
+    session2 = _TickerWithAnchors(
+        earnings=_estimate_frame(average=15.0, second_average=11.0),
+        revenue=_revenue_frame(),
+        earnings_trend=_trend_frame({"0q": "2026-12-31", "+1y": "2027-09-30"}),
+    )
+    _run(tmp_path, "scheduled-2", session2)
+
+    rows = _observations(tmp_path)
+    rolled = rows[
+        (rows["collection_session_id"] == "scheduled-2")
+        & (rows["metric"] == "EPS")
+        & (rows["horizon_label_raw"] == "0q")
+        & (rows["observation_type"] == "average")
+    ].iloc[0]
+    assert rolled["value"] == 15.0
+    assert rolled["period_end"] == "2026-12-31"
+    assert rolled["correction_state"] == "original"
+    assert rolled["correction_state"] != "supersedes"
+    assert pd.isna(rolled["supersedes_observation_id"])
+
+
+def test_gate3_same_period_end_changed_value_is_still_a_genuine_revision(tmp_path: Path):
+    """(e) The genuine-revision case still works: same period_end on both sides
+    with a changed value still yields correction_state 'supersedes' with the
+    prior observation_id linked."""
+    session1 = _TickerWithAnchors(
+        earnings=_estimate_frame(average=10.0, second_average=11.0),
+        revenue=_revenue_frame(),
+        earnings_trend=_trend_frame({"0q": "2026-09-30", "+1y": "2027-09-30"}),
+    )
+    _run(tmp_path, "scheduled-1", session1)
+    before = _observations(tmp_path)
+    prior = before[
+        (before["metric"] == "EPS") & (before["horizon_label_raw"] == "+1y") & (before["observation_type"] == "average")
+    ].iloc[0]
+
+    session2 = _TickerWithAnchors(
+        earnings=_estimate_frame(average=10.0, second_average=12.5),
+        revenue=_revenue_frame(),
+        earnings_trend=_trend_frame({"0q": "2026-09-30", "+1y": "2027-09-30"}),  # unchanged period_end
+    )
+    _run(tmp_path, "scheduled-2", session2)
+    after = _observations(tmp_path)
+    successor = after[
+        (after["collection_session_id"] == "scheduled-2")
+        & (after["metric"] == "EPS")
+        & (after["horizon_label_raw"] == "+1y")
+        & (after["observation_type"] == "average")
+    ].iloc[0]
+    assert successor["value"] == 12.5
+    assert successor["period_end"] == "2027-09-30"
+    assert successor["correction_state"] == "supersedes"
+    assert successor["supersedes_observation_id"] == prior["observation_id"]
+
+
+def test_unanchored_rows_keep_todays_supersession_behavior(tmp_path: Path):
+    """(f) The unanchored case is unchanged: both sides period_end None with a
+    changed value still yields 'supersedes', exactly as today (plain _Ticker
+    carries no _analysis attribute at all, so anchors are never obtained)."""
+    _run(tmp_path, "scheduled-1")
+    before = _observations(tmp_path).copy(deep=True)
+    assert before["period_end"].isna().all()
+
+    changed = _Ticker(earnings=_estimate_frame(average=12.5), revenue=_revenue_frame())
+    _run(tmp_path, "scheduled-2", changed)
+    after = _observations(tmp_path)
+    successor = after[
+        (after["collection_session_id"] == "scheduled-2")
+        & (after["metric"] == "EPS")
+        & (after["horizon_label_raw"] == "0q")
+        & (after["observation_type"] == "average")
+    ].iloc[0]
+    assert pd.isna(successor["period_end"])
+    assert successor["correction_state"] == "supersedes"
+
+
+def test_anchor_extraction_failure_never_escapes_and_period_end_stays_null(tmp_path: Path):
+    """(g) An anchor-extraction failure (the private attribute raises) still
+    produces a complete, lawful row set with period_end None throughout and no
+    exception escaping the collection — attempt status is unaffected."""
+
+    class _TickerAnalysisRaises(_Ticker):
+        @property
+        def _analysis(self):
+            raise RuntimeError("analysis internals unavailable")
+
+    result = _run(tmp_path, "scheduled-1", _TickerAnalysisRaises())
+    assert result == {"attempts": 1, "observations": 28}
+    rows = _observations(tmp_path)
+    attempts = _attempts(tmp_path)
+    assert rows["period_end"].isna().all()
+    assert attempts.iloc[0]["status"] == "success"
+
+
+def test_anchor_extraction_handles_a_missing_analysis_attribute(tmp_path: Path):
+    """(g) The private attribute is simply absent (plain _Ticker, no _analysis at
+    all) — same lawful, exception-free outcome as the raising case."""
+    result = _run(tmp_path, "scheduled-1", _Ticker())
+    assert result == {"attempts": 1, "observations": 28}
+    rows = _observations(tmp_path)
+    assert rows["period_end"].isna().all()
+
+
+def test_anchor_extraction_handles_an_unexpected_earnings_trend_shape(tmp_path: Path):
+    """(g) The private attribute is present but not a DataFrame or a list of
+    records (an unexpected shape) — still no exception, still no anchors."""
+    ticker = _TickerWithAnchors(
+        earnings=_estimate_frame(), revenue=_revenue_frame(),
+        earnings_trend="not-a-frame-or-list",
+    )
+    result = _run(tmp_path, "scheduled-1", ticker)
+    assert result == {"attempts": 1, "observations": 28}
+    rows = _observations(tmp_path)
+    assert rows["period_end"].isna().all()
+
+
+def test_anchor_extraction_skips_items_missing_end_date(tmp_path: Path):
+    """(c)/(g) An item present in earningsTrend but lacking endDate (here: NaN,
+    the shape a pandas-constructed frame yields for a missing cell) contributes
+    no anchor for that horizon, while a sibling item's endDate is unaffected."""
+    ticker = _TickerWithAnchors(
+        earnings=_estimate_frame(),
+        revenue=_revenue_frame(),
+        earnings_trend=_trend_frame({"0q": None, "+1y": "2027-09-30"}),
+    )
+    _run(tmp_path, "scheduled-1", ticker)
+    rows = _observations(tmp_path)
+    zeroq = rows[(rows["metric"] == "EPS") & (rows["horizon_label_raw"] == "0q") & (rows["observation_type"] == "average")].iloc[0]
+    plus1y = rows[(rows["metric"] == "EPS") & (rows["horizon_label_raw"] == "+1y") & (rows["observation_type"] == "average")].iloc[0]
+    assert pd.isna(zeroq["period_end"])
+    assert plus1y["period_end"] == "2027-09-30"
