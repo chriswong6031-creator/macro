@@ -421,3 +421,92 @@ answers "not deployed" for a merge SHA it has not fetched — the box is a parti
 clone and main moves faster than the 3-minute pull, so the box holds a
 *descendant*, never the exact SHA. Deployment must be confirmed from the deployed
 FILE and the artifact it produces, never from ancestry alone.
+# 15. Backfill EXECUTED — Chairman authority, 2026-08-26
+
+§10.3 concluded the journal was a control and not a ledger source, because `entered`
+and `via` are absent from the logged line. On Chairman authority to backfill, that
+conclusion was re-examined and is **partly superseded**. The corrected finding:
+
+- `via` is genuinely unavailable and stays null (it is optional on genuine rows too);
+- `entered` is **not** a price-derived quantity. It is
+  `bool(pack[ticker]["center_buyable"])` (`live_states.py:576`), fixed for a whole
+  name-session and carried forward — so it is recoverable wherever production's OWN
+  output settles it, with no replay and no reconstructed pack.
+
+## 15.1 Why this is RECOVERY, not replay
+
+Every row absorbed was emitted by the production evaluator at the time and read back
+verbatim. No state machine was re-run, no quote tape was rebuilt, and **no armed pack
+was reconstructed** — which is exactly why §24.2 (no surviving pack bytes) does not
+bind this path. There was nothing to mint.
+
+The journal is sound as a source because it self-checks: each pass independently
+declares `events=N` and then prints its event lines. Across the whole outage —
+**672 passes, 672 exact matches, 0 mismatched, 0 orphaned event lines**. A truncated
+log cannot produce that. `scripts/prophet_live_journal_recovery.py` refuses (exit 3)
+on any mismatch, orphan, or branch contradiction rather than accruing a partial pass.
+
+## 15.2 How `entered` was recovered without guessing
+
+`at_risk` / `at_risk_unconfirmed` are emitted **only** inside the `if on_board:`
+branch (`live_states.py:616-654`); `crossing_unconfirmed` **only** in the cross branch
+(`:698`). One such event therefore fixes that name's whole session.
+
+| | names | rows |
+|---|---|---|
+| determined `board` | 118 | 269 |
+| determined `cross` | 23 | 23 |
+| genuinely undetermined → **null** | 153 | 306 |
+| **contradictions** | **0** | — |
+
+Zero contradictions across 141 determinations is the check on the branch mapping.
+Names that only ever emitted `forming` / `confirming_into_close` occur on both
+branches and are left null — inventing them would silently decide the ledger's
+headline cross-vs-board population (§16: absence means no claim).
+
+## 15.3 Absorption
+
+Staged as a bounded pending input outside canonical `data/prophet_live/`, then
+absorbed by the existing reconciler, which remains the sole writer (LEDGER LAW D10).
+`scripts/reconcile_prophet_live.py` gained exactly one new entry point, `--pending`,
+fail-closed on schema, filename/session disagreement, row/session disagreement,
+missing identity, and the `LEDGER_FLOOR_SESSION` floor. Pending and R2 spool are
+mutually exclusive in a run, so "which source wrote this row" stays answerable.
+
+**`data/prophet_live/forward.parquet` did not previously exist** — never committed, no
+history. The ledger's floor is `2026-07-30`, the very day the lane broke, so the
+evidence base had been empty since inception. These are its first rows.
+
+| Result | |
+|---|---|
+| rows | **598** (90 / 15 / 162 / 143 / 71 / 31 / 86) |
+| duplicate `(date,ticker,kind)` | 0 |
+| `close_same_day`, `confirmed` | 598 / 598 |
+| `next_close_fill` | 512 / 598 — the 86 open are exactly Aug 25, maturing on the next close |
+| confirmation basis | 6 sessions `replay` (vintage-truncated gate), Aug 25 `pack` (as_of matches) |
+| `cross_px` null / ≤0 | 0 / 0 |
+| `first_ts > last_ts` | 0 |
+| rerun | idempotent on every field except `reconciled_at` |
+| blast radius | ledger + recovery dir only — no board, rank, plan or site mutation |
+
+Count agreed independently three ways before any effect: journal census (598),
+recovery tool per-session distinct keys (598), reconciler dedupe (598).
+
+## 15.4 What the rows honestly do NOT claim
+
+All 598 carry `pct_basis = unaligned_no_anchor` and a null `cross_basis_close`. That
+is the reconciler's own designed answer for a row first written from an older session
+(`reconcile_prophet_live.py:128`): the basis anchor is only valid if read
+contemporaneously on the cross's own session, and taking a later close would assume
+no distribution in between. Disclosed, never repaired by guess.
+
+Class D's 11 sessions remain **refused** and unchanged (§5). Their `dark` verdict was
+correct for the pack they were handed; recovering them would require minting a pack
+production never armed, which is the one thing the force-majeure DEC does not cover.
+
+## 15.5 Reproducibility
+
+The committed journal (`journal_2026-07-30_2026-08-25.txt.gz`, 197 KB,
+sha256 `d3812a0cec8f50dff57523ffa7163c65d3a3f058da56286fa368185b74156a52`) plus the
+recovery tool regenerate the pending input byte-for-byte. The 10 MB expanded pending
+is deliberately NOT committed — stage-and-absorb, not a persistent queue (§14).
