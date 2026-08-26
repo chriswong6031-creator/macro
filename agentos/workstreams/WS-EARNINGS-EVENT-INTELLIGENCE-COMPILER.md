@@ -23,12 +23,15 @@ decisions:
 next_action: >
   E3-B is BUILT_NOT_PROVEN. Terminal consumer #470 is merged at
   ab7ef1d7dc5c9218ff5f94575596d74e24cbf35d and Macro producer #6376 is merged at
-  94285d03ba60fe3a6bdfcad8109cfb329fc08843. Obtain one lawful post-merge execution
-  of the existing company-intelligence production workflow, verify AAPL transcript SHA
-  a8ff5d03e875fef5604791edbf625186c447af049e6e02f55bb89c68c7cc9f9f before accepting
-  publication, then prove seven canonical qa_exchange.v1 objects through the real
-  workspace, authenticated Terminal, public derivative and regression paths. If the
-  transcript SHA moved, stop AAPL_TRANSCRIPT_REVISION_DIVERGED. E3-C remains locked.
+  94285d03ba60fe3a6bdfcad8109cfb329fc08843. Canonical scheduled production run
+  32928671722 succeeded on clean-descendant head
+  0c80d5c8b13858f113d7896e58bef465bc2ec7d3 and promoted event-workspace generation
+  5517b178afbab673bc8c7c5f with AAPL included. Read back the promoted live AAPL
+  workspace and require transcript SHA
+  a8ff5d03e875fef5604791edbf625186c447af049e6e02f55bb89c68c7cc9f9f plus exactly
+  seven qa_exchange.v1 objects, then complete authenticated Terminal, bounded public
+  derivative and regression proof. If transcript SHA moved, stop
+  AAPL_TRANSCRIPT_REVISION_DIVERGED. E3-C remains locked.
 owns_paths:
   - research/earnings_intelligence/e3/**
   - engine/company_intelligence/qa_reconstruction.py
@@ -97,8 +100,8 @@ do_not_redo:
   - Do not treat E3-A2 structural reconstruction as qa_exchange.v1 publication authority without the E3-B canonical adapter/validator.
   - Do not copy Pass-A topic labels into deterministic reconstruction.
   - Do not put AAPL names, tickers, or boundary indexes in qa_reconstruction.py.
-  - Do not treat the E3-B merges as production proof.
-  - Do not invent a new production trigger or alternate publisher when workflow_dispatch is unavailable.
+  - Do not treat the E3-B merges or publisher success as final production proof.
+  - Do not rerun or republish merely to replace the already-successful scheduled E3-B generation.
 waves:
   - id: E3-0
     title: Compiler architecture freeze
@@ -152,11 +155,13 @@ waves:
     next_action: >
       BUILT_NOT_PROVEN. Terminal consumer #470 landed at
       ab7ef1d7dc5c9218ff5f94575596d74e24cbf35d and Macro producer #6376 landed at
-      94285d03ba60fe3a6bdfcad8109cfb329fc08843. Run the existing canonical
-      company-intelligence production lane on a main head containing the Macro merge;
-      require the held AAPL transcript SHA before publishing seven canonical exchanges;
-      then complete real workspace, authenticated Terminal, public derivative and
-      regression proof. SOURCE_CLOCK_OWNER_GAP remains explicit. Do not start E3-C.
+      94285d03ba60fe3a6bdfcad8109cfb329fc08843. Scheduled production run 32928671722
+      succeeded on clean-descendant head 0c80d5c8b13858f113d7896e58bef465bc2ec7d3,
+      validated AAPL event evt_cik0000320193_2026q3_results and promoted generation
+      5517b178afbab673bc8c7c5f. Read back live AAPL and require the held transcript SHA
+      plus seven canonical qa_exchange.v1 objects; then complete authenticated Terminal,
+      bounded public derivative and regression proof. SOURCE_CLOCK_OWNER_GAP remains
+      explicit. Do not start E3-C.
   - id: E3-C
     title: Second-event generalization
     status: todo
@@ -175,4 +180,4 @@ E3-A is done as a completed calibration / negative-method experiment. Immutable 
 
 E3-A2 is done as a landed **deterministic shadow structural method**, not production-live Q&A. Immutable squash-merge SHA: `1158c9a17712084c011581cd68933f09100c2e5a` (#6306; Sol PASS; accepted head `2f8b7ab443bcd020f0baef618b7ce90f2d6c90fa`; H_IMPL `a6c075f18a7205d943bf6d95aaf904e782a1267c`; merged 2026-08-24T09:37:22Z). Runtime `engine/company_intelligence/qa_reconstruction.py` reconstructs Operator-`go ahead` exchanges from source segments only: no model calls, no gold import, no issuer literals, no live `qa_exchanges`. AAPL oracle parity remains 7 exchanges / 32 question spans / 36 answer spans / 26 turns / 68 replay. Topics remain UNRESOLVED / PASS_A_REFERENCE_ONLY. Source-format limitations (operator-intro identity grammar; other vendor intros may refuse) are preserved for later generalization. Chairman+Sol unlocked E3-B as deterministic structural publication with `topics=["unavailable"]`. E3-C remains locked.
 
-E3-B is now **BUILT_NOT_PROVEN**. Terminal consumer #470 is merged at `ab7ef1d7dc5c9218ff5f94575596d74e24cbf35d`; Macro producer #6376 is merged at `94285d03ba60fe3a6bdfcad8109cfb329fc08843`. The last known successful canonical `company-intelligence` production run (`32920910702`) completed before the Macro merge and therefore proves only lane health, not E3-B publication. A fresh post-merge canonical run, AAPL transcript-SHA check, seven-exchange workspace readback, authenticated Terminal proof, bounded public proof and regressions remain mandatory before E3-B may become PROVEN_LIVE / DONE. This Sol session cannot lawfully substitute Slack for Executive admission or invent a new publisher/trigger merely because its GitHub connector lacks workflow_dispatch. `SOURCE_CLOCK_OWNER_GAP` remains explicit and truthful. E3-C remains locked.
+E3-B remains **BUILT_NOT_PROVEN**, but canonical production publication is now proven. Terminal consumer #470 is merged at `ab7ef1d7dc5c9218ff5f94575596d74e24cbf35d`; Macro producer #6376 is merged at `94285d03ba60fe3a6bdfcad8109cfb329fc08843`. Scheduled `company-intelligence` run `32928671722` succeeded on clean-descendant head `0c80d5c8b13858f113d7896e58bef465bc2ec7d3`, validated AAPL `evt_cik0000320193_2026q3_results`, published immutable event-workspace generation `5517b178afbab673bc8c7c5f`, and promoted its marker. Exact live AAPL transcript-SHA / seven-exchange readback, authenticated Terminal proof, bounded public proof and regressions remain mandatory before E3-B may become PROVEN_LIVE / DONE. The current Sol execution surface cannot resolve the dynamic production API or run the authenticated browser journey, so publisher success must not be inflated into final acceptance. `SOURCE_CLOCK_OWNER_GAP` remains explicit and truthful. E3-C remains locked.
