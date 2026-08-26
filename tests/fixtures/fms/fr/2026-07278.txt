@@ -1,0 +1,160 @@
+<html>
+<head>
+<title>Federal Register, Volume 91 Issue 72 (Wednesday, April 15, 2026)</title>
+</head>
+<body><pre>
+[Federal Register Volume 91, Number 72 (Wednesday, April 15, 2026)]
+[Notices]
+[Pages 20139-20140]
+From the Federal Register Online via the Government Publishing Office [<a href="http://www.gpo.gov">www.gpo.gov</a>]
+[FR Doc No: 2026-07278]
+
+
+=======================================================================
+-----------------------------------------------------------------------
+
+DEPARTMENT OF DEFENSE
+
+Office of the Secretary
+
+[Transmittal No. 26-23]
+
+
+Arms Sales Notification
+
+AGENCY: Defense Security Cooperation Agency, Department of Defense 
+(DoD).
+
+ACTION: Arms sales notice.
+
+-----------------------------------------------------------------------
+
+SUMMARY: The DoD is publishing unclassified text of an arms sales 
+notification.
+
+FOR FURTHER INFORMATION CONTACT: Urooj Zahra at (703) 695-6233, 
+<a href="/cdn-cgi/l/email-protection#dfaaadb0b0b5f1a5beb7adbef1bcb6a99fb2beb6b3f1b2b6b3"><span class="__cf_email__" data-cfemail="0471766b6b6e2a7e656c76652a676d724469656d682a696d68">[email&#160;protected]</span></a>, or <a href="/cdn-cgi/l/email-protection#72160111135c1c11005c000100111f151f065c1e1b01065c111c015f1f100a321f131b1e5c1f1b1e"><span class="__cf_email__" data-cfemail="e88c9b8b89c6868b9ac69a9b9a8b858f859cc684819b9cc68b869bc5858a90a885898184c6858184">[email&#160;protected]</span></a>.
+
+SUPPLEMENTARY INFORMATION: This 36(b) arms sales notification is 
+published to fulfill the requirements of section 155 of Public Law 104-
+164 dated July 21, 1996. The following is a copy of the attached 
+Transmittal 26-23, Policy Justification, and Sensitivity of Technology.
+
+    Dated: April 10, 2026.
+Stephanie J. Bost,
+Alternate OSD Federal Register Liaison Officer, Department of Defense.
+DEPARTMENT OF STATE
+TRANSMITTAL NO RSAT 26-23
+NOTICE OF PROPOSED ISSUSANCE OF LETTER OF OFFER PURSUANT TO SECTION 
+36(b)(1) OF THE ARMS EXPORT CONTROL ACT
+    (i) Prospective Purchaser: Government of Jordan
+    (ii) Total Estimated Value:
+
+Major Defense Equipment *...............  $ 0
+Other...................................  $280 million
+                                         -------------------------------
+  TOTAL.................................  $280 million
+ 
+
+    Funding Source: Foreign Military Financing (FMF)
+    (iii) Description and Quantity or Quantities of Articles or 
+Services under Consideration for Purchase:
+
+Major Defense Equipment (MDE):
+    None
+Non-Major Defense Equipment:
+    The following non-MDE items will be included: Ku band multi-
+function radio frequency system radar and command and control system; 
+generators; global positioning system receivers; spare and repair 
+parts; special tools and test equipment; technical manuals and 
+publications; training devices; new equipment training; U.S. Government 
+and contractor technical, engineering, and logistics personnel 
+services; concurrent spare parts, systems integration, and checkout 
+support; field service representative support; contractor logistics 
+support; program management reviews; and other related elements of 
+logistics and program support.
+
+    (iv) Military Department: Army (JO-B-YFX)
+    (v) Prior Related Cases, if any: None
+    (vi) Sales Commission, Fee, etc., Paid, Offered, or Agreed to be 
+Paid: None known at this time
+    (vii) Sensitivity of Technology Contained in the Defense Article or 
+Defense Services Proposed to be Sold: See Attached Annex
+    (viii) Date Report Delivered to Congress: February 26, 2026
+    * as defined in Section 47(6) of the Arms Export Control Act
+
+POLICY JUSTIFICATION
+
+Jordan--Ku band multi-function radio frequency system radars
+
+    The Government of Jordan has requested to buy Ku band multi-
+function radio frequency system (KuMRFS) radars and command and control 
+system; generators; global positioning system receivers; spare and 
+repair parts; special tools and test equipment; technical manuals and 
+publications; training devices; new equipment training; U.S. Government 
+and contractor technical, engineering, and logistics personnel 
+services; concurrent spare parts, systems integration, and checkout 
+support; field service representative support; contractor logistics 
+support; program management reviews; and other related
+
+[[Page 20140]]
+
+elements of logistics and program support. The estimated total cost is 
+$280 million.
+    This proposed sale will support the foreign policy and national 
+security objectives of the United States by helping to improve the 
+security of a Major Non-NATO Ally that is an important force for 
+political stability and economic progress in the Middle East.
+    The proposed sale will improve Jordan's capability to meet current 
+and future threats by sustaining a credible force that can deter 
+adversaries and participate in CENTCOM operations. Jordan will have no 
+difficulty absorbing these articles into its armed forces.
+    The proposed sale of this equipment and support will not alter the 
+basic military balance in the region.
+    The principal contractor will be RTX Missile Defense Technologies, 
+located in Tucson, AZ. At this time, the U.S. Government is not aware 
+of any offset agreement proposed in connection with this potential 
+sale. Any offset agreement will be defined in negotiations between the 
+purchaser and the contractor.
+    Implementation of this proposed sale will require the temporary 
+assignment of thirteen U.S. Government and twenty-four contractor 
+representatives to Jordan for a duration of up to five years to support 
+fielding, training, and sustainment activities.
+    There will be no adverse impact on U.S. defense readiness as a 
+result of this proposed sale.
+Transmittal No. 26-23
+Notice of Proposed Issuance of Letter of Offer Pursuant to Section 
+36(b)(1) of the Arms Export Control Act
+Annex
+Item No. vii
+    (vii) Sensitivity of Technology:
+    1. The Ku band multi-function radio frequency system (KuMRFS) is a 
+multi-function radar. The radar is capable of providing simultaneous 
+counter-unmanned aircraft systems and counter-rocket, artillery, and 
+mortar air surveillance, and effector support missions. The system 
+leverages M-code global positioning system technology ensuring secure 
+and precise navigation and timing. KuMRFS radar provides three-
+dimensional target location data enhancing situational awareness for 
+command-and-control systems.
+    2. The highest level of classification of defense articles, 
+components, and services included in this potential sale is SECRET.
+    3. If a technologically advanced adversary were to obtain knowledge 
+of the specific hardware and software elements, the information could 
+be used to develop countermeasures that might reduce system 
+effectiveness or be used in the development of a system with similar or 
+advanced capabilities.
+    4. A determination has been made that Jordan can provide 
+substantially the same degree of protection for the sensitive 
+technology being released as the U.S. Government. This proposed sale is 
+necessary in furtherance of the U.S. foreign policy and national 
+security objectives outlined in the Policy Justification.
+    5. All defense articles and services listed in this transmittal 
+have been authorized for release and export to the Government of 
+Jordan.
+
+[FR Doc. 2026-07278 Filed 4-14-26; 8:45 am]
+BILLING CODE 6001-FR-P
+
+
+</pre><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js" defer></script></body>
+</html>

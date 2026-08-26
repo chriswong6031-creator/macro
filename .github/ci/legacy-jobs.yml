@@ -8885,6 +8885,17 @@ jobs:
       # per the commission ("do not rely on an unrun test holding pen").
       - name: DoD budget live acquisition + parser law suite (D6-A)
         run: python -m pytest tests/test_dod_budget_live.py -q
+      # D6-B1 FMS congressional-notification rail (packet 1): the merge-
+      # binding adversarial battery — freeze T1-T14 (stage/amount/identity/
+      # correction/ownership honesty, no procurement_event.v2 rows, no
+      # cross-case aggregation, no empty-valid coercion) plus the D6-B1
+      # official-union battery B1-B7/B9-B11 (FR-only recovery cases, State/FR
+      # join, fallback<->recovery collision, staged-replay + R2-readback
+      # integrity, coverage-gate refusal on an unreconciled denominator).
+      # B8's mint/attach law is covered inside the same file. B12-B14 (EN/ZH
+      # template copy, page-weight fence, anonymous boundary) are packet 2.
+      - name: FMS congressional-notification rail law suite (D6-B1)
+        run: python -m pytest tests/test_fms_notifications.py -q
       # The prophet↔government-revenue context bridge. Named by NOTHING in
       # .github/ before this line — not this manifest, not any workflow, and not
       # even a ci.yml trigger path — so the one suite proving the Prophet side

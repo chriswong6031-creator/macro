@@ -208,10 +208,26 @@ State article (survey-proven on all 46 corpus articles, receipts in §1 artifact
   title-case date in the article header region (the survey's residual-zero grammar);
   anchor structurally, not by page-wide first match, if the header region is
   identifiable; fail closed to null.
-- value: `estimated\s+total\s+(?:program\s+)?cost\s+(?:for\s+the\s+case\s+)?is\s+(?:up\s+to\s+)?\$([\d,.]+)\s*(billion|million)`
-  → integer USD. Corpus classes covered: plain, "up to", "for the case". Articles
-  with no match (3/46 in census) ⇒ null. Multiple distinct values ⇒ null +
+- value (amended after full-corpus survey; five receipted sentence classes:
+  "estimated total cost is", "estimated total cost is up to", "estimated total
+  cost for the case is", "for an estimated cost of", "The estimated cost is",
+  "The total estimated cost is"):
+  `(?:total\s+)?estimated\s+(?:total\s+)?(?:program\s+)?cost\s+(?:for\s+the\s+case\s+)?(?:is|of)\s+(?:up\s+to\s+)?\$([\d,.]+)\s*(billion|million)`
+  → integer USD; 46/46 census articles carry exactly one value under this
+  grammar. Genuinely absent ⇒ null. Multiple distinct values ⇒ null +
   `conflicted`.
+- title anchor (amended, implementation-frozen): the article `<h1>` verbatim on
+  BOTH State and DSCA (og:title is receipt-proven truncated on DSCA and
+  suffix-contaminated on State).
+- `customer_country` (amended, implementation-frozen; precedence per field):
+  (1) the verbatim segment of the `<h1>` title before its first dash separator
+  (dash classes ` – ` / ` — ` / ` - ` and bare unicode-dash variants; the
+  "Country – Capability" split is the sources' own printed format — 60/60
+  census articles yield a non-null prefix); (2) the FR join's
+  "(i) Prospective Purchaser" verbatim (always the source for `fr_only`
+  cases); (3) the determination-sentence grammar; (4) null. A material
+  disagreement between (1) and (2) trips the existing §6 mis-key/conflict
+  guard — never silent field selection.
 - contractor: `The principal contractors?(?: for this (?:effort|case))? (?:will be|is|are) <LIST>.`
   LIST split on `;` / `, and ` with per-entry `NAME(, located in PLACE)?` — verbatim
   capture, location null when absent (e.g. "Aero Vironment Inc."). Explicit-none:
@@ -226,8 +242,12 @@ DSCA article (survey-proven on all 14 staged articles):
 - article date from the article page header = `official_web_publication_date`.
 
 FR raw text (survey-proven on all 267 scanned docs):
-- `(i) Prospective Purchaser: <X>`; `(ii) Total Estimated Value:` table → the
-  `Total` row `\$([\d,.]+)\s*(billion|million)` as `fr_total_estimated_value`;
+- `(i) Prospective Purchaser: <X>`; `(ii) Total Estimated Value:` table (the annex
+  label may interleave classification markings, e.g. `(ii) (U) Total Estimated
+  Value:` — receipted variant FR 2026-09109) → the dotted-leader `TOTAL` row,
+  grammar `TOTAL\.{2,}\s*\$\s*([\d,.]+)\s*(billion|million)` tolerant of leading
+  artifacts on the line (receipted: a literal apostrophe precedes TOTAL in
+  2026-09109), as `fr_total_estimated_value`; absent row ⇒ null, never guessed;
   `(iii) Description and Quantity…: <text>` verbatim; `(viii) Date Report Delivered
   to Congress: <Month D, YYYY>` → the delivered clock. Corrections: title/ACTION
   contains "Correction" ⇒ `fr_correction` observation attaching by exact transmittal
