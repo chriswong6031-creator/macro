@@ -671,11 +671,14 @@
   @keyframes mmb-recoil{0%{transform:none}38%{transform:scale(.985) translateY(2px)}100%{transform:none}}
   @media(prefers-reduced-motion:reduce){.mmb-box.mmb-sent{animation:none}}
   /* ── W1-C effective-context strip ─────────────────────────────────────────────
-     State 1 (nothing resolved) is simply .mmb-ctx with no `.on` — unchanged from
+     State 1 (nothing resolved) is simply .mmb-ctx with no ".on" — unchanged from
      the original single-chip design. States 2 (pre-send preview) and 3 (post-
      receipt, authoritative) share this same markup; only the chip contents and
-     the `.receipt` class (a slightly firmer border once the server has spoken)
-     differ. See research/DEEPVUE_W1C_CONTEXT_ENVELOPE_CONTRACT_2026-08-25.md. */
+     the ".receipt" class (a slightly firmer border once the server has spoken)
+     differ. See research/DEEPVUE_W1C_CONTEXT_ENVELOPE_CONTRACT_2026-08-25.md.
+     (Comment law for this block: this sits INSIDE the CSS template literal, so a
+     backtick here TERMINATES the string and the tail becomes a tagged-template
+     call at runtime — the exact outage this line repairs. Quotes only.) */
   .mmb-ctx{display:none;align-items:center;gap:7px;padding:9px 12px 0}
   .mmb-ctx.on{display:flex}
   .mmb-ctx-chips{display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1;min-width:0;cursor:pointer;
