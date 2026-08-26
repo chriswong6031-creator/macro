@@ -323,3 +323,62 @@ def test_absent_credential_remains_a_clean_skip(monkeypatch, capsys):
     monkeypatch.setattr(geo_enrich, "IPLOCATE_KEY", "")
     assert geo_enrich.main() == 0
     assert "skipping (not configured)" in capsys.readouterr().out
+
+
+# --------------------------------------------------------------------------------------
+# The lane holds TWO credentials. A dead IPLocate key fails every lookup identically, so
+# it is the same whole-run fault as a dead PAT — and left in the per-IP `failed` counter it
+# reproduces the same false green. The annotation must name the RIGHT secret to rotate.
+# --------------------------------------------------------------------------------------
+
+def test_a_dead_iplocate_key_is_a_whole_run_fault_not_a_per_ip_failure(
+    configured, monkeypatch, recorder
+):
+    # Drive the REAL iplocate() through a faked socket, so the classification itself is
+    # under test end-to-end rather than stubbed past.
+    def _rejected(req, timeout=None):
+        raise _http_error(401, b"invalid api key")
+
+    monkeypatch.setattr(geo_enrich, "pending_ips", lambda n: ["8.8.8.8", "1.1.1.1"])
+    monkeypatch.setattr(geo_enrich.urllib.request, "urlopen", _rejected)
+
+    res = geo_enrich.run(10)
+    assert res["ok"] is False, "a dead IPLocate key must not report a successful run"
+    assert res["reason"] == "credential_rejected"
+    assert res["credential"] == "IPLOCATE_API_KEY"
+    assert res["enriched"] == 0
+    assert recorder == []
+
+
+def test_iplocate_classifies_401_but_not_429_or_5xx(monkeypatch):
+    """429 stays a rate limit and 5xx stays a transient outage — neither is a rejection."""
+    for code, expected in ((401, geo_enrich.CredentialRejected),
+                           (403, geo_enrich.CredentialRejected),
+                           (429, urllib.error.HTTPError),
+                           (503, urllib.error.HTTPError)):
+        def _boom(req, timeout=None, _c=code):
+            raise _http_error(_c, b"x")
+
+        monkeypatch.setattr(geo_enrich.urllib.request, "urlopen", _boom)
+        with pytest.raises(expected):
+            geo_enrich.iplocate("8.8.8.8")
+        if expected is urllib.error.HTTPError:
+            monkeypatch.setattr(geo_enrich.urllib.request, "urlopen", _boom)
+            with pytest.raises(urllib.error.HTTPError) as ex:
+                geo_enrich.iplocate("8.8.8.8")
+            assert not isinstance(ex.value, geo_enrich.CredentialRejected)
+
+
+def test_the_annotation_names_the_credential_that_was_actually_rejected(
+    configured, monkeypatch, capsys
+):
+    monkeypatch.setattr(geo_enrich, "pending_ips", lambda n: ["8.8.8.8"])
+
+    def _rejected(ip):
+        raise geo_enrich.CredentialRejected(401, "bad key", credential="IPLOCATE_API_KEY")
+
+    monkeypatch.setattr(geo_enrich, "iplocate", _rejected)
+    assert geo_enrich.main() != 0
+    line = [ln for ln in capsys.readouterr().out.splitlines() if ln.startswith("::error")][0]
+    assert "IPLOCATE_API_KEY" in line
+    assert "SUPABASE_ACCESS_TOKEN" not in line, "must not tell the operator to rotate the wrong secret"

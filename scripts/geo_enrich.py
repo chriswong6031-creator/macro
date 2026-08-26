@@ -59,10 +59,21 @@ class CredentialRejected(RuntimeError):
     (retried on the next tick). This one needs a human to rotate SUPABASE_ACCESS_TOKEN, so
     it is named loudly and is never counted as a per-IP failure — see run()."""
 
-    def __init__(self, code: int, detail: str = "") -> None:
+    def __init__(self, code: int, detail: str = "",
+                 credential: str = "SUPABASE_ACCESS_TOKEN") -> None:
         self.code = code
         self.detail = detail
-        super().__init__(f"Supabase Management API rejected SUPABASE_ACCESS_TOKEN (HTTP {code})")
+        self.credential = credential
+        super().__init__(f"{credential} was rejected (HTTP {code})")
+
+
+def _err_body(ex: urllib.error.HTTPError) -> str:
+    """Best-effort provider message. urllib discards this by default, which is why 13 days
+    of 401s never said whether Supabase or the Cloudflare edge was refusing us."""
+    try:
+        return ex.read().decode("utf-8", "replace")[:200]
+    except Exception:
+        return ""
 
 
 def _sql(query: str):
@@ -81,11 +92,7 @@ def _sql(query: str):
             body = r.read().decode()
     except urllib.error.HTTPError as ex:
         if ex.code in (401, 403):
-            try:
-                detail = ex.read().decode("utf-8", "replace")[:200]
-            except Exception:
-                detail = ""
-            raise CredentialRejected(ex.code, detail) from ex
+            raise CredentialRejected(ex.code, _err_body(ex)) from ex
         raise
     return json.loads(body) if body else []
 
@@ -143,8 +150,16 @@ def iplocate(ip: str) -> dict:
         f"?apikey={urllib.parse.quote(IPLOCATE_KEY)}"
     )
     req = urllib.request.Request(url, headers={"Accept": "application/json", "User-Agent": "mastermind-geo-enrich/1.0"})
-    with urllib.request.urlopen(req, timeout=15) as r:
-        return json.loads(r.read().decode())
+    try:
+        with urllib.request.urlopen(req, timeout=15) as r:
+            return json.loads(r.read().decode())
+    except urllib.error.HTTPError as ex:
+        if ex.code in (401, 403):
+            # A dead IPLocate key fails EVERY lookup identically. Left as a per-IP `failed`
+            # it would report a successful run that enriched nothing — the same false green
+            # the Supabase side of this boundary had. 429 stays a rate limit, not a rejection.
+            raise CredentialRejected(ex.code, _err_body(ex), credential="IPLOCATE_API_KEY") from ex
+        raise
 
 
 def upsert(ip: str, g: dict) -> None:
@@ -178,7 +193,7 @@ def upsert(ip: str, g: dict) -> None:
 def _credential_fault(ex: CredentialRejected, **counts) -> dict:
     """Terminal, named summary for a rejected credential — never ok, never swallowed."""
     return {"ok": False, "reason": "credential_rejected", "code": ex.code,
-            "detail": ex.detail, **counts}
+            "credential": ex.credential, "detail": ex.detail, **counts}
 
 
 def run(budget: int = DEFAULT_BUDGET) -> dict:
@@ -240,11 +255,14 @@ def main() -> int:
         # lane sat red for 13 days behind a bare urllib traceback that named neither the
         # credential nor the remedy. The annotation must START the line and be a bare print
         # — a logger prefix makes GitHub drop it silently.
+        cred = str(res.get("credential") or "SUPABASE_ACCESS_TOKEN")
+        hint = (" Supabase Management API PATs expire ~30 days after they are minted."
+                if cred == "SUPABASE_ACCESS_TOKEN" else "")
         print(
-            f"::error title=geo_enrich_credential::Supabase Management API rejected "
-            f"SUPABASE_ACCESS_TOKEN (HTTP {res.get('code')}) — the sbp_ Management API PAT is "
-            f"expired or revoked. ip_geo enrichment is FROZEN: analytics events keep arriving "
-            f"while their geography goes stale. Rotate the SUPABASE_ACCESS_TOKEN repo secret.",
+            f"::error title=geo_enrich_credential::{cred} was rejected by its provider "
+            f"(HTTP {res.get('code')}) — the key is present but expired or revoked. ip_geo "
+            f"enrichment is FROZEN: analytics events keep arriving while their geography goes "
+            f"stale. Rotate the {cred} repo secret.{hint}",
             flush=True,
         )
         detail = str(res.get("detail") or "").replace("\n", " ").replace("\r", " ").strip()
