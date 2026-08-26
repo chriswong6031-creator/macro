@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mastermindx.ai/contracts/intelligence_workspace/workspace_layout.v1.schema.json",
   "title": "DeepVue W2-A versioned workspace layout v1",
-  "description": "Canonical envelope for a named intelligence workspace (widgets + static link-group graph). See research/DEEPVUE_W2A_WORKSPACE_LAYOUT_CONTRACT_2026-08-26.md (as amended by Amendment A1 and Amendment A2). Structural shape only — cross-field laws (stored-vs-wire name law, duplicate widget ids, undeclared port references, size/count limits, honest provenance) are enforced by engine/intelligence_workspace/workspace_layout.py:validate_envelope, not by this schema alone. `requires` is OPTIONAL (Amendment A2 ruling 11: absent defaults to floor 1); `name` structurally allows a non-null string here because this schema also describes the wire/export shape — validate_envelope's stored mode is what actually requires `null`.",
+  "description": "Canonical envelope for a named intelligence workspace (widgets + static link-group graph). See research/DEEPVUE_W2A_WORKSPACE_LAYOUT_CONTRACT_2026-08-26.md (as amended by Amendment A1, Amendment A2, and Amendment A3). Structural shape only — cross-field laws (stored-vs-wire name law, duplicate widget ids, undeclared port references, size/count limits, honest provenance, error precedence) are enforced by engine/intelligence_workspace/workspace_layout.py:validate_envelope, not by this schema alone. `requires` is OPTIONAL (Amendment A2 ruling 11: absent defaults to floor 1); `name` structurally allows a non-null string here because this schema also describes the wire/export shape — validate_envelope's stored mode is what actually requires `null`. Amendment A3 ruling 2 (number law): integer fields are bounded to the IEEE-754 safe range (|n| <= 9007199254740991); `bounded_primitive`'s numeric minimum/maximum mirror that same outer envelope structurally — the NARROWER rule that a non-integral float must additionally satisfy 1e-4 <= |x| < 1e12 is a business rule this schema cannot express type-discriminately and is enforced authoritatively by validate_envelope.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema", "revision", "name", "link_groups", "widgets", "migration"],
@@ -12,10 +12,10 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "floor": {"type": "integer", "minimum": 1}
+        "floor": {"type": "integer", "minimum": 1, "maximum": 9007199254740991}
       }
     },
-    "revision": {"type": "integer", "minimum": 1},
+    "revision": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
     "name": {"type": ["string", "null"], "minLength": 1, "maxLength": 60},
     "link_groups": {
       "type": "object",
@@ -35,7 +35,7 @@
       "required": ["source", "source_revision"],
       "properties": {
         "source": {"enum": ["legacy_v0", "chart_layout_v1", "chart_layout_v2", "none", "import"]},
-        "source_revision": {"type": ["integer", "null"], "minimum": 1}
+        "source_revision": {"type": ["integer", "null"], "minimum": 1, "maximum": 9007199254740991}
       }
     }
   },
@@ -131,7 +131,13 @@
         {"$ref": "#/$defs/not_denied_key"}
       ]
     },
-    "bounded_primitive": {"type": ["string", "number", "boolean", "null"], "maxLength": 64},
+    "bounded_primitive": {
+      "type": ["string", "number", "boolean", "null"],
+      "maxLength": 64,
+      "minimum": -9007199254740991,
+      "maximum": 9007199254740991,
+      "description": "Amendment A3 ruling 2: the numeric envelope structurally mirrors the IEEE-754 safe-integer range; the narrower non-integral-float window (1e-4 <= |x| < 1e12) is enforced by validate_envelope, not expressible type-discriminately here."
+    },
     "param_value_d0": {"$ref": "#/$defs/bounded_primitive"},
     "param_value_d1": {
       "anyOf": [

@@ -75,7 +75,31 @@
     {
       "name": "legacy_v0_minimal.json",
       "sha256": "a0b825876db62d2df5a499fcf9495c952824725052d29a30f04e0378c2526dba"
+    },
+    {
+      "name": "tolerant_v2_activepane7.json",
+      "sha256": "587f08db08d3af710a38c2e51251db4ada30b1ede2c344d4787180d8cb839226"
+    },
+    {
+      "name": "tolerant_v2_charttype_empty.json",
+      "sha256": "e8297306f4dc30f76153ff9708a4cf70c665810310aab7bef004aa4a41d82521"
+    },
+    {
+      "name": "tolerant_v2_comparecfg_junk.json",
+      "sha256": "6cf049f2173ff0646fd86db8c78c59859cb35549d0d3d877decd74c966d5ad2a"
+    },
+    {
+      "name": "tolerant_v2_inds_mixed.json",
+      "sha256": "806034be8b1efdec588c8cf37834c49e07bfc0c551bc86a936ec8cffc6d75de2"
+    },
+    {
+      "name": "tolerant_v2_panes_empty.json",
+      "sha256": "2183aac8e68dcd25c7ee49ac03a1645b9d20ad4d926cce56b0f26a24b95d379d"
+    },
+    {
+      "name": "tolerant_v2_split3.json",
+      "sha256": "ce063c79db42b4fe33ef4ef68a03c63a3213b31f5e92a2fc7448cf26fb01b6a1"
     }
   ],
-  "vectors_digest": "d8bc519a3e2f959115724ed20d4b214d8a729afd1b0de2aaad21a02013af4e5d"
+  "vectors_digest": "593e6ad7eccd666c1507e237f3dead3bd2f5aadb6446d2be57bf3af00e4c98f3"
 }

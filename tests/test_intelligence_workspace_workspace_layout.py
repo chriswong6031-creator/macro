@@ -48,11 +48,12 @@ SCHEMA_PATH = REPO_ROOT / "contracts" / "intelligence_workspace" / "workspace_la
 
 # Pinned hard literal (contract §10/#SCOPE-item-3): a MANIFEST digest drift
 # without a matching edit here means the fixtures changed silently.
-# Re-pinned under Amendment A2 (2026-08-26, Phase 6 review of 8b4d326514f6):
-# real-runtime grammar (indicator id/param key/chart type/symbol patterns),
-# honest v1 provenance (source_revision null when schemaVersion was absent),
-# and the new `chart_layout_v2_real_capture` vector. Prior digests are void.
-PINNED_VECTORS_DIGEST = "d8bc519a3e2f959115724ed20d4b214d8a729afd1b0de2aaad21a02013af4e5d"
+# Re-pinned under Amendment A3 (2026-08-26, reviewer re-verification of
+# afe87f98750e): the six new `tolerant_v2_*` probe-C vectors (direction-scoped
+# lossless law, ruling 1). No existing vector's bytes changed — the number
+# law (ruling 2) and error precedence (ruling 3) touch no committed value.
+# Prior (A2) digest d8bc519a3e2f9591... is void.
+PINNED_VECTORS_DIGEST = "593e6ad7eccd666c1507e237f3dead3bd2f5aadb6446d2be57bf3af00e4c98f3"
 
 # The freeze doc's §1 canonical example, verbatim.
 FREEZE_SECTION_1_EXAMPLE = {
@@ -118,6 +119,17 @@ INVALID_VECTOR_NAMES = [
     "invalid_unknown_top_level_key.json",
     "invalid_unknown_chart_config_key.json",
     "invalid_non_dict_input.json",
+]
+
+# Amendment A3 ruling 1: the reviewer's probe-C family, one committed
+# tolerant-read (strict=False) vector per corrupted field.
+TOLERANT_VECTOR_NAMES = [
+    "tolerant_v2_split3.json",
+    "tolerant_v2_activepane7.json",
+    "tolerant_v2_panes_empty.json",
+    "tolerant_v2_inds_mixed.json",
+    "tolerant_v2_charttype_empty.json",
+    "tolerant_v2_comparecfg_junk.json",
 ]
 
 
@@ -430,10 +442,17 @@ def test_projection_refuses_a_non_string_row_name():
 
 
 def test_projection_on_hostile_non_mapping_envelope_refuses_rather_than_raising():
-    for hostile in (None, [], 1, "garbage", {"schema": {}}):
+    for hostile in (None, [], 1, "garbage"):
         result = wl.subscriber_safe_projection(hostile, "row-name")
-        assert result["ok"] is False
-        assert result["code"] == "malformed_workspace"
+        assert result == {"ok": False, "code": "malformed_workspace"}
+
+
+def test_projection_on_a_mapping_with_a_bad_schema_reports_unsupported_schema():
+    """Amendment A3 ruling 3: the schema-literal gate runs before ANYTHING
+    else, so a Mapping whose `schema` disagrees reports `unsupported_schema`
+    alone — never `malformed_workspace` from unrelated missing keys."""
+    result = wl.subscriber_safe_projection({"schema": {}}, "row-name")
+    assert result == {"ok": False, "code": "unsupported_schema"}
 
 
 # ---------------------------------------------------------------------------
@@ -859,3 +878,287 @@ def test_boolean_schema_version_two_is_never_treated_as_v2_either():
     # a non-plain-int schemaVersion must never satisfy the v2 recognizer.
     result = wl.migrate_legacy({"schemaVersion": 2.0, "panes": ["AAPL"]})
     assert result == {"ok": False, "code": "unsupported_schema"}
+
+
+# ---------------------------------------------------------------------------
+# Amendment A3 ruling 1: direction-scoped lossless law. WRITE/IMPORT
+# (`strict=True`, the default) keeps A2's lossless-or-refuse exactly.
+# READ/RENDER (`strict=False`) is per-field tolerant: a present-but-invalid
+# owned field becomes no-claim (absent) and is named in `unclaimed`; every
+# OTHER field stays intact; determinism holds in both modes.
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("name", TOLERANT_VECTOR_NAMES)
+def test_tolerant_vector_strict_mode_refuses(name):
+    vector = _load(name)
+    result = wl.migrate_legacy(vector["input"], strict=True)
+    assert result == {"ok": False, "code": "invalid_widget_config"}, name
+
+
+@pytest.mark.parametrize("name", TOLERANT_VECTOR_NAMES)
+def test_tolerant_vector_tolerant_mode_matches_committed_envelope_and_unclaimed(name):
+    vector = _load(name)
+    first = wl.migrate_legacy(vector["input"], strict=False)
+    second = wl.migrate_legacy(vector["input"], strict=False)
+    assert first == second, f"{name}: tolerant migration is not deterministic"
+    assert first["ok"] is True, (name, first)
+    assert first["envelope"] == vector["expected"], name
+    assert first["unclaimed"] == vector["expected_unclaimed"], name
+
+
+@pytest.mark.parametrize("name", TOLERANT_VECTOR_NAMES)
+def test_tolerant_vector_expected_envelope_passes_validate_envelope(name):
+    vector = _load(name)
+    result = wl.validate_envelope(vector["expected"])
+    assert result == {"ok": True, "errors": []}, (name, result)
+
+
+@pytest.mark.parametrize("name", TOLERANT_VECTOR_NAMES)
+def test_tolerant_vector_names_exactly_one_field_and_keeps_the_rest(name):
+    """Every probe-C vector corrupts exactly ONE owned field — the tolerant
+    migration must drop that ONE field and keep every other originally
+    valid field intact (never over-correct, never drop a second field)."""
+    vector = _load(name)
+    assert len(vector["expected_unclaimed"]) == 1, name
+    dropped_field = vector["expected_unclaimed"][0]
+    config = vector["expected"]["widgets"][0]["config"]
+    assert dropped_field not in config, name
+    # Every OTHER field present in the corrupted input (besides the source
+    # recognition keys) that is not the dropped one is still claimed.
+    base_fields = set(wl.CHART_CONFIG_FIELDS) & set(vector["input"].keys())
+    for field in base_fields - {dropped_field}:
+        assert field in config, (name, field)
+
+
+def test_strict_is_the_default_and_matches_the_pre_a3_call_shape():
+    """Existing callers (`migrate_legacy(config)`, one positional arg) must
+    keep getting exactly the A2 lossless-or-refuse shape — no `unclaimed`
+    key leaking into the strict/default return."""
+    result = wl.migrate_legacy({"panes": ["AAPL"], "split": 3})
+    assert result == {"ok": False, "code": "invalid_widget_config"}
+    ok_result = wl.migrate_legacy({"panes": ["AAPL"]})
+    assert set(ok_result.keys()) == {"ok", "envelope"}
+
+
+def test_tolerant_mode_on_a_fully_clean_input_returns_an_empty_unclaimed_list():
+    result = wl.migrate_legacy({"panes": ["AAPL"], "tf": "1D"}, strict=False)
+    assert result["ok"] is True
+    assert result["unclaimed"] == []
+
+
+def test_tolerant_mode_legacy_active_scalar_present_but_invalid_is_unclaimed():
+    """The legacy `active`->`panes` mapping is itself an owned field under
+    the direction-scoped law — tolerant mode no-claims it too."""
+    result = wl.migrate_legacy({"active": 12345, "tf": "1D"}, strict=False)
+    assert result["ok"] is True
+    assert result["unclaimed"] == ["panes"]
+    assert "panes" not in result["envelope"]["widgets"][0]["config"]
+    assert result["envelope"]["widgets"][0]["config"]["paneTfs"] == ["1D"]
+
+
+def test_tolerant_mode_legacy_tf_scalar_present_but_invalid_is_unclaimed():
+    result = wl.migrate_legacy({"active": "AAPL", "tf": 999}, strict=False)
+    assert result["ok"] is True
+    assert result["unclaimed"] == ["paneTfs"]
+    assert "paneTfs" not in result["envelope"]["widgets"][0]["config"]
+    assert result["envelope"]["widgets"][0]["config"]["panes"] == ["AAPL"]
+
+
+def test_tolerant_mode_never_raises_and_strict_mode_never_raises_either():
+    hostile_configs = [
+        {"panes": [1, 2, 3]},
+        {"schemaVersion": 2, "panes": {"nested": True}},
+        {"active": ["a", "b"]},
+    ]
+    for cfg in hostile_configs:
+        strict_result = wl.migrate_legacy(cfg, strict=True)
+        assert isinstance(strict_result, dict)
+        tolerant_result = wl.migrate_legacy(cfg, strict=False)
+        assert isinstance(tolerant_result, dict)
+
+
+# ---------------------------------------------------------------------------
+# Amendment A3 ruling 2: number law — integers bounded to the IEEE-754 safe
+# range everywhere numbers occur; non-integral floats valid only within
+# 1e-4 <= |x| < 1e12; integral floats still normalize to int.
+# ---------------------------------------------------------------------------
+
+def test_integer_beyond_the_safe_range_is_invalid_widget_config():
+    envelope = _widget_config(indParams={"ema21": {"period": 9007199254740993}})
+    result = wl.validate_envelope(envelope)
+    assert result["ok"] is False
+    assert "invalid_widget_config" in {e["code"] for e in result["errors"]}
+
+
+def test_integer_at_the_safe_range_boundary_is_valid():
+    envelope = _widget_config(indParams={"ema21": {"period": 9007199254740991}})
+    assert wl.validate_envelope(envelope) == {"ok": True, "errors": []}
+
+
+def test_revision_beyond_the_safe_range_is_malformed():
+    envelope = copy.deepcopy(FREEZE_SECTION_1_EXAMPLE)
+    envelope["revision"] = 2 ** 60
+    result = wl.validate_envelope(envelope)
+    assert result["ok"] is False
+    assert "malformed_workspace" in {e["code"] for e in result["errors"]}
+
+
+def test_source_revision_beyond_the_safe_range_is_malformed():
+    envelope = copy.deepcopy(FREEZE_SECTION_1_EXAMPLE)
+    envelope["migration"]["source_revision"] = 2 ** 60
+    result = wl.validate_envelope(envelope)
+    assert result["ok"] is False
+    assert "malformed_workspace" in {e["code"] for e in result["errors"]}
+
+
+def test_requires_floor_beyond_the_safe_range_is_malformed_not_unsupported():
+    """A truly malformed (astronomically large) floor is a NUMBER-LAW
+    violation (`malformed_workspace`), distinct from a well-formed floor
+    this reader merely doesn't support yet (`unsupported_floor`). The
+    field-level check fires at `$.requires.floor`; the same astronomical
+    value also trips the whole-envelope canonicalization backstop at `$`
+    (defense in depth — both report the same `malformed_workspace` code)."""
+    envelope = copy.deepcopy(FREEZE_SECTION_1_EXAMPLE)
+    envelope["requires"] = {"floor": 2 ** 60}
+    result = wl.validate_envelope(envelope)
+    assert result["ok"] is False
+    codes = {e["code"] for e in result["errors"]}
+    assert codes == {"malformed_workspace"}
+    paths = {e["path"] for e in result["errors"]}
+    assert "$.requires.floor" in paths
+
+
+def test_non_integral_float_just_below_the_floor_is_invalid():
+    envelope = _widget_config(indParams={"ema21": {"mult": 1e-5}})
+    result = wl.validate_envelope(envelope)
+    assert result["ok"] is False
+    assert "invalid_widget_config" in {e["code"] for e in result["errors"]}
+
+
+def test_non_integral_float_at_the_floor_boundary_is_valid():
+    envelope = _widget_config(indParams={"ema21": {"mult": 1e-4}})
+    assert wl.validate_envelope(envelope) == {"ok": True, "errors": []}
+
+
+def test_non_integral_float_at_the_ceiling_is_invalid():
+    """The ceiling is EXCLUSIVE (`< 1e12`), and applies only to NON-integral
+    floats — `1e12` itself has no fractional part (it IS the integer
+    1,000,000,000,000, safely within the integer bound), so the ceiling
+    must be probed with a value that is both >= 1e12 AND non-integral."""
+    envelope = _widget_config(indParams={"ema21": {"mult": 1_000_000_000_000.5}})
+    result = wl.validate_envelope(envelope)
+    assert result["ok"] is False
+    assert "invalid_widget_config" in {e["code"] for e in result["errors"]}
+
+
+def test_an_integral_valued_float_at_1e12_is_valid_as_an_integer():
+    """1e12 has no fractional part — it normalizes to the plain integer
+    1,000,000,000,000 and is judged against the (much wider) safe-integer
+    bound, not the narrower non-integral-float window."""
+    envelope = _widget_config(indParams={"ema21": {"mult": 1e12}})
+    assert wl.validate_envelope(envelope) == {"ok": True, "errors": []}
+
+
+def test_non_integral_float_just_below_the_ceiling_is_valid():
+    just_under_ceiling = 999999999999.9  # < 1e12, non-integral
+    assert just_under_ceiling < 1e12
+    envelope = _widget_config(indParams={"ema21": {"mult": just_under_ceiling}})
+    assert wl.validate_envelope(envelope) == {"ok": True, "errors": []}
+
+
+@pytest.mark.parametrize("value", [1.5, 0.0001, 123456.789])
+def test_representative_non_integral_floats_are_accepted(value):
+    envelope = _widget_config(indParams={"ema21": {"mult": value}})
+    assert wl.validate_envelope(envelope) == {"ok": True, "errors": []}
+
+
+def test_integral_float_still_normalizes_for_digest_purposes_under_a3():
+    with_float = {"a": 20.0}
+    with_int = {"a": 20}
+    assert wl.envelope_digest(with_float) == wl.envelope_digest(with_int)
+
+
+def test_integer_out_of_range_via_migrate_legacy_refuses():
+    result = wl.migrate_legacy({"panes": ["AAPL"], "indParams": {"ema21": {"period": 2 ** 60}}})
+    assert result == {"ok": False, "code": "invalid_widget_config"}
+
+
+def test_non_integral_float_out_of_range_via_migrate_legacy_tolerant_is_unclaimed():
+    result = wl.migrate_legacy(
+        {"panes": ["AAPL"], "indParams": {"ema21": {"mult": 1e-5}}}, strict=False,
+    )
+    assert result["ok"] is True
+    assert result["unclaimed"] == ["indParams"]
+
+
+# ---------------------------------------------------------------------------
+# Amendment A3 ruling 3: error precedence — schema literal FIRST (alone),
+# then `requires.floor` (alone), only then the general structural sweep. A
+# future/incompatible payload is never reported as merely malformed.
+# ---------------------------------------------------------------------------
+
+def test_future_schema_with_unknown_key_reports_unsupported_schema_alone():
+    envelope = {
+        "schema": "workspace_layout.v2",
+        "requires": {"floor": 1},
+        "revision": 1,
+        "name": None,
+        "link_groups": {},
+        "widgets": [],
+        "migration": {"source": "none", "source_revision": None},
+        "v2_new_field": 1,
+    }
+    result = wl.validate_envelope(envelope)
+    assert result == {"ok": False, "errors": [{"code": "unsupported_schema", "path": "$.schema"}]}
+
+
+def test_future_schema_with_unknown_key_reports_unsupported_schema_via_projection_too():
+    envelope = {
+        "schema": "workspace_layout.v2",
+        "requires": {"floor": 1},
+        "revision": 1,
+        "name": None,
+        "link_groups": {},
+        "widgets": [],
+        "migration": {"source": "none", "source_revision": None},
+        "v2_new_field": 1,
+    }
+    result = wl.subscriber_safe_projection(envelope, "row-name")
+    assert result == {"ok": False, "code": "unsupported_schema"}
+
+
+def test_unsupported_floor_with_unknown_key_reports_unsupported_floor_alone():
+    envelope = copy.deepcopy(FREEZE_SECTION_1_EXAMPLE)
+    envelope["requires"] = {"floor": 2}
+    envelope["some_future_top_level_field"] = 1
+    result = wl.validate_envelope(envelope)
+    assert result == {"ok": False, "errors": [{"code": "unsupported_floor", "path": "$.requires.floor"}]}
+
+
+def test_unsupported_floor_via_projection_reports_unsupported_floor_alone():
+    envelope = copy.deepcopy(FREEZE_SECTION_1_EXAMPLE)
+    envelope["requires"] = {"floor": 2}
+    result = wl.subscriber_safe_projection(envelope, "row-name")
+    assert result == {"ok": False, "code": "unsupported_floor"}
+
+
+def test_malformed_requires_shape_still_folds_into_the_general_sweep():
+    """A STRUCTURALLY bad `requires` (not merely an unsupported floor) is
+    NOT one of the two alone-gates — it reports through the general sweep,
+    same as any other structural defect."""
+    envelope = copy.deepcopy(FREEZE_SECTION_1_EXAMPLE)
+    envelope["requires"] = {"floor": 1, "ceiling": 9}
+    result = wl.validate_envelope(envelope)
+    assert result["ok"] is False
+    assert "malformed_workspace" in {e["code"] for e in result["errors"]}
+
+
+def test_well_formed_floor_within_support_never_short_circuits_other_errors():
+    """A floor of exactly 1 (supported) must NOT suppress genuine other
+    errors elsewhere in the object — only an UNSUPPORTED floor gets the
+    alone treatment."""
+    envelope = copy.deepcopy(FREEZE_SECTION_1_EXAMPLE)
+    envelope["widgets"][0]["semantic_lane"] = "bogus-lane"
+    result = wl.validate_envelope(envelope)
+    assert result["ok"] is False
+    assert "invalid_lane" in {e["code"] for e in result["errors"]}

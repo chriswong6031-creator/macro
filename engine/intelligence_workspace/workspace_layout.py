@@ -1,10 +1,15 @@
 """Deterministic W2-A versioned workspace layout contract (`workspace_layout.v1`).
 
 Frozen contract: research/DEEPVUE_W2A_WORKSPACE_LAYOUT_CONTRACT_2026-08-26.md
-(as amended by Amendment A1 — `lockedVLine`/`split` real-runtime types — and
+(as amended by Amendment A1 — `lockedVLine`/`split` real-runtime types —
 Amendment A2 — Phase 6 adversarial review rulings: real-runtime grammar,
 lossless-or-refuse migration, canonicalization, wire mode, fail-closed
-projection, key deny-list, optional `requires`, honest provenance).
+projection, key deny-list, optional `requires`, honest provenance — and
+Amendment A3 — direction-scoped lossless law (`migrate_legacy(..., strict=)`),
+IEEE-754-safe number bounds, and error precedence (schema-literal, then
+`requires.floor`, only then the general sweep). Amendment A3 rulings 4/5
+(follow-up-read-by-id, conversion-path ABA fence) are Terminal/Postgres-side
+law only — no Python artifact here carries them).
 
 This module is Macro's OWNED half of the W2-A ownership split (contract §10):
 the frozen vocabularies, a pure structural+cross-field validator, a reference
@@ -63,6 +68,14 @@ FLOOR_SUPPORTED = 1
 # below the per-indicator/per-symbol object inside indParams/compareCfg.
 MAX_PARAM_KEYS_PER_LEVEL = 64
 MAX_PARAM_NEST_DEPTH = 3
+# Amendment A3 ruling 2 (number law, completes A2 ruling 4): integers bounded
+# to the IEEE-754 safe range everywhere numbers occur (params, revision,
+# source_revision, grid); a non-integral float is valid only within
+# 1e-4 <= |x| < 1e12 — both languages' shortest-repr is exponent-free and
+# digit-identical in that window, which is exactly why it was chosen.
+MAX_SAFE_INT = 9007199254740991  # 2**53 - 1
+MIN_NONZERO_FLOAT_MAGNITUDE = 1e-4
+MAX_FLOAT_MAGNITUDE = 1e12  # exclusive upper bound
 
 # The 12 chart-config fields owned verbatim by the existing Terminal
 # chart-layout contract (contract §2). Order is the frozen canonical order
@@ -117,20 +130,37 @@ def _is_int(value: Any) -> bool:
     return isinstance(value, int) and not isinstance(value, bool)
 
 
+def _is_safe_int(value: Any) -> bool:
+    """Amendment A3 ruling 2: an integer within the IEEE-754 safe range
+    (|n| <= 2**53 - 1) — the bound applied everywhere a plain integer is
+    accepted (params, revision, source_revision, grid)."""
+    return _is_int(value) and abs(value) <= MAX_SAFE_INT
+
+
 def _is_denied_key(key: Any) -> bool:
     return key in _DENIED_KEYS
 
 
 def _is_bounded_primitive(value: Any) -> bool:
-    """A data-typed leaf value: bool/int/finite-float/None, or a string
-    <=64 chars. NaN/Infinity are never valid (Amendment A2 ruling 4) — no
-    executable payloads, no non-finite numerics, anywhere (contract §3)."""
+    """A data-typed leaf value: bool/safe-int/bounded-float/None, or a
+    string <=64 chars. NaN/Infinity are never valid (Amendment A2 ruling 4).
+    Amendment A3 ruling 2: a plain integer must be IEEE-754-safe
+    (|n| <= 2**53 - 1); an integral-valued float normalizes to that same
+    integer bound; a non-integral float is valid only within
+    1e-4 <= |x| < 1e12 (both languages' shortest-repr is exponent-free and
+    digit-identical there). No executable payloads, no non-finite or
+    unbounded numerics, anywhere (contract §3)."""
     if value is None or isinstance(value, bool):
         return True
     if isinstance(value, int):
-        return True
+        return abs(value) <= MAX_SAFE_INT
     if isinstance(value, float):
-        return math.isfinite(value)
+        if not math.isfinite(value):
+            return False
+        if value == int(value):
+            return abs(int(value)) <= MAX_SAFE_INT
+        magnitude = abs(value)
+        return MIN_NONZERO_FLOAT_MAGNITUDE <= magnitude < MAX_FLOAT_MAGNITUDE
     if isinstance(value, str):
         return len(value) <= 64
     return False
@@ -312,7 +342,7 @@ def _error(code: str, path: str) -> dict[str, str]:
 def _validate_grid(value: Any) -> bool:
     if not isinstance(value, dict) or set(value.keys()) != _GRID_KEYS:
         return False
-    return all(_is_int(value[key]) and 0 <= value[key] <= 64 for key in _GRID_KEYS)
+    return all(_is_safe_int(value[key]) and 0 <= value[key] <= 64 for key in _GRID_KEYS)
 
 
 def _validate_widget_config(widget_type: Any, config: Any, *, path: str) -> list[dict[str, str]]:
@@ -343,21 +373,35 @@ def _validate_widget_config(widget_type: Any, config: Any, *, path: str) -> list
 
 
 def _normalize_numeric(value: Any) -> Any:
-    """Amendment A2 ruling 4: integral-valued floats normalize to `int`
-    before canonical serialization (closes the Python `20.0` vs JS `20`
-    digest split — JS has no separate float type, so this asymmetry is
-    purely a Python artifact). Non-integral floats are left as-is (Python's
-    shortest-round-trip `repr`, used by `json.dumps`, already matches JS's
-    own shortest-repr algorithm for the general case). Raises `ValueError`
-    on a non-finite float — the caller is expected to treat that as
-    `malformed_workspace`, never to let it escape as an uncaught crash."""
+    """Amendment A2 ruling 4 + Amendment A3 ruling 2: integral-valued floats
+    normalize to `int` before canonical serialization (closes the Python
+    `20.0` vs JS `20` digest split — JS has no separate float type, so this
+    asymmetry is purely a Python artifact). Non-integral floats are left
+    as-is (Python's shortest-round-trip `repr`, used by `json.dumps`,
+    already matches JS's own shortest-repr algorithm for the general case).
+    This is also the canonicalization-time BACKSTOP for the number law
+    (field-level checks are the first line): raises `ValueError` on a
+    non-finite float, an integer/integral-float outside the IEEE-754 safe
+    range, or a non-integral float outside `1e-4 <= |x| < 1e12` — the
+    caller is expected to treat any of these as `malformed_workspace`,
+    never to let one escape as an uncaught crash."""
     if isinstance(value, bool):
+        return value
+    if isinstance(value, int):
+        if abs(value) > MAX_SAFE_INT:
+            raise ValueError("integer exceeds the IEEE-754 safe range")
         return value
     if isinstance(value, float):
         if not math.isfinite(value):
             raise ValueError("non-finite float is not a valid canonical value")
         if value == int(value):
-            return int(value)
+            as_int = int(value)
+            if abs(as_int) > MAX_SAFE_INT:
+                raise ValueError("integral float exceeds the IEEE-754 safe range")
+            return as_int
+        magnitude = abs(value)
+        if not (MIN_NONZERO_FLOAT_MAGNITUDE <= magnitude < MAX_FLOAT_MAGNITUDE):
+            raise ValueError("non-integral float outside the canonical magnitude window")
         return value
     if isinstance(value, dict):
         return {key: _normalize_numeric(sub) for key, sub in value.items()}
@@ -407,7 +451,7 @@ def _normalize_name(value: Any) -> str | None:
 def validate_envelope(obj: Any, wire: bool = False) -> dict[str, Any]:
     """Validate a `workspace_layout.v1` envelope: schema shape AND the
     cross-field laws the JSON Schema alone cannot express (contract §1-§8,
-    amended by A1/A2).
+    amended by A1/A2/A3).
 
     ``wire=False`` (default) is the STORED-row law: `name` must be `null`.
     ``wire=True`` (Amendment A2 ruling 5) is the wire/export law: `name` may
@@ -415,14 +459,48 @@ def validate_envelope(obj: Any, wire: bool = False) -> dict[str, Any]:
     ruling 14) — used to validate the read/export projection and import
     payloads, never the stored row itself.
 
+    Amendment A3 ruling 3 (error precedence): the `schema` literal is
+    checked FIRST — a mismatch returns `unsupported_schema` ALONE, before
+    any other issue in the object is even inspected. `requires.floor` is
+    checked SECOND — a well-formed but unsupported floor returns
+    `unsupported_floor` ALONE. Only once both gates pass does the general
+    structural sweep run. A future/incompatible payload therefore always
+    reports a single clean signal, never a stew mixed with unrelated
+    unknown-key noise.
+
     Returns ``{"ok": bool, "errors": [{"code": ..., "path": ...}]}``. Never
     raises — every branch is a type/membership check on already-untrusted
     input, fail-closed on anything unexpected.
     """
-    errors: list[dict[str, str]] = []
-
     if not isinstance(obj, Mapping):
         return {"ok": False, "errors": [_error("malformed_workspace", "$")]}
+
+    # --- Ruling 3, gate 1: schema literal, alone. ---------------------------
+    schema = obj.get("schema")
+    if schema != SCHEMA:
+        return {"ok": False, "errors": [_error("unsupported_schema", "$.schema")]}
+
+    # --- Ruling 3, gate 2: requires.floor, alone (Amendment A2 ruling 11:
+    # `requires`/`requires.floor` are optional — absent defaults to floor 1).
+    # A STRUCTURALLY malformed `requires` is not "unsupported", so it is
+    # remembered here and folded into the general sweep below instead of
+    # short-circuiting — only a well-formed-but-too-high floor gets the
+    # alone-and-immediate treatment.
+    requires = obj.get("requires", {})
+    requires_error: dict[str, str] | None = None
+    if not isinstance(requires, Mapping) or (set(requires.keys()) - {"floor"}):
+        requires_error = _error("malformed_workspace", "$.requires")
+    else:
+        floor = requires.get("floor", FLOOR_SUPPORTED)
+        if not _is_safe_int(floor) or floor < 1:
+            requires_error = _error("malformed_workspace", "$.requires.floor")
+        elif floor > FLOOR_SUPPORTED:
+            return {"ok": False, "errors": [_error("unsupported_floor", "$.requires.floor")]}
+
+    # --- Gate passed: the general structural sweep. -------------------------
+    errors: list[dict[str, str]] = []
+    if requires_error is not None:
+        errors.append(requires_error)
 
     for key in obj:
         if not isinstance(key, str) or key not in _TOP_LEVEL_KEYS:
@@ -431,27 +509,8 @@ def validate_envelope(obj: Any, wire: bool = False) -> dict[str, Any]:
         if key not in obj:
             errors.append(_error("malformed_workspace", f"$.{key}"))
 
-    schema = obj.get("schema")
-    if schema != SCHEMA:
-        errors.append(_error("unsupported_schema", "$.schema"))
-        # Nothing else here is safe to interpret as a workspace_layout.v1
-        # object once the schema tag itself disagrees.
-        return {"ok": False, "errors": errors}
-
-    # Amendment A2 ruling 11: `requires` (and `requires.floor`) are optional
-    # — absent defaults to floor 1.
-    requires = obj.get("requires", {})
-    if not isinstance(requires, Mapping) or (set(requires.keys()) - {"floor"}):
-        errors.append(_error("malformed_workspace", "$.requires"))
-    else:
-        floor = requires.get("floor", FLOOR_SUPPORTED)
-        if not _is_int(floor) or floor < 1:
-            errors.append(_error("malformed_workspace", "$.requires.floor"))
-        elif floor > FLOOR_SUPPORTED:
-            errors.append(_error("unsupported_floor", "$.requires.floor"))
-
     revision = obj.get("revision")
-    if not _is_int(revision) or revision < 1:
+    if not _is_safe_int(revision) or revision < 1:
         errors.append(_error("malformed_workspace", "$.revision"))
 
     name = obj.get("name")
@@ -551,8 +610,8 @@ def validate_envelope(obj: Any, wire: bool = False) -> dict[str, Any]:
         if source not in MIGRATION_SOURCES:
             errors.append(_error("malformed_workspace", "$.migration.source"))
         source_revision = migration.get("source_revision")
-        # Amendment A2 ruling 12: source_revision >= 1 (validator/schema agree).
-        if source_revision is not None and (not _is_int(source_revision) or source_revision < 1):
+        # Amendment A2 ruling 12 + A3 ruling 2: 1 <= source_revision <= safe int.
+        if source_revision is not None and (not _is_safe_int(source_revision) or source_revision < 1):
             errors.append(_error("malformed_workspace", "$.migration.source_revision"))
 
     try:
@@ -590,7 +649,7 @@ def _recognize_legacy(config: Mapping[str, Any]) -> tuple[str, int | None] | Non
     return None
 
 
-def migrate_legacy(config: Any) -> dict[str, Any]:
+def migrate_legacy(config: Any, strict: bool = True) -> dict[str, Any]:
     """Reference migration (contract §6): recognize an inbound legacy/native
     chart-layout shape and produce the canonical `workspace_layout.v1`
     envelope, or a structured failure. Never raises.
@@ -601,10 +660,28 @@ def migrate_legacy(config: Any) -> dict[str, Any]:
     was claimed (verbatim contract rule) — v2 never gets an injected
     default; it owns its own `sync` value or leaves it unclaimed.
 
-    Lossless-or-refuse (Amendment A2 ruling 2): a field the source format
-    OWNS but that fails its validator is never silently dropped — migration
-    refuses outright with `{"ok": False, "code": "invalid_widget_config"}`.
-    There is no third state between "migrated losslessly" and "refused".
+    Direction-scoped lossless law (Amendment A3 ruling 1, supersedes the
+    "no third state" sentence of A2 ruling 2):
+
+    - ``strict=True`` (the default — WRITE/IMPORT direction): lossless-or-
+      refuse, exactly as A2 froze it. A field the source format OWNS but
+      that fails its validator is never silently dropped — migration
+      refuses outright with ``{"ok": False, "code": "invalid_widget_config"}``.
+    - ``strict=False`` (READ/RENDER direction): per-field TOLERANT, mirroring
+      the shipped read boundary's own documented fallbacks. A present-but-
+      invalid owned field becomes no-claim (ABSENT, exactly as if it had
+      never been present) instead of refusing the whole migration, and its
+      canonical field name is appended to a returned ``unclaimed`` list —
+      ``{"ok": True, "envelope": ..., "unclaimed": [...]}`` (empty when
+      nothing was dropped). A bad field never makes a row unopenable in
+      this direction; the caller MUST surface a non-empty `unclaimed` to
+      the user in plain words before any subsequent save (a save is the
+      WRITE direction and reverts to `strict=True`).
+
+    The already-canonical passthrough (row 3 of the recognizer table) is
+    unaffected by `strict` — an already-`workspace_layout.v1` payload either
+    validates whole or refuses; there is no per-field claim concept for an
+    object already in the target shape.
     """
     if not isinstance(config, Mapping):
         return {"ok": False, "code": "malformed_workspace"}
@@ -623,36 +700,47 @@ def migrate_legacy(config: Any) -> dict[str, Any]:
     version = {"legacy_v0": 0, "chart_layout_v1": 1, "chart_layout_v2": 2}[source]
 
     claims: dict[str, Any] = {}
+    unclaimed: list[str] = []
     for field in CHART_CONFIG_FIELDS:
         if field in config:
             normalized = _CHART_FIELD_VALIDATORS[field](config[field])
             if normalized is _INVALID:
-                # Lossless-or-refuse: an owned field is PRESENT but invalid —
-                # refuse loudly rather than silently omit it (ruling 2).
-                return {"ok": False, "code": "invalid_widget_config"}
+                if strict:
+                    # Lossless-or-refuse: an owned field is PRESENT but
+                    # invalid — refuse loudly rather than silently omit it.
+                    return {"ok": False, "code": "invalid_widget_config"}
+                # Tolerant read: no-claim (absent) + named, never dropped
+                # silently.
+                unclaimed.append(field)
+                continue
             claims[field] = normalized
 
     # Legacy scalar -> canonical array mappings (contract §6, v0/v1 only):
     # only applied when the canonical array field was not already directly
     # claimed above, and never for v2 (which owns `panes`/`paneTfs` natively
     # and never carried the singular `active`/`tf` legacy keys). Same
-    # lossless-or-refuse law applies to these legacy-named owned fields.
+    # direction-scoped lossless law applies to these legacy-named owned
+    # fields.
     if version < 2 and "panes" not in claims and "active" in config:
         raw_active = config["active"]
-        if not isinstance(raw_active, str):
-            return {"ok": False, "code": "invalid_widget_config"}
-        normalized = _v_panes([raw_active])
+        normalized = _v_panes([raw_active]) if isinstance(raw_active, str) else _INVALID
         if normalized is _INVALID:
-            return {"ok": False, "code": "invalid_widget_config"}
-        claims["panes"] = normalized
+            if strict:
+                return {"ok": False, "code": "invalid_widget_config"}
+            if "panes" not in unclaimed:
+                unclaimed.append("panes")
+        else:
+            claims["panes"] = normalized
     if version < 2 and "paneTfs" not in claims and "tf" in config:
         raw_tf = config["tf"]
-        if not isinstance(raw_tf, str):
-            return {"ok": False, "code": "invalid_widget_config"}
-        normalized = _v_pane_tfs([raw_tf])
+        normalized = _v_pane_tfs([raw_tf]) if isinstance(raw_tf, str) else _INVALID
         if normalized is _INVALID:
-            return {"ok": False, "code": "invalid_widget_config"}
-        claims["paneTfs"] = normalized
+            if strict:
+                return {"ok": False, "code": "invalid_widget_config"}
+            if "paneTfs" not in unclaimed:
+                unclaimed.append("paneTfs")
+        else:
+            claims["paneTfs"] = normalized
 
     # sync defaults true ONLY when version<2 AND panes claimed (verbatim).
     if version < 2 and "panes" in claims and "sync" not in claims:
@@ -676,7 +764,9 @@ def migrate_legacy(config: Any) -> dict[str, Any]:
         ],
         "migration": {"source": source, "source_revision": source_revision},
     }
-    return {"ok": True, "envelope": envelope}
+    if strict:
+        return {"ok": True, "envelope": envelope}
+    return {"ok": True, "envelope": envelope, "unclaimed": unclaimed}
 
 
 def subscriber_safe_projection(envelope: Any, row_name: Any) -> dict[str, Any]:
