@@ -114,6 +114,21 @@ double-family homing, residual re-derivation, cause-from-ε, identity laundering
 Prophet/Radar leakage, look-ahead, LLM origination) are killed executable-first —
 each with a fixture that fails today, not a prose warning that decays.
 
+A second independent red-team then attacked the repair itself and returned
+STATUS: FAIL — the durable lesson being that the first repair had added the
+right vocabulary while leaving the enforcement reachable around it. Two examples
+worth carrying forward. A construct's NAME was the only thing separating the
+entry-actionability owner from board admission, because `prophet_entry_signal`
+and `prophet_board_lane` share family binding, derivation, and clock classes and
+nothing compared a slot's `owner_ref` to its registry pin: a slot could wear the
+other owner's name, carry the other owner's payload, and satisfy the Entry
+Availability leg with zero findings. And recomputing the `market_reflection`
+denominator proved nothing while the leg SET itself was caller-controlled —
+deleting the five adverse legs reported 2-of-7 coverage as 2/2 = 100%. The
+general rule this contract now encodes: **recomputing an aggregate is integrity
+only if the population it counts over is itself fixed**, and **a registry pin
+that nothing compares against is documentation, not a constraint.**
+
 Sol's REQUEST_CHANGES sharpened three places where the first cut typed a fact
 without proving it. The decision clock is the load-bearing one: a vector whose t0
 can be asserted by a caller string is a vector whose entire PIT discipline rests on

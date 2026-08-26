@@ -93,7 +93,7 @@ verified:
     result: 0 errors (inherited repository warnings only).
   - claim: The contract suite (mutation kills, family join, K1 pins, determinism, no-store) is green on the final candidate.
     command: python3 -m pytest -q tests/test_opportunity_evidence_vector_contract.py
-    result: 84 passed (post-Sol-repair; includes the 22 REQUEST_CHANGES proofs).
+    result: 100 passed (post-second-red-team; 22 Sol REQUEST_CHANGES proofs + 16 RT2 regression proofs).
   - claim: Every hostile fixture fires its commissioned code and every golden validates clean, verified independently of the suite's own assertions.
     command: python3 -c "import json,glob; from lib.opportunity_evidence import validate_vector; ..." (direct validate_vector sweep over tests/fixtures/opportunity_evidence/)
     result: >
@@ -111,6 +111,16 @@ verified:
   - claim: An independent opus red-team attacked the artifact across six lines; every finding was adjudicated and repaired.
     command: routed opus reviewer, findings 3 BLOCKER / 6 MAJOR / 5 MINOR
     result: all repaired or dispositioned; full table in the freeze packet §7.1.
+  - claim: A SECOND independent opus red-team attacked the Sol repair itself and returned STATUS FAIL; every finding was reproduced locally before repair, and every exploit re-run against the fix.
+    command: routed opus reviewer (2 BLOCKER / 6 MAJOR / 4 MINOR / 2 NIT); exploits re-run via direct validate_vector probes
+    result: >
+      Sol items 2 and 3 were satisfied in VOCABULARY, not in substance. B1: a slot
+      named prophet_entry_signal carrying board admission's payload AND owner_ref
+      satisfied the Entry Availability leg with zero findings (only the construct
+      NAME differed). B2: the market_reflection leg SET was attacker-controlled, so
+      its recomputed denominator proved nothing — deleting the five adverse legs
+      reported 2/7 coverage as 2/2 = 100%. Both closed; full disposition with
+      per-finding regression tests in freeze packet §7.3.
 unverified:
   - claim: Sol accepts the K3-E freeze clause-by-clause.
     what_would_verify: Sol's ACCEPT (or exact amendments) against the exact re-parked head of PR #6417. Sol's first review returned REQUEST_CHANGES on head ac2be650a360 with three required repairs; all three are repaired on the same carrier (freeze packet §7.2) and await the next ruling.
@@ -138,6 +148,9 @@ do_not_redo:
   - Do not mint a second K3-E carrier, workstream, or opportunity-vector schema.
   - Do not re-introduce a caller-asserted t0 (a free-string t0_source_object or a caller_named_pit_object source). Sol ruled the decision clock must be authenticated against an immutable owner-backed PIT reference; every lawful t0_source needs a registry t0_sources pin.
   - Do not let Prophet board admission (lane / buyable / eligible) satisfy the Entry Availability leg, and do not read Radar probe admission as a trade-entry verdict. The actionability owner is prophet_entry_signal and nothing else; admission_context owns no leg.
+  - Do not weaken the registry-pin enforcement on owner_ref/object_class (K3E_R008). Construct NAME alone once separated the actionability owner from board admission, and a slot wearing the wrong owner's name defeated Sol item 3 with zero findings.
+  - Do not re-introduce a variable market_reflection leg set. The seven I1-I7 legs are fixed, exactly once, in order; a recomputed denominator over an attacker-controlled leg set is not integrity (deleting the adverse legs reported 2/7 coverage as 100%).
+  - Do not claim owner_pit_reference VERIFIES anything. It is an accountability receipt (a committed, falsifiable digest); its owner_store and clock class are caller-declared. Verifying a digest needs an owner-read seam this contract deliberately lacks.
   - Do not build a data/opportunity_vector/ store or extend the US Context Vector producer for this object without its own commission.
   - Do not re-derive residuals, re-home fusion columns, or add any composite/scalar field to the wire (v2 + promotion ruling required).
   - Do not confuse this with the K3E Expectation-Market-Dynamics child program; both stand.
