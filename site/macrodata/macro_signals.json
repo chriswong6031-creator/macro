@@ -1,15 +1,15 @@
 {
   "date": "2026-08-25",
-  "generated_utc": "2026-08-26 02:47",
+  "generated_utc": "2026-08-26 03:45",
   "business_cycle": {
     "available": true,
     "asof": "2026-08-31",
     "tiers": {
       "leading": {
         "asof": "2026-08-31",
-        "index": 94.90763362796035,
-        "mom6": 0.6274376742847636,
-        "trend": 0.5773931977443677,
+        "index": 94.90763362796034,
+        "mom6": 0.6274376742847494,
+        "trend": 0.5773931977443649,
         "diffusion": 100.0,
         "n_legs": 4,
         "direction": "rising",
@@ -4165,7 +4165,7 @@
       "initial_claims_4wk": 204000.0,
       "continued_claims": 1799000.0,
       "claims_yoy_pct": -11.49674620390455,
-      "claims_z": -1.645662005809066,
+      "claims_z": -1.6456620058092406,
       "claims_trend": "falling",
       "indeed_postings": 101.79,
       "indeed_chg_3m_pct": 0.6327236777063705,
@@ -4198,22 +4198,22 @@
       "read": "persistent (sticky-led)"
     },
     "risk_appetite": {
-      "vrp": 2.494462648274837,
+      "vrp": 2.4944626482748404,
       "vrp_pctile": 0.29365079365079366,
       "vrp_state": "normal",
-      "realized_vol": 12.9555371609903,
+      "realized_vol": 12.955537160990296,
       "vix_term": 0.8484349580467073,
       "vix_term_state": "contango (calm)",
       "vix_term_lead_lag": "coincident",
       "skew": 145.64,
       "skew_pctile": 0.4732142857142857,
-      "stock_bond_corr": 0.4276926352933341,
+      "stock_bond_corr": 0.42769263529333446,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 0.9167622808628496,
+      "roro": 0.9167622808628819,
       "roro_state": "risk-on",
-      "vol_target_scalar": 0.9262448828546095,
+      "vol_target_scalar": 0.9262448828546097,
       "news_sentiment": -0.0009430021164007485,
-      "news_sentiment_z": 0.5204880888152151,
+      "news_sentiment_z": 0.5204880888152165,
       "news_sentiment_state": "pessimistic"
     },
     "drawdown_risk": {
@@ -4353,7 +4353,7 @@
   "fear_euphoria": {
     "fe_score": 98,
     "band": "Euphoria",
-    "roro": 0.9167622808628496,
+    "roro": 0.9167622808628819,
     "roro_state": "risk-on",
     "legs": [
       {

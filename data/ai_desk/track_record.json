@@ -1,16 +1,16 @@
 {
   "schema": "ai_desk_track_record.v1",
-  "as_of": "2026-08-24",
-  "scored_total": 47,
-  "open": 12,
+  "as_of": "2026-08-25",
+  "scored_total": 48,
+  "open": 11,
   "unscored_soft": 0,
   "expired": 0,
   "overall": {
-    "n": 47,
-    "hits": 44,
+    "n": 48,
+    "hits": 45,
     "misses": 3,
-    "hit_rate": 0.936,
-    "dir_accuracy": 0.66
+    "hit_rate": 0.938,
+    "dir_accuracy": 0.667
   },
   "by_conviction": {
     "high": {
@@ -28,20 +28,20 @@
       "dir_accuracy": null
     },
     "low": {
-      "n": 47,
-      "hits": 44,
+      "n": 48,
+      "hits": 45,
       "misses": 3,
-      "hit_rate": 0.936,
-      "dir_accuracy": 0.66
+      "hit_rate": 0.938,
+      "dir_accuracy": 0.667
     }
   },
   "by_kind": {
     "rel_return": {
-      "n": 44,
-      "hits": 44,
+      "n": 45,
+      "hits": 45,
       "misses": 0,
       "hit_rate": 1.0,
-      "dir_accuracy": 0.659
+      "dir_accuracy": 0.667
     },
     "level": {
       "n": 3,
@@ -53,15 +53,24 @@
   },
   "by_regime": {
     "Goldilocks": {
-      "n": 40,
-      "hits": 39,
+      "n": 41,
+      "hits": 40,
       "misses": 1,
-      "hit_rate": 0.975,
-      "dir_accuracy": 0.625
+      "hit_rate": 0.976,
+      "dir_accuracy": 0.634
     }
   },
-  "calibration_note": "47 scored, hit-rate 0.936 (directional accuracy 0.66). Chance alone would land a hit-rate near 0.8932 (directional accuracy near 0.4906) on these exact conditions \u2014 judge the numbers above against that bar, not one-half.",
+  "calibration_note": "48 scored, hit-rate 0.938 (directional accuracy 0.667). Chance alone would land a hit-rate near 0.8922 (directional accuracy near 0.4889) on these exact conditions \u2014 judge the numbers above against that bar, not one-half.",
   "recent": [
+    {
+      "id": "2026-07-14-3",
+      "subject": "Utilities",
+      "lean": "avoid",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": -0.0751,
+      "check_by": "2026-08-25"
+    },
     {
       "id": "2026-07-13-3",
       "subject": "Real Estate",
@@ -142,16 +151,7 @@
       "outcome": "hit",
       "realized": -0.0158,
       "check_by": "2026-08-12"
-    },
-    {
-      "id": "2026-07-15-2",
-      "subject": "Consumer Discretionary",
-      "lean": "avoid",
-      "conviction": "low",
-      "outcome": "hit",
-      "realized": -0.0158,
-      "check_by": "2026-08-12"
     }
   ],
-  "calibration_note_zh": "\u5df2\u8bc4\u5206 47 \u6761\uff0c\u547d\u4e2d\u7387 0.936\uff08\u65b9\u5411\u51c6\u786e\u7387 0.66\uff09\u3002\u540c\u6837\u6761\u4ef6\u4e0b\uff0c\u65e0\u6280\u80fd\u5224\u65ad\u51ed\u673a\u4f1a\u5373\u53ef\u8fbe\u5230\u7ea6 0.8932 \u7684\u547d\u4e2d\u7387\uff08\u65b9\u5411\u51c6\u786e\u7387\u7ea6 0.4906\uff09\u2014\u2014\u4e0a\u8ff0\u6570\u5b57\u5e94\u4e0e\u8be5\u57fa\u7ebf\u6bd4\u8f83\uff0c\u800c\u975e 0.5\u3002"
+  "calibration_note_zh": "\u5df2\u8bc4\u5206 48 \u6761\uff0c\u547d\u4e2d\u7387 0.938\uff08\u65b9\u5411\u51c6\u786e\u7387 0.667\uff09\u3002\u540c\u6837\u6761\u4ef6\u4e0b\uff0c\u65e0\u6280\u80fd\u5224\u65ad\u51ed\u673a\u4f1a\u5373\u53ef\u8fbe\u5230\u7ea6 0.8922 \u7684\u547d\u4e2d\u7387\uff08\u65b9\u5411\u51c6\u786e\u7387\u7ea6 0.4889\uff09\u2014\u2014\u4e0a\u8ff0\u6570\u5b57\u5e94\u4e0e\u8be5\u57fa\u7ebf\u6bd4\u8f83\uff0c\u800c\u975e 0.5\u3002"
 }

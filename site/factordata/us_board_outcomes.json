@@ -1,5 +1,5 @@
 {
- "as_of": "2026-08-24",
+ "as_of": "2026-08-25",
  "rows": [
   {
    "ticker": "U",
@@ -340,6 +340,19 @@
    "lane": "buy"
   },
   {
+   "ticker": "COIN",
+   "sector": "Financials",
+   "first_surfaced": "2026-08-19",
+   "surfaced_price": 172.35,
+   "last_price": 186.49,
+   "pct_since": 8.2,
+   "days_on_board": 2,
+   "exit_date": "2026-08-21",
+   "mark_date": "2026-08-21",
+   "status": "running",
+   "lane": "buy"
+  },
+  {
    "ticker": "DKNG",
    "sector": "Consumer Discretionary",
    "first_surfaced": "2026-08-13",
@@ -532,19 +545,6 @@
    "exit_date": "2026-08-07",
    "mark_date": "2026-08-07",
    "status": "running",
-   "lane": "buy"
-  },
-  {
-   "ticker": "GLXY",
-   "sector": "Financials",
-   "first_surfaced": "2026-08-14",
-   "surfaced_price": 21.87,
-   "last_price": 20.43,
-   "pct_since": -6.6,
-   "days_on_board": 3,
-   "exit_date": "2026-08-18",
-   "mark_date": "2026-08-18",
-   "status": "stopped",
    "lane": "buy"
   },
   {
@@ -783,24 +783,28 @@
   }
  ],
  "summary": {
-  "n_running": 78,
+  "n_running": 77,
   "n_stopped": 89,
-  "n_flat": 318,
-  "n_total": 485,
+  "n_flat": 303,
+  "n_total": 469,
   "n_shown": 60,
   "median_pct": 0.0,
-  "n_skipped_no_price": 8,
+  "n_skipped_no_price": 12,
   "skipped_no_price": [
+   "AM",
    "BRX",
    "CAR",
    "CE",
    "DAR",
    "EGP",
+   "ELS",
    "EZPW",
+   "FCN",
+   "MAT",
    "NYT",
    "RRX"
   ],
-  "win_rate": 0.161,
+  "win_rate": 0.164,
   "avg_pct": 0.0,
   "conventions": {
    "entry": "next session's close after first_surfaced (the surfaced bar is the bar the board is computed from \u2014 unbuyable)",

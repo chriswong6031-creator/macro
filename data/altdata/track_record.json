@@ -1,16 +1,16 @@
 {
   "schema": "altdata_track_record.v1",
-  "as_of": "2026-08-24",
-  "scored_total": 92,
-  "open": 449,
+  "as_of": "2026-08-25",
+  "scored_total": 94,
+  "open": 453,
   "unscored_soft": 0,
   "expired": 0,
   "overall": {
-    "n": 92,
-    "hits": 63,
-    "misses": 29,
-    "hit_rate": 0.685,
-    "dir_accuracy": 0.467
+    "n": 94,
+    "hits": 64,
+    "misses": 30,
+    "hit_rate": 0.681,
+    "dir_accuracy": 0.457
   },
   "by_conviction": {
     "high": {
@@ -28,20 +28,20 @@
       "dir_accuracy": null
     },
     "low": {
-      "n": 92,
-      "hits": 63,
-      "misses": 29,
-      "hit_rate": 0.685,
-      "dir_accuracy": 0.467
+      "n": 94,
+      "hits": 64,
+      "misses": 30,
+      "hit_rate": 0.681,
+      "dir_accuracy": 0.457
     }
   },
   "by_kind": {
     "rel_return": {
-      "n": 92,
-      "hits": 63,
-      "misses": 29,
-      "hit_rate": 0.685,
-      "dir_accuracy": 0.467
+      "n": 94,
+      "hits": 64,
+      "misses": 30,
+      "hit_rate": 0.681,
+      "dir_accuracy": 0.457
     },
     "level": {
       "n": 0,
@@ -52,8 +52,26 @@
     }
   },
   "by_regime": {},
-  "calibration_note": "92 scored, hit-rate 0.685 (directional accuracy 0.467).",
+  "calibration_note": "94 scored, hit-rate 0.681 (directional accuracy 0.457).",
   "recent": [
+    {
+      "id": "2026-07-27-QBTS-altconv",
+      "subject": "QBTS alt-data convergence",
+      "lean": "overweight",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": -0.0445,
+      "check_by": "2026-08-25"
+    },
+    {
+      "id": "2026-07-27-TDG-altconv",
+      "subject": "TDG alt-data convergence",
+      "lean": "overweight",
+      "conviction": "low",
+      "outcome": "miss",
+      "realized": -0.1091,
+      "check_by": "2026-08-25"
+    },
     {
       "id": "2026-07-25-BAC-altconv",
       "subject": "BAC alt-data convergence",
@@ -125,26 +143,8 @@
       "outcome": "miss",
       "realized": -0.181,
       "check_by": "2026-08-19"
-    },
-    {
-      "id": "2026-07-21-INTC-altconv",
-      "subject": "INTC alt-data convergence",
-      "lean": "overweight",
-      "conviction": "low",
-      "outcome": "miss",
-      "realized": -0.1477,
-      "check_by": "2026-08-19"
-    },
-    {
-      "id": "2026-07-20-AMT-altconv",
-      "subject": "AMT alt-data convergence",
-      "lean": "overweight",
-      "conviction": "low",
-      "outcome": "hit",
-      "realized": -0.0026,
-      "check_by": "2026-08-18"
     }
   ],
-  "calibration_note_zh": "\u5df2\u8bc4\u5206 92 \u6761\uff0c\u547d\u4e2d\u7387 0.685\uff08\u65b9\u5411\u51c6\u786e\u7387 0.467\uff09\u3002",
+  "calibration_note_zh": "\u5df2\u8bc4\u5206 94 \u6761\uff0c\u547d\u4e2d\u7387 0.681\uff08\u65b9\u5411\u51c6\u786e\u7387 0.457\uff09\u3002",
   "note": "Alt-data convergence theses graded vs SPY. Context-only \u2014 the signal earns a scored vote only once this track record shows forward edge."
 }

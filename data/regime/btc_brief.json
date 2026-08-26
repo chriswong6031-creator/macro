@@ -2,9 +2,9 @@
   "schema": "master_brief.v2",
   "lens": "btc",
   "is_context_only": true,
-  "generated_at": "2026-08-22T05:15:15.869537+00:00",
+  "generated_at": "2026-08-26T05:38:13.381258+00:00",
   "model": "deepseek-v4-pro",
-  "state_asof": "2026-08-21",
+  "state_asof": "2026-08-25",
   "tldr": [],
   "summary": null,
   "regime_read": null,
@@ -25,16 +25,16 @@
       "key": "system",
       "label_en": "System stance",
       "label_zh": "\u7cfb\u7edf\u59ff\u6001",
-      "value_en": "Distribute",
-      "value_zh": "\u7cfb\u7edf\u51cf\u6301",
-      "tone": "warn"
+      "value_en": "Risk-On",
+      "value_zh": "Risk-On",
+      "tone": "neutral"
     },
     {
       "key": "cycle",
       "label_en": "Cycle clock",
       "label_zh": "\u5468\u671f\u65f6\u949f",
-      "value_en": "Late decline \u00b7 ~88% through",
-      "value_zh": "\u4e0b\u884c\u540e\u6bb5 \u00b7 \u7ea688%\u8fdb\u5ea6",
+      "value_en": "Late decline \u00b7 ~89% through",
+      "value_zh": "\u4e0b\u884c\u540e\u6bb5 \u00b7 \u7ea689%\u8fdb\u5ea6",
       "tone": "warn"
     },
     {

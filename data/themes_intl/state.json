@@ -5,14 +5,7 @@
       "displayed": "intl_mining",
       "pending": null
     },
-    "reco": {
-      "intl_pharma": {
-        "bucket": "2026-08-24",
-        "count": 1,
-        "from": "hold",
-        "to": "accumulate"
-      }
-    }
+    "reco": {}
   },
   "intl_automation": {
     "label": "deteriorating",
@@ -20,15 +13,15 @@
     "name_zh": "\u5de5\u4e1a\u81ea\u52a8\u5316\u4e0e\u673a\u68b0",
     "rank": 13,
     "reco": "avoid",
-    "score": 46
+    "score": 48
   },
   "intl_autos": {
-    "label": "neutral",
+    "label": "deteriorating",
     "name": "Autos & Mobility",
     "name_zh": "\u6c7d\u8f66\u4e0e\u51fa\u884c",
-    "rank": 4,
-    "reco": "hold",
-    "score": 58
+    "rank": 6,
+    "reco": "avoid",
+    "score": 57
   },
   "intl_banks": {
     "label": "deteriorating",
@@ -36,63 +29,63 @@
     "name_zh": "\u5168\u7403\u94f6\u884c",
     "rank": 15,
     "reco": "avoid",
-    "score": 42
+    "score": 46
   },
   "intl_defense": {
-    "label": "neutral",
+    "label": "deteriorating",
     "name": "Defense & Aerospace",
     "name_zh": "\u56fd\u9632\u4e0e\u822a\u7a7a\u822a\u5929",
-    "rank": 16,
-    "reco": "hold",
-    "score": 41
+    "rank": 17,
+    "reco": "avoid",
+    "score": 42
   },
   "intl_energy": {
-    "label": "neutral",
+    "label": "deteriorating",
     "name": "Global Energy",
     "name_zh": "\u5168\u7403\u80fd\u6e90",
-    "rank": 5,
-    "reco": "hold",
-    "score": 58
+    "rank": 7,
+    "reco": "avoid",
+    "score": 56
   },
   "intl_india": {
-    "label": "neutral",
+    "label": "deteriorating",
     "name": "India Growth",
     "name_zh": "\u5370\u5ea6\u6210\u957f",
-    "rank": 9,
-    "reco": "hold",
-    "score": 51
+    "rank": 10,
+    "reco": "avoid",
+    "score": 52
   },
   "intl_insurers": {
     "label": "deteriorating",
     "name": "Insurers & Diversified Financials",
     "name_zh": "\u4fdd\u9669\u4e0e\u591a\u5143\u91d1\u878d",
-    "rank": 17,
+    "rank": 12,
     "reco": "avoid",
-    "score": 34
+    "score": 49
   },
   "intl_japan": {
     "label": "neutral",
     "name": "Japan Inc.",
     "name_zh": "\u65e5\u672c\u4f01\u4e1a",
-    "rank": 14,
+    "rank": 11,
     "reco": "hold",
-    "score": 46
+    "score": 50
   },
   "intl_korea": {
     "label": "neutral",
     "name": "Korea Tech & Industry",
     "name_zh": "\u97e9\u56fd\u79d1\u6280\u4e0e\u5de5\u4e1a",
-    "rank": 12,
+    "rank": 3,
     "reco": "hold",
-    "score": 48
+    "score": 60
   },
   "intl_luxury": {
-    "label": "neutral",
+    "label": "deteriorating",
     "name": "Luxury & Premium Brands",
     "name_zh": "\u5962\u4f88\u54c1\u4e0e\u9ad8\u7aef\u54c1\u724c",
-    "rank": 7,
-    "reco": "hold",
-    "score": 54
+    "rank": 16,
+    "reco": "avoid",
+    "score": 45
   },
   "intl_mining": {
     "label": "dominant",
@@ -100,54 +93,54 @@
     "name_zh": "\u77ff\u4e1a\u4e0e\u91d1\u5c5e",
     "rank": 1,
     "reco": "accumulate",
-    "score": 72
+    "score": 66
   },
   "intl_pharma": {
-    "label": "dominant",
+    "label": "deteriorating",
     "name": "Global Pharma & Healthcare",
     "name_zh": "\u5168\u7403\u5236\u836f\u4e0e\u533b\u7597",
-    "rank": 2,
-    "reco": "accumulate",
-    "score": 62
+    "rank": 4,
+    "reco": "avoid",
+    "score": 59
   },
   "intl_semis": {
-    "label": "deteriorating",
+    "label": "neutral",
     "name": "Global Semiconductors",
     "name_zh": "\u5168\u7403\u534a\u5bfc\u4f53",
-    "rank": 11,
-    "reco": "avoid",
-    "score": 48
+    "rank": 2,
+    "reco": "hold",
+    "score": 60
   },
   "intl_software": {
     "label": "neutral",
     "name": "Software & IT Services",
     "name_zh": "\u8f6f\u4ef6\u4e0eIT\u670d\u52a1",
-    "rank": 3,
+    "rank": 9,
     "reco": "hold",
-    "score": 60
+    "score": 53
   },
   "intl_tech_hw": {
     "label": "neutral",
     "name": "Tech Hardware & Components",
     "name_zh": "\u79d1\u6280\u786c\u4ef6\u4e0e\u96f6\u90e8\u4ef6",
-    "rank": 6,
+    "rank": 5,
     "reco": "hold",
-    "score": 55
+    "score": 58
   },
   "intl_telecom": {
-    "label": "neutral",
+    "label": "deteriorating",
     "name": "Telecom, Media & Internet",
     "name_zh": "\u7535\u4fe1\u5a92\u4f53\u4e0e\u4e92\u8054\u7f51",
     "rank": 8,
-    "reco": "hold",
-    "score": 53
+    "reco": "avoid",
+    "score": 54
   },
   "intl_uk": {
     "label": "deteriorating",
     "name": "UK Blue Chips",
     "name_zh": "\u82f1\u56fd\u84dd\u7b79",
-    "rank": 10,
+    "rank": 14,
     "reco": "avoid",
-    "score": 50
+    "score": 47
   }
 }

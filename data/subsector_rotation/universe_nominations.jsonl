@@ -33,3 +33,4 @@
 {"date":"2026-08-24","theme":"Big Data","donor":"bigdatainfrastructure","receiver":"bigdataproviders","confidence":0.366,"both_confirmed":false}
 {"date":"2026-08-24","theme":"Digital Entertainment","donor":"entertainmentinfrastructure","receiver":"entertainmentmusic","confidence":0.32,"both_confirmed":false}
 {"date":"2026-08-24","theme":"Electric Vehicles","donor":"evschips","receiver":"evsfleets","confidence":0.319,"both_confirmed":false}
+{"date":"2026-08-25","theme":"Digital Entertainment","donor":"entertainmentinfrastructure","receiver":"entertainmentgambling","confidence":0.321,"both_confirmed":false}
