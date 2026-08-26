@@ -78,28 +78,28 @@
     },
     {
       "name": "tolerant_v2_activepane7.json",
-      "sha256": "587f08db08d3af710a38c2e51251db4ada30b1ede2c344d4787180d8cb839226"
+      "sha256": "c274dd8e7572a440332fc9c18d22dfeb294d2b4848aba90ac4b087d371d20487"
     },
     {
       "name": "tolerant_v2_charttype_empty.json",
-      "sha256": "e8297306f4dc30f76153ff9708a4cf70c665810310aab7bef004aa4a41d82521"
+      "sha256": "2ced6f319d5a30434ff770b002781b45c2945900b10ca25680c48307468ed403"
     },
     {
       "name": "tolerant_v2_comparecfg_junk.json",
-      "sha256": "6cf049f2173ff0646fd86db8c78c59859cb35549d0d3d877decd74c966d5ad2a"
+      "sha256": "3e637a103dab2f9528c52ddbafeb5c8cecd890e97c563cad1cbdd729d6523210"
     },
     {
       "name": "tolerant_v2_inds_mixed.json",
-      "sha256": "806034be8b1efdec588c8cf37834c49e07bfc0c551bc86a936ec8cffc6d75de2"
+      "sha256": "fbaee4752bcf216b2bdf360a2183113f566dfc537d9ced3e3c2d1009fc849314"
     },
     {
       "name": "tolerant_v2_panes_empty.json",
-      "sha256": "2183aac8e68dcd25c7ee49ac03a1645b9d20ad4d926cce56b0f26a24b95d379d"
+      "sha256": "c5eba27f369d3997a40357e3b9c7d3ed5fc1ac4fc248ef2c09d464fada44fe1a"
     },
     {
       "name": "tolerant_v2_split3.json",
-      "sha256": "ce063c79db42b4fe33ef4ef68a03c63a3213b31f5e92a2fc7448cf26fb01b6a1"
+      "sha256": "db6db0f5cdb76810f948da430b564235a2e9680d7d70864dbe276f4d2cc9b8d5"
     }
   ],
-  "vectors_digest": "593e6ad7eccd666c1507e237f3dead3bd2f5aadb6446d2be57bf3af00e4c98f3"
+  "vectors_digest": "3e7c1c50faf8b03b4fa2f3ad2c66db3ebf9ba3ebd93bbb15b228654c382ff339"
 }

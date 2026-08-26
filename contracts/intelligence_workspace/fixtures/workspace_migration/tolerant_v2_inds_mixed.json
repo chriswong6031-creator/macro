@@ -44,6 +44,7 @@
       }
     ]
   },
+  "expected_strict_code": "invalid_widget_config",
   "expected_unclaimed": [
     "inds"
   ],

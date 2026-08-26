@@ -53,7 +53,7 @@ SCHEMA_PATH = REPO_ROOT / "contracts" / "intelligence_workspace" / "workspace_la
 # lossless law, ruling 1). No existing vector's bytes changed — the number
 # law (ruling 2) and error precedence (ruling 3) touch no committed value.
 # Prior (A2) digest d8bc519a3e2f9591... is void.
-PINNED_VECTORS_DIGEST = "593e6ad7eccd666c1507e237f3dead3bd2f5aadb6446d2be57bf3af00e4c98f3"
+PINNED_VECTORS_DIGEST = "3e7c1c50faf8b03b4fa2f3ad2c66db3ebf9ba3ebd93bbb15b228654c382ff339"
 
 # The freeze doc's §1 canonical example, verbatim.
 FREEZE_SECTION_1_EXAMPLE = {
@@ -892,7 +892,9 @@ def test_boolean_schema_version_two_is_never_treated_as_v2_either():
 def test_tolerant_vector_strict_mode_refuses(name):
     vector = _load(name)
     result = wl.migrate_legacy(vector["input"], strict=True)
-    assert result == {"ok": False, "code": "invalid_widget_config"}, name
+    # NB-F: the strict expectation ships INSIDE the shared vector bytes so the
+    # Terminal mirror is pinned to both modes by the same digest, not just one.
+    assert result == {"ok": False, "code": vector["expected_strict_code"]}, name
 
 
 @pytest.mark.parametrize("name", TOLERANT_VECTOR_NAMES)
