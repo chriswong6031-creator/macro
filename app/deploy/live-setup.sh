@@ -100,6 +100,41 @@ if ! grep -q '^MACRO_LIVE_DIR=' /etc/macro-live.env; then
   } >> /etc/macro-live.env
 fi
 
+# R2 credential seeding — the INITIATING FAULT of the 2026-07-30..08-26 US
+# Prophet Live force majeure (27 days dark, exit 0 the whole time): this file
+# documented "Needs R2_* in /etc/macro-live.env" above but never wrote them,
+# and nothing verified the precondition before macro-live-prophet went live.
+# /etc/macro-api.env already carries the same R2_* keys for the API's own R2
+# reads, so they are durably re-seeded here instead of typed twice by an
+# operator. Each key is guarded by ITS OWN presence check in the DESTINATION
+# file (the sentinel style the MACRO_LIVE_DIR block above uses), so this is
+# safe to run repeatedly: a rerun, or an operator who already set one key by
+# hand, never overwrites a value already there, and a box seeded with only
+# some of the four keys self-heals the rest on the next run instead of being
+# stuck half-seeded forever. NEVER logs a secret VALUE — only a count of keys
+# newly copied and, on a gap, which key NAMES are missing — because this
+# script's stdout lands in journalctl, which is not a secret store.
+R2_SEEDED_COUNT=0
+R2_SEED_MISSING=()
+for R2_KEY in R2_ENDPOINT R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_BUCKET; do
+  if grep -q "^${R2_KEY}=" /etc/macro-live.env; then
+    continue
+  fi
+  if [ -r /etc/macro-api.env ] && grep -q "^${R2_KEY}=" /etc/macro-api.env; then
+    grep "^${R2_KEY}=" /etc/macro-api.env | tail -n 1 >> /etc/macro-live.env
+    R2_SEEDED_COUNT=$((R2_SEEDED_COUNT + 1))
+  else
+    R2_SEED_MISSING+=("$R2_KEY")
+  fi
+done
+chmod 0600 /etc/macro-live.env
+log "R2 credential seed: ${R2_SEEDED_COUNT} key(s) newly copied from /etc/macro-api.env"
+if [ "${#R2_SEED_MISSING[@]}" -gt 0 ]; then
+  log "WARNING: R2 credentials are INCOMPLETE — macro-live-prophet and macro-live-closepass will read the public mirror and publish NOTHING until this is fixed (this exact gap produced the 2026-07-30..08-26 force-majeure: 27 days dark, exit 0 throughout)."
+  log "WARNING: missing key(s), absent from BOTH /etc/macro-live.env and /etc/macro-api.env: ${R2_SEED_MISSING[*]}"
+  log "WARNING: OPERATOR ACTION REQUIRED — add the missing key(s) to /etc/macro-api.env (preferred; shared with the API's own R2 reads) or directly to /etc/macro-live.env (must stay mode 0600), then re-run this script."
+fi
+
 log "[3/6] systemd services + timers"
 unit_sources=()
 for unit in \
