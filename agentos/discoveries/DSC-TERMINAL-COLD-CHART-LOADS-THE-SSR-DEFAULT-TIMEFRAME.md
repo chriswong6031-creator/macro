@@ -74,6 +74,32 @@ At 4x CPU throttle: 0 of 4 runs reached a first live candle before; 3 of 3 after
   +130ms and the commit at +1178ms.
 - **Chart invalidation.** The chart repaints the moment state changes.
 
+## Proving this live is gated by the FEED, not by market hours
+
+`https://app.mastermind-x.com/api/quote?syms=NVDA` is anonymously reachable (200), so packet
+arrival can be measured without auth — but on 2026-08-26 05:15 ET (pre-market, Wednesday, so
+the session was OPEN) it answered:
+
+```json
+"live": false, "basis": "DELAYED_15M", "source": "polygon-delayed", "marketSession": "pre"
+```
+
+That is the blocker for live-proving THIS code path, and it is not "the market is closed":
+
+- the visible-chart fast lane engages only on `quotes[sym].basis === "REALTIME"` or a seconds
+  timeframe (`TerminalShell.chartQuoteSymsKey`), and
+- `applyIntradayLiveCandle` needs the `tick*` fields that only the real-time one-second
+  aggregate lane emits.
+
+A `DELAYED_15M` packet still splices onto a DAILY chart (`SPLICE_BASES` admits it), so the
+daily splice is provable, but the intraday live candle is not. Live proof of the seconds path
+therefore needs a session whose feed is actually REALTIME — check `basis` on that endpoint
+FIRST and do not spend a browser session on it while the answer is `DELAYED_15M`.
+
+The app shell is also login-walled for anonymous sessions (`/options` 307s to `/login`), so a
+cold-browser UI proof needs an authenticated browser; the anonymous surface is
+`/_next/static/chunks/*.js` (see [[terminal-live-verify-chunk-fingerprint]]).
+
 ## Residual, deliberately not fixed in #478
 
 The visible-chart fast lane is a fixed 1 Hz `setInterval` in `TerminalShell.tsx`
