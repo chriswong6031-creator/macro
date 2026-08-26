@@ -289,13 +289,19 @@ Any session failing 2 or 4 is **refused**, not widened.
 
 # 11. Recommended disposition (for Sol)
 
+> **Superseded in part by §15.** The table below was written before the Chairman
+> exercised authority to backfill. Waves C/D resolved differently than recommended
+> here, and for a reason worth keeping: the blocker was pack RECONSTRUCTION, and the
+> executed path reconstructs nothing. Left in place because a disposition that was
+> revised is more useful than one quietly rewritten.
+
 | Wave | State |
 |---|---|
-| A — forensics + restore | **done**; production proof pending today's 13:25Z window |
-| B — silent-freeze elimination | **built**, PR #6464, mutation-proven; merge + deploy + live proof outstanding |
-| C — PIT replay | **feasible but gated**: control substrate solved (§10.2), pack fidelity unproven (§10.4) |
-| D — backfill | **blocked on C**; lawful scope is the 7 Class-R sessions / 598 keys ONLY |
-| E — acceptance + records | in progress |
+| A — forensics + restore | **PROVEN_LIVE** (§14) |
+| B — silent-freeze elimination | **PROVEN_LIVE** — #6464 + #6482 merged, deployed, red-and-green both demonstrated (§14.1, §14.2) |
+| C — PIT replay | **not built, and not needed**: recovery from the producer's own journal reconstructs no pack, so §24.2 never binds (§15.1) |
+| D — backfill | **EXECUTED** on Chairman authority — 598 rows, 7 sessions (§15.3) |
+| E — acceptance + records | done |
 
 Class-D's 11 sessions are **refused** on the force-majeure DEC's own terms: their
 `dark` verdicts were correct for the pack handed to them, so "recovering" them
