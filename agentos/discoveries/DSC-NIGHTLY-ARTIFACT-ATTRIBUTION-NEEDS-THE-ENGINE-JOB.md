@@ -22,6 +22,12 @@ so_what: >
   six-second run-level SUCCESS as proof a bake occurred or a run-level
   CANCELLED as proof it did not. This matters for every capability ledger,
   closeout receipt and staleness diagnosis that cites a nightly run.
+  For SRC-A1 specifically there is a STRICTLY STRONGER method that needs no
+  Actions API call at all: the artifact's own `collection_session_id` is
+  `sha256` of the canonical tuple `("src-a1", "yfinance", ("github_run",
+  <run_id>))`, so a candidate run id can be confirmed or refuted from the
+  parquet body alone. Prefer that when the artifact carries such an id;
+  fall back to the engine-job window for artifacts that do not.
 kind: runtime
 verified_at: 2026-08-26
 verified_by: >
@@ -54,3 +60,21 @@ The DST guard is working as designed: the wrong-DST firing self-exits cleanly,
 which is why it reports success. The consequence is that run-level conclusion
 is anti-correlated with having done the work, and the honest attribution
 signal sits one level down in the jobs list.
+
+## Cryptographic confirmation for SRC-A1 artifacts
+
+`_default_collection_session_id` (`collectors/equity_revisions.py`) hashes
+`("src-a1", _EXPECTATION_PROVIDER, ("github_run", os.environ["GITHUB_RUN_ID"]))`
+through `_canonical_sha256`, so the run identity is embedded in every row.
+Recomputing that hash for each candidate run settles attribution outright:
+
+| candidate run | sha256 prefix | verdict |
+|---|---|---|
+| `32786919396` | `74cfd4a7162056b1…` | equals C1's `collection_session_id` |
+| `32908543584` | `d9fa989a6c9e3b82…` | equals C2's `collection_session_id` |
+| `32790724676` (skip-twin) | `02cba011439313e5…` | appears nowhere in the data |
+| `32912351235` (skip-twin) | `e08943d447a5b6b6…` | appears nowhere in the data |
+
+This independently confirms the engine-job finding and definitively refutes the
+skip-twin attribution that reached the 2026-08-25 records. Method credit: a
+parallel K3E session (PR `#6469`) surfaced it; verified here before adoption.

@@ -113,7 +113,7 @@ decision-relevant for EXP-1.
 | lane | state | why it matters here |
 |---|---|---|
 | PR `#6452` zero-substitution heal | merged `2e0234d94b93` | This program's carrier for the gate-1 defect; live on main |
-| PR `#6461` fiscal-anchor / rollover fence | OPEN (`collectors/equity_revisions.py` + tests only) | The in-flight carrier for "Next action" step 2: captures the provider's `endDate` into `period_end` before cursor wrap can fire mutation gate 3 |
+| PR `#6461` fiscal-anchor / rollover fence | **merged** `8a0dc256c0b9275e8376b6c2d70c79ab769282de` | Landed before the wrap: captures the provider's per-item `endDate` into `period_end` and guards `_apply_lineage` so a differing period leaves the row a new original instead of a fabricated supersession. Verified functional against the real yfinance payload shape, not only against its own stubs — its failure mode is a silent no-op |
 | K2-B institutional manager intent (PR `#6370`) | merged 2026-08-24T17:53:03Z | Same parent workstream; its contract paths are owned on main, not in flight — do not touch from K3E lanes |
 | sibling worktree `alpha-k3e-evidence-vector-855c3a` | branch at main tip, no commits, no PR | Canonical K3-E Opportunity Evidence Vector — a distinct program per the K3E-0 naming law; path surface disjoint |
 | `daily.yml` nightly engine lane | scheduled | Sole lawful producer of collection evidence; never manually dispatched/rerun/cancelled to manufacture proof |
@@ -121,11 +121,16 @@ decision-relevant for EXP-1.
 ## Next action
 
 1. ~~Land PR `#6452`~~ **done** — merged `2e0234d94b9381b033f4fe7585a75f5da59335ef`.
-2. Capture the provider's own `endDate` into `period_end` and make the lineage
-   pass rollover-aware, before first re-observation
-   (`DSC:SRC-A1-FISCAL-ANCHOR-IS-ON-THE-PAYLOAD`). Without it, a quarter that
-   rolls between observations is recorded as an analyst revision — mutation
-   gate 3 — and the first opportunity to violate it arrives at cursor wrap.
+2. ~~Capture the provider's own `endDate` into `period_end` and make the lineage
+   pass rollover-aware~~ **done** — merged PR `#6461`,
+   `8a0dc256c0b9275e8376b6c2d70c79ab769282de`
+   (`DSC:SRC-A1-FISCAL-ANCHOR-IS-ON-THE-PAYLOAD`). Both collector defects are
+   now repaired ahead of the wrap, so the wrap-night audit tests a conformant
+   collector. `fiscal_period` and `fiscal_year` remain NULL by design: deriving
+   them from `endDate` is inference and the contract forbids guessed fiscal
+   mapping, and `period_end` alone discharges gate 3. `period_end` is
+   deliberately NOT in `_apply_lineage`'s `key_columns` — a null-vs-null
+   equality there would silently break lineage for every unanchored row.
 3. At cursor wrap (**expected on or after 2026-09-01**; `A`→`BOH` collected
    2026-08-25, `_FRESH_DAYS = 6`, 7.5-night cycle), re-run the SRC-A1P audit on
    the first collection containing genuine same-security re-observations, and
