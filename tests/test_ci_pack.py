@@ -1774,6 +1774,10 @@ def test_runner_contract_is_the_v2_linux_x86_64_string() -> None:
 
 def test_diagnostic_canary_workflow_constant_names_the_exact_workflow() -> None:
     assert PACK.DIAGNOSTIC_CANARY_WORKFLOW == "infrastructure-selfhosted-ci-canary"
+    assert PACK.TRUSTED_EXECUTOR_WORKFLOW == "trusted-ci-executor"
+    assert PACK.DIAGNOSTIC_PR_WORKFLOWS == frozenset(
+        {PACK.DIAGNOSTIC_CANARY_WORKFLOW, PACK.TRUSTED_EXECUTOR_WORKFLOW}
+    )
 
 
 def test_runner_contract_v2_participates_in_the_job_semantic_digest(
@@ -1833,6 +1837,29 @@ def test_build_plan_admits_the_diagnostic_pair_only_for_its_exact_workflow_name(
                 subject_head_sha="c" * 40,
                 base_sha=base,
             )
+
+
+def test_p3a_executor_uses_the_same_closed_diagnostic_plan_admission(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _freeze_scope_inference(monkeypatch)
+    base = "b" * 40
+    plan = PACK.build_plan(
+        [_plan_job("demo", 0)],
+        ["engine/example.py"],
+        changed_from=base,
+        scope_mode="active",
+        pack_count=1,
+        workflow=PACK.TRUSTED_EXECUTOR_WORKFLOW,
+        event="workflow_dispatch",
+        role="pr_head",
+        tested_tree_sha="a" * 40,
+        subject_head_sha="c" * 40,
+        base_sha=base,
+    )
+    assert plan.workflow == PACK.TRUSTED_EXECUTOR_WORKFLOW
+    assert plan.role == "pr_head"
+    assert plan.event == "workflow_dispatch"
 
 
 def test_build_plan_still_requires_every_pr_head_invariant_for_the_diagnostic_pair(

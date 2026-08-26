@@ -20,6 +20,7 @@ owns_paths:
   - ".github/workflows/merge-control-hosted-canary.yml"
   - ".github/workflows/render.yml"
   - ".github/workflows/engine-render.yml"
+  - ".github/workflows/trusted-ci-executor.yml"
   - "ops/runner-host/**"
   - "tests/test_runner_policy.py"
   - "tests/test_ci_canary_tools.py"
@@ -50,7 +51,11 @@ waves:
       hourly samples, all three exact listener identities, zero ENOSPC and terminal
       completion. Finish the reversible fixed-set storage recovery through qualified
       TerraMaster scratch and require at least 200 GiB free plus below 85 percent used
-      before closing W2. full_work_allowed remains false, so W4 stays blocked.
+      before closing W2. The fresh 2026-08-26 census shows about 99 GiB free on
+      the M1 root and 509 GiB free on its Theta-bearing STORAGE volume; the M2-attached
+      TerraMaster remains healthy with about 3.9 TB free but is unencrypted/noowners
+      scratch only. ThetaTerminal and the existing Theta/options/research launchd
+      estate remain live. full_work_allowed remains false, so W4 stays blocked.
   - id: W3
     title: PC render recovery and default full-render cutover
     status: done
@@ -68,7 +73,9 @@ waves:
       Census every current macstudio consumer and its memory/local-capability envelope,
       then admit one explicitly selected safe production lane through m1-nightly and
       restore theta-m1 only on the proven store-bearing listener. Do not add the generic
-      macstudio label to the M1 in this wave.
+      macstudio label to the M1 in this wave. The first selected candidate is daily.yml
+      collect_tail because it is Theta-store-bearing and historically M1-specific;
+      canary its actual disk/memory envelope before restoring only theta-m1.
   - id: W5
     title: Retire obsolete M2 roles and add live fleet health projection
     status: todo
@@ -125,6 +132,12 @@ landmines:
     The static runner-policy PC slot/status/carrier census is known stale against the
     accepted four-listener job receipts. W5 owns coherent live-registry reconciliation;
     do not widen W3's route-only cutover into those liveness fields.
+  - >
+    Merging a new root-owned admission tuple does not deploy it to a persistent PC
+    listener. Before the P3A proof dispatch, drain pc-ci-1/2/3, install the merged
+    ops/runner-host/common/runner_admission.py as
+    /usr/local/libexec/runner_admission.py on every root, and re-read identical hashes
+    plus allowed/hostile decisions. Never dispatch against mixed admission bytes.
 do_not_redo:
   - >
     Do not buy hardware before restoring and measuring the existing M1/PC fleet; the
@@ -160,17 +173,17 @@ next_action: >
   control/untrusted boundary. W4/W5 remain unstarted; do not enter either wave without
   fresh Chairman intent and a current authority load.
   Trusted-CI promotion (issue #6351) is active under the Fable COO principal:
-  capability ledger 2026-08-25 — W3 planner containment MERGED (PR #6286,
-  fafe8d7ee775f8b60a0229c085fb7aee6d4349e7); hardened PC CI host/isolation
-  substrate BUILT_NOT_PROVEN for current promotion; diagnostic canary contract
-  bridge P0R IN_PROGRESS (DEC:CI-EXECUTION-PROFILE-V2); default trusted
-  self-hosted CI NOT_BUILT; Macro private cutover HOLD — TRUSTED-CI DEFAULT
-  MIGRATION NOT PROVEN. Live repo-runner census 2026-08-25T20:52Z: zero
-  ci-linux / ci-linux-canary listeners registered; render-linux carried by
-  pc-render-2/3/4 (online; pc-render-1 absent from the repo registry); org
-  runner-group state unreadable from the fleet token (admin:org). CI-listener
-  restoration remains the host-readiness lane's deliverable and is a P1
-  prerequisite, not a reason to loosen workflow admission.
+  capability ledger 2026-08-26 — W3 planner containment MERGED (PR #6286,
+  fafe8d7ee775f8b60a0229c085fb7aee6d4349e7); P0R MERGED and baseline-green;
+  P1 ACCEPTED on pc-ci-1; P2/P2R ACCEPTED with three concurrent PC CI slots,
+  independent render reservation, exact hosted/self-hosted fragment parity and a
+  safe resource envelope. P3A main-defined executor is BUILT_NOT_PROVEN and keeps
+  production_enabled=false; its merge, selected-workflow server mutation, drained
+  three-root admission deployment and one real dispatch proof remain outstanding.
+  P3B production route and P4 natural PR proofs are NOT_BUILT. Macro private
+  visibility mutation remains HOLD. Live accepted PC identities are pc-ci-1/2/3
+  plus an independent pc-render lane; the M1 has no CI listener and remains reserved
+  for its live Theta/options/research estate pending W2 storage closure and W4.
 ---
 
 ## Current incident
