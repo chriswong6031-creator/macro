@@ -6,8 +6,13 @@ ended_because: complete
 mission: >
   GROK-CN-A — determine which China P0 Tushare datasets Mastermind already
   has contractual/access rights to, what is missing, what each missing right
-  costs, and which commercial-use questions need vendor confirmation. No
+  costs, and which commercial-use questions the census believed were open. No
   buy, no secrets written, no collectors, no rights inferred from API success.
+  [NULL / SUPERSEDED 2026-08-21 by DEC:CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE:
+  the mission FORMERLY read "which commercial-use questions need vendor
+  confirmation". TuShare compliance is CHAIRMAN_VERIFIED_PRIVATE / SATISFIED and
+  no such question is open; the surviving half of this census is procurement and
+  endpoint coverage.]
 state_before: >
   Token-gated Tushare plane exists (forecast/chips/金股/moneyflow/margin).
   Operator 2026-08-09 claimed 常规无上限 + 特色 300/min + minutes/premarket/auction.
@@ -27,16 +32,16 @@ unverified:
   - {claim: "the live account is at 10000积分 with the 2026-08-09 add-on SKUs still lit", what_would_verify: "operator screenshot of tushare.pro/weborder/#/user/privilege with token redacted"}
   - {claim: "hm_detail unlocks automatically at 10000积分", what_would_verify: "privilege page or a vendor note; doc 290 特色 sentence does not name 游资"}
 unresolved:
-  - "No written vendor/institutional grant is in the repository. Commercial display of any Tushare-derived widget stays blocked on a vendor letter (matrix §3 five questions)."
+  - "[NULL / SUPERSEDED 2026-08-21 by DEC:CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE — historical wording of the 2026-08-19 census, not a live blocker: it read 'commercial display of any Tushare-derived widget stays blocked on a vendor letter'. TuShare compliance is CHAIRMAN_VERIFIED_PRIVATE / SATISFIED; its evidence is confidential and outside coding scope, and no such document may be requested, inspected, or required. What is genuinely unresolved is engineering: the derived widgets are NOT_BUILT.]"
 next_actions:
   - "Operator opens the privilege page and diffs it against matrix §1.2 (常规 / 特色 / minutes / premarket / auction). Do not paste a token."
-  - "If the product is commercial, send Tushare the five questions in matrix §3. Do not buy table-2 SKUs first."
+  - "[NULL / SUPERSEDED 2026-08-21 by DEC:CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE — this step FORMERLY told a session to put five commercial questions to the vendor. It is removed and must not be executed. The five questions survive in matrix §3 as historical census record only.]"
   - "Do not charter collectors for anns_d, irm_qa_*, or research_report. Native paths already cover those P0 planes."
 do_not_redo:
-  - "Do not infer commercial rights from a 200 / non-empty DataFrame."
+  - "Do not infer endpoint ACCESS from a 200 / non-empty DataFrame; tier, row cap, and field set are privilege-page / response-schema observations (ACCESS_TIER_UNVERIFIED until observed). [The FORMER commercial-rights framing of this line is NULL per DEC:CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE.]"
   - "Do not buy anns_d, irm_qa_sz/irm_qa_sh, or research_report to fill announcement / Q&A / sell-side planes already collected from CNInfo / SSE / SZSE / Eastmoney."
   - "Do not treat TUSHARE_INTEGRATION.md ¥500/5000 as current."
-  - "Do not reopen license-machinery gates inside collectors (2026-08-09 ruling 3). Rights questions go to a vendor letter, not a new env flag."
+  - "Do not reopen license-machinery gates inside collectors (2026-08-09 ruling 3), under any name. [NULL / SUPERSEDED 2026-08-21: this line FORMERLY continued 'rights questions go to a vendor letter, not a new env flag'. There are no open TuShare rights questions and no vendor letter — compliance is CHAIRMAN_VERIFIED_PRIVATE / SATISFIED. Enforced by scripts/check_tushare_compliance_resurrection.py.]"
 danger_areas:
   - "Mastermind data_layer/tushare_feed.py posts to http://api.tushare.pro (plaintext). Macro collectors/tushare_client.py uses HTTPS and refuses redirects. Do not copy the Mastermind client."
   - "cyq_chips collector exists but is not scheduled. Arming it is a quota decision, not a purchase."

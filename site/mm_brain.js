@@ -671,11 +671,14 @@
   @keyframes mmb-recoil{0%{transform:none}38%{transform:scale(.985) translateY(2px)}100%{transform:none}}
   @media(prefers-reduced-motion:reduce){.mmb-box.mmb-sent{animation:none}}
   /* ── W1-C effective-context strip ─────────────────────────────────────────────
-     State 1 (nothing resolved) is simply .mmb-ctx with no `.on` — unchanged from
+     State 1 (nothing resolved) is simply .mmb-ctx with no ".on" — unchanged from
      the original single-chip design. States 2 (pre-send preview) and 3 (post-
      receipt, authoritative) share this same markup; only the chip contents and
-     the `.receipt` class (a slightly firmer border once the server has spoken)
-     differ. See research/DEEPVUE_W1C_CONTEXT_ENVELOPE_CONTRACT_2026-08-25.md. */
+     the ".receipt" class (a slightly firmer border once the server has spoken)
+     differ. See research/DEEPVUE_W1C_CONTEXT_ENVELOPE_CONTRACT_2026-08-25.md.
+     (Comment law for this block: this sits INSIDE the CSS template literal, so a
+     backtick here TERMINATES the string and the tail becomes a tagged-template
+     call at runtime — the exact outage this line repairs. Quotes only.) */
   .mmb-ctx{display:none;align-items:center;gap:7px;padding:9px 12px 0}
   .mmb-ctx.on{display:flex}
   .mmb-ctx-chips{display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1;min-width:0;cursor:pointer;
@@ -3682,8 +3685,17 @@
        SSE event and again inside `done`'s echo, and finalizeDone() re-feeds that
        echo through this same function). "rev >= last applied" alone would
        re-apply and repaint on the second copy; a strict duplicate must be a
-       no-op instead — never a second strip transition for one revision. */
-    if (ctxState.lastReceipt && rev === ctxState.lastAppliedRevision) return;
+       no-op instead — never a second strip transition for one revision.
+       A duplicate is the SAME LOGICAL RESOLUTION re-transported, so it must
+       match on request_id as well: the chart context (and so the revision)
+       legitimately stays constant across many asks, and two different
+       requests at one revision resolve differently the moment the user names
+       a symbol in the prompt (explicit INOD at active-AAOI revision 1 —
+       production 2026-08-26). Keying the dedupe on revision alone ate every
+       later receipt at an unchanged revision and froze the strip on the
+       first resolution. */
+    if (ctxState.lastReceipt && rev === ctxState.lastAppliedRevision &&
+        j.request_id && ctxState.lastReceipt.request_id === j.request_id) return;
     ctxState.lastAppliedRevision = rev;
     ctxState.lastReceipt = j;
     var eff = j.effective_context || {};

@@ -1,0 +1,1 @@
+This branch is the Chairman TuShare compliance override vehicle. It is intentionally not complete until the runtime/masterplan sweep in `agentos/handoffs/CN-LIMIT-ALPHA-2026-08-21-CHAIRMAN-TUSHARE-OVERRIDE.md` is executed and reviewed.

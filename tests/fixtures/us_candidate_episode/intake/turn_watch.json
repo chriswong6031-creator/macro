@@ -1,0 +1,26 @@
+{
+  "anchor_era": "anchor-v1",
+  "content_sha256": "54056672dee269bb49f3c372950c76fadc1ba0295e307151b74251d3b45b74a2",
+  "data_session": "2026-11-27",
+  "known_at": "2026-11-27T18:00:00Z",
+  "rows": [
+    {
+      "asof": "2026-11-27",
+      "reset": {
+        "reset_low": 42.1,
+        "reset_low_date": "2026-11-27"
+      },
+      "ticker": "ALFA",
+      "triggers": {
+        "dot_1d": {
+          "evaluated": true,
+          "fired": true,
+          "last_date": "2026-11-27"
+        }
+      }
+    }
+  ],
+  "schema": "prophet.candidate_episode_input.turn_watch/v1",
+  "selection_era": "anticipation-v1",
+  "source_artifact_sha256": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+}

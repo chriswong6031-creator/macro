@@ -36,7 +36,7 @@
 # conflict_policy  ∈ PRIMARY_ONLY | FALLBACK | DOMAIN_AUTHORITY | CROSS_VALIDATE | COMPOSITE
 # ─────────────────────────────────────────────────────────────────────────────
 schema: dataset_registry.v1
-updated: "2026-08-12"
+updated: "2026-08-25"
 
 datasets:
 
@@ -563,3 +563,271 @@ datasets:
       general pending-transition fence that prevents a RECURRENCE of this class (§5) is
       disclosed in _receipt.json's `pending_transition_refusals`/`listing_continuity`
       blocks, not written here — this dataset records only a REALIZED correction.
+
+  # ── Existing Prophet inputs consumed by V4-B1 ─────────────────────────────
+  # These stores retain their incumbent producers and owners. Registration as B1
+  # lineage does not transfer ranking, Door, or Radar authority to B1.
+  - dataset_id: prophet.us.context_vector.candidates
+    layer: L1
+    status: PRODUCED
+    owner: prophet-us-context-vector
+    producer: engine/us_context_vector.py::append_candidates
+    storage: data/us_prophet_rank/candidates/{month}.parquet
+    format: parquet
+    grain: [stamp_date, ticker, board_definition]
+    identity: {id_column: ticker, id_type: membership_symbol_at_observation}
+    temporal_profile: SNAPSHOT_SERIES
+    timezone: America/New_York
+    frequency: nightly
+    conflict_policy: DOMAIN_AUTHORITY
+    quality_checks: [uniqueness, temporal_integrity, completeness]
+    version: "1.0.0"
+    schema:
+      contract_schema: {dtype: string, nullable: false, value: us_prophet_rank.candidates/v1}
+      stamp_date: {dtype: date, nullable: false, clock: point_in_time, note: "observation session; keep-first at the declared grain"}
+      ticker: {dtype: string, nullable: false}
+      board_definition: {dtype: string, nullable: false}
+    code_consumers: [engine/us_candidate_episode_intake.py]
+    notes: >
+      Existing monthly sensory-spine snapshots produced by us_context_vector. The B1
+      intake reads only the latest valid stamp_date and does not acquire board, rank,
+      candidate-membership, or context-vector ownership.
+
+  - dataset_id: prophet.us.doors.flags
+    layer: L2
+    status: PRODUCED
+    owner: WS:PROPHET-US-ENTRY-TIMING
+    producer: scripts/emit_prophet_doors.py
+    storage: data/prophet_doors/flags.jsonl
+    format: jsonl
+    grain: [date, door, ticker]
+    identity: {id_column: ticker, id_type: membership_symbol_at_observation}
+    temporal_profile: EVENT
+    timezone: America/New_York
+    frequency: nightly
+    conflict_policy: DOMAIN_AUTHORITY
+    quality_checks: [uniqueness, temporal_integrity]
+    version: "1.0.0"
+    schema:
+      contract_schema: {dtype: string, nullable: false, value: prophet_doors/v1}
+      date: {dtype: date, nullable: false, clock: point_in_time, note: "nightly flag session"}
+      door: {dtype: string, nullable: false}
+      ticker: {dtype: string, nullable: false}
+      features: {dtype: object, nullable: false}
+    code_consumers: [engine/us_candidate_episode_intake.py]
+    notes: >
+      Existing append-only Door flag ledger. B1 may normalize current observations or
+      suppressions from it but never owns Door definitions, preregistration, grading,
+      re-arm semantics, or plan admission.
+
+  - dataset_id: entry_radar.forward_events
+    layer: L2
+    status: PROPOSED
+    owner: WS:LIVE-ENTRY-RADAR
+    producer: scripts/reconcile_entry_radar.py
+    storage: data/entry_radar/forward.parquet
+    format: parquet
+    grain: [episode_address]
+    temporal_profile: EVENT
+    timezone: UTC
+    frequency: nightly
+    conflict_policy: DOMAIN_AUTHORITY
+    quality_checks: [uniqueness, temporal_integrity, referential]
+    version: "1.0.0"
+    schema:
+      episode_address: {dtype: string, nullable: false, note: "unversioned W5 relation key; not yet a frozen immutable identity contract"}
+      ticker: {dtype: string, nullable: false}
+      decision_session: {dtype: date, nullable: false, clock: point_in_time}
+      signal_ts: {dtype: RFC3339_UTC, nullable: true}
+      signal_known_ts: {dtype: RFC3339_UTC, nullable: true, clock: point_in_time}
+    code_consumers: [engine/us_candidate_episode_intake.py]
+    notes: >
+      STAGED_NOT_ARMED: data/entry_radar/forward.parquet is absent and the reconciler
+      deliberately creates no store while there are no rows. mastermind.entry_event.v1 is
+      source provenance only, not the schema of this unversioned W5 forward projection.
+      episode_address uses event_id when present, otherwise the legacy
+      ticker|detector_id|decision_session fallback; B1 accepts only a nonempty
+      episode_address relation today and does not treat that fallback as immutable event
+      identity. B1 may relate such an observation to a canonical episode or emit a
+      suppression, but Radar retains detector, event-minting, forward-ledger, and promotion
+      authority. Before this row may become PRODUCED, WS:LIVE-ENTRY-RADAR must freeze and
+      validate the actual forward-projection contract and guarantee the B1-consumed relation
+      is the exact immutable event_id rather than the legacy fallback.
+
+  # ── Prophet US V4-B1 canonical candidate episodes ─────────────────────────
+  # BUILT_PENDING_NATURAL_ACCEPTANCE: these contracts are PROPOSED until the first
+  # ordinary scheduled nightly creates and validates the production generation.
+  - dataset_id: prophet.us.candidate_episode.turn_watch_input
+    layer: L1
+    status: PROPOSED
+    owner: prophet-us-v4-b1
+    producer: scripts/build_turn_watch.py
+    storage: data/us_prophet_rank/episode_inputs/turn_watch/{session}.json
+    format: json
+    grain: [data_session, ticker]
+    identity: {id_column: ticker, id_type: membership_symbol_at_observation}
+    temporal_profile: SNAPSHOT_SERIES
+    timezone: America/New_York
+    frequency: nightly
+    conflict_policy: DOMAIN_AUTHORITY
+    quality_checks: [uniqueness, temporal_integrity, completeness]
+    version: "1.0.0"
+    schema:
+      contract_schema: {dtype: string, nullable: false, value: prophet.candidate_episode_input.turn_watch/v1}
+      data_session: {dtype: date, nullable: false, clock: point_in_time, note: "NYSE observation session; rows are knowable only after the close"}
+      ticker: {dtype: string, nullable: false}
+      rows: {dtype: array, nullable: false, note: "full uncapped TURN WATCH candidates, never the display cap"}
+      content_sha256: {dtype: string, nullable: false, note: "digest of the canonical document without this field"}
+    code_consumers: [scripts/reconcile_us_candidate_episodes.py]
+    notes: >
+      Private input sidecar written once by TURN WATCH's existing engine/broad-data
+      owner from the same in-memory uncapped rows as its display artifact. Natural
+      current admission resolves identity at data_session; historical intake requires
+      pinned identity and may never project present-day state backward. This is an
+      intake receipt, not a board, rank, plan, or episode authority.
+
+  - dataset_id: prophet.us.candidate_episode.events
+    layer: L2
+    status: PROPOSED
+    owner: prophet-us-v4-b1
+    producer: scripts/reconcile_us_candidate_episodes.py
+    storage: data/us_prophet_rank/episodes/generations/<HEAD.generation_id>/events/{month}.jsonl
+    format: jsonl
+    grain: [event_id]
+    identity: {id_column: event_id, id_type: content_address}
+    temporal_profile: EVENT
+    timezone: UTC
+    frequency: nightly
+    conflict_policy: DOMAIN_AUTHORITY
+    quality_checks: [uniqueness, temporal_integrity, referential]
+    version: "1.0.0"
+    inputs: [reference.security_master, reference.vendor_aliases, reference.issuer_master, prophet.us.candidate_episode.turn_watch_input, prophet.us.context_vector.candidates, prophet.us.doors.flags, entry_radar.forward_events]
+    schema:
+      contract_schema: {dtype: string, nullable: false, value: prophet.candidate_episode_event/v1}
+      event_id: {dtype: string, nullable: false, note: "content address over semantic identity; recorded_at is excluded"}
+      episode_id: {dtype: string, nullable: false}
+      occurred_at: {dtype: RFC3339_UTC, nullable: false}
+      known_at: {dtype: RFC3339_UTC, nullable: false, clock: point_in_time, note: "earliest time the source fact was knowable"}
+      recorded_at: {dtype: RFC3339_UTC, nullable: false, note: "actual nightly materialization clock; never semantic identity"}
+    code_consumers: [engine/us_candidate_episode.py, scripts/reconcile_us_candidate_episodes.py]
+    notes: >
+      Immutable history truth. Canonical readers first validate
+      data/us_prophet_rank/episodes/HEAD.json, then open only this path beneath its
+      exact generation_id. Any unreferenced generation is noncanonical, including a
+      complete orphan left by a crash before the HEAD swap. Historical identity must
+      be pinned; the reader may never project present-day state backward.
+
+  - dataset_id: prophet.us.candidate_episode.suppressions
+    layer: L2
+    status: PROPOSED
+    owner: prophet-us-v4-b1
+    producer: scripts/reconcile_us_candidate_episodes.py
+    storage: data/us_prophet_rank/episodes/generations/<HEAD.generation_id>/suppressions/{month}.jsonl
+    format: jsonl
+    grain: [suppression_id]
+    identity: {id_column: security_id, id_type: SEC_or_null}
+    temporal_profile: EVENT
+    timezone: UTC
+    frequency: nightly
+    conflict_policy: DOMAIN_AUTHORITY
+    quality_checks: [uniqueness, temporal_integrity]
+    version: "1.0.0"
+    inputs: [reference.security_master, reference.vendor_aliases, reference.issuer_master, prophet.us.candidate_episode.turn_watch_input, prophet.us.context_vector.candidates, prophet.us.doors.flags, entry_radar.forward_events]
+    schema:
+      contract_schema: {dtype: string, nullable: false, value: prophet.candidate_episode_suppression/v1}
+      suppression_id: {dtype: string, nullable: false}
+      security_id: {dtype: string, nullable: true, note: "resolved Data OS security when the rejected source could be mapped; null for identity failures"}
+      reason: {dtype: string, nullable: false, note: "closed suppression enum; evidence, not a market verdict"}
+      recorded_at: {dtype: RFC3339_UTC, nullable: false, clock: point_in_time, note: "nightly materialization time"}
+    code_consumers: [engine/us_candidate_episode.py, scripts/reconcile_us_candidate_episodes.py]
+    notes: >
+      Idempotent evidence for every registered input that cannot lawfully map. Canonical
+      readers resolve and validate HEAD.json first; an unreferenced generation is
+      noncanonical even if all its bytes are valid. Historical identity must be pinned,
+      and a suppression may never project present-day state backward.
+
+  - dataset_id: prophet.us.candidate_episode.current
+    layer: L3
+    status: PROPOSED
+    owner: prophet-us-v4-b1
+    producer: scripts/reconcile_us_candidate_episodes.py
+    storage: data/us_prophet_rank/episodes/generations/<HEAD.generation_id>/current.parquet
+    format: parquet
+    grain: [episode_id]
+    identity: {id_column: security_id, id_type: SEC}
+    temporal_profile: DERIVED
+    timezone: UTC
+    frequency: nightly
+    conflict_policy: DOMAIN_AUTHORITY
+    quality_checks: [uniqueness, temporal_integrity, referential]
+    version: "1.0.0"
+    inputs: [prophet.us.candidate_episode.events]
+    schema:
+      contract_schema: {dtype: string, nullable: false, value: prophet.candidate_episode/v1}
+      episode_id: {dtype: string, nullable: false}
+      security_id: {dtype: string, nullable: false}
+      company_id: {dtype: string, nullable: false, note: "exact Data OS ISS value despite compatibility field name"}
+      opened_at: {dtype: RFC3339_UTC, nullable: false, clock: point_in_time, note: "earliest time all opening predicates were knowable"}
+      episode_state: {dtype: string, nullable: false}
+    code_consumers: [engine/us_candidate_episode.py]
+    notes: >
+      Deterministic projection rebuilt solely from immutable events. Canonical readers
+      validate HEAD.json and may open only its generation; an unreferenced generation
+      is noncanonical. A projection never edits history or projects present-day state
+      backward; provisional epoch_0 remains explicitly provisional until superseded.
+
+  - dataset_id: prophet.us.candidate_episode.all_candidates
+    layer: L3
+    status: PROPOSED
+    owner: prophet-us-v4-b1
+    producer: scripts/reconcile_us_candidate_episodes.py
+    storage: data/us_prophet_rank/episodes/generations/<HEAD.generation_id>/all_candidates.json
+    format: json
+    grain: [episode_id]
+    identity: {id_column: episode_id, id_type: candidate_episode_id}
+    temporal_profile: DERIVED
+    timezone: UTC
+    frequency: nightly
+    conflict_policy: DOMAIN_AUTHORITY
+    quality_checks: [uniqueness, completeness, referential]
+    version: "1.0.0"
+    inputs: [prophet.us.candidate_episode.events, prophet.us.candidate_episode.suppressions]
+    schema:
+      contract_schema: {dtype: string, nullable: false, value: prophet.all_candidates/v1}
+      generated_from: {dtype: object, nullable: false, clock: point_in_time, note: "event count and immutable ledger digest, not wall-clock freshness"}
+      coverage: {dtype: object, nullable: false}
+      episodes: {dtype: array, nullable: false, note: "uncapped, including terminal non-retracted episodes"}
+    code_consumers: [engine/us_candidate_episode.py]
+    notes: >
+      Uncapped machine projection, never a rank, gate, board, plan, or UI lane. Readers
+      validate HEAD.json and may open only its generation; an unreferenced generation
+      is noncanonical. Historical membership is ledger-derived and must never project
+      present-day state backward.
+
+  - dataset_id: prophet.us.candidate_episode.reconciliation_receipt
+    layer: L3
+    status: PROPOSED
+    owner: prophet-us-v4-b1
+    producer: scripts/reconcile_us_candidate_episodes.py
+    storage: data/us_prophet_rank/episodes/generations/<HEAD.generation_id>/latest_receipt.json
+    format: json
+    grain: [generation_id]
+    temporal_profile: DERIVED
+    timezone: UTC
+    frequency: nightly
+    conflict_policy: DOMAIN_AUTHORITY
+    quality_checks: [temporal_integrity, completeness, referential]
+    version: "1.0.0"
+    inputs: [prophet.us.candidate_episode.events, prophet.us.candidate_episode.suppressions, prophet.us.candidate_episode.current, prophet.us.candidate_episode.all_candidates]
+    schema:
+      contract_schema: {dtype: string, nullable: false, value: prophet.candidate_episode_reconcile_receipt/v1}
+      recorded_at: {dtype: RFC3339_UTC, nullable: false, clock: point_in_time, note: "actual natural writer materialization time"}
+      source_hashes: {dtype: object, nullable: false}
+      projection_hashes: {dtype: object, nullable: false}
+      durable_write: {dtype: bool, nullable: false}
+    code_consumers: [scripts/reconcile_us_candidate_episodes.py]
+    notes: >
+      Hash-bound reconciliation evidence for the exact generation selected by
+      HEAD.json. Any unreferenced generation is noncanonical and its receipt cannot
+      prove production acceptance. Replay/report receipts remain read-only and cannot
+      substitute for a natural nightly; neither may project present-day state backward.
