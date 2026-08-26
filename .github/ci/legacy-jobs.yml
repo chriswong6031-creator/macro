@@ -11050,7 +11050,8 @@ jobs:
           tests/test_intelligence_workspace_consumers.py
           tests/test_intelligence_workspace_mutations.py
           tests/test_intelligence_workspace_cli.py
-          tests/test_intelligence_workspace_performance.py -q
+          tests/test_intelligence_workspace_performance.py
+          tests/test_intelligence_workspace_workspace_layout.py -q
 
   unrun-macro-panels:
     # commodities / forex / rates / news / policy panels and their calibration guards.

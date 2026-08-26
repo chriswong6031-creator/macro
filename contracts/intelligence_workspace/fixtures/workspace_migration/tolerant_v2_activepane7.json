@@ -1,0 +1,72 @@
+{
+  "expected": {
+    "link_groups": {
+      "primary_security": {
+        "entity_type": "security"
+      }
+    },
+    "migration": {
+      "source": "chart_layout_v2",
+      "source_revision": 2
+    },
+    "name": null,
+    "requires": {
+      "floor": 1
+    },
+    "revision": 1,
+    "schema": "workspace_layout.v1",
+    "widgets": [
+      {
+        "config": {
+          "chartType": "candles",
+          "compare": [
+            "MSFT"
+          ],
+          "inds": [
+            "ema21"
+          ],
+          "paneTfs": [
+            "1D"
+          ],
+          "panes": [
+            "AAPL"
+          ],
+          "split": 2,
+          "sync": true
+        },
+        "context_in": [
+          "primary_security"
+        ],
+        "context_out": [
+          "primary_security"
+        ],
+        "id": "chart-main",
+        "semantic_lane": "primary",
+        "type": "chart"
+      }
+    ]
+  },
+  "expected_strict_code": "invalid_widget_config",
+  "expected_unclaimed": [
+    "activePane"
+  ],
+  "input": {
+    "activePane": 7,
+    "chartType": "candles",
+    "compare": [
+      "MSFT"
+    ],
+    "inds": [
+      "ema21"
+    ],
+    "paneTfs": [
+      "1D"
+    ],
+    "panes": [
+      "AAPL"
+    ],
+    "schemaVersion": 2,
+    "split": 2,
+    "sync": true
+  }
+}
