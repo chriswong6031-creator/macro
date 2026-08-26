@@ -227,17 +227,23 @@ def _expectation_rows(
             raw_horizon = str(horizon)
             # A group (metric, horizon) is NON-ESTIMABLE when the provider's own
             # covering-analyst count is unavailable or zero — the provider's empty-
-            # response shape (see mutation gate 1).  Every other observation_type in
-            # such a group is forced to typed missingness regardless of what number
-            # the provider returned; covering_analyst_count itself always keeps its
-            # literal provider value (including a genuine 0) via _field_value below.
+            # response shape (see mutation gate 1).  In such a group, every other
+            # observation_type that _field_value resolved as PRESENT (missingness
+            # None — an interpretable value, the actual mutation-gate violation) is
+            # forced to typed missingness, regardless of what number the provider
+            # returned.  A field that _field_value already typed as missing (e.g.
+            # NOT_APPLICABLE because the provider exposes no such column at all, or
+            # an existing UNESTIMABLE) is left exactly as returned — that reason is
+            # already lawful and more specific than a blanket UNESTIMABLE would be.
+            # covering_analyst_count itself always keeps its literal provider value
+            # (including a genuine 0) via _field_value below.
             covering_value, _covering_missingness = _field_value(
                 frame, horizon, "covering_analyst_count", metric
             )
             non_estimable_group = covering_value is None or covering_value == 0
             for observation_type in _OBSERVATION_TYPES:
                 value, missingness = _field_value(frame, horizon, observation_type, metric)
-                if non_estimable_group and observation_type != "covering_analyst_count":
+                if non_estimable_group and observation_type != "covering_analyst_count" and missingness is None:
                     value, missingness = None, "UNESTIMABLE"
                 observation_id = _canonical_sha256((
                     collection_session_id, _EXPECTATION_PROVIDER, record_class, payload_hash,

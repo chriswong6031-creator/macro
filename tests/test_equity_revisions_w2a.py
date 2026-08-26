@@ -457,6 +457,37 @@ def test_group_with_analyst_count_column_entirely_absent_is_non_estimable(tmp_pa
     assert covering["missingness_reason"] == "NOT_APPLICABLE"
 
 
+def test_zero_analyst_group_never_downgrades_an_already_typed_not_applicable_field(tmp_path: Path):
+    """Regression guard (coordinator amendment): in a NON-ESTIMABLE group, a field
+    that _field_value already resolved to NOT_APPLICABLE — no such column exists in
+    the provider frame at all, distinct from a column that exists but carries no
+    estimable number — must keep NOT_APPLICABLE, never be downgraded to UNESTIMABLE.
+    Only a field _field_value resolved as PRESENT (missingness None; the actual
+    mutation-gate violation of an interpretable value with NULL missingness) is
+    forced into typed missingness by this repair."""
+    earnings = _zero_analyst_eps_frame().drop(columns=["growth"])
+    _run(tmp_path, "scheduled-1", _Ticker(earnings=earnings, revenue=_revenue_frame()))
+    rows = _observations(tmp_path)
+    group = rows[(rows["metric"] == "EPS") & (rows["horizon_label_raw"] == "0q")]
+
+    growth = group[group["observation_type"] == "growth"].iloc[0]
+    assert pd.isna(growth["value"])
+    assert growth["missingness_reason"] == "NOT_APPLICABLE", (
+        f"growth should stay NOT_APPLICABLE (no such column in the frame), not be "
+        f"downgraded to UNESTIMABLE; got {growth['missingness_reason']!r}"
+    )
+
+    # The genuinely PRESENT fields in the same non-estimable group are still repaired.
+    for observation_type in ("average", "median", "high", "low", "year_ago"):
+        row = group[group["observation_type"] == observation_type].iloc[0]
+        assert pd.isna(row["value"])
+        assert row["missingness_reason"] == "UNESTIMABLE"
+
+    covering = group[group["observation_type"] == "covering_analyst_count"].iloc[0]
+    assert covering["value"] == 0
+    assert pd.isna(covering["missingness_reason"])
+
+
 def test_observation_id_formula_is_undisturbed_by_the_missingness_repair(tmp_path: Path):
     """(e) observation_id is a deterministic hash of (session, provider, record_class,
     payload_hash, ticker, metric, raw_horizon, observation_type) — it must never
