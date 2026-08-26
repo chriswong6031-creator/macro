@@ -111,8 +111,37 @@ reach). That is access observation, not compliance adjudication.
   2016, stock lifecycle is the best available construction and the manifest
   explicitly refuses to call that an independent daily-universe witness.
 - `bak_basic` corroborates rather than replaces lifecycle eligibility. The shard
-  and coverage universe is the frozen `lifecycle ∪ PIT` set. Any post-2016
-  lifecycle/PIT difference is receipted with samples and blocks completeness.
+  and coverage universe is the frozen `lifecycle ∪ PIT` set. Post-2016
+  lifecycle/PIT differences are receipted with samples; which of them block
+  completeness is governed by the source-union law below.
+- **Historical PIT construction is source-UNION, never current-snapshot
+  intersection** (`DEC:CNLI-HISTORICAL-PIT-IS-SOURCE-UNION`, Sol 2026-08-26).
+  The current `stock_basic` snapshot is a lifecycle/reference *witness*, not
+  exhaustive historical membership authority: it is a CURRENT snapshot used to
+  classify HISTORICAL sessions, so intersecting against it is a survivorship
+  filter. A well-formed A-share `bak_basic` PIT observation therefore LANDS even
+  when the current snapshot omits it, carrying
+  `current_stock_basic_witness_missing = true`.
+- That observation alone grants **no trading/event authority and no
+  canonical-identity authority**. Authority is graded: a complete same-session
+  positive-volume daily observation *plus* the required exact legal-limit/session
+  evidence proves historical trading even when current `stock_basic` omits the
+  security, and such a security must never be silently removed from the
+  historical exact universe. A PIT-observed row without that evidence stays
+  source-accounted but **non-event-eligible**; `never listed` may not be inferred
+  unless an explicit lifecycle source establishes that stronger state. Data
+  OS/GMI remains the canonical identity owner — no historical CN-Limit identity
+  master exists.
+- PIT-only listing keys **propagate into downstream historical source
+  acquisition, including `name_history`**, so the same survivorship filter is not
+  recreated one stage later.
+- Completeness remains fail-closed for malformed or conflicting keys, incomplete
+  source responses, unresolved source contradictions (including a PIT row whose
+  master lifecycle window contradicts the observed trade date), positive-volume
+  rows without required exact legal-band evidence, and any unknown disposition.
+  The current-snapshot omission rate is recorded as **telemetry, never as an
+  exclusion threshold** — a threshold on it would reintroduce the survivorship
+  filter as a tunable.
 
 Reference refresh is generation-atomic. Raw `stock_basic`, `fund_basic`, and BSE
 mapping units land under an immutable staging generation; derived master/alias/
@@ -340,8 +369,12 @@ bytes are scanned before hashing.
    zero, and any range campaign is terminal with every leaf verified, every day
    receipt bound, and no standing alias conflict (amended 2026-08-13);
 5. every requested post-2016 session has a `bak_basic` witness, lifecycle and PIT
-   sets reconcile exactly, and every requested daily endpoint unit is complete
-   (pre-start endpoints are explicitly N/A);
+   sets reconcile under the source-union law — every lifecycle-eligible security
+   is witnessed in PIT, and no PIT row contradicts its own master lifecycle
+   window; a PIT row absent from the current `stock_basic` witness is a legal
+   union member and is counted as telemetry, not as a mismatch (amended
+   2026-08-26, `DEC:CNLI-HISTORICAL-PIT-IS-SOURCE-UNION`) — and every requested
+   daily endpoint unit is complete (pre-start endpoints are explicitly N/A);
 6. duplicate-key, dense-key, lifecycle, exact-session, suspension, and daily
    security coverage checks close;
 7. the canonical exact-price event join closes; and
