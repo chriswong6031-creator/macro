@@ -3,7 +3,7 @@ workstream: WS:DEFENSE-PROCUREMENT-V3
 session: sol/d6b1-final-acceptance-20260826
 model: sol
 ended_because: complete
-prs: [6447, 6454, 6478, 6480]
+prs: [6447, 6454, 6478, 6480, 6485]
 decisions:
   - DEC:FMS-CANONICAL-OWNER-IS-GOVREV-FMS-RAIL
 discoveries: []
@@ -25,7 +25,7 @@ changed:
       Records the Sol PASS, immutable CI/acquisition/publication receipts,
       explicit U4/Federal-Register supersession ruling, State-web coverage
       ruling, nonblocking reliability debt, and the parked authorization
-      boundary after D6-B.
+      boundary after D6-B. Acceptance projection carrier is Macro PR #6485.
 verified:
   - claim: Protected Skillpack compatibility and atomic pin
     command: >
@@ -197,9 +197,9 @@ danger_areas:
   - Keep D5's deferred proof gap visible; sequencing waiver is not proof.
 return_point: >
   Highest-authority acceptance receipt is Macro PR #6480 comment 5432443653.
-  Closing records carrier is #6480 / merge
-  cca7d6b7c51c9cda6347097281ff050c2fe551ff. Final production acquisition
-  commit is d90d63c782668c6adfa9697563349412292153ae; canonical publication
-  commit is 5d9628af92c2ad0097b39ec3da2af1f78f8c7e0a. Protected Sol review pin
-  is Mastermind@98f60ddcd2e387ea42c23f64b66933650c4f2e19.
+  Acceptance projection carrier is Macro PR #6485. Closing records carrier is
+  #6480 / merge cca7d6b7c51c9cda6347097281ff050c2fe551ff. Final production
+  acquisition commit is d90d63c782668c6adfa9697563349412292153ae; canonical
+  publication commit is 5d9628af92c2ad0097b39ec3da2af1f78f8c7e0a. Protected
+  Sol review pin is Mastermind@98f60ddcd2e387ea42c23f64b66933650c4f2e19.
 ---
