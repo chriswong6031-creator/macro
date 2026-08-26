@@ -44,6 +44,25 @@ Authority: Sol W2-A commission → current `WS-DEEPVUE-INTELLIGENCE-WORKSPACE` �
    region; W2-A's Terminal edits (regions ~1647/1695, ~4106–4204, ~4567, ~4672,
    ~4730–4780, ~5427) must not touch those hunks. Re-census before every push.
 
+### Amendment A1 (2026-08-26, pre-merge, ruled by the commissioning session)
+
+Terminal-runtime verification during the core build falsified two chart-config
+field types as originally frozen, both of which would have made the canonical
+validator REJECT real Terminal v2 layouts (migration loss, the exact failure
+W2-A exists to prevent):
+
+- `lockedVLine` is `string | null` in the real runtime (TerminalShell/
+  ChartPanel own it as a string key), never a number. Amended: string 1..64
+  chars, no control characters, or null.
+- `split` is Terminal's discrete pane-split selector with runtime domain
+  `VALID_SPLITS = {1, 2, 4}`, not a 0–100 percentage. Amended: integer enum
+  {1, 2, 4}. (The `50` in the original §1 example was an authoring error in
+  this document, propagated into the first vector set.)
+
+The Macro schema/validator/vectors and the Terminal mirror are both bound to
+the amended law; the golden-vector digest changes accordingly and the old
+digest is void. No other field law changed.
+
 ## 1. Canonical object — `workspace_layout.v1`
 
 ```json
@@ -64,7 +83,7 @@ Authority: Sol W2-A commission → current `WS-DEEPVUE-INTELLIGENCE-WORKSPACE` �
       "context_in": ["primary_security"],
       "context_out": ["primary_security"],
       "config": {
-        "panes": ["NVDA"], "paneTfs": ["1D"], "split": 50, "activePane": 0,
+        "panes": ["NVDA"], "paneTfs": ["1D"], "split": 1, "activePane": 0,
         "sync": true, "chartType": "candles", "inds": ["ema21"],
         "indParams": {}, "hidden": [], "compare": [], "compareCfg": {},
         "lockedVLine": null
