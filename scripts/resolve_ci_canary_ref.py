@@ -76,21 +76,21 @@ def resolve(repository: str, github_sha: str, pr_number: int, token: str) -> dic
     local_ref = f"refs/ci-canary/pull/{pr_number}/merge"
     git("fetch", "--no-tags", "origin", f"+{tested_ref}:{local_ref}")
     tested_sha = git("rev-parse", f"{local_ref}^{{commit}}")
-    base_sha = str(base.get("sha") or "")
+    api_base_sha = str(base.get("sha") or "")
     head_sha = str(head.get("sha") or "")
-    if len(base_sha) != 40 or len(head_sha) != 40:
+    if len(api_base_sha) != 40 or len(head_sha) != 40:
         raise ResolutionError("GitHub returned an invalid base/head SHA")
     api_merge = data.get("merge_commit_sha")
     if api_merge and api_merge != tested_sha:
         raise ResolutionError(
             f"merge ref moved during resolution: API={api_merge}, fetched={tested_sha}"
         )
-    fetched_base = git("rev-parse", f"{tested_sha}^1")
+    base_sha = git("rev-parse", f"{tested_sha}^1")
     fetched_head = git("rev-parse", f"{tested_sha}^2")
-    if fetched_base != base_sha or fetched_head != head_sha:
+    if fetched_head != head_sha:
         raise ResolutionError(
-            "fetched merge parents do not match the frozen API base/head: "
-            f"fetched={fetched_base}/{fetched_head}, API={base_sha}/{head_sha}"
+            "fetched merge head does not match the frozen API head: "
+            f"fetched={fetched_head}, API={head_sha}"
         )
     return {
         "source_kind": "same-repository-pr-merge",

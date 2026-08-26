@@ -351,7 +351,53 @@ def test_main_dispatch_freezes_parent_as_the_changed_from_base(monkeypatch) -> N
     assert result["contamination_sha"] == parent
 
 
-def test_pr_dispatch_requires_fetched_merge_parents_to_match_api(monkeypatch) -> None:
+def test_pr_dispatch_uses_the_fetched_merge_parent_when_api_base_is_stale(
+    monkeypatch,
+) -> None:
+    """The merge ref is the tested tree; its first parent is its tested base.
+
+    GitHub's pull-request ``base.sha`` can lag the first parent of the current
+    synthetic merge ref while the PR head and immutable merge SHA remain exact.
+    """
+    merge = "a" * 40
+    tested_base = "b" * 40
+    head = "c" * 40
+    stale_api_base = "d" * 40
+    monkeypatch.setattr(
+        RESOLVE,
+        "pull_request",
+        lambda *_: {
+            "state": "open",
+            "merge_commit_sha": merge,
+            "base": {"ref": "main", "sha": stale_api_base},
+            "head": {
+                "sha": head,
+                "repo": {"full_name": "mastermindx-market-intelligence/macro"},
+            },
+        },
+    )
+
+    def fake_git(*args: str) -> str:
+        if args[0] == "fetch":
+            return ""
+        revisions = {
+            "refs/ci-canary/pull/7/merge^{commit}": merge,
+            f"{merge}^1": tested_base,
+            f"{merge}^2": head,
+        }
+        return revisions[args[1]]
+
+    monkeypatch.setattr(RESOLVE, "git", fake_git)
+    result = RESOLVE.resolve(
+        "mastermindx-market-intelligence/macro", "e" * 40, 7, "token"
+    )
+    assert result["tested_sha"] == merge
+    assert result["base_sha"] == tested_base
+    assert result["head_sha"] == head
+    assert result["contamination_sha"] == tested_base
+
+
+def test_pr_dispatch_requires_fetched_merge_sha_and_head_to_match_api(monkeypatch) -> None:
     merge = "a" * 40
     base = "b" * 40
     head = "c" * 40
