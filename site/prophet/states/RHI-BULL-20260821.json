@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "RHI-BULL-20260821",
-  "asof": "2026-08-24",
+  "asof": "2026-08-25",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
   "management_confidence": 68.0,
@@ -11,20 +11,20 @@
   "human_state": "Awaiting Trigger",
   "components": {
     "validity": 100.0,
-    "progress": 2.4,
-    "pace": 100.0,
+    "progress": 1.2,
+    "pace": 98.9,
     "retention": 50.0,
-    "overlay": 61.0
+    "overlay": 55.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.017,
-    "dist_to_t1_r": 1.483,
-    "dist_to_t2_r": 2.983,
-    "horizon_pct_used": 6.7,
-    "p1": 0.0116,
-    "p2": 0.0058,
+    "dist_to_stop_r": 1.007,
+    "dist_to_t1_r": 1.493,
+    "dist_to_t2_r": 2.993,
+    "horizon_pct_used": 8.9,
+    "p1": 0.0047,
+    "p2": 0.0023,
     "p3": null,
-    "move_r": 0.017,
+    "move_r": 0.007,
     "mfe_r": 0.017,
     "mae_r": 0.0
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 3,
-  "tau": 0.0667
+  "days_elapsed": 4,
+  "tau": 0.0889
 }

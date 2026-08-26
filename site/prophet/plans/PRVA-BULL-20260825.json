@@ -1,0 +1,175 @@
+{
+  "schema": "prophet.trade_plan/v1",
+  "id": "PRVA-BULL-20260825",
+  "asof": "2026-08-25",
+  "recorded_at": "2026-08-25",
+  "asset": "PRVA",
+  "direction": "BULL",
+  "thesis": "PRVA \u2014 conviction 11/100 (neutral) Entry grade: light. Drivers: quality. Cautions: Accounting quality is worth a second look.. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+  "thesis_zh": "PRVA \u2014 \u786e\u4fe1\u5ea6 11/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: light\u3002 \u9a71\u52a8\u56e0\u7d20: quality\u3002 \u6ce8\u610f\u4e8b\u9879: \u8d22\u52a1\u8d28\u91cf\u503c\u5f97\u518d\u6838\u67e5\u4e00\u6b21\u3002\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+  "source_engines": [
+    "us_standouts_buy_lane",
+    "neural_web"
+  ],
+  "trigger": 21.2,
+  "entry": 21.2,
+  "invalidation": 21.02,
+  "targets": [
+    21.47,
+    21.74
+  ],
+  "horizon_days": 45,
+  "min_hold_days": 10,
+  "tranche": 1,
+  "option_contract": null,
+  "stage_tilt": {
+    "leash": 1.0,
+    "eligible": false,
+    "stage_at_entry": 3,
+    "ec_sent": null,
+    "ec_call_date": null,
+    "ec_source_state": "unavailable",
+    "ec_source_path": "data/stage_analysis/backfill/earnings_calls.parquet",
+    "ec_source_reason": "no earnings-call source on this host \u2014 the EquityDesk backfill parquet is local-only and absent on CI/deploy, so every earnings lookup answers null",
+    "bear_gate": false,
+    "provisional": true,
+    "demoted": false,
+    "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
+  },
+  "management_ref": "prophet/state/PRVA-BULL-20260825.json",
+  "authority_tier": "display",
+  "reliability": {
+    "plan": "display \u2014 us_standouts buy-lane originated; display-only until forward ledger gate passes",
+    "option_premium": "null \u2014 symbol not in ThetaData store"
+  },
+  "formation_date": "2026-08-25",
+  "signal_date": "2026-08-25",
+  "confirmed_date": null,
+  "observed_date": "2026-08-25",
+  "signal_tier": null,
+  "signal_date_basis": "legacy_formation_alias",
+  "signal_provisional": false,
+  "source_marker_date": "2026-07-23",
+  "price_basis_date": "2026-08-25",
+  "entry_date": "2026-08-25",
+  "what_to_do_now": [
+    "Wait for a pullback into the $20.53\u2013$20.87 zone before starting. No entry above $21.20; the plan waits at the band rather than paying the last print.",
+    "Keep the first tranche small; there is no need to rush. Exit on a close below $21.02.",
+    "If the zone fills, scale in gradually toward T1 ($21.47)."
+  ],
+  "what_to_do_now_zh": [
+    "\u7b49\u5f85\u4ef7\u683c\u56de\u843d\u81f3 $20.53\u2013$20.87 \u533a\u95f4\u518d\u5efa\u4ed3\u3002\u4e0d\u8981\u5728 $21.20 \u4e4b\u4e0a\u4e70\u5165\uff1b\u8ba1\u5212\u5728\u533a\u95f4\u7b49\u5f85\uff0c\u800c\u975e\u6309\u6700\u65b0\u4ef7\u8ffd\u5165\u3002",
+    "\u9996\u7b14\u4fdd\u6301\u5c0f\u4ed3\u4f4d\uff0c\u65e0\u9700\u6025\u4e8e\u5165\u573a\u3002\u6536\u76d8\u8dcc\u7834 $21.02 \u5373\u79bb\u573a\u3002",
+    "\u82e5\u533a\u95f4\u88ab\u89e6\u53ca\uff0c\u53ef\u9010\u6b65\u52a0\u4ed3\u81f3 T1\uff08$21.47\uff09\u3002"
+  ],
+  "profit_plan": [
+    {
+      "level": 21.47,
+      "label": "T1",
+      "action": "Scale out 40%, trail stop to entry",
+      "status": "ACTIVE"
+    },
+    {
+      "level": 21.74,
+      "label": "T2",
+      "action": "Close remaining 60%, exit full position",
+      "status": "PENDING"
+    }
+  ],
+  "profit_plan_zh": [
+    {
+      "level": 21.47,
+      "label": "T1",
+      "action": "\u51cf\u4ed3 40%\uff0c\u5c06\u6b62\u635f\u4e0a\u79fb\u81f3\u5165\u573a\u4f4d",
+      "status": "ACTIVE"
+    },
+    {
+      "level": 21.74,
+      "label": "T2",
+      "action": "\u5e73\u4ed3\u5269\u4f59 60%\uff0c\u5168\u90e8\u79bb\u573a",
+      "status": "PENDING"
+    }
+  ],
+  "_signal_date": "2026-08-25",
+  "_priority_score": 45.7,
+  "_conviction_score": 11,
+  "_act_level": 0,
+  "_r_unit": 0.18,
+  "_gate_go": false,
+  "admission_class": "patience",
+  "entry_status": "bounce_wait",
+  "selection_era": "anticipation-v1-2026-08-08",
+  "entry_basis": {
+    "basis_date": "2026-08-25",
+    "basis_source": "staleness_price_through",
+    "run_asof": "2026-08-25",
+    "lag": 0,
+    "lag_basis": "sessions",
+    "max_lag": 3,
+    "state": "current",
+    "signal_basis_date": "2026-08-21",
+    "signal_lag_sessions": 2,
+    "era": "anticipation-v1-2026-08-08"
+  },
+  "entry_zone": {
+    "schema": "prophet.entry_zone/v1",
+    "low": 20.53,
+    "high": 20.87,
+    "chase_above": 21.2,
+    "pct_from_entry": -2.36,
+    "zone_class": "reset_band",
+    "stance": "wait",
+    "basis": "the 10- and 20-day average band under the last price, from the entry ladder",
+    "basis_zh": "\u6700\u65b0\u4ef7\u4e0b\u65b9\u7684 10 \u65e5\u4e0e 20 \u65e5\u5747\u7ebf\u533a\u95f4\uff0c\u6765\u81ea\u5165\u573a\u9636\u68af",
+    "price_basis_date": "2026-08-25",
+    "expiry_sessions": 10,
+    "expiry_date": "2026-09-08",
+    "conversion_class": "washout",
+    "conversion_evidence": "the board reads this as a name coming off a low",
+    "conversion_evidence_zh": "\u770b\u677f\u628a\u5b83\u5f52\u5165\u4f4e\u4f4d\u56de\u5347\u7684\u4e00\u7c7b",
+    "converts_on_expiry": true,
+    "extension": {
+      "daily_stoch_k": 24.07,
+      "htf_stoch_k": 0.0,
+      "daily_extended": false,
+      "htf_extended": false,
+      "both_extended": false,
+      "threshold": 80.0,
+      "htf_timeframe": 3,
+      "source": "price_store_stoch_rsi",
+      "reason": null,
+      "asof": "2026-08-25"
+    },
+    "leader_pullback": {
+      "leader_pullback": false,
+      "state": "NONE",
+      "pullback_high": null,
+      "days_in_state": 25.0,
+      "construction_era": "leader-pullback-v0-2026-08-08",
+      "state_asof": "2026-08-21",
+      "context_states": [
+        "PULLBACK",
+        "RESET_TURN"
+      ],
+      "source": "us_leader_pullback",
+      "reason": "organ state NONE is not an open controlled pullback"
+    },
+    "era": "anticipation-v1-2026-08-08"
+  },
+  "early_turn": {
+    "fired": false,
+    "reason": "signature fired but no licensing context \u2014 a naked dot is not a starter admission",
+    "timeframes": [
+      1,
+      2
+    ],
+    "washout_state": null,
+    "leader_pullback_source": "us_leader_pullback",
+    "union_fired": false,
+    "union_legs": [
+      "early_dot"
+    ],
+    "union_texture": {},
+    "basket_context_chip": null
+  }
+}
