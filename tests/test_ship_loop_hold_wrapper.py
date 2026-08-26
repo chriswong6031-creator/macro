@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import subprocess
+import threading
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -341,6 +342,7 @@ def _ledger_guard(tmp_path: Path, *, split=None, pull="default", state_extra=Non
     open_pull = _pull() if pull == "default" else pull
     split_result = split or ([], [], ["ci-gate", "fences"])
     calls = {"open_pull": 0, "checks": 0}
+    ledger_lock = threading.Lock()
 
     def _open_pull(*_args):
         calls["open_pull"] += 1
@@ -359,11 +361,21 @@ def _ledger_guard(tmp_path: Path, *, split=None, pull="default", state_extra=Non
     def _save(path, value):
         Path(path).write_text(json.dumps(value), encoding="utf-8")
 
+    def _update_ledger(path, mutate):
+        with ledger_lock:
+            latest = _load(path)
+            if not isinstance(latest, dict):
+                return None
+            result = mutate(latest)
+            _save(path, latest)
+            return result
+
     guard = SimpleNamespace(
         _repo_root=lambda _payload: tmp_path,
         _state_path=lambda _root, _payload: state_path,
         _load=_load,
         _save=_save,
+        _update_ledger=_update_ledger,
         _github_slug=lambda _root: ("mastermindx-market-intelligence", "macro"),
         _open_pull=_open_pull,
         _get_json=lambda _url: _comments(),
@@ -393,6 +405,104 @@ def test_first_parked_stop_narrates_once_then_the_latch_silences_wakes(monkeypat
     assert second == {"action": "silent"}
     # Quiescence is narration-only: the hold was mechanically revalidated.
     assert calls["open_pull"] == 2 and calls["checks"] == 2
+
+
+def test_parked_latch_writer_preserves_a_concurrent_watcher_reservation(
+    monkeypatch, tmp_path
+):
+    """The hold probe can spend seconds on GitHub after reading the ledger.
+    If PreToolUse reserves a watcher meanwhile, the later PARKED latch write
+    must transact against the latest state instead of erasing that watcher.
+    """
+    guard, state_path, _ = _ledger_guard(tmp_path)
+    probe_started = threading.Event()
+    watcher_written = threading.Event()
+    results = []
+
+    def paused_probe(_guard, _payload):
+        probe_started.set()
+        assert watcher_written.wait(timeout=10)
+        return {
+            "number": 6138,
+            "branch": "claude/held",
+            "head": HEAD,
+            "candidate_kind": "ordinary_unmerged",
+            "source_blocker": "unmerged",
+            "status": "parked",
+            "red": [],
+            "pending": [],
+            "passed": ["ci-gate", "fences"],
+        }
+
+    monkeypatch.setattr(WRAPPER, "_hold_probe", paused_probe)
+
+    writer = threading.Thread(
+        target=lambda: results.append(
+            WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"})
+        )
+    )
+    writer.start()
+    assert probe_started.wait(timeout=10)
+    latest = json.loads(state_path.read_text(encoding="utf-8"))
+    latest["ship_watcher"] = {
+        "digest": "d" * 12,
+        "fragment": "gh run watch 1 --exit-status",
+        "head": HEAD,
+        "created": 1.0,
+    }
+    state_path.write_text(json.dumps(latest), encoding="utf-8")
+    watcher_written.set()
+    writer.join(timeout=10)
+    assert not writer.is_alive()
+    assert results and results[0]["action"] == "emit"
+    state = json.loads(state_path.read_text(encoding="utf-8"))
+    assert state["parked_latch"] == f"parked:6138:{HEAD}"
+    assert state["ship_watcher"]["fragment"] == "gh run watch 1 --exit-status"
+
+
+def test_nonparked_probe_clears_a_latch_added_while_the_probe_was_in_flight(
+    monkeypatch, tmp_path
+):
+    """The clear decision must be made from the locked latest ledger too.
+
+    A stale pre-probe snapshot with no latch must not cause the wrapper to miss
+    a latch written during the GitHub query after the probe positively answers
+    that the hold is no longer PARKED. The concurrent watcher stays intact.
+    """
+    guard, state_path, _ = _ledger_guard(tmp_path)
+    probe_started = threading.Event()
+    latch_written = threading.Event()
+    results = []
+
+    def paused_nonparked_probe(_guard, _payload):
+        probe_started.set()
+        assert latch_written.wait(timeout=10)
+        return None
+
+    monkeypatch.setattr(WRAPPER, "_hold_probe", paused_nonparked_probe)
+    writer = threading.Thread(
+        target=lambda: results.append(
+            WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"})
+        )
+    )
+    writer.start()
+    assert probe_started.wait(timeout=10)
+    latest = json.loads(state_path.read_text(encoding="utf-8"))
+    latest["parked_latch"] = f"parked:6138:{HEAD}"
+    latest["ship_watcher"] = {
+        "digest": "d" * 12,
+        "fragment": "gh run watch 1 --exit-status",
+        "head": HEAD,
+        "created": 1.0,
+    }
+    state_path.write_text(json.dumps(latest), encoding="utf-8")
+    latch_written.set()
+    writer.join(timeout=10)
+    assert not writer.is_alive()
+    assert results == [None]
+    state = json.loads(state_path.read_text(encoding="utf-8"))
+    assert "parked_latch" not in state
+    assert state["ship_watcher"]["fragment"] == "gh run watch 1 --exit-status"
 
 
 def test_github_outage_never_silences_and_never_clears_the_latch(monkeypatch, tmp_path):

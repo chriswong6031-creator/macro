@@ -152,45 +152,38 @@ EXTERNAL_BLOCKERS = {
 # So it is internal, and the ladder now matches the severity of the state.
 CI_FAILED_UNMERGED = "ci_failed_unmerged"
 # ── Ship-watcher quiescence (Sol commission #6379, 2026-08-24) ────────────────
-# A "ship watcher" is a DELAYED BACKGROUND wake timer: a `run_in_background`
-# Bash whose command sleeps at least this long before doing anything else. Its
-# completion starts a NEW model turn via `<task-notification>` (reproduced live
-# 2026-08-24; also the measured 2026-08-04 `stop_hook_active` reset class), and
-# that turn's Stop re-enters this guard. The platform exposes NO way for a hook
-# to enumerate or cancel Claude-native background tasks, so watcher lifetime is
-# controlled at the only two boundaries a repository owns: CREATION (at most one
-# live reservation per session state — a second overlapping timer is refused, and
-# any timer aimed at an already-terminal state is refused) and WAKE (a terminal
-# latch makes the re-entered Stop pass silently). Nothing here kills a process
-# or task: an unknown/foreign waiter is simply left alone, which is the
-# fail-closed direction for ownership.
+# A "ship watcher" is one long-lived deterministic condition process: currently
+# `gh run watch` or `gh pr checks --watch`. It polls INSIDE that process and exits
+# only when GitHub materially changes, so unchanged observations produce zero
+# task-completion/model turns. Timer transports (`sleep`, computed sleep forms,
+# polling loops) are refused: even one-at-a-time timers implement the incident
+# loop `timer fires -> model wakes -> unchanged check -> successor timer`.
+# Foreground/background tool flags cannot bypass classification, and shell-level
+# `&` detachment is refused because the reserved shell would no longer own the
+# condition process whose lifetime the ledger tracks.
 #
-# 60s is the discriminator between "waiting out a command" and "waking the
-# session later": foreground waits and short retry sleeps never produce a
-# task-notification turn minutes after the session went quiet.
+# The platform exposes NO way for a hook to enumerate or cancel Claude-native
+# background tasks, so lifetime is controlled at creation. At most one condition
+# process is reserved per session state. After it exits, the same HEAD + condition
+# fingerprint stays consumed: process absence is not permission for an unchanged
+# successor. A genuinely different head/run/check condition may reserve once.
+# Nothing here kills a process or task; an unknown/foreign waiter is simply left
+# alone, which is the fail-closed direction for ownership.
 #
 # OCCUPANCY IS BOUND TO THE REAL WATCHER LIFETIME, observed directly (Sol
-# re-review 2026-08-25). Neither the nominal sleep deadline nor a head move
-# ever frees the slot — the old Claude-native task may still be alive either
-# way, and hooks cannot cancel it. The slot frees on exactly one kind of
+# re-review 2026-08-25). Neither ledger age nor a head move frees the slot —
+# the old Claude-native task may still be alive either way, and hooks cannot
+# cancel it. The slot frees on exactly one kind of
 # evidence: the reserved command's PROCESS is provably absent from the live
 # process table (`ps -axwwo command=`), checked only after a short start
 # grace (below) so a task the harness has admitted but not yet spawned is not
-# double-booked. The lawful post-wake successor (red-team F3) is admitted by
-# that same evidence — a fired watcher's process is gone — while a stacked
-# second live watcher is mechanically refused for as long as the first one
-# actually runs. Unknown liveness (an unanswerable ps) refuses: unknown
-# completion must not permit stacking.
-WATCHER_MIN_SLEEP_SECONDS = 60
+# double-booked. A stacked second live watcher is mechanically refused for as
+# long as the first one actually runs. Unknown liveness (an unanswerable ps)
+# refuses: unknown completion must not permit stacking.
 # Conservative bound on harness task-start latency: within this window after
 # acquisition the reservation is occupied regardless of the process table,
 # because an admitted-but-not-yet-spawned task is invisible to ps.
 WATCHER_START_GRACE_SECONDS = 60
-# The classifier reads LITERAL `sleep` delays (integer, optional s/m/h/d
-# suffix). Computed delays (`sleep $((30*60))`, `python -c 'time.sleep(...)'`)
-# are invisible to it — the gate is a coalescer for the shapes sessions
-# actually emit, not a sandbox; unrecognized delay forms simply fail open.
-_WATCHER_SLEEP_UNIT_SECONDS = {"": 1, "s": 1, "m": 60, "h": 3600, "d": 86400}
 # Test-only knob: seconds to sleep between the locked read and write of the
 # watcher acquisition, so the concurrency regression can force the interleaving
 # the lock exists to prevent. Unset (production) means zero.
@@ -926,6 +919,35 @@ def _save(path: Path, state: dict[str, Any]) -> None:
     temp.replace(path)
 
 
+def _ledger_lock_path(path: Path) -> Path:
+    """The one lock for every read-modify-write of a session ledger.
+
+    The historical suffix is retained so an already-running hook from the
+    immediately preceding revision contends on the same file during rollout.
+    This remains part of the existing per-session ledger, not another store.
+    """
+    return path.with_suffix(".watcher.lock")
+
+
+def _update_ledger(path: Path, mutate: Any, *, initial: dict[str, Any] | None = None) -> Any:
+    """Apply one coherent ledger transaction and return ``mutate``'s result.
+
+    Every writer re-loads INSIDE the same lock used by watcher admission. The
+    optional ``initial`` is used only when the ledger genuinely disappeared;
+    it cannot replace a newer on-disk state and therefore cannot erase a
+    concurrent watcher reservation.
+    """
+    with _file_lock(_ledger_lock_path(path)):
+        latest = _load(path)
+        if not isinstance(latest, dict):
+            if initial is None:
+                return None
+            latest = dict(initial)
+        result = mutate(latest)
+        _save(path, latest)
+        return result
+
+
 def _proof(state: dict[str, Any], gate: str, key: str) -> Any | None:
     """Return a monotonic ship-gate proof only when its identity still matches."""
     entry = (state.get("ship_proofs") or {}).get(gate) or {}
@@ -942,9 +964,17 @@ def _remember_proof(
     value: Any,
 ) -> None:
     """Persist completed gates so later Stop turns do not poll GitHub again."""
-    proofs = state.setdefault("ship_proofs", {})
-    proofs[gate] = {"key": key, "value": value}
-    _save(path, state)
+    def remember(latest: dict[str, Any]) -> dict[str, Any]:
+        proofs = latest.setdefault("ship_proofs", {})
+        proofs[gate] = {"key": key, "value": value}
+        return dict(latest)
+
+    latest = _update_ledger(path, remember, initial=state)
+    if isinstance(latest, dict):
+        # The current Stop continues from the same authoritative snapshot the
+        # transaction persisted; later proof lookups must not use stale state.
+        state.clear()
+        state.update(latest)
 
 
 def _external_exit_key(code: str, head: str, reason: str) -> str:
@@ -983,34 +1013,77 @@ def _external_exit_key(code: str, head: str, reason: str) -> str:
 
 
 def _watcher_request(payload: dict[str, Any]) -> dict[str, Any] | None:
-    """Classify a PreToolUse payload as a ship-watcher creation, else None.
+    """Classify condition watches and no-progress timer bypasses.
 
-    Pure text inspection — no filesystem, no git, no network — so the common
-    case (every ordinary Bash call) costs one regex and returns before the
-    delegation machinery is even consulted. Only a BACKGROUND command whose
-    longest literal ``sleep N`` is at least WATCHER_MIN_SLEEP_SECONDS is a
-    watcher: that is the shape whose completion wakes the session minutes
-    later (incident PR #6377's delayed rerun timer, and the leftover timers
-    that kept re-narrating PR #6371's PARKED state). Foreground commands,
-    short sleeps, and non-Bash tools are never gated here.
+    Pure text inspection keeps ordinary Bash free. Timer-shaped commands are
+    returned with ``deny_timer`` regardless of foreground/background flag or
+    literal/computed delay; they can only wake the model to poll. Native GitHub
+    condition watches return ``reserve_condition`` because they remain inside
+    one deterministic process until a material state transition. A shell-level
+    single ``&`` around such a process returns ``deny_detached``: its child
+    lifetime cannot be bound safely to the reserved shell command.
+
+    This is an admission gate, not a shell sandbox. It recognizes the concrete
+    wait transports observed in #6379/#6406 and fails closed for those shapes;
+    ordinary commands remain outside its authority.
     """
     if str(payload.get("tool_name") or "") != "Bash":
         return None
     tool_input = payload.get("tool_input")
-    if not isinstance(tool_input, dict) or not tool_input.get("run_in_background"):
+    if not isinstance(tool_input, dict):
         return None
     command = str(tool_input.get("command") or "")
-    sleeps = [
-        int(amount) * _WATCHER_SLEEP_UNIT_SECONDS[unit.lower()]
-        for amount, unit in re.findall(r"\bsleep\s+(\d+)([smhdSMHD]?)\b", command)
-    ]
-    longest = max(sleeps, default=0)
-    if longest < WATCHER_MIN_SLEEP_SECONDS:
+    digest = hashlib.sha256(command.encode("utf-8")).hexdigest()[:12]
+
+    # Shell sleep at a command boundary catches literal and computed operands;
+    # the language-specific forms close the exact nonliteral bypass observed
+    # in review. A gh polling loop is likewise a timer even if it omits sleep.
+    shell_sleep = re.search(
+        r"(?im)(?:^|[;&|()\n])\s*(?:(?:builtin|command)\s+)?sleep(?:\s|$)",
+        command,
+    )
+    language_sleep = re.search(
+        r"(?i)\b(?:time|asyncio)\.sleep\s*\(|\bstart-sleep(?:\s|$)",
+        command,
+    )
+    polling_loop = re.search(r"(?is)\b(?:while|until)\b.*\bgh\b", command)
+    if shell_sleep or language_sleep or polling_loop:
+        return {
+            "command": command,
+            "digest": digest,
+            "admission": "deny_timer",
+            "condition": "timer-poll",
+        }
+
+    run_watch = re.search(r"(?i)\bgh\s+run\s+watch\s+([^\s;&|]+)", command)
+    pr_watch = re.search(r"(?i)\bgh\s+pr\s+checks\b([^\n;&|]*)", command)
+    if pr_watch is not None and re.search(
+        r"(?i)(?:^|\s)--watch(?:\s|$)", pr_watch.group(1)
+    ) is None:
+        pr_watch = None
+    if run_watch is None and pr_watch is None:
         return None
+
+    # Single ampersand is shell detachment; && is ordinary sequencing.
+    if re.search(r"(?<!&)&(?!&)", command):
+        return {
+            "command": command,
+            "digest": digest,
+            "admission": "deny_detached",
+            "condition": "detached-condition-watch",
+        }
+
+    if run_watch is not None:
+        condition = f"gh-run:{run_watch.group(1)}"
+    else:
+        remainder = str(pr_watch.group(1) or "").strip().split()
+        target = remainder[0] if remainder and not remainder[0].startswith("-") else "current-head"
+        condition = f"gh-pr-checks:{target}"
     return {
         "command": command,
-        "sleep_seconds": longest,
-        "digest": hashlib.sha256(command.encode("utf-8")).hexdigest()[:12],
+        "digest": hashlib.sha256(condition.encode("utf-8")).hexdigest()[:12],
+        "admission": "reserve_condition",
+        "condition": condition,
     }
 
 
@@ -1027,9 +1100,9 @@ def _latched_terminal_heads(state: dict[str, Any]) -> set[str]:
     (a spent rate-limit window, say) lawfully resumes at the same head once
     the blocker lifts — a permanent "terminal" refusal there would deny the
     resumed session its one legitimate watcher. Post-exit wake QUIESCENCE is
-    already owned by the exit-key memory in ``_block``, which passes the
-    identical frozen state silently; a redundant post-exit watcher therefore
-    wakes to silence rather than being refused at creation.
+    already owned by the exit-key memory in ``_block``, while watcher
+    admission independently refuses timer transport and an unchanged
+    condition successor.
     Unparseable latches contribute nothing: failing to recognise one only
     ALLOWS a watcher, never denies one.
     """
@@ -1058,9 +1131,9 @@ def _watcher_fragment(command: str) -> str:
 
     The first non-empty line, bounded to 120 characters: `run_in_background`
     Bash commands appear verbatim in the spawned shell's argv, and the
-    sleep-led first line ("sleep 1800 && gh run rerun …") is the distinctive
-    part. Bounded because ps output and multi-line argv rendering both make
-    full-command matching brittle. A fragment shared with a sibling session's
+    native condition-watch line ("gh run watch …") is the distinctive part.
+    Bounded because ps output and multi-line argv rendering both make full-
+    command matching brittle. A fragment shared with a sibling session's
     identical watcher can only cause a REFUSAL, never a kill — fail-closed.
     """
     for line in command.strip().splitlines():
@@ -1108,14 +1181,15 @@ def _watcher_gate(root: Path, path: Path, state: dict[str, Any], watch: dict[str
     nothing is ever killed: an existing background task simply runs out.
 
     Occupancy is bound to the REAL watcher lifetime (Sol re-review
-    2026-08-25), not to the ledger entry's age, the nominal sleep deadline,
-    or the current HEAD: within WATCHER_START_GRACE_SECONDS of acquisition
+    2026-08-25), not to the ledger entry's age or the current HEAD: within
+    WATCHER_START_GRACE_SECONDS of acquisition
     the slot is occupied unconditionally (the admitted task may not have
     spawned yet), and after that it is occupied for exactly as long as the
     reserved command's process is observably alive. A head move while the old
     watcher still runs therefore REFUSES — replacing the reservation would
-    leave two live watchers with one recorded. The fired watcher's successor
-    (red-team F3) is admitted by the same evidence: its process is gone.
+    leave two live watchers with one recorded. Once absent, the SAME
+    head/condition remains consumed and refuses a recursive successor; only a
+    materially different head or condition can replace it.
 
     Failure directions are deliberate and split: questions about whether to
     REFUSE extra machinery (the terminal-latch head read) fail open, while
@@ -1125,7 +1199,12 @@ def _watcher_gate(root: Path, path: Path, state: dict[str, Any], watch: dict[str
     try:
         head = _run(root, "git", "rev-parse", "HEAD")
     except Exception:
-        head = ""
+        _deny_watcher(
+            "SHIP WATCHER REFUSED: the current Git HEAD is unanswerable, so "
+            "this condition watch cannot be bound to a safe state identity. "
+            "Unknown identity must not admit an untracked waiter."
+        )
+        return
     if head and head in _latched_terminal_heads(state):
         _deny_watcher(
             "SHIP WATCHER REFUSED: this session's ship state at HEAD "
@@ -1194,15 +1273,29 @@ def _watcher_gate(root: Path, path: Path, state: dict[str, Any], watch: dict[str
                 "HEAD does not end the old timer's life."
             )
             return
-        # The reserved process is provably absent: the old watcher fired or
-        # died, and this request is its lawful successor. Fall through.
+        same_condition = (
+            str(reservation.get("head") or "") == head
+            and str(reservation.get("digest") or "") == str(watch.get("digest") or "")
+        )
+        if same_condition:
+            _deny_watcher(
+                "SHIP WATCHER UNCHANGED WAIT REFUSED: the prior deterministic "
+                "condition watcher has completed, but this request names the "
+                "same HEAD and external condition. Process absence is not "
+                "permission to create a successor polling turn. Continue from "
+                "the material result that woke the session; do not re-arm the "
+                "same wait."
+            )
+            return
+        # Process absence plus a different head/condition is the only lawful
+        # replacement path. The old watcher cannot overlap, and the new
+        # fingerprint represents genuinely new external work.
     state["ship_watcher"] = {
         "digest": watch["digest"],
         "fragment": _watcher_fragment(watch["command"]),
+        "condition": watch["condition"],
         "head": head,
         "created": now,
-        # Informational only — occupancy never reads this deadline.
-        "nominal_fire": now + float(watch["sleep_seconds"]),
     }
     _save(path, state)
 
@@ -1226,16 +1319,49 @@ def _pre_tool_use(payload: dict[str, Any], raw: bytes) -> None:
     watch = _watcher_request(payload)
     if watch is None:
         return
+    admission = str(watch.get("admission") or "")
+    if admission == "deny_timer":
+        _deny_watcher(
+            "SHIP WATCHER TIMER REFUSED: sleep/poll timers are not a lawful "
+            "external wait owner. Their completion wakes the reasoning model "
+            "even when the observed state is unchanged and enables recursive "
+            "successor polling. Use one native condition watch such as "
+            "`gh run watch <id> --exit-status` or `gh pr checks --watch`; its "
+            "unchanged observations remain inside one process."
+        )
+        return
+    if admission == "deny_detached":
+        _deny_watcher(
+            "SHIP WATCHER DETACH REFUSED: shell-level `&` detaches the condition "
+            "process from the command lifetime recorded in the session ledger. "
+            "Run one native condition watch without shell detachment."
+        )
+        return
+    if admission != "reserve_condition":
+        _deny_watcher(
+            "SHIP WATCHER REFUSED: the watcher-shaped command has no recognized "
+            "safe admission policy. Unknown wait transport fails closed."
+        )
+        return
     if _delegate_to_evaluated_hook(payload, raw):
         return
     root = _repo_root(payload)
     if root is None:
+        _deny_watcher(
+            "SHIP WATCHER REFUSED: no repository/session identity is available, "
+            "so this condition watch cannot be reserved safely."
+        )
         return
     path = _state_path(root, payload)
-    with _file_lock(path.with_suffix(".watcher.lock")):
+    with _file_lock(_ledger_lock_path(path)):
         delay = os.environ.get(_WATCHER_ACQUIRE_TEST_DELAY_ENV, "")
         state = _load(path)
         if not isinstance(state, dict):
+            _deny_watcher(
+                "SHIP WATCHER REFUSED: the existing per-session ship ledger is "
+                "missing or unreadable, so a one-owner reservation cannot be "
+                "proven."
+            )
             return
         if delay:
             # Test-only: widen the read→write window so the concurrency
@@ -4218,21 +4344,6 @@ def _block(
     and an unratified block records nothing, so no ladder widens: the report
     is demanded once per frozen state instead of once per Stop.
     """
-    exits = state.get("ladder_exits")
-    remembered = [str(item) for item in exits] if isinstance(exits, list) else []
-    if exit_key and exit_key in remembered:
-        return
-    previous = state.get("last_blocker")
-    count = int(state.get("blocker_count") or 0) + 1 if previous == code else 1
-    state["last_blocker"] = code
-    state["blocker_count"] = count
-    total_blocks = int(state.get("total_blocks") or 0) + 1
-    state["total_blocks"] = total_blocks
-    external_blocks = int(state.get("external_blocks") or 0)
-    if code in EXTERNAL_BLOCKERS:
-        external_blocks += 1
-        state["external_blocks"] = external_blocks
-    _save(path, state)
     final = str(payload.get("last_assistant_message") or "").lstrip()
     if not final:
         final = _transcript_final_message(payload).lstrip()
@@ -4251,21 +4362,63 @@ def _block(
     # needs count >= 2 or external_blocks >= 3; any-code needs count >= 10 or
     # total_blocks >= 15). So the first-attempt bailout the flag was guarding against
     # stays impossible — on a first Stop total_blocks is 1 and no arm can fire.
-    reentrant = bool(payload.get("stop_hook_active")) or total_blocks >= 2
-    reported = reentrant and final.startswith("SHIP LOOP BLOCKED:")
-    external_escape = code in EXTERNAL_BLOCKERS and (count >= 2 or external_blocks >= 3)
-    any_code_escape = count >= 10 or total_blocks >= 15
-    if reported and (external_escape or any_code_escape):
-        if exit_key:
-            # Bounded: the list only ever holds frozen merged-head identities,
-            # and a session mints at most a handful of merges.
-            state["ladder_exits"] = (remembered + [exit_key])[-20:]
-            _save(path, state)
+    def apply_block(latest: dict[str, Any]) -> dict[str, Any]:
+        exits = latest.get("ladder_exits")
+        remembered = [str(item) for item in exits] if isinstance(exits, list) else []
+        if exit_key and exit_key in remembered:
+            return {"silent": True}
+
+        previous = latest.get("last_blocker")
+        count = int(latest.get("blocker_count") or 0) + 1 if previous == code else 1
+        latest["last_blocker"] = code
+        latest["blocker_count"] = count
+        total_blocks = int(latest.get("total_blocks") or 0) + 1
+        latest["total_blocks"] = total_blocks
+        external_blocks = int(latest.get("external_blocks") or 0)
+        if code in EXTERNAL_BLOCKERS:
+            external_blocks += 1
+            latest["external_blocks"] = external_blocks
+
+        reentrant = bool(payload.get("stop_hook_active")) or total_blocks >= 2
+        reported = reentrant and final.startswith("SHIP LOOP BLOCKED:")
+        external_escape = code in EXTERNAL_BLOCKERS and (
+            count >= 2 or external_blocks >= 3
+        )
+        any_code_escape = count >= 10 or total_blocks >= 15
+        escaped = reported and (external_escape or any_code_escape)
+        if escaped and exit_key:
+            # Bounded: the list only ever holds frozen state identities, and a
+            # session mints at most a handful of them.
+            latest["ladder_exits"] = (remembered + [exit_key])[-20:]
+        return {
+            "silent": False,
+            "escaped": escaped,
+            "count": count,
+            "total_blocks": total_blocks,
+        }
+
+    outcome = _update_ledger(path, apply_block, initial=state)
+    if not isinstance(outcome, dict):
+        # This path is only reachable if the lock/transaction itself failed;
+        # preserve the guard's blocking direction instead of granting an exit.
+        _emit(
+            {
+                "decision": "block",
+                "reason": (
+                    "SHIP LOOP guard_error: session ledger transaction was "
+                    "unanswerable; completion cannot be proven safely."
+                ),
+            }
+        )
+        return
+    if outcome.get("silent") or outcome.get("escaped"):
         return
     # The escape hint is only inviting when an escape is plausibly one attempt away:
     # an external code (its ceiling is low), or an internal code already near the
     # any-code ceiling. Offering it to a fresh internal block would invite a bailout
     # long before the loop breaker is meant to arm.
+    count = int(outcome["count"])
+    total_blocks = int(outcome["total_blocks"])
     escape_hint = code in EXTERNAL_BLOCKERS or count >= 9 or total_blocks >= 14
     body = (
         f"SHIP LOOP {code}: {reason}\n"
@@ -4284,7 +4437,7 @@ def _session_start(root: Path, path: Path, payload: dict[str, Any]) -> None:
     source = str(payload.get("source") or "")
     state = _load(path)
     if state is None or source in {"startup", "clear"}:
-        state = {
+        baseline_state = {
             "root": str(root),
             "start_head": _run(root, "git", "rev-parse", "HEAD"),
             "baseline": _fingerprint(root),
@@ -4293,7 +4446,17 @@ def _session_start(root: Path, path: Path, payload: dict[str, Any]) -> None:
             "total_blocks": 0,
             "external_blocks": 0,
         }
-        _save(path, state)
+
+        def reset(latest: dict[str, Any]) -> None:
+            # A concurrent/live watcher remains reserved across a SessionStart
+            # reset; erasing it would reopen the slot while its process lives.
+            watcher = latest.get("ship_watcher")
+            latest.clear()
+            latest.update(baseline_state)
+            if isinstance(watcher, dict):
+                latest["ship_watcher"] = watcher
+
+        _update_ledger(path, reset, initial={})
     _emit(
         {
             "hookSpecificOutput": {
@@ -4950,13 +5113,22 @@ def main() -> None:
     if payload is None:
         return
     if str(payload.get("hook_event_name") or "") == "PreToolUse":
-        # The watcher gate is advisory and fail-open: a crash here may never
-        # deny (or delay) ordinary tool use, so it does not route through the
-        # guard_error path below — it just allows.
+        # Ordinary Bash remains fail-open because _watcher_request returns
+        # before touching state. A command already classified as watcher-shaped
+        # fails CLOSED if admission itself crashes: allowing an untracked wait
+        # is exactly how duplicate/no-progress model wakes bypass the gate.
         try:
             _pre_tool_use(payload, raw)
         except Exception:
-            pass
+            try:
+                watch = _watcher_request(payload)
+            except Exception:
+                watch = None
+            if watch is not None:
+                _deny_watcher(
+                    "SHIP WATCHER REFUSED: watcher admission was unanswerable, "
+                    "so safe single-owner tracking could not be proven."
+                )
         return
     if _delegate_to_evaluated_hook(payload, raw):
         return

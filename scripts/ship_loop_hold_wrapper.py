@@ -355,6 +355,25 @@ def _ledger(guard: ModuleType, payload: dict[str, Any]) -> tuple[Path | None, di
         return None, None
 
 
+def _update_ledger(guard: ModuleType, path: Path | None, mutate: Any) -> Any:
+    """Use the guard's coherent per-session ledger transaction, or do nothing.
+
+    A wrapper/guard revision mismatch must never fall back to saving a stale
+    whole-ledger snapshot. Missing transaction support therefore loses only
+    the narration latch (the documented harmless direction); ordinary Stop
+    enforcement still delegates unchanged.
+    """
+    if path is None:
+        return None
+    updater = getattr(guard, "_update_ledger", None)
+    if not callable(updater):
+        return None
+    try:
+        return updater(path, mutate)
+    except Exception:
+        return None
+
+
 def _parked_message(probe: dict[str, Any]) -> dict[str, str]:
     checks = ", ".join(str(name) for name in probe["passed"][:8])
     return {
@@ -405,28 +424,32 @@ def _handle_stop(guard: ModuleType, payload: dict[str, Any]) -> dict[str, Any] |
 
     if probe is not None and probe["status"] == "parked":
         key = f"parked:{probe['number']}:{probe['head']}"
-        if latched == key:
+        def latch(latest: dict[str, Any]) -> str:
+            if str(latest.get("parked_latch") or "") == key:
+                return "already"
+            latest["parked_latch"] = key
+            return "written"
+
+        latch_result = _update_ledger(guard, path, latch)
+        if latch_result == "already":
             # Same frozen hold, already narrated once: quiescent pass. This is
             # what makes a leftover background task's wake turn end silently.
             return {"action": "silent"}
-        if state is not None and path is not None:
-            state["parked_latch"] = key
-            try:
-                guard._save(path, state)
-            except Exception:
-                pass
+        if latch_result is None and latched == key:
+            # A pre-transaction delegate can still read an existing latch. It
+            # may silence that exact mechanically re-proven state, but it may
+            # not write and risk erasing a concurrent watcher.
+            return {"action": "silent"}
         return {"action": "emit", "value": _parked_message(probe)}
 
-    if latched and state is not None and path is not None:
+    if state is not None and path is not None:
         # The hold state positively moved (released, re-armed, red, pending,
         # new head, dirty tree, closed PR, or the worktree stopped being a
-        # candidate at all): the latch names a state that no longer exists.
-        # Clear it so ordinary fail-closed law gates fresh.
-        state.pop("parked_latch", None)
-        try:
-            guard._save(path, state)
-        except Exception:
-            pass
+        # candidate at all): any latch in the CURRENT locked ledger names a
+        # state that no longer exists. The pre-probe snapshot may not have seen
+        # a concurrent latch, so the transaction itself decides whether there
+        # is one to clear. Ordinary fail-closed law then gates fresh.
+        _update_ledger(guard, path, lambda latest: latest.pop("parked_latch", None))
 
     if probe is not None:
         hold_block = _hold_block(probe)
