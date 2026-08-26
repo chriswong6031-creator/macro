@@ -74,7 +74,7 @@ affects:
   - agentos/decisions/DEC-MAS48-CEO-INGRESS-V1-ACCEPTED-ARCHITECTURE.md
   - agentos/discoveries/DSC-PERSONAL-PRO-INGRESS-PRINCIPAL-GAP.md
 confidence: high
-reversibility: moderate
+reversibility: costly
 decided_by: ceo-sol
 decided_at: 2026-08-26
 ---
