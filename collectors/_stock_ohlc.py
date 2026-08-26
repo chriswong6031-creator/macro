@@ -160,7 +160,29 @@ def _extract(df: pd.DataFrame, t: str, group: str) -> pd.DataFrame | None:
         if "Close" not in cols:
             raise KeyError("Close")
         sub = sub[cols].rename(columns=_REN).dropna(subset=["close"])
+        sub = _drop_non_trading_placeholders(sub)
         return sub.astype("float64") if not sub.empty else None
     except KeyError:
         log.warning("stock_ohlc[%s]: no data for %s", group, t)
         return None
+
+
+def _drop_non_trading_placeholders(df: pd.DataFrame) -> pd.DataFrame:
+    """Remove Yahoo's zero-volume flat rows without guessing from missing data.
+
+    Suspended China/Hong Kong names can receive a synthetic daily row whose OHLC all
+    repeat the prior close and whose volume is exactly zero. That row is not a market
+    session. Require close/high/low plus an explicit non-positive volume before
+    excluding it; a missing volume or a positive-volume flat session remains honest.
+    """
+    required = {"close", "high", "low", "volume"}
+    if not required.issubset(df.columns):
+        return df
+    price_cols = [c for c in ("open", "close", "high", "low") if c in df.columns]
+    prices = df[price_cols]
+    finite_prices = prices.notna().all(axis=1)
+    close = df["close"]
+    tolerance = close.abs() * 1e-10 + 1e-8
+    flat = prices.sub(close, axis=0).abs().le(tolerance, axis=0).all(axis=1)
+    explicit_zero_volume = df["volume"].notna() & df["volume"].le(0)
+    return df.loc[~(finite_prices & flat & explicit_zero_volume)]
