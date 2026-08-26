@@ -38,6 +38,32 @@ carry `opened_at` + `opened_session` (the inputs amendment A8 binds `decision_cu
 mint **no** decision or tradability clock (A8's premise, and the reason `tradable_at` is
 `NOT_ASSERTED` until V4-B4 exists).
 
+## What this probe does NOT cover — read this before calling B1 accepted
+
+A green probe is a floor, not acceptance. It covers the store-shaped half of the
+acceptance contract and is silent on the rest. Four items must be proven separately, and
+naming them here is deliberate: a probe that looks comprehensive while quietly omitting
+acceptance criteria is worse than no probe at all.
+
+1. **Run identity and ancestry.** That the run is `event=schedule`, that `et_gate` kept it,
+   and that its **HEAD SHA contains the B1 merge** are run-level facts this probe never sees.
+   Check them against the run, and confirm the job log's actual `##[group]Run` list contains
+   the `reconcile_us_candidate_episodes` step — checkout ancestry is not proof the step ran.
+2. **Binding the receipt to that run.** The probe asserts the receipt carries
+   `source_hashes`, `source_receipts`, `ledger_sha256` and `projection_hashes`, but not that
+   those hashes match the inputs that particular run consumed. Compare them against the
+   committed `episode_inputs/turn_watch/<session>.json` the run actually read.
+3. **Duplicate / idempotence / retry semantics.** The probe checks that event ids are unique
+   and content-addressed. It does not exercise a retry, and B1's keep-first contract is about
+   what happens on the second write, not the first.
+4. **Provisional Radar lineage staying staged and unarmed.** B1 accepts a Radar relation only
+   as provisional (`DEC:PROPHET-B1-CANONICAL-EPISODE-BINDINGS` R3). Nothing here checks that
+   it has not been quietly promoted. Note `data/entry_radar/forward.parquet` is absent from
+   `main`, so the Radar intake is expected to degrade to `UNREADABLE_SOURCE` — an expected
+   honest degradation, not a fault.
+
+A fresh independent critic must attack the full evidence packet, including these four.
+
 ## Interpreting a failure
 
 A red check here is not automatically a B1 defect. Distinguish, per the failure taxonomy:
