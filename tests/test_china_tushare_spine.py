@@ -352,6 +352,88 @@ def test_calendar_requires_full_calendar_days_and_sse_szse_equality(tmp_path):
         spine._normalise_calendar(missing, "SSE", date(2024, 1, 1), date(2024, 1, 3))
 
 
+def _full_calendar_frame(exchange: str, start_compact: str, end_compact: str) -> pd.DataFrame:
+    """A vendor trade_cal response covering every calendar day in [start, end],
+    with every day marked open and an exact-adjacency pretrade_date (every
+    day's previous session is the immediately preceding calendar day) so
+    ``compile_market_sessions`` accepts the synthesized clock unmodified.
+    """
+    start = spine._parse_date(start_compact)
+    end = spine._parse_date(end_compact)
+    days = pd.date_range(start, end, freq="D")
+    return pd.DataFrame([
+        {
+            "exchange": exchange,
+            "cal_date": day.strftime("%Y%m%d"),
+            "is_open": 1,
+            "pretrade_date": (day - pd.Timedelta(days=1)).strftime("%Y%m%d"),
+        }
+        for day in days
+    ])
+
+
+def test_collect_calendars_writes_each_unit_to_its_own_year_partition(tmp_path):
+    """Regression pin for the leaked-`year` defect: a multi-year calendar
+    collection must land each unit's rows in ITS OWN year partition, never
+    a neighboring year's file (the corruption exposed by canary run
+    32921678076: SSE 2023's rows were written into year=2024.parquet).
+    """
+    def fake(endpoint, fields="", **params):
+        assert endpoint == "trade_cal"
+        return _full_calendar_frame(
+            params["exchange"], params["start_date"], params["end_date"],
+        )
+
+    collector = spine.TushareAShareSpineCollector(tmp_path, query=fake, now=lambda: NOW)
+    assert collector.collect_calendars(date(2023, 1, 1), date(2024, 1, 2)) is True
+
+    year_2023 = pd.read_parquet(
+        tmp_path / "reference" / "trade_calendar" / "year=2023.parquet",
+    )
+    year_2024 = pd.read_parquet(
+        tmp_path / "reference" / "trade_calendar" / "year=2024.parquet",
+    )
+    # No cross-year pollution: each partition holds only its own year's dates.
+    assert set(year_2023["cal_date"].astype(str).str[:4]) == {"2023"}
+    assert set(year_2024["cal_date"].astype(str).str[:4]) == {"2024"}
+    assert len(year_2023) == len(spine.CALENDAR_EXCHANGES) * 365
+    assert len(year_2024) == len(spine.CALENDAR_EXCHANGES) * 2
+
+    state = spine.load_state(tmp_path)
+    units = [
+        f"{exchange}:20230101:20231231" for exchange in spine.CALENDAR_EXCHANGES
+    ] + [
+        f"{exchange}:20240101:20240102" for exchange in spine.CALENDAR_EXCHANGES
+    ]
+    for unit in units:
+        assert spine._unit_done(state, tmp_path, "trade_cal", unit) is True
+
+
+def test_collect_calendars_writer_and_verifier_derive_the_same_partition(tmp_path):
+    """`_expected_unit_partition_path` (the verifier) must agree with the
+    partition the writer actually recorded for every collected unit --
+    the invariant that lets `_set_unit`/`_unit_artifact_receipt` certify a
+    unit without raising `SpineError: ... partition path disagrees with
+    its unit`.
+    """
+    def fake(endpoint, fields="", **params):
+        return _full_calendar_frame(
+            params["exchange"], params["start_date"], params["end_date"],
+        )
+
+    collector = spine.TushareAShareSpineCollector(tmp_path, query=fake, now=lambda: NOW)
+    assert collector.collect_calendars(date(2023, 1, 1), date(2024, 1, 2)) is True
+
+    state = spine.load_state(tmp_path)
+    units = state["units"]["trade_cal"]
+    assert len(units) == 4
+    for unit, record in units.items():
+        expected = spine._expected_unit_partition_path(tmp_path, "trade_cal", unit, record)
+        recorded = spine._contained_store_path(tmp_path, record["partition"])
+        assert expected is not None
+        assert expected.resolve(strict=False) == recorded.resolve(strict=False)
+
+
 def test_daily_normalisation_preserves_source_volume_truth_and_exact_session(tmp_path):
     _seed_spine(tmp_path)
     frame = pd.concat([
