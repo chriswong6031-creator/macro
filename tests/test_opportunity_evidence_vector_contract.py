@@ -1340,6 +1340,29 @@ def test_s1_mutation_unpinned_t0_source_fires_r021():
     assert "K3E_R021" in codes
 
 
+def test_s1_native_identity_key_grammar_is_enforced_semantically():
+    """The in-module structural checker implements no `propertyNames`, so the
+    K1 key grammar would pass silently on shape alone. K3E_R021 re-checks it —
+    without this the schema's propertyNames would be decorative."""
+
+    v = _golden_imxi_vector()
+    v["asof"]["t0_evidence_ref"]["native_identity"] = {"not a valid key!": "x"}
+    codes = _codes(validate_vector(_rehash(v)))
+    assert "K3E_R021" in codes
+
+    empty = _golden_imxi_vector()
+    empty["asof"]["t0_evidence_ref"]["native_identity"] = {}
+    assert "K3E_R021" in _codes(validate_vector(_rehash(empty)))
+
+
+def test_s1_missing_t0_evidence_ref_fails_closed():
+    v = _golden_imxi_vector()
+    del v["asof"]["t0_evidence_ref"]
+    codes = _codes(validate_vector(_rehash(v)))
+    assert "K3E_R021" in codes
+    assert any(c.startswith("K3E_SCHEMA") for c in codes)
+
+
 def test_s1_every_schema_t0_source_has_a_registry_pin():
     schema = load_vector_schema()
     registry = load_slot_registry()
