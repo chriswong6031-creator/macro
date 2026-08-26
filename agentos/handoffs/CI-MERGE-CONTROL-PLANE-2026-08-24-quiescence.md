@@ -57,7 +57,14 @@ changed:
       classifier carries the normalized executed gh command into the canonical
       quota helper, so a hot nested watch cannot reserve. The session-ledger
       root and repo-key directories are opened one component at a time with
-      dir_fd + O_NOFOLLOW, closing the ancestor-symlink traversal.
+      dir_fd + O_NOFOLLOW, closing the ancestor-symlink traversal. Fourth
+      adversarial return: the safe argv-executing wrappers nice, caffeinate,
+      and timeout are structurally unwrapped before gh classification;
+      otherwise unknown transports carrying literal child argv ``gh run
+      watch`` fail closed while echo/printf/cat/quoted prose remain data. The
+      outer OS temp root may be root-owned only when it is a sticky,
+      world-writable/searchable directory; the session-root and repo-key
+      children remain user-owned 0700 and no-follow.
   - path: .claude/hooks/gh_quota_guard.py
     what: >
       Extracted the existing hot-watch rule into a pure canonical helper. The
@@ -91,7 +98,9 @@ changed:
       one material-change owner, and distinct-session isolation. Third return
       adds executable-interpreter heredocs, computed command positions,
       data-only negative controls, immediate quota-denial retirement, and a
-      planted session-root ancestor symlink.
+      planted session-root ancestor symlink. Fourth return adds real fake-gh
+      argv executions through nice/caffeinate/timeout plus a mocked root-owned
+      sticky temp-root acceptance and child-symlink refusal.
   - path: tests/test_ship_loop_hold_wrapper.py
     what: >
       Existing narrate-once/release/outage tests plus the complete PARKED →
@@ -186,6 +195,27 @@ verified:
       admits exactly one owner in the separate material-change regression.
       This is not a claim that repository hooks control client model-turn
       creation.
+  - claim: fourth-return defects reproduced before repair
+    command: >
+      python3.12 -m pytest -q tests/test_ship_loop_guard.py -k
+      'argv_wrappers_cannot_hide or root_owned_sticky'
+    result: >
+      5 intended failures: nice, caffeinate, and timeout each returned no
+      watcher classification; the simulated root-owned sticky temp root was
+      rejected before the secure child boundary, and the negative test proved
+      that the child-symlink path had not been reached.
+  - claim: exact quiescence and quota suites are green on the fourth-return tree
+    command: >
+      python3.12 -m pytest -q tests/test_ship_loop_guard.py
+      tests/test_ship_loop_hold_wrapper.py tests/test_gh_quota_guard.py
+      --maxfail=10
+    result: 495 passed, 1 skipped; 3 inherited non-failing pytest temp-cleanup warnings
+  - claim: fourth-return adjacent governance remains green
+    command: >
+      python3.12 -m pytest -q tests/test_self_mod_fence.py
+      tests/test_agent_routing_control.py tests/test_sparse_worktree_profile.py;
+      python3.12 scripts/check_self_mod_fence.py --selftest
+    result: 136 passed; self-mod 16/16 PASS
 unverified:
   - claim: hosted CI green on the exact PR head
     what_would_verify: ci.yml + fences.yml runs on the PR head after push (watched to conclusion before parking)

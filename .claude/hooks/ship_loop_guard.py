@@ -524,7 +524,9 @@ def _state_path(root: Path, payload: dict[str, Any]) -> Path:
     session = re.sub(r"[^A-Za-z0-9_.-]", "_", str(payload.get("session_id") or "default"))
     repo_key = hashlib.sha256(str(root).encode()).hexdigest()[:16]
     temp_root = Path(tempfile.gettempdir())
-    root_fd = _private_directory_fd(temp_root, create=False)
+    root_fd = _private_directory_fd(
+        temp_root, create=False, allow_root_sticky=True
+    )
     ledger_fd = -1
     directory_fd = -1
     try:
@@ -925,16 +927,37 @@ _OPEN_CLOEXEC = getattr(os, "O_CLOEXEC", 0)
 _OPEN_DIRECTORY = getattr(os, "O_DIRECTORY", 0)
 
 
-def _private_directory_fd(directory: Path, *, create: bool) -> int:
-    """Open one user-owned private directory without following its final name."""
+def _private_directory_fd(
+    directory: Path, *, create: bool, allow_root_sticky: bool = False
+) -> int:
+    """Open one trusted directory without following its final name.
+
+    Ledger directories are always effective-UID-owned and private. The one
+    exception is the operating system's outer temp root: a root-owned sticky,
+    world-writable/searchable directory such as ``/tmp`` or ``/private/tmp``.
+    Its children still pass through ``_private_child_directory_fd`` and must be
+    effective-UID-owned 0700 directories.
+    """
     if create:
         directory.mkdir(parents=True, exist_ok=True, mode=0o700)
     flags = os.O_RDONLY | _OPEN_CLOEXEC | _OPEN_DIRECTORY | _OPEN_NOFOLLOW
     descriptor = os.open(directory, flags)
     try:
         info = os.fstat(descriptor)
-        if not stat.S_ISDIR(info.st_mode) or info.st_uid != os.geteuid():
-            raise OSError("ship ledger directory is not a user-owned directory")
+        owned = info.st_uid == os.geteuid()
+        root_sticky = (
+            allow_root_sticky
+            and not create
+            and info.st_uid == 0
+            and bool(info.st_mode & stat.S_ISVTX)
+            and bool(info.st_mode & stat.S_IWOTH)
+            and bool(info.st_mode & stat.S_IXOTH)
+        )
+        if not stat.S_ISDIR(info.st_mode) or not (owned or root_sticky):
+            raise OSError(
+                "ship ledger directory is neither user-owned nor a trusted "
+                "root-owned sticky temp root"
+            )
         if create:
             os.fchmod(descriptor, 0o700)
         return descriptor
@@ -1623,7 +1646,16 @@ def _shell_wait_classification(
             continue
 
         base = os.path.basename(executable).lower()
-        while base in {"command", "builtin", "env", "nohup", "time"}:
+        while base in {
+            "command",
+            "builtin",
+            "env",
+            "nohup",
+            "time",
+            "nice",
+            "caffeinate",
+            "timeout",
+        }:
             if base == "env" and words[:1] in (["-S"], ["--split-string"]):
                 if len(words) < 2:
                     uncertain = True
@@ -1633,6 +1665,61 @@ def _shell_wait_classification(
                 except ValueError:
                     uncertain = True
                     break
+            elif base == "nice":
+                while words and words[0].startswith("-"):
+                    option = words.pop(0)
+                    if option in {"-n", "--adjustment"}:
+                        if not words:
+                            uncertain = True
+                            break
+                        words.pop(0)
+                    elif option.startswith("--adjustment=") or re.fullmatch(
+                        r"-[0-9]+", option
+                    ):
+                        continue
+                    elif option == "--":
+                        break
+                    else:
+                        uncertain = True
+                        break
+            elif base == "caffeinate":
+                while words and words[0].startswith("-"):
+                    option = words.pop(0)
+                    if option in {"-t", "-w"}:
+                        if not words:
+                            uncertain = True
+                            break
+                        words.pop(0)
+                    elif option == "--" or re.fullmatch(r"-[dimsu]+", option):
+                        if option == "--":
+                            break
+                    else:
+                        uncertain = True
+                        break
+            elif base == "timeout":
+                while words and words[0].startswith("-"):
+                    option = words.pop(0)
+                    if option in {"-k", "--kill-after", "-s", "--signal"}:
+                        if not words:
+                            uncertain = True
+                            break
+                        words.pop(0)
+                    elif (
+                        option in {"--foreground", "--preserve-status", "--verbose"}
+                        or option == "--"
+                        or option.startswith("--kill-after=")
+                        or option.startswith("--signal=")
+                    ):
+                        if option == "--":
+                            break
+                    else:
+                        uncertain = True
+                        break
+                if not uncertain:
+                    if not words:
+                        uncertain = True
+                    else:
+                        words.pop(0)  # duration precedes the child argv
             else:
                 while words and (words[0].startswith("-") or assignment.match(words[0])):
                     words.pop(0)
@@ -1725,6 +1812,21 @@ def _shell_wait_classification(
             continue
 
         if base != "gh":
+            # Unknown argv transports are ordinary Bash unless their literal
+            # child argv is watcher-shaped. Data/prose commands are explicit
+            # negatives; quoted prose stays one token and cannot match this
+            # executable-position sequence.
+            data_commands = {"cat", "echo", "printf"}
+            lowered_words = [word.lower() for word in words]
+            if base not in data_commands and any(
+                lowered_words[index : index + 3] == ["gh", "run", "watch"]
+                or (
+                    lowered_words[index : index + 2] == ["gh", "pr"]
+                    and "checks" in lowered_words[index + 2 : index + 4]
+                )
+                for index in range(len(lowered_words))
+            ):
+                uncertain = True
             continue
         if in_loop:
             saw_loop_gh = True

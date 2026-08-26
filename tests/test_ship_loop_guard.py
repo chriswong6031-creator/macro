@@ -11,6 +11,7 @@ import os
 import re
 import shutil
 import signal
+import stat
 import subprocess
 import sys
 import time
@@ -18,6 +19,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -5713,6 +5715,101 @@ def test_executable_indirection_and_transport_cannot_bypass_wait_admission(
 
 
 @pytest.mark.parametrize(
+    "command,argv",
+    [
+        (
+            "/usr/bin/nice gh run watch 123 --exit-status --interval 60",
+            ["/usr/bin/nice"],
+        ),
+        (
+            "/usr/bin/caffeinate -i gh run watch 123 --exit-status --interval 60",
+            ["/usr/bin/caffeinate", "-i"],
+        ),
+        (
+            "timeout 300 gh run watch 123 --exit-status --interval 60",
+            ["timeout", "300"],
+        ),
+    ],
+)
+def test_argv_wrappers_cannot_hide_a_real_fake_gh_watch(
+    command, argv, tmp_path
+):
+    """The classified argv shape is also executed against a fake gh binary.
+
+    This prevents a parser-only repair from recognizing a spelling that the
+    real wrapper does not actually execute as the child command.
+    """
+    request = GUARD._watcher_request(_watcher_payload(command, background=False))
+    assert request is not None
+    assert request["admission"] == "reserve_condition"
+    assert request["condition"] == "gh-run:current-repo:123"
+
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    receipt = tmp_path / "gh-argv.txt"
+    fake_gh = fake_bin / "gh"
+    fake_gh.write_text(
+        "#!/bin/sh\nprintf '%s\\n' \"$@\" > \"$FAKE_GH_RECEIPT\"\n",
+        encoding="utf-8",
+    )
+    fake_gh.chmod(0o700)
+    if argv[0] == "timeout":
+        fake_timeout = fake_bin / "timeout"
+        fake_timeout.write_text(
+            "#!/bin/sh\nshift\nexec \"$@\"\n",
+            encoding="utf-8",
+        )
+        fake_timeout.chmod(0o700)
+    elif not Path(argv[0]).exists():
+        pytest.skip(f"system wrapper absent: {argv[0]}")
+    env = dict(os.environ)
+    env["PATH"] = f"{fake_bin}{os.pathsep}{env.get('PATH', '')}"
+    env["FAKE_GH_RECEIPT"] = str(receipt)
+    subprocess.run(
+        [*argv, "gh", "run", "watch", "123", "--exit-status", "--interval", "60"],
+        env=env,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=True,
+        timeout=10,
+    )
+    assert receipt.read_text(encoding="utf-8").splitlines() == [
+        "run",
+        "watch",
+        "123",
+        "--exit-status",
+        "--interval",
+        "60",
+    ]
+
+
+def test_unknown_argv_transport_with_literal_gh_watch_fails_closed():
+    request = GUARD._watcher_request(
+        _watcher_payload(
+            "/opt/local/bin/custom-wrapper gh run watch 123 --exit-status",
+            background=False,
+        )
+    )
+    assert request is not None
+    assert request["admission"] == "deny_uncertain"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "/usr/bin/nice echo gh run watch 123 --exit-status",
+        "/usr/bin/caffeinate -i printf '%s' 'gh run watch 123 --exit-status'",
+        "timeout 300 cat notes-about-gh-run-watch.txt",
+    ],
+)
+def test_argv_wrappers_preserve_data_and_prose_negative_controls(command):
+    assert GUARD._watcher_request(
+        _watcher_payload(command, background=False)
+    ) is None
+
+
+@pytest.mark.parametrize(
     "command",
     [
         "cat <<'EOF'\nsleep 600\nEOF",
@@ -6358,6 +6455,65 @@ def test_session_ledger_directory_is_private(monkeypatch, tmp_path):
     root.mkdir()
     path = GUARD._state_path(root, {"session_id": "private-mode"})
     assert path.parent.stat().st_mode & 0o777 == 0o700
+
+
+def _mock_root_owned_sticky_temp(monkeypatch):
+    """Make only the first opened directory look like standard root /tmp."""
+    real_fstat = GUARD.os.fstat
+    calls = {"count": 0}
+
+    def root_temp_then_real(descriptor):
+        calls["count"] += 1
+        info = real_fstat(descriptor)
+        if calls["count"] == 1:
+            return SimpleNamespace(
+                st_mode=stat.S_IFDIR | stat.S_ISVTX | 0o777,
+                st_uid=0,
+            )
+        return info
+
+    monkeypatch.setattr(GUARD.os, "fstat", root_temp_then_real)
+
+
+def test_root_owned_sticky_os_temp_root_can_host_private_session_ledgers(
+    monkeypatch, tmp_path
+):
+    monkeypatch.setattr(GUARD.tempfile, "gettempdir", lambda: str(tmp_path))
+    _mock_root_owned_sticky_temp(monkeypatch)
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    path = GUARD._state_path(repo, {"session_id": "root-sticky-temp"})
+
+    assert path.parent.stat().st_mode & 0o777 == 0o700
+    assert path.parent.parent.stat().st_mode & 0o777 == 0o700
+
+
+def test_root_owned_sticky_temp_still_refuses_a_session_root_symlink(
+    monkeypatch, tmp_path
+):
+    victim = tmp_path / "attacker-owned-target"
+    victim.mkdir()
+    (tmp_path / "macro-claude-ship-sessions").symlink_to(
+        victim, target_is_directory=True
+    )
+    monkeypatch.setattr(GUARD.tempfile, "gettempdir", lambda: str(tmp_path))
+    _mock_root_owned_sticky_temp(monkeypatch)
+    called = []
+    real_child_open = GUARD._private_child_directory_fd
+
+    def recording_child_open(parent_fd, name, *, create):
+        called.append(name)
+        return real_child_open(parent_fd, name, create=create)
+
+    monkeypatch.setattr(GUARD, "_private_child_directory_fd", recording_child_open)
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    with pytest.raises(OSError):
+        GUARD._state_path(repo, {"session_id": "root-sticky-symlink"})
+    assert called == ["macro-claude-ship-sessions"]
+    assert list(victim.iterdir()) == []
 
 
 def test_session_ledger_root_ancestor_symlink_is_never_followed(monkeypatch, tmp_path):

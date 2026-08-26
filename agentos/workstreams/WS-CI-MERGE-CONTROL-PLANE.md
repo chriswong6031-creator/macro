@@ -217,7 +217,13 @@ waves:
       to hook-observable behavior: five unchanged PreToolUse requests yielded
       five denies/no updatedInput, and five unchanged post-PARKED wrapper
       observations yielded action=silent while still re-probing; this does not
-      claim repository hooks control client model-turn creation.
+      claim repository hooks control client model-turn creation. The fourth
+      same-carrier return adds structural argv unwrapping for nice, caffeinate,
+      and timeout, with unknown literal gh-watch transports failing closed and
+      data/prose controls remaining open. It also permits a standard
+      root-owned sticky OS temp root while retaining user-owned 0700/no-follow
+      requirements for both ledger child directories; fake-gh execution and a
+      child-symlink negative test bind those semantics.
       Internal codes byte-unchanged (Journey C). PR #6381 held HOLD-FOR-SOL
       per commission stop condition; mutation receipts + replayed-incident
       proof in the PR body and the
