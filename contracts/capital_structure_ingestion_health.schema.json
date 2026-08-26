@@ -110,6 +110,7 @@
         "target_sla_hours": {"type": "number", "minimum": 0},
         "target_next_downstream_job": {"type": "string", "minLength": 1},
         "policy_version": {"type": ["string", "null"]},
+        "discovery_clock_policy_version": {"type": ["string", "null"]},
         "compiler_generation_id": {"type": ["string", "null"]},
         "compiler_as_of": {"type": ["string", "null"], "format": "date-time"},
         "calculated_at": {"type": "string", "format": "date-time"},
@@ -127,6 +128,7 @@
       "required": ["latest_expected_sec_index_date", "latest_expected_sec_index_status", "latest_completed_sec_index_date", "latest_discovered_in_policy_filing_date", "latest_discovered_observed_at", "latest_eligible_retained_filing_date", "latest_eligible_retained_retrieved_at", "latest_compiled_in_policy_filing_date"],
       "properties": {
         "latest_expected_sec_index_date": {"type": ["string", "null"], "format": "date"}, "latest_expected_sec_index_status": {"type": ["string", "null"]}, "latest_completed_sec_index_date": {"type": ["string", "null"], "format": "date"},
+        "latest_expected_realtime_filing_date": {"type": ["string", "null"], "format": "date"}, "latest_filings_status": {"type": ["string", "null"]}, "latest_filings_observed_through": {"type": ["string", "null"], "format": "date-time"},
         "latest_discovered_in_policy_filing_date": {"type": ["string", "null"], "format": "date"}, "latest_discovered_observed_at": {"type": ["string", "null"], "format": "date-time"},
         "latest_eligible_retained_filing_date": {"type": ["string", "null"], "format": "date"}, "latest_eligible_retained_retrieved_at": {"type": ["string", "null"], "format": "date-time"},
         "latest_compiled_in_policy_filing_date": {"type": ["string", "null"], "format": "date"}
