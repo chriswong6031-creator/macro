@@ -165,11 +165,34 @@ classification, request, or reference-generation artifacts reopen the unit.
 
 ## Sessions, prices, and event equality
 
-The canonical market clock is not a union of stock prints. It begins at the fixed
-1991-01-01 calendar anchor, requires exact SSE/SZSE calendar-day and open-session
-equality, validates `pretrade_date` adjacency, and assigns one immutable
-`market_session_position`. TuShare does not publish BSE in the documented
-`trade_cal` venue list, so BSE explicitly inherits that consensus from launch.
+The canonical market clock is not a union of stock prints. It begins at a frozen,
+definition-versioned mainland calendar epoch — `mainland-joint-complete-v1`,
+`1992-01-01` — requires exact SSE/SZSE calendar-day and open-session equality,
+validates `pretrade_date` adjacency, and assigns one immutable
+`market_session_position` counted from that epoch. TuShare does not publish BSE in
+the documented `trade_cal` venue list, so BSE explicitly inherits that consensus
+from launch.
+
+The epoch is the earliest year for which `trade_cal` supplies a JOINTLY complete
+SSE+SZSE calendar, established by outcome-blind source census
+(`scripts/research/cn_limit_calendar_epoch_census.py`; receipt
+`research/cn_limit_alpha_sol/DEP_EXACT_CALENDAR_EPOCH_CENSUS_2026-08-26.md`) and
+frozen in source. It is never selected at runtime, so two runs over one store can
+never disagree about which date owns which ordinal; moving it requires a new
+definition string, never an in-place edit, so artifacts minted under different
+definitions stay distinguishable. Compiled sessions carry `calendar_epoch` and
+`calendar_epoch_definition` for exactly that reason.
+
+This supersedes the previous fixed 1991-01-01 anchor. TuShare returns 182 of 365
+days for SZSE 1991 against SSE's 365, which is SOURCE-HISTORY TRUNCATION and not
+evidence that the missing civil dates fell outside the trading system. History
+before the epoch is therefore typed `PRE_EPOCH_SOURCE_UNSUPPORTED`: it is never
+imputed as closed, never assigned a session position, and one venue's history is
+never borrowed as another's. The exact-range binding check that rejected SZSE 1991
+stays as-is — relaxing it would let a truncated response prove its own truncation
+legitimate anywhere in the range. Because the axis is built from every landed
+partition rather than the requested window, the epoch is enforced where the axis
+is compiled, not merely at the collection constant.
 
 `daily.vol` is stored in lots and `positive_volume` is exactly `volume_lots > 0`.
 Zero-volume source rows remain in the substrate. Any traded/listing-session claim
