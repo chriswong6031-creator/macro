@@ -4,8 +4,11 @@ title: DeepVue clean-room intelligence workspace
 objective: >
   Build the bounded DeepVue-inspired intelligence workspace on Mastermind's existing
   identity, typed datapoint, owner, Brain and Terminal architecture. Done through the
-  current boundary means W0-B, W1-A and W1-B are merged and production-proven with an
-  immutable before/after receipt, while W1-C and W2 remain explicitly unstarted.
+  current boundary means W0-B, W1-A, W1-B and W1-C are merged and production-proven
+  with immutable receipts — W1-C proven for the accepted guest production boundary,
+  with signed-in persistence/resume BUILT_NOT_PROVEN behind the authorized-principal
+  gate — while W2 remains explicitly unstarted and requires a new Chairman/Sol
+  commission.
 status: parked
 program: macro-mastermind-ai
 p0: PRODUCT_TRUST_COHERENCE
