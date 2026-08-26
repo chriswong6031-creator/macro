@@ -95,7 +95,7 @@ do_not_redo:
   - Do not treat Haiku topic Jaccard as usefulness, promotion, or topic-model authority.
   - Do not grant Haiku production authority.
   - Do not manufacture a numeric usefulness threshold from N=7.
-  - Do not start E3-C before its held source-completeness receipt freezes the second issuer.
+  - Do not begin E3-C extraction/model work or freeze its issuer before a held source-completeness receipt exists.
   - Do not describe E3-A2 as production-live Q&A.
   - Do not treat E3-A2 structural reconstruction as qa_exchange.v1 publication authority without the E3-B canonical adapter/validator.
   - Do not copy Pass-A topic labels into deterministic reconstruction.
