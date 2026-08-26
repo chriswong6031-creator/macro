@@ -50,6 +50,9 @@ owns_paths:
   - research/financial_intelligence_fabric/FIF_3A1_REUSE_MAP.md
   - research/financial_intelligence_fabric/FIF_3A2_REUSE_MAP.md
   - research/financial_intelligence_fabric/FIF_3A3_REUSE_MAP.md
+  - research/financial_intelligence_fabric/FIF_3A4R_CROSS_FILING_LINEAGE_PROTOCOL.md
+  - research/financial_intelligence_fabric/FIF_3A4R_AAPL_OVERLAP_CENSUS.json
+  - research/financial_intelligence_fabric/replay_fif3a4r_aapl_overlap_census.py
   - research/financial_intelligence_fabric/FIF_3A2_AAPL_GOLDEN_REVIEW.md
   - contracts/statement_cell.v1.md
   - scripts/capture_fif3a1_aapl_package.py
@@ -65,6 +68,8 @@ discoveries:
   - DSC:AAPL-CF-CASH-CONCEPT-OCCURS-TWICE
   - DSC:AAPL-Q3-DURATION-FAMILIES-SHARE-END-DATE
   - DSC:AAPL-UNLINKED-VINTAGES-REQUIRE-TYPED-REVISION-LINEAGE
+  - DSC:XBRL-DUPLICATE-LAW-IS-INTRA-INSTANCE
+  - DSC:AAPL-A1-A2-CROSS-FILING-OVERLAP-CENSUS
 decisions:
   - DEC:FIF-1-INDEPENDENT-FILING-PACKAGE-FIXTURE
   - DEC:FIF-1R-HERMETIC-PACKET-CONTRACT
@@ -90,15 +95,19 @@ decisions:
   - DEC:FIF-3A3-REUSE-MAP
   - DEC:FIF-3A3-ACCEPTED-GOLDEN-QUERY-ON-MAIN
 next_action: >
-  FIF-1 is DONE / FROZEN. FIF-2 is DONE / FIXTURE_PROVEN SERVICE
-  SUBSTRATE (DEC:FIF-2-DONE-STATEMENTS-MOVE-TO-FIF-3). FIF-2A/B/C remain
-  ACCEPTED / FIXTURE_PROVEN / ON_MAIN. FIF-3 is IN_PROGRESS. FIF-3A1 is
-  ACCEPTED / GOLDEN FIXTURE PROVEN / ON_MAIN. FIF-3A2 is ACCEPTED /
-  GOLDEN FIXTURE PROVEN / ON_MAIN. FIF-3A3 is ACCEPTED / GOLDEN QUERY
-  CONVERGENCE PROVEN / ON_MAIN (DEC:FIF-3A3-ACCEPTED-GOLDEN-QUERY-ON-MAIN).
-  Do not reopen FIF-2A/2B/2C, FIF-3A1, FIF-3A2, or FIF-3A3. Do not call
-  FIF-3 done. Do not claim production issuer coverage. Do not start
-  FIF-3A4 or another issuer.
+  HOLD-FOR-SOL remains on PR #6382. Sol ruled PASS WITH BOUNDED AMENDMENTS
+  on 2026-08-25. Freeze those rulings in the A4R protocol and census; do not
+  merge; do not start FIF-3A4; do not mint an accepted DEC. FIF-1 is DONE /
+  FROZEN. FIF-2 is DONE / FIXTURE_PROVEN SERVICE SUBSTRATE
+  (DEC:FIF-2-DONE-STATEMENTS-MOVE-TO-FIF-3). FIF-2A/B/C remain ACCEPTED /
+  FIXTURE_PROVEN / ON_MAIN. FIF-3 is IN_PROGRESS. FIF-3A1 is ACCEPTED /
+  GOLDEN FIXTURE PROVEN / ON_MAIN. FIF-3A2 is ACCEPTED / GOLDEN FIXTURE
+  PROVEN / ON_MAIN. FIF-3A3 is ACCEPTED / GOLDEN QUERY CONVERGENCE PROVEN /
+  ON_MAIN (DEC:FIF-3A3-ACCEPTED-GOLDEN-QUERY-ON-MAIN). FIF-3A4R is SPEC_ONLY
+  / SOL PASS WITH BOUNDED AMENDMENTS / HOLD-FOR-SOL, not built, not shipped,
+  and not accepted architecture authority. Do not reopen FIF-2A/2B/2C,
+  FIF-3A1, FIF-3A2, or FIF-3A3. Do not call FIF-3 done. Do not claim
+  production issuer coverage. Do not start another issuer.
 landmines:
   - >
     Core catalog is consolidated_only. Company Facts conversion sets
@@ -128,6 +137,15 @@ landmines:
     as total_assets at 2025-09-27 are NOT_EVALUABLE because the 10-K and
     10-Q are unlinked duplicate roots. Do not invent revision_of.
     See DSC:AAPL-UNLINKED-VINTAGES-REQUIRE-TYPED-REVISION-LINEAGE.
+  - >
+    FIF-3A4R is SPEC_ONLY / SOL PASS WITH BOUNDED AMENDMENTS / HOLD-FOR-SOL.
+    Architecture is accepted in principle, not as an AgentOS DEC. Do not
+    remint A2 FILED as FactEventType.XBRL_CONFIRMATION, do not append a
+    third confirmation occurrence, do not widen v1 to _duplicates_agree,
+    do not discard dimensioned lineage, do not treat the research census
+    timestamp or JSON as runtime authority, and do not load the census into
+    a production/query provider. See DSC:XBRL-DUPLICATE-LAW-IS-INTRA-INSTANCE
+    and DSC:AAPL-A1-A2-CROSS-FILING-OVERLAP-CENSUS.
   - >
     FIF-3A3 query source set is frozen to A1 0000320193-25-000079 and A2
     0000320193-26-000020. Iterating GOLDEN_AAPL_FIXTURES silently admits
@@ -182,7 +200,19 @@ do_not_redo:
   - Do not call FIF-3 done; the golden five-issuer slice is still IN_PROGRESS.
   - FIF-3A2 is ACCEPTED / GOLDEN FIXTURE PROVEN / ON_MAIN (DEC:FIF-3A2-ACCEPTED-GOLDEN-ON-MAIN); do not reopen accepted Q3 composition, complete-period column law, related_event_ref, or SHA b98602a299996ff7ea58b842364031547df795d1458b51134eef0e37159b7918, and do not add FIF-3A2 hardening.
   - FIF-3A3 is ACCEPTED / GOLDEN QUERY CONVERGENCE PROVEN / ON_MAIN (DEC:FIF-3A3-ACCEPTED-GOLDEN-QUERY-ON-MAIN); do not reopen the A1+A2 source freeze, delivery fail-closed law, canonical sec_document_id, unlinked-vintage N/E, or ledger/query identities, and do not add FIF-3A3 hardening.
-  - Do not start FIF-3A4 or another issuer from this closeout.
+  - Do not start FIF-3A4 implementation, activate AAPL revisions/packet, or
+    treat FIF_3A4R_CROSS_FILING_LINEAGE_PROTOCOL.md as an accepted DEC.
+    FIF-3A4R is SPEC_ONLY / HOLD-FOR-SOL after Sol's 2026-08-25 bounded
+    amendments.
+  - Do not remint accepted A2 FILED occurrences as FactEventType.XBRL_CONFIRMATION.
+  - Do not cite within-document duplicate law or _duplicates_agree as proof
+    one filing revises or confirms another.
+  - Do not confirm us-gaap OtherAssetsNoncurrent 83727M vs 72634M, do not
+    treat us-gaap LongTermDebt 90678M vs 90700M as v1 exact confirmation,
+    and do not mint v1 xbrl_confirmation for the CommitmentsAndContingencies
+    nil pair.
+  - Do not discard dimensioned exact confirmation candidates because the
+    current core catalog is consolidated-only.
   - Do not iterate GOLDEN_AAPL_FIXTURES inside GoldenAaplFinancialQueryProvider.
   - Do not treat a non-null FinancialQueryDataset.delivery as a production-attestation authority.
   - Do not label frozen FIF-1 packet_id fip_18e2f725f6ba20678d0612bb as FIF-2C; FIF-2C rich HTTP proof is fip_49718dcaf4c6855592b6ba0a / content 49718dcaf4c6855592b6ba0a160851c608b4733b44f8ac9a6cf7d907df7565e5 / response 310f6579ab0014e6af16a3341f005078eab3fdcc70ebe67ec83cf138b9e6c23a.
@@ -231,8 +261,13 @@ waves:
       AAPL response SHA 58972cb88f82483e86acc9d9fc3b1cbce046f466ff8665ae214909d90ab078b0.
       Unlinked A1/A2 comparatives remain NOT_EVALUABLE
       (DSC:AAPL-UNLINKED-VINTAGES-REQUIRE-TYPED-REVISION-LINEAGE).
-      FIF-3 itself is not done. Do not add SNOW/CAT/BAC/GOOGL. Do not
-      start FIF-3A4. Production attested issuer service remains NOT_BUILT.
+      FIF-3A4R is SPEC_ONLY / SOL PASS WITH BOUNDED AMENDMENTS /
+      HOLD-FOR-SOL
+      (research/financial_intelligence_fabric/FIF_3A4R_CROSS_FILING_LINEAGE_PROTOCOL.md).
+      Do not treat that protocol as accepted DEC. Do not code FIF-3A4.
+      Do not merge PR #6382 until Sol releases the hold. FIF-3 itself is
+      not done. Do not add SNOW/CAT/BAC/GOOGL. Production attested issuer
+      service remains NOT_BUILT.
   - id: FIF-4
     title: Filing Forensics V2 product MVP
     status: todo
@@ -393,4 +428,6 @@ response `310f6579ab0014e6af16a3341f005078eab3fdcc70ebe67ec83cf138b9e6c23a`.
 This is not production coverage. Production attested issuer service
 remains NOT_BUILT. Do not create FIF-1R4. Do not reopen accepted
 packet, query, revision, FIF-3A1, FIF-3A2, or FIF-3A3 semantics. Do
-not call FIF-3 done. Do not start FIF-3A4.
+not call FIF-3 done. FIF-3A4R is SPEC_ONLY / SOL PASS WITH BOUNDED
+AMENDMENTS / HOLD-FOR-SOL and is not accepted architecture authority.
+Do not start FIF-3A4 implementation.
