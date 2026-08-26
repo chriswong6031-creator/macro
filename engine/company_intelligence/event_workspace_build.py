@@ -19,6 +19,7 @@ from ..earnings_release.filing_key import (
 from ..earnings_release.receipts import replay_receipt
 from .documents import text_span
 from .event_id_adapter import aliases_for
+from .qa_exchange import accepted_qa_exchanges_for_transcript
 from .event_workspace import (
     AUTHORITY,
     LIVE_PUBLIC_SLUG,
@@ -309,7 +310,16 @@ def build_event_workspace(
         )
     )
 
-    if has_transcript:
+    qa_exchanges = accepted_qa_exchanges_for_transcript(
+        event_id=event_id,
+        document_id=tx_doc_id,
+        document_sha256=transcript_sha256 or "",
+        segments=segments,
+        source_available_at=None,
+        clock_state="unknown",
+    ) if has_transcript else []
+
+    if has_transcript and not qa_exchanges:
         facts.append({
             "schema": "event_fact.v1",
             "fact_id": "fact_questions_count",
@@ -318,15 +328,12 @@ def build_event_workspace(
             "typed_absence": _absence(
                 reason="no_span_addressable_evidence",
                 subject="questions_count",
-                detail=(
-                    "analyst role is empty on the held transcript; 14 is overlay "
-                    "history, not a structured Q&A count"
-                ),
+                detail="analyst questions are not span-addressable on the held transcript",
                 event_id=event_id,
                 document_id=tx_doc_id,
             ),
         })
-    else:
+    elif not has_transcript:
         facts.append({
             "schema": "event_fact.v1",
             "fact_id": "fact_questions_count",
@@ -390,7 +397,7 @@ def build_event_workspace(
         "slides_absent",
         "consensus_unlicensed",
         "reaction_not_joined",
-        *(["questions_count_unstructured"] if has_transcript else []),
+        *(["questions_count_unstructured"] if has_transcript and not qa_exchanges else []),
         *(["wire_record_not_found"] if not wire_record_found else []),
         *([join_warning] if join_warning else []),
     } & WORKSPACE_WARNINGS)
@@ -546,7 +553,7 @@ def build_event_workspace(
         "authority": AUTHORITY,
         "prophet_flags": dict(PROPHET_FLAGS),
         "claim_citations_pending": claim_pending,
-        "qa_exchanges": [],
+        "qa_exchanges": qa_exchanges,
     }
     validate_event_workspace({**payload, "generation_id": "0" * 24})
     payload["generation_id"] = ""

@@ -1138,4 +1138,85 @@
       state:function(){return loadState}
     };
   };
+  /* D6-B1 FMS congressional-notification rail -- read-only projection of
+   * `government_fms_case.v1` (engine/government_revenue/fms_cases.py). One
+   * fetch of the full case graph; every case already carries its complete
+   * observation history (spec §4), so unlike the DoD budget rail above this
+   * factory never opens a second per-case detail request. Stage is always
+   * `congressional_notification` in v1 -- this file never computes, stores,
+   * or displays a review-period-elapsed conclusion (freeze §4.4, T3). Values
+   * are proposed-sale estimates and are never summed across cases (T13). The
+   * five-answer copy strings below reproduce the frozen U5 bilingual table
+   * (DEFENSE_D6B1_FMS_IMPLEMENTATION_SPEC_2026-08-25.md §9.3) verbatim. */
+  global.createGovernmentRevenueFms=function(api){
+    var obj=api.obj,arr=api.arr,esc=api.esc,text=api.text,n=api.n,money=api.money,date=api.date,tr=api.tr,safeUrl=api.safeUrl,hostFor=api.host;
+    var contentId=null,loadEpoch=0,loadState='loading',listing=null;
+
+    function validAuthority(value){return obj(value)&&value.tier==='display'&&value.context_only===true&&value.can_rank===false&&value.can_size===false&&value.can_gate===false&&value.can_originate_signal===false&&value.can_add_candidates===false&&value.can_escalate===false}
+    function fetchFms(route){
+      if(typeof global.fetch!=='function')return Promise.reject(new Error('unavailable'));
+      return withAuth({Accept:'application/json'}).then(function(headers){
+        return global.fetch('/api/government-revenue/'+route,{credentials:'same-origin',headers:headers});
+      }).then(function(response){if(!response.ok)throw new Error('http_'+response.status);return response.json()}).then(function(value){
+        if(!obj(value)||value.contract!=='government_fms_case.v1'||value.schema_version!=='1.0.0'||!/^grfms1-[a-f0-9]{24}$/.test(text(value.content_id,''))||!validAuthority(value.authority))throw new Error('contract');
+        return value;
+      });
+    }
+    function rowsFrom(value){return arr(value.cases).filter(obj).map(function(c){return{id:'fms:'+text(c.case_key),kind:'fms_case',truth:'official',truthCopy:tr('Official 36(b) congressional notification','36(b) 国会通知官方记录'),linked:false,defense:true,tickers:[],agency:null,date:value.known_at,title:text(c.capability_title,text(c.customer_country)),subtitle:text(c.transmittal_number,'—')+' · '+text(c.customer_country),case:c,fmsEnvelope:{content_id:value.content_id,known_at:value.known_at,as_of:value.as_of,coverage:value.coverage,limitations:value.limitations}}})}
+    function load(){
+      var ticket=++loadEpoch;loadState='loading';
+      if(typeof api.onRows==='function'&&!listing)api.onRows([],{status:'loading',content_id:null,total:0});
+      return fetchFms('fms-cases').then(function(value){
+        if(ticket!==loadEpoch)return listing?rowsFrom(listing):[];
+        listing=value;contentId=value.content_id;loadState='ok';
+        var rows=rowsFrom(value);
+        if(typeof api.onRows==='function')api.onRows(rows,{status:'ok',content_id:contentId,total:rows.length});
+        return rows;
+      }).catch(function(error){
+        if(ticket!==loadEpoch)return listing?rowsFrom(listing):[];
+        var message=error&&error.message||'';
+        if((message==='http_401'||message==='http_403')&&!authSettled()){
+          loadState='loading';
+          if(typeof api.onRows==='function')api.onRows([],{status:'loading',content_id:null,total:0});
+          return[];
+        }
+        listing=null;contentId=null;
+        loadState=(message==='http_404'||message==='http_503'||message==='contract')?'unavailable':'unavailable';
+        if(typeof api.onRows==='function')api.onRows([],{status:loadState,content_id:null,total:0});
+        return[];
+      });
+    }
+    function bindAuthReload(){
+      function onAuth(){markAuthSettled();load();}
+      if(global.MDXAuth&&typeof global.MDXAuth.onChange==='function')global.MDXAuth.onChange(onAuth);
+      else if(typeof global.addEventListener==='function')global.addEventListener('mdx-auth',onAuth);
+    }
+    bindAuthReload();
+    function contractorRow(item){return'<article class="budget-bridge"><span class="truth observed">'+esc(tr('Named in source — identity not reviewed','来源点名 — 身份未审核'))+'</span><strong>'+esc(text(item.name_as_printed))+'</strong>'+(item.location_as_printed?'<small>'+esc(text(item.location_as_printed))+'</small>':'')+'</article>'}
+    function evidenceHtml(c){
+      var html='';
+      arr(c.observations).filter(obj).forEach(function(o){
+        html+='<article class="receipt"><div class="receipt-kind">'+esc(text(o.source_surface)+' · '+text(o.kind))+'</div><p>'+esc(tr('Version','版本')+' '+text(o.version))+'</p><div class="receipt-code">'+esc('observation_id: '+text(o.observation_id)+'\nsha256: '+text(o.response_sha256)+'\nobserved_at: '+text(o.observed_at)+'\nknown_at: '+text(o.known_at))+'</div>'+(safeUrl(o.source_url)?'<a class="source-link" href="'+esc(safeUrl(o.source_url))+'" target="_blank" rel="noopener"><b>'+esc(tr('Open source receipt ↗','打开来源凭证 ↗'))+'</b><span>↗</span></a>':'')+'</article>';
+      });
+      return html;
+    }
+    function render(row){
+      var host=hostFor();if(!host||!row)return;
+      var c=row.case||{},env=row.fmsEnvelope||{},cov=obj(c.source_coverage)?c.source_coverage:{},clocks=obj(c.clocks)?c.clocks:{},notif=obj(clocks.official_notification_date)?clocks.official_notification_date:{},pub=obj(clocks.official_web_publication_date)?clocks.official_web_publication_date:{},contractors=arr(c.contractors).filter(obj);
+      host.className='inspector budget-inspector';
+      host.innerHTML='<div class="inspect-hero budget-hero"><div class="inspect-kicker"><span class="inspect-type">'+esc(tr('FMS congressional notification','FMS 国会通知'))+'</span><span class="inspect-id">'+esc(text(c.transmittal_number,'—'))+'</span></div><h2>'+esc(text(c.customer_country))+'</h2><div class="inspect-meta">'+esc(text(c.capability_title,tr('Capability not disclosed by an official web post','官方网页公告未披露该能力')))+'</div><div class="inspect-truth"><span class="truth official">'+esc(tr('Official 36(b) congressional notification','36(b) 国会通知官方记录'))+'</span><span class="truth derived">'+esc(tr('Display only','仅展示'))+'</span></div><div class="inspect-actions"><button class="tool-btn" type="button" data-fms-evidence>'+esc(tr('View source chain','查看来源链'))+'</button><button class="tool-btn" type="button" data-fms-copy>'+esc(tr('Copy link','复制链接'))+'</button></div></div>'+
+        '<section class="inspect-section"><div class="inspect-label">'+esc(tr('Stage','阶段'))+'</div><div class="budget-boundary"><strong>'+esc(tr('Notified to Congress — not a signed sale','已通知国会 — 尚非已签署军售'))+'</strong><span>'+esc(tr('Later stage not observed','未观察到后续阶段'))+'</span></div></section>'+
+        '<section class="inspect-section"><div class="inspect-label">'+esc(tr('Amount','金额'))+'</div><div class="budget-amounts">'+'<div class="budget-amount primary"><span>'+esc(tr('Estimated notification value','通知估算金额'))+'</span><b>'+esc(money(c.estimated_notification_value))+'</b><small>'+esc(tr('Proposed-sale estimate — not an award, backlog, or revenue','拟议军售估算 — 并非合同授予、订单积压或收入'))+'</small></div>'+'</div>'+(c.source_caveat?'<p class="budget-null">'+esc(text(c.source_caveat))+'</p>':'')+'</section>'+
+        '<section class="inspect-section"><div class="inspect-label">'+esc(tr('Clocks','时间线'))+'</div><div class="budget-coverage">'+'<div class="budget-rail muted"><span>'+esc(tr('Official notification date','官方通知日期'))+'</span><b>'+esc(notif.value?date(notif.value):tr('Official notification date unavailable','官方通知日期暂无'))+'</b></div>'+'<div class="budget-rail muted"><span>'+esc(tr('Official web publication date','官方网页发布日期'))+'</span><b>'+esc(date(pub.value))+'</b></div>'+'<div class="budget-rail muted"><span>'+esc(tr('First observed','首次获知'))+'</span><b>'+esc(date((clocks||{}).first_observed_at))+'</b></div>'+'</div></section>'+
+        '<section class="inspect-section"><div class="inspect-label">'+esc(tr('Linkage','关联'))+'</div><div class="budget-bridges">'+(contractors.length?contractors.map(contractorRow).join(''):(c.contractor_note?'<p class="budget-null">'+esc(text(c.contractor_note))+'</p>':''))+'<article class="budget-bridge"><span class="truth observed">'+esc(tr('Program link not reviewed','项目关联未审核'))+'</span></article>'+'</div></section>'+
+        '<section class="inspect-section"><div class="inspect-label">'+esc(tr('Advancement','推进'))+'</div><div class="budget-boundary"><span>'+esc(tr('Requires official evidence of an offered, accepted, or implemented LOA','须有官方证据证明 LOA 已提出、接受或实施'))+'</span></div></section>'+
+        (cov.web_presence===false?'<section class="inspect-section"><div class="inspect-label">'+esc(tr('Coverage note','覆盖说明'))+'</div><div class="budget-null"><span>'+esc(tr('Recovered from the Federal Register official record — no agency web post exists for this case.','该案例来自联邦公报官方记录 — 该机构未发布对应网页公告。'))+'</span><br><span>'+esc(text((env.coverage||{}).history_disclosure))+'</span></div></section>':'')+
+        '<section class="inspect-section"><div class="inspect-label">'+esc(tr('Evidence & limits','证据与限制'))+'</div><div class="limit-copy">'+esc(tr('Display-only context. It cannot rank a case, size a position, gate a trade, or add a candidate.','仅作展示情境。不得为案例排序、调整仓位、设闸或添加候选。'))+'</div></section>';
+      var evidence=host.querySelector('[data-fms-evidence]');if(evidence)evidence.addEventListener('click',function(){if(typeof api.openEvidenceDrawer==='function')api.openEvidenceDrawer({title:tr('FMS source chain','FMS 来源链'),html:evidenceHtml(c),focus:evidence})});
+      var copy=host.querySelector('[data-fms-copy]');if(copy)copy.addEventListener('click',function(){if(typeof api.copyLink==='function')api.copyLink(copy)});
+      if(typeof api.setMobile==='function')api.setMobile(text(c.customer_country),text(c.transmittal_number,'—'));
+    }
+    return{load:load,refresh:function(){if(!listing||loadState!=='ok')return[];var rows=rowsFrom(listing);if(typeof api.onRows==='function')api.onRows(rows,{status:'ok',content_id:contentId,total:rows.length});return rows},render:render,invalidate:function(){},state:function(){return loadState}};
+  };
+
 })(window);

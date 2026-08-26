@@ -5,54 +5,22 @@ import json
 from datetime import date, datetime, timezone
 from decimal import Decimal
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 import pytest
+import yaml
 from jsonschema import Draft202012Validator, FormatChecker
 
 from collectors import china_tushare_spine as spine
 
 NOW = datetime(2026, 8, 8, 12, 0, tzinfo=timezone.utc)
 GENERATION = "ref-test-generation-0001"
-_TEST_SCOPE = {
-    **{name: True for name in spine.AUTHORIZATION_REQUIRED_SCOPE},
-    "redistribution": False,
-    "public_derivatives": False,
-}
-_TEST_TRUST_ENTRY = {
-    "receipt_sha256": "a" * 64,
-    "grant_document_sha256": "b" * 64,
-    "granted_by": "vendor",
-    "vendor_entitlement_document_sha256": None,
-    "vendor_delegation_document_sha256": None,
-    "authorization_claim_sha256": spine._authorization_claim_sha256(
-        receipt_sha256="a" * 64,
-        grant_document_sha256="b" * 64,
-        vendor_entitlement_document_sha256=None,
-        vendor_delegation_document_sha256=None,
-        issued_on="2026-01-01",
-        expires_on="2027-12-31",
-        granted_by="vendor",
-        scope=_TEST_SCOPE,
-    ),
-}
-_TEST_TRUST_PAYLOAD_JSON = json.dumps({
-    "schema_version": spine.AUTHORIZATION_TRUST_SCHEMA_VERSION,
-    "trusted_grants": [_TEST_TRUST_ENTRY],
-}, sort_keys=True)
-_TEST_TRUST_ALLOWLIST_SHA256 = hashlib.sha256(_TEST_TRUST_PAYLOAD_JSON.encode()).hexdigest()
-_TEST_TRUST_ENTRY_SHA256 = hashlib.sha256(
-    spine._canonical_json_bytes(_TEST_TRUST_ENTRY)
-).hexdigest()
 
 
 @pytest.fixture(autouse=True)
-def _pin_synthetic_authorization_trust_root(monkeypatch):
-    """Synthetic collectors need a reviewed test pin; production defaults to none."""
-    monkeypatch.setattr(
-        spine, "CODE_REVIEWED_AUTHORIZATION_TRUST_ALLOWLIST_SHA256",
-        frozenset({_TEST_TRUST_ALLOWLIST_SHA256}),
-    )
+def _enable_synthetic_technical_readiness(monkeypatch):
+    """Synthetic collectors exercise mechanics; production stays fail-closed."""
     # Synthetic request functions exercise collector mechanics without network.
     # Production remains fail-closed until a scalable range-shard plan is reviewed.
     monkeypatch.setattr(spine, "BULK_HISTORICAL_BACKFILL_READY", True)
@@ -96,76 +64,8 @@ def _request_receipt(
     return receipt
 
 
-def _grant() -> spine.AuthorizationGrant:
-    return spine.AuthorizationGrant(
-        receipt_sha256="a" * 64,
-        grant_document_sha256="b" * 64,
-        trust_allowlist_sha256=_TEST_TRUST_ALLOWLIST_SHA256,
-        trust_entry_sha256=_TEST_TRUST_ENTRY_SHA256,
-        trust_allowlist_payload_json=_TEST_TRUST_PAYLOAD_JSON,
-        vendor_entitlement_document_sha256=None,
-        vendor_delegation_document_sha256=None,
-        issued_on="2026-01-01",
-        expires_on="2027-12-31",
-        granted_by="vendor",
-        scope=_TEST_SCOPE,
-    )
 
 
-def _authorization_receipt(root: Path) -> Path:
-    grant_document = root / "written-vendor-grant.txt"
-    grant_document.write_text("synthetic written vendor grant fixture", encoding="utf-8")
-    payload = {
-        "schema_version": spine.AUTHORIZATION_SCHEMA_VERSION,
-        "authorization_id": "fixture-grant-001",
-        "vendor": "TuShare Pro",
-        "grantee": "Fixture Research Entity",
-        "grantor": "Fixture Vendor Officer",
-        "granted_by": "vendor",
-        "issued_on": "2026-01-01",
-        "expires_on": "2027-12-31",
-        "grant_document_path": str(grant_document.resolve()),
-        "grant_document_sha256": hashlib.sha256(grant_document.read_bytes()).hexdigest(),
-        "entitlement_chain": {
-            "vendor_entitlement_document_path": None,
-            "vendor_entitlement_document_sha256": None,
-            "vendor_delegation_document_path": None,
-            "vendor_delegation_document_sha256": None,
-        },
-        "scope": {
-            **{name: True for name in spine.AUTHORIZATION_REQUIRED_SCOPE},
-            "redistribution": False,
-            "public_derivatives": False,
-        },
-    }
-    receipt = root / "authorization.json"
-    receipt.write_text(json.dumps(payload), encoding="utf-8")
-    trust_entry = {
-        "receipt_sha256": hashlib.sha256(receipt.read_bytes()).hexdigest(),
-        "grant_document_sha256": payload["grant_document_sha256"],
-        "granted_by": "vendor",
-        "vendor_entitlement_document_sha256": None,
-        "vendor_delegation_document_sha256": None,
-        "authorization_claim_sha256": spine._authorization_claim_sha256(
-            receipt_sha256=hashlib.sha256(receipt.read_bytes()).hexdigest(),
-            grant_document_sha256=payload["grant_document_sha256"],
-            vendor_entitlement_document_sha256=None,
-            vendor_delegation_document_sha256=None,
-            issued_on=payload["issued_on"],
-            expires_on=payload["expires_on"],
-            granted_by="vendor",
-            scope=payload["scope"],
-        ),
-    }
-    (root / "authorization-trust-allowlist.json").write_text(json.dumps({
-        "schema_version": spine.AUTHORIZATION_TRUST_SCHEMA_VERSION,
-        "trusted_grants": [trust_entry],
-    }), encoding="utf-8")
-    return receipt
-
-
-def _authorization_trust_allowlist(receipt: Path) -> Path:
-    return receipt.parent / "authorization-trust-allowlist.json"
 
 
 def _stock_basic_rows() -> dict[tuple[str, str], pd.DataFrame]:
@@ -212,7 +112,6 @@ def _fund_basic_rows() -> dict[str, pd.DataFrame]:
 
 
 def _seed_reference(store: Path) -> pd.DataFrame:
-    spine._persist_authorization_grant(store, _grant())
     mapping = pd.DataFrame([{
         "name": "方大新材", "o_code": "838163.BJ", "n_code": "920163.BJ", "list_date": "2020-07-27",
     }])
@@ -453,6 +352,88 @@ def test_calendar_requires_full_calendar_days_and_sse_szse_equality(tmp_path):
         spine._normalise_calendar(missing, "SSE", date(2024, 1, 1), date(2024, 1, 3))
 
 
+def _full_calendar_frame(exchange: str, start_compact: str, end_compact: str) -> pd.DataFrame:
+    """A vendor trade_cal response covering every calendar day in [start, end],
+    with every day marked open and an exact-adjacency pretrade_date (every
+    day's previous session is the immediately preceding calendar day) so
+    ``compile_market_sessions`` accepts the synthesized clock unmodified.
+    """
+    start = spine._parse_date(start_compact)
+    end = spine._parse_date(end_compact)
+    days = pd.date_range(start, end, freq="D")
+    return pd.DataFrame([
+        {
+            "exchange": exchange,
+            "cal_date": day.strftime("%Y%m%d"),
+            "is_open": 1,
+            "pretrade_date": (day - pd.Timedelta(days=1)).strftime("%Y%m%d"),
+        }
+        for day in days
+    ])
+
+
+def test_collect_calendars_writes_each_unit_to_its_own_year_partition(tmp_path):
+    """Regression pin for the leaked-`year` defect: a multi-year calendar
+    collection must land each unit's rows in ITS OWN year partition, never
+    a neighboring year's file (the corruption exposed by canary run
+    32921678076: SSE 2023's rows were written into year=2024.parquet).
+    """
+    def fake(endpoint, fields="", **params):
+        assert endpoint == "trade_cal"
+        return _full_calendar_frame(
+            params["exchange"], params["start_date"], params["end_date"],
+        )
+
+    collector = spine.TushareAShareSpineCollector(tmp_path, query=fake, now=lambda: NOW)
+    assert collector.collect_calendars(date(2023, 1, 1), date(2024, 1, 2)) is True
+
+    year_2023 = pd.read_parquet(
+        tmp_path / "reference" / "trade_calendar" / "year=2023.parquet",
+    )
+    year_2024 = pd.read_parquet(
+        tmp_path / "reference" / "trade_calendar" / "year=2024.parquet",
+    )
+    # No cross-year pollution: each partition holds only its own year's dates.
+    assert set(year_2023["cal_date"].astype(str).str[:4]) == {"2023"}
+    assert set(year_2024["cal_date"].astype(str).str[:4]) == {"2024"}
+    assert len(year_2023) == len(spine.CALENDAR_EXCHANGES) * 365
+    assert len(year_2024) == len(spine.CALENDAR_EXCHANGES) * 2
+
+    state = spine.load_state(tmp_path)
+    units = [
+        f"{exchange}:20230101:20231231" for exchange in spine.CALENDAR_EXCHANGES
+    ] + [
+        f"{exchange}:20240101:20240102" for exchange in spine.CALENDAR_EXCHANGES
+    ]
+    for unit in units:
+        assert spine._unit_done(state, tmp_path, "trade_cal", unit) is True
+
+
+def test_collect_calendars_writer_and_verifier_derive_the_same_partition(tmp_path):
+    """`_expected_unit_partition_path` (the verifier) must agree with the
+    partition the writer actually recorded for every collected unit --
+    the invariant that lets `_set_unit`/`_unit_artifact_receipt` certify a
+    unit without raising `SpineError: ... partition path disagrees with
+    its unit`.
+    """
+    def fake(endpoint, fields="", **params):
+        return _full_calendar_frame(
+            params["exchange"], params["start_date"], params["end_date"],
+        )
+
+    collector = spine.TushareAShareSpineCollector(tmp_path, query=fake, now=lambda: NOW)
+    assert collector.collect_calendars(date(2023, 1, 1), date(2024, 1, 2)) is True
+
+    state = spine.load_state(tmp_path)
+    units = state["units"]["trade_cal"]
+    assert len(units) == 4
+    for unit, record in units.items():
+        expected = spine._expected_unit_partition_path(tmp_path, "trade_cal", unit, record)
+        recorded = spine._contained_store_path(tmp_path, record["partition"])
+        assert expected is not None
+        assert expected.resolve(strict=False) == recorded.resolve(strict=False)
+
+
 def test_daily_normalisation_preserves_source_volume_truth_and_exact_session(tmp_path):
     _seed_spine(tmp_path)
     frame = pd.concat([
@@ -510,7 +491,7 @@ def test_pit_collector_accounts_and_binds_legitimate_b_share_exclusion(tmp_path)
 
     collector = spine.TushareAShareSpineCollector(
         tmp_path, query=lambda *args, **kwargs: raw.copy(),
-        now=lambda: NOW, max_requests=2, authorization=_grant(),
+        now=lambda: NOW, max_requests=2,
     )
     assert collector.collect_pit_universe(date(2024, 1, 2), date(2024, 1, 2)) is True
     state = spine.load_state(tmp_path)
@@ -632,11 +613,462 @@ def test_response_schema_and_request_binding_fail_closed():
         )
 
 
+def _non_canonical_stock_basic_row(**overrides: Any) -> dict:
+    """A T-prefixed legacy vendor code -- independently classifiable, run 32914960162's row."""
+    row = {
+        "ts_code": "T600018.SS", "symbol": "600018", "name": "早期退市样本",
+        "area": "上海", "industry": "工业", "market": "主板", "exchange": "SSE",
+        "curr_type": "CNY", "list_status": "D", "list_date": "19940101",
+        "delist_date": "19990101", "is_hs": "N",
+    }
+    row.update(overrides)
+    return row
+
+
+def _unknown_noncanonical_stock_basic_row(**overrides: Any) -> dict:
+    """A non-canonical code matching no known pattern -- genuinely unknown."""
+    row = {
+        "ts_code": "XX12345.Q", "symbol": "12345", "name": "未知样本",
+        "area": "上海", "industry": "工业", "market": "主板", "exchange": "SSE",
+        "curr_type": "CNY", "list_status": "D", "list_date": "19940101",
+        "delist_date": "19990101", "is_hs": "N",
+    }
+    row.update(overrides)
+    return row
+
+
+def test_stock_basic_t_family_non_canonical_identity_known_excluded_not_fatal():
+    """A T-prefixed legacy vendor code is known_excluded, not quarantined, not a crash."""
+    columns = spine.ENDPOINT_FIELDS["stock_basic"].split(",")
+    stock = _stock_basic_rows()[("SSE", "D")].copy()
+    contaminated = pd.concat(
+        [stock, pd.DataFrame([_non_canonical_stock_basic_row()], columns=columns)],
+        ignore_index=True,
+    )
+    known_excluded, quarantined = spine._validate_response_binding(
+        "stock_basic", contaminated, {"exchange": "SSE", "list_status": "D"},
+    )
+    assert known_excluded == [1]
+    assert quarantined == []
+
+
+def test_stock_basic_unknown_non_canonical_identity_stays_quarantined():
+    """A non-T-family non-canonical code is genuinely unknown -- quarantined, not a crash."""
+    columns = spine.ENDPOINT_FIELDS["stock_basic"].split(",")
+    stock = _stock_basic_rows()[("SSE", "D")].copy()
+    contaminated = pd.concat(
+        [stock, pd.DataFrame([_unknown_noncanonical_stock_basic_row()], columns=columns)],
+        ignore_index=True,
+    )
+    known_excluded, quarantined = spine._validate_response_binding(
+        "stock_basic", contaminated, {"exchange": "SSE", "list_status": "D"},
+    )
+    assert known_excluded == []
+    assert quarantined == [1]
+
+
+def test_stock_basic_non_canonical_row_still_binds_request_literals():
+    """A quarantine-eligible row still fails closed on a cross-wired response."""
+    columns = spine.ENDPOINT_FIELDS["stock_basic"].split(",")
+    wrong_exchange = pd.DataFrame(
+        [_non_canonical_stock_basic_row(exchange="SZSE")], columns=columns,
+    )
+    with pytest.raises(spine.SpineError, match="requested exchange"):
+        spine._validate_response_binding(
+            "stock_basic", wrong_exchange, {"exchange": "SSE", "list_status": "D"},
+        )
+
+    wrong_status = pd.DataFrame(
+        [_non_canonical_stock_basic_row(list_status="L")], columns=columns,
+    )
+    with pytest.raises(spine.SpineError, match="requested list_status"):
+        spine._validate_response_binding(
+            "stock_basic", wrong_status, {"exchange": "SSE", "list_status": "D"},
+        )
+
+
+def test_stock_basic_schema_mismatch_stays_fatal_even_with_a_non_canonical_row():
+    columns = spine.ENDPOINT_FIELDS["stock_basic"].split(",")
+    contaminated = pd.DataFrame([_non_canonical_stock_basic_row()], columns=columns)
+    with pytest.raises(spine.SpineError, match="schema"):
+        spine._validate_response_binding(
+            "stock_basic", contaminated.drop(columns="symbol"),
+            {"exchange": "SSE", "list_status": "D"},
+        )
+
+
+def test_stock_basic_all_canonical_response_reports_zero_non_canonical_and_stays_fatal_on_other_defects():
+    stock = _stock_basic_rows()[("SSE", "L")].copy()
+    known_excluded, quarantined = spine._validate_response_binding(
+        "stock_basic", stock, {"exchange": "SSE", "list_status": "L"},
+    )
+    assert known_excluded == []
+    assert quarantined == []
+
+    bad_currency = stock.copy()
+    bad_currency.loc[0, "curr_type"] = "USD"
+    with pytest.raises(spine.SpineError, match="non-CNY"):
+        spine._validate_response_binding(
+            "stock_basic", bad_currency, {"exchange": "SSE", "list_status": "L"},
+        )
+
+
+def _reference_collector_for_contaminated_sse_d(tmp_path: Path, contaminated_row: dict):
+    columns = spine.ENDPOINT_FIELDS["stock_basic"].split(",")
+    basic = _stock_basic_rows()
+    basic[("SSE", "D")] = pd.concat(
+        [basic[("SSE", "D")], pd.DataFrame([contaminated_row], columns=columns)],
+        ignore_index=True,
+    )
+
+    def fake(endpoint, fields="", **params):
+        if endpoint == "bse_mapping":
+            return pd.DataFrame([{
+                "name": "方大新材", "o_code": "838163.BJ", "n_code": "920163.BJ",
+                "list_date": "20200727",
+            }])
+        if endpoint == "stock_basic":
+            return basic[(params["exchange"], params["list_status"])].copy()
+        if endpoint == "fund_basic":
+            return _fund_basic_rows()[params["status"]].copy()
+        raise AssertionError(f"unexpected endpoint in reference-only test: {endpoint}")
+
+    return spine.TushareAShareSpineCollector(tmp_path, query=fake, now=lambda: NOW)
+
+
+def test_stock_basic_t_family_end_to_end_known_excluded_and_master_exclusion(tmp_path):
+    """Full collect_reference -> compile_security_master path for run 32914960162's row.
+
+    A T-family row is independently classifiable: it lands known_excluded
+    (not quarantined_unknown), so the unit's zero-quarantine equation
+    balances and _unit_done is satisfied for it -- the gate itself is
+    untouched, but this observed legacy family no longer trips it, and the
+    staging generation now promotes (unlike a genuinely unknown shape).
+    """
+    collector = _reference_collector_for_contaminated_sse_d(
+        tmp_path, _non_canonical_stock_basic_row(),
+    )
+    # The call itself must not raise -- this is the exact scenario that crashed
+    # the reference stage in run 32914960162.
+    ready = collector.collect_reference()
+    assert ready is True
+
+    staging = collector.state["reference_generation"]["current_id"]
+    assert staging
+    assert collector.state["reference_generation"]["staging_id"] is None
+
+    contaminated_unit = collector.state["units"]["stock_basic"][f"{staging}:SSE:D"]
+    assert contaminated_unit["status"] == "complete"
+    assert contaminated_unit["source_row_count"] == 2
+    assert contaminated_unit["row_count"] == 1
+    assert contaminated_unit["known_excluded_row_count"] == 1
+    assert contaminated_unit["quarantined_unknown_row_count"] == 0
+    assert contaminated_unit["source_accounting_complete"] is True
+    assert (
+        contaminated_unit["source_row_count"]
+        == contaminated_unit["row_count"]
+        + contaminated_unit["known_excluded_row_count"]
+        + contaminated_unit["quarantined_unknown_row_count"]
+    )
+    contaminated_receipt = contaminated_unit["request_receipts"][0]
+    assert contaminated_receipt["known_excluded_noncanonical_row_count"] == 1
+    assert contaminated_receipt["non_canonical_identity_row_count"] == 1
+
+    # _unit_done's zero-quarantine gate is untouched -- it is now satisfied
+    # because this observed legacy family is classifiable, not because the
+    # gate moved.
+    assert spine._unit_done(collector.state, tmp_path, "stock_basic", f"{staging}:SSE:D") is True
+
+    clean_unit = collector.state["units"]["stock_basic"][f"{staging}:SSE:L"]
+    assert clean_unit["known_excluded_row_count"] == 0
+    assert clean_unit["quarantined_unknown_row_count"] == 0
+    clean_receipt = clean_unit["request_receipts"][0]
+    assert clean_receipt["known_excluded_noncanonical_row_count"] == 0
+    assert clean_receipt["non_canonical_identity_row_count"] == 0
+
+    master, _ = spine.compile_security_master(tmp_path, staging)
+    assert "T600018.SS" not in set(master["source_ts_code"])
+    assert "T600018.SS" not in set(master["ticker"])
+    # The normal rows in the same contaminated unit, and every other unit,
+    # still land.
+    assert "600001.SS" in set(master["ticker"])
+    assert "600519.SS" in set(master["ticker"])
+    assert "000001.SZ" in set(master["ticker"])
+    assert "920163.BJ" in set(master["ticker"])
+
+    classifications = spine._read_parquet_strict(
+        spine._reference_derived_path(tmp_path, "instrument_classification.parquet", staging)
+    )
+    known_excluded_rows = classifications[
+        (classifications["scope_classification"] == "known_out_of_scope")
+        & (classifications["ticker"] == "T600018.SS")
+    ]
+    assert known_excluded_rows["ticker"].tolist() == ["T600018.SS"]
+    assert known_excluded_rows["source_ts_code"].tolist() == ["T600018.SS"]
+    assert known_excluded_rows["classification_source"].tolist() == [
+        "official_A_code_scheme_excludes_T_prefixed_legacy_vendor_code",
+    ]
+    assert classifications[
+        classifications["scope_classification"] == "quarantined_unknown"
+    ].empty
+
+
+def test_stock_basic_unknown_non_canonical_end_to_end_quarantined_blocks_unit_done(tmp_path):
+    """A genuinely unknown non-canonical code stays quarantined and blocks _unit_done."""
+    collector = _reference_collector_for_contaminated_sse_d(
+        tmp_path, _unknown_noncanonical_stock_basic_row(),
+    )
+    ready = collector.collect_reference()
+    # Quarantined rows keep completeness false (frozen law): the unit -- and
+    # therefore the whole staging generation -- never claims to be "done".
+    assert ready is False
+
+    staging = collector.state["reference_generation"]["staging_id"]
+    assert staging
+
+    contaminated_unit = collector.state["units"]["stock_basic"][f"{staging}:SSE:D"]
+    assert contaminated_unit["status"] == "complete"
+    assert contaminated_unit["known_excluded_row_count"] == 0
+    assert contaminated_unit["quarantined_unknown_row_count"] == 1
+    contaminated_receipt = contaminated_unit["request_receipts"][0]
+    assert contaminated_receipt["known_excluded_noncanonical_row_count"] == 0
+    assert contaminated_receipt["non_canonical_identity_row_count"] == 1
+
+    # The zero-quarantine gate is untouched: a genuinely unknown shape still
+    # trips it.
+    assert spine._unit_done(collector.state, tmp_path, "stock_basic", f"{staging}:SSE:D") is False
+
+    master, _ = spine.compile_security_master(tmp_path, staging)
+    assert "XX12345.Q" not in set(master["ticker"])
+    classifications = spine._read_parquet_strict(
+        spine._reference_derived_path(tmp_path, "instrument_classification.parquet", staging)
+    )
+    quarantined_rows = classifications[
+        classifications["scope_classification"] == "quarantined_unknown"
+    ]
+    assert quarantined_rows["ticker"].tolist() == ["XX12345.Q"]
+
+
+def _non_canonical_fund_basic_row(**overrides: Any) -> dict:
+    """A non-6-digit legacy vendor fund code -- run 32918932199's row."""
+    row = {
+        "ts_code": "1610221.SZ", "name": "样本基金", "management": "样本基金管理",
+        "custodian": "样本银行", "fund_type": "股票型", "found_date": "20050101",
+        "due_date": None, "list_date": "20050101", "issue_date": "20041201",
+        "delist_date": None, "issue_amount": 1, "m_fee": 0.5, "c_fee": 0.1,
+        "duration_year": None, "p_value": 1, "min_amount": 0.1, "exp_return": None,
+        "benchmark": "样本基准", "status": "L", "invest_type": "被动指数型",
+        "type": "契约型开放式", "trustee": "", "purc_startdate": "20050101",
+        "redm_startdate": "20050101", "market": "E",
+    }
+    row.update(overrides)
+    return row
+
+
+def test_fund_basic_non_canonical_identity_not_fatal_and_reported():
+    """Run 32918932199's crash: a non-6-digit fund ts_code must not raise, and the
+    row's ordinal is reported (quarantined, since it matches no independently
+    classifiable family such as the T-prefix one)."""
+    columns = spine.ENDPOINT_FIELDS["fund_basic"].split(",")
+    fund = pd.DataFrame([_non_canonical_fund_basic_row()], columns=columns)
+    known_excluded, quarantined = spine._validate_response_binding(
+        "fund_basic", fund, {"market": "E", "status": "L"},
+    )
+    assert known_excluded == []
+    assert quarantined == [0]
+
+
+def test_fund_basic_non_canonical_row_still_binds_request_literals():
+    """The literal market/status binding stays fatal even for a non-canonical row."""
+    columns = spine.ENDPOINT_FIELDS["fund_basic"].split(",")
+    wrong_market = pd.DataFrame(
+        [_non_canonical_fund_basic_row(market="O")], columns=columns,
+    )
+    with pytest.raises(spine.SpineError, match="requested market/status"):
+        spine._validate_response_binding(
+            "fund_basic", wrong_market, {"market": "E", "status": "L"},
+        )
+
+    wrong_status = pd.DataFrame(
+        [_non_canonical_fund_basic_row(status="D")], columns=columns,
+    )
+    with pytest.raises(spine.SpineError, match="requested market/status"):
+        spine._validate_response_binding(
+            "fund_basic", wrong_status, {"market": "E", "status": "L"},
+        )
+
+
+def test_fund_basic_call_succeeds_with_non_canonical_row_and_reports_receipt_count(tmp_path):
+    """The exact crash from run 32918932199: TushareAShareSpineCollector._call must
+    not raise on a well-bound fund_basic response carrying a non-canonical code."""
+    fund = pd.DataFrame(
+        [_non_canonical_fund_basic_row()], columns=spine.ENDPOINT_FIELDS["fund_basic"].split(","),
+    )
+    collector = spine.TushareAShareSpineCollector(
+        tmp_path, query=lambda *args, **kwargs: fund.copy(), now=lambda: NOW,
+    )
+    response = collector._call("fund_basic", "ref-test:L", market="E", status="L")
+    assert response.frame is not None
+    assert response.receipt["response_status"] == "accepted"
+    assert response.receipt["known_excluded_noncanonical_row_count"] == 0
+    assert response.receipt["non_canonical_identity_row_count"] == 1
+
+
+def _reference_collector_for_contaminated_fund_l(tmp_path: Path, contaminated_row: dict):
+    columns = spine.ENDPOINT_FIELDS["fund_basic"].split(",")
+    funds = _fund_basic_rows()
+    funds["L"] = pd.concat(
+        [funds["L"], pd.DataFrame([contaminated_row], columns=columns)],
+        ignore_index=True,
+    )
+
+    def fake(endpoint, fields="", **params):
+        if endpoint == "bse_mapping":
+            return pd.DataFrame([{
+                "name": "方大新材", "o_code": "838163.BJ", "n_code": "920163.BJ",
+                "list_date": "20200727",
+            }])
+        if endpoint == "stock_basic":
+            return _stock_basic_rows()[(params["exchange"], params["list_status"])].copy()
+        if endpoint == "fund_basic":
+            return funds[params["status"]].copy()
+        raise AssertionError(f"unexpected endpoint in reference-only test: {endpoint}")
+
+    return spine.TushareAShareSpineCollector(tmp_path, query=fake, now=lambda: NOW)
+
+
+def test_fund_basic_non_canonical_end_to_end_stays_wholesale_known_excluded(tmp_path):
+    """Full collect_reference -> compile_security_master path for run 32918932199's row.
+
+    Unlike stock_basic, every fund_basic row -- canonical or not -- is already
+    wholesale known_excluded in collect_reference's fund loop
+    (row_count=0, known_excluded_row_count=len(frame)), so a non-canonical fund
+    code needs no new quarantine slot of its own: the unit's existing
+    source_row_count/known_excluded_row_count equation already balances, and
+    the call and the compile must simply not crash.
+    """
+    collector = _reference_collector_for_contaminated_fund_l(
+        tmp_path, _non_canonical_fund_basic_row(),
+    )
+    # The call itself must not raise -- this is the exact scenario that crashed
+    # run 32918932199's fund_basic reference stage.
+    ready = collector.collect_reference()
+    assert ready is True
+
+    staging = collector.state["reference_generation"]["current_id"]
+    unit = f"{staging}:L"
+    record = collector.state["units"]["fund_basic"][unit]
+    assert record["source_row_count"] == 2
+    assert record["landed_a_row_count"] == 0
+    assert record["known_excluded_row_count"] == 2
+    assert record["quarantined_unknown_row_count"] == 0
+    assert (
+        record["source_row_count"]
+        == record["landed_a_row_count"]
+        + record["known_excluded_row_count"]
+        + record["quarantined_unknown_row_count"]
+    )
+    receipt = record["request_receipts"][0]
+    assert receipt["non_canonical_identity_row_count"] == 1
+    assert spine._unit_done(collector.state, tmp_path, "fund_basic", unit) is True
+
+    # compile_security_master must not crash on the raw stored fund frame either
+    # (its own fund loop re-parses ts_code independently of _validate_response_binding).
+    master, _ = spine.compile_security_master(tmp_path, staging)
+    classifications = spine._read_parquet_strict(
+        spine._reference_derived_path(tmp_path, "instrument_classification.parquet", staging)
+    )
+    fund_rows = classifications[classifications["security_class"] == "exchange_fund"]
+    assert "1610221.SZ" in set(fund_rows["ticker"])
+    assert "1610221.SZ" in set(fund_rows["source_ts_code"])
+    assert set(fund_rows["scope_classification"]) == {"known_out_of_scope"}
+    non_canonical_source = fund_rows[fund_rows["ticker"] == "1610221.SZ"]
+    assert non_canonical_source["classification_source"].tolist() == [
+        "tushare.fund_basic_non_canonical_ts_code",
+    ]
+
+
+def _non_canonical_bse_mapping_row(**overrides: Any) -> dict:
+    """A non-canonical vendor code in the BSE old-code -> 920-code alias table."""
+    row = {
+        "name": "样本", "o_code": "1234567.SZ", "n_code": "920163.BJ", "list_date": "20200727",
+    }
+    row.update(overrides)
+    return row
+
+
+def test_bse_alias_map_non_canonical_row_is_skipped_not_fatal():
+    """A non-canonical o_code/n_code in bse_mapping does not crash alias building --
+    it simply cannot alias, so it contributes no entry."""
+    good = pd.DataFrame([{
+        "name": "方大新材", "o_code": "838163.BJ", "n_code": "920163.BJ", "list_date": "20200727",
+    }])
+    contaminated = pd.concat(
+        [good, pd.DataFrame([_non_canonical_bse_mapping_row()])], ignore_index=True,
+    )
+    aliases = spine._bse_alias_map(contaminated)
+    assert aliases == {"838163.BJ": "920163.BJ"}
+
+
+def test_bse_alias_map_non_bse_venue_still_fatal_for_a_canonical_row():
+    """A canonically-parseable row that fails the BSE-venue semantic check stays
+    fatal -- the classify-don't-crash treatment only applies to rows that fail
+    canonical_identity itself, never to a parseable-but-wrong-venue row."""
+    bad_venue = pd.DataFrame([{
+        "name": "样本", "o_code": "600519.SH", "n_code": "920163.BJ", "list_date": "20200727",
+    }])
+    with pytest.raises(spine.SpineError, match="non-BSE row"):
+        spine._bse_alias_map(bad_venue)
+
+
+def test_bse_mapping_non_canonical_row_end_to_end_does_not_crash_reference_or_compile(tmp_path):
+    """A non-canonical bse_mapping vendor row must not crash collect_reference (via
+    _normalise_bse_mapping's validation call) or compile_security_master's own
+    alias-row loop, which re-reads the raw stored bse_mapping parquet directly
+    rather than going through _bse_alias_map."""
+    def fake(endpoint, fields="", **params):
+        if endpoint == "bse_mapping":
+            return pd.DataFrame([
+                {"name": "方大新材", "o_code": "838163.BJ", "n_code": "920163.BJ",
+                 "list_date": "20200727"},
+                _non_canonical_bse_mapping_row(),
+            ])
+        if endpoint == "stock_basic":
+            return _stock_basic_rows()[(params["exchange"], params["list_status"])].copy()
+        if endpoint == "fund_basic":
+            return _fund_basic_rows()[params["status"]].copy()
+        raise AssertionError(f"unexpected endpoint in reference-only test: {endpoint}")
+
+    collector = spine.TushareAShareSpineCollector(tmp_path, query=fake, now=lambda: NOW)
+    ready = collector.collect_reference()
+    assert ready is True
+
+    staging = collector.state["reference_generation"]["current_id"]
+    master, alias_frame = spine.compile_security_master(tmp_path, staging)
+    # The valid alias still lands; the non-canonical pair contributes nothing.
+    assert "838163.BJ" in set(alias_frame["alias_ticker"])
+    assert "920163.BJ" in set(master["ticker"])
+    assert "1234567.SZ" not in set(alias_frame["alias_ticker"])
+
+
+def test_daily_ticker_shard_response_crossing_requested_ts_code_stays_fatal():
+    """A ticker-shard response for a foreign code IS the request subject (case
+    2c in the non-canonical-identity sweep): it must stay fatal even though it
+    is a row-level binding check, because a cross-wired response here is
+    exactly the cross-wiring detector, never a legitimate non-canonical vendor
+    payload shape."""
+    with pytest.raises(spine.SpineError, match="crossed the requested ts_code"):
+        spine._validate_response_binding(
+            "daily", _daily_rows("20240102"),
+            {"trade_date": "20240102", "ts_code": "600519.SH"},
+        )
+
+
 def test_rejected_response_receipt_preserves_observed_rows_columns_and_hash(tmp_path):
     malformed = pd.DataFrame([{"ts_code": "600519.SH", "trade_date": "20240102"}])
     collector = spine.TushareAShareSpineCollector(
         tmp_path, query=lambda *args, **kwargs: malformed.copy(),
-        now=lambda: NOW, authorization=_grant(),
+        now=lambda: NOW,
     )
     with pytest.raises(spine.SpineError, match="schema"):
         collector._call("daily", "20240102", trade_date="20240102")
@@ -698,7 +1130,7 @@ def test_daily_collection_resumes_and_records_legitimate_empty_days(tmp_path):
         return _empty(endpoint)
 
     first = spine.TushareAShareSpineCollector(
-        tmp_path, query=fake, now=lambda: NOW, max_requests=20, authorization=_grant(),
+        tmp_path, query=fake, now=lambda: NOW, max_requests=20,
     )
     first.collect_daily(date(2024, 1, 2), date(2024, 1, 3), spine.DEFAULT_ENDPOINTS)
     assert len(calls) == 10
@@ -711,7 +1143,7 @@ def test_daily_collection_resumes_and_records_legitimate_empty_days(tmp_path):
     second_calls: list[tuple[str, str]] = []
     second = spine.TushareAShareSpineCollector(
         tmp_path, query=lambda endpoint, **params: second_calls.append((endpoint, params.get("trade_date"))),
-        now=lambda: NOW, max_requests=20, authorization=_grant(),
+        now=lambda: NOW, max_requests=20,
     )
     second.collect_daily(date(2024, 1, 2), date(2024, 1, 3), spine.DEFAULT_ENDPOINTS)
     assert second_calls == []
@@ -729,7 +1161,7 @@ def test_unknown_source_rows_are_quarantined_and_block_completion(tmp_path):
 
     collector = spine.TushareAShareSpineCollector(
         tmp_path, query=lambda *args, **kwargs: raw.copy(), now=lambda: NOW,
-        max_requests=5, authorization=_grant(),
+        max_requests=5,
     )
     collector.collect_daily(date(2024, 1, 2), date(2024, 1, 2), ("daily",))
 
@@ -775,7 +1207,7 @@ def test_terminal_units_bind_sparse_landed_and_classification_artifacts(tmp_path
     ], ignore_index=True)
     collector = spine.TushareAShareSpineCollector(
         tmp_path, query=lambda *args, **kwargs: raw.copy(),
-        now=lambda: NOW, max_requests=2, authorization=_grant(),
+        now=lambda: NOW, max_requests=2,
     )
     collector.collect_daily(date(2024, 1, 2), date(2024, 1, 2), ("daily",))
     state = spine.load_state(tmp_path)
@@ -930,17 +1362,9 @@ def test_end_to_end_bounded_collection_then_zero_call_resume(monkeypatch, tmp_pa
             }])
         return _empty("stock_st")
 
-    authorization = _authorization_receipt(tmp_path.parent)
-    trust = _authorization_trust_allowlist(authorization)
-    monkeypatch.setattr(
-        spine, "CODE_REVIEWED_AUTHORIZATION_TRUST_ALLOWLIST_SHA256",
-        frozenset({hashlib.sha256(trust.read_bytes()).hexdigest()}),
-    )
     result = spine.collect(
         start="20240101", end="20240103", store=tmp_path, query=fake,
         require_token=False, max_requests=40, now=lambda: NOW,
-        authorization_receipt=authorization,
-        authorization_trust_allowlist=trust,
     )
     assert result["requests_made"] == 31
     assert result["capped"] is False
@@ -955,8 +1379,6 @@ def test_end_to_end_bounded_collection_then_zero_call_resume(monkeypatch, tmp_pa
     resumed = spine.collect(
         start="20240101", end="20240103", store=tmp_path, query=should_not_call,
         require_token=False, max_requests=40, now=lambda: NOW,
-        authorization_receipt=authorization,
-        authorization_trust_allowlist=trust,
     )
     assert resumed["requests_made"] == 0
     assert resumed["manifest_complete"] is True
@@ -977,7 +1399,7 @@ def test_documented_row_cap_uses_resumable_ticker_range_campaign(monkeypatch, tm
 
     collector = spine.TushareAShareSpineCollector(
         tmp_path, query=fake, now=lambda: NOW,
-        max_requests=5, authorization=_grant(),
+        max_requests=5,
     )
     collector.collect_daily(date(2024, 1, 2), date(2024, 1, 2), ("daily",))
     record = spine.load_state(tmp_path)["units"]["daily"]["20240102"]
@@ -1045,7 +1467,7 @@ def test_ticker_range_campaign_converges_across_bounded_runs(monkeypatch, tmp_pa
     for _ in range(3):
         collector = spine.TushareAShareSpineCollector(
             tmp_path, query=query, now=lambda: NOW,
-            max_requests=2, authorization=_grant(),
+            max_requests=2,
         )
         collector.collect_daily(date(2024, 1, 2), date(2024, 1, 2), ("daily",))
         per_run_calls.append(collector.requests_made)
@@ -1225,11 +1647,13 @@ def test_manifest_hashes_coverage_ore_and_schema(monkeypatch, tmp_path):
     assert manifest["canonical_event_substrate"]["row_count"] == 4
     assert manifest["contracts"]["price_limit"]["canonical_storage"] == "integer CNY cents"
     assert "pre-2016 exact daily ST membership" in manifest["ore_ledger"]["not_tested"]
-    assert manifest["authorization_ready"] is True
-    assert manifest["authorization"]["grant_document_sha256"] == "b" * 64
-    assert "grantee" not in manifest["authorization"]
-    assert "grantor" not in manifest["authorization"]
-    assert "grant_document_path" not in manifest["authorization"]
+    compliance = manifest["contracts"]["compliance"]
+    assert compliance == {
+        "status": "CHAIRMAN_VERIFIED_PRIVATE / SATISFIED",
+        "evidence_scope": "confidential_outside_coding_scope_nda_privacy",
+        "runtime_gate": False,
+    }
+    assert "authorization" not in manifest and "authorization_ready" not in manifest
     assert manifest["reference"]["instrument_classification"]["rows"] == 5
     fund_summary = manifest["reference"]["source_units"]["fund_basic"]
     assert fund_summary["source_row_count"] == 1
@@ -1257,20 +1681,6 @@ def test_manifest_hashes_coverage_ore_and_schema(monkeypatch, tmp_path):
     assert later["generated_at"] != manifest["generated_at"]
     assert later["manifest_identity_sha256"] == manifest["manifest_identity_sha256"]
 
-    authorization_path = spine._authorization_path(tmp_path)
-    persisted_authorization = json.loads(authorization_path.read_text(encoding="utf-8"))
-    broadened = dict(persisted_authorization)
-    broadened["expires_on"] = "2030-12-31"
-    spine._atomic_json(authorization_path, broadened)
-    forged_claim = spine.build_completeness_manifest(
-        tmp_path, date(2024, 1, 2), date(2024, 1, 3), spine.DEFAULT_ENDPOINTS,
-        generated_at=NOW.isoformat(),
-    )
-    assert forged_claim["authorization"] is None
-    assert forged_claim["authorization_ready"] is False
-    assert forged_claim["complete"] is False
-    spine._atomic_json(authorization_path, persisted_authorization)
-
     monkeypatch.setattr(spine, "BULK_HISTORICAL_BACKFILL_READY", False)
     foundation_only = spine.build_completeness_manifest(
         tmp_path, date(2024, 1, 2), date(2024, 1, 3), spine.DEFAULT_ENDPOINTS,
@@ -1279,21 +1689,6 @@ def test_manifest_hashes_coverage_ore_and_schema(monkeypatch, tmp_path):
     assert foundation_only["bulk_historical_backfill_ready"] is False
     assert foundation_only["complete"] is False
     monkeypatch.setattr(spine, "BULK_HISTORICAL_BACKFILL_READY", True)
-
-    # Even a previously valid-looking store-local receipt cannot certify once
-    # its allowlist is absent from the immutable code-reviewed trust root.
-    monkeypatch.setattr(
-        spine, "CODE_REVIEWED_AUTHORIZATION_TRUST_ALLOWLIST_SHA256", frozenset(),
-    )
-    forged = spine.build_completeness_manifest(
-        tmp_path, date(2024, 1, 2), date(2024, 1, 3), spine.DEFAULT_ENDPOINTS,
-        generated_at=NOW.isoformat(),
-    )
-    assert forged["authorization"] is None
-    assert forged["authorization_ready"] is False
-    assert forged["complete"] is False
-
-
 
 
 def test_populated_range_campaign_summary_matches_manifest_schema(monkeypatch, tmp_path):
@@ -1317,7 +1712,7 @@ def test_populated_range_campaign_summary_matches_manifest_schema(monkeypatch, t
 
     collector = spine.TushareAShareSpineCollector(
         tmp_path, query=fake, now=lambda: NOW,
-        max_requests=20, authorization=_grant(),
+        max_requests=20,
     )
     collector.collect_daily(date(2024, 1, 2), date(2024, 1, 2), ("daily",))
 
@@ -1348,7 +1743,7 @@ def test_populated_range_campaign_summary_matches_manifest_schema(monkeypatch, t
     assert "rows" not in summary["cap_probe_receipt"]
     cap_fallback = manifest["contracts"]["cap_fallback"]
     assert cap_fallback["split_rule"] == summary["split_rule"]
-    assert cap_fallback["licensed_live_canary_complete"] is False
+    assert cap_fallback["live_canary_complete"] is False
     assert cap_fallback["live_canary_required_for_promotion"] is True
 
 
@@ -1420,12 +1815,7 @@ def test_missing_token_and_dry_run_are_network_free_and_do_not_expose_secret(mon
 
 
 def test_foundation_only_operational_gate_precedes_store_and_network(monkeypatch, tmp_path):
-    receipt = _authorization_receipt(tmp_path)
-    trust = _authorization_trust_allowlist(receipt)
-    monkeypatch.setattr(
-        spine, "CODE_REVIEWED_AUTHORIZATION_TRUST_ALLOWLIST_SHA256",
-        frozenset({hashlib.sha256(trust.read_bytes()).hexdigest()}),
-    )
+    """The surviving pre-network gate is technical readiness, nothing else."""
     monkeypatch.setattr(spine, "BULK_HISTORICAL_BACKFILL_READY", False)
     store = tmp_path / "private-store"
     calls: list[str] = []
@@ -1434,11 +1824,142 @@ def test_foundation_only_operational_gate_precedes_store_and_network(monkeypatch
         spine.collect(
             start="20240101", end="20240103", store=store,
             query=lambda endpoint, **kwargs: calls.append(endpoint),
-            require_token=False, authorization_receipt=receipt,
-            authorization_trust_allowlist=trust,
+            require_token=False,
         )
     assert calls == []
     assert not store.exists()
+
+
+# ---------------------------------------------------------------------------
+# The bounded canary window.  The bulk gate waits on canary evidence, so the
+# canary must be runnable BEFORE the gate opens -- otherwise the promotion
+# sequence is circular.  These tests pin that it is real, hard-bounded, and
+# still cannot exercise the unproven scalable path.
+# ---------------------------------------------------------------------------
+
+
+def test_canary_window_runs_while_the_bulk_gate_is_still_closed(monkeypatch, tmp_path):
+    """The evidence-gathering path is not blocked by the gate it feeds."""
+    monkeypatch.setattr(spine, "BULK_HISTORICAL_BACKFILL_READY", False)
+    store = tmp_path / "private-store"
+    result = spine.collect(
+        start="20240102", end="20240103", store=store, max_requests=4,
+        canary=True, require_token=False,
+        query=lambda endpoint, **kwargs: None,
+    )
+    assert result["canary"] is True
+    assert result["bulk_historical_backfill_ready"] is False
+    assert result["dry_run"] is False and result["no_op"] is False
+    # It really ran: the private store exists and the collector was constructed.
+    assert store.exists()
+
+
+def test_canary_refuses_bulk_budgets_and_oversized_windows(monkeypatch, tmp_path):
+    """Hard ceilings are checked before any store or network use."""
+    monkeypatch.setattr(spine, "BULK_HISTORICAL_BACKFILL_READY", False)
+    store = tmp_path / "private-store"
+    calls: list[str] = []
+    query = lambda endpoint, **kwargs: calls.append(endpoint)
+
+    with pytest.raises(spine.SpineError, match="never bulk runs"):
+        spine.collect(
+            start="20240102", end="20240103", store=store, max_requests=4,
+            canary=True, allow_bulk=True, require_token=False, query=query,
+        )
+    with pytest.raises(spine.SpineError, match=r"canary max_requests must be 1\.\."):
+        spine.collect(
+            start="20240102", end="20240103", store=store,
+            max_requests=spine.CANARY_MAX_REQUESTS + 1,
+            canary=True, require_token=False, query=query,
+        )
+    with pytest.raises(spine.SpineError, match="canary range is capped"):
+        spine.collect(
+            start="20240102", end="20240131", store=store, max_requests=4,
+            canary=True, require_token=False, query=query,
+        )
+    assert calls == []
+    assert not store.exists()
+
+
+def test_canary_cannot_start_the_unproven_range_campaign(monkeypatch, tmp_path):
+    """A documented row cap refuses inside a canary instead of going scalable."""
+    monkeypatch.setattr(spine, "BULK_HISTORICAL_BACKFILL_READY", False)
+    collector = spine.TushareAShareSpineCollector(
+        tmp_path, query=lambda endpoint, **kwargs: None, now=lambda: NOW,
+        max_requests=4, canary=True,
+    )
+    assert collector.canary is True
+    with pytest.raises(spine.SpineError, match="ticker-range campaign stays refused"):
+        collector._activate_range_campaign(
+            "daily", date(2024, 1, 2), date(2024, 1, 3),
+            trigger_unit="2024-01-02", cap_probe_receipt={},
+        )
+
+
+def test_canary_collector_rejects_a_budget_above_the_ceiling(monkeypatch, tmp_path):
+    monkeypatch.setattr(spine, "BULK_HISTORICAL_BACKFILL_READY", False)
+    with pytest.raises(spine.SpineError, match="canary window is capped"):
+        spine.TushareAShareSpineCollector(
+            tmp_path, query=lambda endpoint, **kwargs: None, now=lambda: NOW,
+            max_requests=spine.CANARY_MAX_REQUESTS + 1, canary=True,
+        )
+
+
+def test_canary_is_not_a_promotion_and_leaves_the_bulk_gate_shut(monkeypatch, tmp_path):
+    """Running a canary must never flip or imply the bulk gate."""
+    monkeypatch.setattr(spine, "BULK_HISTORICAL_BACKFILL_READY", False)
+    store = tmp_path / "private-store"
+    spine.collect(
+        start="20240102", end="20240103", store=store, max_requests=2,
+        canary=True, require_token=False, query=lambda endpoint, **kwargs: None,
+    )
+    assert spine.BULK_HISTORICAL_BACKFILL_READY is False
+    # and the ordinary (non-canary) path is still refused afterwards
+    with pytest.raises(spine.SpineError, match="foundation-only"):
+        spine.collect(
+            start="20240102", end="20240103", store=store, max_requests=2,
+            require_token=False, query=lambda endpoint, **kwargs: None,
+        )
+
+
+def test_backfill_workflow_offers_plan_canary_and_gated_backfill():
+    """The lane's modes match the executable sequence, not a circular one."""
+    lane = Path(spine.__file__).resolve().parents[1] / ".github" / "workflows" / "tushare-spine-backfill.yml"
+    text = lane.read_text(encoding="utf-8")
+    assert "options: [plan, canary, backfill]" in text
+    assert "ARGS+=(--canary)" in text
+    assert "ARGS+=(--dry-run)" in text
+    # backfill stays the gated one; nothing in the lane flips the gate or
+    # smuggles a bulk budget into the collector (a prose mention is fine).
+    assert "BULK_HISTORICAL_BACKFILL_READY = True" not in text
+    assert "ARGS+=(--allow-bulk)" not in text
+
+
+def test_backfill_lane_defaults_are_canary_safe():
+    """`mode=canary` with untouched inputs must not fail on its own default.
+
+    The lane shipped `max_requests: "50"` against a 12-request canary ceiling, so
+    the documented operator path -- pick `canary`, press Run -- died before the
+    first request. That is a trap, not a gate: the gate is `collect()` refusing a
+    real over-ask, and it still does.
+    """
+    lane = Path(spine.__file__).resolve().parents[1] / ".github" / "workflows" / "tushare-spine-backfill.yml"
+    text = lane.read_text(encoding="utf-8")
+    parsed = yaml.safe_load(text)
+    inputs = parsed[True]["workflow_dispatch"]["inputs"]
+    default = int(inputs["max_requests"]["default"])
+    assert 0 < default <= spine.CANARY_MAX_REQUESTS, (
+        f"lane default {default} exceeds the canary ceiling "
+        f"{spine.CANARY_MAX_REQUESTS}"
+    )
+    # The ceiling has one home: the lane reads it from the collector rather than
+    # carrying a second copy that can drift upward.
+    assert "s.CANARY_MAX_REQUESTS" in text
+    # The clamp only ever shrinks, and only in canary mode.
+    assert '[ "$MODE" = "canary" ] && [ "$MAX_REQUESTS" -gt "$CANARY_MAX_REQUESTS" ]' in text
+    assert 'MAX_REQUESTS="$CANARY_MAX_REQUESTS"' in text
+    # Nothing in the lane raises the ceiling.
+    assert "CANARY_MAX_REQUESTS=" not in text.replace('CANARY_MAX_REQUESTS="$(python', "")
 
 
 def test_private_store_path_cannot_escape_into_stageable_repo_locations(tmp_path):
@@ -1450,152 +1971,6 @@ def test_private_store_path_cannot_escape_into_stageable_repo_locations(tmp_path
     assert spine._validate_private_store_path(tmp_path) == tmp_path.resolve()
 
 
-def test_written_authorization_is_hash_bound_and_gates_before_network_or_store(
-    monkeypatch, tmp_path,
-):
-    store = tmp_path / "private-store"
-    calls: list[str] = []
-
-    def query(endpoint, **params):
-        calls.append(endpoint)
-        raise AssertionError("authorization failure must precede the request")
-
-    with pytest.raises(spine.SpineError, match="authorization-receipt"):
-        spine.collect(
-            start="20240101", end="20240103", store=store, query=query,
-            require_token=False,
-        )
-    assert calls == []
-    assert not store.exists()
-    assert not (tmp_path / ".private-store.writer.lock").exists()
-
-    receipt = _authorization_receipt(tmp_path)
-    trust = _authorization_trust_allowlist(receipt)
-    with pytest.raises(spine.SpineError, match="code-reviewed trust root"):
-        spine.collect(
-            start="20240101", end="20240103", store=store, query=query,
-            require_token=False, authorization_receipt=receipt,
-            authorization_trust_allowlist=trust,
-        )
-    assert calls == [] and not store.exists()
-
-    trust_hash = hashlib.sha256(trust.read_bytes()).hexdigest()
-    monkeypatch.setattr(
-        spine, "CODE_REVIEWED_AUTHORIZATION_TRUST_ALLOWLIST_SHA256",
-        frozenset({trust_hash}),
-    )
-    public = spine.load_authorization_grant(
-        receipt, trust_allowlist=trust, as_of=NOW.date(),
-    ).public_receipt()
-    public_text = json.dumps(public)
-    assert "Fixture Research Entity" not in public_text
-    assert "Fixture Vendor Officer" not in public_text
-    assert "grant_document_path" not in public
-    assert public["trust_allowlist_sha256"]
-    assert public["trust_entry_sha256"]
-
-    original_raw = receipt.read_bytes()
-    payload = json.loads(receipt.read_text(encoding="utf-8"))
-    payload["authorization_id"] = "self-authored-unpinned-replacement"
-    receipt.write_text(json.dumps(payload), encoding="utf-8")
-    with pytest.raises(spine.SpineError, match="out-of-band trust allowlist"):
-        spine.collect(
-            start="20240101", end="20240103", store=store, query=query,
-            require_token=False, authorization_receipt=receipt,
-            authorization_trust_allowlist=trust,
-        )
-    assert calls == [] and not store.exists()
-
-    receipt.write_bytes(original_raw)
-    payload = json.loads(original_raw)
-    payload["scope"]["commercial_use"] = False
-    receipt.write_text(json.dumps(payload), encoding="utf-8")
-    with pytest.raises(spine.SpineError, match="lacks required collection scope"):
-        spine.collect(
-            start="20240101", end="20240103", store=store, query=query,
-            require_token=False, authorization_receipt=receipt,
-            authorization_trust_allowlist=trust,
-        )
-    assert calls == [] and not store.exists()
-
-    payload["scope"]["commercial_use"] = True
-    payload["grant_document_sha256"] = "0" * 64
-    receipt.write_text(json.dumps(payload), encoding="utf-8")
-    with pytest.raises(spine.SpineError, match="hash does not match"):
-        spine.collect(
-            start="20240101", end="20240103", store=store, query=query,
-            require_token=False, authorization_receipt=receipt,
-            authorization_trust_allowlist=trust,
-        )
-    assert calls == [] and not store.exists()
-
-
-def test_institutional_authorization_requires_pinned_vendor_entitlement_chain(
-    monkeypatch, tmp_path,
-):
-    receipt = _authorization_receipt(tmp_path)
-    payload = json.loads(receipt.read_text(encoding="utf-8"))
-    entitlement = tmp_path / "vendor-entitlement.txt"
-    delegation = tmp_path / "vendor-delegation.txt"
-    entitlement.write_text("synthetic vendor entitlement fixture", encoding="utf-8")
-    delegation.write_text("synthetic vendor delegation fixture", encoding="utf-8")
-    payload["granted_by"] = "institution"
-    payload["grantor"] = "Fixture Institutional Officer"
-    payload["entitlement_chain"] = {
-        "vendor_entitlement_document_path": str(entitlement.resolve()),
-        "vendor_entitlement_document_sha256": hashlib.sha256(entitlement.read_bytes()).hexdigest(),
-        "vendor_delegation_document_path": str(delegation.resolve()),
-        "vendor_delegation_document_sha256": hashlib.sha256(delegation.read_bytes()).hexdigest(),
-    }
-    receipt.write_text(json.dumps(payload), encoding="utf-8")
-    trust = _authorization_trust_allowlist(receipt)
-    trust.write_text(json.dumps({
-        "schema_version": spine.AUTHORIZATION_TRUST_SCHEMA_VERSION,
-        "trusted_grants": [{
-            "receipt_sha256": hashlib.sha256(receipt.read_bytes()).hexdigest(),
-            "grant_document_sha256": payload["grant_document_sha256"],
-            "granted_by": "institution",
-            "vendor_entitlement_document_sha256": payload["entitlement_chain"][
-                "vendor_entitlement_document_sha256"
-            ],
-            "vendor_delegation_document_sha256": payload["entitlement_chain"][
-                "vendor_delegation_document_sha256"
-            ],
-            "authorization_claim_sha256": spine._authorization_claim_sha256(
-                receipt_sha256=hashlib.sha256(receipt.read_bytes()).hexdigest(),
-                grant_document_sha256=payload["grant_document_sha256"],
-                vendor_entitlement_document_sha256=payload["entitlement_chain"][
-                    "vendor_entitlement_document_sha256"
-                ],
-                vendor_delegation_document_sha256=payload["entitlement_chain"][
-                    "vendor_delegation_document_sha256"
-                ],
-                issued_on=payload["issued_on"],
-                expires_on=payload["expires_on"],
-                granted_by="institution",
-                scope=payload["scope"],
-            ),
-        }],
-    }), encoding="utf-8")
-    monkeypatch.setattr(
-        spine, "CODE_REVIEWED_AUTHORIZATION_TRUST_ALLOWLIST_SHA256",
-        frozenset({hashlib.sha256(trust.read_bytes()).hexdigest()}),
-    )
-    grant = spine.load_authorization_grant(
-        receipt, trust_allowlist=trust, as_of=NOW.date(),
-    )
-    assert grant.granted_by == "institution"
-    assert grant.vendor_entitlement_document_sha256 == payload["entitlement_chain"][
-        "vendor_entitlement_document_sha256"
-    ]
-    assert grant.vendor_delegation_document_sha256 == payload["entitlement_chain"][
-        "vendor_delegation_document_sha256"
-    ]
-
-    payload["entitlement_chain"]["vendor_delegation_document_path"] = None
-    receipt.write_text(json.dumps(payload), encoding="utf-8")
-    with pytest.raises(spine.SpineError, match="vendor_delegation_document"):
-        spine.load_authorization_grant(receipt, trust_allowlist=trust, as_of=NOW.date())
 
 
 def test_active_year_name_history_refreshes_and_orphans_gate(tmp_path, monkeypatch):
@@ -1611,11 +1986,11 @@ def test_active_year_name_history_refreshes_and_orphans_gate(tmp_path, monkeypat
         }], columns=fields.split(","))
 
     first = spine.TushareAShareSpineCollector(
-        tmp_path, query=query, now=lambda: NOW, max_requests=5, authorization=_grant(),
+        tmp_path, query=query, now=lambda: NOW, max_requests=5,
     )
     first.collect_name_history(date(2024, 6, 30))
     second = spine.TushareAShareSpineCollector(
-        tmp_path, query=query, now=lambda: NOW, max_requests=5, authorization=_grant(),
+        tmp_path, query=query, now=lambda: NOW, max_requests=5,
     )
     second.collect_name_history(date(2024, 8, 9))
     history = pd.read_parquet(spine._name_partition(tmp_path, 2024))
@@ -1629,7 +2004,7 @@ def test_active_year_name_history_refreshes_and_orphans_gate(tmp_path, monkeypat
     }], columns=spine.ENDPOINT_FIELDS["namechange"].split(","))
     orphan_collector = spine.TushareAShareSpineCollector(
         tmp_path, query=lambda *args, **kwargs: orphan_frame.copy(),
-        now=lambda: NOW, max_requests=5, authorization=_grant(),
+        now=lambda: NOW, max_requests=5,
     )
     orphan_collector.collect_name_history(date(2024, 8, 10))
     orphan_record = spine.load_state(tmp_path)["units"]["namechange"]["2024:20240810"]
@@ -1658,7 +2033,7 @@ def test_interrupted_reference_refresh_never_moves_current_generation(tmp_path):
         }], columns=fields.split(","))
 
     collector = spine.TushareAShareSpineCollector(
-        tmp_path, query=query, now=lambda: NOW, max_requests=1, authorization=_grant(),
+        tmp_path, query=query, now=lambda: NOW, max_requests=1,
     )
     with pytest.raises(spine.RequestBudgetExhausted):
         collector.collect_reference(refresh=True)
@@ -1683,7 +2058,7 @@ def test_reference_pointer_detects_tamper_and_collector_pins_one_verified_genera
     monkeypatch.setattr(spine, "_reference_generation_semantic_sha256", counted)
     collector = spine.TushareAShareSpineCollector(
         tmp_path, query=lambda *args, **kwargs: _empty("daily"),
-        now=lambda: NOW, max_requests=1, authorization=_grant(),
+        now=lambda: NOW, max_requests=1,
     )
     assert calls == 1
     spine.normalise_daily_endpoint(
@@ -1850,3 +2225,167 @@ def test_exact_day_replacement_removes_vendor_tombstone_without_harming_other_da
     assert (rows, revised) == (1, 0)
     remaining = pd.read_parquet(path)
     assert remaining["trade_date"].tolist() == ["2024-01-03"]
+
+
+# ---------------------------------------------------------------------------
+# Anti-resurrection guards for the Chairman TuShare compliance override.
+#
+# DEC:CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE nulled the private
+# license-document authorization subsystem.  Compliance is settled privately and
+# is outside coding scope; these tests fail if any of it returns, under its own
+# name or a rename, so a later session cannot quietly re-introduce a gate that
+# demands confidential documents.
+# ---------------------------------------------------------------------------
+
+_LICENSE_GATE_IDENTIFIERS = (
+    "AuthorizationGrant",
+    "AUTHORIZATION_SCHEMA_VERSION",
+    "AUTHORIZATION_TRUST_SCHEMA_VERSION",
+    "AUTHORIZATION_REQUIRED_SCOPE",
+    "AUTHORIZATION_RECORDED_SCOPE",
+    "CODE_REVIEWED_AUTHORIZATION_TRUST_ALLOWLIST_SHA256",
+    "load_authorization_grant",
+    "_persist_authorization_grant",
+    "_load_persisted_authorization",
+    "_validate_public_authorization_trust",
+    "_authorization_claim_sha256",
+    "_verified_authorization_document",
+    "_authorization_path",
+    "_authorization_trust_path",
+)
+
+# Vocabulary that only appears when a license-document custody gate exists.
+# Deliberately excludes ordinary vendor access words ("vendor_unavailable_or_
+# unlicensed", entitlement-gap observations) that remain legitimate technical
+# signals about endpoint access.
+_LICENSE_GATE_VOCABULARY = (
+    "authorization_receipt",
+    "authorization-receipt",
+    "authorization_trust_allowlist",
+    "authorization-trust-allowlist",
+    "grant_document_sha256",
+    "grant_document_path",
+    "written_authorization",
+    "written authorization",
+    "entitlement_chain",
+    "vendor_delegation_document",
+    "vendor_entitlement_document",
+    "trust_allowlist_sha256",
+    "cn_tushare_written_authorization",
+)
+
+
+def test_license_document_authorization_identifiers_cannot_return():
+    """No removed license-gate symbol may exist on the spine module again."""
+    present = sorted(name for name in _LICENSE_GATE_IDENTIFIERS if hasattr(spine, name))
+    assert present == [], (
+        "TuShare license-document authorization symbols reappeared: "
+        f"{present}. Compliance is CHAIRMAN_VERIFIED_PRIVATE / SATISFIED and is "
+        "outside coding scope (DEC:CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE)."
+    )
+
+
+def test_spine_source_carries_no_license_document_gate_vocabulary():
+    """Source-level guard: catches a rename that re-adds the same mechanism."""
+    source = Path(spine.__file__).read_text(encoding="utf-8").lower()
+    found = sorted({token for token in _LICENSE_GATE_VOCABULARY if token in source})
+    assert found == [], (
+        f"license-document gate vocabulary reappeared in the spine source: {found}"
+    )
+
+
+def test_spine_ast_defines_no_license_document_gate_callable():
+    """AST guard: no function/class/assignment may re-mint the removed gate."""
+    import ast
+
+    tree = ast.parse(Path(spine.__file__).read_text(encoding="utf-8"))
+    offenders: list[str] = []
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            names = {node.name}
+        elif isinstance(node, ast.Assign):
+            names = {t.id for t in node.targets if isinstance(t, ast.Name)}
+        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            names = {node.target.id}
+        else:
+            continue
+        for name in names:
+            lowered = name.lower()
+            if "authorization" in lowered or "trust_allowlist" in lowered:
+                offenders.append(name)
+    assert offenders == [], (
+        f"spine re-declared a license-document authorization construct: {sorted(offenders)}"
+    )
+
+
+def test_collect_rejects_license_document_arguments():
+    """The callable surface must not accept receipt/allowlist arguments again."""
+    import inspect
+
+    forbidden = {"authorization_receipt", "authorization_trust_allowlist", "authorization"}
+    assert set(inspect.signature(spine.collect).parameters) & forbidden == set()
+    assert set(
+        inspect.signature(spine.TushareAShareSpineCollector.__init__).parameters
+    ) & forbidden == set()
+
+    with pytest.raises(TypeError):
+        spine.collect(
+            start="20240101", end="20240103", dry_run=True,
+            authorization_receipt=Path("/nonexistent/receipt.json"),
+        )
+
+
+def test_cli_parser_exposes_no_license_document_flags(monkeypatch, capsys):
+    """`--authorization-*` must be an unknown flag, not an accepted no-op."""
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "china_tushare_spine", "--start", "20240101", "--dry-run",
+            "--authorization-receipt", "/tmp/receipt.json",
+        ],
+    )
+    with pytest.raises(SystemExit) as exit_info:
+        spine._main()
+    assert exit_info.value.code == 2
+    err = capsys.readouterr().err
+    assert "unrecognized arguments: --authorization-receipt" in err
+    assert "--authorization" not in err.split("error:")[0]  # not offered in usage
+
+
+def test_bounded_collection_needs_no_license_document(monkeypatch, tmp_path):
+    """A normal bounded run proceeds with no license artifact anywhere."""
+    monkeypatch.setattr(spine, "BULK_HISTORICAL_BACKFILL_READY", True)
+    store = tmp_path / "private-store"
+    result = spine.collect(start="20240101", end="20240103", store=store, dry_run=True)
+    assert result["dry_run"] is True and result["network_calls"] == 0
+    assert not any(store.glob("**/authorization*"))
+
+
+def test_manifest_publishes_only_the_settled_compliance_status(tmp_path):
+    """Manifest states the fact and nothing about private evidence."""
+    manifest = spine.build_completeness_manifest(
+        tmp_path, date(2024, 1, 2), date(2024, 1, 3), spine.DEFAULT_ENDPOINTS,
+        generated_at=NOW.isoformat(),
+    )
+    assert manifest["contracts"]["compliance"] == {
+        "status": "CHAIRMAN_VERIFIED_PRIVATE / SATISFIED",
+        "evidence_scope": "confidential_outside_coding_scope_nda_privacy",
+        "runtime_gate": False,
+    }
+    blob = json.dumps(manifest).lower()
+    for token in _LICENSE_GATE_VOCABULARY:
+        assert token not in blob, f"manifest leaked license-gate field: {token}"
+
+
+def test_bulk_readiness_gate_is_documented_as_technical_only():
+    """`BULK_HISTORICAL_BACKFILL_READY` must never be re-titled a licensing gate."""
+    source = Path(spine.__file__).read_text(encoding="utf-8")
+    marker = "BULK_HISTORICAL_BACKFILL_READY = False"
+    assert marker in source
+    preamble = source.split(marker)[0].rsplit("\n\n", 1)[-1].lower()
+    assert "technical readiness gate" in preamble
+    assert "not a licensing gate" in preamble
+    # The shipped default must stay False.  Read it from source, not from the
+    # module attribute: the autouse fixture flips the runtime value so synthetic
+    # collectors can exercise mechanics.
+    assert "BULK_HISTORICAL_BACKFILL_READY = True" not in source

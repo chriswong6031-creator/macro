@@ -278,15 +278,50 @@ waves:
     title: Separate market promotion adjudications
     status: todo
     depends_on: [hk-race, ca-race]
+  - id: v37-canada
+    title: "Presentation lane: Canada Stock Dashboard V3.7 functional completeness"
+    status: done
+    pr: 6416
+    merge_sha: 41efeba82b0193dd9090c600567e0b551ad8dd98
+    completion: >
+      PROVEN_LIVE 2026-08-25 (entitled production matrix; record =
+      research/STOCK_DASHBOARD_V37_CANADA_ACCEPTANCE_2026-08-25.md).
+      Supersession law DEC:V37-SUPERSEDES-V36-ACCEPTANCE; review law = the
+      three committed SOL_* V3.7 packets (composition reference is never
+      semantic truth). Restored Track Record as Evidence & Record (moved
+      .trk owner DOM), owner-native Act-Now lane vocabulary, group-action
+      Expand Leadership, Sol-gate population law (no silent Top Picks→All).
+      Residuals (mechanism/bytes-proven): exact-390 production pixel pass;
+      final live-paint observation.
+  - id: v37-hk
+    title: "Presentation lane: HK V3.7 follower"
+    status: done
+    pr: 6433
+    merge_sha: cbf615eaa89399ae2a1b40de9db94f583d6c37c2
+    depends_on: [v37-canada]
+    completion: >
+      PROVEN_LIVE 2026-08-26 (entitled production matrix; record =
+      research/STOCK_DASHBOARD_V37_HK_ACCEPTANCE_2026-08-26.md). Market-native
+      follower under research/SOL_HK_V37_FOLLOWER_ARCHITECTURE.md: Featured
+      cohort Top Picks (owner pv-featured, never positional), NO LIVE
+      treatment (no HK per-ticker live plane), sector-only leadership joining
+      Act-Now lanes + rotation rank/cycle-state, Southbound INTEGRATE ladder
+      gated on the owner's sig-* materiality marker, Evidence & Record (moved
+      HK trd), disclosure toggles for specialist desks. One residual:
+      exact-390 production pixel pass (bytes + local-real-browser proven).
+      Regional V3.7 rollout COMPLETE — Canada + HK both PROVEN_LIVE; US
+      decoupled; China out of carrier.
 next_action: >
-  hk-discovery CLOSED 2026-08-23 with production receipts (wave entry).
-  Next lawful waves: hk-intel (HK-NATIVE-INTEL, depends on hk-discovery),
-  ca-intel, ca-pit — each needs its own commissioning decision. Optional
-  08-24 follow-up: confirm the first receipt written by the post-#6227
-  fail-closed code. Standing follow-up: ≈2026-08-26
-  verify the CA board-ledger-era-empty warning self-cleared (ledger-era wave
-  entry); if it persists once gradable current-era rows exist, investigate —
-  never silence.
+  PRESENTATION LANE COMPLETE (v37-canada + v37-hk both PROVEN_LIVE with
+  dated acceptance records) — return to Sol; US wave stays decoupled and
+  unauthorized (V4 B1→B2/B3→B4 + reconciled Cell H prerequisites).
+  INTELLIGENCE LANE unchanged: hk-discovery CLOSED 2026-08-23 with
+  production receipts (wave entry). Next lawful waves: hk-intel
+  (HK-NATIVE-INTEL, depends on hk-discovery), ca-intel, ca-pit — each needs
+  its own commissioning decision. Standing follow-up: ≈2026-08-26 verify the
+  CA board-ledger-era-empty warning self-cleared (ledger-era wave entry); if
+  it persists once gradable current-era rows exist, investigate — never
+  silence.
 ---
 
 # HK + Canada Prophet revamp

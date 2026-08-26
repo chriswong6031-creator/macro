@@ -263,7 +263,11 @@ waves:
     next_action: >
       Sol-authorized 2026-08-25 in the D6-A acceptance ruling (macro
       #6385 comment 5404403124): research/source-architecture wave ONLY.
-      DELIVERED 2026-08-25, awaiting Sol acceptance. The FREEZE
+      DELIVERED 2026-08-25 (PR #6404, merge accc1a3a353f, final head
+      ab846bcbae83, CI 32875040030 success); ACCEPTED BY SOL 2026-08-25
+      (macro #6404 comment 5416302430 — the durable GitHub acceptance
+      receipt; Sol's contents-API write was 403-refused, the comment IS
+      the record). The FREEZE
       (research/defense_intelligence/DEFENSE_D6B_FMS_SOURCE_AND_STAGE_ARCHITECTURE_FREEZE_2026-08-25.md)
       closes every commissioned decision: source boundary (State
       PM-Bureau current surface for cases notified ≥2026-02-26 per EO
@@ -291,13 +295,62 @@ waves:
       review-period arithmetic; fourteen merge-binding kill tests;
       real-data reference composition. Opus adversarial review FAILed
       the draft (5 blockers) — all repaired in c2cd79f96d3e before Sol.
-      Five unresolveds routed to Sol (U1 SAMM C5.7 receipt, U2 bulk
-      DSCA backfill depth, U3 FR join in v1, U4 boundary-window sweep,
-      U5 ZH glance vocabulary). D6-B IMPLEMENTATION REMAINS NOT
-      AUTHORIZED (paste-ready commission:
-      DEFENSE_D6B_FMS_IMPLEMENTATION_HANDOFF.md); D6-C+ and D7+ remain
-      UNAUTHORIZED. D5 remains BUILT_NOT_PROVEN (D5P deferred,
+      Five unresolveds RULED BY SOL in the acceptance (comment
+      5416302430): U1 CLOSED/NONBLOCKING (C5.7 re-read first-party —
+      review-period expiry is permission to offer an LOA, never
+      evidence one exists; v1 computes/stores/renders ZERO
+      review-period arithmetic; current C5.7 byte/SHA receipt required
+      as build evidence before implementation mutation); U2 PILOT ONLY
+      (full current State surface + exactly DSCA 26-13; NO bulk DSCA
+      backfill in D6-B; coverage metadata must disclose pilot-only
+      history); U3 FR JOIN REQUIRED IN V1 (exact-transmittal
+      supplementary join; FR never mints/advances a case; 26-27
+      official_notification_date = 2026-03-10 from FR 2026-07237 / 91
+      FR 19115 on successful join; missing FR ⇒ null, never inferred);
+      U4 BOUNDARY SWEEP = MERGE GATE (2026-02-06→2026-02-26 inclusive,
+      independent official 36(b)(1) denominator, classifications
+      dsca_only/state_only/both/absent_from_both; absent_from_both ⇒
+      HOLD-FOR-SOL); U5 EN/ZH PRODUCTION VOCABULARY FROZEN in the
+      acceptance table (typography may change, meaning may not). D6-B
+      implementation AUTHORIZED by the same comment. D6-C+ and D7+
+      remain UNAUTHORIZED. D5 remains BUILT_NOT_PROVEN (D5P deferred,
       nonblocking; never relabel).
+  - id: D6-B
+    title: FMS real vertical — State acquisition, immutable observations, government_fms_case.v1, ninth fms mode, production proof
+    status: in_progress
+    depends_on: [D6-B0]
+    claim: claude/d6b1-fms-coverage-vertical-20260825 (Fable session, D6-B1 continuation claimed 2026-08-25; carrier is a ~/.claude-recovery clone because the local primary clone's git object reads are kernel-blocked by iCloud-evicted pack files)
+    next_action: >
+      D6-B1 COVERAGE-AWARE CONTINUATION IN FLIGHT (2026-08-25). The U4
+      HOLD was RELEASED by the D6-B1 continuation commission (Chairman
+      channel, in-session relay 2026-08-25; full text preserved in the
+      D6-B1 continuation handoff): the U4 discovery is ACCEPTED —
+      State+DSCA web surfaces are non-exhaustive — and the old
+      web-surface population assumption is REPLACED by the frozen
+      official-union coverage law. Scope 2026-01-01→claim-time. Build:
+      FR bounded denominator/recovery + State current presentation
+      observations + DSCA historical observations → transmittal-number
+      dedupe → canonical GovRev FMS records → explicit source/coverage
+      manifest → existing ninth fms mode → production proof. Under
+      D6-B1, FR may RECOVER (mint) a case that is absent from both web
+      surfaces — hostile case: 26-23 Jordan must be canonically present
+      despite State/DSCA web absence; 26-28 Japan must not disappear
+      because the State corpus omits it; 26-27 Sweden stays the
+      positive web case. All B0 laws preserved: stage authority stops
+      at congressional_notification; review-period expiry advances
+      nothing; estimated_notification_value never award/backlog/
+      revenue/cash; contractor prose mints no issuer identity; system
+      similarity mints no D5 link; append-only corrections; no
+      award_change abuse; no new general event store. New mandatory
+      hostile cases: cross-family duplicate → one transmittal; FR
+      publication lag cannot rewrite congressional-delivery time;
+      missing web page never VALID_EMPTY; zero official denominator
+      reconciliation cannot pass publication silently. Prior U4-hold
+      evidence stands (fms_cutover_sweep_2026-08-25.json +
+      fms_u4_fr_denominator_2026-08-25.json; step-2 re-receipts incl.
+      SAMM C5.7 sha b98a113875f4). Stop after the FMS vertical is
+      production-proven and return to Sol. D6-C+ and D7+ remain
+      UNAUTHORIZED. D5 unchanged (BUILT_NOT_PROVEN).
 landmines:
   - "Live page is government_revenue.html (underscore). government-revenue.html 404s."
   - "Access (site_full / 401 locked) is independent of epistemics (display/context_only). Do not conflate them."
@@ -342,16 +395,25 @@ discoveries:
   - DSC:GOVREV-CANDIDATE-RADAR-STAYS-LOCKED-AFTER-SITE-FULL-200
   - DSC:GOVREV-AGENCY-STRINGIFY-IS-COLLECTOR-THEN-ACTION-OMIT
 next_action: >
-  D5 is CLOSED FOR PROGRAM SEQUENCING (Chairman amendment 2026-08-24;
-  Sol ruling macro PR #6355 comment 5395051048): capability remains
-  BUILT_NOT_PROVEN, the authenticated D5P walkthrough is
-  DEFERRED / NONBLOCKING, and it must never be relabeled PROVEN_LIVE
-  without a real entitled browser proof. D6-A (DoD P-1/R-1 budget rail
-  activation) is in_progress and Sol-authorized under that amendment;
-  frozen design at
-  research/defense_intelligence/DEFENSE_D6A_BUDGET_RAIL_DESIGN_2026-08-24.md.
-  D6-B+ and D7+ remain UNAUTHORIZED until D6-A returns to Sol. #5424
-  stays closed/superseded by defense21-v1.
+  D6-B is IN FLIGHT under the D6-B1 coverage-aware continuation
+  (2026-08-25): the U4 hold was released — the U4 discovery is accepted
+  and the population law is now the official union (FR bounded
+  denominator/recovery + State current + DSCA historical observations,
+  transmittal dedupe, explicit source/coverage manifest), scope
+  2026-01-01→claim-time. See the D6-B wave entry for the full D6-B1
+  law. Original Sol authorization macro #6404 comment 5416302430;
+  U4-hold evidence research/defense_intelligence/evidence/
+  fms_cutover_sweep_2026-08-25.json. Continuation claimed by
+  claude/d6b1-fms-coverage-vertical-20260825. D6-A is done / Sol-accepted /
+  PROVEN_LIVE (#6385 comment 5404403124). D6-B0 architecture freeze is
+  done / Sol-accepted (#6404 comment 5416302430; U1–U5 all ruled — see
+  the D6-B0 wave entry). D6-C+, D7+, GAO, DOT&E, IG and every later
+  defense rail remain UNAUTHORIZED. D5 is CLOSED FOR PROGRAM
+  SEQUENCING (Chairman amendment 2026-08-24; Sol ruling macro PR #6355
+  comment 5395051048): capability remains BUILT_NOT_PROVEN, the
+  authenticated D5P walkthrough is DEFERRED / NONBLOCKING, and it must
+  never be relabeled PROVEN_LIVE without a real entitled browser
+  proof. #5424 stays closed/superseded by defense21-v1.
   Publisher-vintage alarm and fixture-freezing the D2/D3 law suites out of
   the unrun-government-revenue holding pen remain separate follow-ups — do
   not fold them into the D5R close.

@@ -1,70 +1,56 @@
-# K3E-0 Current Capability Ledger
+# K3E Current Capability Ledger
 
-Date pinned: 2026-08-23
-Macro `origin/main`: `f69348e80d4be151ae62d3d70e38b3ce0924d68f`
-Protected Mastermind `origin/master`: `7292e7c333a63fe2a3940663931d108d2aa54de7`
+Date pinned: 2026-08-25
+Macro `origin/main` observed at pin time: `4ba89a2b44e90fb236b801c0a8062e10f57c25f3`
+(2026-08-25T20:43Z; main advances continuously — live GitHub evidence outranks
+this pin for later collision checks)
+Protected Mastermind `origin/master`: `51f9942733b86e550bb9169d2a43462bd28e774f`
 Protected Sol Skillpack schema/version/minimum bootstrap:
 `mastermind.sol_skillpack.v1` / `1.0.0` / `1`
-Sol Skillpack files loaded from the same protected SHA:
-`INDEX.md`, `COLD_START.md`, `RECONCILE_STATE.md`, `COMMISSION_WAVE.md`,
-`REVIEW_RETURN.md`, `CLOSEOUT.md`, `BOOTSTRAP_KERNEL.md`.
+Skillpack `INDEX.md` and skills loaded from that same protected SHA.
 
-Strategic state at the protected Mastermind pin remains
-`PRE_REVENUE_MVP_CONVERGENCE`; `duplicate_control_planes`,
-`autonomous_production_deploy`, and `autonomous_live_capital_execution` are
-prohibited. The Chairman's current instruction authorizes this descriptive
-records program and the bounded post-freeze waves, not production deployment,
-live capital, or any new control plane.
+This ledger supersedes the 2026-08-23 revision, which predated the K3E-0,
+SRC-A1, VEND-0, and EVAL-0 merges and the first natural T1 collection.
 
 ## Program state
 
 | capability | current state | evidence / note |
 |---|---|---|
-| K3E-0 architecture freeze | `SPEC_ONLY` | This packet in PR `#6329`; no prior merged Expectation Market Dynamics freeze on current main |
-| canonical K3-E Opportunity Evidence Vector | `SPEC_ONLY` | Existing WS:ALPHA-INTELLIGENCE-INTEGRATION K3 lane; K3E-0 is not a rename, replacement, or narrowing of that contract |
-| K1 Evidence Foundation | `PARTIAL` | Open PR `#6319`, exact head `ead0076ad48d8a19ae8bc90123629e074a0732d4`; exact-head CI packs and `ci-gate` are green, with the repository-wide `ci-authority/codex/merge-queue-pilot` red still present |
-| K3E live carrier | `SPEC_ONLY` | Single current carrier is PR `#6329`, head `81f15f355a2d4aa0824c8ae114ab4b60f4787117` before this amendment; no second K3E carrier is created |
-| MAS-118 family-specific dislocation science | `PARTIAL` | Linear `MAS-118` is `In Progress`; remains the family-specific incorporation lane |
-| MAS-119 cross-domain expectation federation | `SPEC_ONLY` | Linear `MAS-119` is `Backlog`; remains the common `ExpectationBaseline` owner |
-| revisions history lane | `PARTIAL` | Existing analyst-revision assets exist, but no frozen multi-horizon PIT expectation accrual contract |
-| FIF financial semantics | `PARTIAL` | WS:FIF live and accepted through FIF-3A2 golden AAPL; not a broad production issuer service |
-| Earnings event intelligence | `PARTIAL` | E2 is done; E3-A landed; E3-A2 deterministic Q&A skeleton is next |
-| Market-response residual plane | `PARTIAL` | Existing DRL / residual-alpha planes exist and must be reused, not rebuilt |
-| options uncertainty plane | `PARTIAL` | Existing options owners exist; broad coverage and gating remain owner-specific |
+| K3E-0 architecture freeze | `SPEC_ONLY` (accepted, binding) | Merged PR `#6329`, merge `2a90b59423b567071f5b10d9e5ec29ee9397ed79`; freeze and both DEC records untouched since 2026-08-23 |
+| SRC-A1 prospective expectation accrual | `BUILT_NOT_PROVEN` | Implementation merged PR `#6342`, merge `dc51502ba1b0e5304537ab504d3708028c96afc6`. Natural collection C1 exists (called "T1" in the 2026-08-25 takeover commission; C-numbering avoids collision with the registration's `T1`–`T8` target IDs): `daily.yml` scheduled run `32790724676` (`event: schedule`, created 2026-08-24T23:45:03Z, success) produced engine commit `be061c6d49e9b9e40cea5b01b9b7b9acacdc757a` (2026-08-25T05:42:31Z) adding `data/revisions/expectation_observations.parquet` (868,471 B) and `data/revisions/expectation_attempts.parquet` (42,701 B). Prior observer report (not independently re-verified here): ~11,200 prospective observations, 200 attempt receipts, typed missingness, distinct clocks, one honest partial. No natural C2 yet; the second-collection proof law in `handoffs/SRC_A1.md` + `DATA_CLOCK_RIGHTS_MATRIX.md` remains open |
+| VEND-0 vendor bake-off | research complete (`SAMPLE_REQUIRED / PROBE_FURTHER`) | Merged PR `#6339`, merge `f53f8e77b360ae0b1c413c2e9e666ebedfa30fa0`. LSEG I/B/E/S, FactSet, S&P Capital IQ Estimates, Visible Alpha are credible candidates; no winner, rights clearance, trial, or sample proof. Vendor contact/procurement requires separate current Chairman authorization. Does not block a lawful free-estate EXP-1 |
+| EVAL-0 evaluation preregistration | frozen (`SPEC_ONLY`, immutable) | Merged PR `#6341`, merge `8185690d04dd96f871fa4858c6352ff2a95880eb`, registration `K3E-EVAL-0-V1`, canonical digest `986ec117e8517b77e8dece565fd9d9dc169e758beb9d1619acc443e061ef87fd` re-verified 2026-08-25 (file byte-identical since merge). Activation receipt now recorded: `eval0_activation_receipt.v1.json` resolves the first eligible NYSE boundary as 2026-08-24 |
+| EXP-1 expectation surface | `NOT_BUILT` | Gated on SRC-A1 `PROVEN_LIVE` + fresh collision census |
+| MKT-1 market-response surface | `NOT_BUILT` | Gated on EXP-1 acceptance; must reuse existing price/residual/options owners |
+| CPL-1 coupling / lag / disagreement | `NOT_BUILT` | Gated on EXP-1 + MKT-1 |
+| PHASE-1 descriptive phase projection | `NOT_BUILT` | Gated on CPL-1; components stay visible, no collapsed scalar |
+| MAS-118 family-specific incorporation science | separate owner program | Fence unchanged; K3E advance does not complete it |
+| MAS-119 cross-domain `ExpectationBaseline` federation | separate owner program | Fence unchanged; K3E advance does not complete it |
 
-## Live adjacent lanes
+## Live adjacent lanes (observed 2026-08-25)
 
 | lane | state | why it matters here |
 |---|---|---|
-| PR `#6329` `claude/k3e-0-expectation-market-dynamics-freeze-20260823` | open, records-only, `merge-on-green` armed | this is the only current K3E-0 carrier; amend here, never mint a duplicate |
-| PR `#6319` `claude/k1-evidence-foundation-20260823` | open, head `ead0076ad48d8a19ae8bc90123629e074a0732d4` | same Alpha-Intel owner family; do not duplicate or overwrite K1 files |
-| PR `#6325` `claude/market-intel-productization-records-20260823` | open, head `6cb7861e26b8f21bf57759365e0259176655a7b8` | records a productization packet and K1 double-dispatch receipt; informative, not canonical until merged |
-| PR `#6264` `sol/prophet-flagship-fanout-hardening-20260822` | open draft, head `5849675350b8f29da98d09476df4613d2c0ef090` | adjacent Prophet cell architecture; explicitly not this lane and not a carrier to hijack |
-| PR `#6320` `claude/a1r-replay-settlement-20260823` | open Prophet replay settlement | adjacent Prophet evidence history, not K3E architecture |
-| PR `#6275` `chatgpt/mas-122-cell-f-d5-contract-20260822` | open Prophet D5 contract | transport/specialist context only; D5 does not compute K3E belief |
+| K2-B institutional manager intent (PR `#6370`) | merged 2026-08-24T17:53:03Z | Same parent workstream; its contract paths (`contracts/institutional_intelligence/`, `lib/institutional_intelligence.py`) are now owned on main, not in flight — do not touch from K3E lanes |
+| sibling worktree `alpha-k3e-evidence-vector-855c3a`, branch `claude/alpha-k3e-opportunity-evidence-vector` | HEAD at main tip, no commits, no PR | Canonical K3-E Opportunity Evidence Vector lane — a distinct program per the K3E-0 naming law; path surface disjoint from this program; shared surface is only the Agent OS workstream record |
+| `daily.yml` nightly engine lane | scheduled, next natural run 2026-08-25 ~22:30–23:30Z | Sole lawful producer of natural C2 evidence; never manually dispatched/rerun/cancelled to manufacture proof |
 
-## Collision verdict
+## Collision verdict (2026-08-25 census)
 
-1. PR `#6329` is the single current K3E-0 carrier. Do not create a second one.
-2. K3 contract preparation is already ruled lawful in parallel with K1 by
-   `research/alpha_intelligence/C0_WAVE0_ADJUDICATION_2026-08-19.md`.
-3. The occupied collision surface is the Alpha-Intel workstream control file and
-   K1 records, not the K3E research path proposed here.
-4. Therefore K3E-0 may land now as a records-only freeze if it:
-   - avoids K1-owned files where possible;
-   - creates no new workstream;
-   - creates no runtime / product / data mutation.
-5. After merge, `SRC-A1`, `VEND-0`, and `EVAL-0` require one fresh current-head
-   collision census before they start; their handoffs are not permission to
-   ignore newly opened owner lanes.
+1. No open PR or remote branch touches `collectors/equity_revisions.py`,
+   `data/revisions/*`, or `research/alpha_intelligence/expectation_market_dynamics/**`.
+2. All prior K3E PRs are terminal: `#6329` merged, `#6333` closed (superseded
+   carrier), `#6338` merged, `#6339` merged, `#6341` merged, `#6342` merged.
+3. K3E source law (freeze DEC, SRC-A1 DEC, matrices, prereg) has zero commits
+   since 2026-08-23 origination.
+4. The canonical K3-E vector worktree above is adjacent, not colliding; K3E
+   sessions minimize edits to shared Agent OS records outside wave boundaries.
 
-## Freshness notes
+## Next action
 
-- The checked-in `docs/ACTIVE_BUILD_MAP.md` was generated before current
-  `origin/main`; live GitHub / worktree evidence outranks it for current-state
-  collision checks.
-- Relevant Linear projection cells were fetched on 2026-08-23: `MAS-118` is
-  `In Progress`, `MAS-119` is `Backlog`. Linear is projection, not canonical
-  completion evidence.
-- DNR rows cited by key remain binding: `DNR:KILL-FUSED-COMPOSITE` and
-  `DNR:KILL-LIQUIDITY-SHOCK-REVERSAL-CLASSIFIER`.
+Observe the next natural engine-bearing scheduled run (no manual dispatch).
+On a C2-bearing commit, run the SRC-A1P audit against the proof law in
+`handoffs/SRC_A1.md` and the mutation gates in `DATA_CLOCK_RIGHTS_MATRIX.md`;
+on PASS flip SRC-A1 to `PROVEN_LIVE` with immutable run/commit receipts and
+write the Agent OS closeout. EXP-1 may start only after that plus a fresh
+collision census.

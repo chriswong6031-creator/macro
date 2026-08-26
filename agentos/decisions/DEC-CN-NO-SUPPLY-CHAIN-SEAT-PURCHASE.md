@@ -14,7 +14,12 @@ rationale: >
   The binding constraint is lawful Mastermind-derived use, not table count. QCC's
   public ToS (effective 2026-07-09) grants internal-compliance use only and
   forbids redistribution, derivative datasets, scoring systems, and automated
-  data products. TuShare's ordinary token is personal and non-commercial.
+  data products. [NULL / SUPERSEDED 2026-08-21 by
+  DEC:CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE: this rationale
+  FORMERLY asserted "TuShare's ordinary token is personal and non-commercial".
+  TuShare compliance is CHAIRMAN_VERIFIED_PRIVATE / SATISFIED. The decision
+  itself — do not buy a Wind/Choice/iFinD/QCC seat — is UNCHANGED and never
+  rested on that clause; every other vendor's terms below stand as written.]
   CNRDS's click-wrap is academic-only. Wind WDS/SAPI and QCC industrial-chain
   pages market internal-system embedding. Choice's quant API is unlocked inside
   the Choice terminal. Tianyancha's public site geo-blocks the United States.

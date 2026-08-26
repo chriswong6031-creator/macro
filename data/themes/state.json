@@ -1,68 +1,72 @@
 {
   "_debounce": {
     "label": {
-      "ai_agents": {
-        "bucket": "2026-08-24",
+      "ai_neoclouds": {
+        "bucket": "2026-08-25",
+        "count": 1,
+        "from": "deteriorating"
+      },
+      "pgm_miners": {
+        "bucket": "2026-08-25",
         "count": 1,
         "from": "dominant"
-      },
-      "mag7": {
-        "bucket": "2026-08-24",
-        "count": 1,
-        "from": "neutral"
       }
     },
     "lead": {
       "displayed": "gold_miners",
-      "pending": null
+      "pending": {
+        "bucket": "2026-08-25",
+        "count": 1,
+        "tid": "crypto"
+      }
     },
     "reco": {}
   },
   "ai_agents": {
-    "label": "emerging",
+    "label": "dominant",
     "name": "AI Agents & Applications",
     "name_zh": "AI \u667a\u80fd\u4f53\u4e0e\u5e94\u7528",
-    "rank": 10,
-    "reco": "enter",
-    "score": 66
+    "rank": 9,
+    "reco": "accumulate",
+    "score": 68
   },
   "ai_infra": {
     "label": "neutral",
     "name": "AI Infrastructure",
     "name_zh": "AI \u57fa\u7840\u8bbe\u65bd",
-    "rank": 31,
+    "rank": 19,
     "reco": "hold",
-    "score": 48
+    "score": 58
   },
   "ai_neoclouds": {
-    "label": "deteriorating",
+    "label": "emerging",
     "name": "AI Neoclouds & HPC Hosting",
     "name_zh": "AI \u65b0\u4e91\u4e0e\u9ad8\u6027\u80fd\u7b97\u529b\u6258\u7ba1",
-    "rank": 44,
-    "reco": "avoid",
-    "score": 35
+    "rank": 29,
+    "reco": "enter",
+    "score": 52
   },
   "ai_semiconductors": {
-    "label": "deteriorating",
+    "label": "neutral",
     "name": "AI Semiconductors",
     "name_zh": "AI\u534a\u5bfc\u4f53",
-    "rank": 32,
-    "reco": "avoid",
-    "score": 48
+    "rank": 24,
+    "reco": "hold",
+    "score": 57
   },
   "ai_software": {
     "label": "neutral",
     "name": "AI Software & Platforms",
     "name_zh": "AI \u8f6f\u4ef6\u4e0e\u5e73\u53f0",
-    "rank": 17,
+    "rank": 15,
     "reco": "hold",
-    "score": 61
+    "score": 60
   },
   "big_pharma": {
     "label": "dominant",
     "name": "Big Pharma",
     "name_zh": "\u5927\u578b\u836f\u4f01",
-    "rank": 5,
+    "rank": 6,
     "reco": "accumulate",
     "score": 71
   },
@@ -70,151 +74,151 @@
     "label": "emerging",
     "name": "Critical Minerals & Rare Earths",
     "name_zh": "\u5173\u952e\u77ff\u4ea7\u4e0e\u7a00\u571f",
-    "rank": 26,
+    "rank": 11,
     "reco": "hold",
-    "score": 53
+    "score": 67
   },
   "crypto": {
     "label": "dominant",
     "name": "Crypto & Digital Assets",
     "name_zh": "\u52a0\u5bc6\u4e0e\u6570\u5b57\u8d44\u4ea7",
-    "rank": 16,
+    "rank": 1,
     "reco": "accumulate",
-    "score": 62
+    "score": 77
   },
   "crypto_rails": {
     "label": "dominant",
     "name": "Crypto & Digital Rails",
     "name_zh": "\u52a0\u5bc6\u4e0e\u6570\u5b57\u8f68\u9053",
-    "rank": 4,
+    "rank": 3,
     "reco": "accumulate",
-    "score": 71
+    "score": 76
   },
   "cybersecurity": {
     "label": "neutral",
     "name": "Cybersecurity",
     "name_zh": "\u7f51\u7edc\u5b89\u5168",
-    "rank": 25,
+    "rank": 30,
     "reco": "hold",
-    "score": 56
+    "score": 52
   },
   "data_center_power": {
     "label": "deteriorating",
     "name": "Data-Center Power & Cooling",
     "name_zh": "\u6570\u636e\u4e2d\u5fc3\u7535\u529b\u4e0e\u6563\u70ed",
-    "rank": 45,
+    "rank": 44,
     "reco": "avoid",
-    "score": 35
+    "score": 40
   },
   "defense": {
     "label": "deteriorating",
     "name": "Defense & Aerospace",
     "name_zh": "\u56fd\u9632\u4e0e\u822a\u7a7a\u822a\u5929",
-    "rank": 46,
+    "rank": 48,
     "reco": "avoid",
     "score": 28
   },
   "defensives": {
-    "label": "dominant",
+    "label": "deteriorating",
     "name": "Defensives",
     "name_zh": "\u9632\u5fa1\u677f\u5757",
-    "rank": 13,
-    "reco": "hold",
-    "score": 63
+    "rank": 26,
+    "reco": "avoid",
+    "score": 56
   },
   "energy_complex": {
-    "label": "dominant",
+    "label": "fading",
     "name": "US Energy Complex",
     "name_zh": "\u7f8e\u56fd\u80fd\u6e90\u7efc\u5408",
-    "rank": 7,
-    "reco": "hold",
-    "score": 69
+    "rank": 12,
+    "reco": "trim",
+    "score": 66
   },
   "gold_miners": {
     "label": "dominant",
     "name": "Gold Miners",
     "name_zh": "\u9ec4\u91d1\u77ff\u4e1a",
-    "rank": 1,
+    "rank": 2,
     "reco": "accumulate",
-    "score": 76
+    "score": 77
   },
   "housing": {
     "label": "deteriorating",
     "name": "Housing Chain",
     "name_zh": "\u4f4f\u623f\u4ea7\u4e1a\u94fe",
-    "rank": 35,
+    "rank": 38,
     "reco": "avoid",
-    "score": 46
+    "score": 44
   },
   "industrial_distribution": {
     "label": "deteriorating",
     "name": "Industrial Distribution & Capital Goods",
     "name_zh": "\u5de5\u4e1a\u5206\u9500\u4e0e\u8d44\u672c\u54c1",
-    "rank": 39,
+    "rank": 43,
     "reco": "avoid",
-    "score": 42
+    "score": 41
   },
   "insurance": {
     "label": "deteriorating",
     "name": "Insurance & Brokers",
     "name_zh": "\u4fdd\u9669\u4e0e\u7ecf\u7eaa",
-    "rank": 19,
+    "rank": 28,
     "reco": "avoid",
-    "score": 60
+    "score": 54
   },
   "mag7": {
     "label": "emerging",
     "name": "Magnificent Seven",
     "name_zh": "\u4e03\u5de8\u5934",
-    "rank": 24,
+    "rank": 18,
     "reco": "enter",
-    "score": 56
+    "score": 58
   },
   "managed_care": {
-    "label": "neutral",
+    "label": "deteriorating",
     "name": "Managed Care & Insurers",
     "name_zh": "\u7ba1\u7406\u5f0f\u533b\u7597\u4e0e\u4fdd\u9669",
-    "rank": 29,
-    "reco": "hold",
-    "score": 50
+    "rank": 34,
+    "reco": "avoid",
+    "score": 46
   },
   "memory_storage": {
-    "label": "deteriorating",
+    "label": "neutral",
     "name": "Memory, HBM & Storage",
     "name_zh": "\u5185\u5b58\u3001HBM \u4e0e\u5b58\u50a8",
-    "rank": 37,
-    "reco": "avoid",
-    "score": 43
+    "rank": 20,
+    "reco": "hold",
+    "score": 58
   },
   "non_ai_software": {
-    "label": "dominant",
+    "label": "neutral",
     "name": "Non-AI Software",
     "name_zh": "\u975eAI\u8f6f\u4ef6",
-    "rank": 14,
-    "reco": "accumulate",
-    "score": 63
+    "rank": 23,
+    "reco": "hold",
+    "score": 57
   },
   "non_ai_tech": {
     "label": "deteriorating",
     "name": "Non-AI Tech & Hardware",
     "name_zh": "\u975eAI\u79d1\u6280\u4e0e\u786c\u4ef6",
-    "rank": 40,
+    "rank": 32,
     "reco": "avoid",
-    "score": 39
+    "score": 47
   },
   "nuclear_power": {
     "label": "deteriorating",
     "name": "Nuclear & SMR Power",
     "name_zh": "\u6838\u7535\u4e0e\u5c0f\u578b\u6a21\u5757\u5316\u53cd\u5e94\u5806",
-    "rank": 48,
+    "rank": 46,
     "reco": "avoid",
-    "score": 24
+    "score": 39
   },
   "obesity_glp1": {
     "label": "neutral",
     "name": "GLP-1 & Obesity",
     "name_zh": "GLP-1 \u4e0e\u51cf\u80a5\u836f",
-    "rank": 18,
+    "rank": 16,
     "reco": "hold",
     "score": 60
   },
@@ -222,16 +226,16 @@
     "label": "dominant",
     "name": "Payments & Fintech",
     "name_zh": "\u652f\u4ed8\u4e0e\u91d1\u878d\u79d1\u6280",
-    "rank": 11,
+    "rank": 13,
     "reco": "accumulate",
     "score": 65
   },
   "pgm_miners": {
-    "label": "dominant",
+    "label": "emerging",
     "name": "PGM Miners",
     "name_zh": "\u94c2\u65cf\u91d1\u5c5e\u77ff\u4e1a",
     "rank": 8,
-    "reco": "accumulate",
+    "reco": "hold",
     "score": 69
   },
   "power_grid": {
@@ -240,23 +244,23 @@
     "name_zh": "\u7535\u529b\u4e0e\u7535\u7f51",
     "rank": 47,
     "reco": "avoid",
-    "score": 25
+    "score": 34
   },
   "quantum_computing": {
     "label": "neutral",
     "name": "Quantum Computing",
     "name_zh": "\u91cf\u5b50\u8ba1\u7b97",
-    "rank": 43,
+    "rank": 36,
     "reco": "hold",
-    "score": 36
+    "score": 45
   },
   "regional_banks": {
     "label": "deteriorating",
     "name": "Regional Banks",
     "name_zh": "\u533a\u57df\u94f6\u884c",
-    "rank": 34,
+    "rank": 37,
     "reco": "avoid",
-    "score": 46
+    "score": 44
   },
   "reshoring": {
     "label": "neutral",
@@ -264,143 +268,143 @@
     "name_zh": "\u56de\u6d41\u4e0e\u5de5\u4e1a\u8d44\u672c\u5f00\u652f",
     "rank": 33,
     "reco": "hold",
-    "score": 47
+    "score": 46
   },
   "retail": {
-    "label": "neutral",
+    "label": "deteriorating",
     "name": "Retail",
     "name_zh": "\u96f6\u552e",
-    "rank": 23,
-    "reco": "hold",
-    "score": 57
+    "rank": 42,
+    "reco": "avoid",
+    "score": 41
   },
   "robotics_automation": {
     "label": "neutral",
     "name": "Robotics & Automation",
     "name_zh": "\u673a\u5668\u4eba\u4e0e\u81ea\u52a8\u5316",
-    "rank": 22,
+    "rank": 17,
     "reco": "hold",
-    "score": 58
+    "score": 59
   },
   "semicap_equipment": {
-    "label": "deteriorating",
+    "label": "neutral",
     "name": "Semiconductor Equipment (WFE)",
     "name_zh": "\u534a\u5bfc\u4f53\u8bbe\u5907\uff08\u6676\u5706\u5382\u8bbe\u5907\uff09",
-    "rank": 42,
-    "reco": "avoid",
-    "score": 36
+    "rank": 35,
+    "reco": "hold",
+    "score": 46
   },
   "silver_miners": {
     "label": "dominant",
     "name": "Silver Miners",
     "name_zh": "\u767d\u94f6\u77ff\u4e1a",
-    "rank": 2,
+    "rank": 4,
     "reco": "accumulate",
-    "score": 74
+    "score": 76
   },
   "space_economy": {
     "label": "fading",
     "name": "Space Economy",
     "name_zh": "\u592a\u7a7a\u7ecf\u6d4e",
-    "rank": 41,
+    "rank": 45,
     "reco": "trim",
-    "score": 37
+    "score": 40
   },
   "travel": {
     "label": "deteriorating",
     "name": "Travel & Experiences",
     "name_zh": "\u65c5\u884c\u4e0e\u4f53\u9a8c",
-    "rank": 36,
+    "rank": 40,
     "reco": "avoid",
-    "score": 43
+    "score": 42
   },
   "uranium_miners": {
     "label": "emerging",
     "name": "Uranium & Nuclear Fuel",
     "name_zh": "\u94c0\u77ff\u4e0e\u6838\u71c3\u6599",
-    "rank": 15,
+    "rank": 5,
     "reco": "hold",
-    "score": 63
+    "score": 73
   },
   "us_sector_comm": {
-    "label": "emerging",
+    "label": "neutral",
     "name": "Communication Services (Equal-Weight)",
     "name_zh": "\u901a\u4fe1\u670d\u52a1\uff08\u7b49\u6743\uff09",
-    "rank": 21,
+    "rank": 25,
     "reco": "hold",
-    "score": 60
+    "score": 57
   },
   "us_sector_discretionary": {
-    "label": "emerging",
+    "label": "deteriorating",
     "name": "Consumer Discretionary (Equal-Weight)",
     "name_zh": "\u975e\u5fc5\u9700\u6d88\u8d39\uff08\u7b49\u6743\uff09",
-    "rank": 28,
-    "reco": "hold",
-    "score": 51
+    "rank": 39,
+    "reco": "avoid",
+    "score": 43
   },
   "us_sector_energy": {
-    "label": "dominant",
+    "label": "fading",
     "name": "Energy (Equal-Weight)",
     "name_zh": "\u80fd\u6e90\uff08\u7b49\u6743\uff09",
-    "rank": 6,
-    "reco": "hold",
-    "score": 71
+    "rank": 10,
+    "reco": "trim",
+    "score": 68
   },
   "us_sector_financials": {
     "label": "deteriorating",
     "name": "Financials (Equal-Weight)",
     "name_zh": "\u91d1\u878d\uff08\u7b49\u6743\uff09",
-    "rank": 20,
+    "rank": 22,
     "reco": "avoid",
-    "score": 60
+    "score": 58
   },
   "us_sector_health": {
     "label": "dominant",
     "name": "Health Care (Equal-Weight)",
     "name_zh": "\u533b\u7597\u4fdd\u5065\uff08\u7b49\u6743\uff09",
-    "rank": 3,
+    "rank": 7,
     "reco": "hold",
-    "score": 74
+    "score": 70
   },
   "us_sector_industrials": {
     "label": "deteriorating",
     "name": "Industrials (Equal-Weight)",
     "name_zh": "\u5de5\u4e1a\uff08\u7b49\u6743\uff09",
-    "rank": 38,
+    "rank": 41,
     "reco": "avoid",
-    "score": 43
+    "score": 42
   },
   "us_sector_materials": {
-    "label": "dominant",
+    "label": "deteriorating",
     "name": "Materials (Equal-Weight)",
     "name_zh": "\u6750\u6599\uff08\u7b49\u6743\uff09",
-    "rank": 9,
-    "reco": "accumulate",
-    "score": 67
+    "rank": 14,
+    "reco": "avoid",
+    "score": 63
   },
   "us_sector_realestate": {
     "label": "deteriorating",
     "name": "Real Estate (Equal-Weight)",
     "name_zh": "\u623f\u5730\u4ea7\uff08\u7b49\u6743\uff09",
-    "rank": 30,
+    "rank": 31,
     "reco": "avoid",
-    "score": 50
+    "score": 48
   },
   "us_sector_staples": {
-    "label": "dominant",
+    "label": "deteriorating",
     "name": "Consumer Staples (Equal-Weight)",
     "name_zh": "\u5fc5\u9700\u6d88\u8d39\uff08\u7b49\u6743\uff09",
-    "rank": 12,
-    "reco": "hold",
-    "score": 65
+    "rank": 27,
+    "reco": "avoid",
+    "score": 55
   },
   "us_sector_tech": {
     "label": "neutral",
     "name": "Technology (Equal-Weight)",
     "name_zh": "\u4fe1\u606f\u6280\u672f\uff08\u7b49\u6743\uff09",
-    "rank": 27,
+    "rank": 21,
     "reco": "hold",
-    "score": 53
+    "score": 58
   },
   "us_sector_utilities": {
     "label": "deteriorating",
@@ -408,6 +412,6 @@
     "name_zh": "\u516c\u7528\u4e8b\u4e1a\uff08\u7b49\u6743\uff09",
     "rank": 49,
     "reco": "avoid",
-    "score": 23
+    "score": 24
   }
 }

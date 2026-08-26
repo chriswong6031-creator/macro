@@ -1,8 +1,8 @@
 {
   "schema": "edgar_phrase_velocity.v1",
   "vocab_version": 1,
-  "as_of": "2026-08-24",
-  "generated_at": "2026-08-25T01:48:31.746136+00:00",
+  "as_of": "2026-08-25",
+  "generated_at": "2026-08-26T01:54:57.914751+00:00",
   "authority": {
     "may_rank": false,
     "may_gate": false,
@@ -16,12 +16,12 @@
   },
   "honesty_header": "This is a WATCHLIST / candidate feed. Detection is noisy — ~half of phrase-velocity accelerations correspond to real supply-stress shifts. Early-entry return edge ≈ 0. Not a buy signal. Not a scored factor. Carries the same honesty stance as theme_discovery.py.",
   "coverage_stats": {
-    "bottleneck_rows": 81,
+    "bottleneck_rows": 82,
     "emergence_rows": 1284,
-    "combined_rows": 1226,
+    "combined_rows": 1227,
     "date_range_min": "2025-05-28",
-    "date_range_max": "2026-08-19",
-    "unique_tickers": 546,
+    "date_range_max": "2026-08-24",
+    "unique_tickers": 547,
     "unique_phrases": 14
   },
   "expand_note": "Vocabulary expansion disabled in v1: FTS endpoint returns metadata only (no snippet/text). Co-occurrence expansion requires raw filing text (not available from efts.sec.gov). Expansion cap = 0.",
@@ -188,9 +188,9 @@
         {
           "phrase": "extended lead times",
           "recent_count": 24,
-          "prior_count": 4,
+          "prior_count": 3,
           "recent_filers": 23,
-          "prior_filers": 4,
+          "prior_filers": 3,
           "velocity_z": 5.0,
           "is_affinity_phrase": false
         },
@@ -205,9 +205,9 @@
         },
         {
           "phrase": "longer lead times",
-          "recent_count": 25,
+          "recent_count": 26,
           "prior_count": 2,
-          "recent_filers": 25,
+          "recent_filers": 26,
           "prior_filers": 2,
           "velocity_z": 5.0,
           "is_affinity_phrase": false
@@ -248,9 +248,9 @@
         {
           "phrase": "extended lead times",
           "recent_count": 24,
-          "prior_count": 4,
+          "prior_count": 3,
           "recent_filers": 23,
-          "prior_filers": 4,
+          "prior_filers": 3,
           "velocity_z": 5.0,
           "is_affinity_phrase": false
         },
@@ -265,9 +265,9 @@
         },
         {
           "phrase": "longer lead times",
-          "recent_count": 25,
+          "recent_count": 26,
           "prior_count": 2,
-          "recent_filers": 25,
+          "recent_filers": 26,
           "prior_filers": 2,
           "velocity_z": 5.0,
           "is_affinity_phrase": false
@@ -301,9 +301,9 @@
         {
           "phrase": "extended lead times",
           "recent_count": 24,
-          "prior_count": 4,
+          "prior_count": 3,
           "recent_filers": 23,
-          "prior_filers": 4,
+          "prior_filers": 3,
           "velocity_z": 5.0,
           "is_affinity_phrase": false
         },
@@ -318,9 +318,9 @@
         },
         {
           "phrase": "longer lead times",
-          "recent_count": 25,
+          "recent_count": 26,
           "prior_count": 2,
-          "recent_filers": 25,
+          "recent_filers": 26,
           "prior_filers": 2,
           "velocity_z": 5.0,
           "is_affinity_phrase": false
@@ -362,10 +362,20 @@
     },
     {
       "phrase": "longer lead times",
-      "recent_count": 24,
+      "recent_count": 25,
       "prior_count": 2,
-      "recent_filers": 24,
+      "recent_filers": 25,
       "prior_filers": 2,
+      "velocity_z": 5.0,
+      "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
+      "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
+    },
+    {
+      "phrase": "extended lead times",
+      "recent_count": 22,
+      "prior_count": 3,
+      "recent_filers": 22,
+      "prior_filers": 3,
       "velocity_z": 5.0,
       "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
       "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
@@ -381,12 +391,12 @@
       "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
     },
     {
-      "phrase": "extended lead times",
-      "recent_count": 22,
-      "prior_count": 4,
-      "recent_filers": 22,
-      "prior_filers": 4,
-      "velocity_z": 4.5,
+      "phrase": "tight supply",
+      "recent_count": 9,
+      "prior_count": 2,
+      "recent_filers": 8,
+      "prior_filers": 2,
+      "velocity_z": 3.5,
       "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
       "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
     },
@@ -417,16 +427,6 @@
       "recent_filers": 19,
       "prior_filers": 5,
       "velocity_z": 2.1666666666666665,
-      "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
-      "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
-    },
-    {
-      "phrase": "tight supply",
-      "recent_count": 9,
-      "prior_count": 3,
-      "recent_filers": 8,
-      "prior_filers": 3,
-      "velocity_z": 2.0,
       "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
       "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
     },

@@ -83,6 +83,16 @@ def main() -> int:
     parser.add_argument("--cache-before", type=Path)
     parser.add_argument("--cache-after", type=Path)
     parser.add_argument("--workspace-object-bytes", type=int, default=0)
+    # Materialization-receipt amendment (2026-08-25, #6351 live-incident
+    # addendum): split the shared-cache prewarm phase's own wall time out of
+    # `checkout_seconds` (which otherwise mixes prewarm + candidate
+    # materialization into one number), and carry a reference to the raw
+    # semantic fragment this same pack invocation emitted alongside the
+    # receipt so a reader can cross-check receipt identity against fragment
+    # identity without re-deriving it. Both are optional: hosted-control has
+    # no prewarm phase and older invocations pass neither flag.
+    parser.add_argument("--prewarm-seconds", type=Path)
+    parser.add_argument("--fragment", type=Path)
     args = parser.parse_args()
     plan = json.loads(args.plan.read_text(encoding="utf-8"))
     expected = next(
@@ -99,8 +109,14 @@ def main() -> int:
             failed = json.loads(line[len(FAILED) :])
         if line.startswith(PREWARM):
             prewarm = json.loads(line[len(PREWARM) :])
+    fragment_schema = None
+    fragment_plan_sha256 = None
+    if args.fragment is not None and args.fragment.exists():
+        fragment_document = json.loads(args.fragment.read_text(encoding="utf-8"))
+        fragment_schema = fragment_document.get("schema")
+        fragment_plan_sha256 = fragment_document.get("plan_sha256")
     receipt = {
-        "schema": "ci.selfhosted_canary_receipt.v1",
+        "schema": "ci.selfhosted_canary_receipt.v2",
         "runner_kind": args.runner_kind,
         "runner_name": args.runner_name,
         "tested_sha": args.tested_sha,
@@ -113,6 +129,7 @@ def main() -> int:
         "exit_code": args.exit_code,
         "result": "passed" if args.exit_code == 0 else "failed",
         "prewarm": prewarm,
+        "prewarm_seconds": read_float(args.prewarm_seconds),
         "origin_fetch_seconds": trace2_fetch_seconds(args.trace2),
         "checkout_seconds": read_float(args.checkout_seconds),
         "dependency_seconds": read_float(args.dependency_seconds),
@@ -122,6 +139,12 @@ def main() -> int:
         "cache_bytes_after": read_float(args.cache_after),
         "workspace_object_bytes": args.workspace_object_bytes,
         "resources": metrics(args.metrics),
+        # Fragment reference (D, #6351): not the fragment's full body — that
+        # travels as its own artifact and is what `compare_ci_canary_receipts.py`
+        # diffs byte-for-byte — just enough to cross-check this receipt was
+        # captured from the same pack invocation that minted it.
+        "fragment_schema": fragment_schema,
+        "fragment_plan_sha256": fragment_plan_sha256,
     }
     args.output.write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
     print("CI_CANARY_RECEIPT=" + json.dumps(receipt, sort_keys=True), flush=True)

@@ -249,7 +249,7 @@
   function setText(id, txt) { var e = el(id); if (e) e.textContent = txt; }
 
   function showError() {
-    hideEl('pf_desk'); hideEl('pf_empty'); hideEl('pf_add'); hideEl('pf_closed');
+    hideEl('pf_desk'); hideEl('pf_empty'); hideEl('pf_add'); hideEl('pf_import'); hideEl('pf_closed');
     var errDiv = el('pf_err_inline');
     // A1A frozen copy (§13c): a cloud read error with no last-good rows — never a
     // silent zero, never the local book substituted in.
@@ -263,7 +263,7 @@
      hidden — a hidden-but-present stale row is still a leak the moment anything
      un-hides it. Never an error tone: this is expected, resolving traffic. */
   function showLoading() {
-    hideEl('pf_desk'); hideEl('pf_empty'); hideEl('pf_add'); hideEl('pf_closed');
+    hideEl('pf_desk'); hideEl('pf_empty'); hideEl('pf_add'); hideEl('pf_import'); hideEl('pf_closed');
     var host = el('tbl_pf');
     if (host) host.innerHTML = '';
     var errDiv = el('pf_err_inline');
@@ -1884,6 +1884,7 @@
       dispatchPfSave(pfChipStateFor(readState));
       hideEl('pf_err_inline');
       showEl('pf_add');
+      showEl('pf_import');
       if (newRows === null) { render(); return; }   // genuinely unknown — never []
       rows = newRows;
       ensureIndex().then(render);
@@ -1960,6 +1961,15 @@
     document.addEventListener('langchange', function () { if (section()) render(); });
     document.addEventListener('wl-auth', function () { onAuth(); });
     document.addEventListener('pf-folded', function () { reload(); });
+    /* A1B's paste/review surface owns no Portfolio state. It reports only a
+       privacy-safe lifecycle word; this canonical consumer keeps the existing
+       write-honesty chip and authoritative reread path in one place. */
+    document.addEventListener('pf-import-state', function (e) {
+      var state = e && e.detail && e.detail.state;
+      if (state === 'saving') dispatchPfSave('saving');
+      else if (state === 'saved') reload(1); // confirmed import write; truthy afterWrite
+      else if (state === 'failed') dispatchWriteFailure();
+    });
     document.addEventListener('bk-change', function () { if (section() && rows) render(); });
     /* A1A (§11): the Portfolio's own book model is built from Portfolio rows ONLY —
        a Watchlist change can no longer move it, so there is nothing for a `wl-changed`

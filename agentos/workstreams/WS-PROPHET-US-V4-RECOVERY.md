@@ -29,6 +29,15 @@ owns_paths:
   - tests/test_prophet_lab.py
   - tests/test_prophet_lab_api.py
   - tests/fixtures/prophet_lab/
+  - engine/us_candidate_episode.py
+  - engine/us_candidate_episode_intake.py
+  - scripts/reconcile_us_candidate_episodes.py
+  - data/us_prophet_rank/episode_inputs/turn_watch/
+  - data/us_prophet_rank/episodes/
+  - tests/test_us_candidate_episode.py
+  - tests/test_us_candidate_episode_intake.py
+  - tests/test_us_candidate_episode_reconciler.py
+  - tests/test_us_candidate_episode_wiring.py
 depends_on:
   - WS:PROPHET-US-AVAILABILITY
   - WS:LIVE-ENTRY-RADAR
@@ -41,6 +50,7 @@ depends_on:
 decisions:
   - DEC:PROPHET-V4-THEIA-SOURCE-RIGHTS
   - DEC:PROPHET-LAB-B5A-RECUT
+  - DEC:PROPHET-B1-CANONICAL-EPISODE-BINDINGS
 landmines:
   - "THE OUTAGE was LIVE at 0A (2026-08-17) and still unresolved at the 0B pin
     (2026-08-18T00Z: source_asof=2026-08-13, 206 plans). That historical fact is
@@ -114,6 +124,7 @@ artifacts:
   - research/prophet_v4/WAVE_GRAPH_AND_MERGE_ORDER.md
   - research/prophet_v4/V4_A1_AVAILABILITY_RECOVERY_HANDOFF.md
   - agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-25-a1-acceptance.md
+  - agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-25-b1-built.md
 waves:
   - id: 0a
     title: "V4-0A — estate archaeology + architecture freeze. Merged #5832
@@ -159,7 +170,17 @@ waves:
   - id: b1
     depends_on: [a1]
     title: "V4-B1 — canonical candidate episode registry (prophet.candidate_episode/v1)"
-    status: todo
+    status: in_progress
+    next_action: >
+      BUILT_PENDING_NATURAL_ACCEPTANCE. Merge the reviewed B1 code/wiring, then wait
+      for the first ordinary scheduled nightly descendant. Accept only from its exact
+      HEAD-referenced immutable generation, receipt/source hashes, workflow ancestry,
+      and read-only canonical-reader proof. The B1 step itself is schedule-only and is
+      skipped by daily workflow_dispatch; a manual dispatch, rerun, replay, report mode,
+      or CI fixture is not natural acceptance. The Radar lineage input remains
+      PROPOSED/STAGED_NOT_ARMED: only WS:LIVE-ENTRY-RADAR may freeze and validate its
+      forward-projection contract and require exact immutable event_id before PRODUCED.
+      Do not arm or manufacture that store here. D5 remains blocked until then.
   - id: b2
     depends_on: [b1]
     title: "V4-B2 — entry-event correction hardening (B-15..B-19)"
@@ -306,7 +327,15 @@ waves:
       readable — Radar-owner escalation). Residual chores: tonight's
       stays-gone receipt (tombstone-enforced), M1 flow-ops-wt pin advance
       (marks stale during RTH until then), Terminal deploy of #439, site-full
-      token proofs, pixel crops. Handoff:
+      token proofs, pixel crops. CORRECTION 2026-08-25 (B1-A): the 'M1
+      flow-ops-wt pin advance' chore must NOT be read as authority to advance,
+      reset, clean or reconstruct that checkout. Its detached dirty pin at
+      a5f79c83 is the deliberate ENGINE the merged #6363 publisher lanes consume
+      via PYTHONPATH/WorkingDirectory/.env; normalizing it destroys the governed
+      runtime. The marks lane was separately migrated to ~/prophet-marks-runtime
+      on 2026-08-23 and no longer depends on that pin. See
+      DSC:M1-PUBLISHER-RUNTIME-IS-HOST-LOCAL-AND-DELIBERATELY-PINNED and
+      DEC:B1A-M1-RUNTIME-RECOVERED-NO-SUPERSESSION. Handoff:
       agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-21-lab-day5.md."
     status: in_progress
   - id: b5b
@@ -564,13 +593,14 @@ waves:
     title: "V4-E6 — promotion gauntlet + V3 retirement ruling"
     status: todo
 next_action: >
-  A1 is accepted by Chairman-authorized adoption from the exact 2026-08-25 natural-run
-  and private-reader packet. Execute B1 next: build the one canonical
-  prophet.candidate_episode/v1 registry from the frozen handoff, preserving Radar,
-  origination-door, candidate-pool, identity, and grading ownership. Do not execute D5
-  before B1; PR #6275 remains a contract-only carrier that must be reconciled after B1
-  without losing its frozen D5 evidence terms. A2/A3/A4 and all other V4 waves remain
-  separately governed and unchanged by this dependency release.
+  B1 is BUILT_PENDING_NATURAL_ACCEPTANCE on its single reviewed carrier. Merge it,
+  then wait for the first ordinary scheduled nightly descendant and validate the exact
+  HEAD-selected immutable generation, receipt/source hashes, ancestry, and canonical
+  read path. The B1 workflow step is schedule-only; do not dispatch, rerun, or replay as
+  a substitute. Radar forward lineage remains PROPOSED/STAGED_NOT_ARMED until its owner
+  freezes and validates an exact immutable-event relationship contract. D5 remains blocked;
+  PR #6275 stays a contract-only carrier to reconcile only after B1 acceptance without
+  losing its frozen D5 evidence terms. A2/A3/A4 and all other V4 waves remain separate.
 ---
 
 ## Context
