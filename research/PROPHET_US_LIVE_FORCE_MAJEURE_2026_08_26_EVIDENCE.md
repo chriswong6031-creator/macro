@@ -399,3 +399,25 @@ one layer over. Repaired in PR #6482 by stamping `meta.producer` after the singl
 **This is the entire argument for §24.10.** Every check in #6464 was green, the
 mutation matrix passed against pristine code, and the defect was still there. Only
 a real session against real production surfaced it.
+
+## 14.2 Closure — heartbeat green in a live session
+
+`meta.producer` shipped in PR #6482 (`e01895f5fcc4`) and deployed mid-session.
+Re-verified at 15:23:00Z, inside RTH, with the lane actively publishing:
+
+| Surface | Observed |
+|---|---|
+| served artifact | `status=live`, `pass_ts=2026-08-26T15:23:00Z`, `producer=scripts/prophet_live_evaluator.py` |
+| `/api/status` | `expected_now=True status=live pack_ok=True pass_age_min=2.5 quote_age_min=3.2 n_names=180` |
+| external dead-man | **`VPS live plane healthy`** (exit 0) |
+
+Both halves of the contract are now demonstrated on the same lane, in production:
+the dead-man **red**s a non-publishing lane (13:37Z capture) and **green**s a
+publishing one (15:23Z) — which is what makes it an instrument rather than a
+decoration.
+
+Note on verification method: `git merge-base --is-ancestor` against `/opt/macro`
+answers "not deployed" for a merge SHA it has not fetched — the box is a partial
+clone and main moves faster than the 3-minute pull, so the box holds a
+*descendant*, never the exact SHA. Deployment must be confirmed from the deployed
+FILE and the artifact it produces, never from ancestry alone.
