@@ -43,6 +43,14 @@ and produced nothing.
 Neither was manually dispatched; no `workflow_dispatch` run of `daily.yml`
 occurred inside the proof window.
 
+Run attribution is additionally proven at body level: each collection's
+`collection_session_id` equals the collector's deterministic
+`sha256(json(["src-a1","yfinance",["github_run","<run id>"]]))` preimage for
+its producing run — C1 `74cfd4a71620…` = H(`32786919396`), C2 `d9fa989a6c9e…`
+= H(`32908543584`), recomputed exactly (independent verification receipt,
+`SRC_A1_C1C2_INDEPENDENT_VERIFICATION_2026-08-26.md`). A row minted outside
+the real scheduled run cannot carry that session id.
+
 ## SRC-A1P audit outcome (2026-08-26) — verdict FAIL
 
 True counts: C1 = 11,200 observations / 200 attempts (199 `success`, 1 honest
@@ -83,6 +91,14 @@ changed-payloads-append/supersede, failures-do-not-overwrite, fiscal-rollover,
 and cross-collection horizon stability remain **unexercised, not satisfied**
 (`DSC:SRC-A1-DRIP-CURSOR-DEFERS-REVISION-PROOF`).
 
+**Independent concurrence:** a parallel Fable COO session executed the same
+audit independently on the same pair (19-condition sheet, null-safe body
+comparison, frozen gate suite 30/30 at current main) and reached the identical
+verdict — FAIL on mutation gate 1 alone, all other exercisable conditions PASS,
+same 9 violation groups (row-count difference is counting-net only: 27
+non-count interpretable-value rows vs 36 total zero-value rows). Receipt:
+`SRC_A1_C1C2_INDEPENDENT_VERIFICATION_2026-08-26.md`.
+
 **Non-blocking observations:** `correction_state` is state-dependent rather than
 payload-dependent (`original` in C1, `missing` in C2 for identical data
 conditions), permanently non-comparable across collections because C1 is
@@ -97,6 +113,7 @@ decision-relevant for EXP-1.
 | lane | state | why it matters here |
 |---|---|---|
 | PR `#6452` zero-substitution heal | merged `2e0234d94b93` | This program's carrier for the gate-1 defect; live on main |
+| PR `#6461` fiscal-anchor / rollover fence | OPEN (`collectors/equity_revisions.py` + tests only) | The in-flight carrier for "Next action" step 2: captures the provider's `endDate` into `period_end` before cursor wrap can fire mutation gate 3 |
 | K2-B institutional manager intent (PR `#6370`) | merged 2026-08-24T17:53:03Z | Same parent workstream; its contract paths are owned on main, not in flight — do not touch from K3E lanes |
 | sibling worktree `alpha-k3e-evidence-vector-855c3a` | branch at main tip, no commits, no PR | Canonical K3-E Opportunity Evidence Vector — a distinct program per the K3E-0 naming law; path surface disjoint |
 | `daily.yml` nightly engine lane | scheduled | Sole lawful producer of collection evidence; never manually dispatched/rerun/cancelled to manufacture proof |
