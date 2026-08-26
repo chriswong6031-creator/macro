@@ -319,38 +319,38 @@ waves:
     title: FMS real vertical — State acquisition, immutable observations, government_fms_case.v1, ninth fms mode, production proof
     status: in_progress
     depends_on: [D6-B0]
-    claim: claude/d6b-fms-vertical-20260825 (Fable session, claimed 2026-08-25)
+    claim: claude/d6b1-fms-coverage-vertical-20260825 (Fable session, D6-B1 continuation claimed 2026-08-25; carrier is a ~/.claude-recovery clone because the local primary clone's git object reads are kernel-blocked by iCloud-evicted pack files)
     next_action: >
-      HOLD-FOR-SOL AT THE U4 GATE (2026-08-25). The wave was claimed
-      under Sol authorization (macro #6404 comment 5416302430; protected
-      Skillpack Mastermind@51f9942733b86e550bb9169d2a43462bd28e774f;
-      claim pins Macro main f0ccbd37ffe5, freeze blob 4ed41deca82c and
-      DEC blob 71adba5e88c9 unchanged since Sol's review pin
-      2c20168df5d9; open-PR collision census clean) and executed ordered
-      steps 1-3. Step 3 — the mandatory boundary-window sweep
-      (2026-02-06→2026-02-26 inclusive, independent FR 36(b)(1)
-      denominator, 133 FR docs scanned with sha256 receipts) — found
-      transmittal 26-23 (Government of Jordan, KuMRFS radars, $280M,
-      delivered 2026-02-26 per FR 2026-07278 / 91 FR 20139)
-      ABSENT_FROM_BOTH: never posted by DSCA (landing frozen at 25-105
-      Feb-6; Library newest CN = 26-13; Wayback 197 snapshots, zero
-      Jordan) and never posted by State (46-article corpus enumerated,
-      earliest post 2026-03-10; search + direct slugs 404; Wayback
-      empty). 25-105 (Ukraine Class IX spares, Feb-6) = dsca_only,
-      receipted. Collateral: State-era under-coverage is a STANDING
-      class — 26-28 (Japan, Hyper Velocity Gliding Projectiles Support,
-      $340M, delivered 2026-03-24, FR 2026-09109) also absent from
-      State. Per the Sol U4 ruling ("absent_from_both ⇒ HOLD-FOR-SOL
-      before merge") and the commission stop conditions, implementation
-      steps 4-11 were NOT started; zero production code exists. Step-2
-      re-receipts captured (State listing/26-27 byte-deterministic CLI;
-      SAMM C5.7 sha b98a113875f4; FR 26-27 raw text sha d64ae8f732bb
-      verifying delivered 2026-03-10). Evidence:
-      research/defense_intelligence/evidence/fms_cutover_sweep_2026-08-25.json
-      + fms_u4_fr_denominator_2026-08-25.json. NEXT: Sol rules how
-      coverage truth is represented (options in the sweep artifact +
-      handoff) before D6-B implementation may resume. D6-C+ and D7+
-      remain UNAUTHORIZED. D5 unchanged (BUILT_NOT_PROVEN).
+      D6-B1 COVERAGE-AWARE CONTINUATION IN FLIGHT (2026-08-25). The U4
+      HOLD was RELEASED by the D6-B1 continuation commission (Chairman
+      channel, in-session relay 2026-08-25; full text preserved in the
+      D6-B1 continuation handoff): the U4 discovery is ACCEPTED —
+      State+DSCA web surfaces are non-exhaustive — and the old
+      web-surface population assumption is REPLACED by the frozen
+      official-union coverage law. Scope 2026-01-01→claim-time. Build:
+      FR bounded denominator/recovery + State current presentation
+      observations + DSCA historical observations → transmittal-number
+      dedupe → canonical GovRev FMS records → explicit source/coverage
+      manifest → existing ninth fms mode → production proof. Under
+      D6-B1, FR may RECOVER (mint) a case that is absent from both web
+      surfaces — hostile case: 26-23 Jordan must be canonically present
+      despite State/DSCA web absence; 26-28 Japan must not disappear
+      because the State corpus omits it; 26-27 Sweden stays the
+      positive web case. All B0 laws preserved: stage authority stops
+      at congressional_notification; review-period expiry advances
+      nothing; estimated_notification_value never award/backlog/
+      revenue/cash; contractor prose mints no issuer identity; system
+      similarity mints no D5 link; append-only corrections; no
+      award_change abuse; no new general event store. New mandatory
+      hostile cases: cross-family duplicate → one transmittal; FR
+      publication lag cannot rewrite congressional-delivery time;
+      missing web page never VALID_EMPTY; zero official denominator
+      reconciliation cannot pass publication silently. Prior U4-hold
+      evidence stands (fms_cutover_sweep_2026-08-25.json +
+      fms_u4_fr_denominator_2026-08-25.json; step-2 re-receipts incl.
+      SAMM C5.7 sha b98a113875f4). Stop after the FMS vertical is
+      production-proven and return to Sol. D6-C+ and D7+ remain
+      UNAUTHORIZED. D5 unchanged (BUILT_NOT_PROVEN).
 landmines:
   - "Live page is government_revenue.html (underscore). government-revenue.html 404s."
   - "Access (site_full / 401 locked) is independent of epistemics (display/context_only). Do not conflate them."
@@ -395,14 +395,16 @@ discoveries:
   - DSC:GOVREV-CANDIDATE-RADAR-STAYS-LOCKED-AFTER-SITE-FULL-200
   - DSC:GOVREV-AGENCY-STRINGIFY-IS-COLLECTOR-THEN-ACTION-OMIT
 next_action: >
-  D6-B (FMS real vertical) is BLOCKED / HOLD-FOR-SOL at the U4
-  boundary-sweep gate (2026-08-25): transmittal 26-23 (Jordan, delivered
-  2026-02-26) is ABSENT_FROM_BOTH web surfaces — see the D6-B wave entry
-  and research/defense_intelligence/evidence/fms_cutover_sweep_2026-08-25.json.
-  Implementation was NOT started; Sol must rule on coverage-truth
-  representation before the vertical resumes. Wave was Sol-authorized
-  2026-08-25 (macro #6404 comment 5416302430), claimed by
-  claude/d6b-fms-vertical-20260825. D6-A is done / Sol-accepted /
+  D6-B is IN FLIGHT under the D6-B1 coverage-aware continuation
+  (2026-08-25): the U4 hold was released — the U4 discovery is accepted
+  and the population law is now the official union (FR bounded
+  denominator/recovery + State current + DSCA historical observations,
+  transmittal dedupe, explicit source/coverage manifest), scope
+  2026-01-01→claim-time. See the D6-B wave entry for the full D6-B1
+  law. Original Sol authorization macro #6404 comment 5416302430;
+  U4-hold evidence research/defense_intelligence/evidence/
+  fms_cutover_sweep_2026-08-25.json. Continuation claimed by
+  claude/d6b1-fms-coverage-vertical-20260825. D6-A is done / Sol-accepted /
   PROVEN_LIVE (#6385 comment 5404403124). D6-B0 architecture freeze is
   done / Sol-accepted (#6404 comment 5416302430; U1–U5 all ruled — see
   the D6-B0 wave entry). D6-C+, D7+, GAO, DOT&E, IG and every later
