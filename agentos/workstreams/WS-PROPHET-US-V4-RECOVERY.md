@@ -138,6 +138,7 @@ artifacts:
   - research/prophet_v4/ARCHITECTURE_FREEZE.md
   - research/prophet_v4/CONTRACT_AND_OWNER_MAP.md
   - research/prophet_v4/D1_D5_READINESS_RULING.md
+  - research/prophet_v4/B1_NATURAL_ACCEPTANCE_PROBE.md
   - research/prophet_v4/flagship_cells/CELL_F_D5_EVIDENCE_TRANSLATION_AND_TRAJECTORY_CONTRACT_2026-08-22.md
   - research/prophet_v4/flagship_cells/CELL_F_D5_ADVERSARIAL_REVIEW_AMENDMENTS_2026-08-22.md
   - research/prophet_v4/flagship_cells/CELL_F_D5_CANDIDATE_REFERENCE_COMPOSITIONS_AND_E1_BASELINE_2026-08-23.md

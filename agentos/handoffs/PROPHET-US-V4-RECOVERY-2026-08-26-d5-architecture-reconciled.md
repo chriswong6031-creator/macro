@@ -50,6 +50,11 @@ changed:
       Status note recording that the falsifier is half met - implementation now exists,
       real production episode proof does not - so the discovery still stands and D5
       runtime remains blocked.
+  - path: research/prophet_v4/B1_NATURAL_ACCEPTANCE_PROBE.md
+    what: >
+      Read-only acceptance probe for the B1 natural gate, asserting the acceptance contract
+      through B1's own canonical reader so it cannot drift from the plane it checks. Validated
+      at 30 checks / 0 fail against a real generation from B1's own nightly test.
   - path: agentos/discoveries/DSC-PROPHET-D5-EARNINGS-COVERAGE-OVERLAPS-B1-CANDIDATE-POOL.md
     what: >
       New discovery fixing the honest acceptance shape for the first D5 vertical: which
@@ -136,10 +141,13 @@ next_actions:
     that et_gate kept the run, and that the job log actually contains the step
     "Prophet B1 - reconcile canonical candidate episodes".
   - >
-    Run the acceptance probe against the produced store. It materialises
-    data/us_prophet_rank/episodes from a git ref with git archive, so it needs no full
-    checkout: python3 b1_acceptance_probe.py --repo <worktree> --ref origin/main.
-    Then have a fresh independent critic attack the same evidence packet.
+    Run the acceptance probe against the produced store. It is committed with this wave at
+    research/prophet_v4/B1_NATURAL_ACCEPTANCE_PROBE.md, which carries the script inline plus
+    how to run it and how to read a failure. It materialises data/us_prophet_rank/episodes
+    from a git ref with git archive, so it needs no full checkout and works in a sparse tree:
+    python3 b1_acceptance_probe.py --repo <worktree> --ref origin/main. It was validated at
+    30 checks / 0 fail against a real generation from B1's own nightly test. Then have a fresh
+    independent critic attack the same evidence packet - the probe is a floor, not acceptance.
   - >
     Ship a small records-only B1 acceptance PR marking B1 accepted at its true scope and
     explicitly releasing D5 runtime. Only after that merges may D5 runtime work begin.

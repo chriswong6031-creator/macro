@@ -52,9 +52,14 @@ reconstructed) never fires, because that reader cannot reveal that a correction 
    `previous_generation_id` and verifies each predecessor's bytes against
    `previous_manifest_sha256`.
 2. `read_event_workspace` (`:581-622`; it calls `_load_event_workspace` at `:599`) and
-   `read_current_event_workspace` are **FORBIDDEN** in any decision-time D5 path. They may
-   serve only a separately and visibly labelled "known now" research view, never
-   `decision_admissibility = ADMISSIBLE`.
+   `read_current_event_workspace` are **FORBIDDEN** as the source of any decision-time
+   observation BODY. They may serve only a separately and visibly labelled "known now"
+   research view, never `decision_admissibility = ADMISSIBLE`. The prohibition is scoped to
+   bodies deliberately: id discovery via `find_current_event_id_for_company` (`:1036-1076`)
+   also resolves the CURRENT marker, so the candidate event-id SET is not itself
+   point-in-time. An event that exists only post-cut is representable — it resolves to
+   `AFTER_DECISION_CUT` — but an event superseded off the current nest can go unseen, and that
+   limit must be disclosed rather than silently inherited.
 3. **Admission is a CONJUNCTION over both clocks — never `source_available_at` alone.** A
    revision is admissible at cut `C` only if `source_available_at <= C` **AND**
    `observed_at <= C`; for a correction generation, also `generated_at <= C`. The owner
@@ -64,7 +69,10 @@ reconstructed) never fires, because that reader cannot reveal that a correction 
    observed at 22:00 ET, judged against a 16:30 ET cut. Admitting on `source_available_at`
    alone ships evidence the running system did not possess, which is lookahead: the exact
    defect this amendment exists to close. A revision failing only the `observed_at` test is
-   `NOT_CAPTURED_AT_DECISION`, not absent and not admissible. The clocks currently collapse on
+   serialized as `value_state = ABSENT`, `absence_reasons = [NOT_CAPTURED_AT_DECISION]`, and
+   `decision_admissibility = AFTER_DECISION_CUT` — §8.2's `value_state` is closed over
+   `PRESENT | MEASURED_NEUTRAL | ABSENT`, so "present but inadmissible" has no representation
+   and must not be improvised. The clocks currently collapse on
    the live object (`G0_EVENT_CLOCK_AND_CONTRACT_CENSUS.md:98`), so this defect is **latent
    today** — the law must be correct for when that degradation is repaired, and a builder may
    not lean on the collapse.
@@ -97,7 +105,8 @@ reconstructed) never fires, because that reader cannot reveal that a correction 
    `NOT_OBSERVABLE` as "no correction" is forbidden.
 7. `WorkspaceChainIntegrityError` is a first-class outcome. It is raised at
    `company_intelligence_reader.py:1194`, `:1208`, `:1232` and `:1241` in the chain walk, and
-   at `:1065`, `:1070`, `:1075` in the snapshot loader. A broken or dangling chain yields
+   at `:1065`, `:1070`, `:1075` inside `find_current_event_id_for_company` (def `:1036`); the
+   snapshot loader proper is `_load_workspace_snapshot` at `:472`. A broken or dangling chain yields
    `UNESTIMABLE` / `CORRECTION_PENDING` per §13, and **the raised exception's message must be
    recorded in the observation receipt** — those two states may be emitted only with that
    receipt present, so a builder cannot reach for them whenever a read is inconvenient.
@@ -181,12 +190,13 @@ and `scripts/build_canada_library.py`. V4-B4 is not built.
    together with the B1 `generation_id` it was read from, per A9. A cut quoted without its
    generation is unpinned and may silently drift.
 5. **Disclose what `opened_at` is.** It is composed, not raw:
-   `opened_at = max(anchor.time, known_at)` (`engine/us_candidate_episode.py:897`, and `:724`
-   on the re-arm path). That is exactly why referencing it mints nothing and why it can never
-   precede knowledge — but it also means the interval `(known_at, anchor.time]` is a real
-   window in which the structural anchor predates the moment the system knew of it. D5 carries
-   `anchor.time` and `known_at` alongside the cut so a consumer can see that window rather
-   than inferring a single instant.
+   `opened_at = max(anchor.time, known_at)` (`engine/us_candidate_episode.py:897`; the re-arm
+   path composes it the same way at `:890-897`). That is exactly why referencing it mints nothing and why it can never
+   precede knowledge — but it also means that when `anchor.time > known_at` the interval
+   `(known_at, anchor.time]` is a real window in which the structural anchor **postdates** the
+   moment the system knew of it, so the cut sits later than knowledge by that interval. D5
+   carries `anchor.time` and `known_at` alongside the cut so a consumer can see the window
+   rather than inferring a single instant.
 6. When B4 lands, `tradable_at` is filled by its owner and this amendment's clause 2 is
    reopened — nothing else here is.
 
@@ -238,8 +248,12 @@ rights-relevant member is `consensus_unlicensed` (`:102`).
 
    *Owner-backed and mintable (3):* `NOT_APPLICABLE` (the event type does not apply to the
    subject), `NOT_COVERED` (issuer outside the owner's coverage set), `SOURCE_UNAVAILABLE`
-   (the reader's `fetch_failed` disposition, `company_intelligence_reader.py:1012-1033`,
-   which is distinct from `not_published`).
+   (the reader's `fetch_failed` disposition, `company_intelligence_reader.py:1012-1033`).
+   The reader's third disposition, `not_published`, maps to `NOT_COVERED`: the owner has no
+   object for this event. Collapsing the two is forbidden in BOTH directions — the reader's
+   own docstring (`:1019-1022`) warns that letting a transient CDN blip mint "the issuer had
+   no event" is the failure this three-way split exists to prevent, and the converse, dressing
+   a genuine absence as a fetch failure, hides real coverage truth.
 
    *Owner-backed but only PARTIAL (1):* `STALE` — the owner has no staleness clock; it is
    expressible only as a coarse `completeness.<axis>.status` degradation, so it may be emitted
@@ -268,6 +282,8 @@ rights-relevant member is `consensus_unlicensed` (`:102`).
    characterise the subject, the issuer, or the market.
 5. Because `UNESTIMABLE` is otherwise unmintable, §13's escape hatch is reachable ONLY via A7
    clause 7. Without A7 it is dead law.
+
+---
 
 ## A11 — §19.1 canonical episode gate: status corrected
 
