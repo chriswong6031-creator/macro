@@ -101,3 +101,13 @@ danger_areas:
 next_actions:
   - "Operator: supply the authorized production test identity (connect the Chrome extension session or designate the test account vehicle)."
   - "A fresh session then executes the bounded authenticated production-acceptance vertical and, on pass + exact cleanup, advances A1B to DONE / PROVEN_LIVE in Agent OS."
+---
+
+A1B is merged and live: Sol accepted exact head `2bf5d335` and it landed as squash
+`dd66f934e35a` with all binding proof green and the assets serving in production.
+Capability is `BUILT_NOT_PROVEN`. The one open gate is the authenticated
+production-acceptance vertical, which stopped at `PRODUCTION_WRITE_AUTH_REQUIRED`
+because no authorized production test/write identity was available in this session —
+the operator must supply the vehicle before any session may run it. The anonymous
+vertical's receipt is complete and does not need repeating. A2–A6 remain unstarted
+and unauthorized.
