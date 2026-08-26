@@ -27,6 +27,8 @@ waves:
     next_action: >
       Accepted and merged from exact reviewed head fc12904f59a5758817aa2c76ffaa40bb1ebcbf8e
       through PR #6297 at merge commit dcdd939c45b23abce5ba04f95e330ac914a3904b.
+      GitHub squash-replayed the byte-identical candidate delta with stable patch ID
+      eece33a635bcb536a93146b19f74339f080115dc; candidate ancestry is not claimed.
       Treat this as the landed secret-free producer/consumer contract only: it is not deployed,
       live, consumed by Executive placement, or proof of any provider login/readiness realm.
   - id: CF2-F
@@ -91,7 +93,7 @@ artifacts:
   - research/MASTERMIND_EXECUTIVE_CAPACITY_FABRIC_F0_SEMANTIC_IDENTITY_AMENDMENT_2026-08-22.md
   - research/MASTERMIND_EXECUTIVE_CAPACITY_FABRIC_F0_OBSERVATION_NULL_AMENDMENT_2026-08-22.md
   - agentos/handoffs/EXECUTIVE-CAPACITY-FABRIC-2026-08-25.md
-  - agentos/handoffs/EXECUTIVE-CAPACITY-FABRIC-CF1-ACCEPTED-2026-08-25.md
+  - agentos/handoffs/EXECUTIVE-CAPACITY-FABRIC-CF1-ACCEPTED-2026-08-26.md
   - docs/superpowers/plans/2026-08-25-mas-126-cf1-reconciliation.md
 landmines:
   - "Macro `shared-ai-provider-control` already owns provider availability, auth pools, cooling and quota state; do not create ProviderAccount/QuotaHorizon truth tables in Executive OS."
@@ -139,8 +141,10 @@ next_action: >
   Start one fresh Sol-owned CF2-F source-law carrier from current protected Mastermind. Freeze the
   lawful cross-principal acquisition seam, immutable capacity-slot to Executive-quota join, closed
   bounded JOB_CLAIMED capacity evidence, size/privacy limits and no-reacquisition replay law. Keep
-  CF2-I, RF1, HF1, Personal Pro login/readiness, Cursor, Grok and all live/provider expansion held
-  until that source law is independently accepted.
+  CF2-I held until that source law is independently accepted. This carrier performs no login or
+  provider-adapter work: the three Personal Pro readiness ceremonies may continue only on their
+  separate host-isolation carrier under its own gates; Cursor/Grok source and contract research may
+  continue now; executable Cursor/Grok integration remains held until RF1 and HF1 are accepted.
 ---
 
 ## Capability state
