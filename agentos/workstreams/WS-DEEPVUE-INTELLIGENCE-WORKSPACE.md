@@ -64,6 +64,13 @@ waves:
       delivery receipt in research/DEEPVUE_W1C_VALIDATION_RECEIPT_2026-08-26.md.
       Signed-in production persistence/resume remains BUILT_NOT_PROVEN behind the
       external principal gate. W2 stays unstarted pending a new explicit commission.
+  - id: W2-A
+    title: Versioned workspace schema and lossless migration
+    status: in_progress
+    depends_on: [W1-C]
+    next_action: >
+      Contract vertical in flight under the explicit Sol commission of 2026-08-26;
+      Terminal implementation follows the frozen golden vectors.
 landmines:
   - >-
     The W1-A architecture freeze is binding: no second registry, resolver, identity
