@@ -234,3 +234,28 @@ def test_github_backstop_stays_scheduled_off_under_vps_primary():
     assert "VPS_LIVE_PRIMARY" in text, (
         "the backstop must keep gating itself on the host-primary flag"
     )
+
+
+# --------------------------------------------------------------------------
+# Ownership identity (2026-08-26 production proof gap)
+# --------------------------------------------------------------------------
+
+def test_the_evaluator_stamps_an_owner_on_every_published_artifact(monkeypatch):
+    """The dead-man reds on `missing producer (unowned lane)`, so the producing
+    side must actually stamp one — on LIVE and on globally DARK artifacts alike.
+
+    Caught by the real §9 production proof on 2026-08-26: the lane published
+    correctly for the first time in 27 days and the heartbeat still went red,
+    because the check graded a field nothing wrote. A dark pass is still a pass
+    this lane is accountable for, so the stamp sits after the single LS.evaluate
+    call rather than on the live branch only.
+    """
+    import inspect
+    src = inspect.getsource(E.run)
+    assert '"producer"' in src, "run() must stamp an owner onto the artifact meta"
+    stamp = src.index('art["meta"]["producer"]')
+    branch = src.index('art["status"] == "dark"')
+    assert stamp < branch, (
+        "the producer stamp must precede the dark/live branch so a globally dark "
+        "artifact is owned too"
+    )
