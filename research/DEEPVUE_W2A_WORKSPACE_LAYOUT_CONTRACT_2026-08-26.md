@@ -63,6 +63,71 @@ The Macro schema/validator/vectors and the Terminal mirror are both bound to
 the amended law; the golden-vector digest changes accordingly and the old
 digest is void. No other field law changed.
 
+### Amendment A2 (2026-08-26, pre-merge, ruled by the commissioning session after the Phase 6 adversarial review of head 8b4d326514f6)
+
+The hostile review proved the frozen grammar rejects real shipped-Terminal
+values (2 BLOCKERs), and found 8 MAJOR defects including three in the frozen
+LAW itself. Rulings, all binding on both repos:
+
+1. **Grammar (B1)** — amended to the real runtime domain:
+   indicator id `^[A-Za-z_][A-Za-z0-9_]{0,31}$` (covers `_lab`); param key
+   `^[A-Za-z0-9_][A-Za-z0-9_.]{0,63}$` (covers dotted suite keys); chart type
+   `^[a-z][a-z0-9_-]{0,31}$` (covers `line-markers`); symbol
+   `^[\^A-Z0-9.+:_-]{1,24}$` (covers `NVDA+AMD`, `^NDX`, `BINANCE:BTCUSDT`);
+   `indParams` values allow nested objects to depth 3 below the per-indicator
+   object (≤64 keys per level, bounded primitives at leaves — covers `_vis`).
+2. **Lossless-or-refuse (B2)** — `migrate_legacy` MUST NOT silently drop a
+   present-but-invalid owned field: it returns
+   `{"ok": false, "code": "invalid_widget_config"}`. Migration is lossless or
+   it refuses loudly; there is no third state.
+3. **Real-capture vector (M3)** — the vector set MUST include
+   `chart_layout_v2_real_capture.json` built from the REAL Terminal shapes
+   (real indicator keys incl. `_lab`, real ema params with `_vis`, dotted
+   suite keys, `line-markers`, a composite and a caret pane symbol, real
+   `CmpCfg` `{color,lineStyle,lineWidth,mode}`, a non-integral float param).
+4. **Canonicalization (M4)** — canonical JSON is
+   `ensure_ascii=False, allow_nan=False, sort_keys, separators(",",":")`;
+   `UnicodeEncodeError` (lone surrogates) → `malformed_workspace`; NaN/Inf are
+   invalid values; integral-valued floats are normalized to integers before
+   serialization (closing the Python `20.0` vs JS `20` digest split);
+   non-integral floats serialize by shortest-repr in both languages.
+5. **Wire mode (M5)** — `validate_envelope(obj, wire=False)`: wire mode
+   accepts non-null `name` (1..60, normalized-name law). Import validates in
+   wire mode then strips `name` before storage. Export output is wire-valid.
+6. **Projection is fail-closed (M6+M7)** — `subscriber_safe_projection` first
+   validates (stored mode); ANY failure → `{"ok": false, "code": ...}` and the
+   payload is never rewritten, downgraded, or partially projected. (Terminal's
+   export of a blocked row exports the RAW stored bytes instead — the UX spec
+   already carries this.) Projection output over a valid envelope is 1:1 plus
+   `name` and is wire-valid by construction.
+7. **Conversion guard (M8)** — PostgREST cannot express
+   `IS DISTINCT FROM` in one predicate; the §6 guard is TWO disjoint atomic
+   conditional updates (`config->>'schema' IS NULL`, then
+   `config->>'schema' <> 'workspace_layout.v1'`); mutual exclusion follows
+   from READ COMMITTED WHERE re-evaluation, not single-statement identity.
+8. **Retry idempotency (M9)** — on 0 rows updated the caller reads the row:
+   if it exists AND `revision == target` AND canonical content equals what was
+   written → the write ALREADY SUCCEEDED (report success); else
+   `stale_revision` (or `not_found` when absent). On the conversion path a row
+   already carrying `schema == "workspace_layout.v1"` is `stale_revision`.
+9. **ABA fence (M10)** — the CAS predicate includes the loaded row's `id`
+   uuid (`.eq("id", loadedRowId)`) so a delete-recreate under the same name
+   cannot be silently overwritten by a stale device. No DDL — the uuid is
+   already returned by every read.
+10. **Key deny-list (NB1)** — `__proto__`, `constructor`, `prototype` are
+    invalid as widget ids, link-group names, and param keys.
+11. **`requires` optional (NB2)** — absent `requires`/`requires.floor`
+    defaults to floor 1; the schema marks `requires` optional.
+12. **`source_revision ≥ 1` (NB3)** — validator and schema agree.
+13. **Honest provenance (NB4)** — `source_revision` is null when the payload
+    carried no `schemaVersion`; version comparisons use integer checks
+    (booleans are not versions).
+14. **Projected name is normalized (NB5)** — the projection applies the
+    normalized-name law (trim, collapse whitespace, ≤60; empty → refuse) to
+    `row_name` before echoing it.
+
+The golden-vector digest re-pins again under A2; prior digests are void.
+
 ## 1. Canonical object — `workspace_layout.v1`
 
 ```json
