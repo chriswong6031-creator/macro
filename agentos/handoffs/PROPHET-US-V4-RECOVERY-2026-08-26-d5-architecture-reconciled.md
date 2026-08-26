@@ -10,6 +10,7 @@ decisions:
 discoveries:
   - DSC:PROPHET-D5-BLOCKED-ON-CANONICAL-CANDIDATE-EPISODE-B1
   - DSC:PROPHET-D5-EARNINGS-COVERAGE-OVERLAPS-B1-CANDIDATE-POOL
+  - DSC:WORKFLOW-DEFINITION-PINS-TO-TRIGGERING-COMMIT
 mission: >
   Under a direct Chairman commission: reconcile stale Prophet V4 program state, close
   B1's natural-production acceptance, reconcile the open Cell F / D5 architecture
