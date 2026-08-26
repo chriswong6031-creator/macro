@@ -246,6 +246,7 @@ KEY_COLUMNS: dict[str, list[str]] = {
 _ST_PREFIX = re.compile(r"^(?:N?\*ST|N?ST|S\*ST|SST|PT)", re.IGNORECASE)
 _COMPACT_DATE = re.compile(r"^\d{8}$")
 _TUSHARE_CODE = re.compile(r"^(?P<code>\d{6})\.(?P<suffix>SH|SS|SZ|BJ)$", re.IGNORECASE)
+_T_PREFIXED_LEGACY_VENDOR_CODE = re.compile(r"^T\d{6}\.[A-Z]{2}$")
 
 
 class SpineError(RuntimeError):
@@ -508,6 +509,40 @@ def _is_canonical_ts_code(ts_code: Any) -> bool:
     except SpineError:
         return False
     return True
+
+
+def _known_excluded_noncanonical_code_family(raw_ts_code: Any) -> str | None:
+    """Provenance for a non-canonical ``ts_code`` that is independently classifiable.
+
+    Matches exactly one tight, observed pattern (exemplar ``'T600018.SS'``): a
+    T-prefixed legacy vendor code.  The claim is narrow -- only that the raw
+    string sits outside the official 6-digit A-share coding scheme
+    (``_TUSHARE_CODE``), never an assertion about what the security is or
+    was.  Any other non-canonical shape returns ``None`` and stays
+    quarantined as genuinely unknown.
+    """
+    text = str(raw_ts_code or "")
+    if _T_PREFIXED_LEGACY_VENDOR_CODE.fullmatch(text):
+        return "official_A_code_scheme_excludes_T_prefixed_legacy_vendor_code"
+    return None
+
+
+def _stock_basic_ts_code_classification(ts_code: Any) -> str:
+    """Classify one raw stock_basic ``ts_code`` into its accounting role.
+
+    One of ``'landed_A'`` (canonical), ``'known_excluded'`` (non-canonical
+    but independently classifiable, e.g. a T-prefixed legacy vendor code), or
+    ``'quarantined_unknown'`` (non-canonical and genuinely unknown).  Shared
+    by every stock_basic accounting/verification path -- collect_reference's
+    unit accounting, the artifact-receipt role recomputation, and
+    compile_security_master -- so the three-way split is drawn identically
+    everywhere.
+    """
+    if _is_canonical_ts_code(ts_code):
+        return "landed_A"
+    if _known_excluded_noncanonical_code_family(ts_code) is not None:
+        return "known_excluded"
+    return "quarantined_unknown"
 
 
 def is_st_name(name: Any) -> bool:
@@ -921,11 +956,13 @@ def _unit_artifact_receipt(
 ) -> dict[str, Any]:
     """Recompute the exact landed subset represented by one terminal state unit.
 
-    ``role`` only matters for ``stock_basic``: unlike the daily-cadence
-    endpoints, a non-canonical (legacy/delisted vendor code) row is never
-    split into a separate ``source_row_classification`` partition -- the raw
-    response parquet is stored verbatim (raw parquet is raw truth) and both
-    roles are recomputed from that one file.
+    ``role`` only matters for ``stock_basic`` (one of ``'landed_A'``,
+    ``'known_excluded'``, or ``'quarantined_unknown'``): unlike the
+    daily-cadence endpoints, a non-canonical (legacy/delisted vendor code)
+    row is never split into a separate ``source_row_classification``
+    partition -- the raw response parquet is stored verbatim (raw parquet is
+    raw truth) and every role is recomputed from that one file via
+    ``_stock_basic_ts_code_classification``.
     """
     base = endpoint.removesuffix("_shard")
     expected_path = _expected_unit_partition_path(store, endpoint, unit, record)
@@ -975,10 +1012,8 @@ def _unit_artifact_receipt(
             "fund_basic": ["ts_code"],
         }.get(base, list(subset.columns))
         if base == "stock_basic" and not subset.empty:
-            canonical_mask = subset["ts_code"].map(_is_canonical_ts_code)
-            subset = (
-                subset[canonical_mask] if role == "landed_A" else subset[~canonical_mask]
-            ).reset_index(drop=True)
+            row_roles = subset["ts_code"].map(_stock_basic_ts_code_classification)
+            subset = subset[row_roles == role].reset_index(drop=True)
     if subset.empty:
         duplicate_rows = 0
     elif not keys:
@@ -1042,19 +1077,25 @@ def _unit_artifact_receipts(
     if endpoint == FUND_REFERENCE_ENDPOINT:
         landed = _empty_unit_artifact_receipt()
         known_excluded = primary
+        quarantined = _classification_unit_artifact_receipt(
+            store, endpoint, unit, "quarantined_unknown",
+        )
+    elif endpoint == "stock_basic":
+        # stock_basic has no source_row_classification partition of its own
+        # (raw parquet is raw truth); every role is recomputed from the same
+        # raw file the landed role above already read.
+        landed = primary
+        known_excluded = _unit_artifact_receipt(
+            store, endpoint, unit, record, role="known_excluded",
+        )
+        quarantined = _unit_artifact_receipt(
+            store, endpoint, unit, record, role="quarantined_unknown",
+        )
     else:
         landed = primary
         known_excluded = _classification_unit_artifact_receipt(
             store, endpoint, unit, "known_excluded",
         )
-    if endpoint == "stock_basic":
-        # stock_basic has no source_row_classification partition of its own
-        # (raw parquet is raw truth); recompute the quarantined subset from
-        # the same raw file the landed role above already read.
-        quarantined = _unit_artifact_receipt(
-            store, endpoint, unit, record, role="quarantined_unknown",
-        )
-    else:
         quarantined = _classification_unit_artifact_receipt(
             store, endpoint, unit, "quarantined_unknown",
         )
@@ -1531,16 +1572,23 @@ def compile_security_master(
             # Same try/except pattern as normalise_bak_basic: a legacy/
             # delisted-era vendor code (T-prefix, old .SS suffix) is a real
             # payload in TuShare's delisted universe.  The reference call
-            # already quarantined and accounted for this row's presence in
-            # the raw source unit (collect_reference/_set_unit); the master
-            # itself must not contain a row for an unparseable code.
+            # already accounted for this row's presence in the raw source
+            # unit (collect_reference/_set_unit); the master itself must not
+            # contain a row for an unparseable code.  A tight, independently
+            # classifiable non-canonical pattern lands known_out_of_scope
+            # with its narrow provenance claim; anything else stays
+            # quarantined_unknown -- the same three-way split as everywhere
+            # else in this file (_stock_basic_ts_code_classification).
             raw_code = str(item.get("ts_code") or "")
+            provenance = _known_excluded_noncanonical_code_family(raw_code)
             non_canonical_classification_rows.append({
                 "source_ts_code": raw_code,
                 "ticker": raw_code,
                 "security_class": "unclassified",
-                "scope_classification": "quarantined_unknown",
-                "classification_source": "tushare.stock_basic_non_canonical_ts_code",
+                "scope_classification": (
+                    "known_out_of_scope" if provenance is not None else "quarantined_unknown"
+                ),
+                "classification_source": provenance or "tushare.stock_basic_non_canonical_ts_code",
                 "effective_from": _iso(item.get("list_date")),
                 "effective_to": _iso(item.get("delist_date")),
             })
@@ -2008,16 +2056,20 @@ def _validate_response_binding(
     endpoint: str,
     frame: pd.DataFrame,
     params: Mapping[str, Any],
-) -> list[int]:
+) -> tuple[list[int], list[int]]:
     """Require exact returned fields and prove every row belongs to the request.
 
-    Returns the ordinals of ``stock_basic`` rows whose ``ts_code`` is not a
-    canonical SH/SZ/BJ identity -- legacy/delisted-era vendor codes (a
-    T-prefix, an old ``.SS`` suffix) are real payloads in TuShare's delisted
-    universe.  Those rows still must bind to the requested exchange/
-    list_status literally (a mismatch there stays fatal); every other,
-    identity-dependent check is skipped for them and they are reported as
-    non-canonical instead of raising.  Empty for every other endpoint.
+    Returns ``(known_excluded_ordinals, quarantined_unknown_ordinals)`` for
+    ``stock_basic`` rows whose ``ts_code`` is not a canonical SH/SZ/BJ
+    identity -- legacy/delisted-era vendor codes (a T-prefix, an old ``.SS``
+    suffix) are real payloads in TuShare's delisted universe.  Those rows
+    still must bind to the requested exchange/list_status literally (a
+    mismatch there stays fatal); every other, identity-dependent check is
+    skipped for them.  A non-canonical row matching a tight, independently
+    classifiable pattern (see ``_known_excluded_noncanonical_code_family``,
+    e.g. a T-prefixed legacy vendor code) is reported as known-excluded;
+    every other non-canonical row is reported as quarantined-unknown.
+    Both lists are empty for every other endpoint.
     """
     expected_columns = ENDPOINT_FIELDS[endpoint].split(",")
     if list(frame.columns) != expected_columns:
@@ -2025,7 +2077,8 @@ def _validate_response_binding(
             f"{endpoint} returned schema does not exactly match requested fields: "
             f"expected={expected_columns} actual={list(frame.columns)}"
         )
-    non_canonical_rows: list[int] = []
+    known_excluded_rows: list[int] = []
+    quarantined_rows: list[int] = []
     if endpoint == "stock_basic":
         exchange = str(params.get("exchange") or "").upper()
         status = str(params.get("list_status") or "").upper()
@@ -2037,7 +2090,10 @@ def _validate_response_binding(
             try:
                 ident = canonical_identity(item["ts_code"])
             except SpineError:
-                non_canonical_rows.append(ordinal)
+                if _known_excluded_noncanonical_code_family(item["ts_code"]) is not None:
+                    known_excluded_rows.append(ordinal)
+                else:
+                    quarantined_rows.append(ordinal)
                 continue
             if ident.source_exchange != exchange:
                 raise SpineError("stock_basic response does not bind to requested exchange")
@@ -2087,7 +2143,7 @@ def _validate_response_binding(
             expected_code = _source_ts_code(requested_code)
             if any(_source_ts_code(value) != expected_code for value in frame["ts_code"]):
                 raise SpineError(f"{endpoint} ticker shard crossed the requested ts_code")
-    return non_canonical_rows
+    return known_excluded_rows, quarantined_rows
 
 
 def _strict_numeric(
@@ -2644,6 +2700,7 @@ class TushareAShareSpineCollector:
             "response_columns": [],
             "response_semantic_sha256": None,
             "non_canonical_identity_row_count": 0,
+            "known_excluded_noncanonical_row_count": 0,
         }
         if frame is not None:
             try:
@@ -2658,8 +2715,15 @@ class TushareAShareSpineCollector:
                     "response_columns": list(frame.columns),
                     "response_semantic_sha256": _raw_response_semantic_sha256(frame),
                 })
-                non_canonical_rows = _validate_response_binding(endpoint, frame, params)
-                receipt["non_canonical_identity_row_count"] = len(non_canonical_rows)
+                known_excluded_noncanonical_rows, quarantined_noncanonical_rows = (
+                    _validate_response_binding(endpoint, frame, params)
+                )
+                receipt["known_excluded_noncanonical_row_count"] = len(
+                    known_excluded_noncanonical_rows
+                )
+                receipt["non_canonical_identity_row_count"] = (
+                    len(known_excluded_noncanonical_rows) + len(quarantined_noncanonical_rows)
+                )
             except SpineError:
                 receipt["response_status"] = "rejected_contract"
                 _atomic_json(_request_receipt_path(self.store, endpoint, unit, request_id), receipt)
@@ -2795,21 +2859,26 @@ class TushareAShareSpineCollector:
                     continue
                 # Raw parquet is raw truth: store the frame verbatim even
                 # though some rows may carry a non-canonical (legacy/delisted
-                # vendor) ts_code.  Partition it the same way
-                # _validate_response_binding already classified it, so the
-                # unit's row_count/quarantined_unknown_row_count equation
-                # balances against exactly what was stored.
+                # vendor) ts_code.  Classify it the same three-way split
+                # _validate_response_binding already applied (canonical /
+                # independently classifiable known-excluded / genuinely
+                # unknown quarantined), so the unit's row_count/
+                # known_excluded_row_count/quarantined_unknown_row_count
+                # equation balances against exactly what was stored.
                 _atomic_parquet(path, frame)
-                non_canonical_ordinals = [
-                    ordinal for ordinal, item in enumerate(frame.to_dict(orient="records"))
-                    if not _is_canonical_ts_code(item.get("ts_code"))
+                row_roles = [
+                    _stock_basic_ts_code_classification(item.get("ts_code"))
+                    for item in frame.to_dict(orient="records")
                 ]
+                known_excluded_count = row_roles.count("known_excluded")
+                quarantined_count = row_roles.count("quarantined_unknown")
                 _set_unit(
                     self.state, self.store, "stock_basic", unit,
                     status="empty" if frame.empty else "complete", observed_at=self.observed_at,
-                    row_count=len(frame) - len(non_canonical_ordinals),
+                    row_count=len(frame) - known_excluded_count - quarantined_count,
                     source_row_count=len(frame),
-                    quarantined_unknown_row_count=len(non_canonical_ordinals),
+                    known_excluded_row_count=known_excluded_count,
+                    quarantined_unknown_row_count=quarantined_count,
                     partition=path,
                     request_receipts=[response.receipt], generation_id=staging,
                 )

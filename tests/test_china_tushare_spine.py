@@ -532,6 +532,7 @@ def test_response_schema_and_request_binding_fail_closed():
 
 
 def _non_canonical_stock_basic_row(**overrides: Any) -> dict:
+    """A T-prefixed legacy vendor code -- independently classifiable, run 32914960162's row."""
     row = {
         "ts_code": "T600018.SS", "symbol": "600018", "name": "早期退市样本",
         "area": "上海", "industry": "工业", "market": "主板", "exchange": "SSE",
@@ -542,18 +543,46 @@ def _non_canonical_stock_basic_row(**overrides: Any) -> dict:
     return row
 
 
-def test_stock_basic_non_canonical_identity_quarantined_not_fatal():
-    """A legacy/delisted-era vendor code (T-prefix) is quarantined, not a crash."""
+def _unknown_noncanonical_stock_basic_row(**overrides: Any) -> dict:
+    """A non-canonical code matching no known pattern -- genuinely unknown."""
+    row = {
+        "ts_code": "XX12345.Q", "symbol": "12345", "name": "未知样本",
+        "area": "上海", "industry": "工业", "market": "主板", "exchange": "SSE",
+        "curr_type": "CNY", "list_status": "D", "list_date": "19940101",
+        "delist_date": "19990101", "is_hs": "N",
+    }
+    row.update(overrides)
+    return row
+
+
+def test_stock_basic_t_family_non_canonical_identity_known_excluded_not_fatal():
+    """A T-prefixed legacy vendor code is known_excluded, not quarantined, not a crash."""
     columns = spine.ENDPOINT_FIELDS["stock_basic"].split(",")
     stock = _stock_basic_rows()[("SSE", "D")].copy()
     contaminated = pd.concat(
         [stock, pd.DataFrame([_non_canonical_stock_basic_row()], columns=columns)],
         ignore_index=True,
     )
-    non_canonical = spine._validate_response_binding(
+    known_excluded, quarantined = spine._validate_response_binding(
         "stock_basic", contaminated, {"exchange": "SSE", "list_status": "D"},
     )
-    assert non_canonical == [1]
+    assert known_excluded == [1]
+    assert quarantined == []
+
+
+def test_stock_basic_unknown_non_canonical_identity_stays_quarantined():
+    """A non-T-family non-canonical code is genuinely unknown -- quarantined, not a crash."""
+    columns = spine.ENDPOINT_FIELDS["stock_basic"].split(",")
+    stock = _stock_basic_rows()[("SSE", "D")].copy()
+    contaminated = pd.concat(
+        [stock, pd.DataFrame([_unknown_noncanonical_stock_basic_row()], columns=columns)],
+        ignore_index=True,
+    )
+    known_excluded, quarantined = spine._validate_response_binding(
+        "stock_basic", contaminated, {"exchange": "SSE", "list_status": "D"},
+    )
+    assert known_excluded == []
+    assert quarantined == [1]
 
 
 def test_stock_basic_non_canonical_row_still_binds_request_literals():
@@ -588,10 +617,11 @@ def test_stock_basic_schema_mismatch_stays_fatal_even_with_a_non_canonical_row()
 
 def test_stock_basic_all_canonical_response_reports_zero_non_canonical_and_stays_fatal_on_other_defects():
     stock = _stock_basic_rows()[("SSE", "L")].copy()
-    non_canonical = spine._validate_response_binding(
+    known_excluded, quarantined = spine._validate_response_binding(
         "stock_basic", stock, {"exchange": "SSE", "list_status": "L"},
     )
-    assert non_canonical == []
+    assert known_excluded == []
+    assert quarantined == []
 
     bad_currency = stock.copy()
     bad_currency.loc[0, "curr_type"] = "USD"
@@ -601,12 +631,11 @@ def test_stock_basic_all_canonical_response_reports_zero_non_canonical_and_stays
         )
 
 
-def test_stock_basic_non_canonical_identity_end_to_end_quarantine_and_master_exclusion(tmp_path):
-    """Full collect_reference -> compile_security_master path for run 32914960162's row."""
+def _reference_collector_for_contaminated_sse_d(tmp_path: Path, contaminated_row: dict):
     columns = spine.ENDPOINT_FIELDS["stock_basic"].split(",")
     basic = _stock_basic_rows()
     basic[("SSE", "D")] = pd.concat(
-        [basic[("SSE", "D")], pd.DataFrame([_non_canonical_stock_basic_row()], columns=columns)],
+        [basic[("SSE", "D")], pd.DataFrame([contaminated_row], columns=columns)],
         ignore_index=True,
     )
 
@@ -622,22 +651,36 @@ def test_stock_basic_non_canonical_identity_end_to_end_quarantine_and_master_exc
             return _fund_basic_rows()[params["status"]].copy()
         raise AssertionError(f"unexpected endpoint in reference-only test: {endpoint}")
 
-    collector = spine.TushareAShareSpineCollector(tmp_path, query=fake, now=lambda: NOW)
+    return spine.TushareAShareSpineCollector(tmp_path, query=fake, now=lambda: NOW)
+
+
+def test_stock_basic_t_family_end_to_end_known_excluded_and_master_exclusion(tmp_path):
+    """Full collect_reference -> compile_security_master path for run 32914960162's row.
+
+    A T-family row is independently classifiable: it lands known_excluded
+    (not quarantined_unknown), so the unit's zero-quarantine equation
+    balances and _unit_done is satisfied for it -- the gate itself is
+    untouched, but this observed legacy family no longer trips it, and the
+    staging generation now promotes (unlike a genuinely unknown shape).
+    """
+    collector = _reference_collector_for_contaminated_sse_d(
+        tmp_path, _non_canonical_stock_basic_row(),
+    )
     # The call itself must not raise -- this is the exact scenario that crashed
     # the reference stage in run 32914960162.
     ready = collector.collect_reference()
-    # Quarantined rows keep completeness false (frozen law): the unit -- and
-    # therefore the whole staging generation -- never claims to be "done".
-    assert ready is False
+    assert ready is True
 
-    staging = collector.state["reference_generation"]["staging_id"]
+    staging = collector.state["reference_generation"]["current_id"]
     assert staging
+    assert collector.state["reference_generation"]["staging_id"] is None
 
     contaminated_unit = collector.state["units"]["stock_basic"][f"{staging}:SSE:D"]
     assert contaminated_unit["status"] == "complete"
     assert contaminated_unit["source_row_count"] == 2
     assert contaminated_unit["row_count"] == 1
-    assert contaminated_unit["quarantined_unknown_row_count"] == 1
+    assert contaminated_unit["known_excluded_row_count"] == 1
+    assert contaminated_unit["quarantined_unknown_row_count"] == 0
     assert contaminated_unit["source_accounting_complete"] is True
     assert (
         contaminated_unit["source_row_count"]
@@ -646,11 +689,19 @@ def test_stock_basic_non_canonical_identity_end_to_end_quarantine_and_master_exc
         + contaminated_unit["quarantined_unknown_row_count"]
     )
     contaminated_receipt = contaminated_unit["request_receipts"][0]
+    assert contaminated_receipt["known_excluded_noncanonical_row_count"] == 1
     assert contaminated_receipt["non_canonical_identity_row_count"] == 1
 
+    # _unit_done's zero-quarantine gate is untouched -- it is now satisfied
+    # because this observed legacy family is classifiable, not because the
+    # gate moved.
+    assert spine._unit_done(collector.state, tmp_path, "stock_basic", f"{staging}:SSE:D") is True
+
     clean_unit = collector.state["units"]["stock_basic"][f"{staging}:SSE:L"]
+    assert clean_unit["known_excluded_row_count"] == 0
     assert clean_unit["quarantined_unknown_row_count"] == 0
     clean_receipt = clean_unit["request_receipts"][0]
+    assert clean_receipt["known_excluded_noncanonical_row_count"] == 0
     assert clean_receipt["non_canonical_identity_row_count"] == 0
 
     master, _ = spine.compile_security_master(tmp_path, staging)
@@ -666,9 +717,54 @@ def test_stock_basic_non_canonical_identity_end_to_end_quarantine_and_master_exc
     classifications = spine._read_parquet_strict(
         spine._reference_derived_path(tmp_path, "instrument_classification.parquet", staging)
     )
-    quarantined = classifications[classifications["scope_classification"] == "quarantined_unknown"]
-    assert quarantined["ticker"].tolist() == ["T600018.SS"]
-    assert quarantined["source_ts_code"].tolist() == ["T600018.SS"]
+    known_excluded_rows = classifications[
+        (classifications["scope_classification"] == "known_out_of_scope")
+        & (classifications["ticker"] == "T600018.SS")
+    ]
+    assert known_excluded_rows["ticker"].tolist() == ["T600018.SS"]
+    assert known_excluded_rows["source_ts_code"].tolist() == ["T600018.SS"]
+    assert known_excluded_rows["classification_source"].tolist() == [
+        "official_A_code_scheme_excludes_T_prefixed_legacy_vendor_code",
+    ]
+    assert classifications[
+        classifications["scope_classification"] == "quarantined_unknown"
+    ].empty
+
+
+def test_stock_basic_unknown_non_canonical_end_to_end_quarantined_blocks_unit_done(tmp_path):
+    """A genuinely unknown non-canonical code stays quarantined and blocks _unit_done."""
+    collector = _reference_collector_for_contaminated_sse_d(
+        tmp_path, _unknown_noncanonical_stock_basic_row(),
+    )
+    ready = collector.collect_reference()
+    # Quarantined rows keep completeness false (frozen law): the unit -- and
+    # therefore the whole staging generation -- never claims to be "done".
+    assert ready is False
+
+    staging = collector.state["reference_generation"]["staging_id"]
+    assert staging
+
+    contaminated_unit = collector.state["units"]["stock_basic"][f"{staging}:SSE:D"]
+    assert contaminated_unit["status"] == "complete"
+    assert contaminated_unit["known_excluded_row_count"] == 0
+    assert contaminated_unit["quarantined_unknown_row_count"] == 1
+    contaminated_receipt = contaminated_unit["request_receipts"][0]
+    assert contaminated_receipt["known_excluded_noncanonical_row_count"] == 0
+    assert contaminated_receipt["non_canonical_identity_row_count"] == 1
+
+    # The zero-quarantine gate is untouched: a genuinely unknown shape still
+    # trips it.
+    assert spine._unit_done(collector.state, tmp_path, "stock_basic", f"{staging}:SSE:D") is False
+
+    master, _ = spine.compile_security_master(tmp_path, staging)
+    assert "XX12345.Q" not in set(master["ticker"])
+    classifications = spine._read_parquet_strict(
+        spine._reference_derived_path(tmp_path, "instrument_classification.parquet", staging)
+    )
+    quarantined_rows = classifications[
+        classifications["scope_classification"] == "quarantined_unknown"
+    ]
+    assert quarantined_rows["ticker"].tolist() == ["XX12345.Q"]
 
 
 def test_rejected_response_receipt_preserves_observed_rows_columns_and_hash(tmp_path):
