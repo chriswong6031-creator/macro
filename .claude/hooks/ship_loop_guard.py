@@ -167,19 +167,34 @@ CI_FAILED_UNMERGED = "ci_failed_unmerged"
 #
 # 60s is the discriminator between "waiting out a command" and "waking the
 # session later": foreground waits and short retry sleeps never produce a
-# task-notification turn minutes after the session went quiet. A reservation
-# expires at its NOMINAL FIRE TIME (created + sleep), deliberately with no
-# slack: past that moment the old timer is no longer necessarily sleeping, and
-# the lawful next action after a watcher fires is to create the next single
-# watcher — a slack window would refuse exactly that (red-team F3, 2026-08-24).
-# The residual overlap (a replacement minted while the fired timer's
-# notification is still in flight) is one bounded extra wake, not a stack.
+# task-notification turn minutes after the session went quiet.
+#
+# OCCUPANCY IS BOUND TO THE REAL WATCHER LIFETIME, observed directly (Sol
+# re-review 2026-08-25). Neither the nominal sleep deadline nor a head move
+# ever frees the slot — the old Claude-native task may still be alive either
+# way, and hooks cannot cancel it. The slot frees on exactly one kind of
+# evidence: the reserved command's PROCESS is provably absent from the live
+# process table (`ps -axwwo command=`), checked only after a short start
+# grace (below) so a task the harness has admitted but not yet spawned is not
+# double-booked. The lawful post-wake successor (red-team F3) is admitted by
+# that same evidence — a fired watcher's process is gone — while a stacked
+# second live watcher is mechanically refused for as long as the first one
+# actually runs. Unknown liveness (an unanswerable ps) refuses: unknown
+# completion must not permit stacking.
 WATCHER_MIN_SLEEP_SECONDS = 60
+# Conservative bound on harness task-start latency: within this window after
+# acquisition the reservation is occupied regardless of the process table,
+# because an admitted-but-not-yet-spawned task is invisible to ps.
+WATCHER_START_GRACE_SECONDS = 60
 # The classifier reads LITERAL `sleep` delays (integer, optional s/m/h/d
 # suffix). Computed delays (`sleep $((30*60))`, `python -c 'time.sleep(...)'`)
 # are invisible to it — the gate is a coalescer for the shapes sessions
 # actually emit, not a sandbox; unrecognized delay forms simply fail open.
 _WATCHER_SLEEP_UNIT_SECONDS = {"": 1, "s": 1, "m": 60, "h": 3600, "d": 86400}
+# Test-only knob: seconds to sleep between the locked read and write of the
+# watcher acquisition, so the concurrency regression can force the interleaving
+# the lock exists to prevent. Unset (production) means zero.
+_WATCHER_ACQUIRE_TEST_DELAY_ENV = "SHIP_WATCHER_TEST_ACQUIRE_DELAY"
 # Roots holding OTHER agent sessions' checkouts. A repository serving several
 # fleets accumulates dozens of them side by side — measured 2026-07-30 in the
 # primary checkout: 34 `.codex-worktrees/*` entries plus `.claire/worktrees/*`
@@ -1038,6 +1053,50 @@ def _deny_watcher(reason: str) -> None:
     )
 
 
+def _watcher_fragment(command: str) -> str:
+    """Deterministic ps-matchable identity of a watcher command.
+
+    The first non-empty line, bounded to 120 characters: `run_in_background`
+    Bash commands appear verbatim in the spawned shell's argv, and the
+    sleep-led first line ("sleep 1800 && gh run rerun …") is the distinctive
+    part. Bounded because ps output and multi-line argv rendering both make
+    full-command matching brittle. A fragment shared with a sibling session's
+    identical watcher can only cause a REFUSAL, never a kill — fail-closed.
+    """
+    for line in command.strip().splitlines():
+        line = line.strip()
+        if line:
+            return line[:120]
+    return ""
+
+
+def _watcher_process_alive(fragment: str) -> bool | None:
+    """Whether any live process's command line carries the reserved fragment.
+
+    Direct observation of the real watcher lifetime — the process table is the
+    one truth about background Bash tasks a hook can read without a task API.
+    ``None`` means unanswerable (ps failed), which the caller must treat as
+    occupied: unknown completion must not permit stacking. Nothing here ever
+    signals or kills; the answer is read-only evidence.
+    """
+    if not fragment:
+        return None
+    try:
+        proc = subprocess.run(
+            ("ps", "-axwwo", "command="),
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=10,
+            check=False,
+        )
+    except Exception:
+        return None
+    if proc.returncode:
+        return None
+    return any(fragment in line for line in proc.stdout.splitlines())
+
+
 def _watcher_gate(root: Path, path: Path, state: dict[str, Any], watch: dict[str, Any]) -> None:
     """Enforce the one-watcher law for THIS session's ship state.
 
@@ -1048,21 +1107,26 @@ def _watcher_gate(root: Path, path: Path, state: dict[str, Any], watch: dict[str
     never see (let alone refuse or expire) another session's watcher, and
     nothing is ever killed: an existing background task simply runs out.
 
-    Fail-open on uncertainty, deliberately: no ledger (pre-hook session), an
-    unanswerable ``git rev-parse``, or an unparseable reservation all ALLOW.
-    Denial here is an advisory refusal to mint REDUNDANT wake timers; a missed
-    denial restores yesterday's behavior, while a false denial would block
-    ordinary work — the one direction a watcher gate may never fail.
+    Occupancy is bound to the REAL watcher lifetime (Sol re-review
+    2026-08-25), not to the ledger entry's age, the nominal sleep deadline,
+    or the current HEAD: within WATCHER_START_GRACE_SECONDS of acquisition
+    the slot is occupied unconditionally (the admitted task may not have
+    spawned yet), and after that it is occupied for exactly as long as the
+    reserved command's process is observably alive. A head move while the old
+    watcher still runs therefore REFUSES — replacing the reservation would
+    leave two live watchers with one recorded. The fired watcher's successor
+    (red-team F3) is admitted by the same evidence: its process is gone.
 
-    Wall-clock expiry is transport bookkeeping only (when the timer can no
-    longer be waiting, the reservation stops coalescing) — it is never read as
-    evidence that any work completed.
+    Failure directions are deliberate and split: questions about whether to
+    REFUSE extra machinery (the terminal-latch head read) fail open, while
+    the OCCUPANCY question fails closed — an unanswerable process table
+    refuses, because unknown completion must not permit stacking.
     """
     try:
         head = _run(root, "git", "rev-parse", "HEAD")
     except Exception:
-        return
-    if head in _latched_terminal_heads(state):
+        head = ""
+    if head and head in _latched_terminal_heads(state):
         _deny_watcher(
             "SHIP WATCHER REFUSED: this session's ship state at HEAD "
             f"{head[:12]} is already terminal (PARKED / HOLD-FOR-SOL). A new "
@@ -1075,27 +1139,46 @@ def _watcher_gate(root: Path, path: Path, state: dict[str, Any], watch: dict[str
     now = time.time()
     if isinstance(reservation, dict):
         try:
-            expires = float(reservation.get("expires") or 0.0)
+            created = float(reservation.get("created") or 0.0)
         except (TypeError, ValueError):
-            expires = 0.0
-        if expires > now and str(reservation.get("head") or "") == head:
+            created = 0.0
+        fragment = str(reservation.get("fragment") or "")
+        if now < created + WATCHER_START_GRACE_SECONDS:
             _deny_watcher(
-                "SHIP WATCHER COALESCED: one background ship watcher already "
-                f"owns this wait for HEAD {head[:12]} (up to ~{int(expires - now)}s "
-                "remaining). A session carries AT MOST ONE ship-state watcher — "
-                "rely on the existing timer instead of stacking a second wake. If "
-                "the horizon was wrong, let the current watcher fire, then create "
-                "the next single watcher."
+                "SHIP WATCHER COALESCED: a background ship watcher was reserved "
+                f"{int(now - created)}s ago and is conservatively still starting. "
+                "A session carries AT MOST ONE ship-state watcher — rely on the "
+                "existing timer; its completion will wake this session."
             )
             return
+        alive = _watcher_process_alive(fragment)
+        if alive is None:
+            _deny_watcher(
+                "SHIP WATCHER COALESCED: the reserved ship watcher's liveness "
+                "could not be determined (process table unanswerable), and "
+                "unknown completion must not permit stacking a second live "
+                "watcher. Rely on the existing timer, or retry after its wake."
+            )
+            return
+        if alive:
+            _deny_watcher(
+                "SHIP WATCHER COALESCED: the reserved background ship watcher "
+                f"({fragment[:60]!r}) is still RUNNING. A session carries AT "
+                "MOST ONE live ship-state watcher — its completion will wake "
+                "this session, and its successor is admitted once it has "
+                "actually finished. This applies across head moves too: a new "
+                "HEAD does not end the old timer's life."
+            )
+            return
+        # The reserved process is provably absent: the old watcher fired or
+        # died, and this request is its lawful successor. Fall through.
     state["ship_watcher"] = {
         "digest": watch["digest"],
+        "fragment": _watcher_fragment(watch["command"]),
         "head": head,
         "created": now,
-        # Nominal fire time, no slack: past this instant the reservation stops
-        # coalescing, because "let the current watcher fire, then create the
-        # next single watcher" must actually be possible (red-team F3).
-        "expires": now + float(watch["sleep_seconds"]),
+        # Informational only — occupancy never reads this deadline.
+        "nominal_fire": now + float(watch["sleep_seconds"]),
     }
     _save(path, state)
 
@@ -1108,6 +1191,13 @@ def _pre_tool_use(payload: dict[str, Any], raw: bytes) -> None:
     this file, and paying a delegated subprocess per ordinary Bash call would
     tax the whole session for a gate that almost never speaks. Watcher-shaped
     calls (rare) take the same delegate-to-evaluated-tree route as Stop.
+
+    Acquisition is LINEARIZABLE (Sol re-review 2026-08-25): the ledger read,
+    the occupancy check, and the reservation write happen under one exclusive
+    cross-process flock on a sibling of the state file, and the state is
+    loaded INSIDE the lock — two concurrent watcher-shaped tool calls cannot
+    both observe an empty slot. The lock is scoped to watcher-shaped calls
+    only, so ordinary Bash pays nothing.
     """
     watch = _watcher_request(payload)
     if watch is None:
@@ -1117,10 +1207,20 @@ def _pre_tool_use(payload: dict[str, Any], raw: bytes) -> None:
     root = _repo_root(payload)
     if root is None:
         return
-    state = _load(_state_path(root, payload))
-    if not isinstance(state, dict):
-        return
-    _watcher_gate(root, _state_path(root, payload), state, watch)
+    path = _state_path(root, payload)
+    with _file_lock(path.with_suffix(".watcher.lock")):
+        delay = os.environ.get(_WATCHER_ACQUIRE_TEST_DELAY_ENV, "")
+        state = _load(path)
+        if not isinstance(state, dict):
+            return
+        if delay:
+            # Test-only: widen the read→write window so the concurrency
+            # regression deterministically catches a de-serialized mutant.
+            try:
+                time.sleep(float(delay))
+            except ValueError:
+                pass
+        _watcher_gate(root, path, state, watch)
 
 
 def _github_slug(root: Path) -> tuple[str, str]:
