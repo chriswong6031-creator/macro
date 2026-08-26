@@ -4032,3 +4032,10 @@
 {"id":"ob-2026-08-26-66b6ea7b2a","from":"approved","to":"posting","at":"2026-08-26T14:10:39Z","actor":"publisher","note":"in-flight (pre-publish)","receipt":null}
 {"id":"ob-2026-08-26-66b6ea7b2a","from":"posting","to":"posted","at":"2026-08-26T14:10:40Z","actor":"publisher","note":"published","receipt":{"backend":"buffer","external_id":"6a8ef3dfb52629c9abb376ee","external_url":null,"at":"2026-08-26T14:10:15Z","booked_at":"2026-08-26T14:10:15Z"}}
 {"id":"ob-2026-08-26-f64afa5413","from":"approved","to":"quarantined","at":"2026-08-26T14:10:40Z","actor":"publisher","note":"clock: yesterday_word_off_session:yesterday","receipt":null}
+{"id":"ob-2026-08-26-66761007d1","from":"queued","to":"approved","at":"2026-08-26T14:16:00Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
+{"id":"ob-2026-08-26-ad681fff65","from":"queued","to":"approved","at":"2026-08-26T14:16:00Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
+{"id":"ob-2026-08-26-fd4ca05bfe","from":"queued","to":"approved","at":"2026-08-26T14:16:00Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
+{"id":"ob-2026-08-26-66761007d1","from":"approved","to":"quarantined","at":"2026-08-26T14:16:01Z","actor":"publisher","note":"clock: yesterday_word_off_session:yesterday","receipt":null}
+{"id":"ob-2026-08-26-ad681fff65","from":"approved","to":"posting","at":"2026-08-26T14:16:07Z","actor":"publisher","note":"in-flight (pre-publish)","receipt":null}
+{"id":"ob-2026-08-26-ad681fff65","from":"posting","to":"posted","at":"2026-08-26T14:16:08Z","actor":"publisher","note":"published","receipt":{"backend":"buffer","external_id":"6a8ef5285a6c4e84e2537491","external_url":null,"at":"2026-08-26T14:15:45Z","booked_at":"2026-08-26T14:15:45Z"}}
+{"id":"ob-2026-08-26-fd4ca05bfe","from":"approved","to":"quarantined","at":"2026-08-26T14:16:08Z","actor":"publisher","note":"frame repeat (skeleton jaccard=0.80) of ob-2026-08-26-66b6ea7b2a posted today; same template, different ticker","receipt":null}
