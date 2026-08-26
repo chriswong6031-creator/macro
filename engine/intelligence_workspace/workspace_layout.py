@@ -80,6 +80,8 @@ _TIMEFRAME_RE = re.compile(r"^[A-Za-z0-9]{1,8}$")
 _CHART_TYPE_RE = re.compile(r"^[a-z][a-z0-9_]{0,31}$")
 _INDICATOR_ID_RE = re.compile(r"^[a-z][a-z0-9_]{0,31}$")
 _PARAM_KEY_RE = re.compile(r"^[A-Za-z0-9_]{1,32}$")
+# Amendment A1: 1..64 chars, no ASCII control characters (0x00-0x1f, 0x7f).
+_LOCKED_VLINE_RE = re.compile(r"^[^\x00-\x1f\x7f]{1,64}$")
 
 # Sentinel distinguishing "field present but wrong type/shape" (never
 # claimed) from a legitimately-valid `None`/`null` value (e.g. `lockedVLine`
@@ -147,8 +149,15 @@ def _v_pane_tfs(value: Any) -> Any:
     return out
 
 
+_VALID_SPLITS = (1, 2, 4)
+
+
 def _v_split(value: Any) -> Any:
-    if not _is_int(value) or not (0 <= value <= 100):
+    """Amendment A1 (2026-08-26): `split` is Terminal's discrete pane-split
+    selector (`VALID_SPLITS = {1, 2, 4}`), never a 0-100 percentage — the
+    original freeze's `0..100` bound was an authoring error that would have
+    rejected every real Terminal v2 layout."""
+    if not _is_int(value) or value not in _VALID_SPLITS:
         return _INVALID
     return value
 
@@ -206,13 +215,17 @@ def _v_compare_cfg(value: Any) -> Any:
 
 
 def _v_locked_vline(value: Any) -> Any:
+    """Amendment A1 (2026-08-26): `lockedVLine` is `string | null` in the
+    real Terminal runtime (TerminalShell/ChartPanel own it as a string key),
+    never a number — the original freeze's `number | null` bound would have
+    rejected every real Terminal v2 layout that used it."""
     if value is None:
         return None
-    if isinstance(value, bool):
+    if not isinstance(value, str):
         return _INVALID
-    if isinstance(value, (int, float)):
-        return value
-    return _INVALID
+    if not _LOCKED_VLINE_RE.match(value):
+        return _INVALID
+    return value
 
 
 _CHART_FIELD_VALIDATORS: dict[str, Any] = {

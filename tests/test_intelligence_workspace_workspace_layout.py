@@ -34,7 +34,11 @@ SCHEMA_PATH = REPO_ROOT / "contracts" / "intelligence_workspace" / "workspace_la
 
 # Pinned hard literal (contract §10/#SCOPE-item-3): a MANIFEST digest drift
 # without a matching edit here means the fixtures changed silently.
-PINNED_VECTORS_DIGEST = "4111f9d28c8043facc16dda6985a86b51fd9146e50608dc76aa118b0f33fdfb8"
+# Re-pinned under Amendment A1 (2026-08-26): `lockedVLine` is string|null (was
+# number|null) and `split` is the discrete enum {1, 2, 4} (was 0-100) — both
+# falsified against the real Terminal runtime; the pre-amendment digest is
+# void (research/DEEPVUE_W2A_WORKSPACE_LAYOUT_CONTRACT_2026-08-26.md).
+PINNED_VECTORS_DIGEST = "9eeef5b4b055e3ffa407f76d8e3a6ee70c2ab064194983391062d29ec4b701ab"
 
 # The freeze doc's §1 canonical example, verbatim.
 FREEZE_SECTION_1_EXAMPLE = {
@@ -54,7 +58,7 @@ FREEZE_SECTION_1_EXAMPLE = {
             "context_in": ["primary_security"],
             "context_out": ["primary_security"],
             "config": {
-                "panes": ["NVDA"], "paneTfs": ["1D"], "split": 50, "activePane": 0,
+                "panes": ["NVDA"], "paneTfs": ["1D"], "split": 1, "activePane": 0,
                 "sync": True, "chartType": "candles", "inds": ["ema21"],
                 "indParams": {}, "hidden": [], "compare": [], "compareCfg": {},
                 "lockedVLine": None,
@@ -198,6 +202,88 @@ def test_unclaimed_field_is_missing_key_not_none_value():
     for field in wl.CHART_CONFIG_FIELDS:
         if field not in ("panes", "sync"):
             assert field not in config, field
+
+
+# ---------------------------------------------------------------------------
+# Amendment A1 (2026-08-26) regression: `lockedVLine` is string|null, never
+# number; `split` is the discrete enum {1, 2, 4}, never a 0-100 percentage.
+# Both were falsified against the real Terminal runtime and would have
+# rejected every real v2 layout under the original (pre-amendment) law.
+# ---------------------------------------------------------------------------
+
+def _widget_config(**overrides):
+    config = {"panes": ["NVDA"]}
+    config.update(overrides)
+    return {
+        "schema": "workspace_layout.v1",
+        "requires": {"floor": 1},
+        "revision": 1,
+        "name": None,
+        "link_groups": {"primary_security": {"entity_type": "security"}},
+        "widgets": [
+            {
+                "id": "chart-main",
+                "type": "chart",
+                "semantic_lane": "primary",
+                "context_in": ["primary_security"],
+                "context_out": ["primary_security"],
+                "config": config,
+            },
+        ],
+        "migration": {"source": "none", "source_revision": None},
+    }
+
+
+def test_amendment_a1_string_locked_vline_validates():
+    envelope = _widget_config(lockedVLine="2026-08-12T14:30:00Z")
+    result = wl.validate_envelope(envelope)
+    assert result == {"ok": True, "errors": []}
+
+
+def test_amendment_a1_numeric_locked_vline_is_invalid_widget_config():
+    envelope = _widget_config(lockedVLine=1700000000)
+    result = wl.validate_envelope(envelope)
+    assert result["ok"] is False
+    assert {e["code"] for e in result["errors"]} == {"invalid_widget_config"}
+
+
+def test_amendment_a1_split_2_validates():
+    envelope = _widget_config(split=2)
+    result = wl.validate_envelope(envelope)
+    assert result == {"ok": True, "errors": []}
+
+
+def test_amendment_a1_split_50_is_invalid_widget_config():
+    envelope = _widget_config(split=50)
+    result = wl.validate_envelope(envelope)
+    assert result["ok"] is False
+    assert {e["code"] for e in result["errors"]} == {"invalid_widget_config"}
+
+
+def test_amendment_a1_locked_vline_null_still_valid():
+    """`null` remains a legitimate claimed value (explicit "no lock"), not
+    merely the absence of the field — unaffected by the type-narrowing."""
+    envelope = _widget_config(lockedVLine=None)
+    assert wl.validate_envelope(envelope) == {"ok": True, "errors": []}
+
+
+def test_amendment_a1_split_only_allows_the_frozen_enum():
+    for value in (0, 3, 5, 100, -1):
+        envelope = _widget_config(split=value)
+        result = wl.validate_envelope(envelope)
+        assert result["ok"] is False, value
+        assert {e["code"] for e in result["errors"]} == {"invalid_widget_config"}
+    for value in (1, 2, 4):
+        envelope = _widget_config(split=value)
+        assert wl.validate_envelope(envelope) == {"ok": True, "errors": []}
+
+
+def test_amendment_a1_locked_vline_rejects_control_characters_and_oversize():
+    for bad in ("\x00", "a\nb", "x" * 65, ""):
+        envelope = _widget_config(lockedVLine=bad)
+        result = wl.validate_envelope(envelope)
+        assert result["ok"] is False, repr(bad)
+        assert {e["code"] for e in result["errors"]} == {"invalid_widget_config"}
 
 
 # ---------------------------------------------------------------------------

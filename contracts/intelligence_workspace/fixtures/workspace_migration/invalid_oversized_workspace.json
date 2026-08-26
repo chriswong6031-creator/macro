@@ -1189,7 +1189,7 @@
           "panes": [
             "NVDA"
           ],
-          "split": 50,
+          "split": 1,
           "sync": true
         },
         "context_in": [

@@ -10,7 +10,7 @@
     },
     {
       "name": "chart_layout_v2_full.json",
-      "sha256": "42f1c3e3042ee634bdcf14ec22eb7f340c48f00cde0d4c3028bbae778acda5da"
+      "sha256": "e0f237c4ec339a9f274ca67f493c74aec8889e92248238ec1dcd44e3804b9b7d"
     },
     {
       "name": "chart_layout_v2_sparse.json",
@@ -18,15 +18,15 @@
     },
     {
       "name": "invalid_duplicate_widget_id.json",
-      "sha256": "ac7f56f43da63cfe0fc8ed450f93fef5bc47ccd559873efbcf65ccd173bfcfe7"
+      "sha256": "e53ec798f9da8b638d0a07010b5b087c2f08ad2122b0eec51335242504f1b53b"
     },
     {
       "name": "invalid_floor_unsupported.json",
-      "sha256": "9738ced9892b276108c85545ba8f79d41ba80b98eb3594b3d4243128f5c565db"
+      "sha256": "9d83fb554bc23f7143546308ad152a52f5d1398c9c747a6c603128fce9a2441e"
     },
     {
       "name": "invalid_lane.json",
-      "sha256": "8c4cadbc995239ca6f63adeab8c23edd6da9eeea18222911b97965c79f8a50b3"
+      "sha256": "f48e2961b7906803116b94199b6236883b8f8a923cdababf1ac92f095a850126"
     },
     {
       "name": "invalid_non_dict_input.json",
@@ -34,35 +34,35 @@
     },
     {
       "name": "invalid_non_null_name.json",
-      "sha256": "7e71981460b92e20a97007283ada9c00690a7458a731db0172ccbee34a81070a"
+      "sha256": "0f6894de6ba528b16d07684f503798b6025635a8455a338e1c948e32f586504a"
     },
     {
       "name": "invalid_oversized_workspace.json",
-      "sha256": "391e25f718c9f7e82e449a58be48b0e7bb4153674df83e3f523cd752e9280ad5"
+      "sha256": "7838911549ad91c800e6b3303204d508859350a823838cfdac5a7e3d78fdf77b"
     },
     {
       "name": "invalid_port.json",
-      "sha256": "f451f15e64600d5198e941f3890f347405049e0f6e431f219b3058d14a23f275"
+      "sha256": "83aa2c1cdffa2d4d0ebd98af4fb70f75c3a686b8826d936c7bf0cb40a01d7c0b"
     },
     {
       "name": "invalid_too_many_widgets.json",
-      "sha256": "29b30e24aee7507b849b2b701cad8bd00861b84b8bd148883c92ce392682bb45"
+      "sha256": "b099d7b882d75dbf6ce4546db8e0d2836d78e970296f4401d73f6496ee096308"
     },
     {
       "name": "invalid_unknown_chart_config_key.json",
-      "sha256": "357c22135d4b103e4c6770ca07062dfbd166e4692843d58e9a38be4df7702694"
+      "sha256": "69ae9a34a505d895c8aee5ba29377da483af30229b1bd0ca2e81f93c0a198c37"
     },
     {
       "name": "invalid_unknown_schema.json",
-      "sha256": "019c712fe7c0b46bd5acce1e586a666cbf8e20870e727e8452141ff853e7adf5"
+      "sha256": "a8801caf07bcabf22ecca6e8c6e6d514e01ca933868b85acb9749141e3553389"
     },
     {
       "name": "invalid_unknown_top_level_key.json",
-      "sha256": "06cb1390eba50b99e946fd8993a1f37931cf917afe690ac8968dba1d8deb31ff"
+      "sha256": "572fc7c8e179f1feb71b7f8946b35c215389ba88d4406d0e1ec65e4c6f2e998e"
     },
     {
       "name": "invalid_unknown_widget_type.json",
-      "sha256": "99d5d15b97fc63d2585f1343338e389d3d401dc94dd0aeb71139a9644b32bce3"
+      "sha256": "74fdba33b1f103abdf5d8158b82b7f48bb484a535fd07a0d10fcc9a80cc20845"
     },
     {
       "name": "legacy_v0_bare.json",
@@ -73,5 +73,5 @@
       "sha256": "a0b825876db62d2df5a499fcf9495c952824725052d29a30f04e0378c2526dba"
     }
   ],
-  "vectors_digest": "4111f9d28c8043facc16dda6985a86b51fd9146e50608dc76aa118b0f33fdfb8"
+  "vectors_digest": "9eeef5b4b055e3ffa407f76d8e3a6ee70c2ab064194983391062d29ec4b701ab"
 }
