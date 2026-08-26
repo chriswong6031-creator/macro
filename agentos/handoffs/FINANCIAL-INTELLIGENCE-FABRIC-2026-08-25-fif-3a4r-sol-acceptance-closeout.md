@@ -31,16 +31,22 @@ changed:
       IN_PROGRESS, production issuer service NOT_BUILT, and no FIF-3A4 start.
 verified:
   - claim: Protected Sol Skillpack was readable and bootstrap-major compatible.
+    command: gh api repos/mastermindx-market-intelligence/Mastermind/commits/master --jq .sha; gh api 'repos/mastermindx-market-intelligence/Mastermind/contents/docs/sol_skills/INDEX.md?ref=068125e3524eb1b327721f1e79a2338f3d367554' --jq -r .content | base64 -d | rg 'skillpack:|minimum_bootstrap_major:'
     result: mastermindx-market-intelligence/Mastermind master 068125e3524eb1b327721f1e79a2338f3d367554; skillpack 1.0.0; minimum_bootstrap_major 1.
   - claim: Exact accepted #6382 head remained immutable through release.
+    command: gh pr view 6382 --repo mastermindx-market-intelligence/macro --json headRefOid,files,isDraft,autoMergeRequest
     result: 07755cb557a53af1341d8b6323a412631af8d83e; 8 changed files; research/AgentOS only.
   - claim: Exact-head hosted checks were green on the active main authority context.
+    command: gh run view 32897588352 --repo mastermindx-market-intelligence/macro --json conclusion,headSha; gh run view 32897588374 --repo mastermindx-market-intelligence/macro --json conclusion,headSha; gh api repos/mastermindx-market-intelligence/macro/commits/07755cb557a53af1341d8b6323a412631af8d83e/check-runs --jq '.check_runs[] | select(.name=="ci-authority/main") | [.name,.conclusion]'
     result: ci 32897588352 SUCCESS; fences 32897588374 SUCCESS; fresh post-release ci-authority/main SUCCESS. codex/merge-queue-pilot remained inactive fail-by-design.
   - claim: Current-main advancement was collision-clean at release.
-    result: Pre-merge main 8cf08e5d19bbe28590fd62b3be0847ad3e7a637d touched marketing outbox data only; GitHub reported mergeable=true before landing.
+    command: git diff --name-only 2c20168df5d9e711825f7fca5983b4bbab69711d 8cf08e5d19bbe28590fd62b3be0847ad3e7a637d -- $(gh pr view 6382 --repo mastermindx-market-intelligence/macro --json files --jq '.files[].path')
+    result: empty diff on all eight A4R carrier paths; pre-merge main was 8cf08e5d19bbe28590fd62b3be0847ad3e7a637d and GitHub reported mergeable=true before landing.
   - claim: PR #6382 landed on main from the exact accepted head.
-    result: squash merge fe8caca04b634686fc8d8707a188ea1a8477c31c; PR closed/merged 2026-08-26T02:27:35Z.
+    command: gh pr view 6382 --repo mastermindx-market-intelligence/macro --json state,mergedAt,mergeCommit,headRefOid
+    result: squash merge fe8caca04b634686fc8d8707a188ea1a8477c31c; headRefOid 07755cb557a53af1341d8b6323a412631af8d83e; PR closed/merged 2026-08-26T02:27:35Z.
   - claim: Accepted A4R census identity is unchanged.
+    command: git switch --detach fe8caca04b634686fc8d8707a188ea1a8477c31c; python3 research/financial_intelligence_fabric/replay_fif3a4r_aapl_overlap_census.py; git diff --exit-code -- research/financial_intelligence_fabric/FIF_3A4R_AAPL_OVERLAP_CENSUS.json
     result: >
       schema fif3a4r.aapl_overlap_census/v1.1; 964 A1 occurrences; 758 A2
       occurrences; 133 overlap logical keys; 0 duration overlap; 130 exact
@@ -48,9 +54,11 @@ verified:
       1 nil_confirmation_unspecified; 1 precision_consistent_unconfirmed;
       1 changed_value; 0 taxonomy namespace/version mismatches; payload SHA
       b1577b04f553c56ba278d2057ecc07a0d23159a1d20a41339b39da4ed24c12a9;
-      file SHA f1481fffa18720209ba98d463c25a52b4e497bff89b2159cfa3b2d74ea63ab58.
+      file SHA f1481fffa18720209ba98d463c25a52b4e497bff89b2159cfa3b2d74ea63ab58;
+      committed census diff empty.
   - claim: Accepted A3 ledger identity remains unchanged.
-    result: ba149bd55d929d843f353e91bbf68147791fb8b4a20c258426ea2eb7527019d8.
+    command: rg 'EXPECTED_LEDGER_SHA' research/financial_intelligence_fabric/replay_fif3a4r_aapl_overlap_census.py; jq -r .ledger_sha256 research/financial_intelligence_fabric/FIF_3A4R_AAPL_OVERLAP_CENSUS.json
+    result: both report ba149bd55d929d843f353e91bbf68147791fb8b4a20c258426ea2eb7527019d8.
 architecture_law:
   - A1/A2 RawFactOccurrences remain event_type=FILED and are never reminted.
   - xbrl_confirmation is an immutable lineage relation, not FactEventType.XBRL_CONFIRMATION.
