@@ -304,6 +304,37 @@ def validate_event_workspace(payload: object) -> None:
     for name in ("facts", "deltas", "guidance", "claims", "sources", "aliases", "qa_exchanges"):
         if not isinstance(item.get(name), list):
             raise WorkspaceError(f"{name} must be a list")
+    transcript_source = next(
+        (
+            source for source in item.get("sources") or []
+            if isinstance(source, Mapping) and source.get("kind") == "transcript"
+        ),
+        None,
+    )
+    transcript_document_id = None
+    transcript_sha256 = None
+    transcript_clock = None
+    if isinstance(transcript_source, Mapping) and transcript_source.get("receipt_state") == "byte_replayed":
+        transcript_document_id = transcript_source.get("document_id")
+        transcript_sha256 = transcript_source.get("source_sha256")
+        clock = transcript_source.get("source_clock")
+        if clock is not None:
+            from .qa_exchange import validate_source_clock
+            transcript_clock = validate_source_clock(
+                clock,
+                document_id=str(transcript_document_id or ""),
+                source_sha256=str(transcript_sha256 or ""),
+            )
+    elif isinstance(transcript_source, Mapping) and transcript_source.get("source_clock") is not None:
+        raise WorkspaceError("typed-absence transcript cannot carry a revision clock")
+    from .qa_exchange import validate_qa_exchanges
+    validate_qa_exchanges(
+        item.get("qa_exchanges"),
+        event_id=str(item.get("event_id") or ""),
+        document_id=str(transcript_document_id) if transcript_document_id else None,
+        document_sha256=str(transcript_sha256) if transcript_sha256 else None,
+        transcript_clock=transcript_clock,
+    )
     for delta in item["deltas"]:
         if not isinstance(delta, Mapping):
             raise WorkspaceError("delta must be an object")
