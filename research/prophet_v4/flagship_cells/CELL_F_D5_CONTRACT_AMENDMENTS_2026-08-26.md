@@ -83,12 +83,26 @@ owner's real field names differ. This binding is normative — a builder may not
 of these clocks is therefore a **measurement degradation to disclose**, not evidence that the
 clocks agree. A builder must not infer distinctness it has not observed.
 
-**Acceptance test (required, not optional).** Construct a real two-generation chain for one
-event where generation N and generation N+1 disagree on a fact. Assert that the D5 decision
-observation equals generation N's value, that the current body differs, that the correction
-appears as later knowledge with its own `corrected_at` and `generation_id`, and that no field
-of the decision observation changed. A fixture that exercises only one generation does not
-satisfy this test.
+**Acceptance test (required, not optional).** Construct a two-generation chain for one event
+where generation N and generation N+1 disagree on a fact, and drive it through the REAL reader
+rather than a stub. Assert that the D5 decision observation equals generation N's value, that
+the current body differs, that the correction appears as later knowledge with its own
+`corrected_at` and `generation_id`, and that no field of the decision observation changed. A
+test that exercises only one generation does not satisfy this.
+
+**Why the chain must be constructed, and why that makes A7 more urgent rather than less.**
+Measured 2026-08-26 against live production:
+`read_event_source_revisions("evt_cik0000320193_2026q3_results")` returns exactly ONE revision,
+`lifecycle_state = "complete"`, `source_available_at = 2026-07-30T20:30:28Z`. No published
+event currently carries a multi-generation correction chain — `DEFAULT_MAX_CHAIN_HOPS` is 500
+so the walk is not bounded early, and `_dedupe_carry_forward_hops`
+(`company_intelligence_reader.py:1136-1147`) collapses only CONSECUTIVE byte-identical
+`source_sha256`, so a real correction would not have been hidden. The correction path is
+therefore **unexercised in production today**. A builder developing against live data would
+never meet a correction, would see `read_event_workspace` and the revision walk agree on every
+event, and could ship the naive reader without any symptom — until the first real correction
+lands and silently rewrites decision-time history. That is precisely why this access law is
+normative rather than advisory.
 
 ---
 
