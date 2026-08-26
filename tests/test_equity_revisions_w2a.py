@@ -354,6 +354,141 @@ def test_missing_field_is_typed_unestimable_not_zero(tmp_path: Path):
     assert average["missingness_reason"] == "UNESTIMABLE"
 
 
+# ---------------------------------------------------------------------------
+# Mutation gate 1 heal — zero-analyst groups must not silently become value=0.0
+# (production audit, commit 576959b11804: BRK-B EPS 0q recorded average=high=low=0.0
+# with missingness_reason NULL while covering_analyst_count was 0; COKE/CRVL shared
+# a byte-identical provider_payload_hash proving the zeros were the provider's empty-
+# response shape, not company facts). See collectors/equity_revisions._expectation_rows.
+# ---------------------------------------------------------------------------
+
+_NON_COUNT_OBSERVATION_TYPES = ("average", "median", "high", "low", "growth", "year_ago")
+
+
+def _zero_analyst_eps_frame() -> pd.DataFrame:
+    """EPS frame whose '0q' horizon is the provider's empty-response shape: every
+    numeric field (including numberOfAnalysts) reads 0.0, mirroring the audited
+    BRK-B / COKE / CRVL payloads.  The '+1y' horizon stays normally covered so the
+    fix is proven scoped to the (metric, horizon) group, not the whole ticker."""
+    return pd.DataFrame(
+        {
+            "avg": [0.0, 11.0],
+            "median": [0.0, 10.9],
+            "high": [0.0, 13.0],
+            "low": [0.0, 9.0],
+            "numberOfAnalysts": [0, 21],
+            "growth": [0.0, 0.2],
+            "yearAgoEps": [0.0, 9.0],
+        },
+        index=["0q", "+1y"],
+    )
+
+
+def test_zero_analyst_group_types_every_non_count_field_as_unestimable(tmp_path: Path):
+    """(a) A (metric, horizon) group with covering_analyst_count == 0 must emit
+    value=None + missingness_reason='UNESTIMABLE' for average/median/high/low/
+    growth/year_ago, regardless of the literal (zero) number the provider returned."""
+    _run(tmp_path, "scheduled-1", _Ticker(earnings=_zero_analyst_eps_frame(), revenue=_revenue_frame()))
+    rows = _observations(tmp_path)
+    group = rows[(rows["metric"] == "EPS") & (rows["horizon_label_raw"] == "0q")]
+    for observation_type in _NON_COUNT_OBSERVATION_TYPES:
+        row = group[group["observation_type"] == observation_type].iloc[0]
+        assert pd.isna(row["value"]), f"{observation_type} should be None, got {row['value']!r}"
+        assert row["missingness_reason"] == "UNESTIMABLE", (
+            f"{observation_type} missingness_reason should be UNESTIMABLE, got {row['missingness_reason']!r}"
+        )
+
+
+def test_zero_analyst_group_keeps_the_literal_zero_count_with_null_missingness(tmp_path: Path):
+    """(b) covering_analyst_count itself keeps the literal provider 0, with NULL
+    missingness — it is the genuine, interpretable field a consumer reads to detect
+    the non-estimable condition, and must never itself be swept into missingness."""
+    _run(tmp_path, "scheduled-1", _Ticker(earnings=_zero_analyst_eps_frame(), revenue=_revenue_frame()))
+    rows = _observations(tmp_path)
+    covering = rows[
+        (rows["metric"] == "EPS")
+        & (rows["horizon_label_raw"] == "0q")
+        & (rows["observation_type"] == "covering_analyst_count")
+    ].iloc[0]
+    assert covering["value"] == 0
+    assert pd.isna(covering["missingness_reason"])
+
+
+def test_covered_group_with_a_genuine_zero_value_keeps_it_as_a_real_observation(tmp_path: Path):
+    """(c) Regression guard for the 7 legitimate zeros the audit found across ALK,
+    AOSL, ARE, CBRL, CNC: a covered group (analyst count >= 1) that happens to carry
+    a real 0.0 estimate — e.g. a low estimate of 0.0 alongside 19 analysts — must
+    still record that 0.0 with NULL missingness, never swept into UNESTIMABLE."""
+    revenue = _revenue_frame()
+    revenue.loc["0q", "low"] = 0.0
+    revenue.loc["0q", "numberOfAnalysts"] = 19
+    _run(tmp_path, "scheduled-1", _Ticker(earnings=_estimate_frame(), revenue=revenue))
+    rows = _observations(tmp_path)
+    low = rows[
+        (rows["metric"] == "revenue")
+        & (rows["horizon_label_raw"] == "0q")
+        & (rows["observation_type"] == "low")
+    ].iloc[0]
+    assert low["value"] == 0.0
+    assert pd.isna(low["missingness_reason"])
+    covering = rows[
+        (rows["metric"] == "revenue")
+        & (rows["horizon_label_raw"] == "0q")
+        & (rows["observation_type"] == "covering_analyst_count")
+    ].iloc[0]
+    assert covering["value"] == 19
+    assert pd.isna(covering["missingness_reason"])
+
+
+def test_group_with_analyst_count_column_entirely_absent_is_non_estimable(tmp_path: Path):
+    """(d) A group whose covering-analyst-count field is entirely absent (not merely
+    zero) must also be treated as NON-ESTIMABLE — 'unavailable OR equal to 0' per the
+    frozen spec — and forces the same typed-missingness fields."""
+    earnings = _estimate_frame().drop(columns=["numberOfAnalysts"])
+    _run(tmp_path, "scheduled-1", _Ticker(earnings=earnings, revenue=_revenue_frame()))
+    rows = _observations(tmp_path)
+    group = rows[(rows["metric"] == "EPS") & (rows["horizon_label_raw"] == "0q")]
+    for observation_type in _NON_COUNT_OBSERVATION_TYPES:
+        row = group[group["observation_type"] == observation_type].iloc[0]
+        assert pd.isna(row["value"])
+        assert row["missingness_reason"] == "UNESTIMABLE"
+    covering = group[group["observation_type"] == "covering_analyst_count"].iloc[0]
+    assert pd.isna(covering["value"])
+    assert covering["missingness_reason"] == "NOT_APPLICABLE"
+
+
+def test_observation_id_formula_is_undisturbed_by_the_missingness_repair(tmp_path: Path):
+    """(e) observation_id is a deterministic hash of (session, provider, record_class,
+    payload_hash, ticker, metric, raw_horizon, observation_type) — it must never
+    depend on value/missingness, for both the newly-repaired non-estimable rows and
+    the unaffected covered rows, proving the tuple/hashing was not disturbed."""
+    _run(tmp_path, "scheduled-1", _Ticker(earnings=_zero_analyst_eps_frame(), revenue=_revenue_frame()))
+    rows = _observations(tmp_path)
+    attempt = _attempts(tmp_path).iloc[0]
+    session_id = attempt["collection_session_id"]
+    payload_hash = attempt["response_payload_hash"]
+
+    def _expected_id(record_class: str, ticker: str, metric: str, raw_horizon: str, observation_type: str) -> str:
+        return revisions._canonical_sha256((
+            session_id, "yfinance", record_class, payload_hash, ticker, metric, raw_horizon, observation_type,
+        ))
+
+    # A row forced into UNESTIMABLE by this repair still carries the untouched id.
+    non_estimable_row = rows[
+        (rows["metric"] == "EPS") & (rows["horizon_label_raw"] == "0q") & (rows["observation_type"] == "average")
+    ].iloc[0]
+    assert non_estimable_row["observation_id"] == _expected_id(
+        "earnings_estimate", "ACME", "EPS", "0q", "average"
+    )
+    # An unaffected covered row keeps the same formula too.
+    covered_row = rows[
+        (rows["metric"] == "EPS") & (rows["horizon_label_raw"] == "+1y") & (rows["observation_type"] == "average")
+    ].iloc[0]
+    assert covered_row["observation_id"] == _expected_id(
+        "earnings_estimate", "ACME", "EPS", "+1y", "average"
+    )
+
+
 def test_partial_null_and_malformed_attempts_remain_typed_receipts(tmp_path: Path):
     class _Partial:
         earnings_estimate = _estimate_frame()

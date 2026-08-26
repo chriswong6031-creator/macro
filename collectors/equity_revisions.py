@@ -225,8 +225,20 @@ def _expectation_rows(
             continue
         for horizon in sorted(frame.index, key=str):
             raw_horizon = str(horizon)
+            # A group (metric, horizon) is NON-ESTIMABLE when the provider's own
+            # covering-analyst count is unavailable or zero — the provider's empty-
+            # response shape (see mutation gate 1).  Every other observation_type in
+            # such a group is forced to typed missingness regardless of what number
+            # the provider returned; covering_analyst_count itself always keeps its
+            # literal provider value (including a genuine 0) via _field_value below.
+            covering_value, _covering_missingness = _field_value(
+                frame, horizon, "covering_analyst_count", metric
+            )
+            non_estimable_group = covering_value is None or covering_value == 0
             for observation_type in _OBSERVATION_TYPES:
                 value, missingness = _field_value(frame, horizon, observation_type, metric)
+                if non_estimable_group and observation_type != "covering_analyst_count":
+                    value, missingness = None, "UNESTIMABLE"
                 observation_id = _canonical_sha256((
                     collection_session_id, _EXPECTATION_PROVIDER, record_class, payload_hash,
                     ticker, metric, raw_horizon, observation_type,
