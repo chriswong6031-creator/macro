@@ -312,3 +312,90 @@ infrastructure reconstruction.
 2. **D12 ownership.** The pack `as_of` mis-stamp is an upstream close-store /
    tip-selection defect. It darkened 11 sessions and will recur. PR #6464 makes it
    VISIBLE (`pack_ok`, graded by the dead-man) but deliberately does not repair it.
+
+---
+
+# 13. D12 refined — mechanism confirmed, trigger not reproducible today
+
+`engine/prophet_live/armed_pack.py:855 as_of_date()` takes the **MAX last-bar date
+across the whole universe**, deliberately ("the pack must say what it is actually
+armed on"). The consequence is a single-point fragility: **one** contaminated
+series sets the stamp for all ~3,000 names, and the evaluator then darkens the
+entire next session because that stamp is not the last completed session.
+
+Journal evidence of contamination is unambiguous — tips landed on **Saturdays**
+(2026-08-01, 08-09, 08-22) and on the build's own calendar day (08-04/05/06/13/
+17/18/19). A Saturday bar in a US close store is not a defensible reading.
+
+**But it is episodic, and today's pack is clean.** Probe of the live
+`prophet_live_armed.json` (`as_of=2026-08-25`, `built_at=2026-08-26T04:49:31Z`):
+
+| `bar_date` | names |
+|---|---|
+| 2026-08-25 | 3,034 |
+| 2026-08-24 | 4 |
+| older (08-10, 06-26, 05-07, 05-13) | 1 each |
+| **ahead of `as_of`** | **0** |
+
+So the mechanism is proven and the *source* of the ahead-dated bars is not
+identifiable from a clean pack. Naming a culprit today would be a guess.
+
+**Proposed repair (NOT built — needs an owner and a ruling).** `as_of_date`
+should refuse a tip that is not a completed NYSE session rather than propagate one
+series' MAX, using the calendar already imported by
+`live_states.last_completed_session`. This preserves the docstring's intent (a
+stale store still reports honestly stale) while making an impossible date
+unrepresentable. It is pinnable without a live reproduction:
+
+> feed `as_of_date` a series set in which one series' last bar is a Saturday and
+> assert the returned tip is the last **session**, not the Saturday.
+
+Deliberately not done in this program: it edits the nightly pack path, this
+session could not reproduce the trigger, and PR #6464 has already told Sol the
+defect needs an owner. PR #6464 makes it *visible* (`pack_ok` on `/api/status`,
+graded by the dead-man) so the next occurrence pages instead of silently darkening
+a session.
+
+---
+
+# 14. Production proof — 2026-08-26 NYSE session (commission §9)
+
+The lane published for the **first time since 2026-07-30T17:20:56Z**. Captured
+13:37Z from first-hand host state, not from CI.
+
+| § | Requirement | Observed |
+|---|---|---|
+| 1 | timer enabled + active | `enabled` / `active` |
+| 2 | two consecutive natural invocations | `13:28:05Z`, `13:33:05Z` (no manual dispatch) |
+| 3 | `pass_ts` advances on cadence | 13:28:05 → 13:33:05 |
+| 4 | `session_et` = current session | `2026-08-26` |
+| 5 | `pack_as_of` = last completed session | `2026-08-25` = `expected_session` |
+| 6 | quote clock within budget | `quote_asof` 13:32:22Z, age 5.3m |
+| 7 | payload semantically non-vacuous | `evaluated_n=180`, states `{at_risk:19, forming:13, unknown:27, dormant:21, near:12, dark:88}` |
+| 8 | R2 live object advances | `LastModified=2026-08-26T13:33:11Z`, `status=live` |
+| 9 | served object advances | `/var/lib/macro-live/public/live/prophet_live.json` 21,247 B @13:33 — **had not existed at all** |
+| — | `no R2 credentials` warnings in-window | **0** (was every pass for 27 days) |
+| — | `/api/status` projection | `expected_now=True status=live pack_ok=True pass_age_min=4.6 quote_age_min=5.3` |
+
+Events resumed accruing immediately: `events=25` on the 13:28Z pass and `events=15`
+on 13:33Z — prospective intraday evidence is flowing into the spool again.
+
+## 14.1 What the proof caught that CI could not
+
+The external dead-man went **red** on the same capture:
+
+```
+VPS LIVE UNHEALTHY:
+- prophet_live: missing producer (unowned lane)
+```
+
+PR #6464 graded ownership identity — which the commission requires (§B2) and the
+breadth lane already carries — but nothing on the producing side ever wrote the
+field, so the check could never go green. That is the same always-red-therefore-
+unread failure #6464 had to heal in the public-live inventory guard, reintroduced
+one layer over. Repaired in PR #6482 by stamping `meta.producer` after the single
+`LS.evaluate` call, so globally dark artifacts are owned too.
+
+**This is the entire argument for §24.10.** Every check in #6464 was green, the
+mutation matrix passed against pristine code, and the defect was still there. Only
+a real session against real production surfaced it.
