@@ -1,6 +1,6 @@
 {
-  "ts": "2026-08-26T02:14:01+00:00",
-  "main_sha": "a50404c0d4db94392072771daad907b43848650e",
+  "ts": "2026-08-26T03:37:19+00:00",
+  "main_sha": "49b4c5e1878214cefab9c58cd186c34ca1ff63fd",
   "red_required": [
     {
       "name": "health",
@@ -34,9 +34,9 @@
     }
   ],
   "green": false,
-  "consecutive_failures": 58,
+  "consecutive_failures": 59,
   "sensed_shas": [
-    "a50404c0d4db94392072771daad907b43848650e",
+    "49b4c5e1878214cefab9c58cd186c34ca1ff63fd",
     "5929d55dd6d70f4cc35a661aca356803e8ad1df7"
   ],
   "heartbeat_degraded": false
