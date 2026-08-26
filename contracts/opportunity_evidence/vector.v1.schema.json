@@ -145,27 +145,93 @@
     "decisionClock": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["value", "grain", "t0_source", "t0_source_object"],
+      "required": ["value", "grain", "t0_source", "t0_mode", "t0_evidence_ref"],
       "properties": {
         "value": {
           "oneOf": [{"$ref": "#/$defs/utcInstant"}, {"$ref": "#/$defs/isoDate"}]
         },
         "grain": {"enum": ["date", "datetime"]},
         "t0_source": {
-          "description": "The decision date must come from an existing PIT object, never optimized after seeing forward returns (E0 §4.1).",
+          "description": "The decision date must come from an existing PIT object, never optimized after seeing forward returns (E0 §4.1). Every source is authenticated by t0_evidence_ref against the registry t0_sources pins (semantic K3E_R021). The retired caller_named_pit_object free string is replaced by owner_pit_reference, which additionally REQUIRES a known native_digest immutability receipt (Sol REQUEST_CHANGES 2026-08-25 item 1).",
           "enum": [
             "winner_case_t0_hypothesis",
             "drl_event_date",
             "prophet_stamp_date",
             "radar_observed_at",
-            "caller_named_pit_object"
+            "owner_pit_reference"
           ]
         },
-        "t0_source_object": {
+        "t0_mode": {
+          "description": "K1 reference.v1 replay.mode vocabulary, verbatim two-member subset lawful for a decision clock. 'live': the vector claims operational PIT — the recorded_clock must sit within the registry-pinned max_recording_lag_days of t0 (semantic K3E_R021), so a decision-time object minted after the fact fails closed. 'retrospective_research': declared research over a past t0 — the lag law is replaced by this visible declaration; authentication (owner pins, digest requirement, known recorded clock) still binds in full. There is no silent third mode.",
+          "enum": ["live", "retrospective_research"]
+        },
+        "t0_evidence_ref": {"$ref": "#/$defs/t0EvidenceRef"}
+      }
+    },
+    "t0EvidenceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["owner_store", "native_identity", "native_digest", "recorded_clock"],
+      "description": "The immutable owner-backed PIT reference the decision date was read from, reusing K1 reference.v1 EvidenceRef semantics field-for-field: owner_store, native_identity, and native_digest are the verbatim reference.v1 shapes; recorded_clock is this contract's K1-reconciled clockValue projection restricted to the three minting clock classes. An arbitrary caller string is no longer expressible on this wire.",
+      "properties": {
+        "owner_store": {
           "type": "string",
           "minLength": 1,
-          "description": "Identifier of the PIT object the decision date was read from (e.g. a winner_case file, a DRL event key, a stamp date)."
-        }
+          "maxLength": 128,
+          "description": "reference.v1 owner_store, verbatim shape: the canonical owner store the decision-time object lives in. The registry t0_sources section pins the lawful store per named t0_source; a mismatch is K3E_R021."
+        },
+        "native_identity": {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 8,
+          "propertyNames": {"pattern": "^[A-Za-z_][A-Za-z0-9_.-]{0,63}$"},
+          "additionalProperties": {
+            "oneOf": [
+              {"type": "string", "minLength": 1, "maxLength": 1024, "pattern": "^[^\\r\\n]+$"},
+              {"type": "integer", "minimum": 0}
+            ]
+          },
+          "description": "reference.v1 native_identity, verbatim shape: the owner-native identity of the PIT object. Key names are re-checked semantically by K3E_R021 because the structural validator does not implement propertyNames."
+        },
+        "native_digest": {
+          "description": "reference.v1 nativeDigest, verbatim shape — the immutability receipt over the referenced object's bytes. Registry law (t0_sources.digest_required): owner_pit_reference, the generic source, REQUIRES state 'known'; the four registry-pinned owner sources may carry state 'unknown' because their owner_store/clock pins authenticate the pointer.",
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["state", "sha256"],
+              "properties": {
+                "state": {"const": "known"},
+                "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["state", "sha256"],
+              "properties": {
+                "state": {"const": "unknown"},
+                "sha256": {"type": "null"}
+              }
+            }
+          ]
+        },
+        "recorded_clock": {"$ref": "#/$defs/t0RecordedClock"}
+      }
+    },
+    "t0RecordedClock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "grain", "clock_class", "native_field", "state"],
+      "description": "When the referenced PIT object was minted — this contract's clockValue shape with state pinned 'known' (an unverifiable minting clock fails closed at the schema, before K3E_R021 runs) and clock_class narrowed to the three K1 minting classes.",
+      "properties": {
+        "value": {
+          "oneOf": [{"$ref": "#/$defs/utcInstant"}, {"$ref": "#/$defs/isoDate"}]
+        },
+        "grain": {"enum": ["date", "datetime"]},
+        "clock_class": {"enum": ["observed", "system_recorded", "belief_or_build"]},
+        "native_field": {"type": "string", "minLength": 1},
+        "state": {"const": "known"}
       }
     },
     "subject": {
@@ -576,7 +642,10 @@
                 }
               }
             },
-            "denominator": {"$ref": "#/$defs/legDenominator"}
+            "denominator": {
+              "$ref": "#/$defs/legDenominator",
+              "description": "FROZEN inclusion semantics, recomputed by public validation (K3E_R015): total = incorporation legs on the wire; included = legs whose state is observed, modeled, or partial — modeled market-reflection evidence is included evidence, typed as modeled, never silently counted excluded merely because it is not observed; excluded = missing/stale/rights_blocked/conflicted/identity_unresolved/unknown/ex_post_excluded legs. A tampered count cannot survive validation."
+            }
           }
         },
         "strongest_unresolved_fact": {
@@ -625,7 +694,10 @@
                 }
               }
             },
-            "denominator": {"$ref": "#/$defs/legDenominator"}
+            "denominator": {
+              "$ref": "#/$defs/legDenominator",
+              "description": "FROZEN inclusion semantics, recomputed by public validation (K3E_R015): total = gate entries on the wire; included = gates whose state is failed or unavailable (evaluated adverse owner verdicts — this leg's evidence); excluded = not_evaluated entries. A tampered count cannot survive validation."
+            }
           }
         },
         "next_observable": {
@@ -656,25 +728,33 @@
         "entry_availability": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["prophet_board", "radar", "composition_law"],
-          "description": "A READ of the canonical entry owners' current state. This vector never computes, opens, gates, or times an entry; owner state is projected verbatim with its own clocks. 'read' is lawful ONLY over a referenced owner slot whose state is observed; a missing/stale/unknown owner slot forces the matching leg state (semantic K3E_R011).",
+          "required": ["entry_signal", "radar_probe_coverage", "composition_law"],
+          "description": "A READ of the canonical entry owners' current state. This vector never computes, opens, gates, or times an entry; owner state is projected verbatim with its own clocks. 'read' is lawful ONLY over a referenced owner slot whose state is observed; a missing/stale/unknown owner slot forces the matching leg state (semantic K3E_R011). OWNERSHIP LAW (Sol REQUEST_CHANGES 2026-08-25 item 3): the canonical live actionability surface is engine.entry_signal (assess) projected as prophet.board_read/v1 entry_signal.status — Prophet board ADMISSION state (lane / buyable / eligible) is admission/context and may never satisfy this leg; when the actionability surface is unavailable the leg remains explicitly missing/stale/unknown, never inferred from admission.",
           "properties": {
-            "prophet_board": {
+            "entry_signal": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["state", "slot_refs"],
+              "required": ["state", "slot_refs", "verdict_class"],
               "properties": {
                 "state": {"enum": ["read", "missing", "stale", "unknown"]},
-                "slot_refs": {"$ref": "#/$defs/slotRefList"}
+                "slot_refs": {"$ref": "#/$defs/slotRefList"},
+                "verdict_class": {
+                  "const": "owner_entry_actionability",
+                  "description": "This leg reads ONLY the owner entry/actionability axis (registry entry_role 'actionability': engine.entry_signal.assess -> prophet.board_read/v1 entry_signal.status). A ref to an admission/context construct is K3E_R011."
+                }
               }
             },
-            "radar": {
+            "radar_probe_coverage": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["state", "slot_refs"],
+              "required": ["state", "slot_refs", "verdict_class"],
               "properties": {
                 "state": {"enum": ["read", "missing", "stale", "unknown"]},
-                "slot_refs": {"$ref": "#/$defs/slotRefList"}
+                "slot_refs": {"$ref": "#/$defs/slotRefList"},
+                "verdict_class": {
+                  "const": "probe_coverage_state_not_trade_entry",
+                  "description": "Radar probe availability is a probe/coverage state (registry entry_role 'probe_coverage'), NEVER a trade-entry verdict. It answers 'is Radar watching this name', not 'is an entry open'."
+                }
               }
             },
             "composition_law": {

@@ -32,7 +32,7 @@
     "can_size": false
   },
   "compilation_state": "partial",
-  "content_sha256": "de9f2dde54d9ae15961bb77b3c51840842a6b0022b13125dec12c032355d1c01",
+  "content_sha256": "b7b10e8d8d7735b608ca17286a95ee477a20f815d89c7459b43a735546d96e19",
   "denominator": {
     "conflicted": 0,
     "excluded": 3,
@@ -69,10 +69,17 @@
     "failed_or_unavailable_gates": {
       "denominator": {
         "excluded": 0,
-        "included": 0,
-        "total": 0
+        "included": 4,
+        "total": 1
       },
-      "gates": []
+      "gates": [
+        {
+          "gate": "coverage_gate",
+          "owner": "engine/price_pressure/",
+          "reason": "no filing coverage",
+          "state": "unavailable"
+        }
+      ]
     },
     "inferred": {
       "denominator": {
@@ -83,7 +90,7 @@
       "label": "owner_derived_system_belief",
       "slot_refs": [
         "drl_resid_shock",
-        "sue_surprise"
+        "options_state"
       ]
     },
     "market_reflection": {
@@ -112,8 +119,10 @@
         },
         {
           "leg": "I4_options_repricing",
-          "slot_refs": [],
-          "state": "missing"
+          "slot_refs": [
+            "options_state"
+          ],
+          "state": "modeled"
         },
         {
           "leg": "I5_attention",
@@ -213,17 +222,17 @@
     },
     {
       "asof": {
-        "clock_class": "belief_or_build",
+        "clock_class": "world_valid",
         "grain": "date",
-        "native_field": "stamp_date",
+        "native_field": "snapshot_date",
         "state": "known",
         "value": "2026-08-14"
       },
       "basis": null,
-      "construct": "sue_surprise",
+      "construct": "options_state",
       "coverage_flag": {
-        "note": null,
-        "state": "unknown"
+        "note": "modeled dealer-gamma read",
+        "state": "fallback"
       },
       "derivation": "owner_read",
       "exclusion_reason": null,
@@ -236,7 +245,7 @@
       "known_at": {
         "clock_class": "knowable",
         "grain": "date",
-        "native_field": "stamp_date",
+        "native_field": "snapshot_date",
         "state": "known",
         "value": "2026-08-14"
       },
@@ -247,14 +256,16 @@
       },
       "object_class": "derived_view",
       "owner_ref": {
-        "artifact": "data/us_prophet_rank/candidates/ column sue_fresh",
+        "artifact": "data/options_dislocation/snapshots.parquet + data/polygon_gex/ (history from 2026-06-15)",
         "evidence_ref_id": null,
-        "owner": "earnings intelligence owners",
-        "reader": "engine.us_context_vector.load_candidates"
+        "owner": "engine/gex_model.py + options dislocation/flow stores",
+        "reader": "owner readers"
       },
       "provenance_class": "owner_artifact",
-      "state": "observed",
-      "value_or_null": 2.4,
+      "state": "modeled",
+      "value_or_null": {
+        "gex_regime": "positive"
+      },
       "variation_receipt": null
     },
     {

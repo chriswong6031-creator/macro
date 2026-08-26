@@ -1,8 +1,26 @@
 {
   "asof": {
     "grain": "date",
-    "t0_source": "caller_named_pit_object",
-    "t0_source_object": "fpi-absence-receipt:CCJ:2026-08-10",
+    "t0_evidence_ref": {
+      "native_digest": {
+        "sha256": "f8f5d7443b23a75ae70cadf69768026528932f91a51c730cd0e4540bc4a97592",
+        "state": "known"
+      },
+      "native_identity": {
+        "document": "E0_PEER_RELATIVE_CASEBOOK.md",
+        "subject": "CCJ"
+      },
+      "owner_store": "research/opportunity_evidence/",
+      "recorded_clock": {
+        "clock_class": "belief_or_build",
+        "grain": "date",
+        "native_field": "git_committer_date",
+        "state": "known",
+        "value": "2026-08-18"
+      }
+    },
+    "t0_mode": "retrospective_research",
+    "t0_source": "owner_pit_reference",
     "value": "2026-08-10"
   },
   "authority": {
@@ -13,7 +31,7 @@
     "can_size": false
   },
   "compilation_state": "partial",
-  "content_sha256": "999060bd83ffe2f50c256edd3d66b41da4f644c9ce90e81f32ef4d30bfbbe065",
+  "content_sha256": "a1e3fe2755f28f833a075a03fcdbac03ea9f84ab540f3704878c2adcbeb03e6c",
   "denominator": {
     "conflicted": 0,
     "excluded": 3,
@@ -36,13 +54,15 @@
   "projection": {
     "entry_availability": {
       "composition_law": "owner_read_only_never_computed",
-      "prophet_board": {
+      "entry_signal": {
         "slot_refs": [],
-        "state": "missing"
+        "state": "unknown",
+        "verdict_class": "owner_entry_actionability"
       },
-      "radar": {
+      "radar_probe_coverage": {
         "slot_refs": [],
-        "state": "missing"
+        "state": "missing",
+        "verdict_class": "probe_coverage_state_not_trade_entry"
       }
     },
     "failed_or_unavailable_gates": {

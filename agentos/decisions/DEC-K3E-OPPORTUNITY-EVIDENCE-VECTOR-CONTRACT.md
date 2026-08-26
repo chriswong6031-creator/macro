@@ -32,6 +32,26 @@ answer: >
   DEC:PROPHET-LAB-B5A-RECUT's read-only verbs; the authority envelope is the exact
   K1 all-false set including can_open_entry. No store, path, synapse row, or
   consumer is created or armed. Delivery is one bounded PR held DRAFT/HOLD-FOR-SOL.
+  Amended 2026-08-25 by Sol REQUEST_CHANGES on head ac2be650a360 (architecture
+  accepted in principle; repaired on the same carrier): (1) the decision clock is
+  AUTHENTICATED, not asserted — the free-string t0_source_object and its
+  caller_named_pit_object source are deleted from the wire and replaced by a
+  required t0_evidence_ref reusing K1 reference.v1 EvidenceRef semantics
+  (owner_store, native_identity, native_digest) plus a known minting clock and a
+  t0_mode from K1 replay.mode, all authenticated against a registry t0_sources
+  section by K3E_R021, which fails a 'live' t0 whose object was minted past that
+  source's recording-lag budget; (2) public validation recomputes EVERY mandatory
+  denominator including market_reflection and failed_or_unavailable_gates under
+  frozen inclusion semantics shared with the composer, where modeled
+  market-reflection evidence counts as INCLUDED rather than silently excluded for
+  not being observed; (3) Entry Availability ownership is corrected — the leg reads
+  ONLY the canonical live actionability surface (engine.entry_signal.assess ->
+  prophet.board_read/v1 entry_signal.status, registered as prophet_entry_signal
+  with entry_role 'actionability'), Prophet board admission (lane/buyable/eligible)
+  is re-classed entry_role 'admission_context' owning no leg and referenceable from
+  none, Radar probe availability is typed probe/coverage state and never a
+  trade-entry verdict, and an unavailable owner leaves the leg explicitly
+  missing/unknown rather than inferred from admission.
 rationale: >
   Sol's K3-E commission (2026-08-25) binds the accepted E0 laws and C0 §4.1
   rulings 1–6 plus the authenticated-MO rider. The E0 census already ruled the
@@ -70,7 +90,9 @@ evidence:
   - "Fusion family law: research/prophet_fusion/families.yml (one-column-one-family; registry join asserted by the K3-E suite on every run)"
   - "DRL ownership boundary: engine/price_pressure/ (residual-shock + filing-coverage family only; grep for 'impair' over its masterplan and code exits 1 — the impairment axis is unowned)"
   - "Market OS seam: contracts/market_os/security_state.v1.schema.json legs.opportunity_context ships market_incorporation/dislocation refs null/NOT_COVERED (engine/security_state.py:969-994) — the typed gap this object can later fill under a separate commission"
-  - "Freeze packet: research/opportunity_evidence/K3E_OPPORTUNITY_EVIDENCE_VECTOR_CONTRACT_FREEZE_2026-08-25.md (binding-law disposition, family-mapping receipt, mutation matrix, owner gaps)"
+  - "Freeze packet: research/opportunity_evidence/K3E_OPPORTUNITY_EVIDENCE_VECTOR_CONTRACT_FREEZE_2026-08-25.md (binding-law disposition, family-mapping receipt, mutation matrix, owner gaps; §7.2 = the Sol REQUEST_CHANGES disposition with named mutation receipts)"
+  - "Sol REQUEST_CHANGES on PR #6417 head ac2be650a360 (2026-08-25): architecture accepted in principle, three repairs required on the same carrier — decision-time authentication, denominator integrity, Entry Availability ownership"
+  - "Entry actionability owner: engine/entry_signal.py (assess) projected by engine/prophet_board_read.py as SCHEMA 'prophet.board_read/v1' status field — the axis that answers 'should I buy it NOW', distinct from board admission (lane/buyable/eligible)"
 affects:
   - "research/opportunity_evidence/"
   - "contracts/opportunity_evidence/"
@@ -91,6 +113,19 @@ named failure modes (scalar reconstruction, missing→neutral, clock collapse,
 double-family homing, residual re-derivation, cause-from-ε, identity laundering,
 Prophet/Radar leakage, look-ahead, LLM origination) are killed executable-first —
 each with a fixture that fails today, not a prose warning that decays.
+
+Sol's REQUEST_CHANGES sharpened three places where the first cut typed a fact
+without proving it. The decision clock is the load-bearing one: a vector whose t0
+can be asserted by a caller string is a vector whose entire PIT discipline rests on
+good faith, because every look-ahead check downstream measures against that t0. The
+repair does not add a new vocabulary — it binds t0 to the same K1 EvidenceRef
+semantics the rest of the wire already reuses, and makes the "chose t0 with
+hindsight" case fail closed unless the vector visibly declares itself retrospective.
+The Entry Availability correction is the same class of error one level up: reading
+board ADMISSION (is this name on the board) as if it answered ACTIONABILITY (is an
+entry open now) would have let a consumer infer a trade verdict this contract has no
+authority to express — so the two roles are now separate registry roles, and
+admission owns no leg at all.
 
 ## Boundaries
 

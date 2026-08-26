@@ -89,10 +89,16 @@ residualizations, never interchangeable, never merged.
 Contract version `1.0.0`:
 
 - `contracts/opportunity_evidence/vector.v1.schema.json` — closed
-  `opportunity_evidence.vector.v1` wire (subject, decision clock with t0-source
-  discipline, typed slots, the seven projection legs, separate economic-cause
-  hypothesis object, denominator receipt, dominant degradation, all-false authority,
-  deterministic content hash).
+  `opportunity_evidence.vector.v1` wire (subject, **authenticated** decision clock,
+  typed slots, the seven projection legs, separate economic-cause hypothesis object,
+  denominator receipt, dominant degradation, all-false authority, deterministic
+  content hash).
+  The decision clock carries `{value, grain, t0_source, t0_mode, t0_evidence_ref}`:
+  `t0_evidence_ref` is an immutable owner-backed PIT reference in K1 `reference.v1`
+  EvidenceRef shape (`owner_store`, `native_identity`, `native_digest`, plus a known
+  minting clock), and `t0_mode` ∈ {`live`, `retrospective_research`} — K1
+  `replay.mode` vocabulary. The retired free-string `t0_source_object` and its
+  `caller_named_pit_object` source are **structurally unrepresentable** (test-pinned).
 - `contracts/opportunity_evidence/slot_registry.v1.json` — the executable
   family-mapping receipt: every admissible construct with owner, read seam, K1 clock
   bindings over unrenamed native fields, object class, and exactly one of
@@ -135,6 +141,7 @@ EvidenceRef/EvidenceBlock vocabulary is literal and test-enforced:
 | availability `state` | typed states {observed, modeled, missing, stale, rights_blocked, conflicted, unsupported, identity_unresolved, unknown} — the commissioned six adverse states plus observed/modeled/unknown; each adverse state crosswalks to a K1 reason (stale→stale, rights_blocked→rights_blocked, identity_unresolved→unresolved_identity, unsupported→unsupported, missing→{not_available_for_date, source_missing, not_applicable, explicit_none, quarantined, reconstructed_not_operational_pit}); `conflicted` crosswalks to the K1 block-level conflict state | schema conditionals + `K3E_R005`; none of these states ever becomes zero or neutral |
 | aggregates | denominator receipt + dominant degradation, inherited from the K1 block law; counts are the only lawful aggregate arithmetic; dominant severity is the strict order conflicted > corrected > identity_unresolved > rights_blocked > missing > unsupported > unknown > stale > partial_coverage | `K3E_R015`; schema has no other numeric aggregate field; `value_or_null` is typed flat-scalar with a payload key fence so no score/weight/rank structure can ride inside a value |
 | free text | every prose field (`coverage_flag.note`, `set_because`, gate `reason`, `fact`, `exclusion_reason`) is length-capped and DISPLAY-ONLY by consumer law: no consumer may parse values, scores, ranks, sizes, or entry directives out of free text | schema maxLength caps + description law; typed payloads carry every machine-readable fact |
+| decision-time origin | `t0_evidence_ref` reuses `reference.v1`'s `owner_store`, `native_identity` (same `propertyNames`/`maxProperties`), and `nativeDigest` shapes field-for-field; `t0_mode` reuses `replay.mode`'s two decision-lawful members; the minting clock reuses this contract's K1-reconciled `clockValue` narrowed to the three minting classes | literal shape-equality test against `reference.v1.schema.json`; `K3E_R021` authenticates every reference against the registry `t0_sources` pins |
 | authority | the exact K1 all-false envelope incl. `can_open_entry` | schema consts |
 | identity | owner-native subject identity; cross-owner joins lawful only via owner-approved bridges (Earnings `company_identity.v1` PIT alias / Data OS master); a nominal ticker match is not proof | `K3E_R010`; the forbidden symbol-directory + `cik_map` route stays forbidden |
 
@@ -162,6 +169,9 @@ none hideable behind a composite.
 | 13F / ownership laws (45d; WA-R2/NEXTL-U13 never a positive input) | **SATISFIED.** `known_at = accepted_at` inclusion law (`K3E_R007`); registry note pins crowding-hazard-only; 13F is additionally a cross-owner join (55% of positions unmapped) so an unbridged subject types it `identity_unresolved` | `hostile_lookahead`; `hostile_identity_launder` |
 | Prospective expectation accrual (SRC-A1) | **SATISFIED as one OPTIONAL evidence family.** `optional_family: true`; goldens prove vectors are valid with and without it — it is never a prerequisite | `golden_optional_expectation` |
 | Epistemics: display-tier ships freely; gauntlet is a promotion gate | **PRESERVED.** Everything here is display/research tier with zero authority; any promotion of any slot family to rank/gate/size runs through K5 / Eval OS by its own commission | registry `candidate_new_family` routing |
+| **Sol item 1 — decision-time origin must be authenticated, not trusted from a string** | **SATISFIED.** `caller_named_pit_object` and the free-string `t0_source_object` are deleted from the wire (unrepresentable, not merely discouraged). Every t0 now carries an immutable owner-backed `t0_evidence_ref` in K1 EvidenceRef shape; `K3E_R021` checks it against the registry `t0_sources` pins (owner store, minting clock class, mandatory digest for the generic source, native-identity key grammar) and fails closed on a `live` t0 whose object was minted past that source's lag budget | `t0_sources` registry section; `K3E_R021`; `hostile_retrospective_t0` + 6 programmatic S-1 mutations |
+| **Sol item 2 — denominator integrity: public validation must recompute EVERY mandatory denominator** | **SATISFIED.** All five (`$.denominator`, observed, inferred, `market_reflection`, `failed_or_unavailable_gates`) are recomputed by `validate_vector` under frozen included/excluded semantics that the composer shares, so a composed vector can never disagree with the recomputation judging it. **Modeled market-reflection evidence counts as INCLUDED** — it is not silently excluded for not being observed — and gate entries count `failed`/`unavailable` as included with `not_evaluated` excluded | `K3E_R015`; `hostile_denominator_tamper`; the five-way independent tamper sweep |
+| **Sol item 3 — Entry Availability ownership: admission ≠ actionability** | **SATISFIED.** The legs are re-cut to `entry_signal` (reads ONLY `prophet_entry_signal` = `engine.entry_signal.assess` → `prophet.board_read/v1` `entry_signal.status`, registry `entry_role: actionability`) and `radar_probe_coverage` (typed `probe_coverage_state_not_trade_entry` on the wire). `prophet_board_lane` (lane / buyable / eligible) is re-classed `entry_role: admission_context`, owns **no** leg, and may not be referenced from any leg at all. When the actionability surface is unavailable the leg stays explicitly `missing`/`unknown` — never inferred from admission | schema `verdict_class` consts; registry `entry_role`; `K3E_R011`; `hostile_admission_as_entry` + 6 programmatic S-3 proofs |
 
 ## 6. Family-mapping receipt (executable)
 
@@ -192,7 +202,9 @@ asserts the join on every run. `engine/us_prophet_fusion.py`'s `FORBIDDEN_INPUTS
 | `macro_chain_state` | research_only (instrument state; dual-read law) |
 | `prospective_expectation_src_a1` | research_only, `optional_family` |
 | `coverage_count` | research_only (NEGLECTED is not yet a data state) |
-| `prophet_board_lane`, `radar_probe_admission` | research_only owner reads (entry-availability leg; zero-authority projection verbs) |
+| `prophet_entry_signal` | research_only owner read — `entry_role: actionability`; THE canonical live actionability surface, sole lawful feed of the `entry_availability.entry_signal` leg |
+| `radar_probe_admission` | research_only owner read — `entry_role: probe_coverage`; probe/coverage state only, never a trade-entry verdict |
+| `prophet_board_lane` | research_only owner read — `entry_role: admission_context`; admission (lane / buyable / eligible), owns **no** leg and is referenceable from none |
 | `etf_flow_shares_outstanding` | **candidate_new_family → K5 / Eval OS gauntlet**; no authority here |
 
 ## 7. Mutation / adversarial proof matrix
@@ -210,6 +222,9 @@ mutation asserting the exact code:
 | Statistical evidence as economic cause | `K3E_R009` | `hostile_cause_from_epsilon` |
 | Unvalidated cross-owner identity | `K3E_R010` | `hostile_identity_launder` |
 | Prophet/Radar authority leakage | `K3E_R011` + closed consumer enum + all-false envelope | `hostile_authority_leak` + consumer mutation |
+| Board admission passed off as an entry verdict | `K3E_R011` | `hostile_admission_as_entry` |
+| Retrospective t0 claiming operational PIT | `K3E_R021` | `hostile_retrospective_t0` |
+| Denominator tampering (either mandatory aggregate) | `K3E_R015` | `hostile_denominator_tamper` |
 | Outcome audition / look-ahead | `K3E_R007` + no outcome field on the closed wire | `hostile_lookahead` + I7 structural exclusion |
 | LLM origination | schema (no LLM provenance member exists) | `hostile_llm_provenance` |
 
@@ -238,6 +253,24 @@ packet was finalized:
 | M9 — placeholder receipts | filled (§10) |
 | MINORs | `compilation_state` re-cited to K1's `recipe_compilation_receipt.v1` vocabulary (materialized in `security_state.v1`) with an equality test; `grain`'s single additive `unknown` member declared and drift-pinned; hostile docstring honesty fixed; `deterministic_join` documented as reserved-unused in v1; `drl_event_state.known_at` re-classed `belief_or_build` (session-derived evaluation clock); the IMXI receipt citation had already been repaired pre-review |
 
+### 7.2 Sol REQUEST_CHANGES disposition (2026-08-25, held head `ac2be650a360`)
+
+Sol accepted the architecture in principle and returned three required repairs.
+All three were repaired **on this same carrier** (PR #6417) — no redesign, no
+second carrier:
+
+| Sol item | What was wrong | Repair + named mutation receipts |
+|---|---|---|
+| **1. Authenticate decision-time origin** | `caller_named_pit_object` + a free-string `t0_source_object` let a caller assert t0 with an unverifiable label — the decision clock was trusted, not proven | Both deleted from the wire. `t0_evidence_ref` (K1 `reference.v1` EvidenceRef shape) + `t0_mode` (K1 `replay.mode`) are now required; the registry `t0_sources` section pins owner store, minting clock class, digest requirement, and a per-source recording-lag budget; `K3E_R021` enforces all of it fail-closed. Receipts: `hostile_retrospective_t0` (`K3E_R021`), `test_s1_retired_free_string_t0_object_is_no_longer_expressible`, `test_s1_t0_evidence_ref_reuses_k1_evidence_ref_field_semantics`, `test_s1_mutation_retrospective_t0_claiming_live_fires_r021`, `test_s1_same_lag_is_lawful_once_declared_retrospective`, `test_s1_mutation_wrong_owner_store_for_named_t0_source_fires_r021`, `test_s1_mutation_generic_owner_reference_without_digest_fires_r021`, `test_s1_mutation_unpinned_t0_source_fires_r021`, `test_s1_every_schema_t0_source_has_a_registry_pin` |
+| **2. Close denominator integrity** | Only the slot-derived denominators were recomputed; `market_reflection` and `failed_or_unavailable_gates` were taken from the wire on trust, and modeled evidence risked being counted as excluded | Both are now recomputed by public validation under frozen, documented inclusion semantics that the composer shares. Modeled market-reflection legs are **included**; gate `not_evaluated` is excluded while `failed`/`unavailable` are included. Receipts: `hostile_denominator_tamper` (`K3E_R015`), `test_s2_public_validation_recomputes_every_mandatory_denominator` (independent five-way tamper sweep), `test_s2_modeled_market_reflection_evidence_counts_as_included`, `test_s2_dropping_a_modeled_leg_from_the_numerator_fires_r015`, `test_s2_gate_denominator_semantics_are_frozen_and_recomputed` |
+| **3. Correct Entry Availability ownership** | The leg read `prophet_board_lane` (lane / buyable / eligible) — board ADMISSION — as if it were an entry verdict, and Radar probe admission was not typed as coverage | Legs re-cut to `entry_signal` / `radar_probe_coverage` with `verdict_class` consts on the wire. New registry construct `prophet_entry_signal` (`entry_role: actionability`) reads the canonical live surface `engine.entry_signal.assess` → `prophet.board_read/v1` `entry_signal.status`; `prophet_board_lane` becomes `admission_context`, owning no leg and referenceable from none; unavailable ⇒ explicitly `missing`/`unknown`. Receipts: `hostile_admission_as_entry` (`K3E_R011`), `test_s3_registry_binds_exactly_one_actionability_owner`, `test_s3_actionability_owner_names_the_canonical_live_surface`, `test_s3_mutation_board_admission_cannot_satisfy_the_entry_leg_fires_r011`, `test_s3_admission_context_may_not_be_referenced_from_any_leg`, `test_s3_entry_leg_stays_explicitly_unknown_when_owner_is_unavailable`, `test_s3_radar_leg_is_typed_probe_coverage_never_a_trade_verdict`, `test_s3_dangling_refs_are_caught_in_the_recut_entry_legs`, `test_s3_authority_envelope_still_denies_entry_after_the_recut` |
+
+One defect was found by this repair wave itself and is disclosed rather than
+quietly fixed: the leg-membership pass (`K3E_R014`) still addressed the retired
+leg keys after the re-cut, which would have left **both** entry legs unpoliced
+for dangling refs while every other test passed. It is fixed and pinned by
+`test_s3_dangling_refs_are_caught_in_the_recut_entry_legs`.
+
 ## 8. Remaining owner gaps (named, not papered over)
 
 1. **Windowed dislocation attribution has no producer.** The 5-layer per-window
@@ -248,10 +281,16 @@ packet was finalized:
 3. **Factor residual is structurally absent** (`factor__absent` 100% on the
    2026-08-17 stamp): `disloc.ret_fac.*` stays typed-missing; no parallel factor
    residual may be invented (E0 Q8).
-4. **Prophet entry state per name is an unclosed Track-C question** (Q9): the
-   board's `prophet_entry`/`prophet_signal` columns are empty while entry state may
-   live in `engine/entry_signal` dossiers; the entry-availability leg types this
-   `unknown`, never "no entry state".
+4. **Prophet entry state per name — the OWNER is now named; COVERAGE remains the
+   gap.** Sol's item-3 ruling closed the ownership half of the former Track-C
+   question (Q9): the canonical actionability surface is
+   `engine.entry_signal.assess` projected as `prophet.board_read/v1`
+   `entry_signal.status`, registered here as `prophet_entry_signal`. What remains
+   open is coverage, not ownership — that surface exists only for subjects the
+   stock library / Prophet plans actually cover, and the board's own
+   `prophet_entry`/`prophet_signal` columns are empty. For an uncovered subject the
+   leg types `missing`/`unknown` and **never** infers a verdict from board
+   admission. Measuring that coverage is a separate commission; no vector claims it.
 5. **Radar's live spool has zero envelopes ever written** (armed-not-producing as
    of 2026-08-20): `radar_probe_admission` is typed-missing in current-state
    vectors until the lane produces.
@@ -285,13 +324,19 @@ python3 scripts/agentos.py validate
 
 Receipts (exact, this candidate):
 
-- Contract suite: **59 passed** (post-red-team candidate; includes all ten
-  commissioned mutation kills, the 19 red-team repair proofs, the families.yml
-  join, both K1 enum-equality pins, the security_state compilation-state pin,
-  the grain-delta pin, determinism round-trips, and the no-store scans),
-  independently re-run by the commissioning session
+- Contract suite: **82 passed** (post-Sol-repair candidate; includes all ten
+  commissioned mutation kills, the 19 red-team repair proofs, the 20 Sol
+  REQUEST_CHANGES proofs of §7.2, the families.yml join, both K1 enum-equality
+  pins, the K1 EvidenceRef shape-equality pin, the security_state
+  compilation-state pin, the grain-delta pin, determinism round-trips, and the
+  no-store scans)
+- Fixture packet: 4 goldens + **16** hostiles + manifest, every hostile
+  independently re-validated to fire its commissioned code and every golden to
+  validate clean (verified by direct `validate_vector` sweep, not only via the
+  suite's own assertions)
 - Contract-delta vs current main: `0 introduced, 0 inherited` (differential
-  gate, run twice — once by the builder, once independently)
+  gate; base `ffd567cff0ba` — main has advanced from the census pin, and the
+  gate is clean against the newer base)
 - Agent OS validate: 0 errors (710 records; inherited repository warnings only)
 - Registry ↔ families.yml join: asserted inside the suite on every run
 - Carrier: PR #6417 (DRAFT / HOLD-FOR-SOL from its first revision)
@@ -309,18 +354,45 @@ tuning. This PR merges nothing and starts no dependent wave.
 
 ## 12. Exact acceptance request to Sol
 
-> Sol, review K3-E Opportunity Evidence Vector v1.0.0 as a contract-only freeze.
-> Protected Skillpack was loaded from Mastermind `51f9942733b86e`; Macro was pinned
-> at `2c20168df5d9` (your census pin, unmoved); the collision census is CLEAR. The
-> contract is a typed view/join over canonical owners — no store, no score, no
-> Prophet/Radar consumption, residuals owner-read only, impairment axis explicitly
-> unowned, per-term dislocation emission with the reconstitution kill executable,
-> ETF-flow states variation-derived, every slot mapped to exactly one governed
-> fusion family / research_only / candidate_new_family (families.yml join
-> test-enforced), and the seven MO legs independently visible with denominator +
-> dominant-degradation receipts. All ten commissioned mutation classes die by named
-> rule codes with fixture receipts. The carrier is PR #6417, DRAFT / HOLD-FOR-SOL
-> from its first revision; the exact held head and its concluded hosted check run
-> ids are pinned in that PR's conversation. Please rule ACCEPT or return exact
-> amendments. This packet does not authorize or begin K3-D, K5, any consumer
-> wiring, any store, or any promotion.
+> Sol, this is the K3-E re-park answering your REQUEST_CHANGES on held head
+> `ac2be650a360`. Architecture unchanged, repaired on PR #6417 only — no redesign,
+> no second carrier.
+>
+> **Item 1 (authenticate decision-time origin):** `caller_named_pit_object` and the
+> free-string `t0_source_object` are deleted from the wire — structurally
+> unrepresentable, test-pinned. Every t0 now binds to an immutable owner-backed
+> `t0_evidence_ref` reusing K1 `reference.v1` EvidenceRef semantics field-for-field
+> (`owner_store`, `native_identity`, `native_digest`) plus a known minting clock,
+> authenticated against a new registry `t0_sources` section by `K3E_R021`; a
+> hostile retrospective-t0 fixture fails closed, and the same lag is lawful only
+> once the vector visibly declares `t0_mode: retrospective_research`.
+>
+> **Item 2 (denominator integrity):** public validation now recomputes **all five**
+> mandatory denominators, including `market_reflection` and
+> `failed_or_unavailable_gates`, under frozen included/excluded semantics the
+> composer shares. Modeled market-reflection evidence counts as INCLUDED, never
+> silently excluded for not being observed; independent tamper mutations cover
+> every denominator.
+>
+> **Item 3 (Entry Availability ownership):** legs re-cut to `entry_signal` and
+> `radar_probe_coverage` with `verdict_class` consts on the wire. The entry leg
+> reads only the canonical live actionability surface — `engine.entry_signal.assess`
+> → `prophet.board_read/v1` `entry_signal.status` — via the new
+> `prophet_entry_signal` construct; `prophet_board_lane` (lane / buyable / eligible)
+> is re-classed `admission_context`, owns no leg, and may not be referenced from
+> any leg; an unavailable owner leaves the leg explicitly `missing`/`unknown`. Radar
+> probe availability is typed probe/coverage state, never a trade-entry verdict.
+>
+> Receipts: 82 passed; 4 goldens clean and 16 hostiles each firing their
+> commissioned code on an independent re-validation sweep; contract-delta `0
+> introduced, 0 inherited`; Agent OS validate 0 errors. Schema, registry,
+> validator/composer, goldens/hostiles, freeze §5/§7.2/§8/§12, DEC, WS and handoff
+> are all updated. One self-found defect is disclosed in §7.2 rather than quietly
+> fixed: the leg-membership pass still addressed the retired leg keys after the
+> re-cut, leaving both entry legs unpoliced for dangling refs — fixed and pinned.
+> The exact re-parked head and its concluded hosted CI/fences run ids are in PR
+> #6417's conversation.
+>
+> Please rule ACCEPT or return exact amendments. No downstream wave has started:
+> this authorizes no producer, no consumer wiring, no store, no K3-D, no K5, no
+> Market OS UI, no ranker, gate, or score.

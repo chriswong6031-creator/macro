@@ -1,8 +1,26 @@
 {
   "asof": {
     "grain": "date",
-    "t0_source": "caller_named_pit_object",
-    "t0_source_object": "dual-read-receipt:NEM:2026-08-09",
+    "t0_evidence_ref": {
+      "native_digest": {
+        "sha256": "4baa27cc3ae84422b4a252bf6b45af9c3708099f44ce51318b7d128c13c025ca",
+        "state": "known"
+      },
+      "native_identity": {
+        "document": "CASE_STUDY_GOLD_REAL_RATE_PEAK_2026_08.md",
+        "subject": "NEM"
+      },
+      "owner_store": "research/",
+      "recorded_clock": {
+        "clock_class": "belief_or_build",
+        "grain": "date",
+        "native_field": "git_committer_date",
+        "state": "known",
+        "value": "2026-08-09"
+      }
+    },
+    "t0_mode": "live",
+    "t0_source": "owner_pit_reference",
     "value": "2026-08-09"
   },
   "authority": {
@@ -13,7 +31,7 @@
     "can_size": false
   },
   "compilation_state": "partial",
-  "content_sha256": "95f2d103dea4dea0850c31b87f9367ec25caa02a1a9a2d9d28676e291389cb71",
+  "content_sha256": "14a7be46fe950d7e82ddbf111ffd4aeb9881758d4b0d54bb855b449b8a3975a7",
   "denominator": {
     "conflicted": 0,
     "excluded": 2,
@@ -36,19 +54,21 @@
   "projection": {
     "entry_availability": {
       "composition_law": "owner_read_only_never_computed",
-      "prophet_board": {
+      "entry_signal": {
         "slot_refs": [],
-        "state": "missing"
+        "state": "unknown",
+        "verdict_class": "owner_entry_actionability"
       },
-      "radar": {
+      "radar_probe_coverage": {
         "slot_refs": [],
-        "state": "missing"
+        "state": "missing",
+        "verdict_class": "probe_coverage_state_not_trade_entry"
       }
     },
     "failed_or_unavailable_gates": {
       "denominator": {
-        "excluded": 1,
-        "included": 0,
+        "excluded": 0,
+        "included": 1,
         "total": 1
       },
       "gates": [
@@ -132,11 +152,9 @@
       "slot_refs": []
     },
     "strongest_unresolved_fact": {
-      "fact": "prophet_board_lane unresolved: source_missing",
-      "slot_refs": [
-        "prophet_board_lane"
-      ],
-      "state": "named"
+      "fact": null,
+      "slot_refs": [],
+      "state": "none_open"
     }
   },
   "schema": "opportunity_evidence.vector.v1",

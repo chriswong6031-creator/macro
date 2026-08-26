@@ -1,8 +1,26 @@
 {
   "asof": {
     "grain": "date",
-    "t0_source": "caller_named_pit_object",
-    "t0_source_object": "optional-accrual-receipt:AAPL:2026-08-10",
+    "t0_evidence_ref": {
+      "native_digest": {
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000001",
+        "state": "known"
+      },
+      "native_identity": {
+        "observation_date": "2026-08-09",
+        "symbol": "AAPL"
+      },
+      "owner_store": "SRC-A1 observation store (configurable path, append-only)",
+      "recorded_clock": {
+        "clock_class": "system_recorded",
+        "grain": "date",
+        "native_field": "appended_at",
+        "state": "known",
+        "value": "2026-08-10"
+      }
+    },
+    "t0_mode": "live",
+    "t0_source": "owner_pit_reference",
     "value": "2026-08-10"
   },
   "authority": {
@@ -13,7 +31,7 @@
     "can_size": false
   },
   "compilation_state": "partial",
-  "content_sha256": "f74733469d37efbbb611903cf75ae18601c86cb49feb93476cbc1d02ade2ca65",
+  "content_sha256": "b22dd7047c0e7ff34f4171c2ad087f089105e0b1ea87d3133d16806eab537382",
   "denominator": {
     "conflicted": 0,
     "excluded": 3,
@@ -36,13 +54,15 @@
   "projection": {
     "entry_availability": {
       "composition_law": "owner_read_only_never_computed",
-      "prophet_board": {
+      "entry_signal": {
         "slot_refs": [],
-        "state": "missing"
+        "state": "unknown",
+        "verdict_class": "owner_entry_actionability"
       },
-      "radar": {
+      "radar_probe_coverage": {
         "slot_refs": [],
-        "state": "missing"
+        "state": "missing",
+        "verdict_class": "probe_coverage_state_not_trade_entry"
       }
     },
     "failed_or_unavailable_gates": {

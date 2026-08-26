@@ -61,6 +61,27 @@ def _unknown_clock():
     return {"state": "unknown"}
 
 
+def _t0_ref(owner_store, native_identity, recorded_value, *, clock_class, native_field,
+            sha256=None, grain="date"):
+    """Sol item 1: an authenticated decision-time origin — an immutable
+    owner-backed PIT reference in K1 reference.v1 EvidenceRef shape."""
+
+    return {
+        "owner_store": owner_store,
+        "native_identity": native_identity,
+        "native_digest": (
+            {"state": "known", "sha256": sha256} if sha256 else {"state": "unknown", "sha256": None}
+        ),
+        "recorded_clock": {
+            "value": recorded_value,
+            "grain": grain,
+            "clock_class": clock_class,
+            "native_field": native_field,
+            "state": "known",
+        },
+    }
+
+
 def _dump(vector: dict) -> str:
     return json.dumps(vector, indent=2, sort_keys=True) + "\n"
 
@@ -83,7 +104,14 @@ def _build_golden_imxi_drl_event():
         "value": "2026-08-14",
         "grain": "date",
         "t0_source": "drl_event_date",
-        "t0_source_object": "drl:IMXI:2026-08-14:up",
+        "t0_mode": "live",
+        "t0_evidence_ref": _t0_ref(
+            "data/price_pressure/",
+            {"ticker": "IMXI", "date": "2026-08-14", "direction": "up"},
+            "2026-08-14",
+            clock_class="observed",
+            native_field="harvested_asof",
+        ),
     }
     slots = [
         dict(
@@ -129,10 +157,23 @@ def _build_golden_imxi_drl_event():
             asof=_unknown_clock(), known_at=_unknown_clock(),
         ),
         dict(
+            # ADMISSION/CONTEXT, carried but never referenced from any leg
+            # (Sol item 3). Prophet's board says IMXI is not on the board —
+            # which is an admission fact, NOT an entry verdict.
             construct="prophet_board_lane", state="observed",
             value_or_null={"lane": "not_on_board", "buyable": False, "eligible": False},
             coverage_flag={"state": "full", "note": None},
             asof=_clock("2026-08-14"), known_at=_clock("2026-08-14"),
+        ),
+        dict(
+            # THE actionability surface. IMXI is not a Prophet plan, so the
+            # owner publishes no entry_signal.status for it and the slot is
+            # typed missing -- the entry_availability leg therefore reads
+            # "missing", never "no entry open" inferred from the admission
+            # slot directly above it.
+            construct="prophet_entry_signal", state="missing", missingness={"reason": "source_missing"},
+            coverage_flag={"state": "unknown", "note": "no Prophet plan for this subject: owner publishes no entry_signal.status"},
+            asof=_unknown_clock(), known_at=_unknown_clock(),
         ),
         dict(
             construct="radar_probe_admission", state="missing", missingness={"reason": "source_missing"},
@@ -175,8 +216,22 @@ def _build_golden_fpi_absence():
     asof = {
         "value": "2026-08-10",
         "grain": "date",
-        "t0_source": "caller_named_pit_object",
-        "t0_source_object": "fpi-absence-receipt:CCJ:2026-08-10",
+        "t0_source": "owner_pit_reference",
+        # The FPI zero-EDGAR fact for CCJ is recorded in a committed E0
+        # casebook whose bytes are digest-pinned below. That document was
+        # written 2026-08-18, EIGHT days after this t0 — past the 5-day live
+        # budget for owner_pit_reference — so the vector declares
+        # retrospective_research rather than claiming operational PIT. This is
+        # the mode's whole purpose: the lag is disclosed, not hidden.
+        "t0_mode": "retrospective_research",
+        "t0_evidence_ref": _t0_ref(
+            "research/opportunity_evidence/",
+            {"document": "E0_PEER_RELATIVE_CASEBOOK.md", "subject": "CCJ"},
+            "2026-08-18",
+            clock_class="belief_or_build",
+            native_field="git_committer_date",
+            sha256="f8f5d7443b23a75ae70cadf69768026528932f91a51c730cd0e4540bc4a97592",
+        ),
     }
     slots = [
         dict(
@@ -214,8 +269,20 @@ def _build_golden_dual_read():
     asof = {
         "value": "2026-08-09",
         "grain": "date",
-        "t0_source": "caller_named_pit_object",
-        "t0_source_object": "dual-read-receipt:NEM:2026-08-09",
+        "t0_source": "owner_pit_reference",
+        # The operator's real-rate-peak dual-read case study was committed on
+        # 2026-08-09 — the decision date itself. Zero recording lag, so this
+        # golden is lawfully "live": the decision-time object provably existed
+        # at t0 and its bytes are digest-pinned.
+        "t0_mode": "live",
+        "t0_evidence_ref": _t0_ref(
+            "research/",
+            {"document": "CASE_STUDY_GOLD_REAL_RATE_PEAK_2026_08.md", "subject": "NEM"},
+            "2026-08-09",
+            clock_class="belief_or_build",
+            native_field="git_committer_date",
+            sha256="4baa27cc3ae84422b4a252bf6b45af9c3708099f44ce51318b7d128c13c025ca",
+        ),
     }
     slots = [
         dict(
@@ -265,8 +332,21 @@ def _build_golden_optional_expectation():
     asof = {
         "value": "2026-08-10",
         "grain": "date",
-        "t0_source": "caller_named_pit_object",
-        "t0_source_object": "optional-accrual-receipt:AAPL:2026-08-10",
+        "t0_source": "owner_pit_reference",
+        # SRC-A1 observation artifacts live at a configurable, append-only path
+        # and are NOT committed to this repo, so this reference carries an
+        # ILLUSTRATIVE digest (disclosed in the fixture manifest receipt). It
+        # proves the required shape — a generic owner reference must carry a
+        # KNOWN immutability receipt — not a specific committed object.
+        "t0_mode": "live",
+        "t0_evidence_ref": _t0_ref(
+            "SRC-A1 observation store (configurable path, append-only)",
+            {"symbol": "AAPL", "observation_date": "2026-08-09"},
+            "2026-08-10",
+            clock_class="system_recorded",
+            native_field="appended_at",
+            sha256="0" * 63 + "1",
+        ),
     }
     slots = [
         dict(
@@ -320,7 +400,14 @@ def _base_vector():
         "value": "2026-08-14",
         "grain": "date",
         "t0_source": "drl_event_date",
-        "t0_source_object": "drl:IMXI:2026-08-14:up",
+        "t0_mode": "live",
+        "t0_evidence_ref": _t0_ref(
+            "data/price_pressure/",
+            {"ticker": "IMXI", "date": "2026-08-14", "direction": "up"},
+            "2026-08-14",
+            clock_class="observed",
+            native_field="harvested_asof",
+        ),
     }
     slots = [
         dict(
@@ -469,7 +556,84 @@ def _build_hostile_identity_launder():
 def _build_hostile_authority_leak():
     subject, asof, slots = _base_vector()
     v = compose_vector(subject, asof, slots)
-    v["projection"]["entry_availability"]["prophet_board"] = {"state": "read", "slot_refs": ["drl_resid_shock"]}
+    v["projection"]["entry_availability"]["entry_signal"] = {
+        "state": "read",
+        "slot_refs": ["drl_resid_shock"],
+        "verdict_class": "owner_entry_actionability",
+    }
+    return _rehash(v)
+
+
+def _build_hostile_admission_as_entry():
+    """Sol REQUEST_CHANGES 2026-08-25 item 3, planted verbatim: the Entry
+    Availability leg is satisfied by Prophet board ADMISSION (lane / buyable /
+    eligible) instead of the canonical actionability surface."""
+
+    subject, asof, slots = _base_vector()
+    slots = slots + [
+        dict(
+            construct="prophet_board_lane", state="observed",
+            value_or_null={"lane": "core", "buyable": True, "eligible": True},
+            coverage_flag={"state": "full", "note": None},
+            asof=_clock("2026-08-14"), known_at=_clock("2026-08-14"),
+        ),
+    ]
+    v = compose_vector(subject, asof, slots)
+    # "buyable=True on the board, therefore an entry is available" — the exact
+    # ownership confusion Sol's item 3 forbids.
+    v["projection"]["entry_availability"]["entry_signal"] = {
+        "state": "read",
+        "slot_refs": ["prophet_board_lane"],
+        "verdict_class": "owner_entry_actionability",
+    }
+    return _rehash(v)
+
+
+def _build_hostile_retrospective_t0():
+    """Sol item 1: a decision clock claiming operational PIT ('live') whose own
+    referenced object was minted long after t0 — t0 chosen with hindsight."""
+
+    subject, asof, slots = _base_vector()
+    asof = dict(
+        asof,
+        t0_mode="live",
+        t0_evidence_ref=_t0_ref(
+            "data/price_pressure/",
+            {"ticker": "IMXI", "date": "2026-08-14", "direction": "up"},
+            "2026-09-30",  # 47 days after t0, far past the 4-day live budget
+            clock_class="observed",
+            native_field="harvested_asof",
+        ),
+    )
+    v = compose_vector(subject, asof, slots)
+    return _rehash(v)
+
+
+def _build_hostile_denominator_tamper():
+    """Sol item 2: both mandatory aggregate denominators tampered
+    independently — market_reflection recounted so a modeled leg is dropped
+    from the numerator, and the gate denominator inflated."""
+
+    subject, asof, slots = _base_vector()
+    slots = slots + [
+        dict(
+            construct="options_state", state="modeled", value_or_null={"gex_regime": "positive"},
+            coverage_flag={"state": "fallback", "note": "modeled dealer-gamma read"},
+            asof=_clock("2026-08-14"), known_at=_clock("2026-08-14"),
+        ),
+    ]
+    v = compose_vector(
+        subject, asof, slots,
+        failed_or_unavailable_gates=[
+            {"gate": "coverage_gate", "owner": "engine/price_pressure/", "state": "unavailable", "reason": "no filing coverage"},
+        ],
+    )
+    mr = v["projection"]["market_reflection"]["denominator"]
+    # Drop the modeled I4 leg out of the numerator: "not observed, so not
+    # counted" — the exact silent-exclusion Sol's item 2 forbids.
+    mr["included"] -= 1
+    mr["excluded"] += 1
+    v["projection"]["failed_or_unavailable_gates"]["denominator"]["included"] += 3
     return _rehash(v)
 
 
@@ -533,6 +697,10 @@ HOSTILE_BUILDERS = {
     "hostile_flow_nominal": (_build_hostile_flow_nominal, {"K3E_R012"}),
     "hostile_impairment_axis": (_build_hostile_impairment_axis, {"K3E_R001", "K3E_R017"}),
     "hostile_llm_provenance": (_build_hostile_llm_provenance, {"K3E_SCHEMA_ENUM"}),
+    # Sol REQUEST_CHANGES 2026-08-25 repair wave.
+    "hostile_admission_as_entry": (_build_hostile_admission_as_entry, {"K3E_R011"}),
+    "hostile_retrospective_t0": (_build_hostile_retrospective_t0, {"K3E_R021"}),
+    "hostile_denominator_tamper": (_build_hostile_denominator_tamper, {"K3E_R015"}),
 }
 
 
@@ -574,18 +742,36 @@ def _write_fixtures():
         "IMXI DRL residual shock values are illustrative event-day figures in the shape read by "
         "engine.price_pressure.ledger.read_ledger (resid/resid_z/peer_ret/peer_basis, market basis).",
     ]
+    manifest["fixtures"]["golden_imxi_drl_event"]["receipts"].append(
+        "t0 authentication: t0_source drl_event_date, owner_store data/price_pressure/ (registry "
+        "t0_sources pin), recorded_clock harvested_asof 2026-08-14 = t0 -> zero recording lag, live."
+    )
     manifest["fixtures"]["golden_fpi_absence"]["receipts"] = [
         "FPI zero-EDGAR-statements rule: contracts/opportunity_evidence/slot_registry.v1.json "
         "constructs.forensics_scalars note ('Canadian/FPI names may have zero EDGAR rows: missing "
-        "filings are not missing operations').",
+        "filings are not missing operations'); recorded verbatim at "
+        "research/opportunity_evidence/E0_PEER_RELATIVE_CASEBOOK.md line 93 ('Canadian/FPI names "
+        "(CCJ) miss US EDGAR fundamentals').",
+        "t0 authentication: owner_pit_reference digest-pinned to that casebook's committed bytes "
+        "(sha256 f8f5d744...c4bc97592, git committer date 2026-08-18). That is 8 days AFTER t0 "
+        "2026-08-10, past the 5-day live budget, so the vector declares t0_mode "
+        "retrospective_research rather than claiming operational PIT.",
     ]
     manifest["fixtures"]["golden_dual_read"]["receipts"] = [
         "Dual-read law receipt: constructs.macro_chain_state note (operator 2026-08-09 gold/real-rate "
         "case) plus CLAUDE.md 'Instrument verdicts are NOT market verdicts'.",
+        "t0 authentication: owner_pit_reference digest-pinned to research/"
+        "CASE_STUDY_GOLD_REAL_RATE_PEAK_2026_08.md (sha256 4baa27cc...13c025ca), git committer date "
+        "2026-08-09 = t0 -> zero recording lag, lawfully live.",
     ]
     manifest["fixtures"]["golden_optional_expectation"]["receipts"] = [
         "constructs.prospective_expectation_src_a1 note: 'OPTIONAL evidence family only ... never a "
         "prerequisite for composition'.",
+        "t0 authentication: the native_digest on this fixture's t0_evidence_ref is ILLUSTRATIVE. "
+        "SRC-A1 observation artifacts live at a configurable, append-only path and are not committed "
+        "to this repository, so the reference proves the required SHAPE (a generic owner_pit_reference "
+        "must carry a KNOWN immutability receipt) and not a specific committed object. Every other "
+        "golden's digest is the real sha256 of real committed bytes.",
     ]
 
     MANIFEST_PATH.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -801,7 +987,14 @@ def test_mutation_r2_intraday_datetime_lookahead_fires_r007_and_autoexcludes():
         "identity_state": "bridge_validated",
         "identity_bridge": {"method": "owner_native_same_key", "receipt": "test receipt"},
     }
-    asof = {"value": "2026-08-14T09:30:00Z", "grain": "datetime", "t0_source": "drl_event_date", "t0_source_object": "x"}
+    asof = {
+        "value": "2026-08-14T09:30:00Z", "grain": "datetime", "t0_source": "drl_event_date",
+        "t0_mode": "live",
+        "t0_evidence_ref": _t0_ref(
+            "data/price_pressure/", {"ticker": "IMXI", "date": "2026-08-14"}, "2026-08-14",
+            clock_class="observed", native_field="harvested_asof",
+        ),
+    }
     slots = [
         dict(construct="smart_money_13f", state="observed", value_or_null={"holders_delta": 1},
              asof=_clock("2026-06-30"), known_at={"value": "2026-08-14T23:59:59Z", "grain": "datetime"}),
@@ -821,7 +1014,14 @@ def test_mutation_r2_intraday_datetime_lookahead_fires_r007_and_autoexcludes():
 
 def test_mutation_r4_only_unsupported_and_unknown_adverse_dominant_is_unsupported():
     subject = {"subject_type": "us_listing_symbol", "value": "IMXI", "identity_state": "single_owner_native", "identity_bridge": None}
-    asof = {"value": "2026-08-14", "grain": "date", "t0_source": "drl_event_date", "t0_source_object": "x"}
+    asof = {
+        "value": "2026-08-14", "grain": "date", "t0_source": "drl_event_date",
+        "t0_mode": "live",
+        "t0_evidence_ref": _t0_ref(
+            "data/price_pressure/", {"ticker": "IMXI", "date": "2026-08-14"}, "2026-08-14",
+            clock_class="observed", native_field="harvested_asof",
+        ),
+    }
     slots = [
         dict(construct="drl_resid_shock", state="observed", value_or_null={"ret": 0.1, "resid": 0.09},
              basis={"peer_basis": "market"}, asof=_clock("2026-08-14"), known_at=_clock("2026-08-14")),
@@ -841,12 +1041,13 @@ def test_mutation_r4_only_unsupported_and_unknown_adverse_dominant_is_unsupporte
 
 def test_mutation_r5a_entry_leg_state_mismatches_owner_slot_fires_r011():
     v = _golden_imxi_vector()
-    # golden_imxi's prophet_board_lane slot is state=observed -> the leg must
-    # read "read"; forcing it to "missing" while the owner slot stays
-    # observed is the named leg/owner mismatch.
-    owner_slot = next(s for s in v["slots"] if s["construct"] == "prophet_board_lane")
-    assert owner_slot["state"] == "observed"
-    v["projection"]["entry_availability"]["prophet_board"]["state"] = "missing"
+    # golden_imxi's prophet_entry_signal slot is state=missing -> the leg must
+    # read "missing"; forcing it to "read" while the owner slot stays missing
+    # is the named leg/owner mismatch (the leg claiming more certainty than
+    # the owner read carries).
+    owner_slot = next(s for s in v["slots"] if s["construct"] == "prophet_entry_signal")
+    assert owner_slot["state"] == "missing"
+    v["projection"]["entry_availability"]["entry_signal"]["state"] = "read"
     codes = _codes(validate_vector(v))
     assert "K3E_R011" in codes
 
@@ -868,7 +1069,7 @@ def test_mutation_r6_entry_owner_read_construct_in_inferred_leg_fires_r011():
     v = _golden_imxi_vector()
     # radar_probe_admission is object_class derived_view, which the generic
     # inferred-leg object_class check alone would accept -- only the R-6
-    # entry_owner_read fence catches this.
+    # entry_role fence catches this.
     radar_slot = next(s for s in v["slots"] if s["construct"] == "radar_probe_admission")
     assert radar_slot["object_class"] == "derived_view"
     v["projection"]["inferred"]["slot_refs"].append("radar_probe_admission")
@@ -881,6 +1082,7 @@ def test_compose_vector_never_puts_entry_owner_read_constructs_in_observed_or_in
         v = _compose_golden(name)
         refs = set(v["projection"]["observed"]["slot_refs"]) | set(v["projection"]["inferred"]["slot_refs"])
         assert "prophet_board_lane" not in refs
+        assert "prophet_entry_signal" not in refs
         assert "radar_probe_admission" not in refs
 
 
@@ -1049,6 +1251,266 @@ def test_compose_output_round_trips_through_validate_with_zero_findings(name):
 def test_every_fixture_and_manifest_parse_as_json_tool_would():
     for path in sorted(FIXTURE_DIR.glob("*.json")):
         json.loads(path.read_text(encoding="utf-8"))
+
+
+# ---------------------------------------------------------------------------
+# Sol REQUEST_CHANGES (2026-08-25) repair wave — S-1 decision-time origin,
+# S-2 denominator integrity, S-3 Entry Availability ownership.
+# ---------------------------------------------------------------------------
+
+
+def test_s1_retired_free_string_t0_object_is_no_longer_expressible():
+    """The old escape hatch — t0 trusted from an arbitrary caller string — must
+    be structurally unrepresentable, not merely discouraged."""
+
+    schema = load_vector_schema()
+    decision_clock = schema["$defs"]["decisionClock"]
+    assert "t0_source_object" not in decision_clock["properties"]
+    assert "caller_named_pit_object" not in decision_clock["properties"]["t0_source"]["enum"]
+    assert decision_clock["additionalProperties"] is False
+    assert set(decision_clock["required"]) == {"value", "grain", "t0_source", "t0_mode", "t0_evidence_ref"}
+
+
+def test_s1_t0_evidence_ref_reuses_k1_evidence_ref_field_semantics():
+    """Sol item 1 asks for K1 EvidenceRef semantics 'where available'. The
+    three carried fields must be the reference.v1 shapes, not lookalikes."""
+
+    schema = load_vector_schema()
+    k1 = json.loads(K1_REFERENCE_SCHEMA_PATH.read_text(encoding="utf-8"))
+    ref = schema["$defs"]["t0EvidenceRef"]["properties"]
+
+    assert ref["owner_store"]["maxLength"] == k1["properties"]["owner_store"]["maxLength"]
+    assert ref["native_identity"]["propertyNames"] == k1["properties"]["native_identity"]["propertyNames"]
+    assert ref["native_identity"]["maxProperties"] == k1["properties"]["native_identity"]["maxProperties"]
+
+    # K1 expresses the digest hash via {"$ref": "#/$defs/sha256"}; this
+    # contract inlines that same definition because its stdlib-only structural
+    # checker resolves $refs only within its OWN $defs. Resolve K1's ref and
+    # require literal equality of the resulting shapes.
+    k1_digest = json.loads(json.dumps(k1["$defs"]["nativeDigest"]).replace(
+        '{"$ref": "#/$defs/sha256"}', json.dumps(k1["$defs"]["sha256"])
+    ))
+    assert ref["native_digest"]["oneOf"] == k1_digest["oneOf"]
+
+
+def test_s1_mutation_retrospective_t0_claiming_live_fires_r021():
+    v = _golden_imxi_vector()
+    assert v["asof"]["t0_mode"] == "live"
+    # The DRL event row is re-pointed at an object recorded 47 days after the
+    # decision date while still claiming operational PIT.
+    v["asof"]["t0_evidence_ref"]["recorded_clock"]["value"] = "2026-09-30"
+    codes = _codes(validate_vector(_rehash(v)))
+    assert "K3E_R021" in codes
+
+
+def test_s1_same_lag_is_lawful_once_declared_retrospective():
+    """The fence is on the CLAIM, not the research: the identical lag passes
+    the moment the vector stops claiming operational PIT."""
+
+    v = _golden_imxi_vector()
+    v["asof"]["t0_evidence_ref"]["recorded_clock"]["value"] = "2026-09-30"
+    assert "K3E_R021" in _codes(validate_vector(_rehash(v)))
+    v["asof"]["t0_mode"] = "retrospective_research"
+    assert validate_vector(_rehash(v)) == []
+
+
+def test_s1_mutation_wrong_owner_store_for_named_t0_source_fires_r021():
+    v = _golden_imxi_vector()
+    v["asof"]["t0_evidence_ref"]["owner_store"] = "data/us_prophet_rank/candidates/"
+    codes = _codes(validate_vector(_rehash(v)))
+    assert "K3E_R021" in codes
+
+
+def test_s1_mutation_generic_owner_reference_without_digest_fires_r021():
+    """owner_pit_reference — the only source with no owner_store pin — must
+    carry a known immutability receipt, else it is a free string again."""
+
+    v = _compose_golden("golden_dual_read")
+    assert v["asof"]["t0_source"] == "owner_pit_reference"
+    assert validate_vector(v) == []
+    v["asof"]["t0_evidence_ref"]["native_digest"] = {"state": "unknown", "sha256": None}
+    codes = _codes(validate_vector(_rehash(v)))
+    assert "K3E_R021" in codes
+
+
+def test_s1_mutation_unpinned_t0_source_fires_r021():
+    v = _golden_imxi_vector()
+    v["asof"]["t0_source"] = "prophet_stamp_date"  # pins a different owner store
+    codes = _codes(validate_vector(_rehash(v)))
+    assert "K3E_R021" in codes
+
+
+def test_s1_every_schema_t0_source_has_a_registry_pin():
+    schema = load_vector_schema()
+    registry = load_slot_registry()
+    schema_sources = set(schema["$defs"]["decisionClock"]["properties"]["t0_source"]["enum"])
+    pinned = set(registry["t0_sources"]["sources"])
+    assert schema_sources == pinned, "every lawful t0_source must be authenticable"
+
+
+def test_s2_public_validation_recomputes_every_mandatory_denominator():
+    """Sol item 2: not one denominator on the wire may be taken on trust."""
+
+    v = _golden_imxi_vector()
+    assert validate_vector(v) == []
+
+    tampers = [
+        ("$.denominator", lambda d: d["denominator"].__setitem__("included", d["denominator"]["included"] + 1)),
+        ("$.projection.observed.denominator", lambda d: d["projection"]["observed"]["denominator"].__setitem__("total", 99)),
+        ("$.projection.inferred.denominator", lambda d: d["projection"]["inferred"]["denominator"].__setitem__("included", 0)),
+        ("$.projection.market_reflection.denominator", lambda d: d["projection"]["market_reflection"]["denominator"].__setitem__("included", 0)),
+        ("$.projection.failed_or_unavailable_gates.denominator", lambda d: d["projection"]["failed_or_unavailable_gates"]["denominator"].__setitem__("excluded", 7)),
+    ]
+    for label, tamper in tampers:
+        mutated = _golden_imxi_vector()
+        tamper(mutated)
+        codes = _codes(validate_vector(_rehash(mutated)))
+        assert "K3E_R015" in codes, f"{label}: tampered denominator survived validation"
+
+
+def test_s2_modeled_market_reflection_evidence_counts_as_included():
+    """The named half of Sol item 2: modeled evidence must not be silently
+    counted excluded merely because it is not observed."""
+
+    v = _golden_imxi_vector()
+    legs = v["projection"]["market_reflection"]["incorporation_legs"]
+    i4 = next(l for l in legs if l["leg"] == "I4_options_repricing")
+    assert i4["state"] == "modeled"
+    observed_legs = [l for l in legs if l["state"] == "observed"]
+    assert len(observed_legs) == 1  # I2 only
+    # included counts BOTH the observed leg and the modeled one.
+    assert v["projection"]["market_reflection"]["denominator"]["included"] == 2
+    assert validate_vector(v) == []
+
+
+def test_s2_dropping_a_modeled_leg_from_the_numerator_fires_r015():
+    v = _golden_imxi_vector()
+    denom = v["projection"]["market_reflection"]["denominator"]
+    denom["included"] -= 1   # "modeled is not observed, so don't count it"
+    denom["excluded"] += 1
+    codes = _codes(validate_vector(_rehash(v)))
+    assert "K3E_R015" in codes
+
+
+def test_s2_gate_denominator_semantics_are_frozen_and_recomputed():
+    subject, asof, slots = _base_vector()
+    v = compose_vector(
+        subject, asof, slots,
+        failed_or_unavailable_gates=[
+            {"gate": "g_failed", "owner": "engine/price_pressure/", "state": "failed", "reason": None},
+            {"gate": "g_unavailable", "owner": "engine/price_pressure/", "state": "unavailable", "reason": None},
+            {"gate": "g_not_evaluated", "owner": "engine/price_pressure/", "state": "not_evaluated", "reason": None},
+        ],
+    )
+    assert validate_vector(v) == []
+    # failed + unavailable are evaluated adverse verdicts (included);
+    # not_evaluated is a coverage fact, not a verdict (excluded).
+    assert v["projection"]["failed_or_unavailable_gates"]["denominator"] == {"total": 3, "included": 2, "excluded": 1}
+
+
+def test_s3_registry_binds_exactly_one_actionability_owner():
+    registry = load_slot_registry()
+    roles = {
+        name: row.get("entry_role")
+        for name, row in registry["constructs"].items()
+        if row.get("entry_role")
+    }
+    assert roles["prophet_entry_signal"] == "actionability"
+    assert roles["prophet_board_lane"] == "admission_context"
+    assert roles["radar_probe_admission"] == "probe_coverage"
+    assert sum(1 for r in roles.values() if r == "actionability") == 1
+
+
+def test_s3_actionability_owner_names_the_canonical_live_surface():
+    """The entry leg must read engine.entry_signal's status axis projected by
+    prophet.board_read/v1 — not a board admission column."""
+
+    registry = load_slot_registry()
+    row = registry["constructs"]["prophet_entry_signal"]
+    assert "engine/entry_signal.py" in row["owner"]
+    assert "prophet.board_read/v1" in row["artifact"]
+    assert "entry_signal.status" in row["artifact"]
+    assert row["reader"] == "engine.prophet_board_read.build_board_read"
+
+    board_read_source = (ROOT / "engine" / "prophet_board_read.py").read_text(encoding="utf-8")
+    assert 'SCHEMA = "prophet.board_read/v1"' in board_read_source
+    assert "entry_signal" in board_read_source
+
+
+def test_s3_mutation_board_admission_cannot_satisfy_the_entry_leg_fires_r011():
+    v = _golden_imxi_vector()
+    admission = next(s for s in v["slots"] if s["construct"] == "prophet_board_lane")
+    assert admission["state"] == "observed"  # the board DOES have a verdict
+    v["projection"]["entry_availability"]["entry_signal"] = {
+        "state": "read",
+        "slot_refs": ["prophet_board_lane"],
+        "verdict_class": "owner_entry_actionability",
+    }
+    codes = _codes(validate_vector(_rehash(v)))
+    assert "K3E_R011" in codes
+
+
+def test_s3_admission_context_may_not_be_referenced_from_any_leg():
+    for leg_path in (
+        ("observed", "slot_refs"),
+        ("inferred", "slot_refs"),
+        ("strongest_unresolved_fact", "slot_refs"),
+    ):
+        v = _golden_imxi_vector()
+        v["projection"][leg_path[0]][leg_path[1]].append("prophet_board_lane")
+        codes = _codes(validate_vector(_rehash(v)))
+        assert "K3E_R011" in codes, f"{leg_path}: admission context leaked into a projection leg"
+
+
+def test_s3_entry_leg_stays_explicitly_unknown_when_owner_is_unavailable():
+    """When the actionability surface is unavailable the leg is explicitly
+    typed — never inferred from admission, never a neutral 'no entry'."""
+
+    v = _compose_golden("golden_fpi_absence")
+    constructs = {s["construct"] for s in v["slots"]}
+    assert "prophet_entry_signal" not in constructs
+    assert v["projection"]["entry_availability"]["entry_signal"] == {
+        "state": "unknown", "slot_refs": [], "verdict_class": "owner_entry_actionability",
+    }
+    assert validate_vector(v) == []
+
+    # golden_imxi HAS the owner slot, typed missing -> the leg types missing,
+    # even though the board admission slot right beside it is observed.
+    imxi = _golden_imxi_vector()
+    assert imxi["projection"]["entry_availability"]["entry_signal"]["state"] == "missing"
+    assert next(s for s in imxi["slots"] if s["construct"] == "prophet_board_lane")["state"] == "observed"
+
+
+def test_s3_radar_leg_is_typed_probe_coverage_never_a_trade_verdict():
+    v = _golden_imxi_vector()
+    radar_leg = v["projection"]["entry_availability"]["radar_probe_coverage"]
+    assert radar_leg["verdict_class"] == "probe_coverage_state_not_trade_entry"
+    schema = load_vector_schema()
+    entry = schema["$defs"]["projection"]["properties"]["entry_availability"]["properties"]
+    assert entry["radar_probe_coverage"]["properties"]["verdict_class"]["const"] == "probe_coverage_state_not_trade_entry"
+    # The legacy leg names are gone: nothing can address the entry leg as a
+    # Prophet board read any more.
+    assert "prophet_board" not in entry
+    assert "radar" not in entry
+
+
+def test_s3_dangling_refs_are_caught_in_the_recut_entry_legs():
+    """Regression guard for the recut itself: the leg-membership pass must
+    follow the NEW leg names. Checking retired keys would leave both entry
+    legs unpoliced while every other test still passed."""
+
+    for leg_key in ("entry_signal", "radar_probe_coverage"):
+        v = _golden_imxi_vector()
+        v["projection"]["entry_availability"][leg_key]["slot_refs"].append("no_such_construct")
+        codes = _codes(validate_vector(_rehash(v)))
+        assert "K3E_R014" in codes, f"{leg_key}: dangling ref went unchecked"
+
+
+def test_s3_authority_envelope_still_denies_entry_after_the_recut():
+    for name in GOLDEN_BUILDERS:
+        v = _compose_golden(name)
+        assert v["authority"]["can_open_entry"] is False
+        assert v["projection"]["entry_availability"]["composition_law"] == "owner_read_only_never_computed"
 
 
 def test_mutation_disloc_residual_slot_with_noncanonical_owner_fires_r008():

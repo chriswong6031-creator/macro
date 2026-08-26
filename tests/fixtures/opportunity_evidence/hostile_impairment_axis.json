@@ -1,8 +1,27 @@
 {
   "asof": {
     "grain": "date",
+    "t0_evidence_ref": {
+      "native_digest": {
+        "sha256": null,
+        "state": "unknown"
+      },
+      "native_identity": {
+        "date": "2026-08-14",
+        "direction": "up",
+        "ticker": "IMXI"
+      },
+      "owner_store": "data/price_pressure/",
+      "recorded_clock": {
+        "clock_class": "observed",
+        "grain": "date",
+        "native_field": "harvested_asof",
+        "state": "known",
+        "value": "2026-08-14"
+      }
+    },
+    "t0_mode": "live",
     "t0_source": "drl_event_date",
-    "t0_source_object": "drl:IMXI:2026-08-14:up",
     "value": "2026-08-14"
   },
   "authority": {
@@ -13,7 +32,7 @@
     "can_size": false
   },
   "compilation_state": "partial",
-  "content_sha256": "99558e419ea62432dfb47efcb5048898a76cdac94b7f5c8298b44762e5d4d381",
+  "content_sha256": "73680a6d749bd24d5d7aa7ec7d5c962e84cc1bbfaea3730a56fbea99ba5d2065",
   "denominator": {
     "conflicted": 0,
     "excluded": 3,
@@ -36,13 +55,15 @@
   "projection": {
     "entry_availability": {
       "composition_law": "owner_read_only_never_computed",
-      "prophet_board": {
+      "entry_signal": {
         "slot_refs": [],
-        "state": "missing"
+        "state": "unknown",
+        "verdict_class": "owner_entry_actionability"
       },
-      "radar": {
+      "radar_probe_coverage": {
         "slot_refs": [],
-        "state": "missing"
+        "state": "missing",
+        "verdict_class": "probe_coverage_state_not_trade_entry"
       }
     },
     "failed_or_unavailable_gates": {

@@ -1,8 +1,27 @@
 {
   "asof": {
     "grain": "date",
+    "t0_evidence_ref": {
+      "native_digest": {
+        "sha256": null,
+        "state": "unknown"
+      },
+      "native_identity": {
+        "date": "2026-08-14",
+        "direction": "up",
+        "ticker": "IMXI"
+      },
+      "owner_store": "data/price_pressure/",
+      "recorded_clock": {
+        "clock_class": "observed",
+        "grain": "date",
+        "native_field": "harvested_asof",
+        "state": "known",
+        "value": "2026-08-14"
+      }
+    },
+    "t0_mode": "live",
     "t0_source": "drl_event_date",
-    "t0_source_object": "drl:IMXI:2026-08-14:up",
     "value": "2026-08-14"
   },
   "authority": {
@@ -13,16 +32,16 @@
     "can_size": false
   },
   "compilation_state": "partial",
-  "content_sha256": "b0d31197c5eb404a2a907807d1d7cea56e42392d8647c5a6a7fb0fe536fb8e52",
+  "content_sha256": "0d89db9583c311041da53b94d551e0863c2af1ccfd93efb49425d0a875881790",
   "denominator": {
     "conflicted": 0,
-    "excluded": 5,
+    "excluded": 6,
     "identity_unresolved": 1,
     "included": 4,
-    "missing": 3,
+    "missing": 4,
     "rights_blocked": 0,
     "stale": 1,
-    "total": 9,
+    "total": 10,
     "unknown": 0,
     "unsupported": 0
   },
@@ -41,15 +60,15 @@
   "projection": {
     "entry_availability": {
       "composition_law": "owner_read_only_never_computed",
-      "prophet_board": {
-        "slot_refs": [
-          "prophet_board_lane"
-        ],
-        "state": "read"
-      },
-      "radar": {
+      "entry_signal": {
         "slot_refs": [],
-        "state": "missing"
+        "state": "missing",
+        "verdict_class": "owner_entry_actionability"
+      },
+      "radar_probe_coverage": {
+        "slot_refs": [],
+        "state": "missing",
+        "verdict_class": "probe_coverage_state_not_trade_entry"
       }
     },
     "failed_or_unavailable_gates": {
@@ -75,8 +94,8 @@
     },
     "market_reflection": {
       "denominator": {
-        "excluded": 6,
-        "included": 1,
+        "excluded": 5,
+        "included": 2,
         "total": 7
       },
       "incorporation_legs": [
@@ -474,6 +493,52 @@
         "evidence_ref_id": null,
         "owner": "attention/altdata owners",
         "reader": "engine.us_context_vector.load_candidates"
+      },
+      "provenance_class": "owner_artifact",
+      "state": "missing",
+      "value_or_null": null,
+      "variation_receipt": null
+    },
+    {
+      "asof": {
+        "clock_class": "belief_or_build",
+        "grain": "date",
+        "native_field": null,
+        "state": "unknown",
+        "value": null
+      },
+      "basis": null,
+      "construct": "prophet_entry_signal",
+      "coverage_flag": {
+        "note": "no Prophet plan for this subject: owner publishes no entry_signal.status",
+        "state": "unknown"
+      },
+      "derivation": "owner_read",
+      "exclusion_reason": "source_missing",
+      "family_binding": {
+        "family_id": null,
+        "kind": "research_only",
+        "routed_to": null
+      },
+      "included_in_composition": false,
+      "known_at": {
+        "clock_class": "knowable",
+        "grain": "date",
+        "native_field": null,
+        "state": "unknown",
+        "value": null
+      },
+      "missingness": {
+        "reason": "source_missing",
+        "state": "absent",
+        "zero_substituted": false
+      },
+      "object_class": "instrument_state",
+      "owner_ref": {
+        "artifact": "prophet.board_read/v1 status field (owner-native entry_signal.status, produced by engine.entry_signal.assess inside scripts/build_stock_library.py; published verbatim, unmapped words included)",
+        "evidence_ref_id": null,
+        "owner": "engine/entry_signal.py (assess) \u2014 the entry/actionability axis; projected by engine/prophet_board_read.py",
+        "reader": "engine.prophet_board_read.build_board_read"
       },
       "provenance_class": "owner_artifact",
       "state": "missing",

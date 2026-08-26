@@ -17,7 +17,7 @@
         "grain": "date",
         "native_field": "harvested_asof",
         "state": "known",
-        "value": "2026-08-14"
+        "value": "2026-09-30"
       }
     },
     "t0_mode": "live",
@@ -32,16 +32,16 @@
     "can_size": false
   },
   "compilation_state": "partial",
-  "content_sha256": "de9f2dde54d9ae15961bb77b3c51840842a6b0022b13125dec12c032355d1c01",
+  "content_sha256": "b0aea3aebbf69e6f5692ad24ecd62bba093ce1f84a3bcf68961f2f1c3ce6e5f6",
   "denominator": {
     "conflicted": 0,
     "excluded": 3,
     "identity_unresolved": 0,
-    "included": 2,
+    "included": 1,
     "missing": 3,
     "rights_blocked": 0,
     "stale": 0,
-    "total": 5,
+    "total": 4,
     "unknown": 0,
     "unsupported": 0
   },
@@ -77,13 +77,12 @@
     "inferred": {
       "denominator": {
         "excluded": 0,
-        "included": 2,
-        "total": 2
+        "included": 1,
+        "total": 1
       },
       "label": "owner_derived_system_belief",
       "slot_refs": [
-        "drl_resid_shock",
-        "sue_surprise"
+        "drl_resid_shock"
       ]
     },
     "market_reflection": {
@@ -209,52 +208,6 @@
         "resid_z": 11.85,
         "ret": 0.247
       },
-      "variation_receipt": null
-    },
-    {
-      "asof": {
-        "clock_class": "belief_or_build",
-        "grain": "date",
-        "native_field": "stamp_date",
-        "state": "known",
-        "value": "2026-08-14"
-      },
-      "basis": null,
-      "construct": "sue_surprise",
-      "coverage_flag": {
-        "note": null,
-        "state": "unknown"
-      },
-      "derivation": "owner_read",
-      "exclusion_reason": null,
-      "family_binding": {
-        "family_id": "F5_FLOW_POSITIONING",
-        "kind": "governed_family",
-        "routed_to": null
-      },
-      "included_in_composition": true,
-      "known_at": {
-        "clock_class": "knowable",
-        "grain": "date",
-        "native_field": "stamp_date",
-        "state": "known",
-        "value": "2026-08-14"
-      },
-      "missingness": {
-        "reason": null,
-        "state": "present",
-        "zero_substituted": false
-      },
-      "object_class": "derived_view",
-      "owner_ref": {
-        "artifact": "data/us_prophet_rank/candidates/ column sue_fresh",
-        "evidence_ref_id": null,
-        "owner": "earnings intelligence owners",
-        "reader": "engine.us_context_vector.load_candidates"
-      },
-      "provenance_class": "owner_artifact",
-      "state": "observed",
-      "value_or_null": 2.4,
       "variation_receipt": null
     },
     {

@@ -32,7 +32,7 @@
     "can_size": false
   },
   "compilation_state": "partial",
-  "content_sha256": "de9f2dde54d9ae15961bb77b3c51840842a6b0022b13125dec12c032355d1c01",
+  "content_sha256": "13227920bc6712d7a9b6a9542df082cdfc19e69f8866a01e132668d815132e95",
   "denominator": {
     "conflicted": 0,
     "excluded": 3,
@@ -56,8 +56,10 @@
     "entry_availability": {
       "composition_law": "owner_read_only_never_computed",
       "entry_signal": {
-        "slot_refs": [],
-        "state": "unknown",
+        "slot_refs": [
+          "prophet_board_lane"
+        ],
+        "state": "read",
         "verdict_class": "owner_entry_actionability"
       },
       "radar_probe_coverage": {
@@ -77,13 +79,12 @@
     "inferred": {
       "denominator": {
         "excluded": 0,
-        "included": 2,
-        "total": 2
+        "included": 1,
+        "total": 1
       },
       "label": "owner_derived_system_belief",
       "slot_refs": [
-        "drl_resid_shock",
-        "sue_surprise"
+        "drl_resid_shock"
       ]
     },
     "market_reflection": {
@@ -215,52 +216,6 @@
       "asof": {
         "clock_class": "belief_or_build",
         "grain": "date",
-        "native_field": "stamp_date",
-        "state": "known",
-        "value": "2026-08-14"
-      },
-      "basis": null,
-      "construct": "sue_surprise",
-      "coverage_flag": {
-        "note": null,
-        "state": "unknown"
-      },
-      "derivation": "owner_read",
-      "exclusion_reason": null,
-      "family_binding": {
-        "family_id": "F5_FLOW_POSITIONING",
-        "kind": "governed_family",
-        "routed_to": null
-      },
-      "included_in_composition": true,
-      "known_at": {
-        "clock_class": "knowable",
-        "grain": "date",
-        "native_field": "stamp_date",
-        "state": "known",
-        "value": "2026-08-14"
-      },
-      "missingness": {
-        "reason": null,
-        "state": "present",
-        "zero_substituted": false
-      },
-      "object_class": "derived_view",
-      "owner_ref": {
-        "artifact": "data/us_prophet_rank/candidates/ column sue_fresh",
-        "evidence_ref_id": null,
-        "owner": "earnings intelligence owners",
-        "reader": "engine.us_context_vector.load_candidates"
-      },
-      "provenance_class": "owner_artifact",
-      "state": "observed",
-      "value_or_null": 2.4,
-      "variation_receipt": null
-    },
-    {
-      "asof": {
-        "clock_class": "belief_or_build",
-        "grain": "date",
         "native_field": null,
         "state": "unknown",
         "value": null
@@ -347,6 +302,56 @@
       "provenance_class": "owner_artifact",
       "state": "missing",
       "value_or_null": null,
+      "variation_receipt": null
+    },
+    {
+      "asof": {
+        "clock_class": "belief_or_build",
+        "grain": "date",
+        "native_field": "stamp_date",
+        "state": "known",
+        "value": "2026-08-14"
+      },
+      "basis": null,
+      "construct": "prophet_board_lane",
+      "coverage_flag": {
+        "note": null,
+        "state": "full"
+      },
+      "derivation": "owner_read",
+      "exclusion_reason": null,
+      "family_binding": {
+        "family_id": null,
+        "kind": "research_only",
+        "routed_to": null
+      },
+      "included_in_composition": true,
+      "known_at": {
+        "clock_class": "knowable",
+        "grain": "date",
+        "native_field": "stamp_date",
+        "state": "known",
+        "value": "2026-08-14"
+      },
+      "missingness": {
+        "reason": null,
+        "state": "present",
+        "zero_substituted": false
+      },
+      "object_class": "system_belief",
+      "owner_ref": {
+        "artifact": "data/us_prophet_rank/candidates/ frame columns lane, buyable, eligible",
+        "evidence_ref_id": null,
+        "owner": "Prophet US (engine/us_board_rank.py + nightly stamp)",
+        "reader": "engine.us_context_vector.load_candidates"
+      },
+      "provenance_class": "owner_artifact",
+      "state": "observed",
+      "value_or_null": {
+        "buyable": true,
+        "eligible": true,
+        "lane": "core"
+      },
       "variation_receipt": null
     },
     {

@@ -50,6 +50,44 @@
       "validation_status"
     ]
   },
+  "t0_sources": {
+    "law": "Decision-time authentication pins (Sol REQUEST_CHANGES 2026-08-25 item 1; semantic K3E_R021). Every vector's asof.t0_evidence_ref is checked against its t0_source row here: owner_store must equal the pin (when non-null), recorded_clock.clock_class must equal the pin (when non-null), digest_required sources must carry native_digest state 'known', and in t0_mode 'live' the recorded clock may not postdate t0 by more than max_recording_lag_days — a decision-time object minted after the fact fails closed. t0_mode 'retrospective_research' replaces the lag law with the visible declaration; every other authentication check still binds.",
+    "sources": {
+      "winner_case_t0_hypothesis": {
+        "owner_store": "research/winners/cases/",
+        "recorded_clock_class": "belief_or_build",
+        "max_recording_lag_days": 7,
+        "digest_required": false,
+        "notes": ["winner_case.v1 files. A pre-registered t0 hypothesis may be recorded BEFORE its t0 (prospective registration): negative lag is lawful and is the good case."]
+      },
+      "drl_event_date": {
+        "owner_store": "data/price_pressure/",
+        "recorded_clock_class": "observed",
+        "max_recording_lag_days": 4,
+        "digest_required": false,
+        "notes": ["DRL ledger event rows (engine.price_pressure.ledger.read_ledger); the minting clock is the ledger's own harvested_asof, classed observed exactly as the drl_resid_shock slot clocks class it — one native field never carries two classes on this wire."]
+      },
+      "prophet_stamp_date": {
+        "owner_store": "data/us_prophet_rank/candidates/",
+        "recorded_clock_class": "belief_or_build",
+        "max_recording_lag_days": 2,
+        "digest_required": false
+      },
+      "radar_observed_at": {
+        "owner_store": "data/entry_radar/",
+        "recorded_clock_class": "belief_or_build",
+        "max_recording_lag_days": 1,
+        "digest_required": false
+      },
+      "owner_pit_reference": {
+        "owner_store": null,
+        "recorded_clock_class": null,
+        "max_recording_lag_days": 5,
+        "digest_required": true,
+        "notes": ["The generic source: any owner-backed PIT object, authenticated by a MANDATORY immutability receipt (native_digest state 'known') plus a known minting clock. Replaces the retired caller_named_pit_object free string — an arbitrary caller-named identifier is no longer expressible."]
+      }
+    }
+  },
   "decomposition_groups": {
     "dislocation": {
       "grammar": "disloc.<term>.<window>",
@@ -457,8 +495,30 @@
         "No governed flow family exists for creations/redemptions; as a signal candidate this routes through K5 / Eval OS and gains no authority here."
       ]
     },
+    "prophet_entry_signal": {
+      "title": "Prophet entry/actionability status (entry_signal.status) — owner read",
+      "owner": "engine/entry_signal.py (assess) — the entry/actionability axis; projected by engine/prophet_board_read.py",
+      "artifact": "prophet.board_read/v1 status field (owner-native entry_signal.status, produced by engine.entry_signal.assess inside scripts/build_stock_library.py; published verbatim, unmapped words included)",
+      "reader": "engine.prophet_board_read.build_board_read",
+      "object_class": "instrument_state",
+      "family_binding": {"kind": "research_only", "family_id": null, "member": null, "routed_to": null},
+      "asof_clock": {"native_field": "as_of", "clock_class": "belief_or_build"},
+      "known_at_clock": {"native_field": "as_of", "clock_class": "knowable"},
+      "clock_distinct": false,
+      "cross_owner_join": false,
+      "variation_required": false,
+      "basis_required": false,
+      "optional_family": false,
+      "entry_role": "actionability",
+      "derivation": "owner_read",
+      "notes": [
+        "THE canonical live actionability surface for the entry_availability.entry_signal leg (Sol REQUEST_CHANGES 2026-08-25 item 3 — this closes the former Track-C open question by naming the owner). The status word is the owner's own vocabulary, projected verbatim; this vector never buckets, ranks, or re-derives it.",
+        "When the owner surface has no record for the subject (not a Prophet plan / not in the stock library) the slot is typed missing/unknown per the owner's own disclosure — never inferred from board admission, and never no-entry-state.",
+        "entry_role slots never enter the observed/inferred/market_reflection legs; this construct may only ever be referenced by entry_availability.entry_signal."
+      ]
+    },
     "prophet_board_lane": {
-      "title": "Prophet board admission state (lane / buyable / eligible) — owner read",
+      "title": "Prophet board admission state (lane / buyable / eligible) — admission/context owner read",
       "owner": "Prophet US (engine/us_board_rank.py + nightly stamp)",
       "artifact": "data/us_prophet_rank/candidates/ frame columns lane, buyable, eligible",
       "reader": "engine.us_context_vector.load_candidates",
@@ -471,10 +531,11 @@
       "variation_required": false,
       "basis_required": false,
       "optional_family": false,
-      "entry_owner_read": true,
+      "entry_role": "admission_context",
       "derivation": "owner_read",
       "notes": [
-        "Verbatim owner projection for the entry_availability leg ONLY: entry_owner_read slots never enter the observed/inferred/market_reflection legs — Prophet's admission verdict is not vector evidence (red-team repair 2026-08-25). Prophet selection/gating is untouchable; Prophet does not consume this vector; empty prophet_entry/prophet_signal columns are typed unknown (entry state may live in engine/entry_signal dossiers — an unclosed Track-C question), never no-entry-state."
+        "ADMISSION/CONTEXT ONLY (Sol REQUEST_CHANGES 2026-08-25 item 3): lane / buyable / eligible are Prophet board admission state and may NOT satisfy the entry_availability leg — the actionability surface is prophet_entry_signal (engine.entry_signal.status). An admission_context slot may be carried as typed context but may never be referenced from ANY projection leg (semantic K3E_R011).",
+        "Prophet's admission verdict is not vector evidence: never enters observed/inferred/market_reflection (red-team repair 2026-08-25). Prophet selection/gating is untouchable; Prophet does not consume this vector."
       ]
     },
     "radar_probe_admission": {
@@ -491,10 +552,10 @@
       "variation_required": false,
       "basis_required": false,
       "optional_family": false,
-      "entry_owner_read": true,
+      "entry_role": "probe_coverage",
       "derivation": "owner_read",
       "notes": [
-        "Entry_availability leg ONLY: entry_owner_read slots never enter the observed/inferred/market_reflection legs (red-team repair 2026-08-25).",
+        "PROBE/COVERAGE STATE, NEVER A TRADE-ENTRY VERDICT (Sol REQUEST_CHANGES 2026-08-25 item 3): this construct answers 'is Radar watching this name', and feeds ONLY the entry_availability.radar_probe_coverage leg, whose verdict_class pins that reading on the wire. entry_role slots never enter the observed/inferred/market_reflection legs (red-team repair 2026-08-25).",
         "ProbeRecord carries no score, rank, points, candidate boolean, or bullish field — admission is a coverage decision, not an opinion; this vector projects it verbatim under DEC:PROPHET-LAB-B5A-RECUT's read/filter/join/decorate-only verbs.",
         "Radar neither consumes nor writes this vector. Radar W5 forward tables are score-search-contaminated for any weight fitting (DNR:KILL-OUTCOME-AUDITION; PR-0 §18 A2.5 side-door law) — no vector construct may be fit, tuned, or selected on them."
       ]

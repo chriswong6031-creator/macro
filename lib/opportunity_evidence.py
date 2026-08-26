@@ -269,6 +269,26 @@ _MARKET_REFLECTION_MAP = {
 _RESIDUAL_OWNERS = {"engine/price_pressure/", "engine/residual_alpha.py"}
 _RESIDUAL_STANDALONE_CONSTRUCTS = {"drl_resid_shock"}
 
+# Sol REQUEST_CHANGES 2026-08-25 item 3 — Entry Availability ownership. Each
+# entry_availability leg is bound to the ONE registry construct whose
+# `entry_role` it is lawful to read, and to that construct's required role:
+#
+#   entry_signal          <- entry_role "actionability"   (engine.entry_signal
+#                            .assess -> prophet.board_read/v1 entry_signal.status)
+#   radar_probe_coverage  <- entry_role "probe_coverage"  (Radar probe admission,
+#                            explicitly a coverage state, never a trade verdict)
+#
+# `admission_context` (prophet_board_lane: lane / buyable / eligible) is bound
+# to NO leg: board admission may never satisfy Entry Availability, and — being
+# neither evidence nor an actionability read — may not be referenced from any
+# projection leg at all.
+_ENTRY_LEGS = (
+    ("entry_signal", "prophet_entry_signal", "actionability"),
+    ("radar_probe_coverage", "radar_probe_admission", "probe_coverage"),
+)
+_ENTRY_LEG_KEYS = tuple(leg for leg, _c, _r in _ENTRY_LEGS)
+_ENTRY_ROLE_LEG_BY_ROLE = {role: leg for leg, _c, role in _ENTRY_LEGS}
+
 _HYPOTHESIS_EVIDENCE_CLASSES = {
     "company_impairment": {
         "forensics_scalars",
@@ -388,6 +408,40 @@ def _recompute_denominator(slots: list[dict]) -> dict:
         if st in d:
             d[st] += 1
     return d
+
+
+# Sol REQUEST_CHANGES 2026-08-25 item 2 — frozen denominator semantics for the
+# two aggregate legs whose counts are not derived from slot inclusion.
+#
+# market_reflection: an incorporation leg is INCLUDED evidence when the market
+# demonstrably reflects something on that axis — observed, modeled, or partial.
+# `modeled` is the load-bearing member: modeled market-reflection evidence (e.g.
+# dealer-gamma repricing) is real evidence carried under a modeled label, and
+# must NOT be counted excluded merely because it is not directly observed.
+# Everything else (missing / stale / rights_blocked / conflicted /
+# identity_unresolved / unknown / ex_post_excluded) is excluded, still typed,
+# never zero or neutral.
+_MARKET_REFLECTION_INCLUDED_LEG_STATES = frozenset({"observed", "modeled", "partial"})
+
+# failed_or_unavailable_gates: an entry is INCLUDED when the owner actually
+# reached an adverse verdict on it (failed / unavailable). `not_evaluated` is
+# excluded — the gate was never run, which is a coverage fact, not a verdict.
+_GATE_INCLUDED_STATES = frozenset({"failed", "unavailable"})
+
+
+def _recompute_market_reflection_denominator(incorporation_legs: list[dict]) -> dict:
+    total = len(incorporation_legs)
+    included = sum(
+        1 for leg in incorporation_legs
+        if (leg or {}).get("state") in _MARKET_REFLECTION_INCLUDED_LEG_STATES
+    )
+    return {"total": total, "included": included, "excluded": total - included}
+
+
+def _recompute_gate_denominator(gates: list[dict]) -> dict:
+    total = len(gates)
+    included = sum(1 for g in gates if (g or {}).get("state") in _GATE_INCLUDED_STATES)
+    return {"total": total, "included": included, "excluded": total - included}
 
 
 def _recompute_dominant_degradation(slots: list[dict]) -> str:
@@ -617,6 +671,98 @@ def _compare_known_at_to_asof(known_at_value: str | None, known_at_grain: str | 
     return "after" if ka_day > as_day else "before_or_equal"
 
 
+_NATIVE_IDENTITY_KEY_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_.-]{0,63}$")
+
+
+def _check_t0_authentication(vector: dict, registry: dict) -> list[Finding]:
+    """K3E_R021 — Sol REQUEST_CHANGES 2026-08-25 item 1: authenticate the
+    decision-time origin.
+
+    A decision clock may no longer be trusted from an arbitrary caller string.
+    `asof.t0_evidence_ref` is an immutable owner-backed PIT reference in K1
+    reference.v1 EvidenceRef shape, and this pass checks it against the frozen
+    registry `t0_sources` pins:
+
+      * owner_store equals the pin for that t0_source (when the pin is not null)
+      * recorded_clock.clock_class equals the pin (when not null)
+      * digest_required sources carry native_digest state "known"
+      * native_identity keys match the K1 propertyNames pattern (the in-module
+        structural checker implements no `propertyNames`, so it is re-checked
+        here rather than silently passing)
+      * in t0_mode "live", the referenced object was not minted more than
+        max_recording_lag_days AFTER t0 — a retrospective t0 fails closed
+
+    Fail-closed throughout: an unknown t0_source, an unparseable clock, or a
+    missing registry section is a Finding, never a silent pass."""
+
+    findings: list[Finding] = []
+    asof = vector.get("asof") or {}
+    if not isinstance(asof, dict):
+        return [_f("K3E_R021", "$.asof", "asof must be an object")]
+
+    t0_source = asof.get("t0_source")
+    t0_mode = asof.get("t0_mode")
+    ref = asof.get("t0_evidence_ref")
+    if not isinstance(ref, dict):
+        return [_f("K3E_R021", "$.asof.t0_evidence_ref", "decision clock carries no owner-backed PIT reference")]
+
+    sources = (registry.get("t0_sources") or {}).get("sources") or {}
+    pin = sources.get(t0_source)
+    if pin is None:
+        return [_f("K3E_R021", "$.asof.t0_source", f"t0_source {t0_source!r} has no registry t0_sources pin")]
+
+    pinned_store = pin.get("owner_store")
+    owner_store = ref.get("owner_store")
+    if pinned_store is not None and owner_store != pinned_store:
+        findings.append(_f("K3E_R021", "$.asof.t0_evidence_ref.owner_store", f"t0_source {t0_source!r} pins owner_store {pinned_store!r}, got {owner_store!r}"))
+
+    digest = ref.get("native_digest") or {}
+    if pin.get("digest_required") and digest.get("state") != "known":
+        findings.append(_f("K3E_R021", "$.asof.t0_evidence_ref.native_digest", f"t0_source {t0_source!r} requires a known immutability digest, got state {digest.get('state')!r}"))
+
+    identity = ref.get("native_identity")
+    if not isinstance(identity, dict) or not identity:
+        findings.append(_f("K3E_R021", "$.asof.t0_evidence_ref.native_identity", "native_identity must be a non-empty owner-native identity object"))
+    else:
+        for key in identity:
+            if not _NATIVE_IDENTITY_KEY_RE.match(str(key)):
+                findings.append(_f("K3E_R021", f"$.asof.t0_evidence_ref.native_identity.{key}", f"key {key!r} violates the K1 native_identity propertyNames pattern"))
+
+    recorded = ref.get("recorded_clock") or {}
+    pinned_class = pin.get("recorded_clock_class")
+    if pinned_class is not None and recorded.get("clock_class") != pinned_class:
+        findings.append(_f("K3E_R021", "$.asof.t0_evidence_ref.recorded_clock.clock_class", f"t0_source {t0_source!r} pins recorded clock class {pinned_class!r}, got {recorded.get('clock_class')!r}"))
+
+    # Retrospective-t0 fence. A t0 whose own PIT object was minted well after
+    # the decision date is exactly the "chose t0 after seeing what happened"
+    # defect; in live mode it fails closed against the per-source lag budget.
+    # retrospective_research declares the same fact visibly instead of hiding
+    # it — the declaration is the disclosure, and every other check still binds.
+    lag_days = _t0_recording_lag_days(recorded.get("value"), asof.get("value"))
+    if t0_mode == "live":
+        max_lag = pin.get("max_recording_lag_days")
+        if lag_days is None:
+            findings.append(_f("K3E_R021", "$.asof.t0_evidence_ref.recorded_clock.value", "live t0 requires a parseable recorded clock to prove it was not minted retrospectively"))
+        elif max_lag is not None and lag_days > max_lag:
+            findings.append(_f("K3E_R021", "$.asof.t0_evidence_ref.recorded_clock.value", f"live t0 was recorded {lag_days} day(s) after t0, exceeding the {max_lag}-day budget for {t0_source!r}: declare t0_mode 'retrospective_research' instead of claiming operational PIT"))
+    return findings
+
+
+def _t0_recording_lag_days(recorded_value: str | None, t0_value: str | None) -> int | None:
+    """Whole days from t0 to the moment the referenced PIT object was recorded.
+    Negative when the object predates t0 (a pre-registered hypothesis — lawful,
+    and the good case). None when either clock is missing or unparseable."""
+
+    if not recorded_value or not t0_value:
+        return None
+    try:
+        rec = _parse_instant(recorded_value).date() if len(recorded_value) > 10 else datetime.fromisoformat(recorded_value).date()
+        t0 = _parse_instant(t0_value).date() if len(t0_value) > 10 else datetime.fromisoformat(t0_value).date()
+    except ValueError:
+        return None
+    return (rec - t0).days
+
+
 def _check_lookahead(vector: dict, slots: list[dict]) -> list[Finding]:
     findings: list[Finding] = []
     asof = vector.get("asof") or {}
@@ -735,16 +881,26 @@ def _check_authority_leak(vector: dict, slots: list[dict], registry: dict) -> li
     projection = vector.get("projection") or {}
     entry = projection.get("entry_availability") or {}
 
-    for leg_key, owner_construct in (("prophet_board", "prophet_board_lane"), ("radar", "radar_probe_admission")):
+    for leg_key, owner_construct, required_role in _ENTRY_LEGS:
         leg = entry.get(leg_key) or {}
         leg_state = leg.get("state")
         refs = leg.get("slot_refs") or []
         if leg_state == "read":
             if not refs:
                 findings.append(_f("K3E_R011", f"$.projection.entry_availability.{leg_key}", "state=read requires non-empty slot_refs"))
-            for r in refs:
-                if r != owner_construct:
-                    findings.append(_f("K3E_R011", f"$.projection.entry_availability.{leg_key}.slot_refs", f"ref {r!r} is not {owner_construct}"))
+        # Sol item 3: a leg may reference ONLY the construct carrying its own
+        # entry_role. An admission/context construct (prophet_board_lane: lane
+        # / buyable / eligible) referenced here is the named ownership defect —
+        # board admission can never satisfy Entry Availability — and is caught
+        # in every leg state, not only "read".
+        for r in refs:
+            if r != owner_construct:
+                ref_role = (constructs.get(r) or {}).get("entry_role")
+                detail = (
+                    f"ref {r!r} carries entry_role {ref_role!r} (admission/context is not an entry verdict)"
+                    if ref_role else f"ref {r!r} is not {owner_construct}"
+                )
+                findings.append(_f("K3E_R011", f"$.projection.entry_availability.{leg_key}.slot_refs", f"{detail}; this leg may read only {owner_construct!r} (entry_role {required_role!r})"))
 
         # R-5(a): leg state must equal the law-derived state of the owner
         # slot it names (or of the canonical owner construct, if present in
@@ -785,13 +941,23 @@ def _check_authority_leak(vector: dict, slots: list[dict], registry: dict) -> li
         reg_row = constructs.get(construct)
         if slot.get("object_class") == "instrument_state" and construct in referenced_elsewhere:
             findings.append(_f("K3E_R011", f"slots[{construct}]", "instrument_state slot referenced from observed/inferred/market_reflection (only failed_or_unavailable_gates is lawful)"))
-        # R-6 red-team repair (2026-08-25): entry_owner_read constructs
-        # (prophet_board_lane, radar_probe_admission) are a verbatim owner
-        # read for entry_availability ONLY — Prophet/Radar admission is not
-        # vector evidence and must never enter observed/inferred/
-        # market_reflection.
-        if reg_row and reg_row.get("entry_owner_read") and construct in referenced_elsewhere:
-            findings.append(_f("K3E_R011", f"slots[{construct}]", "entry_owner_read construct referenced from observed/inferred/market_reflection (entry_availability only)"))
+        # R-6 red-team repair (2026-08-25), re-cut for Sol item 3: a construct
+        # carrying an `entry_role` is an entry-owner read and is never vector
+        # evidence — it must not enter observed/inferred/market_reflection.
+        entry_role = (reg_row or {}).get("entry_role")
+        if entry_role and construct in referenced_elsewhere:
+            findings.append(_f("K3E_R011", f"slots[{construct}]", f"entry_role {entry_role!r} construct referenced from observed/inferred/market_reflection (entry_availability only)"))
+        # Sol item 3: `admission_context` (board lane / buyable / eligible) owns
+        # NO leg. It is neither evidence nor an actionability read, so it may be
+        # carried as a typed context slot but never referenced from any
+        # projection leg — including entry_availability, checked above.
+        if entry_role and entry_role not in _ENTRY_ROLE_LEG_BY_ROLE:
+            all_leg_refs = set(referenced_elsewhere)
+            for leg_key in _ENTRY_LEG_KEYS:
+                all_leg_refs |= set(((entry.get(leg_key) or {}).get("slot_refs") or []))
+            all_leg_refs |= set((projection.get("strongest_unresolved_fact") or {}).get("slot_refs") or [])
+            if construct in all_leg_refs:
+                findings.append(_f("K3E_R011", f"slots[{construct}]", f"entry_role {entry_role!r} owns no projection leg: board admission is not an entry verdict and is not evidence, so it may never be referenced from any leg"))
     return findings
 
 
@@ -811,8 +977,8 @@ def _check_leg_membership(vector: dict, slots: list[dict]) -> list[Finding]:
         _refs(leg.get("slot_refs"), f"$.projection.market_reflection.{leg.get('leg')}.slot_refs")
     _refs((projection.get("strongest_unresolved_fact") or {}).get("slot_refs"), "$.projection.strongest_unresolved_fact.slot_refs")
     entry = projection.get("entry_availability") or {}
-    _refs((entry.get("prophet_board") or {}).get("slot_refs"), "$.projection.entry_availability.prophet_board.slot_refs")
-    _refs((entry.get("radar") or {}).get("slot_refs"), "$.projection.entry_availability.radar.slot_refs")
+    for leg_key in _ENTRY_LEG_KEYS:
+        _refs((entry.get(leg_key) or {}).get("slot_refs"), f"$.projection.entry_availability.{leg_key}.slot_refs")
     return findings
 
 
@@ -848,8 +1014,25 @@ def _check_receipt_consistency(vector: dict, slots: list[dict]) -> list[Finding]
     # never be mislabeled "observed" (documented here rather than under
     # K3E_R011 because this is a receipt-recomputation check, not a
     # cross-leg authority-boundary check).
+    # Sol item 2: EVERY mandatory denominator is recomputed by public
+    # validation, not merely the two slot-derived ones. market_reflection and
+    # failed_or_unavailable_gates are counted from their own wire entries under
+    # the frozen inclusion semantics above, so an independently tampered count
+    # (inflate included, deflate excluded, silently drop a modeled leg from the
+    # numerator) cannot survive validation.
     mr = projection.get("market_reflection") or {}
-    for leg in mr.get("incorporation_legs", []) or []:
+    mr_legs = mr.get("incorporation_legs", []) or []
+    expected_mr = _recompute_market_reflection_denominator(mr_legs)
+    if (mr.get("denominator") or {}) != expected_mr:
+        findings.append(_f("K3E_R015", "$.projection.market_reflection.denominator", f"expected {expected_mr!r}, got {mr.get('denominator')!r}"))
+
+    fug = projection.get("failed_or_unavailable_gates") or {}
+    gate_entries = fug.get("gates", []) or []
+    expected_gate = _recompute_gate_denominator(gate_entries)
+    if (fug.get("denominator") or {}) != expected_gate:
+        findings.append(_f("K3E_R015", "$.projection.failed_or_unavailable_gates.denominator", f"expected {expected_gate!r}, got {fug.get('denominator')!r}"))
+
+    for leg in mr_legs:
         leg_name = leg.get("leg")
         if leg_name == "I7_persistence_rejection":
             continue
@@ -891,6 +1074,7 @@ def validate_vector(vector: dict) -> list[Finding]:
     if not isinstance(slots, list):
         slots = []
 
+    findings.extend(_check_t0_authentication(vector, registry))
     findings.extend(_check_constructs(slots, registry))
     findings.extend(_check_disloc_reconstruction(slots))
     findings.extend(_check_missing_to_neutral(vector, slots))
@@ -1027,19 +1211,35 @@ def _leg_denominator(refs: list[str], slots_by_construct: dict) -> dict:
     return {"total": total, "included": included, "excluded": total - included}
 
 
+_ENTRY_LEG_VERDICT_CLASS = {
+    "entry_signal": "owner_entry_actionability",
+    "radar_probe_coverage": "probe_coverage_state_not_trade_entry",
+}
+
+
 def _default_entry_availability(slots_by_construct: dict) -> dict:
     # Shares _expected_entry_leg_state with the validator's R-5(a) check so
     # composition and validation can never drift apart on this law.
-    def _leg(construct_name: str) -> dict:
+    #
+    # Sol item 3: each leg reads ONLY its own entry_role owner. When the
+    # actionability surface (prophet_entry_signal) is absent the leg composes
+    # explicitly unknown — it is NEVER back-filled from board admission, which
+    # owns no leg at all.
+    def _leg(leg_key: str, construct_name: str) -> dict:
         slot = slots_by_construct.get(construct_name)
         expected = _expected_entry_leg_state(slot)
+        verdict_class = _ENTRY_LEG_VERDICT_CLASS[leg_key]
         if expected is None:
-            return {"state": "unknown", "slot_refs": []}
-        return {"state": expected, "slot_refs": [construct_name] if expected == "read" else []}
+            return {"state": "unknown", "slot_refs": [], "verdict_class": verdict_class}
+        return {
+            "state": expected,
+            "slot_refs": [construct_name] if expected == "read" else [],
+            "verdict_class": verdict_class,
+        }
 
     return {
-        "prophet_board": _leg("prophet_board_lane"),
-        "radar": _leg("radar_probe_admission"),
+        "entry_signal": _leg("entry_signal", "prophet_entry_signal"),
+        "radar_probe_coverage": _leg("radar_probe_coverage", "radar_probe_admission"),
         "composition_law": "owner_read_only_never_computed",
     }
 
@@ -1087,12 +1287,13 @@ def compose_vector(
     )
     compilation_state = "partial" if adverse_total > 0 else "complete"
 
-    # R-6 red-team repair (2026-08-25): entry_owner_read constructs
-    # (prophet_board_lane, radar_probe_admission) are a verbatim owner read
-    # for entry_availability ONLY and must never enter observed/inferred.
+    # R-6 red-team repair (2026-08-25), re-cut for Sol item 3: any construct
+    # carrying an `entry_role` (actionability / probe_coverage /
+    # admission_context) is an entry-owner read, never vector evidence, and
+    # must not enter observed/inferred.
     def _is_entry_owner_read(construct: str) -> bool:
         row = constructs.get(construct)
-        return bool(row and row.get("entry_owner_read"))
+        return bool(row and row.get("entry_role"))
 
     observed_refs = [
         s["construct"] for s in composed_slots
@@ -1120,10 +1321,12 @@ def compose_vector(
         else:
             incorporation_legs.append({"leg": leg_name, "state": _SLOT_STATE_TO_LEG_STATE.get(slot["state"], "unknown"), "slot_refs": [mapped]})
 
-    mr_included = sum(1 for leg in incorporation_legs if leg["state"] == "observed")
+    # Sol item 2: composition and public validation share ONE frozen counting
+    # rule, so a composed vector can never disagree with the recomputation that
+    # judges it. Modeled legs count as included evidence.
     market_reflection = {
         "incorporation_legs": incorporation_legs,
-        "denominator": {"total": len(incorporation_legs), "included": mr_included, "excluded": len(incorporation_legs) - mr_included},
+        "denominator": _recompute_market_reflection_denominator(incorporation_legs),
     }
 
     observed_leg = {"slot_refs": observed_refs, "denominator": _leg_denominator(observed_refs, slots_by_construct)}
@@ -1134,7 +1337,13 @@ def compose_vector(
     }
 
     if strongest_unresolved_fact is None:
-        excluded = [s for s in composed_slots if not s["included_in_composition"]]
+        # Sol item 3: an entry-owner read is never evidence, so an absent one
+        # is never "the strongest unresolved fact" about the opportunity — and
+        # admission context in particular may not be referenced from any leg.
+        excluded = [
+            s for s in composed_slots
+            if not s["included_in_composition"] and not _is_entry_owner_read(s["construct"])
+        ]
         if excluded:
             first = excluded[0]
             strongest_unresolved_fact = {
@@ -1154,7 +1363,7 @@ def compose_vector(
     gates = list(failed_or_unavailable_gates or [])
     failed_or_unavailable_gates_leg = {
         "gates": gates,
-        "denominator": {"total": len(gates), "included": 0, "excluded": len(gates)},
+        "denominator": _recompute_gate_denominator(gates),
     }
 
     projection = {
