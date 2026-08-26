@@ -120,10 +120,17 @@ verified:
       engine/company_intelligence/qa_exchange.py and qa_reconstruction.py from
       their declared paths (2 jobs x 2 files). Separate lane by the gate's own
       instruction ("heal separately"); main subsequently closed all four itself
-      in ad36de0f6aa3 (PR #6451, merged 2026-08-26T07:26:39Z), which is why a
-      re-run against a newer main reports a smaller inherited count. Every
-      contract-delta receipt must therefore name the head and base it was
-      measured on — the number alone is not a fact about this PR.
+      in ad36de0f6aa3 (PR #6451, merged 2026-08-26T07:26:39Z) — separate lane,
+      exactly as the gate directed. The repaired branch, refreshed onto
+      origin/main so the local gate tests what hosted CI tests, then measures
+      "0 introduced, 0 inherited (base 2cb581c6fa69)" — the same figure this
+      entry wrongly claimed before, recorded now only with the reason it is true:
+      the branch contains main's heal. Nothing in K3-E changed, no finding was
+      suppressed, no paths were widened from this carrier. Both numbers are
+      receipts and neither replaces the other: a contract-delta result is a fact
+      about one (head, base) pair, not about a PR, so every receipt must name
+      both and report both counts, not just the introduced one that decides the
+      gate.
   - claim: An independent opus red-team attacked the artifact across six lines; every finding was adjudicated and repaired.
     command: routed opus reviewer, findings 3 BLOCKER / 6 MAJOR / 5 MINOR
     result: all repaired or dispositioned; full table in the freeze packet §7.1.

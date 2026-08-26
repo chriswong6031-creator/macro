@@ -427,11 +427,21 @@ Receipts (exact, this candidate):
   (2 jobs × 2 files). The gate names this disposition itself — "already uncovered
   on this PR's base — pre-existing, not introduced by this PR; heal separately" —
   and on a held PR, widening another job's `paths:` from this carrier would be
-  both scope creep and a hold violation. Main has since closed all four on its
-  own in `ad36de0f6aa3` (PR #6451, merged 2026-08-26T07:26:39Z), so a run against
-  a newer main reports a smaller inherited count; every contract-delta receipt
-  must therefore name its head and base, because the number alone is a fact about
-  the run, not about this PR
+  both scope creep and a hold violation. **Main has since closed all four on its
+  own** in `ad36de0f6aa3` (PR #6451, merged 2026-08-26T07:26:39Z) — separate lane,
+  exactly as the gate directed.
+  - Consequently the repaired branch, refreshed onto `origin/main` so the local
+    gate tests what hosted CI tests, measures **`0 introduced, 0 inherited`
+    (base `2cb581c6fa69`)**. That is the same figure this section wrongly claimed
+    before, and it is recorded here only with the reason it is now true: the
+    branch contains main's heal. Nothing in K3-E changed, no finding was
+    suppressed, and no `paths:` were widened from this carrier.
+  - **Both numbers are receipts and neither replaces the other**, because a
+    contract-delta result is a fact about one (head, base) pair, not about a PR.
+    A receipt that omits its head and base cannot be checked, and a receipt that
+    reports only the introduced count — the half that decides the gate — is a
+    summary. The authoritative hosted figure for the final head is in PR #6417's
+    conversation with its run id
 - Agent OS validate: 0 errors (710 records; inherited repository warnings only)
 - Registry ↔ families.yml join: asserted inside the suite on every run
 - Carrier: PR #6417 (DRAFT / HOLD-FOR-SOL from its first revision)
@@ -478,9 +488,18 @@ tuning. This PR merges nothing and starts no dependent wave.
 > are `conviction-profile` and `unrun-picks-boards` each missing
 > `engine/company_intelligence/qa_exchange.py` and `qa_reconstruction.py` from
 > their declared `paths:` — **main-side separate-lane debt, not healed here**, per
-> the gate's own "heal separately" instruction and the hold. Main has since closed
-> all four itself in `ad36de0f6aa3` (PR #6451). Corrected in freeze §10, the DEC,
-> and the handoff, each receipt now naming its head and base.
+> the gate's own "heal separately" instruction and the hold. Corrected in freeze
+> §10, the DEC, and the handoff, each receipt now naming its head and base.
+>
+> One thing you should know rather than discover: main has since closed all four
+> itself in `ad36de0f6aa3` (PR #6451), so the repaired branch — refreshed onto
+> `origin/main` so the local gate tests what hosted CI tests — now measures
+> `0 introduced, **0 inherited**` (base `2cb581c6fa69`). That is the same figure
+> you just ruled false, and §10 records it only alongside the held-head `0/4` and
+> the reason it changed: the branch contains main's heal. Nothing in K3-E changed,
+> no finding was suppressed, and no `paths:` were widened from this carrier. I did
+> not overwrite the `0/4` receipt with the new one — a contract-delta result is a
+> fact about one (head, base) pair, not about a PR, so both are recorded.
 >
 > **Item 1 (authenticate decision-time origin), as accepted:** `caller_named_pit_object` and the
 > free-string `t0_source_object` are deleted from the wire — structurally
