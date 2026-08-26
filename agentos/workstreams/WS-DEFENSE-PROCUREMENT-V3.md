@@ -7,7 +7,7 @@ objective: >
   D0R = current-state truth, driver taxonomy, historical casebook method,
   source/rights/PIT registry, graph/contract freeze, golden universe, real-data
   experience architecture, and exact D1-D4 handoffs exist; no production mutation.
-status: active
+status: awaiting_review
 program: government-revenue-foresight
 repos: [macro, terminal, mastermind]
 owner: coo-fable
@@ -316,12 +316,23 @@ waves:
       remain UNAUTHORIZED. D5 remains BUILT_NOT_PROVEN (D5P deferred,
       nonblocking; never relabel).
   - id: D6-B
-    title: FMS real vertical — State acquisition, immutable observations, government_fms_case.v1, ninth fms mode, production proof
-    status: in_progress
+    title: FMS real vertical — official-union acquisition, immutable observations, government_fms_case.v1, ninth fms mode, production proof
+    status: done
     depends_on: [D6-B0]
     claim: claude/d6b1-fms-coverage-vertical-20260825 (Fable session, D6-B1 continuation claimed 2026-08-25; carrier is a ~/.claude-recovery clone because the local primary clone's git object reads are kernel-blocked by iCloud-evicted pack files)
     next_action: >
-      D6-B1 COVERAGE-AWARE CONTINUATION IN FLIGHT (2026-08-25). The U4
+      D6-B1 DONE + PRODUCTION-PROVEN (2026-08-26). Carriers #6447
+      (merged b9c6dd775f2a), #6454 (denominator heal + defense-rail-laws
+      merge-gate repair, merged bff1e60f1ffd), #6478 (§11c State staged
+      replay + country fall-through, merged 98f8c389dbc8). Live: graph
+      d90d63c782 (66 cases, 57/57 denominator, 9 web-only State-frontier
+      cases), publish 5d9628af92c2, served twins byte-identical, VPS
+      in-process canaries 26-13/26-27/26-23 + anonymous 401 + zero
+      event.v2 rows, EN/ZH desktop+mobile rendered. Full receipts:
+      agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-26-d6b1-fms-vertical.md.
+      Sol return posted on #6447. D6-C+ / D7+ UNAUTHORIZED. The
+      superseded historical text follows for context ONLY:
+      (historical) D6-B1 coverage-aware continuation 2026-08-25. The U4
       HOLD was RELEASED by the D6-B1 continuation commission (Chairman
       channel, in-session relay 2026-08-25; full text preserved in the
       D6-B1 continuation handoff): the U4 discovery is ACCEPTED —
@@ -395,8 +406,11 @@ discoveries:
   - DSC:GOVREV-CANDIDATE-RADAR-STAYS-LOCKED-AFTER-SITE-FULL-200
   - DSC:GOVREV-AGENCY-STRINGIFY-IS-COLLECTOR-THEN-ACTION-OMIT
 next_action: >
-  D6-B is IN FLIGHT under the D6-B1 coverage-aware continuation
-  (2026-08-25): the U4 hold was released — the U4 discovery is accepted
+  D6-B is DONE and PRODUCTION-PROVEN (2026-08-26) under the D6-B1
+  coverage-aware continuation — see the D6-B wave entry and the
+  2026-08-26 d6b1-fms-vertical handoff for the receipt packet; awaiting
+  Sol's acceptance of the return on #6447. D6-C+ / D7+ remain
+  UNAUTHORIZED. (historical) The U4 hold was released — the U4 discovery is accepted
   and the population law is now the official union (FR bounded
   denominator/recovery + State current + DSCA historical observations,
   transmittal dedupe, explicit source/coverage manifest), scope
