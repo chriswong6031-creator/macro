@@ -3376,6 +3376,19 @@ CURATED_EXCLUSIVE = {
     # this file's pin does not drift from the manifest (no fix required, the
     # job's own paths: already cover its full closure).
     "dislocation-p0-a1-blind-harvest",
+    # 2026-08-26 (PR #6454): the D6-A + D6-B1 defense rail batteries moved
+    # onto the merge gate (they sat in gate:data unrun-government-revenue,
+    # which ci.yml never plans, so both commissioned merge-binding suites
+    # were dark). tests/test_fms_ui.py imports app.government_revenue for
+    # its route-boundary tests, whose closure's opaque edges smear whole-tree
+    # fallback claims (app/**, templates/**, site/**) — measured
+    # fallback-matching all four probes below and pushing
+    # templates/index.html to 130 > 129. Curated at the source, same
+    # treatment as stock-dossiers / cn-standout-audit / govrev-company-bridge:
+    # the declaration names the earned 563-file closure (flat engine/*.py +
+    # the read subpackages, deliberately not engine/**), the frozen fixture
+    # trees, and the sha-frozen staged goldens.
+    "defense-rail-laws",
 }
 
 

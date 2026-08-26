@@ -1086,6 +1086,11 @@ jobs:
       - "engine/earnings_release/figures.py"
       - "engine/earnings_release/binding.py"
       - "engine/company_intelligence/views.py"
+      # 2026-08-26 widening (PR #6454): #6376 (E3-B AAPL canonical
+      # qa_exchange publication) added qa_exchange/qa_reconstruction to this
+      # job's suite closure; the coverage audit reds without them.
+      - "engine/company_intelligence/qa_exchange.py"
+      - "engine/company_intelligence/qa_reconstruction.py"
       - "engine/company_intelligence/issuer_profiles.py"
       - "engine/company_intelligence/identity.py"
       - "engine/company_intelligence/health.py"
@@ -8869,6 +8874,85 @@ jobs:
     # transport for the FMS route tests.
     if: ${{ false }}
     gate: code
+    # CURATED SCOPE (2026-08-26, same wave as the job itself). Without this,
+    # inference resolves tests/test_fms_ui.py's app.government_revenue import
+    # (the route-boundary tests) plus the collectors' opaque edges into
+    # whole-tree fallback claims — app/**, data/**, config/**, templates/**,
+    # site/** — and this job fallback-matched ALL FOUR probes in
+    # tests/test_ci_pack.py::test_exclusive_curation_narrows_ordinary_code_prs
+    # (templates/index.html measured 130 > the 129 ceiling). That is smear,
+    # curated away at the source per the standing convention (same treatment
+    # as stock-dossiers, cn-standout-audit, govrev-company-bridge). Every
+    # path below is EARNED: the 563-file import closure inference derives
+    # (via app/government_revenue.py the closure spans the flat engine/*.py
+    # layer and the listed engine subpackages — deliberately NOT engine/**,
+    # which would smear onto engine/prophet/**, where the closure holds
+    # nothing), plus the frozen fixture trees and the sha-frozen staged
+    # goldens the batteries read at runtime. templates/ and scripts/ are
+    # named files on purpose: the suites read exactly two templates, and
+    # the five scripts are closure imports, not tree scans.
+    scope: exclusive
+    paths:
+      - "tests/test_dod_budget_live.py"
+      - "tests/test_fms_notifications.py"
+      - "tests/test_fms_ui.py"
+      - "tests/fixtures/fms/**"
+      - "tests/fixtures/dod_budget/**"
+      - "data/government_revenue/fms_staged_objects/**"
+      - "app/**"
+      - "collectors/**"
+      - "lib/**"
+      - "config/**"
+      - "contracts/**"
+      - "engine/*.py"
+      - "engine/biocatalyst/**"
+      - "engine/capital_structure/**"
+      - "engine/chronicle/**"
+      - "engine/codex_lane/**"
+      - "engine/company_intelligence/**"
+      - "engine/context_index/**"
+      - "engine/earnings_narrative/**"
+      - "engine/earnings_release/**"
+      - "engine/entry_radar/**"
+      - "engine/fundamental_forensics/**"
+      - "engine/government_revenue/**"
+      - "engine/intelligence_workspace/**"
+      - "engine/marketing/**"
+      - "engine/metabolism/**"
+      - "engine/neuralweb/**"
+      - "engine/oracle/**"
+      - "engine/pick_lab/**"
+      - "engine/press/**"
+      - "engine/prophet_lab/**"
+      - "engine/prophet_live/**"
+      - "engine/research_vault/**"
+      - "engine/seasonality/**"
+      - "engine/sector_intelligence/**"
+      - "engine/theme_graph/**"
+      - "research/DO_NOT_REBUILD.md"
+      - "research/SIGNAL_EPISODE_ATLAS_MASTERPLAN_BY_FABLE.md"
+      - "research/STOCK_PERSONALITY_MASTERPLAN_BY_FABLE.md"
+      - "research/US_BOARD_MEASUREMENT.md"
+      - "scripts/build_stock_library.py"
+      - "scripts/check_board_contradictions.py"
+      - "scripts/check_signal_gate_coherence.py"
+      - "scripts/check_stretch_oracle_contract.py"
+      - "scripts/thematic_rotation_phase0.py"
+      - "site/basketdata/**"
+      - "site/canadabasketdata/**"
+      - "site/chinabasketdata/**"
+      - "site/coming-soon.html"
+      - "site/data/portfolio_ctx.json"
+      - "site/factordata/**"
+      - "site/flowleaders/**"
+      - "site/government_revenue.html"
+      - "site/hkbasketdata/**"
+      - "site/leaderradar/**"
+      - "site/master_brief.json"
+      - "site/prophet/**"
+      - "site/vol/**"
+      - "templates/government-revenue-dossiers.js"
+      - "templates/government_revenue.html.j2"
     # Install-dominated like its former host; the two batteries themselves
     # are ~30s.
     timeout-minutes: 8
@@ -9970,6 +10054,11 @@ jobs:
       - "engine/company_intelligence/health.py"
       - "engine/company_intelligence/identity.py"
       - "engine/company_intelligence/issuer_profiles.py"
+      # 2026-08-26 widening (PR #6454): #6376 (E3-B AAPL canonical
+      # qa_exchange publication) added qa_exchange/qa_reconstruction to this
+      # job's suite closure; the coverage audit reds without them.
+      - "engine/company_intelligence/qa_exchange.py"
+      - "engine/company_intelligence/qa_reconstruction.py"
       - "engine/company_intelligence/views.py"
       - "engine/earnings_release/binding.py"
       - "engine/earnings_release/figures.py"
