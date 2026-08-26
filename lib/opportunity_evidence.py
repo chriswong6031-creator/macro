@@ -37,7 +37,7 @@ Public surface:
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import lru_cache
 import hashlib
 import itertools
@@ -122,6 +122,19 @@ def _check_type(value: Any, type_spec: Any) -> bool:
     return False
 
 
+def _pattern_matches(pattern: str, value: str) -> bool:
+    """Match a JSON-Schema `pattern` the way JSON Schema means it.
+
+    A pattern anchored `^...$` is matched end-to-end: Python's `$` also matches
+    immediately before a trailing newline, which let `"IMXI\\n"` satisfy K1's
+    explicitly newline-free `^[^\\r\\n]+$` (red-team MINOR 10, 2026-08-25).
+    Unanchored patterns keep `search` semantics."""
+
+    if pattern.startswith("^") and pattern.endswith("$"):
+        return re.fullmatch(pattern[1:-1], value, flags=re.DOTALL) is not None
+    return re.search(pattern, value) is not None
+
+
 def _resolve(schema: dict, defs: dict) -> dict:
     if isinstance(schema, dict) and "$ref" in schema:
         ref = schema["$ref"]
@@ -159,7 +172,11 @@ def _validate_node(instance: Any, schema: dict, defs: dict, path: str) -> list[t
             errors.append((path, f"value {instance!r} not in enum {schema['enum']!r}", "enum"))
 
     if isinstance(instance, str):
-        if "pattern" in schema and re.search(schema["pattern"], instance) is None:
+        # MINOR 10 (red-team 2026-08-25): Python's `$` also matches just before a
+        # trailing newline, unlike the ECMA-262 `$` JSON Schema is defined
+        # against — so "IMXI\n" satisfied K1's no-newline `^[^\r\n]+$`. Anchored
+        # patterns are matched end-to-end instead.
+        if "pattern" in schema and _pattern_matches(schema["pattern"], instance) is False:
             errors.append((path, f"value {instance!r} does not match pattern {schema['pattern']!r}", "pattern"))
         if "minLength" in schema and len(instance) < schema["minLength"]:
             errors.append((path, "string shorter than minLength", "minLength"))
@@ -265,6 +282,11 @@ _MARKET_REFLECTION_MAP = {
     "I6_peer_response": "theme_membership",
     "I7_persistence_rejection": None,
 }
+
+# The incorporation leg set is FIXED (order included). Both the composer and the
+# validator read it, so the seven legs can never be dropped, added, reordered, or
+# repeated to move a denominator.
+_MARKET_REFLECTION_LEGS = tuple(_MARKET_REFLECTION_MAP)
 
 _RESIDUAL_OWNERS = {"engine/price_pressure/", "engine/residual_alpha.py"}
 _RESIDUAL_STANDALONE_CONSTRUCTS = {"drl_resid_shock"}
@@ -495,8 +517,27 @@ def _check_constructs(slots: list[dict], registry: dict) -> list[Finding]:
                 if fb.get("kind") == "governed_family" and fb.get("family_id") and fb.get("family_id") != expected[1]:
                     findings.append(_f("K3E_R003", f"slots[{construct}].family_binding", f"construct {construct!r} claims a second family {fb.get('family_id')!r}; registry homes it in {expected[1]!r}"))
 
-        # R008 residual re-derivation.
+        # Sol-repair BLOCKER 1 / MAJOR 7 (red-team 2026-08-25): a construct NAME
+        # was the only thing separating the actionability owner from board
+        # admission. `prophet_entry_signal` and `prophet_board_lane` share
+        # family_binding, derivation, and clock classes, so a caller could put
+        # the board's own payload AND the board's own owner_ref into a slot
+        # named `prophet_entry_signal` and satisfy the Entry Availability leg —
+        # defeating Sol item 3 while every check passed. Every registry-known
+        # slot's owner pointer and object class must now equal its registry pin,
+        # so the name can no longer be a costume.
         owner_ref = slot.get("owner_ref") or {}
+        if is_known:
+            reg_row = constructs[construct]
+            for field in ("owner", "artifact", "reader"):
+                pinned = reg_row.get(field)
+                if pinned is not None and owner_ref.get(field) != pinned:
+                    findings.append(_f("K3E_R008", f"slots[{construct}].owner_ref.{field}", f"{field} {owner_ref.get(field)!r} does not match the registry pin {pinned!r}: a slot may not wear another owner's construct name"))
+            pinned_class = reg_row.get("object_class")
+            if pinned_class is not None and slot.get("object_class") != pinned_class:
+                findings.append(_f("K3E_R008", f"slots[{construct}].object_class", f"object_class {slot.get('object_class')!r} does not match the registry pin {pinned_class!r}: relabeling would move the slot past its class fences"))
+
+        # R008 residual re-derivation.
         if construct.startswith("drl_"):
             if owner_ref.get("owner") != "engine/price_pressure/" or "price_pressure" not in (owner_ref.get("reader") or ""):
                 findings.append(_f("K3E_R008", f"slots[{construct}].owner_ref", "drl_* construct must be owned by engine/price_pressure/ with a price_pressure reader"))
@@ -717,7 +758,9 @@ def _check_t0_authentication(vector: dict, registry: dict) -> list[Finding]:
         findings.append(_f("K3E_R021", "$.asof.t0_evidence_ref.owner_store", f"t0_source {t0_source!r} pins owner_store {pinned_store!r}, got {owner_store!r}"))
 
     digest = ref.get("native_digest") or {}
-    if pin.get("digest_required") and digest.get("state") != "known":
+    # MINOR 11: an absent digest_required key must not silently drop the only
+    # binding constraint the generic source has — default to REQUIRING it.
+    if pin.get("digest_required", True) and digest.get("state") != "known":
         findings.append(_f("K3E_R021", "$.asof.t0_evidence_ref.native_digest", f"t0_source {t0_source!r} requires a known immutability digest, got state {digest.get('state')!r}"))
 
     identity = ref.get("native_identity")
@@ -738,29 +781,59 @@ def _check_t0_authentication(vector: dict, registry: dict) -> list[Finding]:
     # defect; in live mode it fails closed against the per-source lag budget.
     # retrospective_research declares the same fact visibly instead of hiding
     # it — the declaration is the disclosure, and every other check still binds.
-    lag_days = _t0_recording_lag_days(recorded.get("value"), asof.get("value"))
+    lag_seconds = _t0_recording_lag_seconds(recorded.get("value"), asof.get("value"))
     if t0_mode == "live":
         max_lag = pin.get("max_recording_lag_days")
-        if lag_days is None:
+        if lag_seconds is None:
             findings.append(_f("K3E_R021", "$.asof.t0_evidence_ref.recorded_clock.value", "live t0 requires a parseable recorded clock to prove it was not minted retrospectively"))
-        elif max_lag is not None and lag_days > max_lag:
-            findings.append(_f("K3E_R021", "$.asof.t0_evidence_ref.recorded_clock.value", f"live t0 was recorded {lag_days} day(s) after t0, exceeding the {max_lag}-day budget for {t0_source!r}: declare t0_mode 'retrospective_research' instead of claiming operational PIT"))
+        elif max_lag is None:
+            # MINOR 11: a pin that lost its budget must not silently disable the
+            # anti-hindsight fence. Fail closed and name the gap.
+            findings.append(_f("K3E_R021", "$.asof.t0_source", f"registry t0_sources pin for {t0_source!r} declares no max_recording_lag_days; a live t0 cannot be authenticated against a missing budget"))
+        elif lag_seconds > max_lag * 86400:
+            findings.append(_f("K3E_R021", "$.asof.t0_evidence_ref.recorded_clock.value", f"live t0 was recorded {lag_seconds / 86400:.3f} day(s) after t0, exceeding the {max_lag}-day budget for {t0_source!r}: declare t0_mode 'retrospective_research' instead of claiming operational PIT"))
+
+    # MAJOR 4: the generation clock was unauthenticated, and the composer
+    # defaults it to t0 — so a vector could claim it was generated BEFORE the
+    # evidence it cites existed (the shipped FPI golden did exactly that).
+    generated_at = vector.get("generated_at")
+    gen_lag = _t0_recording_lag_seconds(generated_at, recorded.get("value"))
+    if gen_lag is not None and gen_lag < 0:
+        findings.append(_f("K3E_R021", "$.generated_at", f"generated_at {generated_at!r} precedes the decision-time object's recorded clock {recorded.get('value')!r}: a vector cannot be generated before the evidence it cites existed"))
     return findings
 
 
-def _t0_recording_lag_days(recorded_value: str | None, t0_value: str | None) -> int | None:
-    """Whole days from t0 to the moment the referenced PIT object was recorded.
-    Negative when the object predates t0 (a pre-registered hypothesis — lawful,
-    and the good case). None when either clock is missing or unparseable."""
+def _t0_recording_lag_seconds(recorded_value: Any, t0_value: Any) -> float | None:
+    """Seconds from t0 to the moment the referenced PIT object was recorded.
 
-    if not recorded_value or not t0_value:
+    Negative when the object predates t0 (a pre-registered hypothesis — lawful,
+    and the good case). None when either clock is missing or unparseable.
+
+    Sol-repair MAJOR 5 (red-team 2026-08-25): this was day-truncated via
+    ``.date()``, so an object minted 14h29m AFTER an intraday t0 measured as a
+    zero-day lag and passed every budget — the same day-grain blindness the
+    earlier B2 repair fixed for slot clocks but not for the decision clock. Both
+    sides are now compared as instants, with a bare date read as that day's
+    00:00:00Z. MAJOR 6: the value is whatever the wire carried, so non-string
+    input must return None rather than raise out of ``validate_vector``, whose
+    documented contract is that it never raises."""
+
+    def _instant(value: Any) -> datetime | None:
+        if not isinstance(value, str) or not value:
+            return None
+        try:
+            return _parse_instant(value)
+        except ValueError:
+            return None
+
+    rec, t0 = _instant(recorded_value), _instant(t0_value)
+    if rec is None or t0 is None:
         return None
-    try:
-        rec = _parse_instant(recorded_value).date() if len(recorded_value) > 10 else datetime.fromisoformat(recorded_value).date()
-        t0 = _parse_instant(t0_value).date() if len(t0_value) > 10 else datetime.fromisoformat(t0_value).date()
-    except ValueError:
-        return None
-    return (rec - t0).days
+    if rec.tzinfo is None:
+        rec = rec.replace(tzinfo=timezone.utc)
+    if t0.tzinfo is None:
+        t0 = t0.replace(tzinfo=timezone.utc)
+    return (rec - t0).total_seconds()
 
 
 def _check_lookahead(vector: dict, slots: list[dict]) -> list[Finding]:
@@ -916,7 +989,11 @@ def _check_authority_leak(vector: dict, slots: list[dict], registry: dict) -> li
     fug = projection.get("failed_or_unavailable_gates") or {}
     for gate in fug.get("gates", []) or []:
         owner = (gate.get("owner") or "")
-        if "opportunity_evidence" in owner.lower() or owner.strip().lower() == "computed":
+        # MINOR 12 (red-team 2026-08-25): the fence named only two spellings, so
+        # "self" / "this rule" / "internal" passed as canonical gate owners.
+        normalized = owner.strip().lower()
+        if ("opportunity_evidence" in normalized
+                or normalized in {"computed", "self", "internal", "this rule", "this vector", "local", "n/a", "none"}):
             findings.append(_f("K3E_R011", "$.projection.failed_or_unavailable_gates.gates", f"gate owner {owner!r} names this vector/a computed rule, never a canonical owner"))
 
     observed = projection.get("observed") or {}
@@ -945,8 +1022,14 @@ def _check_authority_leak(vector: dict, slots: list[dict], registry: dict) -> li
         # carrying an `entry_role` is an entry-owner read and is never vector
         # evidence — it must not enter observed/inferred/market_reflection.
         entry_role = (reg_row or {}).get("entry_role")
-        if entry_role and construct in referenced_elsewhere:
-            findings.append(_f("K3E_R011", f"slots[{construct}]", f"entry_role {entry_role!r} construct referenced from observed/inferred/market_reflection (entry_availability only)"))
+        # Sol-repair MAJOR 8 (red-team 2026-08-25): the fence covered only
+        # observed/inferred/market_reflection, so an entry-owner read laundered
+        # cleanly into `strongest_unresolved_fact` — a non-evidence leg the
+        # composer already refuses to put them in. Validator and composer now
+        # agree: an entry_role construct belongs to entry_availability alone.
+        non_entry_refs = referenced_elsewhere | set((projection.get("strongest_unresolved_fact") or {}).get("slot_refs") or [])
+        if entry_role and construct in non_entry_refs:
+            findings.append(_f("K3E_R011", f"slots[{construct}]", f"entry_role {entry_role!r} construct referenced from a non-entry leg (observed/inferred/market_reflection/strongest_unresolved_fact); entry_availability is its only lawful home"))
         # Sol item 3: `admission_context` (board lane / buyable / eligible) owns
         # NO leg. It is neither evidence nor an actionability read, so it may be
         # carried as a typed context slot but never referenced from any
@@ -1032,19 +1115,44 @@ def _check_receipt_consistency(vector: dict, slots: list[dict]) -> list[Finding]
     if (fug.get("denominator") or {}) != expected_gate:
         findings.append(_f("K3E_R015", "$.projection.failed_or_unavailable_gates.denominator", f"expected {expected_gate!r}, got {fug.get('denominator')!r}"))
 
+    # Sol-repair BLOCKER 2 (red-team 2026-08-25): recomputing a denominator from
+    # wire-declared leg states is worthless while the LEG SET itself is
+    # attacker-controlled. Three forgeries all recomputed "consistently" before
+    # this fence: dropping the adverse legs (2/7 coverage reported as 2/2 =
+    # 100%), duplicating the one observed leg, and letting a ref-less leg simply
+    # declare itself observed. The incorporation leg set is therefore FIXED:
+    # exactly the seven I1..I7 legs, each present exactly once.
+    seen_legs = [leg.get("leg") for leg in mr_legs]
+    if seen_legs != list(_MARKET_REFLECTION_LEGS):
+        missing = [n for n in _MARKET_REFLECTION_LEGS if n not in seen_legs]
+        extra = [n for n in seen_legs if n not in _MARKET_REFLECTION_LEGS]
+        dupes = sorted({n for n in seen_legs if seen_legs.count(n) > 1})
+        findings.append(_f(
+            "K3E_R015", "$.projection.market_reflection.incorporation_legs",
+            "the seven I1..I7 incorporation legs must each appear exactly once in order "
+            f"(missing={missing!r}, unexpected={extra!r}, duplicated={dupes!r}): a leg set that can "
+            "shrink, grow, or repeat makes its own denominator meaningless",
+        ))
+
     for leg in mr_legs:
         leg_name = leg.get("leg")
         if leg_name == "I7_persistence_rejection":
             continue
         refs = leg.get("slot_refs") or []
+        # A leg's state is EVIDENCE-BEARING only if a present slot backs it.
+        # With no resolvable ref there is nothing observed, modeled, or partial
+        # to report — such a leg may only be missing/unknown, never a claim that
+        # the market reflected something.
+        resolved = [by_construct.get(r) for r in refs if by_construct.get(r) is not None]
+        if not resolved:
+            if leg.get("state") in _MARKET_REFLECTION_INCLUDED_LEG_STATES:
+                findings.append(_f("K3E_R015", f"$.projection.market_reflection.{leg_name}.state", f"leg claims {leg.get('state')!r} with no resolvable backing slot (refs={refs!r}); a leg with no evidence may only be missing/unknown"))
+            continue
         if len(refs) != 1:
             continue
-        slot = by_construct.get(refs[0])
-        if slot is None:
-            continue
-        expected_leg_state = _SLOT_STATE_TO_LEG_STATE.get(slot.get("state"), "unknown")
+        expected_leg_state = _SLOT_STATE_TO_LEG_STATE.get(resolved[0].get("state"), "unknown")
         if leg.get("state") != expected_leg_state:
-            findings.append(_f("K3E_R015", f"$.projection.market_reflection.{leg_name}.state", f"expected {expected_leg_state!r} (from slot {refs[0]!r} state {slot.get('state')!r}), got {leg.get('state')!r}"))
+            findings.append(_f("K3E_R015", f"$.projection.market_reflection.{leg_name}.state", f"expected {expected_leg_state!r} (from slot {refs[0]!r} state {resolved[0].get('state')!r}), got {leg.get('state')!r}"))
     return findings
 
 
@@ -1380,7 +1488,19 @@ def compose_vector(
         permitted_consumers = ["research_session"]
 
     if generated_at is None:
-        generated_at = f"{asof['value']}T00:00:00Z" if asof.get("grain") == "date" else asof["value"]
+        # Sol-repair MAJOR 4 (red-team 2026-08-25): defaulting purely to t0
+        # backdated the generation clock behind the very object the vector
+        # cites — the shipped FPI golden claimed it was generated eight days
+        # before its own decision-time evidence existed. The default is now the
+        # LATER of t0 and that object's recorded clock, so a composed vector is
+        # never self-inconsistent (K3E_R021 enforces the same invariant on
+        # anything a caller supplies). Still deterministic: both inputs are
+        # caller-supplied, no wall clock is read.
+        t0_stamp = f"{asof['value']}T00:00:00Z" if asof.get("grain") == "date" else asof["value"]
+        recorded = ((asof.get("t0_evidence_ref") or {}).get("recorded_clock") or {}).get("value")
+        rec_stamp = f"{recorded}T00:00:00Z" if isinstance(recorded, str) and len(recorded) == 10 else recorded
+        candidates = [s for s in (t0_stamp, rec_stamp) if isinstance(s, str)]
+        generated_at = max(candidates, key=lambda s: _parse_instant(s)) if candidates else t0_stamp
 
     vector = {
         "schema": "opportunity_evidence.vector.v1",

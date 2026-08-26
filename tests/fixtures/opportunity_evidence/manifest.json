@@ -16,7 +16,7 @@
         "FPI zero-EDGAR-statements rule: contracts/opportunity_evidence/slot_registry.v1.json constructs.forensics_scalars note ('Canadian/FPI names may have zero EDGAR rows: missing filings are not missing operations'); recorded verbatim at research/opportunity_evidence/E0_PEER_RELATIVE_CASEBOOK.md line 93 ('Canadian/FPI names (CCJ) miss US EDGAR fundamentals').",
         "t0 authentication: owner_pit_reference digest-pinned to that casebook's committed bytes (sha256 f8f5d744...c4bc97592, git committer date 2026-08-18). That is 8 days AFTER t0 2026-08-10, past the 5-day live budget, so the vector declares t0_mode retrospective_research rather than claiming operational PIT."
       ],
-      "sha256": "8816c561cdc2ef412945d5c4cda24066368ece211c42337b22c7fd97f0f9b918"
+      "sha256": "503d55427b1fa8e6a85bc9be6d42b11d343677cc6b74d11c15deb6afa33f79fd"
     },
     "golden_imxi_drl_event": {
       "bytes": 18276,
@@ -165,7 +165,7 @@
         "K3E_R021"
       ],
       "kind": "hostile",
-      "sha256": "0c492cc5d25bd39397ac1687c3027e741304a66f4a4561d88c56ee87461aca08"
+      "sha256": "53a134b33f1d466d09cab8348579f61352acc6aca31f67943127df65d5fd3f77"
     }
   },
   "schema": "opportunity_evidence.fixture_manifest.v1"

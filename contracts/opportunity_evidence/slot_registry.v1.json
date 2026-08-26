@@ -84,7 +84,11 @@
         "recorded_clock_class": null,
         "max_recording_lag_days": 5,
         "digest_required": true,
-        "notes": ["The generic source: any owner-backed PIT object, authenticated by a MANDATORY immutability receipt (native_digest state 'known') plus a known minting clock. Replaces the retired caller_named_pit_object free string — an arbitrary caller-named identifier is no longer expressible."]
+        "notes": [
+          "The generic source: any owner-backed PIT object, carrying a MANDATORY immutability receipt (native_digest state 'known') plus a known minting clock and a declared owner_store.",
+          "HONEST BOUNDARY (red-team 2026-08-25, correcting an earlier overclaim). This row does NOT prove the referenced object exists or that the digest is its true hash: with owner_store and recorded_clock_class unpinned, both are caller-declared. What it changes versus the retired caller_named_pit_object free string is (a) the reference is structurally decomposed into K1 EvidenceRef fields instead of one opaque label, (b) a specific 64-hex digest must be committed to, so the claim is falsifiable by anyone who fetches the object, and (c) the minting clock is mandatory, so the retrospective-t0 fence applies. It is an ACCOUNTABILITY receipt, not a verification. A t0 that must be verifiable at validation time belongs on one of the four pinned owner sources above, which do bind owner_store and clock class.",
+          "Consequence a future wave may close: verifying a digest requires reading the owner's bytes, which this contract cannot do — it is a pure in-memory view with no owner imports and no I/O. Binding this source harder means either pinning more owner stores here or giving the validator an owner-read seam, and the latter is a producer decision outside this contract's authority."
+        ]
       }
     }
   },

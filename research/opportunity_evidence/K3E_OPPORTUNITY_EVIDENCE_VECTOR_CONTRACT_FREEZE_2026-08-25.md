@@ -271,6 +271,46 @@ leg keys after the re-cut, which would have left **both** entry legs unpoliced
 for dangling refs while every other test passed. It is fixed and pinned by
 `test_s3_dangling_refs_are_caught_in_the_recut_entry_legs`.
 
+### 7.3 SECOND red-team wave on the Sol repair (2026-08-25) — 2 BLOCKERs, 6 MAJORs
+
+The first repair was then attacked by an independent opus red-team, which
+returned **STATUS: FAIL** with 2 BLOCKERs and 6 MAJORs. Its central judgment was
+that **items 2 and 3 were satisfied in vocabulary but not in substance** — the
+repair had added the right words and left the enforcement reachable around.
+Every finding was independently reproduced by the commissioning session before
+being repaired (no finding was accepted on the reviewer's word), and every
+exploit was re-run against the fix:
+
+| # | Finding | Why it mattered | Repair + proof |
+|---|---|---|---|
+| **B1** | A slot NAMED `prophet_entry_signal` could carry board admission's payload **and** board admission's own `owner_ref`, then satisfy the Entry Availability leg — zero findings. The two constructs share `family_binding`, `derivation`, and clock classes, so only the name differed, and no check read the registry's `owner`/`artifact`/`reader` pins. **Sol item 3 was defeated by a costume.** | The `hostile_admission_as_entry` fixture only caught the naive form (`slot_refs: ["prophet_board_lane"]`) | Every registry-known slot's `owner_ref` (owner/artifact/reader) **and** `object_class` must now equal its registry pin (`K3E_R008`). `test_rt2_blocker1_admission_payload_wearing_the_actionability_name_fires_r008` |
+| **B2** | The `market_reflection` leg SET was attacker-controlled, so recomputing its denominator proved nothing. Three forgeries all recomputed "consistently" and validated clean: ref-less legs declaring themselves `observed`; deleting the five adverse legs so 2/7 coverage reported as **2/2 = 100 % market reflection**; duplicating the one observed leg. **Sol item 2 was defeated.** | The old binding was gated on `if len(refs) != 1: continue`, so any leg without exactly one ref was unchecked | The seven I1–I7 legs must appear **exactly once, in order**, and a leg with no resolvable backing slot may only be `missing`/`unknown` — never `observed`/`modeled`/`partial` (`K3E_R015`). Three parametrized proofs in `test_rt2_blocker2_market_reflection_leg_set_cannot_be_forged` |
+| **M3** | `owner_pit_reference` pins `owner_store: null` and `recorded_clock_class: null`, so the registry's claim that "an arbitrary caller-named identifier is no longer expressible" was **false for the source three of four goldens use** | An overclaim to Sol about the strength of item 1 | Claim corrected in the registry with an explicit HONEST BOUNDARY note: this source is an **accountability receipt, not a verification** — the digest is falsifiable by anyone who fetches the object, but nothing here proves the object exists. Verifying it needs an owner-read seam this contract deliberately does not have |
+| **M4** | `generated_at` was unauthenticated and the composer defaulted it to t0, so a vector could claim it was generated **before the evidence it cites existed** — the shipped FPI golden did exactly that (generated `2026-08-10`, citing an object minted `2026-08-18`) | A self-inconsistent shipped artifact | `K3E_R021` now enforces `generated_at >= recorded_clock`; the composer defaults to the later of the two. `test_rt2_major4_*` (mutation + all-goldens invariant) |
+| **M5** | The anti-hindsight lag was **day-truncated** (`.date()`), re-opening the day-grain blindness the first red-team closed for slot clocks: a ~1.9999-day lag measured as exactly 1 day and slipped under a 1-day budget | The fence Sol's item 1 exists to create | Both sides compared as instants. `test_rt2_major5_lag_is_measured_as_an_instant_not_a_truncated_day` |
+| **M6** | `validate_vector` **raised** `TypeError` on a non-string clock value, violating its documented never-raises contract — a fail-closed caller got an exception instead of a finding | Fail-closed callers cannot fail closed on a crash | Non-string clocks return `None` and surface a finding. `test_rt2_major6_validate_vector_never_raises_on_hostile_clock` |
+| **M7** | No check compared a slot's `object_class` to its registry pin, so relabeling `instrument_state` → `derived_view` walked a slot past the dual-read fence | Instrument verdicts could re-enter the evidence legs | Covered by the same B1 registry-pin enforcement. `test_rt2_major7_object_class_relabel_to_escape_a_fence_fires_r008` |
+| **M8** | The `entry_role` fence covered observed/inferred/market_reflection only, so entry-owner reads laundered into `strongest_unresolved_fact` — a leg the **composer** already refused to put them in (validator/composer drift) | Entry state re-entering the evidence surface | Fence extended to `strongest_unresolved_fact`; validator and composer now agree. `test_rt2_major8_*` (parametrized over all three entry roles) |
+| **m9** | §7 cited "I7 structural exclusion" as a look-ahead proof, but the I7 leg could simply be **deleted** from the wire | A false claim in this packet | Closed by the B2 fixed-leg-set rule. `test_rt2_minor9_deleting_the_i7_leg_is_refused` |
+| **m10** | Anchored patterns used `re.search`, and Python's `$` matches before a trailing newline (unlike ECMA-262), so `"IMXI\n"` satisfied K1's explicitly newline-free `^[^\r\n]+$` | K1 shape reuse was weaker than claimed | Anchored patterns now match end-to-end. `test_rt2_minor10_anchored_patterns_reject_a_trailing_newline` |
+| **m11** | Two `K3E_R021` pins failed **open** on registry drift: a missing lag budget disabled the retrospective fence, a missing `digest_required` dropped the digest | A fail-closed rule that fails open | Both default to the strict reading. `test_rt2_minor11_registry_pins_fail_closed_*` |
+| **m12** | The self-named-gate fence matched only two spellings, so `"self"`, `"internal"`, `"this rule"` passed as canonical gate owners | Authority leak via prose | Fence broadened. `test_rt2_minor12_self_named_gate_owners_are_refused` |
+| **n14** | `assert "radar" not in entry` was **vacuous** — the recut key is `radar_probe_coverage`, so it could never fail | A test that could not detect the regression it named | Replaced with an exact key-set assertion |
+
+Suite: **100 passed**. Two reviewer NO-FINDING areas are recorded as verified
+rather than assumed: fixture honesty (all 20 fixtures match `manifest.json` on
+`sha256` and `bytes`; both real digests independently confirmed with `shasum`;
+the one illustrative digest is disclosed, not passed off as real) and the
+completeness of the mandatory-denominator inventory.
+
+**Reviewer gaps carried forward, not silently closed:** the second
+`propertyNames` site (`value_or_null`, partially covered by the payload-key
+fence) was not probed; whether `prophet.board_read/v1` `entry_signal.status` is
+the *correct* canonical actionability surface is an owner question the reviewer
+could not settle and this session asserts only from the two string pins in
+`engine/prophet_board_read.py`; and K1 EvidenceRef fields beyond the three
+compared field-for-field were not audited for load-bearing omissions.
+
 ## 8. Remaining owner gaps (named, not papered over)
 
 1. **Windowed dislocation attribution has no producer.** The 5-layer per-window
@@ -324,9 +364,9 @@ python3 scripts/agentos.py validate
 
 Receipts (exact, this candidate):
 
-- Contract suite: **84 passed** (post-Sol-repair candidate; includes all ten
+- Contract suite: **100 passed** (post-Sol-repair candidate; includes all ten
   commissioned mutation kills, the 19 red-team repair proofs, the 22 Sol
-  REQUEST_CHANGES proofs of §7.2, the families.yml join, both K1 enum-equality
+  REQUEST_CHANGES proofs of §7.2, the 16 second-red-team regression proofs of §7.3, the families.yml join, both K1 enum-equality
   pins, the K1 EvidenceRef shape-equality pin, the security_state
   compilation-state pin, the grain-delta pin, determinism round-trips, and the
   no-store scans)
@@ -383,7 +423,7 @@ tuning. This PR merges nothing and starts no dependent wave.
 > any leg; an unavailable owner leaves the leg explicitly `missing`/`unknown`. Radar
 > probe availability is typed probe/coverage state, never a trade-entry verdict.
 >
-> Receipts: 84 passed; 4 goldens clean and 16 hostiles each firing their
+> Receipts: 100 passed; 4 goldens clean and 16 hostiles each firing their
 > commissioned code on an independent re-validation sweep; contract-delta `0
 > introduced, 0 inherited`; Agent OS validate 0 errors. Schema, registry,
 > validator/composer, goldens/hostiles, freeze §5/§7.2/§8/§12, DEC, WS and handoff

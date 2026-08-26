@@ -32,7 +32,7 @@
     "can_size": false
   },
   "compilation_state": "partial",
-  "content_sha256": "b0aea3aebbf69e6f5692ad24ecd62bba093ce1f84a3bcf68961f2f1c3ce6e5f6",
+  "content_sha256": "9ea709bc98cbe0d1eaa51ca3c34e689d7640aca033a425d5f3b92dd736065d49",
   "denominator": {
     "conflicted": 0,
     "excluded": 3,
@@ -48,7 +48,7 @@
   "display_only": true,
   "dominant_degradation": "missing",
   "economic_cause_hypothesis": null,
-  "generated_at": "2026-08-14T00:00:00Z",
+  "generated_at": "2026-09-30T00:00:00Z",
   "permitted_consumers": [
     "research_session"
   ],

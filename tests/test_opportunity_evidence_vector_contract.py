@@ -1309,6 +1309,10 @@ def test_s1_same_lag_is_lawful_once_declared_retrospective():
 
     v = _golden_imxi_vector()
     v["asof"]["t0_evidence_ref"]["recorded_clock"]["value"] = "2026-09-30"
+    # The vector is generated no earlier than the object it cites (K3E_R021's
+    # generated_at invariant); move it with the recorded clock so this test
+    # isolates the retrospective-lag law rather than tripping that one.
+    v["generated_at"] = "2026-09-30T00:00:00Z"
     assert "K3E_R021" in _codes(validate_vector(_rehash(v)))
     v["asof"]["t0_mode"] = "retrospective_research"
     assert validate_vector(_rehash(v)) == []
@@ -1512,9 +1516,10 @@ def test_s3_radar_leg_is_typed_probe_coverage_never_a_trade_verdict():
     entry = schema["$defs"]["projection"]["properties"]["entry_availability"]["properties"]
     assert entry["radar_probe_coverage"]["properties"]["verdict_class"]["const"] == "probe_coverage_state_not_trade_entry"
     # The legacy leg names are gone: nothing can address the entry leg as a
-    # Prophet board read any more.
-    assert "prophet_board" not in entry
-    assert "radar" not in entry
+    # Prophet board read any more. Assert the exact key set — `"radar" not in
+    # entry` was vacuous (the recut key is `radar_probe_coverage`, so a
+    # substring-style check could never fail whatever the recut did).
+    assert set(entry) == {"entry_signal", "radar_probe_coverage", "composition_law"}
 
 
 def test_s3_dangling_refs_are_caught_in_the_recut_entry_legs():
@@ -1534,6 +1539,213 @@ def test_s3_authority_envelope_still_denies_entry_after_the_recut():
         v = _compose_golden(name)
         assert v["authority"]["can_open_entry"] is False
         assert v["projection"]["entry_availability"]["composition_law"] == "owner_read_only_never_computed"
+
+
+# ---------------------------------------------------------------------------
+# Second red-team wave (2026-08-25, post-Sol-repair). Each test below reproduces
+# a defect an independent opus reviewer found in the FIRST repair and proves it
+# is closed. Named RT2-* by finding.
+# ---------------------------------------------------------------------------
+
+
+def _honest_receipts(v: dict) -> dict:
+    """Re-derive the slot-level receipts so a probe isolates the defect under
+    test instead of tripping the denominator check on its way."""
+    from lib.opportunity_evidence import _recompute_denominator, _recompute_dominant_degradation
+
+    v["denominator"] = _recompute_denominator(v["slots"])
+    v["dominant_degradation"] = _recompute_dominant_degradation(v["slots"])
+    return _rehash(v)
+
+
+def test_rt2_blocker1_admission_payload_wearing_the_actionability_name_fires_r008():
+    """BLOCKER 1: the construct NAME was the only thing separating the
+    actionability owner from board admission. A caller could put the board's
+    payload AND the board's owner_ref into a slot named prophet_entry_signal
+    and satisfy the Entry Availability leg with zero findings."""
+
+    v = _golden_imxi_vector()
+    for s in v["slots"]:
+        if s["construct"] == "prophet_entry_signal":
+            s.update(
+                state="observed", object_class="system_belief",
+                value_or_null={"lane": "not_on_board", "buyable": False, "eligible": False},
+                missingness={"state": "present", "reason": None, "zero_substituted": False},
+                asof={"value": "2026-08-14", "grain": "date", "clock_class": "belief_or_build", "native_field": "as_of", "state": "known"},
+                known_at={"value": "2026-08-14", "grain": "date", "clock_class": "knowable", "native_field": "as_of", "state": "known"},
+                owner_ref={
+                    "owner": "Prophet US (engine/us_board_rank.py + nightly stamp)",
+                    "artifact": "data/us_prophet_rank/candidates/ frame columns lane, buyable, eligible",
+                    "reader": "engine.us_context_vector.load_candidates",
+                    "evidence_ref_id": None,
+                },
+                coverage_flag={"state": "full", "note": None},
+                exclusion_reason=None, included_in_composition=True,
+            )
+    v["projection"]["entry_availability"]["entry_signal"] = {
+        "state": "read", "slot_refs": ["prophet_entry_signal"],
+        "verdict_class": "owner_entry_actionability",
+    }
+    codes = _codes(validate_vector(_honest_receipts(v)))
+    assert "K3E_R008" in codes, f"board admission still satisfies the entry leg: {codes}"
+
+
+def test_rt2_major7_object_class_relabel_to_escape_a_fence_fires_r008():
+    v = _golden_imxi_vector()
+    for s in v["slots"]:
+        if s["construct"] == "drl_filing_coverage":
+            s["object_class"] = "world_observation"  # registry pins derived_view
+    assert "K3E_R008" in _codes(validate_vector(_honest_receipts(v)))
+
+
+@pytest.mark.parametrize("mutate,label", [
+    (lambda legs: [dict(l, state="observed") if l["leg"] in ("I1_anticipation", "I6_peer_response") else l for l in legs],
+     "ref-less legs declare themselves observed"),
+    (lambda legs: [l for l in legs if l["leg"] in ("I2_immediate_response", "I4_options_repricing")],
+     "adverse legs deleted so coverage reads 100%"),
+    (lambda legs: legs + [copy.deepcopy(next(l for l in legs if l["leg"] == "I2_immediate_response"))],
+     "the one observed leg duplicated"),
+])
+def test_rt2_blocker2_market_reflection_leg_set_cannot_be_forged(mutate, label):
+    """BLOCKER 2: recomputing a denominator from wire-declared leg states is
+    worthless while the leg SET is attacker-controlled. All three forgeries
+    recomputed 'consistently' and validated clean before the fix."""
+
+    v = _golden_imxi_vector()
+    mr = v["projection"]["market_reflection"]
+    mr["incorporation_legs"] = mutate(mr["incorporation_legs"])
+    legs = mr["incorporation_legs"]
+    included = sum(1 for l in legs if l["state"] in ("observed", "modeled", "partial"))
+    mr["denominator"] = {"total": len(legs), "included": included, "excluded": len(legs) - included}
+    codes = _codes(validate_vector(_rehash(v)))
+    assert "K3E_R015" in codes, f"forgery survived ({label}): {codes}"
+
+
+def test_rt2_major5_lag_is_measured_as_an_instant_not_a_truncated_day():
+    """MAJOR 5: the lag was day-truncated via `.date()`, so an object minted
+    1.9999 days after t0 measured as exactly 1 day and slipped under a 1-day
+    budget. Both sides are now compared as instants."""
+
+    from lib.opportunity_evidence import _t0_recording_lag_seconds
+
+    # The reviewer's own case: t0 just after midnight, object minted just before
+    # midnight two calendar days later. Day-truncation called this "1 day".
+    lag = _t0_recording_lag_seconds("2026-08-15T23:59:59Z", "2026-08-14T00:00:01Z")
+    assert lag is not None and lag / 86400 > 1.99
+    budget_days = load_slot_registry()["t0_sources"]["sources"]["radar_observed_at"]["max_recording_lag_days"]
+    assert budget_days == 1
+    assert lag > budget_days * 86400, "a ~2-day lag must not pass a 1-day budget"
+
+    # End to end through the validator on the radar source.
+    v = _golden_imxi_vector()
+    v["asof"]["value"] = "2026-08-14T00:00:01Z"
+    v["asof"]["grain"] = "datetime"
+    v["asof"]["t0_source"] = "radar_observed_at"
+    v["asof"]["t0_evidence_ref"].update(
+        owner_store="data/entry_radar/",
+        recorded_clock={"value": "2026-08-15T23:59:59Z", "grain": "datetime",
+                        "clock_class": "belief_or_build", "native_field": "assembled_at", "state": "known"},
+    )
+    v["generated_at"] = "2026-08-16T00:00:00Z"
+    assert "K3E_R021" in _codes(validate_vector(_rehash(v)))
+
+    # A lag genuinely inside the budget still passes — the fence is on the
+    # boundary, not on intraday precision as such.
+    inside = _t0_recording_lag_seconds("2026-08-14T18:00:00Z", "2026-08-14T00:00:01Z")
+    assert inside is not None and inside < budget_days * 86400
+
+
+def test_rt2_major6_validate_vector_never_raises_on_hostile_clock():
+    """MAJOR 6: len() on a non-string wire value escaped as TypeError, breaking
+    the documented never-raises contract a fail-closed caller depends on."""
+
+    v = _golden_imxi_vector()
+    for bad in (20260814, [], {}, True):
+        v["asof"]["t0_evidence_ref"]["recorded_clock"]["value"] = bad
+        findings = validate_vector(v)  # must not raise
+        assert any(f.code.startswith("K3E_") for f in findings)
+
+
+def test_rt2_major4_generated_at_cannot_precede_the_cited_object():
+    v = _golden_imxi_vector()
+    v["generated_at"] = "2020-01-01T00:00:00Z"
+    assert "K3E_R021" in _codes(validate_vector(_rehash(v)))
+
+
+def test_rt2_major4_composer_never_backdates_generated_at():
+    """The shipped FPI golden claimed it was generated eight days before the
+    decision-time object it cites existed."""
+
+    for name in GOLDEN_BUILDERS:
+        v = _compose_golden(name)
+        recorded = v["asof"]["t0_evidence_ref"]["recorded_clock"]["value"]
+        rec = recorded if len(recorded) > 10 else f"{recorded}T00:00:00Z"
+        assert v["generated_at"] >= rec, f"{name}: generated_at {v['generated_at']} precedes cited object {rec}"
+        assert validate_vector(v) == []
+
+
+@pytest.mark.parametrize("construct", ["prophet_entry_signal", "radar_probe_admission", "prophet_board_lane"])
+def test_rt2_major8_entry_owner_reads_cannot_launder_into_strongest_unresolved_fact(construct):
+    """MAJOR 8: the fence covered observed/inferred/market_reflection only, so
+    the actionability and probe-coverage owners laundered cleanly into a leg the
+    composer already refuses to put them in."""
+
+    v = _golden_imxi_vector()
+    v["projection"]["strongest_unresolved_fact"] = {
+        "state": "named", "fact": "laundering probe", "slot_refs": [construct],
+    }
+    assert "K3E_R011" in _codes(validate_vector(_rehash(v)))
+
+
+def test_rt2_minor9_deleting_the_i7_leg_is_refused():
+    """MINOR 9: freeze §7 cited 'I7 structural exclusion' as a look-ahead proof,
+    but the leg could simply be deleted from the wire."""
+
+    v = _golden_imxi_vector()
+    mr = v["projection"]["market_reflection"]
+    mr["incorporation_legs"] = [l for l in mr["incorporation_legs"] if l["leg"] != "I7_persistence_rejection"]
+    legs = mr["incorporation_legs"]
+    included = sum(1 for l in legs if l["state"] in ("observed", "modeled", "partial"))
+    mr["denominator"] = {"total": len(legs), "included": included, "excluded": len(legs) - included}
+    assert "K3E_R015" in _codes(validate_vector(_rehash(v)))
+
+
+def test_rt2_minor10_anchored_patterns_reject_a_trailing_newline():
+    """MINOR 10: Python's `$` matches before a trailing newline, unlike the
+    ECMA-262 `$` JSON Schema is defined against — so "IMXI\\n" satisfied K1's
+    explicitly newline-free ^[^\\r\\n]+$."""
+
+    v = _golden_imxi_vector()
+    v["asof"]["t0_evidence_ref"]["native_identity"] = {"ticker": "IMXI\nrm -rf"}
+    assert _codes(validate_vector(_rehash(v))), "newline smuggled through an anchored pattern"
+
+    v2 = _golden_imxi_vector()
+    v2["asof"]["value"] = "2026-08-14\n"
+    assert _codes(validate_vector(_rehash(v2)))
+
+
+def test_rt2_minor11_registry_pins_fail_closed_when_a_budget_or_digest_pin_is_missing():
+    import lib.opportunity_evidence as oe
+
+    v = _golden_imxi_vector()
+    registry = copy.deepcopy(oe.load_slot_registry())
+    del registry["t0_sources"]["sources"]["drl_event_date"]["max_recording_lag_days"]
+    real = oe.load_slot_registry
+    try:
+        oe.load_slot_registry = lambda: registry
+        assert "K3E_R021" in _codes(validate_vector(_rehash(v)))
+    finally:
+        oe.load_slot_registry = real
+
+
+def test_rt2_minor12_self_named_gate_owners_are_refused():
+    for owner in ("self", "internal", "this rule", "Computed", "lib/opportunity_evidence.py"):
+        v = _golden_imxi_vector()
+        v["projection"]["failed_or_unavailable_gates"] = {
+            "gates": [{"gate": "g", "owner": owner, "state": "failed", "reason": None}],
+            "denominator": {"total": 1, "included": 1, "excluded": 0},
+        }
+        assert "K3E_R011" in _codes(validate_vector(_rehash(v))), f"gate owner {owner!r} accepted"
 
 
 def test_mutation_disloc_residual_slot_with_noncanonical_owner_fires_r008():
