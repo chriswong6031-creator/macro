@@ -694,23 +694,24 @@ Terminal states are QUIESCENT (Sol commission #6379, 2026-08-24). A session that
 reaches a lawful terminal state — PARKED, or a ratified external `SHIP LOOP
 BLOCKED:` ladder exit — emits ONE terminal report and then stays quiet: the guard
 latches the exact frozen state (`parked_latch`; external ladder-exit keys
-`<code>:<head>:<digest>`), so a leftover background timer's wake turn passes Stop
-silently instead of re-narrating or re-blocking. The latch is state-specific and
+`<code>:<head>:<digest>`), so a legacy background wake turn passes Stop silently
+instead of re-narrating or re-blocking. Canonical requirement: **zero new model
+turns while external state is unchanged**. The latch is state-specific and
 never weakens completion: only a probe that positively answers "parked" may
 silence a Stop; a released hold, a new head, a red check, a dirty tree, or a
 pruned branch clears the latch and ordinary fail-closed law resumes, while an
 unanswerable GitHub layer delegates to the canonical guard's own escapeable
 outage block (the latch survives, but an outage is never terminal evidence).
-Internal codes (`unmerged`, `ci_failed_unmerged`, …) never latch. One-watcher
-law: a background command with a literal `sleep` delay ≥60s is a ship watcher;
-acquisition is serialized under one cross-process lock, and a session carries at
-most one LIVE watcher — after a short start grace, occupancy is governed by the
-reserved command's observable process, so neither a head move nor the nominal
-sleep deadline frees a running watcher, an unanswerable process table refuses,
-and the fired watcher's successor is admitted once its process is gone. None may
-be created at a PARKED-latched HEAD. Hooks cannot enumerate or cancel Claude-native background tasks
+Internal codes (`unmerged`, `ci_failed_unmerged`, …) never latch. Do not create
+sleep timers, polling loops, detached shell jobs, or a successor merely because
+an earlier watcher exited. The PreToolUse gate admits at most one native GitHub
+condition watcher, marks it with a session-unique process identity, and verifies
+PID plus process-start identity; a duplicate/unknown owner fails closed. Process
+absence alone never authorizes the same HEAD/condition again — only a material
+HEAD or external-condition change can admit a later owner after the old identity
+has exited. None may be created at a PARKED-latched HEAD. Hooks cannot enumerate or cancel Claude-native background tasks
 (`DSC:CLAUDE-TASK-WAKES-OUTLIVE-TERMINAL-SHIP-STATES`), so never design around
-cancellation: create at most one watcher, and end post-terminal wake turns
+cancellation: avoid timer-based wakes and end any legacy post-terminal wake turn
 without re-reporting. The CI gate remains
 base-side-aware: a red on the merged head that provably pre-existed on main (same check
 failing on ≥2 independent concurrent PR heads pre-merge, or a green ci.yml run on a main

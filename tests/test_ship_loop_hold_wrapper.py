@@ -523,6 +523,43 @@ def test_github_outage_never_silences_and_never_clears_the_latch(monkeypatch, tm
     assert json.loads(state_path.read_text(encoding="utf-8"))["parked_latch"]
 
 
+def test_outage_blocker_mutation_cannot_make_the_same_parked_hold_narrate_again(
+    monkeypatch, tmp_path
+):
+    """Exercise the whole incident sequence, not only its final snapshot:
+    PARKED -> outage delegate -> canonical blocker mutation -> two recovered
+    Stops. Transport ambiguity cannot turn one unchanged hold into a fresh
+    terminal narration."""
+    _stub_clean_pushed_git(monkeypatch)
+    guard, state_path, calls = _ledger_guard(
+        tmp_path,
+        state_extra={
+            "last_blocker": "unmerged",
+            "parked_latch": f"parked:6138:{HEAD}",
+        },
+    )
+
+    original_open = guard._open_pull
+    guard._open_pull = lambda *_args: (_ for _ in ()).throw(
+        RuntimeError("api.github.com unreachable")
+    )
+    assert WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"}) is None
+    assert json.loads(state_path.read_text(encoding="utf-8"))["parked_latch"]
+
+    # This is the canonical delegate's real side effect during the outage.
+    state = json.loads(state_path.read_text(encoding="utf-8"))
+    state["last_blocker"] = "github_unreachable"
+    state_path.write_text(json.dumps(state), encoding="utf-8")
+    guard._open_pull = original_open
+
+    first = WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"})
+    second = WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"})
+    assert first == second == {"action": "silent"}
+    state = json.loads(state_path.read_text(encoding="utf-8"))
+    assert state["parked_latch"] == f"parked:6138:{HEAD}"
+    assert calls == {"open_pull": 2, "checks": 2}
+
+
 def test_local_probe_failure_reads_as_not_a_candidate_and_clears_the_latch(
     monkeypatch, tmp_path
 ):

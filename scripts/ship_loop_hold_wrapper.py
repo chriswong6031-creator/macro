@@ -216,6 +216,7 @@ def _hold_probe(guard: ModuleType, payload: dict[str, Any]) -> dict[str, Any] | 
         if not isinstance(state, dict):
             return None
         last_blocker = str(state.get("last_blocker") or "")
+        parked_latch = str(state.get("parked_latch") or "")
 
         # Read the local branch before deciding whether GitHub deserves a probe. A Sol
         # authority branch is the one case where waiting for a prior unsafe_branch is
@@ -227,10 +228,20 @@ def _hold_probe(guard: ModuleType, payload: dict[str, Any]) -> dict[str, Any] | 
             candidate_kind = "sol_authority"
         elif last_blocker == "unmerged" and branch.startswith("claude/"):
             candidate_kind = "ordinary_unmerged"
+        elif parked_latch.startswith("parked:") and branch.startswith("claude/"):
+            # A delegated GitHub outage legitimately changes last_blocker to
+            # github_unreachable. The exact parked latch remains the durable
+            # candidate identity until positive local/remote evidence changes
+            # it; transport ambiguity alone may not erase that identity.
+            candidate_kind = "ordinary_latched"
         else:
             return None
 
         head = _git(root, "rev-parse", "HEAD")
+        if candidate_kind == "ordinary_latched":
+            latch_parts = parked_latch.split(":")
+            if len(latch_parts) != 3 or latch_parts[2] != head:
+                return None
         upstream = _git(root, "rev-parse", "--abbrev-ref", "@{upstream}")
         if int(_git(root, "rev-list", "--count", f"{upstream}..HEAD") or "0") != 0:
             return None

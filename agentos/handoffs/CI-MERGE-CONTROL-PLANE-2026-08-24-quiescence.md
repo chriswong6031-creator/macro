@@ -10,8 +10,8 @@ discoveries:
 mission: >
   Sol commission macro#6379: make a session that reaches a lawful terminal
   ship state (PARKED, or a ratified external SHIP LOOP BLOCKED ladder exit)
-  actually quiescent — one terminal report, at most one ship-state watcher,
-  zero repeated wake narration/blocking — without weakening ordinary
+  actually quiescent — one terminal report and zero new model turns while
+  external state is unchanged — without weakening ordinary
   completion (Journey C internal blockers byte-unchanged).
 state_before: >
   Wrapper was stateless: every Stop after PARKED re-probed GitHub and
@@ -29,19 +29,16 @@ changed:
       every EXTERNAL _block site so ratified ladder exits quiesce wakes;
       merged-head ci_failed keeps its original 3-part key. New PreToolUse
       branch (_pre_tool_use/_watcher_request/_watcher_gate/
-      _latched_terminal_heads/_deny_watcher): one live delayed-wake
-      reservation per session ledger; fail-open, kills nothing; non-watcher
-      Bash returns before delegation. After the opus red-team: only the
-      parked_latch refuses creation — ladder exits do not, having no
-      clearing path (F4); sleep parsing is suffix-aware s/m/h/d (F5); _save
-      uses a per-PID temp name (F6). After Sol's 2026-08-25 re-review
-      blocker: acquisition is linearizable (exclusive flock around the
-      ledger read-check-write, state loaded inside the lock), and occupancy
-      binds to the REAL watcher lifetime — start grace, then the reserved
-      command's observable process (ps) governs; head moves and the nominal
-      sleep deadline never free a live watcher; unknown liveness refuses;
-      the fired watcher's successor is admitted by process absence (F3's
-      lawful successor, now on evidence instead of a clock).
+      _latched_terminal_heads/_deny_watcher): ordinary Bash fails open before
+      state access; executed sleep/poll/detached/uncertain watcher forms fail
+      closed; one native GitHub condition owner may reserve. Acquisition is
+      linearizable under the ledger's single transaction lock. The admitted
+      command receives a session-unique marker; occupancy binds to PID plus
+      process-start identity, never a global command fragment. Process exit
+      alone does not authorize the same HEAD/condition again; only material
+      condition change can reserve a later owner after the old identity exits.
+      Ledger/lock files are owned regular files in a 0700 directory, opened
+      no-follow and saved through unique atomic temp files.
   - path: scripts/ship_loop_hold_wrapper.py
     what: >
       _handle_stop: first lawful PARKED writes parked_latch
@@ -57,29 +54,37 @@ changed:
   - path: .claude/settings.json
     what: PreToolUse:Bash now also runs ship_loop_guard.py (timeout 15).
   - path: tests/test_ship_loop_guard.py
-    what: 10 new tests — external exit keys, wake quiescence, new-head/
-      changed-reason regating, internal-code negative control, watcher
-      classification/coalescing/terminal-refusal/fail-open, settings pin.
+    what: >
+      Existing quiescence tests plus adversarial regressions for legal
+      sleep/gh spellings, inert quoted-text negative controls, evaluated-hook
+      delegation failure, concurrent ledger writers, marker/PID/start identity,
+      PID reuse and sibling-session isolation, filesystem symlinks/modes, and
+      standing-law parity.
   - path: tests/test_ship_loop_hold_wrapper.py
-    what: 6 new tests — narrate-once latch, outage-holds-latch, outage+drift
-      delegates, release clears latch, red-after-park sol/* block, ordinary
-      no-latch negative control.
+    what: >
+      Existing narrate-once/release/outage tests plus the complete PARKED →
+      outage delegation → canonical last_blocker mutation → two recovered
+      Stops regression; the unchanged latch stays silent while positive hold
+      changes still clear it.
   - path: CLAUDE.md / AGENTS.md / .cursor/rules/ship-loop-terminal-states.mdc
     what: standing quiescence + one-watcher law matching the executable behavior.
   - path: agentos (WS wave W-QUIESCENCE, DSC record, this handoff)
     what: workstream wave + discovery + continuation record.
 verified:
-  - claim: full guard suite green (one pre-existing mtime flake passes 3/3 standalone)
-    command: python3 -m pytest tests/test_ship_loop_guard.py -q
-    result: 264 passed, 1 skipped (flake test_the_sweep_removes_a_zero_byte_lock_this_guard_orphaned 3/3 standalone)
-  - claim: wrapper suite green
-    command: python3 -m pytest tests/test_ship_loop_hold_wrapper.py -q
-    result: 24 passed
+  - claim: adversarial review defects reproduced before repair
+    command: python3.12 -m pytest focused watcher/delegation/identity/filesystem/prose selections; python3.12 -m pytest tests/test_ship_loop_hold_wrapper.py -q -k outage_blocker_mutation
+    result: 31 failed / 3 passed in guard selection; 1 failed in wrapper selection; 1 additional delegated-child stdout test failed with two hook JSON values, all at the intended missing behaviors
+  - claim: full guard and wrapper suites green on repaired tree
+    command: python3.12 -m pytest tests/test_ship_loop_guard.py tests/test_ship_loop_hold_wrapper.py -q
+    result: 353 passed, 1 skipped; 3 non-failing inherited pytest temp-cleanup warnings
+  - claim: wrapper suite independently green
+    command: python3.12 -m pytest tests/test_ship_loop_hold_wrapper.py -q
+    result: 27 passed; 3 non-failing inherited pytest temp-cleanup warnings
   - claim: adjacent pins green (quota guard, self-mod fence, routing, sparse profile)
-    command: python3 -m pytest tests/test_gh_quota_guard.py tests/test_self_mod_fence.py tests/test_agent_routing_control.py tests/test_sparse_worktree_profile.py -q
+    command: python3.12 -m pytest tests/test_gh_quota_guard.py tests/test_self_mod_fence.py tests/test_agent_routing_control.py tests/test_sparse_worktree_profile.py -q
     result: 230 passed
   - claim: self-mod fence selftest green
-    command: python3 scripts/check_self_mod_fence.py --selftest
+    command: python3.12 scripts/check_self_mod_fence.py --selftest
     result: 16/16 PASS
   - claim: mutation receipts — removing each mechanism fails its discriminating test
     command: "sed-disable each of: _external_exit_key gate / wrapper latch match / reservation check, then pytest the matching test"
@@ -94,8 +99,8 @@ verified:
       watcher DENIED (SHIP WATCHER REFUSED); fixture outage → silent latch
       hold; draft→false release → latch cleared + ordinary unmerged block.
   - claim: Agent OS records validate
-    command: python3 scripts/agentos.py validate
-    result: 0 errors (33 pre-existing warnings)
+    command: python3.12 scripts/agentos.py validate
+    result: 0 errors (43 inherited warnings; review-date rollover and unrelated phantom-path records)
 unverified:
   - claim: hosted CI green on the exact PR head
     what_would_verify: ci.yml + fences.yml runs on the PR head after push (watched to conclusion before parking)
@@ -134,14 +139,15 @@ danger_areas:
     probe cannot distinguish "hold in force" from "hold released", so silence
     there is a free exit for ordinary work (red-team F1/F2; opus review
     2026-08-24, session transcript).
-  - _watcher_gate must stay fail-open; a crash-deny would block ordinary Bash
-    fleet-wide via settings.json PreToolUse wiring.
+  - Ordinary non-watcher Bash must stay fail-open before delegation/state, but
+    once classified watcher-shaped, unanswerable admission must fail closed.
   - >
     Do not let ladder_exits refuse watcher creation (red-team F4 — permanent
     false-DENY of a resumed transient-escape session), and do not free the
     watcher slot on head moves or clock deadlines (Sol's 2026-08-25 blocker —
-    the old task may still be alive); only observed process absence after the
-    start grace frees it, and unknown liveness refuses.
+    the old task may still be alive); require the reserving session's marker,
+    PID, and start identity, refuse unknown liveness, and never treat process
+    absence as authority for an unchanged successor.
   - >
     Run every mutation receipt against COMMITTED code — `git checkout --` as
     the mutation restore silently reverts any uncommitted repair (this

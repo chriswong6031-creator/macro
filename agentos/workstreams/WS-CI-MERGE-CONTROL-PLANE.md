@@ -175,6 +175,8 @@ waves:
       run_in_background timer's completion starts a <task-notification> turn
       whose Stop re-enters the hooks, and no hook can enumerate/cancel
       Claude-native tasks (DSC:CLAUDE-TASK-WAKES-OUTLIVE-TERMINAL-SHIP-STATES).
+      Canonical amendment: zero new model turns while external state is unchanged;
+      timer/poll transports and unchanged successors are forbidden.
       Mechanism (one, deterministic, inside the existing per-session ledger):
       (1) every EXTERNAL block site mints a frozen-state exit key
       <code>:<head>:<digest12(reason)> so the ratified-ladder-exit memory
@@ -183,12 +185,18 @@ waves:
       silently, clearing the latch on any positively changed hold state —
       an unanswerable probe never silences (delegates to the guard's own
       escapeable outage block; opus red-team F1/F2); (3) a PreToolUse:Bash
-      branch of the guard enforces at most one LIVE delayed-wake watcher per
-      session — acquisition linearized under one flock, occupancy bound to
-      the reserved command's observable process lifetime after a start grace
-      (Sol re-review blocker 2026-08-25: head moves and nominal sleep
-      deadlines never free a live watcher; unknown liveness refuses) — and
-      refuses new watchers only at a PARKED-latched HEAD; never kills tasks.
+      branch of the guard fails open for ordinary Bash, fails closed for
+      executed sleep/poll/detached/uncertain wait forms, and admits at most one
+      native GitHub condition owner per session. Acquisition and every ledger
+      mutation share one lock; the admitted owner carries a session-unique
+      marker and binds to PID plus process-start identity rather than global
+      command text. Process absence alone cannot admit the same HEAD/condition;
+      unknown identity refuses. No watcher is admitted at a PARKED-latched HEAD
+      and no task is killed. The 2026-08-26 same-carrier adversarial return also
+      moved every ship_watcher ledger mutation under the one coherent lock,
+      preserved exact PARKED latches across outage blocker mutation, made
+      evaluated-tree watcher delegation fail closed, and hardened the ledger
+      directory/lock/atomic-save paths against symlink substitution.
       Internal codes byte-unchanged (Journey C). PR #6381 held HOLD-FOR-SOL
       per commission stop condition; mutation receipts + replayed-incident
       proof in the PR body and the

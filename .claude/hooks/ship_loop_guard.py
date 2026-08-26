@@ -69,12 +69,16 @@ neither makes it optional, and no counter moved.
 
 from __future__ import annotations
 
+import ast
 import hashlib
 import importlib.util
 import io
 import json
 import os
 import re
+import secrets
+import shlex
+import stat
 import subprocess
 import sys
 import tempfile
@@ -520,7 +524,8 @@ def _state_path(root: Path, payload: dict[str, Any]) -> Path:
     session = re.sub(r"[^A-Za-z0-9_.-]", "_", str(payload.get("session_id") or "default"))
     repo_key = hashlib.sha256(str(root).encode()).hexdigest()[:16]
     directory = Path(tempfile.gettempdir()) / "macro-claude-ship-sessions" / repo_key
-    directory.mkdir(parents=True, exist_ok=True)
+    directory_fd = _private_directory_fd(directory, create=True)
+    os.close(directory_fd)
     return directory / f"{session}.json"
 
 
@@ -902,21 +907,120 @@ def _shipped_identical_untracked(
         return set()
 
 
-def _load(path: Path) -> dict[str, Any] | None:
+_OPEN_NOFOLLOW = getattr(os, "O_NOFOLLOW", 0)
+_OPEN_CLOEXEC = getattr(os, "O_CLOEXEC", 0)
+_OPEN_DIRECTORY = getattr(os, "O_DIRECTORY", 0)
+
+
+def _private_directory_fd(directory: Path, *, create: bool) -> int:
+    """Open one user-owned private directory without following its final name."""
+    if create:
+        directory.mkdir(parents=True, exist_ok=True, mode=0o700)
+    flags = os.O_RDONLY | _OPEN_CLOEXEC | _OPEN_DIRECTORY | _OPEN_NOFOLLOW
+    descriptor = os.open(directory, flags)
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        info = os.fstat(descriptor)
+        if not stat.S_ISDIR(info.st_mode) or info.st_uid != os.geteuid():
+            raise OSError("ship ledger directory is not a user-owned directory")
+        if create:
+            os.fchmod(descriptor, 0o700)
+        return descriptor
+    except Exception:
+        os.close(descriptor)
+        raise
+
+
+def _validate_owned_regular(descriptor: int, label: str) -> None:
+    info = os.fstat(descriptor)
+    if not stat.S_ISREG(info.st_mode) or info.st_uid != os.geteuid():
+        raise OSError(f"{label} is not a user-owned regular file")
+
+
+def _validate_destination(directory_fd: int, name: str) -> None:
+    try:
+        info = os.stat(name, dir_fd=directory_fd, follow_symlinks=False)
+    except FileNotFoundError:
+        return
+    if not stat.S_ISREG(info.st_mode) or info.st_uid != os.geteuid():
+        raise OSError("ship ledger destination is not a user-owned regular file")
+
+
+def _load(path: Path) -> dict[str, Any] | None:
+    directory_fd = -1
+    descriptor = -1
+    try:
+        directory_fd = _private_directory_fd(path.parent, create=False)
+        descriptor = os.open(
+            path.name,
+            os.O_RDONLY | _OPEN_CLOEXEC | _OPEN_NOFOLLOW,
+            dir_fd=directory_fd,
+        )
+        _validate_owned_regular(descriptor, "ship ledger")
+        with os.fdopen(descriptor, "r", encoding="utf-8") as handle:
+            descriptor = -1
+            value = json.load(handle)
+        return value if isinstance(value, dict) else None
     except (OSError, json.JSONDecodeError):
         return None
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+        if directory_fd >= 0:
+            os.close(directory_fd)
+
+
+def _atomic_save_json(path: Path, value: Any) -> None:
+    """Atomically replace JSON through an unguessable, no-follow temp file."""
+    directory_fd = _private_directory_fd(path.parent, create=True)
+    temp_name = ""
+    descriptor = -1
+    try:
+        _validate_destination(directory_fd, path.name)
+        for _attempt in range(16):
+            temp_name = f".{path.name}.{os.getpid()}.{secrets.token_hex(12)}.tmp"
+            try:
+                descriptor = os.open(
+                    temp_name,
+                    os.O_WRONLY
+                    | os.O_CREAT
+                    | os.O_EXCL
+                    | _OPEN_CLOEXEC
+                    | _OPEN_NOFOLLOW,
+                    0o600,
+                    dir_fd=directory_fd,
+                )
+                break
+            except FileExistsError:
+                continue
+        else:
+            raise OSError("could not create a unique ship-ledger temp file")
+        _validate_owned_regular(descriptor, "ship ledger temp")
+        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+            descriptor = -1
+            json.dump(value, handle, ensure_ascii=False, sort_keys=True)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(
+            temp_name,
+            path.name,
+            src_dir_fd=directory_fd,
+            dst_dir_fd=directory_fd,
+        )
+        temp_name = ""
+        os.fsync(directory_fd)
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+        if temp_name:
+            try:
+                os.unlink(temp_name, dir_fd=directory_fd)
+            except OSError:
+                pass
+        os.close(directory_fd)
 
 
 def _save(path: Path, state: dict[str, Any]) -> None:
-    # Per-PID temp name: PreToolUse hooks can run concurrently for parallel
-    # tool calls in one assistant block, and two writers sharing one fixed
-    # ".tmp" can interleave truncate-and-write into a corrupt ledger — whose
-    # downstream failure mode is a fail-OPEN Stop (_load -> None -> return).
-    temp = path.with_suffix(f".{os.getpid()}.tmp")
-    temp.write_text(json.dumps(state, ensure_ascii=False, sort_keys=True), encoding="utf-8")
-    temp.replace(path)
+    _atomic_save_json(path, state)
 
 
 def _ledger_lock_path(path: Path) -> Path:
@@ -1012,20 +1116,224 @@ def _external_exit_key(code: str, head: str, reason: str) -> str:
     return f"{code}:{head}:{digest}"
 
 
+def _python_executes_sleep(source: str) -> bool | None:
+    """Classify actual Python sleep calls without matching inert source text."""
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return None
+    modules: dict[str, str] = {}
+    imported: dict[str, tuple[str, str]] = {}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                modules[alias.asname or alias.name] = alias.name
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            for alias in node.names:
+                imported[alias.asname or alias.name] = (node.module, alias.name)
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        func = node.func
+        if isinstance(func, ast.Name) and imported.get(func.id) in {
+            ("time", "sleep"),
+            ("asyncio", "sleep"),
+        }:
+            return True
+        if not isinstance(func, ast.Attribute) or func.attr != "sleep":
+            continue
+        owner = func.value
+        if isinstance(owner, ast.Name) and modules.get(owner.id) in {"time", "asyncio"}:
+            return True
+        if (
+            isinstance(owner, ast.Call)
+            and isinstance(owner.func, ast.Name)
+            and owner.func.id == "__import__"
+            and owner.args
+            and isinstance(owner.args[0], ast.Constant)
+            and owner.args[0].value in {"time", "asyncio"}
+        ):
+            return True
+    return False
+
+
+def _shell_segments(command: str) -> tuple[list[list[str]], list[str]] | None:
+    """Tokenize executable shell forms while preserving command boundaries.
+
+    Quotes are consumed by ``shlex``, so a value printed by echo/printf is an
+    argument rather than executable syntax. Newlines remain punctuation so a
+    second command cannot hide behind whitespace tokenization.
+    """
+    try:
+        lexer = shlex.shlex(command, posix=True, punctuation_chars=";&|()\n")
+        lexer.whitespace = " \t\r"
+        lexer.whitespace_split = True
+        lexer.commenters = ""
+        tokens = list(lexer)
+    except ValueError:
+        return None
+    segments: list[list[str]] = []
+    separators: list[str] = []
+    current: list[str] = []
+    for token in tokens:
+        if token and all(char in ";&|()\n" for char in token):
+            if current:
+                segments.append(current)
+                current = []
+            separators.append(token)
+        else:
+            current.append(token)
+    if current:
+        segments.append(current)
+    return segments, separators
+
+
+def _shell_wait_classification(command: str, *, depth: int = 0) -> tuple[str, str] | None:
+    """Return ``(admission, condition)`` for supported executed wait forms."""
+    if depth > 3:
+        return ("deny_uncertain", "nested-shell-wait")
+    parsed = _shell_segments(command)
+    if parsed is None:
+        # A malformed watcher-shaped shell command is uncertainty, not an
+        # ordinary command. Avoid broad language-sleep substrings here because
+        # quoted data must remain outside this gate.
+        if re.search(r"(?i)\b(?:sleep|start-sleep|gh)\b", command):
+            return ("deny_uncertain", "unparseable-wait")
+        return None
+    segments, separators = parsed
+    detached = any("&" in token and token != "&&" for token in separators)
+    aliases: dict[str, str] = {}
+    variables: dict[str, str] = {}
+    watches: list[str] = []
+    uncertain = False
+    in_loop = False
+    saw_loop_gh = False
+    assignment = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=(.*)$", re.DOTALL)
+    control = {"do", "then", "else", "elif", "if", "!", "{"}
+
+    for original in segments:
+        words = list(original)
+        while words and words[0] in {"while", "until"}:
+            in_loop = True
+            words.pop(0)
+        while words and words[0] in control:
+            words.pop(0)
+        if words and words[0] == "done":
+            in_loop = False
+            continue
+        if not words:
+            continue
+
+        if words[0] == "alias":
+            for definition in words[1:]:
+                match = assignment.match(definition)
+                if match:
+                    aliases[definition.split("=", 1)[0]] = match.group(1)
+            continue
+
+        while words:
+            match = assignment.match(words[0])
+            if not match:
+                break
+            variables[words[0].split("=", 1)[0]] = match.group(1)
+            words.pop(0)
+        if not words:
+            continue
+
+        executable = words.pop(0)
+        if executable in aliases:
+            try:
+                words = shlex.split(aliases[executable], posix=True) + words
+            except ValueError:
+                uncertain = True
+                continue
+            if not words:
+                uncertain = True
+                continue
+            executable = words.pop(0)
+
+        if executable.startswith("$"):
+            name = executable.lstrip("${").rstrip("}")
+            assigned = os.path.basename(variables.get(name, "")).lower()
+            if assigned in {"sleep", "gh", "start-sleep"} or words[:2] in (
+                ["run", "watch"],
+                ["pr", "checks"],
+            ):
+                uncertain = True
+            continue
+
+        base = os.path.basename(executable).lower()
+        while base in {"command", "builtin", "env"}:
+            while words and (words[0].startswith("-") or assignment.match(words[0])):
+                words.pop(0)
+            if not words:
+                uncertain = True
+                break
+            executable = words.pop(0)
+            base = os.path.basename(executable).lower()
+        if not base:
+            continue
+
+        if base in {"sleep", "start-sleep"}:
+            return ("deny_timer", "timer-poll")
+
+        if base in {"bash", "sh", "zsh"} and "-c" in words:
+            index = words.index("-c")
+            if index + 1 >= len(words):
+                uncertain = True
+            else:
+                nested = _shell_wait_classification(words[index + 1], depth=depth + 1)
+                if nested is not None:
+                    return nested
+            continue
+
+        if re.fullmatch(r"python(?:3(?:\.\d+)?)?", base) and "-c" in words:
+            index = words.index("-c")
+            if index + 1 >= len(words):
+                uncertain = True
+                continue
+            python_wait = _python_executes_sleep(words[index + 1])
+            if python_wait is True:
+                return ("deny_timer", "timer-poll")
+            if python_wait is None and re.search(r"(?i)\bsleep\b", words[index + 1]):
+                uncertain = True
+            continue
+
+        if base != "gh":
+            continue
+        if in_loop:
+            saw_loop_gh = True
+        lowered = [word.lower() for word in words]
+        if len(lowered) >= 3 and lowered[:2] == ["run", "watch"]:
+            watches.append(f"gh-run:{words[2]}")
+        elif len(lowered) >= 2 and lowered[:2] == ["pr", "checks"]:
+            remainder = words[2:]
+            if any(word.lower() in {"--watch", "--watch=true"} for word in remainder):
+                # gh accepts the optional PR selector immediately after
+                # ``checks``. Later bare values may belong to flags such as
+                # ``--interval 60`` and are not condition identity.
+                target = remainder[0] if remainder and not remainder[0].startswith("-") else "current-head"
+                watches.append(f"gh-pr-checks:{target}")
+
+    if saw_loop_gh:
+        return ("deny_timer", "timer-poll")
+    if uncertain:
+        return ("deny_uncertain", "uncertain-wait")
+    if not watches:
+        return None
+    if len(watches) != 1:
+        return ("deny_uncertain", "multiple-condition-watches")
+    if detached:
+        return ("deny_detached", "detached-condition-watch")
+    return ("reserve_condition", watches[0])
+
+
 def _watcher_request(payload: dict[str, Any]) -> dict[str, Any] | None:
-    """Classify condition watches and no-progress timer bypasses.
+    """Classify executed watcher/timer command forms, not raw substrings.
 
-    Pure text inspection keeps ordinary Bash free. Timer-shaped commands are
-    returned with ``deny_timer`` regardless of foreground/background flag or
-    literal/computed delay; they can only wake the model to poll. Native GitHub
-    condition watches return ``reserve_condition`` because they remain inside
-    one deterministic process until a material state transition. A shell-level
-    single ``&`` around such a process returns ``deny_detached``: its child
-    lifetime cannot be bound safely to the reserved shell command.
-
-    This is an admission gate, not a shell sandbox. It recognizes the concrete
-    wait transports observed in #6379/#6406 and fails closed for those shapes;
-    ordinary commands remain outside its authority.
+    Ordinary Bash remains fail-open. Supported native GitHub condition waits
+    may reserve one owner; executed sleeps, polling loops, detached watches,
+    and watcher-shaped uncertainty fail closed.
     """
     if str(payload.get("tool_name") or "") != "Bash":
         return None
@@ -1033,56 +1341,15 @@ def _watcher_request(payload: dict[str, Any]) -> dict[str, Any] | None:
     if not isinstance(tool_input, dict):
         return None
     command = str(tool_input.get("command") or "")
-    digest = hashlib.sha256(command.encode("utf-8")).hexdigest()[:12]
-
-    # Shell sleep at a command boundary catches literal and computed operands;
-    # the language-specific forms close the exact nonliteral bypass observed
-    # in review. A gh polling loop is likewise a timer even if it omits sleep.
-    shell_sleep = re.search(
-        r"(?im)(?:^|[;&|()\n])\s*(?:(?:builtin|command)\s+)?sleep(?:\s|$)",
-        command,
-    )
-    language_sleep = re.search(
-        r"(?i)\b(?:time|asyncio)\.sleep\s*\(|\bstart-sleep(?:\s|$)",
-        command,
-    )
-    polling_loop = re.search(r"(?is)\b(?:while|until)\b.*\bgh\b", command)
-    if shell_sleep or language_sleep or polling_loop:
-        return {
-            "command": command,
-            "digest": digest,
-            "admission": "deny_timer",
-            "condition": "timer-poll",
-        }
-
-    run_watch = re.search(r"(?i)\bgh\s+run\s+watch\s+([^\s;&|]+)", command)
-    pr_watch = re.search(r"(?i)\bgh\s+pr\s+checks\b([^\n;&|]*)", command)
-    if pr_watch is not None and re.search(
-        r"(?i)(?:^|\s)--watch(?:\s|$)", pr_watch.group(1)
-    ) is None:
-        pr_watch = None
-    if run_watch is None and pr_watch is None:
+    classified = _shell_wait_classification(command)
+    if classified is None:
         return None
-
-    # Single ampersand is shell detachment; && is ordinary sequencing.
-    if re.search(r"(?<!&)&(?!&)", command):
-        return {
-            "command": command,
-            "digest": digest,
-            "admission": "deny_detached",
-            "condition": "detached-condition-watch",
-        }
-
-    if run_watch is not None:
-        condition = f"gh-run:{run_watch.group(1)}"
-    else:
-        remainder = str(pr_watch.group(1) or "").strip().split()
-        target = remainder[0] if remainder and not remainder[0].startswith("-") else "current-head"
-        condition = f"gh-pr-checks:{target}"
+    admission, condition = classified
+    identity = condition if admission == "reserve_condition" else command
     return {
         "command": command,
-        "digest": hashlib.sha256(condition.encode("utf-8")).hexdigest()[:12],
-        "admission": "reserve_condition",
+        "digest": hashlib.sha256(identity.encode("utf-8")).hexdigest()[:12],
+        "admission": admission,
         "condition": condition,
     }
 
@@ -1126,16 +1393,22 @@ def _deny_watcher(reason: str) -> None:
     )
 
 
-def _watcher_fragment(command: str) -> str:
-    """Deterministic ps-matchable identity of a watcher command.
+def _allow_watcher(tool_input: dict[str, Any], command: str) -> None:
+    updated = dict(tool_input)
+    updated["command"] = command
+    _emit(
+        {
+            "hookSpecificOutput": {
+                "hookEventName": "PreToolUse",
+                "permissionDecision": "allow",
+                "updatedInput": updated,
+            }
+        }
+    )
 
-    The first non-empty line, bounded to 120 characters: `run_in_background`
-    Bash commands appear verbatim in the spawned shell's argv, and the
-    native condition-watch line ("gh run watch …") is the distinctive part.
-    Bounded because ps output and multi-line argv rendering both make full-
-    command matching brittle. A fragment shared with a sibling session's
-    identical watcher can only cause a REFUSAL, never a kill — fail-closed.
-    """
+
+def _watcher_fragment(command: str) -> str:
+    """Human-readable reservation receipt; never used as process identity."""
     for line in command.strip().splitlines():
         line = line.strip()
         if line:
@@ -1143,20 +1416,33 @@ def _watcher_fragment(command: str) -> str:
     return ""
 
 
-def _watcher_process_alive(fragment: str) -> bool | None:
-    """Whether any live process's command line carries the reserved fragment.
+def _marked_watcher_command(command: str, marker: str) -> str:
+    """Keep a unique marker in the owning shell argv through child execution."""
+    return (
+        "{\n"
+        f"{command}\n"
+        "_ship_watcher_status=$?\n"
+        f": '{marker}'\n"
+        "exit \"$_ship_watcher_status\"\n"
+        "}"
+    )
 
-    Direct observation of the real watcher lifetime — the process table is the
-    one truth about background Bash tasks a hook can read without a task API.
-    ``None`` means unanswerable (ps failed), which the caller must treat as
-    occupied: unknown completion must not permit stacking. Nothing here ever
-    signals or kills; the answer is read-only evidence.
+
+def _watcher_process_alive(reservation: dict[str, Any]) -> bool | None:
+    """Verify the reserving shell by unique marker plus PID/start identity.
+
+    On its first observable poll, the unique marker binds one process PID and
+    its kernel-reported start time into the existing reservation. Later polls
+    require all three values, so PID reuse, an identical sibling command, and
+    shell/child argv normalization cannot impersonate this session's owner.
+    ``None`` is fail-closed ambiguity (ps failure or duplicate marker).
     """
-    if not fragment:
+    marker = str(reservation.get("process_marker") or "")
+    if not marker:
         return None
     try:
         proc = subprocess.run(
-            ("ps", "-axwwo", "command="),
+            ("ps", "-axww", "-o", "pid=", "-o", "lstart=", "-o", "command="),
             text=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -1167,10 +1453,36 @@ def _watcher_process_alive(fragment: str) -> bool | None:
         return None
     if proc.returncode:
         return None
-    return any(fragment in line for line in proc.stdout.splitlines())
+    observed: list[tuple[int, str, str]] = []
+    for line in proc.stdout.splitlines():
+        match = re.match(r"^\s*(\d+)\s+(.{24})\s+(.*)$", line)
+        if not match:
+            continue
+        observed.append((int(match.group(1)), match.group(2), match.group(3)))
+
+    try:
+        bound_pid = int(reservation.get("process_pid") or 0)
+    except (TypeError, ValueError):
+        return None
+    bound_start = str(reservation.get("process_start") or "")
+    if bound_pid or bound_start:
+        if not bound_pid or not bound_start:
+            return None
+        return any(
+            pid == bound_pid and started == bound_start and marker in argv
+            for pid, started, argv in observed
+        )
+
+    matches = [(pid, started) for pid, started, argv in observed if marker in argv]
+    if not matches:
+        return False
+    if len(matches) != 1:
+        return None
+    reservation["process_pid"], reservation["process_start"] = matches[0]
+    return True
 
 
-def _watcher_gate(root: Path, path: Path, state: dict[str, Any], watch: dict[str, Any]) -> None:
+def _watcher_gate(root: Path, path: Path, state: dict[str, Any], watch: dict[str, Any]) -> bool:
     """Enforce the one-watcher law for THIS session's ship state.
 
     At most one live delayed-wake reservation per session ledger; none at all
@@ -1204,7 +1516,7 @@ def _watcher_gate(root: Path, path: Path, state: dict[str, Any], watch: dict[str
             "this condition watch cannot be bound to a safe state identity. "
             "Unknown identity must not admit an untracked waiter."
         )
-        return
+        return False
     if head and head in _latched_terminal_heads(state):
         _deny_watcher(
             "SHIP WATCHER REFUSED: this session's ship state at HEAD "
@@ -1213,7 +1525,7 @@ def _watcher_gate(root: Path, path: Path, state: dict[str, Any], watch: dict[str
             "the same frozen hold. Do not create new ship watchers; emit the "
             "single terminal report and end the turn."
         )
-        return
+        return False
     reservation = state.get("ship_watcher")
     now = time.time()
     if isinstance(reservation, dict):
@@ -1229,7 +1541,7 @@ def _watcher_gate(root: Path, path: Path, state: dict[str, Any], watch: dict[str
                 "A session carries AT MOST ONE ship-state watcher — rely on the "
                 "existing timer; its completion will wake this session."
             )
-            return
+            return False
         if not fragment:
             # LEGACY reservation (pre-liveness format, no fragment — observed
             # live 2026-08-25 on this very repair's session): its process can
@@ -1251,10 +1563,10 @@ def _watcher_gate(root: Path, path: Path, state: dict[str, Any], watch: dict[str
                     f"~{int(legacy_deadline - now)}s from now). Rely on it; its "
                     "completion will wake this session."
                 )
-                return
+                return False
             alive = False
         else:
-            alive = _watcher_process_alive(fragment)
+            alive = _watcher_process_alive(reservation)
         if alive is None:
             _deny_watcher(
                 "SHIP WATCHER COALESCED: the reserved ship watcher's liveness "
@@ -1262,17 +1574,21 @@ def _watcher_gate(root: Path, path: Path, state: dict[str, Any], watch: dict[str
                 "unknown completion must not permit stacking a second live "
                 "watcher. Rely on the existing timer, or retry after its wake."
             )
-            return
+            return False
         if alive:
+            # First observation binds PID + start identity. Persist that
+            # binding before refusing the competing request.
+            if reservation.get("process_pid") and reservation.get("process_start"):
+                _save(path, state)
             _deny_watcher(
                 "SHIP WATCHER COALESCED: the reserved background ship watcher "
                 f"({fragment[:60]!r}) is still RUNNING. A session carries AT "
-                "MOST ONE live ship-state watcher — its completion will wake "
-                "this session, and its successor is admitted once it has "
-                "actually finished. This applies across head moves too: a new "
-                "HEAD does not end the old timer's life."
+                "MOST ONE live ship-state watcher. Completion alone never "
+                "authorizes an unchanged successor; only a materially changed "
+                "HEAD or external condition may reserve another owner after "
+                "this exact PID/start identity has exited."
             )
-            return
+            return False
         same_condition = (
             str(reservation.get("head") or "") == head
             and str(reservation.get("digest") or "") == str(watch.get("digest") or "")
@@ -1286,18 +1602,20 @@ def _watcher_gate(root: Path, path: Path, state: dict[str, Any], watch: dict[str
                 "the material result that woke the session; do not re-arm the "
                 "same wait."
             )
-            return
+            return False
         # Process absence plus a different head/condition is the only lawful
         # replacement path. The old watcher cannot overlap, and the new
         # fingerprint represents genuinely new external work.
     state["ship_watcher"] = {
         "digest": watch["digest"],
         "fragment": _watcher_fragment(watch["command"]),
+        "process_marker": f"ship-watcher:{secrets.token_hex(16)}",
         "condition": watch["condition"],
         "head": head,
         "created": now,
     }
     _save(path, state)
+    return True
 
 
 def _pre_tool_use(payload: dict[str, Any], raw: bytes) -> None:
@@ -1318,6 +1636,9 @@ def _pre_tool_use(payload: dict[str, Any], raw: bytes) -> None:
     """
     watch = _watcher_request(payload)
     if watch is None:
+        return
+    tool_input = payload.get("tool_input")
+    if not isinstance(tool_input, dict):
         return
     admission = str(watch.get("admission") or "")
     if admission == "deny_timer":
@@ -1370,7 +1691,15 @@ def _pre_tool_use(payload: dict[str, Any], raw: bytes) -> None:
                 time.sleep(float(delay))
             except ValueError:
                 pass
-        _watcher_gate(root, path, state, watch)
+        admitted = _watcher_gate(root, path, state, watch)
+        if admitted:
+            reservation = state["ship_watcher"]
+            _allow_watcher(
+                tool_input,
+                _marked_watcher_command(
+                    str(watch["command"]), str(reservation["process_marker"])
+                ),
+            )
 
 
 def _github_slug(root: Path) -> tuple[str, str]:
@@ -1458,31 +1787,38 @@ def _github_cache_directory(token: str) -> Path:
 
 @contextmanager
 def _file_lock(path: Path):
-    """Cross-process advisory lock for cache entries and the shared budget."""
-    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-    with path.open("a+", encoding="utf-8") as handle:
-        try:
-            os.chmod(path, 0o600)
-        except OSError:
-            pass
-        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
-        try:
-            yield
-        finally:
-            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+    """Cross-process advisory lock on one owned regular file, without symlinks."""
+    directory_fd = _private_directory_fd(path.parent, create=True)
+    descriptor = -1
+    try:
+        descriptor = os.open(
+            path.name,
+            os.O_RDWR | os.O_CREAT | _OPEN_CLOEXEC | _OPEN_NOFOLLOW,
+            0o600,
+            dir_fd=directory_fd,
+        )
+        _validate_owned_regular(descriptor, "ship ledger lock")
+        os.fchmod(descriptor, 0o600)
+        handle = os.fdopen(descriptor, "a+", encoding="utf-8")
+        descriptor = -1
+    except Exception:
+        if descriptor >= 0:
+            os.close(descriptor)
+        os.close(directory_fd)
+        raise
+    try:
+        with handle:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+            try:
+                yield
+            finally:
+                fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+    finally:
+        os.close(directory_fd)
 
 
 def _save_private_json(path: Path, value: Any) -> None:
-    temp = path.with_suffix(f"{path.suffix}.{os.getpid()}.tmp")
-    temp.write_text(
-        json.dumps(value, ensure_ascii=False, sort_keys=True),
-        encoding="utf-8",
-    )
-    try:
-        temp.chmod(0o600)
-    except OSError:
-        pass
-    temp.replace(path)
+    _atomic_save_json(path, value)
 
 
 def _rate_limit_message(remaining: int, limit: int, reset: int) -> str:
@@ -5010,10 +5346,16 @@ def _emit_hook_source_mismatch(event: str, reason: str) -> None:
             }
         )
         return
+    if event == "PreToolUse":
+        _deny_watcher(
+            "SHIP WATCHER REFUSED: hook_source_mismatch: evaluated-tree "
+            f"admission could not be enforced ({reason})."
+        )
+        return
     _emit({"systemMessage": f"SHIP LOOP hook_source_mismatch: {reason}"})
 
 
-def _spawn_delegated_guard(target: Path, raw: bytes, *, cwd: Path) -> int:
+def _spawn_delegated_guard(target: Path, raw: bytes, *, cwd: Path) -> tuple[int, bytes, bytes]:
     env = os.environ.copy()
     env[DELEGATION_ENV] = "1"
     proc = subprocess.run(
@@ -5024,13 +5366,14 @@ def _spawn_delegated_guard(target: Path, raw: bytes, *, cwd: Path) -> int:
         capture_output=True,
         check=False,
     )
-    if proc.stdout:
-        sys.stdout.buffer.write(proc.stdout)
-        sys.stdout.flush()
-    if proc.stderr:
-        sys.stderr.buffer.write(proc.stderr)
-        sys.stderr.flush()
-    return int(proc.returncode)
+    return int(proc.returncode), bytes(proc.stdout or b""), bytes(proc.stderr or b"")
+
+
+def _write_hook_bytes(stream: Any, value: bytes) -> None:
+    if not value:
+        return
+    stream.buffer.write(value)
+    stream.flush()
 
 
 def _load_payload_and_raw() -> tuple[dict[str, Any] | None, bytes]:
@@ -5097,12 +5440,35 @@ def _delegate_to_evaluated_hook(payload: dict[str, Any], raw: bytes) -> bool:
         )
         return True
     try:
-        _spawn_delegated_guard(target, raw, cwd=evaluated)
+        outcome = _spawn_delegated_guard(target, raw, cwd=evaluated)
     except Exception as exc:
         _emit_hook_source_mismatch(
             event,
             _format_hook_source_mismatch(
                 source, evaluated, f"target hook spawn failed: {exc}"
+            ),
+        )
+        return True
+    if isinstance(outcome, tuple):
+        returncode, child_stdout, child_stderr = outcome
+    else:
+        # Test stubs and one-revision rolling compatibility may still return
+        # the historical integer result.
+        returncode, child_stdout, child_stderr = int(outcome), b"", b""
+    if not returncode:
+        _write_hook_bytes(sys.stdout, child_stdout)
+        _write_hook_bytes(sys.stderr, child_stderr)
+        return True
+    # A failing child may have emitted a partial/allow JSON before crashing.
+    # Hook stdout must remain ONE authoritative denial, so retain diagnostics
+    # on stderr only.
+    _write_hook_bytes(sys.stderr, child_stdout)
+    _write_hook_bytes(sys.stderr, child_stderr)
+    if returncode:
+        _emit_hook_source_mismatch(
+            event,
+            _format_hook_source_mismatch(
+                source, evaluated, f"target hook exited nonzero ({returncode})"
             ),
         )
     return True
