@@ -1,6 +1,6 @@
 {
-  "ts": "2026-08-26T16:17:19+00:00",
-  "main_sha": "fdcc59327cf7558cebd16ed36111dd667f095be6",
+  "ts": "2026-08-26T20:21:03+00:00",
+  "main_sha": "9c41491c64a36f9e42f537dca1c12007c313e971",
   "red_required": [
     {
       "name": "ci-gate",
@@ -52,9 +52,9 @@
     }
   ],
   "green": false,
-  "consecutive_failures": 65,
+  "consecutive_failures": 66,
   "sensed_shas": [
-    "fdcc59327cf7558cebd16ed36111dd667f095be6",
+    "9c41491c64a36f9e42f537dca1c12007c313e971",
     "a508953fc777848d26cb6856c8696419d87d272a"
   ],
   "heartbeat_degraded": false
