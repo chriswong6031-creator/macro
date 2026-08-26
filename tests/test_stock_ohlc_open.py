@@ -40,3 +40,29 @@ def test_missing_open_keeps_the_name(monkeypatch):
 def test_open_in_ohlc_constant():
     """The store schema now leads with Open (backward-compatible additive column)."""
     assert so._OHLC[0] == "Open" and so._REN["Open"] == "open"
+
+
+def test_extract_drops_only_zero_volume_flat_non_trading_rows():
+    """A Yahoo suspension placeholder is not a session; traded/missing-volume rows remain."""
+    idx = pd.to_datetime(["2026-08-19", "2026-08-20", "2026-08-21", "2026-08-24"])
+    source = pd.DataFrame(
+        {
+            "Open": [24.34, 24.56, 25.00, 26.00],
+            "Close": [24.56, 24.56, 25.00, 26.00],
+            "High": [25.39, 24.56, 25.00, 26.00],
+            "Low": [24.20, 24.56, 25.00, 26.00],
+            "Volume": [47_735_572.0, 0.0, 10_000.0, float("nan")],
+        },
+        index=idx,
+    )
+
+    extracted = so._extract(source, "002155.SZ", "china_stocks")
+
+    assert extracted is not None
+    assert extracted.index.strftime("%Y-%m-%d").tolist() == [
+        "2026-08-19",
+        "2026-08-21",
+        "2026-08-24",
+    ]
+    assert extracted.loc["2026-08-21", "volume"] == 10_000.0
+    assert pd.isna(extracted.loc["2026-08-24", "volume"])
