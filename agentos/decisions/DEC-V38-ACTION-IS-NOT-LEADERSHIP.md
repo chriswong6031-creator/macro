@@ -52,7 +52,7 @@ affects:
   - "future China stock-dashboard follower"
   - "research/STOCK_DASHBOARD_V38_ACTION_LEADERSHIP_ARCHITECTURE.md"
 confidence: high
-reversibility: moderate
+reversibility: costly
 decided_by: ceo-sol
 decided_at: 2026-08-26
 supersedes: []
