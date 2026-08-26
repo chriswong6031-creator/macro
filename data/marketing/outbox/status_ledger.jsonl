@@ -4039,3 +4039,4 @@
 {"id":"ob-2026-08-26-ad681fff65","from":"approved","to":"posting","at":"2026-08-26T14:16:07Z","actor":"publisher","note":"in-flight (pre-publish)","receipt":null}
 {"id":"ob-2026-08-26-ad681fff65","from":"posting","to":"posted","at":"2026-08-26T14:16:08Z","actor":"publisher","note":"published","receipt":{"backend":"buffer","external_id":"6a8ef5285a6c4e84e2537491","external_url":null,"at":"2026-08-26T14:15:45Z","booked_at":"2026-08-26T14:15:45Z"}}
 {"id":"ob-2026-08-26-fd4ca05bfe","from":"approved","to":"quarantined","at":"2026-08-26T14:16:08Z","actor":"publisher","note":"frame repeat (skeleton jaccard=0.80) of ob-2026-08-26-66b6ea7b2a posted today; same template, different ticker","receipt":null}
+{"id":"ob-2026-08-26-47de62a96c","from":"approved","to":"quarantined","at":"2026-08-26T14:22:21Z","actor":"publisher","note":"tape gate: move claim stale: copy says -10.7%, tape says -2.4%","receipt":null}
