@@ -128,6 +128,37 @@ LAW itself. Rulings, all binding on both repos:
 
 The golden-vector digest re-pins again under A2; prior digests are void.
 
+### Amendment A3 (2026-08-26, pre-merge, ruled after the reviewer's re-verification of afe87f98750e)
+
+1. **Direction-scoped lossless law (supersedes the "no third state" sentence
+   of A2 ruling 2)** — WRITE and IMPORT remain lossless-or-refuse. READ/RENDER
+   of a legacy row is per-field TOLERANT, exactly mirroring the shipped read
+   boundary's documented fallbacks: a present-but-invalid field becomes
+   no-claim (absent) and is listed in a returned `unclaimed` array;
+   `migrate_legacy(config, strict=True)` is the write/import form,
+   `strict=False` the read form; a non-empty `unclaimed` MUST surface to the
+   user in plain words before any subsequent save. A bad field never makes a
+   row unopenable; a save never silently drops one.
+2. **Number law (completes A2 ruling 4)** — integers bounded to the IEEE-754
+   safe range (|n| ≤ 9,007,199,254,740,991) everywhere numbers occur
+   (params, revision, source_revision, grid); integral floats normalize to
+   int; NON-integral floats are valid only with 1e-4 ≤ |x| < 1e12 (both
+   languages' shortest-repr is exponent-free and digit-identical in that
+   range); anything outside is `invalid_widget_config`. Schema mirrors the
+   bounds.
+3. **Error precedence (M-C)** — the `schema` literal check runs FIRST and
+   returns `unsupported_schema` alone; then `requires.floor` →
+   `unsupported_floor`; only then the malformed/unknown-key sweep. A future
+   version is never reported as malformed.
+4. **Follow-up read key (completes A2 ruling 8)** — the 0-rows follow-up read
+   is by the loaded row `id`, never by `(user_id, name)`; a concurrent rename
+   therefore reports `stale_revision`, not `not_found`.
+5. **Conversion-path fence (completes A2 ruling 9)** — the loaded-row-`id`
+   predicate applies to BOTH conversion attempts of A2 ruling 7, closing the
+   delete-recreate ABA on the migrate-on-write path.
+
+Digest re-pins under A3; the A2 digest is void.
+
 ## 1. Canonical object — `workspace_layout.v1`
 
 ```json
