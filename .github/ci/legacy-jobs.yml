@@ -8893,9 +8893,12 @@ jobs:
       # join, fallback<->recovery collision, staged-replay + R2-readback
       # integrity, coverage-gate refusal on an unreconciled denominator).
       # B8's mint/attach law is covered inside the same file. B12-B14 (EN/ZH
-      # template copy, page-weight fence, anonymous boundary) are packet 2.
+      # template copy verbatim + mutation-fails-closed, page-weight fence +
+      # FMS shell delta, anonymous boundary + no case bodies in the baked
+      # HTML) land in tests/test_fms_ui.py -- the packet-2 consumer/
+      # publication half (ninth mode tab, entitled routes, JS inspector).
       - name: FMS congressional-notification rail law suite (D6-B1)
-        run: python -m pytest tests/test_fms_notifications.py -q
+        run: python -m pytest tests/test_fms_notifications.py tests/test_fms_ui.py -q
       # The prophet↔government-revenue context bridge. Named by NOTHING in
       # .github/ before this line — not this manifest, not any workflow, and not
       # even a ci.yml trigger path — so the one suite proving the Prophet side

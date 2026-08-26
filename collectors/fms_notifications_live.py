@@ -516,6 +516,23 @@ def run_fms_acquisition(
                 case_key=case_key, source_surface="dsca", kind="listing_article",
                 receipt=receipt, known_at=observed_at, version=1, fields=fields,
             ))
+        # Canary A's certification PDF (freeze §15.1/§3.4 receipt R3): same
+        # staged-replay -> R2 put+strict-readback -> receipt discipline as
+        # the articles, attached to its own case by the manifest's own
+        # "transmittal" field (never re-derived by parsing the PDF).
+        cert_manifest = manifest.get("certification_pdf")
+        if cert_manifest is not None:
+            cert_receipt = replay_staged_certification_pdf(staged_dir, store=store, observed_at=observed_at)
+            cert_transmittal = fms.normalize_transmittal(
+                *cert_manifest["transmittal"].split("-", 1)
+            )
+            cert_case_key = fms.case_key_for_transmittal(cert_transmittal)
+            new_receipts.append(cert_receipt)
+            new_observations.append(fms.build_observation(
+                case_key=cert_case_key, source_surface="dsca", kind="certification_pdf",
+                receipt=cert_receipt, known_at=observed_at, version=1,
+                fields={"transmittal_number": cert_transmittal},
+            ))
         dsca_status = "ok"
     except (FmsStagedIntegrityFailed, OSError, ValueError) as exc:
         print(f"::error title=fms-dsca-staged-refused::{exc}", flush=True)

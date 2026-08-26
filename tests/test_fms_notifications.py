@@ -736,6 +736,95 @@ class TestD6B1Battery:
         with pytest.raises(live.FmsStagedIntegrityFailed):
             live.replay_staged_dsca_objects(bad_dir, store=None, observed_at=RECEIPT_AT)
 
+    def test_b10b_certification_pdf_replay_emits_observation_on_26_13_case(self) -> None:
+        """Canary A's certification PDF (freeze R3) must flow through the
+        same staged-replay discipline as the articles and land as a
+        ``certification_pdf`` observation on ``fms:transmittal:26-13``."""
+        staged = FIXTURES / "dsca"
+        manifest = live.load_staged_dsca_manifest(staged)
+        cert_manifest = manifest["certification_pdf"]
+
+        cert_receipt = live.replay_staged_certification_pdf(staged, store=None, observed_at=RECEIPT_AT)
+        assert cert_receipt["response_sha256"] == "c7e3bcadda94f4f9014bd9eac70827f57bc1e60fe67c20a273074732a8af9c55"
+        assert cert_receipt["transport"] == "browser_in_page_fetch_staged"
+        assert cert_receipt["content_type"] == "application/pdf"
+
+        cert_transmittal = fms.normalize_transmittal(*cert_manifest["transmittal"].split("-", 1))
+        assert cert_transmittal == "26-13"
+        cert_case_key = fms.case_key_for_transmittal(cert_transmittal)
+        pdf_obs = fms.build_observation(
+            case_key=cert_case_key, source_surface="dsca", kind="certification_pdf",
+            receipt=cert_receipt, known_at=RECEIPT_AT, version=1,
+            fields={"transmittal_number": cert_transmittal},
+        )
+
+        # Attach alongside the real 26-13 article observation and confirm the
+        # engine groups both onto ONE case via case_key (never a separate
+        # plane) -- this is the "verify the engine attaches it" check.
+        article_obs = _dsca_observation("dsca-4394629", "https://www.dsca.mil/x/26-13/")
+        assert article_obs["case_key"] == cert_case_key
+        graph = fms_cases.build_fms_case_graph(
+            observations=[article_obs, pdf_obs],
+            **_base_graph_kwargs(fr_denominator_transmittals=["26-13"]),
+        )
+        case = _case(graph, "fms:transmittal:26-13")
+        kinds = {o["kind"] for o in case["observations"]}
+        assert kinds == {"listing_article", "certification_pdf"}
+        pdf_row = next(o for o in case["observations"] if o["kind"] == "certification_pdf")
+        assert pdf_row["response_sha256"] == "c7e3bcadda94f4f9014bd9eac70827f57bc1e60fe67c20a273074732a8af9c55"
+        assert pdf_row["source_surface"] == "dsca"
+        assert pdf_row["transport"] == "browser_in_page_fetch_staged"
+
+    def test_b10c_tampered_certification_pdf_is_refused(self, tmp_path: Path) -> None:
+        import shutil
+
+        bad_dir = tmp_path / "staged"
+        bad_dir.mkdir()
+        shutil.copy(FIXTURES / "dsca" / "manifest.json", bad_dir / "manifest.json")
+        shutil.copy(FIXTURES / "dsca" / "saudi-arabia-26-13-cn.pdf", bad_dir / "saudi-arabia-26-13-cn.pdf")
+        tampered = bad_dir / "saudi-arabia-26-13-cn.pdf"
+        tampered.write_bytes(tampered.read_bytes() + b"TAMPERED")
+
+        with pytest.raises(live.FmsStagedIntegrityFailed):
+            live.replay_staged_certification_pdf(bad_dir, store=None, observed_at=RECEIPT_AT)
+
+    def test_b10d_acquisition_orchestration_replays_certification_pdf(self, tmp_path: Path) -> None:
+        """End-to-end: run_fms_acquisition's DSCA branch must include the
+        certification_pdf replay (the exact regression packet-2 review found
+        — the PDF was fetched/staged but never replayed into the triad)."""
+
+        class _FrOnlySession:
+            def get(self, url, **kwargs):
+                if "federalregister.gov" in url and "documents.json" in url:
+                    return _JsonResponse({
+                        "results": [{
+                            "document_number": "2026-07278",
+                            "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/x/2026-07278.txt",
+                        }],
+                    })
+                if "2026-07278.txt" in url:
+                    return _TextResponse(_read_bytes("fr/2026-07278.txt"))
+                if "state.gov" in url:
+                    raise ConnectionError("simulated State outage (irrelevant here)")
+                raise AssertionError(f"unexpected fetch: {url}")
+
+        rc = live.run_fms_acquisition(
+            root=tmp_path, store=None, session=_FrOnlySession(),
+            observed_at=RECEIPT_AT,
+            staged_dir=(FIXTURES / "dsca").resolve(),
+            publication_from="2026-01-01", publication_through="2026-08-25",
+        )
+        assert rc == 0
+        observations_path = tmp_path / "data" / "government_revenue" / "fms_observations.jsonl"
+        rows = [json.loads(line) for line in observations_path.read_text().splitlines() if line.strip()]
+        pdf_rows = [r for r in rows if r["kind"] == "certification_pdf"]
+        assert len(pdf_rows) == 1
+        assert pdf_rows[0]["case_key"] == "fms:transmittal:26-13"
+        assert pdf_rows[0]["response_sha256"] == "c7e3bcadda94f4f9014bd9eac70827f57bc1e60fe67c20a273074732a8af9c55"
+        graph = json.loads((tmp_path / "data" / "government_revenue" / "fms_case_graph.json").read_text())
+        case_26_13 = next(c for c in graph["cases"] if c["case_key"] == "fms:transmittal:26-13")
+        assert "certification_pdf" in {o["kind"] for o in case_26_13["observations"]}
+
     def test_b11_r2_readback_mutation_is_refused(self, tmp_path: Path) -> None:
         class _CorruptingStore(LocalStore):
             def get_bytes_strict_bounded(self, key, *args, **kwargs):
