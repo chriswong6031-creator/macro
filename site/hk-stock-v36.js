@@ -221,6 +221,24 @@
          [hidden]{display:none} loses to `.pvcard{display:flex}` and
          `.hk-v37-card-grid{display:grid}` unless scoped explicitly here). */
       ".hk-v37-card-grid[hidden]{display:none!important}.hk-v37-card-grid .pvcard[hidden]{display:none!important}" +
+      /* theme.js's row-mode show-more (site/theme.js initShowMore, ~line 4842+)
+         keeps a running `items` array of the original #standouts grid
+         children captured at its own init — the exact .pvcard nodes
+         collectCards() moves into this grid, not copies. Its window
+         'resize' listener and ResizeObserver re-run render() on that array
+         whenever the column count changes (or an inactive tab becomes
+         visible), re-adding
+         .sm-hidden (theme.css: display:none!important) to any card past its
+         own page threshold — a one-shot classList.remove() at mount time
+         does not un-wire that listener. Without this override, a resize (or
+         a Table→Grid round trip that lets the observer fire) can silently
+         delete moved cards from the composed grid while hk-v37-result's
+         counter keeps counting them as shown. `.pvcard[hidden]` above still
+         wins on a genuinely filtered-out card: two classes + one attribute
+         (0,3,0) beats two classes (0,2,0), so this rule only rescues cards
+         theme.js hid on its own initiative, never a card this composer's
+         own Top Picks/leadership filter intentionally hid via `hidden`. */
+      ".hk-v37-card-grid .sm-hidden{display:flex!important}" +
       ".hk-v37-card-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;padding:14px}.hk-v37-card-grid .pvcard{min-width:0;height:100%;font-family:" + FONT_UI + ";transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease}.hk-v37-card-grid .pvcard:hover{transform:translateY(-2px)}.hk-v37-card-grid .pv-chart svg{height:82px!important}.hk-v37-card-grid .pv-bd{padding:14px 14px 12px!important}.hk-v37-card-grid .pv-tk{font-family:" + FONT_UI + "!important;font-size:16.7px!important;font-weight:700!important;letter-spacing:-.012em!important}.hk-v37-card-grid .pv-nm{font-family:" + FONT_UI + "!important;font-size:12.5px!important}.hk-v37-card-grid .pv-ind{font-size:11.1px!important}.hk-v37-card-grid .pv-edge{font-family:" + FONT_UI + "!important}.hk-v37-card-grid .pv-edn{font-size:16px!important}.hk-v37-card-grid .nb-px.pv-px{font-family:" + FONT_UI + "!important;font-size:15.8px!important;font-weight:750!important}.hk-v37-card-grid .nb-chg.pv-chg{font-family:" + FONT_UI + "!important;font-size:13.4px!important;font-weight:750!important}.hk-v37-card-grid .pv-chip{font-size:10.8px!important}.hk-v37-card-grid .pv-life-w,.hk-v37-card-grid .pv-stl{font-size:11.1px!important}.hk-v37-card-grid .pv-zn{min-height:42px!important;font-size:11.6px!important}.hk-v37-card-grid .pv-znr,.hk-v37-card-grid .pv-znm{font-family:" + FONT_UI + "!important;font-size:11.8px!important}",
       /* Selection halo — neutral/cool ring on the OWNER's own .pv-featured class
          (never a synthetic top-N marker; the owner already flags Featured on the
@@ -263,21 +281,35 @@
       (top.length ? top.map(function (x) { return leadRow(x, max); }).join("") : '<div class="hk-v37-empty">' + bi("Ranking unavailable", "排名暂不可用") + '</div>');
     markLeadership();
   }
-  /* Southbound flow cue (change 2) — the FIRST .sbah-read sentence inside
-     #mainland-money (its Southbound flow card is first in DOM order). Rendered
-     only when the node exists and is non-empty; absent means no cue, no
-     placeholder — this must never become a permanent statistic. */
+  /* Southbound flow cue (change 2) — the FIRST .sbah-card inside
+     #mainland-money (its Southbound flow card, first in DOM order). Gated on
+     MATERIALITY, not mere node existence: the owner already computes a
+     directional marker for this exact card — .sbah-sig carries sig-in
+     (inflow) / sig-out (outflow) / sig-neu (templates/hk.html.j2:4698,
+     `_sbsig`, "no strong tilt") — and sig-neu is precisely the non-material
+     case §6 forbids surfacing here ("cue absent when stale, unavailable, or
+     non-material"). A neutral card (or a card/sig node the owner didn't
+     render at all) yields no cue and no placeholder; this must never become
+     a permanent statistic. */
   function southboundFirstRead() {
-    var el = qs("#mainland-money .sbah-read");
-    if (!el) return null;
-    var d = dual(el);
+    var card = qs("#mainland-money .sbah-card");
+    if (!card) return null;
+    var sig = qs(".sbah-sig", card);
+    if (!sig || sig.classList.contains("sig-neu")) return null;
+    var read = qs(".sbah-read", card);
+    if (!read) return null;
+    var d = dual(read);
     return d.en ? d : null;
   }
   function renderLeading() {
     var host = qs("#hk-v37-leading"); if (!host) return;
     var sec = state.sectors[0], sb = southboundFirstRead();
     var html = '<span class="hk-v37-leading-k">' + bi("Leading now", "当前领先") + '</span>';
-    if (sec) html += '<button class="hk-v37-leading-btn" data-hk-lead-id="' + esc(sec.id) + '"><small>' + bi("Sector", "板块") + '</small><span>' + bi(sec.name.en, sec.name.zh) + '</span></button>';
+    /* change 3: the sector's own stance chip rides along — rank-1 by rotation
+       rank alone reads as a bare recommendation (today's rank-1, Healthcare
+       & Pharma, is filed Reduce / Avoid on the owner's own Act-Now board);
+       the chip is what makes "leading" honest rather than implying "buy". */
+    if (sec) html += '<button class="hk-v37-leading-btn" data-hk-lead-id="' + esc(sec.id) + '"><small>' + bi("Sector", "板块") + '</small><span>' + bi(sec.name.en, sec.name.zh) + '</span><span class="hk-v37-stance ' + sec.tone + '">' + bi(sec.stance.en, sec.stance.zh) + '</span></button>';
     if (sb) html += '<span class="hk-v37-leading-flow">' + bi(sb.en, sb.zh) + '</span>';
     host.innerHTML = html;
   }
@@ -423,7 +455,16 @@
     qs("#hk-v37-modal-body", modal).innerHTML = groupActionBandHtml() + modalPaneHtml() + southboundSubbandHtml();
     modal.classList.add("is-open"); modal.setAttribute("aria-hidden", "false"); document.documentElement.style.overflow = "hidden";
   }
-  function closeModal() { var modal = qs("#hk-v37-modal"); if (!modal) return; modal.classList.remove("is-open"); modal.setAttribute("aria-hidden", "true"); document.documentElement.style.overflow = ""; }
+  /* activate() calls closeModal() unconditionally (leadership rows are
+     clickable both in the page and inside the modal), so this must be a
+     no-op when the modal was never open — otherwise every plain leadership
+     click clears document.documentElement.style.overflow regardless of
+     whether anything set it. */
+  function closeModal() {
+    var modal = qs("#hk-v37-modal");
+    if (!modal || !modal.classList.contains("is-open")) return;
+    modal.classList.remove("is-open"); modal.setAttribute("aria-hidden", "true"); document.documentElement.style.overflow = "";
+  }
 
   function bind(root) {
     root.addEventListener("click", function (e) {

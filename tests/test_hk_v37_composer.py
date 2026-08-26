@@ -16,10 +16,23 @@ hold the HK-specific constitution in place:
   - Leadership filtering never silently switches the Top Picks / All
     Candidates population (same Sol adversarial gate as Canada V3.7).
   - The Grid/Table XOR relies on explicit [hidden] overrides, same UA-vs-
-    author display trap as Canada.
+    author display trap as Canada — plus a `.sm-hidden{display:flex}`
+    rescue, because theme.js's row-mode show-more holds LIVE references to
+    the moved .pvcard nodes and can re-hide them on resize.
+  - The Leading Now Southbound flow cue is gated on the owner's own
+    materiality marker (.sbah-sig sig-in/sig-out/sig-neu), never on mere
+    node existence — a neutral "no strong tilt" read must stay silent.
+  - The Leading Now sector carries its own owner-native stance chip, so a
+    bare sector name never reads as an implied recommendation.
   - The loader (templates/dashboard-icons.js + its site/ pair) retries a
     transient entitled-fetch failure with the same bounded backoff shape as
     the Canada loader, gated on the composer's own idempotency flag.
+
+Adversarial review repair (2026-08-25): 1 BLOCKER (sm-hidden rescue) + 2
+MAJOR (Southbound materiality gate, Leading Now stance chip) + hardened
+pins that previously only did bare `"literal" in text` checks now scope
+into the specific function body/callsite so a mutation that deletes the
+emitting code (leaving a comment behind) still fails.
 """
 
 import re
@@ -71,6 +84,50 @@ def test_lane_labels_bind_selector_to_owner_native_titles():
             f"LANE_DEFS no longer binds {sel!r} to en={en!r} zh={zh!r} as one "
             "entry; either the label was swapped onto the wrong lane, or it "
             "was moved into a second, independently-invented lane vocabulary"
+        )
+
+
+HK_TEMPLATE = Path(__file__).resolve().parents[1] / "templates" / "hk.html.j2"
+
+# Matches `_hk_anlane('buy', 'buy', 'Buy Now', '立即买入', ..., _hk_buy, 'anv2-buy')`
+# — group 1/2 are the owner's title_en/title_zh, group 3 is the lane_id arg
+# (the last positional arg, e.g. 'anv2-buy') that binds directly to our
+# LANE_DEFS `sel`. templates/hk.html.j2 is out of OWNED FILES scope, so this
+# only ever reads it.
+_HK_ANLANE_CALL_RE = re.compile(
+    r"_hk_anlane\('\w+',\s*'[\w-]+',\s*'([^']*)',\s*'([^']*)',.*?,\s*'(anv2-[a-z]+)'\)"
+)
+
+
+def _owner_lane_titles():
+    text = HK_TEMPLATE.read_text(encoding="utf-8")
+    out = {}
+    for title_en, title_zh, lane_id in _HK_ANLANE_CALL_RE.findall(text):
+        out["#" + lane_id] = (title_en, title_zh)
+    return out
+
+
+def test_lane_defs_match_the_owner_template_verbatim():
+    """Cross-file consistency: LANE_DEFS is hand-copied from the owner's own
+    `_hk_anlane(...)` macro calls (templates/hk.html.j2:3476-3479) rather than
+    read from them at build time, so nothing forces the two to stay in sync.
+    Parse the owner's title_en/title_zh straight out of the template and
+    assert LANE_DEFS equals them exactly, selector for selector — an owner
+    rewording (or a typo introduced copying LANE_DEFS by hand) now turns this
+    test red instead of leaving stale/invented vocabulary in the composer
+    silently green."""
+    owner = _owner_lane_titles()
+    assert len(owner) == 4, (
+        f"expected exactly 4 _hk_anlane(...) calls in {HK_TEMPLATE}, "
+        f"parsed {len(owner)}: {sorted(owner)} — the regex may no longer "
+        "match the macro call shape"
+    )
+    for sel, en, zh in LANE_BINDINGS:
+        assert sel in owner, f"{sel!r} not found among the owner's _hk_anlane(...) calls"
+        assert owner[sel] == (en, zh), (
+            f"LANE_DEFS[{sel!r}] = (en={en!r}, zh={zh!r}) no longer matches the "
+            f"owner template's own title, which is now {owner[sel]!r} — "
+            "reword LANE_DEFS to match, never the other way around"
         )
 
 
@@ -152,6 +209,75 @@ def test_zero_fetch_calls():
 
 
 # ---------------------------------------------------------------------------
+# Leading Now — materiality-gated Southbound cue + owner stance chip
+# ---------------------------------------------------------------------------
+
+def test_southbound_leading_now_cue_gated_on_materiality_not_existence():
+    """MAJOR repair (adversarial review, 2026-08-25): the frozen spec (§6)
+    forbids the Leading Now Southbound flow cue when the read is
+    non-material — "cue absent when stale, unavailable, or non-material".
+    A first draft gated only on the .sbah-read NODE existing, which pins a
+    neutral "Flow roughly balanced — no strong tilt." read to Leading Now
+    exactly as permanently as a material one (and today's live build IS in
+    that neutral state — sig-neu, verified site/hk_stocks.html).
+
+    The owner already computes a deterministic directional marker for this
+    exact card: .sbah-sig carries sig-in (inflow) / sig-out (outflow) /
+    sig-neu (templates/hk.html.j2:4698, `_sbsig`). southboundFirstRead()
+    must gate on that marker — sig-neu (or a missing .sbah-sig node)
+    returns null; only sig-in/sig-out surface the cue. This is a read of an
+    owner-published class, never a composer-invented threshold."""
+    text = _composer_text()
+    m = re.search(r"function southboundFirstRead\b.*?(?=\n  function )", text, re.S)
+    assert m, "could not locate southboundFirstRead() function body via regex"
+    body = m.group(0)
+    assert "sbah-sig" in body, (
+        "southboundFirstRead() no longer reads .sbah-sig — the cue would go "
+        "back to gating on mere .sbah-read node existence, pinning even a "
+        "neutral/non-material read to Leading Now"
+    )
+    assert "sig-neu" in body, (
+        "southboundFirstRead() no longer checks for the owner's sig-neu "
+        "marker — a neutral 'no strong tilt' Southbound read would surface "
+        "in Leading Now, which §6 forbids (cue absent when non-material)"
+    )
+    # Not a composer-invented numeric threshold: no comparison operators
+    # against sb.* fields (net_z, cum_20d, etc.) — the owner already
+    # computed the directional verdict server-side into the sig-* class.
+    assert not re.search(r"[<>]=?\s*0(\.\d+)?\b", body), (
+        "southboundFirstRead() appears to compare a numeric value against a "
+        "threshold — materiality must be read from the owner's own sig-* "
+        "class, never recomputed from raw flow numbers client-side"
+    )
+
+
+def test_leading_now_sector_carries_its_own_stance_chip():
+    """MAJOR repair (adversarial review, 2026-08-25): printing the bare
+    Leading Now sector name reads as an implied recommendation — today's
+    rotation rank-1 (Healthcare & Pharma) is filed Reduce / Avoid on the
+    owner's own Act-Now board, so "Leading now: Healthcare & Pharma" alone
+    would tell the reader the wrong thing. renderLeading() must append the
+    sector's OWN stance chip (sec.stance/sec.tone, the same values leadRow()
+    uses and the same .hk-v37-stance chip class/idiom), not a bare name."""
+    text = _composer_text()
+    m = re.search(r"function renderLeading\b.*?(?=\n  function )", text, re.S)
+    assert m, "could not locate renderLeading() function body via regex"
+    body = m.group(0)
+    assert re.search(r'class="hk-v37-stance\s*\'\s*\+\s*sec\.tone', body) or (
+        "hk-v37-stance " in body and "sec.tone" in body
+    ), (
+        "renderLeading() no longer renders an .hk-v37-stance chip keyed off "
+        "sec.tone for the Leading Now sector button — the bare sector name "
+        "reads as an implied recommendation"
+    )
+    assert "sec.stance.en" in body and "sec.stance.zh" in body, (
+        "renderLeading() no longer interpolates the sector's own "
+        "sec.stance.en/zh into the Leading Now button — the stance text "
+        "itself is missing even if the chip wrapper survives"
+    )
+
+
+# ---------------------------------------------------------------------------
 # Evidence & Record — moves the HK trd wrapper(s), never recomputes
 # ---------------------------------------------------------------------------
 
@@ -162,26 +288,65 @@ def test_evidence_and_record_moves_trd_wrap_via_appendchild():
     evidenceWraps() must move ALL `.trd-wrap` matches, not just the first —
     moving only the button and stranding the dialog inside the hidden legacy
     panel would silently break the "Track record" click (display:none on an
-    ancestor suppresses a position:fixed descendant too)."""
+    ancestor suppresses a position:fixed descendant too).
+
+    Hardened against comment-satisfiable false-passes: the markup/heading
+    assertions are scoped to evidenceSectionHtml()'s OWN function body (not
+    "anywhere in the file", which a stray comment could satisfy even after
+    the emitting code is deleted); the qsa(...) collection assertion is
+    scoped to evidenceWraps()'s own body the same way; the move itself is
+    pinned as a live `wraps.forEach(...evBody.appendChild(w)...)` call site,
+    not a bare substring; and evidenceSectionHtml() must appear at least
+    twice (definition + buildShell()'s conditional splice) so the section
+    can never be defined-but-never-rendered."""
     text = _composer_text()
-    assert 'id="hk-v37-evidence"' in text, (
+
+    m = re.search(r"function evidenceWraps\b.*?(?=\n  function )", text, re.S)
+    assert m, "could not locate evidenceWraps() function body via regex"
+    wraps_body = m.group(0)
+    assert 'qsa(".trd-wrap", host)' in wraps_body, (
+        "evidenceWraps() no longer collects every .trd-wrap match via qsa() "
+        "INSIDE its own function body — moving only the first .trd-wrap "
+        "(querySelector) would strand the #trd-dlg dialog inside the hidden "
+        "legacy panel"
+    )
+
+    m2 = re.search(r"function evidenceSectionHtml\b.*?(?=\n  function )", text, re.S)
+    assert m2, "could not locate evidenceSectionHtml() function body via regex"
+    section_body = m2.group(0)
+    assert 'id="hk-v37-evidence"' in section_body, (
         "Evidence & Record section markup missing its exact "
-        'id="hk-v37-evidence"'
+        'id="hk-v37-evidence" INSIDE evidenceSectionHtml() itself'
     )
-    assert "Evidence &amp; Record" in text or "Evidence & Record" in text, (
-        "Evidence & Record EN heading missing"
+    assert "Evidence &amp; Record" in section_body or "Evidence & Record" in section_body, (
+        "Evidence & Record EN heading missing from evidenceSectionHtml()'s own markup"
     )
-    assert "证据与往绩" in text, "Evidence & Record ZH heading missing"
-    assert "measurement.html" in text, "Methodology link to measurement.html missing"
-    assert "qsa(\".trd-wrap\", host)" in text, (
-        "evidenceWraps() no longer collects every .trd-wrap match via qsa() — "
-        "moving only the first .trd-wrap (querySelector) would strand the "
-        "#trd-dlg dialog inside the hidden legacy panel"
+    assert "证据与往绩" in section_body, (
+        "Evidence & Record ZH heading missing from evidenceSectionHtml()'s own markup"
     )
-    assert "evBody.appendChild(w)" in text or "appendChild(w)" in text, (
-        "composer no longer moves the trd-wrap elements via appendChild; "
-        "Track Record must be MOVED into the Evidence body, never "
-        "recomputed or left unattached"
+    assert "measurement.html" in section_body, (
+        "Methodology link to measurement.html missing from evidenceSectionHtml()'s own markup"
+    )
+
+    assert text.count("evidenceSectionHtml()") >= 2, (
+        "evidenceSectionHtml() must appear at least twice: once where it is "
+        "defined and once where buildShell() splices its call "
+        "(`wraps.length ? evidenceSectionHtml() : ''`) into the panel "
+        "sequence — otherwise the section can be defined but never rendered"
+    )
+    assert "wraps.length ? evidenceSectionHtml() : ''" in text, (
+        "buildShell() no longer conditionally splices evidenceSectionHtml() "
+        "on wraps.length — the section would either always render (even "
+        "with zero .trd-wrap found) or never render at all"
+    )
+
+    assert re.search(
+        r"wraps\.forEach\(function \(w\) \{ evBody\.appendChild\(w\); \}\)", text
+    ), (
+        "composer no longer moves every element evidenceWraps() collected "
+        "via a live wraps.forEach(...evBody.appendChild(w)...) call — Track "
+        "Record must be MOVED into the Evidence body, never recomputed or "
+        "left unattached"
     )
     assert "hk_track_ledger" not in text, (
         "composer must never fetch factordata/hk_track_ledger.json itself; "
@@ -198,7 +363,15 @@ def test_leadership_activation_never_force_switches_population():
     state.filter and re-render via applyFilter() only — it must never call
     setSource(...) or set state.source = "all" as a side effect. The
     deliberate, user-initiated setSource("all") wired to .hk-v37-empty-switch
-    in bind() is the only place that call is allowed."""
+    in bind() is the only place that call is allowed.
+
+    Hardened against comment-satisfiable false-passes: the three empty-state
+    strings/markers are scoped to emptyStateHtml()'s OWN function body (a
+    bare `"literal" in text` check would still pass if the emitting branch
+    were deleted but a comment elsewhere kept mentioning the same words);
+    the deliberate switch is pinned as a live `.hk-v37-empty-switch` click
+    handler that calls `setSource("all")`, not just the class name appearing
+    somewhere in the file."""
     text = _composer_text()
     m = re.search(r"function activate\b.*?(?=\n  function )", text, re.S)
     assert m, "could not locate activate() function body via regex"
@@ -216,17 +389,42 @@ def test_leadership_activation_never_force_switches_population():
         "activate() must re-render via applyFilter() after setting "
         "state.filter"
     )
-    assert "No Top Picks in this group." in text, "EN zero-state invitation missing"
-    assert "该组别中暂无首选。" in text, "ZH zero-state invitation missing"
-    assert "hk-v37-empty-switch" in text, "deliberate switch-to-All button missing"
+
+    m3 = re.search(r"function emptyStateHtml\b.*?(?=\n  function )", text, re.S)
+    assert m3, "could not locate emptyStateHtml() function body via regex"
+    empty_body = m3.group(0)
+    assert "No Top Picks in this group." in empty_body, (
+        "EN zero-state invitation missing from emptyStateHtml()'s own body"
+    )
+    assert "该组别中暂无首选。" in empty_body, (
+        "ZH zero-state invitation missing from emptyStateHtml()'s own body"
+    )
+    assert "hk-v37-empty-switch" in empty_body, (
+        "deliberate switch-to-All button markup missing from "
+        "emptyStateHtml()'s own body"
+    )
     # The distinct zero-featured-cards empty state (never present in Canada,
     # since Canada always had a position-based Top Picks population).
-    assert "No featured names right now." in text, (
-        "EN zero-featured-cards empty state missing — when this build has no "
-        "pv-featured cards at all, Top Picks must show this explicit state "
-        "rather than silently behaving like All Candidates"
+    assert "No featured names right now." in empty_body, (
+        "EN zero-featured-cards empty state missing from emptyStateHtml()'s "
+        "own body — when this build has no pv-featured cards at all, Top "
+        "Picks must show this explicit state rather than silently behaving "
+        "like All Candidates"
     )
-    assert "当前暂无精选个股。" in text, "ZH zero-featured-cards empty state missing"
+    assert "当前暂无精选个股。" in empty_body, (
+        "ZH zero-featured-cards empty state missing from emptyStateHtml()'s own body"
+    )
+
+    # The deliberate switch itself: a live click delegation that calls
+    # setSource("all") when .hk-v37-empty-switch is clicked — not merely the
+    # class name appearing as markup with no wired behavior.
+    assert re.search(
+        r'closest\("\.hk-v37-empty-switch"\)\)\s*return setSource\("all"\)', text
+    ), (
+        "bind() no longer wires .hk-v37-empty-switch to a live "
+        'setSource("all") call — the deliberate switch-to-All control '
+        "would render but do nothing"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -258,6 +456,47 @@ def test_hidden_attribute_overrides_ship_in_composer_style():
         "composer no longer hides grid cards via the hidden attribute; "
         "re-review REQUIRED_HIDDEN_OVERRIDES before deleting them"
     )
+
+
+def test_sm_hidden_override_rescues_cards_from_theme_js_show_more():
+    """BLOCKER repair (adversarial review, 2026-08-25): site/theme.js's
+    row-mode show-more (`initShowMore`, triggered by the `data-showmore-rows`
+    attribute already present on #standouts .nbgrid) keeps a LIVE reference
+    to the original grid's children — the EXACT .pvcard nodes
+    collectCards() moves into #hk-v37-card-grid, not copies. Its `resize`
+    listener and ResizeObserver re-run `render()` on that live array
+    whenever the column count changes, re-adding `.sm-hidden`
+    (theme.css: display:none!important) to any card past its own page
+    threshold. A one-shot `card.classList.remove("sm-hidden")` at mount time
+    does not un-wire that listener, so a later resize (or a Table<->Grid
+    round trip that lets a hidden ResizeObserver fire) can silently delete
+    moved cards from the composed grid while hk-v37-result's counter keeps
+    counting them as shown.
+
+    Without `.hk-v37-card-grid .sm-hidden{display:flex!important}`, theme.js
+    re-adding `.sm-hidden` would win via the UA/author cascade (theme.css's
+    own `.sm-hidden{display:none!important}` outranks nothing scoped to the
+    composer's grid). The override must specifically NOT swallow a
+    genuinely-filtered card: `.pvcard[hidden]` is two classes + one
+    attribute (specificity 0,3,0) vs this rule's two classes (0,2,0), so
+    the composer's own Top Picks/leadership filter still wins over a stray
+    .sm-hidden class on the same card."""
+    text = _composer_text()
+    assert ".hk-v37-card-grid .sm-hidden{display:flex!important}" in text, (
+        "composer style lost the .sm-hidden{display:flex!important} rescue — "
+        "theme.js's live show-more references to the moved .pvcard nodes can "
+        "re-hide them on resize/ResizeObserver, silently deleting cards from "
+        "the composed grid while the shown-count counter keeps counting them"
+    )
+    # This rescue rule must never outrank a genuine composer-driven hide —
+    # the [hidden] override (asserted above) has to still appear in the text
+    # so the two rules coexist rather than one having replaced the other.
+    for rule in REQUIRED_HIDDEN_OVERRIDES:
+        assert rule in text, (
+            f"{rule!r} missing alongside the sm-hidden rescue — a genuinely "
+            "filtered-out card must still hide via [hidden], which needs "
+            "higher specificity than the sm-hidden rescue to win"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -311,4 +550,39 @@ def test_loader_is_a_separate_iife_from_the_canada_loader():
     assert "__mmCanadaStockV36" not in hk_block.split("}());", 1)[0], (
         "HK loader IIFE references a Canada composer flag; the two loaders "
         "must stay fully independent"
+    )
+
+
+# ---------------------------------------------------------------------------
+# closeModal() is a no-op when the modal was never open
+# ---------------------------------------------------------------------------
+
+def test_close_modal_guards_on_is_open_before_clearing_overflow():
+    """NONBLOCKING repair (adversarial review, 2026-08-25): activate() calls
+    closeModal() unconditionally on every leadership-row click (rows are
+    clickable both on the page and inside the modal), so closeModal() must
+    be a no-op when the modal was never open — otherwise every plain
+    leadership click (never having opened the modal) clears
+    document.documentElement.style.overflow regardless of whether anything
+    set it. Pinned as a guard clause scoped inside closeModal()'s own
+    function body: `if (!modal || !modal.classList.contains("is-open"))
+    return;` before the style mutation, not merely the string
+    "is-open" appearing somewhere in the file."""
+    text = _composer_text()
+    m = re.search(r"function closeModal\b.*?\n  \}", text, re.S)
+    assert m, "could not locate closeModal() function body via regex"
+    body = m.group(0)
+    assert re.search(r'!modal\.classList\.contains\("is-open"\)', body), (
+        "closeModal() no longer guards on modal.classList.contains(\"is-open\") "
+        "— it will clear document.documentElement.style.overflow even when "
+        "the modal was never opened"
+    )
+    # The guard must come BEFORE the overflow mutation, not after (an
+    # after-the-fact check would already have cleared the style).
+    guard_idx = body.find('classList.contains("is-open")')
+    overflow_idx = body.find("style.overflow")
+    assert 0 <= guard_idx < overflow_idx, (
+        "the is-open guard must appear before the "
+        "document.documentElement.style.overflow mutation in closeModal(), "
+        "not after it"
     )
