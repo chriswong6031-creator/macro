@@ -410,6 +410,14 @@ def run(root: Path, *, now: datetime | None = None, dry_run: bool = False,
                       quote_asof=live.get("asof"), delay_min=delay_min,
                       quote_age_of=quote_ager(live, ts))
     art["meta"]["quote_source"] = live.get("source")
+    # Ownership identity travels ON the artifact, house idiom = the producing script
+    # path (cf. build_security_master). The external dead-man requires it, and the
+    # requirement is not bureaucratic: through the 2026-08 freeze there was no way to
+    # ask a served artifact "who last wrote you?", so an unowned document and a
+    # document written by a dead lane looked identical. Stamped here, after the single
+    # LS.evaluate call, so a globally DARK artifact carries it too — a dark pass is
+    # still a pass this lane is accountable for.
+    art["meta"]["producer"] = "scripts/prophet_live_evaluator.py"
 
     m = art["meta"]
     if art["status"] == "dark":
