@@ -12,6 +12,7 @@ The legacy ``edgar_dilution`` adapter remains the sole writer of
 from __future__ import annotations
 
 import hashlib
+import html as stdlib_html
 import json
 import logging
 import math
@@ -20,15 +21,14 @@ import re
 import time
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
-from functools import lru_cache
 from pathlib import Path
 from collections.abc import Mapping, Sequence
 from typing import Any, Callable, Iterable
 from zoneinfo import ZoneInfo
+from xml.etree import ElementTree
 
 import pandas as pd
 import requests
-from pandas.tseries.holiday import USFederalHolidayCalendar
 
 from collectors.base import Adapter, is_connection_error
 from engine.capital_structure.source_identity import (
@@ -49,6 +49,14 @@ from engine.capital_structure.ingestion_health import (
     build_ingestion_run,
     source_high_watermark,
 )
+from engine.capital_structure.sec_discovery_clock import (
+    DISCOVERY_CLOCK_POLICY_VERSION,
+    SEC_TIMEZONE,
+    daily_reconciliation_updated_boundary,
+    is_sec_calendar_closed,
+    latest_expected_daily_index_date,
+    latest_expected_realtime_filing_date,
+)
 from engine.capital_structure.source_ledger_io import (
     read_source_ledger,
     source_ledger_path,
@@ -59,6 +67,7 @@ from engine.capital_structure.source_store import format_store_failure
 log = logging.getLogger(__name__)
 
 _DAILY_IDX = "https://www.sec.gov/Archives/edgar/daily-index/{yr}/QTR{q}/form.{ds}.idx"
+_LATEST_FILINGS = "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&output=atom&count={count}&start={start}"
 _ARCHIVES = "https://www.sec.gov/Archives/"
 
 # Wave 1 is intentionally the registration / issuance family. Broad 8-K, 6-K,
@@ -117,6 +126,8 @@ LOOKBACK_DAYS_NIGHTLY = 7
 RETRIEVAL_QUEUE_AGING_DAYS = 7
 INDEX_NOT_PUBLISHED_GRACE_DAYS = 7
 PACE_SECONDS = 0.12
+LATEST_FILINGS_PAGE_SIZE = 100
+MAX_LATEST_FILINGS_PAGES = 200
 GROUP = "capital_structure"
 
 # The collector must make bounded progress across every evidence family rather
@@ -186,10 +197,13 @@ _UNCLOSED_ATTEMPT_STATES = _RETRIEVAL_FAILURE_STATES | {"stored_parser_deferred"
 _DISCOVERY_COLUMNS = [
     "accession", "cik", "ticker", "company_name", "form", "filing_date",
     "file_path", "canonical_url", "collection_scope", "_first_seen",
+    "discovery_channel", "latest_filings_updated_at", "latest_filings_role",
+    "reconciled_at",
 ]
 _COVERAGE_COLUMNS = [
     "index_date", "status", "target_count", "attempt_count", "last_attempt_at",
-    "last_error", "policy_version",
+    "last_error", "policy_version", "coverage_kind", "observed_through",
+    "discovery_clock_policy_version",
 ]
 _ATTEMPT_COLUMNS = [
     "attempt_id", "accession", "source_id", "canonical_url", "attempted_at",
@@ -207,13 +221,8 @@ class IndexNotPublished(RuntimeError):
         super().__init__(f"SEC daily index HTTP {status_code}: {value}")
 
 
-@lru_cache(maxsize=512)
-def is_sec_calendar_closed(value: date) -> bool:
-    """Return true for an observed US federal weekday closure."""
-    holidays = USFederalHolidayCalendar().holidays(
-        start=pd.Timestamp(value), end=pd.Timestamp(value)
-    )
-    return not holidays.empty
+class LatestFilingsTraversalIncomplete(RuntimeError):
+    """The bounded Atom traversal could not prove a durable-watermark boundary."""
 
 
 def _qtr(value: date) -> int:
@@ -379,6 +388,385 @@ def parse_form_index(
         ):
             rows.append(row | {"collection_scope": DISCOVERY_SCOPE_RECONCILIATION})
     return rows
+
+
+_ATOM_NAMESPACE = {"atom": "http://www.w3.org/2005/Atom"}
+_ATOM_ACCESSION_RE = re.compile(r"accession-number=(\d{10}-\d{2}-\d{6})$")
+_ATOM_SUMMARY_RE = re.compile(
+    r"Filed:\s*(\d{4}-\d{2}-\d{2})\s+AccNo:\s*(\d{10}-\d{2}-\d{6})\b",
+    re.I,
+)
+_ATOM_TITLE_RE = re.compile(
+    r"^(.+?)\s+-\s+(.+)\s+\((\d{1,10})\)\s+\(([^()]+)\)$",
+)
+
+
+def _aware_datetime(value: object, *, field: str) -> datetime:
+    raw = str(value or "").strip()
+    try:
+        parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise ValueError(f"{field} must be an ISO-8601 datetime") from exc
+    if parsed.tzinfo is None:
+        raise ValueError(f"{field} must include a timezone")
+    return parsed.astimezone(timezone.utc)
+
+
+def _utc_iso(value: datetime) -> str:
+    return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def parse_latest_filings_atom(text: str) -> dict[str, Any]:
+    """Parse and strictly validate one official SEC Latest Filings Atom page."""
+    payload = re.sub(r"^\s*<\?xml[^>]*\?>", "", str(text), count=1).strip()
+    if not payload:
+        raise ValueError("SEC Latest Filings response is empty")
+    try:
+        root = ElementTree.fromstring(payload)
+    except ElementTree.ParseError as exc:
+        raise ValueError("SEC Latest Filings response is not valid Atom XML") from exc
+    if root.tag != "{http://www.w3.org/2005/Atom}feed":
+        raise ValueError("SEC Latest Filings response has no Atom feed root")
+    feed_updated = root.findtext("atom:updated", default="", namespaces=_ATOM_NAMESPACE)
+    observed_through = _utc_iso(
+        _aware_datetime(feed_updated, field="Latest Filings feed.updated"),
+    )
+    entries: list[dict[str, Any]] = []
+    for order, element in enumerate(root.findall("atom:entry", _ATOM_NAMESPACE)):
+        entry_id = element.findtext("atom:id", default="", namespaces=_ATOM_NAMESPACE)
+        accession_match = _ATOM_ACCESSION_RE.search(entry_id.strip())
+        if not accession_match:
+            raise ValueError("SEC Latest Filings entry has no canonical accession id")
+        accession = accession_match.group(1)
+        category = element.find("atom:category", _ATOM_NAMESPACE)
+        form = str(category.get("term") if category is not None else "").strip().upper()
+        title = element.findtext("atom:title", default="", namespaces=_ATOM_NAMESPACE).strip()
+        title_match = _ATOM_TITLE_RE.fullmatch(title)
+        if not title_match:
+            raise ValueError(f"SEC Latest Filings title is malformed for {accession}")
+        title_form, company_name, cik, role = title_match.groups()
+        if title_form.strip().upper() != form or not form:
+            raise ValueError(f"SEC Latest Filings form identity disagrees for {accession}")
+        summary = element.findtext(
+            "atom:summary", default="", namespaces=_ATOM_NAMESPACE,
+        )
+        summary_text = re.sub(r"<[^>]+>", " ", stdlib_html.unescape(summary))
+        summary_text = re.sub(r"\s+", " ", summary_text).strip()
+        summary_match = _ATOM_SUMMARY_RE.search(summary_text)
+        if not summary_match or summary_match.group(2) != accession:
+            raise ValueError(f"SEC Latest Filings summary identity disagrees for {accession}")
+        filing_date = summary_match.group(1)
+        try:
+            date.fromisoformat(filing_date)
+        except ValueError as exc:
+            raise ValueError(
+                f"SEC Latest Filings filing date is invalid for {accession}",
+            ) from exc
+        updated = _utc_iso(_aware_datetime(
+            element.findtext("atom:updated", default="", namespaces=_ATOM_NAMESPACE),
+            field=f"Latest Filings entry.updated {accession}",
+        ))
+        entries.append({
+            "accession": accession,
+            "cik": cik.zfill(10),
+            "company_name": company_name.strip(),
+            "form": form,
+            "filing_date": filing_date,
+            "latest_filings_updated_at": updated,
+            "latest_filings_role": role.strip(),
+            "_feed_order": order,
+        })
+    updated_values = [
+        _aware_datetime(row["latest_filings_updated_at"], field="entry.updated")
+        for row in entries
+    ]
+    if any(older > newer for newer, older in zip(updated_values, updated_values[1:])):
+        raise ValueError("SEC Latest Filings entries are not newest-first")
+    return {"observed_through": observed_through, "entries": entries}
+
+
+def _role_rank(value: object) -> int:
+    return {"filer": 0, "issuer": 1}.get(str(value or "").strip().lower(), 2)
+
+
+def _first_entry_per_accession(entries: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for raw in entries:
+        row = dict(raw)
+        grouped.setdefault(str(row.get("accession") or ""), []).append(row)
+    selected = [
+        min(
+            candidates,
+            key=lambda row: (
+                _role_rank(row.get("latest_filings_role")),
+                int(row.get("_scan_order") or row.get("_feed_order") or 0),
+            ),
+        )
+        for accession, candidates in grouped.items()
+        if accession
+    ]
+    return sorted(
+        selected,
+        key=lambda row: int(row.get("_scan_order") or row.get("_feed_order") or 0),
+    )
+
+
+def latest_filings_discovery_rows(
+    entries: Sequence[Mapping[str, Any]],
+    *,
+    existing_discovery: pd.DataFrame,
+    cik_tickers: Mapping[int, str],
+    first_seen: str,
+) -> list[dict[str, Any]]:
+    """Apply the unchanged form and issuer-scope law to provisional Atom rows."""
+    target_entries = [
+        dict(row) for row in entries
+        if str(row.get("form") or "").upper() in TARGET_FORMS
+    ]
+    selected_targets = _first_entry_per_accession(target_entries)
+    scoped_ciks = _issuer_scope_ciks(existing_discovery)
+    scoped_ciks.update(str(row["cik"]) for row in selected_targets)
+    reconciliation_entries = [
+        dict(row) for row in entries
+        if str(row.get("form") or "").upper()
+        in DECLARED_WAVE2_RECONCILIATION_FORMS
+        and _normalized_cik(row.get("cik")) in scoped_ciks
+    ]
+    selected = _first_entry_per_accession([
+        *selected_targets, *reconciliation_entries,
+    ])
+    rows: list[dict[str, Any]] = []
+    for entry in selected:
+        accession = str(entry["accession"])
+        cik = str(entry["cik"]).zfill(10)
+        compact = accession.replace("-", "")
+        file_path = f"edgar/data/{int(cik)}/{compact}/{accession}.txt"
+        form = str(entry["form"]).upper()
+        rows.append({
+            "accession": accession,
+            "cik": cik,
+            "ticker": cik_tickers.get(int(cik)),
+            "company_name": str(entry["company_name"]),
+            "form": form,
+            "filing_date": str(entry["filing_date"]),
+            "file_path": file_path,
+            "canonical_url": _ARCHIVES + file_path,
+            "collection_scope": (
+                DISCOVERY_SCOPE_REGISTRATION
+                if form in TARGET_FORMS else DISCOVERY_SCOPE_RECONCILIATION
+            ),
+            "_first_seen": first_seen,
+            "discovery_channel": "latest_filings",
+            "latest_filings_updated_at": entry["latest_filings_updated_at"],
+            "latest_filings_role": entry["latest_filings_role"],
+            "reconciled_at": None,
+        })
+    return rows
+
+
+def reconcile_discovery_rows(
+    existing: pd.DataFrame,
+    *,
+    overlay_rows: Sequence[Mapping[str, Any]],
+    daily_rows: Sequence[Mapping[str, Any]],
+    reconciled_at: str,
+) -> pd.DataFrame:
+    """Deduplicate by accession and let the daily index reconcile metadata."""
+    frame = existing.copy()
+    for column in _DISCOVERY_COLUMNS:
+        if column not in frame.columns:
+            frame[column] = None
+    ordered: list[str] = []
+    by_accession: dict[str, dict[str, Any]] = {}
+    for raw in frame[_DISCOVERY_COLUMNS].to_dict("records"):
+        accession = str(raw.get("accession") or "")
+        if not accession or accession in by_accession:
+            continue
+        ordered.append(accession)
+        by_accession[accession] = dict(raw)
+    for raw in overlay_rows:
+        row = {column: raw.get(column) for column in _DISCOVERY_COLUMNS}
+        accession = str(row.get("accession") or "")
+        if not accession or accession in by_accession:
+            continue
+        ordered.append(accession)
+        by_accession[accession] = row
+    for raw in daily_rows:
+        accession = str(raw.get("accession") or "")
+        if not accession:
+            raise ValueError("daily-index discovery row has no accession")
+        prior = by_accession.get(accession, {})
+        if accession not in by_accession:
+            ordered.append(accession)
+        row = {column: raw.get(column) for column in _DISCOVERY_COLUMNS}
+        row["_first_seen"] = prior.get("_first_seen") or raw.get("_first_seen")
+        row["discovery_channel"] = "daily_index"
+        row["latest_filings_updated_at"] = prior.get(
+            "latest_filings_updated_at",
+        )
+        row["latest_filings_role"] = prior.get("latest_filings_role")
+        row["reconciled_at"] = reconciled_at
+        by_accession[accession] = row
+    return pd.DataFrame(
+        [by_accession[accession] for accession in ordered],
+        columns=_DISCOVERY_COLUMNS,
+    )
+
+
+def _coverage_kind(row: Mapping[str, Any]) -> str:
+    value = str(row.get("coverage_kind") or "").strip()
+    return value or "daily_index"
+
+
+def _latest_filings_boundary(coverage: pd.DataFrame) -> datetime | None:
+    if coverage.empty:
+        return None
+    rows = coverage.to_dict("records")
+    overlay_times = [
+        _aware_datetime(row.get("observed_through"), field="coverage.observed_through")
+        for row in rows
+        if _coverage_kind(row) == "latest_filings"
+        and str(row.get("status") or "") == "complete"
+        and str(row.get("observed_through") or "").strip()
+    ]
+    if overlay_times:
+        return max(overlay_times)
+    completed_dates = [
+        date.fromisoformat(str(row.get("index_date")))
+        for row in rows
+        if _coverage_kind(row) == "daily_index"
+        and str(row.get("status") or "") == "complete"
+        and re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(row.get("index_date") or ""))
+    ]
+    if not completed_dates:
+        return None
+    return daily_reconciliation_updated_boundary(max(completed_dates)).astimezone(
+        timezone.utc,
+    )
+
+
+def _latest_entry_identity(row: Mapping[str, Any]) -> tuple[str, str, str, str]:
+    return (
+        str(row.get("accession") or ""),
+        str(row.get("cik") or ""),
+        str(row.get("latest_filings_role") or ""),
+        str(row.get("latest_filings_updated_at") or ""),
+    )
+
+
+def collect_latest_filings_overlay(
+    fetch_page: Callable[[int, int], str],
+    *,
+    discovery: pd.DataFrame,
+    coverage: pd.DataFrame,
+    cik_tickers: Mapping[int, str],
+    observed_at: datetime,
+) -> dict[str, Any]:
+    """Exhaustively traverse new Atom updates within a fixed bounded budget."""
+    if observed_at.tzinfo is None:
+        raise ValueError("Latest Filings observed_at must be timezone-aware")
+    boundary = _latest_filings_boundary(coverage)
+    seen: set[tuple[str, str, str, str]] = set()
+    entries: list[dict[str, Any]] = []
+    oldest_seen: datetime | None = None
+    first_page: dict[str, Any] | None = None
+    boundary_reached = False
+    pages_scanned = 0
+    for page_number in range(MAX_LATEST_FILINGS_PAGES):
+        start = page_number * LATEST_FILINGS_PAGE_SIZE
+        parsed = parse_latest_filings_atom(
+            fetch_page(start, LATEST_FILINGS_PAGE_SIZE),
+        )
+        pages_scanned += 1
+        if first_page is None:
+            first_page = parsed
+        page_entries = [dict(row) for row in parsed["entries"]]
+        page_times = [
+            _aware_datetime(row["latest_filings_updated_at"], field="entry.updated")
+            for row in page_entries
+        ]
+        new_rows: list[dict[str, Any]] = []
+        for row, updated in zip(page_entries, page_times, strict=True):
+            identity = _latest_entry_identity(row)
+            if identity in seen:
+                continue
+            if oldest_seen is not None and updated > oldest_seen:
+                raise LatestFilingsTraversalIncomplete(
+                    "Latest Filings pagination order moved across an unseen entry",
+                )
+            seen.add(identity)
+            row["_scan_order"] = len(entries) + len(new_rows)
+            new_rows.append(row)
+        entries.extend(new_rows)
+        if page_times:
+            page_oldest = min(page_times)
+            oldest_seen = (
+                page_oldest if oldest_seen is None else min(oldest_seen, page_oldest)
+            )
+            if boundary is not None and page_oldest < boundary:
+                boundary_reached = True
+        if not page_entries or len(page_entries) < LATEST_FILINGS_PAGE_SIZE:
+            boundary_reached = True
+        if boundary_reached:
+            break
+        time.sleep(PACE_SECONDS)
+    if not boundary_reached:
+        raise LatestFilingsTraversalIncomplete(
+            f"Latest Filings boundary not reached in {MAX_LATEST_FILINGS_PAGES} pages",
+        )
+    assert first_page is not None
+    time.sleep(PACE_SECONDS)
+    final_page = parse_latest_filings_atom(
+        fetch_page(0, LATEST_FILINGS_PAGE_SIZE),
+    )
+    initial_entries = first_page["entries"]
+    final_entries = final_page["entries"]
+    if initial_entries:
+        anchor = _latest_entry_identity(initial_entries[0])
+        if anchor not in {_latest_entry_identity(row) for row in final_entries}:
+            raise LatestFilingsTraversalIncomplete(
+                "Latest Filings leading anchor moved beyond the bounded first page",
+            )
+    elif final_entries:
+        raise LatestFilingsTraversalIncomplete(
+            "Latest Filings changed from empty during traversal",
+        )
+    for raw in final_entries:
+        row = dict(raw)
+        identity = _latest_entry_identity(row)
+        if identity in seen:
+            continue
+        seen.add(identity)
+        row["_scan_order"] = len(entries)
+        entries.append(row)
+    entries.sort(
+        key=lambda row: (
+            -_aware_datetime(
+                row["latest_filings_updated_at"], field="entry.updated",
+            ).timestamp(),
+            int(row.get("_scan_order") or 0),
+        ),
+    )
+    bounded_entries = [
+        row for row in entries
+        if boundary is None
+        or _aware_datetime(row["latest_filings_updated_at"], field="entry.updated")
+        >= boundary
+    ]
+    first_seen = _utc_iso(observed_at)
+    rows = latest_filings_discovery_rows(
+        bounded_entries,
+        existing_discovery=discovery,
+        cik_tickers=cik_tickers,
+        first_seen=first_seen,
+    )
+    return {
+        "rows": rows,
+        "observed_through": final_page["observed_through"],
+        "pages_scanned": pages_scanned,
+        "entries_scanned": len(entries),
+        "boundary": _utc_iso(boundary) if boundary is not None else None,
+    }
 
 
 _HEADER_FIELD_RE = {
@@ -1231,6 +1619,7 @@ def _queue_receipt(
         "schema": "capital_structure.retrieval_queue_receipt.v1",
         "as_of": stamp.isoformat().replace("+00:00", "Z"),
         "policy_version": FORM_POLICY["policy_version"],
+        "discovery_clock_policy_version": DISCOVERY_CLOCK_POLICY_VERSION,
         "max_filings": int(max_filings),
         "selected_count": len(selected),
         "deferred_count": len(candidates) - len(selected),
@@ -1284,6 +1673,9 @@ def due_index_dates(
     ``full_history`` only bypasses completed-day suppression inside the caller's
     bounded lookback. It does not enumerate the historical EDGAR archive.
     """
+    if not coverage.empty and "coverage_kind" in coverage.columns:
+        kinds = coverage["coverage_kind"].fillna("").astype(str)
+        coverage = coverage.loc[kinds.isin({"", "daily_index"})].copy()
     complete: set[str] = set()
     if not coverage.empty and not full_history:
         policy_current = (
@@ -1735,6 +2127,7 @@ class SecCapitalStructureAdapter(Adapter):
     name = "sec_capital_structure"
     group = GROUP
     stale_after_days = 4
+    latest_filings_enabled = True
 
     def __init__(
         self,
@@ -1767,6 +2160,15 @@ class SecCapitalStructureAdapter(Adapter):
             if status_code == 404:
                 raise IndexNotPublished(value, status_code) from exc
             raise
+        return response.text
+
+    def _fetch_latest_filings_page(self, start: int, count: int, ua: str) -> str:
+        response = self.http_get(
+            _LATEST_FILINGS.format(start=int(start), count=int(count)),
+            retries=1,
+            timeout=30,
+            headers={"User-Agent": ua, "Accept-Encoding": "gzip, deflate"},
+        )
         return response.text
 
     def _fetch_submission(self, url: str, ua: str) -> bytes:
@@ -1941,6 +2343,7 @@ class SecCapitalStructureAdapter(Adapter):
         if manifests:
             validate_manifest_ledger(manifests)
         now = self._now_fn().astimezone(timezone.utc)
+        now_et = now.astimezone(SEC_TIMEZONE)
         now_iso = _iso(now)
         # ``full_history`` is the Adapter refresh flag; for this bounded W1
         # collector it revalidates the 90-day bootstrap, not all EDGAR history.
@@ -1952,8 +2355,71 @@ class SecCapitalStructureAdapter(Adapter):
         ua = _ua()
         cik_tickers = _cik_map()
 
-        new_discovery: list[dict] = []
+        overlay_discovery: list[dict] = []
+        daily_discovery: list[dict] = []
         coverage_updates: list[dict] = []
+
+        def prior_coverage(kind: str, index_date: date) -> tuple[int, str]:
+            if coverage.empty:
+                return 0, ""
+            kinds = coverage["coverage_kind"].fillna("").astype(str)
+            expected_kinds = {"", "daily_index"} if kind == "daily_index" else {kind}
+            matches = coverage.loc[
+                coverage["index_date"].astype(str).eq(index_date.isoformat())
+                & kinds.isin(expected_kinds)
+            ]
+            if matches.empty:
+                return 0, ""
+            return (
+                int(matches.iloc[-1].get("attempt_count") or 0),
+                str(matches.iloc[-1].get("last_error") or ""),
+            )
+
+        realtime_date = latest_expected_realtime_filing_date(now)
+        if self.latest_filings_enabled:
+            overlay_attempts, _ = prior_coverage("latest_filings", realtime_date)
+            try:
+                overlay = collect_latest_filings_overlay(
+                    lambda start, count: self._fetch_latest_filings_page(
+                        start, count, ua,
+                    ),
+                    discovery=discovery,
+                    coverage=coverage,
+                    cik_tickers=cik_tickers,
+                    observed_at=now,
+                )
+                overlay_discovery = list(overlay["rows"])
+                coverage_updates.append({
+                    "index_date": realtime_date.isoformat(),
+                    "status": "complete",
+                    "target_count": len(overlay_discovery),
+                    "attempt_count": overlay_attempts + 1,
+                    "last_attempt_at": now_iso,
+                    "last_error": None,
+                    "policy_version": FORM_POLICY["policy_version"],
+                    "coverage_kind": "latest_filings",
+                    "observed_through": overlay["observed_through"],
+                    "discovery_clock_policy_version": DISCOVERY_CLOCK_POLICY_VERSION,
+                })
+            except Exception as exc:  # noqa: BLE001
+                coverage_updates.append({
+                    "index_date": realtime_date.isoformat(),
+                    "status": "retry",
+                    "target_count": None,
+                    "attempt_count": overlay_attempts + 1,
+                    "last_attempt_at": now_iso,
+                    "last_error": f"{type(exc).__name__}: {exc}",
+                    "policy_version": FORM_POLICY["policy_version"],
+                    "coverage_kind": "latest_filings",
+                    "observed_through": None,
+                    "discovery_clock_policy_version": DISCOVERY_CLOCK_POLICY_VERSION,
+                })
+        provisional_discovery = reconcile_discovery_rows(
+            discovery,
+            overlay_rows=overlay_discovery,
+            daily_rows=[],
+            reconciled_at=now_iso,
+        )
         # Keep successful daily-index bytes until the window's registration
         # anchors are known.  ``due_index_dates`` deliberately visits the
         # current day before older days, so admitting reconciliation rows
@@ -1961,16 +2427,14 @@ class SecCapitalStructureAdapter(Adapter):
         # issuer is encountered later in the same run.  Resolve all in-window
         # anchors first, then make one issuer-scoped reconciliation pass.
         successful_indexes: list[tuple[date, str, int]] = []
+        latest_ready_index_date = latest_expected_daily_index_date(now)
         for index_date in due_index_dates(
-            coverage, today=now.date(), lookback_days=lookback, full_history=full_history
+            coverage,
+            today=latest_ready_index_date,
+            lookback_days=lookback,
+            full_history=full_history,
         ):
-            prior_attempts = 0
-            prior_error = ""
-            if not coverage.empty:
-                matches = coverage.loc[coverage["index_date"].astype(str) == index_date.isoformat()]
-                if not matches.empty:
-                    prior_attempts = int(matches.iloc[-1].get("attempt_count") or 0)
-                    prior_error = str(matches.iloc[-1].get("last_error") or "")
+            prior_attempts, prior_error = prior_coverage("daily_index", index_date)
             if is_sec_calendar_closed(index_date):
                 coverage_updates.append({
                     "index_date": index_date.isoformat(),
@@ -1980,6 +2444,9 @@ class SecCapitalStructureAdapter(Adapter):
                     "last_attempt_at": now_iso,
                     "last_error": "SEC calendar closure: observed US federal holiday",
                     "policy_version": FORM_POLICY["policy_version"],
+                    "coverage_kind": "daily_index",
+                    "observed_through": None,
+                    "discovery_clock_policy_version": DISCOVERY_CLOCK_POLICY_VERSION,
                 })
                 continue
             try:
@@ -1991,7 +2458,7 @@ class SecCapitalStructureAdapter(Adapter):
                 successful_indexes.append((index_date, index_text, prior_attempts))
             except IndexNotPublished as exc:
                 is_aged = index_date <= (
-                    now.date() - timedelta(days=INDEX_NOT_PUBLISHED_GRACE_DAYS)
+                    now_et.date() - timedelta(days=INDEX_NOT_PUBLISHED_GRACE_DAYS)
                 )
                 prior_was_missing_status = (
                     "IndexNotPublished" in prior_error
@@ -2006,6 +2473,9 @@ class SecCapitalStructureAdapter(Adapter):
                     "last_attempt_at": now_iso,
                     "last_error": f"{type(exc).__name__}: {exc}",
                     "policy_version": FORM_POLICY["policy_version"],
+                    "coverage_kind": "daily_index",
+                    "observed_through": None,
+                    "discovery_clock_policy_version": DISCOVERY_CLOCK_POLICY_VERSION,
                 })
             except Exception as exc:  # noqa: BLE001
                 if is_connection_error(exc):
@@ -2015,10 +2485,13 @@ class SecCapitalStructureAdapter(Adapter):
                     "target_count": None, "attempt_count": prior_attempts + 1,
                     "last_attempt_at": now_iso, "last_error": f"{type(exc).__name__}: {exc}",
                     "policy_version": FORM_POLICY["policy_version"],
+                    "coverage_kind": "daily_index",
+                    "observed_through": None,
+                    "discovery_clock_policy_version": DISCOVERY_CLOCK_POLICY_VERSION,
                 })
             time.sleep(PACE_SECONDS)
 
-        in_window_scope_ciks = _issuer_scope_ciks(discovery)
+        in_window_scope_ciks = _issuer_scope_ciks(provisional_discovery)
         for _, index_text, _ in successful_indexes:
             in_window_scope_ciks.update(
                 row["cik"] for row in parse_form_index(index_text)
@@ -2032,23 +2505,37 @@ class SecCapitalStructureAdapter(Adapter):
                 cik_int = int(row["cik"])
                 row["ticker"] = cik_tickers.get(cik_int)
                 row["_first_seen"] = now_iso
-                new_discovery.append(row)
+                daily_discovery.append(row)
             coverage_updates.append({
                 "index_date": index_date.isoformat(), "status": "complete",
                 "target_count": len(rows), "attempt_count": prior_attempts + 1,
                 "last_attempt_at": now_iso, "last_error": None,
                 "policy_version": FORM_POLICY["policy_version"],
+                "coverage_kind": "daily_index",
+                "observed_through": None,
+                "discovery_clock_policy_version": DISCOVERY_CLOCK_POLICY_VERSION,
             })
 
-        discovery = _append_keep_first(
-            discovery, new_discovery, key="accession", columns=_DISCOVERY_COLUMNS
+        discovery = reconcile_discovery_rows(
+            provisional_discovery,
+            overlay_rows=[],
+            daily_rows=daily_discovery,
+            reconciled_at=now_iso,
         )
         current_run_arrivals = set(discovery["accession"].astype(str)) - known_discovery_accessions
         if coverage_updates:
             updates = pd.DataFrame(coverage_updates)
             coverage = pd.concat([coverage, updates], ignore_index=True)
-            coverage = coverage.drop_duplicates("index_date", keep="last")
-            coverage = coverage[_COVERAGE_COLUMNS].sort_values("index_date").reset_index(drop=True)
+            coverage["coverage_kind"] = (
+                coverage["coverage_kind"].fillna("").astype(str)
+                .replace("", "daily_index")
+            )
+            coverage = coverage.drop_duplicates(
+                ["coverage_kind", "index_date"], keep="last",
+            )
+            coverage = coverage[_COVERAGE_COLUMNS].sort_values(
+                ["index_date", "coverage_kind"], kind="stable",
+            ).reset_index(drop=True)
         _atomic_write(discovery, discovery_path)
         _atomic_write(coverage, coverage_path)
 
@@ -2457,8 +2944,12 @@ class SecCapitalStructureAdapter(Adapter):
         )
         heartbeat = pd.DataFrame(
             {
-                "index_days_complete": [sum(1 for row in coverage_updates if row["status"] == "complete")],
-                "discovered": [len(new_discovery)],
+                "index_days_complete": [sum(
+                    1 for row in coverage_updates
+                    if row["status"] == "complete"
+                    and row["coverage_kind"] == "daily_index"
+                )],
+                "discovered": [len(current_run_arrivals)],
                 "retrieved": [successful],
                 "deferred": [len(new_attempts) - successful],
                 # ``backlog`` is the RETRYABLE queue; parking removes rows from it.
@@ -2468,7 +2959,7 @@ class SecCapitalStructureAdapter(Adapter):
                 "backlog": [len(pending_after_run)],
                 "parked": [len(parked_after_run)],
             },
-            index=[pd.Timestamp(now.date())],
+            index=[pd.Timestamp(now_et.date())],
         )
         return {"sec_evidence__ingest": heartbeat}
 

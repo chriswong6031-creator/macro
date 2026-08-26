@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.health.v1",
-  "produced_at": "2026-08-26T06:13:02.563935+00:00",
+  "produced_at": "2026-08-26T07:16:34.550785+00:00",
   "as_of": "2026-08-25",
   "overall_status": "warn",
   "lobes": [
@@ -3532,8 +3532,8 @@
     }
   ],
   "cortex": {
-    "cortex_source": "previous_run",
-    "memo_as_of": "2026-08-25T05:52:02+00:00",
+    "cortex_source": "current_run",
+    "memo_as_of": "2026-08-26T07:14:03+00:00",
     "run_status": {
       "status": "ok",
       "degraded": false,
@@ -3582,10 +3582,10 @@
         }
       ],
       "tool_call_batches": 4,
-      "individual_tool_calls": 9,
+      "individual_tool_calls": 10,
       "expected_min_tool_calls": 1,
       "context_stale": false,
-      "context_as_of": "2026-08-25T05:37:51Z"
+      "context_as_of": "2026-08-26T06:09:31Z"
     },
     "probation": {
       "granted": false,

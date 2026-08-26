@@ -1,23 +1,23 @@
 {
   "schema": "stock_desk.v1",
-  "as_of": "2026-08-25",
-  "scored_total": 141,
+  "as_of": "2026-08-26",
+  "scored_total": 142,
   "open": 58,
   "unscored_neutral": 160,
   "overall": {
-    "n": 141,
-    "hits": 98,
+    "n": 142,
+    "hits": 99,
     "misses": 43,
-    "hit_rate": 0.695,
-    "dir_accuracy": 0.44
+    "hit_rate": 0.697,
+    "dir_accuracy": 0.437
   },
   "by_lean": {
     "constructive": {
-      "n": 84,
-      "hits": 54,
+      "n": 85,
+      "hits": 55,
       "misses": 30,
-      "hit_rate": 0.643,
-      "dir_accuracy": 0.357
+      "hit_rate": 0.647,
+      "dir_accuracy": 0.353
     },
     "neutral": {
       "n": 0,
@@ -43,11 +43,11 @@
   },
   "by_conviction": {
     "low": {
-      "n": 118,
-      "hits": 79,
+      "n": 119,
+      "hits": 80,
       "misses": 39,
-      "hit_rate": 0.669,
-      "dir_accuracy": 0.398
+      "hit_rate": 0.672,
+      "dir_accuracy": 0.395
     },
     "medium": {
       "n": 21,
@@ -64,8 +64,17 @@
       "dir_accuracy": 0.0
     }
   },
-  "calibration_note": "141 leans scored, hit-rate 0.695 (directional accuracy 0.44). The no-skill base rate for these exact conditions is not yet measured \u2014 read the hit-rate as unbenchmarked, not as evidence of skill.",
+  "calibration_note": "142 leans scored, hit-rate 0.697 (directional accuracy 0.437). The no-skill base rate for these exact conditions is not yet measured \u2014 read the hit-rate as unbenchmarked, not as evidence of skill.",
   "recent": [
+    {
+      "id": "2026-07-14-JCI-3",
+      "ticker": "JCI",
+      "lean": "constructive",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": -0.037,
+      "check_by": "2026-08-25"
+    },
     {
       "id": "2026-07-13-JCI-6",
       "ticker": "JCI",
@@ -163,15 +172,6 @@
       "conviction": "low",
       "outcome": "miss",
       "realized": -0.1524,
-      "check_by": "2026-08-20"
-    },
-    {
-      "id": "2026-07-30-SHOO-3",
-      "ticker": "SHOO",
-      "lean": "constructive",
-      "conviction": "low",
-      "outcome": "miss",
-      "realized": -0.0725,
       "check_by": "2026-08-20"
     }
   ]
