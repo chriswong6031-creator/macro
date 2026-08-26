@@ -2689,6 +2689,7 @@ jobs:
           tests/test_prophet_live_reconcile.py
           tests/test_prophet_live_basis.py
           tests/test_prophet_live_vps_lane.py
+          tests/test_prophet_live_silent_freeze.py
           tests/test_cn_live_clock.py
           tests/test_cn_live_pack.py
           tests/test_cn_live_evaluator.py

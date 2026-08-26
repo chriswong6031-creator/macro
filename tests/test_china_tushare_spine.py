@@ -2489,3 +2489,60 @@ def test_pre_epoch_exclusion_is_the_sole_cause_on_contiguous_history(tmp_path, m
     assert list(sessions["trade_date"]) == ["2024-01-03"]
     assert list(sessions["market_session_position"]) == [0]
     assert set(sessions["calendar_epoch"]) == {"2024-01-03"}
+
+
+# --- vendor zero-sentinel dates ----------------------------------------------
+# bak_basic returns "0" for an unpublished date where stock_basic returns "".
+# Found the first time pit_universe ran against the real vendor: one descriptive
+# field killed the whole unit.
+
+def test_iso_treats_the_vendor_zero_sentinel_as_a_null_date():
+    assert spine._iso("0") is None
+    assert spine._iso(0) is None
+    assert spine._iso("00000000") is None
+    assert spine._iso("  0  ") is None
+
+
+def test_iso_still_parses_real_dates_including_zero_heavy_ones():
+    assert spine._iso("20240102") == "2024-01-02"
+    assert spine._iso("1992-01-02") == "1992-01-02"
+    # A zero-heavy but genuine date must survive: only an ALL-zero run is a
+    # sentinel, and every real year carries a non-zero digit.
+    assert spine._iso("20001010") == "2000-10-10"
+
+
+def test_iso_still_refuses_a_malformed_date_rather_than_nulling_it():
+    """The sentinel must not become a swallow-everything branch."""
+    for bad in ("202401", "0000-00-00", "not-a-date", "20241301"):
+        with pytest.raises(spine.SpineError, match="invalid date"):
+            spine._iso(bad)
+
+
+def test_bak_basic_row_with_a_zero_list_date_still_lands(tmp_path):
+    """The row is a valid A-share; one unpublished field may not kill the unit.
+
+    This is the exact shape that broke the first real pit_universe run: a
+    `bak_basic` payload carrying list_date "0". Before the sentinel was
+    recognised, normalise_bak_basic raised SpineError and took the whole unit
+    with it.
+    """
+    _seed_reference(tmp_path)
+    _seed_calendar(tmp_path)
+    raw = _bak_rows("20240102")
+    raw.loc[raw["ts_code"] == "600519.SH", "list_date"] = "0"
+
+    normal = spine.normalise_bak_basic(raw, "20240102", tmp_path)
+
+    landed = normal.landed_a.set_index("ticker")
+    # It lands, with identity and session position intact...
+    assert "600519.SS" in landed.index
+    assert landed.loc["600519.SS", "market_session_position"] == 0
+    # ...and the unpublished field is NULL, never invented. Assert nullness
+    # rather than a particular spelling: pandas stores the None as NaN once the
+    # column holds real date strings alongside it.
+    assert pd.isna(landed.loc["600519.SS", "list_date"])
+    # A sibling with a real list_date is untouched.
+    assert landed.loc["000001.SZ", "list_date"] == "1991-04-03"
+    # Source accounting still balances: nothing was dropped or quarantined.
+    assert len(normal.quarantined_unknown) == 0
+    assert len(normal.landed_a) == len(raw)
