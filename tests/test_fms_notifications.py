@@ -130,6 +130,7 @@ def _base_graph_kwargs(**overrides) -> dict:
         fr_docs_scanned=267,
         fr_amendments_excluded=1,
         fr_corrections=1,
+        fr_out_of_scope_originals=0,
         fr_status="ok",
         state_listing_pages=7,
         state_qualifying_articles=54,
@@ -1445,3 +1446,174 @@ class TestPostRedTeamAmendments:
             observations=[earlier, later], **_base_graph_kwargs(fr_denominator_transmittals=["26-13"]),
         )
         assert graph["known_at"] == "2026-08-20T00:00:00+00:00"
+
+
+# ---------------------------------------------------------------------------
+# Production defect (run 32940175991): the FR denominator and the engine's
+# population filter must share ONE membership predicate (spec §2, originals
+# DELIVERED in the window) -- the first real main dispatch found 123 FR-lag
+# originals (delivered before 2026-01-01 but published inside the FR API
+# query window) in the denominator with no built case, refusing every run.
+# ---------------------------------------------------------------------------
+
+
+class TestFrLagDenominatorPredicate:
+    def test_fr_lag_original_delivered_before_window_excluded_from_denominator(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture,
+    ) -> None:
+        """An FR original PUBLISHED in the query window but DELIVERED
+        2025-12-20 (before the 2026-01-01 population start) must never
+        enter the denominator or mint an observation/receipt -- exactly
+        the FR-lag class the production run found (26-5/26-10/26-11 style,
+        delivered Dec 2025)."""
+        out_of_scope_text = (
+            "[Transmittal No. 26-5]\n"
+            "DEPARTMENT OF STATE\n"
+            "ACTION: Arms sales notice.\n\n"
+            "(viii) Date Report Delivered to Congress: December 20, 2025\n"
+        ).encode("utf-8")
+
+        class _FrLagSession:
+            def get(self, url, **kwargs):
+                if "federalregister.gov" in url and "documents.json" in url:
+                    return _JsonResponse({
+                        "results": [
+                            {
+                                "document_number": "2026-07278",
+                                "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/x/2026-07278.txt",
+                            },
+                            {
+                                "document_number": "2026-00005",
+                                "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/x/2026-00005.txt",
+                            },
+                        ],
+                    })
+                if "2026-07278.txt" in url:
+                    return _TextResponse(_read_bytes("fr/2026-07278.txt"))
+                if "2026-00005.txt" in url:
+                    return _TextResponse(out_of_scope_text)
+                if "state.gov" in url:
+                    raise ConnectionError("irrelevant to this test")
+                raise AssertionError(f"unexpected fetch: {url}")
+
+        rc = live.run_fms_acquisition(
+            root=tmp_path, store=None, session=_FrLagSession(),
+            observed_at=RECEIPT_AT, staged_dir=(FIXTURES / "dsca").resolve(),
+            publication_from="2026-01-01", publication_through="2026-08-25",
+        )
+        assert rc == 0  # denominator satisfied by the real 26-23 original; never refuses
+        captured = capsys.readouterr()
+        assert "::warning title=fms-fr-original-out-of-scope::" in captured.out
+
+        graph = json.loads((tmp_path / "data" / "government_revenue" / "fms_case_graph.json").read_text())
+        fr_source = graph["coverage"]["sources"]["federal_register"]
+        assert fr_source["out_of_scope_originals"] == 1
+        assert not any(c["transmittal_number"] == "26-5" for c in graph["cases"])
+
+        observations_path = tmp_path / "data" / "government_revenue" / "fms_observations.jsonl"
+        rows = [json.loads(line) for line in observations_path.read_text().splitlines() if line.strip()]
+        assert not any(r["case_key"] == "fms:transmittal:26-5" for r in rows)
+        receipts_path = tmp_path / "data" / "government_revenue" / "fms_collection_receipts.jsonl"
+        receipt_rows = [json.loads(line) for line in receipts_path.read_text().splitlines() if line.strip()]
+        assert not any(r["source_url"].endswith("2026-00005.txt") for r in receipt_rows)
+
+    def test_fr_original_with_no_parseable_delivered_date_is_excluded_fail_closed(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture,
+    ) -> None:
+        """An original with no parseable delivered-to-Congress date cannot
+        prove population-window membership -- fail closed: excluded,
+        counted, never mints, and warns with its own distinct title."""
+        no_delivered_text = (
+            "[Transmittal No. 26-6]\n"
+            "DEPARTMENT OF STATE\n"
+            "ACTION: Arms sales notice.\n\n"
+            "SUMMARY: no delivered-date line is printed anywhere in this notice.\n"
+        ).encode("utf-8")
+
+        class _NoDeliveredSession:
+            def get(self, url, **kwargs):
+                if "federalregister.gov" in url and "documents.json" in url:
+                    return _JsonResponse({
+                        "results": [
+                            {
+                                "document_number": "2026-07278",
+                                "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/x/2026-07278.txt",
+                            },
+                            {
+                                "document_number": "2026-00006",
+                                "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/x/2026-00006.txt",
+                            },
+                        ],
+                    })
+                if "2026-07278.txt" in url:
+                    return _TextResponse(_read_bytes("fr/2026-07278.txt"))
+                if "2026-00006.txt" in url:
+                    return _TextResponse(no_delivered_text)
+                if "state.gov" in url:
+                    raise ConnectionError("irrelevant to this test")
+                raise AssertionError(f"unexpected fetch: {url}")
+
+        rc = live.run_fms_acquisition(
+            root=tmp_path, store=None, session=_NoDeliveredSession(),
+            observed_at=RECEIPT_AT, staged_dir=(FIXTURES / "dsca").resolve(),
+            publication_from="2026-01-01", publication_through="2026-08-25",
+        )
+        assert rc == 0
+        captured = capsys.readouterr()
+        assert "::warning title=fms-fr-original-no-delivered-date::" in captured.out
+
+        graph = json.loads((tmp_path / "data" / "government_revenue" / "fms_case_graph.json").read_text())
+        fr_source = graph["coverage"]["sources"]["federal_register"]
+        assert fr_source["out_of_scope_originals"] == 1
+        assert not any(c["transmittal_number"] == "26-6" for c in graph["cases"])
+
+    def test_reconciliation_gate_reconciles_when_denominator_and_population_filter_share_the_predicate(
+        self,
+    ) -> None:
+        """Positive control (B7 family, spec §2): a denominator that
+        correctly EXCLUDES an FR-lag original (the collector's own new
+        behavior) reconciles cleanly against the population-filtered
+        cases -- proving the two now share one membership predicate."""
+        in_scope_case = _dsca_observation("dsca-4394629", "https://www.dsca.mil/x/26-13/")
+        filler_fr = _fr_observation("2026-07278", "https://www.federalregister.gov/d/2026-07278")  # 26-23
+        graph = fms_cases.build_fms_case_graph(
+            observations=[in_scope_case, filler_fr],
+            **_base_graph_kwargs(
+                # The FR-lag original (e.g. 26-5, delivered 2025-12-20) is
+                # correctly OMITTED from the denominator -- exactly what
+                # the fixed live collector now does before ever reaching
+                # this function.
+                fr_denominator_transmittals=["26-23"],
+                fr_out_of_scope_originals=1,
+            ),
+        )
+        assert graph["coverage"]["reconciliation"]["denominator_unbuilt"] == []
+        assert graph["coverage"]["sources"]["federal_register"]["out_of_scope_originals"] == 1
+
+    def test_reconciliation_gate_still_refuses_if_denominator_disagrees_with_the_population_filter(
+        self,
+    ) -> None:
+        """Negative control reproducing the ORIGINAL production defect
+        (run 32940175991) at the engine level: if a caller naively
+        included an FR-lag original's transmittal in the denominator
+        anyway, the population filter (applied independently of the
+        denominator) still drops its case -- denominator_unbuilt is
+        non-empty and the gate correctly refuses. This is the exact
+        failure mode the collector-side fix (this file's session) now
+        prevents by never adding such a transmittal in the first place."""
+        in_scope_case = _dsca_observation("dsca-4394629", "https://www.dsca.mil/x/26-13/")
+        filler_fr = _fr_observation("2026-07278", "https://www.federalregister.gov/d/2026-07278")  # 26-23
+        out_of_window_fr_obs = _make_observation(
+            case_key=fms.case_key_for_transmittal("26-5"), source_surface="federal_register",
+            kind="fr_raw_text", source_url="https://www.federalregister.gov/d/2026-00005",
+            content=b"fr-lag-negative-control",
+            fields={
+                "transmittal_number": "26-5", "official_notification_date": "2025-12-20",
+                "customer_country": "Testland",
+            },
+        )
+        with pytest.raises(fms_cases.FmsCoverageRefused):
+            fms_cases.build_fms_case_graph(
+                observations=[in_scope_case, filler_fr, out_of_window_fr_obs],
+                **_base_graph_kwargs(fr_denominator_transmittals=["26-23", "26-5"]),
+            )

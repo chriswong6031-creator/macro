@@ -525,6 +525,7 @@ def run_fms_acquisition(
     fr_docs_scanned = 0
     fr_amendments_excluded = 0
     fr_corrections = 0
+    fr_out_of_scope_originals = 0
     fr_status = "unavailable"
     state_status = "unavailable"
     state_listing_pages = 0
@@ -667,6 +668,36 @@ def run_fms_acquisition(
                 ))
                 continue
             fields = fms.parse_fr_document(text, source_url=fetched.source_url)
+            # Shared membership predicate (spec §2/§11b.4): the denominator
+            # and the engine's population filter must agree on the SAME
+            # test -- an original DELIVERED outside [population start,
+            # as_of] (the FR-lag class: published in the query window but
+            # delivered to Congress before 2026-01-01) is never added to
+            # the denominator and never mints anything, exactly like the
+            # engine already excludes its case from the graph. Counting it
+            # separately in the denominator while the engine dropped its
+            # case is what produced `denominator_unbuilt` and a false
+            # `FmsCoverageRefused` on the first real production run.
+            delivered = fields.get("official_notification_date")
+            if delivered is None:
+                fr_out_of_scope_originals += 1
+                print(
+                    "::warning title=fms-fr-original-no-delivered-date::FR original "
+                    f"{fields.get('transmittal_number')!r} has no parseable delivered-to-Congress "
+                    "date; excluded from the denominator (cannot prove population-window membership)",
+                    flush=True,
+                )
+                continue
+            if not (fms_cases.FMS_POPULATION_WINDOW_START <= delivered <= as_of):
+                fr_out_of_scope_originals += 1
+                print(
+                    "::warning title=fms-fr-original-out-of-scope::FR original "
+                    f"{fields.get('transmittal_number')!r} delivered {delivered} falls outside the "
+                    f"population window [{fms_cases.FMS_POPULATION_WINDOW_START}, {as_of}]; "
+                    "excluded from the denominator",
+                    flush=True,
+                )
+                continue
             fr_denominator.append(fields["transmittal_number"])
             case_key = fms.case_key_for_transmittal(fields["transmittal_number"])
             _append_new_receipt(new_receipts, existing_receipts, receipt)
@@ -709,6 +740,7 @@ def run_fms_acquisition(
             fr_docs_scanned=fr_docs_scanned,
             fr_amendments_excluded=fr_amendments_excluded,
             fr_corrections=fr_corrections,
+            fr_out_of_scope_originals=fr_out_of_scope_originals,
             fr_status=fr_status,
             state_listing_pages=state_listing_pages,
             state_qualifying_articles=state_qualifying_articles,
