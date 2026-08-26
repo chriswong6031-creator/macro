@@ -162,8 +162,15 @@ waves:
       hostile-tested closed; canary pinned to Python 3.12.13 and gate code;
       hosted and self-hosted canary consumers consume ONE frozen plan via
       --plan-json with strict semantic-fragment parity; portable Linux
-      execution profile v2 per DEC:CI-EXECUTION-PROFILE-V2. Sequence after
-      the bridge: live runner/group census, P1 one-slot, P2 three CI slots
+      execution profile v2 per DEC:CI-EXECUTION-PROFILE-V2. P0R/current-main
+      closure is green through merge baseline 32942786458. P1 run 32945782277
+      then failed before PC pickup because the canary resolver treated the PR
+      API's stale base.sha as the synthetic merge ref's authoritative first
+      parent (the observed API base lagged that exact parent by 23 commits).
+      Production ci.yml already derives tested_base_sha from merge parent 1;
+      #6351 therefore owns the bounded test-first resolver correction on
+      codex/ci-p1-resolver-6351. No self-hosted candidate code executed and no
+      route changed. Sequence after the repair: P1 one-slot, P2 three CI slots
       plus render reservation, P3A inert trusted executor, P3B production
       route with hosted ci-pack-N anchors, P4 three natural PR proofs.
 next_action: >
