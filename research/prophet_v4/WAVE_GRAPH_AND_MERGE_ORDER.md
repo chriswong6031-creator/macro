@@ -12,16 +12,19 @@
 4. Every wave handoff uses the masterplan §28 format with acceptance gates inline at §0 of the handoff (fleet spawn-handoff law).
 5. A wave is DONE only at merged + production-verified (fleet ship-loop law); "built, staged, unproven" states must be recorded as such in `WS-PROPHET-US-V4-RECOVERY.md`.
 
-## 1. Critical paths (frozen from masterplan §22)
+## 1. Critical paths (frozen from masterplan §22, reconciled by Cell F 2026-08-23)
 
 ```
-Product:  A1 → A2/A3 → B1 → B3 → B4 → B5 → B6/B7 → C1/C2 → E1 → E2
-Graph:    D1 → D2 → D3 → D4 → D5 → E1 → E3/E4 → E5 → E6
-Earnings: EIOS E0/E1/E2 (external) → D6
-Fusion:   PR-3B → 3D (external) → E1 consumes accepted registry
+Product:      A1 → A2/A3 → B1 → B3 → B4 → B5 → B6/B7 → C1/C2 → E1 → E2
+Theme graph:  D1 → D2 → D3 → D4
+D5 contract:  D1 → D5 semantic architecture (research/spec only)
+D5 runtime:   A1 acceptance/adoption → B1 canonical candidate episode → D5 runtime → E1
+Theme in D5:  D3 canonical ThemeState + lawful adapter → theme.theme_state family may appear
+Earnings:     EIOS stable event workspace → D6 thin adapter (after runtime D5 substrate exists)
+Fusion:       PR-3B → 3D (external) → E1 consumes accepted registry
 ```
 
-V4 must not wait for every lobe: E1 may launch with technical/structure + sector/industry context + current theme evidence + explicit `ACCRUING`/null families (§22.1).
+V4 must not wait for every lobe. D5 may exist with only implemented/admissible families, but **an unbuilt adapter emits no family envelope**; adapter readiness is control metadata, not episode evidence. E1 may launch only after its listed runtime dependencies and may consume only accepted Fusion-bound members; missing/unbuilt families abstain rather than becoming zero.
 
 ```mermaid
 graph LR
@@ -50,7 +53,10 @@ graph LR
     B5 --> C3[C3 operator instrumentation]
   end
   subgraph P4[Phase 4 graph/intelligence]
-    D1[D1 theme census] --> D2[D2 ontology+probation] --> D3[D3 ThemeState v1] --> D4[D4 transmission] --> D5[D5 intel vector contract]
+    D1[D1 theme census] --> D2[D2 ontology+probation] --> D3[D3 ThemeState v1] --> D4[D4 transmission]
+    D1 --> D5[D5 intel vector contract/runtime projection]
+    B1 --> D5
+    D3 -. Theme family only .-> D5
     D5 --> D6[D6 earnings adapter]
     D5 --> D7[D7 alt-data adapters]
   end
@@ -73,11 +79,9 @@ graph LR
   end
   A0A --> A1
   A1 --> B1
-  D1 --> D5
-  D3 -.-> D5
 ```
 
-(B1 starts once A1 merges — A2/A3 continue in parallel on the publication plane, which B1 never touches. Dashed D3→D5: the vector contract may ship with the theme family `ACCRUING`; D3 enriches it. A4 gates only E2.)
+(B1 starts once A1 is accepted/adopted — A2/A3 continue in parallel on the publication plane, which B1 never touches. D1 was enough to freeze D5 **semantics**. The new B1→D5 edge is the runtime identity gate: D5 never invents an episode. The dashed D3→D5 edge applies only to the Theme family; until canonical GMI ThemeState and its adapter exist, no `theme.theme_state` family envelope is emitted. A4 gates only E2.)
 
 ## 2. The 29 waves
 
@@ -123,14 +127,14 @@ Legend: **Deps** = must be merged first (external deps in *italics*). **Paths** 
 | **V4-D2** canonical ontology + probation mapping | D1 | GMI-owned graph stores, `config/theme_crosswalk.yml` (executed in/with GMI lane) | NOT STARTED |
 | **V4-D3** ThemeState v1 | D2 | GMI-owned (dynamic state layer = GMI W3B territory; merge-order ruling required before start) | NOT STARTED |
 | **V4-D4** peer and transmission features | D3 | GMI-owned | NOT STARTED |
-| **V4-D5** V4 intelligence-vector contract | D3 (may start on D1 census with theme family `ACCRUING`) | `engine/us_context_vector.py` extension + new `prophet.intelligence_vector/v1` emitter (family states governed by the Fusion registry, read-only) | NOT STARTED |
-| **V4-D6** earnings adapter | D5; *EIOS stable contract* | thin adapter only | BLOCKED EXTERNALLY (EIOS in E0) |
-| **V4-D7** alt-data family adapters | D5 | one adapter per family | NOT STARTED |
+| **V4-D5** V4 intelligence-vector contract/runtime projection | **B1 for runtime**; D1 was sufficient for contract research; D3 only gates the Theme family | current MAS-122 work is records/research only; future runtime owns a new bounded D5 projection/emitter surface minted at implementation. **`engine/us_context_vector.py` is read/reference-only and is not a D5-owned mutation path.** | SPEC ONLY / runtime BLOCKED ON B1 |
+| **V4-D6** earnings adapter | D5 runtime substrate; *EIOS stable contract* | thin adapter only | BLOCKED ON D5/B1 + OWNER CONTRACT |
+| **V4-D7** alt-data family adapters | D5 runtime substrate | one adapter per family | NOT STARTED |
 
 ### Phase 5 — ranking and product cutover (Lanes G/H)
 | Wave | Deps | Owned paths | Status |
 |---|---|---|---|
-| **V4-E1** explainable deterministic V4 priority | B4, C1, D5; *Fusion PR-3B/3D accepted registry* | Fusion registry extension (post-acceptance), V4 rank projection | NOT STARTED |
+| **V4-E1** explainable deterministic V4 priority | B4, C1, runtime D5; *Fusion PR-3B/3D accepted registry* | Fusion registry extension (post-acceptance), V4 rank projection; deterministic baseline is frozen in `flagship_cells/CELL_F_D5_CANDIDATE_REFERENCE_COMPOSITIONS_AND_E1_BASELINE_2026-08-23.md` | NOT STARTED |
 | **V4-E2** Prophet V4 primary experience (cutover) | E1, B7, C2, A4 | Prophet product shell (`templates/dashboard.html.j2` prophet views or successor templates per MP-1), rollback switch, `premiumdata/us_stocks.json` server-side withholding (closes the anon leak at the latest here) | NOT STARTED |
 | **V4-E3** listwise ranker challenger | C1, E1 | research + shadow lane only | NOT STARTED |
 | **V4-E4** conditional router/multi-head challenger | E3; *Stock Identity interfaces* | shadow lane only | NOT STARTED |
@@ -140,8 +144,9 @@ Legend: **Deps** = must be merged first (external deps in *italics*). **Paths** 
 ## 3. Lane concurrency rules
 
 - After 0A/0B: **Lane A (A1–A4) runs first and alone on the publication plane.** Nothing else touches publication paths until A3 merges.
-- B-lane and D-lane may run concurrently after A1 (disjoint paths). C1 may start as soon as B1 merges.
+- B-lane and D-lane research may run concurrently when paths are disjoint. **Runtime D5 is not independent of B1:** the D5 envelope is episode-scoped and cannot mint or borrow a lifecycle. C1 may start as soon as B1 merges.
 - D2–D4 execute inside/with the GMI workstream (graph owner). Before D3 starts, a one-paragraph merge-order ruling must be appended here naming whether GMI W3B ships it or a V4 builder ships it under GMI review — the two must not both build ThemeState.
+- A source family does not appear in runtime D5 until its canonical owner contract and D5 adapter exist. An unbuilt adapter emits **no family envelope**; `ACCRUING` may describe readiness outside the evidence envelope, not a synthetic episode family.
 - **MP-1 rule (B3/B5/E2):** the page migration executes against `research/migration_packets/MP-1-prophet-board.md` (gates G-A/G-B/G-C satisfied at pin) mapped onto the four V4 state fields — freeze §12.4. The B5 handoff must confirm R3/R4 reference currency with the design authority and re-check the population re-source against `DNR:KILL-PROPHET-POP-MERGE` before executing it. No V4 wave re-designs what MP-1 already ratified without design-authority sign-off.
 - E-lane opens only when its listed deps are merged; E3–E5 are shadow-only and may never edit production ordering paths.
 - Model-routing law applies to every wave: sonnet `builder` builds, opus `reviewer` reviews, design surfaces via `designer`/main loop; every spawn carries explicit routing.
@@ -152,7 +157,7 @@ Legend: **Deps** = must be merged first (external deps in *italics*). **Paths** 
 
 1. **B2/B3/B4 × `WS:PROPHET-US-ENTRY-TIMING`** (registered owner of `engine/prophet_*.py`, same p0): these waves execute as **joint work under that workstream's ownership** — each wave's PR updates WS-PROPHET-US-ENTRY-TIMING (or records its concurrence), and `WS:PROPHET-US-V4-RECOVERY.depends_on` now lists it. No V4 wave touches `engine/prophet_*.py` without this pairing.
 2. **A1/A2 × `WS:PROPHET-US-AVAILABILITY`** (registered owner of `scripts/prophet_rescue.py` + rescue lane; de-facto owner of `scripts/check_nightly_liveness.py` per its 08-15 handoff): A-lane waves touch those files only as that workstream's continuation — the A1/A2 sessions update its record in the same PR. A1's handoff §3 is amended accordingly (no unilateral freeze of a sibling's files).
-3. **B6/B7 × `WS:LIVE-ENTRY-RADAR`** (registered owner of `engine/entry_radar/`, `templates/entry_radar.html.j2`, `site/entry_radar.html`): B6 changes NO Radar-owned file (activation = operator env arm + receipts); B7 builds the production UI **as Radar's W9 under Radar's ownership** — and inherits Radar's own dependency law: W9 `depends_on: [W4, W6, W8]`, so **B7 additionally depends on Radar W6 (research priority) and W8 (reference) or an explicit Radar-side ruling waiving them**. `scripts/reconcile_entry_radar.py` is treated as Radar-owned even though its `owns_paths` prefix misses it (gap flagged to V4-0B).
+3. **B6/B7 × `WS:LIVE-ENTRY-RADAR`** (registered owner of `engine/entry_radar/`, `templates/entry_radar.html.j2`, `site/entry_radar.html`): B6 changes NO Radar-owned file (activation = operator env arm + receipts only); B7 builds the production UI **as Radar's W9 under Radar's ownership** — and inherits Radar's own dependency law: W9 `depends_on: [W4, W6, W8]`, so **B7 additionally depends on Radar W6 (research priority) and W8 (reference) or an explicit Radar-side ruling waiving them**. `scripts/reconcile_entry_radar.py` is treated as Radar-owned even though its `owns_paths` prefix misses it (gap flagged to V4-0B).
 4. **E1 × `WS:PROPHET-CONDITIONAL-FUSION`**: E1 executes as a Fusion-registry EXTENSION inside that workstream's ownership after PR-3D acceptance — never as a parallel edit. **E1 additionally requires an explicit DNR adjudication before spawn** (freeze §12.7): `DNR:KILL-FUSED-COMPOSITE` Amendment 3 currently licenses exactly one construction (the Fusion challenger under the Fusion masterplan); V4-E1 must either be adjudicated as that same construction's lineage or obtain a further amendment. Silence does not clear it.
 5. **0B × `WS:AGENT-OS`** (`agentos/**`): records-only edits are that plane's normal operation; 0B coordinates by citing this ruling, and edits only the six named sibling records + its own.
 6. **D3 (ThemeState) × `WS:GMI-THEME-GRAPH`** (ruling still REQUIRED before D3 starts, per §3): additionally, GMI masterplan G0.11 fences ThemeState from "any ordering path" — before E1 may include the theme family in RANK (not display), a GMI-side ruling must supersede/scope G0.11 for the V4 intelligence vector. Until then the theme family is display/context only.
@@ -168,4 +173,9 @@ Legend: **Deps** = must be merged first (external deps in *italics*). **Paths** 
 
 **2026-08-18 (V4-D1):**
 
-13. **The §4.6 ThemeState ruling now has a census-grounded RECOMMENDATION** (`research/prophet_v4/D1_D3_W3B_MERGE_ORDER_RECOMMENDATION.md`, pending Sol+GMI adjudication): GMI W3B writes `theme_state/v1` AFTER d2's identity/membership repair; V4-d3 becomes the consumption-contract wave; W3B's charter reconciles the pre-existing neuralweb `thematic_state` lineage; path prohibitions enumerated in the doc. **d5 ruling** (`D1_D5_READINESS_RULING.md`): contract lane may run in parallel post-D1 with the theme family pinned ACCRUING until d3. d2's spawn handoff is ready (`V4_D2_ONTOLOGY_AND_PROBATION_HANDOFF.md`) and executes inside/with the GMI workstream.
+13. **The §4.6 ThemeState ruling now has a census-grounded RECOMMENDATION** (`research/prophet_v4/D1_D3_W3B_MERGE_ORDER_RECOMMENDATION.md`, pending Sol+GMI adjudication): GMI W3B writes `theme_state/v1` AFTER d2's identity/membership repair; V4-d3 becomes the consumption-contract wave; W3B's charter reconciles the pre-existing neuralweb `thematic_state` lineage; path prohibitions enumerated in the doc. The original d5 clause allowed contract research post-D1; its implementation tactic is superseded by ruling 14 below.
+
+**2026-08-23 (MAS-122 / Cell F reconciliation):**
+
+14. **D5 semantics vs runtime are separate gates.** D1 was sufficient to freeze the D5 semantic contract, but runtime `prophet.intelligence_vector/v1` requires the owner-issued canonical B1 `prophet.candidate_episode/v1` after A1 acceptance/adoption. D5 never invents a ticker/date lifecycle and never aliases Entry Radar `mastermind.live_entry_episode.v1`. The old `engine/us_context_vector.py` extension path is deleted from D5 ownership: Context Vector is preserved unchanged and referenced read-only. An unbuilt adapter emits no family envelope; specifically, Theme emits no `theme.theme_state` envelope until canonical GMI ThemeState plus a lawful D5 adapter exist. Detailed ruling: `D1_D5_READINESS_RULING.md` and the Cell F contract/amendments.
+15. **E1 deterministic consumption boundary.** D5 itself remains zero-authority. E1 may consume only decision-admissible owner-native observations explicitly bound to accepted Conditional Fusion members/versions, under Fusion's anti-double-count, PIT, coverage, staleness, era and member-method law. Missing/not-covered/unbuilt/right-blocked/stale evidence abstains rather than becoming zero; measured neutral is eligible only when positively measured under the registered member contract. Semantic heads, family/root/provider counts, dependence-group counts, coverage itself, explanations and unregistered/model outputs do not rank. E1 ranks only inside the B4 availability lane. The exact research baseline and eight candidate reference compositions are frozen in `flagship_cells/CELL_F_D5_CANDIDATE_REFERENCE_COMPOSITIONS_AND_E1_BASELINE_2026-08-23.md`. No runtime or ranking change is authorized by this record amendment.
