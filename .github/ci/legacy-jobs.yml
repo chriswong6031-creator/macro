@@ -9203,16 +9203,33 @@ jobs:
         run: python -m pytest tests/test_admin_server.py tests/test_admin_program_watch.py tests/test_project_runtime_state.py -q
       - name: brain SSE keepalive + tape decode
         run: python -m pytest tests/test_brain_sse_keepalive.py tests/test_tape_decode.py -q
-      # Wired 2026-08-26 alongside the suite itself. scripts/geo_enrich.py is the writer
-      # behind this surface — admin/analytics_first_party.py LEFT JOINs public.ip_geo on
-      # every view — and it had NO coverage at all when a 30-day Supabase Management API
-      # PAT expiry killed the geo-enrich cron for 13 days / ~370 runs. The suite pins the
-      # credential-admission boundary (a rejected PAT or IPLocate key is a WHOLE-RUN
-      # terminal state, never a per-IP `failed` that reports a green run having written
-      # nothing) and the geography contract the fix must not trade away: unknown stays
-      # unknown, an abstention spends no lookup, a correction updates in place. Stdlib
-      # only — it needs nothing beyond pytest from this job's install line.
-      - name: geo-enrich credential boundary + geography contract
+
+  geo-enrich-credential-boundary:
+    # scripts/geo_enrich.py is the writer behind admin/analytics_first_party.py, which
+    # LEFT JOINs public.ip_geo on every view. It had NO coverage at all when a 30-day
+    # Supabase Management API PAT expiry killed the geo-enrich cron for 13 days / ~370
+    # runs, and — worse — a credential rejection on the WRITE plane was swallowed by a
+    # per-IP `except Exception`, so the run reported ok=True having written nothing.
+    #
+    # gate: code, deliberately. The suite is stdlib-only and reads no data artifact, so
+    # its verdict is a pure function of the PR tree — the gate-split's own criterion
+    # (research/CI_MERGE_GATE_RELIABILITY_ROOT_CAUSE_2026_08_19.md). It was first wired
+    # into `unrun-serving-admin`, which is gate: data because some of its admin suites
+    # assert against committed artifacts; that would have parked this guard behind the
+    # nightly data-health lane and left the merge gate blind to a regression in the very
+    # file this job exists to protect.
+    if: ${{ false }}
+    gate: code
+    timeout-minutes: 3
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest
+      - name: credential-admission boundary + the geography contract
         run: python -m pytest tests/test_geo_enrich.py -q
 
   unrun-ops-workers:
