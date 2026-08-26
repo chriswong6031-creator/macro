@@ -2996,8 +2996,16 @@ jobs:
         # license-document requirement. Leaving it unnamed would reproduce exactly
         # the hole this step's comment is about, and would make "enforced in CI"
         # false the day it landed. Offline, no new deps.
+        # test_cn_limit_calendar_epoch_census.py joins here in the SAME breath as the
+        # census it covers, for the same reason and under the same WIRING LAW. Its
+        # subject is the frozen mainland session epoch that this job's own
+        # collectors/china_tushare_spine.py compiles the session axis from, so the two
+        # suites fail together or not at all. It is network-free by construction and
+        # builds synthetic fixture stores in tmp_path — CI has no private spine store,
+        # so a census test needing the real one would be a broken test. No new deps.
         run: >
           python -m pytest
+          tests/test_cn_limit_calendar_epoch_census.py
           tests/test_china_tushare_spine.py
           tests/test_china_tushare_range_shards.py
           tests/test_cn_intel_pit_accrual.py
