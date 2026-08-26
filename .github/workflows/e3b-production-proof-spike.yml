@@ -18,58 +18,28 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Diagnose network and fetch live surfaces independently
+      - name: Fetch canonical live surfaces
         shell: bash
         run: |
-          set -uo pipefail
+          set -euo pipefail
           mkdir -p proof
-          UA='Mozilla/5.0 E3BProductionProof/2.0'
-
-          python - <<'PY' > proof/dns.json
-          import json, socket
-          hosts = [
-              'pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev',
-              'mastermind-x.com',
-              'www.mastermind-x.com',
-              'app.mastermind-x.com',
-              'raw.githubusercontent.com',
-          ]
-          out = {}
-          for host in hosts:
-              try:
-                  out[host] = sorted({row[4][0] for row in socket.getaddrinfo(host, 443, type=socket.SOCK_STREAM)})
-              except Exception as exc:
-                  out[host] = {'error': f'{type(exc).__name__}: {exc}'}
-          print(json.dumps(out, indent=2, sort_keys=True))
-          PY
-          cat proof/dns.json
-
-          probe() {
-            local name="$1"
-            local url="$2"
-            local status rc
-            set +e
-            status=$(curl -sS -L --retry 1 --retry-all-errors --connect-timeout 8 --max-time 25 \
+          UA='Mozilla/5.0 E3BProductionProof/3.0'
+          fetch() {
+            local name="$1" url="$2" expected="$3"
+            local got
+            got=$(curl -sS -L --retry 2 --retry-all-errors --connect-timeout 10 --max-time 45 \
               -A "$UA" -D "proof/${name}.headers" -o "proof/${name}.json" -w '%{http_code}' "$url")
-            rc=$?
-            set -e
-            printf '%s\n' "${status:-000}" > "proof/${name}.status"
-            printf '%s\n' "$rc" > "proof/${name}.curl_rc"
-            printf '%-22s http=%s curl_rc=%s %s\n' "$name" "${status:-000}" "$rc" "$url"
+            printf '%s\n' "$got" > "proof/${name}.status"
+            echo "$name http=$got expected=$expected"
+            test "$got" = "$expected"
           }
+          fetch r2_aapl 'https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev/company_intelligence/event_workspaces/generations/5517b178afbab673bc8c7c5f/workspaces/evt_cik0000320193_2026q3_results.json' 200
+          fetch public_aapl 'https://mastermind-x.com/api/event-workspace/AAPL' 200
+          fetch public_lmnd 'https://mastermind-x.com/api/event-workspace/LMND' 404
+          fetch tx_index 'https://app.mastermind-x.com/data/tx/index.json' 200
+          fetch gold 'https://raw.githubusercontent.com/mastermindx-market-intelligence/macro/7d7734d073b0a63cd01fad31dcfbd5ded57abb56/research/earnings_intelligence/e3/gold/aapl_fy2026_q3_qa_gold.json' 200
 
-          probe r2_aapl 'https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev/company_intelligence/event_workspaces/generations/5517b178afbab673bc8c7c5f/workspaces/evt_cik0000320193_2026q3_results.json'
-          probe public_apex_aapl 'https://mastermind-x.com/api/event-workspace/AAPL'
-          probe public_www_aapl 'https://www.mastermind-x.com/api/event-workspace/AAPL'
-          probe public_apex_lmnd 'https://mastermind-x.com/api/event-workspace/LMND'
-          probe public_www_lmnd 'https://www.mastermind-x.com/api/event-workspace/LMND'
-          probe tx_index 'https://app.mastermind-x.com/data/tx/index.json'
-          probe app_analysis 'https://app.mastermind-x.com/analysis?symbol=AAPL&page=intelligence'
-          probe public_www_home 'https://www.mastermind-x.com/'
-          probe gold 'https://raw.githubusercontent.com/mastermindx-market-intelligence/macro/7d7734d073b0a63cd01fad31dcfbd5ded57abb56/research/earnings_intelligence/e3/gold/aapl_fy2026_q3_qa_gold.json'
-          exit 0
-
-      - name: Validate immutable object and available public contracts
+      - name: Validate immutable object and public derivative
         shell: bash
         run: |
           python - <<'PY'
@@ -78,158 +48,89 @@ jobs:
           from pathlib import Path
           from typing import Any
 
-          P = Path('proof')
-          EVENT = 'evt_cik0000320193_2026q3_results'
-          GENERATION = '5517b178afbab673bc8c7c5f'
-          SHA = 'a8ff5d03e875fef5604791edbf625186c447af049e6e02f55bb89c68c7cc9f9f'
-          DOC = 'tx:AAPL/2026Q3'
-
-          def status(name: str) -> int:
-              try: return int((P / f'{name}.status').read_text().strip())
-              except Exception: return 0
-          def curl_rc(name: str) -> int:
-              try: return int((P / f'{name}.curl_rc').read_text().strip())
-              except Exception: return -1
-          def load(name: str):
-              try: return json.loads((P / f'{name}.json').read_text())
-              except Exception: return None
-          def walk(v: Any):
+          P=Path('proof')
+          EVENT='evt_cik0000320193_2026q3_results'
+          GEN='5517b178afbab673bc8c7c5f'
+          SHA='a8ff5d03e875fef5604791edbf625186c447af049e6e02f55bb89c68c7cc9f9f'
+          DOC='tx:AAPL/2026Q3'
+          errors=[]
+          def load(name): return json.loads((P/f'{name}.json').read_text())
+          def walk(v:Any):
               yield v
-              if isinstance(v, dict):
-                  for child in v.values(): yield from walk(child)
-              elif isinstance(v, list):
-                  for child in v: yield from walk(child)
-          def find_dict(root: Any, **wanted: Any):
-              return next((n for n in walk(root) if isinstance(n, dict) and all(n.get(k) == v for k, v in wanted.items())), None)
+              if isinstance(v,dict):
+                  for c in v.values(): yield from walk(c)
+              elif isinstance(v,list):
+                  for c in v: yield from walk(c)
+          def find(root,**want):
+              return next((n for n in walk(root) if isinstance(n,dict) and all(n.get(k)==v for k,v in want.items())),None)
+          w=load('r2_aapl'); pub=load('public_aapl'); lmnd=load('public_lmnd'); gold=load('gold'); tx=load('tx_index')
+          if w.get('schema')!='event_workspace.v1': errors.append(f"workspace schema={w.get('schema')!r}")
+          if w.get('event_id')!=EVENT: errors.append(f"event_id={w.get('event_id')!r}")
+          if w.get('generation_id')!=GEN: errors.append(f"generation={w.get('generation_id')!r}")
+          if w.get('authority')!='context_only': errors.append(f"authority={w.get('authority')!r}")
+          flags={'may_rank':False,'may_size':False,'may_gate':False,'prophet_authority':False}
+          if w.get('prophet_flags')!=flags: errors.append(f"prophet_flags={w.get('prophet_flags')!r}")
+          transcript=next((s for s in w.get('sources',[]) if isinstance(s,dict) and s.get('kind')=='transcript'),None)
+          tsha=transcript.get('source_sha256') if isinstance(transcript,dict) else None
+          if tsha!=SHA: errors.append(f'AAPL_TRANSCRIPT_REVISION_DIVERGED:{tsha!r}')
+          if not isinstance(transcript,dict) or transcript.get('document_id')!=DOC: errors.append('transcript document mismatch')
+          qas=w.get('qa_exchanges') if isinstance(w.get('qa_exchanges'),list) else []
+          answer_turns=sum(len(q.get('respondents') or []) for q in qas if isinstance(q,dict))
+          replay_spans=sum(len(q.get('question_spans') or [])+len(q.get('answer_spans') or []) for q in qas if isinstance(q,dict))
+          if len(qas)!=7: errors.append(f'qa_count={len(qas)}')
+          if answer_turns!=26: errors.append(f'answer_turns={answer_turns}')
+          if replay_spans!=68: errors.append(f'replay_spans={replay_spans}')
+          gqas=gold.get('exchanges') if isinstance(gold.get('exchanges'),list) else []
+          if len(gqas)!=7: errors.append(f'gold_count={len(gqas)}')
+          questioners=[]; respondents=[]
+          forbidden={'rank','gate','trade','prophet','evasiveness','sentiment','deflection','beat','miss','beat_miss','candidate_id'}
+          for i,q in enumerate(qas):
+              if q.get('schema')!='qa_exchange.v1': errors.append(f'qa[{i}] schema')
+              if q.get('ordinal')!=i: errors.append(f'qa[{i}] ordinal')
+              if q.get('exchange_id')!=f'qx_{EVENT}_{SHA[:12]}_{i:02d}': errors.append(f'qa[{i}] exchange_id')
+              if (q.get('event_id'),q.get('document_id'),q.get('document_sha256'))!=(EVENT,DOC,SHA): errors.append(f'qa[{i}] revision binding')
+              if q.get('topics')!=['unavailable']: errors.append(f'qa[{i}] topics={q.get("topics")!r}')
+              qq=q.get('questioner') or {}; questioners.append({'name':qq.get('name'),'affiliation':qq.get('affiliation')})
+              if qq.get('name_state')!='source_supported' or qq.get('affiliation_state')!='source_supported': errors.append(f'qa[{i}] questioner support')
+              rr=q.get('respondents') or []; pairs=[{'name':r.get('name'),'role':r.get('role')} for r in rr]; respondents.append(pairs)
+              if any(r.get('identity_state')!='source_supported' for r in rr): errors.append(f'qa[{i}] respondent support')
+              if i<len(gqas):
+                  gq=gqas[i]; gqq=gq.get('questioner') or {}; gp=[{'name':r.get('name'),'role':r.get('role')} for r in (gq.get('respondents') or [])]
+                  if (qq.get('name'),qq.get('affiliation'))!=(gqq.get('name'),gqq.get('affiliation')): errors.append(f'qa[{i}] questioner gold mismatch')
+                  if pairs!=gp: errors.append(f'qa[{i}] respondent order mismatch')
+              prov=q.get('provenance') or {}
+              if prov.get('provider') is not None or prov.get('model') is not None or prov.get('prompt_version') is not None: errors.append(f'qa[{i}] model authority')
+              if prov.get('validation_state')!='accepted': errors.append(f'qa[{i}] validation_state')
+              if prov.get('source_available_at') is not None or prov.get('clock_state')!='unknown': errors.append(f'qa[{i}] clock')
+              val=q.get('validation') or {}
+              if any(val.get(k) is not True for k in ('replayed','unique_span','event_match','revision_match','rights_ok')): errors.append(f'qa[{i}] validation flags')
+              for node in walk(q):
+                  if isinstance(node,dict) and forbidden.intersection({str(k).lower() for k in node}): errors.append(f'qa[{i}] forbidden authority')
+          for node in walk(w):
+              if isinstance(node,dict) and {'beat','miss','beat_miss'}.intersection({str(k).lower() for k in node}): errors.append('workspace beat/miss field')
 
-          object_errors = []
-          public_errors = []
-          transport = {
-              name: {'http': status(name), 'curl_rc': curl_rc(name)}
-              for name in (
-                  'r2_aapl','public_apex_aapl','public_www_aapl','public_apex_lmnd','public_www_lmnd',
-                  'tx_index','app_analysis','public_www_home','gold'
-              )
-          }
-
-          workspace = load('r2_aapl')
-          gold = load('gold')
-          if status('r2_aapl') != 200 or not isinstance(workspace, dict):
-              object_errors.append(f'R2 immutable object unavailable http={status("r2_aapl")} curl_rc={curl_rc("r2_aapl")}')
-          if status('gold') != 200 or not isinstance(gold, dict):
-              object_errors.append(f'gold unavailable http={status("gold")} curl_rc={curl_rc("gold")}')
-
-          questioners = []
-          respondents_out = []
-          transcript_sha = None
-          qa_count = answer_turns = replay_spans = 0
-          if isinstance(workspace, dict):
-              if workspace.get('schema') != 'event_workspace.v1': object_errors.append(f'workspace schema={workspace.get("schema")!r}')
-              if workspace.get('event_id') != EVENT: object_errors.append(f'event_id={workspace.get("event_id")!r}')
-              if workspace.get('generation_id') != GENERATION: object_errors.append(f'generation_id={workspace.get("generation_id")!r}')
-              if workspace.get('authority') != 'context_only': object_errors.append(f'authority={workspace.get("authority")!r}')
-              expected_flags = {'may_rank': False, 'may_size': False, 'may_gate': False, 'prophet_authority': False}
-              if workspace.get('prophet_flags') != expected_flags: object_errors.append(f'prophet_flags={workspace.get("prophet_flags")!r}')
-
-              transcript = next((s for s in workspace.get('sources', []) if isinstance(s, dict) and s.get('kind') == 'transcript'), None)
-              transcript_sha = transcript.get('source_sha256') if isinstance(transcript, dict) else None
-              if transcript_sha != SHA: object_errors.append(f'AAPL_TRANSCRIPT_REVISION_DIVERGED:{transcript_sha!r}')
-              if not isinstance(transcript, dict) or transcript.get('document_id') != DOC: object_errors.append('transcript document_id mismatch')
-
-              qas = workspace.get('qa_exchanges') if isinstance(workspace.get('qa_exchanges'), list) else []
-              qa_count = len(qas)
-              answer_turns = sum(len(q.get('respondents') or []) for q in qas if isinstance(q, dict))
-              replay_spans = sum(len(q.get('question_spans') or []) + len(q.get('answer_spans') or []) for q in qas if isinstance(q, dict))
-              if qa_count != 7: object_errors.append(f'qa_count={qa_count}')
-              if answer_turns != 26: object_errors.append(f'answer_turns={answer_turns}')
-              if replay_spans != 68: object_errors.append(f'replay_spans={replay_spans}')
-
-              gold_qas = gold.get('exchanges') if isinstance(gold, dict) and isinstance(gold.get('exchanges'), list) else []
-              if len(gold_qas) != 7: object_errors.append(f'gold_qas={len(gold_qas)}')
-              forbidden = {'rank','gate','trade','prophet','evasiveness','sentiment','deflection','beat','miss','beat_miss','candidate_id'}
-              for i, q in enumerate(qas):
-                  if not isinstance(q, dict): object_errors.append(f'qa[{i}] non-object'); continue
-                  if q.get('schema') != 'qa_exchange.v1': object_errors.append(f'qa[{i}] schema={q.get("schema")!r}')
-                  if q.get('ordinal') != i: object_errors.append(f'qa[{i}] ordinal={q.get("ordinal")!r}')
-                  if q.get('exchange_id') != f'qx_{EVENT}_{SHA[:12]}_{i:02d}': object_errors.append(f'qa[{i}] exchange_id mismatch')
-                  if (q.get('event_id'), q.get('document_id'), q.get('document_sha256')) != (EVENT, DOC, SHA): object_errors.append(f'qa[{i}] revision binding mismatch')
-                  if q.get('topics') != ['unavailable']: object_errors.append(f'qa[{i}] topics={q.get("topics")!r}')
-                  questioner = q.get('questioner') if isinstance(q.get('questioner'), dict) else {}
-                  questioners.append({'name': questioner.get('name'), 'affiliation': questioner.get('affiliation')})
-                  if questioner.get('name_state') != 'source_supported' or questioner.get('affiliation_state') != 'source_supported': object_errors.append(f'qa[{i}] questioner support state')
-                  respondents = q.get('respondents') if isinstance(q.get('respondents'), list) else []
-                  pairs = [{'name': r.get('name'), 'role': r.get('role')} for r in respondents if isinstance(r, dict)]
-                  respondents_out.append(pairs)
-                  if any(not isinstance(r, dict) or r.get('identity_state') != 'source_supported' for r in respondents): object_errors.append(f'qa[{i}] respondent identity state')
-                  if i < len(gold_qas):
-                      gq = gold_qas[i]
-                      gquestioner = gq.get('questioner') or {}
-                      if (questioner.get('name'), questioner.get('affiliation')) != (gquestioner.get('name'), gquestioner.get('affiliation')): object_errors.append(f'qa[{i}] questioner differs from gold')
-                      gpairs = [{'name': r.get('name'), 'role': r.get('role')} for r in (gq.get('respondents') or []) if isinstance(r, dict)]
-                      if pairs != gpairs: object_errors.append(f'qa[{i}] respondent order differs from gold')
-                  prov = q.get('provenance') if isinstance(q.get('provenance'), dict) else {}
-                  if prov.get('provider') is not None or prov.get('model') is not None or prov.get('prompt_version') is not None: object_errors.append(f'qa[{i}] model/provider authority')
-                  if prov.get('validation_state') != 'accepted': object_errors.append(f'qa[{i}] validation_state')
-                  if prov.get('source_available_at') is not None or prov.get('clock_state') != 'unknown': object_errors.append(f'qa[{i}] clock not unknown/null')
-                  validation = q.get('validation') if isinstance(q.get('validation'), dict) else {}
-                  if any(validation.get(k) is not True for k in ('replayed','unique_span','event_match','revision_match','rights_ok')): object_errors.append(f'qa[{i}] validation flags')
-                  for node in walk(q):
-                      if isinstance(node, dict) and forbidden.intersection({str(k).lower() for k in node}): object_errors.append(f'qa[{i}] forbidden authority key')
-
-              for node in walk(workspace):
-                  if isinstance(node, dict) and {'beat','miss','beat_miss'}.intersection({str(k).lower() for k in node}): object_errors.append('workspace beat/miss field')
-
-          public_host = None
-          if status('public_apex_aapl') == 200: public_host = 'apex'
-          elif status('public_www_aapl') == 200: public_host = 'www'
-          public_aapl = load(f'public_{public_host}_aapl') if public_host else None
-          public_lmnd = load(f'public_{public_host}_lmnd') if public_host else None
-          if public_host:
-              lmnd_status = status(f'public_{public_host}_lmnd')
-              if lmnd_status != 404: public_errors.append(f'{public_host} LMND http={lmnd_status}')
-              if not isinstance(public_aapl, dict): public_errors.append(f'{public_host} AAPL body invalid')
-              else:
-                  if public_aapl.get('schema') != 'event_workspace_public_glance.v1': public_errors.append(f'public schema={public_aapl.get("schema")!r}')
-                  if public_aapl.get('plane') != 'event_workspace.v1': public_errors.append(f'public plane={public_aapl.get("plane")!r}')
-                  if public_aapl.get('event_id') != EVENT: public_errors.append(f'public event_id={public_aapl.get("event_id")!r}')
-                  if public_aapl.get('authority') != 'context_only': public_errors.append(f'public authority={public_aapl.get("authority")!r}')
-                  if find_dict(public_aapl, label='Analyst questions', state='7 exchanges') is None: public_errors.append('public Analyst questions != 7 exchanges')
-                  rev = next((n for n in walk(public_aapl) if isinstance(n, dict) and n.get('label') == 'Revenue'), None)
-                  if not isinstance(rev, dict) or '$109.4B' not in str(rev.get('value')): public_errors.append(f'E2 revenue regression={rev!r}')
-                  guidance = next((n for n in walk(public_aapl) if isinstance(n, dict) and n.get('label') == 'Q4 revenue growth'), None)
-                  if not isinstance(guidance, dict) or str(guidance.get('value')) != '9–11%': public_errors.append(f'E2 guidance regression={guidance!r}')
-                  forbidden_fragments = ('sha256','hash','receipt','r2_url','score_overlay','beat_miss','prophet_authority','may_rank','may_size','may_gate')
-                  for node in walk(public_aapl):
-                      if isinstance(node, dict):
-                          for key in node:
-                              if any(f in str(key).lower() for f in forbidden_fragments): public_errors.append(f'public forbidden key={key}')
-                  raw = json.dumps(public_aapl, sort_keys=True).lower()
-                  if 'r2.dev' in raw or '/event_workspaces/generations/' in raw: public_errors.append('public storage locator exposed')
-              if not isinstance(public_lmnd, dict) or find_dict(public_lmnd, code='event_workspace_not_covered') is None or find_dict(public_lmnd, ticker='LMND') is None: public_errors.append('LMND fallback contract mismatch')
-          else:
-              public_errors.append('PUBLIC_API_NETWORK_UNREACHABLE_FROM_RUNNER')
-
-          tx_ok = status('tx_index') == 200 and isinstance(load('tx_index'), dict)
-          if not tx_ok: public_errors.append('TERMINAL_TX_INDEX_NETWORK_UNREACHABLE_FROM_RUNNER')
-
-          summary = {
-              'schema': 'e3b.machine_proof.v2',
-              'object_state': 'PASS' if not object_errors else 'FAIL',
-              'public_state': 'PASS' if public_host and not public_errors else 'FAIL',
-              'public_host': public_host,
-              'tx_index_state': 'PASS' if tx_ok else 'FAIL',
-              'transport': transport,
-              'transcript_sha256': transcript_sha,
-              'qa_exchange_count': qa_count,
-              'answer_turn_count': answer_turns,
-              'replay_span_count': replay_spans,
-              'questioners': questioners,
-              'respondents': respondents_out,
-              'object_errors': object_errors,
-              'public_errors': public_errors,
-          }
-          (P/'machine-summary.json').write_text(json.dumps(summary, indent=2, sort_keys=True)+'\n')
-          print(json.dumps(summary, indent=2, sort_keys=True))
+          if pub.get('schema')!='event_workspace_public_glance.v1': errors.append(f"public schema={pub.get('schema')!r}")
+          if pub.get('plane')!='event_workspace.v1': errors.append(f"public plane={pub.get('plane')!r}")
+          if pub.get('event_id')!=EVENT: errors.append(f"public event={pub.get('event_id')!r}")
+          if pub.get('authority')!='context_only': errors.append(f"public authority={pub.get('authority')!r}")
+          if find(pub,label='Analyst questions',state='7 exchanges') is None: errors.append('public Analyst questions != 7 exchanges')
+          rev=next((n for n in walk(pub) if isinstance(n,dict) and n.get('label')=='Revenue'),None)
+          if not isinstance(rev,dict) or '$109.4B' not in str(rev.get('value')): errors.append(f'public revenue={rev!r}')
+          guide=next((n for n in walk(pub) if isinstance(n,dict) and n.get('label')=='Q4 revenue growth'),None)
+          if not isinstance(guide,dict) or str(guide.get('value'))!='9–11%': errors.append(f'public guidance={guide!r}')
+          forbidden_public={'sha256','source_sha256','workspace_sha256','marker_sha256','hash','receipt','r2_url','workspace_url','score_overlay','beat_miss','prophet_authority','may_rank','may_size','may_gate'}
+          for node in walk(pub):
+              if isinstance(node,dict):
+                  bad=forbidden_public.intersection({str(k).lower() for k in node})
+                  if bad: errors.append(f'public forbidden keys={sorted(bad)}')
+          raw=json.dumps(pub,sort_keys=True).lower()
+          if 'r2.dev' in raw or '/event_workspaces/generations/' in raw: errors.append('public storage locator')
+          if find(lmnd,code='event_workspace_not_covered') is None or find(lmnd,ticker='LMND') is None: errors.append('LMND fallback contract')
+          if 'AAPL' not in json.dumps(tx) or '2026Q3' not in json.dumps(tx): errors.append('tx index AAPL/2026Q3 missing')
+          out={'schema':'e3b.machine_proof.v3','state':'PASS' if not errors else 'FAIL','errors':errors,'generation_id':GEN,'transcript_sha256':tsha,'qa_exchange_count':len(qas),'answer_turn_count':answer_turns,'replay_span_count':replay_spans,'questioners':questioners,'respondents':respondents,'public_questions_state':'7 exchanges' if find(pub,label='Analyst questions',state='7 exchanges') else None,'lmnd_state':'not_covered' if find(lmnd,code='event_workspace_not_covered') else None}
+          (P/'machine-summary.json').write_text(json.dumps(out,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(out,indent=2,sort_keys=True))
+          if errors: raise SystemExit(1)
           PY
 
       - name: Install browser probe
@@ -237,7 +138,7 @@ jobs:
           python -m pip install --quiet playwright
           python -m playwright install --with-deps chromium
 
-      - name: Probe live Terminal at required breakpoints
+      - name: Probe canonical Terminal consumer routes
         shell: bash
         continue-on-error: true
         run: |
@@ -245,107 +146,89 @@ jobs:
           from __future__ import annotations
           import json
           from pathlib import Path
-          from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
+          from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout
 
-          P = Path('proof')
-          machine = json.loads((P/'machine-summary.json').read_text())
-          questioners = machine.get('questioners') or []
-          respondents = machine.get('respondents') or []
-          target = 'https://app.mastermind-x.com/analysis?symbol=AAPL&page=intelligence'
-          cases = [
-              ('1440en',1440,900,'en','Results','ANALYST Q&A · 7 exchanges'),
-              ('820en',820,900,'en','Results','ANALYST Q&A · 7 exchanges'),
-              ('390zh',390,844,'zh','业绩','分析师问答 · 7 轮'),
+          P=Path('proof'); machine=json.loads((P/'machine-summary.json').read_text())
+          questioners=machine['questioners']; respondents=machine['respondents']
+          routes=[
+              ('terminal','https://app.mastermind-x.com/terminal?symbol=AAPL&pane=intelligence'),
+              ('analysis','https://app.mastermind-x.com/analysis?symbol=AAPL&page=intelligence'),
           ]
-          results=[]; errors=[]
+          cases=[('1440en',1440,900,'en','Results','ANALYST Q&A · 7 exchanges'),('820en',820,900,'en','Results','ANALYST Q&A · 7 exchanges'),('390zh',390,844,'zh','业绩','分析师问答 · 7 轮')]
+          errors=[]; results=[]
           with sync_playwright() as pw:
-              browser = pw.chromium.launch(headless=True)
+              browser=pw.chromium.launch(headless=True)
               for name,w,h,lang,result_label,heading in cases:
-                  entry={'case':name,'width':w,'height':h,'lang':lang,'target':target}
-                  console_errors=[]; page_errors=[]
-                  ctx=browser.new_context(viewport={'width':w,'height':h})
-                  ctx.add_init_script(f"localStorage.setItem('mm.lang', {lang!r});")
-                  page=ctx.new_page()
-                  page.on('console', lambda msg,s=console_errors: s.append(msg.text) if msg.type=='error' else None)
-                  page.on('pageerror', lambda exc,s=page_errors: s.append(str(exc)))
-                  try:
-                      response=page.goto(target,wait_until='domcontentloaded',timeout=35_000)
-                      entry['http_status']=response.status if response else None
-                      try: page.wait_for_load_state('networkidle',timeout=10_000)
-                      except PlaywrightTimeoutError: pass
-                      entry['final_url']=page.url
-                      body=page.locator('body').inner_text(timeout=10_000)
-                      entry['body_prefix']=body[:1200]
-                      page.screenshot(path=str(P/f'{name}.png'),full_page=True)
-                      lower_url=page.url.lower()
-                      has_ci=page.locator('.ci-page').count()>0
-                      if not has_ci and (any(t in lower_url for t in ('/login','/signin','/auth')) or any(t in body.lower() for t in ('sign in','log in','login','authenticate'))):
-                          raise AssertionError('AUTH_REQUIRED')
-                      page.locator('.ci-page').wait_for(state='visible',timeout=25_000)
-                      page.get_by_role('tab',name=result_label,exact=True).click(timeout=10_000)
-                      qa=page.locator('[data-ci-results-region="analyst-qa"]')
-                      qa.wait_for(state='visible',timeout=20_000)
-                      header=qa.locator('.ci-qa-head').inner_text()
-                      entry['qa_heading']=header
-                      if heading not in header: raise AssertionError(f'QA heading mismatch:{header!r}')
-                      rows=qa.locator('.ci-qa-row'); count=rows.count(); entry['qa_row_count']=count
-                      if count!=7: raise AssertionError(f'QA row count={count}')
-                      rendered=[]
-                      for i in range(count):
-                          row=rows.nth(i); summary=row.locator('summary').inner_text().strip(); row.locator('summary').click()
-                          qtext=row.locator('.ci-qa-question').inner_text().strip()
-                          if 'operator' in qtext.lower() or 'go ahead and take our' in qtext.lower(): raise AssertionError(f'row {i}: Operator intro rendered as question')
-                          turns=[x.strip() for x in row.locator('.ci-qa-turn > span').all_inner_texts()]
-                          expected_name=(questioners[i] or {}).get('name') if i<len(questioners) else None
-                          if expected_name and expected_name not in summary: raise AssertionError(f'row {i}: missing questioner {expected_name}')
-                          expected_turns=respondents[i] if i<len(respondents) else []
-                          expected_labels=[f"{r.get('name')} · {r.get('role')}" if r.get('role') else str(r.get('name')) for r in expected_turns]
-                          if turns!=expected_labels: raise AssertionError(f'row {i}: respondent order {turns!r} != {expected_labels!r}')
-                          rendered.append({'summary':summary,'question':qtext[:300],'turns':turns})
-                      entry['rendered_exchanges']=rendered
-                      overflow=page.evaluate('() => ({viewport:document.documentElement.clientWidth,document:document.documentElement.scrollWidth})')
-                      entry['overflow']=overflow
-                      if overflow['document']>overflow['viewport']+1: raise AssertionError(f'horizontal overflow {overflow}')
-                      if page.locator('.ci-qa .fin-tag:has-text("Unavailable"), .ci-qa .fin-tag:has-text("不可用")').count()>0: raise AssertionError('fake unavailable topic chip rendered')
-                      jump=qa.locator('.ci-qa-open').first
-                      if jump.count()!=1: raise AssertionError('transcript jump missing')
-                      before=page.url; jump.click(timeout=10_000); page.wait_for_timeout(1200)
-                      drawer=page.locator('.fin-tx-drawer')
-                      entry['transcript_jump']={'before_url':before,'after_url':page.url,'drawer_count':drawer.count()}
-                      if drawer.count()!=1 or page.url==before: raise AssertionError('transcript jump did not open revision-safe drawer')
-                      if drawer.locator('.fin-tx-error').count()>0: raise AssertionError('transcript drawer revision/fetch validation failed')
-                      drawer.locator('.fin-tx-seg').first.wait_for(state='visible',timeout=15_000)
-                      entry['console_errors']=console_errors; entry['page_errors']=page_errors
-                      if console_errors or page_errors: raise AssertionError(f'browser errors console={console_errors!r} page={page_errors!r}')
-                      entry['state']='PASS'
-                  except Exception as exc:
-                      entry['state']='FAIL'; entry['error']=f'{type(exc).__name__}:{exc}'; entry['console_errors']=console_errors; entry['page_errors']=page_errors
-                      errors.append(f'{name}:{entry["error"]}')
-                      try: page.screenshot(path=str(P/f'{name}.png'),full_page=True)
-                      except Exception: pass
-                  results.append(entry); ctx.close()
+                  entry={'case':name,'width':w,'height':h,'lang':lang,'attempts':[]}; passed=False
+                  for route_name,target in routes:
+                      ctx=browser.new_context(viewport={'width':w,'height':h}); ctx.add_init_script(f"localStorage.setItem('mm.lang',{lang!r});")
+                      page=ctx.new_page(); console=[]; pageerrs=[]
+                      page.on('console',lambda msg,s=console:s.append(msg.text) if msg.type=='error' else None); page.on('pageerror',lambda exc,s=pageerrs:s.append(str(exc)))
+                      attempt={'route':route_name,'target':target}
+                      try:
+                          resp=page.goto(target,wait_until='domcontentloaded',timeout=40_000); attempt['http_status']=resp.status if resp else None
+                          try: page.wait_for_load_state('networkidle',timeout=10_000)
+                          except PWTimeout: pass
+                          attempt['final_url']=page.url; body=page.locator('body').inner_text(timeout=10_000); attempt['body_prefix']=body[:800]
+                          try: page.locator('.ci-page').wait_for(state='visible',timeout=20_000)
+                          except PWTimeout:
+                              gate=('sign up to open the analysis desk' in body.lower() or 'free account' in body.lower() or '/login' in page.url.lower())
+                              raise AssertionError('AUTH_OR_ENTITLEMENT_REQUIRED' if gate else 'CI_PAGE_NOT_VISIBLE')
+                          page.get_by_role('tab',name=result_label,exact=True).click(timeout=10_000)
+                          qa=page.locator('[data-ci-results-region="analyst-qa"]'); qa.wait_for(state='visible',timeout=20_000)
+                          header=qa.locator('.ci-qa-head').inner_text(); attempt['qa_heading']=header
+                          if heading not in header: raise AssertionError(f'heading={header!r}')
+                          rows=qa.locator('.ci-qa-row'); count=rows.count(); attempt['qa_row_count']=count
+                          if count!=7: raise AssertionError(f'qa_count={count}')
+                          rendered=[]
+                          for i in range(count):
+                              row=rows.nth(i); summary=row.locator('summary').inner_text().strip(); row.locator('summary').click()
+                              qtext=row.locator('.ci-qa-question').inner_text().strip()
+                              if 'operator' in qtext.lower() or 'go ahead and take our' in qtext.lower(): raise AssertionError(f'row {i} Operator intro rendered')
+                              turns=[x.strip() for x in row.locator('.ci-qa-turn > span').all_inner_texts()]
+                              expected_name=questioners[i]['name']; expected=[f"{r['name']} · {r['role']}" if r.get('role') else r['name'] for r in respondents[i]]
+                              if expected_name not in summary: raise AssertionError(f'row {i} questioner')
+                              if turns!=expected: raise AssertionError(f'row {i} turns {turns!r} != {expected!r}')
+                              rendered.append({'summary':summary,'turns':turns})
+                          attempt['rendered_exchanges']=rendered
+                          overflow=page.evaluate('() => ({viewport:document.documentElement.clientWidth,document:document.documentElement.scrollWidth})'); attempt['overflow']=overflow
+                          if overflow['document']>overflow['viewport']+1: raise AssertionError(f'overflow={overflow}')
+                          if page.locator('.ci-qa .fin-tag:has-text("Unavailable"), .ci-qa .fin-tag:has-text("不可用")').count()>0: raise AssertionError('fake unavailable topic chip')
+                          jump=qa.locator('.ci-qa-open').first
+                          if jump.count()!=1: raise AssertionError('transcript jump missing')
+                          before=page.url; jump.click(timeout=10_000); page.wait_for_timeout(1000); drawer=page.locator('.fin-tx-drawer')
+                          attempt['transcript_jump']={'before':before,'after':page.url,'drawer_count':drawer.count()}
+                          if drawer.count()!=1 or page.url==before: raise AssertionError('transcript jump failed')
+                          if drawer.locator('.fin-tx-error').count()>0: raise AssertionError('transcript revision/fetch failed')
+                          drawer.locator('.fin-tx-seg').first.wait_for(state='visible',timeout=15_000)
+                          attempt['console_errors']=console; attempt['page_errors']=pageerrs
+                          if console or pageerrs: raise AssertionError(f'browser errors console={console!r} page={pageerrs!r}')
+                          page.screenshot(path=str(P/f'{name}-{route_name}.png'),full_page=True)
+                          attempt['state']='PASS'; entry['accepted_route']=route_name; passed=True
+                      except Exception as exc:
+                          attempt['state']='FAIL'; attempt['error']=f'{type(exc).__name__}:{exc}'; attempt['console_errors']=console; attempt['page_errors']=pageerrs
+                          try: page.screenshot(path=str(P/f'{name}-{route_name}.png'),full_page=True)
+                          except Exception: pass
+                      entry['attempts'].append(attempt); ctx.close()
+                      if passed: break
+                  entry['state']='PASS' if passed else 'FAIL'
+                  if not passed: errors.append(f"{name}:"+' | '.join(a.get('error','unknown') for a in entry['attempts']))
+                  results.append(entry)
               browser.close()
-          summary={'schema':'e3b.browser_proof.v2','target':target,'cases':results,'errors':errors,'browser_state':'PASS' if not errors and all(r.get('state')=='PASS' for r in results) else 'FAIL'}
-          (P/'browser-summary.json').write_text(json.dumps(summary,indent=2,sort_keys=True)+'\n')
-          print(json.dumps(summary,indent=2,sort_keys=True))
+          out={'schema':'e3b.browser_proof.v3','state':'PASS' if not errors else 'FAIL','errors':errors,'cases':results}
+          (P/'browser-summary.json').write_text(json.dumps(out,indent=2,sort_keys=True)+'\n'); print(json.dumps(out,indent=2,sort_keys=True))
           PY
 
-      - name: Assemble proof verdict
-        if: always()
+      - name: Assemble verdict
         shell: bash
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
-          P=Path('proof')
-          machine=json.loads((P/'machine-summary.json').read_text()) if (P/'machine-summary.json').exists() else {'object_state':'MISSING','public_state':'MISSING','tx_index_state':'MISSING'}
-          browser=json.loads((P/'browser-summary.json').read_text()) if (P/'browser-summary.json').exists() else {'browser_state':'MISSING','errors':['browser summary missing']}
-          if machine.get('object_state')=='PASS' and machine.get('public_state')=='PASS' and machine.get('tx_index_state')=='PASS' and browser.get('browser_state')=='PASS': verdict='FULL_PASS'
-          elif machine.get('object_state')=='PASS': verdict='OBJECT_PROVEN_REMAINING_SURFACE_BLOCKED'
-          else: verdict='PRODUCTION_OBJECT_FAILED'
-          out={'schema':'e3b.production_proof_verdict.v2','verdict':verdict,'object_state':machine.get('object_state'),'public_state':machine.get('public_state'),'tx_index_state':machine.get('tx_index_state'),'browser_state':browser.get('browser_state'),'object_errors':machine.get('object_errors') or [],'public_errors':machine.get('public_errors') or [],'browser_errors':browser.get('errors') or []}
-          (P/'verdict.json').write_text(json.dumps(out,indent=2,sort_keys=True)+'\n')
-          print(json.dumps(out,indent=2,sort_keys=True))
+          P=Path('proof'); m=json.loads((P/'machine-summary.json').read_text()); b=json.loads((P/'browser-summary.json').read_text()) if (P/'browser-summary.json').exists() else {'state':'MISSING','errors':['browser summary missing']}
+          verdict='FULL_PASS' if m.get('state')=='PASS' and b.get('state')=='PASS' else 'MACHINE_PASS_BROWSER_BLOCKED' if m.get('state')=='PASS' else 'PRODUCTION_MACHINE_FAILED'
+          out={'schema':'e3b.production_proof_verdict.v3','verdict':verdict,'machine_state':m.get('state'),'browser_state':b.get('state'),'machine_errors':m.get('errors') or [],'browser_errors':b.get('errors') or []}
+          (P/'verdict.json').write_text(json.dumps(out,indent=2,sort_keys=True)+'\n'); print(json.dumps(out,indent=2,sort_keys=True))
           PY
 
       - name: Upload proof packet
@@ -354,17 +237,15 @@ jobs:
         with:
           name: e3b-production-proof-${{ github.run_id }}
           path: proof
-          if-no-files-found: warn
           retention-days: 14
 
       - name: Enforce full production acceptance
-        if: always()
         shell: bash
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
-          verdict=json.loads(Path('proof/verdict.json').read_text())
-          if verdict.get('verdict')!='FULL_PASS': raise SystemExit(f"E3-B not fully proven: {verdict.get('verdict')}")
+          v=json.loads(Path('proof/verdict.json').read_text())
+          if v.get('verdict')!='FULL_PASS': raise SystemExit(f"E3-B not fully proven: {v.get('verdict')}")
           print('E3-B FULL_PASS')
           PY
