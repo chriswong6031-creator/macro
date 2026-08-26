@@ -1427,8 +1427,18 @@ def _bse_alias_map(frame: pd.DataFrame) -> dict[str, str]:
     for row in frame.itertuples(index=False):
         old = _source_ts_code(row.o_code)
         new = _source_ts_code(row.n_code)
-        old_identity = canonical_identity(old)
-        new_identity = canonical_identity(new)
+        try:
+            old_identity = canonical_identity(old)
+            new_identity = canonical_identity(new)
+        except SpineError:
+            # A non-canonical bse_mapping vendor code (same defect class as
+            # the stock_basic/fund_basic legacy-code shapes) simply cannot
+            # alias; excluding it from the alias map is correct on its own
+            # terms, not a tolerated error -- it never participates in BSE
+            # old-code resolution either way.  This is a whole-table fetch
+            # with no per-row request literal to bind against, so there is
+            # no fatal check being weakened here.
+            continue
         if old_identity.source_exchange != "BSE" or new_identity.source_exchange != "BSE":
             raise SpineError(f"non-BSE row in bse_mapping: {old!r} -> {new!r}")
         if not new_identity.code.startswith("920"):
@@ -1667,8 +1677,15 @@ def compile_security_master(
             "source": "tushare.stock_basic",
         })
     for item in mapping.to_dict(orient="records"):
-        old_ident = canonical_identity(item["o_code"])
-        new_ident = canonical_identity(item["n_code"])
+        try:
+            old_ident = canonical_identity(item["o_code"])
+            new_ident = canonical_identity(item["n_code"])
+        except SpineError:
+            # Mirrors _bse_alias_map: a non-canonical bse_mapping code cannot
+            # alias, so it contributes no alias_frame row instead of crashing
+            # the compile on the same raw source _bse_alias_map already
+            # tolerated.
+            continue
         alias_rows.append({
             "alias_ticker": old_ident.ticker,
             "canonical_ticker": new_ident.ticker,
@@ -1702,7 +1719,27 @@ def compile_security_master(
             raise SpineError(f"fund_basic reference unit absent: E/{status}")
         funds = _read_parquet_strict(fund_path)
         for item in funds.to_dict(orient="records"):
-            ident = canonical_identity(item.get("ts_code"))
+            try:
+                ident = canonical_identity(item.get("ts_code"))
+            except SpineError:
+                # Same non-canonical-vendor-code shape as stock_basic
+                # (exemplar '1610221.SZ'): every fund_basic row is already
+                # known_out_of_scope regardless of ts_code parseability
+                # (collect_reference's fund loop already accounts for its
+                # presence wholesale as known_excluded), so the raw code
+                # stands in for the identity columns instead of dropping the
+                # row or crashing the compile.
+                raw_code = str(item.get("ts_code") or "")
+                classification_rows.append({
+                    "source_ts_code": raw_code,
+                    "ticker": raw_code,
+                    "security_class": "exchange_fund",
+                    "scope_classification": "known_out_of_scope",
+                    "classification_source": "tushare.fund_basic_non_canonical_ts_code",
+                    "effective_from": _iso(item.get("list_date")),
+                    "effective_to": _iso(item.get("delist_date")),
+                })
+                continue
             classification_rows.append({
                 "source_ts_code": ident.source_ts_code,
                 "ticker": ident.ticker,
@@ -2060,16 +2097,19 @@ def _validate_response_binding(
     """Require exact returned fields and prove every row belongs to the request.
 
     Returns ``(known_excluded_ordinals, quarantined_unknown_ordinals)`` for
-    ``stock_basic`` rows whose ``ts_code`` is not a canonical SH/SZ/BJ
-    identity -- legacy/delisted-era vendor codes (a T-prefix, an old ``.SS``
-    suffix) are real payloads in TuShare's delisted universe.  Those rows
-    still must bind to the requested exchange/list_status literally (a
-    mismatch there stays fatal); every other, identity-dependent check is
-    skipped for them.  A non-canonical row matching a tight, independently
-    classifiable pattern (see ``_known_excluded_noncanonical_code_family``,
-    e.g. a T-prefixed legacy vendor code) is reported as known-excluded;
-    every other non-canonical row is reported as quarantined-unknown.
-    Both lists are empty for every other endpoint.
+    ``stock_basic``/``fund_basic`` rows whose ``ts_code`` is not a canonical
+    SH/SZ/BJ identity -- legacy/delisted-era vendor codes (a T-prefix, an old
+    ``.SS`` suffix, a non-6-digit fund code such as ``'1610221.SZ'``) are
+    real payloads in TuShare's reference universe.  Those rows still must
+    bind to the requested literal params (exchange/list_status for
+    stock_basic, market/status for fund_basic) exactly as before; every
+    other, identity-dependent check (the venue/board/currency checks that
+    require a parsed ``Identity``) is skipped for them.  A non-canonical row
+    matching a tight, independently classifiable pattern (see
+    ``_known_excluded_noncanonical_code_family``, e.g. a T-prefixed legacy
+    vendor code) is reported as known-excluded; every other non-canonical
+    row is reported as quarantined-unknown.  Both lists are empty for every
+    other endpoint.
     """
     expected_columns = ENDPOINT_FIELDS[endpoint].split(",")
     if list(frame.columns) != expected_columns:
@@ -2111,12 +2151,28 @@ def _validate_response_binding(
     elif endpoint == "fund_basic":
         market = str(params.get("market") or "")
         status = str(params.get("status") or "")
-        for item in frame.to_dict(orient="records"):
-            ident = canonical_identity(item["ts_code"])
-            if ident.source_exchange not in {"SSE", "SZSE"}:
-                raise SpineError("fund_basic response contains a non-SH/SZ venue")
+        for ordinal, item in enumerate(frame.to_dict(orient="records")):
             if str(item["market"] or "") != market or str(item["status"] or "") != status:
                 raise SpineError("fund_basic response does not bind to requested market/status")
+            try:
+                ident = canonical_identity(item["ts_code"])
+            except SpineError:
+                # A legacy/non-6-digit vendor fund code (exemplar
+                # '1610221.SZ') is a real fund_basic payload row.  The
+                # literal market/status binding above is still proved for
+                # it; the venue check is identity-dependent and is skipped,
+                # matching the stock_basic treatment above.  fund_basic rows
+                # are already wholesale known_excluded in
+                # collect_reference's fund loop (row_count=0,
+                # known_excluded_row_count=len(frame)), so this only feeds
+                # the per-call receipt counts, not the unit accounting.
+                if _known_excluded_noncanonical_code_family(item["ts_code"]) is not None:
+                    known_excluded_rows.append(ordinal)
+                else:
+                    quarantined_rows.append(ordinal)
+                continue
+            if ident.source_exchange not in {"SSE", "SZSE"}:
+                raise SpineError("fund_basic response contains a non-SH/SZ venue")
     elif endpoint == "trade_cal":
         exchange = str(params.get("exchange") or "").upper()
         declared = set(frame["exchange"].dropna().astype(str).str.upper())

@@ -767,6 +767,221 @@ def test_stock_basic_unknown_non_canonical_end_to_end_quarantined_blocks_unit_do
     assert quarantined_rows["ticker"].tolist() == ["XX12345.Q"]
 
 
+def _non_canonical_fund_basic_row(**overrides: Any) -> dict:
+    """A non-6-digit legacy vendor fund code -- run 32918932199's row."""
+    row = {
+        "ts_code": "1610221.SZ", "name": "样本基金", "management": "样本基金管理",
+        "custodian": "样本银行", "fund_type": "股票型", "found_date": "20050101",
+        "due_date": None, "list_date": "20050101", "issue_date": "20041201",
+        "delist_date": None, "issue_amount": 1, "m_fee": 0.5, "c_fee": 0.1,
+        "duration_year": None, "p_value": 1, "min_amount": 0.1, "exp_return": None,
+        "benchmark": "样本基准", "status": "L", "invest_type": "被动指数型",
+        "type": "契约型开放式", "trustee": "", "purc_startdate": "20050101",
+        "redm_startdate": "20050101", "market": "E",
+    }
+    row.update(overrides)
+    return row
+
+
+def test_fund_basic_non_canonical_identity_not_fatal_and_reported():
+    """Run 32918932199's crash: a non-6-digit fund ts_code must not raise, and the
+    row's ordinal is reported (quarantined, since it matches no independently
+    classifiable family such as the T-prefix one)."""
+    columns = spine.ENDPOINT_FIELDS["fund_basic"].split(",")
+    fund = pd.DataFrame([_non_canonical_fund_basic_row()], columns=columns)
+    known_excluded, quarantined = spine._validate_response_binding(
+        "fund_basic", fund, {"market": "E", "status": "L"},
+    )
+    assert known_excluded == []
+    assert quarantined == [0]
+
+
+def test_fund_basic_non_canonical_row_still_binds_request_literals():
+    """The literal market/status binding stays fatal even for a non-canonical row."""
+    columns = spine.ENDPOINT_FIELDS["fund_basic"].split(",")
+    wrong_market = pd.DataFrame(
+        [_non_canonical_fund_basic_row(market="O")], columns=columns,
+    )
+    with pytest.raises(spine.SpineError, match="requested market/status"):
+        spine._validate_response_binding(
+            "fund_basic", wrong_market, {"market": "E", "status": "L"},
+        )
+
+    wrong_status = pd.DataFrame(
+        [_non_canonical_fund_basic_row(status="D")], columns=columns,
+    )
+    with pytest.raises(spine.SpineError, match="requested market/status"):
+        spine._validate_response_binding(
+            "fund_basic", wrong_status, {"market": "E", "status": "L"},
+        )
+
+
+def test_fund_basic_call_succeeds_with_non_canonical_row_and_reports_receipt_count(tmp_path):
+    """The exact crash from run 32918932199: TushareAShareSpineCollector._call must
+    not raise on a well-bound fund_basic response carrying a non-canonical code."""
+    fund = pd.DataFrame(
+        [_non_canonical_fund_basic_row()], columns=spine.ENDPOINT_FIELDS["fund_basic"].split(","),
+    )
+    collector = spine.TushareAShareSpineCollector(
+        tmp_path, query=lambda *args, **kwargs: fund.copy(), now=lambda: NOW,
+    )
+    response = collector._call("fund_basic", "ref-test:L", market="E", status="L")
+    assert response.frame is not None
+    assert response.receipt["response_status"] == "accepted"
+    assert response.receipt["known_excluded_noncanonical_row_count"] == 0
+    assert response.receipt["non_canonical_identity_row_count"] == 1
+
+
+def _reference_collector_for_contaminated_fund_l(tmp_path: Path, contaminated_row: dict):
+    columns = spine.ENDPOINT_FIELDS["fund_basic"].split(",")
+    funds = _fund_basic_rows()
+    funds["L"] = pd.concat(
+        [funds["L"], pd.DataFrame([contaminated_row], columns=columns)],
+        ignore_index=True,
+    )
+
+    def fake(endpoint, fields="", **params):
+        if endpoint == "bse_mapping":
+            return pd.DataFrame([{
+                "name": "方大新材", "o_code": "838163.BJ", "n_code": "920163.BJ",
+                "list_date": "20200727",
+            }])
+        if endpoint == "stock_basic":
+            return _stock_basic_rows()[(params["exchange"], params["list_status"])].copy()
+        if endpoint == "fund_basic":
+            return funds[params["status"]].copy()
+        raise AssertionError(f"unexpected endpoint in reference-only test: {endpoint}")
+
+    return spine.TushareAShareSpineCollector(tmp_path, query=fake, now=lambda: NOW)
+
+
+def test_fund_basic_non_canonical_end_to_end_stays_wholesale_known_excluded(tmp_path):
+    """Full collect_reference -> compile_security_master path for run 32918932199's row.
+
+    Unlike stock_basic, every fund_basic row -- canonical or not -- is already
+    wholesale known_excluded in collect_reference's fund loop
+    (row_count=0, known_excluded_row_count=len(frame)), so a non-canonical fund
+    code needs no new quarantine slot of its own: the unit's existing
+    source_row_count/known_excluded_row_count equation already balances, and
+    the call and the compile must simply not crash.
+    """
+    collector = _reference_collector_for_contaminated_fund_l(
+        tmp_path, _non_canonical_fund_basic_row(),
+    )
+    # The call itself must not raise -- this is the exact scenario that crashed
+    # run 32918932199's fund_basic reference stage.
+    ready = collector.collect_reference()
+    assert ready is True
+
+    staging = collector.state["reference_generation"]["current_id"]
+    unit = f"{staging}:L"
+    record = collector.state["units"]["fund_basic"][unit]
+    assert record["source_row_count"] == 2
+    assert record["landed_a_row_count"] == 0
+    assert record["known_excluded_row_count"] == 2
+    assert record["quarantined_unknown_row_count"] == 0
+    assert (
+        record["source_row_count"]
+        == record["landed_a_row_count"]
+        + record["known_excluded_row_count"]
+        + record["quarantined_unknown_row_count"]
+    )
+    receipt = record["request_receipts"][0]
+    assert receipt["non_canonical_identity_row_count"] == 1
+    assert spine._unit_done(collector.state, tmp_path, "fund_basic", unit) is True
+
+    # compile_security_master must not crash on the raw stored fund frame either
+    # (its own fund loop re-parses ts_code independently of _validate_response_binding).
+    master, _ = spine.compile_security_master(tmp_path, staging)
+    classifications = spine._read_parquet_strict(
+        spine._reference_derived_path(tmp_path, "instrument_classification.parquet", staging)
+    )
+    fund_rows = classifications[classifications["security_class"] == "exchange_fund"]
+    assert "1610221.SZ" in set(fund_rows["ticker"])
+    assert "1610221.SZ" in set(fund_rows["source_ts_code"])
+    assert set(fund_rows["scope_classification"]) == {"known_out_of_scope"}
+    non_canonical_source = fund_rows[fund_rows["ticker"] == "1610221.SZ"]
+    assert non_canonical_source["classification_source"].tolist() == [
+        "tushare.fund_basic_non_canonical_ts_code",
+    ]
+
+
+def _non_canonical_bse_mapping_row(**overrides: Any) -> dict:
+    """A non-canonical vendor code in the BSE old-code -> 920-code alias table."""
+    row = {
+        "name": "样本", "o_code": "1234567.SZ", "n_code": "920163.BJ", "list_date": "20200727",
+    }
+    row.update(overrides)
+    return row
+
+
+def test_bse_alias_map_non_canonical_row_is_skipped_not_fatal():
+    """A non-canonical o_code/n_code in bse_mapping does not crash alias building --
+    it simply cannot alias, so it contributes no entry."""
+    good = pd.DataFrame([{
+        "name": "方大新材", "o_code": "838163.BJ", "n_code": "920163.BJ", "list_date": "20200727",
+    }])
+    contaminated = pd.concat(
+        [good, pd.DataFrame([_non_canonical_bse_mapping_row()])], ignore_index=True,
+    )
+    aliases = spine._bse_alias_map(contaminated)
+    assert aliases == {"838163.BJ": "920163.BJ"}
+
+
+def test_bse_alias_map_non_bse_venue_still_fatal_for_a_canonical_row():
+    """A canonically-parseable row that fails the BSE-venue semantic check stays
+    fatal -- the classify-don't-crash treatment only applies to rows that fail
+    canonical_identity itself, never to a parseable-but-wrong-venue row."""
+    bad_venue = pd.DataFrame([{
+        "name": "样本", "o_code": "600519.SH", "n_code": "920163.BJ", "list_date": "20200727",
+    }])
+    with pytest.raises(spine.SpineError, match="non-BSE row"):
+        spine._bse_alias_map(bad_venue)
+
+
+def test_bse_mapping_non_canonical_row_end_to_end_does_not_crash_reference_or_compile(tmp_path):
+    """A non-canonical bse_mapping vendor row must not crash collect_reference (via
+    _normalise_bse_mapping's validation call) or compile_security_master's own
+    alias-row loop, which re-reads the raw stored bse_mapping parquet directly
+    rather than going through _bse_alias_map."""
+    def fake(endpoint, fields="", **params):
+        if endpoint == "bse_mapping":
+            return pd.DataFrame([
+                {"name": "方大新材", "o_code": "838163.BJ", "n_code": "920163.BJ",
+                 "list_date": "20200727"},
+                _non_canonical_bse_mapping_row(),
+            ])
+        if endpoint == "stock_basic":
+            return _stock_basic_rows()[(params["exchange"], params["list_status"])].copy()
+        if endpoint == "fund_basic":
+            return _fund_basic_rows()[params["status"]].copy()
+        raise AssertionError(f"unexpected endpoint in reference-only test: {endpoint}")
+
+    collector = spine.TushareAShareSpineCollector(tmp_path, query=fake, now=lambda: NOW)
+    ready = collector.collect_reference()
+    assert ready is True
+
+    staging = collector.state["reference_generation"]["current_id"]
+    master, alias_frame = spine.compile_security_master(tmp_path, staging)
+    # The valid alias still lands; the non-canonical pair contributes nothing.
+    assert "838163.BJ" in set(alias_frame["alias_ticker"])
+    assert "920163.BJ" in set(master["ticker"])
+    assert "1234567.SZ" not in set(alias_frame["alias_ticker"])
+
+
+def test_daily_ticker_shard_response_crossing_requested_ts_code_stays_fatal():
+    """A ticker-shard response for a foreign code IS the request subject (case
+    2c in the non-canonical-identity sweep): it must stay fatal even though it
+    is a row-level binding check, because a cross-wired response here is
+    exactly the cross-wiring detector, never a legitimate non-canonical vendor
+    payload shape."""
+    with pytest.raises(spine.SpineError, match="crossed the requested ts_code"):
+        spine._validate_response_binding(
+            "daily", _daily_rows("20240102"),
+            {"trade_date": "20240102", "ts_code": "600519.SH"},
+        )
+
+
 def test_rejected_response_receipt_preserves_observed_rows_columns_and_hash(tmp_path):
     malformed = pd.DataFrame([{"ts_code": "600519.SH", "trade_date": "20240102"}])
     collector = spine.TushareAShareSpineCollector(
