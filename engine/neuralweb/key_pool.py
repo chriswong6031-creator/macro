@@ -66,6 +66,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import stat
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -764,6 +765,403 @@ def usage_snapshot(root: Path | None = None) -> list[dict[str, Any]]:
     except Exception as exc:  # noqa: BLE001
         log.warning("key_pool.usage_snapshot: %s", exc)
         return []
+
+
+# ── Capacity Fabric read-only observation seam ───────────────────────────────
+
+_CAPACITY_KEY_IDS = (
+    "claude_code_oauth",
+    *POOL_CAPABILITY_IDS,
+    "codex_account",
+    "codex_account_2",
+    "codex_account_3",
+    "deepseek_api_key",
+)
+_CAPACITY_LEDGER_ID = {
+    "claude_code_oauth": "legacy",
+    **{capability_id: capability_id for capability_id in POOL_CAPABILITY_IDS},
+    "codex_account": "codex_account",
+    "codex_account_2": "codex_account_2",
+    "codex_account_3": "codex_account_3",
+    "deepseek_api_key": "deepseek_api_key",
+}
+
+
+def _capacity_read_jsonl(path: Path, schema: str) -> dict[str, Any]:
+    """Strictly read one Provider Control JSONL source for capacity use."""
+    try:
+        mode = path.lstat().st_mode
+    except FileNotFoundError:
+        return {"quality": "missing", "rows": []}
+    except OSError:
+        return {"quality": "unreadable", "rows": []}
+    if stat.S_ISLNK(mode) or not stat.S_ISREG(mode):
+        return {"quality": "unreadable", "rows": []}
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeError):
+        return {"quality": "unreadable", "rows": []}
+
+    rows: list[dict[str, Any]] = []
+    for line in lines:
+        if not line.strip():
+            continue
+        try:
+            row = json.loads(line)
+        except (TypeError, ValueError, json.JSONDecodeError):
+            return {"quality": "corrupt", "rows": []}
+        if not isinstance(row, dict) or row.get("schema") != schema:
+            return {"quality": "corrupt", "rows": []}
+        rows.append(row)
+    return {"quality": "ok", "rows": rows}
+
+
+def _capacity_enabled_set() -> dict[str, Any]:
+    """Observe METAB_KEYS_ENABLED without inheriting its fail-open errors."""
+    try:
+        raw = os.environ.get("METAB_KEYS_ENABLED", "").strip()
+    except Exception:  # noqa: BLE001
+        return {"quality": "unreadable", "all": False, "ids": set()}
+    if not raw:
+        return {"quality": "ok", "all": True, "ids": set()}
+
+    enabled: set[str] = set()
+    saw_invalid = False
+    for token in raw.split(","):
+        token = token.strip()
+        if not token:
+            continue
+        if token == "legacy":
+            enabled.add("legacy")
+        elif token.isdigit() and 1 <= int(token) <= len(POOL_CAPABILITY_IDS):
+            enabled.add(f"claude_code_oauth_{int(token)}")
+        else:
+            saw_invalid = True
+    if not enabled and saw_invalid:
+        return {"quality": "corrupt", "all": False, "ids": set()}
+    return {"quality": "ok", "all": False, "ids": enabled}
+
+
+def _capacity_cooling_state(
+    key_id: str,
+    rows: list[dict[str, Any]],
+    now: datetime,
+) -> dict[str, Any]:
+    """Evaluate cooling from a complete strict ledger without fail-soft false."""
+    relevant = [row for row in rows if row.get("key_id") == key_id]
+    for row in relevant:
+        if not isinstance(row.get("ts"), str) or _parse_ts(row["ts"]) is None:
+            return {"quality": "corrupt", "active": None}
+
+    ok_times = [
+        _parse_ts(row["ts"])
+        for row in relevant
+        if row.get("outcome") == "ok"
+    ]
+    ok_times = [value for value in ok_times if value is not None]
+    latest_by_kind: dict[str, dict[str, Any]] = {}
+    for row in sorted(relevant, key=lambda item: _parse_ts(item["ts"]) or datetime.min.replace(tzinfo=timezone.utc)):
+        if row.get("outcome") not in ("rate_limited", "auth_failed"):
+            continue
+        if not row.get("reset_hint"):
+            return {"quality": "corrupt", "active": None}
+        kind = str(row.get("cool_kind") or "window")
+        if kind not in {"window", "weekly", "auth"}:
+            return {"quality": "corrupt", "active": None}
+        if _parse_ts(str(row.get("reset_hint"))) is None:
+            return {"quality": "corrupt", "active": None}
+        latest_by_kind[kind] = row
+
+    active_rows: list[dict[str, Any]] = []
+    for kind, row in latest_by_kind.items():
+        reset_at = _parse_ts(str(row["reset_hint"]))
+        if reset_at is None or now >= reset_at:
+            continue
+        if kind == "auth":
+            row_at = _parse_ts(str(row["ts"]))
+            if row_at is not None and any(value >= row_at for value in ok_times):
+                continue
+        active_rows.append(row)
+
+    if not active_rows:
+        return {
+            "quality": "ok",
+            "active": False,
+            "kind": None,
+            "reset_at": None,
+            "evidence": "exact",
+            "observed_at": None,
+        }
+    chosen = min(
+        active_rows,
+        key=lambda item: _parse_ts(str(item["reset_hint"])) or datetime.max.replace(tzinfo=timezone.utc),
+    )
+    return {
+        "quality": "ok",
+        "active": True,
+        "kind": str(chosen.get("cool_kind") or "window"),
+        "reset_at": str(chosen["reset_hint"]),
+        # Local application of the cooling timer is exact, but the active
+        # reset itself came from provider evidence.
+        "evidence": "provider_reported",
+        "observed_at": str(chosen["ts"]),
+    }
+
+
+def capacity_key_observations(
+    root: Path | None = None,
+    *,
+    state_root: Path | None = None,
+    observed_at: datetime | None = None,
+) -> dict[str, Any]:
+    """Return secret-free Claude/DeepSeek observations with source quality.
+
+    This is deliberately separate from :func:`usage_snapshot`, whose admin
+    contract combines enablement/fallback and renders display zeros.  The
+    capacity seam preserves a reviewed inventory, observes credential presence
+    before enablement filtering, and distinguishes missing/corrupt/unreadable
+    ledgers from a complete source proving a negative.
+    """
+    now = (observed_at or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    repo_root = root if root is not None else _repo_root()
+    telemetry_root = state_root if state_root is not None else _state_root()
+    result: dict[str, Any] = {"quality": "ok", "slots": [], "codes": []}
+
+    try:
+        import yaml  # noqa: PLC0415
+
+        manifest_path = _manifest_path(repo_root)
+        try:
+            manifest_mode = manifest_path.lstat().st_mode
+        except FileNotFoundError:
+            manifest_quality = "missing"
+            manifest_rows: dict[str, dict[str, Any]] = {}
+        except OSError:
+            manifest_quality = "unreadable"
+            manifest_rows = {}
+        else:
+            if stat.S_ISLNK(manifest_mode) or not stat.S_ISREG(manifest_mode):
+                manifest_quality = "unreadable"
+                manifest_rows = {}
+            else:
+                raw = yaml.safe_load(manifest_path.read_text(encoding="utf-8")) or {}
+                capabilities = raw.get("capabilities") if isinstance(raw, dict) else None
+                if not isinstance(capabilities, list):
+                    raise ValueError("capabilities must be a list")
+                manifest_rows = {}
+                for row in capabilities:
+                    if not isinstance(row, dict):
+                        raise ValueError("capability row must be an object")
+                    capability_id = row.get("capability_id")
+                    if capability_id in _CAPACITY_KEY_IDS:
+                        if capability_id in manifest_rows:
+                            raise ValueError("duplicate capacity capability")
+                        manifest_rows[str(capability_id)] = row
+                manifest_quality = "ok"
+    except (OSError, UnicodeError):
+        manifest_quality = "unreadable"
+        manifest_rows = {}
+    except Exception:  # noqa: BLE001
+        manifest_quality = "corrupt"
+        manifest_rows = {}
+
+    ledger = _capacity_read_jsonl(Path(telemetry_root) / _LEDGER_REL, _SCHEMA)
+    usage = _capacity_read_jsonl(Path(telemetry_root) / _USAGE_LEDGER_REL, _USAGE_SCHEMA)
+    enabled_source = _capacity_enabled_set()
+
+    known_ledger_ids = set(_CAPACITY_LEDGER_ID.values())
+    if ledger["quality"] == "ok":
+        for row in ledger["rows"]:
+            key_id = row.get("key_id")
+            outcome = row.get("outcome")
+            est_tokens = row.get("est_tokens")
+            if (
+                not isinstance(key_id, str)
+                or not key_id
+                or _parse_ts(str(row.get("ts") or "")) is None
+                or outcome not in {"ok", "rate_limited", "auth_failed", "error"}
+                or isinstance(est_tokens, bool)
+                or not isinstance(est_tokens, int)
+                or est_tokens < 0
+            ):
+                ledger = {"quality": "corrupt", "rows": []}
+                break
+            if outcome in {"rate_limited", "auth_failed"} and (
+                row.get("cool_kind") not in {"window", "weekly", "auth"}
+                or _parse_ts(str(row.get("reset_hint") or "")) is None
+            ):
+                ledger = {"quality": "corrupt", "rows": []}
+                break
+            if key_id not in known_ledger_ids:
+                result["codes"].append("PROVIDER_INVENTORY_UNKNOWN")
+
+    if usage["quality"] == "ok":
+        for row in usage["rows"]:
+            key_id = row.get("key_id")
+            status = row.get("status")
+            if (
+                not isinstance(key_id, str)
+                or not key_id
+                or _parse_ts(str(row.get("ts") or "")) is None
+                or isinstance(status, bool)
+                or not isinstance(status, int)
+                or not isinstance(row.get("headers"), dict)
+            ):
+                usage = {"quality": "corrupt", "rows": []}
+                break
+            if key_id not in known_ledger_ids:
+                result["codes"].append("PROVIDER_INVENTORY_UNKNOWN")
+
+    if manifest_quality != "ok":
+        result["quality"] = manifest_quality
+        quality_code = {
+            "unreadable": "SOURCE_UNREADABLE",
+            "corrupt": "SOURCE_CORRUPT",
+        }.get(manifest_quality, "PROVIDER_INVENTORY_UNKNOWN")
+        result["codes"].extend(["PROVIDER_INVENTORY_UNKNOWN", quality_code])
+
+    for capability_id in _CAPACITY_KEY_IDS:
+        ledger_id = _CAPACITY_LEDGER_ID[capability_id]
+        codes: list[str] = []
+        manifest_row = manifest_rows.get(capability_id)
+
+        present: bool | None = None
+        enabled: bool | None = None
+        if manifest_quality == "ok" and manifest_row is not None:
+            secret_ref = manifest_row.get("secret_ref")
+            if isinstance(secret_ref, str) and secret_ref:
+                try:
+                    present = bool(os.environ.get(secret_ref, ""))
+                except Exception:  # noqa: BLE001
+                    codes.extend(["SOURCE_UNREADABLE", "PROVIDER_PRESENCE_UNKNOWN"])
+            else:
+                codes.extend(["SOURCE_CORRUPT", "PROVIDER_PRESENCE_UNKNOWN"])
+
+            kill_state = str(manifest_row.get("kill_state") or "active")
+            if kill_state != "active":
+                enabled = False
+            elif capability_id == "deepseek_api_key":
+                enabled = True
+            elif enabled_source["quality"] == "ok":
+                enabled = bool(
+                    enabled_source["all"] or ledger_id in enabled_source["ids"]
+                )
+            else:
+                quality_code = (
+                    "SOURCE_CORRUPT"
+                    if enabled_source["quality"] == "corrupt"
+                    else "SOURCE_UNREADABLE"
+                )
+                codes.extend(["PROVIDER_ENABLEMENT_UNKNOWN", quality_code])
+        else:
+            codes.extend(["PROVIDER_INVENTORY_UNKNOWN", "PROVIDER_PRESENCE_UNKNOWN", "PROVIDER_ENABLEMENT_UNKNOWN"])
+
+        if present is None:
+            codes.append("PROVIDER_PRESENCE_UNKNOWN")
+        if enabled is None:
+            codes.append("PROVIDER_ENABLEMENT_UNKNOWN")
+
+        if ledger["quality"] == "ok":
+            cooling = _capacity_cooling_state(ledger_id, ledger["rows"], now)
+            if cooling["quality"] != "ok":
+                cooling = {"quality": "corrupt", "active": None}
+                codes.extend(["SOURCE_CORRUPT", "PROVIDER_COOLING_UNKNOWN"])
+        else:
+            cooling = {"quality": ledger["quality"], "active": None}
+            quality_code = {
+                "corrupt": "SOURCE_CORRUPT",
+                "unreadable": "SOURCE_UNREADABLE",
+            }.get(ledger["quality"], "PROVIDER_COOLING_UNKNOWN")
+            codes.extend(["PROVIDER_COOLING_UNKNOWN", quality_code])
+
+        key_rows = [
+            row for row in ledger.get("rows", [])
+            if row.get("key_id") == ledger_id
+        ] if ledger["quality"] == "ok" else []
+        valid_times = [
+            (row, _parse_ts(str(row.get("ts") or "")))
+            for row in key_rows
+        ]
+        if any(ts is None for _row, ts in valid_times):
+            valid_times = []
+            codes.extend(["SOURCE_CORRUPT", "PROVIDER_BUDGET_UNKNOWN"])
+        timed_rows = [(row, ts) for row, ts in valid_times if ts is not None]
+        latest = max(timed_rows, key=lambda item: item[1], default=None)
+        five_cutoff = now - timedelta(seconds=_WINDOW_SECONDS)
+        week_cutoff = now - timedelta(seconds=_WEEK_SECONDS)
+        est_5h = None
+        est_weekly = None
+        if timed_rows:
+            try:
+                est_5h = sum(
+                    int(row.get("est_tokens", 0) or 0)
+                    for row, ts in timed_rows if ts >= five_cutoff
+                )
+                est_weekly = sum(
+                    int(row.get("est_tokens", 0) or 0)
+                    for row, ts in timed_rows if ts >= week_cutoff
+                )
+            except (TypeError, ValueError, OverflowError):
+                est_5h = None
+                est_weekly = None
+                codes.extend(["SOURCE_CORRUPT", "PROVIDER_BUDGET_UNKNOWN"])
+
+        header_row = None
+        if usage["quality"] == "ok":
+            candidates = []
+            for row in usage["rows"]:
+                if row.get("key_id") != ledger_id:
+                    continue
+                ts = _parse_ts(str(row.get("ts") or ""))
+                headers = row.get("headers")
+                if ts is None or not isinstance(headers, dict):
+                    codes.extend(["SOURCE_CORRUPT", "PROVIDER_BUDGET_UNKNOWN"])
+                    candidates = []
+                    header_row = None
+                    break
+                safe_prefixes = (
+                    "anthropic-ratelimit",
+                    "codex-ratelimit",
+                    "x-ratelimit-",
+                    "ratelimit-",
+                    "retry-after",
+                )
+                if any(not str(key).lower().startswith(safe_prefixes) for key in headers):
+                    codes.extend(["SOURCE_CORRUPT", "PROVIDER_BUDGET_UNKNOWN"])
+                    candidates = []
+                    header_row = None
+                    break
+                candidates.append((row, ts))
+            if candidates:
+                header_row = max(candidates, key=lambda item: item[1])[0]
+        else:
+            quality_code = {
+                "corrupt": "SOURCE_CORRUPT",
+                "unreadable": "SOURCE_UNREADABLE",
+            }.get(usage["quality"], "PROVIDER_BUDGET_UNKNOWN")
+            codes.extend(["PROVIDER_BUDGET_UNKNOWN", quality_code])
+
+        result["slots"].append({
+            "capability_id": capability_id,
+            "source_key_id": ledger_id,
+            "present": present,
+            "enabled": enabled,
+            "cooling": cooling,
+            "budget": {
+                "headers": dict(header_row.get("headers") or {}) if header_row else {},
+                "headers_ts": header_row.get("ts") if header_row else None,
+                "est_5h_tokens": est_5h,
+                "est_weekly_tokens": est_weekly,
+            },
+            "last_outcome": {
+                "class": str(latest[0].get("outcome") or "unknown") if latest else "unknown",
+                "observed_at": str(latest[0].get("ts")) if latest else None,
+            },
+            "codes": sorted(set(codes)),
+        })
+
+    result["codes"] = sorted(set(result["codes"]))
+    return result
 
 
 # ── Public API ────────────────────────────────────────────────────────────────

@@ -7,7 +7,7 @@ objective: >
   native quota/cooling truth, choose among already-eligible workers deterministically, prefer
   subscription/local capacity where policy permits, preserve frontier reserves, and continue
   safely across quota exhaustion without creating duplicate execution or another lifecycle plane.
-status: active
+status: awaiting_review
 program: shared-ai-provider-control
 p0: EXECUTIVE_OS
 repos: [macro, mastermind]
@@ -21,15 +21,16 @@ waves:
     status: done
   - id: CF1
     title: Secret-free provider-capacity projection over existing Macro provider state
-    status: todo
+    status: in_progress
+    pr: 6297
     depends_on: [F0]
     next_action: >
-      Implement one no-write Macro vertical from existing key-pool/budget/provider state to
-      `mastermind.provider_capacity.v1` and a real JSON/operator consumer. Where current dispatch/admin
-      helpers conflate presence, enablement, executable readiness or fail-soft source quality, add only
-      narrow read-only observation seams inside the existing Provider Control owner; do not change
-      dispatch behavior. Prove exact unknown/stale/correction/source-quality/semantic-identity and
-      secret-redline behavior. Do not modify Executive placement.
+      Resolve the record-bearing candidate SHA from Git after the 2026-08-25 return-packet commit,
+      re-pin and reconcile the newer protected main, repeat the complete local proof, then obtain
+      exact-head hosted proof on the same draft HOLD-FOR-SOL PR #6297. Perform Sol REVIEW_RETURN
+      against that exact head. Keep the PR draft and unarmed; CF1 remains BUILT_PENDING_SOL and
+      unaccepted until Sol explicitly releases the hold. Do not modify Executive placement or
+      begin a provider login ceremony.
   - id: CF2-F
     title: Freeze Executive claim-time capacity evidence and acquisition against landed schema v4
     status: todo
@@ -91,6 +92,8 @@ artifacts:
   - research/MASTERMIND_EXECUTIVE_CAPACITY_FABRIC_F0_PLACEMENT_AMENDMENT_2026-08-22.md
   - research/MASTERMIND_EXECUTIVE_CAPACITY_FABRIC_F0_SEMANTIC_IDENTITY_AMENDMENT_2026-08-22.md
   - research/MASTERMIND_EXECUTIVE_CAPACITY_FABRIC_F0_OBSERVATION_NULL_AMENDMENT_2026-08-22.md
+  - agentos/handoffs/EXECUTIVE-CAPACITY-FABRIC-2026-08-25.md
+  - docs/superpowers/plans/2026-08-25-mas-126-cf1-reconciliation.md
 landmines:
   - "Macro `shared-ai-provider-control` already owns provider availability, auth pools, cooling and quota state; do not create ProviderAccount/QuotaHorizon truth tables in Executive OS."
   - "`usage_snapshot()` is a display aggregate, not a normalized truth contract. Its numeric defaults and fail-soft joins cannot be mapped 1:1 into provider_capacity.v1."
@@ -134,18 +137,20 @@ do_not_redo:
   - "Do not add Z.AI, Alibaba, Claude Code, Grok, Cursor, OpenRouter or local-provider adapters in CF1; prove the contract first on existing Codex/Claude/DeepSeek sources."
   - "Do not widen Capacity Fabric into Wake, Slack dispatch, Control Room P1, merge/deploy authority or capital/trading authority."
 next_action: >
-  After F0 is accepted on Macro main, commission CF1 only: a deterministic, secret-free,
-  no-write `mastermind.provider_capacity.v1` producer over existing provider-control state with
-  source-quality-preserving read-only observations, a real machine/operator consumer and exact-head
-  proof. Keep CF2-F/CF2-I, RF1, HF1, PF1 and MH1 held.
+  Resolve the final record-bearing candidate SHA after the 2026-08-25 return-packet commit, re-pin
+  and reconcile protected main, repeat local proof, and complete the exact-head hosted-CI receipt
+  for draft HOLD-FOR-SOL PR #6297. Then run Sol REVIEW_RETURN against that same head. Keep the PR
+  draft/unarmed and keep CF2-F/CF2-I, RF1, HF1, PF1, MH1, Personal Pro login/readiness and all
+  provider expansion, including Cursor and Grok, held.
 ---
 
 ## Capability state
 
-`SPEC_ONLY` at F0. The provider-control substrate itself is operating and multi-account-aware,
-but no canonical `mastermind.provider_capacity.v1` producer exists and Executive OS does not yet
-consume provider capacity for worker placement. Multi-host Executive execution is also not built;
-current reviewed control/broker architecture is local-host only.
+`BUILT_PENDING_SOL` for CF1 in draft PR #6297. The candidate projects the reviewed existing-provider
+inventory through a strict no-write `mastermind.provider_capacity.v1` stdout consumer, but it is not
+accepted, merged, deployed or available to Executive placement. Executive OS still does not consume
+provider capacity for worker placement. Multi-host Executive execution is also not built; current
+reviewed control/broker architecture is local-host only.
 
 ## 10/10 end-state
 
