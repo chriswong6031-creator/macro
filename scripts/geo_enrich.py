@@ -15,6 +15,15 @@ Runs as a GitHub Action cron (.github/workflows/geo-enrich.yml) and is invokable
 the admin console. Reads Supabase through the Management API SQL endpoint — the same mechanism
 admin/users.py uses — so it needs no DB driver.
 
+Failure semantics (three distinct states — do not collapse them):
+  absent credential      -> exit 0, "skipping (not configured)". The lane is off, not broken.
+  rejected credential    -> exit 3 + a ::error annotation naming the secret to rotate. The
+                            lane IS broken; it stays red rather than serving stale geography
+                            behind a green badge. Management API PATs expire (~30 days).
+  provider 5xx / 429     -> the IP stays pending and is retried next tick. Nothing is written,
+                            so last-known-good survives and nothing is stamped fresh.
+An unresolvable IP is ABSTAINED on, never guessed and never NULL-pinned.
+
 Env:
   SUPABASE_ACCESS_TOKEN / SUPABASE_PAT   sbp_… PAT (Management API)
   SUPABASE_PROJECT_REF                   default fsldfzlxyavsuwqbceod
@@ -42,16 +51,42 @@ QUERY_URL = f"https://api.supabase.com/v1/projects/{PROJECT_REF}/database/query"
 _UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0 Safari/537.36"
 
 
+class CredentialRejected(RuntimeError):
+    """The Management API answered 401/403 — the PAT is present but expired or revoked.
+
+    Deliberately distinct from the two neighbouring states: an ABSENT credential means the
+    lane was never switched on (clean exit 0), and a 5xx means the provider is briefly down
+    (retried on the next tick). This one needs a human to rotate SUPABASE_ACCESS_TOKEN, so
+    it is named loudly and is never counted as a per-IP failure — see run()."""
+
+    def __init__(self, code: int, detail: str = "") -> None:
+        self.code = code
+        self.detail = detail
+        super().__init__(f"Supabase Management API rejected SUPABASE_ACCESS_TOKEN (HTTP {code})")
+
+
 def _sql(query: str):
-    """Run SQL via the Supabase Management API; returns a list of row dicts (or [])."""
+    """Run SQL via the Supabase Management API; returns a list of row dicts (or []).
+
+    A 401/403 is re-raised as CredentialRejected so callers can tell "our token is dead"
+    apart from "this one statement failed". Every other HTTPError propagates unchanged."""
     req = urllib.request.Request(
         QUERY_URL,
         data=json.dumps({"query": query}).encode(),
         method="POST",
         headers={"Authorization": f"Bearer {PAT}", "Content-Type": "application/json", "User-Agent": _UA},
     )
-    with urllib.request.urlopen(req, timeout=30) as r:
-        body = r.read().decode()
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            body = r.read().decode()
+    except urllib.error.HTTPError as ex:
+        if ex.code in (401, 403):
+            try:
+                detail = ex.read().decode("utf-8", "replace")[:200]
+            except Exception:
+                detail = ""
+            raise CredentialRejected(ex.code, detail) from ex
+        raise
     return json.loads(body) if body else []
 
 
@@ -140,11 +175,23 @@ def upsert(ip: str, g: dict) -> None:
     )
 
 
+def _credential_fault(ex: CredentialRejected, **counts) -> dict:
+    """Terminal, named summary for a rejected credential — never ok, never swallowed."""
+    return {"ok": False, "reason": "credential_rejected", "code": ex.code,
+            "detail": ex.detail, **counts}
+
+
 def run(budget: int = DEFAULT_BUDGET) -> dict:
     """Enrich up to `budget` pending IPs. Returns a summary dict (safe to call from the admin)."""
     if not PAT or not IPLOCATE_KEY:
         return {"ok": False, "reason": "missing SUPABASE_ACCESS_TOKEN or IPLOCATE_API_KEY"}
-    ips = pending_ips(budget)
+    try:
+        ips = pending_ips(budget)
+    except CredentialRejected as ex:
+        # The READ plane rejected the PAT. This is exactly where the lane died at
+        # 2026-08-13T13:08Z (30 days after the token was minted) and stayed dead.
+        return _credential_fault(ex, pending=0, enriched=0, failed=0, skipped=0,
+                                 unresolved=0, rate_limited=False)
     done, failed, skipped, unresolved = 0, 0, 0, 0
     for ip in ips:
         if not _routable(ip):
@@ -157,6 +204,12 @@ def run(budget: int = DEFAULT_BUDGET) -> dict:
                 continue
             upsert(ip, g)
             done += 1
+        except CredentialRejected as ex:
+            # MUST precede `except Exception` (CredentialRejected is a RuntimeError). A dead
+            # PAT fails every remaining upsert identically; counting those as per-IP `failed`
+            # returned ok=True -> exit 0, painting the lane GREEN having written nothing.
+            return _credential_fault(ex, pending=len(ips), enriched=done, failed=failed,
+                                     skipped=skipped, unresolved=unresolved, rate_limited=False)
         except urllib.error.HTTPError as ex:
             if ex.code == 429:
                 return {"ok": True, "pending": len(ips), "enriched": done, "failed": failed,
@@ -174,12 +227,30 @@ def main() -> int:
     print(f"geo_enrich: {json.dumps(res)}")
     if res.get("ok"):
         return 0
+    reason = str(res.get("reason", ""))
     # A not-yet-configured lane (missing secret) is a clean skip, not a failure — exiting
     # non-zero here turns an unset-secret state into a persistent red X on the every-30-min
     # cron. Only genuine runtime failures should trip the run.
-    if str(res.get("reason", "")).startswith("missing "):
+    if reason.startswith("missing "):
         print("geo_enrich: skipping (not configured) — set SUPABASE_ACCESS_TOKEN + IPLOCATE_API_KEY to enable")
         return 0
+    if reason == "credential_rejected":
+        # A CONFIGURED lane whose credential died IS broken, so it stays red — going green
+        # here would serve stale geography behind a passing badge. But it must SAY so: this
+        # lane sat red for 13 days behind a bare urllib traceback that named neither the
+        # credential nor the remedy. The annotation must START the line and be a bare print
+        # — a logger prefix makes GitHub drop it silently.
+        print(
+            f"::error title=geo_enrich_credential::Supabase Management API rejected "
+            f"SUPABASE_ACCESS_TOKEN (HTTP {res.get('code')}) — the sbp_ Management API PAT is "
+            f"expired or revoked. ip_geo enrichment is FROZEN: analytics events keep arriving "
+            f"while their geography goes stale. Rotate the SUPABASE_ACCESS_TOKEN repo secret.",
+            flush=True,
+        )
+        detail = str(res.get("detail") or "").replace("\n", " ").replace("\r", " ").strip()
+        if detail:
+            print(f"geo_enrich: provider said: {detail}", flush=True)
+        return 3
     return 2
 
 
