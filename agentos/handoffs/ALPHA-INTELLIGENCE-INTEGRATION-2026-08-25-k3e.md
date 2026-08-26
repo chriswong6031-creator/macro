@@ -50,9 +50,13 @@ changed:
   - path: tests/fixtures/opportunity_evidence/
     what: >
       Golden fixtures (IMXI DRL event; FPI absence typing; gold/real-rate
-      dual-read; optional SRC-A1 prospective-expectation family) and hostile
-      fixtures for all ten commissioned mutation classes, with byte/SHA-256
-      manifest receipts.
+      dual-read; optional SRC-A1 prospective-expectation family) and 16 hostile
+      fixtures covering all ten commissioned mutation classes plus the three
+      Sol REQUEST_CHANGES classes (admission-as-entry, retrospective-t0,
+      denominator-tamper), with byte/SHA-256 manifest receipts. Fixtures are
+      GENERATED from the builders in the test file — regenerate with
+      `python3 -m tests.test_opportunity_evidence_vector_contract`, never
+      hand-edit a fixture or the manifest.
   - path: tests/test_opportunity_evidence_vector_contract.py
     what: >
       Executable proofs: schema/registry hygiene, families.yml join, K1
@@ -89,7 +93,7 @@ verified:
     result: 0 errors (inherited repository warnings only).
   - claim: The contract suite (mutation kills, family join, K1 pins, determinism, no-store) is green on the final candidate.
     command: python3 -m pytest -q tests/test_opportunity_evidence_vector_contract.py
-    result: 82 passed (post-Sol-repair; includes the 20 REQUEST_CHANGES proofs).
+    result: 84 passed (post-Sol-repair; includes the 22 REQUEST_CHANGES proofs).
   - claim: Every hostile fixture fires its commissioned code and every golden validates clean, verified independently of the suite's own assertions.
     command: python3 -c "import json,glob; from lib.opportunity_evidence import validate_vector; ..." (direct validate_vector sweep over tests/fixtures/opportunity_evidence/)
     result: >
