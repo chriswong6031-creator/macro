@@ -1,46 +1,36 @@
 ---
 key: PERSONAL-PRO-INGRESS-PRINCIPAL-GAP
 claim: >
-  As of 2026-08-25, the disposable S0-R1 fixture bot `U0BST4WG996` /
-  `MMX S0 Fixture` is again an active member of private channel `C0BRUL9F2V7`.
-  Mastermind PR #152 / protected merge `cdfecc6f6b382862238c15fe1d5bd646eb62213c`
-  repaired the canonical credential-safe readiness verifier's documented direct-run
-  entrypoint, but current canonical evidence still contains no live verifier PASS.
-  A fresh post-rejoin ChatGPT2 S0-R1 source probe was preserved with the reviewed
-  ChatGPT transport trailer but received no fixture receipt, so fixture event/listener
-  readiness remains unproven. Private C1 channel `C0BSGABKBFY` still contains only Chris
-  plus ChatGPT1/2/3 and no dedicated production Relay bot, and protected B1 source remains
-  explicitly development-unarmed: no real production Slack adapter/service currently
-  implements `SlackStateClient` for C1.
+  As of 2026-08-26, Mastermind PR #159 is merged as
+  `7d160ff47df1bca0ac6312141e6e1134bbce6539`, providing the approved
+  credential-safe S0 fixture metadata-verifier bridge. The helper is
+  BUILT_NOT_PROVEN because no live metadata-verifier receipt has yet been
+  returned from the Chairman Mac. The fresh post-rejoin S0-R1 source probe at
+  Slack TS `1787700074.181209` still has no fixture receipt, so fixture
+  auth/scopes/listener readiness remains unproven. C1 remains independently
+  nonterminal: Mastermind PR #155 is still the sole modifying C1 carrier and
+  has no implementation return or production Relay proof.
 falsifier: >
-  Through the approved secret-owning Keychain-to-stdin boundary, run
-  `python3 scripts/verify_slack_agent_dialogue_metadata.py --expected-team-id T0BRD2AQXQV
-  --expected-bot-user-id U0BST4WG996 --expected-scope groups:history
-  --expected-scope chat:write` without putting the bot token in chat, argv, environment,
-  shell variables, logs, temporary files or git. A PASS releases only the remainder of the
-  one authorized MAS-112 experiment: restore/prove the existing disposable listener path and
-  complete the accepted twenty-row S0-R1 matrix with zero Executive mutation. Independently,
-  C1 is disproved only after the bounded read-only production Slack adapter/service behind the
-  existing `SlackStateClient` contract is built and accepted, a dedicated least-privilege
-  Relay app/bot + host principal is provisioned, and the MAS-109 production proof passes.
+  Run the accepted PR #159 helper through its reviewed native host procedure and
+  return only its allowlisted metadata receipt. PASS for the existing fixture
+  identity and exact approved scopes releases only the remainder of the single
+  authorized MAS-112 experiment. Any identity/scope/auth/metadata refusal stops
+  for Sol with no additional Slack probe and no replacement fixture. C1 requires
+  a code return on existing PR #155 plus the separate MAS-109 production proof.
 so_what: >
-  Bot membership, a merged verifier launcher, or correct source-message framing is not S0-R1
-  PASS and must not release B2. The exact S0 continuation is live verifier qualification,
-  then the one authorized MAS-112 experiment on the same disposable carrier. C1 is not merely
-  an admin-provisioning gap: it has both a `NOT_BUILT` production adapter/service gap and an
-  unproven production Relay principal gap. Any Personal-Pro modifying CEO operation that
-  depends on this ingress path remains held until accepted S0-R1 and C1 proofs release B2,
-  followed separately by C2.
+  The prior S0 Keychain-coordinate blocker is closed, but helper merge is not
+  S0-R1 PASS and must not release B2. The sole S0 gate is now
+  LIVE_KEYCHAIN_VERIFIER_RECEIPT_REQUIRED. C1 remains held on its existing
+  singular carrier. B2/C2 remain held and zero Executive mutation has occurred.
 kind: runtime
-verified_at: 2026-08-25
+verified_at: 2026-08-26
 verified_by: >
-  Macro #6422 records the 2026-08-25 Slack topology/principal reconciliation. Mastermind
-  PR #152 / merge `cdfecc6f6b382862238c15fe1d5bd646eb62213c` is the immutable receipt for
-  the verifier-entrypoint repair. Current protected Mastermind
-  `integrations/slack_agent_dialogue/metadata_verifier.py` defines the credential-safe auth
-  verifier; `integrations/slack_executive/sol_state.py` explicitly declares B1 development-
-  unarmed and exposes only the injected `SlackStateClient` contract. A fresh Slack read after
-  the post-rejoin ChatGPT2 probe still shows no `MMX/S0_FIXTURE_RECEIPT_V1` response.
+  Mastermind PR #159 / merge `7d160ff47df1bca0ac6312141e6e1134bbce6539`;
+  final reviewed head `fbbdef60bbea262fede78ccd51387b6e817b1382`;
+  final CI `32943881890` SUCCESS and CodeQL SUCCESS. MAS-112 Linear records the
+  exact native continuation gate. Slack evidence still shows no fixture receipt
+  for source TS `1787700074.181209`. Mastermind PR #155 and its delivery-only
+  dispatch remain the implementation/transport evidence for C1.
 scope:
   - crypto-intelligence
   - executive-os
@@ -50,76 +40,59 @@ confidence: verified
 
 # Personal-Pro ingress principal gap
 
-The old S0 V1 proof and the current S0-R1 proof must not be conflated. MAS-106 remains an
-immutable completed BLOCK for the exact-whole-message carrier. Its historical disposable
-fixture was app `A0BS2DMVDC4`, bot `U0BST4WG996` / `MMX S0 Fixture`, in private channel
-`C0BRUL9F2V7`. The 2026-08-23 token-isolation falsifier remains valid adverse evidence about
-what happened then, but newer current-canon recovery law explicitly says not to replay that
-historical receipt as an automatic current credential blocker. Current readiness is decided
-by the reviewed credential-safe, allowlisted verifier path; secret values must never enter
-model-visible Slack settings, chat, logs, argv, environment, shell variables, temporary files
-or repository records.
-
-Current live membership for `C0BRUL9F2V7` contains Chris, ChatGPT1, ChatGPT2, ChatGPT3 and
-the same fixture bot `U0BST4WG996`. Slack resolves that principal as a current bot. This
-supersedes only the earlier discovery clause that the fixture principal was absent. It does
-**not** prove bot-token scope equality, Socket Mode/app readiness, credential safety, fixture
-parser behavior, receipt recovery, reconnect/restart behavior, three-seat determinism, or
-S0-R1 PASS.
+MAS-106 remains the immutable original whole-message S0 BLOCK. MAS-112 remains
+the only authorized framed-carrier retry. The existing disposable fixture and
+private test channel remain the only S0 fixture path; no S0-R2 or replacement
+fixture is authorized.
 
 ## S0-R1 current delta
 
-Mastermind PR #152 fixed a real prerequisite defect in the canonical verifier path. The
-Agent OS recovery command was documented as direct script execution, but the wrapper did not
-bootstrap the repository root and could fail with `ModuleNotFoundError: No module named
-'integrations'` from a clean checkout. The accepted repair was developed RED -> GREEN with a
-Python `-S` subprocess regression so an editable installation could not mask the defect, was
-reconciled onto the then-current protected base after branch protection correctly rejected a
-stale check context, and merged as
-`cdfecc6f6b382862238c15fe1d5bd646eb62213c`. This makes the verifier entrypoint callable; it
-does **not** make fixture credentials, scopes or listener readiness proven.
+Mastermind PR #152 first repaired the credential-safe metadata verifier's
+clean-checkout entrypoint. A later fresh ChatGPT2 post-rejoin source probe
+preserved the canonical two-line frame plus the reviewed ChatGPT transport
+trailer but received no fixture receipt, including on bounded reread. That
+proved source-message framing while leaving fixture auth/scopes/listener
+consumption unproven and forbidding blind message retry.
 
-After the fixture rejoined, ChatGPT2 posted fresh inert operation
-`s0-r1-seat2-postrejoin-20260825-001` at Slack source TS `1787700074.181209`. Slack preserved
-the exact two canonical payload lines and appended only the already-reviewed ChatGPT
-attribution trailer. The fixture emitted no receipt then or on a later bounded history reread.
-Historically, the same fixture replied to the original S0 probe within about one second with
-`MMX/S0_FIXTURE_RECEIPT_V1`, so the present absence is meaningful transport evidence: source
-message creation is live, while app/event-listener consumption is currently
-`DARK_OR_DISCONNECTED` or otherwise unproven. Do not send another probe until the approved
-live verifier passes; a missing receipt is not permission for blind retry.
+Chairman subsequently cleared the non-secret coordinate prerequisite for the
+existing replacement credential. Mastermind PR #159 then implemented the
+already-approved fixed host bridge and merged as
+`7d160ff47df1bca0ac6312141e6e1134bbce6539`. The reviewed implementation keeps
+credential retrieval and verifier delivery inside the approved native secret
+boundary and exposes only the verifier's allowlisted receipt.
 
-The two earlier ChatGPT2 MAS-112 source-only preflights remain useful framing evidence. They
-show that the hosted Slack action preserves the exact first-two-line framed payload and appends
-only the reviewed ChatGPT attribution trailer for ordinary and Unicode/escaped-newline cases.
-They do not prove event-delivery bytes, parser extraction, thread receipt,
-duplicate/reconnect/restart, ChatGPT1/3 behavior or the complete twenty-row S0-R1 matrix and
-must not be laundered into a PASS.
+The implementation has discriminating RED -> GREEN evidence. Hosted RED head
+`7d97f95b0f8b3c5c9d5b59e27eb283f964f08be1` failed exactly the deliberate
+child-interpreter-isolation regression; final reviewed head
+`fbbdef60bbea262fede78ccd51387b6e817b1382` passed CI run `32943881890`, and
+CodeQL reported no new alerts. This establishes only BUILT_NOT_PROVEN for the
+helper. No live fixture metadata PASS has been observed yet.
+
+Therefore the exact S0 continuation is singular: obtain the live allowlisted
+metadata-verifier receipt through the accepted PR #159 host procedure. PASS
+releases only the remainder of the existing MAS-112 three-seat/twenty-row
+experiment. Refusal stops for Sol. Until PASS, do not send another Slack probe,
+do not create or select another fixture, and do not begin B2.
 
 ## C1 current delta
 
-For C1, private `#sol-runtime` channel `C0BSGABKBFY` still has exactly Chris plus
-ChatGPT1/2/3. It has no bot, and current workspace search exposes no Relay identity. The
-channel topology is ready, but the dedicated company Relay app/bot and least-privilege host
-principal required for the production read proof are not proven present. A normal employee
-ChatGPT Slack identity cannot substitute for that automation principal.
+Private `#sol-runtime` channel `C0BSGABKBFY` still has Chairman plus
+ChatGPT1/2/3 only, with no production Relay bot and no `MMX/SOL_STATE_V1`
+publication.
 
-There is also a separate implementation gap that must survive future cold starts. Protected
-Mastermind `integrations/slack_executive/sol_state.py` explicitly describes B1 as a
-**development-unarmed** injected-client boundary. `SlackStateClient` has exactly the closed
-read/write methods required by the state publisher (`fetch_history`, `create_message`,
-`update_message`), but protected source contains no real production Slack adapter/service that
-implements that protocol or drives the R0 hot-state read -> publish/heartbeat loop. Therefore
-C1 is not simply waiting for someone to add a bot to `#sol-runtime`; the production read lane
-is still `NOT_BUILT` at that boundary and the production principal is separately unproven.
+Mastermind PR #155, branch
+`sol/personal-pro-c1-sol-state-production-20260825`, remains the sole modifying
+C1 carrier. Current GitHub truth is still a draft commission-only PR with no
+production adapter/service implementation return. The prior ChatGPT1 Slack
+dispatch remains DELIVERY_ONLY with no ACK/return, so delivery does not prove
+execution.
 
-C1 implementation must extend the existing publisher/client seam rather than create another
-state store, Relay lifecycle, queue, cursor, database or inbound command path. B2 still owns
-all inbound CEO command transport. C1 completion remains the real MAS-109 production proof,
-including exactly-one state-message recovery, three-seat readback, semantic-change/heartbeat,
-degraded/stale behavior, restart recovery, >1 ambiguity refusal, and zero inbound
-Job/Attempt/Worker/provider/Wake effects.
+C1 must reuse the existing `SolStatePublisher` and implement only the bounded
+read-only production `SlackStateClient` plus dedicated CeoIngress STATE
+reader/service on PR #155. It must not create a second state store, Relay
+lifecycle, queue, cursor, database or inbound command path. PR/CI can establish
+at most BUILT_NOT_PROVEN; C1 becomes PROVEN_LIVE only after the dedicated Relay
+principal/app and MAS-109 real production proof pass.
 
-None of these transport/admin observations is an Executive lifecycle event. No Job, Attempt,
-Worker, operation key or canonical CEO intent exists merely because a fixture bot is present,
-a channel exists, a verifier script is merged or an admin prerequisite is satisfied.
+None of these records creates an Executive Job, Attempt, Worker, operation key
+or CEO intent. B2 and C2 remain held.
