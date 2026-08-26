@@ -278,15 +278,38 @@ waves:
     title: Separate market promotion adjudications
     status: todo
     depends_on: [hk-race, ca-race]
+  - id: v37-canada
+    title: "Presentation lane: Canada Stock Dashboard V3.7 functional completeness"
+    status: done
+    pr: 6416
+    merge_sha: 41efeba82b0193dd9090c600567e0b551ad8dd98
+    completion: >
+      PROVEN_LIVE 2026-08-25 (entitled production matrix; record =
+      research/STOCK_DASHBOARD_V37_CANADA_ACCEPTANCE_2026-08-25.md).
+      Supersession law DEC:V37-SUPERSEDES-V36-ACCEPTANCE; review law = the
+      three committed SOL_* V3.7 packets (composition reference is never
+      semantic truth). Restored Track Record as Evidence & Record (moved
+      .trk owner DOM), owner-native Act-Now lane vocabulary, group-action
+      Expand Leadership, Sol-gate population law (no silent Top Picks→All).
+      Residuals (mechanism/bytes-proven): exact-390 production pixel pass;
+      final live-paint observation.
+  - id: v37-hk
+    title: "Presentation lane: HK V3.7 follower (census-first)"
+    status: in_progress
+    depends_on: [v37-canada]
 next_action: >
-  hk-discovery CLOSED 2026-08-23 with production receipts (wave entry).
-  Next lawful waves: hk-intel (HK-NATIVE-INTEL, depends on hk-discovery),
-  ca-intel, ca-pit — each needs its own commissioning decision. Optional
-  08-24 follow-up: confirm the first receipt written by the post-#6227
-  fail-closed code. Standing follow-up: ≈2026-08-26
-  verify the CA board-ledger-era-empty warning self-cleared (ledger-era wave
-  entry); if it persists once gradable current-era rows exist, investigate —
-  never silence.
+  PRESENTATION LANE (released 2026-08-25 by v37-canada PROVEN_LIVE): HK V3.7
+  follower under research/SOL_HK_V37_FOLLOWER_ARCHITECTURE.md —
+  feature-disposition census against current HK producers FIRST (Featured
+  cohort owner, live-plane existence, Southbound/A-H current producers),
+  then implement/review/merge/deploy/production-prove. INTELLIGENCE LANE
+  unchanged: hk-discovery CLOSED 2026-08-23 with production receipts (wave
+  entry). Next lawful waves: hk-intel (HK-NATIVE-INTEL, depends on
+  hk-discovery), ca-intel, ca-pit — each needs its own commissioning
+  decision. Standing follow-up: ≈2026-08-26 verify the CA
+  board-ledger-era-empty warning self-cleared (ledger-era wave entry); if it
+  persists once gradable current-era rows exist, investigate — never
+  silence.
 ---
 
 # HK + Canada Prophet revamp

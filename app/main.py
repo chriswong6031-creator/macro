@@ -1275,6 +1275,11 @@ def brain_stream(body: BrainChatRequest, request: Request, background: Backgroun
     POST body: same as /api/brain/chat.
     SSE events (always in this order):
         {"type":"meta","lane":...,"model":...,"thread_id":...,"quota":{...}}
+        {"type":"context_receipt","schema":"ai_context_receipt.v1",...}  (W1-C — every
+                                        native/instant/deep run, right after meta and
+                                        before any delta/tool event; the deterministic
+                                        effective-context resolution the turn used. See
+                                        research/DEEPVUE_W1C_CONTEXT_ENVELOPE_CONTRACT_2026-08-25.md.)
         {"type":"tool","name":"..."}            (progress, 0+ — during tool-calling phase)
         {"type":"annotate","symbol":...,...}    (when annotate_chart called, 0+)
         {"type":"delta","text":"..."}           (full buffered answer, after all tool turns)

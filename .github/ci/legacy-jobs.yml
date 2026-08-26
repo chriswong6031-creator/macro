@@ -2980,11 +2980,21 @@ jobs:
         # margin, block trades, buybacks, _first_seen_store. Same WIRING LAW as
         # the range-shard suite above: named by no run: step when it landed
         # (#5730), so workflow-yaml painted pack-1 red. Offline, no new deps.
+        # test_tushare_compliance_anti_resurrection.py joins here for the same
+        # reason and in the same breath as the guard it covers (#6207, Chairman
+        # override). That guard is the DURABLE half of the override: it fails CI
+        # when an active authority surface — the full-A contract, WS-CN-LIMIT-ALPHA,
+        # the R6 freeze/registry/command packet, the TuShare rights matrix, the
+        # China Alpha rights records — re-acquires a vendor-letter/written-grant/
+        # license-document requirement. Leaving it unnamed would reproduce exactly
+        # the hole this step's comment is about, and would make "enforced in CI"
+        # false the day it landed. Offline, no new deps.
         run: >
           python -m pytest
           tests/test_china_tushare_spine.py
           tests/test_china_tushare_range_shards.py
           tests/test_cn_intel_pit_accrual.py
+          tests/test_tushare_compliance_anti_resurrection.py
           -q
       # The three TuShare takeover suites (lane A #5177 add-ons, lane B #5163
       # minutes, lane C #5162 chips). Same WIRING LAW as every step above, same
@@ -5190,7 +5200,7 @@ jobs:
         # writes to was dark too, which is how _capture_usage could bill free
         # Ollama calls to the Claude subscription lane unnoticed.  It guards the
         # same waterfall as the files beside it — keep it in this step.
-        run: python -m pytest tests/test_codex_provider.py tests/test_llm_auth.py tests/test_key_pool.py tests/test_ollama_provider.py tests/test_ai_costs.py tests/test_provider_health.py -q
+        run: python -m pytest tests/test_codex_provider.py tests/test_llm_auth.py tests/test_key_pool.py tests/test_ollama_provider.py tests/test_ai_costs.py tests/test_provider_health.py tests/test_provider_capacity.py -q
       - name: V10 key economy suite (enabled-set, header capture, usage snapshot)
         run: python -m pytest tests/test_key_pool_economy.py -q
       - name: cortex provider routing + tool loop suite
@@ -10669,6 +10679,12 @@ jobs:
       # check on prophet_bridge.select_candidates.
       - name: US candidate-pool lanes (lossless partition + store columns + no authority leak)
         run: python -m pytest tests/test_us_candidate_lanes.py -q
+      # V4-B1 canonical candidate episodes: pure event contract, source-specific intake,
+      # immutable-generation/atomic-HEAD publication, and this workflow/registry authority
+      # fence. TURN WATCH's own discovery suite stays in its existing engine owner; B1 reads
+      # its sidecar and does not absorb the producer.
+      - name: US B1 canonical candidate episodes (contract + intake + reconciler + wiring)
+        run: python -m pytest tests/test_us_candidate_episode.py tests/test_us_candidate_episode_intake.py tests/test_us_candidate_episode_reconciler.py tests/test_us_candidate_episode_wiring.py -q
       # W1.5 board-session anchor (#5303/#5307): the earnings-blackout gate and the
       # display-tier chip read the BOARD's session, never the render host's wall
       # clock — hosts straddling local midnight flipped membership (78 vs 81 buy
@@ -10832,7 +10848,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jsonschema jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn fastapi httpx
       - name: brain gateway — lane routing, quota ledger, tool allowlist, SSE event order
-        run: python -m pytest tests/test_brain_gateway.py tests/test_brain_gateway_quota_safety.py tests/test_brain_streaming.py tests/test_brain_tool_economics.py tests/test_brain_instant_lane.py -q
+        run: python -m pytest tests/test_brain_gateway.py tests/test_brain_gateway_quota_safety.py tests/test_brain_streaming.py tests/test_brain_tool_economics.py tests/test_brain_instant_lane.py tests/test_intelligence_workspace_context_compiler.py tests/test_mm_brain_asset.py -q
       - name: W1-A typed datapoint registry — owners, PIT, rights, consumers, mutations, batching
         run: >-
           python -m pytest

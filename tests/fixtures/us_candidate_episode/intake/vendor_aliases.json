@@ -1,0 +1,9 @@
+[
+  {
+    "security_id": "SEC:US-XNAS-ALFA",
+    "valid_from": "2020-01-01",
+    "valid_to": null,
+    "vendor": "membership",
+    "vendor_symbol": "ALFA"
+  }
+]

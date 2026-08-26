@@ -84,6 +84,7 @@ waves:
       Reopen the measured Aug-13 collector/engine decomposition plan and reduce the
       critical path using nightly timing receipts; do not mix this with fleet recovery.
 decisions:
+  - DEC:CI-EXECUTION-PROFILE-V2
   - DEC:RUNNER-FLEET-PHYSICAL-FAILURE-DOMAINS
 discoveries:
   - DSC:PRIVATE-CI-HOSTED-MINUTES-REQUIRE-TWO-LEVER-CUTOVER
@@ -97,6 +98,11 @@ artifacts:
   - agentos/discoveries/DSC-PRIVATE-CI-HOSTED-MINUTES-REQUIRE-TWO-LEVER-CUTOVER.md
   - agentos/discoveries/DSC-PERSISTENT-RUNNER-TEMP-PACKS-CAN-BREACH-THE-HOST-DISK-GUARD.md
 landmines:
+  - >
+    pc-render-1 (the W3-accepted runner identity) is no longer in the repo
+    runner registry; render-linux is currently carried by pc-render-2/3/4
+    (census 2026-08-25). Do not cite pc-render-1 as live render capacity
+    without a fresh census.
   - >
     `parked` is not an exclusion label; positive label matching still routes jobs to
     that listener. See .github/runner-policy.yml.
@@ -153,6 +159,18 @@ next_action: >
   measure and reduce the complete hosted estate without weakening its protected
   control/untrusted boundary. W4/W5 remain unstarted; do not enter either wave without
   fresh Chairman intent and a current authority load.
+  Trusted-CI promotion (issue #6351) is active under the Fable COO principal:
+  capability ledger 2026-08-25 — W3 planner containment MERGED (PR #6286,
+  fafe8d7ee775f8b60a0229c085fb7aee6d4349e7); hardened PC CI host/isolation
+  substrate BUILT_NOT_PROVEN for current promotion; diagnostic canary contract
+  bridge P0R IN_PROGRESS (DEC:CI-EXECUTION-PROFILE-V2); default trusted
+  self-hosted CI NOT_BUILT; Macro private cutover HOLD — TRUSTED-CI DEFAULT
+  MIGRATION NOT PROVEN. Live repo-runner census 2026-08-25T20:52Z: zero
+  ci-linux / ci-linux-canary listeners registered; render-linux carried by
+  pc-render-2/3/4 (online; pc-render-1 absent from the repo registry); org
+  runner-group state unreadable from the fleet token (admin:org). CI-listener
+  restoration remains the host-readiness lane's deliverable and is a P1
+  prerequisite, not a reason to loosen workflow admission.
 ---
 
 ## Current incident

@@ -490,6 +490,67 @@ def test_pack_consumes_the_authoritative_plan_without_replanning(
         PACK.load_authoritative_plan(duplicate, workflow=manifest)
 
 
+def _canary_plan(jobs: list[object], *, changed: list[str] | None = None) -> object:
+    """The one narrow diagnostic pair: pr_head/workflow_dispatch, admitted
+    ONLY under the exact canary workflow name (#6351 P0R bridge, spec A).
+    """
+    return PACK.build_plan(
+        jobs,
+        changed,
+        changed_from=SHA_BASE if changed is not None else None,
+        scope_mode="active",
+        pack_count=max(1, len(jobs)),
+        workflow_run_id="987654321",
+        workflow=PACK.DIAGNOSTIC_CANARY_WORKFLOW,
+        event="workflow_dispatch",
+        role="pr_head",
+        tested_tree_sha=SHA_TREE,
+        subject_head_sha=SHA_HEAD,
+        base_sha=SHA_BASE,
+    )
+
+
+def test_load_authoritative_plan_admits_the_diagnostic_pair_only_for_its_exact_workflow_name(
+    tmp_path: Path,
+) -> None:
+    """``load_authoritative_plan`` reads ``workflow`` BEFORE its role/event
+    validation and grants the same narrow admission ``build_plan`` does — no
+    other workflow name may pose as the diagnostic canary, and the refusal
+    must fire on the role/event gate itself (before the digest check ever
+    runs), not merely because a mutated document happens to hash differently.
+    """
+    job = _job("demo", [{"name": "proof", "run": "echo ok"}])
+    manifest = _write_manifest(tmp_path / "manifest.yml", [job])
+    loaded_job = PACK.load_legacy_jobs(manifest)[0]
+    plan = _canary_plan([loaded_job], changed=["engine/example.py"])
+    plan_path = tmp_path / "plan.json"
+    PACK._atomic_write_json(plan_path, plan.to_dict(), indent=2)
+    changed_path = tmp_path / "changed.json"
+    changed_path.write_text('["engine/example.py"]\n', encoding="utf-8")
+
+    consumed = PACK.load_authoritative_plan(
+        plan_path,
+        workflow=manifest,
+        changed_files_file=changed_path,
+        expect_plan_sha=plan.plan_sha256,
+    )
+    assert consumed.workflow == PACK.DIAGNOSTIC_CANARY_WORKFLOW
+    assert consumed.role == "pr_head"
+    assert consumed.event == "workflow_dispatch"
+
+    document = json.loads(plan_path.read_text(encoding="utf-8"))
+    for other_workflow in ("ci", "some-other-workflow"):
+        mutated = dict(document, workflow=other_workflow)
+        mutated_path = tmp_path / f"mutated-{other_workflow}.json"
+        mutated_path.write_text(json.dumps(mutated), encoding="utf-8")
+        with pytest.raises(PACK.ManifestError, match="unsupported"):
+            PACK.load_authoritative_plan(
+                mutated_path,
+                workflow=manifest,
+                changed_files_file=changed_path,
+            )
+
+
 def test_exact_empty_changed_list_round_trips_as_a_distinct_plan_input(
     tmp_path: Path,
 ) -> None:
