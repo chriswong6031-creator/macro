@@ -9,94 +9,112 @@ mission: >
   same draft PR #6297 to Sol with a fresh exact-head hosted-proof gate and HOLD-FOR-SOL intact.
 state_before: >
   Draft PR #6297 was parked at head 2df53626bae9b1a5efdf6f822a54997c0fdc3cd3 with complete
-  2026-08-23 local/hosted receipts, but protected Macro main had advanced by hundreds of commits.
-  Those receipts no longer proved current-base compatibility. The original linked worktree and
-  branch still existed, were clean, and matched the remote carrier; no open PR overlapped the CF1
-  provider-capacity implementation paths. Several open PRs touched only the shared CI manifest.
+  2026-08-23 receipts, but protected Macro main had advanced and those receipts no longer proved
+  current-base compatibility. The original branch and linked worktree remained the single carrier.
+  This reconciliation is bound to operation key MAS-126-CF1-RECONCILE-20260825.
 changed:
-  - path: docs/superpowers/plans/2026-08-25-mas-126-cf1-reconciliation.md
-    what: >
-      Added the approved same-carrier reconciliation plan, evidence-order rules, no-rebuild bounds,
-      and exact HOLD-FOR-SOL stop condition under operation key MAS-126-CF1-RECONCILE-20260825.
   - path: .github/ci/legacy-jobs.yml
     what: >
-      Reconciled the existing one-line CF1 provider-owner test registration with current main by a
-      conflict-free non-force merge; current-main CI additions and the CF1 test line are both retained.
+      Retained the single CF1 provider-owner registration while incorporating current-main CI changes
+      through non-force merge history; no provider-capacity behavior was changed by reconciliation.
+  - path: agentos/handoffs/EXECUTIVE-CAPACITY-FABRIC-2026-08-25.md
+    what: >
+      Replaced the stale return packet with this exact pre-record implementation receipt, an explicit
+      pending-hosted-proof boundary, and negative proof for every later Capacity Fabric wave.
   - path: agentos/workstreams/WS-EXECUTIVE-CAPACITY-FABRIC.md
     what: >
-      Refreshed the CF1 review boundary and pointed recovery to this current-main reconciliation packet;
-      CF1 remains BUILT_PENDING_SOL and every later wave remains held.
+      Kept CF1 at BUILT_PENDING_SOL and recovery pointed to this exact-head review packet; every later
+      wave remains todo and held.
 verified:
   - claim: The operation reused the original PR, branch and linked worktree without a replacement carrier.
-    command: git worktree list --porcelain; git branch -vv --list sol/executive-capacity-cf1-20260823; gh pr view 6297 --repo mastermindx-market-intelligence/macro
+    command: git status --short --branch; git rev-parse HEAD; git rev-parse --abbrev-ref HEAD
     result: >
-      PR #6297, branch sol/executive-capacity-cf1-20260823 and worktree
-      /Users/chriswong/Documents/Cluade/macro-main/.warp/worktrees/mas-126-cf1 remained the single carrier;
-      the pre-reconciliation local and remote head was 2df53626bae9b1a5efdf6f822a54997c0fdc3cd3.
-  - claim: Protected current main was merged into the carrier without conflict, history rewrite or force.
-    command: git show -s --format='%H %P' 7a527a52d6910505835b8f4bcb44b83fa394304d; git merge-tree --write-tree 6acabaa7e719f4cf33b9fe9abceba1cba94951b6 d0e3a70058e41d0f43d597234cca1df0bce9fb15
+      PR #6297 remains bound to branch sol/executive-capacity-cf1-20260823 and worktree
+      /Users/chriswong/Documents/Cluade/macro-main/.warp/worktrees/mas-126-cf1. The exact pre-record
+      reconciled implementation head is dc391292302b42452e68d48d9a21864ebcc76eda.
+  - claim: The current local implementation head includes the protected-main pickup without history rewrite.
+    command: git show -s --format='%H %P' dc391292302b42452e68d48d9a21864ebcc76eda
     result: >
-      Reconciled implementation head 7a527a52d6910505835b8f4bcb44b83fa394304d has parents
-      6acabaa7e719f4cf33b9fe9abceba1cba94951b6 and protected-main pickup
-      d0e3a70058e41d0f43d597234cca1df0bce9fb15. The merge forecast and actual ort merge were clean.
-  - claim: CF1 and all directly touched neighboring provider-owner suites pass after current-main reconciliation.
+      Head dc391292302b42452e68d48d9a21864ebcc76eda has first parent
+      9774e739142732ee98c6a146db66e5ff8e84f5c3 and protected-main pickup
+      4caccc2a98a1e19d58fe484be814830deb0da46d. Protected origin/main later advanced to
+      878930b3b2f9849e120391fa461ed528f32d2e3c, so Task 4 must merge and re-prove that movement
+      before any push or current-base claim.
+  - claim: The pre-record changed-file and import census remains bounded to CF1 and its records.
+    command: git diff --name-status 4caccc2a98a1e19d58fe484be814830deb0da46d..dc391292302b42452e68d48d9a21864ebcc76eda; rg -n '(from engine\.provider_capacity|import engine\.provider_capacity)' --glob '*.py' .
+    result: >
+      Relative to the merged base, the pre-record candidate has 12 paths: one CI registration,
+      four plan/Agent OS records, four existing provider-owner modules, one new normalizer, one
+      stdout consumer and one contract test. The only static provider_capacity import sites are
+      scripts/build_provider_capacity.py and tests/test_provider_capacity.py. The normalizer reads
+      four existing owner modules through bounded lazy imports; there is no Mastermind/Executive
+      importer, second runtime, database, queue, router or service.
+  - claim: CF1 and all directly touched neighboring provider-owner suites pass on the reconciled head.
     command: python3 -m pytest -q tests/test_provider_capacity.py tests/test_codex_provider.py tests/test_provider_health.py tests/test_key_pool.py tests/test_key_pool_economy.py tests/test_key_pool_seven.py tests/test_metabolism_budget_gate.py
-    result: 224 passed, 0 failed; three pytest temporary-directory cleanup warnings outside the repository.
-  - claim: The exact provider-owner pytest line registered in current .github/ci/legacy-jobs.yml passes.
-    command: python3 -m pytest tests/test_codex_provider.py tests/test_llm_auth.py tests/test_key_pool.py tests/test_ollama_provider.py tests/test_ai_costs.py tests/test_provider_health.py tests/test_provider_capacity.py -q
-    result: 233 passed, 0 failed; three pytest temporary-directory cleanup warnings outside the repository.
-  - claim: Agent OS records remain schema-valid on the reconciled current-main tree.
+    result: 224 passed, 0 failed and 3 pytest temporary-directory cleanup warnings.
+  - claim: The unchanged exact CI-registered provider-owner line passes under the hosted-CI Python version.
+    command: python -m pytest tests/test_codex_provider.py tests/test_llm_auth.py tests/test_key_pool.py tests/test_ollama_provider.py tests/test_ai_costs.py tests/test_provider_health.py tests/test_provider_capacity.py -q
+    result: >
+      233 passed, 0 failed and 3 pytest temporary-directory cleanup warnings in a disposable
+      Python 3.12.13 virtual environment, matching the hosted CI interpreter version. The ambient
+      Mac python is legacy Python 2.7 and is not evidence for or against the manifest command.
+  - claim: Agent OS records remained schema-valid before this record refresh.
     command: python3 scripts/agentos.py validate
-    result: 705 records, 0 errors and 30 unrelated current-main warnings.
-  - claim: The real CLI is strict canonical JSON and makes no canonical source or Git worktree write.
+    result: 717 records, 0 errors and 28 unrelated current-main warnings.
+  - claim: The real CLI is strict canonical JSON and makes no canonical-source or Git worktree write.
     command: python3 -m pytest -q tests/test_provider_capacity.py::test_real_cli_is_canonical_json_and_no_write
-    result: 1 passed; the explicit before/after Git status comparison was unchanged and empty.
+    result: 1 passed, 0 failed and 3 pytest temporary-directory cleanup warnings; Git status and HEAD were unchanged.
   - claim: Semantic source identity, Git grounding, caller-injection boundaries and secret redlines remain closed.
     command: python3 -m pytest -q tests/test_provider_capacity.py -k 'material or allowlist or audit or hash or secret or injection'
-    result: 17 passed, 21 deselected and 0 failed.
+    result: 17 passed, 21 deselected, 0 failed and 3 pytest temporary-directory cleanup warnings.
   - claim: Two real projections preserve semantic identity across distinct projection times.
-    command: python3 scripts/build_provider_capacity.py twice, parsed only through the strict public contract fields
+    command: python3 scripts/build_provider_capacity.py twice, parsed only through strict public contract fields
     result: >
-      Projections at 2026-08-25T19:46:13Z and 2026-08-25T19:46:15Z shared snapshot hash
-      b35dd08046c13866ac865871512f90b016ef0396f5f71d4d9ca5fa47a4cfecc9. Producer implementation
-      provider-capacity-v1 version 1 had material-source digest
-      35931b4ef965c5d67a7e01444dd483804e48671784716ea8196c94e925466650; audit commit matched
-      7a527a52d6910505835b8f4bcb44b83fa394304d and material_sources_match_commit was true. The
-      inventory remained 12 slots: Claude 8, Codex 3, DeepSeek 1. Safe degradation codes were
-      PROVIDER_BUDGET_UNKNOWN, PROVIDER_HEALTH_UNKNOWN and PROVIDER_OUTCOME_UNKNOWN.
+      Both projections used schema mastermind.provider_capacity.v1 and preserved snapshot hash
+      b35dd08046c13866ac865871512f90b016ef0396f5f71d4d9ca5fa47a4cfecc9 plus material-source
+      digest 35931b4ef965c5d67a7e01444dd483804e48671784716ea8196c94e925466650. Audit commit
+      dc391292302b42452e68d48d9a21864ebcc76eda matched HEAD and material_sources_match_commit was
+      true. Inventory remained 12 slots: Claude 8, Codex 3 and DeepSeek 1. Honest degradation
+      census was PROVIDER_BUDGET_UNKNOWN=12, PROVIDER_HEALTH_UNKNOWN=4 and
+      PROVIDER_OUTCOME_UNKNOWN=4. No credential value, provider-home content, path or account PII
+      was read or emitted for this receipt.
 unverified:
   - claim: The final record-bearing PR head has concluded all hosted binding checks green.
     what_would_verify: >
-      Push the final ordinary fast-forward to the existing branch, wait for every binding current-head
-      check on PR #6297, and post the exact run/check receipts without changing the Git head.
+      Re-pin and reconcile the newer protected main, repeat the complete local proof, push only the
+      existing branch, then wait for every binding exact-head check on PR #6297 and publish its URLs.
+      Hosted proof state is PENDING_EXACT_HEAD; PR #6297 is the canonical evidence location.
   - claim: Sol accepts or releases CF1 for merge.
     what_would_verify: >
       Load REVIEW_RETURN.md from protected Mastermind Skillpack commit
-      51f9942733b86e550bb9169d2a43462bd28e774f, review the final exact-head diff and hosted packet,
+      80331fdc2ab9085f39ec1f3c01ff38a73d0e239f, review the final exact-head diff and hosted packet,
       and issue an explicit release decision. This handoff grants no release authority by itself.
 unresolved:
-  - "Final exact-head hosted proof and Sol review remain; no CF1 implementation defect is currently known."
+  - "Hosted proof remains PENDING_EXACT_HEAD because origin/main moved after the local receipt."
+  - "The three repeated pytest warnings concern temporary-directory cleanup outside the repository; no test failed."
 next_actions:
-  - "Resolve and record the final record-bearing candidate head after this handoff commit; do not guess a self-referential Git SHA inside this file."
-  - "Re-pin protected main immediately before push; if it advanced, merge it without rewriting history and repeat the complete local proof."
-  - "Push only sol/executive-capacity-cf1-20260823, refresh PR #6297 local receipts, and wait for current exact-head hosted CI/fences."
-  - "Perform Sol REVIEW_RETURN against the final exact head; keep the PR draft and unarmed under HOLD-FOR-SOL throughout this reconciliation slice."
+  - "Resolve the record-bearing candidate head from Git after this commit; a Git record cannot contain its own commit SHA, so do not guess or backfill that SHA into this file."
+  - "Re-pin protected main immediately before push; merge the known movement to 878930b3b2f9849e120391fa461ed528f32d2e3c or newer without rewriting history and repeat the complete Task 2 local proof."
+  - "Push only sol/executive-capacity-cf1-20260823 and bind PR #6297 to the resolved head plus concluded exact-head hosted receipts."
+  - "Perform Sol REVIEW_RETURN against that same exact head and make an explicit release decision; until then capability state is BUILT_PENDING_SOL and terminal state is PARKED / HOLD-FOR-SOL."
 do_not_redo:
-  - "Do not create another branch, PR, provider-capacity store, service, daemon, router, inventory numbering scheme, Executive schema or placement lane."
-  - "Do not add or run a Personal Pro login ceremony, rotate the existing worker credential, inspect auth contents, or change the normal Mac Codex app in CF1."
-  - "Do not begin CF2-F, CF2-I, RF1, HF1, PF1, MH1 or provider expansion until the reviewed dependencies are satisfied."
-  - "Do not mark ready, arm, merge, deploy or call PR #6297 accepted/live; HOLD-FOR-SOL remains binding."
+  - "Do not create another branch, PR, provider-capacity store, service, daemon, router, inventory numbering scheme, Executive schema, queue or placement lane."
+  - "Do not add or run Personal Pro login/readiness, inspect or rotate worker credentials, inspect provider-home contents, or change the normal Mac Codex app in CF1."
+  - "Do not begin CF2-F, CF2-I, RF1, HF1, PF1, MH1, Cursor/Grok or any other provider expansion until the reviewed dependencies are satisfied."
+  - "Do not mark ready, arm, merge, deploy or call PR #6297 accepted or live; HOLD-FOR-SOL remains binding."
 danger_areas:
-  - "A later record-only commit changes the exact Git head even when provider material bytes do not; local code proof and final hosted exact-head proof must be identified separately."
-  - "High-churn protected main can move between fetch, push and review; every movement invalidates current-base proof until merged and re-tested."
+  - "The record commit changes the candidate Git head while provider material bytes remain unchanged; the record-bearing head must be resolved after commit and proven through PR #6297."
+  - "High-churn protected main moved after this local proof. No current-base or hosted-green claim is lawful until it is reconciled and the complete proof is repeated."
   - "Credential presence remains source-owner-private. Never inspect or serialize auth contents, paths, cookies, tokens, Keychain values or account PII."
-  - "Unknown quota/health/outcome is an honest contract result, not free capacity or provider readiness."
+  - "Unknown quota, health or outcome is an honest contract result, not free capacity or provider readiness."
 prs: [6297]
 decisions:
   - "DEC:EXECUTIVE-CAPACITY-FABRIC-OWNERSHIP-AND-CONTRACT"
 ---
 
-This packet proves current-main local compatibility at the exact reconciled implementation head above.
-It deliberately does not claim final hosted proof, Sol acceptance, merge, deployment, Executive placement,
-Personal Pro readiness, worker-realm provisioning, provider expansion or production use. The final candidate
-SHA and hosted receipts belong to PR #6297 because a Git record cannot embed the hash of its own commit.
+This packet proves bounded local compatibility only at pre-record implementation head
+`dc391292302b42452e68d48d9a21864ebcc76eda`. It does not claim hosted proof, Sol acceptance,
+merge, deployment, production use, Executive placement, Personal Pro readiness, worker-realm
+provisioning or provider expansion. Capability state is `BUILT_PENDING_SOL`; terminal state is
+`PARKED / HOLD-FOR-SOL`. PR #6297 must bind the later record-bearing candidate SHA and its hosted
+receipts because a Git record cannot embed the hash of its own commit.

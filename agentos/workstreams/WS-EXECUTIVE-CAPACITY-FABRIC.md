@@ -25,10 +25,12 @@ waves:
     pr: 6297
     depends_on: [F0]
     next_action: >
-      Complete the current-head hosted proof for the same draft HOLD-FOR-SOL PR #6297 after the
-      2026-08-25 current-main reconciliation packet, then perform Sol REVIEW_RETURN against that
-      exact head. Keep the PR draft and unarmed; CF1 remains unaccepted until Sol explicitly
-      releases the hold. Do not modify Executive placement or begin a provider login ceremony.
+      Resolve the record-bearing candidate SHA from Git after the 2026-08-25 return-packet commit,
+      re-pin and reconcile the newer protected main, repeat the complete local proof, then obtain
+      exact-head hosted proof on the same draft HOLD-FOR-SOL PR #6297. Perform Sol REVIEW_RETURN
+      against that exact head. Keep the PR draft and unarmed; CF1 remains BUILT_PENDING_SOL and
+      unaccepted until Sol explicitly releases the hold. Do not modify Executive placement or
+      begin a provider login ceremony.
   - id: CF2-F
     title: Freeze Executive claim-time capacity evidence and acquisition against landed schema v4
     status: todo
@@ -135,9 +137,11 @@ do_not_redo:
   - "Do not add Z.AI, Alibaba, Claude Code, Grok, Cursor, OpenRouter or local-provider adapters in CF1; prove the contract first on existing Codex/Claude/DeepSeek sources."
   - "Do not widen Capacity Fabric into Wake, Slack dispatch, Control Room P1, merge/deploy authority or capital/trading authority."
 next_action: >
-  Complete the final record-bearing exact-head hosted-CI receipt for draft HOLD-FOR-SOL PR #6297,
-  then run Sol REVIEW_RETURN against that same head. Keep the PR draft/unarmed and keep CF2-F/CF2-I,
-  RF1, HF1, PF1, MH1, Personal Pro login/readiness and provider expansion held.
+  Resolve the final record-bearing candidate SHA after the 2026-08-25 return-packet commit, re-pin
+  and reconcile protected main, repeat local proof, and complete the exact-head hosted-CI receipt
+  for draft HOLD-FOR-SOL PR #6297. Then run Sol REVIEW_RETURN against that same head. Keep the PR
+  draft/unarmed and keep CF2-F/CF2-I, RF1, HF1, PF1, MH1, Personal Pro login/readiness and all
+  provider expansion, including Cursor and Grok, held.
 ---
 
 ## Capability state
