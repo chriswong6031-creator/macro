@@ -20,7 +20,7 @@ changed:
   - path: contracts/opportunity_evidence/vector.v1.schema.json
     what: >
       Closed opportunity_evidence.vector.v1 wire: subject with identity-bridge
-      law, AUTHENTICATED decision clock (t0_evidence_ref in K1 reference.v1
+      law, REFERENCE-BOUND decision clock (t0_evidence_ref in K1 reference.v1
       EvidenceRef shape + t0_mode from K1 replay.mode; the free-string
       t0_source_object and caller_named_pit_object are deleted and structurally
       unrepresentable), typed slots

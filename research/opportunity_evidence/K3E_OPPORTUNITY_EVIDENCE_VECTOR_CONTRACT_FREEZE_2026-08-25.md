@@ -89,16 +89,24 @@ residualizations, never interchangeable, never merged.
 Contract version `1.0.0`:
 
 - `contracts/opportunity_evidence/vector.v1.schema.json` — closed
-  `opportunity_evidence.vector.v1` wire (subject, **authenticated** decision clock,
-  typed slots, the seven projection legs, separate economic-cause hypothesis object,
-  denominator receipt, dominant degradation, all-false authority, deterministic
-  content hash).
+  `opportunity_evidence.vector.v1` wire (subject, **reference-bound** decision
+  clock, typed slots, the seven projection legs, separate economic-cause hypothesis
+  object, denominator receipt, dominant degradation, all-false authority,
+  deterministic content hash).
   The decision clock carries `{value, grain, t0_source, t0_mode, t0_evidence_ref}`:
   `t0_evidence_ref` is an immutable owner-backed PIT reference in K1 `reference.v1`
   EvidenceRef shape (`owner_store`, `native_identity`, `native_digest`, plus a known
   minting clock), and `t0_mode` ∈ {`live`, `retrospective_research`} — K1
-  `replay.mode` vocabulary. The retired free-string `t0_source_object` and its
-  `caller_named_pit_object` source are **structurally unrepresentable** (test-pinned).
+  `replay.mode` vocabulary, with per-source permission pinned in the registry
+  (`lawful_t0_modes`). The retired free-string `t0_source_object` and its
+  `caller_named_pit_object` source are **structurally unrepresentable**
+  (test-pinned). **How strong "authenticated" is depends on the source, and this
+  packet never claims it uniformly:** the four registry-pinned sources are
+  validation-checkable (`owner_store` and clock class are compared against pins) and
+  may claim `live`; the generic `owner_pit_reference` declares its own store and
+  clock, so it is an accountability receipt rather than a verification and is capped
+  at `retrospective_research` (§7.4 item A, §8.8). Nothing here reads an owner's
+  bytes — this contract holds no owner I/O by design.
 - `contracts/opportunity_evidence/slot_registry.v1.json` — the executable
   family-mapping receipt: every admissible construct with owner, read seam, K1 clock
   bindings over unrenamed native fields, object class, and exactly one of

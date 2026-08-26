@@ -44,6 +44,8 @@ K1_REFERENCE_SCHEMA_PATH = ROOT / "contracts" / "evidence_foundation" / "referen
 SECURITY_STATE_SCHEMA_PATH = ROOT / "contracts" / "market_os" / "security_state.v1.schema.json"
 FAMILIES_PATH = ROOT / "research" / "prophet_fusion" / "families.yml"
 LIB_SOURCE_PATH = ROOT / "lib" / "opportunity_evidence.py"
+FREEZE_PACKET_PATH = ROOT / "research" / "opportunity_evidence" / "K3E_OPPORTUNITY_EVIDENCE_VECTOR_CONTRACT_FREEZE_2026-08-25.md"
+DEC_PATH = ROOT / "agentos" / "decisions" / "DEC-K3E-OPPORTUNITY-EVIDENCE-VECTOR-CONTRACT.md"
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "opportunity_evidence"
 MANIFEST_PATH = FIXTURE_DIR / "manifest.json"
@@ -1513,19 +1515,32 @@ def test_a4_no_durable_artifact_calls_the_generic_path_fully_authenticated():
     artifacts a reader actually consults, and no shipped fixture may pair the
     generic source with an operational-PIT claim."""
 
+    # Sol named schema, registry, freeze and DEC. The two machine-readable
+    # contract files carry no quoted prose, so the retracted claim must be
+    # absent outright; the two narrative records legitimately QUOTE it while
+    # recording that it was wrong, so there the rule is that the phrase may
+    # never stand unqualified.
     for path in (VECTOR_SCHEMA_PATH, SLOT_REGISTRY_PATH):
+        assert "provably existed at t0" not in path.read_text(encoding="utf-8"), path
+
+    for path in (VECTOR_SCHEMA_PATH, SLOT_REGISTRY_PATH, FREEZE_PACKET_PATH, DEC_PATH):
         text = path.read_text(encoding="utf-8")
-        assert "provably existed at t0" not in text, path
         for claim in ("fully authenticated", "fully-authenticated"):
             for line in text.splitlines():
                 if claim in line.lower():
                     # The phrase may only appear in a sentence that DENIES it.
                     assert any(w in line.lower() for w in ("no ", "not ", "never ")), f"{path}: unqualified {claim!r}: {line.strip()[:160]}"
 
+    checked = 0
     for name in ALL_FIXTURE_NAMES:
         asof = _load_fixture(name)["asof"]
         if asof["t0_source"] == "owner_pit_reference" and name != "hostile_generic_live_t0":
             assert asof["t0_mode"] == "retrospective_research", f"{name} claims operational PIT on the generic source"
+            checked += 1
+    # Non-vacuity (red-team NIT 14: a guard that can never fail is not a guard).
+    # This loop is the one that would have caught the shipped defect, so it must
+    # actually be exercised — two goldens WERE claiming live on this source.
+    assert checked >= 3, f"the generic-source fixture guard covered only {checked} fixtures"
 
 
 def test_s1_mutation_unpinned_t0_source_fires_r021():

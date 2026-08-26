@@ -34,7 +34,9 @@ answer: >
   consumer is created or armed. Delivery is one bounded PR held DRAFT/HOLD-FOR-SOL.
   Amended 2026-08-25 by Sol REQUEST_CHANGES on head ac2be650a360 (architecture
   accepted in principle; repaired on the same carrier): (1) the decision clock is
-  AUTHENTICATED, not asserted — the free-string t0_source_object and its
+  REFERENCE-BOUND, not asserted (how far that binding authenticates depends on the
+  source — see the 2026-08-26 amendment below, which caps the generic path) — the
+  free-string t0_source_object and its
   caller_named_pit_object source are deleted from the wire and replaced by a
   required t0_evidence_ref reusing K1 reference.v1 EvidenceRef semantics
   (owner_store, native_identity, native_digest) plus a known minting clock and a
