@@ -5852,3 +5852,29 @@ def test_main_routes_a_real_pre_tool_use_payload_end_to_end(monkeypatch, capsys,
     monkeypatch.setattr(GUARD.sys, "stdin", io.StringIO(payload))
     GUARD.main()
     assert capsys.readouterr().out == ""
+
+
+def test_a_legacy_fragmentless_reservation_releases_by_its_own_deadline(
+    monkeypatch, capsys, tmp_path
+):
+    """Migration: a reservation minted by the superseded intermediate gate
+    carries no fragment, so liveness can never be observed for it. Observed
+    live 2026-08-25: demanding evidence wedged the slot forever. It stays
+    occupied until its own recorded deadline, then frees."""
+    path = _watcher_state(tmp_path)
+    now = GUARD.time.time()
+    state = GUARD._load(path)
+    state["ship_watcher"] = {
+        "digest": "d" * 12,
+        "head": "a" * 40,
+        "created": now - 300,
+        "expires": now + 600,
+    }
+    GUARD._save(path, state)
+    denied = _drive_watcher_gate(monkeypatch, capsys, path, "sleep 900 && gh pr checks 2")
+    assert "earlier guard version" in denied
+    state = GUARD._load(path)
+    state["ship_watcher"]["expires"] = now - 10
+    GUARD._save(path, state)
+    assert _drive_watcher_gate(monkeypatch, capsys, path, "sleep 900 && gh pr checks 2") == ""
+    assert GUARD._load(path)["ship_watcher"]["fragment"] == "sleep 900 && gh pr checks 2"

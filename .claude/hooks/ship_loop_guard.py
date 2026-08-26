@@ -1151,7 +1151,31 @@ def _watcher_gate(root: Path, path: Path, state: dict[str, Any], watch: dict[str
                 "existing timer; its completion will wake this session."
             )
             return
-        alive = _watcher_process_alive(fragment)
+        if not fragment:
+            # LEGACY reservation (pre-liveness format, no fragment — observed
+            # live 2026-08-25 on this very repair's session): its process can
+            # never be identified, so demanding liveness evidence would wedge
+            # the slot forever. Release it by its own recorded rule instead:
+            # occupied until the deadline the old gate stored, then free.
+            # Bounded to entries minted by the superseded intermediate gate;
+            # every new reservation carries a fragment.
+            try:
+                legacy_deadline = float(
+                    reservation.get("expires") or reservation.get("nominal_fire") or 0.0
+                )
+            except (TypeError, ValueError):
+                legacy_deadline = 0.0
+            if now < legacy_deadline:
+                _deny_watcher(
+                    "SHIP WATCHER COALESCED: a background ship watcher reserved "
+                    "by an earlier guard version still owns this wait (until "
+                    f"~{int(legacy_deadline - now)}s from now). Rely on it; its "
+                    "completion will wake this session."
+                )
+                return
+            alive = False
+        else:
+            alive = _watcher_process_alive(fragment)
         if alive is None:
             _deny_watcher(
                 "SHIP WATCHER COALESCED: the reserved ship watcher's liveness "
