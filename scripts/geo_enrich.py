@@ -52,12 +52,15 @@ _UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ch
 
 
 class CredentialRejected(RuntimeError):
-    """The Management API answered 401/403 — the PAT is present but expired or revoked.
+    """A provider answered 401/403 — the credential is present but expired or revoked.
 
-    Deliberately distinct from the two neighbouring states: an ABSENT credential means the
-    lane was never switched on (clean exit 0), and a 5xx means the provider is briefly down
-    (retried on the next tick). This one needs a human to rotate SUPABASE_ACCESS_TOKEN, so
-    it is named loudly and is never counted as a per-IP failure — see run()."""
+    Raised for BOTH of this lane's credentials: SUPABASE_ACCESS_TOKEN (Management API) and
+    IPLOCATE_API_KEY. `credential` says which, so the operator is told to rotate the right
+    one. Deliberately distinct from the neighbouring states: an ABSENT credential means the
+    lane was never switched on (clean exit 0), a 429 is a rate limit, and a 5xx means the
+    provider is briefly down (retried next tick). This one needs a human, so it is named
+    loudly and is never counted as a per-IP failure — a dead credential fails every item
+    identically, so counting it per-item reports a successful run that wrote nothing."""
 
     def __init__(self, code: int, detail: str = "",
                  credential: str = "SUPABASE_ACCESS_TOKEN") -> None:
