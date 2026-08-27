@@ -57,13 +57,18 @@ owner-native CUSIP (`DEC:K2C-SECURITY-BINDING-IS-OWNER-NATIVE-CUSIP` — the Dat
 OS axis is carried as typed unresolved, never silently bridged), plus `previous`
 and `current` period bindings, each naming a listed
 `institutional_13f.catalog_generation` reference, a listed
-`institutional_13f.raw_receipt` reference, and the exact selected row
-(`accession`, `infotable_sk`, `row_hash`, `cusip`). The validator enforces
-store/identity/clock equality against the listed K1 refs, row↔accession parity,
-strictly increasing report periods, `subject_id == "cusip:<CUSIP>"`, and that
-the observation's primary reference is the current-period raw receipt; the
+`institutional_13f.raw_receipt` reference, and the asserted selected-row
+identity (`accession`, `infotable_sk`, `row_hash`, `cusip` — replayable against
+the immutable owner store; the in-memory validator itself cannot read the
+store). The validator enforces store/identity/clock equality against the listed
+K1 refs, row↔accession parity, strictly increasing report periods,
+`subject_id == "cusip:<CUSIP>"`, that the observation's primary reference is
+the current-period raw receipt, and a per-store PINNED availability clock on
+every sub-binding (raw receipt: `max(accepted_at, retained_at)`; catalog
+generation: `published_at`; `freshness.clock_field` pinned to match). The
 compiler additionally gates positivity on PIT availability of all four bound
-refs at the compile cutoff. `q_prev`/`q_now` under this basis must be real
+refs at the compile cutoff, recomputed from each reference's own clocks, and
+reports each ref's state in `owner_row_reference_states`. `q_prev`/`q_now` under this basis must be real
 numbers (typed unavailable is the lawful absence shape — a null quantity is
 refused, and a missing predecessor period is `insufficient_history`, never
 zero).

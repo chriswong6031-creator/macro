@@ -28,7 +28,17 @@ on:
         required: true
         type: string
       cutoff:
-        description: "Optional compile cutoff (ISO-8601 UTC); empty = now. Re-dispatching with the same cutoff must reproduce the receipt byte-identically."
+        description: "Optional compile cutoff (ISO-8601 UTC); empty = now. Same cutoff AND same pinned generation ids reproduce the receipt byte-identically; without pinned generations a pointer advance between dispatches lawfully changes the resolved generation."
+        required: false
+        default: ""
+        type: string
+      generation_id_now:
+        description: "Optional exact catalog generation for the current period (i13fgen_…); empty = current pointer. Required for a historical-cutoff proof."
+        required: false
+        default: ""
+        type: string
+      generation_id_prev:
+        description: "Optional exact catalog generation for the predecessor period (i13fgen_…); empty = current pointer."
         required: false
         default: ""
         type: string
@@ -70,6 +80,8 @@ jobs:
           PERIOD_NOW: ${{ inputs.report_period_now }}
           PERIOD_PREV: ${{ inputs.report_period_prev }}
           CUTOFF: ${{ inputs.cutoff }}
+          GEN_NOW: ${{ inputs.generation_id_now }}
+          GEN_PREV: ${{ inputs.generation_id_prev }}
           RECEIPT_PATH: ${{ runner.temp }}/institutional-13f-k2c-pilot-receipt.json
         run: |
           set -euo pipefail
@@ -82,6 +94,12 @@ jobs:
           )
           if [ -n "$CUTOFF" ]; then
             args+=(--cutoff "$CUTOFF")
+          fi
+          if [ -n "$GEN_NOW" ]; then
+            args+=(--generation-id-now "$GEN_NOW")
+          fi
+          if [ -n "$GEN_PREV" ]; then
+            args+=(--generation-id-prev "$GEN_PREV")
           fi
           python -m lib.institutional_13f_adapter "${args[@]}"
 

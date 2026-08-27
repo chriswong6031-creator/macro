@@ -102,11 +102,17 @@ Semantic law (validator, RED-first): each binding resolves to a distinct listed
 K1 ref of the right owner store; `row.accession ==` raw-receipt native
 `accession`; the catalog binding's native `report_period` equals the raw ref's
 world-valid `report_period`; `previous.report_period < current.report_period`;
-`row.cusip == security.cusip == subject_id` (grammar `cusip:<CUSIP>`); both
-periods' refs PIT-available at the compile cutoff via the existing K1
-availability machinery (`max(accepted_at, retained_at)`; catalog
-`published_at`); `measure.kind == "reported_share_change"` with numeric
-`q_prev`/`q_now` or a typed unavailable measure. The compiler treats a valid
+`row.cusip == security.cusip == subject_id` (grammar `cusip:<CUSIP>`); every
+sub-binding's `available_clock` is PINNED per owner store — a raw-receipt
+binding's operational availability is `max(accepted_at, retained_at)` and a
+catalog binding's is `clocks.published_at`, with the reference's
+`freshness.clock_field` pinned to match, and the compile-time gate recomputes
+availability from the reference's own clocks (never the caller-declared
+binding), so a forged clock declaration is validate()-rejected rather than
+silently positive; `measure.kind == "reported_share_change"` with numeric
+`q_prev`/`q_now` or a typed unavailable measure. The compiled event receipt
+carries `owner_row_reference_states` naming each of the four refs' PIT state
+individually (absence kinds are never collapsed into one boolean). The compiler treats a valid
 owner-row observation as security-bound (eligible for
 `MANAGER_RESEARCH_INTENT_ELIGIBLE_CONTEXT`); every existing basis behaves
 byte-identically (combined K1+K2-B suites are the regression gate).
@@ -138,10 +144,20 @@ effective filing's decoded row count equals `table_entry_total` and
    (decision mode from owner `investment_discretion`, `SOLE` → discretionary,
    else typed); `compile_recipe` is the only author of results.
 6. Output: `institutional_owner_read_receipt.v1` — canonical-JSON, content-derived
-   id, naming inputs, exact generations (id + manifest digest), effective
-   filings/accessions, row identities (`infotable_sk`, `row_hash`), K1 reference
-   ids, q values + denominator receipts, typed states, embedded compiled K2-B
-   receipt. Deterministic on identical owner inputs.
+   id, naming inputs, exact generations (id + manifest digest — generation ids
+   are content-derived and re-verified on decode, so the explicit-generation
+   path is digest-bound too), effective filings/accessions, asserted row
+   identities (`infotable_sk`, `row_hash` — replayable against the immutable
+   store; the contract validator cannot itself read the store), K1 reference
+   ids, the FULL recipe (independently re-compilable: `compile_recipe` over
+   `receipt["recipe"]` must reproduce `receipt["compiled"]`), q values +
+   denominator receipts, typed states, and a pointer block typed by read-state
+   (`read` on the current-pointer path; `not_read` on the explicit path — no
+   fabricated currency claims). `state` distinguishes `PILOT_COMPILED` (eligible
+   positive) from `PILOT_COMPILED_NON_POSITIVE` (lawful compile, non-positive
+   observation — the top-level measure is then typed `not_compiled` with no
+   q-pair) from typed refusals (including `report_periods_not_increasing`,
+   checked before any read). Deterministic on identical owner inputs.
 7. CLI (`python -m lib.institutional_13f_adapter …`) — read-only; env store or
    `--local-dir`; prints the receipt JSON. Store outage/timeouts raise (never
    typed absence); no retry of any effect-unknown operation (all ops are reads).
@@ -163,6 +179,35 @@ Known context at design time: the rolling census lane has been red since
 lane) — historical generations remain immutable and readable, so the pilot reads
 existing Q1/Q2-2026 generations; amendment freshness is degraded until that lane
 heals and is disclosed in the proof receipt's caveats.
+
+## 6b. Independent adversarial review (2026-08-27)
+
+An opus reviewer attacked head `ffee8e11f121` across eight axes with working
+reproductions. Verdict: 1 BLOCKER, 3 MAJOR, plus minors/notes — all repaired on
+this carrier at `51ffcc242801` (RED-first per finding; combined focused gate
+333 passing):
+
+1. BLOCKER — owner-row PIT gate accepted caller-declared availability clocks on
+   3 of 4 sub-bindings (forged `accepted_at`/`source_cutoff_at` clocks compiled
+   hindsight positives). Repaired: per-store pinned clock law, validate-time and
+   compile-time (§4).
+2. MAJOR — non-SOLE path emitted `PILOT_COMPILED` with the refused q-pair at
+   top level, and fabricated a vehicle class. Repaired: `PILOT_COMPILED_NON_POSITIVE`,
+   typed measure, documented closed-enum placeholder mapping. Residual honesty
+   gap flagged to Sol: K2-B's closed `vehicle_class` enum has no truthful class
+   for a generic 13F reporting vehicle — a future K2-B vocabulary amendment
+   candidate, deliberately NOT smuggled into this wave.
+3. MAJOR — receipt pointer block asserted currency/non-supersession never read
+   on the explicit-generation path. Repaired: read-state-typed pointer block.
+4. Findings 4/5/7/8/9/10/12 (typed period-order refusal; row-identity claim
+   softened to replayable assertion; per-ref PIT states; `retained_at`
+   cross-check; explicit-path digest-boundness confirmed content-derived;
+   embedded re-compilable recipe; honest unknown-denominator counts) — all
+   repaired or clarified as recorded in the review packet and `51ffcc242801`.
+5. Finding 6 (proof lane lacked generation-id inputs; overbroad determinism
+   claim) — repaired in the workflow by the commissioning session.
+6. Finding 11 — acceptance-state honesty: this carrier is `BUILT_NOT_PROVEN`
+   until §7 carries a real production owner-read receipt.
 
 ## 7. Proof receipts
 
