@@ -177,6 +177,8 @@ def _read_timing_observations(
             raise ValueError("logical-job timing observation has unsupported fields")
         job_id = observation.get("logical_job_id")
         phase = observation.get("phase")
+        if not isinstance(job_id, str) or not isinstance(phase, str):
+            raise ValueError("logical-job timing observation fields must be strings")
         if job_id not in selected_jobs or phase not in TIMING_OBSERVATION_PHASES:
             raise ValueError("logical-job timing observation is outside the selected pack")
         if observation.get("status") != "observed":

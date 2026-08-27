@@ -695,6 +695,31 @@ def test_oversized_raw_timing_observations_degrade_without_receipt_or_verdict_im
     )
 
 
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [("logical_job_id", []), ("phase", {})],
+    ids=("non-hashable-logical-job-id", "non-hashable-phase"),
+)
+def test_non_hashable_raw_timing_fields_degrade_without_receipt_or_verdict_impact(
+    tmp_path: Path,
+    field: str,
+    value: object,
+) -> None:
+    observation = {
+        "logical_job_id": "demo",
+        "phase": "test",
+        "status": "observed",
+        "started_monotonic_ns": 100,
+        "ended_monotonic_ns": 130,
+        "duration_ns": 30,
+    }
+    observation[field] = value
+    _assert_invalid_raw_timing_is_non_authoritative(
+        tmp_path,
+        (json.dumps(observation) + "\n").encode(),
+    )
+
+
 def test_unwritable_final_timing_output_degrades_without_receipt_or_verdict_impact(
     tmp_path: Path,
 ) -> None:
