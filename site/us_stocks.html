@@ -352,13 +352,12 @@
   <link rel="stylesheet" href="assets/css/aed3f897.css?v=aed3f897">
   <div class="panel span12" id="stocks-header">
     
-    
     <div class="stk-headline">
       <h1><span class="l-en">US Stocks</span><span class="l-zh">美国股票</span></h1>
       <div class="stk-head-meta">
-        <span class="stk-status">
+        <span class="stk-status" data-tip-en="The date is the last session this board has data for. Prices, buy zones and the ranking are rebuilt from scratch every session, so they are all as of this date. Entry signals are re-scored on their own slower cycle; the current set dates from 2026-08-26, which is why a card can carry a signal older than the board." data-tip-zh="此日期是本榜单最后一个有数据的交易日。价格、买区和排序每个交易日都会完全重算，因此都截至该日期。入场信号按各自较慢的周期重新评分，当前这一批的日期是 2026-08-26，所以卡片上的信号可能比榜单更早。">
           <span class="stk-fresh-dot" aria-hidden="true"></span>
-          <span class="l-en">Fresh</span><span class="l-zh">新鲜</span>
+          <span class="l-en">Data through</span><span class="l-zh">数据截至</span>
           <strong>2026-08-26</strong>
         </span>
         <span class="stk-status"><span class="l-en">Regime</span><span class="l-zh">周期</span> <strong><span class="l-en">Reflation</span><span class="l-zh">再通胀</span></strong></span>
@@ -1234,9 +1233,8 @@
     </div>
     <script type="application/json" id="plv-names">{"GSHD": "Goosehead Insurance, Inc.", "KDP": "Keurig Dr Pepper Inc", "MAN": "ManpowerGroup", "PM": "Philip Morris International", "VIRT": "Virtu Financial, Inc.", "XNCR": "Xencor Inc"}</script>
     
-    
     <div class="panel span12 notable" id="us-standouts"
-         data-prophet-src="candidates">
+         data-prophet-src="candidates" data-board-asof="2026-08-26" data-board-delayed="0">
       <div class="pb-hdrow" style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
         <h2 style="margin:0"><span class="l-en">Prophet Stock Signals</span><span class="l-zh">Prophet 选股</span></h2>
         <span class="pbs pbs-ahead" data-bs="ahead" hidden><span class="l-en">◐ Tonight&#39;s picks</span><span class="l-zh">◐ 今晚选股</span></span>
@@ -1346,7 +1344,7 @@
       
       
       <div id="us-plan-block">
-      <div class="ladder-headline"><span class="ladder-n fig">270</span><span class="ladder-nl"><span class="l-en">live setups today</span><span class="l-zh">个跟踪中计划</span></span><span class="ladder-sub"><span class="l-en">the six published cells below add up to this number</span><span class="l-zh">下方 6 个已发布状态合计</span></span></div>
+      <div class="ladder-headline"><span class="ladder-n fig">269</span><span class="ladder-nl"><span class="l-en">live setups today</span><span class="l-zh">个跟踪中计划</span></span><span class="ladder-sub"><span class="l-en">the six published cells below add up to this number</span><span class="l-zh">下方 6 个已发布状态合计</span></span></div>
 <div class="mx-ladder mx-ladder--board" role="group" aria-label="Filter setups by lifecycle" id="us-life-ladder">
   <button type="button" class="mx-cell" data-life="watch" aria-pressed="false" data-zero="1">
     <span class="mx-cap mx-cap--watch" aria-hidden="true"></span>
@@ -1375,14 +1373,14 @@
   </button>
   <button type="button" class="mx-cell mx-cell--last-live" data-life="invalidated" aria-pressed="false">
     <span class="mx-cap mx-cap--invalidated" aria-hidden="true"></span>
-    <span class="mx-cell-n fig">8</span>
+    <span class="mx-cell-n fig">7</span>
     <span class="mx-cell-l"><span class="l-en">Invalidated</span><span class="l-zh">失效</span></span>
   </button>
   
   <div class="mx-ladder-gap" aria-hidden="true"></div>
   <button type="button" class="mx-cell mx-cell--term" data-life="resolved" aria-pressed="false">
     <span class="mx-cap mx-cap--resolved" aria-hidden="true"></span>
-    <span class="mx-cell-n fig">46</span>
+    <span class="mx-cell-n fig">47</span>
     <span class="mx-cell-l"><span class="l-en">Resolved</span><span class="l-zh">已结</span></span>
   </button>
   <div class="ladder-termnote"><span class="l-en">not in today’s count</span><span class="l-zh">不计入上方总数</span></div>
@@ -1563,7 +1561,6 @@
         
         
         
-        
         <a class="pvcard pv-buy pv-featured" href="stock.html#PM" data-ticker="PM" data-stage="live">
   <div class="pv-chart">
     <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><rect x="144.0" y="16.8" width="96.0" height="3.9" fill="var(--up)" fill-opacity="0.09" stroke="none"/><line x1="144.0" y1="16.8" x2="240" y2="16.8" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><line x1="144.0" y1="20.6" x2="240" y2="20.6" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><polyline points="0,42 0.0,31.7 3.8,35.5 7.6,36.8 11.4,42.0 15.2,40.9 19.0,38.4 22.9,39.5 26.7,35.8 30.5,38.3 34.3,35.6 38.1,30.7 41.9,33.1 45.7,29.3 49.5,32.0 53.3,29.5 57.1,34.6 61.0,35.7 64.8,41.4 68.6,35.4 72.4,35.3 76.2,33.5 80.0,31.5 83.8,29.2 87.6,31.3 91.4,34.9 95.2,29.8 99.0,27.1 102.9,23.7 106.7,24.5 110.5,31.0 114.3,30.5 118.1,32.1 121.9,36.8 125.7,31.4 129.5,21.5 133.3,18.0 137.1,18.3 141.0,23.5 144.8,16.6 148.6,20.1 152.4,18.0 156.2,15.1 160.0,10.1 163.8,12.0 167.6,19.1 171.4,20.4 175.2,24.2 179.0,24.7 182.9,22.5 186.7,23.5 190.5,21.8 194.3,25.7 198.1,25.5 201.9,25.5 205.7,22.5 209.5,20.9 213.3,27.3 217.1,23.9 221.0,21.4 224.8,19.6 228.6,23.3 232.4,19.7 236.2,17.0 240.0,16.8 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,31.7 3.8,35.5 7.6,36.8 11.4,42.0 15.2,40.9 19.0,38.4 22.9,39.5 26.7,35.8 30.5,38.3 34.3,35.6 38.1,30.7 41.9,33.1 45.7,29.3 49.5,32.0 53.3,29.5 57.1,34.6 61.0,35.7 64.8,41.4 68.6,35.4 72.4,35.3 76.2,33.5 80.0,31.5 83.8,29.2 87.6,31.3 91.4,34.9 95.2,29.8 99.0,27.1 102.9,23.7 106.7,24.5 110.5,31.0 114.3,30.5 118.1,32.1 121.9,36.8 125.7,31.4 129.5,21.5 133.3,18.0 137.1,18.3 141.0,23.5 144.8,16.6 148.6,20.1 152.4,18.0 156.2,15.1 160.0,10.1 163.8,12.0 167.6,19.1 171.4,20.4 175.2,24.2 179.0,24.7 182.9,22.5 186.7,23.5 190.5,21.8 194.3,25.7 198.1,25.5 201.9,25.5 205.7,22.5 209.5,20.9 213.3,27.3 217.1,23.9 221.0,21.4 224.8,19.6 228.6,23.3 232.4,19.7 236.2,17.0 240.0,16.8" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="16.8" r="2.6" fill="var(--up)"/></svg>
@@ -1583,7 +1580,7 @@
     <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
     <div class="pv-stl"><span><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span><span><span class="l-en">Turning</span><span class="l-zh">转向</span></span><span class="on"><span class="l-en">Ready</span><span class="l-zh">就绪</span></span><span><span class="l-en">Trend</span><span class="l-zh">趋势</span></span></div>
   </div>
-  <div class="pv-zn"><span class="pv-znl"><span class="l-en">Zone</span><span class="l-zh">买区</span></span><span class="pv-znr">$190.60–$194.10</span><span class="pv-dt"><span class="l-en">Aug 26</span><span class="l-zh">08-26</span></span>
+  <div class="pv-zn"><span class="pv-znl"><span class="l-en">Zone</span><span class="l-zh">买区</span></span><span class="pv-znr">$190.60–$194.10</span>
   </div>
 </a>
 
@@ -1632,7 +1629,6 @@
           
           
           
-        
         
         
         
@@ -1667,7 +1663,7 @@
     <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
     <div class="pv-stl"><span><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span><span><span class="l-en">Turning</span><span class="l-zh">转向</span></span><span class="on"><span class="l-en">Ready</span><span class="l-zh">就绪</span></span><span><span class="l-en">Trend</span><span class="l-zh">趋势</span></span></div>
   </div>
-  <div class="pv-zn"><span class="pv-znl"><span class="l-en">Zone</span><span class="l-zh">买区</span></span><span class="pv-znr">$63.36–$65.74</span><span class="pv-dt"><span class="l-en">Aug 26</span><span class="l-zh">08-26</span></span>
+  <div class="pv-zn"><span class="pv-znl"><span class="l-en">Zone</span><span class="l-zh">买区</span></span><span class="pv-znr">$63.36–$65.74</span>
   </div>
 </a>
 
@@ -1731,7 +1727,6 @@
         
         
         
-        
         <a class="pvcard pv-buy pv-featured" href="stock.html#KDP" data-ticker="KDP" data-stage="live">
   <div class="pv-chart">
     <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><rect x="144.0" y="19.6" width="96.0" height="6.6" fill="var(--up)" fill-opacity="0.09" stroke="none"/><line x1="144.0" y1="19.6" x2="240" y2="19.6" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><line x1="144.0" y1="26.2" x2="240" y2="26.2" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><polyline points="0,42 0.0,36.8 3.8,37.2 7.6,37.3 11.4,36.0 15.2,34.9 19.0,33.5 22.9,37.1 26.7,33.6 30.5,32.0 34.3,26.7 38.1,25.0 41.9,28.5 45.7,25.0 49.5,24.5 53.3,22.8 57.1,31.0 61.0,31.9 64.8,31.1 68.6,31.1 72.4,27.2 76.2,19.0 80.0,10.8 83.8,10.1 87.6,15.8 91.4,11.0 95.2,11.6 99.0,23.0 102.9,24.9 106.7,28.8 110.5,30.6 114.3,23.6 118.1,26.7 121.9,34.0 125.7,33.9 129.5,25.7 133.3,29.2 137.1,32.7 141.0,34.4 144.8,34.5 148.6,38.4 152.4,38.3 156.2,35.1 160.0,28.0 163.8,25.2 167.6,24.3 171.4,27.7 175.2,29.2 179.0,27.8 182.9,30.4 186.7,33.2 190.5,35.9 194.3,41.1 198.1,42.0 201.9,39.2 205.7,27.7 209.5,25.3 213.3,33.9 217.1,30.1 221.0,28.1 224.8,23.7 228.6,20.9 232.4,17.4 236.2,22.3 240.0,19.6 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,36.8 3.8,37.2 7.6,37.3 11.4,36.0 15.2,34.9 19.0,33.5 22.9,37.1 26.7,33.6 30.5,32.0 34.3,26.7 38.1,25.0 41.9,28.5 45.7,25.0 49.5,24.5 53.3,22.8 57.1,31.0 61.0,31.9 64.8,31.1 68.6,31.1 72.4,27.2 76.2,19.0 80.0,10.8 83.8,10.1 87.6,15.8 91.4,11.0 95.2,11.6 99.0,23.0 102.9,24.9 106.7,28.8 110.5,30.6 114.3,23.6 118.1,26.7 121.9,34.0 125.7,33.9 129.5,25.7 133.3,29.2 137.1,32.7 141.0,34.4 144.8,34.5 148.6,38.4 152.4,38.3 156.2,35.1 160.0,28.0 163.8,25.2 167.6,24.3 171.4,27.7 175.2,29.2 179.0,27.8 182.9,30.4 186.7,33.2 190.5,35.9 194.3,41.1 198.1,42.0 201.9,39.2 205.7,27.7 209.5,25.3 213.3,33.9 217.1,30.1 221.0,28.1 224.8,23.7 228.6,20.9 232.4,17.4 236.2,22.3 240.0,19.6" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="19.6" r="2.6" fill="var(--up)"/></svg>
@@ -1751,7 +1746,7 @@
     <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
     <div class="pv-stl"><span><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span><span><span class="l-en">Turning</span><span class="l-zh">转向</span></span><span class="on"><span class="l-en">Ready</span><span class="l-zh">就绪</span></span><span><span class="l-en">Trend</span><span class="l-zh">趋势</span></span></div>
   </div>
-  <div class="pv-zn"><span class="pv-znl"><span class="l-en">Zone</span><span class="l-zh">买区</span></span><span class="pv-znr">$31.32–$32.21</span><span class="pv-dt"><span class="l-en">Aug 26</span><span class="l-zh">08-26</span></span>
+  <div class="pv-zn"><span class="pv-znl"><span class="l-en">Zone</span><span class="l-zh">买区</span></span><span class="pv-znr">$31.32–$32.21</span>
   </div>
 </a>
 
@@ -1890,7 +1885,7 @@
     
     
     
-    <span class="pbr-wl"><span class="l-en">Theme just confirmed — watch for the next entry (turned 5d ago)</span><span class="l-zh">主题刚确认 — 关注下一个买点（5天前转向）</span></span>
+    <span class="pbr-wl"><span class="l-en">Theme just confirmed — watch for the next entry (turned 6d ago)</span><span class="l-zh">主题刚确认 — 关注下一个买点（6天前转向）</span></span>
     
   </a>
 
@@ -1909,7 +1904,7 @@
     
     
     
-    <span class="pbr-wl"><span class="l-en">Theme just confirmed — watch for the next entry (turned 5d ago)</span><span class="l-zh">主题刚确认 — 关注下一个买点（5天前转向）</span></span>
+    <span class="pbr-wl"><span class="l-en">Theme just confirmed — watch for the next entry (turned 6d ago)</span><span class="l-zh">主题刚确认 — 关注下一个买点（6天前转向）</span></span>
     
   </a>
 
@@ -1918,17 +1913,17 @@
   
   
   
-  <a class="pbr-r pbr-warm" href="stock.html#CME">
-    <span class="pbr-tk">CME</span>
-    <span class="pbr-nm">Cme Group Inc</span>
-    <span class="pv-mk-i pv-mk-theme"><span class="l-en">Crypto &amp; Digital Rails</span><span class="l-zh">加密与数字轨道</span></span>
-    <span class="pbr-m"><span class="az-up">+16.9%</span> <span class="l-en">since signal · fired 33 sessions ago</span>
-      <span class="l-zh">信号后 · 33个交易日前触发</span>
+  <a class="pbr-r pbr-warm" href="stock.html#ANGPY">
+    <span class="pbr-tk">ANGPY</span>
+    <span class="pbr-nm">Valterra Platinum (ADR)</span>
+    <span class="pv-mk-i pv-mk-theme"><span class="l-en">PGM Miners</span><span class="l-zh">铂族金属矿业</span></span>
+    <span class="pbr-m"><span class="az-up">+39.8%</span> <span class="l-en">since signal · fired 27 sessions ago</span>
+      <span class="l-zh">信号后 · 27个交易日前触发</span>
     </span>
     
     
     
-    <span class="pbr-wl"><span class="l-en">Theme just confirmed — watch for the next entry (turned 4d ago)</span><span class="l-zh">主题刚确认 — 关注下一个买点（4天前转向）</span></span>
+    <span class="pbr-wl"><span class="l-en">Theme just confirmed — watch for the next entry (turned today)</span><span class="l-zh">主题刚确认 — 关注下一个买点（今日转向）</span></span>
     
   </a>
 
@@ -3359,18 +3354,6 @@
     <td class="r c-setup"><b>+0.88</b></td>
   </tr>
 
-  <tr class="ts-row" data-tkr="CRML">
-    <td class="c-stock"><a class="ts-tk-a" href="stock.html#CRML"><span class="ts-tk">CRML</span></a> <span class="ts-nm">Critical Metals Corp</span></td>
-    <td class="muted c-sector"><span class="l-en">Basic Materials</span><span class="l-zh">原材料</span></td>
-    <td class="r c-edge az-up">+0.42</td>
-    <td class="r muted c-rank">#31/107</td>
-    <td class="c-buy"><span class="ts-buy ok" data-tip-en="Confirmed: fired within the last few days and still building" data-tip-zh="已确认：最近几天刚触发，还在往上走"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span></td>
-    <td class="c-cycle"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></td>
-    <td class="c-trend"><span class="muted">neutral</span></td>
-    <td class="r c-factor muted">—</td>
-    <td class="r c-setup"><b>+1.54</b></td>
-  </tr>
-
   <tr class="ts-row" data-tkr="GRBK">
     <td class="c-stock"><a class="ts-tk-a" href="stock.html#GRBK"><span class="ts-tk">GRBK</span></a> <span class="ts-nm">Green Brick Partners, Inc.</span></td>
     <td class="muted c-sector"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td>
@@ -3381,6 +3364,18 @@
     <td class="c-trend"><span class="muted">neutral</span></td>
     <td class="r c-factor az-dn">-0.2</td>
     <td class="r c-setup"><b>+0.64</b></td>
+  </tr>
+
+  <tr class="ts-row" data-tkr="SCI">
+    <td class="c-stock"><a class="ts-tk-a" href="stock.html#SCI"><span class="ts-tk">SCI</span></a> <span class="ts-nm">Service Corp Intl</span></td>
+    <td class="muted c-sector"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td>
+    <td class="r c-edge az-up">+0.41</td>
+    <td class="r muted c-rank">#77/212</td>
+    <td class="c-buy"><span class="ts-buy ok" data-tip-en="An earlier trigger fired. It often catches the turn closer to the low, but it also has more false starts." data-tip-zh="较早的信号已经触发。它往往更靠近低点，但也更容易出现假启动。"><span class="l-en">Early buy</span><span class="l-zh">提前买点</span></span></td>
+    <td class="c-cycle"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></td>
+    <td class="c-trend"><span class="muted">neutral</span></td>
+    <td class="r c-factor az-dn">-0.2</td>
+    <td class="r c-setup"><b>+1.54</b></td>
   </tr>
 
           </tbody>
