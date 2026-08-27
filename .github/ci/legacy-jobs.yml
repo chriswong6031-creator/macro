@@ -2710,6 +2710,7 @@ jobs:
         run: >
           python -m pytest
           tests/test_prophet_live_pack.py
+          tests/test_prophet_live_pack_d12.py
           tests/test_prophet_live_evaluator.py
           tests/test_prophet_live_reconcile.py
           tests/test_prophet_live_basis.py
@@ -9666,6 +9667,15 @@ jobs:
       # extended in the step directly above.
       - name: W-L1 board-state surface (#5148)
         run: python -m pytest tests/test_wl1_board_state_surface.py -q
+      # US board freshness truth (PR-2, US Prophet permanence program, 2026-08-26).
+      # Rides this lane rather than a new job: it renders the same dashboard.html.j2
+      # organs every step above renders, needs no dependency this lane does not already
+      # install (jinja2 + pandas/plotly for the shared _env harness), and sits beside
+      # the W-L1 board-state surface it is a sibling of — board STATE above, board
+      # VINTAGE here.  Appended last so a board-state regression is still the first
+      # failure a reader sees.
+      - name: US board freshness truth — vintage stamp, card date, delayed banner
+        run: python -m pytest tests/test_us_board_freshness_truth.py -q
 
   unrun-release-forecast:
     # the macro-release forecast producer — projections, benchmarks and the graded forward ledger.
