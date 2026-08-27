@@ -15,7 +15,9 @@ state_before: >
   No Fable ACK/execution is proven. The historical P1 corpus is retained outside GitHub
   and must be imported from exact bytes rather than reconstructed. K2-C/K3-D are already
   separate canonical commissions and are not F00-owned implementation work.
-changed: []
+changed:
+  - path: agentos/handoffs/MARKET-ONTOLOGY-F00-PARITY-CONTROL-FABLE-COO-2026-08-26.md
+    what: "Created the sustained F00 Fable COO program-control commission and its coverage/closure-accounting envelope."
 verified:
   - claim: "Authenticated paid baseline is 88/88 and historical public P1 is materially deeper."
     command: "Read parity baseline, retained-corpus discovery and current-public delta ledger."
