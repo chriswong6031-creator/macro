@@ -33,6 +33,8 @@ from pathlib import Path
 import pytest
 import yaml
 
+from scripts.workflow_run_source import resolve_run_source
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 LIB = REPO_ROOT / "scripts" / "ci" / "push_retry.sh"
 
@@ -465,6 +467,9 @@ def _daily_engine_commit_step() -> tuple[dict, dict]:
         for item in doc["jobs"]["engine"]["steps"]
         if item.get("name") == "commit engine outputs"
     )
+    # 512KB-cap diet: the body lives in scripts/ci/ — resolve the effective
+    # source so these assertions keep reading what the step actually runs.
+    step["run"] = resolve_run_source(step["run"], REPO_ROOT)
     return doc, step
 
 
