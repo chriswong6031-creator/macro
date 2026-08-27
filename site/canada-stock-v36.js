@@ -1,5 +1,17 @@
-/* Canada Stock Dashboard V3.7 — presentation-only composition.
-   SOL-STOCK-DASH-V37-CA-FUNCTIONAL-COMPLETENESS-20260825
+/* Canada Stock Dashboard V3.8 — presentation-only composition.
+   stock-dashboard-v38-hk-ca-fable-20260826-sol-001 (V38-R2)
+   Architecture: research/STOCK_DASHBOARD_V38_ACTION_LEADERSHIP_ARCHITECTURE.md
+   + DEC:V38-ACTION-IS-NOT-LEADERSHIP. Law: ACTION TIMING ≠ TREND LEADERSHIP.
+
+   V3.8 over V3.7: the owner-native What to Act On Now lanes render AT REST
+   above Prophet (compact, max 3 rows per lane before View all); the
+   presentation-minted sector rank (lane-traversal position) is DELETED —
+   sectors carry no number because no canonical sector-rank owner
+   exists; Themes keep the owner-published `themes[].rank` under an explicit
+   "Theme rank" basis; counts render only where canonical membership is
+   known (missing ≠ zero). Frozen and untouched: first-five Top Picks
+   accepted projection, LIVE quote plane, Grid/Table XOR, Track Record,
+   Terminal routes, the two artifact fetches.
 
    This file owns no ranking, signal, quote, lifecycle, entitlement, or persistence
    semantics. It re-composes already-published Canada stock surfaces and reads the
@@ -13,14 +25,20 @@
   window.__mmCanadaStockV36 = true;
 
   var FONT_UI = "var(--font-ui,-apple-system,BlinkMacSystemFont,Inter,\"Segoe UI\",Roboto,sans-serif)";
-  var state = { source: "top", view: "grid", filter: null, themes: [], sectors: [], cards: [], rows: [] };
+  var state = { source: "top", view: "grid", filter: null, themes: [], sectors: [], cards: [], rows: [],
+    /* V3.8 Act-Now panel presentation state (same contract as the HK
+       composer): anLane = visible lane on the mobile segmented selector;
+       anOpen = per-lane View-all expansion. Neither ever touches
+       source/filter. membershipKnown/hasThemeRank gate counts and rank
+       language (missing owner -> no number, no basis chip). */
+    anLane: null, anOpen: {}, membershipKnown: false, hasThemeRank: false };
   var rowsByTicker = Object.create(null);
   var tableObserver = null;
 
   /* Owner-native Act-Now lane vocabulary (templates/canada.html.j2:854-996,
      `_ca_anlane(...)` title_en/title_zh). This is the single source for both
-     collectSectors() (change 2) and the group-action band in openModal()
-     (change 4) — never invent parallel lane vocabulary. */
+     collectSectors() and the at-rest What to Act On Now panel (the one home
+     for group action since V3.8) — never invent parallel lane vocabulary. */
   var LANE_DEFS = [
     { sel: "#anv2-buy", en: "Buy Now", zh: "立即买入", tone: "buy" },
     { sel: "#anv2-pull", en: "In Favour", zh: "看好", tone: "near" },
@@ -83,7 +101,14 @@
   function sectorMembers(name) {
     return new Set(state.rows.filter(function (r) { return r.sector === name; }).map(function (r) { return ticker(r.ticker); }));
   }
+  /* V3.8 (DEC:V38-ACTION-IS-NOT-LEADERSHIP): sectors carry NO rank — the
+     V3.7 rank was lane-traversal position minted into a
+     number, and no canonical Canada sector-rank owner exists. laneIdx is
+     display order for the Act-Now lanes only, never a stat. Membership is
+     canonical only when the board rows actually publish a sector field;
+     unknown stays null (never an empty-set false zero). */
   function collectSectors() {
+    state.membershipKnown = state.rows.some(function (r) { return !!(r && r.sector); });
     var out = [], seen = Object.create(null);
     LANE_DEFS.forEach(function (def) {
       qsa(def.sel + " .anv2-row").forEach(function (node) {
@@ -92,10 +117,12 @@
         var id = m ? ticker(m[1]) : name.en;
         if (!name.en || seen[id]) return;
         seen[id] = true;
-        var members = sectorMembers(name.en), leaders = Array.from(members).slice(0, 3);
-        out.push({ kind: "sector", rank: out.length + 1, id: id, name: name,
-          stance: { en: def.en, zh: def.zh }, tone: def.tone, count: members.size,
-          members: members, leaders: leaders, href: href });
+        var members = state.membershipKnown ? sectorMembers(name.en) : null;
+        out.push({ kind: "sector", rank: null, id: id, name: name,
+          stance: { en: def.en, zh: def.zh }, tone: def.tone,
+          count: members ? members.size : null,
+          members: members, leaders: members ? Array.from(members).slice(0, 3) : [],
+          href: href, laneIdx: out.length });
       });
     });
     return out;
@@ -120,20 +147,30 @@
     var basketMap = Object.create(null), baskets = basketPayload && basketPayload.baskets || [];
     if (Array.isArray(baskets)) baskets.forEach(function (b) { if (b && b.id) basketMap[b.id] = b; });
     else if (baskets && typeof baskets === "object") Object.keys(baskets).forEach(function (k) { basketMap[k] = baskets[k]; });
-    /* Rank is owner-published by sector_pulse/theme_intel. The page never re-scores. */
+    /* Rank is owner-published by sector_pulse/theme_intel. The page never
+       re-scores — and never MINTS: a theme the owner did not rank keeps
+       rank null (the V3.7 positional fallback was sort position minted into
+       a number; V3.8 law renders no number without an owner). */
     ranked.sort(function (a, b) { return (a.rank || 9999) - (b.rank || 9999); });
-    return ranked.map(function (th, idx) {
-      var basket = basketMap[th.id] || {};
+    var themes = ranked.map(function (th) {
+      var basket = basketMap[th.id];
       /* Current Canada basket artifacts publish member identity as `symbol`.
-         `ticker` remains accepted for older/alternate regional producers. */
-      var members = new Set((basket.members || []).map(function (m) { return ticker(typeof m === "string" ? m : (m.ticker || m.symbol)); }).filter(Boolean));
+         `ticker` remains accepted for older/alternate regional producers.
+         A theme with no basket entry has UNKNOWN membership: members stays
+         null (filter no-ops, count falls back to the owner's own n_members
+         or is omitted) — an empty set here would render a false zero and
+         falsely empty the board on activation. */
+      var members = basket ? new Set((basket.members || []).map(function (m) { return ticker(typeof m === "string" ? m : (m.ticker || m.symbol)); }).filter(Boolean)) : null;
       var leaders = (((th.leadership || {}).top) || []).map(function (x) { return ticker(x.ticker || x.symbol || x.t); }).filter(Boolean).slice(0, 3);
-      if (!leaders.length) leaders = Array.from(members).slice(0, 3);
-      return { kind: "theme", rank: th.rank || idx + 1, id: th.id,
+      if (!leaders.length && members) leaders = Array.from(members).slice(0, 3);
+      return { kind: "theme", rank: th.rank != null ? th.rank : null, id: th.id,
         name: { en: th.name || th.id, zh: th.name_zh || th.name || th.id },
-        stance: stance(th.reco, th), tone: tone(th.reco), count: th.n_members != null ? th.n_members : members.size,
+        stance: stance(th.reco, th), tone: tone(th.reco),
+        count: th.n_members != null ? th.n_members : (members ? members.size : null),
         members: members, leaders: leaders };
     });
+    state.hasThemeRank = themes.some(function (x) { return x.rank != null; });
+    return themes;
   }
 
   function injectCss() {
@@ -147,7 +184,27 @@
       ".ca-v36 *{box-sizing:border-box}.ca-v36 button,.ca-v36 input,.ca-v36 select{font-family:inherit}",
       ".ca-v36-head{display:flex;align-items:center;gap:12px;min-height:66px;margin-bottom:14px}.ca-v36-head h1{margin:0;font-size:31.5px;line-height:1.05;font-weight:650;letter-spacing:-.03em}.ca-v36-head-spacer{flex:1}",
       ".ca-v36-chip,.ca-v36-live{height:37px;display:inline-flex;align-items:center;gap:7px;padding:0 13px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--muted);font-size:12px;font-weight:600;white-space:nowrap}.ca-v36-live-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 9px color-mix(in srgb,var(--ok) 55%,transparent)}.ca-v36-live b{color:var(--ok)}",
-      ".ca-v36-leading{display:flex;align-items:center;gap:8px;min-height:51px;margin-bottom:14px;padding:8px 11px 8px 14px;border:1px solid var(--line);border-radius:12px;background:color-mix(in srgb,var(--panel) 78%,transparent);box-shadow:var(--card-shadow)}.ca-v36-leading-k{color:var(--muted);font-size:11.2px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;white-space:nowrap}.ca-v36-leading-btn{height:35px;display:inline-flex;align-items:center;gap:7px;min-width:0;padding:0 11px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;transition:.15s ease}.ca-v36-leading-btn:hover{transform:translateY(-1px);border-color:color-mix(in srgb,var(--text) 30%,var(--line))}.ca-v36-leading-btn small{color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}.ca-v36-leading-fresh{margin-left:auto;color:var(--muted);font-size:12.2px;white-space:nowrap}",
+      /* V3.8: the standalone Leading Now strip is absorbed (§4). The fresh-
+         Prophet-signals cue (owner .pv-mk-new markers) rides compactly in
+         the Prophet header; the rank story lives in the labelled Leadership
+         rows themselves. */
+      ".ca-v36-fresh{color:var(--muted);font-size:12.2px;white-space:nowrap}",
+      ".ca-v36-lead-basis{height:26px;display:inline-flex;align-items:center;padding:0 9px;border:1px solid var(--line);border-radius:999px;background:var(--panel2);color:var(--muted);font-size:11px;font-weight:650;white-space:nowrap}",
+      /* What to Act On Now — compact at-rest action map (V3.8 §5), same
+         grammar as the HK composer: four owner-native lanes, ≤3 rows per
+         lane before View all, name-first rows with an optional Prophet
+         count and the owner's group-research route only. */
+      ".ca-v36-an-body{padding:10px 12px 11px}",
+      ".ca-v36-an-seg{display:none;gap:6px;margin-bottom:10px}.ca-v36-an-seg button{flex:1;min-width:0;height:34px;display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:0 7px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);color:var(--muted);font-size:11px;font-weight:700;cursor:pointer}.ca-v36-an-seg-t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ca-v36-an-seg b{flex:none;font-variant-numeric:tabular-nums;font-weight:700}.ca-v36-an-seg button[aria-selected=true]{color:var(--text);border-color:color-mix(in srgb,var(--text) 30%,var(--line));background:var(--panel)}",
+      ".ca-v36-an-lanes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}",
+      ".ca-v36-an-lane{border:1px solid var(--line);border-radius:11px;background:var(--panel2);overflow:hidden}",
+      ".ca-v36-an-hd{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:8px 10px;border-bottom:1px solid var(--line);border-top:2px solid currentColor;font-size:11px;font-weight:750;text-transform:uppercase;letter-spacing:.02em}.ca-v36-an-hd.buy{color:var(--ink-up,var(--up))}.ca-v36-an-hd.near{color:var(--ink-link,var(--link))}.ca-v36-an-hd.wait{color:var(--ink-warn,var(--warn))}.ca-v36-an-hd.avoid{color:var(--ink-down,var(--down))}.ca-v36-an-hd b{font-variant-numeric:tabular-nums;color:var(--muted);font-weight:700}",
+      ".ca-v36-an-row-w{display:flex;align-items:stretch;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent)}.ca-v36-an-hd+.ca-v36-an-row-w{border-top:0}",
+      ".ca-v36-an-row{flex:1;display:flex;min-width:0;align-items:center;justify-content:space-between;gap:8px;min-height:32px;padding:5px 10px;border:0;background:transparent;color:inherit;font-size:12.6px;font-weight:650;text-align:left;cursor:pointer}.ca-v36-an-row:hover,.ca-v36-an-row.is-active{background:color-mix(in srgb,var(--link) 6%,transparent)}.ca-v36-an-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ca-v36-an-n{flex:none;color:var(--muted);font-size:10.6px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}",
+      ".ca-v36-an-go{flex:none;display:inline-flex;align-items:center;padding:0 9px;border-left:1px dashed color-mix(in srgb,var(--line) 80%,transparent);color:var(--muted);font-size:12px;text-decoration:none}.ca-v36-an-go:hover{color:var(--text);background:color-mix(in srgb,var(--link) 6%,transparent)}",
+      ".ca-v36-an-empty{padding:12px 10px;color:var(--muted);font-size:12px;text-align:center}",
+      ".ca-v36-an-more{display:block;width:100%;padding:7px 10px;border:0;border-top:1px dashed color-mix(in srgb,var(--line) 80%,transparent);background:transparent;color:var(--muted);font-size:11px;font-weight:650;cursor:pointer}.ca-v36-an-more:hover{color:var(--text)}",
+      ".ca-v36-empty-go{display:inline-block;margin-top:10px;color:var(--ink-link,var(--link));font-size:12px;font-weight:600;text-decoration:none}.ca-v36-empty-go:hover{text-decoration:underline}",
       ".ca-v36-panel{margin-bottom:14px;border:1px solid var(--line);border-radius:13px;background:var(--panel);box-shadow:var(--card-shadow);overflow:hidden}.ca-v36-sec-hd{min-height:54px;display:flex;align-items:center;gap:10px;padding:0 15px;border-bottom:1px solid var(--line)}.ca-v36-sec-hd h2{margin:0;font-size:18px;font-weight:650;letter-spacing:-.012em}.ca-v36-sec-spacer{flex:1}.ca-v36-link{color:var(--ink-link,var(--link));font-size:13px;font-weight:600;text-decoration:none}.ca-v36-link:hover{text-decoration:underline}",
       ".ca-v36-lead-cols{display:grid;grid-template-columns:1fr 1fr}.ca-v36-lead-col+.ca-v36-lead-col{border-left:1px solid var(--line)}.ca-v36-lead-col-h{display:flex;justify-content:space-between;padding:11px 14px 10px;color:var(--muted);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}",
       ".ca-v36-lead-row{position:relative;width:100%;min-height:58px;display:grid;grid-template-columns:30px minmax(0,1fr) auto 34px;align-items:center;gap:9px;padding:10px 14px;border:0;border-top:1px solid color-mix(in srgb,var(--line) 72%,transparent);background:transparent;color:inherit;text-align:left;cursor:pointer;overflow:hidden;transition:.15s ease}.ca-v36-lead-row:after{content:\"\";position:absolute;left:0;bottom:0;width:var(--breadth,8%);height:1px;background:color-mix(in srgb,var(--link) 44%,transparent);opacity:.5}.ca-v36-lead-row:hover,.ca-v36-lead-row.is-active{background:color-mix(in srgb,var(--link) 6%,transparent)}.ca-v36-rank{font-variant-numeric:tabular-nums;color:var(--muted);font-size:11.5px}.ca-v36-lead-name{display:block;font-size:14.7px;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ca-v36-leaders{display:block;margin-top:3px;color:var(--muted);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ca-v36-count{font-variant-numeric:tabular-nums;color:var(--muted);font-size:11.7px;text-align:right}",
@@ -163,36 +220,98 @@
          background/padding) from its page-level stylesheet; this only trims
          the outer wrapping and matches the ca-v36 font stack. */
       ".ca-v36-evidence-body{display:flex;justify-content:center;padding:13px 14px 15px;font-family:" + FONT_UI + "}.ca-v36-evidence-body .trk{margin:0;padding:9px 12px;font-family:" + FONT_UI + "}",
-      /* Group-action band (change 4) — four owner lane groups above the two
-         existing ranking panes inside the Expand-leadership modal. */
-      ".ca-v36-modal-lanes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}.ca-v36-modal-lane{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel2)}.ca-v36-modal-lane-hd{padding:9px 10px;border-bottom:1px solid var(--line);border-top:2px solid currentColor;font-size:11.3px;font-weight:750;text-transform:uppercase;letter-spacing:.02em}.ca-v36-modal-lane-hd.buy{color:var(--ink-up,var(--up))}.ca-v36-modal-lane-hd.near{color:var(--ink-link,var(--link))}.ca-v36-modal-lane-hd.wait{color:var(--ink-warn,var(--warn))}.ca-v36-modal-lane-hd.avoid{color:var(--ink-down,var(--down))}.ca-v36-modal-lane-row{display:flex;flex-direction:column;gap:2px;padding:8px 10px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);cursor:pointer}.ca-v36-modal-lane-hd+.ca-v36-modal-lane-row{border-top:0}.ca-v36-modal-lane-row:not(.ca-v36-modal-lane-empty):hover{background:color-mix(in srgb,var(--link) 6%,transparent)}.ca-v36-modal-lane-row.ca-v36-modal-lane-empty{color:var(--muted);cursor:default;text-align:center}.ca-v36-modal-lane-name{font-size:12.6px;font-weight:650}.ca-v36-modal-lane-meta{color:var(--muted);font-size:10.8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
+      /* V3.8: the modal group-action band is gone — the at-rest What to Act
+         On Now panel above Prophet is the one home for group action. */
       ".ca-v36-modal{position:fixed;inset:0;z-index:2147481000;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(4,7,12,.62);backdrop-filter:blur(8px)}.ca-v36-modal.is-open{display:flex}.ca-v36-modal-card{width:min(1180px,calc(100vw - 32px));max-height:min(820px,calc(100vh - 36px));display:flex;flex-direction:column;border:1px solid var(--line);border-radius:15px;background:var(--panel);box-shadow:0 30px 90px rgba(0,0,0,.5);overflow:hidden}html[data-theme=light] .ca-v36-modal{background:rgba(50,64,90,.22)}html[data-theme=light] .ca-v36-modal-card{box-shadow:0 24px 70px rgba(20,32,64,.2)}.ca-v36-modal-hd{min-height:56px;display:flex;align-items:center;padding:0 15px;border-bottom:1px solid var(--line)}.ca-v36-modal-hd h3{margin:0;font-size:19px;font-weight:650}.ca-v36-modal-x{margin-left:auto;width:36px;height:36px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);color:var(--text);font-size:21px;cursor:pointer}.ca-v36-modal-body{overflow:auto;padding:14px}.ca-v36-modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.ca-v36-modal-pane{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel2)}.ca-v36-modal-pane h4{margin:0;padding:11px 12px;border-bottom:1px solid var(--line);font-size:13px}.ca-v36-modal-table{width:100%;border-collapse:collapse;font-size:12.8px}.ca-v36-modal-table th{padding:9px 10px;color:var(--muted);font-size:10.8px;text-align:left;border-bottom:1px solid var(--line)}.ca-v36-modal-table td{padding:10px;border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent)}.ca-v36-modal-table tbody tr{cursor:pointer}.ca-v36-modal-table tbody tr:hover{background:color-mix(in srgb,var(--link) 6%,transparent)}.ca-v36-modal-table .num,.ca-v36-modal-table .leaders{color:var(--muted)}",
-      "@media(max-width:1200px){.ca-v36-card-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.ca-v36-modal-lanes{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:900px){.ca-v36-head{flex-wrap:wrap}.ca-v36-head-spacer{display:none}.ca-v36-lead-cols,.ca-v36-modal-grid{grid-template-columns:1fr}.ca-v36-lead-col+.ca-v36-lead-col{border-left:0;border-top:1px solid var(--line)}.ca-v36-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:680px){.ca-v36{width:min(100% - 20px,680px);margin-top:12px;font-size:15.8px}.ca-v36-head{gap:8px}.ca-v36-head h1{width:100%;font-size:27.5px}.ca-v36-leading{flex-wrap:wrap}.ca-v36-leading-k{width:100%}.ca-v36-leading-btn{flex:1;min-width:140px}.ca-v36-leading-fresh{width:100%;margin-left:0}.ca-v36-sec-hd{align-items:flex-start;flex-wrap:wrap;padding:11px 12px}.ca-v36-sec-hd h2{font-size:17px}.ca-v36-controls{width:100%}.ca-v36-card-grid{grid-template-columns:1fr;padding:10px;gap:10px}.ca-v36-card-grid .pv-tk{font-size:16.3px!important}.ca-v36-card-grid .nb-px.pv-px{font-size:15.5px!important}.ca-v36-card-grid .nb-chg.pv-chg{font-size:13.1px!important}.ca-v36-modal{padding:8px}.ca-v36-modal-card{width:100%;max-height:calc(100vh - 16px)}.ca-v36-modal-lanes{grid-template-columns:1fr}.ca-v36-evidence-body{padding:11px 10px 13px}}"
+      /* Mobile Act-Now grammar (§5.5): one segmented lane selector, one lane
+         body at a time, no stacked giant lane cards, no horizontal overflow. */
+      "@media(max-width:1200px){.ca-v36-card-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.ca-v36-an-lanes{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:900px){.ca-v36-head{flex-wrap:wrap}.ca-v36-head-spacer{display:none}.ca-v36-lead-cols,.ca-v36-modal-grid{grid-template-columns:1fr}.ca-v36-lead-col+.ca-v36-lead-col{border-left:0;border-top:1px solid var(--line)}.ca-v36-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:680px){.ca-v36{width:min(100% - 20px,680px);margin-top:12px;font-size:15.8px}.ca-v36-head{gap:8px}.ca-v36-head h1{width:100%;font-size:27.5px}.ca-v36-fresh{white-space:normal}.ca-v36-sec-hd{align-items:flex-start;flex-wrap:wrap;padding:11px 12px}.ca-v36-sec-hd h2{font-size:17px}.ca-v36-controls{width:100%}.ca-v36-an-seg{display:flex}.ca-v36-an-lanes{grid-template-columns:1fr}.ca-v36-an-lane{display:none}.ca-v36-an-lane.is-current{display:block}.ca-v36-card-grid{grid-template-columns:1fr;padding:10px;gap:10px}.ca-v36-card-grid .pv-tk{font-size:16.3px!important}.ca-v36-card-grid .nb-px.pv-px{font-size:15.5px!important}.ca-v36-card-grid .nb-chg.pv-chg{font-size:13.1px!important}.ca-v36-modal{padding:8px}.ca-v36-modal-card{width:100%;max-height:calc(100vh - 16px)}.ca-v36-evidence-body{padding:11px 10px 13px}}"
     ].join("\n");
     document.head.appendChild(css);
   }
 
+  /* Leadership & Rotation row (V3.8 §6): the ONLY visible numeric rank is
+     the owner-published theme rank, rendered as `Theme #N` under a visible
+     "Theme rank" basis. Sectors have no canonical rank owner and show none
+     — never a lane-traversal number. The action stance chip stays a
+     SEPARATE field. Counts render "—" when membership is unknown. */
   function leadRow(x, max) {
     var breadth = Math.max(8, Math.round(((x.count || 0) / Math.max(1, max)) * 100));
-    return '<button class="ca-v36-lead-row" data-ca-lead-kind="' + x.kind + '" data-ca-lead-id="' + esc(x.id) + '" style="--breadth:' + breadth + '%"><span class="ca-v36-rank">' + String(x.rank).padStart(2, "0") + '</span><span><span class="ca-v36-lead-name">' + bi(x.name.en, x.name.zh) + '</span><span class="ca-v36-leaders">' + esc(x.leaders.length ? x.leaders.join(" · ") : "—") + '</span></span><span class="ca-v36-stance ' + x.tone + '">' + bi(x.stance.en, x.stance.zh) + '</span><span class="ca-v36-count">' + (x.count || 0) + '</span></button>';
+    var rankTxt = x.kind === "theme" && x.rank != null ? "Theme #" + x.rank : "—";
+    return '<button class="ca-v36-lead-row" data-ca-lead-kind="' + x.kind + '" data-ca-lead-id="' + esc(x.id) + '" style="--breadth:' + breadth + '%"><span class="ca-v36-rank">' + esc(rankTxt) + '</span><span><span class="ca-v36-lead-name">' + bi(x.name.en, x.name.zh) + '</span><span class="ca-v36-leaders">' + esc(x.leaders.length ? x.leaders.join(" · ") : "—") + '</span></span><span class="ca-v36-stance ' + x.tone + '">' + bi(x.stance.en, x.stance.zh) + '</span><span class="ca-v36-count">' + (x.count != null ? x.count : "—") + '</span></button>';
   }
   function leadColumn(items, kind) {
     var top = items.slice(0, 5), max = Math.max.apply(Math, [1].concat(top.map(function (x) { return x.count || 0; })));
-    return '<div class="ca-v36-lead-col"><div class="ca-v36-lead-col-h"><span>' + (kind === "theme" ? bi("Themes", "主题") : bi("Sectors", "板块")) + '</span><span>' + (kind === "theme" ? bi("Names", "成分") : bi("Board", "榜单")) + '</span></div>' + (top.length ? top.map(function (x) { return leadRow(x, max); }).join("") : '<div class="ca-v36-empty">' + bi("Ranking unavailable", "排名暂不可用") + '</div>') + '</div>';
+    var head = kind === "theme"
+      ? '<span>' + bi("Themes", "主题") + (state.hasThemeRank ? ' <span class="ca-v36-lead-basis">' + bi("Theme rank", "主题排名") + '</span>' : '') + '</span><span>' + bi("Names", "成分") + '</span>'
+      : '<span>' + bi("Sectors", "板块") + '</span><span>' + bi("Prophet", "候选") + '</span>';
+    return '<div class="ca-v36-lead-col"><div class="ca-v36-lead-col-h">' + head + '</div>' + (top.length ? top.map(function (x) { return leadRow(x, max); }).join("") : '<div class="ca-v36-empty">' + bi("Ranking unavailable", "排名暂不可用") + '</div>') + '</div>';
   }
   function renderLeadership() {
     var host = qs("#ca-v36-lead-cols");
     if (host) host.innerHTML = leadColumn(state.themes, "theme") + leadColumn(state.sectors, "sector");
     markLeadership();
   }
-  function renderLeading() {
-    var host = qs("#ca-v36-leading"); if (!host) return;
-    var th = state.themes[0], sec = state.sectors[0], fresh = state.cards.filter(function (c) { return !!qs(".pv-mk-new", c); }).length;
-    var html = '<span class="ca-v36-leading-k">' + bi("Leading now", "当前领先") + '</span>';
-    if (th) html += '<button class="ca-v36-leading-btn" data-ca-lead-kind="theme" data-ca-lead-id="' + esc(th.id) + '"><small>' + bi("Theme", "主题") + '</small><span>' + bi(th.name.en, th.name.zh) + '</span></button>';
-    if (sec) html += '<button class="ca-v36-leading-btn" data-ca-lead-kind="sector" data-ca-lead-id="' + esc(sec.id) + '"><small>' + bi("Sector", "板块") + '</small><span>' + bi(sec.name.en, sec.name.zh) + '</span></button>';
-    if (fresh) html += '<span class="ca-v36-leading-fresh">' + bi(fresh + " fresh Prophet signal" + (fresh === 1 ? "" : "s"), "Prophet 新信号 " + fresh + " 条") + '</span>';
-    host.innerHTML = html;
+  /* Fresh-signals cue (owner .pv-mk-new markers) — the surviving piece of
+     the absorbed Leading Now strip, in the Prophet header where it belongs
+     (it describes Prophet cards). Absent when zero, never a placeholder. */
+  function renderFresh() {
+    var host = qs("#ca-v36-fresh"); if (!host) return;
+    var fresh = state.cards.filter(function (c) { return !!qs(".pv-mk-new", c); }).length;
+    host.innerHTML = fresh ? bi(fresh + " fresh Prophet signal" + (fresh === 1 ? "" : "s"), "Prophet 新信号 " + fresh + " 条") : "";
+    host.hidden = !fresh;
+  }
+
+  /* What to Act On Now (V3.8 §5) — at-rest action map above Prophet, same
+     grammar as the HK composer. Rows carry the same data-ca-lead-kind/-id
+     the leadership rows use (one activation path; population never touched)
+     plus the owner's group-research route. Lane order is the ACTION owner's
+     own DOM order via laneIdx — the theme/leadership axis never orders or
+     gates the action surface. */
+  var AN_AT_REST = 3;
+  function anLaneItems(tone) {
+    return state.sectors.filter(function (x) { return x.tone === tone; })
+      .sort(function (a, b) { return (a.laneIdx || 0) - (b.laneIdx || 0); });
+  }
+  function anRowHtml(x) {
+    var countHtml = x.count != null ? '<span class="ca-v36-an-n">' + x.count + ' · ' + bi("Prophet", "候选") + '</span>' : '';
+    var go = x.href ? '<a class="ca-v36-an-go" href="' + esc(x.href) + '" aria-label="' + esc(x.name.en) + ' sector research">↗</a>' : '';
+    return '<div class="ca-v36-an-row-w"><button class="ca-v36-an-row" type="button" data-ca-lead-kind="sector" data-ca-lead-id="' + esc(x.id) + '"><span class="ca-v36-an-name">' + bi(x.name.en, x.name.zh) + '</span>' + countHtml + '</button>' + go + '</div>';
+  }
+  function anLaneHtml(lane) {
+    var items = anLaneItems(lane.tone), open = !!state.anOpen[lane.tone];
+    var shown = open ? items : items.slice(0, AN_AT_REST);
+    var body = shown.length ? shown.map(anRowHtml).join("") : '<div class="ca-v36-an-empty">—</div>';
+    var more = items.length > AN_AT_REST
+      ? '<button class="ca-v36-an-more" type="button" data-ca-an-view="' + esc(lane.tone) + '" aria-expanded="' + open + '">' +
+        (open ? bi("Show fewer", "收起") : bi("View all " + items.length, "查看全部 " + items.length)) + '</button>'
+      : '';
+    var current = state.anLane === lane.tone ? " is-current" : "";
+    return '<div class="ca-v36-an-lane' + current + '" data-ca-an-lane-body="' + esc(lane.tone) + '"><div class="ca-v36-an-hd ' + lane.tone + '"><span>' + bi(lane.en, lane.zh) + '</span><b>' + items.length + '</b></div>' + body + more + '</div>';
+  }
+  function renderActNow() {
+    var host = qs("#ca-v36-an-body"); if (!host) return;
+    if (state.anLane == null) {
+      /* Elected ONLY while no lane has been chosen — a user who taps an
+         empty lane keeps it and sees its truthful "—" body (HK adversarial
+         review 2026-08-27, finding 1, baked in here from the start). */
+      for (var i = 0; i < LANE_DEFS.length; i++) {
+        if (anLaneItems(LANE_DEFS[i].tone).length) { state.anLane = LANE_DEFS[i].tone; break; }
+      }
+      if (state.anLane == null) state.anLane = LANE_DEFS[0].tone;
+    }
+    var seg = '<div class="ca-v36-an-seg" role="tablist">' + LANE_DEFS.map(function (lane) {
+      return '<button type="button" role="tab" data-ca-an-lane="' + esc(lane.tone) + '" aria-selected="' + (state.anLane === lane.tone) + '"><span class="ca-v36-an-seg-t">' + bi(lane.en, lane.zh) + '</span><b>' + anLaneItems(lane.tone).length + '</b></button>';
+    }).join("") + '</div>';
+    host.innerHTML = seg + '<div class="ca-v36-an-lanes">' + LANE_DEFS.map(anLaneHtml).join("") + '</div>';
+    markLeadership();
+  }
+  function setAnLane(tone) {
+    /* Presentation-only: never mutates the Prophet selection/filter. */
+    state.anLane = tone; renderActNow();
+  }
+  function toggleAnLane(tone) {
+    state.anOpen[tone] = !state.anOpen[tone]; renderActNow();
   }
 
   function itemForFilter() {
@@ -223,6 +342,13 @@
         return bi("No Top Picks in this group.", "该组别中暂无首选。") +
           ' <button class="ca-v36-empty-switch" type="button">' + bi("View All Candidates", "查看全部候选") + '</button>';
       }
+    }
+    /* Known zero (§10): membership is canonical and the group genuinely has
+       no names on the current board — quiet truthful copy, and the
+       group-research route stays usable (never filter-miss language). */
+    if (item && item.members && item.members.size === 0) {
+      return bi("No current Prophet names in this group.", "该组别暂无 Prophet 候选。") +
+        (item.href ? ' <a class="ca-v36-empty-go" href="' + esc(item.href) + '">' + bi("Open sector research ↗", "查看板块研究 ↗") + '</a>' : '');
     }
     return bi("No names match this leadership filter.", "当前领先筛选下暂无匹配个股。");
   }
@@ -291,33 +417,23 @@
     var prophet = qs("#ca-v36-prophet"); if (prophet) prophet.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  function modalRows(items) {
-    return items.length ? items.map(function (x) { return '<tr tabindex="0" data-ca-modal-kind="' + x.kind + '" data-ca-modal-id="' + esc(x.id) + '"><td class="num">' + String(x.rank).padStart(2, "0") + '</td><td><b>' + bi(x.name.en, x.name.zh) + '</b></td><td><span class="ca-v36-stance ' + x.tone + '">' + bi(x.stance.en, x.stance.zh) + '</span></td><td class="leaders">' + esc(x.leaders.length ? x.leaders.join(" · ") : "—") + '</td><td class="num">' + (x.count || 0) + '</td></tr>'; }).join("") : '<tr><td colspan="5">—</td></tr>';
+  /* Expanded Leadership rows (V3.8): the theme pane may carry the owner
+     rank as `Theme #N` (gated on state.hasThemeRank, with the basis in its
+     own header); the sector pane carries NO rank column at all — no owner,
+     no number, no rank language. Counts render "—" when membership is
+     unknown. */
+  function modalRows(items, rk) {
+    return items.length ? items.map(function (x) { return '<tr tabindex="0" data-ca-modal-kind="' + x.kind + '" data-ca-modal-id="' + esc(x.id) + '">' + (rk ? '<td class="num">' + esc(x.rank != null ? "Theme #" + x.rank : "—") + '</td>' : '') + '<td><b>' + bi(x.name.en, x.name.zh) + '</b></td><td><span class="ca-v36-stance ' + x.tone + '">' + bi(x.stance.en, x.stance.zh) + '</span></td><td class="leaders">' + esc(x.leaders.length ? x.leaders.join(" · ") : "—") + '</td><td class="num">' + (x.count != null ? x.count : "—") + '</td></tr>'; }).join("") : '<tr><td colspan="' + (rk ? 5 : 4) + '">—</td></tr>';
   }
-  function modalPane(items, title, count) {
-    return '<div class="ca-v36-modal-pane"><h4>' + title + '</h4><table class="ca-v36-modal-table"><thead><tr><th>#</th><th>' + bi("Name", "名称") + '</th><th>' + bi("Stance", "状态") + '</th><th>' + bi("Leaders", "领先个股") + '</th><th>' + count + '</th></tr></thead><tbody>' + modalRows(items) + '</tbody></table></div>';
-  }
-  /* Group-action band (change 4). Sectors partition by lane 1:1 via `tone`,
-     which is minted straight from LANE_DEFS in collectSectors() — never a
-     second, independently-invented lane vocabulary. Rows carry the same
-     data-ca-modal-kind/data-ca-modal-id pair modalRows() uses so the existing
-     modal click/keydown delegation activates them with no new handler path. */
-  function laneItemHtml(x) {
-    return '<div class="ca-v36-modal-lane-row" tabindex="0" data-ca-modal-kind="' + x.kind + '" data-ca-modal-id="' + esc(x.id) + '">' +
-      '<span class="ca-v36-modal-lane-name">' + bi(x.name.en, x.name.zh) + '</span>' +
-      '<span class="ca-v36-modal-lane-meta">' + esc(x.leaders.length ? x.leaders.join(" · ") : "—") + ' · ' + (x.count || 0) + '</span></div>';
-  }
-  function laneGroupHtml(lane) {
-    var items = state.sectors.filter(function (x) { return x.tone === lane.tone; });
-    var body = items.length ? items.map(laneItemHtml).join("") : '<div class="ca-v36-modal-lane-row ca-v36-modal-lane-empty">—</div>';
-    return '<div class="ca-v36-modal-lane"><div class="ca-v36-modal-lane-hd ' + lane.tone + '">' + bi(lane.en, lane.zh) + '</div>' + body + '</div>';
-  }
-  function groupActionBandHtml() {
-    return '<div class="ca-v36-modal-lanes">' + LANE_DEFS.map(laneGroupHtml).join("") + '</div>';
+  function modalPane(items, title, count, rk) {
+    return '<div class="ca-v36-modal-pane"><h4>' + title + '</h4><table class="ca-v36-modal-table"><thead><tr>' + (rk ? '<th>' + bi("Rank", "排名") + '</th>' : '') + '<th>' + bi("Name", "名称") + '</th><th>' + bi("Action", "操作状态") + '</th><th>' + bi("Leaders", "领先个股") + '</th><th>' + count + '</th></tr></thead><tbody>' + modalRows(items, rk) + '</tbody></table></div>';
   }
   function openModal() {
     var modal = qs("#ca-v36-modal"); if (!modal) return;
-    qs("#ca-v36-modal-body", modal).innerHTML = groupActionBandHtml() + '<div class="ca-v36-modal-grid">' + modalPane(state.themes, bi("Theme Leadership", "主题领先"), bi("Names", "成分")) + modalPane(state.sectors, bi("Sector Leadership", "板块领先"), bi("Board", "榜单")) + '</div>';
+    var rk = !!state.hasThemeRank;
+    qs("#ca-v36-modal-body", modal).innerHTML = '<div class="ca-v36-modal-grid">' +
+      modalPane(state.themes, bi("Theme Leadership", "主题领先") + (rk ? ' <span class="ca-v36-lead-basis">' + bi("Theme rank", "主题排名") + '</span>' : ''), bi("Names", "成分"), rk) +
+      modalPane(state.sectors, bi("Sector Leadership", "板块领先"), bi("Prophet", "候选"), false) + '</div>';
     modal.classList.add("is-open"); modal.setAttribute("aria-hidden", "false"); document.documentElement.style.overflow = "hidden";
   }
   function closeModal() { var modal = qs("#ca-v36-modal"); if (!modal) return; modal.classList.remove("is-open"); modal.setAttribute("aria-hidden", "true"); document.documentElement.style.overflow = ""; }
@@ -326,6 +442,10 @@
     root.addEventListener("click", function (e) {
       var b = e.target.closest("[data-ca-source]"); if (b) return setSource(b.getAttribute("data-ca-source"));
       b = e.target.closest("[data-ca-view]"); if (b) return setView(b.getAttribute("data-ca-view"));
+      /* Act-Now presentation controls: distinct targets, never carry the
+         lead-kind/-id pair, never touch source/filter. */
+      b = e.target.closest("[data-ca-an-lane]"); if (b) return setAnLane(b.getAttribute("data-ca-an-lane"));
+      b = e.target.closest("[data-ca-an-view]"); if (b) return toggleAnLane(b.getAttribute("data-ca-an-view"));
       b = e.target.closest("[data-ca-lead-kind][data-ca-lead-id]"); if (b) return activate(b.getAttribute("data-ca-lead-kind"), b.getAttribute("data-ca-lead-id"));
       if (e.target.closest("#ca-v36-filter")) { state.filter = null; return applyFilter(); }
       if (e.target.closest("#ca-v36-expand")) return openModal();
@@ -354,10 +474,18 @@
     var trk = evidenceTrk();
     var bd = boardDate(payload.as_of || ""), ld = liveDate(), main = document.createElement("main");
     main.className = "ca-v36"; main.id = "ca-v36";
+    /* V3.8 page grammar (§4): Market Header → What to Act On Now → Prophet →
+       Leadership & Rotation → Evidence & Record → Research Tools. The
+       Act-Now panel renders only when the owner's action lanes populated at
+       least one sector (action owner missing → omit; never synthesize
+       action from leadership rank). */
+    var hasActNow = state.sectors.some(function (x) {
+      return LANE_DEFS.some(function (lane) { return lane.tone === x.tone; });
+    });
     main.innerHTML = '<header class="ca-v36-head"><h1>' + bi("Canada Stocks", "加拿大股票") + '</h1><span class="ca-v36-head-spacer"></span><span class="ca-v36-chip">' + bi("Screen · evidence accruing", "筛选 · 证据积累中") + '</span><span class="ca-v36-chip">' + bi("Board " + bd.en, "榜单 " + bd.zh) + '</span><span class="ca-v36-live"><span class="ca-v36-live-dot"></span><b>LIVE</b><span>·</span>' + bi(ld.en, ld.zh) + '</span></header>' +
-      '<section class="ca-v36-leading" id="ca-v36-leading"></section>' +
-      '<section class="ca-v36-panel" id="ca-v36-prophet"><div class="ca-v36-sec-hd"><h2>Prophet</h2><span class="ca-v36-result" id="ca-v36-result"></span><span class="ca-v36-sec-spacer"></span><div class="ca-v36-controls"><button class="ca-v36-filter" id="ca-v36-filter" type="button"></button><span class="ca-v36-seg"><button type="button" data-ca-source="top" aria-selected="true">' + bi("Top Picks", "首选") + '</button><button type="button" data-ca-source="all" aria-selected="false">' + bi("All Candidates", "全部候选") + '</button></span><span class="ca-v36-seg"><button type="button" data-ca-view="grid" aria-selected="true">' + bi("Grid", "卡片") + '</button><button type="button" data-ca-view="table" aria-selected="false">' + bi("Table", "表格") + '</button></span></div></div><div class="ca-v36-card-grid" id="ca-v36-card-grid"><div class="ca-v36-empty" id="ca-v36-grid-empty" hidden>' + bi("No names match this leadership filter.", "当前领先筛选下暂无匹配个股。") + '</div></div><div class="ca-v36-table" id="ca-v36-table" hidden></div></section>' +
-      '<section class="ca-v36-panel"><div class="ca-v36-sec-hd"><h2>' + bi("Theme & Sector Leadership", "主题与板块领先") + '</h2><span class="ca-v36-sec-spacer"></span><a class="ca-v36-link" href="baskets_canada.html">' + bi("Thematic Baskets", "主题篮子") + ' ↗</a></div><div class="ca-v36-lead-cols" id="ca-v36-lead-cols"></div><div class="ca-v36-expand-wrap"><button class="ca-v36-expand" id="ca-v36-expand" type="button">' + bi("Expand leadership", "展开领先排名") + ' ↗</button></div></section>' +
+      (hasActNow ? '<section class="ca-v36-panel" id="ca-v36-actnow"><div class="ca-v36-sec-hd"><h2>' + bi("What to Act On Now", "现在行动") + '</h2></div><div class="ca-v36-an-body" id="ca-v36-an-body"></div></section>' : '') +
+      '<section class="ca-v36-panel" id="ca-v36-prophet"><div class="ca-v36-sec-hd"><h2>Prophet</h2><span class="ca-v36-result" id="ca-v36-result"></span><span class="ca-v36-fresh" id="ca-v36-fresh" hidden></span><span class="ca-v36-sec-spacer"></span><div class="ca-v36-controls"><button class="ca-v36-filter" id="ca-v36-filter" type="button"></button><span class="ca-v36-seg"><button type="button" data-ca-source="top" aria-selected="true">' + bi("Top Picks", "首选") + '</button><button type="button" data-ca-source="all" aria-selected="false">' + bi("All Candidates", "全部候选") + '</button></span><span class="ca-v36-seg"><button type="button" data-ca-view="grid" aria-selected="true">' + bi("Grid", "卡片") + '</button><button type="button" data-ca-view="table" aria-selected="false">' + bi("Table", "表格") + '</button></span></div></div><div class="ca-v36-card-grid" id="ca-v36-card-grid"><div class="ca-v36-empty" id="ca-v36-grid-empty" hidden>' + bi("No names match this leadership filter.", "当前领先筛选下暂无匹配个股。") + '</div></div><div class="ca-v36-table" id="ca-v36-table" hidden></div></section>' +
+      '<section class="ca-v36-panel" id="ca-v36-leadership"><div class="ca-v36-sec-hd"><h2>' + bi("Leadership & Rotation", "领先与轮动") + '</h2><span class="ca-v36-sec-spacer"></span><a class="ca-v36-link" href="baskets_canada.html">' + bi("Thematic Baskets", "主题篮子") + ' ↗</a></div><div class="ca-v36-lead-cols" id="ca-v36-lead-cols"></div><div class="ca-v36-expand-wrap"><button class="ca-v36-expand" id="ca-v36-expand" type="button">' + bi("Expand leadership", "展开领先排名") + ' ↗</button></div></section>' +
       (trk ? evidenceSectionHtml() : '') +
       '<section class="ca-v36-panel"><div class="ca-v36-tools"><b>' + bi("Research tools", "研究工具") + '</b><a class="ca-v36-tool" href="baskets_canada.html">' + bi("Thematic Baskets", "主题篮子") + ' ↗</a><a class="ca-v36-tool" href="canada.html">' + bi("Canada Macro", "加拿大宏观") + ' ↗</a></div></section>';
     nav.insertAdjacentElement("afterend", main);
@@ -367,13 +495,13 @@
     if (trk) qs("#ca-v36-evidence-body", main).appendChild(trk);
 
     var modal = document.createElement("div"); modal.className = "ca-v36-modal"; modal.id = "ca-v36-modal"; modal.setAttribute("aria-hidden", "true");
-    modal.innerHTML = '<div class="ca-v36-modal-card" role="dialog" aria-modal="true" aria-labelledby="ca-v36-modal-title"><div class="ca-v36-modal-hd"><h3 id="ca-v36-modal-title">' + bi("Theme & Sector Leadership", "主题与板块领先") + '</h3><button class="ca-v36-modal-x" type="button" data-ca-modal-close aria-label="Close">×</button></div><div class="ca-v36-modal-body" id="ca-v36-modal-body"></div></div>';
+    modal.innerHTML = '<div class="ca-v36-modal-card" role="dialog" aria-modal="true" aria-labelledby="ca-v36-modal-title"><div class="ca-v36-modal-hd"><h3 id="ca-v36-modal-title">' + bi("Leadership & Rotation", "领先与轮动") + '</h3><button class="ca-v36-modal-x" type="button" data-ca-modal-close aria-label="Close">×</button></div><div class="ca-v36-modal-body" id="ca-v36-modal-body"></div></div>';
     document.body.appendChild(modal);
     modal.addEventListener("click", function (e) { if (e.target === modal || e.target.closest("[data-ca-modal-close]")) return closeModal(); var r = e.target.closest("[data-ca-modal-kind][data-ca-modal-id]"); if (r) activate(r.getAttribute("data-ca-modal-kind"), r.getAttribute("data-ca-modal-id")); });
     modal.addEventListener("keydown", function (e) { var r = e.target.closest("[data-ca-modal-kind][data-ca-modal-id]"); if (r && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); activate(r.getAttribute("data-ca-modal-kind"), r.getAttribute("data-ca-modal-id")); } });
     document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeModal(); });
 
-    bind(main); document.body.classList.add("ca-v36-mounted"); renderLeadership(); renderLeading(); applyFilter();
+    bind(main); document.body.classList.add("ca-v36-mounted"); renderActNow(); renderLeadership(); renderFresh(); applyFilter();
     try { state.view = localStorage.getItem("mdx_stocktable_ca_view") === "table" ? "table" : "grid"; } catch (e) { state.view = "grid"; }
     setView(state.view); observeTable(); return true;
   }
