@@ -210,14 +210,15 @@ next_action: >
   uses the GitHub event payload and root-owned wrapper pass-through. Drained
   pc-ci-1/2/3 carry post-restart Python hash 69faac248f755829a39f6821f17015382788056991f6d1ff9046b1842e86a002
   and wrapper hash d55f046e6a6a758f55e311ed73b921e007c8570cc0aba11e0cafdc31cef06dee;
-  Exact-head run 33043922465 then exercised all twelve packs on pc-ci-1/2/3:
-  nine passed and only packs 5/6/9 failed. The complete set is sealed-host
-  portability, not listener-version drift: RestrictSUIDSGID blocks a real set-ID
-  fixture, a scrubbed subprocess/replay loses the dynamic 3.12.13 library path,
-  Git 2.43 cannot demonstrate a newer poisoning result, and detached execution
-  needs explicit PR branch metadata. The same #6505 carrier owns all four narrow
-  repairs; no service hardening, label, WSL sizing, render route or runner identity
-  changes. Repaired P3B-B exact execution and P4 natural PR proofs remain unaccepted.
+  Exact-head run 33070187935 subsequently passed all twelve trusted packs and
+  ci-gate; PR #6505 merged as 4b9c9ece8593a2483997432e25f233bfe7af8779.
+  The first two post-merge same-repository calls failed the hosted main-admission
+  comparison before planner or PC pickup because GitHub reports the called
+  workflow's canonical full `@refs/heads/main` ref, not shorthand `@main`.
+  This is a hosted trust-gate representation defect, not listener, WSL or PC
+  capacity failure. One narrow #6351 carrier owns it; no service hardening,
+  label, runner count, render route or runner identity change is authorized.
+  P4 natural product PR proofs remain unaccepted.
   Macro private
   visibility mutation remains HOLD. Live accepted PC identities are pc-ci-1/2/3
   plus an independent pc-render lane; the M1 has no generic CI listener and remains

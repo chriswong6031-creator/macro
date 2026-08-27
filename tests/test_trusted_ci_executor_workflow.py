@@ -62,7 +62,7 @@ def run_trusted_gate(
         ),
         "CALLED_WORKFLOW_REF": (
             f"{repository}/.github/workflows/"
-            "trusted-ci-executor.yml@main"
+            "trusted-ci-executor.yml@refs/heads/main"
         ),
         "CALLED_WORKFLOW_SHA": "a" * 40,
         "REPOSITORY": repository,
@@ -183,6 +183,18 @@ def test_p3ba_keeps_the_direct_main_dispatch_canary(tmp_path: Path) -> None:
     "overrides",
     [
         {"EVENT_NAME": "push"},
+        {
+            "CALLED_WORKFLOW_REF": (
+                "mastermindx-market-intelligence/macro/.github/workflows/"
+                "trusted-ci-executor.yml@main"
+            )
+        },
+        {
+            "CALLED_WORKFLOW_REF": (
+                "mastermindx-market-intelligence/macro/.github/workflows/"
+                "trusted-ci-executor.yml@refs/tags/main"
+            )
+        },
         {
             "CALLED_WORKFLOW_REF": (
                 "mastermindx-market-intelligence/macro/.github/workflows/"

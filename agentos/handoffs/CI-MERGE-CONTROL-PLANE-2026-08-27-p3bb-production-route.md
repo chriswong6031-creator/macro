@@ -20,7 +20,8 @@ changed:
       trusted-fragment relays after exact hosted/main plan-SHA parity.
   - path: .github/workflows/trusted-ci-executor.yml
     what: >
-      Distinguish valid reusable-call `@main` identity from direct-dispatch
+      Distinguish reusable-call declaration syntax `@main` from the canonical
+      called `job.workflow_ref` and direct-dispatch identity
       `@refs/heads/main`; do not claim job `env` is visible to the pre-job hook.
   - path: .github/ci/legacy-jobs.yml
     what: Name the route suite in the existing runner-policy/canary contract step.
@@ -141,27 +142,33 @@ verified:
       Hosted plan and contract-delta passed; packs 0/1/2/3/4/7/8/10/11 passed;
       only packs 5/6/9 failed. Logs and the RestrictSUIDSGID host probe distinguish
       exact test/runtime portability defects from interpreter or listener drift.
+  - claim: The repaired P3B-B carrier proved all twelve packs and merged.
+    command: >
+      GitHub Actions run 33070187935; merge-controller recovery run 33073837131;
+      fresh origin/main ancestry and path verification
+    result: >
+      All twelve trusted PC packs, hosted relays and ci-gate passed on exact head
+      80960d7344d2a26cb74a2f447ee0605df585e3ec. PR #6505 squash-merged without
+      bypass as 4b9c9ece8593a2483997432e25f233bfe7af8779 and its branch was deleted.
 unverified:
-  - claim: The P3B-B carrier itself executes its selected packs on pc-ci-1/2/3.
-    what_would_verify: >
-      Publish the carrier from current main and observe the called main workflow,
-      exact plan parity, PC receipts, trusted fragment relays and green ci-gate.
   - claim: Three ordinary product PRs avoid long hosted checkout/materialization.
     what_would_verify: >
       After merge, record three natural P4 PRs with trusted PC jobs, tiny hosted
       anchors, final gate, queue/resource/cache receipts and no repeated retries.
 unresolved:
-  - P3B-B is not production-proven until its own PR run concludes on the PC fleet.
-  - P4 and post-cutover hosted-minute projection remain outstanding.
+  - >
+    The first two post-merge record-only PR calls, runs 33074339679 and
+    33074386695, failed the hosted admission gate because GitHub canonicalizes
+    called `job.workflow_ref` to `@refs/heads/main` while main expected `@main`.
+  - P4 and the projected post-cutover hosted run rate remain outstanding.
   - >
     M1 W2 storage is closed with about 201 GiB internal and 378 GiB external free,
     but W4 remains unadmitted; OptionsHub/Theta/MarketDesk coexistence and the
     225 GiB admission margin still forbid generic M1 CI.
 next_actions:
-  - Re-pin origin/main and reconcile any overlap before updating PR #6505.
-  - Run focused policy/workflow/host-admission/Agent OS validation on the exact head.
-  - Push only the corrected same carrier and use one mechanical CI watcher.
-  - Accept only exact PC execution, plan/fragment parity, hosted anchors and green gate.
+  - >
+    Carry one narrow #6351 post-merge repair that accepts only the canonical full
+    protected-main `job.workflow_ref`; preserve caller `uses: ...@main` syntax.
   - Merge without bypass, then collect P4 on three natural product PRs.
 do_not_redo:
   - Do not rerun P1, P2, P3A, P3A-R or P3B-A.
@@ -193,6 +200,8 @@ pool, without granting candidate-authored workflow code direct runner access.
 ## Acceptance boundary
 
 - Exact caller syntax: `mastermindx-market-intelligence/macro/.github/workflows/trusted-ci-executor.yml@main`.
+- Exact called `job.workflow_ref` context:
+  `mastermindx-market-intelligence/macro/.github/workflows/trusted-ci-executor.yml@refs/heads/main`.
 - Runner-group selected-workflow policy remains pinned separately to `@refs/heads/main`.
 - No `with`, no inherited secrets and no direct group/label use in `ci.yml`;
   the call grants only contents read and pull-requests read.

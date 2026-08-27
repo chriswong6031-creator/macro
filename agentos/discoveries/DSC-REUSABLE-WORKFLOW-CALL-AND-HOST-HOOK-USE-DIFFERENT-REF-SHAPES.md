@@ -5,20 +5,23 @@ claim: >
   fully qualified `@refs/heads/main` form used by runner-group selected-workflow
   policy is invalid caller syntax. For a same-repository PR call using `@main`,
   `job.workflow_ref` identifies the called workflow as
-  `trusted-ci-executor.yml@main`, while `github.workflow_ref`, `GITHUB_REF` and
-  the persistent runner start hook retain the caller PR identity
+  `trusted-ci-executor.yml@refs/heads/main`; the caller declaration and the
+  called-workflow context therefore use different spellings for the same main
+  definition. Meanwhile `github.workflow_ref`, `GITHUB_REF` and the persistent
+  runner start hook retain the caller PR identity
   `ci.yml@refs/pull/N/merge` / `refs/pull/N/merge`. The pre-job hook runs before
   workflow/job `env` is installed: it receives default GitHub variables and
   `GITHUB_EVENT_PATH`, so job-level environment cannot carry host admission
   authority.
 falsifier: >
   Show a GitHub Actions run where `uses: owner/repo/.github/workflows/file.yml@refs/heads/main`
-  is accepted as a reusable-workflow call, or a successful `@main` called job
-  whose `job.workflow_ref`/start-hook caller variables use the same ref shape.
+  is accepted as a reusable-workflow call, or where an `@main` reusable call's
+  `job.workflow_ref` is the shorthand `@main` instead of the canonical full ref.
 so_what: >
   Keep the server-side runner-group selection pinned to `@refs/heads/main`, but
   call the workflow with `@main`. Bind called identity in the hosted gate with
-  `job.workflow_ref` plus immutable `job.workflow_sha`. At the PC start hook,
+  the exact full `job.workflow_ref` plus immutable `job.workflow_sha`; do not
+  accept shorthand, tag or candidate refs in that context. At the PC start hook,
   rely on the selected-workflow runner-group restriction for called-main
   identity, and admit only the exact PR merge ref/caller/job plus the
   GitHub-authored event payload's same-repository/main-base identity. The
@@ -34,7 +37,8 @@ verified_by: >
   local executed trust/admission tests; PR #6505 run 33039532309 host-hook logs;
   official GitHub pre-job-hook and selected-workflow documentation; drained
   Python+JavaScript hook deployment to pc-ci-1/2/3 with post-restart SHA-256 and
-  allowed/hostile decision receipts.
+  allowed/hostile decision receipts; post-merge runs 33074339679 and 33074386695,
+  whose real `job.workflow_ref` was the full protected-main ref.
 scope: [macro, ".github/workflows/ci.yml", ".github/workflows/trusted-ci-executor.yml", "ops/runner-host/**"]
 confidence: verified
 ---
@@ -82,3 +86,13 @@ wrapper hash `d55f046e6a6a758f55e311ed73b921e007c8570cc0aba11e0cafdc31cef06dee`.
 Both hashes persisted after restart; three listeners returned online/idle; the
 same-repo/main payload passed and a fork payload returned exit 77. P3B-B still
 owes exact PR execution, parity, hosted relays and final gate proof.
+
+PR #6505 subsequently proved all twelve trusted packs and the final gate on run
+33070187935 and squash-merged as `4b9c9ece8593a2483997432e25f233bfe7af8779`.
+The first two natural post-merge calls, runs 33074339679 and 33074386695, exposed
+one remaining representation defect before PC pickup: GitHub supplied
+`job.workflow_ref` as
+`mastermindx-market-intelligence/macro/.github/workflows/trusted-ci-executor.yml@refs/heads/main`,
+while the gate still expected the caller-syntax shorthand `@main`. P4 therefore
+remains unaccepted until the exact canonical full-ref gate repair merges and
+three ordinary product PRs prove the production route naturally.
