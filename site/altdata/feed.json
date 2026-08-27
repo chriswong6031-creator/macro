@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-08-27T05:20:28.625277+00:00",
+  "generated_utc": "2026-08-27T10:42:42.872863+00:00",
   "as_of": "2026-08-27",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -7725,11 +7725,11 @@
       },
       {
         "ticker": "LEG",
-        "category": "Acquisitions",
+        "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Acquisitions"
+        "detail": "Delistings"
       },
       {
         "ticker": "NCSM",
@@ -8125,14 +8125,6 @@
       },
       {
         "ticker": "BXP",
-        "category": "Divestitures",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Divestitures"
-      },
-      {
-        "ticker": "BMRA",
         "category": "Divestitures",
         "confidence": "high",
         "activist": false,
@@ -9669,11 +9661,11 @@
       },
       {
         "ticker": "YMT",
-        "category": "Delistings",
+        "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Delistings"
+        "detail": "Acquisitions"
       },
       {
         "ticker": "AX8",
@@ -10981,11 +10973,11 @@
       },
       {
         "ticker": "VMAR",
-        "category": "Divestitures",
-        "confidence": "high",
+        "category": "Going-Private",
+        "confidence": "medium",
         "activist": false,
         "filer": null,
-        "detail": "Divestitures"
+        "detail": "Going-Private"
       },
       {
         "ticker": "VNT",
@@ -11554,14 +11546,6 @@
         "activist": false,
         "filer": null,
         "detail": "Going-Private"
-      },
-      {
-        "ticker": "CPPTL",
-        "category": "Liquidations",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Liquidations"
       },
       {
         "ticker": "SNGX",
@@ -13069,11 +13053,11 @@
       },
       {
         "ticker": "ALOT",
-        "category": "Acquisitions",
+        "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Acquisitions"
+        "detail": "Delistings"
       },
       {
         "ticker": "C09",
@@ -14912,7 +14896,7 @@
         "category": "Activist Campaigns",
         "confidence": "high",
         "activist": true,
-        "filer": null,
+        "filer": "ATG Capital Opportunities Fund LP",
         "detail": "Activist Campaigns"
       },
       {
@@ -15914,6 +15898,14 @@
         "activist": false,
         "filer": null,
         "detail": "Strategic Reviews"
+      },
+      {
+        "ticker": "KHC",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
       },
       {
         "ticker": "MPAA",
@@ -17532,6 +17524,22 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "AREC",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
+        "ticker": "LXFR",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "BRC",
         "category": "Acquisitions",
         "confidence": "high",
@@ -17554,6 +17562,14 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "CRNC",
+        "category": "Issuer Tenders",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Issuer Tenders"
       },
       {
         "ticker": "OPTT",
@@ -17749,11 +17765,11 @@
       },
       {
         "ticker": "CWLXF",
-        "category": "Acquisitions",
+        "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Acquisitions"
+        "detail": "Delistings"
       },
       {
         "ticker": "GGB",
@@ -17781,14 +17797,6 @@
       },
       {
         "ticker": "HITI",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
-      },
-      {
-        "ticker": "INCR",
         "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
@@ -18396,14 +18404,6 @@
         "detail": "Acquisitions"
       },
       {
-        "ticker": "PMA",
-        "category": "Delistings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Delistings"
-      },
-      {
         "ticker": "NEXRW",
         "category": "Acquisitions",
         "confidence": "medium",
@@ -18461,11 +18461,11 @@
       },
       {
         "ticker": "JSPRW",
-        "category": "Acquisitions",
-        "confidence": "medium",
+        "category": "Delistings",
+        "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Acquisitions"
+        "detail": "Delistings"
       },
       {
         "ticker": "KYNB",
@@ -18541,6 +18541,14 @@
       },
       {
         "ticker": "IRS",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "KNOP",
         "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
@@ -19204,14 +19212,6 @@
         "detail": "Divestitures"
       },
       {
-        "ticker": "SGI",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
-      },
-      {
         "ticker": "AMPGZ",
         "category": "Delistings",
         "confidence": "high",
@@ -19221,6 +19221,14 @@
       },
       {
         "ticker": "PAVS",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "PERI",
         "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
@@ -19692,6 +19700,14 @@
         "detail": "Divestitures"
       },
       {
+        "ticker": "BBCQW",
+        "category": "Strategic Reviews",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Strategic Reviews"
+      },
+      {
         "ticker": "FLYE",
         "category": "Delistings",
         "confidence": "high",
@@ -20109,11 +20125,11 @@
       },
       {
         "ticker": "WNW",
-        "category": "Divestitures",
+        "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Divestitures"
+        "detail": "Acquisitions"
       },
       {
         "ticker": "AVX",
@@ -21004,14 +21020,6 @@
         "detail": "Delistings"
       },
       {
-        "ticker": "ADXN",
-        "category": "Spin-Offs",
-        "confidence": "medium",
-        "activist": false,
-        "filer": null,
-        "detail": "Spin-Offs"
-      },
-      {
         "ticker": "DSGX",
         "category": "Acquisitions",
         "confidence": "high",
@@ -21806,7 +21814,7 @@
       {
         "ticker": "MBAI",
         "category": "Acquisitions",
-        "confidence": "medium",
+        "confidence": "high",
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
@@ -22262,7 +22270,7 @@
       {
         "ticker": "KNRX",
         "category": "Delistings",
-        "confidence": "high",
+        "confidence": "medium",
         "activist": false,
         "filer": null,
         "detail": "Delistings"
@@ -22452,14 +22460,6 @@
         "detail": "Acquisitions"
       },
       {
-        "ticker": "CTNT",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
-      },
-      {
         "ticker": "CBU",
         "category": "Acquisitions",
         "confidence": "high",
@@ -22562,14 +22562,6 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
-      },
-      {
-        "ticker": "HNVR",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
       },
       {
         "ticker": "MYND",
@@ -23973,11 +23965,11 @@
       },
       {
         "ticker": "LNTH",
-        "category": "Going-Private",
+        "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Going-Private"
+        "detail": "Acquisitions"
       },
       {
         "ticker": "GOOS",
@@ -24490,6 +24482,46 @@
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
+      },
+      {
+        "ticker": "PMEC",
+        "category": "Delistings",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
+        "ticker": "CWD",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
+        "ticker": "NOMA",
+        "category": "Strategic Reviews",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Strategic Reviews"
+      },
+      {
+        "ticker": "PRTHU",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "JGH",
+        "category": "Activist Campaigns",
+        "confidence": "high",
+        "activist": true,
+        "filer": "Saba Capital Management, L.P.",
+        "detail": "Activist Campaigns"
       }
     ],
     "unusual_options": [

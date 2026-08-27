@@ -1,36 +1,36 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "HAL-BULL-20260813",
-  "asof": "2026-08-25",
+  "asof": "2026-08-27",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 58.5,
-  "raw_confidence": 52.6,
-  "delta_vs_base": -1.5,
+  "management_confidence": 56.2,
+  "raw_confidence": 55.2,
+  "delta_vs_base": -3.8,
   "recommended_action": "hold",
   "human_state": "Needs Follow-Through",
   "components": {
-    "validity": 73.0,
+    "validity": 91.4,
     "progress": 0.0,
-    "pace": 85.8,
+    "pace": 75.9,
     "retention": 50.0,
-    "overlay": 61.0
+    "overlay": 67.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.792,
+    "dist_to_stop_r": 0.935,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 17.8,
-    "p1": -0.1384,
-    "p2": -0.0692,
+    "horizon_pct_used": 22.2,
+    "p1": -0.0432,
+    "p2": -0.0216,
     "p3": null,
-    "move_r": -0.208,
+    "move_r": -0.065,
     "mfe_r": 0.214,
     "mae_r": -0.208
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Ahead of Schedule",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-19",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 8,
-  "tau": 0.1778
+  "days_elapsed": 10,
+  "tau": 0.2222
 }

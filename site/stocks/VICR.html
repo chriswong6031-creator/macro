@@ -529,14 +529,37 @@
   
   <section class="mod rv" id="earnings">
     <div class="mod-hd"><h2><span class="l-en">Earnings</span><span class="l-zh">财务业绩</span></h2>
-      <span class="hint"><button class="gbtn gbtn-sm" onclick="dsrOpenDlg('dlg-earnings')"><span class="l-en">Full detail</span><span class="l-zh">完整数据</span></button></span></div>
+      <span class="hint"><span class="l-en">next report</span><span class="l-zh">下次财报</span> 2026-10-20 <button class="gbtn gbtn-sm" onclick="dsrOpenDlg('dlg-earnings')"><span class="l-en">Full detail</span><span class="l-zh">完整数据</span></button></span></div>
     <div class="earn-top">
+      <div class="cring-wrap">
+        <div class="cring" style="--p:0;"><div class="cd"><b class="num">54</b></div></div>
+        <span class="cring-lbl"><span class="l-en">days to go</span><span class="l-zh">天后公布</span></span>
+      </div>
       
       <div>
         
         <p class="sm" style="margin:0 0 4px;"><span class="l-en">Estimates being cut</span><span class="l-zh">预期下调</span></p>
+        <p class="sm" style="margin:0 0 4px;"><span class="l-en">Beat expectations 3 quarters in a row</span><span class="l-zh">连续 3 季度超预期</span></p>
         
-        
+        <div class="sbars">
+          <div class="sbar">
+            <i class="" style="height:23px;"></i>
+            <b class="pos num">+67.7%</b>
+            <span>Jun 2026</span>
+          </div>
+          <div class="sbar">
+            <i class="" style="height:4px;"></i>
+            <b class="pos num">+10.0%</b>
+            <span>Mar 2026</span>
+          </div>
+          <div class="sbar">
+            <i class="" style="height:56px;"></i>
+            <b class="pos num">+165.8%</b>
+            <span>Dec 2025</span>
+          </div>
+          
+        </div>
+        <p class="sm mut" style="margin:6px 0 0;"><span class="l-en">EPS surprise vs consensus, last quarters</span><span class="l-zh">每股收益相对预期的超预期幅度（近几个季度）</span> · <span class="l-en">average</span><span class="l-zh">平均</span> 81.2%</p>
         
       </div>
     </div>
@@ -871,7 +894,7 @@
     
     <div class="r6"><span class="k6"><span class="l-en">Volume</span><span class="l-zh">成交量</span></span><span class="v6 num"><span class="l-en">Normal volume</span><span class="l-zh">正常成交量</span></span></div>
     <div class="r6"><span class="k6"><span class="l-en">Volatility rank</span><span class="l-zh">波动率分位</span></span><span class="v6 num"><span class="l-en">50th pctile</span><span class="l-zh">第50百分位</span></span></div>
-    
+    <div class="r6"><span class="k6"><span class="l-en">Next earnings</span><span class="l-zh">下次财报</span></span><span class="v6 num">2026-10-20 (54d)</span></div>
     <div class="r6"><span class="k6"><span class="l-en">52-week range</span><span class="l-zh">52周区间</span></span><span class="v6"><span class="l-en">48.1% below 52-week high</span><span class="l-zh">低于52周高点 48.1%</span></span></div>
   </section>
   
@@ -1018,7 +1041,7 @@
 
 <footer class="site-footer6">
   <p><span class="l-en">Research context only — not investment advice. Past patterns do not guarantee future results.</span><span class="l-zh">仅供研究参考，不构成投资建议。历史规律不代表未来表现。</span></p>
-  <p><span class="l-en">Data through</span><span class="l-zh">数据截至</span> 2026-08-27 · <span class="l-en">regenerated nightly</span><span class="l-zh">每晚更新</span> · <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-08-27 06:28 UTC · <a href="index.html"><span class="l-en">All coverage</span><span class="l-zh">所有股票</span></a> · <a href="../stock.html"><span class="l-en">Analyzer</span><span class="l-zh">分析器</span></a></p>
+  <p><span class="l-en">Data through</span><span class="l-zh">数据截至</span> 2026-08-27 · <span class="l-en">regenerated nightly</span><span class="l-zh">每晚更新</span> · <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-08-27 11:50 UTC · <a href="index.html"><span class="l-en">All coverage</span><span class="l-zh">所有股票</span></a> · <a href="../stock.html"><span class="l-en">Analyzer</span><span class="l-zh">分析器</span></a></p>
 </footer>
 
 </div><!-- /page-wrap -->
@@ -1297,6 +1320,25 @@
       <button class="dsr-dlg-close" onclick="dsrCloseDlg()" aria-label="Close">✕</button>
     </div>
     <div class="dsr-dlg-body">
+      
+      <section class="dpanel">
+        <h3><span class="l-en">Surprise history</span><span class="l-zh">超预期历史</span></h3>
+        
+        <div class="dtable-wrap"><table class="dtable">
+          <thead><tr><th><span class="l-en">Quarter</span><span class="l-zh">季度</span></th><th><span class="l-en">Reported</span><span class="l-zh">实际</span></th><th><span class="l-en">Expected</span><span class="l-zh">预期</span></th><th><span class="l-en">Surprise</span><span class="l-zh">超预期</span></th></tr></thead>
+          <tbody>
+          
+          <tr><td>Jun 2026</td><td>$1.04</td><td>$0.62</td><td>+67.7%</td></tr>
+          
+          <tr><td>Mar 2026</td><td>$0.44</td><td>$0.40</td><td>+10.0%</td></tr>
+          
+          <tr><td>Dec 2025</td><td>$1.01</td><td>$0.38</td><td>+165.8%</td></tr>
+          
+          </tbody>
+        </table></div>
+        
+        
+      </section>
       
       <section class="dpanel">
         <h3><span class="l-en">Estimate revisions</span><span class="l-zh">预期修正</span></h3>

@@ -68,11 +68,8 @@ jobs:
             echo "::error title=trusted-executor-repository::executor is repository-bound"
             exit 1
           }
-          trusted_workflow_ref="$REPOSITORY/.github/workflows/trusted-ci-executor.yml@refs/heads/main"
-          test "$CALLED_WORKFLOW_REF" = "$trusted_workflow_ref" || {
-            echo "::error title=trusted-executor-definition::called workflow must be the exact main-owned executor"
-            exit 1
-          }
+          direct_workflow_ref="$REPOSITORY/.github/workflows/trusted-ci-executor.yml@refs/heads/main"
+          called_workflow_ref="$REPOSITORY/.github/workflows/trusted-ci-executor.yml@main"
           case "$CALLED_WORKFLOW_SHA" in
             [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]) ;;
             *)
@@ -83,11 +80,15 @@ jobs:
 
           case "$EVENT_NAME" in
             workflow_dispatch)
+              test "$CALLED_WORKFLOW_REF" = "$direct_workflow_ref" || {
+                echo "::error title=trusted-executor-definition::direct workflow must be the exact main-owned executor"
+                exit 1
+              }
               test "$TRUSTED_REF" = refs/heads/main || {
                 echo "::error title=trusted-executor-ref::dispatch must use the main workflow definition"
                 exit 1
               }
-              test "$CALLER_WORKFLOW_REF" = "$trusted_workflow_ref" || {
+              test "$CALLER_WORKFLOW_REF" = "$direct_workflow_ref" || {
                 echo "::error title=trusted-executor-caller::dispatch must invoke the main-owned executor directly"
                 exit 1
               }
@@ -96,6 +97,10 @@ jobs:
               semantic_workflow=trusted-ci-executor
               ;;
             pull_request)
+              test "$CALLED_WORKFLOW_REF" = "$called_workflow_ref" || {
+                echo "::error title=trusted-executor-definition::called workflow must use the main branch definition"
+                exit 1
+              }
               test -z "$DISPATCH_PR_NUMBER" || {
                 echo "::error title=trusted-executor-input::a reusable call may not supply candidate identity"
                 exit 1
@@ -155,6 +160,7 @@ jobs:
       tested_sha: ${{ steps.ref.outputs.tested_sha }}
       base_sha: ${{ steps.ref.outputs.base_sha }}
       head_sha: ${{ steps.ref.outputs.head_sha }}
+      head_ref: ${{ steps.ref.outputs.head_ref }}
       control_sha: ${{ steps.control.outputs.sha }}
     steps:
       - name: checkout main-owned executor control code
@@ -348,6 +354,8 @@ jobs:
       - name: execute the frozen logical pack and retain its actual result
         env:
           CI_CHANGED_FILES_FILE: ${{ runner.temp }}/trusted-ci-plan/changed-files.json
+          CI_BASE_REF: ${{ github.base_ref || 'main' }}
+          CI_HEAD_REF: ${{ needs.plan.outputs.head_ref }}
           MASTERMIND_TRUSTED_CI_REPO_ROOT: ${{ github.workspace }}
         shell: bash
         run: |

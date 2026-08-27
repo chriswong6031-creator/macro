@@ -161,6 +161,7 @@ def _extract(df: pd.DataFrame, t: str, group: str) -> pd.DataFrame | None:
             raise KeyError("Close")
         sub = sub[cols].rename(columns=_REN).dropna(subset=["close"])
         sub = _drop_non_trading_placeholders(sub)
+        sub = _drop_invalid_ohlc(sub)
         return sub.astype("float64") if not sub.empty else None
     except KeyError:
         log.warning("stock_ohlc[%s]: no data for %s", group, t)
@@ -186,3 +187,41 @@ def _drop_non_trading_placeholders(df: pd.DataFrame) -> pd.DataFrame:
     flat = prices.sub(close, axis=0).abs().le(tolerance, axis=0).all(axis=1)
     explicit_zero_volume = df["volume"].notna() & df["volume"].le(0)
     return df.loc[~(finite_prices & flat & explicit_zero_volume)]
+
+
+def _drop_invalid_ohlc(df: pd.DataFrame) -> pd.DataFrame:
+    """Remove bars whose CLOSE sits outside the session's own ``[low, high]`` range.
+
+    A close outside the day's range is arithmetically impossible, so the bar is not a
+    session — it is stitched. Yahoo emits one for an A-share RESUMING from suspension:
+    open/high/low stay frozen on the last traded session while close jumps to the
+    resumption print. Measured on 002155.SZ (Hunan Gold) 2026-08-27, the session it
+    reopened after a five-day halt: ``o/h/l = 24.48/25.39/24.20`` carried over from
+    2026-08-14/08-19 against ``close = 27.02``, the +10% limit — a close 6.4% ABOVE the
+    bar's own high. ``_drop_non_trading_placeholders`` cannot see it (volume is real and
+    the prices are not flat), so without this the resumption bar lands in the store and
+    every range-derived reader — limit-up/gap detection above all — reads a nonsense day.
+
+    Guarded on CLOSE, plus an inverted ``high < low``. ``open`` is deliberately NOT
+    checked: Yahoo serves a provisional open intraday that settles after the close, so an
+    open briefly outside the band is a timing artifact rather than corruption — 574 of
+    1,861 CN names carried one for 2026-08-26 and every sampled name self-corrected on a
+    later pull, so dropping those bars would discard real sessions for a third of the
+    universe. Sizing on the committed stores: the close rule excludes 673/6,832,040 CN
+    rows (0.0099%, over half of them one bad Yahoo day, 2024-03-29) and 0 of the
+    2,279,395 US ``data/stocks`` rows — the invariant already holds wherever the feed is
+    clean. A dropped date is left ABSENT rather than repaired; ``upsert`` is incremental,
+    so a later corrected pull fills it in (``overwrite_overlap`` owns its whole span).
+
+    Fail-open on missing data, matching the placeholder guard: a NaN in close/high/low
+    is not evidence of corruption and leaves the row alone.
+    """
+    required = {"close", "high", "low"}
+    if not required.issubset(df.columns):
+        return df
+    close, high, low = df["close"], df["high"], df["low"]
+    known = close.notna() & high.notna() & low.notna()
+    tolerance = close.abs() * 1e-9 + 1e-8
+    outside_band = (close > high + tolerance) | (close < low - tolerance)
+    inverted_range = high < low - tolerance
+    return df.loc[~(known & (outside_band | inverted_range))]
