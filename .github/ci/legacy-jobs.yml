@@ -2710,6 +2710,7 @@ jobs:
         run: >
           python -m pytest
           tests/test_prophet_live_pack.py
+          tests/test_prophet_live_pack_d12.py
           tests/test_prophet_live_evaluator.py
           tests/test_prophet_live_reconcile.py
           tests/test_prophet_live_basis.py
