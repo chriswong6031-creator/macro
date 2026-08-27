@@ -1,38 +1,41 @@
-"""Byte-level pins for the HK Stock Dashboard V3.7 follower client composer.
+"""Byte-level pins for the HK Stock Dashboard V3.8 composer (V3.7 successor).
 
-site/hk-stock-v36.js is the HK follower of the Canada V3.7 composer
-(site/canada-stock-v36.js), built per Sol's frozen follower architecture
-(research/SOL_HK_V37_FOLLOWER_ARCHITECTURE.md, merges with records PR #6429).
-Shared UX grammar, market-native semantics — never a Canada clone. These pins
-hold the HK-specific constitution in place:
+site/hk-stock-v36.js is the HK composer, corrected to V3.8 per
+research/STOCK_DASHBOARD_V38_ACTION_LEADERSHIP_ARCHITECTURE.md and
+DEC:V38-ACTION-IS-NOT-LEADERSHIP (carrier
+stock-dashboard-v38-hk-ca-fable-20260826-sol-001). Canonical V3.8 law:
+ACTION TIMING ≠ TREND LEADERSHIP. These pins hold the constitution in place:
 
-  - Top Picks is the owner's pv-featured cohort, never a position slice
-    (Canada V3.6 shipped `state.cards.slice(0, 5)`; HK must never repeat it).
-  - No LIVE plane exists for HK (site/live/quotes.json carries zero .HK
-    symbols; the card's own nb-chg node is a server-baked "—"), so no LIVE
-    text, no live-quote table enhancement, and zero fetch() calls anywhere.
+  V3.7 laws still controlling (unchanged pins below):
+  - Top Picks is the owner's pv-featured cohort, never a position slice.
+  - No LIVE plane exists for HK — no LIVE text, no live-quote enhancement,
+    zero fetch() calls anywhere.
   - Evidence & Record moves the HK trd wrapper via appendChild, never
     recomputed.
-  - Leadership filtering never silently switches the Top Picks / All
-    Candidates population (same Sol adversarial gate as Canada V3.7).
-  - The Grid/Table XOR relies on explicit [hidden] overrides, same UA-vs-
-    author display trap as Canada — plus a `.sm-hidden{display:flex}`
-    rescue, because theme.js's row-mode show-more holds LIVE references to
-    the moved .pvcard nodes and can re-hide them on resize.
-  - The Leading Now Southbound flow cue is gated on the owner's own
-    materiality marker (.sbah-sig sig-in/sig-out/sig-neu), never on mere
-    node existence — a neutral "no strong tilt" read must stay silent.
-  - The Leading Now sector carries its own owner-native stance chip, so a
-    bare sector name never reads as an implied recommendation.
-  - The loader (templates/dashboard-icons.js + its site/ pair) retries a
-    transient entitled-fetch failure with the same bounded backoff shape as
-    the Canada loader, gated on the composer's own idempotency flag.
+  - Leadership/action-group filtering never silently switches the Top
+    Picks / All Candidates population.
+  - Grid/Table XOR [hidden] overrides + the `.sm-hidden{display:flex}`
+    rescue against theme.js's live show-more references.
+  - The Southbound flow cue is gated on the owner's own materiality marker
+    (.sbah-sig sig-in/sig-out/sig-neu), never on mere node existence.
+  - The loader (templates/dashboard-icons.js + site/ pair) retry pins.
 
-Adversarial review repair (2026-08-25): 1 BLOCKER (sm-hidden rescue) + 2
-MAJOR (Southbound materiality gate, Leading Now stance chip) + hardened
-pins that previously only did bare `"literal" in text` checks now scope
-into the specific function body/callsite so a mutation that deletes the
-emitting code (leaving a comment behind) still fails.
+  V3.8 corrections (new pins below):
+  - What to Act On Now renders AT REST above Prophet — never only inside
+    the Expand-leadership modal — with the exact owner-native lanes, at
+    most 3 group rows per lane before View all, and name-first rows with
+    no performance/score/percentile towers.
+  - The visible sector rank is the OWNER's Sector Rotation rank rendered
+    as `RS #N` under a visible "Relative strength vs HSI" basis label; a
+    sector the owner did not rank shows "—" — lane traversal order is
+    never minted into a rank number.
+  - Action stance stays a separate axis/field from rank (RS #1 can be
+    Reduce / Avoid; that is information, not a contradiction).
+  - The ambiguous BOARD count label is gone: the count column is labelled
+    Prophet/候选 and renders only when canonical membership is known —
+    unknown membership must never render as zero.
+  - Mobile (§5.5): one segmented lane selector, one lane body at a time;
+    lane switching never mutates the Prophet selection.
 """
 
 import re
@@ -209,24 +212,20 @@ def test_zero_fetch_calls():
 
 
 # ---------------------------------------------------------------------------
-# Leading Now — materiality-gated Southbound cue + owner stance chip
+# Southbound flow cue — materiality-gated, lives in the Leadership header
 # ---------------------------------------------------------------------------
 
-def test_southbound_leading_now_cue_gated_on_materiality_not_existence():
-    """MAJOR repair (adversarial review, 2026-08-25): the frozen spec (§6)
-    forbids the Leading Now Southbound flow cue when the read is
+def test_southbound_flow_cue_gated_on_materiality_not_existence():
+    """The architecture forbids the Southbound flow cue when the read is
     non-material — "cue absent when stale, unavailable, or non-material".
-    A first draft gated only on the .sbah-read NODE existing, which pins a
-    neutral "Flow roughly balanced — no strong tilt." read to Leading Now
-    exactly as permanently as a material one (and today's live build IS in
-    that neutral state — sig-neu, verified site/hk_stocks.html).
-
-    The owner already computes a deterministic directional marker for this
-    exact card: .sbah-sig carries sig-in (inflow) / sig-out (outflow) /
-    sig-neu (templates/hk.html.j2:4698, `_sbsig`). southboundFirstRead()
-    must gate on that marker — sig-neu (or a missing .sbah-sig node)
-    returns null; only sig-in/sig-out surface the cue. This is a read of an
-    owner-published class, never a composer-invented threshold."""
+    The owner computes a deterministic directional marker for this exact
+    card: .sbah-sig carries sig-in (inflow) / sig-out (outflow) / sig-neu
+    (templates/hk.html.j2, `_sbsig`). southboundFirstRead() must gate on
+    that marker — sig-neu (or a missing .sbah-sig node) returns null; only
+    sig-in/sig-out surface the cue. This is a read of an owner-published
+    class, never a composer-invented threshold. V3.8 moved the cue's home
+    from the deleted Leading Now strip into the Leadership & Rotation
+    header (§4); the materiality gate travels with it unchanged."""
     text = _composer_text()
     m = re.search(r"function southboundFirstRead\b.*?(?=\n  function )", text, re.S)
     assert m, "could not locate southboundFirstRead() function body via regex"
@@ -234,12 +233,12 @@ def test_southbound_leading_now_cue_gated_on_materiality_not_existence():
     assert "sbah-sig" in body, (
         "southboundFirstRead() no longer reads .sbah-sig — the cue would go "
         "back to gating on mere .sbah-read node existence, pinning even a "
-        "neutral/non-material read to Leading Now"
+        "neutral/non-material read to the Leadership header"
     )
     assert "sig-neu" in body, (
         "southboundFirstRead() no longer checks for the owner's sig-neu "
-        "marker — a neutral 'no strong tilt' Southbound read would surface "
-        "in Leading Now, which §6 forbids (cue absent when non-material)"
+        "marker — a neutral 'no strong tilt' Southbound read would surface, "
+        "which the architecture forbids (cue absent when non-material)"
     )
     # Not a composer-invented numeric threshold: no comparison operators
     # against sb.* fields (net_z, cum_20d, etc.) — the owner already
@@ -249,31 +248,42 @@ def test_southbound_leading_now_cue_gated_on_materiality_not_existence():
         "threshold — materiality must be read from the owner's own sig-* "
         "class, never recomputed from raw flow numbers client-side"
     )
-
-
-def test_leading_now_sector_carries_its_own_stance_chip():
-    """MAJOR repair (adversarial review, 2026-08-25): printing the bare
-    Leading Now sector name reads as an implied recommendation — today's
-    rotation rank-1 (Healthcare & Pharma) is filed Reduce / Avoid on the
-    owner's own Act-Now board, so "Leading now: Healthcare & Pharma" alone
-    would tell the reader the wrong thing. renderLeading() must append the
-    sector's OWN stance chip (sec.stance/sec.tone, the same values leadRow()
-    uses and the same .hk-v37-stance chip class/idiom), not a bare name."""
-    text = _composer_text()
-    m = re.search(r"function renderLeading\b.*?(?=\n  function )", text, re.S)
-    assert m, "could not locate renderLeading() function body via regex"
-    body = m.group(0)
-    assert re.search(r'class="hk-v37-stance\s*\'\s*\+\s*sec\.tone', body) or (
-        "hk-v37-stance " in body and "sec.tone" in body
-    ), (
-        "renderLeading() no longer renders an .hk-v37-stance chip keyed off "
-        "sec.tone for the Leading Now sector button — the bare sector name "
-        "reads as an implied recommendation"
+    # The cue's one consumer is renderFlowCue(), which fills the
+    # #hk-v37-flow slot in the Leadership & Rotation header.
+    m2 = re.search(r"function renderFlowCue\b.*?(?=\n\n)", text, re.S)
+    assert m2, "could not locate renderFlowCue() function body via regex"
+    cue_body = m2.group(0)
+    assert "southboundFirstRead()" in cue_body, (
+        "renderFlowCue() no longer consumes southboundFirstRead() — the "
+        "materiality-gated cue has lost its renderer"
     )
-    assert "sec.stance.en" in body and "sec.stance.zh" in body, (
-        "renderLeading() no longer interpolates the sector's own "
-        "sec.stance.en/zh into the Leading Now button — the stance text "
-        "itself is missing even if the chip wrapper survives"
+    assert '"#hk-v37-flow"' in cue_body, (
+        "renderFlowCue() no longer targets the #hk-v37-flow header slot"
+    )
+    assert 'id="hk-v37-flow"' in text, (
+        "buildShell() markup lost the #hk-v37-flow slot in the Leadership "
+        "header — the cue has nowhere to render"
+    )
+
+
+def test_leadership_rows_keep_action_stance_as_separate_axis():
+    """V3.8 axis law: every leadership row carries the sector's own
+    owner-native action stance chip as a SEPARATE field beside the RS rank —
+    `RS #1 · Reduce / Avoid` is a legitimate combination and must render
+    honestly (the V3.7 Leading Now strip that used to carry this duty is
+    gone, so the rows themselves are now the only guard). leadRow() must
+    interpolate x.tone into an .hk-v37-stance chip and x.stance.en/zh as its
+    text — a bare ranked name would silently imply 'strong = buy'."""
+    text = _composer_text()
+    m = re.search(r"function leadRow\b.*?(?=\n  function )", text, re.S)
+    assert m, "could not locate leadRow() function body via regex"
+    body = m.group(0)
+    assert "hk-v37-stance " in body and "x.tone" in body, (
+        "leadRow() no longer renders an .hk-v37-stance chip keyed off x.tone "
+        "— action stance must stay a separate visible axis beside RS rank"
+    )
+    assert "x.stance.en" in body and "x.stance.zh" in body, (
+        "leadRow() no longer interpolates the sector's own stance text"
     )
 
 
@@ -586,3 +596,255 @@ def test_close_modal_guards_on_is_open_before_clearing_overflow():
         "document.documentElement.style.overflow mutation in closeModal(), "
         "not after it"
     )
+
+
+# ---------------------------------------------------------------------------
+# V3.8 — What to Act On Now at rest above Prophet (never modal-only)
+# ---------------------------------------------------------------------------
+
+def _build_shell_markup(text: str) -> str:
+    m = re.search(r"main\.innerHTML = .*?researchToolsHtml\(\);", text, re.S)
+    assert m, "could not locate buildShell()'s main.innerHTML composition"
+    return m.group(0)
+
+
+def test_act_now_renders_at_rest_above_prophet_never_modal_only():
+    """V3.8 §13.1: without opening any modal, the user sees the owner-native
+    action lanes — group action must not be recoverable only through Expand
+    Leadership. Pins (a) the #hk-v37-actnow section markup sits INSIDE
+    buildShell()'s at-rest page composition, BEFORE the #hk-v37-prophet
+    section (page grammar §4: Action above Prophet); (b) renderActNow() is
+    actually called from the mount path; (c) the V3.7 modal group-action
+    band (hk-v37-modal-lanes) is gone — the at-rest panel is the one home,
+    so the forbidden mutation 'move the lanes back inside openModal()' has
+    no surviving carrier to hide in."""
+    text = _composer_text()
+    shell = _build_shell_markup(text)
+    actnow_idx = shell.find('id="hk-v37-actnow"')
+    prophet_idx = shell.find('id="hk-v37-prophet"')
+    assert actnow_idx != -1, (
+        "buildShell() no longer composes the #hk-v37-actnow section at rest "
+        "— the What to Act On Now job is buried again"
+    )
+    assert prophet_idx != -1, "buildShell() lost the #hk-v37-prophet section"
+    assert actnow_idx < prophet_idx, (
+        "the What to Act On Now section must render ABOVE Prophet (§4 page "
+        "grammar), not below it"
+    )
+    assert "renderActNow()" in text.split("main.innerHTML")[1], (
+        "renderActNow() is never called after the shell mounts — the panel "
+        "would be an empty box"
+    )
+    assert "hk-v37-modal-lanes" not in text, (
+        "the V3.7 modal group-action band (hk-v37-modal-lanes) is back — "
+        "the at-rest panel is the one home for group action; a second home "
+        "inside the modal is duplication, not compression"
+    )
+    m = re.search(r"function openModal\b.*?(?=\n  /\*|\n  function )", text, re.S)
+    assert m, "could not locate openModal() function body via regex"
+    assert "groupActionBandHtml" not in m.group(0), (
+        "openModal() composes a group-action band again — What to Act On "
+        "Now must not live (only) inside Expand Leadership"
+    )
+
+
+def test_at_rest_lane_rows_capped_at_three_with_view_all():
+    """V3.8 §5.2 density law: no more than 3 group rows per lane at rest;
+    additional content only through the explicit View all expansion. Pins
+    the AN_AT_REST constant at exactly 3, the firstN(items, AN_AT_REST)
+    call inside anLaneHtml()'s collapsed branch, and the View-all control
+    keyed on items.length > AN_AT_REST — raising the constant, bypassing
+    firstN, or unconditionally rendering every row all turn this red."""
+    text = _composer_text()
+    assert re.search(r"var AN_AT_REST = 3;", text), (
+        "AN_AT_REST is no longer exactly 3 — the at-rest density pin "
+        "(≤3 rows per lane before View all) is broken"
+    )
+    m = re.search(r"function anLaneHtml\b.*?(?=\n  function )", text, re.S)
+    assert m, "could not locate anLaneHtml() function body via regex"
+    body = m.group(0)
+    assert "firstN(items, AN_AT_REST)" in body, (
+        "anLaneHtml() no longer caps the collapsed lane at "
+        "firstN(items, AN_AT_REST) — every row would render at rest"
+    )
+    assert "items.length > AN_AT_REST" in body, (
+        "anLaneHtml() lost the items.length > AN_AT_REST condition for the "
+        "View-all control — either it never appears or it always appears"
+    )
+    assert "data-hk-an-view" in body, (
+        "anLaneHtml() lost the data-hk-an-view View-all control"
+    )
+
+
+# ---------------------------------------------------------------------------
+# V3.8 — rank is the owner's rank; lane traversal is never rank
+# ---------------------------------------------------------------------------
+
+def test_rank_is_owner_rank_never_lane_traversal():
+    """DEC:V38-ACTION-IS-NOT-LEADERSHIP: every visible numeric rank needs a
+    canonical rank owner; lane traversal order is never a rank. The only
+    .rank assignments collectSectors() may make are the owner-rank copy
+    (`x.rank = r.rank`) and the explicit null (`x.rank = null`) for a
+    sector the owner did not rank. The V3.7 synthesis
+    (`x.rank = ranked.length + i + 1`) — and the Canada idiom
+    (`out.length + 1`) — must never reappear anywhere in the file."""
+    text = _composer_text()
+    m = re.search(r"function collectSectors\b.*?(?=\n  function )", text, re.S)
+    assert m, "could not locate collectSectors() function body via regex"
+    body = m.group(0)
+    assert "x.rank = r.rank" in body, (
+        "collectSectors() no longer copies the owner's rotation rank"
+    )
+    assignments = re.findall(r"\.rank\s*=\s*([^;]+);", body)
+    for rhs in assignments:
+        assert rhs.strip() in {"r.rank", "null"}, (
+            f"collectSectors() assigns .rank = {rhs.strip()!r} — the only "
+            "lawful assignments are the owner-rank copy (r.rank) and the "
+            "explicit null; anything else is a presentation-minted rank"
+        )
+    assert "ranked.length + i" not in text, (
+        "the V3.7 rank synthesis (ranked.length + i + 1) is back — a sector "
+        "without an owner rank must render '—', never a minted number"
+    )
+    assert "out.length + 1" not in text, (
+        "the Canada traversal-rank idiom (out.length + 1) appeared in the "
+        "HK composer — lane traversal is never rank"
+    )
+
+
+def test_rank_basis_label_and_rs_prefix():
+    """V3.8 §6.2: never display a bare rank number without a visible basis.
+    Pins (a) the 'Relative strength vs HSI' basis label in buildShell()'s
+    Leadership & Rotation header (and its ZH twin, the owner's own
+    相对恒生指数); (b) leadRow()/modalRows() render `RS #` + the owner rank
+    and fall back to '—' on null via the exact conditional — removing the
+    label, the prefix, or the null guard turns this red."""
+    text = _composer_text()
+    # The basis label must be visible in BOTH rank homes: the at-rest
+    # Leadership & Rotation header (buildShell markup) and the expanded
+    # modal pane (modalPaneHtml) — losing either leaves a bare RS number
+    # somewhere.
+    shell = _build_shell_markup(text)
+    mp = re.search(r"function modalPaneHtml\b.*?(?=\n  function )", text, re.S)
+    assert mp, "could not locate modalPaneHtml() function body via regex"
+    for where, markup in [("Leadership & Rotation header", shell),
+                          ("expanded modal pane", mp.group(0))]:
+        assert "Relative strength vs HSI" in markup, (
+            f"the visible rank-basis label (Relative strength vs HSI) is "
+            f"gone from the {where} — a bare RS number without its basis is "
+            "exactly the V3.7 confusion V3.8 corrects"
+        )
+        assert "相对恒生指数" in markup, (
+            f"the ZH rank-basis label (相对恒生指数, the owner's own "
+            f"wording) is gone from the {where}"
+        )
+    for fn in ("leadRow", "modalRows"):
+        m = re.search(r"function " + fn + r"\b.*?(?=\n  function )", text, re.S)
+        assert m, f"could not locate {fn}() function body via regex"
+        body = m.group(0)
+        assert re.search(r'x\.rank != null \? "RS #" \+ x\.rank : "—"', body), (
+            f"{fn}() no longer renders the owner rank as 'RS #N' with the "
+            "explicit null → '—' guard — either the basis-bearing prefix or "
+            "the no-synthesized-rank fallback was dropped"
+        )
+    assert "Sector Leadership" not in text, (
+        "the old ambiguous 'Sector Leadership' heading is back — V3.8 names "
+        "this surface Leadership & Rotation"
+    )
+
+
+# ---------------------------------------------------------------------------
+# V3.8 — Prophet count label; unknown membership is never zero
+# ---------------------------------------------------------------------------
+
+def test_count_is_labelled_prophet_and_unknown_membership_never_renders_zero():
+    """V3.8 §6.3 + failure law: the ambiguous BOARD count label is gone —
+    the count column is labelled Prophet/候选 — and a Prophet count renders
+    only where canonical membership is known. collectSectors() derives
+    membershipKnown from the board rows actually carrying a sector field;
+    when unknown it must set members/count to null (NOT an empty set /
+    zero), and every renderer must branch on `count != null` rather than
+    defaulting to 0."""
+    text = _composer_text()
+    m = re.search(r"function renderLeadership\b.*?(?=\n  /\*|\n  function )", text, re.S)
+    assert m, "could not locate renderLeadership() function body via regex"
+    body = m.group(0)
+    assert 'bi("Prophet", "候选")' in body, (
+        "the leadership list count column is no longer labelled "
+        "Prophet/候选 — an unlabelled or BOARD-labelled count is the "
+        "ambiguity V3.8 removes"
+    )
+    assert 'bi("Board", "榜单")' not in body, (
+        "the ambiguous Board/榜单 count label is back in renderLeadership()"
+    )
+    m2 = re.search(r"function collectSectors\b.*?(?=\n  function )", text, re.S)
+    assert m2, "could not locate collectSectors() function body via regex"
+    sec_body = m2.group(0)
+    assert "state.membershipKnown" in sec_body and "r.sector" in sec_body, (
+        "collectSectors() no longer derives membershipKnown from the board "
+        "rows' own sector field"
+    )
+    assert re.search(r"x\.members = null; x\.leaders = \[\]; x\.count = null;", sec_body), (
+        "collectSectors() no longer nulls members/count when membership is "
+        "unknown — an empty set would render as a false 0"
+    )
+    for fn, snippet in [
+        ("leadRow", 'x.count != null ? x.count : "—"'),
+        ("modalRows", 'x.count != null ? x.count : "—"'),
+        ("anRowHtml", "x.count != null"),
+    ]:
+        m3 = re.search(r"function " + fn + r"\b.*?(?=\n  function )", text, re.S)
+        assert m3, f"could not locate {fn}() function body via regex"
+        assert snippet in m3.group(0), (
+            f"{fn}() no longer branches on count != null — an unknown "
+            "membership would render as zero, and missing ≠ zero"
+        )
+
+
+# ---------------------------------------------------------------------------
+# V3.8 — mobile lane grammar; presentation controls never touch population
+# ---------------------------------------------------------------------------
+
+def test_mobile_segment_grammar_one_lane_at_a_time():
+    """V3.8 §5.5: at ~390px the Act-Now panel is one horizontal segmented
+    lane selector plus ONE lane body at a time — never four stacked giant
+    lane cards. Pins the CSS mechanism: the segment bar is hidden at
+    desktop (display:none base rule) and shown in the 680px media query,
+    where lanes collapse to one column and only .is-current displays."""
+    text = _composer_text()
+    assert re.search(r"\.hk-v37-an-seg\{display:none", text), (
+        "the Act-Now segment bar lost its desktop display:none base rule"
+    )
+    mq = re.search(r"@media\(max-width:680px\)\{.*?\}\"", text, re.S)
+    assert mq, "could not locate the 680px media query block"
+    mq_body = mq.group(0)
+    for rule in [
+        ".hk-v37-an-seg{display:flex}",
+        ".hk-v37-an-lanes{grid-template-columns:1fr}",
+        ".hk-v37-an-lane{display:none}",
+        ".hk-v37-an-lane.is-current{display:block}",
+    ]:
+        assert rule in mq_body, (
+            f"680px media query lost {rule!r} — the mobile grammar (one "
+            "segmented selector, one lane body at a time) is broken"
+        )
+
+
+def test_act_now_presentation_controls_never_touch_population_or_filter():
+    """V3.8 §5.5: switching the visible mobile lane (or expanding View all)
+    is presentation-only — it must not mutate the Prophet selection until a
+    group is actually chosen. setAnLane()/toggleAnLane() must not call
+    setSource()/activate()/applyFilter() or assign state.source /
+    state.filter."""
+    text = _composer_text()
+    for fn in ("setAnLane", "toggleAnLane"):
+        m = re.search(r"function " + fn + r"\b.*?\n  \}", text, re.S)
+        assert m, f"could not locate {fn}() function body via regex"
+        body = m.group(0)
+        for forbidden in ("setSource(", "activate(", "applyFilter(",
+                          "state.source", "state.filter"):
+            assert forbidden not in body, (
+                f"{fn}() references {forbidden!r} — Act-Now lane "
+                "presentation controls must never mutate the Prophet "
+                "population or filter"
+            )
