@@ -1630,6 +1630,133 @@ def test_event_substrate_audits_daily_basic_close_and_direction(tmp_path):
         )
 
 
+def test_stk_limit_zero_pre_close_with_no_published_limits_lands_as_absent(tmp_path):
+    """U1 (S1): a stk_limit row for a non-trading instrument spells its absent
+    pre_close as vendor 0 with no published up/down limits. That must land
+    with null price columns rather than raising, and the source-row equation
+    (source == landed + known_excluded + quarantined_unknown) must balance,
+    so the unit can still reach terminal.
+    """
+    _seed_spine(tmp_path)
+    raw = _limit_rows("20240102")
+    raw.loc[raw["ts_code"] == "600519.SH", ["pre_close", "up_limit", "down_limit"]] = [
+        0, None, None,
+    ]
+    result = spine.normalise_daily_endpoint("stk_limit", raw, "20240102", tmp_path)
+    assert (
+        len(result.landed_a) + len(result.known_excluded) + len(result.quarantined_unknown)
+        == len(raw)
+    )
+    assert result.known_excluded.empty
+    assert result.quarantined_unknown.empty
+    row = result.landed_a.set_index("ticker").loc["600519.SS"]
+    assert pd.isna(row["pre_close_cents"])
+    assert pd.isna(row["up_limit_cents"])
+    assert pd.isna(row["down_limit_cents"])
+    assert bool(row["source_limits_present"]) is False
+
+    _land_endpoint_day(tmp_path, "stk_limit", "20240102", raw)
+    state = spine.load_state(tmp_path)
+    assert spine._unit_done(state, tmp_path, "stk_limit", "20240102") is True
+
+
+def test_stk_limit_zero_up_down_limits_are_treated_as_absent(tmp_path):
+    """U2 (S1): up_limit/down_limit of vendor 0 carry the identical
+    zero-as-null defect as pre_close and must be nulled the same way, not
+    just pre_close. A real (non-zero) pre_close still lands normally.
+    """
+    _seed_spine(tmp_path)
+    raw = _limit_rows("20240102")
+    raw.loc[raw["ts_code"] == "600519.SH", ["up_limit", "down_limit"]] = [0, 0]
+    result = spine.normalise_daily_endpoint("stk_limit", raw, "20240102", tmp_path)
+    row = result.landed_a.set_index("ticker").loc["600519.SS"]
+    assert row["pre_close_cents"] == 1000
+    assert pd.isna(row["up_limit_cents"])
+    assert pd.isna(row["down_limit_cents"])
+    assert bool(row["source_limits_present"]) is False
+
+
+def test_stk_limit_zero_pre_close_with_published_limits_raises_contradiction(tmp_path):
+    """U3 (S2): pre_close 0 (the non-trading sentinel) together with
+    PUBLISHED up/down limits is a legal band with no anchor -- a
+    contradiction that must keep raising, not be silently accepted.
+    """
+    _seed_spine(tmp_path)
+    raw = _limit_rows("20240102")
+    raw.loc[raw["ts_code"] == "600519.SH", "pre_close"] = 0
+    with pytest.raises(spine.SpineError, match="without an anchoring pre_close"):
+        spine.normalise_daily_endpoint("stk_limit", raw, "20240102", tmp_path)
+
+
+def test_stk_limit_one_sided_zero_publication_still_raises(tmp_path):
+    """U4 (S1): a one-sided publication (up present, down spelled as vendor
+    0) must still raise -- proves the up_missing != down_missing check was
+    taught about the non-positive sentinel rather than bypassed by it.
+    """
+    _seed_spine(tmp_path)
+    raw = _limit_rows("20240102")
+    raw.loc[raw["ts_code"] == "600519.SH", "down_limit"] = 0
+    with pytest.raises(spine.SpineError, match="both upper/lower"):
+        spine.normalise_daily_endpoint("stk_limit", raw, "20240102", tmp_path)
+
+
+def test_event_substrate_raises_when_traded_ticker_has_null_stk_limit_pre_close(tmp_path):
+    """U5 (S3 fail-open guard): the daily/stk_limit previous-close
+    cross-check only compares rows where both pre_close columns are
+    non-null, so nulling a zero pre_close (S1) would silently remove a
+    traded ticker from that audit. This must instead raise: a
+    positive-volume daily row with no stk_limit.pre_close is not allowed to
+    exit the cross-check unnoticed.
+    """
+    _seed_spine(tmp_path)
+    limits = _limit_rows("20240102")
+    limits.loc[limits["ts_code"] == "600519.SH", ["pre_close", "up_limit", "down_limit"]] = [
+        0, 0, 0,
+    ]
+    _land_endpoint_day(tmp_path, "daily", "20240102", _daily_rows("20240102"))
+    _land_endpoint_day(tmp_path, "daily_basic", "20240102", _daily_basic_rows("20240102"))
+    _land_endpoint_day(tmp_path, "stk_limit", "20240102", limits)
+    with pytest.raises(spine.SpineError, match="have no stk_limit.pre_close"):
+        spine.build_canonical_event_substrate(
+            tmp_path, date(2024, 1, 2), date(2024, 1, 2),
+        )
+
+
+def test_daily_zero_close_on_traded_stock_still_raises(tmp_path):
+    """U6: the zero-sentinel handling is scoped to stk_limit only. A
+    genuinely corrupt daily.close of 0 on a positive-volume (traded) stock
+    must keep raising through the unmodified _quote_price_cents OHLC path.
+    """
+    _seed_spine(tmp_path)
+    corrupt = _daily_rows("20240102")
+    corrupt["close"] = corrupt["close"].astype(float)
+    corrupt.loc[corrupt["ts_code"] == "600519.SH", "close"] = 0
+    with pytest.raises(spine.SpineError, match="must be positive"):
+        spine.normalise_daily_endpoint("daily", corrupt, "20240102", tmp_path)
+
+
+def test_stk_limit_row_landing_with_null_limits_is_not_event_eligible(tmp_path):
+    """U7: a row that lands with null limits (source_limits_present False)
+    is not event-eligible, the correct resting place for a non-trading
+    instrument under DEC:CNLI-HISTORICAL-PIT-IS-SOURCE-UNION.
+    """
+    _seed_spine(tmp_path)
+    limits = _limit_rows("20240102")
+    limits.loc[limits["ts_code"] == "000001.SZ", ["pre_close", "up_limit", "down_limit"]] = [
+        0, 0, 0,
+    ]
+    _land_endpoint_day(tmp_path, "daily", "20240102", _daily_rows("20240102"))
+    _land_endpoint_day(tmp_path, "daily_basic", "20240102", _daily_basic_rows("20240102"))
+    _land_endpoint_day(tmp_path, "stk_limit", "20240102", limits)
+    spine.build_canonical_event_substrate(tmp_path, date(2024, 1, 2), date(2024, 1, 2))
+    event = pd.read_parquet(
+        tmp_path / "event_daily" / "year=2024" / "month=01" / "part.parquet"
+    ).set_index("ticker")
+    assert pd.isna(event.loc["000001.SZ", "limit_pre_close_cents"])
+    assert bool(event.loc["000001.SZ", "source_limits_present"]) is False
+    assert bool(event.loc["000001.SZ", "event_eligible"]) is False
+
+
 def test_manifest_hashes_coverage_ore_and_schema(monkeypatch, tmp_path):
     _seed_spine(tmp_path)
     monkeypatch.setattr(spine, "CALENDAR_HISTORY_START", date(2024, 1, 1))

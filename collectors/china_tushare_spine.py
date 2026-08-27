@@ -397,6 +397,35 @@ def _quote_price_cents(
     return int(tick_price * A_SHARE_PRICE_SCALE)
 
 
+def _stk_limit_price_or_sentinel_absent(value: Any) -> Any:
+    """Map TuShare's ``stk_limit`` non-trading zero sentinel to an absent value.
+
+    ``stk_limit`` publishes rows for instruments that did not trade the
+    session and spells their absent price fields (``pre_close``, ``up_limit``,
+    ``down_limit``) as ``0`` rather than null. Scoped to the ``stk_limit``
+    branch only -- a zero ``daily`` OHLC price stays a hard failure via
+    ``_quote_price_cents`` directly. Only a value that parses cleanly as a
+    non-positive finite decimal is treated as the sentinel; anything else
+    (None/NaN pass through unchanged, and unparseable values are left for
+    ``_quote_price_cents`` to reject with its own error) is returned as-is so
+    genuine corruption still surfaces.
+    """
+    if value is None:
+        return None
+    try:
+        if pd.isna(value):
+            return None
+    except (TypeError, ValueError):
+        pass
+    try:
+        parsed = value if isinstance(value, Decimal) else Decimal(str(value).strip())
+    except (InvalidOperation, ValueError):
+        return value
+    if parsed.is_finite() and parsed <= 0:
+        return None
+    return value
+
+
 def a_share_limit_price_bounds(
     previous_close: str | float | Decimal,
     limit_ratio: str | float | Decimal,
@@ -2619,21 +2648,34 @@ def normalise_daily_endpoint(
                 integral=True, allowed=set(range(7)),
             )
         elif endpoint == "stk_limit":
-            pre_close_cents = _quote_price_cents(
-                item.get("pre_close"), field="stk_limit.pre_close",
-            )
-            up_missing = item.get("up_limit") is None or pd.isna(item.get("up_limit"))
-            down_missing = item.get("down_limit") is None or pd.isna(item.get("down_limit"))
+            raw_pre_close = _stk_limit_price_or_sentinel_absent(item.get("pre_close"))
+            raw_up_limit = _stk_limit_price_or_sentinel_absent(item.get("up_limit"))
+            raw_down_limit = _stk_limit_price_or_sentinel_absent(item.get("down_limit"))
+            up_missing = raw_up_limit is None
+            down_missing = raw_down_limit is None
             if up_missing != down_missing:
                 raise SpineError("stk_limit must publish both upper/lower prices or neither")
+            pre_close_cents = _quote_price_cents(
+                raw_pre_close, field="stk_limit.pre_close", allow_missing=True,
+            )
             up_limit_cents = _quote_price_cents(
-                item.get("up_limit"), field="stk_limit.up_limit", allow_missing=True,
+                raw_up_limit, field="stk_limit.up_limit", allow_missing=True,
             )
             down_limit_cents = _quote_price_cents(
-                item.get("down_limit"), field="stk_limit.down_limit", allow_missing=True,
+                raw_down_limit, field="stk_limit.down_limit", allow_missing=True,
             )
-            if up_limit_cents is not None and not (
-                up_limit_cents > pre_close_cents >= down_limit_cents
+            if pre_close_cents is None and up_limit_cents is not None:
+                # Contradiction: a published upper/lower band with no anchoring
+                # pre_close is a legal band with no anchor -- this is NOT the
+                # non-trading case S1 exists for, so it stays a hard failure.
+                raise SpineError(
+                    "stk_limit published upper/lower limits without an anchoring pre_close"
+                )
+            if (
+                pre_close_cents is not None
+                and up_limit_cents is not None
+                and down_limit_cents is not None
+                and not (up_limit_cents > pre_close_cents >= down_limit_cents)
             ):
                 raise SpineError("stk_limit upper/pre-close/lower ordering is inconsistent")
             for column, cents in (
@@ -3950,6 +3992,26 @@ def build_canonical_event_substrate(
         merged = merged.merge(
             status, on=["trade_date", "ticker"], how="left", validate="one_to_one",
         )
+
+        # S3 fail-open guard: the cross-check below only compares rows where
+        # BOTH pre_close_cents columns are non-null, so a nulled stk_limit
+        # zero-sentinel (S1) would otherwise silently drop that ticker out of
+        # the audit's scope instead of failing loud. Assert directly that
+        # every positive-volume daily row still carries a non-null
+        # stk_limit.pre_close -- a vendor zero on a stock that actually
+        # traded is genuine corruption, not the non-trading sentinel, and
+        # must not be allowed to exit the cross-check unnoticed.
+        traded_missing_limit_pre_close = merged[
+            merged["positive_volume"].fillna(False).astype(bool)
+            & merged["limit_pre_close_cents"].isna()
+        ]
+        if not traded_missing_limit_pre_close.empty:
+            sample = traded_missing_limit_pre_close[
+                ["trade_date", "ticker"]
+            ].head(20).to_dict(orient="records")
+            raise SpineError(
+                f"positive-volume daily rows have no stk_limit.pre_close: {sample}"
+            )
 
         compared = merged[
             merged["pre_close_cents"].notna() & merged["limit_pre_close_cents"].notna()
