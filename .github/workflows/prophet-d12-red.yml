@@ -20,16 +20,13 @@ jobs:
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             /tests/test_prophet_live_pack_d12.py
-            /engine/**
-            /lib/**
+            /engine/prophet_live/**
+            /lib/nyse_calendar.py
             /scripts/build_prophet_live_pack.py
-            /scripts/build_stock_library.py
-            /collectors/us_names_zh.py
-            /config.yml
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - name: Install focused dependencies
-        run: pip install --quiet pytest pandas numpy pyyaml scipy
+        run: pip install --quiet pytest pandas
       - name: Run D12 regression
         run: python -m pytest tests/test_prophet_live_pack_d12.py -q
