@@ -1,0 +1,140 @@
+{
+  "abstention": {
+    "abstained": true,
+    "reasons": [
+      "no_mechanism_hypothesized"
+    ]
+  },
+  "alternatives": [
+    {
+      "explanation_class": "sector_factor",
+      "text": "A common sector-wide demand shift could also explain the co-movement without direct transfer."
+    }
+  ],
+  "asof": "2026-08-20",
+  "authority": {
+    "display_only": true,
+    "entry": false,
+    "gating": false,
+    "originates_signals": false,
+    "permitted_consumers": [
+      "research",
+      "display"
+    ],
+    "ranking": false,
+    "sizing": false,
+    "trading": false
+  },
+  "binding_kills": [
+    "DNR:KILL-PSS-SR2-PEER-DIFFUSION",
+    "DNR:KILL-PSS-SR3-PARTICIPATION",
+    "DNR:KILL-CN-SUPPLY-ABSORPTION",
+    "DNR:KILL-CAUSAL-DAG-ALPHA"
+  ],
+  "compiled_at": "2026-08-20T04:00:00Z",
+  "content_sha256": "624fab3a5d0f5fa6e18343821e4f4acfa8ea00c7ddc2ecae0678e4b433a6f53b",
+  "economic_share": null,
+  "expiry": {
+    "note": "Review after next quarterly filing.",
+    "review_by": "2026-11-20"
+  },
+  "falsifiers": [
+    {
+      "condition": "No incremental orders observed within two quarters of the filing.",
+      "observable": "Segment revenue disclosure in the next two 10-Q filings."
+    }
+  ],
+  "generator_admissions": [
+    {
+      "asof": "2026-08-20",
+      "construct": "disclosed_customer_supplier",
+      "coverage_state": "covered",
+      "evidence_refs": [
+        "evidence-ref-admission"
+      ],
+      "generator_id": "gen_disclosed_customer_supplier",
+      "graph": "graph_1",
+      "known_at": "2026-08-20",
+      "owner_ref": {
+        "artifact": "data/edgar/material_8k_events.parquet",
+        "artifact_schema": "group_linked_outsiders.v1",
+        "owner_program": "group-reads"
+      }
+    }
+  ],
+  "graph_states": {
+    "graph_1": "supported",
+    "graph_2": "absent",
+    "graph_3": "absent"
+  },
+  "hypothesis_state": "abstained",
+  "market_evidence": [],
+  "mechanism": {
+    "hypothesis_text": null,
+    "mechanism_class": null,
+    "operating_metric_class": null,
+    "predicted_operating_direction": null,
+    "state": "abstained"
+  },
+  "record_id": "eph1:e545400879b0570b",
+  "relationship_paths": [
+    {
+      "asof": "2026-08-20",
+      "claim_strength": "candidate",
+      "construct": "disclosed_agreement_role_unknown",
+      "evidence_refs": [
+        "evidence-ref-g1"
+      ],
+      "graph": "graph_1",
+      "known_at": "2026-08-20",
+      "leg_id": "g1_role_bad",
+      "owner_ref": {
+        "artifact": "data/edgar/material_8k_events.parquet",
+        "artifact_schema": "group_linked_outsiders.v1",
+        "owner_program": "group-reads"
+      },
+      "role": "supplier",
+      "role_evidence_class": "agreement_role_unknown",
+      "usability_state": "usable"
+    }
+  ],
+  "schema": "economic_propagation.propagation_hypothesis/v1",
+  "similarity_evidence": [],
+  "source_event": {
+    "event_class": "filing_8k",
+    "event_id": "evt-min-0001",
+    "event_time": "2026-08-18",
+    "known_at": "2026-08-18T12:00:00Z",
+    "owner_ref": {
+      "artifact": "data/edgar/material_8k_events.parquet",
+      "artifact_schema": "group_linked_outsiders.v1",
+      "owner_program": "group-reads"
+    },
+    "source_identity": {
+      "issuer_id": "ISSUER-ACME",
+      "owner_ref": {
+        "artifact": "data/identity/master.parquet",
+        "artifact_schema": "stock_identity.master.v1",
+        "owner_program": "stock-identity"
+      },
+      "resolution_asof": "2026-08-20",
+      "resolution_state": "RESOLVED",
+      "security_id": "SEC-ACME"
+    }
+  },
+  "target": {
+    "requested_key": "MINCO",
+    "resolution": {
+      "issuer_id": "ISSUER-ACME",
+      "owner_ref": {
+        "artifact": "data/identity/master.parquet",
+        "artifact_schema": "stock_identity.master.v1",
+        "owner_program": "stock-identity"
+      },
+      "resolution_asof": "2026-08-20",
+      "resolution_state": "RESOLVED",
+      "security_id": "SEC-ACME"
+    }
+  },
+  "version": 1
+}

@@ -1,0 +1,157 @@
+{
+  "fixtures": {
+    "golden_supported_hypothesis": {
+      "bytes": 5932,
+      "expected_codes": [],
+      "kind": "golden",
+      "purpose": "Lawful supported_hypothesis record: disclosed customer/supplier leg + comparable + market context, mechanism hypothesized.",
+      "sha256": "c14822d4f91b90ac36b23d767626f4f1ee22b34a8507042b81962f694a9f1ba1"
+    },
+    "golden_typed_abstention_rights_blocked": {
+      "bytes": 3925,
+      "expected_codes": [],
+      "kind": "golden",
+      "purpose": "Lawful typed abstention: RESOLVED identity, but the only Graph-1 leg is rights_blocked.",
+      "sha256": "60bc4af8318e5b1b53de96583f7bb65fdab6388cd85534c4428915bd80d4b681"
+    },
+    "golden_typed_abstention_unresolved": {
+      "bytes": 2826,
+      "expected_codes": [],
+      "kind": "golden",
+      "purpose": "Lawful typed abstention: NOT_IN_MASTER identity, zero evidence legs, zero mechanism.",
+      "sha256": "44339f01bc6edacb0b8ba6737a0fcfb15f9a7fa77458860f8eb83ab136b5ccdb"
+    },
+    "hostile_authority_trading_true": {
+      "bytes": 5931,
+      "expected_codes": [
+        "K3D_R070"
+      ],
+      "kind": "hostile",
+      "purpose": "authority.trading flipped true against the const all-false object.",
+      "sha256": "7c2d828deb2e6f22ca0c231731352940bb418dc78c110afba89356d206e195e2"
+    },
+    "hostile_binding_kills_drop": {
+      "bytes": 5899,
+      "expected_codes": [
+        "K3D_R001"
+      ],
+      "kind": "hostile",
+      "purpose": "One of the four const binding_kills entries dropped.",
+      "sha256": "e31ca61424fa2028e00b65aa3d5e54788e8c82bfe44884b02b1685c8e54701d7"
+    },
+    "hostile_clock_violations": {
+      "bytes": 5932,
+      "expected_codes": [
+        "K3D_R060",
+        "K3D_R061"
+      ],
+      "kind": "hostile",
+      "purpose": "One leg with known_at after asof (lookahead), one leg with an unparseable clock.",
+      "sha256": "3dae75a9f67bc81cbd3464cf5ebcd373bfd631dc38d79831aab8c9d960e6dac6"
+    },
+    "hostile_disagreeing_derived_summary": {
+      "bytes": 3889,
+      "expected_codes": [
+        "K3D_R051",
+        "K3D_R052",
+        "K3D_R053"
+      ],
+      "kind": "hostile",
+      "purpose": "Caller-authored graph_states/hypothesis_state/abstention disagree with the actual derivation.",
+      "sha256": "052ebe1309565da04e8bcf0698b8c6927bbdcd5e43abd03f64144e93b2081665"
+    },
+    "hostile_economic_share_nonnull": {
+      "bytes": 5932,
+      "expected_codes": [
+        "K3D_R072"
+      ],
+      "kind": "hostile",
+      "purpose": "economic_share tampered non-null; it is a reserved-null axis.",
+      "sha256": "685eed77fbb9e05f5b48daef4fbbc1b5f0dd18caedfbeae5368de05ad6baced3"
+    },
+    "hostile_forbidden_key_injection": {
+      "bytes": 5963,
+      "expected_codes": [
+        "K3D_R071"
+      ],
+      "kind": "hostile",
+      "purpose": "A scalar-authority-shaped key ('confidence_note') smuggled into source_event.",
+      "sha256": "76d3b2e5dc097e072de96ece5b44b198c9b90421db9051cdf07196d048dc29bb"
+    },
+    "hostile_generator_refusal_admission": {
+      "bytes": 3913,
+      "expected_codes": [
+        "K3D_R021"
+      ],
+      "kind": "hostile",
+      "purpose": "The registry's one admits_target=false refusal row used as a target-admitting generator.",
+      "sha256": "444c0a61b6293f0d4265dc9c7c9da06f69dfc620cb725f61572abe54c67561f4"
+    },
+    "hostile_mechanism_trade_language": {
+      "bytes": 5915,
+      "expected_codes": [
+        "K3D_R041"
+      ],
+      "kind": "hostile",
+      "purpose": "Trade/price vocabulary ('rally', 'price target') smuggled into mechanism prose.",
+      "sha256": "ee777c29894b77ff936154d0f02325def341c0c2933b9991401f15ba318dc1ca"
+    },
+    "hostile_mechanism_without_relationship": {
+      "bytes": 3882,
+      "expected_codes": [
+        "K3D_R042"
+      ],
+      "kind": "hostile",
+      "purpose": "Mechanism hypothesized while relationship_paths stays empty (no Graph-1 support).",
+      "sha256": "3f2132abcc4270baff2fb33b16bef1eed4960a373068c9fa3581f2da3a617ac0"
+    },
+    "hostile_relationship_construct_laundering": {
+      "bytes": 4446,
+      "expected_codes": [
+        "K3D_R032"
+      ],
+      "kind": "hostile",
+      "purpose": "Graph-2/Graph-3 constructs (theme_membership, residual_comovement) placed as Graph-1 relationship legs.",
+      "sha256": "8b48366a80ed9ae29fb7c3b1e88f4c3a3bca5c8e136fe2dd0fc6064b14803ad3"
+    },
+    "hostile_rights_blocked_claimed_supported": {
+      "bytes": 3923,
+      "expected_codes": [
+        "K3D_R051",
+        "K3D_R063"
+      ],
+      "kind": "hostile",
+      "purpose": "Only Graph-1 leg is rights_blocked but graph_states.graph_1 still claims supported.",
+      "sha256": "f82faf3ffabfff5b3beb394f8730aadc83850218d05ed8661aca6bec563fecfc"
+    },
+    "hostile_role_laundering": {
+      "bytes": 3924,
+      "expected_codes": [
+        "K3D_R031"
+      ],
+      "kind": "hostile",
+      "purpose": "A generic-agreement leg (disclosed_agreement_role_unknown) claims a specific economic role.",
+      "sha256": "91af167e1b88c01007c83361228d3f428c7854d034baece5f518d3ed724d2465"
+    },
+    "hostile_sha_mismatch": {
+      "bytes": 5920,
+      "expected_codes": [
+        "K3D_R081"
+      ],
+      "kind": "hostile",
+      "purpose": "Field tampered WITHOUT recomputing content_sha256 (the stale-hash exception fixture).",
+      "sha256": "fe9ab0741548b64a4c908d5326b52af7ca658a677e462e8c0935bf8097b589ba"
+    },
+    "hostile_unresolved_identity_laundered": {
+      "bytes": 3870,
+      "expected_codes": [
+        "K3D_R010",
+        "K3D_R011"
+      ],
+      "kind": "hostile",
+      "purpose": "NOT_IN_MASTER identity with abstained flipped false and evidence legs smuggled in.",
+      "sha256": "f50d5dee9cef2fe1b99f155e0e5879b667020fe46010c769d9dfcb2133eb55c5"
+    }
+  },
+  "schema": "economic_propagation.fixture_manifest.v1"
+}

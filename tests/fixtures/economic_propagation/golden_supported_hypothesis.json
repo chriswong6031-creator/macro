@@ -1,0 +1,206 @@
+{
+  "abstention": {
+    "abstained": false,
+    "reasons": []
+  },
+  "alternatives": [
+    {
+      "explanation_class": "sector_factor",
+      "text": "A common sector-wide demand shift could also explain the co-movement without direct transfer."
+    }
+  ],
+  "asof": "2026-08-20",
+  "authority": {
+    "display_only": true,
+    "entry": false,
+    "gating": false,
+    "originates_signals": false,
+    "permitted_consumers": [
+      "research",
+      "display"
+    ],
+    "ranking": false,
+    "sizing": false,
+    "trading": false
+  },
+  "binding_kills": [
+    "DNR:KILL-PSS-SR2-PEER-DIFFUSION",
+    "DNR:KILL-PSS-SR3-PARTICIPATION",
+    "DNR:KILL-CN-SUPPLY-ABSORPTION",
+    "DNR:KILL-CAUSAL-DAG-ALPHA"
+  ],
+  "compiled_at": "2026-08-20T04:00:00Z",
+  "content_sha256": "3b7199a0cc6daa15845c71915dc9f088cebe114a1c29f8c31bf4b2d3ea0301c7",
+  "economic_share": null,
+  "expiry": {
+    "note": "Review after next quarterly filing.",
+    "review_by": "2026-11-20"
+  },
+  "falsifiers": [
+    {
+      "condition": "No incremental orders observed within two quarters of the filing.",
+      "observable": "Segment revenue disclosure in the next two 10-Q filings."
+    }
+  ],
+  "generator_admissions": [
+    {
+      "asof": "2026-08-20",
+      "construct": "disclosed_customer_supplier",
+      "coverage_state": "covered",
+      "evidence_refs": [
+        "evidence-ref-admission"
+      ],
+      "generator_id": "gen_disclosed_customer_supplier",
+      "graph": "graph_1",
+      "known_at": "2026-08-20",
+      "owner_ref": {
+        "artifact": "data/edgar/material_8k_events.parquet",
+        "artifact_schema": "group_linked_outsiders.v1",
+        "owner_program": "group-reads"
+      }
+    },
+    {
+      "asof": "2026-08-20",
+      "construct": "theme_membership",
+      "coverage_state": "covered",
+      "evidence_refs": [
+        "evidence-ref-admission"
+      ],
+      "generator_id": "gen_theme_membership",
+      "graph": "graph_2",
+      "known_at": "2026-08-20",
+      "owner_ref": {
+        "artifact": "data/edgar/material_8k_events.parquet",
+        "artifact_schema": "group_linked_outsiders.v1",
+        "owner_program": "group-reads"
+      }
+    },
+    {
+      "asof": "2026-08-20",
+      "construct": "residual_comovement",
+      "coverage_state": "covered",
+      "evidence_refs": [
+        "evidence-ref-admission"
+      ],
+      "generator_id": "gen_residual_comovement",
+      "graph": "graph_3",
+      "known_at": "2026-08-20",
+      "owner_ref": {
+        "artifact": "data/edgar/material_8k_events.parquet",
+        "artifact_schema": "group_linked_outsiders.v1",
+        "owner_program": "group-reads"
+      }
+    }
+  ],
+  "graph_states": {
+    "graph_1": "supported",
+    "graph_2": "present",
+    "graph_3": "present"
+  },
+  "hypothesis_state": "supported_hypothesis",
+  "market_evidence": [
+    {
+      "asof": "2026-08-20",
+      "construct": "residual_comovement",
+      "evidence_refs": [
+        "evidence-ref-g3"
+      ],
+      "graph": "graph_3",
+      "known_at": "2026-08-20",
+      "leg_id": "g3_resid",
+      "market_state_basis": "residual_comovement",
+      "owner_ref": {
+        "artifact": "data/baskets/group_pulse.json",
+        "artifact_schema": "group_pulse.v1",
+        "owner_program": "group-reads"
+      },
+      "usability_state": "usable"
+    }
+  ],
+  "mechanism": {
+    "hypothesis_text": "Demand for widgets shifts from Acme to Beta as capacity reallocates toward Beta's line.",
+    "mechanism_class": "demand_transfer",
+    "operating_metric_class": "revenue",
+    "predicted_operating_direction": "improves",
+    "state": "hypothesized"
+  },
+  "record_id": "eph1:c3a05ed82cbec69c",
+  "relationship_paths": [
+    {
+      "asof": "2026-08-20",
+      "claim_strength": "disclosed",
+      "construct": "disclosed_customer_supplier",
+      "evidence_refs": [
+        "evidence-ref-g1"
+      ],
+      "graph": "graph_1",
+      "known_at": "2026-08-20",
+      "leg_id": "g1_customer",
+      "owner_ref": {
+        "artifact": "data/edgar/material_8k_events.parquet",
+        "artifact_schema": "group_linked_outsiders.v1",
+        "owner_program": "group-reads"
+      },
+      "role": "customer",
+      "role_evidence_class": "disclosed_role_specific",
+      "usability_state": "usable"
+    }
+  ],
+  "schema": "economic_propagation.propagation_hypothesis/v1",
+  "similarity_evidence": [
+    {
+      "asof": "2026-08-20",
+      "comparability_basis": "shared_theme_vocabulary",
+      "construct": "theme_membership",
+      "evidence_refs": [
+        "evidence-ref-g2"
+      ],
+      "graph": "graph_2",
+      "known_at": "2026-08-20",
+      "leg_id": "g2_theme",
+      "owner_ref": {
+        "artifact": "data/theme_graph/edges.parquet",
+        "artifact_schema": "theme_graph.edges.v1",
+        "owner_program": "gmi-theme-graph"
+      },
+      "usability_state": "usable"
+    }
+  ],
+  "source_event": {
+    "event_class": "filing_8k",
+    "event_id": "evt-8k-0001",
+    "event_time": "2026-08-18",
+    "known_at": "2026-08-18T12:00:00Z",
+    "owner_ref": {
+      "artifact": "data/edgar/material_8k_events.parquet",
+      "artifact_schema": "group_linked_outsiders.v1",
+      "owner_program": "group-reads"
+    },
+    "source_identity": {
+      "issuer_id": "ISSUER-ACME",
+      "owner_ref": {
+        "artifact": "data/identity/master.parquet",
+        "artifact_schema": "stock_identity.master.v1",
+        "owner_program": "stock-identity"
+      },
+      "resolution_asof": "2026-08-20",
+      "resolution_state": "RESOLVED",
+      "security_id": "SEC-ACME"
+    }
+  },
+  "target": {
+    "requested_key": "ACME",
+    "resolution": {
+      "issuer_id": "ISSUER-ACME",
+      "owner_ref": {
+        "artifact": "data/identity/master.parquet",
+        "artifact_schema": "stock_identity.master.v1",
+        "owner_program": "stock-identity"
+      },
+      "resolution_asof": "2026-08-20",
+      "resolution_state": "RESOLVED",
+      "security_id": "SEC-ACME"
+    }
+  },
+  "version": 1
+}
