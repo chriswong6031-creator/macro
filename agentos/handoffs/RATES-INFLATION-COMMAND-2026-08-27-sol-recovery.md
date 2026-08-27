@@ -83,14 +83,14 @@ unverified:
   - claim: Dealer-load-extreme is promotable.
     what_would_verify: >=12 months forward history plus every frozen preregistered lift/HAC/permutation gate; earliest approximately 2027-07.
 unresolved:
-  - "F0 records carrier requires independent review/CI/merge before it becomes accepted durable truth."
+  - "PR #6543 requires independent review/CI/merge before F0 becomes accepted durable truth."
   - "Current theta surface liveness is unproven by committed history alone."
   - "Historical CPI/PPI/NFP event-window coverage needs canonical PIT release-date repair."
   - "Yield-series momentum organ is missing."
   - "Forward Path must remove semantic-stale policy input and compose the missing canonical yield/transmission reads."
   - "Unified premium RIC UX and aggregate evidence/scorecard remain nonterminal."
 next_actions:
-  - "Independently review and merge the F0 records carrier only if Agent OS validation/semantic CI are green."
+  - "Independently review and merge PR #6543 only if Agent OS validation/semantic CI are green on its exact head."
   - "After F0 acceptance, submit RIC-F1 Release/Event Truth & Intelligence through canonical Executive admission/routing; require concrete carrier/session ACK before active."
   - "In parallel after F0, submit RIC-F2 Dealer/OPEX State and RIC-F3 Yield/Canonical Transmission as disjoint operations with the same ACK requirement."
   - "Sol then adversarially reviews each returned PR against the frozen end-state and real-input production proof before releasing F4/F5/F6/F7 dependencies."
@@ -106,7 +106,8 @@ danger_areas:
   - "The July masterplan remains useful product law but its wave status is stale; always re-archaeologize current owners before implementation."
   - "W3's user-facing copy contains directional-sounding hold/ease language despite context-only authority; future UX review must ensure wording cannot launder authority."
   - "Clean forward evidence clocks must not be backfilled retrospectively after target/provenance corrections."
-prs: []
+prs:
+  - 6543
 decisions:
   - DEC:RIC-CANONICAL-COMPOSITION-BOUNDARIES
 discoveries:
