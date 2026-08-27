@@ -2,7 +2,7 @@
 workstream: "WS:ALPHA-INTELLIGENCE-INTEGRATION"
 session: sol/alpha-k2c-commission-20260826
 model: sol
-ended_because: commissioned_delivery_only
+ended_because: complete
 mission: >
   Commission one bounded K2-C Institutional Adapter Pilot that proves a real,
   point-in-time, security-level manager-research-intent observation can be read
