@@ -826,6 +826,9 @@ def test_the_only_pipeline_write_is_a_dispatch():
         "/issues",
         "/issues/{number}/comments",
         "/issues/{number}/comments?per_page=100",
+        # The [DAY N] escalation write (2026-08-27): PATCH the issue's title,
+        # never the daily.yml pipeline (see the `writes` assertion below).
+        "/issues/{number}",
     }, f"the GitHub surface changed: {sorted(paths)}"
 
     writes = {p for p in paths if p.startswith("/actions/") and "?" not in p}
@@ -1479,3 +1482,259 @@ def test_a_dry_run_mutates_nothing(_no_network):
     results = RESCUE.execute(plan, state(), THU, "o/r", "tok", dry_run=True)
     assert _no_network.comments == [] and _no_network.pushes == []
     assert any("DRY RUN" in r for r in results)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# the [DAY N] escalation ladder (2026-08-27). During Aug 2026 these issues sat
+# unread for 5 days. expected_fire_after() is purely calendar-driven, so a
+# multi-day outage mints a NEW issue per stranded session date — a day-count
+# that lived only inside one issue thread would never exceed 1 on weekdays and
+# would ship dead. The anchor must therefore carry across SIBLING open issues,
+# never just this thread.
+# ─────────────────────────────────────────────────────────────────────────────
+def test_an_outage_day_anchor_round_trips_through_the_receipt():
+    """The OUTAGE-DAY token receipt() writes is exactly the token
+    outage_anchors() reads back — for the class that wrote it, not some other
+    one."""
+    alarm = [RESCUE.Action(RESCUE.ALERT, RESCUE.STALE, "stale")]
+    snapshot = state(now=at(FRI, 9, 40), session=THU)
+    body = RESCUE.receipt(alarm, snapshot, THU, [], anchor=WED, day=2)
+    assert f"{RESCUE.OUTAGE_DAY_TOKEN} {WED.isoformat()}" in body
+    assert RESCUE.outage_anchors([body]) == {(RESCUE.STALE,): WED}
+
+
+def test_outage_anchors_keeps_the_earliest_across_several_receipts():
+    """A class seen on day 1 and again on day 3 anchors to day 1 — the
+    class's clock started when it was FIRST seen, not on the newest receipt
+    that happens to mention it. A receipt naming a DIFFERENT class must not
+    contaminate this class's anchor."""
+    older = (f"```\n{RESCUE.VERDICT_TOKEN} STALE\n"
+             f"{RESCUE.OUTAGE_DAY_TOKEN} {WED.isoformat()}\n```")
+    newer = (f"```\n{RESCUE.VERDICT_TOKEN} STALE\n"
+             f"{RESCUE.OUTAGE_DAY_TOKEN} {FRI.isoformat()}\n```")
+    other_class = (f"```\n{RESCUE.VERDICT_TOKEN} NO_COHORT\n"
+                   f"{RESCUE.OUTAGE_DAY_TOKEN} {THU.isoformat()}\n```")
+    anchors = RESCUE.outage_anchors([older, newer, other_class])
+    assert anchors[(RESCUE.STALE,)] == WED
+    assert anchors[(RESCUE.NO_COHORT,)] == THU
+
+
+def test_outage_anchors_skips_unparseable_or_missing_tokens_without_raising():
+    assert RESCUE.outage_anchors(["no tokens here", None, 42]) == {}
+    assert RESCUE.outage_anchors([f"{RESCUE.VERDICT_TOKEN} STALE"]) == {}, (
+        "a verdict with no OUTAGE-DAY token at all anchors nothing"
+    )
+    assert RESCUE.outage_anchors(
+        [f"{RESCUE.VERDICT_TOKEN} NONE\n{RESCUE.OUTAGE_DAY_TOKEN} {WED.isoformat()}"]
+    ) == {}, "NONE is not a breach class and must never anchor"
+
+
+def test_outage_day_floors_at_one_and_counts_forward_from_the_anchor():
+    today = FRI
+    assert RESCUE.outage_day(None, today) == 1, "no anchor ever recorded == day 1"
+    future = today + timedelta(days=3)
+    assert RESCUE.outage_day(future, today) == 1, (
+        "a future anchor (clock skew) must never print DAY 0 or negative"
+    )
+    yesterday = today - timedelta(days=1)
+    assert RESCUE.outage_day(yesterday, today) == 2
+    four_days_ago = today - timedelta(days=4)
+    assert RESCUE.outage_day(four_days_ago, today) == 5
+
+
+def test_escalated_title_is_unprefixed_at_day_one_and_prefixed_after():
+    assert RESCUE.escalated_title(THU, 1) == RESCUE.issue_title(THU)
+    assert RESCUE.escalated_title(THU, 2) == f"[DAY 2] {RESCUE.issue_title(THU)}"
+
+
+@pytest.mark.parametrize("day", [2, 3, 4, 10, 100])
+def test_strip_day_prefix_round_trips_escalated_title(day):
+    escalated = RESCUE.escalated_title(THU, day)
+    assert RESCUE.strip_day_prefix(escalated) == RESCUE.issue_title(THU)
+
+
+def test_an_escalated_title_must_not_mint_a_duplicate_issue(monkeypatch):
+    """Pin: once a title escalates to e.g. [DAY 4], an exact-title match would
+    stop finding the thread and this lane would open a brand-new duplicate
+    issue every wake instead of appending a receipt to the one that already
+    exists."""
+    escalated = f"[DAY 4] {RESCUE.issue_title(THU)}"
+    monkeypatch.setattr(
+        RESCUE, "_get_json",
+        lambda url, headers=None: ([{"number": 42, "title": escalated}], None),
+    )
+    row, err = RESCUE.find_open_issue("o/r", "tok", THU)
+    assert err is None
+    assert row is not None and row["number"] == 42
+
+
+def test_issue_row_anchors_bootstraps_from_created_at_without_a_day_token():
+    """The BOOTSTRAP path: every prophet-outage issue open before this PR
+    shipped names a class in RESCUE-VERDICTS but carries no OUTAGE-DAY token
+    at all. Without this fallback, day one of this ladder reads every
+    pre-existing outage as brand new."""
+    rows = [{
+        "title": RESCUE.issue_title(WED),
+        "created_at": WED.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "body": f"```\n{RESCUE.VERDICT_TOKEN} STALE\n```",
+    }]
+    assert RESCUE.issue_row_anchors(rows) == {(RESCUE.STALE,): WED}
+
+
+def test_issue_row_anchors_prefers_a_real_token_over_the_bootstrap():
+    rows = [{
+        "created_at": FRI.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "body": (f"```\n{RESCUE.VERDICT_TOKEN} STALE\n"
+                 f"{RESCUE.OUTAGE_DAY_TOKEN} {WED.isoformat()}\n```"),
+    }]
+    assert RESCUE.issue_row_anchors(rows) == {(RESCUE.STALE,): WED}, (
+        "a real OUTAGE-DAY token must win over the created_at bootstrap"
+    )
+
+
+def test_execute_patches_the_title_on_a_suppressed_wake_two_days_into_the_outage(
+        monkeypatch, _no_network):
+    """WIRED, not just the helper. The escalation must fire precisely on the
+    wakes should_file_receipt SUPPRESSES — an unchanged verdict set, two+ days
+    into the same breach class — and it must not also file a comment or push
+    on that wake: only the title moves."""
+    patched: list[tuple] = []
+    monkeypatch.setattr(
+        RESCUE, "update_issue_title",
+        lambda repo, token, number, title: (
+            patched.append((number, title)) or f"updated issue #{number} title"
+        ),
+    )
+    alarm = [RESCUE.Action(RESCUE.ALERT, RESCUE.STALE, "still stale")]
+    anchor = at(FRI, 9, 40).date() - timedelta(days=1)          # -> day 2
+    snapshot = state(
+        now=at(FRI, 9, 40),
+        outage_anchors={(RESCUE.STALE,): anchor},
+        issue_number=7,
+        issue_title=RESCUE.issue_title(THU),      # not yet escalated
+        last_receipt_verdicts=("STALE",),         # unchanged -> receipt suppressed
+    )
+    results = RESCUE.execute(alarm, snapshot, THU, "o/r", "tok", dry_run=False)
+    assert patched == [(7, RESCUE.escalated_title(THU, 2))]
+    assert _no_network.comments == [], "the comment must stay suppressed"
+    assert _no_network.pushes == [], "the push must stay suppressed"
+    assert any("title" in r for r in results)
+
+
+def test_execute_does_not_patch_the_title_on_day_one(monkeypatch, _no_network):
+    patched: list[tuple] = []
+    monkeypatch.setattr(RESCUE, "update_issue_title",
+                        lambda *a, **k: patched.append(a) or "updated")
+    alarm = [RESCUE.Action(RESCUE.ALERT, RESCUE.STALE, "stale")]
+    snapshot = state(now=at(FRI, 9, 40), outage_anchors=None, issue_number=7,
+                     issue_title=RESCUE.issue_title(THU),
+                     last_receipt_verdicts=None)
+    RESCUE.execute(alarm, snapshot, THU, "o/r", "tok", dry_run=False)
+    assert patched == [], "day 1 must never rewrite the title"
+
+
+def test_execute_does_not_repatch_an_already_escalated_title(monkeypatch, _no_network):
+    """No hourly rewrite: once the title already reads the wanted escalation,
+    a later wake with the same anchor must not PATCH it again."""
+    patched: list[tuple] = []
+    monkeypatch.setattr(RESCUE, "update_issue_title",
+                        lambda *a, **k: patched.append(a) or "updated")
+    alarm = [RESCUE.Action(RESCUE.ALERT, RESCUE.STALE, "still stale")]
+    anchor = at(FRI, 9, 40).date() - timedelta(days=1)          # -> day 2
+    snapshot = state(
+        now=at(FRI, 9, 40),
+        outage_anchors={(RESCUE.STALE,): anchor},
+        issue_number=7,
+        issue_title=RESCUE.escalated_title(THU, 2),   # already escalated
+        last_receipt_verdicts=("STALE",),
+    )
+    RESCUE.execute(alarm, snapshot, THU, "o/r", "tok", dry_run=False)
+    assert patched == [], "an already-correct title must not be rewritten"
+
+
+def test_a_new_issue_is_created_with_an_escalated_title_when_a_sibling_anchor_carries_forward(
+        monkeypatch):
+    """A sibling anchor can carry a breach class forward into a BRAND NEW
+    session's issue (a fresh session, same still-open breach class) — the
+    very first receipt on that new thread must already carry the escalated
+    title, verified through upsert_issue's own day= reaching escalated_title,
+    not waiting for a later PATCH to catch up."""
+    monkeypatch.setattr(RESCUE, "find_open_issue", lambda *a, **k: (None, None))
+    monkeypatch.setattr(RESCUE, "ensure_label", lambda *a, **k: None)
+    captured = {}
+
+    def fake_post(url, body, headers, timeout=RESCUE.HTTP_TIMEOUT_S, *, method="POST"):
+        captured["url"], captured["body"] = url, body
+        return 201, b'{"number": 99}', None
+
+    monkeypatch.setattr(RESCUE, "_post", fake_post)
+    result = RESCUE.upsert_issue("o/r", "tok", FRI, "receipt body", day=3)
+    assert captured["body"]["title"] == RESCUE.escalated_title(FRI, 3)
+    assert "opened issue #99" in result
+
+
+def test_ops_push_carries_the_day_prefix_only_at_day_two_and_beyond(_no_network):
+    alarm = [RESCUE.Action(RESCUE.ALERT, RESCUE.STALE, "stale")]
+    day_one = state(now=at(FRI, 9, 40), outage_anchors=None, issue_number=7,
+                    last_receipt_verdicts=None)
+    RESCUE.execute(alarm, day_one, THU, "o/r", "tok", dry_run=False)
+    assert "[DAY" not in _no_network.pushes[-1]
+
+    anchor = at(FRI, 9, 40).date() - timedelta(days=1)
+    day_two = state(now=at(FRI, 9, 40), outage_anchors={(RESCUE.STALE,): anchor},
+                    issue_number=7, last_receipt_verdicts=None)
+    RESCUE.execute(alarm, day_two, THU, "o/r", "tok", dry_run=False)
+    assert "[DAY 2]" in _no_network.pushes[-1]
+
+
+def test_a_changed_breach_class_resets_to_day_one(_no_network):
+    """A STRAND that later becomes STALE is a DIFFERENT breach class from the
+    ladder's point of view — the anchor recorded for STRAND must not leak
+    onto STALE, so the class change escalates from day 1 again rather than
+    inheriting STRAND's multi-day-old anchor."""
+    old_strand_anchor = {(RESCUE.STRAND,): date(2026, 8, 1)}
+    stale_only = [RESCUE.Action(RESCUE.ALERT, RESCUE.STALE, "now stale, not strand")]
+    snapshot = state(now=at(FRI, 9, 40), outage_anchors=old_strand_anchor,
+                     issue_number=7, last_receipt_verdicts=None)
+    RESCUE.execute(stale_only, snapshot, THU, "o/r", "tok", dry_run=False)
+    assert _no_network.pushes and "[DAY" not in _no_network.pushes[-1], (
+        "STALE has never been anchored before (only STRAND has) so it must "
+        "escalate from day 1, not inherit STRAND's old anchor"
+    )
+
+
+def test_the_escalation_feature_adds_no_cancel_path_and_stays_stdlib_only():
+    """Direct pin scoped to this PR: the [DAY N] ladder's new PATCH write must
+    not have grown a DELETE/cancel capability alongside it, and the module
+    must still run from a bare python3 with no venv.
+
+    Scanned the same way ``test_no_stop_run_code_path_exists`` scans — RUNTIME
+    string constants only, docstrings exempted — because the module's own
+    postmortem prose legitimately narrates the 2026-08-12
+    ``force-cancel`` incident this file exists to prevent a repeat of; a raw
+    substring search over the whole file would false-positive on that prose.
+    """
+    tree = ast.parse(SCRIPT.read_text(encoding="utf-8"))
+    docstrings = _docstrings(tree)
+    offenders = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Constant) and isinstance(node.value, str) \
+                and node.value not in docstrings:
+            low = node.value.lower()
+            if "/cancel" in low or "force-cancel" in low:
+                offenders.append(node.value)
+        if isinstance(node, ast.keyword) and node.arg == "method" \
+                and isinstance(node.value, ast.Constant) \
+                and isinstance(node.value.value, str) \
+                and node.value.value.upper() == "DELETE":
+            offenders.append("method=\"DELETE\" keyword argument")
+    assert not offenders, f"a cancel/DELETE code path appeared: {offenders}"
+
+    roots: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            roots.update(a.name.split(".")[0] for a in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module and node.level == 0:
+            roots.add(node.module.split(".")[0])
+    first_party = roots & {"lib", "engine", "scripts", "app", "collectors", "admin"}
+    assert first_party == {"lib"}
