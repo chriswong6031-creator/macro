@@ -752,3 +752,166 @@ def test_no_subcommand_still_announces_itself_as_a_stub() -> None:
     finally:
         agentos.git_dates = original_git_dates
         agentos._repo_sha = original_repo_sha
+
+
+# -------------------------------------------------- R8-B2 semantic program source
+
+
+def _load_agentos_module_for_program_registry():
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("agentos_program_registry_contract", CLI)
+    assert spec is not None and spec.loader is not None
+    agentos = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(agentos)
+    return agentos
+
+
+def _write_program_registry(
+    path: Path,
+    *,
+    lifecycle_states: tuple[str, ...] = ("operating", "building"),
+    programs_yaml: str,
+) -> None:
+    lifecycle = "\n".join(f"    - {value}" for value in lifecycle_states)
+    path.write_text(
+        "schema: mastermind_programs.v1\n"
+        "ontology:\n"
+        "  lifecycle_states:\n"
+        f"{lifecycle}\n"
+        "programs:\n"
+        f"{programs_yaml}",
+        encoding="utf-8",
+    )
+
+
+def test_program_registry_normalizes_exact_keys_and_sorts_them(tmp_path: Path) -> None:
+    agentos = _load_agentos_module_for_program_registry()
+    path = tmp_path / "mastermind_programs.yml"
+    _write_program_registry(
+        path,
+        programs_yaml=(
+            "  beta-program:\n"
+            "    name: Beta\n"
+            "    category: market_intelligence\n"
+            "    kind: intelligence_program\n"
+            "    lifecycle_state: building\n"
+            "    scope: project\n"
+            "  alpha-program:\n"
+            "    name: Alpha\n"
+            "    category: project_infrastructure\n"
+            "    kind: infrastructure\n"
+            "    lifecycle_state: operating\n"
+            "    scope: project\n"
+        ),
+    )
+
+    got = agentos._load_program_registry(path)
+
+    assert got["schema"] == "agentos.program_registry.v1"
+    assert got["available"] is True
+    assert [row["key"] for row in got["programs"]] == ["alpha-program", "beta-program"]
+    assert got["programs"][1]["lifecycle_state"] == "building"
+
+
+def test_program_registry_lifecycle_membership_comes_from_authored_ontology(tmp_path: Path) -> None:
+    agentos = _load_agentos_module_for_program_registry()
+    path = tmp_path / "mastermind_programs.yml"
+    _write_program_registry(
+        path,
+        lifecycle_states=("operating", "building", "evidence_wait"),
+        programs_yaml=(
+            "  alpha-program:\n"
+            "    name: Alpha\n"
+            "    category: market_intelligence\n"
+            "    kind: research_program\n"
+            "    lifecycle_state: evidence_wait\n"
+            "    scope: project\n"
+        ),
+    )
+
+    got = agentos._load_program_registry(path)
+
+    assert got["available"] is True
+    assert got["programs"][0]["lifecycle_state"] == "evidence_wait"
+
+
+def test_program_registry_rejects_lifecycle_absent_from_authored_ontology(tmp_path: Path) -> None:
+    agentos = _load_agentos_module_for_program_registry()
+    path = tmp_path / "mastermind_programs.yml"
+    _write_program_registry(
+        path,
+        lifecycle_states=("operating", "building"),
+        programs_yaml=(
+            "  alpha-program:\n"
+            "    name: Alpha\n"
+            "    category: market_intelligence\n"
+            "    kind: research_program\n"
+            "    lifecycle_state: evidence_wait\n"
+            "    scope: project\n"
+        ),
+    )
+
+    got = agentos._load_program_registry(path)
+
+    assert got["available"] is False
+    assert got["reason"] == "program_registry_malformed"
+    assert got["programs"] == []
+
+
+def test_richer_metadata_failure_does_not_delete_legacy_program_key(
+    tmp_path: Path, monkeypatch,
+) -> None:
+    agentos = _load_agentos_module_for_program_registry()
+    path = tmp_path / "mastermind_programs.yml"
+    _write_program_registry(
+        path,
+        programs_yaml=(
+            "  alpha-program:\n"
+            "    category: market_intelligence\n"
+            "    kind: research_program\n"
+            "    lifecycle_state: building\n"
+            "    scope: project\n"
+        ),
+    )
+    monkeypatch.setattr(agentos, "_PROGRAMS", path)
+
+    assert agentos._load_programs() == {"alpha-program"}
+    got = agentos._load_program_registry(path)
+    assert got["available"] is False
+    assert got["reason"] == "program_registry_malformed"
+
+
+def test_program_registry_missing_source_is_explicit_unavailable(tmp_path: Path) -> None:
+    agentos = _load_agentos_module_for_program_registry()
+    got = agentos._load_program_registry(tmp_path / "missing.yml")
+
+    assert got == {
+        "schema": "agentos.program_registry.v1",
+        "available": False,
+        "reason": "program_registry_unavailable",
+        "source": "config/mastermind_programs.yml",
+        "programs": [],
+    }
+
+
+def test_program_identity_is_mapping_key_not_display_name(tmp_path: Path) -> None:
+    agentos = _load_agentos_module_for_program_registry()
+    path = tmp_path / "mastermind_programs.yml"
+    _write_program_registry(
+        path,
+        programs_yaml=(
+            "  alpha-program:\n"
+            "    name: Totally Different Display Name\n"
+            "    category: market_intelligence\n"
+            "    kind: research_program\n"
+            "    lifecycle_state: building\n"
+            "    scope: project\n"
+        ),
+    )
+
+    got = agentos._load_program_registry(path)
+
+    assert got["available"] is True
+    assert [row["key"] for row in got["programs"]] == ["alpha-program"]
+    assert got["programs"][0]["name"] == "Totally Different Display Name"
