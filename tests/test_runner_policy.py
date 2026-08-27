@@ -93,15 +93,17 @@ def test_server_side_runner_group_cannot_lose_main_pinned_workflow_restriction(
     assert "runner-group policy drifted" in result.stdout
 
 
-def test_p3ba_executor_is_main_pinned_and_call_capable_but_route_stays_hosted() -> None:
+def test_p3bb_executor_is_main_pinned_and_only_same_repo_execution_moves() -> None:
     registry = yaml.safe_load(REGISTRY.read_text(encoding="utf-8"))
-    assert registry["phase"] == "p3b-a-call-capable"
+    assert registry["phase"] == "p3b-b-production-route"
     selected = set(registry["runtime_runner_group"]["selected_workflows"])
     assert (
         "mastermindx-market-intelligence/macro/.github/workflows/"
         "trusted-ci-executor.yml@refs/heads/main"
     ) in selected
-    assert registry["scenario_routes"]["same_repo_ordinary_pr"] == "github-hosted"
+    assert registry["scenario_routes"]["same_repo_ordinary_pr"] == (
+        "pc-ci-via-main-executor"
+    )
     assert registry["scenario_routes"]["fork_pr"] == "github-hosted"
     route = registry["trusted_executor_route"]
     assert route == {
@@ -110,22 +112,71 @@ def test_p3ba_executor_is_main_pinned_and_call_capable_but_route_stays_hosted() 
         "group": "macro-home-canary",
         "labels": ["ci-linux"],
         "call_enabled": True,
-        "production_enabled": False,
+        "production_enabled": True,
     }
 
 
-def test_p3ba_policy_rejects_early_production_enable(tmp_path: Path) -> None:
+def test_p3bb_policy_rejects_disabling_the_declared_production_route(tmp_path: Path) -> None:
     root, registry, workflows = fixture_tree(tmp_path)
     mutate_registry(
         registry,
         lambda doc: doc["trusted_executor_route"].__setitem__(
-            "production_enabled", True
+            "production_enabled", False
         ),
     )
     result = run_guard(root, registry, workflows)
     assert result.returncode == 1
     assert "R13" in result.stdout
-    assert "P3B-A" in result.stdout
+    assert "P3B-B" in result.stdout
+
+
+def test_p3bb_policy_rejects_a_candidate_pinned_executor_call(tmp_path: Path) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+    path = workflows / "ci.yml"
+    rendered = path.read_text(encoding="utf-8")
+    assert "trusted-ci-executor.yml@refs/heads/main" in rendered
+    path.write_text(
+        rendered.replace(
+            "trusted-ci-executor.yml@refs/heads/main",
+            "trusted-ci-executor.yml@${{ github.sha }}",
+            1,
+        ),
+        encoding="utf-8",
+    )
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "R3" in result.stdout
+    assert "R13" in result.stdout
+
+
+def test_p3bb_policy_rejects_caller_supplied_executor_inputs(tmp_path: Path) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+    path = workflows / "ci.yml"
+    document = yaml.safe_load(path.read_text(encoding="utf-8"))
+    document["jobs"]["trusted-ci"]["with"] = {"tested_sha": "${{ github.sha }}"}
+    path.write_text(yaml.safe_dump(document, sort_keys=False), encoding="utf-8")
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "R3" in result.stdout
+    assert "R13" in result.stdout
+
+
+def test_p3bb_policy_rejects_same_repo_candidate_checkout_in_anchor(
+    tmp_path: Path,
+) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+    path = workflows / "ci.yml"
+    document = yaml.safe_load(path.read_text(encoding="utf-8"))
+    checkout = next(
+        step
+        for step in document["jobs"]["ci-pack"]["steps"]
+        if step.get("uses") == "actions/checkout@v4"
+    )
+    checkout.pop("if")
+    path.write_text(yaml.safe_dump(document, sort_keys=False), encoding="utf-8")
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "R13" in result.stdout
 
 
 def _mutate_trusted_gate(tmp_path: Path, old: str, new: str) -> subprocess.CompletedProcess[str]:

@@ -212,12 +212,14 @@ waves:
       1ad0b428cac9e81481545358f9e30b151c3fdffe88d28ed7bc99be8d5ac7e720,
       matching fragment/control/receipt identity, stable 66,228,371,240-byte
       root-owned cache, 60.03% peak CPU, 38.55GB memory-available floor and
-      218.947s wall time. P3B-A is the next bounded carrier: make only the
-      already main-selected executor call-capable, derive all PR/control/plan
-      identity from the GitHub event and called-workflow context, preserve the
-      direct one-pack diagnostic, cap production mode at the P2-accepted three
-      PC slots, and keep ci.yml plus production_enabled unchanged. P3B-B alone
-      may route ordinary same-repository PR traffic after P3B-A acceptance.
+      218.947s wall time. P3B-A then merged through PR #6496 as
+      904863dabc490ee95ac50153048c25dee048d90b. Its exact-head hosted run
+      33035115527 passed one planner, contract delta, all twelve packs and the
+      semantic gate; those packs consumed about 180.7 hosted minutes and the
+      slowest pack ran 38m22s. P3B-B is the separate active carrier: call the
+      exact main-owned executor only for same-repository PRs, preserve hosted
+      planner/ci-pack-N anchors/ci-gate and the complete hosted fork path, and
+      prove the route on its own exact PR tree before P4 natural traffic.
 next_action: >
   W-TRANSPORT and W-PR-EVENT-CAUSALITY are closed. Do not reopen either for a
   new CI-speed, runner, branch-protection, or cancellation-system proposal.
@@ -237,11 +239,11 @@ next_action: >
   and #6286 attempt-1 checkout-only failures; do not absorb pack-checkout
   repairs into product PRs or reopen them here outside the #6351 sequence.
   P3A-R and its repaired direct-main dispatch are accepted; run 33024021850 is
-  a closed diagnostic receipt, not a retry candidate. Complete the bounded
-  P3B-A call-capability carrier with ci.yml still byte-unchanged. Only after
-  P3B-A merges may a separate P3B-B carrier make the exact main-owned call,
-  preserve hosted control/anchors and existing ci-gate, and prove the new route
-  on its own exact PR tree before P4 natural traffic.
+  a closed diagnostic receipt, not a retry candidate. P3B-A is accepted on main.
+  Complete the separate P3B-B carrier: make the exact protected-main zero-input
+  call for same-repository PRs, retain the hosted fork implementation and hosted
+  planner/anchors/ci-gate, and prove the new route on its own exact PR tree before
+  P4 natural traffic.
 owns_paths:
   - ".github/workflows/ci.yml"
   - ".github/workflows/merge-on-green.yml"

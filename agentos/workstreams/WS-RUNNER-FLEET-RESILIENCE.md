@@ -197,12 +197,12 @@ next_action: >
   fafe8d7ee775f8b60a0229c085fb7aee6d4349e7); P0R MERGED and baseline-green;
   P1 ACCEPTED on pc-ci-1; P2/P2R ACCEPTED with three concurrent PC CI slots,
   independent render reservation, exact hosted/self-hosted fragment parity and a
-  safe resource envelope. P3A main-defined executor merged through PR #6481 and
-  keeps production_enabled=false. Its selected-workflow server mutation and drained
-  three-root admission deployment are complete. First dispatch 33024021850 exposed
-  candidate-control displacement before PC pickup; P3A-R freezes the main-owned
-  control bundle and must pass before one repaired dispatch proof.
-  P3B production route and P4 natural PR proofs are NOT_BUILT. Macro private
+  safe resource envelope. P3A/P3A-R main-defined executor is accepted through
+  PR #6487 and direct proof run 33030976647. P3B-A call capability merged through
+  PR #6496 as 904863dabc490ee95ac50153048c25dee048d90b; its exact-head hosted
+  run 33035115527 passed all twelve packs and recorded about 180.7 hosted
+  pack-minutes. P3B-B production routing and P4 natural PR proofs remain unaccepted.
+  Macro private
   visibility mutation remains HOLD. Live accepted PC identities are pc-ci-1/2/3
   plus an independent pc-render lane; the M1 has no generic CI listener and remains
   reserved for its live Theta/options/research estate while W4 measures one possible

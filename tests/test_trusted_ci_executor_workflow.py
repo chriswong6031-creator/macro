@@ -88,7 +88,7 @@ def run_trusted_gate(
     return result, values
 
 
-def test_p3ba_executor_is_call_capable_but_production_route_stays_inert() -> None:
+def test_p3bb_executor_stays_call_capable_after_production_route_activation() -> None:
     document = workflow("trusted-ci-executor.yml")
     assert triggers(document) == {"workflow_call", "workflow_dispatch"}
     trigger_config = document.get("on", document.get(True))
@@ -128,7 +128,10 @@ def test_p3ba_executor_is_call_capable_but_production_route_stays_inert() -> Non
     }
 
     production = workflow("ci.yml")
-    assert "trusted-ci-executor.yml" not in str(production)
+    assert production["jobs"]["trusted-ci"]["uses"] == (
+        "mastermindx-market-intelligence/macro/.github/workflows/"
+        "trusted-ci-executor.yml@refs/heads/main"
+    )
     assert {
         production["jobs"][name]["runs-on"]
         for name in ("ci-plan", "ci-pack", "ci-gate")

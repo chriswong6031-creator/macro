@@ -4562,8 +4562,18 @@ jobs:
           path: ${{ runner.temp }}/ci-semantic-plan/ci-plan.json
           if-no-files-found: error
           retention-days: 14
-  ci-pack:
+  # P3B-B: the expensive same-repository PR execution is defined by protected
+  # main, not by candidate-authored workflow bytes. This call accepts no identity
+  # inputs or inherited secrets; the called workflow independently admits the
+  # exact PR merge ref, derives the immutable candidate/base/plan, and caps the
+  # isolated PC pool at three slots. Forks never enter this job.
+  trusted-ci:
+    name: trusted-ci
     needs: ci-plan
+    if: needs.ci-plan.outputs.has_work == 'true' && github.event.pull_request.head.repo.full_name == github.repository
+    uses: mastermindx-market-intelligence/macro/.github/workflows/trusted-ci-executor.yml@refs/heads/main
+  ci-pack:
+    needs: [ci-plan, trusted-ci]
     # The `has_work` clause is the Wave B addition, and it is safe only because
     # `has_work: false` is an AFFIRMATIVE planner proof that no legacy job is
     # selected. Every uncertainty widens instead: a planner exception, an unknown
@@ -4573,7 +4583,11 @@ jobs:
     # sweeper requires an affirmative pass, since absence of red is not a pass
     # (#4779), so a PR whose only packs were skipped would otherwise read unproven
     # and never merge.
-    if: needs.ci-plan.outputs.has_work == 'true'
+    if: >-
+      always() && needs.ci-plan.result == 'success' &&
+      needs.ci-plan.outputs.has_work == 'true' &&
+      (github.event.pull_request.head.repo.full_name != github.repository ||
+      needs.trusted-ci.result == 'success')
     # The logical jobs in .github/ci/legacy-jobs.yml remain the reviewable
     # source of truth, but GitHub sees only this matrix. Twelve pack runners
     # execute every legacy run step against a clean working tree, sharing one
@@ -4709,6 +4723,7 @@ jobs:
             fi
           fi
       - uses: actions/checkout@v4
+        if: github.event.pull_request.head.repo.full_name != github.repository
         with:
           ref: ${{ github.sha }}
           # Packs consume ci-plan's changed-file list and only need the current
@@ -4725,6 +4740,7 @@ jobs:
           filter: blob:none
           fetch-depth: 1
       - uses: actions/setup-python@v5
+        if: github.event.pull_request.head.repo.full_name != github.repository
         with:
           # PINNED to an exact patch release, not the floating "3.12".
           #
@@ -4756,14 +4772,16 @@ jobs:
           # SHA-256), THEN bump here. tests/test_ci_pack.py enforces that order.
           python-version: "3.12.13"
       - uses: actions/setup-node@v4
+        if: github.event.pull_request.head.repo.full_name != github.repository
         with:
           node-version: "20"
       - name: install isolated pack runner
+        if: github.event.pull_request.head.repo.full_name != github.repository
         run: |
           python -m venv "$RUNNER_TEMP/ci-pack-runner"
           "$RUNNER_TEMP/ci-pack-runner/bin/pip" install pyyaml
       - name: download the authoritative semantic plan
-        if: needs.ci-plan.outputs.plan_sha != ''
+        if: github.event.pull_request.head.repo.full_name != github.repository && needs.ci-plan.outputs.plan_sha != ''
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: ${{ needs.ci-plan.outputs.plan_artifact_name }}
@@ -4784,17 +4802,19 @@ jobs:
       # inside the hashed plan payload, so it would recompute a different plan
       # sha and `--expect-plan-sha` refuses below.
       - name: download the planner's changed-file list
+        if: github.event.pull_request.head.repo.full_name != github.repository
         uses: actions/download-artifact@v4
         with:
           name: ci-changed-files
           path: ${{ runner.temp }}/ci-changed-files
       - name: publish the changed-file handle
+        if: github.event.pull_request.head.repo.full_name != github.repository
         run: echo "CI_CHANGED_FILES_FILE=$RUNNER_TEMP/ci-changed-files/changed-files.json" >> "$GITHUB_ENV"
       # Pack index is transport only. Each runner consumes the one hashed plan,
       # verifies the exact tree/head/base identities, and emits raw semantic facts.
       # Causality is computed later by ci-gate; a pack never labels itself inherited.
       - name: validate and run legacy CI pack
-        if: needs.ci-plan.outputs.plan_sha != ''
+        if: github.event.pull_request.head.repo.full_name != github.repository && needs.ci-plan.outputs.plan_sha != ''
         id: execute_semantic_pack
         env:
           CI_BASE_REF: ${{ github.base_ref || 'main' }}
@@ -4825,7 +4845,7 @@ jobs:
       # semantic authority because no exact plan exists, so ci-gate will block
       # even if these compatibility packs happen to pass.
       - name: fail-safe full suite when no authoritative plan was produced
-        if: needs.ci-plan.outputs.plan_sha == ''
+        if: github.event.pull_request.head.repo.full_name != github.repository && needs.ci-plan.outputs.plan_sha == ''
         env:
           CI_BASE_REF: ${{ github.base_ref || 'main' }}
           CI_HEAD_REF: ${{ github.head_ref || github.ref_name }}
@@ -4836,6 +4856,47 @@ jobs:
           --pack-index ${{ matrix.pack }}
           --pack-count 12
           --execute
+      # The called main workflow already ran this exact pack on the PC pool. These
+      # two hosted steps are deliberately tiny: they preserve the existing
+      # ci-pack-N check and artifact contract while refusing any mismatch between
+      # the hosted authoritative plan and the independently main-derived plan.
+      - name: relay the trusted pack fragment under the existing check contract
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: trusted-ci-fragment-${{ matrix.pack }}
+          path: ${{ runner.temp }}/trusted-ci-fragment
+      - name: bind trusted execution to the hosted authoritative plan
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          HOSTED_PLAN_SHA: ${{ needs.ci-plan.outputs.plan_sha }}
+          TRUSTED_PLAN_SHA: ${{ needs.trusted-ci.outputs.plan_sha }}
+          TRUSTED_FRAGMENT: ${{ runner.temp }}/trusted-ci-fragment/trusted-fragment.json
+          RELAY_FRAGMENT: ${{ runner.temp }}/ci-semantic-fragments/pack-${{ matrix.pack }}.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - "$TRUSTED_FRAGMENT" "$RELAY_FRAGMENT" "$HOSTED_PLAN_SHA" "$TRUSTED_PLAN_SHA" <<'PY'
+          import json
+          import shutil
+          import sys
+          from pathlib import Path
+
+          source = Path(sys.argv[1])
+          destination = Path(sys.argv[2])
+          hosted_plan_sha = sys.argv[3]
+          trusted_plan_sha = sys.argv[4]
+          if not hosted_plan_sha or hosted_plan_sha != trusted_plan_sha:
+              raise SystemExit(
+                  "hosted/trusted plan mismatch: "
+                  f"hosted={hosted_plan_sha!r} trusted={trusted_plan_sha!r}"
+              )
+          fragment = json.loads(source.read_text(encoding="utf-8"))
+          if fragment.get("plan_sha256") != hosted_plan_sha:
+              raise SystemExit("trusted fragment is not bound to the authoritative plan")
+          destination.parent.mkdir(parents=True, exist_ok=True)
+          shutil.copyfile(source, destination)
+          PY
       - name: publish this pack's raw semantic fragment
         if: always() && needs.ci-plan.outputs.plan_sha != ''
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
