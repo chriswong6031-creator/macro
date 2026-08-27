@@ -1,0 +1,82 @@
+<informationTable xmlns="http://www.sec.gov/edgar/document/thirteenf/informationtable" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sec.gov/edgar/document/thirteenf/informationtable eis_13FDocument.xsd">
+  <infoTable>
+    <nameOfIssuer>AMERICAS GOLD AND SILVER COR</nameOfIssuer>
+    <titleOfClass>COM NEW</titleOfClass>
+    <cusip>03062D803</cusip>
+    <value>1305000</value>
+    <shrsOrPrnAmt>
+      <sshPrnamt>250000</sshPrnamt>
+      <sshPrnamtType>SH</sshPrnamtType>
+    </shrsOrPrnAmt>
+    <investmentDiscretion>SOLE</investmentDiscretion>
+    <votingAuthority>
+      <Sole>250000</Sole>
+      <Shared>0</Shared>
+      <None>0</None>
+    </votingAuthority>
+  </infoTable>
+  <infoTable>
+    <nameOfIssuer>KLX ENERGY SERVICES HOLDINGS</nameOfIssuer>
+    <titleOfClass>COM NEW</titleOfClass>
+    <cusip>48253L205</cusip>
+    <value>465551</value>
+    <shrsOrPrnAmt>
+      <sshPrnamt>179058</sshPrnamt>
+      <sshPrnamtType>SH</sshPrnamtType>
+    </shrsOrPrnAmt>
+    <investmentDiscretion>SOLE</investmentDiscretion>
+    <votingAuthority>
+      <Sole>179058</Sole>
+      <Shared>0</Shared>
+      <None>0</None>
+    </votingAuthority>
+  </infoTable>
+  <infoTable>
+    <nameOfIssuer>SUPER MICRO COMPUTER INC</nameOfIssuer>
+    <titleOfClass>NOTE 3.500% 3/0</titleOfClass>
+    <cusip>86800UAB0</cusip>
+    <value>110514615</value>
+    <shrsOrPrnAmt>
+      <sshPrnamt>138601000</sshPrnamt>
+      <sshPrnamtType>SH</sshPrnamtType>
+    </shrsOrPrnAmt>
+    <investmentDiscretion>SOLE</investmentDiscretion>
+    <votingAuthority>
+      <Sole>138601000</Sole>
+      <Shared>0</Shared>
+      <None>0</None>
+    </votingAuthority>
+  </infoTable>
+  <infoTable>
+    <nameOfIssuer>VINE HILL CAP INVT CORP.</nameOfIssuer>
+    <titleOfClass>*W EXP 07/01/203</titleOfClass>
+    <cusip>G93Y09115</cusip>
+    <value>161650</value>
+    <shrsOrPrnAmt>
+      <sshPrnamt>132500</sshPrnamt>
+      <sshPrnamtType>SH</sshPrnamtType>
+    </shrsOrPrnAmt>
+    <investmentDiscretion>SOLE</investmentDiscretion>
+    <votingAuthority>
+      <Sole>132500</Sole>
+      <Shared>0</Shared>
+      <None>0</None>
+    </votingAuthority>
+  </infoTable>
+  <infoTable>
+    <nameOfIssuer>WHEELS UP EXPERIENCE INC</nameOfIssuer>
+    <titleOfClass>COM CL A</titleOfClass>
+    <cusip>96328L205</cusip>
+    <value>7388207</value>
+    <shrsOrPrnAmt>
+      <sshPrnamt>23832927</sshPrnamt>
+      <sshPrnamtType>SH</sshPrnamtType>
+    </shrsOrPrnAmt>
+    <investmentDiscretion>SOLE</investmentDiscretion>
+    <votingAuthority>
+      <Sole>23832927</Sole>
+      <Shared>0</Shared>
+      <None>0</None>
+    </votingAuthority>
+  </infoTable>
+</informationTable>
