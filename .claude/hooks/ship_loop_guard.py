@@ -2175,14 +2175,16 @@ def _watcher_gate(root: Path, path: Path, state: dict[str, Any], watch: dict[str
             # before GitHub starts.
             state.pop("ship_watcher", None)
             return _watcher_gate(root, path, state, watch)
-        if not fragment:
-            # LEGACY reservation (pre-liveness format, no fragment — observed
-            # live 2026-08-25 on this very repair's session): its process can
-            # never be identified, so demanding liveness evidence would wedge
-            # the slot forever. Release it by its own recorded rule instead:
-            # occupied until the deadline the old gate stored, then free.
-            # Bounded to entries minted by the superseded intermediate gate;
-            # every new reservation carries a fragment.
+        if not reservation.get("process_marker"):
+            # LEGACY reservation without a marker: identity binding is
+            # impossible, so demanding liveness evidence would wedge the slot
+            # forever. TWO superseded generations land here — the fragment-less
+            # 08-25 format (observed live on this repair's own session) and the
+            # fragment-carrying but marker-less intermediate format (observed
+            # live 2026-08-26, same session, wedged the same way). Release
+            # them by their own recorded rule instead: occupied until the
+            # deadline the minting gate stored, then free. Bounded to entries
+            # from superseded gates; every new reservation carries a marker.
             try:
                 legacy_deadline = float(
                     reservation.get("expires") or reservation.get("nominal_fire") or 0.0

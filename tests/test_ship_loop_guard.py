@@ -7012,3 +7012,33 @@ def test_a_legacy_fragmentless_reservation_releases_by_its_own_deadline(
     GUARD._save(path, state)
     assert _drive_watcher_gate(monkeypatch, capsys, path, "sleep 900 && gh pr checks 2") == ""
     assert GUARD._load(path)["ship_watcher"]["fragment"] == "sleep 900 && gh pr checks 2"
+
+
+def test_a_markerless_fragment_era_reservation_releases_by_its_own_deadline(
+    monkeypatch, capsys, tmp_path
+):
+    """Second superseded generation (observed live 2026-08-26 on this repair's
+    own session): a fragment-carrying but MARKER-LESS reservation can never be
+    identity-bound, so demanding liveness evidence wedged the slot forever.
+    Like the fragment-less generation, it stays occupied until its own
+    recorded deadline, then frees."""
+    path = _watcher_state(tmp_path)
+    now = GUARD.time.time()
+    state = GUARD._load(path)
+    state["ship_watcher"] = {
+        "digest": "d" * 12,
+        "fragment": 'sleep 1500 && echo "CI-WATCH-3: recheck"',
+        "head": "a" * 40,
+        "created": now - 97000,
+        "nominal_fire": now + 600,
+    }
+    GUARD._save(path, state)
+    denied = _drive_watcher_gate(monkeypatch, capsys, path, "gh run watch 9 --exit-status")
+    assert "earlier guard version" in denied
+    state = GUARD._load(path)
+    state["ship_watcher"]["nominal_fire"] = now - 10
+    GUARD._save(path, state)
+    assert _drive_watcher_gate(monkeypatch, capsys, path, "gh run watch 9 --exit-status") == ""
+    replaced = GUARD._load(path)["ship_watcher"]
+    assert replaced["condition"] == "gh-run:current-repo:9"
+    assert replaced["process_marker"]
