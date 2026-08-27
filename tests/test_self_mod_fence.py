@@ -399,7 +399,9 @@ def _run_live_check(
     # different variable.
     env.pop("CI_CHANGED_FILES_FILE", None)
     env.pop("CI_CHANGED_FILES_JSON", None)
+    env.pop("GITHUB_HEAD_REF", None)
     env["GITHUB_EVENT_NAME"] = event
+    env["CI_HEAD_REF"] = head_ref
     if extra_env:
         env.update(extra_env)
     # ci-pack runs every legacy step through this exact interpreter invocation.
@@ -510,6 +512,35 @@ def test_live_check_still_blocks_loop_pr_touching_immutable(tmp_path):
         f"fence failed without its fail-closed diagnostic (rc={result.returncode}).\n"
         f"stdout: {result.stdout}\nstderr: {result.stderr}"
     )
+
+
+def test_live_check_uses_event_head_ref_when_renderer_head_ref_is_empty(tmp_path):
+    """A main-owned pre-upgrade executor must retain the PR's branch identity.
+
+    Reusable workflow control is deliberately loaded from ``main``, so the PR that
+    introduces ``CI_HEAD_REF`` cannot use that new wiring to prove itself. GitHub's
+    pull-request environment still carries ``GITHUB_HEAD_REF`` into the sealed pack
+    child. A human branch touching an immutable path must therefore classify as human,
+    not fail closed as an empty/unclassifiable branch during that one-head bootstrap.
+    """
+    work = _seed_repo(tmp_path)
+    _git("checkout", "-b", "human/fence-repair", cwd=work)
+    (work / ".github/workflows").mkdir(parents=True, exist_ok=True)
+    (work / ".github/workflows/ci.yml").write_text("jobs: {}\n")
+    _git("add", "-A", cwd=work)
+    _git("commit", "-m", "human repairs an immutable path", cwd=work)
+
+    result = _run_live_check(
+        work,
+        event="pull_request",
+        head_ref="",
+        extra_env={"GITHUB_HEAD_REF": "human/fence-repair"},
+    )
+    assert result.returncode == 0, (
+        "the pull-request event branch must bridge a pre-upgrade main executor.\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+    assert "PASS: branch 'human/fence-repair'" in result.stdout
 
 
 def test_fences_workflow_live_check_is_pull_request_only():

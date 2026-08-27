@@ -3684,7 +3684,7 @@ jobs:
       - name: merge-gate reliability report contract
         run: python -m pytest tests/test_ci_gate_reliability_report.py -q
       - name: transitional self-hosted runner policy and canary contracts
-        run: python scripts/check_runner_policy.py && python -m pytest tests/test_runner_policy.py tests/test_ci_canary_tools.py tests/test_ci_canary_workflows.py tests/test_trusted_ci_executor_workflow.py -q
+        run: python scripts/check_runner_policy.py && python -m pytest tests/test_runner_policy.py tests/test_ci_canary_tools.py tests/test_ci_canary_workflows.py tests/test_trusted_ci_executor_workflow.py tests/test_trusted_ci_production_route.py -q
       # The US nightly's cron redundancy (2026-08-13), wired here for the same reason
       # the two steps above are: its subject IS .github/workflows/ — specifically the
       # asymmetry that asia-close.yml carries five cron slots and daily.yml carries one
@@ -5107,7 +5107,11 @@ jobs:
         run: python -m pytest tests/test_ship_loop_guard.py tests/test_ship_loop_semantic.py tests/test_agent_worktree_roots.py tests/test_sparse_worktree_profile.py tests/test_warp_session_start_sparse.py tests/test_worktree_gc.py tests/test_worktree_placement.py -q
       - name: self-mod-fence live check (loop PR + immutable → BLOCKED)
         run: |
-          BRANCH="${{ github.head_ref }}"
+          # CI_HEAD_REF is the validated API identity published by the upgraded
+          # main-owned executor. GITHUB_HEAD_REF is the GitHub PR-event identity
+          # retained solely for the one-head bootstrap where the PR must still be
+          # proven by the pre-upgrade executor loaded from main.
+          BRANCH="${CI_HEAD_REF:-${GITHUB_HEAD_REF:-}}"
           TRAILERS=""
           FILES=""
           PARSE_RC=0

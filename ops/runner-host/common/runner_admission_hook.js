@@ -28,6 +28,7 @@ for (const key of [
   "GITHUB_REF",
   "GITHUB_WORKFLOW_REF",
   "GITHUB_JOB",
+  "GITHUB_EVENT_PATH",
 ]) {
   environment[key] = process.env[key] || "";
 }
