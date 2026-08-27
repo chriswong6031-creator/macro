@@ -1,37 +1,18 @@
 {
   "schema": "active_builds.v1",
-  "generated_at": "2026-08-27T04:51:11.822246+00:00",
+  "generated_at": "2026-08-27T07:40:34.320521+00:00",
   "base": {
-    "sha": "b246810c8caa046cd52f82f8dad1e9fedf9e2f8b"
+    "sha": "99b0299069c619af8b5fa4fa6e1bbb344fa87a81"
   },
   "merged_days": 14,
   "merged_truncated": true,
   "open_prs_truncated": false,
   "open_prs": [
     {
-      "number": 6509,
-      "title": "records(agentos): reconcile Autonomy V1 dispatch and Capacity Fabric continuation",
-      "head_ref": "sol/autonomy-v1-agentos-reconcile-20260826",
-      "updated_at": "2026-08-27T04:49:03Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 4,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "agentos/decisions/DEC-AUTONOMY-V1-DISPATCH-DIALOGUE-RUNTIME-SEPARATION.md",
-        "agentos/discoveries/DSC-AGENT-DISPATCH-CURRENTLY-HAS-NO-WORKER-RECEIVER.md",
-        "agentos/handoffs/AUTONOMY-V1-2026-08-26-sol-operational-reconciliation.md",
-        "agentos/workstreams/WS-EXECUTIVE-CAPACITY-FABRIC.md"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 6508,
-      "title": "records(market-os): accept A1B in production",
-      "head_ref": "sol/market-os-a1b-production-acceptance-closeout-20260826",
-      "updated_at": "2026-08-27T04:42:42Z",
+      "number": 6538,
+      "title": "ops: route Livingston portfolio through Caddy",
+      "head_ref": "claude/livingston-caddy",
+      "updated_at": "2026-08-27T07:38:02Z",
       "is_draft": false,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
@@ -39,39 +20,48 @@
       "files_truncated": false,
       "files_error": false,
       "files": [
-        "agentos/decisions/DEC-MARKET-OS-A1B-ACCEPTED-IN-PRODUCTION.md",
-        "agentos/handoffs/MARKET-OS-2026-08-26-a1b-sol-acceptance.md"
+        "app/deploy/Caddyfile",
+        "tests/test_deploy_update_self_heal.py"
       ],
       "protected_paths_touched": []
     },
     {
-      "number": 6507,
-      "title": "fix(options-source): ThetaData is canonical \u2014 stop calling the retired Polygon estate an outage",
-      "head_ref": "claude/thetadata-is-canonical-options-source",
-      "updated_at": "2026-08-27T04:34:32Z",
-      "is_draft": false,
+      "number": 6537,
+      "title": "records(market-os): repair post-#6504 reconciliation truth",
+      "head_ref": "sol/marketontology-post-6504-truth-repair-20260827",
+      "updated_at": "2026-08-27T07:15:08Z",
+      "is_draft": true,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
-      "files_count": 6,
+      "files_count": 1,
       "files_truncated": false,
       "files_error": false,
       "files": [
-        "agentos/discoveries/DSC-A-HEALTH-RECEIPT-NOBODY-READS-IS-NOT-AN-ESCALATION.md",
-        "collectors/polygon_options.py",
-        "data/experiments/registry_seed.json",
-        "scripts/build_flow_leaders.py",
-        "scripts/build_polygon_gex.py",
-        "tests/test_polygon_gex.py"
+        "agentos/handoffs/MARKET-ONTOLOGY-2026-08-27-sol-final-reconciliation.md"
       ],
-      "protected_paths_touched": [
-        "data/experiments/registry_seed.json"
-      ]
+      "protected_paths_touched": []
     },
     {
-      "number": 6506,
-      "title": "shadow-book: percentile field is a true cross-sectional pct rank (era-stamped, no restatement)",
-      "head_ref": "claude/shadow-book-xs-percentile",
-      "updated_at": "2026-08-27T04:33:39Z",
+      "number": 6536,
+      "title": "heal(agentos): schema-lawful Breathing forensic-acceptance record (main ci-pack-9 red)",
+      "head_ref": "claude/heal-agentos-breathing-record-20260827",
+      "updated_at": "2026-08-27T07:13:50Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "agentos/handoffs/BREATHING-PLATFORM-2026-08-27-forensic-acceptance.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6535,
+      "title": "records(prophet-us): August availability ledger + two-tier backfill ruling + takeover handoff",
+      "head_ref": "claude/prophet-us-records-20260827",
+      "updated_at": "2026-08-27T07:14:59Z",
       "is_draft": false,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
@@ -79,10 +69,295 @@
       "files_truncated": false,
       "files_error": false,
       "files": [
-        "engine/shadow_book.py",
-        "scripts/build_stock_library.py",
-        "scripts/snapshot_shadow_book.py",
-        "tests/test_shadow_book_percentile.py"
+        "agentos/decisions/DEC-PROPHET-US-BACKFILL-IS-TWO-TIER.md",
+        "agentos/handoffs/PROPHET-US-AVAILABILITY-2026-08-27-ceo-takeover.md",
+        "agentos/workstreams/WS-PROPHET-US-AVAILABILITY.md",
+        "research/PROPHET_US_AVAILABILITY_LEDGER_2026-08.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6534,
+      "title": "prophet: PR-1 permanence net \u2014 extend the three existing watchdogs + a new post-publish acceptance alarm",
+      "head_ref": "worktree-agent-abca2b21591a89932",
+      "updated_at": "2026-08-27T07:18:34Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 13,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/ci.yml",
+        ".github/workflows/daily.yml",
+        ".github/workflows/prophet-rescue.yml",
+        "agentos/decisions/DEC-PROPHET-US-PERMANENCE-NET.md",
+        "research/PROPHET_US_PERMANENCE_NET_2026-08-27.md",
+        "scripts/check_nightly_liveness.py",
+        "scripts/freshness_sentinel.py",
+        "scripts/prophet_board_acceptance.py",
+        "scripts/prophet_rescue.py",
+        "tests/test_freshness_sentinel.py",
+        "tests/test_prophet_rescue.py",
+        "tests/test_prophet_surface_net.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/daily.yml",
+        ".github/workflows/prophet-rescue.yml",
+        "scripts/check_nightly_liveness.py"
+      ]
+    },
+    {
+      "number": 6533,
+      "title": "k2c: institutional 13F owner-read adapter pilot (K2-B owner-row basis + proof lane)",
+      "head_ref": "claude/k2c-institutional-adapter-20260827",
+      "updated_at": "2026-08-27T07:22:42Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 12,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/smart-money-13f-k2c-pilot.yml",
+        "agentos/decisions/DEC-K2C-SECURITY-BINDING-IS-OWNER-NATIVE-CUSIP.md",
+        "agentos/handoffs/ALPHA-INTELLIGENCE-INTEGRATION-2026-08-27-k2c-implementation.md",
+        "contracts/institutional_intelligence/README.md",
+        "contracts/institutional_intelligence/manager_intent_recipe.v1.schema.json",
+        "lib/institutional_13f_adapter.py",
+        "lib/institutional_intelligence.py",
+        "requirements/institutional-13f-k2c-pilot-macos-arm64-py312.lock",
+        "research/alpha_intelligence/K2C_INSTITUTIONAL_ADAPTER_PILOT_2026-08-27.md",
+        "tests/test_institutional_13f_adapter_contract.py",
+        "tests/test_institutional_manager_intent_contract.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/smart-money-13f-k2c-pilot.yml"
+      ]
+    },
+    {
+      "number": 6532,
+      "title": "design(us-board): make the board state its own freshness in plain words",
+      "head_ref": "claude/us-board-freshness-truth",
+      "updated_at": "2026-08-27T06:55:16Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 20,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/ci/legacy-jobs.yml",
+        "templates/_us_board_cards.html.j2",
+        "templates/dashboard.html.j2",
+        "tests/test_us_board_freshness_truth.py",
+        "verify_shots/usbf_after_cards_dark.png",
+        "verify_shots/usbf_after_cards_dark_zh.png",
+        "verify_shots/usbf_after_cards_light.png",
+        "verify_shots/usbf_after_cards_light_zh.png",
+        "verify_shots/usbf_after_header_dark.png",
+        "verify_shots/usbf_after_header_dark_zh.png",
+        "verify_shots/usbf_after_header_light.png",
+        "verify_shots/usbf_after_header_light_zh.png",
+        "verify_shots/usbf_before_cards_dark.png",
+        "verify_shots/usbf_before_header_dark.png",
+        "verify_shots/usbf_delayed_banner_dark.png",
+        "verify_shots/usbf_delayed_banner_dark_zh.png",
+        "verify_shots/usbf_delayed_banner_light.png",
+        "verify_shots/usbf_delayed_header_dark.png",
+        "verify_shots/usbf_delayed_header_dark_zh.png",
+        "verify_shots/usbf_delayed_header_light.png"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6529,
+      "title": "records(stock-identity): freeze W3-to-final program and Fable commission",
+      "head_ref": "sol/stock-identity-recovery-20260827",
+      "updated_at": "2026-08-27T06:24:17Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 4,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "agentos/decisions/DEC-SI-FABLE-COO-AUTONOMOUS-EXECUTION.md",
+        "agentos/handoffs/STOCK-IDENTITY-2026-08-27-fable-coo-program.md",
+        "agentos/workstreams/WS-STOCK-IDENTITY.md",
+        "research/stock_identity/W3_FINAL_ARCHITECTURE_FREEZE_2026-08-27.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6528,
+      "title": "records(market-memory): recharter full PIT-to-cognition program",
+      "head_ref": "sol/market-memory-ceo-recharter-20260827",
+      "updated_at": "2026-08-27T06:24:54Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 4,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "agentos/decisions/DEC-MARKET-MEMORY-CEO-RECHARTER-AND-NO-REBUILD-FREEZE.md",
+        "agentos/handoffs/MARKET-MEMORY-2026-08-27-fable-coo-full-program.md",
+        "agentos/workstreams/WS-MARKET-MEMORY.md",
+        "research/MARKET_MEMORY_CEO_RECHARTER_2026-08-27.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6526,
+      "title": "fix(market-os): refresh Portfolio badge after authoritative A1B reread",
+      "head_ref": "sol/market-os-6510-badge-refresh-20260827",
+      "updated_at": "2026-08-27T06:32:19Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "tests/test_portfolio_import_a1b_js.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6523,
+      "title": "fix(china_stocks): drop stitched resumption bars; re-heal 002155.SZ suspension window",
+      "head_ref": "claude/cn-suspension-window-002155",
+      "updated_at": "2026-08-27T07:04:16Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 4,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "collectors/_stock_ohlc.py",
+        "data/china_stocks/002155.SZ.parquet",
+        "data/china_stocks_raw/002155.SZ.parquet",
+        "tests/test_stock_ohlc_open.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6522,
+      "title": "records(gmi): freeze end-to-end Theme Graph completion program",
+      "head_ref": "sol/gmi-theme-graph-end-to-end-20260827",
+      "updated_at": "2026-08-27T05:40:04Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 12,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "agentos/decisions/DEC-GMI-THEME-GRAPH-END-TO-END-COMPLETION-OWNERSHIP-SEQUENCING.md",
+        "agentos/handoffs/GMI-THEME-GRAPH-2026-08-27-completion-fanout-manifest.md",
+        "agentos/handoffs/GMI-THEME-GRAPH-2026-08-27-d2c-pit-vintage-commission.md",
+        "agentos/handoffs/GMI-THEME-GRAPH-2026-08-27-d2d-ontology-probation-commission.md",
+        "agentos/handoffs/GMI-THEME-GRAPH-2026-08-27-d2e-acceptance-commission.md",
+        "agentos/handoffs/GMI-THEME-GRAPH-2026-08-27-end-to-end-completion-program.md",
+        "agentos/handoffs/GMI-THEME-GRAPH-2026-08-27-w3b-themestate-commission.md",
+        "agentos/handoffs/GMI-THEME-GRAPH-2026-08-27-w3c-cohort-intelligence-commission.md",
+        "agentos/handoffs/GMI-THEME-GRAPH-2026-08-27-w4-semantic-relations-commission.md",
+        "agentos/handoffs/GMI-THEME-GRAPH-2026-08-27-w5-sensorium-commission.md",
+        "agentos/workstreams/WS-GMI-THEME-GRAPH.md",
+        "research/theme_graph/THEME_GRAPH_END_TO_END_COMPLETION_FREEZE_2026-08-27.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6521,
+      "title": "[RESEARCH][HOLD-FOR-SOL] TFG-0 transcript format generalization",
+      "head_ref": "sol/tfg0-transcript-format-census-20260827",
+      "updated_at": "2026-08-27T06:18:40Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 12,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "agentos/decisions/DEC-E3FMT-TRANSCRIPT-LOCAL-SOURCE-EVIDENCE-NORMALIZATION.md",
+        "agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-27-tfg0.md",
+        "research/earnings_intelligence/e3/TFG0_QA_RESPONDENT_IDENTITY_EVIDENCE_AMENDMENT_2026-08-27.md",
+        "research/earnings_intelligence/e3/TFG0_TRANSCRIPT_FORMAT_GENERALIZATION_ARCHITECTURE_FREEZE_2026-08-27.md",
+        "research/earnings_intelligence/e3/TFG0_TRANSCRIPT_FORMAT_GENERALIZATION_PREREG_2026-08-27.md",
+        "research/earnings_intelligence/e3/TFG1_DETERMINISTIC_TRANSCRIPT_FORMAT_HARDENING_HANDOFF_2026-08-27.md",
+        "research/earnings_intelligence/e3/TFG1_TRANSCRIPT_FORMAT_HOLDOUT_PREREG_2026-08-27.md",
+        "research/earnings_intelligence/e3/tfg0_development_corpus_qna_presence_receipt.json",
+        "research/earnings_intelligence/e3/tfg0_respondent_identity_feasibility_receipt.json",
+        "research/earnings_intelligence/e3/tfg0_transcript_format_census_receipt.json",
+        "research/earnings_intelligence/e3/tfg0_transcript_format_development_corpus_selection.json",
+        "research/earnings_intelligence/e3/tfg1_transcript_format_holdout_selection.json"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6519,
+      "title": "fix(ci): restore direct suffix startability containment",
+      "head_ref": "claude/ci-main-red-defense-startability-20260827-sol-001",
+      "updated_at": "2026-08-27T05:29:16Z",
+      "is_draft": true,
+      "merge_state": "DIRTY",
+      "merge_state_raw": "DIRTY",
+      "files_count": 2,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "scripts/run_ci_pack.py",
+        "tests/test_ci_pack.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6514,
+      "title": "HOLD-FOR-SOL: contracts(k3d): Economic Propagation hypothesis v1 \u2014 do not merge until Sol accepts",
+      "head_ref": "claude/k3d-economic-propagation",
+      "updated_at": "2026-08-27T05:52:46Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 29,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/ci/legacy-jobs.yml",
+        "agentos/decisions/DEC-K3D-PROPAGATION-HYPOTHESIS-CONTRACT.md",
+        "agentos/handoffs/ALPHA-INTELLIGENCE-INTEGRATION-2026-08-27-k3d.md",
+        "agentos/workstreams/WS-ALPHA-INTELLIGENCE-INTEGRATION.md",
+        "contracts/economic_propagation/generator_registry.v1.json",
+        "contracts/economic_propagation/propagation_hypothesis.v1.schema.json",
+        "lib/economic_propagation.py",
+        "research/economic_propagation/K3D_PROPAGATION_HYPOTHESIS_CONTRACT_FREEZE_2026-08-27.md",
+        "research/economic_propagation/k3d_real_proof_records/real_abstention_tsn_adm_no_graph1.json",
+        "research/economic_propagation/k3d_real_proof_records/real_abstention_tsn_counterparty_unresolved.json",
+        "tests/fixtures/economic_propagation/golden_supported_hypothesis.json",
+        "tests/fixtures/economic_propagation/golden_typed_abstention_rights_blocked.json",
+        "tests/fixtures/economic_propagation/golden_typed_abstention_unresolved.json",
+        "tests/fixtures/economic_propagation/hostile_authority_trading_true.json",
+        "tests/fixtures/economic_propagation/hostile_binding_kills_drop.json",
+        "tests/fixtures/economic_propagation/hostile_clock_violations.json",
+        "tests/fixtures/economic_propagation/hostile_disagreeing_derived_summary.json",
+        "tests/fixtures/economic_propagation/hostile_economic_share_nonnull.json",
+        "tests/fixtures/economic_propagation/hostile_forbidden_key_injection.json",
+        "tests/fixtures/economic_propagation/hostile_generator_refusal_admission.json",
+        "tests/fixtures/economic_propagation/hostile_mechanism_trade_language.json",
+        "tests/fixtures/economic_propagation/hostile_mechanism_without_relationship.json",
+        "tests/fixtures/economic_propagation/hostile_relationship_construct_laundering.json",
+        "tests/fixtures/economic_propagation/hostile_rights_blocked_claimed_supported.json",
+        "tests/fixtures/economic_propagation/hostile_role_laundering.json",
+        "tests/fixtures/economic_propagation/hostile_sha_mismatch.json",
+        "tests/fixtures/economic_propagation/hostile_unresolved_identity_laundered.json",
+        "tests/fixtures/economic_propagation/manifest.json",
+        "tests/test_economic_propagation_hypothesis_contract.py"
       ],
       "protected_paths_touched": []
     },
@@ -90,29 +365,37 @@
       "number": 6505,
       "title": "ci: route trusted PR packs through main executor",
       "head_ref": "codex/ci-p3bb-production-route-6351",
-      "updated_at": "2026-08-27T04:30:45Z",
+      "updated_at": "2026-08-27T07:10:38Z",
       "is_draft": false,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
-      "files_count": 15,
+      "files_count": 23,
       "files_truncated": false,
       "files_error": false,
       "files": [
+        ".github/ci/legacy-jobs.yml",
         ".github/runner-policy.yml",
         ".github/workflows/ci.yml",
         ".github/workflows/trusted-ci-executor.yml",
         "agentos/decisions/DEC-TRUSTED-CI-MAIN-DEFINED-EXECUTOR-BOUNDARY.md",
         "agentos/discoveries/DSC-REUSABLE-WORKFLOW-CALL-AND-HOST-HOOK-USE-DIFFERENT-REF-SHAPES.md",
+        "agentos/discoveries/DSC-SEALED-PC-CI-REPLAY-AND-PORTABILITY-NEED-EXPLICIT-RUNTIME-BINDINGS.md",
         "agentos/handoffs/CI-MERGE-CONTROL-PLANE-2026-08-27-p3bb-production-route.md",
         "agentos/workstreams/WS-CI-MERGE-CONTROL-PLANE.md",
         "agentos/workstreams/WS-RUNNER-FLEET-RESILIENCE.md",
         "ops/runner-host/common/runner_admission.py",
+        "ops/runner-host/common/runner_admission_hook.js",
         "scripts/check_runner_policy.py",
+        "scripts/run_ci_pack.py",
+        "tests/test_biocatalyst_fixed_cohort_deployment.py",
         "tests/test_ci_canary_tools.py",
         "tests/test_ci_pack.py",
+        "tests/test_ci_pack_semantic.py",
+        "tests/test_macro_anon_dependency_guard.py",
         "tests/test_runner_policy.py",
         "tests/test_trusted_ci_executor_workflow.py",
-        "tests/test_trusted_ci_production_route.py"
+        "tests/test_trusted_ci_production_route.py",
+        "tests/test_tushare_minutes_plane.py"
       ],
       "protected_paths_touched": [
         ".github/workflows/ci.yml",
@@ -121,114 +404,19 @@
       ]
     },
     {
-      "number": 6504,
-      "title": "records(market-os): complete MarketOntology parity + parallel Fable COO fanout",
-      "head_ref": "sol/marketontology-complete-parity-fanout-20260826",
-      "updated_at": "2026-08-27T04:42:55Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 23,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "agentos/decisions/DEC-MARKET-ONTOLOGY-COMPLETE-CAPABILITY-PARITY-FABLE-COO-FANOUT.md",
-        "agentos/decisions/DEC-MARKET-ONTOLOGY-CURRENT-PUBLIC-DELTA-CENSUS-IS-CLOSURE-INPUT.md",
-        "agentos/decisions/DEC-MARKET-ONTOLOGY-FABLE-MULTI-COO-CONCURRENCY-TOPOLOGY.md",
-        "agentos/decisions/DEC-MARKET-OS-STALE-GLOBAL-NEXT-ACTION-SUPERSEDED-BY-PARITY-FANOUT.md",
-        "agentos/discoveries/DSC-MARKET-ONTOLOGY-PUBLIC-P1-CORPUS-RETAINED-OUTSIDE-GITHUB.md",
-        "agentos/handoffs/MARKET-ONTOLOGY-2026-08-26-fable-coo-complete-parity-program.md",
-        "agentos/handoffs/MARKET-ONTOLOGY-F00-F13-FABLE-COO-FANOUT-MANIFEST-2026-08-26.md",
-        "agentos/handoffs/MARKET-ONTOLOGY-F01-MACRO-MARKETS-BRIEFINGS-FABLE-COO-2026-08-26.md",
-        "agentos/handoffs/MARKET-ONTOLOGY-F02-POLICY-GEO-GEOSPATIAL-FABLE-COO-2026-08-26.md",
-        "agentos/handoffs/MARKET-ONTOLOGY-F03-OPTIONS-EXPRESSION-FABLE-COO-2026-08-26.md",
-        "agentos/handoffs/MARKET-ONTOLOGY-F04-ONTOLOGY-TRANSMISSION-OPPORTUNITY-FABLE-COO-2026-08-26.md",
-        "agentos/handoffs/MARKET-ONTOLOGY-F05-EVENT-IMPACT-CATALYST-FABLE-COO-2026-08-26.md",
-        "agentos/handoffs/MARKET-ONTOLOGY-F06-SECURITY-TICKER-WORKSPACE-FABLE-COO-2026-08-26.md",
-        "agentos/handoffs/MARKET-ONTOLOGY-F07-VALUATION-SCENARIO-FABLE-COO-2026-08-26.md",
-        "agentos/handoffs/MARKET-ONTOLOGY-F08-PORTFOLIO-ALERTS-FABLE-COO-2026-08-26.md",
-        "agentos/handoffs/MARKET-ONTOLOGY-F09-CAPITAL-OWNERSHIP-MATERIALS-FABLE-COO-2026-08-26.md",
-        "agentos/handoffs/MARKET-ONTOLOGY-F10-QUANT-ANALOGS-FABLE-COO-2026-08-26.md",
-        "agentos/handoffs/MARKET-ONTOLOGY-F11-HUMAN-RESEARCH-RMS-FABLE-COO-2026-08-26.md",
-        "agentos/handoffs/MARKET-ONTOLOGY-F12-TEAM-TENANT-API-PLATFORM-FABLE-COO-2026-08-26.md",
-        "agentos/handoffs/MARKET-ONTOLOGY-F13-OPS-LEARNING-RELIABILITY-FABLE-COO-2026-08-26.md",
-        "research/market_intelligence_productization/MARKET_ONTOLOGY_COMPLETE_PARITY_ADOPTION_ADDENDUM_2026-08-26.md",
-        "research/market_intelligence_productization/MARKET_ONTOLOGY_COMPLETE_PARITY_ADOPTION_LEDGER_2026-08-26.csv",
-        "research/market_intelligence_productization/MARKET_ONTOLOGY_CURRENT_PUBLIC_DELTA_LEDGER_2026-08-26.csv"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 6503,
-      "title": "fix(cortex): repair the five hypothesis-evaluator wiring defects (experiments audit \u00a73 W1\u2013W6)",
-      "head_ref": "claude/cortex-evaluator-wiring-repairs",
-      "updated_at": "2026-08-27T04:27:27Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 9,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        ".github/workflows/daily.yml",
-        "agentos/discoveries/DSC-A-SWALLOWED-SIGNAL-ARITY-LOOKS-LIKE-A-DATA-GAP.md",
-        "agentos/discoveries/DSC-THE-2026-08-18-GOVERNANCE-CLOBBER-WAS-NOT-SYSTEMATIC.md",
-        "config/dag.yml",
-        "data/experiments/registry_seed.json",
-        "engine/neuralweb/metabolism.py",
-        "scripts/evaluate_cortex_hypotheses.py",
-        "scripts/quarterly_cortex_fdr.py",
-        "tests/test_cortex_evaluator_repairs.py"
-      ],
-      "protected_paths_touched": [
-        ".github/workflows/daily.yml",
-        "config/dag.yml",
-        "data/experiments/registry_seed.json",
-        "engine/neuralweb/metabolism.py"
-      ]
-    },
-    {
-      "number": 6499,
-      "title": "shadow-book: wire nightly maturation, overlap-true HAC lags, leak-free Clark-West (experiments audit \u00a78.4+13)",
-      "head_ref": "claude/shadow-book-wiring",
-      "updated_at": "2026-08-27T04:41:17Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 10,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        ".github/workflows/daily.yml",
-        "config/dag.yml",
-        "data/experiments/registry_seed.json",
-        "engine/shadow_book.py",
-        "scripts/mature_shadow_book.py",
-        "scripts/validate_options_dislocation.py",
-        "scripts/validate_options_ivspread.py",
-        "scripts/validate_options_skew.py",
-        "tests/test_price_basis_graders.py",
-        "tests/test_shadow_book.py"
-      ],
-      "protected_paths_touched": [
-        ".github/workflows/daily.yml",
-        "config/dag.yml",
-        "data/experiments/registry_seed.json"
-      ]
-    },
-    {
       "number": 6497,
       "title": "HOLD-FOR-SOL: E3-C GOOGL generalization REFUSED on source format (records + regression, no runtime change)",
       "head_ref": "claude/e3c-googl-generalization-refusal",
-      "updated_at": "2026-08-27T03:46:51Z",
+      "updated_at": "2026-08-27T06:25:36Z",
       "is_draft": true,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 7,
+      "merge_state": "CLEAN",
+      "merge_state_raw": "CLEAN",
+      "files_count": 8,
       "files_truncated": false,
       "files_error": false,
       "files": [
         ".github/ci/legacy-jobs.yml",
+        "agentos/decisions/DEC-E3C-GOOGL-OOS-REFUSAL-SPENDS-EVENT.md",
         "agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-27-e3c-refusal.md",
         "agentos/workstreams/WS-EARNINGS-EVENT-INTELLIGENCE-COMPILER.md",
         "research/earnings_intelligence/e3/E3C_SECOND_EVENT_GENERALIZATION_HANDOFF_2026-08-20.md",
@@ -242,7 +430,7 @@
       "number": 6485,
       "title": "records(defense): Sol accepts D6-B1 / park at D6-C boundary",
       "head_ref": "sol/d6b1-final-acceptance-20260826",
-      "updated_at": "2026-08-27T03:57:35Z",
+      "updated_at": "2026-08-27T06:51:33Z",
       "is_draft": false,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
@@ -291,10 +479,10 @@
       "number": 6441,
       "title": "HOLD-FOR-SOL: records(agentos): reconcile current state-sync program",
       "head_ref": "sol/agentos-state-sync-20260825",
-      "updated_at": "2026-08-26T02:32:54Z",
+      "updated_at": "2026-08-27T05:03:56Z",
       "is_draft": true,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
+      "merge_state": "CLEAN",
+      "merge_state_raw": "CLEAN",
       "files_count": 2,
       "files_truncated": false,
       "files_error": false,
@@ -426,10 +614,10 @@
       "number": 6381,
       "title": "Ship-loop watcher quiescence after PARKED / external exit (#6379)",
       "head_ref": "claude/ship-loop-quiescence-20260824",
-      "updated_at": "2026-08-26T13:17:59Z",
+      "updated_at": "2026-08-27T06:28:15Z",
       "is_draft": false,
-      "merge_state": "DIRTY",
-      "merge_state_raw": "DIRTY",
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
       "files_count": 12,
       "files_truncated": false,
       "files_error": false,
@@ -529,15 +717,16 @@
       "number": 6182,
       "title": "feat(agentos): deterministic zero-network Linear portfolio plan compiler (MAS-65)",
       "head_ref": "chatgpt1/mas-65-linear-portfolio-plan-p0",
-      "updated_at": "2026-08-26T02:26:10Z",
+      "updated_at": "2026-08-27T05:34:24Z",
       "is_draft": true,
       "merge_state": "CLEAN",
       "merge_state_raw": "CLEAN",
-      "files_count": 6,
+      "files_count": 7,
       "files_truncated": false,
       "files_error": false,
       "files": [
         "research/linear_portfolio_p0/linear_snapshot_2026-08-25.json",
+        "research/linear_portfolio_p0/real_main_drift_receipt_2026-08-26.json",
         "scripts/linear_portfolio_plan.py",
         "tests/agentos_compile_legacy_cases.py",
         "tests/linear_portfolio_plan_cases.py",
@@ -658,39 +847,219 @@
   ],
   "collisions": [
     {
-      "pr_a": 6503,
-      "pr_b": 6499,
+      "pr_a": 6534,
+      "pr_b": 6505,
       "shared_files": [
-        ".github/workflows/daily.yml",
-        "config/dag.yml",
-        "data/experiments/registry_seed.json"
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/ci.yml"
       ],
-      "shared_count": 3,
+      "shared_count": 2,
       "any_protected": true
     },
     {
-      "pr_a": 6507,
-      "pr_b": 6503,
+      "pr_a": 6519,
+      "pr_b": 6505,
       "shared_files": [
-        "data/experiments/registry_seed.json"
+        "scripts/run_ci_pack.py",
+        "tests/test_ci_pack.py"
+      ],
+      "shared_count": 2,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6534,
+      "pr_b": 6533,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
       ],
       "shared_count": 1,
-      "any_protected": true
+      "any_protected": false
     },
     {
-      "pr_a": 6507,
-      "pr_b": 6499,
+      "pr_a": 6534,
+      "pr_b": 6532,
       "shared_files": [
-        "data/experiments/registry_seed.json"
+        ".github/ci/legacy-jobs.yml"
       ],
       "shared_count": 1,
-      "any_protected": true
+      "any_protected": false
     },
     {
-      "pr_a": 6506,
-      "pr_b": 6499,
+      "pr_a": 6534,
+      "pr_b": 6514,
       "shared_files": [
-        "engine/shadow_book.py"
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6534,
+      "pr_b": 6497,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6534,
+      "pr_b": 6389,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6534,
+      "pr_b": 6296,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6533,
+      "pr_b": 6532,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6533,
+      "pr_b": 6514,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6533,
+      "pr_b": 6505,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6533,
+      "pr_b": 6497,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6533,
+      "pr_b": 6389,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6533,
+      "pr_b": 6296,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6532,
+      "pr_b": 6514,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6532,
+      "pr_b": 6505,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6532,
+      "pr_b": 6497,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6532,
+      "pr_b": 6389,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6532,
+      "pr_b": 6296,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6514,
+      "pr_b": 6505,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6514,
+      "pr_b": 6497,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6514,
+      "pr_b": 6389,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6514,
+      "pr_b": 6296,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6505,
+      "pr_b": 6497,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
       ],
       "shared_count": 1,
       "any_protected": false
@@ -706,9 +1075,27 @@
     },
     {
       "pr_a": 6505,
+      "pr_b": 6389,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6505,
       "pr_b": 6381,
       "shared_files": [
         "agentos/workstreams/WS-CI-MERGE-CONTROL-PLANE.md"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6505,
+      "pr_b": 6296,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
       ],
       "shared_count": 1,
       "any_protected": false
@@ -761,6 +1148,101 @@
   ],
   "recent_merged": [
     {
+      "number": 6531,
+      "title": "records(breathing): reconcile post-Aug17 acceptance ruler and W-L2",
+      "merged_at": "2026-08-27T06:25:58Z"
+    },
+    {
+      "number": 6530,
+      "title": "records(deepvue): W2-A closeout \u2014 receipt, wave done, handoff",
+      "merged_at": "2026-08-27T07:04:48Z"
+    },
+    {
+      "number": 6527,
+      "title": "fix(landing): the browser was dark-moding a page we never gave a dark mode",
+      "merged_at": "2026-08-27T06:48:01Z"
+    },
+    {
+      "number": 6525,
+      "title": "records(market-os): F00 pickup and carrier-landing handoff",
+      "merged_at": "2026-08-27T06:34:37Z"
+    },
+    {
+      "number": 6524,
+      "title": "records(prophet-live): mature force-majeure evidence closeout",
+      "merged_at": "2026-08-27T06:41:00Z"
+    },
+    {
+      "number": 6520,
+      "title": "agentos(market-os): sync workstream after A1B production acceptance",
+      "merged_at": "2026-08-27T06:01:23Z"
+    },
+    {
+      "number": 6518,
+      "title": "ci: extract 3 largest engine run bodies to scripts/ci \u2014 daily.yml 512KB-cap headroom diet",
+      "merged_at": "2026-08-27T06:20:59Z"
+    },
+    {
+      "number": 6517,
+      "title": "fix(13f-census): recover filing documents omitted from SEC index.json via the SGML header manifest",
+      "merged_at": "2026-08-27T05:51:48Z"
+    },
+    {
+      "number": 6516,
+      "title": "records(grey-deer): GD-3 acceptance handoff for a computer-access session",
+      "merged_at": "2026-08-27T05:50:58Z"
+    },
+    {
+      "number": 6515,
+      "title": "hk(v38-r1): What to Act On Now at rest; Leadership & Rotation separated from action",
+      "merged_at": "2026-08-27T06:04:56Z"
+    },
+    {
+      "number": 6513,
+      "title": "cn-limit: stk_limit publishes legal bands without republishing the anchor",
+      "merged_at": "2026-08-27T05:38:07Z"
+    },
+    {
+      "number": 6512,
+      "title": "docs: sequence CI and private-readiness modernization",
+      "merged_at": "2026-08-27T05:27:16Z"
+    },
+    {
+      "number": 6511,
+      "title": "records(agentos): reconcile MAS-112 live scope mismatch",
+      "merged_at": "2026-08-27T06:13:55Z"
+    },
+    {
+      "number": 6509,
+      "title": "records(agentos): reconcile Autonomy V1 dispatch and Capacity Fabric continuation",
+      "merged_at": "2026-08-27T05:47:06Z"
+    },
+    {
+      "number": 6508,
+      "title": "records(market-os): accept A1B in production",
+      "merged_at": "2026-08-27T05:26:48Z"
+    },
+    {
+      "number": 6507,
+      "title": "fix(options-source): ThetaData is canonical \u2014 stop calling the retired Polygon estate an outage",
+      "merged_at": "2026-08-27T05:07:56Z"
+    },
+    {
+      "number": 6506,
+      "title": "shadow-book: percentile field is a true cross-sectional pct rank (era-stamped, no restatement)",
+      "merged_at": "2026-08-27T05:30:59Z"
+    },
+    {
+      "number": 6504,
+      "title": "records(market-os): complete MarketOntology parity + parallel Fable COO fanout",
+      "merged_at": "2026-08-27T06:03:25Z"
+    },
+    {
+      "number": 6503,
+      "title": "fix(cortex): repair the five hypothesis-evaluator wiring defects (experiments audit \u00a73 W1\u2013W6)",
+      "merged_at": "2026-08-27T05:33:41Z"
+    },
+    {
       "number": 6502,
       "title": "cn-limit: name-history source authority (Sol RETURN-GATE 10B)",
       "merged_at": "2026-08-27T04:25:20Z"
@@ -774,6 +1256,11 @@
       "number": 6500,
       "title": "fix(aibrief): the worker that writes the brief now writes its \u4e2d\u6587 too",
       "merged_at": "2026-08-27T04:07:52Z"
+    },
+    {
+      "number": 6499,
+      "title": "shadow-book: wire nightly maturation, overlap-true HAC lags, leak-free Clark-West (experiments audit \u00a78.4+13)",
+      "merged_at": "2026-08-27T05:14:59Z"
     },
     {
       "number": 6498,
@@ -3159,106 +3646,6 @@
       "number": 5970,
       "title": "fix(qledger): untrack committed control-evidence clock file + gitignore fence (fleet-wide T9 red)",
       "merged_at": "2026-08-19T11:52:16Z"
-    },
-    {
-      "number": 5969,
-      "title": "ci(W2): merge gate packs only gate:code; data receipts move to a post-nightly data-health lane",
-      "merged_at": "2026-08-19T10:58:32Z"
-    },
-    {
-      "number": 5968,
-      "title": "ci: confine an unrepresentable semantic unit to its job instead of voiding the whole run",
-      "merged_at": "2026-08-19T11:35:23Z"
-    },
-    {
-      "number": 5967,
-      "title": "fix(ship-loop): a timed-out git status must not wedge the tree it reads",
-      "merged_at": "2026-08-19T10:44:11Z"
-    },
-    {
-      "number": 5966,
-      "title": "agentos: FIF-1 DONE \u2014 financial_intelligence_packet.v1 FROZEN",
-      "merged_at": "2026-08-19T10:29:16Z"
-    },
-    {
-      "number": 5965,
-      "title": "feat(dataos): V4-D2B1 issuer authority hardening \u2014 economic issuer axis, typed refusals, nightly refresh seam",
-      "merged_at": "2026-08-19T11:58:20Z"
-    },
-    {
-      "number": 5964,
-      "title": "fix(ci): a dark step on main must not void the whole semantic aggregate",
-      "merged_at": "2026-08-19T12:54:53Z"
-    },
-    {
-      "number": 5963,
-      "title": "records(grey-deer): GD-0A durable landing \u2014 architecture freeze, workstream, 8 decisions, program registration",
-      "merged_at": "2026-08-19T12:24:34Z"
-    },
-    {
-      "number": 5962,
-      "title": "docs(prophet-lab): day-1 continuation handoff + b5a wave status",
-      "merged_at": "2026-08-19T10:06:14Z"
-    },
-    {
-      "number": 5961,
-      "title": "research(gd1): Grey Deer August 2026 point-in-time event replay",
-      "merged_at": "2026-08-19T14:02:46Z"
-    },
-    {
-      "number": 5960,
-      "title": "perf(admin): unblock the console, and name the analytics failure instead of \"bad json\"",
-      "merged_at": "2026-08-19T12:05:48Z"
-    },
-    {
-      "number": 5959,
-      "title": "feat(cs-v2-w1): Capital Structure V2 Wave 1 \u2014 evidence identity wiring + hostile tests",
-      "merged_at": "2026-08-19T15:10:27Z"
-    },
-    {
-      "number": 5958,
-      "title": "agentos: W1-execution handoff + breadth-ledger discovery (WS:CI-MERGE-CONTROL-PLANE)",
-      "merged_at": "2026-08-19T08:36:09Z"
-    },
-    {
-      "number": 5957,
-      "title": "Remove stray Chinese sentence from English disclaimer page",
-      "merged_at": "2026-08-19T11:00:19Z"
-    },
-    {
-      "number": 5955,
-      "title": "docs(earnings): G0 post-event reinterpretation research census",
-      "merged_at": "2026-08-19T18:13:48Z"
-    },
-    {
-      "number": 5954,
-      "title": "ci(W1): classify every legacy job by which tree moves its verdict",
-      "merged_at": "2026-08-19T10:11:29Z"
-    },
-    {
-      "number": 5953,
-      "title": "research(china-alpha): canonical China Alpha Intelligence masterplan \u2014 FABLE-00 reconciliation + G0 census + builder commissions",
-      "merged_at": "2026-08-19T16:05:16Z"
-    },
-    {
-      "number": 5952,
-      "title": "fix(ci): wire the merge-gate reliability suite into a run: step",
-      "merged_at": "2026-08-19T09:03:19Z"
-    },
-    {
-      "number": 5951,
-      "title": "docs(cn): GROK-CN-E commercial supply-chain diligence \u2014 no seat purchase",
-      "merged_at": "2026-08-19T19:50:45Z"
-    },
-    {
-      "number": 5950,
-      "title": "research(cn-f): sector-clock census \u2014 only Bio and EV earn a China specialist lobe",
-      "merged_at": "2026-08-19T18:15:25Z"
-    },
-    {
-      "number": 5949,
-      "title": "docs(cn-g): empirical prior table for twelve China evidence families",
-      "merged_at": "2026-08-19T19:51:00Z"
     }
   ]
 }
