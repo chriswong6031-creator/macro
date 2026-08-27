@@ -34,10 +34,16 @@ changed:
       A2_0_REVALIDATED_PASS or A2_HOST_COLLISION and then stop.
   - path: mastermindx-market-intelligence/Mastermind protected master
     what: >
-      Action-time protected Mastermind / Skillpack remains
-      8affa1c0403f4400825371bea0257f360a4814f2. Movement from the historical A2 pickup base remains
-      disjoint from integrations/slack_agent_dialogue/** and no current asd-a2 or agent-relay
+      Action-time protected Mastermind / Skillpack is
+      c590ff21664761e6bd4a6558175b6666c5c7eba2. The only movement after accepted H0/security head
+      8affa1c0403f4400825371bea0257f360a4814f2 is Project Recovery R8 records/source-law material;
+      it does not touch integrations/slack_agent_dialogue/**. No current asd-a2 or agent-relay
       implementation branch/PR exists.
+  - path: mastermindx-market-intelligence/macro main
+    what: >
+      Action-time Macro main is bb554dcfc67b5080c7308f8ca256c6c6ffef886d. This carrier was
+      reconciled onto that exact main rather than merging stale Agent OS bytes over the newer hybrid
+      workforce source-law reconciliation.
   - path: Slack workspace current census
     what: >
       #agent-dispatch C0BSBM78V1N currently has ten user principals and no bot/app member; workspace
@@ -52,22 +58,24 @@ verified:
       preflight proof under current Chairman admission law.
   - claim: Current Chairman handoff law requires pre-work ACK from the initial envelope.
     command: >
-      Read Macro main 64bc2c1166f8b4684ad2666d55ca0d018e9cc85b decision
+      Read current Macro main bb554dcfc67b5080c7308f8ca256c6c6ffef886d decision
       DEC-SLACK-HANDOFF-INITIAL-ENVELOPE-REQUIRES-PREWORK-ACK.
     result: >
       The initial envelope must require ACK + full-thread read before execution; a later ACK does not
       repair work that already began.
   - claim: A clean revalidation carrier has been issued without mutating A2 resources.
-    command: "Slack send receipt for #agent-dispatch parent 1787834271.424569"
+    command: "Slack send receipt for #agent-dispatch parent 1787834271.424569 and current thread reread."
     result: >
-      New operation asd-a2-host-preflight-revalidate-20260827-sol-002 is DELIVERY_ONLY / READ_ONLY and
-      contains the complete pre-work admission sequence in the initial message.
+      Operation asd-a2-host-preflight-revalidate-20260827-sol-002 is DELIVERY_ONLY / READ_ONLY,
+      contains the complete pre-work admission sequence in the initial message, and at action time
+      still has no thread replies. No duplicate revalidation carrier was issued.
   - claim: Current protected Mastermind is still code-path disjoint from accepted A1.
     command: >
-      Compare Mastermind cef4332d3682991e3e1c3d6160da17cd0a3a8f63 through
-      8affa1c0403f4400825371bea0257f360a4814f2 plus current A2 branch/open-PR census.
+      Compare Mastermind 8affa1c0403f4400825371bea0257f360a4814f2 through
+      c590ff21664761e6bd4a6558175b6666c5c7eba2 plus current A2 branch/open-PR census.
     result: >
-      No integrations/slack_agent_dialogue/** movement and no competing A2 implementation carrier.
+      The exact protected delta is only two Project Recovery R8 plan/spec files; there is no
+      integrations/slack_agent_dialogue/** movement and no competing A2 implementation carrier.
 unverified:
   - claim: A2-0 is accepted under current admission law.
     what_would_verify: >
