@@ -1,154 +1,99 @@
 ---
-program: earnings-intelligence
-workstream: EARNINGS-EVENT-INTELLIGENCE-COMPILER
-date: 2026-08-27
-wave: TFG-0
-state: SPEC_ONLY_PENDING_SOL_ACCEPTANCE
-operation_key: tfg0-transcript-format-census-20260827-v1
-carrier: macro#6521
+workstream: "WS:EARNINGS-EVENT-INTELLIGENCE-COMPILER"
+session: sol/tfg0-transcript-format-census-20260827-initial
+model: sol
+ended_because: complete
+mission: >
+  Pre-register a transcript-format generalization development corpus before opening new transcript
+  bodies, measure the unchanged deterministic Q&A compiler across that independent corpus, freeze an
+  eight-revision metadata-only holdout, and produce the first transcript-local source-evidence
+  architecture without modifying runtime code or consuming GOOGL/CAT/BAC/SNOW as fresh acceptance data.
+state_before: >
+  E3-B was PROVEN_LIVE on AAPL. The frozen GOOGL E3-C second-event attempt had exposed a genuine
+  source-format refusal and was still being repaired under HOLD-FOR-SOL on PR #6497. GOOGL's failure
+  cues were therefore development-visible and could not lawfully be used as a repaired OOS pass.
+prs:
+  - 6521
+decisions:
+  - DEC:E3FMT-TRANSCRIPT-LOCAL-SOURCE-EVIDENCE-NORMALIZATION
+  - DEC:E3FMT-STRUCTURAL-SEPARATORS-PROXY-IDENTITY-AND-SOURCE-CONDITIONED-HOLDOUT
+changed:
+  - path: research/earnings_intelligence/e3/TFG0_TRANSCRIPT_FORMAT_GENERALIZATION_PREREG_2026-08-27.md
+    what: >
+      Froze the development-corpus selection law before body inspection: live transcript index,
+      exact advertised SHA, bounded date/period eligibility, exclude AAPL/GOOGL/GOOG/CAT/BAC/SNOW,
+      sort by deterministic TFG0 hash and take the first 16.
+  - path: research/earnings_intelligence/e3/tfg0_transcript_format_development_corpus_selection.json
+    what: >
+      Recorded the exact 16 development revisions selected from 2,909 eligible held revisions with
+      zero selected-body inspection before freeze.
+  - path: research/earnings_intelligence/e3/tfg0_transcript_format_census_receipt.json
+    what: >
+      Recorded 16/16 byte replay, 0/16 success through the unchanged deterministic compiler, role
+      sparsity and terminal-cue diversity across the independently frozen development corpus.
+  - path: research/earnings_intelligence/e3/tfg1_transcript_format_holdout_selection.json
+    what: >
+      Froze eight further metadata/SHA-ranked revisions as an unseen format holdout; their bodies
+      were not opened by TFG-0.
+  - path: agentos/decisions/DEC-E3FMT-TRANSCRIPT-LOCAL-SOURCE-EVIDENCE-NORMALIZATION.md
+    what: >
+      Froze the first transcript-local source-evidence normalization architecture: no terminal-phrase
+      admission authority, no external person lookup, no new store/control plane, and same-revision
+      role evidence only.
+verified:
+  - claim: Development corpus selection was frozen before body inspection.
+    command: >
+      GitHub Actions run 33042834588 freeze job 98420076116 plus
+      research/earnings_intelligence/e3/tfg0_transcript_format_development_corpus_selection.json.
+    result: >
+      2,909 eligible revisions; exact ranks 1-16 selected by the pre-registered hash law;
+      bodies_inspected_before_freeze=0.
+  - claim: All selected development source revisions byte replayed and the unchanged compiler failed on all 16.
+    command: >
+      GitHub Actions artifacts 9634504377 and 9634565138 from run 33042834588.
+    result: >
+      16/16 byte replay; 0/16 unchanged-compiler success; 11 operator_intro_identity_unparsed and
+      5 zero_qa_boundaries.
+  - claim: The separate format holdout was frozen without opening its bodies.
+    command: >
+      GitHub Actions run 33043554816 job 98422311316 and artifact 9634756392.
+    result: >
+      Exact ranks 17-24 recorded by pair + SHA only; bodies_inspected=0.
+unverified:
+  - TFG-1 implementation behavior is not built or claimed by this handoff.
+  - The eight frozen holdout bodies remain intentionally unopened and therefore uncharacterized.
+unresolved:
+  - >
+    The first architecture draft could not yet know how many development calls were independently
+    source-clean for all-or-nothing reconstruction, nor how explicit analyst proxies and source-role
+    conflicts should score. Those questions were resolved later in the R1 continuation handoff and
+    R1 decision; this initial record is historical input, not the active implementation packet.
+next_actions:
+  - >
+    Follow `agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-27-tfg0-r1.md`
+    and the R1 architecture amendment for final TFG-0 acceptance. Do not execute the initial numeric
+    breadth bars from this historical stage.
+do_not_redo:
+  - Do not reselect the 16-call development corpus after seeing body/parser outcomes.
+  - Do not open or replace the frozen eight-call holdout during TFG-0.
+  - Do not use GOOGL, CAT, BAC or SNOW as TFG development bodies.
+  - Do not interpret the unchanged 0/16 result as authority to add ticker/provider-specific parser branches.
+danger_areas:
+  - >
+    This initial stage recorded provisional >=12/16 and >=6/8 outcome bars before source-only
+    adjudication was complete. Those bars are superseded by the R1 source-conditioned law and must
+    never be used to pressure identity guessing or partial publication.
+  - >
+    Segment role metadata is incomplete and sometimes conflicts with explicit same-revision title
+    text. A future compiler must treat it as evidence, not unquestioned truth.
 ---
 
-# E3 / TFG-0 — Transcript Format Generalization handoff
+# TFG-0 initial handoff — historical stage
 
-## Why this exists
+This handoff preserves the first anti-leakage selection/census stage. The active continuation and
+implementation law is the later R1 handoff:
 
-The frozen GOOGL E3-C out-of-sample attempt truthfully refused on transcript source format. Sol ruled that GOOGL is spent as future OOS acceptance evidence: do not tune on GOOGL and retest it as OOS, and do not immediately switch the failed carrier to CAT/BAC/SNOW.
+`agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-27-tfg0-r1.md`
 
-TFG-0 therefore pre-registered a development census before inspecting any additional transcript body, measured the existing deterministic Q&A parser across independently selected held formats, and froze the next repair method without modifying runtime code.
-
-## Exact TFG-0 carrier
-
-- PR: Macro #6521
-- operation: `tfg0-transcript-format-census-20260827-v1`
-- pickup main: `5d07658b899d2d3457dfeeccbc0a91c280f5bc1f`
-- pre-registration-before-body-inspection commit: `05e4ddde16e9cd94c79ce3dd21a8a25db865da51`
-- final research head at time of this handoff: branch continues; re-read PR exact head before acceptance
-- completion if accepted: `SPEC_ONLY`
-
-## Measured result
-
-Production transcript index snapshot:
-
-- schema `mastermind.tx-index/v1`
-- generated_at `2026-08-27T00:17:17.252644+00:00`
-- 28,741 bodies / 3,572 symbols
-- exact index SHA-256 `58f15ff0540f2aa0228348dda6f0ee34b26ef6d3227582fe59793fd43e0af496`
-
-TFG eligible held revisions under the frozen law: **2,909**.
-
-Development corpus:
-
-- deterministic hash-selected first 16 revisions;
-- AAPL, GOOGL/GOOG, CAT, BAC and SNOW excluded;
-- 16/16 byte replay;
-- 0 source revision mismatch;
-- zero model calls;
-- zero reserved OOS body inspection.
-
-Unchanged deterministic compiler:
-
-- **0 / 16 successful**;
-- 11 `operator_intro_identity_unparsed`;
-- 5 `zero_qa_boundaries`.
-
-This proves the GOOGL failure is a systemic source-format coverage gap, not an isolated ticker/vendor exception.
-
-Across the exact 16 bodies:
-
-- 1,524 segments;
-- 672 blank-role segments (44.1%);
-- every call contains blank role;
-- SCCO and COF have only `Operator` + blank role vocabulary;
-- same-transcript opening rosters provide replayable management title evidence for roleless structured speakers;
-- at least ARRY and CTRE contain direct conflicts between segment `role` metadata and explicit title text.
-
-## Architecture ruling
-
-TFG-0 selects **transcript-local source evidence normalization**.
-
-Boundary law:
-
-- terminal phrases (`go ahead`, `line open/live`, `proceed`) have zero primary authority;
-- admit Q&A only through a named Operator handoff that binds to the next non-housekeeping source speaker;
-- generic Q&A instructions, presentation handoffs and closing management returns are not boundaries.
-
-Questioner law:
-
-- name anchored to the verified next source speaker + same-person Operator clause;
-- affiliation parsed only inside the admitted handoff clause and may remain existing `unresolved`;
-- abbreviation-safe; no external people lookup.
-
-Respondent law:
-
-- source evidence may be segment role, same-revision transcript-local title declaration, or compatible combination;
-- source-native aliasing may strip honorifics / use a unique contiguous multi-token speaker-name prefix only;
-- no nickname/fuzzy/cross-call inference;
-- incompatible role evidence -> `management_identity_conflict`;
-- missing role evidence -> existing `management_identity_insufficient`;
-- accepted identity remains `source_supported`.
-
-Canonical evidence law:
-
-- legacy respondent shape remains valid;
-- roster-derived accepted role requires optional nested `qa_respondent_identity_evidence.v1` with replayable same-revision `role_source_spans`;
-- no nullable role, generic `Management`, new top-level workspace key, new Q&A store or builder-invented `qa_exchange.v2`.
-
-## TFG-1 format holdout — EMBARGOED
-
-A separate eight-revision format holdout is frozen by metadata/SHA only as ranks 17-24 of the same deterministic ordering.
-
-Receipt: `research/earnings_intelligence/e3/tfg1_transcript_format_holdout_selection.json`.
-
-**Bodies inspected: 0.**
-
-Do not open these bodies until a future TFG-1 implementation head is frozen and the development suite is green. If the holdout fails its frozen bar, do not patch the same implementation carrier after seeing it and then call it unseen validation.
-
-## Frozen TFG-1 breadth bars
-
-Before implementation:
-
-- AAPL oracle stays exactly 7 exchanges / 26 management answer turns / 68 replay spans;
-- current AAPL-only production revision admission stays closed;
-- development corpus must reach >=12/16 non-empty through one generic deterministic method;
-- valid Q&A may not fail merely because terminal cue dialect lacks `go ahead`;
-- any remaining development failure must be source identity/conflict/replay, not phrase-format failure;
-- hard gates: accepted unsupported 0, cross-event 0, 100% accepted replay.
-
-After implementation head freeze:
-
-- open exact eight holdout revisions once;
-- >=6/8 non-empty;
-- no old literal-terminal-cue failure class;
-- hard gates remain green;
-- no post-holdout tuning on that carrier.
-
-Then run GOOGL only as a known regression. It cannot serve as OOS acceptance.
-
-## Durable evidence
-
-- dev selection run/job/artifact: `33042834588` / `98420076116` / `9634504377`; artifact SHA `33cfa64643deb70b3690d78c33543898b3fcf1d49c2f1fdcb3e321f3b29608e5`
-- unchanged-compiler census artifact: `9634565138`; SHA `8e14d491fd92f596fcd7c89656a8b4540d8339857ed3b853ad6456ad6c29c4a7`
-- structural census run/job/artifact: `33043092699` / `98420881749` / `9634595572`; SHA `688f7c70bb97c31cf35227c317e7516c89f3ebf0e0bbb17cf994d9e121df5bf5`
-- holdout freeze run/job/artifact: `33043554816` / `98422311316` / `9634756392`; SHA `464a65d696dc97ee82780c857924da72f3757b12f5f86c196470e943b456675f`
-
-Temporary proof workflows were removed after evidence capture. TFG-0 final PR carries records/research only.
-
-## Collision / current state
-
-At TFG-0 pickup, E3-C refusal PR #6497 was concurrently being repaired under Sol review. TFG-0 deliberately did **not** edit `agentos/workstreams/WS-EARNINGS-EVENT-INTELLIGENCE-COMPILER.md` so it could not clobber that carrier.
-
-Before accepting #6521, reconcile #6497 and current `main`. Once #6497's refusal records land, update the E3 workstream to link TFG-0 as the method-hardening architecture and TFG-1 as the exact next implementation wave.
-
-## Do not redo / do not leak
-
-- do not reopen GOOGL as OOS acceptance;
-- do not inspect CAT/BAC/SNOW in TFG development;
-- do not inspect the eight TFG-1 holdout bodies before implementation freeze;
-- do not source-shop another GOOGL provider to rescue the failed test;
-- do not weaken source-supported respondent identity;
-- do not create another transcript/Q&A/identity/publication plane;
-- do not start E3-P.
-
-## Exact next action
-
-After #6497 and TFG-0 are Sol-accepted and reconciled, commission `TFG1_DETERMINISTIC_TRANSCRIPT_FORMAT_HARDENING_HANDOFF_2026-08-27.md` as one bounded Macro implementation. Stop after held-development + unseen-format validation and return to Sol. Fresh second-issuer production/OOS selection is later.
+Git history preserves the original draft in full. The replacement above intentionally removes stale
+numeric bars from the active text while keeping the measurements and selection provenance recoverable.
