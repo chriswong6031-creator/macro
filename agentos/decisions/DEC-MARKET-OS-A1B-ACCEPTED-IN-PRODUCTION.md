@@ -35,7 +35,10 @@ rationale: >
   showed 16; because canonical persisted state, authoritative reread, cross-product
   conformance, cleanup, and fresh reread were all correct, that observation is a
   nonblocking presentation-state lag defect rather than an A1B persistence or truth
-  failure. It remains visible for a separate bounded UI-consistency follow-up.
+  failure. It remains visible for a separate bounded UI-consistency follow-up. The
+  previously current WS:MARKET-OS A1B BUILT_NOT_PROVEN / PRODUCTION_WRITE_AUTH_REQUIRED
+  continuation is now stale, as is any still-open records projection that repeats it;
+  those projection layers must reconcile this accepted decision before landing.
 alternatives:
   - option: Keep A1B BUILT_NOT_PROVEN because the same-page mode badge briefly showed 13
     why_not: >
@@ -66,9 +69,6 @@ confidence: high
 reversibility: costly
 decided_by: sol
 decided_at: 2026-08-26
-supersedes:
-  - "WS:MARKET-OS A1B BUILT_NOT_PROVEN / PRODUCTION_WRITE_AUTH_REQUIRED continuation as of 854c2764e8756c8ebc6640796bf98e724e2479b7"
-  - "Any still-open records projection, including PR #6504, that describes A1B as BUILT_NOT_PROVEN after this accepted production receipt"
 ---
 
 ## Capability delta
