@@ -14,10 +14,25 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /tests/test_prophet_live_pack_d12.py
+            /engine/prophet_live/**
+            /engine/signal_gate.py
+            /engine/session_anchor.py
+            /engine/price_ladder.py
+            /engine/conditions/**
+            /lib/**
+            /scripts/build_prophet_live_pack.py
+            /scripts/build_stock_library.py
+            /config.yml
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - name: Install focused dependencies
-        run: pip install --quiet pytest pandas numpy pyyaml
+        run: pip install --quiet pytest pandas numpy pyyaml scipy
       - name: Run D12 regression
         run: python -m pytest tests/test_prophet_live_pack_d12.py -q
