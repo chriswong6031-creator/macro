@@ -1870,6 +1870,10 @@ jobs:
       - "research/STOCK_PERSONALITY_MASTERPLAN_BY_FABLE.md"
       - "research/US_BOARD_MEASUREMENT.md"
       - "scripts/build_stock_library.py"
+      # Import-closure entry: build_stock_library reuses
+      # scripts/snapshot_shadow_book.rows_from_board for the shadow-book
+      # snapshot (one percentile definition), so exclusive scope must name it.
+      - "scripts/snapshot_shadow_book.py"
       - "scripts/check_board_contradictions.py"
       - "scripts/check_signal_gate_coherence.py"
       - "scripts/check_stretch_oracle_contract.py"
@@ -3405,6 +3409,10 @@ jobs:
       - "scripts/build_sp500_heatmap.py"
       - "scripts/build_state_of_themes.py"
       - "scripts/build_stock_library.py"
+      # Import-closure entry: build_stock_library reuses
+      # scripts/snapshot_shadow_book.rows_from_board for the shadow-book
+      # snapshot (one percentile definition), so exclusive scope must name it.
+      - "scripts/snapshot_shadow_book.py"
       - "scripts/build_subsector_confluence.py"
       - "scripts/build_subsector_rotation.py"
       - "scripts/build_subsector_rotation_china.py"
@@ -5255,6 +5263,14 @@ jobs:
         run: python -m pytest tests/test_key_pool_economy.py -q
       - name: cortex provider routing + tool loop suite
         run: python -m pytest tests/test_cortex.py -q
+      # Rides here because this job is the ONLY CI runner of the metabolism suite
+      # (see the deps note above) and these repairs span BOTH sides of that
+      # boundary: engine/neuralweb/metabolism.py's registration contract and
+      # scripts/evaluate_cortex_hypotheses.py's grading of it. Splitting them
+      # across jobs would let the metric enum drift between where it is enforced
+      # and where it is computed — which is the W3 defect itself.
+      - name: cortex evaluator wiring repairs (audit §3 W1-W6)
+        run: python -m pytest tests/test_cortex_evaluator_repairs.py -q
       - name: cortex ADB-W3 two-way read tools + parity suite
         run: python -m pytest tests/test_cortex_adb_w3.py -q
       - name: metabolism w2-pulse suite (verify scan mode + dream invocability)
@@ -6803,6 +6819,10 @@ jobs:
       - "scripts/build_sp500_heatmap.py"
       - "scripts/build_state_of_themes.py"
       - "scripts/build_stock_library.py"
+      # Import-closure entry: build_stock_library reuses
+      # scripts/snapshot_shadow_book.rows_from_board for the shadow-book
+      # snapshot (one percentile definition), so exclusive scope must name it.
+      - "scripts/snapshot_shadow_book.py"
       - "scripts/build_subsector_confluence.py"
       - "scripts/build_subsector_rotation.py"
       - "scripts/build_subsector_rotation_china.py"
@@ -7225,6 +7245,10 @@ jobs:
       - "research/STOCK_PERSONALITY_MASTERPLAN_BY_FABLE.md"
       - "research/US_BOARD_MEASUREMENT.md"
       - "scripts/build_stock_library.py"
+      # Import-closure entry: build_stock_library reuses
+      # scripts/snapshot_shadow_book.rows_from_board for the shadow-book
+      # snapshot (one percentile definition), so exclusive scope must name it.
+      - "scripts/snapshot_shadow_book.py"
       - "scripts/check_board_contradictions.py"
       - "scripts/check_signal_gate_coherence.py"
       - "scripts/check_stretch_oracle_contract.py"
@@ -8967,6 +8991,10 @@ jobs:
       - "research/STOCK_PERSONALITY_MASTERPLAN_BY_FABLE.md"
       - "research/US_BOARD_MEASUREMENT.md"
       - "scripts/build_stock_library.py"
+      # Import-closure entry: build_stock_library reuses
+      # scripts/snapshot_shadow_book.rows_from_board for the shadow-book
+      # snapshot (one percentile definition), so exclusive scope must name it.
+      - "scripts/snapshot_shadow_book.py"
       - "scripts/check_board_contradictions.py"
       - "scripts/check_signal_gate_coherence.py"
       - "scripts/check_stretch_oracle_contract.py"
@@ -10631,6 +10659,10 @@ jobs:
       - "scripts/build_state_of_themes.py"
       - "scripts/build_stock_board_v2.py"
       - "scripts/build_stock_library.py"
+      # Import-closure entry: build_stock_library reuses
+      # scripts/snapshot_shadow_book.rows_from_board for the shadow-book
+      # snapshot (one percentile definition), so exclusive scope must name it.
+      - "scripts/snapshot_shadow_book.py"
       - "scripts/build_strategies.py"
       - "scripts/build_subsector_confluence.py"
       - "scripts/build_subsector_rotation.py"
@@ -10738,6 +10770,7 @@ jobs:
       - "tests/test_prophet_fusion_race.py"
       - "tests/test_prophet_fusion_w3_structural.py"
       - "tests/test_prophet_verb_ink_contrast.py"
+      - "tests/test_shadow_book_percentile.py"
       - "tests/test_stage_analysis.py"
       - "tests/test_stage_industry_live_partition.py"
       - "tests/test_stock_board_v2.py"
@@ -10789,7 +10822,7 @@ jobs:
       # than the honesty guard failing for a borrowed reason.  No dependency widened —
       # probed at RUN time, it loads only pandas/numpy/pyarrow/pyyaml.
       - name: pick lab runners + US/CN board surfaces — shipped picks, outcome ledgers, priority board
-        run: python -m pytest tests/test_b3_forex_consumer.py tests/test_board_contradictions.py tests/test_bottom_ledger.py tests/test_china_board_rank.py tests/test_china_board_rank_v4.py tests/test_china_continuation_watch.py tests/test_china_intel_interest.py tests/test_china_prophet_shadow.py tests/test_cn_board_unified_grid.py tests/test_cn_prophet_candidates_schema.py tests/test_cn_track_ledger_eras.py tests/test_opportunity_timeline.py tests/test_pick_lab_book.py tests/test_pick_lab_cn_runner.py tests/test_pick_lab_render.py tests/test_pick_lab_runner.py tests/test_prophet_card_live_change.py tests/test_prophet_card_shared.py tests/test_prophet_verb_ink_contrast.py tests/test_stock_board_v2.py tests/test_track_ledger_emitters.py tests/test_us_board_fail_closed_freshness.py tests/test_us_board_lanes.py tests/test_us_board_priority_ui.py tests/test_us_board_rank.py tests/test_us_prophet_fusion.py tests/test_prophet_fusion_w3_structural.py tests/test_us_board_w3_evidence.py tests/test_us_context_vector.py tests/test_us_context_vector_accrual.py tests/test_confluence_veto_leg_telemetry.py tests/test_us_board_grader_honesty.py -q
+        run: python -m pytest tests/test_b3_forex_consumer.py tests/test_board_contradictions.py tests/test_bottom_ledger.py tests/test_china_board_rank.py tests/test_china_board_rank_v4.py tests/test_china_continuation_watch.py tests/test_china_intel_interest.py tests/test_china_prophet_shadow.py tests/test_cn_board_unified_grid.py tests/test_cn_prophet_candidates_schema.py tests/test_cn_track_ledger_eras.py tests/test_opportunity_timeline.py tests/test_pick_lab_book.py tests/test_pick_lab_cn_runner.py tests/test_pick_lab_render.py tests/test_pick_lab_runner.py tests/test_prophet_card_live_change.py tests/test_prophet_card_shared.py tests/test_prophet_verb_ink_contrast.py tests/test_shadow_book_percentile.py tests/test_stock_board_v2.py tests/test_track_ledger_emitters.py tests/test_us_board_fail_closed_freshness.py tests/test_us_board_lanes.py tests/test_us_board_priority_ui.py tests/test_us_board_rank.py tests/test_us_prophet_fusion.py tests/test_prophet_fusion_w3_structural.py tests/test_us_board_w3_evidence.py tests/test_us_context_vector.py tests/test_us_context_vector_accrual.py tests/test_confluence_veto_leg_telemetry.py tests/test_us_board_grader_honesty.py -q
       # PR-1a (WS:PROPHET-CONDITIONAL-FUSION): the accrual-regression + veto-leg
       # telemetry suites ride the step above (same store cluster); the fusion arena
       # harness gets its own step below — research-tier scaffolding, zero authority,
@@ -12204,6 +12237,10 @@ jobs:
       - "research/STOCK_PERSONALITY_MASTERPLAN_BY_FABLE.md"
       - "research/US_BOARD_MEASUREMENT.md"
       - "scripts/build_stock_library.py"
+      # Import-closure entry: build_stock_library reuses
+      # scripts/snapshot_shadow_book.rows_from_board for the shadow-book
+      # snapshot (one percentile definition), so exclusive scope must name it.
+      - "scripts/snapshot_shadow_book.py"
       - "scripts/check_board_contradictions.py"
       - "scripts/check_signal_gate_coherence.py"
       - "scripts/check_stretch_oracle_contract.py"

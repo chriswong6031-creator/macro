@@ -1,5 +1,15 @@
-/* HK Stock Dashboard V3.7 — presentation-only composition.
-   SOL-STOCK-DASH-V37-HK-FOLLOWER-20260825
+/* HK Stock Dashboard V3.8 — presentation-only composition.
+   stock-dashboard-v38-hk-ca-fable-20260826-sol-001 (V38-R1)
+   Architecture: research/STOCK_DASHBOARD_V38_ACTION_LEADERSHIP_ARCHITECTURE.md
+   + DEC:V38-ACTION-IS-NOT-LEADERSHIP. Law: ACTION TIMING ≠ TREND LEADERSHIP.
+
+   V3.8 over V3.7: the owner-native What to Act On Now lanes render AT REST
+   above Prophet (compact, max 3 rows per lane before View all); Leadership &
+   Rotation below Prophet names its rank basis explicitly (RS vs HSI, the
+   owner's own Sector Rotation rank) and keeps action stance as a separate
+   field; a sector with no owner rank shows no number (lane traversal is
+   never rank); Prophet-name counts render only where canonical membership is
+   known (missing ≠ zero).
 
    This file owns no ranking, signal, quote, lifecycle, entitlement, or persistence
    semantics. It re-composes already-published HK stock surfaces (Prophet cards,
@@ -16,7 +26,12 @@
   window.__mmHKStockV36 = true;
 
   var FONT_UI = "var(--font-ui,-apple-system,BlinkMacSystemFont,Inter,\"Segoe UI\",Roboto,sans-serif)";
-  var state = { source: "top", view: "grid", filter: null, sectors: [], cards: [], rows: [], featuredCount: 0 };
+  var state = { source: "top", view: "grid", filter: null, sectors: [], cards: [], rows: [], featuredCount: 0,
+    /* V3.8 Act-Now panel presentation state: anLane = which lane body is
+       visible on the mobile segmented selector; anOpen = per-lane View-all
+       expansion. Neither ever touches source/filter — a lane change must not
+       mutate the Prophet selection until a group is actually chosen. */
+    anLane: null, anOpen: {}, membershipKnown: false };
   var rowsByTicker = Object.create(null);
   var tableObserver = null;
 
@@ -34,10 +49,11 @@
     { sel: "#anv2-red", en: "Reduce / Avoid", zh: "减仓 / 回避", tone: "avoid" }
   ];
 
-  /* On-demand disclosure targets for Research Tools (change 6). Only owner panels
+  /* On-demand disclosure targets for Research Tools. Only owner panels
      present in the served DOM get a toggle — a panel absent from this build gets
      no dead button. Never includes #sector-rotation (integrated into Leadership)
-     or #act-now (compressed into the Expand modal's group-action band). */
+     or #act-now (its lanes are surfaced by the at-rest What to Act On Now
+     panel above Prophet — the one home for group action since V3.8). */
   var TOOL_DEFS = [
     { sel: "#hk-velocity-desk", en: "Fast Movers", zh: "快速异动" },
     { sel: "#washout-watch", en: "Washout Watch", zh: "洗盘观察站" },
@@ -128,7 +144,11 @@
         var id = sectorIdFromHref(href) || name.en;
         if (!name.en || !id || seen[id]) return;
         seen[id] = true;
-        out.push({ id: id, name: name, stance: { en: def.en, zh: def.zh }, tone: def.tone, href: href });
+        /* laneIdx preserves the ACTION owner's own row order inside each
+           lane — the at-rest action map renders in this order, never in
+           rotation-rank order (Action ≠ Leadership: the rank axis must not
+           gate or order the action surface). */
+        out.push({ id: id, name: name, stance: { en: def.en, zh: def.zh }, tone: def.tone, href: href, laneIdx: out.length });
       });
     });
     return out;
@@ -154,10 +174,16 @@
      (the common case); a sector present only in a lane keeps lane-traversal
      order and is appended after every ranked sector; a sector present only in
      rotation (no lane placement) renders with a neutral "—" stance rather than
-     a fabricated recommendation. No client-side score or rank is computed —
-     `rank` is either the owner's own number or, for the lane-only fallback, the
-     sector's position in this list (the same "position as display order, never
-     as a stat" idiom collectSectors() already uses for the ranked case). */
+     a fabricated recommendation. No client-side score or rank is computed:
+     `rank` is the owner's own Sector Rotation number or stays null. V3.8 law
+     (DEC:V38-ACTION-IS-NOT-LEADERSHIP): a null rank RENDERS as no rank —
+     lane-traversal position is display order only and must never be minted
+     into a rank number.
+
+     Membership law: Prophet-name counts/filters are canonical only when the
+     board rows actually publish a sector field. When no row carries one,
+     members stays null (unknown), the count is omitted everywhere, and
+     unknown must never render as zero. */
   function collectSectors() {
     var lanes = collectLaneSectors(), ranks = collectRotationRanks();
     var ranked = [], unranked = [], seenIds = Object.create(null);
@@ -169,6 +195,7 @@
         if (r.name && r.name.en) x.name = r.name;
         ranked.push(x);
       } else {
+        x.rank = null;
         unranked.push(x);
       }
     });
@@ -179,10 +206,20 @@
     });
     ranked.sort(function (a, b) { return (a.rank || 9999) - (b.rank || 9999); });
     var merged = ranked.concat(unranked);
-    merged.forEach(function (x, i) { if (x.rank == null) x.rank = ranked.length + i + 1; });
+    /* §10 rank-owner-missing law: when NO sector carries an owner rank, every
+       piece of rank language (the RS basis chips, the modal Rank column)
+       must disappear too — a basis label over a traversal-ordered list would
+       be rank language without a rank owner. */
+    state.hasRankOwner = merged.some(function (x) { return x.rank != null; });
+    state.membershipKnown = state.rows.some(function (r) { return !!(r && r.sector); });
     merged.forEach(function (x) {
-      var members = sectorMembers(x.name.en);
-      x.kind = "sector"; x.members = members; x.leaders = firstN(Array.from(members), 3); x.count = members.size;
+      x.kind = "sector";
+      if (state.membershipKnown) {
+        var members = sectorMembers(x.name.en);
+        x.members = members; x.leaders = firstN(Array.from(members), 3); x.count = members.size;
+      } else {
+        x.members = null; x.leaders = []; x.count = null;
+      }
     });
     return merged;
   }
@@ -210,7 +247,28 @@
       ".hk-v37 *{box-sizing:border-box}.hk-v37 button,.hk-v37 input,.hk-v37 select{font-family:inherit}",
       ".hk-v37-head{display:flex;align-items:center;gap:12px;min-height:66px;margin-bottom:14px}.hk-v37-head h1{margin:0;font-size:31.5px;line-height:1.05;font-weight:650;letter-spacing:-.03em}.hk-v37-head-spacer{flex:1}",
       ".hk-v37-chip{height:37px;display:inline-flex;align-items:center;gap:7px;padding:0 13px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--muted);font-size:12px;font-weight:600;white-space:nowrap}",
-      ".hk-v37-leading{display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-height:51px;margin-bottom:14px;padding:8px 11px 8px 14px;border:1px solid var(--line);border-radius:12px;background:color-mix(in srgb,var(--panel) 78%,transparent);box-shadow:var(--card-shadow)}.hk-v37-leading-k{color:var(--muted);font-size:11.2px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;white-space:nowrap}.hk-v37-leading-btn{height:35px;display:inline-flex;align-items:center;gap:7px;min-width:0;padding:0 11px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;transition:.15s ease}.hk-v37-leading-btn:hover{transform:translateY(-1px);border-color:color-mix(in srgb,var(--text) 30%,var(--line))}.hk-v37-leading-btn small{color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}.hk-v37-leading-flow{margin-left:auto;color:var(--muted);font-size:12.2px;white-space:nowrap;max-width:46%;overflow:hidden;text-overflow:ellipsis}",
+      /* V3.8: the standalone Leading Now strip is absorbed (§4). What remains
+         of it: the sig-gated Southbound flow cue rides compactly in the
+         Leadership & Rotation header (.hk-v37-flow), and the rank story moved
+         into the explicitly-labelled Leadership rows themselves. */
+      ".hk-v37-flow{color:var(--muted);font-size:12.2px;white-space:nowrap;max-width:38%;overflow:hidden;text-overflow:ellipsis}",
+      ".hk-v37-lead-basis{height:26px;display:inline-flex;align-items:center;padding:0 9px;border:1px solid var(--line);border-radius:999px;background:var(--panel2);color:var(--muted);font-size:11px;font-weight:650;white-space:nowrap}",
+      /* What to Act On Now — compact at-rest action map (V3.8 §5). Four
+         owner-native lanes side by side, ≤3 group rows per lane before View
+         all, name-first rows with an optional Prophet count only. Target ≤
+         240px collapsed at 1440×900 — no performance/score/percentile/prose
+         towers here, ever. */
+      ".hk-v37-an-body{padding:10px 12px 11px}",
+      ".hk-v37-an-seg{display:none;gap:6px;margin-bottom:10px}.hk-v37-an-seg button{flex:1;min-width:0;height:34px;display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:0 7px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);color:var(--muted);font-size:11px;font-weight:700;cursor:pointer}.hk-v37-an-seg-t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hk-v37-an-seg b{flex:none;font-variant-numeric:tabular-nums;font-weight:700}.hk-v37-an-seg button[aria-selected=true]{color:var(--text);border-color:color-mix(in srgb,var(--text) 30%,var(--line));background:var(--panel)}",
+      ".hk-v37-an-lanes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}",
+      ".hk-v37-an-lane{border:1px solid var(--line);border-radius:11px;background:var(--panel2);overflow:hidden}",
+      ".hk-v37-an-hd{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:8px 10px;border-bottom:1px solid var(--line);border-top:2px solid currentColor;font-size:11px;font-weight:750;text-transform:uppercase;letter-spacing:.02em}.hk-v37-an-hd.buy{color:var(--ink-up,var(--up))}.hk-v37-an-hd.near{color:var(--ink-link,var(--link))}.hk-v37-an-hd.wait{color:var(--ink-warn,var(--warn))}.hk-v37-an-hd.avoid{color:var(--ink-down,var(--down))}.hk-v37-an-hd b{font-variant-numeric:tabular-nums;color:var(--muted);font-weight:700}",
+      ".hk-v37-an-row-w{display:flex;align-items:stretch;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent)}.hk-v37-an-hd+.hk-v37-an-row-w{border-top:0}",
+      ".hk-v37-an-row{flex:1;display:flex;min-width:0;align-items:center;justify-content:space-between;gap:8px;min-height:32px;padding:5px 10px;border:0;background:transparent;color:inherit;font-size:12.6px;font-weight:650;text-align:left;cursor:pointer}.hk-v37-an-row:hover,.hk-v37-an-row.is-active{background:color-mix(in srgb,var(--link) 6%,transparent)}.hk-v37-an-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hk-v37-an-n{flex:none;color:var(--muted);font-size:10.6px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}",
+      ".hk-v37-an-go{flex:none;display:inline-flex;align-items:center;padding:0 9px;border-left:1px dashed color-mix(in srgb,var(--line) 80%,transparent);color:var(--muted);font-size:12px;text-decoration:none}.hk-v37-an-go:hover{color:var(--text);background:color-mix(in srgb,var(--link) 6%,transparent)}",
+      ".hk-v37-empty-go{display:inline-block;margin-top:10px;color:var(--ink-link,var(--link));font-size:12px;font-weight:600;text-decoration:none}.hk-v37-empty-go:hover{text-decoration:underline}",
+      ".hk-v37-an-empty{padding:12px 10px;color:var(--muted);font-size:12px;text-align:center}",
+      ".hk-v37-an-more{display:block;width:100%;padding:7px 10px;border:0;border-top:1px dashed color-mix(in srgb,var(--line) 80%,transparent);background:transparent;color:var(--muted);font-size:11px;font-weight:650;cursor:pointer}.hk-v37-an-more:hover{color:var(--text)}",
       ".hk-v37-panel{margin-bottom:14px;border:1px solid var(--line);border-radius:13px;background:var(--panel);box-shadow:var(--card-shadow);overflow:hidden}.hk-v37-sec-hd{min-height:54px;display:flex;align-items:center;gap:10px;padding:0 15px;border-bottom:1px solid var(--line)}.hk-v37-sec-hd h2{margin:0;font-size:18px;font-weight:650;letter-spacing:-.012em}.hk-v37-sec-spacer{flex:1}.hk-v37-link{color:var(--ink-link,var(--link));font-size:13px;font-weight:600;text-decoration:none}.hk-v37-link:hover{text-decoration:underline}",
       ".hk-v37-lead-list{padding:2px 0}.hk-v37-lead-list-h{display:flex;justify-content:space-between;padding:11px 14px 10px;color:var(--muted);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}",
       ".hk-v37-lead-row{position:relative;width:100%;min-height:58px;display:grid;grid-template-columns:30px minmax(0,1fr) auto 34px;align-items:center;gap:9px;padding:10px 14px;border:0;border-top:1px solid color-mix(in srgb,var(--line) 72%,transparent);background:transparent;color:inherit;text-align:left;cursor:pointer;overflow:hidden;transition:.15s ease}.hk-v37-lead-row:after{content:\"\";position:absolute;left:0;bottom:0;width:var(--breadth,8%);height:1px;background:color-mix(in srgb,var(--link) 44%,transparent);opacity:.5}.hk-v37-lead-row:hover,.hk-v37-lead-row.is-active{background:color-mix(in srgb,var(--link) 6%,transparent)}.hk-v37-rank{font-variant-numeric:tabular-nums;color:var(--muted);font-size:11.5px}.hk-v37-lead-name{display:block;font-size:14.7px;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hk-v37-leaders{display:inline-block;margin-top:3px;color:var(--muted);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}.hk-v37-cycle{display:inline-block;margin-top:3px;color:var(--muted);font-size:11px;white-space:nowrap}.hk-v37-count{font-variant-numeric:tabular-nums;color:var(--muted);font-size:11.7px;text-align:right}",
@@ -256,41 +314,56 @@
          stylesheet; this only trims the outer wrapping and matches the hk-v37
          font stack (font smoothing only, no restyle of the chip itself). */
       ".hk-v37-evidence-body{display:flex;flex-direction:column;align-items:center;gap:6px;padding:13px 14px 15px;font-family:" + FONT_UI + "}",
-      /* Group-action band — four owner lane groups above the ranked sector table
-         inside the Expand-leadership modal. */
-      ".hk-v37-modal-lanes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}.hk-v37-modal-lane{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel2)}.hk-v37-modal-lane-hd{padding:9px 10px;border-bottom:1px solid var(--line);border-top:2px solid currentColor;font-size:11.3px;font-weight:750;text-transform:uppercase;letter-spacing:.02em}.hk-v37-modal-lane-hd.buy{color:var(--ink-up,var(--up))}.hk-v37-modal-lane-hd.near{color:var(--ink-link,var(--link))}.hk-v37-modal-lane-hd.wait{color:var(--ink-warn,var(--warn))}.hk-v37-modal-lane-hd.avoid{color:var(--ink-down,var(--down))}.hk-v37-modal-lane-row{display:flex;flex-direction:column;gap:2px;padding:8px 10px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);cursor:pointer}.hk-v37-modal-lane-hd+.hk-v37-modal-lane-row{border-top:0}.hk-v37-modal-lane-row:not(.hk-v37-modal-lane-empty):hover{background:color-mix(in srgb,var(--link) 6%,transparent)}.hk-v37-modal-lane-row.hk-v37-modal-lane-empty{color:var(--muted);cursor:default;text-align:center}.hk-v37-modal-lane-name{font-size:12.6px;font-weight:650}.hk-v37-modal-lane-meta{color:var(--muted);font-size:10.8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
+      /* V3.8: the modal group-action band is gone — the at-rest What to Act
+         On Now panel above Prophet is the one home for group action (§13.1:
+         group action must not be recoverable only through Expand leadership,
+         and two homes would be duplication, not compression). */
       ".hk-v37-modal{position:fixed;inset:0;z-index:2147481000;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(4,7,12,.62);backdrop-filter:blur(8px)}.hk-v37-modal.is-open{display:flex}.hk-v37-modal-card{width:min(1180px,calc(100vw - 32px));max-height:min(820px,calc(100vh - 36px));display:flex;flex-direction:column;border:1px solid var(--line);border-radius:15px;background:var(--panel);box-shadow:0 30px 90px rgba(0,0,0,.5);overflow:hidden}html[data-theme=light] .hk-v37-modal{background:rgba(50,64,90,.22)}html[data-theme=light] .hk-v37-modal-card{box-shadow:0 24px 70px rgba(20,32,64,.2)}.hk-v37-modal-hd{min-height:56px;display:flex;align-items:center;padding:0 15px;border-bottom:1px solid var(--line)}.hk-v37-modal-hd h3{margin:0;font-size:19px;font-weight:650}.hk-v37-modal-x{margin-left:auto;width:36px;height:36px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);color:var(--text);font-size:21px;cursor:pointer}.hk-v37-modal-body{overflow:auto;padding:14px}.hk-v37-modal-pane{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel2)}.hk-v37-modal-pane h4{margin:0;padding:11px 12px;border-bottom:1px solid var(--line);font-size:13px}.hk-v37-modal-table{width:100%;border-collapse:collapse;font-size:12.8px}.hk-v37-modal-table th{padding:9px 10px;color:var(--muted);font-size:10.8px;text-align:left;border-bottom:1px solid var(--line)}.hk-v37-modal-table td{padding:10px;border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent)}.hk-v37-modal-table tbody tr{cursor:pointer}.hk-v37-modal-table tbody tr:hover{background:color-mix(in srgb,var(--link) 6%,transparent)}.hk-v37-modal-table .num,.hk-v37-modal-table .leaders{color:var(--muted)}",
       /* Southbound subband — three read-only bilingual rows, text only, no charts. */
       ".hk-v37-modal-sb{margin-top:14px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel2)}.hk-v37-modal-sb table{width:100%;border-collapse:collapse;font-size:12.6px}.hk-v37-modal-sb td{padding:9px 12px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);vertical-align:top}.hk-v37-modal-sb tr:first-child td{border-top:0}.hk-v37-sb-label{white-space:nowrap;color:var(--muted);font-weight:650;width:1%}",
-      "@media(max-width:1200px){.hk-v37-card-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.hk-v37-modal-lanes{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:900px){.hk-v37-head{flex-wrap:wrap}.hk-v37-head-spacer{display:none}.hk-v37-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:680px){.hk-v37{width:min(100% - 20px,680px);margin-top:12px;font-size:15.8px}.hk-v37-head{gap:8px}.hk-v37-head h1{width:100%;font-size:27.5px}.hk-v37-leading{flex-wrap:wrap}.hk-v37-leading-k{width:100%}.hk-v37-leading-btn{flex:1;min-width:140px}.hk-v37-leading-flow{width:100%;margin-left:0;max-width:none}.hk-v37-sec-hd{align-items:flex-start;flex-wrap:wrap;padding:11px 12px}.hk-v37-sec-hd h2{font-size:17px}.hk-v37-controls{width:100%}.hk-v37-card-grid{grid-template-columns:1fr;padding:10px;gap:10px}.hk-v37-card-grid .pv-tk{font-size:16.3px!important}.hk-v37-card-grid .nb-px.pv-px{font-size:15.5px!important}.hk-v37-card-grid .nb-chg.pv-chg{font-size:13.1px!important}.hk-v37-modal{padding:8px}.hk-v37-modal-card{width:100%;max-height:calc(100vh - 16px)}.hk-v37-modal-lanes{grid-template-columns:1fr}.hk-v37-evidence-body{padding:11px 10px 13px}}"
+      /* Mobile Act-Now grammar (§5.5): one horizontal segmented lane selector
+         with every lane title+count, one lane body at a time beneath it, no
+         four stacked giant lane cards, no horizontal overflow. */
+      "@media(max-width:1200px){.hk-v37-card-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.hk-v37-an-lanes{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:900px){.hk-v37-head{flex-wrap:wrap}.hk-v37-head-spacer{display:none}.hk-v37-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:680px){.hk-v37{width:min(100% - 20px,680px);margin-top:12px;font-size:15.8px}.hk-v37-head{gap:8px}.hk-v37-head h1{width:100%;font-size:27.5px}.hk-v37-sec-hd{align-items:flex-start;flex-wrap:wrap;padding:11px 12px}.hk-v37-sec-hd h2{font-size:17px}.hk-v37-flow{width:100%;max-width:none;white-space:normal}.hk-v37-controls{width:100%}.hk-v37-an-seg{display:flex}.hk-v37-an-lanes{grid-template-columns:1fr}.hk-v37-an-lane{display:none}.hk-v37-an-lane.is-current{display:block}.hk-v37-card-grid{grid-template-columns:1fr;padding:10px;gap:10px}.hk-v37-card-grid .pv-tk{font-size:16.3px!important}.hk-v37-card-grid .nb-px.pv-px{font-size:15.5px!important}.hk-v37-card-grid .nb-chg.pv-chg{font-size:13.1px!important}.hk-v37-modal{padding:8px}.hk-v37-modal-card{width:100%;max-height:calc(100vh - 16px)}.hk-v37-evidence-body{padding:11px 10px 13px}}"
     ].join("\n");
     document.head.appendChild(css);
   }
 
+  /* Leadership & Rotation row (V3.8 §6): the rank cell is `RS #N` — the
+     owner's own Sector Rotation number under a visible basis label — and a
+     sector the owner did not rank shows "—", never a minted number. The
+     action stance chip stays a SEPARATE field: `RS #1 · Reduce / Avoid` is a
+     legitimate, informative combination (trend strength vs entry timing),
+     not a contradiction to be sorted away. The count cell is the current
+     Prophet-name count and renders "—" when membership is unknown. */
   function leadRow(x, max) {
     var breadth = Math.max(8, Math.round(((x.count || 0) / Math.max(1, max)) * 100));
     var leadersTxt = x.leaders.length ? x.leaders.join(" · ") : "—";
     var cycleHtml = (x.cycleState && x.cycleState.en) ? ' <span class="hk-v37-cycle">· ' + bi(x.cycleState.en, x.cycleState.zh) + '</span>' : '';
-    return '<button class="hk-v37-lead-row" data-hk-lead-id="' + esc(x.id) + '" style="--breadth:' + breadth + '%"><span class="hk-v37-rank">' + String(x.rank).padStart(2, "0") + '</span><span><span class="hk-v37-lead-name">' + bi(x.name.en, x.name.zh) + '</span><span class="hk-v37-leaders">' + esc(leadersTxt) + '</span>' + cycleHtml + '</span><span class="hk-v37-stance ' + x.tone + '">' + bi(x.stance.en, x.stance.zh) + '</span><span class="hk-v37-count">' + (x.count || 0) + '</span></button>';
+    var rankTxt = x.rank != null ? "RS #" + x.rank : "—";
+    return '<button class="hk-v37-lead-row" data-hk-lead-id="' + esc(x.id) + '" style="--breadth:' + breadth + '%"><span class="hk-v37-rank">' + esc(rankTxt) + '</span><span><span class="hk-v37-lead-name">' + bi(x.name.en, x.name.zh) + '</span><span class="hk-v37-leaders">' + esc(leadersTxt) + '</span>' + cycleHtml + '</span><span class="hk-v37-stance ' + x.tone + '">' + bi(x.stance.en, x.stance.zh) + '</span><span class="hk-v37-count">' + (x.count != null ? x.count : "—") + '</span></button>';
   }
   function renderLeadership() {
     var host = qs("#hk-v37-lead-list");
     if (!host) return;
-    var top = firstN(state.sectors, 8), max = Math.max.apply(Math, [1].concat(top.map(function (x) { return x.count || 0; })));
-    host.innerHTML = '<div class="hk-v37-lead-list-h"><span>' + bi("Sectors", "板块") + '</span><span>' + bi("Board", "榜单") + '</span></div>' +
+    /* At rest: at most the top 5 owner-ranked sectors before expansion (§6.3). */
+    var top = firstN(state.sectors, 5), max = Math.max.apply(Math, [1].concat(top.map(function (x) { return x.count || 0; })));
+    host.innerHTML = '<div class="hk-v37-lead-list-h"><span>' + bi("Sectors", "板块") + '</span><span>' + bi("Prophet", "候选") + '</span></div>' +
       (top.length ? top.map(function (x) { return leadRow(x, max); }).join("") : '<div class="hk-v37-empty">' + bi("Ranking unavailable", "排名暂不可用") + '</div>');
     markLeadership();
   }
-  /* Southbound flow cue (change 2) — the FIRST .sbah-card inside
-     #mainland-money (its Southbound flow card, first in DOM order). Gated on
-     MATERIALITY, not mere node existence: the owner already computes a
-     directional marker for this exact card — .sbah-sig carries sig-in
-     (inflow) / sig-out (outflow) / sig-neu (templates/hk.html.j2:4698,
-     `_sbsig`, "no strong tilt") — and sig-neu is precisely the non-material
-     case §6 forbids surfacing here ("cue absent when stale, unavailable, or
-     non-material"). A neutral card (or a card/sig node the owner didn't
-     render at all) yields no cue and no placeholder; this must never become
-     a permanent statistic. */
+  /* Southbound flow cue — the FIRST .sbah-card inside #mainland-money (its
+     Southbound flow card, first in DOM order). Gated on MATERIALITY, not
+     mere node existence: the owner already computes a directional marker for
+     this exact card — .sbah-sig carries sig-in (inflow) / sig-out (outflow) /
+     sig-neu (templates/hk.html.j2:4698, `_sbsig`, "no strong tilt") — and
+     sig-neu is precisely the non-material case the architecture forbids
+     surfacing ("cue absent when stale, unavailable, or non-material"). A
+     neutral card (or a card/sig node the owner didn't render at all) yields
+     no cue and no placeholder; this must never become a permanent statistic.
+     V3.8 home: the Leadership & Rotation header (§4 — a market-specific
+     material cue may remain compactly in the Leadership header only when a
+     canonical producer owns it); the standalone Leading Now strip is gone. */
   function southboundFirstRead() {
     var card = qs("#mainland-money .sbah-card");
     if (!card) return null;
@@ -301,17 +374,79 @@
     var d = dual(read);
     return d.en ? d : null;
   }
-  function renderLeading() {
-    var host = qs("#hk-v37-leading"); if (!host) return;
-    var sec = state.sectors[0], sb = southboundFirstRead();
-    var html = '<span class="hk-v37-leading-k">' + bi("Leading now", "当前领先") + '</span>';
-    /* change 3: the sector's own stance chip rides along — rank-1 by rotation
-       rank alone reads as a bare recommendation (today's rank-1, Healthcare
-       & Pharma, is filed Reduce / Avoid on the owner's own Act-Now board);
-       the chip is what makes "leading" honest rather than implying "buy". */
-    if (sec) html += '<button class="hk-v37-leading-btn" data-hk-lead-id="' + esc(sec.id) + '"><small>' + bi("Sector", "板块") + '</small><span>' + bi(sec.name.en, sec.name.zh) + '</span><span class="hk-v37-stance ' + sec.tone + '">' + bi(sec.stance.en, sec.stance.zh) + '</span></button>';
-    if (sb) html += '<span class="hk-v37-leading-flow">' + bi(sb.en, sb.zh) + '</span>';
-    host.innerHTML = html;
+  function renderFlowCue() {
+    var host = qs("#hk-v37-flow"); if (!host) return;
+    var sb = southboundFirstRead();
+    host.innerHTML = sb ? bi(sb.en, sb.zh) : "";
+    host.hidden = !sb;
+  }
+
+  /* What to Act On Now (V3.8 §5) — the restored high-frequency customer job,
+     AT REST above Prophet. Sectors partition by lane 1:1 via `tone`, minted
+     straight from LANE_DEFS in collectSectors() — never a second lane
+     vocabulary. Row rows carry the same data-hk-lead-id the leadership rows
+     use, so activation runs through the one existing delegation path
+     (activate(): filter only — the Top Picks | All Candidates population is
+     never touched). At rest each lane shows at most AN_AT_REST rows; the
+     remainder is behind a per-lane View all toggle. A lane's Prophet count
+     chip renders only when canonical membership is known — unknown
+     membership must never render as 0. */
+  var AN_AT_REST = 3;
+  function anLaneItems(tone) {
+    /* Sorted by the action owner's own lane order (laneIdx), NOT by the
+       rotation-rank order state.sectors carries for the Leadership surface. */
+    return state.sectors.filter(function (x) { return x.tone === tone; })
+      .sort(function (a, b) { return (a.laneIdx || 0) - (b.laneIdx || 0); });
+  }
+  /* Each row = filter button + the owner's own group-research route (the
+     harvested sectors/<id>.html href). The route is what keeps a known-zero
+     group useful as a research destination (§5.4/§10) instead of a dead end. */
+  function anRowHtml(x) {
+    var countHtml = x.count != null ? '<span class="hk-v37-an-n">' + x.count + ' · ' + bi("Prophet", "候选") + '</span>' : '';
+    var go = x.href ? '<a class="hk-v37-an-go" href="' + esc(x.href) + '" aria-label="' + esc(x.name.en) + ' sector research">↗</a>' : '';
+    return '<div class="hk-v37-an-row-w"><button class="hk-v37-an-row" type="button" data-hk-lead-id="' + esc(x.id) + '"><span class="hk-v37-an-name">' + bi(x.name.en, x.name.zh) + '</span>' + countHtml + '</button>' + go + '</div>';
+  }
+  function anLaneHtml(lane) {
+    var items = anLaneItems(lane.tone), open = !!state.anOpen[lane.tone];
+    var shown = open ? items : firstN(items, AN_AT_REST);
+    var body = shown.length ? shown.map(anRowHtml).join("") : '<div class="hk-v37-an-empty">—</div>';
+    var more = items.length > AN_AT_REST
+      ? '<button class="hk-v37-an-more" type="button" data-hk-an-view="' + esc(lane.tone) + '" aria-expanded="' + open + '">' +
+        (open ? bi("Show fewer", "收起") : bi("View all " + items.length, "查看全部 " + items.length)) + '</button>'
+      : '';
+    var current = state.anLane === lane.tone ? " is-current" : "";
+    return '<div class="hk-v37-an-lane' + current + '" data-hk-an-lane-body="' + esc(lane.tone) + '"><div class="hk-v37-an-hd ' + lane.tone + '"><span>' + bi(lane.en, lane.zh) + '</span><b>' + items.length + '</b></div>' + body + more + '</div>';
+  }
+  function renderActNow() {
+    var host = qs("#hk-v37-an-body"); if (!host) return;
+    if (state.anLane == null) {
+      /* Mobile default lane: Buy Now when non-empty, else the next non-empty
+         lane in the owner's own urgency order (§5.5). Elected ONLY while no
+         lane has been chosen yet — a user who taps an empty lane keeps it
+         and sees its truthful "—" body; re-electing on every render would
+         silently snap the selector back to Buy Now (adversarial review
+         2026-08-27, finding 1). */
+      for (var i = 0; i < LANE_DEFS.length; i++) {
+        if (anLaneItems(LANE_DEFS[i].tone).length) { state.anLane = LANE_DEFS[i].tone; break; }
+      }
+      if (state.anLane == null) state.anLane = LANE_DEFS[0].tone;
+    }
+    /* The count rides as a separate fixed badge so a narrow segment button
+       ellipsizes the title only — §5.5 requires every lane title AND count
+       accessible from the selector. */
+    var seg = '<div class="hk-v37-an-seg" role="tablist">' + LANE_DEFS.map(function (lane) {
+      return '<button type="button" role="tab" data-hk-an-lane="' + esc(lane.tone) + '" aria-selected="' + (state.anLane === lane.tone) + '"><span class="hk-v37-an-seg-t">' + bi(lane.en, lane.zh) + '</span><b>' + anLaneItems(lane.tone).length + '</b></button>';
+    }).join("") + '</div>';
+    host.innerHTML = seg + '<div class="hk-v37-an-lanes">' + LANE_DEFS.map(anLaneHtml).join("") + '</div>';
+    markLeadership();
+  }
+  function setAnLane(tone) {
+    /* Presentation-only: switching the visible mobile lane must not mutate
+       the Prophet selection/filter until a group row is actually chosen. */
+    state.anLane = tone; renderActNow();
+  }
+  function toggleAnLane(tone) {
+    state.anOpen[tone] = !state.anOpen[tone]; renderActNow();
   }
 
   function itemForFilter() {
@@ -354,6 +489,13 @@
         return bi("No Top Picks in this group.", "该组别中暂无首选。") +
           ' <button class="hk-v37-empty-switch" type="button">' + bi("View All Candidates", "查看全部候选") + '</button>';
       }
+    }
+    /* Known zero (§10): membership is canonical and the group genuinely has
+       no names on the current board — a quiet truthful state, not filter-miss
+       language, and the group-research route stays usable. */
+    if (item && item.members && item.members.size === 0) {
+      return bi("No current Prophet names in this group.", "该组别暂无 Prophet 候选。") +
+        (item.href ? ' <a class="hk-v37-empty-go" href="' + esc(item.href) + '">' + bi("Open sector research ↗", "查看板块研究 ↗") + '</a>' : '');
     }
     return bi("No names match this leadership filter.", "当前领先筛选下暂无匹配个股。");
   }
@@ -407,29 +549,16 @@
     var prophet = qs("#hk-v37-prophet"); if (prophet) prophet.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  function modalRows(items) {
-    return items.length ? items.map(function (x) { return '<tr tabindex="0" data-hk-modal-id="' + esc(x.id) + '"><td class="num">' + String(x.rank).padStart(2, "0") + '</td><td><b>' + bi(x.name.en, x.name.zh) + '</b></td><td><span class="hk-v37-stance ' + x.tone + '">' + bi(x.stance.en, x.stance.zh) + '</span></td><td>' + (x.cycleState && x.cycleState.en ? bi(x.cycleState.en, x.cycleState.zh) : "—") + '</td><td class="leaders">' + esc(x.leaders.length ? x.leaders.join(" · ") : "—") + '</td><td class="num">' + (x.count || 0) + '</td></tr>'; }).join("") : '<tr><td colspan="6">—</td></tr>';
+  /* Expanded Leadership rows: same axis law as leadRow() — `RS #N` only from
+     the owner's own rank (null renders "—", never a minted number), stance a
+     separate chip, count "—" when membership is unknown. */
+  function modalRows(items, rk) {
+    return items.length ? items.map(function (x) { return '<tr tabindex="0" data-hk-modal-id="' + esc(x.id) + '">' + (rk ? '<td class="num">' + esc(x.rank != null ? "RS #" + x.rank : "—") + '</td>' : '') + '<td><b>' + bi(x.name.en, x.name.zh) + '</b></td><td><span class="hk-v37-stance ' + x.tone + '">' + bi(x.stance.en, x.stance.zh) + '</span></td><td>' + (x.cycleState && x.cycleState.en ? bi(x.cycleState.en, x.cycleState.zh) : "—") + '</td><td class="leaders">' + esc(x.leaders.length ? x.leaders.join(" · ") : "—") + '</td><td class="num">' + (x.count != null ? x.count : "—") + '</td></tr>'; }).join("") : '<tr><td colspan="' + (rk ? 6 : 5) + '">—</td></tr>';
   }
   function modalPaneHtml() {
-    return '<div class="hk-v37-modal-pane"><h4>' + bi("Sector Leadership", "板块领先") + '</h4><table class="hk-v37-modal-table"><thead><tr><th>#</th><th>' + bi("Name", "名称") + '</th><th>' + bi("Stance", "状态") + '</th><th>' + bi("Cycle state", "周期状态") + '</th><th>' + bi("Leaders", "领先个股") + '</th><th>' + bi("Board", "榜单") + '</th></tr></thead><tbody>' + modalRows(state.sectors) + '</tbody></table></div>';
-  }
-  /* Group-action band. Sectors partition by lane 1:1 via `tone`, minted straight
-     from LANE_DEFS in collectSectors() — never a second, independently-invented
-     lane vocabulary. Rows carry the same data-hk-modal-id modalRows() uses so
-     the existing modal click/keydown delegation activates them with no new
-     handler path. */
-  function laneItemHtml(x) {
-    return '<div class="hk-v37-modal-lane-row" tabindex="0" data-hk-modal-id="' + esc(x.id) + '">' +
-      '<span class="hk-v37-modal-lane-name">' + bi(x.name.en, x.name.zh) + '</span>' +
-      '<span class="hk-v37-modal-lane-meta">' + esc(x.leaders.length ? x.leaders.join(" · ") : "—") + ' · ' + (x.count || 0) + '</span></div>';
-  }
-  function laneGroupHtml(lane) {
-    var items = state.sectors.filter(function (x) { return x.tone === lane.tone; });
-    var body = items.length ? items.map(laneItemHtml).join("") : '<div class="hk-v37-modal-lane-row hk-v37-modal-lane-empty">—</div>';
-    return '<div class="hk-v37-modal-lane"><div class="hk-v37-modal-lane-hd ' + lane.tone + '">' + bi(lane.en, lane.zh) + '</div>' + body + '</div>';
-  }
-  function groupActionBandHtml() {
-    return '<div class="hk-v37-modal-lanes">' + LANE_DEFS.map(laneGroupHtml).join("") + '</div>';
+    /* Rank column + basis chip render ONLY under an owner rank (§10). */
+    var rk = !!state.hasRankOwner;
+    return '<div class="hk-v37-modal-pane"><h4>' + bi("Leadership & Rotation", "领先与轮动") + (rk ? ' <span class="hk-v37-lead-basis">' + bi("Relative strength vs HSI", "相对恒生指数") + '</span>' : '') + '</h4><table class="hk-v37-modal-table"><thead><tr>' + (rk ? '<th>' + bi("Rank", "排名") + '</th>' : '') + '<th>' + bi("Name", "名称") + '</th><th>' + bi("Action", "操作状态") + '</th><th>' + bi("Cycle state", "周期状态") + '</th><th>' + bi("Leaders", "领先个股") + '</th><th>' + bi("Prophet", "候选") + '</th></tr></thead><tbody>' + modalRows(state.sectors, rk) + '</tbody></table></div>';
   }
   /* Southbound subband (INTEGRATE_COMPRESS) — the three .sbah-read sentences
      from #mainland-money's cards (Southbound flow / Flow vs price / A/H
@@ -452,7 +581,7 @@
   }
   function openModal() {
     var modal = qs("#hk-v37-modal"); if (!modal) return;
-    qs("#hk-v37-modal-body", modal).innerHTML = groupActionBandHtml() + modalPaneHtml() + southboundSubbandHtml();
+    qs("#hk-v37-modal-body", modal).innerHTML = modalPaneHtml() + southboundSubbandHtml();
     modal.classList.add("is-open"); modal.setAttribute("aria-hidden", "false"); document.documentElement.style.overflow = "hidden";
   }
   /* activate() calls closeModal() unconditionally (leadership rows are
@@ -470,6 +599,12 @@
     root.addEventListener("click", function (e) {
       var b = e.target.closest("[data-hk-source]"); if (b) return setSource(b.getAttribute("data-hk-source"));
       b = e.target.closest("[data-hk-view]"); if (b) return setView(b.getAttribute("data-hk-view"));
+      /* Act-Now presentation controls come BEFORE the data-hk-lead-id row
+         handler only in the sense that they are distinct targets — the
+         segment/View-all buttons never carry data-hk-lead-id, and neither
+         handler touches source/filter. */
+      b = e.target.closest("[data-hk-an-lane]"); if (b) return setAnLane(b.getAttribute("data-hk-an-lane"));
+      b = e.target.closest("[data-hk-an-view]"); if (b) return toggleAnLane(b.getAttribute("data-hk-an-view"));
       b = e.target.closest("[data-hk-lead-id]"); if (b) return activate(b.getAttribute("data-hk-lead-id"));
       if (e.target.closest("#hk-v37-filter")) { state.filter = null; return applyFilter(); }
       if (e.target.closest("#hk-v37-expand")) return openModal();
@@ -530,10 +665,18 @@
     var wraps = evidenceWraps();
     var bd = boardDate(payload.as_of || ""), main = document.createElement("main");
     main.className = "hk-v37"; main.id = "hk-v37";
+    /* V3.8 page grammar (§4): Market Header → What to Act On Now → Prophet →
+       Leadership & Rotation → Evidence & Record → Research Tools. The Act-Now
+       panel renders only when the owner's action lanes actually populated at
+       least one sector (action owner missing → omit, never synthesize action
+       from leadership rank). */
+    var hasActNow = state.sectors.some(function (x) {
+      return LANE_DEFS.some(function (lane) { return lane.tone === x.tone; });
+    });
     main.innerHTML = '<header class="hk-v37-head"><h1>' + bi("Hong Kong Stocks", "港股") + '</h1><span class="hk-v37-head-spacer"></span><span class="hk-v37-chip">' + bi("Board " + bd.en, "榜单 " + bd.zh) + '</span></header>' +
-      '<section class="hk-v37-leading" id="hk-v37-leading"></section>' +
+      (hasActNow ? '<section class="hk-v37-panel" id="hk-v37-actnow"><div class="hk-v37-sec-hd"><h2>' + bi("What to Act On Now", "现在行动") + '</h2></div><div class="hk-v37-an-body" id="hk-v37-an-body"></div></section>' : '') +
       '<section class="hk-v37-panel" id="hk-v37-prophet"><div class="hk-v37-sec-hd"><h2>Prophet</h2><span class="hk-v37-result" id="hk-v37-result"></span><span class="hk-v37-sec-spacer"></span><div class="hk-v37-controls"><button class="hk-v37-filter" id="hk-v37-filter" type="button"></button><span class="hk-v37-seg"><button type="button" data-hk-source="top" aria-selected="true">' + bi("Top Picks", "首选") + '</button><button type="button" data-hk-source="all" aria-selected="false">' + bi("All Candidates", "全部候选") + '</button></span><span class="hk-v37-seg"><button type="button" data-hk-view="grid" aria-selected="true">' + bi("Grid", "卡片") + '</button><button type="button" data-hk-view="table" aria-selected="false">' + bi("Table", "表格") + '</button></span></div></div><div class="hk-v37-card-grid" id="hk-v37-card-grid"><div class="hk-v37-empty" id="hk-v37-grid-empty" hidden>' + bi("No names match this leadership filter.", "当前领先筛选下暂无匹配个股。") + '</div></div><div class="hk-v37-table" id="hk-v37-table" hidden></div></section>' +
-      '<section class="hk-v37-panel"><div class="hk-v37-sec-hd"><h2>' + bi("Sector Leadership", "板块领先") + '</h2></div><div class="hk-v37-lead-list" id="hk-v37-lead-list"></div><div class="hk-v37-expand-wrap"><button class="hk-v37-expand" id="hk-v37-expand" type="button">' + bi("Expand leadership", "展开领先排名") + ' ↗</button></div></section>' +
+      '<section class="hk-v37-panel" id="hk-v37-leadership"><div class="hk-v37-sec-hd"><h2>' + bi("Leadership & Rotation", "领先与轮动") + '</h2>' + (state.hasRankOwner ? '<span class="hk-v37-lead-basis">' + bi("Relative strength vs HSI", "相对恒生指数") + '</span>' : '') + '<span class="hk-v37-sec-spacer"></span><span class="hk-v37-flow" id="hk-v37-flow" hidden></span></div><div class="hk-v37-lead-list" id="hk-v37-lead-list"></div><div class="hk-v37-expand-wrap"><button class="hk-v37-expand" id="hk-v37-expand" type="button">' + bi("Expand leadership", "展开领先排名") + ' ↗</button></div></section>' +
       (wraps.length ? evidenceSectionHtml() : '') +
       researchToolsHtml();
     nav.insertAdjacentElement("afterend", main);
@@ -543,13 +686,13 @@
     if (wraps.length) { var evBody = qs("#hk-v37-evidence-body", main); wraps.forEach(function (w) { evBody.appendChild(w); }); }
 
     var modal = document.createElement("div"); modal.className = "hk-v37-modal"; modal.id = "hk-v37-modal"; modal.setAttribute("aria-hidden", "true");
-    modal.innerHTML = '<div class="hk-v37-modal-card" role="dialog" aria-modal="true" aria-labelledby="hk-v37-modal-title"><div class="hk-v37-modal-hd"><h3 id="hk-v37-modal-title">' + bi("Sector Leadership", "板块领先") + '</h3><button class="hk-v37-modal-x" type="button" data-hk-modal-close aria-label="Close">×</button></div><div class="hk-v37-modal-body" id="hk-v37-modal-body"></div></div>';
+    modal.innerHTML = '<div class="hk-v37-modal-card" role="dialog" aria-modal="true" aria-labelledby="hk-v37-modal-title"><div class="hk-v37-modal-hd"><h3 id="hk-v37-modal-title">' + bi("Leadership & Rotation", "领先与轮动") + '</h3><button class="hk-v37-modal-x" type="button" data-hk-modal-close aria-label="Close">×</button></div><div class="hk-v37-modal-body" id="hk-v37-modal-body"></div></div>';
     document.body.appendChild(modal);
     modal.addEventListener("click", function (e) { if (e.target === modal || e.target.closest("[data-hk-modal-close]")) return closeModal(); var r = e.target.closest("[data-hk-modal-id]"); if (r) activate(r.getAttribute("data-hk-modal-id")); });
     modal.addEventListener("keydown", function (e) { var r = e.target.closest("[data-hk-modal-id]"); if (r && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); activate(r.getAttribute("data-hk-modal-id")); } });
     document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeModal(); });
 
-    bind(main); document.body.classList.add("hk-v37-mounted"); renderLeadership(); renderLeading();
+    bind(main); document.body.classList.add("hk-v37-mounted"); renderActNow(); renderLeadership(); renderFlowCue();
     /* setSource (not a bare applyFilter()) so the Top Picks / All Candidates
        segment buttons' aria-selected reflects the computed default — the
        markup above hard-codes Top Picks as selected, which is wrong on a

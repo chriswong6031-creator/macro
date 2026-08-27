@@ -1505,6 +1505,16 @@ lanes:
           Output: site/shadow/bottom_sensors_geometry_audit.json (display-only; empty until
           ~1-3 months of snapshots mature — latency is the price of honesty).
           Runs AFTER build_bottom_sensors. Benchmark: 0.6s (2026-07-09). PR-2 wiring.
+      - id: mature_shadow_book
+        module: scripts.mature_shadow_book
+        note: >
+          non-fatal; frozen stock-score forward audit (experiments audit 2026-08-26 §8
+          item 4, PR #6499 — the script existed unwired since PR #381). Grades the
+          data/shadow/stock_score_book.jsonl snapshots (appended by build_stock_library
+          in build_site) against fully-elapsed 21/63/126-bar forward returns.
+          Output: site/shadow/audit.json (display-only; verdicts stay "building" until
+          the FROZEN prereg §3 floor — research/SHADOW_BOOK_PREREGISTRATION.md).
+          Benchmark: 0.7s (2026-08-26).
       - id: build_thesis_funnel_history
         module: scripts.research.build_thesis_funnel_snapshot
         note: >
@@ -2134,19 +2144,30 @@ lanes:
       - id: evaluate_cortex_hypotheses
         module: scripts.evaluate_cortex_hypotheses
         note: >
-          W7b PR2 — Generic cortex hypothesis evaluator.
+          W7b PR3 — Generic cortex hypothesis evaluator.
           Runs AFTER spine-index build (needs: engine via cortex job needs chain).
-          For each registered hypothesis with come_back <= today:
+          Also needs build_factor_panel: `feature:` hypotheses resolve their
+          treatment/control split against data/factordata/panel/ (gitignored,
+          built earlier in the same run).
+          For each due hypothesis (status registered OR insufficient-n) with
+          come_back <= today:
             STRICT post-registration filter: as_of > registered_at enforced at entry.
             PATH A (lead_lag/sector_conditional/conditional_regime): spine/qledger join.
             PATH B (entry_quality): walk_forward stop-out harness.
-            Verdict against PRE-COMMITTED gate ONLY (no metric switching).
-            Passed → queued for quarterly cortex FDR batch (promotion requires gauntlet).
+            Declared feature: conditions are APPLIED and a CONTRAST group built;
+              a feature that cannot be resolved yields 'unresolvable-query'
+              rather than silently grading the whole population (W2 repair).
+            Verdict against PRE-COMMITTED gate ONLY (no metric switching): an
+              unsupported metric yields 'uncomputable-metric' and a structurally
+              unpassable threshold yields 'invalid-gate' (W3 repair).
+            Passed → consumed by scripts.quarterly_cortex_fdr (promotion still
+              requires the gauntlet; BH survival is necessary, not sufficient).
           impure: false.
           inputs: [data/neuralweb/machine_registry.jsonl,
                    data/neuralweb/spine_index.parquet,
+                   data/factordata/panel/*/panel.parquet,
                    data/yahoo/*.parquet]
-          outputs: [data/neuralweb/machine_registry.jsonl (status update),
+          outputs: [data/neuralweb/machine_registry.jsonl (superseding row appended),
                     data/neuralweb/cortex/evaluator_run.json,
                     data/neuralweb/governance.jsonl]
       - id: build_neuralweb_health_cortex
@@ -3113,6 +3134,26 @@ lanes:
         module: scripts.build_vector
       - id: build_aibrief
         module: scripts.build_aibrief
+      - id: quarterly_cortex_fdr
+        module: scripts.quarterly_cortex_fdr
+        note: >
+          W1 repair (2026-08-26 experiments audit §3) — the BH-FDR consumer the
+          evaluator has promised since W7b PR2 and that did not exist.
+          Wired into weekly.yml, NOT the nightly that feeds it: daily.yml sits
+          ~250 bytes under the 487,000-byte budget guarding GitHub's silent
+          processing cap (#5416), and a quarter-scoped batch is not worth that
+          headroom.  Quarter-SCOPED grouping on a weekly cadence: idempotent,
+          and appends a governance event only when the BH decision changes, so
+          re-running the same quarter is a no-op.
+          Eligibility fence (all required): evaluator_version >= W7b-PR3, a
+          p_value, gate_informative true, episode_n >= 8.  Ineligible verdicts
+          are listed with reasons, never silently dropped.
+          Promotes NOTHING — no authority, rank, size or gate reads the artifact.
+          impure: false.
+          inputs: [data/neuralweb/machine_registry.jsonl]
+          outputs: [data/neuralweb/cortex/fdr_batches/<quarter>.json,
+                    data/neuralweb/cortex/fdr_latest.json,
+                    data/neuralweb/governance.jsonl]
       - id: inject_data_base
         module: scripts.inject_data_base
         note: >
