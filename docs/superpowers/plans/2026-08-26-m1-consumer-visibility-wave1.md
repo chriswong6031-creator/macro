@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add one read-only M1 Macro consumer census command plus stronger wrong-account transport regression coverage so a fresh operator can deterministically see every loaded/recent Macro dependency and detect unlawful repository identity before any migration mutation.
+**Goal:** Add one read-only M1 Macro consumer census command plus stronger wrong-account transport regression coverage so a fresh operator can deterministically inspect every consumer in an externally attested bounded M1 scope and detect unlawful repository identity before any migration mutation.
 
-**Architecture:** Implement a single Python inspector that reads bounded launchd/plist/Git/filesystem evidence and emits one versioned JSON model plus a table projection; it performs no fetch, reset, launchctl mutation, service trigger, remote shell, or credential-value read. Every subprocess uses an absolute executable, fixed argv grammar, sanitized environment, hostile local-Git configuration neutralization, bounded output, and a timeout. Extend the existing `check_macro_anon_dependency.py` fence to reject old-personal-owner Git transport targets while preserving human citation allowances. Wave 1 implementation stops after code/CI and an immutable reviewed head; a separately released post-merge step obtains one real read-only M1 census receipt. Classification remains a Sol/operator act and no consumer remote is changed.
+**Architecture:** Implement a single Python inspector that reads an ephemeral, operator-supplied scope manifest plus bounded launchd/plist/Git/filesystem evidence and emits one versioned JSON model plus a table projection; it performs no fetch, reset, launchctl mutation, service trigger, remote shell, or credential-value read. Every subprocess uses an absolute executable, fixed argv grammar, sanitized environment, hostile local-Git configuration neutralization, streaming output enforcement, and a timeout. The inspector reports only `complete_for_supplied_scope`; #6432 may call the overall census cutover-complete only when a separate read-only scope-attestation receipt proves current user/system launchd domains, scheduler surfaces, and recently active jobs were covered. Extend the existing `check_macro_anon_dependency.py` fence to reject old-personal-owner Git transport targets while preserving human citation allowances. Wave 1 implementation stops after code/CI and an immutable reviewed head; a separately released post-merge step obtains one real read-only M1 census receipt. Classification remains a Sol/operator act and no consumer remote is changed.
 
 **Tech Stack:** Python 3 stdlib (`argparse`, `dataclasses`, `datetime`, `json`, `pathlib`, `plistlib`, `re`, `stat`, `subprocess`), pytest, existing Macro CI/fence framework, macOS `launchctl` for production proof only.
 
@@ -21,7 +21,8 @@
 - Native macOS persistent-disabled output must normalize both exact spellings `=> true` and `=> disabled`; `false`, `enabled`, duplicate/inexact rows, and ambiguous output are not accepted as disabled evidence. This compatibility constraint was introduced at protected Mastermind commit `acc7ebc4...` and remains binding in the current `af43f356...` Skillpack.
 - The inspector never prints or persists private-key bytes, token values, `.env` contents, arbitrary environment values, raw remote URLs, credential-helper values, SSH stderr, or full process environments. Raw Git URL/config values are transient classification inputs only and must be discarded before report/error construction.
 - Git inspection must neutralize repository-local host-execution seams (including `core.fsmonitor` and hooks), recursive submodule/status behavior, inherited `GIT_*` control variables, global/system config, prompts, and optional index locks before any `status` probe. A hostile `core.fsmonitor` fixture must prove no marker process executes.
-- Launchctl inspection is restricted to `/bin/launchctl print-disabled gui/<uid>` and `/bin/launchctl print gui/<uid>/<validated-label>` with fixed label/domain grammar, bounded output, a timeout, and fail-closed error parsing. Unit tests assert exact argv construction and refusal before subprocess launch.
+- Launchctl inspection is restricted to `/bin/launchctl print-disabled <selected-domain>` and `/bin/launchctl print <selected-domain>/<validated-label>`, where `<selected-domain>` is exactly the current `gui/<decimal-uid>` or `system`. The wrapper uses fixed label/domain grammar, streaming bounded output, a timeout, and fail-closed error parsing. Unit tests assert exact argv construction and refusal before subprocess launch.
+- The inspector never asserts that the supplied scope is the entire cutover estate. Its only internal completeness flag is `complete_for_supplied_scope`; a distinct #6432 scope-attestation digest and evidence packet must enumerate selected user/system launchd domains, cron/other scheduler surfaces, and recently active jobs before Sol can call the census complete for cutover.
 - The inspector may label deterministic evidence (`wrong_owner`, `anonymous_transport`, `loaded`, `disabled`, `explicit_machine_identity`) but may not emit organizational decisions such as `KEEP_AUTHENTICATE` or `RETIRE_DUPLICATE`.
 - No new durable registry, inventory database, daemon, scheduler, queue, cursor, credential broker, or truth store.
 - TDD is mandatory: each production behavior starts with a failing test, the worker must run it and observe the expected failure before implementation.
@@ -152,6 +153,8 @@ class ServiceEvidence:
     environment_names: tuple[str, ...]
     checkout: CheckoutEvidence | None
     last_execution: str | None
+    last_execution_source: str | None
+    recent_evidence_metadata: tuple[str, ...]
     hazards: tuple[str, ...]
     inspection_errors: tuple[str, ...] = ()
 
@@ -161,8 +164,10 @@ class CensusReport:
     schema: str
     observed_at: str
     hostname: str
+    supplied_scope_sha256: str
     services: tuple[ServiceEvidence, ...]
-    complete_for_cutover: bool
+    complete_for_supplied_scope: bool
+    scope_coverage_errors: tuple[str, ...]
 
 
 def parse_launchctl_disabled(output: str, label: str) -> tuple[bool, str | None]:
@@ -209,7 +214,8 @@ git commit -m "feat(ops): define M1 consumer census contract"
 
 **Interfaces:**
 - Produces: `parse_plist(path: Path) -> dict[str, object]`
-- Produces: `service_definition(path: Path) -> tuple[str, str | None, str | None, tuple[str, ...], tuple[Path, ...]]`
+- Produces: `service_definition(path: Path) -> tuple[str, str | None, str | None, tuple[str, ...], tuple[Path, ...], tuple[Path, ...]]`
+- Produces: bounded metadata-only evidence for explicit `StandardOutPath`, `StandardErrorPath`, and operator-attested recent receipt/artifact paths; it never reads arbitrary log contents.
 - Consumes: Task 1 dataclasses.
 - Contract: environment **names only**; no `.env` or environment values.
 
@@ -234,17 +240,18 @@ def test_service_definition_emits_env_names_and_checkout_candidates_without_valu
         },
     }))
 
-    label, entrypoint, cwd, env_names, candidates = census.service_definition(plist_path)
+    label, entrypoint, cwd, env_names, candidates, recent_paths = census.service_definition(plist_path)
     assert label == "com.mastermind.optionshub"
     assert entrypoint == "/Users/chriswong/hub-ops-wt/scripts/run_optionshub.sh"
     assert cwd == "/Users/chriswong/hub-ops-wt"
     assert env_names == ("PYTHONPATH", "SECRET_TOKEN")
     assert Path("/Users/chriswong/hub-ops-wt") in candidates
-    rendered = repr((label, entrypoint, cwd, env_names, candidates))
+    assert recent_paths == ()
+    rendered = repr((label, entrypoint, cwd, env_names, candidates, recent_paths))
     assert "must-never-appear" not in rendered
 ```
 
-Also add one test where `WorkingDirectory` is absent but an absolute script path identifies a checkout candidate, and one malformed plist test expecting `InspectionError("PLIST_INVALID")`.
+Also add one test where `WorkingDirectory` is absent but an absolute script path identifies a checkout candidate, one test proving only absolute `StandardOutPath`/`StandardErrorPath` values become metadata-only recent-evidence candidates, and one malformed plist test expecting `InspectionError("PLIST_INVALID")`.
 
 - [ ] **Step 2: Run the focused tests and verify RED**
 
@@ -256,7 +263,7 @@ Expected: `AttributeError` for missing `service_definition`.
 
 - [ ] **Step 3: Implement minimal plist parsing and candidate extraction**
 
-Use stdlib `plistlib`; accept only a non-empty string `Label`, string-list `ProgramArguments`, optional string `WorkingDirectory`, and dict `EnvironmentVariables`. Derive candidates only from absolute `WorkingDirectory`, absolute argv paths, and absolute values of explicitly non-secret path variables such as `PYTHONPATH`; never include arbitrary environment values in returned data.
+Use stdlib `plistlib`; accept only a non-empty string `Label`, string-list `ProgramArguments`, optional string `WorkingDirectory`, optional absolute string `StandardOutPath`/`StandardErrorPath`, and dict `EnvironmentVariables`. Derive checkout candidates only from absolute `WorkingDirectory`, absolute argv paths, and absolute values of explicitly non-secret path variables such as `PYTHONPATH`; never include arbitrary environment values in returned data. Return the two standard-output/error paths separately as metadata candidates. Later probes may call `Path.stat()` on those paths but may not open or print their contents.
 
 Implement a private helper:
 
@@ -359,7 +366,7 @@ Expected: missing `classify_remote`/`inspect_checkout` failures.
 
 - [ ] **Step 4: Implement read-only Git probes**
 
-The production wrapper invokes the absolute `/usr/bin/git` with `shell=False`, a five-second timeout, a 256-KiB stdout/stderr ceiling, `--no-optional-locks`, and high-precedence neutralization before the exact read-only command grammar:
+The production wrapper invokes the absolute `/usr/bin/git` with `shell=False`, a five-second timeout, a combined 256-KiB stdout/stderr ceiling enforced while bytes are read, `--no-optional-locks`, and high-precedence neutralization before the exact read-only command grammar:
 
 ```text
 -c core.fsmonitor=false
@@ -385,6 +392,10 @@ config --no-includes --worktree --name-only --get-regexp ^credential\.helper$
 ```
 
 Construct the subprocess environment from a small allowlist rather than copying `os.environ`: fixed `PATH=/usr/bin:/bin`, `LANG=C`, `LC_ALL=C`, `GIT_CONFIG_GLOBAL=/dev/null`, `GIT_CONFIG_SYSTEM=/dev/null`, `GIT_CONFIG_NOSYSTEM=1`, `GIT_TERMINAL_PROMPT=0`, `GIT_OPTIONAL_LOCKS=0`, and no inherited `GIT_*`, SSH-agent, askpass, pager, or credential variables. The wrapper rejects every argv not matching the full grammar with `InspectionError("READ_ONLY_COMMAND_REFUSED")` before child creation. Do not emit raw stdout/stderr on error.
+
+Freeze one shared `_run_bounded_readonly` implementation for Git and launchctl. It must use `subprocess.Popen` with byte pipes plus `selectors.DefaultSelector` (or an equivalently reviewed incremental reader), read fixed chunks no larger than 16 KiB, track the combined stdout+stderr byte count, and enforce both a monotonic five-second deadline and the 256-KiB limit before appending a chunk. On timeout or the first over-limit chunk it kills and reaps the child, closes both pipes without unbounded draining, discards all partial output, and raises exactly `InspectionError("COMMAND_TIMEOUT")` or `InspectionError("OUTPUT_LIMIT")`. It decodes only after a successful bounded exit and fails closed on invalid UTF-8. Neither `subprocess.run(capture_output=True)` nor `Popen.communicate()` without an already enforced bound satisfies this contract.
+
+Add a hostile Git-wrapper test whose approved read-only child emits more than 256 KiB and then stays alive. Assert the wrapper returns `OUTPUT_LIMIT` within the bounded deadline, the child is reaped, captured diagnostics contain none of the emitted marker, and resident capture never exceeds the configured ceiling. Mirror the same test for launchctl in Task 4.
 
 `explicit_machine_identity=True` only when the local/worktree `core.sshCommand` (or service definition evidence later) visibly selects an SSH identity path and includes `IdentitiesOnly=yes`; never infer this from an SSH URL alone. `ambient_fallback_possible=True` if the observed local SSH command lacks `IdentitiesOnly=yes` or allows an agent, or if local/worktree URL rewrites/credential helpers are present. Raw remote and config values are used only to derive booleans plus the bounded `remote_states` enum values `canonical_ssh`, `canonical_https_anon`, `wrong_owner`, `other`, and `unknown`; the values themselves are discarded before evidence construction. `write_capability_observed` remains `False` in Wave 1 because the inspector does not test writes.
 
@@ -414,10 +425,11 @@ git commit -m "feat(ops): report M1 Macro checkout identity"
 - Modify: `tests/test_m1_macro_consumer_inspector.py`
 
 **Interfaces:**
-- Produces: `build_report(plist_paths: Sequence[Path], *, launchctl_disabled_output: str, launchctl_probe: Callable[[str], tuple[bool | None, bool | None, bool | None]], hostname: str, now: datetime) -> CensusReport`
-- Produces: `probe_launchctl(label: str, *, uid: int = os.getuid(), run_launchctl: Callable[..., CompletedProcess[str]] = _run_launchctl) -> tuple[bool | None, bool | None, bool | None]`
-- Produces CLI: `python3 scripts/inspect_m1_macro_consumers.py --plist <path> [--plist <path> ...] --format json|table`
-- Exit `0`: complete read-only census with no inspection errors.
+- Produces: `parse_scope_manifest(path: Path) -> ScopeManifest`, accepting only schema `macro.m1_consumer_scope.v1`, a matching hostname, explicit service rows with exact domain/plist bindings, and explicit scheduler/recent-evidence attestations.
+- Produces: `build_report(scope: ScopeManifest, *, launchctl_probe: Callable[[str, str], tuple[bool | None, bool | None, bool | None]], hostname: str, now: datetime) -> CensusReport`
+- Produces: `probe_launchctl(label: str, domain: str, *, uid: int = os.getuid(), run_launchctl: Callable[..., CompletedProcess[str]] = _run_launchctl) -> tuple[bool | None, bool | None, bool | None]`
+- Produces CLI: `python3 scripts/inspect_m1_macro_consumers.py --scope-manifest <path> --format json|table`
+- Exit `0`: complete read-only inspection of every row in the supplied scope with no inspection errors; this is not a cutover-complete verdict.
 - Exit `65`: malformed/ambiguous/incomplete evidence; still emits the bounded report to stdout when possible.
 - CLI has no mutation verbs.
 
@@ -435,6 +447,8 @@ assert "KEEP_AUTHENTICATE" not in json.dumps(payload)
 
 Assert `environment_names` contains only names and no fixture secret values.
 
+The synthetic manifest must include one current-user row and one system-domain row, plus explicit `scheduler_surfaces_checked` and `recent_job_sources_checked` arrays. Assert the report binds the SHA-256 of the exact manifest bytes, uses `complete_for_supplied_scope`, contains no `complete_for_cutover` key, and refuses a hostname mismatch, duplicate service ID, unsupported domain, relative plist/evidence path, or missing coverage arrays.
+
 - [ ] **Step 2: Write failing incomplete-evidence tests**
 
 Cases:
@@ -442,30 +456,33 @@ Cases:
 1. malformed plist → report contains `PLIST_INVALID`, exit 65;
 2. duplicate disabled-state rows → `LAUNCHCTL_DISABLED_STATE_INVALID`, exit 65;
 3. inaccessible checkout candidate → service remains present with `inspection_errors`, exit 65;
-4. clean complete census → exit 0.
+4. clean complete supplied-scope census → exit 0 with `complete_for_supplied_scope=true`;
+5. missing scope row / unavailable declared recent-evidence path → `scope_coverage_errors`, exit 65.
 
 - [ ] **Step 3: Write failing retired-breadth state test**
 
-For `com.macro.live-breadth`, feed `=> disabled` plus a launchctl probe returning `(loaded=False, active=False, enabled=False)` and assert the report preserves:
+For `com.macro.live-breadth`, feed `=> disabled` plus a launchctl probe returning `(loaded=True, active=False, enabled=False)` from a successful exact `state = not running` fixture and assert the report preserves:
 
 ```python
 service.enabled is False
-service.loaded is False
+service.loaded is True
 service.disabled_observed_state == "disabled"
 ```
 
-The inspector must not label it `RETIRE_DUPLICATE` or `PROVEN_LIVE`.
+The inspector must not label it `RETIRE_DUPLICATE` or `PROVEN_LIVE`. Unloaded status is not inferred in Wave 1 because no exact native service-missing fixture has yet been accepted; a nonzero `launchctl print` remains incomplete evidence.
 
 - [ ] **Step 3a: Write failing production launchctl-wrapper tests**
 
-Mock child creation and assert exact argv for a valid label:
+Mock child creation and assert exact argv for valid current-user and system-domain rows:
 
 ```text
 /bin/launchctl print-disabled gui/<uid>
 /bin/launchctl print gui/<uid>/<label>
+/bin/launchctl print-disabled system
+/bin/launchctl print system/<label>
 ```
 
-Assert label injection (`/`, whitespace, shell metacharacters, oversized labels), a non-`gui/<decimal-uid>` domain, mutation verbs, missing/duplicate `state = ...` rows, oversized output, timeout, and unexpected nonzero exits all raise a bounded `InspectionError` without starting an unapproved child. An exact supported native service-missing result may map to `(loaded=False, active=False, enabled=<disabled parser result>)`; every other nonzero result remains incomplete evidence. Raw launchctl stderr is never copied into the report.
+Assert label injection (`/`, whitespace, shell metacharacters, oversized labels), a foreign `gui/<uid>`, any domain other than the current `gui/<decimal-uid>` or exact `system`, mutation verbs, missing/duplicate `state = ...` rows, streaming oversized output, timeout, and every nonzero exit all raise a bounded `InspectionError` without starting an unapproved child. Freeze return-code/state behavior exactly: exit `0` plus one exact `state = running` row maps to `(loaded=True, active=True, ...)`; exit `0` plus one exact `state = not running` row maps to `(loaded=True, active=False, ...)`; any other spelling, duplicate row, or any nonzero exit yields incomplete evidence. Wave 1 does not map any service-missing result to unloaded until a later native fixture is separately captured and reviewed. Raw launchctl stderr and partial over-limit output are never copied into the report.
 
 - [ ] **Step 4: Run tests and verify RED**
 
@@ -475,9 +492,11 @@ python -m pytest tests/test_m1_macro_consumer_inspector.py -q
 
 - [ ] **Step 5: Implement report assembly and CLI**
 
-CLI must require explicit plist inputs in v1. Do **not** implement an unbounded `/Library/LaunchAgents` recursive scan. The production operator can derive the bounded input set with an explicit shell glob/list after a read-only census; future automatic discovery can be separately reviewed if needed.
+CLI must require one explicit ephemeral scope manifest in v1. Do **not** implement an unbounded `/Library/LaunchAgents` recursive scan. The manifest is evidence input, not a registry or authority plane. It contains exact service ID, selected domain (`gui/<current uid>` or `system`), absolute plist path, and optional absolute recent-log/receipt/artifact paths for metadata-only inspection. It also binds non-empty arrays naming the read-only scheduler surfaces and recent-job sources the operator checked. The inspector hashes the exact manifest bytes, validates that every declared row is represented, and reports only `complete_for_supplied_scope`; it never promotes the manifest's self-assertion into a cutover-complete verdict.
 
-`probe_launchctl` uses `/bin/launchctl`, `shell=False`, a five-second timeout, the same bounded-output discipline as Git, and a fixed `PATH`/locale environment with no inherited `DYLD_*` or other loader/control variables. `print` output must contain exactly one parseable `state = ...` row when the service is loaded; `active=True` only for exact `running`, `active=False` for a single recognized non-running native state, and otherwise `None` plus an inspection error. `enabled` is derived only from the exact `print-disabled` parser, never from process activity.
+`probe_launchctl` uses `/bin/launchctl`, `shell=False`, the shared `_run_bounded_readonly` five-second/256-KiB streaming ceiling, and a fixed `PATH`/locale environment with no inherited `DYLD_*` or other loader/control variables. `print` output must contain exactly one parseable `state = ...` row on exit 0; `active=True` only for exact `running`, `active=False` only for exact `not running`, and otherwise `None` plus an inspection error. Any nonzero exit is incomplete evidence, not `loaded=False`. `enabled` is derived only from the exact `print-disabled` parser, never from process activity.
+
+For each declared `StandardOutPath`, `StandardErrorPath`, or manifest recent-evidence path, call `lstat()`/`stat()` only. Emit bounded metadata strings containing evidence kind, existence, file type, size, and offset-aware mtime; never open the file or serialize its contents. Set `last_execution` and `last_execution_source` only from the newest explicitly declared metadata timestamp and label it metadata-derived; do not call that a successful execution receipt. A missing/inaccessible declared path is an inspection error rather than evidence that the service never ran.
 
 Use `json.dumps(asdict(report), sort_keys=True, indent=2)` for JSON. Table columns are a projection of the same report model only:
 
@@ -615,7 +634,7 @@ git commit -m "fix(security): fence old-owner Macro Git transports"
 - Modify: `tests/test_m1_macro_consumer_inspector.py`
 
 **Interfaces:**
-- Runbook command uses explicit plist paths and writes output only to operator-chosen stdout/file redirection.
+- Runbook command uses one ephemeral explicit scope manifest and writes output only to operator-chosen stdout/file redirection.
 - No runtime mutation command appears in the normal procedure.
 
 - [ ] **Step 1: Add failing runtime command-refusal tests, then retain a source-level tripwire**
@@ -674,15 +693,15 @@ The subprocess wrapper must refuse anything outside the complete grammar with `I
 4. exact example invocation:
 
 ```bash
+scope_file="$(mktemp /tmp/m1-macro-consumer-scope.XXXXXX.json)"
+# Populate this 0600 temporary file from the separately receipted read-only
+# launchd/scheduler/recent-job scope census; do not assume the example rows are exhaustive.
 python3 scripts/inspect_m1_macro_consumers.py \
-  --plist "$HOME/Library/LaunchAgents/com.mastermind.optionshub.plist" \
-  --plist "$HOME/Library/LaunchAgents/com.mastermind.levelsseal.plist" \
-  --plist "$HOME/Library/LaunchAgents/com.mastermind.levelsgrader.plist" \
-  --plist "$HOME/Library/LaunchAgents/com.macro.live-breadth.plist" \
+  --scope-manifest "$scope_file" \
   --format json > /tmp/m1-macro-consumer-census.json
 ```
 
-The example is illustrative; operator must re-census current relevant plist names before proof and must not assume this list is exhaustive.
+The runbook freezes the `macro.m1_consumer_scope.v1` manifest shape with explicit hostname, current-user/system domain selection, service/domain/plist rows, metadata-only recent-evidence paths, and non-empty `scheduler_surfaces_checked` / `recent_job_sources_checked` arrays. The example is illustrative; operator must generate the manifest from a separately receipted bounded read-only scope census and must not assume any checked-in/example list is exhaustive. The manifest is temporary evidence input and must be removed after its digest and sanitized receipt are recorded; it is not committed or treated as a registry.
 
 5. JSON/table field meanings;
 6. exit 65 meaning “incomplete/ambiguous evidence — STOP for Sol”; 
@@ -690,7 +709,8 @@ The example is illustrative; operator must re-census current relevant plist name
 8. no-mutation law;
 9. `flow-ops-wt` special preservation rule;
 10. current native disabled-state compatibility (`true` and `disabled` accepted);
-11. #6432 return packet fields: exact code head, command, host/time, census SHA-256, services discovered, unresolved inspection errors, evidence-only hazards, confirmation of zero host mutation.
+11. field law: `complete_for_supplied_scope=true` means only that every manifest row was inspected without an error; there is no `complete_for_cutover` field;
+12. #6432 return packet fields: exact code head, command, host/time, scope-manifest SHA-256, independent scope-attestation receipt/digest, census SHA-256, selected user/system domains, scheduler surfaces checked, recently active job sources checked, services discovered, last-execution evidence/source for each service, unresolved inspection/coverage errors, evidence-only hazards, confirmation of zero service/Git/runtime mutation.
 
 - [ ] **Step 5: Run focused suites and compile**
 
@@ -762,6 +782,8 @@ Reviewer must explicitly try to falsify:
 - output can leak env/key/token values;
 - raw remote URLs or credential-helper values can reach JSON, table output, errors, or diagnostics;
 - malformed launchctl labels/domains or a first-verb-only allowlist can escape the fixed argv grammar;
+- nonzero/unknown launchctl output is incorrectly promoted to unloaded or inactive instead of incomplete evidence;
+- Git or launchctl can allocate/capture more than the combined 256-KiB ceiling before refusal, leave an over-limit child alive, or leak partial output;
 - `=> disabled` is misread as enabled/unknown;
 - malformed duplicate launchctl rows are accepted;
 - canonical org SSH is falsely rejected;
@@ -769,6 +791,7 @@ Reviewer must explicitly try to falsify:
 - old-owner SCP/SSH acquisition target escapes the fence;
 - output invents organizational classifications;
 - filesystem discovery becomes an unbounded crawl;
+- a partial/operator-supplied manifest can be mislabeled `complete_for_cutover`, or current-user/system domains, scheduler surfaces, recently active jobs, and last-execution sources can be omitted without a cutover-level stop;
 - `flow-ops-wt` receives any write;
 - new registry/credential/control plane was introduced.
 
@@ -803,7 +826,7 @@ STOP. Do not run the real M1 proof merely because CI is green unless the commiss
 
 **Interfaces:**
 - Input: exact merged Wave 1 implementation SHA installed/read on M1 without altering service state.
-- Output: census JSON digest + concise #6432 receipt.
+- Output: independent bounded scope-attestation digest + supplied-scope manifest digest + census JSON digest + concise #6432 receipt.
 
 - [ ] **Step 1: Re-pin current authority and prove the implementation bytes used on M1**
 
@@ -811,14 +834,15 @@ Record current protected Skillpack, current Macro main, exact inspector blob/has
 
 - [ ] **Step 2: Run only read-only preflight**
 
-Confirm no target service is being mutated by another carrier. Confirm `com.macro.live-breadth` remains disabled/unloaded. Do not repair anything in this step.
+Confirm no target service is being mutated by another carrier. Obtain a bounded read-only scope attestation that names the selected current-user and system launchd domains, every scheduler surface checked, every loaded/recent Macro job discovered, and the last-execution/recent-log metadata source expected for each row. Confirm `com.macro.live-breadth` remains persistently disabled; unloaded may be claimed only if an exact native service-missing fixture has been separately accepted. Do not repair anything in this step.
 
 - [ ] **Step 3: Run the bounded census**
 
-Use the runbook with the current explicit relevant plist set and save JSON to a temporary operator path. Compute:
+Use the runbook to build a 0600 temporary `macro.m1_consumer_scope.v1` manifest from that attested current scope, then run the inspector and save JSON to a temporary operator path. Compute:
 
 ```bash
 shasum -a 256 /tmp/m1-macro-consumer-census.json
+shasum -a 256 "$scope_file"
 ```
 
 - [ ] **Step 4: Validate the receipt itself**
@@ -826,17 +850,20 @@ shasum -a 256 /tmp/m1-macro-consumer-census.json
 Require:
 
 - schema exactly `macro.m1_consumer_census.v1`;
+- `supplied_scope_sha256` exactly matches the temporary manifest digest;
 - all explicitly supplied services represented;
 - environment names only, no secret values;
-- no inspection errors for a `complete_for_cutover=true` result;
-- retired breadth shows disabled/unloaded without an organizational classification;
+- `complete_for_supplied_scope=true`, no `complete_for_cutover` field, and no inspection/scope-coverage errors;
+- the independent scope attestation covers current-user/system launchd domains, cron/other schedulers, and recently active jobs and maps every discovered Macro consumer to exactly one manifest row;
+- every service has bounded metadata-derived last-execution/source evidence or an explicit unknown that keeps #6432 incomplete;
+- retired breadth shows persistent disabled evidence and no organizational classification; unloaded remains unknown unless an accepted exact native missing-service fixture supports it;
 - `flow-ops-wt` identity is observed only, not mutated;
 - current `hub-ops-wt`, `theta-ops-wt`, `fund-engine-wt`, and any newly discovered active/recent dependencies are surfaced for Sol classification where applicable;
 - shell history/service state/Git state comparison shows zero mutation attributable to the inspector.
 
 - [ ] **Step 5: Post the evidence to #6432 and return to Sol**
 
-Post exact code SHA, host/time, invocation shape (no secrets), JSON SHA-256, service count, hazards/unknowns, and `complete_for_cutover` value. Do not perform Wave 2 authentication/retirement acts in the same proof step.
+Post exact code SHA, host/time, invocation shape (no secrets), independent scope-attestation digest, manifest SHA-256, JSON SHA-256, selected domains/scheduler/recent-job coverage, service count, last-execution evidence/source summary, hazards/unknowns, and `complete_for_supplied_scope` value. Sol alone decides whether the combined external scope receipt plus inspector report is complete for cutover. Do not perform Wave 2 authentication/retirement acts in the same proof step.
 
 - [ ] **Step 6: Close Wave 1 organizationally only on Sol PASS**
 
@@ -846,7 +873,7 @@ On Sol PASS, update the correct Agent OS workstream/discovery/handoff and MAS-13
 
 ## Plan Self-Review Results
 
-- **Spec coverage:** Wave 1 covers Component A (host inspector) and Component B (wrong-owner fence), including secret safety, launchd disabled-state compatibility, ephemeral evidence, no organizational authority, bounded discovery, read-only proof, and no M1 mutation. Components C/D migration/proof are deliberately deferred to later plans except that this wave creates the evidence needed to commission them.
+- **Spec coverage:** Wave 1 covers Component A (host inspector) and Component B (wrong-owner fence), including secret safety, launchd disabled-state compatibility, ephemeral evidence, no organizational authority, bounded discovery, true streaming output ceilings, supplied-scope versus cutover-completeness separation, read-only proof, and no M1 mutation. Components C/D migration/proof are deliberately deferred to later plans except that this wave creates the evidence needed to commission them.
 - **Placeholder scan:** no `TBD`, `TODO`, “similar to”, or unspecified error-handling steps remain.
 - **Type consistency:** Task 1 dataclasses and `parse_launchctl_disabled` feed Tasks 2–4; Task 3 `classify_remote` feeds report assembly; fence retains its current `Finding` interface with one new `wrong_owner_transport` shape.
 - **Scope check:** Wave 1 is independently useful and testable. It does not implement authenticated consumer migration, natural publisher verification, runner/storage work, trusted CI, or repository visibility changes.
