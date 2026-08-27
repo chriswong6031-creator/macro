@@ -162,6 +162,19 @@ danger_areas:
     Backups of the private store hold superseded eras and must never be promoted:
     ~/.local/share/macro-dashboard/china_tushare_spine.prerebuild-20260826 is the
     OLD 1991-anchored trade_cal plane.
+  - >
+    SOURCE_ROW_CAPS['stk_limit'] is 5800 and the cap test is `>=`, while the
+    A-share universe measured 5,344 on 2024-01-02 and grows a few hundred names a
+    year. The 2024 canary has roughly 450 rows of headroom, but a whole-market
+    stk_limit call on a recent session will eventually land at the documented
+    maximum, and the collector then refuses the unit rather than blessing a
+    truncated response. That refusal is correct — it is the same fail-closed
+    reasoning as the trade_cal exact-range check — but it means the range
+    campaign will hit an endpoint-specific wall on recent dates that the 2024
+    canary cannot reveal. Do NOT respond by raising the constant: the cap is the
+    vendor's documented per-call maximum, so raising it would bless truncation.
+    The cap_fallback path (switch the whole requested interval to the
+    ticker-range campaign) is the designed answer, and it is unproven.
 ---
 
 # Removing a survivorship filter that was written in three places
