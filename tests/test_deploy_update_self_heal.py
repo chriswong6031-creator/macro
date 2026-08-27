@@ -11,6 +11,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_PATH = ROOT / "app" / "deploy" / "update.sh"
 SCRIPT = SCRIPT_PATH.read_text(encoding="utf-8")
+CADDYFILE_PATH = ROOT / "app" / "deploy" / "Caddyfile"
 
 
 def test_update_script_has_valid_shell_syntax():
@@ -93,6 +94,43 @@ def test_caddy_source_is_validated_before_install():
     install = 'install -m 0644 "$APP_DIR/app/deploy/Caddyfile" /etc/caddy/Caddyfile'
     assert validate in SCRIPT
     assert SCRIPT.index(validate) < SCRIPT.index(install)
+
+
+def _livingston_site_block() -> str:
+    text = CADDYFILE_PATH.read_text(encoding="utf-8")
+    marker = "livingstonpan.com {"
+    start = text.index(marker)
+    depth = 0
+
+    for index in range(start, len(text)):
+        character = text[index]
+        if character == "{":
+            depth += 1
+        elif character == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start : index + 1]
+
+    raise AssertionError("livingstonpan.com site block is not closed")
+
+
+def test_livingston_portfolio_uses_an_isolated_loopback_origin():
+    block = _livingston_site_block()
+
+    assert "reverse_proxy 127.0.0.1:3210" in block
+    assert "reverse_proxy 0.0.0.0" not in block
+    assert "tls internal" in block
+
+
+def test_livingston_portfolio_sets_browser_security_headers():
+    block = _livingston_site_block()
+
+    assert 'Content-Security-Policy "default-src \'self\'' in block
+    assert 'X-Content-Type-Options "nosniff"' in block
+    assert 'X-Frame-Options "DENY"' in block
+    assert 'Referrer-Policy "strict-origin-when-cross-origin"' in block
+    assert 'Strict-Transport-Security "max-age=31536000"' in block
+    assert "-Server" in block
 
 
 def test_changed_systemd_unit_forces_api_restart():
