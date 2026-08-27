@@ -110,23 +110,21 @@ def test_prophet_index_referenced_by_the_template_is_graded():
     )
 
 
-def test_premium_payload_referenced_by_the_template_is_a_known_gap():
+def test_premium_payload_referenced_by_the_template_is_graded():
     """site/premiumdata/us_stocks.json (the paid card payload
     templates/_us_board_cards.html.j2 and _us_prophet_plan_cards.html.j2 both
-    name) is NOT named by any grader in this PR. SCOPE items 1/2/3/4 never
-    enumerated this artifact, so PR-1 does not add coverage for it — adding an
-    uncommissioned SURFACES entry would be scope creep this packet's
-    DEVIATIONS section flags instead. This test pins the gap as KNOWN rather
-    than letting it hide: it must be revisited (`xfail`, not silently green)
-    the day a future PR closes it, at which point flip this to the same
-    shape as the two tests above.
+    name) is now graded by check_nightly_liveness MARKET_BOARDS after #6549.
+    Flip of the former known-gap pin: same positive-coverage shape as the
+    us_standouts / prophet-index siblings above.
     """
     text = _template_text()
     assert "premiumdata/us_stocks.json" in text, "fixture premise moved — re-check the templates"
     graded = _all_grader_paths()
-    assert not any("premiumdata" in p for p in graded), (
-        "premiumdata/us_stocks.json is now graded — flip this test to a "
-        "positive coverage assertion like its us_standouts/prophet-index siblings"
+    assert "site/premiumdata/us_stocks.json" in graded or any(
+        "premiumdata/us_stocks.json" in p for p in graded
+    ), (
+        "premiumdata/us_stocks.json is template-consumed but ungraded. "
+        f"Graded: {sorted(graded)}"
     )
 
 
