@@ -12,7 +12,9 @@ state_before: >
   and multi-COO topology are frozen on PR #6504; distinct F01-F13 durable handoffs now
   exist on the same carrier. Slack still provides DELIVERY_ONLY transport and no Fable
   ACK/EXECUTING state is inferred.
-changed: []
+changed:
+  - path: agentos/handoffs/MARKET-ONTOLOGY-F00-F13-FABLE-COO-FANOUT-MANIFEST-2026-08-26.md
+    what: "Created the F00-F13 Fable COO allocation manifest binding lane operation keys, durable handoffs, Linear projection and allocation law."
 verified:
   - claim: "Thirteen distinct domain handoffs exist with unique operation keys."
     command: "Current PR #6504 changed-file census."

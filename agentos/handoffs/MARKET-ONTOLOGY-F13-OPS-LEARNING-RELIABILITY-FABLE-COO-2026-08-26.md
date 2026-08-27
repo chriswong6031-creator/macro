@@ -13,7 +13,9 @@ state_before: >
   claim/prediction scoring, glossary/reference methodology and enterprise deployment
   planner depth. Existing source-owner schedules, health/receipt systems, Eval OS and
   release/support surfaces must be reused; exact integration census remains required.
-changed: []
+changed:
+  - path: agentos/handoffs/MARKET-ONTOLOGY-F13-OPS-LEARNING-RELIABILITY-FABLE-COO-2026-08-26.md
+    what: "Created the sustained F13 Fable COO lane commission and its reliability/SLO/instrumentation/institutional-learning envelope."
 verified:
   - claim: "Learning must distinguish product usefulness from alpha value and cannot become a duplicate grading/control plane."
     command: "Read parity completion law and no-rebuild decisions."

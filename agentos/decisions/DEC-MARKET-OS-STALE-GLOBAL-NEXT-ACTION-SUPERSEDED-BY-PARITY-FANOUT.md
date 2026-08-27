@@ -8,10 +8,12 @@ question: >
 answer: >
   No. The WS:MARKET-OS global next_action and prose describing A1B as an unmerged
   repair carrier are stale projection and are superseded by current implementation
-  truth plus the complete-parity/fanout decisions. A1B itself remains
-  BUILT_NOT_PROVEN behind its real authenticated production-write proof gate; that
-  unresolved proof is preserved as an independent bounded capability gate and must
-  not be fabricated or bypassed. It does not serialize independent Market OS,
+  truth plus the complete-parity/fanout decisions. A1B has since passed its real
+  authenticated production-write proof gate: under operation
+  market-os-a1b-auth-accept-20260826-sol-001 Sol accepted A1B in production as
+  PROVEN_LIVE / DONE (DEC:MARKET-OS-A1B-ACCEPTED-IN-PRODUCTION, carrier PR #6508);
+  that newer acceptance is controlling and must not be regressed by any stale
+  projection here. A1B does not serialize independent Market OS,
   Alpha-Integration, research, source-archaeology, context, product-projection or
   parity lanes whose frozen dependencies and owner/path collision fences are otherwise
   satisfied. The current primary organizational continuation is F00 complete-parity
@@ -21,9 +23,11 @@ answer: >
   obsolete global A1B-as-sole-next-action serialization.
 rationale: >
   PR #6335 is no longer a draft repair carrier: it merged as
-  dd66f934e35a4629281656e854c6cc028dbd66d7 and its A1B assets were deployed. The
-  remaining A1B blocker is the absence of an authorized authenticated production test
-  identity for the temporary-write proof, not code review or merge. Meanwhile B1A is
+  dd66f934e35a4629281656e854c6cc028dbd66d7 and its A1B assets were deployed. At
+  authoring time the remaining A1B blocker was the absence of an authorized
+  authenticated production test identity for the temporary-write proof, not code
+  review or merge; that proof has since passed under operation
+  market-os-a1b-auth-accept-20260826-sol-001. Meanwhile B1A is
   PROVEN_LIVE, and the Chairman explicitly ruled on 2026-08-26 that the broader Market
   Ontology project must stop operating as a one-wave-at-a-time Sol↔single-COO loop.
   Treating the stale global line as current would contradict both GitHub evidence and
@@ -36,8 +40,11 @@ alternatives:
       options, macro, policy, capital-markets, quant and product-composition lanes.
   - option: Declare A1B done so it stops blocking anything.
     why_not: >
-      Rejected. The authenticated canonical persistence proof is still missing; A1B
-      truthfully remains BUILT_NOT_PROVEN until that real production vertical passes.
+      Rejected at authoring time: the authenticated canonical persistence proof was
+      still missing, so A1B truthfully remained BUILT_NOT_PROVEN until that real
+      production vertical passed. That vertical has since passed and Sol accepted
+      A1B (DEC:MARKET-OS-A1B-ACCEPTED-IN-PRODUCTION) — through the proof, never by
+      declaration; see Current continuation law.
   - option: Ignore the stale workstream text without durable reconciliation.
     why_not: >
       Rejected. A fresh Sol session could otherwise resurrect the obsolete #6335
@@ -75,12 +82,17 @@ stale global/workstream-level assumptions:
 
 ## Current continuation law
 
-- **A1B:** remains `BUILT_NOT_PROVEN`; when an authorized disposable/designated
-  authenticated production test vehicle exists, run only the already-commissioned
-  bounded acceptance journey with exact cleanup. Do not manufacture credentials or
-  touch the Chairman's sealed Portfolio.
-- **A2-A6:** their declared dependency on A1B remains binding; do not use this DEC to
-  start them early.
+- **A1B:** accepted in production — `PROVEN_LIVE / DONE` per
+  `DEC:MARKET-OS-A1B-ACCEPTED-IN-PRODUCTION` (operation
+  market-os-a1b-auth-accept-20260826-sol-001, carrier PR #6508). The commissioned
+  bounded acceptance journey ran with exact cleanup; do not repeat production
+  mutation for extra evidence, do not manufacture credentials, and never touch the
+  Chairman's sealed Portfolio. The transient Portfolio mode-tab badge lag remains a
+  separate bounded nonblocking UI follow-up.
+- **A2-A6:** dependency-eligible now that A1B is accepted, but per the continuation
+  law of `DEC:MARKET-OS-A1B-ACCEPTED-IN-PRODUCTION` each still requires its own
+  fresh current-state census and a separate bounded Sol commission; do not start
+  them from this DEC.
 - **B1 expansion:** B1A is already PROVEN_LIVE. The known general namespace / identity
   reader repairs are valid independent prerequisites for broader security product
   expansion and may be owned through the F06 parity lane after current collision

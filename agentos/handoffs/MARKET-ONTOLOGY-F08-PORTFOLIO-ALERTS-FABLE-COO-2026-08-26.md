@@ -11,8 +11,9 @@ mission: >
 state_before: >
   Baseline MO-PAID-027,028,036,085 route to F08; current deltas add Portfolio Constructor,
   explicit portfolio-risk metric depth and event-to-portfolio path semantics. A1A
-  Portfolio state authority is PROVEN_LIVE. A1B import remains BUILT_NOT_PROVEN but does
-  not block independent F08 read/context work. Authenticated competitor testing exposed
+  Portfolio state authority is PROVEN_LIVE. A1B import is accepted in production
+  (PROVEN_LIVE / DONE per DEC:MARKET-OS-A1B-ACCEPTED-IN-PRODUCTION, carrier PR #6508)
+  and does not block independent F08 read/context work. Authenticated competitor testing exposed
   mixed denominator/basis and duplicate-edit defects that are binding Mastermind redlines.
 changed:
   - path: agentos/handoffs/MARKET-ONTOLOGY-F08-PORTFOLIO-ALERTS-FABLE-COO-2026-08-26.md

@@ -16,7 +16,8 @@ state_before: >
   Authenticated competitive research is complete at 88/88 paid capability coverage,
   but the 2026-08-23 productization plan reduced immediate implementation impact to a
   small strongest-transferable subset and execution remained predominantly serial.
-  WS:MARKET-OS has A1A PROVEN_LIVE, A1B merged but production-write proof blocked,
+  WS:MARKET-OS has A1A PROVEN_LIVE, A1B accepted in production (PROVEN_LIVE / DONE
+  per DEC:MARKET-OS-A1B-ACCEPTED-IN-PRODUCTION, carrier PR #6508),
   and B1A security_state.v1 PROVEN_LIVE for AAPL; broader B/C/D/E/F product waves remain
   open. WS:ALPHA-INTELLIGENCE-INTEGRATION has K1 done, K2-B done, K3-E done, and K2-C
   plus K3-D separately commissioned on PR #6498; K5 remains gated on accepted K2-C +
