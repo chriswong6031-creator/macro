@@ -6,8 +6,9 @@ claim: >
   ChatGPT1/2/3. User/channel membership is not Worker/session identity. At least one historical
   Slack-origin operation key (K2-C) later produced real GitHub implementation/merge evidence with
   Claude Fable co-authorship, so an un-ACKed Slack handoff cannot be assumed never executed; however,
-  the exact ASD-A2 Claude3 pickup remains DELIVERY_ONLY with zero thread replies, and no production
-  Agent Relay or Executive Worker claim has proven Slack-to-session/runtime pickup.
+  the exact ASD-A2 Claude3 pickup remains DELIVERY_ONLY with no Claude/operator ACK or bounded result
+  (its only thread reply is a same-carrier Sol ACK nudge), and no production Agent Relay or Executive
+  Worker claim has proven Slack-to-session/runtime pickup.
 falsifier: >
   The accepted Agent Relay/runtime path binds an eligible already-active commissioned worker/COO
   session to an exact commission and produces an explicit ACK/readback, or Executive OS records the
@@ -34,15 +35,16 @@ confidence: verified
 
 ## Evidence
 
-A live Slack census on 2026-08-27 shows `#agent-dispatch` (`C0BSBM78V1N`) now contains ten user
+A live Slack census on 2026-08-27 shows `#agent-dispatch` (`C0BSBM78V1N`) contains ten user
 principals: Chairman Chris, ChatGPT1/2/3 and six Claude-labelled user principals. No dedicated
 production Mastermind Agent Relay bot is present in that census.
 
 The exact ASD-A2 preflight pickup `asd-a2-host-preflight-20260827-sol-001`, addressed to Claude3,
-has zero thread replies at observation time. Under its own contract it remains `DELIVERY_ONLY`, not
-ACKED or executing.
+has one thread reply, but that reply is only ChatGPT1's same-carrier ACK nudge. Claude3 has supplied
+no `ACK asd-a2-host-preflight-20260827-sol-001`, `A2_0_PASS`, or `A2_HOST_COLLISION`. Under the
+pickup contract the operation therefore remains `DELIVERY_ONLY`, not ACKED or executing.
 
-Separately, current Macro main `0758de6b9a7e9e920a6f44e4c1abcd62dbf8074e` contains K2-C merge
+Separately, current Macro main `1276333b37b9131ed77c97bc6ffaa63a1ca9be72` contains K2-C merge
 #6533. Its merge commit explicitly records operation key
 `alpha-k2c-institutional-adapter-20260826-sol-001` and Claude Fable co-authorship. That operation
 originated in an earlier `#agent-dispatch` DELIVERY_ONLY handoff. Therefore the prior simple mental
