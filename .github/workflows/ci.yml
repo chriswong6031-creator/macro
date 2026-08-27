@@ -4113,6 +4113,16 @@ on:
       # import-derived auditor reports subjects=[] and would call it untriggerable.
       - "tests/test_prophet_rescue.py"
       - "scripts/prophet_rescue.py"
+      # PR-1 Prophet US permanence net (2026-08-27), same unrun-dark-guards family:
+      # the new post-publish acceptance alarm (imported via importlib from
+      # daily.yml's engine job, the same path-literal shape as the rescue lane
+      # above) and the cross-cutting suite that pins the shared intake-identity
+      # predicate across freshness_sentinel/check_nightly_liveness/prophet_rescue/
+      # this script, the lane-latch acceptance exemption, and the heartbeat
+      # write/grade round trip (see check_surface_freshness.py's own pair above
+      # for the precedent this follows).
+      - "scripts/prophet_board_acceptance.py"
+      - "tests/test_prophet_surface_net.py"
       # ── Public-render fastlane (2026-07-28) ─────────────────────────────────
       # test_public_render_fastlane pins the heavy/public render split and the
       # rendered pricing copy; it was named by no lane and rotted red when #3856

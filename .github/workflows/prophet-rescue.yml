@@ -29,25 +29,35 @@ name: prophet-rescue
 # killed bake and a bake that never fired leave the same trace.
 on:
   schedule:
-    # The nightly fires 22:30Z (EDT) / 23:30Z (EST) and legitimately runs for hours.
-    # Hourly at :40 from 23:40Z through 13:40Z is the watch window; the deadline
-    # ladder inside the script (STRAND from 01:40Z, STALE from 09:40Z, alert-only
-    # from 13:40Z) is anchored to the NYSE calendar rather than to these crons, so
-    # weekends and market holidays cannot manufacture a breach and there is no
+    # PR-1 (Prophet US permanence net, 2026-08-27): FULL 24h hourly coverage at
+    # :40, closing the 13:40Z->23:40Z hole the previous two-line schedule left —
+    # "40 23 * * *" + "40 0-13 * * *" covered 23:40Z through 13:40Z (15 wakes/day)
+    # and went silent for the 10 daytime hours 14:40Z-22:40Z. The deadline ladder
+    # inside the script (STRAND from 01:40Z, STALE from 09:40Z, alert-only from
+    # 13:40Z) is anchored to the NYSE calendar and expected_fire_after(), never to
+    # these crons, so the extra daytime wakes are cheap no-ops (HEALTHY/WAIT) on
+    # every ordinary day and simply close the window where a same-day re-arm or a
+    # zero-origination-wedge alert could otherwise wait until the next 23:40Z wake.
+    # Weekends and market holidays still cannot manufacture a breach; there is no
     # weekday filter here to drift out of sync.
-    - cron: "40 23 * * *"
-    - cron: "40 0-13 * * *"
+    - cron: "40 * * * *"
   workflow_dispatch:
 
 permissions:
   contents: read          # read main's site/prophet/index.json via the contents API
-  actions: write          # re-arm daily.yml (dispatch only — never a stop)
+  actions: write          # re-arm daily.yml (dispatch only) — see item 3c's
+                           # verification note in scripts/prophet_rescue.py's
+                           # module docstring for whether this scope also covers
+                           # the narrow self-withdraw cancel this program considered
   issues: write           # upsert the one `prophet-outage` issue per stranded session
 
 concurrency:
   # Its own group, and NEVER cancel-in-progress: a responder that a sibling wake can
   # kill mid-dispatch is not a responder. It also must never share a group with the
-  # lanes it watches.
+  # lanes it watches. Tolerates the hourly cadence above without change: each run
+  # is bounded by `timeout-minutes: 10` below, an order of magnitude under the
+  # 60-minute wake interval, so cancel-in-progress:false queues at most a brief
+  # overlap rather than an unbounded backlog even at 24 wakes/day.
   group: prophet-rescue
   cancel-in-progress: false
 

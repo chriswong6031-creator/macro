@@ -2290,6 +2290,27 @@ jobs:
         env:
           PYTHONUNBUFFERED: "1"
         run: bash scripts/ci/daily_engine_prophet_nightly.sh
+      - name: prophet-board-acceptance (post-publish alarm, never a gate)
+        id: prophet_board_acceptance
+        # Same job, same runner, same bytes as the "Prophet nightly" step just
+        # above — placed immediately after it and BEFORE the checkpoint commit
+        # below so there is no cross-job pull race and no window where a later
+        # reader sees something this check did not. ALARM, never a GATE: see
+        # scripts/prophet_board_acceptance.py's module docstring for the full
+        # honest-scope statement (a no-op on a night this job never reaches; dead
+        # if the run is cancelled before it — that class belongs to
+        # scripts/check_nightly_liveness.py and scripts/prophet_rescue.py, not
+        # this step). continue-on-error keeps a failure here from blocking the
+        # checkpoint/commit/publish steps that follow, exactly like every other
+        # Prophet step in this job — a failure still reaches the job's overall
+        # conclusion via the step's own nonzero exit plus the ::error annotation,
+        # which is what pages through GitHub's own check-run surface.
+        continue-on-error: true
+        timeout-minutes: 5
+        env:
+          PYTHONUNBUFFERED: "1"
+        run: |
+          python3 -m scripts.prophet_board_acceptance --run-id "${GITHUB_RUN_ID}"
       - name: checkpoint Prophet outputs to main (durable before engine tail)
         id: prophet_checkpoint
         if: steps.prophet_nightly.outputs.succeeded == 'true'

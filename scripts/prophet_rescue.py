@@ -639,6 +639,46 @@ def intake_eligible(index: dict | None) -> int | None:
     return value if isinstance(value, int) and not isinstance(value, bool) else None
 
 
+def intake_identity_breach(intake: object) -> str | None:
+    """Breach reason(s) from ``index["intake"]``, or None when healthy/absent.
+
+    PR-1 (Prophet US permanence net, 2026-08-27). DELIBERATELY DUPLICATED in
+    scripts/freshness_sentinel.py, scripts/check_nightly_liveness.py, and
+    scripts/prophet_board_acceptance.py rather than imported from one shared
+    module — this permanence net's whole point is a SECOND, INDEPENDENT
+    failure domain per instrument, and a bug in one shared copy of this
+    ~10-line predicate would blind all four watchdogs identically. Keep the
+    four copies in semantic lockstep by hand.
+
+    An entirely absent/non-dict ``intake`` ABSTAINS (returns None): this
+    predicate is also exercised against tests/test_prophet_rescue.py fixtures
+    that predate the field and exist to test unrelated decide() behavior.
+    """
+    if not isinstance(intake, dict):
+        return None
+    reasons: list[str] = []
+    if "lossless" in intake and intake.get("lossless") is not True:
+        reasons.append(f"intake.lossless={intake.get('lossless')!r} (must be true)")
+    unaccounted = intake.get("unaccounted")
+    if (
+        isinstance(unaccounted, int)
+        and not isinstance(unaccounted, bool)
+        and unaccounted != 0
+    ):
+        reasons.append(f"intake.unaccounted={unaccounted} (must be 0)")
+    eligible = intake.get("eligible_after_skips")
+    originated = intake.get("originated")
+    if (
+        isinstance(eligible, int) and not isinstance(eligible, bool) and eligible > 0
+        and isinstance(originated, int) and not isinstance(originated, bool)
+        and originated == 0
+    ):
+        reasons.append(
+            f"intake.eligible_after_skips={eligible} but intake.originated=0"
+        )
+    return "; ".join(reasons) if reasons else None
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # the pure decision core
 # ─────────────────────────────────────────────────────────────────────────────
@@ -864,15 +904,36 @@ def decide(state: WatchdogState) -> list[Action]:
     # nothing: the refusal is in the selection code or in the vintage gate. This is
     # 2026-08-13's shape — publish green, asof advanced, `source_mixed_vintage: true`,
     # `gate_go: false`, zero plans originated.
-    if data_current and cohort == 0 and (eligible or 0) > 0:
+    #
+    # PR-1 (Prophet US permanence net, 2026-08-27) EXTENDS this same NO_COHORT
+    # verdict — deliberately not a new verdict name — with the intake-identity
+    # predicate: a store can be `data_current` with a non-empty cohort and STILL
+    # be lying about its own bookkeeping (lossless=false, unaccounted>0, or the
+    # eligible-but-zero-originated shape counted a different way than the raw
+    # cohort/eligible comparison above catches, e.g. when `cohort` itself is
+    # miscounted). The `data_current` precondition is unchanged.
+    intake_breach = intake_identity_breach(
+        state.main_index.get("intake") if isinstance(state.main_index, dict) else None
+    )
+    empty_cohort = cohort == 0 and (eligible or 0) > 0
+    if data_current and (empty_cohort or intake_breach):
+        reasons: list[str] = []
+        if empty_cohort:
+            reasons.append(
+                f"ZERO plans carry recorded_at={session.isoformat()} while intake "
+                f"reports eligible_after_skips={eligible}"
+            )
+        if intake_breach:
+            reasons.append(f"intake identity check failed: {intake_breach}")
         actions.append(Action(
             ALERT, NO_COHORT,
-            f"source_asof is current ({src.isoformat() if src else '?'}) but ZERO "
-            f"plans carry recorded_at={session.isoformat()} while intake reports "
-            f"eligible_after_skips={eligible}. The store advanced and origination "
-            "still produced nothing — a selection/vintage-gate wedge, not a missing "
-            "bake. A re-dispatch cannot fix code, so this alerts only. Read "
-            "`source_mixed_vintage` and `gate_go` in the index.",
+            f"source_asof is current ({src.isoformat() if src else '?'}) but "
+            + "; and ".join(reasons)
+            + ". The store advanced and origination still produced nothing or lied "
+            "about its own bookkeeping — a selection/vintage-gate wedge or a "
+            "bookkeeping defect, not a missing bake. A re-dispatch cannot fix "
+            "either, so this alerts only. Read `source_mixed_vintage` and "
+            "`gate_go` in the index.",
         ))
 
     # ── publish lag: main is the truth, the health receipt only proves publication ──
@@ -1371,6 +1432,20 @@ def receipt(actions: list[Action], state: WatchdogState, session: date,
             )
     lines += ["", "**Verdicts**"]
     lines += [f"- `{a.verdict}` ({a.kind}) — {a.message}" for a in actions]
+    if any(a.verdict in (STALE, STRAND) for a in actions):
+        # PR-1 item 3e triage line. ci-recovery-bootstrap-freeze-2026-08-15 froze
+        # every Prophet board for three days on a repository ruleset that GH013'd
+        # even the nightly's own bot pushes while the engine kept building green
+        # — the exact shape a STALE/STRAND verdict here cannot distinguish from an
+        # engine defect on its own. Naming the check is cheap and saves a human
+        # from re-diagnosing the same postmortem from scratch.
+        lines.append(
+            "- ⚠ if the engine job itself reads GREEN but pushes are failing, "
+            "check `gh api repos/{owner}/{repo}/rulesets` FIRST — a repository "
+            "ruleset freeze (GH013, org-admin-only bypass, no DEC record) can 403 "
+            "every push while every job stays green "
+            "(research/PROPHET_OUTAGE_2026_08_17_POSTMORTEM.md)."
+        )
     if results:
         lines += ["", "**Actions taken**"] + [f"- {r}" for r in results]
     verdict_set = ",".join(sorted({a.verdict for a in actions if a.loud})) or "NONE"
