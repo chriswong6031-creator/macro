@@ -1430,6 +1430,7 @@ def _set_unit(
     known_excluded_row_count: int = 0,
     quarantined_unknown_row_count: int = 0,
     witness_missing_row_count: int = 0,
+    namechange_only_row_count: int = 0,
     unmatched_master_row_count: int = 0,
     revised_key_count: int = 0,
     partition: Path | None = None,
@@ -1462,6 +1463,11 @@ def _set_unit(
         # landed_a_row_count above, never a fourth term in the source-row
         # equation and never a completion gate (C3).
         "witness_missing_row_count": int(witness_missing_row_count),
+        # Sol RETURN-GATE 10B -- exact mirror of witness_missing_row_count
+        # above, for the namechange endpoint: telemetry only, a SUBSET of
+        # landed_a_row_count, never a fourth term in the source-row equation
+        # and never a completion gate.
+        "namechange_only_row_count": int(namechange_only_row_count),
         "source_accounting_complete": source_accounting_complete,
         "unmatched_master_row_count": int(unmatched_master_row_count),
         "revised_key_count": int(revised_key_count),
@@ -2479,6 +2485,7 @@ def normalise_name_history(
     if not required.issubset(frame.columns) and not frame.empty:
         raise SpineError(f"namechange missing columns {sorted(required - set(frame.columns))}")
     rows: list[dict[str, Any]] = []
+    row_sources: list[tuple[int, Mapping[str, Any]]] = []
     excluded: list[dict[str, Any]] = []
     unknown: list[dict[str, Any]] = []
     for ordinal, item in enumerate(frame.to_dict(orient="records")):
@@ -2494,29 +2501,97 @@ def normalise_name_history(
                 expected_date=expected_date,
             ))
             continue
-        if ident is None or ident.ticker not in known_a:
+        # DEC:CNLI-HISTORICAL-PIT-IS-SOURCE-UNION -- Sol RETURN-GATE 10B: a valid
+        # namechange row is itself sufficient source evidence of a historical
+        # listing-key/name observation; it does not additionally require a
+        # contemporary stock_basic/bak_basic/PIT witness merely to EXIST in the
+        # name-history plane.  `known_a` membership used to do double duty as
+        # both that witness check AND the only thing keeping non-A-share
+        # identities out of the A-share name plane.  This split (mirrors C1 in
+        # normalise_bak_basic) keeps the scope gate below while removing the
+        # witness gate; witness membership becomes row-level telemetry (N2)
+        # instead of a landing precondition.
+        if ident is None:
             unknown.append(_classified_source_row(
                 item, ordinal=ordinal, classification="quarantined_unknown",
-                classification_source="namechange_absent_from_A_universe_witness",
+                classification_source="namechange_unparseable_ts_code",
+                expected_date=expected_date,
+            ))
+            continue
+        if not _is_a_share_identity(ident):
+            unknown.append(_classified_source_row(
+                item, ordinal=ordinal, classification="quarantined_unknown",
+                classification_source="namechange_non_a_share_identity",
                 expected_date=expected_date,
             ))
             continue
         name = str(item.get("name") or "")
+        effective_from = _iso(item.get("start_date"))
+        effective_to = _iso(item.get("end_date"))
+        # N3 -- a contradictory lifecycle interval is a row-level source defect,
+        # fail-closed by quarantine (not a frame-level raise) so the accounting
+        # equation stays balanced.
+        if (
+            effective_from is not None
+            and effective_to is not None
+            and _parse_date(effective_to) < _parse_date(effective_from)
+        ):
+            unknown.append(_classified_source_row(
+                item, ordinal=ordinal, classification="quarantined_unknown",
+                classification_source="namechange_contradictory_lifecycle_interval",
+                expected_date=expected_date,
+            ))
+            continue
         rows.append({
             **_identity_columns(ident),
             "name": name,
-            "effective_from": _iso(item.get("start_date")),
-            "effective_to": _iso(item.get("end_date")),
+            "effective_from": effective_from,
+            "effective_to": effective_to,
             "announced_date": _iso(item.get("ann_date")),
             "change_reason": str(item.get("change_reason") or ""),
             "is_st_name": is_st_name(name),
             "st_provenance": "namechange_name_inference_partial",
             "source": "tushare.namechange",
+            # N2 -- corroboration disposition; metadata only, deliberately NOT
+            # part of KEY_COLUMNS["name_history"] (the key is the observation
+            # identity, not its corroboration state).
+            "source_disposition": (
+                "externally_corroborated" if ident.ticker in known_a else "namechange_only"
+            ),
         })
+        row_sources.append((ordinal, item))
+
+    # N4 -- CORRECTED 2026-08-27: an unresolved same-key name conflict is the
+    # explicit-conflict/quarantine disposition, not a frame-level raise -- a
+    # raise would leave the offending rows with no disposition at all and would
+    # kill the whole 35-year collection run instead of blocking one year-unit.
+    # Two rows sharing (ticker, effective_from) but asserting different `name`
+    # values are an unresolved source conflict; every row in that group moves
+    # to quarantine.  Rows that differ only in `announced_date` (a
+    # re-announcement of the same name) are NOT a conflict and are untouched.
+    names_by_key: dict[tuple[str, str | None], set[str]] = {}
+    for row in rows:
+        names_by_key.setdefault((row["ticker"], row["effective_from"]), set()).add(row["name"])
+    conflicting_keys = {key for key, names in names_by_key.items() if len(names) > 1}
+    if conflicting_keys:
+        kept_rows: list[dict[str, Any]] = []
+        kept_sources: list[tuple[int, Mapping[str, Any]]] = []
+        for row, (ordinal, item) in zip(rows, row_sources):
+            if (row["ticker"], row["effective_from"]) in conflicting_keys:
+                unknown.append(_classified_source_row(
+                    item, ordinal=ordinal, classification="quarantined_unknown",
+                    classification_source="namechange_conflicting_names_same_effective_from",
+                    expected_date=expected_date,
+                ))
+            else:
+                kept_rows.append(row)
+                kept_sources.append((ordinal, item))
+        rows, row_sources = kept_rows, kept_sources
+
     columns = [
         "security_id", "ticker", "source_ts_code", "exchange", "board", "name",
         "effective_from", "effective_to", "announced_date", "change_reason",
-        "is_st_name", "st_provenance", "source",
+        "is_st_name", "st_provenance", "source", "source_disposition",
     ]
     out = pd.DataFrame(rows, columns=columns)
     if not out.empty and _duplicates(out, KEY_COLUMNS["name_history"]):
@@ -2943,6 +3018,7 @@ class TushareAShareSpineCollector:
         known_excluded_row_count: int = 0,
         quarantined_unknown_row_count: int = 0,
         witness_missing_row_count: int = 0,
+        namechange_only_row_count: int = 0,
         unmatched_master_row_count: int = 0,
         collection_method: str = "whole_market",
         generation_id: str | None = None,
@@ -2955,6 +3031,7 @@ class TushareAShareSpineCollector:
             row_count=row_count, known_excluded_row_count=known_excluded_row_count,
             quarantined_unknown_row_count=quarantined_unknown_row_count,
             witness_missing_row_count=witness_missing_row_count,
+            namechange_only_row_count=namechange_only_row_count,
             unmatched_master_row_count=unmatched_master_row_count,
             collection_method=collection_method, generation_id=generation_id,
         )
@@ -3323,14 +3400,27 @@ class TushareAShareSpineCollector:
             self._replace_source_classifications("namechange", segment_end, normal)
             path = _name_partition(self.store, year)
             _atomic_parquet(path, normal.landed_a)
+            # N5 -- Sol RETURN-GATE 10B: telemetry only, a SUBSET of landed_a,
+            # never a fourth term in the source-row equation.
+            namechange_only_row_count = int((
+                normal.landed_a.get("source_disposition", pd.Series(dtype=str))
+                == "namechange_only"
+            ).sum())
             if not normal.quarantined_unknown.empty:
+                # N6 -- renamed from namechange_orphans_absent_from_A_universe_witness:
+                # after N1 that reason is factually wrong, quarantine no longer
+                # means "absent from witness" (a witness-absent row now lands as
+                # namechange_only). Quarantine now means an unresolved row-level
+                # source disposition (unparseable code, non-A identity,
+                # contradictory lifecycle interval, or a same-key name conflict).
                 self._mark_failed(
-                    "namechange", unit, "namechange_orphans_absent_from_A_universe_witness",
+                    "namechange", unit, "namechange_unresolved_source_dispositions",
                     request_receipts=[response.receipt], source_row_count=len(frame),
                     row_count=len(normal.landed_a),
                     known_excluded_row_count=len(normal.known_excluded),
                     quarantined_unknown_row_count=len(normal.quarantined_unknown),
                     unmatched_master_row_count=len(normal.quarantined_unknown),
+                    namechange_only_row_count=namechange_only_row_count,
                 )
                 continue
             if normal.landed_a.empty:
@@ -3338,6 +3428,7 @@ class TushareAShareSpineCollector:
                     self.state, self.store, "namechange", unit, status="empty",
                     observed_at=self.observed_at, source_row_count=len(frame),
                     known_excluded_row_count=len(normal.known_excluded),
+                    namechange_only_row_count=namechange_only_row_count,
                     partition=path, request_receipts=[response.receipt],
                 )
                 continue
@@ -3346,6 +3437,7 @@ class TushareAShareSpineCollector:
                 observed_at=self.observed_at, row_count=len(normal.landed_a),
                 source_row_count=len(frame),
                 known_excluded_row_count=len(normal.known_excluded),
+                namechange_only_row_count=namechange_only_row_count,
                 unmatched_master_row_count=0, revised_key_count=0, partition=path,
                 request_receipts=[response.receipt],
             )
@@ -5012,6 +5104,32 @@ def build_completeness_manifest(
     )
     session_receipt = _file_receipt(sessions_path, store, ["trade_date"])
     name_history_partitions, name_history_rows, name_history_semantic = _name_history_receipts(store)
+    # N9 -- Sol RETURN-GATE 10B: telemetry only (never a threshold/gate). Every
+    # source row lands with exactly one disposition (N2); this is the store-wide
+    # count and rate of the namechange_only disposition across all landed
+    # name_history rows.
+    name_history_namechange_only_row_count = 0
+    for _name_history_path in sorted((store / "name_history").glob("year=*.parquet")):
+        _name_history_frame = _read_parquet_strict(_name_history_path)
+        if "source_disposition" not in _name_history_frame.columns:
+            # FAIL CLOSED, never skip. After Sol RETURN-GATE 10B every landed row
+            # carries exactly one disposition, so a partition without the column
+            # is a pre-ruling artifact and a schema contradiction. Skipping it
+            # would silently DILUTE the rate -- name_history_row_count counts its
+            # rows in the denominator while the numerator ignores them -- and a
+            # quietly wrong telemetry number is worse than none, because the
+            # whole point of the telemetry clause is that omission stays visible.
+            raise SpineError(
+                "name_history partition predates the source-disposition law and "
+                f"cannot be reconciled: {_name_history_path.name}"
+            )
+        name_history_namechange_only_row_count += int((
+            _name_history_frame["source_disposition"] == "namechange_only"
+        ).sum())
+    name_history_external_witness_missing_rate = (
+        name_history_namechange_only_row_count / name_history_rows
+        if name_history_rows else 0.0
+    )
     state_receipt = _json_file_receipt(store / "collection_state.json", store)
     request_receipts = _request_receipts_summary(store)
     provenance = _collector_provenance()
@@ -5080,6 +5198,8 @@ def build_completeness_manifest(
             "name_history_partitions": name_history_partitions,
             "name_history_row_count": name_history_rows,
             "name_history_semantic_sha256": name_history_semantic,
+            "name_history_namechange_only_row_count": name_history_namechange_only_row_count,
+            "name_history_external_witness_missing_rate": name_history_external_witness_missing_rate,
         },
         "endpoints": endpoint_receipts,
         "range_campaigns": range_campaigns,
@@ -5128,6 +5248,24 @@ def build_completeness_manifest(
                     "proves historical trading."
                 ),
                 "contract": TUSHARE_BAK_BASIC_DOC_URL,
+            },
+            "name_history": {
+                # N9 -- Sol RETURN-GATE 10B (DEC:CNLI-HISTORICAL-PIT-IS-SOURCE-UNION
+                # sibling, applied to the name-history plane).
+                "source": "tushare.namechange",
+                "reconciliation_law": (
+                    "name history is a source-assertion plane; a valid namechange "
+                    "row is sufficient source evidence of the observation and "
+                    "needs no external witness to exist. Every source row "
+                    "carries exactly one deterministic disposition -- "
+                    "externally_corroborated, namechange_only, or quarantined "
+                    "conflict. Completeness requires every source row "
+                    "deterministically reconciled with zero unresolved "
+                    "conflicts, NOT 100% external corroboration. A "
+                    "namechange_only observation grants no PIT membership, "
+                    "trading, exact-event, canonical-identity, rank or score "
+                    "authority."
+                ),
             },
             "source_row_accounting": {
                 "equation": "source_rows = landed_A_rows + known_excluded_rows + quarantined_unknown_rows",

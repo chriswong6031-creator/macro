@@ -220,6 +220,58 @@ waves:
       name; no gate-constant edit without reviewed technical evidence; no
       public redistribution of raw vendor data.
       DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT untouched.
+      RETURN-GATE 10 SHIPPED 2026-08-27 (PR #6486, squash a636c7bcefdb): the
+      source-union ruling is merged and PROVEN on the live vendor -- bak_basic
+      20240102 went from failed to status=complete at 5344 = 5344 + 0 + 0,
+      quarantine 0 where it was 2, witness_missing_row_count 2, with 300114.SZ
+      and 603361.SS landing flagged. pit_universe, name_history, daily and
+      daily_basic all executed against TuShare for the first time. Follow-up PR
+      #6494 (squash fab40e11940c) fixed DSC:CNLI-STK-LIMIT-ZERO-PRE-CLOSE-SENTINEL,
+      the vendor's second zero-as-null spelling: stk_limit publishes rows for
+      non-trading instruments with pre_close 0, which raised and destroyed a
+      whole unit's accounting (3,466 source rows, 0 landed). Sentinel is scoped to
+      stk_limit only, and its load-bearing half is a fail-open GUARD -- the
+      daily/stk_limit previous-close cross-check compares only rows where both
+      values are non-null, so nulling a zero would have silently dropped that
+      ticker from the audit; every positive-volume daily row must now have a
+      non-null stk_limit.pre_close or the substrate raises.
+      SOL RULED return-gate 10B on 2026-08-27
+      (DEC:CNLI-NAMECHANGE-IS-ITS-OWN-SOURCE-AUTHORITY): a valid namechange row
+      is ITSELF sufficient source evidence and needs no external witness to exist
+      in the name-history plane. External-witness-as-completeness is replaced by
+      deterministic row disposition -- externally corroborated, NAMECHANGE_ONLY,
+      or explicit conflict/quarantine. NAMECHANGE_ONLY is TERMINAL SOURCE
+      COMPLETENESS with ZERO PIT membership, trading, exact-event,
+      canonical-identity, rank or score authority. No pre-2016 special case and
+      the witness-missing percentage is NOT an admission threshold; row by row
+      across the frozen epoch, rate is telemetry. Manifest complete now requires
+      all source rows deterministically reconciled with zero unresolved
+      conflicts, NOT 100% external corroboration. EXECUTION FINDINGS: (1)
+      name_history is a LEAF -- nothing reads store/name_history but its own
+      receipt builder, so unlike the PIT case there is no second-stage filter to
+      repair; the zero-authority clause is pinned by a negative proof that a
+      namechange-only ticker never enters _all_known_a_tickers, which is the
+      inversion that would otherwise let a name assertion bootstrap universe
+      membership. (2) TWO of the four fail-closed conditions Sol required to be
+      PRESERVED did not exist and had to be BUILT: normalise_name_history carried
+      no lifecycle-interval validation at all, and because KEY_COLUMNS
+      ['name_history'] includes `name`, two rows asserting different names
+      effective the same day did not trip the duplicate check. The single
+      compound witness condition had been masking both, so removing it without
+      building them would have turned a fail-closed plane fail-open while
+      appearing to preserve fail-closed behaviour. (3) known_a membership was
+      also doing double duty as the only A-share scope filter, so an explicit
+      _is_a_share_identity gate replaces that half. BULK READINESS (Sol 10B): a
+      clean canary is NOT required to exercise the ticker-range campaign, since
+      that capability is deliberately held behind BULK_HISTORICAL_BACKFILL_READY;
+      exact-head canary plus range-shard ADVERSARIAL TESTS may justify the
+      separate technical readiness PR, and the first post-promotion bounded range
+      execution is its production proof. DEP-EXACT stays OPEN until the complete
+      range campaign and the sanitized completeness manifest. Note the row cap is
+      already binding on recent sessions: stk_limit returned >=5,800 rows for a
+      2024 session against a 6,000 cap that daily/daily_basic cleared only
+      narrowly, so the range campaign is REQUIRED for recent dates, not an
+      optimisation.
   - id: DEP-ID-ELIG
     title: Canonical China identity, PIT membership, eligibility overlay
     status: todo

@@ -99,3 +99,18 @@ widen a ruling to a dependency it did not address.
 
 Sibling: `DSC:CNLI-BAK-BASIC-PIT-ROWS-ABSENT-FROM-STOCK-BASIC-WITNESS`, the
 post-2016 case that produced the decision.
+
+## RULED — see `DEC:CNLI-NAMECHANGE-IS-ITS-OWN-SOURCE-AUTHORITY` (2026-08-27)
+
+Sol answered the escalation by removing the witness dependency entirely rather
+than extending the witness backwards. A valid `namechange` row is now its own
+sufficient source evidence; it lands as `NAMECHANGE_ONLY` with zero PIT,
+trading, exact-event, canonical-identity, rank or score authority.
+
+Two framings in this record were superseded by that ruling and are retained only
+as the reasoning that led to it. Sol explicitly refused BOTH an era-scoped
+exception and any use of the measured rate as an admission threshold, so the
+closing advice here to "scope any ruling to the RATE, not to the era" was
+answered by scoping it to NEITHER — the rule applies row by row, and the rate is
+telemetry. The 0.09% measurement stands as a factual observation of how rare the
+condition is; it carries no admission authority.

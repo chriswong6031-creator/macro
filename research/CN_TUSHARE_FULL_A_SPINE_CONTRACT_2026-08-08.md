@@ -42,7 +42,7 @@ All links are primary TuShare or exchange documentation checked 2026-08-08/09.
 | `bse_mapping` | <https://tushare.pro/document/2?doc_id=375> | Old BJ aliases must map to a canonical `920xxx.BJ` code; 1,000 cap. |
 | `trade_cal` | <https://tushare.pro/document/2?doc_id=26> | Exact exchange/range/day response; SSE and SZSE must have identical open-session sets. |
 | `bak_basic` | <https://tushare.pro/document/2?doc_id=262> | Exact-date historical stock-list witness from 2016; 7,000 cap. Pre-2016 stays an explicit gap. |
-| `namechange` | <https://tushare.pro/document/2?doc_id=100> | Active year is refreshed to the actual end-date anchor; announcement dates must stay inside the request; orphans block. |
+| `namechange` | <https://tushare.pro/document/2?doc_id=100> | Active year is refreshed to the actual end-date anchor; announcement dates must stay inside the request. A valid row is its own source evidence and lands with or without an external witness; only malformed keys, non-A identities, contradictory lifecycle intervals and unresolved same-day name conflicts block. |
 | `daily` | <https://tushare.pro/document/2?doc_id=27> | Direct unadjusted nominal OHLCV, exact date, 6,000 cap; on cap the endpoint's requested interval switches to the bounded ticker×date-range campaign (amended 2026-08-13), correctness-tested synthetically and still gated. |
 | `daily_basic` | <https://tushare.pro/document/2?doc_id=32> | Exact date/ticker; 6,000 cap; `limit_status` domain 0–6 and close/limit semantics are audited. |
 | `stk_limit` | <https://tushare.pro/document/2?doc_id=183> | Exact source pre-close/up/down limits; 5,800 cap; non-A rows require independent exclusion or quarantine. |
@@ -135,6 +135,28 @@ reach). That is access observation, not compliance adjudication.
 - PIT-only listing keys **propagate into downstream historical source
   acquisition, including `name_history`**, so the same survivorship filter is not
   recreated one stage later.
+- **A valid `namechange` row is its own sufficient source evidence**
+  (`DEC:CNLI-NAMECHANGE-IS-ITS-OWN-SOURCE-AUTHORITY`, Sol 2026-08-27). It needs no
+  contemporary `stock_basic`, `bak_basic`, PIT or other external witness merely to
+  EXIST in the name-history plane — the PIT witness only reaches back to
+  2016-01-01, so requiring corroboration would restore the current snapshot as
+  sole authority for every earlier row. Every source row instead carries exactly
+  one deterministic disposition: **externally corroborated**, **`NAMECHANGE_ONLY`**,
+  or **explicit conflict/quarantine**.
+- `NAMECHANGE_ONLY` counts as **terminal source completeness** and grants **zero
+  PIT membership, positive-volume trading, exact-event, canonical-identity, rank
+  or score authority**. Name history is a leaf: nothing reads it but its own
+  receipt builder, and a namechange-only ticker must never enter
+  `_all_known_a_tickers` — otherwise a name assertion would bootstrap itself into
+  the universe membership this law denies it.
+- The rule applies **row by row across the frozen epoch**. Pre-2016 is not
+  special-cased and the witness-missing percentage is **not an admission
+  threshold**; the rate is telemetry. Malformed keys, contradictory lifecycle
+  intervals, incomplete responses and unresolved source conflicts stay
+  fail-closed.
+- Completeness of the name-history plane therefore requires **all source rows
+  deterministically reconciled with zero unresolved conflicts — not 100% external
+  corroboration**.
 - Completeness remains fail-closed for malformed or conflicting keys, incomplete
   source responses, unresolved source contradictions (including a PIT row whose
   master lifecycle window contradicts the observed trade date), positive-volume
