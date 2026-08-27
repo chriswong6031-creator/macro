@@ -44,18 +44,20 @@ waves:
       pickup was 2 seconds and decisive-green-to-merge was 28 seconds.
   - id: W2
     title: Guarded M1 three-listener diagnostic restoration
-    status: in_progress
+    status: done
     depends_on: [M0]
     next_action: >
-      The terminal 12-hour listener soak is accepted from the Aug-21 receipt: 73
-      hourly samples, all three exact listener identities, zero ENOSPC and terminal
-      completion. Finish the reversible fixed-set storage recovery through qualified
-      TerraMaster scratch and require at least 200 GiB free plus below 85 percent used
-      before closing W2. The fresh 2026-08-26 census shows about 99 GiB free on
-      the M1 root and 509 GiB free on its Theta-bearing STORAGE volume; the M2-attached
-      TerraMaster remains healthy with about 3.9 TB free but is unencrypted/noowners
-      scratch only. ThetaTerminal and the existing Theta/options/research launchd
-      estate remain live. full_work_allowed remains false, so W4 stays blocked.
+      W2 closed 2026-08-26. The accepted soak contains 73 hourly samples, 219
+      exact listener observations, zero identity mismatch and zero ENOSPC. Three
+      orphan archives moved recoverably to qualified non-secret scratch, and eight
+      live-tree Git metadata directories moved to /Volumes/STORAGE through verified
+      symlinks. M1 root now has 211,257,392 KiB (201 GiB) available at 52 percent
+      used; /Volumes/STORAGE has 395,854,256 KiB (378 GiB) available at 60 percent
+      used. Every moved repository resolves its Git directory, the ThetaData store
+      was not moved, ThetaTerminal retained ports 25503/25520, and the live
+      Theta/options/research launchd estate was drained and restored. Closure receipt:
+      PR #6372 comment 5432407328. This closes storage recovery only; it does not
+      authorize generic macstudio or a broad M1 CI lane.
   - id: W3
     title: PC render recovery and default full-render cutover
     status: done
@@ -67,15 +69,22 @@ waves:
       and the M2 as rollback-only; do not reopen W3 absent new production evidence.
   - id: W4
     title: Bounded M1 production-capacity return
-    status: todo
+    status: in_progress
     depends_on: [W2]
     next_action: >
-      Census every current macstudio consumer and its memory/local-capability envelope,
-      then admit one explicitly selected safe production lane through m1-nightly and
-      restore theta-m1 only on the proven store-bearing listener. Do not add the generic
-      macstudio label to the M1 in this wave. The first selected candidate is daily.yml
-      collect_tail because it is Theta-store-bearing and historically M1-specific;
-      canary its actual disk/memory envelope before restoring only theta-m1.
+      Read-only host/workflow census is complete; production admission is not yet
+      safe. The only eligible lane remains daily.yml collect_tail on exactly
+      actions-runner-2/m1-nightly-2 with a new theta-m1 capability. Current M1 has
+      zero live listeners; its admission bytes are stale and refuse collect_tail;
+      OptionsHub was measured at 9-14 GiB RSS with host load near 5.7 and 4.45 GiB
+      swap used; and 201.3 GiB root free leaves only 1.3 GiB over the hard floor.
+      Require either 225 GiB free before first full-work admission or an exact cold
+      checkout/peak receipt proving a lower reserve. Then land one bounded carrier,
+      use full job-start disk/resource admission, add only daily.yml@main to the
+      existing selected-workflow group, route only collect_tail to group
+      macro-home-canary plus label theta-m1, and prove one natural run below 170
+      minutes with Theta ports/store identity and production coexistence intact.
+      Generic macstudio remains forbidden; no broad CI/render capability may be added.
   - id: W5
     title: Retire obsolete M2 roles and add live fleet health projection
     status: todo
@@ -126,6 +135,11 @@ landmines:
     the 32-GB M1 it is forbidden until a separate current-consumer/resource census proves
     every macstudio job is lawful there. See the M0 adversarial amendment.
   - >
+    Current main contains 49 literal generic macstudio jobs plus one dynamic pool
+    probe. The 2026-08-26 W4 census therefore reconfirmed generic macstudio as
+    rejected by design. A future M1 production change may admit only the exact
+    daily.yml:collect_tail theta-m1 tuple after its disk/runtime gates pass.
+  - >
     `render-linux` being declared in runner-policy does not prove it is online; the
     registry is static operator-maintained state. Re-prove current PC liveness.
   - >
@@ -134,10 +148,11 @@ landmines:
     do not widen W3's route-only cutover into those liveness fields.
   - >
     Merging a new root-owned admission tuple does not deploy it to a persistent PC
-    listener. Before the P3A proof dispatch, drain pc-ci-1/2/3, install the merged
-    ops/runner-host/common/runner_admission.py as
-    /usr/local/libexec/runner_admission.py on every root, and re-read identical hashes
-    plus allowed/hostile decisions. Never dispatch against mixed admission bytes.
+    listener. P3A deployed identical admission hash
+    e4ff74a96e9949a0ce4707e3fdb58cfffc251057d5e8c69a7309fe2871e11202 after
+    draining pc-ci-1/2/3 and re-proved allowed/hostile decisions. Repeat this exact
+    drain/deploy/re-read discipline for any future admission-byte change; never
+    dispatch against mixed admission bytes.
 do_not_redo:
   - >
     Do not buy hardware before restoring and measuring the existing M1/PC fleet; the
@@ -161,9 +176,14 @@ do_not_redo:
     is a two-source receipt: GitHub Actions run/job timing metadata plus the uniquely
     named run_id + run_attempt artifact containing job_started_at_observed.
 next_action: >
-  W3 is Sol-accepted and closed. Keep the overall workstream active: W2's terminal
-  listener soak is accepted, but M1 storage remains below the 200 GiB full-work floor
-  and W4 stays blocked on W2. TerraMaster is qualified only as non-secret scratch.
+  W3 is Sol-accepted and closed. Keep the overall workstream active: W2 is closed
+  from its accepted soak plus measured storage recovery above the 200 GiB root floor.
+  TerraMaster remains qualified only as non-secret scratch. W4 is now a bounded
+  capability admission for at most one theta-m1 lane; its read-only census is done,
+  but current 201.3 GiB free space, zero listeners, stale guard bytes and collect_tail
+  runtime tail make production admission unsafe today. Recover a 225 GiB start floor
+  or prove a lower exact peak before the one-root canary. Generic macstudio remains
+  forbidden.
   The M2 temporary-pack incident is recovered with 303.6 GB unallocated and zero Git
   garbage; measure the producer before extending the existing runner lifecycle.
   The private-readiness baseline in
@@ -177,13 +197,16 @@ next_action: >
   fafe8d7ee775f8b60a0229c085fb7aee6d4349e7); P0R MERGED and baseline-green;
   P1 ACCEPTED on pc-ci-1; P2/P2R ACCEPTED with three concurrent PC CI slots,
   independent render reservation, exact hosted/self-hosted fragment parity and a
-  safe resource envelope. P3A main-defined executor is BUILT_NOT_PROVEN and keeps
-  production_enabled=false; its merge, selected-workflow server mutation, drained
-  three-root admission deployment and one real dispatch proof remain outstanding.
+  safe resource envelope. P3A main-defined executor merged through PR #6481 and
+  keeps production_enabled=false. Its selected-workflow server mutation and drained
+  three-root admission deployment are complete. First dispatch 33024021850 exposed
+  candidate-control displacement before PC pickup; P3A-R freezes the main-owned
+  control bundle and must pass before one repaired dispatch proof.
   P3B production route and P4 natural PR proofs are NOT_BUILT. Macro private
   visibility mutation remains HOLD. Live accepted PC identities are pc-ci-1/2/3
-  plus an independent pc-render lane; the M1 has no CI listener and remains reserved
-  for its live Theta/options/research estate pending W2 storage closure and W4.
+  plus an independent pc-render lane; the M1 has no generic CI listener and remains
+  reserved for its live Theta/options/research estate while W4 measures one possible
+  capability-specific theta-m1 lane.
 ---
 
 ## Current incident
