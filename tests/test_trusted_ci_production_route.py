@@ -158,6 +158,22 @@ def test_p3bb_called_pack_does_not_pretend_job_env_reaches_the_pre_job_hook() ->
     assert "env" not in job
 
 
+def test_p3bb_runtime_called_workflow_ref_uses_resolved_main_ref() -> None:
+    trust = workflow("trusted-ci-executor.yml")["jobs"]["trust-gate"]
+    admit = named_step(
+        trust, "admit direct dispatch or exact main-called same-repository PR"
+    )
+    script = admit["run"]
+    assert (
+        'called_workflow_ref="$REPOSITORY/.github/workflows/'
+        'trusted-ci-executor.yml@refs/heads/main"'
+    ) in script
+    assert (
+        'called_workflow_ref="$REPOSITORY/.github/workflows/'
+        'trusted-ci-executor.yml@main"'
+    ) not in script
+
+
 def test_p3bb_route_contract_is_named_by_the_legacy_manifest() -> None:
     manifest = yaml.safe_load(
         (ROOT / ".github" / "ci" / "legacy-jobs.yml").read_text(encoding="utf-8")
