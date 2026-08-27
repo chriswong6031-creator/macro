@@ -13,21 +13,18 @@
   },
   "meituan": {
     "date": "2026-08-27",
-    "rows": 86,
-    "status": "ok",
-    "ticker": "3690.HK"
+    "rows": 0,
+    "status": "empty"
   },
   "xiaomi": {
     "date": "2026-08-27",
-    "rows": 86,
-    "status": "ok",
-    "ticker": "1810.HK"
+    "rows": 0,
+    "status": "empty"
   },
   "baidu": {
     "date": "2026-08-27",
-    "rows": 86,
-    "status": "ok",
-    "ticker": "9888.HK"
+    "rows": 0,
+    "status": "empty"
   },
   "jdcom": {
     "date": "2026-08-27",
@@ -42,8 +39,7 @@
   },
   "smic": {
     "date": "2026-08-27",
-    "rows": 86,
-    "status": "ok",
-    "ticker": "0981.HK"
+    "rows": 0,
+    "status": "empty"
   }
 }

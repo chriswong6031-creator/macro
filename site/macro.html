@@ -1955,7 +1955,7 @@
 
 
 
-<div class="panel span12 gde-band" id="risk-envelope-band" data-bundle-id="add670acab651341" data-settled-session="2026-08-26">
+<div class="panel span12 gde-band" id="risk-envelope-band" data-bundle-id="b16e1a21622b12b2" data-settled-session="2026-08-26">
 
   <div class="gde-head">
     <div>
@@ -1981,8 +1981,8 @@
   
   <p class="gde-lead">
     
-      <span class="l-en"><b>No — they disagree.</b> The trend read and the damage read point opposite ways. Both are shown, unchanged.</span>
-      <span class="l-zh"><b>不一致。</b>趋势判读与损伤判读方向相反。两者原样并列，未做平均。</span>
+      <span class="l-en"><b>Not fully.</b> One read can't be made cleanly today. What we can see is shown below, unchanged.</span>
+      <span class="l-zh"><b>并不完全一致。</b>今日有一项无法干净判读，可见部分原样列于下方，未做平均。</span>
     
   </p>
 
@@ -1990,27 +1990,24 @@
   <div class="gde-reads is-split">
 
     
-    <div class="gde-read" style="--gde-c: var(--ink-up)">
+    <div class="gde-read" style="--gde-c: var(--prov-ink)">
      <div class="gde-row">
       <span class="gde-q"><span class="l-en">Is the trend still there?</span><span class="l-zh">趋势还在吗？</span></span>
       <p class="gde-a">
         
-          <span class="l-en">Risk-on</span><span class="l-zh">风险偏好</span
-          ><span
-            class="gde-arr" aria-hidden="true">▲</span>
+          <span class="l-en">Can't read it today</span><span class="l-zh">今日无法判读</span>
         
       </p>
       <p class="gde-c">
         
-          <span class="l-en">Slow trend read, carried unchanged from the score above —
-            <a class="gde-quote tnum" href="#regime-radar">76<span class="gde-outof">/100</span></a>.</span>
-          <span class="l-zh">慢速趋势判读，原样取自上方评分 —
-            <a class="gde-quote tnum" href="#regime-radar">76<span class="gde-outof">/100</span></a>。</span>
+          <span class="l-en">The trend source didn't settle for this session, so we're not quoting a stale one.</span>
+          <span class="l-zh">趋势来源本交易日未结算，因此不引用过期读数。</span>
         
       </p>
       
       
-      <span class="gde-clock tnum">2026-08-26</span>
+      <span class="gde-clock tnum">2026-08-26
+        <span class="gde-flag"><span class="l-en">· older than this session</span><span class="l-zh">· 早于本交易日</span></span></span>
      </div>
     </div>
 
@@ -2039,8 +2036,8 @@
       
       <details class="gde-disc">
         <summary>
-          <span class="l-en">Evidence — 3 sources, 2 disagreements</span>
-          <span class="l-zh">证据 — 3 个来源，2 处分歧</span>
+          <span class="l-en">Evidence — 3 sources, 1 disagreement</span>
+          <span class="l-zh">证据 — 3 个来源，1 处分歧</span>
         </summary>
         <div class="gde-disc-body">
           <div class="gde-tblwrap">
@@ -2058,7 +2055,7 @@
                   <td class="tnum">RISK_ON · 76</td>
                   <td class="tnum">2026-08-26</td>
                   <td>
-                    <span class="l-en">This session</span><span class="l-zh">本交易日</span>
+                    <span class="gde-warn"><span class="l-en">Older than this session</span><span class="l-zh">早于本交易日</span></span>
                      <span class="gde-req"><span class="l-en">required</span><span class="l-zh">必需</span></span>
                   </td>
                 </tr>
@@ -2092,11 +2089,6 @@
           <ul class="gde-conflicts">
             
             <li>
-              <span class="l-en">Market state reads <b>RISK_ON</b> while Leadership cohort reads <b>BROKEN</b>.</span>
-              <span class="l-zh">市场状态 读为 <b>RISK_ON</b>，而 龙头股群体 读为 <b>BROKEN</b>。</span>
-            </li>
-            
-            <li>
               <span class="l-en">Leadership cohort reads <b>BROKEN</b> while Cross-asset scares reads <b>calm</b>.</span>
               <span class="l-zh">龙头股群体 读为 <b>BROKEN</b>，而 跨资产风险扫描 读为 <b>calm</b>。</span>
             </li>
@@ -2105,9 +2097,9 @@
           
 
           <p class="gde-receipt tnum">
-            grey-deer-v1-2026-08-19 · bundle add670acab651341 ·
-            coverage FRESH ·
-            coherence CONTRADICTORY (scope market_reads) ·
+            grey-deer-v1-2026-08-19 · bundle b16e1a21622b12b2 ·
+            coverage DEGRADED ·
+            coherence MIXED (scope market_reads) ·
             stage FRAGILE (observed_settled_evidence) ·
             stage_since null (no_episode_lifecycle_in_v0) ·
             engine/risk_envelope.py
@@ -4800,8 +4792,8 @@
         
         
         <span class="plf-chip">
-          <span class="l-en">7 speeches this week</span>
-          <span class="l-zh">本周7次政策发声</span>
+          <span class="l-en">5 speeches this week</span>
+          <span class="l-zh">本周5次政策发声</span>
         </span>
         
       </div>
@@ -4833,11 +4825,11 @@
         
         <span class="mx5-ai-ticker-pill">QQQ</span>
         
+        <span class="mx5-ai-ticker-pill">XLF</span>
+        
         <span class="mx5-ai-ticker-pill">NVDA</span>
         
-        <span class="mx5-ai-ticker-pill">SPY</span>
-        
-        <span class="mx5-ai-ticker-pill">XLF</span>
+        <span class="mx5-ai-ticker-pill">CRM</span>
         
       </div>
       
@@ -4928,11 +4920,11 @@
           <div class="mx5-alert-content">
             <div class="mx5-alert-title">
               <span style="font-size:12px;margin-right:3px">📰</span>
-              <span class="l-en">Best Buy beats quarterly estimates and hikes its outlook, but stock falls</span>
-              <span class="l-zh">百思买季度业绩超预期并上调展望，但股价下跌</span>
+              <span class="l-en">Affirm posts strong Q4 results, issues healthy guidance amid consistent profitab…</span>
+              <span class="l-zh">Affirm公布强劲第四季度业绩，持续盈利下发布稳健指引</span>
             </div>
             <div class="mx5-alert-detail">
-              <span>CNBC - Stock Blog</span> · 
+              <span>Seeking Alpha - Market Currents</span> · 
               <span style="color:var(--mx5-warn-ink,#9c6212);font-weight:600"><span class="l-en">High impact</span><span class="l-zh">高影响</span></span>
             </div>
           </div>
@@ -7031,7 +7023,7 @@
         </div>
         <div class="plx-jaw-counts">
           <div class="plx-jaw-count-box">
-            <div class="plx-jaw-count-num">7</div>
+            <div class="plx-jaw-count-num">5</div>
             <div class="plx-jaw-count-lbl">
               <span class="l-en">speeches 7d</span><span class="l-zh">7日发声</span>
             </div>
@@ -7047,7 +7039,7 @@
         
         
         
-        <div class="plx-jaw-bar-track"><div class="plx-jaw-bar-fill" style="width:19%"></div></div>
+        <div class="plx-jaw-bar-track"><div class="plx-jaw-bar-fill" style="width:14%"></div></div>
         
         <div class="plx-jaw-ts">
           <span class="l-en">Last event: 2026-08-26</span>
@@ -7395,6 +7387,60 @@ Crypto liquidity is today&#39;s clear driver. Bitcoin and ether lead higher, but
           
           
           
+          <a class="nbx-item" href="https://seekingalpha.com/news/4637625-affirm-posts-strong-q4-results-issues-healthy-guidance-amid-consistent-profitability?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nbx-title"><span class="l-en">Affirm posts strong Q4 results, issues healthy guidance amid consistent profitability</span><span class="l-zh">Affirm公布强劲第四季度业绩，持续盈利下发布稳健指引</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Aug 27</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
+          <a class="nbx-item" href="https://www.cnbc.com/2026/08/27/nvidia-nvda-q2-earnings.html" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nbx-title"><span class="l-en">Nvidia adds more than $400 billion in value after blowout earnings boost AI confidence</span><span class="l-zh">英伟达在强劲财报提振AI信心后市值增加逾4000亿美元</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Aug 27</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
+          <a class="nbx-item" href="https://www.cnbc.com/2026/08/27/okta-skyrockets-20percent-and-crowdstrike-surges-15percent-leading-cyber-rally.html" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nbx-title"><span class="l-en">CrowdStrike posts best day ever, Okta&#39;s stock pops nearly 29% as rising AI threat lifts earnings</span><span class="l-zh">CrowdStrike创史上最佳单日表现，Okta股价大涨近29%，AI威胁加剧提振盈利</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Aug 27</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
           <a class="nbx-item" href="https://www.cnbc.com/2026/08/27/best-buy-bby-q2-2027-earnings.html" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Guidance</span><span class="l-zh">指引</span></span>
@@ -7413,10 +7459,10 @@ Crypto liquidity is today&#39;s clear driver. Bitcoin and ether lead higher, but
           
           
           
-          <a class="nbx-item" href="https://www.cnbc.com/2026/08/27/okta-skyrockets-20percent-and-crowdstrike-surges-15percent-leading-cyber-rally.html" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://seekingalpha.com/news/4637722-synopsys-rises-13-boosted-by-earnings?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Okta&#39;s stock skyrockets 29%, CrowdStrike&#39;s surges 19% as rising AI threat boosts earnings</span><span class="l-zh">Okta股价飙升29%，CrowdStrike大涨19%，AI威胁上升提振业绩</span></span>
+              <span class="nbx-title"><span class="l-en">Synopsys rises 13%, boosted by earnings</span><span class="l-zh">新思科技因财报利好上涨13%</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7431,10 +7477,10 @@ Crypto liquidity is today&#39;s clear driver. Bitcoin and ether lead higher, but
           
           
           
-          <a class="nbx-item" href="https://www.cnbc.com/2026/08/27/nvidia-nvda-q2-earnings.html" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://seekingalpha.com/news/4637726-ntg-clarity-networks-gaap-eps-of-c004-revenue-of-c201m?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Nvidia jumps 9% after blockbuster earnings boost AI confidence</span><span class="l-zh">英伟达财报亮眼提振AI信心，股价大涨9%</span></span>
+              <span class="nbx-title"><span class="l-en">NTG Clarity Networks GAAP EPS of C$0.04, revenue of C$20.1M</span><span class="l-zh">NTG Clarity Networks GAAP每股收益0.04加元，营收2010万加元</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7449,64 +7495,10 @@ Crypto liquidity is today&#39;s clear driver. Bitcoin and ether lead higher, but
           
           
           
-          <a class="nbx-item" href="https://seekingalpha.com/news/4637630-sa-analyst-nvidia-results-signal-more-capital-is-coming-for-ai?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://seekingalpha.com/news/4637724-titan-machinery-reaffirms-fy-2027-adjusted-ebitda-of-17m-29m-while-lowering-europe-outlook-to?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Analysts</span><span class="l-zh">分析师</span></span>
-              <span class="nbx-title"><span class="l-en">SA analyst: Nvidia results signal more capital is coming for AI</span><span class="l-zh">SA分析师：英伟达业绩预示AI领域将有更多资本涌入</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Aug 27</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://seekingalpha.com/news/4637646-key-tronic-gaap-eps-of-3_16-revenue-of-102_2m?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Key Tronic GAAP EPS of -$3.16, revenue of $102.2M</span><span class="l-zh">Key Tronic GAAP每股收益-3.16美元，营收1.022亿美元</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Aug 27</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://seekingalpha.com/news/4637641-autodesk-non-gaap-eps-of-3_30-beats-by-0_18-revenue-of-2_05b-beats-by-40m?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Autodesk Non-GAAP EPS of $3.30 beats by $0.18, revenue of $2.05B beats by $40M</span><span class="l-zh">Autodesk非GAAP每股收益3.30美元，超出预期0.18美元；营收20.5亿美元，超出预期4000万美元</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Aug 27</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://seekingalpha.com/news/4637640-workday-non-gaap-eps-of-2_75-beats-by-0_14-revenue-of-2_65b-beats-by-10m?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Workday Non-GAAP EPS of $2.75 beats by $0.14, revenue of $2.65B beats by $10M</span><span class="l-zh">Workday非GAAP每股收益2.75美元，超出预期0.14美元；营收26.5亿美元，超出预期1000万美元</span></span>
+              <span class="nbx-theme"><span class="l-en">Guidance</span><span class="l-zh">指引</span></span>
+              <span class="nbx-title"><span class="l-en">Titan machinery reaffirms FY 2027 adjusted EBITDA of $17M-$29M while lowering Europe outlook to down 30%-40%</span><span class="l-zh">Titan Machinery重申2027财年调整后EBITDA为1700万-2900万美元，同时将欧洲展望下调至下降30%-40%</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7524,7 +7516,7 @@ Crypto liquidity is today&#39;s clear driver. Bitcoin and ether lead higher, but
           <a class="nbx-item" href="https://www.cnbc.com/2026/08/26/salesforce-crm-q2-earnings-report-2027.html" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nbx-title"><span class="l-en">Salesforce stock jumps 18% on AI growth and Anthropic investment gain</span><span class="l-zh">Salesforce股价因AI增长和Anthropic投资收益跳涨18%</span></span>
+              <span class="nbx-title"><span class="l-en">Salesforce stock jumps 18% on AI growth and Anthropic investment gain</span><span class="l-zh">Salesforce股价因AI增长及Anthropic投资收益大涨18%</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7539,15 +7531,15 @@ Crypto liquidity is today&#39;s clear driver. Bitcoin and ether lead higher, but
           
           
           
-          <a class="nbx-item" href="https://www.npr.org/2026/08/25/nx-s1-5944240/canada-us-tariffs" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://www.marketwatch.com/story/marvell-is-boosting-its-forecasts-but-thats-not-enough-to-lift-its-stock-c769556a?mod=mw_rss_topstories" target="_blank" rel="noopener">
             <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Fiscal</span><span class="l-zh">财政</span></span>
-              <span class="nbx-title"><span class="l-en">Canada hits back at the U.S. with tariffs as the countries&#39; trade fight escalates</span><span class="l-zh">加拿大对美加征报复性关税，两国贸易战升级</span></span>
+              <span class="nbx-theme"><span class="l-en">Guidance</span><span class="l-zh">指引</span></span>
+              <span class="nbx-title"><span class="l-en">Marvell is boosting its forecasts, but that’s not enough to lift its stock</span><span class="l-zh">Marvell上调预测，但不足以提振股价</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
               <span class="nbx-dot">·</span>
-              <span class="nbx-date">Aug 25</span>
+              <span class="nbx-date">Aug 27</span>
               <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
             </div>
             
@@ -7557,10 +7549,10 @@ Crypto liquidity is today&#39;s clear driver. Bitcoin and ether lead higher, but
           
           
           
-          <a class="nbx-item" href="https://www.marketwatch.com/story/how-will-stocks-perform-when-the-fed-chair-speaks-at-jackson-hole-heres-what-history-tells-us-1f9466d0?mod=mw_rss_topstories" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://www.marketwatch.com/story/nvidia-is-getting-too-big-and-thats-a-problem-e1edabff?mod=mw_rss_topstories" target="_blank" rel="noopener">
             <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
-              <span class="nbx-title"><span class="l-en">How will stocks perform when the Fed chair speaks at Jackson Hole? Here’s what history tells us.</span><span class="l-zh">美联储主席在杰克逊霍尔讲话时股市表现如何？历史告诉我们答案。</span></span>
+              <span class="nbx-theme"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span>
+              <span class="nbx-title"><span class="l-en">Nvidia is getting too big, and that’s a problem</span><span class="l-zh">英伟达变得过于庞大，这是个问题</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -11445,9 +11437,9 @@ Crypto liquidity is today&#39;s clear driver. Bitcoin and ether lead higher, but
       
     </table>
     <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated 2026-08-27 20:03 UTC · <a href="aibrief.html">AI daily brief</a> ·
+       Generated 2026-08-27 21:13 UTC · <a href="aibrief.html">AI daily brief</a> ·
        <a href="history.html">history & charts</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
-       生成于 2026-08-27 20:03 UTC · <a href="aibrief.html">AI每日简报</a> ·
+       生成于 2026-08-27 21:13 UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a></span></p>
   </details>
   
