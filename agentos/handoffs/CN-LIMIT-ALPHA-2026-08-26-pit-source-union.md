@@ -228,18 +228,38 @@ danger_areas:
     normalise_name_history never touches _session_map, so 1990 and 1991 units are
     legitimate and must not be "corrected" to the epoch.
   - >
-    SOURCE_ROW_CAPS['stk_limit'] is 5800 and the cap test is `>=`, while the
-    A-share universe measured 5,344 on 2024-01-02 and grows a few hundred names a
-    year. The 2024 canary has roughly 450 rows of headroom, but a whole-market
-    stk_limit call on a recent session will eventually land at the documented
-    maximum, and the collector then refuses the unit rather than blessing a
-    truncated response. That refusal is correct — it is the same fail-closed
-    reasoning as the trade_cal exact-range check — but it means the range
-    campaign will hit an endpoint-specific wall on recent dates that the 2024
-    canary cannot reveal. Do NOT respond by raising the constant: the cap is the
-    vendor's documented per-call maximum, so raising it would bless truncation.
-    The cap_fallback path (switch the whole requested interval to the
-    ticker-range campaign) is the designed answer, and it is unproven.
+    MEASURED 2026-08-26, and it CORRECTS an estimate made earlier in this same
+    session. SOURCE_ROW_CAPS['stk_limit'] is 5800 with a `>=` test. I sized the
+    headroom against bak_basic's 5,344 A-shares for 2024-01-02 and predicted
+    ~450 rows of slack. That was WRONG: stk_limit covers more instruments than
+    the A-share PIT universe, and canary run 33026747482 died on exactly this
+    cap. So the wall is not a forward risk for the campaign — it is already
+    binding on a 2024 session, today.
+
+    The refusal itself is correct and deliberate. `_activate_range_campaign`
+    (:3343) refuses when `self.canary and not BULK_HISTORICAL_BACKFILL_READY`,
+    with the comment that the scalable ticker-range path "is exactly what the
+    bulk gate is still withholding, so a canary must never be the thing that
+    first exercises it live". Note the resulting shape: the whole-market fast
+    path cannot cover a recent session, the designed fallback is gated behind the
+    bulk promotion, and the bulk promotion is gated behind a clean canary. A
+    RECENT-DATE canary is therefore structurally unable to reach terminal, and no
+    amount of re-running changes that.
+
+    The error's advice, "Narrow the canary range and re-run", is misleading: the
+    range was already ONE day, and the cap counts rows per session, not sessions
+    per window. The actual lever is choosing an EARLIER session whose universe
+    fits under the cap. This session retargeted the acceptance canary to
+    2018-01-02 (universe ~3,500, and 29 namechange years instead of 35) for that
+    reason. Do NOT respond by raising the constant: it is the vendor's documented
+    per-call maximum, so raising it would bless a truncated response, which is
+    the same fail-open the program already refused for trade_cal.
+
+    Note also that daily and daily_basic (cap 6000) BOTH passed on 2024-01-02, so
+    the true response size sits between 5,800 and 6,000 and only stk_limit's
+    tighter constant caught it. Those two will hit their own wall a year or two
+    later. The bulk-readiness PR must therefore treat the ticker-range campaign
+    as REQUIRED for recent dates, not as an optimisation.
 ---
 
 # Removing a survivorship filter that was written in three places
