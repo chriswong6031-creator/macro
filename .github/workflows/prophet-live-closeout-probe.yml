@@ -9,11 +9,11 @@ permissions:
   contents: read
 
 jobs:
-  maturity-probe:
+  package-verified-output:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Checkout canonical reconciler and bounded close inputs
+      - name: Checkout canonical reconciler and bounded evidence
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
@@ -21,12 +21,13 @@ jobs:
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             /config.yml
-            /requirements.txt
             /scripts/**
             /engine/**
             /lib/**
             /collectors/**
             /data/prophet_live/forward.parquet
+            /data/pit_replay/prophet_live_recovery/journal_2026-07-30_2026-08-25.txt.gz
+            /data/pit_replay/prophet_live_recovery/_recovery_receipt.json
             /data/breadth/_closes_cache.parquet
             /data/breadth/constituents.parquet
             /data/smallcap_breadth/_closes_cache.parquet
@@ -36,82 +37,8 @@ jobs:
             /data/russell_breadth/_closes_cache.parquet
             /data/russell_breadth/constituents.parquet
             /data/baskets/extras.parquet
-            /data/stocks/AJG.parquet
-            /data/stocks/ALV.parquet
-            /data/stocks/AM.parquet
-            /data/stocks/AZN.parquet
-            /data/stocks/BJ.parquet
-            /data/stocks/BL.parquet
-            /data/stocks/CMG.parquet
-            /data/stocks/CPNG.parquet
-            /data/stocks/CWST.parquet
-            /data/stocks/ECL.parquet
-            /data/stocks/FCFS.parquet
-            /data/stocks/FCN.parquet
-            /data/stocks/FMC.parquet
-            /data/stocks/FWONK.parquet
-            /data/stocks/HLI.parquet
-            /data/stocks/HLT.parquet
-            /data/stocks/HOG.parquet
-            /data/stocks/LNN.parquet
-            /data/stocks/MAT.parquet
-            /data/stocks/MCO.parquet
-            /data/stocks/MMI.parquet
-            /data/stocks/MMS.parquet
-            /data/stocks/NVR.parquet
-            /data/stocks/ONCY.parquet
-            /data/stocks/PCG.parquet
-            /data/stocks/PRDO.parquet
-            /data/stocks/RHI.parquet
-            /data/stocks/ROL.parquet
-            /data/stocks/SPGI.parquet
-            /data/stocks/STC.parquet
-            /data/stocks/STRA.parquet
-            /data/stocks/TSLA.parquet
-            /data/stocks/UGI.parquet
-            /data/stocks/V.parquet
-            /data/stocks/VALE.parquet
-            /data/stocks/VIR.parquet
-            /data/stocks/WMG.parquet
-            /data/stocks/YUM.parquet
-            /data/yahoo/AJG.parquet
-            /data/yahoo/ALV.parquet
-            /data/yahoo/AM.parquet
-            /data/yahoo/AZN.parquet
-            /data/yahoo/BJ.parquet
-            /data/yahoo/BL.parquet
-            /data/yahoo/CMG.parquet
-            /data/yahoo/CPNG.parquet
-            /data/yahoo/CWST.parquet
-            /data/yahoo/ECL.parquet
-            /data/yahoo/FCFS.parquet
-            /data/yahoo/FCN.parquet
-            /data/yahoo/FMC.parquet
-            /data/yahoo/FWONK.parquet
-            /data/yahoo/HLI.parquet
-            /data/yahoo/HLT.parquet
-            /data/yahoo/HOG.parquet
-            /data/yahoo/LNN.parquet
-            /data/yahoo/MAT.parquet
-            /data/yahoo/MCO.parquet
-            /data/yahoo/MMI.parquet
-            /data/yahoo/MMS.parquet
-            /data/yahoo/NVR.parquet
-            /data/yahoo/ONCY.parquet
-            /data/yahoo/PCG.parquet
-            /data/yahoo/PRDO.parquet
-            /data/yahoo/RHI.parquet
-            /data/yahoo/ROL.parquet
-            /data/yahoo/SPGI.parquet
-            /data/yahoo/STC.parquet
-            /data/yahoo/STRA.parquet
-            /data/yahoo/TSLA.parquet
-            /data/yahoo/UGI.parquet
-            /data/yahoo/V.parquet
-            /data/yahoo/VALE.parquet
-            /data/yahoo/VIR.parquet
-            /data/yahoo/WMG.parquet
-            /data/yahoo/YUM.parquet
+            /data/stocks/*.parquet
+            /data/yahoo/*.parquet
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -121,82 +48,130 @@ jobs:
       - name: Install canonical path dependencies
         run: pip install --quiet pandas pyarrow pyyaml boto3 requests jinja2 yfinance scipy scikit-learn
 
-      - name: Simulate the existing sole-writer maturation path
+      - name: Package canonical reconciliation result
+        env:
+          SOURCE_HEAD: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
         run: |
           python - <<'PY'
+          import gzip
+          import hashlib
           import json
+          import os
+          import re
+          from collections import Counter
           from datetime import datetime, timezone
           from pathlib import Path
+          from zoneinfo import ZoneInfo
           import pandas as pd
           from scripts import reconcile_prophet_live as RC
 
-          root = Path('.')
-          ledger = root / RC.LEDGER_REL
+          ledger = Path('data/prophet_live/forward.parquet')
+          before_bytes = ledger.read_bytes()
           before = pd.read_parquet(ledger)
-          before_first = before.set_index(RC.KEY)[list(RC.FIRST_WINS)].sort_index()
+          if len(before) != 598 or int(before.duplicated(RC.KEY).sum()) != 0:
+              raise SystemExit('baseline ledger identity drifted')
+          if int(before['next_close_fill'].isna().sum()) != 86:
+              raise SystemExit('baseline open-fill cardinality drifted')
+
           open_pairs = RC.open_rows(ledger)
           want = {ticker for _day, ticker in open_pairs}
           closes, adjustment = RC.load_closes(want)
           missing = sorted(want - set(closes))
-          latest = {}
-          for ticker in sorted(want):
-              series = closes.get(ticker)
-              if series is None or len(series) == 0:
-                  latest[ticker] = None
-              else:
-                  latest[ticker] = str(pd.Timestamp(series.index.max()).date())
+          if missing:
+              raise SystemExit(f'missing canonical close series: {missing}')
 
-          now = datetime(2026, 8, 27, 1, 0, tzinfo=timezone.utc)
+          now = datetime.now(timezone.utc)
           pair_updates = RC.maturing_rows(
               ledger, closes=closes, now=now, close_adjustment=adjustment
           )
           updates = RC._expand_maturing(ledger, pair_updates)
-          simulated = RC.merge_ledger(ledger, updates)
-          after_first = simulated.set_index(RC.KEY)[list(RC.FIRST_WINS)].sort_index()
+          matured = RC.merge_ledger(ledger, updates)
 
-          first_wins_changed = []
+          before_first = before.set_index(RC.KEY)[list(RC.FIRST_WINS)].sort_index()
+          after_first = matured.set_index(RC.KEY)[list(RC.FIRST_WINS)].sort_index()
+          changed = []
           for col in RC.FIRST_WINS:
-              a = before_first[col]
-              b = after_first[col]
-              both_null = a.isna() & b.isna()
-              same = (a == b) | both_null
+              a, b = before_first[col], after_first[col]
+              same = (a == b) | (a.isna() & b.isna())
               if not bool(same.all()):
-                  first_wins_changed.append(col)
+                  changed.append(col)
+          before_entered = before.set_index(RC.KEY)['entered'].sort_index()
+          after_entered = matured.set_index(RC.KEY)['entered'].sort_index()
+          entered_same = (before_entered == after_entered) | (before_entered.isna() & after_entered.isna())
 
-          result = {
-              'before_rows': int(len(before)),
-              'before_open_rows': int(before['next_close_fill'].isna().sum()),
-              'before_open_pairs': len(open_pairs),
-              'close_series_found': len(closes),
-              'missing_close_series': missing,
-              'latest_close_by_ticker': latest,
+          out = Path('/tmp/prophet-live-closeout')
+          out.mkdir()
+          generated = out / 'forward.parquet'
+          matured.to_parquet(generated, index=False)
+
+          journal = Path('data/pit_replay/prophet_live_recovery/journal_2026-07-30_2026-08-25.txt.gz')
+          raw = gzip.open(journal, 'rt', encoding='utf-8', errors='replace').read()
+          passes = []
+          event_lines = 0
+          for line in raw.splitlines():
+              if 'prophet-live EVENT ' in line:
+                  event_lines += 1
+              if 'prophet-live pass=' not in line:
+                  continue
+              mts = re.search(r'prophet-live pass=(\S+)', line)
+              mev = re.search(r'events=(\d+)', line)
+              if not (mts and mev):
+                  raise SystemExit('unparseable committed pass line')
+              ts = datetime.fromisoformat(mts.group(1).replace('Z', '+00:00'))
+              session = ts.astimezone(ZoneInfo('America/New_York')).date().isoformat()
+              passes.append((session, int(mev.group(1))))
+          pass_counts = Counter(s for s, _ in passes)
+          event_counts = Counter()
+          for session, count in passes:
+              event_counts[session] += count
+
+          receipt = {
+              'schema': 'prophet_live.force_majeure_closeout/v1',
+              'source_head': os.environ['SOURCE_HEAD'],
+              'workflow_run_id': int(os.environ['RUN_ID']),
+              'reconciliation_code': 'scripts/reconcile_prophet_live.py:maturing_rows+_expand_maturing+merge_ledger',
+              'reconciled_at': now.isoformat(),
+              'ledger_before_sha256': hashlib.sha256(before_bytes).hexdigest(),
+              'ledger_after_sha256': hashlib.sha256(generated.read_bytes()).hexdigest(),
+              'rows_before': int(len(before)),
+              'rows_after': int(len(matured)),
+              'duplicate_keys_after': int(matured.duplicated(RC.KEY).sum()),
+              'open_fills_before': 86,
+              'open_fills_after': int(matured['next_close_fill'].isna().sum()),
               'maturing_pair_updates': len(pair_updates),
               'maturing_row_updates': len(updates),
-              'after_rows': int(len(simulated)),
-              'after_open_rows': int(simulated['next_close_fill'].isna().sum()),
-              'after_duplicate_keys': int(simulated.duplicated(RC.KEY).sum()),
-              'next_close_dates': sorted({str(v) for v in simulated.loc[simulated['date'].astype(str).eq('2026-08-25'), 'next_close_date'].dropna()}),
-              'first_wins_changed': first_wins_changed,
+              'next_close_dates_for_2026_08_25': sorted({str(v) for v in matured.loc[matured['date'].astype(str).eq('2026-08-25'), 'next_close_date'].dropna()}),
+              'first_wins_changed': changed,
+              'entered_changed': not bool(entered_same.all()),
+              'entered_null_rows_after': int(matured['entered'].isna().sum()),
+              'journal_sha256': hashlib.sha256(journal.read_bytes()).hexdigest(),
+              'journal_pass_lines': len(passes),
+              'journal_event_lines': event_lines,
+              'journal_declared_event_sum': sum(n for _s, n in passes),
+              'journal_passes_by_et_session': dict(sorted(pass_counts.items())),
+              'journal_declared_events_by_et_session': dict(sorted(event_counts.items())),
           }
-          Path('/tmp/prophet_live_maturity_probe.json').write_text(
-              json.dumps(result, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          if receipt['rows_after'] != 598 or receipt['duplicate_keys_after'] != 0:
+              raise SystemExit('post-maturation ledger identity failed')
+          if receipt['open_fills_after'] != 0 or receipt['maturing_pair_updates'] != 38 or receipt['maturing_row_updates'] != 86:
+              raise SystemExit('post-maturation fill proof failed')
+          if receipt['next_close_dates_for_2026_08_25'] != ['2026-08-26']:
+              raise SystemExit('next-close date failed')
+          if receipt['first_wins_changed'] or receipt['entered_changed']:
+              raise SystemExit('immutable evidence changed during maturation')
+          if receipt['journal_pass_lines'] != 588 or receipt['journal_event_lines'] != 25958 or receipt['journal_declared_event_sum'] != 25958:
+              raise SystemExit('committed recovery corpus counters drifted')
+
+          (out / 'closeout_receipt.json').write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + '\n', encoding='utf-8'
           )
-          print(json.dumps(result, indent=2, sort_keys=True))
-          if missing:
-              raise SystemExit('missing canonical close series')
-          if result['maturing_pair_updates'] != 38 or result['maturing_row_updates'] != 86:
-              raise SystemExit('unexpected maturation cardinality')
-          if result['after_rows'] != 598 or result['after_open_rows'] != 0 or result['after_duplicate_keys'] != 0:
-              raise SystemExit('maturation invariants failed')
-          if result['next_close_dates'] != ['2026-08-26']:
-              raise SystemExit('unexpected next-close date')
-          if first_wins_changed:
-              raise SystemExit('FIRST_WINS mutation detected')
+          print(json.dumps(receipt, indent=2, sort_keys=True))
           PY
 
-      - name: Upload maturity probe receipt
+      - name: Upload generated closeout
         uses: actions/upload-artifact@v4
         with:
-          name: prophet-live-maturity-probe
-          path: /tmp/prophet_live_maturity_probe.json
+          name: prophet-live-closeout-generated
+          path: /tmp/prophet-live-closeout
           retention-days: 1
