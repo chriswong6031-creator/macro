@@ -1,10 +1,14 @@
 ---
 key: CNLI-PRE-PIT-NAMECHANGE-ORPHANS-HAVE-NO-WITNESS
 claim: >
-  `name_history` cannot reach a terminal unit for pre-2016 years, because
-  `namechange` rows name securities that the current `stock_basic` witness no
-  longer publishes and that NO point-in-time witness can corroborate — the
-  `bak_basic` PIT universe only begins at `PIT_UNIVERSE_START = 2016-01-01`.
+  Individual pre-2016 `namechange` rows name securities that the current
+  `stock_basic` witness no longer publishes and that NO point-in-time witness can
+  corroborate, so those units cannot reach terminal. The condition is RARE, not
+  era-wide: of ten attempted year-units, 1990-1998 ALL reached terminal with ZERO
+  quarantine (935 rows landed), and only 1999 failed, on exactly ONE row of 193 —
+  1 orphan in 1,128 rows across ten years (0.09%), with 19 later years still
+  unattempted. The mechanism is that the `bak_basic` PIT universe only begins at
+  `PIT_UNIVERSE_START = 2016-01-01`.
   Measured 2026-08-27 on canary run 33026983388: the `1999:19991231` unit failed
   with reason `namechange_orphans_absent_from_A_universe_witness`, source_row_count
   193 = landed 192 + known_excluded 0 + quarantined 1. The quarantined row is
@@ -44,9 +48,13 @@ so_what: >
   is materially weaker evidence than the `300114.SZ` case, where a same-session
   `bak_basic` observation existed. Admitting these rows on identity-derivation
   alone would let `name_history` land rows for securities nothing in the store
-  can witness; refusing them makes `name_history` permanently non-terminal for
-  every pre-2016 year, and `build_completeness_manifest` requires every year from
-  `NAME_HISTORY_START_YEAR = 1990` to `end.year`.
+  can witness; refusing them leaves the affected years permanently non-terminal.
+  `build_completeness_manifest` requires EVERY year from
+  `NAME_HISTORY_START_YEAR = 1990` to `end.year`, so even a 0.09% orphan rate is
+  fatal to completeness — one unclassifiable row in one year blocks the whole
+  manifest. Scope any ruling to the RATE, not to the era: this is a handful of
+  individual securities with no witness of any kind, NOT a systemic failure of
+  pre-2016 name history, and 1990-1998 prove the era is otherwise clean.
 
   Consequence for sequencing: the acceptance canary CANNOT reach a terminal state
   on any window while this stands, independently of the `stk_limit` defect

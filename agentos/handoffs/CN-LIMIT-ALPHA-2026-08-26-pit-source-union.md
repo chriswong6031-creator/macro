@@ -124,9 +124,15 @@ verified:
       ci-authority/main check passed with reason `ordinary_change`.
 unresolved:
   - >
-    SOL GATE 1 (authority, blocking). `name_history` cannot reach a terminal unit
-    for any pre-2016 year:
-    DSC:CNLI-PRE-PIT-NAMECHANGE-ORPHANS-HAVE-NO-WITNESS. The 1999 unit failed at
+    SOL GATE 1 (authority, blocking) --
+    DSC:CNLI-PRE-PIT-NAMECHANGE-ORPHANS-HAVE-NO-WITNESS. Scope it by the MEASURED
+    RATE, not by the era: of ten attempted namechange year-units, 1990-1998 ALL
+    reached terminal with ZERO quarantine (935 rows landed) and only 1999 failed,
+    on exactly ONE row of 193 -- 1 orphan in 1,128 rows (0.09%), 19 later years
+    still unattempted. So pre-2016 name history is otherwise clean; this is a
+    handful of individual securities, not a systemic era failure. It is still
+    fatal to completeness, because the manifest requires EVERY year from 1990 and
+    one unclassifiable row blocks the whole thing. The 1999 unit failed at
     193 = 192 + 0 + 1 on 000991.SZ 通海高科, a security absent from the current
     5,888-row master. This is the SAME survivorship shape the source-union
     decision removed, reaching an era where that decision's MECHANISM does not
