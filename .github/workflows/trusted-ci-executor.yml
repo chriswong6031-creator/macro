@@ -2,15 +2,30 @@ name: trusted-ci-executor
 
 on:
   workflow_call:
-    inputs:
-      pr_number:
-        description: "Same-repository PR resolved again by the main-owned executor."
-        required: true
-        type: string
+    inputs: {}
+    outputs:
+      matrix:
+        description: "The immutable main-planned pack matrix."
+        value: ${{ jobs.plan.outputs.matrix }}
+      plan_sha:
+        description: "Digest of the immutable semantic plan."
+        value: ${{ jobs.plan.outputs.plan_sha }}
+      tested_sha:
+        description: "Exact tested PR merge commit."
+        value: ${{ jobs.plan.outputs.tested_sha }}
+      base_sha:
+        description: "Exact PR base commit."
+        value: ${{ jobs.plan.outputs.base_sha }}
+      head_sha:
+        description: "Exact PR subject head commit."
+        value: ${{ jobs.plan.outputs.head_sha }}
+      control_sha:
+        description: "Exact main-owned executor control commit."
+        value: ${{ jobs.plan.outputs.control_sha }}
   workflow_dispatch:
     inputs:
       pr_number:
-        description: "Same-repository open PR for the inert P3A one-pack proof."
+        description: "Same-repository open PR for the bounded one-pack diagnostic."
         required: true
         type: string
 
@@ -27,34 +42,107 @@ jobs:
     name: trusted-executor-main-admission
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    outputs:
+      control_sha: ${{ steps.admit.outputs.control_sha }}
+      pr_number: ${{ steps.admit.outputs.pr_number }}
+      mode: ${{ steps.admit.outputs.mode }}
+      semantic_workflow: ${{ steps.admit.outputs.semantic_workflow }}
     steps:
-      - name: keep P3A dispatch-provable and production-inert
+      - id: admit
+        name: admit direct dispatch or exact main-called same-repository PR
         env:
           EVENT_NAME: ${{ github.event_name }}
           TRUSTED_REF: ${{ github.ref }}
-          TRUSTED_WORKFLOW_REF: ${{ github.workflow_ref }}
-          PR_NUMBER: ${{ inputs.pr_number }}
+          CALLER_WORKFLOW_REF: ${{ github.workflow_ref }}
+          CALLED_WORKFLOW_REF: ${{ job.workflow_ref }}
+          CALLED_WORKFLOW_SHA: ${{ job.workflow_sha }}
+          REPOSITORY: ${{ github.repository }}
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          BASE_REF: ${{ github.base_ref }}
+          EVENT_PR_NUMBER: ${{ github.event.pull_request.number }}
+          DISPATCH_PR_NUMBER: ${{ inputs.pr_number }}
         shell: bash
         run: |
           set -euo pipefail
-          test "$EVENT_NAME" = workflow_dispatch || {
-            echo "::error title=trusted-executor-inert::P3A refuses workflow_call until P3B changes the production route"
+          test "$REPOSITORY" = mastermindx-market-intelligence/macro || {
+            echo "::error title=trusted-executor-repository::executor is repository-bound"
             exit 1
           }
-          test "$TRUSTED_REF" = refs/heads/main || {
-            echo "::error title=trusted-executor-ref::dispatch must use the main workflow definition"
+          trusted_workflow_ref="$REPOSITORY/.github/workflows/trusted-ci-executor.yml@refs/heads/main"
+          test "$CALLED_WORKFLOW_REF" = "$trusted_workflow_ref" || {
+            echo "::error title=trusted-executor-definition::called workflow must be the exact main-owned executor"
             exit 1
           }
-          test "$TRUSTED_WORKFLOW_REF" = mastermindx-market-intelligence/macro/.github/workflows/trusted-ci-executor.yml@refs/heads/main || {
-            echo "::error title=trusted-executor-caller::P3A refuses indirect callers until P3B binds caller authority explicitly"
-            exit 1
-          }
-          case "$PR_NUMBER" in
-            ''|*[!0-9]*|0)
-              echo "::error title=trusted-executor-pr::pr_number must identify a same-repository open PR"
+          case "$CALLED_WORKFLOW_SHA" in
+            [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]) ;;
+            *)
+              echo "::error title=trusted-executor-control::called workflow SHA must be an exact lowercase commit"
               exit 1
               ;;
           esac
+
+          case "$EVENT_NAME" in
+            workflow_dispatch)
+              test "$TRUSTED_REF" = refs/heads/main || {
+                echo "::error title=trusted-executor-ref::dispatch must use the main workflow definition"
+                exit 1
+              }
+              test "$CALLER_WORKFLOW_REF" = "$trusted_workflow_ref" || {
+                echo "::error title=trusted-executor-caller::dispatch must invoke the main-owned executor directly"
+                exit 1
+              }
+              pr_number="$DISPATCH_PR_NUMBER"
+              mode=dispatch
+              semantic_workflow=trusted-ci-executor
+              ;;
+            pull_request)
+              test -z "$DISPATCH_PR_NUMBER" || {
+                echo "::error title=trusted-executor-input::a reusable call may not supply candidate identity"
+                exit 1
+              }
+              case "$EVENT_PR_NUMBER" in
+                ''|*[!0-9]*|0)
+                  echo "::error title=trusted-executor-event::pull_request event must carry a valid PR number"
+                  exit 1
+                  ;;
+              esac
+              test "$TRUSTED_REF" = "refs/pull/$EVENT_PR_NUMBER/merge" || {
+                echo "::error title=trusted-executor-ref::caller must run on the event PR merge ref"
+                exit 1
+              }
+              test "$HEAD_REPOSITORY" = "$REPOSITORY" || {
+                echo "::error title=trusted-executor-fork::fork-authored code may not reach persistent runners"
+                exit 1
+              }
+              test "$BASE_REF" = main || {
+                echo "::error title=trusted-executor-base::ordinary production calls must target main"
+                exit 1
+              }
+              expected_caller_ref="$REPOSITORY/.github/workflows/ci.yml@refs/pull/$EVENT_PR_NUMBER/merge"
+              test "$CALLER_WORKFLOW_REF" = "$expected_caller_ref" || {
+                echo "::error title=trusted-executor-caller::only the ordinary ci.yml PR workflow may call the executor"
+                exit 1
+              }
+              pr_number="$EVENT_PR_NUMBER"
+              mode=production
+              semantic_workflow=ci
+              ;;
+            *)
+              echo "::error title=trusted-executor-event::unsupported caller event"
+              exit 1
+              ;;
+          esac
+
+          case "$pr_number" in
+            ''|*[!0-9]*|0)
+              echo "::error title=trusted-executor-pr::PR identity must be a positive integer"
+              exit 1
+              ;;
+          esac
+          printf 'control_sha=%s\n' "$CALLED_WORKFLOW_SHA" >> "$GITHUB_OUTPUT"
+          printf 'pr_number=%s\n' "$pr_number" >> "$GITHUB_OUTPUT"
+          printf 'mode=%s\n' "$mode" >> "$GITHUB_OUTPUT"
+          printf 'semantic_workflow=%s\n' "$semantic_workflow" >> "$GITHUB_OUTPUT"
 
   plan:
     name: trusted-executor-hosted-plan
@@ -72,7 +160,7 @@ jobs:
       - name: checkout main-owned executor control code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ needs.trust-gate.outputs.control_sha }}
           persist-credentials: false
           filter: blob:none
           fetch-depth: 2
@@ -80,7 +168,7 @@ jobs:
         name: freeze the main-owned control SHA
         shell: bash
         run: |
-          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          test "$(git rev-parse HEAD)" = "${{ needs.trust-gate.outputs.control_sha }}"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
       - name: freeze the complete main-owned control bundle
         run: |
@@ -111,8 +199,8 @@ jobs:
         run: |
           python3 "$RUNNER_TEMP/trusted-ci-control/scripts/resolve_ci_canary_ref.py" \
             --repository "${{ github.repository }}" \
-            --github-sha "${{ github.sha }}" \
-            --pr-number "${{ inputs.pr_number }}" \
+            --github-sha "${{ needs.trust-gate.outputs.control_sha }}" \
+            --pr-number "${{ needs.trust-gate.outputs.pr_number }}" \
             --github-output "$GITHUB_OUTPUT"
       - name: checkout the immutable PR candidate
         uses: actions/checkout@v4
@@ -148,20 +236,31 @@ jobs:
             --emit-plan-json "$RUNNER_TEMP/trusted-ci-plan/plan.json" \
             --emit-changed-files "$RUNNER_TEMP/trusted-ci-plan/changed-files.json" \
             --workflow-run-id "$GITHUB_RUN_ID" \
-            --workflow-name trusted-ci-executor \
-            --event workflow_dispatch \
+            --workflow-name "${{ needs.trust-gate.outputs.semantic_workflow }}" \
+            --event "${{ github.event_name }}" \
             --role pr_head \
             --tested-tree-sha "${{ steps.ref.outputs.tested_sha }}" \
             --subject-head-sha "${{ steps.ref.outputs.head_sha }}" \
             --base-sha "${{ steps.ref.outputs.base_sha }}" \
             --changed-from "${{ steps.ref.outputs.base_sha }}"
       - id: select
-        name: select exactly one bounded P3A proof pack
+        name: select one diagnostic pack or the full production matrix
+        env:
+          EXECUTION_MODE: ${{ needs.trust-gate.outputs.mode }}
+          FULL_MATRIX: ${{ steps.plan.outputs.matrix }}
+        shell: bash
         run: |
-          python3 "$RUNNER_TEMP/trusted-ci-control/scripts/select_ci_canary_packs.py" \
-            --plan "$RUNNER_TEMP/trusted-ci-plan/plan.json" \
-            --count 1 \
-            --github-output "$GITHUB_OUTPUT"
+          set -euo pipefail
+          if [ "$EXECUTION_MODE" = dispatch ]; then
+            python3 "$RUNNER_TEMP/trusted-ci-control/scripts/select_ci_canary_packs.py" \
+              --plan "$RUNNER_TEMP/trusted-ci-plan/plan.json" \
+              --count 1 \
+              --github-output "$GITHUB_OUTPUT"
+          else
+            test "$EXECUTION_MODE" = production
+            test -n "$FULL_MATRIX"
+            echo "matrix=$FULL_MATRIX" >> "$GITHUB_OUTPUT"
+          fi
       - name: publish the frozen plan and changed-file handle
         uses: actions/upload-artifact@v4
         with:
@@ -179,7 +278,7 @@ jobs:
     timeout-minutes: 180
     strategy:
       fail-fast: false
-      max-parallel: 1
+      max-parallel: 3
       matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
     steps:
       - name: mark self-hosted job start

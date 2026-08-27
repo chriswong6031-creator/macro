@@ -1,5 +1,5 @@
 schema: runner_policy.v2
-phase: p3a-inert-trusted-executor
+phase: p3b-a-call-capable
 repository_visibility: public
 ordinary_pr_ci: github-hosted
 
@@ -26,6 +26,7 @@ trusted_executor_route:
   job: trusted-pack
   group: macro-home-canary
   labels: [ci-linux]
+  call_enabled: true
   production_enabled: false
 
 protected_hosted_routes:
@@ -189,8 +190,9 @@ label_registry:
     status: live
     carried_by: [pc-ci-1, pc-ci-2, pc-ci-3]
     note: >
-      P2-accepted three-slot PC CI pool. Production routing remains disabled in
-      P3A; only the main-selected canary and inert trusted executor may use it.
+      P2-accepted three-slot PC CI pool. P3B-A admits exact main-called
+      same-repository PR execution, but production ci.yml routing remains disabled
+      until the separate P3B-B carrier.
   ci-linux-canary:
     status: live
     carried_by: [pc-ci-1]
