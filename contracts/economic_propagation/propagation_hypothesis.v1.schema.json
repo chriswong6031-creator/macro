@@ -1,0 +1,477 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "economic_propagation.propagation_hypothesis/v1",
+  "description": "K3-D Economic Propagation hypothesis record. One governed, display/research-tier object that composes existing Graph 1 (economic relationship), Graph 2 (fundamental/narrative similarity) and Graph 3 (residual market) OWNER evidence into a provenance-rich read-through hypothesis — or a typed abstention when Graph-1 relationship, exact identity, rights, clocks or coverage are insufficient. This record is the general form of the architecture-only join object earnings_readthrough_hypothesis/v1 (research/EARNINGS_NEURAL_GRAPH_READTHROUGH_AND_CATALYST_ARCHITECTURE_2026-08-16.md §2.6; unowned and unimplemented at freeze time — census in the K3-D freeze doc). It is NEVER a store, a graph, an edge type, a score, a rank, a grade, a gate, a size, or a trade signal. BINDING KILLS carried in-body via binding_kills: DNR:KILL-PSS-SR2-PEER-DIFFUSION (peer new-low diffusion construction closed; adverse on every outcome layer); DNR:KILL-PSS-SR3-PARTICIPATION (the participation construction was KILLED, not merely demoted to display — any future peer-state species must measure an ORTHOGONAL source of durable absorption or selective leadership, never another contemporaneous sector-breadth relief label; in this contract peer participation/breadth alone can NEVER admit a target); DNR:KILL-CN-SUPPLY-ABSORPTION (price-only absorption is momentum; cannot be reconstituted from broad participation or co-movement); DNR:KILL-CAUSAL-DAG-ALPHA (no discovered-graph causal alpha; this record is hypothesis/evidence tier with zero authority). Graph 2/3 evidence may never launder a missing Graph-1 economic relationship. economic_share remains formula-unowned and MUST be null. Grading, if ever wanted, routes through engine/grading.py and existing forward ledgers — this contract owns no grade ledger.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "version",
+    "record_id",
+    "binding_kills",
+    "asof",
+    "compiled_at",
+    "source_event",
+    "target",
+    "generator_admissions",
+    "relationship_paths",
+    "similarity_evidence",
+    "market_evidence",
+    "graph_states",
+    "mechanism",
+    "hypothesis_state",
+    "abstention",
+    "alternatives",
+    "falsifiers",
+    "expiry",
+    "authority",
+    "economic_share",
+    "content_sha256"
+  ],
+  "properties": {
+    "schema": { "const": "economic_propagation.propagation_hypothesis/v1" },
+    "version": { "const": 1 },
+    "record_id": {
+      "type": "string",
+      "pattern": "^eph1:[0-9a-f]{16}$",
+      "description": "Deterministic identity: sha256 over (source_event.event_id, target.requested_key, asof), first 16 hex chars. Same inputs -> same record_id, always."
+    },
+    "binding_kills": {
+      "const": [
+        "DNR:KILL-PSS-SR2-PEER-DIFFUSION",
+        "DNR:KILL-PSS-SR3-PARTICIPATION",
+        "DNR:KILL-CN-SUPPLY-ABSORPTION",
+        "DNR:KILL-CAUSAL-DAG-ALPHA"
+      ],
+      "description": "The four kill receipts every K3-D record acknowledges. Const so no caller can drop or amend them."
+    },
+    "asof": {
+      "$ref": "#/$defs/date",
+      "description": "Composition cutoff. Evidence known after this cutoff must not participate (validator K3D_R061)."
+    },
+    "compiled_at": {
+      "$ref": "#/$defs/datetime",
+      "description": "Caller-supplied compile clock. The library never reads a wall clock; determinism law."
+    },
+    "source_event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["event_id", "owner_ref", "event_class", "source_identity", "event_time", "known_at"],
+      "properties": {
+        "event_id": { "type": "string", "minLength": 1, "maxLength": 300, "pattern": "^[^\\r\\n]+$" },
+        "owner_ref": { "$ref": "#/$defs/owner_ref" },
+        "event_class": {
+          "enum": [
+            "filing_8k",
+            "earnings_event",
+            "guidance_event",
+            "award_fact",
+            "policy_event",
+            "supply_disruption",
+            "corporate_action",
+            "other_owner_event"
+          ]
+        },
+        "source_identity": { "$ref": "#/$defs/identity_resolution" },
+        "event_time": { "$ref": "#/$defs/datetime_or_date" },
+        "known_at": { "$ref": "#/$defs/datetime_or_date" }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requested_key", "resolution"],
+      "properties": {
+        "requested_key": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "^[^\\r\\n]+$",
+          "description": "The caller's raw key (ticker, GMI node id, name). NEVER an identity by itself."
+        },
+        "resolution": { "$ref": "#/$defs/identity_resolution" }
+      }
+    },
+    "generator_admissions": {
+      "type": "array",
+      "maxItems": 24,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["generator_id", "graph", "construct", "owner_ref", "evidence_refs", "asof", "known_at", "coverage_state"],
+        "properties": {
+          "generator_id": { "type": "string", "minLength": 1, "maxLength": 80, "pattern": "^[a-z0-9_]+$" },
+          "graph": { "$ref": "#/$defs/graph_tag" },
+          "construct": { "$ref": "#/$defs/construct" },
+          "owner_ref": { "$ref": "#/$defs/owner_ref" },
+          "evidence_refs": { "$ref": "#/$defs/evidence_refs" },
+          "asof": { "$ref": "#/$defs/date" },
+          "known_at": { "$ref": "#/$defs/datetime_or_date" },
+          "coverage_state": { "$ref": "#/$defs/coverage_state" }
+        }
+      },
+      "description": "Which generator admitted this target into consideration, tagged with its graph. An admitted-by-Graph-2 target stays Graph-2-admitted even if a Graph-3 move also exists. Generators must exist in contracts/economic_propagation/generator_registry.v1.json; a registry row with admits_target=false (peer participation/breadth) can never appear here."
+    },
+    "relationship_paths": {
+      "type": "array",
+      "maxItems": 16,
+      "items": { "$ref": "#/$defs/graph1_leg" },
+      "description": "Graph 1 ONLY: why transfer could occur. Role-specific, owner-backed."
+    },
+    "similarity_evidence": {
+      "type": "array",
+      "maxItems": 16,
+      "items": { "$ref": "#/$defs/graph2_leg" },
+      "description": "Graph 2 ONLY: what operating information is comparable. Never a cash-flow edge."
+    },
+    "market_evidence": {
+      "type": "array",
+      "maxItems": 16,
+      "items": { "$ref": "#/$defs/graph3_leg" },
+      "description": "Graph 3 ONLY: how the market is treating the names. Cannot be inverted into economic cause."
+    },
+    "graph_states": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["graph_1", "graph_2", "graph_3"],
+      "properties": {
+        "graph_1": {
+          "enum": ["supported", "insufficient_role", "rights_blocked_only", "unknown_unavailable"],
+          "description": "COMPILER-DERIVED from relationship_paths. Absence is unknown_unavailable, never false-relationship and never zero."
+        },
+        "graph_2": { "enum": ["present", "absent"] },
+        "graph_3": { "enum": ["present", "absent"] }
+      }
+    },
+    "mechanism": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "mechanism_class", "hypothesis_text", "predicted_operating_direction", "operating_metric_class"],
+      "properties": {
+        "state": { "enum": ["hypothesized", "abstained"] },
+        "mechanism_class": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "enum": [
+                "demand_transfer",
+                "supply_constraint",
+                "pricing_power_shift",
+                "input_cost_shift",
+                "capacity_reallocation",
+                "share_shift_competitive",
+                "regulatory_exposure",
+                "program_funding_flow",
+                "common_end_market_demand"
+              ]
+            }
+          ]
+        },
+        "hypothesis_text": {
+          "oneOf": [
+            { "type": "null" },
+            { "type": "string", "minLength": 1, "maxLength": 1200 }
+          ],
+          "description": "Operating-mechanism prose. No price forecast, no trade direction (validator K3D_R041). Null whenever state=abstained."
+        },
+        "predicted_operating_direction": {
+          "oneOf": [
+            { "type": "null" },
+            { "enum": ["improves", "deteriorates", "mixed"] }
+          ],
+          "description": "Direction of the OPERATING metric only — never predicted price return or trade direction. Null whenever state=abstained."
+        },
+        "operating_metric_class": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "enum": [
+                "revenue",
+                "volume",
+                "pricing",
+                "gross_margin",
+                "operating_margin",
+                "backlog_orders",
+                "capacity_utilization",
+                "input_cost",
+                "market_share"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "hypothesis_state": {
+      "enum": ["supported_hypothesis", "abstained"],
+      "description": "COMPILER-DERIVED headline. supported_hypothesis requires graph_states.graph_1=supported AND a hypothesized mechanism. Everything else is abstained — a complete research object that must not read as confirmed transfer."
+    },
+    "abstention": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["abstained", "reasons"],
+      "properties": {
+        "abstained": { "type": "boolean" },
+        "reasons": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "enum": [
+              "unresolved_identity",
+              "conflicting_identity",
+              "no_graph1_evidence",
+              "insufficient_role_evidence",
+              "rights_blocked",
+              "coverage_insufficient",
+              "no_mechanism_hypothesized",
+              "stale_owner_object",
+              "clock_missing_or_future",
+              "correction_not_yet_knowable"
+            ]
+          },
+          "description": "Typed, closed. Empty exactly when abstained=false."
+        }
+      }
+    },
+    "alternatives": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 12,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["explanation_class", "text"],
+        "properties": {
+          "explanation_class": {
+            "enum": [
+              "common_cause_macro",
+              "sector_factor",
+              "narrative_similarity_only",
+              "market_sympathy_only",
+              "liquidity_flow_technical",
+              "coincident_timing",
+              "other_disclosed"
+            ]
+          },
+          "text": { "type": "string", "minLength": 1, "maxLength": 600 }
+        }
+      },
+      "description": "Competing explanations are mandatory on every record, including abstentions."
+    },
+    "falsifiers": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 12,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["condition", "observable"],
+        "properties": {
+          "condition": { "type": "string", "minLength": 1, "maxLength": 600 },
+          "observable": { "type": "string", "minLength": 1, "maxLength": 600 }
+        }
+      },
+      "description": "Observable invalidation conditions. Internal/research tier — falsifier language never surfaces on user cycle pages (operator 2026-07-27)."
+    },
+    "expiry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["review_by"],
+      "properties": {
+        "review_by": { "$ref": "#/$defs/date" },
+        "note": { "type": "string", "minLength": 1, "maxLength": 300 }
+      },
+      "description": "Every hypothesis carries a review clock; nothing is evergreen."
+    },
+    "authority": {
+      "const": {
+        "trading": false,
+        "ranking": false,
+        "gating": false,
+        "sizing": false,
+        "entry": false,
+        "originates_signals": false,
+        "display_only": true,
+        "permitted_consumers": ["research", "display"]
+      },
+      "description": "All authority axes are const-false. There is no lawful way to emit an authoritative K3-D record."
+    },
+    "economic_share": {
+      "type": "null",
+      "description": "Reserved formula-unowned axis. MUST be null until its canonical owner mints a formula (GMI W2 verdict). K3-D may not invent one."
+    },
+    "content_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "sha256 of the canonical serialization of this record with content_sha256 blanked. Deterministic-repeat law."
+    }
+  },
+  "$defs": {
+    "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "datetime": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})$"
+    },
+    "datetime_or_date": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}(T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2}))?$"
+    },
+    "owner_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["owner_program", "artifact"],
+      "properties": {
+        "owner_program": {
+          "enum": [
+            "gmi-theme-graph",
+            "group-reads",
+            "earnings-intelligence",
+            "government-revenue-foresight",
+            "biocatalyst",
+            "thematic-intelligence",
+            "policy-transmission-intelligence",
+            "stock-identity",
+            "data-os",
+            "edgar-ingest"
+          ],
+          "description": "Closed set of recognized native owners. K3-D reads them; it never writes them."
+        },
+        "artifact": { "type": "string", "minLength": 1, "maxLength": 300, "pattern": "^[^\\r\\n]+$" },
+        "artifact_schema": { "type": "string", "minLength": 1, "maxLength": 120, "pattern": "^[^\\r\\n]+$" }
+      }
+    },
+    "evidence_refs": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 16,
+      "items": { "type": "string", "minLength": 1, "maxLength": 400, "pattern": "^[^\\r\\n]+$" }
+    },
+    "coverage_state": {
+      "enum": ["covered", "partial", "coverage_insufficient", "unknown"],
+      "description": "Derived from the actual owner objects, never from field names or nominal source meaning."
+    },
+    "usability_state": {
+      "enum": ["usable", "rights_blocked", "stale", "not_yet_knowable", "superseded", "coverage_insufficient"],
+      "description": "Only usable legs support graph states. Every other value is a typed non-usable state."
+    },
+    "identity_resolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resolution_state", "owner_ref", "issuer_id", "security_id", "resolution_asof"],
+      "properties": {
+        "resolution_state": {
+          "enum": ["RESOLVED", "NOT_IN_MASTER", "UNRESOLVED", "CONFLICTING", "UNSUPPORTED_MARKET", "DEFERRED_IDENTITY_EXCEPTION", "ENTITY_TYPE_CONFLICT"],
+          "description": "Data OS / Stock Identity verdict, carrying the OWNER vocabulary as observed in production (gmi.identity_resolution/v1 emits RESOLVED / NOT_IN_MASTER / UNSUPPORTED_MARKET / DEFERRED_IDENTITY_EXCEPTION / ENTITY_TYPE_CONFLICT; UNRESOLVED and CONFLICTING are the contract's generic forms). Anything but RESOLVED forces typed abstention before any semantic inference."
+        },
+        "owner_ref": { "$ref": "#/$defs/owner_ref" },
+        "issuer_id": { "oneOf": [{ "type": "null" }, { "type": "string", "minLength": 1, "maxLength": 120, "pattern": "^[^\\r\\n]+$" }] },
+        "security_id": { "oneOf": [{ "type": "null" }, { "type": "string", "minLength": 1, "maxLength": 120, "pattern": "^[^\\r\\n]+$" }] },
+        "resolution_asof": { "$ref": "#/$defs/date" }
+      }
+    },
+    "graph_tag": { "enum": ["graph_1", "graph_2", "graph_3"] },
+    "construct": {
+      "enum": [
+        "disclosed_customer_supplier",
+        "disclosed_partner_license",
+        "common_customer_supplier",
+        "product_end_market_exposure",
+        "program_award_fact",
+        "ownership_cashflow_change",
+        "disclosed_agreement_role_unknown",
+        "theme_membership",
+        "curated_peer_set",
+        "narrative_topic",
+        "protocol_comparability",
+        "segment_kpi_comparability",
+        "residual_comovement",
+        "earnings_sympathy",
+        "group_pulse_state",
+        "peer_participation_breadth",
+        "historical_transmission_neighbor",
+        "options_volume_attention",
+        "etf_tracking"
+      ],
+      "description": "Closed construct vocabulary. Every construct carries a fixed graph assignment in generator_registry.v1.json construct_vocabulary; a leg claiming a graph its construct does not belong to is laundering (K3D_R032)."
+    },
+    "graph1_leg": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["leg_id", "graph", "construct", "role", "role_evidence_class", "claim_strength", "owner_ref", "evidence_refs", "asof", "known_at", "usability_state"],
+      "properties": {
+        "leg_id": { "type": "string", "minLength": 1, "maxLength": 80, "pattern": "^[a-z0-9_:-]+$" },
+        "graph": { "const": "graph_1" },
+        "construct": { "$ref": "#/$defs/construct" },
+        "role": {
+          "enum": [
+            "customer",
+            "supplier",
+            "partner",
+            "competitor",
+            "distributor",
+            "licensor",
+            "licensee",
+            "common_customer",
+            "common_supplier",
+            "product_exposure",
+            "end_market_exposure",
+            "geography_exposure",
+            "regulation_exposure",
+            "program_participant",
+            "facility_dependency",
+            "bottleneck_dependency",
+            "ownership_cashflow",
+            "role_unknown"
+          ]
+        },
+        "role_evidence_class": {
+          "enum": ["disclosed_role_specific", "strongly_evidenced_role", "agreement_role_unknown", "identity_only", "none"],
+          "description": "What the SOURCE actually supports. agreement_role_unknown (e.g. a generic 8-K agreement or financing-agent counterparty) can only carry role=role_unknown — never customer/supplier (K3D_R031). identity_only (ownership without cash-flow-rights change) supports no economic role."
+        },
+        "claim_strength": { "enum": ["disclosed", "strongly_evidenced", "candidate"] },
+        "owner_ref": { "$ref": "#/$defs/owner_ref" },
+        "evidence_refs": { "$ref": "#/$defs/evidence_refs" },
+        "asof": { "$ref": "#/$defs/date" },
+        "known_at": { "$ref": "#/$defs/datetime_or_date" },
+        "usability_state": { "$ref": "#/$defs/usability_state" }
+      }
+    },
+    "graph2_leg": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["leg_id", "graph", "construct", "comparability_basis", "owner_ref", "evidence_refs", "asof", "known_at", "usability_state"],
+      "properties": {
+        "leg_id": { "type": "string", "minLength": 1, "maxLength": 80, "pattern": "^[a-z0-9_:-]+$" },
+        "graph": { "const": "graph_2" },
+        "construct": { "$ref": "#/$defs/construct" },
+        "comparability_basis": {
+          "enum": ["shared_theme_vocabulary", "curated_peer_membership", "segment_kpi_overlap", "narrative_co_acceleration", "protocol_comparability"],
+          "description": "Explains comparability, NOT a customer/supplier relationship."
+        },
+        "owner_ref": { "$ref": "#/$defs/owner_ref" },
+        "evidence_refs": { "$ref": "#/$defs/evidence_refs" },
+        "asof": { "$ref": "#/$defs/date" },
+        "known_at": { "$ref": "#/$defs/datetime_or_date" },
+        "usability_state": { "$ref": "#/$defs/usability_state" }
+      }
+    },
+    "graph3_leg": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["leg_id", "graph", "construct", "market_state_basis", "owner_ref", "evidence_refs", "asof", "known_at", "usability_state"],
+      "properties": {
+        "leg_id": { "type": "string", "minLength": 1, "maxLength": 80, "pattern": "^[a-z0-9_:-]+$" },
+        "graph": { "const": "graph_3" },
+        "construct": { "$ref": "#/$defs/construct" },
+        "market_state_basis": {
+          "enum": ["residual_comovement", "sympathy_around_print", "group_pulse", "participation_breadth", "attention_options_volume", "incorporation_state"],
+          "description": "How the market is treating the names right now. Can exist with no Graph-1 path; cannot be inverted into economic cause."
+        },
+        "owner_ref": { "$ref": "#/$defs/owner_ref" },
+        "evidence_refs": { "$ref": "#/$defs/evidence_refs" },
+        "asof": { "$ref": "#/$defs/date" },
+        "known_at": { "$ref": "#/$defs/datetime_or_date" },
+        "usability_state": { "$ref": "#/$defs/usability_state" }
+      }
+    }
+  }
+}

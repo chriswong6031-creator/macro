@@ -716,6 +716,19 @@ jobs:
       # contract compilers adjacent.
       - name: K3-E Opportunity Evidence Vector contract and hostile-fixture kills
         run: python -m pytest tests/test_opportunity_evidence_vector_contract.py -q
+      # K3-D is the Economic Propagation hypothesis contract: one governed
+      # display/research-tier record composing Graph 1/2/3 OWNER evidence
+      # (contracts/economic_propagation/propagation_hypothesis.v1.schema.json +
+      # generator_registry.v1.json) with typed abstention when Graph-1
+      # relationship, exact identity, rights, clocks or coverage are missing —
+      # never a store, never a graph, never a score. lib/economic_propagation.py
+      # is a pure in-memory validator/composer (json, hashlib, re, pathlib +
+      # jsonschema, same dependency K2-B already rides this job with), so the
+      # install line above satisfies it. Placed after K3-E to keep the Alpha
+      # contract compilers adjacent; the suite's hostile fixtures pin the four
+      # binding DNR kills and the participation-generator refusal.
+      - name: K3-D Economic Propagation hypothesis contract and laundering kills
+        run: python -m pytest tests/test_economic_propagation_hypothesis_contract.py -q
       # Four detector ids exist as byte-identical strings in THREE implementations
       # with three separate threshold stores: scripts/build_fundamental_forensics.py
       # (inline FRACTION literals, Filing Forensics workbench),

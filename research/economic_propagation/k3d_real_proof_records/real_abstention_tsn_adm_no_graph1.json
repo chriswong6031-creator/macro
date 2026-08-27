@@ -1,0 +1,148 @@
+{
+  "schema": "economic_propagation.propagation_hypothesis/v1",
+  "version": 1,
+  "record_id": "eph1:00af09cb1ce455b9",
+  "binding_kills": [
+    "DNR:KILL-PSS-SR2-PEER-DIFFUSION",
+    "DNR:KILL-PSS-SR3-PARTICIPATION",
+    "DNR:KILL-CN-SUPPLY-ABSORPTION",
+    "DNR:KILL-CAUSAL-DAG-ALPHA"
+  ],
+  "asof": "2026-08-26",
+  "compiled_at": "2026-08-27T00:00:00Z",
+  "source_event": {
+    "event_id": "8-K:TSN:0001140361-26-034195",
+    "owner_ref": {
+      "owner_program": "edgar-ingest",
+      "artifact": "data/edgar/material_8k_events.parquet",
+      "artifact_schema": "material_8k_events"
+    },
+    "event_class": "filing_8k",
+    "source_identity": {
+      "resolution_state": "RESOLVED",
+      "owner_ref": {
+        "owner_program": "gmi-theme-graph",
+        "artifact": "data/theme_graph/identity_resolution.parquet",
+        "artifact_schema": "gmi.identity_resolution/v1"
+      },
+      "issuer_id": "ISS:US-XNYS-TSN",
+      "security_id": "SEC:US-XNYS-TSN",
+      "resolution_asof": "2026-08-18"
+    },
+    "event_time": "2026-08-24",
+    "known_at": "2026-08-25T00:02:11Z"
+  },
+  "target": {
+    "requested_key": "co:us:ADM",
+    "resolution": {
+      "resolution_state": "RESOLVED",
+      "owner_ref": {
+        "owner_program": "gmi-theme-graph",
+        "artifact": "data/theme_graph/identity_resolution.parquet",
+        "artifact_schema": "gmi.identity_resolution/v1"
+      },
+      "issuer_id": "ISS:US-XNYS-ADM",
+      "security_id": "SEC:US-XNYS-ADM",
+      "resolution_asof": "2026-08-18"
+    }
+  },
+  "generator_admissions": [
+    {
+      "generator_id": "gen_theme_membership",
+      "graph": "graph_2",
+      "construct": "theme_membership",
+      "owner_ref": {
+        "owner_program": "gmi-theme-graph",
+        "artifact": "data/theme_graph/edges.parquet",
+        "artifact_schema": "theme_graph.edges.v1"
+      },
+      "evidence_refs": [
+        "member_of:co:us:TSN->ltheme:finviz:agricultureprocessing@2026-06-27",
+        "member_of:co:us:ADM->ltheme:finviz:agricultureprocessing@2026-06-27"
+      ],
+      "asof": "2026-06-27",
+      "known_at": "2026-08-15",
+      "coverage_state": "covered"
+    }
+  ],
+  "relationship_paths": [],
+  "similarity_evidence": [
+    {
+      "leg_id": "g2:ltheme:agricultureprocessing",
+      "graph": "graph_2",
+      "construct": "theme_membership",
+      "comparability_basis": "shared_theme_vocabulary",
+      "owner_ref": {
+        "owner_program": "gmi-theme-graph",
+        "artifact": "data/theme_graph/edges.parquet",
+        "artifact_schema": "theme_graph.edges.v1"
+      },
+      "evidence_refs": [
+        "member_of:co:us:TSN->ltheme:finviz:agricultureprocessing@2026-06-27 (era=reconstruction; latest-belief vocabulary, not historically-known membership)",
+        "member_of:co:us:ADM->ltheme:finviz:agricultureprocessing@2026-06-27 (era=reconstruction)"
+      ],
+      "asof": "2026-06-27",
+      "known_at": "2026-08-15",
+      "usability_state": "usable"
+    }
+  ],
+  "market_evidence": [],
+  "graph_states": {
+    "graph_1": "unknown_unavailable",
+    "graph_2": "present",
+    "graph_3": "absent"
+  },
+  "mechanism": {
+    "state": "abstained",
+    "mechanism_class": null,
+    "hypothesis_text": null,
+    "predicted_operating_direction": null,
+    "operating_metric_class": null
+  },
+  "hypothesis_state": "abstained",
+  "abstention": {
+    "abstained": true,
+    "reasons": [
+      "no_graph1_evidence"
+    ]
+  },
+  "alternatives": [
+    {
+      "explanation_class": "narrative_similarity_only",
+      "text": "TSN and ADM share finviz agriculture-processing theme vocabulary; shared vocabulary explains comparability, not a customer/supplier cash-flow path."
+    },
+    {
+      "explanation_class": "common_cause_macro",
+      "text": "Both names respond to the same agricultural commodity input-cost cycle; a common cause moves both without any transfer between them."
+    }
+  ],
+  "falsifiers": [
+    {
+      "condition": "A role-specific TSN-ADM disclosure appears (10-K customer/supplier naming, or a GMI Graph-1 edge with owner role evidence)",
+      "observable": "theme_graph.edges.v1 SUPPLIES/BENEFITS_FROM row for co:us:TSN-co:us:ADM, or an EDGAR filing naming the role"
+    },
+    {
+      "condition": "The shared-theme comparability claim itself lapses (either name leaves the theme in a later belief)",
+      "observable": "MEMBER_OF edge valid_to set or absent in a later theme_graph belief"
+    }
+  ],
+  "expiry": {
+    "review_by": "2026-09-26",
+    "note": "Re-derive at next theme-graph belief or on any GR3b role-specific extraction landing."
+  },
+  "authority": {
+    "trading": false,
+    "ranking": false,
+    "gating": false,
+    "sizing": false,
+    "entry": false,
+    "originates_signals": false,
+    "display_only": true,
+    "permitted_consumers": [
+      "research",
+      "display"
+    ]
+  },
+  "economic_share": null,
+  "content_sha256": "0a1db4f3c6afa776fba3dfcf36a0b200249c5db71ad0513b130e5e0290cfa6a4"
+}

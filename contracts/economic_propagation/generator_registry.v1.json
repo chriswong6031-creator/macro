@@ -1,0 +1,159 @@
+{
+  "schema": "economic_propagation.generator_registry/v1",
+  "version": 1,
+  "description": "Closed registry of target-admission generators and the construct->graph vocabulary for economic_propagation.propagation_hypothesis/v1. A generator names ONE way a target can be admitted into a propagation hypothesis, tagged with the graph its evidence actually belongs to. Rows with admits_target=false are REFUSALS: their construct exists (so it can be recorded as Graph-3 context) but it can never be the reason a target is considered economic propagation. This registry is a vocabulary, not a graph, a store, or a control plane. K3-D reads owner artifacts; it never writes them.",
+  "binding_kills": {
+    "DNR:KILL-PSS-SR2-PEER-DIFFUSION": "Peer new-low diffusion at a tested low: exact construction closed; stratified effects adverse on every outcome layer (DEV and VAL). Peer adjacency does not mean transfer.",
+    "DNR:KILL-PSS-SR3-PARTICIPATION": "CORRECTED SUMMARY (c0 §4.2 rider repair): SR3 did not merely demote participation to display tier — it KILLED the synchronized peer-participation target-generator construction outright, and requires any future peer-state species to measure an ORTHOGONAL source of durable absorption or selective leadership, never another contemporaneous sector-breadth relief label. In this contract, peer participation/breadth alone can never admit a target (admits_target=false below).",
+    "DNR:KILL-CN-SUPPLY-ABSORPTION": "Price-only absorption is momentum (construct kill, #1944). Absorption cannot be reconstituted from broad participation or co-movement, in any market.",
+    "DNR:KILL-CAUSAL-DAG-ALPHA": "No causal DAG -> alpha score -> trade path from discovered graphs. This record class is hypothesis/evidence tier with all authority axes const-false."
+  },
+  "construct_vocabulary": {
+    "disclosed_customer_supplier": "graph_1",
+    "disclosed_partner_license": "graph_1",
+    "common_customer_supplier": "graph_1",
+    "product_end_market_exposure": "graph_1",
+    "program_award_fact": "graph_1",
+    "ownership_cashflow_change": "graph_1",
+    "disclosed_agreement_role_unknown": "graph_1",
+    "theme_membership": "graph_2",
+    "curated_peer_set": "graph_2",
+    "narrative_topic": "graph_2",
+    "protocol_comparability": "graph_2",
+    "segment_kpi_comparability": "graph_2",
+    "residual_comovement": "graph_3",
+    "earnings_sympathy": "graph_3",
+    "group_pulse_state": "graph_3",
+    "peer_participation_breadth": "graph_3",
+    "historical_transmission_neighbor": "graph_3",
+    "options_volume_attention": "graph_3",
+    "etf_tracking": "graph_3"
+  },
+  "construct_notes": {
+    "disclosed_agreement_role_unknown": "A generic 8-K agreement or a financing-agent counterparty proves two names signed something — it does NOT say who supplies whom. Graph-1-candidate only; role must stay role_unknown (K3D_R031). GR linked-outsiders' closed vocabulary and module header forbid Customer/Supplier/Partner/Competitor labels.",
+    "ownership_cashflow_change": "Ownership counts as Graph 1 only when it changes cash-flow rights (JV, sub, parent). GovRev defense19-v1 legal/ownership identity is NOT an economic relationship by itself.",
+    "protocol_comparability": "Bio trial-protocol comparability (same indication/endpoint) is not a commercial peer; contract text of trial_peer_set.v1 forbids the inference.",
+    "etf_tracking": "A tradable proxy, not economic exposure; exposure axes stay reserved-null.",
+    "theme_membership": "Theme/basket membership is vocabulary (Graph 2). It is never a supplier or beneficiary edge; theme_graph reserved Graph-1 edge types have never been emitted (zero rows on main at freeze time).",
+    "historical_transmission_neighbor": "Neighbor is not cause. Admits a target for study only; asserts no economic path."
+  },
+  "generators": [
+    {
+      "generator_id": "gen_disclosed_customer_supplier",
+      "graph": "graph_1",
+      "construct": "disclosed_customer_supplier",
+      "admits_target": true,
+      "native_owner": "gmi-theme-graph",
+      "reference": "contracts/theme_graph/edges.v1.schema.json reserved SUPPLIES/ENABLES/BENEFITS_FROM (never emitted as of freeze); future GR3b role-specific extraction",
+      "notes": "The only fully economic customer/supplier generator. As of freeze there is NO live owner row of this construct anywhere in the estate — a record claiming it must carry a real owner ref or abstain."
+    },
+    {
+      "generator_id": "gen_common_customer_supplier",
+      "graph": "graph_1",
+      "construct": "common_customer_supplier",
+      "admits_target": true,
+      "native_owner": "government-revenue-foresight",
+      "reference": "GovRev award facts (common awarding customer); XBRL segment fingerprints (future)",
+      "notes": "Common-customer via award facts is award-vehicle evidence; agency mix is not a customer node without role-specific support."
+    },
+    {
+      "generator_id": "gen_product_end_market",
+      "graph": "graph_1",
+      "construct": "product_end_market_exposure",
+      "admits_target": true,
+      "native_owner": "earnings-intelligence",
+      "reference": "earnings fact packs / segment disclosures (issuer event grain)",
+      "notes": "Requires disclosed product/end-market exposure, not narrative co-mention."
+    },
+    {
+      "generator_id": "gen_program_award_catalyst",
+      "graph": "graph_1",
+      "construct": "program_award_fact",
+      "admits_target": true,
+      "native_owner": "government-revenue-foresight",
+      "reference": "government award facts; theme_graph CATALYST_OF reserved (never emitted as of freeze)",
+      "notes": "Event->name catalyst from award facts only; never minted from a theme tag."
+    },
+    {
+      "generator_id": "gen_disclosed_agreement",
+      "graph": "graph_1",
+      "construct": "disclosed_agreement_role_unknown",
+      "admits_target": true,
+      "native_owner": "group-reads",
+      "reference": "group_linked_outsiders.v1 (engine/group_linked_outsiders.py); data/edgar/material_8k_events.parquet counterparty",
+      "notes": "Admits the target as a Graph-1 CANDIDATE only. Role stays role_unknown; graph_1 state can be at most insufficient_role on this generator alone. 8-K counterparty population is dominated by financing agents (c0 §4.2), which is exactly why this cannot self-upgrade."
+    },
+    {
+      "generator_id": "gen_theme_membership",
+      "graph": "graph_2",
+      "construct": "theme_membership",
+      "admits_target": true,
+      "native_owner": "gmi-theme-graph",
+      "reference": "theme_graph.edges.v1 MEMBER_OF/EXPRESSES (latest-belief; era=reconstruction rows are never historically-known membership)",
+      "notes": "Admits as Graph-2 comparability only."
+    },
+    {
+      "generator_id": "gen_curated_peer_set",
+      "graph": "graph_2",
+      "construct": "curated_peer_set",
+      "admits_target": true,
+      "native_owner": "group-reads",
+      "reference": "data/baskets/membership.json (PIT added/removed vs as_of)",
+      "notes": "Membership is not an economic edge."
+    },
+    {
+      "generator_id": "gen_narrative_topic",
+      "graph": "graph_2",
+      "construct": "narrative_topic",
+      "admits_target": true,
+      "native_owner": "thematic-intelligence",
+      "reference": "theme crosswalk / narrative topics; EI claim graph vocabulary",
+      "notes": "Narrative co-acceleration explains comparability, never transfer."
+    },
+    {
+      "generator_id": "gen_protocol_comparability",
+      "graph": "graph_2",
+      "construct": "protocol_comparability",
+      "admits_target": true,
+      "native_owner": "biocatalyst",
+      "reference": "trial_peer_set.v1 (engine/biocatalyst/peer_matrix.py)",
+      "notes": "Not a clinical or commercial peer assertion."
+    },
+    {
+      "generator_id": "gen_residual_comovement",
+      "graph": "graph_3",
+      "construct": "residual_comovement",
+      "admits_target": true,
+      "native_owner": "group-reads",
+      "reference": "group_pulse.v1 (build_baskets.py); residual organs (CSP/XSR) as context",
+      "notes": "Admits a target as Graph-3-admitted only; residual co-movement is common-factor-compatible and never implies a Graph-1 path."
+    },
+    {
+      "generator_id": "gen_earnings_sympathy",
+      "graph": "graph_3",
+      "construct": "earnings_sympathy",
+      "admits_target": true,
+      "native_owner": "group-reads",
+      "reference": "group_earnings_pulse.v1 sympathy block",
+      "notes": "Sympathy around a print is co-movement, not read-through causality."
+    },
+    {
+      "generator_id": "gen_transmission_neighbor",
+      "graph": "graph_3",
+      "construct": "historical_transmission_neighbor",
+      "admits_target": true,
+      "native_owner": "policy-transmission-intelligence",
+      "reference": "transmission_chains.v1 episode state (macro context only)",
+      "notes": "Neighbor is not cause; TXI chains are macro->asset, not firm-to-firm."
+    },
+    {
+      "generator_id": "gen_peer_participation_breadth",
+      "graph": "graph_3",
+      "construct": "peer_participation_breadth",
+      "admits_target": false,
+      "native_owner": "group-reads",
+      "reference": "group_pulse.v1 participation/breadth",
+      "refusal": "REFUSAL ROW (binding, c0 §4.2): peer participation/breadth alone can never admit a target as economic propagation. DNR:KILL-PSS-SR2-PEER-DIFFUSION and DNR:KILL-PSS-SR3-PARTICIPATION killed the participation/diffusion target-generator constructions; SR3 additionally requires any future peer-state species to measure an orthogonal source. Participation may appear as a market_evidence leg (Graph-3 context) on a target admitted by another generator; it may never appear in generator_admissions."
+    }
+  ]
+}

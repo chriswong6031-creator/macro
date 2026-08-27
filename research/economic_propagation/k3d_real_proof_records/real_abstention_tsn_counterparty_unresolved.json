@@ -1,0 +1,103 @@
+{
+  "schema": "economic_propagation.propagation_hypothesis/v1",
+  "version": 1,
+  "record_id": "eph1:e9bad2ac4cbed771",
+  "binding_kills": [
+    "DNR:KILL-PSS-SR2-PEER-DIFFUSION",
+    "DNR:KILL-PSS-SR3-PARTICIPATION",
+    "DNR:KILL-CN-SUPPLY-ABSORPTION",
+    "DNR:KILL-CAUSAL-DAG-ALPHA"
+  ],
+  "asof": "2026-08-26",
+  "compiled_at": "2026-08-27T00:00:00Z",
+  "source_event": {
+    "event_id": "8-K:TSN:0001140361-26-034195",
+    "owner_ref": {
+      "owner_program": "edgar-ingest",
+      "artifact": "data/edgar/material_8k_events.parquet",
+      "artifact_schema": "material_8k_events"
+    },
+    "event_class": "filing_8k",
+    "source_identity": {
+      "resolution_state": "RESOLVED",
+      "owner_ref": {
+        "owner_program": "gmi-theme-graph",
+        "artifact": "data/theme_graph/identity_resolution.parquet",
+        "artifact_schema": "gmi.identity_resolution/v1"
+      },
+      "issuer_id": "ISS:US-XNYS-TSN",
+      "security_id": "SEC:US-XNYS-TSN",
+      "resolution_asof": "2026-08-18"
+    },
+    "event_time": "2026-08-24",
+    "known_at": "2026-08-25T00:02:11Z"
+  },
+  "target": {
+    "requested_key": "Bank of New York Mellon Trust Company",
+    "resolution": {
+      "resolution_state": "UNRESOLVED",
+      "owner_ref": {
+        "owner_program": "gmi-theme-graph",
+        "artifact": "data/theme_graph/identity_resolution.parquet",
+        "artifact_schema": "gmi.identity_resolution/v1"
+      },
+      "issuer_id": null,
+      "security_id": null,
+      "resolution_asof": "2026-08-18"
+    }
+  },
+  "generator_admissions": [],
+  "relationship_paths": [],
+  "similarity_evidence": [],
+  "market_evidence": [],
+  "graph_states": {
+    "graph_1": "unknown_unavailable",
+    "graph_2": "absent",
+    "graph_3": "absent"
+  },
+  "mechanism": {
+    "state": "abstained",
+    "mechanism_class": null,
+    "hypothesis_text": null,
+    "predicted_operating_direction": null,
+    "operating_metric_class": null
+  },
+  "hypothesis_state": "abstained",
+  "abstention": {
+    "abstained": true,
+    "reasons": [
+      "unresolved_identity"
+    ]
+  },
+  "alternatives": [
+    {
+      "explanation_class": "other_disclosed",
+      "text": "The 8-K counterparty is an indenture trustee on a debt issuance (items 1.01/2.03); a financing agent is not a commercial customer or supplier of the filer."
+    }
+  ],
+  "falsifiers": [
+    {
+      "condition": "The counterparty string resolves through the canonical identity surface to an exact issuer",
+      "observable": "gmi.identity_resolution/v1 (or Data OS master) row with resolution_state=RESOLVED for this entity"
+    }
+  ],
+  "expiry": {
+    "review_by": "2026-09-26",
+    "note": "A naive fuzzy alias map to ticker BK is exactly the guess this contract forbids."
+  },
+  "authority": {
+    "trading": false,
+    "ranking": false,
+    "gating": false,
+    "sizing": false,
+    "entry": false,
+    "originates_signals": false,
+    "display_only": true,
+    "permitted_consumers": [
+      "research",
+      "display"
+    ]
+  },
+  "economic_share": null,
+  "content_sha256": "dbc64b5c7ae1daeb45ab1beed060850650b63aa306c691dd3cc143ea4de37291"
+}
