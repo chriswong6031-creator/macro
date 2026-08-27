@@ -43,7 +43,7 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           s = Path('.github/ci/legacy-jobs.yml').read_text()
-          assert s.count('          tests/test_prophet_live_pack_d12.py\n') == 2
+          assert s.count('          tests/test_prophet_live_pack_d12.py\n') == 1
           h = Path('agentos/handoffs/WS-PROPHET-US-AVAILABILITY-2026-08-26-live-force-majeure.md').read_text()
           assert 'BUILT_NOT_PROVEN' in h and 'invalid_series_tip' in h
           r = Path('research/PROPHET_US_LIVE_FORCE_MAJEURE_2026_08_26_EVIDENCE.md').read_text()
