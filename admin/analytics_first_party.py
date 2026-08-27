@@ -279,12 +279,31 @@ def _excluded_cte() -> str:
         "  or e.ip in (select ip from excl_geo_ips) or e.ip in (select ip from excl_ips) "
         "  or e.visitor_id in (select visitor_id from excl_vids) "
         f"  or e.ip in ({','.join(_LOOPBACK_IPS)}))), "
-        "excl_link as (select distinct e2.visitor_id from public.analytics_events e2 "
-        "  join (select distinct fp, ip from public.analytics_events "
-        "        where visitor_id in (select visitor_id from excl_seed)) k "
-        "    on (e2.fp = k.fp and e2.fp is not null) "
-        f"    or (e2.ip = k.ip and {_routable('e2.ip')} and {_routable('k.ip')}) "
-        "  where e2.visitor_id is not null), "
+        # An OR across two DIFFERENT join keys is not a join Postgres can hash or merge,
+        # so it planned the only thing left: a nested loop evaluating the predicate for
+        # every (event x anchor) pair. Measured on production 2026-08-26 — 58,702 rows
+        # against 271 anchors = 15.9M filter evaluations, 3.75s of this CTE's 3.9s, on a
+        # 58k-row / 40MB table. `excluded` is embedded in EVERY statement of EVERY
+        # analytics tab, so that nested loop was the floor under the whole surface.
+        #
+        # `a or b` over a set we only read as DISTINCT visitor_id is `a` UNION `b`, and
+        # each arm on its own is a plain equi-join the planner hashes. Same rows —
+        # both definitions evaluated in ONE statement against the live table, symmetric
+        # difference 0 (a count match would not have been proof, and a two-round-trip
+        # comparison could not tell a real difference from an event landing between
+        # them). 2.79s -> 0.58s, of which ~0.34s is the API round trip itself.
+        "excl_link as ("
+        "  select e2.visitor_id from public.analytics_events e2 "
+        "    join (select distinct fp from public.analytics_events "
+        "          where visitor_id in (select visitor_id from excl_seed) "
+        "            and fp is not null) kf on kf.fp = e2.fp "
+        "  where e2.visitor_id is not null and e2.fp is not null "
+        "  union "
+        "  select e2.visitor_id from public.analytics_events e2 "
+        "    join (select distinct ip from public.analytics_events "
+        "          where visitor_id in (select visitor_id from excl_seed) "
+        f"            and {_routable('ip')}) ki on ki.ip = e2.ip "
+        f"  where e2.visitor_id is not null and {_routable('e2.ip')}), "
         "excluded as (select visitor_id from excl_seed "
         "             union select visitor_id from excl_link)"
     )
@@ -321,7 +340,19 @@ def _bot_cte() -> str:
     return (
         f"bot_ips as ({ips_body}), "
         f"fp_farm as ({farm_body}), "
-        "bots as (select distinct e.visitor_id from public.analytics_events e "
+        # Every signal below is a function of (visitor_id, ua, ip, fp) plus the ip_geo
+        # row that `ip` joins to, and the result is a DISTINCT visitor_id either way —
+        # so evaluating them once per EVENT was pure repetition. It made the 40-branch
+        # case-insensitive UA regex run 58,702 times instead of 8,189 (production
+        # 2026-08-26: 2.32s -> 0.72s, and the set is unchanged — symmetric difference 0
+        # against the old definition inside ONE snapshot, so live traffic between two
+        # round trips cannot be what made it look equal). Reducing to distinct
+        # identity tuples FIRST is what makes the regex affordable; it also
+        # keeps the cost tied to how many distinct devices exist rather than to how
+        # much they browsed.
+        "bot_sig as (select distinct visitor_id, ua, ip, fp from public.analytics_events "
+        "  where visitor_id is not null), "
+        "bots as (select distinct e.visitor_id from bot_sig e "
         "  left join public.ip_geo g on g.ip = e.ip "
         "  where e.visitor_id is not null and ("
         "    e.ip in (select ip from bot_ips) "
@@ -467,20 +498,34 @@ def status() -> dict:
     }
 
 
-_QUERY_TIMEOUT_S = 20
+_QUERY_TIMEOUT_S = 9
 
 # Whole-surface budget. Every panel here is a chain of round trips to the Supabase
 # Management API, and admin.mastermind-x.com is served THROUGH a CDN edge (see the
 # admin block in app/deploy/Caddyfile) — so an endpoint that outruns the edge's
 # origin-pull timeout does not fail as this module's {ok:False,...} envelope. It
-# fails as the EDGE's HTML error page, which reaches app.js as a body that is not
+# fails as the EDGE's error response, which reaches app.js as a body that is not
 # JSON at all. That is the "bad json" the console was reporting: not a serialization
 # bug in here, a request that never got to finish.
 #
 # Bounding the whole surface below the edge's patience is what makes the failure
 # legible: whatever else goes wrong, the operator gets a JSON error naming the
 # timeout instead of a gateway page the SPA can only describe as malformed.
-_REQUEST_BUDGET_S = 22.0
+#
+# 22.0 was NOT below it. Measured on production 2026-08-26: `overview` folded in
+# 14.9s at the origin and the admin journal recorded BrokenPipeError writing the
+# response — the edge had already hung up and answered the browser 524 with an
+# empty body, which is exactly the panel error the operator was looking at. So the
+# budget has to sit under the edge's real patience, and the evidence says that is
+# somewhere below 15s. The edge's exact configured origin-pull timeout is NOT
+# measured here (it is EdgeOne zone config, not repo state; 15s is its documented
+# default and matches what we observed) — 10s is chosen to be under it with room
+# to spare, and to stay far above what these panels now actually cost: after the
+# `excluded`/`bots` rewrites above, the slowest surface folds in ~2s.
+#
+# If a panel ever does hit this, the answer the operator gets is the honest one —
+# a JSON error naming the budget — not a gateway page.
+_REQUEST_BUDGET_S = 10.0
 _DEADLINE: contextvars.ContextVar[float | None] = contextvars.ContextVar(
     "fp_deadline", default=None)
 
@@ -648,7 +693,7 @@ def overview(days=7, minutes=None, gap=None) -> dict:
                 f"select e.site, count(*)::int as events, {_CANON_VISITORS} "
                 "from public.analytics_events e left join ident i on i.visitor_id = e.visitor_id "
                 f"where e.created_at > now() - interval '{m} minutes' {human} "
-                "group by e.site order by events desc") or [],
+                "group by e.site order by events desc, e.site") or [],
             daily=lambda: _query(_cte(include_ident=True) +
                 f"select to_char({dt},'{fmt}') as day, "
                 f"{_CANON_VISITORS}, count(*)::int as events "
@@ -665,6 +710,14 @@ def overview(days=7, minutes=None, gap=None) -> dict:
     return _guard(run)
 
 
+# Every ranked list below carries its grouping key as a FINAL sort key. Ranking by a
+# count alone is a partial order, so rows that tie came back in whatever sequence the
+# plan happened to produce — and where the ranking is paired with a LIMIT, that decides
+# MEMBERSHIP, not just position: two cities tied on 4 visitors at the cut, and only one
+# of them is on the panel. It was invisible only because the plan was stable; changing
+# the exclusion CTEs above changed it, and Guangzhou and Singapore (both 4 visitors)
+# swapped places on the Map tab with no data behind the move. Found 2026-08-26 while
+# verifying that rewrite; the instability predates it.
 def pages(days=7, limit=25, minutes=None) -> dict:
     m, n = _win(minutes, days, 10080), _limit(limit, 25)
     def run():
@@ -675,7 +728,7 @@ def pages(days=7, limit=25, minutes=None) -> dict:
             "round(avg(dwell_ms) filter (where dwell_ms is not null))::int as avg_dwell_ms "
             f"from public.analytics_events where created_at > now() - interval '{m} minutes' "
             f"and {_not_excluded('')} and {_not_a_bot('')} "
-            "group by 1,2 order by views desc nulls last "
+            "group by 1,2 order by views desc nulls last, 1, 2 "
             f"limit {n}") or []
         return {"days": round(m / 1440, 2), "minutes": m, "pages": rows}
     return _guard(run)
@@ -690,14 +743,14 @@ def geo(days=30, limit=200, minutes=None) -> dict:
                 "count(distinct e.visitor_id)::int as visitors, count(*)::int as events "
                 "from public.analytics_events e left join public.ip_geo g on g.ip = e.ip "
                 f"where e.created_at > now() - interval '{m} minutes' and {_not_excluded('e')} and {_not_a_bot('e')} "
-                "group by 1,2 order by visitors desc nulls last") or [],
+                "group by 1,2 order by visitors desc nulls last, 1, 2") or [],
             cities=lambda: _query(_cte() +
                 "select g.city, g.region, g.country_code, g.lat, g.lon, "
                 "count(distinct e.visitor_id)::int as visitors "
                 "from public.analytics_events e join public.ip_geo g on g.ip = e.ip "
                 f"where e.created_at > now() - interval '{m} minutes' and g.city is not null "
                 f"and {_not_excluded('e')} and {_not_a_bot('e')} "
-                "group by 1,2,3,4,5 order by visitors desc "
+                "group by 1,2,3,4,5 order by visitors desc, 1, 2, 3 "
                 f"limit {n}") or [],
         )
         return {"days": round(m / 1440, 2), "minutes": m,
@@ -775,7 +828,7 @@ def sessions(limit=100, q="", include_bots=False, minutes=None, days=None, gap=N
             "left join cand c on c.visitor_id = s.visitor_id "
             "left join auth.users cu on cu.id::text = c.uid "
             f"{where}"
-            f"order by s.started desc limit {n}") or []
+            f"order by s.started desc, s.session_id limit {n}") or []
         return {"sessions": _apply_geo_overrides(rows), "q": qq, "include_bots": include_bots,
                 "tz": _TZ, "tz_label": _tz_label(), "visit_gap_min": g}
     return _guard(run)
@@ -851,7 +904,7 @@ def visitors(limit=250, q="", include_bots=False, minutes=None, days=None, gap=N
             "left join auth.users cu on cu.id::text = c.uid "
             "left join public.ip_geo g on g.ip = v.last_ip "
             f"{where}"
-            f"order by v.sessions desc, v.last_seen desc limit {n}") or []
+            f"order by v.sessions desc, v.last_seen desc, v.canon limit {n}") or []
         return {"visitors": _apply_geo_overrides(rows, "last_ip"), "q": qq,
                 "include_bots": include_bots, "tz": _TZ, "tz_label": _tz_label(),
                 "visit_gap_min": g}
@@ -933,7 +986,7 @@ def flow(days=7, limit=40, minutes=None) -> dict:
             f"    and created_at > now() - interval '{m} minutes') "
             "select prev as from_path, path as to_path, count(*)::int as n "
             "from ev where prev is not null and prev <> path "
-            "group by 1,2 order by n desc "
+            "group by 1,2 order by n desc, 1, 2 "
             f"limit {n}") or []
         return {"days": round(m / 1440, 2), "minutes": m, "edges": rows}
     return _guard(run)
@@ -949,12 +1002,12 @@ def terminal(days=7, limit=25, minutes=None) -> dict:
                 "count(distinct coalesce(user_id::text, anon_id, ip))::int as visitors "
                 f"from public.search_events where created_at > now() - interval '{m} minutes' "
                 f"and {_not_excluded_search()} and {no_bot_search} "
-                f"group by 1 order by searches desc limit {n}") or [],
+                f"group by 1 order by searches desc, 1 limit {n}") or [],
             views=lambda: _query(_cte() +
                 "select ticker, count(*)::int as views, count(distinct visitor_id)::int as visitors "
                 "from public.analytics_events where type='ticker_view' and ticker is not null "
                 f"and created_at > now() - interval '{m} minutes' and {_not_excluded('')} and {_not_a_bot('')} "
-                f"group by 1 order by views desc limit {n}") or [],
+                f"group by 1 order by views desc, 1 limit {n}") or [],
             totals=lambda: (_query(_cte() +
                 "select (select count(*)::int from public.search_events "
                 f"  where created_at > now() - interval '{m} minutes' and {_not_excluded_search()} and {no_bot_search}) as search_total, "
@@ -1044,11 +1097,11 @@ def visitor(visitor_id: str, gap=None) -> dict:
                 f"to_char(max({_lt('created_at')}),'YYYY-MM-DD HH24:MI') as last "
                 "from public.search_events "
                 f"where (anon_id in (select visitor_id from myaids) or user_id::text = '{v}') "
-                "group by 1 order by n desc, last desc limit 50") or [],
+                "group by 1 order by n desc, last desc, 1 limit 50") or [],
             tickers_viewed=lambda: _query(cte +
                 "select ticker, count(*)::int as n "
                 f"from public.analytics_events where {inaids} and type='ticker_view' and ticker is not null "
-                "group by 1 order by n desc limit 50") or [],
+                "group by 1 order by n desc, 1 limit 50") or [],
         )
         profile, ips, linked = r["profile"], r["ips"], r["linked"]
         recent, searches, tickers_viewed = r["recent"], r["searches"], r["tickers_viewed"]
