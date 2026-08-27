@@ -88,7 +88,7 @@ do_not_redo:
   - "Do NOT treat 'nightly Prophet is fresh' as evidence the live lane is fresh — they are separate planes and the nightly stayed healthy through all 27 days."
   - "Do NOT use event-spool absence as evidence no passes ran: zero spool objects exist alongside ~1,500 in-window passes."
   - "Do NOT reconstruct the 11 Class-D sessions (08-03/04/05/06/10/12/13/17/18/19/24). Their dark verdict was CORRECT for the pack they were handed; recovering them means minting a pack production never armed."
-  - "SUPERSEDED 2026-08-26 — this entry was WRONG and is kept so the correction travels. Journal-derived rows ARE lawful: `entered` is bool(center_buyable), fixed per name-session and NOT price-derived, so production's own branch-exclusive kinds settle it (at_risk/at_risk_unconfirmed only inside `if on_board:`, crossing_unconfirmed only in the cross branch). 141 of 294 names determined, 0 contradictions; the rest are null. `via` is genuinely unavailable and stays null."
+  - "SUPERSEDED 2026-08-26 — this entry was WRONG and is kept so the correction travels. Journal-derived rows ARE lawful: `entered` is bool(center_buyable), fixed per name-session and NOT price-derived, so production's own branch-exclusive kinds settle it (at_risk/at_risk_unconfirmed only inside `if on_board:`, crossing_unconfirmed only in the cross branch). 141 of 294 name-sessions determined, 0 contradictions; 153 remain null/unknown. `via` is genuinely unavailable and stays null."
   - "Do NOT rebuild this as a PIT replay. The events already exist in the producer's journal; replaying would require the vanished pack and would MINT a cohort. Recovery reconstructs nothing."
   - "Do NOT commit the expanded pending input (~10 MB). It is stage-and-absorb and regenerates byte-for-byte from the committed 197 KB journal + scripts/prophet_live_journal_recovery.py."
   - "Do NOT re-probe R2 for historical armed packs. Versioning is off and ListObjectVersions is unimplemented; the bytes do not exist."
@@ -99,22 +99,17 @@ danger_areas:
   - "Persistent=false on macro-live-prophet.timer is load-bearing and now test-pinned; a reboot must not replay stale live moments."
   - "The pack builder's as_of is the tip of the loaded close series (build_prophet_live_pack.py:167). It is VISIBLE now (pack_ok) but NOT repaired — it will recur."
 next_actions: >
-  1) Merge PR #6464 on concluded-green (merge-on-green armed; the codex pilot X is
-     red-by-design), deploy to /opt/macro, and hold the §9 production proof during
-     a real NYSE session: two consecutive natural invocations, advancing pass_ts,
-     session_et = current session, pack_as_of = last completed session, R2 + served
-     objects advancing, entitled product fetch, nightly board unchanged.
-  2) Return the §25 continuation packet to Sol carrying the two operator items:
-     the unattributed 2026-08-26T07:43:28Z credential seeding, and D12 ownership.
-  3) DONE 2026-08-27: the backfill is executed (598 rows, #6484). No Wave-C replay
-     harness was built and none should be — the events existed already. If more
-     sessions are ever recovered, extend scripts/prophet_live_journal_recovery.py;
-     do not resurrect the §10.5 pack-reconstruction gate, which exists only for a
-     replay path this program did not need.
-  4) DONE 2026-08-27: the 86 Aug-25 rows were matured through the existing
-     canonical reconciler against the Aug-26 close. Final ledger: 598 rows, 0
-     duplicate keys, 598/598 next_close_fill, no FIRST_WINS or entered mutation;
-     receipt data/pit_replay/prophet_live_recovery/_closeout_receipt.json.
+  1) PRIMARY NEXT: assign D12 to one bounded owner and repair the armed-pack `as_of`
+     tip law so a non-session/same-day contaminated close cannot darken a whole future
+     session. Return to Sol with exact mutation proof and live-path evidence; do not
+     couple that repair to the recovered forward ledger.
+  2) INDEPENDENT OPERATOR AUDIT: attribute the 2026-08-26T07:43:28Z R2 credential
+     seeding and record the carrier/operator provenance without rotating or rewriting
+     working credentials merely to make the record tidy.
+  3) HELD INVESTIGATION: classify the partial 2026-07-30 tail after 17:20:56Z. Its
+     existence is not replay/backfill authority; any recovery requires the same
+     point-in-time evidence law and explicit authority that governed the seven Class-R
+     sessions.
 unverified:
   - "The 15m pass_ts / 25m quote thresholds held green across a live session but have not been observed against an early-close or DST-boundary session."
   - "D12 remains unreproduced: the 2026-08-26 pack was clean (0 names ahead of as_of), so the mis-stamp mechanism is proven from code + journal but its upstream trigger is not identified."
@@ -122,7 +117,6 @@ unverified:
 unresolved:
   - "Who seeded /etc/macro-live.env at 2026-08-26T07:43:28Z. It happened ~3 minutes before this session's first VPS connection, from this operator machine, with no PR or Agent OS record. Needs operator acknowledgement."
   - "D12 ownership: the armed pack's as_of inherits the close-series tip (build_prophet_live_pack.py:167). Visible now via pack_ok; unrepaired and will recur."
-  - "RESOLVED 2026-08-26: the Chairman exercised authority to backfill. Executed as RECOVERY (598 rows, PR #6484, squash 37014fcbddda) — see below. §24.2 never bound it because nothing was reconstructed."
   - "The 2026-07-30 tail after 17:20:56Z (~13:21-16:15 ET) is a partial lost session not classified R or D."
 ---
 
