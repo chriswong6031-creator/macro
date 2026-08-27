@@ -446,11 +446,17 @@ verbatim. No state machine was re-run, no quote tape was rebuilt, and **no armed
 was reconstructed** — which is exactly why §24.2 (no surviving pack bytes) does not
 bind this path. There was nothing to mint.
 
-The journal is sound as a source because it self-checks: each pass independently
-declares `events=N` and then prints its event lines. Across the whole outage —
-**672 passes, 672 exact matches, 0 mismatched, 0 orphaned event lines**. A truncated
-log cannot produce that. `scripts/prophet_live_journal_recovery.py` refuses (exit 3)
-on any mismatch, orphan, or branch contradiction rather than accruing a partial pass.
+The committed recovery corpus is the source boundary, not an unscoped host-journal
+count. Its immutable gzip contains **588 pass records: exactly 84 on each of the seven
+Class-R sessions**. Those passes declare **25,958 events** and the gzip carries exactly
+**25,958 `EVENT` lines**, with 0 mismatched passes and 0 orphaned lines. The producer
+timer is `:03/5`; the single canonical ET window is 09:25 through 16:15 plus 10 minutes
+of end grace, which admits exactly 84 scheduled ticks per EDT session (13:28Z through
+20:23Z). The per-session census therefore closes whole-pass completeness, while the
+`events=N` equality closes intra-pass completeness. The earlier **672 passes** claim in
+#6484 prose is not reproducible from the committed gzip and is superseded for recovery
+source-integrity claims. `scripts/prophet_live_journal_recovery.py` still refuses
+(exit 3) on any mismatch, orphan, or branch contradiction.
 
 ## 15.2 How `entered` was recovered without guessing
 
@@ -512,7 +518,38 @@ production never armed, which is the one thing the force-majeure DEC does not co
 
 ## 15.5 Reproducibility
 
-The committed journal (`journal_2026-07-30_2026-08-25.txt.gz`, 197 KB,
-sha256 `d3812a0cec8f50dff57523ffa7163c65d3a3f058da56286fa368185b74156a52`) plus the
-recovery tool regenerate the pending input byte-for-byte. The 10 MB expanded pending
-is deliberately NOT committed — stage-and-absorb, not a persistent queue (§14).
+The committed journal (`journal_2026-07-30_2026-08-25.txt.gz`, 197 KB) plus the
+recovery tool regenerate the pending input byte-for-byte. `_recovery_receipt.json`
+records sha256 `d3812a0cec8f50dff57523ffa7163c65d3a3f058da56286fa368185b74156a52`
+for the **uncompressed source text** supplied to the recovery tool; the committed gzip
+archive bytes hash to sha256
+`2d1f429993fd555482ff3887f5dca13eb8825313be9dcbd702f091d52636884e`.
+The two hashes name different representations and must not be conflated. The 10 MB
+expanded pending is deliberately NOT committed — stage-and-absorb, not a persistent
+queue (§14).
+
+## 15.6 Final maturation — 2026-08-27
+
+The initial absorption in §15.3 was intentionally honest about 86 rows from the
+2026-08-25 session whose `next_close_fill` was still null. The ordinary nightly had
+already run before #6484 created the ledger, so those rows missed that one normal
+maturation pass; this was a sequencing residue, not missing market data.
+
+Sol re-ran the **existing canonical reconciler logic** (`maturing_rows` →
+`_expand_maturing` → `merge_ledger`) against the committed Aug-26 close series. All 38
+open ticker/session pairs had a 2026-08-26 close. The deterministic closeout produced:
+
+- 38 pair updates → exactly **86 row updates**;
+- **598 rows before and after**;
+- **0 duplicate `(date,ticker,kind)` keys**;
+- `next_close_fill`: **512/598 → 598/598**;
+- every matured Aug-25 row has `next_close_date=2026-08-26`;
+- **0 `FIRST_WINS` fields changed** and `entered` did not change;
+- the 153 undetermined name-sessions remain unknown (`entered=null`), never cross;
+- final ledger sha256
+  `fb25fcc6b1935d9fdd5e7e2a6e8a5981411acda6825784afb241eceba968c5e0`.
+
+The durable machine receipt is
+`data/pit_replay/prophet_live_recovery/_closeout_receipt.json`. Class D remains
+refused; no replay, pack reconstruction, board/rank/plan/site mutation, or third ledger
+writer was introduced.
