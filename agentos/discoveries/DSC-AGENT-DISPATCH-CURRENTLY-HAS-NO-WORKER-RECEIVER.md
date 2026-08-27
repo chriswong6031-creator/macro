@@ -10,10 +10,12 @@ claim: >
   (its only thread reply is a same-carrier Sol ACK nudge), and no production Agent Relay or Executive
   Worker claim has proven Slack-to-session/runtime pickup.
 falsifier: >
-  The accepted Agent Relay/runtime path binds an eligible already-active commissioned worker/COO
-  session to an exact commission and produces an explicit ACK/readback, or Executive OS records the
-  corresponding concrete Worker claim/Attempt for a canonical Job. Slack membership, delivery,
-  later GitHub activity, or model/user naming alone is insufficient.
+  Run `rg -n "A2_0_PASS|A2_HOST_COLLISION|Agent Relay|agent-dispatch" agentos/ research/` and follow
+  any exact operation/PR receipts it surfaces. This discovery is falsified when the accepted Agent
+  Relay/runtime path binds an eligible already-active commissioned worker/COO session to an exact
+  commission and produces an explicit ACK/readback, or Executive OS records the corresponding
+  concrete Worker claim/Attempt for a canonical Job. Slack membership, delivery, later GitHub
+  activity, or model/user naming alone is insufficient.
 so_what: >
   Future Sol sessions must keep generic runnable #agent-dispatch fan-out held, must reconcile each
   Slack-origin operation individually against GitHub/Agent OS/Executive evidence, and must not infer
