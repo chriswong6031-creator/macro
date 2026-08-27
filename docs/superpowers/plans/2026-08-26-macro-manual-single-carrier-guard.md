@@ -341,14 +341,16 @@ with pytest.raises(cp.PreflightError):
     cp.claim(clone, ident, "ws-" + "0" * 32, base_sha)
 ```
 
-and dirty-tree refusal:
+and dirty-tree refusal before remote mutation:
 
 ```python
 (clone / "dirty.txt").write_text("dirty\n", encoding="utf-8")
-result = cp.claim(clone, ident, ident.operation_key, base_sha)
-assert result["state"] == "CONFLICT"
+with pytest.raises(cp.PreflightError, match="working tree"):
+    cp.claim(clone, ident, ident.operation_key, base_sha)
 assert _git(clone, "ls-remote", "--heads", "origin", f"refs/heads/{ident.carrier_branch}") == ""
 ```
+
+Dirty local state is an invalid precondition, not the semantic `CONFLICT` state reserved for one work identity paired with incompatible frozen commission metadata.
 
 - [ ] **Step 2: Implement the Git primitives and claim-message contract**
 
@@ -404,7 +406,7 @@ The claim commit must use the exact base tree, so `git diff-tree --no-commit-id 
 
 - [ ] **Step 3: Implement the create-only remote-ref claim**
 
-Use the absent-ref lease exactly once:
+Use the absent-ref lease exactly once, with the option before the repository argument:
 
 ```python
 def _push_create_only(root: Path, branch: str, commit_sha: str) -> subprocess.CompletedProcess[str]:
@@ -412,8 +414,8 @@ def _push_create_only(root: Path, branch: str, commit_sha: str) -> subprocess.Co
     return _run_git(
         root,
         "push",
-        "origin",
         f"--force-with-lease={ref}:",
+        "origin",
         f"{commit_sha}:{ref}",
     )
 ```
@@ -428,7 +430,7 @@ Before relying on it, the unit test must demonstrate that the repository’s sup
 2. validate full lowercase `base_sha` shape;
 3. verify `origin` contains `EXPECTED_ORIGIN_MARKER`;
 4. require `git status --porcelain` empty;
-5. `git fetch --prune origin main`;
+5. run `git fetch --prune origin refs/heads/main:refs/remotes/origin/main` so the comparison ref is explicit;
 6. require the exact base commit exists and is an ancestor of `refs/remotes/origin/main`; otherwise return `BASE_STALE`;
 7. if current branch already equals the carrier, defer to Task 3’s `CLAIMED_SELF` validation;
 8. if the remote carrier already exists, defer to Task 3 classification and perform zero push;
@@ -547,10 +549,10 @@ git worktree list --porcelain
 
 A different worktree holding `refs/heads/<carrier>` is positive `DUPLICATE_ACTIVE` evidence.
 
-For cross-clone visibility, optionally invoke:
+For cross-clone visibility, optionally invoke the same carrier branch in:
 
 ```bash
-gh pr list --repo mastermindx-market-intelligence/macro --head <carrier> --state all --limit 100 --json number,state,isDraft,mergedAt,url,headRefName
+gh pr list --repo mastermindx-market-intelligence/macro --head "$CARRIER_BRANCH" --state all --limit 100 --json number,state,isDraft,mergedAt,url,headRefName
 ```
 
 Rules:
