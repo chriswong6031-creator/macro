@@ -44,7 +44,13 @@ confidence: high
 reversibility: costly
 decided_by: sol
 decided_at: 2026-08-27
+supersedes:
+  - E3FMT-TRANSCRIPT-LOCAL-SOURCE-EVIDENCE-NORMALIZATION: boundary/questioner/scoring portions only
 ---
+
+# Precedence
+
+This R1 decision supersedes the boundary, questioner-association, open-ended role-equivalence, and numeric development/holdout scoring portions of `DEC:E3FMT-TRANSCRIPT-LOCAL-SOURCE-EVIDENCE-NORMALIZATION` wherever they conflict. The original decision remains controlling for the broader transcript-local normalization / no-new-store / no-external-person-inference architecture that R1 does not amend.
 
 # Closed role comparison law
 
