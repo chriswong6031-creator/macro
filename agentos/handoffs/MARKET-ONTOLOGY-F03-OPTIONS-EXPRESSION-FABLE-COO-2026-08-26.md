@@ -13,7 +13,9 @@ state_before: >
   Catalyst Picker→Exposure Map→Structure Explorer→Related Catalysts→Thesis→Alert flow,
   strategy/P&L/Greeks depth and real-time catalyst-to-expiry context. Existing options
   owners are substantial but exact current path/coverage archaeology is still required.
-changed: []
+changed:
+  - path: agentos/handoffs/MARKET-ONTOLOGY-F03-OPTIONS-EXPRESSION-FABLE-COO-2026-08-26.md
+    what: "Created the sustained F03 Fable COO lane commission and its prerequisite/authority envelope."
 verified:
   - claim: "ExpressionCandidate must be a proposal/read model over the existing Options plane, not a second pricing system."
     command: "Read authenticated MO adjudication + parity addendum."
