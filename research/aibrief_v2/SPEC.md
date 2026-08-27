@@ -55,6 +55,7 @@ Engine-emitted (deterministic — never from the LLM):
 | `key_facts` | list[obj], ≤6 | `{key, label_en, label_zh, value_en, value_zh, tone}` — tone ∈ good/warn/bad/neutral/info. Built per lens from calibrated state (§6). Fail-open: missing source → chip omitted, never raises. |
 | `refresh_days` | int | the lens's interval (1 or 3) — UI renders the cadence chip honestly |
 | `style_flags` | list[str] | banned tokens that survived the rewrite retry (observability; NOT rendered on user tiers) |
+| `served_by` | str \| None | NEW (provider ladder). The rung that actually served this brief — `"codex"` / `"oauth"` / `"anthropic"` / `"deepseek"` — or `"cache"` on a reply-cache hit, or `None` on a degraded call. `model` is now the model id of THAT rung (falls back to the configured `llm_model` on a cache hit, a degraded call, or a `call`/`_call_model` stub that ignores the new `served` out-param). Makes the load balancer verifiable from the artifact itself instead of every brief always reading as `deepseek-v4-pro`. Same treatment applies to `ai_desk.v1`'s `model`/`served_by`. |
 
 `schema` field bumps to `"master_brief.v2"`. Builder greps every consumer of the literal
 `master_brief.v1` and fixes string-matches (renderers are `get()`-based fail-open;

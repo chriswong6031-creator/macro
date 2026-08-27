@@ -1576,6 +1576,46 @@ def _mb_reply_cache_put(prompt_hash: str, text: str, cfg: dict, root=None) -> No
 # --------------------------------------------------------------------------- #
 # the model call (DeepSeek V4 Pro via the Anthropic-compatible endpoint)
 # --------------------------------------------------------------------------- #
+def _is_deepseek_lane(cfg: dict) -> bool:
+    """True when this lane's legacy llm_* keys describe DeepSeek's endpoint.
+
+    The shipped config points at DeepSeek's Anthropic-compatible endpoint, so
+    the legacy keys can be safely re-expressed in build_providers' vocabulary.
+    An operator who deliberately pinned some OTHER endpoint keeps the historic
+    single-provider behaviour rather than being silently re-routed off it.
+    """
+    base = str(cfg.get("llm_base_url") or "").lower()
+    env = str(cfg.get("api_key_env") or "DEEPSEEK_API_KEY").upper()
+    return "deepseek" in base or "DEEPSEEK" in env
+
+
+def _ladder_cfg(cfg: dict) -> dict:
+    """Translate master_brain's legacy llm_* config into build_providers' keys.
+
+    THE KEY COLLISION THIS FUNCTION EXISTS TO CLOSE. master_brain's
+    ``api_key_env`` has always named the DEEPSEEK key, while build_providers
+    reads ``api_key_env`` as the ANTHROPIC key and ``deepseek_key_env`` as
+    DeepSeek's. Handing this cfg over untranslated would build an
+    anthropic.Anthropic() against api.anthropic.com holding a DeepSeek key — a
+    rung that 401s on every call and burns a waterfall step to do it.
+    """
+    out = dict(cfg)
+    out["deepseek_key_env"] = (cfg.get("deepseek_key_env")
+                               or cfg.get("api_key_env") or "DEEPSEEK_API_KEY")
+    out["deepseek_base_url"] = (cfg.get("deepseek_base_url")
+                                or cfg.get("llm_base_url")
+                                or "https://api.deepseek.com/anthropic")
+    out["deepseek_model"] = (cfg.get("deepseek_model")
+                             or cfg.get("llm_model") or "deepseek-v4-pro")
+    out["api_key_env"] = cfg.get("anthropic_key_env") or "ANTHROPIC_API_KEY"
+    out.setdefault("oauth_token_env", "CLAUDE_CODE_OAUTH_TOKEN")
+    out.setdefault("provider_order", ["codex", "oauth", "anthropic", "deepseek"])
+    out.setdefault("oauth_pool_lane", "master-brain")
+    out.setdefault("usage_lane", "master-brain")
+    out["opus_model"] = cfg.get("opus_model") or "claude-opus-4-8"
+    return out
+
+
 def _client(cfg: dict):
     try:
         import anthropic
@@ -1592,8 +1632,20 @@ def _client(cfg: dict):
         return None
 
 
-def _call_model(system: str, user: str, cfg: dict) -> tuple[str | None, str | None]:
+def _call_model(system: str, user: str, cfg: dict,
+                 served: dict | None = None) -> tuple[str | None, str | None]:
     """Return (reply_text, degraded_reason). Never raises.
+
+    served: OPTIONAL out-parameter (matches llm_auth.make_call's own `attempts`
+    idiom — see its docstring for why an out-param beats widening the return
+    tuple: engine/ai_desk.py and several tests stub _call_model with a 2-tuple
+    lambda, and every one of them would break if the return type grew). When a
+    dict is passed, on SUCCESS this sets served["provider"] to the rung name
+    make_call returned and served["model"] to that rung's model id (matched
+    out of `providers` by name; left unset if the match is ambiguous). Left
+    untouched on failure. Population is wrapped so a defect in it can never
+    break a call that otherwise worked — same discipline as make_call's own
+    _note().
 
     Determinism kit (W7 #33): temperature=0 + seed=0 for greedy/deterministic
     sampling. Content-hash cache: SHA-256(model‖system‖user) → cached reply text.
@@ -1604,24 +1656,40 @@ def _call_model(system: str, user: str, cfg: dict) -> tuple[str | None, str | No
     provider (llm_base_url / api_key_env configurable). The waterfall is built via
     engine.llm_auth.build_providers() so a 401 from any provider falls back cleanly.
     The degraded_reason distinguishes "auth_invalid:<provider>" from "llm_error".
+
+    RUNG ORDER (operator mandate): Codex (ChatGPT oauth) first, then Claude
+    (oauth pool, then Anthropic API), then DeepSeek last — DeepSeek is the
+    only metered pay-per-use rung; Codex and Claude are subscriptions already
+    paid for. When this lane's legacy llm_* keys describe DeepSeek's endpoint
+    (_is_deepseek_lane), the ladder is built via llm_auth.build_providers()
+    after translating the legacy keys (_ladder_cfg) so a single DeepSeek
+    balance exhaustion no longer blanks the whole brief. An operator who
+    pinned some OTHER endpoint keeps the historic single-provider descriptor.
     """
     from engine import llm_auth
 
-    # master_brain uses a non-standard provider config: the default provider is
-    # DeepSeek, but it is fully config-overridable via llm_base_url/api_key_env.
-    # We build a minimal provider descriptor directly rather than using build_providers()
-    # (which assumes the oauth→anthropic→deepseek order), because master_brain
-    # intentionally sends derived market state to an endpoint the operator chose.
-    client = _client(cfg)
-    if client is None:
-        return None, "no_client_or_key"
-    model = cfg.get("llm_model", "deepseek-v4-pro")
-    env_var = cfg.get("api_key_env", "DEEPSEEK_API_KEY")
-    providers = [{"name": "deepseek", "env_var": env_var, "cred": "present",
-                  "client": client, "model": model,
-                  "usage_lane": "master-brain",
-                  # sub-component drill-down (macro/china/btc lens, ai-desk, etc.)
-                  "usage_stage": str(cfg.get("usage_stage") or "")}]
+    if _is_deepseek_lane(cfg):
+        lcfg = _ladder_cfg(cfg)
+        providers = llm_auth.build_providers(
+            lcfg, opus_model=lcfg["opus_model"], deepseek_model=lcfg["deepseek_model"])
+        if not providers:
+            return None, "no_client_or_key"
+    else:
+        log.info(
+            "master_brain: lane pins a custom endpoint (%s); bypassing the "
+            "provider ladder and using the single configured client.",
+            cfg.get("llm_base_url") or "<no llm_base_url>",
+        )
+        client = _client(cfg)
+        if client is None:
+            return None, "no_client_or_key"
+        model = cfg.get("llm_model", "deepseek-v4-pro")
+        env_var = cfg.get("api_key_env", "DEEPSEEK_API_KEY")
+        providers = [{"name": "deepseek", "env_var": env_var, "cred": "present",
+                      "client": client, "model": model,
+                      "usage_lane": "master-brain",
+                      # sub-component drill-down (macro/china/btc lens, ai-desk, etc.)
+                      "usage_stage": str(cfg.get("usage_stage") or "")}]
 
     # NB: no caching here — synthesize() is the SOLE cache reader/writer, so only
     # FINAL post-lint text ever lands under the prompt hash (a raw pre-lint reply
@@ -1669,10 +1737,11 @@ def _call_model(system: str, user: str, cfg: dict) -> tuple[str | None, str | No
 
     text: str | None = None
     reason: str | None = None
+    provider_used: str | None = None
     for attempt in range(max_attempts):
         seed = 0 if attempt == 0 else attempt   # primary deterministic; retries vary
         try:
-            text, reason, _ = llm_auth.make_call(
+            text, reason, provider_used = llm_auth.make_call(
                 providers, _make_do_call(seed), context="master_brain")
         except Exception as e:  # noqa: BLE001 — degrade, never raise
             log.warning("master_brain model call failed (%s)", e)
@@ -1683,6 +1752,25 @@ def _call_model(system: str, user: str, cfg: dict) -> tuple[str | None, str | No
             log.warning(
                 "master_brain: '%s' on attempt %d/%d — retrying (seed=%d)",
                 reason, attempt + 1, max_attempts, attempt + 1)
+
+    if text is not None and served is not None:
+        try:  # telemetry only — never let this break a call that otherwise worked
+            served["provider"] = provider_used
+            # DISTINCT model ids, not distinct rungs. One provider NAME routinely
+            # covers several rungs — the oauth pool contributes one per present
+            # CLAUDE_CODE_OAUTH_TOKEN_n (up to seven) and Codex one per attached
+            # account — and they all serve the SAME model id. Counting rungs here
+            # made every pool-served brief ambiguous, so `model` silently fell back
+            # to the legacy DeepSeek label on exactly the runs the ladder was built
+            # to enable. Genuine ambiguity (one name, two model ids) still declines
+            # to guess and leaves the configured default in place.
+            matched = {p.get("model") for p in providers
+                       if p.get("name") == provider_used and p.get("model")}
+            if len(matched) == 1:
+                served["model"] = matched.pop()
+        except Exception as e:  # noqa: BLE001
+            log.debug("master_brain: served-by telemetry failed (%s)", e)
+
     return text, reason
 
 
@@ -1807,6 +1895,11 @@ def synthesize(state: dict, cfg: dict | None = None, lens: str = "macro", root=N
         "schema": "master_brief.v2", "lens": lens, "is_context_only": True,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "model": cfg.get("llm_model", "deepseek-v4-pro"),
+        # rung that served this brief — "codex" / "oauth" / "anthropic" / "deepseek",
+        # "cache" on a reply-cache hit, or None on a degraded call. Populated below
+        # from _call_model's `served` out-param so the ladder is verifiable from
+        # the artifact instead of always reading as the legacy DeepSeek label.
+        "served_by": None,
         "state_asof": _state_asof(state),
         "tldr": [],
         "summary": None, "regime_read": None, "conflicts": [], "rotation_check": None,
@@ -1831,9 +1924,23 @@ def synthesize(state: dict, cfg: dict | None = None, lens: str = "macro", root=N
     if _cache_was_hit:
         log.debug("master_brain: reply cache HIT (%s)", phash[:12])
         reply, reason = cached, None
+        brief["served_by"] = "cache"
     else:
         # Tag the lens (macro/china/btc) as the usage stage for cost drill-down.
-        reply, reason = _call_model(system, user, {**cfg, "usage_stage": lens})
+        served: dict = {}
+        try:
+            reply, reason = _call_model(
+                system, user, {**cfg, "usage_stage": lens}, served=served)
+        except TypeError:
+            # Stub with the OLD 2-arg-plus-cfg signature (several tests monkeypatch
+            # _call_model this way, e.g. `lambda system, user, cfg: (...)`) — tolerate
+            # and retry without the new kwarg rather than breaking those callers.
+            reply, reason = _call_model(system, user, {**cfg, "usage_stage": lens})
+            served = {}
+        if reply is not None:
+            brief["served_by"] = served.get("provider")
+            if served.get("model"):
+                brief["model"] = served["model"]
 
     brief["raw_text"] = reply
     if reply is None:
