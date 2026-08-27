@@ -368,7 +368,7 @@ def test_every_production_cn_collection_write_names_its_lane():
         offenders += _unlaned_calls(src, rel)
         laned += _laned_calls(src)
     assert offenders == [], (
-        "CN collection sink called without lane=; the gates are fail-closed, so these 
+        "CN collection sink called without lane=; the gates are fail-closed, so these "
         f"writes no-op silently and the store stops advancing: {offenders}")
     # WITNESS: the scan can SEE calls — it found the production ones and judged them
     # compliant (4x append_board, 1x append_ripening, 1x cn_prophet_audit.run in the
