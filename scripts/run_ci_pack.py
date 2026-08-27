@@ -786,6 +786,11 @@ def _is_peer_python_or_unpatterned_glob(pattern: str) -> bool:
     return True
 
 
+def _has_glob(segment: str) -> bool:
+    """Does this path fragment contain a glob metacharacter?"""
+    return any(char in segment for char in "*?")
+
+
 def scope_pattern_is_startable(pattern: str, triggers: Iterable[str]) -> bool:
     """Can an edit to something ``pattern`` covers start the gating workflow?
 
@@ -813,10 +818,27 @@ def scope_pattern_is_startable(pattern: str, triggers: Iterable[str]) -> bool:
         # `app/*` is a single-level subset of `app/**`. Any edit it covers
         # also matches that ancestor trigger, so the run starts. Exclusive
         # declarations use this form on purpose (`*` does not cross `/`).
-        if pattern.endswith("/*"):
-            parent = pattern[: -len("/*")]
-            if f"{parent}/**" in triggers:
-                return True
+        #
+        # This covers `app/*.py` too, not just a bare `app/*`. SUFFIX_NARROWED_RE
+        # requires a `**/` before the suffix, so a SINGLE-LEVEL suffix glob
+        # matched neither it nor the bare-`/*` test below and fell through to
+        # False — even though `engine/*.py` is as strictly contained in
+        # `engine/**` as `app/*` is. Measured 2026-08-26: `defense-rail-laws`
+        # derived an `engine/*.py` scope and reported an unstartable gap against
+        # a trigger list that carries `engine/**`, `*` AND `**`. Because
+        # ci-pack is path-scoped, only a PR touching .github/ci/ ever ran the
+        # test that says so, so the gap sat green on every unrelated PR.
+        #
+        # Ancestors are walked for the same containment reason as the subtree
+        # branch below: `a/b/*.py` ⊂ `a/b/**` ⊂ `a/**`. A glob anywhere in the
+        # PARENT is not proven and still fails.
+        head, sep, last = pattern.rpartition("/")
+        if sep and _has_glob(last) and not _has_glob(head):
+            segments = head.split("/")
+            while segments:
+                if "/".join(segments) + "/**" in triggers:
+                    return True
+                segments.pop()
         return False
     # A subtree scope is startable when an ANCESTOR subtree is a trigger, for the
     # same reason: `data/smart_money/**` matches a subset of `data/**`.

@@ -5247,6 +5247,14 @@ jobs:
         run: python -m pytest tests/test_key_pool_economy.py -q
       - name: cortex provider routing + tool loop suite
         run: python -m pytest tests/test_cortex.py -q
+      # Rides here because this job is the ONLY CI runner of the metabolism suite
+      # (see the deps note above) and these repairs span BOTH sides of that
+      # boundary: engine/neuralweb/metabolism.py's registration contract and
+      # scripts/evaluate_cortex_hypotheses.py's grading of it. Splitting them
+      # across jobs would let the metric enum drift between where it is enforced
+      # and where it is computed — which is the W3 defect itself.
+      - name: cortex evaluator wiring repairs (audit §3 W1-W6)
+        run: python -m pytest tests/test_cortex_evaluator_repairs.py -q
       - name: cortex ADB-W3 two-way read tools + parity suite
         run: python -m pytest tests/test_cortex_adb_w3.py -q
       - name: metabolism w2-pulse suite (verify scan mode + dream invocability)
