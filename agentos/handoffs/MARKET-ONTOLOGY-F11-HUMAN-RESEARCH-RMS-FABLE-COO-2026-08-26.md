@@ -17,7 +17,9 @@ state_before: >
   invalidation execution failed non-2xx and monitor failure could masquerade as clear,
   strengthening durable execution-receipt law. Durable team writes still depend on
   stable identity/tenant/access semantics; read-only experience/contract work can start earlier.
-changed: []
+changed:
+  - path: agentos/handoffs/MARKET-ONTOLOGY-F11-HUMAN-RESEARCH-RMS-FABLE-COO-2026-08-26.md
+    what: "Created the sustained F11 Fable COO lane commission and its human-memory/permission/monitoring envelope."
 verified:
   - claim: "Human investment research state is distinct from Agent OS, Prophet conviction and canonical market truth."
     command: "Read authenticated adjudication + retained institutional-memory reconstruction."
