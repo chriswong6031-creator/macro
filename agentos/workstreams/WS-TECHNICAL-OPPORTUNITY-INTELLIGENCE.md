@@ -80,6 +80,7 @@ landmines:
   - "The U.S. 390-minute regular session does not divide evenly into four-hour bars; research and Terminal clocks must be measured and versioned."
   - "Entitlement or a successful API call is not proof of historical point-in-time availability, corrections, rights, or universe coverage."
   - "Downside breakdown research starts with zero directional-short authority."
+  - "Weekly/Daily/4H is the first proving slice, not the final horizon estate; future cold starts must preserve Monthly structural context, Radar-owned true intraday context, and point-in-time sector/theme/basket expansion."
 do_not_redo:
   - "Do not build a universal technical score or average Forming/Armed with Triggered/Confirmed."
   - "Do not redo per-name in-sample outcome audition (DNR:KILL-OUTCOME-AUDITION)."
@@ -104,3 +105,12 @@ This workstream is the broad technical-perception program under
 `market-timing-intelligence`. It does not subsume `WS:LIVE-ENTRY-RADAR`,
 `WS:STOCK-IDENTITY`, or `WS:PROPHET-US-ENTRY-TIMING`; it consumes or hands off
 through their declared boundaries.
+
+## Horizon end-state
+
+Weekly/Daily/4H is the first proving vertical, not a permanent ceiling. The complete
+program must later incorporate Monthly structural/regime context, true intraday
+context through Live Entry Radar's existing event and market-data owners, and
+point-in-time sector, industry, theme, and basket opportunity objects. Those later
+horizons reuse the same species and occurrence law; they do not authorize a second
+intraday plane or a wider first PR.
