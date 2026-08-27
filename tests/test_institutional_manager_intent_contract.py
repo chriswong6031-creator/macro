@@ -1425,3 +1425,140 @@ def test_owner_row_basis_does_not_perturb_existing_bases() -> None:
     assert by_id["obs_source_pointer_only"]["state"] == "SOURCE_POINTER_ONLY_NO_SECURITY_BINDING"
     assert manager_intent.VERSION == "1.1.0"
     assert receipt["version"] == "1.1.0"
+
+
+# --- adversarial review repair: Finding 1 (BLOCKER) --------------------------
+#
+# ``_owner_row_reference_binding_errors`` used to accept ANY available_clock
+# whose *class* was in the K1 clock-class vocabulary, with no law pinning
+# which *field*/*value* an owner-row sub-binding may declare.  A forged
+# sub-binding could therefore declare an earlier, unrelated clock as its
+# "available" instant and slip PIT evidence the store did not yet hold past
+# ``validate()`` -- these two tests reproduce both forgery shapes named in
+# the review and pin them to hard ``validate()`` refusals.
+
+
+def test_owner_row_raw_receipt_available_clock_must_equal_operational_knowable_clock() -> None:
+    """Forgery (i): previous raw-receipt binding declares accepted_at while
+    retained_at (the actual operational-knowable clock) is later."""
+    value, _ = owner_row_case()
+    binding = event(value, "obs_owner_row_positive")["owner_row_binding"]
+    # previous_accepted_at defaults to 2025-12-15T20:00:00Z; the honest
+    # operational clock is max(accepted_at, retained_at) = retained_at
+    # (2025-12-15T20:01:00Z, one minute later).  Declaring accepted_at here
+    # forges an earlier "available" instant than the store actually held.
+    binding["previous"]["raw_receipt_binding"]["available_clock"] = {
+        "field": "clocks.accepted_at", "value": "2025-12-15T20:00:00Z",
+    }
+    rejected(value, "owner_row_binding_available_clock_conflict:previous:raw")
+
+
+def test_owner_row_catalog_available_clock_must_be_published_at_not_source_cutoff() -> None:
+    """Forgery (ii): previous catalog binding declares source_cutoff_at while
+    published_at (the actual public-availability clock) is later."""
+    value, _ = owner_row_case()
+    binding = event(value, "obs_owner_row_positive")["owner_row_binding"]
+    # previous_source_cutoff_at defaults to 2025-12-15T20:00:00Z; the honest
+    # public-availability clock is published_at (2025-12-15T20:05:00Z, five
+    # minutes later).  Declaring source_cutoff_at forges an earlier instant.
+    binding["previous"]["catalog_binding"]["available_clock"] = {
+        "field": "clocks.source_cutoff_at", "value": "2025-12-15T20:00:00Z",
+    }
+    rejected(value, "owner_row_binding_available_clock_conflict:previous:catalog")
+
+
+def test_owner_row_reference_freshness_clock_field_must_match_its_owner_store() -> None:
+    """A raw-receipt reference forging freshness onto accepted_at (instead of
+    the honest retained_at) is rejected even if every clock VALUE agrees --
+    the field pin, not just the value law, must hold."""
+    value, _ = owner_row_case()
+    prev_raw_binding = event(value, "obs_owner_row_positive")["owner_row_binding"]["previous"][
+        "raw_receipt_binding"
+    ]
+    reference = next(
+        row for row in value["evidence_refs"] if row["reference_id"] == prev_raw_binding["reference_id"]
+    )
+    reference["freshness"] = {
+        "state": "native_clock_bound", "clock_field": "clocks.accepted_at", "policy_id": None,
+    }
+    reference["reference_id"] = compute_reference_id(reference)
+    validate_reference(reference)
+    prev_raw_binding["reference_id"] = reference["reference_id"]
+    rejected(value, "owner_row_binding_freshness_clock_field_conflict:previous:raw")
+
+
+def test_owner_row_all_refs_present_ignores_a_forged_binding_clock() -> None:
+    """The compile-time positivity gate must recompute the lawful clock
+    itself, never trust the binding's declared clock.  This combines BOTH
+    forgeries -- a reference whose freshness is (also) mislabeled onto the
+    earlier accepted_at, plus a binding declaring that same earlier clock as
+    "available" -- so the raw-receipt store did not actually hold this
+    evidence (real retained_at) until after the compile cutoff.  A gate that
+    trusted either forged field would wrongly call it PIT-present."""
+    value, observation_id = owner_row_case(
+        previous_retained_at="2026-09-01T00:00:00Z",
+    )
+    observation = event(value, observation_id)
+    binding = observation["owner_row_binding"]
+    prev_raw_binding = binding["previous"]["raw_receipt_binding"]
+    prev_raw_ref_id = prev_raw_binding["reference_id"]
+    reference = next(row for row in value["evidence_refs"] if row["reference_id"] == prev_raw_ref_id)
+    # Forge freshness onto the earlier accepted_at (2025-12-15), masking the
+    # true, later retained_at (2026-09-01) from the reference's own law.
+    reference["freshness"] = {
+        "state": "native_clock_bound", "clock_field": "clocks.accepted_at", "policy_id": None,
+    }
+    # Forge the binding's declared available_clock onto that same earlier,
+    # dishonest clock.
+    prev_raw_binding["available_clock"] = {
+        "field": "clocks.accepted_at", "value": "2025-12-15T20:00:00Z",
+    }
+
+    references = {row["reference_id"]: row for row in value["evidence_refs"]}
+    cutoff = manager_intent._time(AS_OF, "as_of")
+    assert manager_intent._owner_row_all_refs_present(observation, references, cutoff) is False
+
+
+# --- adversarial review repair: Finding 7 (MINOR) ----------------------------
+#
+# The compile gate used to collapse all four owner-row refs' absence kinds
+# into one boolean (``MANAGER_INTENT_INELIGIBLE_OR_INSUFFICIENT``), so the
+# compiled artifact could never say WHICH of the four sub-references blocked
+# eligibility or HOW (rights_blocked vs not-knowable vs missing).
+
+
+def test_owner_row_receipt_names_which_sub_reference_state_blocked_eligibility() -> None:
+    value, observation_id = owner_row_case(
+        previous_retained_at="2026-09-01T00:00:00Z",
+    )
+    receipt = compile_recipe(value, as_of=AS_OF)
+    compiled = next(row for row in receipt["events"] if row["observation_id"] == observation_id)
+    assert compiled["state"] == "MANAGER_INTENT_INELIGIBLE_OR_INSUFFICIENT"
+    states = compiled["owner_row_reference_states"]
+    assert states["previous"]["raw_receipt"] == "NOT_KNOWABLE"
+    assert states["current"]["raw_receipt"] == "PRESENT"
+    assert states["current"]["catalog"] == "PRESENT"
+    assert states["previous"]["catalog"] == "PRESENT"
+
+
+def test_owner_row_reference_states_is_additive_and_absent_for_other_bases() -> None:
+    value, observation_id = owner_row_case()
+    receipt = compile_recipe(value, as_of=AS_OF)
+    by_id = {row["observation_id"]: row for row in receipt["events"]}
+    assert by_id[observation_id]["owner_row_reference_states"] == {
+        "previous": {"catalog": "PRESENT", "raw_receipt": "PRESENT"},
+        "current": {"catalog": "PRESENT", "raw_receipt": "PRESENT"},
+    }
+    # Additive-only: every existing basis still compiles and now simply
+    # carries the new field as None (never touching any prior field).
+    assert by_id["obs_manager_positive"]["owner_row_reference_states"] is None
+    assert by_id["obs_source_pointer_only"]["owner_row_reference_states"] is None
+
+
+# --- adversarial review repair: ambiguous_filing_lineage tie (K2-C, adapter) -
+#
+# The K2-B contract itself has no direct analogue of the adapter's tie
+# branch; this file only pins the K2-B-side reference-state work above.  The
+# adapter-side ambiguous_filing_lineage tie test lives in
+# tests/test_institutional_13f_adapter_contract.py, next to its sibling
+# filing-lineage tests.

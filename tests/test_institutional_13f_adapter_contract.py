@@ -31,6 +31,8 @@ from engine.institutional_census.models import (
 from engine.institutional_census.storage import publish_raw_evidence
 from engine.research_vault.r2_store import LocalStore
 
+from types import SimpleNamespace
+
 from lib.institutional_13f_adapter import (
     AMBIGUOUS_FILING_LINEAGE,
     AMBIGUOUS_HOLDINGS_ROWS,
@@ -39,7 +41,9 @@ from lib.institutional_13f_adapter import (
     FILING_NOT_FOUND,
     GENERATION_NOT_KNOWABLE_AT_CUTOFF,
     MEASURE_UNIT_UNSUPPORTED,
+    NON_POSITIVE_STATE,
     POSITIVE_STATE,
+    REPORT_PERIODS_NOT_INCREASING,
     SECURITY_NOT_IN_FILING,
     SOURCE_RECEIPT_MISMATCH,
     Institutional13FAdapterError,
@@ -50,6 +54,7 @@ from lib.institutional_13f_adapter import (
     _manager_denominator,
     _period_binding,
     _raw_receipt_reference,
+    _vehicle_decision,
     main as adapter_main,
     resolve_generation,
     run_pilot,
@@ -314,6 +319,14 @@ def test_happy_path_two_period_read_compiles(tmp_path: Path) -> None:
     }
     assert receipt["compiled"]["authority"] == receipt["authority"]
     assert receipt["receipt_id"].startswith("i13fpilot_")
+    assert receipt["periods"]["previous"]["pointer"]["state"] == "read"
+    assert receipt["periods"]["current"]["pointer"]["state"] == "read"
+
+    # Finding 10: the receipt embeds the full recipe, and recompiling it
+    # independently reproduces the embedded "compiled" output exactly.
+    recompiled = compile_recipe(receipt["recipe"], as_of=receipt["request"]["cutoff"])
+    assert recompiled == receipt["compiled"]
+    assert len(canonical_json_bytes(receipt)) < 256 * 1024
 
 
 # --- (b) determinism ------------------------------------------------------
@@ -368,6 +381,19 @@ def test_explicit_generation_id_binds_the_exact_older_generation(tmp_path: Path)
     assert receipt["state"] == POSITIVE_STATE
     assert receipt["periods"]["current"]["generation_id"] == generation_a.generation_id
     assert receipt["periods"]["current"]["filing"]["accession"] == ACCESSION_NOW
+
+    # Finding 3: the explicit-generation_id path never dereferenced the
+    # current-pointer object -- catalog._load_generation hard-codes
+    # current_generation_id/pointer_updated/superseded for that path, so the
+    # receipt must say "not_read", never assert those fabricated values.
+    assert receipt["periods"]["current"]["pointer"] == {"state": "not_read"}
+    # The previous period was resolved via the ordinary current-pointer read
+    # (no generation_id_prev pinned), so it genuinely dereferenced the
+    # pointer and may report the real fields.
+    assert receipt["periods"]["previous"]["pointer"]["state"] == "read"
+    assert "current_generation_id" in receipt["periods"]["previous"]["pointer"]
+    assert "pointer_updated" in receipt["periods"]["previous"]["pointer"]
+    assert "superseded" in receipt["periods"]["previous"]["pointer"]
 
 
 # --- (d) generation published after cutoff ---------------------------------
@@ -743,8 +769,41 @@ def test_non_sole_discretion_compiles_non_positive_via_the_compiler(tmp_path: Pa
     store = _build_world(tmp_path, investment_discretion="SHARED")
     receipt = run_pilot(store, _request())
 
-    assert receipt["state"] == POSITIVE_STATE
+    # (a) state distinguishes the non-positive outcome from an eligible one.
+    assert receipt["state"] == NON_POSITIVE_STATE
     assert receipt["compiled_observation_state"] == "MANAGER_INTENT_INELIGIBLE_OR_INSUFFICIENT"
+
+    # (b) the refused delta is never smuggled out as a top-level q pair.
+    assert "q_prev" not in receipt["measure"]
+    assert "q_now" not in receipt["measure"]
+    assert receipt["measure"] == {"state": "not_compiled", "reason": "non_discretionary_vehicle"}
+    # The per-period raw owner facts are still honestly present (never hidden).
+    assert receipt["periods"]["current"]["row"]["ssh_prn_amt"] == "140"
+    assert receipt["periods"]["previous"]["row"]["ssh_prn_amt"] == "100"
+
+    # (c) the vehicle/complex fields are an honest "we do not know the
+    # structure" placeholder, never a fabricated real-structure claim.
+    vehicle = receipt["recipe"]["vehicle_epochs"][0]
+    assert vehicle["decision_mode"] == "unknown"
+    assert vehicle["vehicle_class"] == "options_income_overlay"
+    complex_epoch = receipt["recipe"]["manager_complex_epochs"][0]
+    assert complex_epoch["decision_mode"] == "unknown"
+
+    # The non-positive outcome is reached through the compiler's own law
+    # (non_discretionary_vehicle_cannot_emit_manager_intent /
+    # MANAGER_INTENT_INELIGIBLE_OR_INSUFFICIENT), never a fabricated class:
+    # recompiling the embedded recipe reproduces the exact same outcome.
+    recompiled = compile_recipe(receipt["recipe"], as_of=receipt["request"]["cutoff"])
+    assert recompiled == receipt["compiled"]
+
+
+def test_vehicle_decision_mapping_is_honest_for_both_discretion_paths() -> None:
+    assert _vehicle_decision("SOLE") == ("discretionary", "concentrated_discretionary_active")
+    assert _vehicle_decision(" sole ") == ("discretionary", "concentrated_discretionary_active")
+    for value in ("SHARED", "DEFINED", "NONE", None, ""):
+        assert _vehicle_decision(value) == ("unknown", "options_income_overlay")
+    # Never the fabricated real-structure claim the review flagged.
+    assert _vehicle_decision("SHARED")[1] != "synthetic_fund_of_funds"
 
 
 # --- (p) callers cannot inject compiled output ------------------------------
@@ -915,3 +974,178 @@ def test_cli_store_outage_like_missing_env_exits_nonzero(tmp_path: Path, monkeyp
         "--receipt", str(tmp_path / "receipt.json"),
     ])
     assert exit_code == 1
+
+
+# --- adversarial review repair: Finding 4 (MAJOR) ----------------------------
+#
+# A swapped or equal report-period pair used to escape as an untyped
+# InstitutionalIntelligenceError raised from validate_recipe() deep inside
+# run_pilot's happy path (outside the typed PilotRefusal envelope) -- the
+# CLI's broad exception boundary turned that into exit 1 with no receipt at
+# all.  This is now a typed refusal checked before any store read.
+
+
+def test_swapped_report_periods_is_a_typed_refusal_not_an_exception(tmp_path: Path) -> None:
+    store = _build_world(tmp_path)
+    receipt = run_pilot(
+        store, _request(report_period_prev=PERIOD_NOW, report_period_now=PERIOD_PREV)
+    )
+    assert receipt["state"] == REPORT_PERIODS_NOT_INCREASING
+    assert receipt["refusal"]["reason"] == REPORT_PERIODS_NOT_INCREASING
+    assert "compiled" not in receipt
+    assert "measure" not in receipt
+
+
+def test_equal_report_periods_is_a_typed_refusal_not_an_exception(tmp_path: Path) -> None:
+    store = _build_world(tmp_path)
+    receipt = run_pilot(
+        store, _request(report_period_prev=PERIOD_NOW, report_period_now=PERIOD_NOW)
+    )
+    assert receipt["state"] == REPORT_PERIODS_NOT_INCREASING
+
+
+def test_swapped_and_equal_report_periods_produce_typed_receipts_via_cli(tmp_path: Path) -> None:
+    store = _build_world(tmp_path)
+
+    swapped_path = tmp_path / "swapped.json"
+    exit_code_swapped = adapter_main([
+        "--filer-cik", FILER_CIK,
+        "--cusip", CUSIP,
+        "--report-period-now", PERIOD_PREV,
+        "--report-period-prev", PERIOD_NOW,
+        "--cutoff", "2026-08-01T00:00:00Z",
+        "--local-dir", str(store.root),
+        "--receipt", str(swapped_path),
+    ])
+    assert exit_code_swapped == 0
+    swapped_payload = json.loads(swapped_path.read_text(encoding="utf-8"))
+    assert swapped_payload["state"] == REPORT_PERIODS_NOT_INCREASING
+
+    equal_path = tmp_path / "equal.json"
+    exit_code_equal = adapter_main([
+        "--filer-cik", FILER_CIK,
+        "--cusip", CUSIP,
+        "--report-period-now", PERIOD_NOW,
+        "--report-period-prev", PERIOD_NOW,
+        "--cutoff", "2026-08-01T00:00:00Z",
+        "--local-dir", str(store.root),
+        "--receipt", str(equal_path),
+    ])
+    assert exit_code_equal == 0
+    equal_payload = json.loads(equal_path.read_text(encoding="utf-8"))
+    assert equal_payload["state"] == REPORT_PERIODS_NOT_INCREASING
+
+
+# --- adversarial review repair: Finding 8 (NOTE) -----------------------------
+
+
+def test_source_receipt_retained_at_mismatch_is_hard_refusal(tmp_path: Path) -> None:
+    store = LocalStore(tmp_path / "store")
+    _publish_standard_prev(store)
+
+    receipt_now = _publish_raw(
+        store, accession=ACCESSION_NOW, report_period=PERIOD_NOW,
+        accepted_at=ACCEPTED_NOW, retained_at=RETAINED_NOW, seed="now-retained-mismatch",
+    )
+    filing_now = _filing_row(
+        accession=ACCESSION_NOW, report_period=PERIOD_NOW,
+        accepted_at=ACCEPTED_NOW, retained_at="2026-07-10T12:09:00Z",
+        receipt=receipt_now,
+    )
+    holdings_now = [
+        _holding_row(accession=ACCESSION_NOW, sk=1, cusip=CUSIP, ssh_prn_amt="140"),
+        _holding_row(accession=ACCESSION_NOW, sk=2, cusip=OTHER_CUSIP, ssh_prn_amt="60"),
+    ]
+    _publish_generation(
+        store, report_period=PERIOD_NOW, filings=[filing_now], holdings=holdings_now,
+        source_receipt_ids=[receipt_now.receipt_id],
+        published_at=PUBLISHED_NOW, source_cutoff_at=CUTOFF_NOW,
+    )
+
+    receipt = run_pilot(store, _request())
+    assert receipt["state"] == SOURCE_RECEIPT_MISMATCH
+    assert "retained_at" in receipt["refusal"]["detail"]
+
+
+# --- adversarial review repair: ambiguous_filing_lineage tie -----------------
+
+
+def test_ambiguous_filing_lineage_tie_is_refused(tmp_path: Path) -> None:
+    store = LocalStore(tmp_path / "store")
+    _publish_standard_prev(store)
+
+    receipt_a = _publish_raw(
+        store, accession=ACCESSION_NOW, report_period=PERIOD_NOW,
+        accepted_at=ACCEPTED_NOW, retained_at=RETAINED_NOW, seed="now-tie-a",
+    )
+    filing_a = _filing_row(
+        accession=ACCESSION_NOW, report_period=PERIOD_NOW,
+        accepted_at=ACCEPTED_NOW, retained_at=RETAINED_NOW, receipt=receipt_a,
+    )
+    accession_b = "0001792167-26-000005"
+    receipt_b = _publish_raw(
+        store, accession=accession_b, report_period=PERIOD_NOW,
+        accepted_at=ACCEPTED_NOW, retained_at=RETAINED_NOW, seed="now-tie-b",
+    )
+    filing_b = _filing_row(
+        accession=accession_b, report_period=PERIOD_NOW,
+        accepted_at=ACCEPTED_NOW, retained_at=RETAINED_NOW, receipt=receipt_b,
+    )
+    holdings_now = [
+        _holding_row(accession=ACCESSION_NOW, sk=1, cusip=CUSIP, ssh_prn_amt="140"),
+        _holding_row(accession=accession_b, sk=1, cusip=CUSIP, ssh_prn_amt="140"),
+    ]
+    _publish_generation(
+        store, report_period=PERIOD_NOW, filings=[filing_a, filing_b], holdings=holdings_now,
+        source_receipt_ids=[receipt_a.receipt_id, receipt_b.receipt_id],
+        published_at=PUBLISHED_NOW, source_cutoff_at=CUTOFF_NOW,
+    )
+
+    receipt = run_pilot(store, _request())
+    assert receipt["state"] == AMBIGUOUS_FILING_LINEAGE
+
+
+# --- adversarial review repair: Finding 12 (MINOR) ---------------------------
+#
+# _manager_denominator used to assert total=included=decoded/missing=0 under
+# a genuinely-unknown table_entry_total (an honest shape) AND, separately,
+# mislabel an excess-rows condition (decoded > table_entry_total) as
+# "partial" with the excess counted as excluded_positions -- rows that were
+# in fact successfully decoded, not excluded from anything.
+
+
+def test_manager_denominator_unknown_total_uses_honest_observed_counts() -> None:
+    generation = SimpleNamespace(holdings=[
+        {"accession": ACCESSION_NOW}, {"accession": ACCESSION_NOW}, {"accession": OTHER_CUSIP},
+    ])
+    filing_row = {"accession": ACCESSION_NOW, "table_entry_total": None, "confidential_omitted": None}
+    result = _manager_denominator(generation=generation, filing_row=filing_row)
+    assert result == {
+        "kind": "public_reported_sleeve", "state": "unknown",
+        "total_positions": 2, "included_positions": 2,
+        "excluded_positions": 0, "missing_positions": 0,
+    }
+
+
+def test_manager_denominator_excess_decoded_rows_is_unknown_never_excluded() -> None:
+    generation = SimpleNamespace(holdings=[
+        {"accession": ACCESSION_NOW}, {"accession": ACCESSION_NOW}, {"accession": ACCESSION_NOW},
+    ])
+    filing_row = {"accession": ACCESSION_NOW, "table_entry_total": 1, "confidential_omitted": False}
+    result = _manager_denominator(generation=generation, filing_row=filing_row)
+    assert result["state"] == "unknown"
+    assert result["excluded_positions"] == 0
+    assert result["total_positions"] == 3
+    assert result["included_positions"] == 3
+    assert result["missing_positions"] == 0
+
+
+def test_manager_denominator_partial_when_decoded_is_a_lawful_subset() -> None:
+    generation = SimpleNamespace(holdings=[{"accession": ACCESSION_NOW}])
+    filing_row = {"accession": ACCESSION_NOW, "table_entry_total": 2, "confidential_omitted": False}
+    result = _manager_denominator(generation=generation, filing_row=filing_row)
+    assert result == {
+        "kind": "public_reported_sleeve", "state": "partial",
+        "total_positions": 2, "included_positions": 1,
+        "excluded_positions": 0, "missing_positions": 1,
+    }

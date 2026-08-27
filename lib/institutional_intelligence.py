@@ -652,6 +652,101 @@ def _observation_ineligible_reason(
 
 _OWNER_ROW_RAW_STORE = "institutional_13f.raw_receipt"
 _OWNER_ROW_CATALOG_STORE = "institutional_13f.catalog_generation"
+_OWNER_ROW_EXPECTED_FRESHNESS_FIELD = {
+    _OWNER_ROW_RAW_STORE: "clocks.retained_at",
+    _OWNER_ROW_CATALOG_STORE: "clocks.published_at",
+}
+
+
+def _owner_row_expected_available_time(
+    reference: Mapping[str, Any],
+    *,
+    expected_owner_store: str,
+    label: str,
+) -> datetime | None:
+    """Return the one lawful PIT-availability instant for an owner-row store.
+
+    ``institutional_13f.raw_receipt``: ``max(clocks.accepted_at,
+    clocks.retained_at)`` -- mirrors ``event_13f_operational_knowable_clock_
+    conflict``, the law already enforced for the *primary* observation
+    binding.  ``institutional_13f.catalog_generation``:
+    ``clocks.published_at`` exactly (never the earlier
+    ``clocks.source_cutoff_at``).  Returns ``None`` when the reference lacks
+    the clocks this owner store requires -- callers treat that as a binding
+    error, never as an honest absence.
+    """
+    clocks = reference.get("clocks", [])
+    if not isinstance(clocks, list):
+        return None
+
+    def _known(field: str) -> Mapping[str, Any] | None:
+        return next(
+            (
+                clock for clock in clocks
+                if isinstance(clock, Mapping)
+                and clock.get("field") == field
+                and clock.get("value_state") == "known"
+            ),
+            None,
+        )
+
+    try:
+        if expected_owner_store == _OWNER_ROW_RAW_STORE:
+            accepted = _known("clocks.accepted_at")
+            retained = _known("clocks.retained_at")
+            if accepted is None or retained is None:
+                return None
+            return max(
+                _clock_time(accepted, f"{label}:accepted_at"),
+                _clock_time(retained, f"{label}:retained_at"),
+            )
+        if expected_owner_store == _OWNER_ROW_CATALOG_STORE:
+            published = _known("clocks.published_at")
+            if published is None:
+                return None
+            return _clock_time(published, f"{label}:published_at")
+    except InstitutionalIntelligenceError:
+        return None
+    return None
+
+
+def _owner_row_pit_clock_errors(
+    binding: Mapping[str, Any],
+    reference: Mapping[str, Any],
+    *,
+    expected_owner_store: str,
+    label: str,
+) -> list[str]:
+    """Pin one owner-row sub-binding's declared clock to the honest one.
+
+    Without this, a sub-binding could declare ``available_clock`` on an
+    earlier, unrelated native clock (e.g. ``clocks.accepted_at`` instead of
+    the operational ``max(accepted_at, retained_at)``, or
+    ``clocks.source_cutoff_at`` instead of ``clocks.published_at``) and
+    silently steer PIT availability -- the exact forged-clock-field gap this
+    law closes for every owner-row sub-binding, mirroring the field pin the
+    primary observation binding already enforces for
+    ``institutional_13f.raw_receipt``.
+    """
+    errors: list[str] = []
+    expected_freshness_field = _OWNER_ROW_EXPECTED_FRESHNESS_FIELD.get(expected_owner_store)
+    if reference.get("freshness", {}).get("clock_field") != expected_freshness_field:
+        errors.append(f"owner_row_binding_freshness_clock_field_conflict:{label}")
+    expected_time = _owner_row_expected_available_time(
+        reference, expected_owner_store=expected_owner_store, label=label
+    )
+    available_clock = _clock_entry(reference, binding.get("available_clock"))
+    try:
+        actual_time = (
+            _clock_time(available_clock, f"{label}:available_clock")
+            if available_clock is not None
+            else None
+        )
+    except InstitutionalIntelligenceError:
+        actual_time = None
+    if expected_time is None or actual_time is None or actual_time != expected_time:
+        errors.append(f"owner_row_binding_available_clock_conflict:{label}")
+    return errors
 
 
 def _owner_row_reference_binding_errors(
@@ -675,13 +770,13 @@ def _owner_row_reference_binding_errors(
     if binding.get("native_identity") != reference.get("native_identity"):
         errors.append(f"owner_row_binding_native_identity_conflict:{label}")
     valid_clock = _clock_entry(reference, binding.get("valid_clock"))
-    available_clock = _clock_entry(reference, binding.get("available_clock"))
     if not valid_clock or valid_clock.get("class") != "world_valid":
         errors.append(f"owner_row_binding_valid_clock_conflict:{label}")
-    if not available_clock or available_clock.get("class") not in {
-        "source_published", "knowable", "system_recorded", "belief_or_build",
-    }:
-        errors.append(f"owner_row_binding_available_clock_conflict:{label}")
+    errors.extend(
+        _owner_row_pit_clock_errors(
+            binding, reference, expected_owner_store=expected_owner_store, label=label
+        )
+    )
     return errors, reference
 
 
@@ -792,12 +887,24 @@ def _owner_row_binding_errors(
     return errors
 
 
+_OWNER_ROW_BINDING_STORES = (
+    ("catalog_binding", _OWNER_ROW_CATALOG_STORE),
+    ("raw_receipt_binding", _OWNER_ROW_RAW_STORE),
+)
+
+
 def _owner_row_all_refs_present(
     event: Mapping[str, Any],
     references: Mapping[str, Mapping[str, Any]],
     cutoff: datetime,
 ) -> bool:
-    """PIT availability of all four owner-row bound refs gates positivity."""
+    """PIT availability of all four owner-row bound refs gates positivity.
+
+    Availability is always recomputed from each reference's OWN lawful clock
+    (:func:`_owner_row_expected_available_time`), never trusted from the
+    binding's declared ``available_clock`` -- a forged/mislabeled clock field
+    on the binding cannot steer this compile-time gate.
+    """
     owner_binding = event.get("owner_row_binding")
     if not isinstance(owner_binding, Mapping):
         return False
@@ -805,22 +912,19 @@ def _owner_row_all_refs_present(
         period = owner_binding.get(period_key)
         if not isinstance(period, Mapping):
             return False
-        for binding_key in ("catalog_binding", "raw_receipt_binding"):
+        for binding_key, expected_owner_store in _OWNER_ROW_BINDING_STORES:
             binding = period.get(binding_key)
             if not isinstance(binding, Mapping):
                 return False
             reference = references.get(str(binding.get("reference_id")))
-            if reference is None:
+            if reference is None or reference.get("owner_store") != expected_owner_store:
                 return False
-            try:
-                available_at = _available_time(
-                    {
-                        "reference_binding": binding,
-                        "observation_id": f"owner_row:{period_key}:{binding_key}",
-                    },
-                    reference,
-                )
-            except (KeyError, InstitutionalIntelligenceError):
+            available_at = _owner_row_expected_available_time(
+                reference,
+                expected_owner_store=expected_owner_store,
+                label=f"owner_row:{period_key}:{binding_key}",
+            )
+            if available_at is None:
                 return False
             if _reference_state(reference, available_at, cutoff) != "PRESENT":
                 return False
@@ -1497,6 +1601,55 @@ def _reliability_receipt(
     }
 
 
+def _owner_row_reference_states(
+    event: Mapping[str, Any],
+    references: Mapping[str, Mapping[str, Any]],
+    cutoff: datetime,
+) -> dict[str, dict[str, str]] | None:
+    """Name which one of the four owner-row sub-references blocked eligibility.
+
+    ``_owner_row_all_refs_present`` collapses all four refs' absence kinds
+    into one boolean, so the compiled receipt could not previously say
+    whether a non-positive owner-row observation was blocked by
+    ``rights_blocked``, a not-yet-knowable clock, or something else, or on
+    which of the four bindings.  Additive only: ``None`` for every other
+    evidence basis, never touching any existing receipt field.
+    """
+    if event.get("evidence_basis") != "source_backed_owner_row":
+        return None
+    owner_binding = event.get("owner_row_binding")
+    if not isinstance(owner_binding, Mapping):
+        return None
+    result: dict[str, dict[str, str]] = {}
+    for period_key in ("previous", "current"):
+        period = owner_binding.get(period_key)
+        period_states: dict[str, str] = {}
+        for binding_key, ref_key, expected_owner_store in (
+            ("catalog_binding", "catalog", _OWNER_ROW_CATALOG_STORE),
+            ("raw_receipt_binding", "raw_receipt", _OWNER_ROW_RAW_STORE),
+        ):
+            binding = period.get(binding_key) if isinstance(period, Mapping) else None
+            reference = (
+                references.get(str(binding.get("reference_id")))
+                if isinstance(binding, Mapping)
+                else None
+            )
+            if reference is None or reference.get("owner_store") != expected_owner_store:
+                period_states[ref_key] = "UNRESOLVED"
+                continue
+            available_at = _owner_row_expected_available_time(
+                reference,
+                expected_owner_store=expected_owner_store,
+                label=f"owner_row_state:{period_key}:{binding_key}",
+            )
+            if available_at is None:
+                period_states[ref_key] = "AVAILABLE_CLOCK_UNBOUND"
+                continue
+            period_states[ref_key] = _reference_state(reference, available_at, cutoff)
+        result[period_key] = period_states
+    return result
+
+
 def compile_recipe(recipe: Mapping[str, Any], *, as_of: str) -> dict[str, Any]:
     validated = validate(recipe)
     cutoff = _time(as_of, "as_of")
@@ -1593,6 +1746,7 @@ def compile_recipe(recipe: Mapping[str, Any], *, as_of: str) -> dict[str, Any]:
                 else event["denominator"]
             ),
             "correction": event["correction"],
+            "owner_row_reference_states": _owner_row_reference_states(event, references, cutoff),
         }
         event_receipts.append(receipt)
         event_receipt_map[event["observation_id"]] = receipt

@@ -77,7 +77,9 @@ SECURITY_NOT_IN_FILING = "security_not_in_filing"
 AMBIGUOUS_HOLDINGS_ROWS = "ambiguous_holdings_rows"
 MEASURE_UNIT_UNSUPPORTED = "measure_unit_unsupported"
 SOURCE_RECEIPT_MISMATCH = "source_receipt_mismatch"
+REPORT_PERIODS_NOT_INCREASING = "report_periods_not_increasing"
 POSITIVE_STATE = "PILOT_COMPILED"
+NON_POSITIVE_STATE = "PILOT_COMPILED_NON_POSITIVE"
 
 TYPED_REFUSAL_REASONS = frozenset({
     GENERATION_NOT_KNOWABLE_AT_CUTOFF,
@@ -90,6 +92,7 @@ TYPED_REFUSAL_REASONS = frozenset({
     AMBIGUOUS_HOLDINGS_ROWS,
     MEASURE_UNIT_UNSUPPORTED,
     SOURCE_RECEIPT_MISMATCH,
+    REPORT_PERIODS_NOT_INCREASING,
 })
 
 _CUSIP_RE = re.compile(r"^[0-9A-Z]{9}$")
@@ -337,7 +340,7 @@ def cross_check_raw_receipt(
     """Load the filing's raw evidence receipt and prove it matches the filing.
 
     Any disagreement on ``source_receipt_id``/``raw_sha256``/``accepted_at``/
-    ``report_period``/``filer_cik`` is a hard typed refusal
+    ``retained_at``/``report_period``/``filer_cik`` is a hard typed refusal
     (``source_receipt_mismatch``).  A genuinely missing/corrupt raw object is
     an owner exception and propagates untouched.
     """
@@ -352,6 +355,8 @@ def cross_check_raw_receipt(
         mismatches.append("raw_sha256")
     if str(receipt.clocks.accepted_at) != str(filing_row["accepted_at"]):
         mismatches.append("accepted_at")
+    if str(receipt.clocks.retained_at) != str(filing_row["retained_at"]):
+        mismatches.append("retained_at")
     if str(receipt.clocks.report_period) != str(filing_row["report_period"]):
         mismatches.append("report_period")
     if receipt.filer_cik != cik:
@@ -437,6 +442,11 @@ def _raw_receipt_reference(*, receipt: Any) -> dict[str, Any]:
 
 
 def _catalog_generation_reference(*, generation: PublishedCatalogGeneration) -> dict[str, Any]:
+    # generation_id is content-derived and re-verified on every decode
+    # (CatalogGenerationManifest.__post_init__ recomputes and compares the
+    # sha256 identity, mirroring RawEvidenceReceipt's own law), so the
+    # explicit-generation_id read path in resolve_generation is thereby
+    # digest-bound even though it never touches the current-pointer object.
     generation_id = generation.manifest.generation_id
     report_period = str(generation.manifest.clocks.report_period)
     manifest_sha256 = sha256(generation.manifest.to_json_bytes()).hexdigest()
@@ -560,18 +570,42 @@ def _original_lineage() -> dict[str, Any]:
 
 
 def _vehicle_decision(investment_discretion: Any) -> tuple[str, str]:
-    """SOLE -> discretionary/active; anything else passes through honestly.
+    """Map one 13F row's ``investment_discretion`` to K2-B's closed vocabulary.
 
-    A non-SOLE (shared/defined/unknown) discretion is never forced into a
-    discretionary vehicle class -- it is modeled honestly as
-    ``decision_mode="unknown"`` on a mixed-or-unknown vehicle class, which the
-    K2-B compiler itself will refuse to treat as manager-research-intent
-    eligible (its own typed ``MANAGER_INTENT_INELIGIBLE_OR_INSUFFICIENT``
-    state).  The adapter never manufactures eligibility.
+    ``vehicleEpoch.vehicle_class`` is a CLOSED nine-value enum
+    (``contracts/institutional_intelligence/manager_intent_recipe.v1.schema.
+    json``), and K2-B's own ``vehicle_class_decision_mode_conflict`` law
+    (``lib/institutional_intelligence.py`` ``ACTIVE_CLASSES`` /
+    ``PASSIVE_CLASSES`` / ``SYSTEMATIC_CLASSES`` / ``MIXED_OR_UNKNOWN_
+    CLASSES``, lines ~40-47) partitions all nine values across exactly those
+    four buckets -- there is no ninth, neutral "unclassified" value.
+
+    SOLE investment_discretion is mapped to ``decision_mode="discretionary"``
+    on ``concentrated_discretionary_active`` (an ``ACTIVE_CLASSES`` member,
+    the only vehicle_class family compatible with "discretionary").
+
+    Any non-SOLE discretion (SHARED, DEFINED, NONE, or an unrecognized/
+    absent value) is honestly UNKNOWN structure to this adapter -- a single
+    13F row's discretion field describes voting/investment AUTHORITY over
+    one reported position, never the vehicle's trading style -- so it maps
+    to ``decision_mode="unknown"``.  The schema requires decision_mode to
+    agree with vehicle_class, and the ONLY two vehicle_class values
+    compatible with "unknown"/"mixed" are ``options_income_overlay`` and
+    ``synthetic_fund_of_funds``; this adapter picks ``options_income_
+    overlay`` as the closed-vocabulary placeholder.  Neither of these two
+    values is a factual claim about this specific filer's real structure --
+    the compiler treats both identically (excluded from manager-research-
+    intent eligibility via its own ``non_discretionary_vehicle_cannot_emit_
+    manager_intent``/``MANAGER_INTENT_INELIGIBLE_OR_INSUFFICIENT`` law), so
+    the choice between them has zero effect on any compiled outcome.  The
+    adapter never manufactures eligibility, and the compiled non-positive
+    state always arises from this honest ``decision_mode="unknown"`` mapping
+    through the compiler's own law, never from asserting a specific
+    structure this adapter has no evidence for.
     """
     if str(investment_discretion or "").strip().upper() == "SOLE":
         return "discretionary", "concentrated_discretionary_active"
-    return "unknown", "synthetic_fund_of_funds"
+    return "unknown", "options_income_overlay"
 
 
 def _manager_denominator(
@@ -581,35 +615,47 @@ def _manager_denominator(
 
     ``complete`` only when the decoded holdings-row count for the accession
     equals the filing's own ``table_entry_total`` AND ``confidential_omitted``
-    is false; otherwise ``partial``/``unknown`` with honest counts (never a
-    numeric zero standing in for missing knowledge).
+    is false.  ``partial`` only when the filer's own ``table_entry_total`` IS
+    disclosed AND decoded_count is a lawful subset of it (decoded <= total) --
+    the honest ``missing_positions`` count is then the real, known gap.
+
+    Every other condition -- ``table_entry_total`` undisclosed, OR a decoded
+    row count that EXCEEDS the filer's own reported total (an owner-data
+    inconsistency this adapter never resolves or silently reinterprets) --
+    yields ``state="unknown"`` with the only counts this adapter actually
+    holds knowledge of: the rows it decoded for this accession.
+    ``excluded_positions``/``missing_positions`` are asserted 0 under
+    "unknown" only because this adapter makes no separate claim about them,
+    never because it has proven zero are excluded or missing -- an excess of
+    decoded rows over a disclosed total is NEVER labelled "excluded" (those
+    rows were not excluded from anything; they are exactly what was decoded).
     """
     accession = str(filing_row["accession"])
     decoded_count = sum(1 for row in generation.holdings if str(row["accession"]) == accession)
     table_entry_total = filing_row.get("table_entry_total")
     confidential_omitted = filing_row.get("confidential_omitted")
-    if table_entry_total is None:
+    has_lawful_total = (
+        isinstance(table_entry_total, int)
+        and not isinstance(table_entry_total, bool)
+        and decoded_count <= table_entry_total
+    )
+    if has_lawful_total:
+        total_entry = int(table_entry_total)
+        if decoded_count == total_entry and confidential_omitted is False:
+            return {
+                "kind": "public_reported_sleeve", "state": "complete",
+                "total_positions": total_entry, "included_positions": total_entry,
+                "excluded_positions": 0, "missing_positions": 0,
+            }
         return {
-            "kind": "public_reported_sleeve", "state": "unknown",
-            "total_positions": decoded_count, "included_positions": decoded_count,
-            "excluded_positions": 0, "missing_positions": 0,
+            "kind": "public_reported_sleeve", "state": "partial",
+            "total_positions": total_entry, "included_positions": decoded_count,
+            "excluded_positions": 0, "missing_positions": total_entry - decoded_count,
         }
-    total_entry = int(table_entry_total)
-    if decoded_count == total_entry and confidential_omitted is False:
-        return {
-            "kind": "public_reported_sleeve", "state": "complete",
-            "total_positions": total_entry, "included_positions": total_entry,
-            "excluded_positions": 0, "missing_positions": 0,
-        }
-    total = max(total_entry, decoded_count)
-    if decoded_count <= total_entry:
-        included, missing, excluded = decoded_count, total_entry - decoded_count, 0
-    else:
-        included, missing, excluded = total_entry, 0, decoded_count - total_entry
     return {
-        "kind": "public_reported_sleeve", "state": "partial",
-        "total_positions": total, "included_positions": included,
-        "excluded_positions": excluded, "missing_positions": missing,
+        "kind": "public_reported_sleeve", "state": "unknown",
+        "total_positions": decoded_count, "included_positions": decoded_count,
+        "excluded_positions": 0, "missing_positions": 0,
     }
 
 
@@ -765,17 +811,32 @@ def _period_block(
     raw_receipt: Any,
     raw_ref: Mapping[str, Any],
     catalog_ref: Mapping[str, Any],
+    explicit_generation_id: bool,
 ) -> dict[str, Any]:
+    # On the explicit-generation_id path, engine.institutional_census.catalog
+    # ``_load_generation`` NEVER reads the current-pointer object -- it
+    # hard-codes ``current_generation_id=generation_id`` (tautologically
+    # itself) with ``pointer_updated=False``/``superseded=False``.  Emitting
+    # those fabricated values as if they were a real pointer read would be
+    # asserting knowledge this adapter never obtained.  A ``"not_read"``
+    # state carries no such fields; only the current-pointer path, which
+    # genuinely dereferences the pointer object, may report them.
+    pointer_block: dict[str, Any] = (
+        {"state": "not_read"}
+        if explicit_generation_id
+        else {
+            "state": "read",
+            "current_generation_id": generation.current_generation_id,
+            "pointer_updated": bool(generation.pointer_updated),
+            "superseded": bool(generation.superseded),
+        }
+    )
     return {
         "generation_id": generation.manifest.generation_id,
         "report_period": str(generation.manifest.clocks.report_period),
         "source_cutoff_at": str(generation.manifest.clocks.source_cutoff_at),
         "published_at": str(generation.manifest.clocks.published_at),
-        "pointer": {
-            "current_generation_id": generation.current_generation_id,
-            "pointer_updated": bool(generation.pointer_updated),
-            "superseded": bool(generation.superseded),
-        },
+        "pointer": pointer_block,
         "filing": {
             "accession": str(filing_row["accession"]),
             "is_amendment": bool(filing_row["is_amendment"]),
@@ -851,12 +912,27 @@ def run_pilot(store: Any, request: PilotRequest) -> dict[str, Any]:
     """Execute one deterministic, read-only, two-period owner-read pilot.
 
     Returns a canonical-JSON receipt: either a lawful typed refusal (missing,
-    ambiguous, or not-yet-knowable data) or a positive
-    ``PILOT_COMPILED`` receipt embedding the K2-B compiler's own output
-    verbatim.  A genuine owner exception (store outage, digest mismatch,
-    corrupt object) is never caught here and always propagates.
+    ambiguous, not-yet-knowable, or non-increasing report periods) or a
+    compiled receipt embedding the K2-B compiler's own output verbatim --
+    ``PILOT_COMPILED`` when the compiler itself reached
+    ``MANAGER_RESEARCH_INTENT_ELIGIBLE_CONTEXT``, else
+    ``PILOT_COMPILED_NON_POSITIVE``.  A genuine owner exception (store
+    outage, digest mismatch, corrupt object) is never caught here and always
+    propagates.
     """
     cutoff = request.cutoff
+    if request.report_period_prev >= request.report_period_now:
+        # Checked before any store read: a swapped or equal report-period
+        # pair is a typed refusal, never left to surface later as an
+        # untyped InstitutionalIntelligenceError out of validate_recipe().
+        return _finalize(_refusal_receipt(
+            request,
+            PilotRefusal(
+                REPORT_PERIODS_NOT_INCREASING,
+                f"report_period_prev {request.report_period_prev!r} must be strictly earlier "
+                f"than report_period_now {request.report_period_now!r}",
+            ),
+        ))
     try:
         generation_prev = resolve_generation(
             store,
@@ -931,6 +1007,18 @@ def run_pilot(store: Any, request: PilotRequest) -> dict[str, Any]:
     observation_receipt = next(
         event for event in compiled["events"] if event["observation_id"] == "obs_owner_read_pilot"
     )
+    is_eligible = observation_receipt["state"] == "MANAGER_RESEARCH_INTENT_ELIGIBLE_CONTEXT"
+    # The recipe's own observation measure kind (set in build_recipe from the
+    # honest _vehicle_decision mapping) is the single source of truth for
+    # whether a discretionary-attributable q_prev/q_now delta was ever
+    # submitted to the compiler -- never re-derived from is_eligible, which
+    # answers a different question (whether the compiler accepted it).
+    measure_was_submitted = recipe["observations"][0]["measure"]["kind"] == "reported_share_change"
+    top_measure: dict[str, Any] = (
+        {"q_prev": q_prev, "q_now": q_now, "unit": "shares"}
+        if measure_was_submitted
+        else {"state": "not_compiled", "reason": "non_discretionary_vehicle"}
+    )
 
     body = {
         "schema": SCHEMA,
@@ -940,16 +1028,18 @@ def run_pilot(store: Any, request: PilotRequest) -> dict[str, Any]:
         "owner_payloads_copied": False,
         "authority": dict(ALL_FALSE_AUTHORITY),
         "request": _request_block(request),
-        "state": POSITIVE_STATE,
+        "state": POSITIVE_STATE if is_eligible else NON_POSITIVE_STATE,
         "compiled_observation_state": observation_receipt["state"],
         "periods": {
             "previous": _period_block(
                 generation=generation_prev, filing_row=filing_prev, row=row_prev,
                 raw_receipt=raw_receipt_prev, raw_ref=raw_ref_prev, catalog_ref=catalog_ref_prev,
+                explicit_generation_id=request.generation_id_prev is not None,
             ),
             "current": _period_block(
                 generation=generation_now, filing_row=filing_now, row=row_now,
                 raw_receipt=raw_receipt_now, raw_ref=raw_ref_now, catalog_ref=catalog_ref_now,
+                explicit_generation_id=request.generation_id_now is not None,
             ),
         },
         "security_binding": {
@@ -958,11 +1048,12 @@ def run_pilot(store: Any, request: PilotRequest) -> dict[str, Any]:
             "dataos_security_id": None,
             "dataos_resolution": "unresolved_no_authoritative_cusip_plane",
         },
-        "measure": {"q_prev": q_prev, "q_now": q_now, "unit": "shares"},
+        "measure": top_measure,
         "denominators": {
             "previous": _manager_denominator(generation=generation_prev, filing_row=filing_prev),
             "current": denominator,
         },
+        "recipe": recipe,
         "compiled": compiled,
     }
     return _finalize(body)
