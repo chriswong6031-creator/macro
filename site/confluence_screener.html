@@ -35,7 +35,7 @@
 })();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<title>Signals Lining Up — 2026-08-26 | MastermindX</title>
+<title>Signals Lining Up — 2026-08-27 | MastermindX</title>
 
 
 
@@ -56,10 +56,146 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="stylesheet" href="theme.css?v=f41f9a21">
-<link rel="stylesheet" href="assets/css/1a84aaa8.css?v=1a84aaa8">
-<link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
-<link rel="preload" as="style" href="navigation-refresh.css?v=c299c324">
+<link rel="stylesheet" href="theme.css">
+<style>
+/* ── bilingual toggle (mirrors theme.css mechanism for the self-contained head) ── */
+html:not([data-lang="zh"]) .l-zh{display:none}
+html[data-lang="zh"] .l-en{display:none}
+html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-ui);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:var(--ink-link, var(--link));text-decoration:none}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px 72px}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+
+/* ── page brand / lead ── */
+.pg-brand{font-weight:800;font-size:23px;color:var(--text);letter-spacing:-.02em;margin:8px 0 2px;display:flex;align-items:center;gap:9px}
+.pg-brand .gn{color:var(--ink-info, var(--info))}
+.pg-lead{color:var(--muted);font-size:14px;margin:0 0 22px;max-width:60ch}
+
+/* ── HERO — glass state card ── */
+.hero{position:relative;background:var(--glass-bg);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
+  border:1px solid var(--glass-brd);border-radius:20px;padding:26px 28px;box-shadow:var(--glass-shadow);overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(120% 140% at 88% -20%, color-mix(in srgb,var(--info) 20%,transparent), transparent 60%)}
+.hero-inner{position:relative;display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center}
+.hero-eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin-bottom:9px}
+.hero-state{font-size:32px;font-weight:800;letter-spacing:-.03em;line-height:1.08;margin:0;color:var(--text)}
+.hero-state .n{color:var(--ink-info, var(--info))}
+.stance{display:inline-flex;align-items:center;gap:7px;padding:5px 14px;border-radius:999px;font-size:13px;font-weight:700;margin-top:14px;
+  background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--ink-warn, var(--warn))}
+.stance::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.hero-sentence{font-size:14px;color:var(--muted);margin:12px 0 0;max-width:46ch;line-height:1.55}
+/* right rail — the "line-up" motif: 3 stacked leg ticks converging into a dot */
+.hero-motif{width:132px;height:112px;flex:none}
+
+/* ── section head ── */
+.sec-h{display:flex;align-items:baseline;gap:10px;margin:34px 0 4px;flex-wrap:wrap}
+.sec-h h2{margin:0;font-size:16px;font-weight:800;color:var(--text);letter-spacing:-.01em}
+.sec-h .sub{font-size:12.5px;color:var(--muted)}
+
+/* ── LEDGER CARD (signature) ── */
+.ledger{display:flex;flex-direction:column;gap:16px;margin-top:14px}
+.lc{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:16px;
+  padding:20px 22px 18px;transition:border-color .16s,box-shadow .16s,transform .16s}
+.lc:hover{border-color:color-mix(in srgb,var(--info) 40%,var(--line));box-shadow:0 10px 30px -18px rgba(0,0,0,.5)}
+.lc.free{border-color:color-mix(in srgb,var(--info) 34%,var(--line))}
+.lc-top{display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:start}
+/* rank chip — rank_score IS a real ordering, so the numeral carries information */
+.lc-rank{font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--muted);
+  border:1px solid var(--line);border-radius:9px;padding:5px 9px;line-height:1;letter-spacing:.02em;white-space:nowrap;margin-top:2px}
+.lc.free .lc-rank{color:var(--ink-info, var(--info));border-color:color-mix(in srgb,var(--info) 40%,var(--line))}
+.lc-title{font-size:16px;font-weight:700;color:var(--text);line-height:1.35;letter-spacing:-.01em}
+.lc-since{font-size:11.5px;color:var(--muted);margin-top:3px}
+/* win-rate hero block — the number is the type hero, honestly paired with the older era */
+.lc-wr{text-align:right;flex:none;min-width:118px}
+.lc-wr-big{font-family:var(--font-mono);font-size:30px;font-weight:800;line-height:1;color:var(--ink-up, var(--up));letter-spacing:-.02em}
+.lc-wr-unit{font-size:11px;color:var(--muted);font-weight:600;margin-top:3px}
+.lc-wr-old{font-size:11.5px;color:var(--muted);margin-top:8px;font-family:var(--font-mono)}
+.lc-wr-old b{color:var(--text);font-weight:700}
+
+/* the line-up leg stack */
+.legs{display:flex;flex-direction:column;gap:7px;margin:16px 0 4px}
+.leg{display:grid;grid-template-columns:26px 1fr;gap:11px;align-items:center}
+.leg-tf{font-family:var(--font-mono);font-size:10.5px;font-weight:700;text-align:center;border-radius:6px;padding:3px 0;line-height:1}
+.leg-tf.d{background:color-mix(in srgb,var(--muted) 20%,transparent);color:var(--muted)}
+.leg-tf.w{background:color-mix(in srgb,var(--info) 20%,transparent);color:var(--ink-info, var(--info))}
+.leg-txt{font-size:13px;color:var(--text);line-height:1.35;display:flex;align-items:center;gap:9px}
+.leg-txt::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:color-mix(in srgb,var(--up) 70%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--up) 14%,transparent)}
+
+/* wins-per-10 segmented bar */
+.w10{display:inline-flex;gap:3px;vertical-align:middle}
+.w10 i{width:10px;height:10px;border-radius:3px;background:color-mix(in srgb,var(--muted) 26%,transparent)}
+.w10.tone-free i.on{background:var(--up)}
+.w10.tone-gated i.on{background:color-mix(in srgb,var(--muted) 60%,transparent)}
+
+/* footer receipts row */
+.lc-foot{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--muted)}
+.chip.ok{color:var(--ink-up, var(--up))}
+.chip .w10{margin-left:2px}
+.tickers{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
+.tkr{display:inline-flex;align-items:baseline;gap:6px;font-family:var(--font-mono);font-weight:700;font-size:13px;color:var(--text);
+  background:color-mix(in srgb,var(--up) 12%,transparent);border:1px solid color-mix(in srgb,var(--up) 26%,transparent);
+  border-radius:8px;padding:5px 10px}
+.tkr .nm{font-family:var(--font-ui);font-weight:500;font-size:11px;color:var(--muted)}
+
+/* locked state — honest, built from active_count only. NO blurred text. */
+.locked{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:16px;padding:14px 16px;border-radius:12px;
+  background:color-mix(in srgb,var(--info) 7%,transparent);border:1px dashed color-mix(in srgb,var(--info) 34%,var(--line))}
+.locked .ic{flex:none;width:32px;height:32px;border-radius:9px;display:grid;place-items:center;
+  background:color-mix(in srgb,var(--info) 16%,transparent);color:var(--ink-info, var(--info))}
+.locked .lk-tx{flex:1;min-width:180px;font-size:13px;color:var(--text);line-height:1.4}
+.locked .lk-tx b{font-weight:700}
+.locked .lk-tx .sub{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
+.btn{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:700;border-radius:10px;padding:9px 16px;
+  background:var(--fill-info, var(--info));color:#fff;border:0;cursor:pointer;transition:filter .15s,transform .15s;white-space:nowrap}
+.btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn.ghost{background:transparent;color:var(--ink-info, var(--info));border:1px solid color-mix(in srgb,var(--info) 40%,var(--line))}
+
+/* honesty footer + big CTA */
+.honesty{margin-top:30px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px 22px}
+.honesty h3{margin:0 0 10px;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.honesty ul{margin:0;padding:0;list-style:none;display:grid;gap:9px}
+.honesty li{position:relative;padding-left:20px;font-size:13px;color:var(--text);line-height:1.5}
+.honesty li::before{content:"";position:absolute;left:2px;top:8px;width:7px;height:7px;border-radius:2px;background:color-mix(in srgb,var(--warn) 70%,transparent)}
+.cta-band{margin-top:22px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;
+  background:var(--glass-bg);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
+  border:1px solid var(--glass-brd);border-radius:16px;padding:20px 24px;box-shadow:var(--glass-shadow)}
+.cta-band .cb-tx{font-size:15px;font-weight:700;color:var(--text)}
+.cta-band .cb-sub{font-size:12.5px;color:var(--muted);font-weight:400;margin-top:3px}
+
+/* empty state */
+.empty{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:40px 24px;text-align:center;margin-top:14px}
+.empty .ec-ic{font-size:30px;margin-bottom:10px;opacity:.7}
+.empty h3{margin:0 0 6px;font-size:18px;font-weight:800;color:var(--text)}
+.empty p{margin:0 auto;font-size:13.5px;color:var(--muted);max-width:40ch;line-height:1.55}
+
+/* footer */
+.site-foot{max-width:1080px;margin:34px auto 0;padding:18px 20px;border-top:1px solid var(--line);
+  display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:12px}
+
+/* zh Asia colour convention — theme.css swaps --up/--down globally, but our
+   green-tinted ticker chips + win cells reference --up so they follow for free.
+   Keep the wins bar semantic (win = good), so we DON'T flip it: a win is a win in
+   both languages. Guard only the ticker chip, which reads as "price up = green"
+   and should invert in zh. */
+html[data-lang="zh"] .tkr{background:color-mix(in srgb,var(--down) 12%,transparent);border-color:color-mix(in srgb,var(--down) 26%,transparent)}
+
+/* focus visibility */
+a:focus-visible,.btn:focus-visible,summary:focus-visible{outline:2px solid var(--info);outline-offset:2px;border-radius:8px}
+
+/* responsive */
+@media(max-width:640px){
+  .hero-inner{grid-template-columns:1fr}
+  .hero-motif{display:none}
+  .hero-state{font-size:26px}
+  .lc-top{grid-template-columns:auto 1fr;grid-template-areas:"rank title" "wr wr"}
+  .lc-rank{grid-area:rank}.lc-title-wrap{grid-area:title}.lc-wr{grid-area:wr;text-align:left;margin-top:6px}
+  .lc-wr-old{margin-top:4px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
 </head>
 <body>
 
@@ -69,7 +205,7 @@
 
 
 
-    <link rel="stylesheet" href="navigation-refresh.css?v=c299c324">
+    <link rel="stylesheet" href="navigation-refresh.css">
     <div class="nav-links">
     
     <a class="nav-brand" href="start.html" aria-label="MASTERMINDX — Home">
@@ -281,10 +417,10 @@
     </div>
   </div>
   
-  <script src="logo_config.js?v=b37d33d3" defer></script>
-  <script src="stock-logos.js?v=cc29be53" defer></script>
-  <script src="live_config.js?v=52943e92" defer></script>
-  <script src="live.js?v=cfb8c072" defer></script>
+  <script src="logo_config.js"></script>
+  <script src="stock-logos.js"></script>
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
   <div class="nav-search">
     <span class="mag" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg></span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -320,7 +456,7 @@
   <div class="hero">
     <div class="hero-inner">
       <div>
-        <div class="hero-eyebrow"><span class="l-en">SETUP TAPE · 2026-08-26</span><span class="l-zh">布局磁带 · 2026-08-26</span></div>
+        <div class="hero-eyebrow"><span class="l-en">SETUP TAPE · 2026-08-27</span><span class="l-zh">布局磁带 · 2026-08-27</span></div>
         <h1 class="hero-state">
           <span class="l-en"><span class="n">3</span> setups lining up today</span>
           <span class="l-zh"><span class="n">3</span> 组信号今日共振</span>
@@ -364,84 +500,10 @@
       <div class="lc-top">
         <div class="lc-rank">01</div>
         <div class="lc-title-wrap">
-          <div class="lc-title"><span class="l-en">Weekly short-term uptrend + weekly 50/200 golden cross + riding the upper band + MACD bullish cross</span><span class="l-zh">周线短期上升趋势 + 周线50/200金叉 + 沿上轨强势运行 + MACD 金叉</span></div>
-          <div class="lc-since">
-            <span class="l-en">Seen 64 times since 1964 · about 1.0 a year · last 2026-08-21</span>
-            <span class="l-zh">自 1964 年出现 64 次 · 约每年 1.0 次 · 最近 2026-08-21</span>
-          </div>
-        </div>
-        <div class="lc-wr">
-          <div class="lc-wr-big mono">8.8<span style="font-size:15px;color:var(--muted);font-weight:600">/10</span></div>
-          <div class="lc-wr-unit"><span class="l-en">wins recently (2018+)</span><span class="l-zh">近年胜率 (2018起)</span></div>
-          <div class="lc-wr-old"><span class="l-en">older years:</span><span class="l-zh">更早年份:</span> <b>6.4/10</b></div>
-        </div>
-      </div>
-
-      
-      <div class="legs">
-        
-        <div class="leg">
-          <span class="leg-tf w">W</span>
-          <span class="leg-txt"><span class="l-en">Golden Cross (50/200)</span><span class="l-zh">黄金交叉 (50/200)</span></span>
-        </div>
-        
-        <div class="leg">
-          <span class="leg-tf w">W</span>
-          <span class="leg-txt"><span class="l-en">Short-term Rising Trend</span><span class="l-zh">短期上升趋势</span></span>
-        </div>
-        
-        <div class="leg">
-          <span class="leg-tf d">D</span>
-          <span class="leg-txt"><span class="l-en">Bollinger Band Walk Up (Close above upper band ≥ 3 of last 5 bars)</span><span class="l-zh">布林带向上游走（近5根K线中至少3根收盘高于上轨）</span></span>
-        </div>
-        
-        <div class="leg">
-          <span class="leg-tf d">D</span>
-          <span class="leg-txt"><span class="l-en">MACD bullish cross</span><span class="l-zh">MACD 金叉</span></span>
-        </div>
-        
-      </div>
-
-      <div class="lc-foot">
-        <span class="chip ok">
-<span class="w10 tone-free" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i></span>
-          <span class="l-en">8.8 in 10 recently</span>
-          <span class="l-zh">近年 8.8/10</span></span>
-        
-        <span class="chip">
-          <span class="l-en">+30 points better than a coin-flip entry</span>
-          <span class="l-zh">较随机入场高 30 个百分点</span>
-        </span>
-        
-        <span class="chip ok">✓ <span class="l-en">held up in both eras</span><span class="l-zh">两期均稳</span></span>
-        
-      </div>
-
-      
-      
-        
-        <div class="lc-foot" style="border-top:0;padding-top:6px;margin-top:8px">
-          <span class="chip ok" style="color:var(--text)">
-            <span class="l-en">Matching now &nbsp;→</span><span class="l-zh">当前匹配 &nbsp;→</span>
-          </span>
-          <div class="tickers">
-            
-            <a class="tkr" href="stocks/TMO.html">TMO<span class="nm">Thermo Fisher Scientific</span></a>
-            
-          </div>
-        </div>
-        
-      
-    </div>
-    
-    <div class="lc gated">
-      <div class="lc-top">
-        <div class="lc-rank">02</div>
-        <div class="lc-title-wrap">
           <div class="lc-title"><span class="l-en">Weekly RSI stack washed out + weekly RSI stack curls up + RSI stack curls up</span><span class="l-zh">周线RSI组超卖 + 周线RSI组齐转上 + RSI组齐转上</span></div>
           <div class="lc-since">
-            <span class="l-en">Seen 809 times since 1962 · about 12.6 a year · last 2026-08-21</span>
-            <span class="l-zh">自 1962 年出现 809 次 · 约每年 12.6 次 · 最近 2026-08-21</span>
+            <span class="l-en">Seen 810 times since 1962 · about 12.6 a year · last 2026-08-21</span>
+            <span class="l-zh">自 1962 年出现 810 次 · 约每年 12.6 次 · 最近 2026-08-21</span>
           </div>
         </div>
         <div class="lc-wr">
@@ -473,7 +535,7 @@
 
       <div class="lc-foot">
         <span class="chip ok">
-<span class="w10 tone-gated" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i></span>
+<span class="w10 tone-free" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i></span>
           <span class="l-en">7.8 in 10 recently</span>
           <span class="l-zh">近年 7.8/10</span></span>
         
@@ -488,7 +550,81 @@
 
       
       
-        <div class="locked" data-confluence-combo="L0035">
+        
+        <div class="lc-foot" style="border-top:0;padding-top:6px;margin-top:8px">
+          <span class="chip ok" style="color:var(--text)">
+            <span class="l-en">Matching now &nbsp;→</span><span class="l-zh">当前匹配 &nbsp;→</span>
+          </span>
+          <div class="tickers">
+            
+            <a class="tkr" href="stocks/TTD.html">TTD<span class="nm">Trade Desk (The)</span></a>
+            
+          </div>
+        </div>
+        
+      
+    </div>
+    
+    <div class="lc gated">
+      <div class="lc-top">
+        <div class="lc-rank">02</div>
+        <div class="lc-title-wrap">
+          <div class="lc-title"><span class="l-en">Weekly ribbon uptrend + weekly reclaims 100-day line + Price reclaims AVWAP from earnings-proxy anchor + Golden Star 7/35</span><span class="l-zh">周线均线带多头排列 + 周线站上100日线 + 价格收复财报代理锚点 AVWAP + 黄金之星7/35</span></div>
+          <div class="lc-since">
+            <span class="l-en">Seen 67 times since 1988 · about 1.8 a year · last 2026-08-26</span>
+            <span class="l-zh">自 1988 年出现 67 次 · 约每年 1.8 次 · 最近 2026-08-26</span>
+          </div>
+        </div>
+        <div class="lc-wr">
+          <div class="lc-wr-big mono">8.0<span style="font-size:15px;color:var(--muted);font-weight:600">/10</span></div>
+          <div class="lc-wr-unit"><span class="l-en">wins recently (2018+)</span><span class="l-zh">近年胜率 (2018起)</span></div>
+          <div class="lc-wr-old"><span class="l-en">older years:</span><span class="l-zh">更早年份:</span> <b>7.0/10</b></div>
+        </div>
+      </div>
+
+      
+      <div class="legs">
+        
+        <div class="leg">
+          <span class="leg-tf w">W</span>
+          <span class="leg-txt"><span class="l-en">MA Buy (100)</span><span class="l-zh">均线买入 (100)</span></span>
+        </div>
+        
+        <div class="leg">
+          <span class="leg-tf w">W</span>
+          <span class="leg-txt"><span class="l-en">Trend Ribbon — Uptrend State</span><span class="l-zh">趋势带 — 上升趋势状态</span></span>
+        </div>
+        
+        <div class="leg">
+          <span class="leg-tf d">D</span>
+          <span class="leg-txt"><span class="l-en">Price reclaims AVWAP from earnings-proxy anchor (quarter&#39;s top-volume session)</span><span class="l-zh">价格收复财报代理锚点 AVWAP（季度最大成交量日）</span></span>
+        </div>
+        
+        <div class="leg">
+          <span class="leg-tf d">D</span>
+          <span class="leg-txt"><span class="l-en">Golden Star (7/35) — three-entity cross with price gate</span><span class="l-zh">黄金之星 (7/35) — 含价格接近门控的三实体交叉</span></span>
+        </div>
+        
+      </div>
+
+      <div class="lc-foot">
+        <span class="chip ok">
+<span class="w10 tone-gated" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i></span>
+          <span class="l-en">8.0 in 10 recently</span>
+          <span class="l-zh">近年 8.0/10</span></span>
+        
+        <span class="chip">
+          <span class="l-en">+23 points better than a coin-flip entry</span>
+          <span class="l-zh">较随机入场高 23 个百分点</span>
+        </span>
+        
+        <span class="chip ok">✓ <span class="l-en">held up in both eras</span><span class="l-zh">两期均稳</span></span>
+        
+      </div>
+
+      
+      
+        <div class="locked" data-confluence-combo="L0043">
           <span class="ic" aria-hidden="true">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
           </span>
@@ -511,16 +647,16 @@
       <div class="lc-top">
         <div class="lc-rank">03</div>
         <div class="lc-title-wrap">
-          <div class="lc-title"><span class="l-en">Weekly ribbon flips up + double bottom (slow) + Bi-weekly Stochastic-RSI bullish cross</span><span class="l-zh">周线均线带翻多 + 长线双底 + 双周随机 RSI 金叉</span></div>
+          <div class="lc-title"><span class="l-en">Weekly long-term uptrend + weekly RSI-14 washed out + weekly RSI crosses above 50 + RSI stack washed out</span><span class="l-zh">周线长期上升趋势 + 周线RSI-14超卖 + 周线RSI 上穿 50 + RSI组超卖</span></div>
           <div class="lc-since">
-            <span class="l-en">Seen 1354 times since 1963 · about 21.6 a year · last 2026-08-25</span>
-            <span class="l-zh">自 1963 年出现 1354 次 · 约每年 21.6 次 · 最近 2026-08-25</span>
+            <span class="l-en">Seen 155 times since 1968 · about 2.6 a year · last 2026-08-26</span>
+            <span class="l-zh">自 1968 年出现 155 次 · 约每年 2.6 次 · 最近 2026-08-26</span>
           </div>
         </div>
         <div class="lc-wr">
-          <div class="lc-wr-big mono">6.7<span style="font-size:15px;color:var(--muted);font-weight:600">/10</span></div>
+          <div class="lc-wr-big mono">8.0<span style="font-size:15px;color:var(--muted);font-weight:600">/10</span></div>
           <div class="lc-wr-unit"><span class="l-en">wins recently (2018+)</span><span class="l-zh">近年胜率 (2018起)</span></div>
-          <div class="lc-wr-old"><span class="l-en">older years:</span><span class="l-zh">更早年份:</span> <b>5.6/10</b></div>
+          <div class="lc-wr-old"><span class="l-en">older years:</span><span class="l-zh">更早年份:</span> <b>6.6/10</b></div>
         </div>
       </div>
 
@@ -528,43 +664,45 @@
       <div class="legs">
         
         <div class="leg">
-          <span class="leg-tf d">D</span>
-          <span class="leg-txt"><span class="l-en">Double Bottom (Long-term)</span><span class="l-zh">双底形态（长期）</span></span>
+          <span class="leg-tf w">W</span>
+          <span class="leg-txt"><span class="l-en">RSI-14 Oversold Entry</span><span class="l-zh">RSI-14 超卖入场</span></span>
         </div>
         
         <div class="leg">
           <span class="leg-tf w">W</span>
-          <span class="leg-txt"><span class="l-en">Trend Ribbon — Flip to Uptrend</span><span class="l-zh">趋势带 — 翻转为上升趋势</span></span>
+          <span class="leg-txt"><span class="l-en">Long-term Rising Trend</span><span class="l-zh">长期上升趋势</span></span>
         </div>
         
         <div class="leg">
           <span class="leg-tf d">D</span>
-          <span class="leg-txt"><span class="l-en">Bi-weekly Stochastic-RSI bullish cross</span><span class="l-zh">双周随机 RSI 金叉</span></span>
+          <span class="leg-txt"><span class="l-en">RSI Stack (7/14/21) — All Three at or Below 30</span><span class="l-zh">RSI叠加（7/14/21）— 三条RSI均低于30参考带</span></span>
+        </div>
+        
+        <div class="leg">
+          <span class="leg-tf w">W</span>
+          <span class="leg-txt"><span class="l-en">RSI crosses above 50</span><span class="l-zh">RSI 上穿 50</span></span>
         </div>
         
       </div>
 
       <div class="lc-foot">
         <span class="chip ok">
-<span class="w10 tone-gated" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i></span>
-          <span class="l-en">6.7 in 10 recently</span>
-          <span class="l-zh">近年 6.7/10</span></span>
+<span class="w10 tone-gated" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i></span>
+          <span class="l-en">8.0 in 10 recently</span>
+          <span class="l-zh">近年 8.0/10</span></span>
         
         <span class="chip">
-          <span class="l-en">+10 points better than a coin-flip entry</span>
-          <span class="l-zh">较随机入场高 10 个百分点</span>
+          <span class="l-en">+23 points better than a coin-flip entry</span>
+          <span class="l-zh">较随机入场高 23 个百分点</span>
         </span>
         
-        <span class="chip">
-          <span class="l-en">recent read only — thinner older record</span>
-          <span class="l-zh">仅近年数据 — 更早记录较薄</span>
-        </span>
+        <span class="chip ok">✓ <span class="l-en">held up in both eras</span><span class="l-zh">两期均稳</span></span>
         
       </div>
 
       
       
-        <div class="locked" data-confluence-combo="L0110">
+        <div class="locked" data-confluence-combo="L0064">
           <span class="ic" aria-hidden="true">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
           </span>
@@ -591,8 +729,8 @@
     <ul>
       <li><span class="l-en"><b>Leads, not proof.</b> These combos were found by searching a large pool of signal recipes. Treat them as things to watch and research, not a guarantee.</span>
         <span class="l-zh"><b>线索，非定论。</b>这些组合由自动搜索大量信号配方得出。请将其视为值得观察与研究的线索，而非保证。</span></li>
-      <li><span class="l-en"><b>The stocks are survivors.</b> The list covers 242 large, established US companies — names that made it. That flatters the win rates. Small and failed companies aren't here.</span>
-        <span class="l-zh"><b>标的是幸存者。</b>名单覆盖 242 家大型成熟美国公司——都是活下来的赢家。这会美化胜率。小盘股与失败公司不在其中。</span></li>
+      <li><span class="l-en"><b>The stocks are survivors.</b> The list covers 243 large, established US companies — names that made it. That flatters the win rates. Small and failed companies aren't here.</span>
+        <span class="l-zh"><b>标的是幸存者。</b>名单覆盖 243 家大型成熟美国公司——都是活下来的赢家。这会美化胜率。小盘股与失败公司不在其中。</span></li>
       <li><span class="l-en"><b>Small recent samples.</b> A recent-era rate can rest on only a couple dozen monthly readings — samples that thin will wobble. The exact counts sit next to every rate.</span>
         <span class="l-zh"><b>近期样本偏小。</b>近期胜率可能只基于二十来个月度读数——样本这么小，数字会有波动。具体次数就标在每个胜率旁边。</span></li>
       <li><span class="l-en"><b>Win rates are historical, month-by-month reads.</b> Each calendar month counts once, so clusters don't inflate them. We show the recent years and the older years so you can see if a pattern is cherry-picked.</span>
@@ -605,7 +743,7 @@
   <div class="cta-band" id="confluence-paid-cta">
     <div>
       <div class="cb-tx"><span class="l-en">See every line-up's matching stocks</span><span class="l-zh">查看每组共振匹配的股票</span></div>
-      <div class="cb-sub"><span class="l-en">The full screener updates daily. Build your own combos and screen all 242 names.</span><span class="l-zh">完整筛选器每日更新。自建组合并筛选全部 242 只标的。</span></div>
+      <div class="cb-sub"><span class="l-en">The full screener updates daily. Build your own combos and screen all 243 names.</span><span class="l-zh">完整筛选器每日更新。自建组合并筛选全部 243 只标的。</span></div>
     </div>
     <a class="btn" href="https://app.mastermind-x.com/?utm_source=site&amp;utm_medium=free_tools&amp;utm_campaign=confluence_screener&amp;utm_content=cta"><span class="l-en">Start free trial →</span><span class="l-zh">开始免费试用 →</span></a>
   </div>
@@ -613,12 +751,12 @@
   
 
   <div class="site-foot">
-    <span><span class="l-en">Data as of 2026-08-26 · large-cap US universe · updated daily.</span><span class="l-zh">数据截至 2026-08-26 · 美国大盘股 · 每日更新。</span></span>
+    <span><span class="l-en">Data as of 2026-08-27 · large-cap US universe · updated daily.</span><span class="l-zh">数据截至 2026-08-27 · 美国大盘股 · 每日更新。</span></span>
     <span><span class="l-en">Context, not investment advice.</span><span class="l-zh">仅供参考，非投资建议。</span></span>
   </div>
 </div>
 
-<script src="theme.js?v=0956049c" defer></script>
+<script src="theme.js"></script>
 <script>
 (function(){
   'use strict';
@@ -783,6 +921,5 @@
   window.addEventListener('mdx-auth', attemptHydrate);
 })();
 </script>
-<script defer data-whb data-root="" src="wh_banner.js?v=4a53a176"></script>
 </body>
 </html>
