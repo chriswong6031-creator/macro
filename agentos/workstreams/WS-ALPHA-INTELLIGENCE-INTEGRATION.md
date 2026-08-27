@@ -29,6 +29,12 @@ owns_paths:
   - lib/institutional_intelligence.py
   - tests/fixtures/institutional_intelligence/
   - tests/test_institutional_manager_intent_contract.py
+  - contracts/economic_propagation/
+  - lib/economic_propagation.py
+  - tests/fixtures/economic_propagation/
+  - tests/test_economic_propagation_hypothesis_contract.py
+  - research/economic_propagation/K3D_PROPAGATION_HYPOTHESIS_CONTRACT_FREEZE_2026-08-27.md
+  - research/economic_propagation/k3d_real_proof_records/
 depends_on:
   - WS:PROPHET-US-V4-RECOVERY
   - WS:PROPHET-CONDITIONAL-FUSION
@@ -202,10 +208,23 @@ waves:
       for the same main SHA entered the workflow concurrency group; no baseline
       job failed. This is a contract-only on-main capability, not a producer,
       consumer, store, product surface, deployment or PROVEN_LIVE claim. K3
-      remains IN_PROGRESS because K3-D Economic Propagation is still NOT_BUILT
-      and requires its own commission. This canonical K3-E remains distinct from
-      the K3E Expectation-Market-Dynamics child program
-      (DEC:K3E-EXPECTATION-MARKET-DYNAMICS-FREEZE); neither replaces the other.
+      remains IN_PROGRESS because K3-D awaits Sol acceptance. This canonical
+      K3-E remains distinct from the K3E Expectation-Market-Dynamics child
+      program (DEC:K3E-EXPECTATION-MARKET-DYNAMICS-FREEZE); neither replaces the
+      other. K3-D Economic Propagation is now BUILT on one carrier (PR #6514,
+      branch claude/k3d-economic-propagation, operation
+      alpha-k3d-economic-propagation-20260826-sol-001): record class frozen as
+      economic_propagation.propagation_hypothesis/v1 under this workstream
+      (DEC:K3D-PROPAGATION-HYPOTHESIS-CONTRACT) after archaeology proved
+      earnings_readthrough_hypothesis/v1 architecture-only/unowned; the four
+      binding kills are const in the wire format; the participation-generator
+      refusal row is registry-enforced; unresolved identity forces typed
+      abstention before inference; two real owner-read abstention proofs are
+      committed (no live role-specific Graph-1 row exists estate-wide, so the
+      honest abstention is the real proof). The carrier is PARKED /
+      HOLD-FOR-SOL (draft, literal do-not-merge, no arming): it merges only on
+      Sol's explicit acceptance of the exact head. K3-D is contract-only — no
+      store, consumer, product surface, deployment or PROVEN_LIVE claim.
   - id: k4
     title: K4 Path/Event Intelligence — holdability extension (F), earnings event-clock waves (G)
     status: todo
