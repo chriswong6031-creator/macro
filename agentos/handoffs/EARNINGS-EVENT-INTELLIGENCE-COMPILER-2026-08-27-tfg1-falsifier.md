@@ -14,7 +14,7 @@ state_before: >
   source-conditioned separator/proxy/role law, and froze an eight-revision metadata-only holdout
   (ranks 17-24) that had never been opened. E3-C was open; E3-P locked.
 prs:
-  - 0
+  - 6555
 discoveries:
   - DSC:TX-BODY-SHA-IS-CANONICAL-JSON-NOT-RAW-BYTES
 changed:
