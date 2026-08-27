@@ -2,7 +2,7 @@
 workstream: "WS:ALPHA-INTELLIGENCE-INTEGRATION"
 session: sol/alpha-k3d-commission-20260826
 model: sol
-ended_because: commissioned_delivery_only
+ended_because: complete
 mission: >
   Commission one bounded K3-D Economic Propagation wave that freezes and proves
   the lawful propagation-hypothesis record class over existing Graph 1/2/3 owner
