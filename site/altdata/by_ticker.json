@@ -1,7 +1,7 @@
 {
   "schema": "altdata.by_ticker.v2",
   "as_of": "2026-08-27",
-  "generated_utc": "2026-08-27T08:06:41.875784+00:00",
+  "generated_utc": "2026-08-27T09:31:03.230290+00:00",
   "n_tickers": 2601,
   "n_dropped_invalid": 0,
   "dropped_invalid_examples": [],
@@ -4710,10 +4710,12 @@
     },
     "KHC": {
       "ticker": "KHC",
-      "channels": [],
-      "weighted_score": 0,
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.2,
       "congress_position_usd": 34952500.0,
-      "convergence_score": 0,
+      "convergence_score": 1,
       "trump_linked": false,
       "affiliated": false
     },
@@ -7038,16 +7040,6 @@
     },
     "BXP": {
       "ticker": "BXP",
-      "channels": [
-        "special_situation"
-      ],
-      "weighted_score": 0.2,
-      "convergence_score": 1,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "BMRA": {
-      "ticker": "BMRA",
       "channels": [
         "special_situation"
       ],
@@ -11119,16 +11111,6 @@
     },
     "OLPX": {
       "ticker": "OLPX",
-      "channels": [
-        "special_situation"
-      ],
-      "weighted_score": 0.2,
-      "convergence_score": 1,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "CPPTL": {
-      "ticker": "CPPTL",
       "channels": [
         "special_situation"
       ],
@@ -18238,6 +18220,26 @@
       "trump_linked": false,
       "affiliated": false
     },
+    "AREC": {
+      "ticker": "AREC",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.2,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "LXFR": {
+      "ticker": "LXFR",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.2,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
     "BRC": {
       "ticker": "BRC",
       "channels": [
@@ -18260,6 +18262,16 @@
     },
     "WILC": {
       "ticker": "WILC",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.2,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "CRNC": {
+      "ticker": "CRNC",
       "channels": [
         "special_situation"
       ],
@@ -18550,16 +18562,6 @@
     },
     "HITI": {
       "ticker": "HITI",
-      "channels": [
-        "special_situation"
-      ],
-      "weighted_score": 0.2,
-      "convergence_score": 1,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "INCR": {
-      "ticker": "INCR",
       "channels": [
         "special_situation"
       ],
@@ -19268,16 +19270,6 @@
       "trump_linked": false,
       "affiliated": false
     },
-    "PMA": {
-      "ticker": "PMA",
-      "channels": [
-        "special_situation"
-      ],
-      "weighted_score": 0.2,
-      "convergence_score": 1,
-      "trump_linked": false,
-      "affiliated": false
-    },
     "NEXRW": {
       "ticker": "NEXRW",
       "channels": [
@@ -19450,6 +19442,16 @@
     },
     "IRS": {
       "ticker": "IRS",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.2,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "KNOP": {
+      "ticker": "KNOP",
       "channels": [
         "special_situation"
       ],
@@ -20268,16 +20270,6 @@
       "trump_linked": false,
       "affiliated": false
     },
-    "SGI": {
-      "ticker": "SGI",
-      "channels": [
-        "special_situation"
-      ],
-      "weighted_score": 0.2,
-      "convergence_score": 1,
-      "trump_linked": false,
-      "affiliated": false
-    },
     "AMPGZ": {
       "ticker": "AMPGZ",
       "channels": [
@@ -20290,6 +20282,16 @@
     },
     "PAVS": {
       "ticker": "PAVS",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.2,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "PERI": {
+      "ticker": "PERI",
       "channels": [
         "special_situation"
       ],
@@ -20850,6 +20852,16 @@
     },
     "VOXR": {
       "ticker": "VOXR",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.2,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "BBCQW": {
+      "ticker": "BBCQW",
       "channels": [
         "special_situation"
       ],
@@ -22460,16 +22472,6 @@
     },
     "TVGNW": {
       "ticker": "TVGNW",
-      "channels": [
-        "special_situation"
-      ],
-      "weighted_score": 0.2,
-      "convergence_score": 1,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "ADXN": {
-      "ticker": "ADXN",
       "channels": [
         "special_situation"
       ],
@@ -24188,16 +24190,6 @@
       "trump_linked": false,
       "affiliated": false
     },
-    "CTNT": {
-      "ticker": "CTNT",
-      "channels": [
-        "special_situation"
-      ],
-      "weighted_score": 0.2,
-      "convergence_score": 1,
-      "trump_linked": false,
-      "affiliated": false
-    },
     "CBU": {
       "ticker": "CBU",
       "channels": [
@@ -24310,16 +24302,6 @@
     },
     "SMID": {
       "ticker": "SMID",
-      "channels": [
-        "special_situation"
-      ],
-      "weighted_score": 0.2,
-      "convergence_score": 1,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "HNVR": {
-      "ticker": "HNVR",
       "channels": [
         "special_situation"
       ],
@@ -26652,6 +26634,56 @@
       "ticker": "RGEN",
       "channels": [
         "special_situation"
+      ],
+      "weighted_score": 0.2,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "PMEC": {
+      "ticker": "PMEC",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.2,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "CWD": {
+      "ticker": "CWD",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.2,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "NOMA": {
+      "ticker": "NOMA",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.2,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "PRTHU": {
+      "ticker": "PRTHU",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.2,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "JGH": {
+      "ticker": "JGH",
+      "channels": [
+        "activist_13d"
       ],
       "weighted_score": 0.2,
       "convergence_score": 1,

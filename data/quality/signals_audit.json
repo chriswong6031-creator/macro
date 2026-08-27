@@ -1,7 +1,7 @@
 {
- "asof": "2026-08-21",
- "files_checked": 245,
- "n_markers": 57395,
+ "asof": "2026-08-26",
+ "files_checked": 246,
+ "n_markers": 57530,
  "errors": [
   "site/signals/AMZN.json: markers[175]: `reasons[0]` is 'veto: bearish divergence' but `reason` is 'failed next-bar hold' \u2014 the exhaustive account must open on the first-match label it accompanies",
   "site/signals/EQIX.json: markers[149]: `reasons[0]` is 'veto: bearish divergence' but `reason` is 'failed next-bar hold' \u2014 the exhaustive account must open on the first-match label it accompanies",

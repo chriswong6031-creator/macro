@@ -1,17 +1,17 @@
 {
   "schema": "altdata.mastermind.v1",
   "as_of": "2026-08-27",
-  "generated_utc": "2026-08-27T08:06:49.349972+00:00",
+  "generated_utc": "2026-08-27T09:31:09.150694+00:00",
   "contract": "Actionable alt-data axis for the Mastermind bot. Each signal: signal_score 0-100 (composite of weighted convergence + brain conviction + price confirm \u2212 extension), action \u2208 {ACCUMULATE,WATCH,AVOID}, direction \u2208 {long,short,neutral}, source \u2208 {brain,deterministic}. The bot sizes through its OWN risk framework; this is an input, not an order. Brain calls are graded vs SPY (see calibration). An extended name is never ACCUMULATE. trump_linked / affiliations flag actor ties. rolling_over names (off_high\u2264\u221215% AND 20d<0 AND below 50dma) appear in broken_signals only \u2014 crowd attention, NOT entries. entry_tier (T1/T2/T3) = validated confluence buy gate signal.",
-  "regime_read": "Convergence is concentrated in semiconductors, enterprise AI, healthcare and federal-services exposure, but several clusters rely partly on sentiment or affiliation rather than hard demand. With no completed track-record observations, conviction remains modest and near-extended or event-sensitive names are watches rather than entries.",
+  "regime_read": "The strongest measured alignment is in semiconductors, government-linked technology, and pharma, but most signals mix fundamental activity with sentiment or affiliation rather than multiple hard-flow channels. With no scored track record yet, conviction remains modest and MRK is a WATCH because its relative strength is close to the extended threshold.",
   "brain_present": true,
   "brain_usable": true,
   "article3": {
     "granted": false,
     "lift_lb": null,
     "reason": "insufficient-n: n=17 < min_n=25",
-    "evidence_asof": "2026-08-26",
-    "evaluated_at": "2026-08-26T05:50:25+00:00"
+    "evidence_asof": "2026-08-27",
+    "evaluated_at": "2026-08-27T09:58:29+00:00"
   },
   "is_context_only": true,
   "calibration": {
@@ -20,118 +20,16 @@
     "open": 16,
     "note": "No theses scored yet \u2014 the track record begins once the first check-by dates pass. Keep conviction modest until it does."
   },
-  "n_signals": 103,
+  "n_signals": 102,
   "n_broken": 15,
   "signals": [
     {
-      "ticker": "MSFT",
-      "signal_score": 78,
-      "conviction": "medium",
+      "ticker": "PLTR",
+      "signal_score": 75,
+      "conviction": "low",
       "action": "ACCUMULATE",
       "direction": "long",
       "source": "brain",
-      "weighted_score": 1.6,
-      "convergence_score": 4,
-      "channels": [
-        "affiliation",
-        "app_demand",
-        "github_momentum",
-        "patent_cluster"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": 7.9,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": false,
-      "off_high_252": -7.7,
-      "ret_20d": 27.3,
-      "above_50dma": true,
-      "entry_tier": null,
-      "affiliations": [
-        {
-          "actor": "Sam Altman",
-          "rel": "PARTNERS_WITH",
-          "kind": "exec"
-        },
-        {
-          "actor": "Bill Ackman",
-          "rel": "AFFILIATES_WITH",
-          "kind": "fund"
-        }
-      ],
-      "n_affiliated_actors": 2,
-      "thesis": "MSFT's signals span measured product demand, developer activity and intellectual-property creation: highly rated applications with a very large review base, strong model-download activity, substantial GitHub engagement and a large patent cluster [app_demand] [github_momentum] [patent_cluster]. The factual Sam Altman partnership connects these usage signals to the AI platform ecosystem, while Bill Ackman's disclosed affiliation is supplementary rather than central [actor:Sam Altman] [actor:Bill Ackman].",
-      "second_order": [
-        "NVDA \u2014 expanding AI workloads can support accelerator demand",
-        "Enterprise AI software \u2014 developer and application adoption can broaden paid deployment",
-        "Cloud data-center infrastructure \u2014 sustained usage implies continuing compute, networking and power requirements"
-      ],
-      "falsifier": {
-        "text": "Application and developer engagement weaken materially without corresponding growth in commercial AI deployment.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "MSFT",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 60
-        }
-      },
-      "clamped": null
-    },
-    {
-      "ticker": "MRK",
-      "signal_score": 70,
-      "conviction": "low",
-      "action": "WATCH",
-      "direction": "long",
-      "source": "brain",
-      "weighted_score": 1.9,
-      "convergence_score": 5,
-      "channels": [
-        "clinical_phase3_start",
-        "fda_label_expansion",
-        "lobbying",
-        "special_situation",
-        "trump"
-      ],
-      "trump_linked": true,
-      "rs_vs_spy_60d": 31.2,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": false,
-      "off_high_252": -2.1,
-      "ret_20d": 17.4,
-      "above_50dma": true,
-      "entry_tier": null,
-      "affiliations": [],
-      "n_affiliated_actors": 0,
-      "thesis": "MRK combines ten Phase 3 starts, an FDA label-expansion signal, substantial lobbying activity and a special-situation catalyst [clinical_phase3_start] [fda_label_expansion] [lobbying] [special_situation]. However, four clinical halts create meaningful counterevidence, and relative strength versus SPY is already close to the desk's extended threshold; the alignment merits monitoring rather than chasing.",
-      "second_order": [
-        "Clinical-research services \u2014 a broad late-stage pipeline supports trial execution demand",
-        "Drug-manufacturing capacity \u2014 successful label expansion could increase production requirements",
-        "Healthcare policy specialists \u2014 elevated lobbying indicates continuing regulatory and reimbursement engagement"
-      ],
-      "falsifier": {
-        "text": "Additional late-stage programs are halted or the expected label expansion fails to produce measurable commercial uptake.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "MRK",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 60
-        }
-      },
-      "clamped": null
-    },
-    {
-      "ticker": "PLTR",
-      "signal_score": 67,
-      "conviction": "high",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
       "weighted_score": 2.1,
       "convergence_score": 6,
       "channels": [
@@ -164,9 +62,164 @@
         }
       ],
       "n_affiliated_actors": 2,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
+      "thesis": "PLTR combines recent government-contract activity and acceleration with a fully bullish analyst cluster and strong retail attention [gov_contract] [analyst_upgrade_cluster] [retail_buzz] [stocktwits_bull]. Disclosed links to Marjorie Taylor Greene and Cathie Wood broaden the influence graph [actor:Marjorie Taylor Greene] [actor:Cathie Wood], but the Trump-linked signal is explicitly on the sell side and prevents higher conviction [trump].",
+      "second_order": [
+        "Government software integrators \u2014 continued contract acceleration would support adjacent federal data-modernization vendors.",
+        "Defense AI infrastructure \u2014 PLTR contract momentum implies continued demand for secure compute, data integration, and deployment tooling."
+      ],
+      "falsifier": {
+        "text": "Government-contract acceleration falls below its recent pace and the analyst cluster turns mixed while the Trump-linked sell signal persists.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "PLTR",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 45
+        }
+      },
+      "clamped": null
+    },
+    {
+      "ticker": "MRK",
+      "signal_score": 70,
+      "conviction": "low",
+      "action": "WATCH",
+      "direction": "long",
+      "source": "brain",
+      "weighted_score": 1.9,
+      "convergence_score": 5,
+      "channels": [
+        "clinical_phase3_start",
+        "fda_label_expansion",
+        "lobbying",
+        "special_situation",
+        "trump"
+      ],
+      "trump_linked": true,
+      "rs_vs_spy_60d": 32.6,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": false,
+      "off_high_252": -2.1,
+      "ret_20d": 17.4,
+      "above_50dma": true,
+      "entry_tier": null,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": "MRK shows potentially meaningful alignment between ten Phase 3 starts, an FDA label-expansion signal, elevated lobbying activity, and a Trump-linked buy indication [clinical_phase3_start] [fda_label_expansion] [lobbying] [trump]. However, four clinical halts create substantial internal dissent, and its 32.6-point 60-day relative gain is close enough to the extended threshold to rule out chasing.",
+      "second_order": [
+        "Clinical-research services \u2014 a broad Phase 3 pipeline implies trial-management and patient-enrollment demand.",
+        "Drug-manufacturing capacity \u2014 successful late-stage programs would increase downstream production and packaging requirements."
+      ],
+      "falsifier": {
+        "text": "Additional clinical halts emerge or the anticipated label expansion fails to progress.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "MRK",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 60
+        }
+      },
+      "clamped": null
+    },
+    {
+      "ticker": "MSFT",
+      "signal_score": 65,
+      "conviction": "low",
+      "action": "ACCUMULATE",
+      "direction": "long",
+      "source": "brain",
+      "weighted_score": 1.6,
+      "convergence_score": 4,
+      "channels": [
+        "affiliation",
+        "app_demand",
+        "github_momentum",
+        "patent_cluster"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": 6.7,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": false,
+      "off_high_252": -7.7,
+      "ret_20d": 27.3,
+      "above_50dma": true,
+      "entry_tier": null,
+      "affiliations": [
+        {
+          "actor": "Sam Altman",
+          "rel": "PARTNERS_WITH",
+          "kind": "exec"
+        },
+        {
+          "actor": "Bill Ackman",
+          "rel": "AFFILIATES_WITH",
+          "kind": "fund"
+        }
+      ],
+      "n_affiliated_actors": 2,
+      "thesis": "MSFT's measured demand and development ecosystem align with a large patent cluster: strong app engagement, substantial model-download activity, and GitHub momentum indicate usage across consumer and developer surfaces [app_demand] [github_momentum] [patent_cluster]. The factual Sam Altman partnership adds strategic distribution context [actor:Sam Altman], while the Bill Ackman affiliation is qualitative and receives little weight [actor:Bill Ackman].",
+      "second_order": [
+        "Cloud data-center infrastructure \u2014 sustained application and developer demand implies continued compute, networking, and power requirements.",
+        "Enterprise AI software \u2014 ecosystem momentum can support vendors building deployment, security, and workflow products on Microsoft platforms."
+      ],
+      "falsifier": {
+        "text": "Developer momentum and model-download activity contract materially without corresponding improvement in app demand.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "MSFT",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 75
+        }
+      },
+      "clamped": null
+    },
+    {
+      "ticker": "T",
+      "signal_score": 64,
+      "conviction": "low",
+      "action": "ACCUMULATE",
+      "direction": "long",
+      "source": "brain",
+      "weighted_score": 1.7,
+      "convergence_score": 2,
+      "channels": [
+        "congress_cluster",
+        "gov_contract_accel"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": 5.5,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": false,
+      "off_high_252": -9.0,
+      "ret_20d": 8.1,
+      "above_50dma": true,
+      "entry_tier": null,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": "T has only two channels, but both are relatively concrete: government-contract activity accelerated sharply and three congressional members produced net buying [gov_contract_accel] [congress_cluster]. The setup is actionable only at low conviction because there is no corroborating insider, demand, patent, or smart-money channel.",
+      "second_order": [
+        "Federal telecom contractors \u2014 sustained procurement would support subcontractors involved in secure connectivity and network deployment.",
+        "Network-equipment suppliers \u2014 contract-driven buildout can pull through routing, fiber, and communications hardware demand."
+      ],
+      "falsifier": {
+        "text": "Federal contract awards normalize sharply and congressional positioning stops increasing.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "T",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 45
+        }
+      },
       "clamped": null
     },
     {
@@ -206,29 +259,62 @@
       "clamped": null
     },
     {
-      "ticker": "T",
-      "signal_score": 56,
+      "ticker": "NVDA",
+      "signal_score": 51,
       "conviction": "high",
       "action": "WATCH",
       "direction": "neutral",
       "source": "deterministic",
-      "weighted_score": 1.7,
-      "convergence_score": 2,
+      "weighted_score": 1.35,
+      "convergence_score": 4,
       "channels": [
-        "congress_cluster",
-        "gov_contract_accel"
+        "affiliation",
+        "github_momentum",
+        "patent_cluster",
+        "retail_buzz"
       ],
       "trump_linked": false,
-      "rs_vs_spy_60d": 5.5,
+      "rs_vs_spy_60d": -7.7,
       "no_price_data": false,
       "extended": false,
       "rolling_over": false,
-      "off_high_252": -9.0,
-      "ret_20d": 8.1,
+      "off_high_252": -11.0,
+      "ret_20d": 10.3,
       "above_50dma": true,
       "entry_tier": null,
-      "affiliations": [],
-      "n_affiliated_actors": 0,
+      "affiliations": [
+        {
+          "actor": "Jensen Huang",
+          "rel": "CONTROLS",
+          "kind": "exec"
+        },
+        {
+          "actor": "Nancy Pelosi",
+          "rel": "HOLDS_STAKE",
+          "kind": "politician"
+        },
+        {
+          "actor": "Marjorie Taylor Greene",
+          "rel": "HOLDS_STAKE",
+          "kind": "politician"
+        },
+        {
+          "actor": "Michael McCaul",
+          "rel": "HOLDS_STAKE",
+          "kind": "politician"
+        },
+        {
+          "actor": "Jim Cramer",
+          "rel": "TALKS_ABOUT",
+          "kind": "influencer"
+        },
+        {
+          "actor": "Paul Pelosi",
+          "rel": "AFFILIATES_WITH",
+          "kind": "influencer"
+        }
+      ],
+      "n_affiliated_actors": 6,
       "thesis": null,
       "second_order": [],
       "falsifier": null,
@@ -485,43 +571,6 @@
       "entry_tier": null,
       "affiliations": [],
       "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
-      "ticker": "QCOM",
-      "signal_score": 39,
-      "conviction": "high",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 1.4,
-      "convergence_score": 4,
-      "channels": [
-        "affiliation",
-        "lobbying",
-        "patent_cluster",
-        "special_situation"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": -29.5,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": false,
-      "off_high_252": -34.5,
-      "ret_20d": 5.2,
-      "above_50dma": false,
-      "entry_tier": null,
-      "affiliations": [
-        {
-          "actor": "Tommy Tuberville",
-          "rel": "HOLDS_STAKE",
-          "kind": "politician"
-        }
-      ],
-      "n_affiliated_actors": 1,
       "thesis": null,
       "second_order": [],
       "falsifier": null,
@@ -1285,7 +1334,7 @@
       "off_high_252": -55.3,
       "ret_20d": -13.6,
       "above_50dma": false,
-      "entry_tier": null,
+      "entry_tier": "T3",
       "affiliations": [
         {
           "actor": "Eric Trump",
