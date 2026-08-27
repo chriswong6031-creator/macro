@@ -64,11 +64,15 @@ jobs:
             /tests/test_prophet_live_pack.py
             /tests/test_prophet_live_pack_d12.py
             /tests/test_cn_live_pack.py
+            /tests/fixtures/prophet_live/**
+            /.github/workflows/daily.yml
             /engine/**
             /lib/**
             /scripts/build_prophet_live_pack.py
             /scripts/build_cn_live_pack.py
             /scripts/build_stock_library.py
+            /scripts/cn_live_evaluator.py
+            /scripts/build_china_library.py
             /collectors/**
             /config.yml
       - uses: actions/setup-python@v5
