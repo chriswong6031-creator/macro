@@ -14,6 +14,7 @@ print, never through a logger.
 """
 from __future__ import annotations
 
+import datetime as _dt
 import json
 import os
 import shutil
@@ -973,3 +974,54 @@ def test_wait_schema_mirror_names_closed_contract() -> None:
         "condition",
     ):
         assert term in mirror
+
+
+@pytest.mark.parametrize(
+    "wait",
+    [
+        # An unhashable authored `kind` — `kind:` followed by a YAML block sequence, or
+        # the flow typo `kind: {natural_evidence}` which PyYAML resolves to a mapping.
+        {"kind": ["natural_evidence"], "review_after": "2026-09-25", "condition": "c"},
+        {"kind": {"natural_evidence": None}, "review_after": "2026-09-25", "condition": "c"},
+        # Unknown keys of INCOMPARABLE types.  Authored YAML resolves bare `no:`/`on:` to
+        # bools and `2026-09-01:` to a date, so the closed-contract check — the very rule
+        # that exists to reject extra keys — is what a mixed-key mapping reaches first.
+        {"kind": "natural_evidence", "review_after": "2026-09-25", "condition": "c",
+         1: "a", "zz": "b"},
+        {"kind": "natural_evidence", "review_after": "2026-09-25", "condition": "c",
+         None: "a", "zz": "b"},
+        # Pattern-shaped but not a day.  A review date nobody can arrive at is malformed.
+        {"kind": "natural_evidence", "review_after": "2026-13-45", "condition": "c"},
+    ],
+)
+def test_hostile_wait_is_reported_not_raised(wait: dict[str, object]) -> None:
+    """A malformed wait must come back as a typed `bad-wait` finding at BOTH scopes.
+
+    Every input here used to raise out of ``check_workstream``, which turns a record-level
+    validation finding into a crash of the whole fleet-wide `validate` run — the one
+    outcome a validator may never have.
+    """
+    at_workstream = _wait_workstream()
+    at_workstream["wait"] = wait
+    assert [p.rule for p in _wait_hard(at_workstream)] == ["bad-wait"]
+
+    at_wave = _wait_workstream()
+    waves = at_wave["waves"]
+    assert isinstance(waves, list) and isinstance(waves[0], dict)
+    waves[0]["wait"] = wait
+    assert [p.rule for p in _wait_hard(at_wave)] == ["bad-wait"]
+
+
+@pytest.mark.parametrize(
+    "review_after",
+    ["2026-09-25", "2020-01-01", _dt.date(2026, 9, 25), _dt.date(2020, 1, 1)],
+)
+def test_wait_review_after_accepts_dates_including_past_ones(review_after: object) -> None:
+    """A PAST `review_after` is an OVERDUE REVIEW, not an expiry — it stays schema-valid."""
+    rec = _wait_workstream()
+    rec["wait"] = {
+        "kind": "external_action",
+        "review_after": review_after,
+        "condition": "Operator action remains outstanding.",
+    }
+    assert _wait_hard(rec) == []

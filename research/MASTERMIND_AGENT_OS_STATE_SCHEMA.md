@@ -73,6 +73,7 @@ action. Target cardinality **20–40 live**. This is the join key that makes eve
 | `runtime_ref` | ◻ | object | `{service, deployed_sha, freshness_artifact}`. Interface to the runtime-truth program; Agent OS never discovers these itself. |
 | `claim` | ◻ | object | `{by, at, expires}`. **Advisory only — blocks nothing.** |
 | `needs_ceo` | ◻ | object | `{question, options, recommendation, by_when}`. Presence promotes it into the CEO brief. |
+| `wait` | ◻ | object | `{kind, review_after, condition}`. **Declared intentional inactivity — schedules nothing, gates nothing.** See §1.2. Also valid per wave. |
 | `next_action` | ✅ | string | The single next concrete action. Not a goal — a command, a file, or a decision. |
 | `created` / `updated` | ✖ | — | **DERIVED, never authored.** The generator computes them from `git log` over the record file. Writing them by hand made every session touching a record rewrite the same line — the one verified concurrent-edit conflict site in this schema — and made staleness circular, since the field asserting freshness was typed by the session claiming it. |
 
@@ -86,10 +87,41 @@ action. Target cardinality **20–40 live**. This is the join key that makes eve
 | `pr` | ◻ | int \| list[int] | Joined to `active_builds.v1` at generation. |
 | `depends_on` | ◻ | list[wave id] | Within this workstream. |
 | `next_action` | ◻ | string | Overrides the workstream-level one while `in_progress`. |
+| `wait` | ◻ | object | Same closed contract as the workstream-scope field. See §1.2. |
 
 **Waves exist so there is no Task store.** They carry the two things a PR genuinely cannot
 (`depends_on`, `next_action`) at ~4 fields instead of 20, and they match the W0/W1/W2 decomposition
 every masterplan in this repo already uses. See architecture §3 and conflict C1.
+
+### §1.2 Typed intentional wait (`wait`) — optional, at workstream OR wave scope
+
+A workstream can be quiet for two entirely different reasons: it was abandoned, or its author
+decided that waiting IS the correct next move — the sample has to mature, an operator has to act,
+a counterparty has to answer, a calendar window has to arrive. Nothing in the record distinguished
+those, so the only way to tell was to read `next_action` prose and guess. `wait` is the author
+saying which one it is, in a shape a reader can trust without parsing English.
+
+| Field | Req | Type | Notes |
+|---|---|---|---|
+| `kind` | ✅ | enum | `natural_evidence` · `external_dependency` · `calendar_window` · `external_action`. |
+| `review_after` | ✅ | date | Date-only `YYYY-MM-DD`. The date a **human looks again** — not a predicted resolution, not an expiry, not a timer. |
+| `condition` | ✅ | string | Non-empty opaque human context. **Never parsed** for authority, action, or completion. |
+
+**The contract is CLOSED.** Unknown fields are a hard `bad-wait` error at both scopes, validated by
+one shared rule. An open vocabulary would let each author mint a private reason, and "why is this
+still sitting here" would need a parser again — which is the thing this field exists to remove.
+
+**It executes nothing (I1).** No scheduler, no queue, no wake, no timer, no status transition, no
+completion, no gate reads this field. It is testimony carried into `agent_os_state.v1` and
+`context_bundle.v1` for a reader, and that is its entire reach.
+
+**A past `review_after` stays schema-valid.** It is an OVERDUE REVIEW, not an expired lease —
+degrading it automatically would be this file deciding something, and a review nobody performed is
+exactly the fact a reader needs to see.
+
+**Absence is never inferred.** A record with no `wait` is making no claim at all — it is not
+thereby "abandoned", and a record WITH one is not thereby "alive". Like `claim`, presence is an
+author's note in git, never evidence that anyone is working now.
 
 ### Example — a real, current workstream
 
@@ -356,6 +388,7 @@ command produced it.
       "status": "active", "program": "prophet-us", "p0": "US_PROPHET_ENTRY_TIMING",
       "owner": "coo-fable", "next_action": "Verify the 22:30Z bake (W1).",
       "waves": {"done": 1, "in_progress": 1, "todo": 1},
+      "wait": null,
       "prs": [{"number": 5370, "state": "merged"}],
       "claim": {"by": "claude/prophet-bake-verify-7f3a21", "expires": "2026-08-15T00:00:00Z", "stale": false},
       "needs_ceo": null,
