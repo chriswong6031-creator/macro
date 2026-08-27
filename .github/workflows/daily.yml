@@ -4041,9 +4041,28 @@ jobs:
         # one brief per configured lens (master_brain.lenses, default macro+china+btc):
         #   site/master_brief.json (US dashboard) · site/china_brief.json (china.html)
         #   · site/btc_brief.json (vector.html) — each client-fetched by its AI brief
-        # panel. NO-OP unless BOTH config master_brain.enabled is true AND the
-        # DEEPSEEK_API_KEY secret is set. Self-sufficient; never aborts the deploy.
+        # panel. NO-OP unless config master_brain.enabled is true AND at least one
+        # rung of the ladder below can serve. Self-sufficient; never aborts the deploy.
         env:
+          # PROVIDER LADDER (config.yml master_brain.provider_order):
+          # codex → oauth pool → ANTHROPIC_API_KEY → DeepSeek. This step used to pass
+          # DEEPSEEK_API_KEY and nothing else, so DeepSeek was not merely first — it was
+          # the ONLY rung that existed at runtime, and the day its balance ran out the
+          # brief stopped rendering entirely. Codex needs no secret (it reads the
+          # runner's attached ~/.codex login), but the Claude rungs are invisible
+          # without these, so a ladder that omits them silently collapses back to
+          # DeepSeek-only. Mirrors the Narrative Brain step below.
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          CLAUDE_CODE_OAUTH_TOKEN_1: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_1 }}
+          CLAUDE_CODE_OAUTH_TOKEN_2: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_2 }}
+          CLAUDE_CODE_OAUTH_TOKEN_3: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_3 }}
+          CLAUDE_CODE_OAUTH_TOKEN_4: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_4 }}
+          CLAUDE_CODE_OAUTH_TOKEN_5: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_5 }}
+          CLAUDE_CODE_OAUTH_TOKEN_6: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_6 }}
+          CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
+          METAB_KEYS_ENABLED: ${{ vars.METAB_KEYS_ENABLED }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Metered floor, deliberately LAST — the only pay-per-use rung.
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
           set +e
@@ -4098,9 +4117,25 @@ jobs:
         # data/regime/regime_snap.json (when Engine-2 is present) — and writes a
         # FALSIFIABLE desk note (data/regime/ai_desk.json + site/ai_desk.json) while
         # appending data/ai_desk/theses.jsonl for the Phase-C scorer to grade. NO-OP
-        # unless BOTH config ai_desk.enabled is true AND DEEPSEEK_API_KEY is set.
+        # unless config ai_desk.enabled is true AND at least one rung of the ladder
+        # below can serve.
         # Context-only (never scored/sized); self-sufficient; never aborts the deploy.
         env:
+          # Same ladder as the master brain step above (config.yml ai_desk.provider_order):
+          # codex → oauth pool → ANTHROPIC_API_KEY → DeepSeek. ai_desk calls the brain
+          # through master_brain._call_model, so it shares the waterfall and needs the
+          # same secrets; without them the desk note silently reverts to DeepSeek-only.
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          CLAUDE_CODE_OAUTH_TOKEN_1: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_1 }}
+          CLAUDE_CODE_OAUTH_TOKEN_2: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_2 }}
+          CLAUDE_CODE_OAUTH_TOKEN_3: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_3 }}
+          CLAUDE_CODE_OAUTH_TOKEN_4: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_4 }}
+          CLAUDE_CODE_OAUTH_TOKEN_5: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_5 }}
+          CLAUDE_CODE_OAUTH_TOKEN_6: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_6 }}
+          CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
+          METAB_KEYS_ENABLED: ${{ vars.METAB_KEYS_ENABLED }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Metered floor, deliberately LAST — the only pay-per-use rung.
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
           set +e

@@ -55,6 +55,23 @@ Engine-emitted (deterministic — never from the LLM):
 | `key_facts` | list[obj], ≤6 | `{key, label_en, label_zh, value_en, value_zh, tone}` — tone ∈ good/warn/bad/neutral/info. Built per lens from calibrated state (§6). Fail-open: missing source → chip omitted, never raises. |
 | `refresh_days` | int | the lens's interval (1 or 3) — UI renders the cadence chip honestly |
 | `style_flags` | list[str] | banned tokens that survived the rewrite retry (observability; NOT rendered on user tiers) |
+| `served_by` | str \| None | NEW (provider ladder). The rung that actually served this brief — `"codex"` / `"oauth"` / `"anthropic"` / `"deepseek"` — or `"cache"` on a reply-cache hit, or `None` on a degraded call. `model` is now the model id of THAT rung (falls back to the configured `llm_model` on a cache hit, a degraded call, or a `call`/`_call_model` stub that ignores the new `served` out-param). Makes the load balancer verifiable from the artifact itself instead of every brief always reading as `deepseek-v4-pro`. Same treatment applies to `ai_desk.v1`'s `model`/`served_by`. |
+
+Two consequences of routing this lane onto the shared ladder, recorded because
+neither is visible in the field table and both change what a brief actually is:
+
+- **DeepSeek serves this lane with reasoning mode OFF.** `build_providers` wraps the
+  DeepSeek rung in `_deepseek_no_thinking()`, which the old hand-built client did not.
+  So on a DeepSeek-served night the briefs are non-reasoning completions, while
+  `model` still reads `deepseek-v4-pro`. The `max_tokens: 8000` note in `config.yml`
+  budgets for thinking tokens and now applies only to the Claude rungs. Quality impact
+  is **unmeasured** — this is a disclosure, not a verdict.
+- **The zh half of the brief is still DeepSeek-only.** `_translate_brief` bypasses
+  `_call_model` entirely and builds its own `tcfg` for `engine.translate`, which has no
+  ladder. On a DeepSeek-exhausted night the English brief survives but `brief["zh"]` is
+  dropped, so the 中文 toggle falls back to English on all three lenses — including the
+  china lens. Migrating `engine/translate.py` is a separate change: it is shared by
+  several other lanes.
 
 `schema` field bumps to `"master_brief.v2"`. Builder greps every consumer of the literal
 `master_brief.v1` and fixes string-matches (renderers are `get()`-based fail-open;
