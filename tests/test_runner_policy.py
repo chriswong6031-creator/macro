@@ -93,8 +93,9 @@ def test_server_side_runner_group_cannot_lose_main_pinned_workflow_restriction(
     assert "runner-group policy drifted" in result.stdout
 
 
-def test_p3a_executor_is_registered_main_pinned_but_ordinary_pr_route_stays_hosted() -> None:
+def test_p3ba_executor_is_main_pinned_and_call_capable_but_route_stays_hosted() -> None:
     registry = yaml.safe_load(REGISTRY.read_text(encoding="utf-8"))
+    assert registry["phase"] == "p3b-a-call-capable"
     selected = set(registry["runtime_runner_group"]["selected_workflows"])
     assert (
         "mastermindx-market-intelligence/macro/.github/workflows/"
@@ -108,11 +109,12 @@ def test_p3a_executor_is_registered_main_pinned_but_ordinary_pr_route_stays_host
         "job": "trusted-pack",
         "group": "macro-home-canary",
         "labels": ["ci-linux"],
+        "call_enabled": True,
         "production_enabled": False,
     }
 
 
-def test_p3a_policy_rejects_early_production_enable(tmp_path: Path) -> None:
+def test_p3ba_policy_rejects_early_production_enable(tmp_path: Path) -> None:
     root, registry, workflows = fixture_tree(tmp_path)
     mutate_registry(
         registry,
@@ -123,7 +125,7 @@ def test_p3a_policy_rejects_early_production_enable(tmp_path: Path) -> None:
     result = run_guard(root, registry, workflows)
     assert result.returncode == 1
     assert "R13" in result.stdout
-    assert "P3A" in result.stdout
+    assert "P3B-A" in result.stdout
 
 
 def _mutate_trusted_gate(tmp_path: Path, old: str, new: str) -> subprocess.CompletedProcess[str]:
@@ -135,17 +137,19 @@ def _mutate_trusted_gate(tmp_path: Path, old: str, new: str) -> subprocess.Compl
     return run_guard(root, registry, workflows)
 
 
-def test_p3a_policy_rejects_disabled_workflow_call_refusal(tmp_path: Path) -> None:
+def test_p3ba_policy_rejects_disabled_main_called_workflow_refusal(
+    tmp_path: Path,
+) -> None:
     result = _mutate_trusted_gate(
         tmp_path,
-        'test "$EVENT_NAME" = workflow_dispatch || {',
-        'true || { # test "$EVENT_NAME" = workflow_dispatch || {',
+        'test "$CALLED_WORKFLOW_REF" = "$trusted_workflow_ref" || {',
+        'true || { # test "$CALLED_WORKFLOW_REF" = "$trusted_workflow_ref" || {',
     )
     assert result.returncode == 1
     assert "R13" in result.stdout
 
 
-def test_p3a_policy_rejects_disabled_main_ref_refusal(tmp_path: Path) -> None:
+def test_p3ba_policy_rejects_disabled_direct_main_ref_refusal(tmp_path: Path) -> None:
     result = _mutate_trusted_gate(
         tmp_path,
         'test "$TRUSTED_REF" = refs/heads/main || {',
@@ -155,19 +159,31 @@ def test_p3a_policy_rejects_disabled_main_ref_refusal(tmp_path: Path) -> None:
     assert "R13" in result.stdout
 
 
-def test_p3a_policy_rejects_disabled_direct_workflow_identity_refusal(
+def test_p3ba_policy_rejects_disabled_same_repo_refusal(
     tmp_path: Path,
 ) -> None:
     result = _mutate_trusted_gate(
         tmp_path,
-        'test "$TRUSTED_WORKFLOW_REF" = mastermindx-market-intelligence/macro/.github/workflows/trusted-ci-executor.yml@refs/heads/main || {',
-        'true || { # test "$TRUSTED_WORKFLOW_REF" = mastermindx-market-intelligence/macro/.github/workflows/trusted-ci-executor.yml@refs/heads/main || {',
+        'test "$HEAD_REPOSITORY" = "$REPOSITORY" || {',
+        'true || { # test "$HEAD_REPOSITORY" = "$REPOSITORY" || {',
     )
     assert result.returncode == 1
     assert "R13" in result.stdout
 
 
-def test_p3a_policy_rejects_new_caller_supplied_inputs(tmp_path: Path) -> None:
+def test_p3ba_policy_rejects_disabled_exact_ci_caller_refusal(
+    tmp_path: Path,
+) -> None:
+    result = _mutate_trusted_gate(
+        tmp_path,
+        'test "$CALLER_WORKFLOW_REF" = "$expected_caller_ref" || {',
+        'true || { # test "$CALLER_WORKFLOW_REF" = "$expected_caller_ref" || {',
+    )
+    assert result.returncode == 1
+    assert "R13" in result.stdout
+
+
+def test_p3ba_policy_rejects_new_caller_supplied_inputs(tmp_path: Path) -> None:
     root, registry, workflows = fixture_tree(tmp_path)
     path = workflows / "trusted-ci-executor.yml"
     document = yaml.safe_load(path.read_text(encoding="utf-8"))
@@ -182,7 +198,7 @@ def test_p3a_policy_rejects_new_caller_supplied_inputs(tmp_path: Path) -> None:
     assert "R13" in result.stdout
 
 
-def test_p3a_policy_rejects_a_second_runner_group_consumer(tmp_path: Path) -> None:
+def test_p3ba_policy_rejects_a_second_runner_group_consumer(tmp_path: Path) -> None:
     root, registry, workflows = fixture_tree(tmp_path)
     path = workflows / "trusted-ci-executor.yml"
     document = yaml.safe_load(path.read_text(encoding="utf-8"))

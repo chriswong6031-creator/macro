@@ -202,10 +202,22 @@ waves:
       dispatch 33024021850 then failed closed before PC pickup: after exact resolver
       and candidate checkout success, hosted planning invoked the older candidate
       scripts/run_ci_pack.py, which does not admit the trusted executor event pair,
-      so no plan artifact existed. P3A-R on the same #6351 program now freezes and
-      transports the complete main-owned planner/semantic/control bundle while
-      retaining the exact candidate tree and manifest. Production ci.yml remains
-      byte-unchanged and production_enabled remains false.
+      so no plan artifact existed. P3A-R on the same #6351 program froze and
+      transported the complete main-owned planner/semantic/control bundle while
+      retaining the exact candidate tree and manifest. It merged through PR
+      #6487 as ac3f8a888e2ece7a15f37180c19dc247227a3098. Direct main proof run
+      33030976647 then passed on pc-ci-3 against PR #6390 with exact
+      main/control SHA ac3f8a888e2ece7a15f37180c19dc247227a3098, tested merge
+      078bdb7d212a3bcabea9df6ba06a6ef7bcf5ee07, plan
+      1ad0b428cac9e81481545358f9e30b151c3fdffe88d28ed7bc99be8d5ac7e720,
+      matching fragment/control/receipt identity, stable 66,228,371,240-byte
+      root-owned cache, 60.03% peak CPU, 38.55GB memory-available floor and
+      218.947s wall time. P3B-A is the next bounded carrier: make only the
+      already main-selected executor call-capable, derive all PR/control/plan
+      identity from the GitHub event and called-workflow context, preserve the
+      direct one-pack diagnostic, cap production mode at the P2-accepted three
+      PC slots, and keep ci.yml plus production_enabled unchanged. P3B-B alone
+      may route ordinary same-repository PR traffic after P3B-A acceptance.
 next_action: >
   W-TRANSPORT and W-PR-EVENT-CAUSALITY are closed. Do not reopen either for a
   new CI-speed, runner, branch-protection, or cancellation-system proposal.
@@ -224,9 +236,12 @@ next_action: >
   packs still run the blob:none full-tree checkout that produced the #6406
   and #6286 attempt-1 checkout-only failures; do not absorb pack-checkout
   repairs into product PRs or reopen them here outside the #6351 sequence.
-  Complete P3A-R exact-head proof and one repaired dispatch before any P3B
-  production routing. Run 33024021850 is a closed diagnostic receipt, not a
-  retry candidate.
+  P3A-R and its repaired direct-main dispatch are accepted; run 33024021850 is
+  a closed diagnostic receipt, not a retry candidate. Complete the bounded
+  P3B-A call-capability carrier with ci.yml still byte-unchanged. Only after
+  P3B-A merges may a separate P3B-B carrier make the exact main-owned call,
+  preserve hosted control/anchors and existing ci-gate, and prove the new route
+  on its own exact PR tree before P4 natural traffic.
 owns_paths:
   - ".github/workflows/ci.yml"
   - ".github/workflows/merge-on-green.yml"
