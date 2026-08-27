@@ -1,6 +1,6 @@
 {
   "schema": "e3c.reconstruction_refusal_receipt.v1",
-  "operation_key": "e3c-googl-generalization-20260827-v1",
+  "operation_key": "e3c-googl-generalization-20260826-v1",
   "authority": "E3_EVENT_INTELLIGENCE_COMPILER_FREEZE_2026-08-20.md#11",
   "predecessor_receipt": "research/earnings_intelligence/e3/e3c_googl_2026q2_source_completeness_receipt.json",
   "predecessor_operation_key": "e3c-source-census-20260826-v1",

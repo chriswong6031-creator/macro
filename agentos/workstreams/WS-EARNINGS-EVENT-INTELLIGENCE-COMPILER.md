@@ -20,9 +20,12 @@ depends_on:
   - WS:EARNINGS-INTELLIGENCE-OS
 decisions:
   - DEC:E3-EVENT-INTELLIGENCE-COMPILER-NOT-SCORER
+  - DEC:E3C-GOOGL-OOS-REFUSAL-SPENDS-EVENT
 next_action: >
   E3-B is PROVEN_LIVE / DONE. E3-C is GENERALIZATION_REFUSED_ON_SOURCE_FORMAT — in
-  progress, NOT complete, awaiting a Sol ruling. The frozen GOOGL Q2 FY2026 package
+  progress, NOT complete. SOL HAS RULED (2026-08-27, PR #6497 review 5037388696,
+  DEC:E3C-GOOGL-OOS-REFUSAL-SPENDS-EVENT): the refusal is ACCEPTED as a valid negative
+  E3-C receipt and no ruling is outstanding. The frozen GOOGL Q2 FY2026 package
   (evt_cik0001652044_2026q2_results / tx:GOOGL/2026Q2, transcript SHA a44db883...) was
   run through the UNCHANGED E3-A2 reconstructor and E3-B qa_exchange.v1 adapter and the
   compiler REFUSED: reconstruct_qa returned status=failed / operator_intro_identity_unparsed
@@ -38,10 +41,17 @@ next_action: >
   boundary constant was added, Alphabet was NOT registered in production, and the issuer was
   NOT switched to CAT/BAC/SNOW. Canonical receipt is
   research/earnings_intelligence/e3/e3c_googl_2026q2_reconstruction_refusal_receipt.json.
-  Next: Sol adjudicates whether a source-format generalization (role-optional management
-  classification + vendor-neutral boundary cue) is an in-scope E3-C repair or needs its own
-  pre-registered wave; whether a role-annotated GOOGL revision can be acquired; and whether
-  the selection law permits re-entering the walk at CAT. E3-P remains locked behind E3-C.
+  Sol's ruling on that receipt: GOOGL Q2 FY2026 is a PERMANENT source-format falsifier and is
+  now SPENT as out-of-sample acceptance evidence — the exact failure cues are development-visible,
+  so no compiler change motivated by them may ever grade GOOGL as an E3-C OOS pass; no
+  role-annotated GOOGL revision is evidenced in the canonical held estate, so the carrier may not
+  be source-swapped; and there is NO CAT/BAC/SNOW rescue in this wave. Next dependency is a
+  SEPARATE pre-registered Transcript Format Generalization method-hardening wave (E3-FMT) that
+  generalizes only against independently chosen development transcripts declared before its first
+  behavior change, preserves the AAPL 7/26/68 oracle, and adjudicates the respondent-identity
+  contract explicitly rather than inferring roles. After E3-FMT is independently reviewed,
+  accepted and frozen, a FRESH untouched-OOS acceptance wave (E3-OOS2) on a newly pre-registered
+  event is required; only an E3-OOS2 pass may close parent E3-C. E3-P remains locked behind E3-C.
 owns_paths:
   - research/earnings_intelligence/e3/**
   - engine/company_intelligence/qa_reconstruction.py
@@ -68,6 +78,7 @@ artifacts:
   - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-25-e3b-built-not-proven.md
   - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-26-e3b-live-proof-narrowed.md
   - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-27-e3c-refusal.md
+  - agentos/decisions/DEC-E3C-GOOGL-OOS-REFUSAL-SPENDS-EVENT.md
   - research/earnings_intelligence/e3/e3c_googl_2026q2_reconstruction_refusal_receipt.json
   - tests/test_company_intelligence_qa_generalization_e3c.py
   - engine/company_intelligence/qa_exchange.py
@@ -122,8 +133,11 @@ do_not_redo:
   - Do not treat the E3-B merges or publisher success as final production proof; final acceptance is the combined immutable/public/authenticated-browser receipt recorded in the E3-B closeout.
   - Do not rerun or republish merely to replace the already-successful scheduled E3-B generation.
   - Do not start E3-P.
-  - Do not tune the compiler on the frozen GOOGL event to rescue the measured refusal. Generalizing the "go ahead" boundary cue, the operator-intro identity grammar, the affiliation cut rule, or the management-role requirement while GOOGL is the registered E3-C event is fitting the method to the test set; it needs a Sol ruling and its own pre-registered wave.
-  - Do not switch to CAT/BAC/SNOW because GOOGL refused. The freeze binds the issuer until the held GOOGL revision is falsified or Sol releases it.
+  - Do not tune the compiler on the frozen GOOGL event and then grade GOOGL as the E3-C OOS pass. Sol ruled 2026-08-27 (DEC:E3C-GOOGL-OOS-REFUSAL-SPENDS-EVENT) that GOOGL is a PERMANENT source-format falsifier and is SPENT as OOS acceptance evidence: its exact failure cues ("Your line is now open", roleless management, affiliation terminator) are development-visible, so any repair motivated by them makes GOOGL a development/regression fixture, never an untouched OOS proof. Source-format generality is legitimate product work, but only inside the separate pre-registered E3-FMT wave.
+  - Do not source-swap the GOOGL carrier. Sol ruled 2026-08-27 that NO second held GOOGL Q2 FY2026 body/provider revision is evidenced in the canonical estate — mastermind.tx-index/v1 keys a revision by ticker/transcript_id plus one advertised body SHA and carries no provider dimension. An externally sourced role-annotated body is not a held canonical source and may not be substituted post-result into this frozen test.
+  - Do not switch to CAT/BAC/SNOW to rescue this wave. Sol ruled 2026-08-27: NO under the current E3-C selection law — GOOGL was frozen before extraction and its bytes are intact, not falsified. CAT/BAC/SNOW remain uninspected. A later fresh OOS wave may draw from the remaining golden universe, but only as a NEW pre-registered selection operation under whatever source law Sol freezes then — never as continuation or re-entry of the old GOOGL walk, and never represented as rescuing E3-C by issuer switch.
+  - Do not invent Management/CEO/CFO roles or make a source-supported role silently optional to get past B2/B3. qa_exchange.v1 promises source-supported respondent identity; if role availability needs a new `unresolved` state that is an explicit contract/architecture change for Sol to adjudicate, not an inference hack.
+  - Do not treat E3-FMT completion as E3-C completion. Only a pass on a fresh untouched-OOS acceptance wave (E3-OOS2) may close parent E3-C, and E3-P stays locked until it does.
   - Do not add Alphabet to event_workspace.production_registry() until a wave can publish non-empty accepted Q&A for it; registering it now ships a live workspace with empty qa_exchanges (capability false) and breaks tests/test_issuer_profiles_a5a.py:110.
   - Do not re-run the GOOGL reconstruction expecting a different answer; it is deterministic, pinned by tests/test_company_intelligence_qa_generalization_e3c.py, and the fixture is byte-frozen at the receipt SHA.
 waves:
@@ -197,7 +211,8 @@ waves:
       - tests/test_company_intelligence_qa_generalization_e3c.py
       - tests/fixtures/company_intelligence/googl_fy2026_q2.json.gz
     next_action: >
-      GENERALIZATION_REFUSED_ON_SOURCE_FORMAT — in progress, NOT complete, awaiting Sol.
+      GENERALIZATION_REFUSED_ON_SOURCE_FORMAT — in progress, NOT complete. Sol has RULED
+      (2026-08-27, DEC:E3C-GOOGL-OOS-REFUSAL-SPENDS-EVENT); nothing is awaiting Sol.
       The unchanged compiler was run against the frozen GOOGL package and refused
       (operator_intro_identity_unparsed at boundary segment 0; 0 exchanges; accepted set
       []). Honest refusal is a receipt, not wave completion, so E3-C stays in progress.
@@ -208,10 +223,15 @@ waves:
       The compiler was NOT tuned, Alphabet was NOT production-registered, and the issuer
       was NOT switched. Safety gates held: accepted-unsupported 0, cross-event 0, both
       AAPL cross-event poisons rejected, fail-closed on a mutated SHA for both issuers,
-      and AAPL exact at 7 exchanges / 26 turns / 68 spans. Sol must rule on: (1) whether a
-      source-format generalization is an in-scope E3-C repair or needs its own
-      pre-registered wave, (2) whether a role-annotated GOOGL revision can be acquired,
-      (3) whether the selection law permits re-entering the walk at CAT.
+      and AAPL exact at 7 exchanges / 26 turns / 68 spans. Sol's answers, now binding:
+      (1) source-format generalization is legitimate product work but NOT an in-scope E3-C
+      repair — it needs its own pre-registered E3-FMT wave on independently chosen
+      development transcripts, and GOOGL is a PERMANENT source-format falsifier, spent as
+      OOS acceptance evidence; (2) no role-annotated GOOGL revision is evidenced in the
+      canonical held estate, so the carrier may NOT be source-swapped; (3) NO CAT/BAC/SNOW
+      rescue in this wave — a later fresh untouched-OOS acceptance wave (E3-OOS2) must be a
+      NEW pre-registered selection operation, not re-entry of the GOOGL walk. Only an
+      E3-OOS2 pass closes E3-C; E3-P stays locked.
   - id: E3-P
     title: Natural-cycle commissioning
     status: todo
@@ -227,6 +247,8 @@ E3-A2 is done as a landed **deterministic shadow structural method**, not produc
 
 E3-B is **PROVEN_LIVE / DONE**. Terminal consumer #470 is merged at `ab7ef1d7dc5c9218ff5f94575596d74e24cbf35d`; Macro producer #6376 is merged at `94285d03ba60fe3a6bdfcad8109cfb329fc08843`; scheduled `company-intelligence` run `32928671722` published generation `5517b178afbab673bc8c7c5f`; exact live readback proved the accepted transcript revision plus seven `qa_exchange.v1` / 26 management turns / 68 replay spans; bounded public AAPL/LMND/E2/Prophet safety regressions passed; and the final authenticated Terminal acceptance on Slack carrier `1787728244.427289` passed at 1440 EN / 820 EN / 390 ZH with exact analyst/respondent ordering, Operator exclusion, revision-safe `2026Q3` transcript navigation, zero horizontal overflow, and zero application/browser errors. `SOURCE_CLOCK_OWNER_GAP` remains explicit and truthful.
 
-E3-C is now **`GENERALIZATION_REFUSED_ON_SOURCE_FORMAT`** — in progress, **not** complete, awaiting a Sol ruling. Operation `e3c-googl-generalization-20260827-v1` ran the **unchanged** E3-A2 reconstructor and E3-B `qa_exchange.v1` adapter against the frozen GOOGL package and the compiler **refused**: `reconstruct_qa` returned `status=failed` / `operator_intro_identity_unparsed` at boundary segment 0 with **0 exchanges**, and `accepted_qa_exchanges_for_transcript` returned `[]`. No workspace was written, no typed absence was invented, and the E2 event did not regress. Three blockers were measured, each sufficient alone: **B1** the `go ahead` boundary cue is absent from all nine real analyst intros (they close "Your line is now open"), so the only cue hit is segment 0's pre-presentation IR handoff — a false boundary; **B2** this transcript vendor publishes **no management role at all** (role vocabulary `{Operator, IR, ''}` = 12/3/75, with Pichai/Schindler/Ashkenazi all roleless), so `_is_management` (which is `bool(role)`) cannot classify management speech; **B3** `qa_exchange._assert_respondent_identity` requires a non-empty source role, so no respondent could be minted source-supported even downstream. Per the commission's scientific stop the compiler was **not** tuned, no GOOGL-specific extraction or boundary constant was added, Alphabet was **not** production-registered, and the issuer was **not** switched to CAT/BAC/SNOW. Safety gates held throughout: accepted-unsupported 0, cross-event 0, both planted AAPL cross-event poisons rejected (`event_id does not match parent workspace`; then `span document_id mismatch` after relabelling), fail-closed on a mutated SHA for both issuers, and the AAPL regression exact at **7 exchanges / 26 management turns / 68 replay spans**. The refusal is a **source-format** dependency, not ticker hard-coding: the Q&A path holds no ticker literal, the sole AAPL-derived runtime literal is the accepted-revision digest at `engine/company_intelligence/qa_exchange.py:35`, and the transcript document id is built generically at `engine/company_intelligence/event_workspace_build.py:265`. E3-A2 predicted exactly this ("other vendor intros may refuse"). Canonical receipt: `research/earnings_intelligence/e3/e3c_googl_2026q2_reconstruction_refusal_receipt.json`; regression `tests/test_company_intelligence_qa_generalization_e3c.py`; byte-frozen fixture `tests/fixtures/company_intelligence/googl_fy2026_q2.json.gz`.
+E3-C is now **`GENERALIZATION_REFUSED_ON_SOURCE_FORMAT`** — in progress, **not** complete. **Sol ruled on 2026-08-27** (PR #6497 review `5037388696`, recorded as `DEC:E3C-GOOGL-OOS-REFUSAL-SPENDS-EVENT`): the refusal is **accepted** as a valid negative E3-C receipt, and no ruling is outstanding. Operation `e3c-googl-generalization-20260826-v1` ran the **unchanged** E3-A2 reconstructor and E3-B `qa_exchange.v1` adapter against the frozen GOOGL package and the compiler **refused**: `reconstruct_qa` returned `status=failed` / `operator_intro_identity_unparsed` at boundary segment 0 with **0 exchanges**, and `accepted_qa_exchanges_for_transcript` returned `[]`. No workspace was written, no typed absence was invented, and the E2 event did not regress. Three blockers were measured, each sufficient alone: **B1** the `go ahead` boundary cue is absent from all nine real analyst intros (they close "Your line is now open"), so the only cue hit is segment 0's pre-presentation IR handoff — a false boundary; **B2** this transcript vendor publishes **no management role at all** (role vocabulary `{Operator, IR, ''}` = 12/3/75, with Pichai/Schindler/Ashkenazi all roleless), so `_is_management` (which is `bool(role)`) cannot classify management speech; **B3** `qa_exchange._assert_respondent_identity` requires a non-empty source role, so no respondent could be minted source-supported even downstream. Per the commission's scientific stop the compiler was **not** tuned, no GOOGL-specific extraction or boundary constant was added, Alphabet was **not** production-registered, and the issuer was **not** switched to CAT/BAC/SNOW. Safety gates held throughout: accepted-unsupported 0, cross-event 0, both planted AAPL cross-event poisons rejected (`event_id does not match parent workspace`; then `span document_id mismatch` after relabelling), fail-closed on a mutated SHA for both issuers, and the AAPL regression exact at **7 exchanges / 26 management turns / 68 replay spans**. The refusal is a **source-format** dependency, not ticker hard-coding: the Q&A path holds no ticker literal, the sole AAPL-derived runtime literal is the accepted-revision digest at `engine/company_intelligence/qa_exchange.py:35`, and the transcript document id is built generically at `engine/company_intelligence/event_workspace_build.py:265`. E3-A2 predicted exactly this ("other vendor intros may refuse"). Canonical receipt: `research/earnings_intelligence/e3/e3c_googl_2026q2_reconstruction_refusal_receipt.json`; regression `tests/test_company_intelligence_qa_generalization_e3c.py`; byte-frozen fixture `tests/fixtures/company_intelligence/googl_fy2026_q2.json.gz`.
+
+**Sol's continuation law for E3-C** (`DEC:E3C-GOOGL-OOS-REFUSAL-SPENDS-EVENT`, `decided_by: sol`, 2026-08-27). GOOGL Q2 FY2026 is a **permanent source-format falsifier** and is **spent** as out-of-sample acceptance evidence: the exact failure cues — the `Your line is now open` intro terminator, roleless management speech, and the affiliation terminator — are now development-visible, so §11.2 forbids repairing the parser from them and then grading this same event as an E3-C OOS pass. There is **no CAT/BAC/SNOW rescue in this wave**; those issuers remain uninspected, and the frozen GOOGL bytes are intact rather than falsified, so the no-switch law still binds the failed attempt. The carrier may **not** be source-swapped: no second held GOOGL Q2 body/provider revision is evidenced in the canonical estate, because `mastermind.tx-index/v1` keys a revision by `ticker/transcript_id` plus one advertised body SHA and carries no provider dimension. The next dependency is therefore a **separate, pre-registered Transcript Format Generalization method-hardening wave (E3-FMT)** that declares a bounded development corpus before its first behavior change, excludes CAT/BAC/SNOW, never uses GOOGL as a success criterion, preserves the AAPL 7/26/68 oracle and byte replay, and adjudicates the respondent-identity contract explicitly — inventing `Management`/CEO/CFO roles or making a source-supported role silently optional is an inference hack, and any new `unresolved` state is a contract change for Sol, not a builder inference. GOOGL may become a regression fixture once the method is frozen, never the OOS clearance set. After E3-FMT is independently reviewed, accepted and frozen, a **fresh untouched-OOS acceptance wave (E3-OOS2)** on a newly pre-registered selection operation over an untouched event is required; only an E3-OOS2 pass may close parent E3-C. **E3-P remains locked.**
 
 The superseded selection context remains true: fresh source census operation `e3c-source-census-20260826-v1` selected GOOGL Q2 FY2026 first and stopped without inspecting CAT/BAC/SNOW. The frozen package is `evt_cik0001652044_2026q2_results`, SEC accession `0001652044-26-000066`, Exhibit 99.1 SHA `a01f6bd87c7fa0dcb562493dda7348a1a37d017b4a4b5edb39b915b45688237e`, 8-K SHA `9e881beb88f9496e316a412fdb881a22b9244fdec75131b4fb00ae11d0f9f7e4`, and transcript `tx:GOOGL/2026Q2` SHA `a44db883463181ba73a536cb3643b81ea59a3e10c0f191859f7717538452d2a9`. Source-only admission found 10 Operator question-intro boundaries; these are not canonical extraction results. The receipt preserves transcript clock `unknown/null`, existing `rp_public_primary_v1` rights, and the dual-class requirement that GOOGL and GOOG remain one CIK-backed issuer/event. Current production workspace registry still lacks Alphabet, so the next E3-C implementation must extend that existing registry rather than fork identity. E3-C remains incomplete until non-empty accepted Q&A is published and consumed. E3-P remains locked.

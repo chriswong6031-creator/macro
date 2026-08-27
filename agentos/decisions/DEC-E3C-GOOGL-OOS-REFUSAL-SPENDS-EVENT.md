@@ -7,8 +7,9 @@ question: >
   or immediately switch to CAT/BAC/SNOW; and what is the lawful continuation?
 answer: >
   No to all three rescue paths. Sol accepts the GOOGL refusal as a valid OOS falsification.
-  The frozen GOOGL event is now development-visible and therefore spent as out-of-sample
-  acceptance evidence for any compiler repair motivated by this failure. Do not change the
+  GOOGL Q2 FY2026 is a PERMANENT source-format falsifier: the frozen event is now
+  development-visible and is therefore SPENT as out-of-sample acceptance evidence for any
+  compiler repair motivated by this failure, permanently and not merely for this wave. Do not change the
   boundary grammar, management classification, respondent identity law, affiliation parsing,
   transcript normalization or accepted-revision policy because of GOOGL and then call GOOGL
   a passing OOS test. Current canonical evidence contains no separately held, byte-pinned,
