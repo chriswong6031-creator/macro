@@ -915,6 +915,7 @@ def test_startability_accepts_only_provable_narrowings_of_a_trigger() -> None:
         "data/a/b/c/**",                # deeper subtree
         "*.json",                       # repository-root form, `*` is a trigger
         "engine/*",                     # single-level subset of engine/**
+        "engine/*.py",                  # direct-child suffix subset of engine/**
     ):
         assert PACK.scope_pattern_is_startable(covered, triggers), covered
     for uncovered in (
@@ -923,6 +924,7 @@ def test_startability_accepts_only_provable_narrowings_of_a_trigger() -> None:
         "brand_new_root/deep/**",
         "site/**",                      # a real root that this filter omits
         "app/*",                        # single-level, but app/** is not a trigger
+        "brand_new_root/*.py",          # suffix does not make an untriggered root safe
     ):
         assert not PACK.scope_pattern_is_startable(uncovered, triggers), uncovered
 

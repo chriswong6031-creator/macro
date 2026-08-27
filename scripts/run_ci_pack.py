@@ -810,6 +810,12 @@ def scope_pattern_is_startable(pattern: str, triggers: Iterable[str]) -> bool:
         if pattern in triggers:
             return True
     if not pattern.endswith("/**"):
+        parent, separator, filename = pattern.rpartition("/")
+        if separator and parent and filename.startswith("*."):
+            # A direct-child suffix glob is a subset of its parent tree: every
+            # match for `engine/*.py` also matches `engine/**`.
+            if f"{parent}/**" in triggers:
+                return True
         # `app/*` is a single-level subset of `app/**`. Any edit it covers
         # also matches that ancestor trigger, so the run starts. Exclusive
         # declarations use this form on purpose (`*` does not cross `/`).
