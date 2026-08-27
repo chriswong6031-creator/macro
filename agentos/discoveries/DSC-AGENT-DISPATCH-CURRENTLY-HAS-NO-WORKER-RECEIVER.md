@@ -1,23 +1,30 @@
 ---
 key: AGENT-DISPATCH-CURRENTLY-HAS-NO-WORKER-RECEIVER
 claim: >
-  Current #agent-dispatch fan-out is delivery-shaped but has no production worker/Fable receiver:
-  the live channel contains Chairman plus ChatGPT1/2/3, while no production Agent Relay/Fable/worker
-  principal is present to turn DELIVERY_ONLY posts into runtime pickup.
+  Current #agent-dispatch fan-out still has no PROVEN canonical production receiver path even though
+  the live channel now includes multiple Claude user principals in addition to Chairman and
+  ChatGPT1/2/3. User/channel membership is not Worker/session identity. At least one historical
+  Slack-origin operation key (K2-C) later produced real GitHub implementation/merge evidence with
+  Claude Fable co-authorship, so an un-ACKed Slack handoff cannot be assumed never executed; however,
+  the exact ASD-A2 Claude3 pickup remains DELIVERY_ONLY with zero thread replies, and no production
+  Agent Relay or Executive Worker claim has proven Slack-to-session/runtime pickup.
 falsifier: >
-  Slack.slack_list_channel_members(channel_id=C0BSBM78V1N, include_bots=true, response_format=ids_only)
-  returns an eligible production worker/Agent Relay receiver and canonical runtime/session evidence
-  shows that receiver actually consuming a bound commission; mere message delivery is insufficient.
+  The accepted Agent Relay/runtime path binds an eligible already-active commissioned worker/COO
+  session to an exact commission and produces an explicit ACK/readback, or Executive OS records the
+  corresponding concrete Worker claim/Attempt for a canonical Job. Slack membership, delivery,
+  later GitHub activity, or model/user naming alone is insufficient.
 so_what: >
-  Future Sol sessions must not treat #agent-dispatch delivery as Executive admission or worker
-  execution, must not bulk-replay historical posts, and must finish canonical Executive routing plus
-  ASD Agent Relay before using Slack as anything beyond bounded active-session dialogue/attention.
+  Future Sol sessions must keep generic runnable #agent-dispatch fan-out held, must reconcile each
+  Slack-origin operation individually against GitHub/Agent OS/Executive evidence, and must not infer
+  either non-execution from missing Slack ACK or canonical dispatch from a later PR. Finish ASD-A2/A3
+  for the canonical already-active-session dialogue receiver and Executive routing for canonical
+  Job-to-Worker execution.
 kind: runtime
 verified_at: 2026-08-27
 verified_by: >
-  Slack.slack_list_channel_members(channel_id=C0BSBM78V1N, include_bots=true, response_format=ids_only)
-  plus protected Autonomy V1 operating law in Mastermind #168 and the durable reconciliation carrier
-  Macro #6509.
+  Slack member/channel/thread reads of C0BSBM78V1N; current Macro main K2-C merge #6533 carrying
+  operation key alpha-k2c-institutional-adapter-20260826-sol-001 with Claude Fable co-authorship;
+  protected Autonomy V1 operating law in Mastermind #168.
 scope:
   - WS:CHAIRMAN-CONTROL-ROOM
   - WS:EXECUTIVE-CAPACITY-FABRIC
@@ -27,36 +34,54 @@ confidence: verified
 
 ## Evidence
 
-A live Slack census of `#agent-dispatch` (`C0BSBM78V1N`) shows only Chairman Chris and the three
-Personal-Pro ChatGPT Sol principals as members. No production Mastermind Agent Relay/Fable/worker
-principal is present.
+A live Slack census on 2026-08-27 shows `#agent-dispatch` (`C0BSBM78V1N`) now contains ten user
+principals: Chairman Chris, ChatGPT1/2/3 and six Claude-labelled user principals. No dedicated
+production Mastermind Agent Relay bot is present in that census.
 
-The channel contains many well-formed `DELIVERY_ONLY` messages addressed to Fable or peer Sol
-identities, but current accepted architecture says Slack delivery is not Executive admission,
-runtime claim or execution. Production ASD Agent Relay A2 remains unbuilt/preflight-gated, and the
-Personal-Pro Executive ingress/routing path remains nonterminal.
+The exact ASD-A2 preflight pickup `asd-a2-host-preflight-20260827-sol-001`, addressed to Claude3,
+has zero thread replies at observation time. Under its own contract it remains `DELIVERY_ONLY`, not
+ACKED or executing.
 
-Therefore current absent-recipient fan-out behaves as a **dead-letter communication pattern**:
-messages are visible to Sol/Chairman but no canonical worker runtime automatically consumes them.
+Separately, current Macro main `0758de6b9a7e9e920a6f44e4c1abcd62dbf8074e` contains K2-C merge
+#6533. Its merge commit explicitly records operation key
+`alpha-k2c-institutional-adapter-20260826-sol-001` and Claude Fable co-authorship. That operation
+originated in an earlier `#agent-dispatch` DELIVERY_ONLY handoff. Therefore the prior simple mental
+model "Slack post with no ACK means the work definitely never executed" is false. Canonical owner
+and GitHub evidence must be reconciled per operation.
+
+What remains unproven is the system capability Autonomy V1 requires: a deterministic receiver path
+that binds Slack/dialogue transport to one already-active commissioned session, or a canonical
+Executive Worker claim for a Job. A channel member's display name and a later matching PR do not
+establish that binding.
 
 ## Consequence
 
-Do not infer:
+Do not infer any of the following from Slack alone:
 
-- Fable received/claimed the work;
-- Executive OS created a Job;
-- a Codex Sol/Terra/Luna worker was selected;
-- the intended operation is executing;
-- a later GitHub PR necessarily came from that Slack message.
+- Fable/Claude claimed a commission because its user principal is in the channel;
+- a missing Slack ACK proves the operation never ran;
+- Executive OS created or routed a Job;
+- a later matching PR proves a canonical Slack runtime receiver;
+- a Claude/ChatGPT user identity is an Executive Worker ID.
+
+For investigation, distinguish evidence states conceptually without creating another lifecycle:
+
+- transport only;
+- out-of-band/manual pickup evidenced by an exact later owner/GitHub result;
+- accepted Agent Relay session ACK/readback;
+- Executive Job/Attempt/Worker claim.
+
+Only the latter two establish the receiver/runtime capabilities Autonomy V1 is building.
 
 ## Repair
 
-`DEC:AUTONOMY-V1-DISPATCH-DIALOGUE-RUNTIME-SEPARATION` freezes new absent-recipient commissions.
-Autonomy V1 closure must finish the actual receiving paths:
+`DEC:AUTONOMY-V1-DISPATCH-DIALOGUE-RUNTIME-SEPARATION` remains controlling:
 
-1. Personal-Pro C1 -> B2 -> C2 for canonical CEO ingress;
-2. H0/P0 -> CF2-I/routing for governed Worker/realm claim;
-3. ASD-A2 -> A3 for already-active worker/COO dialogue and Sol rulings.
-
-Historical Slack posts require individual reconciliation against Executive/GitHub/Agent OS truth
-before any later canonical re-issue.
+1. do not bulk replay historical DELIVERY_ONLY posts;
+2. reconcile each apparent return against exact operation key, PR/head/merge and owning durable
+   records before deciding whether work remains owed;
+3. keep MAS-127 ASD-A2 pre-flight gated until A2-0 receives an actual bounded return or the local
+   collision census is completed through another lawful already-active operator carrier;
+4. finish ASD-A2 -> A3 for canonical already-active worker/COO dialogue and Sol rulings;
+5. finish H0/P0 -> CF2-I/Executive routing for canonical Job -> Worker/realm execution;
+6. Slack user principals remain transport identities, never Worker identity by name.
