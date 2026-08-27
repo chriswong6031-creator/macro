@@ -69,7 +69,7 @@ jobs:
             exit 1
           }
           direct_workflow_ref="$REPOSITORY/.github/workflows/trusted-ci-executor.yml@refs/heads/main"
-          called_workflow_ref="$REPOSITORY/.github/workflows/trusted-ci-executor.yml@main"
+          called_workflow_ref="$REPOSITORY/.github/workflows/trusted-ci-executor.yml@refs/heads/main"
           case "$CALLED_WORKFLOW_SHA" in
             [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]) ;;
             *)
@@ -170,6 +170,19 @@ jobs:
           persist-credentials: false
           filter: blob:none
           fetch-depth: 2
+          sparse-checkout: |
+            scripts/__init__.py
+            scripts/run_ci_pack.py
+            scripts/ci_semantic_proof.py
+            scripts/ci_authority_paths.py
+            scripts/ci_scope_dependencies.py
+            scripts/audit_unrun_tests.py
+            scripts/workflow_run_source.py
+            scripts/resolve_ci_canary_ref.py
+            scripts/select_ci_canary_packs.py
+            scripts/monitor_ci_host_resources.py
+            scripts/capture_ci_canary_receipt.py
+          sparse-checkout-cone-mode: false
       - id: control
         name: freeze the main-owned control SHA
         shell: bash
@@ -215,6 +228,16 @@ jobs:
           persist-credentials: false
           filter: blob:none
           fetch-depth: 0
+          # Preserve ci-plan's established semantic working-tree profile: omit
+          # only the generated-heavy trees, keep unknown new top-level trees,
+          # and bind omitted-path existence to the exact Git tree below.
+          sparse-checkout: |
+            /*
+            !/data/
+            !/site/
+            !/mockups/
+            !/verify_shots/
+          sparse-checkout-cone-mode: false
       - name: prove the planner is on the frozen candidate
         run: test "$(git rev-parse HEAD)" = "${{ steps.ref.outputs.tested_sha }}"
       - uses: actions/setup-python@v5
@@ -224,6 +247,14 @@ jobs:
         run: |
           python -m venv "$RUNNER_TEMP/trusted-ci-plan-runner"
           "$RUNNER_TEMP/trusted-ci-plan-runner/bin/pip" install pyyaml
+      - name: bind exact tested-tree path inventory
+        env:
+          MASTERMIND_TRUSTED_CI_REPO_ROOT: ${{ github.workspace }}
+        run: >-
+          "$RUNNER_TEMP/trusted-ci-plan-runner/bin/python"
+          "$RUNNER_TEMP/trusted-ci-control/scripts/ci_scope_dependencies.py"
+          --write-tracked-paths "$RUNNER_TEMP/trusted-ci-tracked-paths/tracked-paths.v1"
+          --tested-tree-sha "${{ steps.ref.outputs.tested_sha }}"
       - id: plan
         name: freeze one authoritative logical plan
         env:
@@ -241,6 +272,7 @@ jobs:
             --github-output "$GITHUB_OUTPUT" \
             --emit-plan-json "$RUNNER_TEMP/trusted-ci-plan/plan.json" \
             --emit-changed-files "$RUNNER_TEMP/trusted-ci-plan/changed-files.json" \
+            --tracked-paths-file "$RUNNER_TEMP/trusted-ci-tracked-paths/tracked-paths.v1" \
             --workflow-run-id "$GITHUB_RUN_ID" \
             --workflow-name "${{ needs.trust-gate.outputs.semantic_workflow }}" \
             --event "${{ github.event_name }}" \
