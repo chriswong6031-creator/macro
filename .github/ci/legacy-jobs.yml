@@ -3675,7 +3675,7 @@ jobs:
       - name: merge-gate reliability report contract
         run: python -m pytest tests/test_ci_gate_reliability_report.py -q
       - name: transitional self-hosted runner policy and canary contracts
-        run: python scripts/check_runner_policy.py && python -m pytest tests/test_runner_policy.py tests/test_ci_canary_tools.py tests/test_ci_canary_workflows.py tests/test_trusted_ci_executor_workflow.py -q
+        run: python scripts/check_runner_policy.py && python -m pytest tests/test_runner_policy.py tests/test_ci_canary_tools.py tests/test_ci_canary_workflows.py tests/test_trusted_ci_executor_workflow.py tests/test_trusted_ci_production_route.py -q
       # The US nightly's cron redundancy (2026-08-13), wired here for the same reason
       # the two steps above are: its subject IS .github/workflows/ — specifically the
       # asymmetry that asia-close.yml carries five cron slots and daily.yml carries one

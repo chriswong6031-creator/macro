@@ -220,7 +220,14 @@ waves:
       slowest pack ran 38m22s. P3B-B is the separate active carrier: call the
       exact main-owned executor only for same-repository PRs, preserve hosted
       planner/ci-pack-N anchors/ci-gate and the complete hosted fork path, and
-      prove the route on its own exact PR tree before P4 natural traffic.
+      prove the route on its own exact PR tree before P4 natural traffic. PR
+      #6505 run 33039532309 reached all twelve real PC jobs but the root hook
+      refused them before steps because job `env` is unavailable pre-job;
+      contract-delta also caught the new route suite unwired. The same carrier
+      now uses GitHub's event payload, forwards it in the root-owned wrapper and
+      wires the suite. Post-restart PC hashes are Python 69faac248f755829a39f6821f17015382788056991f6d1ff9046b1842e86a002
+      and wrapper d55f046e6a6a758f55e311ed73b921e007c8570cc0aba11e0cafdc31cef06dee;
+      exact execution/parity/gate proof remains owed.
 next_action: >
   W-TRANSPORT and W-PR-EVENT-CAUSALITY are closed. Do not reopen either for a
   new CI-speed, runner, branch-protection, or cancellation-system proposal.

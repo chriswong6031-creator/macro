@@ -203,7 +203,13 @@ next_action: >
   PR #6487 and direct proof run 33030976647. P3B-A call capability merged through
   PR #6496 as 904863dabc490ee95ac50153048c25dee048d90b; its exact-head hosted
   run 33035115527 passed all twelve packs and recorded about 180.7 hosted
-  pack-minutes. P3B-B production routing and P4 natural PR proofs remain unaccepted.
+  pack-minutes. P3B-B PR #6505 reached the real PC hooks in run 33039532309 but
+  failed closed before steps because job `env` is unavailable to pre-job hooks;
+  contract-delta separately caught its unwired route suite. The same carrier now
+  uses the GitHub event payload and root-owned wrapper pass-through. Drained
+  pc-ci-1/2/3 carry post-restart Python hash 69faac248f755829a39f6821f17015382788056991f6d1ff9046b1842e86a002
+  and wrapper hash d55f046e6a6a758f55e311ed73b921e007c8570cc0aba11e0cafdc31cef06dee;
+  P3B-B exact execution and P4 natural PR proofs remain unaccepted.
   Macro private
   visibility mutation remains HOLD. Live accepted PC identities are pc-ci-1/2/3
   plus an independent pc-render lane; the M1 has no generic CI listener and remains

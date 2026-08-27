@@ -153,12 +153,19 @@ def test_p3bb_policy_declares_only_same_repo_production_on_pc() -> None:
     }
 
 
-def test_p3bb_called_pack_exports_main_derived_host_admission_facts() -> None:
+def test_p3bb_called_pack_does_not_pretend_job_env_reaches_the_pre_job_hook() -> None:
     job = workflow("trusted-ci-executor.yml")["jobs"]["trusted-pack"]
-    assert job["env"] == {
-        "MASTERMIND_TRUSTED_HEAD_REPOSITORY": (
-            "${{ github.event.pull_request.head.repo.full_name }}"
-        ),
-        "MASTERMIND_TRUSTED_BASE_REF": "${{ github.base_ref }}",
-        "MASTERMIND_TRUSTED_CONTROL_SHA": "${{ needs.plan.outputs.control_sha }}",
-    }
+    assert "env" not in job
+
+
+def test_p3bb_route_contract_is_named_by_the_legacy_manifest() -> None:
+    manifest = yaml.safe_load(
+        (ROOT / ".github" / "ci" / "legacy-jobs.yml").read_text(encoding="utf-8")
+    )
+    run_commands = "\n".join(
+        str(step.get("run", ""))
+        for job in manifest["jobs"].values()
+        for step in job.get("steps", [])
+        if isinstance(step, dict)
+    )
+    assert "tests/test_trusted_ci_production_route.py" in run_commands

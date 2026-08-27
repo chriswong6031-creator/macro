@@ -277,10 +277,6 @@ jobs:
   trusted-pack:
     name: trusted-executor-pack-${{ matrix.pack }}
     needs: plan
-    env:
-      MASTERMIND_TRUSTED_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
-      MASTERMIND_TRUSTED_BASE_REF: ${{ github.base_ref }}
-      MASTERMIND_TRUSTED_CONTROL_SHA: ${{ needs.plan.outputs.control_sha }}
     runs-on:
       group: macro-home-canary
       labels: ci-linux

@@ -21,8 +21,9 @@ changed:
   - path: .github/workflows/trusted-ci-executor.yml
     what: >
       Distinguish valid reusable-call `@main` identity from direct-dispatch
-      `@refs/heads/main` and export main-derived same-repo/base/control facts to
-      the existing root-owned host admission hook.
+      `@refs/heads/main`; do not claim job `env` is visible to the pre-job hook.
+  - path: .github/ci/legacy-jobs.yml
+    what: Name the route suite in the existing runner-policy/canary contract step.
   - path: .github/runner-policy.yml
     what: >
       Declare P3B-B production routing for same-repository PR execution only;
@@ -35,8 +36,10 @@ changed:
   - path: ops/runner-host/common/runner_admission.py
     what: >
       Extend the existing PC hook with the exact same-repository PR merge ref,
-      ci.yml caller, trusted-pack job, main base and main-derived control-SHA
-      contract while preserving direct dispatch and every hostile refusal.
+      ci.yml caller and trusted-pack job; derive same-repository/main-base facts
+      from GitHub's event payload while preserving every hostile refusal.
+  - path: ops/runner-host/common/runner_admission_hook.js
+    what: Forward `GITHUB_EVENT_PATH`, the default variable available before job steps.
   - path: tests/test_trusted_ci_production_route.py
     what: >
       Pin the production call, hosted anchor/fork split, unchanged gate and
@@ -96,10 +99,26 @@ verified:
       GitHub org runner census; systemd/Worker drain; exact SHA-256 install;
       installed allowed/fork-refused decisions; service/listener/runner re-census
     result: >
-      pc-ci-1/2/3 were online and idle, stopped with no root Worker, received
-      cd7f67591fe9aaaea2976db467c4ce053cf94d06e5a17f60bc0706086d566736,
-      passed exact allow and fork refusal, then returned active/online/idle.
-      The old e4ff74a9... hook is retained at a dated root-owned backup path.
+      The first production pickup, run 33039532309, failed closed before steps
+      because job `env` is unavailable to the hook; its contract-delta also
+      found the new route suite unwired. The repaired drained deployment uses
+      Python hash 69faac248f755829a39f6821f17015382788056991f6d1ff9046b1842e86a002
+      and wrapper hash d55f046e6a6a758f55e311ed73b921e007c8570cc0aba11e0cafdc31cef06dee.
+      Both persisted after restart; three listeners returned online/idle; exact
+      same-repo/main passed and fork returned exit 77. Dated root backups exist.
+  - claim: The route introduces no contract-delta defect.
+    command: python3.12 scripts/check_contract_delta.py --base 854c2764e8756c8ebc6640796bf98e724e2479b7
+    result: "contract-delta: 0 introduced, 0 inherited."
+  - claim: The broad planner/policy battery is classified, not hidden.
+    command: >
+      python3.12 -m pytest tests/test_ci_pack.py tests/test_ci_canary_tools.py
+      tests/test_ci_canary_workflows.py tests/test_runner_policy.py
+      tests/test_trusted_ci_executor_workflow.py
+      tests/test_trusted_ci_production_route.py -q
+    result: >
+      216 passed; one inherited current-main startability failure at
+      defense-rail-laws:engine/*.py; three temp-cleanup warnings. This carrier
+      changes neither ci.yml trigger paths nor that job's scope.
 unverified:
   - claim: The P3B-B carrier itself executes its selected packs on pc-ci-1/2/3.
     what_would_verify: >

@@ -498,8 +498,26 @@ def test_host_admission_accepts_only_the_main_dispatch_trusted_executor_pack() -
         assert not ADMISSION.decision(mutated)[0]
 
 
-def test_host_admission_accepts_only_main_gated_same_repo_pr_executor_pack() -> None:
+def test_host_admission_accepts_only_main_gated_same_repo_pr_executor_pack(
+    tmp_path: Path,
+) -> None:
     pr_number = "6505"
+    event_path = tmp_path / "event.json"
+    event_path.write_text(
+        json.dumps(
+            {
+                "pull_request": {
+                    "base": {"ref": "main"},
+                    "head": {
+                        "repo": {
+                            "full_name": "mastermindx-market-intelligence/macro"
+                        }
+                    },
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
     allowed = {
         "MASTERMIND_CI_PROFILE": "pc-ci",
         "GITHUB_REPOSITORY": "mastermindx-market-intelligence/macro",
@@ -510,11 +528,7 @@ def test_host_admission_accepts_only_main_gated_same_repo_pr_executor_pack() -> 
             f"ci.yml@refs/pull/{pr_number}/merge"
         ),
         "GITHUB_JOB": "trusted-pack",
-        "MASTERMIND_TRUSTED_HEAD_REPOSITORY": (
-            "mastermindx-market-intelligence/macro"
-        ),
-        "MASTERMIND_TRUSTED_BASE_REF": "main",
-        "MASTERMIND_TRUSTED_CONTROL_SHA": "a" * 40,
+        "GITHUB_EVENT_PATH": str(event_path),
     }
     assert ADMISSION.decision(allowed)[0]
     for key, value in (
@@ -525,11 +539,39 @@ def test_host_admission_accepts_only_main_gated_same_repo_pr_executor_pack() -> 
             "mastermindx-market-intelligence/macro/.github/workflows/rogue.yml@refs/pull/6505/merge",
         ),
         ("GITHUB_JOB", "rogue-pack"),
-        ("MASTERMIND_TRUSTED_HEAD_REPOSITORY", "attacker/fork"),
-        ("MASTERMIND_TRUSTED_BASE_REF", "release"),
-        ("MASTERMIND_TRUSTED_CONTROL_SHA", "candidate"),
+        ("GITHUB_EVENT_PATH", str(tmp_path / "missing-event.json")),
     ):
         assert not ADMISSION.decision({**allowed, key: value})[0]
+
+    for name, payload in (
+        (
+            "fork.json",
+            {
+                "pull_request": {
+                    "base": {"ref": "main"},
+                    "head": {"repo": {"full_name": "attacker/fork"}},
+                }
+            },
+        ),
+        (
+            "release-base.json",
+            {
+                "pull_request": {
+                    "base": {"ref": "release"},
+                    "head": {
+                        "repo": {
+                            "full_name": "mastermindx-market-intelligence/macro"
+                        }
+                    },
+                }
+            },
+        ),
+    ):
+        mutated_event = tmp_path / name
+        mutated_event.write_text(json.dumps(payload), encoding="utf-8")
+        assert not ADMISSION.decision(
+            {**allowed, "GITHUB_EVENT_PATH": str(mutated_event)}
+        )[0]
 
 
 def test_cache_update_disables_automatic_maintenance() -> None:
@@ -575,6 +617,7 @@ def test_runner_service_seals_runtime_and_binds_host_admission() -> None:
         ROOT / "ops" / "runner-host" / "common" / "runner_admission_hook.js"
     ).read_text(encoding="utf-8")
     assert 'spawnSync("/usr/bin/python3", ["-I", script]' in hook
+    assert '"GITHUB_EVENT_PATH"' in hook
     assert "process.env.PATH" not in hook
     assert "process.env.MASTERMIND_CI_PROFILE" not in hook
 

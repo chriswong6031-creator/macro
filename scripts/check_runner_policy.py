@@ -632,11 +632,7 @@ def evaluate(root: Path, registry_path: Path, workflows_dir: Path) -> list[Findi
         if (
             not isinstance(trusted_job, dict)
             or trusted_job.get("needs") != "plan"
-            or trusted_job.get("env") != {
-                "MASTERMIND_TRUSTED_HEAD_REPOSITORY": "${{ github.event.pull_request.head.repo.full_name }}",
-                "MASTERMIND_TRUSTED_BASE_REF": "${{ github.base_ref }}",
-                "MASTERMIND_TRUSTED_CONTROL_SHA": "${{ needs.plan.outputs.control_sha }}",
-            }
+            or "env" in trusted_job
             or trusted_job.get("runs-on")
             != {"group": "macro-home-canary", "labels": "ci-linux"}
             or (trusted_job.get("strategy") or {}).get("max-parallel") != 3

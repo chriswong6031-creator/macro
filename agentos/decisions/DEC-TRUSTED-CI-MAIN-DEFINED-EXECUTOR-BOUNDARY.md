@@ -23,7 +23,10 @@ answer: >
   exact control SHA, candidate merge SHA and semantic plan are independently
   derived by the called workflow. Direct dispatch stays one-pack bounded;
   production-mode calls may use the P2-accepted three-slot matrix. The PC host
-  repeats the exact event/ref/workflow-ref/job decision before job start. P3B-B
+  repeats the exact event/ref/workflow-ref/job decision before job start and
+  derives same-repository/main-base identity from the GitHub-authored event
+  payload. Called-main identity remains the server-side selected-workflow group
+  boundary because job-level `env` is unavailable to the pre-job hook. P3B-B
   routes only same-repository PR execution through that exact main call. The
   existing hosted ci-pack-N jobs become tiny fragment relays: each compares the
   hosted planner SHA with the main-derived executor SHA, republishes the trusted
@@ -61,6 +64,7 @@ evidence:
   - "P3B-A PR #6496 merged as 904863dabc490ee95ac50153048c25dee048d90b"
   - "P3B-A exact-head hosted run 33035115527"
   - "GitHub runner-group selected-workflow rule: only jobs directly defined in selected workflows may access the group"
+  - "PR #6505 run 33039532309: job env absent in pre-job hook; event path correction and fail-closed receipt"
 affects: ["WS:CI-MERGE-CONTROL-PLANE", "WS:RUNNER-FLEET-RESILIENCE", ".github/runner-policy.yml", ".github/workflows/ci.yml", ".github/workflows/trusted-ci-executor.yml"]
 confidence: high
 reversibility: easy

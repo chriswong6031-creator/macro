@@ -47,6 +47,31 @@ ALLOWLIST = {
 }
 
 
+def _pull_request_event_facts(environment: dict[str, str]) -> tuple[str, str]:
+    """Read the GitHub-authored PR identity available to the pre-job hook.
+
+    GitHub runs ``ACTIONS_RUNNER_HOOK_JOB_STARTED`` before workflow/job ``env``
+    is installed.  The hook does receive the default variables and the event
+    payload path, so fail closed on any unreadable or malformed payload and
+    derive same-repository/base identity from that GitHub-authored document.
+    """
+
+    event_path = environment.get("GITHUB_EVENT_PATH", "")
+    if not event_path:
+        return "", ""
+    try:
+        with open(event_path, encoding="utf-8") as handle:
+            payload = json.load(handle)
+        pull_request = payload["pull_request"]
+        head_repository = pull_request["head"]["repo"]["full_name"]
+        base_ref = pull_request["base"]["ref"]
+    except (KeyError, OSError, TypeError, ValueError):
+        return "", ""
+    if not isinstance(head_repository, str) or not isinstance(base_ref, str):
+        return "", ""
+    return head_repository, base_ref
+
+
 def _trusted_pr_pack_allowed(facts: dict[str, str]) -> bool:
     match = re.fullmatch(r"refs/pull/([1-9][0-9]*)/merge", facts["ref"])
     if match is None:
@@ -59,14 +84,13 @@ def _trusted_pr_pack_allowed(facts: dict[str, str]) -> bool:
         and facts["event"] == "pull_request"
         and facts["workflow_ref"] == expected_workflow_ref
         and facts["job"] == "trusted-pack"
-        and facts["trusted_head_repository"] == REPOSITORY
-        and facts["trusted_base_ref"] == "main"
-        and re.fullmatch(r"[0-9a-f]{40}", facts["trusted_control_sha"])
-        is not None
+        and facts["head_repository"] == REPOSITORY
+        and facts["base_ref"] == "main"
     )
 
 def decision(environment: dict[str, str]) -> tuple[bool, dict[str, str]]:
     profile = environment.get("MASTERMIND_CI_PROFILE", "")
+    head_repository, base_ref = _pull_request_event_facts(environment)
     facts = {
         "profile": profile,
         "repository": environment.get("GITHUB_REPOSITORY", ""),
@@ -74,13 +98,8 @@ def decision(environment: dict[str, str]) -> tuple[bool, dict[str, str]]:
         "ref": environment.get("GITHUB_REF", ""),
         "workflow_ref": environment.get("GITHUB_WORKFLOW_REF", ""),
         "job": environment.get("GITHUB_JOB", ""),
-        "trusted_head_repository": environment.get(
-            "MASTERMIND_TRUSTED_HEAD_REPOSITORY", ""
-        ),
-        "trusted_base_ref": environment.get("MASTERMIND_TRUSTED_BASE_REF", ""),
-        "trusted_control_sha": environment.get(
-            "MASTERMIND_TRUSTED_CONTROL_SHA", ""
-        ),
+        "head_repository": head_repository,
+        "base_ref": base_ref,
     }
     key = (facts["event"], facts["workflow_ref"], facts["job"])
     allowed = (
