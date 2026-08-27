@@ -1,36 +1,36 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "ARLO-BULL-20260724",
-  "asof": "2026-08-24",
+  "asof": "2026-08-25",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 28.0,
-  "raw_confidence": 27.0,
-  "delta_vs_base": -32.0,
+  "management_confidence": 28.8,
+  "raw_confidence": 29.7,
+  "delta_vs_base": -31.2,
   "recommended_action": "hold",
   "human_state": "Stalling",
   "components": {
-    "validity": 39.2,
+    "validity": 50.3,
     "progress": 0.0,
-    "pace": 5.7,
+    "pace": 5.0,
     "retention": 50.0,
-    "overlay": 64.0
+    "overlay": 67.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.5,
+    "dist_to_stop_r": 0.601,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 60.0,
-    "p1": -0.3333,
-    "p2": -0.1667,
+    "horizon_pct_used": 62.2,
+    "p1": -0.2661,
+    "p2": -0.133,
     "p3": null,
-    "move_r": -0.5,
+    "move_r": -0.399,
     "mfe_r": 0.746,
     "mae_r": -0.522
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "",
+  "change_reason": "Falling Behind Schedule",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-29",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 27,
-  "tau": 0.6
+  "days_elapsed": 28,
+  "tau": 0.6222
 }

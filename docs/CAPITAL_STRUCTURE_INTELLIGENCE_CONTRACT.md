@@ -760,7 +760,14 @@ For terms, `source_available_at` records durable source retention while canonica
 `available_at` is the time Mastermind produced that extraction/correction. This makes parser
 corrections point-in-time safe: a later parser upgrade cannot backdate a fact to the original
 SEC filing. The normal nightly compiler processes only new manifests or an older parser
-version; `--rebuild` is the deliberate correction path.
+version. An immutable row is reused only while its exact closed manifest/evidence identity,
+retained-content SHA-256, mirrored filing fields, observation contract, and registered parser
+version still match the canonical source ledger. New evidence, a corrected manifest, a parser
+version change, or any detached dependency forces retained-byte parsing and source validation.
+The nightly does not re-read or reparse unchanged historical roots merely to re-establish those
+already closed dependencies. `--rebuild` remains the deliberate whole-ledger retained-byte audit
+and correction path, and must produce the same semantic rows and byte-identical Parquet output
+as the incremental path over the same inputs when no correction is present.
 
 This lane does **not** create instruments, active or remaining capacity, aggregate offering
 amounts, fully diluted shares, cash runway, overhang, risk, probability, rank, entry, sizing,

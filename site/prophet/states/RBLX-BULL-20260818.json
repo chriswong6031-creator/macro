@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "RBLX-BULL-20260818",
-  "asof": "2026-08-24",
+  "asof": "2026-08-25",
   "phase": "invalidated",
   "detection_phase": "invalidated",
   "management_confidence": 20.2,
@@ -13,18 +13,18 @@
     "validity": 0.0,
     "progress": 60.0,
     "pace": 0.0,
-    "retention": 6.5,
+    "retention": 8.7,
     "overlay": 67.0
   },
   "geometry": {
-    "dist_to_stop_r": -0.715,
-    "dist_to_t1_r": 1.215,
-    "dist_to_t2_r": 2.715,
-    "horizon_pct_used": 13.3,
-    "p1": 0.1897,
-    "p2": 0.0949,
+    "dist_to_stop_r": -0.621,
+    "dist_to_t1_r": 1.121,
+    "dist_to_t2_r": 2.621,
+    "horizon_pct_used": 15.6,
+    "p1": 0.2524,
+    "p2": 0.1262,
     "p3": null,
-    "move_r": 0.285,
+    "move_r": 0.379,
     "mfe_r": 4.352,
     "mae_r": 0.0
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-18",
   "_first_t1_ts": "2026-08-18",
   "_first_t2_ts": "2026-08-18",
-  "days_elapsed": 6,
-  "tau": 0.1333
+  "days_elapsed": 7,
+  "tau": 0.1556
 }

@@ -309,10 +309,46 @@ def quote_ager(live: dict[str, Any], now: datetime):
     return lambda q: LV._quote_age_min(q, asof, now)  # noqa: SLF001
 
 
+def no_publish_set() -> bool:
+    """True when the operator kill switch is engaged (an INTENTIONAL stand-down)."""
+    return os.environ.get("PROPHET_LIVE_NO_PUBLISH", "").strip() not in ("", "0", "false")
+
+
+def publication_required(dry_run: bool, explicit: bool | None = None) -> bool:
+    """Whether THIS pass owes the world a publication.
+
+    Fail-closed by construction: any real pass owes a publication unless something
+    EXPLICIT says otherwise. Before the 2026-08 incident the contract was inverted
+    -- publication was best-effort, every failure was a warning, and the process
+    exited 0 -- so a lane that had never once published looked healthy for 27 days.
+
+    The opt-outs are explicit MODES, never host-name guessing (a runner and the VPS
+    are told apart by what they own, not by what they are called):
+      * ``--dry-run``                     evaluate and print; nothing is owed
+      * ``--no-require-publish`` / env 0  dev/CI running the real path deliberately
+      * ``PROPHET_LIVE_NO_PUBLISH``       operator kill switch; the stand-down is
+                                          intentional, so it is not a fault -- but it
+                                          is also never reported as a healthy publish
+    """
+    if dry_run or no_publish_set():
+        return False
+    if explicit is not None:
+        return explicit
+    raw = os.environ.get("PROPHET_LIVE_REQUIRE_PUBLISH", "").strip().lower()
+    if raw in ("0", "false", "no"):
+        return False
+    return True
+
+
 def run(root: Path, *, now: datetime | None = None, dry_run: bool = False,
-        cfg: dict[str, Any] | None = None) -> int:
-    """One evaluator pass. Returns a process exit code (0 unless a write was expected
-    and impossible)."""
+        cfg: dict[str, Any] | None = None, require_publish: bool | None = None) -> int:
+    """One evaluator pass.
+
+    Exit codes are a CONTRACT (2026-08 silent-freeze repair):
+      0  nothing was owed, or everything owed was published
+      3  a REQUIRED publication was impossible or failed -- the lane is not producing
+      1  unexpected failure (raised by ``main``)
+    """
     ts = now or datetime.now(timezone.utc)
     if ts.tzinfo is None:
         ts = ts.replace(tzinfo=timezone.utc)
@@ -327,9 +363,15 @@ def run(root: Path, *, now: datetime | None = None, dry_run: bool = False,
               flush=True)
         return 0
 
+    owes_publication = publication_required(dry_run, require_publish)
     s3 = r2io.client()
     if s3 is None:
-        print("::warning title=prophet-live::no R2 credentials — reading the public "
+        # Line-start ::error, not ::warning, when a publication is owed. This exact
+        # line printed ~1,500 times between 2026-07-30 and 2026-08-26 while the pass
+        # returned 0 -- the credentials were never seeded at cutover and nothing
+        # anywhere turned that into a failure.
+        level = "error" if owes_publication else "warning"
+        print(f"::{level} title=prophet-live::no R2 credentials — reading the public "
               "mirror, publishing nothing this pass", flush=True)
 
     pack = r2io.get_json(r2io.PACK_KEY, s3=s3)
@@ -368,6 +410,14 @@ def run(root: Path, *, now: datetime | None = None, dry_run: bool = False,
                       quote_asof=live.get("asof"), delay_min=delay_min,
                       quote_age_of=quote_ager(live, ts))
     art["meta"]["quote_source"] = live.get("source")
+    # Ownership identity travels ON the artifact, house idiom = the producing script
+    # path (cf. build_security_master). The external dead-man requires it, and the
+    # requirement is not bureaucratic: through the 2026-08 freeze there was no way to
+    # ask a served artifact "who last wrote you?", so an unowned document and a
+    # document written by a dead lane looked identical. Stamped here, after the single
+    # LS.evaluate call, so a globally DARK artifact carries it too — a dark pass is
+    # still a pass this lane is accountable for.
+    art["meta"]["producer"] = "scripts/prophet_live_evaluator.py"
 
     m = art["meta"]
     if art["status"] == "dark":
@@ -437,6 +487,9 @@ def run(root: Path, *, now: datetime | None = None, dry_run: bool = False,
                          default=str), flush=True)
         return 0
 
+    published: list[str] = []
+    unpublished: list[str] = []
+
     if s3 is None:
         # No served copy either, deliberately. Without credentials there is no `prev`
         # (the debounce predecessor is read authenticated, never off the CDN), so every
@@ -445,11 +498,19 @@ def run(root: Path, *, now: datetime | None = None, dry_run: bool = False,
         # be a worse lie than publishing nothing. Operator step, named in the PR: put
         # R2_ENDPOINT / R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY / R2_BUCKET in
         # /etc/macro-live.env (0600) and make sure boto3 is in /opt/macro/.venv.
+        if owes_publication:
+            print("::error title=prophet-live::publication was required and no R2 "
+                  "client could be built — nothing was published this pass", flush=True)
+            return 3
         return 0
     ok = r2io.put_json(r2io.LIVE_KEY, art, s3=s3)
-    if not ok:
-        print("::warning title=prophet-live::live artifact PUT failed — the next pass "
-              "loses its debounce history", flush=True)
+    if ok:
+        published.append(r2io.LIVE_KEY)
+    else:
+        unpublished.append(r2io.LIVE_KEY)
+        print(f"::{'error' if owes_publication else 'warning'} title=prophet-live::"
+              "live artifact PUT failed — the next pass loses its debounce history",
+              flush=True)
 
     # The served copy (§4.4a). Independent of the R2 result on purpose: R2 is the
     # PIPELINE artifact the nightly reconciler reads, the served file is the PRODUCT
@@ -457,7 +518,17 @@ def run(root: Path, *, now: datetime | None = None, dry_run: bool = False,
     # the PUT above, so the two planes can never describe different tapes.
     served = served_path(block)
     if served is not None:
-        publish_served(served, art)
+        # Owning a live plane is a CAPABILITY, not a hostname: the directory is
+        # never created, so its absence means this host serves nothing and owes
+        # nothing. A CI runner therefore cannot be failed for a directory it does
+        # not own, while the VPS -- which does own it -- cannot fail silently.
+        host_serves = served.parent.is_dir()
+        if publish_served(served, art):
+            published.append(str(served))
+        elif host_serves:
+            unpublished.append(str(served))
+            print(f"::{'error' if owes_publication else 'warning'} title=prophet-live::"
+                  f"served copy {served} could not be written", flush=True)
 
     if events:
         stamp = LS.et_clock(ts).strftime("%H%M%S")
@@ -465,9 +536,23 @@ def run(root: Path, *, now: datetime | None = None, dry_run: bool = False,
         spool = {"schema": "prophet_live.events/v1", "pass_ts": m["pass_ts"],
                  "session_et": m["session_et"], "pack_as_of": m.get("pack_as_of"),
                  "quote_asof": m.get("quote_asof"), "events": events}
-        if not r2io.put_json(key, spool, s3=s3):
-            print(f"::warning title=prophet-live::event spool PUT {key} failed — "
-                  f"{len(events)} transitions are not in tonight's evidence", flush=True)
+        if r2io.put_json(key, spool, s3=s3):
+            published.append(key)
+        else:
+            unpublished.append(key)
+            print(f"::{'error' if owes_publication else 'warning'} title=prophet-live::"
+                  f"event spool PUT {key} failed — {len(events)} transitions are not "
+                  "in tonight's evidence", flush=True)
+
+    # PARTIAL EFFECT IS REPORTED, NEVER RETRIED HERE. Naming exactly which objects
+    # landed and which did not is what lets the next actor reconcile instead of
+    # guessing; a blind retry through another carrier is how one logical
+    # publication becomes two conflicting ones.
+    if unpublished:
+        print(f"prophet-live publication partial: landed={len(published)} "
+              f"failed={len(unpublished)} [{', '.join(unpublished)}]", flush=True)
+        if owes_publication:
+            return 3
     return 0
 
 
@@ -479,6 +564,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--now", default=None,
                         help="ISO timestamp override for the pass clock (tests / replays)")
     parser.add_argument("--root", default=None, help="repo root (default: this script's parent)")
+    publish = parser.add_mutually_exclusive_group()
+    publish.add_argument("--require-publish", dest="require_publish", action="store_true",
+                         default=None,
+                         help="fail (exit 3) when a required publication cannot happen")
+    publish.add_argument("--no-require-publish", dest="require_publish",
+                         action="store_false",
+                         help="dev/CI: run the real path without owing a publication")
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s",
@@ -492,13 +584,17 @@ def main(argv: list[str] | None = None) -> int:
             print(f"::error title=prophet-live::unparseable --now {args.now!r}", flush=True)
             return 2
     try:
-        return run(root, now=now, dry_run=bool(args.dry_run))
+        return run(root, now=now, dry_run=bool(args.dry_run),
+                   require_publish=args.require_publish)
     except Exception as exc:  # noqa: BLE001
-        # A lane that turns 80 runs a day red is noise; a pass that cannot say
-        # anything simply says nothing and the artifact keeps its previous stamp.
-        print(f"::warning title=prophet-live::pass failed: {exc}", flush=True)
+        # This used to return 0 -- justified as "a lane that turns 80 runs a day red
+        # is noise". On a systemd product lane fronted by an external dead-man it
+        # produced the opposite failure: a dead producer that looks successful
+        # forever. Noise is a threshold problem; a swallowed exception is a
+        # blindness problem, and only one of the two can hide a 27-day outage.
+        print(f"::error title=prophet-live::pass failed: {exc}", flush=True)
         log.warning("prophet_live_evaluator: unexpected failure", exc_info=True)
-        return 0
+        return 1
 
 
 if __name__ == "__main__":  # pragma: no cover

@@ -418,11 +418,18 @@ def _glance_coverage_states(workspace: Mapping[str, Any]) -> list[dict[str, Any]
          if isinstance(f, Mapping) and f.get("metric") == "questions_count"),
         None,
     )
+    qa_exchanges = workspace.get("qa_exchanges") or []
     states = [
         {"id": "consensus", "label": "Consensus", "state": consensus_status},
         {"id": "reaction", "label": "Market reaction", "state": reaction_status},
     ]
-    if questions_fact is not None and isinstance(questions_fact.get("typed_absence"), Mapping):
+    if isinstance(qa_exchanges, list) and qa_exchanges:
+        states.append({
+            "id": "questions_count",
+            "label": "Analyst questions",
+            "state": f"{len(qa_exchanges)} exchanges",
+        })
+    elif questions_fact is not None and isinstance(questions_fact.get("typed_absence"), Mapping):
         states.append({
             "id": "questions_count",
             "label": "Analyst questions",

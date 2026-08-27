@@ -49,16 +49,21 @@ waves:
     status: in_progress
     depends_on: [A1A]
     next_action: >
-      Sol reviewed A1B PR #6335 at ff03e0aa28a2a3ece4293505812b1a848b2c23e8
-      and accepted the architecture in direction while requesting exactly two repairs:
-      freeze the reviewed draft throughout an in-flight Save, and classify a successful
-      local write followed by verification disagreement as terminal effect/state unknown.
-      Both bounded repairs and their discriminating regressions are now on the same
-      carrier, reconciled onto fresh Macro main, with served assets regenerated. Return
-      the new exact head only after its CI/fence/authority checks conclude, and preserve
-      the PR as DRAFT / HOLD-FOR-SOL. Sol re-review remains the sole next gate. Do not
-      merge, deploy, mutate production Portfolio rows, begin production acceptance,
-      change Terminal, or absorb A2-A6 from this carrier.
+      MERGED AND DEPLOYED 2026-08-26: Sol FINAL REVIEW PASS (PR #6335 comment
+      5417266507) accepted exact head 2bf5d335e5adf742486e0c2aca50b0765617da2d; after a
+      clean final collision check it squash-merged with an exact-head guard as
+      dd66f934e35a4629281656e854c6cc028dbd66d7 and the A1B assets are live on
+      production watchlist.html (VPS + HTTP receipts). The bounded anonymous
+      production vertical passed with exact cleanup (one canonical mdash.pf.v1
+      whole-book write, duplicate lot preserved, UUID ids, zero Watchlist mutation,
+      before-state restored). Capability remains BUILT_NOT_PROVEN: the authenticated
+      vertical stopped at PRODUCTION_WRITE_AUTH_REQUIRED because no authorized
+      production test/write identity was available. Next: operator supplies the
+      authorized test identity vehicle; a session then runs the authenticated
+      paste->review->portfolio_positions batch write->authoritative reread vertical
+      with temporary rows and exact cleanup, then advances A1B to DONE / PROVEN_LIVE.
+      See agentos/handoffs/MARKET-OS-2026-08-26-a1b-merged-deployed.md. Do not start
+      A2-A6 from this closure.
   - id: A2-A6
     title: Persistent sizing assumptions, CSV import, My Market rail, universal add, and Watchlist workspace
     status: todo
@@ -66,24 +71,58 @@ waves:
     next_action: Commission one independently useful vertical at a time; no broad My Market rewrite.
   - id: B1A
     title: security_state.v1 golden AAPL product vertical (contract + compiler + producer + dossier Decision Spine)
-    status: in_progress
+    status: done
     depends_on: [A1A]
     next_action: >
-      DELIVERED-HELD 2026-08-24 under the Chairman dispatch of the prepared B1A
-      commission: identity gate adjudicated PASSED instance-scoped via the exact
-      owner-backed chain (DEC:MARKET-OS-B1A-IDENTITY-GATE-OWNER-BACKED-CHAIN —
-      adversarial BLOCKED verdict preserved inside as dissent), K1 evidence
-      composition runs cik-native (four-owner golden fixture untouched, still
-      REFUSED), producer is a frozen ("AAPL",) allowlist stage in
-      build_stock_library, consumer is the server-rendered Decision Spine on the
-      AAPL dossier. The B1A PR is DRAFT + HOLD-FOR-SOL — Sol reviews the
-      adjudication, implementation, and browser evidence; do not arm or merge.
-      Production proof (live object + live page) executes only after Sol accepts
-      and merges; capability is BUILT_NOT_PROVEN until then. Universe expansion
-      beyond AAPL is BLOCKED on the owner-routed ListingAlias→ListingKey
-      renderer + K1 vocabulary triple repair (named Sol item), and
-      CIK_LEG_UNOWNED_ACCESS names the reader-surface repair
-      (expose issuer_cik on lib.dataos.identity readers).
+      PROVEN_LIVE 2026-08-26. Sol accepted the held DRAFT and PR #6371 merged as
+      squash 10b54a12828b14af0e99541a83c8d0638e64145e on 2026-08-25T16:56:39Z;
+      the capability moves BUILT_NOT_PROVEN -> PROVEN_LIVE on the natural
+      post-merge nightly, run 32908543584, with no lane re-run. That run's
+      aggregate conclusion is `cancelled` and carries no B1A meaning — the
+      owning jobs concluded success (collect 22:57:10Z->01:48:42Z; engine
+      03:27:14Z->06:23:13Z, with rebuild stock-search libraries, publish heavy
+      per-ticker stores to R2, and verify R2 data plane freshness all SUCCESS),
+      and the only cancelled jobs were capital_structure and standout_audit_us,
+      neither of which owns a B1A stage. Two live post-merge objects were
+      verified, both self-consistent under a re-implementation of
+      engine.security_state._content_sha256 with firing positive and stability
+      controls: production /stockdata/AAPL.json (mtime 2026-08-26T02:22:47Z,
+      126176 bytes, file sha256 3958897edf087e2c585acdb45e5e4ec0140e61acc287b408f3fe89caed3351bc,
+      generated_at 2026-08-26T01:01:51Z inside the run window, content_sha256
+      34e417cac98d24073f146bf8949ce33304e02ff8041f041aa5aec80b4894dc6c), and the
+      canonical R2 data-plane object the dossier renders (Last-Modified
+      2026-08-26T07:53:04Z, generated_at 2026-08-26T07:07:49Z, content_sha256
+      abf598ea915c694c14118b2839ca718e6a0db69e4760a1d499c6fe153afe4c40).
+      Attribution correction carried in the handoff: both objects were compiled
+      by engine-render runs (32912667077 and 32938845408) — render.yml:1229 and
+      engine-render.yml:833 also build_site and publish stockdata to R2, so
+      daily.yml is not the only lane that delivers the blob; the nightly's own
+      owning steps concluded SUCCESS on the same code path. Both
+      carry identity PROVEN via owner_backed_chain.v1 (9 legs, 9 equalities, 0
+      refusals, SEC:US-XNAS-AAPL / ISS:US-XNAS-AAPL / CIK 0000320193), real
+      State and Change, the K1 recipe erp_5687f42d... with an EvidenceBlock ref
+      and an evidence_foundation.recipe_compilation_receipt.v1 denominator,
+      coverage PARTIAL with required legs 2/2 and dominant_degradation PARTIAL,
+      failed_gates [] with strongest_unresolved_fact reaction_not_joined,
+      catalyst ESTIMATED_WINDOW 2026-09-12->2026-10-10 authoritative false,
+      personal_impact NO_USER_CONTEXT with zero private Portfolio/Watchlist
+      tokens, and zero authority widening (no can_* true anywhere). Browser
+      receipt: https://www.mastermind-x.com/stocks/AAPL.html served byte-identical
+      to disk at sha256 8154964e0ed4b886eb3d59e075d094496f052aa8d785e239d57639e5d2a8338f,
+      rendered by 0eb6fa5061ee at 2026-08-26T08:03:48Z, its Evidence & receipts
+      drilldown printing the R2 object's own content fingerprint
+      abf598ea915c... — six cards and the drilldown at 1440/820/390 with zero
+      horizontal overflow. Control: MSFT holds no security_state on disk or on
+      the live page, and only 2 of 3014 stockdata files carry the key (AAPL.json
+      plus the AAPL row of index.json). Both Sol expansion gates survive into
+      production and remain OPEN as repairs, not as closed items: universe
+      expansion beyond ("AAPL",) is still BLOCKED under
+      NO_GENERAL_NAMESPACE_RENDERER pending the owner-routed
+      ListingAlias→ListingKey renderer + K1 vocabulary triple, and
+      CIK_LEG_UNOWNED_ACCESS still names the reader-surface repair (expose
+      issuer_cik on lib.dataos.identity readers). Receipts:
+      agentos/handoffs/MARKET-OS-2026-08-26-b1a-proven-live.md. B1B and B2 need
+      their own Sol commission and were not started.
   - id: B1B-B6
     title: Terminal/Desk projection and chart-first security cockpit over frozen security_state.v1
     status: todo

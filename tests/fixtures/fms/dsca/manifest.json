@@ -1,0 +1,44 @@
+{
+  "articles": [
+    {
+      "article_id": "4394629",
+      "bytes": 64958,
+      "final_url": "https://www.dsca.mil/Press-Media/Major-Arms-Sales/Article-Display/Article/4394629/kingdom-of-saudi-arabia-patriot-advanced-capability-3-missile-segment-enhanceme",
+      "http_status": 200,
+      "local_path": "tests/fixtures/fms/dsca/dsca-4394629.html",
+      "observed_at": "2026-08-26T02:35:16.399Z",
+      "sha256": "d53b9e978aaf5019df381265b27a82278e819f26f7e93395b8c82c9a66cecc6b",
+      "sha_match": true,
+      "slug": "kingdom-of-saudi-arabia-patriot-advanced-capability-3-missile-segment-enhanceme",
+      "transport": "browser_in_page_fetch",
+      "url": "https://www.dsca.mil/Press-Media/Major-Arms-Sales/Article-Display/Article/4394629/kingdom-of-saudi-arabia-patriot-advanced-capability-3-missile-segment-enhanceme"
+    },
+    {
+      "article_id": "4399552",
+      "bytes": 63198,
+      "final_url": "https://www.dsca.mil/Press-Media/Major-Arms-Sales/Article-Display/Article/4399552/ukraine-class-ix-spare-parts",
+      "http_status": 200,
+      "local_path": "tests/fixtures/fms/dsca/dsca-4399552.html",
+      "observed_at": "2026-08-26T02:35:16.399Z",
+      "sha256": "f3981f7c94217ed8f0ae54737238aff1367bd5adf55a0c0599a31241df2ff70a",
+      "sha_match": true,
+      "slug": "ukraine-class-ix-spare-parts",
+      "transport": "browser_in_page_fetch",
+      "url": "https://www.dsca.mil/Press-Media/Major-Arms-Sales/Article-Display/Article/4399552/ukraine-class-ix-spare-parts"
+    }
+  ],
+  "certification_pdf": {
+    "bytes": 133064,
+    "final_url": "https://media.defense.gov/2026/Jan/30/2003868787/-1/-1/1/PRESS%20RELEASE%20-%20SAUDI%20ARABIA%2026-13%20CN.PDF",
+    "http_status": 200,
+    "local_path": "tests/fixtures/fms/dsca/saudi-arabia-26-13-cn.pdf",
+    "observed_at": "2026-08-26T02:35:53.977Z",
+    "sha256": "c7e3bcadda94f4f9014bd9eac70827f57bc1e60fe67c20a273074732a8af9c55",
+    "transmittal": "26-13",
+    "transport": "browser_in_page_fetch",
+    "url": "https://media.defense.gov/2026/Jan/30/2003868787/-1/-1/1/PRESS%20RELEASE%20-%20SAUDI%20ARABIA%2026-13%20CN.PDF"
+  },
+  "kind": "dsca_article_bytes_manifest_v1",
+  "observed_at": "2026-08-26T02:35:16.399Z",
+  "transport": "browser_in_page_fetch"
+}

@@ -175,11 +175,22 @@ def test_glance_facts_are_byte_replayed_spans_or_typed_absences() -> None:
         assert claim.get("typed_absence") is None
         assert claim["source_span"]["receipt_state"] == "byte_replayed"
 
-    questions = next(fact for fact in payload["facts"] if fact["metric"] == "questions_count")
-    assert "typed_absence" in questions
-    assert questions["typed_absence"]["reason"] == "no_span_addressable_evidence"
-    assert "questions_count_unstructured" in payload["warnings"]
+    questions_count_facts = [fact for fact in payload["facts"] if fact["metric"] == "questions_count"]
+    assert questions_count_facts == []
+    assert "questions_count_unstructured" not in payload["warnings"]
     assert "wire_record_not_found" in payload["warnings"]
+    qa = payload["qa_exchanges"]
+    assert len(qa) == 7
+    assert all(item["topics"] == ["unavailable"] for item in qa)
+    assert sum(len(item["question_spans"]) for item in qa) == 32
+    assert sum(len(item["answer_spans"]) for item in qa) == 36
+    assert sum(len(item["respondents"]) for item in qa) == 26
+    assert qa[0]["questioner"]["name"] == "Amit Daryanani"
+    assert [row["name"] for row in qa[0]["respondents"]] == ["Kevan Parekh", "Tim Cook", "Tim Cook"]
+    assert all(item["provenance"]["provider"] is None and item["provenance"]["model"] is None for item in qa)
+    assert payload["prophet_flags"] == {
+        "may_rank": False, "may_size": False, "may_gate": False, "prophet_authority": False,
+    }
 
 
 def test_claim_citations_pending_is_derived_on_v2_and_v1_still_requires_true() -> None:
@@ -397,6 +408,7 @@ def _clone_as_q2(flagship: dict) -> dict:
         if fact.get("metric") == "revenue":
             fact["value"] = 90000.0
     q2["generation_id"] = ""
+    q2["qa_exchanges"] = []
     q2.pop("_source_sha256", None)
     q2.pop("_aliases", None)
     return q2
@@ -691,18 +703,51 @@ def test_public_glance_reaction_does_not_borrow_public_wire(tmp_path) -> None:
     assert by_id["reaction"]["state"] == "not_joined"
 
 
-def test_public_glance_questions_count_typed_absence_is_unstructured(tmp_path) -> None:
-    """(F) questions_count typed_absence must map to 'unstructured', never 14."""
+def test_public_glance_questions_count_from_accepted_qa_exchanges(tmp_path) -> None:
+    """Accepted Q&A publishes a derived exchange count, never overlay 14."""
     result = _build_workspace_reader_result(tmp_path)
     glance = _public_workspace_glance(result)
-    by_id = {s["id"]: s for s in glance["coverage_states"]}
     qs = next((s for s in glance["coverage_states"] if s["id"] == "questions_count"), None)
     assert qs is not None
-    assert qs["state"] == "unstructured"
-    assert qs.get("value") != 14
+    assert qs["state"] == "7 exchanges"
     dumped = json.dumps(glance)
     assert ": 14" not in dumped
     assert '"questions_count": 14' not in dumped
+    assert "unavailable" not in dumped
+    assert "a8ff5d03" not in dumped
+    assert "source_span" not in dumped
+    assert "run_id" not in dumped
+
+
+def test_public_glance_questions_count_typed_absence_is_unstructured() -> None:
+    """Empty Q&A with a questions_count typed absence stays unstructured, never 14."""
+    glance = _public_workspace_glance({
+        "available": True,
+        "ticker": "DHI",
+        "event_id": "evt_cik0000882184_2026q3_results",
+        "workspace": {
+            "completeness": {"consensus": {"status": "unlicensed"}, "reaction": {"status": "not_joined"}},
+            "facts": [{
+                "metric": "questions_count",
+                "typed_absence": {"reason": "no_transcript", "subject": "questions_count"},
+            }],
+            "qa_exchanges": [],
+            "lifecycle": {"state": "complete"},
+            "fiscal_period": {"year": 2026, "quarter": 3},
+            "aliases": ["DHI/2026Q3"],
+            "claims": [],
+            "guidance": [],
+            "sources": [],
+        },
+        "receipt": {"generation_id": "0" * 24},
+        "is_context_only": True,
+        "display_only": True,
+        "authority": "context_only",
+    })
+    qs = next((s for s in glance["coverage_states"] if s["id"] == "questions_count"), None)
+    assert qs is not None
+    assert qs["state"] == "unstructured"
+    assert "14" not in json.dumps(glance)
 
 
 def test_public_glance_same_event_correction_updates_value_not_id(tmp_path) -> None:
@@ -744,6 +789,7 @@ def test_write_workspace_generation_refuses_alias_collision_before_marker(tmp_pa
     first = _build_flagship()
     second = copy.deepcopy(first)
     second["event_id"] = "evt_cik0000320193_2026q3_alt"
+    second["qa_exchanges"] = []
     second["aliases"] = [LIVE_NARRATIVE_ALIAS]
     extra = dict(second.get("_aliases") or {})
     extra["canonical_event_id"] = second["event_id"]

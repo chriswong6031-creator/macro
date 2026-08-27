@@ -44,6 +44,7 @@ _PATH_PARAMS = {
     "program_key": "dod-program:department-of-army",   # _BUDGET_PROGRAM_KEY
     "notice_id": "notice-1",                           # _NOTICE_ID
     "event_id": "event-1",
+    "case_key": "fms:transmittal:26-13",               # _FMS_CASE_KEY
 }
 
 

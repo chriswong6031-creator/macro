@@ -1,0 +1,251 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/government_revenue/government_fms_case.v1.schema.json",
+  "title": "Government Revenue FMS Congressional-Notification Case Graph v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract", "schema_version", "content_id", "as_of", "known_at", "generated_at",
+    "authority", "scope", "coverage", "cases", "limitations"
+  ],
+  "properties": {
+    "contract": {"const": "government_fms_case.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "content_id": {"type": "string", "pattern": "^grfms1-[a-f0-9]{24}$"},
+    "as_of": {"type": "string", "format": "date"},
+    "known_at": {"type": ["string", "null"], "format": "date-time"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "authority": {"$ref": "#/$defs/authority"},
+    "scope": {"$ref": "#/$defs/scope"},
+    "coverage": {"$ref": "#/$defs/coverage"},
+    "cases": {"type": "array", "maxItems": 5000, "items": {"$ref": "#/$defs/case"}},
+    "limitations": {
+      "type": "array", "minItems": 1,
+      "items": {"type": "string", "minLength": 1, "maxLength": 1000}
+    }
+  },
+  "$defs": {
+    "authority": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "tier", "context_only", "can_rank", "can_size", "can_gate",
+        "can_originate_signal", "can_add_candidates", "can_escalate"
+      ],
+      "properties": {
+        "tier": {"const": "display"},
+        "context_only": {"const": true},
+        "can_rank": {"const": false},
+        "can_size": {"const": false},
+        "can_gate": {"const": false},
+        "can_originate_signal": {"const": false},
+        "can_add_candidates": {"const": false},
+        "can_escalate": {"const": false}
+      }
+    },
+    "scope": {
+      "type": "object", "additionalProperties": false,
+      "required": ["delivered_from", "delivered_through"],
+      "properties": {
+        "delivered_from": {"type": "string", "format": "date"},
+        "delivered_through": {"type": "string", "format": "date"}
+      }
+    },
+    "railStatus": {"enum": ["ok", "partial", "stale", "unavailable", "blocked", "failed", "unknown"]},
+    "coverage": {
+      "type": "object", "additionalProperties": false,
+      "required": ["law", "sources", "history_disclosure", "reconciliation"],
+      "properties": {
+        "law": {"const": "official_union_v1"},
+        "sources": {
+          "type": "object", "additionalProperties": false,
+          "required": ["federal_register", "state_pm_bureau", "dsca_press"],
+          "properties": {
+            "federal_register": {
+              "type": "object", "additionalProperties": false,
+              "required": [
+                "role", "publication_window", "docs_scanned", "originals",
+                "amendments_excluded", "corrections", "out_of_scope_originals", "status"
+              ],
+              "properties": {
+                "role": {"const": "denominator_and_recovery"},
+                "publication_window": {
+                  "type": "array", "minItems": 2, "maxItems": 2,
+                  "items": {"type": "string", "format": "date"}
+                },
+                "docs_scanned": {"type": "integer", "minimum": 0},
+                "originals": {"type": "integer", "minimum": 0},
+                "amendments_excluded": {"type": "integer", "minimum": 0},
+                "corrections": {"type": "integer", "minimum": 0},
+                "out_of_scope_originals": {"type": "integer", "minimum": 0},
+                "status": {"$ref": "#/$defs/railStatus"}
+              }
+            },
+            "state_pm_bureau": {
+              "type": "object", "additionalProperties": false,
+              "required": [
+                "role", "listing_pages", "qualifying_articles", "status",
+                "articles_succeeded", "articles_failed"
+              ],
+              "properties": {
+                "role": {"const": "current_presentation_staged"},
+                "listing_pages": {"type": "integer", "minimum": 0},
+                "qualifying_articles": {"type": "integer", "minimum": 0},
+                "status": {"$ref": "#/$defs/railStatus"},
+                "articles_succeeded": {"type": "integer", "minimum": 0},
+                "articles_failed": {"type": "integer", "minimum": 0}
+              }
+            },
+            "dsca_press": {
+              "type": "object", "additionalProperties": false,
+              "required": ["role", "articles_staged", "status", "disclosure"],
+              "properties": {
+                "role": {"const": "historical_observations_bounded"},
+                "articles_staged": {"type": "integer", "minimum": 0},
+                "status": {"$ref": "#/$defs/railStatus"},
+                "disclosure": {"type": "string", "minLength": 1, "maxLength": 2000}
+              }
+            }
+          }
+        },
+        "history_disclosure": {"type": "string", "minLength": 1, "maxLength": 2000},
+        "reconciliation": {
+          "type": "object", "additionalProperties": false,
+          "required": [
+            "denominator_transmittals", "cases_built", "denominator_unbuilt",
+            "web_only_cases", "web_absent_cases"
+          ],
+          "properties": {
+            "denominator_transmittals": {"type": "integer", "minimum": 0},
+            "cases_built": {"type": "integer", "minimum": 0},
+            "denominator_unbuilt": {"type": "array", "items": {"type": "string"}},
+            "web_only_cases": {"type": "integer", "minimum": 0},
+            "web_absent_cases": {"type": "array", "items": {"type": "string"}}
+          }
+        }
+      }
+    },
+    "observation": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "observation_id", "source_surface", "kind", "version", "source_url",
+        "response_sha256", "bytes", "transport", "observed_at", "known_at", "r2_object_key"
+      ],
+      "properties": {
+        "observation_id": {"type": "string", "minLength": 1},
+        "source_surface": {"enum": ["state", "dsca", "federal_register"]},
+        "kind": {
+          "enum": [
+            "listing_article", "certification_pdf", "fr_raw_text",
+            "fr_correction", "retraction_observed"
+          ]
+        },
+        "version": {"type": "integer", "minimum": 1},
+        "source_url": {"type": "string", "minLength": 1, "maxLength": 2000},
+        "response_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "bytes": {"type": "integer", "minimum": 0},
+        "transport": {"enum": ["cli", "browser_in_page_fetch_staged", "cli_residential_staged"]},
+        "observed_at": {"type": "string", "format": "date-time"},
+        "known_at": {"type": "string", "format": "date-time"},
+        "r2_object_key": {"type": ["string", "null"]}
+      }
+    },
+    "clockValue": {
+      "type": "object", "additionalProperties": false,
+      "required": ["value", "provenance"],
+      "properties": {
+        "value": {"type": ["string", "null"], "format": "date"},
+        "provenance": {
+          "enum": [
+            "fr_delivered_to_congress", "dsca_body_dateline",
+            "state_header_date", "dsca_article_date", null
+          ]
+        }
+      }
+    },
+    "programLink": {
+      "type": "object", "additionalProperties": false,
+      "required": ["state", "reason_code", "program_id", "program_case_link_id", "ontology_graph_id"],
+      "properties": {
+        "state": {"const": "not_reviewed"},
+        "reason_code": {"const": "no_reviewed_program_link"},
+        "program_id": {"type": "null"},
+        "program_case_link_id": {"type": "null"},
+        "ontology_graph_id": {"type": "null"}
+      }
+    },
+    "contractor": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name_as_printed", "location_as_printed", "identity_state", "issuer_ref"],
+      "properties": {
+        "name_as_printed": {"type": "string", "minLength": 1, "maxLength": 500},
+        "location_as_printed": {"type": ["string", "null"], "maxLength": 500},
+        "identity_state": {"const": "not_reviewed"},
+        "issuer_ref": {"type": "null"}
+      }
+    },
+    "case": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "case_key", "transmittal_number", "identity_basis", "case_identity_state", "aliases",
+        "customer_country", "capability_title", "source_item_enumeration",
+        "stage", "later_stages", "advancement_condition",
+        "estimated_notification_value", "currency", "source_caveat", "value_provenance",
+        "contractors", "contractor_note", "program_links",
+        "clocks", "source_coverage", "observations", "case_state"
+      ],
+      "properties": {
+        "case_key": {"type": "string", "pattern": "^fms:(transmittal:\\d{2}-\\d{1,3}|urlpath:[a-f0-9]{24})$"},
+        "transmittal_number": {"type": ["string", "null"], "pattern": "^\\d{2}-\\d{1,3}$"},
+        "identity_basis": {"enum": ["transmittal", "url_fallback"]},
+        "case_identity_state": {"enum": ["resolved", "identity_unresolved", "conflicted"]},
+        "aliases": {"type": "array", "items": {"type": "string"}},
+        "customer_country": {"type": ["string", "null"], "minLength": 1, "maxLength": 300},
+        "capability_title": {"type": ["string", "null"], "minLength": 1, "maxLength": 500},
+        "source_item_enumeration": {"type": ["string", "null"], "maxLength": 20000},
+        "stage": {"const": "congressional_notification"},
+        "later_stages": {"const": "stage_not_observed"},
+        "advancement_condition": {"const": "official_evidence_of_offered_accepted_or_implemented_loa"},
+        "estimated_notification_value": {"type": ["integer", "null"], "minimum": 1},
+        "currency": {"const": "USD"},
+        "source_caveat": {"type": ["string", "null"], "maxLength": 2000},
+        "value_provenance": {
+          "enum": ["state_body", "dsca_body", "fr_total_estimated_value", null]
+        },
+        "contractors": {"type": "array", "items": {"$ref": "#/$defs/contractor"}},
+        "contractor_note": {"type": ["string", "null"], "maxLength": 500},
+        "program_links": {
+          "type": "array", "minItems": 1, "maxItems": 1,
+          "items": {"$ref": "#/$defs/programLink"}
+        },
+        "clocks": {
+          "type": "object", "additionalProperties": false,
+          "required": ["official_notification_date", "official_web_publication_date", "first_observed_at"],
+          "properties": {
+            "official_notification_date": {"$ref": "#/$defs/clockValue"},
+            "official_web_publication_date": {"$ref": "#/$defs/clockValue"},
+            "first_observed_at": {"type": "string", "format": "date-time"}
+          }
+        },
+        "source_coverage": {
+          "type": "object", "additionalProperties": false,
+          "required": ["classification", "surfaces", "web_presence"],
+          "properties": {
+            "classification": {
+              "enum": [
+                "dsca_and_fr", "state_and_fr", "fr_only",
+                "state_only", "dsca_only", "state_fallback", "multi_surface"
+              ]
+            },
+            "surfaces": {
+              "type": "array", "minItems": 1,
+              "items": {"enum": ["state", "dsca", "federal_register"]}
+            },
+            "web_presence": {"type": "boolean"}
+          }
+        },
+        "observations": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/observation"}},
+        "case_state": {"enum": ["current", "corrected", "conflicted", "retraction_observed"]}
+      }
+    }
+  }
+}

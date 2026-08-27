@@ -40,6 +40,11 @@ from engine.government_revenue.budget_program import (
     BUDGET_PROGRAM_GRAPH_CONTRACT,
     is_valid_budget_program_graph,
 )
+from engine.government_revenue.fms_cases import (
+    AUTHORITY as FMS_CASE_GRAPH_AUTHORITY,
+    FMS_CASE_GRAPH_CONTRACT,
+    fms_case_graph_content_id,
+)
 from engine.government_revenue.candidates import (
     CONTRACT as CANDIDATE_CONTRACT,
 )
@@ -118,6 +123,11 @@ _BUDGET_PROGRAM_PATHS = (
     _REPO / "data" / "government_revenue" / "budget_program_graph.json",
     _REPO / "site" / "government-revenue-data" / "budget-program.json",
 )
+_FMS_CASE_GRAPH_PATHS = (
+    _REPO / "data" / "government_revenue" / "fms_case_graph.json",
+    _REPO / "site" / "government-revenue-data" / "fms-cases.json",
+)
+_FMS_CASE_GRAPH_SCHEMA_PATH = _REPO / "contracts" / "government_revenue" / "government_fms_case.v1.schema.json"
 _IDV_DOSSIER_PATHS = (
     _REPO / "data" / "government_revenue" / "idv_dossiers.json",
     _REPO / "site" / "government-revenue-data" / "idv-dossiers.json",
@@ -148,11 +158,13 @@ _SUBAWARD_KEY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:|+-]{0,599}$")
 _BUDGET_LINE_KEY = re.compile(r"^dod:[a-z0-9:_-]{8,600}$")
 _BUDGET_PROGRAM_KEY = re.compile(r"^dod-program:[a-z0-9:_-]{8,600}$")
 _CANDIDATE_ID = re.compile(r"^grc1-[a-f0-9]{24}$")
+_FMS_CASE_KEY = re.compile(r"^fms:(transmittal:\d{2}-\d{1,3}|urlpath:[a-f0-9]{24})$")
 _LOCK = threading.RLock()
 _CACHE: dict = {"path": None, "mtime_ns": None, "payload": None}
 _DOSSIER_CACHE: dict = {"state": None, "payload": None}
 _SUBAWARD_DOSSIER_CACHE: dict = {"state": None, "payload": None}
 _BUDGET_PROGRAM_CACHE: dict = {"state": None, "payload": None}
+_FMS_CASE_GRAPH_CACHE: dict = {"state": None, "payload": None}
 _IDV_DOSSIER_CACHE: dict = {"state": None, "payload": None}
 _IDV_BRIDGE_CACHE: dict = {"state": None, "payload": None}
 _CANDIDATE_CACHE: dict = {"state": None, "payload": None}
@@ -474,6 +486,103 @@ def _load_budget_program_graph() -> dict:
         _validate_budget_program_award_bindings(payload, prime_payload)
         _BUDGET_PROGRAM_CACHE.update(state=state, payload=payload)
         return payload
+
+
+def _is_valid_fms_case_graph(payload: object) -> bool:
+    """Admit only a schema-valid, content-addressed FMS case graph.
+
+    The FMS rail carries no award-key/dossier binding (its program_links are
+    always the display-tier ``not_reviewed`` const, spec §4/§6), so unlike
+    the DoD budget graph this validation is fully self-contained -- no prime
+    dossier is consulted.
+    """
+    try:
+        from jsonschema import Draft202012Validator, FormatChecker  # noqa: PLC0415
+
+        if not isinstance(payload, dict) or payload.get("contract") != FMS_CASE_GRAPH_CONTRACT:
+            return False
+        schema = json.loads(_FMS_CASE_GRAPH_SCHEMA_PATH.read_text(encoding="utf-8"))
+        Draft202012Validator(schema, format_checker=FormatChecker()).validate(payload)
+        return (
+            fms_case_graph_content_id(payload) == payload.get("content_id")
+            and payload.get("authority") == FMS_CASE_GRAPH_AUTHORITY
+        )
+    except Exception:  # malformed external artifacts must fail closed for callers
+        return False
+
+
+def _load_fms_case_graph() -> dict:
+    """Load one exact, precomputed FMS case graph or fail closed.
+
+    Mirrors :func:`_load_budget_program_graph`. This route family never
+    recomputes cases from observations, never advances stage from elapsed
+    time, and never opens a prime-dossier binding the FMS rail does not have.
+    """
+    canonical, site = _FMS_CASE_GRAPH_PATHS
+    try:
+        canonical_state = canonical.stat()
+        site_state = site.stat()
+    except OSError as exc:
+        raise HTTPException(status_code=503, detail="government revenue FMS case graph unavailable") from exc
+    state = (
+        canonical_state.st_mtime_ns,
+        canonical_state.st_size,
+        site_state.st_mtime_ns,
+        site_state.st_size,
+    )
+    with _LOCK:
+        if _FMS_CASE_GRAPH_CACHE["payload"] is not None and _FMS_CASE_GRAPH_CACHE["state"] == state:
+            return _FMS_CASE_GRAPH_CACHE["payload"]
+        try:
+            canonical_bytes = canonical.read_bytes()
+            site_bytes = site.read_bytes()
+            payload = json.loads(canonical_bytes)
+        except (OSError, ValueError, TypeError) as exc:
+            raise HTTPException(status_code=503, detail="government revenue FMS case graph unreadable") from exc
+        if canonical_bytes != site_bytes:
+            raise HTTPException(status_code=503, detail="government revenue FMS case graph twin mismatch")
+        if (
+            not isinstance(payload, dict)
+            or payload.get("contract") != FMS_CASE_GRAPH_CONTRACT
+            or not _is_valid_fms_case_graph(payload)
+        ):
+            raise HTTPException(status_code=503, detail="government revenue FMS case graph schema mismatch")
+        _FMS_CASE_GRAPH_CACHE.update(state=state, payload=payload)
+        return payload
+
+
+def _public_fms_case_graph_envelope(payload: dict) -> dict:
+    """Expose the FMS coverage manifest without cross-case totals (T13/§7)."""
+    return _scrub_public({
+        "contract": payload.get("contract"),
+        "schema_version": payload.get("schema_version"),
+        "content_id": payload.get("content_id"),
+        "as_of": payload.get("as_of"),
+        "known_at": payload.get("known_at"),
+        "authority": payload.get("authority"),
+        "scope": payload.get("scope"),
+        "coverage": payload.get("coverage"),
+        "limitations": payload.get("limitations"),
+    })
+
+
+def _public_fms_case(row: dict) -> dict:
+    """Return one FMS case exactly as precomputed by the graph rail.
+
+    Every field here is already display-tier and null-safe by contract
+    (schema ``additionalProperties: false``); this allowlist exists so a
+    future case field cannot ride an entitled response without a reviewed
+    addition here, matching this router's other public projections.
+    """
+    allowed = (
+        "case_key", "transmittal_number", "identity_basis", "case_identity_state", "aliases",
+        "customer_country", "capability_title", "source_item_enumeration",
+        "stage", "later_stages", "advancement_condition",
+        "estimated_notification_value", "currency", "source_caveat", "value_provenance",
+        "contractors", "contractor_note", "program_links",
+        "clocks", "source_coverage", "observations", "case_state",
+    )
+    return _scrub_public({key: row[key] for key in allowed if key in row})
 
 
 def _validate_idv_dossier_bindings(payload: dict, prime_payload: dict) -> None:
@@ -1157,6 +1266,18 @@ def _validated_budget_line_key(value: str) -> str:
 def _validated_budget_program_key(value: str) -> str:
     if not _BUDGET_PROGRAM_KEY.fullmatch(value):
         raise HTTPException(status_code=400, detail="invalid budget program key")
+    return value
+
+
+def _validated_fms_case_key(value: str) -> str:
+    """Validate an FMS case key against the D6-B1 contract regex (spec §8).
+
+    422, not 400: a malformed FMS case key is a well-formed-but-invalid
+    request path per the commission's explicit acceptance gate, distinct
+    from this router's other identifier families.
+    """
+    if not _FMS_CASE_KEY.fullmatch(value):
+        raise HTTPException(status_code=422, detail="invalid FMS case key")
     return value
 
 
@@ -2776,4 +2897,37 @@ def event(event_id: str) -> dict:
         "known_at": source.get("known_at"),
         "authority": source.get("authority"),
         "event": _public_workspace_event(row),
+    }
+
+
+@router.get("/api/government-revenue/fms-cases")
+def fms_cases() -> dict:
+    """List the D6-B1 FMS congressional-notification read model.
+
+    Display/context tier only (authority.tier == "display",
+    context_only == true): stage is always "congressional_notification" in
+    v1, values are proposed-sale estimates never summed across cases, and
+    program/contractor links are always "not_reviewed". See
+    ``research/defense_intelligence/DEFENSE_D6B1_FMS_IMPLEMENTATION_SPEC_2026-08-25.md``.
+    """
+    payload = _load_fms_case_graph()
+    return _public_fms_case_graph_envelope(payload) | {
+        "cases": [_public_fms_case(row) for row in payload.get("cases") or []],
+        "total": len(payload.get("cases") or []),
+    }
+
+
+@router.get("/api/government-revenue/fms-case/{case_key}")
+def fms_case(case_key: str) -> dict:
+    """Return one FMS congressional-notification case."""
+    case_key = _validated_fms_case_key(case_key)
+    payload = _load_fms_case_graph()
+    row = next(
+        (item for item in payload.get("cases") or [] if isinstance(item, dict) and item.get("case_key") == case_key),
+        None,
+    )
+    if row is None:
+        raise HTTPException(status_code=404, detail="FMS case not covered")
+    return _public_fms_case_graph_envelope(payload) | {
+        "case": _public_fms_case(row),
     }

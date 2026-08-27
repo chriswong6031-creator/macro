@@ -441,6 +441,21 @@ def main(argv: list[str] | None = None) -> int:
         if not r2io.put_json(r2io.PACK_KEY, payload):
             print("::warning title=prophet-live-pack::R2 publish failed or "
                   "credentials absent — the evaluator will dark on no_pack", flush=True)
+            # A failed/credential-less publish is no longer reported as success.
+            #
+            # The authoritative nightly board stays protected: the caller at
+            # .github/workflows/daily.yml:3583-3591 runs this under `set +e`, captures
+            # `rc=$?`, warns when it is nonzero, and then `exit 0`s the step
+            # unconditionally. So this nonzero code cannot red the nightly — and,
+            # equally, it cannot show up in the step's own conclusion either.
+            #
+            # What it DOES buy is that daily.yml's `if [ "$rc" -ne 0 ]` warning was
+            # unreachable dead code until now, because this function returned 0 on
+            # every path including a silent no-publish. That warning can finally fire.
+            # The loud external signal for a stale pack is the pack-freshness grading
+            # in scripts/check_vps_live_health.py and scripts/freshness_sentinel.py,
+            # not this exit code.
+            return 1
     return 0
 
 

@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.causal_lab_state.v1",
-  "asof": "2026-08-25T05:50:44Z",
+  "asof": "2026-08-26T07:30:02Z",
   "heartbeat": {
     "program": "CHF",
     "wave": "W3",
@@ -44,12 +44,12 @@
   "surprise_queue": {
     "size": 69,
     "stalest_source": "data/release_forecast/forward_ledger.jsonl",
-    "stalest_source_asof": "2026-08-24"
+    "stalest_source_asof": "2026-08-25"
   },
   "drift_events": [],
   "llm_lane": {
     "status": "armed",
-    "asof": "2026-08-24T03:25:33+00:00",
+    "asof": "2026-08-25T05:50:44+00:00",
     "description": "auto_loop armed (operator ruling 2026-07-09); scheduled OAuth LLM run fires on the Tuesday nightly"
   },
   "data_absent_notes": [

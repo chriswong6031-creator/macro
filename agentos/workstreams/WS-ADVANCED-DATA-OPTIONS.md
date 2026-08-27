@@ -75,30 +75,34 @@ waves:
       AD-2; do not shrink the universe.
   - id: AD-1T1
     title: Full-universe incremental ThetaData T1 cadence (Sol handoff 2026-08-22)
-    status: in_progress
+    status: done
     pr: 6267
     depends_on: [AD-1T0]
     next_action: >
-      Implementation MERGED (Sol PASS 2026-08-23, release directive
-      ADVANCED_DATA_OPTIONS_AD1T1_RELEASE_AND_PRODUCTION_COMMISSIONING_
-      2026-08-23): PR 6267 squash-merged at accepted head cc2d90399bc4 ->
-      merge SHA 787787f93c8efaaf30b9cd3d32d9446596fa0925 (collision fence
-      clean; exact-head ci/fences green pre-merge; post-merge fences push
-      run green). M1 transition EXECUTED same day per runbook section 3a:
-      com.macro.thetadata-backfill booted out + plist removed + zero
-      orphans; com.macro.thetadata-daily bootstrapped from merge-SHA bytes
-      (7 files sha256-verified; streamed transfer because theta-ops-wt's
-      origin remote credential is dead — separate debt); weekend RunAtLoad
-      clean no-op proven (no receipt written); Terminal untouched (PID
-      10566, HTTP 200 before/after). State = BUILT_NOT_PROVEN, production
-      commissioning IN PROGRESS. Next: two consecutive normal healthy
-      scheduled sessions (D1 Mon 2026-08-24, D2 Tue 2026-08-25; forced=false,
-      status=healthy, ad_ready_coverage_pct >= 0.90, no deadline breach,
-      Terminal healthy, first fetching run oi_D_source=snapshot_open_
-      interest), then bounded production review + read-only AD diagnostic,
-      then return packet to Sol. NOTE-4 ruled NONBLOCKING (late-recovery
-      sentinel page is a real degraded-SLA alert — do not suppress).
-      No --force-run proof ever. AD-1T2/AD-2 stay CLOSED pending Sol.
+      PROVEN_LIVE 2026-08-25 (production packet = PR 6267
+      issuecomment-5419508761; merge SHA 787787f93c8e, merged 2026-08-23,
+      m1 transitioned same night per runbook section 3a, Terminal never
+      restarted). Proof: two consecutive normal scheduled sessions — D1
+      2026-08-24 (S 2026-08-21) healthy 98.1->98.4%, D2 2026-08-25
+      (S 2026-08-24) healthy 0.984, all 8 rungs deadline_exceeded=False,
+      forced=false, both 18:30 PT sentinel anchor evaluations PASSED K4,
+      oi_D_source=snapshot_open_interest direct in D2 receipts, OI[D]
+      rows verified lawful at the parquet level both dates; bounded
+      production acceptance review 9/10 PASS with the one finding (F1
+      second-writer flock gap: com.mastermind.levelsseal ran pre-AD-1T1
+      topup from stale hub-ops-wt without flock) REPAIRED same day
+      (4-file closure refreshed to origin/main bytes, sha256-verified,
+      live validation = next 04:30 PT fire); read-only AD diagnostic on
+      the store host: source_coverage_pct 0.9467 >= 0.90, board_state OK,
+      receipt closure intact, zero Polygon inputs, Q_flow ABSENT — the
+      AD-1T0 source blocker (0.104) is SOLVED. Open findings for their
+      own waves (never a lane redesign): F2 six dead AD-universe roots
+      masked as vendor_empty (WBS/BLD/URG/RHHBY/NVR/FI, stale since
+      <=2026-07-02); F3 sentinel structural evening greeks-WARN
+      (pre-existing); F4 timestamp-less daily_refresh.log + single-slot
+      receipt makes first-run receipts unrecoverable per day. AD-1
+      remains BUILT_NOT_PROVEN (consumer path is AD-1T2's to prove).
+      Next: Sol commissioning of AD-1T2. AD-2 stays CLOSED.
   - id: AD-1T2
     title: Restore store-bearing M1 to the theta-m1 product workflow; commission AD-1 end to end
     status: todo

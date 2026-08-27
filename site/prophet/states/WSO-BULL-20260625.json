@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "WSO-BULL-20260625",
-  "asof": "2026-08-24",
+  "asof": "2026-08-25",
   "phase": "invalidated",
   "detection_phase": "invalidated",
   "management_confidence": 8.0,
@@ -17,16 +17,16 @@
     "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": -1.05,
+    "dist_to_stop_r": -1.433,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 6.7,
-    "p1": -0.033,
-    "p2": -0.0165,
+    "horizon_pct_used": 8.9,
+    "p1": -0.2885,
+    "p2": -0.1442,
     "p3": null,
-    "move_r": -0.05,
+    "move_r": -0.433,
     "mfe_r": 0.002,
-    "mae_r": -0.05
+    "mae_r": -0.433
   },
   "rr_ratio": null,
   "rr_grade": null,
@@ -40,11 +40,11 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 0.04000244140627274,
-  "_mae": -1.1000122070312273,
+  "_mae": -9.609991455078102,
   "_max_p1": 0.0012007336456933135,
   "_first_trigger_ts": "2026-08-21",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 3,
-  "tau": 0.0667
+  "days_elapsed": 4,
+  "tau": 0.0889
 }

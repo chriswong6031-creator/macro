@@ -20,7 +20,6 @@
     "memory_storage",
     "non_ai_tech",
     "obesity_glp1",
-    "pgm_miners",
     "quantum_computing",
     "regional_banks",
     "reshoring",
@@ -45,7 +44,7 @@
     "memory_storage",
     "gold_miners",
     "ai_infra",
-    "us_sector_health"
+    "big_pharma"
   ],
   "leader": "memory_storage",
   "names": {

@@ -1,34 +1,37 @@
 {
   "schema": "active_builds.v1",
-  "generated_at": "2026-08-25T01:42:12.369074+00:00",
+  "generated_at": "2026-08-27T04:51:11.822246+00:00",
   "base": {
-    "sha": "73d700770e8fabb3fe984634fef78350d4064be8"
+    "sha": "b246810c8caa046cd52f82f8dad1e9fedf9e2f8b"
   },
   "merged_days": 14,
   "merged_truncated": true,
   "open_prs_truncated": false,
   "open_prs": [
     {
-      "number": 6388,
-      "title": "records(xpv2): reconcile R3B/R3B.1 and active R3B.2 state",
-      "head_ref": "sol/xpv2-agentos-reconcile-20260824",
-      "updated_at": "2026-08-25T01:39:44Z",
-      "is_draft": true,
+      "number": 6509,
+      "title": "records(agentos): reconcile Autonomy V1 dispatch and Capacity Fabric continuation",
+      "head_ref": "sol/autonomy-v1-agentos-reconcile-20260826",
+      "updated_at": "2026-08-27T04:49:03Z",
+      "is_draft": false,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
-      "files_count": 1,
+      "files_count": 4,
       "files_truncated": false,
       "files_error": false,
       "files": [
-        "agentos/workstreams/WS-INSTITUTIONAL-PRODUCT-EXPERIENCE-V2.md"
+        "agentos/decisions/DEC-AUTONOMY-V1-DISPATCH-DIALOGUE-RUNTIME-SEPARATION.md",
+        "agentos/discoveries/DSC-AGENT-DISPATCH-CURRENTLY-HAS-NO-WORKER-RECEIVER.md",
+        "agentos/handoffs/AUTONOMY-V1-2026-08-26-sol-operational-reconciliation.md",
+        "agentos/workstreams/WS-EXECUTIVE-CAPACITY-FABRIC.md"
       ],
       "protected_paths_touched": []
     },
     {
-      "number": 6385,
-      "title": "agentos(defense-v3): D6-A production proof complete \u2014 done / Sol acceptance pending",
-      "head_ref": "claude/d6a-agentos-close",
-      "updated_at": "2026-08-25T01:21:18Z",
+      "number": 6508,
+      "title": "records(market-os): accept A1B in production",
+      "head_ref": "sol/market-os-a1b-production-acceptance-closeout-20260826",
+      "updated_at": "2026-08-27T04:42:42Z",
       "is_draft": false,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
@@ -36,16 +39,259 @@
       "files_truncated": false,
       "files_error": false,
       "files": [
-        "agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-24-d6a-budget-rail.md",
+        "agentos/decisions/DEC-MARKET-OS-A1B-ACCEPTED-IN-PRODUCTION.md",
+        "agentos/handoffs/MARKET-OS-2026-08-26-a1b-sol-acceptance.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6507,
+      "title": "fix(options-source): ThetaData is canonical \u2014 stop calling the retired Polygon estate an outage",
+      "head_ref": "claude/thetadata-is-canonical-options-source",
+      "updated_at": "2026-08-27T04:34:32Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 6,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "agentos/discoveries/DSC-A-HEALTH-RECEIPT-NOBODY-READS-IS-NOT-AN-ESCALATION.md",
+        "collectors/polygon_options.py",
+        "data/experiments/registry_seed.json",
+        "scripts/build_flow_leaders.py",
+        "scripts/build_polygon_gex.py",
+        "tests/test_polygon_gex.py"
+      ],
+      "protected_paths_touched": [
+        "data/experiments/registry_seed.json"
+      ]
+    },
+    {
+      "number": 6506,
+      "title": "shadow-book: percentile field is a true cross-sectional pct rank (era-stamped, no restatement)",
+      "head_ref": "claude/shadow-book-xs-percentile",
+      "updated_at": "2026-08-27T04:33:39Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 4,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "engine/shadow_book.py",
+        "scripts/build_stock_library.py",
+        "scripts/snapshot_shadow_book.py",
+        "tests/test_shadow_book_percentile.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6505,
+      "title": "ci: route trusted PR packs through main executor",
+      "head_ref": "codex/ci-p3bb-production-route-6351",
+      "updated_at": "2026-08-27T04:30:45Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 15,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/runner-policy.yml",
+        ".github/workflows/ci.yml",
+        ".github/workflows/trusted-ci-executor.yml",
+        "agentos/decisions/DEC-TRUSTED-CI-MAIN-DEFINED-EXECUTOR-BOUNDARY.md",
+        "agentos/discoveries/DSC-REUSABLE-WORKFLOW-CALL-AND-HOST-HOOK-USE-DIFFERENT-REF-SHAPES.md",
+        "agentos/handoffs/CI-MERGE-CONTROL-PLANE-2026-08-27-p3bb-production-route.md",
+        "agentos/workstreams/WS-CI-MERGE-CONTROL-PLANE.md",
+        "agentos/workstreams/WS-RUNNER-FLEET-RESILIENCE.md",
+        "ops/runner-host/common/runner_admission.py",
+        "scripts/check_runner_policy.py",
+        "tests/test_ci_canary_tools.py",
+        "tests/test_ci_pack.py",
+        "tests/test_runner_policy.py",
+        "tests/test_trusted_ci_executor_workflow.py",
+        "tests/test_trusted_ci_production_route.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/trusted-ci-executor.yml",
+        "scripts/check_runner_policy.py"
+      ]
+    },
+    {
+      "number": 6504,
+      "title": "records(market-os): complete MarketOntology parity + parallel Fable COO fanout",
+      "head_ref": "sol/marketontology-complete-parity-fanout-20260826",
+      "updated_at": "2026-08-27T04:42:55Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 23,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "agentos/decisions/DEC-MARKET-ONTOLOGY-COMPLETE-CAPABILITY-PARITY-FABLE-COO-FANOUT.md",
+        "agentos/decisions/DEC-MARKET-ONTOLOGY-CURRENT-PUBLIC-DELTA-CENSUS-IS-CLOSURE-INPUT.md",
+        "agentos/decisions/DEC-MARKET-ONTOLOGY-FABLE-MULTI-COO-CONCURRENCY-TOPOLOGY.md",
+        "agentos/decisions/DEC-MARKET-OS-STALE-GLOBAL-NEXT-ACTION-SUPERSEDED-BY-PARITY-FANOUT.md",
+        "agentos/discoveries/DSC-MARKET-ONTOLOGY-PUBLIC-P1-CORPUS-RETAINED-OUTSIDE-GITHUB.md",
+        "agentos/handoffs/MARKET-ONTOLOGY-2026-08-26-fable-coo-complete-parity-program.md",
+        "agentos/handoffs/MARKET-ONTOLOGY-F00-F13-FABLE-COO-FANOUT-MANIFEST-2026-08-26.md",
+        "agentos/handoffs/MARKET-ONTOLOGY-F01-MACRO-MARKETS-BRIEFINGS-FABLE-COO-2026-08-26.md",
+        "agentos/handoffs/MARKET-ONTOLOGY-F02-POLICY-GEO-GEOSPATIAL-FABLE-COO-2026-08-26.md",
+        "agentos/handoffs/MARKET-ONTOLOGY-F03-OPTIONS-EXPRESSION-FABLE-COO-2026-08-26.md",
+        "agentos/handoffs/MARKET-ONTOLOGY-F04-ONTOLOGY-TRANSMISSION-OPPORTUNITY-FABLE-COO-2026-08-26.md",
+        "agentos/handoffs/MARKET-ONTOLOGY-F05-EVENT-IMPACT-CATALYST-FABLE-COO-2026-08-26.md",
+        "agentos/handoffs/MARKET-ONTOLOGY-F06-SECURITY-TICKER-WORKSPACE-FABLE-COO-2026-08-26.md",
+        "agentos/handoffs/MARKET-ONTOLOGY-F07-VALUATION-SCENARIO-FABLE-COO-2026-08-26.md",
+        "agentos/handoffs/MARKET-ONTOLOGY-F08-PORTFOLIO-ALERTS-FABLE-COO-2026-08-26.md",
+        "agentos/handoffs/MARKET-ONTOLOGY-F09-CAPITAL-OWNERSHIP-MATERIALS-FABLE-COO-2026-08-26.md",
+        "agentos/handoffs/MARKET-ONTOLOGY-F10-QUANT-ANALOGS-FABLE-COO-2026-08-26.md",
+        "agentos/handoffs/MARKET-ONTOLOGY-F11-HUMAN-RESEARCH-RMS-FABLE-COO-2026-08-26.md",
+        "agentos/handoffs/MARKET-ONTOLOGY-F12-TEAM-TENANT-API-PLATFORM-FABLE-COO-2026-08-26.md",
+        "agentos/handoffs/MARKET-ONTOLOGY-F13-OPS-LEARNING-RELIABILITY-FABLE-COO-2026-08-26.md",
+        "research/market_intelligence_productization/MARKET_ONTOLOGY_COMPLETE_PARITY_ADOPTION_ADDENDUM_2026-08-26.md",
+        "research/market_intelligence_productization/MARKET_ONTOLOGY_COMPLETE_PARITY_ADOPTION_LEDGER_2026-08-26.csv",
+        "research/market_intelligence_productization/MARKET_ONTOLOGY_CURRENT_PUBLIC_DELTA_LEDGER_2026-08-26.csv"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6503,
+      "title": "fix(cortex): repair the five hypothesis-evaluator wiring defects (experiments audit \u00a73 W1\u2013W6)",
+      "head_ref": "claude/cortex-evaluator-wiring-repairs",
+      "updated_at": "2026-08-27T04:27:27Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 9,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/daily.yml",
+        "agentos/discoveries/DSC-A-SWALLOWED-SIGNAL-ARITY-LOOKS-LIKE-A-DATA-GAP.md",
+        "agentos/discoveries/DSC-THE-2026-08-18-GOVERNANCE-CLOBBER-WAS-NOT-SYSTEMATIC.md",
+        "config/dag.yml",
+        "data/experiments/registry_seed.json",
+        "engine/neuralweb/metabolism.py",
+        "scripts/evaluate_cortex_hypotheses.py",
+        "scripts/quarterly_cortex_fdr.py",
+        "tests/test_cortex_evaluator_repairs.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/daily.yml",
+        "config/dag.yml",
+        "data/experiments/registry_seed.json",
+        "engine/neuralweb/metabolism.py"
+      ]
+    },
+    {
+      "number": 6499,
+      "title": "shadow-book: wire nightly maturation, overlap-true HAC lags, leak-free Clark-West (experiments audit \u00a78.4+13)",
+      "head_ref": "claude/shadow-book-wiring",
+      "updated_at": "2026-08-27T04:41:17Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 10,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/daily.yml",
+        "config/dag.yml",
+        "data/experiments/registry_seed.json",
+        "engine/shadow_book.py",
+        "scripts/mature_shadow_book.py",
+        "scripts/validate_options_dislocation.py",
+        "scripts/validate_options_ivspread.py",
+        "scripts/validate_options_skew.py",
+        "tests/test_price_basis_graders.py",
+        "tests/test_shadow_book.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/daily.yml",
+        "config/dag.yml",
+        "data/experiments/registry_seed.json"
+      ]
+    },
+    {
+      "number": 6497,
+      "title": "HOLD-FOR-SOL: E3-C GOOGL generalization REFUSED on source format (records + regression, no runtime change)",
+      "head_ref": "claude/e3c-googl-generalization-refusal",
+      "updated_at": "2026-08-27T03:46:51Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 7,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/ci/legacy-jobs.yml",
+        "agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-27-e3c-refusal.md",
+        "agentos/workstreams/WS-EARNINGS-EVENT-INTELLIGENCE-COMPILER.md",
+        "research/earnings_intelligence/e3/E3C_SECOND_EVENT_GENERALIZATION_HANDOFF_2026-08-20.md",
+        "research/earnings_intelligence/e3/e3c_googl_2026q2_reconstruction_refusal_receipt.json",
+        "tests/fixtures/company_intelligence/googl_fy2026_q2.json.gz",
+        "tests/test_company_intelligence_qa_generalization_e3c.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6485,
+      "title": "records(defense): Sol accepts D6-B1 / park at D6-C boundary",
+      "head_ref": "sol/d6b1-final-acceptance-20260826",
+      "updated_at": "2026-08-27T03:57:35Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 2,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "agentos/handoffs/DEFENSE-PROCUREMENT-V3-2026-08-26-d6b1-sol-acceptance.md",
         "agentos/workstreams/WS-DEFENSE-PROCUREMENT-V3.md"
       ],
       "protected_paths_touched": []
     },
     {
-      "number": 6383,
-      "title": "MAS-28 W1 repair: 5.10 pre-cutover legacy, integer parity, 0-3-space label ceiling",
-      "head_ref": "claude/mas28-w1",
-      "updated_at": "2026-08-25T00:26:18Z",
+      "number": 6459,
+      "title": "HOLD-FOR-SOL \u00b7 plan: M1 Consumer Visibility Wave 1",
+      "head_ref": "sol/b1a-m1-consumer-visibility-plan-20260826",
+      "updated_at": "2026-08-26T07:40:03Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "docs/superpowers/plans/2026-08-26-m1-consumer-visibility-wave1.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6457,
+      "title": "HOLD-FOR-CHAIRMAN \u00b7 design: harden M1 Macro consumer recovery and migration",
+      "head_ref": "sol/b1a-m1-consumer-hardening-design-20260826",
+      "updated_at": "2026-08-26T07:29:34Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "docs/superpowers/specs/2026-08-26-m1-macro-consumer-hardening-design.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6441,
+      "title": "HOLD-FOR-SOL: records(agentos): reconcile current state-sync program",
+      "head_ref": "sol/agentos-state-sync-20260825",
+      "updated_at": "2026-08-26T02:32:54Z",
       "is_draft": true,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
@@ -53,47 +299,142 @@
       "files_truncated": false,
       "files_error": false,
       "files": [
-        "lib/pr_linkage_validator.py",
-        "tests/test_pr_linkage_hostile_regressions.py"
+        "agentos/handoffs/AGENT-OS-2026-08-25-state-sync-takeover.md",
+        "agentos/workstreams/WS-AGENT-OS.md"
       ],
       "protected_paths_touched": []
     },
     {
-      "number": 6382,
-      "title": "HOLD-FOR-SOL: FIF-3A4R cross-filing fact lineage protocol + AAPL calibration",
-      "head_ref": "claude/fif-3a4r",
-      "updated_at": "2026-08-25T00:59:50Z",
+      "number": 6426,
+      "title": "HOLD-FOR-SOL: CI ProofFreshness precedes stale semantic verdict",
+      "head_ref": "claude/ci-prooffreshness-before-semantic-20260825",
+      "updated_at": "2026-08-25T22:05:07Z",
       "is_draft": true,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
-      "files_count": 9,
+      "files_count": 6,
       "files_truncated": false,
       "files_error": false,
       "files": [
-        "agentos/discoveries/DSC-AAPL-A1-A2-CROSS-FILING-OVERLAP-CENSUS.md",
-        "agentos/discoveries/DSC-XBRL-DUPLICATE-LAW-IS-INTRA-INSTANCE.md",
-        "agentos/handoffs/FINANCIAL-INTELLIGENCE-FABRIC-2026-08-24-fif-3a4r.md",
-        "agentos/workstreams/WS-FINANCIAL-INTELLIGENCE-FABRIC.md",
-        "research/financial_intelligence_fabric/FIF_3A4R_AAPL_OVERLAP_CENSUS.json",
-        "research/financial_intelligence_fabric/FIF_3A4R_CROSS_FILING_LINEAGE_PROTOCOL.md",
-        "research/financial_intelligence_fabric/replay_fif3a4r_aapl_overlap_census.py",
-        "tests/test_board_shadow.py",
-        "tests/test_hk_discovery_challenger.py"
+        "agentos/decisions/DEC-STALE-SEMANTIC-PROOF-HAS-NO-CURRENT-VERDICT-AUTHORITY.md",
+        "agentos/discoveries/DSC-SEMANTIC-REFUSAL-BYPASSED-PROOFFRESHNESS.md",
+        "agentos/handoffs/CI-MERGE-CONTROL-PLANE-2026-08-25-prooffreshness-order.md",
+        "agentos/workstreams/WS-CI-MERGE-CONTROL-PLANE.md",
+        "scripts/merge_on_green.py",
+        "tests/test_merge_on_green_semantic.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6423,
+      "title": "DRAFT / DO NOT MERGE: ProofFreshness stale-red live fixture",
+      "head_ref": "claude/prooffreshness-live-fixture-20260825",
+      "updated_at": "2026-08-25T22:00:57Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 2,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "agentos/README.md",
+        "tests/test_merge_on_green_semantic.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6391,
+      "title": "FF-1 acceptance-time representational equivalence",
+      "head_ref": "claude/ff1-acceptance-time-equivalence-20260824",
+      "updated_at": "2026-08-25T20:34:39Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 5,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "agentos/decisions/DEC-FF-1-ACCEPTANCE-DATETIME-COMPARES-BY-INSTANT.md",
+        "agentos/handoffs/FUNDAMENTAL-FORENSICS-2026-08-24-FF-1R-ACCEPTANCE-DATETIME-REPAIR.md",
+        "agentos/workstreams/WS-FUNDAMENTAL-FORENSICS.md",
+        "engine/fundamental_forensics/broad_sec_store.py",
+        "tests/test_fundamental_forensics_broad_sec.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6390,
+      "title": "fix(live): make China Prophet A-share quotes genuinely live",
+      "head_ref": "claude/fix-cn-prophet-live-quotes-20260824",
+      "updated_at": "2026-08-25T02:33:19Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 5,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "engine/live_quotes.py",
+        "site/live.js",
+        "templates/live.js",
+        "tests/test_live_delay_labeling.py",
+        "tests/test_live_quotes.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 6389,
+      "title": "[HOLD-FOR-SOL] BioCatalyst SNAPSHOT-ONBOARD A \u2014 Historical Event History",
+      "head_ref": "warp/warp-2b1d7bf0a28b4f9d9016367398c3bd93",
+      "updated_at": "2026-08-27T03:29:42Z",
+      "is_draft": true,
+      "merge_state": "DIRTY",
+      "merge_state_raw": "DIRTY",
+      "files_count": 25,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/ci/legacy-jobs.yml",
+        "agentos/handoffs/BPC-JV-RECON-2026-08-24-SNAPSHOT-ONBOARD-A.md",
+        "agentos/workstreams/WS-BPC-JV-RECON.md",
+        "app/biocatalyst.py",
+        "contracts/biocatalyst/biocatalyst_jv_snapshot_manifest.v1.schema.json",
+        "contracts/biocatalyst/historical_event_generation.v1.schema.json",
+        "contracts/biocatalyst/historical_event_record.v1.schema.json",
+        "docs/superpowers/plans/2026-08-24-biocatalyst-snapshot-onboard-a.md",
+        "engine/biocatalyst/historical_events.py",
+        "engine/biocatalyst/jv_snapshot.py",
+        "research/BIOCATALYST_SNAPSHOT_ONBOARD_A_CORPUS_AND_CONTRACT_FREEZE_2026-08-24.md",
+        "scripts/biocatalyst_snapshot_onboard.py",
+        "site/biocatalyst.css",
+        "site/biocatalyst.html",
+        "site/biocatalyst.js",
+        "templates/biocatalyst.css",
+        "templates/biocatalyst.html.j2",
+        "templates/biocatalyst.js",
+        "tests/biocatalyst_hydration_harness.js",
+        "tests/test_biocatalyst_historical_event_api.py",
+        "tests/test_biocatalyst_historical_event_ui.py",
+        "tests/test_biocatalyst_historical_events.py",
+        "tests/test_biocatalyst_jv_snapshot.py",
+        "tests/test_biocatalyst_snapshot_onboard.py",
+        "tests/test_sector_intelligence_ownership.py"
       ],
       "protected_paths_touched": []
     },
     {
       "number": 6381,
-      "title": "HOLD-FOR-SOL \u00b7 ship-loop watcher quiescence after PARKED / external exit (#6379)",
+      "title": "Ship-loop watcher quiescence after PARKED / external exit (#6379)",
       "head_ref": "claude/ship-loop-quiescence-20260824",
-      "updated_at": "2026-08-25T01:18:28Z",
-      "is_draft": true,
-      "merge_state": "CLEAN",
-      "merge_state_raw": "CLEAN",
-      "files_count": 11,
+      "updated_at": "2026-08-26T13:17:59Z",
+      "is_draft": false,
+      "merge_state": "DIRTY",
+      "merge_state_raw": "DIRTY",
+      "files_count": 12,
       "files_truncated": false,
       "files_error": false,
       "files": [
+        ".claude/hooks/gh_quota_guard.py",
         ".claude/hooks/ship_loop_guard.py",
         ".claude/settings.json",
         ".cursor/rules/ship-loop-terminal-states.mdc",
@@ -109,368 +450,10 @@
       "protected_paths_touched": []
     },
     {
-      "number": 6380,
-      "title": "records(ccr): release ASD-A2 behind local collision preflight",
-      "head_ref": "sol/ccr-asd-a2-release-20260824",
-      "updated_at": "2026-08-24T21:59:22Z",
-      "is_draft": true,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 1,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-08-24-asd-a2-released.md"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 6376,
-      "title": "HOLD-FOR-SOL: E3-B AAPL canonical qa_exchange publication",
-      "head_ref": "fable/e3b-aapl-canonical-qa-exchange",
-      "updated_at": "2026-08-25T01:29:44Z",
-      "is_draft": true,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 13,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        ".github/ci/legacy-jobs.yml",
-        ".github/workflows/ci.yml",
-        "agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-24-e3b-r1.md",
-        "agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-24-e3b.md",
-        "agentos/workstreams/WS-EARNINGS-EVENT-INTELLIGENCE-COMPILER.md",
-        "app/company_intelligence.py",
-        "engine/company_intelligence/event_workspace.py",
-        "engine/company_intelligence/event_workspace_build.py",
-        "engine/company_intelligence/qa_exchange.py",
-        "tests/test_company_intelligence_api.py",
-        "tests/test_company_intelligence_event_workspace.py",
-        "tests/test_company_intelligence_qa_exchange.py",
-        "tests/test_refresh_event_workspaces.py"
-      ],
-      "protected_paths_touched": [
-        ".github/workflows/ci.yml"
-      ]
-    },
-    {
-      "number": 6371,
-      "title": "HOLD-FOR-SOL \u2014 Market OS B1A: AAPL security_state.v1 golden product vertical",
-      "head_ref": "claude/market-os-b1a-20260824",
-      "updated_at": "2026-08-25T01:22:03Z",
-      "is_draft": true,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 100,
-      "files_truncated": true,
-      "files_error": false,
-      "files": [
-        ".github/ci/legacy-jobs.yml",
-        "agentos/decisions/DEC-MARKET-OS-B1A-IDENTITY-GATE-OWNER-BACKED-CHAIN.md",
-        "agentos/handoffs/MARKET-OS-2026-08-24-b1a-delivered-held.md",
-        "agentos/workstreams/WS-MARKET-OS.md",
-        "contracts/market_os/security_state.v1.schema.json",
-        "engine/security_state.py",
-        "scripts/build_stock_library.py",
-        "scripts/build_ticker_pages.py",
-        "templates/ticker.html.j2",
-        "tests/fixtures/security_state/entry_unavailable_input.json",
-        "tests/fixtures/security_state/golden_aapl_expected_output.json",
-        "tests/fixtures/security_state/golden_aapl_input.json",
-        "tests/fixtures/security_state/identity_r1_superseded_input.json",
-        "tests/fixtures/security_state/identity_r34_multi_security_input.json",
-        "tests/fixtures/security_state/identity_r3_duplicate_issuer_row_input.json",
-        "tests/fixtures/security_state/identity_r6_migration_input.json",
-        "tests/fixtures/security_state/identity_r78_workspace_mismatch_input.json",
-        "tests/fixtures/security_state/identity_r9_divergent_input.json",
-        "tests/fixtures/security_state/no_current_event_input.json",
-        "tests/fixtures/security_state/source_corrected_input.json",
-        "tests/fixtures/security_state/source_stale_input.json",
-        "tests/test_security_state_contract.py",
-        "tests/test_security_state_view_model.py",
-        "verify_shots/b1a/dlg-compiler-failure-change-1440-dark.png",
-        "verify_shots/b1a/dlg-compiler-failure-evidence-1440-dark.png",
-        "verify_shots/b1a/dlg-corrected-change-1440-dark.png",
-        "verify_shots/b1a/dlg-corrected-evidence-1440-dark.png",
-        "verify_shots/b1a/dlg-degraded-mix-catalyst-1440-light.png",
-        "verify_shots/b1a/dlg-degraded-mix-change-1440-dark.png",
-        "verify_shots/b1a/dlg-degraded-mix-evidence-1440-dark.png",
-        "verify_shots/b1a/dlg-degraded-mix-evidence-390-dark.png",
-        "verify_shots/b1a/dlg-degraded-mix-risk-1440-dark.png",
-        "verify_shots/b1a/dlg-golden-catalyst-1440-dark.png",
-        "verify_shots/b1a/dlg-golden-catalyst-1440-light.png",
-        "verify_shots/b1a/dlg-golden-catalyst-390-dark.png",
-        "verify_shots/b1a/dlg-golden-change-1440-dark.png",
-        "verify_shots/b1a/dlg-golden-change-1440-light.png",
-        "verify_shots/b1a/dlg-golden-evidence-1440-dark-zh.png",
-        "verify_shots/b1a/dlg-golden-evidence-1440-dark.png",
-        "verify_shots/b1a/dlg-golden-evidence-1440-light.png",
-        "verify_shots/b1a/dlg-golden-evidence-390-dark.png",
-        "verify_shots/b1a/dlg-golden-evidence-820-light.png",
-        "verify_shots/b1a/dlg-golden-opportunity-1440-dark.png",
-        "verify_shots/b1a/dlg-golden-opportunity-1440-light.png",
-        "verify_shots/b1a/dlg-golden-personal-1440-dark.png",
-        "verify_shots/b1a/dlg-golden-personal-1440-light.png",
-        "verify_shots/b1a/dlg-golden-risk-1440-dark.png",
-        "verify_shots/b1a/dlg-golden-risk-1440-light.png",
-        "verify_shots/b1a/dlg-golden-state-1440-dark.png",
-        "verify_shots/b1a/dlg-golden-state-1440-light.png",
-        "verify_shots/b1a/dlg-missing-event-change-1440-dark.png",
-        "verify_shots/b1a/dlg-missing-event-evidence-1440-dark.png",
-        "verify_shots/b1a/dlg-stale-change-1440-dark.png",
-        "verify_shots/b1a/dlg-stale-change-1440-light.png",
-        "verify_shots/b1a/dlg-stale-evidence-1440-dark.png",
-        "verify_shots/b1a/dlg-stale-risk-1440-dark.png",
-        "verify_shots/b1a/hero-compiler-failure-1440-light.png",
-        "verify_shots/b1a/hero-degraded-mix-1440-dark.png",
-        "verify_shots/b1a/hero-golden-1440-dark-zh.png",
-        "verify_shots/b1a/hero-golden-1440-dark.png",
-        "verify_shots/b1a/hero-golden-1440-light.png",
-        "verify_shots/b1a/hero-golden-390-dark.png",
-        "verify_shots/b1a/hero-no-user-context-1440-dark.png",
-        "verify_shots/b1a/spine-compiler-failure-1440-dark-zh.png",
-        "verify_shots/b1a/spine-compiler-failure-1440-dark.png",
-        "verify_shots/b1a/spine-compiler-failure-1440-light.png",
-        "verify_shots/b1a/spine-compiler-failure-390-dark-zh.png",
-        "verify_shots/b1a/spine-compiler-failure-390-dark.png",
-        "verify_shots/b1a/spine-compiler-failure-390-light-zh.png",
-        "verify_shots/b1a/spine-compiler-failure-390-light.png",
-        "verify_shots/b1a/spine-compiler-failure-820-dark.png",
-        "verify_shots/b1a/spine-compiler-failure-820-light.png",
-        "verify_shots/b1a/spine-corrected-1440-dark-zh.png",
-        "verify_shots/b1a/spine-corrected-1440-dark.png",
-        "verify_shots/b1a/spine-corrected-1440-light-zh.png",
-        "verify_shots/b1a/spine-corrected-1440-light.png",
-        "verify_shots/b1a/spine-corrected-390-dark-zh.png",
-        "verify_shots/b1a/spine-corrected-390-dark.png",
-        "verify_shots/b1a/spine-corrected-390-light.png",
-        "verify_shots/b1a/spine-corrected-820-dark.png",
-        "verify_shots/b1a/spine-corrected-820-light.png",
-        "verify_shots/b1a/spine-degraded-mix-1440-dark-zh.png",
-        "verify_shots/b1a/spine-degraded-mix-1440-dark.png",
-        "verify_shots/b1a/spine-degraded-mix-1440-light.png",
-        "verify_shots/b1a/spine-degraded-mix-390-dark-zh.png",
-        "verify_shots/b1a/spine-degraded-mix-390-dark.png",
-        "verify_shots/b1a/spine-degraded-mix-390-light.png",
-        "verify_shots/b1a/spine-degraded-mix-820-dark.png",
-        "verify_shots/b1a/spine-degraded-mix-820-light-zh.png",
-        "verify_shots/b1a/spine-degraded-mix-820-light.png",
-        "verify_shots/b1a/spine-golden-1440-dark-zh.png",
-        "verify_shots/b1a/spine-golden-1440-dark.png",
-        "verify_shots/b1a/spine-golden-1440-light-zh.png",
-        "verify_shots/b1a/spine-golden-1440-light.png",
-        "verify_shots/b1a/spine-golden-390-dark-zh.png",
-        "verify_shots/b1a/spine-golden-390-dark.png",
-        "verify_shots/b1a/spine-golden-390-light.png",
-        "verify_shots/b1a/spine-golden-820-dark-zh.png",
-        "verify_shots/b1a/spine-golden-820-dark.png",
-        "verify_shots/b1a/spine-golden-820-light.png"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 6367,
-      "title": "Agent OS: private-repository compute readiness blocker packet",
-      "head_ref": "codex/private-repo-compute-readiness-packet-20260824",
-      "updated_at": "2026-08-25T00:48:37Z",
-      "is_draft": true,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 3,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "agentos/discoveries/DSC-PRIVATE-CI-PACK-OFFLOAD-DOES-NOT-CLOSE-HOSTED-BUDGET.md",
-        "agentos/handoffs/CI-MERGE-CONTROL-PLANE-2026-08-24-private-repo-compute-readiness.md",
-        "agentos/workstreams/WS-RUNNER-FLEET-RESILIENCE.md"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 6337,
-      "title": "HOLD-FOR-SOL \u2014 XPV2-SC-R3B.2 final surgical closure: frozen successor mastermind-xpv2-sector-r3b-2 (in_review; do not merge)",
-      "head_ref": "claude/xpv2-sc-r3b2-build",
-      "updated_at": "2026-08-25T01:29:15Z",
-      "is_draft": true,
-      "merge_state": "DIRTY",
-      "merge_state_raw": "DIRTY",
-      "files_count": 100,
-      "files_truncated": true,
-      "files_error": false,
-      "files": [
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/B2_01_LABEL_MAP_MUTATION.md",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/B2_12_THIN_RELIABILITY_MUTATION.md",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/B2_13_ARIA_RECEIPT_MUTATION.md",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/DECODED_EMOJI_MUTATION.md",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/DESIGN_SYSTEM_SPEC.md",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/INVENTORY_SOURCES.md",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/MUTATION_RESULTS.md",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/README_BUILD.md",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/aria_id_audit.py",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/aria_receipt_audit.json",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/aria_receipt_audit.py",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/build_reference.py",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/capture_prefinal_emoji_evidence.py",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/contrast_audit.py",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/decoded_emoji_audit.json",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/decoded_emoji_audit.py",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/expected_inventory.json",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fig_naming_audit.json",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fig_naming_audit.py",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fixture_supplement/PROVENANCE_SUPPLEMENT.md",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fixture_supplement/basketdata/etf_pulse.json",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fixture_supplement/basketdata/vol_sentiment.json",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fixture_supplement/fragments/sc_flows.html",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fixture_supplement/marketdata/nasdaq_internals.json",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fixture_supplement/marketdata/sp500_heatmap.json",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fixture_supplement/receipts_supplement.json",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/fixture_supplement/sector_cycles_data.js",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/inventory_check.py",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/label_map_audit.json",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/label_map_audit.py",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/01-overview-actionboard-strength-1440-dark-en.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/01-overview-actionboard-strength-1440-dark-zh.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/01-overview-actionboard-strength-390-dark-zh.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/08-map-rank-header-1440-dark-en.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/08-map-rank-header-1440-dark-zh.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/08-map-rank-header-390-dark-en.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/08-map-rank-header-390-dark-zh.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/09-moving-recent-wrong-1440-dark-en.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/09-moving-recent-wrong-1440-dark-zh.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/09-moving-recent-wrong-1440-light-en.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/09-moving-recent-wrong-1440-light-zh.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/B209_INK_RECEIPT.txt",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_a2/contrast_audit_a2.json",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b/CONTRAST_TABLE.md",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b/LANG_PROBE.txt",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b/aria_id_audit.json",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b/contrast_audit.json",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b/zoom_sweep.json",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/05-confluence-conviction-320-dark-en.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/05-confluence-conviction-320-dark-zh.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/05-confluence-conviction-390-dark-en.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/05-confluence-conviction-390-dark-zh.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/05-overview-strength-1440-dark-en-DESKTOP-UNCHANGED.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/05-overview-strength-320-dark-zh.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/05-overview-strength-390-dark-en.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/05-overview-strength-390-dark-zh.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/06-treemap-320-dark-en.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/06-treemap-390-dark-en.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/06-treemap-390-dark-zh.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/07-heatmap-band-320-dark-zh.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/07-heatmap-band-390-dark-en.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/07-heatmap-band-820-dark-en-DESKTOP-UNCHANGED.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/10-ledge-desktop-ramp-1440-dark-en.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/10-ledge-stacked-no-ramp-320-dark-zh.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/10-ledge-stacked-no-ramp-390-dark-en.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/11-receipt-flow-320-dark-en.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/11-receipt-flow-320-dark-zh.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/11-receipt-flow-320-zoom200-dark-zh.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/11-receipt-flow-390-zoom200-dark-en.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/11-receipt-flow-390-zoom200-dark-zh.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_b2/B2_LANE_B_RECEIPT.txt",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_f2/F2_LANE_F_RECEIPT.txt",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_f2/b2-05_overview-actionrow_1440_en.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_f2/b2-05_overview-actionrow_1440_zh.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_f2/b2-05_overview-actionrow_320_en.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_f2/b2-05_overview-actionrow_320_zh.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_f2/b2-05_overview-actionrow_390_en.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_f2/b2-05_overview-actionrow_390_zh.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_f2/b2-15_money-trackrecord_1440_en.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_f2/b2-15_money-trackrecord_1440_zh.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_f2/b2-15_money-trackrecord_390_en.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lane_crops_f2/b2-15_money-trackrecord_390_zh.png",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/lang_probe.py",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/mobile_geometry_audit.json",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/mobile_geometry_audit.py",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/mutation_suite.py",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/runtime_shim.js",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/shell.html",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/shell_specimen.html",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/thin_reliability_audit.json",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/thin_reliability_audit.py",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/treemap_labels_audit.json",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/treemap_labels_audit.py",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/verify_reference.py",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/confluence.html",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/explore.html",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/map.html",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/money.html",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/moving.html",
-        "mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-2/build/views/overview.html"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 6335,
-      "title": "[DRAFT][HOLD-FOR-SOL] A1B: atomic Portfolio Fast Start Import",
-      "head_ref": "warp/warp-71ca86ff4f1545089aa1fc6fd9eda4e0",
-      "updated_at": "2026-08-24T12:47:25Z",
-      "is_draft": true,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 22,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        ".github/ci/legacy-jobs.yml",
-        "agentos/handoffs/MARKET-OS-2026-08-23-a1b-implementation.md",
-        "agentos/handoffs/MARKET-OS-2026-08-24-a1b-sol-review-repair.md",
-        "agentos/workstreams/WS-MARKET-OS.md",
-        "app/deploy/Caddyfile",
-        "config/site_access.yml",
-        "scripts/build_site.py",
-        "site/portfolio.js",
-        "site/portfolio_import.css",
-        "site/portfolio_import.js",
-        "site/portfolio_import_ui.js",
-        "site/watchlist.html",
-        "site/watchstore.js",
-        "templates/portfolio.js",
-        "templates/portfolio_import.css",
-        "templates/portfolio_import.js",
-        "templates/portfolio_import_ui.js",
-        "templates/watchlist.html.j2",
-        "templates/watchstore.js",
-        "tests/test_caddy_hub_boundary.py",
-        "tests/test_portfolio_import_a1b_js.py",
-        "tests/test_unsubscribe_page.py"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 6297,
-      "title": "[DRAFT][HOLD-FOR-SOL] MAS-126 CF1: secret-free provider capacity v1",
-      "head_ref": "sol/executive-capacity-cf1-20260823",
-      "updated_at": "2026-08-23T07:58:50Z",
-      "is_draft": true,
-      "merge_state": "CLEAN",
-      "merge_state_raw": "CLEAN",
-      "files_count": 10,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        ".github/ci/legacy-jobs.yml",
-        "agentos/handoffs/EXECUTIVE-CAPACITY-FABRIC-2026-08-23.md",
-        "agentos/workstreams/WS-EXECUTIVE-CAPACITY-FABRIC.md",
-        "engine/codex_provider.py",
-        "engine/metabolism/budget_gate.py",
-        "engine/neuralweb/key_pool.py",
-        "engine/provider_capacity.py",
-        "engine/provider_health.py",
-        "scripts/build_provider_capacity.py",
-        "tests/test_provider_capacity.py"
-      ],
-      "protected_paths_touched": [
-        "engine/neuralweb/key_pool.py"
-      ]
-    },
-    {
       "number": 6296,
       "title": "[HOLD-FOR-SOL] W-LIQ.1 causal global liquidity state producer",
       "head_ref": "claude/w-liq1-global-liquidity",
-      "updated_at": "2026-08-23T09:32:39Z",
+      "updated_at": "2026-08-27T00:48:59Z",
       "is_draft": true,
       "merge_state": "CLEAN",
       "merge_state_raw": "CLEAN",
@@ -497,58 +480,10 @@
       "protected_paths_touched": []
     },
     {
-      "number": 6286,
-      "title": "HOLD-FOR-SOL \u00b7 ci: contain ci-plan working tree (W3)",
-      "head_ref": "codex/ci-plan-working-tree-containment-w3-20260822",
-      "updated_at": "2026-08-24T11:18:47Z",
-      "is_draft": true,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 6,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        ".github/workflows/ci.yml",
-        "agentos/handoffs/CI-PLAN-WORKING-TREE-CONTAINMENT-2026-08-22-codex-implementation.md",
-        "scripts/ci_scope_dependencies.py",
-        "scripts/run_ci_pack.py",
-        "tests/test_ci_pack.py",
-        "tests/test_ci_plan_workflow.py"
-      ],
-      "protected_paths_touched": [
-        ".github/workflows/ci.yml"
-      ]
-    },
-    {
-      "number": 6275,
-      "title": "research(prophet): freeze MAS-122 Cell F D5 evidence contract",
-      "head_ref": "chatgpt/mas-122-cell-f-d5-contract-20260822",
-      "updated_at": "2026-08-23T07:25:35Z",
-      "is_draft": false,
-      "merge_state": "CLEAN",
-      "merge_state_raw": "CLEAN",
-      "files_count": 10,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "agentos/decisions/DEC-PROPHET-D5-PRESERVES-CONTEXT-VECTOR-AND-SEPARATES-EVIDENCE-AUTHORITY.md",
-        "agentos/discoveries/DSC-PROPHET-D5-BLOCKED-ON-CANONICAL-CANDIDATE-EPISODE-B1.md",
-        "agentos/handoffs/PROPHET-US-V4-D5-CELL-F-2026-08-22.md",
-        "agentos/workstreams/WS-PROPHET-US-V4-RECOVERY.md",
-        "research/prophet_v4/CONTRACT_AND_OWNER_MAP.md",
-        "research/prophet_v4/D1_D5_READINESS_RULING.md",
-        "research/prophet_v4/WAVE_GRAPH_AND_MERGE_ORDER.md",
-        "research/prophet_v4/flagship_cells/CELL_F_D5_ADVERSARIAL_REVIEW_AMENDMENTS_2026-08-22.md",
-        "research/prophet_v4/flagship_cells/CELL_F_D5_CANDIDATE_REFERENCE_COMPOSITIONS_AND_E1_BASELINE_2026-08-23.md",
-        "research/prophet_v4/flagship_cells/CELL_F_D5_EVIDENCE_TRANSLATION_AND_TRAJECTORY_CONTRACT_2026-08-22.md"
-      ],
-      "protected_paths_touched": []
-    },
-    {
       "number": 6264,
       "title": "research(prophet): harden flagship intelligence fan-out cells",
       "head_ref": "sol/prophet-flagship-fanout-hardening-20260822",
-      "updated_at": "2026-08-23T01:40:14Z",
+      "updated_at": "2026-08-26T15:27:08Z",
       "is_draft": true,
       "merge_state": "CLEAN",
       "merge_state_raw": "CLEAN",
@@ -591,115 +526,23 @@
       "protected_paths_touched": []
     },
     {
-      "number": 6208,
-      "title": "records(agentos): reconcile MAS-48 after S0 carrier falsifier",
-      "head_ref": "chatgpt1/mas-48-s0-r1-agentos-reconcile",
-      "updated_at": "2026-08-22T03:10:44Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 2,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "agentos/decisions/DEC-MAS48-CEO-INGRESS-V1-ACCEPTED-ARCHITECTURE.md",
-        "agentos/handoffs/AGENT-OS-2026-08-21-mas48-pr-a-r0-closeout-b1.md"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 6207,
-      "title": "HOLD-FOR-SOL \u00b7 chairman(cn-limit): null TuShare license-document gates; bounded canary path; active-surface CI guard",
-      "head_ref": "sol/chairman-tushare-compliance-override-2026-08-21",
-      "updated_at": "2026-08-22T19:41:39Z",
-      "is_draft": true,
-      "merge_state": "CLEAN",
-      "merge_state_raw": "CLEAN",
-      "files_count": 37,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        ".github/ci/legacy-jobs.yml",
-        ".github/workflows/tushare-spine-backfill.yml",
-        "agentos/decisions/DEC-CN-NO-SUPPLY-CHAIN-SEAT-PURCHASE.md",
-        "agentos/decisions/DEC-CNLI-EXACT-PLANE-REQUIRES-WRITTEN-COMMERCIAL-GRANT.md",
-        "agentos/decisions/DEC-CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE.md",
-        "agentos/discoveries/DSC-TUSHARE-TOKEN-IS-NOT-A-COMMERCIAL-GRANT.md",
-        "agentos/handoffs/CN-LIMIT-ALPHA-2026-08-21-CHAIRMAN-TUSHARE-OVERRIDE.md",
-        "agentos/handoffs/CN-LIMIT-ALPHA-2026-08-21-OVERRIDE-IMPLEMENTATION.md",
-        "agentos/handoffs/TUSHARE-ENTITLEMENT-2026-08-19.md",
-        "agentos/workstreams/WS-CHINA-ALPHA-INTELLIGENCE.md",
-        "agentos/workstreams/WS-CN-COMMERCIAL-SUPPLY-DILIGENCE.md",
-        "agentos/workstreams/WS-CN-LIMIT-ALPHA.md",
-        "agentos/workstreams/WS-TUSHARE-ENTITLEMENT.md",
-        "collectors/china_tushare_spine.py",
-        "contracts/cn_tushare_a_share_spine_manifest.v1.schema.json",
-        "research/CHINA_ALPHA_INTELLIGENCE_MASTERPLAN.md",
-        "research/CN_COMMERCIAL_SUPPLY_CHAIN_DILIGENCE_2026_08_19.md",
-        "research/CN_LIMIT_EXACT_PLANE_LEDGER_PREREG_REQUIREMENTS_2026-08-11.md",
-        "research/CN_TUSHARE_FULL_A_SPINE_CONTRACT_2026-08-08.md",
-        "research/MASTERMIND_DATA_SOURCE_CATALOG.md",
-        "research/TUSHARE_P0_ENTITLEMENT_RIGHTS_MATRIX_2026-08-19.md",
-        "research/china_alpha_intelligence/RIGHTS_REGISTRY.md",
-        "research/china_alpha_intelligence/commissions/RIGHTS-0_source_entitlement_audit.md",
-        "research/cn_limit/CHAIRMAN_TUSHARE_COMPLIANCE_OVERRIDE_2026-08-21.md",
-        "research/cn_limit/CN_LIMIT_R6_ARTIFACT_MANIFEST_2026-08-19.json",
-        "research/cn_limit/CN_LIMIT_R6_FABLE_EXECUTION_COMMAND_PACKET_2026-08-19.md",
-        "research/cn_limit/CN_LIMIT_R6_FINAL_ARCHITECTURE_FREEZE_2026-08-19.md",
-        "research/cn_limit/CN_LIMIT_R6_FINAL_ARCHITECTURE_REGISTRY_V1_2026-08-19.json",
-        "research/cn_limit/FABLE_START_HERE_CHAIRMAN_OVERRIDE.md",
-        "research/cn_limit/IMPLEMENTATION_STATUS_CHAIRMAN_TUSHARE_OVERRIDE.md",
-        "research/cn_limit/OVERRIDE_BRANCH_NOTES.md",
-        "research/cn_limit/README_CHAIRMAN_OVERRIDE_BRANCH.md",
-        "research/cn_limit/TUSHARE_PRIVATE_COMPLIANCE_CODING_BOUNDARY.md",
-        "research/cn_limit/TUSHARE_VENDOR_LETTER_PACKET_2026-08-21.md",
-        "scripts/check_tushare_compliance_resurrection.py",
-        "tests/test_china_tushare_spine.py",
-        "tests/test_tushare_compliance_anti_resurrection.py"
-      ],
-      "protected_paths_touched": [
-        ".github/workflows/tushare-spine-backfill.yml",
-        "scripts/check_tushare_compliance_resurrection.py"
-      ]
-    },
-    {
       "number": 6182,
       "title": "feat(agentos): deterministic zero-network Linear portfolio plan compiler (MAS-65)",
       "head_ref": "chatgpt1/mas-65-linear-portfolio-plan-p0",
-      "updated_at": "2026-08-25T01:30:48Z",
+      "updated_at": "2026-08-26T02:26:10Z",
       "is_draft": true,
       "merge_state": "CLEAN",
       "merge_state_raw": "CLEAN",
-      "files_count": 8,
+      "files_count": 6,
       "files_truncated": false,
       "files_error": false,
       "files": [
-        "NO_SUCH_PATH",
-        "research/linear_portfolio_p0/linear_snapshot_2026-08-21.json",
-        "research/linear_portfolio_p0/real_main_drift_receipt_2026-08-22.json",
+        "research/linear_portfolio_p0/linear_snapshot_2026-08-25.json",
         "scripts/linear_portfolio_plan.py",
         "tests/agentos_compile_legacy_cases.py",
         "tests/linear_portfolio_plan_cases.py",
         "tests/linear_portfolio_plan_live_cases.py",
         "tests/test_agentos_compile.py"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 6126,
-      "title": "records(intraday-flow): reconcile PR-4 merge to current-session production gate",
-      "head_ref": "chatgpt1/mas-86-intraday-pr4-merge-reconcile",
-      "updated_at": "2026-08-21T18:14:21Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 3,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "agentos/decisions/DEC-INTRADAY-FLOW-PR4-MERGED-PRODUCTION-ACCEPTANCE-OWED.md",
-        "agentos/handoffs/INTRADAY-FLOW-P0-RECOVERY-2026-08-20-pr4-merge-reconciliation.md",
-        "agentos/workstreams/WS-INTRADAY-FLOW-P0-RECOVERY.md"
       ],
       "protected_paths_touched": []
     },
@@ -815,63 +658,64 @@
   ],
   "collisions": [
     {
-      "pr_a": 6371,
-      "pr_b": 6335,
+      "pr_a": 6503,
+      "pr_b": 6499,
       "shared_files": [
-        ".github/ci/legacy-jobs.yml",
-        "agentos/workstreams/WS-MARKET-OS.md"
+        ".github/workflows/daily.yml",
+        "config/dag.yml",
+        "data/experiments/registry_seed.json"
       ],
-      "shared_count": 2,
-      "any_protected": false
+      "shared_count": 3,
+      "any_protected": true
     },
     {
-      "pr_a": 6376,
-      "pr_b": 6371,
+      "pr_a": 6507,
+      "pr_b": 6503,
       "shared_files": [
-        ".github/ci/legacy-jobs.yml"
-      ],
-      "shared_count": 1,
-      "any_protected": false
-    },
-    {
-      "pr_a": 6376,
-      "pr_b": 6335,
-      "shared_files": [
-        ".github/ci/legacy-jobs.yml"
-      ],
-      "shared_count": 1,
-      "any_protected": false
-    },
-    {
-      "pr_a": 6376,
-      "pr_b": 6297,
-      "shared_files": [
-        ".github/ci/legacy-jobs.yml"
-      ],
-      "shared_count": 1,
-      "any_protected": false
-    },
-    {
-      "pr_a": 6376,
-      "pr_b": 6296,
-      "shared_files": [
-        ".github/ci/legacy-jobs.yml"
-      ],
-      "shared_count": 1,
-      "any_protected": false
-    },
-    {
-      "pr_a": 6376,
-      "pr_b": 6286,
-      "shared_files": [
-        ".github/workflows/ci.yml"
+        "data/experiments/registry_seed.json"
       ],
       "shared_count": 1,
       "any_protected": true
     },
     {
-      "pr_a": 6376,
-      "pr_b": 6207,
+      "pr_a": 6507,
+      "pr_b": 6499,
+      "shared_files": [
+        "data/experiments/registry_seed.json"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 6506,
+      "pr_b": 6499,
+      "shared_files": [
+        "engine/shadow_book.py"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6505,
+      "pr_b": 6426,
+      "shared_files": [
+        "agentos/workstreams/WS-CI-MERGE-CONTROL-PLANE.md"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6505,
+      "pr_b": 6381,
+      "shared_files": [
+        "agentos/workstreams/WS-CI-MERGE-CONTROL-PLANE.md"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 6497,
+      "pr_b": 6389,
       "shared_files": [
         ".github/ci/legacy-jobs.yml"
       ],
@@ -879,16 +723,7 @@
       "any_protected": false
     },
     {
-      "pr_a": 6371,
-      "pr_b": 6297,
-      "shared_files": [
-        ".github/ci/legacy-jobs.yml"
-      ],
-      "shared_count": 1,
-      "any_protected": false
-    },
-    {
-      "pr_a": 6371,
+      "pr_a": 6497,
       "pr_b": 6296,
       "shared_files": [
         ".github/ci/legacy-jobs.yml"
@@ -897,62 +732,26 @@
       "any_protected": false
     },
     {
-      "pr_a": 6371,
-      "pr_b": 6207,
+      "pr_a": 6426,
+      "pr_b": 6423,
       "shared_files": [
-        ".github/ci/legacy-jobs.yml"
+        "tests/test_merge_on_green_semantic.py"
       ],
       "shared_count": 1,
       "any_protected": false
     },
     {
-      "pr_a": 6335,
-      "pr_b": 6297,
+      "pr_a": 6426,
+      "pr_b": 6381,
       "shared_files": [
-        ".github/ci/legacy-jobs.yml"
+        "agentos/workstreams/WS-CI-MERGE-CONTROL-PLANE.md"
       ],
       "shared_count": 1,
       "any_protected": false
     },
     {
-      "pr_a": 6335,
+      "pr_a": 6389,
       "pr_b": 6296,
-      "shared_files": [
-        ".github/ci/legacy-jobs.yml"
-      ],
-      "shared_count": 1,
-      "any_protected": false
-    },
-    {
-      "pr_a": 6335,
-      "pr_b": 6207,
-      "shared_files": [
-        ".github/ci/legacy-jobs.yml"
-      ],
-      "shared_count": 1,
-      "any_protected": false
-    },
-    {
-      "pr_a": 6297,
-      "pr_b": 6296,
-      "shared_files": [
-        ".github/ci/legacy-jobs.yml"
-      ],
-      "shared_count": 1,
-      "any_protected": false
-    },
-    {
-      "pr_a": 6297,
-      "pr_b": 6207,
-      "shared_files": [
-        ".github/ci/legacy-jobs.yml"
-      ],
-      "shared_count": 1,
-      "any_protected": false
-    },
-    {
-      "pr_a": 6296,
-      "pr_b": 6207,
       "shared_files": [
         ".github/ci/legacy-jobs.yml"
       ],
@@ -962,14 +761,514 @@
   ],
   "recent_merged": [
     {
+      "number": 6502,
+      "title": "cn-limit: name-history source authority (Sol RETURN-GATE 10B)",
+      "merged_at": "2026-08-27T04:25:20Z"
+    },
+    {
+      "number": 6501,
+      "title": "fix(polygon-gex): a zero-capture must ALARM, not just file a receipt",
+      "merged_at": "2026-08-27T04:06:09Z"
+    },
+    {
+      "number": 6500,
+      "title": "fix(aibrief): the worker that writes the brief now writes its \u4e2d\u6587 too",
+      "merged_at": "2026-08-27T04:07:52Z"
+    },
+    {
+      "number": 6498,
+      "title": "records(alpha): commission K2-C and K3-D bounded waves",
+      "merged_at": "2026-08-27T04:11:26Z"
+    },
+    {
+      "number": 6496,
+      "title": "ci: make main-owned trusted executor call-capable (P3B-A #6351)",
+      "merged_at": "2026-08-27T03:42:13Z"
+    },
+    {
+      "number": 6494,
+      "title": "cn-limit: treat a non-positive stk_limit price as absent, fail-closed",
+      "merged_at": "2026-08-27T03:14:57Z"
+    },
+    {
+      "number": 6493,
+      "title": "perf(admin-analytics): stop every panel paying a 15.9M-row nested loop; fix the Visitors 524",
+      "merged_at": "2026-08-27T01:40:38Z"
+    },
+    {
+      "number": 6492,
+      "title": "records(e3c): freeze GOOGL Q2 source-completeness selection",
+      "merged_at": "2026-08-27T01:27:55Z"
+    },
+    {
+      "number": 6491,
+      "title": "records(alpha): close K3-E merge and reconcile next actions",
+      "merged_at": "2026-08-27T01:22:59Z"
+    },
+    {
+      "number": 6490,
+      "title": "registry: 2026-08-26 experiments audit \u2014 all 72 ready results tested and adjudicated",
+      "merged_at": "2026-08-27T01:26:31Z"
+    },
+    {
+      "number": 6489,
+      "title": "records(prophet-live): backfill executed \u2014 correct the do_not_redo that was wrong",
+      "merged_at": "2026-08-27T01:18:22Z"
+    },
+    {
+      "number": 6488,
+      "title": "fix(aibrief): route the AI Daily Brief through the provider ladder (Codex \u2192 Claude \u2192 DeepSeek)",
+      "merged_at": "2026-08-27T01:56:23Z"
+    },
+    {
+      "number": 6487,
+      "title": "CI P3A-R: freeze main-owned trusted executor control (#6351)",
+      "merged_at": "2026-08-27T01:41:37Z"
+    },
+    {
+      "number": 6486,
+      "title": "cn-limit: historical PIT is source-union, not current-snapshot intersection",
+      "merged_at": "2026-08-27T01:36:12Z"
+    },
+    {
+      "number": 6484,
+      "title": "feat(prophet-live): recover and absorb the 598 events the outage never published",
+      "merged_at": "2026-08-27T00:45:50Z"
+    },
+    {
+      "number": 6483,
+      "title": "records(prophet-live): US Prophet Live is PROVEN_LIVE \u2014 incident closeout",
+      "merged_at": "2026-08-26T15:34:33Z"
+    },
+    {
+      "number": 6482,
+      "title": "fix(prophet-live): stamp an owner on the artifact the dead-man grades",
+      "merged_at": "2026-08-26T15:14:35Z"
+    },
+    {
+      "number": 6481,
+      "title": "ci: add inert main-defined trusted executor (P3A #6351)",
+      "merged_at": "2026-08-26T18:05:30Z"
+    },
+    {
+      "number": 6480,
+      "title": "records(defense): D6-B1 FMS vertical closing handoff + WS reconcile",
+      "merged_at": "2026-08-26T16:10:18Z"
+    },
+    {
+      "number": 6479,
+      "title": "fix(ci): compare canary receipts without repo checkout",
+      "merged_at": "2026-08-26T11:42:08Z"
+    },
+    {
+      "number": 6478,
+      "title": "fms(\u00a711c): State staged replay in CI + country precedence fall-through (D6-B1 production amendments)",
+      "merged_at": "2026-08-26T10:58:50Z"
+    },
+    {
+      "number": 6477,
+      "title": "records(agentos): mint the workflow-definition pinning landmine",
+      "merged_at": "2026-08-26T09:52:46Z"
+    },
+    {
+      "number": 6476,
+      "title": "cn-limit: zero-date sentinel fix + pit_universe witness gate (DEP-EXACT)",
+      "merged_at": "2026-08-26T09:36:05Z"
+    },
+    {
+      "number": 6475,
+      "title": "agentos: next_date's three producers, the ingest script-mode landmine, and the cross-vendor census gap",
+      "merged_at": "2026-08-26T09:22:17Z"
+    },
+    {
+      "number": 6474,
+      "title": "agentos: record why a cold Terminal chart loaded the wrong timeframe",
+      "merged_at": "2026-08-26T09:55:20Z"
+    },
+    {
+      "number": 6473,
+      "title": "feat(deepvue): W2-A workspace_layout.v1 \u2014 contract freeze, validator, golden migration vectors",
+      "merged_at": "2026-08-26T11:56:50Z"
+    },
+    {
+      "number": 6472,
+      "title": "agentos: Market OS B1A PROVEN_LIVE from the natural post-merge nightly",
+      "merged_at": "2026-08-26T09:27:10Z"
+    },
+    {
+      "number": 6471,
+      "title": "records(k3e): close out both mutation-gate repairs ahead of cursor wrap",
+      "merged_at": "2026-08-26T10:01:54Z"
+    },
+    {
+      "number": 6470,
+      "title": "fix(prophet-live): close the force-majeure gaps #6464 left, and heal main",
+      "merged_at": "2026-08-26T10:58:01Z"
+    },
+    {
+      "number": 6469,
+      "title": "records(k3e): independent SRC-A1 C1\u2192C2 audit concurrence + cryptographic run binding",
+      "merged_at": "2026-08-26T09:10:38Z"
+    },
+    {
+      "number": 6468,
+      "title": "fix(geo-enrich): classify a rejected Management API credential; stop the false green",
+      "merged_at": "2026-08-26T09:55:17Z"
+    },
+    {
+      "number": 6467,
+      "title": "ci: derive canary base from exact merge tree",
+      "merged_at": "2026-08-26T10:13:30Z"
+    },
+    {
+      "number": 6466,
+      "title": "fix(ci): stop keying daily-engine retry identity off a templated run-name",
+      "merged_at": "2026-08-26T08:56:53Z"
+    },
+    {
+      "number": 6465,
+      "title": "records(agentos): canonize Personal-Pro native-write P0",
+      "merged_at": "2026-08-26T16:10:06Z"
+    },
+    {
+      "number": 6464,
+      "title": "fix(prophet-live): make a non-publishing US live lane impossible to hide",
+      "merged_at": "2026-08-26T09:36:58Z"
+    },
+    {
+      "number": 6463,
+      "title": "Fix Hunan Gold suspension placeholders",
+      "merged_at": "2026-08-26T08:27:16Z"
+    },
+    {
+      "number": 6462,
+      "title": "docs(agentos): close E3-B as PROVEN_LIVE after authenticated PASS",
+      "merged_at": "2026-08-27T00:04:52Z"
+    },
+    {
+      "number": 6461,
+      "title": "fix(revisions): capture the provider's fiscal period end and stop reading a rollover as a revision",
+      "merged_at": "2026-08-26T08:43:06Z"
+    },
+    {
+      "number": 6460,
+      "title": "records(agentos): close MAS-112 Keychain helper merge gate",
+      "merged_at": "2026-08-26T08:17:58Z"
+    },
+    {
+      "number": 6458,
+      "title": "records(k3e): SRC-A1P audit outcome \u2014 FAIL, no promotion, plus corrected run attribution",
+      "merged_at": "2026-08-26T08:21:54Z"
+    },
+    {
+      "number": 6456,
+      "title": "Sol V3.8 freeze \u2014 restore Action, separate Leadership",
+      "merged_at": "2026-08-26T20:02:05Z"
+    },
+    {
+      "number": 6455,
+      "title": "cn-limit: freeze the mainland session epoch at 1992-01-01 (DEP-EXACT)",
+      "merged_at": "2026-08-26T08:32:54Z"
+    },
+    {
+      "number": 6454,
+      "title": "d6b1: FR denominator shares the population-window predicate (acquire-lane heal)",
+      "merged_at": "2026-08-26T09:08:56Z"
+    },
+    {
+      "number": 6452,
+      "title": "fix(revisions): type an empty provider consensus instead of recording it as 0",
+      "merged_at": "2026-08-26T07:29:32Z"
+    },
+    {
+      "number": 6451,
+      "title": "fix(ci): close E3-B exclusive import ownership",
+      "merged_at": "2026-08-26T07:26:39Z"
+    },
+    {
+      "number": 6450,
+      "title": "records(agentos): W1-C truth repair \u2014 WS-DEEPVUE objective no longer says W1-C unstarted",
+      "merged_at": "2026-08-26T07:16:36Z"
+    },
+    {
+      "number": 6449,
+      "title": "test(ci): make P0R execution-profile refusal host-independent",
+      "merged_at": "2026-08-26T06:51:27Z"
+    },
+    {
+      "number": 6448,
+      "title": "records(cn-limit): SZSE calendar coverage gate \u2014 bounded ruling request for Sol",
+      "merged_at": "2026-08-26T05:44:45Z"
+    },
+    {
+      "number": 6447,
+      "title": "D6-B1: coverage-aware FMS vertical \u2014 official-union population, government_fms_case.v1, ninth fms mode",
+      "merged_at": "2026-08-26T06:35:53Z"
+    },
+    {
+      "number": 6446,
+      "title": "fix(cn-limit): write each trade_cal unit to its own year partition",
+      "merged_at": "2026-08-26T05:03:31Z"
+    },
+    {
+      "number": 6445,
+      "title": "records(v37): HK V3.7 PROVEN_LIVE \u2014 Canada\u2192HK regional rollout complete",
+      "merged_at": "2026-08-26T04:39:40Z"
+    },
+    {
+      "number": 6444,
+      "title": "agentos: A1B merged + deployed \u2014 Sol PASS, anonymous vertical proven, authenticated acceptance gated on PRODUCTION_WRITE_AUTH_REQUIRED",
+      "merged_at": "2026-08-26T16:09:55Z"
+    },
+    {
+      "number": 6443,
+      "title": "HOLD-FOR-SOL: record E3-B built-not-proven production gate",
+      "merged_at": "2026-08-26T06:50:37Z"
+    },
+    {
+      "number": 6442,
+      "title": "FIF-3A4R Sol acceptance records after PR #6382 landing",
+      "merged_at": "2026-08-26T03:17:22Z"
+    },
+    {
+      "number": 6440,
+      "title": "records(exec): close MAS-112 verifier repair and C1 code gap",
+      "merged_at": "2026-08-26T02:28:42Z"
+    },
+    {
+      "number": 6439,
+      "title": "AD-1T1 PROVEN_LIVE: production-proof records (workstream + handoff)",
+      "merged_at": "2026-08-26T02:22:42Z"
+    },
+    {
+      "number": 6438,
+      "title": "fix(cn-limit): sweep remaining fatal canonical_identity sites \u2014 classify vendor legacy codes across fund_basic/bse_mapping",
+      "merged_at": "2026-08-26T02:09:29Z"
+    },
+    {
+      "number": 6436,
+      "title": "records(deepvue): W1-C durable closeout \u2014 receipt, workstream, handoff, discovery",
+      "merged_at": "2026-08-26T02:20:36Z"
+    },
+    {
+      "number": 6435,
+      "title": "records(agentos): close CF1 and release CF2-F",
+      "merged_at": "2026-08-26T01:55:20Z"
+    },
+    {
+      "number": 6433,
+      "title": "feat(hk): HK Stock Dashboard V3.7 follower composer",
+      "merged_at": "2026-08-26T02:23:53Z"
+    },
+    {
+      "number": 6431,
+      "title": "fix(cn-limit): classify non-canonical stock_basic vendor codes \u2014 three-way split instead of fatal reference crash",
+      "merged_at": "2026-08-26T01:22:15Z"
+    },
+    {
+      "number": 6430,
+      "title": "fix(brain): context-receipt dedupe must key on request_id, not revision alone (W1-C)",
+      "merged_at": "2026-08-26T01:11:19Z"
+    },
+    {
+      "number": 6429,
+      "title": "records(v37): Canada V3.7 PROVEN_LIVE + supersession law + Sol V3.7 packets",
+      "merged_at": "2026-08-26T01:23:44Z"
+    },
+    {
+      "number": 6428,
+      "title": "fix(brain): heal widget-down outage \u2014 backticks inside the CSS template literal (W1-C)",
+      "merged_at": "2026-08-26T00:12:09Z"
+    },
+    {
+      "number": 6427,
+      "title": "ci(canary): P0R diagnostic bridge \u2014 reconcile self-hosted canary to the current CI semantic contract (#6351)",
+      "merged_at": "2026-08-25T23:29:15Z"
+    },
+    {
+      "number": 6425,
+      "title": "agentos: repair D6-B0 Sol handoff schema",
+      "merged_at": "2026-08-25T23:09:37Z"
+    },
+    {
+      "number": 6424,
+      "title": "Capital Structure W2D SEC discovery clock",
+      "merged_at": "2026-08-26T07:45:22Z"
+    },
+    {
+      "number": 6422,
+      "title": "agentos: reconcile current S0-R1 fixture principal state",
+      "merged_at": "2026-08-26T00:41:32Z"
+    },
+    {
+      "number": 6421,
+      "title": "feat(brain): W1-C visible context compiler + effective-context receipt (ai_context_envelope.v1)",
+      "merged_at": "2026-08-25T23:52:19Z"
+    },
+    {
+      "number": 6420,
+      "title": "records(defense): D6-B claim + U4 sweep finding \u2014 implementation wave held for Sol (26-23 absent_from_both)",
+      "merged_at": "2026-08-26T00:26:56Z"
+    },
+    {
+      "number": 6419,
+      "title": "agentos: prevent ambiguous global and local identifiers",
+      "merged_at": "2026-08-26T00:58:40Z"
+    },
+    {
+      "number": 6418,
+      "title": "records: M1 publisher runtime recovered and #6363 commissioned",
+      "merged_at": "2026-08-26T01:09:22Z"
+    },
+    {
+      "number": 6417,
+      "title": "contracts(k3e): Opportunity Evidence Vector v1 contract freeze \u2014 SOL ACCEPTED",
+      "merged_at": "2026-08-27T00:47:35Z"
+    },
+    {
+      "number": 6416,
+      "title": "Canada Stock Dashboard V3.7 \u2014 restore Track Record, owner-native lanes, group-action band",
+      "merged_at": "2026-08-26T00:11:22Z"
+    },
+    {
+      "number": 6415,
+      "title": "Capital Structure W2C exact-dependency runtime",
+      "merged_at": "2026-08-26T06:42:36Z"
+    },
+    {
+      "number": 6414,
+      "title": "records(cn-limit): delegate autonomous remainder program to Fable COO",
+      "merged_at": "2026-08-25T22:08:13Z"
+    },
+    {
+      "number": 6413,
+      "title": "records(k3e): EVAL-0 activation receipt, capability ledger refresh, COO takeover handoff",
+      "merged_at": "2026-08-25T22:21:37Z"
+    },
+    {
+      "number": 6412,
+      "title": "HOLD-FOR-SOL: records(xpv2): close the organizational layer onto merged #6337 \u2014 C2' continuation-delta repair",
+      "merged_at": "2026-08-26T02:22:50Z"
+    },
+    {
+      "number": 6411,
+      "title": "records(agentos): close MAS-28 W1 implementation wave",
+      "merged_at": "2026-08-26T00:16:08Z"
+    },
+    {
+      "number": 6410,
+      "title": "records(v36): Canada V3.6.1 PROVEN_LIVE receipt (entitled production matrix 2026-08-25)",
+      "merged_at": "2026-08-25T20:48:20Z"
+    },
+    {
+      "number": 6409,
+      "title": "fix(canada): bounded retry in the V3.6 composer loader (transient entitled-fetch failures)",
+      "merged_at": "2026-08-25T22:20:31Z"
+    },
+    {
+      "number": 6407,
+      "title": "agentos: B1A merge handoff amendment (Sol acceptance + production receipts)",
+      "merged_at": "2026-08-25T19:33:42Z"
+    },
+    {
+      "number": 6406,
+      "title": "fix(canada): make V3.6 composer [hidden] hiding actually hide (Top Picks / filter / view switch)",
+      "merged_at": "2026-08-25T19:38:21Z"
+    },
+    {
+      "number": 6405,
+      "title": "feat(prophet): build canonical candidate episode plane",
+      "merged_at": "2026-08-26T00:13:07Z"
+    },
+    {
+      "number": 6404,
+      "title": "D6-B0: FMS congressional-notification source migration + architecture freeze (records-only)",
+      "merged_at": "2026-08-25T18:10:56Z"
+    },
+    {
+      "number": 6403,
+      "title": "records(ccr): close P0A durable state and resume current P0B gate",
+      "merged_at": "2026-08-25T18:39:56Z"
+    },
+    {
+      "number": 6402,
+      "title": "records(v36): DEC \u2014 Sol ratifies Canada\u2192HK pilot, decouples US, fixes cross-market hierarchy + US freeze gates",
+      "merged_at": "2026-08-25T16:03:38Z"
+    },
+    {
+      "number": 6401,
+      "title": "Agent OS: bind crypto P0B to current Personal-Pro gates",
+      "merged_at": "2026-08-25T20:06:26Z"
+    },
+    {
+      "number": 6399,
+      "title": "docs(prophet): accept A1 natural settlement",
+      "merged_at": "2026-08-25T08:56:15Z"
+    },
+    {
+      "number": 6398,
+      "title": "records(v36): Canada V3.6.1 acceptance receipts + regional rollout reconciliation",
+      "merged_at": "2026-08-25T03:23:45Z"
+    },
+    {
+      "number": 6397,
+      "title": "Agent OS: record crypto P0B runtime admission block",
+      "merged_at": "2026-08-25T11:16:31Z"
+    },
+    {
+      "number": 6395,
+      "title": "Agent OS: close crypto P0A and commission P0B",
+      "merged_at": "2026-08-25T02:45:06Z"
+    },
+    {
+      "number": 6394,
+      "title": "Animate The Price of Duration figures",
+      "merged_at": "2026-08-25T02:54:02Z"
+    },
+    {
+      "number": 6393,
+      "title": "records(biocatalyst): park core product between commissioned waves",
+      "merged_at": "2026-08-25T19:55:49Z"
+    },
+    {
+      "number": 6392,
+      "title": "records(eval-os): reconcile completed T1 registry lifecycle",
+      "merged_at": "2026-08-25T19:55:11Z"
+    },
+    {
+      "number": 6388,
+      "title": "records(xpv2): reconcile R3B/R3B.1 and active R3B.2 state",
+      "merged_at": "2026-08-25T02:07:04Z"
+    },
+    {
       "number": 6386,
       "title": "heal(ci): board-shadow session date is derived, not a literal that ages out",
       "merged_at": "2026-08-25T01:41:44Z"
     },
     {
+      "number": 6385,
+      "title": "agentos(defense-v3): D6-A production proof complete \u2014 done / Sol acceptance pending",
+      "merged_at": "2026-08-25T01:50:29Z"
+    },
+    {
       "number": 6384,
       "title": "fix(reports): rebuild Price of Duration editorial V2",
       "merged_at": "2026-08-25T00:45:09Z"
+    },
+    {
+      "number": 6383,
+      "title": "MAS-28 W1 repair: 5.10 pre-cutover legacy, integer parity, 0-3-space label ceiling",
+      "merged_at": "2026-08-25T19:52:45Z"
+    },
+    {
+      "number": 6382,
+      "title": "FIF-3A4R cross-filing fact lineage protocol + AAPL calibration",
+      "merged_at": "2026-08-26T02:27:35Z"
+    },
+    {
+      "number": 6380,
+      "title": "records(ccr): release ASD-A2 behind local collision preflight",
+      "merged_at": "2026-08-26T08:25:21Z"
     },
     {
       "number": 6378,
@@ -980,6 +1279,11 @@
       "number": 6377,
       "title": "defense(d6a): DoD P-1/R-1 budget rail activation \u2014 official FY2027 source, immutable acquisition, production extraction",
       "merged_at": "2026-08-24T23:10:48Z"
+    },
+    {
+      "number": 6376,
+      "title": "HOLD-FOR-SOL: E3-B AAPL canonical qa_exchange publication",
+      "merged_at": "2026-08-26T02:29:28Z"
     },
     {
       "number": 6375,
@@ -995,6 +1299,11 @@
       "number": 6372,
       "title": "Runner fleet: accept M1 soak and recover M2 pack pressure",
       "merged_at": "2026-08-24T14:01:07Z"
+    },
+    {
+      "number": 6371,
+      "title": "HOLD-FOR-SOL \u2014 Market OS B1A: AAPL security_state.v1 golden product vertical",
+      "merged_at": "2026-08-25T16:56:39Z"
     },
     {
       "number": 6370,
@@ -1142,6 +1451,16 @@
       "merged_at": "2026-08-23T14:44:59Z"
     },
     {
+      "number": 6337,
+      "title": "XPV2-SC-R3B.2 \u2014 Sol APPROVE_WITH_CONDITIONS: frozen successor mastermind-xpv2-sector-r3b-2 approved (reference law only)",
+      "merged_at": "2026-08-25T02:56:54Z"
+    },
+    {
+      "number": 6335,
+      "title": "A1B: atomic Portfolio Fast Start Import",
+      "merged_at": "2026-08-26T02:18:29Z"
+    },
+    {
       "number": 6334,
       "title": "LANDED: Dislocation P0-S1F source precision falsification",
       "merged_at": "2026-08-25T01:02:06Z"
@@ -1272,14 +1591,14 @@
       "merged_at": "2026-08-24T09:37:22Z"
     },
     {
-      "number": 6305,
-      "title": "records(biocatalyst): close P1-1 production acceptance",
-      "merged_at": "2026-08-24T08:27:16Z"
-    },
-    {
       "number": 6304,
       "title": "docs(agentos): record final A1A authenticated matrix",
       "merged_at": "2026-08-23T07:49:54Z"
+    },
+    {
+      "number": 6305,
+      "title": "records(biocatalyst): close P1-1 production acceptance",
+      "merged_at": "2026-08-24T08:27:16Z"
     },
     {
       "number": 6302,
@@ -1305,6 +1624,11 @@
       "number": 6298,
       "title": "records(china-p1r3a): closeout \u2014 Sol PASS, #6269 lineage, residual rulings",
       "merged_at": "2026-08-23T07:31:08Z"
+    },
+    {
+      "number": 6297,
+      "title": "MAS-126 CF1: secret-free provider capacity v1",
+      "merged_at": "2026-08-26T01:10:26Z"
     },
     {
       "number": 6295,
@@ -1350,6 +1674,11 @@
       "number": 6287,
       "title": "Capital Structure W2B: 500-live capacity envelope",
       "merged_at": "2026-08-23T06:56:37Z"
+    },
+    {
+      "number": 6286,
+      "title": "ci: contain ci-plan working tree (W3)",
+      "merged_at": "2026-08-25T22:36:54Z"
     },
     {
       "number": 6285,
@@ -1400,6 +1729,11 @@
       "number": 6276,
       "title": "MAS-123: freeze Cell G flagship VOI law + read-only report",
       "merged_at": "2026-08-23T06:46:02Z"
+    },
+    {
+      "number": 6275,
+      "title": "research(prophet): freeze MAS-122 Cell F D5 evidence contract",
+      "merged_at": "2026-08-26T09:17:25Z"
     },
     {
       "number": 6274,
@@ -1715,6 +2049,16 @@
       "number": 6209,
       "title": "docs(d5r): D5 program-graph architecture freeze \u2014 owner adjudication, Virginia pilot, implementation handoff",
       "merged_at": "2026-08-22T04:32:13Z"
+    },
+    {
+      "number": 6208,
+      "title": "records(agentos): reconcile MAS-48 after S0 carrier falsifier",
+      "merged_at": "2026-08-25T20:09:33Z"
+    },
+    {
+      "number": 6207,
+      "title": "HOLD-FOR-SOL \u00b7 chairman(cn-limit): null TuShare license-document gates; bounded canary path; active-surface CI guard",
+      "merged_at": "2026-08-26T00:21:50Z"
     },
     {
       "number": 6206,
@@ -2085,6 +2429,11 @@
       "number": 6127,
       "title": "records(imce): IMCE-00 architecture freeze \u2014 issuer-mechanism research extension under CPI [HOLD-FOR-SOL]",
       "merged_at": "2026-08-21T03:55:28Z"
+    },
+    {
+      "number": 6126,
+      "title": "records(intraday-flow): reconcile PR-4 merge to current-session production gate",
+      "merged_at": "2026-08-25T20:09:11Z"
     },
     {
       "number": 6125,
@@ -2910,556 +3259,6 @@
       "number": 5949,
       "title": "docs(cn-g): empirical prior table for twelve China evidence families",
       "merged_at": "2026-08-19T19:51:00Z"
-    },
-    {
-      "number": 5948,
-      "title": "ci(backfill): fix the push path \u2014 backfill concluded SUCCESS while publishing nothing",
-      "merged_at": "2026-08-19T12:05:40Z"
-    },
-    {
-      "number": 5947,
-      "title": "docs(cn-b): PRC corporate entity resolver bake-off, no-buy",
-      "merged_at": "2026-08-19T19:51:08Z"
-    },
-    {
-      "number": 5946,
-      "title": "research: CN project/EIA source map + lithium-battery pilot (GROK-CN-D)",
-      "merged_at": "2026-08-19T19:51:16Z"
-    },
-    {
-      "number": 5945,
-      "title": "research(cn): Tushare P0 purchase/rights matrix (GROK-CN-A)",
-      "merged_at": "2026-08-19T19:51:34Z"
-    },
-    {
-      "number": 5944,
-      "title": "research(cn-c): Government/SOE Demand first-party source map",
-      "merged_at": "2026-08-19T19:51:42Z"
-    },
-    {
-      "number": 5943,
-      "title": "docs(alpha-intel): CN-G0 China post-event reinterpretation census",
-      "merged_at": "2026-08-19T18:08:49Z"
-    },
-    {
-      "number": 5942,
-      "title": "fix(collectors): NA-ticker pandas-sentinel corruption across 18 parse sites",
-      "merged_at": "2026-08-19T11:35:02Z"
-    },
-    {
-      "number": 5941,
-      "title": "fix(tests): market-memory breadth fixtures pinned to one era",
-      "merged_at": "2026-08-19T07:38:03Z"
-    },
-    {
-      "number": 5940,
-      "title": "design(prophet-lab-r5-1): close the R5 REVISE \u2014 grid-scoped mode, unknown-not-zero, symmetric lead",
-      "merged_at": "2026-08-19T15:32:49Z"
-    },
-    {
-      "number": 5939,
-      "title": "fix(main-red-repair): ASTS ladder-rung re-pin + breadth union-universe DSC",
-      "merged_at": "2026-08-19T08:53:07Z"
-    },
-    {
-      "number": 5938,
-      "title": "ci: measure why the merge train stalls \u2014 main is green 44% of the time",
-      "merged_at": "2026-08-19T07:47:39Z"
-    },
-    {
-      "number": 5937,
-      "title": "fix(main-red-repair): the price-ladder control asserts its mechanism, not a calendar",
-      "merged_at": "2026-08-19T07:28:43Z"
-    },
-    {
-      "number": 5936,
-      "title": "fix(symbol_directory): NA ticker parsed as NaN froze the exchange roster since 2026-08-11",
-      "merged_at": "2026-08-19T07:10:58Z"
-    },
-    {
-      "number": 5934,
-      "title": "P0-C2R1 \u2014 single-validation BioCatalyst generation read",
-      "merged_at": "2026-08-19T12:45:33Z"
-    },
-    {
-      "number": 5933,
-      "title": "docs(alpha-intel): c0 adjudication \u2014 five census verdicts, FABLE-A conditional GO with amendment rider",
-      "merged_at": "2026-08-19T16:05:24Z"
-    },
-    {
-      "number": 5932,
-      "title": "D2 Identity Atlas: defense21-v1 graph + per-issuer identity vertical (five pilots + SPR control)",
-      "merged_at": "2026-08-19T13:26:47Z"
-    },
-    {
-      "number": 5930,
-      "title": "fix(main-red-repair): pin CI to a CPython the parser allowlist has reviewed",
-      "merged_at": "2026-08-19T05:15:01Z"
-    },
-    {
-      "number": 5929,
-      "title": "radar(w4.1): live-transport correction \u2014 confirmed-lane pack field + W4->W5 spool envelope contract",
-      "merged_at": "2026-08-19T17:27:25Z"
-    },
-    {
-      "number": 5928,
-      "title": "feat(prophet-lab): P-LAB-API \u2014 Prophet Operator Lab read-only projection",
-      "merged_at": "2026-08-19T14:59:00Z"
-    },
-    {
-      "number": 5927,
-      "title": "P0-C2R0: public generation read-path profile (evidence only)",
-      "merged_at": "2026-08-19T18:13:56Z"
-    },
-    {
-      "number": 5926,
-      "title": "fix(canada): CA-TRUTH \u2014 one canonical Canada Prophet board per session",
-      "merged_at": "2026-08-19T16:04:48Z"
-    },
-    {
-      "number": 5925,
-      "title": "fix(entry-radar): W4 pack snapshot reads live ProbeSet.records",
-      "merged_at": "2026-08-19T19:58:05Z"
-    },
-    {
-      "number": 5924,
-      "title": "docs(prophet-lab): LAB-0 \u2014 recut V4-B5 into B5A Operator Lab + B5B desk; commission Radar W4.1",
-      "merged_at": "2026-08-19T04:11:05Z"
-    },
-    {
-      "number": 5923,
-      "title": "agentos: mint WS:PROPHET-HK-CA-REVAMP + hardened execution packet",
-      "merged_at": "2026-08-19T04:54:33Z"
-    },
-    {
-      "number": 5922,
-      "title": "ci(baseline): keep the merge-train circuit breaker fresh on a clock",
-      "merged_at": "2026-08-19T07:57:33Z"
-    },
-    {
-      "number": 5921,
-      "title": "feat(prophet-fusion): PR-3D-R1 same-stamp revision + atomic W3 persist",
-      "merged_at": "2026-08-19T03:58:30Z"
-    },
-    {
-      "number": 5919,
-      "title": "docs(agentos): D1 closure proof \u2014 next action is Sol acceptance",
-      "merged_at": "2026-08-18T20:50:15Z"
-    },
-    {
-      "number": 5918,
-      "title": "docs(agentos): the sweeper's forward-rebase can drop a commit you pushed",
-      "merged_at": "2026-08-18T21:12:02Z"
-    },
-    {
-      "number": 5917,
-      "title": "fix(worktree-sparse): SIGTERM-first timeout, and a budget sized from the tail",
-      "merged_at": "2026-08-18T19:55:50Z"
-    },
-    {
-      "number": 5915,
-      "title": "docs(path-survival): GROK-F0 capability census",
-      "merged_at": "2026-08-18T14:41:14Z"
-    },
-    {
-      "number": 5914,
-      "title": "docs(research): GROK-E0 opportunity evidence census and casebooks",
-      "merged_at": "2026-08-18T14:25:56Z"
-    },
-    {
-      "number": 5913,
-      "title": "docs(economic-propagation): D0 graph census and casebook",
-      "merged_at": "2026-08-18T14:45:48Z"
-    },
-    {
-      "number": 5912,
-      "title": "docs(research): A0 evidence/provenance estate census",
-      "merged_at": "2026-08-18T14:38:08Z"
-    },
-    {
-      "number": 5911,
-      "title": "research(alpha-intel): GROK-B0 institutional source and capture census",
-      "merged_at": "2026-08-18T14:41:27Z"
-    },
-    {
-      "number": 5910,
-      "title": "docs(alpha-intel): PASS-0 program integration packet + WS record",
-      "merged_at": "2026-08-18T15:28:16Z"
-    },
-    {
-      "number": 5909,
-      "title": "BPC-RECON-0: soak-safe architecture freeze (canonical identity frozen; runtime registry deferred)",
-      "merged_at": "2026-08-19T19:51:49Z"
-    },
-    {
-      "number": 5908,
-      "title": "feat(fleet): AionUi/Grok SessionStart mints sparse worktrees",
-      "merged_at": "2026-08-19T19:59:22Z"
-    },
-    {
-      "number": 5907,
-      "title": "fix(worktree-sparse): never leave a tracked file truncated on a failed `add`",
-      "merged_at": "2026-08-18T16:43:39Z"
-    },
-    {
-      "number": 5906,
-      "title": "docs(biocatalyst): P0-C2 entitled acceptance \u2014 generation-read hang",
-      "merged_at": "2026-08-19T03:25:53Z"
-    },
-    {
-      "number": 5905,
-      "title": "fix(main-red-repair): re-price the HK G1 fixture for the 2359.HK adjustment",
-      "merged_at": "2026-08-18T13:46:21Z"
-    },
-    {
-      "number": 5904,
-      "title": "docs(agentos): complete the W1-A1 tripwire handoff with the session's end state",
-      "merged_at": "2026-08-18T13:10:00Z"
-    },
-    {
-      "number": 5903,
-      "title": "fix(prophet-fusion): pin C2 construction tests to the registered-era frame",
-      "merged_at": "2026-08-19T18:07:59Z"
-    },
-    {
-      "number": 5902,
-      "title": "feat(prophet): general PIT session replay harness (market, session) under DEC:FORCE-MAJEURE-SESSIONS-ARE-BACKFILLED-BY-DEFAULT",
-      "merged_at": "2026-08-18T20:53:32Z"
-    },
-    {
-      "number": 5900,
-      "title": "fix(heartbeat): tier-gate mirrored the PR lane's steps but not its venv",
-      "merged_at": "2026-08-18T15:37:44Z"
-    },
-    {
-      "number": 5899,
-      "title": "fix(metabolism): repair blind main-red sentinel (owner/repo 404, dead PAT fallback, HEAD/heartbeat SHA mismatch)",
-      "merged_at": "2026-08-18T15:38:18Z"
-    },
-    {
-      "number": 5898,
-      "title": "FF-1P2R: current-quarter EDGAR index discovery",
-      "merged_at": "2026-08-22T22:59:45Z"
-    },
-    {
-      "number": 5897,
-      "title": "fix(entry-radar): W4 hermetic sink proves spool path, not W5 directory absence",
-      "merged_at": "2026-08-19T03:54:00Z"
-    },
-    {
-      "number": 5896,
-      "title": "fix(hk-board): band the refresh-window re-base, not the close level",
-      "merged_at": "2026-08-18T11:46:14Z"
-    },
-    {
-      "number": 5895,
-      "title": "fix(entry-radar): the hermetic control asserted a directory it cannot create",
-      "merged_at": "2026-08-18T11:19:20Z"
-    },
-    {
-      "number": 5894,
-      "title": "research+engine(prophet-v4): V4-D2A canonical identity authority bridge (GMI \u2192 Data OS)",
-      "merged_at": "2026-08-18T14:56:25Z"
-    },
-    {
-      "number": 5893,
-      "title": "fix(prophet-fusion): assert PR-2's registered numbers against the artifact, not a rebuild",
-      "merged_at": "2026-08-18T10:55:34Z"
-    },
-    {
-      "number": 5892,
-      "title": "fix(leader-radar): make _build_fire_history honor its data_root parameter",
-      "merged_at": "2026-08-19T22:07:31Z"
-    },
-    {
-      "number": 5890,
-      "title": "feat(prophet-fusion): PR-3D W3 liveness fence and lawful status surface",
-      "merged_at": "2026-08-18T12:44:06Z"
-    },
-    {
-      "number": 5889,
-      "title": "FIF-1R3: land accepted financial_intelligence_packet.v1",
-      "merged_at": "2026-08-19T09:50:19Z"
-    },
-    {
-      "number": 5888,
-      "title": "fix(leader-radar): honour the caller's data_root when joining fire grades",
-      "merged_at": "2026-08-18T10:44:13Z"
-    },
-    {
-      "number": 5887,
-      "title": "docs(agentos): govrev event_id folds the collector's retrieval clock, so a re-run re-mints candidates",
-      "merged_at": "2026-08-18T09:45:19Z"
-    },
-    {
-      "number": 5886,
-      "title": "docs(agentos): record why the daily collect mutex cannot live in et_gate",
-      "merged_at": "2026-08-18T08:52:43Z"
-    },
-    {
-      "number": 5885,
-      "title": "fix(nightly): base-freshness fence \u2014 refuse to publish an append-only artifact over a base that moved",
-      "merged_at": "2026-08-18T16:02:10Z"
-    },
-    {
-      "number": 5884,
-      "title": "docs(agentos): D1 recovery-generation proof \u2014 Radar 48, fence next",
-      "merged_at": "2026-08-18T08:47:24Z"
-    },
-    {
-      "number": 5883,
-      "title": "docs(agentos): RESOLVED \u2014 a generation revert was the ci-pack-6 repair; correct the \"wedged\" conclusion",
-      "merged_at": "2026-08-18T09:30:40Z"
-    },
-    {
-      "number": 5882,
-      "title": "govrev: adjudicate the three deferred identity/ledger/gate defects (arm the proof gate)",
-      "merged_at": "2026-08-18T18:27:16Z"
-    },
-    {
-      "number": 5879,
-      "title": "fix(ci): hydrate the base commit's blobs so the semantic replay can check it out",
-      "merged_at": "2026-08-18T19:12:27Z"
-    },
-    {
-      "number": 5878,
-      "title": "policy(prophet): force-majeure sessions are backfilled by DEFAULT",
-      "merged_at": "2026-08-18T08:14:38Z"
-    },
-    {
-      "number": 5876,
-      "title": "docs(agentos): the ci-pack-6 red is a candidate-id race between two govrev lanes",
-      "merged_at": "2026-08-18T08:02:33Z"
-    },
-    {
-      "number": 5875,
-      "title": "fix(stock-identity): band the B live-plane tripwire on uniformity, not level",
-      "merged_at": "2026-08-18T08:21:18Z"
-    },
-    {
-      "number": 5874,
-      "title": "fix(main-red-repair): register the Prophet Board-read keys as CONDITIONAL contract fields",
-      "merged_at": "2026-08-18T14:08:18Z"
-    },
-    {
-      "number": 5873,
-      "title": "docs(agentos): correct the govrev record \u2014 the projection lane does NOT clear the ci-pack-6 red",
-      "merged_at": "2026-08-18T07:40:30Z"
-    },
-    {
-      "number": 5872,
-      "title": "feat(advanced-data): AD-1 Daily EOD Options Intelligence Brief \u2014 runtime implementation (v1.2)",
-      "merged_at": "2026-08-19T13:25:26Z"
-    },
-    {
-      "number": 5871,
-      "title": "docs(agentos): ci-pack-6 govrev red is a lost update between two overlapping daily collect jobs",
-      "merged_at": "2026-08-18T07:02:59Z"
-    },
-    {
-      "number": 5870,
-      "title": "fix(govrev): restore the collection generation the candidate projection was frozen against",
-      "merged_at": "2026-08-18T07:38:11Z"
-    },
-    {
-      "number": 5867,
-      "title": "ci(runner-policy): checked-in label registry (R11/R12) closes the orphaned-label class",
-      "merged_at": "2026-08-18T09:43:33Z"
-    },
-    {
-      "number": 5866,
-      "title": "close-pass: grade the frozen launchd bootstrap against origin/main (merged is not deployed)",
-      "merged_at": "2026-08-18T08:18:58Z"
-    },
-    {
-      "number": 5865,
-      "title": "fix(stock-identity): freeze the registered B prefix off the nightly-rewritten plane",
-      "merged_at": "2026-08-18T06:45:12Z"
-    },
-    {
-      "number": 5864,
-      "title": "fix(forensics): raise FF-1 universe bind cap for live 2837-issuer parquet",
-      "merged_at": "2026-08-18T08:28:04Z"
-    },
-    {
-      "number": 5863,
-      "title": "docs(agentos): the fleet-blocking atlas red is an exact digest over a non-bit-reproducible producer",
-      "merged_at": "2026-08-18T06:09:49Z"
-    },
-    {
-      "number": 5862,
-      "title": "fix(close-pass): retry a stalled lane probe instead of losing the session",
-      "merged_at": "2026-08-18T04:36:25Z"
-    },
-    {
-      "number": 5861,
-      "title": "docs(agentos): DSC \u2014 a git rebase can splice two renders into a paywall leak",
-      "merged_at": "2026-08-18T03:47:34Z"
-    },
-    {
-      "number": 5860,
-      "title": "docs(advanced-data): AD-1P0 freeze semantic authority before implementation",
-      "merged_at": "2026-08-18T03:47:19Z"
-    },
-    {
-      "number": 5859,
-      "title": "research(prophet-v4): V4-D1 theme-source, taxonomy, identity & coverage census",
-      "merged_at": "2026-08-18T08:42:27Z"
-    },
-    {
-      "number": 5858,
-      "title": "fix(13f-census): survive a transient SEC page instead of discarding the whole atom scan",
-      "merged_at": "2026-08-18T05:40:48Z"
-    },
-    {
-      "number": 5857,
-      "title": "fix(main-red-repair): a git REBASE published the paid board, not the renderer",
-      "merged_at": "2026-08-18T03:26:41Z"
-    },
-    {
-      "number": 5856,
-      "title": "D1.1F: PIT-safe Government Revenue agency labels",
-      "merged_at": "2026-08-18T19:31:07Z"
-    },
-    {
-      "number": 5855,
-      "title": "fix(13f-census): un-red both master-index backstop lanes",
-      "merged_at": "2026-08-18T04:15:24Z"
-    },
-    {
-      "number": 5854,
-      "title": "fix(13f-census): decide atom scan completeness on the raw feed page, not the filtered one",
-      "merged_at": "2026-08-18T04:05:04Z"
-    },
-    {
-      "number": 5853,
-      "title": "fix(sector_central): withhold the Act-Now board server-side on its second host",
-      "merged_at": "2026-08-18T15:42:19Z"
-    },
-    {
-      "number": 5852,
-      "title": "feat(nightly-liveness): grade all five Prophet boards, each on its own exchange calendar",
-      "merged_at": "2026-08-18T05:41:01Z"
-    },
-    {
-      "number": 5851,
-      "title": "ci(close-pass): re-measure the stale mac-builder-1/2 pool model + per-cron concurrency",
-      "merged_at": "2026-08-18T10:42:08Z"
-    },
-    {
-      "number": 5850,
-      "title": "ci(13f-census): hourly 12-20Z fast lane + 60m cap so it stops starving the nightly",
-      "merged_at": "2026-08-18T01:45:11Z"
-    },
-    {
-      "number": 5849,
-      "title": "docs(advanced-data): AD-0 data-feasibility amendment \u2014 AD-1 scoring refrozen as v1.1",
-      "merged_at": "2026-08-18T01:34:25Z"
-    },
-    {
-      "number": 5848,
-      "title": "fix(prophet): 08-14\u219217 outage hardening \u2014 hostage-class kill + watchdog wedge/weekend closure",
-      "merged_at": "2026-08-18T02:04:31Z"
-    },
-    {
-      "number": 5847,
-      "title": "docs(prophet-v4): V4-0B reconcile post-0A state and delegate availability implementation",
-      "merged_at": "2026-08-18T00:50:19Z"
-    },
-    {
-      "number": 5846,
-      "title": "fix(us_stocks): withhold the four panels beside the board server-side too",
-      "merged_at": "2026-08-18T01:13:39Z"
-    },
-    {
-      "number": 5845,
-      "title": "radar(w6): Sol-review RP1 ranking-law corrections",
-      "merged_at": "2026-08-18T12:40:51Z"
-    },
-    {
-      "number": 5843,
-      "title": "fix(ci-authority): retry transient GitHub API failures instead of failing the fence closed",
-      "merged_at": "2026-08-18T00:30:43Z"
-    },
-    {
-      "number": 5842,
-      "title": "docs(agentos): E1P live proof handoff; E2 unblocked",
-      "merged_at": "2026-08-17T16:15:02Z"
-    },
-    {
-      "number": 5841,
-      "title": "fix(company-intelligence): unescape EDGAR index-headers for AAPL EX-99.1",
-      "merged_at": "2026-08-17T15:33:51Z"
-    },
-    {
-      "number": 5840,
-      "title": "fix(us_stocks): withhold the paid board server-side instead of in the DOM",
-      "merged_at": "2026-08-17T19:56:57Z"
-    },
-    {
-      "number": 5839,
-      "title": "feat(prophet-fusion): PR-3C durable W3 prospective evidence ledger",
-      "merged_at": "2026-08-17T18:41:06Z"
-    },
-    {
-      "number": 5838,
-      "title": "docs(advanced-data): AD-0 amendments per Sol review on #5830",
-      "merged_at": "2026-08-17T13:39:53Z"
-    },
-    {
-      "number": 5837,
-      "title": "feat(fif-1r2): harden financial_intelligence_packet.v1 contract",
-      "merged_at": "2026-08-17T16:08:09Z"
-    },
-    {
-      "number": 5836,
-      "title": "fix(govrev): D1 entitled-desk rescue \u2014 Radar, banner, agency names, typed failures",
-      "merged_at": "2026-08-17T13:45:44Z"
-    },
-    {
-      "number": 5835,
-      "title": "feat(company-intelligence): publish AAPL Q3 event_workspace on live R2",
-      "merged_at": "2026-08-17T14:32:42Z"
-    },
-    {
-      "number": 5834,
-      "title": "radar(w6): deterministic ACCRUING Research Priority",
-      "merged_at": "2026-08-17T20:56:50Z"
-    },
-    {
-      "number": 5833,
-      "title": "radar(w5.1): persist control-pool diagnostics",
-      "merged_at": "2026-08-17T12:49:55Z"
-    },
-    {
-      "number": 5832,
-      "title": "docs(prophet-v4): V4-0A estate archaeology + architecture freeze packet",
-      "merged_at": "2026-08-17T13:18:55Z"
-    },
-    {
-      "number": 5831,
-      "title": "docs(agentos): decision records for agent routing control + Opus fable-mode orchestrator seat",
-      "merged_at": "2026-08-17T12:40:59Z"
-    },
-    {
-      "number": 5830,
-      "title": "docs(advanced-data): AD-0 recovery archaeology \u2014 current-state ledger + AD-1 handoff",
-      "merged_at": "2026-08-17T12:18:37Z"
-    },
-    {
-      "number": 5829,
-      "title": "feat(prophet-fusion): PR-3B outcome-blind LOFO and member census",
-      "merged_at": "2026-08-17T12:59:10Z"
-    },
-    {
-      "number": 5828,
-      "title": "docs(ci): charter the CI Latency + Autonomous Healing wave",
-      "merged_at": "2026-08-17T10:34:30Z"
-    },
-    {
-      "number": 5827,
-      "title": "docs(agentos): close Live Entry Radar W5 after #5825",
-      "merged_at": "2026-08-17T11:04:45Z"
     }
   ]
 }

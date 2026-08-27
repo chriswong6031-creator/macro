@@ -12,12 +12,19 @@ MAIN_REF = "refs/heads/main"
 
 ALLOWLIST = {
     "pc-ci": {
+        *{
+            (
+                "workflow_dispatch",
+                f"{REPOSITORY}/.github/workflows/selfhosted-ci-canary.yml@{MAIN_REF}",
+                job,
+            )
+            for job in ("selfhosted-pack", "cache-negative-control", "contamination-probe")
+        },
         (
             "workflow_dispatch",
-            f"{REPOSITORY}/.github/workflows/selfhosted-ci-canary.yml@{MAIN_REF}",
-            job,
-        )
-        for job in ("selfhosted-pack", "cache-negative-control", "contamination-probe")
+            f"{REPOSITORY}/.github/workflows/trusted-ci-executor.yml@{MAIN_REF}",
+            "trusted-pack",
+        ),
     },
     "m1-canary": {
         (
