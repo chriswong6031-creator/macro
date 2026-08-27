@@ -1738,3 +1738,43 @@ def test_the_escalation_feature_adds_no_cancel_path_and_stays_stdlib_only():
             roots.add(node.module.split(".")[0])
     first_party = roots & {"lib", "engine", "scripts", "app", "collectors", "admin"}
     assert first_party == {"lib"}
+
+
+def test_main_wires_the_mined_anchors_into_the_state_it_hands_to_execute(monkeypatch):
+    """WIRED AT THE main() SEAM — the one seam every other test in this file
+    misses, because they all drive ``execute`` with a hand-built state.
+
+    MEASURED 2026-08-27: deleting ``state.outage_anchors = thread.anchors`` and
+    ``state.issue_title = thread.title`` from ``main`` left all 104 other tests
+    GREEN.  That is the ships-green-and-dead shape this whole lane exists to
+    prevent: the ladder would be silently unwired by a refactor and no test
+    would say a word, while production quietly escalated nothing forever.
+    """
+    anchors = {(RESCUE.STALE,): THU}
+    escalated = RESCUE.escalated_title(THU, 2)
+    monkeypatch.setenv("GH_TOKEN", "tok")
+    monkeypatch.setattr(RESCUE, "collect_state", lambda *a, **k: state())
+    monkeypatch.setattr(
+        RESCUE, "decide",
+        lambda s: [RESCUE.Action(RESCUE.ALERT, RESCUE.STALE, "still stale")])
+    monkeypatch.setattr(
+        RESCUE, "fetch_issue_thread",
+        lambda repo, token, session, now: RESCUE.IssueThread(
+            number=7, title=escalated, receipts=0,
+            last_verdicts=("STALE",), anchors=anchors, error=None))
+    seen: dict = {}
+    monkeypatch.setattr(
+        RESCUE, "execute",
+        lambda actions, s, session, repo, token, **k: seen.update(
+            anchors=s.outage_anchors, title=s.issue_title,
+            number=s.issue_number) or [])
+
+    RESCUE.main(["--now", at(FRI, 8, 40).isoformat(), "--repo", "o/r"])
+
+    assert seen["anchors"] == anchors, (
+        "main() must carry the mined anchors into the state execute() reads — "
+        "without this the [DAY N] ladder is dead on arrival in production")
+    assert seen["title"] == escalated, (
+        "main() must carry the CURRENT title through, or execute() re-PATCHes "
+        "an already-escalated title on every hourly wake")
+    assert seen["number"] == 7
