@@ -32,7 +32,7 @@
     "DNR:KILL-CAUSAL-DAG-ALPHA"
   ],
   "compiled_at": "2026-08-20T04:00:00Z",
-  "content_sha256": "316a131113f1905ecd2610741a48f603ed81d767239ed18c2f7760727c9daaba",
+  "content_sha256": "605edb1ca5c0d8969b28fae4b69eefc1738810788c591d8c373b0f473f6af777",
   "economic_share": null,
   "expiry": {
     "note": "Review after next quarterly filing.",
@@ -56,8 +56,8 @@
       "graph": "graph_3",
       "known_at": "2026-08-20",
       "owner_ref": {
-        "artifact": "data/edgar/material_8k_events.parquet",
-        "artifact_schema": "group_linked_outsiders.v1",
+        "artifact": "data/baskets/group_pulse.json",
+        "artifact_schema": "group_pulse.v1",
         "owner_program": "group-reads"
       }
     }
@@ -89,9 +89,9 @@
       "known_at": "2026-08-20",
       "leg_id": "g1_min",
       "owner_ref": {
-        "artifact": "data/edgar/material_8k_events.parquet",
-        "artifact_schema": "group_linked_outsiders.v1",
-        "owner_program": "group-reads"
+        "artifact": "data/earnings/fact_packs.parquet",
+        "artifact_schema": "earnings.fact_pack/v1",
+        "owner_program": "earnings-intelligence"
       },
       "role": "customer",
       "role_evidence_class": "disclosed_role_specific",

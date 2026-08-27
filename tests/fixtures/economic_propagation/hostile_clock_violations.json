@@ -30,7 +30,7 @@
     "DNR:KILL-CAUSAL-DAG-ALPHA"
   ],
   "compiled_at": "2026-08-20T04:00:00Z",
-  "content_sha256": "9057646f71692ba9098b30db2dd5b59e188aad16b6caec92580371690579a0e8",
+  "content_sha256": "ec90f8bc9958ca403349724d8c33c6397d953ac5c86c016d7738fb4020e8569f",
   "economic_share": null,
   "expiry": {
     "note": "Review after next quarterly filing.",
@@ -54,9 +54,9 @@
       "graph": "graph_1",
       "known_at": "2026-08-20",
       "owner_ref": {
-        "artifact": "data/edgar/material_8k_events.parquet",
-        "artifact_schema": "group_linked_outsiders.v1",
-        "owner_program": "group-reads"
+        "artifact": "data/earnings/fact_packs.parquet",
+        "artifact_schema": "earnings.fact_pack/v1",
+        "owner_program": "earnings-intelligence"
       }
     },
     {
@@ -70,9 +70,9 @@
       "graph": "graph_2",
       "known_at": "2026-08-20",
       "owner_ref": {
-        "artifact": "data/edgar/material_8k_events.parquet",
-        "artifact_schema": "group_linked_outsiders.v1",
-        "owner_program": "group-reads"
+        "artifact": "data/theme_graph/edges.parquet",
+        "artifact_schema": "theme_graph.edges.v1",
+        "owner_program": "gmi-theme-graph"
       }
     },
     {
@@ -86,8 +86,8 @@
       "graph": "graph_3",
       "known_at": "2026-08-20",
       "owner_ref": {
-        "artifact": "data/edgar/material_8k_events.parquet",
-        "artifact_schema": "group_linked_outsiders.v1",
+        "artifact": "data/baskets/group_pulse.json",
+        "artifact_schema": "group_pulse.v1",
         "owner_program": "group-reads"
       }
     }
@@ -137,9 +137,9 @@
       "known_at": "2026-09-01",
       "leg_id": "g1_customer",
       "owner_ref": {
-        "artifact": "data/edgar/material_8k_events.parquet",
-        "artifact_schema": "group_linked_outsiders.v1",
-        "owner_program": "group-reads"
+        "artifact": "data/earnings/fact_packs.parquet",
+        "artifact_schema": "earnings.fact_pack/v1",
+        "owner_program": "earnings-intelligence"
       },
       "role": "customer",
       "role_evidence_class": "disclosed_role_specific",

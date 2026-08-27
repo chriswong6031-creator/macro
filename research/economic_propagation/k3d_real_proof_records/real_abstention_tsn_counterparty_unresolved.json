@@ -77,13 +77,13 @@
   ],
   "falsifiers": [
     {
-      "condition": "The counterparty string resolves through the canonical identity surface to an exact issuer",
-      "observable": "gmi.identity_resolution/v1 (or Data OS master) row with resolution_state=RESOLVED for this entity"
+      "condition": "An owner alias/resolution row binds this exact counterparty string to an exact issuer",
+      "observable": "gmi.identity_resolution/v1 or the Data OS master carrying a row for this entity string with resolution_state=RESOLVED"
     }
   ],
   "expiry": {
     "review_by": "2026-09-26",
-    "note": "A naive fuzzy alias map to ticker BK is exactly the guess this contract forbids."
+    "note": "Parent node co:us:BNY IS RESOLVED (ISS:US-XNYS-BNY) on this surface, but no owner row binds this trust-company subsidiary string to it; hand-mapping the string to the parent issuer (or pre-2025 symbol BK) is the entity-grain guess this contract forbids."
   },
   "authority": {
     "trading": false,
@@ -99,5 +99,5 @@
     ]
   },
   "economic_share": null,
-  "content_sha256": "dbc64b5c7ae1daeb45ab1beed060850650b63aa306c691dd3cc143ea4de37291"
+  "content_sha256": "ffe8b2c830dc00f059897ca5514969e2f84735b377aae53951e2c48b46d41941"
 }

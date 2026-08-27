@@ -47,7 +47,7 @@
     },
     "asof": {
       "$ref": "#/$defs/date",
-      "description": "Composition cutoff. Evidence known after this cutoff must not participate (validator K3D_R061)."
+      "description": "Composition cutoff. Evidence known after this cutoff must not participate (validator K3D_R061; applies to leg/admission asof+known_at, source event clocks, and BOTH identity resolution_asof values). Clock comparison is DATE-granular by declared law: evidence known intraday on the cutoff date counts as knowable at the cutoff."
     },
     "compiled_at": {
       "$ref": "#/$defs/datetime",
@@ -203,7 +203,7 @@
     },
     "hypothesis_state": {
       "enum": ["supported_hypothesis", "abstained"],
-      "description": "COMPILER-DERIVED headline. supported_hypothesis requires graph_states.graph_1=supported AND a hypothesized mechanism. Everything else is abstained — a complete research object that must not read as confirmed transfer."
+      "description": "COMPILER-DERIVED headline, unified with abstention: supported_hypothesis if and only if abstention.abstained=false (which itself requires graph_1=supported, effective admissions, and a hypothesized mechanism). A record can never be simultaneously supported and abstained."
     },
     "abstention": {
       "type": "object",
@@ -224,11 +224,10 @@
               "coverage_insufficient",
               "no_mechanism_hypothesized",
               "stale_owner_object",
-              "clock_missing_or_future",
               "correction_not_yet_knowable"
             ]
           },
-          "description": "Typed, closed. Empty exactly when abstained=false."
+          "description": "Typed, closed, and every value is compiler-reachable: stale/superseded legs derive stale_owner_object and not_yet_knowable legs derive correction_not_yet_knowable — evidence that exists but is unusable at the cutoff is never misreported as no_graph1_evidence (that reason is reserved for ZERO Graph-1 legs). Empty exactly when abstained=false."
         }
       }
     },

@@ -129,12 +129,22 @@ _FORBIDDEN_KEY_TOKENS = (
     "strength",
 )
 
-# Trade/price vocabulary forbidden in mechanism prose: the predicted direction
+# Trade/price vocabulary forbidden in record prose: the predicted direction
 # is an OPERATING direction, never a price forecast or trade instruction.
 _TRADE_LANGUAGE = re.compile(
-    r"\b(buy|sell|long|short|overweight|underweight|outperform|underperform"
+    r"\b(buy|buying|sell|selling|long|short|shorting|overweight|underweight"
+    r"|outperform|underperform"
     r"|price\s+target|target\s+price|share\s+price|stock\s+price|upside|downside"
     r"|rally|returns?|alpha|entry|exit)\b",
+    re.IGNORECASE,
+)
+
+# Scalar-authority vocabulary forbidden in ANY record prose (review MAJOR-2,
+# 2026-08-27): a confidence/score/rank smuggled as a sentence is still a
+# scalar authority claim. Flat word ban — reword the prose instead.
+_AUTHORITY_LANGUAGE = re.compile(
+    r"\b(confidence|conviction|probabilit(?:y|ies)|score[sd]?|scoring"
+    r"|grade[sd]?|grading|rank(?:s|ed|ing)?)\b",
     re.IGNORECASE,
 )
 
@@ -221,6 +231,8 @@ def _scan_forbidden_keys(node: Any, path: str, out: list[Finding], code: str) ->
     if isinstance(node, dict):
         for key, value in node.items():
             if str(key) in _FORBIDDEN_KEY_ALLOWLIST:
+                # Allowlisted KEY only — the subtree underneath is still scanned.
+                _scan_forbidden_keys(value, f"{path}.{key}", out, code)
                 continue
             lowered = str(key).lower()
             for token in _FORBIDDEN_KEY_TOKENS:
@@ -302,8 +314,15 @@ def derive_abstention_reasons(
     admissions: list[dict],
     registry: dict,
     mechanism_hypothesized: bool,
+    relationship_paths: list[dict] | tuple = (),
 ) -> list[str]:
-    """Typed abstention reasons in a fixed, closed order."""
+    """Typed abstention reasons in a fixed, closed order.
+
+    Truthfulness law (review MAJOR-4, 2026-08-27): no_graph1_evidence means
+    ZERO Graph-1 legs exist. Evidence that exists but is unusable at the
+    cutoff derives its own typed reason (rights_blocked, stale_owner_object,
+    correction_not_yet_knowable, coverage_insufficient) — an abstention must
+    never misreport "unusable now" as "does not exist"."""
 
     reasons: list[str] = []
     if resolution_state in ("CONFLICTING", "ENTITY_TYPE_CONFLICT"):
@@ -312,14 +331,25 @@ def derive_abstention_reasons(
         return ["unresolved_identity"]
 
     graph_1 = graph_states["graph_1"]
-    if graph_1 == "unknown_unavailable":
-        reasons.append("no_graph1_evidence")
-    elif graph_1 == "insufficient_role":
+    g1_legs = [leg for leg in relationship_paths if isinstance(leg, dict)]
+    if graph_1 == "insufficient_role":
         reasons.append("insufficient_role_evidence")
-    elif graph_1 == "rights_blocked_only":
-        reasons.append("rights_blocked")
+    elif graph_1 in ("unknown_unavailable", "rights_blocked_only") and g1_legs:
+        states = {leg.get("usability_state") for leg in g1_legs}
+        if "rights_blocked" in states:
+            reasons.append("rights_blocked")
+        if states & {"stale", "superseded"}:
+            reasons.append("stale_owner_object")
+        if "not_yet_knowable" in states:
+            reasons.append("correction_not_yet_knowable")
+        if "coverage_insufficient" in states:
+            reasons.append("coverage_insufficient")
+        if not reasons:
+            reasons.append("no_graph1_evidence")
+    elif graph_1 == "unknown_unavailable":
+        reasons.append("no_graph1_evidence")
 
-    if admissions and not _effective_admissions(admissions, registry):
+    if admissions and not _effective_admissions(admissions, registry) and "coverage_insufficient" not in reasons:
         reasons.append("coverage_insufficient")
 
     if graph_1 == "supported" and not mechanism_hypothesized:
@@ -342,6 +372,17 @@ def validate_hypothesis(record: Any) -> list[Finding]:
 
     for error in sorted(_schema_validator().iter_errors(record), key=lambda e: str(e.json_path)):
         findings.append(_f("K3D_R001", error.json_path, error.message[:400]))
+
+    version = record.get("version")
+    if not (isinstance(version, int) and not isinstance(version, bool) and version == 1):
+        findings.append(
+            _f(
+                "K3D_R002",
+                "$.version",
+                f"version must be the INTEGER 1 (got {version!r}): a float 1.0 satisfies numeric "
+                "equality but changes the canonical bytes across producers",
+            )
+        )
 
     registry = load_generator_registry()
     vocabulary = registry.get("construct_vocabulary", {})
@@ -394,12 +435,14 @@ def validate_hypothesis(record: Any) -> list[Finding]:
             findings.append(
                 _f("K3D_R013", "$.target.resolution.issuer_id", "RESOLVED requires a non-null Data OS/Stock Identity issuer_id")
             )
-        if not admissions and abstention.get("abstained") is not True:
+        if not admissions and (abstention.get("abstained") is not True or g1_legs or g2_legs or g3_legs):
             findings.append(
                 _f(
                     "K3D_R023",
                     "$.generator_admissions",
-                    "a non-abstained record needs at least one admitting generator (journey step 6)",
+                    "a resolved record carrying evidence (or claiming support) needs at least one "
+                    "admitting generator (journey step 6) — evidence with no admitting generator is "
+                    "an unexplained target",
                 )
             )
 
@@ -442,7 +485,49 @@ def validate_hypothesis(record: Any) -> list[Finding]:
                     )
                 )
 
-    # --- K3D_R03x: construct->graph vocabulary + role laundering.
+    # --- K3D_R03x: construct->graph vocabulary + owner/grammar/role bindings.
+    construct_owners = registry.get("construct_owners", {})
+    owner_grammars = registry.get("owner_evidence_grammars", {})
+    role_constructs = registry.get("graph1_role_constructs", {})
+    g2_basis_constructs = registry.get("graph2_basis_constructs", {})
+    g3_basis_constructs = registry.get("graph3_basis_constructs", {})
+
+    def _check_owner_binding(path: str, construct: Any, owner_ref: Any) -> None:
+        allowed = construct_owners.get(construct)
+        owner = owner_ref.get("owner_program") if isinstance(owner_ref, dict) else None
+        if allowed is not None and owner is not None and owner not in allowed:
+            findings.append(
+                _f(
+                    "K3D_R034",
+                    f"{path}.owner_ref.owner_program",
+                    f"owner {owner!r} is not a lawful owner of construct {construct!r} "
+                    f"(lawful: {allowed!r}) — a construct claim is only as good as the owner "
+                    "surface that can actually carry it",
+                )
+            )
+
+    def _check_evidence_grammar(path: str, construct: Any, owner_ref: Any, evidence_refs: Any, expected_graph: str) -> None:
+        owner = owner_ref.get("owner_program") if isinstance(owner_ref, dict) else None
+        grammar = owner_grammars.get(owner)
+        if not grammar or not isinstance(evidence_refs, list):
+            return
+        prefix = grammar.get(f"{expected_graph}_edge_prefix")
+        if not prefix:
+            return
+        pattern = re.compile(prefix)
+        for j, ref in enumerate(evidence_refs):
+            if isinstance(ref, str) and re.match(r"^[a-z_]+:", ref) and not pattern.match(ref):
+                findings.append(
+                    _f(
+                        "K3D_R035",
+                        f"{path}.evidence_refs[{j}]",
+                        f"LAUNDERING: evidence ref {ref[:80]!r} is not a {expected_graph}-type object "
+                        f"of owner {owner!r} (required prefix {prefix!r}) — re-labeling a "
+                        "membership/expression edge as an economic relationship is refused by the "
+                        "owner's own id grammar",
+                    )
+                )
+
     for name, legs, expected_graph in (
         ("relationship_paths", g1_legs, "graph_1"),
         ("similarity_evidence", g2_legs, "graph_2"),
@@ -464,6 +549,44 @@ def validate_hypothesis(record: Any) -> list[Finding]:
                         f"LAUNDERING: construct {construct!r} belongs to {vocab_graph}, but this leg "
                         f"claims {expected_graph} — Graph 2/3 evidence can never fill a Graph-1 role "
                         "and no opaque RELATED flattening exists in this contract",
+                    )
+                )
+            _check_owner_binding(path, construct, leg.get("owner_ref"))
+            _check_evidence_grammar(path, construct, leg.get("owner_ref"), leg.get("evidence_refs"), expected_graph)
+
+    for i, admission in enumerate(admissions):
+        if isinstance(admission, dict):
+            path = f"$.generator_admissions[{i}]"
+            _check_owner_binding(path, admission.get("construct"), admission.get("owner_ref"))
+            vocab_graph = vocabulary.get(admission.get("construct"))
+            if vocab_graph in ("graph_1", "graph_2", "graph_3"):
+                _check_evidence_grammar(path, admission.get("construct"), admission.get("owner_ref"), admission.get("evidence_refs"), vocab_graph)
+
+    for i, leg in enumerate(g2_legs):
+        if isinstance(leg, dict):
+            basis = leg.get("comparability_basis")
+            allowed_constructs = g2_basis_constructs.get(basis)
+            if allowed_constructs is not None and leg.get("construct") not in allowed_constructs:
+                findings.append(
+                    _f(
+                        "K3D_R036",
+                        f"$.similarity_evidence[{i}].comparability_basis",
+                        f"basis {basis!r} does not cohere with construct {leg.get('construct')!r} "
+                        f"(lawful constructs: {allowed_constructs!r})",
+                    )
+                )
+    for i, leg in enumerate(g3_legs):
+        if isinstance(leg, dict):
+            basis = leg.get("market_state_basis")
+            allowed_constructs = g3_basis_constructs.get(basis)
+            if allowed_constructs is not None and leg.get("construct") not in allowed_constructs:
+                findings.append(
+                    _f(
+                        "K3D_R036",
+                        f"$.market_evidence[{i}].market_state_basis",
+                        f"basis {basis!r} does not cohere with construct {leg.get('construct')!r} "
+                        f"(lawful constructs: {allowed_constructs!r}) — participation/breadth "
+                        "evidence cannot travel under a residual/sympathy label",
                     )
                 )
 
@@ -510,6 +633,16 @@ def validate_hypothesis(record: Any) -> list[Finding]:
                     "claim_strength=disclosed requires role_evidence_class=disclosed_role_specific",
                 )
             )
+        allowed_role_constructs = role_constructs.get(role)
+        if allowed_role_constructs is not None and construct not in allowed_role_constructs:
+            findings.append(
+                _f(
+                    "K3D_R037",
+                    f"{path}.role",
+                    f"role {role!r} does not cohere with construct {construct!r} "
+                    f"(lawful constructs: {allowed_role_constructs!r})",
+                )
+            )
 
     # --- K3D_R04x: mechanism gating + operating-direction-only law.
     graph_states_claimed = record.get("graph_states") if isinstance(record.get("graph_states"), dict) else {}
@@ -541,6 +674,46 @@ def validate_hypothesis(record: Any) -> list[Finding]:
                 )
             )
 
+    # --- K3D_R043: authority/trade language in ANY free-prose field (review
+    # MAJOR-2): a confidence/score/rank/trade instruction smuggled as a
+    # sentence is still an authority claim. Flat word ban; reword the prose.
+    prose_fields: list[tuple[str, Any]] = [("$.mechanism.hypothesis_text", text)]
+    alternatives = record.get("alternatives") if isinstance(record.get("alternatives"), list) else []
+    falsifiers = record.get("falsifiers") if isinstance(record.get("falsifiers"), list) else []
+    expiry = record.get("expiry") if isinstance(record.get("expiry"), dict) else {}
+    for i, alt in enumerate(alternatives):
+        if isinstance(alt, dict):
+            prose_fields.append((f"$.alternatives[{i}].text", alt.get("text")))
+    for i, fz in enumerate(falsifiers):
+        if isinstance(fz, dict):
+            prose_fields.append((f"$.falsifiers[{i}].condition", fz.get("condition")))
+            prose_fields.append((f"$.falsifiers[{i}].observable", fz.get("observable")))
+    prose_fields.append(("$.expiry.note", expiry.get("note")))
+    for prose_path, prose in prose_fields:
+        if not isinstance(prose, str):
+            continue
+        hit = _AUTHORITY_LANGUAGE.search(prose)
+        if hit:
+            findings.append(
+                _f(
+                    "K3D_R043",
+                    prose_path,
+                    f"scalar-authority vocabulary {hit.group(0)!r} in record prose: no confidence, "
+                    "score, grade, rank or probability may be asserted anywhere in a K3-D record",
+                )
+            )
+        if prose_path != "$.mechanism.hypothesis_text":
+            hit2 = _TRADE_LANGUAGE.search(prose)
+            if hit2:
+                findings.append(
+                    _f(
+                        "K3D_R043",
+                        prose_path,
+                        f"trade/price vocabulary {hit2.group(0)!r} in record prose: a hypothesis "
+                        "record carries no trade instruction in any field",
+                    )
+                )
+
     # --- K3D_R05x: derived fields must equal the derivation (no caller-authored summaries).
     derived_states = derive_graph_states(
         [leg for leg in g1_legs if isinstance(leg, dict)],
@@ -571,27 +744,7 @@ def validate_hypothesis(record: Any) -> list[Finding]:
             )
 
     mechanism_hypothesized = mechanism.get("state") == "hypothesized"
-    expected_hypothesis_state = (
-        "supported_hypothesis" if derived_states["graph_1"] == "supported" and mechanism_hypothesized else "abstained"
-    )
-    if record.get("hypothesis_state") != expected_hypothesis_state:
-        findings.append(
-            _f(
-                "K3D_R052",
-                "$.hypothesis_state",
-                f"hypothesis_state {record.get('hypothesis_state')!r} != derived {expected_hypothesis_state!r}",
-            )
-        )
-    if mechanism_hypothesized and derived_states["graph_1"] != "supported":
-        findings.append(
-            _f(
-                "K3D_R042",
-                "$.mechanism.state",
-                f"mechanism hypothesized while derived Graph-1 state is {derived_states['graph_1']!r}: "
-                "missing economic relationship cannot be converted into a confident mechanism",
-            )
-        )
-
+    expected_reasons: list[str] | None = None
     if isinstance(resolution_state, str):
         expected_reasons = derive_abstention_reasons(
             resolution_state,
@@ -599,6 +752,7 @@ def validate_hypothesis(record: Any) -> list[Finding]:
             [a for a in admissions if isinstance(a, dict)],
             registry,
             mechanism_hypothesized,
+            [leg for leg in g1_legs if isinstance(leg, dict)],
         )
         claimed_reasons = abstention.get("reasons") if isinstance(abstention.get("reasons"), list) else []
         expected_abstained = bool(expected_reasons)
@@ -611,6 +765,31 @@ def validate_hypothesis(record: Any) -> list[Finding]:
                     f"!= derived {{abstained: {expected_abstained!r}, reasons: {expected_reasons!r}}}",
                 )
             )
+
+    # Unified headline (review MAJOR-5): supported_hypothesis IFF the derived
+    # abstention is empty — a record can never be supported AND abstained.
+    if expected_reasons is not None:
+        expected_hypothesis_state = "supported_hypothesis" if not expected_reasons else "abstained"
+    else:
+        expected_hypothesis_state = "abstained"
+    if record.get("hypothesis_state") != expected_hypothesis_state:
+        findings.append(
+            _f(
+                "K3D_R052",
+                "$.hypothesis_state",
+                f"hypothesis_state {record.get('hypothesis_state')!r} != derived {expected_hypothesis_state!r}",
+            )
+        )
+    if mechanism_hypothesized and (derived_states["graph_1"] != "supported" or (expected_reasons or [])):
+        findings.append(
+            _f(
+                "K3D_R042",
+                "$.mechanism.state",
+                f"mechanism hypothesized while the derived record abstains "
+                f"(graph_1={derived_states['graph_1']!r}, reasons={expected_reasons!r}): "
+                "an abstaining record cannot carry a confident mechanism",
+            )
+        )
 
     # --- K3D_R06x: clocks. Evidence known after the cutoff cannot participate.
     asof_key = _date_key(record.get("asof"))
@@ -652,6 +831,33 @@ def validate_hypothesis(record: Any) -> list[Finding]:
                         f"record cutoff asof={record.get('asof')!r}",
                     )
                 )
+        source_identity = source_event_obj.get("source_identity") if isinstance(source_event_obj.get("source_identity"), dict) else {}
+        for res_path, res_obj in (
+            ("$.target.resolution.resolution_asof", resolution),
+            ("$.source_event.source_identity.resolution_asof", source_identity),
+        ):
+            key = _date_key(res_obj.get("resolution_asof"))
+            if key is not None and key > asof_key:
+                findings.append(
+                    _f(
+                        "K3D_R061",
+                        res_path,
+                        f"LOOKAHEAD: identity resolution_asof={res_obj.get('resolution_asof')!r} is after "
+                        f"the record cutoff asof={record.get('asof')!r} — a future identity verdict is "
+                        "not lawful evidence",
+                    )
+                )
+        expiry_obj = record.get("expiry") if isinstance(record.get("expiry"), dict) else {}
+        review_key = _date_key(expiry_obj.get("review_by"))
+        if review_key is not None and review_key <= asof_key:
+            findings.append(
+                _f(
+                    "K3D_R064",
+                    "$.expiry.review_by",
+                    f"review_by={expiry_obj.get('review_by')!r} is not after asof={record.get('asof')!r}: "
+                    "a record expired at composition is not a live hypothesis",
+                )
+            )
         compiled_key = _date_key(record.get("compiled_at"))
         if compiled_key is not None and compiled_key < asof_key:
             findings.append(
@@ -812,12 +1018,16 @@ def compose_hypothesis(
             )
 
     graph_states = derive_graph_states(g1_legs, g2_legs, g3_legs)
+    base_reasons = derive_abstention_reasons(
+        resolution_state, graph_states, admissions, registry, True, g1_legs
+    )
 
     if mechanism_proposal is not None:
-        if graph_states["graph_1"] != "supported":
+        if graph_states["graph_1"] != "supported" or base_reasons:
             raise EconomicPropagationError(
-                f"mechanism proposed while derived Graph-1 state is {graph_states['graph_1']!r}: "
-                "a missing economic relationship cannot be converted into a confident mechanism — "
+                f"mechanism proposed while the record abstains "
+                f"(graph_1={graph_states['graph_1']!r}, reasons={base_reasons!r}): "
+                "an abstaining record cannot carry a confident mechanism — "
                 "compose the abstention instead"
             )
         for field in ("mechanism_class", "hypothesis_text", "predicted_operating_direction", "operating_metric_class"):
@@ -846,10 +1056,10 @@ def compose_hypothesis(
         }
 
     mechanism_hypothesized = mechanism["state"] == "hypothesized"
-    reasons = derive_abstention_reasons(resolution_state, graph_states, admissions, registry, mechanism_hypothesized)
-    hypothesis_state = (
-        "supported_hypothesis" if graph_states["graph_1"] == "supported" and mechanism_hypothesized else "abstained"
+    reasons = derive_abstention_reasons(
+        resolution_state, graph_states, admissions, registry, mechanism_hypothesized, g1_legs
     )
+    hypothesis_state = "supported_hypothesis" if not reasons else "abstained"
 
     record = {
         "schema": SCHEMA_ID,

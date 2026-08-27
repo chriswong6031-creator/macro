@@ -32,7 +32,7 @@
     "DNR:KILL-CAUSAL-DAG-ALPHA"
   ],
   "compiled_at": "2026-08-20T04:00:00Z",
-  "content_sha256": "30b64df01a2ef95d8a2fa9b9775d8efe770ba4d6e2118088e5fae48c5c316a06",
+  "content_sha256": "7cd2336d20e04cb6d5b205f61f6abfcbadf577f3d7ff2c3fdf2dfeb85327563b",
   "economic_share": null,
   "expiry": {
     "note": "Review after next quarterly filing.",
@@ -56,9 +56,9 @@
       "graph": "graph_2",
       "known_at": "2026-08-20",
       "owner_ref": {
-        "artifact": "data/edgar/material_8k_events.parquet",
-        "artifact_schema": "group_linked_outsiders.v1",
-        "owner_program": "group-reads"
+        "artifact": "data/theme_graph/edges.parquet",
+        "artifact_schema": "theme_graph.edges.v1",
+        "owner_program": "gmi-theme-graph"
       }
     }
   ],

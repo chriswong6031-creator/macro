@@ -29,6 +29,71 @@
     "options_volume_attention": "graph_3",
     "etf_tracking": "graph_3"
   },
+  "construct_owners": {
+    "disclosed_customer_supplier": ["gmi-theme-graph", "earnings-intelligence"],
+    "disclosed_partner_license": ["gmi-theme-graph", "earnings-intelligence", "biocatalyst"],
+    "common_customer_supplier": ["government-revenue-foresight", "earnings-intelligence"],
+    "product_end_market_exposure": ["earnings-intelligence"],
+    "program_award_fact": ["government-revenue-foresight"],
+    "ownership_cashflow_change": ["government-revenue-foresight", "earnings-intelligence"],
+    "disclosed_agreement_role_unknown": ["group-reads", "edgar-ingest"],
+    "theme_membership": ["gmi-theme-graph"],
+    "curated_peer_set": ["group-reads"],
+    "narrative_topic": ["thematic-intelligence", "earnings-intelligence"],
+    "protocol_comparability": ["biocatalyst"],
+    "segment_kpi_comparability": ["earnings-intelligence"],
+    "residual_comovement": ["group-reads"],
+    "earnings_sympathy": ["group-reads"],
+    "group_pulse_state": ["group-reads"],
+    "peer_participation_breadth": ["group-reads"],
+    "historical_transmission_neighbor": ["policy-transmission-intelligence"],
+    "options_volume_attention": ["group-reads"],
+    "etf_tracking": ["gmi-theme-graph"]
+  },
+  "construct_owners_note": "K3D_R034: a leg or admission whose owner_ref.owner_program is not a lawful owner of its construct is refused — group-reads REFUSES Customer/Supplier/Partner/Competitor labels (engine/group_linked_outsiders.py), so group-reads can never be the owner of a role-specific Graph-1 construct; only its role-unknown agreement construct binds to it.",
+  "graph1_role_constructs": {
+    "customer": ["disclosed_customer_supplier"],
+    "supplier": ["disclosed_customer_supplier"],
+    "distributor": ["disclosed_customer_supplier"],
+    "partner": ["disclosed_partner_license"],
+    "licensor": ["disclosed_partner_license"],
+    "licensee": ["disclosed_partner_license"],
+    "competitor": ["product_end_market_exposure", "disclosed_partner_license"],
+    "common_customer": ["common_customer_supplier"],
+    "common_supplier": ["common_customer_supplier"],
+    "product_exposure": ["product_end_market_exposure"],
+    "end_market_exposure": ["product_end_market_exposure"],
+    "geography_exposure": ["product_end_market_exposure"],
+    "regulation_exposure": ["product_end_market_exposure"],
+    "program_participant": ["program_award_fact"],
+    "facility_dependency": ["program_award_fact"],
+    "bottleneck_dependency": ["program_award_fact"],
+    "ownership_cashflow": ["ownership_cashflow_change"],
+    "role_unknown": ["disclosed_agreement_role_unknown"]
+  },
+  "graph2_basis_constructs": {
+    "shared_theme_vocabulary": ["theme_membership"],
+    "curated_peer_membership": ["curated_peer_set"],
+    "segment_kpi_overlap": ["segment_kpi_comparability"],
+    "narrative_co_acceleration": ["narrative_topic"],
+    "protocol_comparability": ["protocol_comparability"]
+  },
+  "graph3_basis_constructs": {
+    "residual_comovement": ["residual_comovement"],
+    "sympathy_around_print": ["earnings_sympathy"],
+    "group_pulse": ["group_pulse_state"],
+    "participation_breadth": ["peer_participation_breadth"],
+    "attention_options_volume": ["options_volume_attention"],
+    "incorporation_state": ["group_pulse_state", "earnings_sympathy"]
+  },
+  "owner_evidence_grammars": {
+    "gmi-theme-graph": {
+      "graph_1_edge_prefix": "^(supplies|enables|bottleneck_of|benefits_from|catalyst_of):",
+      "graph_2_edge_prefix": "^(member_of|expresses):",
+      "graph_3_edge_prefix": "^(tracks):",
+      "note": "K3D_R035: theme-graph edge_ids are structured '<type>:<src>-><dst>@<date>'. A Graph-1 leg citing this owner must cite Graph-1-type edge ids; a MEMBER_OF/EXPRESSES id re-labeled as a customer/supplier claim is refused by grammar, not trusted by field value. As of freeze, ZERO Graph-1-type edges have ever been emitted, so any Graph-1 claim on this owner is refusable-by-construction until W4 lands."
+    }
+  },
   "construct_notes": {
     "disclosed_agreement_role_unknown": "A generic 8-K agreement or a financing-agent counterparty proves two names signed something — it does NOT say who supplies whom. Graph-1-candidate only; role must stay role_unknown (K3D_R031). GR linked-outsiders' closed vocabulary and module header forbid Customer/Supplier/Partner/Competitor labels.",
     "ownership_cashflow_change": "Ownership counts as Graph 1 only when it changes cash-flow rights (JV, sub, parent). GovRev defense19-v1 legal/ownership identity is NOT an economic relationship by itself.",

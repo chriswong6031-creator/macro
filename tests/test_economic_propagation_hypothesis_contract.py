@@ -99,13 +99,32 @@ def _target(requested_key="ACME", resolution=None):
     return {"requested_key": requested_key, "resolution": resolution or _identity()}
 
 
+# Lawful owner per construct (generator_registry construct_owners, K3D_R034).
+_CONSTRUCT_OWNER = {
+    "disclosed_customer_supplier": ("earnings-intelligence", "data/earnings/fact_packs.parquet", "earnings.fact_pack/v1"),
+    "disclosed_agreement_role_unknown": ("group-reads", "data/edgar/material_8k_events.parquet", "group_linked_outsiders.v1"),
+    "theme_membership": ("gmi-theme-graph", "data/theme_graph/edges.parquet", "theme_graph.edges.v1"),
+    "curated_peer_set": ("group-reads", "data/baskets/membership.json", "baskets.membership.v1"),
+    "residual_comovement": ("group-reads", "data/baskets/group_pulse.json", "group_pulse.v1"),
+    "earnings_sympathy": ("group-reads", "data/baskets/group_pulse.json", "group_earnings_pulse.v1"),
+    "peer_participation_breadth": ("group-reads", "data/baskets/group_pulse.json", "group_pulse.v1"),
+}
+
+
+def _construct_owner_ref(construct):
+    program, artifact, schema = _CONSTRUCT_OWNER.get(
+        construct, ("earnings-intelligence", "data/earnings/fact_packs.parquet", "earnings.fact_pack/v1")
+    )
+    return _owner_ref(program, artifact, schema)
+
+
 def _g1_leg(leg_id="g1_customer", construct="disclosed_customer_supplier", role="customer",
             role_evidence_class="disclosed_role_specific", claim_strength="disclosed",
             usability_state="usable", asof=ASOF, known_at=ASOF):
     return {
         "leg_id": leg_id, "graph": "graph_1", "construct": construct,
         "role": role, "role_evidence_class": role_evidence_class, "claim_strength": claim_strength,
-        "owner_ref": _owner_ref(), "evidence_refs": ["evidence-ref-g1"],
+        "owner_ref": _construct_owner_ref(construct), "evidence_refs": ["evidence-ref-g1"],
         "asof": asof, "known_at": known_at, "usability_state": usability_state,
     }
 
@@ -133,7 +152,7 @@ def _g3_leg(leg_id="g3_resid", construct="residual_comovement", market_state_bas
 def _admission(generator_id, graph, construct, coverage_state="covered", asof=ASOF, known_at=ASOF):
     return {
         "generator_id": generator_id, "graph": graph, "construct": construct,
-        "owner_ref": _owner_ref(), "evidence_refs": ["evidence-ref-admission"],
+        "owner_ref": _construct_owner_ref(construct), "evidence_refs": ["evidence-ref-admission"],
         "asof": asof, "known_at": known_at, "coverage_state": coverage_state,
     }
 
@@ -937,3 +956,243 @@ def test_every_fixture_and_manifest_parse_as_json_tool_would():
 def test_compose_output_round_trips_through_validate_with_zero_findings(name):
     record = GOLDEN_BUILDERS[name]()
     assert validate_hypothesis(record) == []
+
+
+# ---------------------------------------------------------------------------
+# Adversarial-review supplement (exact-head review of cb0c66b2, 2026-08-27).
+# One test per repaired defect, reproducing the review's attack records, plus
+# coverage for every rule code the original suite left unexercised.
+# ---------------------------------------------------------------------------
+
+
+def test_review_a1_theme_edge_relabeled_as_customer_is_refused():
+    # MAJOR-1: a real theme-graph MEMBER_OF edge re-tagged as a disclosed
+    # customer/supplier claim. Two independent guards must fire: the owner
+    # binding (gmi-theme-graph IS a lawful disclosed_customer_supplier owner,
+    # so the grammar guard R035 is the one that kills the member_of ref) and,
+    # for a non-owner like group-reads, the owner binding R034.
+    rec = _base_min()
+    leg = rec["relationship_paths"][0]
+    leg["owner_ref"] = _owner_ref("gmi-theme-graph", "data/theme_graph/edges.parquet", "theme_graph.edges.v1")
+    leg["evidence_refs"] = ["member_of:co:us:TSN->ltheme:finviz:agricultureprocessing@2026-06-27"]
+    rec = _rehash(rec)
+    assert "K3D_R035" in _codes(validate_hypothesis(rec))
+
+    rec2 = _base_min()
+    rec2["relationship_paths"][0]["owner_ref"] = _owner_ref()  # group-reads
+    rec2 = _rehash(rec2)
+    assert "K3D_R034" in _codes(validate_hypothesis(rec2))
+
+
+def test_review_b1_scalar_and_trade_language_in_prose_is_refused():
+    # MAJOR-2: authority/trade claims smuggled as sentences.
+    rec = _base_min()
+    rec["alternatives"] = [{
+        "explanation_class": "sector_factor",
+        "text": "Recommend buying the target on this news and shorting the source.",
+    }]
+    rec = _rehash(rec)
+    assert "K3D_R043" in _codes(validate_hypothesis(rec))
+
+    rec2 = _build_golden_supported_hypothesis()
+    rec2["mechanism"]["hypothesis_text"] = "Propagation confidence 0.93; highest ranked of 42 names."
+    rec2 = _rehash(rec2)
+    assert "K3D_R043" in _codes(validate_hypothesis(rec2))
+
+    with pytest.raises(EconomicPropagationError):
+        compose_hypothesis(
+            source_event=_source_event(), target=_target(), asof=ASOF, compiled_at=COMPILED_AT,
+            generator_admissions=[_admission("gen_disclosed_customer_supplier", "graph_1", "disclosed_customer_supplier")],
+            relationship_paths=[_g1_leg()],
+            mechanism_proposal=None,
+            alternatives=[{"explanation_class": "sector_factor", "text": "Grade A conviction setup."}],
+            falsifiers=_FALSIFIERS, expiry=_EXPIRY,
+        )
+
+
+def test_review_c1_future_resolution_asof_is_lookahead():
+    # MAJOR-3: a future identity verdict is not lawful evidence.
+    rec = _base_min()
+    rec["target"]["resolution"]["resolution_asof"] = "2030-01-01"
+    rec = _rehash(rec)
+    assert "K3D_R061" in _codes(validate_hypothesis(rec))
+
+
+def test_review_d1_coverage_insufficient_never_yields_supported_headline():
+    # MAJOR-5: supported_hypothesis and abstained can no longer coexist.
+    rec = compose_hypothesis(
+        source_event=_source_event(event_id="evt-d1"), target=_target(requested_key="D1CO"),
+        asof=ASOF, compiled_at=COMPILED_AT,
+        generator_admissions=[_admission(
+            "gen_disclosed_customer_supplier", "graph_1", "disclosed_customer_supplier",
+            coverage_state="coverage_insufficient")],
+        relationship_paths=[_g1_leg(leg_id="g1_d1")],
+        mechanism_proposal=None,
+        alternatives=_ALTERNATIVES, falsifiers=_FALSIFIERS, expiry=_EXPIRY,
+    )
+    assert rec["hypothesis_state"] == "abstained"
+    assert rec["abstention"]["abstained"] is True
+    assert "coverage_insufficient" in rec["abstention"]["reasons"]
+    assert validate_hypothesis(rec) == []
+    with pytest.raises(EconomicPropagationError):
+        compose_hypothesis(
+            source_event=_source_event(event_id="evt-d1b"), target=_target(requested_key="D1CO"),
+            asof=ASOF, compiled_at=COMPILED_AT,
+            generator_admissions=[_admission(
+                "gen_disclosed_customer_supplier", "graph_1", "disclosed_customer_supplier",
+                coverage_state="coverage_insufficient")],
+            relationship_paths=[_g1_leg(leg_id="g1_d1")],
+            mechanism_proposal=_mechanism_proposal(),
+            alternatives=_ALTERNATIVES, falsifiers=_FALSIFIERS, expiry=_EXPIRY,
+        )
+
+
+def test_review_e1_unusable_evidence_is_not_reported_as_nonexistent():
+    # MAJOR-4: stale/superseded -> stale_owner_object; not_yet_knowable ->
+    # correction_not_yet_knowable; never no_graph1_evidence when legs exist.
+    for state, expected in (
+        ("stale", "stale_owner_object"),
+        ("superseded", "stale_owner_object"),
+        ("not_yet_knowable", "correction_not_yet_knowable"),
+        ("coverage_insufficient", "coverage_insufficient"),
+    ):
+        rec = compose_hypothesis(
+            source_event=_source_event(event_id=f"evt-e1-{state}"), target=_target(requested_key="E1CO"),
+            asof=ASOF, compiled_at=COMPILED_AT,
+            generator_admissions=[_admission("gen_disclosed_customer_supplier", "graph_1", "disclosed_customer_supplier")],
+            relationship_paths=[_g1_leg(leg_id="g1_e1", usability_state=state)],
+            mechanism_proposal=None,
+            alternatives=_ALTERNATIVES, falsifiers=_FALSIFIERS, expiry=_EXPIRY,
+        )
+        assert expected in rec["abstention"]["reasons"], (state, rec["abstention"])
+        assert "no_graph1_evidence" not in rec["abstention"]["reasons"]
+        assert validate_hypothesis(rec) == []
+
+
+def test_review_g1_participation_basis_requires_participation_construct():
+    # MINOR-3: participation/breadth evidence cannot travel under a residual
+    # co-movement label.
+    rec = compose_hypothesis(
+        source_event=_source_event(event_id="evt-g1"), target=_target(requested_key="G1CO"),
+        asof=ASOF, compiled_at=COMPILED_AT,
+        generator_admissions=[_admission("gen_residual_comovement", "graph_3", "residual_comovement")],
+        market_evidence=[_g3_leg(leg_id="g3_g1")],
+        mechanism_proposal=None,
+        alternatives=_ALTERNATIVES, falsifiers=_FALSIFIERS, expiry=_EXPIRY,
+    )
+    leg = rec["market_evidence"][0]
+    leg["market_state_basis"] = "participation_breadth"
+    rec = _rehash(rec)
+    assert "K3D_R036" in _codes(validate_hypothesis(rec))
+
+
+def test_review_f1_expired_at_composition_is_refused():
+    rec = _base_min()
+    rec["expiry"] = {"review_by": ASOF}
+    rec = _rehash(rec)
+    assert "K3D_R064" in _codes(validate_hypothesis(rec))
+
+
+def test_review_l1_float_version_is_refused():
+    rec = _base_min()
+    rec["version"] = 1.0
+    rec = _rehash(rec)
+    assert "K3D_R002" in _codes(validate_hypothesis(rec))
+
+
+def test_review_m6_forbidden_keys_found_under_allowlisted_parent():
+    rec = _base_min()
+    rec["authority"] = dict(rec["authority"])
+    # 'ranking' key itself is allowlisted (const-false axis) but the scan must
+    # still descend past allowlisted keys elsewhere in the tree.
+    rec["target"]["resolution"]["owner_ref"]["artifact"] = "x"
+    rec["expiry"]["note"] = "n"
+    rec["source_event"]["owner_ref"] = dict(rec["source_event"]["owner_ref"])
+    rec = _rehash(rec)
+    tampered = copy.deepcopy(rec)
+    tampered["mechanism"] = dict(tampered["mechanism"])
+    # smuggle under a nested object two levels down
+    tampered["target"] = json.loads(json.dumps(tampered["target"]))
+    tampered["target"]["resolution"]["my_score"] = 0.9
+    tampered["content_sha256"] = content_sha256(tampered)
+    assert "K3D_R071" in _codes(validate_hypothesis(tampered))
+
+
+def test_review_m5_committed_real_proof_records_validate_clean():
+    proof_dir = ROOT / "research" / "economic_propagation" / "k3d_real_proof_records"
+    paths = sorted(proof_dir.glob("*.json"))
+    assert len(paths) >= 2, "both real-proof records must stay committed"
+    for path in paths:
+        rec = json.loads(path.read_text(encoding="utf-8"))
+        assert validate_hypothesis(rec) == [], path.name
+        assert rec["hypothesis_state"] == "abstained"
+        assert rec["abstention"]["abstained"] is True
+
+
+def test_unexercised_codes_r012_r013_identity_details():
+    rec = _build_golden_typed_abstention_unresolved()
+    rec["mechanism"] = {
+        "state": "hypothesized", "mechanism_class": "demand_transfer",
+        "hypothesis_text": "Widget demand transfers.", "predicted_operating_direction": "improves",
+        "operating_metric_class": "revenue",
+    }
+    rec = _rehash(rec)
+    assert "K3D_R012" in _codes(validate_hypothesis(rec))
+
+    rec2 = _base_min()
+    rec2["target"]["resolution"]["issuer_id"] = None
+    rec2 = _rehash(rec2)
+    assert "K3D_R013" in _codes(validate_hypothesis(rec2))
+
+
+def test_unexercised_codes_r020_r022_r023_admissions():
+    rec = _base_min()
+    rec["generator_admissions"][0]["generator_id"] = "gen_nonexistent"
+    rec = _rehash(rec)
+    assert "K3D_R020" in _codes(validate_hypothesis(rec))
+
+    rec2 = _base_min()
+    rec2["generator_admissions"][0]["graph"] = "graph_2"
+    rec2 = _rehash(rec2)
+    assert "K3D_R022" in _codes(validate_hypothesis(rec2))
+
+    rec3 = _base_min()
+    rec3["generator_admissions"] = []
+    rec3 = _rehash(rec3)
+    assert "K3D_R023" in _codes(validate_hypothesis(rec3))
+
+
+def test_unexercised_codes_r030_r033_r040_legs_and_mechanism():
+    rec = _base_min()
+    rec["relationship_paths"][0]["construct"] = "made_up_construct"
+    rec = _rehash(rec)
+    assert "K3D_R030" in _codes(validate_hypothesis(rec))
+
+    rec2 = _base_min()
+    rec2["relationship_paths"][0]["role_evidence_class"] = "strongly_evidenced_role"
+    rec2 = _rehash(rec2)  # claim_strength stays "disclosed"
+    assert "K3D_R033" in _codes(validate_hypothesis(rec2))
+
+    rec3 = _build_golden_supported_hypothesis()
+    rec3["mechanism"] = dict(rec3["mechanism"], operating_metric_class=None)
+    rec3 = _rehash(rec3)
+    assert "K3D_R040" in _codes(validate_hypothesis(rec3))
+
+
+def test_unexercised_codes_r000_r037_r062_r082():
+    assert _codes(validate_hypothesis("not a dict")) == {"K3D_R000"}
+
+    rec = _base_min()
+    rec["relationship_paths"][0]["role"] = "program_participant"
+    rec = _rehash(rec)  # construct stays disclosed_customer_supplier
+    assert "K3D_R037" in _codes(validate_hypothesis(rec))
+
+    rec2 = _base_min()
+    rec2["compiled_at"] = "2026-08-01T00:00:00Z"
+    rec2 = _rehash(rec2)
+    assert "K3D_R062" in _codes(validate_hypothesis(rec2))
+
+    rec3 = _base_min()
+    rec3["record_id"] = "eph1:0000000000000000"
+    rec3 = _rehash(rec3)
+    assert "K3D_R082" in _codes(validate_hypothesis(rec3))
