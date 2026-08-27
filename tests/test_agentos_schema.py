@@ -752,3 +752,224 @@ def test_no_subcommand_still_announces_itself_as_a_stub() -> None:
     finally:
         agentos.git_dates = original_git_dates
         agentos._repo_sha = original_repo_sha
+
+
+# ------------------------------------------- Project Recovery R8-B1 typed wait
+
+
+def _wait_workstream() -> dict[str, object]:
+    return {
+        "key": "TEST-WAIT",
+        "title": "Test wait",
+        "objective": "Exercise the typed intentional-wait contract.",
+        "status": "active",
+        "program": "test-program",
+        "repos": ["macro"],
+        "owner": "fable",
+        "class": "research",
+        "blast_radius": "reversible",
+        "ambiguity": "specified",
+        "waves": [{"id": "w1", "title": "Accrue", "status": "todo"}],
+        "next_action": "Accrue prospectively.",
+    }
+
+
+def _wait_hard(rec: dict[str, object]):
+    from scripts import agentos
+
+    return [
+        problem
+        for problem in agentos.check_workstream(
+            rec,
+            Path("agentos/workstreams/WS-TEST-WAIT.md"),
+            {"test-program"},
+        )
+        if problem.hard
+    ]
+
+
+def test_workstream_wait_accepts_closed_valid_shape() -> None:
+    rec = _wait_workstream()
+    rec["wait"] = {
+        "kind": "natural_evidence",
+        "review_after": "2026-09-25",
+        "condition": "Review whether the preregistered prospective sample matured.",
+    }
+    assert _wait_hard(rec) == []
+
+
+@pytest.mark.parametrize(
+    "wait,message_fragment",
+    [
+        (
+            {
+                "kind": "until_ready",
+                "review_after": "2026-09-25",
+                "condition": "Not a registered kind.",
+            },
+            "kind",
+        ),
+        ({"kind": "natural_evidence"}, "review_after"),
+        (
+            {
+                "kind": "external_action",
+                "review_after": "next week",
+                "condition": "Operator action remains outstanding.",
+            },
+            "review_after",
+        ),
+        (
+            {
+                "kind": "external_action",
+                "review_after": "2026-09-25",
+                "condition": "Operator action remains outstanding.",
+                "auto_extend": True,
+            },
+            "auto_extend",
+        ),
+    ],
+)
+def test_workstream_wait_rejects_malformed_closed_contract(
+    wait: dict[str, object], message_fragment: str
+) -> None:
+    rec = _wait_workstream()
+    rec["wait"] = wait
+    hard = _wait_hard(rec)
+    assert any(problem.rule == "bad-wait" for problem in hard)
+    assert any(message_fragment in problem.message for problem in hard)
+
+
+def test_wave_wait_uses_same_contract_and_rejects_blank_condition() -> None:
+    rec = _wait_workstream()
+    wave = rec["waves"][0]
+    assert isinstance(wave, dict)
+    wave["wait"] = {
+        "kind": "calendar_window",
+        "review_after": "2026-09-01",
+        "condition": "  ",
+    }
+    hard = _wait_hard(rec)
+    assert any(problem.rule == "bad-wait" for problem in hard)
+    assert any("condition" in problem.message for problem in hard)
+
+
+def _inject_valid_waits(store: Path) -> None:
+    record = store / "workstreams" / "WS-AGENT-OS.md"
+    _patch(
+        record,
+        "waves:\n",
+        "wait:\n"
+        "  kind: natural_evidence\n"
+        "  review_after: 2026-09-25\n"
+        "  condition: Review whether the preregistered prospective sample matured.\n"
+        "waves:\n",
+    )
+    _patch(
+        record,
+        "    status: done\n    pr: 5472",
+        "    status: done\n"
+        "    wait:\n"
+        "      kind: calendar_window\n"
+        "      review_after: 2026-09-01\n"
+        "      condition: Review at the declared calendar window.\n"
+        "    pr: 5472",
+    )
+
+
+def test_typed_wait_projects_into_state_without_date_serialization_failure(store: Path) -> None:
+    from scripts import agentos
+
+    _inject_valid_waits(store)
+    parsed = agentos.load_store(store, agentos._load_programs())
+    assert not [problem for problem in parsed.problems if problem.hard]
+    now = agentos._parse_moment("2026-08-27T15:00:00Z")
+    assert now is not None
+
+    original_git_dates = agentos.git_dates
+    agentos.git_dates = lambda _path: (None, None)
+    try:
+        state = agentos.build_state(
+            parsed,
+            now=now,
+            degraded=agentos.Degraded(),
+            builds=None,
+            p0_status=None,
+            worktrees={"count": 0, "branches": [], "uncommitted": []},
+        )
+    finally:
+        agentos.git_dates = original_git_dates
+
+    row = next(item for item in state["workstreams"] if item["key"] == "AGENT-OS")
+    assert row["wait"] == {
+        "kind": "natural_evidence",
+        "review_after": "2026-09-25",
+        "condition": "Review whether the preregistered prospective sample matured.",
+    }
+    first_wave = next(item for item in row["wave_detail"] if item["id"] == "W0")
+    assert first_wave["wait"] == {
+        "kind": "calendar_window",
+        "review_after": "2026-09-01",
+        "condition": "Review at the declared calendar window.",
+    }
+    json.dumps(state, sort_keys=True)
+
+
+def test_typed_wait_projects_into_context_target_and_wave_excerpt(store: Path) -> None:
+    from scripts import agentos
+
+    _inject_valid_waits(store)
+    parsed = agentos.load_store(store, agentos._load_programs())
+    now = agentos._parse_moment("2026-08-27T15:00:00Z")
+    assert now is not None
+
+    original_git_dates = agentos.git_dates
+    original_repo_sha = agentos._repo_sha
+    agentos.git_dates = lambda _path: (None, None)
+    agentos._repo_sha = lambda: "test-sha"
+    try:
+        first = agentos.compile_bundle(
+            parsed,
+            workstream="AGENT-OS",
+            now=now,
+            builds=None,
+            degraded=agentos.Degraded(),
+        )
+        second = agentos.compile_bundle(
+            parsed,
+            workstream="AGENT-OS",
+            now=now,
+            builds=None,
+            degraded=agentos.Degraded(),
+        )
+    finally:
+        agentos.git_dates = original_git_dates
+        agentos._repo_sha = original_repo_sha
+
+    assert first["target"]["wait"] == {
+        "kind": "natural_evidence",
+        "review_after": "2026-09-25",
+        "condition": "Review whether the preregistered prospective sample matured.",
+    }
+    workstream_item = next(
+        item
+        for section in first["sections"]
+        for item in section["items"]
+        if item.get("kind") == "workstream" and item.get("key") == "WS:AGENT-OS"
+    )
+    assert "wait: calendar_window" in workstream_item["excerpt"]
+    assert json.dumps(first, sort_keys=True) == json.dumps(second, sort_keys=True)
+
+
+def test_wait_schema_mirror_names_closed_contract() -> None:
+    mirror = (REPO / "agentos" / "schema" / "workstream.schema.yml").read_text(
+        encoding="utf-8"
+    )
+    for term in (
+        "natural_evidence",
+        "external_dependency",
+        "calendar_window",
+        "external_action",
+        "review_after",
+        "condition",
+    ):
+        assert term in mirror
