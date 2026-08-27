@@ -1,5 +1,18 @@
 """Polygon.io / massive.com options-OI collector — the GEX accrual FOUNDATION.
 
+RETIRED SOURCE — THETADATA IS CANONICAL FOR OPTIONS.
+    Chairman source ruling 2026-08-22, DEC:AD-OPTIONS-CANONICAL-SOURCE-THETADATA.
+    Massive/Polygon is a STOCK-data source; its options chain entitlement 403'd
+    on 2026-08-13/14 and never returned, and the blocker asking for it back was
+    RETIRED. THERE IS NO OPTIONS-ENTITLED KEY HERE TO ROTATE. The "verified
+    entitled on the stocks+options plan" note below is HISTORICAL — it was true
+    when written and is not true now; the stocks half still answers 200, which
+    is why `self.key` looks healthy while every chain call 403s.
+    Therefore `auth_or_entitlement_failure` on the whole probe set is this
+    module's EXPECTED steady state, and the auth short-circuit below is doing
+    its job when it aborts the universe. Do not open an outage for it.
+    See scripts/build_polygon_gex.py's header for the full blast radius.
+
 The free Cboe feed (collectors/cboe.py) returns a live delayed chain, but the runner
 stores only a 1-row/day GEX summary and THROWS THE PER-STRIKE CHAIN AWAY. Polygon's
 options snapshot returns per-contract open_interest + implied_vol for the whole

@@ -1,5 +1,39 @@
 """Polygon options-OI accrual — the GEX FOUNDATION (display / research only).
 
+╔══════════════════════════════════════════════════════════════════════════╗
+║ SOURCE AUTHORITY — READ BEFORE DIAGNOSING THIS LANE                      ║
+║                                                                          ║
+║ THETADATA is the canonical Mastermind options source. This Massive/      ║
+║ Polygon estate is LEGACY and is EXPECTED TO BE DARK.                     ║
+║                                                                          ║
+║ Chairman source ruling 2026-08-22,                                       ║
+║ DEC:AD-OPTIONS-CANONICAL-SOURCE-THETADATA: ThetaData covers EOD chains,  ║
+║ OI, Greeks/IV, trades + NBBO and the intraday options data Terminal      ║
+║ serves. Massive/Polygon is a STOCK-data source and is NOT the canonical  ║
+║ options source. The blocker that asked for the Massive/Polygon options   ║
+║ entitlement back was RETIRED by that ruling.                             ║
+║                                                                          ║
+║ THERE IS NO OPTIONS-ENTITLED POLYGON/MASSIVE KEY, and one is not coming. ║
+║ The chain entitlement 403'd on 2026-08-13/14 and never returned (stock/  ║
+║ news kept returning 200 — that is why a key APPEARS present: it is the   ║
+║ stock key). So `auth_or_entitlement_failure` on every symbol here is the ║
+║ expected steady state, NOT an outage. Do not open an incident, do not    ║
+║ hunt for a credential to rotate, do not "restore" the entitlement.       ║
+║                                                                          ║
+║ Consequence worth knowing: data/options_flow/summary_*.parquet is fed    ║
+║ from this estate, so it is frozen at session 2026-08-12, which keeps     ║
+║ site/flowleaders/leaders.json at stale:true and starves the              ║
+║ plab_flow_leader / plab_flow_washout pick-lab books. Repointing that     ║
+║ lane at ThetaData, or retiring those boards, is a Sol / WS:ADVANCED-     ║
+║ DATA-OPTIONS decision — NOT a silent swap for a coding agent to make     ║
+║ (the superseded DNR row existed precisely to reserve it).                ║
+║                                                                          ║
+║ Cost of not reading this: 2026-08-26, a session diagnosed the settled    ║
+║ ruling as a fresh 13-day credential outage and shipped a "rotate the     ║
+║ key" remediation. See DSC:A-HEALTH-RECEIPT-NOBODY-READS-IS-NOT-AN-       ║
+║ ESCALATION.                                                              ║
+╚══════════════════════════════════════════════════════════════════════════╝
+
 Each run snapshots the configured underlyings' option chains via Polygon and:
   1. writes the RAW per-strike chain to data/polygon_gex/chains/{YYYY-MM-DD}.parquet
      — SESSION-partitioned & append-only (never rewrites history, so the daily
@@ -869,38 +903,53 @@ def _sessions_dark(asof: date, now: datetime | None = None) -> int | None:
 def _annotate_zero_capture(asof: date, census: dict, now: datetime | None = None) -> None:
     """Emit the line-start annotation a total zero-capture owes the operator.
 
-    WHY THIS EXISTS (2026-08-26): the vendor key went 401/403 on 2026-08-13 and
-    this lane stayed dark for THIRTEEN days without one alarm. Detection was
-    never the gap — collectors/polygon_options.py classified every symbol
-    `auth_or_entitlement_failure`, short-circuited the universe, and filed a
-    correct `nothing_captured`/`failed` health receipt each night. The gap was
-    ESCALATION: this branch only called log.warning(), and a logger can never
-    become a GitHub annotation (the house format prefixes the line, so
-    "::error" lands mid-line and Actions drops it — see the repo law and
-    tests/test_gh_annotation_line_start.py). The sibling universe-degraded
-    branch below already prints its own annotation; a vendor that rejects every
-    request is not a quieter failure than a collapsed universe.
+    TWO SEVERITIES, because this estate has two very different zero-captures.
 
-    Bare print + flush: stdout is block-buffered when piped in CI.
+    `auth_or_entitlement_failure` here is the EXPECTED STEADY STATE, not an
+    incident. This Massive/Polygon options estate is RETIRED: its chain
+    entitlement regressed to HTTP 403 on 2026-08-13/14 and never returned, and
+    the Chairman source ruling of 2026-08-22
+    (DEC:AD-OPTIONS-CANONICAL-SOURCE-THETADATA) made ThetaData the canonical
+    options source and explicitly RETIRED the blocker that asked for this
+    entitlement back. Massive/Polygon is a STOCK-data source; there is no
+    options-entitled key here to rotate, and one is not coming. So this case
+    gets a ::notice — an ::error every night for a lane that is dead by ruling
+    is alarm fatigue, and it is how a real red in this file would get scrolled
+    past. It also stops the next session diagnosing a settled decision as a
+    fresh outage (which is exactly what happened on 2026-08-26; see
+    DSC:A-HEALTH-RECEIPT-NOBODY-READS-IS-NOT-AN-ESCALATION).
 
-    Blast radius is named on purpose — polygon OI is point-in-time and cannot
-    be backfilled, so each dark session is permanently lost, and the artifact
-    the reader will actually notice is three hops downstream (chains →
-    data/options_flow/summary_*.parquet → site/flowleaders/leaders.json →
-    the plab_flow_leader / plab_flow_washout pick-lab books)."""
+    ANY OTHER reason (network, parse, rate limit, collapsed universe) is a real
+    zero-capture on a lane that was supposed to work, and keeps the ::error.
+
+    WHY AN ANNOTATION AT ALL (2026-08-26): this branch used to call only
+    log.warning(), and a logger can never become a GitHub annotation — the
+    house log format prefixes the line, so "::error" lands mid-line and Actions
+    drops it (repo law; tests/test_gh_annotation_line_start.py). Bare print +
+    flush because stdout is block-buffered when piped in CI."""
     reason = _dominant_failure_reason(census) or "unclassified"
     dark = _sessions_dark(asof, now=now)
     span = (f"; chain store is {dark} NYSE session(s) behind the calendar"
             if dark else "")
     attempted = census.get("attempted_underlyings")
     requested = census.get("requested_underlyings")
+
+    if reason == "auth_or_entitlement_failure":
+        print(f"::notice title=polygon-options-estate-retired::session {asof}: "
+              f"captured ZERO underlyings ({attempted} attempted of "
+              f"{requested} requested), all auth_or_entitlement_failure{span}. "
+              f"EXPECTED — the Massive/Polygon options estate is retired by "
+              f"DEC:AD-OPTIONS-CANONICAL-SOURCE-THETADATA (2026-08-22); "
+              f"ThetaData is the canonical options source and Massive/Polygon "
+              f"is a stock-data source. There is NO options key to rotate. "
+              f"No action; do not open an outage for this.", flush=True)
+        return
+
     print(f"::error title=polygon-accrual-dark::session {asof}: captured ZERO "
           f"underlyings ({attempted} attempted of {requested} requested) — "
           f"dominant failure reason {reason}{span}. Nothing was written; "
-          f"polygon OI is point-in-time and this session cannot be backfilled. "
-          f"Downstream: data/options_flow/summary_*.parquet stops advancing, "
-          f"site/flowleaders/leaders.json goes stale:true, and the "
-          f"plab_flow_leader / plab_flow_washout books starve.", flush=True)
+          f"OI is point-in-time and this session cannot be backfilled.",
+          flush=True)
 
 
 def accrue(as_of=None, *, force: bool = False, _now: datetime | None = None) -> dict:
