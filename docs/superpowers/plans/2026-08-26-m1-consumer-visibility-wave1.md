@@ -4,7 +4,7 @@
 
 **Goal:** Add one read-only M1 Macro consumer census command plus stronger wrong-account transport regression coverage so a fresh operator can deterministically see every loaded/recent Macro dependency and detect unlawful repository identity before any migration mutation.
 
-**Architecture:** Implement a single Python inspector that reads bounded launchd/plist/Git/filesystem evidence and emits one versioned JSON model plus a table projection; it performs no fetch, reset, launchctl mutation, service trigger, remote shell, or credential read. Extend the existing `check_macro_anon_dependency.py` fence to reject old-personal-owner Git transport targets while preserving human citation allowances. Wave 1 stops after code/CI plus one real read-only M1 census receipt; classification remains a Sol/operator act and no consumer remote is changed.
+**Architecture:** Implement a single Python inspector that reads bounded launchd/plist/Git/filesystem evidence and emits one versioned JSON model plus a table projection; it performs no fetch, reset, launchctl mutation, service trigger, remote shell, or credential-value read. Every subprocess uses an absolute executable, fixed argv grammar, sanitized environment, hostile local-Git configuration neutralization, bounded output, and a timeout. Extend the existing `check_macro_anon_dependency.py` fence to reject old-personal-owner Git transport targets while preserving human citation allowances. Wave 1 implementation stops after code/CI and an immutable reviewed head; a separately released post-merge step obtains one real read-only M1 census receipt. Classification remains a Sol/operator act and no consumer remote is changed.
 
 **Tech Stack:** Python 3 stdlib (`argparse`, `dataclasses`, `datetime`, `json`, `pathlib`, `plistlib`, `re`, `stat`, `subprocess`), pytest, existing Macro CI/fence framework, macOS `launchctl` for production proof only.
 
@@ -13,13 +13,15 @@
 ## Global Constraints
 
 - Canonical execution/evidence carrier remains GitHub #6432; MAS-137/MAS-140 are projection only.
-- Current protected Sol Skillpack for planning: `mastermindx-market-intelligence/Mastermind@acc7ebc4bf44a4857168f481a745b2e57d5be585`, schema `mastermind.sol_skillpack.v1`, version `1.0.0`, bootstrap major `1` compatible. Re-pin again before implementation/host proof.
-- Architecture design head: `afc01c8ffeb6299b1b801637230b478f403ea8fe`; design base: `7d7734d073b0a63cd01fad31dcfbd5ded57abb56`.
+- Current protected Sol Skillpack for release review: `mastermindx-market-intelligence/Mastermind@af43f356f4f7f34cb3514d1d1099b50444af8487`, schema `mastermind.sol_skillpack.v1`, version `1.0.0`, bootstrap major `1` compatible. Re-pin again before implementation/host proof.
+- Chairman-approved architecture head: `afc01c8ffeb6299b1b801637230b478f403ea8fe`; released/reconciled design head: `18590a9d8bdd5832b11229ddbe714447764effd7`; reviewed Macro base: `463bb3b4b708a4748fc65a04250366ca94205186`.
 - No M1 mutation in Wave 1: no `launchctl enable/disable/bootstrap/bootout/kickstart`, no Git fetch/pull/reset/checkout/clean/rebase, no remote/config write, no file deletion/move, no mount/storage/listener/runner action.
 - `/Users/chriswong/flow-ops-wt` is inspect-only; never normalize its deliberate detached/dirty state.
 - `com.macro.live-breadth` must remain disabled/unloaded; its retired state is evidence, not a migration target.
-- Native macOS persistent-disabled output must normalize both exact spellings `=> true` and `=> disabled`; `false`, `enabled`, duplicate/inexact rows, and ambiguous output are not accepted as disabled evidence. This compatibility constraint comes from current protected Mastermind commit `acc7ebc4...`.
-- The inspector never prints or persists private-key bytes, token values, `.env` contents, arbitrary environment values, credential-helper output, SSH stderr, or full process environments.
+- Native macOS persistent-disabled output must normalize both exact spellings `=> true` and `=> disabled`; `false`, `enabled`, duplicate/inexact rows, and ambiguous output are not accepted as disabled evidence. This compatibility constraint was introduced at protected Mastermind commit `acc7ebc4...` and remains binding in the current `af43f356...` Skillpack.
+- The inspector never prints or persists private-key bytes, token values, `.env` contents, arbitrary environment values, raw remote URLs, credential-helper values, SSH stderr, or full process environments. Raw Git URL/config values are transient classification inputs only and must be discarded before report/error construction.
+- Git inspection must neutralize repository-local host-execution seams (including `core.fsmonitor` and hooks), recursive submodule/status behavior, inherited `GIT_*` control variables, global/system config, prompts, and optional index locks before any `status` probe. A hostile `core.fsmonitor` fixture must prove no marker process executes.
+- Launchctl inspection is restricted to `/bin/launchctl print-disabled gui/<uid>` and `/bin/launchctl print gui/<uid>/<validated-label>` with fixed label/domain grammar, bounded output, a timeout, and fail-closed error parsing. Unit tests assert exact argv construction and refusal before subprocess launch.
 - The inspector may label deterministic evidence (`wrong_owner`, `anonymous_transport`, `loaded`, `disabled`, `explicit_machine_identity`) but may not emit organizational decisions such as `KEEP_AUTHENTICATE` or `RETIRE_DUPLICATE`.
 - No new durable registry, inventory database, daemon, scheduler, queue, cursor, credential broker, or truth store.
 - TDD is mandatory: each production behavior starts with a failing test, the worker must run it and observe the expected failure before implementation.
@@ -131,7 +133,7 @@ class CheckoutEvidence:
     detached: bool | None
     dirty_tracked_count: int | None
     dirty_untracked_count: int | None
-    remote_urls: tuple[str, ...]
+    remote_states: tuple[str, ...]
     fetch_head_mtime: str | None
     git_identity: GitIdentityEvidence
     inspection_errors: tuple[str, ...] = ()
@@ -329,7 +331,7 @@ def test_classify_remote(url, expected) -> None:
     assert census.classify_remote(url) == expected
 ```
 
-- [ ] **Step 2: Write a failing local-repository test proving no fetch occurs**
+- [ ] **Step 2: Write failing local-repository tests proving no network or host-code execution occurs**
 
 Create a temporary Git repository with `git init`, one commit, then set `origin` to the old-owner URL. Monkeypatch `census._run_git` with a wrapper that records argv and delegates to `/usr/bin/git`; call `inspect_checkout(repo)`. Assert:
 
@@ -343,6 +345,10 @@ assert all("reset" not in argv for argv in observed_commands)
 
 Also assert dirty tracked/untracked counts using one modified tracked file plus one untracked file.
 
+Create a second repository whose local config points `core.fsmonitor` at a marker executable. Run `inspect_checkout(repo)` and assert the marker file is absent afterward. Record every subprocess argv and assert the status probe contains the high-precedence `core.fsmonitor=false`, hook neutralization, and submodule-recursion refusal before `status`.
+
+Add a third fixture with a token-bearing HTTPS remote and a shell-form `credential.helper`. Build both JSON and table output, trigger one sanitized inspection error, and assert the token, raw remote, and helper value are absent from every output/exception/diagnostic string.
+
 - [ ] **Step 3: Run focused tests and verify RED**
 
 ```bash
@@ -353,25 +359,34 @@ Expected: missing `classify_remote`/`inspect_checkout` failures.
 
 - [ ] **Step 4: Implement read-only Git probes**
 
-Allowed Git argv are limited to:
+The production wrapper invokes the absolute `/usr/bin/git` with `shell=False`, a five-second timeout, a 256-KiB stdout/stderr ceiling, `--no-optional-locks`, and high-precedence neutralization before the exact read-only command grammar:
+
+```text
+-c core.fsmonitor=false
+-c core.hooksPath=/dev/null
+-c submodule.recurse=false
+-c status.submoduleSummary=false
+```
+
+Allowed command suffixes are limited to:
 
 ```text
 rev-parse --show-toplevel
 rev-parse HEAD
 symbolic-ref -q --short HEAD
-status --porcelain=v1 --untracked-files=all
+status --porcelain=v1 --untracked-files=all --ignore-submodules=all
 remote -v
-config --local --get core.sshCommand
-config --worktree --get core.sshCommand
-config --local --name-only --get-regexp ^url\.
-config --worktree --name-only --get-regexp ^url\.
-config --local --get credential.helper
-config --worktree --get credential.helper
+config --no-includes --local --get core.sshCommand
+config --no-includes --worktree --get core.sshCommand
+config --no-includes --local --name-only --get-regexp ^url\.
+config --no-includes --worktree --name-only --get-regexp ^url\.
+config --no-includes --local --name-only --get-regexp ^credential\.helper$
+config --no-includes --worktree --name-only --get-regexp ^credential\.helper$
 ```
 
-Use `GIT_CONFIG_GLOBAL=/dev/null`, `GIT_CONFIG_SYSTEM=/dev/null`, `GIT_CONFIG_NOSYSTEM=1`, `GIT_TERMINAL_PROMPT=0` for inspection subprocesses so the inspector reports repository-local evidence rather than inheriting global rewrites/helpers. Do not emit raw command stderr on error.
+Construct the subprocess environment from a small allowlist rather than copying `os.environ`: fixed `PATH=/usr/bin:/bin`, `LANG=C`, `LC_ALL=C`, `GIT_CONFIG_GLOBAL=/dev/null`, `GIT_CONFIG_SYSTEM=/dev/null`, `GIT_CONFIG_NOSYSTEM=1`, `GIT_TERMINAL_PROMPT=0`, `GIT_OPTIONAL_LOCKS=0`, and no inherited `GIT_*`, SSH-agent, askpass, pager, or credential variables. The wrapper rejects every argv not matching the full grammar with `InspectionError("READ_ONLY_COMMAND_REFUSED")` before child creation. Do not emit raw stdout/stderr on error.
 
-`explicit_machine_identity=True` only when the local/worktree `core.sshCommand` (or service definition evidence later) visibly selects an SSH identity path and includes `IdentitiesOnly=yes`; never infer this from an SSH URL alone. `ambient_fallback_possible=True` if the observed local SSH command lacks `IdentitiesOnly=yes` or allows an agent, or if local/worktree URL rewrites/credential helpers are present. `write_capability_observed` remains `False` in Wave 1 because the inspector does not test writes.
+`explicit_machine_identity=True` only when the local/worktree `core.sshCommand` (or service definition evidence later) visibly selects an SSH identity path and includes `IdentitiesOnly=yes`; never infer this from an SSH URL alone. `ambient_fallback_possible=True` if the observed local SSH command lacks `IdentitiesOnly=yes` or allows an agent, or if local/worktree URL rewrites/credential helpers are present. Raw remote and config values are used only to derive booleans plus the bounded `remote_states` enum values `canonical_ssh`, `canonical_https_anon`, `wrong_owner`, `other`, and `unknown`; the values themselves are discarded before evidence construction. `write_capability_observed` remains `False` in Wave 1 because the inspector does not test writes.
 
 `FETCH_HEAD` is inspected only with `Path.stat()`; if absent, return `None`.
 
@@ -400,6 +415,7 @@ git commit -m "feat(ops): report M1 Macro checkout identity"
 
 **Interfaces:**
 - Produces: `build_report(plist_paths: Sequence[Path], *, launchctl_disabled_output: str, launchctl_probe: Callable[[str], tuple[bool | None, bool | None, bool | None]], hostname: str, now: datetime) -> CensusReport`
+- Produces: `probe_launchctl(label: str, *, uid: int = os.getuid(), run_launchctl: Callable[..., CompletedProcess[str]] = _run_launchctl) -> tuple[bool | None, bool | None, bool | None]`
 - Produces CLI: `python3 scripts/inspect_m1_macro_consumers.py --plist <path> [--plist <path> ...] --format json|table`
 - Exit `0`: complete read-only census with no inspection errors.
 - Exit `65`: malformed/ambiguous/incomplete evidence; still emits the bounded report to stdout when possible.
@@ -440,6 +456,17 @@ service.disabled_observed_state == "disabled"
 
 The inspector must not label it `RETIRE_DUPLICATE` or `PROVEN_LIVE`.
 
+- [ ] **Step 3a: Write failing production launchctl-wrapper tests**
+
+Mock child creation and assert exact argv for a valid label:
+
+```text
+/bin/launchctl print-disabled gui/<uid>
+/bin/launchctl print gui/<uid>/<label>
+```
+
+Assert label injection (`/`, whitespace, shell metacharacters, oversized labels), a non-`gui/<decimal-uid>` domain, mutation verbs, missing/duplicate `state = ...` rows, oversized output, timeout, and unexpected nonzero exits all raise a bounded `InspectionError` without starting an unapproved child. An exact supported native service-missing result may map to `(loaded=False, active=False, enabled=<disabled parser result>)`; every other nonzero result remains incomplete evidence. Raw launchctl stderr is never copied into the report.
+
 - [ ] **Step 4: Run tests and verify RED**
 
 ```bash
@@ -449,6 +476,8 @@ python -m pytest tests/test_m1_macro_consumer_inspector.py -q
 - [ ] **Step 5: Implement report assembly and CLI**
 
 CLI must require explicit plist inputs in v1. Do **not** implement an unbounded `/Library/LaunchAgents` recursive scan. The production operator can derive the bounded input set with an explicit shell glob/list after a read-only census; future automatic discovery can be separately reviewed if needed.
+
+`probe_launchctl` uses `/bin/launchctl`, `shell=False`, a five-second timeout, the same bounded-output discipline as Git, and a fixed `PATH`/locale environment with no inherited `DYLD_*` or other loader/control variables. `print` output must contain exactly one parseable `state = ...` row when the service is loaded; `active=True` only for exact `running`, `active=False` for a single recognized non-running native state, and otherwise `None` plus an inspection error. `enabled` is derived only from the exact `print-disabled` parser, never from process activity.
 
 Use `json.dumps(asdict(report), sort_keys=True, indent=2)` for JSON. Table columns are a projection of the same report model only:
 
@@ -502,6 +531,7 @@ Add:
     "snippet",
     [
         'REMOTE = "git@github.com:chriswong6031-creator/macro.git"\n',
+        'REMOTE = "git@github.com:chriswong6031-creator/macro/"\n',
         'REMOTE = "ssh://git@github.com/chriswong6031-creator/macro.git"\n',
         'REMOTE = "ssh://git@github.com/chriswong6031-creator/macro/"\n',
         'git remote set-url origin git@github.com:chriswong6031-creator/macro.git\n',
@@ -545,7 +575,7 @@ Add a pattern keyed only to the old owner + `macro` repo, for SCP and SSH URL fo
 _OLD_OWNER = re.escape("chriswong6031-creator")
 
 "wrong_owner_transport": re.compile(
-    rf"(?:git@github\.com:{_OLD_OWNER}/{_REPO}(?:\.git)?|"
+    rf"(?:git@github\.com:{_OLD_OWNER}/{_REPO}(?:\.git)?/?|"
     rf"ssh://git@github\.com/{_OLD_OWNER}/{_REPO}(?:\.git)?/?)"
     rf"(?=[\"'\s]|$)"
 ),
@@ -588,7 +618,11 @@ git commit -m "fix(security): fence old-owner Macro Git transports"
 - Runbook command uses explicit plist paths and writes output only to operator-chosen stdout/file redirection.
 - No runtime mutation command appears in the normal procedure.
 
-- [ ] **Step 1: Add a failing source-level read-only command fence test**
+- [ ] **Step 1: Add failing runtime command-refusal tests, then retain a source-level tripwire**
+
+Mock the subprocess constructor and call the Git and launchctl wrappers with every prohibited operation: Git `fetch`, `pull`, `reset`, `clean`, `checkout`, `remote set-url`, malformed `config`, a `status` suffix that removes `--ignore-submodules=all`, and launchctl `enable`, `disable`, `bootstrap`, `bootout`, and `kickstart`. Assert each call raises `InspectionError("READ_ONLY_COMMAND_REFUSED")` and the mock child was never called. Also prove inherited `GIT_*`, `SSH_*`, `DYLD_*`, askpass, pager, and credential variables never enter the child environment.
+
+Keep this source-level test as a secondary regression tripwire:
 
 ```python
 def test_inspector_source_contains_no_mutating_launchctl_or_git_verbs() -> None:
@@ -611,22 +645,24 @@ def test_inspector_source_contains_no_mutating_launchctl_or_git_verbs() -> None:
 
 If quoting causes a false positive in documentation strings, move the subprocess argv allowlist into a constant and assert the constant equals the explicit read-only verb set instead of weakening the test.
 
-- [ ] **Step 2: Run the inspector suite and verify the new test fails if the allowlist is not yet explicit**
+- [ ] **Step 2: Run the inspector suite and verify the runtime refusal tests fail before the grammar is explicit**
 
 ```bash
 python -m pytest tests/test_m1_macro_consumer_inspector.py -q
 ```
 
-- [ ] **Step 3: Make the read-only Git/launchctl command allowlists explicit in production code**
+- [ ] **Step 3: Make the complete read-only Git/launchctl argv grammars explicit in production code**
 
-Expose immutable constants such as:
+Expose immutable full-prefix/suffix specifications rather than trusting only the first verb. At minimum, the wrappers must bind the absolute executables and the fixed safety prefixes described in Tasks 3–4; the allowed command suffixes remain explicit immutable tuples. A first-token-only allowlist is insufficient because `remote set-url` and malformed `config` share otherwise allowed first verbs.
+
+Diagnostic constants may still summarize the allowed verbs:
 
 ```python
 _ALLOWED_GIT_COMMANDS = frozenset({"rev-parse", "symbolic-ref", "status", "remote", "config"})
 _ALLOWED_LAUNCHCTL_COMMANDS = frozenset({"print", "print-disabled"})
 ```
 
-The subprocess wrapper must refuse anything outside those sets with `InspectionError("READ_ONLY_COMMAND_REFUSED")`.
+The subprocess wrapper must refuse anything outside the complete grammar with `InspectionError("READ_ONLY_COMMAND_REFUSED")` before child creation.
 
 - [ ] **Step 4: Write the runbook with exact production procedure**
 
@@ -722,7 +758,10 @@ Reviewer must explicitly try to falsify:
 
 - inspector can trigger/mutate launchd;
 - inspector can run network Git operations;
+- repository-local `core.fsmonitor`, hooks, submodule recursion, or inherited `GIT_*`/loader variables can execute host code during inspection;
 - output can leak env/key/token values;
+- raw remote URLs or credential-helper values can reach JSON, table output, errors, or diagnostics;
+- malformed launchctl labels/domains or a first-verb-only allowlist can escape the fixed argv grammar;
 - `=> disabled` is misread as enabled/unknown;
 - malformed duplicate launchctl rows are accepted;
 - canonical org SSH is falsely rejected;
