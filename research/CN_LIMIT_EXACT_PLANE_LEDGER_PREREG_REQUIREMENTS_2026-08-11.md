@@ -266,7 +266,10 @@ The ledger may be built only on the exact plane defined by
    gate separately promoted on canary/throughput/correctness evidence; reference
    generation, exact calendar, and every required source unit request-bound and complete;
    zero unknown and zero name-orphan counts; post-2016 `bak_basic` witnesses with lifecycle
-   and PIT sets reconciling exactly; duplicate-key, dense-key, lifecycle, exact-session,
+   and PIT sets reconciling under the source-union law (every lifecycle-eligible security
+   witnessed in PIT and no PIT row contradicting its own master lifecycle window; a PIT row
+   the current `stock_basic` snapshot omits is a legal union member counted as telemetry —
+   `DEC:CNLI-HISTORICAL-PIT-IS-SOURCE-UNION`); duplicate-key, dense-key, lifecycle, exact-session,
    suspension, and daily security coverage checks closing; and the canonical exact-price event
    join closing. Manifest artifacts are private and must not be committed; only the
    contract's sanitized hash/date/scope fields propagate.
@@ -279,6 +282,17 @@ The ledger may be built only on the exact plane defined by
 suspended-to-delisting, and never-listed-yet names must be present in the PIT universe for
 every date they were actually listed. Any cohort statistic computed later must name who is
 missing before its means are trusted.
+
+This is enforced at the collector, not merely asserted here. The current `stock_basic`
+snapshot is a lifecycle/reference witness, not exhaustive historical membership authority,
+so historical PIT construction is **source-union, never current-snapshot intersection**
+(`DEC:CNLI-HISTORICAL-PIT-IS-SOURCE-UNION`). Intersecting a current snapshot against
+historical sessions is precisely the survivorship filter this section forbids, and its error
+points one way: a security the vendor later stops publishing would become unclassifiable on
+every past date it actually traded. A security with a complete same-session positive-volume
+observation and the required exact legal-band evidence is in the historical exact universe
+whether or not the current snapshot still carries it. The current-snapshot omission rate is
+the "name who is missing" telemetry this section demands — it is reported, never thresholded.
 
 ---
 
