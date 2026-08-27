@@ -764,6 +764,14 @@ lanes:
           build_prophet's early band is fragile publication machinery. engine/seasonality/
           program_watch.py reads this token as the decision record; deleting it re-opens the
           daily-order tripwire, which is the intended behaviour if the decision is ever revisited.
+      - id: prophet_board_acceptance
+        module: scripts.prophet_board_acceptance
+        note: >
+          PR-1 Prophet US permanence net (2026-08-27) — post-publish acceptance
+          alarm (never a gate). Runs in daily.yml engine immediately after the
+          Prophet nightly step and before the Prophet checkpoint. continue-on-error
+          in the live workflow; declares the new scripts.prophet_board_acceptance
+          module so dag-conformance does not treat the step as undeclared lane drift.
       - id: build_prophet_stage_shadow
         module: scripts.build_prophet_stage_shadow
         note: >

@@ -32,8 +32,8 @@
   "capture_undefined_pct": null,
   "n_logged": 84,
   "n_locked_excluded": 0,
-  "n_skipped_awaiting_t1": 20,
-  "n_skipped_total": 20,
+  "n_skipped_awaiting_t1": 25,
+  "n_skipped_total": 25,
   "board_definition": "cn_prophet_v4"
  },
  "rows": [
@@ -56,8 +56,8 @@
    "xr": null,
    "ed": "2026-08-26",
    "eb": "t1_hl2",
-   "er": null,
-   "erw": null
+   "er": 2.27,
+   "erw": "re-derivation on today's bars gives 2.2700 (t1_open) against the published entry 2.2900 (t1_hl2); the published entry is point-in-time and is not restated"
   },
   {
    "t": "000935.SZ",
@@ -78,8 +78,8 @@
    "xr": null,
    "ed": "2026-08-26",
    "eb": "t1_open",
-   "er": null,
-   "erw": null
+   "er": 22.59,
+   "erw": "re-derivation on today's bars gives 22.5900 (t1_open) against the published entry 22.7800 (t1_open); the published entry is point-in-time and is not restated"
   },
   {
    "t": "002594.SZ",
@@ -100,8 +100,8 @@
    "xr": null,
    "ed": "2026-08-26",
    "eb": "t1_hl2",
-   "er": null,
-   "erw": null
+   "er": 91.2,
+   "erw": "re-derivation on today's bars gives 91.2000 (t1_open) against the published entry 92.1450 (t1_hl2); the published entry is point-in-time and is not restated"
   },
   {
    "t": "301565.SZ",
@@ -122,8 +122,8 @@
    "xr": null,
    "ed": "2026-08-26",
    "eb": "t1_hl2",
-   "er": null,
-   "erw": null
+   "er": 20.16,
+   "erw": "re-derivation on today's bars gives 20.1600 (t1_open) against the published entry 20.3050 (t1_hl2); the published entry is point-in-time and is not restated"
   },
   {
    "t": "301626.SZ",
@@ -144,8 +144,8 @@
    "xr": null,
    "ed": "2026-08-26",
    "eb": "t1_open",
-   "er": null,
-   "erw": null
+   "er": 258.68,
+   "erw": "re-derivation on today's bars gives 258.6800 (t1_open) against the published entry 255.0000 (t1_open); the published entry is point-in-time and is not restated"
   },
   {
    "t": "600507.SS",
@@ -215,8 +215,8 @@
   },
   {
    "t": "603605.SS",
-   "nm": "Proya Cosmetics Co.,Ltd. / 珀莱雅",
-   "sec": "Consumer Defensive",
+   "nm": null,
+   "sec": null,
    "grp": null,
    "d": "2026-08-25",
    "e": 61.2,
@@ -1893,8 +1893,8 @@
   "survivorship": {
    "n_locked_excluded": 0,
    "n_skipped_no_price": 0,
-   "n_skipped_awaiting_t1": 20,
-   "n_skipped_total": 20,
+   "n_skipped_awaiting_t1": 25,
+   "n_skipped_total": 25,
    "note": "locked-limit T+1 rows are unfillable — flagged, excluded from stats; n_skipped_no_price counts store misses only, awaiting-T+1 episodes are in flight"
   },
   "board_definition": "cn_prophet_v4",
@@ -1915,20 +1915,20 @@
    "n_skipped_no_price": 0,
    "n_board_days": 18,
    "win_pct": 70.3,
-   "expectancy_pct": 3.21,
-   "median_pct": 4.35,
-   "avg_win_pct": 8.16,
+   "expectancy_pct": 3.19,
+   "median_pct": 4.32,
+   "avg_win_pct": 8.14,
    "avg_loss_pct": -8.53,
-   "profit_factor": 2.27,
+   "profit_factor": 2.26,
    "ci_lo_pct": 63.0,
    "ci_hi_pct": 78.3,
-   "exp_lo_pct": 1.84,
-   "exp_hi_pct": 4.69,
+   "exp_lo_pct": 1.82,
+   "exp_hi_pct": 4.68,
    "median_hold": 10,
    "capture": 0.64,
-   "n_capture": 509,
-   "n_capture_undefined": 74,
-   "capture_undefined_pct": 12.7,
+   "n_capture": 508,
+   "n_capture_undefined": 75,
+   "capture_undefined_pct": 12.9,
    "mfe_median_pct": 5.91,
    "mae_median_pct": -2.31,
    "mae_p10_pct": -14.77,
@@ -2298,9 +2298,9 @@
     "grp": null,
     "d": "2026-07-29",
     "e": 49.5,
-    "l": 54.03,
-    "p": 9.2,
-    "x": 6.05,
+    "l": 53.57,
+    "p": 8.2,
+    "x": 5.11,
     "dy": 10,
     "st": "beat",
     "m": true,
@@ -2310,8 +2310,8 @@
     "xr": "horizon",
     "ed": "2026-07-30",
     "eb": "t1_open",
-    "er": null,
-    "erw": null
+    "er": 49.07,
+    "erw": "re-derivation on today's bars gives 49.0750 (t1_open) against the published entry 49.5000 (t1_open); the published entry is point-in-time and is not restated"
    },
    {
     "t": "603809.SS",
@@ -2777,8 +2777,8 @@
    },
    {
     "t": "601615.SS",
-    "nm": "Ming Yang Smart Energy Group Limited / 明阳智能",
-    "sec": "Industrials",
+    "nm": null,
+    "sec": null,
     "grp": null,
     "d": "2026-07-28",
     "e": 10.87,
@@ -2909,8 +2909,8 @@
    },
    {
     "t": "603605.SS",
-    "nm": "Proya Cosmetics Co.,Ltd. / 珀莱雅",
-    "sec": "Consumer Defensive",
+    "nm": null,
+    "sec": null,
     "grp": null,
     "d": "2026-07-28",
     "e": 60.3,
@@ -4911,7 +4911,7 @@
    },
    {
     "t": "601898.SS",
-    "nm": "China Coal Energy Company Limited / XD中煤能",
+    "nm": "China Coal Energy Company Limited / 中煤能源",
     "sec": "Energy",
     "grp": null,
     "d": "2026-07-23",
@@ -8431,8 +8431,8 @@
    },
    {
     "t": "002152.SZ",
-    "nm": "GRG Banking Equipment Co., Ltd. / 广电运通",
-    "sec": "Industrials",
+    "nm": null,
+    "sec": null,
     "grp": null,
     "d": "2026-07-13",
     "e": 10.14,
@@ -9734,9 +9734,9 @@
     "grp": null,
     "d": "2026-07-10",
     "e": 54.0,
-    "l": 48.89,
-    "p": -9.5,
-    "x": -8.56,
+    "l": 48.47,
+    "p": -10.2,
+    "x": -9.33,
     "dy": 10,
     "st": "lag",
     "m": true,
@@ -9746,8 +9746,8 @@
     "xr": "horizon",
     "ed": "2026-07-13",
     "eb": "t1_open",
-    "er": null,
-    "erw": null
+    "er": 53.54,
+    "erw": "re-derivation on today's bars gives 53.5364 (t1_open) against the published entry 54.0000 (t1_open); the published entry is point-in-time and is not restated"
    },
    {
     "t": "603355.SS",
@@ -13564,9 +13564,9 @@
     "grp": null,
     "d": "2026-06-30",
     "e": 37.54,
-    "l": 39.18,
-    "p": 4.4,
-    "x": 7.59,
+    "l": 37.3,
+    "p": -0.7,
+    "x": 2.57,
     "dy": 10,
     "st": "beat",
     "m": true,
@@ -13576,8 +13576,8 @@
     "xr": "horizon",
     "ed": "2026-07-01",
     "eb": "t1_open",
-    "er": null,
-    "erw": null
+    "er": 35.73,
+    "erw": "re-derivation on today's bars gives 35.7343 (t1_open) against the published entry 37.5400 (t1_open); the published entry is point-in-time and is not restated"
    },
    {
     "t": "000792.SZ",
@@ -14823,15 +14823,15 @@
     "n_skipped_no_price": 0,
     "n_board_days": 5,
     "win_pct": 28.3,
-    "expectancy_pct": -1.99,
+    "expectancy_pct": -2.01,
     "median_pct": -4.48,
-    "avg_win_pct": 7.18,
+    "avg_win_pct": 7.14,
     "avg_loss_pct": -5.62,
     "profit_factor": 0.5,
     "ci_lo_pct": 19.3,
     "ci_hi_pct": 38.8,
     "exp_lo_pct": -4.62,
-    "exp_hi_pct": 1.58,
+    "exp_hi_pct": 1.53,
     "median_hold": 10,
     "capture": 0.17,
     "n_capture": 36,
@@ -15118,9 +15118,9 @@
      "grp": null,
      "d": "2026-08-04",
      "e": 14.61,
-     "l": 16.85,
-     "p": 15.3,
-     "x": 13.78,
+     "l": 16.76,
+     "p": 14.7,
+     "x": 13.17,
      "dy": 10,
      "st": "beat",
      "m": true,
@@ -15130,8 +15130,8 @@
      "xr": "horizon",
      "ed": "2026-08-05",
      "eb": "t1_open",
-     "er": null,
-     "erw": null
+     "er": 14.53,
+     "erw": "re-derivation on today's bars gives 14.5319 (t1_open) against the published entry 14.6100 (t1_open); the published entry is point-in-time and is not restated"
     },
     {
      "t": "300496.SZ",
@@ -15663,8 +15663,8 @@
     },
     {
      "t": "603605.SS",
-     "nm": "Proya Cosmetics Co.,Ltd. / 珀莱雅",
-     "sec": "Consumer Defensive",
+     "nm": null,
+     "sec": null,
      "grp": null,
      "d": "2026-08-03",
      "e": 60.9,
@@ -16046,15 +16046,15 @@
     "n_skipped_no_price": 0,
     "n_board_days": 5,
     "win_pct": 33.3,
-    "expectancy_pct": -2.3,
+    "expectancy_pct": -2.33,
     "median_pct": -3.09,
-    "avg_win_pct": 5.13,
+    "avg_win_pct": 5.03,
     "avg_loss_pct": -6.01,
-    "profit_factor": 0.43,
+    "profit_factor": 0.42,
     "ci_lo_pct": 15.0,
     "ci_hi_pct": 48.6,
-    "exp_lo_pct": -4.92,
-    "exp_hi_pct": -0.4,
+    "exp_lo_pct": -4.94,
+    "exp_hi_pct": -0.45,
     "median_hold": 10,
     "capture": -1.41,
     "n_capture": 31,
@@ -16065,8 +16065,8 @@
     "mae_p10_pct": -12.88,
     "n_logged": 122,
     "n_locked_excluded": 0,
-    "n_skipped_awaiting_t1": 18,
-    "n_skipped_total": 18,
+    "n_skipped_awaiting_t1": 22,
+    "n_skipped_total": 22,
     "board_definition": "cn_prophet_v2_shadow"
    },
    "rows": [
@@ -16089,8 +16089,8 @@
      "xr": null,
      "ed": "2026-08-26",
      "eb": "t1_hl2",
-     "er": null,
-     "erw": null
+     "er": 2.49,
+     "erw": "re-derivation on today's bars gives 2.4900 (t1_open) against the published entry 2.5100 (t1_hl2); the published entry is point-in-time and is not restated"
     },
     {
      "t": "002351.SZ",
@@ -16111,8 +16111,8 @@
      "xr": null,
      "ed": "2026-08-26",
      "eb": "t1_hl2",
-     "er": null,
-     "erw": null
+     "er": 10.1,
+     "erw": "re-derivation on today's bars gives 10.1000 (t1_open) against the published entry 10.1850 (t1_hl2); the published entry is point-in-time and is not restated"
     },
     {
      "t": "002594.SZ",
@@ -16133,8 +16133,8 @@
      "xr": null,
      "ed": "2026-08-26",
      "eb": "t1_hl2",
-     "er": null,
-     "erw": null
+     "er": 91.2,
+     "erw": "re-derivation on today's bars gives 91.2000 (t1_open) against the published entry 92.1450 (t1_hl2); the published entry is point-in-time and is not restated"
     },
     {
      "t": "600507.SS",
@@ -16226,8 +16226,8 @@
     },
     {
      "t": "603605.SS",
-     "nm": "Proya Cosmetics Co.,Ltd. / 珀莱雅",
-     "sec": "Consumer Defensive",
+     "nm": null,
+     "sec": null,
      "grp": null,
      "d": "2026-08-25",
      "e": 61.2,
@@ -16583,8 +16583,8 @@
      "grp": null,
      "d": "2026-08-20",
      "e": 41.49,
-     "l": 41.58,
-     "p": 0.2,
+     "l": 39.58,
+     "p": -4.6,
      "x": null,
      "dy": 4,
      "st": "early",
@@ -16595,8 +16595,8 @@
      "xr": null,
      "ed": "2026-08-21",
      "eb": "t1_hl2",
-     "er": 41.43,
-     "erw": "re-derivation on today's bars gives 41.4300 (t1_open) against the published entry 41.4850 (t1_hl2); the published entry is point-in-time and is not restated"
+     "er": 39.44,
+     "erw": "re-derivation on today's bars gives 39.4372 (t1_open) against the published entry 41.4850 (t1_hl2); the published entry is point-in-time and is not restated"
     },
     {
      "t": "300723.SZ",
@@ -18365,9 +18365,9 @@
      "grp": null,
      "d": "2026-08-10",
      "e": 50.0,
-     "l": 56.99,
-     "p": 14.0,
-     "x": 16.12,
+     "l": 56.5,
+     "p": 13.0,
+     "x": 15.14,
      "dy": 10,
      "st": "beat",
      "m": true,
@@ -18377,8 +18377,8 @@
      "xr": "horizon",
      "ed": "2026-08-11",
      "eb": "t1_open",
-     "er": null,
-     "erw": null
+     "er": 49.57,
+     "erw": "re-derivation on today's bars gives 49.5707 (t1_open) against the published entry 50.0000 (t1_open); the published entry is point-in-time and is not restated"
     },
     {
      "t": "605296.SS",
@@ -18431,9 +18431,9 @@
      "grp": null,
      "d": "2026-08-07",
      "e": 14.86,
-     "l": 15.54,
-     "p": 4.6,
-     "x": 6.24,
+     "l": 15.46,
+     "p": 4.0,
+     "x": 5.68,
      "dy": 10,
      "st": "beat",
      "m": true,
@@ -18443,8 +18443,8 @@
      "xr": "horizon",
      "ed": "2026-08-10",
      "eb": "t1_hl2",
-     "er": 15.0,
-     "erw": "re-derivation on today's bars gives 15.0000 (t1_open) against the published entry 14.8600 (t1_hl2); the published entry is point-in-time and is not restated"
+     "er": 14.92,
+     "erw": "re-derivation on today's bars gives 14.9198 (t1_open) against the published entry 14.8600 (t1_hl2); the published entry is point-in-time and is not restated"
     },
     {
      "t": "300058.SZ",
@@ -18763,8 +18763,8 @@
     "survivorship": {
      "n_locked_excluded": 0,
      "n_skipped_no_price": 0,
-     "n_skipped_awaiting_t1": 18,
-     "n_skipped_total": 18,
+     "n_skipped_awaiting_t1": 22,
+     "n_skipped_total": 22,
      "note": "locked-limit T+1 rows are unfillable — flagged, excluded from stats; n_skipped_no_price counts store misses only, awaiting-T+1 episodes are in flight"
     },
     "exit_rule": "10-session forced verdict · T+1 open fill · no oscillator target (3D thresholds not yet refit for A-shares)",
@@ -20331,8 +20331,8 @@
     },
     {
      "t": "601799.SS",
-     "nm": "Changzhou Xingyu Automotive Lighting Systems Co., Ltd. / 星宇股份",
-     "sec": "Consumer Cyclical",
+     "nm": null,
+     "sec": null,
      "grp": null,
      "d": "2026-08-07",
      "e": 94.34,
@@ -20972,8 +20972,8 @@
     "capture_undefined_pct": null,
     "n_logged": 84,
     "n_locked_excluded": 0,
-    "n_skipped_awaiting_t1": 20,
-    "n_skipped_total": 20,
+    "n_skipped_awaiting_t1": 25,
+    "n_skipped_total": 25,
     "board_definition": "cn_prophet_v3_shadow"
    },
    "rows": [
@@ -20996,8 +20996,8 @@
      "xr": null,
      "ed": "2026-08-26",
      "eb": "t1_hl2",
-     "er": null,
-     "erw": null
+     "er": 2.27,
+     "erw": "re-derivation on today's bars gives 2.2700 (t1_open) against the published entry 2.2900 (t1_hl2); the published entry is point-in-time and is not restated"
     },
     {
      "t": "000935.SZ",
@@ -21018,8 +21018,8 @@
      "xr": null,
      "ed": "2026-08-26",
      "eb": "t1_open",
-     "er": null,
-     "erw": null
+     "er": 22.59,
+     "erw": "re-derivation on today's bars gives 22.5900 (t1_open) against the published entry 22.7800 (t1_open); the published entry is point-in-time and is not restated"
     },
     {
      "t": "002594.SZ",
@@ -21040,8 +21040,8 @@
      "xr": null,
      "ed": "2026-08-26",
      "eb": "t1_hl2",
-     "er": null,
-     "erw": null
+     "er": 91.2,
+     "erw": "re-derivation on today's bars gives 91.2000 (t1_open) against the published entry 92.1450 (t1_hl2); the published entry is point-in-time and is not restated"
     },
     {
      "t": "301565.SZ",
@@ -21062,8 +21062,8 @@
      "xr": null,
      "ed": "2026-08-26",
      "eb": "t1_hl2",
-     "er": null,
-     "erw": null
+     "er": 20.16,
+     "erw": "re-derivation on today's bars gives 20.1600 (t1_open) against the published entry 20.3050 (t1_hl2); the published entry is point-in-time and is not restated"
     },
     {
      "t": "301626.SZ",
@@ -21084,8 +21084,8 @@
      "xr": null,
      "ed": "2026-08-26",
      "eb": "t1_open",
-     "er": null,
-     "erw": null
+     "er": 258.68,
+     "erw": "re-derivation on today's bars gives 258.6800 (t1_open) against the published entry 255.0000 (t1_open); the published entry is point-in-time and is not restated"
     },
     {
      "t": "600507.SS",
@@ -21155,8 +21155,8 @@
     },
     {
      "t": "603605.SS",
-     "nm": "Proya Cosmetics Co.,Ltd. / 珀莱雅",
-     "sec": "Consumer Defensive",
+     "nm": null,
+     "sec": null,
      "grp": null,
      "d": "2026-08-25",
      "e": 61.2,
@@ -22834,8 +22834,8 @@
     "survivorship": {
      "n_locked_excluded": 0,
      "n_skipped_no_price": 0,
-     "n_skipped_awaiting_t1": 20,
-     "n_skipped_total": 20,
+     "n_skipped_awaiting_t1": 25,
+     "n_skipped_total": 25,
      "note": "locked-limit T+1 rows are unfillable — flagged, excluded from stats; n_skipped_no_price counts store misses only, awaiting-T+1 episodes are in flight"
     },
     "exit_rule": "10-session forced verdict · T+1 open fill · no oscillator target (3D thresholds not yet refit for A-shares)",
@@ -22858,15 +22858,15 @@
     "n_skipped_no_price": 0,
     "n_board_days": 7,
     "win_pct": 24.1,
-    "expectancy_pct": -3.51,
+    "expectancy_pct": -3.52,
     "median_pct": -4.31,
-    "avg_win_pct": 5.15,
+    "avg_win_pct": 5.14,
     "avg_loss_pct": -6.26,
     "profit_factor": 0.26,
     "ci_lo_pct": 17.3,
     "ci_hi_pct": 30.1,
     "exp_lo_pct": -4.46,
-    "exp_hi_pct": -2.58,
+    "exp_hi_pct": -2.59,
     "median_hold": 10,
     "capture": -1.51,
     "n_capture": 87,
@@ -22901,8 +22901,8 @@
      "xr": null,
      "ed": "2026-08-26",
      "eb": "t1_hl2",
-     "er": null,
-     "erw": null
+     "er": 8.93,
+     "erw": "re-derivation on today's bars gives 8.9300 (t1_open) against the published entry 8.8450 (t1_hl2); the published entry is point-in-time and is not restated"
     },
     {
      "t": "300913.SZ",
@@ -22923,8 +22923,8 @@
      "xr": null,
      "ed": "2026-08-26",
      "eb": "t1_open",
-     "er": null,
-     "erw": null
+     "er": 36.1,
+     "erw": "re-derivation on today's bars gives 36.1000 (t1_open) against the published entry 35.8500 (t1_open); the published entry is point-in-time and is not restated"
     },
     {
      "t": "603220.SS",
@@ -24116,8 +24116,8 @@
     },
     {
      "t": "601799.SS",
-     "nm": "Changzhou Xingyu Automotive Lighting Systems Co., Ltd. / 星宇股份",
-     "sec": "Consumer Cyclical",
+     "nm": null,
+     "sec": null,
      "grp": null,
      "d": "2026-08-13",
      "e": 94.21,
@@ -26037,9 +26037,9 @@
      "grp": null,
      "d": "2026-08-04",
      "e": 33.7,
-     "l": 38.81,
-     "p": 15.2,
-     "x": 13.61,
+     "l": 38.7,
+     "p": 14.8,
+     "x": 13.3,
      "dy": 10,
      "st": "beat",
      "m": true,
@@ -26049,8 +26049,8 @@
      "xr": "horizon",
      "ed": "2026-08-05",
      "eb": "t1_open",
-     "er": null,
-     "erw": null
+     "er": 33.61,
+     "erw": "re-derivation on today's bars gives 33.6079 (t1_open) against the published entry 33.7000 (t1_open); the published entry is point-in-time and is not restated"
     },
     {
      "t": "002368.SZ",

@@ -313,3 +313,27 @@ def test_identity_and_intake_receipts_attest_the_exact_once_read_file_bytes(tmp_
     assert candidate_batch.source_receipts[0]["files"] == [
         {"path": str(candidate_path), "sha256": candidate_hash}
     ]
+
+
+def test_parquet_numpy_dressed_rows_intake_cleanly(tmp_path: Path):
+    """B1's first natural scheduled run (33036497832, 2026-08-27T14:40Z) died with
+    'Object of type ndarray is not JSON serializable' and aborted the ledgers job
+    before its commit: parquet round-trips list-typed cells back as numpy arrays,
+    and the receipt hash's canonical_json is deliberately fail-closed. Rows are
+    normalized to plain Python before hashing (_plain_row); this pins the numpy
+    dress never crashing intake again."""
+    import numpy as np  # noqa: PLC0415 — the dress under test
+
+    data = tmp_path / "data"
+    _identity_spine(data)
+    spine = load_identity_spine(data)
+    candidates = data / "us_prophet_rank" / "candidates"
+    candidates.mkdir(parents=True)
+    pd.DataFrame([{
+        "stamp_date": "2026-11-27", "ticker": "ALFA", "board_definition": "us_prophet_v2",
+        "tier": "curated", "pool_lane": None, "prophet_score": np.float64(0.5),
+        "confluence_tags": np.array(["a", "b"]),
+    }]).to_parquet(candidates / "2026-11.parquet", index=False)
+
+    batch = candidate_observations(data, spine)
+    assert len(batch.observations) + len(batch.suppressions) >= 1
