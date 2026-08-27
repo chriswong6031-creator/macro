@@ -132,6 +132,10 @@ do_not_redo:
   - "Do not port HK pv-featured Top Picks ownership to Canada or Canada's first-five/LIVE laws to HK."
   - "Do not reopen Prophet ranking, Top Picks ownership, Grid/Table XOR, Track Record/Evidence, quote/no-LIVE planes, entitlement, Terminal routing, lifecycle, sig-neu, .sm-hidden, loader/template/engine/data surfaces from this closed presentation program."
   - "Do not treat the accepted 390px evidence substitution as a general weakening of production-proof law."
+danger_areas:
+  - "Reopening the closed HK/Canada V3.8 presentation lane, or treating this acceptance as auto-start for China or US."
+  - "Treating the accepted 390px evidence substitution as a general weakening of production-proof law."
+  - "Rebuilding Action timing as Trend Leadership, or restoring presentation-owned sector rank."
 decisions:
   - DEC:V38-ACTION-IS-NOT-LEADERSHIP
 ---
