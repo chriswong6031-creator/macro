@@ -1,7 +1,7 @@
 {
  "status": "upstream_degraded",
- "detail": "derived over a same-run china_filings TRANSPORT degradation (szse: HTTP 504 from CNInfo exchange=szse) \u2014 this run contributes no absence evidence",
- "last_attempt_utc": "2026-08-27T17:58:07.262565+00:00",
+ "detail": "derived over a same-run china_filings TRANSPORT degradation (sse: HTTP 504 from CNInfo exchange=sse; szse: HTTP 504 from CNInfo exchange=szse); same-run china_filings key-integrity partition is UNKNOWN this run \u2014 this run contributes no absence evidence",
+ "last_attempt_utc": "2026-08-27T22:52:24.902005+00:00",
  "last_success_utc": "2026-08-26T09:10:55.658242+00:00",
  "candidate_accounting": {
   "eligible": 470,

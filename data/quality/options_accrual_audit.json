@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-08-27T18:03:49.033468+00:00",
+  "generated_at": "2026-08-27T22:58:11.449122+00:00",
   "ok": false,
   "fail_reasons": [
-    "CHAINS STALE: latest chain file is 2026-08-13 (9 NYSE session(s) behind last_session=2026-08-26); threshold=1 \u2014 OI snapshot may have been missed",
+    "CHAINS STALE: latest chain file is 2026-08-13 (10 NYSE session(s) behind last_session=2026-08-27); threshold=1 \u2014 OI snapshot may have been missed",
     "CHAINS SESSION FAILED: session 2026-08-26 has a health-receipt attempt but NO chain parquet was ever written for it \u2014 the accrual captured nothing for the most recently attempted session (see data/polygon_gex_health/2026-08-26.json)"
   ],
   "warnings": [
@@ -10,11 +10,11 @@
   ],
   "detail": {
     "today_utc": "2026-08-27",
-    "last_trading_day": "2026-08-26",
-    "chains_dir": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/polygon_gex/chains",
+    "last_trading_day": "2026-08-27",
+    "chains_dir": "/Users/chriswong/actions-runner-4/_work/macro/macro/data/polygon_gex/chains",
     "chains_latest_date": "2026-08-13",
     "chains_count": 28,
-    "chains_age_sessions": 9,
+    "chains_age_sessions": 10,
     "health_latest_receipt_session": "2026-08-26",
     "options_flow_creds_present": false,
     "options_flow_summary_count": 387

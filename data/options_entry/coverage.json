@@ -1,6 +1,6 @@
 {
   "schema": "options_entry_coverage.v1",
-  "generated_at": "2026-08-27T18:03:49.108995+00:00",
+  "generated_at": "2026-08-27T22:58:11.526887+00:00",
   "as_of": "2026-08-27",
   "absent_stores": [],
   "feature_coverage": {
@@ -524,10 +524,10 @@
     },
     {
       "check": "audit_options_accrual_last_run",
-      "generated_at": "2026-08-27T18:03:49.033468+00:00",
+      "generated_at": "2026-08-27T22:58:11.449122+00:00",
       "ok": false,
       "fail_reasons": [
-        "CHAINS STALE: latest chain file is 2026-08-13 (9 NYSE session(s) behind last_session=2026-08-26); threshold=1 \u2014 OI snapshot may have been missed",
+        "CHAINS STALE: latest chain file is 2026-08-13 (10 NYSE session(s) behind last_session=2026-08-27); threshold=1 \u2014 OI snapshot may have been missed",
         "CHAINS SESSION FAILED: session 2026-08-26 has a health-receipt attempt but NO chain parquet was ever written for it \u2014 the accrual captured nothing for the most recently attempted session (see data/polygon_gex_health/2026-08-26.json)"
       ],
       "warnings": [
@@ -537,7 +537,7 @@
   ],
   "_stamp": {
     "audit": "options_entry_coverage.v1",
-    "generated_at_utc": "2026-08-27T18:03:49.108988+00:00",
+    "generated_at_utc": "2026-08-27T22:58:11.526878+00:00",
     "as_of": "2026-08-27",
     "absent_stores": []
   }
