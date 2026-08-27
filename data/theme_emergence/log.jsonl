@@ -27,3 +27,4 @@
 {"sic":"3760","sic_desc":"Guided Missiles & Space Vehicles & Parts","asof":"2026-08-14","ts":"2026-08-20T07:47:37.956108+00:00","n_new_filers":4,"velocity":4,"new_filers":["FLY","MNTS","VOYG","YSS"]}
 {"sic":"3679","sic_desc":"Electronic Components, NEC","asof":"2026-08-14","ts":"2026-08-20T07:47:37.956108+00:00","n_new_filers":3,"velocity":3,"new_filers":["LGL","NSYS","VICR"]}
 {"sic":"3823","sic_desc":"Industrial Instruments For Measurement, Display, and Control","asof":"2026-08-18","ts":"2026-08-20T07:47:37.956108+00:00","n_new_filers":3,"velocity":3,"new_filers":["FTV","RAL","SYPR"]}
+{"sic":"3674","sic_desc":"Semiconductors & Related Devices","asof":"2026-08-26","ts":"2026-08-27T08:35:57.939581+00:00","n_new_filers":16,"velocity":12,"new_filers":["AAOI","CBRS","CRDO","CRUS","DIOD","GSIT","IPGP","KOPN","MCHP","MRVL","MX","OSIS"]}

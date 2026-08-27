@@ -1,0 +1,83 @@
+{
+  "schema": "tfg0.development_boundary_identity_adjudication.v1",
+  "operation_key": "tfg0-transcript-format-census-20260827-v1",
+  "method": "post-freeze source-only adjudication of the 16 already-open development revisions; every true analyst handoff is separated from opening/queue/closing housekeeping using Operator text plus immediate next non-housekeeping source turn; no compiler output/model/external biography used for gold",
+  "source_packet": {
+    "run_id": 33056549015,
+    "job_id": 98464657203,
+    "artifact_id": 9639840320,
+    "artifact_sha256": "4bad699c7be43a908d4010faaa9d620f7a30ebff288ac429712324988980102e",
+    "head_sha": "fa2bbcb34a037b4db5556d43e989c113330f83e1"
+  },
+  "summary": {
+    "calls": 16,
+    "true_question_handoffs": 110,
+    "direct_operator_next_speaker_matches": 95,
+    "explicit_full_name_proxy_handoffs": 6,
+    "source_supported_questioner_handoffs": 101,
+    "unresolved_questioner_handoffs": 9,
+    "calls_with_explicit_management_role_conflict": 2,
+    "source_clean_calls_for_full_call_reconstruction": 10,
+    "source_clean_call_pairs": [
+      "OCSL/2026Q3",
+      "MBLY/2026Q2",
+      "GEF/2026Q3",
+      "ARQQ/2026Q2",
+      "UPBD/2026Q2",
+      "SCCO/2026Q2",
+      "AGM/2026Q2",
+      "FANG/2026Q2",
+      "COF/2026Q2",
+      "KREF/2026Q2"
+    ]
+  },
+  "proxy_law": {
+    "accepted_relation": "If the Operator names principal X but the immediate next structured speaker is full-name Y, the handoff remains source-supported only when Y's first source utterance explicitly binds Y as 'on for', 'sitting in for', or equivalent on-behalf relation to X. Canonical questioner name is Y. Operator-supplied affiliation of X does not automatically transfer to Y; affiliation remains unresolved unless Y's affiliation is independently stated in the same handoff/utterance.",
+    "full_name_proxy_examples": [
+      {"pair":"GEF/2026Q3","segment_index":30,"operator_named":"Ghansham Panjabi","next_speaker":"Josh Fessler","first_utterance":"It's actually Josh Fessler on for Ghansham.","relation":"explicit_full_name_proxy"},
+      {"pair":"CTRE/2026Q2","segment_index":31,"operator_named":"Juan Sanabria","next_speaker":"Robin Hanlon","first_utterance":"Hi, this is Robin Hanlon sitting in for Juan.","relation":"explicit_full_name_proxy"},
+      {"pair":"LTH/2026Q2","segment_index":59,"operator_named":"Ben Chaiken","next_speaker":"Lida Chen","first_utterance":"Hi, this is Lida Chen on for Ben.","relation":"explicit_full_name_proxy"},
+      {"pair":"BANR/2026Q2","segment_index":34,"operator_named":"Jeff Rulis","next_speaker":"Ryan Payne","first_utterance":"Good morning. This is Ryan Payne on for Jeff Rulis.","relation":"explicit_full_name_proxy"},
+      {"pair":"BANR/2026Q2","segment_index":45,"operator_named":"Kelly Motta","next_speaker":"Megan Lynch","first_utterance":"Hi, this is Megan Lynch on for Kelly Motta.","relation":"explicit_full_name_proxy"},
+      {"pair":"ARRY/2026Q2","segment_index":63,"operator_named":"Colin Rusch","next_speaker":"Andre Adams","first_utterance":"Hi there, guys. This is Andre Adams on for Colin.","relation":"explicit_full_name_proxy"}
+    ],
+    "unresolved_examples": [
+      {"pair":"TRVI/2026Q2","segment_index":46,"operator_named":"Leland Gershell","next_speaker":"Speaker 8","first_utterance":"Hi, this is Tracey on for Leland.","reason":"structured speaker placeholder; self-identification is first-name only"},
+      {"pair":"TRVI/2026Q2","segment_index":58,"operator_named":"Kaveri Pohlman","next_speaker":"Speaker 10","first_utterance":"Hi, team. This is Wayne on for Kaveri.","reason":"structured speaker placeholder; self-identification is first-name only"},
+      {"pair":"TRVI/2026Q2","segment_index":65,"operator_named":"Serge Belanger","next_speaker":"Speaker 11","first_utterance":"Hi, good afternoon. This is John on for Serge today.","reason":"structured speaker placeholder; self-identification is first-name only"},
+      {"pair":"CTRE/2026Q2","segment_index":79,"operator_named":"Addy Rodgers","next_speaker":"Dave Rodgers","first_utterance":"Hey, guys. Good morning. It's Dave.","reason":"different source names; no explicit proxy/on-behalf relation"},
+      {"pair":"LTH/2026Q2","segment_index":81,"operator_named":"Chris Woronko","next_speaker":"Chris Woronka","first_utterance":"Hey. Good morning, guys. Thanks for taking the question.","reason":"one-character name conflict; edit-distance/fuzzy repair forbidden"},
+      {"pair":"LTH/2026Q2","segment_index":104,"operator_named":"Logan Rice","next_speaker":"Logan Reich","first_utterance":"Good morning. Thanks for taking the question.","reason":"name conflict; edit-distance/fuzzy repair forbidden"},
+      {"pair":"LTH/2026Q2","segment_index":113,"operator_named":"Andrew Chazanov","next_speaker":"Speaker 14","first_utterance":"Good morning. Congrats on the quarter, and thanks for taking my question.","reason":"structured speaker placeholder and no source self-identification"},
+      {"pair":"BANR/2026Q2","segment_index":71,"operator_named":"David Feaster","next_speaker":"Speaker 9","first_utterance":"Hey, good morning, guys. This is actually Evan on for David Feaster.","reason":"structured speaker placeholder; self-identification is first-name only"},
+      {"pair":"HTGC/2026Q2","segment_index":61,"operator_named":"Point","next_speaker":"Speaker 8","first_utterance":"Hi. Thank you. Question on core yields.","reason":"operator name is garbled and next speaker is placeholder; no source-supported person identity"}
+    ]
+  },
+  "structural_separator_law": "All 110 adjudicated question handoffs are structural separators. The 9 unresolved questioner handoffs must still split neighboring Q&A windows so their source text cannot be merged into an adjacent accepted exchange, but they cannot mint a canonical qa_exchange. TFG-1 must preserve a typed separator/refusal state for these boundaries; it must not infer a person, silently discard the separator, or contaminate adjacent spans.",
+  "full_call_bar": "The former >=12/16 non-empty call bar is superseded. It exceeds the independently adjudicated all-or-nothing source-clean ceiling. TFG-1 must produce non-empty deterministic reconstruction on all 10 source-clean calls. The remaining six calls must fail only for frozen source-identity/conflict reasons, never terminal-phrase format dependence, while their structural handoffs remain correctly separated.",
+  "boundary_bar": "On the development corpus, structural boundary detection must recover all 110 adjudicated handoffs with zero opening/queue/closing false positives. Of those, 101 must resolve a source-supported direct/proxy questioner according to the frozen law; the 9 unresolved cases must remain refused/separator-only.",
+  "role_conflict_calls": [
+    {"pair":"ARRY/2026Q2","reason":"held transcript text identifies Keith Jennings as CFO and Neil Manning as President/COO while segment role metadata labels those speakers CEO and CFO"},
+    {"pair":"CTRE/2026Q2","reason":"held transcript text identifies James Callister as Chief Investment Officer while segment role metadata labels his speech CFO"}
+  ],
+  "per_call": [
+    {"pair":"OCSL/2026Q3","true_question_handoff_indices":[29,35,47],"direct_next_speaker_match_indices":[29,35,47],"explicit_full_name_proxy_indices":[],"unresolved_questioner_indices":[],"management_role_conflict":false,"source_clean_for_full_call_reconstruction":true},
+    {"pair":"MBLY/2026Q2","true_question_handoff_indices":[31,44,54,65,72,79,89,98],"direct_next_speaker_match_indices":[31,44,54,65,72,79,89,98],"explicit_full_name_proxy_indices":[],"unresolved_questioner_indices":[],"management_role_conflict":false,"source_clean_for_full_call_reconstruction":true},
+    {"pair":"GEF/2026Q3","true_question_handoff_indices":[25,30],"direct_next_speaker_match_indices":[25],"explicit_full_name_proxy_indices":[30],"unresolved_questioner_indices":[],"management_role_conflict":false,"source_clean_for_full_call_reconstruction":true},
+    {"pair":"ARQQ/2026Q2","true_question_handoff_indices":[22],"direct_next_speaker_match_indices":[22],"explicit_full_name_proxy_indices":[],"unresolved_questioner_indices":[],"management_role_conflict":false,"source_clean_for_full_call_reconstruction":true},
+    {"pair":"TRVI/2026Q2","true_question_handoff_indices":[12,25,41,46,51,58,65,74,85],"direct_next_speaker_match_indices":[12,25,41,51,74,85],"explicit_full_name_proxy_indices":[],"unresolved_questioner_indices":[46,58,65],"management_role_conflict":false,"source_clean_for_full_call_reconstruction":false},
+    {"pair":"CTRE/2026Q2","true_question_handoff_indices":[17,24,31,37,45,53,59,72,79,87,94],"direct_next_speaker_match_indices":[17,24,37,45,53,59,72,87,94],"explicit_full_name_proxy_indices":[31],"unresolved_questioner_indices":[79],"management_role_conflict":true,"source_clean_for_full_call_reconstruction":false},
+    {"pair":"LTH/2026Q2","true_question_handoff_indices":[10,18,31,39,49,59,70,81,92,104,113],"direct_next_speaker_match_indices":[10,18,31,39,49,70,92],"explicit_full_name_proxy_indices":[59],"unresolved_questioner_indices":[81,104,113],"management_role_conflict":false,"source_clean_for_full_call_reconstruction":false},
+    {"pair":"UPBD/2026Q2","true_question_handoff_indices":[32,44,53,64,74,79,84],"direct_next_speaker_match_indices":[32,44,53,64,74,79,84],"explicit_full_name_proxy_indices":[],"unresolved_questioner_indices":[],"management_role_conflict":false,"source_clean_for_full_call_reconstruction":true},
+    {"pair":"SCCO/2026Q2","true_question_handoff_indices":[53,66,91,109,117],"direct_next_speaker_match_indices":[53,66,91,109,117],"explicit_full_name_proxy_indices":[],"unresolved_questioner_indices":[],"management_role_conflict":false,"source_clean_for_full_call_reconstruction":true},
+    {"pair":"AGM/2026Q2","true_question_handoff_indices":[30,36,49,64],"direct_next_speaker_match_indices":[30,36,49,64],"explicit_full_name_proxy_indices":[],"unresolved_questioner_indices":[],"management_role_conflict":false,"source_clean_for_full_call_reconstruction":true},
+    {"pair":"BANR/2026Q2","true_question_handoff_indices":[20,34,45,55,71,83],"direct_next_speaker_match_indices":[20,55,83],"explicit_full_name_proxy_indices":[34,45],"unresolved_questioner_indices":[71],"management_role_conflict":false,"source_clean_for_full_call_reconstruction":false},
+    {"pair":"FANG/2026Q2","true_question_handoff_indices":[4,15,31,40,51,62,73,81,89,96,104,112,124,133],"direct_next_speaker_match_indices":[4,15,31,40,51,62,73,81,89,96,104,112,124,133],"explicit_full_name_proxy_indices":[],"unresolved_questioner_indices":[],"management_role_conflict":false,"source_clean_for_full_call_reconstruction":true},
+    {"pair":"HTGC/2026Q2","true_question_handoff_indices":[33,40,52,61,69,76,83,92],"direct_next_speaker_match_indices":[33,40,52,69,76,83,92],"explicit_full_name_proxy_indices":[],"unresolved_questioner_indices":[61],"management_role_conflict":false,"source_clean_for_full_call_reconstruction":false},
+    {"pair":"COF/2026Q2","true_question_handoff_indices":[20,33,43,53,62,71,80,93,103,114,120],"direct_next_speaker_match_indices":[20,33,43,53,62,71,80,93,103,114,120],"explicit_full_name_proxy_indices":[],"unresolved_questioner_indices":[],"management_role_conflict":false,"source_clean_for_full_call_reconstruction":true},
+    {"pair":"ARRY/2026Q2","true_question_handoff_indices":[36,46,63,76,84,89],"direct_next_speaker_match_indices":[36,46,76,84,89],"explicit_full_name_proxy_indices":[63],"unresolved_questioner_indices":[],"management_role_conflict":true,"source_clean_for_full_call_reconstruction":false},
+    {"pair":"KREF/2026Q2","true_question_handoff_indices":[25,40,51,60],"direct_next_speaker_match_indices":[25,40,51,60],"explicit_full_name_proxy_indices":[],"unresolved_questioner_indices":[],"management_role_conflict":false,"source_clean_for_full_call_reconstruction":true}
+  ],
+  "holdout_bodies_inspected": 0,
+  "model_calls": 0
+}

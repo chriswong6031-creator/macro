@@ -2355,6 +2355,7 @@ jobs:
           tests/test_intl_act_now_board_icons.py
           tests/test_act_now_board_icons.py
           tests/test_china_delayed_board_disclosure.py
+          tests/test_cn_board_freshness_truth.py
           tests/test_china_zt_pool_dates.py
           tests/test_drip_append_only.py
           tests/test_cn_calendar.py
@@ -3515,7 +3516,7 @@ jobs:
         #    exercises that degraded branch instead of the shipped one.
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 requests
       - name: neural-web core suite (mastermind context + confluence + spine query + ask brain + world state + R5 macro context + ADB-W1 brief context + ADB-W2 forward calendar + Analyst OS P0 + W2)
-        run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_company_intelligence_neural_reader.py tests/test_company_intelligence_workspace_chain.py tests/test_company_intelligence_event_workspace.py tests/test_company_intelligence_event_compiler_e3a.py tests/test_company_intelligence_qa_reconstruction.py tests/test_company_intelligence_qa_exchange.py tests/test_refresh_event_workspaces.py tests/test_issuer_profiles_a5a.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py tests/test_neuralweb_health.py tests/test_neuralweb_daily_brief.py tests/test_brief_context.py tests/test_forward_calendar.py tests/test_orchestrator_log.py tests/test_mastermind_feedback.py tests/test_admin_orchestrator.py tests/test_admin_prophet.py tests/test_admin_trade_memory.py tests/test_macro_thesis.py tests/test_brain_doctrine.py tests/test_mastermind_response_log.py tests/test_admin_mastermind_logs.py tests/test_brain_analyst_doctrine.py tests/test_brain_analyst_wiring.py tests/test_market_packet.py tests/test_brain_market_intel.py tests/test_brain_seed_router.py tests/test_brain_analogues.py tests/test_brain_curve.py tests/test_response_eval.py tests/test_brain_user_memory.py tests/test_user_prefs.py -q
+        run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_company_intelligence_neural_reader.py tests/test_company_intelligence_workspace_chain.py tests/test_company_intelligence_event_workspace.py tests/test_company_intelligence_event_compiler_e3a.py tests/test_company_intelligence_qa_reconstruction.py tests/test_company_intelligence_qa_exchange.py tests/test_company_intelligence_qa_generalization_e3c.py tests/test_refresh_event_workspaces.py tests/test_issuer_profiles_a5a.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py tests/test_neuralweb_health.py tests/test_neuralweb_daily_brief.py tests/test_brief_context.py tests/test_forward_calendar.py tests/test_orchestrator_log.py tests/test_mastermind_feedback.py tests/test_admin_orchestrator.py tests/test_admin_prophet.py tests/test_admin_trade_memory.py tests/test_macro_thesis.py tests/test_brain_doctrine.py tests/test_mastermind_response_log.py tests/test_admin_mastermind_logs.py tests/test_brain_analyst_doctrine.py tests/test_brain_analyst_wiring.py tests/test_market_packet.py tests/test_brain_market_intel.py tests/test_brain_seed_router.py tests/test_brain_analogues.py tests/test_brain_curve.py tests/test_response_eval.py tests/test_brain_user_memory.py tests/test_user_prefs.py -q
 
   cn-standout-audit:
     if: ${{ false }}
@@ -10866,6 +10867,29 @@ jobs:
       # above, so it shares their venv.
       - name: stage-analysis ledger session stamps + heal (forward-ledger audit 2026-08-05)
         run: python -m pytest tests/test_stage_analysis.py tests/test_stage_industry_live_partition.py tests/test_weinstein_stage.py tests/test_heal_stage_forward_ledger.py -q
+      # Unrun backfill 2026-08-27: tests/test_dashboard_template_render.py — the
+      # dashboard.html.j2 rendered-HTML contract — was named by NO `run:` step in any
+      # workflow while this job ALREADY claimed the file in its `paths:` block above.
+      # That is the worst of both shapes: an edit to the suite re-selected this job,
+      # and the job then ran everything EXCEPT the suite.  Because nothing executed it,
+      # a genuine red survived on main indefinitely — test_candidate_stage_rail_absent_
+      # from_setups_grid has been failing since fd0c0b0ece50 (#6243, shipping #6185)
+      # re-added `{% include "_us_board_cards.html.j2" %}`, which renders a DELIBERATE
+      # lane rail in the Candidates section BELOW the migrated Setups grid.  The suite's
+      # whole-page substring assertion could not tell that restored rail from the grid
+      # rail it exists to prove gone — and tests/test_p0_prophet_candidate_board.py:282
+      # pins the restored one as REQUIRED, so the two contracts contradicted outright.
+      # The assertions are scoped to the grid in the same PR; the enrolment and the
+      # repair ship together, per the house rule that a guard nothing runs is already open.
+      # It belongs to THIS lane rather than unrun-site-surfaces because the failing
+      # case imports `priority_overlay`/`ran_overlay` from tests/test_us_board_priority_ui.py,
+      # which the lane's first step already runs — same US board-surface family, same venv.
+      # Its own step, not appended to that step's line, so a render-contract red is
+      # attributable on sight rather than reading as a picks/boards regression.
+      # No dependency widened: it renders Jinja templates only — jinja2 is already on
+      # the install line above.  Measured 54s against this job's 245s body and 12m cap.
+      - name: dashboard.html.j2 rendered-HTML contract (unrun backfill 2026-08-27)
+        run: python -m pytest tests/test_dashboard_template_render.py -q
   prophet-us-context-and-grades:
     # PROPHET US §W7 — the full-population candidate record: the PIT context store that
     # REMEMBERS each night's score, the forward grader that says what those names then did,
