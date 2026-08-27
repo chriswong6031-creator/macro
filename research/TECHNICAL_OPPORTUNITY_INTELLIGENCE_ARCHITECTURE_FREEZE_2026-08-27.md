@@ -38,6 +38,8 @@ The first proving vertical is:
 
 True 5-minute tactical entry production remains owned by Live Entry Radar. Prophet, Golden Confluence, ranking, sizing, and trade authority remain unchanged.
 
+Weekly/Daily/4H is the first proving slice, not the final horizon estate. The complete program must later preserve Monthly structural and regime context, Radar-owned true tactical intraday context, and point-in-time sector, industry, theme, and basket opportunity objects under the same species and occurrence law—without creating another intraday, data, identity, or lifecycle plane.
+
 ---
 
 ## 1. Outcome before code
@@ -116,14 +118,14 @@ The program is not complete when code exists or a screener page renders. Complet
 | Dependency-family and evidence-role metadata | `BUILT_NOT_PROVEN` as complete ontology | Reuse and audit; do not count synonymous or correlated indicators as independent votes. |
 | Current D/W confluence miner and public screener | `PROVEN_LIVE` as display-tier research/product | Preserve as incumbent benchmark, not as timing or trade authority. |
 | Role-aware/dependency-aware Combo v2 | `NOT_BUILT` | Current miner still gates to legacy families. A future role-aware benchmark may be built, but it is not the final opportunity architecture. |
-| Setup Species scientific registry | `BUILT` | Remains canonical for species identity, scientific lifecycle, deployment status, trials, and ledger binding. |
+| Setup Species scientific registry | `BUILT_NOT_PROVEN` as the complete scientific registry | Remains canonical for species identity, scientific lifecycle, deployment status, trials, and ledger binding; W0 does not claim the whole Setup Species program is production-complete. |
 | General per-security technical occurrence lifecycle | `NOT_BUILT` | Build as a deterministic derived occurrence read over canonical species; do not create another species registry. |
 | Durable-bottom and setup-species measurement law | `PARTIAL`, unusually mature | Generalize timing-native recall, lateness, false-bottom, dead-money, MFE/MAE, and wait-cost law. |
-| Signal Foundry | `BUILT`, autonomous lane `DARK_OR_DISCONNECTED` by design | Reuse for declarative candidate proposals and frozen research batteries; no second automated research factory. |
+| Signal Foundry core | `BUILT_NOT_PROVEN`; scheduled autonomous lane `DARK_OR_DISCONNECTED` by design | Reuse for declarative candidate proposals and frozen research batteries; no second automated research factory. |
 | Deep, whole-universe, correction-safe daily U.S. panel | `PARTIAL` | Re-prove current coverage, split/correction behavior, universe history, and rights before research claims. |
-| Deep causal whole-universe 4H research panel | `NOT_BUILT` or at least `BUILT_NOT_PROVEN` | W2-0 must establish current truth. Entitlement and a short collector are not proof of a research-ready panel. |
+| Integrated deep causal whole-universe 4H research panel | `NOT_BUILT`; individual collection/entitlement components are `PARTIAL` or `BUILT_NOT_PROVEN` | W2-0 must establish current truth. Entitlement and a short collector are not proof of a research-ready panel. |
 | Live Entry Radar tactical event plane | `PROVEN_LIVE` owner-side | Retains 5-minute RTH tactical events, live evaluation, and entry-event ownership. |
-| Terminal chart and premium technical primitives | `BUILT` | Use as renderer and local geometry substrate; Macro owns canonical opportunity semantics. |
+| Terminal chart and premium technical primitives | `BUILT_NOT_PROVEN` as the complete TOI rendering substrate | Use as renderer and local geometry substrate; Macro owns canonical opportunity semantics. W5 owes exact current browser and production proof. |
 | Point-in-time theme/basket technical opportunity objects | `NOT_BUILT` | Later wave after single-security species and clocks are proven. |
 | Prophet / Golden Confluence consumption | `REJECTED_BY_DESIGN` at birth | No consumption until a named species clears prospective promotion law and receives a separate ruling. |
 
@@ -487,6 +489,7 @@ A lawful null:
 
 ### 9.1 Completed bars for authoritative transitions
 
+- Monthly context uses the most recent completed exchange month when that later horizon is admitted.
 - Weekly state uses the most recent completed exchange week.
 - Daily state uses a completed market session.
 - 4H state uses a completed registered bar.
@@ -615,7 +618,7 @@ Source hierarchy:
 5. practitioner names as hypothesis leads;
 6. proprietary/opaque methods blocked unless mechanics and rights are lawfully public.
 
-The census normalizes synonyms before testing. Indicator breadth is not evidence.
+The census normalizes synonyms before testing. Indicator breadth is not evidence. W1 also classifies Monthly/later-context and Radar-owned tactical-intraday methods now, while keeping the first W3 family bounded to Weekly/Daily/4H.
 
 ---
 
@@ -1021,11 +1024,11 @@ This carrier:
 
 ### W1 — Technical Evidence Census
 
-Normalize the public technical universe, current local coverage, aliases, formulas, dependencies, sources, rights, failures, and research priority.
+Normalize the public technical universe, current local coverage, aliases, formulas, dependencies, sources, rights, failures, horizon/owner disposition, and research priority. Include Monthly/later-context and Radar-owned tactical residue now; keep the first W3 family bounded.
 
 ### W2-0 — Data and Clock Archaeology
 
-Prove or fail the current Daily/Weekly/4H data substrate. Freeze bar, session, adjustment, correction, universe, rights, and coverage law. No signal performance runs.
+Prove or fail the current Daily/Weekly/4H data substrate, audit completed Monthly derivation for later context, and crosswalk Radar-owned tactical clocks without modifying them. Freeze bar, session, adjustment, correction, universe, rights, and coverage law. Return a canonical capability state and separate W3 admission gate. No signal performance runs.
 
 ### W2 — Data substrate implementation, only if W2-0 authorizes it
 
@@ -1077,7 +1080,9 @@ W0 passes only when:
 - Live Entry Radar and Stock Identity boundaries are named;
 - Setup Species remains canonical;
 - two queues and no-universal-score law are durable;
+- the first slice and full horizon end-state are both preserved;
 - W1 and W2-0 handoffs are cold-stranger complete;
+- capability states use the canonical company vocabulary and W3 admission is a separate gate;
 - Agent OS validation and CI are green;
 - the PR remains records-only;
 - no runtime, data, score, rank, gate, or trade path changes.
@@ -1123,7 +1128,7 @@ These sources seed W1. They do not pre-authorize any formula, parameter, product
 
 Run two disjoint bounded research carriers:
 
-1. **W1 Evidence Census** — public evidence, formula, alias, dependency, local coverage, and rights normalization;
-2. **W2-0 Data/Clock Archaeology** — current source, bar, session, correction, adjustment, universe, and coverage proof.
+1. **W1 Evidence Census** — public evidence, formula, alias, dependency, local coverage, owner/horizon disposition, and rights normalization;
+2. **W2-0 Data/Clock Archaeology** — current source, bar, session, correction, adjustment, universe, coverage, rights, Monthly-context, and Radar-owned tactical clock proof.
 
 No Compression Release outcome testing begins until both return and Sol freezes the W3 preregistration.
