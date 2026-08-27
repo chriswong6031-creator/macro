@@ -320,7 +320,7 @@
   <div class="row">
     <h1><span class="l-en">TSX Stock Dashboard</span><span class="l-zh">标普/TSX 个股看板</span></h1>
     <span style="flex:1"></span>
-    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-08-26 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-08-27 10:24 UTC</span>
+    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-08-26 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-08-27 11:12 UTC</span>
   </div>
   <p class="muted small" style="margin:6px 0 0"><span class="l-en">A shortlist of TSX stocks that look ready to buy, with a suggested buy zone for each. Search any TSX stock in the box above, or click a card for the full breakdown.</span><span class="l-zh">一份看起来可以买入的 TSX 个股短名单，并为每只标注建议买入区间。可在上方搜索框查询任意 TSX 个股，或点击卡片查看完整拆解。</span>
     <a href="canada.html" style="color:var(--ink-link, var(--link));font-weight:600">← <span class="l-en">Canada macro dashboard</span><span class="l-zh">加拿大宏观看板</span></a></p>
@@ -1026,11 +1026,23 @@
 
 <script type="application/json" id="stocktable-data">
 {
-  "rows": [{"_stage": "RIPENING", "alpha": 0.54, "conviction": 32, "days_since_signal": null, "entry_status": "hold", "group": "setting_up", "name": "SOUTH BOW CORPORATION", "off_high": -3.7, "price": 52.45, "sector": "Energy", "stage": "RIPENING", "ticker": "SOBO.TO", "tier": ""}, {"_stage": "RIPENING", "alpha": -0.34, "conviction": 28, "days_since_signal": 48, "entry_status": "extended", "group": "setting_up", "name": "COGECO COMMUNICATIONS INC", "off_high": -19.9, "price": 60.54, "sector": "Communication", "stage": "RIPENING", "ticker": "CCA.TO", "tier": ""}, {"_stage": "RIPENING", "alpha": -0.55, "conviction": 57, "days_since_signal": 30, "entry_status": "await_confluence", "group": "setting_up", "name": "RICHELIEU HARDWARE LTD", "off_high": -20.5, "price": 35.6, "sector": "Industrials", "stage": "RIPENING", "ticker": "RCH.TO", "tier": ""}, {"_stage": "RIPENING", "alpha": -1.62, "conviction": 51, "days_since_signal": 6, "entry_status": "await_confluence", "group": "setting_up", "name": "FIRSTSERVICE CORPORATION", "off_high": -30.5, "price": 199.33, "sector": "Real Estate", "stage": "RIPENING", "ticker": "FSV.TO", "tier": ""}, {"_stage": "RIPENING", "alpha": -1.91, "conviction": 37, "days_since_signal": null, "entry_status": "wait_pullback", "group": "setting_up", "name": "TELUS CORPORATION", "off_high": -36.1, "price": 13.43, "sector": "Communication", "stage": "RIPENING", "ticker": "T.TO", "tier": ""}, {"_stage": "RIPENING", "alpha": -1.96, "conviction": 37, "days_since_signal": 54, "entry_status": "await_confluence", "group": "setting_up", "name": "ONEX CORPORATION", "off_high": -6.7, "price": 116.91, "sector": "Financials", "stage": "RIPENING", "ticker": "ONEX.TO", "tier": ""}],
+  "rows": [{"_stage": "RIPENING", "alpha": 0.54, "conviction": 32, "days_since_signal": 0, "entry_status": "hold", "group": "setting_up", "name": "SOUTH BOW CORPORATION", "off_high": -3.7, "price": 52.45, "sector": "Energy", "stage": "RIPENING", "ticker": "SOBO.TO", "tier": ""}, {"_stage": "RIPENING", "alpha": -0.34, "conviction": 28, "days_since_signal": 48, "entry_status": "extended", "group": "setting_up", "name": "COGECO COMMUNICATIONS INC", "off_high": -19.9, "price": 60.54, "sector": "Communication", "stage": "RIPENING", "ticker": "CCA.TO", "tier": ""}, {"_stage": "RIPENING", "alpha": -0.55, "conviction": 57, "days_since_signal": 30, "entry_status": "await_confluence", "group": "setting_up", "name": "RICHELIEU HARDWARE LTD", "off_high": -20.5, "price": 35.6, "sector": "Industrials", "stage": "RIPENING", "ticker": "RCH.TO", "tier": ""}, {"_stage": "RIPENING", "alpha": -1.62, "conviction": 51, "days_since_signal": 6, "entry_status": "await_confluence", "group": "setting_up", "name": "FIRSTSERVICE CORPORATION", "off_high": -30.5, "price": 199.33, "sector": "Real Estate", "stage": "RIPENING", "ticker": "FSV.TO", "tier": ""}, {"_stage": "RIPENING", "alpha": -1.91, "conviction": 37, "days_since_signal": 0, "entry_status": "wait_pullback", "group": "setting_up", "name": "TELUS CORPORATION", "off_high": -36.1, "price": 13.43, "sector": "Communication", "stage": "RIPENING", "ticker": "T.TO", "tier": ""}, {"_stage": "RIPENING", "alpha": -1.96, "conviction": 37, "days_since_signal": 54, "entry_status": "await_confluence", "group": "setting_up", "name": "ONEX CORPORATION", "off_high": -6.7, "price": 116.91, "sector": "Financials", "stage": "RIPENING", "ticker": "ONEX.TO", "tier": ""}],
   "as_of": "2026-08-26"
 }
 </script>
 
+
+<div class="panel" style="border-color:color-mix(in srgb,var(--warn) 40%,var(--line))">
+  <div class="row" style="gap:8px">
+    <b style="color:var(--ink-warn, var(--warn))">⚠ <span class="l-en">Data health</span><span class="l-zh">数据健康</span></b>
+    <span class="muted small"><span class="l-en">some board inputs are degraded — the affected axes are suppressed, not silently filled</span><span class="l-zh">部分榜单输入已降级 — 受影响的轴已抑制，而非静默填充</span></span>
+  </div>
+  <div class="row small" style="gap:6px; margin-top:6px">
+    
+    <span class="chip off"><span class="l-en">Board ledger (append wrote 0 rows — see build log)</span><span class="l-zh">榜单账本（写入 0 行 — 查看构建日志）</span> <b>· ERROR</b> <span class="muted">(2026-08-26)</span></span>
+    
+  </div>
+</div>
 
 <div class="panel" id="standouts">
   <h2><span class="l-en">Prophet Stock Signals — TSX ripe list</span><span class="l-zh">Prophet 选股 — TSX 成熟清单</span>
@@ -2104,6 +2116,5 @@ if (document.readyState === 'loading') {
 <footer class="site-footer">
   <span class="made">© 2026 Mastermind Inc</span>
 </footer>
-<script defer data-whb data-root="" src="wh_banner.js?v=4a53a176"></script>
 </body>
 </html>
