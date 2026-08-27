@@ -1,0 +1,146 @@
+{
+  "schema": "e3c.reconstruction_refusal_receipt.v1",
+  "operation_key": "e3c-googl-generalization-20260827-v1",
+  "authority": "E3_EVENT_INTELLIGENCE_COMPILER_FREEZE_2026-08-20.md#11",
+  "predecessor_receipt": "research/earnings_intelligence/e3/e3c_googl_2026q2_source_completeness_receipt.json",
+  "predecessor_operation_key": "e3c-source-census-20260826-v1",
+  "measured_at": "2026-08-27T03:17:32+00:00",
+  "verdict": "GENERIC_COMPILER_REFUSED_ON_SOURCE_FORMAT",
+  "wave_state": "E3-C IN PROGRESS — NOT COMPLETE",
+  "compiler_mutated": false,
+  "issuer_switched": false,
+  "production_registry_mutated": false,
+
+  "what_this_receipt_is": "A measured negative result. The frozen GOOGL Q2 FY2026 package was run through the UNCHANGED E3-A2/E3-B deterministic reconstructor and canonical qa_exchange.v1 adapter. The compiler refused. Per the E3-C commission's scientific stop, execution halted at the refusal: the compiler was not tuned on GOOGL, no GOOGL-specific extraction or boundary constant was introduced, and the issuer was not switched to CAT/BAC/SNOW. This receipt is not wave completion and grants no publication authority.",
+
+  "held_package": {
+    "issuer": "Alphabet Inc.",
+    "company_id": "cik:0001652044",
+    "canonical_event_id": "evt_cik0001652044_2026q2_results",
+    "canonical_listing": "GOOGL",
+    "sibling_listing": "GOOG",
+    "sec_accession": "0001652044-26-000066",
+    "transcript_document_id": "tx:GOOGL/2026Q2",
+    "transcript_sha256": "a44db883463181ba73a536cb3643b81ea59a3e10c0f191859f7717538452d2a9",
+    "transcript_sha256_agrees_with_frozen_receipt": true,
+    "transcript_source_url": "https://app.mastermind-x.com/data/tx/GOOGL/2026Q2.json.gz",
+    "transcript_gzip_bytes": 19182,
+    "segment_count": 90,
+    "committed_fixture": "tests/fixtures/company_intelligence/googl_fy2026_q2.json.gz",
+    "digest_note": "sha256(decompressed body) and engine.earnings_transcript_intake.canonical_body_sha256 agree on this archive body; both equal the frozen receipt digest."
+  },
+
+  "compiler_under_test": {
+    "reconstructor": "engine/company_intelligence/qa_reconstruction.py",
+    "reconstructor_schema": "qa_reconstruction.v1",
+    "adapter": "engine/company_intelligence/qa_exchange.py",
+    "adapter_schema": "qa_exchange.v1",
+    "unchanged_from_main": true,
+    "issuer_literals_in_reconstructor": 0,
+    "boundary_constants_added": 0
+  },
+
+  "measured_result": {
+    "reconstruct_qa_status": "failed",
+    "failure_code": "operator_intro_identity_unparsed",
+    "failure_message": "Operator intro at segment 0 has no unique name/affiliation",
+    "failure_boundary_segment_index": 0,
+    "qualifying_boundaries": [0],
+    "exchanges_reconstructed": 0,
+    "accepted_qa_exchange_v1": 0,
+    "workspace_written": false,
+    "typed_absence_invented": false,
+    "e2_event_regressed": false
+  },
+
+  "three_independent_blockers": [
+    {
+      "id": "B1",
+      "name": "boundary cue is vendor-specific",
+      "detail": "qa_reconstruction._qualifying_boundaries admits an Operator segment only when its text contains the literal 'go ahead'. In this transcript exactly one of twelve Operator segments carries that cue, and it is segment 0 — the pre-presentation IR handoff ('...hand the conference over to your speaker today, Jim Friedland, Head of Investor Relations. Please go ahead.'), which is not a Q&A boundary. All nine real analyst question intros close with 'Your line is now open.' instead. The generic detector therefore returns exactly one boundary and it is a false positive.",
+      "observed_failure_code": "operator_intro_identity_unparsed",
+      "independent": true
+    },
+    {
+      "id": "B2",
+      "name": "no management role is published by this vendor",
+      "detail": "The segment role vocabulary in this body is exactly {'Operator', 'IR', ''}: 12 Operator, 3 IR, 75 empty. Every management turn — Sundar Pichai (30), Philipp Schindler (14), Anat Ashkenazi (17) — carries role ''. qa_reconstruction._is_management returns bool(role), so roleless management speech cannot be classified as management and is rejected as an unexpected speaker. AAPL's held body by contrast publishes explicit CEO/CFO roles (IR 10 / CEO 42 / CFO 23 / Operator 8 / empty 25). This blocker is independent of B1: a white-box probe of the unchanged _reconstruct_exchange over the real boundary window [33,40) fails with 'unexpected_non_housekeeping_speaker: segment 35 speaker Sundar Pichai is not the verified questioner'. The committed regression proves the same law with a public-API minimal pair in which the management role is the only variable.",
+      "observed_failure_code": "unexpected_non_housekeeping_speaker",
+      "independent": true
+    },
+    {
+      "id": "B3",
+      "name": "qa_exchange.v1 cannot mint a source-supported roleless respondent",
+      "detail": "Even had B1 and B2 been resolved, qa_exchange._assert_respondent_identity requires a non-empty source role on every respondent and raises WorkspaceError('respondent name and role must be source-supported'). With this body's roleless management speech, no respondent could be minted source-supported without fabricating a role — which the freeze forbids. This blocker sits downstream of reconstruction entirely.",
+      "observed_failure": "WorkspaceError: respondent name and role must be source-supported",
+      "independent": true
+    }
+  ],
+
+  "secondary_observation": {
+    "name": "operator identity grammar partially generalizes",
+    "detail": "qa_reconstruction._NAME_CUE_RE does correctly extract the analyst name from this vendor's phrasing ('Our next question comes from Brian Nowak with Morgan Stanley' -> name 'Brian Nowak'). The affiliation parse over-captures: _AFFIL_CUT_RE truncates only at a go-ahead clause, '?', '!' or end-of-string, so with no go-ahead clause present the affiliation becomes 'Morgan Stanley. Your line is now open.' rather than 'Morgan Stanley'. Recorded as evidence about the grammar's AAPL shape. NOT repaired in this wave — repairing it here would be tuning the compiler on the E3-C event."
+  },
+
+  "safety_gates_observed_during_refusal": {
+    "accepted_unsupported": 0,
+    "cross_event_contamination": 0,
+    "span_replay_of_accepted": "100% (AAPL only; GOOGL accepted set is empty)",
+    "publication_gate_fail_closed_on_googl_sha": true,
+    "publication_gate_fail_closed_on_mutated_aapl_sha": true,
+    "publication_gate_fail_closed_on_mutated_googl_sha": true,
+    "cross_event_poison_1": "accepted AAPL exchange offered to the GOOGL workspace -> REJECTED: qa_exchange event_id does not match parent workspace",
+    "cross_event_poison_2": "AAPL spans smuggled inside a correctly relabelled GOOGL envelope -> REJECTED: qa_exchange span document_id mismatch"
+  },
+
+  "aapl_regression": {
+    "unchanged": true,
+    "exchanges": 7,
+    "management_answer_turns": 26,
+    "question_spans": 32,
+    "answer_spans": 36,
+    "total_replay_spans": 68,
+    "transcript_sha256": "a8ff5d03e875fef5604791edbf625186c447af049e6e02f55bb89c68c7cc9f9f"
+  },
+
+  "red_green_evidence": {
+    "red": {
+      "test": "test_e3c_pass_rule_googl_publishes_non_empty_accepted_qa_exchanges",
+      "assertion": "assert accepted, 'E3-C requires non-empty accepted qa_exchange.v1 for GOOGL'",
+      "observed": "AssertionError: assert []",
+      "meaning": "The E3-C pass rule §11.2(3) written as an executable assertion FAILS against the frozen GOOGL package on the unchanged compiler. That failure is the scientific result of this wave."
+    },
+    "green": {
+      "test_module": "tests/test_company_intelligence_qa_generalization_e3c.py",
+      "tests_passed": 10,
+      "meaning": "The refusal, its three independent blockers, the fail-closed publication gate, cross-event containment, and the exact AAPL regression are now pinned and reproducible."
+    }
+  },
+
+  "deliberately_not_done": [
+    "Did NOT generalize the 'go ahead' boundary cue, the operator-intro identity grammar, or the affiliation cut rule. Any of these would be tuning the compiler on the frozen E3-C event, which the pass rule and the commission both forbid.",
+    "Did NOT relax the management-role requirement in qa_reconstruction or the respondent-role requirement in qa_exchange. Inferring management identity where the source publishes none would fabricate source support.",
+    "Did NOT switch to CAT, BAC or SNOW. GOOGL is frozen; switching to rescue a result is explicitly forbidden.",
+    "Did NOT add Alphabet to event_workspace.production_registry(). Registering the issuer now would publish a live Alphabet workspace whose qa_exchanges is empty — infrastructure present, promised capability false — and would break tests/test_issuer_profiles_a5a.py:110 (assert len(registry) == 5) for no capability gain. The dual-class identity law it would rely on is already proven at tests/test_company_intelligence_spine.py:164-178 (GOOGL class A + GOOG class C -> one cik:0001652044 issuer) and tests/test_company_intelligence_event_workspace.py:489-490 (GOOG must not be admitted as a second event). Registration belongs to the wave that can actually publish non-empty Q&A.",
+    "Did NOT wire GOOGL through scripts/refresh_event_workspaces.py for the same reason.",
+    "Did NOT create a new Q&A store, identity plane, publisher, transcript store, model router, schema, score, beat/miss, Prophet authority, or E3-P work."
+  ],
+
+  "what_this_does_and_does_not_prove": {
+    "proves": "The compiler contains no AAPL ticker literal or AAPL boundary constant in its Q&A path — the single AAPL-derived runtime literal is the accepted-revision digest at engine/company_intelligence/qa_exchange.py:35, and the document id is built generically at engine/company_intelligence/event_workspace_build.py:265. The refusal is therefore NOT ticker hard-coding. It is a genuine source-format dependency on one transcript vendor's segment role vocabulary and operator phrasing.",
+    "does_not_prove": "That the compiler cannot generalize. It proves that THIS held GOOGL revision is not reconstructable by the AAPL-calibrated grammar. E3-A2 predicted exactly this: 'other vendor intros may refuse'. Whether the correct response is a wider source-format contract, a different held revision of the same event, or an acquisition of a role-annotated GOOGL body is a Sol decision, not a builder decision."
+  },
+
+  "open_questions_for_sol": [
+    "Is a source-format generalization (role-optional management classification + vendor-neutral boundary cue) an in-scope E3-C repair, or does it require its own pre-registered wave so that it is not fitted to the frozen E3-C event?",
+    "Does a role-annotated revision of tx:GOOGL/2026Q2 exist from any held provider? The current archive body publishes no management role at all.",
+    "If GOOGL cannot be reconstructed without changing the compiler, does the E3-C selection law permit re-entering the frozen walk at CAT, or does the freeze bind the issuer until the held GOOGL revision is falsified?"
+  ],
+
+  "current_state_after_receipt": {
+    "e3c": "GENERALIZATION_REFUSED_ON_SOURCE_FORMAT — IN PROGRESS, NOT COMPLETE",
+    "e3b": "PROVEN_LIVE / DONE — unaffected by this wave",
+    "e3p": "LOCKED",
+    "next_action": "Sol adjudicates the three open questions above. Do not tune the compiler on GOOGL and do not switch issuers without a Sol ruling."
+  }
+}
