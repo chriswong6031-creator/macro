@@ -184,6 +184,19 @@ danger_areas:
     ~/.local/share/macro-dashboard/china_tushare_spine.prerebuild-20260826 is the
     OLD 1991-anchored trade_cal plane.
   - >
+    TWO witness-missing counters exist and they deliberately count DIFFERENT
+    things. `witness_missing_row_count` on a collection-state unit is per-unit,
+    i.e. per session. `pit_absent_from_master_count` in the reconciliation is an
+    OBSERVATION count accumulated as (trade_date, ticker) pairs across the whole
+    requested range, matching its siblings `lifecycle_missing_from_pit_count` and
+    `pit_missing_from_lifecycle_count`. One security absent from the master on
+    two sessions is therefore 1 in the first counter and 2 in the second, and
+    both are correct. Do NOT "simplify" the reconciliation counter to distinct
+    tickers: `current_snapshot_omission_rate` divides it by
+    `union_observation_count`, which is an observation count, so distinct tickers
+    over observations would not be a rate at all. This exact confusion produced
+    the only failing assertion in the first full test run.
+  - >
     CORRECTION to the previous handoff, which said the acceptance canary was ONE
     window of "pit 1 + name <=5 + daily 5 = <=11 against the cap of 12". The
     "<=5" was misread: NAMECHANGE_MAX_PER_RUN = 5 is a PER-RUN cap, not the
