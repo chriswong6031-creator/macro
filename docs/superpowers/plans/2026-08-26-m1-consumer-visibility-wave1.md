@@ -14,7 +14,7 @@
 
 - Canonical execution/evidence carrier remains GitHub #6432; MAS-137/MAS-140 are projection only.
 - Current protected Sol Skillpack for release review: `mastermindx-market-intelligence/Mastermind@af43f356f4f7f34cb3514d1d1099b50444af8487`, schema `mastermind.sol_skillpack.v1`, version `1.0.0`, bootstrap major `1` compatible. Re-pin again before implementation/host proof.
-- Chairman-approved architecture head: `afc01c8ffeb6299b1b801637230b478f403ea8fe`; released/reconciled design head: `18590a9d8bdd5832b11229ddbe714447764effd7`; reviewed Macro base: `463bb3b4b708a4748fc65a04250366ca94205186`.
+- Chairman-approved architecture head: `afc01c8ffeb6299b1b801637230b478f403ea8fe`; released/reconciled design head: `18590a9d8bdd5832b11229ddbe714447764effd7`; merged design/main SHA: `47439bf4180846af6eb4336a107c1935806399c2`; reviewed Macro base: `47439bf4180846af6eb4336a107c1935806399c2`.
 - No M1 mutation in Wave 1: no `launchctl enable/disable/bootstrap/bootout/kickstart`, no Git fetch/pull/reset/checkout/clean/rebase, no remote/config write, no file deletion/move, no mount/storage/listener/runner action.
 - `/Users/chriswong/flow-ops-wt` is inspect-only; never normalize its deliberate detached/dirty state.
 - `com.macro.live-breadth` must remain disabled/unloaded; its retired state is evidence, not a migration target.
@@ -704,7 +704,7 @@ python3 scripts/inspect_m1_macro_consumers.py \
 The runbook freezes the `macro.m1_consumer_scope.v1` manifest shape with explicit hostname, current-user/system domain selection, service/domain/plist rows, metadata-only recent-evidence paths, and non-empty `scheduler_surfaces_checked` / `recent_job_sources_checked` arrays. The example is illustrative; operator must generate the manifest from a separately receipted bounded read-only scope census and must not assume any checked-in/example list is exhaustive. The manifest is temporary evidence input and must be removed after its digest and sanitized receipt are recorded; it is not committed or treated as a registry.
 
 5. JSON/table field meanings;
-6. exit 65 meaning “incomplete/ambiguous evidence — STOP for Sol”; 
+6. exit 65 meaning “incomplete/ambiguous evidence — STOP for Sol”;
 7. secret-handling rules;
 8. no-mutation law;
 9. `flow-ops-wt` special preservation rule;
