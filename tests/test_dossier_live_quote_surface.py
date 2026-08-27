@@ -81,7 +81,22 @@ def test_client_requires_both_realtime_feed_and_open_regular_session(client_text
 
 
 def test_client_keeps_baked_values_when_the_server_disowns_the_quote(client_text: str) -> None:
-    assert "if (q.freshness === 'stale') return;" in client_text
+    assert "if (q.freshness === 'stale') {" in client_text
+
+
+def test_a_lapsed_feed_stops_claiming_live(client_text: str) -> None:
+    """A tab left open while the feed dies must not hold a green "Live".
+
+    Keeping the last measured NUMBERS is right — they beat a day-old baked
+    price — but the currency CLAIM beside them has expired, and holding it is
+    the original defect in a different costume.
+    """
+    stale_branch = client_text[client_text.index("if (q.freshness === 'stale') {"):]
+    stale_branch = stale_branch[: stale_branch.index("return;")]
+    assert "painted && stamp" in stale_branch
+    assert "'closed'" in stale_branch
+    assert "LABELS.lapsed" in stale_branch
+    assert re.search(r"lapsed: \['[^']+', '[^']+'\]", client_text)
 
 
 def test_client_never_paints_a_quote_for_another_ticker(client_text: str) -> None:
@@ -92,7 +107,8 @@ def test_client_writes_price_and_move_together_or_not_at_all(client_text: str) -
     """The guards must precede the first write, or a partial paint is possible."""
     first_write = client_text.index("priceNodes[i].textContent")
     for guard in (
-        "if (q.freshness === 'stale') return;",
+        "if (!q || q.ticker !== ticker) return;",
+        "if (q.freshness === 'stale') {",
         "if (!isFiniteNumber(q.price) || q.price <= 0) return;",
         "if (!isFiniteNumber(q.change_abs) || !isFiniteNumber(q.change_pct)) return;",
     ):
@@ -105,6 +121,21 @@ def test_client_sets_both_languages_for_every_state(client_text: str) -> None:
         assert re.search(rf"{key}: \['[^']+', '[^']+'\]", client_text), key
     assert "enNode.textContent = en" in client_text
     assert "zhNode.textContent = zh" in client_text
+
+
+def test_revealing_a_background_tab_reads_immediately(client_text: str) -> None:
+    """A dossier opened in a background tab must not show baked bytes on reveal.
+
+    `start()` used to bail on an existing timer.  A page loaded while hidden
+    installs that timer, every tick no-ops on the hidden check, and the reveal
+    then returned early — so the reader's first look got the baked price for up
+    to a full poll period.
+    """
+    assert "if (timer) return;\n    poll();" not in client_text
+    start_body = client_text[client_text.index("function start()"):]
+    start_body = start_body[: start_body.index("function stop()")]
+    assert "poll();" in start_body
+    assert "if (!timer) timer = setInterval(poll, POLL_MS);" in start_body
 
 
 def test_client_names_the_session_date_outside_regular_hours(client_text: str) -> None:

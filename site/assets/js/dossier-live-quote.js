@@ -53,8 +53,16 @@
     delayed: ['Delayed', '延迟'],
     pre: ['Pre-market', '盘前'],
     post: ['After hours', '盘后'],
-    closed: ['Closed', '已收盘']
+    closed: ['Closed', '已收盘'],
+    // Currency LAPSED after we had it. Plain words, no internal state name.
+    lapsed: ['Not updating', '暂停更新']
   };
+
+  // Whether this page has ever painted a measured quote. A stale reading is
+  // handled differently before and after that: before, the baked stamp already
+  // names its own build date and is honest as-is; after, the stamp is making a
+  // live-or-delayed claim that has since lapsed and MUST be demoted.
+  var painted = false;
 
   function fmtPrice(v) { return Number(v).toFixed(2); }
 
@@ -98,11 +106,23 @@
     // Fail closed on anything we cannot fully render. A partial paint is worse
     // than no paint: it desynchronises the price from the move.
     if (!q || q.ticker !== ticker) return;
-    if (q.freshness === 'stale') return;          // server disowns it -> keep baked
+    if (q.freshness === 'stale') {
+      // Keep the numbers — the last measured quote still beats a day-old baked
+      // one — but never keep a currency claim we can no longer support. A tab
+      // left open while the feed dies used to hold a pulsing green "Live"
+      // indefinitely, which is this project's original defect wearing a
+      // different hat.
+      if (painted && stamp) {
+        stamp.setAttribute('data-dq-state', 'closed');
+        setBilingual(stamp, LABELS.lapsed[0], LABELS.lapsed[1]);
+      }
+      return;
+    }
     if (!isFiniteNumber(q.price) || q.price <= 0) return;
     if (!isFiniteNumber(q.change_abs) || !isFiniteNumber(q.change_pct)) return;
 
     var i;
+    painted = true;
     for (i = 0; i < priceNodes.length; i++) priceNodes[i].textContent = fmtPrice(q.price);
 
     if (absNode) absNode.textContent = fmtAbs(q.change_abs);
@@ -150,10 +170,17 @@
       });
   }
 
+  // Always attempt an immediate read, then ensure the interval exists. The
+  // earlier `if (timer) return` shape stranded one real case: a dossier opened
+  // in a BACKGROUND tab installs the timer while hidden, every tick no-ops on
+  // the hidden check, and the reveal then found the timer already set and
+  // returned — leaving the baked price on screen for up to a full poll period
+  // at the exact moment the reader first looked at it. poll() is itself
+  // guarded on `inflight` and `document.hidden`, so calling it here is cheap
+  // and safe.
   function start() {
-    if (timer) return;
     poll();
-    timer = setInterval(poll, POLL_MS);
+    if (!timer) timer = setInterval(poll, POLL_MS);
   }
 
   function stop() {
