@@ -188,7 +188,11 @@ KNOWN_UNMIGRATED = {
     "scripts/calibrate_bottom_radar.py":      "not triaged (#4698 named it P2)",
     "scripts/fund_crowding_phase0.py":        "not triaged (phase0 study)",
     "scripts/mature_bottom_sensors_shadow.py": "not triaged",
-    "scripts/mature_shadow_book.py":          "not triaged",
+    "scripts/mature_shadow_book.py":          ("triaged 2026-08-26 (#6499): cache-only "
+                                               "cross-section, no adjusted benchmark leg "
+                                               "differenced; adjusted store.read union is "
+                                               "dormant (0 columns added). Grades PRICE-only "
+                                               "returns — artifact stamps price_basis"),
     "scripts/residual_alpha_phase0.py":       "not triaged (phase0 study)",
     "scripts/residual_momentum_phase0.py":    "not triaged (phase0 study)",
     "scripts/theme_discovery_phase0.py":      "not triaged (phase0 study)",

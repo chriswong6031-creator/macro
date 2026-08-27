@@ -160,9 +160,12 @@ def _fwd_ic(panel: pd.DataFrame, h: int) -> dict:
                 ics.append(ic)
     if not ics:
         return {"n_dates": 0}
-    # Daily-sampled cross-sections against an h-session forward window overlap h deep;
-    # ic_summary's periods_per_year//2 default lag under-corrects that and inflates t
-    # (engine/validation.py ic_summary docstring; 2026-08-26 experiments audit item 13).
+    # hac_lags=h pins the Newey-West lag to the true overlap depth (daily-sampled
+    # cross-sections vs an h-session forward window). The ppy//2 default was wrong at
+    # BOTH ends: at h=21 it under-corrected the 21-deep overlap, while at h=5/10 it
+    # requested lag ~n, where the Bartlett variance degenerates (gamma_0 cancels at
+    # L=n-1) and t INFLATES — bigger lag is NOT automatically more conservative.
+    # Verdicts stay behind _MIN_DATES=120, clear of both regimes.
     summ = V.ic_summary(np.array(ics), periods_per_year=max(1, 252 // h), hac_lags=h)
     # ic_summary() returns "t_hac" (Newey-West HAC t-stat) — NOT "t" or "hac_t".
     # Using the wrong key silently produces NaN t-stats and a dead gate verdict.

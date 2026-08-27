@@ -154,6 +154,14 @@ def mature(asof, closes: pd.DataFrame, *, path: str = BOOK_PATH, horizons=HORIZO
 _CW_MIN_PRIOR_ROWS = 60
 _CW_MIN_PRIOR_DATES = 3
 
+# A HAC t is only publishable when the series can carry its overlap lag: the Bartlett
+# long-run variance DEGENERATES as L→n (gamma_0 cancels exactly at L=n-1), so a lag-h
+# correction on n≈h dates inflates t instead of correcting it (red-team 2026-08-26 on the
+# real book: t 6.82 at L=21 on n=23 vs 4.04 at L=6; Monte-Carlo null size 0.63 vs 0.55 at
+# the 5% bar). Below this many sample points per lag the t/p are suppressed, not printed —
+# the request stays visible so the artifact says WHY there is no t yet.
+_HAC_MIN_N_PER_LAG = 3
+
 
 def grade(matured: pd.DataFrame, *, key: str = "score") -> dict:
     """Per-horizon realized forward audit of the frozen score: cross-sectional rank-IC per
@@ -162,44 +170,81 @@ def grade(matured: pd.DataFrame, *, key: str = "score") -> dict:
 
     HAC lags: the book snapshots DAILY cross-sections while each horizon's forward window
     spans h trading bars, so consecutive per-date ICs overlap h deep — the truncation lag
-    passed is h itself, never ic_summary's rebalance-cadence default (engine/validation.py
-    documents that default as under-correcting exactly this shape; the 2026-08-26
-    experiments audit measured the inflated t it produced here). periods_per_year is the
-    count of INDEPENDENT h-bar windows in a year — annualization only, not the lag."""
+    REQUESTED is h itself, never ic_summary's rebalance-cadence default (engine/validation.py
+    documents that default as under-correcting exactly this shape). But a lag the series is
+    too short to carry is worse than none (see _HAC_MIN_N_PER_LAG): until n >= 3h the t/p
+    are suppressed with the reason stamped, and the pre-registration's §3 floor keeps the
+    verdict at "building" regardless. periods_per_year is the count of INDEPENDENT h-bar
+    windows in a year — annualization only, not the lag."""
     out = {"n_matured": int(len(matured)), "by_horizon": {}}
     if matured is None or matured.empty:
         return out
     for h, g in matured.groupby("horizon"):
         h = int(h)
-        ics, dates = [], sorted(g["date"].unique())
+        ics, ic_dates, dates = [], [], sorted(g["date"].unique())
         for d in dates:
             sub = g[g["date"] == d]
             if len(sub) >= 10:
                 ic = V.rank_ic(sub[key], sub["fwd_ret"])
                 if np.isfinite(ic):
                     ics.append(ic)
+                    ic_dates.append(d)
         summ = V.ic_summary(ics, periods_per_year=max(1, round(252 / h)), hac_lags=h)
+        summ = _suppress_degenerate_t(summ, n=len(ics), lag=h)
         out["by_horizon"][f"h{h}"] = {
             "ic": summ, "n_dates": len(ics), "n_obs": int(len(g)),
-            # honest independent-observation count: n_dates overlapping windows can be
-            # as few as 1-2 real episodes (engine/china_validation._disjoint_windows)
-            "n_indep_windows": _disjoint_windows(g),
+            # honest independent-observation count over the dates that actually produced
+            # an IC: n_dates overlapping windows can be as few as 1-2 real episodes
+            # (engine/china_validation._disjoint_windows)
+            "n_indep_windows": _disjoint_windows(g[g["date"].isin(ic_dates)]),
             "span": [str(min(dates)), str(max(dates))] if dates else None,
+            "verdict": _prereg_state(ic_dates),
             "clark_west": _clark_west_pooled(g, key=key, hac_lags=h),
         }
     return out
 
 
+def _suppress_degenerate_t(summ: dict, *, n: int, lag: int) -> dict:
+    """Null t_hac/p_hac when the IC series cannot carry its overlap lag (n < 3·lag).
+    The effective/requested lag echo stays, so the artifact shows the ask AND the reason
+    no t accompanies it — printing a degenerate t reads as a fully-corrected one."""
+    if "t_hac" not in summ or n >= _HAC_MIN_N_PER_LAG * lag:
+        return summ
+    return {**summ, "t_hac": None, "p_hac": None,
+            "t_suppressed": (f"n={n} cannot carry the lag-{lag} overlap correction "
+                             f"(needs n>={_HAC_MIN_N_PER_LAG * lag}; Bartlett variance "
+                             "degenerates as lag approaches n)")}
+
+
+def _prereg_state(ic_dates: list) -> str:
+    """§3 of research/SHADOW_BOOK_PREREGISTRATION.md (FROZEN): below 6 matured entry-date
+    clusters AND ~2 calendar quarters of matured history the audit reads 'building' —
+    never PASS/NULL/NEGATIVE. At the floor the §2 table is applied by an adjudicating
+    session (HAC t + Clark-West + DSR deflation via the trial ledger), never auto-stamped
+    here: overlapping daily dates still need a non-overlapping subsample or block
+    bootstrap before the t is trusted at the longer horizons."""
+    if len(ic_dates) < 6:
+        return "building"
+    span_days = (pd.Timestamp(max(ic_dates)) - pd.Timestamp(min(ic_dates))).days
+    if span_days < 182:
+        return "building"
+    return ("sample_floor_met — apply §2 of research/SHADOW_BOOK_PREREGISTRATION.md "
+            "(HAC t + Clark-West + DSR deflation; not auto-adjudicated)")
+
+
 def _disjoint_windows(g: pd.DataFrame) -> int:
     """Greedy count of NON-overlapping [date, end_date] forward windows among the matured
     snapshot dates — what n_dates would have been had the book sampled at the horizon
-    instead of daily. The honest episode count beside every overlapping-date t-stat."""
+    instead of daily. The honest episode count beside every overlapping-date t-stat.
+    A window starting exactly at the previous end_date is return-disjoint (its forward
+    return covers the NEXT h bars), so ties count. Greedy-by-start is optimal here
+    because end_date = date + h bars is monotone in date."""
     if "end_date" not in g.columns:
         return 0
     spans = g.dropna(subset=["end_date"]).groupby("date")["end_date"].first()
     n, cur_end = 0, None
     for d, e in sorted(spans.items()):
-        if cur_end is None or pd.Timestamp(d) > cur_end:
+        if cur_end is None or pd.Timestamp(d) >= cur_end:
             n += 1
             cur_end = pd.Timestamp(e)
     return n
@@ -213,7 +258,11 @@ def _clark_west_pooled(g: pd.DataFrame, *, key: str, hac_lags: int) -> dict:
     benchmark is those same prior rows' mean return, so the pair is nested (slope 0
     recovers the benchmark exactly, the structure Clark-West requires). Per-date means of
     the adjusted MSPE difference then take a Newey-West t at the same overlap lag as the
-    IC series; cw_p is ONE-sided (H1: the score has genuine OOS content)."""
+    IC series; cw_p is ONE-sided (H1: the score has genuine OOS content). Weighting note:
+    cw_t equal-weights DATES while oos_r2 pools per OBSERVATION — with uneven cross-section
+    sizes the two can disagree in sign near zero; the t is the test, oos_r2 the effect size.
+    Both t and oos_r2 are suppressed while the eligible-date series is too short to carry
+    the correction (same _HAC_MIN_N_PER_LAG rule as the IC series; oos_r2 needs >= 8)."""
     if "end_date" not in g.columns:
         return {"n_dates": 0, "note": "no end_date column — cannot form a leak-free prior"}
     rows = g.dropna(subset=[key, "fwd_ret"]).copy()
@@ -250,8 +299,21 @@ def _clark_west_pooled(g: pd.DataFrame, *, key: str, hac_lags: int) -> dict:
     t = nw.get("t")
     p1 = (nw["p"] / 2.0 if (t is not None and t > 0)
           else (1.0 - nw["p"] / 2.0 if t is not None else None))
-    return {"cw_t": t, "cw_p": round(p1, 4) if p1 is not None else None,
-            "mean_adj": nw.get("mean"), "n_dates": len(fadj_by_date), "n_obs": n_obs,
-            "oos_r2": round(1.0 - sse_f / sse_b, 5) if sse_b > 0 else None,
-            "hac_lags": nw.get("lags"), "hac_lags_requested": int(hac_lags),
-            "benchmark": "expanding mean of prior fully-closed forward returns"}
+    res = {"cw_t": t, "cw_p": round(p1, 4) if p1 is not None else None,
+           "mean_adj": nw.get("mean"), "n_dates": len(fadj_by_date), "n_obs": n_obs,
+           # a 2-date pooled R2 is noise wearing a number — same floor as newey_west's n>=8
+           "oos_r2": (round(1.0 - sse_f / sse_b, 5)
+                      if (sse_b > 0 and len(fadj_by_date) >= 8) else None),
+           "hac_lags": nw.get("lags"), "hac_lags_requested": int(hac_lags),
+           "benchmark": "expanding mean of prior fully-closed forward returns"}
+    return _suppress_cw_t(res, n=len(fadj_by_date), lag=hac_lags)
+
+
+def _suppress_cw_t(res: dict, *, n: int, lag: int) -> dict:
+    """Same degeneracy rule as the IC series, applied to the CW date series."""
+    if res.get("cw_t") is None or n >= _HAC_MIN_N_PER_LAG * lag:
+        return res
+    return {**res, "cw_t": None, "cw_p": None,
+            "t_suppressed": (f"n={n} cannot carry the lag-{lag} overlap correction "
+                             f"(needs n>={_HAC_MIN_N_PER_LAG * lag}; Bartlett variance "
+                             "degenerates as lag approaches n)")}

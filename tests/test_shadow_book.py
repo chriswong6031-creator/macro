@@ -92,38 +92,81 @@ def _matured_panel(n_dates=40, n_names=12, h=21, ret_of=None):
     return pd.DataFrame(rows)
 
 
-def test_grade_hac_lag_matches_overlap():
+def test_grade_hac_lag_requested_is_overlap_but_t_suppressed_short():
     """Daily snapshots graded on an h-bar forward window overlap h deep: the requested
-    HAC lag must be h itself, not ic_summary's rebalance-cadence default (6 at ppy=12 —
-    the under-correction the 2026-08-26 experiments audit measured inflating t here)."""
+    HAC lag must be h itself. But a series that cannot carry that lag (n < 3h) must
+    SUPPRESS t/p rather than publish one from the L~n-degenerate Bartlett estimator
+    (gamma_0 cancels at L=n-1; red-team 2026-08-26 measured t INFLATING 4.04->6.82)."""
     g = SB.grade(_matured_panel(n_dates=40, h=21))
     ic = g["by_horizon"]["h21"]["ic"]
     assert ic["hac_lags_requested"] == 21
-    assert ic["hac_lags"] == 21          # 40 IC dates > 21 -> no clamp, fully applied
+    assert ic["hac_lags"] == 21          # 40 IC dates > 21 -> no clamp on the lag itself
+    assert ic["t_hac"] is None and ic["p_hac"] is None
+    assert "cannot carry" in ic["t_suppressed"]
     # 40 daily dates with 21-bar windows collapse to exactly 2 non-overlapping episodes
     assert g["by_horizon"]["h21"]["n_indep_windows"] == 2
+    assert g["by_horizon"]["h21"]["verdict"] == "building"     # prereg §3 floor
+
+
+def test_grade_t_published_when_series_carries_lag():
+    """Once n >= 3h the correction is real: t publishes at the full overlap lag, and
+    a perfectly-ranking score shows a positive t with no suppression note."""
+    g = SB.grade(_matured_panel(n_dates=70, h=21))
+    ic = g["by_horizon"]["h21"]["ic"]
+    assert ic["hac_lags"] == 21 and ic["hac_lags_requested"] == 21
+    assert ic["t_hac"] is not None and ic["t_hac"] > 0
+    assert "t_suppressed" not in ic
 
 
 def test_grade_hac_lag_clamps_on_short_series():
     """A book shorter than its own overlap cannot carry the full correction: the
-    effective lag is n-1 and the request stays visible beside it."""
+    effective lag is n-1, the request stays visible beside it, and t is suppressed."""
     g = SB.grade(_matured_panel(n_dates=10, h=21))
     ic = g["by_horizon"]["h21"]["ic"]
     assert ic["hac_lags_requested"] == 21
     assert ic["hac_lags"] == 9
+    assert ic["t_hac"] is None and "cannot carry" in ic["t_suppressed"]
+
+
+def test_grade_verdict_floor():
+    """Prereg §3: 'building' below 6 matured clusters / 2 quarters of history; the
+    floor-met state defers to §2 adjudication, never auto-stamps PASS/NULL."""
+    g = SB.grade(_matured_panel(n_dates=140, h=21))
+    v = g["by_horizon"]["h21"]["verdict"]
+    assert v.startswith("sample_floor_met")
+    assert "PREREGISTRATION" in v
 
 
 def test_clark_west_positive_on_predictive_score():
     """A score that maps linearly onto forward returns must show genuine OOS content:
     positive cw_t, oos_r2 near 1, and forecasts only on dates with a fully-closed prior."""
-    m = _matured_panel(n_dates=40, h=21)
+    m = _matured_panel(n_dates=100, h=21)
     cw = SB.grade(m)["by_horizon"]["h21"]["clark_west"]
     # earliest eligible date needs >= _CW_MIN_PRIOR_ROWS closed rows AND >= 3 closed dates:
-    # with h=21 and 12 names/date, dates 0..39 -> first forecast at date index >= 26
-    assert 0 < cw["n_dates"] <= 40 - 26
+    # with h=21 and 12 names/date, first forecast at date index >= 26 -> 74 eligible dates,
+    # which also clears the 3*21 suppression floor
+    assert 0 < cw["n_dates"] <= 100 - 26
     assert cw["cw_t"] is not None and cw["cw_t"] > 0
     assert cw["oos_r2"] is not None and cw["oos_r2"] > 0.9
     assert cw["hac_lags_requested"] == 21
+
+
+def test_clark_west_t_suppressed_on_short_eligible_series():
+    """Eligible CW dates below 3h: oos_r2 may print (>=8 dates) but cw_t/cw_p are
+    suppressed with the degeneracy note — same rule as the IC series."""
+    cw = SB.grade(_matured_panel(n_dates=40, h=21))["by_horizon"]["h21"]["clark_west"]
+    assert 8 <= cw["n_dates"] < 63
+    assert cw["cw_t"] is None and cw["cw_p"] is None
+    assert "cannot carry" in cw["t_suppressed"]
+    assert cw["oos_r2"] is not None
+
+
+def test_clark_west_oos_r2_needs_eight_dates():
+    """A pooled R2 from a couple of forecast dates is noise wearing a number: below 8
+    eligible dates oos_r2 must be None (t is already None via newey_west's own floor)."""
+    cw = SB.grade(_matured_panel(n_dates=32, h=21))["by_horizon"]["h21"]["clark_west"]
+    assert 0 < cw["n_dates"] < 8
+    assert cw["oos_r2"] is None and cw["cw_t"] is None
 
 
 def test_clark_west_leak_guard_no_open_prior():
@@ -139,3 +182,17 @@ def test_clark_west_requires_end_date():
     m = _matured_panel(n_dates=30, h=21).drop(columns=["end_date"])
     cw = SB.grade(m)["by_horizon"]["h21"]["clark_west"]
     assert cw["n_dates"] == 0 and "no end_date" in cw.get("note", "")
+
+
+def test_indep_windows_count_only_ic_dates():
+    """A thin date (below the 10-name IC floor) contributes no IC and must not pad
+    n_indep_windows — the field the registry says to lead every read with."""
+    m = _matured_panel(n_dates=40, h=21)
+    idx = pd.bdate_range("2024-01-01", periods=80)
+    thin = pd.DataFrame([{"date": str(idx[60].date()), "ticker": f"T{t}", "horizon": 21,
+                          "score": float(t), "percentile": float(t),
+                          "fwd_ret": float(t) * 0.001, "end_date": str(idx[60 + 15].date())}
+                         for t in range(5)])
+    g = SB.grade(pd.concat([m, thin], ignore_index=True))
+    # unfiltered the thin date would open a third disjoint window; filtered it cannot
+    assert g["by_horizon"]["h21"]["n_indep_windows"] == 2
