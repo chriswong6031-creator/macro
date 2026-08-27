@@ -331,6 +331,37 @@ MARKET_BOARDS: tuple[dict, ...] = (
         "min_calendar_days": None,
     },
     {
+        # THE ENTITLED TWIN of the us_standouts board above, and the reason it needs
+        # its own row rather than riding that one: they are written by DIFFERENT code
+        # on the same night. build_site.py's _write_us_payload renders the withheld
+        # remainder of the US board into site/premiumdata/us_stocks.json
+        # (schema tier_payload.v1), the pre-rendered cards the page fetches post-auth
+        # and splices into the very same `.nbgrid` — see docs/TIER_PREVIEW_PATTERN.md
+        # and build_live_quotes.py's DISPLAY_BOARD_PAYLOAD_DIR note. Grading the free
+        # half therefore says NOTHING about the paid half: measured in production
+        # 2026-08-20, us_stocks.html shipped 3 board symbols while this payload carried
+        # 60 more. A freeze here is invisible to every other instrument in this file and
+        # is worse than a freeze on the free board, because the people it fails are the
+        # ones who paid — which is exactly the shape a monitor is for.
+        #
+        # ``us_premium`` is a DISTINCT market id on purpose, following the cn_ledger /
+        # hk_ledger precedent: _load_boards keys ``out[spec["market"]]``, so a second
+        # row reusing "us" would silently overwrite the free board and delete a market
+        # from the registry rather than add one.
+        #
+        # Budget 1 session, matching its twin: the two are baked by the same nightly
+        # from the same selection, so anything the free board can absorb this one can.
+        # No holiday floor — NYSE is the one calendar with no long-closure problem.
+        "market": "us_premium",
+        "label": "US premium payload",
+        "path": "site/premiumdata/us_stocks.json",
+        "stamp_known_absent": False,
+        "field": "as_of",
+        "calendar": "nyse",
+        "max_sessions_behind": 1,
+        "min_calendar_days": None,
+    },
+    {
         "market": "cn",
         "label": "China",
         "path": "site/factordata/china_standouts.json",
@@ -791,6 +822,45 @@ def evaluate_market_boards(
                 f"sessions behind (limit {budget}). The board was re-rendered but did "
                 "not advance — a green lane and a fresh git mtime both look exactly "
                 "like this."
+            )
+
+    # ── PAIRED VINTAGE: the free board and its entitled twin must name the SAME
+    # session ────────────────────────────────────────────────────────────────────
+    # Neither row above can catch this alone, and that is exactly why it is asked as
+    # its own question rather than as a tighter budget. Both carry a 1-session budget,
+    # so us_standouts@T together with us_stocks@T-1 leaves BOTH individually "fresh"
+    # while the paying tier is served a strictly OLDER board than the free preview
+    # beside it — on the same page, spliced into the same `.nbgrid`. A vintage split is
+    # invisible to a sessions-behind grader by construction.
+    #
+    # Blindness stays blindness: when either stamp is absent or unparseable the loop
+    # above has ALREADY filed that row's INDETERMINATE (or its published-without-a-stamp
+    # failure), so this stays silent rather than paging twice about one fault.
+    #
+    # Direction matters and only one direction pages. Paid OLDER than free is the
+    # subscriber-facing defect. Paid NEWER is a strange shape but harms nobody — the
+    # free board's own row grades whether IT has fallen behind — so it warns instead of
+    # manufacturing a page, per this module's standing rule against false positives.
+    free_asof = _parse_date((states.get("us") or {}).get("as_of"))
+    paid_asof = _parse_date((states.get("us_premium") or {}).get("as_of"))
+    if free_asof is not None and paid_asof is not None and paid_asof != free_asof:
+        if paid_asof < free_asof:
+            fail.append(
+                "PREMIUM PAYLOAD VINTAGE SPLIT [US premium payload]: "
+                f"site/premiumdata/us_stocks.json reads as_of={paid_asof.isoformat()} "
+                f"while site/factordata/us_standouts.json reads "
+                f"as_of={free_asof.isoformat()} — the entitled half of the US board is a "
+                "strictly OLDER session than the free preview rendered beside it. Both "
+                "are inside their own 1-session budgets, so no other check in this file "
+                "can see this."
+            )
+        else:
+            warn.append(
+                f"INDETERMINATE [US premium payload]: premiumdata "
+                f"as_of={paid_asof.isoformat()} is NEWER than us_standouts "
+                f"as_of={free_asof.isoformat()}. Not a paid-tier freeze — the direction "
+                "that harms a subscriber — so it does not page here; the US row above "
+                "grades whether the free board has fallen behind."
             )
 
     return fail, warn, facts
@@ -1550,9 +1620,9 @@ def _selftest() -> int:
                  boards={"us": None, "cn": None, "hk": None,
                          "ca": {"as_of": "2026-08-17"}, "intl": {"as_of": None}})
     _check("D/blind-markets-never-breach", r["ok"], True)
-    # 4 board-level blind markets (us, cn, hk, intl) + 2 ledger entries absent from this
-    # fixture's ``boards`` dict entirely (cn_ledger, hk_ledger) = 6.
-    assert len([w for w in r["warnings"] if "INDETERMINATE [" in w]) == 6, r
+    # 5 board-level blind markets (us, us_premium, cn, hk, intl) + 2 ledger entries
+    # absent from this fixture's ``boards`` dict entirely (cn_ledger, hk_ledger) = 7.
+    assert len([w for w in r["warnings"] if "INDETERMINATE [" in w]) == 7, r
     assert r["facts"]["boards"]["ca"]["behind"] == 0, r
 
     # ...but an artifact we CAN read that publishes no stamp is a producer regression,

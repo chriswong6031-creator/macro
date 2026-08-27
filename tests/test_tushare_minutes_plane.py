@@ -12,8 +12,10 @@ digests to a Shanghai one — ``test_utc_runner_produces_shanghai_stamps`` pins 
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
+import sysconfig
 from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
 
@@ -1173,8 +1175,59 @@ def test_cli_spine_universe_is_explicitly_deferred(
     )
 
 
+def _selected_python_loader_directory() -> Path:
+    library_names = tuple(
+        name
+        for name in (
+            sysconfig.get_config_var("LDLIBRARY"),
+            sysconfig.get_config_var("INSTSONAME"),
+        )
+        if isinstance(name, str) and name
+    )
+    ambient_library_dirs = tuple(
+        Path(entry)
+        for entry in os.environ.get("LD_LIBRARY_PATH", "").split(os.pathsep)
+        if entry
+    )
+    declared_library_dir = sysconfig.get_config_var("LIBDIR")
+    candidates = list(ambient_library_dirs)
+    if isinstance(declared_library_dir, str) and declared_library_dir:
+        candidates.append(Path(declared_library_dir))
+    for candidate in candidates:
+        if any((candidate / name).is_file() for name in library_names):
+            return candidate.resolve(strict=True)
+    raise AssertionError(
+        "no usable Python loader directory found; "
+        f"libraries={library_names!r}, candidates={candidates!r}"
+    )
+
+
+def test_cli_loader_uses_setup_python_alias_when_canonical_libdir_is_absent(
+    tmp_path: Path, monkeypatch,
+) -> None:
+    canonical = tmp_path / "hostedtoolcache" / "Python" / "3.12.13" / "x64" / "lib"
+    alias = tmp_path / "runner" / "_work" / "_tool" / "Python" / "3.12.13" / "x64" / "lib"
+    alias.mkdir(parents=True)
+    (alias / "libpython3.12.so.1.0").write_bytes(b"fixture")
+    monkeypatch.setattr(
+        sysconfig,
+        "get_config_var",
+        lambda name: {
+            "LIBDIR": str(canonical),
+            "LDLIBRARY": "libpython3.12.so",
+            "INSTSONAME": "libpython3.12.so.1.0",
+        }.get(name),
+    )
+    monkeypatch.setenv("LD_LIBRARY_PATH", str(alias))
+
+    assert _selected_python_loader_directory() == alias
+
+
 def test_cli_module_entrypoint_runs_without_a_token() -> None:
     """A keyless invocation must produce usage text, never a traceback."""
+    environment = {"PATH": "/usr/bin:/bin", "HOME": str(ROOT)}
+    if sys.platform.startswith("linux"):
+        environment["LD_LIBRARY_PATH"] = str(_selected_python_loader_directory())
     completed = subprocess.run(
         [sys.executable, "-m", "scripts.backfill_tushare_minutes", "--help"],
         cwd=ROOT,
@@ -1182,7 +1235,7 @@ def test_cli_module_entrypoint_runs_without_a_token() -> None:
         text=True,
         timeout=120,
         check=False,
-        env={"PATH": "/usr/bin:/bin", "HOME": str(ROOT)},
+        env=environment,
     )
     assert completed.returncode == 0
     assert "--verify" in completed.stdout
