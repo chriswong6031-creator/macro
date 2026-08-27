@@ -13,7 +13,9 @@ state_before: >
   event-to-portfolio/path depth adjacent to F08. Mastermind has stronger source/event
   clock and correction law than the competitor but lacks complete consequence-oriented
   product distribution. K5-dependent universal synthesis remains gated.
-changed: []
+changed:
+  - path: agentos/handoffs/MARKET-ONTOLOGY-F05-EVENT-IMPACT-CATALYST-FABLE-COO-2026-08-26.md
+    what: "Created the sustained F05 Fable COO lane commission and its event/correction/authority envelope."
 verified:
   - claim: "Canonical event truth remains owner-native and K1 evidence is the provenance bridge."
     command: "Read Alpha/Market OS/competitor adjudication laws."
