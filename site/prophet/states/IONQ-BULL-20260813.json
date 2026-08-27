@@ -1,36 +1,36 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "IONQ-BULL-20260813",
-  "asof": "2026-08-25",
+  "asof": "2026-08-27",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 51.9,
-  "raw_confidence": 49.6,
-  "delta_vs_base": -8.1,
+  "management_confidence": 48.0,
+  "raw_confidence": 43.2,
+  "delta_vs_base": -12.0,
   "recommended_action": "hold",
-  "human_state": "Needs Follow-Through",
+  "human_state": "Stalling",
   "components": {
-    "validity": 78.4,
+    "validity": 64.3,
     "progress": 0.0,
-    "pace": 64.7,
+    "pace": 52.8,
     "retention": 50.0,
-    "overlay": 67.0
+    "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.835,
+    "dist_to_stop_r": 0.721,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 26.7,
-    "p1": -0.1101,
-    "p2": -0.0551,
+    "horizon_pct_used": 31.1,
+    "p1": -0.186,
+    "p2": -0.093,
     "p3": null,
-    "move_r": -0.165,
+    "move_r": -0.279,
     "mfe_r": 0.105,
-    "mae_r": -0.221
+    "mae_r": -0.279
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "",
+  "change_reason": "Weakening",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -40,11 +40,11 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 1.8600001525878938,
-  "_mae": -3.9199986267089812,
+  "_mae": -4.950001220703122,
   "_max_p1": 0.06989854011980058,
   "_first_trigger_ts": "2026-08-17",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 12,
-  "tau": 0.2667
+  "days_elapsed": 14,
+  "tau": 0.3111
 }

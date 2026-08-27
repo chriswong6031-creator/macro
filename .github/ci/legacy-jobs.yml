@@ -704,6 +704,14 @@ jobs:
       # suite adjacent to K1 makes the pointer-only boundary visible in CI.
       - name: K2-B manager-complex and research-intent hostile contracts
         run: python -m pytest tests/test_institutional_manager_intent_contract.py -q
+      # K2-C is the bounded owner-read adapter over the institutional 13F catalog:
+      # it composes existing engine/institutional_census read APIs into the K1 +
+      # K2-B contracts and emits a deterministic owner-read receipt. Its suite
+      # rides this same contract job because the fixture store is an in-test
+      # LocalStore published through the owner's own APIs — no credentials, no
+      # network, and the K1/K2-B suites above already supply the import closure.
+      - name: K2-C institutional owner-read adapter contracts
+        run: python -m pytest tests/test_institutional_13f_adapter_contract.py -q
       # K3-E is the Opportunity Evidence Vector: a typed, deterministic view/join
       # over canonical owner outputs (contracts/opportunity_evidence/vector.v1.
       # schema.json + slot_registry.v1.json) — never a store, never a score. Rides
