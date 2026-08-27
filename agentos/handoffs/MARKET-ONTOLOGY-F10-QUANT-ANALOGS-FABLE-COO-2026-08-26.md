@@ -16,7 +16,9 @@ state_before: >
   1,556-row ledger contains much deeper per-method contracts/falsifiers and must be
   imported/crosswalked rather than reconstructed. Analog Lab is not decision-grade
   until PIT episode, dedup, selection and outcomes gates are satisfied.
-changed: []
+changed:
+  - path: agentos/handoffs/MARKET-ONTOLOGY-F10-QUANT-ANALOGS-FABLE-COO-2026-08-26.md
+    what: "Created the sustained F10 Fable COO lane commission and its Evaluation/PIT/validity envelope."
 verified:
   - claim: "ResearchStudy is canonical and Eval OS owns validity/promotion law."
     command: "Read authenticated adjudication + parity architecture."
