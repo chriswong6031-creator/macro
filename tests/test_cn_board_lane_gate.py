@@ -368,7 +368,7 @@ def test_every_production_cn_collection_write_names_its_lane():
         offenders += _unlaned_calls(src, rel)
         laned += _laned_calls(src)
     assert offenders == [], (
-        "CN collection sink called without lane=; the gates are fail-closed, so these "
+        "CN collection sink called without lane=; the gates are fail-closed, so these 
         f"writes no-op silently and the store stops advancing: {offenders}")
     # WITNESS: the scan can SEE calls — it found the production ones and judged them
     # compliant (4x append_board, 1x append_ripening, 1x cn_prophet_audit.run in the
@@ -415,3 +415,45 @@ def test_the_t2_event_latch_records_only_on_the_asia_lane():
         "the T2 event-latch lane must come from the fail-closed resolver")
     assert 'record=(_latch_lane == "asia")' in src, (
         "the EventLatch record flag must still be the asia-lane comparison")
+
+
+# ===========================================================================
+# 6. DEEP-OHLC FRESHNESS — enrichment may never regress the settled board clock
+# ===========================================================================
+
+def _freshness_close(end: str, n: int = 320) -> pd.Series:
+    idx = pd.bdate_range(end=end, periods=n)
+    return pd.Series(range(n), index=idx, dtype=float)
+
+
+def _freshness_deep(end: str, n: int = 320) -> pd.DataFrame:
+    close = _freshness_close(end, n)
+    return pd.DataFrame({"close": close, "high": close * 1.01}, index=close.index)
+
+
+def test_deep_ohlc_never_regresses_a_fresher_cache_close(monkeypatch):
+    """The deep store enriches high/low; it cannot move the Prophet price clock backward."""
+    cache_close = _freshness_close("2026-08-27")
+    deep = _freshness_deep("2026-08-26")
+    monkeypatch.setattr(bcl.store, "read", lambda group, ticker: deep)
+    universe = [("000001.SZ", cache_close, None, "Ping An", "Banks")]
+
+    upgraded = bcl._overlay_deep_ohlc(universe, "china_stocks", min_rows=300)
+
+    assert upgraded == 0
+    assert universe[0][1].index.max() == cache_close.index.max()
+    assert universe[0][2] is None
+
+
+def test_deep_ohlc_still_upgrades_when_it_is_equally_fresh(monkeypatch):
+    """Same-session deep OHLC keeps its real high/low enrichment authority."""
+    cache_close = _freshness_close("2026-08-27")
+    deep = _freshness_deep("2026-08-27")
+    monkeypatch.setattr(bcl.store, "read", lambda group, ticker: deep)
+    universe = [("000001.SZ", cache_close, None, "Ping An", "Banks")]
+
+    upgraded = bcl._overlay_deep_ohlc(universe, "china_stocks", min_rows=300)
+
+    assert upgraded == 1
+    assert universe[0][1].index.max() == deep.index.max()
+    pd.testing.assert_series_equal(universe[0][2], deep["high"])
