@@ -584,3 +584,66 @@ def test_import_assets_have_shipping_site_pairs():
     for name in ("portfolio_import.css", "portfolio_import.js", "portfolio_import_ui.js", "watchstore.js", "portfolio.js"):
         assert (ROOT / "site" / name).read_bytes() == (ROOT / "templates" / name).read_bytes()
     assert (ROOT / "site" / "watchlist.html").is_file()
+
+
+@needs_node
+def test_a1b_post_save_badge_refresh_is_same_page_and_fail_closed():
+    watchlist = ROOT / "templates" / "watchlist.js"
+    script = r"""
+var __pfCount = 13;
+var __pfNode = {textContent:''}, __wlNode = {textContent:''};
+var __modes = {
+  querySelector:function(sel){
+    if(sel === '[data-count="pf"]') return __pfNode;
+    if(sel === '[data-count="wl"]') return __wlNode;
+    return null;
+  },
+  querySelectorAll:function(){return [];}
+};
+global.localStorage = {getItem:function(){return null;},setItem:function(){},removeItem:function(){}};
+global.CustomEvent = function(t,o){this.type=t;this.detail=o&&o.detail;};
+global.document = {
+  readyState:'loading',
+  documentElement:{getAttribute:function(){return 'en';},setAttribute:function(){},classList:{add:function(){},remove:function(){}}},
+  getElementById:function(id){return id === 'ws_modes' ? __modes : null;},
+  querySelector:function(){return null;},querySelectorAll:function(){return [];},
+  addEventListener:function(){},removeEventListener:function(){},dispatchEvent:function(){return true;},
+  createElement:function(){return {style:{},classList:{add:function(){}}};}
+};
+global.window = global; window.addEventListener = function(){};
+global.location = {hash:'',pathname:'/watchlist.html',search:'',origin:'https://x'};
+window.PF = {count:function(){return __pfCount;}};
+require(%s);
+window.WS.refreshModeCounts();
+var before = __pfNode.textContent;
+__pfCount = 16; window.WS.refreshModeCounts();
+var afterSave = __pfNode.textContent;
+__pfCount = 13; window.WS.refreshModeCounts();
+var afterCleanup = __pfNode.textContent;
+__pfCount = null; window.WS.refreshModeCounts();
+var unknown = __pfNode.textContent;
+window.PF = undefined; window.WS.refreshModeCounts();
+process.stdout.write(JSON.stringify({before:before,afterSave:afterSave,afterCleanup:afterCleanup,unknown:unknown,noPf:__pfNode.textContent}));
+""" % json.dumps(str(watchlist))
+    proc = subprocess.run(["node", "-e", script], capture_output=True, text=True, timeout=30)
+    assert proc.returncode == 0, f"node failed:\nSTDERR:\n{proc.stderr}\nSTDOUT:\n{proc.stdout}"
+    assert json.loads(proc.stdout) == {
+        "before": "13",
+        "afterSave": "16",
+        "afterCleanup": "13",
+        "unknown": "—",
+        "noPf": "—",
+    }
+
+
+def test_a1b_badge_refresh_follows_authoritative_rows_and_keeps_shipping_pairs():
+    portfolio = (ROOT / "templates" / "portfolio.js").read_text(encoding="utf-8")
+    assign = portfolio.index("rows = newRows;")
+    refresh = portfolio.index("window.WS.refreshModeCounts", assign)
+    later_render = portfolio.index("ensureIndex().then(render);", assign)
+    assert assign < refresh < later_render
+    watchlist = (ROOT / "templates" / "watchlist.js").read_text(encoding="utf-8")
+    assert "function refreshModeCounts(" in watchlist
+    assert "refreshModeCounts: refreshModeCounts" in watchlist
+    assert (ROOT / "site" / "watchlist.js").read_bytes() == (ROOT / "templates" / "watchlist.js").read_bytes()
+    assert (ROOT / "site" / "portfolio.js").read_bytes() == (ROOT / "templates" / "portfolio.js").read_bytes()
