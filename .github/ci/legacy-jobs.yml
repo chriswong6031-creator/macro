@@ -2355,6 +2355,7 @@ jobs:
           tests/test_intl_act_now_board_icons.py
           tests/test_act_now_board_icons.py
           tests/test_china_delayed_board_disclosure.py
+          tests/test_cn_board_freshness_truth.py
           tests/test_china_zt_pool_dates.py
           tests/test_drip_append_only.py
           tests/test_cn_calendar.py
