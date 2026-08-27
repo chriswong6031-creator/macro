@@ -1,6 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "K2-B manager-complex and research-intent recipe v1",
+  "version": "1.1.0",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema", "recipe_id", "authority", "evidence_refs", "manager_complex_epochs", "filer_epochs", "vehicle_epochs", "observations", "theme_comparisons", "campaign_transitions", "reliability"],
@@ -94,17 +95,25 @@
     "themeDenominator": {"type": "object", "additionalProperties": false, "required": ["kind", "comparison_id"], "properties": {"kind": {"const": "pit_theme_membership"}, "comparison_id": {"type": "string", "pattern": "^thc_[a-z0-9_]+$"}}},
     "saturationDenominator": {"type": "object", "additionalProperties": false, "required": ["kind", "eligible_complex_epoch_ids", "excluded_complex_epochs"], "properties": {"kind": {"const": "eligible_research_complexes"}, "eligible_complex_epoch_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^mce_[a-z0-9_]+$"}}, "excluded_complex_epochs": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["complex_epoch_id", "reason"], "properties": {"complex_epoch_id": {"type": "string", "pattern": "^mce_[a-z0-9_]+$"}, "reason": {"enum": ["unresolved", "inactive", "passive", "systematic", "mixed", "unknown", "epoch_not_applicable"]}}}}}},
     "observationCorrection": {"type": "object", "additionalProperties": false, "required": ["kind", "predecessor_observation_id", "reason", "append_only"], "properties": {"kind": {"enum": ["none", "amendment", "restatement", "source_correction", "withdrawal", "superseding_generation"]}, "predecessor_observation_id": {"type": ["string", "null"]}, "reason": {"type": ["string", "null"], "maxLength": 512}, "append_only": {"const": true}}},
+    "cusipSecurityBinding": {"type": "object", "additionalProperties": false, "required": ["key_type", "cusip", "dataos_security_id", "dataos_resolution"], "properties": {"key_type": {"const": "cusip"}, "cusip": {"type": "string", "pattern": "^[0-9A-Z]{9}$"}, "dataos_security_id": {"type": ["string", "null"]}, "dataos_resolution": {"enum": ["unresolved_no_authoritative_cusip_plane", "alias_table_resolved"]}}},
+    "ownerRow": {"type": "object", "additionalProperties": false, "required": ["accession", "infotable_sk", "row_hash", "cusip"], "properties": {"accession": {"type": "string", "minLength": 1, "maxLength": 32}, "infotable_sk": {"type": "integer", "minimum": 0}, "row_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "cusip": {"type": "string", "pattern": "^[0-9A-Z]{9}$"}}},
+    "ownerPeriodBinding": {"type": "object", "additionalProperties": false, "required": ["catalog_binding", "raw_receipt_binding", "row"], "properties": {"catalog_binding": {"$ref": "#/$defs/referenceBinding"}, "raw_receipt_binding": {"$ref": "#/$defs/referenceBinding"}, "row": {"$ref": "#/$defs/ownerRow"}}},
+    "ownerRowBinding": {"type": "object", "additionalProperties": false, "required": ["security", "previous", "current"], "properties": {"security": {"$ref": "#/$defs/cusipSecurityBinding"}, "previous": {"$ref": "#/$defs/ownerPeriodBinding"}, "current": {"$ref": "#/$defs/ownerPeriodBinding"}}},
     "observation": {
       "type": "object", "additionalProperties": false,
       "required": ["observation_id", "evidence_basis", "evidence_reference_id", "reference_binding", "vehicle_epoch_id", "subject_id", "theme_id", "theme_epoch_id", "plane", "measure", "denominator", "correction"],
       "properties": {
-        "observation_id": {"type": "string", "pattern": "^obs_[a-z0-9_]+$"}, "evidence_basis": {"enum": ["source_backed_pointer_only", "synthetic_fixture_positive", "synthetic_fixture_adverse"]}, "evidence_reference_id": {"type": "string", "pattern": "^efr_[a-f0-9]{64}$"}, "reference_binding": {"$ref": "#/$defs/referenceBinding"},
+        "observation_id": {"type": "string", "pattern": "^obs_[a-z0-9_]+$"}, "evidence_basis": {"enum": ["source_backed_pointer_only", "synthetic_fixture_positive", "synthetic_fixture_adverse", "source_backed_owner_row"]}, "evidence_reference_id": {"type": "string", "pattern": "^efr_[a-f0-9]{64}$"}, "reference_binding": {"$ref": "#/$defs/referenceBinding"},
         "vehicle_epoch_id": {"type": "string"}, "subject_id": {"type": "string", "minLength": 1, "maxLength": 256}, "theme_id": {"type": "string", "minLength": 1, "maxLength": 256}, "theme_epoch_id": {"type": "string", "minLength": 1, "maxLength": 128},
         "plane": {"enum": ["manager_research_intent", "fund_flow_pressure", "theme_capital_rotation", "institutionalization_saturation"]},
         "measure": {"oneOf": [{"$ref": "#/$defs/reportedShareChange"}, {"$ref": "#/$defs/etfTrueShareResidual"}, {"$ref": "#/$defs/flowProxy"}, {"$ref": "#/$defs/unavailableMeasure"}, {"$ref": "#/$defs/themeMemberChange"}, {"$ref": "#/$defs/complexPresence"}]},
         "denominator": {"oneOf": [{"$ref": "#/$defs/managerDenominator"}, {"$ref": "#/$defs/flowDenominator"}, {"$ref": "#/$defs/themeDenominator"}, {"$ref": "#/$defs/saturationDenominator"}]},
-        "correction": {"$ref": "#/$defs/observationCorrection"}
-      }
+        "correction": {"$ref": "#/$defs/observationCorrection"},
+        "owner_row_binding": {"$ref": "#/$defs/ownerRowBinding"}
+      },
+      "if": {"properties": {"evidence_basis": {"const": "source_backed_owner_row"}}, "required": ["evidence_basis"]},
+      "then": {"required": ["owner_row_binding"]},
+      "else": {"not": {"required": ["owner_row_binding"]}}
     },
     "themeComparison": {
       "type": "object", "additionalProperties": false,
