@@ -14,7 +14,9 @@ state_before: >
   policy/government/defense/trade/geopolitical owners exist but exact owner/source/rights
   mapping is not yet reconciled for every capability; geospatial feeds remain explicit
   rights/commercial gates.
-changed: []
+changed:
+  - path: agentos/handoffs/MARKET-ONTOLOGY-F02-POLICY-GEO-GEOSPATIAL-FABLE-COO-2026-08-26.md
+    what: "Created the sustained F02 Fable COO lane commission and its source/rights/authority envelope."
 verified:
   - claim: "F02 includes policy lifecycle, country dossiers, geopolitical map and geospatial context."
     command: "Read parity ledgers."
