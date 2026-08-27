@@ -85,3 +85,42 @@ def test_lookup_template_carries_limited_branch():
     assert "if (d.limited) { renderLimited(d); return; }" in src
     for pid in ('id="panel_deep"', 'id="panel_mtf"', 'id="panel_cal"'):
         assert pid in src, f"missing {pid}"
+
+
+def _freshness_close(end: str, n: int = 320) -> pd.Series:
+    idx = pd.bdate_range(end=end, periods=n)
+    return pd.Series(np.linspace(10.0, 20.0, n), index=idx)
+
+
+def _freshness_deep(end: str, n: int = 320) -> pd.DataFrame:
+    idx = pd.bdate_range(end=end, periods=n)
+    close = np.linspace(9.0, 19.0, n)
+    return pd.DataFrame({"close": close, "high": close * 1.01}, index=idx)
+
+
+def test_deep_overlay_never_regresses_fresher_cache_close(monkeypatch):
+    """Deep OHLC is enrichment; a lagging deep store must not move the board clock back."""
+    cache_close = _freshness_close("2026-08-27")
+    deep = _freshness_deep("2026-08-26")
+    monkeypatch.setattr(bcl.store, "read", lambda group, ticker: deep)
+
+    universe = [("000001.SZ", cache_close, None, "Ping An", "Banks")]
+    upgraded = bcl._overlay_deep_ohlc(universe, "china_stocks", min_rows=300)
+
+    assert upgraded == 0
+    assert universe[0][1].index.max() == cache_close.index.max()
+    assert universe[0][2] is None
+
+
+def test_deep_overlay_still_upgrades_when_equally_fresh(monkeypatch):
+    """The guard must not disable the deep high/low enrichment when sessions match."""
+    cache_close = _freshness_close("2026-08-27")
+    deep = _freshness_deep("2026-08-27")
+    monkeypatch.setattr(bcl.store, "read", lambda group, ticker: deep)
+
+    universe = [("000001.SZ", cache_close, None, "Ping An", "Banks")]
+    upgraded = bcl._overlay_deep_ohlc(universe, "china_stocks", min_rows=300)
+
+    assert upgraded == 1
+    assert universe[0][1].index.max() == deep.index.max()
+    assert universe[0][2] is deep["high"]
