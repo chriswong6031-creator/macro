@@ -3,20 +3,23 @@ from __future__ import annotations
 import hashlib
 import runpy
 import shutil
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
 
-from scripts import reconcile_prophet_live as RC
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 
-ROOT = Path('.')
+from scripts import reconcile_prophet_live as RC  # noqa: E402
+
 LEDGER = ROOT / RC.LEDGER_REL
 EXPECTED_BEFORE_SHA = '6c54fb8a92d43f44b5acc3999696217d6523abac0d684a9473b1f71ff0e25843'
 EXPECTED_AFTER_SHA = 'fb25fcc6b1935d9fdd5e7e2a6e8a5981411acda6825784afb241eceba968c5e0'
 
 # Generate the corrected text/receipt surfaces from exact old-text tripwires.
-runpy.run_path('.github/prophet_closeout_patch.py', run_name='__main__')
+runpy.run_path(str(ROOT / '.github/prophet_closeout_patch.py'), run_name='__main__')
 out = Path('/tmp/final')
 
 before_bytes = LEDGER.read_bytes()
