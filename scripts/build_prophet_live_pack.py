@@ -170,7 +170,7 @@ def _split_completed_series(series: dict[str, Any], *, completed_through: str
         except Exception:  # noqa: BLE001 — malformed tip is not admissible evidence
             invalid[tkr] = close
             continue
-        if day > bound or not is_session(day):
+        if pd.isna(day) or day > bound or not is_session(day):
             invalid[tkr] = close
         else:
             valid[tkr] = close
