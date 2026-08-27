@@ -2,11 +2,21 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import sys
+import types
 
 import pandas as pd
 
-from engine.prophet_live import armed_pack as AP
-import scripts.build_prophet_live_pack as B
+# D12 is a calendar/admission defect. Keep this focused suite independent of the much
+# larger signal-engine import graph so RED/GREEN means the date law changed, not that a
+# sparse test checkout happened to omit an unrelated signal module.
+_signal_gate = types.ModuleType("engine.signal_gate")
+_signal_gate.gate = lambda *a, **k: {}
+_signal_gate.is_buyable = lambda *_a, **_k: False
+sys.modules.setdefault("engine.signal_gate", _signal_gate)
+
+from engine.prophet_live import armed_pack as AP  # noqa: E402
+import scripts.build_prophet_live_pack as B  # noqa: E402
 
 
 def _series(last: str, *, n: int = 80) -> pd.Series:
