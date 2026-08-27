@@ -702,6 +702,252 @@ def test_dependency_failure_is_infrastructure_and_blocks_every_semantic_step(
     ) == ["demo"]
 
 
+def test_dependency_environment_retries_exact_tls_record_once_in_a_fresh_venv(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setenv("RUNNER_TEMP", str(tmp_path))
+    observations = iter(
+        [
+            PACK.CommandObservation(
+                outcome="failed",
+                returncode=1,
+                detail="exited 1",
+                retryable_dependency_transport=True,
+            ),
+            PACK.CommandObservation(outcome="passed", returncode=0),
+        ]
+    )
+    streamed: list[str] = []
+    venv_creations: list[Path] = []
+
+    def stream(command: str, **kwargs: object) -> object:
+        streamed.append(command)
+        assert kwargs["detect_retryable_dependency_transport"] is True
+        return next(observations)
+
+    def run(command: list[str], **_kwargs: object) -> object:
+        assert command[:3] == [sys.executable, "-m", "venv"]
+        target = Path(command[3])
+        sentinel = target / "partial-install"
+        if venv_creations:
+            assert not sentinel.exists(), "retry inherited the partial first venv"
+        target.mkdir(parents=True)
+        sentinel.write_text("partial\n", encoding="utf-8")
+        venv_creations.append(target)
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(PACK, "_stream_command", stream)
+    monkeypatch.setattr(PACK.subprocess, "run", run)
+
+    environment = PACK._dependency_environment("python -m pip install plotly")
+
+    assert streamed == [
+        "python -m pip install plotly",
+        "python -m pip install plotly",
+    ]
+    assert len(venv_creations) == 2
+    assert venv_creations[0] == venv_creations[1]
+    assert environment["PATH"].split(os.pathsep, 1)[0] == str(
+        tmp_path / "ci-pack-job-env" / "bin"
+    )
+    output = capsys.readouterr().out
+    assert "ci dependency transport retry" in output
+    assert "recreating the isolated environment once" in output
+
+
+def test_dependency_environment_does_not_retry_an_unclassified_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("RUNNER_TEMP", str(tmp_path))
+    streamed: list[str] = []
+
+    def stream(command: str, **kwargs: object) -> object:
+        streamed.append(command)
+        assert kwargs["detect_retryable_dependency_transport"] is True
+        return PACK.CommandObservation(
+            outcome="failed",
+            returncode=23,
+            detail="exited 23",
+        )
+
+    monkeypatch.setattr(PACK, "_stream_command", stream)
+    monkeypatch.setattr(
+        PACK.subprocess,
+        "run",
+        lambda *_args, **_kwargs: SimpleNamespace(returncode=0),
+    )
+
+    with pytest.raises(RuntimeError, match="dependency install exited 23"):
+        PACK._dependency_environment("python -m pip install plotly")
+    assert streamed == ["python -m pip install plotly"]
+
+
+def test_dependency_environment_fails_after_one_classified_tls_retry(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("RUNNER_TEMP", str(tmp_path))
+    calls = 0
+
+    def stream(_command: str, **kwargs: object) -> object:
+        nonlocal calls
+        calls += 1
+        assert kwargs["detect_retryable_dependency_transport"] is True
+        return PACK.CommandObservation(
+            outcome="failed",
+            returncode=1,
+            detail="exited 1",
+            retryable_dependency_transport=True,
+        )
+
+    monkeypatch.setattr(PACK, "_stream_command", stream)
+    monkeypatch.setattr(
+        PACK.subprocess,
+        "run",
+        lambda *_args, **_kwargs: SimpleNamespace(returncode=0),
+    )
+
+    with pytest.raises(RuntimeError, match="after one classified TLS retry"):
+        PACK._dependency_environment("python -m pip install plotly")
+    assert calls == 2
+
+
+def test_dependency_environment_records_tls_retry_before_different_second_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("RUNNER_TEMP", str(tmp_path))
+    observations = iter(
+        [
+            PACK.CommandObservation(
+                outcome="failed",
+                returncode=1,
+                detail="exited 1",
+                retryable_dependency_transport=True,
+            ),
+            PACK.CommandObservation(
+                outcome="failed",
+                returncode=23,
+                detail="exited 23",
+            ),
+        ]
+    )
+    monkeypatch.setattr(
+        PACK,
+        "_stream_command",
+        lambda *_args, **_kwargs: next(observations),
+    )
+    monkeypatch.setattr(
+        PACK.subprocess,
+        "run",
+        lambda *_args, **_kwargs: SimpleNamespace(returncode=0),
+    )
+
+    with pytest.raises(
+        RuntimeError,
+        match="dependency install exited 23 after one classified TLS retry",
+    ):
+        PACK._dependency_environment("python -m pip install plotly")
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "echo prepare; python -m pip install plotly",
+        "python -m pip install plotly && echo replayed",
+        "python -m pip install plotly; ./non_idempotent_step",
+        "python -m pip install plotly | tee /tmp/output",
+        "python -m pip install $(cat requirements.txt)",
+        "python -m pip install `cat requirements.txt`",
+    ],
+)
+def test_dependency_command_refuses_a_mixed_shell_body(command: str) -> None:
+    job = _job(
+        "mixed-install",
+        [
+            {
+                "name": "not standalone",
+                "run": command,
+            },
+            {"name": "proof", "run": "true"},
+        ],
+    )
+    with pytest.raises(PACK.ManifestError, match="not a standalone pip command"):
+        PACK.dependency_command(job)
+
+
+def test_dependency_transport_marker_detection_crosses_stream_chunks(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    chunks = iter(
+        [
+            b"ssl.SSLError: [SSL: DECRYPTION_FAILED_OR_BAD_",
+            b"RECORD_MAC] decryption failed or bad record mac\n",
+            b"",
+        ]
+    )
+
+    class Process:
+        returncode = 1
+        pid = 77
+        stdout = SimpleNamespace(
+            read=lambda _size: next(chunks),
+            close=lambda: None,
+        )
+
+        def wait(self, timeout: object = None) -> int:
+            return self.returncode
+
+    monkeypatch.setattr(PACK.subprocess, "Popen", lambda *_args, **_kwargs: Process())
+    observation = PACK._stream_command(
+        "python -m pip install plotly",
+        env={},
+        timeout_seconds=None,
+        detect_retryable_dependency_transport=True,
+    )
+    assert observation.outcome == "failed"
+    assert observation.retryable_dependency_transport is True
+
+
+@pytest.mark.parametrize(
+    "near_miss",
+    [
+        b"ssl.SSLError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed\n",
+        b"ssl.SSLError: [SSL: DECRYPTION_FAILED] decryption failed\n",
+        b"ssl.SSLError: [SSL: DECRYPTION_FAILED_OR_BAD_RECORD] incomplete marker\n",
+    ],
+)
+def test_dependency_transport_near_misses_are_not_retryable(
+    monkeypatch: pytest.MonkeyPatch,
+    near_miss: bytes,
+) -> None:
+    chunks = iter([near_miss, b""])
+
+    class Process:
+        returncode = 1
+        pid = 77
+        stdout = SimpleNamespace(
+            read=lambda _size: next(chunks),
+            close=lambda: None,
+        )
+
+        def wait(self, timeout: object = None) -> int:
+            return self.returncode
+
+    monkeypatch.setattr(PACK.subprocess, "Popen", lambda *_args, **_kwargs: Process())
+    observation = PACK._stream_command(
+        "python -m pip install plotly",
+        env={},
+        timeout_seconds=None,
+        detect_retryable_dependency_transport=True,
+    )
+    assert observation.outcome == "failed"
+    assert observation.retryable_dependency_transport is False
+
+
 def test_explicit_changed_file_handle_overrides_stale_child_transports(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1450,6 +1696,12 @@ def test_base_replay_uses_base_runner_and_is_serial_without_matrix_fanout(
         "ACTIONS_RESULTS_URL",
     ):
         monkeypatch.setenv(capability, "must-not-reach-base")
+    monkeypatch.setenv("LD_LIBRARY_PATH", "/candidate/controlled/library/path")
+    monkeypatch.setattr(
+        PACK,
+        "_selected_python_loader_environment",
+        lambda: {"LD_LIBRARY_PATH": "/trusted/python-3.12.13/lib"},
+    )
     jobs = [
         _job("alpha", [{"name": "proof alpha", "run": "false"}], ordinal=0),
         _job("beta", [{"name": "proof beta", "run": "false"}], ordinal=1),
@@ -1538,6 +1790,7 @@ def test_base_replay_uses_base_runner_and_is_serial_without_matrix_fanout(
         assert env["GITHUB_WORKSPACE"] == str(base_root)
         assert env["CI_BASE_REF"] == "main"
         assert env["CI_HEAD_REF"] == "main"
+        assert env["LD_LIBRARY_PATH"] == "/trusted/python-3.12.13/lib"
         assert Path(env["CI_CHANGED_FILES_FILE"]).read_text() == "null\n"
         assert not any(
             value == "must-not-reach-base" for value in env.values()
@@ -1555,6 +1808,118 @@ def test_base_replay_uses_base_runner_and_is_serial_without_matrix_fanout(
         for record in records
         for step in record["steps"]
     )
+
+
+def test_selected_python_loader_environment_is_derived_from_the_interpreter(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    prefix = tmp_path / "python-3.12.13"
+    library_dir = prefix / "lib"
+    library_dir.mkdir(parents=True)
+    (library_dir / "libpython3.12.so.1.0").write_bytes(b"fixture")
+    monkeypatch.setattr(PACK.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(PACK.sys, "base_prefix", str(prefix))
+    monkeypatch.setattr(
+        PACK.sysconfig,
+        "get_config_var",
+        lambda name: {
+            "LIBDIR": str(library_dir),
+            "LDLIBRARY": "libpython3.12.so.1.0",
+        }.get(name),
+    )
+    monkeypatch.setenv("LD_LIBRARY_PATH", "/candidate/controlled/library/path")
+
+    assert PACK._selected_python_loader_environment() == {
+        "LD_LIBRARY_PATH": str(library_dir.resolve())
+    }
+
+
+def test_selected_python_loader_environment_preserves_the_attested_tool_cache_alias(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    prefix = tmp_path / "hostedtoolcache" / "Python" / "3.12.13" / "x64"
+    library_dir = prefix / "lib"
+    library_dir.mkdir(parents=True)
+    (library_dir / "libpython3.12.so.1.0").write_bytes(b"fixture")
+    tool_cache_alias = (
+        tmp_path / "runner" / "_work" / "_tool" / "Python" / "3.12.13" / "x64"
+    )
+    tool_cache_alias.parent.mkdir(parents=True)
+    tool_cache_alias.symlink_to(prefix, target_is_directory=True)
+    ambient_library_dir = tool_cache_alias / "lib"
+    monkeypatch.setattr(PACK.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(PACK.sys, "base_prefix", str(prefix))
+    monkeypatch.setattr(
+        PACK.sysconfig,
+        "get_config_var",
+        lambda name: {
+            "LIBDIR": str(library_dir),
+            "LDLIBRARY": "libpython3.12.so",
+            "INSTSONAME": "libpython3.12.so.1.0",
+        }.get(name),
+    )
+    monkeypatch.setenv("LD_LIBRARY_PATH", str(ambient_library_dir))
+
+    assert PACK._selected_python_loader_environment() == {
+        "LD_LIBRARY_PATH": str(ambient_library_dir)
+    }
+
+
+def test_selected_python_loader_environment_refuses_a_library_outside_the_prefix(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    prefix = tmp_path / "python-3.12.13"
+    prefix.mkdir()
+    outside = tmp_path / "candidate-library"
+    outside.mkdir()
+    (outside / "libpython3.12.so.1.0").write_bytes(b"fixture")
+    monkeypatch.setattr(PACK.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(PACK.sys, "base_prefix", str(prefix))
+    monkeypatch.setattr(
+        PACK.sysconfig,
+        "get_config_var",
+        lambda name: {
+            "LIBDIR": str(outside),
+            "LDLIBRARY": "libpython3.12.so.1.0",
+        }.get(name),
+    )
+
+    with pytest.raises(PACK.ExecutionProfileError, match="outside selected interpreter"):
+        PACK._selected_python_loader_environment()
+
+
+@pytest.mark.parametrize(
+    ("library_dir", "library_name", "message"),
+    [
+        (None, "libpython3.12.so.1.0", "does not declare LIBDIR"),
+        ("inside", None, "does not declare LDLIBRARY"),
+        ("inside", "libpython3.12.so.1.0", "shared library is absent"),
+    ],
+)
+def test_selected_python_loader_environment_refuses_missing_library_metadata_or_file(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    library_dir: str | None,
+    library_name: str | None,
+    message: str,
+) -> None:
+    prefix = tmp_path / "python-3.12.13"
+    prefix.mkdir()
+    declared_dir = prefix / "lib"
+    declared_dir.mkdir()
+    monkeypatch.setattr(PACK.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(PACK.sys, "base_prefix", str(prefix))
+    monkeypatch.setattr(
+        PACK.sysconfig,
+        "get_config_var",
+        lambda name: {
+            "LIBDIR": str(declared_dir) if library_dir == "inside" else library_dir,
+            "LDLIBRARY": library_name,
+        }.get(name),
+    )
+
+    with pytest.raises(PACK.ExecutionProfileError, match=message):
+        PACK._selected_python_loader_environment()
 
 
 def test_replay_process_never_invents_time_after_the_shared_deadline(

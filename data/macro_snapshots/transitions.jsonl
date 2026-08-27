@@ -212,3 +212,8 @@
 {"asof": "2026-08-26", "domain": "fx", "field": "fx_regime_radar", "from_value": "reflation_risk_on", "to_value": null, "macro_context_id": "c2f7bd302bc63cb6"}
 {"asof": "2026-08-26", "domain": "fx", "field": "usd_valuation", "from_value": "rich", "to_value": "fair", "macro_context_id": "c2f7bd302bc63cb6"}
 {"asof": "2026-08-26", "domain": "commodity", "field": "commodity_ladder", "from_value": "RALLY ON", "to_value": "TURN SIGNALED", "macro_context_id": "c2f7bd302bc63cb6"}
+{"asof": "2026-08-27", "domain": "us", "field": "us_froth_band", "from_value": "watch", "to_value": "calm", "macro_context_id": "a14675905fc1ce16"}
+{"asof": "2026-08-27", "domain": "us", "field": "us_vrp_state", "from_value": "normal", "to_value": "collapsing (de-risk)", "macro_context_id": "a14675905fc1ce16"}
+{"asof": "2026-08-27", "domain": "fx", "field": "fed_path_lean", "from_value": "dovish_repricing", "to_value": "steady", "macro_context_id": "a14675905fc1ce16"}
+{"asof": "2026-08-27", "domain": "commodity", "field": "commodity_ladder", "from_value": "TURN SIGNALED", "to_value": "RALLY ON", "macro_context_id": "a14675905fc1ce16"}
+{"asof": "2026-08-27", "domain": "intl", "field": "intl_au_quad", "from_value": "Q2", "to_value": "Q3", "macro_context_id": "a14675905fc1ce16"}
