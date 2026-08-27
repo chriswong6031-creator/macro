@@ -27,21 +27,21 @@ changed:
       ruling, nonblocking reliability debt, and the parked authorization
       boundary after D6-B. Acceptance projection carrier is Macro PR #6485.
 verified:
-  - claim: Protected Skillpack compatibility and atomic final-closeout pin
+  - claim: Protected Skillpack compatibility and atomic records-carrier re-pin
     command: >
       gh api repos/mastermindx-market-intelligence/Mastermind/branches/master
       --jq '.commit.sha'
     result: >
       Protected Mastermind master was
-      e5cc1a5ea519a922fdeb9878834245e63208927d at final closeout re-pin.
+      abb64e9e1dcedea39d5dc7e1dc32495449630531 at the records-carrier re-pin.
       INDEX.md, REVIEW_RETURN.md, RECONCILE_STATE.md and CLOSEOUT.md were
       loaded from that exact SHA. Skillpack mastermind.sol_skillpack.v1 was
       v1.0.0 with minimum bootstrap major 1, compatible with Chairman bootstrap
       major 1. The canonical Sol acceptance comment had already been issued
       under the prior compatible protected pin
-      98f60ddcd2e387ea42c23f64b66933650c4f2e19; the newer protected revision
-      was reloaded before the AgentOS merge and introduced no compatibility or
-      closeout-law conflict.
+      98f60ddcd2e387ea42c23f64b66933650c4f2e19; later compatible protected
+      revisions were reloaded before AgentOS merge work and introduced no
+      compatibility or closeout-law conflict.
   - claim: No post-close FMS semantic or Defense workstream drift
     command: >
       gh api repos/mastermindx-market-intelligence/macro/compare/cca7d6b7c51c9cda6347097281ff050c2fe551ff...851e660cce363778d20b66dcf816a76cea9dffc2
@@ -205,9 +205,9 @@ return_point: >
   Acceptance projection carrier is Macro PR #6485. Closing records carrier is
   #6480 / merge cca7d6b7c51c9cda6347097281ff050c2fe551ff. Final production
   acquisition commit is d90d63c782668c6adfa9697563349412292153ae; canonical
-  publication commit is 5d9628af92c2ad0097b39ec3da2af1f78f8c7e0a. Final
-  closeout Skillpack pin is
-  Mastermind@e5cc1a5ea519a922fdeb9878834245e63208927d; the canonical Sol
+  publication commit is 5d9628af92c2ad0097b39ec3da2af1f78f8c7e0a. Records-carrier
+  Skillpack re-pin is
+  Mastermind@abb64e9e1dcedea39d5dc7e1dc32495449630531; the canonical Sol
   acceptance comment preserves its original review pin
   Mastermind@98f60ddcd2e387ea42c23f64b66933650c4f2e19.
 ---
