@@ -107,7 +107,7 @@ verified:
       Both persisted after restart; three listeners returned online/idle; exact
       same-repo/main passed and fork returned exit 77. Dated root backups exist.
   - claim: The route introduces no contract-delta defect.
-    command: python3.12 scripts/check_contract_delta.py --base 5d07658b899d2d3457dfeeccbc0a91c280f5bc1f
+    command: python3.12 scripts/check_contract_delta.py --base 23007eea2f2b3070093a7fcd9df577844ebabb8c
     result: "contract-delta: 0 introduced, 0 inherited."
   - claim: The broad planner/policy battery is classified, not hidden.
     command: >
