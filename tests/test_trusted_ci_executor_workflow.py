@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 import yaml
@@ -7,6 +10,20 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = ROOT / ".github" / "workflows"
+MAIN_CONTROL_FILES = {
+    "__init__.py",
+    "run_ci_pack.py",
+    "ci_semantic_proof.py",
+    "ci_authority_paths.py",
+    "ci_scope_dependencies.py",
+    "audit_unrun_tests.py",
+    "workflow_run_source.py",
+    "resolve_ci_canary_ref.py",
+    "select_ci_canary_packs.py",
+    "monitor_ci_host_resources.py",
+    "capture_ci_canary_receipt.py",
+}
+CONTROL_REPO_ROOT_ENV = "MASTERMIND_TRUSTED_CI_REPO_ROOT"
 
 
 def workflow(name: str) -> dict:
@@ -96,6 +113,124 @@ def test_p3a_planner_is_hosted_main_control_and_freezes_one_exact_pr_pack() -> N
         assert token in planner["run"]
     selector = next(step for step in steps if step.get("id") == "select")
     assert "--count 1" in selector["run"]
+
+
+def test_p3ar_freezes_and_transports_the_complete_main_owned_control_bundle() -> None:
+    document = workflow("trusted-ci-executor.yml")
+    plan_steps = document["jobs"]["plan"]["steps"]
+    preserve = next(
+        step
+        for step in plan_steps
+        if step.get("name") == "freeze the complete main-owned control bundle"
+    )
+    for filename in MAIN_CONTROL_FILES:
+        assert f"scripts/{filename}" in preserve["run"]
+    assert "$RUNNER_TEMP/trusted-ci-control/scripts/" in preserve["run"]
+
+    planner = next(step for step in plan_steps if step.get("id") == "plan")
+    assert planner["env"][CONTROL_REPO_ROOT_ENV] == "${{ github.workspace }}"
+    assert (
+        '"$RUNNER_TEMP/trusted-ci-plan-runner/bin/python" '
+        '"$RUNNER_TEMP/trusted-ci-control/scripts/run_ci_pack.py"'
+    ) in planner["run"]
+    assert 'bin/python" scripts/run_ci_pack.py' not in planner["run"]
+
+    control_upload = next(
+        step
+        for step in plan_steps
+        if step.get("uses") == "actions/upload-artifact@v4"
+        and step["with"]["name"] == "trusted-ci-control"
+    )
+    assert control_upload["with"]["path"] == "${{ runner.temp }}/trusted-ci-control"
+    assert control_upload["with"]["if-no-files-found"] == "error"
+
+    pack_steps = document["jobs"]["trusted-pack"]["steps"]
+    control_download_index = next(
+        index
+        for index, step in enumerate(pack_steps)
+        if step.get("uses") == "actions/download-artifact@v4"
+        and step["with"].get("name") == "trusted-ci-control"
+    )
+    materialize_index = next(
+        index
+        for index, step in enumerate(pack_steps)
+        if step.get("name", "").startswith("materialize exact candidate")
+    )
+    assert control_download_index < materialize_index
+    assert pack_steps[control_download_index]["with"]["path"] == (
+        "${{ runner.temp }}/trusted-ci-control"
+    )
+
+    execute_step = next(
+        step
+        for step in pack_steps
+        if step.get("name") == "execute the frozen logical pack and retain its actual result"
+    )
+    assert execute_step["env"][CONTROL_REPO_ROOT_ENV] == "${{ github.workspace }}"
+    execute = execute_step["run"]
+    assert (
+        '"$RUNNER_TEMP/trusted-ci-pack-runner/bin/python" '
+        '"$RUNNER_TEMP/trusted-ci-control/scripts/run_ci_pack.py"'
+    ) in execute
+    assert 'bin/python" scripts/run_ci_pack.py' not in execute
+
+    receipt = next(
+        step
+        for step in pack_steps
+        if step.get("name") == "write trusted self-hosted receipt"
+    )["run"]
+    assert "$RUNNER_TEMP/trusted-ci-control/scripts/capture_ci_canary_receipt.py" in receipt
+    assert "$RUNNER_TEMP/trusted-ci-control/scripts/monitor_ci_host_resources.py" in execute
+
+
+def test_p3ar_control_bundle_imports_without_candidate_control_modules(
+    tmp_path: Path,
+) -> None:
+    control_scripts = tmp_path / "trusted-ci-control" / "scripts"
+    control_scripts.mkdir(parents=True)
+    for filename in MAIN_CONTROL_FILES:
+        (control_scripts / filename).write_bytes((ROOT / "scripts" / filename).read_bytes())
+
+    environment = dict(os.environ)
+    environment["PYTHONPATH"] = str(control_scripts.parent)
+    environment[CONTROL_REPO_ROOT_ENV] = str(ROOT)
+    root_probe = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            (
+                "import sys; "
+                f"sys.path.insert(0, {str(control_scripts.parent)!r}); "
+                "from scripts.ci_scope_dependencies import ROOT; print(ROOT)"
+            ),
+        ],
+        cwd=ROOT,
+        env=environment,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert root_probe.returncode == 0, root_probe.stdout + root_probe.stderr
+    assert root_probe.stdout.strip() == str(ROOT.resolve())
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(control_scripts / "run_ci_pack.py"),
+            "--workflow",
+            ".github/ci/legacy-jobs.yml",
+            "--gate",
+            "code",
+            "--validate-only",
+        ],
+        cwd=ROOT,
+        env=environment,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "Validated 132 legacy jobs" in result.stdout
 
 
 def test_p3a_selfhosted_job_uses_the_selected_group_and_negotiated_cache() -> None:

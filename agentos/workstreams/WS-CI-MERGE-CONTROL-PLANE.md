@@ -193,12 +193,19 @@ waves:
       checkoutless parity green for packs 0/1/9 on one exact tree and plan. PC
       wall time was 164.689-216.668s versus hosted 680.467-2050.9s, all semantic
       fragments were byte-identical, cache bytes were unchanged and the resource
-      envelope stayed safe. P3A is built locally on the canonical #6351 program:
-      one main-selected reusable executor, production_enabled=false, one hosted
-      plan and one PC proof pack. Its direct-dispatch gate and the root-owned PC
-      job-start hook both require the exact main workflow identity; hostile caller,
-      workflow_call, PR-ref and fork forms stay closed. Production ci.yml remains
-      byte-unchanged.
+      envelope stayed safe. P3A merged through PR #6481 as
+      7dc0b0ddcd6dd7323a0bf9d45b4ebf6ebc785531. The exact main-pinned workflow
+      was added as the fifth selected workflow in the existing organization runner
+      group, and the merged root admission was deployed with identical hash
+      e4ff74a96e9949a0ce4707e3fdb58cfffc251057d5e8c69a7309fe2871e11202;
+      direct main admission passed and a hostile PR ref remained refused. First
+      dispatch 33024021850 then failed closed before PC pickup: after exact resolver
+      and candidate checkout success, hosted planning invoked the older candidate
+      scripts/run_ci_pack.py, which does not admit the trusted executor event pair,
+      so no plan artifact existed. P3A-R on the same #6351 program now freezes and
+      transports the complete main-owned planner/semantic/control bundle while
+      retaining the exact candidate tree and manifest. Production ci.yml remains
+      byte-unchanged and production_enabled remains false.
 next_action: >
   W-TRANSPORT and W-PR-EVENT-CAUSALITY are closed. Do not reopen either for a
   new CI-speed, runner, branch-protection, or cancellation-system proposal.
@@ -217,6 +224,9 @@ next_action: >
   packs still run the blob:none full-tree checkout that produced the #6406
   and #6286 attempt-1 checkout-only failures; do not absorb pack-checkout
   repairs into product PRs or reopen them here outside the #6351 sequence.
+  Complete P3A-R exact-head proof and one repaired dispatch before any P3B
+  production routing. Run 33024021850 is a closed diagnostic receipt, not a
+  retry candidate.
 owns_paths:
   - ".github/workflows/ci.yml"
   - ".github/workflows/merge-on-green.yml"

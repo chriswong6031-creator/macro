@@ -82,18 +82,34 @@ jobs:
         run: |
           test "$(git rev-parse HEAD)" = "${{ github.sha }}"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-      - name: preserve main-owned resolver and selector
+      - name: freeze the complete main-owned control bundle
         run: |
-          mkdir -p "$RUNNER_TEMP/trusted-ci-control"
-          cp scripts/resolve_ci_canary_ref.py \
+          mkdir -p "$RUNNER_TEMP/trusted-ci-control/scripts"
+          cp scripts/__init__.py \
+             scripts/run_ci_pack.py \
+             scripts/ci_semantic_proof.py \
+             scripts/ci_authority_paths.py \
+             scripts/ci_scope_dependencies.py \
+             scripts/audit_unrun_tests.py \
+             scripts/workflow_run_source.py \
+             scripts/resolve_ci_canary_ref.py \
              scripts/select_ci_canary_packs.py \
-             "$RUNNER_TEMP/trusted-ci-control/"
+             scripts/monitor_ci_host_resources.py \
+             scripts/capture_ci_canary_receipt.py \
+             "$RUNNER_TEMP/trusted-ci-control/scripts/"
+      - name: publish the frozen main-owned control bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: trusted-ci-control
+          path: ${{ runner.temp }}/trusted-ci-control
+          if-no-files-found: error
+          retention-days: 14
       - id: ref
         name: resolve the immutable same-repository PR candidate
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          python3 "$RUNNER_TEMP/trusted-ci-control/resolve_ci_canary_ref.py" \
+          python3 "$RUNNER_TEMP/trusted-ci-control/scripts/resolve_ci_canary_ref.py" \
             --repository "${{ github.repository }}" \
             --github-sha "${{ github.sha }}" \
             --pr-number "${{ inputs.pr_number }}" \
@@ -116,10 +132,12 @@ jobs:
           "$RUNNER_TEMP/trusted-ci-plan-runner/bin/pip" install pyyaml
       - id: plan
         name: freeze one authoritative logical plan
+        env:
+          MASTERMIND_TRUSTED_CI_REPO_ROOT: ${{ github.workspace }}
         shell: bash
         run: |
           set -euo pipefail
-          "$RUNNER_TEMP/trusted-ci-plan-runner/bin/python" scripts/run_ci_pack.py \
+          "$RUNNER_TEMP/trusted-ci-plan-runner/bin/python" "$RUNNER_TEMP/trusted-ci-control/scripts/run_ci_pack.py" \
             --workflow .github/ci/legacy-jobs.yml \
             --gate code \
             --pack-count 12 \
@@ -140,7 +158,7 @@ jobs:
       - id: select
         name: select exactly one bounded P3A proof pack
         run: |
-          python3 "$RUNNER_TEMP/trusted-ci-control/select_ci_canary_packs.py" \
+          python3 "$RUNNER_TEMP/trusted-ci-control/scripts/select_ci_canary_packs.py" \
             --plan "$RUNNER_TEMP/trusted-ci-plan/plan.json" \
             --count 1 \
             --github-output "$GITHUB_OUTPUT"
@@ -168,6 +186,11 @@ jobs:
         run: date +%s.%N > "$RUNNER_TEMP/job-start"
       - name: refuse unsafe resources before shared cache use
         run: /usr/local/libexec/mastermind-ci-resource-guard --path "$GITHUB_WORKSPACE"
+      - name: download the frozen main-owned control bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: trusted-ci-control
+          path: ${{ runner.temp }}/trusted-ci-control
       - name: mark cache and checkout start
         run: |
           du -sb /var/cache/mastermind-ci/macro.git | awk '{print $1}' > "$RUNNER_TEMP/cache-before"
@@ -185,12 +208,6 @@ jobs:
             | tee "$RUNNER_TEMP/prewarm.log"
           GIT_NO_LAZY_FETCH=1 git -C "$GITHUB_WORKSPACE" \
             cat-file -e "${{ needs.plan.outputs.base_sha }}^{commit}"
-      - name: preserve main-owned receipt helpers before candidate materialization
-        run: |
-          mkdir -p "$RUNNER_TEMP/trusted-ci-control"
-          cp scripts/monitor_ci_host_resources.py \
-             scripts/capture_ci_canary_receipt.py \
-             "$RUNNER_TEMP/trusted-ci-control/"
       - name: materialize exact candidate with negotiated incremental fetch
         env:
           GIT_TRACE2_EVENT: ${{ runner.temp }}/git-trace2.json
@@ -232,6 +249,7 @@ jobs:
       - name: execute the frozen logical pack and retain its actual result
         env:
           CI_CHANGED_FILES_FILE: ${{ runner.temp }}/trusted-ci-plan/changed-files.json
+          MASTERMIND_TRUSTED_CI_REPO_ROOT: ${{ github.workspace }}
         shell: bash
         run: |
           set -uo pipefail
@@ -239,11 +257,11 @@ jobs:
           awk -v start="$(cat "$RUNNER_TEMP/dependency-start")" -v end="$dependency_end" 'BEGIN {print end-start}' > "$RUNNER_TEMP/dependency-seconds"
           test_start=$(date +%s.%N)
           mkdir -p "$RUNNER_TEMP/ci-semantic-fragments"
-          python3 "$RUNNER_TEMP/trusted-ci-control/monitor_ci_host_resources.py" \
+          python3 "$RUNNER_TEMP/trusted-ci-control/scripts/monitor_ci_host_resources.py" \
             --output "$RUNNER_TEMP/resources.jsonl" --path "$GITHUB_WORKSPACE" &
           monitor_pid=$!
           set +e
-          "$RUNNER_TEMP/trusted-ci-pack-runner/bin/python" scripts/run_ci_pack.py \
+          "$RUNNER_TEMP/trusted-ci-pack-runner/bin/python" "$RUNNER_TEMP/trusted-ci-control/scripts/run_ci_pack.py" \
             --workflow .github/ci/legacy-jobs.yml \
             --gate code \
             --plan-json "$RUNNER_TEMP/trusted-ci-plan/plan.json" \
@@ -270,7 +288,7 @@ jobs:
           cat "$RUNNER_TEMP/prewarm.log" "$RUNNER_TEMP/pack.log" > "$RUNNER_TEMP/combined.log"
           du -sb /var/cache/mastermind-ci/macro.git | awk '{print $1}' > "$RUNNER_TEMP/cache-after"
           object_bytes=$(du -sk .git/objects | awk '{print $1 * 1024}')
-          python3 "$RUNNER_TEMP/trusted-ci-control/capture_ci_canary_receipt.py" \
+          python3 "$RUNNER_TEMP/trusted-ci-control/scripts/capture_ci_canary_receipt.py" \
             --log "$RUNNER_TEMP/combined.log" \
             --plan "$RUNNER_TEMP/trusted-ci-plan/plan.json" \
             --pack "${{ matrix.pack }}" \
