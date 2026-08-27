@@ -158,7 +158,7 @@ waves:
     # null, raw source states unchanged.
   - id: GD-3
     title: Live provisional envelope + pending escalation
-    status: in_progress
+    status: done
     pr: 6144
     depends_on: [GD-2]
     # Sol rulings 2026-08-19 (x2): do NOT start GD-3 until Gate 8 passes on
@@ -184,7 +184,7 @@ waves:
     # quote_ts is flagged and excluded), null when unestablishable and NEVER
     # substituted with built; upstream_built kept as separate lineage;
     # observed_at/produced_at are two real ms-precision clocks.
-    # PRODUCTION ACCEPTANCE: WAITING_FOR_PRODUCTION_EVENT (Sol fallback,
+    # HISTORICAL PRE-ACCEPTANCE STATE: WAITING_FOR_PRODUCTION_EVENT (Sol fallback,
     # 2026-08-21). The Gate-8-equivalent four-clock receipt requires an
     # AUTHENTICATED browser witness (regwall = Supabase session cookie only,
     # no ops bypass — verified app/regwall.py). The operator's Chrome never
@@ -210,6 +210,23 @@ waves:
     # paint, and the interval-scoped data/-unchanged proof.
     # Executable acceptance packet:
     # agentos/handoffs/GREY-DEER-RISK-INTELLIGENCE-2026-08-27.md.
+    # PRODUCTION ACCEPTANCE: PASS / GD-3 DONE (2026-08-27, authenticated
+    # browser, US cash session). The FIRST observed qualifying live-source
+    # change had rs.built=2026-08-27 13:37:47 UTC, live_active=true, and raw
+    # live.source_event_time=2026-08-27T13:37:46.959534+00:00. The live
+    # envelope reflected it one fast fire later: event_time=
+    # 2026-08-27T13:37:46.959Z (the canonical millisecond form of that same
+    # source instant; never rs.built), observed_at=13:38:49.075Z,
+    # produced_at=13:38:50.111Z, upstream_built=13:37:47.000Z; page paint was
+    # first witnessed at 13:39:37.774Z with #gde-live-chip visible. Feed delay
+    # was 62.116s (informational), processing 1.036s, and source->envelope
+    # production 63.111s. revision=live_provisional, precedence=live, all
+    # four authority booleans false, and the required live_transition shape
+    # remained present. Both authenticated payload reads were HTTP 200; the
+    # page and envelope shared settled bundle add670acab651341. Origin/main
+    # advanced b2e158f5feb2 -> 9319de54854e, while all ten
+    # data/risk_radar_intl/*_forward_log.jsonl blobs remained unchanged. Full
+    # four-clock receipt: agentos/handoffs/GREY-DEER-RISK-INTELLIGENCE-2026-08-27-GD3-DONE.md.
   - id: GD-4A
     title: CN/HK forward-ledger liveness repair
     status: done
@@ -317,27 +334,14 @@ waves:
     status: todo
     depends_on: [GD-5A, GD-6A, GD-8A]
 next_action: >
-  2026-08-27: GD-3 is built, merged, deployed and REPAIRED (#6144 55d7ea02ce3e;
-  GD-3R1 #6210 e667ec39d176) and verified RUNNING on the box every fast-lane
-  fire, with the closed-market clock laws proven in served production bytes.
-  The wave stays OPEN on WAITING_FOR_PRODUCTION_EVENT for one artifact only:
-  the Gate-8-equivalent four-clock receipt, which needs an AUTHENTICATED
-  browser during a US cash session (13:30-20:00Z weekday — the fast-lane gate
-  is 11:00-22:00Z but the qualifying change needs a moving tape). Executable
-  packet, including everything already proven so it is not re-proven:
-  agentos/handoffs/GREY-DEER-RISK-INTELLIGENCE-2026-08-27.md. In short: in-page
-  authenticated fetch of live/risk_envelope.json + live/risk_state.json on
-  macro.html; FIRST real live-source change (rs.built advancing WITH
-  live_active true) reflected in the envelope within ≤2 fast fires;
-  event_time→observed_at→produced_at→browser_seen_at with event_time equal to
-  the real source quote clock and never to rs.built; overlay paint screenshot;
-  interval-scoped proof data/ + forward ledgers unchanged. Feed delay is
-  informational and never a failure (Sol 2026-08-22). Do NOT simulate or
-  manufacture the event (Sol 2026-08-21); do not modify the implementation
-  unless the real witness falsifies it (Sol 2026-08-22). GD-4A.1 DONE.
-  GD-8A/8B/9A remain gated on that receipt and may not be commissioned from
-  the acceptance seat. GD-5A/B/C stay closed; GD-4B/4C open and
-  uncommissioned; GD-6/7 and Portfolio cutover not authorized.
+  2026-08-27: GD-3 DONE. The authenticated-browser four-clock production
+  acceptance passed on the first natural qualifying US-session source event;
+  the complete receipt is
+  agentos/handoffs/GREY-DEER-RISK-INTELLIGENCE-2026-08-27-GD3-DONE.md. This
+  acceptance seat does not commission follow-on work: GD-8A/GD-8B/GD-9A remain
+  unstarted pending an explicit new commission; GD-5A/B/C stay closed;
+  GD-4B/4C open and uncommissioned; GD-6/7 and Portfolio cutover are not
+  authorized.
 ---
 
 # Grey Deer Risk Intelligence & Capital Protection
