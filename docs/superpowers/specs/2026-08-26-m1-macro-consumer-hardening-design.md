@@ -7,7 +7,7 @@ Canonical execution carrier: GitHub issue #6432 (`Macro private-repository cutov
 Linear projection: MAS-137; aggregate readiness projection: MAS-140
 Protected Sol Skillpack used for the original design: `mastermindx-market-intelligence/Mastermind@ebff50d65b09a2753b6cb9bea3cb2548522932e4` (`mastermind.sol_skillpack.v1`, v1.0.0, bootstrap major 1 compatible)
 Macro design base: `7d7734d073b0a63cd01fad31dcfbd5ded57abb56`
-Release reconciliation: on 2026-08-27, Sol atomically reloaded the current protected Skillpack at `mastermindx-market-intelligence/Mastermind@af43f356f4f7f34cb3514d1d1099b50444af8487`, reconciled this carrier onto Macro `main` at `c6e590a6e0281823d4bd9b4ade2862e739f72042`, and found no material conflict with the governing B1 decisions or current runner/CI ownership boundaries.
+Release reconciliation: on 2026-08-27, Sol atomically reloaded the current protected Skillpack at `mastermindx-market-intelligence/Mastermind@af43f356f4f7f34cb3514d1d1099b50444af8487`, reconciled this carrier onto Macro `main` at `463bb3b4b708a4748fc65a04250366ca94205186`, and found no material conflict with the governing B1 decisions or current runner/CI ownership boundaries.
 
 ## 1. Outcome
 
