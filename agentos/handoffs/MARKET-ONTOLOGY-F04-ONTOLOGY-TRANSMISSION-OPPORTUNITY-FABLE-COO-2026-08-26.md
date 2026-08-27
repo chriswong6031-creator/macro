@@ -14,7 +14,9 @@ state_before: >
   must not be duplicated. K5 remains gated on accepted K2-C + K3-D. TXI/GMI and
   Dislocation/Market Incorporation contain substantial substrate but user-facing
   scenario/explanation composition remains fragmented.
-changed: []
+changed:
+  - path: agentos/handoffs/MARKET-ONTOLOGY-F04-ONTOLOGY-TRANSMISSION-OPPORTUNITY-FABLE-COO-2026-08-26.md
+    what: "Created the sustained F04 Fable COO lane commission and its graph/authority boundaries."
 verified:
   - claim: "Graph 1/2/3 separation and no-new-graph law are binding."
     command: "Read K3-D commission + parity/no-rebuild decisions."
