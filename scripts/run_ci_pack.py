@@ -42,6 +42,7 @@ import signal
 import shutil
 import subprocess
 import sys
+import sysconfig
 import tempfile
 import threading
 import time
@@ -3339,6 +3340,38 @@ class ExecutionProfileError(RuntimeError):
     """
 
 
+def _selected_python_loader_environment() -> dict[str, str]:
+    """Derive the Linux loader path from the attested interpreter itself.
+
+    ``actions/setup-python`` selects a versioned shared-library build.  Re-execing
+    that interpreter with a deliberately small environment must retain only its
+    own library directory; copying ambient ``LD_LIBRARY_PATH`` would let candidate
+    code steer the exact-base replay into an unrelated library tree.
+    """
+    if platform.system() != "Linux":
+        return {}
+    raw_library_dir = sysconfig.get_config_var("LIBDIR")
+    raw_library_name = sysconfig.get_config_var("LDLIBRARY")
+    if not isinstance(raw_library_dir, str) or not raw_library_dir:
+        raise ExecutionProfileError("selected Python does not declare LIBDIR")
+    if not isinstance(raw_library_name, str) or not raw_library_name:
+        raise ExecutionProfileError("selected Python does not declare LDLIBRARY")
+    try:
+        prefix = Path(sys.base_prefix).resolve(strict=True)
+        library_dir = Path(raw_library_dir).resolve(strict=True)
+        library_dir.relative_to(prefix)
+    except (OSError, ValueError) as exc:
+        raise ExecutionProfileError(
+            "selected Python library directory is outside selected interpreter prefix"
+        ) from exc
+    library = library_dir / raw_library_name
+    if not library.is_file():
+        raise ExecutionProfileError(
+            f"selected Python shared library is absent: {library}"
+        )
+    return {"LD_LIBRARY_PATH": str(library_dir)}
+
+
 def _node_major_version() -> int | None:
     """Return node's major version, or None if node is missing/unparseable."""
     try:
@@ -3883,6 +3916,10 @@ def _run_exact_base_replays(
                     for key, value in os.environ.items()
                     if key in safe_parent_names or key.startswith("LC_")
                 }
+                # Re-exec the selected setup-python interpreter without copying
+                # candidate-controlled loader state.  The directory is derived
+                # and containment-checked against sys.base_prefix above.
+                child_env.update(_selected_python_loader_environment())
                 child_home = child_temp / "home"
                 child_home.mkdir(exist_ok=True)
                 child_env.update(

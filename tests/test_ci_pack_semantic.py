@@ -1450,6 +1450,12 @@ def test_base_replay_uses_base_runner_and_is_serial_without_matrix_fanout(
         "ACTIONS_RESULTS_URL",
     ):
         monkeypatch.setenv(capability, "must-not-reach-base")
+    monkeypatch.setenv("LD_LIBRARY_PATH", "/candidate/controlled/library/path")
+    monkeypatch.setattr(
+        PACK,
+        "_selected_python_loader_environment",
+        lambda: {"LD_LIBRARY_PATH": "/trusted/python-3.12.13/lib"},
+    )
     jobs = [
         _job("alpha", [{"name": "proof alpha", "run": "false"}], ordinal=0),
         _job("beta", [{"name": "proof beta", "run": "false"}], ordinal=1),
@@ -1538,6 +1544,7 @@ def test_base_replay_uses_base_runner_and_is_serial_without_matrix_fanout(
         assert env["GITHUB_WORKSPACE"] == str(base_root)
         assert env["CI_BASE_REF"] == "main"
         assert env["CI_HEAD_REF"] == "main"
+        assert env["LD_LIBRARY_PATH"] == "/trusted/python-3.12.13/lib"
         assert Path(env["CI_CHANGED_FILES_FILE"]).read_text() == "null\n"
         assert not any(
             value == "must-not-reach-base" for value in env.values()
@@ -1555,6 +1562,87 @@ def test_base_replay_uses_base_runner_and_is_serial_without_matrix_fanout(
         for record in records
         for step in record["steps"]
     )
+
+
+def test_selected_python_loader_environment_is_derived_from_the_interpreter(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    prefix = tmp_path / "python-3.12.13"
+    library_dir = prefix / "lib"
+    library_dir.mkdir(parents=True)
+    (library_dir / "libpython3.12.so.1.0").write_bytes(b"fixture")
+    monkeypatch.setattr(PACK.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(PACK.sys, "base_prefix", str(prefix))
+    monkeypatch.setattr(
+        PACK.sysconfig,
+        "get_config_var",
+        lambda name: {
+            "LIBDIR": str(library_dir),
+            "LDLIBRARY": "libpython3.12.so.1.0",
+        }.get(name),
+    )
+    monkeypatch.setenv("LD_LIBRARY_PATH", "/candidate/controlled/library/path")
+
+    assert PACK._selected_python_loader_environment() == {
+        "LD_LIBRARY_PATH": str(library_dir.resolve())
+    }
+
+
+def test_selected_python_loader_environment_refuses_a_library_outside_the_prefix(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    prefix = tmp_path / "python-3.12.13"
+    prefix.mkdir()
+    outside = tmp_path / "candidate-library"
+    outside.mkdir()
+    (outside / "libpython3.12.so.1.0").write_bytes(b"fixture")
+    monkeypatch.setattr(PACK.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(PACK.sys, "base_prefix", str(prefix))
+    monkeypatch.setattr(
+        PACK.sysconfig,
+        "get_config_var",
+        lambda name: {
+            "LIBDIR": str(outside),
+            "LDLIBRARY": "libpython3.12.so.1.0",
+        }.get(name),
+    )
+
+    with pytest.raises(PACK.ExecutionProfileError, match="outside selected interpreter"):
+        PACK._selected_python_loader_environment()
+
+
+@pytest.mark.parametrize(
+    ("library_dir", "library_name", "message"),
+    [
+        (None, "libpython3.12.so.1.0", "does not declare LIBDIR"),
+        ("inside", None, "does not declare LDLIBRARY"),
+        ("inside", "libpython3.12.so.1.0", "shared library is absent"),
+    ],
+)
+def test_selected_python_loader_environment_refuses_missing_library_metadata_or_file(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    library_dir: str | None,
+    library_name: str | None,
+    message: str,
+) -> None:
+    prefix = tmp_path / "python-3.12.13"
+    prefix.mkdir()
+    declared_dir = prefix / "lib"
+    declared_dir.mkdir()
+    monkeypatch.setattr(PACK.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(PACK.sys, "base_prefix", str(prefix))
+    monkeypatch.setattr(
+        PACK.sysconfig,
+        "get_config_var",
+        lambda name: {
+            "LIBDIR": str(declared_dir) if library_dir == "inside" else library_dir,
+            "LDLIBRARY": library_name,
+        }.get(name),
+    )
+
+    with pytest.raises(PACK.ExecutionProfileError, match=message):
+        PACK._selected_python_loader_environment()
 
 
 def test_replay_process_never_invents_time_after_the_shared_deadline(

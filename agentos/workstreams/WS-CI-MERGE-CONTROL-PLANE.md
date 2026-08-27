@@ -21,6 +21,7 @@ discoveries:
   - "DSC:PR-EVENT-DELIVERY-IS-NOT-CANDIDATE-IDENTITY"
   - "DSC:CI-SELF-MOD-FENCE-ARGV-BYPASSES-BOUNDED-TRANSPORT"
   - "DSC:REUSABLE-WORKFLOW-CALL-AND-HOST-HOOK-USE-DIFFERENT-REF-SHAPES"
+  - "DSC:SEALED-PC-CI-REPLAY-AND-PORTABILITY-NEED-EXPLICIT-RUNTIME-BINDINGS"
 waves:
   - id: W-TRANSPORT
     title: Bounded changed-files transport across CI and self-mod fences
@@ -227,7 +228,14 @@ waves:
       now uses GitHub's event payload, forwards it in the root-owned wrapper and
       wires the suite. Post-restart PC hashes are Python 69faac248f755829a39f6821f17015382788056991f6d1ff9046b1842e86a002
       and wrapper d55f046e6a6a758f55e311ed73b921e007c8570cc0aba11e0cafdc31cef06dee;
-      exact execution/parity/gate proof remains owed.
+      run 33043922465 then executed the complete twelve-pack matrix: packs
+      0/1/2/3/4/7/8/10/11 passed and packs 5/6/9 exposed the complete sealed-host
+      portability set. The same carrier now derives replay's loader directory
+      from the selected interpreter while stripping credentials, scopes the
+      set-ID fixture to exact descriptor metadata, preserves Git-config refusal
+      across client behavior, and projects the caller's PR branch identity into
+      the detached trusted executor. Repaired exact execution/parity/gate proof
+      remains owed.
 next_action: >
   W-TRANSPORT and W-PR-EVENT-CAUSALITY are closed. Do not reopen either for a
   new CI-speed, runner, branch-protection, or cancellation-system proposal.

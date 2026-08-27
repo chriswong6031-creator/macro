@@ -14,6 +14,7 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+import sysconfig
 from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
 
@@ -1175,6 +1176,12 @@ def test_cli_spine_universe_is_explicitly_deferred(
 
 def test_cli_module_entrypoint_runs_without_a_token() -> None:
     """A keyless invocation must produce usage text, never a traceback."""
+    environment = {"PATH": "/usr/bin:/bin", "HOME": str(ROOT)}
+    if sys.platform.startswith("linux"):
+        library_dir = Path(str(sysconfig.get_config_var("LIBDIR"))).resolve()
+        library_name = str(sysconfig.get_config_var("LDLIBRARY"))
+        assert (library_dir / library_name).is_file()
+        environment["LD_LIBRARY_PATH"] = str(library_dir)
     completed = subprocess.run(
         [sys.executable, "-m", "scripts.backfill_tushare_minutes", "--help"],
         cwd=ROOT,
@@ -1182,7 +1189,7 @@ def test_cli_module_entrypoint_runs_without_a_token() -> None:
         text=True,
         timeout=120,
         check=False,
-        env={"PATH": "/usr/bin:/bin", "HOME": str(ROOT)},
+        env=environment,
     )
     assert completed.returncode == 0
     assert "--verify" in completed.stdout

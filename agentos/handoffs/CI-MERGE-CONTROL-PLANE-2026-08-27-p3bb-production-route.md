@@ -50,6 +50,22 @@ changed:
       in same-repository anchors, fork rerouting and extra group consumers.
   - path: tests/test_trusted_ci_executor_workflow.py
     what: Reconcile the already-proven executor contract to activated P3B-B routing.
+  - path: scripts/run_ci_pack.py
+    what: >
+      Derive exact-base replay's loader directory from the selected interpreter;
+      preserve the small capability-free environment and credential stripping.
+  - path: tests/test_ci_pack_semantic.py
+    what: >
+      Prove contained loader derivation, absent/outside library refusal, exact
+      3.12.13 replay and absence of GitHub/OIDC/artifact credentials.
+  - path: tests/test_biocatalyst_fixed_cohort_deployment.py
+    what: >
+      Exercise set-ID mode refusal by exact device+inode metadata injection so
+      RestrictSUIDSGID remains enabled on the sealed PC service.
+  - path: tests/test_tushare_minutes_plane.py
+    what: Preserve only the selected interpreter's loader binding in the keyless probe.
+  - path: tests/test_macro_anon_dependency_guard.py
+    what: Reject the malicious Git config across Git 2.43 and newer client behavior.
   - path: tests/test_ci_canary_tools.py
     what: Execute the exact allowed PR hook facts and hostile ref/fork/base/SHA mutations.
   - path: agentos/decisions/DEC-TRUSTED-CI-MAIN-DEFINED-EXECUTOR-BOUNDARY.md
@@ -119,6 +135,12 @@ verified:
       216 passed; one inherited current-main startability failure at
       defense-rail-laws:engine/*.py; three temp-cleanup warnings. This carrier
       changes neither ci.yml trigger paths nor that job's scope.
+  - claim: The first full P3B-B execution produced a complete bounded repair set.
+    command: GitHub Actions run 33043922465 on exact head eb2c7758c9cdefc42638ce5b5d92379950fcb41c
+    result: >
+      Hosted plan and contract-delta passed; packs 0/1/2/3/4/7/8/10/11 passed;
+      only packs 5/6/9 failed. Logs and the RestrictSUIDSGID host probe distinguish
+      exact test/runtime portability defects from interpreter or listener drift.
 unverified:
   - claim: The P3B-B carrier itself executes its selected packs on pc-ci-1/2/3.
     what_would_verify: >

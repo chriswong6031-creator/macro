@@ -353,6 +353,8 @@ jobs:
       - name: execute the frozen logical pack and retain its actual result
         env:
           CI_CHANGED_FILES_FILE: ${{ runner.temp }}/trusted-ci-plan/changed-files.json
+          CI_BASE_REF: ${{ github.base_ref || 'main' }}
+          CI_HEAD_REF: ${{ github.head_ref || github.ref_name }}
           MASTERMIND_TRUSTED_CI_REPO_ROOT: ${{ github.workspace }}
         shell: bash
         run: |

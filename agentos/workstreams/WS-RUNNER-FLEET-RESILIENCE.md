@@ -106,6 +106,7 @@ discoveries:
   - DSC:PRIVATE-CI-HOSTED-MINUTES-REQUIRE-TWO-LEVER-CUTOVER
   - DSC:PERSISTENT-RUNNER-TEMP-PACKS-CAN-BREACH-THE-HOST-DISK-GUARD
   - DSC:REUSABLE-WORKFLOW-CALL-AND-HOST-HOOK-USE-DIFFERENT-REF-SHAPES
+  - DSC:SEALED-PC-CI-REPLAY-AND-PORTABILITY-NEED-EXPLICIT-RUNTIME-BINDINGS
 artifacts:
   - research/RUNNER_FLEET_RESILIENCE_ARCHITECTURE_FREEZE_2026-08-20.md
   - research/RUNNER_FLEET_RESILIENCE_M0_ADVERSARIAL_AMENDMENT_2026-08-20.md
@@ -209,7 +210,14 @@ next_action: >
   uses the GitHub event payload and root-owned wrapper pass-through. Drained
   pc-ci-1/2/3 carry post-restart Python hash 69faac248f755829a39f6821f17015382788056991f6d1ff9046b1842e86a002
   and wrapper hash d55f046e6a6a758f55e311ed73b921e007c8570cc0aba11e0cafdc31cef06dee;
-  P3B-B exact execution and P4 natural PR proofs remain unaccepted.
+  Exact-head run 33043922465 then exercised all twelve packs on pc-ci-1/2/3:
+  nine passed and only packs 5/6/9 failed. The complete set is sealed-host
+  portability, not listener-version drift: RestrictSUIDSGID blocks a real set-ID
+  fixture, a scrubbed subprocess/replay loses the dynamic 3.12.13 library path,
+  Git 2.43 cannot demonstrate a newer poisoning result, and detached execution
+  needs explicit PR branch metadata. The same #6505 carrier owns all four narrow
+  repairs; no service hardening, label, WSL sizing, render route or runner identity
+  changes. Repaired P3B-B exact execution and P4 natural PR proofs remain unaccepted.
   Macro private
   visibility mutation remains HOLD. Live accepted PC identities are pc-ci-1/2/3
   plus an independent pc-render lane; the M1 has no generic CI listener and remains
