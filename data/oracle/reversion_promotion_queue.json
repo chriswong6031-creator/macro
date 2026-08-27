@@ -1,6 +1,6 @@
 {
   "schema": "reversion_promotion_queue.v1",
-  "generated_at": "2026-08-25T05:37:50+00:00",
+  "generated_at": "2026-08-26T06:09:30+00:00",
   "n_compounds_scanned": 11,
   "n_candidates": 0,
   "n_lapses": 0,

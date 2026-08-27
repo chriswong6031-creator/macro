@@ -1,0 +1,423 @@
+name: trusted-ci-executor
+
+on:
+  workflow_call:
+    inputs: {}
+    outputs:
+      matrix:
+        description: "The immutable main-planned pack matrix."
+        value: ${{ jobs.plan.outputs.matrix }}
+      plan_sha:
+        description: "Digest of the immutable semantic plan."
+        value: ${{ jobs.plan.outputs.plan_sha }}
+      tested_sha:
+        description: "Exact tested PR merge commit."
+        value: ${{ jobs.plan.outputs.tested_sha }}
+      base_sha:
+        description: "Exact PR base commit."
+        value: ${{ jobs.plan.outputs.base_sha }}
+      head_sha:
+        description: "Exact PR subject head commit."
+        value: ${{ jobs.plan.outputs.head_sha }}
+      control_sha:
+        description: "Exact main-owned executor control commit."
+        value: ${{ jobs.plan.outputs.control_sha }}
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "Same-repository open PR for the bounded one-pack diagnostic."
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: trusted-ci-executor-${{ github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  trust-gate:
+    name: trusted-executor-main-admission
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      control_sha: ${{ steps.admit.outputs.control_sha }}
+      pr_number: ${{ steps.admit.outputs.pr_number }}
+      mode: ${{ steps.admit.outputs.mode }}
+      semantic_workflow: ${{ steps.admit.outputs.semantic_workflow }}
+    steps:
+      - id: admit
+        name: admit direct dispatch or exact main-called same-repository PR
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          TRUSTED_REF: ${{ github.ref }}
+          CALLER_WORKFLOW_REF: ${{ github.workflow_ref }}
+          CALLED_WORKFLOW_REF: ${{ job.workflow_ref }}
+          CALLED_WORKFLOW_SHA: ${{ job.workflow_sha }}
+          REPOSITORY: ${{ github.repository }}
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          BASE_REF: ${{ github.base_ref }}
+          EVENT_PR_NUMBER: ${{ github.event.pull_request.number }}
+          DISPATCH_PR_NUMBER: ${{ inputs.pr_number }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$REPOSITORY" = mastermindx-market-intelligence/macro || {
+            echo "::error title=trusted-executor-repository::executor is repository-bound"
+            exit 1
+          }
+          trusted_workflow_ref="$REPOSITORY/.github/workflows/trusted-ci-executor.yml@refs/heads/main"
+          test "$CALLED_WORKFLOW_REF" = "$trusted_workflow_ref" || {
+            echo "::error title=trusted-executor-definition::called workflow must be the exact main-owned executor"
+            exit 1
+          }
+          case "$CALLED_WORKFLOW_SHA" in
+            [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]) ;;
+            *)
+              echo "::error title=trusted-executor-control::called workflow SHA must be an exact lowercase commit"
+              exit 1
+              ;;
+          esac
+
+          case "$EVENT_NAME" in
+            workflow_dispatch)
+              test "$TRUSTED_REF" = refs/heads/main || {
+                echo "::error title=trusted-executor-ref::dispatch must use the main workflow definition"
+                exit 1
+              }
+              test "$CALLER_WORKFLOW_REF" = "$trusted_workflow_ref" || {
+                echo "::error title=trusted-executor-caller::dispatch must invoke the main-owned executor directly"
+                exit 1
+              }
+              pr_number="$DISPATCH_PR_NUMBER"
+              mode=dispatch
+              semantic_workflow=trusted-ci-executor
+              ;;
+            pull_request)
+              test -z "$DISPATCH_PR_NUMBER" || {
+                echo "::error title=trusted-executor-input::a reusable call may not supply candidate identity"
+                exit 1
+              }
+              case "$EVENT_PR_NUMBER" in
+                ''|*[!0-9]*|0)
+                  echo "::error title=trusted-executor-event::pull_request event must carry a valid PR number"
+                  exit 1
+                  ;;
+              esac
+              test "$TRUSTED_REF" = "refs/pull/$EVENT_PR_NUMBER/merge" || {
+                echo "::error title=trusted-executor-ref::caller must run on the event PR merge ref"
+                exit 1
+              }
+              test "$HEAD_REPOSITORY" = "$REPOSITORY" || {
+                echo "::error title=trusted-executor-fork::fork-authored code may not reach persistent runners"
+                exit 1
+              }
+              test "$BASE_REF" = main || {
+                echo "::error title=trusted-executor-base::ordinary production calls must target main"
+                exit 1
+              }
+              expected_caller_ref="$REPOSITORY/.github/workflows/ci.yml@refs/pull/$EVENT_PR_NUMBER/merge"
+              test "$CALLER_WORKFLOW_REF" = "$expected_caller_ref" || {
+                echo "::error title=trusted-executor-caller::only the ordinary ci.yml PR workflow may call the executor"
+                exit 1
+              }
+              pr_number="$EVENT_PR_NUMBER"
+              mode=production
+              semantic_workflow=ci
+              ;;
+            *)
+              echo "::error title=trusted-executor-event::unsupported caller event"
+              exit 1
+              ;;
+          esac
+
+          case "$pr_number" in
+            ''|*[!0-9]*|0)
+              echo "::error title=trusted-executor-pr::PR identity must be a positive integer"
+              exit 1
+              ;;
+          esac
+          printf 'control_sha=%s\n' "$CALLED_WORKFLOW_SHA" >> "$GITHUB_OUTPUT"
+          printf 'pr_number=%s\n' "$pr_number" >> "$GITHUB_OUTPUT"
+          printf 'mode=%s\n' "$mode" >> "$GITHUB_OUTPUT"
+          printf 'semantic_workflow=%s\n' "$semantic_workflow" >> "$GITHUB_OUTPUT"
+
+  plan:
+    name: trusted-executor-hosted-plan
+    needs: trust-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      matrix: ${{ steps.select.outputs.matrix }}
+      plan_sha: ${{ steps.plan.outputs.plan_sha }}
+      tested_sha: ${{ steps.ref.outputs.tested_sha }}
+      base_sha: ${{ steps.ref.outputs.base_sha }}
+      head_sha: ${{ steps.ref.outputs.head_sha }}
+      control_sha: ${{ steps.control.outputs.sha }}
+    steps:
+      - name: checkout main-owned executor control code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.trust-gate.outputs.control_sha }}
+          persist-credentials: false
+          filter: blob:none
+          fetch-depth: 2
+      - id: control
+        name: freeze the main-owned control SHA
+        shell: bash
+        run: |
+          test "$(git rev-parse HEAD)" = "${{ needs.trust-gate.outputs.control_sha }}"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: freeze the complete main-owned control bundle
+        run: |
+          mkdir -p "$RUNNER_TEMP/trusted-ci-control/scripts"
+          cp scripts/__init__.py \
+             scripts/run_ci_pack.py \
+             scripts/ci_semantic_proof.py \
+             scripts/ci_authority_paths.py \
+             scripts/ci_scope_dependencies.py \
+             scripts/audit_unrun_tests.py \
+             scripts/workflow_run_source.py \
+             scripts/resolve_ci_canary_ref.py \
+             scripts/select_ci_canary_packs.py \
+             scripts/monitor_ci_host_resources.py \
+             scripts/capture_ci_canary_receipt.py \
+             "$RUNNER_TEMP/trusted-ci-control/scripts/"
+      - name: publish the frozen main-owned control bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: trusted-ci-control
+          path: ${{ runner.temp }}/trusted-ci-control
+          if-no-files-found: error
+          retention-days: 14
+      - id: ref
+        name: resolve the immutable same-repository PR candidate
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python3 "$RUNNER_TEMP/trusted-ci-control/scripts/resolve_ci_canary_ref.py" \
+            --repository "${{ github.repository }}" \
+            --github-sha "${{ needs.trust-gate.outputs.control_sha }}" \
+            --pr-number "${{ needs.trust-gate.outputs.pr_number }}" \
+            --github-output "$GITHUB_OUTPUT"
+      - name: checkout the immutable PR candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.ref.outputs.tested_sha }}
+          persist-credentials: false
+          filter: blob:none
+          fetch-depth: 0
+      - name: prove the planner is on the frozen candidate
+        run: test "$(git rev-parse HEAD)" = "${{ steps.ref.outputs.tested_sha }}"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12.13"
+      - name: install isolated planner
+        run: |
+          python -m venv "$RUNNER_TEMP/trusted-ci-plan-runner"
+          "$RUNNER_TEMP/trusted-ci-plan-runner/bin/pip" install pyyaml
+      - id: plan
+        name: freeze one authoritative logical plan
+        env:
+          MASTERMIND_TRUSTED_CI_REPO_ROOT: ${{ github.workspace }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/trusted-ci-plan-runner/bin/python" "$RUNNER_TEMP/trusted-ci-control/scripts/run_ci_pack.py" \
+            --workflow .github/ci/legacy-jobs.yml \
+            --gate code \
+            --pack-count 12 \
+            --scope-mode active \
+            --matrix-mode active \
+            --plan-only \
+            --github-output "$GITHUB_OUTPUT" \
+            --emit-plan-json "$RUNNER_TEMP/trusted-ci-plan/plan.json" \
+            --emit-changed-files "$RUNNER_TEMP/trusted-ci-plan/changed-files.json" \
+            --workflow-run-id "$GITHUB_RUN_ID" \
+            --workflow-name "${{ needs.trust-gate.outputs.semantic_workflow }}" \
+            --event "${{ github.event_name }}" \
+            --role pr_head \
+            --tested-tree-sha "${{ steps.ref.outputs.tested_sha }}" \
+            --subject-head-sha "${{ steps.ref.outputs.head_sha }}" \
+            --base-sha "${{ steps.ref.outputs.base_sha }}" \
+            --changed-from "${{ steps.ref.outputs.base_sha }}"
+      - id: select
+        name: select one diagnostic pack or the full production matrix
+        env:
+          EXECUTION_MODE: ${{ needs.trust-gate.outputs.mode }}
+          FULL_MATRIX: ${{ steps.plan.outputs.matrix }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "$EXECUTION_MODE" = dispatch ]; then
+            python3 "$RUNNER_TEMP/trusted-ci-control/scripts/select_ci_canary_packs.py" \
+              --plan "$RUNNER_TEMP/trusted-ci-plan/plan.json" \
+              --count 1 \
+              --github-output "$GITHUB_OUTPUT"
+          else
+            test "$EXECUTION_MODE" = production
+            test -n "$FULL_MATRIX"
+            echo "matrix=$FULL_MATRIX" >> "$GITHUB_OUTPUT"
+          fi
+      - name: publish the frozen plan and changed-file handle
+        uses: actions/upload-artifact@v4
+        with:
+          name: trusted-ci-plan
+          path: ${{ runner.temp }}/trusted-ci-plan
+          if-no-files-found: error
+          retention-days: 14
+
+  trusted-pack:
+    name: trusted-executor-pack-${{ matrix.pack }}
+    needs: plan
+    runs-on:
+      group: macro-home-canary
+      labels: ci-linux
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - name: mark self-hosted job start
+        run: date +%s.%N > "$RUNNER_TEMP/job-start"
+      - name: refuse unsafe resources before shared cache use
+        run: /usr/local/libexec/mastermind-ci-resource-guard --path "$GITHUB_WORKSPACE"
+      - name: download the frozen main-owned control bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: trusted-ci-control
+          path: ${{ runner.temp }}/trusted-ci-control
+      - name: mark cache and checkout start
+        run: |
+          du -sb /var/cache/mastermind-ci/macro.git | awk '{print $1}' > "$RUNNER_TEMP/cache-before"
+          date +%s.%N > "$RUNNER_TEMP/checkout-start"
+      - name: prewarm exact base from the read-only shared cache
+        shell: bash
+        run: |
+          set -o pipefail
+          /usr/local/libexec/mastermind-ci-prewarm \
+            --cache /var/cache/mastermind-ci/macro.git \
+            --workspace "$GITHUB_WORKSPACE" \
+            --repository "${{ github.repository }}" \
+            --repository-url "https://github.com/${{ github.repository }}.git" \
+            --base-sha "${{ needs.plan.outputs.control_sha }}" \
+            | tee "$RUNNER_TEMP/prewarm.log"
+          GIT_NO_LAZY_FETCH=1 git -C "$GITHUB_WORKSPACE" \
+            cat-file -e "${{ needs.plan.outputs.base_sha }}^{commit}"
+      - name: materialize exact candidate with negotiated incremental fetch
+        env:
+          GIT_TRACE2_EVENT: ${{ runner.temp }}/git-trace2.json
+          TESTED_SHA: ${{ needs.plan.outputs.tested_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "$(git config --get-regexp '^http\..*\.extraheader$' || true)"
+          GIT_TERMINAL_PROMPT=0 GIT_ASKPASS=/bin/false \
+          git -c credential.helper= -c fetch.negotiationAlgorithm=skipping fetch \
+            --no-tags --no-write-fetch-head --recurse-submodules=no \
+            --filter=blob:none --depth=1 origin "$TESTED_SHA"
+          GIT_NO_LAZY_FETCH=0 git checkout --force --detach "$TESTED_SHA"
+          git reset --hard "$TESTED_SHA"
+          git clean -ffdx
+          GIT_NO_LAZY_FETCH=1 git cat-file -e "$TESTED_SHA^{commit}"
+          test -z "$(git config --local --get-regexp '^http\..*\.extraheader$' || true)"
+      - name: verify exact checkout and close timing
+        run: |
+          test "$(git rev-parse HEAD)" = "${{ needs.plan.outputs.tested_sha }}"
+          test "$(cat .git/objects/info/alternates)" = "/var/cache/mastermind-ci/macro.git/objects"
+          checkout_end=$(date +%s.%N)
+          awk -v start="$(cat "$RUNNER_TEMP/checkout-start")" -v end="$checkout_end" 'BEGIN {print end-start}' > "$RUNNER_TEMP/checkout-seconds"
+          date +%s.%N > "$RUNNER_TEMP/dependency-start"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12.13"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: install isolated pack runner
+        run: |
+          python -m venv "$RUNNER_TEMP/trusted-ci-pack-runner"
+          "$RUNNER_TEMP/trusted-ci-pack-runner/bin/pip" install pyyaml
+      - uses: actions/download-artifact@v4
+        with:
+          name: trusted-ci-plan
+          path: ${{ runner.temp }}/trusted-ci-plan
+      - name: execute the frozen logical pack and retain its actual result
+        env:
+          CI_CHANGED_FILES_FILE: ${{ runner.temp }}/trusted-ci-plan/changed-files.json
+          MASTERMIND_TRUSTED_CI_REPO_ROOT: ${{ github.workspace }}
+        shell: bash
+        run: |
+          set -uo pipefail
+          dependency_end=$(date +%s.%N)
+          awk -v start="$(cat "$RUNNER_TEMP/dependency-start")" -v end="$dependency_end" 'BEGIN {print end-start}' > "$RUNNER_TEMP/dependency-seconds"
+          test_start=$(date +%s.%N)
+          mkdir -p "$RUNNER_TEMP/ci-semantic-fragments"
+          python3 "$RUNNER_TEMP/trusted-ci-control/scripts/monitor_ci_host_resources.py" \
+            --output "$RUNNER_TEMP/resources.jsonl" --path "$GITHUB_WORKSPACE" &
+          monitor_pid=$!
+          set +e
+          "$RUNNER_TEMP/trusted-ci-pack-runner/bin/python" "$RUNNER_TEMP/trusted-ci-control/scripts/run_ci_pack.py" \
+            --workflow .github/ci/legacy-jobs.yml \
+            --gate code \
+            --plan-json "$RUNNER_TEMP/trusted-ci-plan/plan.json" \
+            --changed-files-file "$CI_CHANGED_FILES_FILE" \
+            --expect-plan-sha "${{ needs.plan.outputs.plan_sha }}" \
+            --expect-tested-tree-sha "${{ needs.plan.outputs.tested_sha }}" \
+            --expect-subject-head-sha "${{ needs.plan.outputs.head_sha }}" \
+            --expect-base-sha "${{ needs.plan.outputs.base_sha }}" \
+            --pack-index "${{ matrix.pack }}" \
+            --pack-count 12 \
+            --emit-semantic-fragment "$RUNNER_TEMP/ci-semantic-fragments/trusted-fragment.json" \
+            --execute 2>&1 | tee "$RUNNER_TEMP/pack.log"
+          pack_rc=${PIPESTATUS[0]}
+          set -e
+          test_end=$(date +%s.%N)
+          awk -v start="$test_start" -v end="$test_end" 'BEGIN {print end-start}' > "$RUNNER_TEMP/test-seconds"
+          kill "$monitor_pid" 2>/dev/null || true
+          wait "$monitor_pid" 2>/dev/null || true
+          echo "$pack_rc" > "$RUNNER_TEMP/pack.rc"
+      - name: write trusted self-hosted receipt
+        run: |
+          wall_end=$(date +%s.%N)
+          awk -v start="$(cat "$RUNNER_TEMP/job-start")" -v end="$wall_end" 'BEGIN {print end-start}' > "$RUNNER_TEMP/wall-seconds"
+          cat "$RUNNER_TEMP/prewarm.log" "$RUNNER_TEMP/pack.log" > "$RUNNER_TEMP/combined.log"
+          du -sb /var/cache/mastermind-ci/macro.git | awk '{print $1}' > "$RUNNER_TEMP/cache-after"
+          object_bytes=$(du -sk .git/objects | awk '{print $1 * 1024}')
+          python3 "$RUNNER_TEMP/trusted-ci-control/scripts/capture_ci_canary_receipt.py" \
+            --log "$RUNNER_TEMP/combined.log" \
+            --plan "$RUNNER_TEMP/trusted-ci-plan/plan.json" \
+            --pack "${{ matrix.pack }}" \
+            --exit-code "$(cat "$RUNNER_TEMP/pack.rc")" \
+            --tested-sha "${{ needs.plan.outputs.tested_sha }}" \
+            --base-sha "${{ needs.plan.outputs.base_sha }}" \
+            --runner-kind selfhosted \
+            --runner-name "${RUNNER_NAME:-unknown}" \
+            --trace2 "$RUNNER_TEMP/git-trace2.json" \
+            --metrics "$RUNNER_TEMP/resources.jsonl" \
+            --checkout-seconds "$RUNNER_TEMP/checkout-seconds" \
+            --dependency-seconds "$RUNNER_TEMP/dependency-seconds" \
+            --test-seconds "$RUNNER_TEMP/test-seconds" \
+            --wall-seconds "$RUNNER_TEMP/wall-seconds" \
+            --cache-before "$RUNNER_TEMP/cache-before" \
+            --cache-after "$RUNNER_TEMP/cache-after" \
+            --workspace-object-bytes "$object_bytes" \
+            --fragment "$RUNNER_TEMP/ci-semantic-fragments/trusted-fragment.json" \
+            --output "$RUNNER_TEMP/trusted-${{ matrix.pack }}.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: trusted-ci-receipt-${{ matrix.pack }}
+          path: ${{ runner.temp }}/trusted-${{ matrix.pack }}.json
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        with:
+          name: trusted-ci-fragment-${{ matrix.pack }}
+          path: ${{ runner.temp }}/ci-semantic-fragments/trusted-fragment.json
+          if-no-files-found: error
+          retention-days: 14
+      - name: surface a red pack after preserving evidence
+        run: test "$(cat "$RUNNER_TEMP/pack.rc")" -eq 0

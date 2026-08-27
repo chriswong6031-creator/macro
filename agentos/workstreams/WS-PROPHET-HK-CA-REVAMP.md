@@ -294,21 +294,33 @@ waves:
       Residuals (mechanism/bytes-proven): exact-390 production pixel pass;
       final live-paint observation.
   - id: v37-hk
-    title: "Presentation lane: HK V3.7 follower (census-first)"
-    status: in_progress
+    title: "Presentation lane: HK V3.7 follower"
+    status: done
+    pr: 6433
+    merge_sha: cbf615eaa89399ae2a1b40de9db94f583d6c37c2
     depends_on: [v37-canada]
+    completion: >
+      PROVEN_LIVE 2026-08-26 (entitled production matrix; record =
+      research/STOCK_DASHBOARD_V37_HK_ACCEPTANCE_2026-08-26.md). Market-native
+      follower under research/SOL_HK_V37_FOLLOWER_ARCHITECTURE.md: Featured
+      cohort Top Picks (owner pv-featured, never positional), NO LIVE
+      treatment (no HK per-ticker live plane), sector-only leadership joining
+      Act-Now lanes + rotation rank/cycle-state, Southbound INTEGRATE ladder
+      gated on the owner's sig-* materiality marker, Evidence & Record (moved
+      HK trd), disclosure toggles for specialist desks. One residual:
+      exact-390 production pixel pass (bytes + local-real-browser proven).
+      Regional V3.7 rollout COMPLETE — Canada + HK both PROVEN_LIVE; US
+      decoupled; China out of carrier.
 next_action: >
-  PRESENTATION LANE (released 2026-08-25 by v37-canada PROVEN_LIVE): HK V3.7
-  follower under research/SOL_HK_V37_FOLLOWER_ARCHITECTURE.md —
-  feature-disposition census against current HK producers FIRST (Featured
-  cohort owner, live-plane existence, Southbound/A-H current producers),
-  then implement/review/merge/deploy/production-prove. INTELLIGENCE LANE
-  unchanged: hk-discovery CLOSED 2026-08-23 with production receipts (wave
-  entry). Next lawful waves: hk-intel (HK-NATIVE-INTEL, depends on
-  hk-discovery), ca-intel, ca-pit — each needs its own commissioning
-  decision. Standing follow-up: ≈2026-08-26 verify the CA
-  board-ledger-era-empty warning self-cleared (ledger-era wave entry); if it
-  persists once gradable current-era rows exist, investigate — never
+  PRESENTATION LANE COMPLETE (v37-canada + v37-hk both PROVEN_LIVE with
+  dated acceptance records) — return to Sol; US wave stays decoupled and
+  unauthorized (V4 B1→B2/B3→B4 + reconciled Cell H prerequisites).
+  INTELLIGENCE LANE unchanged: hk-discovery CLOSED 2026-08-23 with
+  production receipts (wave entry). Next lawful waves: hk-intel
+  (HK-NATIVE-INTEL, depends on hk-discovery), ca-intel, ca-pit — each needs
+  its own commissioning decision. Standing follow-up: ≈2026-08-26 verify the
+  CA board-ledger-era-empty warning self-cleared (ledger-era wave entry); if
+  it persists once gradable current-era rows exist, investigate — never
   silence.
 ---
 

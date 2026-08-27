@@ -1,0 +1,90 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# FMS 36(b) congressional-notification acquisition — DISPATCH-ONLY lane.
+#
+# Defense D6-B1 (spec research/defense_intelligence/DEFENSE_D6B1_FMS_IMPLEMENTATION_SPEC_2026-08-25.md
+# §10; D6-B0 freeze DEFENSE_D6B_FMS_SOURCE_AND_STAGE_ARCHITECTURE_FREEZE_2026-08-25.md).
+# Runs the live acquisition CLI (collectors/fms_notifications_live.py) on the
+# self-hosted runner, where the R2 credentials exist: sweep the State PM-Bureau
+# listing/articles (CLI) and the Federal Register API for in-scope "Arms Sales
+# Notification" documents, replay the committed staged DSCA bytes into the
+# EXISTING canonical R2 object store with strict readback, project the
+# deterministic ``government_fms_case.v1`` read model, and commit the
+# append-only source triad plus the case graph back to the dispatched ref.
+#
+# Deliberately NO schedule (spec §10 — Sol sets cadence later). Re-dispatching
+# against unchanged official bytes is an idempotent no-op (the CLI refuses to
+# append a duplicate observation for the same URL/bytes).
+#
+# This lane publishes NOTHING beyond the canonical triad + graph: it never
+# writes a site twin. Twin publication remains exclusively owned by
+# government-revenue-live.yml (single-publisher law).
+# ─────────────────────────────────────────────────────────────────────────────
+name: fms-acquire
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch to run the acquisition from and commit the triad+graph back to"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  # Shares the government-revenue-live group so an acquisition can never race
+  # the serialized Government Revenue persist/publish cycle.
+  group: government-revenue-live
+  cancel-in-progress: false
+
+jobs:
+  acquire:
+    runs-on: [self-hosted, macstudio-light]
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 1
+
+      - name: python 3.12 (Homebrew venv — self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+      - run: pip install -r requirements.txt
+
+      - name: acquire FMS congressional notifications (State + FR fetch → DSCA staged replay → R2 write → readback proof → triad + graph)
+        env:
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: python -m collectors.fms_notifications_live acquire
+
+      - name: commit triad + graph back to the dispatched ref (fms files only)
+        run: |
+          set -euo pipefail
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "::notice title=fms-acquire::no new observation — official bytes unchanged (idempotent no-op)"
+            exit 0
+          fi
+          # Fail closed if the CLI touched anything beyond the four
+          # collector-owned FMS files — nothing else may ride this commit.
+          UNEXPECTED="$(git status --porcelain | grep -vE '^(\?\?| ?[AM]+) +"?data/government_revenue/fms_(collection_receipts\.jsonl|observations\.jsonl|projection_state\.json|case_graph\.json)"?$' || true)"
+          if [ -n "$UNEXPECTED" ]; then
+            echo "::error title=fms-acquire::unexpected working-tree changes; refusing to commit"
+            echo "$UNEXPECTED"
+            exit 1
+          fi
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add \
+            data/government_revenue/fms_collection_receipts.jsonl \
+            data/government_revenue/fms_observations.jsonl \
+            data/government_revenue/fms_projection_state.json \
+            data/government_revenue/fms_case_graph.json
+          git commit -m "fms-acquire: official 36(b) notification acquisition $(date -u +%FT%H:%MZ)"
+          git push origin "HEAD:${{ inputs.ref }}"

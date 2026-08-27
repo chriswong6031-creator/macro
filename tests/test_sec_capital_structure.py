@@ -12,7 +12,12 @@ import requests
 
 import collectors.sec_capital_structure as sec
 from collectors.sec_capital_structure import (
+    collect_latest_filings_overlay,
     DocumentInspection,
+    LatestFilingsTraversalIncomplete,
+    latest_filings_discovery_rows,
+    parse_latest_filings_atom,
+    reconcile_discovery_rows,
     SecCapitalStructureAdapter,
     SubmissionBundle,
     SubmissionDocument,
@@ -44,6 +49,14 @@ from engine.capital_structure.source_ledger_io import (
 )
 
 
+@pytest.fixture(autouse=True)
+def _keep_legacy_adapter_tests_off_the_new_network_surface(monkeypatch):
+    """Existing adapter fixtures remain daily-index-only unless a test opts in."""
+    monkeypatch.setattr(
+        SecCapitalStructureAdapter, "latest_filings_enabled", False,
+    )
+
+
 def _write_ledger(path, records):
     """Write a source-manifest ledger fixture, bypassing the validating writer.
 
@@ -61,6 +74,10 @@ EFFECT                               ACME CORP                                 1
 1-A POS                              REG A CO                                  2222222     20260804    edgar/data/2222222/0002222222-26-000004.txt
 8-K                                  BROAD EVENT CO                            3333333     20260805    edgar/data/3333333/0003333333-26-000005.txt
 """
+
+BUSINESS_DAY_INDEX = INDEX
+for _fixture_date in ("20260801", "20260802", "20260803", "20260804", "20260805"):
+    BUSINESS_DAY_INDEX = BUSINESS_DAY_INDEX.replace(_fixture_date, "20260731")
 
 SUBMISSION = b"""\
 <SEC-DOCUMENT>0001234567-26-000001.txt
@@ -94,6 +111,327 @@ Form Type                            Company Name                              C
 S-3                                  ACME CORP                                 1234567     20260801    edgar/data/1234567/0001234567-26-000001.txt
 """
 
+SINGLE_BUSINESS_DAY_INDEX = SINGLE_INDEX.replace("20260801", "20260731")
+
+LEGACY_DISCOVERY_COLUMNS = [
+    "accession", "cik", "ticker", "company_name", "form", "filing_date",
+    "file_path", "canonical_url", "_first_seen",
+]
+
+
+def _atom_page(*entries: dict, updated: str = "2026-08-25T18:30:00-04:00") -> str:
+    body = []
+    for entry in entries:
+        accession = entry["accession"]
+        cik = str(entry.get("cik", "1234567")).zfill(10)
+        form = entry.get("form", "S-3")
+        company = entry.get("company", "ACME CORP")
+        role = entry.get("role", "Filer")
+        filed = entry.get("filing_date", "2026-08-25")
+        entry_updated = entry.get("updated", updated)
+        compact = accession.replace("-", "")
+        body.append(f"""
+<entry>
+<title>{form} - {company} ({cik}) ({role})</title>
+<link rel="alternate" type="text/html" href="https://www.sec.gov/Archives/edgar/data/{int(cik)}/{compact}/{accession}-index.htm"/>
+<summary type="html">&lt;b&gt;Filed:&lt;/b&gt; {filed} &lt;b&gt;AccNo:&lt;/b&gt; {accession} &lt;b&gt;Size:&lt;/b&gt; 12 KB</summary>
+<updated>{entry_updated}</updated>
+<category scheme="https://www.sec.gov/" label="form type" term="{form}"/>
+<id>urn:tag:sec.gov,2008:accession-number={accession}</id>
+</entry>
+""")
+    return f"""<?xml version="1.0" encoding="ISO-8859-1" ?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+<title>Latest Filings</title>
+<updated>{updated}</updated>
+{''.join(body)}
+</feed>
+"""
+
+
+def test_latest_filings_atom_is_role_aware_and_accession_deduped():
+    accession = "0001234567-26-000001"
+    parsed = parse_latest_filings_atom(_atom_page(
+        {
+            "accession": accession, "cik": "7654321",
+            "company": "REPORTING OWNER", "role": "Reporting",
+        },
+        {
+            "accession": accession, "cik": "1234567",
+            "company": "ACME CORP", "role": "Filer",
+        },
+    ))
+
+    rows = latest_filings_discovery_rows(
+        parsed["entries"],
+        existing_discovery=pd.DataFrame(columns=sec._DISCOVERY_COLUMNS),
+        cik_tickers={1234567: "ACME"},
+        first_seen="2026-08-25T22:30:00Z",
+    )
+
+    assert parsed["observed_through"] == "2026-08-25T22:30:00Z"
+    assert len(rows) == 1
+    assert rows[0]["accession"] == accession
+    assert rows[0]["cik"] == "0001234567"
+    assert rows[0]["latest_filings_role"] == "Filer"
+    assert rows[0]["discovery_channel"] == "latest_filings"
+
+
+def test_latest_filings_traversal_crosses_durable_boundary_not_one_page(monkeypatch):
+    monkeypatch.setattr(sec, "LATEST_FILINGS_PAGE_SIZE", 2)
+    monkeypatch.setattr(sec, "MAX_LATEST_FILINGS_PAGES", 4)
+    pages = {
+        0: _atom_page(
+            {"accession": "0001234567-26-000003", "updated": "2026-08-25T18:30:00-04:00"},
+            {"accession": "0001234567-26-000002", "updated": "2026-08-25T18:20:00-04:00"},
+        ),
+        2: _atom_page(
+            {"accession": "0001234567-26-000001", "updated": "2026-08-25T18:10:00-04:00"},
+            {"accession": "0001234567-26-000000", "updated": "2026-08-25T17:59:00-04:00"},
+        ),
+    }
+    starts: list[int] = []
+
+    def fetch_page(start: int, count: int) -> str:
+        starts.append(start)
+        assert count == 2
+        return pages[start]
+
+    coverage = pd.DataFrame([{
+        "coverage_kind": "latest_filings",
+        "index_date": "2026-08-25",
+        "status": "complete",
+        "observed_through": "2026-08-25T22:00:00Z",
+        "policy_version": sec.FORM_POLICY["policy_version"],
+    }])
+    result = collect_latest_filings_overlay(
+        fetch_page,
+        discovery=pd.DataFrame(columns=sec._DISCOVERY_COLUMNS),
+        coverage=coverage,
+        cik_tickers={},
+        observed_at=datetime.fromisoformat("2026-08-25T22:30:00+00:00"),
+    )
+
+    assert starts == [0, 2, 0]
+    assert [row["accession"] for row in result["rows"]] == [
+        "0001234567-26-000003",
+        "0001234567-26-000002",
+        "0001234567-26-000001",
+    ]
+    assert result["pages_scanned"] == 2
+
+
+def test_latest_filings_traversal_cap_discards_unproven_partial_scan(monkeypatch):
+    monkeypatch.setattr(sec, "LATEST_FILINGS_PAGE_SIZE", 1)
+    monkeypatch.setattr(sec, "MAX_LATEST_FILINGS_PAGES", 2)
+    monkeypatch.setattr(sec, "PACE_SECONDS", 0)
+    pages = {
+        0: _atom_page({
+            "accession": "0001234567-26-000002",
+            "updated": "2026-08-25T18:20:00-04:00",
+        }),
+        1: _atom_page({
+            "accession": "0001234567-26-000001",
+            "updated": "2026-08-25T18:10:00-04:00",
+        }),
+    }
+    starts: list[int] = []
+
+    def fetch_page(start: int, count: int) -> str:
+        starts.append(start)
+        return pages[start]
+
+    coverage = pd.DataFrame([{
+        "coverage_kind": "latest_filings",
+        "index_date": "2026-08-25",
+        "status": "complete",
+        "observed_through": "2026-08-25T21:00:00Z",
+        "policy_version": sec.FORM_POLICY["policy_version"],
+    }])
+    with pytest.raises(
+        LatestFilingsTraversalIncomplete,
+        match="boundary not reached in 2 pages",
+    ):
+        collect_latest_filings_overlay(
+            fetch_page,
+            discovery=pd.DataFrame(columns=sec._DISCOVERY_COLUMNS),
+            coverage=coverage,
+            cik_tickers={},
+            observed_at=datetime.fromisoformat("2026-08-25T22:30:00+00:00"),
+        )
+
+    assert starts == [0, 1]
+
+
+def test_latest_filings_unavailable_persists_retry_without_partial_discovery(
+    tmp_path, monkeypatch,
+):
+    class OverlayUnavailableAdapter(SecCapitalStructureAdapter):
+        def _fetch_latest_filings_page(self, start, count, ua):
+            raise RuntimeError("forced Latest Filings outage")
+
+        def _fetch_index(self, value, ua):
+            raise AssertionError("no daily index is due in this fixture")
+
+        def _fetch_submission(self, url, ua):
+            raise AssertionError("partial overlay rows must never reach retrieval")
+
+    monkeypatch.setattr(sec, "_data_dir", lambda: tmp_path / "capital_structure")
+    monkeypatch.setattr(sec, "_cik_map", lambda: {})
+    monkeypatch.setattr(sec, "_ua", lambda: "test@example.com")
+    monkeypatch.setattr(sec, "PACE_SECONDS", 0)
+    monkeypatch.setattr(sec, "due_index_dates", lambda *args, **kwargs: [])
+    adapter = OverlayUnavailableAdapter(
+        source_store=object(),
+        now_fn=lambda: datetime(2026, 8, 25, 22, 30, tzinfo=timezone.utc),
+        max_filings_per_run=0,
+    )
+    adapter.latest_filings_enabled = True
+
+    heartbeat = adapter.fetch()["sec_evidence__ingest"]
+
+    root = tmp_path / "capital_structure"
+    coverage = pd.read_parquet(root / "index_coverage.parquet")
+    discovery = pd.read_parquet(root / "discovery.parquet")
+    receipt = json.loads((root / "retrieval_queue_receipt.json").read_text())
+    assert discovery.empty
+    assert len(coverage) == 1
+    assert coverage.iloc[0]["coverage_kind"] == "latest_filings"
+    assert coverage.iloc[0]["status"] == "retry"
+    assert "forced Latest Filings outage" in coverage.iloc[0]["last_error"]
+    assert int(heartbeat.iloc[0]["index_days_complete"]) == 0
+    assert (
+        receipt["discovery_clock_policy_version"]
+        == sec.DISCOVERY_CLOCK_POLICY_VERSION
+    )
+
+
+def test_latest_filings_then_daily_reconciliation_keeps_one_evidence_and_event(
+    tmp_path, monkeypatch,
+):
+    from scripts.compile_capital_structure_events import compile_manifest_records
+
+    accession = "0001234567-26-000001"
+    atom = _atom_page({
+        "accession": accession,
+        "company": "PROVISIONAL ACME NAME",
+        "filing_date": "2026-07-31",
+        "updated": "2026-07-31T16:00:00-04:00",
+    }, updated="2026-07-31T16:05:00-04:00")
+    state = {
+        "now": datetime(2026, 8, 1, 13, 0, tzinfo=timezone.utc),
+        "daily_due": False,
+    }
+
+    class OverlayThenDailyAdapter(SecCapitalStructureAdapter):
+        def _fetch_latest_filings_page(self, start, count, ua):
+            return atom if start == 0 else _atom_page(
+                updated="2026-07-31T16:05:00-04:00",
+            )
+
+        def _fetch_index(self, value, ua):
+            assert value == date(2026, 7, 31)
+            return SINGLE_BUSINESS_DAY_INDEX
+
+        def _fetch_submission(self, url, ua):
+            return SUBMISSION
+
+    monkeypatch.setattr(sec, "_data_dir", lambda: tmp_path / "capital_structure")
+    monkeypatch.setattr(sec, "_cik_map", lambda: {1234567: "ACME"})
+    monkeypatch.setattr(sec, "_ua", lambda: "test@example.com")
+    monkeypatch.setattr(sec, "PACE_SECONDS", 0)
+    monkeypatch.setattr(
+        sec,
+        "due_index_dates",
+        lambda *args, **kwargs: (
+            [date(2026, 7, 31)] if state["daily_due"] else []
+        ),
+    )
+    store = ContentAddressedSourceStore(
+        LocalStore(tmp_path / "objects"), backend="local",
+    )
+    adapter = OverlayThenDailyAdapter(
+        source_store=store,
+        now_fn=lambda: state["now"],
+        max_filings_per_run=1,
+    )
+    adapter.latest_filings_enabled = True
+
+    first = adapter.fetch()["sec_evidence__ingest"]
+    root = tmp_path / "capital_structure"
+    ledger_path = source_ledger_path(root)
+    first_ledger_bytes = ledger_path.read_bytes()
+    first_attempts = pd.read_parquet(root / "retrieval_attempts.parquet")
+    assert int(first.iloc[0]["retrieved"]) == 1
+    assert len(first_attempts) == 1
+
+    state["daily_due"] = True
+    state["now"] = datetime(2026, 8, 1, 13, 30, tzinfo=timezone.utc)
+    second = adapter.fetch()["sec_evidence__ingest"]
+
+    discovery = pd.read_parquet(root / "discovery.parquet")
+    attempts = pd.read_parquet(root / "retrieval_attempts.parquet")
+    manifests = read_source_ledger(ledger_path)
+    compiled = compile_manifest_records(
+        manifests,
+        generated_at="2026-08-01T14:00:00Z",
+    )
+    assert int(second.iloc[0]["retrieved"]) == 0
+    assert len(discovery) == 1
+    assert discovery.iloc[0]["accession"] == accession
+    assert discovery.iloc[0]["company_name"] == "ACME CORP"
+    assert discovery.iloc[0]["discovery_channel"] == "daily_index"
+    assert discovery.iloc[0]["_first_seen"] == "2026-08-01T13:00:00Z"
+    assert ledger_path.read_bytes() == first_ledger_bytes
+    assert len(attempts) == len(first_attempts) == 1
+    assert len({row["evidence_id"] for row in manifests}) == len(manifests)
+    assert len(compiled["events"]) == 1
+    assert compiled["telemetry"]["counts"]["compile_failures"] == 0
+
+
+def test_latest_filings_then_daily_index_reconciles_one_accession_in_place():
+    accession = "0001234567-26-000001"
+    overlay = latest_filings_discovery_rows(
+        parse_latest_filings_atom(_atom_page({"accession": accession}))["entries"],
+        existing_discovery=pd.DataFrame(columns=sec._DISCOVERY_COLUMNS),
+        cik_tickers={1234567: "ACME"},
+        first_seen="2026-08-25T22:30:00Z",
+    )
+    provisional = reconcile_discovery_rows(
+        pd.DataFrame(columns=sec._DISCOVERY_COLUMNS),
+        overlay_rows=overlay,
+        daily_rows=[],
+        reconciled_at="2026-08-25T22:30:00Z",
+    )
+    daily = [{
+        "accession": accession,
+        "cik": "0007654321",
+        "ticker": "CORR",
+        "company_name": "CORRECTED DAILY INDEX ISSUER",
+        "form": "S-3",
+        "filing_date": "2026-08-25",
+        "file_path": "edgar/data/7654321/000123456726000001/0001234567-26-000001.txt",
+        "canonical_url": "https://www.sec.gov/Archives/edgar/data/7654321/000123456726000001/0001234567-26-000001.txt",
+        "collection_scope": sec.DISCOVERY_SCOPE_REGISTRATION,
+        "_first_seen": "2026-08-26T10:00:00Z",
+    }]
+
+    reconciled = reconcile_discovery_rows(
+        provisional,
+        overlay_rows=[],
+        daily_rows=daily,
+        reconciled_at="2026-08-26T10:00:00Z",
+    )
+
+    assert len(reconciled) == 1
+    row = reconciled.iloc[0]
+    assert row["cik"] == "0007654321"
+    assert row["company_name"] == "CORRECTED DAILY INDEX ISSUER"
+    assert row["discovery_channel"] == "daily_index"
+    assert row["_first_seen"] == "2026-08-25T22:30:00Z"
+    assert row["latest_filings_updated_at"] == "2026-08-25T22:30:00Z"
+    assert row["reconciled_at"] == "2026-08-26T10:00:00Z"
+
 WRAPPED_OFFICIAL_HEADER_INDEX = """\
 Description:           Daily Index of EDGAR Dissemination Feed by Form Type
 Last Data Received:    Aug 1, 2026
@@ -116,13 +454,13 @@ S-3                                  ANCHORED CO                               1
 RECONCILIATION_ONLY_INDEX = """\
 Form Type                            Company Name                              CIK         Date Filed  Filename
 -------------------------------------------------------------------------------------------------------------------------------------------
-8-K                                  ANCHORED CO                               1234567     20260802    edgar/data/1234567/0001234567-26-000010.txt
+8-K                                  ANCHORED CO                               1234567     20260804    edgar/data/1234567/0001234567-26-000010.txt
 """
 
 REGISTRATION_ONLY_INDEX = """\
 Form Type                            Company Name                              CIK         Date Filed  Filename
 -------------------------------------------------------------------------------------------------------------------------------------------
-S-3                                  ANCHORED CO                               1234567     20260801    edgar/data/1234567/0001234567-26-000011.txt
+S-3                                  ANCHORED CO                               1234567     20260803    edgar/data/1234567/0001234567-26-000011.txt
 """
 
 MODERN_HEADER_SUBMISSION = b"""\
@@ -514,7 +852,7 @@ def test_full_history_flag_revalidates_bounded_ninety_day_window(
         "ticker": "ACME",
         "_first_seen": "2026-07-31T12:00:00Z",
     }
-    pd.DataFrame([row])[sec._DISCOVERY_COLUMNS].to_parquet(
+    pd.DataFrame([row]).reindex(columns=sec._DISCOVERY_COLUMNS).to_parquet(
         root / "discovery.parquet", index=False
     )
     captured = {}
@@ -537,6 +875,7 @@ def test_full_history_flag_revalidates_bounded_ninety_day_window(
 
     assert captured["lookback_days"] == sec.LOOKBACK_DAYS_FIRST == 90
     assert captured["full_history"] is True
+    assert captured["today"] == date(2026, 7, 31)
 
 
 def test_structured_note_prospectuses_cannot_starve_registration_evidence():
@@ -1258,7 +1597,7 @@ def test_manifest_record_conforms_to_strict_contract():
 
 class OneDayAdapter(SecCapitalStructureAdapter):
     def _fetch_index(self, value, ua):
-        return INDEX
+        return BUSINESS_DAY_INDEX
 
     def _fetch_submission(self, url, ua):
         return SUBMISSION
@@ -1267,8 +1606,8 @@ class OneDayAdapter(SecCapitalStructureAdapter):
 class CrossIndexScopeAdapter(SecCapitalStructureAdapter):
     def _fetch_index(self, value, ua):
         return {
-            date(2026, 8, 2): RECONCILIATION_ONLY_INDEX,
-            date(2026, 8, 1): REGISTRATION_ONLY_INDEX,
+            date(2026, 8, 4): RECONCILIATION_ONLY_INDEX,
+            date(2026, 8, 3): REGISTRATION_ONLY_INDEX,
         }[value]
 
     def _fetch_submission(self, url, ua):
@@ -1317,7 +1656,7 @@ def test_html_index_response_stays_retryable_and_never_closes_zero_target_day(
     monkeypatch.setattr(sec, "_ua", lambda: "test@example.com")
     monkeypatch.setattr(sec, "PACE_SECONDS", 0)
     monkeypatch.setattr(
-        sec, "due_index_dates", lambda *args, **kwargs: [date(2026, 8, 1)]
+        sec, "due_index_dates", lambda *args, **kwargs: [date(2026, 7, 31)]
     )
     adapter = HtmlIndexAdapter(
         now_fn=lambda: datetime(2026, 8, 1, 13, 0, tzinfo=timezone.utc),
@@ -1425,11 +1764,21 @@ def test_observed_federal_holiday_is_terminal_without_network(
 def test_adapter_materializes_discovery_coverage_verified_manifests_and_attempts(
     tmp_path, monkeypatch
 ):
+    business_day_index = INDEX
+    for filing_date in ("20260801", "20260802", "20260803", "20260804", "20260805"):
+        business_day_index = business_day_index.replace(filing_date, "20260731")
+    monkeypatch.setattr(
+        OneDayAdapter,
+        "_fetch_index",
+        lambda self, value, ua: business_day_index,
+    )
     monkeypatch.setattr(sec, "_data_dir", lambda: tmp_path / "capital_structure")
     monkeypatch.setattr(sec, "_cik_map", lambda: {1234567: "ACME"})
     monkeypatch.setattr(sec, "_ua", lambda: "test@example.com")
     monkeypatch.setattr(sec, "PACE_SECONDS", 0)
-    monkeypatch.setattr(sec, "due_index_dates", lambda *args, **kwargs: [date(2026, 8, 1)])
+    monkeypatch.setattr(
+        sec, "due_index_dates", lambda *args, **kwargs: [date(2026, 7, 31)]
+    )
     store = ContentAddressedSourceStore(LocalStore(tmp_path / "objects"), backend="local")
     adapter = OneDayAdapter(
         source_store=store,
@@ -1510,11 +1859,11 @@ def test_cross_index_registration_anchor_scopes_newer_reconciliation_row(
     monkeypatch.setattr(
         sec,
         "due_index_dates",
-        lambda *args, **kwargs: [date(2026, 8, 2), date(2026, 8, 1)],
+        lambda *args, **kwargs: [date(2026, 8, 4), date(2026, 8, 3)],
     )
     adapter = CrossIndexScopeAdapter(
         source_store=object(),
-        now_fn=lambda: datetime(2026, 8, 2, 13, 0, tzinfo=timezone.utc),
+        now_fn=lambda: datetime(2026, 8, 4, 13, 0, tzinfo=timezone.utc),
         max_filings_per_run=0,
     )
 
@@ -1532,9 +1881,7 @@ def test_cross_index_registration_anchor_scopes_newer_reconciliation_row(
 
 def test_old_discovery_ledger_is_migrated_with_null_collection_scope(tmp_path):
     """Wave 2C must not make a pre-existing append-only ledger unreadable."""
-    legacy_columns = [
-        column for column in sec._DISCOVERY_COLUMNS if column != "collection_scope"
-    ]
+    legacy_columns = LEGACY_DISCOVERY_COLUMNS
     path = tmp_path / "discovery.parquet"
     pd.DataFrame([{
         "accession": "legacy", "cik": "0001234567", "ticker": "ACME",
@@ -1558,7 +1905,7 @@ def test_existing_manifest_identity_mismatch_aborts_before_append(
     monkeypatch.setattr(sec, "_ua", lambda: "test@example.com")
     monkeypatch.setattr(sec, "PACE_SECONDS", 0)
     monkeypatch.setattr(
-        sec, "due_index_dates", lambda *args, **kwargs: [date(2026, 8, 1)]
+        sec, "due_index_dates", lambda *args, **kwargs: [date(2026, 7, 31)]
     )
     store = ContentAddressedSourceStore(
         LocalStore(tmp_path / "objects"), backend="local"
@@ -1589,7 +1936,7 @@ def test_manifest_clock_is_stamped_after_bundle_readback_completion(
     monkeypatch.setattr(sec, "_ua", lambda: "test@example.com")
     monkeypatch.setattr(sec, "PACE_SECONDS", 0)
     monkeypatch.setattr(
-        sec, "due_index_dates", lambda *args, **kwargs: [date(2026, 8, 1)]
+        sec, "due_index_dates", lambda *args, **kwargs: [date(2026, 7, 31)]
     )
     clocks = iter([
         datetime(2026, 8, 1, 13, 0, tzinfo=timezone.utc),
@@ -1629,7 +1976,9 @@ def test_storage_failure_records_retryable_attempt_and_emits_no_manifest(tmp_pat
     monkeypatch.setattr(sec, "_cik_map", lambda: {})
     monkeypatch.setattr(sec, "_ua", lambda: "test@example.com")
     monkeypatch.setattr(sec, "PACE_SECONDS", 0)
-    monkeypatch.setattr(sec, "due_index_dates", lambda *args, **kwargs: [date(2026, 8, 1)])
+    monkeypatch.setattr(
+        sec, "due_index_dates", lambda *args, **kwargs: [date(2026, 7, 31)]
+    )
     adapter = OneDayAdapter(
         source_store=FailingSourceStore(),
         now_fn=lambda: datetime(2026, 8, 1, 13, 0, tzinfo=timezone.utc),
@@ -1676,7 +2025,7 @@ def test_manifest_first_seen_clock_starts_at_successful_evidence_retention(
     monkeypatch.setattr(sec, "_ua", lambda: "test@example.com")
     monkeypatch.setattr(sec, "PACE_SECONDS", 0)
     monkeypatch.setattr(
-        sec, "due_index_dates", lambda *args, **kwargs: [date(2026, 8, 1)]
+        sec, "due_index_dates", lambda *args, **kwargs: [date(2026, 7, 31)]
     )
     clock = {"now": datetime(2026, 8, 1, 13, 0, tzinfo=timezone.utc)}
     delegate = ContentAddressedSourceStore(
@@ -1716,7 +2065,7 @@ class SuspectThenValidAdapter(SecCapitalStructureAdapter):
         self.submission_calls = 0
 
     def _fetch_index(self, value, ua):
-        return SINGLE_INDEX
+        return SINGLE_BUSINESS_DAY_INDEX
 
     def _fetch_submission(self, url, ua):
         self.submission_calls += 1
@@ -1738,7 +2087,7 @@ def test_suspect_bundle_retry_advances_closed_version_and_compiles(
     monkeypatch.setattr(sec, "_ua", lambda: "test@example.com")
     monkeypatch.setattr(sec, "PACE_SECONDS", 0)
     monkeypatch.setattr(
-        sec, "due_index_dates", lambda *args, **kwargs: [date(2026, 8, 1)]
+        sec, "due_index_dates", lambda *args, **kwargs: [date(2026, 7, 31)]
     )
     clock = {"now": datetime(2026, 8, 1, 13, 0, tzinfo=timezone.utc)}
     store = ContentAddressedSourceStore(
@@ -1936,9 +2285,7 @@ def test_legacy_discovery_ledger_migrates_to_a_json_representable_null(tmp_path)
     only ``pd.isna(...)``, so it passed while the migrated value was a NaN that no
     canonical writer could encode.  Assert JSON-representability instead.
     """
-    legacy_columns = [
-        column for column in sec._DISCOVERY_COLUMNS if column != "collection_scope"
-    ]
+    legacy_columns = LEGACY_DISCOVERY_COLUMNS
     path = tmp_path / "discovery.parquet"
     pd.DataFrame([{
         "accession": "legacy", "cik": "0001234567", "ticker": "ACME",
@@ -2141,9 +2488,7 @@ def test_legacy_null_scope_survives_the_retrieval_loop_unlaundered(
     root.mkdir(parents=True)
     # Seeded exactly as the legacy ledger is on disk — the column simply is not
     # there — so ``_read_table`` performs the real production migration to ``None``.
-    legacy_columns = [
-        column for column in sec._DISCOVERY_COLUMNS if column != "collection_scope"
-    ]
+    legacy_columns = LEGACY_DISCOVERY_COLUMNS
     pd.DataFrame([{
         "accession": "0001234567-26-000001",
         "cik": "0001234567",

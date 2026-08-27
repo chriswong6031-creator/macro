@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.mechanism_pathways.v1",
-  "as_of": "2026-08-25",
+  "as_of": "2026-08-26",
   "display_only": true,
   "not_a_signal": true,
   "authority": {
@@ -28,7 +28,7 @@
       "family": "crypto",
       "driver": "crypto_liquidity",
       "pathway_role": "primary",
-      "as_of": "2026-08-25",
+      "as_of": "2026-08-26",
       "direction_en": "crypto liquidity surging — BTC/ETH lead up",
       "direction_zh": "加密流动性涌入 — BTC/ETH领涨",
       "confidence_ceiling": "context_only",
@@ -38,7 +38,7 @@
       "nodes": [
         {
           "node_id": "driver_crypto_liquidity",
-          "as_of": "2026-08-25",
+          "as_of": "2026-08-26",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "crypto_liquidity",
@@ -47,8 +47,8 @@
             "zh": "加密流动性涌入 — BTC/ETH领涨"
           },
           "direction": 1,
-          "value": 3.11,
-          "z_or_percentile": 1.78,
+          "value": 3.14,
+          "z_or_percentile": 4.32,
           "source_tier": "display",
           "lag_class": "same_day",
           "pathway_role": "trigger",
@@ -58,17 +58,17 @@
         },
         {
           "node_id": "leg_crypto_liquidity_0",
-          "as_of": "2026-08-25",
+          "as_of": "2026-08-26",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "bitcoin",
           "observation": {
-            "en": "bitcoin (+3.7σ)",
-            "zh": "比特币 (+3.7σ)"
+            "en": "bitcoin (+3.6σ)",
+            "zh": "比特币 (+3.6σ)"
           },
           "direction": "positive",
-          "value": 3.7,
-          "z_or_percentile": 3.7,
+          "value": 3.6,
+          "z_or_percentile": 3.6,
           "source_tier": "display",
           "lag_class": "same_day",
           "pathway_role": "required_leg",
@@ -78,17 +78,17 @@
         },
         {
           "node_id": "leg_crypto_liquidity_1",
-          "as_of": "2026-08-25",
+          "as_of": "2026-08-26",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "ether",
           "observation": {
-            "en": "ether (+3.6σ)",
-            "zh": "以太坊 (+3.6σ)"
+            "en": "ether (+3.3σ)",
+            "zh": "以太坊 (+3.3σ)"
           },
           "direction": "positive",
-          "value": 3.6,
-          "z_or_percentile": 3.6,
+          "value": 3.3,
+          "z_or_percentile": 3.3,
           "source_tier": "display",
           "lag_class": "same_day",
           "pathway_role": "required_leg",
@@ -98,17 +98,17 @@
         },
         {
           "node_id": "leg_crypto_liquidity_2",
-          "as_of": "2026-08-25",
+          "as_of": "2026-08-26",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "high-beta vs low-vol",
           "observation": {
-            "en": "high-beta vs low-vol (-1.3σ)",
-            "zh": "高贝塔对低波动 (-1.3σ)"
+            "en": "high-beta vs low-vol (+0.2σ)",
+            "zh": "高贝塔对低波动 (+0.2σ)"
           },
-          "direction": "negative",
-          "value": -1.3,
-          "z_or_percentile": -1.3,
+          "direction": "positive",
+          "value": 0.2,
+          "z_or_percentile": 0.2,
           "source_tier": "display",
           "lag_class": "same_day",
           "pathway_role": "required_leg",
@@ -147,8 +147,8 @@
           "dst_node": "leg_crypto_liquidity_2",
           "mechanism_type": "evidence_leg",
           "expected_lag": "same_day",
-          "expected_sign": "negative",
-          "observed_sign": "negative",
+          "expected_sign": "positive",
+          "observed_sign": "positive",
           "status": "measured",
           "evidence_refs": [
             "market_drivers.evidence_legs[2]"
@@ -157,11 +157,11 @@
       ]
     },
     {
-      "family": "equity-leadership",
-      "driver": "ai_semis",
+      "family": "china",
+      "driver": "china_stimulus",
       "pathway_role": "alternate",
-      "as_of": "2026-08-25",
-      "direction_en": "AI/semis unwind — tech-led de-rating",
+      "as_of": "2026-08-26",
+      "direction_en": "China risk-off — A-shares/HK & copper lead down",
       "direction_zh": "",
       "confidence_ceiling": "context_only",
       "coverage_score": null,
@@ -169,17 +169,17 @@
       "stale_legs": [],
       "nodes": [
         {
-          "node_id": "driver_ai_semis",
-          "as_of": "2026-08-25",
+          "node_id": "driver_china_stimulus",
+          "as_of": "2026-08-26",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "ai_semis",
+          "entity": "china_stimulus",
           "observation": {
-            "en": "AI/semis unwind — tech-led de-rating",
+            "en": "China risk-off — A-shares/HK & copper lead down",
             "zh": ""
           },
           "direction": "",
-          "value": 1.74,
+          "value": 0.73,
           "z_or_percentile": null,
           "source_tier": "display",
           "lag_class": "same_day",
@@ -193,11 +193,11 @@
       "coverage_basis": "scare_trigger"
     },
     {
-      "family": "china",
-      "driver": "china_stimulus",
+      "family": "equity-leadership",
+      "driver": "ai_semis",
       "pathway_role": "alternate",
-      "as_of": "2026-08-25",
-      "direction_en": "China risk-off — A-shares/HK & copper lead down",
+      "as_of": "2026-08-26",
+      "direction_en": "AI/semis unwind — tech-led de-rating",
       "direction_zh": "",
       "confidence_ceiling": "context_only",
       "coverage_score": null,
@@ -205,17 +205,17 @@
       "stale_legs": [],
       "nodes": [
         {
-          "node_id": "driver_china_stimulus",
-          "as_of": "2026-08-25",
+          "node_id": "driver_ai_semis",
+          "as_of": "2026-08-26",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "china_stimulus",
+          "entity": "ai_semis",
           "observation": {
-            "en": "China risk-off — A-shares/HK & copper lead down",
+            "en": "AI/semis unwind — tech-led de-rating",
             "zh": ""
           },
           "direction": "",
-          "value": 1.01,
+          "value": 0.7,
           "z_or_percentile": null,
           "source_tier": "display",
           "lag_class": "same_day",

@@ -60,6 +60,11 @@ from engine.government_revenue.idv_dossiers import (  # noqa: E402
     idv_dossier_content_id,
     is_valid_idv_dossier_payload,
 )
+from engine.government_revenue.fms_cases import (  # noqa: E402
+    AUTHORITY as FMS_CASE_GRAPH_AUTHORITY,
+    FMS_CASE_GRAPH_CONTRACT,
+    fms_case_graph_content_id,
+)
 from engine.government_revenue.idv_bridge import (  # noqa: E402
     build_idv_bridge_payload,
     is_valid_idv_bridge_payload,
@@ -861,6 +866,71 @@ def _write_budget_program_graph_twins(root: Path, graph_raw: str) -> tuple[Path,
     return canonical, site
 
 
+def _validate_fms_case_graph_payload(payload: object) -> dict:
+    """Admit only the immutable, display-tier FMS case graph contract.
+
+    Mirrors ``_validate_budget_program_graph_payload``. The FMS case graph
+    is produced exclusively by the live acquisition CLI
+    (``collectors/fms_notifications_live.py::run_fms_acquisition``, D6-B1
+    packet 1, frozen) -- this builder never re-derives cases from raw
+    observations, it only admits and mirrors an already-built generation.
+    """
+    if not isinstance(payload, dict) or payload.get("contract") != FMS_CASE_GRAPH_CONTRACT:
+        raise ValueError("government revenue FMS case graph returned an invalid schema")
+    schema_path = _ROOT / "contracts" / "government_revenue" / "government_fms_case.v1.schema.json"
+    try:
+        from jsonschema import Draft202012Validator, FormatChecker  # noqa: PLC0415
+
+        schema = json.loads(schema_path.read_text(encoding="utf-8"))
+        Draft202012Validator(schema, format_checker=FormatChecker()).validate(payload)
+    except Exception as exc:
+        raise ValueError("government revenue FMS case graph failed schema validation") from exc
+    if fms_case_graph_content_id(payload) != payload.get("content_id"):
+        raise ValueError("government revenue FMS case graph content_id mismatch")
+    if payload.get("authority") != FMS_CASE_GRAPH_AUTHORITY:
+        raise ValueError("government revenue FMS case graph authority mismatch")
+    return payload
+
+
+def _write_fms_case_twins(root: Path, graph_raw: str) -> tuple[Path, Path]:
+    """Publish one exact FMS case graph to canonical and static locations."""
+    canonical = root / "data" / "government_revenue" / "fms_case_graph.json"
+    site = root / "site" / "government-revenue-data" / "fms-cases.json"
+    _atomic_write_text(canonical, graph_raw)
+    _atomic_write_text(site, graph_raw)
+    return canonical, site
+
+
+def _load_optional_canonical_fms_case_graph(root: Path) -> tuple[str, dict] | None:
+    """Read a precomputed optional FMS case graph without rebuilding it.
+
+    Preserve-if-absent, identical in shape to
+    :func:`_load_optional_canonical_budget_graph`: a checkout without the
+    fms triad/graph builds with the rail typed absent, never a fabricated
+    empty one (spec §3/§7).
+    """
+    canonical = root / "data" / "government_revenue" / "fms_case_graph.json"
+    site = root / "site" / "government-revenue-data" / "fms-cases.json"
+    if not canonical.exists():
+        if site.exists():
+            raise ValueError("public FMS case graph exists without canonical bytes")
+        return None
+    try:
+        raw = canonical.read_text(encoding="utf-8")
+        graph = _validate_fms_case_graph_payload(json.loads(raw))
+    except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+        raise ValueError("canonical FMS case graph is invalid") from exc
+    # The live acquisition CLI (frozen packet 1) writes this artifact via
+    # json.dumps(sort_keys=True, separators=(",", ":")) without
+    # ensure_ascii=False -- verify against that exact serialization rather
+    # than this module's own _canonical_json convention (the two coincide
+    # for the ASCII-only v1 corpus; see DEVIATIONS in the D6-B1 packet 2
+    # build report).
+    if json.dumps(graph, sort_keys=True, separators=(",", ":")) != raw:
+        raise ValueError("canonical FMS case graph bytes are non-canonical")
+    return raw, graph
+
+
 def _write_idv_dossier_twins(root: Path, dossier_raw: str) -> tuple[Path, Path]:
     """Publish one exact, independently content-addressed IDV relationship rail."""
     canonical = root / "data" / "government_revenue" / "idv_dossiers.json"
@@ -1215,6 +1285,14 @@ def build(
         preserved_graph = _load_optional_canonical_budget_graph(root, dossier)
         if preserved_graph is not None:
             _write_budget_program_graph_twins(root, preserved_graph[0])
+    # D6-B1 FMS congressional-notification rail: the case graph is built
+    # exclusively by the live acquisition CLI (never re-derived here); mirror
+    # its exact committed bytes to the site twin when present, and leave the
+    # rail typed-absent (never a fabricated empty graph) when a checkout
+    # carries no fms triad/graph yet.
+    preserved_fms_graph = _load_optional_canonical_fms_case_graph(root)
+    if preserved_fms_graph is not None:
+        _write_fms_case_twins(root, preserved_fms_graph[0])
     candidate_projection = _candidate_projection(
         root,
         live_materialization=live_materialization,
@@ -1313,11 +1391,20 @@ def build_site_only(root: Path) -> tuple[Path, Path, Path]:
         optional_identity_atlas = _load_optional_canonical_identity_atlas(root)
         if optional_identity_atlas is not None:
             _write_identity_atlas_twins(root, optional_identity_atlas[0])
+        # D6-B1 FMS congressional-notification rail: same preserve-if-absent
+        # mirror as the budget graph above; never re-derived from raw
+        # observations here.
+        optional_fms_graph = _load_optional_canonical_fms_case_graph(root)
+        if optional_fms_graph is not None:
+            _write_fms_case_twins(root, optional_fms_graph[0])
     elif (canonical_dir / "subaward_dossiers.json").exists():
         raise ValueError("canonical subaward dossier exists without a prime dossier")
     elif any(
         (canonical_dir / name).exists()
-        for name in ("idv_dossiers.json", "budget_program_graph.json", "identity_atlas.json")
+        for name in (
+            "idv_dossiers.json", "budget_program_graph.json", "identity_atlas.json",
+            "fms_case_graph.json",
+        )
     ):
         raise ValueError("canonical optional Government Revenue rail exists without a prime dossier")
 

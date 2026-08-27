@@ -4,8 +4,11 @@ title: DeepVue clean-room intelligence workspace
 objective: >
   Build the bounded DeepVue-inspired intelligence workspace on Mastermind's existing
   identity, typed datapoint, owner, Brain and Terminal architecture. Done through the
-  current boundary means W0-B, W1-A and W1-B are merged and production-proven with an
-  immutable before/after receipt, while W1-C and W2 remain explicitly unstarted.
+  current boundary means W0-B, W1-A, W1-B and W1-C are merged and production-proven
+  with immutable receipts — W1-C proven for the accepted guest production boundary,
+  with signed-in persistence/resume BUILT_NOT_PROVEN behind the authorized-principal
+  gate — while W2 remains explicitly unstarted and requires a new Chairman/Sol
+  commission.
 status: parked
 program: macro-mastermind-ai
 p0: PRODUCT_TRUST_COHERENCE
@@ -61,6 +64,13 @@ waves:
       delivery receipt in research/DEEPVUE_W1C_VALIDATION_RECEIPT_2026-08-26.md.
       Signed-in production persistence/resume remains BUILT_NOT_PROVEN behind the
       external principal gate. W2 stays unstarted pending a new explicit commission.
+  - id: W2-A
+    title: Versioned workspace schema and lossless migration
+    status: in_progress
+    depends_on: [W1-C]
+    next_action: >
+      Contract vertical in flight under the explicit Sol commission of 2026-08-26;
+      Terminal implementation follows the frozen golden vectors.
 landmines:
   - >-
     The W1-A architecture freeze is binding: no second registry, resolver, identity

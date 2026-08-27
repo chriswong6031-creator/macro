@@ -1,13 +1,13 @@
 {
   "schema": "flow_signals.gate/v2",
-  "asof": "2026-08-25",
+  "asof": "2026-08-26",
   "scored": false,
   "status": "building_history",
   "ledger": {
-    "n_rows": 68157,
-    "n_sessions": 23,
-    "last_ts": "2026-08-24T19:57:20+00:00",
-    "events_per_day_mean": 2963.3,
+    "n_rows": 68566,
+    "n_sessions": 24,
+    "last_ts": "2026-08-25T19:56:27+00:00",
+    "events_per_day_mean": 2856.9,
     "events_per_day": {
       "2026-07-13": 4509,
       "2026-07-14": 4441,
@@ -31,24 +31,25 @@
       "2026-08-12": 515,
       "2026-08-20": 2190,
       "2026-08-21": 494,
-      "2026-08-24": 482
+      "2026-08-24": 482,
+      "2026-08-25": 409
     },
     "n_by_dte_bucket": {
-      "1_7d": 27155,
-      "8_30d": 15148,
-      "31_90d": 14836,
-      "0d": 11018
+      "1_7d": 27378,
+      "8_30d": 15257,
+      "31_90d": 14895,
+      "0d": 11036
     }
   },
   "harvest": {
-    "n_new_this_run": 482
+    "n_new_this_run": 409
   },
   "grader": {
-    "n_graded_ok": 3,
+    "n_graded_ok": 1412,
     "n_split_seam": 0,
-    "n_not_matured": 17110,
+    "n_not_matured": 16107,
     "n_errors": 46,
-    "elapsed_sec": 2.38
+    "elapsed_sec": 2.83
   },
   "scoring": {
     "enabled": false,
@@ -59,6 +60,6 @@
     "calibration": {},
     "monitor": {}
   },
-  "elapsed_sec": 6.39,
+  "elapsed_sec": 7.71,
   "note": "Flow-event ledger accruing. Scored field remains false until FS-3 pre-registration + FS-4 model training + FS-5 gauntlet pass. Ledger history older than 48h is permanently lost from the R2 archive window (FS-R1); run nightly without gaps."
 }

@@ -707,7 +707,13 @@ def test_the_public_live_exceptions_are_still_exactly_the_reviewed_files():
     """A PREFIX would have swept the payload in with them.  There is no prefix —
     each entry is an individually reviewed file."""
     live_public = sorted(p for p in _caddy_public_exclusions() if p.startswith("/live/"))
-    assert live_public == ["/live/breadth.json", "/live/quotes.json",
+    # Twin of the same inventory in tests/test_close_pass_lane.py; see the longer
+    # note there. flow_pulse.json and intraday_quotes.json were made anonymously
+    # fetchable on purpose by #6105 (2026-08-20) and neither copy of this list was
+    # updated, so both have been red on main since. Healed together — a pack is one
+    # check, so healing only one copy would deadlock the other.
+    assert live_public == ["/live/breadth.json", "/live/flow_pulse.json",
+                           "/live/intraday_quotes.json", "/live/quotes.json",
                            "/live/release_publications.json", "/live/staleness.json"]
 
 

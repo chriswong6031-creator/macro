@@ -1774,6 +1774,10 @@ def test_runner_contract_is_the_v2_linux_x86_64_string() -> None:
 
 def test_diagnostic_canary_workflow_constant_names_the_exact_workflow() -> None:
     assert PACK.DIAGNOSTIC_CANARY_WORKFLOW == "infrastructure-selfhosted-ci-canary"
+    assert PACK.TRUSTED_EXECUTOR_WORKFLOW == "trusted-ci-executor"
+    assert PACK.DIAGNOSTIC_PR_WORKFLOWS == frozenset(
+        {PACK.DIAGNOSTIC_CANARY_WORKFLOW, PACK.TRUSTED_EXECUTOR_WORKFLOW}
+    )
 
 
 def test_runner_contract_v2_participates_in_the_job_semantic_digest(
@@ -1833,6 +1837,29 @@ def test_build_plan_admits_the_diagnostic_pair_only_for_its_exact_workflow_name(
                 subject_head_sha="c" * 40,
                 base_sha=base,
             )
+
+
+def test_p3a_executor_uses_the_same_closed_diagnostic_plan_admission(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _freeze_scope_inference(monkeypatch)
+    base = "b" * 40
+    plan = PACK.build_plan(
+        [_plan_job("demo", 0)],
+        ["engine/example.py"],
+        changed_from=base,
+        scope_mode="active",
+        pack_count=1,
+        workflow=PACK.TRUSTED_EXECUTOR_WORKFLOW,
+        event="workflow_dispatch",
+        role="pr_head",
+        tested_tree_sha="a" * 40,
+        subject_head_sha="c" * 40,
+        base_sha=base,
+    )
+    assert plan.workflow == PACK.TRUSTED_EXECUTOR_WORKFLOW
+    assert plan.role == "pr_head"
+    assert plan.event == "workflow_dispatch"
 
 
 def test_build_plan_still_requires_every_pr_head_invariant_for_the_diagnostic_pair(
@@ -1900,12 +1927,11 @@ def test_build_plan_refuses_the_old_broken_main_dispatch_with_changed_from(
         )
 
 
-def test_attest_execution_profile_refuses_on_this_real_non_linux_host() -> None:
-    """Real, un-mocked function on the real (macOS) host — the frozen spec
-    requires at least one test exercising the genuine refusal path via
-    faked ``platform`` attrs, never by actually running on Linux. This one
-    needs no faking at all: this Mac is not Linux.
-    """
+def test_attest_execution_profile_refuses_on_a_non_linux_host(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The real guard refuses a deterministically simulated non-Linux host."""
+    monkeypatch.setattr(PACK.platform, "system", lambda: "Darwin")
     with pytest.raises(PACK.ExecutionProfileError, match="Linux"):
         PACK.attest_execution_profile(None)
 
@@ -3377,6 +3403,19 @@ CURATED_EXCLUSIVE = {
     # this file's pin does not drift from the manifest (no fix required, the
     # job's own paths: already cover its full closure).
     "dislocation-p0-a1-blind-harvest",
+    # 2026-08-26 (PR #6454): the D6-A + D6-B1 defense rail batteries moved
+    # onto the merge gate (they sat in gate:data unrun-government-revenue,
+    # which ci.yml never plans, so both commissioned merge-binding suites
+    # were dark). tests/test_fms_ui.py imports app.government_revenue for
+    # its route-boundary tests, whose closure's opaque edges smear whole-tree
+    # fallback claims (app/**, templates/**, site/**) — measured
+    # fallback-matching all four probes below and pushing
+    # templates/index.html to 130 > 129. Curated at the source, same
+    # treatment as stock-dossiers / cn-standout-audit / govrev-company-bridge:
+    # the declaration names the earned 563-file closure (flat engine/*.py +
+    # the read subpackages, deliberately not engine/**), the frozen fixture
+    # trees, and the sha-frozen staged goldens.
+    "defense-rail-laws",
 }
 
 

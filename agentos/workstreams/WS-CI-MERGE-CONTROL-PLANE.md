@@ -162,10 +162,62 @@ waves:
       hostile-tested closed; canary pinned to Python 3.12.13 and gate code;
       hosted and self-hosted canary consumers consume ONE frozen plan via
       --plan-json with strict semantic-fragment parity; portable Linux
-      execution profile v2 per DEC:CI-EXECUTION-PROFILE-V2. Sequence after
-      the bridge: live runner/group census, P1 one-slot, P2 three CI slots
-      plus render reservation, P3A inert trusted executor, P3B production
-      route with hosted ci-pack-N anchors, P4 three natural PR proofs.
+      execution profile v2 per DEC:CI-EXECUTION-PROFILE-V2. P0R/current-main
+      closure is green through merge baseline 32942786458. P1 run 32945782277
+      then failed before PC pickup because the canary resolver treated the PR
+      API's stale base.sha as the synthetic merge ref's authoritative first
+      parent (the observed API base lagged that exact parent by 23 commits).
+      Production ci.yml already derives tested_base_sha from merge parent 1;
+      #6351's bounded resolver correction merged through PR #6467 as
+      b6b2307d34110052eaedd1a3779353b1779c3308. P1 run 32957250432 then
+      proved exact hosted/self-hosted pack-0 semantic parity, missing-cache
+      refusal, different-tree contamination isolation, and one PC CI slot at
+      220.080s versus hosted 799.132s (3.63x). P2 run 32960314514 proved
+      three distinct sealed PC slots concurrently at 174.986-254.000s,
+      byte-stable shared cache, load-1m peak 4.053 on 16 CPUs, at least
+      42.77GB memory available, and an independently routable render slot
+      while pc-render-1 executed real production render work. Exact trusted
+      manual comparison of the uploaded pack 0/1/9 receipts returned parity
+      true for all three. The run wrapper concluded cancelled only because
+      pack-9's receipt-only hosted compare job spent its full ten-minute
+      budget materializing a redundant full repository checkout. The bounded
+      P2R repair now publishes a runtime-complete, package-shaped
+      main-defined comparator artifact before candidate checkout or any
+      candidate-authored execution, and removes that compare-only checkout;
+      executable tests lock both bundle imports and upload ordering. It does
+      not change production routing or semantic authority. Sequence after P2R:
+      P3A inert trusted executor, P3B production route with hosted ci-pack-N
+      anchors, then P4 three natural PR proofs. P2 is now accepted from the
+      combined receipts: run 32960314514 proved three concurrent PC CI slots and
+      an independently acquired pc-render-4 reservation; run 32964925696 made
+      checkoutless parity green for packs 0/1/9 on one exact tree and plan. PC
+      wall time was 164.689-216.668s versus hosted 680.467-2050.9s, all semantic
+      fragments were byte-identical, cache bytes were unchanged and the resource
+      envelope stayed safe. P3A merged through PR #6481 as
+      7dc0b0ddcd6dd7323a0bf9d45b4ebf6ebc785531. The exact main-pinned workflow
+      was added as the fifth selected workflow in the existing organization runner
+      group, and the merged root admission was deployed with identical hash
+      e4ff74a96e9949a0ce4707e3fdb58cfffc251057d5e8c69a7309fe2871e11202;
+      direct main admission passed and a hostile PR ref remained refused. First
+      dispatch 33024021850 then failed closed before PC pickup: after exact resolver
+      and candidate checkout success, hosted planning invoked the older candidate
+      scripts/run_ci_pack.py, which does not admit the trusted executor event pair,
+      so no plan artifact existed. P3A-R on the same #6351 program froze and
+      transported the complete main-owned planner/semantic/control bundle while
+      retaining the exact candidate tree and manifest. It merged through PR
+      #6487 as ac3f8a888e2ece7a15f37180c19dc247227a3098. Direct main proof run
+      33030976647 then passed on pc-ci-3 against PR #6390 with exact
+      main/control SHA ac3f8a888e2ece7a15f37180c19dc247227a3098, tested merge
+      078bdb7d212a3bcabea9df6ba06a6ef7bcf5ee07, plan
+      1ad0b428cac9e81481545358f9e30b151c3fdffe88d28ed7bc99be8d5ac7e720,
+      matching fragment/control/receipt identity, stable 66,228,371,240-byte
+      root-owned cache, 60.03% peak CPU, 38.55GB memory-available floor and
+      218.947s wall time. P3B-A is the next bounded carrier: make only the
+      already main-selected executor call-capable, derive all PR/control/plan
+      identity from the GitHub event and called-workflow context, preserve the
+      direct one-pack diagnostic, cap production mode at the P2-accepted three
+      PC slots, and keep ci.yml plus production_enabled unchanged. P3B-B alone
+      may route ordinary same-repository PR traffic after P3B-A acceptance.
 next_action: >
   W-TRANSPORT and W-PR-EVENT-CAUSALITY are closed. Do not reopen either for a
   new CI-speed, runner, branch-protection, or cancellation-system proposal.
@@ -184,6 +236,12 @@ next_action: >
   packs still run the blob:none full-tree checkout that produced the #6406
   and #6286 attempt-1 checkout-only failures; do not absorb pack-checkout
   repairs into product PRs or reopen them here outside the #6351 sequence.
+  P3A-R and its repaired direct-main dispatch are accepted; run 33024021850 is
+  a closed diagnostic receipt, not a retry candidate. Complete the bounded
+  P3B-A call-capability carrier with ci.yml still byte-unchanged. Only after
+  P3B-A merges may a separate P3B-B carrier make the exact main-owned call,
+  preserve hosted control/anchors and existing ci-gate, and prove the new route
+  on its own exact PR tree before P4 natural traffic.
 owns_paths:
   - ".github/workflows/ci.yml"
   - ".github/workflows/merge-on-green.yml"
@@ -192,6 +250,7 @@ owns_paths:
   - "scripts/run_ci_pack.py"
   - "scripts/merge_on_green.py"
   - "scripts/check_self_mod_fence.py"
+  - ".github/workflows/trusted-ci-executor.yml"
 ---
 
 The E2BIG incident model and receipts live in

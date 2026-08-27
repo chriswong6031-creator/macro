@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.causal_confluence_audit.v1",
   "artifact_id": "causal-confluence-audit",
-  "asof": "2026-08-25T05:50:44Z",
+  "asof": "2026-08-26T07:30:03Z",
   "authority": {
     "tier": "shadow",
     "display_only": true,

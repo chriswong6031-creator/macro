@@ -1,5 +1,5 @@
 {
- "asof": "2026-08-25",
+ "asof": "2026-08-27",
  "audit": "stocks",
  "config": {
   "price_max_gap_days": 4,
@@ -19,14 +19,14 @@
   "stocks_stale_calendar_days": 7,
   "email_alerts": false
  },
- "n": 243,
+ "n": 244,
  "n_failed": 0,
  "fail_pct": 0.0,
  "n_flags": 1,
  "universes": [
   {
    "name": "stocks",
-   "n": 243,
+   "n": 244,
    "n_failed": 0,
    "fail_pct": 0.0,
    "n_flags": 1,
@@ -37,15 +37,15 @@
     {
      "name": "EA",
      "kind": "stale_live",
-     "detail": "last bar 2026-08-10 (15d stale)"
+     "detail": "last bar 2026-08-10 (17d stale)"
     }
    ]
   }
  ],
- "expected_session": "2026-08-25",
+ "expected_session": "2026-08-26",
  "threshold_calendar_days": 7,
  "totals": {
-  "fresh": 242,
+  "fresh": 243,
   "stale_live": 1,
   "stale_dead": 0,
   "missing": 0,
@@ -55,7 +55,7 @@
   {
    "ticker": "EA",
    "last_bar": "2026-08-10",
-   "lag_days": 15,
+   "lag_days": 17,
    "in_union": false
   }
  ],

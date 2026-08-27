@@ -28,6 +28,12 @@ import pandas as pd
 from engine.government_revenue.amount_semantics import assert_combinable
 from engine.government_revenue.award_events import build_award_change_events
 from engine.government_revenue.budget_program import is_valid_budget_program_graph
+from engine.government_revenue.fms_cases import (
+    AUTHORITY as _FMS_CASE_GRAPH_AUTHORITY,
+    FMS_CASE_GRAPH_CONTRACT as _FMS_CASE_GRAPH_CONTRACT,
+    fms_case_graph_content_id as _fms_case_graph_content_id,
+)
+from engine.government_revenue.freshness import _STATUS_RANK
 from engine.government_revenue.entity_resolution import (
     attach_recipient_resolutions,
     build_recipient_resolution_coverage,
@@ -1623,6 +1629,79 @@ def _budget_freshness(repo: Path) -> dict[str, Any] | None:
     }
 
 
+def _is_valid_fms_case_graph(graph: Any, *, root: Path) -> bool:
+    """Admit only a schema-valid, content-addressed FMS case graph.
+
+    No shared validator is exported from ``engine.government_revenue.fms_cases``
+    yet (the D6-B1 packet-1 module owns collector/engine law and is out of
+    this packet's scope) -- this repeats the same contract/schema/content-id
+    checks ``app/government_revenue.py`` and ``scripts/build_government_revenue.py``
+    each perform independently. Fail closed on any malformed external
+    artifact, exactly like ``is_valid_budget_program_graph`` above.
+    """
+    if not isinstance(graph, dict) or graph.get("contract") != _FMS_CASE_GRAPH_CONTRACT:
+        return False
+    try:
+        from jsonschema import Draft202012Validator, FormatChecker
+
+        schema_path = root / "contracts" / "government_revenue" / "government_fms_case.v1.schema.json"
+        schema = json.loads(schema_path.read_text(encoding="utf-8"))
+        Draft202012Validator(schema, format_checker=FormatChecker()).validate(graph)
+        return (
+            _fms_case_graph_content_id(graph) == graph.get("content_id")
+            and graph.get("authority") == _FMS_CASE_GRAPH_AUTHORITY
+        )
+    except Exception:  # noqa: BLE001 - a malformed external artifact fails closed
+        return False
+
+
+# D6-B1 FMS congressional-notification rail (D6-B0 freeze
+# DEFENSE_D6B_FMS_SOURCE_AND_STAGE_ARCHITECTURE_FREEZE_2026-08-25.md §14 plane
+# 1). Mirrors ``_budget_freshness`` exactly: a path/loader check, never a
+# network call, and never a re-derivation of cases from raw observations --
+# the FMS case graph is built exclusively by the live acquisition CLI
+# (``collectors/fms_notifications_live.py``). A checkout that has never run
+# the fms-acquire lane has no artifact at all, which is ``None`` here (the
+# caller's ``build_procurement_workspace`` composes the typed absence itself,
+# same as an absent ``budget_freshness``).
+def _fms_freshness(repo: Path) -> dict[str, Any] | None:
+    path = repo / "data" / "government_revenue" / "fms_case_graph.json"
+    if not path.exists():
+        return None
+    graph = _read_json(path, None)
+    # root=repo is load-bearing: the validator resolves contracts/ relative to
+    # cwd by default, so an artifact read from `repo` must be validated against
+    # `repo`'s own contracts or a path mismatch masquerades as a typed failure.
+    if not _is_valid_fms_case_graph(graph, root=repo):
+        return {
+            "status": "unavailable",
+            "failure_state": "projection_missing",
+            "observed_at": None,
+            "records_visible": 0,
+            "reason_code": "invalid_fms_case_graph_artifact",
+        }
+    coverage = graph.get("coverage") if isinstance(graph.get("coverage"), dict) else {}
+    sources = coverage.get("sources") if isinstance(coverage.get("sources"), dict) else {}
+    # Worst-of FR and State source status (spec §11b.7), mapped into the
+    # freshness vocabulary via the same `_STATUS_RANK` ordering
+    # `engine.government_revenue.freshness.effective_freshness` uses for its
+    # own overall determination -- FR alone used to stand in for the whole
+    # rail's health, silently hiding a State-side `partial`/`unavailable`
+    # that FR/DSCA truth would otherwise mask. No age/staleness logic here;
+    # that stays out of v1 pending Sol's cadence (spec §11b.7).
+    fr_status = str((sources.get("federal_register") or {}).get("status") or "ok")
+    state_status = str((sources.get("state_pm_bureau") or {}).get("status") or "ok")
+    worst_status = max((fr_status, state_status), key=lambda status: _STATUS_RANK.get(status, 3))
+    cases = graph.get("cases")
+    return {
+        "status": worst_status,
+        "failure_state": None,
+        "observed_at": graph.get("known_at") or graph.get("generated_at"),
+        "records_visible": len(cases) if isinstance(cases, list) else 0,
+        "reason_code": None,
+    }
+
+
 def _freshness_contract(
     *,
     monthly: pd.DataFrame,
@@ -2194,6 +2273,7 @@ def build_payload(root: Path | None = None, as_of: str | None = None) -> dict:
         award_event_freshness=award_event_freshness,
         vertical_links_by_ticker=vertical_links_by_ticker,
         budget_freshness=_budget_freshness(repo),
+        fms_freshness=_fms_freshness(repo),
     )
 
     return {

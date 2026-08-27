@@ -132,6 +132,10 @@ RUNNER_CONTRACT = "ci-pack/linux-x86_64/python-3.12.13/node-20/v2"
 # scripts/ci_semantic_proof.py's own narrower pair set and its own
 # `workflow == "ci"` assertion, which this constant does not touch.
 DIAGNOSTIC_CANARY_WORKFLOW = "infrastructure-selfhosted-ci-canary"
+TRUSTED_EXECUTOR_WORKFLOW = "trusted-ci-executor"
+DIAGNOSTIC_PR_WORKFLOWS = frozenset(
+    {DIAGNOSTIC_CANARY_WORKFLOW, TRUSTED_EXECUTOR_WORKFLOW}
+)
 
 # Failure output is streamed live.  These caps cover only the small structured
 # atom collector retained alongside the stream; raw logs never enter evidence.
@@ -1831,15 +1835,14 @@ def build_plan(
         "pr_head" if event == "pull_request" else "main"
     )
     # `workflow` is resolved HERE, before the role/event validation below, so
-    # the one narrow diagnostic-canary admission (workflow ==
-    # DIAGNOSTIC_CANARY_WORKFLOW) can be evaluated in the same gate instead of
+    # the narrow main-owned diagnostic admission can be evaluated in the same gate instead of
     # a second, later, easy-to-miss check. Moving this resolution earlier does
     # not change what any OTHER caller gets: it was unconditional before too.
     workflow = workflow or os.environ.get("GITHUB_WORKFLOW") or "ci"
     if (role, event) not in SUPPORTED_PLAN_ROLE_EVENTS and not (
         role == "pr_head"
         and event == "workflow_dispatch"
-        and workflow == DIAGNOSTIC_CANARY_WORKFLOW
+        and workflow in DIAGNOSTIC_PR_WORKFLOWS
     ):
         raise ManifestError(
             f"semantic plan role/event combination {role}/{event} is unsupported"
@@ -2160,14 +2163,14 @@ def load_authoritative_plan(
         raise ManifestError("authoritative plan role must be pr_head or main")
     event = required_text("event")
     # `workflow` is read HERE, before the role/event validation below, so the
-    # same one narrow diagnostic-canary admission build_plan() grants can be
+    # same narrow main-owned diagnostic admission build_plan() grants can be
     # evaluated in this reader too, rather than only when the published
     # `workflow` field is reached later (still needed for the hash payload).
     workflow = required_text("workflow")
     if (role, event) not in SUPPORTED_PLAN_ROLE_EVENTS and not (
         role == "pr_head"
         and event == "workflow_dispatch"
-        and workflow == DIAGNOSTIC_CANARY_WORKFLOW
+        and workflow in DIAGNOSTIC_PR_WORKFLOWS
     ):
         raise ManifestError(
             f"authoritative plan role/event combination {role}/{event} is unsupported"

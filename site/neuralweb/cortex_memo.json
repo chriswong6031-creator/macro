@@ -1,32 +1,34 @@
 {
   "schema": "neuralweb.cortex_memo.v1",
-  "as_of": "2026-08-25T05:52:02+00:00",
-  "summary": "Context-only committee read: the tape is risk-on and the risk radar has receded to calm, with 21-day pullback incidence measured at 13.0% versus a 17.8% base rate. Breadth is healthy and credit/funding conditions are calm, but the confirmed US Q2 regime label is no longer supported by its own axes: raw signs indicate Q3, with growth -0.27 and inflation +0.68, currently only 1 of 7 confirmation sessions. Liquidity is contracting in an orderly drain, real yields are restrictive and near a five-year extreme, the curve has shifted to a bear steepener, dealer gamma has turned short, and systematic allocators are pausing. These observations constrain confidence; they do not originate a position, score, ranking, or escalation.",
+  "as_of": "2026-08-26T07:14:03+00:00",
+  "summary": "Context-only shadow memo, as of 2026-08-26: the measured tape remains risk-on and volatility is normalizing, while the risk radar is calm and receding. That surface-level resilience is not fully confirmed: no fresh C1-C7 market confirmer is present, market_confirmed remains false, liquidity plumbing shows an orderly contraction, and the confirmed US Q2 label is unsupported by its own current axes, which indicate pending Q3 after 2 of the required 7 sessions. Credit, funding, and broad market breadth remain orderly, so this is a transition/confirmation gap rather than evidence of acute stress. Factor intelligence is immature: only 11 panel dates, the history floor is unmet, Pair G is dormant, the composite is untradeable, and factor-attention authority remains A0/A1 shadow with no graded record. The kernel provides no authority to originate: all reviewed engines remain unarmed, several signed-excess families are negative, and board-family MFE results are not comparable to signed alpha. One pre-registered context hypothesis was staked for later evaluation: whether Q2-label/Q3-axis divergence plus contracting liquidity is associated with weaker 21-day signed excess for existing US-board entries. No signal, trade, score, ranking, sizing change, or escalation is originated here.",
   "what_fired": [
-    "Risk radar de-escalation is eligible: internals, growth-scare, and bubble keys have receded; no fresh recovery confirmation chips fired.",
-    "US regime transition watch: displayed Q2 versus raw Q3, pending 1/7 sessions.",
-    "Options contradiction: 10 existing US buy-lane names show five-day-rising OTM-put skew; de-escalation context only.",
-    "Factor Pair G did not fire: ledger is dormant because the panel has only 11 dates and has not met the 60-date floor.",
-    "No new metabolism hypothesis was staked: the available evidence did not justify consuming the three-per-week budget without first reading a bounded causal or context candidate."
+    "Attention: confirmed Q2 regime label versus raw Q3 axes; pending Q3 is 2/7 confirmation sessions.",
+    "Attention: risk-on tape lacks fresh C1-C7 confirmation; n_fresh=0 and market_confirmed=false.",
+    "Attention: eight US buy-lane names have rising five-day OTM-put skew; this is de-escalation context only, not a short thesis.",
+    "Attention: master-brain thesis governance has overdue open records and duplicate thesis IDs.",
+    "Hypothesis registered for 21-day matched testing of entry quality during Q2-label/Q3-axis divergence with contracting liquidity."
   ],
-  "contradictions_review": "The confluence graph contains two current contradictions: ticker-level demand-versus-supply divergences against the briefing, and rising put skew against 10 US buy-lane names. Factor contradictions are unavailable rather than absent: Pair G is dormant pending sufficient panel history. Master-brain review found no direct conflict between the current confluence contradictions and the semiconductors or growth-over-value theses; however, the thesis ledger itself has many open rows past their check_by dates, weakening accountability until they are scored or closed. The China-overweight thesis also deserves human re-review against broader context showing China/HK in Q4 with contracting liquidity, HK weak-side peg pressure, and offshore selling into hot turnover, although that broader disagreement was not one of the two typed confluence contradictions returned today.",
+  "contradictions_review": "Two current confluence contradictions were found. First, ticker-level demand/tape evidence opposes the briefing for a divergence cohort; this is descriptive and does not support a directional conclusion. Second, CIEN, FORM, GLXY, HAL, IREN, MPWR, NNE, and NVT are in the US buy lane while five-day OTM-put skew is rising; retain only as de-escalation context while both conditions persist on fresh observations. Pair G contains no records because the factor panel has not reached 60 dates, so absence means unavailable coverage, not agreement. The master-brain ledger also conflicts with current governance expectations: several theses remain open after check_by, duplicate IDs are present, and its tiny scored sample is not a validated edge. Current macro evidence puts pressure on older open theses as follows: US-equity and high-yield underweights face tight credit, healthy bond conditions, and a calm below-base risk radar; long-Treasury overweights face restrictive real yields and a bear-steepening curve despite a modest duration-value case; China-equity theses cannot be cleanly adjudicated because the China market-state packet is stale/unavailable and existing China theses point in opposite directions; semiconductor underweights remain under review amid weak longer-horizon sector performance and leadership strain, but recent short-horizon technology momentum prevents escalation. These are operator-attention conflicts only.",
   "decaying_families": [
-    "Radar claims show negative signed excess across 5-, 21-, and 63-day kernel rows and remain unarmed; current calm state should be treated as contextual de-escalation, not an edge.",
-    "US board performance deteriorates from positive Q1 signed excess to negative Q2 results at 5 and 10 days; pooled weighting remains unarmed because it loses out of sample.",
-    "Policy, White House, stock-desk, thematic-desk, and AI-desk families have negative signed-excess kernel estimates and are unarmed.",
-    "Alt-data is mildly positive at five days but negative at 21 days and fails its out-of-sample arming test.",
-    "CA/HK board kernel results use unsigned MFE proxies and their held-out allocation tests are vacuous; they cannot establish directional reliability."
+    "Risk radar signed excess is negative across reviewed 5-, 21-, and 63-day horizons; it is unarmed and should remain advisory/context-only.",
+    "US-board Q2 signed excess is negative at 5 and 10 days, while pooled out-of-sample performance loses; do not infer authority from reliability counts.",
+    "Alt-data turns negative at 21 and 63 days and fails its pooled out-of-sample test.",
+    "AI, stock, and thematic desk 63-day signed-excess estimates are negative; all are unarmed and their weighting tests are vacuous.",
+    "Policy and White House families show negative signed excess with small or uneven samples; no arming basis exists.",
+    "CA/HK board and long-history track-record rows use unsigned MFE proxies; their positive values are not signed alpha and their weighting tests are vacuous or held."
   ],
   "deserves_operator": [
-    "US regime label/axes divergence: observe whether raw Q3 persists through the seven-session confirmation requirement; do not anticipate the flip.",
-    "Open-thesis ledger governance: score or close every thesis past its check_by date before treating the brief's track record as current.",
-    "Review the 10-name options contradiction cohort only as potential de-escalation of existing buy-lane keys; persistence criterion is at least five names retaining or increasing skew.",
-    "Re-review the open China-overweight thesis against Q4 growth-scare, contracting liquidity, weak-side HK peg pressure, and the offshore-outflow/hot-turnover contradiction.",
-    "Treat factor conclusions as coverage-limited: 11 panel dates, no Pair G ledger, zero factor-attention firings, and no A2 authority grant."
+    "US regime label/axis divergence: review if Q3 completes 7 sessions; clear if Q2 becomes supported by its own axes again or the pending transition fails.",
+    "Risk-on without fresh confirmation: clear when a fresh C1-C7 confirmer turns market_confirmed true; intensify review only if the 21-day drawdown rate rises above the 17.8% base or radar exits calm.",
+    "Options contradiction cohort: clear each name when rising five-day put skew stops or the name leaves the buy lane; never reinterpret as a short signal.",
+    "Master-brain governance: score or retire every thesis past check_by and eliminate duplicate open thesis IDs.",
+    "Review current contradictions against overdue US-equity, high-yield, long-Treasury, China-equity, semiconductor, growth/value, and Bitcoin theses; this is accountability review, not position origination.",
+    "Factor coverage gap: Pair G and factor attention cannot be judged until panel history and graded firings accrue; zero records must not be read as zero contradictions."
   ],
   "probation": {
     "schema": "neuralweb.cortex_probation.v1",
-    "as_of": "2026-08-24",
+    "as_of": "2026-08-25",
     "granted": false,
     "tier": "A0/A1 shadow",
     "reason": "insufficient-n: n=8 < min_n=25",
@@ -38,8 +40,8 @@
       "n": 8,
       "hits": 0,
       "base_rate": 0.5,
-      "ungradeable": 5,
-      "total_rows": 13
+      "ungradeable": 7,
+      "total_rows": 15
     },
     "is_context_only": true
   },
@@ -52,6 +54,7 @@
     "read_kernel": 1,
     "read_master_brain_theses": 1,
     "flag_attention": 1,
+    "stake_hypothesis": 1,
     "write_memo": 1
   },
   "is_context_only": true,
@@ -103,9 +106,9 @@
       }
     ],
     "tool_call_batches": 4,
-    "individual_tool_calls": 9,
+    "individual_tool_calls": 10,
     "expected_min_tool_calls": 1,
     "context_stale": false,
-    "context_as_of": "2026-08-25T05:37:51Z"
+    "context_as_of": "2026-08-26T06:09:31Z"
   }
 }

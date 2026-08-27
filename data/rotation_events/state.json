@@ -1,62 +1,5 @@
 {
- "active": {
-  "xlk:semicap->memory": {
-   "pair_id": "xlk:semicap->memory",
-   "sector": "xlk",
-   "from_leg": "semicap",
-   "to_leg": "memory",
-   "started": "2026-08-19",
-   "lapse_count": 4,
-   "last_receipts": {
-    "blowoff": {
-     "peak_date": "2026-08-17",
-     "runup_pct": 0.3427,
-     "runup_z": 0.03,
-     "drawdown_pct": 0.1251,
-     "qualified_by": "abs_runup"
-    },
-    "turn": {
-     "low_date": "2026-07-29",
-     "off_low_pct": 0.2169,
-     "reclaimed": true
-    },
-    "ratio": {
-     "ratio_chg_10s": 0.0599,
-     "inflected": true,
-     "ratio_20s_high": false
-    },
-    "asof": "2026-08-19"
-   }
-  },
-  "xlk:semicap->legacy_tech": {
-   "pair_id": "xlk:semicap->legacy_tech",
-   "sector": "xlk",
-   "from_leg": "semicap",
-   "to_leg": "legacy_tech",
-   "started": "2026-08-19",
-   "lapse_count": 4,
-   "last_receipts": {
-    "blowoff": {
-     "peak_date": "2026-08-17",
-     "runup_pct": 0.3427,
-     "runup_z": 0.03,
-     "drawdown_pct": 0.1251,
-     "qualified_by": "abs_runup"
-    },
-    "turn": {
-     "low_date": "2026-07-29",
-     "off_low_pct": 0.0592,
-     "reclaimed": true
-    },
-    "ratio": {
-     "ratio_chg_10s": 0.0059,
-     "inflected": true,
-     "ratio_20s_high": false
-    },
-    "asof": "2026-08-19"
-   }
-  }
- },
+ "active": {},
  "closed": {
   "xlk:legacy_tech->software": "2026-07-06",
   "xlk:ai_semis->software": "2026-07-10",
@@ -74,6 +17,8 @@
   "xlk:memory->ai_semis": "2026-07-31",
   "xlk:semicap->ai_semis": "2026-08-07",
   "xlk:memory->semicap": "2026-08-07",
-  "xlk:memory->legacy_tech": "2026-08-07"
+  "xlk:memory->legacy_tech": "2026-08-07",
+  "xlk:semicap->memory": "2026-08-25",
+  "xlk:semicap->legacy_tech": "2026-08-25"
  }
 }

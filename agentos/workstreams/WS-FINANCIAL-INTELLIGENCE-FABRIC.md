@@ -94,20 +94,20 @@ decisions:
   - DEC:FIF-3A2-ACCEPTED-GOLDEN-ON-MAIN
   - DEC:FIF-3A3-REUSE-MAP
   - DEC:FIF-3A3-ACCEPTED-GOLDEN-QUERY-ON-MAIN
+  - DEC:FIF-3A4R-CROSS-FILING-LINEAGE-ACCEPTED-ON-MAIN
 next_action: >
-  HOLD-FOR-SOL remains on PR #6382. Sol ruled PASS WITH BOUNDED AMENDMENTS
-  on 2026-08-25. Freeze those rulings in the A4R protocol and census; do not
-  merge; do not start FIF-3A4; do not mint an accepted DEC. FIF-1 is DONE /
-  FROZEN. FIF-2 is DONE / FIXTURE_PROVEN SERVICE SUBSTRATE
-  (DEC:FIF-2-DONE-STATEMENTS-MOVE-TO-FIF-3). FIF-2A/B/C remain ACCEPTED /
-  FIXTURE_PROVEN / ON_MAIN. FIF-3 is IN_PROGRESS. FIF-3A1 is ACCEPTED /
-  GOLDEN FIXTURE PROVEN / ON_MAIN. FIF-3A2 is ACCEPTED / GOLDEN FIXTURE
-  PROVEN / ON_MAIN. FIF-3A3 is ACCEPTED / GOLDEN QUERY CONVERGENCE PROVEN /
-  ON_MAIN (DEC:FIF-3A3-ACCEPTED-GOLDEN-QUERY-ON-MAIN). FIF-3A4R is SPEC_ONLY
-  / SOL PASS WITH BOUNDED AMENDMENTS / HOLD-FOR-SOL, not built, not shipped,
-  and not accepted architecture authority. Do not reopen FIF-2A/2B/2C,
-  FIF-3A1, FIF-3A2, or FIF-3A3. Do not call FIF-3 done. Do not claim
-  production issuer coverage. Do not start another issuer.
+  FIF-3A4R is ACCEPTED_ARCHITECTURE / ON_MAIN / NOT_BUILT via PR #6382
+  (accepted head 07755cb557a53af1341d8b6323a412631af8d83e; squash merge
+  fe8caca04b634686fc8d8707a188ea1a8477c31c;
+  DEC:FIF-3A4R-CROSS-FILING-LINEAGE-ACCEPTED-ON-MAIN). Sol has closed the
+  A4R research gate. Do not implement FIF-3A4 from this records closeout;
+  implementation requires a separate Sol commission. FIF-1 remains DONE /
+  FROZEN. FIF-2 remains DONE / FIXTURE_PROVEN SERVICE SUBSTRATE. FIF-3
+  remains IN_PROGRESS. FIF-3A1/A2 remain ACCEPTED / GOLDEN FIXTURE PROVEN /
+  ON_MAIN. FIF-3A3 remains ACCEPTED / GOLDEN QUERY CONVERGENCE PROVEN /
+  ON_MAIN. Production attested issuer service remains NOT_BUILT. Do not call
+  FIF-3 done, do not claim production issuer coverage, and do not start another
+  issuer from the A4R closeout.
 landmines:
   - >
     Core catalog is consolidated_only. Company Facts conversion sets
@@ -135,17 +135,22 @@ landmines:
   - >
     After both AAPL golden filings are visible, comparative instants such
     as total_assets at 2025-09-27 are NOT_EVALUABLE because the 10-K and
-    10-Q are unlinked duplicate roots. Do not invent revision_of.
-    See DSC:AAPL-UNLINKED-VINTAGES-REQUIRE-TYPED-REVISION-LINEAGE.
+    10-Q are unlinked duplicate roots. Do not invent revision_of. Accepted
+    A4R architecture does not retroactively repair this state: only a future
+    cutoff-visible positive lineage receipt may make LATEST_KNOWN_AS_OF resolve.
+    See DSC:AAPL-UNLINKED-VINTAGES-REQUIRE-TYPED-REVISION-LINEAGE and
+    DEC:FIF-3A4R-CROSS-FILING-LINEAGE-ACCEPTED-ON-MAIN.
   - >
-    FIF-3A4R is SPEC_ONLY / SOL PASS WITH BOUNDED AMENDMENTS / HOLD-FOR-SOL.
-    Architecture is accepted in principle, not as an AgentOS DEC. Do not
-    remint A2 FILED as FactEventType.XBRL_CONFIRMATION, do not append a
-    third confirmation occurrence, do not widen v1 to _duplicates_agree,
-    do not discard dimensioned lineage, do not treat the research census
-    timestamp or JSON as runtime authority, and do not load the census into
-    a production/query provider. See DSC:XBRL-DUPLICATE-LAW-IS-INTRA-INSTANCE
-    and DSC:AAPL-A1-A2-CROSS-FILING-OVERLAP-CENSUS.
+    FIF-3A4R is ACCEPTED_ARCHITECTURE / ON_MAIN / NOT_BUILT. Do not remint A2
+    FILED as FactEventType.XBRL_CONFIRMATION, append a third confirmation
+    occurrence, widen v1 to _duplicates_agree, discard dimensioned lineage,
+    treat the research census timestamp or JSON as runtime authority, or load
+    the census into a production/query provider. Confirmation is source lineage,
+    not a reported revision, and its system_available_at must be no earlier than
+    all accepted rule/recording prerequisites. See
+    DEC:FIF-3A4R-CROSS-FILING-LINEAGE-ACCEPTED-ON-MAIN,
+    DSC:XBRL-DUPLICATE-LAW-IS-INTRA-INSTANCE, and
+    DSC:AAPL-A1-A2-CROSS-FILING-OVERLAP-CENSUS.
   - >
     FIF-3A3 query source set is frozen to A1 0000320193-25-000079 and A2
     0000320193-26-000020. Iterating GOLDEN_AAPL_FIXTURES silently admits
@@ -200,10 +205,12 @@ do_not_redo:
   - Do not call FIF-3 done; the golden five-issuer slice is still IN_PROGRESS.
   - FIF-3A2 is ACCEPTED / GOLDEN FIXTURE PROVEN / ON_MAIN (DEC:FIF-3A2-ACCEPTED-GOLDEN-ON-MAIN); do not reopen accepted Q3 composition, complete-period column law, related_event_ref, or SHA b98602a299996ff7ea58b842364031547df795d1458b51134eef0e37159b7918, and do not add FIF-3A2 hardening.
   - FIF-3A3 is ACCEPTED / GOLDEN QUERY CONVERGENCE PROVEN / ON_MAIN (DEC:FIF-3A3-ACCEPTED-GOLDEN-QUERY-ON-MAIN); do not reopen the A1+A2 source freeze, delivery fail-closed law, canonical sec_document_id, unlinked-vintage N/E, or ledger/query identities, and do not add FIF-3A3 hardening.
-  - Do not start FIF-3A4 implementation, activate AAPL revisions/packet, or
-    treat FIF_3A4R_CROSS_FILING_LINEAGE_PROTOCOL.md as an accepted DEC.
-    FIF-3A4R is SPEC_ONLY / HOLD-FOR-SOL after Sol's 2026-08-25 bounded
-    amendments.
+  - >
+    FIF-3A4R is ACCEPTED_ARCHITECTURE / ON_MAIN / NOT_BUILT
+    (DEC:FIF-3A4R-CROSS-FILING-LINEAGE-ACCEPTED-ON-MAIN). Do not start
+    FIF-3A4 implementation, activate AAPL revisions/packet, or alter accepted
+    A3 historical replay from this records closeout. A future implementation
+    requires a separate Sol commission.
   - Do not remint accepted A2 FILED occurrences as FactEventType.XBRL_CONFIRMATION.
   - Do not cite within-document duplicate law or _duplicates_agree as proof
     one filing revises or confirms another.
@@ -246,7 +253,7 @@ waves:
     title: Golden five issuer vertical slice
     status: in_progress
     depends_on: [FIF-2]
-    pr: [6268, 6302, 6352]
+    pr: [6268, 6302, 6352, 6382]
     next_action: >
       FIF-3A1 is ACCEPTED / GOLDEN FIXTURE PROVEN / ON_MAIN via PR #6268
       (accepted head 80d3da1e2ce6, merge 4ef15259f027). FIF-3A2 AAPL
@@ -259,15 +266,21 @@ waves:
       0000320193-25-000079 plus A2 0000320193-26-000020. Ledger SHA
       ba149bd55d929d843f353e91bbf68147791fb8b4a20c258426ea2eb7527019d8;
       AAPL response SHA 58972cb88f82483e86acc9d9fc3b1cbce046f466ff8665ae214909d90ab078b0.
-      Unlinked A1/A2 comparatives remain NOT_EVALUABLE
+      Unlinked A1/A2 comparatives remain NOT_EVALUABLE until a future
+      cutoff-visible positive lineage receipt is present
       (DSC:AAPL-UNLINKED-VINTAGES-REQUIRE-TYPED-REVISION-LINEAGE).
-      FIF-3A4R is SPEC_ONLY / SOL PASS WITH BOUNDED AMENDMENTS /
-      HOLD-FOR-SOL
-      (research/financial_intelligence_fabric/FIF_3A4R_CROSS_FILING_LINEAGE_PROTOCOL.md).
-      Do not treat that protocol as accepted DEC. Do not code FIF-3A4.
-      Do not merge PR #6382 until Sol releases the hold. FIF-3 itself is
-      not done. Do not add SNOW/CAT/BAC/GOOGL. Production attested issuer
-      service remains NOT_BUILT.
+      FIF-3A4R is ACCEPTED_ARCHITECTURE / ON_MAIN / NOT_BUILT via PR #6382
+      (accepted head 07755cb557a53af1341d8b6323a412631af8d83e; merge
+      fe8caca04b634686fc8d8707a188ea1a8477c31c;
+      DEC:FIF-3A4R-CROSS-FILING-LINEAGE-ACCEPTED-ON-MAIN). The accepted
+      census is v1.1 with 130 exact numeric candidates, 37 empty-dimension,
+      93 dimensioned, 15 query-relevant, one nil refusal, one precision-
+      consistent refusal, one changed-value refusal, zero namespace/version
+      mismatches; payload SHA b1577b04f553c56ba278d2057ecc07a0d23159a1d20a41339b39da4ed24c12a9,
+      file SHA f1481fffa18720209ba98d463c25a52b4e497bff89b2159cfa3b2d74ea63ab58.
+      Do not implement FIF-3A4 until separately commissioned by Sol. FIF-3
+      itself is not done. Do not add SNOW/CAT/BAC/GOOGL from this closeout.
+      Production attested issuer service remains NOT_BUILT.
   - id: FIF-4
     title: Filing Forensics V2 product MVP
     status: todo
@@ -428,6 +441,8 @@ response `310f6579ab0014e6af16a3341f005078eab3fdcc70ebe67ec83cf138b9e6c23a`.
 This is not production coverage. Production attested issuer service
 remains NOT_BUILT. Do not create FIF-1R4. Do not reopen accepted
 packet, query, revision, FIF-3A1, FIF-3A2, or FIF-3A3 semantics. Do
-not call FIF-3 done. FIF-3A4R is SPEC_ONLY / SOL PASS WITH BOUNDED
-AMENDMENTS / HOLD-FOR-SOL and is not accepted architecture authority.
-Do not start FIF-3A4 implementation.
+not call FIF-3 done. FIF-3A4R is ACCEPTED_ARCHITECTURE / ON_MAIN /
+NOT_BUILT via PR #6382 and
+`DEC:FIF-3A4R-CROSS-FILING-LINEAGE-ACCEPTED-ON-MAIN`. This acceptance
+freezes source law only; FIF-3A4 implementation requires a separate Sol
+commission.

@@ -1,36 +1,36 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "WINA-BULL-20260810",
-  "asof": "2026-08-24",
+  "asof": "2026-08-25",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 38.8,
-  "raw_confidence": 38.0,
-  "delta_vs_base": -21.2,
+  "management_confidence": 37.0,
+  "raw_confidence": 34.7,
+  "delta_vs_base": -23.0,
   "recommended_action": "hold",
   "human_state": "Stalling",
   "components": {
-    "validity": 41.1,
+    "validity": 34.3,
     "progress": 0.0,
-    "pace": 52.8,
+    "pace": 46.9,
     "retention": 50.0,
-    "overlay": 67.0
+    "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.518,
+    "dist_to_stop_r": 0.453,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 31.1,
-    "p1": -0.3215,
-    "p2": -0.1608,
+    "horizon_pct_used": 33.3,
+    "p1": -0.3646,
+    "p2": -0.1823,
     "p3": null,
-    "move_r": -0.482,
+    "move_r": -0.547,
     "mfe_r": 0.0,
     "mae_r": -0.622
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "",
+  "change_reason": "Weakening",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-10",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 14,
-  "tau": 0.3111
+  "days_elapsed": 15,
+  "tau": 0.3333
 }

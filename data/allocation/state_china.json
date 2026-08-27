@@ -1,20 +1,21 @@
 {
-  "cash": 0.25,
+  "cash": 0.0,
   "crash": false,
   "eligible": [
     "cn_ai_compute",
     "cn_coal",
     "cn_consumer_elec",
     "cn_gold",
-    "cn_metals",
     "cn_pharma_cxo",
     "cn_rare_earth",
+    "cn_robotics",
     "cn_semis"
   ],
   "held": [
     "cn_gold",
     "cn_ai_compute",
-    "cn_pharma_cxo"
+    "cn_pharma_cxo",
+    "cn_robotics"
   ],
   "leader": "cn_gold",
   "names": {

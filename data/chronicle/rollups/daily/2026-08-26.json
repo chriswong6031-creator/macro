@@ -1,0 +1,247 @@
+{
+  "as_of": "2026-08-26",
+  "coverage": {
+    "end": "2026-08-25",
+    "note": "daily rollup covers 10 session-date(s) from 2026-08-16 to 2026-08-25; chronicle event store begins 2013-05-21; trimmed lowest-salience events to fit the display budget",
+    "start": "2026-08-16"
+  },
+  "schema": "chronicle.rollup.daily/v1",
+  "sessions": [
+    {
+      "date": "2026-08-25",
+      "events": []
+    },
+    {
+      "date": "2026-08-24",
+      "events": [
+        {
+          "date": "2026-08-24",
+          "id": "cev-research_vault-2874cacaea1a",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-x6dm5a4kmqa-490e9f",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM International Market Intelligence | Morning Briefing",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-23",
+      "events": []
+    },
+    {
+      "date": "2026-08-22",
+      "events": [
+        {
+          "date": "2026-08-22",
+          "id": "cev-research_vault-a45893b7bba7",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-fkwg03orkqd-7a785b",
+          "tickers": [],
+          "title": "Morgan Stanley: MS Savone Global Reflections 22 Aug 2026",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-21",
+      "events": []
+    },
+    {
+      "date": "2026-08-20",
+      "events": []
+    },
+    {
+      "date": "2026-08-19",
+      "events": [
+        {
+          "date": "2026-08-19",
+          "id": "cev-research_vault-8d809004022b",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-iufhbreqa5u-c4615f",
+          "tickers": [],
+          "title": "Goldman Sachs: GS Early Morning Research Recap Ratings and Target Price Changes August 19, 2026 as of 5 30 AM ET",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-18",
+      "events": [
+        {
+          "date": "2026-08-18",
+          "id": "cev-regime_flip-473ee143192e",
+          "kind": "state_flip",
+          "source": "regime_flip",
+          "source_ref": "state_log#2026-08-18#regime_hk",
+          "tickers": [],
+          "title": "HK regime: Q1 Goldilocks → Q4 Growth-scare",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-18",
+          "id": "cev-research_vault-62df2f0b5d21",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-9vjczla6ost-b0629a",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM US Market Intelligence | Afternoon Briefing: Tech led Risk off;",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-18",
+          "id": "cev-research_vault-fee179a69bfa",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-4bsngk2htsd-550f52",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM US Market Intelligence Morning Briefing",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-17",
+      "events": [
+        {
+          "date": "2026-08-17",
+          "id": "cev-regime_flip-ad3dc732fc9d",
+          "kind": "state_flip",
+          "source": "regime_flip",
+          "source_ref": "state_log#2026-08-17#regime_canada",
+          "tickers": [],
+          "title": "CANADA regime: Q2 Reflation → Q1 Goldilocks",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-17",
+          "id": "cev-research_vault-0e79a325181d",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-bcfi5bg14vs-8d1ece",
+          "tickers": [],
+          "title": "S&T: MS Nick Savone Global Reflections 15 Aug 2026",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-16",
+      "events": [
+        {
+          "date": "2026-08-16",
+          "id": "cev-research_vault-c14d4f377b8d",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-xnytiufrt2t-4fcb8b",
+          "tickers": [],
+          "title": "Jefferies: Semi Important Stuff Price targets",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-16",
+          "id": "cev-research_vault-c7d5b2aa44e4",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-dob9nzvdzwk-0a86b5",
+          "tickers": [],
+          "title": "Other: Needham The Impact of Trump's New Drone and Component Import Tariff",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-16",
+          "id": "cev-research_vault-d257bef9eb2d",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-m770dvrmx2x-7e5aa1",
+          "tickers": [],
+          "title": "Jefferies: Fwd Curves and Spot Margins Climb Lead by MidCon",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-16",
+          "id": "cev-research_vault-d37ac67a426b",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-hsttx9ej51z-1d746a",
+          "tickers": [],
+          "title": "Jefferies: Highlights from the Lowlands",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-16",
+          "id": "cev-research_vault-db289214489f",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-gtnbedbwhah-e35583",
+          "tickers": [],
+          "title": "Jefferies: 2Q26 Big Beat; Stronger Outlook for Longer TARGET ESTIMATE CHANGE",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-16",
+          "id": "cev-research_vault-def3e4c6951e",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-u6gcjedlytp-3216a3",
+          "tickers": [],
+          "title": "Jefferies: July Credit Monitor Prev. All OK Expecting Seasonal Trends + Steady Growth",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-16",
+          "id": "cev-research_vault-e0b92348ee65",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-saomiqpusyy-393dbf",
+          "tickers": [],
+          "title": "Jefferies: Buzzworthy Beauty Insights Vol 189 Prestige Jefferies Weekly Beauty Reports",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-16",
+          "id": "cev-research_vault-e6194ea73c4e",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-e2bvnqa12xb-093354",
+          "tickers": [],
+          "title": "Morgan Stanley: MS Asia Economics Growing Evidence Confirms Recovery is Broadening Out Beyond AI",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-16",
+          "id": "cev-research_vault-e814f1bbe707",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-q5upftiar2e-dcf23b",
+          "tickers": [],
+          "title": "Goldman Sachs: US Week Ahead August 17 August 23",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-16",
+          "id": "cev-research_vault-f53aa6a4bc11",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-hs3c1hgpriq-f9d770",
+          "tickers": [],
+          "title": "Morgan Stanley: MS US Credit Strategy 2Q 26 Fundamentals Check in",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-16",
+          "id": "cev-research_vault-f5c7c0c6ad88",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-f01ghb5qlhg-34ba09",
+          "tickers": [],
+          "title": "Week Ahead: Daily US Equity Opening News 14th August 2026",
+          "weight_hint": 2
+        }
+      ]
+    }
+  ]
+}

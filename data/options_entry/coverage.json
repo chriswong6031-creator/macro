@@ -1,7 +1,7 @@
 {
   "schema": "options_entry_coverage.v1",
-  "generated_at": "2026-08-26T01:13:40.794274+00:00",
-  "as_of": "2026-08-26",
+  "generated_at": "2026-08-27T04:18:21.108296+00:00",
+  "as_of": "2026-08-27",
   "absent_stores": [],
   "feature_coverage": {
     "n_rows": 419,
@@ -215,18 +215,19 @@
         "2026-W27": 78,
         "2026-W28": 93,
         "2026-W29": 108,
-        "2026-W30": 135,
+        "2026-W30": 150,
         "2026-W31": 302,
         "2026-W32": 93,
-        "2026-W33": 123
+        "2026-W33": 123,
+        "2026-W34": 29
       },
       "n_stamped_cond": 0,
       "cond_hit_share": 0.0,
       "readiness_forecast": {
         "forecast": "unknown",
         "reason": "zero cadence or zero cond_hit_share in post-W-C window",
-        "post_wc_fires": 854,
-        "post_wc_span_days": 40
+        "post_wc_fires": 898,
+        "post_wc_span_days": 43
       }
     },
     {
@@ -241,13 +242,14 @@
         "2026-W27": 78,
         "2026-W28": 93,
         "2026-W29": 108,
-        "2026-W30": 135,
+        "2026-W30": 150,
         "2026-W31": 302,
         "2026-W32": 93,
-        "2026-W33": 123
+        "2026-W33": 123,
+        "2026-W34": 29
       },
-      "n_stamped_cond": 722,
-      "cond_hit_share": 0.7234,
+      "n_stamped_cond": 737,
+      "cond_hit_share": 0.7073,
       "readiness_forecast": {
         "forecast": "already_ready",
         "n_cond": 123
@@ -256,8 +258,8 @@
     {
       "family": "S-VOI",
       "status": "building_history",
-      "n_cond": 158,
-      "n_base": 55,
+      "n_cond": 169,
+      "n_base": 60,
       "target_n_cond": 30,
       "weekly_fires": {
         "2026-W25": 25,
@@ -265,23 +267,24 @@
         "2026-W27": 78,
         "2026-W28": 93,
         "2026-W29": 108,
-        "2026-W30": 135,
+        "2026-W30": 150,
         "2026-W31": 302,
         "2026-W32": 93,
-        "2026-W33": 123
+        "2026-W33": 123,
+        "2026-W34": 29
       },
-      "n_stamped_cond": 715,
-      "cond_hit_share": 0.7164,
+      "n_stamped_cond": 753,
+      "cond_hit_share": 0.7226,
       "readiness_forecast": {
         "forecast": "already_ready",
-        "n_cond": 158
+        "n_cond": 169
       }
     },
     {
       "family": "S-IVSPREAD-F",
       "status": "building_history",
-      "n_cond": 124,
-      "n_base": 118,
+      "n_cond": 133,
+      "n_base": 128,
       "target_n_cond": 30,
       "weekly_fires": {
         "2026-W25": 25,
@@ -289,23 +292,24 @@
         "2026-W27": 78,
         "2026-W28": 93,
         "2026-W29": 108,
-        "2026-W30": 135,
+        "2026-W30": 150,
         "2026-W31": 302,
         "2026-W32": 93,
-        "2026-W33": 123
+        "2026-W33": 123,
+        "2026-W34": 29
       },
-      "n_stamped_cond": 895,
-      "cond_hit_share": 0.8968,
+      "n_stamped_cond": 936,
+      "cond_hit_share": 0.8983,
       "readiness_forecast": {
         "forecast": "already_ready",
-        "n_cond": 124
+        "n_cond": 133
       }
     },
     {
       "family": "S-SKEW_DECEL",
       "status": "building_history",
-      "n_cond": 30,
-      "n_base": 211,
+      "n_cond": 34,
+      "n_base": 226,
       "target_n_cond": 30,
       "weekly_fires": {
         "2026-W25": 25,
@@ -313,23 +317,24 @@
         "2026-W27": 78,
         "2026-W28": 93,
         "2026-W29": 108,
-        "2026-W30": 135,
+        "2026-W30": 150,
         "2026-W31": 302,
         "2026-W32": 93,
-        "2026-W33": 123
+        "2026-W33": 123,
+        "2026-W34": 29
       },
-      "n_stamped_cond": 926,
-      "cond_hit_share": 0.9279,
+      "n_stamped_cond": 970,
+      "cond_hit_share": 0.9309,
       "readiness_forecast": {
         "forecast": "already_ready",
-        "n_cond": 30
+        "n_cond": 34
       }
     },
     {
       "family": "S-TOP_RISK",
       "status": "building_history",
-      "n_cond": 163,
-      "n_base": 78,
+      "n_cond": 174,
+      "n_base": 86,
       "target_n_cond": 30,
       "weekly_fires": {
         "2026-W25": 25,
@@ -337,23 +342,24 @@
         "2026-W27": 78,
         "2026-W28": 93,
         "2026-W29": 108,
-        "2026-W30": 135,
+        "2026-W30": 150,
         "2026-W31": 302,
         "2026-W32": 93,
-        "2026-W33": 123
+        "2026-W33": 123,
+        "2026-W34": 29
       },
-      "n_stamped_cond": 895,
-      "cond_hit_share": 0.8968,
+      "n_stamped_cond": 936,
+      "cond_hit_share": 0.8983,
       "readiness_forecast": {
         "forecast": "already_ready",
-        "n_cond": 163
+        "n_cond": 174
       }
     },
     {
       "family": "S-PIN_RISK",
       "status": "building_history",
-      "n_cond": 22,
-      "n_base": 238,
+      "n_cond": 31,
+      "n_base": 250,
       "target_n_cond": 30,
       "weekly_fires": {
         "2026-W25": 25,
@@ -361,19 +367,17 @@
         "2026-W27": 78,
         "2026-W28": 93,
         "2026-W29": 108,
-        "2026-W30": 135,
+        "2026-W30": 150,
         "2026-W31": 302,
         "2026-W32": 93,
-        "2026-W33": 123
+        "2026-W33": 123,
+        "2026-W34": 29
       },
-      "n_stamped_cond": 936,
-      "cond_hit_share": 0.9379,
+      "n_stamped_cond": 980,
+      "cond_hit_share": 0.9405,
       "readiness_forecast": {
-        "forecast": "date",
-        "forecast_date": "2026-08-26",
-        "basis": "n_cond=22/30 needed; post-W-C cadence=21.350/day \u00d7 cond_hit_share=0.986 \u2192 0 days",
-        "post_wc_fires": 854,
-        "post_wc_span_days": 40
+        "forecast": "already_ready",
+        "n_cond": 31
       }
     },
     {
@@ -388,26 +392,27 @@
         "2026-W27": 78,
         "2026-W28": 93,
         "2026-W29": 108,
-        "2026-W30": 135,
+        "2026-W30": 150,
         "2026-W31": 302,
         "2026-W32": 93,
-        "2026-W33": 123
+        "2026-W33": 123,
+        "2026-W34": 29
       },
-      "n_stamped_cond": 715,
-      "cond_hit_share": 0.7164,
+      "n_stamped_cond": 753,
+      "cond_hit_share": 0.7226,
       "readiness_forecast": {
         "forecast": "date",
-        "forecast_date": "2026-08-27",
-        "basis": "n_cond=0/30 needed; post-W-C cadence=21.350/day \u00d7 cond_hit_share=0.720 \u2192 2 days",
-        "post_wc_fires": 854,
-        "post_wc_span_days": 40
+        "forecast_date": "2026-08-28",
+        "basis": "n_cond=0/30 needed; post-W-C cadence=20.884/day \u00d7 cond_hit_share=0.727 \u2192 2 days",
+        "post_wc_fires": 898,
+        "post_wc_span_days": 43
       }
     },
     {
       "family": "S-VANNA-RELIEF",
       "status": "building_history",
-      "n_cond": 69,
-      "n_base": 118,
+      "n_cond": 77,
+      "n_base": 128,
       "target_n_cond": 30,
       "weekly_fires": {
         "2026-W25": 25,
@@ -415,23 +420,24 @@
         "2026-W27": 78,
         "2026-W28": 93,
         "2026-W29": 108,
-        "2026-W30": 135,
+        "2026-W30": 150,
         "2026-W31": 302,
         "2026-W32": 93,
-        "2026-W33": 123
+        "2026-W33": 123,
+        "2026-W34": 29
       },
       "n_stamped_cond": 0,
       "cond_hit_share": 0.0,
       "readiness_forecast": {
         "forecast": "already_ready",
-        "n_cond": 69
+        "n_cond": 77
       }
     },
     {
       "family": "S-FRONT-CHARM",
       "status": "building_history",
-      "n_cond": 102,
-      "n_base": 96,
+      "n_cond": 108,
+      "n_base": 106,
       "target_n_cond": 30,
       "weekly_fires": {
         "2026-W25": 25,
@@ -439,16 +445,17 @@
         "2026-W27": 78,
         "2026-W28": 93,
         "2026-W29": 108,
-        "2026-W30": 135,
+        "2026-W30": 150,
         "2026-W31": 302,
         "2026-W32": 93,
-        "2026-W33": 123
+        "2026-W33": 123,
+        "2026-W34": 29
       },
       "n_stamped_cond": 0,
       "cond_hit_share": 0.0,
       "readiness_forecast": {
         "forecast": "already_ready",
-        "n_cond": 102
+        "n_cond": 108
       }
     }
   ],
@@ -470,7 +477,7 @@
       "null_share": 1.0,
       "root_cause": "by-design opex_days<=5 gate \u2014 opt_pin_risk requires opex_days<=5 AND gamma='long' AND min_wall_dist<=2%. Gate only fires in the final week before monthly OPEX.",
       "pin_risk_gate_condition": "opex_days<=5 AND gamma_regime='long' AND min(|wall_dist_up_pct|, |wall_dist_down_pct|)<=2.0",
-      "current_opex_days": 17,
+      "current_opex_days": 16,
       "next_opex_date": "2026-09-18",
       "note": "pin_risk will be non-null only in the 5 trading days before each monthly OPEX. Current build date has opex_days>5 \u2014 no fires expected."
     },
@@ -498,38 +505,38 @@
         {
           "source": "options_entry/state.parquet",
           "latest_as_of": "2026-08-13",
-          "age_days_from_today": 13,
+          "age_days_from_today": 14,
           "status": "STALE"
         },
         {
           "source": "options_entry/gate.json",
-          "latest_as_of": "2026-08-25 05:19 UTC",
+          "latest_as_of": "2026-08-26 05:47 UTC",
           "age_days_from_today": 1,
           "status": "FRESH"
         },
         {
           "source": "us_board_ledger/retro_grades.parquet",
-          "latest_as_of": "2026-08-14",
-          "age_days_from_today": 12,
+          "latest_as_of": "2026-08-17",
+          "age_days_from_today": 10,
           "status": "STALE"
         }
       ]
     },
     {
       "check": "audit_options_accrual_last_run",
-      "generated_at": "2026-08-26T01:13:40.721982+00:00",
+      "generated_at": "2026-08-27T04:18:21.037552+00:00",
       "ok": false,
       "fail_reasons": [
-        "CHAINS STALE: latest chain file is 2026-08-13 (8 NYSE session(s) behind last_session=2026-08-25); threshold=1 \u2014 OI snapshot may have been missed",
-        "CHAINS SESSION FAILED: session 2026-08-25 has a health-receipt attempt but NO chain parquet was ever written for it \u2014 the accrual captured nothing for the most recently attempted session (see data/polygon_gex_health/2026-08-25.json)"
+        "CHAINS STALE: latest chain file is 2026-08-13 (9 NYSE session(s) behind last_session=2026-08-26); threshold=1 \u2014 OI snapshot may have been missed",
+        "CHAINS SESSION FAILED: session 2026-08-26 has a health-receipt attempt but NO chain parquet was ever written for it \u2014 the accrual captured nothing for the most recently attempted session (see data/polygon_gex_health/2026-08-26.json)"
       ],
       "warnings": []
     }
   ],
   "_stamp": {
     "audit": "options_entry_coverage.v1",
-    "generated_at_utc": "2026-08-26T01:13:40.794264+00:00",
-    "as_of": "2026-08-26",
+    "generated_at_utc": "2026-08-27T04:18:21.108289+00:00",
+    "as_of": "2026-08-27",
     "absent_stores": []
   }
 }
