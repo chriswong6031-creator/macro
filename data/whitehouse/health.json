@@ -1,41 +1,10 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-08-26T23:34:16.913093+00:00",
+  "as_of": "2026-08-27T09:47:46.786202+00:00",
   "posts_seen": 12,
   "seen_total": 141,
-  "evaluated": 5,
-  "activated": 4,
+  "evaluated": 0,
+  "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": [
-    {
-      "id": "wh-2026-08-26-fact-sheet-president-donald-j-trump-further-ensures-affordable-beef-for-the-amer",
-      "importance": 62,
-      "activated": true,
-      "degraded_reason": "served_by:codex"
-    },
-    {
-      "id": "wh-2026-08-26-further-ensuring-affordable-beef-for-the-american-consumer",
-      "importance": 64,
-      "activated": true,
-      "degraded_reason": null
-    },
-    {
-      "id": "wh-2026-08-26-fact-sheet-president-donald-j-trump-declares-a-national-emergency-to-secure-amer",
-      "importance": 72,
-      "activated": true,
-      "degraded_reason": null
-    },
-    {
-      "id": "wh-2026-08-26-declaring-a-national-emergency-to-secure-the-united-states-bulk-power-system",
-      "importance": 76,
-      "activated": true,
-      "degraded_reason": null
-    },
-    {
-      "id": "wh-2026-08-26-fifth-anniversary-of-the-attack-at-abbey-gate",
-      "importance": 2,
-      "activated": false,
-      "degraded_reason": null
-    }
-  ]
+  "gate_scores": []
 }

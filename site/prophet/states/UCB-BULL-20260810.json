@@ -1,36 +1,36 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "UCB-BULL-20260810",
-  "asof": "2026-08-25",
+  "asof": "2026-08-27",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
-  "management_confidence": 56.6,
-  "raw_confidence": 54.4,
-  "delta_vs_base": -3.4,
+  "management_confidence": 54.5,
+  "raw_confidence": 52.0,
+  "delta_vs_base": -5.5,
   "recommended_action": "wait",
   "human_state": "Approaching Trigger",
   "components": {
-    "validity": 65.9,
+    "validity": 68.1,
     "progress": 0.0,
-    "pace": 64.7,
+    "pace": 52.8,
     "retention": 50.0,
-    "overlay": 55.0
+    "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.734,
+    "dist_to_stop_r": 0.752,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 26.7,
-    "p1": -0.1771,
-    "p2": -0.0886,
+    "horizon_pct_used": 31.1,
+    "p1": -0.1653,
+    "p2": -0.0827,
     "p3": null,
-    "move_r": -0.266,
+    "move_r": -0.248,
     "mfe_r": 0.0,
     "mae_r": -0.266
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Weakening",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 12,
-  "tau": 0.2667
+  "days_elapsed": 14,
+  "tau": 0.3111
 }

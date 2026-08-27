@@ -88,7 +88,7 @@ do_not_redo:
   - "Do NOT treat 'nightly Prophet is fresh' as evidence the live lane is fresh — they are separate planes and the nightly stayed healthy through all 27 days."
   - "Do NOT use event-spool absence as evidence no passes ran: zero spool objects exist alongside ~1,500 in-window passes."
   - "Do NOT reconstruct the 11 Class-D sessions (08-03/04/05/06/10/12/13/17/18/19/24). Their dark verdict was CORRECT for the pack they were handed; recovering them means minting a pack production never armed."
-  - "SUPERSEDED 2026-08-26 — this entry was WRONG and is kept so the correction travels. Journal-derived rows ARE lawful: `entered` is bool(center_buyable), fixed per name-session and NOT price-derived, so production's own branch-exclusive kinds settle it (at_risk/at_risk_unconfirmed only inside `if on_board:`, crossing_unconfirmed only in the cross branch). 141 of 294 names determined, 0 contradictions; the rest are null. `via` is genuinely unavailable and stays null."
+  - "SUPERSEDED 2026-08-26 — this entry was WRONG and is kept so the correction travels. Journal-derived rows ARE lawful: `entered` is bool(center_buyable), fixed per name-session and NOT price-derived, so production's own branch-exclusive kinds settle it (at_risk/at_risk_unconfirmed only inside `if on_board:`, crossing_unconfirmed only in the cross branch). 141 of 294 name-sessions determined, 0 contradictions; 153 remain null/unknown. `via` is genuinely unavailable and stays null."
   - "Do NOT rebuild this as a PIT replay. The events already exist in the producer's journal; replaying would require the vanished pack and would MINT a cohort. Recovery reconstructs nothing."
   - "Do NOT commit the expanded pending input (~10 MB). It is stage-and-absorb and regenerates byte-for-byte from the committed 197 KB journal + scripts/prophet_live_journal_recovery.py."
   - "Do NOT re-probe R2 for historical armed packs. Versioning is off and ListObjectVersions is unimplemented; the bytes do not exist."
@@ -97,31 +97,30 @@ danger_areas:
   - "live/prophet_live.json has exactly two lawful writers (evaluator + close-pass mirror CAS). Nothing in this wave adds a third; keep it that way."
   - "Manual workflow_dispatch of prophet-live.yml BYPASSES the VPS_LIVE_PRIMARY gate. Never dispatch it while the VPS timer can still publish — that is two writers on one object."
   - "Persistent=false on macro-live-prophet.timer is load-bearing and now test-pinned; a reboot must not replay stale live moments."
-  - "The pack builder's as_of is the tip of the loaded close series (build_prophet_live_pack.py:167). It is VISIBLE now (pack_ok) but NOT repaired — it will recur."
+  - "D12 is BUILT_NOT_PROVEN on operation prophet-us-d12-pack-tip-hardening-20260827-sol-001: the US pack owner quarantines non-session, not-yet-completed, and malformed last bars before BOTH pack-tip selection and gate submission. Shared armed_pack/CN semantics are unchanged. Do not call this PROVEN_LIVE until the first natural post-merge US pack + evaluator/dead-man proof."
 next_actions: >
-  1) Merge PR #6464 on concluded-green (merge-on-green armed; the codex pilot X is
-     red-by-design), deploy to /opt/macro, and hold the §9 production proof during
-     a real NYSE session: two consecutive natural invocations, advancing pass_ts,
-     session_et = current session, pack_as_of = last completed session, R2 + served
-     objects advancing, entitled product fetch, nightly board unchanged.
-  2) Return the §25 continuation packet to Sol carrying the two operator items:
-     the unattributed 2026-08-26T07:43:28Z credential seeding, and D12 ownership.
-  3) DONE 2026-08-27: the backfill is executed (598 rows, #6484). No Wave-C replay
-     harness was built and none should be — the events existed already. If more
-     sessions are ever recovered, extend scripts/prophet_live_journal_recovery.py;
-     do not resurrect the §10.5 pack-reconstruction gate, which exists only for a
-     replay path this program did not need.
-  4) The 86 Aug-25 rows carry next_close_fill=null and mature on an ordinary
-     nightly. Confirm they fill, then the ledger is fully matured for this incident.
+  1) PRIMARY NEXT: after the D12 carrier merges and reaches the natural production
+     pack path, hold the first US pack + live-evaluator proof. Require completed_through
+     = the canonical last completed NYSE session; pack as_of must be a real completed
+     session at or before that bound; any invalid_series_tip names must be explicit
+     non-verdicts; the evaluator must consume the pack without global stale_pack
+     darkness; and the external dead-man must report pack_ok=True. Do NOT manufacture a
+     contaminated production store merely to force the negative case, and do NOT
+     manually dispatch prophet-live.yml while the VPS timer is primary.
+  2) INDEPENDENT OPERATOR AUDIT: attribute the 2026-08-26T07:43:28Z R2 credential
+     seeding and record the carrier/operator provenance without rotating or rewriting
+     working credentials merely to make the record tidy.
+  3) HELD INVESTIGATION: classify the partial 2026-07-30 tail after 17:20:56Z. Its
+     existence is not replay/backfill authority; any recovery requires the same
+     point-in-time evidence law and explicit authority that governed the seven Class-R
+     sessions.
 unverified:
   - "The 15m pass_ts / 25m quote thresholds held green across a live session but have not been observed against an early-close or DST-boundary session."
-  - "D12 remains unreproduced: the 2026-08-26 pack was clean (0 names ahead of as_of), so the mis-stamp mechanism is proven from code + journal but its upstream trigger is not identified."
+  - "The historical D12 contamination SOURCE remains unreproduced/unattributed: the 2026-08-26 pack was clean. The repair itself is discriminator-proven against Saturday, future-session, and NaT hostile inputs; no contaminated production store was manufactured for proof."
   - "153 of 294 recovered name-sessions carry entered=null. They only ever emitted forming/confirming_into_close, which occur on BOTH state-machine branches. Any analysis splitting crosses from board rows must treat that null bucket as unknown, not as cross."
-  - "The 86 Aug-25 rows have next_close_fill=null pending the next close; they mature in place on an ordinary nightly."
 unresolved:
   - "Who seeded /etc/macro-live.env at 2026-08-26T07:43:28Z. It happened ~3 minutes before this session's first VPS connection, from this operator machine, with no PR or Agent OS record. Needs operator acknowledgement."
-  - "D12 ownership: the armed pack's as_of inherits the close-series tip (build_prophet_live_pack.py:167). Visible now via pack_ok; unrepaired and will recur."
-  - "RESOLVED 2026-08-26: the Chairman exercised authority to backfill. Executed as RECOVERY (598 rows, PR #6484, squash 37014fcbddda) — see below. §24.2 never bound it because nothing was reconstructed."
+  - "D12 production acceptance: ownership and implementation are resolved on operation prophet-us-d12-pack-tip-hardening-20260827-sol-001, but capability state remains BUILT_NOT_PROVEN until the first natural post-merge pack/evaluator/dead-man proof described in next_actions."
   - "The 2026-07-30 tail after 17:20:56Z (~13:21-16:15 ET) is a partial lost session not classified R or D."
 ---
 
@@ -164,9 +163,13 @@ evidence base had been empty since inception. 598 rows across the 7 Class-R sess
 
 Executed as RECOVERY, not replay: every row was emitted by the production evaluator
 at the time and read back verbatim from its journal. Nothing was reconstructed, so
-the §24.2 no-surviving-pack blocker never applied. The journal self-checks — each
-pass declares `events=N` then prints its lines; 672 passes, 672 matches, 0 orphans.
-Count agreed three independent ways before any effect landed.
+the §24.2 no-surviving-pack blocker never applied. The **committed recovery corpus**
+has 588 pass records — exactly 84 in each of the seven Class-R sessions, matching the
+`:03/5` timer inside the sole 09:25–16:25 ET inclusive window — and 25,958 declared
+events exactly equal 25,958 EVENT lines, with 0 mismatches/orphans. The earlier 672
+pass count is not reproducible from the committed gzip and is superseded for source-
+integrity claims. The 598 distinct ledger-key count still agreed independently via
+journal census, recovery-tool distinct keys, and reconciler dedupe before absorption.
 
 Class D's 11 sessions remain REFUSED and unchanged.
 
@@ -191,16 +194,17 @@ still went red — `prophet_live: missing producer (unowned lane)` — because t
 dead-man graded a field nothing wrote. A guard that cannot go green is worse than
 no guard. #6482 repaired it. Nothing but a live session would have found it.
 
-## What was proven vs merely built
+## What is proven now
 
-`PR #6464` is BUILT_NOT_PROVEN until it is merged, deployed to `/opt/macro`, and
-a real in-window pass advances the served and R2 objects. CI green is not
-production proof and must not be reported as such.
+PR #6464 + #6482 are **PROVEN_LIVE**, not merely built: they are merged, deployed,
+and were exercised during the real 2026-08-26 NYSE session with advancing R2 + served
+objects and the external dead-man demonstrated both red and green states. CI remains
+supporting evidence, not the acceptance proof.
 
-The restoration precondition IS proven: authenticated PUT/GET/DELETE against the
-production bucket succeeded with the now-seeded credentials, and today's armed
-pack (`as_of=2026-08-25`) is correctly stamped, so the lane is not exposed to D12
-for this session.
+The force-majeure recovery ledger is now fully matured for its seven lawful Class-R
+sessions: 598 rows, 0 duplicate keys, 598/598 next-close fills. The 11 Class-D sessions
+remain refused by design. D12 itself remains visible but unrepaired and separately
+owned from this closeout.
 
 ## Open operator acts
 
@@ -211,3 +215,17 @@ for this session.
    the incident and needs acknowledgement.
 2. D12 (pack `as_of` inherits the close-series tip) needs an owner. This wave
    makes it visible; it does not repair it.
+
+## FINAL EVIDENCE MATURATION — 2026-08-27
+
+The one remaining backfill closeout gate is closed. The existing reconciler matured all
+86 Aug-25 rows against the 2026-08-26 close: 38 ticker/session pairs → 86 row updates,
+598 rows remain, duplicate keys remain 0, `next_close_fill` is 598/598, and no
+`FIRST_WINS` or `entered` value changed. Final ledger sha256:
+`fb25fcc6b1935d9fdd5e7e2a6e8a5981411acda6825784afb241eceba968c5e0`.
+Machine receipt: `data/pit_replay/prophet_live_recovery/_closeout_receipt.json`.
+
+Do not reopen a replay/backfill wave from this incident. Remaining items are separate:
+D12 ownership/repair, attribution of the 2026-08-26T07:43:28Z credential seeding, and
+the unclassified partial 2026-07-30 tail. Class D stays refused. #6296 is unrelated
+and remains HOLD-FOR-SOL.

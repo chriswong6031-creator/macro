@@ -915,6 +915,16 @@ def test_startability_accepts_only_provable_narrowings_of_a_trigger() -> None:
         "data/a/b/c/**",                # deeper subtree
         "*.json",                       # repository-root form, `*` is a trigger
         "engine/*",                     # single-level subset of engine/**
+        # SINGLE-LEVEL SUFFIX GLOB (2026-08-26).  SUFFIX_NARROWED_RE requires a
+        # `**/` before the suffix, and the bare-`/*` test does not fire on a
+        # pattern ending `*.py`, so these fell through to False despite being as
+        # strictly contained in `engine/**` as `engine/*` is.  `defense-rail-laws`
+        # derived exactly this shape and reported an unstartable gap against a
+        # trigger list carrying `engine/**`.  ci-pack is path-scoped, so only a PR
+        # touching .github/ci/ ever ran the test that noticed.
+        "engine/*.py",
+        "data/*.parquet",
+        "data/smart_money/*.py",        # ancestor proof: ⊂ data/smart_money/** ⊂ data/**
     ):
         assert PACK.scope_pattern_is_startable(covered, triggers), covered
     for uncovered in (
@@ -923,6 +933,8 @@ def test_startability_accepts_only_provable_narrowings_of_a_trigger() -> None:
         "brand_new_root/deep/**",
         "site/**",                      # a real root that this filter omits
         "app/*",                        # single-level, but app/** is not a trigger
+        "app/*.py",                     # same, suffixed — must NOT be relaxed
+        "*/engine/*.py",                # a glob in the PARENT proves nothing
     ):
         assert not PACK.scope_pattern_is_startable(uncovered, triggers), uncovered
 
@@ -2773,7 +2785,7 @@ def test_pack_command_folds_to_exactly_one_shell_command() -> None:
         assert command.rstrip().endswith("--execute")
 
 
-def test_ci_pack_uses_twelve_balanced_hosted_jobs() -> None:
+def test_ci_pack_uses_twelve_balanced_hosted_anchors_or_fork_packs() -> None:
     workflow = _yaml(WORKFLOW)
     # This job set was EXACTLY {"ci-pack"} until Wave B (2026-08-11) added the
     # planner and the aggregate. Pinned as a subset, not as equality: the
@@ -2791,14 +2803,24 @@ def test_ci_pack_uses_twelve_balanced_hosted_jobs() -> None:
     # scripts/check_contract_delta.py's module docstring). Adding it here is
     # the same class of change as ci-plan/ci-gate joining originally; it does
     # not reopen the 86-VM fan-out this test exists to prevent.
-    assert set(workflow["jobs"]) <= {"ci-plan", "ci-pack", "contract-delta", "ci-gate"}
+    # `trusted-ci` (P3B-B) is one protected-main reusable call, not another
+    # planner, pack fan-out or scheduler. Its PC jobs are defined only by the
+    # called main workflow; the caller's ci-pack matrix remains the stable hosted
+    # anchor set and retains the full implementation only for forks.
+    assert set(workflow["jobs"]) <= {
+        "ci-plan",
+        "trusted-ci",
+        "ci-pack",
+        "contract-delta",
+        "ci-gate",
+    }
     assert "ci-pack" in workflow["jobs"]
     pack = workflow["jobs"]["ci-pack"]
     # The pack COUNT tunes (2 -> 4 -> 12 as hosted capacity increased); the
-    # SHAPE is the contract: a small ordered matrix of balanced packs on hosted
-    # runners, never one job per legacy suite (86 VMs), and the matrix must
-    # agree with the --pack-count handed to the runner or some packs' jobs
-    # would execute nowhere.
+    # SHAPE is the contract: a small ordered matrix of stable hosted anchors
+    # (or full hosted fork packs), never one job per legacy suite (86 VMs), and
+    # the matrix must agree with the --pack-count handed to the runner or some
+    # packs' jobs would execute nowhere.
     #
     # Wave B made the matrix the PLANNER's, so the list of indices is no longer
     # in this file — `--pack-count 12` below is now the only place the twelve-way
@@ -2846,7 +2868,12 @@ def test_ci_pack_uses_twelve_balanced_hosted_jobs() -> None:
         "reintroducing max-parallel only slows main's proof; the hosted concurrency "
         "ceiling is account-wide and this key cannot raise it"
     )
-    assert pack["if"] == "needs.ci-plan.outputs.has_work == 'true'"
+    assert pack["if"] == (
+        "always() && needs.ci-plan.result == 'success' && "
+        "needs.ci-plan.outputs.has_work == 'true' && "
+        "(github.event.pull_request.head.repo.full_name != github.repository || "
+        "needs.trusted-ci.result == 'success')"
+    )
     run_text = "\n".join(
         str(step.get("run", "")) for step in pack["steps"] if isinstance(step, dict)
     )

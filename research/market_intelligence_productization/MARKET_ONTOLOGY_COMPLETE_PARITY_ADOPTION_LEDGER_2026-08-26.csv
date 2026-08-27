@@ -1,0 +1,89 @@
+id,family,advertised_capability,fanout_lane,canonical_owner_route,initial_disposition,authority_at_adoption,status
+MO-PAID-001,Macro,"Macro regime detection — growth, inflation, labor, liquidity",F01-MACRO-MARKETS,"GMI/TXI + Market OS",UPGRADE_EXISTING,context_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-002,Markets,Rates monitoring,F01-MACRO-MARKETS,"market-data/GMI + Market OS",UPGRADE_EXISTING,context_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-003,Markets,FX monitoring,F01-MACRO-MARKETS,"market-data/GMI + Market OS",UPGRADE_EXISTING,context_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-004,Markets,Commodities monitoring,F01-MACRO-MARKETS,"market-data/GMI + Market OS",UPGRADE_EXISTING,context_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-005,Markets,Cross-asset monitoring,F01-MACRO-MARKETS,"TXI/GMI + Market OS",UPGRADE_EXISTING,context_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-006,Policy,Country dossiers,F02-POLICY-GEO,"existing policy/geopolitics owners + Market OS",UPGRADE_EXISTING,context_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-007,Policy,Policy & legislation tracker,F02-POLICY-GEO,"existing policy/government owners + Market OS",UPGRADE_EXISTING,context_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-008,Geopolitics,Live geopolitical event map,F02-POLICY-GEO,"existing geopolitics/event owners + Market OS",UPGRADE_EXISTING,context_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-009,Briefing,Daily intelligence brief,F01-MACRO-MARKETS,"Market OS projection over canonical owners",PROJECTION_OVER_EXISTING,display_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-010,Options,Core options intelligence,F03-OPTIONS-EXPRESSION,"existing options owner + Market OS",UPGRADE_EXISTING,context_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-011,Briefing,AM Edition premarket briefing,F01-MACRO-MARKETS,"Market OS projection over canonical owners",PROJECTION_OVER_EXISTING,display_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-012,Options,Full options — volatility surface,F03-OPTIONS-EXPRESSION,"existing options owner",UPGRADE_EXISTING,context_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-013,Options,Full options — skew,F03-OPTIONS-EXPRESSION,"existing options owner",UPGRADE_EXISTING,context_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-014,Options,Full options — term structure,F03-OPTIONS-EXPRESSION,"existing options owner",UPGRADE_EXISTING,context_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-015,Options,Full options — flow signals,F03-OPTIONS-EXPRESSION,"existing options/flow owner",UPGRADE_EXISTING,research_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-016,Ontology,Cross-asset transmission / causal graphs,F04-ONTOLOGY-TRANSMISSION,"TXI/GMI + Alpha K3",UPGRADE_EXISTING,research_display_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-017,Events,Event-to-asset mapping,F05-EVENT-IMPACT,"Earnings/Event owners + Alpha K3/K5",UPGRADE_EXISTING,context_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-018,Events,Causal Impact workflow,F05-EVENT-IMPACT,"Event owners + Eval OS + Alpha K3/K5",UPGRADE_EXISTING,research_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-019,Capital Markets,Capital-markets tools / tape,F09-CAPITAL-MATERIALS,"existing capital-markets/company owners + Market OS",UPGRADE_EXISTING,context_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-020,Equity Research,Stock-research tools,F06-SECURITY-RESEARCH,"WS:MARKET-OS",UPGRADE_EXISTING,display_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-021,Equity Research,Ticker Workspace,F06-SECURITY-RESEARCH,"WS:MARKET-OS",UPGRADE_EXISTING,display_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-022,Equity Research,Valuation Finder / event-to-assumption view,F07-VALUATION-SCENARIO,"FIF + WS:MARKET-OS",BUILD_NEW,research_display_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-023,Politics,Political intelligence,F02-POLICY-GEO,"existing politics/policy owners + Market OS",UPGRADE_EXISTING,context_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-024,Opportunity,Arbitrage opportunity scanner,F04-ONTOLOGY-TRANSMISSION,"Alpha K5 + Dislocation + Market OS",RESEARCH_CONTEXT_ONLY,research_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-025,FX,FX Dislocation Desk,F01-MACRO-MARKETS,"Dislocation + market-data/GMI + Market OS",UPGRADE_EXISTING,research_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-026,Scenario,Scenario analytics,F07-VALUATION-SCENARIO,"Market OS + TXI/FIF/Portfolio owners",BUILD_NEW,research_display_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-027,Alerts,Alerts and monitoring,F08-PORTFOLIO-ALERTS,"WS:MARKET-OS",BUILD_NEW,notification_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-028,Portfolio,Portfolio exposure / event-to-portfolio,F08-PORTFOLIO-ALERTS,"Portfolio Superintelligence + Market OS",UPGRADE_EXISTING,context_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-029,Capital Structure,Capital-structure mapping,F09-CAPITAL-MATERIALS,"FIF/company facts + Market OS",UPGRADE_EXISTING,context_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-030,Ownership,Sovereign-fund mapping,F09-CAPITAL-MATERIALS,"institutional intelligence owner + Data OS",BUILD_NEW,context_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-031,Research Assistant,Ask MO deep research,F11-RESEARCH-WORKSPACE,"Market OS human workspace over canonical evidence",BUILD_NEW,non_authoritative_assistant,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-032,Workflow,"Automated briefs, event studies, models, recurring workflows",F11-RESEARCH-WORKSPACE,"Market OS + existing Executive/job/event owners",BUILD_NEW,workflow_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-033,News/Event,Today's implications / ranked catalysts,F05-EVENT-IMPACT,"Event owners + Alpha K5 + Market OS",UPGRADE_EXISTING,research_priority_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-034,Policy/Geo,Policy & geopolitical pipeline,F02-POLICY-GEO,"policy/geopolitics owners + Event/Market OS",UPGRADE_EXISTING,context_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-035,Valuation,Full Equity Valuation,F07-VALUATION-SCENARIO,"WS:FINANCIAL-INTELLIGENCE-FABRIC + Market OS",BUILD_NEW,research_display_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-036,Portfolio,Full Portfolio Management / risk,F08-PORTFOLIO-ALERTS,"Portfolio Superintelligence + Market OS",UPGRADE_EXISTING,context_and_user_decision_support,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-037,Scenario,Scenario Valuation,F07-VALUATION-SCENARIO,"FIF + Portfolio + Market OS",BUILD_NEW,research_display_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-038,Quant,Econometric Workbench,F10-QUANT-ANALOGS,"Evaluation OS + model owners + Market OS",BUILD_NEW,research_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-039,Quant,Platform-wide causal inference / causal implication cards,F10-QUANT-ANALOGS,"Evaluation OS + owner models + Market OS",BUILD_NEW,research_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-040,Materials,Materials supply-chain decomposition,F09-CAPITAL-MATERIALS,"existing materials/TXI/GMI/sector owners",UPGRADE_EXISTING,context_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-041,Materials,Materials arbitrage engine,F09-CAPITAL-MATERIALS,"materials owners + Dislocation + Eval OS",RESEARCH_CONTEXT_ONLY,research_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-042,Opportunity,Opportunity Radar,F04-ONTOLOGY-TRANSMISSION,"Alpha K5 + existing Radar + Market OS",PROJECTION_OVER_EXISTING,research_priority_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-043,Ontology,Transmission Gap Monitor,F04-ONTOLOGY-TRANSMISSION,"TXI/GMI + Market OS",UPGRADE_EXISTING,research_display_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-044,Ontology,Second-Order Screener,F04-ONTOLOGY-TRANSMISSION,"TXI/GMI + Alpha K3/K5",UPGRADE_EXISTING,research_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-045,Analogs,Historical Analog Lab,F10-QUANT-ANALOGS,"Stock Identity + Outcome Spine + Eval OS + Market OS",BUILD_NEW,research_navigation_until_promoted,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-046,Research Workflow,Thesis Builder,F11-RESEARCH-WORKSPACE,"Market OS human research layer",BUILD_NEW,human_research_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-047,Research Workflow,Invalidation Monitor,F11-RESEARCH-WORKSPACE,"Market OS human research layer + canonical job/event owners",BUILD_NEW,human_research_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-048,Geospatial,Military asset tracking,F02-POLICY-GEO,"defense/geopolitics owner + lawful geospatial source",RESEARCH_CONTEXT_ONLY,context_only,PENDING_RIGHTS_SOURCE_RECONCILIATION
+MO-PAID-049,Geospatial,Maritime asset tracking,F02-POLICY-GEO,"trade/logistics/geopolitics owner + lawful maritime source",RESEARCH_CONTEXT_ONLY,context_only,PENDING_RIGHTS_SOURCE_RECONCILIATION
+MO-PAID-050,Geospatial,Satellite asset tracking,F02-POLICY-GEO,"geopolitics/sector owner + lawful satellite source",RESEARCH_CONTEXT_ONLY,context_only,PENDING_RIGHTS_SOURCE_RECONCILIATION
+MO-PAID-051,Team,Team workspace / up to 10 seats,F12-TEAM-API-PLATFORM,"Market OS workspace + canonical auth/tenant owner",BUILD_NEW,collaboration_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-052,Team,"Shared watchlists, scenarios, analyses, coverage",F12-TEAM-API-PLATFORM,"Market OS workspace over canonical objects",BUILD_NEW,collaboration_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-053,RMS,Coverage / Ideas / Notes / Theses / Catalysts / Risks / Reviews,F11-RESEARCH-WORKSPACE,"Market OS human research layer",BUILD_NEW,human_research_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-054,Research Assistant,Workspace Chat,F11-RESEARCH-WORKSPACE,"Market OS workspace over canonical evidence",BUILD_NEW,non_authoritative_assistant,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-055,API,Programmatic API access,F12-TEAM-API-PLATFORM,"delivery projection over accepted internal contracts",BUILD_NEW,projection_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-056,API,Webhook delivery,F12-TEAM-API-PLATFORM,"delivery projection over canonical event/job owners",BUILD_NEW,transport_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-057,Operations,Priority data refresh,F13-OPS-LEARNING,"existing source-owner schedules/SLOs",UPGRADE_EXISTING,operations_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-058,Operations,Dedicated / priority support channel,F13-OPS-LEARNING,"commercial/support operating layer",BUILD_NEW,operations_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-059,Capital Markets,Capital Need Monitor,F09-CAPITAL-MATERIALS,"capital-markets/company facts + Market OS",BUILD_NEW,context_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-060,Capital Markets,Market Windows,F09-CAPITAL-MATERIALS,"capital-markets + market-data owners",BUILD_NEW,research_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-061,Capital Markets,Transaction Tape,F09-CAPITAL-MATERIALS,"capital-markets source owner + Market OS",BUILD_NEW,context_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-062,Capital Markets,Issuer Workspace,F09-CAPITAL-MATERIALS,"capital-markets + Market OS company workspace",BUILD_NEW,human_research_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-063,Capital Markets,Valuation Bridge,F09-CAPITAL-MATERIALS,"capital-markets + FIF",BUILD_NEW,research_display_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-064,Capital Markets,M&A Workbench,F09-CAPITAL-MATERIALS,"capital-markets/Special Situations + FIF + Market OS",BUILD_NEW,research_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-065,Capital Markets,ECM Workbench,F09-CAPITAL-MATERIALS,"capital-markets/company facts + Market OS",BUILD_NEW,research_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-066,Capital Markets,DCM & Credit Workbench,F09-CAPITAL-MATERIALS,"capital-markets/credit/company facts + Market OS",BUILD_NEW,research_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-067,Capital Markets,Policy Pipeline,F09-CAPITAL-MATERIALS,"capital-markets + policy owners",PROJECTION_OVER_EXISTING,context_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-068,Capital Markets,Precedents & Analogs,F09-CAPITAL-MATERIALS,"capital-markets + Outcome Spine/Eval OS",BUILD_NEW,research_navigation_until_promoted,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-069,Capital Markets,Source Library,F09-CAPITAL-MATERIALS,"canonical evidence/source owners + Market OS",PROJECTION_OVER_EXISTING,evidence_navigation_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-070,Options,Catalyst-to-options workflow,F03-OPTIONS-EXPRESSION,"options owner + Alpha K5 ExpressionCandidate",BUILD_NEW,research_expression_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-071,Options,Live option chain / chain context,F03-OPTIONS-EXPRESSION,"existing options owner",UPGRADE_EXISTING,context_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-072,Options,Expected move,F03-OPTIONS-EXPRESSION,"existing options owner",UPGRADE_EXISTING,context_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-073,Options,Open-interest concentration,F03-OPTIONS-EXPRESSION,"existing options owner",UPGRADE_EXISTING,context_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-074,Options,Dealer gamma / delta positioning,F03-OPTIONS-EXPRESSION,"existing options owner",UPGRADE_EXISTING,research_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-075,Options,Trade-flow interpretation,F03-OPTIONS-EXPRESSION,"existing options/flow owner",UPGRADE_EXISTING,research_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-076,Options,Structure Builder,F03-OPTIONS-EXPRESSION,"options owner + ExpressionCandidate",BUILD_NEW,research_expression_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-077,Options,Greeks / P&L / scenario analysis,F03-OPTIONS-EXPRESSION,"existing options owner + scenario projection",UPGRADE_EXISTING,research_expression_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-078,Account & Platform,Account / profile settings,F12-TEAM-API-PLATFORM,"canonical auth/account owner",UPGRADE_EXISTING,account_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-079,Account & Platform,Billing / subscription,F12-TEAM-API-PLATFORM,"canonical commercial/billing owner",UPGRADE_EXISTING,commercial_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-080,Account & Platform,Plan / entitlement display,F12-TEAM-API-PLATFORM,"canonical auth/entitlement owner",UPGRADE_EXISTING,account_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-081,Account & Platform,Team members / invitations,F12-TEAM-API-PLATFORM,"canonical auth/tenant owner + Market OS workspace",UPGRADE_EXISTING,collaboration_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-082,Account & Platform,Roles / permissions,F12-TEAM-API-PLATFORM,"canonical auth/tenant owner",UPGRADE_EXISTING,access_control_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-083,Account & Platform,Workspace settings,F12-TEAM-API-PLATFORM,"Market OS workspace + canonical tenant owner",BUILD_NEW,workspace_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-084,Account & Platform,API keys / developer settings,F12-TEAM-API-PLATFORM,"canonical auth/secrets owner + API projection",BUILD_NEW,access_control_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-085,Account & Platform,Notifications / alerts settings,F08-PORTFOLIO-ALERTS,"Market OS alerts + canonical user settings owner",BUILD_NEW,notification_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-086,Account & Platform,Exports / downloads,F12-TEAM-API-PLATFORM,"delivery projection over canonical objects",BUILD_NEW,projection_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-087,Account & Platform,Privacy / deletion / data export controls,F12-TEAM-API-PLATFORM,"canonical auth/privacy/data lifecycle owners",UPGRADE_EXISTING,governance_only,PENDING_OPERATOR_RECONCILIATION
+MO-PAID-088,Account & Platform,Support / help / methodology / release notes,F13-OPS-LEARNING,"Market OS product/help + release/receipt owners",BUILD_NEW,operations_and_explanation_only,PENDING_OPERATOR_RECONCILIATION

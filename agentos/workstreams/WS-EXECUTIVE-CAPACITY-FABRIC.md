@@ -32,23 +32,42 @@ waves:
       to implement Executive placement or new providers.
   - id: CF2-F
     title: Freeze Executive claim-time capacity evidence and acquisition against landed schema v4
-    status: todo
+    status: done
+    pr: 150
     depends_on: [CF1]
     next_action: >
-      Sol must now freeze and independently review the smallest typed capacity-evidence extension
-      to the existing atomic JOB_CLAIMED receipt plus one secret-free Provider Control acquisition
-      seam consuming accepted `mastermind.provider_capacity.v1`. Preserve the closed schema-v4
-      placement snapshot byte-for-byte; create no second event, table, service, daemon or schema v5.
-      Stop after accepted source law; CF2-I remains a separate implementation wave.
+      COMPLETED_DO_NOT_REPEAT. Mastermind PR #150 accepted the CF2-F source law and merged as
+      e9cb5cbd745b36dc51f54bd83238ec38ef0c80c7. Do not reopen CF2-F merely because the production
+      host later refused P0; that refusal correctly created the H0 host-preparation gate.
+  - id: CF2-H0
+    title: Grounded CF1 source and inert three-realm host preparation
+    status: in_progress
+    depends_on: [CF2-F]
+    next_action: >
+      Implementation merged in Mastermind PR #157 and real-host compatibility repairs continued
+      through current protected Mastermind. Complete the exact merged-H0 administrator ceremony on
+      the production host, require H0_INSTALLED_HOST_PASS_NOT_P0_ACCEPTED, repeat verify-only, keep
+      all three broker labels disabled/unloaded with sockets absent, then STOP for independent P0.
+      Do not perform OAuth/device login, provider calls, routing or CF2-I from the H0 carrier.
+  - id: CF2-P0
+    title: Independent post-H0 installed-host acquisition census
+    status: todo
+    depends_on: [CF2-H0]
+    next_action: >
+      After exact H0 installed-host PASS, rerun the accepted read-only CF2-P0 census. Only an exact
+      accepted P0 result may release capacity-aware Executive composition. If P0 again refuses,
+      preserve the refusal and return to Sol; do not bypass it with a user checkout, stale socket,
+      anonymous fetch or new acquisition service.
   - id: CF2-I
     title: Executive capacity-aware placement using the reviewed claim receipt
     status: todo
-    depends_on: [CF2-F]
+    depends_on: [CF2-P0]
     next_action: >
-      After CF2-F is accepted, consume `mastermind.provider_capacity.v1` only after Model Router and
-      Executive hard eligibility filters, rank eligible candidates deterministically, persist the
-      accepted capacity evidence atomically with JOB_CLAIMED, and prove one existing-provider /
-      multi-account canary. Do not start before CF2-F acceptance.
+      Only after CF2-P0 accepts the grounded acquisition path, consume
+      `mastermind.provider_capacity.v1` after Model Router and Executive hard eligibility filters,
+      rank eligible candidates deterministically, persist accepted capacity evidence atomically
+      with JOB_CLAIMED, and prove one existing-provider / multi-account canary. Do not start before
+      P0 acceptance.
   - id: RF1
     title: Provider-neutral Model Router suitability equivalence
     status: todo
@@ -87,8 +106,12 @@ waves:
       effect-unknown reconciliation, local-only provider credentials and zero remote queue/scheduler.
 decisions:
   - DEC:EXECUTIVE-CAPACITY-FABRIC-OWNERSHIP-AND-CONTRACT
+  - DEC:AUTONOMY-V1-DISPATCH-DIALOGUE-RUNTIME-SEPARATION
 artifacts:
   - agentos/decisions/DEC-EXECUTIVE-CAPACITY-FABRIC-OWNERSHIP-AND-CONTRACT.md
+  - agentos/decisions/DEC-AUTONOMY-V1-DISPATCH-DIALOGUE-RUNTIME-SEPARATION.md
+  - agentos/discoveries/DSC-AGENT-DISPATCH-CURRENTLY-HAS-NO-WORKER-RECEIVER.md
+  - agentos/handoffs/AUTONOMY-V1-2026-08-26-sol-operational-reconciliation.md
   - research/MASTERMIND_EXECUTIVE_CAPACITY_FABRIC_F0_ARCHITECTURE_2026-08-22.md
   - research/MASTERMIND_EXECUTIVE_CAPACITY_FABRIC_F0_PLACEMENT_AMENDMENT_2026-08-22.md
   - research/MASTERMIND_EXECUTIVE_CAPACITY_FABRIC_F0_SEMANTIC_IDENTITY_AMENDMENT_2026-08-22.md
@@ -108,6 +131,7 @@ landmines:
   - "Provider/account presence is not authentication success, and Slack/GitHub/provider process presence is not Executive execution evidence."
   - "Host matters: attached subscription capacity is bound to an opaque reviewed host identity; do not assume accounts on different Macs are globally interchangeable."
   - "Capacity host_ref is observational identity only; it is not an authenticated endpoint or remote execution credential."
+  - "ChatGPT1/2/3 Slack principals are Sol CEO communication identities, not Executive Worker IDs. The corresponding paid subscriptions may supply codex-pro worker realms, but Executive OS must claim the concrete realm rather than routing by Slack username."
   - "Current Executive control/broker path is local AF_UNIX with one configured worker. Multi-host transport remains MH1/V1.x and must not create a second Runtime/queue/scheduler or generic SSH executor."
   - "Model Router suitability and provider capacity are separate filters. Provider health/cost may rank eligible workers but may not redefine model quality, authority or required independence."
   - "Current Model Router routes are ordered concrete model aliases. Before heterogeneous providers share a route, RF1 must define provider-neutral equivalence tiers/classes so alias/file order cannot silently become provider priority."
@@ -120,7 +144,7 @@ landmines:
   - "Capacity decision evidence belongs in the existing atomic claim receipt only after CF2-F source-law acceptance; if that seam proves insufficient, return to Sol rather than inventing a second event/ledger or schema v5."
   - "Whole-repository Macro commit identity is audit provenance only. High-churn unrelated repo commits must not change provider-capacity semantic snapshot_hash; material provider-source bytes must."
   - "snapshot_hash and generated_at are distinct: Executive claim evidence must bind both, because identical semantic contents can have different freshness."
-  - "CF1 stdout proves the contract, not the future Executive acquisition transport. CF2-F must freeze one secret-free bounded acquisition seam; Executive may not import floating Macro Python or read raw provider ledgers/secrets."
+  - "CF1 stdout proves the contract, not the future Executive acquisition transport. CF2-F froze one secret-free bounded acquisition seam; Executive may not import floating Macro provider internals or read raw provider ledgers/secrets."
   - "The provider-capacity normalizer receives only secret-free typed observations. Existing Provider Control helpers may continue their already-reviewed credential-presence mechanics internally; that authority is not transferred to the normalizer or Executive OS."
   - "Subscription headroom should reduce marginal API spend for routine eligible work, but policy may reserve scarce frontier capacity for critical/interactive work."
   - "Never expose auth tokens, cookies, API keys, raw auth files, provider-home contents, email/account PII, remote endpoint credentials or private host addresses in the capacity projection."
@@ -137,23 +161,26 @@ do_not_redo:
   - "Do not widen Phase 1F-C placement_snapshot_json for Capacity Fabric."
   - "Do not disguise Alibaba/Z.AI/Grok/Cursor behind a `codex_home` field or copy Codex-only secret-canary semantics into the common harness contract."
   - "Do not reopen CF1 implementation absent a concrete defect or material-source change."
+  - "Do not reopen CF2-F; Mastermind #150 is the accepted source law."
   - "Do not widen Capacity Fabric into Wake, Slack dispatch, Control Room, browser/devserver resources, host arming, merge/deploy authority or capital/trading authority."
 next_action: >
-  Commission and execute `WS:EXECUTIVE-CAPACITY-FABRIC::CF2-F — Freeze Executive claim-time
-  capacity evidence and acquisition` against current protected Mastermind plus accepted Macro CF1.
-  The wave is source-law/architecture only and stops before CF2-I implementation. Worker Browser /
-  DevServer Resource Fabric architecture and existing C1/S0-R1/ASD/host-readiness lanes may proceed
-  independently in parallel because their authority and changed-path surfaces are disjoint.
+  Complete the current merged CF2-H0 production host ceremony and require
+  H0_INSTALLED_HOST_PASS_NOT_P0_ACCEPTED plus repeated verify-only proof; then rerun the independent
+  read-only CF2-P0 census. Only a lawful P0 acceptance may release CF2-I capacity-aware claim/routing.
+  Existing C1/B2/C2, ASD-A2/A3 and Worker Browser B1 lanes proceed independently in parallel when
+  their host/resource/path surfaces are disjoint.
 ---
 
 ## Capability state
 
 CF1 is accepted and merged in Macro as `dcdd939c45b23abce5ba04f95e330ac914a3904b`.
-The strict no-write `mastermind.provider_capacity.v1` producer and machine/operator JSON consumer are
-`BUILT_NOT_PROVEN` as an always-on production placement capability: the contract is implemented and
-exact-head tested, but Executive OS still does not consume it at claim time. CF2-F is the next source-law
-dependency; CF2-I capacity-aware placement, RF1 provider-neutral suitability, HF1 common harness, PF1
-first real non-Codex worker and MH1 multi-host transport remain not built / held by their dependencies.
+CF2-F is accepted and merged in Mastermind as `e9cb5cbd745b36dc51f54bd83238ec38ef0c80c7`.
+The first independent P0 census correctly refused with `NO_SAFE_CF1_ACQUISITION_PATH`; H0 code then
+merged in Mastermind #157 and subsequent real-host compatibility repairs advanced the installation
+carrier. The program is now `PARTIAL`: exact H0 production installation/verification and a fresh
+independent P0 result remain the gate before CF2-I. Capacity-aware placement, real multi-account
+routing/fan-out, RF1 provider-neutral suitability, HF1 common harness, PF1 first real non-Codex
+worker and MH1 multi-host transport are not production-proven.
 
 ## 10/10 end-state
 
