@@ -17,7 +17,9 @@ state_before: >
   exact owner/path crosswalk and the retained 1,556-row public ledger is awaiting
   exact-byte repository import. This lane is independent of A1B authenticated proof
   and K2-C/K3-D except where a specific downstream consumer explicitly depends on them.
-changed: []
+changed:
+  - path: agentos/handoffs/MARKET-ONTOLOGY-F01-MACRO-MARKETS-BRIEFINGS-FABLE-COO-2026-08-26.md
+    what: "Created the sustained F01 Fable COO lane commission and its architecture/authority/proof envelope."
 verified:
   - claim: "F01 has a complete-parity baseline and current-public delta inventory."
     command: "Read complete-parity adoption + current-public delta ledgers on PR #6504."
