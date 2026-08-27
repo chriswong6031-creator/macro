@@ -175,15 +175,41 @@ waves:
     # data-settled-session, risk_envelope_live.js ?v=bbe5e528; the consumer
     # script + live payload are tier-gated (anonymous 401 — deliberate; the
     # public-boundary decision was NOT taken).
+    # GD-3R1 CLOCK-TRUTH REPAIR merged 2026-08-22T05:16Z (PR #6210,
+    # e667ec39d176): Sol found a §0b.5 violation in the shipped bytes —
+    # risk_state["built"] was published as clocks.event_time and
+    # produced_at == observed_at. Repaired: event_time now comes from the real
+    # contributing quote clocks (build_risk_state emits
+    # live.source_event_time / source_quote_clocks; synthesized wall-clock
+    # quote_ts is flagged and excluded), null when unestablishable and NEVER
+    # substituted with built; upstream_built kept as separate lineage;
+    # observed_at/produced_at are two real ms-precision clocks.
     # PRODUCTION ACCEPTANCE: WAITING_FOR_PRODUCTION_EVENT (Sol fallback,
     # 2026-08-21). The Gate-8-equivalent four-clock receipt requires an
-    # AUTHENTICATED browser witness (regwall = Supabase session cookie only;
-    # no VPS shell from the fleet host; no ops bypass — verified
-    # app/regwall.py). The operator's Chrome (claude-in-chrome) never
-    # connected during the full 2026-08-21 11:00-22:00Z live window
-    # (14 retries). The live plane ran the whole window; the event is
-    # presumed to have occurred UNWITNESSED. Wave closes only on the receipt:
-    # re-run during any live window with an authenticated browser.
+    # AUTHENTICATED browser witness (regwall = Supabase session cookie only,
+    # no ops bypass — verified app/regwall.py). The operator's Chrome never
+    # connected during the full 2026-08-21 11:00-22:00Z window (14 retries);
+    # a 2026-08-22 retry DID connect and sign in, but 2026-08-22 was a
+    # SATURDAY, so no US session and no lawful event existed.
+    # CORRECTION (2026-08-27): the 2026-08-21 record's claim that "no VPS
+    # shell exists from the fleet host" is FALSE. app/deploy/README.md:29
+    # documents `ssh -i ~/.ssh/macro_dashboard_deploy_v2 root@146.190.142.17`
+    # (raw IP — the CDN-fronted hostname refuses port 22). It is read-only
+    # diagnosis, NOT a receipt substitute: the acceptance measures the browser
+    # paint leg.
+    # PRE-VERIFIED IN PRODUCTION 2026-08-27 over that shell: the box runs the
+    # GD-3R1 bytes; risk_envelope_live executes ok on EVERY fast-lane fire
+    # (~0.9-2.2s, risk_state on odd minutes) — closing the 2026-08-21
+    # unverified item; and the served 2026-08-26T22:59Z envelope proves the
+    # closed-market clock laws in real bytes (event_time null while built was
+    # 22:59:46; observed_at 22:59:46.623Z vs produced_at 22:59:47.538Z, ms
+    # precision, 915ms apart; clocks.upstream_built 22:57:42.000Z separate;
+    # revision live_provisional; all four authority booleans false).
+    # STILL UNPROVEN and the whole remaining gate: event_time from a REAL
+    # quote clock during an OPEN session, <=2-fast-fire propagation, browser
+    # paint, and the interval-scoped data/-unchanged proof.
+    # Executable acceptance packet:
+    # agentos/handoffs/GREY-DEER-RISK-INTELLIGENCE-2026-08-27.md.
   - id: GD-4A
     title: CN/HK forward-ledger liveness repair
     status: done
@@ -291,18 +317,27 @@ waves:
     status: todo
     depends_on: [GD-5A, GD-6A, GD-8A]
 next_action: >
-  2026-08-21: GD-3 built/merged/deployed (PR #6144, 55d7ea02ce3e) but the wave
-  stays OPEN on WAITING_FOR_PRODUCTION_EVENT — the ONLY remaining step is the
-  Gate-8-equivalent four-clock production receipt, which needs an
-  AUTHENTICATED browser during a US live window (11:00-22:00Z weekday):
-  authenticated in-page fetch of live/risk_envelope.json + live/risk_state.json
-  on macro.html, first real live-source change reflected ≤2 fast fires,
-  event_time→observed_at→produced_at→browser_seen_at, overlay paint screenshot,
-  interval-scoped proof data/ + forward ledgers unchanged. Do NOT simulate or
-  manufacture the event (Sol 2026-08-21). GD-4A.1 DONE. GD-8A/8B/9A remain
-  gated on GD-3 production acceptance (Sol: do not begin until then).
-  GD-5A/B/C stay closed; GD-4B/4C open and uncommissioned; GD-6/7 and
-  Portfolio cutover not authorized.
+  2026-08-27: GD-3 is built, merged, deployed and REPAIRED (#6144 55d7ea02ce3e;
+  GD-3R1 #6210 e667ec39d176) and verified RUNNING on the box every fast-lane
+  fire, with the closed-market clock laws proven in served production bytes.
+  The wave stays OPEN on WAITING_FOR_PRODUCTION_EVENT for one artifact only:
+  the Gate-8-equivalent four-clock receipt, which needs an AUTHENTICATED
+  browser during a US cash session (13:30-20:00Z weekday — the fast-lane gate
+  is 11:00-22:00Z but the qualifying change needs a moving tape). Executable
+  packet, including everything already proven so it is not re-proven:
+  agentos/handoffs/GREY-DEER-RISK-INTELLIGENCE-2026-08-27.md. In short: in-page
+  authenticated fetch of live/risk_envelope.json + live/risk_state.json on
+  macro.html; FIRST real live-source change (rs.built advancing WITH
+  live_active true) reflected in the envelope within ≤2 fast fires;
+  event_time→observed_at→produced_at→browser_seen_at with event_time equal to
+  the real source quote clock and never to rs.built; overlay paint screenshot;
+  interval-scoped proof data/ + forward ledgers unchanged. Feed delay is
+  informational and never a failure (Sol 2026-08-22). Do NOT simulate or
+  manufacture the event (Sol 2026-08-21); do not modify the implementation
+  unless the real witness falsifies it (Sol 2026-08-22). GD-4A.1 DONE.
+  GD-8A/8B/9A remain gated on that receipt and may not be commissioned from
+  the acceptance seat. GD-5A/B/C stay closed; GD-4B/4C open and
+  uncommissioned; GD-6/7 and Portfolio cutover not authorized.
 ---
 
 # Grey Deer Risk Intelligence & Capital Protection

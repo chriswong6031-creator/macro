@@ -31,7 +31,7 @@ AgentOS records: `agentos/workstreams/WS-GREY-DEER-RISK-INTELLIGENCE.md`, eight
 
 The wave matrix is a mechanical index under 3. The GD-1 packet governs GD-1 research conduct under 2–3.
 
-## Current next action (updated 2026-08-21, GD-3 + GD-4A.1 wave)
+## Current next action (updated 2026-08-27, GD-3 acceptance handoff)
 
 - **GD-1 closed:** GD-1A DONE; GD-1B ACCEPTED_NO_PROMOTION — zero GD-5 promotions
   (`DEC:GD1-ACCEPTED-NO-PROMOTION`). Dossier: `gd1/`. **GD-1C closed** DONE /
@@ -39,13 +39,17 @@ The wave matrix is a mechanical index under 3. The GD-1 packet governs GD-1 rese
 - **GD-2 DONE** (Gate 8 passed 2026-08-20). **GD-4A DONE** (real settled proof +
   idempotence, 2026-08-20). **GD-4A.1 DONE** (#6140 merged `e4f18b53e9d0`,
   live-verified run 32435846087; ledger freshness now graded by the liveness lane).
-- **GD-3 built/merged/deployed** (#6144, `55d7ea02ce3e`; commission §0b carries Sol's
-  seven clarifications) — wave OPEN on **WAITING_FOR_PRODUCTION_EVENT**: the only
-  remaining step is the Gate-8-equivalent four-clock receipt, which requires an
-  AUTHENTICATED browser during a US live window (the payload and consumer script are
-  tier-gated by design). Receipt spec + witness gap: workstream record and
-  `agentos/handoffs/GREY-DEER-RISK-INTELLIGENCE-2026-08-21.md`. Never simulate the
-  event.
+- **GD-3 built/merged/deployed/repaired** (#6144 `55d7ea02ce3e`; GD-3R1 clock-truth
+  repair #6210 `e667ec39d176`; commission §0b carries Sol's seven clarifications) —
+  wave OPEN on **WAITING_FOR_PRODUCTION_EVENT**. Verified 2026-08-27: the box runs
+  the repaired bytes, the module executes on every fast-lane fire, and the
+  closed-market clock laws hold in served production bytes. The only remaining step
+  is the Gate-8-equivalent four-clock receipt, which requires an AUTHENTICATED
+  browser during a US cash session (payload and consumer script are tier-gated by
+  design). **Executable acceptance packet:**
+  `agentos/handoffs/GREY-DEER-RISK-INTELLIGENCE-2026-08-27.md` (lists what is already
+  proven, so it is not re-proven). Never simulate the event; never modify the
+  implementation unless the real witness falsifies it.
 - **Gates:** GD-5A/B/C remain closed (GD-1C did not clear the promotion gate). GD-8/9
   gated on GD-3 production acceptance (Sol 2026-08-21). GD-6/7, Portfolio cutover: not
   authorized.
