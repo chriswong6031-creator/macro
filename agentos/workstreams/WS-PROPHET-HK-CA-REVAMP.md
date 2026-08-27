@@ -312,9 +312,16 @@ waves:
       Regional V3.7 rollout COMPLETE — Canada + HK both PROVEN_LIVE; US
       decoupled; China out of carrier.
 next_action: >
-  PRESENTATION LANE COMPLETE (v37-canada + v37-hk both PROVEN_LIVE with
-  dated acceptance records) — return to Sol; US wave stays decoupled and
-  unauthorized (V4 B1→B2/B3→B4 + reconciled Cell H prerequisites).
+  PRESENTATION LANE — V3.8 correction in flight on one Fable carrier
+  (stock-dashboard-v38-hk-ca-fable-20260826-sol-001) under the frozen
+  Action≠Leadership architecture (#6456 + DEC:V38-ACTION-IS-NOT-LEADERSHIP).
+  HK V38-R1 PROVEN_LIVE 2026-08-27 (PR #6515, merge 5dad2bd41326, entitled
+  production matrix in research/STOCK_DASHBOARD_V38_HK_ACCEPTANCE_2026-08-27.md;
+  handoff PROPHET-HK-CA-REVAMP-2026-08-27-v38-hk). Next: V38-R2 Canada on the
+  SAME carrier (restore at-rest action lanes, keep themes[].rank, remove
+  traversal sector rank), then final HK+Canada V3.8 return to Sol. China is a
+  separate later carrier; US stays decoupled and unauthorized (V4 B1→B2/B3→B4
+  + reconciled Cell H prerequisites).
   INTELLIGENCE LANE unchanged: hk-discovery CLOSED 2026-08-23 with
   production receipts (wave entry). Next lawful waves: hk-intel
   (HK-NATIVE-INTEL, depends on hk-discovery), ca-intel, ca-pit — each needs
