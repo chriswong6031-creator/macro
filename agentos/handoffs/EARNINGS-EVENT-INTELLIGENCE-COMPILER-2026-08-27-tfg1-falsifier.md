@@ -30,6 +30,11 @@ changed:
       separator indices for all 16 exact revisions, the three omitted separators with their
       Operator text, next speaker and first utterance, the corrected partition, and the explicit
       record that holdout_bodies_inspected is 0 and no compiler source changed.
+  - path: research/earnings_intelligence/e3/tfg1_separator_falsifier_measurement.py
+    what: >
+      Self-contained measurement script so Sol can independently re-derive the 113-vs-110
+      separator diff from a clean fetch in about 11 seconds. Measurement evidence only - nothing
+      imports it, it is not the compiler implementation, and it never reads a holdout revision.
   - path: agentos/discoveries/DSC-TX-BODY-SHA-IS-CANONICAL-JSON-NOT-RAW-BYTES.md
     what: >
       Records that mastermind.tx-index/v1 body_sha256 is a canonical-JSON re-serialization hash,
@@ -76,7 +81,7 @@ next_actions:
   - "If amended, re-commission TFG-1 implementation against the corrected gold with the holdout still sealed."
   - "Do not open the eight holdout revisions until an implementation head is frozen against a ratified gold."
 do_not_redo:
-  - "Do not re-derive the separator grammar from scratch: the predicate that achieves 110/110 recall with zero false negatives and exact direct-name extraction is described in the falsifier record and its receipt."
+  - "Do not re-derive the separator grammar from scratch: the predicate that achieves 110/110 recall with zero false negatives and exact direct-name extraction is implemented verbatim in research/earnings_intelligence/e3/tfg1_separator_falsifier_measurement.py."
   - "Do not byte-replay transcript revisions with sha256 of the raw decompressed body - it reports a false SOURCE_REVISION_MISMATCH on COF/2026Q2. Use the canonical-JSON convention (DSC:TX-BODY-SHA-IS-CANONICAL-JSON-NOT-RAW-BYTES)."
   - "Do not re-test the probe-truncation or deliberate-first-handoff-convention explanations for the three omissions; both are measured and falsified."
   - "Do not treat COF/2026Q2 as a moved or corrected revision."

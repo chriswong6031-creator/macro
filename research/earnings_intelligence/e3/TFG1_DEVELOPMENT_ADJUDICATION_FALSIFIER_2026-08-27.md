@@ -5,6 +5,7 @@
 **Outcome:** STOP — named falsifier returned to Sol. Holdout NOT unsealed.
 **Runtime effect:** none. No compiler source changed, no production admission changed, zero model calls.
 **Measurement receipt:** `tfg1_development_separator_falsifier_receipt.json`
+**Reproduce:** `python3 research/earnings_intelligence/e3/tfg1_separator_falsifier_measurement.py` (~11s from a clean fetch; reads only the 16 already-open development revisions, never the holdout)
 
 ## 1. What was asked and what happened
 
@@ -71,6 +72,12 @@ Two alternative explanations were tested and falsified:
 - **A deliberate "first handoff is not a separator" convention.** Contradicted by the thirteen
   counted first handoffs, and by the architecture freeze §4.3, which explicitly admits a
   first-question handoff before Q&A is established.
+
+The measurement is reproducible end to end from a clean network fetch by
+`research/earnings_intelligence/e3/tfg1_separator_falsifier_measurement.py`, which re-derives
+16/16 canonical byte replay, 110 frozen vs 113 detected separators, 0 false negatives, and the
+three omissions with their questioner class. It is measurement evidence only — nothing imports
+it, it is not the TFG-1 compiler implementation, and it never reads a holdout revision.
 
 A completeness sweep confirms nothing else is missed: every housekeeping segment the predicate
 rejects is followed by IR or management at call open or close, never by an analyst.
