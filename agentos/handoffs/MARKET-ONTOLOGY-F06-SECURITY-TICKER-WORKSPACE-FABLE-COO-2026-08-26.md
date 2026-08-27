@@ -13,7 +13,9 @@ state_before: >
   Research Screener. B1A security_state.v1 is PROVEN_LIVE for AAPL. Broad expansion is
   blocked by known general namespace/ListingAlias→ListingKey and issuer_cik reader seams,
   not by A1B. These are valid F06 prerequisites after fresh collision census.
-changed: []
+changed:
+  - path: agentos/handoffs/MARKET-ONTOLOGY-F06-SECURITY-TICKER-WORKSPACE-FABLE-COO-2026-08-26.md
+    what: "Created the sustained F06 Fable COO lane commission and its general-identity/product-proof envelope."
 verified:
   - claim: "B1A is PROVEN_LIVE and broader issuer rendering requires identity/general namespace repair rather than another issuer-specific path."
     command: "Read current WS:MARKET-OS B1A receipt/state."
