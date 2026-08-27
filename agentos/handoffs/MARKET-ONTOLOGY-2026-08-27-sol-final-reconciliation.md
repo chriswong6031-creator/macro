@@ -23,8 +23,9 @@ changed:
       Replaces stale pre-merge/F00/Alpha state clauses with post-#6504 canonical truth
       while preserving complete-parity scope, canonical owners, Autonomy V1 transport
       precedence, F01-F13 unclaimed status, and the K5 dependency gate; refreshes the
-      current protected Skillpack receipt and K2-C exact-head review receipt after both
-      moved during the reconciliation window.
+      current protected Skillpack receipt and reconciles K2-C's later merge without
+      converting that merge into Sol acceptance while its exact-head owner/identity
+      blockers remained open.
 verified:
   - claim: "Current protected Sol Skillpack is bootstrap-compatible for this reconciliation."
     command: "Protected mastermindx-market-intelligence/Mastermind master + docs/sol_skills atomic bootstrap"
@@ -65,20 +66,23 @@ verified:
       PASS — #6508 merged as fcbafecaa2636a5bba103d704bdc1c0d4d47d117;
       A1B is PROVEN_LIVE / DONE. A2-A6 are dependency-eligible but remain separate,
       unstarted bounded work and are not silently absorbed into Market Ontology parity.
-  - claim: "K2-C now has one real same-operation implementation carrier but is not accepted."
-    command: "Macro #6533 + original K2-C commission + current exact-head Sol review"
+  - claim: "K2-C is main-canonical implementation evidence but remains unaccepted."
+    command: "Macro #6533 merge + exact-head hosted checks + Sol review 5038662980"
     result: >
-      PASS — operation alpha-k2c-institutional-adapter-20260826-sol-001 remains active
-      on Macro #6533. The carrier reconciled onto Macro main
-      259b7eb5b4e165bf3713fbddfa4225070a9b9f66 and advanced to exact head
-      9b331df00b5346e287999e5271d368e3ec3c7a4c. Sol exact-head review 5038662980
-      REQUESTS CHANGES because the positive path still bypasses the commissioned
-      canonical Stock Identity/Data OS security-resolution gate while Data OS identity
-      is unresolved, and still fabricates manager-complex/vehicle resolution/class from
-      filer CIK plus row-level investment_discretion. Same-carrier RED-first repair,
-      lawful canonical bindings or typed unavailable, exact-head proof and independent
-      repaired-head adversarial review remain required before acceptance.
-  - claim: "K3-D now has one real same-operation implementation carrier but is not accepted."
+      PASS — operation alpha-k2c-institutional-adapter-20260826-sol-001 landed from
+      exact head 9b331df00b5346e287999e5271d368e3ec3c7a4c as Macro merge
+      0758de6b9a7e9e920a6f44e4c1abcd62dbf8074e. The exact-head hosted check census
+      completed without a current running/failing check, but Sol exact-head review
+      5038662980 remained CHANGES_REQUESTED on that same head because the positive path
+      still bypasses the commissioned canonical Stock Identity/Data OS security-resolution
+      gate while Data OS identity is unresolved and still fabricates manager-complex/
+      vehicle resolution/class from filer CIK plus row-level investment_discretion.
+      Merge/green CI is implementation evidence, not Sol acceptance. Because the
+      commissioned one-carrier PR is now closed/merged, the lawful post-merge repair
+      mechanism is an explicit Sol/Chairman adjudication point; do not silently mint a
+      replacement carrier or use the production proof lane to waive these architecture
+      blockers.
+  - claim: "K3-D has one real same-operation implementation carrier but is not accepted."
     command: "Macro #6514 + exact-head Sol review"
     result: >
       PASS — operation alpha-k3d-economic-propagation-20260826-sol-001 remains on
@@ -86,12 +90,22 @@ verified:
       aaaff0a9415337797c6fc917a06a3a2bd9a3010c. Sol review 5037637852 still blocks
       acceptance on alias-derived logical record identity, unenforced generator
       native-owner authority, and missing fail-closed source-event exact-identity gating.
+      Its branch is stale against the newer Macro main and must reconcile on this same
+      carrier before any repaired exact-head acceptance proof.
   - claim: "Autonomy V1 still forbids dead-letter Slack fanout to absent receivers."
     command: "Current protected Autonomy V1 operational reconciliation + dispatch-precedence decision"
     result: >
       PASS — new DELIVERY_ONLY worker/Fable posts remain frozen unless a known
       already-active explicitly commissioned receiver will actually read the exact
       carrier. Slack visibility is not Job admission, ACK, execution or lifecycle truth.
+  - claim: "Slack transport has not acquired new F01-F13 execution truth."
+    command: "Fresh exact-operation-key Slack census"
+    result: >
+      PASS — the existing program operation remains on its original DELIVERY_ONLY
+      carrier/thread with no receiver reply; wildcard census found no F01-F13 lane
+      operation-key messages. K2-C and K3-D each already have their pre-existing
+      DELIVERY_ONLY posts and both threads remain empty. No duplicate Slack fanout was
+      sent and no execution state was inferred from delivery.
 unverified:
   - claim: "Exact retained public-P1 source files are available inside the active F00 receiver's own execution filesystem."
     what_would_verify: >
@@ -110,7 +124,8 @@ unresolved:
   - "F00 remains ACTIVE_MANUAL_CARRIER / organizational claim accepted after #6504 merge; that is not an Executive runtime state and does not prove subordinate capacity."
   - "F01-F13 remain COMMISSIONED_DURABLY / UNCLAIMED absent individual lane ACK/runtime claim evidence."
   - "Historical public P1 exact-byte import remains OPEN_IMPORT_GATE until exact retained bytes are transferred and hashes verified; do not model-reconstruct the 1,556-row corpus."
-  - "K2-C #6533 and K3-D #6514 are both implementation-active but Sol-blocked; neither is accepted and K5 remains blocked until both are separately accepted under their proof laws."
+  - "K2-C #6533 is merged/main-canonical implementation evidence but not Sol-accepted because exact-head owner/identity blockers remained open at merge; its lawful post-merge repair mechanism requires explicit adjudication rather than a silent duplicate carrier."
+  - "K3-D #6514 remains implementation-active but Sol-blocked on the same carrier; K5 remains blocked until both K2-C and K3-D are separately Sol-accepted under their proof laws."
   - "Material rights/commercial decisions for military, maritime, satellite, sovereign ownership and paid specialist feeds remain executive/Chairman gates where the owning lane cannot prove lawful rights from existing contracts."
 next_actions:
   - >
@@ -128,9 +143,12 @@ next_actions:
     If capacity is unavailable, record the exact capacity blocker and keep F00
     coverage/import/archaeology work moving rather than posting Slack dead letters.
   - >
-    ALPHA PARALLEL: preserve the existing K2-C #6533 and K3-D #6514 carriers. Require
-    same-carrier repairs and exact-head proof. Do not start K5 until both capabilities
-    are Sol-accepted and current Agent OS state explicitly releases the gate.
+    ALPHA PARALLEL: preserve the existing K2-C operation identity and K3-D #6514
+    carrier. K2-C #6533 is already merged; do not pretend that closed carrier can be
+    repaired in place and do not mint a replacement without explicit adjudication of
+    the lawful post-merge repair path. K3-D repairs remain same-carrier only with fresh
+    current-main reconciliation and exact-head proof. Do not start K5 until both
+    capabilities are Sol-accepted and current Agent OS state explicitly releases the gate.
   - >
     PUBLIC DELTA: at meaningful milestones, recheck current-public Market Ontology
     surfaces and classify changes against the 88 baseline and retained P1 before
@@ -143,10 +161,12 @@ do_not_redo:
   - "Do not copy Market Ontology proprietary code, data, corpora, assets, branding, credentials or hidden/private interfaces."
   - "Do not infer Fable/worker execution from Slack delivery or Linear status. F00's manual organizational ACK is real only at that organizational layer."
   - "Do not bulk-convert #agent-dispatch visibility posts into Executive Jobs or blindly reissue K2-C/K3-D/F01-F13 operations."
+  - "Do not open a replacement K2-C implementation carrier merely because #6533 merged with unresolved Sol blockers; resolve the post-merge repair mechanism explicitly first."
   - "Do not make F00 a routine serial approval hop or collapse F01-F13 into one mega-session."
   - "Do not let research/context parity acquire trade, rank, gate, size, origination or ENTRY_OPEN authority without a separate lawful promotion."
 danger_areas:
   - "A stale cold-start handoff can overwrite newer GitHub/PR truth; this record now supersedes its own pre-merge clauses."
+  - "Merged/green implementation can be mistaken for Sol acceptance even when exact-head architecture blockers remained open; capability and merge state must stay distinct."
   - "Future competitor evolution escaping a frozen 88-row snapshot; F00 current-public delta census is recurring."
   - "Historical owner mappings becoming stale; current canonical owner/source/rights law always wins."
   - "Parallel lane collisions on shared owner paths; fresh pre-write census is mandatory."
@@ -155,7 +175,7 @@ danger_areas:
 prs:
   - "macro#6504 merged 275ee28e0f1d87463f0f5f84a8a0878e39b78510 from head 440d4b26bbcc6311dc35a92ab2761c458130ae2e"
   - "macro#6508 merged fcbafecaa2636a5bba103d704bdc1c0d4d47d117"
-  - "macro#6533 K2-C open / same-operation repair required"
+  - "macro#6533 K2-C merged 0758de6b9a7e9e920a6f44e4c1abcd62dbf8074e from head 9b331df00b5346e287999e5271d368e3ec3c7a4c / NOT SOL-ACCEPTED"
   - "macro#6514 K3-D open DRAFT/HOLD-FOR-SOL / same-operation repair required"
 decisions:
   - DEC:MARKET-ONTOLOGY-COMPLETE-CAPABILITY-PARITY-FABLE-COO-FANOUT
@@ -177,8 +197,9 @@ and their frozen operation identities remain binding.
 2. F00 is ACTIVE_MANUAL_CARRIER at the organizational layer from the explicit same-operation
    Fable ACK; F01-F13 remain durable/unclaimed absent their own evidence.
 3. A1B remains PROVEN_LIVE / DONE via merged #6508; A2-A6 remain separately unstarted.
-4. K2-C and K3-D are no longer merely commissioned/unclaimed: #6533 and #6514 are their
-   real implementation carriers, both still blocked on Sol-requested same-carrier repair.
+4. K2-C #6533 is now merged/main-canonical implementation evidence but remains unaccepted
+   because exact-head Sol owner/identity blockers were unresolved at merge; K3-D #6514
+   is the real open implementation carrier and remains Sol-blocked on the same carrier.
 5. Generic Slack DELIVERY_ONLY posting is not normal allocation. Absent a known active
    receiver, the lawful state is durable/unclaimed rather than dispatched.
 6. Earlier Skillpack pins remain historical receipts; current procedural pin for this
