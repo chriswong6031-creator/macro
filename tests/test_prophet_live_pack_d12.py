@@ -77,6 +77,16 @@ def test_split_completed_series_quarantines_non_session_and_not_yet_completed_na
     assert set(invalid) == {"SAT", "FUTURE"}
 
 
+def test_split_completed_series_quarantines_nat_tip_without_crashing():
+    malformed = pd.Series([101.0], index=pd.DatetimeIndex([pd.NaT]))
+    valid, invalid = B._split_completed_series(
+        {"GOOD": _series("2026-08-07"), "MALFORMED": malformed},
+        completed_through="2026-08-07",
+    )
+    assert set(valid) == {"GOOD"}
+    assert set(invalid) == {"MALFORMED"}
+
+
 def test_invalid_tip_name_is_an_explicit_non_verdict_not_dormant():
     s = _series("2026-08-08")
     rec = AP.stale_record("BAD", s, 0)
