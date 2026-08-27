@@ -1,135 +1,151 @@
 ---
-workstream: EARNINGS-EVENT-INTELLIGENCE-COMPILER
-wave: TFG-0-R1
-status: HOLD-FOR-SOL
-operation_key: tfg0-transcript-format-census-20260827-v1
-authority: architecture
-decided_by: sol
-created_at: 2026-08-27
-supersedes:
-  - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-27-tfg0.md
+workstream: "WS:EARNINGS-EVENT-INTELLIGENCE-COMPILER"
+session: sol/tfg0-transcript-format-census-20260827-r1
+model: sol
+ended_because: ci_handoff
+mission: >
+  Finish TFG-0 after the GOOGL E3-C refusal became canonical: adjudicate structural question
+  boundaries and source-supported identity on the already-frozen 16-call development corpus,
+  replace impossible outcome bars with source-conditioned acceptance law, freeze a no-leak unseen
+  holdout protocol, and leave one bounded TFG-1 implementation packet without modifying compiler or
+  production behavior.
+state_before: >
+  The initial TFG-0 stage had frozen a 16-revision development corpus and eight-revision unopened
+  holdout, measured the unchanged compiler at 0/16, and proposed transcript-local source evidence.
+  E3-C refusal PR #6497 was still concurrent and the initial >=12/16 development / >=6/8 holdout
+  outcome bars had not yet been tested against source-only identity adjudication.
+prs:
+  - 6521
+decisions:
+  - DEC:E3FMT-TRANSCRIPT-LOCAL-SOURCE-EVIDENCE-NORMALIZATION
+  - DEC:E3FMT-STRUCTURAL-SEPARATORS-PROXY-IDENTITY-AND-SOURCE-CONDITIONED-HOLDOUT
+changed:
+  - path: research/earnings_intelligence/e3/tfg0_development_boundary_identity_adjudication.json
+    what: >
+      Froze source-only development truth from the 16 already-open exact revisions: 110 real
+      structural question handoffs, 95 direct next-speaker matches, 6 explicit full-name proxy
+      handoffs, 101 source-supported questioners, 9 unresolved separators, 2 explicit management
+      role-conflict calls, and exactly 10 source-clean full-call cases.
+  - path: research/earnings_intelligence/e3/TFG0_R1_BOUNDARY_IDENTITY_AND_HOLDOUT_SCORING_AMENDMENT_2026-08-27.md
+    what: >
+      Replaced the impossible provisional numeric outcome bars with source-conditioned development
+      and holdout law, froze structural-separator semantics, explicit proxy identity, exact role
+      comparison aliases, and no-post-unseal-code-change law.
+  - path: agentos/decisions/DEC-E3FMT-STRUCTURAL-SEPARATORS-PROXY-IDENTITY-AND-SOURCE-CONDITIONED-HOLDOUT.md
+    what: >
+      Recorded Sol's R1 decision. It has higher precedence for boundary/questioner/role-equivalence
+      and scoring clauses but deliberately does not use formal Agent OS supersession because the
+      earlier broader transcript-local architecture remains live where not amended.
+  - path: research/earnings_intelligence/e3/TFG0_QA_RESPONDENT_IDENTITY_EVIDENCE_AMENDMENT_2026-08-27.md
+    what: >
+      Froze a future optional nested same-revision respondent-role evidence variant while keeping
+      respondent role required/source-supported and keeping TFG-1 production admission AAPL-only.
+  - path: research/earnings_intelligence/e3/TFG1_DETERMINISTIC_TRANSCRIPT_FORMAT_HARDENING_HANDOFF_R1_2026-08-27.md
+    what: >
+      Created the sole active TFG-1 implementation packet with complete TDD sequence, exact
+      development/holdout gates, stop conditions, proof packet and no-production-coverage boundary.
+  - path: research/earnings_intelligence/e3/TFG1_DETERMINISTIC_TRANSCRIPT_FORMAT_HARDENING_HANDOFF_2026-08-27.md
+    what: >
+      Marked the initial implementation packet SUPERSEDED so no worker can accidentally execute its
+      stale provisional breadth bars.
+  - path: agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-27-tfg0.md
+    what: >
+      Recast the initial stage as a schema-valid historical handoff and removed stale active numeric
+      bars from its body while preserving the initial anti-leakage measurements in Git history.
+  - path: agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-27-tfg0-r1.md
+    what: >
+      This continuation record reconciles merged E3-C refusal state with TFG-0 R1 and leaves the
+      exact next operation recoverable by a fresh session.
+verified:
+  - claim: The GOOGL E3-C refusal is canonical and still does not complete parent E3-C.
+    command: >
+      GitHub PR #6497 exact-head review and merge; merge SHA
+      f244f0b34330cac9c98a815a3c0e97d0ba5b1d7f.
+    result: >
+      Accepted refusal merged; GOOGL is spent as clean OOS evidence; E3-C remains in progress and
+      E3-P remains locked.
+  - claim: TFG development selection was anti-leakage and exact.
+    command: >
+      GitHub Actions run 33042834588 jobs/artifacts 98420076116, 9634504377 and 9634565138.
+    result: >
+      2,909 eligible held revisions; exact ranks 1-16 selected before body inspection; 16/16 byte
+      replay; unchanged deterministic compiler 0/16.
+  - claim: Development source-only Q&A geometry and identity were frozen independently of compiler output.
+    command: >
+      GitHub Actions run 33056549015 job 98464657203 artifact 9639840320 plus
+      research/earnings_intelligence/e3/tfg0_development_boundary_identity_adjudication.json.
+    result: >
+      110 structural handoffs; 95 direct matches; 6 explicit full-name proxies; 101 supported
+      questioners; 9 unresolved separator-only handoffs; ARRY/CTRE role conflicts; 10 source-clean calls.
+  - claim: The TFG-1 format holdout is frozen but its bodies remain unopened.
+    command: >
+      GitHub Actions run 33043554816 job 98422311316 artifact 9634756392 and current PR changed-file census.
+    result: >
+      Exact ranks 17-24 recorded by pair + SHA only; no holdout body fixture or holdout-body
+      adjudication exists on PR #6521.
+  - claim: Final TFG-0 diff is records/research only.
+    command: >
+      GitHub list_pr_changed_filenames for Macro PR #6521 at the current R1 carrier head.
+    result: >
+      Only research/earnings_intelligence/e3/* and agentos/decisions|handoffs/* paths are changed;
+      no engine, script, workflow, test, config, data, Terminal or production publication path remains.
+unverified:
+  - TFG-1 compiler implementation is not built and no implementation success is claimed.
+  - The eight frozen holdout bodies remain intentionally unopened; their source-clean power is unknown.
+  - No new production issuer/Q&A coverage is claimed by TFG-0; production proof is not owed by this records-only architecture wave.
+unresolved:
+  - >
+    Whether the frozen TFG-1 method can satisfy all 10 source-clean development calls and the unseen
+    holdout remains unknown until a separate coding worker executes the R1 handoff under TDD.
+  - >
+    Whether the unseen eight-call holdout has at least 6 source-clean slots is intentionally unknown;
+    source-only holdout adjudication happens only after the TFG-1 implementation head is frozen.
+next_actions:
+  - >
+    Sol exact-head reviews and, only on binding green hosted CI, merges PR #6521 as SPEC_ONLY
+    architecture/research. Merge does not complete E3-C.
+  - >
+    After #6521 lands, commission one strong frontier coding worker on
+    `research/earnings_intelligence/e3/TFG1_DETERMINISTIC_TRANSCRIPT_FORMAT_HARDENING_HANDOFF_R1_2026-08-27.md`.
+  - >
+    After a Sol-accepted TFG-1 result, commission a fresh pre-registered untouched-production-OOS
+    selection/proof. Only that later OOS pass may close E3-C and make E3-P eligible.
+do_not_redo:
+  - Do not reselect or expand the 16-call development corpus after seeing source/parser outcomes.
+  - Do not open, replace, skip or rerank the eight frozen holdout bodies before TFG-1 implementation-head freeze.
+  - Do not inspect CAT/BAC/SNOW during TFG development or use GOOGL again as clean OOS acceptance.
+  - Do not restore the rejected >=12/16 development outcome bar or bare >=6/8 holdout outcome bar.
+  - Do not make respondent role nullable, invent generic Management, or use external/fuzzy person identity.
+  - Do not create another transcript, Q&A, person, publication, model-routing or lifecycle plane.
+  - Do not widen the AAPL-only production accepted-revision gate during TFG-1 and do not start E3-P.
+danger_areas:
+  - >
+    A real question handoff may be structurally certain while its person identity is unresolved. Dropping
+    the separator would merge adjacent exchanges; guessing the person would violate source-supported identity.
+  - >
+    Explicit proxy speakers are source-supported only under the frozen full-name on-for/sitting-in-for law.
+    The principal analyst's affiliation does not automatically transfer to the proxy.
+  - >
+    Segment role metadata is incomplete and can contradict same-revision title text. Role comparison aliases
+    are closed to CEO/CFO/COO families only; `CIO` is deliberately not an alias because it is ambiguous.
+  - >
+    The current Terminal consumer accepts an exact four-key respondent object. The optional roster-evidence
+    variant is production-unarmed in TFG-1; a later fresh-OOS product vertical must update/verify the real
+    consumer before any extended respondent publishes.
+  - >
+    Once TFG-1 opens the eight holdout bodies after implementation freeze, no code change is permitted on that
+    operation. A miss is a falsifier/return-to-Sol, not an invitation to tune the same holdout.
 ---
 
 # Earnings Event Intelligence Compiler — TFG-0 R1 continuation
 
-## Mission just completed
+TFG-0 is a records/research architecture wave only. The GOOGL refusal is already canonical. This R1
+continuation freezes the method-hardening evidence, corrects the experiment scoring law, and leaves one
+active implementation packet. If PR #6521 lands, classify TFG-0 as `SPEC_ONLY`, not built or proven live.
 
-Recover the generalization problem exposed by the frozen GOOGL E3-C failure without fitting the repair to GOOGL, inspect a pre-registered independent development corpus, freeze a transcript-local deterministic architecture, and leave a bounded TFG-1 implementation/holdout packet.
-
-## Canonical predecessor closeout
-
-E3-C refusal PR #6497 is now merged as `f244f0b34330cac9c98a815a3c0e97d0ba5b1d7f` from accepted exact head `be2f14ae1d9585d114bd06848feed98d74552d59`.
-
-That merge makes the GOOGL source-format falsifier and `DEC:E3C-GOOGL-OOS-REFUSAL-SPENDS-EVENT` canonical. It does **not** complete E3-C. GOOGL is spent as clean OOS evidence; CAT/BAC/SNOW remain uninspected; E3-P remains locked.
-
-## TFG-0 anti-leakage state
-
-Operation `tfg0-transcript-format-census-20260827-v1` was pre-registered before body inspection.
-
-Development selection came from the live `mastermind.tx-index/v1` by deterministic metadata/SHA ordering only:
-
-- 2,909 eligible held revisions;
-- exclude AAPL, GOOGL/GOOG, CAT, BAC, SNOW;
-- select ranks 1–16 by `sha256(TFG0|pair|body_sha256)`;
-- zero selected bodies inspected before the selection receipt was frozen.
-
-An eight-call TFG-1 holdout is independently frozen as ranks 17–24. Its bodies remain **unopened**. Do not inspect them before the TFG-1 implementation head is frozen.
-
-## What the development corpus proved
-
-All 16 exact revisions byte replayed and contain real named analyst Q&A. The unchanged deterministic compiler succeeded on **0/16**:
-
-- 11 `operator_intro_identity_unparsed`;
-- 5 `zero_qa_boundaries`.
-
-Across 1,524 segments, 672 roles are blank (44.1%). SCCO and COF are effectively roleless management formats but carry same-revision participant/title evidence. ARRY and CTRE show explicit same-revision role conflicts, proving segment role is evidence rather than unquestioned authority.
-
-Post-freeze source-only adjudication froze:
-
-- 110 real structural question handoffs;
-- 95 direct Operator-name → next-speaker matches;
-- 6 explicit full-name proxy handoffs (`on for` / `sitting in for`);
-- 101 source-supported questioner handoffs under the closed direct/proxy law;
-- 9 real handoffs whose questioner identity must remain unresolved;
-- 2 explicit management-role-conflict calls (ARRY, CTRE);
-- exactly 10 independently source-clean calls for all-or-nothing full-call reconstruction.
-
-Therefore the initial `>=12/16` development bar was rejected as impossible under the already-binding fail-closed identity law. It is superseded, not loosened.
-
-## Binding R1 architecture
-
-Highest TFG-specific sources, in order:
-
-1. `research/earnings_intelligence/e3/TFG0_R1_BOUNDARY_IDENTITY_AND_HOLDOUT_SCORING_AMENDMENT_2026-08-27.md`
-2. `agentos/decisions/DEC-E3FMT-STRUCTURAL-SEPARATORS-PROXY-IDENTITY-AND-SOURCE-CONDITIONED-HOLDOUT.md`
-3. `research/earnings_intelligence/e3/TFG0_TRANSCRIPT_FORMAT_GENERALIZATION_ARCHITECTURE_FREEZE_2026-08-27.md`
-4. `research/earnings_intelligence/e3/TFG0_QA_RESPONDENT_IDENTITY_EVIDENCE_AMENDMENT_2026-08-27.md`
-5. `agentos/decisions/DEC-E3FMT-TRANSCRIPT-LOCAL-SOURCE-EVIDENCE-NORMALIZATION.md` where not superseded by R1.
-
-R1 laws:
-
-- terminal phrases (`go ahead`, line open/live, proceed) have zero boundary authority;
-- a real question handoff remains a structural separator even when the questioner cannot be canonicalized;
-- unresolved separators must prevent adjacent span contamination but cannot mint a canonical exchange;
-- direct questioner requires exact source-name agreement under case/whitespace/honorific normalization only;
-- a differing full-name next speaker is source-supported only when their first utterance explicitly says they are `on for` / `sitting in for` the Operator-named person;
-- principal affiliation does not transfer to the proxy unless separately source-supported;
-- no fuzzy/typo/nickname/initial repair;
-- respondent role may come only from the same exact transcript revision: segment role and/or replayable participant/title declaration;
-- explicit same-revision role conflict refuses;
-- closed comparison aliases are exactly CEO↔Chief Executive Officer, CFO↔Chief Financial Officer, COO↔Chief Operating Officer; no `CIO`, no `etc.`;
-- role remains non-null/source-supported; never invent generic `Management`.
-
-## Correct development acceptance
-
-TFG-1 must:
-
-1. replay all 16 exact development SHAs;
-2. recover all 110 structural separators with zero opening/queue/closing false positives;
-3. resolve all 101 source-supported direct/proxy questioners;
-4. keep all 9 unresolved handoffs separator-only/refused without adjacent contamination;
-5. produce non-empty deterministic full-call reconstruction on **all 10 frozen source-clean calls**;
-6. make the six source-conflicted calls fail only for their pre-adjudicated source identity/conflict reason, never terminal-dialect dependence;
-7. preserve AAPL exactly 7 exchanges / 26 management answer turns / 68 replay spans;
-8. hold hard safety: accepted unsupported 0, cross-event 0, accepted replay 100%;
-9. contain no ticker/provider branch and no new store/model/control plane.
-
-## Correct unseen-holdout law
-
-Eight frozen ranks 17–24 are immutable and unopened.
-
-After development gates are green:
-
-1. freeze exact TFG-1 implementation head SHA;
-2. only then open the eight exact holdout revisions and verify SHA;
-3. before any compiler output, freeze a source-only `tfg1.holdout_source_adjudication.v1` classifying each fixed slot as `QNA_SOURCE_CLEAN`, `QNA_SOURCE_CONFLICTED`, `NO_QA_ADMISSION`, or `SOURCE_REVISION_MISMATCH`;
-4. never replace, skip or rerank a slot;
-5. if fewer than 6/8 are source-clean, stop `INSUFFICIENT_HOLDOUT_POWER`;
-6. otherwise run the already-frozen compiler once;
-7. every source-clean slot must produce non-empty full-call reconstruction;
-8. conflicted slots must preserve all structural separators and fail only the pre-adjudicated source reason;
-9. no-QA slots must create zero false Q&A boundaries;
-10. boundary precision/recall and hard safety must remain 100%/0/0 as frozen;
-11. **no code changes after holdout unseal**, whether or not the compiler has run yet.
-
-The old bare `>=6/8 non-empty` outcome bar is superseded. Six of eight is now a source-clean **power gate**; when powered, compiler success is required on **all** clean slots.
-
-## Canonical implementation handoff
-
-Use only:
+The sole active TFG-1 packet is:
 
 `research/earnings_intelligence/e3/TFG1_DETERMINISTIC_TRANSCRIPT_FORMAT_HARDENING_HANDOFF_R1_2026-08-27.md`
 
-The unsuffixed TFG-1 handoff is explicitly marked `SUPERSEDED` and must not be executed.
-
-## Capability classification
-
-TFG-0 is research/architecture only. If PR #6521 is Sol-accepted and merged, its capability state is **SPEC_ONLY**: the generalization method, development gold and unseen-holdout law are frozen, but no compiler behavior or production coverage has changed.
-
-E3-B remains `PROVEN_LIVE / DONE`. Parent E3-C remains `GENERALIZATION_REFUSED_ON_SOURCE_FORMAT / in_progress`. TFG-1 must not be represented as E3-C completion. Only a later fresh untouched-production-OOS proof may close E3-C. E3-P remains locked.
-
-## Exact next action
-
-After Sol exact-head acceptance and merge of PR #6521, commission **one** strong frontier coding worker on `TFG1_DETERMINISTIC_TRANSCRIPT_FORMAT_HARDENING_HANDOFF_R1_2026-08-27.md`.
-
-Do not open the eight frozen holdout bodies before that worker freezes its implementation head. Do not inspect CAT/BAC/SNOW. Do not start E3-P.
+Do not open the eight-body holdout before that worker freezes its implementation head. Do not inspect
+CAT/BAC/SNOW. Do not start E3-P.
