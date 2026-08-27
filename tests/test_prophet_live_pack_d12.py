@@ -77,13 +77,15 @@ def test_split_completed_series_quarantines_nat_tip_without_crashing():
     assert set(invalid) == {"MALFORMED"}
 
 
-def test_invalid_tip_name_is_an_explicit_non_verdict_not_dormant():
+def test_invalid_tip_name_is_an_explicit_non_verdict_without_contaminated_price():
     s = _series("2026-08-08")
     rec = AP.stale_record("BAD", s, 0)
     rec["skip"] = "invalid_series_tip"
     entry = B._name_entry(rec, None)
     assert entry["state"] == "stale"
     assert entry["skip"] == "invalid_series_tip"
+    assert "as_of_close" not in entry, "rejected future/non-session price is not trusted evidence"
+    assert entry["bar_date"] == "2026-08-08", "rejected source date stays visible diagnostically"
 
 
 def test_completion_clock_matches_the_incident_shape():
