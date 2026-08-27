@@ -77,6 +77,25 @@ verified:
       ledger-diverges-from-artifacts hazard recorded in
       DSC:CNLI-REPAIRED-SPINE-LEDGER-DIVERGES-FROM-ARTIFACTS and is why the
       ruling's fresh-attempt instruction is not cosmetic.
+  - claim: The intersection semantics were NEVER covered by a test, which is why they survived to first vendor contact
+    command: "grep -c absent_from_stock_basic_A_witness tests/test_china_tushare_spine.py; python3 -m pytest tests/test_china_tushare_spine.py -q"
+    result: >
+      CONFIRMED — the old classification string appears ZERO times in the test
+      file, and the full suite reports 83 passed with the source-union collector
+      change already in place and no pre-existing test modified. Removing the
+      filter broke nothing because nothing exercised it: every ticker in the
+      _bak_rows fixture is also present in _stock_basic_rows, so the
+      witness-missing branch was unreachable from the suite. Same family as the
+      three earlier canary defects in this lane — green tests, broken reality,
+      invisible until real data arrived.
+  - claim: The fail-closed half of the coverage check was already pinned by an existing test
+    command: "grep -n unexplained_missing tests/test_china_tushare_spine.py"
+    result: >
+      PASS — tests at :1658 and :1817 assert unexplained_missing_observations of
+      0 and 2 respectively, and both still pass under C6. Their securities are
+      master-known, so the C6 carve-out (which only excuses witness-missing
+      tickers) leaves them counting exactly as before. That :1817 assertion is
+      the standing guard that C6 did not disable the coverage check wholesale.
   - claim: The ci-authority/codex/merge-queue-pilot red on PR 6486 is by design
     command: "gh api repos/.../check-runs/98364660853"
     result: >
