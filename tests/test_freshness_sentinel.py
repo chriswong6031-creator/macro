@@ -226,6 +226,21 @@ def _armed(as_of: str | None = PROPHET_CURRENT_ASOF, *,
     )
 
 
+def _armed_current(now: datetime) -> fs.FetchResult:
+    """An armed pack stamped EXACTLY current for ``now`` — expected_last_session
+    — which is what a healthy nightly serves at every hour of every day.
+
+    The module-level PROPHET_CURRENT_ASOF is current only for clocks on NOW's
+    own Saturday. The SLA tests run at Friday-AFTERNOON clocks (ON_TIME is
+    16:47 ET, before the 17:00 ET settle roll), where the expected last session
+    is still Thursday — a pack stamped 08-07 there is AHEAD of the calendar,
+    which the D12 fence now correctly breaches. sessions_behind's floor-at-0
+    used to hide that fixture dishonesty; this helper removes it.
+    """
+    from lib import nyse_calendar
+    return _armed(nyse_calendar.expected_last_session(now).isoformat())
+
+
 #: The R2 key the armed-pack surface reads (engine/prophet_live/r2io.PACK_KEY).
 ARMED_PATH = "/live_flow/prophet_live_armed.json"
 
@@ -296,7 +311,8 @@ def _live_strip(as_of: str | None = PROPHET_CURRENT_ASOF, *,
 ABSENT = fs.FetchResult(error="served read failed: FileNotFoundError: [Errno 2] …")
 
 
-def _plv(pass_ts: str | None, *, last_modified: datetime | None = NOW) -> fs.FetchResult:
+def _plv(pass_ts: str | None, *, last_modified: datetime | None = NOW,
+        states: dict | list | None = None) -> fs.FetchResult:
     """One live-plane read of live/prophet_live.json, shaped for the
     window-gated ``prophet_live`` surface (Part A — closes the 27-day
     2026-07-30→08-26 freeze). ``meta.pass_ts`` is the evaluator's OWN semantic
@@ -305,8 +321,15 @@ def _plv(pass_ts: str | None, *, last_modified: datetime | None = NOW) -> fs.Fet
     NOW (fresh) so a case exercising pass_ts is not also fighting a stale-mtime
     side effect it is not testing for; the mtime-does-not-rescue-it tests pass
     it explicitly.
+
+    ``states`` defaults to an EMPTY dict — the production dark-pass shape
+    (engine/prophet_live/live_states.py writes ``states: {}``) — so every
+    single-shot evaluate stays inside the empty-states grace and every
+    pre-existing case doubles as proof one empty observation never breaches;
+    the F2 tests drive the streak explicitly.
     """
-    doc: dict = {"schema": "prophet_live.states/v1", "status": "live", "states": []}
+    doc: dict = {"schema": "prophet_live.states/v1", "status": "live",
+                "states": {} if states is None else states}
     if pass_ts is not None:
         doc["meta"] = {"pass_ts": pass_ts}
     return fs.FetchResult(status=200, last_modified=last_modified, body=json.dumps(doc))
@@ -1318,6 +1341,148 @@ def test_an_unimportable_live_states_module_degrades_to_indeterminate(monkeypatc
     assert "prophet_live" not in report["stale_surfaces"]
 
 
+# --------------------------------------------------------------------------- #
+# prophet_live — F2 fresh-but-empty (Part B: the empty states map mid-window)
+#
+# Proven in production 2026-08-27: at 19:12Z the sentinel reported
+# "prophet_live: ok (4.1 min old)" while the artifact carried n_states=0
+# mid-NYSE-window — the evaluator was refusing its poisoned pack as stale_pack
+# and publishing fresh EMPTY passes all session, so the meta.pass_ts budget was
+# satisfied by an artifact that served a reader nothing. The fence: an empty
+# states map observed on more than PROPHET_LIVE_EMPTY_STATES_GRACE_PASSES
+# consecutive in-window sentinel passes is a breach; any other observation
+# (window closed, absent, unparseable, non-empty) resets the streak, and the
+# streak crosses process boundaries through state.json.
+# --------------------------------------------------------------------------- #
+def _fresh_plv(now: datetime, states: dict | list | None = None) -> fs.FetchResult:
+    return _plv((now - timedelta(minutes=3)).isoformat(), last_modified=now,
+                states=states)
+
+
+def _empty_streak_state(n: int) -> dict:
+    return {"empty_states_passes": {"prophet_live": n}}
+
+
+def test_first_empty_passes_in_window_are_absorbed_by_the_grace():
+    """First minutes after open the artifact can legitimately be empty, and a
+    single dark pass publishes states: {} BY DESIGN — observations 1 and 2
+    must not page (the B5 falsifier law: budgets absorb routine hiccups)."""
+    results = _fresh_results()
+    results["prophet_live"] = _fresh_plv(WEEKDAY_IN_WINDOW)
+    report = fs.evaluate(results, WEEKDAY_IN_WINDOW)          # no prior state
+    c = report["surfaces"]["prophet_live"]
+    assert c["status"] == "ok"
+    assert c["n_states"] == 0
+    assert c["states_empty_passes"] == 1
+
+    report = fs.evaluate(results, WEEKDAY_IN_WINDOW,
+                         state=_empty_streak_state(1))
+    c = report["surfaces"]["prophet_live"]
+    assert c["status"] == "ok"
+    assert c["states_empty_passes"] == 2
+
+
+def test_empty_states_beyond_the_grace_in_window_is_a_breach():
+    """THE INCIDENT. meta.pass_ts is minutes old — the whole of the old
+    check's verdict — and the states map has now been empty for a third
+    consecutive in-window pass: fresh-but-empty is an outage, not freshness."""
+    results = _fresh_results()
+    results["prophet_live"] = _fresh_plv(WEEKDAY_IN_WINDOW)
+    report = fs.evaluate(results, WEEKDAY_IN_WINDOW,
+                         state=_empty_streak_state(2))
+    c = report["surfaces"]["prophet_live"]
+    assert c["status"] == "stale"
+    assert "prophet_live" in report["stale_surfaces"]
+    assert c["states_empty_passes"] == 3
+    assert "states map empty for 3 consecutive" in c["detail"]
+    assert "fresh-but-empty" in c["detail"]
+    assert c["asof_age_minutes"] == 3.0        # the clock alone reads healthy
+
+
+def test_nonempty_states_reset_the_empty_streak():
+    results = _fresh_results()
+    results["prophet_live"] = _fresh_plv(
+        WEEKDAY_IN_WINDOW, states={"AAPL": {"state": "armed"}})
+    report = fs.evaluate(results, WEEKDAY_IN_WINDOW,
+                         state=_empty_streak_state(7))
+    c = report["surfaces"]["prophet_live"]
+    assert c["status"] == "ok"
+    assert c["n_states"] == 1
+    assert c["states_empty_passes"] == 0
+
+
+def test_a_closed_window_resets_the_empty_streak():
+    """A Friday-close streak must never page at Monday's open: out-of-window
+    passes reset the count, so every session open gets its grace back."""
+    results = _fresh_results()      # prophet_live ABSENT; NOW is a Saturday
+    report = fs.evaluate(results, NOW, state=_empty_streak_state(7))
+    c = report["surfaces"]["prophet_live"]
+    assert c["status"] == "ok"
+    assert c["states_empty_passes"] == 0
+
+
+def test_the_empty_streak_keeps_counting_under_a_pass_ts_breach():
+    """The two conditions are independent. A frozen clock over an empty map
+    keeps the streak accumulating, so an evaluator that heals its stamp while
+    still serving nothing breaches on the heal pass instead of re-entering
+    the grace."""
+    results = _fresh_results()
+    results["prophet_live"] = _plv(
+        (WEEKDAY_IN_WINDOW - timedelta(hours=2)).isoformat(),
+        last_modified=WEEKDAY_IN_WINDOW)
+    report = fs.evaluate(results, WEEKDAY_IN_WINDOW,
+                         state=_empty_streak_state(2))
+    c = report["surfaces"]["prophet_live"]
+    assert c["status"] == "stale"                      # the pass_ts breach
+    assert "min old" in c["detail"]
+    assert c["states_empty_passes"] == 3               # still counted
+
+    healed = _fresh_results()
+    healed["prophet_live"] = _fresh_plv(WEEKDAY_IN_WINDOW)
+    c2 = fs.evaluate(healed, WEEKDAY_IN_WINDOW,
+                     state=_empty_streak_state(3))["surfaces"]["prophet_live"]
+    assert c2["status"] == "stale"                     # breaches immediately
+    assert "states map empty for 4 consecutive" in c2["detail"]
+
+
+def test_the_empty_streak_persists_across_sentinel_processes(tmp_path, monkeypatch):
+    """The N-consecutive-passes condition is CROSS-PROCESS by construction —
+    the timer fires a fresh oneshot python every pass — so the streak must
+    round-trip <state-dir>/state.json: three run()s, breach on the third."""
+    for var in ("TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID", "DISCORD_WEBHOOK_URL",
+                "DISCORD_WEBHOOK_WATCHLIST", "MAIL_SENTINEL_TO", "MAIL_SUPPORT_TO"):
+        monkeypatch.delenv(var, raising=False)
+    # The run-level served-vs-R2 agreement probe needs live credentials and is
+    # not what this case is about.
+    monkeypatch.setattr(fs, "prophet_live_r2_agreement",
+                        lambda body, now: ("no_creds", "stubbed for this test"))
+
+    codes = []
+    for i in range(3):
+        t = WEEKDAY_IN_WINDOW + timedelta(minutes=30 * i)
+
+        def fetcher(url, *, want_body, _t=t):
+            return fs.FetchResult(status=200, last_modified=_t - timedelta(hours=4),
+                                  body=_http_body(url, want_body))
+
+        codes.append(fs.run(
+            now=t, base="https://example.invalid",
+            r2_base="https://example.invalid",
+            public_dir=tmp_path / "public", state_dir=tmp_path / "state",
+            fetcher=fetcher,
+            served_reader=_served(_prophet(), strip=_fresh_plv(t)),
+        ))
+        state = json.loads((tmp_path / "state" / "state.json").read_text())
+        assert state["empty_states_passes"]["prophet_live"] == i + 1
+
+    assert codes == [0, 0, 1]
+    served = json.loads(
+        (tmp_path / "public" / "live" / "staleness.json").read_text())
+    assert "prophet_live" in served["stale_surfaces"]
+    assert ("states map empty for 3 consecutive"
+            in served["surfaces"]["prophet_live"]["detail"])
+
+
 def test_sentinel_is_stdlib_only():
     """The observer of last resort must not import the engine tree, lib.config,
     or any third-party package at module load — a broken venv or repo half-pull
@@ -1478,6 +1643,7 @@ def _ok_report(session: str = "2026-08-07", now: datetime = ON_TIME,
     """
     results = _fresh_results()
     results["us_board_provisional"] = _provisional(session)
+    results["prophet_live_armed"] = _armed_current(now)
     reads = _client_reads(session if client is _UNSET else client,
                           observed_at=now)
     return fs.evaluate(results, now, client_reads=reads)
@@ -1674,7 +1840,7 @@ def test_the_record_is_written_beside_the_state_and_rides_the_public_report(
 
     def fresh_fetcher(url, *, want_body):
         return fs.FetchResult(status=200, last_modified=ON_TIME - timedelta(hours=10),
-                              body=_http_body(url, want_body))
+                              body=_http_body(url, want_body, armed_as_of="2026-08-06"))
 
     assert fs.run(now=ON_TIME, base="https://example.invalid",
                   r2_base="https://example.invalid",
@@ -1993,7 +2159,7 @@ def test_a_dark_reader_is_diagnosable_from_the_operator_line_and_the_report(
 
     def fresh_fetcher(url, *, want_body):
         return fs.FetchResult(status=200, last_modified=ON_TIME - timedelta(hours=10),
-                              body=_http_body(url, want_body))
+                              body=_http_body(url, want_body, armed_as_of="2026-08-06"))
 
     assert fs.run(now=ON_TIME, base="https://example.invalid",
                   r2_base="https://example.invalid",
@@ -2456,3 +2622,71 @@ def test_the_armed_pack_is_fetched_with_a_body_and_the_manifest_still_is_not():
     assert wanted["prophet_live_armed.json"] is True
     assert wanted["_manifest.json"] is False
     assert wanted["us_stocks.html"] is True
+
+
+# --------------------------------------------------------------------------- #
+# D12 — the armed pack may never be AHEAD of the calendar
+#
+# 2026-08-27: a pre-#6554 build stamped as_of=2026-08-27 MID-SESSION. The */5
+# evaluator refused the pack as stale_pack all day; this surface read it "ok
+# (0 sessions behind)", because sessions_behind floors a future-dated stamp at
+# 0 by its own docstring ("no completed session is missing"). The fence: as_of
+# must be neither behind beyond the existing budget NOR ahead of
+# expected_last_session — an ahead stamp is its own named breach
+# (pack_ahead_of_calendar) with no grace.
+# --------------------------------------------------------------------------- #
+#: Thursday 2026-08-27 11:00 ET — MID-SESSION, before the 17:00 ET settle
+#: roll, so the last completed NYSE session is Wednesday 2026-08-26. The exact
+#: D12 clock shape.
+D12_MID_SESSION = datetime(2026, 8, 27, 15, 0, tzinfo=timezone.utc)
+#: The same Thursday at 18:30 ET — the session has completed and
+#: expected_last_session has rolled to 2026-08-27 itself (daily.yml's own
+#: 22:30 UTC firing hour).
+D12_POST_CLOSE = datetime(2026, 8, 27, 22, 30, tzinfo=timezone.utc)
+
+
+def test_the_armed_pack_forbids_ahead_of_calendar_stamps():
+    assert _armed_surface()["asof_never_ahead"] is True
+
+
+def test_an_ahead_of_calendar_stamp_is_its_own_named_breach():
+    """The D12 replay. The old check's whole view was "0 sessions behind" —
+    only an explicit comparison against expected_last_session can see a stamp
+    from the future."""
+    c = _armed_check("2026-08-27", D12_MID_SESSION)
+    assert c["status"] == "stale"
+    assert c["asof_sessions_behind"] == 0          # the floor that hid it
+    assert c["asof_expected_session"] == "2026-08-26"
+    assert "pack_ahead_of_calendar" in c["detail"]
+
+
+def test_a_weekend_dated_stamp_is_ahead_not_current():
+    """NOW is Saturday 08-08; a pack stamped with Saturday's date names a
+    session that cannot exist, and 0-behind arithmetic calls it current."""
+    c = _armed_check("2026-08-08", NOW)
+    assert c["status"] == "stale"
+    assert "pack_ahead_of_calendar" in c["detail"]
+
+
+def test_a_post_close_same_day_stamp_is_not_ahead():
+    """The falsifier-law half. daily.yml fires 22:30 UTC — 18:30 ET, after
+    the 17:00 ET settle roll — so a pack stamped with the session it just
+    watched close is EXACTLY current, and an ahead fence that paged on it
+    would page every healthy evening by construction."""
+    c = _armed_check("2026-08-27", D12_POST_CLOSE)
+    assert c["status"] == "ok"
+    assert c["asof_expected_session"] == "2026-08-27"
+    assert c["asof_sessions_behind"] == 0
+
+
+def test_the_behind_budget_is_unchanged_by_the_ahead_fence():
+    """Behind-beyond-budget still breaches with the SAME message and one
+    session of lag is still absorbed: the fence adds a ceiling, it does not
+    touch the floor."""
+    assert _armed_check("2026-08-26", D12_MID_SESSION)["status"] == "ok"
+    within = _armed_check("2026-08-25", D12_MID_SESSION)
+    assert within["status"] == "ok" and within["asof_sessions_behind"] == 1
+    over = _armed_check("2026-08-24", D12_MID_SESSION)
+    assert over["status"] == "stale" and over["asof_sessions_behind"] == 2
+    assert "behind the calendar" in over["detail"]
+    assert "pack_ahead_of_calendar" not in over["detail"]
