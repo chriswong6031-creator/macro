@@ -6329,6 +6329,11 @@ def _aged_reservation(
         "digest": "08e6d841f709",
         "fragment": fragment,
         "condition": "gh-run:current-repo:1",
+        # Current-format entries always carry a marker and confirmation; the
+        # marker-less shapes are the LEGACY generations, tested separately by
+        # the release-by-own-deadline regressions.
+        "process_marker": "ship-watcher:" + "ab" * 16,
+        "confirmed": True,
         "head": head,
         "created": now - age,
     }
