@@ -363,8 +363,8 @@ def evaluate(root: Path, registry_path: Path, workflows_dir: Path) -> list[Findi
     findings: list[Finding] = []
     if registry.get("schema") != "runner_policy.v2":
         findings.append(Finding("R0", "runner policy schema must be runner_policy.v2"))
-    if registry.get("phase") != "p3a-inert-trusted-executor":
-        findings.append(Finding("R0", "runner policy must describe the P3A inert executor phase"))
+    if registry.get("phase") != "p3b-a-call-capable":
+        findings.append(Finding("R0", "runner policy must describe the P3B-A call-capable phase"))
     if registry.get("repository_visibility") != "public":
         findings.append(Finding("R0", "repository visibility boundary must remain public"))
     expected_scenarios = {
@@ -486,11 +486,12 @@ def evaluate(root: Path, registry_path: Path, workflows_dir: Path) -> list[Findi
         "job": "trusted-pack",
         "group": "macro-home-canary",
         "labels": ["ci-linux"],
+        "call_enabled": True,
         "production_enabled": False,
     }
     if trusted_route != expected_trusted_route:
         findings.append(
-            Finding("R13", "P3A trusted executor declaration drifted or enabled production early")
+            Finding("R13", "P3B-A trusted executor declaration drifted or enabled production early")
         )
     trusted_workflow = str(trusted_route.get("workflow", ""))
     trusted_job_id = str(trusted_route.get("job", ""))
@@ -498,7 +499,7 @@ def evaluate(root: Path, registry_path: Path, workflows_dir: Path) -> list[Findi
         allowed_custom.add((trusted_workflow, trusted_job_id))
     trusted_document = documents.get(trusted_workflow)
     if trusted_document is None:
-        findings.append(Finding("R13", "P3A trusted executor workflow is missing"))
+        findings.append(Finding("R13", "P3B-A trusted executor workflow is missing"))
     else:
         trusted_jobs = trusted_document.get("jobs") or {}
         trust_gate = trusted_jobs.get("trust-gate") or {}
@@ -507,14 +508,22 @@ def evaluate(root: Path, registry_path: Path, workflows_dir: Path) -> list[Findi
         trigger_config = trusted_document.get(
             "on", trusted_document.get(True, {})
         )
-        exact_inputs = {"pr_number"}
+        call_outputs = {
+            "matrix",
+            "plan_sha",
+            "tested_sha",
+            "base_sha",
+            "head_sha",
+            "control_sha",
+        }
         trigger_inputs_are_exact = (
             isinstance(trigger_config, dict)
-            and all(
-                isinstance(trigger_config.get(event), dict)
-                and set((trigger_config[event].get("inputs") or {})) == exact_inputs
-                for event in ("workflow_call", "workflow_dispatch")
-            )
+            and isinstance(trigger_config.get("workflow_call"), dict)
+            and (trigger_config["workflow_call"].get("inputs") or {}) == {}
+            and set(trigger_config["workflow_call"].get("outputs") or {}) == call_outputs
+            and isinstance(trigger_config.get("workflow_dispatch"), dict)
+            and set((trigger_config["workflow_dispatch"].get("inputs") or {}))
+            == {"pr_number"}
         )
         trust_steps = trust_gate.get("steps") or []
         gate_step = next(
@@ -522,7 +531,8 @@ def evaluate(root: Path, registry_path: Path, workflows_dir: Path) -> list[Findi
                 step
                 for step in trust_steps
                 if isinstance(step, dict)
-                and step.get("name") == "keep P3A dispatch-provable and production-inert"
+                and step.get("name")
+                == "admit direct dispatch or exact main-called same-repository PR"
             ),
             {},
         )
@@ -532,39 +542,78 @@ def evaluate(root: Path, registry_path: Path, workflows_dir: Path) -> list[Findi
         gate_env_is_exact = gate_step.get("env") == {
             "EVENT_NAME": "${{ github.event_name }}",
             "TRUSTED_REF": "${{ github.ref }}",
-            "TRUSTED_WORKFLOW_REF": "${{ github.workflow_ref }}",
-            "PR_NUMBER": "${{ inputs.pr_number }}",
+            "CALLER_WORKFLOW_REF": "${{ github.workflow_ref }}",
+            "CALLED_WORKFLOW_REF": "${{ job.workflow_ref }}",
+            "CALLED_WORKFLOW_SHA": "${{ job.workflow_sha }}",
+            "REPOSITORY": "${{ github.repository }}",
+            "HEAD_REPOSITORY": "${{ github.event.pull_request.head.repo.full_name }}",
+            "BASE_REF": "${{ github.base_ref }}",
+            "EVENT_PR_NUMBER": "${{ github.event.pull_request.number }}",
+            "DISPATCH_PR_NUMBER": "${{ inputs.pr_number }}",
         }
         executable_refusals_are_exact = {
-            'test "$EVENT_NAME" = workflow_dispatch || {',
+            'test "$REPOSITORY" = mastermindx-market-intelligence/macro || {',
+            'test "$CALLED_WORKFLOW_REF" = "$trusted_workflow_ref" || {',
             'test "$TRUSTED_REF" = refs/heads/main || {',
-            (
-                'test "$TRUSTED_WORKFLOW_REF" = mastermindx-market-intelligence/'
-                "macro/.github/workflows/trusted-ci-executor.yml@refs/heads/main || {"
-            ),
+            'test -z "$DISPATCH_PR_NUMBER" || {',
+            'test "$TRUSTED_REF" = "refs/pull/$EVENT_PR_NUMBER/merge" || {',
+            'test "$HEAD_REPOSITORY" = "$REPOSITORY" || {',
+            'test "$BASE_REF" = main || {',
+            'test "$CALLER_WORKFLOW_REF" = "$expected_caller_ref" || {',
         } <= gate_lines
+        trust_outputs_are_exact = trust_gate.get("outputs") == {
+            "control_sha": "${{ steps.admit.outputs.control_sha }}",
+            "pr_number": "${{ steps.admit.outputs.pr_number }}",
+            "mode": "${{ steps.admit.outputs.mode }}",
+            "semantic_workflow": "${{ steps.admit.outputs.semantic_workflow }}",
+        }
+        plan_text = str(plan_job)
+        selector = next(
+            (
+                step
+                for step in (plan_job.get("steps") or [])
+                if isinstance(step, dict) and step.get("id") == "select"
+            ),
+            {},
+        )
+        plan_is_main_controlled = all(
+            token in plan_text
+            for token in (
+                "${{ needs.trust-gate.outputs.control_sha }}",
+                "${{ needs.trust-gate.outputs.pr_number }}",
+                "${{ needs.trust-gate.outputs.semantic_workflow }}",
+                "${{ github.event_name }}",
+            )
+        ) and selector.get("env") == {
+            "EXECUTION_MODE": "${{ needs.trust-gate.outputs.mode }}",
+            "FULL_MATRIX": "${{ steps.plan.outputs.matrix }}",
+        }
         if triggers(trusted_document) != {"workflow_call", "workflow_dispatch"}:
-            findings.append(Finding("R13", "P3A executor triggers must stay call-capable and dispatch-provable"))
+            findings.append(Finding("R13", "P3B-A executor triggers must stay call-capable and dispatch-provable"))
         if not trigger_inputs_are_exact:
-            findings.append(Finding("R13", "P3A executor may accept only the pr_number input"))
+            findings.append(Finding("R13", "P3B-A reusable call must accept no caller-supplied identity"))
         if (
             trust_gate.get("runs-on") != HOSTED
+            or gate_step.get("id") != "admit"
             or not gate_env_is_exact
             or not executable_refusals_are_exact
+            or not trust_outputs_are_exact
             or plan_job.get("runs-on") != HOSTED
             or plan_job.get("needs") != "trust-gate"
+            or not plan_is_main_controlled
         ):
-            findings.append(Finding("R13", "P3A hosted trust and planner boundary drifted"))
+            findings.append(Finding("R13", "P3B-A hosted trust and main-owned planner boundary drifted"))
         if (
             not isinstance(trusted_job, dict)
             or trusted_job.get("needs") != "plan"
             or trusted_job.get("runs-on")
             != {"group": "macro-home-canary", "labels": "ci-linux"}
+            or (trusted_job.get("strategy") or {}).get("max-parallel") != 3
         ):
-            findings.append(Finding("R13", "P3A trusted pack lost its selected group and exact label"))
+            findings.append(Finding("R13", "P3B-A trusted pack lost its selected group, label, or three-slot bound"))
         ci_document = documents.get(".github/workflows/ci.yml") or {}
         if "trusted-ci-executor.yml" in str(ci_document):
-            findings.append(Finding("R13", "P3A must not route production ci.yml through the executor"))
+            findings.append(Finding("R13", "P3B-A must not route production ci.yml through the executor"))
 
     runner_group_name = str(runtime_group.get("name", ""))
     runner_group_consumers = {
@@ -580,7 +629,7 @@ def evaluate(root: Path, registry_path: Path, workflows_dir: Path) -> list[Findi
         findings.append(
             Finding(
                 "R13",
-                "P3A runner-group consumer set must be exactly "
+                "P3B-A runner-group consumer set must be exactly "
                 f"{sorted(expected_group_consumers)}; found {sorted(runner_group_consumers)}",
             )
         )
@@ -741,7 +790,7 @@ def main(argv: list[str] | None = None) -> int:
     if findings:
         print(f"FAIL: {len(findings)} runner-policy finding(s)")
         return 1
-    print("OK: P3A runner routing is hosted-by-default with an inert main-selected executor.")
+    print("OK: P3B-A runner routing remains hosted while the main-selected executor is call-capable.")
     return 0
 
 

@@ -5,6 +5,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
 import yaml
 
 
@@ -35,31 +36,96 @@ def triggers(document: dict) -> set[str]:
     return set(raw) if isinstance(raw, dict) else {str(raw)}
 
 
-def test_p3a_executor_is_dispatch_provable_but_production_inert() -> None:
+def trusted_gate_step() -> dict:
+    trust = workflow("trusted-ci-executor.yml")["jobs"]["trust-gate"]
+    return next(
+        step
+        for step in trust["steps"]
+        if step.get("name")
+        == "admit direct dispatch or exact main-called same-repository PR"
+    )
+
+
+def run_trusted_gate(
+    tmp_path: Path, **overrides: str
+) -> tuple[subprocess.CompletedProcess[str], dict[str, str]]:
+    repository = "mastermindx-market-intelligence/macro"
+    pr_number = "6390"
+    output = tmp_path / "github-output"
+    environment = {
+        **os.environ,
+        "GITHUB_OUTPUT": str(output),
+        "EVENT_NAME": "pull_request",
+        "TRUSTED_REF": f"refs/pull/{pr_number}/merge",
+        "CALLER_WORKFLOW_REF": (
+            f"{repository}/.github/workflows/ci.yml@refs/pull/{pr_number}/merge"
+        ),
+        "CALLED_WORKFLOW_REF": (
+            f"{repository}/.github/workflows/"
+            "trusted-ci-executor.yml@refs/heads/main"
+        ),
+        "CALLED_WORKFLOW_SHA": "a" * 40,
+        "REPOSITORY": repository,
+        "HEAD_REPOSITORY": repository,
+        "BASE_REF": "main",
+        "EVENT_PR_NUMBER": pr_number,
+        "DISPATCH_PR_NUMBER": "",
+    }
+    environment.update(overrides)
+    result = subprocess.run(
+        ["bash", "-c", trusted_gate_step()["run"]],
+        cwd=ROOT,
+        env=environment,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    values: dict[str, str] = {}
+    if output.exists():
+        for line in output.read_text(encoding="utf-8").splitlines():
+            key, value = line.split("=", 1)
+            values[key] = value
+    return result, values
+
+
+def test_p3ba_executor_is_call_capable_but_production_route_stays_inert() -> None:
     document = workflow("trusted-ci-executor.yml")
     assert triggers(document) == {"workflow_call", "workflow_dispatch"}
     trigger_config = document.get("on", document.get(True))
-    assert set(trigger_config["workflow_call"]["inputs"]) == {"pr_number"}
+    assert trigger_config["workflow_call"].get("inputs", {}) == {}
+    assert set(trigger_config["workflow_call"]["outputs"]) == {
+        "matrix",
+        "plan_sha",
+        "tested_sha",
+        "base_sha",
+        "head_sha",
+        "control_sha",
+    }
     assert set(trigger_config["workflow_dispatch"]["inputs"]) == {"pr_number"}
     assert document["permissions"] == {"contents": "read", "pull-requests": "read"}
 
     trust = document["jobs"]["trust-gate"]
     assert trust["runs-on"] == "ubuntu-latest"
-    rendered = str(trust)
-    assert "refs/heads/main" in rendered
-    assert "workflow_dispatch" in rendered
-    assert "P3A refuses workflow_call" in rendered
-    gate = next(
-        step
-        for step in trust["steps"]
-        if step.get("name") == "keep P3A dispatch-provable and production-inert"
-    )
-    assert gate["env"]["TRUSTED_WORKFLOW_REF"] == "${{ github.workflow_ref }}"
-    assert (
-        'test "$TRUSTED_WORKFLOW_REF" = '
-        "mastermindx-market-intelligence/macro/.github/workflows/"
-        'trusted-ci-executor.yml@refs/heads/main || {'
-    ) in gate["run"].splitlines()
+    assert trust["outputs"] == {
+        "control_sha": "${{ steps.admit.outputs.control_sha }}",
+        "pr_number": "${{ steps.admit.outputs.pr_number }}",
+        "mode": "${{ steps.admit.outputs.mode }}",
+        "semantic_workflow": "${{ steps.admit.outputs.semantic_workflow }}",
+    }
+    gate = trusted_gate_step()
+    assert gate["id"] == "admit"
+    assert gate["env"] == {
+        "EVENT_NAME": "${{ github.event_name }}",
+        "TRUSTED_REF": "${{ github.ref }}",
+        "CALLER_WORKFLOW_REF": "${{ github.workflow_ref }}",
+        "CALLED_WORKFLOW_REF": "${{ job.workflow_ref }}",
+        "CALLED_WORKFLOW_SHA": "${{ job.workflow_sha }}",
+        "REPOSITORY": "${{ github.repository }}",
+        "HEAD_REPOSITORY": "${{ github.event.pull_request.head.repo.full_name }}",
+        "BASE_REF": "${{ github.base_ref }}",
+        "EVENT_PR_NUMBER": "${{ github.event.pull_request.number }}",
+        "DISPATCH_PR_NUMBER": "${{ inputs.pr_number }}",
+    }
 
     production = workflow("ci.yml")
     assert "trusted-ci-executor.yml" not in str(production)
@@ -69,7 +135,76 @@ def test_p3a_executor_is_dispatch_provable_but_production_inert() -> None:
     } == {"ubuntu-latest"}
 
 
-def test_p3a_planner_is_hosted_main_control_and_freezes_one_exact_pr_pack() -> None:
+def test_p3ba_accepts_exact_main_called_same_repo_pr_and_derives_identity(
+    tmp_path: Path,
+) -> None:
+    result, outputs = run_trusted_gate(tmp_path)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert outputs == {
+        "control_sha": "a" * 40,
+        "pr_number": "6390",
+        "mode": "production",
+        "semantic_workflow": "ci",
+    }
+
+
+def test_p3ba_keeps_the_direct_main_dispatch_canary(tmp_path: Path) -> None:
+    repository = "mastermindx-market-intelligence/macro"
+    result, outputs = run_trusted_gate(
+        tmp_path,
+        EVENT_NAME="workflow_dispatch",
+        TRUSTED_REF="refs/heads/main",
+        CALLER_WORKFLOW_REF=(
+            f"{repository}/.github/workflows/"
+            "trusted-ci-executor.yml@refs/heads/main"
+        ),
+        HEAD_REPOSITORY="",
+        BASE_REF="",
+        EVENT_PR_NUMBER="",
+        DISPATCH_PR_NUMBER="6390",
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert outputs == {
+        "control_sha": "a" * 40,
+        "pr_number": "6390",
+        "mode": "dispatch",
+        "semantic_workflow": "trusted-ci-executor",
+    }
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {"EVENT_NAME": "push"},
+        {
+            "CALLED_WORKFLOW_REF": (
+                "mastermindx-market-intelligence/macro/.github/workflows/"
+                "trusted-ci-executor.yml@refs/pull/6390/merge"
+            )
+        },
+        {
+            "CALLER_WORKFLOW_REF": (
+                "mastermindx-market-intelligence/macro/.github/workflows/"
+                "rogue.yml@refs/pull/6390/merge"
+            )
+        },
+        {"HEAD_REPOSITORY": "attacker/fork"},
+        {"BASE_REF": "release"},
+        {"TRUSTED_REF": "refs/pull/6391/merge"},
+        {"EVENT_PR_NUMBER": "6391"},
+        {"DISPATCH_PR_NUMBER": "6390"},
+        {"CALLED_WORKFLOW_SHA": "candidate"},
+    ],
+)
+def test_p3ba_refuses_untrusted_call_contexts(
+    tmp_path: Path, overrides: dict[str, str]
+) -> None:
+    result, outputs = run_trusted_gate(tmp_path, **overrides)
+    assert result.returncode != 0
+    assert outputs == {}
+
+
+def test_p3ba_planner_uses_main_control_and_routes_one_or_all_exact_pr_packs() -> None:
     document = workflow("trusted-ci-executor.yml")
     plan = document["jobs"]["plan"]
     assert plan["runs-on"] == "ubuntu-latest"
@@ -88,11 +223,15 @@ def test_p3a_planner_is_hosted_main_control_and_freezes_one_exact_pr_pack() -> N
         step for step in steps if step.get("name") == "checkout main-owned executor control code"
     )
     assert control_checkout["uses"] == "actions/checkout@v4"
-    assert control_checkout["with"]["ref"] == "${{ github.sha }}"
+    assert control_checkout["with"]["ref"] == (
+        "${{ needs.trust-gate.outputs.control_sha }}"
+    )
     assert control_checkout["with"]["persist-credentials"] is False
 
     resolve = next(step for step in steps if step.get("id") == "ref")
     assert "resolve_ci_canary_ref.py" in resolve["run"]
+    assert '--github-sha "${{ needs.trust-gate.outputs.control_sha }}"' in resolve["run"]
+    assert '--pr-number "${{ needs.trust-gate.outputs.pr_number }}"' in resolve["run"]
     candidate_checkout = next(
         step for step in steps if step.get("name") == "checkout the immutable PR candidate"
     )
@@ -101,8 +240,8 @@ def test_p3a_planner_is_hosted_main_control_and_freezes_one_exact_pr_pack() -> N
 
     planner = next(step for step in steps if step.get("id") == "plan")
     for token in (
-        "--workflow-name trusted-ci-executor",
-        "--event workflow_dispatch",
+        '--workflow-name "${{ needs.trust-gate.outputs.semantic_workflow }}"',
+        '--event "${{ github.event_name }}"',
         "--role pr_head",
         "--gate code",
         "--tested-tree-sha",
@@ -112,7 +251,15 @@ def test_p3a_planner_is_hosted_main_control_and_freezes_one_exact_pr_pack() -> N
     ):
         assert token in planner["run"]
     selector = next(step for step in steps if step.get("id") == "select")
+    assert selector["env"] == {
+        "EXECUTION_MODE": "${{ needs.trust-gate.outputs.mode }}",
+        "FULL_MATRIX": "${{ steps.plan.outputs.matrix }}",
+    }
     assert "--count 1" in selector["run"]
+    assert "matrix=$FULL_MATRIX" in selector["run"]
+
+    trusted_pack = document["jobs"]["trusted-pack"]
+    assert trusted_pack["strategy"]["max-parallel"] == 3
 
 
 def test_p3ar_freezes_and_transports_the_complete_main_owned_control_bundle() -> None:

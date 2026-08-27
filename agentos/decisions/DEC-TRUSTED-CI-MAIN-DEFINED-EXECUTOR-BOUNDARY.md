@@ -16,12 +16,17 @@ answer: >
   later call that exact main path, but may never define a self-hosted job itself
   or supply trusted SHA, plan or route authority. Hosted ci-plan/anchors,
   ci-gate, fences, merge control and every fork/untrusted route remain
-  independently hosted. P3A declares workflow_call but refuses it at runtime;
-  only a direct main workflow_dispatch whose caller-context workflow_ref is the
-  exact trusted-ci-executor main path can run one proof pack. The PC host repeats
-  that exact event/ref/workflow-ref/job decision before job start. P3B is the
-  separate authority-changing wave that may admit the exact same-repository caller
-  and move production execution.
+  independently hosted. P3B-A admits either a direct main workflow_dispatch or
+  an exact same-repository pull_request call whose caller workflow_ref is
+  ci.yml at that event's merge ref and whose called job.workflow_ref remains the
+  main-owned trusted-ci-executor path. The call accepts no inputs: PR identity,
+  exact control SHA, candidate merge SHA and semantic plan are independently
+  derived by the called workflow. Direct dispatch stays one-pack bounded;
+  production-mode calls may use the P2-accepted three-slot matrix. The PC host
+  repeats the exact event/ref/workflow-ref/job decision before job start. P3B-A
+  does not edit ci.yml or enable production routing; P3B-B is the separate
+  authority-changing carrier that may make the exact call and retain hosted
+  anchors under the existing ci-gate.
 rationale: >
   GitHub runner groups restrict access to jobs directly defined in selected
   workflows. A main-pinned reusable workflow therefore keeps runner admission
@@ -49,6 +54,8 @@ alternatives:
 evidence:
   - "Issue #6351 P0R/P1/P2/P2R receipts"
   - "P2 runs 32960314514 and 32964925696"
+  - "P3A-R PR #6487 merged as ac3f8a888e2ece7a15f37180c19dc247227a3098"
+  - "P3A-R direct main proof run 33030976647 on pc-ci-3"
   - "GitHub runner-group selected-workflow rule: only jobs directly defined in selected workflows may access the group"
 affects: ["WS:CI-MERGE-CONTROL-PLANE", "WS:RUNNER-FLEET-RESILIENCE", ".github/runner-policy.yml", ".github/workflows/trusted-ci-executor.yml"]
 confidence: high
@@ -57,11 +64,13 @@ decided_by: ceo-sol
 decided_at: 2026-08-26
 ---
 
-## P3A stop boundary
+## P3B-A stop boundary
 
-P3A may merge the inert reusable workflow, register its exact main path in the
-existing runner group, and dispatch one real proof pack from main. It may not edit
-production ci.yml, enable workflow_call admission, rename required checks, or move
-any hosted control/untrusted route. Before the proof dispatch, all three drained PC
-CI roots must receive and re-read the merged root-owned admission bytes. Those are
-P3B decisions after P3A proof.
+P3B-A may make the already selected main-owned reusable workflow call-capable for
+one exact same-repository PR event and use at most the P2-accepted three PC slots.
+It may not edit production ci.yml, change required-check names, expose the runner
+group to another workflow, accept caller-supplied identity/plan/route inputs, or
+move any hosted control, fork or untrusted route. Production stays hosted and
+`production_enabled` stays false. Only the separate P3B-B carrier may route
+ordinary PR traffic after P3B-A is merged and exact-main callable behavior is
+available for that carrier to prove.
