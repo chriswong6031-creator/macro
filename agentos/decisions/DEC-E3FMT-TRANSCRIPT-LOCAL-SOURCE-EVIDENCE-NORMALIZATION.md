@@ -68,10 +68,19 @@ confidence: high
 reversibility: costly
 decided_by: sol
 decided_at: 2026-08-27
+superseded_by: "DEC:E3FMT-STRUCTURAL-SEPARATORS-PROXY-IDENTITY-AND-SOURCE-CONDITIONED-HOLDOUT"
 ---
 
-# Implementation boundary
+# SUPERSEDED BY TFG-0 R1
 
-This decision is architecture only. It grants no production revision admission and no second-issuer publication authority.
+This initial TFG decision is retained only as provenance for the first post-GOOGL architecture draft. It is formally superseded by:
 
-TFG-1 must remain Macro-only and production-unarmed: preserve the AAPL-only accepted revision gate, preserve AAPL 7/26/68, prove >=12/16 on the declared development corpus, freeze its code head before opening the eight-call holdout, then require >=6/8 on that holdout with no same-carrier post-holdout tuning. GOOGL is a known regression only. Fresh E3 second-issuer production acceptance remains a later pre-registered operation; E3-P stays locked.
+`DEC:E3FMT-STRUCTURAL-SEPARATORS-PROXY-IDENTITY-AND-SOURCE-CONDITIONED-HOLDOUT`
+
+The replacement decision is self-contained and is the sole canonical TFG method law. In particular, the provisional `>=12/16` development and bare `>=6/8` holdout outcome bars below are **not active law**; source-only adjudication later proved the development source-clean ceiling is ten calls and replaced both bars with the R1 source-conditioned protocol.
+
+# Historical implementation boundary
+
+This decision was architecture only. It granted no production revision admission and no second-issuer publication authority.
+
+The historical first draft said TFG-1 should remain Macro-only and production-unarmed, preserve the AAPL-only accepted revision gate and AAPL 7/26/68, prove >=12/16 on the declared development corpus, freeze its code head before opening the eight-call holdout, then require >=6/8 on that holdout with no same-carrier post-holdout tuning. Those two numeric outcome bars were provisional and are superseded by the replacement decision. GOOGL remains a known regression only. Fresh E3 second-issuer production acceptance remains a later pre-registered operation; E3-P stays locked.
