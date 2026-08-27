@@ -62,7 +62,7 @@ def run_trusted_gate(
         ),
         "CALLED_WORKFLOW_REF": (
             f"{repository}/.github/workflows/"
-            "trusted-ci-executor.yml@refs/heads/main"
+            "trusted-ci-executor.yml@main"
         ),
         "CALLED_WORKFLOW_SHA": "a" * 40,
         "REPOSITORY": repository,
@@ -130,7 +130,7 @@ def test_p3bb_executor_stays_call_capable_after_production_route_activation() ->
     production = workflow("ci.yml")
     assert production["jobs"]["trusted-ci"]["uses"] == (
         "mastermindx-market-intelligence/macro/.github/workflows/"
-        "trusted-ci-executor.yml@refs/heads/main"
+        "trusted-ci-executor.yml@main"
     )
     assert {
         production["jobs"][name]["runs-on"]
@@ -158,6 +158,10 @@ def test_p3ba_keeps_the_direct_main_dispatch_canary(tmp_path: Path) -> None:
         EVENT_NAME="workflow_dispatch",
         TRUSTED_REF="refs/heads/main",
         CALLER_WORKFLOW_REF=(
+            f"{repository}/.github/workflows/"
+            "trusted-ci-executor.yml@refs/heads/main"
+        ),
+        CALLED_WORKFLOW_REF=(
             f"{repository}/.github/workflows/"
             "trusted-ci-executor.yml@refs/heads/main"
         ),

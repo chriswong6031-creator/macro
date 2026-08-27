@@ -4571,7 +4571,7 @@ jobs:
     name: trusted-ci
     needs: ci-plan
     if: needs.ci-plan.outputs.has_work == 'true' && github.event.pull_request.head.repo.full_name == github.repository
-    uses: mastermindx-market-intelligence/macro/.github/workflows/trusted-ci-executor.yml@refs/heads/main
+    uses: mastermindx-market-intelligence/macro/.github/workflows/trusted-ci-executor.yml@main
   ci-pack:
     needs: [ci-plan, trusted-ci]
     # The `has_work` clause is the Wave B addition, and it is safe only because

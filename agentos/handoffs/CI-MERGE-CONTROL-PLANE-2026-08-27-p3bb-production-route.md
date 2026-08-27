@@ -18,6 +18,11 @@ changed:
       Add one zero-input same-repository call to the exact main executor; retain
       full hosted fork execution; turn existing hosted ci-pack-N jobs into
       trusted-fragment relays after exact hosted/main plan-SHA parity.
+  - path: .github/workflows/trusted-ci-executor.yml
+    what: >
+      Distinguish valid reusable-call `@main` identity from direct-dispatch
+      `@refs/heads/main` and export main-derived same-repo/base/control facts to
+      the existing root-owned host admission hook.
   - path: .github/runner-policy.yml
     what: >
       Declare P3B-B production routing for same-repository PR execution only;
@@ -27,6 +32,11 @@ changed:
       Permit only the exact protected-main call and enforce no inputs/secrets,
       hosted anchors, fork-only heavy candidate steps, semantic relay identity,
       three-slot executor bound and sole runner-group consumer.
+  - path: ops/runner-host/common/runner_admission.py
+    what: >
+      Extend the existing PC hook with the exact same-repository PR merge ref,
+      ci.yml caller, trusted-pack job, main base and main-derived control-SHA
+      contract while preserving direct dispatch and every hostile refusal.
   - path: tests/test_trusted_ci_production_route.py
     what: >
       Pin the production call, hosted anchor/fork split, unchanged gate and
@@ -37,6 +47,8 @@ changed:
       in same-repository anchors, fork rerouting and extra group consumers.
   - path: tests/test_trusted_ci_executor_workflow.py
     what: Reconcile the already-proven executor contract to activated P3B-B routing.
+  - path: tests/test_ci_canary_tools.py
+    what: Execute the exact allowed PR hook facts and hostile ref/fork/base/SHA mutations.
   - path: agentos/decisions/DEC-TRUSTED-CI-MAIN-DEFINED-EXECUTOR-BOUNDARY.md
     what: Record the frozen P3B-B relay and fork-isolation boundary.
   - path: agentos/workstreams/WS-CI-MERGE-CONTROL-PLANE.md
@@ -45,6 +57,8 @@ changed:
     what: Reconcile the fleet ledger to P3B-A acceptance without changing M1 admission.
   - path: agentos/handoffs/CI-MERGE-CONTROL-PLANE-2026-08-27-p3bb-production-route.md
     what: Preserve exact scope, local proof and the production/P4 continuation.
+  - path: agentos/discoveries/DSC-REUSABLE-WORKFLOW-CALL-AND-HOST-HOOK-USE-DIFFERENT-REF-SHAPES.md
+    what: Record GitHub's caller/called/start-hook ref-shape distinction and repair.
 verified:
   - claim: Current main lacked the P3B-B route.
     command: python3.12 -m pytest -q tests/test_trusted_ci_production_route.py
@@ -55,12 +69,30 @@ verified:
     command: >
       python3.12 -m pytest -q tests/test_trusted_ci_executor_workflow.py
       tests/test_runner_policy.py tests/test_trusted_ci_production_route.py
-    result: 59 passed under Python 3.12.13; three inherited temp-cleanup warnings.
+    result: >
+      84 passed under Python 3.12.13 across workflow, route, runner-policy,
+      host-admission and stable-pack-contract coverage; three inherited
+      temp-cleanup warnings.
   - claim: The checked-in guard accepts the exact P3B-B route.
     command: python3 scripts/check_runner_policy.py
     result: >
       OK: only same-repository PR execution routes through the protected-main PC
       executor; hosted anchors/forks and the sole group consumer remain pinned.
+  - claim: The invalid first call failed before any job or PC work.
+    command: GitHub Actions run 33038617258 and signed-in annotation inspection
+    result: >
+      Zero jobs. GitHub rejected `@refs/heads/main` because a reusable call must
+      name a branch, tag or commit. The carrier now uses `@main`; the trust gate
+      separately binds called `job.workflow_ref` and immutable `job.workflow_sha`.
+  - claim: All three drained PC roots run identical P3B-B admission bytes.
+    command: >
+      GitHub org runner census; systemd/Worker drain; exact SHA-256 install;
+      installed allowed/fork-refused decisions; service/listener/runner re-census
+    result: >
+      pc-ci-1/2/3 were online and idle, stopped with no root Worker, received
+      cd7f67591fe9aaaea2976db467c4ce053cf94d06e5a17f60bc0706086d566736,
+      passed exact allow and fork refusal, then returned active/online/idle.
+      The old e4ff74a9... hook is retained at a dated root-owned backup path.
 unverified:
   - claim: The P3B-B carrier itself executes its selected packs on pc-ci-1/2/3.
     what_would_verify: >
@@ -78,9 +110,9 @@ unresolved:
     but W4 remains unadmitted; OptionsHub/Theta/MarketDesk coexistence and the
     225 GiB admission margin still forbid generic M1 CI.
 next_actions:
-  - Re-pin origin/main and reconcile any overlap before publication.
-  - Run focused policy/workflow/Agent OS validation on the exact reconciled head.
-  - Publish one P3B-B PR linked to #6351 and use one mechanical CI watcher.
+  - Re-pin origin/main and reconcile any overlap before updating PR #6505.
+  - Run focused policy/workflow/host-admission/Agent OS validation on the exact head.
+  - Push only the corrected same carrier and use one mechanical CI watcher.
   - Accept only exact PC execution, plan/fragment parity, hosted anchors and green gate.
   - Merge without bypass, then collect P4 on three natural product PRs.
 do_not_redo:
@@ -112,7 +144,8 @@ pool, without granting candidate-authored workflow code direct runner access.
 
 ## Acceptance boundary
 
-- Exact call: `mastermindx-market-intelligence/macro/.github/workflows/trusted-ci-executor.yml@refs/heads/main`.
+- Exact caller syntax: `mastermindx-market-intelligence/macro/.github/workflows/trusted-ci-executor.yml@main`.
+- Runner-group selected-workflow policy remains pinned separately to `@refs/heads/main`.
 - No `with`, no inherited secrets and no direct group/label use in `ci.yml`.
 - Same-repository PR: trusted executor plus tiny hosted `ci-pack-N` relays.
 - Fork PR: existing complete hosted pack implementation.

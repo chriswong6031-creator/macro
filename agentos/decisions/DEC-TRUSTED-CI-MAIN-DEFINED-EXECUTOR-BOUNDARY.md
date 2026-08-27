@@ -82,7 +82,8 @@ available for that carrier to prove.
 ## P3B-B production boundary
 
 P3B-B may add exactly one zero-input `ci.yml` reusable-workflow call to
-`trusted-ci-executor.yml@refs/heads/main` for ordinary same-repository PRs.
+`trusted-ci-executor.yml@main` for ordinary same-repository PRs. The runner
+group's separate selected-workflow policy remains pinned to `@refs/heads/main`.
 `ci-plan`, `ci-pack-N` anchors, `ci-gate`, contract delta, fences and merge
 control remain hosted. The anchors may consume only the called workflow's
 trusted semantic fragments and must refuse any hosted/main plan-SHA mismatch

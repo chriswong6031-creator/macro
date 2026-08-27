@@ -134,10 +134,10 @@ def test_p3bb_policy_rejects_a_candidate_pinned_executor_call(tmp_path: Path) ->
     root, registry, workflows = fixture_tree(tmp_path)
     path = workflows / "ci.yml"
     rendered = path.read_text(encoding="utf-8")
-    assert "trusted-ci-executor.yml@refs/heads/main" in rendered
+    assert "trusted-ci-executor.yml@main" in rendered
     path.write_text(
         rendered.replace(
-            "trusted-ci-executor.yml@refs/heads/main",
+            "trusted-ci-executor.yml@main",
             "trusted-ci-executor.yml@${{ github.sha }}",
             1,
         ),
@@ -193,8 +193,8 @@ def test_p3ba_policy_rejects_disabled_main_called_workflow_refusal(
 ) -> None:
     result = _mutate_trusted_gate(
         tmp_path,
-        'test "$CALLED_WORKFLOW_REF" = "$trusted_workflow_ref" || {',
-        'true || { # test "$CALLED_WORKFLOW_REF" = "$trusted_workflow_ref" || {',
+        'test "$CALLED_WORKFLOW_REF" = "$called_workflow_ref" || {',
+        'true || { # test "$CALLED_WORKFLOW_REF" = "$called_workflow_ref" || {',
     )
     assert result.returncode == 1
     assert "R13" in result.stdout

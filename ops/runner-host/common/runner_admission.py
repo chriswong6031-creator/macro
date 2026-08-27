@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 
 
 REPOSITORY = "mastermindx-market-intelligence/macro"
@@ -45,6 +46,25 @@ ALLOWLIST = {
     },
 }
 
+
+def _trusted_pr_pack_allowed(facts: dict[str, str]) -> bool:
+    match = re.fullmatch(r"refs/pull/([1-9][0-9]*)/merge", facts["ref"])
+    if match is None:
+        return False
+    expected_workflow_ref = (
+        f"{REPOSITORY}/.github/workflows/ci.yml@{facts['ref']}"
+    )
+    return (
+        facts["profile"] == "pc-ci"
+        and facts["event"] == "pull_request"
+        and facts["workflow_ref"] == expected_workflow_ref
+        and facts["job"] == "trusted-pack"
+        and facts["trusted_head_repository"] == REPOSITORY
+        and facts["trusted_base_ref"] == "main"
+        and re.fullmatch(r"[0-9a-f]{40}", facts["trusted_control_sha"])
+        is not None
+    )
+
 def decision(environment: dict[str, str]) -> tuple[bool, dict[str, str]]:
     profile = environment.get("MASTERMIND_CI_PROFILE", "")
     facts = {
@@ -54,12 +74,24 @@ def decision(environment: dict[str, str]) -> tuple[bool, dict[str, str]]:
         "ref": environment.get("GITHUB_REF", ""),
         "workflow_ref": environment.get("GITHUB_WORKFLOW_REF", ""),
         "job": environment.get("GITHUB_JOB", ""),
+        "trusted_head_repository": environment.get(
+            "MASTERMIND_TRUSTED_HEAD_REPOSITORY", ""
+        ),
+        "trusted_base_ref": environment.get("MASTERMIND_TRUSTED_BASE_REF", ""),
+        "trusted_control_sha": environment.get(
+            "MASTERMIND_TRUSTED_CONTROL_SHA", ""
+        ),
     }
     key = (facts["event"], facts["workflow_ref"], facts["job"])
     allowed = (
         facts["repository"] == REPOSITORY
-        and facts["ref"] == MAIN_REF
-        and key in ALLOWLIST.get(profile, set())
+        and (
+            (
+                facts["ref"] == MAIN_REF
+                and key in ALLOWLIST.get(profile, set())
+            )
+            or _trusted_pr_pack_allowed(facts)
+        )
     )
     return allowed, facts
 

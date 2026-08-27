@@ -30,7 +30,7 @@ def test_p3bb_same_repo_pr_calls_only_the_exact_main_owned_executor() -> None:
         ),
         "uses": (
             "mastermindx-market-intelligence/macro/.github/workflows/"
-            "trusted-ci-executor.yml@refs/heads/main"
+            "trusted-ci-executor.yml@main"
         ),
     }
     assert "with" not in trusted
@@ -149,4 +149,15 @@ def test_p3bb_policy_declares_only_same_repo_production_on_pc() -> None:
     assert registry["protected_hosted_routes"][0] == {
         "workflow": ".github/workflows/ci.yml",
         "jobs": ["ci-plan", "ci-pack", "ci-gate"],
+    }
+
+
+def test_p3bb_called_pack_exports_main_derived_host_admission_facts() -> None:
+    job = workflow("trusted-ci-executor.yml")["jobs"]["trusted-pack"]
+    assert job["env"] == {
+        "MASTERMIND_TRUSTED_HEAD_REPOSITORY": (
+            "${{ github.event.pull_request.head.repo.full_name }}"
+        ),
+        "MASTERMIND_TRUSTED_BASE_REF": "${{ github.base_ref }}",
+        "MASTERMIND_TRUSTED_CONTROL_SHA": "${{ needs.plan.outputs.control_sha }}",
     }

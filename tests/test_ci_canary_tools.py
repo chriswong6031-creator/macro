@@ -498,6 +498,40 @@ def test_host_admission_accepts_only_the_main_dispatch_trusted_executor_pack() -
         assert not ADMISSION.decision(mutated)[0]
 
 
+def test_host_admission_accepts_only_main_gated_same_repo_pr_executor_pack() -> None:
+    pr_number = "6505"
+    allowed = {
+        "MASTERMIND_CI_PROFILE": "pc-ci",
+        "GITHUB_REPOSITORY": "mastermindx-market-intelligence/macro",
+        "GITHUB_EVENT_NAME": "pull_request",
+        "GITHUB_REF": f"refs/pull/{pr_number}/merge",
+        "GITHUB_WORKFLOW_REF": (
+            "mastermindx-market-intelligence/macro/.github/workflows/"
+            f"ci.yml@refs/pull/{pr_number}/merge"
+        ),
+        "GITHUB_JOB": "trusted-pack",
+        "MASTERMIND_TRUSTED_HEAD_REPOSITORY": (
+            "mastermindx-market-intelligence/macro"
+        ),
+        "MASTERMIND_TRUSTED_BASE_REF": "main",
+        "MASTERMIND_TRUSTED_CONTROL_SHA": "a" * 40,
+    }
+    assert ADMISSION.decision(allowed)[0]
+    for key, value in (
+        ("GITHUB_EVENT_NAME", "workflow_dispatch"),
+        ("GITHUB_REF", "refs/pull/6506/merge"),
+        (
+            "GITHUB_WORKFLOW_REF",
+            "mastermindx-market-intelligence/macro/.github/workflows/rogue.yml@refs/pull/6505/merge",
+        ),
+        ("GITHUB_JOB", "rogue-pack"),
+        ("MASTERMIND_TRUSTED_HEAD_REPOSITORY", "attacker/fork"),
+        ("MASTERMIND_TRUSTED_BASE_REF", "release"),
+        ("MASTERMIND_TRUSTED_CONTROL_SHA", "candidate"),
+    ):
+        assert not ADMISSION.decision({**allowed, key: value})[0]
+
+
 def test_cache_update_disables_automatic_maintenance() -> None:
     script = (ROOT / "ops" / "runner-host" / "pc" / "mastermind_ci_cache_update.sh").read_text(
         encoding="utf-8"
