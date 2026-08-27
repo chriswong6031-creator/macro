@@ -49,10 +49,11 @@
     { sel: "#anv2-red", en: "Reduce / Avoid", zh: "减仓 / 回避", tone: "avoid" }
   ];
 
-  /* On-demand disclosure targets for Research Tools (change 6). Only owner panels
+  /* On-demand disclosure targets for Research Tools. Only owner panels
      present in the served DOM get a toggle — a panel absent from this build gets
      no dead button. Never includes #sector-rotation (integrated into Leadership)
-     or #act-now (compressed into the Expand modal's group-action band). */
+     or #act-now (its lanes are surfaced by the at-rest What to Act On Now
+     panel above Prophet — the one home for group action since V3.8). */
   var TOOL_DEFS = [
     { sel: "#hk-velocity-desk", en: "Fast Movers", zh: "快速异动" },
     { sel: "#washout-watch", en: "Washout Watch", zh: "洗盘观察站" },
@@ -143,7 +144,11 @@
         var id = sectorIdFromHref(href) || name.en;
         if (!name.en || !id || seen[id]) return;
         seen[id] = true;
-        out.push({ id: id, name: name, stance: { en: def.en, zh: def.zh }, tone: def.tone, href: href });
+        /* laneIdx preserves the ACTION owner's own row order inside each
+           lane — the at-rest action map renders in this order, never in
+           rotation-rank order (Action ≠ Leadership: the rank axis must not
+           gate or order the action surface). */
+        out.push({ id: id, name: name, stance: { en: def.en, zh: def.zh }, tone: def.tone, href: href, laneIdx: out.length });
       });
     });
     return out;
@@ -201,6 +206,11 @@
     });
     ranked.sort(function (a, b) { return (a.rank || 9999) - (b.rank || 9999); });
     var merged = ranked.concat(unranked);
+    /* §10 rank-owner-missing law: when NO sector carries an owner rank, every
+       piece of rank language (the RS basis chips, the modal Rank column)
+       must disappear too — a basis label over a traversal-ordered list would
+       be rank language without a rank owner. */
+    state.hasRankOwner = merged.some(function (x) { return x.rank != null; });
     state.membershipKnown = state.rows.some(function (r) { return !!(r && r.sector); });
     merged.forEach(function (x) {
       x.kind = "sector";
@@ -253,7 +263,10 @@
       ".hk-v37-an-lanes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}",
       ".hk-v37-an-lane{border:1px solid var(--line);border-radius:11px;background:var(--panel2);overflow:hidden}",
       ".hk-v37-an-hd{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:8px 10px;border-bottom:1px solid var(--line);border-top:2px solid currentColor;font-size:11px;font-weight:750;text-transform:uppercase;letter-spacing:.02em}.hk-v37-an-hd.buy{color:var(--ink-up,var(--up))}.hk-v37-an-hd.near{color:var(--ink-link,var(--link))}.hk-v37-an-hd.wait{color:var(--ink-warn,var(--warn))}.hk-v37-an-hd.avoid{color:var(--ink-down,var(--down))}.hk-v37-an-hd b{font-variant-numeric:tabular-nums;color:var(--muted);font-weight:700}",
-      ".hk-v37-an-row{display:flex;width:100%;align-items:center;justify-content:space-between;gap:8px;min-height:32px;padding:5px 10px;border:0;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);background:transparent;color:inherit;font-size:12.6px;font-weight:650;text-align:left;cursor:pointer}.hk-v37-an-hd+.hk-v37-an-row{border-top:0}.hk-v37-an-row:hover,.hk-v37-an-row.is-active{background:color-mix(in srgb,var(--link) 6%,transparent)}.hk-v37-an-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hk-v37-an-n{flex:none;color:var(--muted);font-size:10.6px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}",
+      ".hk-v37-an-row-w{display:flex;align-items:stretch;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent)}.hk-v37-an-hd+.hk-v37-an-row-w{border-top:0}",
+      ".hk-v37-an-row{flex:1;display:flex;min-width:0;align-items:center;justify-content:space-between;gap:8px;min-height:32px;padding:5px 10px;border:0;background:transparent;color:inherit;font-size:12.6px;font-weight:650;text-align:left;cursor:pointer}.hk-v37-an-row:hover,.hk-v37-an-row.is-active{background:color-mix(in srgb,var(--link) 6%,transparent)}.hk-v37-an-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hk-v37-an-n{flex:none;color:var(--muted);font-size:10.6px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}",
+      ".hk-v37-an-go{flex:none;display:inline-flex;align-items:center;padding:0 9px;border-left:1px dashed color-mix(in srgb,var(--line) 80%,transparent);color:var(--muted);font-size:12px;text-decoration:none}.hk-v37-an-go:hover{color:var(--text);background:color-mix(in srgb,var(--link) 6%,transparent)}",
+      ".hk-v37-empty-go{display:inline-block;margin-top:10px;color:var(--ink-link,var(--link));font-size:12px;font-weight:600;text-decoration:none}.hk-v37-empty-go:hover{text-decoration:underline}",
       ".hk-v37-an-empty{padding:12px 10px;color:var(--muted);font-size:12px;text-align:center}",
       ".hk-v37-an-more{display:block;width:100%;padding:7px 10px;border:0;border-top:1px dashed color-mix(in srgb,var(--line) 80%,transparent);background:transparent;color:var(--muted);font-size:11px;font-weight:650;cursor:pointer}.hk-v37-an-more:hover{color:var(--text)}",
       ".hk-v37-panel{margin-bottom:14px;border:1px solid var(--line);border-radius:13px;background:var(--panel);box-shadow:var(--card-shadow);overflow:hidden}.hk-v37-sec-hd{min-height:54px;display:flex;align-items:center;gap:10px;padding:0 15px;border-bottom:1px solid var(--line)}.hk-v37-sec-hd h2{margin:0;font-size:18px;font-weight:650;letter-spacing:-.012em}.hk-v37-sec-spacer{flex:1}.hk-v37-link{color:var(--ink-link,var(--link));font-size:13px;font-weight:600;text-decoration:none}.hk-v37-link:hover{text-decoration:underline}",
@@ -380,11 +393,18 @@
      membership must never render as 0. */
   var AN_AT_REST = 3;
   function anLaneItems(tone) {
-    return state.sectors.filter(function (x) { return x.tone === tone; });
+    /* Sorted by the action owner's own lane order (laneIdx), NOT by the
+       rotation-rank order state.sectors carries for the Leadership surface. */
+    return state.sectors.filter(function (x) { return x.tone === tone; })
+      .sort(function (a, b) { return (a.laneIdx || 0) - (b.laneIdx || 0); });
   }
+  /* Each row = filter button + the owner's own group-research route (the
+     harvested sectors/<id>.html href). The route is what keeps a known-zero
+     group useful as a research destination (§5.4/§10) instead of a dead end. */
   function anRowHtml(x) {
     var countHtml = x.count != null ? '<span class="hk-v37-an-n">' + x.count + ' · ' + bi("Prophet", "候选") + '</span>' : '';
-    return '<button class="hk-v37-an-row" type="button" data-hk-lead-id="' + esc(x.id) + '"><span class="hk-v37-an-name">' + bi(x.name.en, x.name.zh) + '</span>' + countHtml + '</button>';
+    var go = x.href ? '<a class="hk-v37-an-go" href="' + esc(x.href) + '" aria-label="' + esc(x.name.en) + ' sector research">↗</a>' : '';
+    return '<div class="hk-v37-an-row-w"><button class="hk-v37-an-row" type="button" data-hk-lead-id="' + esc(x.id) + '"><span class="hk-v37-an-name">' + bi(x.name.en, x.name.zh) + '</span>' + countHtml + '</button>' + go + '</div>';
   }
   function anLaneHtml(lane) {
     var items = anLaneItems(lane.tone), open = !!state.anOpen[lane.tone];
@@ -399,9 +419,13 @@
   }
   function renderActNow() {
     var host = qs("#hk-v37-an-body"); if (!host) return;
-    if (state.anLane == null || !anLaneItems(state.anLane).length) {
+    if (state.anLane == null) {
       /* Mobile default lane: Buy Now when non-empty, else the next non-empty
-         lane in the owner's own urgency order (§5.5). */
+         lane in the owner's own urgency order (§5.5). Elected ONLY while no
+         lane has been chosen yet — a user who taps an empty lane keeps it
+         and sees its truthful "—" body; re-electing on every render would
+         silently snap the selector back to Buy Now (adversarial review
+         2026-08-27, finding 1). */
       for (var i = 0; i < LANE_DEFS.length; i++) {
         if (anLaneItems(LANE_DEFS[i].tone).length) { state.anLane = LANE_DEFS[i].tone; break; }
       }
@@ -466,6 +490,13 @@
           ' <button class="hk-v37-empty-switch" type="button">' + bi("View All Candidates", "查看全部候选") + '</button>';
       }
     }
+    /* Known zero (§10): membership is canonical and the group genuinely has
+       no names on the current board — a quiet truthful state, not filter-miss
+       language, and the group-research route stays usable. */
+    if (item && item.members && item.members.size === 0) {
+      return bi("No current Prophet names in this group.", "该组别暂无 Prophet 候选。") +
+        (item.href ? ' <a class="hk-v37-empty-go" href="' + esc(item.href) + '">' + bi("Open sector research ↗", "查看板块研究 ↗") + '</a>' : '');
+    }
     return bi("No names match this leadership filter.", "当前领先筛选下暂无匹配个股。");
   }
   function applyFilter() {
@@ -521,11 +552,13 @@
   /* Expanded Leadership rows: same axis law as leadRow() — `RS #N` only from
      the owner's own rank (null renders "—", never a minted number), stance a
      separate chip, count "—" when membership is unknown. */
-  function modalRows(items) {
-    return items.length ? items.map(function (x) { return '<tr tabindex="0" data-hk-modal-id="' + esc(x.id) + '"><td class="num">' + esc(x.rank != null ? "RS #" + x.rank : "—") + '</td><td><b>' + bi(x.name.en, x.name.zh) + '</b></td><td><span class="hk-v37-stance ' + x.tone + '">' + bi(x.stance.en, x.stance.zh) + '</span></td><td>' + (x.cycleState && x.cycleState.en ? bi(x.cycleState.en, x.cycleState.zh) : "—") + '</td><td class="leaders">' + esc(x.leaders.length ? x.leaders.join(" · ") : "—") + '</td><td class="num">' + (x.count != null ? x.count : "—") + '</td></tr>'; }).join("") : '<tr><td colspan="6">—</td></tr>';
+  function modalRows(items, rk) {
+    return items.length ? items.map(function (x) { return '<tr tabindex="0" data-hk-modal-id="' + esc(x.id) + '">' + (rk ? '<td class="num">' + esc(x.rank != null ? "RS #" + x.rank : "—") + '</td>' : '') + '<td><b>' + bi(x.name.en, x.name.zh) + '</b></td><td><span class="hk-v37-stance ' + x.tone + '">' + bi(x.stance.en, x.stance.zh) + '</span></td><td>' + (x.cycleState && x.cycleState.en ? bi(x.cycleState.en, x.cycleState.zh) : "—") + '</td><td class="leaders">' + esc(x.leaders.length ? x.leaders.join(" · ") : "—") + '</td><td class="num">' + (x.count != null ? x.count : "—") + '</td></tr>'; }).join("") : '<tr><td colspan="' + (rk ? 6 : 5) + '">—</td></tr>';
   }
   function modalPaneHtml() {
-    return '<div class="hk-v37-modal-pane"><h4>' + bi("Leadership & Rotation", "领先与轮动") + ' <span class="hk-v37-lead-basis">' + bi("Relative strength vs HSI", "相对恒生指数") + '</span></h4><table class="hk-v37-modal-table"><thead><tr><th>' + bi("Rank", "排名") + '</th><th>' + bi("Name", "名称") + '</th><th>' + bi("Action", "操作状态") + '</th><th>' + bi("Cycle state", "周期状态") + '</th><th>' + bi("Leaders", "领先个股") + '</th><th>' + bi("Prophet", "候选") + '</th></tr></thead><tbody>' + modalRows(state.sectors) + '</tbody></table></div>';
+    /* Rank column + basis chip render ONLY under an owner rank (§10). */
+    var rk = !!state.hasRankOwner;
+    return '<div class="hk-v37-modal-pane"><h4>' + bi("Leadership & Rotation", "领先与轮动") + (rk ? ' <span class="hk-v37-lead-basis">' + bi("Relative strength vs HSI", "相对恒生指数") + '</span>' : '') + '</h4><table class="hk-v37-modal-table"><thead><tr>' + (rk ? '<th>' + bi("Rank", "排名") + '</th>' : '') + '<th>' + bi("Name", "名称") + '</th><th>' + bi("Action", "操作状态") + '</th><th>' + bi("Cycle state", "周期状态") + '</th><th>' + bi("Leaders", "领先个股") + '</th><th>' + bi("Prophet", "候选") + '</th></tr></thead><tbody>' + modalRows(state.sectors, rk) + '</tbody></table></div>';
   }
   /* Southbound subband (INTEGRATE_COMPRESS) — the three .sbah-read sentences
      from #mainland-money's cards (Southbound flow / Flow vs price / A/H
@@ -643,7 +676,7 @@
     main.innerHTML = '<header class="hk-v37-head"><h1>' + bi("Hong Kong Stocks", "港股") + '</h1><span class="hk-v37-head-spacer"></span><span class="hk-v37-chip">' + bi("Board " + bd.en, "榜单 " + bd.zh) + '</span></header>' +
       (hasActNow ? '<section class="hk-v37-panel" id="hk-v37-actnow"><div class="hk-v37-sec-hd"><h2>' + bi("What to Act On Now", "现在行动") + '</h2></div><div class="hk-v37-an-body" id="hk-v37-an-body"></div></section>' : '') +
       '<section class="hk-v37-panel" id="hk-v37-prophet"><div class="hk-v37-sec-hd"><h2>Prophet</h2><span class="hk-v37-result" id="hk-v37-result"></span><span class="hk-v37-sec-spacer"></span><div class="hk-v37-controls"><button class="hk-v37-filter" id="hk-v37-filter" type="button"></button><span class="hk-v37-seg"><button type="button" data-hk-source="top" aria-selected="true">' + bi("Top Picks", "首选") + '</button><button type="button" data-hk-source="all" aria-selected="false">' + bi("All Candidates", "全部候选") + '</button></span><span class="hk-v37-seg"><button type="button" data-hk-view="grid" aria-selected="true">' + bi("Grid", "卡片") + '</button><button type="button" data-hk-view="table" aria-selected="false">' + bi("Table", "表格") + '</button></span></div></div><div class="hk-v37-card-grid" id="hk-v37-card-grid"><div class="hk-v37-empty" id="hk-v37-grid-empty" hidden>' + bi("No names match this leadership filter.", "当前领先筛选下暂无匹配个股。") + '</div></div><div class="hk-v37-table" id="hk-v37-table" hidden></div></section>' +
-      '<section class="hk-v37-panel" id="hk-v37-leadership"><div class="hk-v37-sec-hd"><h2>' + bi("Leadership & Rotation", "领先与轮动") + '</h2><span class="hk-v37-lead-basis">' + bi("Relative strength vs HSI", "相对恒生指数") + '</span><span class="hk-v37-sec-spacer"></span><span class="hk-v37-flow" id="hk-v37-flow" hidden></span></div><div class="hk-v37-lead-list" id="hk-v37-lead-list"></div><div class="hk-v37-expand-wrap"><button class="hk-v37-expand" id="hk-v37-expand" type="button">' + bi("Expand leadership", "展开领先排名") + ' ↗</button></div></section>' +
+      '<section class="hk-v37-panel" id="hk-v37-leadership"><div class="hk-v37-sec-hd"><h2>' + bi("Leadership & Rotation", "领先与轮动") + '</h2>' + (state.hasRankOwner ? '<span class="hk-v37-lead-basis">' + bi("Relative strength vs HSI", "相对恒生指数") + '</span>' : '') + '<span class="hk-v37-sec-spacer"></span><span class="hk-v37-flow" id="hk-v37-flow" hidden></span></div><div class="hk-v37-lead-list" id="hk-v37-lead-list"></div><div class="hk-v37-expand-wrap"><button class="hk-v37-expand" id="hk-v37-expand" type="button">' + bi("Expand leadership", "展开领先排名") + ' ↗</button></div></section>' +
       (wraps.length ? evidenceSectionHtml() : '') +
       researchToolsHtml();
     nav.insertAdjacentElement("afterend", main);

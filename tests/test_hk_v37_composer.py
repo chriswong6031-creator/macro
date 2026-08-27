@@ -695,13 +695,20 @@ def test_rank_is_owner_rank_never_lane_traversal():
     assert "x.rank = r.rank" in body, (
         "collectSectors() no longer copies the owner's rotation rank"
     )
-    assignments = re.findall(r"\.rank\s*=\s*([^;]+);", body)
+    # Catch both member-access and subscript assignment shapes — a mutation
+    # writing x["rank"] = ... must not slip past a dot-only scan
+    # (adversarial review 2026-08-27, finding 8).
+    assignments = re.findall(r"(?:\.rank|\[[\"']rank[\"']\])\s*=\s*([^;]+);", body)
     for rhs in assignments:
         assert rhs.strip() in {"r.rank", "null"}, (
-            f"collectSectors() assigns .rank = {rhs.strip()!r} — the only "
+            f"collectSectors() assigns rank = {rhs.strip()!r} — the only "
             "lawful assignments are the owner-rank copy (r.rank) and the "
             "explicit null; anything else is a presentation-minted rank"
         )
+    assert '["rank"]' not in text and "['rank']" not in text, (
+        "the composer assigns rank via subscript somewhere — every rank "
+        "write must be visible to this test's assignment scan"
+    )
     assert "ranked.length + i" not in text, (
         "the V3.7 rank synthesis (ranked.length + i + 1) is back — a sector "
         "without an owner rank must render '—', never a minted number"
@@ -791,7 +798,10 @@ def test_count_is_labelled_prophet_and_unknown_membership_never_renders_zero():
     for fn, snippet in [
         ("leadRow", 'x.count != null ? x.count : "—"'),
         ("modalRows", 'x.count != null ? x.count : "—"'),
-        ("anRowHtml", "x.count != null"),
+        # Exact ternary-head pin: a mutation like `(x.count != null || true)`
+        # keeps the bare substring but breaks this shape (adversarial review
+        # 2026-08-27, finding 8).
+        ("anRowHtml", "var countHtml = x.count != null ? '"),
     ]:
         m3 = re.search(r"function " + fn + r"\b.*?(?=\n  function )", text, re.S)
         assert m3, f"could not locate {fn}() function body via regex"
@@ -828,6 +838,146 @@ def test_mobile_segment_grammar_one_lane_at_a_time():
             f"680px media query lost {rule!r} — the mobile grammar (one "
             "segmented selector, one lane body at a time) is broken"
         )
+
+
+def test_mobile_lane_election_only_when_no_lane_chosen():
+    """Adversarial review 2026-08-27, finding 1 (MAJOR): the default-lane
+    election must run ONLY while no lane has been chosen (state.anLane ==
+    null). Guarding it on the chosen lane's emptiness re-elects Buy Now on
+    every render, silently overriding a user who tapped an empty lane and
+    making the empty-lane "—" body unreachable on mobile (§5.5/§13.6 give
+    every lane title an accessible body, empty or not)."""
+    text = _composer_text()
+    m = re.search(r"function renderActNow\b.*?(?=\n  function )", text, re.S)
+    assert m, "could not locate renderActNow() function body via regex"
+    body = m.group(0)
+    assert "if (state.anLane == null) {" in body, (
+        "renderActNow() lost the null-only default-lane election guard"
+    )
+    assert not re.search(r"state\.anLane == null\s*\|\|", body), (
+        "the default-lane election guard is an OR again — a chosen-but-empty "
+        "lane would be overridden back to the first non-empty lane on every "
+        "render, hijacking the user's segment choice"
+    )
+    assert "!anLaneItems(state.anLane).length" not in body, (
+        "renderActNow() re-elects when the chosen lane is empty — the "
+        "election must fire only when NO lane has been chosen yet"
+    )
+
+
+def test_act_now_rows_carry_group_research_route_and_known_zero_state():
+    """Adversarial review 2026-08-27, finding 2 (MAJOR): §5.4/§10 — a
+    known-zero group must stay useful as a group-research destination.
+    Pins (a) anRowHtml() renders the harvested owner href as a live
+    .hk-v37-an-go route link; (b) emptyStateHtml() has a distinct known-zero
+    branch (members known, size 0) with quiet §10 copy — never the
+    filter-miss language — that keeps the research route usable."""
+    text = _composer_text()
+    m = re.search(r"function anRowHtml\b.*?(?=\n  function )", text, re.S)
+    assert m, "could not locate anRowHtml() function body via regex"
+    body = m.group(0)
+    assert "x.href" in body and "hk-v37-an-go" in body, (
+        "anRowHtml() no longer renders the harvested sector href as an "
+        ".hk-v37-an-go route — known-zero groups become dead ends again"
+    )
+    m2 = re.search(r"function emptyStateHtml\b.*?(?=\n  function )", text, re.S)
+    assert m2, "could not locate emptyStateHtml() function body via regex"
+    empty_body = m2.group(0)
+    assert "item.members.size === 0" in empty_body, (
+        "emptyStateHtml() lost its known-zero branch — a canonically empty "
+        "group falls through to filter-miss language, which §10 forbids"
+    )
+    assert "No current Prophet names in this group." in empty_body, (
+        "the quiet §10 known-zero copy is gone from emptyStateHtml()"
+    )
+    assert "该组别暂无 Prophet 候选。" in empty_body, (
+        "the ZH known-zero copy is gone from emptyStateHtml()"
+    )
+    assert "item.href" in empty_body and "hk-v37-empty-go" in empty_body, (
+        "the known-zero state no longer offers the group-research route"
+    )
+
+
+def test_rank_language_degrades_when_rank_owner_missing():
+    """Adversarial review 2026-08-27, finding 3 (MAJOR): §10 — when the
+    rank owner is absent (no sector carries an owner rank), hide numeric
+    rank AND rank language. Pins (a) collectSectors() derives
+    state.hasRankOwner from the merged rank values; (b) the at-rest
+    Leadership header renders its basis chip only under state.hasRankOwner;
+    (c) modalPaneHtml() guards both its basis chip and its Rank column on
+    the same flag, and modalRows() takes the flag rather than always
+    emitting a rank cell."""
+    text = _composer_text()
+    m = re.search(r"function collectSectors\b.*?(?=\n  function )", text, re.S)
+    assert m, "could not locate collectSectors() function body via regex"
+    assert re.search(r"state\.hasRankOwner = merged\.some\(function \(x\) \{ return x\.rank != null; \}\)", m.group(0)), (
+        "collectSectors() no longer derives state.hasRankOwner from the "
+        "merged owner ranks"
+    )
+    shell = _build_shell_markup(text)
+    assert "state.hasRankOwner ?" in shell, (
+        "the at-rest Leadership basis chip is unconditional again — with no "
+        "rank owner the page would show rank language over a traversal-"
+        "ordered list"
+    )
+    mp = re.search(r"function modalPaneHtml\b.*?(?=\n  function )", text, re.S)
+    assert mp, "could not locate modalPaneHtml() function body via regex"
+    mp_body = mp.group(0)
+    assert "state.hasRankOwner" in mp_body, (
+        "modalPaneHtml() no longer consults state.hasRankOwner"
+    )
+    assert re.search(r"rk \? '<th>' \+ bi\(\"Rank\", \"排名\"\)", mp_body), (
+        "the modal Rank column header is unconditional again"
+    )
+    mr = re.search(r"function modalRows\b.*?(?=\n  function )", text, re.S)
+    assert mr, "could not locate modalRows() function body via regex"
+    assert re.search(r"rk \? '<td class=\"num\">'", mr.group(0)), (
+        "modalRows() emits its rank cell unconditionally again"
+    )
+
+
+def test_at_rest_action_rows_carry_no_metric_towers():
+    """§5.2/§13.5: at-rest action rows carry only the group name, optional
+    type cue, optional Prophet count, and a route/filter affordance — never
+    performance stacks, score towers, percentile or diagnostic fields. Pins
+    the anRowHtml() surface to exactly the name span + optional count span
+    + optional route link, and bans the §5.2 forbidden-field vocabulary."""
+    text = _composer_text()
+    m = re.search(r"function anRowHtml\b.*?(?=\n  function )", text, re.S)
+    assert m, "could not locate anRowHtml() function body via regex"
+    body = m.group(0)
+    for banned in ("20d", "60d", "5d", "pctile", "percentile", "score",
+                   "priority", "mom", "sparkline"):
+        assert banned not in body, (
+            f"anRowHtml() carries {banned!r} — at-rest action rows must not "
+            "grow performance/score/percentile towers (§5.2)"
+        )
+    spans = re.findall(r'<span class="([^"]+)"', body)
+    assert set(spans) <= {"hk-v37-an-name", "hk-v37-an-n"}, (
+        f"anRowHtml() renders unexpected span classes {spans!r} — the "
+        "at-rest row surface is name + optional count only"
+    )
+
+
+def test_act_now_lane_order_is_the_action_owners_order():
+    """DEC:V38-ACTION-IS-NOT-LEADERSHIP: the rank axis must not order (or
+    via the 3-row cap, gate the at-rest visibility of) the action surface.
+    collectLaneSectors() stamps the owner's own lane row order as laneIdx
+    and anLaneItems() sorts by it, undoing the rotation-rank sort that
+    state.sectors carries for the Leadership surface."""
+    text = _composer_text()
+    m = re.search(r"function collectLaneSectors\b.*?(?=\n  /\*|\n  function )", text, re.S)
+    assert m, "could not locate collectLaneSectors() function body via regex"
+    assert "laneIdx: out.length" in m.group(0), (
+        "collectLaneSectors() no longer stamps the action owner's row order"
+    )
+    m2 = re.search(r"function anLaneItems\b.*?(?=\n  /\*|\n  function )", text, re.S)
+    assert m2, "could not locate anLaneItems() function body via regex"
+    assert re.search(r"a\.laneIdx \|\| 0\) - \(b\.laneIdx \|\| 0", m2.group(0)), (
+        "anLaneItems() no longer sorts by laneIdx — the at-rest action rows "
+        "would surface in rotation-rank order, letting the leadership axis "
+        "decide which action rows are visible under the 3-row cap"
+    )
 
 
 def test_act_now_presentation_controls_never_touch_population_or_filter():
