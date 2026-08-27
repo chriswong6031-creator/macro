@@ -66,12 +66,20 @@ neither is visible in the field table and both change what a brief actually is:
   `model` still reads `deepseek-v4-pro`. The `max_tokens: 8000` note in `config.yml`
   budgets for thinking tokens and now applies only to the Claude rungs. Quality impact
   is **unmeasured** — this is a disclosure, not a verdict.
-- **The zh half of the brief is still DeepSeek-only.** `_translate_brief` bypasses
-  `_call_model` entirely and builds its own `tcfg` for `engine.translate`, which has no
-  ladder. On a DeepSeek-exhausted night the English brief survives but `brief["zh"]` is
-  dropped, so the 中文 toggle falls back to English on all three lenses — including the
-  china lens. Migrating `engine/translate.py` is a separate change: it is shared by
-  several other lanes.
+- **The writer translates its own brief** (operator 2026-08-27; supersedes the
+  "zh half is still DeepSeek-only" note recorded here a day earlier).
+  `_translate_brief` used to build a hardcoded DeepSeek V4-Flash `tcfg` for
+  `engine.translate`, which has no ladder — so a DeepSeek balance exhaustion left the
+  English brief standing and silently dropped `brief["zh"]` on all three lenses, and
+  every zh pass was billed to the one metered provider even on nights Codex or Claude
+  wrote the English for free. It now goes through `_call_model`: same
+  codex → oauth → anthropic → deepseek waterfall, same lane, same cooling policy, with
+  the lens `usage_stage` suffixed `-zh` so the cost ledger still separates the two
+  passes. Batched at 6 items; a malformed or truncated reply fails ITS BATCH closed
+  (a short array would shift every later field onto the wrong key) and the remaining
+  batches still land. `engine/translate.py` itself is unchanged and still ladderless —
+  it is shared by `catalyst_stock` and `scripts/translate_profiles`, which are separate
+  lanes and out of scope here.
 
 `schema` field bumps to `"master_brief.v2"`. Builder greps every consumer of the literal
 `master_brief.v1` and fixes string-matches (renderers are `get()`-based fail-open;
