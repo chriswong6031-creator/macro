@@ -31,7 +31,7 @@ AgentOS records: `agentos/workstreams/WS-GREY-DEER-RISK-INTELLIGENCE.md`, eight
 
 The wave matrix is a mechanical index under 3. The GD-1 packet governs GD-1 research conduct under 2–3.
 
-## Current next action (updated 2026-08-21, GD-3 + GD-4A.1 wave)
+## Current next action (updated 2026-08-27, GD-3 acceptance handoff)
 
 - **GD-1 closed:** GD-1A DONE; GD-1B ACCEPTED_NO_PROMOTION — zero GD-5 promotions
   (`DEC:GD1-ACCEPTED-NO-PROMOTION`). Dossier: `gd1/`. **GD-1C closed** DONE /
@@ -39,16 +39,19 @@ The wave matrix is a mechanical index under 3. The GD-1 packet governs GD-1 rese
 - **GD-2 DONE** (Gate 8 passed 2026-08-20). **GD-4A DONE** (real settled proof +
   idempotence, 2026-08-20). **GD-4A.1 DONE** (#6140 merged `e4f18b53e9d0`,
   live-verified run 32435846087; ledger freshness now graded by the liveness lane).
-- **GD-3 built/merged/deployed** (#6144, `55d7ea02ce3e`; commission §0b carries Sol's
-  seven clarifications) — wave OPEN on **WAITING_FOR_PRODUCTION_EVENT**: the only
-  remaining step is the Gate-8-equivalent four-clock receipt, which requires an
-  AUTHENTICATED browser during a US live window (the payload and consumer script are
-  tier-gated by design). Receipt spec + witness gap: workstream record and
-  `agentos/handoffs/GREY-DEER-RISK-INTELLIGENCE-2026-08-21.md`. Never simulate the
-  event.
-- **Gates:** GD-5A/B/C remain closed (GD-1C did not clear the promotion gate). GD-8/9
-  gated on GD-3 production acceptance (Sol 2026-08-21). GD-6/7, Portfolio cutover: not
-  authorized.
+- **GD-3 DONE — production four-clock acceptance PASSED 2026-08-27.** In the
+  authenticated Macro dashboard during the US cash session, the first natural
+  `live_active=true` source update was observed with raw source quote time
+  `2026-08-27T13:37:46.959534+00:00` and `rs.built=13:37:47 UTC`; one fast fire
+  later the live envelope carried its canonical millisecond source instant
+  `2026-08-27T13:37:46.959Z`, then distinct `observed_at` and `produced_at`, and
+  the visible provisional chip painted. Payloads were authenticated HTTP 200,
+  the four authority booleans stayed false, and all forward-ledger blobs were
+  unchanged over the witness interval. Receipt:
+  `agentos/handoffs/GREY-DEER-RISK-INTELLIGENCE-2026-08-27-GD3-DONE.md`.
+- **Gates:** GD-5A/B/C remain closed (GD-1C did not clear the promotion gate).
+  GD-8A/GD-8B/GD-9A received no commission in the GD-3 acceptance session;
+  GD-6/7 and Portfolio cutover remain unauthorized.
 
 ## Do not start (explicit)
 

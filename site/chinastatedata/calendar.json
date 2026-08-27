@@ -1,11 +1,11 @@
 {
   "schema": "china_calendar.v1",
-  "asof": "2026-08-25",
-  "generated_at_utc": "2026-08-25T09:53:30.753246+00:00",
+  "asof": "2026-08-26",
+  "generated_at_utc": "2026-08-27T18:47:55.187565+00:00",
   "horizon_days": 45,
   "entries": [
     {
-      "date": "2026-08-25",
+      "date": "2026-08-26",
       "window_end": "2026-08-31",
       "etype": "earnings_season",
       "label_en": "A-share interim results season — 99% of the covered board reports in 2026-08",
@@ -14,18 +14,6 @@
       "impact": "high",
       "source_class": "feed",
       "source": "china_earnings.calendar",
-      "approx": false
-    },
-    {
-      "date": "2026-08-25",
-      "window_end": null,
-      "etype": "omo_mlf_tender",
-      "label_en": "PBoC MLF tender — 1年期, RMB 500bn",
-      "label_zh": "央行中期借贷便利（MLF）操作：1年期，5,000亿元",
-      "region": "cn",
-      "impact": "high",
-      "source_class": "feed",
-      "source": "china_omo.operations",
       "approx": false
     },
     {
@@ -377,7 +365,9 @@
       "approx": true
     }
   ],
-  "data_gaps": [],
+  "data_gaps": [
+    "china_omo store holds no announced operation inside the horizon (the tape is present; the PBoC simply has nothing pending)"
+  ],
   "authority": {
     "tier": "context_only",
     "may_rank": false

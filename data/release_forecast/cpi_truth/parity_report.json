@@ -1,5 +1,5 @@
 {
-  "asof": "2026-08-26T06:06:23+00:00",
+  "asof": "2026-08-27T10:15:06+00:00",
   "authority": false,
   "candidate_coverage": {
     "candidate_period_end": "2026-07",
@@ -22,7 +22,7 @@
       "cpi_headline": 354
     }
   },
-  "candidate_data_asof": "2026-08-26T06:06:23+00:00",
+  "candidate_data_asof": "2026-08-27T10:15:06+00:00",
   "candidate_target_epoch": {
     "name": "alfred_same_release_vintage_proxy_v1",
     "promotion_authorized": false,
@@ -520,8 +520,8 @@
     "ordinary": 9
   },
   "display_only": true,
-  "evidence_available_at": "2026-08-26T06:06:23+00:00",
-  "history_hash": "sha256:2bb0c8d2abc4595253bee9d538f3fee147d9b15097847ded0bfbbf44ddb82e42",
+  "evidence_available_at": "2026-08-27T10:15:06+00:00",
+  "history_hash": "sha256:6996b75ca25085da121a8e22ea7f4d3cfb866e8ad28523c2288f86d4096ec003",
   "history_schema": "release_cpi_target_history.v1",
   "n_cases": 15,
   "n_metric_comparisons": 28,

@@ -534,7 +534,8 @@ def test_staleness_comes_from_git_not_from_a_typed_field(
     out = tmp_path / "state.json"
     _status(STORE, out, "--now", FROZEN, "--active-builds", str(builds))
     rows = _state(out)["workstreams"]
-    assert any(row["updated"] for row in rows), "git dates did not resolve for any record"
+    undated = [row["key"] for row in rows if not row["updated"]]
+    assert not undated, f"git dates did not resolve for tracked workstreams: {undated}"
 
 
 # ------------------------------------------------------- non-ranked readiness

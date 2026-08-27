@@ -38,10 +38,12 @@ import json
 import os
 import platform
 import re
+import shlex
 import signal
 import shutil
 import subprocess
 import sys
+import sysconfig
 import tempfile
 import threading
 import time
@@ -132,12 +134,26 @@ RUNNER_CONTRACT = "ci-pack/linux-x86_64/python-3.12.13/node-20/v2"
 # scripts/ci_semantic_proof.py's own narrower pair set and its own
 # `workflow == "ci"` assertion, which this constant does not touch.
 DIAGNOSTIC_CANARY_WORKFLOW = "infrastructure-selfhosted-ci-canary"
+TRUSTED_EXECUTOR_WORKFLOW = "trusted-ci-executor"
+DIAGNOSTIC_PR_WORKFLOWS = frozenset(
+    {DIAGNOSTIC_CANARY_WORKFLOW, TRUSTED_EXECUTOR_WORKFLOW}
+)
 
 # Failure output is streamed live.  These caps cover only the small structured
 # atom collector retained alongside the stream; raw logs never enter evidence.
 FAILURE_CAPTURE_MAX_BYTES = 131_072
 FAILURE_CAPTURE_MAX_ATOMS = 64
 FAILURE_CAPTURE_MAX_LINE_BYTES = 4_096
+
+# Retry exactly the transport corruption observed on the sealed PC runner in
+# #6505.  This is deliberately not a generic "network error" bucket: package
+# resolution, certificate validation, authentication, hash, and build failures
+# must remain terminal on their first attempt.  Matching is performed over the
+# live byte stream with only a marker-sized tail retained; raw dependency logs
+# never enter semantic evidence or memory.
+DEPENDENCY_TRANSPORT_RETRY_MARKERS = (
+    b"[SSL: DECRYPTION_FAILED_OR_BAD_RECORD_MAC]",
+)
 
 DEFAULT_BASE_REPLAY_BUDGET_SECONDS = 15 * 60
 SEMANTIC_DETAIL_MAX_BYTES = 1_024
@@ -302,6 +318,28 @@ EXPRESSION_RE = re.compile(r"\$\{\{[^}]+\}\}")
 PIP_INSTALL_RE = re.compile(
     r"^\s*(?:(?:python|python3) -m )?pip install [^\n]+\s*$"
 )
+SHELL_CONTROL_CHARS = frozenset(";&|<>()`")
+
+
+def _is_standalone_pip_install(command: str) -> bool:
+    """Accept one pip invocation, never a compound or substituted shell body."""
+    if not PIP_INSTALL_RE.fullmatch(command):
+        return False
+    try:
+        lexer = shlex.shlex(
+            command,
+            posix=True,
+            punctuation_chars=";&|<>()`",
+        )
+        lexer.whitespace_split = True
+        lexer.commenters = ""
+        tokens = list(lexer)
+    except ValueError:
+        return False
+    return not any(
+        token and all(char in SHELL_CONTROL_CHARS for char in token)
+        for token in tokens
+    )
 # Command-only timings from successful ci run 30173070380.  These few outliers
 # dominate wall time; checkout/setup/install were deliberately excluded because
 # packs share or group that work.  The fallback heuristic handles every other
@@ -472,6 +510,7 @@ class CommandObservation:
     returncode: int | None
     failure_signature: Mapping[str, Any] | None = None
     detail: str | None = None
+    retryable_dependency_transport: bool = False
 
 
 @dataclass(frozen=True)
@@ -782,6 +821,11 @@ def _is_peer_python_or_unpatterned_glob(pattern: str) -> bool:
     return True
 
 
+def _has_glob(segment: str) -> bool:
+    """Does this path fragment contain a glob metacharacter?"""
+    return any(char in segment for char in "*?")
+
+
 def scope_pattern_is_startable(pattern: str, triggers: Iterable[str]) -> bool:
     """Can an edit to something ``pattern`` covers start the gating workflow?
 
@@ -809,10 +853,27 @@ def scope_pattern_is_startable(pattern: str, triggers: Iterable[str]) -> bool:
         # `app/*` is a single-level subset of `app/**`. Any edit it covers
         # also matches that ancestor trigger, so the run starts. Exclusive
         # declarations use this form on purpose (`*` does not cross `/`).
-        if pattern.endswith("/*"):
-            parent = pattern[: -len("/*")]
-            if f"{parent}/**" in triggers:
-                return True
+        #
+        # This covers `app/*.py` too, not just a bare `app/*`. SUFFIX_NARROWED_RE
+        # requires a `**/` before the suffix, so a SINGLE-LEVEL suffix glob
+        # matched neither it nor the bare-`/*` test below and fell through to
+        # False — even though `engine/*.py` is as strictly contained in
+        # `engine/**` as `app/*` is. Measured 2026-08-26: `defense-rail-laws`
+        # derived an `engine/*.py` scope and reported an unstartable gap against
+        # a trigger list that carries `engine/**`, `*` AND `**`. Because
+        # ci-pack is path-scoped, only a PR touching .github/ci/ ever ran the
+        # test that says so, so the gap sat green on every unrelated PR.
+        #
+        # Ancestors are walked for the same containment reason as the subtree
+        # branch below: `a/b/*.py` ⊂ `a/b/**` ⊂ `a/**`. A glob anywhere in the
+        # PARENT is not proven and still fails.
+        head, sep, last = pattern.rpartition("/")
+        if sep and _has_glob(last) and not _has_glob(head):
+            segments = head.split("/")
+            while segments:
+                if "/".join(segments) + "/**" in triggers:
+                    return True
+                segments.pop()
         return False
     # A subtree scope is startable when an ANCESTOR subtree is a trigger, for the
     # same reason: `data/smart_money/**` matches a subset of `data/**`.
@@ -1381,7 +1442,7 @@ def load_legacy_jobs(path: Path, *, gate: str | None = None) -> list[LegacyJob]:
         ]
         if len(installs) > 1:
             findings.append(f"{prefix} has more than one dependency-install step")
-        elif installs and not PIP_INSTALL_RE.fullmatch(installs[0]):
+        elif installs and not _is_standalone_pip_install(installs[0]):
             findings.append(
                 f"{prefix} dependency install is not a standalone pip command"
             )
@@ -1831,15 +1892,14 @@ def build_plan(
         "pr_head" if event == "pull_request" else "main"
     )
     # `workflow` is resolved HERE, before the role/event validation below, so
-    # the one narrow diagnostic-canary admission (workflow ==
-    # DIAGNOSTIC_CANARY_WORKFLOW) can be evaluated in the same gate instead of
+    # the narrow main-owned diagnostic admission can be evaluated in the same gate instead of
     # a second, later, easy-to-miss check. Moving this resolution earlier does
     # not change what any OTHER caller gets: it was unconditional before too.
     workflow = workflow or os.environ.get("GITHUB_WORKFLOW") or "ci"
     if (role, event) not in SUPPORTED_PLAN_ROLE_EVENTS and not (
         role == "pr_head"
         and event == "workflow_dispatch"
-        and workflow == DIAGNOSTIC_CANARY_WORKFLOW
+        and workflow in DIAGNOSTIC_PR_WORKFLOWS
     ):
         raise ManifestError(
             f"semantic plan role/event combination {role}/{event} is unsupported"
@@ -2160,14 +2220,14 @@ def load_authoritative_plan(
         raise ManifestError("authoritative plan role must be pr_head or main")
     event = required_text("event")
     # `workflow` is read HERE, before the role/event validation below, so the
-    # same one narrow diagnostic-canary admission build_plan() grants can be
+    # same narrow main-owned diagnostic admission build_plan() grants can be
     # evaluated in this reader too, rather than only when the published
     # `workflow` field is reached later (still needed for the hash payload).
     workflow = required_text("workflow")
     if (role, event) not in SUPPORTED_PLAN_ROLE_EVENTS and not (
         role == "pr_head"
         and event == "workflow_dispatch"
-        and workflow == DIAGNOSTIC_CANARY_WORKFLOW
+        and workflow in DIAGNOSTIC_PR_WORKFLOWS
     ):
         raise ManifestError(
             f"authoritative plan role/event combination {role}/{event} is unsupported"
@@ -2529,6 +2589,15 @@ def dependency_command(job: LegacyJob) -> str | None:
     for step in job.definition["steps"]:
         command = str(step.get("run", ""))
         if "pip install" in command:
+            # Manifest validation normally closes this invariant before
+            # execution.  Keep it local as well: retrying an entire mixed shell
+            # body merely because it contains these words would replay unrelated
+            # and potentially non-idempotent work.
+            if not _is_standalone_pip_install(command):
+                raise ManifestError(
+                    f"job {job.job_id!r} dependency install is not a standalone "
+                    "pip command"
+                )
             return command
     return None
 
@@ -3063,11 +3132,29 @@ def _run_job(
     )
 
 
+class _DependencyTransportMarkerDetector:
+    """Recognize an exact retry marker without retaining the dependency log."""
+
+    def __init__(self, markers: Sequence[bytes]):
+        self._markers = tuple(marker for marker in markers if marker)
+        self._tail = b""
+        self.matched = False
+        self._tail_size = max((len(marker) for marker in self._markers), default=1) - 1
+
+    def feed(self, chunk: bytes) -> None:
+        if self.matched or not self._markers:
+            return
+        window = self._tail + bytes(chunk)
+        self.matched = any(marker in window for marker in self._markers)
+        self._tail = window[-self._tail_size :] if self._tail_size else b""
+
+
 def _stream_command(
     command: str,
     *,
     env: Mapping[str, str],
     timeout_seconds: int | float | None,
+    detect_retryable_dependency_transport: bool = False,
 ) -> CommandObservation:
     """Stream a child live while retaining only bounded structured atoms."""
     deadline = (
@@ -3079,6 +3166,11 @@ def _stream_command(
         max_bytes=FAILURE_CAPTURE_MAX_BYTES,
         max_atoms=FAILURE_CAPTURE_MAX_ATOMS,
         max_line_bytes=FAILURE_CAPTURE_MAX_LINE_BYTES,
+    )
+    dependency_transport = _DependencyTransportMarkerDetector(
+        DEPENDENCY_TRANSPORT_RETRY_MARKERS
+        if detect_retryable_dependency_transport
+        else ()
     )
     process = subprocess.Popen(
         ["bash", "-eo", "pipefail", "-c", command],
@@ -3099,6 +3191,7 @@ def _stream_command(
                 chunk = process.stdout.read(4_096)
                 if not chunk:
                     break
+                dependency_transport.feed(chunk)
                 # Normal Actions output remains live.  Decode only for display;
                 # the collector receives the original bounded byte line.
                 print(chunk.decode("utf-8", "replace"), end="", flush=True)
@@ -3184,6 +3277,7 @@ def _stream_command(
             returncode=process.returncode,
             failure_signature=signature,
             detail=f"exited {process.returncode}",
+            retryable_dependency_transport=dependency_transport.matched,
         )
     return CommandObservation(outcome="passed", returncode=0)
 
@@ -3236,23 +3330,52 @@ def _dependency_environment(
     if not runner_temp:
         raise RuntimeError("RUNNER_TEMP is required to isolate legacy dependencies")
     environment = Path(runner_temp).resolve() / "ci-pack-job-env"
-    if environment.exists():
-        shutil.rmtree(environment)
-    subprocess.run([sys.executable, "-m", "venv", str(environment)], check=True)
-    command_env["PATH"] = (
-        str(environment / "bin") + os.pathsep + command_env.get("PATH", "")
-    )
-    print(f"::group::dependency environment — {install_command}", flush=True)
-    result = subprocess.run(
-        ["bash", "-eo", "pipefail", "-c", install_command],
-        env=command_env,
-    )
-    print("::endgroup::", flush=True)
-    if result.returncode:
-        raise RuntimeError(
-            f"dependency install exited {result.returncode}: {install_command}"
+    inherited_path = command_env.get("PATH", "")
+    retry_used = False
+    for attempt in (1, 2):
+        # A retry never inherits a partly-installed environment.  Recreate the
+        # same bounded path so adjacent jobs still share only a fully successful
+        # dependency set, exactly as the single-attempt contract did.
+        if environment.exists():
+            shutil.rmtree(environment)
+        subprocess.run([sys.executable, "-m", "venv", str(environment)], check=True)
+        command_env["PATH"] = (
+            str(environment / "bin") + os.pathsep + inherited_path
         )
-    return command_env
+        print(
+            f"::group::dependency environment attempt {attempt} — {install_command}",
+            flush=True,
+        )
+        try:
+            result = _stream_command(
+                install_command,
+                env=command_env,
+                timeout_seconds=None,
+                detect_retryable_dependency_transport=True,
+            )
+        finally:
+            print("::endgroup::", flush=True)
+        if result.outcome == "passed":
+            return command_env
+        if attempt == 1 and result.retryable_dependency_transport:
+            retry_used = True
+            print(
+                "::warning title=ci dependency transport retry::"
+                "classified transient TLS record on attempt 1; recreating the "
+                "isolated environment once",
+                flush=True,
+            )
+            continue
+        returncode = result.returncode if result.returncode is not None else result.outcome
+        retry_detail = (
+            " after one classified TLS retry"
+            if attempt == 2 and retry_used
+            else ""
+        )
+        raise RuntimeError(
+            f"dependency install exited {returncode}{retry_detail}: {install_command}"
+        )
+    raise AssertionError("dependency retry loop exhausted without a verdict")
 
 
 def _blocked_job_execution(
@@ -3312,6 +3435,61 @@ class ExecutionProfileError(RuntimeError):
     before any legacy job executes — never folded into a generic
     infrastructure outcome a reader might mistake for a transient flake.
     """
+
+
+def _selected_python_loader_environment() -> dict[str, str]:
+    """Derive the Linux loader path from the attested interpreter itself.
+
+    ``actions/setup-python`` selects a versioned shared-library build.  Re-execing
+    that interpreter with a deliberately small environment must retain only its
+    own library directory.  The action can expose that directory through a
+    runner-local alias while ``sysconfig`` reports its canonical tool-cache path,
+    so preserve an ambient alias only after proving it resolves to the declared
+    directory inside ``sys.base_prefix`` and contains a declared Python SONAME.
+    """
+    if platform.system() != "Linux":
+        return {}
+    raw_library_dir = sysconfig.get_config_var("LIBDIR")
+    raw_library_names = [
+        sysconfig.get_config_var("LDLIBRARY"),
+        sysconfig.get_config_var("INSTSONAME"),
+    ]
+    library_names = [
+        name for name in raw_library_names if isinstance(name, str) and name
+    ]
+    if not isinstance(raw_library_dir, str) or not raw_library_dir:
+        raise ExecutionProfileError("selected Python does not declare LIBDIR")
+    if not library_names:
+        raise ExecutionProfileError(
+            "selected Python does not declare LDLIBRARY or INSTSONAME"
+        )
+    try:
+        prefix = Path(sys.base_prefix).resolve(strict=True)
+        declared_library_dir = Path(raw_library_dir).resolve(strict=True)
+        declared_library_dir.relative_to(prefix)
+    except (OSError, ValueError) as exc:
+        raise ExecutionProfileError(
+            "selected Python library directory is outside selected interpreter prefix"
+        ) from exc
+
+    candidates: list[Path] = []
+    for entry in os.environ.get("LD_LIBRARY_PATH", "").split(os.pathsep):
+        if not entry:
+            continue
+        candidate = Path(entry)
+        try:
+            if candidate.resolve(strict=True) == declared_library_dir:
+                candidates.append(candidate)
+        except OSError:
+            continue
+    candidates.append(Path(raw_library_dir))
+    for candidate in candidates:
+        if any((candidate / name).is_file() for name in library_names):
+            return {"LD_LIBRARY_PATH": str(candidate)}
+    raise ExecutionProfileError(
+        "selected Python shared library is absent: "
+        f"{declared_library_dir} ({', '.join(library_names)})"
+    )
 
 
 def _node_major_version() -> int | None:
@@ -3858,6 +4036,10 @@ def _run_exact_base_replays(
                     for key, value in os.environ.items()
                     if key in safe_parent_names or key.startswith("LC_")
                 }
+                # Re-exec the selected setup-python interpreter without copying
+                # candidate-controlled loader state.  The directory is derived
+                # and containment-checked against sys.base_prefix above.
+                child_env.update(_selected_python_loader_environment())
                 child_home = child_temp / "home"
                 child_home.mkdir(exist_ok=True)
                 child_env.update(

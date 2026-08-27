@@ -3,34 +3,33 @@
   "authority": {
     "tier": "context_only"
   },
-  "built": "2026-08-25T09:53:28.741596+00:00",
-  "asof": "2026-08-25",
-  "phase": "POLICY_PUT",
-  "confidence": 0.75,
+  "built": "2026-08-27T18:47:53.083745+00:00",
+  "asof": "2026-08-27",
+  "phase": "REPAIR",
+  "confidence": 0.8,
   "evidence": [
-    "turnover_z20_null",
-    "participation_regime_nan"
+    "turnover_z20_null"
   ],
   "contradictions": [],
   "falsifiers": [
     {
-      "id": "POLI_PP_LUP_RECOVERING",
-      "expr": "lup5 > 1.0",
+      "id": "GRIN_GB_TOZ_COLD",
+      "expr": "turnover_z20 < 0.5",
       "horizon_d": 10
     },
     {
-      "id": "POLI_PP_TOZ_STABILISE",
-      "expr": "turnover_z20 > -1.0",
+      "id": "GRIN_GB_LUP_QUIET",
+      "expr": "lup5 < 1.5",
       "horizon_d": 10
     },
     {
-      "id": "POLI_PP_LDN_FADING",
-      "expr": "ldn5 < 2.0",
-      "horizon_d": 5
+      "id": "GRIN_GB_SEC_WASH",
+      "expr": "sec_wash > 0.3",
+      "horizon_d": 10
     }
   ],
   "allowed_actions": [
-    "watch_for_stabilisation",
+    "watch_for_base",
     "reversal_only"
   ],
   "data_gaps": [],
@@ -260,10 +259,10 @@
     }
   ],
   "ledger_summary": {
-    "total_graded": 22790,
+    "total_graded": 22795,
     "held": 8089,
-    "fired": 1969,
-    "indeterminate": 12732
+    "fired": 1970,
+    "indeterminate": 12736
   },
   "caveat": "regime_history is a current-best-estimate non-PIT series; policy_impulse for HISTORICAL rows is per-date reconstructed from ACTUAL RRR and LPR-1Y series deltas (PBoC data) using a 90-calendar-day trailing window: a date is marked 'easing' when at least one RRR cut or LPR-1Y cut occurred in the prior 90 days (direction from series deltas only, not from event titles or communique text); dates before the first PBoC series observation are set to null (data_gap, no fabrication); the LIVE TAIL only (dates beyond the last PBoC data point) uses the live engine snapshot impulse (may include 'targeted_support' or 'market_rescue' labels not reconstructable from rate-series deltas); all outputs are context_only (CN-SYS-R1)"
 }

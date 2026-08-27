@@ -1,47 +1,33 @@
 {
-  "appended": 1,
-  "asof": "2026-08-24",
+  "appended": 0,
+  "asof": "2026-08-26",
   "candidates": {
-    "R": 2,
+    "R": 1,
     "T": 4,
     "W": 34
   },
   "deduped": {
-    "R": 2,
-    "T": 3,
+    "R": 1,
+    "T": 4,
     "W": 34
   },
   "dry_run": false,
   "feature_source": {
     "enabled": true,
     "foresight": {
-      "asof": "2026-08-25",
-      "consulted": true,
-      "n_keys": 27,
-      "n_themes": 18,
-      "ok": true,
-      "reason": null,
-      "source": "site/basketdata/foresight_cascade.json"
+      "consulted": false
     },
     "ignition": {
       "coil_min_sessions": 293,
-      "consulted": true,
-      "null_reasons": {
-        "ohlcv_absent": 8
-      },
+      "consulted": false,
+      "null_reasons": {},
       "reason": null,
       "source": "data/baskets/ohlcv/<ticker>.parquet",
-      "themes_read": {
-        "Consumer Goods": {
-          "theme_thrust_frac": 0.1562,
-          "theme_thrust_reason": null,
-          "theme_thrust_state": "quiet"
-        }
-      },
+      "themes_read": {},
       "thrust_min_members": 6,
       "thrust_min_sessions": 27,
-      "tickers_ok": 32,
-      "tickers_read": 40
+      "tickers_ok": 0,
+      "tickers_read": 0
     },
     "keys": [
       "relay_count_3d",
@@ -59,21 +45,10 @@
       "theme_thrust_reason"
     ],
     "relay": {
-      "consulted": true,
-      "high_lookback": 63,
-      "members_indexed": 143,
-      "n_covered": 73,
-      "reason": null,
-      "window_sessions": 21
+      "consulted": false
     },
     "turnover": {
-      "consulted": true,
-      "last_session": "2026-08-24",
-      "n_tickers": 1544,
-      "ok": true,
-      "reason": null,
-      "source": "data/{breadth,midcap_breadth,smallcap_breadth}/_volume_cache.parquet",
-      "window_max": 60
+      "consulted": false
     }
   },
   "feature_source_w": {
@@ -102,9 +77,7 @@
   },
   "flag_tickers": {
     "R": [],
-    "T": [
-      "TSLA"
-    ],
+    "T": [],
     "W": []
   },
   "n_universe": 1496,
@@ -113,41 +86,41 @@
     "T": 0,
     "W": 0
   },
-  "run_utc": "2026-08-25 06:52:44",
-  "runtime_s": 100.6,
+  "run_utc": "2026-08-27 14:38:55",
+  "runtime_s": 114.0,
   "schema": "prophet_doors/v1",
   "theme_source": {
-    "age_days": 0,
-    "asof": "2026-08-24",
-    "n_members": 143,
+    "age_days": -1,
+    "asof": "2026-08-27",
+    "n_members": 173,
     "ok": true,
     "reason": null,
     "source": "site/marketdata/subsector_rotation.json",
     "top_themes": [
       {
-        "emerging_score": 3.038,
+        "emerging_score": 4.636,
         "rank": 1,
         "theme": "Commodities Metals"
       },
       {
-        "emerging_score": 1.962,
+        "emerging_score": 2.35,
         "rank": 2,
-        "theme": "Healthy Food & Nutrition"
+        "theme": "Crypto & Blockchain"
       },
       {
-        "emerging_score": 1.632,
+        "emerging_score": 1.544,
         "rank": 3,
+        "theme": "Electric Vehicles"
+      },
+      {
+        "emerging_score": 1.464,
+        "rank": 4,
         "theme": "Agriculture & FoodTech"
       },
       {
-        "emerging_score": 1.622,
-        "rank": 4,
-        "theme": "Consumer Goods"
-      },
-      {
-        "emerging_score": 1.547,
+        "emerging_score": 1.425,
         "rank": 5,
-        "theme": "Commodities Agriculture"
+        "theme": "FinTech"
       }
     ]
   },
@@ -157,15 +130,15 @@
       "3B"
     ],
     "aligned": 34,
-    "asof_max": "2026-08-24",
+    "asof_max": "2026-08-26",
     "asof_mismatch": 0,
-    "asof_run": "2026-08-24",
+    "asof_run": "2026-08-26",
     "evaluated": 712,
     "fresh": 35,
     "fresh_weeks_max": 2,
     "ok": true,
     "reason": null,
-    "runtime_s": 19.1,
+    "runtime_s": 21.0,
     "skipped": 5,
     "source": "baskets/membership.json",
     "state_turn": 97,

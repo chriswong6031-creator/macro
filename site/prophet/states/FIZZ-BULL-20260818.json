@@ -1,30 +1,30 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "FIZZ-BULL-20260818",
-  "asof": "2026-08-25",
+  "asof": "2026-08-27",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 67.8,
-  "raw_confidence": 69.8,
-  "delta_vs_base": 7.8,
+  "management_confidence": 67.2,
+  "raw_confidence": 66.5,
+  "delta_vs_base": 7.2,
   "recommended_action": "hold",
   "human_state": "Needs Follow-Through",
   "components": {
     "validity": 100.0,
-    "progress": 18.1,
-    "pace": 100.0,
+    "progress": 13.6,
+    "pace": 96.3,
     "retention": 50.0,
-    "overlay": 67.0
+    "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.256,
-    "dist_to_t1_r": 1.244,
-    "dist_to_t2_r": 2.744,
-    "horizon_pct_used": 13.3,
-    "p1": 0.1707,
-    "p2": 0.0854,
+    "dist_to_stop_r": 1.175,
+    "dist_to_t1_r": 1.325,
+    "dist_to_t2_r": 2.825,
+    "horizon_pct_used": 17.8,
+    "p1": 0.1165,
+    "p2": 0.0583,
     "p3": null,
-    "move_r": 0.256,
+    "move_r": 0.175,
     "mfe_r": 0.256,
     "mae_r": -0.0
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-21",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 6,
-  "tau": 0.1333
+  "days_elapsed": 8,
+  "tau": 0.1778
 }

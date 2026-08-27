@@ -87,6 +87,32 @@ def _prophet(asof: str | None = PROPHET_CURRENT_ASOF, *,
     )
 
 
+def _us_standouts(as_of: str | None = PROPHET_CURRENT_ASOF, *,
+                  mtime_age_hours: float = 2.0,
+                  price_through_matches: bool = True,
+                  buy: list | None = None,
+                  lane_counts: dict | None = None) -> fs.FetchResult:
+    """One served read of factordata/us_standouts.json, shaped like the real
+    board of record (PR-1 item 1a: as_of, staleness.price_through, a non-empty
+    ``buy`` lane, and a non-empty ``lane_counts``).
+
+    ``price_through_matches=False`` deliberately diverges price_through from
+    as_of, for the cross_field_asof re-stamp-trap test.
+    """
+    doc = {
+        "as_of": as_of,
+        "buy": ["AAPL"] if buy is None else buy,
+        "lane_counts": {"live": 1} if lane_counts is None else lane_counts,
+        "staleness": {
+            "price_through": as_of if price_through_matches else "2020-01-01",
+        },
+    }
+    return fs.FetchResult(
+        status=200, last_modified=NOW - timedelta(hours=mtime_age_hours),
+        body=json.dumps(doc),
+    )
+
+
 def _provisional(as_of: str | None = PROPHET_CURRENT_ASOF, *,
                  mtime_age_hours: float = 12.0,
                  built_at: str | None = None,
@@ -270,17 +296,50 @@ def _live_strip(as_of: str | None = PROPHET_CURRENT_ASOF, *,
 ABSENT = fs.FetchResult(error="served read failed: FileNotFoundError: [Errno 2] …")
 
 
+def _plv(pass_ts: str | None, *, last_modified: datetime | None = NOW) -> fs.FetchResult:
+    """One live-plane read of live/prophet_live.json, shaped for the
+    window-gated ``prophet_live`` surface (Part A — closes the 27-day
+    2026-07-30→08-26 freeze). ``meta.pass_ts`` is the evaluator's OWN semantic
+    clock — never mtime, see PROPHET_LIVE_MAX_AGE_MINUTES — so every test below
+    drives freshness through this field alone. ``last_modified`` defaults to
+    NOW (fresh) so a case exercising pass_ts is not also fighting a stale-mtime
+    side effect it is not testing for; the mtime-does-not-rescue-it tests pass
+    it explicitly.
+    """
+    doc: dict = {"schema": "prophet_live.states/v1", "status": "live", "states": []}
+    if pass_ts is not None:
+        doc["meta"] = {"pass_ts": pass_ts}
+    return fs.FetchResult(status=200, last_modified=last_modified, body=json.dumps(doc))
+
+
+#: A weekday, ordinary NYSE trading session, well inside the 09:25-16:15 ET
+#: (+10 min grace) live window — 15:00Z = 11:00 EDT. Used by every
+#: ``prophet_live`` window-open test below; NOW itself (module-level) is a
+#: Saturday and must never be used for those cases.
+WEEKDAY_IN_WINDOW = datetime(2026, 8, 10, 15, 0, tzinfo=timezone.utc)
+#: Labor Day 2026 (a Monday, an NYSE holiday) at the same wall-clock hour that
+#: is inside the window on an ordinary trading day — proves in_window() is
+#: reading the CALENDAR, not just the clock.
+HOLIDAY_AT_TRADING_HOUR = datetime(2026, 9, 7, 15, 0, tzinfo=timezone.utc)
+
+
+def _prophet_live_surface() -> dict:
+    return next(s for s in fs.SURFACES if s["id"] == "prophet_live")
+
+
 def _served(result: fs.FetchResult, live: fs.FetchResult | None = None,
             strip: fs.FetchResult | None = None,
             radar: fs.FetchResult | None = None,
-            cn: fs.FetchResult | None = None):
+            cn: fs.FetchResult | None = None,
+            standouts: fs.FetchResult | None = None):
     """A served_reader stand-in.
 
-    PATH-AWARE, because one reader now answers five different artifacts: the
-    git-rsynced site.served tree (``/prophet/index.json``), the daemon-written
-    close-pass board (``/live/us_board_provisional.json``), the client artifact
-    the SLA is measured against (``/live/prophet_live.json``), the Live Entry
-    Radar payload (``/live/entry_radar.json``) and the CN runtime board
+    PATH-AWARE, because one reader now answers six different artifacts: the
+    git-rsynced site.served tree (``/prophet/index.json`` AND, since PR-1,
+    ``/factordata/us_standouts.json``), the daemon-written close-pass board
+    (``/live/us_board_provisional.json``), the client artifact the SLA is
+    measured against (``/live/prophet_live.json``), the Live Entry Radar
+    payload (``/live/entry_radar.json``) and the CN runtime board
     (``/live/cn_prophet_live.json``, judged on ``session``). A stub that answered
     them with the same body would hand one surface's payload to a surface judged
     on a different field and manufacture a breach that has nothing to do with
@@ -293,12 +352,15 @@ def _served(result: fs.FetchResult, live: fs.FetchResult | None = None,
     strip = _live_strip() if strip is None else strip
     radar = _entry_radar() if radar is None else radar
     cn = _cn_board() if cn is None else cn
+    standouts = _us_standouts() if standouts is None else standouts
 
     def _read(root, path):
         if path == CLIENT_PATH:
             return strip
         if path == RADAR_PATH:
             return radar
+        if path == "/factordata/us_standouts.json":
+            return standouts
         if path == CN_PATH:
             return cn
         return fallback if path.startswith("/live/") else result
@@ -312,11 +374,18 @@ def _fresh_results() -> dict[str, fs.FetchResult]:
         "hub": _page(14.0),
         "r2_massive_stock_day": _r2(10.0),
         "prophet_us": _prophet(),
+        "us_standouts": _us_standouts(),
         "us_board_provisional": _provisional(),
         "entry_radar_live": _entry_radar(),
         "cn_board_live": _cn_board(),
 
         "prophet_live_armed": _armed(),
+        # Window-gated (PROPHET_LIVE_MAX_AGE_MINUTES / the prophet_live SURFACES
+        # entry): NOW is a Saturday, so the ET live window is closed and this
+        # surface reads ok regardless of content — ABSENT is the ordinary
+        # overnight/weekend state on purpose, and every test built on this
+        # baseline is implicit proof a closed window never breaches on it.
+        "prophet_live": ABSENT,
     }
 
 
@@ -349,6 +418,7 @@ def test_dead_nightly_for_a_day_breaches_every_bake_surface():
         # content, not on a stamp — they stay ok here, which is the point: the four
         # bake surfaces answer independently.
         "prophet_us": _prophet(),
+        "us_standouts": _us_standouts(),
         "us_board_provisional": _provisional(),
         "entry_radar_live": _entry_radar(),
         "cn_board_live": _cn_board(),
@@ -357,8 +427,10 @@ def test_dead_nightly_for_a_day_breaches_every_bake_surface():
         # they stay ok here, which is the point: the four bake surfaces answer
         # independently.
         "prophet_us": _prophet(),
+        "us_standouts": _us_standouts(),
         "us_board_provisional": _provisional(),
         "prophet_live_armed": _armed(),
+        "prophet_live": ABSENT,   # window closed (NOW is Saturday) — see _fresh_results
     }
     report = fs.evaluate(results, NOW)
     assert report["ok"] is False
@@ -447,11 +519,16 @@ def _stale_report(now: datetime = NOW) -> dict:
             # held fresh: these cases exercise the alert window, and the four
             # bake surfaces above are the breach set they assert on.
             "prophet_us": _prophet(),
+            "us_standouts": _us_standouts(),
             "us_board_provisional": _provisional(),
             "entry_radar_live": _entry_radar(),
             "cn_board_live": _cn_board(),
 
             "prophet_live_armed": _armed(),
+            # window closed for every `now` this helper is called with (NOW and
+            # its small offsets all stay inside the same Saturday) — see
+            # _fresh_results.
+            "prophet_live": ABSENT,
         },
         now,
     )
@@ -655,6 +732,7 @@ def test_served_state_reads_not_ok_once_blind_past_threshold(tmp_path, monkeypat
     def dark_fetcher(url, *, want_body):
         return fs.FetchResult(error="connection refused")
 
+    dark_served = fs.FetchResult(error="served read failed: no such file")
     rc = 0
     for i in range(fs.BLIND_AFTER):
         rc = fs.run(
@@ -664,7 +742,7 @@ def test_served_state_reads_not_ok_once_blind_past_threshold(tmp_path, monkeypat
             public_dir=tmp_path / "public",
             state_dir=tmp_path / "state",
             fetcher=dark_fetcher,
-            served_reader=_served(fs.FetchResult(error="served read failed: no such file")),
+            served_reader=_served(dark_served, standouts=dark_served),
         )
     assert rc == 1
     served = json.loads((tmp_path / "public" / "live" / "staleness.json").read_text())
@@ -675,7 +753,7 @@ def test_served_state_reads_not_ok_once_blind_past_threshold(tmp_path, monkeypat
     # answering is the sentinel losing sight of it.
     assert served["blind_surfaces"] == [
         "china", "hub", "prophet_live_armed", "prophet_us", "r2_massive_stock_day",
-        "us_stocks",
+        "us_standouts", "us_stocks",
     ]
     assert served["stale_surfaces"] == []  # blind, not provably stale — honest split
 
@@ -969,6 +1047,8 @@ def test_prophet_is_read_from_the_served_tree_never_over_http(tmp_path, monkeypa
             return _entry_radar()
         if path == CN_PATH:
             return _cn_board()
+        if path == "/factordata/us_standouts.json":
+            return _us_standouts()
         return _provisional() if path.startswith("/live/") else _prophet()
 
     rc = fs.run(
@@ -997,9 +1077,19 @@ def test_prophet_is_read_from_the_served_tree_never_over_http(tmp_path, monkeypa
     # also read off the live-plane root. Two roots, one reader, zero HTTP.
     assert reads == [
         ("/opt/macro/site.served", "/prophet/index.json"),
+        # PR-1 item 1a — the served board of record, read off the same
+        # site.served tree immediately after the Prophet index (SURFACES order).
+        ("/opt/macro/site.served", "/factordata/us_standouts.json"),
         (str(tmp_path / "public"), "/live/us_board_provisional.json"),
         (str(tmp_path / "public"), RADAR_PATH),
         (str(tmp_path / "public"), CN_PATH),
+        # The prophet_live SURFACES entry (Part A) reads CLIENT_PATH directly —
+        # it is the SAME underlying file as the reader-side artifact below, read
+        # for a different purpose (grading the artifact's own meta.pass_ts
+        # rather than the reader's board_state), so it legitimately shows up
+        # twice: once as a first-class surface, once as the us_board_provisional
+        # SLA's client-side read.
+        (str(tmp_path / "public"), CLIENT_PATH),
         (str(tmp_path / "public"), CLIENT_PATH),
     ]
     assert not [u for u in urls if "us_board_provisional" in u], urls
@@ -1067,6 +1157,165 @@ def test_prophet_budget_is_tighter_than_the_board_budgets():
     board_budgets = [s["delay_budget_days"] for s in fs.SURFACES
                      if s["delay_budget_days"] is not None]
     assert board_budgets and min(board_budgets) > fs.PROPHET_MAX_SESSIONS_BEHIND
+
+
+# --------------------------------------------------------------------------- #
+# prophet_live — window-gated, minute-grained intraday freshness (Part A).
+#
+# Closes the 27-day 2026-07-30→08-26 freeze: live/prophet_live.json's own
+# meta.pass_ts froze while three separate instruments read the estate healthy,
+# because none of them graded this artifact's own semantic clock. See the
+# SURFACES entry and PROPHET_LIVE_MAX_AGE_MINUTES for the full rationale.
+# --------------------------------------------------------------------------- #
+def test_prophet_live_surface_is_armed_with_the_new_budget_shape():
+    """Structural pin: the nested asof_field and the minute budget are the
+    deliberate extension the module docstring names, not a repurposed session
+    or hours budget."""
+    s = _prophet_live_surface()
+    assert s["kind"] == "live_file"
+    assert s["path"] == "/live/prophet_live.json"
+    assert s["asof_field"] == ("meta", "pass_ts")
+    assert s["asof_max_age_minutes"] == fs.PROPHET_LIVE_MAX_AGE_MINUTES
+    assert s["live_window_gate"] is True
+    assert fs.PROPHET_LIVE_MAX_AGE_MINUTES == 10.0
+    # Never a session or hours budget — this surface's clock is minute-grained.
+    assert s["bake_budget_hours"] is None
+    assert s["delay_budget_days"] is None
+    assert "asof_max_sessions_behind" not in s
+
+
+def test_absent_during_the_live_window_is_a_breach():
+    """Area 1 (existence half). Inside the window the evaluator is meant to be
+    ticking every 5 minutes, so a missing artifact is a definitive breach —
+    never the ordinary pre-publication state absent_ok surfaces get."""
+    results = _fresh_results()
+    results["prophet_live"] = ABSENT
+    report = fs.evaluate(results, WEEKDAY_IN_WINDOW)
+    c = report["surfaces"]["prophet_live"]
+    assert c["status"] == "stale"
+    assert "prophet_live" in report["stale_surfaces"]
+    assert "absent during the live window" in c["detail"]
+
+
+def test_pass_ts_older_than_ten_minutes_in_window_is_a_breach():
+    """Area 2 (existence half's twin: freshness). 11 minutes old — one minute
+    past the 10-minute budget, which is two missed 5-minute evaluator passes."""
+    results = _fresh_results()
+    results["prophet_live"] = _plv(
+        (WEEKDAY_IN_WINDOW - timedelta(minutes=11)).isoformat(),
+        last_modified=WEEKDAY_IN_WINDOW,
+    )
+    report = fs.evaluate(results, WEEKDAY_IN_WINDOW)
+    c = report["surfaces"]["prophet_live"]
+    assert c["status"] == "stale"
+    assert c["asof_age_minutes"] == 11.0
+    assert "11.0 min old" in c["detail"] and "budget 10 min" in c["detail"]
+
+
+def test_a_fresh_mtime_over_an_ancient_pass_ts_still_breaches():
+    """Area 3 — THE incident's exact shape. The served file's mtime moved
+    seconds ago (the evaluator rewrote it), but meta.pass_ts is hours stale:
+    mtime must never rescue this verdict, because the 27-day freeze shipped
+    with the mtime moving on schedule the entire time."""
+    results = _fresh_results()
+    results["prophet_live"] = _plv(
+        (WEEKDAY_IN_WINDOW - timedelta(hours=3)).isoformat(),
+        last_modified=WEEKDAY_IN_WINDOW - timedelta(seconds=20),
+    )
+    report = fs.evaluate(results, WEEKDAY_IN_WINDOW)
+    c = report["surfaces"]["prophet_live"]
+    assert c["status"] == "stale"
+    assert c["bake_age_hours"] < 1.0        # mtime reads FRESH...
+    assert "mtime is fresh, the semantic clock is not" in c["detail"]  # ...and is ignored
+
+
+def test_fresh_pass_ts_in_window_is_clean():
+    """Area 4. Three minutes old, well inside the 10-minute budget."""
+    results = _fresh_results()
+    results["prophet_live"] = _plv(
+        (WEEKDAY_IN_WINDOW - timedelta(minutes=3)).isoformat(),
+        last_modified=WEEKDAY_IN_WINDOW,
+    )
+    report = fs.evaluate(results, WEEKDAY_IN_WINDOW)
+    c = report["surfaces"]["prophet_live"]
+    assert c["status"] == "ok"
+    assert c["asof_age_minutes"] == 3.0
+    assert "prophet_live" not in report["stale_surfaces"]
+
+
+@pytest.mark.parametrize("label,now,plv", [
+    ("weekend, absent", NOW, ABSENT),
+    ("weekend, ancient pass_ts", NOW,
+     _plv((NOW - timedelta(days=3)).isoformat(), last_modified=NOW)),
+    ("NYSE holiday at a trading-day hour, absent",
+     HOLIDAY_AT_TRADING_HOUR, ABSENT),
+    ("NYSE holiday at a trading-day hour, ancient pass_ts",
+     HOLIDAY_AT_TRADING_HOUR,
+     _plv((HOLIDAY_AT_TRADING_HOUR - timedelta(days=3)).isoformat(),
+          last_modified=HOLIDAY_AT_TRADING_HOUR)),
+])
+def test_absent_or_stale_outside_the_window_is_never_a_breach(label, now, plv):
+    """Area 5. Weekend and NYSE-holiday cases — absence AND staleness must both
+    stay clean outside the window, or this surface pages every morning and
+    every weekend by construction (the falsifier law this module states
+    everywhere else)."""
+    results = _fresh_results()
+    results["prophet_live"] = plv
+    report = fs.evaluate(results, now)
+    c = report["surfaces"]["prophet_live"]
+    assert c["status"] == "ok", label
+    assert "prophet_live" not in report["stale_surfaces"], label
+    assert "prophet_live" not in report["indeterminate_surfaces"], label
+
+
+def test_unparseable_artifact_in_window_is_a_breach_not_a_crash():
+    """Area 6. Inside the window the evaluator is meant to be writing a fresh
+    document every 5 minutes, so a body that fails to parse is itself evidence
+    the write is broken right now — a breach, not the blindness-counter path
+    the general check_surface machinery uses for a malformed body."""
+    results = _fresh_results()
+    results["prophet_live"] = fs.FetchResult(
+        status=200, last_modified=WEEKDAY_IN_WINDOW, body="<html>not json</html>",
+    )
+    report = fs.evaluate(results, WEEKDAY_IN_WINDOW)
+    c = report["surfaces"]["prophet_live"]
+    assert c["status"] == "stale"
+    assert "not JSON" in c["detail"]
+
+
+def test_the_window_is_read_from_the_evaluators_own_calendar_aware_helper():
+    """FROZEN SPEC Part A #4. The window/session test must come from
+    engine.prophet_live.live_states, not a hand-rolled hour band — proven
+    directly against the seam the surface calls, and pinned to agree with the
+    calendar-aware helper itself rather than a second, independent notion of
+    the window."""
+    from engine.prophet_live.live_states import in_window, live_cfg
+    assert in_window(WEEKDAY_IN_WINDOW, live_cfg(None)) is True
+    assert in_window(HOLIDAY_AT_TRADING_HOUR, live_cfg(None)) is False
+    assert fs._prophet_live_window_open(WEEKDAY_IN_WINDOW) is True
+    assert fs._prophet_live_window_open(HOLIDAY_AT_TRADING_HOUR) is False
+
+
+def test_an_unimportable_live_states_module_degrades_to_indeterminate(monkeypatch):
+    """The sentinel must survive a broken/half-pulled engine/ tree (module
+    docstring, the same discipline lib.nyse_calendar's lazy import gets):
+    unknowable is neither a breach nor a false-clean."""
+    import builtins
+    real_import = builtins.__import__
+
+    def blocked(name, *a, **kw):
+        if name == "engine.prophet_live.live_states":
+            raise ImportError("simulated broken engine tree")
+        return real_import(name, *a, **kw)
+
+    monkeypatch.setattr(builtins, "__import__", blocked)
+    assert fs._prophet_live_window_open(WEEKDAY_IN_WINDOW) is None
+    results = _fresh_results()
+    results["prophet_live"] = _plv(WEEKDAY_IN_WINDOW.isoformat(),
+                                   last_modified=WEEKDAY_IN_WINDOW)
+    report = fs.evaluate(results, WEEKDAY_IN_WINDOW)
+    assert report["surfaces"]["prophet_live"]["status"] == "indeterminate"
+    assert "prophet_live" not in report["stale_surfaces"]
 
 
 def test_sentinel_is_stdlib_only():
@@ -1666,11 +1915,16 @@ def test_a_dark_reader_never_breaches_never_blinds_and_never_pages(read, label):
     assert CLIENT_PATH not in report["surfaces"], label
     # Every surface whose PATH is the client artifact — not every id that shares
     # a prefix with it. ``prophet_live_armed`` is a genuine surface reading a
-    # genuinely different artifact on R2; the thing that must never appear here
-    # is a surface pointed at the reader's own file.
-    assert not [
+    # genuinely different artifact on R2. Exactly ONE surface may point at the
+    # reader's own file: ``prophet_live`` (Part A, closing the 27-day freeze) —
+    # and it is a DIFFERENT question than this reader condition, answered by
+    # its own dedicated, window-gated, minute-grained budget (see the SURFACES
+    # comment), never a repurposing of this client-side path. What must never
+    # appear is a SECOND surface on that path, or this one behaving like an
+    # ordinary session/hours-budgeted surface.
+    assert [
         s["id"] for s in fs.SURFACES if s["path"] == CLIENT_PATH
-    ], label
+    ] == ["prophet_live"], label
     assert report["surfaces"]["us_board_provisional"]["client_session"] is None, label
 
     state: dict = {}
@@ -1809,10 +2063,14 @@ def _results_at(now: datetime, board: fs.FetchResult) -> dict[str, fs.FetchResul
         "hub": fs.FetchResult(status=200, last_modified=fresh, body=HEALTHY_BODY),
         "r2_massive_stock_day": fs.FetchResult(status=200, last_modified=fresh),
         "prophet_us": _prophet(FRI_SESSION),
+        "us_standouts": _us_standouts(FRI_SESSION),
         "us_board_provisional": board,
         "entry_radar_live": _entry_radar(FRI_SESSION),
         "cn_board_live": _cn_board(FRI_SESSION),
         "prophet_live_armed": _armed(FRI_SESSION),
+        # FRI_VISIBLE is 19:30 ET — after the live window closes; window-gated,
+        # see _fresh_results.
+        "prophet_live": ABSENT,
     }
 
 
@@ -1980,7 +2238,8 @@ def test_the_private_facts_never_ride_the_publicly_served_staleness_file(
                                  strip=_live_strip(FRI_SESSION,
                                                    observed_at=FRI_VISIBLE),
                                  radar=_entry_radar(FRI_SESSION),
-                                 cn=_cn_board(FRI_SESSION)))
+                                 cn=_cn_board(FRI_SESSION),
+                                 standouts=_us_standouts(FRI_SESSION)))
 
     raw = (tmp_path / "public" / "live" / "staleness.json").read_text()
     served = json.loads(raw)

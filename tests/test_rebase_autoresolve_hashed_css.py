@@ -99,6 +99,34 @@ def assert_hash_pure(root: Path):
             assert f.stem == h, f"{f.name} content hashes to {h} — filename==hash contract broken"
 
 
+def write_release_snapshot(root: Path, name: str, marker: str) -> Path:
+    path = root / "data" / "release_forecast" / "input_snapshots" / name
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "{\n  \"series\": [\n"
+        + "".join("    1,\n" for _ in range(200))
+        + f"    1\n  ],\n  \"marker\": \"{marker}\"\n}}\n"
+    )
+    return path
+
+
+def add_destination_to_rebase_head(root: Path, env: dict, path: str, blob: str) -> None:
+    """Use Git plumbing to model the runner commit tree at a rename/delete stop."""
+    index = root / ".synthetic-rebase-head-index"
+    synthetic_env = dict(env, GIT_INDEX_FILE=str(index))
+    run(["git", "read-tree", "REBASE_HEAD"], root, synthetic_env)
+    run(["git", "update-index", "--add", "--cacheinfo", f"100644,{blob},{path}"], root, synthetic_env)
+    tree = run(["git", "write-tree"], root, synthetic_env).stdout.strip()
+    parent = run(["git", "rev-parse", "REBASE_HEAD^"], root, env).stdout.strip()
+    commit = run(
+        ["git", "commit-tree", tree, "-p", parent, "-m", "synthetic replay tree"],
+        root,
+        env,
+    ).stdout.strip()
+    run(["git", "update-ref", "REBASE_HEAD", commit], root, env)
+    index.unlink(missing_ok=True)
+
+
 @pytest.fixture()
 def lanes(tmp_path):
     """Bare origin + two clones sharing a base commit (hashed css + page + data)."""
@@ -161,6 +189,139 @@ def test_rename_rename_keeps_both_sides_and_completes(lanes):
     assert (lane2 / "data" / "x.json").read_text() == '{"day": 2}\n'
     assert not run(["git", "ls-files", "-u"], lane2, env).stdout.strip()
     run(["git", "push", "-q", "origin", "main"], lane2, env)  # the day's outputs land
+
+
+def test_release_snapshot_same_destination_same_blob_completes_rebase(lanes):
+    """Independent rotations to one byte-identical immutable snapshot are safe.
+
+    Production change that makes this pass: the resolver recognizes only the
+    release-forecast snapshot conflict whose destination exists byte-identically
+    in HEAD and REBASE_HEAD, keeps that upstream destination, and preserves both
+    replayed historical deletions.
+    """
+    env, origin, lane1, lane2, base_hash, base_css = lanes
+    old_path = write_release_snapshot(lane1, "CLAIMS_old.json", "series")
+    destination = "CLAIMS_new.json"
+    run(["git", "add", "-A"], lane1, env)
+    run(["git", "commit", "-qm", "seed historical release snapshots"], lane1, env)
+    run(["git", "push", "-q", "origin", "main"], lane1, env)
+    run(["git", "pull", "-q", "--rebase", "origin", "main"], lane2, env)
+
+    destination_path = old_path.with_name(destination)
+    old_path.rename(destination_path)
+    run(["git", "add", "-A"], lane1, env)
+    run(["git", "commit", "-qm", "lane1 rotates release snapshot"], lane1, env)
+    run(["git", "push", "-q", "origin", "main"], lane1, env)
+
+    (lane2 / old_path.relative_to(lane1)).unlink()
+    (lane2 / "data" / "x.json").write_text('{"pruned": true}\n')
+    run(["git", "add", "-A"], lane2, env)
+    run(["git", "commit", "-qm", "lane2 prunes historical snapshot"], lane2, env)
+
+    pull = run(PULL, lane2, env, check=False)
+    assert pull.returncode != 0, pull.stdout + pull.stderr
+    assert in_rebase(lane2)
+    rel_destination = str(destination_path.relative_to(lane1))
+    head_blob = run(["git", "rev-parse", f"HEAD:{rel_destination}"], lane2, env).stdout.strip()
+    add_destination_to_rebase_head(lane2, env, rel_destination, head_blob)
+
+    r = resolver(lane2, env)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert not in_rebase(lane2)
+    snapshot_dir = lane2 / "data" / "release_forecast" / "input_snapshots"
+    assert sorted(p.name for p in snapshot_dir.glob("*.json")) == [destination]
+    assert not run(["git", "ls-files", "-u"], lane2, env).stdout.strip()
+
+
+def test_release_snapshot_same_destination_different_blob_refuses(lanes):
+    """Same-named destinations with different bytes must never auto-resolve."""
+    env, origin, lane1, lane2, base_hash, base_css = lanes
+    old_a = write_release_snapshot(lane1, "CLAIMS_old.json", "series")
+    destination = "CLAIMS_new.json"
+    run(["git", "add", "-A"], lane1, env)
+    run(["git", "commit", "-qm", "seed historical release snapshots"], lane1, env)
+    run(["git", "push", "-q", "origin", "main"], lane1, env)
+    run(["git", "pull", "-q", "--rebase", "origin", "main"], lane2, env)
+
+    destination_path = old_a.with_name(destination)
+    old_a.rename(destination_path)
+    run(["git", "add", "-A"], lane1, env)
+    run(["git", "commit", "-qm", "lane1 rotates release snapshot"], lane1, env)
+    run(["git", "push", "-q", "origin", "main"], lane1, env)
+
+    (lane2 / old_a.relative_to(lane1)).unlink()
+    (lane2 / "data" / "x.json").write_text('{"pruned": true}\n')
+    run(["git", "add", "-A"], lane2, env)
+    run(["git", "commit", "-qm", "lane2 prunes historical snapshot"], lane2, env)
+
+    pull = run(PULL, lane2, env, check=False)
+    assert pull.returncode != 0, pull.stdout + pull.stderr
+    assert in_rebase(lane2)
+    divergent = lane2 / "divergent.json"
+    divergent.write_text('{"different": true}\n')
+    divergent_blob = run(["git", "hash-object", "-w", str(divergent)], lane2, env).stdout.strip()
+    divergent.unlink()
+    add_destination_to_rebase_head(
+        lane2, env, str(destination_path.relative_to(lane1)), divergent_blob
+    )
+
+    r = resolver(lane2, env)
+    assert r.returncode != 0
+    assert "refusing" in r.stdout + r.stderr
+    assert in_rebase(lane2)
+    run(["git", "rebase", "--abort"], lane2, env)
+
+
+def test_release_snapshot_preflight_refusal_does_not_partially_stage(lanes):
+    """One divergent snapshot refuses before an earlier safe path is mutated."""
+    env, origin, lane1, lane2, base_hash, base_css = lanes
+    old_safe = write_release_snapshot(lane1, "CLAIMS_old_safe.json", "safe")
+    old_bad = write_release_snapshot(lane1, "CLAIMS_old_bad.json", "bad")
+    safe_destination = old_safe.with_name("CLAIMS_A_safe.json")
+    bad_destination = old_bad.with_name("CLAIMS_B_divergent.json")
+    run(["git", "add", "-A"], lane1, env)
+    run(["git", "commit", "-qm", "seed two historical release snapshots"], lane1, env)
+    run(["git", "push", "-q", "origin", "main"], lane1, env)
+    run(["git", "pull", "-q", "--rebase", "origin", "main"], lane2, env)
+
+    old_safe.rename(safe_destination)
+    old_bad.rename(bad_destination)
+    run(["git", "add", "-A"], lane1, env)
+    run(["git", "commit", "-qm", "lane1 rotates two release snapshots"], lane1, env)
+    run(["git", "push", "-q", "origin", "main"], lane1, env)
+
+    (lane2 / old_safe.relative_to(lane1)).unlink()
+    (lane2 / old_bad.relative_to(lane1)).unlink()
+    (lane2 / "data" / "x.json").write_text('{"pruned": true}\n')
+    run(["git", "add", "-A"], lane2, env)
+    run(["git", "commit", "-qm", "lane2 prunes two historical snapshots"], lane2, env)
+
+    pull = run(PULL, lane2, env, check=False)
+    assert pull.returncode != 0, pull.stdout + pull.stderr
+    assert in_rebase(lane2)
+    safe_rel = str(safe_destination.relative_to(lane1))
+    bad_rel = str(bad_destination.relative_to(lane1))
+    safe_blob = run(["git", "rev-parse", f"HEAD:{safe_rel}"], lane2, env).stdout.strip()
+    add_destination_to_rebase_head(lane2, env, safe_rel, safe_blob)
+    divergent = lane2 / "divergent.json"
+    divergent.write_text('{"different": true}\n')
+    divergent_blob = run(["git", "hash-object", "-w", str(divergent)], lane2, env).stdout.strip()
+    divergent.unlink()
+    add_destination_to_rebase_head(lane2, env, bad_rel, divergent_blob)
+
+    before_index = run(["git", "ls-files", "--stage"], lane2, env).stdout
+    before_status = run(["git", "status", "--porcelain=v2"], lane2, env).stdout
+    before_unmerged = run(["git", "ls-files", "-u"], lane2, env).stdout
+    assert safe_rel in before_unmerged and bad_rel in before_unmerged
+
+    r = resolver(lane2, env)
+    assert r.returncode != 0
+    assert "refusing" in r.stdout + r.stderr
+    assert run(["git", "ls-files", "--stage"], lane2, env).stdout == before_index
+    assert run(["git", "status", "--porcelain=v2"], lane2, env).stdout == before_status
+    assert run(["git", "ls-files", "-u"], lane2, env).stdout == before_unmerged
+    assert in_rebase(lane2)
+    run(["git", "rebase", "--abort"], lane2, env)
 
 
 def test_rename_rename_hashed_js_resolves_alongside_css(lanes):

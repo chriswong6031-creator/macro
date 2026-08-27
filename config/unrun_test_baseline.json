@@ -255,7 +255,6 @@
     "tests/test_dannytrades.py",
     "tests/test_darkpool_signals.py",
     "tests/test_dashboard_news_i18n.py",
-    "tests/test_dashboard_template_render.py",
     "tests/test_dead_name_delisting.py",
     "tests/test_dead_name_price_tenure_guard.py",
     "tests/test_dead_name_prices.py",

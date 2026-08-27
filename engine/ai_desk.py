@@ -600,7 +600,19 @@ def _run_panel(state: dict, cfg: dict, call=None) -> dict:
     return dict(results)
 
 
-def _adjudicate(state: dict, panel: dict, cfg: dict, call=None):
+def _call_tracked(fn, system: str, user: str, cfg: dict, served: dict):
+    """Call fn(system, user, cfg, served=served), tolerating an OLD 3-arg `call`/
+    `_call_model` stub signature (several tests monkeypatch `call` this way, e.g.
+    `lambda system, user, cfg: (...)`) — retry without the new kwarg rather than
+    breaking those callers."""
+    try:
+        return fn(system, user, cfg, served=served)
+    except TypeError:
+        served.clear()
+        return fn(system, user, cfg)
+
+
+def _adjudicate(state: dict, panel: dict, cfg: dict, call=None, served: dict | None = None):
     """DESK-HEAD synthesis over the panel + raw state → (reply_text, degraded_reason)."""
     fn = call or _mb._call_model
     payload = {"detector_state": state,
@@ -608,7 +620,7 @@ def _adjudicate(state: dict, panel: dict, cfg: dict, call=None):
     user = ("The detector state and the four analysts' stances (JSON). Adjudicate into "
             "the FINAL falsifiable leans per your instructions.\n<input>\n"
             + json.dumps(payload, indent=2, default=str) + "\n</input>")
-    return fn(_ADJ_SYSTEM, user, cfg)
+    return _call_tracked(fn, _ADJ_SYSTEM, user, cfg, served if served is not None else {})
 
 
 def synthesize(state: dict, cfg: dict | None = None, call=None) -> dict:
@@ -621,6 +633,19 @@ def synthesize(state: dict, cfg: dict | None = None, call=None) -> dict:
         "schema": SCHEMA, "is_context_only": True,
         "generated_at": _now_iso(), "state_asof": asof,
         "model": cfg.get("llm_model", "deepseek-v4-pro"),
+        # Rung that authored THIS NOTE's text — "codex" / "oauth" / "anthropic" /
+        # "deepseek", or None on a degraded call. Populated below from the tracked
+        # call's `served` out-param so the ladder is verifiable from the artifact.
+        #
+        # SCOPE, so this is not read as more than it says: with the panel enabled
+        # the desk makes FIVE calls — four analysts then the desk-head adjudicator
+        # — and each walks the ladder independently, so they can be served by
+        # different rungs. This field names the ADJUDICATOR's rung, because the
+        # adjudicator is what wrote the published note; the analysts only feed it.
+        # It is therefore an authorship field, NOT a spend field: to see which
+        # rungs the four analyst calls actually billed, read the ai_costs ledger,
+        # where every call records its own rung under usage_lane "ai-desk".
+        "served_by": None,
         "regime_context": None, "theses": [],
         "source_verdicts": _source_verdicts(state),
         "track_record": state.get("track_record"),     # injected by Phase-C scorer; else None
@@ -631,17 +656,22 @@ def synthesize(state: dict, cfg: dict | None = None, call=None) -> dict:
         "confidence": "low",
         "raw_text": None, "degraded_reason": None, "disclaimer": DISCLAIMER,
     }
+    served: dict = {}
     panel_on = bool((cfg.get("panel") or {}).get("enabled", True))
     if panel_on:
         panel = _run_panel(state, cfg, call)
         brief["panel"] = {k: v for k, v in panel.items() if v}     # transparency for the page
         if any(panel.values()):
-            reply, reason = _adjudicate(state, panel, cfg, call)   # desk-head synthesis
+            reply, reason = _adjudicate(state, panel, cfg, call, served=served)  # desk-head synthesis
         else:                                                      # whole panel unavailable
-            reply, reason = (call or _mb._call_model)(_SYSTEM, _build_user(state), cfg)
+            reply, reason = _call_tracked(call or _mb._call_model, _SYSTEM, _build_user(state), cfg, served)
     else:
-        reply, reason = (call or _mb._call_model)(_SYSTEM, _build_user(state), cfg)
+        reply, reason = _call_tracked(call or _mb._call_model, _SYSTEM, _build_user(state), cfg, served)
     brief["raw_text"] = reply
+    if reply is not None:
+        brief["served_by"] = served.get("provider")
+        if served.get("model"):
+            brief["model"] = served["model"]
     if reply is None:
         brief["degraded_reason"] = reason
         return brief

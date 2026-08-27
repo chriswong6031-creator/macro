@@ -64,7 +64,7 @@
               "type": "object", "additionalProperties": false,
               "required": [
                 "role", "publication_window", "docs_scanned", "originals",
-                "amendments_excluded", "corrections", "status"
+                "amendments_excluded", "corrections", "out_of_scope_originals", "status"
               ],
               "properties": {
                 "role": {"const": "denominator_and_recovery"},
@@ -76,6 +76,7 @@
                 "originals": {"type": "integer", "minimum": 0},
                 "amendments_excluded": {"type": "integer", "minimum": 0},
                 "corrections": {"type": "integer", "minimum": 0},
+                "out_of_scope_originals": {"type": "integer", "minimum": 0},
                 "status": {"$ref": "#/$defs/railStatus"}
               }
             },
@@ -86,7 +87,7 @@
                 "articles_succeeded", "articles_failed"
               ],
               "properties": {
-                "role": {"const": "current_presentation"},
+                "role": {"const": "current_presentation_staged"},
                 "listing_pages": {"type": "integer", "minimum": 0},
                 "qualifying_articles": {"type": "integer", "minimum": 0},
                 "status": {"$ref": "#/$defs/railStatus"},
@@ -142,7 +143,7 @@
         "source_url": {"type": "string", "minLength": 1, "maxLength": 2000},
         "response_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
         "bytes": {"type": "integer", "minimum": 0},
-        "transport": {"enum": ["cli", "browser_in_page_fetch_staged"]},
+        "transport": {"enum": ["cli", "browser_in_page_fetch_staged", "cli_residential_staged"]},
         "observed_at": {"type": "string", "format": "date-time"},
         "known_at": {"type": "string", "format": "date-time"},
         "r2_object_key": {"type": ["string", "null"]}

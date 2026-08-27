@@ -310,8 +310,37 @@ def test_every_seeded_workstream_compiles_and_every_line_is_cited() -> None:
     provenance — exactly what §8's "everything is cited" exists to forbid.
     """
     assert SEED_KEYS, "the seeded store has no workstreams to compile"
+    # Parse and validate the committed store once, then exercise the same pure
+    # compiler over every target.  Spawning the CLI once per workstream reparsed
+    # all 863 records 49 times; exact-head #6505 measured that single test at
+    # more than 50 minutes on pc-ci-3.  Representative CLI-routing tests below
+    # still cross the process/argument/JSON boundary.  This acceptance gate
+    # retains every workstream and every assertion; it only removes quadratic
+    # fixture transport.
+    module = _load_cli()
+    store = module.load_store(STORE, module._load_programs())
+    active_builds_degraded = module.Degraded()
+    builds = module.load_active_builds(active_builds_degraded)
+    now = module._parse_moment(FROZEN)
+    assert now is not None
+    # This gate asserts graph coverage, citations, authority and budget behavior;
+    # it does not assert Git-history timestamps.  Resolving those timestamps here
+    # spawned thousands of `git log` processes over the same records and made the
+    # all-workstream proof the pack's hidden hour-long tail.  The status contract
+    # test separately proves that real tracked records resolve Git-derived dates.
+    module.git_dates = lambda _path: (None, None)
+    repo_sha = module._repo_sha()
+    module._repo_sha = lambda: repo_sha
     for key in SEED_KEYS:
-        bundle = _bundle(_compile("--workstream", key))
+        degraded = module.Degraded()
+        degraded.items.extend(active_builds_degraded.items)
+        bundle = module.compile_bundle(
+            store,
+            workstream=key,
+            now=now,
+            builds=builds,
+            degraded=degraded,
+        )
         assert bundle["schema"] == "context_bundle.v1"
         assert bundle["target"]["workstream"] == f"WS:{key}"
         assert bundle["target"]["resolution"] == "explicit"
