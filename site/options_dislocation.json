@@ -3,7 +3,7 @@
   "is_context_only": true,
   "scored": false,
   "as_of": "2026-08-13",
-  "generated_utc": "2026-08-26T12:29:32.177666+00:00",
+  "generated_utc": "2026-08-27T00:27:47.326024+00:00",
   "n": 372,
   "names": {
     "AAL": {
@@ -39,7 +39,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.2083770374419769,
+        "skew_acceleration": -0.20837703744197666,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -85,7 +85,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.167469130416039,
+        "skew_acceleration": -0.16746913041603878,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -131,7 +131,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.09515866262854156,
+        "skew_acceleration": 0.09515866262854178,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -177,7 +177,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.2170513399429247,
+        "skew_acceleration": 0.21705133994292491,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -223,7 +223,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.32020658900304033,
+        "skew_acceleration": 0.32020658900304055,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -269,7 +269,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.02190001730730784,
+        "skew_acceleration": -0.021900017307307507,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -315,7 +315,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.06493938332220361,
+        "skew_acceleration": 0.06493938332220395,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -407,7 +407,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.13077703981295768,
+        "skew_acceleration": 0.13077703981295785,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -453,7 +453,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.011654115475479787,
+        "skew_acceleration": 0.01165411547548012,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -591,7 +591,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.15145138539940983,
+        "skew_acceleration": 0.15145138539941017,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -637,7 +637,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.03316726547282545,
+        "skew_acceleration": -0.033167265472825225,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -683,7 +683,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.13717362749969975,
+        "skew_acceleration": 0.13717362749970008,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -729,7 +729,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.1383771231665819,
+        "skew_acceleration": 0.13837712316658213,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -821,7 +821,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.4433939883358413,
+        "skew_acceleration": -0.44339398833584087,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -867,7 +867,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.2337896109982075,
+        "skew_acceleration": 0.23378961099820772,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -913,7 +913,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.042489996181592216,
+        "skew_acceleration": 0.04248999618159238,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -959,7 +959,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.11755009863000748,
+        "skew_acceleration": -0.1175500986300072,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -1005,7 +1005,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.14672478700515568,
+        "skew_acceleration": 0.1467247870051559,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -1051,7 +1051,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.32773057704009534,
+        "skew_acceleration": 0.32773057704009556,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -1097,7 +1097,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.14455322011018845,
+        "skew_acceleration": 0.14455322011018878,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -1143,7 +1143,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.26950933177488945,
+        "skew_acceleration": 0.2695093317748899,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -1189,7 +1189,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.43731726829100415,
+        "skew_acceleration": 0.43731726829100437,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -1235,7 +1235,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.43126144854665094,
+        "skew_acceleration": -0.4312614485466506,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -1281,7 +1281,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.13934756823131633,
+        "skew_acceleration": 0.13934756823131667,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -1327,7 +1327,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.04125167069910873,
+        "skew_acceleration": 0.041251670699109066,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -1419,7 +1419,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.2450095038799276,
+        "skew_acceleration": 0.24500950387992793,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -1465,7 +1465,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.08636755484814873,
+        "skew_acceleration": 0.08636755484814906,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -1511,7 +1511,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.06847531246205862,
+        "skew_acceleration": -0.0684753124620584,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -1557,7 +1557,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.4042644022957498,
+        "skew_acceleration": -0.4042644022957496,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -1603,7 +1603,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.28372551363376397,
+        "skew_acceleration": -0.2837255136337637,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -1649,7 +1649,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.07517756908025891,
+        "skew_acceleration": -0.07517756908025863,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -1695,7 +1695,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.12271560050274555,
+        "skew_acceleration": 0.12271560050274599,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -1741,7 +1741,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.0954724080898589,
+        "skew_acceleration": 0.09547240808985913,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -1787,7 +1787,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.2249581779669414,
+        "skew_acceleration": 0.22495817796694167,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -1833,7 +1833,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.3778577566225809,
+        "skew_acceleration": -0.37785775662258064,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -1879,7 +1879,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.04522260458551258,
+        "skew_acceleration": -0.04522260458551236,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -1925,7 +1925,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.10261957684351647,
+        "skew_acceleration": -0.10261957684351614,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -1971,7 +1971,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.0569599514410592,
+        "skew_acceleration": 0.056959951441059475,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -2017,7 +2017,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.01464038111451893,
+        "skew_acceleration": 0.014640381114519152,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -2063,7 +2063,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.23186328952137136,
+        "skew_acceleration": 0.23186328952137158,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -2155,7 +2155,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.005146499051585374,
+        "skew_acceleration": -0.00514649905158493,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -2201,7 +2201,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.140303341038436,
+        "skew_acceleration": 0.14030334103843634,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -2247,7 +2247,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.04778339278982474,
+        "skew_acceleration": 0.04778339278982496,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -2293,7 +2293,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.567283661073707,
+        "skew_acceleration": -0.5672836610737065,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -2339,7 +2339,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.006834316591126377,
+        "skew_acceleration": 0.006834316591126599,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -2385,7 +2385,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.10186158059914097,
+        "skew_acceleration": 0.1018615805991413,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -2431,7 +2431,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.19996927324924652,
+        "skew_acceleration": 0.19996927324924707,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -2477,7 +2477,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.16319755633052224,
+        "skew_acceleration": -0.16319755633052202,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -2569,7 +2569,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.27313094262240156,
+        "skew_acceleration": -0.27313094262240134,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -2615,7 +2615,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.2019058918944429,
+        "skew_acceleration": 0.20190589189444302,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -2661,7 +2661,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.24557874999590484,
+        "skew_acceleration": -0.24557874999590468,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -2707,7 +2707,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.4668387010840228,
+        "skew_acceleration": -0.4668387010840225,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -2753,7 +2753,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.16504627241329334,
+        "skew_acceleration": 0.16504627241329345,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -2799,7 +2799,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.19891495264745432,
+        "skew_acceleration": -0.1989149526474541,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -2845,7 +2845,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.1605434664567199,
+        "skew_acceleration": 0.16054346645672035,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -2891,7 +2891,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.09985503317538647,
+        "skew_acceleration": 0.0998550331753868,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -2937,7 +2937,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.004894724478006041,
+        "skew_acceleration": -0.00489472447800593,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -2983,7 +2983,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.29035225494566985,
+        "skew_acceleration": 0.2903522549456703,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -3029,7 +3029,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.30052813426461744,
+        "skew_acceleration": -0.3005281342646172,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -3075,7 +3075,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.3418813112402397,
+        "skew_acceleration": 0.34188131124023996,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -3121,7 +3121,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.24906176179640896,
+        "skew_acceleration": -0.24906176179640868,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -3167,7 +3167,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.026954041367908743,
+        "skew_acceleration": -0.026954041367908577,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -3213,7 +3213,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.10004321321214305,
+        "skew_acceleration": -0.1000432132121426,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -3259,7 +3259,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.1747955195606804,
+        "skew_acceleration": 0.17479551956068073,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -3305,7 +3305,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.4041322312247998,
+        "skew_acceleration": -0.4041322312247996,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -3351,7 +3351,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.342067783860196,
+        "skew_acceleration": -0.34206778386019576,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -3397,7 +3397,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.3869014879179164,
+        "skew_acceleration": -0.38690148791791623,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -3443,7 +3443,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.22043982127175676,
+        "skew_acceleration": 0.2204398212717571,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -3489,7 +3489,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.2567744186197382,
+        "skew_acceleration": -0.256774418619738,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -3535,7 +3535,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.2902756316375835,
+        "skew_acceleration": 0.29027563163758385,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -3581,7 +3581,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.16840252723599547,
+        "skew_acceleration": 0.1684025272359958,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -3627,7 +3627,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.4038969055398014,
+        "skew_acceleration": 0.40389690553980173,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -3673,7 +3673,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.013747758620420769,
+        "skew_acceleration": -0.013747758620420436,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -3719,7 +3719,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.3265825303822778,
+        "skew_acceleration": 0.32658253038227836,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -3765,7 +3765,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.14178643332443297,
+        "skew_acceleration": -0.1417864333244328,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -3811,7 +3811,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.0047182529333064105,
+        "skew_acceleration": 0.004718252933306688,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -3857,7 +3857,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.10858316831308962,
+        "skew_acceleration": -0.10858316831308934,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -3903,7 +3903,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.17268703133897717,
+        "skew_acceleration": -0.17268703133897684,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -3995,7 +3995,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.23610507244226528,
+        "skew_acceleration": -0.23610507244226506,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -4041,7 +4041,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.11328609755501523,
+        "skew_acceleration": 0.11328609755501545,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -4087,7 +4087,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.2867190019621416,
+        "skew_acceleration": 0.28671900196214184,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -4133,7 +4133,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.28011630723779113,
+        "skew_acceleration": -0.2801163072377908,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -4179,7 +4179,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.2249724776405121,
+        "skew_acceleration": 0.22497247764051242,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -4225,7 +4225,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.11721567974714425,
+        "skew_acceleration": -0.11721567974714403,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -4271,7 +4271,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.48971568776032987,
+        "skew_acceleration": 0.48971568776033014,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -4317,7 +4317,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.09922572109606925,
+        "skew_acceleration": 0.09922572109606947,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -4363,7 +4363,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.22069182531815834,
+        "skew_acceleration": -0.22069182531815812,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -4409,7 +4409,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.07506206160089568,
+        "skew_acceleration": -0.07506206160089546,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -4455,7 +4455,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.41926990632956773,
+        "skew_acceleration": -0.4192699063295673,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -4501,7 +4501,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.07097373008054736,
+        "skew_acceleration": -0.07097373008054714,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -4547,7 +4547,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.19310831161227637,
+        "skew_acceleration": -0.19310831161227604,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -4593,7 +4593,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.0069340636483490314,
+        "skew_acceleration": -0.006934063648348865,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -4639,7 +4639,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.34786430280346,
+        "skew_acceleration": 0.34786430280346026,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -4685,7 +4685,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.029781582367177872,
+        "skew_acceleration": 0.02978158236717804,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -4731,7 +4731,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.1584107268630886,
+        "skew_acceleration": -0.15841072686308832,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -4777,7 +4777,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.18184003942894883,
+        "skew_acceleration": -0.1818400394289486,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -4823,7 +4823,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.21236846465400355,
+        "skew_acceleration": -0.21236846465400333,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -4915,7 +4915,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.15664853398427003,
+        "skew_acceleration": -0.15664853398426976,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -4961,7 +4961,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.4756669040605012,
+        "skew_acceleration": -0.4756669040605009,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -5007,7 +5007,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.28016065708844,
+        "skew_acceleration": -0.2801606570884398,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -5053,7 +5053,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.11706055289502282,
+        "skew_acceleration": 0.11706055289502315,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -5099,7 +5099,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.3582513527636849,
+        "skew_acceleration": -0.3582513527636846,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -5145,7 +5145,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.1580132046185121,
+        "skew_acceleration": -0.15801320461851193,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -5237,7 +5237,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.34885654648694076,
+        "skew_acceleration": 0.348856546486941,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -5283,7 +5283,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.2463203762682309,
+        "skew_acceleration": 0.24632037626823122,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -5329,7 +5329,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.16392600327529505,
+        "skew_acceleration": 0.16392600327529522,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -5375,7 +5375,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.36828250357826164,
+        "skew_acceleration": -0.3682825035782613,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -5421,7 +5421,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.2866876513431237,
+        "skew_acceleration": -0.28668765134312346,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -5467,7 +5467,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.1823603608401262,
+        "skew_acceleration": -0.18236036084012602,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -5513,7 +5513,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.5032901235487152,
+        "skew_acceleration": -0.5032901235487149,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -5559,7 +5559,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.09532156484996834,
+        "skew_acceleration": 0.09532156484996862,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -5605,7 +5605,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.17844913003538485,
+        "skew_acceleration": -0.17844913003538473,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -5651,7 +5651,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.29712352482875726,
+        "skew_acceleration": 0.2971235248287576,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -5697,7 +5697,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.02501326476205512,
+        "skew_acceleration": -0.0250132647620549,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -5743,7 +5743,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.10475456440595687,
+        "skew_acceleration": 0.1047545644059572,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -5789,7 +5789,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.15026624354550677,
+        "skew_acceleration": 0.1502662435455071,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -5835,7 +5835,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.08849054008272761,
+        "skew_acceleration": 0.08849054008272783,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -5881,7 +5881,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.3518753571563644,
+        "skew_acceleration": 0.35187535715636475,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -5927,7 +5927,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.19789328795780314,
+        "skew_acceleration": -0.1978932879578028,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -5973,7 +5973,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.4413075233545227,
+        "skew_acceleration": 0.44130752335452295,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -6065,7 +6065,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.023195534039006316,
+        "skew_acceleration": -0.02319553403900604,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -6111,7 +6111,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.3640532238627059,
+        "skew_acceleration": -0.36405322386270556,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -6203,7 +6203,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.052409795051871766,
+        "skew_acceleration": -0.0524097950518716,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -6249,7 +6249,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.0982841443575383,
+        "skew_acceleration": 0.09828414435753874,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -6295,7 +6295,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.19541484295019462,
+        "skew_acceleration": 0.19541484295019496,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -6341,7 +6341,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.1767553631344032,
+        "skew_acceleration": 0.17675536313440343,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -6433,7 +6433,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.2670475452914184,
+        "skew_acceleration": -0.26704754529141805,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -6479,7 +6479,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.5442615757345766,
+        "skew_acceleration": -0.5442615757345762,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -6525,7 +6525,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.1883711323487573,
+        "skew_acceleration": -0.18837113234875708,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -6571,7 +6571,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.25690364333680493,
+        "skew_acceleration": 0.2569036433368055,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -6617,7 +6617,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.16807033163349172,
+        "skew_acceleration": 0.168070331633492,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -6663,7 +6663,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.4504956278135663,
+        "skew_acceleration": 0.4504956278135665,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -6709,7 +6709,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.020646025089032516,
+        "skew_acceleration": -0.02064602508903235,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -6755,7 +6755,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.16582496434207278,
+        "skew_acceleration": -0.16582496434207256,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -6801,7 +6801,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.26694369714347965,
+        "skew_acceleration": -0.26694369714347943,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -6847,7 +6847,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.45387491490838033,
+        "skew_acceleration": 0.45387491490838067,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -6893,7 +6893,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.5266745113211017,
+        "skew_acceleration": -0.5266745113211013,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -6985,7 +6985,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.5540592021835709,
+        "skew_acceleration": 0.5540592021835711,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -7077,7 +7077,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.045551755080334266,
+        "skew_acceleration": 0.04555175508033449,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -7123,7 +7123,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.05154367189851028,
+        "skew_acceleration": 0.05154367189851061,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -7169,7 +7169,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.2261740190060968,
+        "skew_acceleration": 0.22617401900609702,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -7215,7 +7215,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.2283950831230971,
+        "skew_acceleration": 0.2283950831230973,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -7261,7 +7261,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.10541111345308418,
+        "skew_acceleration": 0.10541111345308446,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -7307,7 +7307,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.3004584078448402,
+        "skew_acceleration": -0.3004584078448399,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -7353,7 +7353,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.3968212645253374,
+        "skew_acceleration": 0.3968212645253377,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -7399,7 +7399,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.34012731569167065,
+        "skew_acceleration": -0.34012731569167043,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -7445,7 +7445,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.24565247390141598,
+        "skew_acceleration": 0.2456524739014163,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -7491,7 +7491,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.40202908788207825,
+        "skew_acceleration": -0.40202908788207803,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -7583,7 +7583,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.14533241534203523,
+        "skew_acceleration": 0.14533241534203545,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -7629,7 +7629,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.06334239243611212,
+        "skew_acceleration": 0.06334239243611234,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -7675,7 +7675,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.08774962189784141,
+        "skew_acceleration": -0.08774962189784108,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -7721,7 +7721,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.10899729000253677,
+        "skew_acceleration": 0.108997290002537,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -7767,7 +7767,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.6103477546495572,
+        "skew_acceleration": -0.6103477546495568,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -7813,7 +7813,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.16952872347257542,
+        "skew_acceleration": 0.16952872347257586,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -7859,7 +7859,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.6223794197587329,
+        "skew_acceleration": -0.6223794197587326,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -7905,7 +7905,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.24623124975480692,
+        "skew_acceleration": -0.24623124975480665,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -7951,7 +7951,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.3152392338514989,
+        "skew_acceleration": 0.3152392338514993,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -7997,7 +7997,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.22415655979662386,
+        "skew_acceleration": 0.2241565597966242,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -8043,7 +8043,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.21130769138770356,
+        "skew_acceleration": -0.2113076913877034,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -8089,7 +8089,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.133282554252945,
+        "skew_acceleration": 0.13328255425294516,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -8135,7 +8135,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.21404855620113877,
+        "skew_acceleration": -0.2140485562011385,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -8181,7 +8181,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.27509368074751633,
+        "skew_acceleration": -0.2750936807475161,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -8227,7 +8227,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.034823256204322584,
+        "skew_acceleration": -0.034823256204322306,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -8273,7 +8273,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.5009325824856761,
+        "skew_acceleration": 0.5009325824856762,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -8319,7 +8319,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.33489834272435787,
+        "skew_acceleration": -0.3348983427243577,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -8411,7 +8411,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.2315867452867132,
+        "skew_acceleration": 0.23158674528671352,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -8457,7 +8457,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.4924960511461333,
+        "skew_acceleration": -0.4924960511461329,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -8503,7 +8503,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.24652679681061823,
+        "skew_acceleration": -0.24652679681061807,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -8549,7 +8549,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.11563948572484717,
+        "skew_acceleration": -0.11563948572484706,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -8595,7 +8595,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.09593978019646149,
+        "skew_acceleration": -0.09593978019646132,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -8641,7 +8641,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.10546013448609143,
+        "skew_acceleration": -0.1054601344860912,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -8687,7 +8687,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.2801930564137176,
+        "skew_acceleration": 0.28019305641371783,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -8733,7 +8733,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.6131509111322833,
+        "skew_acceleration": 0.6131509111322835,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -8779,7 +8779,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.3441211685428375,
+        "skew_acceleration": 0.3441211685428378,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -8825,7 +8825,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.0459871004457032,
+        "skew_acceleration": -0.04598710044570292,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -8871,7 +8871,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.13872344804909975,
+        "skew_acceleration": 0.13872344804909997,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -8917,7 +8917,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.5383727767140409,
+        "skew_acceleration": -0.5383727767140407,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -8963,7 +8963,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.3063436289149936,
+        "skew_acceleration": -0.30634362891499334,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -9009,7 +9009,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.39625714109229526,
+        "skew_acceleration": -0.396257141092295,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -9055,7 +9055,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.35124221296539343,
+        "skew_acceleration": -0.3512422129653932,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -9101,7 +9101,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.3416800061040128,
+        "skew_acceleration": -0.3416800061040125,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -9147,7 +9147,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.11088046331686519,
+        "skew_acceleration": 0.11088046331686541,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -9193,7 +9193,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.1568061629664721,
+        "skew_acceleration": 0.15680616296647232,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -9239,7 +9239,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.18299088188435925,
+        "skew_acceleration": -0.18299088188435897,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -9285,7 +9285,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.3534033519729768,
+        "skew_acceleration": 0.35340335197297723,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -9331,7 +9331,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.24860738649584546,
+        "skew_acceleration": 0.24860738649584568,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -9377,7 +9377,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.07327144219408355,
+        "skew_acceleration": 0.07327144219408377,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -9423,7 +9423,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.28624464413206446,
+        "skew_acceleration": 0.2862446441320647,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -9469,7 +9469,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.018990036783126774,
+        "skew_acceleration": 0.018990036783126996,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -9515,7 +9515,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.11184615828270933,
+        "skew_acceleration": 0.1118461582827096,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -9561,7 +9561,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.24809372010795672,
+        "skew_acceleration": -0.24809372010795638,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -9607,7 +9607,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.4548299079883024,
+        "skew_acceleration": 0.45482990798830264,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -9653,7 +9653,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.027999465041582683,
+        "skew_acceleration": -0.02799946504158235,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -9699,7 +9699,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.2545452583518789,
+        "skew_acceleration": 0.25454525835187936,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -9745,7 +9745,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.07776084679534923,
+        "skew_acceleration": 0.07776084679534945,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -9791,7 +9791,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.46100352506468634,
+        "skew_acceleration": -0.461003525064686,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -9837,7 +9837,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.12150145717802413,
+        "skew_acceleration": 0.1215014571780243,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -9883,7 +9883,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.2962717308885996,
+        "skew_acceleration": 0.29627173088859987,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -9929,7 +9929,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.044150559341648465,
+        "skew_acceleration": 0.04415055934164863,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -9975,7 +9975,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.47133327774512246,
+        "skew_acceleration": -0.47133327774512224,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -10021,7 +10021,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.034542455471475164,
+        "skew_acceleration": -0.03454245547147505,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -10067,7 +10067,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.2379024899835876,
+        "skew_acceleration": -0.23790248998358715,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -10113,7 +10113,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.029827553441320098,
+        "skew_acceleration": -0.029827553441319765,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -10159,7 +10159,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.23952555824947241,
+        "skew_acceleration": 0.23952555824947286,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -10205,7 +10205,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.40205498759154057,
+        "skew_acceleration": 0.4020549875915408,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -10251,7 +10251,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.22442077849627518,
+        "skew_acceleration": 0.22442077849627562,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -10297,7 +10297,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.22076914701131822,
+        "skew_acceleration": 0.22076914701131856,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -10343,7 +10343,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.5496058242348645,
+        "skew_acceleration": 0.5496058242348647,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -10389,7 +10389,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.0793920901286258,
+        "skew_acceleration": -0.07939209012862558,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -10435,7 +10435,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.1392119179637834,
+        "skew_acceleration": -0.13921191796378324,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -10481,7 +10481,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.055958202708614735,
+        "skew_acceleration": -0.05595820270861446,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -10527,7 +10527,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.34367597508409353,
+        "skew_acceleration": 0.34367597508409387,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -10573,7 +10573,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.32663215589774275,
+        "skew_acceleration": 0.3266321558977432,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -10619,7 +10619,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.10263497702583779,
+        "skew_acceleration": -0.10263497702583757,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -10665,7 +10665,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.028278515044708963,
+        "skew_acceleration": 0.028278515044709185,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -10711,7 +10711,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.05092360343011049,
+        "skew_acceleration": 0.05092360343011065,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -10803,7 +10803,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.06499188355179375,
+        "skew_acceleration": 0.06499188355179408,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -10849,7 +10849,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.2533941099327055,
+        "skew_acceleration": 0.2533941099327057,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -10895,7 +10895,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.14176155520718892,
+        "skew_acceleration": -0.14176155520718864,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -10941,7 +10941,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.4934469949378302,
+        "skew_acceleration": -0.49344699493782984,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -10987,7 +10987,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.3586159254286079,
+        "skew_acceleration": 0.3586159254286082,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -11033,7 +11033,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.23869421068362995,
+        "skew_acceleration": 0.23869421068363028,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -11079,7 +11079,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.06784889493413315,
+        "skew_acceleration": 0.06784889493413349,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -11125,7 +11125,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.15330437781763684,
+        "skew_acceleration": 0.15330437781763717,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -11171,7 +11171,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.43008527889901155,
+        "skew_acceleration": -0.43008527889901127,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -11217,7 +11217,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.3177217504101906,
+        "skew_acceleration": 0.3177217504101908,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -11263,7 +11263,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.013275323126416327,
+        "skew_acceleration": 0.01327532312641655,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -11309,7 +11309,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.5494328986753232,
+        "skew_acceleration": -0.5494328986753229,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -11355,7 +11355,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.3692524255026618,
+        "skew_acceleration": 0.3692524255026621,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -11401,7 +11401,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.08828824531950652,
+        "skew_acceleration": 0.08828824531950669,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -11447,7 +11447,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.07030882829569762,
+        "skew_acceleration": 0.07030882829569796,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -11493,7 +11493,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.0881266682284696,
+        "skew_acceleration": 0.08812666822846982,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -11539,7 +11539,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.48332792051076595,
+        "skew_acceleration": -0.4833279205107656,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -11585,7 +11585,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.14341637379017735,
+        "skew_acceleration": 0.1434163737901777,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -11631,7 +11631,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.27835949362877066,
+        "skew_acceleration": -0.2783594936287703,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -11677,7 +11677,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.3402029396703965,
+        "skew_acceleration": 0.34020293967039683,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -11723,7 +11723,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.2879672941290661,
+        "skew_acceleration": -0.28796729412906585,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -11769,7 +11769,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.433893887932405,
+        "skew_acceleration": -0.4338938879324047,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -11815,7 +11815,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.17652649011391286,
+        "skew_acceleration": -0.1765264901139127,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -11861,7 +11861,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.4527361685151544,
+        "skew_acceleration": 0.4527361685151545,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -11953,7 +11953,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.1110910837037673,
+        "skew_acceleration": 0.11109108370376775,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -11999,7 +11999,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.5945965305294714,
+        "skew_acceleration": -0.5945965305294711,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -12045,7 +12045,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.3997855737125656,
+        "skew_acceleration": 0.39978557371256584,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -12091,7 +12091,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.02698181646213632,
+        "skew_acceleration": -0.0269818164621361,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -12137,7 +12137,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.0028312104266757787,
+        "skew_acceleration": -0.0028312104266756677,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -12183,7 +12183,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.023388533388818966,
+        "skew_acceleration": -0.0233885333888188,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -12229,7 +12229,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.07114884938081573,
+        "skew_acceleration": -0.0711488493808155,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -12275,7 +12275,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.16205123450118003,
+        "skew_acceleration": -0.1620512345011798,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -12321,7 +12321,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.09173470247593407,
+        "skew_acceleration": 0.0917347024759344,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -12367,7 +12367,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.1934321593282406,
+        "skew_acceleration": 0.19343215932824082,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -12413,7 +12413,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.04191244913038389,
+        "skew_acceleration": 0.04191244913038411,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -12459,7 +12459,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.16219403339270255,
+        "skew_acceleration": 0.16219403339270289,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -12505,7 +12505,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.04295021723861364,
+        "skew_acceleration": -0.042950217238613364,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -12551,7 +12551,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.3830350313503591,
+        "skew_acceleration": -0.3830350313503589,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -12597,7 +12597,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.08951656487555004,
+        "skew_acceleration": 0.08951656487555038,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -12643,7 +12643,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.30804917352219763,
+        "skew_acceleration": 0.3080491735221979,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -12689,7 +12689,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.28094005710465886,
+        "skew_acceleration": 0.2809400571046592,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -12735,7 +12735,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.20155664292090025,
+        "skew_acceleration": 0.20155664292090048,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -12781,7 +12781,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.4881913744990819,
+        "skew_acceleration": -0.48819137449908157,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -12827,7 +12827,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.34371004986094744,
+        "skew_acceleration": -0.3437100498609471,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -12873,7 +12873,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.14008861713522625,
+        "skew_acceleration": 0.14008861713522658,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -12919,7 +12919,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.3143726960139691,
+        "skew_acceleration": -0.3143726960139689,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -12965,7 +12965,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.3268722612212641,
+        "skew_acceleration": 0.3268722612212644,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -13011,7 +13011,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.27321427275626753,
+        "skew_acceleration": -0.2732142727562671,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -13057,7 +13057,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.007981808143385227,
+        "skew_acceleration": 0.007981808143385671,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -13103,7 +13103,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.2602473799680861,
+        "skew_acceleration": -0.2602473799680859,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -13149,7 +13149,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.28800134664306126,
+        "skew_acceleration": 0.2880013466430615,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -13195,7 +13195,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.5921211674459527,
+        "skew_acceleration": -0.5921211674459522,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -13241,7 +13241,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.1302956100660988,
+        "skew_acceleration": 0.13029561006609913,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -13287,7 +13287,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.2486169162332595,
+        "skew_acceleration": -0.24861691623325916,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -13333,7 +13333,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.16130326644610254,
+        "skew_acceleration": 0.16130326644610288,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -13379,7 +13379,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.13682030697507402,
+        "skew_acceleration": -0.13682030697507375,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -13425,7 +13425,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.03942646065188388,
+        "skew_acceleration": 0.0394264606518841,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -13471,7 +13471,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.112606604854675,
+        "skew_acceleration": -0.11260660485467477,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -13517,7 +13517,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.08255360093577319,
+        "skew_acceleration": 0.08255360093577341,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -13563,7 +13563,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.13923664552473736,
+        "skew_acceleration": 0.13923664552473752,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -13609,7 +13609,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.2433398847458923,
+        "skew_acceleration": 0.24333988474589252,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -13655,7 +13655,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.25975258568232684,
+        "skew_acceleration": 0.25975258568232706,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -13701,7 +13701,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.3211987043930894,
+        "skew_acceleration": 0.3211987043930896,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -13747,7 +13747,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.34665928466688356,
+        "skew_acceleration": 0.346659284666884,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -13793,7 +13793,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.31458336577777024,
+        "skew_acceleration": 0.3145833657777708,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -13839,7 +13839,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.10462831315681437,
+        "skew_acceleration": -0.10462831315681415,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -13885,7 +13885,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.015197773033332251,
+        "skew_acceleration": 0.015197773033332473,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -13931,7 +13931,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.3113700086003899,
+        "skew_acceleration": 0.3113700086003901,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -13977,7 +13977,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.11824577851664136,
+        "skew_acceleration": 0.11824577851664159,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -14023,7 +14023,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.32946194486582137,
+        "skew_acceleration": 0.3294619448658216,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -14069,7 +14069,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.5544113999365882,
+        "skew_acceleration": -0.554411399936588,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -14115,7 +14115,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.19012619644085277,
+        "skew_acceleration": -0.1901261964408526,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -14161,7 +14161,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.17376430044516578,
+        "skew_acceleration": 0.1737643004451661,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -14207,7 +14207,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.34588468897763724,
+        "skew_acceleration": 0.3458846889776378,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -14253,7 +14253,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.13387712270996782,
+        "skew_acceleration": 0.13387712270996804,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -14299,7 +14299,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.04992955357603057,
+        "skew_acceleration": 0.049929553576030794,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -14345,7 +14345,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.2769713711870647,
+        "skew_acceleration": -0.2769713711870645,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -14391,7 +14391,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.42289399219311896,
+        "skew_acceleration": 0.42289399219311924,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -14437,7 +14437,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.41213531484659716,
+        "skew_acceleration": 0.4121353148465976,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -14483,7 +14483,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.2996496633133914,
+        "skew_acceleration": -0.29964966331339105,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -14529,7 +14529,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.4653479592965606,
+        "skew_acceleration": -0.46534795929656037,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -14575,7 +14575,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.2591390613554585,
+        "skew_acceleration": 0.25913906135545894,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -14621,7 +14621,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.17720198532851922,
+        "skew_acceleration": -0.17720198532851905,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -14667,7 +14667,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.2520054716274406,
+        "skew_acceleration": -0.25200547162744025,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -14713,7 +14713,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.2709571030701755,
+        "skew_acceleration": -0.27095710307017523,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -14759,7 +14759,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.4666226496248317,
+        "skew_acceleration": -0.46662264962483124,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -14805,7 +14805,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.3726699083023124,
+        "skew_acceleration": -0.37266990830231217,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -14851,7 +14851,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.33113083364955853,
+        "skew_acceleration": 0.33113083364955886,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -14897,7 +14897,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.4094976515985183,
+        "skew_acceleration": -0.4094976515985181,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -14943,7 +14943,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.04533692757214236,
+        "skew_acceleration": 0.04533692757214269,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -14989,7 +14989,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.4445616597089448,
+        "skew_acceleration": -0.44456165970894457,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -15035,7 +15035,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.12595488450363013,
+        "skew_acceleration": -0.1259548845036298,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -15081,7 +15081,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.18876819317412363,
+        "skew_acceleration": 0.18876819317412397,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -15127,7 +15127,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.11070571174945792,
+        "skew_acceleration": 0.11070571174945809,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -15173,7 +15173,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.25388736191150374,
+        "skew_acceleration": 0.2538873619115041,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -15219,7 +15219,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.12356454441722764,
+        "skew_acceleration": 0.12356454441722797,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -15265,7 +15265,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.2556476276030665,
+        "skew_acceleration": -0.25564762760306614,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -15311,7 +15311,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.3066469043888027,
+        "skew_acceleration": -0.3066469043888025,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -15357,7 +15357,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.16661900950186553,
+        "skew_acceleration": -0.16661900950186526,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -15403,7 +15403,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.3394508235732956,
+        "skew_acceleration": -0.33945082357329526,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -15449,7 +15449,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.15160713899684702,
+        "skew_acceleration": 0.15160713899684736,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -15495,7 +15495,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.1852833231842625,
+        "skew_acceleration": 0.18528332318426266,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -15541,7 +15541,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.03468450174984172,
+        "skew_acceleration": -0.0346845017498415,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -15587,7 +15587,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.5877562127744138,
+        "skew_acceleration": -0.5877562127744135,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -15633,7 +15633,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.21482902718647556,
+        "skew_acceleration": 0.21482902718647578,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -15679,7 +15679,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.5433035549586476,
+        "skew_acceleration": -0.5433035549586474,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -15725,7 +15725,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.4907385565637141,
+        "skew_acceleration": -0.4907385565637138,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -15771,7 +15771,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.212474689064183,
+        "skew_acceleration": 0.2124746890641832,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -15817,7 +15817,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.10515036182205828,
+        "skew_acceleration": 0.10515036182205861,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -15863,7 +15863,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.16374782673938704,
+        "skew_acceleration": 0.16374782673938731,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -15909,7 +15909,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.2293755588027211,
+        "skew_acceleration": 0.22937555880272126,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -15955,7 +15955,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.3384148741961569,
+        "skew_acceleration": 0.3384148741961571,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -16001,7 +16001,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.3774880094722316,
+        "skew_acceleration": 0.37748800947223204,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -16047,7 +16047,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.3270922806265569,
+        "skew_acceleration": -0.3270922806265566,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -16093,7 +16093,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.30355099422226633,
+        "skew_acceleration": -0.30355099422226617,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -16139,7 +16139,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.23350341115829576,
+        "skew_acceleration": -0.23350341115829554,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -16185,7 +16185,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.3611095116060827,
+        "skew_acceleration": -0.36110951160608246,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -16231,7 +16231,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.29620683348424515,
+        "skew_acceleration": 0.29620683348424537,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -16277,7 +16277,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.21807003359024335,
+        "skew_acceleration": 0.21807003359024368,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -16323,7 +16323,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.2978809930816153,
+        "skew_acceleration": 0.29788099308161564,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -16369,7 +16369,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.10343420901528066,
+        "skew_acceleration": 0.10343420901528094,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -16415,7 +16415,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.21999037616600695,
+        "skew_acceleration": -0.21999037616600672,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -16461,7 +16461,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.15380817384929274,
+        "skew_acceleration": -0.15380817384929257,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -16507,7 +16507,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.31819835114162665,
+        "skew_acceleration": 0.3181983511416268,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -16553,7 +16553,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.18308833159587298,
+        "skew_acceleration": -0.18308833159587287,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -16599,7 +16599,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.5236509481271956,
+        "skew_acceleration": 0.5236509481271958,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -16645,7 +16645,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.026199544157383348,
+        "skew_acceleration": -0.02619954415738318,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -16691,7 +16691,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.27831122035773664,
+        "skew_acceleration": 0.27831122035773687,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -16737,7 +16737,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.2036296842840527,
+        "skew_acceleration": 0.20362968428405281,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -16783,7 +16783,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.11682563175929334,
+        "skew_acceleration": 0.1168256317592935,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -16829,7 +16829,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.6229798141349469,
+        "skew_acceleration": 0.622979814134947,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -16875,7 +16875,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.24599935388949234,
+        "skew_acceleration": 0.2459993538894925,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -16921,7 +16921,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.43222072038762016,
+        "skew_acceleration": 0.4322207203876203,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -16967,7 +16967,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.22992367757098447,
+        "skew_acceleration": -0.22992367757098425,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -17013,7 +17013,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.2896207875816648,
+        "skew_acceleration": 0.28962078758166504,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -17059,7 +17059,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": -0.46902368674597267,
+        "skew_acceleration": -0.4690236867459724,
         "event_expected_move_gap": null
       },
       "primitives": {
@@ -17105,7 +17105,7 @@
           },
           "is_return_predictor": false
         },
-        "skew_acceleration": 0.11254344969047037,
+        "skew_acceleration": 0.11254344969047081,
         "event_expected_move_gap": null
       },
       "primitives": {

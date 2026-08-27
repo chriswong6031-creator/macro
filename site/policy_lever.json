@@ -1,20 +1,20 @@
 {
   "schema": "policy_lever.v1",
-  "as_of": "2026-08-25",
+  "as_of": "2026-08-26",
   "favored_complex": {
     "basket": [
       "SMH",
       "SOXX"
     ],
     "basket_incomplete": false,
-    "drawdown_pct": -19.22,
-    "drawdown_z": -2.69,
-    "as_of": "2026-08-25",
-    "note": "Semis complex (SMH/SOXX equal-weight) is -19.2% from the trailing-120-day peak. Depth of the drawdown is the structural context for rotation-reversal conditions.",
-    "note_zh": "\u534a\u5bfc\u4f53\u7ec4\u5408\uff08SMH/SOXX\u7b49\u6743\uff09\u8ddd\u8fc7\u53bb120\u65e5\u9ad8\u70b9-19.2%\u3002\u56de\u64a4\u6df1\u5ea6\u662f\u8f6e\u52a8\u53cd\u8f6c\u6761\u4ef6\u7684\u7ed3\u6784\u6027\u80cc\u666f\u3002"
+    "drawdown_pct": -19.12,
+    "drawdown_z": -2.63,
+    "as_of": "2026-08-26",
+    "note": "Semis complex (SMH/SOXX equal-weight) is -19.1% from the trailing-120-day peak. Depth of the drawdown is the structural context for rotation-reversal conditions.",
+    "note_zh": "\u534a\u5bfc\u4f53\u7ec4\u5408\uff08SMH/SOXX\u7b49\u6743\uff09\u8ddd\u8fc7\u53bb120\u65e5\u9ad8\u70b9-19.1%\u3002\u56de\u64a4\u6df1\u5ea6\u662f\u8f6e\u52a8\u53cd\u8f6c\u6761\u4ef6\u7684\u7ed3\u6784\u6027\u80cc\u666f\u3002"
   },
   "jawboning": {
-    "n_7d": 4,
+    "n_7d": 3,
     "n_30d": 34,
     "last_alert_ts": "2026-08-24T19:15:08+00:00",
     "last_alert_summary": "U.S. seeks total Iran isolation \u2014 oil risk premium and sanctions exposure surge",
@@ -31,13 +31,13 @@
       "name_zh": "\u4f0a\u6717/\u77f3\u6cb9",
       "asset": "CL=F",
       "arming": {
-        "stoch_k": 60.3,
-        "stoch_d": 79.04,
+        "stoch_k": 39.66,
+        "stoch_d": 62.83,
         "stoch_curl": false,
         "macd_curl": false,
         "basing": false,
         "days_in_base": 0,
-        "flatness": 0.0028,
+        "flatness": 0.0067,
         "armed": false,
         "stoch_curl_recent": false,
         "stoch_traverse": false,
