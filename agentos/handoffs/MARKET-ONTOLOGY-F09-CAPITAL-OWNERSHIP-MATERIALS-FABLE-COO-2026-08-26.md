@@ -16,7 +16,9 @@ state_before: >
   semantics. Multiple existing company/capital/credit/institutional/TXI/GMI/source
   owners likely apply; exact owner/rights mapping is not yet complete. Sovereign-fund,
   maritime/chokepoint and specialist market data may require rights/commercial gates.
-changed: []
+changed:
+  - path: agentos/handoffs/MARKET-ONTOLOGY-F09-CAPITAL-OWNERSHIP-MATERIALS-FABLE-COO-2026-08-26.md
+    what: "Created the sustained F09 Fable COO lane commission and its owner-partition/rights envelope."
 verified:
   - claim: "F09 is program-broad but must split into bounded child carriers by canonical owner."
     command: "Read parity addendum and multi-COO law."
