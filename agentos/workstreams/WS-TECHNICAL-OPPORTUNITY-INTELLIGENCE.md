@@ -19,9 +19,14 @@ ambiguity: scoped
 owns_paths:
   - research/TECHNICAL_OPPORTUNITY_INTELLIGENCE_
   - research/technical_opportunity/
+  - scripts/research/validate_toi_
+  - scripts/research/run_toi_
+  - tests/test_toi_
   - agentos/workstreams/WS-TECHNICAL-OPPORTUNITY-INTELLIGENCE.md
   - agentos/decisions/DEC-TECHNICAL-OPPORTUNITY-INTELLIGENCE-
-  - agentos/discoveries/DSC-TECHNICAL-
+  - agentos/discoveries/DSC-TECHNICAL-CONFLUENCE-V1-EXCLUDES-TECH-LAB-FAMILIES.md
+  - agentos/discoveries/DSC-TECHNICAL-4H-RESEARCH-PANEL-NOT-PROVEN.md
+  - agentos/discoveries/DSC-TOI-
   - agentos/handoffs/TECHNICAL-OPPORTUNITY-INTELLIGENCE-
 decisions:
   - DEC:TECHNICAL-OPPORTUNITY-INTELLIGENCE-CANONICAL-OWNERSHIP-AND-TWO-QUEUE-LAW
