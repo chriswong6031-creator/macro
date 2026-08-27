@@ -117,6 +117,19 @@
     }
   },
 
+  "ci_repair_during_this_wave": {
+    "finding": "contract-delta failed on head d30e79dfef70 with 1 introduced finding: tests/test_company_intelligence_qa_generalization_e3c.py was a new pytest suite named by no run: step in any workflow.",
+    "attribution": "This PR's own defect, not an inherited main-side gap. `git merge-base --is-ancestor origin/main HEAD` succeeded on base fab40e11940c, so the stale-base reclassification documented for this gate does not apply. A suite no job runs proves nothing, so the previous head shipped a test that would never have executed in CI.",
+    "repair": "Added the suite to the existing neural-web-core run: step in .github/ci/legacy-jobs.yml that already names tests/test_company_intelligence_qa_reconstruction.py and tests/test_company_intelligence_qa_exchange.py. Wiring into the job that already owns both sibling suites is closure-neutral: that job's import closure already reaches qa_reconstruction.py and qa_exchange.py, so no other job's declared paths were widened.",
+    "verified_locally": {
+      "gated_unrun_suites": "0 total, this suite absent",
+      "curated_exclusive_closure_findings": 0,
+      "co_run_with_job_mates": "274 passed across the nine company-intelligence suites now sharing that job line"
+    },
+    "authority_surface_note": "This repair edits .github/ci/legacy-jobs.yml, which is inside the CI-authority inventory (scripts/ci_authority_paths.py). Recorded explicitly for review: the change adds one filename to one existing run: step and alters no gate, no job definition, no paths: declaration, and no runtime module.",
+    "repaired_head": "d2a62a45f384e3bc2e2b32ecb652d97f674b0170"
+  },
+
   "deliberately_not_done": [
     "Did NOT generalize the 'go ahead' boundary cue, the operator-intro identity grammar, or the affiliation cut rule. Any of these would be tuning the compiler on the frozen E3-C event, which the pass rule and the commission both forbid.",
     "Did NOT relax the management-role requirement in qa_reconstruction or the respondent-role requirement in qa_exchange. Inferring management identity where the source publishes none would fabricate source support.",

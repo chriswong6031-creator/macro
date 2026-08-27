@@ -41,6 +41,15 @@ changed:
     what: >
       Amended with the measured result section and the state change to
       GENERALIZATION_REFUSED_ON_SOURCE_FORMAT. Selection law and pass rule are unchanged.
+  - path: .github/ci/legacy-jobs.yml
+    what: >
+      Added tests/test_company_intelligence_qa_generalization_e3c.py to the existing
+      neural-web-core run: step that already names the qa_reconstruction and qa_exchange
+      suites. Repairs a real contract-delta red on the prior head, where the new suite was
+      wired into no job and would never have executed in CI. Closure-neutral — that job's
+      import closure already reached both modules, so no paths: declaration was widened.
+      Inside the CI-authority inventory; flagged for review, but it alters no gate, no job
+      definition and no runtime module.
   - path: agentos/workstreams/WS-EARNINGS-EVENT-INTELLIGENCE-COMPILER.md
     what: >
       E3-C wave next_action, workstream next_action and prose reconciled to the refusal;
@@ -131,6 +140,20 @@ verified:
       GREEN — 10 passed in the delivered module; 183 passed across
       test_company_intelligence_qa_reconstruction, _qa_exchange, _event_workspace, _spine,
       test_issuer_profiles_a5a and the new module.
+  - claim: A real CI red was found on the first head and repaired, not waived.
+    command: >
+      gh api check-runs/98399837744/annotations on the contract-delta failure, then
+      git merge-base --is-ancestor origin/main HEAD to test the stale-base explanation,
+      then scripts.audit_unrun_tests.gated_unrun_suites() and
+      curated_exclusive_closure_findings() after the repair.
+    result: >
+      contract-delta reported 1 introduced finding on head d30e79dfef70 — the new suite was
+      named by no run: step in any workflow. The stale-base explanation was tested and
+      REJECTED: origin/main fab40e11940c is an ancestor of HEAD, so the finding is this PR's
+      own. Repaired by wiring the suite into the neural-web-core job that already owns both
+      sibling suites. After repair: gated_unrun_suites() 0 with this suite absent,
+      curated_exclusive_closure_findings 0, and 274 passed co-running the nine
+      company-intelligence suites on that job line. Repaired head d2a62a45f384.
   - claim: Protected Sol procedure was loaded before returning.
     command: >
       GitHub read of protected Mastermind master docs/sol_skills/INDEX.md and REVIEW_RETURN.md.
