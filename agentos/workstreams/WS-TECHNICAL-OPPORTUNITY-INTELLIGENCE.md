@@ -31,11 +31,12 @@ discoveries:
 waves:
   - id: W0
     title: Architecture freeze, evidence contract, data/clock contract, and durable records
-    status: in_progress
+    status: awaiting_ci
+    pr: 6570
     next_action: >
-      Review and accept the records-only W0 carrier. Do not commission runtime or signal
-      implementation before the architecture, Agent OS records, and no-rebuild boundaries
-      are merged.
+      Adjudicate exact-head Agent OS validation and PR CI on #6570, then complete Sol
+      records-only acceptance. Do not commission W1, W2-0, runtime, or signal work before
+      W0 is accepted and merged.
   - id: W1
     title: Public-method and local-estate Technical Evidence Census
     status: todo
@@ -90,10 +91,11 @@ artifacts:
   - research/TECHNICAL_OPPORTUNITY_INTELLIGENCE_ARCHITECTURE_FREEZE_2026-08-27.md
   - research/TECHNICAL_OPPORTUNITY_INTELLIGENCE_W1_EVIDENCE_CENSUS_HANDOFF_2026-08-27.md
   - research/TECHNICAL_OPPORTUNITY_INTELLIGENCE_W2_DATA_CLOCK_HANDOFF_2026-08-27.md
+  - agentos/handoffs/TECHNICAL-OPPORTUNITY-INTELLIGENCE-2026-08-27.md
 next_action: >
-  Accept W0, then commission W1 Evidence Census and W2-0 Data/Clock Archaeology on
-  separate disjoint carriers. Return both to Sol before any W3 preregistration or
-  outcome testing.
+  Complete exact-head W0 validation and Sol review on draft PR #6570. Only after
+  merge may W1 Evidence Census and W2-0 Data/Clock Archaeology start on separate
+  disjoint carriers; both must return before W3 preregistration or outcome testing.
 ---
 
 ## Boundary note
