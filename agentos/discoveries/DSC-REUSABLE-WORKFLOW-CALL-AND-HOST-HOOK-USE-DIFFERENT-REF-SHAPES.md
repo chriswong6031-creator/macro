@@ -48,3 +48,9 @@ was installed. Exact same-repository/main/PR/caller/job/control-SHA input passed
 the fork mutation returned exit 77. All three services and runner registrations
 returned online and idle. This receipt does not prove P3B-B execution; the
 corrected PR run still owes real PC pickup, semantic parity and final gate proof.
+
+The next exact head resolved the main workflow but run 33039188648 stopped at
+startup with zero jobs because the called workflow requested `pull-requests:
+read` while the caller allowed `none`. The same carrier now grants only
+`contents: read` and `pull-requests: read` on the reusable-call job. This is the
+minimum permission needed by the main resolver; it adds no write or secret scope.

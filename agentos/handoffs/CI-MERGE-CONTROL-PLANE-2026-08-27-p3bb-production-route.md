@@ -84,6 +84,13 @@ verified:
       Zero jobs. GitHub rejected `@refs/heads/main` because a reusable call must
       name a branch, tag or commit. The carrier now uses `@main`; the trust gate
       separately binds called `job.workflow_ref` and immutable `job.workflow_sha`.
+  - claim: The resolved call initially lacked the called workflow's read permission.
+    command: GitHub Actions run 33039188648 and signed-in annotation inspection
+    result: >
+      GitHub resolved the exact main workflow and graph, then stopped with zero
+      jobs because pull-requests read was requested by the called workflow but
+      absent from the caller. The call job now grants only contents read and
+      pull-requests read; no write or secret permission is introduced.
   - claim: All three drained PC roots run identical P3B-B admission bytes.
     command: >
       GitHub org runner census; systemd/Worker drain; exact SHA-256 install;
@@ -146,7 +153,8 @@ pool, without granting candidate-authored workflow code direct runner access.
 
 - Exact caller syntax: `mastermindx-market-intelligence/macro/.github/workflows/trusted-ci-executor.yml@main`.
 - Runner-group selected-workflow policy remains pinned separately to `@refs/heads/main`.
-- No `with`, no inherited secrets and no direct group/label use in `ci.yml`.
+- No `with`, no inherited secrets and no direct group/label use in `ci.yml`;
+  the call grants only contents read and pull-requests read.
 - Same-repository PR: trusted executor plus tiny hosted `ci-pack-N` relays.
 - Fork PR: existing complete hosted pack implementation.
 - Hosted planner SHA must equal trusted planner SHA and fragment `plan_sha256`.

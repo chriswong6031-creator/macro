@@ -75,6 +75,7 @@ TRUSTED_CALL_JOB = {
         "needs.ci-plan.outputs.has_work == 'true' && " + SAME_REPO_PR
     ),
     "uses": TRUSTED_EXECUTOR_CALL,
+    "permissions": {"contents": "read", "pull-requests": "read"},
 }
 LABEL_REGISTRY_VALID_STATUS = {"live", "github-hosted", "offline", "orphaned"}
 # Every single-quoted literal inside a `${{ }}` expression. Never matches a bare

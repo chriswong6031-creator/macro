@@ -32,6 +32,7 @@ def test_p3bb_same_repo_pr_calls_only_the_exact_main_owned_executor() -> None:
             "mastermindx-market-intelligence/macro/.github/workflows/"
             "trusted-ci-executor.yml@main"
         ),
+        "permissions": {"contents": "read", "pull-requests": "read"},
     }
     assert "with" not in trusted
     assert "secrets" not in trusted
