@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import inspect
 import sys
 import types
 
@@ -91,3 +92,13 @@ def test_completion_clock_matches_the_incident_shape():
 
     now = datetime(2026, 8, 10, 12, 0, tzinfo=timezone.utc)
     assert LS.last_completed_session(now) == "2026-08-07"
+
+
+def test_build_filters_invalid_series_before_selecting_tip_or_submitting_gate_work():
+    source = inspect.getsource(B.build)
+    completion = source.index("completed_through = LS.last_completed_session(now)")
+    split = source.index("series, invalid_series = _split_completed_series")
+    tip = source.index("tip = AP.as_of_date(series.values())")
+    fresh_loop = source.index("for tkr, s in series.items():", tip)
+    assert completion < split < tip < fresh_loop
+    assert 'recs[tkr]["skip"] = "invalid_series_tip"' in source
