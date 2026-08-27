@@ -5,7 +5,7 @@ import json
 from datetime import date, datetime, timezone
 from decimal import Decimal
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
 import pandas as pd
 import pytest
@@ -111,7 +111,17 @@ def _fund_basic_rows() -> dict[str, pd.DataFrame]:
     return rows
 
 
-def _seed_reference(store: Path) -> pd.DataFrame:
+def _seed_reference(
+    store: Path, *, drop_stock_basic_ts_code: str | Sequence[str] | None = None,
+) -> pd.DataFrame:
+    """Seed the reference generation.
+
+    ``drop_stock_basic_ts_code`` removes one or more ts_codes from the seeded
+    stock_basic witness before the security master compiles -- used to prove
+    T3's replay-invariance claim (DEC:CNLI-HISTORICAL-PIT-IS-SOURCE-UNION):
+    a security absent from the CURRENT stock_basic snapshot but observed
+    trading historically must not change the historical exact universe.
+    """
     mapping = pd.DataFrame([{
         "name": "方大新材", "o_code": "838163.BJ", "n_code": "920163.BJ", "list_date": "2020-07-27",
     }])
@@ -127,7 +137,17 @@ def _seed_reference(store: Path) -> pd.DataFrame:
         )],
         generation_id=GENERATION,
     )
-    for (exchange, status), frame in _stock_basic_rows().items():
+    stock_basic_rows = _stock_basic_rows()
+    if drop_stock_basic_ts_code is not None:
+        drop_codes = (
+            {drop_stock_basic_ts_code} if isinstance(drop_stock_basic_ts_code, str)
+            else set(drop_stock_basic_ts_code)
+        )
+        stock_basic_rows = {
+            key: frame[~frame["ts_code"].isin(drop_codes)].reset_index(drop=True)
+            for key, frame in stock_basic_rows.items()
+        }
+    for (exchange, status), frame in stock_basic_rows.items():
         source_unit = f"{exchange}:{status}"
         path = spine._reference_source_path(store, GENERATION, "stock_basic", source_unit)
         spine._atomic_parquet(path, frame)
@@ -215,8 +235,17 @@ def _bak_rows(trade_date: str) -> pd.DataFrame:
     return pd.DataFrame(rows, columns=columns)
 
 
-def _seed_pit_day(store: Path, trade_date: str) -> None:
+def _seed_pit_day(store: Path, trade_date: str, *, extra_rows: pd.DataFrame | None = None) -> None:
+    """Seed one bak_basic PIT day.
+
+    ``extra_rows`` appends additional raw bak_basic rows (e.g. a ticker the
+    current stock_basic witness has never carried) before normalising --
+    used by T9 to build an end-to-end store containing witness-missing
+    securities.
+    """
     raw = _bak_rows(trade_date)
+    if extra_rows is not None:
+        raw = pd.concat([raw, extra_rows], ignore_index=True)
     normal = spine.normalise_bak_basic(raw, trade_date, store)
     parsed = spine._parse_date(trade_date)
     path = spine._pit_partition(store, parsed)
@@ -229,14 +258,19 @@ def _seed_pit_day(store: Path, trade_date: str) -> None:
         state, store, "bak_basic", trade_date, status="complete",
         observed_at=NOW.isoformat(), row_count=len(normal.landed_a),
         source_row_count=len(raw), partition=path,
+        witness_missing_row_count=int(normal.landed_a.get(
+            "current_stock_basic_witness_missing", pd.Series(dtype=bool),
+        ).sum()),
         request_receipts=[_request_receipt(
             "bak_basic", trade_date, store, frame=raw, params={"trade_date": trade_date},
         )],
     )
 
 
-def _seed_spine(store: Path) -> pd.DataFrame:
-    master = _seed_reference(store)
+def _seed_spine(
+    store: Path, *, drop_stock_basic_ts_code: str | Sequence[str] | None = None,
+) -> pd.DataFrame:
+    master = _seed_reference(store, drop_stock_basic_ts_code=drop_stock_basic_ts_code)
     _seed_calendar(store)
     for trade_date in ("20240102", "20240103"):
         _seed_pit_day(store, trade_date)
@@ -1596,6 +1630,133 @@ def test_event_substrate_audits_daily_basic_close_and_direction(tmp_path):
         )
 
 
+def test_stk_limit_zero_pre_close_with_no_published_limits_lands_as_absent(tmp_path):
+    """U1 (S1): a stk_limit row for a non-trading instrument spells its absent
+    pre_close as vendor 0 with no published up/down limits. That must land
+    with null price columns rather than raising, and the source-row equation
+    (source == landed + known_excluded + quarantined_unknown) must balance,
+    so the unit can still reach terminal.
+    """
+    _seed_spine(tmp_path)
+    raw = _limit_rows("20240102")
+    raw.loc[raw["ts_code"] == "600519.SH", ["pre_close", "up_limit", "down_limit"]] = [
+        0, None, None,
+    ]
+    result = spine.normalise_daily_endpoint("stk_limit", raw, "20240102", tmp_path)
+    assert (
+        len(result.landed_a) + len(result.known_excluded) + len(result.quarantined_unknown)
+        == len(raw)
+    )
+    assert result.known_excluded.empty
+    assert result.quarantined_unknown.empty
+    row = result.landed_a.set_index("ticker").loc["600519.SS"]
+    assert pd.isna(row["pre_close_cents"])
+    assert pd.isna(row["up_limit_cents"])
+    assert pd.isna(row["down_limit_cents"])
+    assert bool(row["source_limits_present"]) is False
+
+    _land_endpoint_day(tmp_path, "stk_limit", "20240102", raw)
+    state = spine.load_state(tmp_path)
+    assert spine._unit_done(state, tmp_path, "stk_limit", "20240102") is True
+
+
+def test_stk_limit_zero_up_down_limits_are_treated_as_absent(tmp_path):
+    """U2 (S1): up_limit/down_limit of vendor 0 carry the identical
+    zero-as-null defect as pre_close and must be nulled the same way, not
+    just pre_close. A real (non-zero) pre_close still lands normally.
+    """
+    _seed_spine(tmp_path)
+    raw = _limit_rows("20240102")
+    raw.loc[raw["ts_code"] == "600519.SH", ["up_limit", "down_limit"]] = [0, 0]
+    result = spine.normalise_daily_endpoint("stk_limit", raw, "20240102", tmp_path)
+    row = result.landed_a.set_index("ticker").loc["600519.SS"]
+    assert row["pre_close_cents"] == 1000
+    assert pd.isna(row["up_limit_cents"])
+    assert pd.isna(row["down_limit_cents"])
+    assert bool(row["source_limits_present"]) is False
+
+
+def test_stk_limit_zero_pre_close_with_published_limits_raises_contradiction(tmp_path):
+    """U3 (S2): pre_close 0 (the non-trading sentinel) together with
+    PUBLISHED up/down limits is a legal band with no anchor -- a
+    contradiction that must keep raising, not be silently accepted.
+    """
+    _seed_spine(tmp_path)
+    raw = _limit_rows("20240102")
+    raw.loc[raw["ts_code"] == "600519.SH", "pre_close"] = 0
+    with pytest.raises(spine.SpineError, match="without an anchoring pre_close"):
+        spine.normalise_daily_endpoint("stk_limit", raw, "20240102", tmp_path)
+
+
+def test_stk_limit_one_sided_zero_publication_still_raises(tmp_path):
+    """U4 (S1): a one-sided publication (up present, down spelled as vendor
+    0) must still raise -- proves the up_missing != down_missing check was
+    taught about the non-positive sentinel rather than bypassed by it.
+    """
+    _seed_spine(tmp_path)
+    raw = _limit_rows("20240102")
+    raw.loc[raw["ts_code"] == "600519.SH", "down_limit"] = 0
+    with pytest.raises(spine.SpineError, match="both upper/lower"):
+        spine.normalise_daily_endpoint("stk_limit", raw, "20240102", tmp_path)
+
+
+def test_event_substrate_raises_when_traded_ticker_has_null_stk_limit_pre_close(tmp_path):
+    """U5 (S3 fail-open guard): the daily/stk_limit previous-close
+    cross-check only compares rows where both pre_close columns are
+    non-null, so nulling a zero pre_close (S1) would silently remove a
+    traded ticker from that audit. This must instead raise: a
+    positive-volume daily row with no stk_limit.pre_close is not allowed to
+    exit the cross-check unnoticed.
+    """
+    _seed_spine(tmp_path)
+    limits = _limit_rows("20240102")
+    limits.loc[limits["ts_code"] == "600519.SH", ["pre_close", "up_limit", "down_limit"]] = [
+        0, 0, 0,
+    ]
+    _land_endpoint_day(tmp_path, "daily", "20240102", _daily_rows("20240102"))
+    _land_endpoint_day(tmp_path, "daily_basic", "20240102", _daily_basic_rows("20240102"))
+    _land_endpoint_day(tmp_path, "stk_limit", "20240102", limits)
+    with pytest.raises(spine.SpineError, match="have no stk_limit.pre_close"):
+        spine.build_canonical_event_substrate(
+            tmp_path, date(2024, 1, 2), date(2024, 1, 2),
+        )
+
+
+def test_daily_zero_close_on_traded_stock_still_raises(tmp_path):
+    """U6: the zero-sentinel handling is scoped to stk_limit only. A
+    genuinely corrupt daily.close of 0 on a positive-volume (traded) stock
+    must keep raising through the unmodified _quote_price_cents OHLC path.
+    """
+    _seed_spine(tmp_path)
+    corrupt = _daily_rows("20240102")
+    corrupt["close"] = corrupt["close"].astype(float)
+    corrupt.loc[corrupt["ts_code"] == "600519.SH", "close"] = 0
+    with pytest.raises(spine.SpineError, match="must be positive"):
+        spine.normalise_daily_endpoint("daily", corrupt, "20240102", tmp_path)
+
+
+def test_stk_limit_row_landing_with_null_limits_is_not_event_eligible(tmp_path):
+    """U7: a row that lands with null limits (source_limits_present False)
+    is not event-eligible, the correct resting place for a non-trading
+    instrument under DEC:CNLI-HISTORICAL-PIT-IS-SOURCE-UNION.
+    """
+    _seed_spine(tmp_path)
+    limits = _limit_rows("20240102")
+    limits.loc[limits["ts_code"] == "000001.SZ", ["pre_close", "up_limit", "down_limit"]] = [
+        0, 0, 0,
+    ]
+    _land_endpoint_day(tmp_path, "daily", "20240102", _daily_rows("20240102"))
+    _land_endpoint_day(tmp_path, "daily_basic", "20240102", _daily_basic_rows("20240102"))
+    _land_endpoint_day(tmp_path, "stk_limit", "20240102", limits)
+    spine.build_canonical_event_substrate(tmp_path, date(2024, 1, 2), date(2024, 1, 2))
+    event = pd.read_parquet(
+        tmp_path / "event_daily" / "year=2024" / "month=01" / "part.parquet"
+    ).set_index("ticker")
+    assert pd.isna(event.loc["000001.SZ", "limit_pre_close_cents"])
+    assert bool(event.loc["000001.SZ", "source_limits_present"]) is False
+    assert bool(event.loc["000001.SZ", "event_eligible"]) is False
+
+
 def test_manifest_hashes_coverage_ore_and_schema(monkeypatch, tmp_path):
     _seed_spine(tmp_path)
     monkeypatch.setattr(spine, "CALENDAR_HISTORY_START", date(2024, 1, 1))
@@ -2546,3 +2707,440 @@ def test_bak_basic_row_with_a_zero_list_date_still_lands(tmp_path):
     # Source accounting still balances: nothing was dropped or quarantined.
     assert len(normal.quarantined_unknown) == 0
     assert len(normal.landed_a) == len(raw)
+
+
+# --- DEC:CNLI-HISTORICAL-PIT-IS-SOURCE-UNION (Sol return-gate 10, T1-T9) ----
+#
+# Historical PIT construction is source-UNION, not current-stock_basic-
+# snapshot intersection: a bak_basic row for a ticker the CURRENT stock_basic
+# witness no longer publishes is a legal union member, not an unknown
+# disposition.  Fail-closed is preserved exactly where it carries information
+# (unparseable keys, non-A identities, and a PIT row that contradicts its own
+# master lifecycle window); the current-snapshot omission rate is telemetry,
+# never a threshold.
+
+
+def _bak_row(columns: list[str], trade_date: str, ts_code: str, name: str, **overrides: Any) -> dict:
+    row = {column: None for column in columns}
+    row.update({
+        "trade_date": trade_date, "ts_code": ts_code, "name": name,
+        "industry": "样本", "area": "样本", "list_date": "19990101",
+        "float_share": 1, "total_share": 1, "total_assets": 1,
+        "liquid_assets": 1, "fixed_assets": 1, "holder_num": 1,
+    })
+    row.update(overrides)
+    return row
+
+
+def test_pit_row_absent_from_current_stock_basic_witness_lands_as_union_member(tmp_path):
+    """T1 -- C1: a well-formed A-share bak_basic row whose ticker the CURRENT
+    stock_basic snapshot no longer publishes still LANDS as a legal union
+    member -- current_stock_basic_witness_missing True, a real identity, a
+    market_session_position, zero quarantine, and a balanced source-row
+    equation. Mirrors the ruling's own motivating exemplar, 300114.SZ."""
+    _seed_reference(tmp_path)
+    _seed_calendar(tmp_path)
+    columns = spine.ENDPOINT_FIELDS["bak_basic"].split(",")
+    raw = pd.DataFrame(
+        [_bak_row(columns, "20240102", "300114.SZ", "中航电测")], columns=columns,
+    )
+
+    normal = spine.normalise_bak_basic(raw, "20240102", tmp_path)
+
+    assert normal.quarantined_unknown.empty
+    assert len(normal.landed_a) == 1
+    landed = normal.landed_a.iloc[0]
+    assert landed["ticker"] == "300114.SZ"
+    assert landed["security_id"] == "CN-XSHE-300114"
+    assert bool(landed["current_stock_basic_witness_missing"]) is True
+    assert normal.landed_a["current_stock_basic_witness_missing"].dtype == bool
+    assert landed["market_session_position"] == 0
+    # Balanced source-row equation: source = landed_A + known_excluded + quarantined_unknown.
+    assert normal.source_row_count == 1
+    assert normal.source_row_count == (
+        len(normal.landed_a) + len(normal.known_excluded) + len(normal.quarantined_unknown)
+    )
+
+
+def test_bak_basic_fail_closed_unparseable_and_non_a_share_rows_still_block(tmp_path):
+    """T2 -- fail-closed halves of C1, preserved exactly (must not be
+    relaxed by the ruling): an unparseable ts_code and a parseable-but-non-
+    A-share identity both still quarantine, and in both cases the
+    pit_universe unit is NOT terminal."""
+    columns = spine.ENDPOINT_FIELDS["bak_basic"].split(",")
+    cases = (
+        ("00700.HK", "unparseable ts_code", "bak_basic_unparseable_ts_code"),
+        ("510300.SH", "parseable non-A identity", "bak_basic_non_a_share_identity"),
+    )
+    for bad_code, name, expected_source in cases:
+        store = tmp_path / bad_code.replace(".", "_")
+        store.mkdir()
+        _seed_reference(store)
+        _seed_calendar(store)
+        raw = pd.concat([
+            _bak_rows("20240102"),
+            pd.DataFrame([_bak_row(columns, "20240102", bad_code, name)], columns=columns),
+        ], ignore_index=True)
+        collector = spine.TushareAShareSpineCollector(
+            store, query=lambda *args, **kwargs: raw.copy(),
+            now=lambda: NOW, max_requests=2,
+        )
+        assert collector.collect_pit_universe(date(2024, 1, 2), date(2024, 1, 2)) is False
+        state = spine.load_state(store)
+        assert spine._unit_done(state, store, "bak_basic", "20240102") is False
+        record = state["units"]["bak_basic"]["20240102"]
+        assert record["status"] == "failed"
+        assert record["quarantined_unknown_row_count"] == 1
+        assert record["landed_a_row_count"] == 3
+        quarantine = pd.read_parquet(spine._classification_partition(
+            store, "quarantined_unknown", "bak_basic", date(2024, 1, 2),
+        ))
+        assert quarantine["classification_source"].tolist() == [expected_source]
+
+
+def test_replay_invariance_deleting_a_traded_security_from_stock_basic_witness(tmp_path):
+    """T3 -- REPLAY-INVARIANCE PROOF, the ruling's own acceptance criterion and
+    the most important test in the change. Deleting a security that
+    demonstrably TRADED a session from the CURRENT stock_basic witness must
+    not change the historical exact universe or the event result -- only
+    witness-coverage TELEMETRY may differ.
+
+    run A: the full seeded stock_basic witness.
+    run B: identical, except 600519.SS (positive-volume daily row + stk_limit
+           evidence on both sessions) is absent from stock_basic.
+    """
+    def _build(store: Path, *, drop: str | None) -> pd.DataFrame:
+        store.mkdir()
+        master = _seed_reference(store, drop_stock_basic_ts_code=drop)
+        _seed_calendar(store)
+        for trade_date in ("20240102", "20240103"):
+            _seed_pit_day(store, trade_date)
+            _land_endpoint_day(store, "daily", trade_date, _daily_rows(trade_date))
+            _land_endpoint_day(store, "daily_basic", trade_date, _daily_basic_rows(trade_date))
+            _land_endpoint_day(store, "stk_limit", trade_date, _limit_rows(trade_date))
+        return master
+
+    store_a, store_b = tmp_path / "run_a", tmp_path / "run_b"
+    master_a = _build(store_a, drop=None)
+    master_b = _build(store_b, drop="600519.SS")
+
+    sessions_a = spine._read_parquet_strict(store_a / "reference" / "market_sessions.parquet")
+    sessions_b = spine._read_parquet_strict(store_b / "reference" / "market_sessions.parquet")
+
+    # The historical exact universe is IDENTICAL.
+    for trade_date in ("2024-01-02", "2024-01-03"):
+        eligible_a = spine._eligible_tickers_with_pit(store_a, master_a, trade_date)
+        eligible_b = spine._eligible_tickers_with_pit(store_b, master_b, trade_date)
+        assert eligible_a == eligible_b
+        assert "600519.SS" in eligible_a
+
+    recon_a = spine._pit_lifecycle_reconciliation(
+        store_a, master_a, sessions_a, date(2024, 1, 2), date(2024, 1, 3),
+    )
+    recon_b = spine._pit_lifecycle_reconciliation(
+        store_b, master_b, sessions_b, date(2024, 1, 2), date(2024, 1, 3),
+    )
+    assert recon_a["frozen_union_semantic_sha256"] == recon_b["frozen_union_semantic_sha256"]
+    assert recon_a["union_observation_count"] == recon_b["union_observation_count"]
+    assert recon_a["complete"] is True
+    assert recon_b["complete"] is True
+
+    # The event result is IDENTICAL.
+    substrate_a = spine.build_canonical_event_substrate(store_a, date(2024, 1, 2), date(2024, 1, 3))
+    substrate_b = spine.build_canonical_event_substrate(store_b, date(2024, 1, 2), date(2024, 1, 3))
+    assert substrate_a["ready"] is True and substrate_b["ready"] is True
+
+    def _event_rows(store: Path) -> pd.DataFrame:
+        parts = sorted((store / "event_daily").glob("year=*/month=*/part.parquet"))
+        frame = pd.concat([pd.read_parquet(p) for p in parts], ignore_index=True)
+        return frame.sort_values(["trade_date", "ticker"], kind="stable").reset_index(drop=True)
+
+    event_a = _event_rows(store_a)
+    event_b = _event_rows(store_b)
+    compare_columns = [
+        "trade_date", "ticker", "event_eligible", "touched_up", "sealed_up",
+        "touched_down", "sealed_down", "close_cents", "up_limit_cents", "down_limit_cents",
+    ]
+    pd.testing.assert_frame_equal(
+        event_a[compare_columns].reset_index(drop=True),
+        event_b[compare_columns].reset_index(drop=True),
+    )
+
+    # ONLY witness-coverage metadata differs.
+    pit_a = spine._read_parquet_strict(spine._pit_partition(store_a, date(2024, 1, 2)))
+    pit_b = spine._read_parquet_strict(spine._pit_partition(store_b, date(2024, 1, 2)))
+    pit_a_day = pit_a[pit_a["trade_date"] == "2024-01-02"].set_index("ticker")
+    pit_b_day = pit_b[pit_b["trade_date"] == "2024-01-02"].set_index("ticker")
+    assert bool(pit_a_day.loc["600519.SS", "current_stock_basic_witness_missing"]) is False
+    assert bool(pit_b_day.loc["600519.SS", "current_stock_basic_witness_missing"]) is True
+    # witness_missing_row_count (C3, per-unit) and pit_absent_from_master_count
+    # (C2, range-level) deliberately count different things and must not be
+    # collapsed into one counter: the former is PER SESSION -- 600519.SS is
+    # witness-missing once on 2024-01-02 -- while the latter is a
+    # (trade_date, ticker) OBSERVATION count accumulated across every
+    # requested session in the reconciled range, exactly like its siblings
+    # lifecycle_missing_from_pit_count/pit_missing_from_lifecycle_count. Two
+    # sessions (2024-01-02, 2024-01-03) each observe 600519.SS witness-missing
+    # once, so the range-level count is 2, not 1 -- and current_snapshot_
+    # omission_rate's denominator (union_observation_count) is itself an
+    # observation count, so the numerator must be an observation count too.
+    state_b = spine.load_state(store_b)
+    assert state_b["units"]["bak_basic"]["20240102"]["witness_missing_row_count"] == 1
+    assert recon_b["pit_absent_from_master_count"] == 2
+    assert recon_a["pit_absent_from_master_count"] == 0
+    assert recon_b["current_snapshot_omission_rate"] > 0
+    assert recon_a["current_snapshot_omission_rate"] == 0.0
+
+
+def test_pit_row_contradicting_master_lifecycle_window_still_blocks(tmp_path):
+    """T4 -- fail-closed half of C2, must not be forgotten: a PIT row for a
+    ticker that IS in the security master, but whose own lifecycle window
+    does not cover the observed trade_date, is an unresolved source
+    contradiction and keeps blocking -- unlike a witness-missing row."""
+    _seed_reference(tmp_path)
+    _seed_calendar(tmp_path)
+    _seed_pit_day(tmp_path, "20240102")
+
+    master = spine._read_parquet_strict(
+        spine._reference_derived_path(tmp_path, "security_master.parquet", GENERATION),
+    ).copy()
+    # 600519.SS is a legitimate PIT observation on 2024-01-02, but its OWN
+    # master lifecycle window is set to have closed before that date -- a
+    # genuine unresolved source contradiction, not a witness-missing case.
+    master.loc[master["ticker"] == "600519.SS", "effective_to"] = "2020-01-01"
+
+    sessions = spine._read_parquet_strict(tmp_path / "reference" / "market_sessions.parquet")
+    recon = spine._pit_lifecycle_reconciliation(
+        tmp_path, master, sessions, date(2024, 1, 2), date(2024, 1, 2),
+    )
+    assert recon["pit_lifecycle_window_conflict_count"] == 1
+    assert recon["pit_lifecycle_window_conflict_sample"] == [
+        {"trade_date": "2024-01-02", "ticker": "600519.SS"},
+    ]
+    assert recon["pit_absent_from_master_count"] == 0
+    assert recon["complete"] is False
+
+
+def test_pit_only_ticker_survives_into_name_history_and_daily_endpoints(tmp_path):
+    """T5 -- C5 proof (not a rebuild): a PIT-only, witness-missing ticker is
+    accepted by name_history and by a daily endpoint, proving the
+    survivorship filter is not recreated one stage later."""
+    _seed_reference(tmp_path, drop_stock_basic_ts_code="600519.SS")
+    _seed_calendar(tmp_path)
+    _seed_pit_day(tmp_path, "20240102")
+
+    pit = spine._read_parquet_strict(spine._pit_partition(tmp_path, date(2024, 1, 2)))
+    landed = pit.set_index("ticker").loc["600519.SS"]
+    assert bool(landed["current_stock_basic_witness_missing"]) is True
+
+    daily_normal = spine.normalise_daily_endpoint(
+        "daily", _daily_rows("20240102"), "20240102", tmp_path,
+    )
+    assert "600519.SS" in set(daily_normal.landed_a["ticker"])
+    assert daily_normal.quarantined_unknown.empty
+
+    namechange_raw = pd.DataFrame([{
+        "ts_code": "600519.SH", "name": "贵州茅台", "start_date": "20240101",
+        "end_date": None, "ann_date": "20240101", "change_reason": "更名",
+    }])
+    name_normal = spine.normalise_name_history(namechange_raw, tmp_path, "20240102")
+    assert "600519.SS" in set(name_normal.landed_a["ticker"])
+    assert name_normal.quarantined_unknown.empty
+
+
+def test_pit_only_ticker_without_trading_evidence_is_not_event_eligible(tmp_path):
+    """T6 -- ruling's clause 5: a PIT-observed row WITHOUT authority-grade
+    trading evidence remains source-accounted (it still lands in the joined
+    event substrate) but is NOT promoted to event-eligible."""
+    _seed_reference(tmp_path, drop_stock_basic_ts_code="600519.SS")
+    _seed_calendar(tmp_path)
+    _seed_pit_day(tmp_path, "20240102")
+
+    # 600519.SS (witness-missing, PIT-only) trades flat with zero volume;
+    # 000001.SZ carries the up-limit touch instead, so every limit_status/
+    # direction audit in build_canonical_event_substrate stays internally
+    # consistent.
+    daily = pd.DataFrame([
+        {"ts_code": "600519.SH", "trade_date": "20240102", "open": 10, "high": 10, "low": 10,
+         "close": 10, "pre_close": 10, "change": 0, "pct_chg": 0, "vol": 0, "amount": 0},
+        {"ts_code": "000001.SZ", "trade_date": "20240102", "open": 10, "high": 11, "low": 9,
+         "close": 11, "pre_close": 10, "change": 1, "pct_chg": 10, "vol": 100, "amount": 1000},
+    ])
+    daily_basic = pd.DataFrame([
+        {"ts_code": code, "trade_date": "20240102",
+         "close": 11 if code == "000001.SZ" else 10, "turnover_rate": 1,
+         "turnover_rate_f": 2, "volume_ratio": 1, "pe": 10, "pe_ttm": 11, "pb": 2,
+         "ps": 3, "ps_ttm": 3, "dv_ratio": 1, "dv_ttm": 1, "total_share": 100,
+         "float_share": 80, "free_share": 60, "total_mv": 1000, "circ_mv": 800,
+         "limit_status": 2 if code == "000001.SZ" else 0}
+        for code in ("600519.SH", "000001.SZ")
+    ])[spine.ENDPOINT_FIELDS["daily_basic"].split(",")]
+    limits = _limit_rows("20240102")
+
+    _land_endpoint_day(tmp_path, "daily", "20240102", daily)
+    _land_endpoint_day(tmp_path, "daily_basic", "20240102", daily_basic)
+    _land_endpoint_day(tmp_path, "stk_limit", "20240102", limits)
+
+    substrate = spine.build_canonical_event_substrate(tmp_path, date(2024, 1, 2), date(2024, 1, 2))
+    assert substrate["ready"] is True
+    event = pd.read_parquet(
+        tmp_path / "event_daily" / "year=2024" / "month=01" / "part.parquet"
+    ).set_index("ticker")
+    assert "600519.SS" in event.index  # source-accounted
+    row = event.loc["600519.SS"]
+    assert bool(row["positive_volume"]) is False
+    assert bool(row["source_limits_present"]) is True
+    assert bool(row["event_eligible"]) is False
+
+
+def test_current_snapshot_omission_rate_is_telemetry_never_a_threshold(tmp_path):
+    """T7 -- C3: no threshold exists on the omission rate. A store whose
+    omission rate is HIGH still reaches complete when nothing else is
+    wrong -- the omission rate is telemetry, never a completion gate."""
+    _seed_reference(tmp_path, drop_stock_basic_ts_code=["600519.SS", "000001.SZ"])
+    _seed_calendar(tmp_path)
+    _seed_pit_day(tmp_path, "20240102")
+
+    master = spine._read_parquet_strict(
+        spine._reference_derived_path(tmp_path, "security_master.parquet", GENERATION),
+    )
+    sessions = spine._read_parquet_strict(tmp_path / "reference" / "market_sessions.parquet")
+    recon = spine._pit_lifecycle_reconciliation(
+        tmp_path, master, sessions, date(2024, 1, 2), date(2024, 1, 2),
+    )
+    # 2 of the 3 PIT tickers are witness-missing this session: a high rate.
+    assert recon["pit_absent_from_master_count"] == 2
+    assert recon["current_snapshot_omission_rate"] == pytest.approx(2 / 3)
+    assert recon["pit_lifecycle_window_conflict_count"] == 0
+    assert recon["complete"] is True
+    # No threshold constant exists anywhere on the module (a MAX_OMISSION_RATE
+    # would smuggle the survivorship filter back in as a tunable).
+    assert not any("OMISSION" in name and "RATE" in name for name in dir(spine))
+
+
+def test_witness_missing_pit_ticker_without_daily_row_is_coverage_telemetry_not_gap(tmp_path):
+    """T8(a) -- C6, half one: a witness-missing PIT ticker with NO daily
+    observation does not appear in unexplained_missing_n, appears in
+    pit_only_without_daily_n instead, and the coverage receipt still
+    reports complete True."""
+    _seed_reference(tmp_path, drop_stock_basic_ts_code="600519.SS")
+    _seed_calendar(tmp_path)
+    _seed_pit_day(tmp_path, "20240102")
+
+    daily = _daily_rows("20240102")
+    daily = daily[daily["ts_code"] != "600519.SH"].reset_index(drop=True)
+    daily = pd.concat([daily, pd.DataFrame([{
+        "ts_code": "920163.BJ", "trade_date": "20240102", "open": 5, "high": 5, "low": 5,
+        "close": 5, "pre_close": 5, "change": 0, "pct_chg": 0, "vol": 10, "amount": 50,
+    }])], ignore_index=True)
+    _land_endpoint_day(tmp_path, "daily", "20240102", daily)
+    _land_endpoint_day(tmp_path, "suspend_d", "20240102", _empty("suspend_d"))
+
+    state = spine.load_state(tmp_path)
+    coverage = spine.build_daily_security_coverage(
+        tmp_path, date(2024, 1, 2), date(2024, 1, 2), state, GENERATION,
+    )
+    row = coverage.iloc[0]
+    assert row["pit_only_without_daily_n"] == 1
+    assert row["unexplained_missing_n"] == 0
+
+    manifest = spine.build_completeness_manifest(
+        tmp_path, date(2024, 1, 2), date(2024, 1, 2), spine.DEFAULT_ENDPOINTS,
+        generated_at=NOW.isoformat(),
+    )
+    coverage_receipt = manifest["daily_security_coverage"]
+    assert coverage_receipt["pit_only_without_daily_observations"] == 1
+    assert coverage_receipt["unexplained_missing_observations"] == 0
+    assert coverage_receipt["complete"] is True
+
+
+def test_master_present_lifecycle_eligible_ticker_missing_from_daily_still_blocks(tmp_path):
+    """T8(b) -- C6, half two, the narrow-scope proof: only the witness-missing
+    class moves. A ticker that IS in the master with a lifecycle window
+    covering the date, and is missing from daily, STILL lands in
+    unexplained_missing_n and STILL blocks. Without this half, C6 would have
+    silently disabled the coverage check."""
+    _seed_reference(tmp_path)
+    _seed_calendar(tmp_path)
+    _seed_pit_day(tmp_path, "20240102")
+
+    daily = _daily_rows("20240102")
+    daily = daily[daily["ts_code"] != "600519.SH"].reset_index(drop=True)
+    daily = pd.concat([daily, pd.DataFrame([{
+        "ts_code": "920163.BJ", "trade_date": "20240102", "open": 5, "high": 5, "low": 5,
+        "close": 5, "pre_close": 5, "change": 0, "pct_chg": 0, "vol": 10, "amount": 50,
+    }])], ignore_index=True)
+    _land_endpoint_day(tmp_path, "daily", "20240102", daily)
+    _land_endpoint_day(tmp_path, "suspend_d", "20240102", _empty("suspend_d"))
+
+    state = spine.load_state(tmp_path)
+    coverage = spine.build_daily_security_coverage(
+        tmp_path, date(2024, 1, 2), date(2024, 1, 2), state, GENERATION,
+    )
+    row = coverage.iloc[0]
+    assert row["pit_only_without_daily_n"] == 0
+    assert row["unexplained_missing_n"] == 1
+
+    manifest = spine.build_completeness_manifest(
+        tmp_path, date(2024, 1, 2), date(2024, 1, 2), spine.DEFAULT_ENDPOINTS,
+        generated_at=NOW.isoformat(),
+    )
+    coverage_receipt = manifest["daily_security_coverage"]
+    assert coverage_receipt["unexplained_missing_observations"] == 1
+    assert coverage_receipt["complete"] is False
+
+
+def test_completeness_manifest_reachable_with_witness_missing_securities(monkeypatch, tmp_path):
+    """T9 -- end-to-end: completeness_manifest's `complete` conjunction is
+    reachable on a store containing both a witness-missing TRADED security
+    and a witness-missing NEVER-TRADED security.
+    BULK_HISTORICAL_BACKFILL_READY stays forced True only through the
+    autouse `_enable_synthetic_technical_readiness` fixture -- never edited
+    directly, never `allow_bulk`, never `mode=backfill`."""
+    monkeypatch.setattr(spine, "CALENDAR_HISTORY_START", date(2024, 1, 1))
+    monkeypatch.setattr(spine, "NAME_HISTORY_START_YEAR", 2024)
+
+    # 600519.SS: witness-missing but demonstrably TRADED (positive-volume
+    # daily + stk_limit evidence, matching the ruling's 300114.SZ exemplar).
+    _seed_reference(tmp_path, drop_stock_basic_ts_code="600519.SS")
+    _seed_calendar(tmp_path)
+
+    columns = spine.ENDPOINT_FIELDS["bak_basic"].split(",")
+    for trade_date in ("20240102", "20240103"):
+        # 603361.SS: witness-missing AND NEVER-TRADED (zero shares, no daily
+        # row -- the ruling's own 603361.SS "approved but never listed" case).
+        never_traded = pd.DataFrame([_bak_row(
+            columns, trade_date, "603361.SH", "样本未上市",
+            list_date=None, float_share=0, total_share=0, total_assets=0,
+            liquid_assets=0, fixed_assets=0, holder_num=0,
+        )], columns=columns)
+        _seed_pit_day(tmp_path, trade_date, extra_rows=never_traded)
+        _land_endpoint_day(tmp_path, "daily", trade_date, _daily_rows(trade_date))
+        _land_endpoint_day(tmp_path, "daily_basic", trade_date, _daily_basic_rows(trade_date))
+        _land_endpoint_day(tmp_path, "stk_limit", trade_date, _limit_rows(trade_date))
+        _land_endpoint_day(tmp_path, "suspend_d", trade_date, pd.DataFrame([{
+            "ts_code": "920163.BJ", "trade_date": trade_date,
+            "suspend_timing": None, "suspend_type": "S",
+        }]))
+        _land_endpoint_day(tmp_path, "stock_st", trade_date, _empty("stock_st"))
+
+    state = spine.load_state(tmp_path)
+    spine._set_unit(
+        state, tmp_path, "namechange", "2024:20240103", status="empty",
+        observed_at=NOW.isoformat(),
+        request_receipts=[_request_receipt(
+            "namechange", "2024:20240103", tmp_path, frame=_empty("namechange"),
+            params={"start_date": "20240101", "end_date": "20240103"},
+        )],
+    )
+
+    manifest = spine.build_completeness_manifest(
+        tmp_path, date(2024, 1, 2), date(2024, 1, 3), spine.DEFAULT_ENDPOINTS,
+        generated_at=NOW.isoformat(),
+    )
+    assert manifest["bulk_historical_backfill_ready"] is True
+    assert manifest["complete"] is True
+    assert manifest["pit_lifecycle_reconciliation"]["pit_absent_from_master_count"] == 4
+    assert manifest["pit_lifecycle_reconciliation"]["current_snapshot_omission_rate"] > 0
+    assert manifest["daily_security_coverage"]["pit_only_without_daily_observations"] == 2
+    assert manifest["daily_security_coverage"]["unexplained_missing_observations"] == 0

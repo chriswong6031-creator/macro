@@ -4080,3 +4080,8 @@
 {"id":"ob-2026-08-26-f346348c8c","from":"approved","to":"posting","at":"2026-08-26T18:19:18Z","actor":"publisher","note":"in-flight (pre-publish)","receipt":null}
 {"id":"ob-2026-08-26-f346348c8c","from":"posting","to":"posted","at":"2026-08-26T18:19:19Z","actor":"publisher","note":"published","receipt":{"backend":"buffer","external_id":"6a8f2e27114fe1e8fd77560f","external_url":null,"at":"2026-08-26T18:19:11Z","booked_at":"2026-08-26T18:19:11Z"}}
 {"id":"ob-2026-08-26-2d72ae93fb","from":"approved","to":"quarantined","at":"2026-08-26T21:00:13Z","actor":"wire_expiry","note":"expired_stale_wire: breaking sat untouched 3.0h (ttl 3h) — the moment it was written about is gone","receipt":null}
+{"id":"ob-2026-08-27-b451b9e3d7","from":"queued","to":"quarantined","at":"2026-08-27T00:43:11Z","actor":"approval-desk","note":"approval-desk: session_language: today_word_off_session:today","receipt":null}
+{"id":"ob-2026-08-27-de43963c13","from":"queued","to":"approved","at":"2026-08-27T00:43:12Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
+{"id":"ob-2026-08-27-de43963c13","from":"approved","to":"posting","at":"2026-08-27T00:43:21Z","actor":"publisher","note":"in-flight (pre-publish)","receipt":null}
+{"id":"ob-2026-08-27-de43963c13","from":"posting","to":"posted","at":"2026-08-27T00:43:22Z","actor":"publisher","note":"published","receipt":{"backend":"buffer","external_id":"6a8f882a68f0bd7ea6526fcc","external_url":null,"at":"2026-08-27T00:43:11Z","booked_at":"2026-08-27T00:43:11Z"}}
+{"id":"ob-2026-08-27-b451b9e3d7","from":"queued","to":"quarantined","at":"2026-08-27T00:45:27Z","actor":"approval-desk","note":"approval-desk: session_language: today_word_off_session:today","receipt":null}

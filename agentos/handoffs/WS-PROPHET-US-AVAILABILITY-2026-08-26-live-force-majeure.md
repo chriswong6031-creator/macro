@@ -88,7 +88,9 @@ do_not_redo:
   - "Do NOT treat 'nightly Prophet is fresh' as evidence the live lane is fresh — they are separate planes and the nightly stayed healthy through all 27 days."
   - "Do NOT use event-spool absence as evidence no passes ran: zero spool objects exist alongside ~1,500 in-window passes."
   - "Do NOT reconstruct the 11 Class-D sessions (08-03/04/05/06/10/12/13/17/18/19/24). Their dark verdict was CORRECT for the pack they were handed; recovering them means minting a pack production never armed."
-  - "Do NOT write journal-derived rows to forward.parquet. The log omits `entered` and `via`, and `entered` is what separates a genuine cross from a board member's first-pass reading."
+  - "SUPERSEDED 2026-08-26 — this entry was WRONG and is kept so the correction travels. Journal-derived rows ARE lawful: `entered` is bool(center_buyable), fixed per name-session and NOT price-derived, so production's own branch-exclusive kinds settle it (at_risk/at_risk_unconfirmed only inside `if on_board:`, crossing_unconfirmed only in the cross branch). 141 of 294 names determined, 0 contradictions; the rest are null. `via` is genuinely unavailable and stays null."
+  - "Do NOT rebuild this as a PIT replay. The events already exist in the producer's journal; replaying would require the vanished pack and would MINT a cohort. Recovery reconstructs nothing."
+  - "Do NOT commit the expanded pending input (~10 MB). It is stage-and-absorb and regenerates byte-for-byte from the committed 197 KB journal + scripts/prophet_live_journal_recovery.py."
   - "Do NOT re-probe R2 for historical armed packs. Versioning is off and ListObjectVersions is unimplemented; the bytes do not exist."
   - "Do NOT re-litigate the ci-authority/codex/merge-queue-pilot red — it fails by design on every main-based PR."
 danger_areas:
@@ -104,21 +106,22 @@ next_actions: >
      objects advancing, entitled product fetch, nightly board unchanged.
   2) Return the §25 continuation packet to Sol carrying the two operator items:
      the unattributed 2026-08-26T07:43:28Z credential seeding, and D12 ownership.
-  3) Wave C remains GATED, not refused: the §13 control substrate is solved (the
-     journal), but historical pack fidelity is unproven and no pack bytes survive.
-     Any Wave-C session must run the §10.5 gate — reconstruct pack at D-1 vintage,
-     reject unless cohort size matches the journal's checked+unchecked for that
-     session, replay live_states over a delay-respecting quote view, reject unless
-     the (ticker,kind) set matches the journal exactly — and refuse rather than
-     widen. Lawful scope is the 7 Class-R sessions / 598 keys ONLY.
+  3) DONE 2026-08-27: the backfill is executed (598 rows, #6484). No Wave-C replay
+     harness was built and none should be — the events existed already. If more
+     sessions are ever recovered, extend scripts/prophet_live_journal_recovery.py;
+     do not resurrect the §10.5 pack-reconstruction gate, which exists only for a
+     replay path this program did not need.
+  4) The 86 Aug-25 rows carry next_close_fill=null and mature on an ordinary
+     nightly. Confirm they fill, then the ledger is fully matured for this incident.
 unverified:
-  - "Whether a reconstructed armed pack can reproduce production's cohort for any Class-R session is UNTESTED; §10.5 is the gate, not a result."
   - "The 15m pass_ts / 25m quote thresholds held green across a live session but have not been observed against an early-close or DST-boundary session."
-  - "D12 remains unreproduced: today's pack was clean (0 names ahead of as_of), so the mis-stamp mechanism is proven from code + journal but its upstream trigger is not identified."
+  - "D12 remains unreproduced: the 2026-08-26 pack was clean (0 names ahead of as_of), so the mis-stamp mechanism is proven from code + journal but its upstream trigger is not identified."
+  - "153 of 294 recovered name-sessions carry entered=null. They only ever emitted forming/confirming_into_close, which occur on BOTH state-machine branches. Any analysis splitting crosses from board rows must treat that null bucket as unknown, not as cross."
+  - "The 86 Aug-25 rows have next_close_fill=null pending the next close; they mature in place on an ordinary nightly."
 unresolved:
   - "Who seeded /etc/macro-live.env at 2026-08-26T07:43:28Z. It happened ~3 minutes before this session's first VPS connection, from this operator machine, with no PR or Agent OS record. Needs operator acknowledgement."
   - "D12 ownership: the armed pack's as_of inherits the close-series tip (build_prophet_live_pack.py:167). Visible now via pack_ok; unrepaired and will recur."
-  - "Whether Wave C/D should proceed at all given no historical pack bytes survive — a Sol call, since the §24.2 stop condition is live."
+  - "RESOLVED 2026-08-26: the Chairman exercised authority to backfill. Executed as RECOVERY (598 rows, PR #6484, squash 37014fcbddda) — see below. §24.2 never bound it because nothing was reconstructed."
   - "The 2026-07-30 tail after 17:20:56Z (~13:21-16:15 ET) is a partial lost session not classified R or D."
 ---
 
@@ -151,6 +154,21 @@ an outage from the date a human noticed is exactly the failure
   to the evaluator. Reconstructing them means minting a pack production never
   armed — data manufacture, not infrastructure reconstruction, and outside
   `DEC:FORCE-MAJEURE-SESSIONS-ARE-BACKFILLED-BY-DEFAULT`.
+
+## Backfill EXECUTED 2026-08-27T00:45Z (Chairman authority)
+
+`data/prophet_live/forward.parquet` **now exists and did not before** — never
+committed, no history, and its floor is `2026-07-30`, the day the lane broke. The
+evidence base had been empty since inception. 598 rows across the 7 Class-R sessions
+(90/15/162/143/71/31/86), PR #6484, squash `37014fcbddda`.
+
+Executed as RECOVERY, not replay: every row was emitted by the production evaluator
+at the time and read back verbatim from its journal. Nothing was reconstructed, so
+the §24.2 no-surviving-pack blocker never applied. The journal self-checks — each
+pass declares `events=N` then prints its lines; 672 passes, 672 matches, 0 orphans.
+Count agreed three independent ways before any effect landed.
+
+Class D's 11 sessions remain REFUSED and unchanged.
 
 ## PROVEN_LIVE as of 2026-08-26T15:23Z
 

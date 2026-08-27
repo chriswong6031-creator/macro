@@ -694,6 +694,7 @@
         "positive_volume_observations",
         "unexplained_missing_observations",
         "unexpected_daily_observations",
+        "pit_only_without_daily_observations",
         "complete",
         "worst_session_sample",
         "artifact"
@@ -706,6 +707,7 @@
         "positive_volume_observations": {"$ref": "#/$defs/counter"},
         "unexplained_missing_observations": {"$ref": "#/$defs/counter"},
         "unexpected_daily_observations": {"$ref": "#/$defs/counter"},
+        "pit_only_without_daily_observations": {"$ref": "#/$defs/counter"},
         "complete": {"type": "boolean"},
         "worst_session_sample": {"type": "array", "maxItems": 10, "items": {"type": "object"}},
         "artifact": {"$ref": "#/$defs/fileReceiptOrNull"}
@@ -724,9 +726,14 @@
         "union_observation_count",
         "lifecycle_missing_from_pit_count",
         "pit_missing_from_lifecycle_count",
+        "pit_absent_from_master_count",
+        "pit_lifecycle_window_conflict_count",
         "missing_pit_session_sample",
         "lifecycle_missing_from_pit_sample",
         "pit_missing_from_lifecycle_sample",
+        "pit_absent_from_master_sample",
+        "pit_lifecycle_window_conflict_sample",
+        "current_snapshot_omission_rate",
         "frozen_union_semantic_sha256",
         "complete"
       ],
@@ -740,6 +747,8 @@
         "union_observation_count": {"$ref": "#/$defs/counter"},
         "lifecycle_missing_from_pit_count": {"$ref": "#/$defs/counter"},
         "pit_missing_from_lifecycle_count": {"$ref": "#/$defs/counter"},
+        "pit_absent_from_master_count": {"$ref": "#/$defs/counter"},
+        "pit_lifecycle_window_conflict_count": {"$ref": "#/$defs/counter"},
         "missing_pit_session_sample": {
           "type": "array", "maxItems": 20,
           "items": {"type": "string", "format": "date"}
@@ -750,6 +759,13 @@
         "pit_missing_from_lifecycle_sample": {
           "type": "array", "maxItems": 20, "items": {"$ref": "#/$defs/dateTicker"}
         },
+        "pit_absent_from_master_sample": {
+          "type": "array", "maxItems": 20, "items": {"$ref": "#/$defs/dateTicker"}
+        },
+        "pit_lifecycle_window_conflict_sample": {
+          "type": "array", "maxItems": 20, "items": {"$ref": "#/$defs/dateTicker"}
+        },
+        "current_snapshot_omission_rate": {"type": "number", "minimum": 0, "maximum": 1},
         "frozen_union_semantic_sha256": {"$ref": "#/$defs/sha256"},
         "complete": {"type": "boolean"}
       }

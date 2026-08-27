@@ -558,8 +558,37 @@ def test_zh_lists_includes_tldr():
 # text (the China lens went blank this way on 2026-07-20 while macro succeeded
 # seconds earlier). _call_model must re-call before giving up. Patch the shared
 # waterfall (engine.llm_auth.make_call, imported locally inside _call_model) plus
-# mb._client (so we clear the client-is-None guard).
+# the provider-construction seam (so we clear the no-providers guard).
+#
+# THAT SEAM MOVED (2026-08-26, provider ladder). These tests used to patch
+# mb._client alone, because _call_model built ONE DeepSeek descriptor from it. A
+# DeepSeek-shaped cfg now builds the codex → oauth → anthropic → deepseek ladder
+# via llm_auth.build_providers() instead, and the cfgs below carry no
+# llm_base_url/api_key_env — so they take the ladder branch and mb._client is
+# never consulted. Patch build_providers to keep these tests pointed at what they
+# actually test: the RETRY LOOP, not provider construction. mb._client stays
+# patched so the legacy custom-endpoint branch is still covered if a cfg here ever
+# changes shape.
+#
+# Do NOT "fix" this by making an empty cfg take the legacy branch. The shipped
+# config IS DeepSeek-shaped, so defaults-mean-ladder is the correct production
+# behaviour, and the repo's autouse _set_nightly_lane fixture sets
+# CODEX_PROVIDER_ENABLED=0 — without this patch build_providers returns [] under
+# that fixture and _call_model degrades to "no_client_or_key" before make_call.
+#
+# THESE FOUR TESTS DO NOT PIN THE LADDER, and must not be read as if they did.
+# fake_make_call ignores its `providers` argument entirely, so all four still
+# pass against the pre-ladder DeepSeek-only descriptor — they are branch-agnostic
+# by construction, because what they test is the RETRY LOOP. The ladder itself is
+# pinned in tests/test_master_brain_ladder.py (test 2 raises KeyError on a revert
+# because build_providers is never called; test 3 degrades to no_client_or_key).
 # --------------------------------------------------------------------------- #
+def _fake_ladder(*_a, **_kw):
+    """One serving rung, shaped like build_providers' own descriptors."""
+    return [{"name": "deepseek", "env_var": "DEEPSEEK_API_KEY", "cred": "present",
+             "client": object(), "model": "deepseek-v4-pro"}]
+
+
 class _SeedCapClient:
     """Minimal Anthropic-shaped client: records the seed kwarg, always returns
     an empty completion (no text blocks) so _do_call reports 'empty_reply'."""
@@ -582,8 +611,10 @@ def test_call_model_retries_empty_reply():
     """A transient empty reply is retried and the recovered text is returned."""
     from engine import llm_auth
     orig_client, orig_make = mb._client, llm_auth.make_call
+    orig_build = llm_auth.build_providers
     calls = {"n": 0}
-    mb._client = lambda cfg: object()          # non-None → we reach make_call
+    mb._client = lambda cfg: object()
+    llm_auth.build_providers = _fake_ladder          # non-None → we reach make_call
 
     def fake_make_call(providers, call_fn, *, context=""):
         calls["n"] += 1
@@ -597,6 +628,7 @@ def test_call_model_retries_empty_reply():
         assert calls["n"] == 2                          # one retry was enough
     finally:
         mb._client, llm_auth.make_call = orig_client, orig_make
+        llm_auth.build_providers = orig_build
 
 
 def test_call_model_empty_reply_gives_up_after_retries():
@@ -604,8 +636,10 @@ def test_call_model_empty_reply_gives_up_after_retries():
     after exactly 1 primary + N retries (default N=2)."""
     from engine import llm_auth
     orig_client, orig_make = mb._client, llm_auth.make_call
+    orig_build = llm_auth.build_providers
     calls = {"n": 0}
     mb._client = lambda cfg: object()
+    llm_auth.build_providers = _fake_ladder
 
     def fake_make_call(providers, call_fn, *, context=""):
         calls["n"] += 1
@@ -617,6 +651,7 @@ def test_call_model_empty_reply_gives_up_after_retries():
         assert calls["n"] == 3                          # 1 primary + 2 retries
     finally:
         mb._client, llm_auth.make_call = orig_client, orig_make
+        llm_auth.build_providers = orig_build
 
 
 def test_call_model_retry_nudges_seed():
@@ -624,8 +659,10 @@ def test_call_model_retry_nudges_seed():
     deterministically-empty completion can differ."""
     from engine import llm_auth
     orig_client, orig_make = mb._client, llm_auth.make_call
+    orig_build = llm_auth.build_providers
     seeds: list = []
     mb._client = lambda cfg: object()
+    llm_auth.build_providers = _fake_ladder
 
     def fake_make_call(providers, call_fn, *, context=""):
         return call_fn(_SeedCapClient(seeds), "deepseek-v4-pro")
@@ -636,14 +673,17 @@ def test_call_model_retry_nudges_seed():
         assert seeds == [0, 1, 2]                        # deterministic, then nudged
     finally:
         mb._client, llm_auth.make_call = orig_client, orig_make
+        llm_auth.build_providers = orig_build
 
 
 def test_call_model_no_retry_on_truncation():
     """A 'truncated' reply carries real (capped) content — it must NOT be retried."""
     from engine import llm_auth
     orig_client, orig_make = mb._client, llm_auth.make_call
+    orig_build = llm_auth.build_providers
     calls = {"n": 0}
     mb._client = lambda cfg: object()
+    llm_auth.build_providers = _fake_ladder
 
     def fake_make_call(providers, call_fn, *, context=""):
         calls["n"] += 1
@@ -655,6 +695,7 @@ def test_call_model_no_retry_on_truncation():
         assert calls["n"] == 1                           # no retry on real content
     finally:
         mb._client, llm_auth.make_call = orig_client, orig_make
+        llm_auth.build_providers = orig_build
 
 
 if __name__ == "__main__":

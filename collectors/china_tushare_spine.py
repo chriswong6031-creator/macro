@@ -397,6 +397,35 @@ def _quote_price_cents(
     return int(tick_price * A_SHARE_PRICE_SCALE)
 
 
+def _stk_limit_price_or_sentinel_absent(value: Any) -> Any:
+    """Map TuShare's ``stk_limit`` non-trading zero sentinel to an absent value.
+
+    ``stk_limit`` publishes rows for instruments that did not trade the
+    session and spells their absent price fields (``pre_close``, ``up_limit``,
+    ``down_limit``) as ``0`` rather than null. Scoped to the ``stk_limit``
+    branch only -- a zero ``daily`` OHLC price stays a hard failure via
+    ``_quote_price_cents`` directly. Only a value that parses cleanly as a
+    non-positive finite decimal is treated as the sentinel; anything else
+    (None/NaN pass through unchanged, and unparseable values are left for
+    ``_quote_price_cents`` to reject with its own error) is returned as-is so
+    genuine corruption still surfaces.
+    """
+    if value is None:
+        return None
+    try:
+        if pd.isna(value):
+            return None
+    except (TypeError, ValueError):
+        pass
+    try:
+        parsed = value if isinstance(value, Decimal) else Decimal(str(value).strip())
+    except (InvalidOperation, ValueError):
+        return value
+    if parsed.is_finite() and parsed <= 0:
+        return None
+    return value
+
+
 def a_share_limit_price_bounds(
     previous_close: str | float | Decimal,
     limit_ratio: str | float | Decimal,
@@ -1400,6 +1429,7 @@ def _set_unit(
     source_row_count: int = 0,
     known_excluded_row_count: int = 0,
     quarantined_unknown_row_count: int = 0,
+    witness_missing_row_count: int = 0,
     unmatched_master_row_count: int = 0,
     revised_key_count: int = 0,
     partition: Path | None = None,
@@ -1428,6 +1458,10 @@ def _set_unit(
         "landed_a_row_count": int(row_count),
         "known_excluded_row_count": int(known_excluded_row_count),
         "quarantined_unknown_row_count": int(quarantined_unknown_row_count),
+        # DEC:CNLI-HISTORICAL-PIT-IS-SOURCE-UNION -- telemetry only, a SUBSET of
+        # landed_a_row_count above, never a fourth term in the source-row
+        # equation and never a completion gate (C3).
+        "witness_missing_row_count": int(witness_missing_row_count),
         "source_accounting_complete": source_accounting_complete,
         "unmatched_master_row_count": int(unmatched_master_row_count),
         "revised_key_count": int(revised_key_count),
@@ -2370,17 +2404,26 @@ def normalise_bak_basic(
                 classification_source=code_exclusion, expected_date=expected_date,
             ))
             continue
-        if (
-            ident is None
-            or not _is_a_share_identity(ident)
-            or ident.ticker not in known_a
-        ):
+        if ident is None:
             unknown.append(_classified_source_row(
                 item, ordinal=ordinal, classification="quarantined_unknown",
-                classification_source="bak_basic_absent_from_stock_basic_A_witness",
+                classification_source="bak_basic_unparseable_ts_code",
                 expected_date=expected_date,
             ))
             continue
+        if not _is_a_share_identity(ident):
+            unknown.append(_classified_source_row(
+                item, ordinal=ordinal, classification="quarantined_unknown",
+                classification_source="bak_basic_non_a_share_identity",
+                expected_date=expected_date,
+            ))
+            continue
+        # DEC:CNLI-HISTORICAL-PIT-IS-SOURCE-UNION -- the current stock_basic
+        # snapshot is a lifecycle/reference WITNESS, not exhaustive historical
+        # membership authority.  A parseable A-share identity this PIT row
+        # observes but the current snapshot no longer publishes still LANDS as
+        # a legal union member; the current-snapshot miss is recorded as
+        # telemetry on the row, never as a reason to quarantine it.
         row = {
             **_identity_columns(ident),
             "trade_date": expected_date,
@@ -2390,6 +2433,7 @@ def normalise_bak_basic(
             "area": str(item.get("area") or ""),
             "list_date": _iso(item.get("list_date")),
             "source": "tushare.bak_basic_exact_daily",
+            "current_stock_basic_witness_missing": bool(ident.ticker not in known_a),
         }
         for field in numeric_fields:
             minimum = 0.0 if field in {
@@ -2604,21 +2648,34 @@ def normalise_daily_endpoint(
                 integral=True, allowed=set(range(7)),
             )
         elif endpoint == "stk_limit":
-            pre_close_cents = _quote_price_cents(
-                item.get("pre_close"), field="stk_limit.pre_close",
-            )
-            up_missing = item.get("up_limit") is None or pd.isna(item.get("up_limit"))
-            down_missing = item.get("down_limit") is None or pd.isna(item.get("down_limit"))
+            raw_pre_close = _stk_limit_price_or_sentinel_absent(item.get("pre_close"))
+            raw_up_limit = _stk_limit_price_or_sentinel_absent(item.get("up_limit"))
+            raw_down_limit = _stk_limit_price_or_sentinel_absent(item.get("down_limit"))
+            up_missing = raw_up_limit is None
+            down_missing = raw_down_limit is None
             if up_missing != down_missing:
                 raise SpineError("stk_limit must publish both upper/lower prices or neither")
+            pre_close_cents = _quote_price_cents(
+                raw_pre_close, field="stk_limit.pre_close", allow_missing=True,
+            )
             up_limit_cents = _quote_price_cents(
-                item.get("up_limit"), field="stk_limit.up_limit", allow_missing=True,
+                raw_up_limit, field="stk_limit.up_limit", allow_missing=True,
             )
             down_limit_cents = _quote_price_cents(
-                item.get("down_limit"), field="stk_limit.down_limit", allow_missing=True,
+                raw_down_limit, field="stk_limit.down_limit", allow_missing=True,
             )
-            if up_limit_cents is not None and not (
-                up_limit_cents > pre_close_cents >= down_limit_cents
+            if pre_close_cents is None and up_limit_cents is not None:
+                # Contradiction: a published upper/lower band with no anchoring
+                # pre_close is a legal band with no anchor -- this is NOT the
+                # non-trading case S1 exists for, so it stays a hard failure.
+                raise SpineError(
+                    "stk_limit published upper/lower limits without an anchoring pre_close"
+                )
+            if (
+                pre_close_cents is not None
+                and up_limit_cents is not None
+                and down_limit_cents is not None
+                and not (up_limit_cents > pre_close_cents >= down_limit_cents)
             ):
                 raise SpineError("stk_limit upper/pre-close/lower ordering is inconsistent")
             for column, cents in (
@@ -2885,6 +2942,7 @@ class TushareAShareSpineCollector:
         row_count: int = 0,
         known_excluded_row_count: int = 0,
         quarantined_unknown_row_count: int = 0,
+        witness_missing_row_count: int = 0,
         unmatched_master_row_count: int = 0,
         collection_method: str = "whole_market",
         generation_id: str | None = None,
@@ -2896,6 +2954,7 @@ class TushareAShareSpineCollector:
             request_receipts=request_receipts, source_row_count=source_row_count,
             row_count=row_count, known_excluded_row_count=known_excluded_row_count,
             quarantined_unknown_row_count=quarantined_unknown_row_count,
+            witness_missing_row_count=witness_missing_row_count,
             unmatched_master_row_count=unmatched_master_row_count,
             collection_method=collection_method, generation_id=generation_id,
         )
@@ -3194,6 +3253,9 @@ class TushareAShareSpineCollector:
                 path, normal.landed_a, keys=KEY_COLUMNS["bak_basic"],
                 unit_column="trade_date", units=[trade_date.isoformat()],
             )
+            witness_missing_row_count = int(normal.landed_a.get(
+                "current_stock_basic_witness_missing", pd.Series(dtype=bool),
+            ).sum())
             if not normal.quarantined_unknown.empty:
                 self._mark_failed(
                     PIT_UNIVERSE_ENDPOINT, unit, "quarantined_unknown_source_rows",
@@ -3201,6 +3263,7 @@ class TushareAShareSpineCollector:
                     row_count=len(normal.landed_a),
                     known_excluded_row_count=len(normal.known_excluded),
                     quarantined_unknown_row_count=len(normal.quarantined_unknown),
+                    witness_missing_row_count=witness_missing_row_count,
                     collection_method="whole_market",
                 )
                 continue
@@ -3209,6 +3272,7 @@ class TushareAShareSpineCollector:
                 observed_at=self.observed_at, row_count=len(normal.landed_a),
                 source_row_count=len(frame), partition=path,
                 known_excluded_row_count=len(normal.known_excluded),
+                witness_missing_row_count=witness_missing_row_count,
                 request_receipts=[response.receipt],
             )
         expected = [_compact(day) for day in sorted(dates)]
@@ -3929,6 +3993,26 @@ def build_canonical_event_substrate(
             status, on=["trade_date", "ticker"], how="left", validate="one_to_one",
         )
 
+        # S3 fail-open guard: the cross-check below only compares rows where
+        # BOTH pre_close_cents columns are non-null, so a nulled stk_limit
+        # zero-sentinel (S1) would otherwise silently drop that ticker out of
+        # the audit's scope instead of failing loud. Assert directly that
+        # every positive-volume daily row still carries a non-null
+        # stk_limit.pre_close -- a vendor zero on a stock that actually
+        # traded is genuine corruption, not the non-trading sentinel, and
+        # must not be allowed to exit the cross-check unnoticed.
+        traded_missing_limit_pre_close = merged[
+            merged["positive_volume"].fillna(False).astype(bool)
+            & merged["limit_pre_close_cents"].isna()
+        ]
+        if not traded_missing_limit_pre_close.empty:
+            sample = traded_missing_limit_pre_close[
+                ["trade_date", "ticker"]
+            ].head(20).to_dict(orient="records")
+            raise SpineError(
+                f"positive-volume daily rows have no stk_limit.pre_close: {sample}"
+            )
+
         compared = merged[
             merged["pre_close_cents"].notna() & merged["limit_pre_close_cents"].notna()
         ]
@@ -4110,14 +4194,26 @@ def _pit_lifecycle_reconciliation(
     start: date,
     end: date,
 ) -> dict[str, Any]:
-    """Prove bak_basic corroborates, rather than replaces, lifecycle eligibility."""
+    """Prove PIT rows are a legal union member, not a lifecycle intersection.
+
+    DEC:CNLI-HISTORICAL-PIT-IS-SOURCE-UNION -- a PIT ticker absent from the
+    current stock_basic-derived security master ("witness-missing") is a
+    legal union member and never blocks; a PIT ticker that IS in the master
+    but whose lifecycle window does not cover the observed trade_date is an
+    unresolved source contradiction and keeps blocking.  A lifecycle-eligible
+    ticker missing from the PIT witness (``missing_in_pit``) is unchanged --
+    not ruled on by this decision -- and keeps blocking exactly as before.
+    """
     requested = [
         value for value in sessions.get("trade_date", pd.Series(dtype=str)).astype(str)
         if max(start, PIT_UNIVERSE_START).isoformat() <= value <= end.isoformat()
     ]
+    master_tickers = set(master["ticker"].astype(str)) if not master.empty else set()
     missing_sessions: list[str] = []
     missing_in_pit: list[tuple[str, str]] = []
     extra_in_pit: list[tuple[str, str]] = []
+    absent_from_master: list[tuple[str, str]] = []
+    window_conflict: list[tuple[str, str]] = []
     lifecycle_observations = 0
     pit_observations = 0
     union_observations = 0
@@ -4140,11 +4236,21 @@ def _pit_lifecycle_reconciliation(
         pit_observations += len(pit)
         union_observations += len(union)
         missing_in_pit.extend((trade_date, ticker) for ticker in sorted(lifecycle - pit))
-        extra_in_pit.extend((trade_date, ticker) for ticker in sorted(pit - lifecycle))
+        pit_not_in_lifecycle_window = sorted(pit - lifecycle)
+        extra_in_pit.extend((trade_date, ticker) for ticker in pit_not_in_lifecycle_window)
+        for ticker in pit_not_in_lifecycle_window:
+            if ticker not in master_tickers:
+                absent_from_master.append((trade_date, ticker))
+            else:
+                window_conflict.append((trade_date, ticker))
         union_hasher.update(trade_date.encode("ascii"))
         union_hasher.update(b"\0")
         union_hasher.update("\n".join(sorted(union)).encode("utf-8"))
         union_hasher.update(b"\n")
+    omission_denominator = union_observations
+    current_snapshot_omission_rate = (
+        len(absent_from_master) / omission_denominator if omission_denominator else 0.0
+    )
     return {
         "not_applicable": not requested,
         "required_session_count": len(requested),
@@ -4155,6 +4261,8 @@ def _pit_lifecycle_reconciliation(
         "union_observation_count": union_observations,
         "lifecycle_missing_from_pit_count": len(missing_in_pit),
         "pit_missing_from_lifecycle_count": len(extra_in_pit),
+        "pit_absent_from_master_count": len(absent_from_master),
+        "pit_lifecycle_window_conflict_count": len(window_conflict),
         "missing_pit_session_sample": missing_sessions[:20],
         "lifecycle_missing_from_pit_sample": [
             {"trade_date": trade_date, "ticker": ticker}
@@ -4164,11 +4272,20 @@ def _pit_lifecycle_reconciliation(
             {"trade_date": trade_date, "ticker": ticker}
             for trade_date, ticker in extra_in_pit[:20]
         ],
+        "pit_absent_from_master_sample": [
+            {"trade_date": trade_date, "ticker": ticker}
+            for trade_date, ticker in absent_from_master[:20]
+        ],
+        "pit_lifecycle_window_conflict_sample": [
+            {"trade_date": trade_date, "ticker": ticker}
+            for trade_date, ticker in window_conflict[:20]
+        ],
+        "current_snapshot_omission_rate": current_snapshot_omission_rate,
         "frozen_union_semantic_sha256": union_hasher.hexdigest(),
         "complete": bool(
             len(missing_sessions) == 0
             and len(missing_in_pit) == 0
-            and len(extra_in_pit) == 0
+            and len(window_conflict) == 0
         ),
     }
 
@@ -4191,10 +4308,12 @@ def build_daily_security_coverage(
     columns = [
         "trade_date", "eligible_n", "daily_n", "positive_volume_n", "suspended_n",
         "unexplained_missing_n", "unexpected_daily_n", "suspension_state_known",
+        "pit_only_without_daily_n",
     ]
     if not master_path.exists() or not session_path.exists():
         return pd.DataFrame(columns=columns)
     master = _read_parquet_strict(master_path)
+    master_tickers = set(master["ticker"].astype(str)) if not master.empty else set()
     sessions = _read_parquet_strict(session_path)
     requested = [
         value for value in sessions["trade_date"].astype(str)
@@ -4232,7 +4351,20 @@ def build_daily_security_coverage(
                 suspended = set()
             eligible = _eligible_tickers_with_pit(store, master, trade_date)
             missing = eligible - actual
-            unexplained = missing - suspended if suspension_known else missing
+            # DEC:CNLI-HISTORICAL-PIT-IS-SOURCE-UNION -- a witness-missing PIT
+            # ticker (absent from the current stock_basic-derived security
+            # master) with no daily observation is not an unexplained coverage
+            # gap: "the vendor's daily tape omitted it" and "it did not trade"
+            # are not separable from these sources, so it is recorded as its
+            # own telemetry bucket rather than promoted to event-eligible or
+            # silently dropped.  A ticker that IS in the master with a
+            # lifecycle window covering this date, and is missing from daily,
+            # is unaffected and keeps blocking exactly as before.
+            pit_only_without_daily = {ticker for ticker in missing if ticker not in master_tickers}
+            explainable_missing = missing - pit_only_without_daily
+            unexplained = (
+                explainable_missing - suspended if suspension_known else explainable_missing
+            )
             rows.append({
                 "trade_date": trade_date,
                 "eligible_n": len(eligible),
@@ -4242,6 +4374,7 @@ def build_daily_security_coverage(
                 "unexplained_missing_n": len(unexplained),
                 "unexpected_daily_n": len(actual - eligible),
                 "suspension_state_known": bool(suspension_known),
+                "pit_only_without_daily_n": len(pit_only_without_daily),
             })
     coverage = pd.DataFrame(rows, columns=columns)
     if not coverage.empty:
@@ -4844,6 +4977,11 @@ def build_completeness_manifest(
         "unexpected_daily_observations": int(coverage.get(
             "unexpected_daily_n", pd.Series(dtype=int)
         ).sum()),
+        # Telemetry only (DEC:CNLI-HISTORICAL-PIT-IS-SOURCE-UNION C6) -- never
+        # part of the `complete` conjunction below.
+        "pit_only_without_daily_observations": int(coverage.get(
+            "pit_only_without_daily_n", pd.Series(dtype=int)
+        ).sum()),
     }
     coverage_receipt["complete"] = bool(
         len(coverage)
@@ -4981,8 +5119,13 @@ def build_completeness_manifest(
                 "exact_daily_start": PIT_UNIVERSE_START.isoformat(),
                 "pre_2016_completeness": "no_independent_daily_universe_witness",
                 "reconciliation_law": (
-                    "bak_basic corroborates lifecycle eligibility; expected daily/shard universe "
-                    "is lifecycle union PIT and post-2016 mismatches block completeness"
+                    "universe is lifecycle union PIT; a PIT row the current stock_basic "
+                    "snapshot omits is a legal union member recorded as telemetry; "
+                    "lifecycle-eligible securities missing from PIT and PIT rows "
+                    "contradicting their own master lifecycle window block completeness. "
+                    "A PIT observation alone grants no trading/event or canonical-identity "
+                    "authority; positive-volume plus exact legal-band evidence is what "
+                    "proves historical trading."
                 ),
                 "contract": TUSHARE_BAK_BASIC_DOC_URL,
             },

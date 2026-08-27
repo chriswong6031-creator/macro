@@ -1,0 +1,575 @@
+{
+  "schema": "opportunity_evidence.slot_registry.v1",
+  "version": "1.0.0",
+  "description": "K3-E Opportunity Evidence Vector slot registry — the executable family-mapping receipt. Every construct a vector slot may carry is enumerated here with its canonical owner, read seam, clock bindings (K1 clock classes over unrenamed owner-native fields), object class, and fusion-family binding. Every slot maps to exactly one of: an existing governed conditional-fusion family member, research_only, or candidate_new_family (which routes to K5 / Eval OS and gains no authority here). The registry composes over owners; it never re-homes a column: where this file and research/prophet_fusion/families.yml disagree on a column's family home, families.yml governs and this file is defective.",
+  "fusion_family_registry": {
+    "path": "research/prophet_fusion/families.yml",
+    "schema": "prophet_fusion.families.v1",
+    "law": "THAT file is the law for family membership (one column, one family; masterplan prose is its view). K3-E binds constructs to (family, member) pairs that must exist there verbatim; tests assert the join.",
+    "families": [
+      "F1_TECHNICAL_CONFLUENCE",
+      "F2_MOMENTUM_EXTENSION",
+      "F3_THEME_STRUCTURE",
+      "F4_CATALYST_EVENT",
+      "F5_FLOW_POSITIONING",
+      "F6_MACRO_REGIME",
+      "F7_QUALITY_FUNDAMENTAL",
+      "F8_ATTENTION_CROWDING"
+    ]
+  },
+  "unowned_axes": {
+    "company_impairment_attribution": "NO OWNER EXISTS. DRL (engine/price_pressure/, the Dislocation & Recovery Lobe) owns residual-shock harvest plus the filing-coverage family only; zero impairment constructs exist in its code or masterplan (C0 §4.1 ruling 2, re-receipted 2026-08-25: grep -rin impair over the DRL masterplan and engine/price_pressure/*.py exits 1). Any slot claiming an impairment attribution is unknown-construct-invalid until an owner is minted by its own commission.",
+    "latent_net_demand": "NEVER OBSERVABLE (E0 observability matrix). Residual price is not demand. No construct may claim it; never emit net_demand = f(price, residual, volume)."
+  },
+  "forbidden_constructs": [
+    "opportunity_score",
+    "dislocation_total",
+    "dislocation_score",
+    "net_demand",
+    "net_demand_score",
+    "lifecycle_score",
+    "pair_score",
+    "composite"
+  ],
+  "forbidden_construct_prefixes": ["composite_", "fused_", "blended_"],
+  "forbidden_input_columns": {
+    "law": "engine/us_prophet_fusion.py FORBIDDEN_INPUTS — composite/score outputs that may never be read as evidence by any slot.",
+    "columns": [
+      "confluence_k",
+      "conviction",
+      "composite_z",
+      "verdict",
+      "band",
+      "potential_score",
+      "name_score",
+      "score",
+      "urgency",
+      "act_level",
+      "altdata_conv_gte2",
+      "signal_quality",
+      "validation_status"
+    ]
+  },
+  "t0_sources": {
+    "law": "Decision-time authentication pins (Sol REQUEST_CHANGES 2026-08-25 item 1, 2026-08-26 item A; semantic K3E_R021). Every vector's asof.t0_evidence_ref is checked against its t0_source row here: t0_mode must be a member of lawful_t0_modes, owner_store must equal the pin (when non-null), recorded_clock.clock_class must equal the pin (when non-null), digest_required sources must carry native_digest state 'known', and in t0_mode 'live' the recorded clock may not postdate t0 by more than max_recording_lag_days — a decision-time object minted after the fact fails closed. t0_mode 'retrospective_research' replaces the lag law with the visible declaration; every other authentication check still binds. ASSURANCE LAW (Sol 2026-08-26 item A): 'live' is a claim of OPERATIONAL point-in-time, and this contract may only permit it where validation itself can check the pointer — i.e. where owner_store and recorded_clock_class are pinned here. The generic source authenticates nothing at validation time, so lawful_t0_modes excludes 'live' for it. A source with no lawful_t0_modes key may claim only 'retrospective_research': a missing pin never grants the stronger claim.",
+    "sources": {
+      "winner_case_t0_hypothesis": {
+        "owner_store": "research/winners/cases/",
+        "recorded_clock_class": "belief_or_build",
+        "lawful_t0_modes": ["live", "retrospective_research"],
+        "max_recording_lag_days": 7,
+        "digest_required": false,
+        "notes": ["winner_case.v1 files. A pre-registered t0 hypothesis may be recorded BEFORE its t0 (prospective registration): negative lag is lawful and is the good case."]
+      },
+      "drl_event_date": {
+        "owner_store": "data/price_pressure/",
+        "recorded_clock_class": "observed",
+        "lawful_t0_modes": ["live", "retrospective_research"],
+        "max_recording_lag_days": 4,
+        "digest_required": false,
+        "notes": ["DRL ledger event rows (engine.price_pressure.ledger.read_ledger); the minting clock is the ledger's own harvested_asof, classed observed exactly as the drl_resid_shock slot clocks class it — one native field never carries two classes on this wire."]
+      },
+      "prophet_stamp_date": {
+        "owner_store": "data/us_prophet_rank/candidates/",
+        "recorded_clock_class": "belief_or_build",
+        "lawful_t0_modes": ["live", "retrospective_research"],
+        "max_recording_lag_days": 2,
+        "digest_required": false
+      },
+      "radar_observed_at": {
+        "owner_store": "data/entry_radar/",
+        "recorded_clock_class": "belief_or_build",
+        "lawful_t0_modes": ["live", "retrospective_research"],
+        "max_recording_lag_days": 1,
+        "digest_required": false
+      },
+      "owner_pit_reference": {
+        "owner_store": null,
+        "recorded_clock_class": null,
+        "lawful_t0_modes": ["retrospective_research"],
+        "max_recording_lag_days": null,
+        "digest_required": true,
+        "notes": [
+          "The generic source: any owner-backed PIT object, carrying a MANDATORY immutability receipt (native_digest state 'known') plus a known minting clock and a declared owner_store.",
+          "HONEST BOUNDARY (red-team 2026-08-25, correcting an earlier overclaim). This row does NOT prove the referenced object exists or that the digest is its true hash: with owner_store and recorded_clock_class unpinned, both are caller-declared. What it changes versus the retired caller_named_pit_object free string is (a) the reference is structurally decomposed into K1 EvidenceRef fields instead of one opaque label, (b) a specific 64-hex digest must be committed to, so the claim is falsifiable by anyone who fetches the object, and (c) the minting clock is mandatory, so the retrospective-t0 fence applies. It is an ACCOUNTABILITY receipt, not a verification. A t0 that must be verifiable at validation time belongs on one of the four pinned owner sources above, which do bind owner_store and clock class.",
+          "ASSURANCE CEILING (Sol REQUEST_CHANGES 2026-08-26 item A). The boundary above is now enforced instead of merely disclosed: because this source is an accountability receipt and not a validation-time verification, it MAY NOT claim t0_mode 'live'. lawful_t0_modes is ['retrospective_research'] and K3E_R021 fails a generic+live vector closed. Rationale: 'live' asserts operational point-in-time, and every input that would substantiate it here — the store, the minting clock class, the bytes behind the digest — is caller-declared, so a live claim on this source would be the caller vouching for the caller. The four pinned sources above may claim 'live' because validation checks their owner_store and clock class against these pins.",
+          "max_recording_lag_days is null BY CONSTRUCTION, not by omission: the lag budget is only ever consulted in 'live' mode, which this source cannot enter. The null is also a second, independent fence — a future wave that re-opens 'live' here by widening lawful_t0_modes alone still fails closed on the missing budget (the K3E_R021 MINOR-11 path), so re-opening requires deliberately minting a budget rather than editing one list.",
+          "Consequence a future wave may close: verifying a digest requires reading the owner's bytes, which this contract cannot do — it is a pure in-memory view with no owner imports and no I/O. Binding this source harder means either pinning more owner stores here or giving the validator an owner-read seam, and the latter is a producer decision outside this contract's authority. Until one of those lands, no artifact in this contract may describe the generic path as fully authenticated."
+        ]
+      }
+    }
+  },
+  "decomposition_groups": {
+    "dislocation": {
+      "grammar": "disloc.<term>.<window>",
+      "terms": ["ret_raw", "ret_mkt", "ret_fac", "ret_sec", "ret_theme", "ret_resid", "resid_z", "r2"],
+      "windows": ["5d", "21d", "63d"],
+      "law": "The lawful dislocation decomposition (E0_DISLOCATION_RESEARCH_SPEC §2.1, ruled lawful by C0 §4.1 ruling 1) emits named per-term components only and may never be reconstituted into one scalar: no construct, field, or value may fuse, weight, or sum these terms into a single dislocation number, and ret_raw — the observed identity total — is never re-emitted under another name. Missing terms are omitted with typed states, never 0. peer_basis disclosure is mandatory on every residual term (basis_required).",
+      "owner_status": "UNPRODUCED for windowed multi-term attribution — the statistical parts exist (DRL event-day residual; residual_alpha 12-1) but no owner assembles the 5-layer windowed pack (E0 census #6: NOT ASSEMBLED). Slots in this group therefore carry typed missingness in v1 unless a term is readable from an existing owner (event-day resid/resid_z via drl_resid_shock). Building the producer is NOT authorized by this contract.",
+      "family_binding": {"kind": "research_only", "family_id": null, "member": null, "routed_to": null},
+      "object_class": "derived_view",
+      "basis_required": true,
+      "value_type": "number",
+      "kills": [
+        "DNR:KILL-PSS-F3-RESIDUAL — residualization is a descriptor of where the move lived, never a timer, gate, or ranker",
+        "DNR:KILL-LIQUIDITY-SHOCK-REVERSAL-CLASSIFIER — closed at OHLCV grade; do not re-propose by re-tuning z/volume/horizon/peer-basis/label taxonomy; its analyst-revision firewall reopener is coverage-blocked-not-null and stays accruing",
+        "DNR:KILL-PARALLEL-SHOCK-CLASSIFIER — the statistical layer stays numeric; no named day types",
+        "DNR:KILL-FUSED-COMPOSITE — no reconstituted scalar in any scored path"
+      ]
+    }
+  },
+  "constructs": {
+    "residual_alpha_momentum": {
+      "title": "Medium-horizon sector-neutral residual momentum (12-1), within-sector rank context",
+      "owner": "engine/residual_alpha.py",
+      "artifact": "data/us_prophet_rank/candidates/ columns alpha, alpha_percentile",
+      "reader": "engine.residual_alpha.compute_residual_alpha | engine.us_context_vector.load_candidates",
+      "object_class": "derived_view",
+      "family_binding": {"kind": "governed_family", "family_id": "F2_MOMENTUM_EXTENSION", "member": "residual_alpha", "routed_to": null},
+      "asof_clock": {"native_field": "stamp_date", "clock_class": "belief_or_build"},
+      "known_at_clock": {"native_field": "stamp_date", "clock_class": "knowable"},
+      "clock_distinct": false,
+      "cross_owner_join": false,
+      "variation_required": false,
+      "basis_required": false,
+      "optional_family": false,
+      "derivation": "owner_read",
+      "notes": [
+        "NOT interchangeable with drl_resid_shock — two different residualizations (E0 dislocation spec §2.1).",
+        "Context only: did not clear BH-FDR/DSR on the modern era; never a standalone alpha score."
+      ]
+    },
+    "drl_resid_shock": {
+      "title": "DRL event-day residual shock vs peer basis (reactive, cross-sectional)",
+      "owner": "engine/price_pressure/",
+      "artifact": "data/price_pressure/events.parquet (+ latest.json display mirror)",
+      "reader": "engine.price_pressure.ledger.read_ledger",
+      "object_class": "derived_view",
+      "family_binding": {"kind": "research_only", "family_id": null, "member": null, "routed_to": null},
+      "asof_clock": {"native_field": "date", "clock_class": "world_valid"},
+      "known_at_clock": {"native_field": "harvested_asof", "clock_class": "observed"},
+      "clock_distinct": true,
+      "cross_owner_join": false,
+      "variation_required": false,
+      "basis_required": true,
+      "optional_family": false,
+      "derivation": "owner_read",
+      "notes": [
+        "Residual values (resid, resid_z, peer_ret, peer_basis) are read from the DRL ledger, never re-derived; do not fork sigma.",
+        "peer_basis=market is disclosed and never passed off as sector-idiosyncratic (latest panel: sector 52.79% / market 47.21%).",
+        "DRL authority is all-false display; DNR:KILL-LIQUIDITY-SHOCK-REVERSAL-CLASSIFIER binds (including its retune clause)."
+      ]
+    },
+    "drl_filing_coverage": {
+      "title": "DRL filing-coverage family for the event (earnings-filing | other-filing | no-filing | filing-coverage-unknown)",
+      "owner": "engine/price_pressure/",
+      "artifact": "data/price_pressure/events.parquet column family",
+      "reader": "engine.price_pressure.ledger.read_ledger",
+      "object_class": "derived_view",
+      "family_binding": {"kind": "research_only", "family_id": null, "member": null, "routed_to": null},
+      "asof_clock": {"native_field": "date", "clock_class": "world_valid"},
+      "known_at_clock": {"native_field": "harvested_asof", "clock_class": "observed"},
+      "clock_distinct": true,
+      "cross_owner_join": false,
+      "variation_required": false,
+      "basis_required": false,
+      "optional_family": false,
+      "derivation": "owner_read",
+      "notes": [
+        "This filing-COVERAGE family is what DRL actually owns on this axis (engine/price_pressure/context.py FAMILIES). It is not an impairment verdict; the impairment axis is unowned (see unowned_axes)."
+      ]
+    },
+    "drl_event_state": {
+      "title": "DRL event resolution state (per-side lifecycle + terminal windows)",
+      "owner": "engine/price_pressure/",
+      "artifact": "data/price_pressure/events.parquet grading columns (state, terminal_state_*)",
+      "reader": "engine.price_pressure.ledger.read_ledger",
+      "object_class": "instrument_state",
+      "family_binding": {"kind": "research_only", "family_id": null, "member": null, "routed_to": null},
+      "asof_clock": {"native_field": "state_asof", "clock_class": "belief_or_build"},
+      "known_at_clock": {"native_field": "state_updated", "clock_class": "belief_or_build"},
+      "clock_distinct": true,
+      "cross_owner_join": false,
+      "variation_required": false,
+      "basis_required": false,
+      "optional_family": false,
+      "derivation": "owner_read",
+      "notes": [
+        "An instrument verdict is not a market verdict: a terminal window state means the declared windows resolved, never that a thesis is true or false.",
+        "state_updated is a market SESSION date derived from bar indices (engine/price_pressure/ledger.py grading walk), i.e. the owner's evaluation/build clock — belief_or_build, not a system write clock (repaired from system_recorded on red-team finding, 2026-08-25)."
+      ]
+    },
+    "macro_chain_state": {
+      "title": "Macro chain / tripwire instrument state touching the subject's theme (display tier)",
+      "owner": "engine cycle/chain artifacts (per-chain owners)",
+      "artifact": "chain state artifacts (per chain)",
+      "reader": "owner chain readers",
+      "object_class": "instrument_state",
+      "family_binding": {"kind": "research_only", "family_id": null, "member": null, "routed_to": null},
+      "asof_clock": {"native_field": "asof", "clock_class": "belief_or_build"},
+      "known_at_clock": {"native_field": "asof", "clock_class": "knowable"},
+      "clock_distinct": false,
+      "cross_owner_join": true,
+      "variation_required": false,
+      "basis_required": false,
+      "optional_family": false,
+      "derivation": "owner_read",
+      "notes": [
+        "Dual-read law (operator 2026-08-09, gold/real-rate case): when this instrument state disagrees with the terminal asset's tape, the tape-side observed slots lead the read and this state is the footnote. A chain FAILED can never set any market_reflection leg."
+      ]
+    },
+    "estimate_revisions": {
+      "title": "Analyst estimate revisions snapshot (EPS trend/revisions, coverage)",
+      "owner": "collectors/equity_revisions.py",
+      "artifact": "data/revisions/latest.parquet + history.parquet (history born 2026-06-16)",
+      "reader": "owner parquet read at asof <= t0",
+      "object_class": "world_observation",
+      "family_binding": {"kind": "governed_family", "family_id": "F4_CATALYST_EVENT", "member": "analyst_revisions", "routed_to": null},
+      "asof_clock": {"native_field": "snapshot_date", "clock_class": "source_published"},
+      "known_at_clock": {"native_field": "snapshot_date", "clock_class": "knowable"},
+      "clock_distinct": false,
+      "cross_owner_join": false,
+      "variation_required": false,
+      "basis_required": false,
+      "optional_family": false,
+      "derivation": "owner_read",
+      "notes": [
+        "Pre-2026-06-16 is not_available_for_date (unlicensed_absent consensus history) — never backfilled, never zero.",
+        "n_covering nulls stay null (HARD HONESTY: never substitute reviser count)."
+      ]
+    },
+    "prospective_expectation_src_a1": {
+      "title": "SRC-A1 prospective raw EPS/revenue expectation observation + attempt receipt (append-only accrual)",
+      "owner": "collectors/equity_revisions.py (SRC-A1 writers)",
+      "artifact": "SRC-A1 observation/attempt artifacts (configurable path, append-only)",
+      "reader": "owner SRC-A1 readers",
+      "object_class": "world_observation",
+      "family_binding": {"kind": "research_only", "family_id": null, "member": null, "routed_to": null},
+      "asof_clock": {"native_field": "observation clock (SRC-A1 native)", "clock_class": "source_published"},
+      "known_at_clock": {"native_field": "collection clock (SRC-A1 native)", "clock_class": "observed"},
+      "clock_distinct": true,
+      "cross_owner_join": false,
+      "variation_required": false,
+      "basis_required": false,
+      "optional_family": true,
+      "derivation": "owner_read",
+      "notes": [
+        "OPTIONAL evidence family only: the vector is valid and complete-able without it; its absence is typed not_available_for_date, and it is never a prerequisite for composition."
+      ]
+    },
+    "coverage_count": {
+      "title": "Analyst coverage count (n_covering) — coverage, not quality",
+      "owner": "collectors/equity_revisions.py",
+      "artifact": "data/revisions/latest.parquet column n_covering",
+      "reader": "owner parquet read",
+      "object_class": "world_observation",
+      "family_binding": {"kind": "research_only", "family_id": null, "member": null, "routed_to": null},
+      "asof_clock": {"native_field": "snapshot_date", "clock_class": "source_published"},
+      "known_at_clock": {"native_field": "snapshot_date", "clock_class": "knowable"},
+      "clock_distinct": false,
+      "cross_owner_join": false,
+      "variation_required": false,
+      "basis_required": false,
+      "optional_family": false,
+      "derivation": "owner_read",
+      "notes": [
+        "NEGLECTED is not yet a data state (E0 Q6): missing attention/coverage makes lifecycle UNRESOLVED, never NEGLECTED."
+      ]
+    },
+    "eightk_recency": {
+      "title": "Material 8-K recency",
+      "owner": "EDGAR 8-K ingest (earnings/catalyst owners)",
+      "artifact": "data/us_prophet_rank/candidates/ column eightk_recent_days",
+      "reader": "engine.us_context_vector.load_candidates",
+      "object_class": "world_observation",
+      "family_binding": {"kind": "governed_family", "family_id": "F4_CATALYST_EVENT", "member": "eightk_recency", "routed_to": null},
+      "asof_clock": {"native_field": "stamp_date", "clock_class": "belief_or_build"},
+      "known_at_clock": {"native_field": "stamp_date", "clock_class": "knowable"},
+      "clock_distinct": false,
+      "cross_owner_join": false,
+      "variation_required": false,
+      "basis_required": false,
+      "optional_family": false,
+      "derivation": "owner_read",
+      "notes": []
+    },
+    "sue_surprise": {
+      "title": "Standardized earnings surprise (fresh)",
+      "owner": "earnings intelligence owners",
+      "artifact": "data/us_prophet_rank/candidates/ column sue_fresh",
+      "reader": "engine.us_context_vector.load_candidates",
+      "object_class": "derived_view",
+      "family_binding": {"kind": "governed_family", "family_id": "F4_CATALYST_EVENT", "member": "sue_surprise", "routed_to": null},
+      "asof_clock": {"native_field": "stamp_date", "clock_class": "belief_or_build"},
+      "known_at_clock": {"native_field": "stamp_date", "clock_class": "knowable"},
+      "clock_distinct": false,
+      "cross_owner_join": false,
+      "variation_required": false,
+      "basis_required": false,
+      "optional_family": false,
+      "derivation": "owner_read",
+      "notes": []
+    },
+    "short_interest": {
+      "title": "FINRA short interest (biweekly settlement)",
+      "owner": "data/finra/ ingest",
+      "artifact": "data/finra/short_interest_panel.parquet (PIT panel carrying knowable_date) + data/finra/short_interest.parquet (capture store; its asof/capture_date is a capture clock, observed class, never knowable)",
+      "reader": "owner parquet read",
+      "object_class": "world_observation",
+      "family_binding": {"kind": "governed_family", "family_id": "F5_FLOW_POSITIONING", "member": "short_interest", "routed_to": null},
+      "asof_clock": {"native_field": "settlement_date", "clock_class": "world_valid"},
+      "known_at_clock": {"native_field": "knowable_date", "clock_class": "knowable"},
+      "clock_distinct": true,
+      "cross_owner_join": false,
+      "variation_required": false,
+      "basis_required": false,
+      "optional_family": false,
+      "derivation": "owner_read",
+      "notes": [
+        "knowable_date is the estate's ONE canonical FINRA availability clock — the 8th NYSE session after settlement (lib/finra_knowable.py; engine/short_pressure.py PIT LAW: joins on knowable_date, never settlement_date). The capture store's asof (= collector run date, collectors/finra.py) is an observed-class capture clock and is NOT knowable — pinning it as known_at was the exact owner-clock-collapse this registry exists to kill (repaired on red-team finding, 2026-08-25).",
+        "A knowable_date describing a two-week-old settlement is stale for the current tape and must be typed stale — collapsing settlement and availability clocks is the named mutation kill.",
+        "Days-to-cover uses FINRA ADV, not borrow; utilization/CTB/locate are UNKNOWN constructs and stay out of this registry."
+      ]
+    },
+    "insider_activity": {
+      "title": "Insider activity panel (Form 4 sourced)",
+      "owner": "engine/insider_intel.py (one sec_insider panel)",
+      "artifact": "data/us_prophet_rank/candidates/ column insider_cluster (+ insider__ dims)",
+      "reader": "engine.us_context_vector.load_candidates",
+      "object_class": "world_observation",
+      "family_binding": {"kind": "governed_family", "family_id": "F5_FLOW_POSITIONING", "member": "insider_panel", "routed_to": null},
+      "asof_clock": {"native_field": "stamp_date", "clock_class": "belief_or_build"},
+      "known_at_clock": {"native_field": "stamp_date", "clock_class": "knowable"},
+      "clock_distinct": false,
+      "cross_owner_join": false,
+      "variation_required": false,
+      "basis_required": false,
+      "optional_family": false,
+      "derivation": "owner_read",
+      "notes": []
+    },
+    "smart_money_13f": {
+      "title": "Curated 13F holdings state (quarterly, +45d lag)",
+      "owner": "engine/smart_money.py + collectors/edgar_13f.py",
+      "artifact": "data/smart_money/ + data/institutional_13f/",
+      "reader": "owner readers",
+      "object_class": "world_observation",
+      "family_binding": {"kind": "governed_family", "family_id": "F5_FLOW_POSITIONING", "member": "smart_money_13f", "routed_to": null},
+      "asof_clock": {"native_field": "report_period", "clock_class": "world_valid"},
+      "known_at_clock": {"native_field": "accepted_at", "clock_class": "knowable"},
+      "clock_distinct": true,
+      "cross_owner_join": true,
+      "variation_required": false,
+      "basis_required": false,
+      "optional_family": false,
+      "derivation": "owner_read",
+      "notes": [
+        "A 13F increase known only after t0+45d cannot explain a t0 entry: inclusion requires known_at (acceptance/public date) <= t0, never report_period <= t0 — the look-ahead mutation kill.",
+        "WA-R2 / NEXTL-U13: ownership is context / crowding hazard, never a positive opportunity input."
+      ]
+    },
+    "options_state": {
+      "title": "Options surface state (IV/skew observed; GEX/dealer gamma modeled)",
+      "owner": "engine/gex_model.py + options dislocation/flow stores",
+      "artifact": "data/options_dislocation/snapshots.parquet + data/polygon_gex/ (history from 2026-06-15)",
+      "reader": "owner readers",
+      "object_class": "derived_view",
+      "family_binding": {"kind": "governed_family", "family_id": "F5_FLOW_POSITIONING", "member": "options_state", "routed_to": null},
+      "asof_clock": {"native_field": "snapshot_date", "clock_class": "world_valid"},
+      "known_at_clock": {"native_field": "snapshot_date", "clock_class": "knowable"},
+      "clock_distinct": false,
+      "cross_owner_join": false,
+      "variation_required": false,
+      "basis_required": false,
+      "optional_family": false,
+      "derivation": "owner_read",
+      "notes": [
+        "GEX / dealer gamma is modeled, a different state than observed — the slot state must be modeled, never observed.",
+        "Before 2026-06-15 the construct is not_available_for_date, never 0. Signed initiator flow is forbidden without trade-level NBBO.",
+        "Options intelligence productization is owned by AD-1 (#5872) — cite, do not fork."
+      ]
+    },
+    "turnover_liquidity": {
+      "title": "Turnover / dollar-volume liquidity state",
+      "owner": "engine/stock_technicals.py",
+      "artifact": "data/us_prophet_rank/candidates/ columns mdv20_usd, turnover_pctile_*",
+      "reader": "engine.us_context_vector.load_candidates",
+      "object_class": "world_observation",
+      "family_binding": {"kind": "governed_family", "family_id": "F5_FLOW_POSITIONING", "member": "turnover_liquidity", "routed_to": null},
+      "asof_clock": {"native_field": "stamp_date", "clock_class": "belief_or_build"},
+      "known_at_clock": {"native_field": "stamp_date", "clock_class": "knowable"},
+      "clock_distinct": false,
+      "cross_owner_join": false,
+      "variation_required": false,
+      "basis_required": false,
+      "optional_family": false,
+      "derivation": "owner_read",
+      "notes": [
+        "Float-based share turnover is a Track-C gap — not in this registry; do not infer it from volume-vs-history."
+      ]
+    },
+    "theme_membership": {
+      "title": "Theme/basket membership state at t0",
+      "owner": "theme graph + baskets owners",
+      "artifact": "data/us_prophet_rank/candidates/ theme_membership_* columns; data/baskets/membership.json",
+      "reader": "engine.us_context_vector.load_candidates",
+      "object_class": "derived_view",
+      "family_binding": {"kind": "governed_family", "family_id": "F3_THEME_STRUCTURE", "member": "theme_membership", "routed_to": null},
+      "asof_clock": {"native_field": "stamp_date", "clock_class": "belief_or_build"},
+      "known_at_clock": {"native_field": "stamp_date", "clock_class": "knowable"},
+      "clock_distinct": false,
+      "cross_owner_join": false,
+      "variation_required": false,
+      "basis_required": false,
+      "optional_family": false,
+      "derivation": "owner_read",
+      "notes": [
+        "A theme term in the dislocation decomposition exists only when membership exists at t0 (E0 dislocation spec §5.4)."
+      ]
+    },
+    "attention_views": {
+      "title": "Attention dimension (views / log views)",
+      "owner": "attention/altdata owners",
+      "artifact": "data/us_prophet_rank/candidates/ columns attention__views, attention__log_views",
+      "reader": "engine.us_context_vector.load_candidates",
+      "object_class": "world_observation",
+      "family_binding": {"kind": "governed_family", "family_id": "F8_ATTENTION_CROWDING", "member": "attention", "routed_to": null},
+      "asof_clock": {"native_field": "stamp_date", "clock_class": "belief_or_build"},
+      "known_at_clock": {"native_field": "stamp_date", "clock_class": "knowable"},
+      "clock_distinct": false,
+      "cross_owner_join": false,
+      "variation_required": false,
+      "basis_required": false,
+      "optional_family": false,
+      "derivation": "owner_read",
+      "notes": [
+        "No durable pre-2026 PIT attention tape exists; historical absence is not_available_for_date."
+      ]
+    },
+    "forensics_scalars": {
+      "title": "Fundamental forensics scalar state (display-only projection)",
+      "owner": "engine/fundamental_forensics/",
+      "artifact": "data/us_prophet_rank/candidates/ forensics__* columns",
+      "reader": "engine.us_context_vector.load_candidates",
+      "object_class": "derived_view",
+      "family_binding": {"kind": "governed_family", "family_id": "F7_QUALITY_FUNDAMENTAL", "member": "forensics_scalars", "routed_to": null},
+      "asof_clock": {"native_field": "forensics__latest_filed", "clock_class": "source_published"},
+      "known_at_clock": {"native_field": "stamp_date", "clock_class": "knowable"},
+      "clock_distinct": true,
+      "cross_owner_join": false,
+      "variation_required": false,
+      "basis_required": false,
+      "optional_family": false,
+      "derivation": "owner_read",
+      "notes": [
+        "Canadian/FPI names may have zero EDGAR rows: missing filings are not missing operations — the state is not_applicable or not_available_for_date, never an impairment claim."
+      ]
+    },
+    "capital_structure_supply": {
+      "title": "Capital-structure / dilution event-candidate state (form-level, backlogged parser)",
+      "owner": "engine/capital_structure/",
+      "artifact": "data/edgar/dilution_events.parquet + capital-structure candidate stores",
+      "reader": "owner readers",
+      "object_class": "world_observation",
+      "family_binding": {"kind": "governed_family", "family_id": "F7_QUALITY_FUNDAMENTAL", "member": "capital_structure", "routed_to": null},
+      "asof_clock": {"native_field": "filing_date", "clock_class": "source_published"},
+      "known_at_clock": {"native_field": "_first_seen", "clock_class": "knowable"},
+      "clock_distinct": true,
+      "cross_owner_join": false,
+      "variation_required": false,
+      "basis_required": false,
+      "optional_family": false,
+      "derivation": "owner_read",
+      "notes": [
+        "Backlog honesty: no event in projection is not a clean cap table — absence with a pending parser backlog is coverage partial, never a clean verdict. Do not read 424B2 count as dilution intensity.",
+        "Capital Structure Intelligence V2 (#5901) owns this axis's architecture — cite, do not fork.",
+        "Join key: dilution_events.parquet natively carries BOTH cik and ticker columns, so a listing-symbol subject joins owner-native same-key on ticker (cross_owner_join false). Any cik-keyed instrument object without a native ticker requires the Earnings company_identity.v1 PIT alias and types identity_unresolved without it."
+      ]
+    },
+    "etf_flow_shares_outstanding": {
+      "title": "ETF shares-outstanding flow proxy (creations/redemptions)",
+      "owner": "data/flows/ ingest",
+      "artifact": "data/flows/<FUND>.parquet columns so_mn, aum_mn, nav",
+      "reader": "owner parquet read",
+      "object_class": "world_observation",
+      "family_binding": {"kind": "candidate_new_family", "family_id": null, "member": null, "routed_to": "k5_eval_os_gauntlet"},
+      "asof_clock": {"native_field": "date", "clock_class": "world_valid"},
+      "known_at_clock": {"native_field": "date", "clock_class": "knowable"},
+      "clock_distinct": false,
+      "cross_owner_join": false,
+      "variation_required": true,
+      "basis_required": false,
+      "optional_family": false,
+      "derivation": "owner_read",
+      "notes": [
+        "An ETF-flow slot's state derives from OBSERVED VARIATION in the artifact, defaulting stale, never from the field's nominal meaning (C0 §4.1 ruling 5; SPY so_mn measured constant across five weeks while NAV moved).",
+        "No governed flow family exists for creations/redemptions; as a signal candidate this routes through K5 / Eval OS and gains no authority here."
+      ]
+    },
+    "prophet_entry_signal": {
+      "title": "Prophet entry/actionability status (entry_signal.status) — owner read",
+      "owner": "engine/entry_signal.py (assess) — the entry/actionability axis; projected by engine/prophet_board_read.py",
+      "artifact": "prophet.board_read/v1 status field (owner-native entry_signal.status, produced by engine.entry_signal.assess inside scripts/build_stock_library.py; published verbatim, unmapped words included)",
+      "reader": "engine.prophet_board_read.build_board_read",
+      "object_class": "instrument_state",
+      "family_binding": {"kind": "research_only", "family_id": null, "member": null, "routed_to": null},
+      "asof_clock": {"native_field": "as_of", "clock_class": "belief_or_build"},
+      "known_at_clock": {"native_field": "as_of", "clock_class": "knowable"},
+      "clock_distinct": false,
+      "cross_owner_join": false,
+      "variation_required": false,
+      "basis_required": false,
+      "optional_family": false,
+      "entry_role": "actionability",
+      "derivation": "owner_read",
+      "notes": [
+        "THE canonical live actionability surface for the entry_availability.entry_signal leg (Sol REQUEST_CHANGES 2026-08-25 item 3 — this closes the former Track-C open question by naming the owner). The status word is the owner's own vocabulary, projected verbatim; this vector never buckets, ranks, or re-derives it.",
+        "When the owner surface has no record for the subject (not a Prophet plan / not in the stock library) the slot is typed missing/unknown per the owner's own disclosure — never inferred from board admission, and never no-entry-state.",
+        "entry_role slots never enter the observed/inferred/market_reflection legs; this construct may only ever be referenced by entry_availability.entry_signal."
+      ]
+    },
+    "prophet_board_lane": {
+      "title": "Prophet board admission state (lane / buyable / eligible) — admission/context owner read",
+      "owner": "Prophet US (engine/us_board_rank.py + nightly stamp)",
+      "artifact": "data/us_prophet_rank/candidates/ frame columns lane, buyable, eligible",
+      "reader": "engine.us_context_vector.load_candidates",
+      "object_class": "system_belief",
+      "family_binding": {"kind": "research_only", "family_id": null, "member": null, "routed_to": null},
+      "asof_clock": {"native_field": "stamp_date", "clock_class": "belief_or_build"},
+      "known_at_clock": {"native_field": "stamp_date", "clock_class": "knowable"},
+      "clock_distinct": false,
+      "cross_owner_join": false,
+      "variation_required": false,
+      "basis_required": false,
+      "optional_family": false,
+      "entry_role": "admission_context",
+      "derivation": "owner_read",
+      "notes": [
+        "ADMISSION/CONTEXT ONLY (Sol REQUEST_CHANGES 2026-08-25 item 3): lane / buyable / eligible are Prophet board admission state and may NOT satisfy the entry_availability leg — the actionability surface is prophet_entry_signal (engine.entry_signal.status). An admission_context slot may be carried as typed context but may never be referenced from ANY projection leg (semantic K3E_R011).",
+        "Prophet's admission verdict is not vector evidence: never enters observed/inferred/market_reflection (red-team repair 2026-08-25). Prophet selection/gating is untouchable; Prophet does not consume this vector."
+      ]
+    },
+    "radar_probe_admission": {
+      "title": "Live Entry Radar probe admission / eligibility / freshness — owner read",
+      "owner": "engine/entry_radar/ (WS:LIVE-ENTRY-RADAR)",
+      "artifact": "mastermind.entry_probe_set.v1 ProbeSet (per-name ProbeRecord) + data/entry_radar/ledger_state.json",
+      "reader": "owner ProbeSet readers",
+      "object_class": "derived_view",
+      "family_binding": {"kind": "research_only", "family_id": null, "member": null, "routed_to": null},
+      "asof_clock": {"native_field": "assembled_at", "clock_class": "belief_or_build"},
+      "known_at_clock": {"native_field": "assembled_at", "clock_class": "knowable"},
+      "clock_distinct": false,
+      "cross_owner_join": false,
+      "variation_required": false,
+      "basis_required": false,
+      "optional_family": false,
+      "entry_role": "probe_coverage",
+      "derivation": "owner_read",
+      "notes": [
+        "PROBE/COVERAGE STATE, NEVER A TRADE-ENTRY VERDICT (Sol REQUEST_CHANGES 2026-08-25 item 3): this construct answers 'is Radar watching this name', and feeds ONLY the entry_availability.radar_probe_coverage leg, whose verdict_class pins that reading on the wire. entry_role slots never enter the observed/inferred/market_reflection legs (red-team repair 2026-08-25).",
+        "ProbeRecord carries no score, rank, points, candidate boolean, or bullish field — admission is a coverage decision, not an opinion; this vector projects it verbatim under DEC:PROPHET-LAB-B5A-RECUT's read/filter/join/decorate-only verbs.",
+        "Radar neither consumes nor writes this vector. Radar W5 forward tables are score-search-contaminated for any weight fitting (DNR:KILL-OUTCOME-AUDITION; PR-0 §18 A2.5 side-door law) — no vector construct may be fit, tuned, or selected on them."
+      ]
+    }
+  }
+}
