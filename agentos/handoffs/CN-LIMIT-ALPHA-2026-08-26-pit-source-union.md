@@ -184,6 +184,20 @@ danger_areas:
     ~/.local/share/macro-dashboard/china_tushare_spine.prerebuild-20260826 is the
     OLD 1991-anchored trade_cal plane.
   - >
+    `stage=complete` IS NOT ACCEPTANCE ON ITS OWN, and neither is
+    `manifest["complete"]`. Two independent reasons, both measured in the source.
+    First: `collect_name_history` BREAKS after NAMECHANGE_MAX_PER_RUN=5 attempts
+    without raising, so it never blocks stage progression -- window 1 can spend
+    pit(1) + name(5) + daily(5) = 11 of its 12 requests and report
+    `stage=complete` with name_history at 5 of 35 years landed. Second:
+    `manifest["complete"]` conjoins BULK_HISTORICAL_BACKFILL_READY FIRST, and
+    that stays False by order, so the manifest can never report complete during
+    the canary phase -- reading it as the acceptance signal would make a healthy
+    canary look permanently failed. Acceptance must therefore be read from the
+    UNITS: every expected unit terminal under `_unit_done`, including all 35
+    namechange years (1990..end.year). A session that accepts on `stage=complete`
+    alone will promote a one-seventh-finished canary.
+  - >
     TWO witness-missing counters exist and they deliberately count DIFFERENT
     things. `witness_missing_row_count` on a collection-state unit is per-unit,
     i.e. per session. `pit_absent_from_master_count` in the reconciliation is an
