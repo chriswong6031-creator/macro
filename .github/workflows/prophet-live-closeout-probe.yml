@@ -1,0 +1,91 @@
+name: prophet-live-closeout-probe
+
+on:
+  push:
+    branches:
+      - sol/prophet-live-closeout-20260827
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout bounded evidence
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            data/prophet_live
+            data/pit_replay/prophet_live_recovery
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install parquet reader
+        run: pip install --quiet pandas pyarrow
+
+      - name: Probe committed ledger and journal
+        run: |
+          python - <<'PY'
+          import gzip
+          import json
+          import re
+          from pathlib import Path
+          import pandas as pd
+
+          ledger = Path('data/prophet_live/forward.parquet')
+          journal = Path('data/pit_replay/prophet_live_recovery/journal_2026-07-30_2026-08-25.txt.gz')
+          receipt_path = Path('data/pit_replay/prophet_live_recovery/_recovery_receipt.json')
+
+          df = pd.read_parquet(ledger)
+          key = ['date', 'ticker', 'kind']
+          open_mask = df['next_close_fill'].isna()
+          open_rows = df.loc[open_mask, key].sort_values(key)
+          duplicate_keys = int(df.duplicated(key).sum())
+
+          raw = gzip.open(journal, 'rt', encoding='utf-8', errors='replace').read()
+          pass_lines = [line for line in raw.splitlines() if 'prophet-live pass=' in line]
+          event_lines = [line for line in raw.splitlines() if 'prophet-live EVENT ' in line]
+          declared = []
+          for line in pass_lines:
+              m = re.search(r'events=(\d+)', line)
+              if m:
+                  declared.append(int(m.group(1)))
+          zero_event_passes = sum(1 for n in declared if n == 0)
+
+          receipt = json.loads(receipt_path.read_text())
+          result = {
+              'ledger_rows': int(len(df)),
+              'duplicate_keys': duplicate_keys,
+              'next_close_fill_nonnull': int(df['next_close_fill'].notna().sum()),
+              'next_close_fill_null': int(open_mask.sum()),
+              'open_dates': sorted({str(v) for v in df.loc[open_mask, 'date']}),
+              'open_tickers': sorted({str(v) for v in df.loc[open_mask, 'ticker']}),
+              'open_rows': open_rows.to_dict(orient='records'),
+              'journal_pass_lines_in_committed_gzip': len(pass_lines),
+              'journal_event_lines_in_committed_gzip': len(event_lines),
+              'journal_declared_event_sum': sum(declared),
+              'journal_zero_event_passes_in_committed_gzip': zero_event_passes,
+              'receipt': receipt,
+          }
+          Path('/tmp/prophet_live_closeout_probe.json').write_text(
+              json.dumps(result, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          print(json.dumps({k: v for k, v in result.items() if k not in {'open_rows', 'open_tickers', 'receipt'}}, indent=2, sort_keys=True))
+          print(f"open_tickers={len(result['open_tickers'])}")
+          print('receipt_passes_parsed=', receipt.get('passes_parsed'))
+          print('receipt_passes_with_events=', receipt.get('passes_with_events'))
+          PY
+
+      - name: Upload probe receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: prophet-live-closeout-probe
+          path: /tmp/prophet_live_closeout_probe.json
+          retention-days: 1
