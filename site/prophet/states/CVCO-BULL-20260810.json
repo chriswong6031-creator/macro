@@ -1,36 +1,36 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "CVCO-BULL-20260810",
-  "asof": "2026-08-25",
+  "asof": "2026-08-27",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 53.5,
-  "raw_confidence": 51.3,
-  "delta_vs_base": -6.5,
+  "management_confidence": 50.2,
+  "raw_confidence": 46.2,
+  "delta_vs_base": -9.8,
   "recommended_action": "hold",
-  "human_state": "Needs Follow-Through",
+  "human_state": "Stalling",
   "components": {
-    "validity": 90.9,
+    "validity": 82.3,
     "progress": 0.0,
-    "pace": 58.8,
+    "pace": 46.9,
     "retention": 50.0,
-    "overlay": 67.0
+    "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.932,
+    "dist_to_stop_r": 0.865,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 28.9,
-    "p1": -0.0454,
-    "p2": -0.0227,
+    "horizon_pct_used": 33.3,
+    "p1": -0.0897,
+    "p2": -0.0448,
     "p3": null,
-    "move_r": -0.068,
+    "move_r": -0.135,
     "mfe_r": 0.056,
-    "mae_r": -0.125
+    "mae_r": -0.135
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "",
+  "change_reason": "Moving Away from Stop",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -40,11 +40,11 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 8.699975585937523,
-  "_mae": -19.540014648437477,
+  "_mae": -21.030004882812477,
   "_max_p1": 0.03710564726478375,
   "_first_trigger_ts": "2026-08-13",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 13,
-  "tau": 0.2889
+  "days_elapsed": 15,
+  "tau": 0.3333
 }

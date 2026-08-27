@@ -1,30 +1,30 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "PECO-BULL-20260717",
-  "asof": "2026-08-25",
+  "asof": "2026-08-27",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 63.7,
-  "raw_confidence": 65.1,
-  "delta_vs_base": 3.7,
+  "management_confidence": 63.3,
+  "raw_confidence": 62.8,
+  "delta_vs_base": 3.3,
   "recommended_action": "hold",
   "human_state": "Needs Follow-Through",
   "components": {
     "validity": 100.0,
-    "progress": 6.7,
+    "progress": 1.8,
     "pace": 100.0,
     "retention": 50.0,
-    "overlay": 67.0
+    "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.068,
-    "dist_to_t1_r": 1.432,
-    "dist_to_t2_r": 2.932,
-    "horizon_pct_used": 2.2,
-    "p1": 0.0453,
-    "p2": 0.0227,
+    "dist_to_stop_r": 1.012,
+    "dist_to_t1_r": 1.488,
+    "dist_to_t2_r": 2.988,
+    "horizon_pct_used": 6.7,
+    "p1": 0.0081,
+    "p2": 0.004,
     "p3": null,
-    "move_r": 0.068,
+    "move_r": 0.012,
     "mfe_r": 0.068,
     "mae_r": 0.0
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-24",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 1,
-  "tau": 0.0222
+  "days_elapsed": 3,
+  "tau": 0.0667
 }

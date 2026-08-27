@@ -1,30 +1,30 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "DIOD-BULL-20260813",
-  "asof": "2026-08-25",
+  "asof": "2026-08-27",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
-  "management_confidence": 53.1,
-  "raw_confidence": 52.9,
-  "delta_vs_base": -6.9,
+  "management_confidence": 51.4,
+  "raw_confidence": 49.4,
+  "delta_vs_base": -8.6,
   "recommended_action": "wait",
   "human_state": "Approaching Trigger",
   "components": {
-    "validity": 50.0,
+    "validity": 42.7,
     "progress": 0.0,
-    "pace": 85.8,
+    "pace": 75.9,
     "retention": 50.0,
-    "overlay": 61.0
+    "overlay": 55.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.599,
+    "dist_to_stop_r": 0.533,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 17.8,
-    "p1": -0.2674,
-    "p2": -0.1337,
+    "horizon_pct_used": 22.2,
+    "p1": -0.3114,
+    "p2": -0.1557,
     "p3": null,
-    "move_r": -0.401,
+    "move_r": -0.467,
     "mfe_r": 0.0,
     "mae_r": -0.489
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 8,
-  "tau": 0.1778
+  "days_elapsed": 10,
+  "tau": 0.2222
 }
