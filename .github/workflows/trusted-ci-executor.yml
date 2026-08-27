@@ -69,7 +69,7 @@ jobs:
             exit 1
           }
           direct_workflow_ref="$REPOSITORY/.github/workflows/trusted-ci-executor.yml@refs/heads/main"
-          called_workflow_ref="$REPOSITORY/.github/workflows/trusted-ci-executor.yml@main"
+          called_workflow_ref="$REPOSITORY/.github/workflows/trusted-ci-executor.yml@refs/heads/main"
           case "$CALLED_WORKFLOW_SHA" in
             [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]) ;;
             *)
