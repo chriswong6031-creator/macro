@@ -1,0 +1,47 @@
+{
+  "schema": "tfg0.development_corpus_selection.v1",
+  "operation_key": "tfg0-transcript-format-census-20260827-v1",
+  "frozen_at": "2026-08-27T05:32:56.664292+00:00",
+  "bodies_inspected_before_freeze": 0,
+  "selection_law": "sha256(TFG0|pair|body_sha256), ascending; first 16",
+  "eligible_count": 2909,
+  "selected_count": 16,
+  "excluded_symbols": ["AAPL", "BAC", "CAT", "GOOG", "GOOGL", "SNOW"],
+  "eligibility": {
+    "call_date_start": "2026-05-01",
+    "call_date_end": "2026-08-26",
+    "transcript_ids": ["2026Q2", "2026Q3"],
+    "requires_advertised_sha256": true
+  },
+  "tx_index": {
+    "schema": "mastermind.tx-index/v1",
+    "generated_at": "2026-08-27T00:17:17.252644+00:00",
+    "body_count": 28741,
+    "symbol_count": 3572,
+    "raw_sha256": "58f15ff0540f2aa0228348dda6f0ee34b26ef6d3227582fe59793fd43e0af496"
+  },
+  "selected": [
+    {"pair":"OCSL/2026Q3","ticker":"OCSL","transcript_id":"2026Q3","call_date":"2026-08-05","body_sha256":"529d26f9b96f4ada5ee99cf8fced8c33d0781f0ec5b3d7fd0df4ec0e7fc184bc","selection_hash":"000d1fd5add7d6c74a9159a72dd994628e37ade839279a6871481bdfaee7375f"},
+    {"pair":"MBLY/2026Q2","ticker":"MBLY","transcript_id":"2026Q2","call_date":"2026-07-23","body_sha256":"87a6aa53c4be71a147df199db349f54c647ddf5ff20f026a464e6d068deabd76","selection_hash":"00348ee0d109838e4d5ecd1177af0ef0bc648ac586ca3bcb6b830bd3e202cf25"},
+    {"pair":"GEF/2026Q3","ticker":"GEF","transcript_id":"2026Q3","call_date":"2026-07-29","body_sha256":"740fbb992a10c249ddb0b693d096650e02732596474cf6f4e5855b37e16446f3","selection_hash":"00660ef463202e68250c870f9595186186cf25c2143f52d80f3c22472be0a185"},
+    {"pair":"ARQQ/2026Q2","ticker":"ARQQ","transcript_id":"2026Q2","call_date":"2026-05-21","body_sha256":"11dcf2506693d4756e38e14546aeb5c4c5cc4851326393fea05e54b68c300a8a","selection_hash":"006a46a4ff92ebac892e3d644818bc0e9a82e872178c4efd7e62d648cec41e6c"},
+    {"pair":"TRVI/2026Q2","ticker":"TRVI","transcript_id":"2026Q2","call_date":"2026-08-06","body_sha256":"5fc48d8fc151c155195b233bb3bbcffd822dcc7e140944df95ca811cbbac6514","selection_hash":"00759a29042ce829341f239adca7be1fc7abd83c184003a6b1b889839a2bf98a"},
+    {"pair":"CTRE/2026Q2","ticker":"CTRE","transcript_id":"2026Q2","call_date":"2026-08-07","body_sha256":"00e6f5f4a97b53333f060f765a98342f252c76b422a938e30087765bbaf05e64","selection_hash":"0090d58dd03db0d98b593dae7094a0123ac53a9f9c98d1bf2780f1ee872af045"},
+    {"pair":"LTH/2026Q2","ticker":"LTH","transcript_id":"2026Q2","call_date":"2026-07-30","body_sha256":"c33f5f7b884c53b1b6b40964ce82d1ce505a4ef127a43a91e128eba578014782","selection_hash":"009dcd96d6890aa1a715caa77be9cefd348899b24d2fa51ee5e79187b083908b"},
+    {"pair":"UPBD/2026Q2","ticker":"UPBD","transcript_id":"2026Q2","call_date":"2026-07-30","body_sha256":"011e3c7aab0657ff1b0a6fad2dd41716757c40911ebb177ce38a13a4cad2681e","selection_hash":"009fb877d27fb9f1d8a415474d16a41e0c3438b5942825cad69f9233f4fd0c3a"},
+    {"pair":"SCCO/2026Q2","ticker":"SCCO","transcript_id":"2026Q2","call_date":"2026-07-22","body_sha256":"9c657f21a2de4bbeb731378377d0a27e61aeeded62e51dfab86e636412ad56a5","selection_hash":"00d6422c1e02df8f94221f63f418281dc952a72868a2b6b1d3ffb8646f9785aa"},
+    {"pair":"AGM/2026Q2","ticker":"AGM","transcript_id":"2026Q2","call_date":"2026-07-30","body_sha256":"87aa0131d7e9f86203927cfc45c2024fefbadd917f72aabf2e8a1adf07ae0e54","selection_hash":"00dccf69da3990ee1c1dc387fe8758148e299b116b13a3c7cccbf30d1bd91201"},
+    {"pair":"BANR/2026Q2","ticker":"BANR","transcript_id":"2026Q2","call_date":"2026-07-23","body_sha256":"5a7d732e563acebcb8dd47edb396521e2d54c760c1cff0da327992f80863dc4a","selection_hash":"00f3d0b3da60ec400534b0fc7ff7aac9a916294d0b1bec3e2f5d61ee0dbfffd5"},
+    {"pair":"FANG/2026Q2","ticker":"FANG","transcript_id":"2026Q2","call_date":"2026-08-04","body_sha256":"4ff1ccdd568aabb6000d6eeabbb7c951ecbbfd03f51744ec847a438fb0cb0d89","selection_hash":"010f0c9c290b8ebbefecfbe7fc5e53cad59a5e3b36ceb4d7b751c3d8390e6e2d"},
+    {"pair":"HTGC/2026Q2","ticker":"HTGC","transcript_id":"2026Q2","call_date":"2026-07-30","body_sha256":"d829b5f029fe62dbc377edcfc4b9fa1b8aac8d085dbd765caadaf7d1982877f8","selection_hash":"012a98f9c84ce1739622ebba5db76a3526aaccee126abd4c4f9157bdbf5b39f8"},
+    {"pair":"COF/2026Q2","ticker":"COF","transcript_id":"2026Q2","call_date":"2026-07-21","body_sha256":"e9402d4ea54f02e352806f02a1d5757004a274b2d8d023c528b91108e4af1bcc","selection_hash":"015843614e2004ceb54103aa132b3baae265e3e8b036691f5accf4d8d647533a"},
+    {"pair":"ARRY/2026Q2","ticker":"ARRY","transcript_id":"2026Q2","call_date":"2026-08-05","body_sha256":"fc5410027ef716ca50f4a5549d7c58309e061f611c3bfe3a78a1875125b5666d","selection_hash":"018f3bf2602d0300c866df42036f53bc416ef634f56dfe3385a7dd57535dadae"},
+    {"pair":"KREF/2026Q2","ticker":"KREF","transcript_id":"2026Q2","call_date":"2026-07-22","body_sha256":"ba53bb440ceb2d20a5b9307e6440c804af587b190ae6623cecc25c0a42672999","selection_hash":"018f58c8db63e2c16a084a9a725c8feac8910a7319beda43d4dcfe221970e29f"}
+  ],
+  "evidence": {
+    "github_run_id": 33042834588,
+    "freeze_job_id": 98420076116,
+    "selection_artifact_id": 9634504377,
+    "selection_artifact_sha256": "33cfa64643deb70b3690d78c33543898b3fcf1d49c2f1fdcb3e321f3b29608e5"
+  }
+}

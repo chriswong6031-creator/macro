@@ -1,66 +1,82 @@
 {
-  "as_of": "2026-08-26",
-  "item_count": 8,
+  "as_of": "2026-08-27",
+  "item_count": 10,
   "counts_by_severity": {
-    "P2": 7,
+    "P2": 9,
     "P3": 1
   },
   "items": [
     {
-      "kind": "lobe_sla_breach",
+      "kind": "contradiction_tension",
       "severity": "P2",
-      "summary_en": "Lobe 'confluence-graph' overdue: 126h old vs 30h SLA (4.2×)",
-      "summary_zh": "脉叶 'confluence-graph' 过期：126小时，SLA 30小时（4.2倍）",
-      "evidence_path": "site/neuralwebdata/health.json",
-      "as_of": "2026-08-26"
+      "summary_en": "Tension: briefing-divergences",
+      "summary_zh": "矛盾张力：briefing-divergences",
+      "evidence_path": "site/neuralwebdata/confluence_graph.json",
+      "as_of": "2026-08-27"
     },
     {
       "kind": "lobe_sla_breach",
       "severity": "P2",
-      "summary_en": "Lobe 'confluence-strength' overdue: 126h old vs 30h SLA (4.2×)",
-      "summary_zh": "脉叶 'confluence-strength' 过期：126小时，SLA 30小时（4.2倍）",
+      "summary_en": "Lobe 'confluence-graph' overdue: 82h old vs 30h SLA (2.7×)",
+      "summary_zh": "脉叶 'confluence-graph' 过期：82小时，SLA 30小时（2.7倍）",
       "evidence_path": "site/neuralwebdata/health.json",
-      "as_of": "2026-08-26"
+      "as_of": "2026-08-27"
     },
     {
       "kind": "lobe_sla_breach",
       "severity": "P2",
-      "summary_en": "Lobe 'site-confluence-graph' overdue: 126h old vs 30h SLA (4.2×)",
-      "summary_zh": "脉叶 'site-confluence-graph' 过期：126小时，SLA 30小时（4.2倍）",
+      "summary_en": "Lobe 'confluence-strength' overdue: 58h old vs 30h SLA (1.9×)",
+      "summary_zh": "脉叶 'confluence-strength' 过期：58小时，SLA 30小时（1.9倍）",
       "evidence_path": "site/neuralwebdata/health.json",
-      "as_of": "2026-08-26"
+      "as_of": "2026-08-27"
     },
     {
       "kind": "lobe_sla_breach",
       "severity": "P2",
-      "summary_en": "Lobe 'prophet-status' overdue: 142h old vs 48h SLA (3.0×)",
-      "summary_zh": "脉叶 'prophet-status' 过期：142小时，SLA 48小时（3.0倍）",
+      "summary_en": "Lobe 'site-confluence-graph' overdue: 154h old vs 30h SLA (5.1×)",
+      "summary_zh": "脉叶 'site-confluence-graph' 过期：154小时，SLA 30小时（5.1倍）",
       "evidence_path": "site/neuralwebdata/health.json",
-      "as_of": "2026-08-26"
+      "as_of": "2026-08-27"
     },
     {
       "kind": "lobe_sla_breach",
       "severity": "P2",
-      "summary_en": "Lobe 'prophet-suggestions' overdue: 142h old vs 48h SLA (3.0×)",
-      "summary_zh": "脉叶 'prophet-suggestions' 过期：142小时，SLA 48小时（3.0倍）",
+      "summary_en": "Lobe 'prophet-status' overdue: 171h old vs 48h SLA (3.6×)",
+      "summary_zh": "脉叶 'prophet-status' 过期：171小时，SLA 48小时（3.6倍）",
       "evidence_path": "site/neuralwebdata/health.json",
-      "as_of": "2026-08-26"
+      "as_of": "2026-08-27"
     },
     {
       "kind": "lobe_sla_breach",
       "severity": "P2",
-      "summary_en": "Lobe 'marketing-state' overdue: 150h old vs 48h SLA (3.1×)",
-      "summary_zh": "脉叶 'marketing-state' 过期：150小时，SLA 48小时（3.1倍）",
+      "summary_en": "Lobe 'prophet-suggestions' overdue: 171h old vs 48h SLA (3.6×)",
+      "summary_zh": "脉叶 'prophet-suggestions' 过期：171小时，SLA 48小时（3.6倍）",
       "evidence_path": "site/neuralwebdata/health.json",
-      "as_of": "2026-08-26"
+      "as_of": "2026-08-27"
     },
     {
       "kind": "lobe_sla_breach",
       "severity": "P2",
-      "summary_en": "Lobe 'marketing-lobe' overdue: 150h old vs 48h SLA (3.1×)",
-      "summary_zh": "脉叶 'marketing-lobe' 过期：150小时，SLA 48小时（3.1倍）",
+      "summary_en": "Lobe 'marketing-state' overdue: 178h old vs 48h SLA (3.7×)",
+      "summary_zh": "脉叶 'marketing-state' 过期：178小时，SLA 48小时（3.7倍）",
       "evidence_path": "site/neuralwebdata/health.json",
-      "as_of": "2026-08-26"
+      "as_of": "2026-08-27"
+    },
+    {
+      "kind": "lobe_sla_breach",
+      "severity": "P2",
+      "summary_en": "Lobe 'marketing-lobe' overdue: 178h old vs 48h SLA (3.7×)",
+      "summary_zh": "脉叶 'marketing-lobe' 过期：178小时，SLA 48小时（3.7倍）",
+      "evidence_path": "site/neuralwebdata/health.json",
+      "as_of": "2026-08-27"
+    },
+    {
+      "kind": "regime_indeterminate",
+      "severity": "P2",
+      "summary_en": "Regime indeterminate: Q2 confidence 14% (below 25% threshold)",
+      "summary_zh": "周期不明确：Q2 置信度 14%（低于25%阈值）",
+      "evidence_path": "data/neuralweb/world_state.json",
+      "as_of": "2026-08-27"
     },
     {
       "kind": "evidence_clock_overdue",
@@ -68,7 +84,7 @@
       "summary_en": "30 evidence clock(s) overdue; top: qledger:placebo",
       "summary_zh": "30 个证据时钟逾期；最高优先级：qledger:placebo",
       "evidence_path": "data/neuralweb/evidence_clock.json",
-      "as_of": "2026-08-26"
+      "as_of": "2026-08-27"
     }
   ],
   "caveats": [
@@ -79,7 +95,7 @@
   ],
   "schema_version": 1,
   "produced_by": "scripts/build_attention_deterministic.py",
-  "produced_at": "2026-08-26T06:13:05Z",
-  "inputs_hash": "sha256:c524a8a0eafc1295ec67b807713cb7e61358f91e76099ac887a23054161b33bf",
+  "produced_at": "2026-08-27T10:22:37Z",
+  "inputs_hash": "sha256:e3261698a359d692fe985b09ce7bfbb03908d5b0c11749c74266e9cae291b9bd",
   "tier": "display"
 }

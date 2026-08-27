@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-08-26",
+  "as_of": "2026-08-27",
   "authority": {
     "may_alert": false,
     "may_auto_promote": false,
@@ -38,7 +38,7 @@
   },
   "family": "pss_rh1_relief_hazard_prospective",
   "gate_open": true,
-  "generated_utc": "2026-08-26T03:31:45.812907+00:00",
+  "generated_utc": "2026-08-27T07:31:46.704258+00:00",
   "ledger": {
     "advanced_today": 0,
     "appended_today": 0,
@@ -65,11 +65,10 @@
     "frozen_members": 799,
     "loaded_members": 799,
     "missing_members": 0,
-    "prospective_candidate_anchors": 69,
+    "prospective_candidate_anchors": 71,
     "reasons": {
-      "incomplete_formation": 2,
       "missing_ohlcv": 0,
-      "no_subject_recovery": 20,
+      "no_subject_recovery": 22,
       "pre_cutoff_action": 20
     }
   },

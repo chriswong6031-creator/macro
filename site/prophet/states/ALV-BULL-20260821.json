@@ -1,30 +1,30 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "ALV-BULL-20260821",
-  "asof": "2026-08-25",
+  "asof": "2026-08-27",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
-  "management_confidence": 65.9,
-  "raw_confidence": 65.5,
-  "delta_vs_base": 5.9,
+  "management_confidence": 65.0,
+  "raw_confidence": 63.8,
+  "delta_vs_base": 5.0,
   "recommended_action": "wait",
   "human_state": "Awaiting Trigger",
   "components": {
-    "validity": 90.6,
+    "validity": 87.8,
     "progress": 0.0,
-    "pace": 98.5,
+    "pace": 93.5,
     "retention": 50.0,
-    "overlay": 61.0
+    "overlay": 55.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.93,
+    "dist_to_stop_r": 0.908,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 8.9,
-    "p1": -0.0469,
-    "p2": -0.0235,
+    "horizon_pct_used": 13.3,
+    "p1": -0.0614,
+    "p2": -0.0307,
     "p3": null,
-    "move_r": -0.07,
+    "move_r": -0.092,
     "mfe_r": 0.0,
     "mae_r": -0.109
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 4,
-  "tau": 0.0889
+  "days_elapsed": 6,
+  "tau": 0.1333
 }
