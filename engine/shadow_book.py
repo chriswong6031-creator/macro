@@ -5,9 +5,9 @@ is to FREEZE it at build time and grade it once the forward window has fully ela
 
 Three pure functions, append-only, leak-free by construction:
 
-  snapshot(date, recs)  — append (date, ticker, score, percentile, regime) frozen at the
-                          build date `t`. Append-only + dedup by (date, ticker): a nightly
-                          rebuild never overwrites or backfills history.
+  snapshot(date, recs)  — append (date, ticker, score, percentile, regime, pct_basis)
+                          frozen at the build date `t`. Append-only + dedup by (date,
+                          ticker): a nightly rebuild never overwrites or backfills history.
   mature(asof, closes)  — join only rows whose horizon has FULLY ELAPSED (the h-th trading
                           bar after `date` exists in `closes` AND its date <= asof) to the
                           realized forward return. The elapsed-horizon guard is the whole
@@ -53,7 +53,8 @@ def snapshot(date, recs, *, horizons=HORIZONS, path: str = BOOK_PATH) -> int:
                 continue
             row = {"date": d, "ticker": t,
                    "score": _num(r.get("score")), "percentile": _num(r.get("percentile")),
-                   "regime": r.get("regime"), "horizons": list(horizons)}
+                   "regime": r.get("regime"), "horizons": list(horizons),
+                   "pct_basis": r.get("pct_basis")}
             fh.write(json.dumps(row, default=str) + "\n")
             seen.add((d, t)); n += 1
     return n
@@ -82,6 +83,15 @@ def _num(x):
         return v if np.isfinite(v) else None
     except (TypeError, ValueError):
         return None
+
+
+def xs_percentile(scores) -> list:
+    """Cross-sectional percentile rank of `scores` within their own universe: average
+    rank / n, ties share, values in (0, 1]. Non-numeric/non-finite entries return None.
+    This — not the raw score — is what the pre-registration grades (the book's
+    `percentile` field; research/SHADOW_BOOK_PREREGISTRATION.md §1)."""
+    s = pd.to_numeric(pd.Series(list(scores), dtype=object), errors="coerce")
+    return [_num(v) for v in s.rank(pct=True)]
 
 
 def load_book(path: str = BOOK_PATH) -> pd.DataFrame:
@@ -142,6 +152,7 @@ def mature(asof, closes: pd.DataFrame, *, path: str = BOOK_PATH, horizons=HORIZO
                 continue
             out.append({"date": r["date"], "ticker": t, "horizon": int(h),
                         "score": _num(r.get("score")), "percentile": _num(r.get("percentile")),
+                        "pct_basis": r.get("pct_basis"),
                         "fwd_ret": float(px / base - 1.0), "end_date": str(d_end.date())})
     return pd.DataFrame(out)
 
