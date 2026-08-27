@@ -9,13 +9,12 @@ def replace_once(path: str, old: str, new: str) -> None:
     p.write_text(s.replace(old, new, 1))
 
 
-# Permanent P0 wiring: the manifest carries two equivalent Prophet P0 command copies
-# for the normal and retriggered pack paths. The D12 suite must ride both.
+# Permanent P0 wiring: add the D12 suite to the one canonical Prophet P0 pytest command.
 p = Path('.github/ci/legacy-jobs.yml')
 s = p.read_text()
 needle = "          tests/test_prophet_live_pack.py\n"
-assert s.count(needle) == 2, s.count(needle)
-s = s.replace(needle, needle + "          tests/test_prophet_live_pack_d12.py\n")
+assert s.count(needle) == 1, s.count(needle)
+s = s.replace(needle, needle + "          tests/test_prophet_live_pack_d12.py\n", 1)
 p.write_text(s)
 
 handoff = 'agentos/handoffs/WS-PROPHET-US-AVAILABILITY-2026-08-26-live-force-majeure.md'
