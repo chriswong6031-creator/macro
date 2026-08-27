@@ -1,4 +1,4 @@
-name: prophet-d12-red
+name: prophet-d12-verify
 
 on:
   push:
@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 jobs:
-  d12-regression:
+  focused-and-mutation:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -28,5 +28,53 @@ jobs:
           python-version: "3.12"
       - name: Install focused dependencies
         run: pip install --quiet pytest pandas
-      - name: Run D12 regression
+      - name: Baseline D12 GREEN
         run: python -m pytest tests/test_prophet_live_pack_d12.py -q
+      - name: Mutation must die — admit Saturday if it is before bound
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('scripts/build_prophet_live_pack.py')
+          s = p.read_text()
+          old = 'if day > bound or not is_session(day):'
+          new = 'if day > bound:'
+          assert s.count(old) == 1
+          p.write_text(s.replace(old, new, 1))
+          PY
+          set +e
+          python -m pytest tests/test_prophet_live_pack_d12.py::test_us_pack_ignores_a_non_session_even_when_it_is_before_the_bound -q
+          rc=$?
+          set -e
+          if [ "$rc" -eq 0 ]; then
+            echo "::error title=D12 mutation survived::removing NYSE-session validation stayed green"
+            exit 1
+          fi
+          echo "D12 mutation killed as required (rc=$rc)"
+
+  us-cn-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /tests/test_prophet_live_pack.py
+            /tests/test_prophet_live_pack_d12.py
+            /tests/test_cn_live_pack.py
+            /engine/**
+            /lib/**
+            /scripts/build_prophet_live_pack.py
+            /scripts/build_cn_live_pack.py
+            /scripts/build_stock_library.py
+            /collectors/**
+            /config.yml
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install regression dependencies
+        run: pip install --quiet pytest pandas numpy scipy pyyaml requests
+      - name: Run US and CN armed-pack suites
+        run: python -m pytest tests/test_prophet_live_pack.py tests/test_prophet_live_pack_d12.py tests/test_cn_live_pack.py -q
