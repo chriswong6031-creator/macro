@@ -323,7 +323,7 @@
           "2B",
           "3B"
         ],
-        "runtime_s": 20.9
+        "runtime_s": 21.8
       }
     },
     "policies": {
@@ -603,7 +603,7 @@
           "validation_failed": 25
         },
         "ledger_rows_appended": 0,
-        "ledger_closures_appended": 1
+        "ledger_closures_appended": 0
       },
       "C1_buy_soon_first": {
         "selected_tickers": [
@@ -1300,7 +1300,7 @@
           "validation_failed": 25
         },
         "ledger_rows_appended": 0,
-        "ledger_closures_appended": 1
+        "ledger_closures_appended": 0
       },
       "C7_buy_soon_admitted": {
         "selected_tickers": [

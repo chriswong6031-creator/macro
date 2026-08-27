@@ -14,7 +14,7 @@
   "gate_go": false,
   "plan_count": 338,
   "active_count": 316,
-  "open_count": 270,
+  "open_count": 269,
   "active_count_by_age": {
     "le_7d": 39,
     "d8_21d": 120,
@@ -27,10 +27,10 @@
     "entered": 181,
     "delivering": 0,
     "overtime": 0,
-    "invalidated": 8,
-    "resolved": 46
+    "invalidated": 7,
+    "resolved": 47
   },
-  "lifecycle_live_total": 270,
+  "lifecycle_live_total": 269,
   "lifecycle_grand_total": 316,
   "plans_sort_key": "us_prophet_v1 priority score desc, then plan id asc; a plan with no numeric priority score sorts below every scored plan and, among those, by the legacy conviction score",
   "intake": {
@@ -46,7 +46,7 @@
       "VIRT-BULL",
       "WH-BULL"
     ],
-    "open_plan_keys": 264,
+    "open_plan_keys": 263,
     "admitted": 39,
     "duplicate_id_blocked": 7,
     "eligible_after_skips": 25,
@@ -1003,7 +1003,7 @@
           "mfe_r": 0.085,
           "mae_r": -0.225
         },
-        "change_reason": "Falling Behind Schedule"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($80.65).",
@@ -1166,7 +1166,7 @@
           "mfe_r": 0.118,
           "mae_r": -0.204
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($93.62).",
@@ -1764,7 +1764,7 @@
           "mfe_r": 0.392,
           "mae_r": -0.089
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($82.19).",
@@ -1969,14 +1969,14 @@
       "closed": false,
       "pulse": "14d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "14\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 38.5,
+      "management_confidence": 36.7,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 21.16,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 38.5,
+        "management_confidence": 36.7,
         "recommended_action": "hold",
         "components": {
           "validity": 27.8,
@@ -1997,7 +1997,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.613
         },
-        "change_reason": "Weakening"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($33.54).",
@@ -2440,14 +2440,14 @@
       "closed": false,
       "pulse": "15d \u00b7 triggered \u00b7 on track",
       "pulse_zh": "15\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u6309\u8ba1\u5212\u63a8\u8fdb",
-      "management_confidence": 74.7,
+      "management_confidence": 74.1,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 153.1,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 74.7,
+        "management_confidence": 74.1,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -2468,7 +2468,7 @@
           "mfe_r": 0.849,
           "mae_r": 0.0
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($174.53).",
@@ -2701,7 +2701,7 @@
           "mfe_r": 0.056,
           "mae_r": -0.135
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($832.87).",
@@ -2906,14 +2906,14 @@
       "closed": false,
       "pulse": "14d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "14\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 45.6,
+      "management_confidence": 44.9,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 155.23,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 45.6,
+        "management_confidence": 44.9,
         "recommended_action": "hold",
         "components": {
           "validity": 66.3,
@@ -3165,7 +3165,7 @@
           "mfe_r": 0.187,
           "mae_r": -0.399
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($15.91).",
@@ -3369,14 +3369,14 @@
       "closed": false,
       "pulse": "15d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "15\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 40.3,
+      "management_confidence": 39.6,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 321.87,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 40.3,
+        "management_confidence": 39.6,
         "recommended_action": "hold",
         "components": {
           "validity": 49.6,
@@ -3397,7 +3397,7 @@
           "mfe_r": 0.083,
           "mae_r": -0.544
         },
-        "change_reason": "Macro Tailwind"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($475.40).",
@@ -3630,7 +3630,7 @@
           "mfe_r": 0.009,
           "mae_r": -0.317
         },
-        "change_reason": "Weakening"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($69.25).",
@@ -3833,14 +3833,14 @@
       "closed": false,
       "pulse": "17d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "17\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 32.3,
+      "management_confidence": 30.8,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 43.95,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 32.3,
+        "management_confidence": 30.8,
         "recommended_action": "hold",
         "components": {
           "validity": 21.3,
@@ -3861,7 +3861,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.729
         },
-        "change_reason": "Nearing Invalidation"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($69.33).",
@@ -4086,7 +4086,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.235
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Accumulate into the $333.20\u2013$339.40 zone. Do not pay above $341.80 \u2014 above that you are chasing the bar, not entering it.",
@@ -4289,14 +4289,14 @@
       "closed": false,
       "pulse": "20d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "20\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 49.5,
+      "management_confidence": 50.0,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 226.9,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 49.5,
+        "management_confidence": 50.0,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -4317,7 +4317,7 @@
           "mfe_r": 0.393,
           "mae_r": -0.057
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($314.65).",
@@ -4643,7 +4643,7 @@
           "mfe_r": 0.864,
           "mae_r": 0.0
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($30.39).",
@@ -4840,14 +4840,14 @@
       "closed": false,
       "pulse": "20d \u00b7 triggered \u00b7 on track",
       "pulse_zh": "20\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u6309\u8ba1\u5212\u63a8\u8fdb",
-      "management_confidence": 68.0,
+      "management_confidence": 66.1,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 41.4,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 68.0,
+        "management_confidence": 66.1,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -4868,7 +4868,7 @@
           "mfe_r": 1.017,
           "mae_r": 0.0
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($48.34).",
@@ -5105,7 +5105,7 @@
           "mfe_r": 0.362,
           "mae_r": 0.0
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($267.00).",
@@ -5332,7 +5332,7 @@
           "mfe_r": 0.766,
           "mae_r": 0.0
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($34.86).",
@@ -5798,7 +5798,7 @@
           "mfe_r": 0.119,
           "mae_r": -0.017
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($14.35).",
@@ -5961,7 +5961,7 @@
           "mfe_r": 0.134,
           "mae_r": -0.368
         },
-        "change_reason": "Falling Behind Schedule"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($26.09).",
@@ -6196,7 +6196,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.622
         },
-        "change_reason": "Weakening"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($463.38).",
@@ -6421,7 +6421,7 @@
           "mfe_r": 0.085,
           "mae_r": -0.598
         },
-        "change_reason": "Weakening"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($114.99).",
@@ -6625,14 +6625,14 @@
       "closed": false,
       "pulse": "15d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "15\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 56.9,
+      "management_confidence": 55.7,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 18.92,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 56.9,
+        "management_confidence": 55.7,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -6653,7 +6653,7 @@
           "mfe_r": 0.175,
           "mae_r": -0.227
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($27.00).",
@@ -7020,14 +7020,14 @@
       "closed": false,
       "pulse": "20d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "20\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 60.4,
+      "management_confidence": 60.2,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 24.76,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 60.4,
+        "management_confidence": 60.2,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -7183,14 +7183,14 @@
       "closed": false,
       "pulse": "15d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "15\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 45.5,
+      "management_confidence": 43.6,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 59.88,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 45.5,
+        "management_confidence": 43.6,
         "recommended_action": "wait",
         "components": {
           "validity": 26.0,
@@ -7211,7 +7211,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.631
         },
-        "change_reason": "Weakening"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Wait for a pullback into the $63.03\u2013$67.36 zone before starting. No entry above $74.31; the plan waits at the band rather than paying the last print.",
@@ -7415,14 +7415,14 @@
       "closed": false,
       "pulse": "20d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "20\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 43.1,
+      "management_confidence": 42.5,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 40.06,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 43.1,
+        "management_confidence": 42.5,
         "recommended_action": "hold",
         "components": {
           "validity": 87.0,
@@ -7650,14 +7650,14 @@
       "closed": false,
       "pulse": "15d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "15\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 67.0,
+      "management_confidence": 65.5,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 134.51,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 67.0,
+        "management_confidence": 65.5,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -8175,14 +8175,14 @@
       "closed": false,
       "pulse": "17d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "17\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 49.9,
+      "management_confidence": 49.7,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 235.9,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 49.9,
+        "management_confidence": 49.7,
         "recommended_action": "wait",
         "components": {
           "validity": 59.9,
@@ -8794,14 +8794,14 @@
       "closed": false,
       "pulse": "20d \u00b7 triggered \u00b7 on track",
       "pulse_zh": "20\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u6309\u8ba1\u5212\u63a8\u8fdb",
-      "management_confidence": 64.2,
+      "management_confidence": 63.6,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 79.0,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 64.2,
+        "management_confidence": 63.6,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -8822,7 +8822,7 @@
           "mfe_r": 0.615,
           "mae_r": -0.167
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($94.72).",
@@ -8957,14 +8957,14 @@
       "closed": false,
       "pulse": "15d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "15\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 52.7,
+      "management_confidence": 51.7,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 163.08,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 52.7,
+        "management_confidence": 51.7,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -8985,7 +8985,7 @@
           "mfe_r": 0.028,
           "mae_r": -0.116
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($236.01).",
@@ -9218,7 +9218,7 @@
           "mfe_r": 0.409,
           "mae_r": -0.0
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($668.25).",
@@ -9381,7 +9381,7 @@
           "mfe_r": 0.399,
           "mae_r": -0.002
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($131.36).",
@@ -9588,14 +9588,14 @@
       "closed": false,
       "pulse": "17d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "17\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 61.9,
+      "management_confidence": 60.7,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 11.75,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 61.9,
+        "management_confidence": 60.7,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -10071,7 +10071,7 @@
           "mfe_r": 0.801,
           "mae_r": -0.098
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($212.43).",
@@ -10433,14 +10433,14 @@
       "closed": false,
       "pulse": "14d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "14\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 58.5,
+      "management_confidence": 55.9,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 49.72,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 58.5,
+        "management_confidence": 55.9,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -10461,7 +10461,7 @@
           "mfe_r": 0.28,
           "mae_r": -0.025
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($61.71).",
@@ -10693,7 +10693,7 @@
           "mfe_r": 0.059,
           "mae_r": -0.13
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($117.80).",
@@ -11147,7 +11147,7 @@
           "mfe_r": 0.226,
           "mae_r": -0.128
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($108.44).",
@@ -11374,7 +11374,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.608
         },
-        "change_reason": "Weakening"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Wait for a pullback into the $18.64\u2013$20.06 zone before starting. No entry above $20.74; the plan waits at the band rather than paying the last print.",
@@ -11605,7 +11605,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.555
         },
-        "change_reason": "Weakening"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($329.51).",
@@ -11830,7 +11830,7 @@
           "mfe_r": 0.224,
           "mae_r": -0.548
         },
-        "change_reason": "Weakening"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($57.63).",
@@ -12027,14 +12027,14 @@
       "closed": false,
       "pulse": "3d \u00b7 pre-trigger \u00b7 awaiting trigger",
       "pulse_zh": "3\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u7b49\u5f85\u89e6\u53d1",
-      "management_confidence": 64.1,
+      "management_confidence": 64.2,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 34.24,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 64.1,
+        "management_confidence": 64.2,
         "recommended_action": "wait",
         "components": {
           "validity": 85.2,
@@ -12055,7 +12055,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.249
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Wait for a pullback into the $34.14\u2013$34.27 zone before starting. No entry above $36.60; the plan waits at the band rather than paying the last print.",
@@ -12258,14 +12258,14 @@
       "closed": false,
       "pulse": "14d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "14\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 51.5,
+      "management_confidence": 50.9,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 142.46,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 51.5,
+        "management_confidence": 50.9,
         "recommended_action": "wait",
         "components": {
           "validity": 55.2,
@@ -12491,14 +12491,14 @@
       "closed": false,
       "pulse": "20d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "20\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 44.9,
+      "management_confidence": 44.4,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 57.02,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 44.9,
+        "management_confidence": 44.4,
         "recommended_action": "wait",
         "components": {
           "validity": 45.8,
@@ -12654,14 +12654,14 @@
       "closed": false,
       "pulse": "20d \u00b7 triggered \u00b7 on track",
       "pulse_zh": "20\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u6309\u8ba1\u5212\u63a8\u8fdb",
-      "management_confidence": 68.2,
+      "management_confidence": 68.0,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 13.13,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 68.2,
+        "management_confidence": 68.0,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -12682,7 +12682,7 @@
           "mfe_r": 0.807,
           "mae_r": -0.12
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($14.99).",
@@ -12845,7 +12845,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.605
         },
-        "change_reason": "Weakening"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($49.69).",
@@ -13076,7 +13076,7 @@
           "mfe_r": 0.105,
           "mae_r": -0.279
         },
-        "change_reason": "Weakening"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($71.59).",
@@ -13280,14 +13280,14 @@
       "closed": false,
       "pulse": "15d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "15\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 54.9,
+      "management_confidence": 52.6,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 199.84,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 54.9,
+        "management_confidence": 52.6,
         "recommended_action": "hold",
         "components": {
           "validity": 96.2,
@@ -13308,7 +13308,7 @@
           "mfe_r": 0.301,
           "mae_r": -0.038
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($251.80).",
@@ -13738,14 +13738,14 @@
       "closed": false,
       "pulse": "17d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "17\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 57.5,
+      "management_confidence": 55.2,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 134.45,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 57.5,
+        "management_confidence": 55.2,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -13766,7 +13766,7 @@
           "mfe_r": 0.467,
           "mae_r": -0.316
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($146.88).",
@@ -13991,7 +13991,7 @@
           "mfe_r": 0.052,
           "mae_r": -0.315
         },
-        "change_reason": "Weakening"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Accumulate into the $8.36\u2013$8.92 zone. Do not pay above $9.14 \u2014 above that you are chasing the bar, not entering it.",
@@ -14195,14 +14195,14 @@
       "closed": false,
       "pulse": "20d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "20\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 45.8,
+      "management_confidence": 45.3,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 14.52,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 45.8,
+        "management_confidence": 45.3,
         "recommended_action": "wait",
         "components": {
           "validity": 48.5,
@@ -14458,7 +14458,7 @@
           "mfe_r": 0.679,
           "mae_r": -0.303
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($48.35).",
@@ -14886,14 +14886,14 @@
       "closed": false,
       "pulse": "17d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "17\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 49.6,
+      "management_confidence": 50.4,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 1.37,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 49.6,
+        "management_confidence": 50.4,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -14914,7 +14914,7 @@
           "mfe_r": 0.25,
           "mae_r": -0.946
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($1.73).",
@@ -15599,7 +15599,7 @@
           "mfe_r": 0.565,
           "mae_r": 0.0
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($183.77).",
@@ -15924,7 +15924,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.381
         },
-        "change_reason": "Falling Behind Schedule"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($131.20) before entering. No position until trigger is confirmed.",
@@ -16059,14 +16059,14 @@
       "closed": false,
       "pulse": "14d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "14\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 48.3,
+      "management_confidence": 45.3,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 67.77,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 48.3,
+        "management_confidence": 45.3,
         "recommended_action": "hold",
         "components": {
           "validity": 57.7,
@@ -16087,7 +16087,7 @@
           "mfe_r": 0.11,
           "mae_r": -0.334
         },
-        "change_reason": "Weakening"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($91.97).",
@@ -16557,7 +16557,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.467
         },
-        "change_reason": "Weakening"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Accumulate into the $16.56\u2013$16.72 zone. Do not pay above $16.78 \u2014 above that you are chasing the bar, not entering it.",
@@ -16789,7 +16789,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.235
         },
-        "change_reason": "Weakening"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Accumulate into the $67.66\u2013$70.38 zone. Do not pay above $71.47 \u2014 above that you are chasing the bar, not entering it.",
@@ -17022,7 +17022,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.183
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Wait for a pullback into the $177.50\u2013$180.50 zone before starting. No entry above $183.40; the plan waits at the band rather than paying the last print.",
@@ -17225,14 +17225,14 @@
       "closed": false,
       "pulse": "17d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "17\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 55.8,
+      "management_confidence": 54.5,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 215.36,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 55.8,
+        "management_confidence": 54.5,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -17253,7 +17253,7 @@
           "mfe_r": 0.179,
           "mae_r": -0.186
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($288.40).",
@@ -17745,14 +17745,14 @@
       "closed": false,
       "pulse": "20d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "20\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 35.2,
+      "management_confidence": 34.4,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 58.05,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 35.2,
+        "management_confidence": 34.4,
         "recommended_action": "hold",
         "components": {
           "validity": 52.0,
@@ -17908,14 +17908,14 @@
       "closed": false,
       "pulse": "14d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "14\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 47.4,
+      "management_confidence": 46.8,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 129.8,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 47.4,
+        "management_confidence": 46.8,
         "recommended_action": "hold",
         "components": {
           "validity": 75.0,
@@ -18142,14 +18142,14 @@
       "closed": false,
       "pulse": "17d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "17\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 49.0,
+      "management_confidence": 50.0,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 576.14,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 49.0,
+        "management_confidence": 50.0,
         "recommended_action": "wait",
         "components": {
           "validity": 66.5,
@@ -18395,7 +18395,7 @@
           "mfe_r": 0.487,
           "mae_r": -0.131
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($32.09).",
@@ -18715,7 +18715,7 @@
           "mfe_r": 0.028,
           "mae_r": -0.341
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Accumulate into the $401.60\u2013$411.80 zone. Do not pay above $415.80 \u2014 above that you are chasing the bar, not entering it.",
@@ -19109,7 +19109,7 @@
           "mfe_r": 0.81,
           "mae_r": -0.095
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($1.67).",
@@ -19341,7 +19341,7 @@
           "mfe_r": 0.174,
           "mae_r": -0.148
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($31.89).",
@@ -19547,14 +19547,14 @@
       "closed": false,
       "pulse": "20d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "20\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 54.0,
+      "management_confidence": 52.1,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 88.0,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 54.0,
+        "management_confidence": 52.1,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -19575,7 +19575,7 @@
           "mfe_r": 0.559,
           "mae_r": 0.0
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($103.62).",
@@ -19810,7 +19810,7 @@
           "mfe_r": 0.206,
           "mae_r": -0.489
         },
-        "change_reason": "Weakening"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($13.14).",
@@ -20043,7 +20043,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.623
         },
-        "change_reason": "Weakening"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Accumulate into the $69.85\u2013$73.56 zone. Do not pay above $75.04 \u2014 above that you are chasing the bar, not entering it.",
@@ -20407,14 +20407,14 @@
       "closed": false,
       "pulse": "20d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "20\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 43.6,
+      "management_confidence": 42.0,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 370.42,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 43.6,
+        "management_confidence": 42.0,
         "recommended_action": "hold",
         "components": {
           "validity": 80.6,
@@ -20435,7 +20435,7 @@
           "mfe_r": 0.396,
           "mae_r": -0.148
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($463.91).",
@@ -20670,7 +20670,7 @@
           "mfe_r": 0.039,
           "mae_r": -0.149
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($359.01).",
@@ -21136,7 +21136,7 @@
           "mfe_r": 0.146,
           "mae_r": -0.14
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($221.16).",
@@ -21345,14 +21345,14 @@
       "closed": false,
       "pulse": "20d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "20\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 45.6,
+      "management_confidence": 45.9,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 68.41,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 45.6,
+        "management_confidence": 45.9,
         "recommended_action": "wait",
         "components": {
           "validity": 55.0,
@@ -21536,7 +21536,7 @@
           "mfe_r": 5.687,
           "mae_r": 0.0
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 hit second target. Nothing to do; kept here for the record."
@@ -21739,14 +21739,14 @@
       "closed": false,
       "pulse": "20d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "20\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 46.7,
+      "management_confidence": 46.0,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 33.92,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 46.7,
+        "management_confidence": 46.0,
         "recommended_action": "wait",
         "components": {
           "validity": 51.2,
@@ -21930,7 +21930,7 @@
           "mfe_r": 0.159,
           "mae_r": -0.1
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($358.63).",
@@ -22390,7 +22390,7 @@
           "mfe_r": 0.249,
           "mae_r": 0.0
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($108.41).",
@@ -22712,7 +22712,7 @@
           "mfe_r": 0.065,
           "mae_r": -0.141
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Accumulate into the $8.75\u2013$9.21 zone. Do not pay above $9.40 \u2014 above that you are chasing the bar, not entering it.",
@@ -23136,14 +23136,14 @@
       "closed": false,
       "pulse": "17d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "17\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 51.7,
+      "management_confidence": 50.0,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 6.14,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 51.7,
+        "management_confidence": 50.0,
         "recommended_action": "hold",
         "components": {
           "validity": 98.9,
@@ -23164,7 +23164,7 @@
           "mfe_r": 0.356,
           "mae_r": -0.008
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($7.92).",
@@ -23391,7 +23391,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.563
         },
-        "change_reason": "Weakening"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Wait for a pullback into the $44.65\u2013$45.08 zone before starting. No entry above $46.30; the plan waits at the band rather than paying the last print.",
@@ -23588,14 +23588,14 @@
       "closed": false,
       "pulse": "15d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "15\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 47.4,
+      "management_confidence": 46.6,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 52.54,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 47.4,
+        "management_confidence": 46.6,
         "recommended_action": "hold",
         "components": {
           "validity": 78.4,
@@ -23616,7 +23616,7 @@
           "mfe_r": 0.057,
           "mae_r": -0.319
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($61.95).",
@@ -23819,14 +23819,14 @@
       "closed": false,
       "pulse": "14d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "14\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 53.1,
+      "management_confidence": 52.0,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 18.5,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 53.1,
+        "management_confidence": 52.0,
         "recommended_action": "wait",
         "components": {
           "validity": 58.0,
@@ -23847,7 +23847,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.376
         },
-        "change_reason": "Weakening"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Accumulate into the $18.85\u2013$20.52 zone. Do not pay above $21.19 \u2014 above that you are chasing the bar, not entering it.",
@@ -24404,7 +24404,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.225
         },
-        "change_reason": "Weakening"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Accumulate into the $365.60\u2013$373.10 zone. Do not pay above $376.10 \u2014 above that you are chasing the bar, not entering it.",
@@ -24636,7 +24636,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.266
         },
-        "change_reason": "Weakening"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Accumulate into the $36.32\u2013$36.76 zone. Do not pay above $36.93 \u2014 above that you are chasing the bar, not entering it.",
@@ -25034,7 +25034,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.3
         },
-        "change_reason": "Ahead of Schedule"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Accumulate into the $96.54\u2013$98.49 zone. Do not pay above $99.27 \u2014 above that you are chasing the bar, not entering it.",
@@ -25267,7 +25267,7 @@
           "mfe_r": 0.001,
           "mae_r": -0.223
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($121.41).",
@@ -25558,14 +25558,14 @@
       "closed": false,
       "pulse": "6d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "6\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 64.3,
+      "management_confidence": 64.4,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 436.49,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 64.3,
+        "management_confidence": 64.4,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -25790,14 +25790,14 @@
       "closed": false,
       "pulse": "14d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "14\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 50.7,
+      "management_confidence": 50.3,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 49.47,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 50.7,
+        "management_confidence": 50.3,
         "recommended_action": "wait",
         "components": {
           "validity": 53.3,
@@ -26021,14 +26021,14 @@
       "closed": false,
       "pulse": "9d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "9\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 63.6,
+      "management_confidence": 63.4,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 9.91,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 63.6,
+        "management_confidence": 63.4,
         "recommended_action": "wait",
         "components": {
           "validity": 89.7,
@@ -26445,7 +26445,7 @@
           "mfe_r": 0.0,
           "mae_r": -1.426
         },
-        "change_reason": "Phase: invalidated \u2192 triggered_pre_t1"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($97.03).",
@@ -27160,7 +27160,7 @@
           "mfe_r": 0.001,
           "mae_r": -0.259
         },
-        "change_reason": "Ahead of Schedule"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($187.51).",
@@ -27477,7 +27477,7 @@
           "mfe_r": 0.465,
           "mae_r": -0.474
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($85.08).",
@@ -27682,14 +27682,14 @@
       "closed": false,
       "pulse": "9d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "9\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 52.9,
+      "management_confidence": 51.9,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 41.31,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 52.9,
+        "management_confidence": 51.9,
         "recommended_action": "hold",
         "components": {
           "validity": 68.7,
@@ -28335,7 +28335,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.215
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Wait for a pullback into the $147.60\u2013$148.50 zone before starting. No entry above $151.90; the plan waits at the band rather than paying the last print.",
@@ -28538,14 +28538,14 @@
       "closed": false,
       "pulse": "20d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "20\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 50.5,
+      "management_confidence": 50.2,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 121.53,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 50.5,
+        "management_confidence": 50.2,
         "recommended_action": "wait",
         "components": {
           "validity": 67.9,
@@ -28934,14 +28934,14 @@
       "closed": false,
       "pulse": "9d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "9\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 61.4,
+      "management_confidence": 61.1,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 74.51,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 61.4,
+        "management_confidence": 61.1,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -28962,7 +28962,7 @@
           "mfe_r": 0.082,
           "mae_r": -0.157
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($93.70).",
@@ -29167,14 +29167,14 @@
       "closed": false,
       "pulse": "2d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "2\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 60.6,
+      "management_confidence": 59.7,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 22.43,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 60.6,
+        "management_confidence": 59.7,
         "recommended_action": "hold",
         "components": {
           "validity": 85.4,
@@ -29195,7 +29195,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.111
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($30.73).",
@@ -29715,14 +29715,14 @@
       "closed": false,
       "pulse": "7d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "7\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 60.2,
+      "management_confidence": 59.1,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 45.66,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 60.2,
+        "management_confidence": 59.1,
         "recommended_action": "hold",
         "components": {
           "validity": 90.5,
@@ -29743,7 +29743,7 @@
           "mfe_r": 0.042,
           "mae_r": -0.071
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($55.12).",
@@ -30192,14 +30192,14 @@
       "closed": false,
       "pulse": "7d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "7\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 64.0,
+      "management_confidence": 63.6,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 18.22,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 64.0,
+        "management_confidence": 63.6,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -30220,7 +30220,7 @@
           "mfe_r": 0.117,
           "mae_r": -0.105
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($23.09).",
@@ -30658,14 +30658,14 @@
       "closed": false,
       "pulse": "20d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "20\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 56.3,
+      "management_confidence": 54.4,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 218.81,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 56.3,
+        "management_confidence": 54.4,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -30686,7 +30686,7 @@
           "mfe_r": 0.458,
           "mae_r": 0.0
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($259.25).",
@@ -30923,7 +30923,7 @@
           "mfe_r": 1.256,
           "mae_r": -0.172
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($337.11).",
@@ -31244,7 +31244,7 @@
           "mfe_r": 0.346,
           "mae_r": -0.001
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($171.88).",
@@ -31537,14 +31537,14 @@
       "closed": false,
       "pulse": "3d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "3\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 64.5,
+      "management_confidence": 65.4,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 156.59,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 64.5,
+        "management_confidence": 65.4,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -31565,7 +31565,7 @@
           "mfe_r": 0.118,
           "mae_r": 0.0
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($198.71).",
@@ -31769,14 +31769,14 @@
       "closed": false,
       "pulse": "14d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "14\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 44.0,
+      "management_confidence": 43.8,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 98.69,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 44.0,
+        "management_confidence": 43.8,
         "recommended_action": "hold",
         "components": {
           "validity": 64.2,
@@ -32030,7 +32030,7 @@
           "mfe_r": 0.001,
           "mae_r": -0.349
         },
-        "change_reason": "Ahead of Schedule"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Accumulate into the $227.50\u2013$236.40 zone. Do not pay above $240.00 \u2014 above that you are chasing the bar, not entering it.",
@@ -32262,7 +32262,7 @@
           "mfe_r": 0.004,
           "mae_r": -0.291
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Accumulate into the $90.40\u2013$91.71 zone. Do not pay above $92.23 \u2014 above that you are chasing the bar, not entering it.",
@@ -32467,14 +32467,14 @@
       "closed": true,
       "pulse": "closed \u00b7 hit first target",
       "pulse_zh": "\u5df2\u7ed3 \u00b7 \u8fbe\u5230\u9996\u4e2a\u76ee\u6807",
-      "management_confidence": 84.9,
+      "management_confidence": 82.3,
       "recommended_action": "trail",
       "management_status": "available",
       "management_error": null,
       "last_price": 33.9,
       "state": {
         "phase": "at_t2",
-        "management_confidence": 84.9,
+        "management_confidence": 82.3,
         "recommended_action": "trail",
         "components": {
           "validity": 100.0,
@@ -32495,7 +32495,7 @@
           "mfe_r": 4.715,
           "mae_r": 0.0
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 hit first target. Nothing to do; kept here for the record."
@@ -32722,7 +32722,7 @@
           "mfe_r": 0.657,
           "mae_r": -1.069
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 stopped out. Nothing to do; kept here for the record."
@@ -33039,7 +33039,7 @@
           "mfe_r": 0.019,
           "mae_r": -0.301
         },
-        "change_reason": "Falling Behind Schedule"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($28.73) before entering. No position until trigger is confirmed.",
@@ -33174,14 +33174,14 @@
       "closed": false,
       "pulse": "6d \u00b7 pre-trigger \u00b7 awaiting trigger",
       "pulse_zh": "6\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u7b49\u5f85\u89e6\u53d1",
-      "management_confidence": 65.9,
+      "management_confidence": 65.7,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 27.85,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 65.9,
+        "management_confidence": 65.7,
         "recommended_action": "wait",
         "components": {
           "validity": 92.9,
@@ -33433,7 +33433,7 @@
           "mfe_r": 0.068,
           "mae_r": 0.0
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($45.81).",
@@ -33639,14 +33639,14 @@
       "closed": false,
       "pulse": "8d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "8\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 66.0,
+      "management_confidence": 65.0,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 166.27,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 66.0,
+        "management_confidence": 65.0,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -33667,7 +33667,7 @@
           "mfe_r": 0.341,
           "mae_r": -0.029
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($185.82).",
@@ -34325,14 +34325,14 @@
       "closed": false,
       "pulse": "7d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "7\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 61.8,
+      "management_confidence": 61.5,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 53.29,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 61.8,
+        "management_confidence": 61.5,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -34817,7 +34817,7 @@
           "mfe_r": 0.002,
           "mae_r": -0.115
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($542.14).",
@@ -35131,7 +35131,7 @@
           "mfe_r": 0.112,
           "mae_r": 0.0
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($31.32).",
@@ -35334,14 +35334,14 @@
       "closed": false,
       "pulse": "6d \u00b7 pre-trigger \u00b7 awaiting trigger",
       "pulse_zh": "6\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u7b49\u5f85\u89e6\u53d1",
-      "management_confidence": 64.4,
+      "management_confidence": 64.0,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 148.72,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 64.4,
+        "management_confidence": 64.0,
         "recommended_action": "wait",
         "components": {
           "validity": 85.5,
@@ -35596,7 +35596,7 @@
           "mfe_r": 4.71,
           "mae_r": 0.0
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 hit first target. Nothing to do; kept here for the record."
@@ -35823,7 +35823,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.217
         },
-        "change_reason": "Weakening"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Accumulate into the $48.24\u2013$50.08 zone. Do not pay above $50.82 \u2014 above that you are chasing the bar, not entering it.",
@@ -36054,7 +36054,7 @@
           "mfe_r": 0.0,
           "mae_r": -1.141
         },
-        "change_reason": "Stop Level Breached"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Invalidation level ($224.17) has been breached. Exit the full position.",
@@ -36518,7 +36518,7 @@
           "mfe_r": 0.129,
           "mae_r": -0.032
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($82.37).",
@@ -36724,14 +36724,14 @@
       "closed": false,
       "pulse": "10d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "10\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 42.9,
+      "management_confidence": 42.0,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 616.73,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 42.9,
+        "management_confidence": 42.0,
         "recommended_action": "hold",
         "components": {
           "validity": 31.8,
@@ -36957,14 +36957,14 @@
       "closed": false,
       "pulse": "6d \u00b7 triggered \u00b7 advancing cleanly",
       "pulse_zh": "6\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u987a\u5229\u63a8\u8fdb",
-      "management_confidence": 71.7,
+      "management_confidence": 75.1,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 44.29,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 71.7,
+        "management_confidence": 75.1,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -37218,7 +37218,7 @@
           "mfe_r": 0.448,
           "mae_r": -0.132
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($24.97).",
@@ -37451,7 +37451,7 @@
           "mfe_r": 0.178,
           "mae_r": -0.279
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($39.87).",
@@ -37657,14 +37657,14 @@
       "closed": true,
       "pulse": "closed \u00b7 hit first target",
       "pulse_zh": "\u5df2\u7ed3 \u00b7 \u8fbe\u5230\u9996\u4e2a\u76ee\u6807",
-      "management_confidence": 74.9,
+      "management_confidence": 74.2,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 130.39,
       "state": {
         "phase": "at_t1",
-        "management_confidence": 74.9,
+        "management_confidence": 74.2,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -37685,7 +37685,7 @@
           "mfe_r": 1.899,
           "mae_r": -0.552
         },
-        "change_reason": "Phase: between_t1_t2 \u2192 at_t1"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 hit first target. Nothing to do; kept here for the record."
@@ -38146,7 +38146,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.141
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($16.36).",
@@ -38349,14 +38349,14 @@
       "closed": true,
       "pulse": "closed \u00b7 hit first target",
       "pulse_zh": "\u5df2\u7ed3 \u00b7 \u8fbe\u5230\u9996\u4e2a\u76ee\u6807",
-      "management_confidence": 78.3,
+      "management_confidence": 79.6,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 32.21,
       "state": {
         "phase": "at_t1",
-        "management_confidence": 78.3,
+        "management_confidence": 79.6,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -38377,7 +38377,7 @@
           "mfe_r": 1.746,
           "mae_r": 0.0
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 hit first target. Nothing to do; kept here for the record."
@@ -38838,7 +38838,7 @@
           "mfe_r": 0.017,
           "mae_r": -0.114
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Accumulate into the $19.98\u2013$20.85 zone. Do not pay above $21.20 \u2014 above that you are chasing the bar, not entering it.",
@@ -39070,7 +39070,7 @@
           "mfe_r": 0.3,
           "mae_r": 0.0
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($17.24).",
@@ -39362,14 +39362,14 @@
       "closed": false,
       "pulse": "9d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "9\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 57.0,
+      "management_confidence": 57.4,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 107.75,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 57.0,
+        "management_confidence": 57.4,
         "recommended_action": "wait",
         "components": {
           "validity": 70.3,
@@ -39390,7 +39390,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.42
         },
-        "change_reason": "Ahead of Schedule"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Wait for a pullback into the $108.80\u2013$108.80 zone before starting. No entry above $109.70; the plan waits at the band rather than paying the last print.",
@@ -39623,7 +39623,7 @@
           "mfe_r": 0.0,
           "mae_r": -1.498
         },
-        "change_reason": "Stop Level Breached"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Invalidation level ($63.89) has been breached. Exit the full position.",
@@ -39855,7 +39855,7 @@
           "mfe_r": 0.102,
           "mae_r": -0.115
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($166.66).",
@@ -40058,14 +40058,14 @@
       "closed": false,
       "pulse": "6d \u00b7 pre-trigger \u00b7 awaiting trigger",
       "pulse_zh": "6\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u7b49\u5f85\u89e6\u53d1",
-      "management_confidence": 64.0,
+      "management_confidence": 63.1,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 114.13,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 64.0,
+        "management_confidence": 63.1,
         "recommended_action": "wait",
         "components": {
           "validity": 80.9,
@@ -40317,7 +40317,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.587
         },
-        "change_reason": "Ahead of Schedule"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Wait for a pullback into the $398.10\u2013$416.00 zone before starting. No entry above $445.20; the plan waits at the band rather than paying the last print.",
@@ -40755,14 +40755,14 @@
       "closed": false,
       "pulse": "6d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "6\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 68.8,
+      "management_confidence": 69.1,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 37.18,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 68.8,
+        "management_confidence": 69.1,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -41016,7 +41016,7 @@
           "mfe_r": 0.291,
           "mae_r": -0.0
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($84.00).",
@@ -41541,14 +41541,14 @@
       "closed": false,
       "pulse": "3d \u00b7 triggered \u00b7 on track",
       "pulse_zh": "3\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u6309\u8ba1\u5212\u63a8\u8fdb",
-      "management_confidence": 72.7,
+      "management_confidence": 73.3,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 372.3,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 72.7,
+        "management_confidence": 73.3,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -41569,7 +41569,7 @@
           "mfe_r": 0.615,
           "mae_r": -0.187
         },
-        "change_reason": "Trigger Confirmed"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($397.48).",
@@ -41800,7 +41800,7 @@
           "mfe_r": 0.459,
           "mae_r": -0.356
         },
-        "change_reason": "Trigger Confirmed"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($170.35).",
@@ -42031,7 +42031,7 @@
           "mfe_r": 1.794,
           "mae_r": -0.137
         },
-        "change_reason": "Phase: between_t1_t2 \u2192 at_t1"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 hit first target. Nothing to do; kept here for the record."
@@ -42465,14 +42465,14 @@
       "closed": false,
       "pulse": "9d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "9\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 65.9,
+      "management_confidence": 65.8,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 38.45,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 65.9,
+        "management_confidence": 65.8,
         "recommended_action": "wait",
         "components": {
           "validity": 100.0,
@@ -42929,14 +42929,14 @@
       "closed": false,
       "pulse": "3d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "3\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 63.7,
+      "management_confidence": 63.4,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 280.87,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 63.7,
+        "management_confidence": 63.4,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -42957,7 +42957,7 @@
           "mfe_r": 0.012,
           "mae_r": -0.037
         },
-        "change_reason": "Trigger Confirmed"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($327.90).",
@@ -43392,14 +43392,14 @@
       "closed": false,
       "pulse": "7d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "7\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 67.1,
+      "management_confidence": 67.4,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 514.55,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 67.1,
+        "management_confidence": 67.4,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -43626,14 +43626,14 @@
       "closed": false,
       "pulse": "3d \u00b7 triggered \u00b7 on track",
       "pulse_zh": "3\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u6309\u8ba1\u5212\u63a8\u8fdb",
-      "management_confidence": 72.9,
+      "management_confidence": 73.6,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 11.08,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 72.9,
+        "management_confidence": 73.6,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -43654,7 +43654,7 @@
           "mfe_r": 0.613,
           "mae_r": -0.0
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($12.78).",
@@ -43857,14 +43857,14 @@
       "closed": false,
       "pulse": "6d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "6\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 57.3,
+      "management_confidence": 56.2,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 151.92,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 57.3,
+        "management_confidence": 56.2,
         "recommended_action": "hold",
         "components": {
           "validity": 74.8,
@@ -44119,7 +44119,7 @@
           "mfe_r": 0.256,
           "mae_r": -0.0
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($39.48).",
@@ -44322,14 +44322,14 @@
       "closed": false,
       "pulse": "10d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "10\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 42.9,
+      "management_confidence": 42.6,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 272.66,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 42.9,
+        "management_confidence": 42.6,
         "recommended_action": "hold",
         "components": {
           "validity": 37.2,
@@ -44583,7 +44583,7 @@
           "mfe_r": 0.019,
           "mae_r": -0.488
         },
-        "change_reason": "Ahead of Schedule"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($101.70).",
@@ -44816,7 +44816,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.163
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($33.49).",
@@ -45341,14 +45341,14 @@
       "closed": false,
       "pulse": "6d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "6\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 64.7,
+      "management_confidence": 65.1,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 33.46,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 64.7,
+        "management_confidence": 65.1,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -45600,7 +45600,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.489
         },
-        "change_reason": "Ahead of Schedule"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Wait for a pullback into the $92.72\u2013$99.71 zone before starting. No entry above $107.60; the plan waits at the band rather than paying the last print.",
@@ -45803,14 +45803,14 @@
       "closed": false,
       "pulse": "10d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "10\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 59.4,
+      "management_confidence": 57.4,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 55.25,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 59.4,
+        "management_confidence": 57.4,
         "recommended_action": "hold",
         "components": {
           "validity": 92.0,
@@ -45831,7 +45831,7 @@
           "mfe_r": 0.215,
           "mae_r": -0.06
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($73.27).",
@@ -46035,14 +46035,14 @@
       "closed": false,
       "pulse": "2d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "2\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 66.8,
+      "management_confidence": 69.1,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 13.9,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 66.8,
+        "management_confidence": 69.1,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -46063,7 +46063,7 @@
           "mfe_r": 0.406,
           "mae_r": 0.0
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($14.74).",
@@ -46356,14 +46356,14 @@
       "closed": false,
       "pulse": "10d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "10\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 57.0,
+      "management_confidence": 56.2,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 34.44,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 57.0,
+        "management_confidence": 56.2,
         "recommended_action": "hold",
         "components": {
           "validity": 91.4,
@@ -46384,7 +46384,7 @@
           "mfe_r": 0.214,
           "mae_r": -0.208
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($41.45).",
@@ -46615,7 +46615,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.722
         },
-        "change_reason": "Nearing Invalidation"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($21.47).",
@@ -46821,14 +46821,14 @@
       "closed": false,
       "pulse": "9d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "9\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 51.6,
+      "management_confidence": 51.2,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 44.44,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 51.6,
+        "management_confidence": 51.2,
         "recommended_action": "hold",
         "components": {
           "validity": 69.0,
@@ -47055,14 +47055,14 @@
       "closed": false,
       "pulse": "7d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "7\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 67.8,
+      "management_confidence": 69.0,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 76.84,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 67.8,
+        "management_confidence": 69.0,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -47083,7 +47083,7 @@
           "mfe_r": 0.341,
           "mae_r": -0.214
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($82.05).",
@@ -47375,14 +47375,14 @@
       "closed": false,
       "pulse": "10d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "10\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 46.6,
+      "management_confidence": 45.9,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 18.51,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 46.6,
+        "management_confidence": 45.9,
         "recommended_action": "wait",
         "components": {
           "validity": 25.8,
@@ -47606,14 +47606,14 @@
       "closed": false,
       "pulse": "6d \u00b7 pre-trigger \u00b7 awaiting trigger",
       "pulse_zh": "6\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u7b49\u5f85\u89e6\u53d1",
-      "management_confidence": 64.1,
+      "management_confidence": 63.0,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 229.87,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 64.1,
+        "management_confidence": 63.0,
         "recommended_action": "wait",
         "components": {
           "validity": 79.6,
@@ -47634,7 +47634,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.155
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Accumulate into the $230.90\u2013$235.70 zone. Do not pay above $237.60 \u2014 above that you are chasing the bar, not entering it.",
@@ -47865,7 +47865,7 @@
           "mfe_r": 5.0,
           "mae_r": -1.0
         },
-        "change_reason": "Phase: between_t1_t2 \u2192 invalidated"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Invalidation level ($31.54) has been breached. Exit the full position.",
@@ -48226,7 +48226,7 @@
           "mfe_r": 0.032,
           "mae_r": -0.738
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($102.79).",
@@ -48458,7 +48458,7 @@
           "mfe_r": 0.082,
           "mae_r": -0.0
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($82.62).",
@@ -48892,14 +48892,14 @@
       "closed": false,
       "pulse": "10d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "10\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 47.4,
+      "management_confidence": 45.5,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 103.46,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 47.4,
+        "management_confidence": 45.5,
         "recommended_action": "hold",
         "components": {
           "validity": 42.9,
@@ -48920,7 +48920,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.466
         },
-        "change_reason": "Ahead of Schedule"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($147.50).",
@@ -49151,7 +49151,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.436
         },
-        "change_reason": "Ahead of Schedule"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($40.59).",
@@ -49355,14 +49355,14 @@
       "closed": false,
       "pulse": "8d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "8\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 46.6,
+      "management_confidence": 46.5,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 27.51,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 46.6,
+        "management_confidence": 46.5,
         "recommended_action": "wait",
         "components": {
           "validity": 27.2,
@@ -50283,9 +50283,9 @@
       "phase": "invalidated",
       "age_days": 63,
       "clock_age_days": 6,
-      "closed": false,
-      "pulse": "6d \u00b7 invalidated",
-      "pulse_zh": "6\u5929 \u00b7 \u5df2\u5931\u6548",
+      "closed": true,
+      "pulse": "closed \u00b7 stopped out",
+      "pulse_zh": "\u5df2\u7ed3 \u00b7 \u6b62\u635f\u79bb\u573a",
       "management_confidence": 8.0,
       "recommended_action": "invalidated",
       "management_status": "available",
@@ -50317,12 +50317,10 @@
         "change_reason": ""
       },
       "what_to_do_now": [
-        "Invalidation level ($334.11) has been breached. Exit the full position.",
-        "This plan is no longer active. Do not hold through invalidation."
+        "This plan is closed \u2014 stopped out. Nothing to do; kept here for the record."
       ],
       "what_to_do_now_zh": [
-        "\u65e0\u6548\u5316\u4f4d\uff08$334.11\uff09\u5df2\u88ab\u7a81\u7834\uff0c\u5168\u90e8\u79bb\u573a\u3002",
-        "\u8be5\u8ba1\u5212\u5df2\u5931\u6548\uff0c\u4e0d\u8981\u6301\u4ed3\u786c\u6491\u3002"
+        "\u8be5\u8ba1\u5212\u5df2\u7ed3\u675f \u2014 \u6b62\u635f\u79bb\u573a\u3002\u65e0\u9700\u64cd\u4f5c\uff1b\u4fdd\u7559\u4ee5\u4f9b\u8bb0\u5f55\u3002"
       ],
       "profit_plan": [
         {
@@ -50441,7 +50439,7 @@
         "union_texture": {},
         "basket_context_chip": "FALLING"
       },
-      "lifecycle_state": "invalidated",
+      "lifecycle_state": "resolved",
       "board_read": {
         "schema": "prophet.board_read/v1",
         "scope": "ticker",
@@ -50449,10 +50447,10 @@
         "as_of": "2026-08-26",
         "fields": {
           "status": {
-            "value": "bounce_wait",
-            "state": "available",
-            "reason": null,
-            "source": "us_stock_library"
+            "value": null,
+            "state": "not_applicable",
+            "reason": "plan_closed",
+            "source": null
           },
           "name": {
             "value": "Watsco",
@@ -50517,14 +50515,14 @@
       "closed": false,
       "pulse": "8d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "8\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 65.7,
+      "management_confidence": 65.4,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 114.61,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 65.7,
+        "management_confidence": 65.4,
         "recommended_action": "wait",
         "components": {
           "validity": 95.0,
@@ -50776,7 +50774,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.98
         },
-        "change_reason": "Nearing Invalidation"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($15.39).",
@@ -51070,14 +51068,14 @@
       "closed": false,
       "pulse": "9d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "9\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 69.9,
+      "management_confidence": 70.6,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 15.78,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 69.9,
+        "management_confidence": 70.6,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -51329,7 +51327,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.458
         },
-        "change_reason": "Ahead of Schedule"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Wait for a pullback into the $16.54\u2013$16.54 zone before starting. No entry above $20.38; the plan waits at the band rather than paying the last print.",
@@ -51533,14 +51531,14 @@
       "closed": false,
       "pulse": "10d \u00b7 triggered \u00b7 on track",
       "pulse_zh": "10\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u6309\u8ba1\u5212\u63a8\u8fdb",
-      "management_confidence": 72.4,
+      "management_confidence": 71.4,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 144.0,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 72.4,
+        "management_confidence": 71.4,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -51561,7 +51559,7 @@
           "mfe_r": 1.295,
           "mae_r": -0.854
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($147.76).",
@@ -52490,14 +52488,14 @@
       "closed": false,
       "pulse": "8d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "8\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 60.2,
+      "management_confidence": 59.0,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 6368.1201,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 60.2,
+        "management_confidence": 59.0,
         "recommended_action": "hold",
         "components": {
           "validity": 93.4,
@@ -52518,7 +52516,7 @@
           "mfe_r": 0.015,
           "mae_r": -0.116
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($7952.19).",
@@ -52749,7 +52747,7 @@
           "mfe_r": 0.198,
           "mae_r": 0.0
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($12.98).",
@@ -52954,14 +52952,14 @@
       "closed": false,
       "pulse": "7d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "7\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 65.4,
+      "management_confidence": 64.3,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 140.88,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 65.4,
+        "management_confidence": 64.3,
         "recommended_action": "wait",
         "components": {
           "validity": 86.4,
@@ -52982,7 +52980,7 @@
           "mfe_r": 0.001,
           "mae_r": -0.103
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Accumulate into the $138.20\u2013$147.00 zone. Do not pay above $150.60 \u2014 above that you are chasing the bar, not entering it.",
@@ -53213,7 +53211,7 @@
           "mfe_r": 1.228,
           "mae_r": -0.0
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($193.14).",
@@ -53980,7 +53978,7 @@
           "mfe_r": 1.924,
           "mae_r": -0.298
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 hit first target. Nothing to do; kept here for the record."
@@ -54544,14 +54542,14 @@
       "closed": true,
       "pulse": "closed \u00b7 hit first target",
       "pulse_zh": "\u5df2\u7ed3 \u00b7 \u8fbe\u5230\u9996\u4e2a\u76ee\u6807",
-      "management_confidence": 70.7,
+      "management_confidence": 70.9,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 49.78,
       "state": {
         "phase": "at_t1",
-        "management_confidence": 70.7,
+        "management_confidence": 70.9,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -54743,7 +54741,7 @@
           "mfe_r": 0.291,
           "mae_r": -0.517
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($23.02).",
@@ -55002,14 +55000,14 @@
       "closed": false,
       "pulse": "44d \u00b7 triggered \u00b7 advancing cleanly",
       "pulse_zh": "44\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u987a\u5229\u63a8\u8fdb",
-      "management_confidence": 69.7,
+      "management_confidence": 69.6,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 273.47,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 69.7,
+        "management_confidence": 69.6,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -55180,7 +55178,7 @@
           "mfe_r": 1.843,
           "mae_r": -0.232
         },
-        "change_reason": "Phase: between_t1_t2 \u2192 at_t1"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 hit first target. Nothing to do; kept here for the record."
@@ -55594,14 +55592,14 @@
       "closed": true,
       "pulse": "closed \u00b7 hit first target",
       "pulse_zh": "\u5df2\u7ed3 \u00b7 \u8fbe\u5230\u9996\u4e2a\u76ee\u6807",
-      "management_confidence": 67.9,
+      "management_confidence": 67.4,
       "recommended_action": "trail",
       "management_status": "available",
       "management_error": null,
       "last_price": 141.98,
       "state": {
         "phase": "at_t2",
-        "management_confidence": 67.9,
+        "management_confidence": 67.4,
         "recommended_action": "trail",
         "components": {
           "validity": 100.0,
@@ -55622,7 +55620,7 @@
           "mfe_r": 4.238,
           "mae_r": -2.153
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 hit first target. Nothing to do; kept here for the record."
@@ -56226,7 +56224,7 @@
           "mfe_r": 0.66,
           "mae_r": -0.0
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($228.97).",
@@ -56386,7 +56384,7 @@
           "mfe_r": 0.549,
           "mae_r": -0.001
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($238.72).",
@@ -56546,7 +56544,7 @@
           "mfe_r": 1.466,
           "mae_r": 0.0
         },
-        "change_reason": "Window Elapsed \u2014 Awaiting Close"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 timed out. Nothing to do; kept here for the record."
@@ -56692,7 +56690,7 @@
           "mfe_r": 0.715,
           "mae_r": -0.239
         },
-        "change_reason": "Window Elapsed \u2014 Awaiting Close"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 timed out. Nothing to do; kept here for the record."
@@ -57229,14 +57227,14 @@
       "closed": false,
       "pulse": "44d \u00b7 triggered \u00b7 on track",
       "pulse_zh": "44\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u6309\u8ba1\u5212\u63a8\u8fdb",
-      "management_confidence": 61.9,
+      "management_confidence": 61.4,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 190.56,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 61.9,
+        "management_confidence": 61.4,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -57553,7 +57551,7 @@
           "mfe_r": 0.359,
           "mae_r": -0.511
         },
-        "change_reason": "Window Elapsed \u2014 Awaiting Close"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 timed out. Nothing to do; kept here for the record."
@@ -57699,7 +57697,7 @@
           "mfe_r": 1.813,
           "mae_r": -0.456
         },
-        "change_reason": "Phase: between_t1_t2 \u2192 at_t1"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 hit first target. Nothing to do; kept here for the record."
@@ -57817,14 +57815,14 @@
       "closed": false,
       "pulse": "38d \u00b7 triggered \u00b7 advancing cleanly",
       "pulse_zh": "38\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u987a\u5229\u63a8\u8fdb",
-      "management_confidence": 75.3,
+      "management_confidence": 74.6,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 212.44,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 75.3,
+        "management_confidence": 74.6,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -57995,7 +57993,7 @@
           "mfe_r": 0.971,
           "mae_r": -0.225
         },
-        "change_reason": "Window Elapsed \u2014 Awaiting Close"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 timed out. Nothing to do; kept here for the record."
@@ -58113,14 +58111,14 @@
       "closed": false,
       "pulse": "37d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "37\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 44.7,
+      "management_confidence": 43.9,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 185.52,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 44.7,
+        "management_confidence": 43.9,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -58141,7 +58139,7 @@
           "mfe_r": 0.307,
           "mae_r": -0.028
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($233.66).",
@@ -58291,7 +58289,7 @@
           "mfe_r": 1.018,
           "mae_r": -0.017
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($147.96).",
@@ -59171,14 +59169,14 @@
       "closed": false,
       "pulse": "27d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "27\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 41.9,
+      "management_confidence": 40.7,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 22.63,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 41.9,
+        "management_confidence": 40.7,
         "recommended_action": "wait",
         "components": {
           "validity": 36.6,
@@ -59199,7 +59197,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.525
         },
-        "change_reason": "Falling Behind Schedule"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($26.90) before entering. No position until trigger is confirmed.",
@@ -59359,7 +59357,7 @@
           "mfe_r": 1.897,
           "mae_r": -1.687
         },
-        "change_reason": "Phase: between_t1_t2 \u2192 at_t1"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 stopped out. Nothing to do; kept here for the record."
@@ -61059,7 +61057,7 @@
           "mfe_r": 0.682,
           "mae_r": -0.215
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($17.27).",
@@ -61337,14 +61335,14 @@
       "closed": true,
       "pulse": "closed \u00b7 hit first target",
       "pulse_zh": "\u5df2\u7ed3 \u00b7 \u8fbe\u5230\u9996\u4e2a\u76ee\u6807",
-      "management_confidence": 74.0,
+      "management_confidence": 73.0,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 10.08,
       "state": {
         "phase": "at_t1",
-        "management_confidence": 74.0,
+        "management_confidence": 73.0,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -61365,7 +61363,7 @@
           "mfe_r": 1.613,
           "mae_r": 0.0
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 hit first target. Nothing to do; kept here for the record."
@@ -61643,14 +61641,14 @@
       "closed": true,
       "pulse": "closed \u00b7 hit first target",
       "pulse_zh": "\u5df2\u7ed3 \u00b7 \u8fbe\u5230\u9996\u4e2a\u76ee\u6807",
-      "management_confidence": 83.0,
+      "management_confidence": 82.7,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 168.47,
       "state": {
         "phase": "between_t1_t2",
-        "management_confidence": 83.0,
+        "management_confidence": 82.7,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -61799,14 +61797,14 @@
       "closed": false,
       "pulse": "28d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "28\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 50.9,
+      "management_confidence": 51.8,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 37.71,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 50.9,
+        "management_confidence": 51.8,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -61827,7 +61825,7 @@
           "mfe_r": 0.296,
           "mae_r": -0.148
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($43.09).",
@@ -61987,7 +61985,7 @@
           "mfe_r": 1.728,
           "mae_r": -0.343
         },
-        "change_reason": "Phase: at_t1 \u2192 between_t1_t2"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 hit first target. Nothing to do; kept here for the record."
@@ -62133,7 +62131,7 @@
           "mfe_r": 1.181,
           "mae_r": -0.437
         },
-        "change_reason": "Falling Behind Schedule"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($42.47).",
@@ -62265,14 +62263,14 @@
       "closed": false,
       "pulse": "41d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "41\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 44.1,
+      "management_confidence": 43.5,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 15.33,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 44.1,
+        "management_confidence": 43.5,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -62603,7 +62601,7 @@
           "mfe_r": 0.503,
           "mae_r": 0.0
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($96.28).",
@@ -62735,14 +62733,14 @@
       "closed": false,
       "pulse": "30d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "30\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 27.6,
+      "management_confidence": 26.9,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 13.06,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 27.6,
+        "management_confidence": 26.9,
         "recommended_action": "hold",
         "components": {
           "validity": 37.8,
@@ -62763,7 +62761,7 @@
           "mfe_r": 0.746,
           "mae_r": -0.522
         },
-        "change_reason": "Falling Behind Schedule"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($17.65).",
@@ -63053,14 +63051,14 @@
       "closed": false,
       "pulse": "37d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "37\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 32.1,
+      "management_confidence": 33.1,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 205.03,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 32.1,
+        "management_confidence": 33.1,
         "recommended_action": "hold",
         "components": {
           "validity": 73.9,
@@ -63081,7 +63079,7 @@
           "mfe_r": 0.456,
           "mae_r": -0.428
         },
-        "change_reason": "Falling Behind Schedule"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($238.66).",
@@ -63363,14 +63361,14 @@
       "closed": false,
       "pulse": "37d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "37\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 43.2,
+      "management_confidence": 42.0,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 236.27,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 43.2,
+        "management_confidence": 42.0,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -63391,7 +63389,7 @@
           "mfe_r": 0.538,
           "mae_r": -0.189
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($289.95).",
@@ -63701,7 +63699,7 @@
           "mfe_r": 1.453,
           "mae_r": 0.0
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 hit first target. Nothing to do; kept here for the record."
@@ -64017,7 +64015,7 @@
           "mfe_r": 0.604,
           "mae_r": -0.167
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($58.93).",
@@ -64177,7 +64175,7 @@
           "mfe_r": 0.454,
           "mae_r": -0.053
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($68.41).",
@@ -64337,7 +64335,7 @@
           "mfe_r": 0.359,
           "mae_r": -0.458
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($210.76).",
@@ -64497,7 +64495,7 @@
           "mfe_r": 0.0,
           "mae_r": -2.773
         },
-        "change_reason": "Phase: overtime \u2192 invalidated"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 stopped out. Nothing to do; kept here for the record."
@@ -64643,7 +64641,7 @@
           "mfe_r": 0.455,
           "mae_r": -0.094
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($67.08).",
@@ -64935,14 +64933,14 @@
       "closed": false,
       "pulse": "27d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "27\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 49.6,
+      "management_confidence": 48.4,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 807.12,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 49.6,
+        "management_confidence": 48.4,
         "recommended_action": "wait",
         "components": {
           "validity": 64.7,
@@ -64963,7 +64961,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.276
         },
-        "change_reason": "Falling Behind Schedule"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($878.80) before entering. No position until trigger is confirmed.",
@@ -65725,14 +65723,14 @@
       "closed": false,
       "pulse": "40d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "40\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 52.4,
+      "management_confidence": 53.7,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 40.03,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 52.4,
+        "management_confidence": 53.7,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -65753,7 +65751,7 @@
           "mfe_r": 0.448,
           "mae_r": -0.364
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($51.52).",
@@ -66189,14 +66187,14 @@
       "closed": false,
       "pulse": "33d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "33\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 50.7,
+      "management_confidence": 50.4,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 11.62,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 50.7,
+        "management_confidence": 50.4,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -66349,14 +66347,14 @@
       "closed": false,
       "pulse": "41d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "41\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 31.1,
+      "management_confidence": 30.8,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 59.47,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 31.1,
+        "management_confidence": 30.8,
         "recommended_action": "hold",
         "components": {
           "validity": 58.4,
@@ -66835,14 +66833,14 @@
     "read_errors": {},
     "by_field": {
       "status": {
-        "available": 270,
+        "available": 269,
         "blocked_data": 0,
-        "not_applicable": 46,
+        "not_applicable": 47,
         "reasons": {
-          "plan_closed": 46
+          "plan_closed": 47
         },
         "sources": {
-          "us_stock_library": 270
+          "us_stock_library": 269
         }
       },
       "name": {
