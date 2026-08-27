@@ -13,6 +13,7 @@ from hashlib import sha256
 from pathlib import Path
 from typing import Callable, Mapping
 
+import numpy as np
 import pandas as pd
 
 from engine.session_digest import session_window_et
@@ -55,6 +56,8 @@ def _json_safe(value: object) -> object:
         return None
     if isinstance(value, Mapping):
         return {str(key): _json_safe(item) for key, item in value.items()}
+    if isinstance(value, np.ndarray):
+        return [_json_safe(item) for item in value.tolist()]
     if isinstance(value, (list, tuple)):
         return [_json_safe(item) for item in value]
     if isinstance(value, (datetime, date, pd.Timestamp)):
