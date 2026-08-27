@@ -25,6 +25,14 @@ MAIN_CONTROL_FILES = {
     "capture_ci_canary_receipt.py",
 }
 CONTROL_REPO_ROOT_ENV = "MASTERMIND_TRUSTED_CI_REPO_ROOT"
+CONTROL_SPARSE_PATHS = {f"scripts/{filename}" for filename in MAIN_CONTROL_FILES}
+CANDIDATE_SPARSE_PATTERNS = (
+    "/*",
+    "!/data/",
+    "!/site/",
+    "!/mockups/",
+    "!/verify_shots/",
+)
 
 
 def workflow(name: str) -> dict:
@@ -62,7 +70,7 @@ def run_trusted_gate(
         ),
         "CALLED_WORKFLOW_REF": (
             f"{repository}/.github/workflows/"
-            "trusted-ci-executor.yml@main"
+            "trusted-ci-executor.yml@refs/heads/main"
         ),
         "CALLED_WORKFLOW_SHA": "a" * 40,
         "REPOSITORY": repository,
@@ -186,6 +194,12 @@ def test_p3ba_keeps_the_direct_main_dispatch_canary(tmp_path: Path) -> None:
         {
             "CALLED_WORKFLOW_REF": (
                 "mastermindx-market-intelligence/macro/.github/workflows/"
+                "trusted-ci-executor.yml@main"
+            )
+        },
+        {
+            "CALLED_WORKFLOW_REF": (
+                "mastermindx-market-intelligence/macro/.github/workflows/"
                 "trusted-ci-executor.yml@refs/pull/6390/merge"
             )
         },
@@ -267,6 +281,62 @@ def test_p3ba_planner_uses_main_control_and_routes_one_or_all_exact_pr_packs() -
 
     trusted_pack = document["jobs"]["trusted-pack"]
     assert trusted_pack["strategy"]["max-parallel"] == 3
+
+
+def test_p4_hosted_planner_avoids_full_tree_materialization_without_narrowing_semantics() -> None:
+    """Catch the production checkout jam without weakening exact-tree planning."""
+    plan = workflow("trusted-ci-executor.yml")["jobs"]["plan"]
+    steps = plan["steps"]
+
+    control_checkout = next(
+        step
+        for step in steps
+        if step.get("name") == "checkout main-owned executor control code"
+    )
+    control_patterns = {
+        line.strip()
+        for line in str(control_checkout["with"].get("sparse-checkout", "")).splitlines()
+        if line.strip()
+    }
+    assert control_patterns == CONTROL_SPARSE_PATHS
+    assert control_checkout["with"].get("sparse-checkout-cone-mode") is False
+
+    candidate_checkout = next(
+        step
+        for step in steps
+        if step.get("name") == "checkout the immutable PR candidate"
+    )
+    candidate_patterns = tuple(
+        line.strip()
+        for line in str(candidate_checkout["with"].get("sparse-checkout", "")).splitlines()
+        if line.strip()
+    )
+    assert candidate_patterns == CANDIDATE_SPARSE_PATTERNS
+    assert candidate_checkout["with"].get("sparse-checkout-cone-mode") is False
+
+    inventory = next(
+        (
+            step
+            for step in steps
+            if step.get("name") == "bind exact tested-tree path inventory"
+        ),
+        None,
+    )
+    assert inventory is not None
+    inventory_handle = "$RUNNER_TEMP/trusted-ci-tracked-paths/tracked-paths.v1"
+    assert inventory["env"] == {
+        CONTROL_REPO_ROOT_ENV: "${{ github.workspace }}",
+    }
+    assert (
+        '"$RUNNER_TEMP/trusted-ci-control/scripts/ci_scope_dependencies.py"'
+        in inventory["run"]
+    )
+    assert f'--write-tracked-paths "{inventory_handle}"' in inventory["run"]
+    assert '--tested-tree-sha "${{ steps.ref.outputs.tested_sha }}"' in inventory["run"]
+
+    planner = next(step for step in steps if step.get("id") == "plan")
+    assert f'--tracked-paths-file "{inventory_handle}"' in planner["run"]
+    assert steps.index(candidate_checkout) < steps.index(inventory) < steps.index(planner)
 
 
 def test_p3ar_freezes_and_transports_the_complete_main_owned_control_bundle() -> None:
