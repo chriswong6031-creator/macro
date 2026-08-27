@@ -1,0 +1,498 @@
+{
+ "schema": "tfg1.development_separator_falsifier.v1",
+ "operation_key": "tfg1-deterministic-transcript-format-hardening-20260827-v1",
+ "verdict": "FROZEN_DEVELOPMENT_ADJUDICATION_UNDERCOUNTS_STRUCTURAL_SEPARATORS",
+ "wave_state": "TFG-1 STOPPED AT DEVELOPMENT GATE; HOLDOUT NOT UNSEALED",
+ "holdout_bodies_inspected": 0,
+ "model_calls": 0,
+ "runtime_mutated": false,
+ "production_admission_changed": false,
+ "compiler_source_changed": false,
+ "falsified_receipt": "research/earnings_intelligence/e3/tfg0_development_boundary_identity_adjudication.json",
+ "governing_law": [
+  "research/earnings_intelligence/e3/TFG0_R1_BOUNDARY_IDENTITY_AND_HOLDOUT_SCORING_AMENDMENT_2026-08-27.md",
+  "agentos/decisions/DEC-E3FMT-STRUCTURAL-SEPARATORS-PROXY-IDENTITY-AND-SOURCE-CONDITIONED-HOLDOUT.md"
+ ],
+ "corpus": {
+  "calls": 16,
+  "byte_replayed": 16,
+  "replay_convention": "sha256(json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(',',':')).encode('utf-8'))",
+  "replay_convention_note": "canonical-JSON re-serialization, per the TFG-0 probe. Hashing the raw decompressed body instead reports COF/2026Q2 as a moved revision; that file alone is not stored in canonical form. No revision has moved.",
+  "tx_index_raw_sha256": "58f15ff0540f2aa0228348dda6f0ee34b26ef6d3227582fe59793fd43e0af496",
+  "tx_index_identical_to_tfg0_snapshot": true
+ },
+ "measurement": {
+  "frozen_structural_separators": 110,
+  "detected_structural_separators": 113,
+  "frozen_recall_by_detector": "110/110",
+  "false_negatives": 0,
+  "separators_omitted_by_frozen_receipt": 3,
+  "direct_name_extraction_failures_on_frozen_direct_set": 0,
+  "missed_handoff_sweep": "every housekeeping segment the detector rejects is followed by IR/management at call open or close; no analyst handoff is unaccounted for"
+ },
+ "corrected_partition_under_frozen_law": {
+  "structural_separators": 113,
+  "direct_questioners": 97,
+  "explicit_full_name_proxy": 6,
+  "source_supported_questioners": 103,
+  "unresolved_questioners": 10,
+  "source_clean_calls_for_full_call_reconstruction": 9,
+  "source_clean_call_pairs": [
+   "OCSL/2026Q3",
+   "GEF/2026Q3",
+   "ARQQ/2026Q2",
+   "UPBD/2026Q2",
+   "SCCO/2026Q2",
+   "AGM/2026Q2",
+   "FANG/2026Q2",
+   "COF/2026Q2",
+   "KREF/2026Q2"
+  ],
+  "call_that_leaves_the_source_clean_set": "MBLY/2026Q2"
+ },
+ "omitted_separators": [
+  {
+   "pair": "MBLY/2026Q2",
+   "segment_index": 21,
+   "operator_text": "Thank you. If you would like to ask a question, please press star one on your telephone keypad. A confirmation tone will indicate your line is in the question queue. You may press star two if you would like to remove your question from the queue, and for participants using speaker equipment, it may be necessary to pick up your handset before pressing the star keys. One moment while we poll for questions. Our first question is from Joshua Buchalter with TD Cowen. Please proceed.",
+   "operator_named": "Joshua Buchalter",
+   "next_non_housekeeping_index": 22,
+   "next_speaker": "Speaker 4",
+   "next_first_utterance": "Hi. Good morning. This is Lanny on for Josh. Can you hear me okay?",
+   "questioner_class": "unresolved",
+   "why_it_is_a_structural_separator": "question-bearing named Operator handoff immediately followed by a non-housekeeping source turn; not an opening prepared-speaker handoff, not a generic queue instruction, not a closing return"
+  },
+  {
+   "pair": "ARRY/2026Q2",
+   "segment_index": 31,
+   "operator_text": "Thank you. Ladies and gentlemen, we will now conduct a question and answer session. If you have a question, please press star followed by the number one on your touch tone phone. You will hear a three-tone prompt acknowledging your request. If you would like to cancel your request, please press star two. Please ensure you lift the handset before pressing any keys. Your first question comes from the line of Joe Osha from Guggenheim Securities. Please go ahead.",
+   "operator_named": "Joe Osha",
+   "next_non_housekeeping_index": 32,
+   "next_speaker": "Joe Osha",
+   "next_first_utterance": "Gosh, thanks. I made it first. Hello, everybody. You've commented in the past regarding the pace of backlog conversion sort of over the subsequent six quarters.",
+   "questioner_class": "direct",
+   "why_it_is_a_structural_separator": "question-bearing named Operator handoff immediately followed by a non-housekeeping source turn; not an opening prepared-speaker handoff, not a generic queue instruction, not a closing return"
+  },
+  {
+   "pair": "KREF/2026Q2",
+   "segment_index": 15,
+   "operator_text": "Thank you. We will now begin the question-and-answer session. To ask a question, you may press star then one on your touch-tone phone. If you're using a speakerphone, please pick up your handset before pressing the keys. To withdraw your question, please press star then one again. At this time, we will pause momentarily to assemble our roster. Your first question comes from Tom Catherwood with BTIG. Your line is open.",
+   "operator_named": "Tom Catherwood",
+   "next_non_housekeeping_index": 16,
+   "next_speaker": "Tom Catherwood",
+   "next_first_utterance": "Thanks, good morning, everybody. Matt, maybe starting with you. You mentioned in your prepared remarks how the increases in reserves and the lower book value re",
+   "questioner_class": "direct",
+   "why_it_is_a_structural_separator": "question-bearing named Operator handoff immediately followed by a non-housekeeping source turn; not an opening prepared-speaker handoff, not a generic queue instruction, not a closing return"
+  }
+ ],
+ "consequence_if_frozen_receipt_is_implemented_literally": "segments preceding the first admitted boundary fall outside every exchange window, so the first analyst exchange of MBLY/2026Q2, ARRY/2026Q2 and KREF/2026Q2 is silently discarded - the span loss across a real question handoff that the separator law exists to prevent",
+ "stop_condition_met": "a frozen source-clean development call (MBLY/2026Q2) cannot produce non-empty all-or-nothing full-call reconstruction under the correctly implemented frozen law, because its first question handoff has an unresolved questioner (structured placeholder 'Speaker 4' with first-name-only self-identification 'This is Lanny on for Josh')",
+ "not_rescued": "no exclusion rule was invented to make MBLY/2026Q2 pass; no edit distance, nickname map, or first-handoff exemption was added",
+ "per_call": [
+  {
+   "pair": "OCSL/2026Q3",
+   "body_sha256": "529d26f9b96f4ada5ee99cf8fced8c33d0781f0ec5b3d7fd0df4ec0e7fc184bc",
+   "byte_replayed": true,
+   "frozen_separator_indices": [
+    29,
+    35,
+    47
+   ],
+   "detected_separator_indices": [
+    29,
+    35,
+    47
+   ],
+   "omitted_by_frozen_receipt": [],
+   "frozen_source_clean_for_full_call_reconstruction": true
+  },
+  {
+   "pair": "MBLY/2026Q2",
+   "body_sha256": "87a6aa53c4be71a147df199db349f54c647ddf5ff20f026a464e6d068deabd76",
+   "byte_replayed": true,
+   "frozen_separator_indices": [
+    31,
+    44,
+    54,
+    65,
+    72,
+    79,
+    89,
+    98
+   ],
+   "detected_separator_indices": [
+    21,
+    31,
+    44,
+    54,
+    65,
+    72,
+    79,
+    89,
+    98
+   ],
+   "omitted_by_frozen_receipt": [
+    21
+   ],
+   "frozen_source_clean_for_full_call_reconstruction": true
+  },
+  {
+   "pair": "GEF/2026Q3",
+   "body_sha256": "740fbb992a10c249ddb0b693d096650e02732596474cf6f4e5855b37e16446f3",
+   "byte_replayed": true,
+   "frozen_separator_indices": [
+    25,
+    30
+   ],
+   "detected_separator_indices": [
+    25,
+    30
+   ],
+   "omitted_by_frozen_receipt": [],
+   "frozen_source_clean_for_full_call_reconstruction": true
+  },
+  {
+   "pair": "ARQQ/2026Q2",
+   "body_sha256": "11dcf2506693d4756e38e14546aeb5c4c5cc4851326393fea05e54b68c300a8a",
+   "byte_replayed": true,
+   "frozen_separator_indices": [
+    22
+   ],
+   "detected_separator_indices": [
+    22
+   ],
+   "omitted_by_frozen_receipt": [],
+   "frozen_source_clean_for_full_call_reconstruction": true
+  },
+  {
+   "pair": "TRVI/2026Q2",
+   "body_sha256": "5fc48d8fc151c155195b233bb3bbcffd822dcc7e140944df95ca811cbbac6514",
+   "byte_replayed": true,
+   "frozen_separator_indices": [
+    12,
+    25,
+    41,
+    46,
+    51,
+    58,
+    65,
+    74,
+    85
+   ],
+   "detected_separator_indices": [
+    12,
+    25,
+    41,
+    46,
+    51,
+    58,
+    65,
+    74,
+    85
+   ],
+   "omitted_by_frozen_receipt": [],
+   "frozen_source_clean_for_full_call_reconstruction": false
+  },
+  {
+   "pair": "CTRE/2026Q2",
+   "body_sha256": "00e6f5f4a97b53333f060f765a98342f252c76b422a938e30087765bbaf05e64",
+   "byte_replayed": true,
+   "frozen_separator_indices": [
+    17,
+    24,
+    31,
+    37,
+    45,
+    53,
+    59,
+    72,
+    79,
+    87,
+    94
+   ],
+   "detected_separator_indices": [
+    17,
+    24,
+    31,
+    37,
+    45,
+    53,
+    59,
+    72,
+    79,
+    87,
+    94
+   ],
+   "omitted_by_frozen_receipt": [],
+   "frozen_source_clean_for_full_call_reconstruction": false
+  },
+  {
+   "pair": "LTH/2026Q2",
+   "body_sha256": "c33f5f7b884c53b1b6b40964ce82d1ce505a4ef127a43a91e128eba578014782",
+   "byte_replayed": true,
+   "frozen_separator_indices": [
+    10,
+    18,
+    31,
+    39,
+    49,
+    59,
+    70,
+    81,
+    92,
+    104,
+    113
+   ],
+   "detected_separator_indices": [
+    10,
+    18,
+    31,
+    39,
+    49,
+    59,
+    70,
+    81,
+    92,
+    104,
+    113
+   ],
+   "omitted_by_frozen_receipt": [],
+   "frozen_source_clean_for_full_call_reconstruction": false
+  },
+  {
+   "pair": "UPBD/2026Q2",
+   "body_sha256": "011e3c7aab0657ff1b0a6fad2dd41716757c40911ebb177ce38a13a4cad2681e",
+   "byte_replayed": true,
+   "frozen_separator_indices": [
+    32,
+    44,
+    53,
+    64,
+    74,
+    79,
+    84
+   ],
+   "detected_separator_indices": [
+    32,
+    44,
+    53,
+    64,
+    74,
+    79,
+    84
+   ],
+   "omitted_by_frozen_receipt": [],
+   "frozen_source_clean_for_full_call_reconstruction": true
+  },
+  {
+   "pair": "SCCO/2026Q2",
+   "body_sha256": "9c657f21a2de4bbeb731378377d0a27e61aeeded62e51dfab86e636412ad56a5",
+   "byte_replayed": true,
+   "frozen_separator_indices": [
+    53,
+    66,
+    91,
+    109,
+    117
+   ],
+   "detected_separator_indices": [
+    53,
+    66,
+    91,
+    109,
+    117
+   ],
+   "omitted_by_frozen_receipt": [],
+   "frozen_source_clean_for_full_call_reconstruction": true
+  },
+  {
+   "pair": "AGM/2026Q2",
+   "body_sha256": "87aa0131d7e9f86203927cfc45c2024fefbadd917f72aabf2e8a1adf07ae0e54",
+   "byte_replayed": true,
+   "frozen_separator_indices": [
+    30,
+    36,
+    49,
+    64
+   ],
+   "detected_separator_indices": [
+    30,
+    36,
+    49,
+    64
+   ],
+   "omitted_by_frozen_receipt": [],
+   "frozen_source_clean_for_full_call_reconstruction": true
+  },
+  {
+   "pair": "BANR/2026Q2",
+   "body_sha256": "5a7d732e563acebcb8dd47edb396521e2d54c760c1cff0da327992f80863dc4a",
+   "byte_replayed": true,
+   "frozen_separator_indices": [
+    20,
+    34,
+    45,
+    55,
+    71,
+    83
+   ],
+   "detected_separator_indices": [
+    20,
+    34,
+    45,
+    55,
+    71,
+    83
+   ],
+   "omitted_by_frozen_receipt": [],
+   "frozen_source_clean_for_full_call_reconstruction": false
+  },
+  {
+   "pair": "FANG/2026Q2",
+   "body_sha256": "4ff1ccdd568aabb6000d6eeabbb7c951ecbbfd03f51744ec847a438fb0cb0d89",
+   "byte_replayed": true,
+   "frozen_separator_indices": [
+    4,
+    15,
+    31,
+    40,
+    51,
+    62,
+    73,
+    81,
+    89,
+    96,
+    104,
+    112,
+    124,
+    133
+   ],
+   "detected_separator_indices": [
+    4,
+    15,
+    31,
+    40,
+    51,
+    62,
+    73,
+    81,
+    89,
+    96,
+    104,
+    112,
+    124,
+    133
+   ],
+   "omitted_by_frozen_receipt": [],
+   "frozen_source_clean_for_full_call_reconstruction": true
+  },
+  {
+   "pair": "HTGC/2026Q2",
+   "body_sha256": "d829b5f029fe62dbc377edcfc4b9fa1b8aac8d085dbd765caadaf7d1982877f8",
+   "byte_replayed": true,
+   "frozen_separator_indices": [
+    33,
+    40,
+    52,
+    61,
+    69,
+    76,
+    83,
+    92
+   ],
+   "detected_separator_indices": [
+    33,
+    40,
+    52,
+    61,
+    69,
+    76,
+    83,
+    92
+   ],
+   "omitted_by_frozen_receipt": [],
+   "frozen_source_clean_for_full_call_reconstruction": false
+  },
+  {
+   "pair": "COF/2026Q2",
+   "body_sha256": "e9402d4ea54f02e352806f02a1d5757004a274b2d8d023c528b91108e4af1bcc",
+   "byte_replayed": true,
+   "frozen_separator_indices": [
+    20,
+    33,
+    43,
+    53,
+    62,
+    71,
+    80,
+    93,
+    103,
+    114,
+    120
+   ],
+   "detected_separator_indices": [
+    20,
+    33,
+    43,
+    53,
+    62,
+    71,
+    80,
+    93,
+    103,
+    114,
+    120
+   ],
+   "omitted_by_frozen_receipt": [],
+   "frozen_source_clean_for_full_call_reconstruction": true
+  },
+  {
+   "pair": "ARRY/2026Q2",
+   "body_sha256": "fc5410027ef716ca50f4a5549d7c58309e061f611c3bfe3a78a1875125b5666d",
+   "byte_replayed": true,
+   "frozen_separator_indices": [
+    36,
+    46,
+    63,
+    76,
+    84,
+    89
+   ],
+   "detected_separator_indices": [
+    31,
+    36,
+    46,
+    63,
+    76,
+    84,
+    89
+   ],
+   "omitted_by_frozen_receipt": [
+    31
+   ],
+   "frozen_source_clean_for_full_call_reconstruction": false
+  },
+  {
+   "pair": "KREF/2026Q2",
+   "body_sha256": "ba53bb440ceb2d20a5b9307e6440c804af587b190ae6623cecc25c0a42672999",
+   "byte_replayed": true,
+   "frozen_separator_indices": [
+    25,
+    40,
+    51,
+    60
+   ],
+   "detected_separator_indices": [
+    15,
+    25,
+    40,
+    51,
+    60
+   ],
+   "omitted_by_frozen_receipt": [
+    15
+   ],
+   "frozen_source_clean_for_full_call_reconstruction": true
+  }
+ ]
+}
