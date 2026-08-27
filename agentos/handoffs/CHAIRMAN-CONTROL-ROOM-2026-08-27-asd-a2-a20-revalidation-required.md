@@ -2,7 +2,7 @@
 workstream: WS:CHAIRMAN-CONTROL-ROOM
 session: sol/asd-a2-a20-pass-reconcile-20260827
 model: sol
-ended_because: revalidate_required
+ended_because: blocked
 mission: >
   Reconcile the returned ASD-A2 host census against the Chairman's current Slack handoff admission law
   without laundering useful read-only evidence into an accepted A2-0 PASS, and preserve the exact
