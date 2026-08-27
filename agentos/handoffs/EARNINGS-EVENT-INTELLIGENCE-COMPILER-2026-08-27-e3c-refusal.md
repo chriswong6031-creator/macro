@@ -15,6 +15,8 @@ state_before: >
   0001652044-26-000066) by receipt e3c-source-census-20260826-v1 before any extraction or
   model call. Alphabet was not in event_workspace.production_registry(). No E3-C extraction
   had run.
+prs:
+  - 6497
 decisions:
   - DEC:E3-EVENT-INTELLIGENCE-COMPILER-NOT-SCORER
 changed:
