@@ -2,7 +2,7 @@
 workstream: WS:CHAIRMAN-CONTROL-ROOM
 session: sol/worker-presence-dialogue-20260827
 model: sol
-ended_because: handoff
+ended_because: ci_handoff
 mission: >
   Record the Chairman-approved Worker Presence & Dialogue / stateless turn-watcher architecture after
   its protected Mastermind merge, preserve existing ASD-A2/A3 ownership, and leave the exact WP-1
