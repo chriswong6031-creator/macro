@@ -266,6 +266,42 @@ def turn_watch_observations(path: Path, spine: IdentitySpine) -> IntakeBatch:
                          "files": file_receipts},))
 
 
+def _plain_value(value: object) -> object:
+    """Coerce numpy containers/scalars to plain Python, recursively.
+
+    Duck-typed on ``tolist`` (ndarray and every numpy scalar carry it) so this
+    module stays numpy-import-free. Genuinely foreign types still reach
+    ``canonical_json`` unconverted and keep failing closed — this widens the
+    door only for values that are semantically plain lists/numbers arriving in
+    parquet dress."""
+    if not isinstance(value, (str, bytes)):
+        tolist = getattr(value, "tolist", None)
+        if callable(tolist):
+            try:
+                value = tolist()
+            except Exception:  # noqa: BLE001 — leave it for canonical_json to refuse
+                return value
+    if isinstance(value, (list, tuple)):
+        return [_plain_value(v) for v in value]
+    if isinstance(value, dict):
+        return {k: _plain_value(v) for k, v in value.items()}
+    return value
+
+
+def _plain_row(row: Mapping[str, object]) -> dict[str, object]:
+    """Normalize a source row before hashing/persisting it.
+
+    The episode contract's ``canonical_json`` is deliberately fail-closed on
+    foreign types (EpisodeContractError), and parquet-sourced candidate rows
+    carry numpy arrays/scalars. B1's FIRST natural scheduled run (33036497832,
+    2026-08-27T14:40Z) crashed exactly here — ``Object of type ndarray is not
+    JSON serializable`` — which aborted the us_prophet_ledgers job before its
+    commit and cost session 2026-08-26 its cohort. Receipts hash the normalized
+    row; no durable episode receipts predate this (the store was empty), so no
+    existing hash changes."""
+    return {k: _plain_value(v) for k, v in row.items()}
+
+
 def _unanchored_batch(source: str, schema: str, rows: list[dict[str, object]], spine: IdentitySpine,
                       *, ticker_key: str = "ticker", session_key: str = "as_of",
                       source_id: Callable[[dict[str, object]], str] | None = None,
@@ -274,6 +310,7 @@ def _unanchored_batch(source: str, schema: str, rows: list[dict[str, object]], s
     observations: list[dict[str, object]] = []
     suppressions: list[dict[str, object]] = []
     for row in rows:
+        row = _plain_row(row)
         ticker, session = row.get(ticker_key), (row.get(session_key) or row.get("date")
                                                  or row.get("decision_session")
                                                  or row.get("signal_ts"))
