@@ -29,9 +29,10 @@
     /* V3.8 Act-Now panel presentation state (same contract as the HK
        composer): anLane = visible lane on the mobile segmented selector;
        anOpen = per-lane View-all expansion. Neither ever touches
-       source/filter. membershipKnown/hasThemeRank gate counts and rank
-       language (missing owner -> no number, no basis chip). */
-    anLane: null, anOpen: {}, membershipKnown: false, hasThemeRank: false };
+       source/filter. hasThemeRank gates all theme-rank language (missing
+       owner -> no number, no basis chip). Membership knowledge is PER
+       GROUP (each item's members is a Set or null), never a global flag. */
+    anLane: null, anOpen: {}, hasThemeRank: false };
   var rowsByTicker = Object.create(null);
   var tableObserver = null;
 
@@ -104,11 +105,16 @@
   /* V3.8 (DEC:V38-ACTION-IS-NOT-LEADERSHIP): sectors carry NO rank — the
      V3.7 rank was lane-traversal position minted into a
      number, and no canonical Canada sector-rank owner exists. laneIdx is
-     display order for the Act-Now lanes only, never a stat. Membership is
-     canonical only when the board rows actually publish a sector field;
-     unknown stays null (never an empty-set false zero). */
+     display order for the Act-Now lanes only, never a stat. */
   function collectSectors() {
-    state.membershipKnown = state.rows.some(function (r) { return !!(r && r.sector); });
+    /* Membership knowledge is PER GROUP, not a page-global flag (adversarial
+       review 2026-08-27, finding 1): the Act-Now lane taxonomy and the board
+       rows' sector taxonomy are different vocabularies (lane "Communication
+       Services" vs board "Communication"), so a group's membership is
+       canonical ONLY when its exact name exists in the board's own sector
+       vocabulary. A lane name outside that vocabulary keeps members/count
+       null — unknown, never a false "0 · Prophet". */
+    var sectorVocab = new Set(state.rows.map(function (r) { return r && r.sector; }).filter(Boolean));
     var out = [], seen = Object.create(null);
     LANE_DEFS.forEach(function (def) {
       qsa(def.sel + " .anv2-row").forEach(function (node) {
@@ -117,7 +123,7 @@
         var id = m ? ticker(m[1]) : name.en;
         if (!name.en || seen[id]) return;
         seen[id] = true;
-        var members = state.membershipKnown ? sectorMembers(name.en) : null;
+        var members = sectorVocab.has(name.en) ? sectorMembers(name.en) : null;
         out.push({ kind: "sector", rank: null, id: id, name: name,
           stance: { en: def.en, zh: def.zh }, tone: def.tone,
           count: members ? members.size : null,
@@ -200,14 +206,14 @@
       ".ca-v36-an-lane{border:1px solid var(--line);border-radius:11px;background:var(--panel2);overflow:hidden}",
       ".ca-v36-an-hd{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:8px 10px;border-bottom:1px solid var(--line);border-top:2px solid currentColor;font-size:11px;font-weight:750;text-transform:uppercase;letter-spacing:.02em}.ca-v36-an-hd.buy{color:var(--ink-up,var(--up))}.ca-v36-an-hd.near{color:var(--ink-link,var(--link))}.ca-v36-an-hd.wait{color:var(--ink-warn,var(--warn))}.ca-v36-an-hd.avoid{color:var(--ink-down,var(--down))}.ca-v36-an-hd b{font-variant-numeric:tabular-nums;color:var(--muted);font-weight:700}",
       ".ca-v36-an-row-w{display:flex;align-items:stretch;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent)}.ca-v36-an-hd+.ca-v36-an-row-w{border-top:0}",
-      ".ca-v36-an-row{flex:1;display:flex;min-width:0;align-items:center;justify-content:space-between;gap:8px;min-height:32px;padding:5px 10px;border:0;background:transparent;color:inherit;font-size:12.6px;font-weight:650;text-align:left;cursor:pointer}.ca-v36-an-row:hover,.ca-v36-an-row.is-active{background:color-mix(in srgb,var(--link) 6%,transparent)}.ca-v36-an-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ca-v36-an-n{flex:none;color:var(--muted);font-size:10.6px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}",
+      ".ca-v36-an-row{flex:1;display:flex;min-width:0;align-items:center;justify-content:space-between;gap:8px;min-height:32px;padding:5px 10px;border:0;background:transparent;color:inherit;font-size:12.6px;font-weight:650;text-align:left;cursor:pointer}.ca-v36-an-row:hover:not(:disabled),.ca-v36-an-row.is-active{background:color-mix(in srgb,var(--link) 6%,transparent)}.ca-v36-an-row:disabled{cursor:default}.ca-v36-an-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ca-v36-an-n{flex:none;color:var(--muted);font-size:10.6px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}",
       ".ca-v36-an-go{flex:none;display:inline-flex;align-items:center;padding:0 9px;border-left:1px dashed color-mix(in srgb,var(--line) 80%,transparent);color:var(--muted);font-size:12px;text-decoration:none}.ca-v36-an-go:hover{color:var(--text);background:color-mix(in srgb,var(--link) 6%,transparent)}",
       ".ca-v36-an-empty{padding:12px 10px;color:var(--muted);font-size:12px;text-align:center}",
       ".ca-v36-an-more{display:block;width:100%;padding:7px 10px;border:0;border-top:1px dashed color-mix(in srgb,var(--line) 80%,transparent);background:transparent;color:var(--muted);font-size:11px;font-weight:650;cursor:pointer}.ca-v36-an-more:hover{color:var(--text)}",
       ".ca-v36-empty-go{display:inline-block;margin-top:10px;color:var(--ink-link,var(--link));font-size:12px;font-weight:600;text-decoration:none}.ca-v36-empty-go:hover{text-decoration:underline}",
       ".ca-v36-panel{margin-bottom:14px;border:1px solid var(--line);border-radius:13px;background:var(--panel);box-shadow:var(--card-shadow);overflow:hidden}.ca-v36-sec-hd{min-height:54px;display:flex;align-items:center;gap:10px;padding:0 15px;border-bottom:1px solid var(--line)}.ca-v36-sec-hd h2{margin:0;font-size:18px;font-weight:650;letter-spacing:-.012em}.ca-v36-sec-spacer{flex:1}.ca-v36-link{color:var(--ink-link,var(--link));font-size:13px;font-weight:600;text-decoration:none}.ca-v36-link:hover{text-decoration:underline}",
-      ".ca-v36-lead-cols{display:grid;grid-template-columns:1fr 1fr}.ca-v36-lead-col+.ca-v36-lead-col{border-left:1px solid var(--line)}.ca-v36-lead-col-h{display:flex;justify-content:space-between;padding:11px 14px 10px;color:var(--muted);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}",
-      ".ca-v36-lead-row{position:relative;width:100%;min-height:58px;display:grid;grid-template-columns:30px minmax(0,1fr) auto 34px;align-items:center;gap:9px;padding:10px 14px;border:0;border-top:1px solid color-mix(in srgb,var(--line) 72%,transparent);background:transparent;color:inherit;text-align:left;cursor:pointer;overflow:hidden;transition:.15s ease}.ca-v36-lead-row:after{content:\"\";position:absolute;left:0;bottom:0;width:var(--breadth,8%);height:1px;background:color-mix(in srgb,var(--link) 44%,transparent);opacity:.5}.ca-v36-lead-row:hover,.ca-v36-lead-row.is-active{background:color-mix(in srgb,var(--link) 6%,transparent)}.ca-v36-rank{font-variant-numeric:tabular-nums;color:var(--muted);font-size:11.5px}.ca-v36-lead-name{display:block;font-size:14.7px;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ca-v36-leaders{display:block;margin-top:3px;color:var(--muted);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ca-v36-count{font-variant-numeric:tabular-nums;color:var(--muted);font-size:11.7px;text-align:right}",
+      ".ca-v36-lead-cols{display:block}.ca-v36-lead-col-h{display:flex;justify-content:space-between;padding:11px 14px 10px;color:var(--muted);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}",
+      ".ca-v36-lead-row{position:relative;width:100%;min-height:58px;display:grid;grid-template-columns:30px minmax(0,1fr) auto 34px;align-items:center;gap:9px;padding:10px 14px;border:0;border-top:1px solid color-mix(in srgb,var(--line) 72%,transparent);background:transparent;color:inherit;text-align:left;cursor:pointer;overflow:hidden;transition:.15s ease}.ca-v36-lead-row:after{content:\"\";position:absolute;left:0;bottom:0;width:var(--breadth,8%);height:1px;background:color-mix(in srgb,var(--link) 44%,transparent);opacity:.5}.ca-v36-lead-row:hover:not(:disabled),.ca-v36-lead-row.is-active{background:color-mix(in srgb,var(--link) 6%,transparent)}.ca-v36-lead-row:disabled{cursor:default}.ca-v36-rank{font-variant-numeric:tabular-nums;color:var(--muted);font-size:11.5px}.ca-v36-lead-name{display:block;font-size:14.7px;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ca-v36-leaders{display:block;margin-top:3px;color:var(--muted);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ca-v36-count{font-variant-numeric:tabular-nums;color:var(--muted);font-size:11.7px;text-align:right}",
       ".ca-v36-stance{height:24px;display:inline-flex;align-items:center;padding:0 9px;border:1px solid currentColor;border-radius:6px;font-size:10px;font-weight:750;text-transform:uppercase;white-space:nowrap}.ca-v36-stance.buy{color:var(--ink-up,var(--up))}.ca-v36-stance.near{color:var(--ink-link,var(--link))}.ca-v36-stance.wait{color:var(--ink-warn,var(--warn))}.ca-v36-stance.avoid{color:var(--ink-down,var(--down))}",
       ".ca-v36-expand-wrap{display:flex;justify-content:center;padding:9px 12px 11px;border-top:1px solid var(--line);background:color-mix(in srgb,var(--panel2) 32%,transparent)}.ca-v36-expand{height:35px;padding:0 14px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);color:var(--text);font-size:12.5px;font-weight:650;cursor:pointer}.ca-v36-expand:hover{border-color:color-mix(in srgb,var(--text) 30%,var(--line));transform:translateY(-1px)}",
       ".ca-v36-controls{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.ca-v36-seg{display:inline-flex;gap:3px;padding:3px;border:1px solid var(--line);border-radius:9px;background:var(--panel2)}.ca-v36-seg button{height:36px;padding:0 14px;border:1px solid transparent;border-radius:7px;background:transparent;color:var(--muted);font-size:13.1px;font-weight:650;cursor:pointer}.ca-v36-seg button[aria-selected=true]{background:var(--panel);border-color:var(--line);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.12)}.ca-v36-result{color:var(--muted);font-size:12px;white-space:nowrap}.ca-v36-filter{display:none;height:32px;align-items:center;padding:0 10px;border:1px solid color-mix(in srgb,var(--link) 35%,var(--line));border-radius:999px;background:color-mix(in srgb,var(--link) 7%,transparent);color:var(--text);font-size:12px;cursor:pointer}.ca-v36-filter.is-on{display:inline-flex}",
@@ -222,34 +228,37 @@
       ".ca-v36-evidence-body{display:flex;justify-content:center;padding:13px 14px 15px;font-family:" + FONT_UI + "}.ca-v36-evidence-body .trk{margin:0;padding:9px 12px;font-family:" + FONT_UI + "}",
       /* V3.8: the modal group-action band is gone — the at-rest What to Act
          On Now panel above Prophet is the one home for group action. */
-      ".ca-v36-modal{position:fixed;inset:0;z-index:2147481000;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(4,7,12,.62);backdrop-filter:blur(8px)}.ca-v36-modal.is-open{display:flex}.ca-v36-modal-card{width:min(1180px,calc(100vw - 32px));max-height:min(820px,calc(100vh - 36px));display:flex;flex-direction:column;border:1px solid var(--line);border-radius:15px;background:var(--panel);box-shadow:0 30px 90px rgba(0,0,0,.5);overflow:hidden}html[data-theme=light] .ca-v36-modal{background:rgba(50,64,90,.22)}html[data-theme=light] .ca-v36-modal-card{box-shadow:0 24px 70px rgba(20,32,64,.2)}.ca-v36-modal-hd{min-height:56px;display:flex;align-items:center;padding:0 15px;border-bottom:1px solid var(--line)}.ca-v36-modal-hd h3{margin:0;font-size:19px;font-weight:650}.ca-v36-modal-x{margin-left:auto;width:36px;height:36px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);color:var(--text);font-size:21px;cursor:pointer}.ca-v36-modal-body{overflow:auto;padding:14px}.ca-v36-modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.ca-v36-modal-pane{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel2)}.ca-v36-modal-pane h4{margin:0;padding:11px 12px;border-bottom:1px solid var(--line);font-size:13px}.ca-v36-modal-table{width:100%;border-collapse:collapse;font-size:12.8px}.ca-v36-modal-table th{padding:9px 10px;color:var(--muted);font-size:10.8px;text-align:left;border-bottom:1px solid var(--line)}.ca-v36-modal-table td{padding:10px;border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent)}.ca-v36-modal-table tbody tr{cursor:pointer}.ca-v36-modal-table tbody tr:hover{background:color-mix(in srgb,var(--link) 6%,transparent)}.ca-v36-modal-table .num,.ca-v36-modal-table .leaders{color:var(--muted)}",
+      ".ca-v36-modal{position:fixed;inset:0;z-index:2147481000;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(4,7,12,.62);backdrop-filter:blur(8px)}.ca-v36-modal.is-open{display:flex}.ca-v36-modal-card{width:min(1180px,calc(100vw - 32px));max-height:min(820px,calc(100vh - 36px));display:flex;flex-direction:column;border:1px solid var(--line);border-radius:15px;background:var(--panel);box-shadow:0 30px 90px rgba(0,0,0,.5);overflow:hidden}html[data-theme=light] .ca-v36-modal{background:rgba(50,64,90,.22)}html[data-theme=light] .ca-v36-modal-card{box-shadow:0 24px 70px rgba(20,32,64,.2)}.ca-v36-modal-hd{min-height:56px;display:flex;align-items:center;padding:0 15px;border-bottom:1px solid var(--line)}.ca-v36-modal-hd h3{margin:0;font-size:19px;font-weight:650}.ca-v36-modal-x{margin-left:auto;width:36px;height:36px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);color:var(--text);font-size:21px;cursor:pointer}.ca-v36-modal-body{overflow:auto;padding:14px}.ca-v36-modal-pane{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel2)}.ca-v36-modal-pane h4{margin:0;padding:11px 12px;border-bottom:1px solid var(--line);font-size:13px}.ca-v36-modal-table{width:100%;border-collapse:collapse;font-size:12.8px}.ca-v36-modal-table th{padding:9px 10px;color:var(--muted);font-size:10.8px;text-align:left;border-bottom:1px solid var(--line)}.ca-v36-modal-table td{padding:10px;border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent)}.ca-v36-modal-table tbody tr{cursor:pointer}.ca-v36-modal-table tbody tr:hover{background:color-mix(in srgb,var(--link) 6%,transparent)}.ca-v36-modal-table .num,.ca-v36-modal-table .leaders{color:var(--muted)}",
       /* Mobile Act-Now grammar (§5.5): one segmented lane selector, one lane
          body at a time, no stacked giant lane cards, no horizontal overflow. */
-      "@media(max-width:1200px){.ca-v36-card-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.ca-v36-an-lanes{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:900px){.ca-v36-head{flex-wrap:wrap}.ca-v36-head-spacer{display:none}.ca-v36-lead-cols,.ca-v36-modal-grid{grid-template-columns:1fr}.ca-v36-lead-col+.ca-v36-lead-col{border-left:0;border-top:1px solid var(--line)}.ca-v36-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:680px){.ca-v36{width:min(100% - 20px,680px);margin-top:12px;font-size:15.8px}.ca-v36-head{gap:8px}.ca-v36-head h1{width:100%;font-size:27.5px}.ca-v36-fresh{white-space:normal}.ca-v36-sec-hd{align-items:flex-start;flex-wrap:wrap;padding:11px 12px}.ca-v36-sec-hd h2{font-size:17px}.ca-v36-controls{width:100%}.ca-v36-an-seg{display:flex}.ca-v36-an-lanes{grid-template-columns:1fr}.ca-v36-an-lane{display:none}.ca-v36-an-lane.is-current{display:block}.ca-v36-card-grid{grid-template-columns:1fr;padding:10px;gap:10px}.ca-v36-card-grid .pv-tk{font-size:16.3px!important}.ca-v36-card-grid .nb-px.pv-px{font-size:15.5px!important}.ca-v36-card-grid .nb-chg.pv-chg{font-size:13.1px!important}.ca-v36-modal{padding:8px}.ca-v36-modal-card{width:100%;max-height:calc(100vh - 16px)}.ca-v36-evidence-body{padding:11px 10px 13px}}"
+      "@media(max-width:1200px){.ca-v36-card-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.ca-v36-an-lanes{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:900px){.ca-v36-head{flex-wrap:wrap}.ca-v36-head-spacer{display:none}.ca-v36-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:680px){.ca-v36{width:min(100% - 20px,680px);margin-top:12px;font-size:15.8px}.ca-v36-head{gap:8px}.ca-v36-head h1{width:100%;font-size:27.5px}.ca-v36-fresh{white-space:normal}.ca-v36-sec-hd{align-items:flex-start;flex-wrap:wrap;padding:11px 12px}.ca-v36-sec-hd h2{font-size:17px}.ca-v36-controls{width:100%}.ca-v36-an-seg{display:flex}.ca-v36-an-lanes{grid-template-columns:1fr}.ca-v36-an-lane{display:none}.ca-v36-an-lane.is-current{display:block}.ca-v36-card-grid{grid-template-columns:1fr;padding:10px;gap:10px}.ca-v36-card-grid .pv-tk{font-size:16.3px!important}.ca-v36-card-grid .nb-px.pv-px{font-size:15.5px!important}.ca-v36-card-grid .nb-chg.pv-chg{font-size:13.1px!important}.ca-v36-modal{padding:8px}.ca-v36-modal-card{width:100%;max-height:calc(100vh - 16px)}.ca-v36-evidence-body{padding:11px 10px 13px}}"
     ].join("\n");
     document.head.appendChild(css);
   }
 
-  /* Leadership & Rotation row (V3.8 §6): the ONLY visible numeric rank is
-     the owner-published theme rank, rendered as `Theme #N` under a visible
-     "Theme rank" basis. Sectors have no canonical rank owner and show none
-     — never a lane-traversal number. The action stance chip stays a
-     SEPARATE field. Counts render "—" when membership is unknown. */
+  /* Leadership & Rotation (V3.8 §6 + §8.2.4, corrected per adversarial
+     review 2026-08-27 finding 2): Canada's ONLY canonical leadership axis
+     is the owner-published theme rank, so this surface renders THEMES ONLY
+     — `Theme #N` under a visible "Theme rank" basis. There is no sector
+     column: with no sector-rank owner, an action-ordered top-5 sector list
+     would be §6.2's "numbering rows because they happen to be rendered
+     first" with the digit removed. Sectors remain fully useful through
+     What to Act On Now and their group pages. The action stance chip stays
+     a SEPARATE field. Counts render "—" when membership is unknown, and
+     the activation affordance (data-ca-lead-*) renders ONLY when canonical
+     membership exists — an unknown-membership group must not offer a
+     filter that would paint the full board as if it all matched (§10). */
   function leadRow(x, max) {
     var breadth = Math.max(8, Math.round(((x.count || 0) / Math.max(1, max)) * 100));
     var rankTxt = x.kind === "theme" && x.rank != null ? "Theme #" + x.rank : "—";
-    return '<button class="ca-v36-lead-row" data-ca-lead-kind="' + x.kind + '" data-ca-lead-id="' + esc(x.id) + '" style="--breadth:' + breadth + '%"><span class="ca-v36-rank">' + esc(rankTxt) + '</span><span><span class="ca-v36-lead-name">' + bi(x.name.en, x.name.zh) + '</span><span class="ca-v36-leaders">' + esc(x.leaders.length ? x.leaders.join(" · ") : "—") + '</span></span><span class="ca-v36-stance ' + x.tone + '">' + bi(x.stance.en, x.stance.zh) + '</span><span class="ca-v36-count">' + (x.count != null ? x.count : "—") + '</span></button>';
-  }
-  function leadColumn(items, kind) {
-    var top = items.slice(0, 5), max = Math.max.apply(Math, [1].concat(top.map(function (x) { return x.count || 0; })));
-    var head = kind === "theme"
-      ? '<span>' + bi("Themes", "主题") + (state.hasThemeRank ? ' <span class="ca-v36-lead-basis">' + bi("Theme rank", "主题排名") + '</span>' : '') + '</span><span>' + bi("Names", "成分") + '</span>'
-      : '<span>' + bi("Sectors", "板块") + '</span><span>' + bi("Prophet", "候选") + '</span>';
-    return '<div class="ca-v36-lead-col"><div class="ca-v36-lead-col-h">' + head + '</div>' + (top.length ? top.map(function (x) { return leadRow(x, max); }).join("") : '<div class="ca-v36-empty">' + bi("Ranking unavailable", "排名暂不可用") + '</div>') + '</div>';
+    var act = x.members != null ? ' data-ca-lead-kind="' + x.kind + '" data-ca-lead-id="' + esc(x.id) + '"' : ' disabled';
+    return '<button class="ca-v36-lead-row" type="button"' + act + ' style="--breadth:' + breadth + '%"><span class="ca-v36-rank">' + esc(rankTxt) + '</span><span><span class="ca-v36-lead-name">' + bi(x.name.en, x.name.zh) + '</span><span class="ca-v36-leaders">' + esc(x.leaders.length ? x.leaders.join(" · ") : "—") + '</span></span><span class="ca-v36-stance ' + x.tone + '">' + bi(x.stance.en, x.stance.zh) + '</span><span class="ca-v36-count">' + (x.count != null ? x.count : "—") + '</span></button>';
   }
   function renderLeadership() {
     var host = qs("#ca-v36-lead-cols");
-    if (host) host.innerHTML = leadColumn(state.themes, "theme") + leadColumn(state.sectors, "sector");
+    if (!host) return;
+    var top = state.themes.slice(0, 5), max = Math.max.apply(Math, [1].concat(top.map(function (x) { return x.count || 0; })));
+    host.innerHTML = '<div class="ca-v36-lead-col"><div class="ca-v36-lead-col-h"><span>' + bi("Themes", "主题") + (state.hasThemeRank ? ' <span class="ca-v36-lead-basis">' + bi("Theme rank", "主题排名") + '</span>' : '') + '</span><span>' + bi("Names", "成分") + '</span></div>' + (top.length ? top.map(function (x) { return leadRow(x, max); }).join("") : '<div class="ca-v36-empty">' + bi("Theme ranking unavailable", "主题排名暂不可用") + '</div>') + '</div>';
     markLeadership();
   }
   /* Fresh-signals cue (owner .pv-mk-new markers) — the surviving piece of
@@ -276,7 +285,12 @@
   function anRowHtml(x) {
     var countHtml = x.count != null ? '<span class="ca-v36-an-n">' + x.count + ' · ' + bi("Prophet", "候选") + '</span>' : '';
     var go = x.href ? '<a class="ca-v36-an-go" href="' + esc(x.href) + '" aria-label="' + esc(x.name.en) + ' sector research">↗</a>' : '';
-    return '<div class="ca-v36-an-row-w"><button class="ca-v36-an-row" type="button" data-ca-lead-kind="sector" data-ca-lead-id="' + esc(x.id) + '"><span class="ca-v36-an-name">' + bi(x.name.en, x.name.zh) + '</span>' + countHtml + '</button>' + go + '</div>';
+    /* Filter affordance ONLY under canonical membership (§10: membership
+       missing → omit count/filter, keep the group-detail route) — an
+       unknown-membership row is a research destination, not a filter that
+       would no-op and paint the whole board as matching. */
+    var act = x.members != null ? ' data-ca-lead-kind="sector" data-ca-lead-id="' + esc(x.id) + '"' : ' disabled';
+    return '<div class="ca-v36-an-row-w"><button class="ca-v36-an-row" type="button"' + act + '><span class="ca-v36-an-name">' + bi(x.name.en, x.name.zh) + '</span>' + countHtml + '</button>' + go + '</div>';
   }
   function anLaneHtml(lane) {
     var items = anLaneItems(lane.tone), open = !!state.anOpen[lane.tone];
@@ -417,13 +431,14 @@
     var prophet = qs("#ca-v36-prophet"); if (prophet) prophet.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  /* Expanded Leadership rows (V3.8): the theme pane may carry the owner
-     rank as `Theme #N` (gated on state.hasThemeRank, with the basis in its
-     own header); the sector pane carries NO rank column at all — no owner,
-     no number, no rank language. Counts render "—" when membership is
-     unknown. */
+  /* Expanded Leadership (V3.8, themes only — §8.2.4): the full owner-ranked
+     theme table, `Theme #N` gated on state.hasThemeRank. No sector pane:
+     no sector-rank owner means no sector leadership surface at any depth —
+     sectors live in What to Act On Now and their group pages. Activation
+     attributes render only under canonical membership (same §10 law as the
+     at-rest rows). Counts render "—" when membership is unknown. */
   function modalRows(items, rk) {
-    return items.length ? items.map(function (x) { return '<tr tabindex="0" data-ca-modal-kind="' + x.kind + '" data-ca-modal-id="' + esc(x.id) + '">' + (rk ? '<td class="num">' + esc(x.rank != null ? "Theme #" + x.rank : "—") + '</td>' : '') + '<td><b>' + bi(x.name.en, x.name.zh) + '</b></td><td><span class="ca-v36-stance ' + x.tone + '">' + bi(x.stance.en, x.stance.zh) + '</span></td><td class="leaders">' + esc(x.leaders.length ? x.leaders.join(" · ") : "—") + '</td><td class="num">' + (x.count != null ? x.count : "—") + '</td></tr>'; }).join("") : '<tr><td colspan="' + (rk ? 5 : 4) + '">—</td></tr>';
+    return items.length ? items.map(function (x) { var act = x.members != null ? ' tabindex="0" data-ca-modal-kind="' + x.kind + '" data-ca-modal-id="' + esc(x.id) + '"' : ''; return '<tr' + act + '>' + (rk ? '<td class="num">' + esc(x.rank != null ? "Theme #" + x.rank : "—") + '</td>' : '') + '<td><b>' + bi(x.name.en, x.name.zh) + '</b></td><td><span class="ca-v36-stance ' + x.tone + '">' + bi(x.stance.en, x.stance.zh) + '</span></td><td class="leaders">' + esc(x.leaders.length ? x.leaders.join(" · ") : "—") + '</td><td class="num">' + (x.count != null ? x.count : "—") + '</td></tr>'; }).join("") : '<tr><td colspan="' + (rk ? 5 : 4) + '">—</td></tr>';
   }
   function modalPane(items, title, count, rk) {
     return '<div class="ca-v36-modal-pane"><h4>' + title + '</h4><table class="ca-v36-modal-table"><thead><tr>' + (rk ? '<th>' + bi("Rank", "排名") + '</th>' : '') + '<th>' + bi("Name", "名称") + '</th><th>' + bi("Action", "操作状态") + '</th><th>' + bi("Leaders", "领先个股") + '</th><th>' + count + '</th></tr></thead><tbody>' + modalRows(items, rk) + '</tbody></table></div>';
@@ -431,9 +446,8 @@
   function openModal() {
     var modal = qs("#ca-v36-modal"); if (!modal) return;
     var rk = !!state.hasThemeRank;
-    qs("#ca-v36-modal-body", modal).innerHTML = '<div class="ca-v36-modal-grid">' +
-      modalPane(state.themes, bi("Theme Leadership", "主题领先") + (rk ? ' <span class="ca-v36-lead-basis">' + bi("Theme rank", "主题排名") + '</span>' : ''), bi("Names", "成分"), rk) +
-      modalPane(state.sectors, bi("Sector Leadership", "板块领先"), bi("Prophet", "候选"), false) + '</div>';
+    qs("#ca-v36-modal-body", modal).innerHTML =
+      modalPane(state.themes, bi("Theme Leadership", "主题领先") + (rk ? ' <span class="ca-v36-lead-basis">' + bi("Theme rank", "主题排名") + '</span>' : ''), bi("Names", "成分"), rk);
     modal.classList.add("is-open"); modal.setAttribute("aria-hidden", "false"); document.documentElement.style.overflow = "hidden";
   }
   function closeModal() { var modal = qs("#ca-v36-modal"); if (!modal) return; modal.classList.remove("is-open"); modal.setAttribute("aria-hidden", "true"); document.documentElement.style.overflow = ""; }

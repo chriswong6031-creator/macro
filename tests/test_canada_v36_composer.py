@@ -258,11 +258,14 @@ def test_sector_rank_is_never_lane_traversal_and_theme_rank_is_owner_only():
     )
     m = re.search(r"function collectSectors\b.*?(?=\n\n|\n  function tone)", text, re.S)
     assert m, "could not locate collectSectors() function body via regex"
-    assert "rank: null" in m.group(0), (
-        "collectSectors() no longer pins sector rank to null"
-    )
-    assert re.search(r"rank\s*:\s*(?!null)[^,]+,", m.group(0)) is None or "rank: null" in m.group(0), (
-        "collectSectors() assigns a non-null rank"
+    # Every rank: assignment in collectSectors must be the literal null —
+    # scan all occurrences rather than merely requiring one null somewhere
+    # (adversarial review 2026-08-27, finding 4: the earlier disjunct form
+    # was a tautology).
+    rank_values = re.findall(r"rank\s*:\s*([^,]+),", m.group(0))
+    assert rank_values and all(v.strip() == "null" for v in rank_values), (
+        f"collectSectors() assigns rank values {rank_values!r} — sectors "
+        "must always carry rank: null (no canonical sector-rank owner)"
     )
     m2 = re.search(r"function collectThemes\b.*?(?=\n\n  function )", text, re.S)
     assert m2, "could not locate collectThemes() function body via regex"
@@ -292,45 +295,62 @@ def test_sector_rank_is_never_lane_traversal_and_theme_rank_is_owner_only():
 def test_theme_rank_language_gated_on_owner_and_prophet_count_label():
     """V3.8 §6.2/§6.3: rank language (the Theme-rank basis chip, the modal
     Rank column) renders only while an owner-ranked theme exists
-    (state.hasThemeRank); the sector count column is labelled Prophet/候选
-    (the ambiguous BOARD label is gone) and counts render only when
-    canonical membership is known — unknown membership must never render
-    as zero (members stays null, count stays null, renderers branch on
-    count != null)."""
+    (state.hasThemeRank); the at-rest count chip is labelled Prophet/候选
+    (the ambiguous BOARD label is gone everywhere) and counts render only
+    when canonical membership is known — unknown membership must never
+    render as zero (members stays null, count stays null, renderers branch
+    on count != null)."""
     text = _composer_text()
     assert "state.hasThemeRank = themes.some(function (x) { return x.rank != null; })" in text, (
         "collectThemes() no longer derives state.hasThemeRank"
     )
-    m = re.search(r"function leadColumn\b.*?(?=\n  function )", text, re.S)
-    assert m, "could not locate leadColumn() function body via regex"
+    m = re.search(r"function renderLeadership\b.*?(?=\n  /\*|\n  function )", text, re.S)
+    assert m, "could not locate renderLeadership() function body via regex"
     col_body = m.group(0)
     assert "state.hasThemeRank ?" in col_body and 'bi("Theme rank", "主题排名")' in col_body, (
         "the Theme-rank basis chip is missing or unconditional in "
-        "leadColumn() — a bare number without a visible basis (or a basis "
-        "with no owner) is the V3.7 confusion V3.8 corrects"
+        "renderLeadership() — a bare number without a visible basis (or a "
+        "basis with no owner) is the V3.7 confusion V3.8 corrects"
     )
-    assert 'bi("Prophet", "候选")' in col_body, (
-        "the sector count column is no longer labelled Prophet/候选"
+    assert 'bi("Board", "榜单")' not in text, (
+        "the ambiguous Board/榜单 count label is back somewhere in the file"
     )
-    assert 'bi("Board", "榜单")' not in col_body, (
-        "the ambiguous Board/榜单 count label is back in leadColumn()"
+    man = re.search(r"function anRowHtml\b.*?(?=\n  function )", text, re.S)
+    assert man, "could not locate anRowHtml() function body via regex"
+    assert 'bi("Prophet", "候选")' in man.group(0), (
+        "the at-rest count chip is no longer labelled Prophet/候选"
     )
     mo = re.search(r"function modalPane\b.*?(?=\n  function )", text, re.S)
     assert mo, "could not locate modalPane() function body via regex"
     assert "rk ? '<th>' + bi(\"Rank\", \"排名\")" in mo.group(0), (
         "the modal Rank column is unconditional again — it must render only "
-        "under state.hasThemeRank (and never for the sector pane)"
+        "under state.hasThemeRank"
     )
     mr = re.search(r"function modalRows\b.*?(?=\n  function )", text, re.S)
     assert mr, "could not locate modalRows() function body via regex"
     assert '"Theme #" + x.rank : "—"' in mr.group(0), (
         "modalRows() lost the owner-only Theme # rank cell"
     )
-    # unknown membership never renders zero
+    # Membership knowledge is PER GROUP via the board's own sector
+    # vocabulary — a lane name outside that vocabulary must stay null
+    # (adversarial review 2026-08-27, finding 1: a global flag rendered
+    # false '0 · Prophet' rows for every lane whose taxonomy differs from
+    # the board's, e.g. lane 'Communication Services' vs board
+    # 'Communication').
     m2 = re.search(r"function collectSectors\b.*?(?=\n\n|\n  function tone)", text, re.S)
-    assert "state.membershipKnown ? sectorMembers(name.en) : null" in m2.group(0), (
-        "collectSectors() no longer nulls membership when the board rows "
-        "publish no sector field — an empty set renders a false 0"
+    assert m2, "could not locate collectSectors() function body via regex"
+    sec_body = m2.group(0)
+    assert re.search(r"var sectorVocab = new Set\(state\.rows\.map", sec_body), (
+        "collectSectors() no longer builds the board's sector vocabulary"
+    )
+    assert "sectorVocab.has(name.en) ? sectorMembers(name.en) : null" in sec_body, (
+        "collectSectors() no longer gates membership per group on the "
+        "board's own sector vocabulary — a lane name outside the board "
+        "taxonomy would render a false 0 · Prophet"
+    )
+    assert "state.membershipKnown" not in text, (
+        "the page-global membershipKnown flag is back — membership "
+        "knowledge must stay per group"
     )
     for fn, snippet in [
         ("leadRow", 'x.count != null ? x.count : "—"'),
@@ -342,6 +362,64 @@ def test_theme_rank_language_gated_on_owner_and_prophet_count_label():
         assert snippet in mf.group(0), (
             f"{fn}() no longer branches on count != null — unknown "
             "membership would render as zero, and missing ≠ zero"
+        )
+
+
+def test_leadership_surface_is_themes_only_no_covert_sector_ordering():
+    """Adversarial review 2026-08-27, finding 2 (MAJOR) + architecture
+    §8.2.4: Canada has no sector-rank owner, so the Leadership & Rotation
+    surface renders THEMES ONLY — an action-ordered, truncated sector list
+    would be §6.2's 'numbering rows because they happen to be rendered
+    first' with the digit removed. Sectors stay fully useful through What
+    to Act On Now and their group pages. Pins: renderLeadership() consumes
+    state.themes and never state.sectors; the modal composes exactly one
+    (theme) pane and the 'Sector Leadership' pane title is gone; the
+    surviving empty copy names the THEME axis."""
+    text = _composer_text()
+    m = re.search(r"function renderLeadership\b.*?(?=\n  /\*|\n  function )", text, re.S)
+    assert m, "could not locate renderLeadership() function body via regex"
+    body = m.group(0)
+    assert "state.themes.slice(0, 5)" in body, (
+        "renderLeadership() no longer renders the top-5 owner-ranked themes"
+    )
+    assert "state.sectors" not in body, (
+        "renderLeadership() consumes state.sectors again — an action-"
+        "ordered sector list on the leadership surface is a covert rank"
+    )
+    assert "Theme ranking unavailable" in body, (
+        "the leadership empty state no longer names the theme axis"
+    )
+    mo = re.search(r"function openModal\b.*?(?=\n  /\*|\n  function )", text, re.S)
+    assert mo, "could not locate openModal() function body via regex"
+    assert "state.sectors" not in mo.group(0), (
+        "openModal() composes a sector pane again — no sector-rank owner "
+        "means no sector leadership surface at any depth"
+    )
+    assert 'bi("Sector Leadership", "板块领先")' not in text, (
+        "the Sector Leadership pane title is back"
+    )
+
+
+def test_activation_affordance_requires_canonical_membership():
+    """Adversarial review 2026-08-27, findings 1+3: a group with unknown
+    membership must not offer a filter at all — activating it would no-op
+    allowed() and paint the whole board as if it matched. Every activation
+    surface (at-rest rows, leadership rows, modal rows) renders its
+    data-ca-* activation attributes ONLY when x.members is non-null; the
+    unknown-membership row keeps the group-research route as its
+    affordance."""
+    text = _composer_text()
+    for fn, gate in [
+        ("anRowHtml", "var act = x.members != null ? ' data-ca-lead-kind=\"sector\" data-ca-lead-id=\"' + esc(x.id) + '\"' : ' disabled';"),
+        ("leadRow", "var act = x.members != null ? ' data-ca-lead-kind=\"' + x.kind + '\" data-ca-lead-id=\"' + esc(x.id) + '\"' : ' disabled';"),
+        ("modalRows", "var act = x.members != null ? ' tabindex=\"0\" data-ca-modal-kind=\"' + x.kind + '\" data-ca-modal-id=\"' + esc(x.id) + '\"' : '';"),
+    ]:
+        m = re.search(r"function " + fn + r"\b.*?(?=\n  function )", text, re.S)
+        assert m, f"could not locate {fn}() function body via regex"
+        assert gate in m.group(0), (
+            f"{fn}() no longer gates its activation attributes on "
+            "x.members != null — an unknown-membership group would offer a "
+            "filter that no-ops and claims the full board matches"
         )
 
 
