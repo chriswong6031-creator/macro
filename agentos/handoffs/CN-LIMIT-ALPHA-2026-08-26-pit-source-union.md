@@ -161,15 +161,26 @@ unresolved:
     session), 603361.SS not (no daily observation).
 unverified:
   - >
-    name_history and all five daily endpoints have STILL never executed against
-    the vendor. Every claim about their behaviour is code-reading, not
-    measurement, until a canary reaches them.
+    THREE of the six exact endpoints have still never executed against the
+    vendor: stk_limit (blocked by blocker 2), suspend_d and stock_st (never
+    reached, because stk_limit aborts the daily stage before them). Every claim
+    about those three is code-reading, not measurement. name_history, daily and
+    daily_basic HAVE now run -- 10 namechange year-units and 2/2 sessions each --
+    so this is no longer the blanket "nothing downstream has ever run" state the
+    predecessor handoff described.
   - >
     Whether the current-snapshot omission rate stays near 2 rows per session or
-    rises on older dates. Only ONE session (2024-01-02) has ever been collected.
-    The witness is a CURRENT snapshot classifying HISTORICAL sessions, so the
-    rate can only worsen as the campaign reaches back; it is now telemetry and
-    will be measurable per unit rather than fatal.
+    rises on older dates. TWO sessions have now been collected (2024-01-02 and
+    2018-01-02), which is not enough to establish a trend, and the 2018 unit's
+    own witness-missing count has not been read off yet. The witness is a CURRENT
+    snapshot classifying HISTORICAL sessions, so the rate can only worsen as the
+    campaign reaches back; it is now telemetry and measurable per unit rather
+    than fatal.
+  - >
+    Whether later namechange years carry a higher orphan rate than the measured
+    0.09%. Years 2000-2018 are entirely unattempted, and delistings concentrate
+    in some eras more than others, so the rate that matters for Sol's ruling is
+    not yet known.
 next_actions: >
   1. SOL: rule gate 1 above (pre-2016 namechange orphans). No canary window can
      reach terminal until it is ruled, so nothing downstream can start.
