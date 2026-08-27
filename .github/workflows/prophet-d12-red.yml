@@ -79,6 +79,6 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install regression dependencies
-        run: pip install --quiet pytest pandas numpy scipy pyyaml requests
+        run: pip install --quiet pytest pandas numpy scipy pyyaml requests markupsafe
       - name: Run US and CN armed-pack suites
         run: python -m pytest tests/test_prophet_live_pack.py tests/test_prophet_live_pack_d12.py tests/test_cn_live_pack.py -q
