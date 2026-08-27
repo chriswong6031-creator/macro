@@ -4940,6 +4940,18 @@ jobs:
         # 'git add site/' in 'commit engine outputs' below). Benchmark: 0.6s (2026-07-09).
         # Fail-soft: empty until ~1-3 months of snapshots mature; always exits 0.
         run: python -m scripts.mature_bottom_sensors_shadow || echo "::warning::mature_bottom_sensors_shadow failed (non-fatal)"
+      - name: mature shadow book (frozen stock-score forward audit — display-only)
+        if: always()
+        # Experiments audit 2026-08-26 §8 item 4 (seed `shadow-book`): grades the FROZEN
+        # stock-score book (data/shadow/stock_score_book.jsonl — appended by
+        # build_stock_library's snapshot during the build-site step above) against
+        # realized forward returns at fully-elapsed 21/63/126 trading-bar horizons
+        # (engine/shadow_book.mature + grade). This script was never wired anywhere, so
+        # site/shadow/audit.json had never been produced despite 37 snapshot dates.
+        # Output: site/shadow/audit.json (display-only; covered by 'git add site/' in
+        # 'commit engine outputs' below). Empty/thin until horizons mature (~1-6 months) —
+        # that latency is the price of honesty. Fail-soft: never blocks the commit.
+        run: python -m scripts.mature_shadow_book || echo "::warning::mature_shadow_book failed (non-fatal)"
       - name: LT-4 thesis funnel history append (PR-A2 — nightly longitudinal store)
         if: always()
         # LT-4 thesis funnel longitudinal history — append-only per (ticker, snapshot_date).

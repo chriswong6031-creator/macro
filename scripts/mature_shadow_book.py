@@ -72,8 +72,11 @@ def main() -> int:
           f"wrote site/shadow/audit.json")
     if nm and out.get("by_horizon"):
         for h, g in out["by_horizon"].items():
+            cw = g.get("clark_west") or {}
             print(f"  {h}: forward IC {g['ic'].get('mean_ic')} (t {g['ic'].get('t_hac')}, "
-                  f"{g['n_dates']} dates)")
+                  f"lags {g['ic'].get('hac_lags')}/{g['ic'].get('hac_lags_requested')}, "
+                  f"{g['n_dates']} dates, {g.get('n_indep_windows')} indep); "
+                  f"CW t {cw.get('cw_t')} ({cw.get('n_dates', 0)} dates)")
     return 0
 
 

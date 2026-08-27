@@ -149,14 +149,28 @@ def mature(asof, closes: pd.DataFrame, *, path: str = BOOK_PATH, horizons=HORIZO
 # --------------------------------------------------------------------------- #
 # grade (rolling forward rank-IC + HAC-t + Clark-West)
 # --------------------------------------------------------------------------- #
-def grade(matured: pd.DataFrame, *, key: str = "score", periods_per_year: int = 12) -> dict:
+# Minimum PRIOR evidence before the expanding score→return map may issue a Clark-West
+# forecast: with fewer closed rows/dates than this the fitted slope is noise, not a model.
+_CW_MIN_PRIOR_ROWS = 60
+_CW_MIN_PRIOR_DATES = 3
+
+
+def grade(matured: pd.DataFrame, *, key: str = "score") -> dict:
     """Per-horizon realized forward audit of the frozen score: cross-sectional rank-IC per
     snapshot date → ic_summary (mean IC, IC-IR, HAC-t) + a pooled Clark-West/OOS-R2 of the
-    score-implied ranking vs an expanding-mean benchmark. Empty until horizons mature."""
+    score-implied forecast vs an expanding-mean benchmark. Empty until horizons mature.
+
+    HAC lags: the book snapshots DAILY cross-sections while each horizon's forward window
+    spans h trading bars, so consecutive per-date ICs overlap h deep — the truncation lag
+    passed is h itself, never ic_summary's rebalance-cadence default (engine/validation.py
+    documents that default as under-correcting exactly this shape; the 2026-08-26
+    experiments audit measured the inflated t it produced here). periods_per_year is the
+    count of INDEPENDENT h-bar windows in a year — annualization only, not the lag."""
     out = {"n_matured": int(len(matured)), "by_horizon": {}}
     if matured is None or matured.empty:
         return out
     for h, g in matured.groupby("horizon"):
+        h = int(h)
         ics, dates = [], sorted(g["date"].unique())
         for d in dates:
             sub = g[g["date"] == d]
@@ -164,9 +178,80 @@ def grade(matured: pd.DataFrame, *, key: str = "score", periods_per_year: int = 
                 ic = V.rank_ic(sub[key], sub["fwd_ret"])
                 if np.isfinite(ic):
                     ics.append(ic)
-        summ = V.ic_summary(ics, periods_per_year=periods_per_year)
-        out["by_horizon"][f"h{int(h)}"] = {
+        summ = V.ic_summary(ics, periods_per_year=max(1, round(252 / h)), hac_lags=h)
+        out["by_horizon"][f"h{h}"] = {
             "ic": summ, "n_dates": len(ics), "n_obs": int(len(g)),
+            # honest independent-observation count: n_dates overlapping windows can be
+            # as few as 1-2 real episodes (engine/china_validation._disjoint_windows)
+            "n_indep_windows": _disjoint_windows(g),
             "span": [str(min(dates)), str(max(dates))] if dates else None,
+            "clark_west": _clark_west_pooled(g, key=key, hac_lags=h),
         }
     return out
+
+
+def _disjoint_windows(g: pd.DataFrame) -> int:
+    """Greedy count of NON-overlapping [date, end_date] forward windows among the matured
+    snapshot dates — what n_dates would have been had the book sampled at the horizon
+    instead of daily. The honest episode count beside every overlapping-date t-stat."""
+    if "end_date" not in g.columns:
+        return 0
+    spans = g.dropna(subset=["end_date"]).groupby("date")["end_date"].first()
+    n, cur_end = 0, None
+    for d, e in sorted(spans.items()):
+        if cur_end is None or pd.Timestamp(d) > cur_end:
+            n += 1
+            cur_end = pd.Timestamp(e)
+    return n
+
+
+def _clark_west_pooled(g: pd.DataFrame, *, key: str, hac_lags: int) -> dict:
+    """Pooled Clark-West (2007) + OOS-R2 of the frozen score vs an expanding-mean
+    benchmark for one horizon. Leak-free by construction: the forecast for snapshot date
+    d maps score→return with an OLS line fitted ONLY on rows whose forward window had
+    fully CLOSED before d (end_date < d) — the information actually available at d. The
+    benchmark is those same prior rows' mean return, so the pair is nested (slope 0
+    recovers the benchmark exactly, the structure Clark-West requires). Per-date means of
+    the adjusted MSPE difference then take a Newey-West t at the same overlap lag as the
+    IC series; cw_p is ONE-sided (H1: the score has genuine OOS content)."""
+    if "end_date" not in g.columns:
+        return {"n_dates": 0, "note": "no end_date column — cannot form a leak-free prior"}
+    rows = g.dropna(subset=[key, "fwd_ret"]).copy()
+    if rows.empty:
+        return {"n_dates": 0}
+    rows["_d"] = pd.to_datetime(rows["date"])
+    rows["_end"] = pd.to_datetime(rows["end_date"])
+    fadj_by_date: list[float] = []
+    sse_f = sse_b = 0.0
+    n_obs = 0
+    for d in sorted(rows["_d"].unique()):
+        prior = rows[rows["_end"] < d]
+        if len(prior) < _CW_MIN_PRIOR_ROWS or prior["_d"].nunique() < _CW_MIN_PRIOR_DATES:
+            continue
+        cur = rows[rows["_d"] == d]
+        if len(cur) < 10:                               # same floor as rank_ic
+            continue
+        x = prior[key].to_numpy(float)
+        y = prior["fwd_ret"].to_numpy(float)
+        bench = float(y.mean())
+        var = float(np.var(x))
+        slope = float(np.cov(x, y, bias=True)[0, 1] / var) if var > 0 else 0.0
+        intercept = bench - slope * float(x.mean())
+        r = cur["fwd_ret"].to_numpy(float)
+        f = intercept + slope * cur[key].to_numpy(float)
+        fa = (r - bench) ** 2 - (r - f) ** 2 + (bench - f) ** 2
+        fadj_by_date.append(float(fa.mean()))
+        sse_f += float(np.sum((r - f) ** 2))
+        sse_b += float(np.sum((r - bench) ** 2))
+        n_obs += int(len(r))
+    if not fadj_by_date:
+        return {"n_dates": 0}
+    nw = V.newey_west_tstat(fadj_by_date, lags=hac_lags)
+    t = nw.get("t")
+    p1 = (nw["p"] / 2.0 if (t is not None and t > 0)
+          else (1.0 - nw["p"] / 2.0 if t is not None else None))
+    return {"cw_t": t, "cw_p": round(p1, 4) if p1 is not None else None,
+            "mean_adj": nw.get("mean"), "n_dates": len(fadj_by_date), "n_obs": n_obs,
+            "oos_r2": round(1.0 - sse_f / sse_b, 5) if sse_b > 0 else None,
+            "hac_lags": nw.get("lags"), "hac_lags_requested": int(hac_lags),
+            "benchmark": "expanding mean of prior fully-closed forward returns"}

@@ -75,3 +75,67 @@ def test_grade_recovers_known_ic():
 def test_grade_empty_book():
     g = SB.grade(pd.DataFrame())
     assert g["n_matured"] == 0 and g["by_horizon"] == {}
+
+
+def _matured_panel(n_dates=40, n_names=12, h=21, ret_of=None):
+    """Synthetic matured frame on a business-day grid with real end_dates (date + h bars),
+    the shape mature() emits. `ret_of(score)` maps score -> forward return."""
+    ret_of = ret_of or (lambda s: s * 0.001)
+    idx = pd.bdate_range("2024-01-01", periods=n_dates + h + 1)
+    rows = []
+    for di in range(n_dates):
+        for t in range(n_names):
+            rows.append({"date": str(idx[di].date()), "ticker": f"T{t}", "horizon": h,
+                         "score": float(t), "percentile": float(t),
+                         "fwd_ret": ret_of(float(t)),
+                         "end_date": str(idx[di + h].date())})
+    return pd.DataFrame(rows)
+
+
+def test_grade_hac_lag_matches_overlap():
+    """Daily snapshots graded on an h-bar forward window overlap h deep: the requested
+    HAC lag must be h itself, not ic_summary's rebalance-cadence default (6 at ppy=12 —
+    the under-correction the 2026-08-26 experiments audit measured inflating t here)."""
+    g = SB.grade(_matured_panel(n_dates=40, h=21))
+    ic = g["by_horizon"]["h21"]["ic"]
+    assert ic["hac_lags_requested"] == 21
+    assert ic["hac_lags"] == 21          # 40 IC dates > 21 -> no clamp, fully applied
+    # 40 daily dates with 21-bar windows collapse to exactly 2 non-overlapping episodes
+    assert g["by_horizon"]["h21"]["n_indep_windows"] == 2
+
+
+def test_grade_hac_lag_clamps_on_short_series():
+    """A book shorter than its own overlap cannot carry the full correction: the
+    effective lag is n-1 and the request stays visible beside it."""
+    g = SB.grade(_matured_panel(n_dates=10, h=21))
+    ic = g["by_horizon"]["h21"]["ic"]
+    assert ic["hac_lags_requested"] == 21
+    assert ic["hac_lags"] == 9
+
+
+def test_clark_west_positive_on_predictive_score():
+    """A score that maps linearly onto forward returns must show genuine OOS content:
+    positive cw_t, oos_r2 near 1, and forecasts only on dates with a fully-closed prior."""
+    m = _matured_panel(n_dates=40, h=21)
+    cw = SB.grade(m)["by_horizon"]["h21"]["clark_west"]
+    # earliest eligible date needs >= _CW_MIN_PRIOR_ROWS closed rows AND >= 3 closed dates:
+    # with h=21 and 12 names/date, dates 0..39 -> first forecast at date index >= 26
+    assert 0 < cw["n_dates"] <= 40 - 26
+    assert cw["cw_t"] is not None and cw["cw_t"] > 0
+    assert cw["oos_r2"] is not None and cw["oos_r2"] > 0.9
+    assert cw["hac_lags_requested"] == 21
+
+
+def test_clark_west_leak_guard_no_open_prior():
+    """With too few dates for any prior window to have CLOSED before a later snapshot,
+    Clark-West must emit nothing rather than fit on open (leaking) windows."""
+    cw = SB.grade(_matured_panel(n_dates=15, h=21))["by_horizon"]["h21"]["clark_west"]
+    assert cw["n_dates"] == 0 and "cw_t" not in cw
+
+
+def test_clark_west_requires_end_date():
+    """A matured frame with no end_date column (pre-schema rows) cannot form a leak-free
+    prior; the CW block must degrade to an explicit note, never a silent fit."""
+    m = _matured_panel(n_dates=30, h=21).drop(columns=["end_date"])
+    cw = SB.grade(m)["by_horizon"]["h21"]["clark_west"]
+    assert cw["n_dates"] == 0 and "no end_date" in cw.get("note", "")

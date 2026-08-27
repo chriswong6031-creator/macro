@@ -156,7 +156,10 @@ def _fwd_ic(panel: pd.DataFrame, h: int) -> dict:
                 ics.append(ic)
     if not ics:
         return {"n_dates": 0}
-    summ = V.ic_summary(np.array(ics), periods_per_year=max(1, 252 // h))
+    # Daily-sampled cross-sections against an h-session forward window overlap h deep;
+    # ic_summary's periods_per_year//2 default lag under-corrects that and inflates t
+    # (engine/validation.py ic_summary docstring; 2026-08-26 experiments audit item 13).
+    summ = V.ic_summary(np.array(ics), periods_per_year=max(1, 252 // h), hac_lags=h)
     # ic_summary() returns "t_hac" (Newey-West HAC t-stat) — NOT "t" or "hac_t".
     # Using the wrong key silently produces NaN t-stats and a dead gate verdict.
     # `t_hac` is None whenever newey_west_tstat could not form a correction (measured:
