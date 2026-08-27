@@ -21,6 +21,11 @@ changed:
   - {path: research/CN_TUSHARE_FULL_A_SPINE_CONTRACT_2026-08-08.md, what: "The clause that named the universe as lifecycle-union-PIT while blocking on every post-2016 difference now states the source-union law and which differences still block."}
   - {path: research/CN_LIMIT_EXACT_PLANE_LEDGER_PREREG_REQUIREMENTS_2026-08-11.md, what: "Its survivorship-and-universe-honesty section now says how that law is enforced at the collector; its completeness criterion follows the same split."}
   - {path: agentos/workstreams/WS-CN-LIMIT-ALPHA.md, what: "DEP-EXACT wave next_action carries the ruling and the three-layer finding."}
+  - {path: collectors/china_tushare_spine.py, what: "C1-C6 -- the source-union classifier split, the reconciliation witness-missing/window-conflict split, per-unit witness telemetry, the coverage carve-out, and the manifest reconciliation_law text."}
+  - {path: tests/test_china_tushare_spine.py, what: "T1-T9, 10 new tests including the replay-invariance proof. 83 -> 93 passing, no pre-existing test modified or removed."}
+  - {path: contracts/cn_tushare_a_share_spine_manifest.v1.schema.json, what: "Extended for the new manifest keys: 16 insertions, 0 deletions, no additionalProperties gate touched. Required because the file is additionalProperties:false and a pre-existing manifest test failed on the new keys."}
+  - {path: agentos/discoveries/DSC-CNLI-STK-LIMIT-ZERO-PRE-CLOSE-SENTINEL.md, what: "blocker 2, technical."}
+  - {path: agentos/discoveries/DSC-CNLI-PRE-PIT-NAMECHANGE-ORPHANS-HAVE-NO-WITNESS.md, what: "Sol gate 1, authority."}
 verified:
   - claim: The survivorship filter was encoded at THREE layers, not one
     command: "Traced the completeness manifest's `complete` conjunction term by term in collectors/china_tushare_spine.py"
@@ -96,6 +101,21 @@ verified:
       master-known, so the C6 carve-out (which only excuses witness-missing
       tickers) leaves them counting exactly as before. That :1817 assertion is
       the standing guard that C6 did not disable the coverage check wholesale.
+  - claim: The ruling works on the LIVE vendor rows that blocked the program
+    command: "Canary runs 33026747482 (2024-01-02) and 33026983388 (2018-01-02), then read the unit and the landed partition"
+    result: >
+      PASS, and this is the session's central evidence. bak_basic 20240102 is now
+      status COMPLETE at source_row_count 5344 = landed_a 5344 + known_excluded 0 +
+      quarantined_unknown 0, with witness_missing_row_count 2 and
+      source_accounting_complete true -- the equation balances and quarantine is
+      ZERO where it was 2. The landed partition carries exactly two rows with
+      current_stock_basic_witness_missing True: 300114.SZ 中航电测 (list_date
+      2010-08-27) and 603361.SS 浙江国祥 (list_date null via the zero sentinel).
+      The column is dtype bool with ZERO nulls, so no row carries an unknown
+      disposition. bak_basic then reached 2/2 terminal when the 2018-01-02 window
+      landed as well, and daily and daily_basic reached 2/2. pit_universe,
+      name_history and two daily endpoints have now all executed against the live
+      vendor for the first time.
   - claim: The ci-authority/codex/merge-queue-pilot red on PR 6486 is by design
     command: "gh api repos/.../check-runs/98364660853"
     result: >
@@ -104,17 +124,35 @@ verified:
       ci-authority/main check passed with reason `ordinary_change`.
 unresolved:
   - >
-    The implementation (C1-C6) and its tests (T1-T9) were commissioned to a
-    routed builder against the frozen spec and had not landed when this handoff
-    was written. The spec lives in the session scratchpad, not in the repo; if it
-    is lost, it is reconstructible from DEC:CNLI-HISTORICAL-PIT-IS-SOURCE-UNION
-    plus the three-layer finding above.
+    SOL GATE 1 (authority, blocking). `name_history` cannot reach a terminal unit
+    for any pre-2016 year:
+    DSC:CNLI-PRE-PIT-NAMECHANGE-ORPHANS-HAVE-NO-WITNESS. The 1999 unit failed at
+    193 = 192 + 0 + 1 on 000991.SZ 通海高科, a security absent from the current
+    5,888-row master. This is the SAME survivorship shape the source-union
+    decision removed, reaching an era where that decision's MECHANISM does not
+    exist -- the PIT witness starts 2016, so a 1999 row has no corroboration of
+    any kind and admitting it would rest on identity derivation alone. Refusing
+    it makes name_history permanently non-terminal, because the manifest requires
+    every year from NAME_HISTORY_START_YEAR = 1990. Choosing an earlier canary
+    date reduces the year count but never removes the pre-2016 years, so NO
+    canary window can reach terminal while this stands. Not decided here: the
+    standing instruction is to return a dependency the ruling did not address
+    rather than widen it.
   - >
-    Whether the two measured rows split as expected once the change lands:
-    300114.SZ should become a landed, witness-missing, EVENT-ELIGIBLE row (it
-    traded that session), while 603361.SS should become landed, witness-missing
-    and NON-event-eligible with no daily observation. That is the ruling's graded
-    authority working, and it is the first thing to read off the fresh canary.
+    BLOCKER 2 (technical, independent of gate 1).
+    DSC:CNLI-STK-LIMIT-ZERO-PRE-CLOSE-SENTINEL: stk_limit spells the absent prior
+    close of a non-trading instrument as `0`, and the shared price coercer
+    requires positive, so one field kills a 3,466-row unit and aborts the run. A
+    repair must decide the contradiction case explicitly -- what to do when the
+    vendor publishes up/down limits WHILE pre_close is zero, which is a band with
+    no anchor and should keep blocking.
+  - >
+    Whether the two measured rows split as expected on EVENT eligibility.
+    300114.SZ and 603361.SS both now land witness-missing (confirmed), but
+    event_eligible cannot be read yet because the canonical event substrate needs
+    daily, daily_basic AND stk_limit complete, and stk_limit is blocked by
+    blocker 2. Expected once unblocked: 300114.SZ event-eligible (it traded that
+    session), 603361.SS not (no daily observation).
 unverified:
   - >
     name_history and all five daily endpoints have STILL never executed against
@@ -127,20 +165,20 @@ unverified:
     rate can only worsen as the campaign reaches back; it is now telemetry and
     will be measurable per unit rather than fatal.
 next_actions: >
-  1. Land C1-C6 + T1-T9 on claude/cn-limit-pit-source-union, update PR 6486's
-     body, arm merge-on-green, and own it to merged.
-  2. Back up the private store, then run scratchpad/pit_fresh_attempt.py --apply
-     to discard the failed bak_basic unit. Reuse the clean 1992 calendar and the
-     existing reference generation; never re-collect identity.
-  3. Drive bounded canary windows (mode=canary, max_requests=12, one-day window)
-     to stage=complete through pit_universe, name_history and all five daily
-     endpoints. Budget ~7 WINDOWS, not one -- see the name_history correction in
-     danger_areas. Roughly: pit_universe 1 request, name_history 35 year-units at
-     NAMECHANGE_MAX_PER_RUN=5 per run, five daily endpoints at 1 request each for
-     a single session, so about 41 requests across ~7 runs of 12.
-  4. Only then: a SEPARATE technical-readiness PR for the bulk gate, gated on a
-     clean terminal canary AND independent review. Then the resumable range
-     campaign, then close DEP-EXACT on the sanitized completeness manifest.
+  1. SOL: rule gate 1 above (pre-2016 namechange orphans). No canary window can
+     reach terminal until it is ruled, so nothing downstream can start.
+  2. Fix DSC:CNLI-STK-LIMIT-ZERO-PRE-CLOSE-SENTINEL, deciding the
+     limits-published-with-zero-pre_close contradiction explicitly rather than by
+     reflex. Needed regardless of how gate 1 is ruled.
+  3. Resume bounded canary windows on 2018-01-02 (already retargeted; the 2024
+     window is structurally unreachable per the stk_limit cap danger_area).
+     Budget ~6 more windows for the remaining namechange years.
+  4. Only then: the SEPARATE technical-readiness PR for the bulk gate, gated on a
+     clean terminal canary AND independent review. Note that PR must now also
+     treat the ticker-range campaign as REQUIRED for recent sessions, not as an
+     optimisation.
+  5. Then the resumable range campaign, then close DEP-EXACT on the sanitized
+     completeness manifest.
 do_not_redo:
   - >
     Do NOT relax the quarantined_unknown == 0 gate in _unit_done. The ruling
