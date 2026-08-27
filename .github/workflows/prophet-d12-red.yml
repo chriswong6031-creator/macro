@@ -20,14 +20,11 @@ jobs:
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             /tests/test_prophet_live_pack_d12.py
-            /engine/prophet_live/**
-            /engine/signal_gate.py
-            /engine/session_anchor.py
-            /engine/price_ladder.py
-            /engine/conditions/**
+            /engine/**
             /lib/**
             /scripts/build_prophet_live_pack.py
             /scripts/build_stock_library.py
+            /collectors/us_names_zh.py
             /config.yml
       - uses: actions/setup-python@v5
         with:
