@@ -822,7 +822,8 @@ def test_the_only_pipeline_write_is_a_dispatch():
         # path when pass one was blocked by run_in_flight.
         "/actions/runs/{run_id}/jobs?per_page=100",
         "/labels",
-        "/issues?labels={urllib.parse.quote(ISSUE_LABEL)}&state=open&per_page=50",
+        "/issues?labels={urllib.parse.quote(ISSUE_LABEL)}&state=open&per_page=50"
+        "&sort=created&direction=desc",
         "/issues",
         "/issues/{number}/comments",
         "/issues/{number}/comments?per_page=100",
@@ -1284,6 +1285,19 @@ def test_a_dispatch_always_files_even_when_the_verdict_is_unchanged():
     lost attempt is an unbounded budget."""
     plan = [RESCUE.Action(RESCUE.DISPATCH, RESCUE.STALE, "re-arming")]
     assert RESCUE.should_file_receipt(plan, ("STALE",)) is True
+
+
+def test_should_file_receipt_returns_true_on_a_day_advance_alone():
+    """R3 unit pin (2026-08-27 review round 2): ``day_advanced`` overrides an
+    otherwise-unchanged verdict set — exactly the weekend/holiday wake where
+    the session (and so the verdict set) does not move but the [DAY N] title
+    is about to. Without this, the escalation reached only the title, which
+    is the unread artifact in the first place."""
+    alarm = [RESCUE.Action(RESCUE.ALERT, RESCUE.STALE, "same as last time")]
+    assert RESCUE.should_file_receipt(alarm, ("STALE",), day_advanced=True) is True
+    assert RESCUE.should_file_receipt(alarm, ("STALE",), day_advanced=False) is False, (
+        "the default must not change the existing suppression contract"
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1761,6 +1775,213 @@ def test_fetch_issue_thread_rest_budget_and_never_paginates(monkeypatch):
         assert "per_page=" in url
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# R1+R2 CHAIN TOLERANCE (2026-08-27 review round 2). The strict one-link chain
+# above snapped on two inputs that are not healed nights: the watchdog itself
+# missing a night (no issue ever filed for the immediately preceding session)
+# and an operator closing yesterday's now-duplicate issue as superseded. Both
+# look identical on the wire — fetch_open_outage_issues only ever returns OPEN
+# issues, so "never filed" and "closed" are the same absent row — and the
+# chain must bridge past ONE such gap (k=2) while still refusing everything
+# ANCHOR_CHAIN_MAX_SESSIONS was tuned to keep refusing.
+# ─────────────────────────────────────────────────────────────────────────────
+def test_a_chain_bridges_past_a_missing_link_when_the_watchdog_itself_missed_a_night(
+        monkeypatch, capsys):
+    """R1: this module's own docstring records that daily.yml's cron can
+    silently never fire, and watchdog outages correlate with the outages they
+    watch — so a night this LANE itself never woke for (or woke --dry-run, or
+    whose alarm never went loud) files no issue for the session immediately
+    before this one. That is not a healed night and must not reset the day
+    count to 1; the bridge must also be named in the run log."""
+    assert RESCUE.session_n_back(FRI, 1) == THU
+    assert RESCUE.session_n_back(FRI, 2) == WED
+    bridge_issue = {
+        "number": 3,
+        "title": RESCUE.issue_title(WED),
+        "created_at": WED.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "body": (f"```\n{RESCUE.VERDICT_TOKEN} STALE\n"
+                 f"{RESCUE.OUTAGE_DAY_TOKEN} {WED.isoformat()}\n```"),
+    }
+
+    def fake_get_json(url, headers=None):
+        if "/issues?" in url:
+            return ([bridge_issue], None)      # no row at all for THU (k=1)
+        if "/issues/3/comments" in url:
+            return ([], None)
+        raise AssertionError(f"unexpected URL: {url}")
+
+    monkeypatch.setattr(RESCUE, "_get_json", fake_get_json)
+    thread = RESCUE.fetch_issue_thread("o/r", "tok", FRI, at(FRI, 9, 40))
+    assert thread.anchors == {(RESCUE.STALE,): WED}
+    day = RESCUE.outage_day(thread.anchors[(RESCUE.STALE,)], FRI)
+    assert day >= 2
+
+    out = capsys.readouterr().out
+    lines = [line for line in out.splitlines() if line]
+    assert lines, "a k=2 bridge must be named in the run log"
+    assert lines[0].startswith("::notice"), lines[0]
+    assert "prophet-rescue-chain-gap" in lines[0]
+
+
+def test_a_chain_bridges_past_a_link_the_operator_closed_as_superseded(monkeypatch):
+    """R2: closing yesterday's now-duplicate issue as superseded mid-outage is
+    the most natural triage act there is, and it is NOT the "declared-
+    resolved" reset this ladder means to detect. fetch_open_outage_issues only
+    ever sees OPEN issues, so a closed k=1 issue is indistinguishable on the
+    wire from one that was never filed — the chain must still bridge to k=2."""
+    assert RESCUE.session_n_back(FRI, 1) == THU
+    assert RESCUE.session_n_back(FRI, 2) == WED
+    bridge_issue = {
+        "number": 4,
+        "title": RESCUE.issue_title(WED),
+        "created_at": WED.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "body": (f"```\n{RESCUE.VERDICT_TOKEN} STRAND\n"
+                 f"{RESCUE.OUTAGE_DAY_TOKEN} {WED.isoformat()}\n```"),
+    }
+
+    def fake_get_json(url, headers=None):
+        # THU's issue was closed by an operator mid-outage -> absent from
+        # this open-issues page, exactly like a never-filed one.
+        if "/issues?" in url:
+            return ([bridge_issue], None)
+        if "/issues/4/comments" in url:
+            return ([], None)
+        raise AssertionError(f"unexpected URL: {url}")
+
+    monkeypatch.setattr(RESCUE, "_get_json", fake_get_json)
+    thread = RESCUE.fetch_issue_thread("o/r", "tok", FRI, at(FRI, 9, 40))
+    assert thread.anchors == {(RESCUE.STRAND,): WED}
+    day = RESCUE.outage_day(thread.anchors[(RESCUE.STRAND,)], FRI)
+    assert day >= 2
+
+
+def test_a_gap_of_three_or_more_sessions_does_not_chain(monkeypatch):
+    """Pins the ANCHOR_CHAIN_MAX_SESSIONS=2 boundary precisely: a session
+    exactly THREE sessions back — one further than the bound reaches — must
+    NOT chain. This is the same refusal the orphan and Mon+Fri-gap tests pin
+    (both of those sit even further back), verified here at the exact edge of
+    what k<=2 can reach."""
+    three_back = RESCUE.session_n_back(FRI, 3)
+    assert three_back is not None
+    far_issue = {
+        "number": 8,
+        "title": RESCUE.issue_title(three_back),
+        "created_at": three_back.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "body": (f"```\n{RESCUE.VERDICT_TOKEN} STALE\n"
+                 f"{RESCUE.OUTAGE_DAY_TOKEN} {three_back.isoformat()}\n```"),
+    }
+    monkeypatch.setattr(RESCUE, "_get_json",
+                        lambda url, headers=None: ([far_issue], None))
+    thread = RESCUE.fetch_issue_thread("o/r", "tok", FRI, at(FRI, 9, 40))
+    assert thread.anchors == {}, "three sessions back is beyond ANCHOR_CHAIN_MAX_SESSIONS"
+    day = RESCUE.outage_day(thread.anchors.get((RESCUE.STALE,)), FRI)
+    assert day == 1
+    title = RESCUE.escalated_title(FRI, day)
+    assert not title.startswith("[DAY"), title
+
+
+def test_the_alarm_path_still_spends_at_most_three_reads_when_the_chain_bridges_to_k2(
+        monkeypatch):
+    """§REST BUDGET pin, extended for R1+R2: bridging past a missing k=1 link
+    to a real k=2 row must not grow the read budget — one list read, one
+    comments read for the bridged predecessor, one comments read for this
+    session's own row, same as an ordinary k=1 chain."""
+    bridge_issue = {
+        "number": 3,
+        "title": RESCUE.issue_title(WED),
+        "created_at": WED.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "body": f"```\n{RESCUE.VERDICT_TOKEN} STALE\n{RESCUE.OUTAGE_DAY_TOKEN} "
+                f"{WED.isoformat()}\n```",
+    }
+    this_row = {
+        "number": 20,
+        "title": RESCUE.issue_title(FRI),
+        "created_at": FRI.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "body": "x",
+    }
+    calls: list[str] = []
+
+    def fake_get_json(url, headers=None):
+        calls.append(url)
+        if "/issues?" in url:
+            return ([bridge_issue, this_row], None)
+        return ([], None)
+
+    monkeypatch.setattr(RESCUE, "_get_json", fake_get_json)
+    RESCUE.fetch_issue_thread("o/r", "tok", FRI, at(FRI, 9, 40))
+    assert len(calls) == 3, calls
+
+
+def test_a_failed_preceding_comments_read_emits_a_warning_and_preserves_this_sessions_ledger(
+        monkeypatch, capsys):
+    """R4: the degrade-without-raising contract pinned above
+    (test_a_failed_read_of_the_preceding_threads_comments_degrades_without_raising)
+    used to be SILENT — a lost comment-only class (a night's issue BODY is
+    only its FIRST receipt) had nothing in the run log to explain why the day
+    count might read low. This pins that the degradation is now named, and
+    that naming it changes nothing about THIS session's own receipts/
+    last_verdicts/error, which come from an entirely separate, successful
+    GET on this session's own issue."""
+    this_row = {
+        "number": 20,
+        "title": RESCUE.issue_title(FRI),
+        "created_at": FRI.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "body": f"```\n{RESCUE.VERDICT_TOKEN} STALE\n```",
+    }
+    prev_row = {
+        "number": 11,
+        "title": RESCUE.issue_title(THU),
+        "created_at": THU.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "body": f"```\n{RESCUE.VERDICT_TOKEN} STALE\n{RESCUE.OUTAGE_DAY_TOKEN} "
+                f"{THU.isoformat()}\n```",
+    }
+
+    def fake_get_json(url, headers=None):
+        if "/issues?" in url:
+            return ([this_row, prev_row], None)
+        if "/issues/11/comments" in url:
+            return None, "HTTP 500"
+        if "/issues/20/comments" in url:
+            return ([{"body": f"{RESCUE.DISPATCH_RECEIPT_TOKEN} "
+                              f"{at(FRI, 9, 40).isoformat()}"}], None)
+        raise AssertionError(f"unexpected URL: {url}")
+
+    monkeypatch.setattr(RESCUE, "_get_json", fake_get_json)
+    thread = RESCUE.fetch_issue_thread("o/r", "tok", FRI, at(FRI, 9, 40))
+
+    out = capsys.readouterr().out
+    lines = [line for line in out.splitlines() if line]
+    assert lines, "a failed preceding-comments read must be named in the run log"
+    assert lines[0].startswith("::warning"), lines[0]
+    assert "11" in lines[0]
+
+    assert thread.receipts == 1, "this session's own ledger must stay intact"
+    assert thread.last_verdicts == (RESCUE.STALE,)
+    assert thread.error is None, (
+        "a failure reading the PRECEDING thread must never surface as this "
+        "session's own error"
+    )
+
+
+def test_the_issue_list_url_pins_newest_first_ordering_and_never_paginates(monkeypatch):
+    """R6: the ladder makes the open backlog only grow over a real outage
+    (closing an issue is the reset lever, not this lane), so the two rows the
+    chain needs must be guaranteed newest-first on the single unpaginated
+    page rather than assumed from GitHub's undocumented default order."""
+    captured: dict[str, str] = {}
+
+    def fake_get_json(url, headers=None):
+        captured["url"] = url
+        return [], None
+
+    monkeypatch.setattr(RESCUE, "_get_json", fake_get_json)
+    RESCUE.fetch_open_outage_issues("o/r", "tok")
+    url = captured["url"]
+    assert "sort=created" in url
+    assert "direction=desc" in url
+    assert not re.search(r"[?&]page=\d", url), url
+
+
 def test_fetch_issue_thread_actually_mines_anchors_not_a_vacuous_stub(monkeypatch):
     """SEAM PIN. test_main_wires_the_mined_anchors_into_the_state_it_hands_to_execute
     monkeypatches fetch_issue_thread WHOLESALE, so it cannot catch a
@@ -1793,12 +2014,16 @@ def test_fetch_issue_thread_actually_mines_anchors_not_a_vacuous_stub(monkeypatc
     )
 
 
-def test_execute_patches_the_title_on_a_suppressed_wake_two_days_into_the_outage(
+def test_execute_patches_the_title_and_files_a_receipt_on_a_day_advance(
         monkeypatch, _no_network):
-    """WIRED, not just the helper. The escalation must fire precisely on the
-    wakes should_file_receipt SUPPRESSES — an unchanged verdict set, two+ days
-    into the same breach class — and it must not also file a comment or push
-    on that wake: only the title moves."""
+    """R3 (2026-08-27 review round 2), superseding the earlier pin of the
+    opposite behaviour. A weekend/holiday wake reuses the same session, so the
+    verdict set is unchanged from the last receipt — but the [DAY N] title IS
+    about to change, which is exactly the "day advanced" case should_file_receipt
+    now treats as news. Before R3 this wake patched ONLY the title and stayed
+    silent everywhere else, so the escalation reached an artifact nobody
+    re-reads (the issue title) and never the comment thread or the ops push —
+    the precise defect R3 closes."""
     patched: list[tuple] = []
     monkeypatch.setattr(
         RESCUE, "update_issue_title",
@@ -1813,13 +2038,41 @@ def test_execute_patches_the_title_on_a_suppressed_wake_two_days_into_the_outage
         outage_anchors={(RESCUE.STALE,): anchor},
         issue_number=7,
         issue_title=RESCUE.issue_title(THU),      # not yet escalated
-        last_receipt_verdicts=("STALE",),         # unchanged -> receipt suppressed
+        last_receipt_verdicts=("STALE",),         # unchanged verdict set
     )
     results = RESCUE.execute(alarm, snapshot, THU, "o/r", "tok", dry_run=False)
     assert patched == [(7, RESCUE.escalated_title(THU, 2))]
-    assert _no_network.comments == [], "the comment must stay suppressed"
-    assert _no_network.pushes == [], "the push must stay suppressed"
+    assert len(_no_network.comments) == 1, "a day advance must file exactly one receipt"
+    assert len(_no_network.pushes) == 1, "a day advance must push exactly once"
+    assert "[DAY 2]" in _no_network.pushes[-1]
     assert any("title" in r for r in results)
+
+
+def test_execute_still_suppresses_a_same_day_repeat_wake_with_no_day_advance(
+        monkeypatch, _no_network):
+    """The anti-spam contract R3 must NOT regress: a second wake at the SAME
+    day (the title already reads the escalated form, so escalated_title(...)
+    no longer differs from state.issue_title) with an unchanged verdict set
+    must still suppress — day_advanced is keyed to the title TEXT changing,
+    not to day>=2 alone, so an hourly wake through the rest of that day does
+    not re-file."""
+    patched: list[tuple] = []
+    monkeypatch.setattr(RESCUE, "update_issue_title",
+                        lambda *a, **k: patched.append(a) or "updated")
+    alarm = [RESCUE.Action(RESCUE.ALERT, RESCUE.STALE, "still stale")]
+    anchor = at(FRI, 9, 40).date() - timedelta(days=1)          # -> day 2
+    snapshot = state(
+        now=at(FRI, 9, 40),
+        outage_anchors={(RESCUE.STALE,): anchor},
+        issue_number=7,
+        issue_title=RESCUE.escalated_title(THU, 2),   # already escalated
+        last_receipt_verdicts=("STALE",),
+    )
+    results = RESCUE.execute(alarm, snapshot, THU, "o/r", "tok", dry_run=False)
+    assert patched == [], "an already-correct title must not be rewritten"
+    assert _no_network.comments == [], "no day advance and no verdict change -> suppressed"
+    assert _no_network.pushes == [], "no day advance and no verdict change -> suppressed"
+    assert any("suppressed" in r for r in results)
 
 
 def test_execute_does_not_patch_the_title_on_day_one(monkeypatch, _no_network):
