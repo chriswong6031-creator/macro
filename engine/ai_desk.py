@@ -633,9 +633,18 @@ def synthesize(state: dict, cfg: dict | None = None, call=None) -> dict:
         "schema": SCHEMA, "is_context_only": True,
         "generated_at": _now_iso(), "state_asof": asof,
         "model": cfg.get("llm_model", "deepseek-v4-pro"),
-        # rung that served this note — "codex" / "oauth" / "anthropic" / "deepseek",
-        # or None on a degraded call. Populated below from the tracked call's
-        # `served` out-param so the ladder is verifiable from the artifact.
+        # Rung that authored THIS NOTE's text — "codex" / "oauth" / "anthropic" /
+        # "deepseek", or None on a degraded call. Populated below from the tracked
+        # call's `served` out-param so the ladder is verifiable from the artifact.
+        #
+        # SCOPE, so this is not read as more than it says: with the panel enabled
+        # the desk makes FIVE calls — four analysts then the desk-head adjudicator
+        # — and each walks the ladder independently, so they can be served by
+        # different rungs. This field names the ADJUDICATOR's rung, because the
+        # adjudicator is what wrote the published note; the analysts only feed it.
+        # It is therefore an authorship field, NOT a spend field: to see which
+        # rungs the four analyst calls actually billed, read the ai_costs ledger,
+        # where every call records its own rung under usage_lane "ai-desk".
         "served_by": None,
         "regime_context": None, "theses": [],
         "source_verdicts": _source_verdicts(state),
