@@ -1,0 +1,25 @@
+{
+  "session": "2026-08-26",
+  "attempts": [
+    {
+      "capture_instant": "2026-08-27T04:12:08.690426+00:00",
+      "requested_underlyings": 375,
+      "attempted_underlyings": 5,
+      "successful_underlyings": 0,
+      "coverage_pct": 0.0,
+      "failure_reasons": {
+        "auth_or_entitlement_failure": 5
+      },
+      "failure_examples": {
+        "auth_or_entitlement_failure": [
+          "SPY",
+          "QQQ",
+          "IWM"
+        ]
+      },
+      "aborted_early": true,
+      "decision": "nothing_captured",
+      "health": "failed"
+    }
+  ]
+}
