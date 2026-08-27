@@ -1115,6 +1115,12 @@ def test_rejected_response_receipt_preserves_observed_rows_columns_and_hash(tmp_
 
 
 def test_name_history_st_is_inference_and_classifies_every_source_row(tmp_path):
+    # Amended 2026-08-27 for Sol RETURN-GATE 10B
+    # (DEC:CNLI-HISTORICAL-PIT-IS-SOURCE-UNION sibling): 600999.SH is a
+    # well-formed SSE A-share code absent from the witness, so it now LANDS as
+    # namechange_only rather than quarantining. 900901.SH must still land in
+    # known_excluded -- that proves the B-share exclusion path survived the
+    # N1 compound-branch split.
     _seed_reference(tmp_path)
     raw = pd.DataFrame([
         {"ts_code": "600519.SH", "name": "*ST茅台", "start_date": "20110101",
@@ -1127,10 +1133,18 @@ def test_name_history_st_is_inference_and_classifies_every_source_row(tmp_path):
     normal = spine.normalise_name_history(raw, tmp_path, "2024-08-09")
     out = normal.landed_a
     assert normal.source_row_count == len(raw)
-    assert normal.quarantined_unknown["raw_ts_code"].tolist() == ["600999.SH"]
+    assert normal.quarantined_unknown.empty
     assert normal.known_excluded["raw_ts_code"].tolist() == ["900901.SH"]
     assert out.loc[out["ticker"] == "600519.SS", "is_st_name"].iloc[0]
     assert set(out["st_provenance"]) == {"namechange_name_inference_partial"}
+    assert (
+        out.loc[out["ticker"] == "600519.SS", "source_disposition"].iloc[0]
+        == "externally_corroborated"
+    )
+    assert (
+        out.loc[out["ticker"] == "600999.SS", "source_disposition"].iloc[0]
+        == "namechange_only"
+    )
 
 
 def test_full_day_suspension_normalises_vendor_nan_timing_to_empty(tmp_path):
@@ -1676,15 +1690,47 @@ def test_stk_limit_zero_up_down_limits_are_treated_as_absent(tmp_path):
     assert bool(row["source_limits_present"]) is False
 
 
-def test_stk_limit_zero_pre_close_with_published_limits_raises_contradiction(tmp_path):
-    """U3 (S2): pre_close 0 (the non-trading sentinel) together with
-    PUBLISHED up/down limits is a legal band with no anchor -- a
-    contradiction that must keep raising, not be silently accepted.
+def test_stk_limit_unanchored_band_lands_instead_of_raising(tmp_path):
+    """U3, CORRECTED 2026-08-27 by canary run 33037449419.
+
+    This test used to assert that pre_close 0 with PUBLISHED up/down limits was
+    a contradiction that must raise. The live vendor disproved that model: on
+    2018-01-02 it is the dominant shape and it destroyed the entire 3,466-row
+    unit. The exchange still announces a legal band for an instrument that did
+    not trade, while the vendor spells the un-republished prior close as 0.
+
+    The row now LANDS with a null anchor and a real band. What makes this safe
+    rather than fail-open is the substrate guard, pinned separately below: a
+    security that actually TRADED may never have a null stk_limit.pre_close.
     """
     _seed_spine(tmp_path)
     raw = _limit_rows("20240102")
     raw.loc[raw["ts_code"] == "600519.SH", "pre_close"] = 0
-    with pytest.raises(spine.SpineError, match="without an anchoring pre_close"):
+    result = spine.normalise_daily_endpoint("stk_limit", raw, "20240102", tmp_path)
+    row = result.landed_a.set_index("ticker").loc["600519.SS"]
+    assert pd.isna(row["pre_close_cents"])
+    assert row["up_limit_cents"] > row["down_limit_cents"]
+    # The band is real, so limits ARE present -- eligibility is then decided by
+    # positive_volume, which a non-trading instrument does not have.
+    assert bool(row["source_limits_present"]) is True
+    assert result.quarantined_unknown.empty
+
+
+def test_stk_limit_unanchored_band_with_inverted_ordering_still_raises(tmp_path):
+    """The anchor may be absent; the band's own ordering may not be nonsense.
+
+    Without this, dropping the anchor check would have removed the LAST
+    structural check on a row whose three-way invariant can no longer run.
+    """
+    _seed_spine(tmp_path)
+    raw = _limit_rows("20240102")
+    mask = raw["ts_code"] == "600519.SH"
+    raw.loc[mask, "pre_close"] = 0
+    up = float(raw.loc[mask, "up_limit"].iloc[0])
+    down = float(raw.loc[mask, "down_limit"].iloc[0])
+    raw.loc[mask, "up_limit"] = down
+    raw.loc[mask, "down_limit"] = up
+    with pytest.raises(spine.SpineError, match="band ordering is inconsistent"):
         spine.normalise_daily_endpoint("stk_limit", raw, "20240102", tmp_path)
 
 
@@ -2134,7 +2180,7 @@ def test_private_store_path_cannot_escape_into_stageable_repo_locations(tmp_path
 
 
 
-def test_active_year_name_history_refreshes_and_orphans_gate(tmp_path, monkeypatch):
+def test_active_year_name_history_refreshes_and_lands_uncorroborated_rows(tmp_path, monkeypatch):
     _seed_reference(tmp_path)
     monkeypatch.setattr(spine, "NAME_HISTORY_START_YEAR", 2024)
 
@@ -2159,26 +2205,32 @@ def test_active_year_name_history_refreshes_and_orphans_gate(tmp_path, monkeypat
     state = spine.load_state(tmp_path)
     assert {"2024:20240630", "2024:20240809"}.issubset(state["units"]["namechange"])
 
-    orphan_frame = pd.DataFrame([{
-        "ts_code": "600999.SH", "name": "orphan", "start_date": "20240101",
+    # Amended 2026-08-27 for Sol RETURN-GATE 10B
+    # (DEC:CNLI-HISTORICAL-PIT-IS-SOURCE-UNION sibling): 600999.SH is a
+    # well-formed SSE A-share code absent from the witness. It is no longer an
+    # "orphan" that gates the unit failed -- it LANDS as namechange_only and
+    # the unit reaches terminal, with the three-term accounting equation
+    # still balancing.
+    uncorroborated_frame = pd.DataFrame([{
+        "ts_code": "600999.SH", "name": "uncorroborated", "start_date": "20240101",
         "end_date": None, "ann_date": "20240810", "change_reason": "改名",
     }], columns=spine.ENDPOINT_FIELDS["namechange"].split(","))
-    orphan_collector = spine.TushareAShareSpineCollector(
-        tmp_path, query=lambda *args, **kwargs: orphan_frame.copy(),
+    uncorroborated_collector = spine.TushareAShareSpineCollector(
+        tmp_path, query=lambda *args, **kwargs: uncorroborated_frame.copy(),
         now=lambda: NOW, max_requests=5,
     )
-    orphan_collector.collect_name_history(date(2024, 8, 10))
-    orphan_record = spine.load_state(tmp_path)["units"]["namechange"]["2024:20240810"]
-    assert orphan_record["status"] == "failed"
-    assert orphan_record["unmatched_master_row_count"] == 1
-    assert orphan_record["source_row_count"] == 1
-    assert orphan_record["landed_a_row_count"] == 0
-    assert orphan_record["quarantined_unknown_row_count"] == 1
-    assert orphan_record["source_accounting_complete"] is True
-    quarantine = pd.read_parquet(spine._classification_partition(
-        tmp_path, "quarantined_unknown", "namechange", date(2024, 8, 10),
-    ))
-    assert quarantine["raw_ts_code"].tolist() == ["600999.SH"]
+    uncorroborated_collector.collect_name_history(date(2024, 8, 10))
+    uncorroborated_record = spine.load_state(tmp_path)["units"]["namechange"]["2024:20240810"]
+    assert uncorroborated_record["status"] == "complete"
+    assert uncorroborated_record["unmatched_master_row_count"] == 0
+    assert uncorroborated_record["source_row_count"] == 1
+    assert uncorroborated_record["landed_a_row_count"] == 1
+    assert uncorroborated_record["quarantined_unknown_row_count"] == 0
+    assert uncorroborated_record["source_accounting_complete"] is True
+    assert uncorroborated_record["namechange_only_row_count"] == 1
+    landed = pd.read_parquet(spine._name_partition(tmp_path, 2024))
+    landed_row = landed.loc[landed["ticker"] == "600999.SS"]
+    assert landed_row["source_disposition"].tolist() == ["namechange_only"]
 
 
 def test_interrupted_reference_refresh_never_moves_current_generation(tmp_path):
@@ -3144,3 +3196,383 @@ def test_completeness_manifest_reachable_with_witness_missing_securities(monkeyp
     assert manifest["pit_lifecycle_reconciliation"]["current_snapshot_omission_rate"] > 0
     assert manifest["daily_security_coverage"]["pit_only_without_daily_observations"] == 2
     assert manifest["daily_security_coverage"]["unexplained_missing_observations"] == 0
+
+
+# ---------------------------------------------------------------------------
+# SOL RETURN-GATE 10B -- DEC:CNLI-NAMECHANGE-IS-ITS-OWN-SOURCE-AUTHORITY
+#
+# A valid `namechange` row is ITSELF sufficient source evidence that the vendor
+# asserted that historical listing-key/name observation; it needs no external
+# witness merely to EXIST in the name-history plane.  Every source row takes
+# exactly one deterministic disposition -- externally_corroborated,
+# namechange_only, or explicit conflict/quarantine.  `namechange_only` is
+# terminal source completeness and grants ZERO PIT membership, trading,
+# exact-event, canonical-identity, rank or score authority.
+# ---------------------------------------------------------------------------
+
+_NAMECHANGE_COLUMNS = spine.ENDPOINT_FIELDS["namechange"].split(",")
+
+
+def _namechange_frame(*rows: dict[str, object]) -> pd.DataFrame:
+    return pd.DataFrame(list(rows), columns=_NAMECHANGE_COLUMNS)
+
+
+def _collect_namechange(
+    store: Path, frame: pd.DataFrame, monkeypatch, *, end: date = date(2024, 8, 10),
+) -> dict:
+    """Drive one namechange year-unit through the real collector.
+
+    Returns the resulting unit record so a test can assert on terminal status
+    and on the three-term source-row accounting equation.
+    """
+    monkeypatch.setattr(spine, "NAME_HISTORY_START_YEAR", end.year)
+    collector = spine.TushareAShareSpineCollector(
+        store, query=lambda *args, **kwargs: frame.copy(),
+        now=lambda: NOW, max_requests=5,
+    )
+    collector.collect_name_history(end)
+    unit = f"{end.year}:{end.strftime('%Y%m%d')}"
+    return spine.load_state(store)["units"]["namechange"][unit]
+
+
+def _assert_source_equation(record: dict) -> None:
+    assert record["source_row_count"] == (
+        record["landed_a_row_count"]
+        + record["known_excluded_row_count"]
+        + record["quarantined_unknown_row_count"]
+    )
+    assert record["source_accounting_complete"] is True
+
+
+def test_t1_namechange_unparseable_ts_code_quarantines_and_blocks(tmp_path, monkeypatch):
+    """T1 -- a malformed key has no disposition, so it stays FAIL-CLOSED.
+
+    Sol's ruling removed the WITNESS requirement, not the requirement that a row
+    be decidable at all.
+    """
+    _seed_reference(tmp_path)
+    record = _collect_namechange(tmp_path, _namechange_frame({
+        "ts_code": "XYZ", "name": "无法解析", "start_date": "20240101",
+        "end_date": None, "ann_date": "20240810", "change_reason": "改名",
+    }), monkeypatch)
+
+    assert record["status"] == "failed"
+    assert record["quarantined_unknown_row_count"] == 1
+    assert record["landed_a_row_count"] == 0
+    _assert_source_equation(record)
+    quarantine = pd.read_parquet(spine._classification_partition(
+        tmp_path, "quarantined_unknown", "namechange", date(2024, 8, 10),
+    ))
+    assert quarantine["classification_source"].tolist() == ["namechange_unparseable_ts_code"]
+
+
+def test_t2_uncorroborated_a_share_row_lands_namechange_only_and_unit_is_terminal(
+    tmp_path, monkeypatch,
+):
+    """T2 -- THE RULING ITSELF.
+
+    `600999.SH` is a well-formed SSE A-share code that the current witness does
+    not carry.  Before 10B it quarantined and failed the whole year-unit; a
+    single such row in 1999 blocked the entire completeness manifest, which
+    requires every year from 1990 onward.  It must now LAND.
+    """
+    _seed_reference(tmp_path)
+    record = _collect_namechange(tmp_path, _namechange_frame({
+        "ts_code": "600999.SH", "name": "无见证", "start_date": "20240101",
+        "end_date": None, "ann_date": "20240810", "change_reason": "改名",
+    }), monkeypatch)
+
+    assert record["status"] == "complete"
+    assert record["landed_a_row_count"] == 1
+    assert record["quarantined_unknown_row_count"] == 0
+    # Telemetry only: a SUBSET of landed_A, never a fourth equation term.
+    assert record["namechange_only_row_count"] == 1
+    _assert_source_equation(record)
+
+    landed = pd.read_parquet(spine._name_partition(tmp_path, 2024))
+    assert landed["ticker"].tolist() == ["600999.SS"]
+    assert landed["source_disposition"].tolist() == ["namechange_only"]
+
+
+def test_t3_witnessed_a_share_row_lands_externally_corroborated(tmp_path):
+    """T3 -- the other side of the disposition split."""
+    _seed_reference(tmp_path)
+    normal = spine.normalise_name_history(_namechange_frame({
+        "ts_code": "600519.SH", "name": "贵州茅台", "start_date": "20240101",
+        "end_date": None, "ann_date": "20240810", "change_reason": "改名",
+    }), tmp_path, "2024-08-10")
+
+    assert normal.quarantined_unknown.empty
+    assert normal.landed_a["source_disposition"].tolist() == ["externally_corroborated"]
+
+
+def test_t4_non_a_share_identity_quarantines(tmp_path, monkeypatch):
+    """T4 -- the scope gate that `known_a` membership used to provide implicitly.
+
+    `known_a` was doing DOUBLE DUTY: witness check and A-share scope filter.
+    Removing the witness half without replacing the scope half would let fund
+    and other non-A codes into the A-share name plane.  `500999.SH` parses to a
+    valid SSE identity, is not an A-share code, and has no B-share exclusion
+    provenance -- an unknown disposition, so it stays fail-closed.
+    """
+    _seed_reference(tmp_path)
+    record = _collect_namechange(tmp_path, _namechange_frame({
+        "ts_code": "500999.SH", "name": "非A标的", "start_date": "20240101",
+        "end_date": None, "ann_date": "20240810", "change_reason": "改名",
+    }), monkeypatch)
+
+    assert record["status"] == "failed"
+    assert record["quarantined_unknown_row_count"] == 1
+    _assert_source_equation(record)
+    quarantine = pd.read_parquet(spine._classification_partition(
+        tmp_path, "quarantined_unknown", "namechange", date(2024, 8, 10),
+    ))
+    assert quarantine["classification_source"].tolist() == ["namechange_non_a_share_identity"]
+
+
+def test_t5_b_share_still_classifies_known_out_of_scope_not_quarantine(tmp_path):
+    """T5 -- the B-share exclusion path must survive the N1 split.
+
+    Ordering is load-bearing: `900901.SH` is not an A-share code, so if the new
+    A-share gate ran BEFORE the exclusion check it would quarantine a row that
+    has perfectly good official code-family provenance, and block the unit.
+    """
+    _seed_reference(tmp_path)
+    normal = spine.normalise_name_history(_namechange_frame({
+        "ts_code": "900901.SH", "name": "B股旧名", "start_date": "20240101",
+        "end_date": None, "ann_date": "20240810", "change_reason": "改名",
+    }), tmp_path, "2024-08-10")
+
+    assert normal.quarantined_unknown.empty
+    assert normal.landed_a.empty
+    assert normal.known_excluded["raw_ts_code"].tolist() == ["900901.SH"]
+    assert normal.known_excluded["classification_source"].tolist() == [
+        "SSE_security_code_900xxx_B_share",
+    ]
+
+
+def test_t6_contradictory_lifecycle_interval_quarantines_and_blocks(tmp_path, monkeypatch):
+    """T6 -- one of the two fail-closed conditions that did NOT exist.
+
+    Sol required contradictory lifecycle intervals to stay fail-closed.
+    `normalise_name_history` carried no interval validation at all; the compound
+    witness condition had been masking the gap, so lifting it without building
+    this check would have turned a fail-closed plane fail-open.
+    """
+    _seed_reference(tmp_path)
+    record = _collect_namechange(tmp_path, _namechange_frame({
+        "ts_code": "600519.SH", "name": "时间倒置", "start_date": "20240201",
+        "end_date": "20240101", "ann_date": "20240810", "change_reason": "改名",
+    }), monkeypatch)
+
+    assert record["status"] == "failed"
+    assert record["quarantined_unknown_row_count"] == 1
+    assert record["landed_a_row_count"] == 0
+    _assert_source_equation(record)
+    quarantine = pd.read_parquet(spine._classification_partition(
+        tmp_path, "quarantined_unknown", "namechange", date(2024, 8, 10),
+    ))
+    assert quarantine["classification_source"].tolist() == [
+        "namechange_contradictory_lifecycle_interval",
+    ]
+
+
+def test_t7_same_day_conflicting_names_quarantine_the_whole_group(tmp_path, monkeypatch):
+    """T7 -- the other fail-closed condition that did NOT exist.
+
+    `KEY_COLUMNS["name_history"]` includes `name`, so two rows asserting
+    DIFFERENT names effective the same day for the same ticker did not trip the
+    duplicate-key check -- they both landed.  That is an unresolved source
+    conflict and it takes the QUARANTINE disposition (not a raise: a raise would
+    leave the rows with no disposition at all and would kill a whole 35-year
+    collection run instead of blocking one year-unit).
+    """
+    _seed_reference(tmp_path)
+    record = _collect_namechange(tmp_path, _namechange_frame(
+        {"ts_code": "600519.SH", "name": "名称甲", "start_date": "20240101",
+         "end_date": None, "ann_date": "20240810", "change_reason": "改名"},
+        {"ts_code": "600519.SH", "name": "名称乙", "start_date": "20240101",
+         "end_date": None, "ann_date": "20240810", "change_reason": "改名"},
+    ), monkeypatch)
+
+    assert record["status"] == "failed"
+    # BOTH rows quarantine -- the conflict is a property of the group, and
+    # keeping either one would be an arbitrary resolution of a source conflict.
+    assert record["quarantined_unknown_row_count"] == 2
+    assert record["landed_a_row_count"] == 0
+    _assert_source_equation(record)
+    quarantine = pd.read_parquet(spine._classification_partition(
+        tmp_path, "quarantined_unknown", "namechange", date(2024, 8, 10),
+    ))
+    assert quarantine["classification_source"].tolist() == [
+        "namechange_conflicting_names_same_effective_from",
+    ] * 2
+
+
+def test_t8_reannouncement_of_the_same_name_is_not_a_conflict(tmp_path, monkeypatch):
+    """T8 -- N4 must be scoped to genuine conflicts.
+
+    Same ticker, same effective_from, SAME name, different announcement date is
+    a re-announcement.  If T7's group check swallowed these it would quarantine
+    ordinary vendor behaviour and block units for no reason.
+    """
+    _seed_reference(tmp_path)
+    record = _collect_namechange(tmp_path, _namechange_frame(
+        {"ts_code": "600519.SH", "name": "同一名称", "start_date": "20240101",
+         "end_date": None, "ann_date": "20240101", "change_reason": "改名"},
+        {"ts_code": "600519.SH", "name": "同一名称", "start_date": "20240101",
+         "end_date": None, "ann_date": "20240810", "change_reason": "改名"},
+    ), monkeypatch)
+
+    assert record["status"] == "complete"
+    assert record["landed_a_row_count"] == 2
+    assert record["quarantined_unknown_row_count"] == 0
+    _assert_source_equation(record)
+
+
+def test_t9_replay_proof_removing_a_witness_cannot_delete_a_name_history_observation(
+    tmp_path, monkeypatch,
+):
+    """T9 -- REPLAY PROOF, required by name in Sol RETURN-GATE 10B.
+
+    Removing an external witness must not delete a valid historical
+    name-history observation.  Run A carries the full seeded stock_basic
+    witness; run B is identical except `600519.SS` is absent from it.  The
+    landed OBSERVATION must be byte-identical across the two runs -- only the
+    corroboration disposition, which is metadata and deliberately not part of
+    KEY_COLUMNS, may differ.
+    """
+    frame = _namechange_frame({
+        "ts_code": "600519.SH", "name": "历史名称", "start_date": "20240101",
+        "end_date": "20240630", "ann_date": "20240810", "change_reason": "改名",
+    })
+
+    def _run(store: Path, *, drop: str | None) -> tuple[pd.DataFrame, dict]:
+        store.mkdir()
+        _seed_reference(store, drop_stock_basic_ts_code=drop)
+        record = _collect_namechange(store, frame, monkeypatch)
+        return pd.read_parquet(spine._name_partition(store, 2024)), record
+
+    landed_a, record_a = _run(tmp_path / "run_a", drop=None)
+    landed_b, record_b = _run(tmp_path / "run_b", drop="600519.SS")
+
+    # The observation SURVIVES the witness deletion, and the unit still closes.
+    assert record_a["status"] == "complete"
+    assert record_b["status"] == "complete"
+    assert record_a["landed_a_row_count"] == record_b["landed_a_row_count"] == 1
+
+    # The observation itself is IDENTICAL.
+    observation = [
+        *spine.KEY_COLUMNS["name_history"],
+        "security_id", "exchange", "board", "effective_to", "change_reason",
+        "is_st_name", "st_provenance", "source",
+    ]
+    pd.testing.assert_frame_equal(landed_a[observation], landed_b[observation])
+
+    # ONLY the disposition flips, plus its telemetry.
+    assert landed_a["source_disposition"].tolist() == ["externally_corroborated"]
+    assert landed_b["source_disposition"].tolist() == ["namechange_only"]
+    assert record_a["namechange_only_row_count"] == 0
+    assert record_b["namechange_only_row_count"] == 1
+
+
+def test_t10_negative_proof_namechange_only_row_gains_no_universe_or_event_authority(
+    tmp_path, monkeypatch,
+):
+    """T10 -- NEGATIVE PROOF, required by name in Sol RETURN-GATE 10B.
+
+    A namechange-only row must not enter an exact eligible/event population
+    without independent qualifying evidence.
+
+    The `_all_known_a_tickers` assertion is the load-bearing one.  Today
+    `name_history` is a LEAF -- nothing reads its partitions but its own receipt
+    builder -- but "no consumer today" is exactly the kind of fact that changes
+    silently.  If a landed name-history row ever fed back into the known-A set,
+    a namechange-only observation would bootstrap itself into the very PIT
+    membership authority this ruling denies it.  That inversion is pinned here.
+    """
+    master = _seed_spine(tmp_path)
+    for trade_date in ("20240102", "20240103"):
+        _land_endpoint_day(tmp_path, "daily", trade_date, _daily_rows(trade_date))
+        _land_endpoint_day(tmp_path, "daily_basic", trade_date, _daily_basic_rows(trade_date))
+        _land_endpoint_day(tmp_path, "stk_limit", trade_date, _limit_rows(trade_date))
+        # The BSE name is eligible but absent from daily; account for it as
+        # suspended so the coverage baseline is a clean zero. Without this the
+        # assertion below would read 2 from the FIXTURE and could never detect
+        # a namechange-only ticker leaking into the eligible population.
+        _land_endpoint_day(tmp_path, "suspend_d", trade_date, pd.DataFrame([{
+            "ts_code": "920163.BJ", "trade_date": trade_date,
+            "suspend_timing": None, "suspend_type": "S",
+        }]))
+
+    # `600999.SH` has a name assertion and NOTHING else: no witness, no PIT
+    # observation, no daily row, no legal-band evidence.
+    record = _collect_namechange(tmp_path, _namechange_frame({
+        "ts_code": "600999.SH", "name": "仅有更名记录", "start_date": "20240101",
+        "end_date": None, "ann_date": "20240810", "change_reason": "改名",
+    }), monkeypatch)
+    assert record["status"] == "complete"
+    landed = pd.read_parquet(spine._name_partition(tmp_path, 2024))
+    assert landed.loc[landed["ticker"] == "600999.SS", "source_disposition"].tolist() == [
+        "namechange_only",
+    ]
+
+    # ZERO canonical-identity / PIT-membership authority: landing the name
+    # history must not have minted universe membership.
+    assert "600999.SS" not in spine._all_known_a_tickers(tmp_path, GENERATION)
+    for trade_date in ("2024-01-02", "2024-01-03"):
+        assert "600999.SS" not in spine._eligible_tickers_with_pit(tmp_path, master, trade_date)
+
+    # ZERO exact-event authority.
+    substrate = spine.build_canonical_event_substrate(
+        tmp_path, date(2024, 1, 2), date(2024, 1, 3),
+    )
+    assert substrate["ready"] is True
+    events = pd.concat(
+        [pd.read_parquet(p) for p in
+         sorted((tmp_path / "event_daily").glob("year=*/month=*/part.parquet"))],
+        ignore_index=True,
+    )
+    assert "600999.SS" not in set(events["ticker"].astype(str))
+
+    # POSITIVE CONTROL -- without this the test could pass vacuously on an
+    # empty event plane rather than on the exclusion it claims to prove.
+    茅台 = events[events["ticker"] == "600519.SS"]
+    assert not 茅台.empty
+    assert bool(茅台["event_eligible"].iloc[0]) is True
+
+    # The namechange-only ticker is not silently charged to coverage either.
+    coverage = spine.build_daily_security_coverage(
+        tmp_path, date(2024, 1, 2), date(2024, 1, 3),
+        spine.load_state(tmp_path), GENERATION,
+    )
+    assert int(coverage["unexplained_missing_n"].sum()) == 0
+
+
+def test_t11_external_witness_missing_rate_is_reported_and_is_zero_not_none(tmp_path, monkeypatch):
+    """T11 -- the rate is TELEMETRY: reported always, thresholded never.
+
+    A fully corroborated plane must report `0.0`, not `None` and not a divide
+    by zero -- a null here would be indistinguishable from "not measured", and
+    the whole point of Sol's telemetry clause is that the omission is always
+    visible.
+    """
+    _seed_spine(tmp_path)
+    _collect_namechange(tmp_path, _namechange_frame({
+        "ts_code": "600519.SH", "name": "有见证", "start_date": "20240101",
+        "end_date": None, "ann_date": "20240810", "change_reason": "改名",
+    }), monkeypatch)
+
+    manifest = spine.build_completeness_manifest(
+        tmp_path, date(2024, 1, 2), date(2024, 1, 3), spine.DEFAULT_ENDPOINTS,
+        generated_at=NOW.isoformat(),
+    )
+    receipts = manifest["reference"]
+    assert receipts["name_history_namechange_only_row_count"] == 0
+    rate = receipts["name_history_external_witness_missing_rate"]
+    assert rate == 0.0
+    assert isinstance(rate, float)
+
+    law = manifest["contracts"]["name_history"]["reconciliation_law"]
+    assert "no external witness to exist" in law
+    assert "NOT 100% external corroboration" in law

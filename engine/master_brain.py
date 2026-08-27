@@ -2602,18 +2602,76 @@ def _normalize_zh_lexicon(s: str | None) -> str | None:
     return s
 
 
-def _translate_brief(brief: dict, cfg: dict) -> None:
-    """Attach a Chinese version (brief['zh']) via the shared DeepSeek translator
-    (engine/translate.translate_to_zh) so the dashboard's 中文 toggle shows the brief
-    in Chinese. The brief is unique daily, so it's translated fresh each run — a cheap
-    V4-Flash pass. Degrade-never-raise: on any failure brief['zh'] is omitted and the
-    panel falls back to English (per field)."""
+_ZH_SYSTEM = (
+    "You are a professional financial translator. Translate each item of the JSON "
+    "array into concise, natural Simplified Chinese. Preserve ticker symbols, company "
+    "names commonly used in English, numbers, and market terms such as ETF names. Do "
+    "not add analysis, commentary, or extra items. Return ONLY a JSON array of "
+    "strings, exactly one output per input, in the same order."
+)
+
+
+def _extract_zh_array(text: str) -> list | None:
+    """Pull a JSON array out of a model reply, tolerating fences and prose. PURE."""
+    if not text:
+        return None
+    i, j = text.find("["), text.rfind("]")
+    if i < 0 or j <= i:
+        return None
+    try:
+        out = json.loads(text[i:j + 1])
+    except (json.JSONDecodeError, ValueError):
+        return None
+    return out if isinstance(out, list) else None
+
+
+def _zh_batch(texts: list[str], cfg: dict, lens: str) -> list[str | None]:
+    """Translate ONE batch through the SAME ladder that wrote the brief.
+
+    Returns a same-length list, None per item on any failure. The batch fails
+    CLOSED on a count mismatch: a short array would silently shift every later
+    field onto the wrong key, which is far worse than falling back to English.
+    """
+    none: list[str | None] = [None] * len(texts)
+    user = ("Translate each item to Simplified Chinese and return a JSON array of the "
+            "same length and order:\n" + json.dumps(texts, ensure_ascii=False))
+    reply, _reason = _call_model(_ZH_SYSTEM, user, {**cfg, "usage_stage": f"{lens}-zh"})
+    arr = _extract_zh_array(reply or "")
+    if arr is None or len(arr) != len(texts):
+        log.warning("master_brain zh: batch malformed (got %s for %d items) — "
+                    "keeping English", None if arr is None else len(arr), len(texts))
+        return none
+    out: list[str | None] = []
+    for v in arr:
+        s = str(v).strip() if v is not None else ""
+        # Accept only non-empty strings that actually contain CJK — a model that
+        # echoes the English back must not be recorded as a translation.
+        out.append(s if (s and any("一" <= ch <= "鿿" for ch in s)) else None)
+    return out
+
+
+def _translate_brief(brief: dict, cfg: dict, lens: str = "macro") -> None:
+    """Attach a Chinese version (brief['zh']) so the dashboard's 中文 toggle shows the
+    brief in Chinese.
+
+    THE WRITER TRANSLATES ITS OWN BRIEF (operator 2026-08-27). This used to build a
+    hardcoded DeepSeek V4-Flash client and call engine.translate, which has no
+    provider ladder — so the English half survived a DeepSeek balance exhaustion and
+    the 中文 half did not, and every zh pass was billed to the one metered provider
+    even on nights Codex and Claude wrote the brief for free. It now goes through
+    _call_model, i.e. the same codex → oauth → anthropic → deepseek waterfall, the
+    same lane and the same cooling policy that produced the English text; the lens's
+    usage_stage is suffixed "-zh" so the cost ledger can still tell the two apart.
+
+    Batched (6 items) so a truncated or malformed reply costs one batch, not the whole
+    brief. Degrade-never-raise: on any failure brief['zh'] is omitted or partial and
+    the panel falls back to English per field.
+    """
     if not cfg.get("translate_zh", True):
         return
     if brief.get("degraded_reason") and not brief.get("regime_read"):
         return                                       # nothing usable to translate
     try:
-        from engine import translate as _tr
         texts: list[str] = []
         layout: list[tuple[str, int | None]] = []
         for k in _ZH_SCALARS:
@@ -2626,17 +2684,15 @@ def _translate_brief(brief: dict, cfg: dict) -> None:
                     layout.append((k, i)); texts.append(v)
         if not texts:
             return
-        tcfg = {                                     # force-on Flash translate (independent of profile_translation)
-            "enabled": True,
-            "base_url": cfg.get("llm_base_url", "https://api.deepseek.com/anthropic"),
-            "api_key_env": cfg.get("api_key_env", "DEEPSEEK_API_KEY"),
-            "model": cfg.get("translate_model", "deepseek-v4-flash"),
-            # small batches + generous cap: a Flash batch that hits max_tokens fails the
-            # WHOLE batch closed (translate._translate_one_batch), and a long brief in one
-            # 24-item batch blows the cap -> zero zh. Split it so any truncation is local.
-            "max_chars": 2000, "max_tokens": 8000, "batch_size": 6,
-        }
-        zh_list = _tr.translate_to_zh(texts, tcfg)
+        # Small batches on purpose: a reply that hits max_tokens fails its batch
+        # CLOSED, so a 24-item single batch that truncates yields zero 中文. Six keeps
+        # any truncation local to a handful of fields.
+        batch_size = max(1, int(cfg.get("zh_batch_size", 6)))
+        max_chars = max(1, int(cfg.get("zh_max_chars", 2000)))
+        zh_list: list[str | None] = []
+        for start in range(0, len(texts), batch_size):
+            chunk = [t[:max_chars] for t in texts[start:start + batch_size]]
+            zh_list.extend(_zh_batch(chunk, cfg, lens))
         if not zh_list or all(x is None for x in zh_list):
             return
         zh: dict = {"summary": None, "regime_read": None, "rotation_check": None,
@@ -2702,7 +2758,7 @@ def run(persist: bool = True, root: Path | None = None, force: bool = False,
             brief["key_facts"] = _key_facts_for(lens, state)
         except Exception:  # noqa: BLE001 — additive, never fatal
             brief["key_facts"] = []
-        _translate_brief(brief, cfg)          # attach brief['zh'] for the 中文 toggle
+        _translate_brief(brief, cfg, lens)    # attach brief['zh'] for the 中文 toggle
         if persist:
             try:
                 payload = json.dumps(brief, indent=2, default=str)

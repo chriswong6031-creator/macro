@@ -44,19 +44,28 @@ def test_reply_cache_roundtrip_root_aware(tmp_path):
 
 def test_translate_brief_covers_tldr(monkeypatch):
     """_translate_brief must pre-size zh['tldr'] — a missing key raised KeyError
-    inside the fail-open except and silently dropped the ENTIRE zh block."""
-    from engine import translate as _tr
-    monkeypatch.setattr(_tr, "translate_to_zh",
-                        lambda texts, cfg: ["ZH:" + t for t in texts])
+    inside the fail-open except and silently dropped the ENTIRE zh block.
+
+    SEAM NOTE (2026-08-27): the zh pass no longer calls engine.translate — the
+    worker that wrote the brief now translates it through _call_model, i.e. the
+    shared provider ladder. This test stubs that seam instead. The 译 prefix is
+    load-bearing: _zh_batch rejects any item with no CJK, because a model echoing
+    the English back has not translated anything.
+    """
+    def fake_call_model(system, user, cfg, served=None):
+        items = json.loads(user[user.find("["):user.rfind("]") + 1])
+        return json.dumps(["译" + t for t in items]), None
+
+    monkeypatch.setattr(mb, "_call_model", fake_call_model)
     brief = {"tldr": ["Head: one", "What to do: Watch — don't chase."],
              "summary": "s", "regime_read": "r", "rotation_check": None,
              "conflicts": ["c1"], "transmission": [], "watch_items": ["w1"],
              "confidence": "low"}
     mb._translate_brief(brief, {})
     assert "zh" in brief, "zh block must survive a v2 brief with tldr"
-    assert brief["zh"]["tldr"] == ["ZH:Head: one",
-                                   "ZH:What to do: Watch — don't chase."]
-    assert brief["zh"]["conflicts"] == ["ZH:c1"]
+    assert brief["zh"]["tldr"] == ["译Head: one",
+                                   "译What to do: Watch — don't chase."]
+    assert brief["zh"]["conflicts"] == ["译c1"]
 
 MACRO = {
     "date": "2026-06-12", "quad": "Q1", "quad_name": "Goldilocks", "label": "Q1",

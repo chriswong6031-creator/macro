@@ -1,6 +1,9 @@
 # CI Latency + Autonomous Healing — masterplan
 
-**Commissioned by the operator, 2026-08-17.** Status: chartered, no wave built.
+**Commissioned by the operator, 2026-08-17.** Status: active; W1 and substantial
+planner/checkout infrastructure have landed, trusted-PC production routing is in
+P3B-B on issue #6351, and the remaining latency/capacity waves are held behind that
+route's exact-head proof and P4 natural-traffic acceptance.
 
 This is a **dedicated wave, deliberately separate from PR #5823**. Standing constraint
 for the whole program: *do not let a routing-feature PR rewrite CI infrastructure while
@@ -14,6 +17,94 @@ already does real work (measured on #5823: `scoped to 16 changed file(s): 6/194 
 exclusive`). This program is that system's next maturation step — fast front-door
 validation, cheap checkouts, cached base proofs, empirical balancing, a closed-loop
 healer — not a rewrite.
+
+## 2026-08-26 current-state amendment
+
+This amendment reconciles the original charter with the system that now exists. It does
+not authorize a parallel CI plane and it does not make the private-repository cutover.
+
+### What the repository is actually doing
+
+- The code gate currently contains **132 logical jobs**, partitioned into twelve stable
+  semantic check names. A full-suite validation at current main reports pack weights
+  `274,272,172,172,172,171,170,170,170,170,173,171`; the first two partitions carry a
+  materially heavier tail than the other ten.
+- Ordinary PRs do **not** automatically execute all 132 jobs or all twelve packs. The
+  hosted planner computes one exact changed-file set, conservatively infers ownership,
+  and launches only the non-empty pack indices. Global-invalidating paths, unscoped jobs,
+  opaque filesystem/subprocess traversals, and deliberately broad owners still widen a
+  PR. That conservatism is why a small-looking change can legitimately select a long
+  tail.
+- A logical job is one serial sequence of checkout, tool setup, dependency installation,
+  and one or more validation steps. The repository repeatedly folded unrelated suites
+  into existing logical jobs to preserve the representative-diff scoping ratio. That kept
+  coverage visible, but it also made one selected owner inherit every folded suite and
+  made a slow step hold the whole pack open.
+- P1/P2 proved three isolated Linux/x86 CI slots on the PC with a root-owned read-only
+  object cache and an independent render reservation. P3B-A made the main-owned executor
+  callable. P3B-B is the single live production-route carrier; no latency or slot-count
+  edit may overlap it. P4 must then prove three natural ordinary PRs before the route is
+  accepted as production behavior.
+- The PC is a 24-core/24-thread Core Ultra 9 285K, but WSL is intentionally limited to
+  16 CPUs, 44 GiB memory, and 8 GiB swap. Three CI candidates are proven. A fourth is the
+  next admissible experiment only after an aggregate CI cgroup/slice budget and a
+  render-aware resource receipt exist. Six or eight are not inferred from idle core
+  count.
+- The stationary M4 Pro MacBook is available for six months, but it is a macOS/ARM host,
+  not a semantic substitute for Linux/x86 CI. Its first lawful role is a narrow,
+  main-defined `macos-arm-validation` capability with no production route. The three
+  current M4 minis are deferred because they will be replaced in roughly two weeks; the
+  role must be device-independent so a replacement mini can assume it later.
+
+### Why packs are numerous and why some are long
+
+The answer is not simply "the codebase is huge." The repository spans product rendering,
+data contracts, workflow authority, market engines, publication, Agent OS, deployment,
+and security fences, so broad validation is real. But the current latency comes from four
+separable mechanisms:
+
+1. **Conservative ownership.** Static inference must widen when a test traverses the
+   filesystem, launches opaque subprocesses, imports dynamically, or owns a global graph.
+2. **Folded ownership.** Several independent suites share one logical owner because the
+   manifest's scoping-ratio guard punished adding a broad job. Selecting that owner runs
+   the whole bundle.
+3. **Repeated environment startup.** Every selected pack repeats checkout, Python/Node
+   setup, virtual-environment creation, and dependency installation before useful work.
+4. **Stale balancing units.** Hand-maintained job weights do not reliably predict current
+   checkout/install/test wall time, so one long owner can dominate the verdict after the
+   other packs finish.
+
+This is recognizable in large monorepos, but mature systems normally combine explicit
+ownership graphs, hermetic task caching, immutable dependency caches, empirical weights,
+and a small always-on trust core. Running every test for every PR is not the target here;
+running every validation that the exact change can affect, plus the non-negotiable trust
+fences, is.
+
+### Revised execution order
+
+The route and latency programs share authority files, so they are serialized:
+
+1. Finish the existing P3B-B carrier and P4 natural-traffic proof without changing its
+   planner, job selection, pack topology, or resource envelope.
+2. Capture a current per-logical-job cost/selection corpus from those natural PRs. This is
+   the baseline for every later latency claim.
+3. Split false ownership coupling, beginning with suites folded into broad jobs. Preserve
+   the actual security/merge fences and use coverage-audited `scope: exclusive` only where
+   the closure checker proves the declaration complete.
+4. Remove repeated startup cost with immutable dependency caches keyed by lock/input and
+   execution profile. Candidate jobs may consume but never mutate shared cache state.
+5. Add result reuse only for hermetic jobs keyed by exact tree/input/dependency/toolchain
+   identity. Missing, stale, corrupt, or non-hermetic evidence must execute live.
+6. Recalibrate job weights and, only from measured evidence, reconsider the fixed twelve
+   partitions. Check names remain stable until merge-control consumers are migrated.
+7. In a separate capacity carrier, prove a fourth PC slot under one aggregate CI resource
+   slice and a naturally active render. Do not proceed to six until four has a clean
+   pressure, cache, teardown, and render receipt.
+8. In a separate host carrier, build the device-independent macOS/ARM validation role and
+   keep production routing disabled until its isolation, reboot, contamination, cache,
+   and thermal gates pass.
+9. Recompute hosted-minute projection, ordinary-PR p50/p95, simultaneous-PR queueing, and
+   render/native contention. Only then assemble the private-cutover packet.
 
 ---
 
@@ -111,11 +202,20 @@ graph, so a later edit cannot reorder it back.
 Watch: preflight must not become a second scoping authority. It answers *"is this diff
 structurally well-formed"*, never *"which jobs run"*.
 
-### W3 — Collapse the planner (< 60 s)
-Feed the planner PR changed-file metadata directly, or sparse-checkout only the CI
-authority/config/scope files it needs. Profile the ~3m47 compute stage separately before
-optimizing it — the checkout and the compute are different problems and may have
-different fixes.
+Implementation must specify and test the full dependency/aggregate matrix on the
+post-P3B-B workflow: same-repository trusted execution, fork-hosted execution,
+`workflow_dispatch` main proof, a no-work PR, malformed/absent planner evidence, and
+preflight failure. Uncertainty widens to the existing full-suite path; it never suppresses
+work. `ci-gate` must still publish one affirmative conclusion when downstream packs are
+lawfully skipped. Checks that can be red on base use the existing differential
+base-versus-head contract rather than becoming absolute always-on fleet blockers.
+
+### W3 — Collapse the planner (< 60 s) *(CAPABILITY LANDED; residual work measured only)*
+The sparse/tracked planner checkout and preserved selection law have landed. Do not reopen
+or duplicate W3. Profile current natural traffic after P4; only a measured residual above
+the gate may commission a new optimization carrier. That carrier may feed PR changed-file
+metadata directly or further reduce the exact authority/config/scope materialization, but
+checkout and compute remain separately receipted.
 
 Gate: `ci-plan` < 60 s p95, with the **identical** job selection as today on a corpus of
 replayed real PRs (selection equality is the correctness proof; a faster planner that
@@ -158,12 +258,13 @@ Gate: max/min pack wall-clock ratio ≤ 2× on a replay corpus (from the current
 ### W7 — CI Failure Router / healer
 Classify every concluded red as exactly one of:
 
-| Class | Routing |
+| Class | Advisory disposition |
 |---|---|
-| `PR_OWNED` | back to the producing agent on a trusted same-repo branch, with the exact failed logical job, command, annotations, and changed files |
-| `BASE_INHERITED` | to a CI/main healer — **never** the feature author |
-| `INFRA_TRANSIENT` | one automatic rerun |
+| `PR_OWNED` | evidence names the producing carrier and exact failed logical job, command, annotations, and changed files |
+| `BASE_INHERITED` | evidence names the CI/main owner — **never** the feature author |
+| `INFRA_TRANSIENT` | eligible for a later controller-owned bounded retry only after the separate retry gate |
 | `NON_BINDING_DESIGNED_RED` | no work generated, ever |
+| `UNKNOWN_UNATTRIBUTABLE` | advisory only; no blame, rerun, or work generated |
 
 The classification inputs already exist and are load-bearing: `ship_loop_guard.py`
 already distinguishes base-inherited from PR-owned reds (same check red on ≥2 independent
@@ -176,11 +277,27 @@ designed-red. Hazards: a pack is ONE check, so two partial heals deadlock — th
 must route a pack's whole failure set to one owner; and "not red" is not "green" — a
 pending check is not a pass.
 
-### W8 — Definition of done is "green", not "PR created"
+The first W7 carrier is **advisory classification only** and writes no work item, message,
+rerun, dispatch, scheduler state, or producer-agent assignment. An infra-transient retry
+may be added only through the existing merge controller after it proves the exact same SHA
+and tested merge tree, owns one bounded retry under the existing concurrency contract, and
+cannot race a baseline refresh. No new queue, lease, registry, retry, or lifecycle plane is
+authorized by this masterplan.
+
+The implementation seam is one pure `scripts/ci_failure_classification.py` module
+extracted under tests from the existing `ship_loop_guard.py` rules. It accepts explicit
+immutable check/provenance/timing inputs and returns only the classification plus evidence;
+it has no GitHub or filesystem mutation. Both the hook and the advisory reporter import
+that module. A labelled fixture corpus must prove parity with the pre-extraction hook and
+with every overlapping merge-controller classification before either consumer changes.
+
+### W8 — Definition of done is "delivered", not "PR created"
 Sessions (Claude / Codex / Cursor) run the fast local preflight **before** pushing, and
-stay responsible for their branch until binding CI is green or they produce an explicit
-`BLOCKED` handoff with evidence. This is the accountability loop the rest of the program
-depends on; the hook layer (`ship_loop_guard.py`) already encodes most of it.
+stay responsible through concluded binding CI, merge, and relevant live verification. The
+only non-merge terminal states are those already allowed by repository law: a fully
+ratified `HOLD-FOR-SOL` or the separately governed actual-external-blocker protocol with
+exact evidence. This masterplan does not create a generic `BLOCKED` handoff escape. The
+hook layer (`ship_loop_guard.py`) already encodes most of the accountability loop.
 
 Gate: local preflight is one documented command, runs in the same budget as W2, and its
 verdict matches CI's for the checks it covers — including **on a sparse worktree**, where
@@ -193,19 +310,29 @@ CPU-heavy packs. Rationale for the ordering: paying for 16 cores while spending 
 minutes cloning 19 GB and synchronously replaying base failures treats the symptom, not
 the architecture.
 
-Keep the self-hosted fleet a **measured option, not the default**: benchmark the same
-heavy pack hosted vs `ci-linux` with the persistent repo cache — the existing canary is
-already instrumented for checkout/test/resource comparison. If self-hosted wins
-decisively, reserve **one or two** CI slots; never consume all four render machines. The
-render budget is law (~67 min, 4-core-bound), and the nightly/render lanes have priority
-over CI throughput.
+Keep the self-hosted fleet a **measured option, not an unbounded default**: benchmark the
+same heavy pack hosted vs `ci-linux` with the persistent repo cache — the existing canary
+is already instrumented for checkout/test/resource comparison. The original one-or-two
+slot proposal is superseded by the accepted 2026-08-26 topology: three PC CI slots are
+proven, and exactly one fourth slot is the next capacity experiment. All four must share
+one enforced aggregate CI resource slice and preserve the independent render reservation.
+Do not infer six or eight slots from nominal core count; each increase requires natural
+traffic, cgroup pressure, teardown, cache, and concurrent-render receipts from the prior
+level. The render budget remains law (~67 min, 4-core-bound), and the nightly/render lanes
+retain priority over CI throughput.
+
+The stationary M4 Pro MacBook is a separate native-validation experiment, not a fifth
+Linux/x86 pack slot. Its role is one narrow `macos-arm-validation` capability, sealed so
+that the same contract can be reconstructed on a replacement M4 mini. It does not acquire
+`ci-linux`, `macstudio`, render, merge-control, or generic overflow authority.
 
 ---
 
 ## §3 Sequencing and ownership
 
-W2 → W3 → W4 → W5 → W6 → W7 → W8, then W9. W3/W4 are coupled (the planner emits what W4
-consumes) but ship separately so a planner regression is bisectable.
+W2 → residual planner measurement → W4 → W5 → W6 → advisory W7 → W8, then W9. The landed
+W3 capability is not rerun; any measured residual planner optimization and W4 ship
+separately so a planner regression is bisectable.
 
 Run as a **chain of short sessions** over this document, one wave per session, per the
 context-economy law — not one long session. Each session: read this file, read the

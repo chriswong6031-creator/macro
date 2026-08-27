@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import replace
 from hashlib import sha256
 from io import BytesIO
+import json
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 from zipfile import ZIP_DEFLATED, ZipFile
@@ -1003,3 +1004,125 @@ def test_filing_index_rejects_unsafe_member_name() -> None:
     payload = {"directory": {"item": [{"name": "../primary_doc.xml"}]}}
     with pytest.raises(SecSourceError, match="unsafe filing document"):
         parse_filing_index(payload, index_url=INDEX_URL)
+
+
+# --- SEC index.json document-omission regression (~2026-08-25) -----------
+#
+# EDGAR's archive index.json has intermittently served a directory.item list
+# that omits one of the filing's own XML documents.  Verified live
+# 2026-08-27: accession 0000905148-26-003956 (Whitebox Advisors, CIK
+# 1257391, 13F-HR/A) has an index.json that lists only form13fInfoTable.xml
+# and the two index/txt files -- primary_doc.xml is absent from index.json
+# even though it serves fine directly and is listed in the filing's own SGML
+# header.  The fixtures below are captured live (not synthesized) so this
+# suite is pinned to the actual regression shape rather than a guess at it.
+
+REGRESSION_FIXTURES = FIXTURES / "regression_index_omission"
+REGRESSION_ACCESSION = "0000905148-26-003956"
+REGRESSION_INDEX_URL = (
+    "https://www.sec.gov/Archives/edgar/data/1257391/000090514826003956/"
+    "0000905148-26-003956-index.htm"
+)
+
+
+def test_read_filing_package_recovers_document_missing_from_index_json(capsys) -> None:
+    index_body = (REGRESSION_FIXTURES / "index.json").read_bytes()
+    index_names = {item["name"] for item in json.loads(index_body)["directory"]["item"]}
+    assert "primary_doc.xml" not in index_names, (
+        "captured fixture no longer reproduces the index.json omission -- "
+        "re-capture it before trusting this test"
+    )
+
+    documents = {
+        "0000905148-26-003956-index-headers.html": (
+            REGRESSION_FIXTURES / "0000905148-26-003956-index-headers.html"
+        ).read_bytes(),
+        "form13fInfoTable.xml": (
+            REGRESSION_FIXTURES / "form13fInfoTable.xml"
+        ).read_bytes(),
+        "primary_doc.xml": (REGRESSION_FIXTURES / "primary_doc.xml").read_bytes(),
+    }
+    calls: list[str] = []
+
+    def fetch(url: str) -> bytes:
+        calls.append(url)
+        if url.endswith("/index.json"):
+            return index_body
+        return documents[url.rsplit("/", 1)[-1]]
+
+    tables = read_filing_package(REGRESSION_INDEX_URL, fetch)
+
+    submission = tables.submissions.iloc[0]
+    assert submission["cik"] == "0001257391"
+    assert submission["form"] == "13F-HR/A"
+    assert submission["accession"] == REGRESSION_ACCESSION
+    assert not tables.holdings.empty
+
+    assert any(url.endswith("/primary_doc.xml") for url in calls), (
+        "recovery must actively fetch the document index.json omitted"
+    )
+
+    out = capsys.readouterr().out
+    warning_lines = [line for line in out.splitlines() if line.startswith("::")]
+    assert any(
+        line.startswith("::warning title=sec-index-missing-documents::")
+        for line in warning_lines
+    ), f"no recovery annotation emitted; captured: {out!r}"
+
+
+def test_parse_filing_package_recovers_xml_omitted_from_index_json() -> None:
+    """Same recovery, exercised on the pre-existing fixture set: a hand-built
+    index.json with the information_table.xml entry dropped still parses when
+    the document body is supplied (SGML recovery), and still fails closed
+    when it is not (no body to recover with -- the completeness gate must
+    stay a real gate, not a rubber stamp)."""
+
+    index_payload = json.loads((FIXTURES / "filing_index.json").read_bytes())
+    items = index_payload["directory"]["item"]
+    truncated_items = [item for item in items if item["name"] != "information_table.xml"]
+    assert len(truncated_items) == len(items) - 1
+    index_payload["directory"]["item"] = truncated_items
+
+    base_header = (FIXTURES / "0001398344-26-013841-index-headers.html").read_text()
+    assert "FILENAME" not in base_header.upper(), (
+        "fixture header must not already list documents, or this test proves nothing"
+    )
+    header_source = base_header.replace(
+        "</PRE></BODY></HTML>",
+        "&lt;DOCUMENT&gt;\n&lt;TYPE&gt;13F-HR/A\n&lt;SEQUENCE&gt;1\n"
+        "&lt;FILENAME&gt;primary_doc.xml\n&lt;/DOCUMENT&gt;\n"
+        "&lt;DOCUMENT&gt;\n&lt;TYPE&gt;INFORMATION TABLE\n&lt;SEQUENCE&gt;2\n"
+        "&lt;FILENAME&gt;information_table.xml\n&lt;/DOCUMENT&gt;\n"
+        "</PRE></BODY></HTML>",
+    )
+    assert header_source != base_header
+
+    documents = {
+        "0001398344-26-013841-index-headers.html": header_source.encode("utf-8"),
+        "primary_doc.xml": (FIXTURES / "primary_doc.xml").read_bytes(),
+        "information_table.xml": (FIXTURES / "information_table.xml").read_bytes(),
+    }
+
+    tables = parse_filing_package(
+        index_url=INDEX_URL,
+        index_source=index_payload,
+        documents=documents,
+    )
+    assert len(tables.holdings) == 2
+
+    incomplete = dict(documents)
+    incomplete.pop("information_table.xml")
+    with pytest.raises(SecSourceError, match="not supplied"):
+        parse_filing_package(
+            index_url=INDEX_URL,
+            index_source=index_payload,
+            documents=incomplete,
+        )
+
+
+def test_sgml_document_names_rejects_unsafe_filename() -> None:
+    from engine.institutional_census import sec_sources
+
+    header = "<PRE>&lt;DOCUMENT&gt;\n&lt;FILENAME&gt;../evil.xml\n&lt;/DOCUMENT&gt;</PRE>"
+    with pytest.raises(SecSourceError, match="unsafe filing document name"):
+        sec_sources._sgml_document_names(header)

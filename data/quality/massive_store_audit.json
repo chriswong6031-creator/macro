@@ -1,5 +1,5 @@
 {
- "asof": "2026-08-25",
+ "asof": "2026-08-26",
  "audit": "massive_stock_day",
  "config": {
   "price_max_gap_days": 4,
