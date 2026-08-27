@@ -1,0 +1,256 @@
+{
+  "as_of": "2026-08-27",
+  "coverage": {
+    "end": "2026-08-26",
+    "note": "daily rollup covers 10 session-date(s) from 2026-08-17 to 2026-08-26; chronicle event store begins 2013-05-21; trimmed lowest-salience events to fit the display budget",
+    "start": "2026-08-17"
+  },
+  "schema": "chronicle.rollup.daily/v1",
+  "sessions": [
+    {
+      "date": "2026-08-26",
+      "events": []
+    },
+    {
+      "date": "2026-08-25",
+      "events": []
+    },
+    {
+      "date": "2026-08-24",
+      "events": [
+        {
+          "date": "2026-08-24",
+          "id": "cev-research_vault-2874cacaea1a",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-x6dm5a4kmqa-490e9f",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM International Market Intelligence | Morning Briefing",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-23",
+      "events": []
+    },
+    {
+      "date": "2026-08-22",
+      "events": [
+        {
+          "date": "2026-08-22",
+          "id": "cev-research_vault-a45893b7bba7",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-fkwg03orkqd-7a785b",
+          "tickers": [],
+          "title": "Morgan Stanley: MS Savone Global Reflections 22 Aug 2026",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-21",
+      "events": []
+    },
+    {
+      "date": "2026-08-20",
+      "events": []
+    },
+    {
+      "date": "2026-08-19",
+      "events": [
+        {
+          "date": "2026-08-19",
+          "id": "cev-research_vault-8d809004022b",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-iufhbreqa5u-c4615f",
+          "tickers": [],
+          "title": "Goldman Sachs: GS Early Morning Research Recap Ratings and Target Price Changes August 19, 2026 as of 5 30 AM ET",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-18",
+      "events": [
+        {
+          "date": "2026-08-18",
+          "id": "cev-regime_flip-473ee143192e",
+          "kind": "state_flip",
+          "source": "regime_flip",
+          "source_ref": "state_log#2026-08-18#regime_hk",
+          "tickers": [],
+          "title": "HK regime: Q1 Goldilocks → Q4 Growth-scare",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-18",
+          "id": "cev-research_vault-62df2f0b5d21",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-9vjczla6ost-b0629a",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM US Market Intelligence | Afternoon Briefing: Tech led Risk off;",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-18",
+          "id": "cev-research_vault-fee179a69bfa",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-4bsngk2htsd-550f52",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM US Market Intelligence Morning Briefing",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-17",
+      "events": [
+        {
+          "date": "2026-08-17",
+          "id": "cev-regime_flip-ad3dc732fc9d",
+          "kind": "state_flip",
+          "source": "regime_flip",
+          "source_ref": "state_log#2026-08-17#regime_canada",
+          "tickers": [],
+          "title": "CANADA regime: Q2 Reflation → Q1 Goldilocks",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-17",
+          "id": "cev-research_vault-0e79a325181d",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-bcfi5bg14vs-8d1ece",
+          "tickers": [],
+          "title": "S&T: MS Nick Savone Global Reflections 15 Aug 2026",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-17",
+          "id": "cev-research_vault-f39ebf9e3380",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-nh48bmuahv5-2a5c50",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM US Market Intelligence | Morning Briefing: Tactically Bullish; Roadmap to Q4; EM Update; Consumer Deep Dive",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-17",
+          "id": "cev-research_vault-f92528dcb8d3",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-ocfkz9qvblu-66a5dd",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM China AI",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-17",
+          "id": "cev-research_vault-f95e44785f26",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-0ejermzpiay-b36960",
+          "tickers": [],
+          "title": "Fidelity: gaai quarterly snapshot Q3 snapshot august 2026",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-17",
+          "id": "cev-research_vault-f97739d2b8b9",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-9squsvcqjky-314715",
+          "tickers": [],
+          "title": "Bank of America: Systematic Flows Monitor Front end Treasury short covering begins and CTA equity longs build further",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-17",
+          "id": "cev-research_vault-fa2c5e434902",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-quhg78rh6kj-0f4b56",
+          "tickers": [],
+          "title": "Societe Generale: Week Ahead in Economics Fed has more time; BoJ has less",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-17",
+          "id": "cev-research_vault-fa5ce0d5f773",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-uejo8d4qqkt-e2fd06",
+          "tickers": [],
+          "title": "Goldman Sachs: Americas Business & Information Services Weekly debt issuance, AUM, exchange traded derivative volumes and fund formation as...",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-17",
+          "id": "cev-research_vault-fc34b44022bb",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-qadnmqpr6ss-c55491",
+          "tickers": [],
+          "title": "Bank of America: A lower bar for the Fed, a higher bar for retailers",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-17",
+          "id": "cev-research_vault-fc6cfe7bb903",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-nr0cqbckka2-1e3ee2",
+          "tickers": [],
+          "title": "MetLife: MIM equityMarketReview Q2 2026",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-17",
+          "id": "cev-research_vault-fd6420ba2248",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-fladiygcar4-249b0d",
+          "tickers": [],
+          "title": "UBS: Should investors worry about private credit",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-17",
+          "id": "cev-research_vault-fd960d386af2",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-cpbpngrliuc-bd45b2",
+          "tickers": [],
+          "title": "Other: TDAGeneric NAM",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-17",
+          "id": "cev-research_vault-ff11ac17bf8c",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-gvknc2hu9rd-2b438c",
+          "tickers": [],
+          "title": "S&T: GS Duttenhoefer Daily 17 Aug 2026",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-17",
+          "id": "cev-risk_band-ec681470946e",
+          "kind": "state_flip",
+          "source": "risk_band",
+          "source_ref": "risk_radar_forward_log#2026-08-17",
+          "tickers": [],
+          "title": "Risk radar: caution → watch",
+          "weight_hint": 2
+        }
+      ]
+    }
+  ]
+}

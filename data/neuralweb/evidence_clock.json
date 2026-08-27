@@ -1,20 +1,20 @@
 {
   "schema": "neuralweb.evidence_clock.v1",
-  "as_of": "2026-08-26",
-  "generated_utc": "2026-08-26T06:13:06Z",
+  "as_of": "2026-08-27",
+  "generated_utc": "2026-08-27T10:22:38Z",
   "authority": "display_only",
   "summary": {
     "n_rows": 312,
     "by_state": {
-      "overdue": 30,
-      "due": 54,
+      "overdue": 15,
+      "due": 4,
       "human_review": 0,
       "missing": 1,
       "stale": 1,
       "blocked": 2,
       "not_ready": 0,
       "promotion_eligible": 0,
-      "accruing": 224
+      "accruing": 289
     },
     "n_acknowledged": 0,
     "top_due": {
@@ -22,7 +22,7 @@
       "due_at": "2026-06-22",
       "owner_program": "qualitative-intelligence"
     },
-    "morning_line": "84 due/overdue, 1 missing, 224 accruing, 1 stale, 2 blocked. Top due: qledger:placebo."
+    "morning_line": "19 due/overdue, 1 missing, 289 accruing, 1 stale, 2 blocked. Top due: qledger:placebo."
   },
   "rows": [
     {
@@ -133,8 +133,8 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 3034,
-        "n_past_check_by": 2144
+        "n_open": 3236,
+        "n_past_check_by": 2181
       },
       "allowed_actions": [
         "inspect",
@@ -181,8 +181,8 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 3034,
-        "n_past_check_by": 2144
+        "n_open": 3236,
+        "n_past_check_by": 2181
       },
       "allowed_actions": [
         "inspect",
@@ -229,8 +229,8 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 19878,
-        "n_past_check_by": 14963
+        "n_open": 21906,
+        "n_past_check_by": 16069
       },
       "allowed_actions": [
         "inspect",
@@ -277,8 +277,8 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 19878,
-        "n_past_check_by": 14963
+        "n_open": 21906,
+        "n_past_check_by": 16069
       },
       "allowed_actions": [
         "inspect",
@@ -417,8 +417,8 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 136,
-        "n_past_check_by": 124
+        "n_open": 155,
+        "n_past_check_by": 130
       },
       "allowed_actions": [
         "inspect",
@@ -465,8 +465,8 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 3246,
-        "n_past_check_by": 1960
+        "n_open": 3270,
+        "n_past_check_by": 2033
       },
       "allowed_actions": [
         "inspect",
@@ -534,102 +534,6 @@
       "packet": null
     },
     {
-      "clock_id": "experiments:nwci-scanner-first-review",
-      "source_system": "experiments",
-      "subject_id": "nwci-scanner-first-review",
-      "subject_type": "infrastructure_check",
-      "owner_program": "neural-web",
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-05",
-      "as_of": "2026-07-08",
-      "state": "overdue",
-      "date_state": "overdue",
-      "readiness": {
-        "maturation": "see masterplan section 4",
-        "cadence": "one-time",
-        "status": "registered",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:rf-batch-b-cortex-watch",
-      "source_system": "experiments",
-      "subject_id": "rf-batch-b-cortex-watch",
-      "subject_type": "data_collection",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-06",
-      "as_of": "2026-07-06",
-      "state": "overdue",
-      "date_state": "overdue",
-      "readiness": {
-        "maturation": "Trigger: machine_registry.jsonl exists with >=1 row having an evaluator verdict. No numeric maturation gate — this is a pipeline-health watch, not a forward-return accrual.",
-        "cadence": "on-trigger",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:china-native-w2-stores",
-      "source_system": "experiments",
-      "subject_id": "china-native-w2-stores",
-      "subject_type": "data_collection",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-08",
-      "as_of": "2026-07-26",
-      "state": "overdue",
-      "date_state": "overdue",
-      "readiness": {
-        "maturation": "every W2 store advances on trading days for ~14 consecutive days with no manual repair; etf_shares row width holds >= 1,000 funds; jisilu index accrues past its rolling ~250-session served window.",
-        "cadence": "nightly asia-lane accrual",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
       "clock_id": "experiments:institutional-floor-phase0",
       "source_system": "experiments",
       "subject_id": "institutional-floor-phase0",
@@ -662,70 +566,6 @@
       "packet": null
     },
     {
-      "clock_id": "experiments:macro-tx-phase0",
-      "source_system": "experiments",
-      "subject_id": "macro-tx-phase0",
-      "subject_type": "study",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-10",
-      "as_of": "2026-07-06",
-      "state": "overdue",
-      "date_state": "overdue",
-      "readiness": {
-        "maturation": "Runs on existing graded history (spine_index track_record ledger) — no accrual wait; the gate is build+review latency, not calendar.",
-        "cadence": "once",
-        "status": "complete",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:shadow-book",
-      "source_system": "experiments",
-      "subject_id": "shadow-book",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-10",
-      "as_of": "2026-06-18",
-      "state": "overdue",
-      "date_state": "overdue",
-      "readiness": {
-        "maturation": "row matures when p0+h < len(closes) AND close date<=asof; per-horizon IC needs >=10 names/date; ic_summary emits IC-IR/HAC-t only at >=6 distinct matured dates.",
-        "cadence": "daily snapshot + nightly maturation",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
       "clock_id": "qledger:altdata",
       "source_system": "qledger",
       "subject_id": "altdata",
@@ -737,8 +577,8 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 1252,
-        "n_past_check_by": 333
+        "n_open": 1303,
+        "n_past_check_by": 351
       },
       "allowed_actions": [
         "inspect",
@@ -758,328 +598,6 @@
       "packet": null
     },
     {
-      "clock_id": "experiments:chf-first-edge-batch",
-      "source_system": "experiments",
-      "subject_id": "chf-first-edge-batch",
-      "subject_type": "validation",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-15",
-      "as_of": null,
-      "state": "overdue",
-      "date_state": "overdue",
-      "readiness": {
-        "maturation": ">=2 weekly batches run; cumulative literal_n printed and consistent with ledger; >=1 honest null in library",
-        "cadence": "weekly",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:china-intel-hub-command",
-      "source_system": "experiments",
-      "subject_id": "china-intel-hub-command",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-15",
-      "as_of": "2026-07-06",
-      "state": "overdue",
-      "date_state": "overdue",
-      "readiness": {
-        "maturation": "n_dates>=25 then FDR gate",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:guidance-gap-ledger",
-      "source_system": "experiments",
-      "subject_id": "guidance-gap-ledger",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-15",
-      "as_of": null,
-      "state": "overdue",
-      "date_state": "overdue",
-      "readiness": {
-        "maturation": "append daily non-NEUTRAL (theme,tilt); grade on forward T4 revision-breadth resolution vs tilt direction.",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:next3-analogue-library",
-      "source_system": "experiments",
-      "subject_id": "next3-analogue-library",
-      "subject_type": "study",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-15",
-      "as_of": "2026-07-06",
-      "state": "overdue",
-      "date_state": "overdue",
-      "readiness": {
-        "maturation": "Gated on W-E0 backfill depth, not calendar; RUL-U7 fences bind any build.",
-        "cadence": "once",
-        "status": null,
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:oracle-ratio-lens",
-      "source_system": "experiments",
-      "subject_id": "oracle-ratio-lens",
-      "subject_type": "track_record",
-      "owner_program": "oracle-rotation",
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-15",
-      "as_of": "2026-07-11",
-      "state": "overdue",
-      "date_state": "overdue",
-      "readiness": {
-        "maturation": "display-only until gauntleted; accrual starts 2026-07-11; promotion requires new prereg + full gauntlet (RL-R9); come-back 2026-10-15 for field-guide review.",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:signal-sanity",
-      "source_system": "experiments",
-      "subject_id": "signal-sanity",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-15",
-      "as_of": null,
-      "state": "overdue",
-      "date_state": "overdue",
-      "readiness": {
-        "maturation": "forward_log appends daily {fired_signals,n_fired,regime,outcome}; grade on whether high-n_fired days precede directional moves / vol.",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:qledger-w6-radar",
-      "source_system": "experiments",
-      "subject_id": "qledger-w6-radar",
-      "subject_type": "qledger_promotion",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-16",
-      "as_of": "2026-07-02",
-      "state": "overdue",
-      "date_state": "overdue",
-      "readiness": {
-        "maturation": "n_dates>=25 AND Wilson-CI lower bound >0 vs matched control (§3 gate).",
-        "cadence": "daily",
-        "status": "accruing"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [
-        "site/qledger/track_record.json"
-      ],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:sector-central-grader",
-      "source_system": "experiments",
-      "subject_id": "sector-central-grader",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-16",
-      "as_of": "2026-06-28",
-      "state": "overdue",
-      "date_state": "overdue",
-      "readiness": {
-        "maturation": "grade() needs >=3 matured obs/horizon; cross-sectional rank-IC needs distinct call-dates each >=3 scores; stable IC target >=100 obs.",
-        "cadence": "daily",
-        "status": "blocked",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:calibration-hub",
-      "source_system": "experiments",
-      "subject_id": "calibration-hub",
-      "subject_type": "calibration",
-      "owner_program": "neural-web",
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-17",
-      "as_of": "2026-06-15",
-      "state": "overdue",
-      "date_state": "overdue",
-      "readiness": {
-        "maturation": "The real gate is engine/calibration_hub.py:165-259 — cold n<10; inverted if dir_acc<null_dir or conviction verdict False; weak if hit<null_hit; calibrated only when the desk placebo is available AND hit-null >= 5pp AND Holm-adjusted p < 0.05 AND independent_blocks >= 10. hit_rate>=0.5 is the demotion floor (:56), never the promotion bar. (Seed text corrected 2026-08-03; the prior 'hit_rate>=0.5 AND conviction monotone' description was wrong in both clauses.)",
-        "cadence": "on-build",
-        "status": "measuring"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [
-        "data/calibration/summary.json"
-      ],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:nwci-indicator-personality-map",
-      "source_system": "experiments",
-      "subject_id": "nwci-indicator-personality-map",
-      "subject_type": "infrastructure_check",
-      "owner_program": "neural-web",
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-17",
-      "as_of": "2026-07-08",
-      "state": "overdue",
-      "date_state": "overdue",
-      "readiness": {
-        "maturation": "see masterplan section 4",
-        "cadence": "one-time",
-        "status": "registered",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
       "clock_id": "qledger:narrative",
       "source_system": "qledger",
       "subject_id": "narrative",
@@ -1091,8 +609,8 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 337,
-        "n_past_check_by": 304
+        "n_open": 338,
+        "n_past_check_by": 306
       },
       "allowed_actions": [
         "inspect",
@@ -1123,7 +641,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 38,
+        "n_open": 39,
         "n_past_check_by": 4
       },
       "allowed_actions": [
@@ -1144,1614 +662,13 @@
       "packet": null
     },
     {
-      "clock_id": "experiments:picklab-cn-cnlab_1d_blastoff",
-      "source_system": "experiments",
-      "subject_id": "picklab-cn-cnlab_1d_blastoff",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-07-08",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_csi300_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-cn-cnlab_1d_participation",
-      "source_system": "experiments",
-      "subject_id": "picklab-cn-cnlab_1d_participation",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-07-08",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_csi300_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-cn-cnlab_1d_phase",
-      "source_system": "experiments",
-      "subject_id": "picklab-cn-cnlab_1d_phase",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-07-08",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_csi300_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-cn-cnlab_1d_pure",
-      "source_system": "experiments",
-      "subject_id": "picklab-cn-cnlab_1d_pure",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-07-08",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_csi300_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-cn-cnlab_block_discount",
-      "source_system": "experiments",
-      "subject_id": "picklab-cn-cnlab_block_discount",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-07-08",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_csi300_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-cn-cnlab_capitulation_beta",
-      "source_system": "experiments",
-      "subject_id": "picklab-cn-cnlab_capitulation_beta",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-07-08",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_csi300_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-cn-cnlab_chase_avoid",
-      "source_system": "experiments",
-      "subject_id": "picklab-cn-cnlab_chase_avoid",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-07-08",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_csi300_excess_avoid_accuracy. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-cn-cnlab_dividend_ma120",
-      "source_system": "experiments",
-      "subject_id": "picklab-cn-cnlab_dividend_ma120",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-07-08",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_csi300_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-cn-cnlab_flagship_nogate",
-      "source_system": "experiments",
-      "subject_id": "picklab-cn-cnlab_flagship_nogate",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-07-08",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_csi300_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-cn-cnlab_lhb_inst",
-      "source_system": "experiments",
-      "subject_id": "picklab-cn-cnlab_lhb_inst",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-07-08",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_csi300_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-cn-cnlab_lowvol_defensive",
-      "source_system": "experiments",
-      "subject_id": "picklab-cn-cnlab_lowvol_defensive",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-07-08",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_csi300_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-cn-cnlab_policy_put",
-      "source_system": "experiments",
-      "subject_id": "picklab-cn-cnlab_policy_put",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-07-08",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_csi300_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-cn-cnlab_qvix_panic",
-      "source_system": "experiments",
-      "subject_id": "picklab-cn-cnlab_qvix_panic",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-07-08",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_csi300_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-cn-cnlab_random_ctrl",
-      "source_system": "experiments",
-      "subject_id": "picklab-cn-cnlab_random_ctrl",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-07-08",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_csi300_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-cn-cnlab_rev_coiled",
-      "source_system": "experiments",
-      "subject_id": "picklab-cn-cnlab_rev_coiled",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-07-08",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_csi300_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-cn-cnlab_rev_lowvol",
-      "source_system": "experiments",
-      "subject_id": "picklab-cn-cnlab_rev_lowvol",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-07-08",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_csi300_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-cn-cnlab_rev_pure",
-      "source_system": "experiments",
-      "subject_id": "picklab-cn-cnlab_rev_pure",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-07-08",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_csi300_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-cn-cnlab_rev_washout",
-      "source_system": "experiments",
-      "subject_id": "picklab-cn-cnlab_rev_washout",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-07-08",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_csi300_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-cn-cnlab_star_20cm",
-      "source_system": "experiments",
-      "subject_id": "picklab-cn-cnlab_star_20cm",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-07-08",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_csi300_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-cn-cnlab_theme_laggard",
-      "source_system": "experiments",
-      "subject_id": "picklab-cn-cnlab_theme_laggard",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-07-08",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_csi300_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-us-plab_1d_blastoff",
-      "source_system": "experiments",
-      "subject_id": "picklab-us-plab_1d_blastoff",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-06-15",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_spy_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-us-plab_1d_pure",
-      "source_system": "experiments",
-      "subject_id": "picklab-us-plab_1d_pure",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-06-15",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_spy_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-us-plab_1d_regime",
-      "source_system": "experiments",
-      "subject_id": "picklab-us-plab_1d_regime",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-06-15",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_spy_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-us-plab_1d_sectorheat",
-      "source_system": "experiments",
-      "subject_id": "picklab-us-plab_1d_sectorheat",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-06-15",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_spy_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-us-plab_beta_squeeze",
-      "source_system": "experiments",
-      "subject_id": "picklab-us-plab_beta_squeeze",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-06-15",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_spy_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-us-plab_breakout_vol",
-      "source_system": "experiments",
-      "subject_id": "picklab-us-plab_breakout_vol",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-06-15",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_spy_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-us-plab_edge_1d",
-      "source_system": "experiments",
-      "subject_id": "picklab-us-plab_edge_1d",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-06-15",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_spy_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-us-plab_edge_pure",
-      "source_system": "experiments",
-      "subject_id": "picklab-us-plab_edge_pure",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-06-15",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_spy_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-us-plab_flagship_nogate",
-      "source_system": "experiments",
-      "subject_id": "picklab-us-plab_flagship_nogate",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-06-15",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_spy_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-us-plab_flagship_t3t4",
-      "source_system": "experiments",
-      "subject_id": "picklab-us-plab_flagship_t3t4",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-06-15",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_spy_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-us-plab_flow_leader",
-      "source_system": "experiments",
-      "subject_id": "picklab-us-plab_flow_leader",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-06-15",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_spy_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-us-plab_flow_washout",
-      "source_system": "experiments",
-      "subject_id": "picklab-us-plab_flow_washout",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-06-15",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_abs_reversion_capture_mfe_mae. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-us-plab_hi_base",
-      "source_system": "experiments",
-      "subject_id": "picklab-us-plab_hi_base",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-06-15",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_spy_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-us-plab_leader_onset",
-      "source_system": "experiments",
-      "subject_id": "picklab-us-plab_leader_onset",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-06-15",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_spy_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-us-plab_leader_precipice",
-      "source_system": "experiments",
-      "subject_id": "picklab-us-plab_leader_precipice",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-06-15",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_spy_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-us-plab_otr_pullback",
-      "source_system": "experiments",
-      "subject_id": "picklab-us-plab_otr_pullback",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-06-15",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_spy_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-us-plab_quality_pullback",
-      "source_system": "experiments",
-      "subject_id": "picklab-us-plab_quality_pullback",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-06-15",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_spy_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-us-plab_random_ctrl",
-      "source_system": "experiments",
-      "subject_id": "picklab-us-plab_random_ctrl",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-06-15",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_spy_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-us-plab_resid_mom",
-      "source_system": "experiments",
-      "subject_id": "picklab-us-plab_resid_mom",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-06-15",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_spy_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-us-plab_revision_accel",
-      "source_system": "experiments",
-      "subject_id": "picklab-us-plab_revision_accel",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-06-15",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_spy_excess. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-us-plab_sector_trough",
-      "source_system": "experiments",
-      "subject_id": "picklab-us-plab_sector_trough",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-06-15",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_abs_reversion_capture_mfe_mae. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-us-plab_topping_avoid",
-      "source_system": "experiments",
-      "subject_id": "picklab-us-plab_topping_avoid",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-06-15",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_spy_excess_avoid_accuracy. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-us-plab_washout_clean",
-      "source_system": "experiments",
-      "subject_id": "picklab-us-plab_washout_clean",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-06-15",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_abs_reversion_capture_mfe_mae. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:picklab-us-plab_washout_deep",
-      "source_system": "experiments",
-      "subject_id": "picklab-us-plab_washout_deep",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-20",
-      "as_of": "2026-06-15",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "PL-R4: first SCOREABLE read at refire_lockout_sessions=21d from first fires (entry books need >=21 matured obs; long-hold >=10). Ruler: 21d_abs_reversion_capture_mfe_mae. SA-R5: replay may authorize shadow experiments at Tier-0; promotion requires pre-registered gauntlet (Tier-2).",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:market-state-tune",
-      "source_system": "experiments",
-      "subject_id": "market-state-tune",
-      "subject_type": "calibration",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-21",
-      "as_of": "2026-06-26",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "H21=21bd per snapshot; tuner gated until MIN_GRADED=20 graded calls; MAX_STEP=3.0, clamped bounds, do-no-harm re-backtest guard.",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:ai-desk-tracker",
-      "source_system": "experiments",
-      "subject_id": "ai-desk-tracker",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-24",
-      "as_of": "2026-06-15",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "Call matures at check_by; promotion runs through calibration_hub's gate (placebo-paired hit-null >= 5pp, Holm p < 0.05, independent_blocks >= 10). The former '>55% high-conviction hit' upgrade trigger is RETIRED 2026-08-03: 55% sits 31pp below this desk's measured placebo null (86.2%), so it would promote leniency, not skill.",
-        "cadence": "daily",
-        "status": "measuring"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [
-        "data/ai_desk/track_record.json"
-      ],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:ca-confluence-gate-calibration",
-      "source_system": "experiments",
-      "subject_id": "ca-confluence-gate-calibration",
-      "subject_type": "phase0_followup",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-24",
-      "as_of": "2026-07-03",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "stable-negative T3 on live cohort => wire per-market demote; sign-flip/null => clear flag",
-        "cadence": "once",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:hkca-board-forward-ledger",
-      "source_system": "experiments",
-      "subject_id": "hkca-board-forward-ledger",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-24",
-      "as_of": "2026-07-03",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "First single 21d grade: ~21 trading days after first render write (~2026-07-27 per market). Stable rank-IC read (>=5 matured IC dates with >=5 names each): approx 2026-08-24. 63d read: approx 2026-10. Graduation (W7) is a 2026-Q4 event gated on ledger maturity. scorecard() returns status='accruing' until gate is met.",
-        "cadence": "daily",
-        "status": "registered",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:next3-reason-codes-after-c4",
-      "source_system": "experiments",
-      "subject_id": "next3-reason-codes-after-c4",
-      "subject_type": "re-check",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-24",
-      "as_of": "2026-07-06",
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "Blocked on PR-C4 (not started as of 2026-07-06).",
-        "cadence": "once",
-        "status": "registered",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:froth-fragility-scorecard",
-      "source_system": "experiments",
-      "subject_id": "froth-fragility-scorecard",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-26",
-      "as_of": null,
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "maturation": "append daily -> resolve matured outcomes over horizon (max-DD + directional) -> hit_rate by band/quadrant/hit_type; provisional flag until enough resolved.",
-        "cadence": "daily",
-        "status": "accruing",
-        "floor": "undeclared"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
       "clock_id": "rule_experiments:disp_gate_1",
       "source_system": "rule_experiments",
       "subject_id": "disp_gate_1",
       "subject_type": "experiment",
       "owner_program": "engine-fix",
       "clock_type": "awaiting_execution",
-      "due_at": "2026-08-26",
+      "due_at": "2026-08-27",
       "as_of": "2026-07-06",
       "state": "due",
       "date_state": "due",
@@ -2783,7 +700,7 @@
       "subject_type": "experiment",
       "owner_program": "engine-fix",
       "clock_type": "awaiting_execution",
-      "due_at": "2026-08-26",
+      "due_at": "2026-08-27",
       "as_of": "2026-07-06",
       "state": "due",
       "date_state": "due",
@@ -2815,7 +732,7 @@
       "subject_type": "experiment",
       "owner_program": "engine-fix",
       "clock_type": "awaiting_execution",
-      "due_at": "2026-08-26",
+      "due_at": "2026-08-27",
       "as_of": "2026-07-06",
       "state": "due",
       "date_state": "due",
@@ -2847,7 +764,7 @@
       "subject_type": "experiment",
       "owner_program": "engine-fix",
       "clock_type": "awaiting_execution",
-      "due_at": "2026-08-26",
+      "due_at": "2026-08-27",
       "as_of": "2026-07-06",
       "state": "due",
       "date_state": "due",
@@ -2912,18 +829,17 @@
       "owner_program": "nw-mastermind-bridge",
       "clock_type": "freshness_sla",
       "due_at": null,
-      "as_of": "2026-08-25",
+      "as_of": "2026-08-26",
       "state": "stale",
       "date_state": "stale",
       "readiness": {
-        "as_of": "2026-08-25",
+        "as_of": "2026-08-26",
         "stale_chips": [
           "market",
           "reliability",
           "contradictions",
           "bottom_sensors",
-          "cortex",
-          "government_revenue"
+          "cortex"
         ]
       },
       "allowed_actions": [
@@ -2955,7 +871,7 @@
       "state": "blocked",
       "date_state": "accruing",
       "readiness": {
-        "n_missing": 16,
+        "n_missing": 17,
         "ids": [
           "deribit-butterfly",
           "bottom-radar-calibration",
@@ -2969,12 +885,13 @@
           "species-DISLOC",
           "species-S10",
           "species-S11",
+          "macro-tx-phase0",
           "stock-personality-dna-class-presence",
           "nwci-forward-ledger-first-write",
           "nwci-fire-coordinates-accrual",
           "s-mlc-2-suction-conditionality"
         ],
-        "blocking_reason": "16 entries lack come_back_on (RF-9)"
+        "blocking_reason": "17 entries lack come_back_on (RF-9)"
       },
       "allowed_actions": [
         "inspect",
@@ -3003,8 +920,8 @@
       "state": "blocked",
       "date_state": "accruing",
       "readiness": {
-        "n_claims": 63237,
-        "n_with_falsifier": 648,
+        "n_claims": 68246,
+        "n_with_falsifier": 668,
         "falsifier_coverage": "1.0%",
         "blocking_reason": "falsifier coverage 1.0%; not a promotion-grade substrate"
       },
@@ -3471,18 +1388,80 @@
       "packet": null
     },
     {
-      "clock_id": "experiments:index-leadership",
+      "clock_id": "experiments:china-native-w2-stores",
       "source_system": "experiments",
-      "subject_id": "index-leadership",
+      "subject_id": "china-native-w2-stores",
+      "subject_type": "data_collection",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-08",
+      "as_of": "2026-07-26",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "every W2 store advances on trading days for ~14 consecutive days with no manual repair; etf_shares row width holds >= 1,000 funds; jisilu index accrues past its rolling ~250-session served window.",
+        "cadence": "nightly asia-lane accrual",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:froth-fragility-scorecard",
+      "source_system": "experiments",
+      "subject_id": "froth-fragility-scorecard",
       "subject_type": "track_record",
       "owner_program": null,
       "clock_type": "come_back_on",
       "due_at": "2026-09-08",
-      "as_of": "2026-06-30",
+      "as_of": null,
       "state": "accruing",
       "date_state": "accruing",
       "readiness": {
-        "maturation": "n_matured>=40 at a horizon AND Newey-West HAC-t>=2.0 (running or coiling) AND mean_ic>0; per-date IC needs >=8 calls/date and >=6 IC-eligible dates; verdict accruing->measuring(any_matured)->validated(proven).",
+        "maturation": "append daily -> resolve matured outcomes over horizon (max-DD + directional) -> hit_rate by band/quadrant/hit_type; provisional flag until enough resolved.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-cn-cnlab_theme_laggard",
+      "source_system": "experiments",
+      "subject_id": "picklab-cn-cnlab_theme_laggard",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-09",
+      "as_of": "2026-07-10",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "CNPL-R4: n>=25 fires AND months_span>=3 AND >=6 distinct fire dates (engine/pick_lab/book.py:54-57); ruler 21d CSI300-excess. Read lift vs cnlab_random_ctrl only. Promotion requires the pre-registered gauntlet.",
         "cadence": "daily",
         "status": "blocked"
       },
@@ -3495,9 +1474,38 @@
         "mutate_source_state",
         "score"
       ],
-      "evidence_refs": [
-        "data/index_leadership/track_record.json"
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:rf-batch-b-cortex-watch",
+      "source_system": "experiments",
+      "subject_id": "rf-batch-b-cortex-watch",
+      "subject_type": "data_collection",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-09",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Trigger: machine_registry.jsonl exists with >=1 row having an evaluator verdict. No numeric maturation gate — this is a pipeline-health watch, not a forward-return accrual.",
+        "cadence": "on-trigger",
+        "status": "measuring"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
       ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
       "regenerate_cmd": null,
       "acknowledged": false,
       "review": null,
@@ -3530,6 +1538,70 @@
       "evidence_refs": [
         "data/neuralweb/machine_registry.jsonl"
       ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:ai-desk-tracker",
+      "source_system": "experiments",
+      "subject_id": "ai-desk-tracker",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-14",
+      "as_of": "2026-06-15",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Call matures at check_by; promotion runs through calibration_hub's gate (placebo-paired hit-null >= 5pp, Holm p < 0.05, independent_blocks >= 10). The former '>55% high-conviction hit' upgrade trigger is RETIRED 2026-08-03: 55% sits 31pp below this desk's measured placebo null (86.2%), so it would promote leniency, not skill.",
+        "cadence": "daily",
+        "status": "measuring"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/ai_desk/track_record.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:sector-central-grader",
+      "source_system": "experiments",
+      "subject_id": "sector-central-grader",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-14",
+      "as_of": "2026-06-28",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "grade() needs >=3 matured obs/horizon; cross-sectional rank-IC needs distinct call-dates each >=3 scores; stable IC target >=100 obs.",
+        "cadence": "daily",
+        "status": "blocked"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
       "regenerate_cmd": null,
       "acknowledged": false,
       "review": null,
@@ -3611,6 +1683,37 @@
       "readiness": {
         "maturation": "append on event-window + fragility co-occurrence; grade forward (event-window realized vol >= typical OR sustained fragility). Display-only, accruing.",
         "cadence": "daily / event-driven",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:hkca-board-forward-ledger",
+      "source_system": "experiments",
+      "subject_id": "hkca-board-forward-ledger",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-15",
+      "as_of": "2026-07-03",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "First single 21d grade: ~21 trading days after first render write (~2026-07-27 per market). Stable rank-IC read (>=5 matured IC dates with >=5 names each): approx 2026-08-24. 63d read: approx 2026-10. Graduation (W7) is a 2026-Q4 event gated on ledger maturity. scorecard() returns status='accruing' until gate is met.",
+        "cadence": "daily",
         "status": "accruing"
       },
       "allowed_actions": [
@@ -4238,6 +2341,442 @@
       "packet": null
     },
     {
+      "clock_id": "experiments:chf-first-edge-batch",
+      "source_system": "experiments",
+      "subject_id": "chf-first-edge-batch",
+      "subject_type": "validation",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-16",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": ">=2 weekly batches run; cumulative literal_n printed and consistent with ledger; >=1 honest null in library",
+        "cadence": "weekly",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:nwci-indicator-personality-map",
+      "source_system": "experiments",
+      "subject_id": "nwci-indicator-personality-map",
+      "subject_type": "infrastructure_check",
+      "owner_program": "neural-web",
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-16",
+      "as_of": "2026-07-08",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "see masterplan section 4",
+        "cadence": "one-time",
+        "status": "registered"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-cn-cnlab_1d_participation",
+      "source_system": "experiments",
+      "subject_id": "picklab-cn-cnlab_1d_participation",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-16",
+      "as_of": "2026-07-10",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "CNPL-R4: n>=25 fires AND months_span>=3 AND >=6 distinct fire dates (engine/pick_lab/book.py:54-57); ruler 21d CSI300-excess. Read lift vs cnlab_random_ctrl only. Promotion requires the pre-registered gauntlet.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-cn-cnlab_block_discount",
+      "source_system": "experiments",
+      "subject_id": "picklab-cn-cnlab_block_discount",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-16",
+      "as_of": "2026-07-10",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "CNPL-R4: n>=25 fires AND months_span>=3 AND >=6 distinct fire dates (engine/pick_lab/book.py:54-57); ruler 21d CSI300-excess. Read lift vs cnlab_random_ctrl only. Promotion requires the pre-registered gauntlet.",
+        "cadence": "daily",
+        "status": "blocked"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-cn-cnlab_dividend_ma120",
+      "source_system": "experiments",
+      "subject_id": "picklab-cn-cnlab_dividend_ma120",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-16",
+      "as_of": "2026-07-10",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "CNPL-R4: n>=25 fires AND months_span>=3 AND >=6 distinct fire dates (engine/pick_lab/book.py:54-57); ruler 21d CSI300-excess. Read lift vs cnlab_random_ctrl only. Promotion requires the pre-registered gauntlet.",
+        "cadence": "daily",
+        "status": "blocked"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-cn-cnlab_lhb_inst",
+      "source_system": "experiments",
+      "subject_id": "picklab-cn-cnlab_lhb_inst",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-16",
+      "as_of": "2026-07-10",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "CNPL-R4: n>=25 fires AND months_span>=3 AND >=6 distinct fire dates (engine/pick_lab/book.py:54-57); ruler 21d CSI300-excess. Read lift vs cnlab_random_ctrl only. Promotion requires the pre-registered gauntlet.",
+        "cadence": "daily",
+        "status": "blocked"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-us-plab_beta_squeeze",
+      "source_system": "experiments",
+      "subject_id": "picklab-us-plab_beta_squeeze",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-16",
+      "as_of": "2026-07-13",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Scoreboard floor (site/labdata/pick_lab.json): n>=25 fires AND >=3 months span AND >=6 distinct fire dates; earliest clear 2026-10-13. Emitted metrics are h21_wr_exc / h21_capture / vs_random_lift (hit_quality / upside_capture / coverage_health do not exist in engine/pick_lab). Promotion requires the SA-R5 Tier-2 gauntlet.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-us-plab_flow_leader",
+      "source_system": "experiments",
+      "subject_id": "picklab-us-plab_flow_leader",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-16",
+      "as_of": "2026-07-13",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Scoreboard floor (site/labdata/pick_lab.json): n>=25 fires AND >=3 months span AND >=6 distinct fire dates; earliest clear 2026-10-13. Emitted metrics are h21_wr_exc / h21_capture / vs_random_lift (hit_quality / upside_capture / coverage_health do not exist in engine/pick_lab). Promotion requires the SA-R5 Tier-2 gauntlet.",
+        "cadence": "daily",
+        "status": "blocked"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-us-plab_flow_washout",
+      "source_system": "experiments",
+      "subject_id": "picklab-us-plab_flow_washout",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-16",
+      "as_of": "2026-07-13",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Scoreboard floor (site/labdata/pick_lab.json): n>=25 fires AND >=3 months span AND >=6 distinct fire dates; earliest clear 2026-10-13. Emitted metrics are h21_wr_exc / h21_capture / vs_random_lift (hit_quality / upside_capture / coverage_health do not exist in engine/pick_lab). Promotion requires the SA-R5 Tier-2 gauntlet.",
+        "cadence": "daily",
+        "status": "blocked"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-us-plab_leader_precipice",
+      "source_system": "experiments",
+      "subject_id": "picklab-us-plab_leader_precipice",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-16",
+      "as_of": "2026-07-13",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Scoreboard floor (site/labdata/pick_lab.json): n>=25 fires AND >=3 months span AND >=6 distinct fire dates; earliest clear 2026-10-13. Emitted metrics are h21_wr_exc / h21_capture / vs_random_lift (hit_quality / upside_capture / coverage_health do not exist in engine/pick_lab). Promotion requires the SA-R5 Tier-2 gauntlet.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-us-plab_otr_pullback",
+      "source_system": "experiments",
+      "subject_id": "picklab-us-plab_otr_pullback",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-16",
+      "as_of": "2026-07-13",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Scoreboard floor (site/labdata/pick_lab.json): n>=25 fires AND >=3 months span AND >=6 distinct fire dates; earliest clear 2026-10-13. Emitted metrics are h21_wr_exc / h21_capture / vs_random_lift (hit_quality / upside_capture / coverage_health do not exist in engine/pick_lab). Promotion requires the SA-R5 Tier-2 gauntlet.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-us-plab_revision_accel",
+      "source_system": "experiments",
+      "subject_id": "picklab-us-plab_revision_accel",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-16",
+      "as_of": "2026-07-13",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Scoreboard floor (site/labdata/pick_lab.json): n>=25 fires AND >=3 months span AND >=6 distinct fire dates; earliest clear 2026-10-13. Emitted metrics are h21_wr_exc / h21_capture / vs_random_lift (hit_quality / upside_capture / coverage_health do not exist in engine/pick_lab). Promotion requires the SA-R5 Tier-2 gauntlet.",
+        "cadence": "daily",
+        "status": "blocked"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-us-plab_sector_trough",
+      "source_system": "experiments",
+      "subject_id": "picklab-us-plab_sector_trough",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-16",
+      "as_of": "2026-07-13",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Scoreboard floor (site/labdata/pick_lab.json): n>=25 fires AND >=3 months span AND >=6 distinct fire dates; earliest clear 2026-10-13. Emitted metrics are h21_wr_exc / h21_capture / vs_random_lift (hit_quality / upside_capture / coverage_health do not exist in engine/pick_lab). Promotion requires the SA-R5 Tier-2 gauntlet.",
+        "cadence": "daily",
+        "status": "blocked"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:calibration-hub",
+      "source_system": "experiments",
+      "subject_id": "calibration-hub",
+      "subject_type": "calibration",
+      "owner_program": "neural-web",
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-17",
+      "as_of": "2026-06-15",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "The real gate is engine/calibration_hub.py:165-259 — cold n<10; inverted if dir_acc<null_dir or conviction verdict False; weak if hit<null_hit; calibrated only when the desk placebo is available AND hit-null >= 5pp AND Holm-adjusted p < 0.05 AND independent_blocks >= 10. hit_rate>=0.5 is the demotion floor (:56), never the promotion bar. (Seed text corrected 2026-08-03; the prior 'hit_rate>=0.5 AND conviction monotone' description was wrong in both clauses.)",
+        "cadence": "on-build",
+        "status": "measuring"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/calibration/summary.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
       "clock_id": "cortex:cortex-2026-08-22-when-the-confirmed-us-regime-label-remai-710a86",
       "source_system": "cortex",
       "subject_id": "cortex-2026-08-22-when-the-confirmed-us-regime-label-remai-710a86",
@@ -4296,6 +2835,100 @@
       "evidence_refs": [
         "data/neuralweb/machine_registry.jsonl"
       ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:shadow-book",
+      "source_system": "experiments",
+      "subject_id": "shadow-book",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-21",
+      "as_of": "2026-06-18",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "row matures when p0+h < len(closes) AND close date<=asof; per-horizon IC needs >=10 names/date; ic_summary emits IC-IR/HAC-t only at >=6 distinct matured dates.",
+        "cadence": "daily snapshot + nightly maturation",
+        "status": "measuring"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "cortex:cortex-2026-08-26-when-the-confirmed-us-regime-label-remai-3fe580",
+      "source_system": "cortex",
+      "subject_id": "cortex-2026-08-26-when-the-confirmed-us-regime-label-remai-3fe580",
+      "subject_type": "hypothesis",
+      "owner_program": "neural-web",
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-23",
+      "as_of": "2026-08-26",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "horizon_d": 21,
+        "status": "registered"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/neuralweb/machine_registry.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:nwci-scanner-first-review",
+      "source_system": "experiments",
+      "subject_id": "nwci-scanner-first-review",
+      "subject_type": "infrastructure_check",
+      "owner_program": "neural-web",
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-23",
+      "as_of": "2026-07-08",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "see masterplan section 4",
+        "cadence": "one-time",
+        "status": "registered"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
       "regenerate_cmd": null,
       "acknowledged": false,
       "review": null,
@@ -4428,6 +3061,39 @@
       "packet": null
     },
     {
+      "clock_id": "experiments:index-leadership",
+      "source_system": "experiments",
+      "subject_id": "index-leadership",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-29",
+      "as_of": "2026-06-30",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "n_matured>=40 at a horizon AND Newey-West HAC-t>=2.0 (running or coiling) AND mean_ic>0; per-date IC needs >=8 calls/date and >=6 IC-eligible dates; verdict accruing->measuring(any_matured)->validated(proven).",
+        "cadence": "daily",
+        "status": "validated"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/index_leadership/track_record.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
       "clock_id": "experiments:w3c-margin-velocity-substrate",
       "source_system": "experiments",
       "subject_id": "w3c-margin-velocity-substrate",
@@ -4453,6 +3119,132 @@
         "score"
       ],
       "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:market-state-tune",
+      "source_system": "experiments",
+      "subject_id": "market-state-tune",
+      "subject_type": "calibration",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-30",
+      "as_of": "2026-06-26",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "H21=21bd per snapshot; tuner gated until MIN_GRADED=20 graded calls; MAX_STEP=3.0, clamped bounds, do-no-harm re-backtest guard.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:next3-analogue-library",
+      "source_system": "experiments",
+      "subject_id": "next3-analogue-library",
+      "subject_type": "study",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-30",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Gated on W-E0 backfill depth, not calendar; RUL-U7 fences bind any build.",
+        "cadence": "once",
+        "status": null
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:next3-reason-codes-after-c4",
+      "source_system": "experiments",
+      "subject_id": "next3-reason-codes-after-c4",
+      "subject_type": "re-check",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-30",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Blocked on PR-C4 (not started as of 2026-07-06).",
+        "cadence": "once",
+        "status": "registered"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:qledger-w6-radar",
+      "source_system": "experiments",
+      "subject_id": "qledger-w6-radar",
+      "subject_type": "qledger_promotion",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-30",
+      "as_of": "2026-07-02",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "n_dates>=25 AND Wilson-CI lower bound >0 vs matched control (§3 gate).",
+        "cadence": "daily",
+        "status": "blocked"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "site/qledger/track_record.json"
+      ],
       "regenerate_cmd": null,
       "acknowledged": false,
       "review": null,
@@ -5957,6 +4749,37 @@
       "packet": null
     },
     {
+      "clock_id": "experiments:china-intel-hub-command",
+      "source_system": "experiments",
+      "subject_id": "china-intel-hub-command",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-06",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "n_dates>=25 then FDR gate",
+        "cadence": "daily",
+        "status": "measuring"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
       "clock_id": "experiments:china-venue-divergence",
       "source_system": "experiments",
       "subject_id": "china-venue-divergence",
@@ -6081,6 +4904,471 @@
       "packet": null
     },
     {
+      "clock_id": "experiments:picklab-cn-cnlab_1d_blastoff",
+      "source_system": "experiments",
+      "subject_id": "picklab-cn-cnlab_1d_blastoff",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-12",
+      "as_of": "2026-07-10",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "CNPL-R4: n>=25 fires AND months_span>=3 AND >=6 distinct fire dates (engine/pick_lab/book.py:54-57); ruler 21d CSI300-excess. Read lift vs cnlab_random_ctrl only. Promotion requires the pre-registered gauntlet.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-cn-cnlab_1d_phase",
+      "source_system": "experiments",
+      "subject_id": "picklab-cn-cnlab_1d_phase",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-12",
+      "as_of": "2026-07-10",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "CNPL-R4: n>=25 fires AND months_span>=3 AND >=6 distinct fire dates (engine/pick_lab/book.py:54-57); ruler 21d CSI300-excess. Read lift vs cnlab_random_ctrl only. Promotion requires the pre-registered gauntlet.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-cn-cnlab_1d_pure",
+      "source_system": "experiments",
+      "subject_id": "picklab-cn-cnlab_1d_pure",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-12",
+      "as_of": "2026-07-10",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "CNPL-R4: n>=25 fires AND months_span>=3 AND >=6 distinct fire dates (engine/pick_lab/book.py:54-57); ruler 21d CSI300-excess. Read lift vs cnlab_random_ctrl only. Promotion requires the pre-registered gauntlet.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-cn-cnlab_capitulation_beta",
+      "source_system": "experiments",
+      "subject_id": "picklab-cn-cnlab_capitulation_beta",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-12",
+      "as_of": "2026-07-10",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "CNPL-R4: n>=25 fires AND months_span>=3 AND >=6 distinct fire dates (engine/pick_lab/book.py:54-57); ruler 21d CSI300-excess. Read lift vs cnlab_random_ctrl only. Promotion requires the pre-registered gauntlet.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-cn-cnlab_chase_avoid",
+      "source_system": "experiments",
+      "subject_id": "picklab-cn-cnlab_chase_avoid",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-12",
+      "as_of": "2026-07-10",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "CNPL-R4: n>=25 fires AND months_span>=3 AND >=6 distinct fire dates (engine/pick_lab/book.py:54-57); ruler 21d CSI300-excess. Read lift vs cnlab_random_ctrl only. Promotion requires the pre-registered gauntlet.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-cn-cnlab_flagship_nogate",
+      "source_system": "experiments",
+      "subject_id": "picklab-cn-cnlab_flagship_nogate",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-12",
+      "as_of": "2026-07-10",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "CNPL-R4: n>=25 fires AND months_span>=3 AND >=6 distinct fire dates (engine/pick_lab/book.py:54-57); ruler 21d CSI300-excess. Read lift vs cnlab_random_ctrl only. Promotion requires the pre-registered gauntlet.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-cn-cnlab_lowvol_defensive",
+      "source_system": "experiments",
+      "subject_id": "picklab-cn-cnlab_lowvol_defensive",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-12",
+      "as_of": "2026-07-10",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "CNPL-R4: n>=25 fires AND months_span>=3 AND >=6 distinct fire dates (engine/pick_lab/book.py:54-57); ruler 21d CSI300-excess. Read lift vs cnlab_random_ctrl only. Promotion requires the pre-registered gauntlet.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-cn-cnlab_policy_put",
+      "source_system": "experiments",
+      "subject_id": "picklab-cn-cnlab_policy_put",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-12",
+      "as_of": "2026-07-10",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "CNPL-R4: n>=25 fires AND months_span>=3 AND >=6 distinct fire dates (engine/pick_lab/book.py:54-57); ruler 21d CSI300-excess. Read lift vs cnlab_random_ctrl only. Promotion requires the pre-registered gauntlet.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-cn-cnlab_qvix_panic",
+      "source_system": "experiments",
+      "subject_id": "picklab-cn-cnlab_qvix_panic",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-12",
+      "as_of": "2026-07-10",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "CNPL-R4: n>=25 fires AND months_span>=3 AND >=6 distinct fire dates (engine/pick_lab/book.py:54-57); ruler 21d CSI300-excess. Read lift vs cnlab_random_ctrl only. Promotion requires the pre-registered gauntlet.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-cn-cnlab_random_ctrl",
+      "source_system": "experiments",
+      "subject_id": "picklab-cn-cnlab_random_ctrl",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-12",
+      "as_of": "2026-07-10",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "CNPL-R4: n>=25 fires AND months_span>=3 AND >=6 distinct fire dates (engine/pick_lab/book.py:54-57); ruler 21d CSI300-excess. Read lift vs cnlab_random_ctrl only. Promotion requires the pre-registered gauntlet.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-cn-cnlab_rev_coiled",
+      "source_system": "experiments",
+      "subject_id": "picklab-cn-cnlab_rev_coiled",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-12",
+      "as_of": "2026-07-10",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "CNPL-R4: n>=25 fires AND months_span>=3 AND >=6 distinct fire dates (engine/pick_lab/book.py:54-57); ruler 21d CSI300-excess. Read lift vs cnlab_random_ctrl only. Promotion requires the pre-registered gauntlet.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-cn-cnlab_rev_lowvol",
+      "source_system": "experiments",
+      "subject_id": "picklab-cn-cnlab_rev_lowvol",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-12",
+      "as_of": "2026-07-10",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "CNPL-R4: n>=25 fires AND months_span>=3 AND >=6 distinct fire dates (engine/pick_lab/book.py:54-57); ruler 21d CSI300-excess. Read lift vs cnlab_random_ctrl only. Promotion requires the pre-registered gauntlet.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-cn-cnlab_rev_pure",
+      "source_system": "experiments",
+      "subject_id": "picklab-cn-cnlab_rev_pure",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-12",
+      "as_of": "2026-07-10",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "CNPL-R4: n>=25 fires AND months_span>=3 AND >=6 distinct fire dates (engine/pick_lab/book.py:54-57); ruler 21d CSI300-excess. Read lift vs cnlab_random_ctrl only. Promotion requires the pre-registered gauntlet.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-cn-cnlab_rev_washout",
+      "source_system": "experiments",
+      "subject_id": "picklab-cn-cnlab_rev_washout",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-12",
+      "as_of": "2026-07-10",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "CNPL-R4: n>=25 fires AND months_span>=3 AND >=6 distinct fire dates (engine/pick_lab/book.py:54-57); ruler 21d CSI300-excess. Read lift vs cnlab_random_ctrl only. Promotion requires the pre-registered gauntlet.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-cn-cnlab_star_20cm",
+      "source_system": "experiments",
+      "subject_id": "picklab-cn-cnlab_star_20cm",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-12",
+      "as_of": "2026-07-10",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "CNPL-R4: n>=25 fires AND months_span>=3 AND >=6 distinct fire dates (engine/pick_lab/book.py:54-57); ruler 21d CSI300-excess. Read lift vs cnlab_random_ctrl only. Promotion requires the pre-registered gauntlet.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
       "clock_id": "experiments:chf-phase2-machine-family",
       "source_system": "experiments",
       "subject_id": "chf-phase2-machine-family",
@@ -6174,6 +5462,37 @@
       "packet": null
     },
     {
+      "clock_id": "experiments:oracle-ratio-lens",
+      "source_system": "experiments",
+      "subject_id": "oracle-ratio-lens",
+      "subject_type": "track_record",
+      "owner_program": "oracle-rotation",
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-15",
+      "as_of": "2026-07-11",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "display-only until gauntleted; accrual starts 2026-07-11; promotion requires new prereg + full gauntlet (RL-R9); come-back 2026-10-15 for field-guide review.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
       "clock_id": "experiments:winner-autopsy-case-library",
       "source_system": "experiments",
       "subject_id": "winner-autopsy-case-library",
@@ -6218,6 +5537,316 @@
       "readiness": {
         "maturation": "n>=60 trading-day snapshots",
         "cadence": "quarterly",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-us-plab_1d_pure",
+      "source_system": "experiments",
+      "subject_id": "picklab-us-plab_1d_pure",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-20",
+      "as_of": "2026-07-13",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Scoreboard floor (site/labdata/pick_lab.json): n>=25 fires AND >=3 months span AND >=6 distinct fire dates; earliest clear 2026-10-13. Emitted metrics are h21_wr_exc / h21_capture / vs_random_lift (hit_quality / upside_capture / coverage_health do not exist in engine/pick_lab). Promotion requires the SA-R5 Tier-2 gauntlet.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-us-plab_1d_regime",
+      "source_system": "experiments",
+      "subject_id": "picklab-us-plab_1d_regime",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-20",
+      "as_of": "2026-07-13",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Scoreboard floor (site/labdata/pick_lab.json): n>=25 fires AND >=3 months span AND >=6 distinct fire dates; earliest clear 2026-10-13. Emitted metrics are h21_wr_exc / h21_capture / vs_random_lift (hit_quality / upside_capture / coverage_health do not exist in engine/pick_lab). Promotion requires the SA-R5 Tier-2 gauntlet.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-us-plab_1d_sectorheat",
+      "source_system": "experiments",
+      "subject_id": "picklab-us-plab_1d_sectorheat",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-20",
+      "as_of": "2026-07-13",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Scoreboard floor (site/labdata/pick_lab.json): n>=25 fires AND >=3 months span AND >=6 distinct fire dates; earliest clear 2026-10-13. Emitted metrics are h21_wr_exc / h21_capture / vs_random_lift (hit_quality / upside_capture / coverage_health do not exist in engine/pick_lab). Promotion requires the SA-R5 Tier-2 gauntlet.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-us-plab_edge_1d",
+      "source_system": "experiments",
+      "subject_id": "picklab-us-plab_edge_1d",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-20",
+      "as_of": "2026-07-13",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Scoreboard floor (site/labdata/pick_lab.json): n>=25 fires AND >=3 months span AND >=6 distinct fire dates; earliest clear 2026-10-13. Emitted metrics are h21_wr_exc / h21_capture / vs_random_lift (hit_quality / upside_capture / coverage_health do not exist in engine/pick_lab). Promotion requires the SA-R5 Tier-2 gauntlet.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-us-plab_edge_pure",
+      "source_system": "experiments",
+      "subject_id": "picklab-us-plab_edge_pure",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-20",
+      "as_of": "2026-07-13",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Scoreboard floor (site/labdata/pick_lab.json): n>=25 fires AND >=3 months span AND >=6 distinct fire dates; earliest clear 2026-10-13. Emitted metrics are h21_wr_exc / h21_capture / vs_random_lift (hit_quality / upside_capture / coverage_health do not exist in engine/pick_lab). Promotion requires the SA-R5 Tier-2 gauntlet.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-us-plab_flagship_nogate",
+      "source_system": "experiments",
+      "subject_id": "picklab-us-plab_flagship_nogate",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-20",
+      "as_of": "2026-07-13",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Scoreboard floor (site/labdata/pick_lab.json): n>=25 fires AND >=3 months span AND >=6 distinct fire dates; earliest clear 2026-10-13. Emitted metrics are h21_wr_exc / h21_capture / vs_random_lift (hit_quality / upside_capture / coverage_health do not exist in engine/pick_lab). Promotion requires the SA-R5 Tier-2 gauntlet.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-us-plab_flagship_t3t4",
+      "source_system": "experiments",
+      "subject_id": "picklab-us-plab_flagship_t3t4",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-20",
+      "as_of": "2026-07-13",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Scoreboard floor (site/labdata/pick_lab.json): n>=25 fires AND >=3 months span AND >=6 distinct fire dates; earliest clear 2026-10-13. Emitted metrics are h21_wr_exc / h21_capture / vs_random_lift (hit_quality / upside_capture / coverage_health do not exist in engine/pick_lab). Promotion requires the SA-R5 Tier-2 gauntlet.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-us-plab_quality_pullback",
+      "source_system": "experiments",
+      "subject_id": "picklab-us-plab_quality_pullback",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-20",
+      "as_of": "2026-07-13",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Scoreboard floor (site/labdata/pick_lab.json): n>=25 fires AND >=3 months span AND >=6 distinct fire dates; earliest clear 2026-10-13. Emitted metrics are h21_wr_exc / h21_capture / vs_random_lift (hit_quality / upside_capture / coverage_health do not exist in engine/pick_lab). Promotion requires the SA-R5 Tier-2 gauntlet.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-us-plab_random_ctrl",
+      "source_system": "experiments",
+      "subject_id": "picklab-us-plab_random_ctrl",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-20",
+      "as_of": "2026-07-13",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Scoreboard floor (site/labdata/pick_lab.json): n>=25 fires AND >=3 months span AND >=6 distinct fire dates; earliest clear 2026-10-13. Emitted metrics are h21_wr_exc / h21_capture / vs_random_lift (hit_quality / upside_capture / coverage_health do not exist in engine/pick_lab). Promotion requires the SA-R5 Tier-2 gauntlet.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-us-plab_topping_avoid",
+      "source_system": "experiments",
+      "subject_id": "picklab-us-plab_topping_avoid",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-20",
+      "as_of": "2026-07-13",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Scoreboard floor (site/labdata/pick_lab.json): n>=25 fires AND >=3 months span AND >=6 distinct fire dates; earliest clear 2026-10-13. Emitted metrics are h21_wr_exc / h21_capture / vs_random_lift (hit_quality / upside_capture / coverage_health do not exist in engine/pick_lab). Promotion requires the SA-R5 Tier-2 gauntlet.",
+        "cadence": "daily",
         "status": "accruing"
       },
       "allowed_actions": [
@@ -6325,6 +5954,37 @@
       "evidence_refs": [
         "data/radar/radar_ic.json"
       ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:ca-confluence-gate-calibration",
+      "source_system": "experiments",
+      "subject_id": "ca-confluence-gate-calibration",
+      "subject_type": "phase0_followup",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-31",
+      "as_of": "2026-07-03",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "stable-negative T3 on live cohort => wire per-market demote; sign-flip/null => clear flag",
+        "cadence": "once",
+        "status": "blocked"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
       "regenerate_cmd": null,
       "acknowledged": false,
       "review": null,
@@ -7141,6 +6801,254 @@
       "packet": null
     },
     {
+      "clock_id": "experiments:picklab-us-plab_1d_blastoff",
+      "source_system": "experiments",
+      "subject_id": "picklab-us-plab_1d_blastoff",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-11-17",
+      "as_of": "2026-07-13",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Scoreboard floor (site/labdata/pick_lab.json): n>=25 fires AND >=3 months span AND >=6 distinct fire dates; earliest clear 2026-10-13. Emitted metrics are h21_wr_exc / h21_capture / vs_random_lift (hit_quality / upside_capture / coverage_health do not exist in engine/pick_lab). Promotion requires the SA-R5 Tier-2 gauntlet.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-us-plab_breakout_vol",
+      "source_system": "experiments",
+      "subject_id": "picklab-us-plab_breakout_vol",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-11-17",
+      "as_of": "2026-07-13",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Scoreboard floor (site/labdata/pick_lab.json): n>=25 fires AND >=3 months span AND >=6 distinct fire dates; earliest clear 2026-10-13. Emitted metrics are h21_wr_exc / h21_capture / vs_random_lift (hit_quality / upside_capture / coverage_health do not exist in engine/pick_lab). Promotion requires the SA-R5 Tier-2 gauntlet.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-us-plab_hi_base",
+      "source_system": "experiments",
+      "subject_id": "picklab-us-plab_hi_base",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-11-17",
+      "as_of": "2026-07-13",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Scoreboard floor (site/labdata/pick_lab.json): n>=25 fires AND >=3 months span AND >=6 distinct fire dates; earliest clear 2026-10-13. Emitted metrics are h21_wr_exc / h21_capture / vs_random_lift (hit_quality / upside_capture / coverage_health do not exist in engine/pick_lab). Promotion requires the SA-R5 Tier-2 gauntlet.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-us-plab_leader_onset",
+      "source_system": "experiments",
+      "subject_id": "picklab-us-plab_leader_onset",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-11-17",
+      "as_of": "2026-07-13",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Scoreboard floor (site/labdata/pick_lab.json): n>=25 fires AND >=3 months span AND >=6 distinct fire dates; earliest clear 2026-10-13. Emitted metrics are h21_wr_exc / h21_capture / vs_random_lift (hit_quality / upside_capture / coverage_health do not exist in engine/pick_lab). Promotion requires the SA-R5 Tier-2 gauntlet.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-us-plab_resid_mom",
+      "source_system": "experiments",
+      "subject_id": "picklab-us-plab_resid_mom",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-11-17",
+      "as_of": "2026-07-13",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Scoreboard floor (site/labdata/pick_lab.json): n>=25 fires AND >=3 months span AND >=6 distinct fire dates; earliest clear 2026-10-13. Emitted metrics are h21_wr_exc / h21_capture / vs_random_lift (hit_quality / upside_capture / coverage_health do not exist in engine/pick_lab). Promotion requires the SA-R5 Tier-2 gauntlet.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-us-plab_washout_clean",
+      "source_system": "experiments",
+      "subject_id": "picklab-us-plab_washout_clean",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-11-17",
+      "as_of": "2026-07-13",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Scoreboard floor (site/labdata/pick_lab.json): n>=25 fires AND >=3 months span AND >=6 distinct fire dates; earliest clear 2026-10-13. Emitted metrics are h21_wr_exc / h21_capture / vs_random_lift (hit_quality / upside_capture / coverage_health do not exist in engine/pick_lab). Promotion requires the SA-R5 Tier-2 gauntlet.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:picklab-us-plab_washout_deep",
+      "source_system": "experiments",
+      "subject_id": "picklab-us-plab_washout_deep",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-11-17",
+      "as_of": "2026-07-13",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Scoreboard floor (site/labdata/pick_lab.json): n>=25 fires AND >=3 months span AND >=6 distinct fire dates; earliest clear 2026-10-13. Emitted metrics are h21_wr_exc / h21_capture / vs_random_lift (hit_quality / upside_capture / coverage_health do not exist in engine/pick_lab). Promotion requires the SA-R5 Tier-2 gauntlet.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:guidance-gap-ledger",
+      "source_system": "experiments",
+      "subject_id": "guidance-gap-ledger",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-11-30",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "append daily non-NEUTRAL (theme,tilt); grade on forward T4 revision-breadth resolution vs tilt direction.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
       "clock_id": "experiments:opex-vanna-charm-wovc",
       "source_system": "experiments",
       "subject_id": "opex-vanna-charm-wovc",
@@ -7313,6 +7221,37 @@
       "readiness": {
         "maturation": "LHB inst-seat net-buy store and southbound holdings store both have >=2.5y of daily data; narrowed variants reach n>=200 forward episodes with >=21d forward returns matured; HAC-t >=2.0 gate.",
         "cadence": "wave-5/Day-2 re-run (2.5y accrual milestone)",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:signal-sanity",
+      "source_system": "experiments",
+      "subject_id": "signal-sanity",
+      "subject_type": "infrastructure_check",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-12-31",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "forward_log appends daily {fired_signals,n_fired,regime,outcome}; grade on whether high-n_fired days precede directional moves / vol.",
+        "cadence": "daily",
         "status": "accruing"
       },
       "allowed_actions": [
@@ -9608,7 +9547,7 @@
       "state": "accruing",
       "date_state": "accruing",
       "readiness": {
-        "n_open": 11147,
+        "n_open": 11600,
         "n_past_check_by": 0
       },
       "allowed_actions": [
@@ -9706,6 +9645,38 @@
       "readiness": {
         "n_trials": 110,
         "last_ts": "2026-07-12T08:42:03.312944+00:00"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/trial_ledger.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "trial_ledger:cortex",
+      "source_system": "trial_ledger",
+      "subject_id": "cortex",
+      "subject_type": "family",
+      "owner_program": null,
+      "clock_type": "fdr_batch_due",
+      "due_at": null,
+      "as_of": "2026-08-26",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "n_trials": 15,
+        "last_ts": "2026-08-26T07:15:05.578283+00:00"
       },
       "allowed_actions": [
         "inspect",
@@ -9828,7 +9799,7 @@
       "owner_program": null,
       "clock_type": "fdr_batch_due",
       "due_at": null,
-      "as_of": "2026-08-23",
+      "as_of": "2026-08-22",
       "state": "accruing",
       "date_state": "accruing",
       "readiness": {
@@ -10058,38 +10029,6 @@
       "readiness": {
         "n_trials": 15,
         "last_ts": "2026-07-06T11:37:27.012383+00:00"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [
-        "data/trial_ledger.jsonl"
-      ],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "trial_ledger:slf056_funding_tail",
-      "source_system": "trial_ledger",
-      "subject_id": "slf056_funding_tail",
-      "subject_type": "family",
-      "owner_program": null,
-      "clock_type": "fdr_batch_due",
-      "due_at": null,
-      "as_of": "2026-07-06",
-      "state": "accruing",
-      "date_state": "accruing",
-      "readiness": {
-        "n_trials": 14,
-        "last_ts": "2026-07-06T11:06:52.261461+00:00"
       },
       "allowed_actions": [
         "inspect",
