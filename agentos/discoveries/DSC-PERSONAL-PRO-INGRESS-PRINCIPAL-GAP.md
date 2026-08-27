@@ -1,36 +1,47 @@
 ---
 key: PERSONAL-PRO-INGRESS-PRINCIPAL-GAP
 claim: >
-  As of 2026-08-26, Mastermind PR #159 is merged as
-  `7d160ff47df1bca0ac6312141e6e1134bbce6539`, providing the approved
-  credential-safe S0 fixture metadata-verifier bridge. The helper is
-  BUILT_NOT_PROVEN because no live metadata-verifier receipt has yet been
-  returned from the Chairman Mac. The fresh post-rejoin S0-R1 source probe at
-  Slack TS `1787700074.181209` still has no fixture receipt, so fixture
-  auth/scopes/listener readiness remains unproven. C1 remains independently
-  nonterminal: Mastermind PR #155 is still the sole modifying C1 carrier and
-  has no implementation return or production Relay proof.
+  As of 2026-08-27, the accepted PR #159 login-Keychain verifier bridge has now
+  been exercised on the Chairman Mac against the live disposable fixture
+  credential at protected Mastermind `e4e44867ace335ac9208a3990a10c163e199492d`.
+  The bridge returned the allowlisted refusal
+  `METADATA_SCOPE_MISMATCH`. This proves the credential-safe native verifier
+  path is live enough to authenticate/classify the fixture without exposing the
+  secret, while proving the installed bot scope set is not exactly the frozen
+  `groups:history` + `chat:write` contract. Current Slack membership separately
+  confirms fixture bot `U0BST4WG996` remains present in private channel
+  `C0BRUL9F2V7`. C1 remains independently nonterminal: Mastermind PR #155 is
+  still the sole modifying C1 carrier and has no implementation return or
+  production Relay proof.
 falsifier: >
-  Run the accepted PR #159 helper through its reviewed native host procedure and
-  return only its allowlisted metadata receipt. PASS for the existing fixture
-  identity and exact approved scopes releases only the remainder of the single
-  authorized MAS-112 experiment. Any identity/scope/auth/metadata refusal stops
-  for Sol with no additional Slack probe and no replacement fixture. C1 requires
-  a code return on existing PR #155 plus the separate MAS-109 production proof.
+  Determine the live installed bot scope set through a credential-safe,
+  non-secret admin/provider surface. Correct only the scope-contract drift under
+  the existing fixture identity if required. Do not blind-rerun the fixture
+  verifier, send another source probe, create S0-R2, or select/rotate a
+  replacement fixture from this failed PR #159 live gate. After Sol reviews the
+  exact non-secret scope receipt and any required bounded remediation, only a
+  newly authorized requalification may re-run the accepted verifier. C1 still
+  requires a code return on existing PR #155 plus the separate MAS-109
+  production proof.
 so_what: >
-  The prior S0 Keychain-coordinate blocker is closed, but helper merge is not
-  S0-R1 PASS and must not release B2. The sole S0 gate is now
-  LIVE_KEYCHAIN_VERIFIER_RECEIPT_REQUIRED. C1 remains held on its existing
-  singular carrier. B2/C2 remain held and zero Executive mutation has occurred.
+  The old `LIVE_KEYCHAIN_VERIFIER_RECEIPT_REQUIRED` gate is closed by a real
+  native receipt and replaced by `LIVE_FIXTURE_SCOPE_CONTRACT_DRIFT`. S0-R1 has
+  not passed and the carrier experiment itself has not yet been falsified; the
+  current blocker is fixture qualification. MAS-112 must remain nonterminal.
+  B2/C2 remain held and zero Executive mutation has occurred.
 kind: runtime
-verified_at: 2026-08-26
+verified_at: 2026-08-27
 verified_by: >
-  Mastermind PR #159 / merge `7d160ff47df1bca0ac6312141e6e1134bbce6539`;
-  final reviewed head `fbbdef60bbea262fede78ccd51387b6e817b1382`;
-  final CI `32943881890` SUCCESS and CodeQL SUCCESS. MAS-112 Linear records the
-  exact native continuation gate. Slack evidence still shows no fixture receipt
-  for source TS `1787700074.181209`. Mastermind PR #155 and its delivery-only
-  dispatch remain the implementation/transport evidence for C1.
+  Chairman-native receipt
+  `{"error":"METADATA_SCOPE_MISMATCH","schema":"mastermind.slack_agent_dialogue.metadata_verification.v1","status":"ERROR"}`
+  from accepted PR #159 helper on protected Mastermind
+  `e4e44867ace335ac9208a3990a10c163e199492d`; PR #159 / merge
+  `7d160ff47df1bca0ac6312141e6e1134bbce6539` freezes exact scopes
+  `groups:history` + `chat:write`; live Slack channel census confirms bot
+  `U0BST4WG996` is currently a member of `C0BRUL9F2V7`. Linear MAS-112 was
+  corrected from false-green Done to In Progress with the receipt recorded.
+  Mastermind PR #155 remains open draft at head
+  `c7e0940133ec731e344c29b9aff7c21999f19271`.
 scope:
   - crypto-intelligence
   - executive-os
@@ -54,38 +65,58 @@ trailer but received no fixture receipt, including on bounded reread. That
 proved source-message framing while leaving fixture auth/scopes/listener
 consumption unproven and forbidding blind message retry.
 
-Chairman subsequently cleared the non-secret coordinate prerequisite for the
-existing replacement credential. Mastermind PR #159 then implemented the
-already-approved fixed host bridge and merged as
-`7d160ff47df1bca0ac6312141e6e1134bbce6539`. The reviewed implementation keeps
-credential retrieval and verifier delivery inside the approved native secret
-boundary and exposes only the verifier's allowlisted receipt.
+Mastermind PR #159 then implemented the approved fixed login-Keychain host bridge
+and merged as `7d160ff47df1bca0ac6312141e6e1134bbce6539`. Its exact live acceptance
+contract is team `T0BRD2AQXQV`, bot user `U0BST4WG996`, and installed bot scopes
+exactly `groups:history` + `chat:write`. The helper is intentionally fail-closed
+and emits no observed arbitrary scope header on mismatch.
 
-The implementation has discriminating RED -> GREEN evidence. Hosted RED head
-`7d97f95b0f8b3c5c9d5b59e27eb283f964f08be1` failed exactly the deliberate
-child-interpreter-isolation regression; final reviewed head
-`fbbdef60bbea262fede78ccd51387b6e817b1382` passed CI run `32943881890`, and
-CodeQL reported no new alerts. This establishes only BUILT_NOT_PROVEN for the
-helper. No live fixture metadata PASS has been observed yet.
+The Chairman has now run that accepted helper from a fresh clean checkout at
+protected Mastermind `e4e44867ace335ac9208a3990a10c163e199492d`. The one-line
+allowlisted result was:
 
-Therefore the exact S0 continuation is singular: obtain the live allowlisted
-metadata-verifier receipt through the accepted PR #159 host procedure. PASS
-releases only the remainder of the existing MAS-112 three-seat/twenty-row
-experiment. Refusal stops for Sol. Until PASS, do not send another Slack probe,
-do not create or select another fixture, and do not begin B2.
+```json
+{"error":"METADATA_SCOPE_MISMATCH","schema":"mastermind.slack_agent_dialogue.metadata_verification.v1","status":"ERROR"}
+```
+
+Because the verifier checks Slack auth response validity and team/bot identity
+before exact scope equality, this receipt narrows the live defect to the
+installed scope contract rather than a generic credential-read failure. It does
+not reveal whether the drift is a missing required scope or one or more extra
+scopes. Independently, current Slack membership shows fixture bot
+`U0BST4WG996` present in private channel `C0BRUL9F2V7`.
+
+This closes the old `LIVE_KEYCHAIN_VERIFIER_RECEIPT_REQUIRED` uncertainty but
+replaces it with the narrower `LIVE_FIXTURE_SCOPE_CONTRACT_DRIFT` gate. The
+credential-safe helper path itself has now been exercised on the real native
+boundary; S0-R1 as a capability remains nonterminal and not PASS. The scope
+mismatch is a fixture preflight failure, not evidence that the framed carrier's
+20-row kill gate has failed.
+
+The exact continuation is now singular: obtain the live installed bot scope set
+through a credential-safe, non-secret Slack admin/provider surface. Do not expose
+or copy any token. Sol must then compare that finite scope set to the frozen
+`groups:history` + `chat:write` contract and authorize only the smallest
+configuration remediation under the existing fixture identity if required.
+Until that review, do not rerun the verifier, do not send another source probe,
+do not create S0-R2, do not select or rotate a replacement fixture, and do not
+begin B2.
+
+Linear MAS-112 had drifted to false-green Done after the helper merge. It has
+been repaired to In Progress and now records the live scope-mismatch receipt.
 
 ## C1 current delta
 
 Private `#sol-runtime` channel `C0BSGABKBFY` still has Chairman plus
-ChatGPT1/2/3 only, with no production Relay bot and no `MMX/SOL_STATE_V1`
-publication.
+ChatGPT1/2/3 only, with no accepted production Relay proof or accepted
+`MMX/SOL_STATE_V1` publication.
 
 Mastermind PR #155, branch
 `sol/personal-pro-c1-sol-state-production-20260825`, remains the sole modifying
-C1 carrier. Current GitHub truth is still a draft commission-only PR with no
-production adapter/service implementation return. The prior ChatGPT1 Slack
-dispatch remains DELIVERY_ONLY with no ACK/return, so delivery does not prove
-execution.
+C1 carrier. Current GitHub truth is still an open draft commission-only PR at
+head `c7e0940133ec731e344c29b9aff7c21999f19271`, with no production adapter or
+service implementation return. Delivery of the prior builder commission does
+not prove execution.
 
 C1 must reuse the existing `SolStatePublisher` and implement only the bounded
 read-only production `SlackStateClient` plus dedicated CeoIngress STATE
