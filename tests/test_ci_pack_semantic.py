@@ -1588,6 +1588,37 @@ def test_selected_python_loader_environment_is_derived_from_the_interpreter(
     }
 
 
+def test_selected_python_loader_environment_preserves_the_attested_tool_cache_alias(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    prefix = tmp_path / "hostedtoolcache" / "Python" / "3.12.13" / "x64"
+    library_dir = prefix / "lib"
+    library_dir.mkdir(parents=True)
+    (library_dir / "libpython3.12.so.1.0").write_bytes(b"fixture")
+    tool_cache_alias = (
+        tmp_path / "runner" / "_work" / "_tool" / "Python" / "3.12.13" / "x64"
+    )
+    tool_cache_alias.parent.mkdir(parents=True)
+    tool_cache_alias.symlink_to(prefix, target_is_directory=True)
+    ambient_library_dir = tool_cache_alias / "lib"
+    monkeypatch.setattr(PACK.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(PACK.sys, "base_prefix", str(prefix))
+    monkeypatch.setattr(
+        PACK.sysconfig,
+        "get_config_var",
+        lambda name: {
+            "LIBDIR": str(library_dir),
+            "LDLIBRARY": "libpython3.12.so",
+            "INSTSONAME": "libpython3.12.so.1.0",
+        }.get(name),
+    )
+    monkeypatch.setenv("LD_LIBRARY_PATH", str(ambient_library_dir))
+
+    assert PACK._selected_python_loader_environment() == {
+        "LD_LIBRARY_PATH": str(ambient_library_dir)
+    }
+
+
 def test_selected_python_loader_environment_refuses_a_library_outside_the_prefix(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

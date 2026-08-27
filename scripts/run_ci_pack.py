@@ -3345,31 +3345,54 @@ def _selected_python_loader_environment() -> dict[str, str]:
 
     ``actions/setup-python`` selects a versioned shared-library build.  Re-execing
     that interpreter with a deliberately small environment must retain only its
-    own library directory; copying ambient ``LD_LIBRARY_PATH`` would let candidate
-    code steer the exact-base replay into an unrelated library tree.
+    own library directory.  The action can expose that directory through a
+    runner-local alias while ``sysconfig`` reports its canonical tool-cache path,
+    so preserve an ambient alias only after proving it resolves to the declared
+    directory inside ``sys.base_prefix`` and contains a declared Python SONAME.
     """
     if platform.system() != "Linux":
         return {}
     raw_library_dir = sysconfig.get_config_var("LIBDIR")
-    raw_library_name = sysconfig.get_config_var("LDLIBRARY")
+    raw_library_names = [
+        sysconfig.get_config_var("LDLIBRARY"),
+        sysconfig.get_config_var("INSTSONAME"),
+    ]
+    library_names = [
+        name for name in raw_library_names if isinstance(name, str) and name
+    ]
     if not isinstance(raw_library_dir, str) or not raw_library_dir:
         raise ExecutionProfileError("selected Python does not declare LIBDIR")
-    if not isinstance(raw_library_name, str) or not raw_library_name:
-        raise ExecutionProfileError("selected Python does not declare LDLIBRARY")
+    if not library_names:
+        raise ExecutionProfileError(
+            "selected Python does not declare LDLIBRARY or INSTSONAME"
+        )
     try:
         prefix = Path(sys.base_prefix).resolve(strict=True)
-        library_dir = Path(raw_library_dir).resolve(strict=True)
-        library_dir.relative_to(prefix)
+        declared_library_dir = Path(raw_library_dir).resolve(strict=True)
+        declared_library_dir.relative_to(prefix)
     except (OSError, ValueError) as exc:
         raise ExecutionProfileError(
             "selected Python library directory is outside selected interpreter prefix"
         ) from exc
-    library = library_dir / raw_library_name
-    if not library.is_file():
-        raise ExecutionProfileError(
-            f"selected Python shared library is absent: {library}"
-        )
-    return {"LD_LIBRARY_PATH": str(library_dir)}
+
+    candidates: list[Path] = []
+    for entry in os.environ.get("LD_LIBRARY_PATH", "").split(os.pathsep):
+        if not entry:
+            continue
+        candidate = Path(entry)
+        try:
+            if candidate.resolve(strict=True) == declared_library_dir:
+                candidates.append(candidate)
+        except OSError:
+            continue
+    candidates.append(Path(raw_library_dir))
+    for candidate in candidates:
+        if any((candidate / name).is_file() for name in library_names):
+            return {"LD_LIBRARY_PATH": str(candidate)}
+    raise ExecutionProfileError(
+        "selected Python shared library is absent: "
+        f"{declared_library_dir} ({', '.join(library_names)})"
+    )
 
 
 def _node_major_version() -> int | None:

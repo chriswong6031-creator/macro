@@ -348,6 +348,7 @@ def test_main_dispatch_freezes_parent_as_the_changed_from_base(monkeypatch) -> N
     assert result["tested_ref"] == tested
     assert result["tested_sha"] == tested
     assert result["base_sha"] == parent
+    assert result["head_ref"] == "main"
     assert result["contamination_sha"] == parent
 
 
@@ -371,6 +372,7 @@ def test_pr_dispatch_uses_the_fetched_merge_parent_when_api_base_is_stale(
             "merge_commit_sha": merge,
             "base": {"ref": "main", "sha": stale_api_base},
             "head": {
+                "ref": "codex/ci-p3bb-production-route-6351",
                 "sha": head,
                 "repo": {"full_name": "mastermindx-market-intelligence/macro"},
             },
@@ -380,6 +382,8 @@ def test_pr_dispatch_uses_the_fetched_merge_parent_when_api_base_is_stale(
     def fake_git(*args: str) -> str:
         if args[0] == "fetch":
             return ""
+        if args[0] == "check-ref-format":
+            return args[2]
         revisions = {
             "refs/ci-canary/pull/7/merge^{commit}": merge,
             f"{merge}^1": tested_base,
@@ -394,6 +398,7 @@ def test_pr_dispatch_uses_the_fetched_merge_parent_when_api_base_is_stale(
     assert result["tested_sha"] == merge
     assert result["base_sha"] == tested_base
     assert result["head_sha"] == head
+    assert result["head_ref"] == "codex/ci-p3bb-production-route-6351"
     assert result["contamination_sha"] == tested_base
 
 
@@ -409,6 +414,7 @@ def test_pr_dispatch_requires_fetched_merge_sha_and_head_to_match_api(monkeypatc
             "merge_commit_sha": merge,
             "base": {"ref": "main", "sha": base},
             "head": {
+                "ref": "codex/ci-p3bb-production-route-6351",
                 "sha": head,
                 "repo": {"full_name": "mastermindx-market-intelligence/macro"},
             },
@@ -418,6 +424,8 @@ def test_pr_dispatch_requires_fetched_merge_sha_and_head_to_match_api(monkeypatc
     def fake_git(*args: str) -> str:
         if args[0] == "fetch":
             return ""
+        if args[0] == "check-ref-format":
+            return args[2]
         revisions = {
             "refs/ci-canary/pull/7/merge^{commit}": merge,
             f"{merge}^1": base,

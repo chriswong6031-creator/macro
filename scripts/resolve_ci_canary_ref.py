@@ -55,6 +55,7 @@ def resolve(repository: str, github_sha: str, pr_number: int, token: str) -> dic
             "tested_sha": tested_sha,
             "base_sha": parent,
             "head_sha": tested_sha,
+            "head_ref": "main",
             "contamination_sha": parent,
         }
 
@@ -78,8 +79,12 @@ def resolve(repository: str, github_sha: str, pr_number: int, token: str) -> dic
     tested_sha = git("rev-parse", f"{local_ref}^{{commit}}")
     api_base_sha = str(base.get("sha") or "")
     head_sha = str(head.get("sha") or "")
+    head_ref = str(head.get("ref") or "")
     if len(api_base_sha) != 40 or len(head_sha) != 40:
         raise ResolutionError("GitHub returned an invalid base/head SHA")
+    if not head_ref:
+        raise ResolutionError("GitHub returned an empty PR head ref")
+    git("check-ref-format", "--branch", head_ref)
     api_merge = data.get("merge_commit_sha")
     if api_merge and api_merge != tested_sha:
         raise ResolutionError(
@@ -98,6 +103,7 @@ def resolve(repository: str, github_sha: str, pr_number: int, token: str) -> dic
         "tested_sha": tested_sha,
         "base_sha": base_sha,
         "head_sha": head_sha,
+        "head_ref": head_ref,
         "contamination_sha": base_sha,
     }
 

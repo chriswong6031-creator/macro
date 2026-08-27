@@ -322,9 +322,7 @@ def test_p3ar_freezes_and_transports_the_complete_main_owned_control_bundle() ->
     )
     assert execute_step["env"][CONTROL_REPO_ROOT_ENV] == "${{ github.workspace }}"
     assert execute_step["env"]["CI_BASE_REF"] == "${{ github.base_ref || 'main' }}"
-    assert execute_step["env"]["CI_HEAD_REF"] == (
-        "${{ github.head_ref || github.ref_name }}"
-    )
+    assert execute_step["env"]["CI_HEAD_REF"] == "${{ needs.plan.outputs.head_ref }}"
     execute = execute_step["run"]
     assert (
         '"$RUNNER_TEMP/trusted-ci-pack-runner/bin/python" '

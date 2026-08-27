@@ -12,6 +12,7 @@ digests to a Shanghai one — ``test_utc_runner_produces_shanghai_stamps`` pins 
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import sysconfig
@@ -1178,9 +1179,31 @@ def test_cli_module_entrypoint_runs_without_a_token() -> None:
     """A keyless invocation must produce usage text, never a traceback."""
     environment = {"PATH": "/usr/bin:/bin", "HOME": str(ROOT)}
     if sys.platform.startswith("linux"):
-        library_dir = Path(str(sysconfig.get_config_var("LIBDIR"))).resolve()
-        library_name = str(sysconfig.get_config_var("LDLIBRARY"))
-        assert (library_dir / library_name).is_file()
+        declared_library_dir = Path(str(sysconfig.get_config_var("LIBDIR")))
+        resolved_library_dir = declared_library_dir.resolve(strict=True)
+        library_names = [
+            name
+            for name in (
+                sysconfig.get_config_var("LDLIBRARY"),
+                sysconfig.get_config_var("INSTSONAME"),
+            )
+            if isinstance(name, str) and name
+        ]
+        ambient_library_dirs = [
+            Path(entry)
+            for entry in os.environ.get("LD_LIBRARY_PATH", "").split(os.pathsep)
+            if entry
+        ]
+        library_dir = next(
+            (
+                candidate
+                for candidate in [*ambient_library_dirs, declared_library_dir]
+                if candidate.resolve(strict=True) == resolved_library_dir
+                and any((candidate / name).is_file() for name in library_names)
+            ),
+            None,
+        )
+        assert library_dir is not None
         environment["LD_LIBRARY_PATH"] = str(library_dir)
     completed = subprocess.run(
         [sys.executable, "-m", "scripts.backfill_tushare_minutes", "--help"],

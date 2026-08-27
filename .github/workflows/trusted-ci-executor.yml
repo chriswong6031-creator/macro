@@ -160,6 +160,7 @@ jobs:
       tested_sha: ${{ steps.ref.outputs.tested_sha }}
       base_sha: ${{ steps.ref.outputs.base_sha }}
       head_sha: ${{ steps.ref.outputs.head_sha }}
+      head_ref: ${{ steps.ref.outputs.head_ref }}
       control_sha: ${{ steps.control.outputs.sha }}
     steps:
       - name: checkout main-owned executor control code
@@ -354,7 +355,7 @@ jobs:
         env:
           CI_CHANGED_FILES_FILE: ${{ runner.temp }}/trusted-ci-plan/changed-files.json
           CI_BASE_REF: ${{ github.base_ref || 'main' }}
-          CI_HEAD_REF: ${{ github.head_ref || github.ref_name }}
+          CI_HEAD_REF: ${{ needs.plan.outputs.head_ref }}
           MASTERMIND_TRUSTED_CI_REPO_ROOT: ${{ github.workspace }}
         shell: bash
         run: |
