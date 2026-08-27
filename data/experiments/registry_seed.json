@@ -4032,8 +4032,8 @@
       "come_back_note": "2026-09-16 (2026-08-26 audit). All matured obs from 7 fire dates 2026-07-13..07-24 (~1-2 independent episodes; SPY +2.75% over the window — read only vs plab_random_ctrl, whose own median excess was -1.79%).",
       "maturation": "Scoreboard floor (site/labdata/pick_lab.json): n>=25 fires AND >=3 months span AND >=6 distinct fire dates; earliest clear 2026-10-13. Emitted metrics are h21_wr_exc / h21_capture / vs_random_lift (hit_quality / upside_capture / coverage_health do not exist in engine/pick_lab). Promotion requires the SA-R5 Tier-2 gauntlet.",
       "status": "blocked",
-      "state": "2026-08-26 audit: ZERO fires ever — upstream site/flowleaders/leaders.json is stale:true (session 08-12 vs as_of 08-26) and fire_a=0 across all 133 board_a rows.",
-      "next_step": "Blocked on the flow lane, not Pick Lab. Fix upstream first.",
+      "state": "2026-08-26 audit: ZERO fires ever — upstream site/flowleaders/leaders.json is stale:true (session 08-12 vs as_of 08-26) and fire_a=0 across all 133 board_a rows. ROOT CAUSE traced 2026-08-26: the options vendor key is being REJECTED — every data/polygon_gex_health receipt (08-19,20,21,24,25) reads auth_or_entitlement_failure on all 5 probe symbols, 0 successes, decision nothing_captured. Chains dark since 08-13, so data/options_flow/summary_*.parquet froze at session 08-12 (367/387 tickers) and build_flow_leaders' >2-session freshness SLA sets stale:true, which gates off the recurrence block and nulls A1_flow_recur/recurrence_count. fire_a=0 is the fail-closed CONSEQUENCE of stale:true, not a separate Board-A defect.",
+      "next_step": "Blocked on a vendor CREDENTIAL, not on Pick Lab and not on code: rotate/re-entitle POLYGON_API_KEY (alias MASSIVE_API_KEY) and confirm MASSIVE_S3_* flatfile access, then one nightly repopulates chains + summaries and the SLA clears itself. Diagnostic that pins it: accrue() returns no_key and writes NO receipt when the key is absent, so a receipt carrying 401/403 proves the key is present and the vendor is rejecting it. Do not re-audit the board logic first.",
       "phase_hint": "SA-W4 · US pick-lab · family-G",
       "sa_r5_note": "Tier-0 evidence tool: scripts/replay_standout_books.py --engine-id plab_flow_leader. May authorize shadow experiments (SA-R5). NEVER promotions on replay evidence alone.",
       "state_as_of": "2026-08-26"
@@ -4054,8 +4054,8 @@
       "come_back_note": "2026-09-16 (2026-08-26 audit). All matured obs from 7 fire dates 2026-07-13..07-24 (~1-2 independent episodes; SPY +2.75% over the window — read only vs plab_random_ctrl, whose own median excess was -1.79%).",
       "maturation": "Scoreboard floor (site/labdata/pick_lab.json): n>=25 fires AND >=3 months span AND >=6 distinct fire dates; earliest clear 2026-10-13. Emitted metrics are h21_wr_exc / h21_capture / vs_random_lift (hit_quality / upside_capture / coverage_health do not exist in engine/pick_lab). Promotion requires the SA-R5 Tier-2 gauntlet.",
       "status": "blocked",
-      "state": "2026-08-26 audit: ZERO fires ever — same upstream blocker: fire_b=0 across 19 board_b rows in the stale flowleaders artifact.",
-      "next_step": "Blocked on the flow lane.",
+      "state": "2026-08-26 audit: ZERO fires ever — same upstream blocker: fire_b=0 across 19 board_b rows in the stale flowleaders artifact. Same traced root cause as plab_flow_leader: the options vendor key is rejected (401/403) since ~08-13, chains dark, options_flow summaries frozen at session 08-12, so leaders.json carries stale:true and Board B's legs collapse to K_b<=1 of n_avail_b=2.",
+      "next_step": "Blocked on the same vendor credential as plab_flow_leader — see that entry's next_step. One rotation unblocks both books; they are not independent blockers.",
       "phase_hint": "SA-W4 · US pick-lab · family-G",
       "sa_r5_note": "Tier-0 evidence tool: scripts/replay_standout_books.py --engine-id plab_flow_washout. May authorize shadow experiments (SA-R5). NEVER promotions on replay evidence alone.",
       "state_as_of": "2026-08-26"
@@ -4077,7 +4077,7 @@
       "maturation": "Scoreboard floor (site/labdata/pick_lab.json): n>=25 fires AND >=3 months span AND >=6 distinct fire dates; earliest clear 2026-10-13. Emitted metrics are h21_wr_exc / h21_capture / vs_random_lift (hit_quality / upside_capture / coverage_health do not exist in engine/pick_lab). Promotion requires the SA-R5 Tier-2 gauntlet.",
       "status": "accruing",
       "state": "2026-08-26 audit: 5 fires ever, none since 2026-07-29 (28 days) — near-dead gate; h21 n=1.",
-      "next_step": "Triage fire rate (possible shared Leader Radar staleness) before setting a read date.",
+      "next_step": "Fire-rate triage only — the 'shared Leader Radar staleness' hypothesis is FALSIFIED (2026-08-26): site/leaderradar/radar.json carries stale:false, degraded:[], freshness.price_through 2026-08-25 and 173 rows, and its near_trigger rows sit at k_true=1 of n_avail=3 with named missing chips. The gate is genuinely unmet, not starved. Unrelated to the flow-leaders vendor outage — do NOT bundle it into that fix.",
       "phase_hint": "SA-W4 · US pick-lab · family-H",
       "sa_r5_note": "Tier-0 evidence tool: scripts/replay_standout_books.py --engine-id plab_leader_precipice. May authorize shadow experiments (SA-R5). NEVER promotions on replay evidence alone.",
       "state_as_of": "2026-08-26"
@@ -4099,7 +4099,7 @@
       "maturation": "Scoreboard floor (site/labdata/pick_lab.json): n>=25 fires AND >=3 months span AND >=6 distinct fire dates; earliest clear 2026-10-13. Emitted metrics are h21_wr_exc / h21_capture / vs_random_lift (hit_quality / upside_capture / coverage_health do not exist in engine/pick_lab). Promotion requires the SA-R5 Tier-2 gauntlet.",
       "status": "accruing",
       "state": "2026-08-26 audit: 23 fires/8 dates, none since 08-12; h21 n=4/2 dates — below floor.",
-      "next_step": "Extend accrual; watch for the precipice-style stall.",
+      "next_step": "Extend accrual; watch for the precipice-style stall. The shared 08-12 date with the flow-leaders freeze is COINCIDENCE (2026-08-26): Leader Radar reads prices, not the options flow store, and radar.json is fresh (stale:false, price_through 2026-08-25) — 08-12 is simply the last genuine onset fire (ZS, CSCO in fire_history). No shared upstream with plab_flow_leader/plab_flow_washout.",
       "phase_hint": "SA-W4 · US pick-lab · family-H",
       "sa_r5_note": "Tier-0 evidence tool: scripts/replay_standout_books.py --engine-id plab_leader_onset. May authorize shadow experiments (SA-R5). NEVER promotions on replay evidence alone.",
       "state_as_of": "2026-08-26"

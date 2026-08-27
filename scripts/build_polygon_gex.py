@@ -836,6 +836,73 @@ def _summarize(raw: pd.DataFrame, sym: str, cfg: dict) -> pd.DataFrame | None:
     return pd.DataFrame({k: [summ.get(k)] for k in SUMMARY_KEYS}, index=[asof])
 
 
+def _dominant_failure_reason(census: dict) -> str | None:
+    """The reason code explaining the most failed underlyings, or None.
+
+    Ties break on the code NAME so one outage never renders two different
+    messages across runs (an annotation that changes wording run-to-run reads
+    as two incidents to whoever is scanning the Actions summary)."""
+    reasons = {k: v for k, v in (census.get("failure_reasons") or {}).items() if v}
+    if not reasons:
+        return None
+    return max(reasons.items(), key=lambda kv: (kv[1], kv[0]))[0]
+
+
+def _sessions_dark(asof: date, now: datetime | None = None) -> int | None:
+    """NYSE sessions the stored chain history is behind the calendar, or None.
+
+    None when nothing is stored yet (a first-ever run is not an outage) or when
+    a stray filename will not parse. Deliberately the SAME `sessions_behind`
+    the downstream flow-leaders freshness SLA uses (scripts/build_flow_leaders
+    ._check_stale), so the number the operator reads here is the number that
+    trips `stale:true` on site/flowleaders/leaders.json."""
+    stored = sorted(p.stem for p in _chains_dir().glob("*.parquet"))
+    if not stored:
+        return None
+    try:
+        newest = date.fromisoformat(stored[-1])
+    except ValueError:
+        return None
+    return nyse_calendar.sessions_behind(newest, now=now)
+
+
+def _annotate_zero_capture(asof: date, census: dict, now: datetime | None = None) -> None:
+    """Emit the line-start annotation a total zero-capture owes the operator.
+
+    WHY THIS EXISTS (2026-08-26): the vendor key went 401/403 on 2026-08-13 and
+    this lane stayed dark for THIRTEEN days without one alarm. Detection was
+    never the gap — collectors/polygon_options.py classified every symbol
+    `auth_or_entitlement_failure`, short-circuited the universe, and filed a
+    correct `nothing_captured`/`failed` health receipt each night. The gap was
+    ESCALATION: this branch only called log.warning(), and a logger can never
+    become a GitHub annotation (the house format prefixes the line, so
+    "::error" lands mid-line and Actions drops it — see the repo law and
+    tests/test_gh_annotation_line_start.py). The sibling universe-degraded
+    branch below already prints its own annotation; a vendor that rejects every
+    request is not a quieter failure than a collapsed universe.
+
+    Bare print + flush: stdout is block-buffered when piped in CI.
+
+    Blast radius is named on purpose — polygon OI is point-in-time and cannot
+    be backfilled, so each dark session is permanently lost, and the artifact
+    the reader will actually notice is three hops downstream (chains →
+    data/options_flow/summary_*.parquet → site/flowleaders/leaders.json →
+    the plab_flow_leader / plab_flow_washout pick-lab books)."""
+    reason = _dominant_failure_reason(census) or "unclassified"
+    dark = _sessions_dark(asof, now=now)
+    span = (f"; chain store is {dark} NYSE session(s) behind the calendar"
+            if dark else "")
+    attempted = census.get("attempted_underlyings")
+    requested = census.get("requested_underlyings")
+    print(f"::error title=polygon-accrual-dark::session {asof}: captured ZERO "
+          f"underlyings ({attempted} attempted of {requested} requested) — "
+          f"dominant failure reason {reason}{span}. Nothing was written; "
+          f"polygon OI is point-in-time and this session cannot be backfilled. "
+          f"Downstream: data/options_flow/summary_*.parquet stops advancing, "
+          f"site/flowleaders/leaders.json goes stale:true, and the "
+          f"plab_flow_leader / plab_flow_washout books starve.", flush=True)
+
+
 def accrue(as_of=None, *, force: bool = False, _now: datetime | None = None) -> dict:
     """Snapshot + persist one SESSION. Returns a small status dict (logging/tests).
 
@@ -1131,6 +1198,10 @@ def accrue(as_of=None, *, force: bool = False, _now: datetime | None = None) -> 
         # "skipped_not_better", which is reserved for a real comparison against a
         # stored capture that this attempt failed to beat).
         health = _health_verdict(census["coverage_pct"], 0)
+        # The receipt below is the FORENSIC record; this is the ALARM. Both are
+        # required — see _annotate_zero_capture for the 13-day outage that
+        # proved a health receipt nobody reads is not an escalation.
+        _annotate_zero_capture(asof, census, now=now)
         log.warning("polygon: snapshot empty — nothing accrued (%s)", census)
         _append_health_attempt(asof, decision="nothing_captured", health=health,
                                census=census, now=now)
