@@ -1,7 +1,7 @@
 {
   "schema": "china_market_state.v1",
   "as_of": "2026-08-27",
-  "generated_utc": "2026-08-27T18:47:53Z",
+  "generated_utc": "2026-08-27T23:41:04Z",
   "authority": {
     "tier": "context_only",
     "why": [
@@ -67,23 +67,23 @@
     "contradictions": []
   },
   "microstructure": {
-    "as_of": "2026-08-26",
+    "as_of": "2026-08-27",
     "aggregate": {
-      "date": "2026-08-26",
-      "limit_up_count": 9.0,
-      "limit_down_count": 1.0,
-      "sealed_up_close": 4.0,
-      "failed_up_seal_count": 5.0,
-      "lianban_2plus": 0.0,
-      "lianban_max": 1.0,
+      "date": "2026-08-27",
+      "limit_up_count": 18.0,
+      "limit_down_count": 0.0,
+      "sealed_up_close": 16.0,
+      "failed_up_seal_count": 2.0,
+      "lianban_2plus": 1.0,
+      "lianban_max": 2.0,
       "universe_n": 1852.0,
-      "limit_up_breadth_pct": 0.486,
-      "limit_down_breadth_pct": 0.054
+      "limit_up_breadth_pct": 0.9719,
+      "limit_down_breadth_pct": 0.0
     },
     "name_summary": {
-      "n_packets": 131,
-      "chase_veto_count": 7,
-      "fillable_count": 128
+      "n_packets": 156,
+      "chase_veto_count": 15,
+      "fillable_count": 151
     },
     "names_ref": "site/chinastatedata/microstructure.json#name_packets"
   },
@@ -160,49 +160,49 @@
     "ths_heat": {
       "as_of": "2026-08-27",
       "basket_count": 237,
-      "above_200d_pct": 47.7,
+      "above_200d_pct": 60.8,
       "hot_baskets": [
         {
           "id": "ths_innovative_rx",
-          "ret_60d": 0.2296
-        },
-        {
-          "id": "thsc308822",
-          "ret_60d": 0.138
-        },
-        {
-          "id": "thsc301146",
-          "ret_60d": 0.1209
-        },
-        {
-          "id": "ths_synbio",
-          "ret_60d": 0.1172
+          "ret_60d": 0.2439
         },
         {
           "id": "thsc308690",
-          "ret_60d": 0.097
+          "ret_60d": 0.1467
+        },
+        {
+          "id": "thsc308822",
+          "ret_60d": 0.1449
+        },
+        {
+          "id": "thsc301146",
+          "ret_60d": 0.1439
+        },
+        {
+          "id": "ths_synbio",
+          "ret_60d": 0.1367
         }
       ],
       "cold_baskets": [
         {
-          "id": "thsc309120",
-          "ret_60d": -0.1736
+          "id": "thsc309128",
+          "ret_60d": -0.1599
         },
         {
-          "id": "ths_satnav",
-          "ret_60d": -0.1781
+          "id": "thsc300223",
+          "ret_60d": -0.1726
         },
         {
-          "id": "thsc300180",
-          "ret_60d": -0.1781
+          "id": "thsc308753",
+          "ret_60d": -0.1761
         },
         {
           "id": "ths_appliances",
-          "ret_60d": -0.1947
+          "ret_60d": -0.1828
         },
         {
           "id": "thsc300795",
-          "ret_60d": -0.2576
+          "ret_60d": -0.2104
         }
       ]
     }
@@ -390,7 +390,7 @@
       "cn_10y": 1.6988,
       "cn_2y": 1.254,
       "cn_slope_10_2": 0.4448000000000001,
-      "cn_us_10y_spread": null
+      "cn_us_10y_spread": -2.9711999999999996
     },
     "cgb_curve": {
       "as_of": "2026-08-27",
@@ -435,7 +435,7 @@
     "phase_evidence: turnover_z20_null"
   ],
   "contradictions": [
-    "microstructure_chase_vs_participation: 7 names carry chase_veto while participation.regime='dormant' (theme-level chase pressure in a low-participation tape — theme breadth may be narrow)"
+    "microstructure_chase_vs_participation: 15 names carry chase_veto while participation.regime='dormant' (theme-level chase pressure in a low-participation tape — theme breadth may be narrow)"
   ],
   "falsifiers": [
     {
