@@ -7,7 +7,7 @@ objective: >
   Forward Path synthesis and learning. Done means real current inputs traverse production into the
   actual user/machine consumers with all authority ceilings, nulls, evidence clocks and failure states
   intact; CI or merged infrastructure alone is not completion.
-status: active
+status: awaiting_ci
 program: rates-inflation-command
 repos: [macro]
 owner: ceo-sol
@@ -32,10 +32,11 @@ depends_on: []
 waves:
   - id: F0
     title: Recovery, capability ledger and architecture freeze
-    status: in_progress
+    status: awaiting_ci
+    pr: 6543
     next_action: >
-      Independently review and accept the records-only recovery carrier; no product/runtime behavior
-      is changed by F0.
+      Independently review and accept PR #6543 only after exact-head semantic/fence CI completes
+      green; no product/runtime behavior is changed by F0.
   - id: F1
     title: Release and event truth/intelligence closure
     status: todo
@@ -84,9 +85,9 @@ artifacts:
   - research/MACRO_RELEASE_INTEL_MASTERPLAN_BY_FABLE.md
   - research/TRANSMISSION_INTELLIGENCE_MASTERPLAN_BY_FABLE.md
 next_action: >
-  Complete F0 independent review/merge, then submit the frozen RIC-F1, RIC-F2 and RIC-F3 packets
-  through canonical Executive admission/routing as three disjoint operations and call a lane active
-  only after its concrete Fable/worker carrier/session ACK is proven.
+  Complete PR #6543 F0 independent review/merge, then submit the frozen RIC-F1, RIC-F2 and RIC-F3
+  packets through canonical Executive admission/routing as three disjoint operations and call a lane
+  active only after its concrete Fable/worker carrier/session ACK is proven.
 ---
 
 ## Why this workstream exists
