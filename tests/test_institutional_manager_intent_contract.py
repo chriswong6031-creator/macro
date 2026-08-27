@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from hashlib import sha256
 import inspect
 import json
 from pathlib import Path
@@ -36,6 +37,23 @@ FIXTURE = (
 RAW_REF_ID = "efr_9b1450aec5bd550aff068fbd28246c44505702d75577cef76e2349d0706a8915"
 THEME_REF_ID = "efr_c5a0444802fa2ed354a7324be6dc5bb17b81cd205d44ee49465be43db5e36011"
 AS_OF = "2026-08-08T01:00:00Z"
+CUSIP = "037833100"
+_CURRENT_RAW_NATIVE_IDENTITY = {
+    "accession": "0001398344-26-013841",
+    "filer_cik": "0001792167",
+    "receipt_id": "i13fraw_c16997a2b2d352a4b7ada643273e00ca482505cf84b1e33e3688d3b0dc6fa8d2",
+}
+_K1_REPLAY_CUTOFFS = {
+    axis: {"state": "unknown", "value": None, "grain": "date"}
+    for axis in (
+        "belief_or_build", "knowable", "observed", "review_due",
+        "source_published", "system_recorded", "world_valid",
+    )
+}
+_K1_ALL_FALSE_AUTHORITY = {
+    "can_rank": False, "can_gate": False, "can_size": False,
+    "can_originate": False, "can_open_entry": False,
+}
 
 
 def recipe() -> dict:
@@ -181,6 +199,260 @@ def _transition(
             "append_only": True,
         },
     }
+
+
+def _hash_hex(label: str) -> str:
+    return sha256(label.encode("utf-8")).hexdigest()
+
+
+def _owner_row_raw_ref(
+    *,
+    accession: str,
+    report_period: str,
+    accepted_at: str,
+    retained_at: str,
+    label: str,
+    filer_cik: str = "0001792167",
+) -> dict:
+    """Build a fresh, real-shaped K1 ``institutional_13f.raw_receipt`` ref."""
+    receipt_id = f"i13fraw_{_hash_hex(label)}"
+    reference = {
+        "schema": "evidence_foundation.reference.v1",
+        "version": "1.0.0",
+        "object_class": "world_observation",
+        "owner_store": "institutional_13f.raw_receipt",
+        "native_identity": {
+            "filer_cik": filer_cik,
+            "accession": accession,
+            "receipt_id": receipt_id,
+        },
+        "native_schema": "institutional_13f.raw_evidence_receipt/v1",
+        "native_digest": {"state": "known", "sha256": _hash_hex(f"{label}:digest")},
+        "coverage_class": "source_release_snapshot_only",
+        "freshness": {"state": "native_clock_bound", "clock_field": "clocks.retained_at", "policy_id": None},
+        "rights": {"state": "permitted", "policy_id": None},
+        "authority_class": "fact",
+        "subject": {"key_type": "institutional_manager_cik", "key": filer_cik},
+        "secondary_subjects": [{"key_type": "accession", "key": accession}],
+        "clocks": [
+            {"class": "world_valid", "field": "clocks.report_period", "grain": "date", "value": report_period, "value_state": "known"},
+            {"class": "source_published", "field": "clocks.accepted_at", "grain": "datetime", "value": accepted_at, "value_state": "known"},
+            {"class": "system_recorded", "field": "clocks.retained_at", "grain": "datetime", "value": retained_at, "value_state": "known"},
+        ],
+        "provenance": {
+            "pointer_only": True,
+            "body_embedded": False,
+            "owner_reader": "engine.institutional_census.models.RawEvidenceReceipt.from_json_bytes",
+            "owner_reader_kind": "parser",
+            "pointer": f"institutional-13f/raw/{filer_cik}/{accession}/{receipt_id}.json",
+        },
+        "relations": [],
+        "missingness": {"state": "present", "reason": None, "zero_substituted": False},
+        "correction": {
+            "kind": "none", "predecessor_reference_ids": [], "clock_field": None,
+            "chronology_state": "not_applicable", "append_only": True, "mutates_predecessor": False,
+        },
+        "replay": {
+            "mode": "live", "cutoffs": deepcopy(_K1_REPLAY_CUTOFFS),
+            "code_revision": None, "input_digest": None, "vintage_state": "owner_native",
+        },
+        "authority": deepcopy(_K1_ALL_FALSE_AUTHORITY),
+    }
+    reference["reference_id"] = compute_reference_id(reference)
+    validate_reference(reference)
+    return reference
+
+
+def _owner_row_catalog_ref(
+    *,
+    report_period: str,
+    source_cutoff_at: str,
+    published_at: str,
+    label: str,
+) -> dict:
+    """Build a fresh, real-shaped K1 ``institutional_13f.catalog_generation`` ref."""
+    generation_id = f"i13fgen_{_hash_hex(label)}"
+    reference = {
+        "schema": "evidence_foundation.reference.v1",
+        "version": "1.0.0",
+        "object_class": "derived_view",
+        "owner_store": "institutional_13f.catalog_generation",
+        "native_identity": {"generation_id": generation_id, "report_period": report_period},
+        "native_schema": "institutional_13f.catalog_generation_manifest/v1",
+        "native_digest": {"state": "known", "sha256": _hash_hex(f"{label}:digest")},
+        "coverage_class": "immutable_generation",
+        "freshness": {"state": "native_clock_bound", "clock_field": "clocks.published_at", "policy_id": None},
+        "rights": {"state": "permitted", "policy_id": None},
+        "authority_class": "deterministic",
+        "subject": {"key_type": "institutional_catalog_generation_id", "key": generation_id},
+        "secondary_subjects": [],
+        "clocks": [
+            {"class": "world_valid", "field": "clocks.report_period", "grain": "date", "value": report_period, "value_state": "known"},
+            {"class": "knowable", "field": "clocks.source_cutoff_at", "grain": "datetime", "value": source_cutoff_at, "value_state": "known"},
+            {"class": "belief_or_build", "field": "clocks.published_at", "grain": "datetime", "value": published_at, "value_state": "known"},
+        ],
+        "provenance": {
+            "pointer_only": True,
+            "body_embedded": False,
+            "owner_reader": "engine.institutional_census.catalog.load_catalog_generation",
+            "owner_reader_kind": "direct",
+            "pointer": f"institutional-13f/catalog/{report_period}/generations/{generation_id}/manifest.json",
+        },
+        "relations": [],
+        "missingness": {"state": "present", "reason": None, "zero_substituted": False},
+        "correction": {
+            "kind": "none", "predecessor_reference_ids": [], "clock_field": None,
+            "chronology_state": "not_applicable", "append_only": True, "mutates_predecessor": False,
+        },
+        "replay": {
+            "mode": "live", "cutoffs": deepcopy(_K1_REPLAY_CUTOFFS),
+            "code_revision": None, "input_digest": None, "vintage_state": "owner_native",
+        },
+        "authority": deepcopy(_K1_ALL_FALSE_AUTHORITY),
+    }
+    reference["reference_id"] = compute_reference_id(reference)
+    validate_reference(reference)
+    return reference
+
+
+def _reference_binding_from(
+    reference: dict, *, valid_field: str, valid_value: str, available_field: str, available_value: str,
+) -> dict:
+    return {
+        "reference_id": reference["reference_id"],
+        "owner_store": reference["owner_store"],
+        "native_identity": deepcopy(reference["native_identity"]),
+        "valid_clock": {"field": valid_field, "value": valid_value},
+        "available_clock": {"field": available_field, "value": available_value},
+    }
+
+
+def _current_raw_ref_view() -> dict:
+    """The existing fixture raw ref, described only as needed to build bindings."""
+    return {"reference_id": RAW_REF_ID, "owner_store": "institutional_13f.raw_receipt", "native_identity": deepcopy(_CURRENT_RAW_NATIVE_IDENTITY)}
+
+
+def owner_row_case(
+    *,
+    cusip: str = CUSIP,
+    security_cusip: str | None = None,
+    previous_report_period: str = "2025-12-31",
+    previous_accession: str = "0001398344-25-098765",
+    previous_accepted_at: str = "2025-12-15T20:00:00Z",
+    previous_retained_at: str = "2025-12-15T20:01:00Z",
+    previous_source_cutoff_at: str = "2025-12-15T20:00:00Z",
+    previous_published_at: str = "2025-12-15T20:05:00Z",
+    current_report_period: str = "2026-03-31",
+    current_catalog_report_period: str | None = None,
+    previous_row_cusip: str | None = None,
+    current_row_cusip: str | None = None,
+    current_row_accession: str | None = None,
+    subject_id: str | None = None,
+    measure: dict | None = None,
+    swap_previous_catalog_for_raw: bool = False,
+    unlisted_previous_raw_reference: bool = False,
+    primary_reference_is_previous: bool = False,
+    observation_id: str = "obs_owner_row_positive",
+) -> tuple[dict, str]:
+    """A deep-copied fixture recipe extended with one ``source_backed_owner_row``
+    observation.  Defaults produce a fully lawful two-period owner-read; keyword
+    overrides isolate exactly one K2-C falsifier axis at a time."""
+    value = recipe()
+
+    prev_raw = _owner_row_raw_ref(
+        accession=previous_accession,
+        report_period=previous_report_period,
+        accepted_at=previous_accepted_at,
+        retained_at=previous_retained_at,
+        label=f"owner-row-prev-raw:{observation_id}:{previous_report_period}:{previous_retained_at}",
+    )
+    resolved_current_catalog_period = current_catalog_report_period or current_report_period
+    prev_catalog = _owner_row_catalog_ref(
+        report_period=previous_report_period,
+        source_cutoff_at=previous_source_cutoff_at,
+        published_at=previous_published_at,
+        label=f"owner-row-prev-catalog:{observation_id}:{previous_report_period}",
+    )
+    current_catalog = _owner_row_catalog_ref(
+        report_period=resolved_current_catalog_period,
+        source_cutoff_at="2026-05-15T20:00:00Z",
+        published_at="2026-05-15T20:05:00Z",
+        label=f"owner-row-current-catalog:{observation_id}:{resolved_current_catalog_period}",
+    )
+    value["evidence_refs"].extend([prev_raw, prev_catalog, current_catalog])
+
+    previous_binding = {
+        "catalog_binding": _reference_binding_from(
+            prev_catalog, valid_field="clocks.report_period", valid_value=previous_report_period,
+            available_field="clocks.published_at", available_value=previous_published_at,
+        ),
+        "raw_receipt_binding": _reference_binding_from(
+            prev_raw, valid_field="clocks.report_period", valid_value=previous_report_period,
+            available_field="clocks.retained_at", available_value=previous_retained_at,
+        ),
+        "row": {
+            "accession": previous_accession,
+            "infotable_sk": 7,
+            "row_hash": _hash_hex(f"owner-row-prev-row:{observation_id}"),
+            "cusip": previous_row_cusip if previous_row_cusip is not None else cusip,
+        },
+    }
+    if swap_previous_catalog_for_raw:
+        previous_binding["catalog_binding"] = deepcopy(previous_binding["raw_receipt_binding"])
+    if unlisted_previous_raw_reference:
+        previous_binding["raw_receipt_binding"]["reference_id"] = "efr_" + "0" * 64
+
+    current_binding = {
+        "catalog_binding": _reference_binding_from(
+            current_catalog, valid_field="clocks.report_period", valid_value=resolved_current_catalog_period,
+            available_field="clocks.published_at", available_value="2026-05-15T20:05:00Z",
+        ),
+        "raw_receipt_binding": _reference_binding_from(
+            _current_raw_ref_view(), valid_field="clocks.report_period", valid_value="2026-03-31",
+            available_field="clocks.retained_at", available_value="2026-05-15T20:01:00Z",
+        ),
+        "row": {
+            "accession": current_row_accession if current_row_accession is not None else _CURRENT_RAW_NATIVE_IDENTITY["accession"],
+            "infotable_sk": 12,
+            "row_hash": _hash_hex(f"owner-row-current-row:{observation_id}"),
+            "cusip": current_row_cusip if current_row_cusip is not None else cusip,
+        },
+    }
+
+    primary_binding = deepcopy(
+        previous_binding["raw_receipt_binding"] if primary_reference_is_previous else current_binding["raw_receipt_binding"]
+    )
+
+    observation = {
+        "observation_id": observation_id,
+        "evidence_basis": "source_backed_owner_row",
+        "evidence_reference_id": primary_binding["reference_id"],
+        "reference_binding": primary_binding,
+        "vehicle_epoch_id": "vie_meeder_2026q2",
+        "subject_id": subject_id if subject_id is not None else f"cusip:{cusip}",
+        "theme_id": "theme_ai_infrastructure",
+        "theme_epoch_id": "theme_epoch_2026q2",
+        "plane": "manager_research_intent",
+        "measure": measure if measure is not None else {"kind": "reported_share_change", "q_prev": 100, "q_now": 140},
+        "denominator": {
+            "kind": "public_reported_sleeve", "state": "partial",
+            "total_positions": 2, "included_positions": 2, "excluded_positions": 0, "missing_positions": 0,
+        },
+        "correction": {"kind": "none", "predecessor_observation_id": None, "reason": None, "append_only": True},
+        "owner_row_binding": {
+            "security": {
+                "key_type": "cusip",
+                "cusip": security_cusip if security_cusip is not None else cusip,
+                "dataos_security_id": None,
+                "dataos_resolution": "unresolved_no_authoritative_cusip_plane",
+            },
+            "previous": previous_binding,
+            "current": current_binding,
+        },
+    }
+    value["observations"].append(observation)
+    stamp(value)
+    return value, observation_id
 
 
 def test_full_k1_refs_are_valid_and_actual_raw_receipt_contract_is_exact() -> None:
@@ -1036,3 +1308,120 @@ def test_recipe_id_and_schema_reject_noncanonical_mutation() -> None:
     value = recipe()
     value["manager_complex_epochs"][0]["status"] = "inactive"
     assert "recipe_id_mismatch" in violations(value)
+
+
+# --- K2-C wave: source_backed_owner_row contract extension (K2-B v1.1.0) -----
+
+
+def test_owner_row_binding_forbidden_on_every_other_basis() -> None:
+    value, _ = owner_row_case()
+    donor = event(value, "obs_owner_row_positive")["owner_row_binding"]
+    value["observations"] = [row for row in value["observations"] if row["observation_id"] != "obs_owner_row_positive"]
+    event(value, "obs_manager_positive")["owner_row_binding"] = donor
+    rejected(value, "json_schema:observations")
+
+
+def test_source_backed_owner_row_without_binding_is_rejected() -> None:
+    value = recipe()
+    stub = deepcopy(event(value, "obs_manager_positive"))
+    stub["observation_id"] = "obs_owner_row_no_binding"
+    stub["evidence_basis"] = "source_backed_owner_row"
+    value["observations"].append(stub)
+    rejected(value, "json_schema:observations")
+
+
+def test_owner_row_binding_reference_must_be_listed() -> None:
+    value, _ = owner_row_case(unlisted_previous_raw_reference=True)
+    rejected(value, "owner_row_binding_reference_unresolved")
+
+
+def test_owner_row_catalog_and_raw_owner_store_cannot_be_swapped() -> None:
+    value, _ = owner_row_case(swap_previous_catalog_for_raw=True)
+    rejected(value, "owner_row_binding_owner_store_mismatch")
+
+
+def test_owner_row_row_accession_must_match_raw_receipt_accession() -> None:
+    value, _ = owner_row_case(current_row_accession="0001398344-26-000001")
+    rejected(value, "owner_row_accession_conflict")
+
+
+def test_owner_row_catalog_and_raw_report_period_must_agree() -> None:
+    value, _ = owner_row_case(current_catalog_report_period="2026-04-30")
+    rejected(value, "owner_row_report_period_conflict")
+
+
+def test_owner_row_previous_period_must_be_strictly_earlier() -> None:
+    value, _ = owner_row_case(
+        previous_report_period="2026-06-30",
+        previous_accepted_at="2026-06-15T20:00:00Z",
+        previous_retained_at="2026-06-15T20:01:00Z",
+        previous_source_cutoff_at="2026-06-15T20:00:00Z",
+        previous_published_at="2026-06-15T20:05:00Z",
+    )
+    rejected(value, "owner_row_report_period_not_increasing")
+
+
+def test_owner_row_subject_and_row_cusip_must_match_security_cusip() -> None:
+    value, _ = owner_row_case(subject_id="cusip:999999999")
+    rejected(value, "owner_row_subject_id_conflict")
+
+    value, _ = owner_row_case(current_row_cusip="999999999")
+    rejected(value, "owner_row_security_cusip_conflict")
+
+
+def test_owner_row_primary_reference_must_be_current_raw_receipt() -> None:
+    value, _ = owner_row_case(primary_reference_is_previous=True)
+    rejected(value, "owner_row_primary_reference_not_current_raw_receipt")
+
+
+def test_owner_row_previous_period_not_yet_available_is_non_positive() -> None:
+    value, observation_id = owner_row_case(
+        previous_retained_at="2026-09-01T00:00:00Z",
+        previous_published_at="2026-09-01T00:05:00Z",
+    )
+    assert validate(value)
+    receipt = compile_recipe(value, as_of=AS_OF)
+    compiled = next(row for row in receipt["events"] if row["observation_id"] == observation_id)
+    assert compiled["state"] != "MANAGER_RESEARCH_INTENT_ELIGIBLE_CONTEXT"
+    assert compiled["state"] == "MANAGER_INTENT_INELIGIBLE_OR_INSUFFICIENT"
+
+
+def test_owner_row_cusip_grammar_violation_is_rejected() -> None:
+    value, _ = owner_row_case(security_cusip="abcdefghi")
+    rejected(value, "json_schema:observations")
+
+
+def test_owner_row_forbids_null_quantity_under_owner_row_basis() -> None:
+    value, _ = owner_row_case(measure={"kind": "reported_share_change", "q_prev": None, "q_now": 140})
+    rejected(value, "owner_row_measure_null_quantity_forbidden")
+
+    value, _ = owner_row_case(measure={"kind": "reported_share_change", "q_prev": 100, "q_now": None})
+    rejected(value, "owner_row_measure_null_quantity_forbidden")
+
+
+def test_owner_row_valid_observation_is_security_bound_and_eligible() -> None:
+    value, observation_id = owner_row_case()
+    assert validate(value)
+    receipt = compile_recipe(value, as_of=AS_OF)
+    compiled = next(row for row in receipt["events"] if row["observation_id"] == observation_id)
+    assert compiled["state"] == "MANAGER_RESEARCH_INTENT_ELIGIBLE_CONTEXT"
+    assert compiled["state"] != "SOURCE_POINTER_ONLY_NO_SECURITY_BINDING"
+    assert compiled["measure"]["kind"] == "reported_share_change"
+    assert compiled["measure"]["state"] == "computed"
+    assert compiled["measure"]["reported_share_delta"] == 40.0
+
+
+def test_owner_row_compilation_is_deterministic() -> None:
+    value, _ = owner_row_case()
+    first = compile_recipe(value, as_of=AS_OF)
+    second = compile_recipe(deepcopy(value), as_of=AS_OF)
+    assert first == second
+
+
+def test_owner_row_basis_does_not_perturb_existing_bases() -> None:
+    receipt = compile_recipe(recipe(), as_of=AS_OF)
+    by_id = {row["observation_id"]: row for row in receipt["events"]}
+    assert by_id["obs_manager_positive"]["state"] == "MANAGER_RESEARCH_INTENT_ELIGIBLE_CONTEXT"
+    assert by_id["obs_source_pointer_only"]["state"] == "SOURCE_POINTER_ONLY_NO_SECURITY_BINDING"
+    assert manager_intent.VERSION == "1.1.0"
+    assert receipt["version"] == "1.1.0"

@@ -33,7 +33,7 @@ from lib.evidence_foundation import (
 
 SCHEMA = "institutional_intelligence.manager_intent_recipe.v1"
 RECEIPT_SCHEMA = "institutional_intelligence.manager_intent_compilation_receipt.v1"
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = ROOT / "contracts" / "institutional_intelligence" / "manager_intent_recipe.v1.schema.json"
 
@@ -650,6 +650,183 @@ def _observation_ineligible_reason(
     return None
 
 
+_OWNER_ROW_RAW_STORE = "institutional_13f.raw_receipt"
+_OWNER_ROW_CATALOG_STORE = "institutional_13f.catalog_generation"
+
+
+def _owner_row_reference_binding_errors(
+    binding: object,
+    references: Mapping[str, Mapping[str, Any]],
+    *,
+    expected_owner_store: str,
+    label: str,
+) -> tuple[list[str], Mapping[str, Any] | None]:
+    """Resolve one owner-row sub-binding against the listed K1 references."""
+    if not isinstance(binding, Mapping):
+        return [f"owner_row_binding_malformed:{label}"], None
+    reference = references.get(str(binding.get("reference_id")))
+    if reference is None:
+        return [f"owner_row_binding_reference_unresolved:{label}"], None
+    errors: list[str] = []
+    if binding.get("owner_store") != reference.get("owner_store"):
+        errors.append(f"owner_row_binding_owner_store_conflict:{label}")
+    if reference.get("owner_store") != expected_owner_store:
+        errors.append(f"owner_row_binding_owner_store_mismatch:{label}")
+    if binding.get("native_identity") != reference.get("native_identity"):
+        errors.append(f"owner_row_binding_native_identity_conflict:{label}")
+    valid_clock = _clock_entry(reference, binding.get("valid_clock"))
+    available_clock = _clock_entry(reference, binding.get("available_clock"))
+    if not valid_clock or valid_clock.get("class") != "world_valid":
+        errors.append(f"owner_row_binding_valid_clock_conflict:{label}")
+    if not available_clock or available_clock.get("class") not in {
+        "source_published", "knowable", "system_recorded", "belief_or_build",
+    }:
+        errors.append(f"owner_row_binding_available_clock_conflict:{label}")
+    return errors, reference
+
+
+def _owner_row_period_errors(
+    period: object,
+    references: Mapping[str, Mapping[str, Any]],
+    *,
+    label: str,
+) -> tuple[list[str], dict[str, Any]]:
+    """Validate one previous/current ``ownerPeriodBinding`` and derive its facts."""
+    errors: list[str] = []
+    period = period if isinstance(period, Mapping) else {}
+    catalog_errors, catalog_ref = _owner_row_reference_binding_errors(
+        period.get("catalog_binding"), references,
+        expected_owner_store=_OWNER_ROW_CATALOG_STORE,
+        label=f"{label}:catalog",
+    )
+    raw_errors, raw_ref = _owner_row_reference_binding_errors(
+        period.get("raw_receipt_binding"), references,
+        expected_owner_store=_OWNER_ROW_RAW_STORE,
+        label=f"{label}:raw",
+    )
+    errors.extend(catalog_errors)
+    errors.extend(raw_errors)
+    row = period.get("row")
+    row = row if isinstance(row, Mapping) else {}
+    if raw_ref is not None and row.get("accession") != raw_ref.get("native_identity", {}).get("accession"):
+        errors.append(f"owner_row_accession_conflict:{label}")
+    catalog_report_period = (
+        catalog_ref.get("native_identity", {}).get("report_period") if catalog_ref is not None else None
+    )
+    raw_report_period_clock = (
+        next(
+            (
+                clock for clock in raw_ref.get("clocks", [])
+                if clock.get("field") == "clocks.report_period" and clock.get("class") == "world_valid"
+            ),
+            None,
+        )
+        if raw_ref is not None
+        else None
+    )
+    raw_report_period = raw_report_period_clock.get("value") if raw_report_period_clock is not None else None
+    if catalog_ref is not None and raw_ref is not None and catalog_report_period != raw_report_period:
+        errors.append(f"owner_row_report_period_conflict:{label}")
+    return errors, {
+        "catalog_ref": catalog_ref,
+        "raw_ref": raw_ref,
+        "row": row,
+        "report_period": catalog_report_period if catalog_report_period is not None else raw_report_period,
+    }
+
+
+def _owner_row_binding_errors(
+    event: Mapping[str, Any],
+    *,
+    references: Mapping[str, Mapping[str, Any]],
+    reference_id: object,
+) -> list[str]:
+    """Validate one ``source_backed_owner_row`` observation's ``owner_row_binding``."""
+    errors: list[str] = []
+    owner_binding = event.get("owner_row_binding")
+    owner_binding = owner_binding if isinstance(owner_binding, Mapping) else {}
+    security = owner_binding.get("security")
+    security = security if isinstance(security, Mapping) else {}
+    previous = owner_binding.get("previous")
+    current = owner_binding.get("current")
+
+    previous_errors, previous_info = _owner_row_period_errors(previous, references, label="previous")
+    current_errors, current_info = _owner_row_period_errors(current, references, label="current")
+    errors.extend(previous_errors)
+    errors.extend(current_errors)
+
+    cusip = security.get("cusip")
+    previous_row = previous_info["row"]
+    current_row = current_info["row"]
+    if isinstance(previous_row, Mapping) and previous_row.get("cusip") != cusip:
+        errors.append("owner_row_security_cusip_conflict:previous")
+    if isinstance(current_row, Mapping) and current_row.get("cusip") != cusip:
+        errors.append("owner_row_security_cusip_conflict:current")
+    if event.get("subject_id") != f"cusip:{cusip}":
+        errors.append("owner_row_subject_id_conflict")
+
+    previous_period = previous_info["report_period"]
+    current_period = current_info["report_period"]
+    if previous_period is not None and current_period is not None:
+        try:
+            if not date.fromisoformat(str(previous_period)) < date.fromisoformat(str(current_period)):
+                errors.append("owner_row_report_period_not_increasing")
+        except ValueError:
+            errors.append("owner_row_report_period_invalid")
+
+    current_raw_binding = current.get("raw_receipt_binding") if isinstance(current, Mapping) else None
+    current_raw_reference_id = (
+        current_raw_binding.get("reference_id") if isinstance(current_raw_binding, Mapping) else None
+    )
+    if str(reference_id) != str(current_raw_reference_id):
+        errors.append("owner_row_primary_reference_not_current_raw_receipt")
+
+    measure = event.get("measure")
+    measure = measure if isinstance(measure, Mapping) else {}
+    if measure.get("kind") == "reported_share_change":
+        if measure.get("q_prev") is None or measure.get("q_now") is None:
+            errors.append("owner_row_measure_null_quantity_forbidden")
+    elif measure.get("kind") != "unavailable":
+        errors.append("owner_row_measure_kind_invalid")
+
+    return errors
+
+
+def _owner_row_all_refs_present(
+    event: Mapping[str, Any],
+    references: Mapping[str, Mapping[str, Any]],
+    cutoff: datetime,
+) -> bool:
+    """PIT availability of all four owner-row bound refs gates positivity."""
+    owner_binding = event.get("owner_row_binding")
+    if not isinstance(owner_binding, Mapping):
+        return False
+    for period_key in ("previous", "current"):
+        period = owner_binding.get(period_key)
+        if not isinstance(period, Mapping):
+            return False
+        for binding_key in ("catalog_binding", "raw_receipt_binding"):
+            binding = period.get(binding_key)
+            if not isinstance(binding, Mapping):
+                return False
+            reference = references.get(str(binding.get("reference_id")))
+            if reference is None:
+                return False
+            try:
+                available_at = _available_time(
+                    {
+                        "reference_binding": binding,
+                        "observation_id": f"owner_row:{period_key}:{binding_key}",
+                    },
+                    reference,
+                )
+            except (KeyError, InstitutionalIntelligenceError):
+                return False
+            if _reference_state(reference, available_at, cutoff) != "PRESENT":
+                return False
+    return True
+
+
 def _semantic_errors(recipe: Mapping[str, Any]) -> list[str]:
     errors: list[str] = []
     if recipe.get("authority") != ALL_FALSE_AUTHORITY:
@@ -811,6 +988,11 @@ def _semantic_errors(recipe: Mapping[str, Any]) -> list[str]:
                     errors.append("event_13f_operational_knowable_clock_conflict")
             if event.get("evidence_basis") == "source_backed_pointer_only" and event.get("subject_id") != "unresolved_security_subject":
                 errors.append("source_pointer_cannot_bind_security_subject")
+
+        if event.get("evidence_basis") == "source_backed_owner_row":
+            errors.extend(
+                _owner_row_binding_errors(event, references=references, reference_id=reference_id)
+            )
 
         plane = event.get("plane")
         measure = event.get("measure") if isinstance(event.get("measure"), Mapping) else {}
@@ -1365,10 +1547,15 @@ def compile_recipe(recipe: Mapping[str, Any], *, as_of: str) -> dict[str, Any]:
             if event["evidence_basis"] == "source_backed_pointer_only":
                 state = "SOURCE_POINTER_ONLY_NO_SECURITY_BINDING"
             elif event["plane"] == "manager_research_intent":
+                owner_row_ready = (
+                    event["evidence_basis"] != "source_backed_owner_row"
+                    or _owner_row_all_refs_present(event, references, cutoff)
+                )
                 state = (
                     "MANAGER_RESEARCH_INTENT_ELIGIBLE_CONTEXT"
                     if _vehicle_is_discretionary(vehicle, complex_epoch, cutoff=cutoff)
                     and compiled_measure["state"] == "computed"
+                    and owner_row_ready
                     else "MANAGER_INTENT_INELIGIBLE_OR_INSUFFICIENT"
                 )
             elif event["plane"] == "fund_flow_pressure":
