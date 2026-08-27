@@ -235,3 +235,107 @@ def test_synthesize_tolerates_old_signature_call_model_stub(monkeypatch):
     assert brief["summary"] == _CLEAN_REPLY["summary"]
     assert brief["model"] == cfg.get("llm_model", "deepseek-v4-pro")
     assert brief["served_by"] is None   # unknown — the stub never populated `served`
+
+
+# --------------------------------------------------------------------------- #
+# 8. An empty reply must eventually FALL THROUGH to the next rung.
+#
+# llm_auth.make_call only walks the waterfall on an EXCEPTION — a returned
+# (None, "empty_reply") counts as that rung having served, so every retry
+# re-enters the ladder at rung 1 and draws the same rung again. With one rung
+# that was survivable; with Codex leading the ladder it is not, because the
+# Codex adapter takes **kwargs and ignores unknown ones, so the seed nudge
+# cannot change its output. A rung stuck returning empty text would blank the
+# brief with healthy providers sitting behind it — the exact symptom the ladder
+# exists to prevent. _call_model retries the same rung ONCE (the seed nudge is
+# what recovered the China lens on 2026-07-20) and then marks it dead so the
+# remaining attempts fall through.
+# --------------------------------------------------------------------------- #
+class _EmptyMessages:
+    """Returns a 200 with no text blocks — the shape that blanked china_brief."""
+
+    def __init__(self, seen: list):
+        self._seen = seen
+
+    def create(self, **kw):
+        self._seen.append("empty-rung")
+
+        class _Resp:
+            stop_reason = "end_turn"
+            content = []          # no text blocks -> _do_call reports empty_reply
+            usage = None
+
+        return _Resp()
+
+
+class _EmptyClient:
+    def __init__(self, seen: list):
+        self.messages = _EmptyMessages(seen)
+
+
+def test_call_model_empty_reply_falls_through_to_the_next_rung(monkeypatch):
+    seen: list = []
+    dead_rung = {
+        "name": "codex", "env_var": "FAKE_CODEX_ENV", "cred": "present",
+        "client": _EmptyClient(seen), "model": "codex-fake-model",
+    }
+    good_rung = _fake_provider("oauth", text=json.dumps(_CLEAN_REPLY))
+
+    monkeypatch.setattr(llm_auth_mod, "build_providers",
+                        lambda cfg, **kw: [dead_rung, good_rung])
+    monkeypatch.setattr(mb, "_is_deepseek_lane", lambda cfg: True)
+    llm_auth_mod.clear_dead()
+    try:
+        served: dict = {}
+        text, reason = mb._call_model(
+            "sys", "user", dict(_SHIPPED_CFG), served=served)
+
+        # Same rung twice (seed nudge preserved), THEN the ladder advances.
+        assert seen == ["empty-rung", "empty-rung"], seen
+        assert text is not None and reason is None
+        assert served.get("provider") == "oauth"
+        # Would have been None/blank before the fall-through — the reported bug.
+        assert json.loads(text)["summary"] == _CLEAN_REPLY["summary"]
+    finally:
+        llm_auth_mod.clear_dead()
+
+
+# --------------------------------------------------------------------------- #
+# 9. A PARTIALLY swapped config must never send the Anthropic key to DeepSeek.
+#
+# _is_deepseek_lane accepts a lane on the base URL OR the key name, so the
+# documented one-line Opus swap (module docstring) applied to api_key_env/
+# llm_model but NOT llm_base_url arrives here mixed. Blind `or api_key_env`
+# fallbacks then set deepseek_key_env=ANTHROPIC_API_KEY, and build_providers
+# would construct anthropic.Anthropic(api_key=<the Anthropic key>,
+# base_url="https://api.deepseek.com/anthropic") — transmitting a live
+# credential to a third party. That is the mirror of the collision _ladder_cfg
+# exists to close, and strictly worse: the other direction merely 401s.
+# --------------------------------------------------------------------------- #
+_PARTIAL_SWAP_CFG = {
+    "api_key_env": "ANTHROPIC_API_KEY",              # swapped
+    "llm_model": "claude-opus-4-8",                  # swapped
+    "llm_base_url": "https://api.deepseek.com/anthropic",   # NOT swapped
+}
+
+
+def test_ladder_cfg_never_routes_a_non_deepseek_key_to_deepseek():
+    out = mb._ladder_cfg(_PARTIAL_SWAP_CFG)
+
+    # The credential must not follow the stale DeepSeek base URL.
+    assert out["deepseek_key_env"] == "DEEPSEEK_API_KEY"
+    assert out["deepseek_key_env"] != "ANTHROPIC_API_KEY"
+    # A Claude model id must not be served to DeepSeek under its own name.
+    assert out["deepseek_model"] == "deepseek-v4-pro"
+    # It belongs to the Claude rungs instead.
+    assert out["opus_model"] == "claude-opus-4-8"
+    assert out["api_key_env"] == "ANTHROPIC_API_KEY"
+
+
+def test_ladder_cfg_shipped_shape_is_unchanged_by_that_guard():
+    """The leak guard must not disturb the shipped DeepSeek-shaped config."""
+    out = mb._ladder_cfg(_SHIPPED_CFG)
+    assert out["deepseek_key_env"] == "DEEPSEEK_API_KEY"
+    assert out["deepseek_base_url"] == _SHIPPED_CFG["llm_base_url"]
+    assert out["deepseek_model"] == "deepseek-v4-pro"
+    assert out["opus_model"] == "claude-opus-4-8"

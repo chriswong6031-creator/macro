@@ -9675,7 +9675,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: master brain / AI desk / alt-data / risk brains behind the shipped desk verdicts
-        run: python -m pytest tests/test_admin_brief_gate.py tests/test_ai_desk_panel.py tests/test_altdata_intel.py tests/test_altdata_price_truth.py tests/test_china_intel_hub.py tests/test_master_brain.py tests/test_master_brain_policy.py tests/test_master_brain_producer.py tests/test_master_brain_scorer.py tests/test_risk_brain.py tests/test_risk_radar_review.py tests/test_shock_deescalation.py tests/test_w7_llm_determinism.py -q
+        run: python -m pytest tests/test_admin_brief_gate.py tests/test_ai_desk_panel.py tests/test_altdata_intel.py tests/test_altdata_price_truth.py tests/test_china_intel_hub.py tests/test_master_brain.py tests/test_master_brain_ladder.py tests/test_master_brain_policy.py tests/test_master_brain_producer.py tests/test_master_brain_scorer.py tests/test_risk_brain.py tests/test_risk_radar_review.py tests/test_shock_deescalation.py tests/test_w7_llm_determinism.py -q
       # China Alpha Intelligence P1 (#6050): the china_intel_hub dossier's
       # descriptive-only visits block — joins the china_intel_hub owner lane.
       # test_china_intel_visits_render.py is the SOL-repair template render

@@ -1598,21 +1598,48 @@ def _ladder_cfg(cfg: dict) -> dict:
     DeepSeek's. Handing this cfg over untranslated would build an
     anthropic.Anthropic() against api.anthropic.com holding a DeepSeek key — a
     rung that 401s on every call and burns a waterfall step to do it.
+
+    THE LEGACY KEYS ARE ONLY INHERITED WHEN THEY ACTUALLY DESCRIBE DEEPSEEK.
+    `_is_deepseek_lane` accepts a lane on the base URL *or* the key name, so a
+    PARTIALLY swapped config — the documented one-line Opus swap done to
+    `api_key_env`/`llm_model` but not `llm_base_url` — reaches here mixed. Blind
+    `or cfg["api_key_env"]` fallbacks would then hand the operator's ANTHROPIC
+    key to `deepseek_key_env` and ship it to api.deepseek.com, which is the
+    mirror image of the collision above and strictly worse: the first merely
+    401s, this one transmits a live credential to a third party. Each legacy key
+    is therefore inherited only if it is DeepSeek-shaped, and a Claude-shaped
+    `llm_model` is routed to `opus_model` where it belongs instead of being
+    served to DeepSeek under its own id.
     """
     out = dict(cfg)
-    out["deepseek_key_env"] = (cfg.get("deepseek_key_env")
-                               or cfg.get("api_key_env") or "DEEPSEEK_API_KEY")
-    out["deepseek_base_url"] = (cfg.get("deepseek_base_url")
-                                or cfg.get("llm_base_url")
-                                or "https://api.deepseek.com/anthropic")
-    out["deepseek_model"] = (cfg.get("deepseek_model")
-                             or cfg.get("llm_model") or "deepseek-v4-pro")
-    out["api_key_env"] = cfg.get("anthropic_key_env") or "ANTHROPIC_API_KEY"
+    legacy_env = str(cfg.get("api_key_env") or "").upper()
+    legacy_base = str(cfg.get("llm_base_url") or "").lower()
+    legacy_model = str(cfg.get("llm_model") or "")
+
+    out["deepseek_key_env"] = (
+        cfg.get("deepseek_key_env")
+        or (cfg.get("api_key_env") if "DEEPSEEK" in legacy_env else None)
+        or "DEEPSEEK_API_KEY")
+    out["deepseek_base_url"] = (
+        cfg.get("deepseek_base_url")
+        or (cfg.get("llm_base_url") if "deepseek" in legacy_base else None)
+        or "https://api.deepseek.com/anthropic")
+    out["deepseek_model"] = (
+        cfg.get("deepseek_model")
+        or (legacy_model if legacy_model.lower().startswith("deepseek") else None)
+        or "deepseek-v4-pro")
+    out["api_key_env"] = (cfg.get("anthropic_key_env")
+                          or (cfg.get("api_key_env") if "DEEPSEEK" not in legacy_env
+                              and legacy_env else None)
+                          or "ANTHROPIC_API_KEY")
     out.setdefault("oauth_token_env", "CLAUDE_CODE_OAUTH_TOKEN")
     out.setdefault("provider_order", ["codex", "oauth", "anthropic", "deepseek"])
     out.setdefault("oauth_pool_lane", "master-brain")
     out.setdefault("usage_lane", "master-brain")
-    out["opus_model"] = cfg.get("opus_model") or "claude-opus-4-8"
+    out["opus_model"] = (
+        cfg.get("opus_model")
+        or (legacy_model if legacy_model.lower().startswith("claude") else None)
+        or "claude-opus-4-8")
     return out
 
 
@@ -1685,7 +1712,15 @@ def _call_model(system: str, user: str, cfg: dict,
             return None, "no_client_or_key"
         model = cfg.get("llm_model", "deepseek-v4-pro")
         env_var = cfg.get("api_key_env", "DEEPSEEK_API_KEY")
-        providers = [{"name": "deepseek", "env_var": env_var, "cred": "present",
+        # This branch is reached ONLY when the endpoint is not DeepSeek, so calling
+        # the rung "deepseek" was harmless while the name stayed internal — it is
+        # not any more. served_by publishes it into the brief (where it would
+        # contradict the Claude model id sitting beside it) and
+        # llm_auth.LEDGER_PROVIDER maps "deepseek" to ("deepseek", "metered"),
+        # which books the operator's Anthropic spend as a DeepSeek bill on the AI
+        # Cost page. "custom" is unmapped, and ledger_provider_for() records an
+        # unmapped rung as ITSELF rather than charging it to someone else.
+        providers = [{"name": "custom", "env_var": env_var, "cred": "present",
                       "client": client, "model": model,
                       "usage_lane": "master-brain",
                       # sub-component drill-down (macro/china/btc lens, ai-desk, etc.)
@@ -1749,6 +1784,30 @@ def _call_model(system: str, user: str, cfg: dict,
         if text is not None or reason not in _RETRYABLE:
             break
         if attempt + 1 < max_attempts:
+            # AN EMPTY REPLY DOES NOT WALK THE WATERFALL BY ITSELF. make_call only
+            # advances on an EXCEPTION; a returned (None, "empty_reply") counts as
+            # that rung having served, so every attempt here re-enters the ladder at
+            # rung 1 and gets the same rung again. That was survivable while the lane
+            # had ONE rung, but the ladder now leads with Codex — whose adapter
+            # ignores unknown kwargs, so the seed nudge below cannot change its
+            # output — and a rung stuck returning empty text would blank the brief
+            # with two healthy providers sitting behind it. That is the very symptom
+            # the ladder was added to stop.
+            #
+            # So: retry the SAME rung once (the seed nudge is the proven fix — it is
+            # what recovered the China lens on 2026-07-20), then strike it off so the
+            # remaining attempts fall through to the next provider. mark_dead is
+            # keyed on (name, env_var) — for pooled rungs env_var is the cap_id — so
+            # this retires one account, not the whole provider class.
+            if attempt > 0 and provider_used:
+                env_var = next(
+                    (p.get("env_var", "") for p in providers
+                     if p.get("name") == provider_used), "")
+                llm_auth.mark_dead(provider_used, env_var, reason=reason or "empty_reply")
+                log.warning(
+                    "master_brain: '%s' twice from rung '%s' — marking it dead so "
+                    "attempt %d falls through to the next provider.",
+                    reason, provider_used, attempt + 2)
             log.warning(
                 "master_brain: '%s' on attempt %d/%d — retrying (seed=%d)",
                 reason, attempt + 1, max_attempts, attempt + 1)
@@ -1967,7 +2026,18 @@ def synthesize(state: dict, cfg: dict | None = None, lens: str = "macro", root=N
                     "replacing every banned token with plain language a non-finance "
                     "reader understands. Return only the JSON."
                 )
-                rw_reply, _rw_reason = _call_model(rewrite_system, reply, {**cfg, "usage_stage": lens})
+                # THE REWRITE IS A SECOND TRIP DOWN THE LADDER, so it can be served
+                # by a DIFFERENT rung than the original draft — mark_dead and pool
+                # cooling both move between the two calls. When the rewrite is
+                # ACCEPTED below it becomes the published text, so served_by/model
+                # must follow it; otherwise the brief carries the draft's label over
+                # the rewrite's words, and the field the operator reads to check
+                # "did DeepSeek quietly serve this?" answers about a reply that was
+                # thrown away. Tracked separately and only promoted on acceptance.
+                rw_served: dict = {}
+                rw_reply, _rw_reason = _call_model(
+                    rewrite_system, reply, {**cfg, "usage_stage": lens},
+                    served=rw_served)
                 if rw_reply:
                     rw_parsed = _extract_json(rw_reply)
                     if isinstance(rw_parsed, dict):
@@ -1977,6 +2047,10 @@ def synthesize(state: dict, cfg: dict | None = None, lens: str = "macro", root=N
                             reply = rw_reply
                             parsed = rw_parsed
                             violations = rw_violations
+                            if rw_served.get("provider"):
+                                brief["served_by"] = rw_served["provider"]
+                            if rw_served.get("model"):
+                                brief["model"] = rw_served["model"]
                 style_flags = violations
             # Cache the FINAL post-lint text under the ORIGINAL prompt hash. On a
             # lint failure above we cache NOTHING (next run re-calls and re-lints)

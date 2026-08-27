@@ -575,6 +575,13 @@ def test_zh_lists_includes_tldr():
 # behaviour, and the repo's autouse _set_nightly_lane fixture sets
 # CODEX_PROVIDER_ENABLED=0 — without this patch build_providers returns [] under
 # that fixture and _call_model degrades to "no_client_or_key" before make_call.
+#
+# THESE FOUR TESTS DO NOT PIN THE LADDER, and must not be read as if they did.
+# fake_make_call ignores its `providers` argument entirely, so all four still
+# pass against the pre-ladder DeepSeek-only descriptor — they are branch-agnostic
+# by construction, because what they test is the RETRY LOOP. The ladder itself is
+# pinned in tests/test_master_brain_ladder.py (test 2 raises KeyError on a revert
+# because build_providers is never called; test 3 degrades to no_client_or_key).
 # --------------------------------------------------------------------------- #
 def _fake_ladder(*_a, **_kw):
     """One serving rung, shaped like build_providers' own descriptors."""
