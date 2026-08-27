@@ -44,7 +44,21 @@
     ]
    },
    "conclusion": "the identical combined construction is admitted 11 times and refused 3 times within the same frozen receipt"
-  }
+  },
+  "refuted_explanations": [
+   {
+    "explanation": "TFG-0 probe clipped Operator text at 650 chars so the adjudicator could not see the handoff",
+    "refutation": "the three omitted segments are 463/421/482 chars with handoff clauses at offsets 372/351/412, all inside the clip; counted segments run longer (LTH #10 = 557)"
+   },
+   {
+    "explanation": "a deliberate convention that a call's first question handoff is not a separator",
+    "refutation": "13 first handoffs are counted, 11 of them the identical combined construction; architecture freeze section 4.3 explicitly admits a first-question handoff before Q&A is established"
+   },
+   {
+    "explanation": "MBLY/2026Q2 #21 was omitted because its questioner is unresolved",
+    "refutation": "the frozen receipt records 9 unresolved handoffs AS separators (TRVI #46/#58/#65, CTRE #79, LTH #81/#104/#113, BANR #71, HTGC #61); an unresolved questioner never disqualifies a separator in this gold, and it never applied to ARRY #31 or KREF #15, which are exact direct matches"
+   }
+  ]
  },
  "corrected_partition_under_frozen_law": {
   "structural_separators": 113,

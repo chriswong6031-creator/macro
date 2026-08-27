@@ -91,6 +91,13 @@ The measurement is reproducible end to end from a clean network fetch by
 three omissions with their questioner class. It is measurement evidence only — nothing imports
 it, it is not the TFG-1 compiler implementation, and it never reads a holdout revision.
 
+A third explanation — that `MBLY/2026Q2` #21 was omitted *because* its questioner is unresolved —
+is refuted by the gold itself. The frozen receipt records nine unresolved handoffs **as
+separators** (TRVI #46/#58/#65, CTRE #79, LTH #81/#104/#113, BANR #71, HTGC #61), which is exactly
+the separator-versus-identity split the R1 amendment §2 exists to enforce. An unresolved questioner
+therefore never disqualifies a separator in this gold. It also never applied to `ARRY` #31 or
+`KREF` #15, whose questioners are exact direct matches.
+
 A completeness sweep confirms nothing else is missed: every housekeeping segment the predicate
 rejects is followed by IR or management at call open or close, never by an analyst.
 
