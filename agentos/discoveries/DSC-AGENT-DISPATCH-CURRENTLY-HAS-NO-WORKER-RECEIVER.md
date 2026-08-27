@@ -5,10 +5,9 @@ claim: >
   the live channel contains Chairman plus ChatGPT1/2/3, while no production Agent Relay/Fable/worker
   principal is present to turn DELIVERY_ONLY posts into runtime pickup.
 falsifier: >
-  Re-open https://app.slack.com/client/T0BRD2AQXQV/C0BSBM78V1N, re-read channel membership including
-  bots/apps, and produce canonical runtime evidence showing an eligible worker/Agent Relay receiver
-  both present and actually consuming a bound commission; mere channel membership or message
-  delivery does not falsify the claim.
+  Slack.slack_list_channel_members(channel_id=C0BSBM78V1N, include_bots=true, response_format=ids_only)
+  returns an eligible production worker/Agent Relay receiver and canonical runtime/session evidence
+  shows that receiver actually consuming a bound commission; mere message delivery is insufficient.
 so_what: >
   Future Sol sessions must not treat #agent-dispatch delivery as Executive admission or worker
   execution, must not bulk-replay historical posts, and must finish canonical Executive routing plus
@@ -16,9 +15,9 @@ so_what: >
 kind: runtime
 verified_at: 2026-08-27
 verified_by: >
-  Slack channel membership read at https://app.slack.com/client/T0BRD2AQXQV/C0BSBM78V1N plus current
-  Linear MAS-127 / Mastermind C1 state reconciliation under protected Mastermind
-  be68ec881460aa60d7d77cdb69f7c1cae81f6310; durable review carrier Macro #6509.
+  Slack.slack_list_channel_members(channel_id=C0BSBM78V1N, include_bots=true, response_format=ids_only)
+  plus protected Autonomy V1 operating law in Mastermind #168 and the durable reconciliation carrier
+  Macro #6509.
 scope:
   - WS:CHAIRMAN-CONTROL-ROOM
   - WS:EXECUTIVE-CAPACITY-FABRIC
