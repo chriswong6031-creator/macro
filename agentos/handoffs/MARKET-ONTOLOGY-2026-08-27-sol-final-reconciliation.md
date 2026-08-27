@@ -22,16 +22,20 @@ changed:
     what: >
       Replaces stale pre-merge/F00/Alpha state clauses with post-#6504 canonical truth
       while preserving complete-parity scope, canonical owners, Autonomy V1 transport
-      precedence, F01-F13 unclaimed status, and the K5 dependency gate.
+      precedence, F01-F13 unclaimed status, and the K5 dependency gate; refreshes the
+      current protected Skillpack receipt and K2-C exact-head review receipt after both
+      moved during the reconciliation window.
 verified:
   - claim: "Current protected Sol Skillpack is bootstrap-compatible for this reconciliation."
     command: "Protected mastermindx-market-intelligence/Mastermind master + docs/sol_skills atomic bootstrap"
     result: >
-      PASS — protected Mastermind commit cef4332d3682991e3e1c3d6160da17cd0a3a8f63,
-      mastermind.sol_skillpack.v1 v1.0.0 / bootstrap-major 1 compatible. Its parent
-      preserves the accepted Autonomy V1 operational law and the new commit adds
-      records-only cross-plane reconciliation architecture without changing execution
-      truth ownership.
+      PASS — protected Mastermind master is
+      6f1bc3dd39f1ebecd3c22e44aa11ca7a13fa5182, mastermind.sol_skillpack.v1
+      v1.0.0 / bootstrap-major 1 compatible. The movement from
+      cef4332d3682991e3e1c3d6160da17cd0a3a8f63 is merged records/source-law and
+      implementation-planning PR #172; it does not modify docs/sol_skills/** and arms
+      no runtime/provider/host capability. The relevant execution-truth boundary remains:
+      Slack delivery is transport evidence, not execution authority.
   - claim: "#6504 is accepted and merged; complete-parity organizational architecture is main-canonical."
     command: "Macro PR #6504 exact-head/merge reconciliation"
     result: >
@@ -62,16 +66,18 @@ verified:
       A1B is PROVEN_LIVE / DONE. A2-A6 are dependency-eligible but remain separate,
       unstarted bounded work and are not silently absorbed into Market Ontology parity.
   - claim: "K2-C now has one real same-operation implementation carrier but is not accepted."
-    command: "Macro #6533 + original K2-C commission + exact-head Sol review"
+    command: "Macro #6533 + original K2-C commission + current exact-head Sol review"
     result: >
-      PASS — operation alpha-k2c-institutional-adapter-20260826-sol-001 is active on
-      Macro #6533. Sol exact-head review 5038136294 REQUESTS CHANGES on
-      d6fa05695187aa07d6099e049354320f4ff88aaa because the positive path bypasses the
-      commissioned canonical Stock Identity/Data OS security-resolution gate while
-      Data OS identity is unresolved, and fabricates manager-complex/vehicle
-      resolution/class from filer CIK plus row-level investment_discretion. Same-carrier
-      repair, current-main reconciliation, exact-head proof and independent repaired-head
-      adversarial review are required before acceptance.
+      PASS — operation alpha-k2c-institutional-adapter-20260826-sol-001 remains active
+      on Macro #6533. The carrier reconciled onto Macro main
+      259b7eb5b4e165bf3713fbddfa4225070a9b9f66 and advanced to exact head
+      9b331df00b5346e287999e5271d368e3ec3c7a4c. Sol exact-head review 5038662980
+      REQUESTS CHANGES because the positive path still bypasses the commissioned
+      canonical Stock Identity/Data OS security-resolution gate while Data OS identity
+      is unresolved, and still fabricates manager-complex/vehicle resolution/class from
+      filer CIK plus row-level investment_discretion. Same-carrier RED-first repair,
+      lawful canonical bindings or typed unavailable, exact-head proof and independent
+      repaired-head adversarial review remain required before acceptance.
   - claim: "K3-D now has one real same-operation implementation carrier but is not accepted."
     command: "Macro #6514 + exact-head Sol review"
     result: >
@@ -176,7 +182,7 @@ and their frozen operation identities remain binding.
 5. Generic Slack DELIVERY_ONLY posting is not normal allocation. Absent a known active
    receiver, the lawful state is durable/unclaimed rather than dispatched.
 6. Earlier Skillpack pins remain historical receipts; current procedural pin for this
-   reconciliation is `cef4332d3682991e3e1c3d6160da17cd0a3a8f63`.
+   reconciliation is `6f1bc3dd39f1ebecd3c22e44aa11ca7a13fa5182`.
 
 # Capability delta of the records program
 
