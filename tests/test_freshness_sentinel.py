@@ -87,6 +87,32 @@ def _prophet(asof: str | None = PROPHET_CURRENT_ASOF, *,
     )
 
 
+def _us_standouts(as_of: str | None = PROPHET_CURRENT_ASOF, *,
+                  mtime_age_hours: float = 2.0,
+                  price_through_matches: bool = True,
+                  buy: list | None = None,
+                  lane_counts: dict | None = None) -> fs.FetchResult:
+    """One served read of factordata/us_standouts.json, shaped like the real
+    board of record (PR-1 item 1a: as_of, staleness.price_through, a non-empty
+    ``buy`` lane, and a non-empty ``lane_counts``).
+
+    ``price_through_matches=False`` deliberately diverges price_through from
+    as_of, for the cross_field_asof re-stamp-trap test.
+    """
+    doc = {
+        "as_of": as_of,
+        "buy": ["AAPL"] if buy is None else buy,
+        "lane_counts": {"live": 1} if lane_counts is None else lane_counts,
+        "staleness": {
+            "price_through": as_of if price_through_matches else "2020-01-01",
+        },
+    }
+    return fs.FetchResult(
+        status=200, last_modified=NOW - timedelta(hours=mtime_age_hours),
+        body=json.dumps(doc),
+    )
+
+
 def _provisional(as_of: str | None = PROPHET_CURRENT_ASOF, *,
                  mtime_age_hours: float = 12.0,
                  built_at: str | None = None,
@@ -304,14 +330,16 @@ def _prophet_live_surface() -> dict:
 def _served(result: fs.FetchResult, live: fs.FetchResult | None = None,
             strip: fs.FetchResult | None = None,
             radar: fs.FetchResult | None = None,
-            cn: fs.FetchResult | None = None):
+            cn: fs.FetchResult | None = None,
+            standouts: fs.FetchResult | None = None):
     """A served_reader stand-in.
 
-    PATH-AWARE, because one reader now answers five different artifacts: the
-    git-rsynced site.served tree (``/prophet/index.json``), the daemon-written
-    close-pass board (``/live/us_board_provisional.json``), the client artifact
-    the SLA is measured against (``/live/prophet_live.json``), the Live Entry
-    Radar payload (``/live/entry_radar.json``) and the CN runtime board
+    PATH-AWARE, because one reader now answers six different artifacts: the
+    git-rsynced site.served tree (``/prophet/index.json`` AND, since PR-1,
+    ``/factordata/us_standouts.json``), the daemon-written close-pass board
+    (``/live/us_board_provisional.json``), the client artifact the SLA is
+    measured against (``/live/prophet_live.json``), the Live Entry Radar
+    payload (``/live/entry_radar.json``) and the CN runtime board
     (``/live/cn_prophet_live.json``, judged on ``session``). A stub that answered
     them with the same body would hand one surface's payload to a surface judged
     on a different field and manufacture a breach that has nothing to do with
@@ -324,12 +352,15 @@ def _served(result: fs.FetchResult, live: fs.FetchResult | None = None,
     strip = _live_strip() if strip is None else strip
     radar = _entry_radar() if radar is None else radar
     cn = _cn_board() if cn is None else cn
+    standouts = _us_standouts() if standouts is None else standouts
 
     def _read(root, path):
         if path == CLIENT_PATH:
             return strip
         if path == RADAR_PATH:
             return radar
+        if path == "/factordata/us_standouts.json":
+            return standouts
         if path == CN_PATH:
             return cn
         return fallback if path.startswith("/live/") else result
@@ -343,6 +374,7 @@ def _fresh_results() -> dict[str, fs.FetchResult]:
         "hub": _page(14.0),
         "r2_massive_stock_day": _r2(10.0),
         "prophet_us": _prophet(),
+        "us_standouts": _us_standouts(),
         "us_board_provisional": _provisional(),
         "entry_radar_live": _entry_radar(),
         "cn_board_live": _cn_board(),
@@ -386,6 +418,7 @@ def test_dead_nightly_for_a_day_breaches_every_bake_surface():
         # content, not on a stamp — they stay ok here, which is the point: the four
         # bake surfaces answer independently.
         "prophet_us": _prophet(),
+        "us_standouts": _us_standouts(),
         "us_board_provisional": _provisional(),
         "entry_radar_live": _entry_radar(),
         "cn_board_live": _cn_board(),
@@ -394,6 +427,7 @@ def test_dead_nightly_for_a_day_breaches_every_bake_surface():
         # they stay ok here, which is the point: the four bake surfaces answer
         # independently.
         "prophet_us": _prophet(),
+        "us_standouts": _us_standouts(),
         "us_board_provisional": _provisional(),
         "prophet_live_armed": _armed(),
         "prophet_live": ABSENT,   # window closed (NOW is Saturday) — see _fresh_results
@@ -485,6 +519,7 @@ def _stale_report(now: datetime = NOW) -> dict:
             # held fresh: these cases exercise the alert window, and the four
             # bake surfaces above are the breach set they assert on.
             "prophet_us": _prophet(),
+            "us_standouts": _us_standouts(),
             "us_board_provisional": _provisional(),
             "entry_radar_live": _entry_radar(),
             "cn_board_live": _cn_board(),
@@ -697,6 +732,7 @@ def test_served_state_reads_not_ok_once_blind_past_threshold(tmp_path, monkeypat
     def dark_fetcher(url, *, want_body):
         return fs.FetchResult(error="connection refused")
 
+    dark_served = fs.FetchResult(error="served read failed: no such file")
     rc = 0
     for i in range(fs.BLIND_AFTER):
         rc = fs.run(
@@ -706,7 +742,7 @@ def test_served_state_reads_not_ok_once_blind_past_threshold(tmp_path, monkeypat
             public_dir=tmp_path / "public",
             state_dir=tmp_path / "state",
             fetcher=dark_fetcher,
-            served_reader=_served(fs.FetchResult(error="served read failed: no such file")),
+            served_reader=_served(dark_served, standouts=dark_served),
         )
     assert rc == 1
     served = json.loads((tmp_path / "public" / "live" / "staleness.json").read_text())
@@ -717,7 +753,7 @@ def test_served_state_reads_not_ok_once_blind_past_threshold(tmp_path, monkeypat
     # answering is the sentinel losing sight of it.
     assert served["blind_surfaces"] == [
         "china", "hub", "prophet_live_armed", "prophet_us", "r2_massive_stock_day",
-        "us_stocks",
+        "us_standouts", "us_stocks",
     ]
     assert served["stale_surfaces"] == []  # blind, not provably stale — honest split
 
@@ -1011,6 +1047,8 @@ def test_prophet_is_read_from_the_served_tree_never_over_http(tmp_path, monkeypa
             return _entry_radar()
         if path == CN_PATH:
             return _cn_board()
+        if path == "/factordata/us_standouts.json":
+            return _us_standouts()
         return _provisional() if path.startswith("/live/") else _prophet()
 
     rc = fs.run(
@@ -1039,6 +1077,9 @@ def test_prophet_is_read_from_the_served_tree_never_over_http(tmp_path, monkeypa
     # also read off the live-plane root. Two roots, one reader, zero HTTP.
     assert reads == [
         ("/opt/macro/site.served", "/prophet/index.json"),
+        # PR-1 item 1a — the served board of record, read off the same
+        # site.served tree immediately after the Prophet index (SURFACES order).
+        ("/opt/macro/site.served", "/factordata/us_standouts.json"),
         (str(tmp_path / "public"), "/live/us_board_provisional.json"),
         (str(tmp_path / "public"), RADAR_PATH),
         (str(tmp_path / "public"), CN_PATH),
@@ -2022,6 +2063,7 @@ def _results_at(now: datetime, board: fs.FetchResult) -> dict[str, fs.FetchResul
         "hub": fs.FetchResult(status=200, last_modified=fresh, body=HEALTHY_BODY),
         "r2_massive_stock_day": fs.FetchResult(status=200, last_modified=fresh),
         "prophet_us": _prophet(FRI_SESSION),
+        "us_standouts": _us_standouts(FRI_SESSION),
         "us_board_provisional": board,
         "entry_radar_live": _entry_radar(FRI_SESSION),
         "cn_board_live": _cn_board(FRI_SESSION),
@@ -2196,7 +2238,8 @@ def test_the_private_facts_never_ride_the_publicly_served_staleness_file(
                                  strip=_live_strip(FRI_SESSION,
                                                    observed_at=FRI_VISIBLE),
                                  radar=_entry_radar(FRI_SESSION),
-                                 cn=_cn_board(FRI_SESSION)))
+                                 cn=_cn_board(FRI_SESSION),
+                                 standouts=_us_standouts(FRI_SESSION)))
 
     raw = (tmp_path / "public" / "live" / "staleness.json").read_text()
     served = json.loads(raw)

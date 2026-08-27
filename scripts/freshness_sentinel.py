@@ -394,6 +394,54 @@ SURFACES: list[dict] = [
             "source_delayed", "source_unknown", "source_mixed_vintage",
         ),
         "required_values": {"source_basis": "panel_majority"},
+        # PR-1 (Prophet US permanence net, 2026-08-27): the intake-IDENTITY check,
+        # independent of source_asof's own staleness budget above. A store can
+        # advance (source_asof current) while origination silently loses or
+        # miscounts candidates — sessions-behind arithmetic cannot see that, only
+        # the ledger's own accounting can. See intake_identity_breach() for the
+        # exact predicate; it is DELIBERATELY duplicated (not imported) in
+        # scripts/check_nightly_liveness.py, scripts/prophet_rescue.py and
+        # scripts/prophet_board_acceptance.py — four independent copies so a bug
+        # in one cannot blind the other three.
+        "intake_identity": True,
+    },
+    # PR-1 (Prophet US permanence net, 2026-08-27) — the served board of record
+    # itself, one layer ABOVE the Prophet plan index: us_standouts.json is what
+    # build_prophet.py actually reads to originate plans (daily.yml's "Prophet
+    # nightly" step comment: "reads site/factordata/us_standouts.json"), so a
+    # frozen or internally-inconsistent board here is upstream of everything the
+    # prophet_us entry above can see.
+    #
+    # served_file, not page/r2: same reasoning as prophet_us — a served-file read
+    # is the exact byte-for-byte payload Caddy hands an entitled reader on this
+    # host, and a missing/unreadable file is INDETERMINATE (the sentinel is
+    # blind), never a breach.
+    #
+    # cross_field_asof + non_vacuous are the two GENERIC, ADDITIVE extensions
+    # check_surface() gained for this entry (see their handling below) — nothing
+    # about the prophet_us or armed_pack entries changed to add them.
+    {
+        "id": "us_standouts",
+        "kind": "served_file",
+        "path": "/factordata/us_standouts.json",
+        "bake_budget_hours": None,
+        "delay_budget_days": None,
+        "asof_field": "as_of",
+        "asof_max_sessions_behind": PROPHET_MAX_SESSIONS_BEHIND,
+        # The re-stamp trap one layer up: `as_of` is publication metadata and
+        # `staleness.price_through` is the ranked-price watermark the board's own
+        # numbers were actually built from (module docstring's re-stamp-trap
+        # paragraph). A rerun that re-stamps `as_of` while leaving the priced
+        # content frozen is exactly the shape that breach; the two are asserted
+        # equal so a divergence between publication clock and content clock is
+        # caught here rather than silently inherited by prophet_us above.
+        "cross_field_asof": ("staleness", "price_through"),
+        # Non-vacuity: a technically-fresh board that carries no actionable rows
+        # is functionally the same outage as a stale one (an empty buy lane is
+        # what a reader actually sees), and an absent/empty `lane_counts` means
+        # the board cannot even explain its own composition. Neither is caught by
+        # a timestamp check.
+        "non_vacuous": {"list_fields": ("buy",), "dict_fields": ("lane_counts",)},
     },
     # W-L1a — the evening close-pass provisional board, on the VPS live plane
     # (kind live_file: <public-dir>/live/…, the plane the daemons write, NOT the
@@ -746,6 +794,54 @@ def board_delay_stamp(body: str) -> str | None:
     return min(dates) if dates else None
 
 
+def intake_identity_breach(intake: object) -> str | None:
+    """Breach reason(s) from site/prophet/index.json's ``intake`` block, or None
+    when it is healthy OR simply absent.
+
+    DELIBERATELY DUPLICATED in scripts/check_nightly_liveness.py,
+    scripts/prophet_rescue.py and scripts/prophet_board_acceptance.py rather
+    than imported from one shared module: this permanence net's whole point is
+    a SECOND, INDEPENDENT failure domain per instrument — a bug in one shared
+    copy of this ~10-line predicate would blind all four watchdogs identically,
+    exactly the class of failure a single stranded workflow file (#5362) taught
+    this program to distrust. Keep the four copies in semantic lockstep by
+    hand.
+
+    Three conditions: ``lossless`` must be True, ``unaccounted`` must be 0, and
+    a positive ``eligible_after_skips`` must not coexist with ``originated ==
+    0`` (the 2026-08-13 mixed-vintage wedge signature — a candidate cohort
+    existed and origination produced nothing from it).
+
+    An entirely absent/non-dict ``intake`` ABSTAINS (returns None) rather than
+    breaching: this predicate is exercised against synthetic fixtures that
+    predate the field and exist to test unrelated behavior, and those must not
+    spuriously start failing the day this check is added.
+    """
+    if not isinstance(intake, dict):
+        return None
+    reasons: list[str] = []
+    if "lossless" in intake and intake.get("lossless") is not True:
+        reasons.append(f"intake.lossless={intake.get('lossless')!r} (must be true)")
+    unaccounted = intake.get("unaccounted")
+    if (
+        isinstance(unaccounted, int)
+        and not isinstance(unaccounted, bool)
+        and unaccounted != 0
+    ):
+        reasons.append(f"intake.unaccounted={unaccounted} (must be 0)")
+    eligible = intake.get("eligible_after_skips")
+    originated = intake.get("originated")
+    if (
+        isinstance(eligible, int) and not isinstance(eligible, bool) and eligible > 0
+        and isinstance(originated, int) and not isinstance(originated, bool)
+        and originated == 0
+    ):
+        reasons.append(
+            f"intake.eligible_after_skips={eligible} but intake.originated=0"
+        )
+    return "; ".join(reasons) if reasons else None
+
+
 # --------------------------------------------------------------------------- #
 # Payload FACTS — the optional inputs to the W-L1 latency decomposition and to
 # the armed pack's coverage disclosure.
@@ -957,6 +1053,66 @@ def _prophet_live_window_open(now: datetime) -> bool | None:
             file=sys.stderr,
         )
         return None
+
+
+#: Budget for the served-vs-R2 pass_ts divergence (PR-1, item 1c): one 5-minute
+#: evaluator tick (the cadence scripts/prophet_live_evaluator.py runs on) plus
+#: 30s of clock/transport slop. Tighter than PROPHET_LIVE_MAX_AGE_MINUTES on
+#: purpose — this is not an age budget, it is an AGREEMENT budget between two
+#: writes of the SAME instant by the SAME evaluator pass, so it can be far
+#: tighter than "how stale may the whole artifact be".
+PROPHET_LIVE_R2_AGREEMENT_SECONDS = 330.0
+
+
+def prophet_live_r2_agreement(served_body: str | None, now: datetime) -> tuple[str, str | None]:
+    """('ok'|'stale'|'no_creds', detail) comparing the served
+    /live/prophet_live.json's meta.pass_ts against the SAME artifact's mirror in
+    the private/operational R2 bucket (key engine.prophet_live.r2io.LIVE_KEY —
+    NOT the public r2.dev base every other R2 SURFACES entry reads).
+
+    Lazy, failure-guarded import of engine.prophet_live.r2io — the SECOND place
+    this stdlib-only module reaches into the venv/engine tree (the live-window
+    gate above is the first), because only boto3 can read R2 credentials and
+    only the VPS process holds them. 'no_creds' degrades to a WARNING, never a
+    page (item 1c's explicit requirement): a sentinel host with no
+    R2_ACCESS_KEY_ID configured is an ordinary deployment shape (e.g. a
+    developer running this module by hand), not an outage. Only a POSITIVE,
+    parsed divergence beyond one 5-minute tick is 'stale'.
+    """
+    try:
+        from engine.prophet_live import r2io  # noqa: PLC0415
+    except Exception as exc:  # noqa: BLE001
+        return "no_creds", f"engine.prophet_live.r2io unavailable ({type(exc).__name__}: {exc})"
+    client = r2io.client()
+    if client is None:
+        return "no_creds", "R2 credentials absent in this environment"
+    try:
+        r2_doc = r2io.get_json(r2io.LIVE_KEY, s3=client, allow_public=False)
+    except Exception as exc:  # noqa: BLE001
+        return "no_creds", f"R2 read failed ({type(exc).__name__}: {exc})"
+    if not isinstance(r2_doc, dict):
+        return "no_creds", "R2 mirror object absent or unparseable"
+    r2_pass_ts = _instant(_asof_field_value(r2_doc, ("meta", "pass_ts")))
+    served_doc = None
+    if served_body:
+        try:
+            served_doc = json.loads(served_body)
+        except ValueError:
+            served_doc = None
+    served_pass_ts = (
+        _instant(_asof_field_value(served_doc, ("meta", "pass_ts")))
+        if served_doc is not None else None
+    )
+    if r2_pass_ts is None or served_pass_ts is None:
+        return "no_creds", "one side has no usable meta.pass_ts to compare"
+    drift = abs((served_pass_ts - r2_pass_ts).total_seconds())
+    if drift > PROPHET_LIVE_R2_AGREEMENT_SECONDS:
+        return "stale", (
+            f"served meta.pass_ts {served_pass_ts.isoformat()} diverges from the "
+            f"R2 mirror's {r2_pass_ts.isoformat()} by {drift:.0f}s (budget "
+            f"{PROPHET_LIVE_R2_AGREEMENT_SECONDS:.0f}s — one 5-min evaluator tick)"
+        )
+    return "ok", None
 
 
 def _check_live_window_surface(surface: dict, fr: FetchResult, now: datetime) -> dict:
@@ -1187,6 +1343,14 @@ def check_surface(surface: dict, fr: FetchResult, now: datetime) -> dict:
                     f"served payload {field!r} must equal {expected!r} "
                     f"({value!r}) — Prophet source authority is not proven"
                 )
+        # PR-1 (Prophet US permanence net) — the intake-identity check, wired
+        # onto whichever surface names it (only prophet_us today). Independent
+        # of the sessions-behind budget below: a store can read current while
+        # origination silently loses or miscounts candidates.
+        if surface.get("intake_identity") and isinstance(doc, dict):
+            breach = intake_identity_breach(doc.get("intake"))
+            if breach:
+                problems.append(f"intake identity breach: {breach}")
         if not isinstance(stamp, str) or not stamp:
             # Well-formed JSON that cannot say when it is from IS a definitive
             # regression in the artifact, so it breaches rather than going
@@ -1223,6 +1387,39 @@ def check_surface(surface: dict, fr: FetchResult, now: datetime) -> dict:
                     # 2026-08-05 candidates freeze under a daily-fresh page).
                     msg += "; the file is being re-published, the store is not"
                 problems.append(msg)
+
+            # PR-1 additive extensions — generic, and only exercised by a surface
+            # that names them (today: us_standouts). Neither existed before this
+            # program; adding them here costs nothing to every surface that does
+            # not opt in.
+            cross_field = surface.get("cross_field_asof")
+            if cross_field is not None:
+                other = _asof_field_value(doc, cross_field)
+                if other != stamp:
+                    label = (
+                        ".".join(cross_field) if isinstance(cross_field, (tuple, list))
+                        else str(cross_field)
+                    )
+                    problems.append(
+                        f"{surface['asof_field']!r} ({stamp!r}) disagrees with "
+                        f"{label!r} ({other!r}) — publication clock and content "
+                        "clock do not agree"
+                    )
+            non_vacuous = surface.get("non_vacuous") or {}
+            for field in non_vacuous.get("list_fields", ()):
+                value = doc.get(field) if isinstance(doc, dict) else None
+                if not isinstance(value, list) or not value:
+                    problems.append(
+                        f"{field!r} is empty or missing — board carries no "
+                        "actionable rows"
+                    )
+            for field in non_vacuous.get("dict_fields", ()):
+                value = doc.get(field) if isinstance(doc, dict) else None
+                if not isinstance(value, dict) or not value:
+                    problems.append(
+                        f"{field!r} is empty or missing — board coverage counts "
+                        "absent"
+                    )
 
     if problems:
         out["status"] = "stale"
@@ -2001,6 +2198,47 @@ def run(now: datetime, base: str, r2_base: str, public_dir: Path, state_dir: Pat
             client_reads[client_path] = served_reader(public_dir, client_path)
 
     report = evaluate(results, now, client_reads=client_reads)
+
+    # PR-1 item 1c — prophet_live served-vs-R2 agreement. Injected post-evaluate()
+    # because it needs live R2 credentials that evaluate() has no business
+    # depending on (evaluate() stays pure/testable over already-fetched
+    # FetchResults; see its own docstring). Only attempted when the served read
+    # itself succeeded — outside the live window, or on a genuinely absent
+    # artifact, _check_live_window_surface already produced the right verdict
+    # and there is nothing here to compare.
+    prophet_live_check = report["surfaces"].get("prophet_live")
+    prophet_live_result = results.get("prophet_live")
+    if (
+        prophet_live_check is not None
+        and prophet_live_result is not None
+        and prophet_live_result.error is None
+    ):
+        agreement_status, agreement_detail = prophet_live_r2_agreement(
+            prophet_live_result.body, now
+        )
+        prophet_live_check["r2_agreement"] = {
+            "status": agreement_status, "detail": agreement_detail,
+        }
+        if agreement_status == "no_creds":
+            # Degrade to a named warning, never a page (item 1c's explicit
+            # requirement) — stdout/stderr only, never the served surface.
+            print(
+                f"sentinel: prophet_live R2 agreement degraded to warning "
+                f"({agreement_detail})",
+                file=sys.stderr,
+            )
+        elif agreement_status == "stale" and prophet_live_check["status"] == "ok":
+            prophet_live_check["status"] = "stale"
+            prophet_live_check["detail"] = (
+                (prophet_live_check["detail"] + "; " if prophet_live_check["detail"] else "")
+                + agreement_detail
+            )
+            if "prophet_live" not in report["stale_surfaces"]:
+                report["stale_surfaces"] = sorted(
+                    report["stale_surfaces"] + ["prophet_live"]
+                )
+                report["ok"] = False
+
     for sid, c in sorted(report["surfaces"].items()):
         if c.get("asof"):
             # asof_age_minutes ⇒ a minute-grained live-window budget (prophet_live
@@ -2082,6 +2320,24 @@ def run(now: datetime, base: str, r2_base: str, public_dir: Path, state_dir: Pat
     # put an append-only record inside an overwrite-only one.
     first_fresh = record_first_fresh(load_first_fresh(state_dir), report, now)
     report["sla"] = sla_summary(first_fresh, now)
+
+    # PR-1 item 1d — heartbeat. staleness.json's writer idiom (checked first:
+    # scripts/build_output_health.py is the only other module that touches this
+    # path, and it only READS it — freshness_sentinel.py is the sole writer) is
+    # to overwrite the whole file every pass with this ``report`` dict, whose
+    # existing top-level keys (generated_at, ok, stale_surfaces,
+    # indeterminate_surfaces, surfaces, active_breach, blind_surfaces, alerting,
+    # sla) are untouched above. This adds ONE new key alongside them — never
+    # clobbering, because there is no other writer's key to clobber.
+    # scripts/check_nightly_liveness.py's Check E reads exactly this key to
+    # grade the sentinel's own liveness from the GitHub failure domain, closing
+    # the loop the other way: this sentinel watches the estate from the VPS,
+    # and Check E watches THIS sentinel from GitHub.
+    report["heartbeat"] = {
+        "last_pass_utc": now.isoformat(),
+        "cadence_minutes": VISIBLE_RESOLUTION_SECONDS / 60.0,
+        "surfaces": {sid: c["status"] for sid, c in report["surfaces"].items()},
+    }
 
     for target, payload in (
         # public_report, never `report` — the private facts stop at the Caddy

@@ -30,6 +30,7 @@ set -u
 # Strictly the two content-hashed trees (hex filename, extension matching its
 # tree) — a real, hand-authored asset must never be auto-resolved here.
 ALLOW_RE='^site/assets/(css/[0-9a-f]{6,64}\.css|js/[0-9a-f]{6,64}\.js)$'
+RELEASE_SNAPSHOT_RE='^data/release_forecast/input_snapshots/[^/]+\.json$'
 
 gitdir=$(git rev-parse --git-dir 2>/dev/null) || exit 1
 in_rebase() { [ -d "$gitdir/rebase-merge" ] || [ -d "$gitdir/rebase-apply" ]; }
@@ -41,16 +42,42 @@ in_rebase || { echo "autoresolve_hashed_css: no rebase in progress"; exit 1; }
 for _pass in 1 2 3 4 5 6 7 8 9 10; do
   unmerged=$(git ls-files -u | cut -f2 | LC_ALL=C sort -u)
   if [ -n "$unmerged" ]; then
-    bad=$(printf '%s\n' "$unmerged" | grep -Ev "$ALLOW_RE" || true)
+    bad=$(printf '%s\n' "$unmerged" | grep -Ev "$ALLOW_RE|$RELEASE_SNAPSHOT_RE" || true)
     if [ -n "$bad" ]; then
-      echo "autoresolve_hashed_css: refusing — unmerged paths outside the hashed site/assets/{css,js} trees:"
+      echo "autoresolve_hashed_css: refusing — unmerged paths outside the hashed site/assets/{css,js} trees and release-forecast snapshot equality fence:"
       printf '%s\n' "$bad" | sed 's/^/  /'
       exit 1
     fi
     git rev-parse -q --verify REBASE_HEAD >/dev/null \
       || { echo "autoresolve_hashed_css: REBASE_HEAD unavailable"; exit 1; }
+    # Validate the complete release-snapshot set before staging any path. A
+    # later divergent destination must leave earlier equality-safe conflicts
+    # untouched so the caller can inspect/abort the original rebase state.
     while IFS= read -r p; do
       [ -n "$p" ] || continue
+      printf '%s\n' "$p" | grep -Eq "$RELEASE_SNAPSHOT_RE" || continue
+      head_blob=$(git rev-parse --verify "HEAD:$p" 2>/dev/null) || {
+        echo "autoresolve_hashed_css: refusing — release snapshot missing from HEAD: $p"
+        exit 1
+      }
+      replay_blob=$(git rev-parse --verify "REBASE_HEAD:$p" 2>/dev/null) || {
+        echo "autoresolve_hashed_css: refusing — release snapshot missing from REBASE_HEAD: $p"
+        exit 1
+      }
+      if [ "$head_blob" != "$replay_blob" ]; then
+        echo "autoresolve_hashed_css: refusing — release snapshot bytes diverge between HEAD and REBASE_HEAD: $p"
+        exit 1
+      fi
+    done <<EOF
+$unmerged
+EOF
+    while IFS= read -r p; do
+      [ -n "$p" ] || continue
+      if printf '%s\n' "$p" | grep -Eq "$RELEASE_SNAPSHOT_RE"; then
+        git restore --source=HEAD --staged --worktree -- "$p" || exit 1
+        echo "autoresolve_hashed_css: kept $p (release snapshot byte-identical in HEAD and REBASE_HEAD)"
+        continue
+      fi
       stages=$(git ls-files -u -- "$p" | awk '{print $3}')
       if printf '%s\n' "$stages" | grep -qx 3; then
         git restore --source=REBASE_HEAD --staged --worktree -- "$p" || exit 1
