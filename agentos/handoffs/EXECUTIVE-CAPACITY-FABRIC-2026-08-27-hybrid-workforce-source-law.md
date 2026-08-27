@@ -4,158 +4,147 @@ session: sol/hybrid-executive-workforce-20260827
 model: sol
 ended_because: complete
 mission: >
-  Make the Chairman-approved hybrid Sol/Codex/Fable workforce architecture and its dependency-safe
-  implementation topology recoverable from current durable sources, while preserving newer Agent OS
-  receiver evidence, keeping CF2/RF1/HF1/PF1/MH1 behind their actual gates, and keeping Wake transport
-  proof separate from target ACK/source resolution.
+  Keep the Chairman-approved hybrid Sol/Codex/Fable workforce architecture recoverable from current
+  durable sources while preserving the real Capacity, Wake, Slack-admission and ASD dependency gates.
+  This handoff is organizational truth only; it must not make transport, CI, channel membership or a
+  merged source repair look like runtime execution or production acceptance.
 state_before: >
-  Mastermind #172 had frozen the hybrid executive workforce architecture and #173 had accepted the
-  Codex-Sol technical-staff conformance law, but Agent OS did not yet carry one current handoff joining
-  those rulings to the active Wake and Capacity Fabric gates. The original records carrier also tried
-  to update the Slack receiver discovery; Macro main subsequently landed a newer correction of that
-  same discovery, making the branch copy stale and conflict-prone.
+  Mastermind #172 froze the hybrid workforce architecture and #173 accepted Codex-Sol technical-staff
+  conformance. Capacity Fabric CF2-H0 was still waiting on exact installed-host proof. Wake #174 was
+  the sole provider-native continuation carrier. Earlier copies of this handoff became stale as #175,
+  Wake dispatcher-identity TDD, and the Chairman's pre-work Slack ACK decision landed.
 changed:
-  - path: mastermindx-market-intelligence/Mastermind PR #172
+  - path: mastermindx-market-intelligence/Mastermind #172
     what: >
-      Chairman-approved hybrid workforce architecture plus bounded implementation plans merged as
-      6f1bc3dd39f1ebecd3c22e44aa11ca7a13fa5182. The accepted law keeps one Executive Runtime, keeps
-      ChatGPT Sol as canonical CEO cognition, permits Codex as a bounded technical/CTO reasoning arm
-      of the existing ceo seat or as an ordinary Worker, keeps Fable/Claude as sustained COO, puts
-      provider-neutral suitability before capacity/cost, keeps one common Worker Harness, and assigns
-      authenticated multi-host execution to MH1 rather than creating per-host runtimes.
-  - path: mastermindx-market-intelligence/Mastermind PR #173
+      Hybrid workforce architecture remains accepted at merge
+      6f1bc3dd39f1ebecd3c22e44aa11ca7a13fa5182: one Executive Runtime; ChatGPT Sol remains the
+      accountable CEO cognition; Codex may be a bounded technical arm of the existing ceo seat or an
+      ordinary Worker; Fable/Claude remains the preferred sustained COO; provider-neutral suitability
+      precedes capacity/cost; one common Worker Harness remains the target; MH1 owns later multi-host
+      execution rather than per-host runtimes.
+  - path: mastermindx-market-intelligence/Mastermind #173
     what: >
-      Codex-Sol technical-staff conformance exact head 95325f2bcfe1009b54b45bdca9ce99e052a083e4
-      passed hosted CI/CodeQL and independent Sol review, then squash-merged as
-      f81e29cc2a3f945fd79096e8ca10e8b2daec9e18. Executive accountability remains owner_seat=ceo;
-      provider/model/Slack identity cannot mint authority; Codex-to-Worker replacement remains inside
-      the existing Job/Attempt/Worker lifecycle. This is conformance acceptance only, not Wake,
-      provider-routing, host or multi-host production proof.
-  - path: mastermindx-market-intelligence/Mastermind PR #174
+      Codex-Sol conformance merged as f81e29cc2a3f945fd79096e8ca10e8b2daec9e18. Provider/model,
+      Slack principal and runtime thread identity cannot mint ceo authority or a fourth executive seat.
+  - path: mastermindx-market-intelligence/Mastermind #175
     what: >
-      The sole Wake PR3 carrier remains OPEN/DRAFT/HOLD-FOR-SOL on
-      sol/wake-pr3-native-transports-20260827 at observed head
-      c4f9d80879823eb7a30db94817682225e81ae933. Its current accepted scope is transport-only: prove one
-      exact runtime-bound Codex App Server delivery edge and truthfully implement or refuse Claude
-      native-resume transport after installed-version preflight. A live proof may end at
-      DELIVERED_UNACKNOWLEDGED. TARGET_ACKNOWLEDGED ingress and SOURCE_RESOLVED remain later-wave
-      NOT_BUILT capabilities. production_armed remains false and checked-in targets remain disabled.
-  - path: mastermindx-market-intelligence/Mastermind PR #175
+      CF2-H0 root Python isolation exact head f9ca3f78d31341c4a3ddfad39d916561bc62f1af passed fresh
+      CI/CodeQL and merged as protected Mastermind
+      8affa1c0403f4400825371bea0257f360a4814f2. Four privileged inline JSON parsers now use
+      /usr/bin/python3 -I -S -B -c. This closes only the source-level security blocker; H0 host
+      installation/verification and independent P0 remain unaccepted.
+  - path: mastermindx-market-intelligence/Mastermind #174
     what: >
-      CF2-H0 root Python isolation repair was reconciled onto protected Mastermind, passed exact-head
-      hosted CI/CodeQL at head f9ca3f78d31341c4a3ddfad39d916561bc62f1af, and squash-merged as
-      8affa1c0403f4400825371bea0257f360a4814f2. The four privileged inline JSON parsers now use
-      /usr/bin/python3 -I -S -B -c with a hostile-CWD regression test. This closes the source-level
-      security blocker only; it does not prove the administrator H0 ceremony, P0, CF2-I, RF1 or HF1.
+      Wake PR3 remains the sole OPEN/DRAFT/HOLD-FOR-SOL transport carrier. Dispatcher composition
+      identity is now TDD-proven on exact head 1ecd7f507b10e5ff3c8fbf05ce66a6f917c93e59: registry key,
+      concrete dispatcher.transport_id and canonical descriptor must agree; WakeDispatcher itself
+      structurally requires transport_id. Hosted CI run 33071810751 succeeded on that exact head.
+      This closes the identity blocker only. Concrete provider Task 3 remains held because a
+      turn/start whose effect is unknown can currently become a later Wake attempt and issue a second
+      provider turn. The proposed existing-Wake-aggregate EFFECT_UNKNOWN/read-reconciliation design is
+      not yet Chairman-approved and therefore is not implementation authority.
+  - path: agentos/decisions/DEC-SLACK-HANDOFF-INITIAL-ENVELOPE-REQUIRES-PREWORK-ACK.md
+    what: >
+      Current Chairman law requires applicable manual Slack handoffs to place the pre-work admission
+      sequence in the initial envelope: ACK the exact operation before work, read the entire existing
+      thread, and do not execute until both are complete. ACK remains protocol evidence only.
+  - path: WS:CHAIRMAN-CONTROL-ROOM / ASD-A2
+    what: >
+      Claude3's earlier read-only A2-0 census found Agent Relay resources disjoint, but Claude3
+      disclosed that work preceded the Slack ACK. That packet is advisory testimony only under the
+      current Chairman admission law. One clean revalidation carrier now exists at #agent-dispatch
+      parent 1787834271.424569, operation asd-a2-host-preflight-revalidate-20260827-sol-002. Until it
+      returns A2_0_REVALIDATED_PASS after the required pre-work ACK/full-thread read, no A2
+      implementation branch is authorized. Macro #6556 is the records-only reconciliation carrier.
   - path: agentos/discoveries/DSC-AGENT-DISPATCH-CURRENTLY-HAS-NO-WORKER-RECEIVER.md
     what: >
-      Preserve the newer Macro-main record rather than overwriting it from this carrier. Current main
-      already records that #agent-dispatch contains Claude-labelled principals, that membership and
-      DELIVERY_ONLY are not canonical pickup, that missing Slack ACK does not prove non-execution,
-      and that the ASD-A2 Claude3 pickup still lacks a canonical receiver ACK/result. This carrier's
-      older discovery edit is superseded and intentionally dropped during reconciliation.
-  - path: agentos/workstreams/WS-EXECUTIVE-CAPACITY-FABRIC.md
-    what: >
-      Preserve the canonical dependency chain. CF2-H0 remains in_progress until the exact merged-H0
-      administrator ceremony returns H0_INSTALLED_HOST_PASS_NOT_P0_ACCEPTED plus repeat verify-only.
-      Independent CF2-P0 remains TODO; only its lawful acceptance may release CF2-I. RF1/HF1/PF1 stay
-      downstream of CF2-I and MH1 stays downstream of HF1. Wake PR3 may proceed independently when
-      path-safe because it owns transport continuation rather than provider placement.
+      Preserve current Macro-main receiver evidence. Slack membership and DELIVERY_ONLY are not
+      canonical pickup. Missing ACK does not prove non-execution, later GitHub work does not prove a
+      Slack receiver, and ChatGPT/Claude Slack principals are communication identities rather than
+      Executive Worker/session identities.
 verified:
-  - claim: Hybrid Executive Workforce source law is merged on protected Mastermind.
-    command: "GitHub PR #172 exact-head CI + Sol review + merge receipt"
+  - claim: Protected Mastermind carries accepted hybrid/Codex-Sol/H0 source law.
+    command: "Read current protected Mastermind and exact accepted PR receipts."
     result: >
-      PR #172 merged as 6f1bc3dd39f1ebecd3c22e44aa11ca7a13fa5182 with the one-runtime,
-      three-seat, provider-neutral, common-harness and multi-host no-rebuild boundaries intact.
-  - claim: Codex-Sol technical-staff conformance is accepted and merged.
-    command: "GitHub PR #173 exact-head CI/CodeQL + independent Sol review + merge receipt"
+      Current protected Skillpack is mastermind.sol_skillpack.v1 v1.0.0 / bootstrap-major 1 at
+      8affa1c0403f4400825371bea0257f360a4814f2. #172/#173/#175 remain accepted under their exact
+      capability boundaries.
+  - claim: Wake dispatcher identity blocker is closed on the exact current carrier.
+    command: "Mastermind #174 TDD receipts + exact-head hosted CI"
     result: >
-      Exact head 95325f2bcfe1009b54b45bdca9ce99e052a083e4 passed hosted CI run 33064433428
-      and CodeQL, then merged as f81e29cc2a3f945fd79096e8ca10e8b2daec9e18. No fourth executive seat,
-      provider authority, Wake implementation or production arming was introduced.
-  - claim: Protected Mastermind contains the accepted CF2-H0 root Python isolation repair.
-    command: "Protected Mastermind read + PR #175 exact-head CI/CodeQL/review + expected-head squash merge"
+      Registry RED run 33069770973 and structural protocol RED run 33070934616 failed only the
+      intended identity falsifiers; exact head 1ecd7f507b10e5ff3c8fbf05ce66a6f917c93e59 then passed
+      hosted CI run 33071810751 with the three-way identity invariant implemented.
+  - claim: Capacity Fabric's canonical primary dependency remains H0 -> P0 -> CF2-I.
+    command: "Read current Macro WS-EXECUTIVE-CAPACITY-FABRIC."
     result: >
-      PR #175 exact head f9ca3f78d31341c4a3ddfad39d916561bc62f1af passed CI run 33068645048
-      and CodeQL, then merged as 8affa1c0403f4400825371bea0257f360a4814f2. Protected master advanced
-      to that exact merge; current-base diff was only prepare-capacity-host.sh + the bounded regression.
-  - claim: Wake PR3 remains a separate nonterminal transport carrier.
-    command: "GitHub PR #174 current metadata read"
+      CF2-H0 remains in_progress; CF2-P0 and CF2-I remain TODO. RF1/HF1/PF1 remain downstream of
+      accepted CF2-I; MH1 remains downstream of HF1.
+  - claim: Current Slack admission law invalidates the prior pre-ACK A2-0 result as accepted proof.
+    command: >
+      Read Macro main decision DEC-SLACK-HANDOFF-INITIAL-ENVELOPE-REQUIRES-PREWORK-ACK and Slack
+      A2-0 timing disclosure.
     result: >
-      #174 remains OPEN and DRAFT at observed head c4f9d80879823eb7a30db94817682225e81ae933 with
-      transport-only completion law. DELIVERED is not TARGET_ACKNOWLEDGED and neither is SOURCE_RESOLVED.
-  - claim: Capacity Fabric's canonical primary gate remains H0 -> P0 -> CF2-I.
-    command: "Read Macro main WS-EXECUTIVE-CAPACITY-FABRIC at observed main 8098bd5490cd5e24755c0f5fa42ce0f01b090da7"
-    result: >
-      CF2-H0 is in_progress; CF2-P0/CF2-I are TODO; RF1/HF1/PF1/MH1 remain downstream. The workstream
-      next action is the exact merged-H0 administrator ceremony, not more source implementation.
-  - claim: The Slack receiver discovery on Macro main is newer than this carrier's original edit.
-    command: "Read Macro main agentos/discoveries/DSC-AGENT-DISPATCH-CURRENTLY-HAS-NO-WORKER-RECEIVER.md"
-    result: >
-      Main blob bcbbf324437b02b448d74e2fc130af9e4f9b87c2 already carries the corrected membership,
-      missing-ACK and K2-C counterexample law. Reconciliation therefore keeps main's discovery bytes
-      and drops the older #6539 version rather than overwriting canonical truth.
+      Prior census content remains useful read-only evidence, but A2-0 is REVALIDATE_REQUIRED. Exactly
+      one clean revalidation carrier is outstanding; no failover/duplicate carrier is authorized.
 unverified:
   - claim: CF2-H0 production installation/verification passes and independent P0 accepts.
     what_would_verify: >
-      Run the exact merged-H0 administrator ceremony on the intended production host, obtain
-      H0_INSTALLED_HOST_PASS_NOT_P0_ACCEPTED, repeat verify-only with all broker labels disabled/unloaded
-      and sockets absent, then run the accepted independent read-only CF2-P0 census to a lawful verdict.
+      Run the exact protected merged-H0 administrator ceremony on the intended production host,
+      obtain H0_INSTALLED_HOST_PASS_NOT_P0_ACCEPTED, repeat verify-only with all three broker labels
+      disabled/unloaded and sockets absent, then run the accepted independent read-only CF2-P0 census.
   - claim: RF1/HF1/PF1 modifying implementation may begin.
     what_would_verify: >
-      Accepted CF2-I under the current Capacity Fabric dependency law. Before that, planning/read-only
-      archaeology does not authorize modifying those downstream waves.
-  - claim: Wake PR3 transport is accepted/proven live.
+      Accepted CF2-I. Read-only archaeology/planning does not release downstream modifying waves.
+  - claim: Wake PR3 provider-native delivery is implementation-safe or live-proven.
     what_would_verify: >
-      #174 reaches its exact transport-only acceptance boundary: bounded current-head code, hosted
-      CI/security/adversarial review, truthful Claude preflight verdict, and one harmless real Codex
-      canary proving exact-thread delivery with reconstructed status DELIVERED_UNACKNOWLEDGED.
-  - claim: Wake target ACK ingress and source resolution are implemented.
+      Chairman approval of the effect-unknown reconciliation architecture, implementation on the same
+      #174 carrier, exact-head CI/security/adversarial review, truthful Claude preflight and one harmless
+      exact-thread Codex delivery canary ending DELIVERED_UNACKNOWLEDGED.
+  - claim: Wake target ACK ingress/source resolution is implemented.
     what_would_verify: >
-      A later separately approved wave implements exact target reasoning-session ACK ingress and source
-      resolution through existing Wake/Executive law. #174 explicitly does not build or synthesize them.
-  - claim: lower-cost heterogeneous workers are usable autonomously.
+      A separately approved later wave reusing existing Wake acknowledgement law and Executive events.
+      #174 explicitly does not build or synthesize those facts.
+  - claim: ASD-A2 host preflight is accepted under current admission law.
     what_would_verify: >
-      RF1 + HF1 + PF1 accepted with provider-specific rights/auth/transport proof, matched-job quality
-      evidence and a real Executive child Job through the common lifecycle.
-  - claim: multi-host M1/M2/PC worker execution is live.
+      The sole Slack carrier 1787834271.424569 receives pre-work ACK for
+      asd-a2-host-preflight-revalidate-20260827-sol-002, full-thread read, then a fresh bounded
+      A2_0_REVALIDATED_PASS with no collision. Only then may one A2 implementation carrier be released.
+  - claim: lower-cost heterogeneous workers or multi-host execution are production-live.
     what_would_verify: >
-      HF1 acceptance followed by MH1 authenticated transport, same-Attempt effect-unknown reconciliation,
-      credential-locality proof and a real multi-host Executive fan-out canary.
+      RF1 + HF1 + PF1 accepted with a real Executive child Job through the common lifecycle; MH1 later
+      requires authenticated same-Attempt remote transport, effect-unknown reconciliation and credential
+      locality proof.
 unresolved:
-  - "CF2-H0 is still PARTIAL: source hardening #175 is merged, but the real administrator ceremony and repeat verify-only receipt are not yet accepted."
-  - "#174 is still DRAFT and nonterminal. Transport delivery may be proved without ACK; target ACK/source resolution stay later-wave NOT_BUILT."
-  - "Macro main already superseded #6539's older Slack discovery edit; never reintroduce that stale branch version during future reconciliation."
-  - "RF1/HF1/PF1 remain held behind accepted CF2-I; MH1 remains held behind accepted HF1."
-  - "ASD-A2/A3 remains the active-session dialogue owner; Wake PR3 must not absorb Slack Agent Relay/dialogue lifecycle."
+  - "CF2-H0 remains PARTIAL: #175 is merged, but the real administrator ceremony and P0 are not accepted."
+  - "Wake #174 dispatcher identity is green, but provider Task 3 remains held on unapproved effect-unknown architecture."
+  - "ASD-A2 is REVALIDATE_REQUIRED; do not accept the earlier pre-ACK A2_0_PASS or release implementation yet."
+  - "C1/B2/C2 and Worker Browser B1 remain independently gated; Slack delivery/CI/merge do not close them."
 next_actions:
-  - "Primary Capacity Fabric action: from exact protected Mastermind merge 8affa1c0403f4400825371bea0257f360a4814f2 or a later lawfully reconciled protected head containing it, complete the H0 administrator ceremony, require H0_INSTALLED_HOST_PASS_NOT_P0_ACCEPTED + repeat verify-only, then STOP for independent CF2-P0."
-  - "Independent Wake action: continue/review Mastermind #174 on its sole carrier under its transport-only completion law; do not synthesize TARGET_ACKNOWLEDGED or SOURCE_RESOLVED."
-  - "Preserve Mastermind #173 merge f81e29cc2a3f945fd79096e8ca10e8b2daec9e18 as accepted Codex-Sol conformance; do not create another Codex-Sol identity/authority carrier."
-  - "Keep RF1/HF1/PF1 modifying work staged behind accepted CF2-I and MH1 modifying work staged behind accepted HF1."
-  - "Continue ASD-A2/A3, C1/B2/C2 and Worker Browser B1 only on their existing owners when disjoint; final Autonomy V1 acceptance waits for the required real paths."
+  - "Primary Capacity action: complete the exact merged-H0 administrator ceremony, require H0_INSTALLED_HOST_PASS_NOT_P0_ACCEPTED + repeated verify-only, then STOP for independent CF2-P0."
+  - "Wake action: keep #174 on its sole carrier; dispatcher identity is closed. Do not implement provider Task 3 until the effect-unknown design is Chairman-approved/frozen."
+  - "ASD action: wait only on Slack carrier 1787834271.424569. If it returns A2_0_REVALIDATED_PASS under current admission law, release exactly one bounded Mastermind A2 implementation carrier; otherwise preserve the exact collision."
+  - "Keep RF1/HF1/PF1 modifying work staged behind accepted CF2-I and MH1 behind HF1."
 do_not_redo:
-  - "Do not create another hybrid-workforce workstream; extend Executive Capacity Fabric, Executive OS, Wake and Chairman Control Room owners."
-  - "Do not add a fourth executive seat for Codex-Sol; #173 proved the accountable seat remains ceo."
-  - "Do not reopen #173 absent a concrete conformance defect or material source-law change."
-  - "Do not overwrite the current Macro-main Slack receiver discovery with #6539's older branch copy."
-  - "Do not use provider/model/Slack identity as Worker or executive authority."
-  - "Do not create provider-specific brokers, per-host Executive runtimes, tmux lifecycle authority, a Wake session DB, or another routing/capacity store."
+  - "Do not create another hybrid-workforce workstream or duplicate Executive Runtime/Worker/queue/session/identity planes."
+  - "Do not add a fourth executive seat for Codex-Sol or use provider/model/Slack identity as executive authority."
+  - "Do not reopen #173 or #175 absent a concrete receipt-invalidating defect."
+  - "Do not merge stale #agent-dispatch receiver evidence over current Macro-main truth."
+  - "Do not create a second Wake PR3 carrier, Wake session DB, provider-specific broker or per-host Executive runtime."
+  - "Do not treat the previous pre-ACK A2_0_PASS as accepted production-preflight proof."
   - "Do not bypass CF2-I for RF1/HF1/PF1 or HF1 for MH1."
-  - "Do not treat #174 PR state, Slack delivery, channel membership, CI green or #175 merge as production execution/acceptance beyond their exact receipts."
 danger_areas:
-  - "Macro is high-churn. Re-pin main immediately before reconciling this carrier and preserve newer Agent OS bytes when overlapping records moved after pickup."
-  - "Codex-Sol conformance, Wake transport and Capacity Fabric all reference Codex/provider concepts but own different authority planes; do not let runtime addresses, capacity observations or Slack principals collapse into executive identity."
-  - "Provider cost can rank only inside an already-lawful RF1 suitability tier; file/alias order must not become vendor priority."
-  - "Remote/multi-host timeout after a modifying operation begins is EFFECT_UNKNOWN and stays bound to the same Attempt/Worker/host until reconciled."
+  - "Macro is high-churn; re-pin main immediately before this records carrier merges and preserve newer overlapping Agent OS bytes."
+  - "Codex-Sol conformance, Wake transport and Capacity Fabric share provider concepts but own different authority planes."
+  - "Provider submission timeout/disconnect is EFFECT_UNKNOWN, never permission for a second Wake turn, provider failover or cross-host retry."
+  - "Slack ACK is only admission-protocol evidence and does not equal canonical Worker/session claim, RUNNING or RESULT."
 ---
 
 # Return point
 
-This Agent OS carrier is records-only. Its merge makes the current hybrid workforce rulings, exact
-accepted receipts, limits and continuation recoverable; it does not make the hybrid workforce or
-Autonomy V1 complete. A fresh Sol should start from protected Mastermind, this handoff and the current
-WS:EXECUTIVE-CAPACITY-FABRIC record, then execute the H0 -> P0 -> CF2-I gate while allowing only
-truly independent Wake #174 work in parallel. No further Chairman sequencing input is required until
-a Chairman-owned credential/admin/rights/spend/destructive gate or a material architecture conflict
-is reached.
+Current hybrid workforce truth is finite and dependency-safe: protected Mastermind contains the accepted
+hybrid/Codex-Sol/H0 source law; Capacity remains H0 -> P0 -> CF2-I; Wake dispatcher identity is exact-head
+GREEN but provider delivery remains held on the effect-unknown architecture gate; and ASD-A2 requires one
+clean pre-work-ACK revalidation before implementation release. No further Chairman sequencing is needed
+for ordinary architecture-preserving work, but native credential/admin gates and material architecture
+changes remain explicit return boundaries.
