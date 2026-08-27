@@ -210,7 +210,7 @@ import tempfile
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 
@@ -320,6 +320,26 @@ ARMED_PACK_MAX_SESSIONS_BEHIND = 1
 #: would have stayed green through the whole incident; this one is keyed on
 #: meta.pass_ts alone, by construction (see _check_live_window_surface).
 PROPHET_LIVE_MAX_AGE_MINUTES = 10.0
+
+#: Consecutive in-window sentinel passes an EMPTY ``states`` map is ABSORBED
+#: before it breaches (F2 fresh-but-empty, proven in production 2026-08-27: at
+#: 19:12Z this surface reported "ok (4.1 min old)" while the artifact carried
+#: n_states=0 mid-NYSE-window — the evaluator was refusing its poisoned pack as
+#: stale_pack all session and publishing fresh, EMPTY passes, so the
+#: meta.pass_ts budget above was satisfied by an artifact that served a reader
+#: nothing). The grace is 2 passes ≈ 1h at the sentinel cadence: the artifact
+#: can legitimately be empty in the first minutes after open (the evaluator's
+#: first ticks may not have quotes yet), and a single dark pass publishes
+#: ``states: {}`` BY DESIGN (engine/prophet_live/live_states.py's dark payload
+#: — a guessed state is the failure), so neither may page. The THIRD
+#: consecutive empty in-window observation breaches. The streak counts
+#: OBSERVATIONS of an open window with a parsed doc whose states container is
+#: empty — anything else (window closed, artifact absent, unparseable body,
+#: non-empty states) resets it to 0, so every session open gets its grace back
+#: and a Friday-close streak can never page at Monday's open. Each sentinel
+#: pass is its own oneshot process, so the streak is persisted across passes in
+#: <state-dir>/state.json under ``empty_states_passes`` (see run()).
+PROPHET_LIVE_EMPTY_STATES_GRACE_PASSES = 2
 
 # Per-surface freshness budgets. ``delay_budget_days`` applies to the board's own
 # delayed-board disclosure (see module docstring): the marker only renders when
@@ -579,6 +599,20 @@ SURFACES: list[dict] = [
         "asof_max_sessions_behind": ARMED_PACK_MAX_SESSIONS_BEHIND,
         # Coverage is DISCLOSED, never budgeted — see the module docstring.
         "facts": "armed_pack",
+        # D12 grader fence (2026-08-27): the as_of may lag by at most the
+        # budget above and may NEVER be AHEAD of the calendar. sessions_behind
+        # floors a future-dated stamp at 0 ("no completed session is missing" —
+        # its own docstring), so before this key the sentinel graded the
+        # D12-poisoned pack — as_of 2026-08-27 stamped MID-SESSION by a
+        # pre-#6554 build — "ok (0 sessions behind)" while the */5 evaluator
+        # refused the same object as stale_pack all session. An ahead stamp is
+        # never a freshness state: it is a poisoned or mid-session build
+        # (impossible at the producer since #6554 quarantined impossible tips
+        # at build; #6562 fixed the B1 intake crash the same day), so it is its
+        # own named breach (pack_ahead_of_calendar) and pages immediately — a
+        # definitive server answer gets no grace. Grader-side twin of those two
+        # producer-side fences.
+        "asof_never_ahead": True,
     },
     # CN-W-L3 — the mainland runtime board, on the same VPS live plane as the
     # US evening board. The ARTIFACT path is /live/cn_prophet_live.json (the
@@ -1115,7 +1149,8 @@ def prophet_live_r2_agreement(served_body: str | None, now: datetime) -> tuple[s
     return "ok", None
 
 
-def _check_live_window_surface(surface: dict, fr: FetchResult, now: datetime) -> dict:
+def _check_live_window_surface(surface: dict, fr: FetchResult, now: datetime,
+                               state: dict | None = None) -> dict:
     """Minute-grained intraday freshness, gated to the ET live window.
 
     See PROPHET_LIVE_MAX_AGE_MINUTES and the ``prophet_live`` SURFACES entry for
@@ -1124,6 +1159,11 @@ def _check_live_window_surface(surface: dict, fr: FetchResult, now: datetime) ->
     express "no older than 10 minutes, except overnight/weekends/holidays", so
     this surface is evaluated on its own path instead of being bent to fit the
     general machinery (FROZEN SPEC Part A #5).
+
+    Part B (F2 fresh-but-empty): ``state`` is the PRIOR pass's private counters
+    (state.json), consulted only for the consecutive-empty-states streak; None
+    restarts the grace, which is exactly what a lost or first-ever state file
+    should do.
     """
     out: dict = {
         "id": surface["id"],
@@ -1139,6 +1179,8 @@ def _check_live_window_surface(surface: dict, fr: FetchResult, now: datetime) ->
         "asof": None,
         "asof_sessions_behind": None,
         "asof_age_minutes": None,
+        "n_states": None,
+        "states_empty_passes": 0,
         "absent": False,
         "facts": {},
         "detail": "",
@@ -1191,6 +1233,27 @@ def _check_live_window_surface(surface: dict, fr: FetchResult, now: datetime) ->
         out["detail"] = f"served body is not JSON during the live window ({exc})"
         return out
 
+    # F2 non-vacuity (fresh-but-empty), counted BEFORE the pass_ts checks so
+    # the streak keeps accumulating while the clock is also broken: an
+    # evaluator that heals its stamp but keeps serving no states breaches on
+    # the heal pass rather than re-entering the grace. The container is the
+    # payload's top-level ``states`` map (a dict in production —
+    # engine/prophet_live/live_states.py writes ``states: {}`` on dark passes
+    # and a ticker-keyed dict on live ones; a list is tolerated for the same
+    # shape-lenience every optional reader here practices).
+    states = doc.get("states") if isinstance(doc, dict) else None
+    if isinstance(states, (dict, list)):
+        out["n_states"] = len(states)
+    prior_empty = 0
+    if isinstance(state, dict):
+        per_surface = state.get("empty_states_passes")
+        if isinstance(per_surface, dict):
+            raw = per_surface.get(surface["id"], 0)
+            if isinstance(raw, int) and not isinstance(raw, bool):
+                prior_empty = max(0, raw)
+    if out["n_states"] == 0:
+        out["states_empty_passes"] = prior_empty + 1
+
     stamp = _asof_field_value(doc, surface["asof_field"])
     if not isinstance(stamp, str) or not stamp:
         out["status"] = "stale"
@@ -1221,13 +1284,24 @@ def _check_live_window_surface(surface: dict, fr: FetchResult, now: datetime) ->
             msg += "; mtime is fresh, the semantic clock is not"
         out["status"] = "stale"
         out["detail"] = msg
+    if out["states_empty_passes"] > PROPHET_LIVE_EMPTY_STATES_GRACE_PASSES:
+        empty_msg = (
+            f"states map empty for {out['states_empty_passes']} consecutive"
+            " sentinel passes during the live window (grace"
+            f" {PROPHET_LIVE_EMPTY_STATES_GRACE_PASSES} passes ≈ 1h) —"
+            " fresh-but-empty: the evaluator is publishing passes that carry"
+            " no states while the session is open"
+        )
+        out["status"] = "stale"
+        out["detail"] = (out["detail"] + "; " if out["detail"] else "") + empty_msg
     return out
 
 
-def check_surface(surface: dict, fr: FetchResult, now: datetime) -> dict:
+def check_surface(surface: dict, fr: FetchResult, now: datetime,
+                  state: dict | None = None) -> dict:
     """One surface → {id, status ∈ ok|stale|indeterminate, ages, detail}."""
     if surface.get("live_window_gate"):
-        return _check_live_window_surface(surface, fr, now)
+        return _check_live_window_surface(surface, fr, now, state)
     out: dict = {
         "id": surface["id"],
         "kind": surface["kind"],
@@ -1366,6 +1440,13 @@ def check_surface(surface: dict, fr: FetchResult, now: datetime) -> dict:
             budget = surface["asof_max_sessions_behind"]
             try:
                 behind = sessions_behind(stamp, now, calendar=surface.get("calendar"))
+                # Resolved inside the same guarded block as sessions_behind so
+                # a broken calendar degrades BOTH reads to indeterminate
+                # together rather than half-grading the surface.
+                expected_session = (
+                    _calendar_mod(surface.get("calendar")).expected_last_session(now)
+                    if surface.get("asof_never_ahead") else None
+                )
             except Exception as exc:  # noqa: BLE001 — bad date / unimportable calendar
                 cal_label = "mainland" if surface.get("calendar") == "cn" else "NYSE"
                 out["status"] = "indeterminate"
@@ -1387,6 +1468,23 @@ def check_surface(surface: dict, fr: FetchResult, now: datetime) -> dict:
                     # 2026-08-05 candidates freeze under a daily-fresh page).
                     msg += "; the file is being re-published, the store is not"
                 problems.append(msg)
+
+            # D12 grader fence — see the armed-pack SURFACES entry.
+            # sessions_behind floors a future-dated stamp at 0, so without an
+            # explicit comparison an ahead stamp reads exactly like a current
+            # one; the fence requires as_of to be neither behind beyond the
+            # budget above NOR ahead of the calendar at all.
+            if expected_session is not None:
+                out["asof_expected_session"] = expected_session.isoformat()
+                if date.fromisoformat(stamp) > expected_session:
+                    problems.append(
+                        f"pack_ahead_of_calendar: as_of {stamp} is AHEAD of the"
+                        " last completed session"
+                        f" {expected_session.isoformat()} — a stamp from the"
+                        " future is a poisoned or mid-session build, never"
+                        " freshness (the intraday evaluator refuses exactly"
+                        " this pack as stale_pack)"
+                    )
 
             # PR-1 additive extensions — generic, and only exercised by a surface
             # that names them (today: us_standouts). Neither existed before this
@@ -1561,7 +1659,8 @@ def client_visible_session(fr: FetchResult | None, sla: dict,
 
 def evaluate(results: dict[str, FetchResult], now: datetime,
              surfaces: list[dict] | None = None,
-             client_reads: dict[str, FetchResult] | None = None) -> dict:
+             client_reads: dict[str, FetchResult] | None = None,
+             state: dict | None = None) -> dict:
     """All surfaces → this pass's report. ``ok`` here is the single-pass
     staleness verdict only; run() folds active-breach and blindness into the
     SERVED ok before publishing.
@@ -1572,9 +1671,14 @@ def evaluate(results: dict[str, FetchResult], now: datetime,
     the one thing the reader-side gate needs. Absent ⇒ every client session is
     unknown, which withholds SLA stamps rather than manufacturing verdicts —
     "I can't tell the reader saw it" must never score as a pass.
+
+    ``state`` is the PRIOR pass's private counters (state.json), consumed only
+    by the live-window surface's empty-states streak; evaluation stays pure
+    over its inputs — the caller owns persisting the updated streak (see
+    run()).
     """
     surfaces = SURFACES if surfaces is None else surfaces
-    checked = {s["id"]: check_surface(s, results[s["id"]], now) for s in surfaces}
+    checked = {s["id"]: check_surface(s, results[s["id"]], now, state=state) for s in surfaces}
     for s in surfaces:
         sla = s.get("sla") or {}
         if not sla.get("client_path"):
@@ -2197,7 +2301,14 @@ def run(now: datetime, base: str, r2_base: str, public_dir: Path, state_dir: Pat
         if client_path and client_path not in client_reads:
             client_reads[client_path] = served_reader(public_dir, client_path)
 
-    report = evaluate(results, now, client_reads=client_reads)
+    # The PRIOR pass's private counters, read BEFORE evaluate() because the
+    # live-window surface's empty-states streak is a cross-pass observation
+    # (each sentinel pass is its own oneshot process — the timer fires a fresh
+    # python every pass, so consecutive-pass state can only live in
+    # state.json). Read-only here; the updated streak is folded back in below,
+    # and a dry run reads it without ever writing it back.
+    prior_state = load_state(state_dir)
+    report = evaluate(results, now, client_reads=client_reads, state=prior_state)
 
     # PR-1 item 1c — prophet_live served-vs-R2 agreement. Injected post-evaluate()
     # because it needs live R2 credentials that evaluate() has no business
@@ -2245,7 +2356,14 @@ def run(now: datetime, base: str, r2_base: str, public_dir: Path, state_dir: Pat
             # — see PROPHET_LIVE_MAX_AGE_MINUTES); every other asof-bearing surface
             # carries a session-grained budget instead, so the two never both read.
             if c.get("asof_age_minutes") is not None:
-                label, content = "store", f"asof@{c['asof']} ({c['asof_age_minutes']:.1f} min old)"
+                label = "store"
+                content = f"asof@{c['asof']} ({c['asof_age_minutes']:.1f} min old"
+                if "n_states" in c:
+                    # The count whose absence hid the 2026-08-27 fresh-but-empty
+                    # freeze from this line: "ok (4.1 min old)" disclosed
+                    # nothing about the artifact serving zero states.
+                    content += f", states={'?' if c['n_states'] is None else c['n_states']}"
+                content += ")"
             else:
                 label, content = "store", (
                     f"asof@{c['asof']} ({c['asof_sessions_behind']} session(s) behind)"
@@ -2282,7 +2400,15 @@ def run(now: datetime, base: str, r2_base: str, public_dir: Path, state_dir: Pat
         print("dry-run: no state written, no alert sent")
         return 0 if report["ok"] else 1
 
-    alerts, new_state = decide_alerts(report, load_state(state_dir), now)
+    # Fold the empty-states streak this pass observed into the state
+    # decide_alerts persists — decide_alerts copies unknown keys through, so
+    # the next pass's evaluate() reads back exactly what this pass saw.
+    prior_state["empty_states_passes"] = {
+        sid: c["states_empty_passes"]
+        for sid, c in report["surfaces"].items()
+        if isinstance(c, dict) and "states_empty_passes" in c
+    }
+    alerts, new_state = decide_alerts(report, prior_state, now)
 
     # ALERTS FIRST, state files second: a full disk or a permissions break on
     # /var/lib must never silence the alarm it should be raising.
