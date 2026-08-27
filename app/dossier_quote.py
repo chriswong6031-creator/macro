@@ -64,9 +64,20 @@ _HUB_TIMEOUT_SECONDS = float(os.environ.get("DOSSIER_QUOTE_HUB_TIMEOUT_SECONDS",
 # request path.
 _HUB_MAX_BYTES = 64 * 1024
 
-# A realtime row is allowed to be this old before it stops being "live".  The
-# hub's own snapshot TTL is 60s, so two TTLs is the tightest bound that does
-# not flicker on a healthy feed.
+# A realtime row is allowed to be this old before it stops being "live".  Two
+# of the hub's 60s snapshot TTLs (8s in realtime mode) — the tightest bound
+# that cannot flicker on a healthy feed.
+#
+# DELIBERATELY TIGHTER THAN UPSTREAM.  The hub stamps `basis:"REALTIME"` when
+# the FEED's print-age floor is realtime and THIS name printed within 15
+# minutes (its `NAME_REALTIME_MAX_LAG_MS`), a bound it makes generous so a
+# quiet ticker on a genuinely realtime feed still reads live.  That is the
+# right call for a watchlist of many names; it is the wrong one for a dossier,
+# which is a single page a reader stares at expecting the current price.  A
+# two-minute-old print called "Live" is defensible there; a fourteen-minute-old
+# one is not, however fresh a sibling ticker was.  The cost is under-claiming on
+# a genuinely quiet name — the safe direction, and the one this whole route
+# exists to choose.
 _LIVE_MAX_AGE_SECONDS = 120.0
 # Past this the row is not merely late, it is unrepresentative — the hub has
 # stopped refreshing and the client must fall back to the baked value.  The
