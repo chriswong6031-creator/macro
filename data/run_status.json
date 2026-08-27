@@ -3626,41 +3626,41 @@
     "health": {
       "valuation": {
         "table": "valuation",
-        "asof": "2026-08-26",
+        "asof": "2026-08-27",
         "lag_days": 0,
         "state": "fresh"
       },
       "margin": {
         "table": "margin",
-        "asof": "2026-08-25",
+        "asof": "2026-08-26",
         "lag_days": 1,
         "state": "fresh"
       },
       "moneyflow": {
         "table": "moneyflow",
-        "asof": "2026-08-26",
+        "asof": "2026-08-27",
         "lag_days": 0,
         "state": "fresh"
       },
       "chips": {
         "table": "chips",
-        "asof": "2026-08-25",
-        "lag_days": 1,
+        "asof": "2026-08-27",
+        "lag_days": 0,
         "state": "fresh"
       },
       "broker": {
         "table": "broker",
-        "asof": "2026-08-26",
+        "asof": "2026-08-27",
         "lag_days": 0,
         "state": "fresh"
       },
       "forecast": {
         "table": "forecast",
         "asof": "2026-08-25",
-        "lag_days": 1,
+        "lag_days": 2,
         "state": "fresh"
       }
     },
-    "asof": "2026-08-26 09:37:06.868111+00:00"
+    "asof": "2026-08-27 18:20:28.715467+00:00"
   }
 }

@@ -1,32 +1,17 @@
 {
   "_debounce": {
     "label": {
-      "cn_battery": {
-        "bucket": "2026-08-26",
+      "cn_defense": {
+        "bucket": "2026-08-27",
         "count": 1,
-        "from": "neutral"
-      },
-      "cn_consumer_elec": {
-        "bucket": "2026-08-26",
-        "count": 1,
-        "from": "neutral"
-      },
-      "cn_metals": {
-        "bucket": "2026-08-26",
-        "count": 1,
-        "from": "neutral"
-      },
-      "cn_solar": {
-        "bucket": "2026-08-26",
-        "count": 1,
-        "from": "neutral"
+        "from": "deteriorating"
       }
     },
     "lead": {
       "displayed": "cn_coal",
       "pending": {
-        "bucket": "2026-08-26",
-        "count": 1,
+        "bucket": "2026-08-27",
+        "count": 2,
         "tid": "cn_metals"
       }
     },
@@ -36,57 +21,57 @@
     "label": "neutral",
     "name": "AI Compute & Optics",
     "name_zh": "AI\u7b97\u529b\u4e0e\u5149\u6a21\u5757",
-    "rank": 14,
+    "rank": 9,
     "reco": "hold",
-    "score": 49
+    "score": 54
   },
   "cn_appliances": {
     "label": "deteriorating",
     "name": "Home Appliances",
     "name_zh": "\u5bb6\u7535",
-    "rank": 10,
+    "rank": 15,
     "reco": "avoid",
-    "score": 51
+    "score": 47
   },
   "cn_autos": {
     "label": "deteriorating",
     "name": "Autos & NEV Makers",
     "name_zh": "\u6c7d\u8f66\u6574\u8f66",
-    "rank": 21,
+    "rank": 22,
     "reco": "avoid",
-    "score": 33
+    "score": 35
   },
   "cn_baijiu": {
     "label": "deteriorating",
     "name": "Baijiu / Liquor",
     "name_zh": "\u767d\u9152",
-    "rank": 16,
+    "rank": 20,
     "reco": "avoid",
-    "score": 42
+    "score": 41
   },
   "cn_banks": {
-    "label": "neutral",
+    "label": "deteriorating",
     "name": "Banks",
     "name_zh": "\u94f6\u884c",
-    "rank": 4,
-    "reco": "hold",
-    "score": 58
+    "rank": 13,
+    "reco": "avoid",
+    "score": 50
   },
   "cn_battery": {
     "label": "emerging",
     "name": "Battery & Lithium",
     "name_zh": "\u9502\u7535\u6c60",
-    "rank": 18,
+    "rank": 16,
     "reco": "hold",
-    "score": 40
+    "score": 45
   },
   "cn_brokers": {
-    "label": "deteriorating",
+    "label": "neutral",
     "name": "Brokers & Securities",
     "name_zh": "\u5238\u5546",
-    "rank": 11,
-    "reco": "avoid",
-    "score": 50
+    "rank": 12,
+    "reco": "hold",
+    "score": 51
   },
   "cn_coal": {
     "label": "emerging",
@@ -94,31 +79,31 @@
     "name_zh": "\u7164\u70ad",
     "rank": 2,
     "reco": "enter",
-    "score": 71
+    "score": 63
   },
   "cn_consumer_elec": {
     "label": "emerging",
     "name": "Consumer Electronics",
     "name_zh": "\u6d88\u8d39\u7535\u5b50",
-    "rank": 8,
+    "rank": 5,
     "reco": "enter",
-    "score": 52
+    "score": 56
   },
   "cn_defense": {
-    "label": "deteriorating",
+    "label": "emerging",
     "name": "Defense & Aerospace",
     "name_zh": "\u519b\u5de5\u822a\u5929",
-    "rank": 22,
-    "reco": "avoid",
-    "score": 32
+    "rank": 19,
+    "reco": "enter",
+    "score": 42
   },
   "cn_food_bev": {
     "label": "deteriorating",
     "name": "Food & Beverage",
     "name_zh": "\u98df\u54c1\u996e\u6599",
-    "rank": 17,
+    "rank": 18,
     "reco": "avoid",
-    "score": 41
+    "score": 44
   },
   "cn_gold": {
     "label": "neutral",
@@ -126,23 +111,23 @@
     "name_zh": "\u9ec4\u91d1",
     "rank": 3,
     "reco": "hold",
-    "score": 69
+    "score": 61
   },
   "cn_insurers": {
-    "label": "neutral",
+    "label": "deteriorating",
     "name": "Insurers",
     "name_zh": "\u4fdd\u9669",
-    "rank": 5,
-    "reco": "hold",
-    "score": 58
+    "rank": 8,
+    "reco": "avoid",
+    "score": 55
   },
   "cn_med_devices": {
     "label": "deteriorating",
     "name": "Medical Devices & TCM",
     "name_zh": "\u533b\u7597\u5668\u68b0\u4e0e\u4e2d\u836f",
-    "rank": 20,
+    "rank": 21,
     "reco": "avoid",
-    "score": 38
+    "score": 39
   },
   "cn_metals": {
     "label": "emerging",
@@ -150,62 +135,62 @@
     "name_zh": "\u6709\u8272\u91d1\u5c5e",
     "rank": 1,
     "reco": "enter",
-    "score": 71
+    "score": 64
   },
   "cn_pharma_cxo": {
     "label": "neutral",
     "name": "Innovative Pharma & CXO",
     "name_zh": "\u521b\u65b0\u836f\u4e0eCXO",
-    "rank": 6,
+    "rank": 4,
     "reco": "hold",
-    "score": 56
+    "score": 57
   },
   "cn_rare_earth": {
     "label": "neutral",
     "name": "Rare Earth & Magnets",
     "name_zh": "\u7a00\u571f\u6c38\u78c1",
-    "rank": 12,
+    "rank": 7,
     "reco": "hold",
-    "score": 50
+    "score": 56
   },
   "cn_robotics": {
     "label": "neutral",
     "name": "Robotics & Automation",
     "name_zh": "\u673a\u5668\u4eba\u4e0e\u81ea\u52a8\u5316",
-    "rank": 15,
-    "reco": "hold",
-    "score": 44
-  },
-  "cn_semis": {
-    "label": "deteriorating",
-    "name": "Semiconductors",
-    "name_zh": "\u534a\u5bfc\u4f53",
-    "rank": 13,
-    "reco": "avoid",
-    "score": 49
-  },
-  "cn_soe_value": {
-    "label": "neutral",
-    "name": "SOE Blue Chips (\u4e2d\u7279\u4f30)",
-    "name_zh": "\u4e2d\u7279\u4f30\u00b7\u592e\u4f01",
-    "rank": 9,
+    "rank": 11,
     "reco": "hold",
     "score": 52
+  },
+  "cn_semis": {
+    "label": "neutral",
+    "name": "Semiconductors",
+    "name_zh": "\u534a\u5bfc\u4f53",
+    "rank": 10,
+    "reco": "hold",
+    "score": 53
+  },
+  "cn_soe_value": {
+    "label": "deteriorating",
+    "name": "SOE Blue Chips (\u4e2d\u7279\u4f30)",
+    "name_zh": "\u4e2d\u7279\u4f30\u00b7\u592e\u4f01",
+    "rank": 14,
+    "reco": "avoid",
+    "score": 48
   },
   "cn_software": {
     "label": "neutral",
     "name": "Software & AI Apps",
     "name_zh": "\u8f6f\u4ef6\u4e0eAI\u5e94\u7528",
-    "rank": 19,
+    "rank": 17,
     "reco": "hold",
-    "score": 38
+    "score": 44
   },
   "cn_solar": {
     "label": "emerging",
     "name": "Solar / Photovoltaics",
     "name_zh": "\u5149\u4f0f",
-    "rank": 7,
+    "rank": 6,
     "reco": "hold",
-    "score": 54
+    "score": 56
   }
 }
