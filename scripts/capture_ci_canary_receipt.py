@@ -341,7 +341,7 @@ def write_execution_timing(path: Path, records: list[Mapping[str, Any]]) -> None
     except OSError as exc:
         _timing_warning(f"could not publish execution timing: {exc}")
     finally:
-        with contextlib.suppress(FileNotFoundError):
+        with contextlib.suppress(OSError):
             temporary.unlink()
 
 

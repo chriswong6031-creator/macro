@@ -568,6 +568,194 @@ def test_malformed_timing_degrades_without_changing_the_receipt(
     }
 
 
+def _assert_invalid_raw_timing_is_non_authoritative(
+    tmp_path: Path,
+    raw_observations: bytes,
+) -> None:
+    """Run the receipt CLI against a malformed raw timing sidecar.
+
+    A timing-input rejection must leave the already-established canary receipt
+    and its passed pack verdict byte-for-byte untouched, while still producing
+    a complete missing-row sidecar when the final timing destination works.
+    """
+    tested = "a" * 40
+    plan_path = tmp_path / "plan.json"
+    plan_path.write_text(
+        json.dumps(
+            {
+                "workflow_run_id": "123",
+                "tested_tree_sha": tested,
+                "subject_head_sha": tested,
+                "base_sha": tested,
+                "plan_sha256": "d" * 64,
+                "packs": [{"index": 0, "jobs": ["demo"]}],
+            }
+        ),
+        encoding="utf-8",
+    )
+    log_path = tmp_path / "pack.log"
+    log_path.write_text("CI_PACK_FAILED_JOBS=[]\n", encoding="utf-8")
+    observations_path = tmp_path / "observations.jsonl"
+    observations_path.write_bytes(raw_observations)
+    phase_path = tmp_path / "phase-monotonic.txt"
+    phase_path.write_text(
+        "job_start 10\n"
+        "checkout_start 20\n"
+        "checkout_end 30\n"
+        "executor_setup_start 31\n"
+        "executor_setup_end 40\n"
+        "pack_execution_start 41\n"
+        "pack_execution_end 70\n"
+        "job_end 80\n",
+        encoding="utf-8",
+    )
+    baseline_receipt = tmp_path / "baseline-receipt.json"
+    degraded_receipt = tmp_path / "degraded-receipt.json"
+    timing_path = tmp_path / "execution-timing.jsonl"
+    common = [
+        "python3",
+        str(ROOT / "scripts" / "capture_ci_canary_receipt.py"),
+        "--log", str(log_path),
+        "--plan", str(plan_path),
+        "--pack", "0",
+        "--exit-code", "0",
+        "--tested-sha", tested,
+        "--base-sha", tested,
+        "--runner-kind", "selfhosted",
+        "--runner-name", "pc-ci-1",
+        "--runner-profile", RUN_PACK.RUNNER_CONTRACT,
+    ]
+    baseline = subprocess.run(
+        [*common, "--output", str(baseline_receipt)],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    degraded = subprocess.run(
+        [
+            *common,
+            "--timing-observations", str(observations_path),
+            "--phase-monotonic", str(phase_path),
+            "--timing-output", str(timing_path),
+            "--output", str(degraded_receipt),
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert baseline.returncode == 0, baseline.stdout + baseline.stderr
+    assert degraded.returncode == 0, degraded.stdout + degraded.stderr
+    assert degraded_receipt.read_bytes() == baseline_receipt.read_bytes()
+    assert json.loads(degraded_receipt.read_text(encoding="utf-8"))["result"] == "passed"
+    assert "::warning title=ci timing telemetry degraded::" in degraded.stdout
+    rows = [
+        json.loads(line)
+        for line in timing_path.read_text(encoding="utf-8").splitlines()
+    ]
+    assert {(row["logical_job_id"], row["phase"]) for row in rows} == {
+        (None, "queue"),
+        (None, "checkout"),
+        (None, "executor_setup"),
+        (None, "pack_execution"),
+        (None, "pack_completion"),
+        ("demo", "dependency_install"),
+        ("demo", "test"),
+    }
+    by_phase = {(row["logical_job_id"], row["phase"]): row for row in rows}
+    assert all(
+        by_phase[("demo", phase)]["status"] == "missing"
+        for phase in ("dependency_install", "test")
+    )
+
+
+def test_duplicate_raw_timing_observations_degrade_without_receipt_or_verdict_impact(
+    tmp_path: Path,
+) -> None:
+    observation = {
+        "logical_job_id": "demo",
+        "phase": "test",
+        "status": "observed",
+        "started_monotonic_ns": 100,
+        "ended_monotonic_ns": 130,
+        "duration_ns": 30,
+    }
+    _assert_invalid_raw_timing_is_non_authoritative(
+        tmp_path,
+        (json.dumps(observation) + "\n" + json.dumps(observation) + "\n").encode(),
+    )
+
+
+def test_oversized_raw_timing_observations_degrade_without_receipt_or_verdict_impact(
+    tmp_path: Path,
+) -> None:
+    _assert_invalid_raw_timing_is_non_authoritative(
+        tmp_path,
+        b"x" * (4 * 1024 * 1024 + 1),
+    )
+
+
+def test_unwritable_final_timing_output_degrades_without_receipt_or_verdict_impact(
+    tmp_path: Path,
+) -> None:
+    tested = "a" * 40
+    plan_path = tmp_path / "plan.json"
+    plan_path.write_text(
+        json.dumps(
+            {
+                "workflow_run_id": "123",
+                "tested_tree_sha": tested,
+                "subject_head_sha": tested,
+                "base_sha": tested,
+                "plan_sha256": "d" * 64,
+                "packs": [{"index": 0, "jobs": ["demo"]}],
+            }
+        ),
+        encoding="utf-8",
+    )
+    log_path = tmp_path / "pack.log"
+    log_path.write_text("CI_PACK_FAILED_JOBS=[]\n", encoding="utf-8")
+    baseline_receipt = tmp_path / "baseline-receipt.json"
+    degraded_receipt = tmp_path / "degraded-receipt.json"
+    blocked_parent = tmp_path / "not-a-directory"
+    blocked_parent.write_text("not a directory\n", encoding="utf-8")
+    common = [
+        "python3",
+        str(ROOT / "scripts" / "capture_ci_canary_receipt.py"),
+        "--log", str(log_path),
+        "--plan", str(plan_path),
+        "--pack", "0",
+        "--exit-code", "0",
+        "--tested-sha", tested,
+        "--base-sha", tested,
+        "--runner-kind", "selfhosted",
+        "--runner-name", "pc-ci-1",
+        "--runner-profile", RUN_PACK.RUNNER_CONTRACT,
+    ]
+    baseline = subprocess.run(
+        [*common, "--output", str(baseline_receipt)],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    degraded = subprocess.run(
+        [
+            *common,
+            "--timing-output", str(blocked_parent / "execution-timing.jsonl"),
+            "--output", str(degraded_receipt),
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert baseline.returncode == 0, baseline.stdout + baseline.stderr
+    assert degraded.returncode == 0, degraded.stdout + degraded.stderr
+    assert degraded_receipt.read_bytes() == baseline_receipt.read_bytes()
+    assert json.loads(degraded_receipt.read_text(encoding="utf-8"))["result"] == "passed"
+    assert "::warning title=ci timing telemetry degraded::" in degraded.stdout
+
+
 def test_trusted_executor_publishes_timing_without_gate_authority() -> None:
     executor = yaml.safe_load(
         (ROOT / ".github" / "workflows" / "trusted-ci-executor.yml").read_text(

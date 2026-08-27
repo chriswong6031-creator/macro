@@ -3462,7 +3462,7 @@ def _write_timing_observations(
             flush=True,
         )
     finally:
-        with contextlib.suppress(FileNotFoundError):
+        with contextlib.suppress(OSError):
             temporary.unlink()
 
 
