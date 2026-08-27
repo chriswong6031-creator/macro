@@ -86,6 +86,47 @@ def test_alias_owner_is_also_flagged() -> None:
     assert "raw_githubusercontent" in _shapes(findings)
 
 
+@pytest.mark.parametrize(
+    "snippet",
+    [
+        'REMOTE = "git@github.com:chriswong6031-creator/macro.git"\n',
+        'REMOTE = "git@github.com:chriswong6031-creator/macro/"\n',
+        'REMOTE = "ssh://git@github.com/chriswong6031-creator/macro.git"\n',
+        'REMOTE = "ssh://git@github.com/chriswong6031-creator/macro/"\n',
+        'git remote set-url origin git@github.com:chriswong6031-creator/macro.git\n',
+    ],
+)
+def test_old_owner_git_transport_is_flagged(snippet: str) -> None:
+    findings = find_anonymous_macro_dependencies(snippet, "scripts/synthetic.sh")
+    assert "wrong_owner_transport" in _shapes(findings)
+
+
+@pytest.mark.parametrize(
+    "snippet",
+    [
+        'REMOTE = "git@github.com:mastermindx-market-intelligence/macro.git"\n',
+        'PR = "https://github.com/chriswong6031-creator/macro/pull/6363"\n',
+        'CMT = "https://github.com/chriswong6031-creator/macro/commit/deadbeef"\n',
+        'OTHER = "git@github.com:chriswong6031-creator/not-macro.git"\n',
+    ],
+)
+def test_canonical_ssh_and_human_old_owner_citations_are_not_wrong_owner_transport(
+    snippet: str,
+) -> None:
+    findings = find_anonymous_macro_dependencies(snippet, "scripts/synthetic.sh")
+    assert "wrong_owner_transport" not in _shapes(findings)
+
+
+def test_old_owner_ssh_subprocess_reports_the_transport_shape_only() -> None:
+    src = (
+        "import subprocess\n"
+        'REMOTE = "git@github.com:chriswong6031-creator/macro.git"\n'
+        "subprocess.run(['git', 'fetch', REMOTE])\n"
+    )
+    findings = find_anonymous_macro_dependencies(src, "scripts/synthetic.py")
+    assert _shapes(findings) == {"wrong_owner_transport"}
+
+
 def test_git_clone_subprocess_call_is_flagged() -> None:
     """shape 4 via subprocess argv, not just a bare string literal."""
     src = (

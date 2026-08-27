@@ -28,6 +28,8 @@ BANNED SHAPES
     4. https://github.com/<owner>/macro(.git)?      when used as a bare
        clone/fetch/ls-remote target
     5. api.github.com/repos/<owner>/macro/(contents|git/blobs|git/trees)
+    6. git@github.com:chriswong6031-creator/macro(.git)? or the
+       equivalent ssh:// Git transport (old-owner executable/config target)
 
 Shapes 1, 2, 3, and 5 are keyed on HOST + OWNER + REPO alone: those hosts have
 no legitimate use once bound to the macro owner/repo other than pointing at
@@ -96,6 +98,7 @@ CANONICAL_REPO = "macro"
 
 _OWNER_ALT = "(?:" + "|".join(re.escape(o) for o in CANONICAL_OWNERS) + ")"
 _REPO = re.escape(CANONICAL_REPO)
+_OLD_OWNER = re.escape("chriswong6031-creator")
 
 # ---------------------------------------------------------------------------
 # Shape regexes — see module docstring for the reasoning behind each.
@@ -132,6 +135,14 @@ _SHAPE_PATTERNS: dict[str, re.Pattern[str]] = {
         rf"https://github\.com/{_OWNER_ALT}/{_REPO}/"
         rf"(?:archive/|raw/|releases/download/|blob/[^\"'\s]*[?&]raw=)"
     ),
+    # Transport only: reject the retired personal owner when the string is an
+    # executable/config Git remote, while keeping its PR/commit citations and
+    # unrelated repositories lawful.
+    "wrong_owner_transport": re.compile(
+        rf"(?:git@github\.com:{_OLD_OWNER}/{_REPO}(?:\.git)?/?|"
+        rf"ssh://git@github\.com/{_OLD_OWNER}/{_REPO}(?:\.git)?/?)"
+        rf"(?=[\"'\s]|$)"
+    ),
 }
 
 # Any banned shape's host+owner+repo prefix, used by the AST same-file
@@ -140,7 +151,13 @@ _SHAPE_PATTERNS: dict[str, re.Pattern[str]] = {
 # (e.g. a constant that is later concatenated with more path). Built as the
 # alternation of the five shape patterns themselves so it can never drift
 # from them.
-_ANY_BANNED_PREFIX = re.compile("|".join(p.pattern for p in _SHAPE_PATTERNS.values()))
+_ANY_BANNED_PREFIX = re.compile(
+    "|".join(
+        pattern.pattern
+        for shape, pattern in _SHAPE_PATTERNS.items()
+        if shape != "wrong_owner_transport"
+    )
+)
 
 _GIT_FETCH_VERBS = {"clone", "fetch", "ls-remote"}
 _SUBPROCESS_FUNCS = {"run", "Popen", "check_output", "check_call"}
