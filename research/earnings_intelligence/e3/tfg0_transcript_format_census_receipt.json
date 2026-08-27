@@ -1,0 +1,117 @@
+{
+  "schema": "tfg0.transcript_format_census_receipt.v1",
+  "operation_key": "tfg0-transcript-format-census-20260827-v1",
+  "verdict": "SYSTEMIC_SOURCE_FORMAT_COVERAGE_GAP_CONFIRMED",
+  "wave_state": "TFG-0 RESEARCH_COMPLETE_PENDING_ARCHITECTURE_ACCEPTANCE",
+  "runtime_mutated": false,
+  "model_calls": 0,
+  "oos_reserved_bodies_inspected": 0,
+  "development_corpus": {
+    "selection_receipt": "research/earnings_intelligence/e3/tfg0_transcript_format_development_corpus_selection.json",
+    "eligible_count": 2909,
+    "selected_count": 16,
+    "byte_replayed": 16,
+    "source_revision_mismatch": 0,
+    "fetch_or_decode_failed": 0,
+    "total_segments": 1524,
+    "blank_role_segments": 672,
+    "blank_role_share": 0.4409448818897638,
+    "operator_segments": 165,
+    "operator_candidate_segments": 142,
+    "all_calls_contain_blank_role_segments": true,
+    "calls_with_only_operator_plus_blank_role_vocabulary": ["SCCO/2026Q2", "COF/2026Q2"]
+  },
+  "unchanged_compiler_baseline": {
+    "qa_reconstruction_path": "engine/company_intelligence/qa_reconstruction.py",
+    "calls_tested": 16,
+    "calls_status_ok": 0,
+    "calls_status_failed": 16,
+    "failure_codes": {
+      "operator_intro_identity_unparsed": 11,
+      "zero_qa_boundaries": 5
+    },
+    "calls_where_first_go_ahead_boundary_was_segment_0": 10,
+    "interpretation": "The literal go-ahead detector fails in both directions: it admits pre-Q presentation/IR handoffs as false boundaries and misses valid Q&A formats that never use go ahead."
+  },
+  "per_call_compiler_receipt": [
+    {"pair":"OCSL/2026Q3","status":"failed","failure":"operator_intro_identity_unparsed","qualifying_boundaries":[0,29,35,47]},
+    {"pair":"MBLY/2026Q2","status":"failed","failure":"zero_qa_boundaries","qualifying_boundaries":[]},
+    {"pair":"GEF/2026Q3","status":"failed","failure":"operator_intro_identity_unparsed","qualifying_boundaries":[0]},
+    {"pair":"ARQQ/2026Q2","status":"failed","failure":"zero_qa_boundaries","qualifying_boundaries":[]},
+    {"pair":"TRVI/2026Q2","status":"failed","failure":"operator_intro_identity_unparsed","qualifying_boundaries":[1,12,41,51,58,65,74,85]},
+    {"pair":"CTRE/2026Q2","status":"failed","failure":"operator_intro_identity_unparsed","qualifying_boundaries":[0,17,24,31,37,45,53,59,72,79,87,94]},
+    {"pair":"LTH/2026Q2","status":"failed","failure":"operator_intro_identity_unparsed","qualifying_boundaries":[0]},
+    {"pair":"UPBD/2026Q2","status":"failed","failure":"operator_intro_identity_unparsed","qualifying_boundaries":[0]},
+    {"pair":"SCCO/2026Q2","status":"failed","failure":"zero_qa_boundaries","qualifying_boundaries":[]},
+    {"pair":"AGM/2026Q2","status":"failed","failure":"zero_qa_boundaries","qualifying_boundaries":[]},
+    {"pair":"BANR/2026Q2","status":"failed","failure":"zero_qa_boundaries","qualifying_boundaries":[]},
+    {"pair":"FANG/2026Q2","status":"failed","failure":"operator_intro_identity_unparsed","qualifying_boundaries":[0]},
+    {"pair":"HTGC/2026Q2","status":"failed","failure":"operator_intro_identity_unparsed","qualifying_boundaries":[0,33,40,52,69,76,92]},
+    {"pair":"COF/2026Q2","status":"failed","failure":"operator_intro_identity_unparsed","qualifying_boundaries":[0]},
+    {"pair":"ARRY/2026Q2","status":"failed","failure":"operator_intro_identity_unparsed","qualifying_boundaries":[0,31,36,46,63,76,84,89]},
+    {"pair":"KREF/2026Q2","status":"failed","failure":"operator_intro_identity_unparsed","qualifying_boundaries":[0]}
+  ],
+  "source_format_findings": {
+    "boundary_terminal_styles_observed": [
+      "go_ahead",
+      "line_open_or_live",
+      "may_proceed",
+      "please_proceed",
+      "question_please",
+      "move_on_to_named_questioner"
+    ],
+    "boundary_ruling": "Terminal cue text is optional evidence, never the primary boundary predicate. A boundary must be positively bound to a named questioner and the next non-housekeeping source speaker.",
+    "role_metadata_ruling": "Segment role metadata is neither complete nor universally reliable. Two development calls have no non-housekeeping role vocabulary at all, and at least two calls contain explicit transcript-local title declarations that conflict with segment role labels.",
+    "transcript_local_role_evidence": {
+      "conservative_exact_name_calls_with_roleless_speaker_title_evidence": 6,
+      "examples": [
+        "OCSL/2026Q3",
+        "TRVI/2026Q2",
+        "FANG/2026Q2",
+        "COF/2026Q2"
+      ],
+      "note": "This count is deliberately conservative because exact speaker-name matching misses source-native aliases such as shortened/multi-surname forms. No external biography source was used."
+    },
+    "explicit_role_conflict_examples": [
+      {
+        "pair": "ARRY/2026Q2",
+        "finding": "held transcript text declares Keith Jennings as CFO and Neil Manning as President/COO while segment role metadata labels those speakers CEO and CFO respectively"
+      },
+      {
+        "pair": "CTRE/2026Q2",
+        "finding": "held transcript text declares James Callister as Chief Investment Officer while segment role metadata labels his speech CFO"
+      }
+    ]
+  },
+  "architecture_implication": {
+    "selected_approach": "TRANSCRIPT_LOCAL_EVIDENCE_NORMALIZATION",
+    "reject_phrase_whitelist_as_primary_method": true,
+    "reject_external_title_inference": true,
+    "reject_silent_nullable_role": true,
+    "preserve_source_supported_identity": true,
+    "requires_versioned_nested_respondent_identity_evidence_for_roster_derived_roles": true,
+    "no_new_store_or_control_plane": true
+  },
+  "unseen_format_holdout": {
+    "selection_receipt": "research/earnings_intelligence/e3/tfg1_transcript_format_holdout_selection.json",
+    "count": 8,
+    "bodies_inspected": 0,
+    "embargo": "Do not inspect until the TFG-1 implementation head is frozen and development tests are green."
+  },
+  "evidence": {
+    "selection_run_id": 33042834588,
+    "selection_job_id": 98420076116,
+    "selection_artifact_id": 9634504377,
+    "selection_artifact_sha256": "33cfa64643deb70b3690d78c33543898b3fcf1d49c2f1fdcb3e321f3b29608e5",
+    "compiler_census_artifact_id": 9634565138,
+    "compiler_census_artifact_sha256": "8e14d491fd92f596fcd7c89656a8b4540d8339857ed3b853ad6456ad6c29c4a7",
+    "structural_census_run_id": 33043092699,
+    "structural_census_job_id": 98420881749,
+    "structural_census_artifact_id": 9634595572,
+    "structural_census_artifact_sha256": "688f7c70bb97c31cf35227c317e7516c89f3ebf0e0bbb17cf994d9e121df5bf5",
+    "holdout_freeze_run_id": 33043554816,
+    "holdout_freeze_job_id": 98422311316,
+    "holdout_artifact_id": 9634756392,
+    "holdout_artifact_sha256": "464a65d696dc97ee82780c857924da72f3757b12f5f86c196470e943b456675f"
+  }
+}

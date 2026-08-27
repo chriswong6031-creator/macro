@@ -1,12 +1,13 @@
 # M1 Macro Consumer Hardening — Architecture Design
 
-Date: 2026-08-26  
-Status: DESIGN FREEZE CANDIDATE — no runtime mutation authorized by this document  
-Chairman intent: harden the B1-A continuation so M1 private-repository migration, runtime recovery, proof, and future maintenance proceed smoothly without repeated archaeology or accidental scope collision.  
-Canonical execution carrier: GitHub issue #6432 (`Macro private-repository cutover — M1 legacy consumer retirement and authenticated fetch`)  
-Linear projection: MAS-137; aggregate readiness projection: MAS-140  
-Protected Sol Skillpack used for this design: `mastermindx-market-intelligence/Mastermind@ebff50d65b09a2753b6cb9bea3cb2548522932e4` (`mastermind.sol_skillpack.v1`, v1.0.0, bootstrap major 1 compatible)  
+Date: 2026-08-26
+Status: DESIGN ACCEPTED — Chairman approval is recorded on canonical carrier #6432; no runtime mutation is authorized by this document
+Chairman intent: harden the B1-A continuation so M1 private-repository migration, runtime recovery, proof, and future maintenance proceed smoothly without repeated archaeology or accidental scope collision.
+Canonical execution carrier: GitHub issue #6432 (`Macro private-repository cutover — M1 legacy consumer retirement and authenticated fetch`)
+Linear projection: MAS-137; aggregate readiness projection: MAS-140
+Protected Sol Skillpack used for the original design: `mastermindx-market-intelligence/Mastermind@ebff50d65b09a2753b6cb9bea3cb2548522932e4` (`mastermind.sol_skillpack.v1`, v1.0.0, bootstrap major 1 compatible)
 Macro design base: `7d7734d073b0a63cd01fad31dcfbd5ded57abb56`
+Release reconciliation: on 2026-08-27, Sol atomically reloaded the current protected Skillpack at `mastermindx-market-intelligence/Mastermind@af43f356f4f7f34cb3514d1d1099b50444af8487`, reconciled this carrier onto Macro `main` at `463bb3b4b708a4748fc65a04250366ca94205186`, and found no material conflict with the governing B1 decisions or current runner/CI ownership boundaries.
 
 ## 1. Outcome
 

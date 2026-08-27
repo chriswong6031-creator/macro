@@ -1,36 +1,36 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "ROL-BULL-20260821",
-  "asof": "2026-08-25",
+  "asof": "2026-08-27",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 61.5,
-  "raw_confidence": 53.3,
-  "delta_vs_base": 1.5,
+  "management_confidence": 59.8,
+  "raw_confidence": 57.7,
+  "delta_vs_base": -0.2,
   "recommended_action": "hold",
   "human_state": "Needs Follow-Through",
   "components": {
-    "validity": 64.3,
+    "validity": 85.9,
     "progress": 0.0,
-    "pace": 98.5,
+    "pace": 93.5,
     "retention": 50.0,
-    "overlay": 61.0
+    "overlay": 67.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.721,
+    "dist_to_stop_r": 0.893,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 8.9,
-    "p1": -0.1861,
-    "p2": -0.0931,
+    "horizon_pct_used": 13.3,
+    "p1": -0.0711,
+    "p2": -0.0355,
     "p3": null,
-    "move_r": -0.279,
+    "move_r": -0.107,
     "mfe_r": 0.178,
     "mae_r": -0.279
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Ahead of Schedule",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-24",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 4,
-  "tau": 0.0889
+  "days_elapsed": 6,
+  "tau": 0.1333
 }

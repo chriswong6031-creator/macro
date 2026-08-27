@@ -13,6 +13,8 @@ import re
 import pytest
 import yaml
 
+from scripts.workflow_run_source import resolve_run_source
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DAILY = ROOT / ".github" / "workflows" / "daily.yml"
@@ -106,7 +108,9 @@ def _load(path: Path):
 
 
 def _run(step: dict[str, object]) -> str:
-    return str(step.get("run") or "")
+    # 512KB-cap diet: some bodies live in scripts/ci/ — resolve the effective
+    # source so step-body assertions keep seeing what the step actually runs.
+    return resolve_run_source(str(step.get("run") or ""), ROOT)
 
 
 def _step_index(steps: list[dict[str, object]], needle: str) -> int:

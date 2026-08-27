@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import shutil
+import subprocess
+import sys
+import tempfile
 from pathlib import Path
 
 import yaml
@@ -450,6 +454,85 @@ def test_canary_compare_runs_for_both_slot_counts_over_the_selected_packs() -> N
     )
     assert "--hosted-fragment" in command
     assert "--selfhosted-fragment" in command
+
+
+def test_canary_compare_uses_trusted_control_artifact_without_repo_checkout() -> None:
+    """Receipt comparison must not rematerialize the multi-gigabyte repository."""
+    document = workflow("selfhosted-ci-canary.yml")
+    plan_steps = document["jobs"]["plan"]["steps"]
+    preserve = next(
+        step["run"]
+        for step in plan_steps
+        if step.get("name") == "preserve trusted control helpers outside the candidate workspace"
+    )
+    assert 'mkdir -p "$RUNNER_TEMP/ci-canary-compare-control/scripts"' in preserve
+    for helper in (
+        "scripts/__init__.py",
+        "scripts/compare_ci_canary_receipts.py",
+        "scripts/ci_semantic_proof.py",
+    ):
+        assert helper in preserve
+
+    control_upload_index = next(
+        index
+        for index, step in enumerate(plan_steps)
+        if step.get("uses") == "actions/upload-artifact@v4"
+        and step.get("with", {}).get("name") == "ci-canary-compare-control"
+    )
+    control_upload = plan_steps[control_upload_index]
+    assert control_upload["with"]["path"] == "${{ runner.temp }}/ci-canary-compare-control"
+    assert control_upload["with"]["if-no-files-found"] == "error"
+    candidate_checkout_index = next(
+        index
+        for index, step in enumerate(plan_steps)
+        if step.get("name") == "checkout the exact candidate tree on hosted control"
+    )
+    candidate_plan_index = next(
+        index
+        for index, step in enumerate(plan_steps)
+        if step.get("name") == "freeze the current logical plan"
+    )
+    assert control_upload_index < candidate_checkout_index < candidate_plan_index
+
+    compare_steps = document["jobs"]["compare"]["steps"]
+    assert all(step.get("uses") != "actions/checkout@v4" for step in compare_steps)
+    control_download = next(
+        step
+        for step in compare_steps
+        if step.get("uses") == "actions/download-artifact@v4"
+        and step.get("with", {}).get("name") == "ci-canary-compare-control"
+    )
+    assert control_download["with"]["path"] == "${{ runner.temp }}/control"
+
+    command = next(
+        step["run"]
+        for step in compare_steps
+        if step.get("name")
+        == "compare logical jobs, failures, receipts, and semantic fragments"
+    )
+    assert 'python3 "$RUNNER_TEMP/control/scripts/compare_ci_canary_receipts.py"' in command
+    assert "python3 scripts/compare_ci_canary_receipts.py" not in command
+
+
+def test_canary_compare_control_bundle_is_runtime_complete() -> None:
+    """Reproduce the uploaded package layout and prove its entrypoint imports."""
+    with tempfile.TemporaryDirectory() as temp:
+        bundle = Path(temp) / "ci-canary-compare-control" / "scripts"
+        bundle.mkdir(parents=True)
+        for helper in (
+            "__init__.py",
+            "compare_ci_canary_receipts.py",
+            "ci_semantic_proof.py",
+        ):
+            shutil.copy2(ROOT / "scripts" / helper, bundle / helper)
+        completed = subprocess.run(
+            [sys.executable, str(bundle / "compare_ci_canary_receipts.py"), "--help"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    assert completed.returncode == 0, completed.stderr
+    assert "--hosted-fragment" in completed.stdout
 
 
 def test_three_slot_run_surfaces_red_after_preserving_the_receipt() -> None:

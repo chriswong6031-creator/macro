@@ -1,7 +1,7 @@
 {
   "schema": "influence.graph.v1",
   "as_of": "2026-06-19",
-  "generated_utc": "2026-08-26T05:51:51.993158+00:00",
+  "generated_utc": "2026-08-27T21:10:54.248060+00:00",
   "note": "Curated multi-actor influence graph: important people and the investable names/themes they are affiliated with (control, holdings, public advocacy, partnerships). Public-record only. provenance = FACT (filing/widely-reported structural fact) | DISCLOSED (self-reported trade/holding) | INFERRED (analytical link). The LLM extractor grows candidate edges; a human promotes them here.",
   "n_actors": 22,
   "n_entities": 19,
@@ -1120,11 +1120,12 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 5,
-      "alt_weighted": 1.65,
+      "alt_score": 6,
+      "alt_weighted": 2.1,
       "alt_channels": [
         "affiliation",
         "analyst_upgrade_cluster",
+        "gov_contract",
         "retail_buzz",
         "stocktwits_bull",
         "trump"
@@ -1668,6 +1669,22 @@
   "n_candidates": 0,
   "filings": [
     {
+      "date": "2026-08-26",
+      "form": "8-K",
+      "company": "New America Acquisition I Corp.",
+      "ticker": null,
+      "items": "5.02,7.01,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/2074878/000149315226040253/ex99-1.htm"
+    },
+    {
+      "date": "2026-08-26",
+      "form": "8-K",
+      "company": "New America Acquisition I Corp.",
+      "ticker": null,
+      "items": "5.02,7.01,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/2074878/000149315226040253/form8-k.htm"
+    },
+    {
       "date": "2026-08-24",
       "form": "S-1/A",
       "company": "Cryptex Digital Market Cap ETF",
@@ -1689,23 +1706,15 @@
       "company": "SunScout Holding Ltd",
       "ticker": "SNSC",
       "items": "",
-      "url": "https://www.sec.gov/Archives/edgar/data/2101240/000121390026089389/ea030207001ex10-1.htm"
-    },
-    {
-      "date": "2026-08-14",
-      "form": "6-K",
-      "company": "SunScout Holding Ltd",
-      "ticker": "SNSC",
-      "items": "",
-      "url": "https://www.sec.gov/Archives/edgar/data/2101240/000121390026089389/ea0302070-6k_sunscout.htm"
-    },
-    {
-      "date": "2026-08-14",
-      "form": "6-K",
-      "company": "SunScout Holding Ltd",
-      "ticker": "SNSC",
-      "items": "",
       "url": "https://www.sec.gov/Archives/edgar/data/2101240/000121390026089389/ea030207001ex99-2.htm"
+    },
+    {
+      "date": "2026-08-14",
+      "form": "8-K",
+      "company": "Dominari Holdings Inc.",
+      "ticker": "DOMH",
+      "items": "1.01,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/12239/000143774926027806/domh20260813_8k.htm"
     },
     {
       "date": "2026-08-14",
@@ -1721,39 +1730,23 @@
       "company": "Dominari Holdings Inc.",
       "ticker": "DOMH",
       "items": "1.01,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/12239/000143774926027806/domh20260813_8k.htm"
-    },
-    {
-      "date": "2026-08-14",
-      "form": "8-K",
-      "company": "Dominari Holdings Inc.",
-      "ticker": "DOMH",
-      "items": "1.01,9.01",
       "url": "https://www.sec.gov/Archives/edgar/data/12239/000143774926027806/ex_1004944.htm"
     },
     {
-      "date": "2026-08-11",
-      "form": "425",
-      "company": "Trump Media & Technology Group Corp.",
-      "ticker": null,
+      "date": "2026-08-14",
+      "form": "6-K",
+      "company": "SunScout Holding Ltd",
+      "ticker": "SNSC",
       "items": "",
-      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926026839/djt20260810i_425.htm"
+      "url": "https://www.sec.gov/Archives/edgar/data/2101240/000121390026089389/ea0302070-6k_sunscout.htm"
     },
     {
-      "date": "2026-08-11",
-      "form": "425",
-      "company": "Trump Media & Technology Group Corp.",
-      "ticker": null,
+      "date": "2026-08-14",
+      "form": "6-K",
+      "company": "SunScout Holding Ltd",
+      "ticker": "SNSC",
       "items": "",
-      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926026839/ex_1002726.htm"
-    },
-    {
-      "date": "2026-08-11",
-      "form": "425",
-      "company": "Trump Media & Technology Group Corp.",
-      "ticker": null,
-      "items": "",
-      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926026838/ex_1002728.htm"
+      "url": "https://www.sec.gov/Archives/edgar/data/2101240/000121390026089389/ea030207001ex10-1.htm"
     },
     {
       "date": "2026-08-11",
@@ -1762,6 +1755,14 @@
       "ticker": null,
       "items": "",
       "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926026838/djt20260810j_425.htm"
+    },
+    {
+      "date": "2026-08-11",
+      "form": "425",
+      "company": "Trump Media & Technology Group Corp.",
+      "ticker": null,
+      "items": "",
+      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926027049/djt20260811_425.htm"
     }
   ]
 }

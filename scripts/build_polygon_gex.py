@@ -1,5 +1,39 @@
 """Polygon options-OI accrual — the GEX FOUNDATION (display / research only).
 
+╔══════════════════════════════════════════════════════════════════════════╗
+║ SOURCE AUTHORITY — READ BEFORE DIAGNOSING THIS LANE                      ║
+║                                                                          ║
+║ THETADATA is the canonical Mastermind options source. This Massive/      ║
+║ Polygon estate is LEGACY and is EXPECTED TO BE DARK.                     ║
+║                                                                          ║
+║ Chairman source ruling 2026-08-22,                                       ║
+║ DEC:AD-OPTIONS-CANONICAL-SOURCE-THETADATA: ThetaData covers EOD chains,  ║
+║ OI, Greeks/IV, trades + NBBO and the intraday options data Terminal      ║
+║ serves. Massive/Polygon is a STOCK-data source and is NOT the canonical  ║
+║ options source. The blocker that asked for the Massive/Polygon options   ║
+║ entitlement back was RETIRED by that ruling.                             ║
+║                                                                          ║
+║ THERE IS NO OPTIONS-ENTITLED POLYGON/MASSIVE KEY, and one is not coming. ║
+║ The chain entitlement 403'd on 2026-08-13/14 and never returned (stock/  ║
+║ news kept returning 200 — that is why a key APPEARS present: it is the   ║
+║ stock key). So `auth_or_entitlement_failure` on every symbol here is the ║
+║ expected steady state, NOT an outage. Do not open an incident, do not    ║
+║ hunt for a credential to rotate, do not "restore" the entitlement.       ║
+║                                                                          ║
+║ Consequence worth knowing: data/options_flow/summary_*.parquet is fed    ║
+║ from this estate, so it is frozen at session 2026-08-12, which keeps     ║
+║ site/flowleaders/leaders.json at stale:true and starves the              ║
+║ plab_flow_leader / plab_flow_washout pick-lab books. Repointing that     ║
+║ lane at ThetaData, or retiring those boards, is a Sol / WS:ADVANCED-     ║
+║ DATA-OPTIONS decision — NOT a silent swap for a coding agent to make     ║
+║ (the superseded DNR row existed precisely to reserve it).                ║
+║                                                                          ║
+║ Cost of not reading this: 2026-08-26, a session diagnosed the settled    ║
+║ ruling as a fresh 13-day credential outage and shipped a "rotate the     ║
+║ key" remediation. See DSC:A-HEALTH-RECEIPT-NOBODY-READS-IS-NOT-AN-       ║
+║ ESCALATION.                                                              ║
+╚══════════════════════════════════════════════════════════════════════════╝
+
 Each run snapshots the configured underlyings' option chains via Polygon and:
   1. writes the RAW per-strike chain to data/polygon_gex/chains/{YYYY-MM-DD}.parquet
      — SESSION-partitioned & append-only (never rewrites history, so the daily
@@ -836,6 +870,88 @@ def _summarize(raw: pd.DataFrame, sym: str, cfg: dict) -> pd.DataFrame | None:
     return pd.DataFrame({k: [summ.get(k)] for k in SUMMARY_KEYS}, index=[asof])
 
 
+def _dominant_failure_reason(census: dict) -> str | None:
+    """The reason code explaining the most failed underlyings, or None.
+
+    Ties break on the code NAME so one outage never renders two different
+    messages across runs (an annotation that changes wording run-to-run reads
+    as two incidents to whoever is scanning the Actions summary)."""
+    reasons = {k: v for k, v in (census.get("failure_reasons") or {}).items() if v}
+    if not reasons:
+        return None
+    return max(reasons.items(), key=lambda kv: (kv[1], kv[0]))[0]
+
+
+def _sessions_dark(asof: date, now: datetime | None = None) -> int | None:
+    """NYSE sessions the stored chain history is behind the calendar, or None.
+
+    None when nothing is stored yet (a first-ever run is not an outage) or when
+    a stray filename will not parse. Deliberately the SAME `sessions_behind`
+    the downstream flow-leaders freshness SLA uses (scripts/build_flow_leaders
+    ._check_stale), so the number the operator reads here is the number that
+    trips `stale:true` on site/flowleaders/leaders.json."""
+    stored = sorted(p.stem for p in _chains_dir().glob("*.parquet"))
+    if not stored:
+        return None
+    try:
+        newest = date.fromisoformat(stored[-1])
+    except ValueError:
+        return None
+    return nyse_calendar.sessions_behind(newest, now=now)
+
+
+def _annotate_zero_capture(asof: date, census: dict, now: datetime | None = None) -> None:
+    """Emit the line-start annotation a total zero-capture owes the operator.
+
+    TWO SEVERITIES, because this estate has two very different zero-captures.
+
+    `auth_or_entitlement_failure` here is the EXPECTED STEADY STATE, not an
+    incident. This Massive/Polygon options estate is RETIRED: its chain
+    entitlement regressed to HTTP 403 on 2026-08-13/14 and never returned, and
+    the Chairman source ruling of 2026-08-22
+    (DEC:AD-OPTIONS-CANONICAL-SOURCE-THETADATA) made ThetaData the canonical
+    options source and explicitly RETIRED the blocker that asked for this
+    entitlement back. Massive/Polygon is a STOCK-data source; there is no
+    options-entitled key here to rotate, and one is not coming. So this case
+    gets a ::notice — an ::error every night for a lane that is dead by ruling
+    is alarm fatigue, and it is how a real red in this file would get scrolled
+    past. It also stops the next session diagnosing a settled decision as a
+    fresh outage (which is exactly what happened on 2026-08-26; see
+    DSC:A-HEALTH-RECEIPT-NOBODY-READS-IS-NOT-AN-ESCALATION).
+
+    ANY OTHER reason (network, parse, rate limit, collapsed universe) is a real
+    zero-capture on a lane that was supposed to work, and keeps the ::error.
+
+    WHY AN ANNOTATION AT ALL (2026-08-26): this branch used to call only
+    log.warning(), and a logger can never become a GitHub annotation — the
+    house log format prefixes the line, so "::error" lands mid-line and Actions
+    drops it (repo law; tests/test_gh_annotation_line_start.py). Bare print +
+    flush because stdout is block-buffered when piped in CI."""
+    reason = _dominant_failure_reason(census) or "unclassified"
+    dark = _sessions_dark(asof, now=now)
+    span = (f"; chain store is {dark} NYSE session(s) behind the calendar"
+            if dark else "")
+    attempted = census.get("attempted_underlyings")
+    requested = census.get("requested_underlyings")
+
+    if reason == "auth_or_entitlement_failure":
+        print(f"::notice title=polygon-options-estate-retired::session {asof}: "
+              f"captured ZERO underlyings ({attempted} attempted of "
+              f"{requested} requested), all auth_or_entitlement_failure{span}. "
+              f"EXPECTED — the Massive/Polygon options estate is retired by "
+              f"DEC:AD-OPTIONS-CANONICAL-SOURCE-THETADATA (2026-08-22); "
+              f"ThetaData is the canonical options source and Massive/Polygon "
+              f"is a stock-data source. There is NO options key to rotate. "
+              f"No action; do not open an outage for this.", flush=True)
+        return
+
+    print(f"::error title=polygon-accrual-dark::session {asof}: captured ZERO "
+          f"underlyings ({attempted} attempted of {requested} requested) — "
+          f"dominant failure reason {reason}{span}. Nothing was written; "
+          f"OI is point-in-time and this session cannot be backfilled.",
+          flush=True)
+
+
 def accrue(as_of=None, *, force: bool = False, _now: datetime | None = None) -> dict:
     """Snapshot + persist one SESSION. Returns a small status dict (logging/tests).
 
@@ -1131,6 +1247,10 @@ def accrue(as_of=None, *, force: bool = False, _now: datetime | None = None) -> 
         # "skipped_not_better", which is reserved for a real comparison against a
         # stored capture that this attempt failed to beat).
         health = _health_verdict(census["coverage_pct"], 0)
+        # The receipt below is the FORENSIC record; this is the ALARM. Both are
+        # required — see _annotate_zero_capture for the 13-day outage that
+        # proved a health receipt nobody reads is not an escalation.
+        _annotate_zero_capture(asof, census, now=now)
         log.warning("polygon: snapshot empty — nothing accrued (%s)", census)
         _append_health_attempt(asof, decision="nothing_captured", health=health,
                                census=census, now=now)

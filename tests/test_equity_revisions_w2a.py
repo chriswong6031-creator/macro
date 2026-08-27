@@ -252,6 +252,29 @@ class _Ticker:
         return self._revenue
 
 
+class _AnalysisStub:
+    """Minimal stub of yfinance's private Analysis object, holding only the raw
+    `_earnings_trend` attribute the collector's guarded anchor read looks for."""
+
+    def __init__(self, earnings_trend):
+        self._earnings_trend = earnings_trend
+
+
+def _trend_frame(pairs: dict[str, str | None]) -> pd.DataFrame:
+    """Synthetic raw earningsTrend items: one row per (period, endDate) pair,
+    mirroring yfinance's `Analysis._earnings_trend` shape closely enough for
+    `.to_dict(orient="records")` to yield `{"period": ..., "endDate": ...}` dicts."""
+    return pd.DataFrame({"period": list(pairs.keys()), "endDate": list(pairs.values())})
+
+
+class _TickerWithAnchors(_Ticker):
+    """`_Ticker` plus a synthetic private `_analysis._earnings_trend` anchor source."""
+
+    def __init__(self, *, earnings=None, revenue=None, earnings_trend=None):
+        super().__init__(earnings=earnings, revenue=revenue)
+        self._analysis = _AnalysisStub(earnings_trend) if earnings_trend is not None else None
+
+
 def _run(
     tmp_path: Path,
     session: str,
@@ -352,6 +375,172 @@ def test_missing_field_is_typed_unestimable_not_zero(tmp_path: Path):
     average = rows[(rows["metric"] == "EPS") & (rows["horizon_label_raw"] == "0q") & (rows["observation_type"] == "average")].iloc[0]
     assert pd.isna(average["value"])
     assert average["missingness_reason"] == "UNESTIMABLE"
+
+
+# ---------------------------------------------------------------------------
+# Mutation gate 1 heal — zero-analyst groups must not silently become value=0.0
+# (production audit, commit 576959b11804: BRK-B EPS 0q recorded average=high=low=0.0
+# with missingness_reason NULL while covering_analyst_count was 0; COKE/CRVL shared
+# a byte-identical provider_payload_hash proving the zeros were the provider's empty-
+# response shape, not company facts). See collectors/equity_revisions._expectation_rows.
+# ---------------------------------------------------------------------------
+
+_NON_COUNT_OBSERVATION_TYPES = ("average", "median", "high", "low", "growth", "year_ago")
+
+
+def _zero_analyst_eps_frame() -> pd.DataFrame:
+    """EPS frame whose '0q' horizon is the provider's empty-response shape: every
+    numeric field (including numberOfAnalysts) reads 0.0, mirroring the audited
+    BRK-B / COKE / CRVL payloads.  The '+1y' horizon stays normally covered so the
+    fix is proven scoped to the (metric, horizon) group, not the whole ticker."""
+    return pd.DataFrame(
+        {
+            "avg": [0.0, 11.0],
+            "median": [0.0, 10.9],
+            "high": [0.0, 13.0],
+            "low": [0.0, 9.0],
+            "numberOfAnalysts": [0, 21],
+            "growth": [0.0, 0.2],
+            "yearAgoEps": [0.0, 9.0],
+        },
+        index=["0q", "+1y"],
+    )
+
+
+def test_zero_analyst_group_types_every_non_count_field_as_unestimable(tmp_path: Path):
+    """(a) A (metric, horizon) group with covering_analyst_count == 0 must emit
+    value=None + missingness_reason='UNESTIMABLE' for average/median/high/low/
+    growth/year_ago, regardless of the literal (zero) number the provider returned."""
+    _run(tmp_path, "scheduled-1", _Ticker(earnings=_zero_analyst_eps_frame(), revenue=_revenue_frame()))
+    rows = _observations(tmp_path)
+    group = rows[(rows["metric"] == "EPS") & (rows["horizon_label_raw"] == "0q")]
+    for observation_type in _NON_COUNT_OBSERVATION_TYPES:
+        row = group[group["observation_type"] == observation_type].iloc[0]
+        assert pd.isna(row["value"]), f"{observation_type} should be None, got {row['value']!r}"
+        assert row["missingness_reason"] == "UNESTIMABLE", (
+            f"{observation_type} missingness_reason should be UNESTIMABLE, got {row['missingness_reason']!r}"
+        )
+
+
+def test_zero_analyst_group_keeps_the_literal_zero_count_with_null_missingness(tmp_path: Path):
+    """(b) covering_analyst_count itself keeps the literal provider 0, with NULL
+    missingness — it is the genuine, interpretable field a consumer reads to detect
+    the non-estimable condition, and must never itself be swept into missingness."""
+    _run(tmp_path, "scheduled-1", _Ticker(earnings=_zero_analyst_eps_frame(), revenue=_revenue_frame()))
+    rows = _observations(tmp_path)
+    covering = rows[
+        (rows["metric"] == "EPS")
+        & (rows["horizon_label_raw"] == "0q")
+        & (rows["observation_type"] == "covering_analyst_count")
+    ].iloc[0]
+    assert covering["value"] == 0
+    assert pd.isna(covering["missingness_reason"])
+
+
+def test_covered_group_with_a_genuine_zero_value_keeps_it_as_a_real_observation(tmp_path: Path):
+    """(c) Regression guard for the 7 legitimate zeros the audit found across ALK,
+    AOSL, ARE, CBRL, CNC: a covered group (analyst count >= 1) that happens to carry
+    a real 0.0 estimate — e.g. a low estimate of 0.0 alongside 19 analysts — must
+    still record that 0.0 with NULL missingness, never swept into UNESTIMABLE."""
+    revenue = _revenue_frame()
+    revenue.loc["0q", "low"] = 0.0
+    revenue.loc["0q", "numberOfAnalysts"] = 19
+    _run(tmp_path, "scheduled-1", _Ticker(earnings=_estimate_frame(), revenue=revenue))
+    rows = _observations(tmp_path)
+    low = rows[
+        (rows["metric"] == "revenue")
+        & (rows["horizon_label_raw"] == "0q")
+        & (rows["observation_type"] == "low")
+    ].iloc[0]
+    assert low["value"] == 0.0
+    assert pd.isna(low["missingness_reason"])
+    covering = rows[
+        (rows["metric"] == "revenue")
+        & (rows["horizon_label_raw"] == "0q")
+        & (rows["observation_type"] == "covering_analyst_count")
+    ].iloc[0]
+    assert covering["value"] == 19
+    assert pd.isna(covering["missingness_reason"])
+
+
+def test_group_with_analyst_count_column_entirely_absent_is_non_estimable(tmp_path: Path):
+    """(d) A group whose covering-analyst-count field is entirely absent (not merely
+    zero) must also be treated as NON-ESTIMABLE — 'unavailable OR equal to 0' per the
+    frozen spec — and forces the same typed-missingness fields."""
+    earnings = _estimate_frame().drop(columns=["numberOfAnalysts"])
+    _run(tmp_path, "scheduled-1", _Ticker(earnings=earnings, revenue=_revenue_frame()))
+    rows = _observations(tmp_path)
+    group = rows[(rows["metric"] == "EPS") & (rows["horizon_label_raw"] == "0q")]
+    for observation_type in _NON_COUNT_OBSERVATION_TYPES:
+        row = group[group["observation_type"] == observation_type].iloc[0]
+        assert pd.isna(row["value"])
+        assert row["missingness_reason"] == "UNESTIMABLE"
+    covering = group[group["observation_type"] == "covering_analyst_count"].iloc[0]
+    assert pd.isna(covering["value"])
+    assert covering["missingness_reason"] == "NOT_APPLICABLE"
+
+
+def test_zero_analyst_group_never_downgrades_an_already_typed_not_applicable_field(tmp_path: Path):
+    """Regression guard (coordinator amendment): in a NON-ESTIMABLE group, a field
+    that _field_value already resolved to NOT_APPLICABLE — no such column exists in
+    the provider frame at all, distinct from a column that exists but carries no
+    estimable number — must keep NOT_APPLICABLE, never be downgraded to UNESTIMABLE.
+    Only a field _field_value resolved as PRESENT (missingness None; the actual
+    mutation-gate violation of an interpretable value with NULL missingness) is
+    forced into typed missingness by this repair."""
+    earnings = _zero_analyst_eps_frame().drop(columns=["growth"])
+    _run(tmp_path, "scheduled-1", _Ticker(earnings=earnings, revenue=_revenue_frame()))
+    rows = _observations(tmp_path)
+    group = rows[(rows["metric"] == "EPS") & (rows["horizon_label_raw"] == "0q")]
+
+    growth = group[group["observation_type"] == "growth"].iloc[0]
+    assert pd.isna(growth["value"])
+    assert growth["missingness_reason"] == "NOT_APPLICABLE", (
+        f"growth should stay NOT_APPLICABLE (no such column in the frame), not be "
+        f"downgraded to UNESTIMABLE; got {growth['missingness_reason']!r}"
+    )
+
+    # The genuinely PRESENT fields in the same non-estimable group are still repaired.
+    for observation_type in ("average", "median", "high", "low", "year_ago"):
+        row = group[group["observation_type"] == observation_type].iloc[0]
+        assert pd.isna(row["value"])
+        assert row["missingness_reason"] == "UNESTIMABLE"
+
+    covering = group[group["observation_type"] == "covering_analyst_count"].iloc[0]
+    assert covering["value"] == 0
+    assert pd.isna(covering["missingness_reason"])
+
+
+def test_observation_id_formula_is_undisturbed_by_the_missingness_repair(tmp_path: Path):
+    """(e) observation_id is a deterministic hash of (session, provider, record_class,
+    payload_hash, ticker, metric, raw_horizon, observation_type) — it must never
+    depend on value/missingness, for both the newly-repaired non-estimable rows and
+    the unaffected covered rows, proving the tuple/hashing was not disturbed."""
+    _run(tmp_path, "scheduled-1", _Ticker(earnings=_zero_analyst_eps_frame(), revenue=_revenue_frame()))
+    rows = _observations(tmp_path)
+    attempt = _attempts(tmp_path).iloc[0]
+    session_id = attempt["collection_session_id"]
+    payload_hash = attempt["response_payload_hash"]
+
+    def _expected_id(record_class: str, ticker: str, metric: str, raw_horizon: str, observation_type: str) -> str:
+        return revisions._canonical_sha256((
+            session_id, "yfinance", record_class, payload_hash, ticker, metric, raw_horizon, observation_type,
+        ))
+
+    # A row forced into UNESTIMABLE by this repair still carries the untouched id.
+    non_estimable_row = rows[
+        (rows["metric"] == "EPS") & (rows["horizon_label_raw"] == "0q") & (rows["observation_type"] == "average")
+    ].iloc[0]
+    assert non_estimable_row["observation_id"] == _expected_id(
+        "earnings_estimate", "ACME", "EPS", "0q", "average"
+    )
+    # An unaffected covered row keeps the same formula too.
+    covered_row = rows[
+        (rows["metric"] == "EPS") & (rows["horizon_label_raw"] == "+1y") & (rows["observation_type"] == "average")
+    ].iloc[0]
+    assert covered_row["observation_id"] == _expected_id(
+        "earnings_estimate", "ACME", "EPS", "+1y", "average"
+    )
 
 
 def test_partial_null_and_malformed_attempts_remain_typed_receipts(tmp_path: Path):
@@ -517,3 +706,208 @@ def test_legacy_latest_and_history_contract_is_unchanged(monkeypatch, tmp_path: 
     assert list(latest.columns) == ["breadth", "n_analysts", "asof"]
     assert list(history.columns) == ["ticker", "breadth", "n_analysts", "asof", "date"]
     assert history["ticker"].tolist() == ["ACME"]
+
+
+# ---------------------------------------------------------------------------
+# SRC-A1 fiscal period-end anchor (DATA_CLOCK_RIGHTS_MATRIX.md mutation gate 3):
+# capture the provider's own `endDate` into `period_end`, and refuse to record a
+# fiscal rollover (same relative horizon label, different underlying period) as
+# an analyst revision.  Synthetic frames + synthetic prior-state DataFrames only
+# — no network, no reads from data/.
+# ---------------------------------------------------------------------------
+
+
+def test_period_end_populated_verbatim_from_anchor_for_both_metrics(tmp_path: Path):
+    """(a) period_end is populated verbatim from the supplied anchor mapping, for
+    the correct horizon, on both EPS and revenue rows."""
+    ticker = _TickerWithAnchors(
+        earnings=_estimate_frame(),
+        revenue=_revenue_frame(),
+        earnings_trend=_trend_frame({"0q": "2026-09-30", "+1y": "2027-09-30"}),
+    )
+    _run(tmp_path, "scheduled-1", ticker)
+    rows = _observations(tmp_path)
+
+    for metric in ("EPS", "revenue"):
+        zeroq = rows[(rows["metric"] == metric) & (rows["horizon_label_raw"] == "0q") & (rows["observation_type"] == "average")].iloc[0]
+        plus1y = rows[(rows["metric"] == metric) & (rows["horizon_label_raw"] == "+1y") & (rows["observation_type"] == "average")].iloc[0]
+        assert zeroq["period_end"] == "2026-09-30"
+        assert plus1y["period_end"] == "2027-09-30"
+
+
+def test_fiscal_period_and_fiscal_year_stay_null_even_with_an_anchor_present(tmp_path: Path):
+    """(b) fiscal_period and fiscal_year remain None unconditionally, even when a
+    real period_end anchor is present — deriving them would be a guessed fiscal
+    mapping, which the contract forbids."""
+    ticker = _TickerWithAnchors(
+        earnings=_estimate_frame(),
+        revenue=_revenue_frame(),
+        earnings_trend=_trend_frame({"0q": "2026-09-30", "+1y": "2027-09-30"}),
+    )
+    _run(tmp_path, "scheduled-1", ticker)
+    rows = _observations(tmp_path)
+    assert rows["period_end"].notna().all()
+    assert rows["fiscal_period"].isna().all()
+    assert rows["fiscal_year"].isna().all()
+
+
+def test_unanchored_horizon_stays_null_while_anchored_siblings_are_populated(tmp_path: Path):
+    """(c) A horizon with no anchor (its item is simply absent from the raw
+    earningsTrend items) yields period_end None, while sibling horizons that do
+    have an anchor are still populated."""
+    ticker = _TickerWithAnchors(
+        earnings=_estimate_frame(),
+        revenue=_revenue_frame(),
+        earnings_trend=_trend_frame({"+1y": "2027-09-30"}),  # "0q" has no item at all
+    )
+    _run(tmp_path, "scheduled-1", ticker)
+    rows = _observations(tmp_path)
+
+    zeroq = rows[(rows["metric"] == "EPS") & (rows["horizon_label_raw"] == "0q") & (rows["observation_type"] == "average")].iloc[0]
+    plus1y = rows[(rows["metric"] == "EPS") & (rows["horizon_label_raw"] == "+1y") & (rows["observation_type"] == "average")].iloc[0]
+    assert pd.isna(zeroq["period_end"])
+    assert plus1y["period_end"] == "2027-09-30"
+
+
+def test_gate3_fiscal_rollover_is_not_recorded_as_a_revision(tmp_path: Path):
+    """(d) THE GATE-3 TEST: a prior "0q" observation with an earlier period_end and
+    a different value, followed by a new "0q" observation with a later period_end,
+    must be left a new original — never a fabricated supersession."""
+    session1 = _TickerWithAnchors(
+        earnings=_estimate_frame(average=10.0, second_average=11.0),
+        revenue=_revenue_frame(),
+        earnings_trend=_trend_frame({"0q": "2026-09-30", "+1y": "2027-09-30"}),
+    )
+    _run(tmp_path, "scheduled-1", session1)
+
+    session2 = _TickerWithAnchors(
+        earnings=_estimate_frame(average=15.0, second_average=11.0),
+        revenue=_revenue_frame(),
+        earnings_trend=_trend_frame({"0q": "2026-12-31", "+1y": "2027-09-30"}),
+    )
+    _run(tmp_path, "scheduled-2", session2)
+
+    rows = _observations(tmp_path)
+    rolled = rows[
+        (rows["collection_session_id"] == "scheduled-2")
+        & (rows["metric"] == "EPS")
+        & (rows["horizon_label_raw"] == "0q")
+        & (rows["observation_type"] == "average")
+    ].iloc[0]
+    assert rolled["value"] == 15.0
+    assert rolled["period_end"] == "2026-12-31"
+    assert rolled["correction_state"] == "original"
+    assert rolled["correction_state"] != "supersedes"
+    assert pd.isna(rolled["supersedes_observation_id"])
+
+
+def test_gate3_same_period_end_changed_value_is_still_a_genuine_revision(tmp_path: Path):
+    """(e) The genuine-revision case still works: same period_end on both sides
+    with a changed value still yields correction_state 'supersedes' with the
+    prior observation_id linked."""
+    session1 = _TickerWithAnchors(
+        earnings=_estimate_frame(average=10.0, second_average=11.0),
+        revenue=_revenue_frame(),
+        earnings_trend=_trend_frame({"0q": "2026-09-30", "+1y": "2027-09-30"}),
+    )
+    _run(tmp_path, "scheduled-1", session1)
+    before = _observations(tmp_path)
+    prior = before[
+        (before["metric"] == "EPS") & (before["horizon_label_raw"] == "+1y") & (before["observation_type"] == "average")
+    ].iloc[0]
+
+    session2 = _TickerWithAnchors(
+        earnings=_estimate_frame(average=10.0, second_average=12.5),
+        revenue=_revenue_frame(),
+        earnings_trend=_trend_frame({"0q": "2026-09-30", "+1y": "2027-09-30"}),  # unchanged period_end
+    )
+    _run(tmp_path, "scheduled-2", session2)
+    after = _observations(tmp_path)
+    successor = after[
+        (after["collection_session_id"] == "scheduled-2")
+        & (after["metric"] == "EPS")
+        & (after["horizon_label_raw"] == "+1y")
+        & (after["observation_type"] == "average")
+    ].iloc[0]
+    assert successor["value"] == 12.5
+    assert successor["period_end"] == "2027-09-30"
+    assert successor["correction_state"] == "supersedes"
+    assert successor["supersedes_observation_id"] == prior["observation_id"]
+
+
+def test_unanchored_rows_keep_todays_supersession_behavior(tmp_path: Path):
+    """(f) The unanchored case is unchanged: both sides period_end None with a
+    changed value still yields 'supersedes', exactly as today (plain _Ticker
+    carries no _analysis attribute at all, so anchors are never obtained)."""
+    _run(tmp_path, "scheduled-1")
+    before = _observations(tmp_path).copy(deep=True)
+    assert before["period_end"].isna().all()
+
+    changed = _Ticker(earnings=_estimate_frame(average=12.5), revenue=_revenue_frame())
+    _run(tmp_path, "scheduled-2", changed)
+    after = _observations(tmp_path)
+    successor = after[
+        (after["collection_session_id"] == "scheduled-2")
+        & (after["metric"] == "EPS")
+        & (after["horizon_label_raw"] == "0q")
+        & (after["observation_type"] == "average")
+    ].iloc[0]
+    assert pd.isna(successor["period_end"])
+    assert successor["correction_state"] == "supersedes"
+
+
+def test_anchor_extraction_failure_never_escapes_and_period_end_stays_null(tmp_path: Path):
+    """(g) An anchor-extraction failure (the private attribute raises) still
+    produces a complete, lawful row set with period_end None throughout and no
+    exception escaping the collection — attempt status is unaffected."""
+
+    class _TickerAnalysisRaises(_Ticker):
+        @property
+        def _analysis(self):
+            raise RuntimeError("analysis internals unavailable")
+
+    result = _run(tmp_path, "scheduled-1", _TickerAnalysisRaises())
+    assert result == {"attempts": 1, "observations": 28}
+    rows = _observations(tmp_path)
+    attempts = _attempts(tmp_path)
+    assert rows["period_end"].isna().all()
+    assert attempts.iloc[0]["status"] == "success"
+
+
+def test_anchor_extraction_handles_a_missing_analysis_attribute(tmp_path: Path):
+    """(g) The private attribute is simply absent (plain _Ticker, no _analysis at
+    all) — same lawful, exception-free outcome as the raising case."""
+    result = _run(tmp_path, "scheduled-1", _Ticker())
+    assert result == {"attempts": 1, "observations": 28}
+    rows = _observations(tmp_path)
+    assert rows["period_end"].isna().all()
+
+
+def test_anchor_extraction_handles_an_unexpected_earnings_trend_shape(tmp_path: Path):
+    """(g) The private attribute is present but not a DataFrame or a list of
+    records (an unexpected shape) — still no exception, still no anchors."""
+    ticker = _TickerWithAnchors(
+        earnings=_estimate_frame(), revenue=_revenue_frame(),
+        earnings_trend="not-a-frame-or-list",
+    )
+    result = _run(tmp_path, "scheduled-1", ticker)
+    assert result == {"attempts": 1, "observations": 28}
+    rows = _observations(tmp_path)
+    assert rows["period_end"].isna().all()
+
+
+def test_anchor_extraction_skips_items_missing_end_date(tmp_path: Path):
+    """(c)/(g) An item present in earningsTrend but lacking endDate (here: NaN,
+    the shape a pandas-constructed frame yields for a missing cell) contributes
+    no anchor for that horizon, while a sibling item's endDate is unaffected."""
+    ticker = _TickerWithAnchors(
+        earnings=_estimate_frame(),
+        revenue=_revenue_frame(),
+        earnings_trend=_trend_frame({"0q": None, "+1y": "2027-09-30"}),
+    )
+    _run(tmp_path, "scheduled-1", ticker)
+    rows = _observations(tmp_path)
+    zeroq = rows[(rows["metric"] == "EPS") & (rows["horizon_label_raw"] == "0q") & (rows["observation_type"] == "average")].iloc[0]
+    plus1y = rows[(rows["metric"] == "EPS") & (rows["horizon_label_raw"] == "+1y") & (rows["observation_type"] == "average")].iloc[0]
+    assert pd.isna(zeroq["period_end"])
+    assert plus1y["period_end"] == "2027-09-30"

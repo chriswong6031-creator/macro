@@ -11,7 +11,7 @@ import pytest
 
 from engine.stock_identity.fingerprint import spec_hash
 from engine import us_turn_watch as turn_watch
-from engine.us_candidate_episode import reconcile_observations
+from engine.us_candidate_episode import canonical_json, reconcile_observations
 from engine.us_candidate_episode_intake import (
     candidate_observations,
     door_observations,
@@ -212,6 +212,37 @@ def test_non_anchor_sources_attach_or_suppress_and_preserve_exact_radar_event_id
     assert _ids(radar_batch) == {"radar-expert-17"}
 
 
+def test_candidate_nested_parquet_records_are_canonical_json_safe(tmp_path: Path):
+    """A list-of-struct Parquet cell must remain receipt-hashable after read-back."""
+    data = tmp_path / "data"
+    _identity_spine(data)
+    candidates = data / "us_prophet_rank" / "candidates"
+    candidates.mkdir(parents=True)
+    pd.DataFrame([{
+        "stamp_date": "2026-11-27",
+        "ticker": "ALFA",
+        "board_definition": "us_prophet_v2",
+        "spine__records": [{"signal_id": "qledger:test", "score": 1.0}],
+    }]).to_parquet(candidates / "2026-11.parquet", index=False)
+
+    batch = candidate_observations(data, load_identity_spine(data))
+
+    assert len(batch.observations) == 1
+    assert batch.suppressions == ()
+    assert batch.observations[0]["source_event_id"] == (
+        "candidate:2026-11-27:ALFA:us_prophet_v2"
+    )
+    expected_row = {
+        "stamp_date": "2026-11-27",
+        "ticker": "ALFA",
+        "board_definition": "us_prophet_v2",
+        "spine__records": [{"signal_id": "qledger:test", "score": 1.0}],
+    }
+    assert batch.observations[0]["source_receipt"] == (
+        "sha256:" + sha256(canonical_json(expected_row).encode("utf-8")).hexdigest()
+    )
+
+
 def test_canonical_source_keys_and_multirow_accounting_are_stable(tmp_path: Path):
     """Mutable feature/null changes cannot mint a second source identity or drop a row."""
     data = tmp_path / "data"
@@ -313,3 +344,27 @@ def test_identity_and_intake_receipts_attest_the_exact_once_read_file_bytes(tmp_
     assert candidate_batch.source_receipts[0]["files"] == [
         {"path": str(candidate_path), "sha256": candidate_hash}
     ]
+
+
+def test_parquet_numpy_dressed_rows_intake_cleanly(tmp_path: Path):
+    """B1's first natural scheduled run (33036497832, 2026-08-27T14:40Z) died with
+    'Object of type ndarray is not JSON serializable' and aborted the ledgers job
+    before its commit: parquet round-trips list-typed cells back as numpy arrays,
+    and the receipt hash's canonical_json is deliberately fail-closed. Rows are
+    normalized to plain Python before hashing (_plain_row); this pins the numpy
+    dress never crashing intake again."""
+    import numpy as np  # noqa: PLC0415 — the dress under test
+
+    data = tmp_path / "data"
+    _identity_spine(data)
+    spine = load_identity_spine(data)
+    candidates = data / "us_prophet_rank" / "candidates"
+    candidates.mkdir(parents=True)
+    pd.DataFrame([{
+        "stamp_date": "2026-11-27", "ticker": "ALFA", "board_definition": "us_prophet_v2",
+        "tier": "curated", "pool_lane": None, "prophet_score": np.float64(0.5),
+        "confluence_tags": np.array(["a", "b"]),
+    }]).to_parquet(candidates / "2026-11.parquet", index=False)
+
+    batch = candidate_observations(data, spine)
+    assert len(batch.observations) + len(batch.suppressions) >= 1

@@ -57,6 +57,7 @@ _CODE_ROOT = str(Path(__file__).resolve().parent.parent)
 sys.path.insert(0, _CODE_ROOT)
 
 from engine.prophet_live import armed_pack as AP  # noqa: E402
+from engine.prophet_live import live_states as LS  # noqa: E402
 from engine.prophet_live import r2io  # noqa: E402
 
 log = logging.getLogger("build_prophet_live_pack")
@@ -142,6 +143,51 @@ def _workers(explicit: int | None) -> int:
         return max(1, min(os.cpu_count() or 1, 8))
 
 
+def _split_completed_series(series: dict[str, Any], *, completed_through: str
+                            ) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Partition US close series by whether their LAST bar is a completed NYSE session.
+
+    D12 was a one-name-to-whole-pack contagion: ``AP.as_of_date`` intentionally reports
+    the raw maximum store tip, and ``AP.session_lag`` intentionally treats a bar at or
+    ahead of that tip as current. A Saturday/future/same-session-before-close row could
+    therefore stamp the whole pack and also enter the gate itself. US admission must
+    reject that NAME before either operation. We do not trim the bad row: doing so would
+    make this pack probe a series different from the board owner's series.
+
+    This law is US-only. ``armed_pack`` is shared with China, so its raw ``as_of_date``
+    semantics remain unchanged and the NYSE calendar stays here at the US pack owner.
+    """
+    from datetime import date as _date  # noqa: PLC0415
+    from lib.nyse_calendar import is_session  # noqa: PLC0415
+    import pandas as pd  # noqa: PLC0415
+
+    bound = _date.fromisoformat(str(completed_through)[:10])
+    valid: dict[str, Any] = {}
+    invalid: dict[str, Any] = {}
+    for tkr, close in series.items():
+        try:
+            day = pd.Timestamp(close.index[-1]).date()
+        except Exception:  # noqa: BLE001 — malformed tip is not admissible evidence
+            invalid[tkr] = close
+            continue
+        if pd.isna(day) or day > bound or not is_session(day):
+            invalid[tkr] = close
+        else:
+            valid[tkr] = close
+    return valid, invalid
+
+
+def _name_entry(rec: dict[str, Any], probe: dict[str, Any] | None) -> dict[str, Any]:
+    """US publication wrapper for D12's explicit invalid-tip non-verdict."""
+    entry = AP.name_entry(rec, probe)
+    if rec.get("skip") == "invalid_series_tip":
+        # No gate ran. ``dormant`` would falsely say the name was evaluated and nothing
+        # was forming. Keep the shared AP vocabulary unchanged for CN; the US-specific
+        # invalid-tip state is projected here by the owner that minted the skip reason.
+        entry["state"] = "stale"
+    return entry
+
+
 def build(*, cfg: dict[str, Any] | None = None, now: datetime | None = None,
           workers: int | None = None, limit: int | None = None) -> dict[str, Any]:
     """Run both phases across a process pool and return the assembled payload."""
@@ -164,13 +210,24 @@ def build(*, cfg: dict[str, Any] | None = None, now: datetime | None = None,
             skipped["no_series"] = skipped.get("no_series", 0) + 1
             continue
         series[tkr] = s
+    usable_n = len(series)
+    completed_through = LS.last_completed_session(now)
+    series, invalid_series = _split_completed_series(
+        series, completed_through=completed_through)
     tip = AP.as_of_date(series.values())
-    print(f"prophet-live pack: universe={len(uni)} usable={len(series)} tip={tip} "
+    if invalid_series:
+        skipped["invalid_series_tip"] = len(invalid_series)
+    print(f"prophet-live pack: universe={len(uni)} usable={usable_n} "
+          f"admitted={len(series)} invalid_tip={len(invalid_series)} "
+          f"completed_through={completed_through} tip={tip} "
           f"load={time.time() - t0:.1f}s", flush=True)
 
     max_lag = int(c["max_lag_sessions"])
     fresh: list[str] = []
     recs: dict[str, dict[str, Any]] = {}
+    for tkr, s in invalid_series.items():
+        recs[tkr] = AP.stale_record(tkr, s, 0)
+        recs[tkr]["skip"] = "invalid_series_tip"
     import pandas as pd  # noqa: PLC0415
     for tkr, s in series.items():
         lag = AP.session_lag(str(pd.Timestamp(s.index[-1]).date()), tip)
@@ -279,7 +336,7 @@ def build(*, cfg: dict[str, Any] | None = None, now: datetime | None = None,
         # PUBLISHED edge and at the false-side bound the bisection measured. This is
         # the check that can actually fail; the membership self_check below cannot.
         t_verify = time.time()
-        names = {t: AP.name_entry(r, probes.get(t)) for t, r in recs.items()}
+        names = {t: _name_entry(r, probes.get(t)) for t, r in recs.items()}
         checks = {t: AP.edge_checks(e, probes.get(t)) for t, e in names.items()}
         checks = {t: v for t, v in checks.items() if v}
         vfuts = {ex.submit(_verify, (t, v)): t for t, v in checks.items()}
@@ -318,7 +375,7 @@ def build(*, cfg: dict[str, Any] | None = None, now: datetime | None = None,
 
     _withhold(set(checks) - verified, "unverified")
     _withhold(mismatched, "edge_mismatch")
-    names = {t: AP.name_entry(r, probes.get(t)) for t, r in recs.items()}
+    names = {t: _name_entry(r, probes.get(t)) for t, r in recs.items()}
     # The membership check is structural, runs over the ASSEMBLED payload, and is
     # reachable via config (a high bisect_iters can put a trigger within one 4-dp step
     # of the close). Same per-name treatment, then re-assemble.
@@ -326,7 +383,7 @@ def build(*, cfg: dict[str, Any] | None = None, now: datetime | None = None,
     if mem_bad:
         bad.extend(mem_bad.values())
         _withhold(set(mem_bad), "membership_mismatch")
-        names = {t: AP.name_entry(r, probes.get(t)) for t, r in recs.items()}
+        names = {t: _name_entry(r, probes.get(t)) for t, r in recs.items()}
     payload = AP.assemble(names, as_of=tip or "", cfg=c, universe_n=len(uni),
                           wanted_n=wanted, gate_calls=gate_calls, edges_checked=edges,
                           probe_seconds=probe_seconds, price_adjustment=px_adjustment,
@@ -441,6 +498,21 @@ def main(argv: list[str] | None = None) -> int:
         if not r2io.put_json(r2io.PACK_KEY, payload):
             print("::warning title=prophet-live-pack::R2 publish failed or "
                   "credentials absent — the evaluator will dark on no_pack", flush=True)
+            # A failed/credential-less publish is no longer reported as success.
+            #
+            # The authoritative nightly board stays protected: the caller at
+            # .github/workflows/daily.yml:3583-3591 runs this under `set +e`, captures
+            # `rc=$?`, warns when it is nonzero, and then `exit 0`s the step
+            # unconditionally. So this nonzero code cannot red the nightly — and,
+            # equally, it cannot show up in the step's own conclusion either.
+            #
+            # What it DOES buy is that daily.yml's `if [ "$rc" -ne 0 ]` warning was
+            # unreachable dead code until now, because this function returned 0 on
+            # every path including a silent no-publish. That warning can finally fire.
+            # The loud external signal for a stale pack is the pack-freshness grading
+            # in scripts/check_vps_live_health.py and scripts/freshness_sentinel.py,
+            # not this exit code.
+            return 1
     return 0
 
 
