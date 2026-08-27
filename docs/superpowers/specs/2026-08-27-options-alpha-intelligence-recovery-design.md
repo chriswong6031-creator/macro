@@ -73,7 +73,7 @@ The durable moat is not a proprietary-looking 0–100 number. It is the combinat
 
 ### 10/10 end state
 
-Options Alpha becomes a first-class live research/signaling desk that can discover unusual campaigns, explain the evidence, show what was knowable at decision time, abstain honestly, learn prospectively, graduate only validated statistical families, and ultimately hand a complete exact-option research plan into the existing Issue Desk without creating parallel authority or lifecycle systems.
+Options Alpha becomes a first-class live research/signaling desk that can discover unusual campaigns, explain the evidence, show what was knowable at decision time, abstain honestly, learn prospectively, graduate only statistically earned families, and ultimately hand a complete exact-option research plan into the existing Issue Desk without creating parallel authority or lifecycle systems.
 
 ---
 
@@ -83,24 +83,24 @@ The dead-looking Terminal surface understates the current estate.
 
 | Capability | State | Canonical evidence / interpretation |
 |---|---|---|
-| ThetaData as Mastermind options source | `PROVEN_LIVE` source authority | `DEC:AD-OPTIONS-CANONICAL-SOURCE-THETADATA` names ThetaData for EOD chains, OI, Greeks/IV, trade+NBBO, and Terminal intraday. |
+| ThetaData canonical options source/data plane | `PROVEN_LIVE` | `DEC:AD-OPTIONS-CANONICAL-SOURCE-THETADATA` names ThetaData for EOD chains, OI, Greeks/IV, trade+NBBO, and Terminal intraday; AD-1T1 separately supplies current production evidence for the T1 source spine. |
 | Full-universe ThetaData T1 incremental cadence | `PROVEN_LIVE` | `WS:ADVANCED-DATA-OPTIONS` records AD-1T1 proof on two consecutive normal sessions and source coverage `0.9467 >= 0.90`. |
 | AD-1 EOD Options Intelligence Brief implementation | `BUILT_NOT_PROVEN` end-to-end | Producer is merged; canonical source blocker was solved by AD-1T1; product consumer/acceptance remains AD-1T2. |
 | Live flow event production | `PARTIAL` as a product dependency | Existing `com.mastermind.liveflow` M1/R2 plane and Macro `live_flow` code are the source to extend; the architecture authorizes no second collector. Current separate Intraday Flow P0 workstream still carries its own production-proof status. |
 | Durable Flow ML population | `PROVEN_LIVE` accrual / `DARK_OR_DISCONNECTED` scoring | `data/flow_signals/gate.json` at the action-time base records `69,041` rows, `25` sessions, `scored:false`, `status:building_history`, and zero scored rows. |
-| FS-3 flow-score preregistration | `PROVEN_LIVE` as source law | `research/OPTIONS_ALPHA_FLOW_SCORE_AMENDMENT.md` is Fable-ratified and separates the unsigned event-quality target from future signed direction. |
+| FS-3 flow-score preregistration | `SPEC_ONLY` (ratified research source law) | `research/OPTIONS_ALPHA_FLOW_SCORE_AMENDMENT.md` is Fable-ratified and separates the unsigned event-quality target from future signed direction. Ratified architecture is not runtime proof. |
 | FS-4 model/trainer implementation | `BUILT_NOT_PROVEN` / pre-gate | `scripts/ops_train_flow_score.py`, `lib/flow_score.py`, and `config/flow_score.yml` exist. The configured feature list expects measured quote-rule inputs that the durable live-event ledger does not currently preserve completely. |
-| Options signal episodes | `PROVEN_LIVE` zero-authority evidence | Current campaign checkpoint binds `5,263` immutable episodes. `options.signal_episode/v1` preserves exact PIT identity and explicitly grants zero signal/trade authority. |
-| Options campaign revision/outcome spine | `PROVEN_LIVE` zero-authority evidence | Current checkpoint binds `5,041` campaign records and `17,136` campaign outcome rows; `training_eligible:false` and all authority booleans false. |
+| Options signal episode evidence | `PARTIAL` | Current committed campaign checkpoint binds `5,263` immutable episodes and the v1 contract preserves exact PIT identity with zero authority. The committed file proves evidence exists; it is not by itself proof that every producer/consumer is currently live. |
+| Options campaign revision/outcome evidence | `PARTIAL` | Current committed checkpoint binds `5,041` campaign records and `17,136` campaign outcome rows; `training_eligible:false` and all authority booleans false. Runtime liveness is not inferred solely from the committed checkpoint. |
 | Exact option P&L on episode outcomes | `NOT_BUILT` in v1 | `options.signal_episode_outcome/v1` intentionally declares option outcomes unavailable because no executable NBBO quote path is attached. |
 | Options Alpha Terminal primary surface | `DARK_OR_DISCONNECTED` from the useful evidence estate | It consumes `options.prophet_shadow/v1`, a projection intentionally forbidden from inventing direction, probability, contract, or lifecycle. |
-| Current Terminal heuristic Flow Score | `PROVEN_LIVE` as presentation heuristic, `REJECTED_BY_DESIGN` as alpha probability | `terminal/lib/flowScore.ts` is a deterministic fixed-weight attention heuristic. It must not compete semantically with the governed Macro calibration path. |
-| Operator Issue Desk | `PROVEN_LIVE` implementation boundary, no automatic trade authority | Existing `options.issue_desk/v1` owns operator research-plan records and already prevents automatic rank/gate/size/trade authority. |
-| MomoEdge completion benchmark | `PROVEN_LIVE` as preregistered research ruler, goal incomplete | Catch-up and surpass are frozen prospectively in `research/momoedge/MOMOEDGE_COMPLETION_BENCHMARK_PREREG_2026-08-11.md`. |
+| Current Terminal heuristic Flow Score | `BUILT_NOT_PROVEN` as a presentation heuristic / `REJECTED_BY_DESIGN` as alpha probability | `terminal/lib/flowScore.ts` is a deterministic fixed-weight attention heuristic. This architecture does not infer production proof from source code, and the heuristic must not compete semantically with governed Macro calibration. |
+| Operator Issue Desk | `BUILT_NOT_PROVEN` as the intended operator boundary | Existing `options.issue_desk/v1` implementation owns operator research-plan records and prevents automatic rank/gate/size/trade authority. OA-0 does not claim production acceptance without a separate receipt. |
+| MomoEdge completion benchmark | `SPEC_ONLY` (registered research ruler) | Catch-up and surpass are frozen prospectively in `research/momoedge/MOMOEDGE_COMPLETION_BENCHMARK_PREREG_2026-08-11.md`; registration is not completion evidence. |
 
 ### Key organizational disagreement repaired by this architecture
 
-`WS:ADVANCED-DATA-OPTIONS` correctly marks AD-1T1 `PROVEN_LIVE` and says AD-1T2 is next, but its bottom-level `next_action` still instructs a fresh session to execute AD-1T1. That stale projection must be corrected to AD-1T2 in this records carrier so future sessions do not repeat solved infrastructure.
+`WS:ADVANCED-DATA-OPTIONS` correctly marks AD-1T1 `PROVEN_LIVE` and says AD-1T2 is next, but its bottom-level `next_action` still instructs a fresh session to execute AD-1T1. That stale projection is corrected to AD-1T2 in this records carrier so future sessions do not repeat solved infrastructure.
 
 ---
 
@@ -443,7 +443,7 @@ Evidence families should remain independently visible:
 - catalyst/event facts when available under their owners;
 - explicit evidence gaps.
 
-**No generic weighted confluence score is authorized by this composition.** Statistical interactions are research questions and require preregistration/promotion.
+**No generic weighted confluence score is authorized by this composition.** Under current `DNR:KILL-POSITIONING-FUSION`, a new Options Alpha predictive score/ranker may not fuse OI/GEX/other positioning keys merely because the features are available or preregistered. The first OA families therefore do not gain new predictive positioning inputs from this architecture. Existing ratified families keep only the exact feature authority they already possess. Any future OA family that wants to add EOD positioning/structure keys to a predictive score requires an explicit DNR scope adjudication/amendment **before** the test, not just an ordinary model preregistration.
 
 ---
 
@@ -453,7 +453,7 @@ Evidence families should remain independently visible:
 
 The Fable-ratified S-FLOWML family remains a useful event-quality/meta-label research family. Its current target is intentionally unsigned: it estimates an underlying outcome as registered, not "this call means stock up" or "this put means stock down."
 
-OA-0 does not silently repurpose that target.
+OA-0 does not silently repurpose that target or widen its registered features with new EOD positioning keys.
 
 ### 11.2 FS-5 remains required
 
@@ -463,7 +463,8 @@ The existing FS-4 implementation does not earn authority merely because code exi
 - registered population/cohort rules must hold;
 - deferred FS-5 CV/gauntlet requirements must be executed honestly;
 - required sample floors and calibration tests must pass;
-- the promotion decision must be separately adjudicated.
+- the promotion decision must be separately adjudicated;
+- the promotion review must explicitly check current `DNR:KILL-FUSED-COMPOSITE` applicability. The existing FS registration is research source law, not by itself a live-authority exception. If the current DNR scope is ambiguous for a trained calibrated probability, an explicit DNR adjudication is a promotion prerequisite rather than something an implementation worker may infer.
 
 `config/flow_score.yml` remains `scoring.enabled: false` until that process is satisfied.
 
@@ -477,6 +478,7 @@ It must not:
 - assume call-buy = stock-up or put-buy = stock-down without grading;
 - use the suspended tick-rule Theta tape as directional authority;
 - revive a killed DOI/skew/charm thesis by renaming it;
+- add positioning-fusion features without the explicit DNR scope ruling required by §10;
 - convert LLM narrative into signal authority.
 
 A signed family may be promoted only through its own prospective/OOS gate and exact declared horizon.
@@ -610,7 +612,7 @@ Terminal currently carries a fixed-weight `flowScore.ts`. OA-0 freezes the seman
 ### `Calibrated Outcome Probability`
 
 - Macro-owned statistical output;
-- only exists when the relevant registered family passes its prospective gate;
+- only exists when the relevant registered family passes its prospective gate **and** any required current DNR authority adjudication;
 - carries model/family/version, horizon, cohort, N, calibration status and receipts;
 - never silently falls back to the heuristic.
 
@@ -643,8 +645,8 @@ This architecture was reviewed against current `research/DO_NOT_REBUILD.md` at t
 ### Binding DNRs
 
 - **`DNR:KILL-LLM-ORIGINATION`** — satisfied: LLMs explain only; no origination/score/escalation.
-- **`DNR:KILL-FUSED-COMPOSITE`** — satisfied: no generic blended alpha score is introduced.
-- **`DNR:KILL-POSITIONING-FUSION`** — satisfied: OI/GEX/skew context remains separately visible; no positioning keys are fused into a new live score outside the specifically amended Prophet arena.
+- **`DNR:KILL-FUSED-COMPOSITE`** — satisfied at OA-0: no generic blended alpha score is introduced. OA-2 promotion must explicitly adjudicate current scope for any trained calibrated probability rather than inferring an exception.
+- **`DNR:KILL-POSITIONING-FUSION`** — satisfied: OI/GEX/skew context remains separately visible; no new Options Alpha predictive score/ranker receives positioning keys under this architecture. Any future test that would fuse them requires an explicit DNR scope ruling before testing.
 - **`DNR:HOLD-THETA-TAPE`** — satisfied: suspended tick-rule direction is not used as directional authority. Measured trade-vs-NBBO execution location is treated as deterministic microstructure evidence, not tick-rule sign authority.
 - **`DNR:KILL-DOI-FAMILY`** — satisfied: the killed DOI signal family is not revived. Matched-contract OI change may be displayed as native descriptive context; it carries no new OA score/rank/gate weight unless a future explicit adjudication changes that scope.
 - **`DNR:KILL-SKEW-DECELERATION`** — satisfied: skew level/change may be displayed as context; the unsupported skew-deceleration bullish thesis is not reintroduced.
@@ -721,9 +723,7 @@ Mission: the Options Alpha primary lane becomes the candidate stream/detail expe
 
 ### OA-2 — FS-5 completion
 
-Mission: execute the existing preregistered flow-event model gauntlet using correctly populated event-time features. Preserve the existing unsigned event-quality target.
-
-No signed directional probability is granted here.
+Mission: execute the existing preregistered flow-event model gauntlet using correctly populated event-time features. Preserve the existing unsigned event-quality target and do not widen it with new positioning-fusion features. Any live probability promotion remains separately adjudicated under current DNR law.
 
 ### OA-3 — exact-option NBBO outcome/lifecycle
 
@@ -731,7 +731,7 @@ Mission: add a separately versioned option-outcome contract under the existing e
 
 ### OA-4 — signed/right-conditioned research family
 
-Mission: preregister and test a separate directional family using lawful event-time evidence and exact registered horizons. Promotion only through its own prospective/OOS gate.
+Mission: preregister and test a separate directional family using lawful event-time evidence and exact registered horizons. Promotion only through its own prospective/OOS gate, with any required DNR scope ruling obtained before a prohibited feature/test is attempted.
 
 ### OA-5 — existing Issue Desk integration
 
@@ -777,7 +777,7 @@ Long-form program completion requires all four layers:
 - structured event/campaign facts;
 - independent EOD context families;
 - transparent candidate formation;
-- prospectively calibrated models where earned;
+- prospectively calibrated models where earned and lawful under current DNR scope;
 - exact-option outcomes.
 
 ### Product
