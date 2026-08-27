@@ -11,17 +11,29 @@
 
 ## 1. Observable mission
 
-Determine whether Mastermind currently has a causal, correction-safe, rights-safe, point-in-time Weekly/Daily/4H U.S. equity panel suitable for Technical Opportunity research.
+Determine whether Mastermind currently has a causal, correction-safe, rights-safe, point-in-time Weekly/Daily/4H U.S. equity panel suitable for the first Technical Opportunity Compression Release experiment.
 
-Return one unambiguous verdict per plane:
+Audit Monthly derivation and context capability now so the full long-horizon end-state does not require a second broad data archaeology later. True tactical intraday remains owned by Live Entry Radar; W2-0 may crosswalk its source and clocks but may not create another feed, store, or event owner.
 
-- **PROVEN_READY**
-- **PARTIAL**
-- **BROKEN**
-- **NOT_BUILT**
-- **REJECTED_BY_DESIGN**
+Return, for every source plane and for the combined research panel:
 
-If the panel is not ready, freeze the smallest lawful W2 implementation architecture using existing market-data owners. Do not build the panel in W2-0.
+1. one canonical company capability state:
+   - `PROVEN_LIVE`
+   - `BUILT_NOT_PROVEN`
+   - `PARTIAL`
+   - `DARK_OR_DISCONNECTED`
+   - `BROKEN`
+   - `SPEC_ONLY`
+   - `NOT_BUILT`
+   - `REJECTED_BY_DESIGN`
+2. one W3 gate result:
+   - `ADMIT`
+   - `HOLD`
+   - `REJECT`
+
+`ADMIT` means the exact frozen panel contract may be used for W3 research. It does not mean the eventual Technical Opportunity product is live or validated.
+
+If the panel is not admitted, freeze the smallest lawful W2 implementation architecture using existing market-data owners. Do not build the panel in W2-0.
 
 ---
 
@@ -70,11 +82,19 @@ At the pinned archaeology:
 - Live Entry Radar has price-receipt and tactical event-time contracts;
 - no current artifact has yet been accepted as the whole-universe, deep-history, correction-safe Technical Opportunity 4H research panel.
 
+The integrated deep 4H research-panel capability is therefore `NOT_BUILT` at the W0 decision level even though individual collector, entitlement, and store components are `PARTIAL` or `BUILT_NOT_PROVEN`.
+
 Reverify on current heads.
 
 ---
 
 ## 5. Exact scope
+
+### Repository and modification scope
+
+- All W2-0 authored reports, receipts, validators, and tests live in `macro` on one W2-0 carrier.
+- `mastermind-terminal` is read-only archaeology and parity evidence in W2-0.
+- No production store, collector, chart, Radar, or data path is mutated.
 
 ### Stores and producers
 
@@ -105,6 +125,13 @@ For every candidate input:
 - adjusted-price vintage;
 - research `as_of` and `known_at`;
 - provisional/final status.
+
+### Horizons
+
+- Daily and Weekly for the first vertical;
+- candidate 4H constructions for the first vertical;
+- Monthly derivation and completed-month availability as later structural context;
+- Radar-owned 5m/tactical source and clock crosswalk only, with no second owner.
 
 ### Universe
 
@@ -143,13 +170,15 @@ Do not:
 - select a vendor by intuition;
 - infer rights from successful API calls;
 - call a short smoke file a deep panel;
-- create a synthetic 4H series from daily bars.
+- create a synthetic 4H series from daily bars;
+- transfer tactical-intraday ownership out of Live Entry Radar;
+- treat a W3 `ADMIT` gate as product, signal, or production completion.
 
 ---
 
 ## 7. Required output artifacts
 
-Proposed W2-0-owned paths:
+W2-0-owned paths, after an exact pickup collision recheck:
 
 - `research/technical_opportunity/W2_DATA_PLANE_CENSUS.md`
 - `research/technical_opportunity/w2_store_contracts.json`
@@ -159,7 +188,14 @@ Proposed W2-0-owned paths:
 - `research/technical_opportunity/w2_rights_matrix.json`
 - `research/technical_opportunity/W2_DATA_CLOCK_ARCHITECTURE_FREEZE.md`
 - `research/technical_opportunity/W2_REPORT.md`
-- one continuation handoff
+- `scripts/research/validate_toi_w2_store_contracts.py`
+- `scripts/research/run_toi_w2_clock_fixtures.py`
+- `scripts/research/run_toi_w2_terminal_parity.py`
+- `scripts/research/run_toi_w2_coverage.py`
+- `tests/test_toi_w2_data_clock.py`
+- `agentos/handoffs/TECHNICAL-OPPORTUNITY-INTELLIGENCE-W2-0-<YYYY-MM-DD>.md`
+
+The date token in the handoff filename is the actual close date; every other path above is exact.
 
 No permanent data or engine path changes in W2-0.
 
@@ -171,12 +207,14 @@ Each candidate store receives:
 
 ```json
 {
+  "schema_version": "toi.store_contract.v1",
   "store_id": "",
   "owner_program": "",
   "producer_paths": [],
   "consumer_paths": [],
   "physical_location": [],
   "source_vendor": "",
+  "source_rights_ref": null,
   "universe_definition": "",
   "first_date": null,
   "last_date": null,
@@ -200,15 +238,18 @@ Each candidate store receives:
   },
   "coverage_receipt": "",
   "integrity_findings": [],
-  "verdict": "PROVEN_READY|PARTIAL|BROKEN|NOT_BUILT|REJECTED_BY_DESIGN"
+  "capability_state": "PROVEN_LIVE|BUILT_NOT_PROVEN|PARTIAL|DARK_OR_DISCONNECTED|BROKEN|SPEC_ONLY|NOT_BUILT|REJECTED_BY_DESIGN",
+  "w3_admission": "ADMIT|HOLD|REJECT"
 }
 ```
 
 Strict JSON, no NaN or implicit defaults.
 
+`source_rights_ref` must be non-null before any rights field is `allowed`. `w3_admission=ADMIT` requires all load-bearing source planes to have a proven contract; it may not be inferred by majority vote across mixed states.
+
 ---
 
-## 9. Required 4H constructions
+## 9. Required bar constructions
 
 W2-0 must define and compare at least:
 
@@ -232,9 +273,17 @@ W2-0 must define and compare at least:
 - early-close rule;
 - independent method/trial identity.
 
+### Completed Monthly context
+
+- calendar/exchange month-end rule;
+- completed-month `known_at`;
+- holiday and partial-month handling;
+- adjustment and correction basis;
+- explicit statement that Monthly is later context and not a W3 trigger horizon.
+
 The operator must also inspect Terminal’s current displayed “4H” construction. Research and product parity is a measured question, not an assumption.
 
-No pooling across constructions.
+No pooling across 4H constructions.
 
 ---
 
@@ -248,6 +297,7 @@ No pooling across constructions.
 - A bar is final only when its registered close time and source delay/correction budget have elapsed.
 - Empty vendor results are distinguished from request failure and no entitlement.
 - Coverage denominators are point-in-time eligible subjects, not current survivors.
+- Monthly and tactical-intraday residue remains explicitly classified even when not admitted to the first W3 vertical.
 
 ---
 
@@ -263,6 +313,7 @@ No pooling across constructions.
 - split checks;
 - point-in-time membership joins;
 - Terminal parity comparisons;
+- Live Entry Radar ownership/clock crosswalk;
 - rights-document reference extraction.
 
 ### Statistical
@@ -279,7 +330,7 @@ No return prediction or alpha tests.
 
 ### Model-generated
 
-Models may summarize contracts and flag discrepancies. They may not decide legal rights, silently repair bars, infer missing timestamps, or choose a canonical clock without deterministic receipts and principal review.
+Models may summarize contracts and flag discrepancies. They may not decide legal rights, silently repair bars, infer missing timestamps, choose a canonical clock, or grant W3 admission without deterministic receipts and principal review.
 
 ---
 
@@ -294,12 +345,14 @@ Models may summarize contracts and flag discrepancies. They may not decide legal
 7. Audit price adjustment, splits, reused tickers, delistings, and corrections.
 8. Reconstruct source availability and finality clocks.
 9. Derive `4H-CLOCK` and `195M-RTH` on a fixed small symbol/date corpus.
-10. Compare with Terminal chart bars and any current Macro 4H consumer.
-11. Audit rights by use case.
-12. Classify each plane and the combined panel.
-13. If not ready, freeze one extension architecture over existing owners.
-14. Run adversarial review.
-15. Validate artifacts and return the continuation handoff.
+10. Derive and receipt completed Monthly context from the candidate daily owner.
+11. Compare with Terminal chart bars and any current Macro 4H consumer.
+12. Crosswalk Radar-owned tactical clocks without changing them.
+13. Audit rights by use case.
+14. Classify each plane using the canonical capability vocabulary and assign the W3 gate.
+15. If not admitted, freeze one extension architecture over existing owners.
+16. Run adversarial review.
+17. Validate artifacts and return the continuation handoff.
 
 ---
 
@@ -310,6 +363,8 @@ At minimum:
 - normal full session;
 - early-close session;
 - DST transition week;
+- month-end ending on a holiday/weekend;
+- partial first/last listing month;
 - symbol with missing minutes;
 - symbol with a split;
 - symbol with ticker reuse or identity hazard;
@@ -335,13 +390,15 @@ Return to Sol immediately if:
 - the point-in-time universe denominator cannot be defined;
 - delisted or ticker-reuse hazards make the planned claim unreadable;
 - a current carrier owns the same data/clock paths;
-- the operator is tempted to begin outcome tests before the clock verdict.
+- the operator is tempted to begin outcome tests before the clock verdict;
+- `ADMIT` would require treating a `PARTIAL`, `BUILT_NOT_PROVEN`, or unknown load-bearing source as proven;
+- tactical intraday parity would require changing Live Entry Radar ownership in this wave.
 
 Do not weaken the claim to make the panel look ready. Classify it honestly.
 
 ---
 
-## 15. Acceptance tests and production proof
+## 15. Acceptance tests and evidence
 
 W2-0 is a research/architecture wave. Proof is deterministic and real-data, not production deployment.
 
@@ -350,23 +407,27 @@ Minimum gates:
 - every store record validates;
 - every claimed clock is demonstrated on real timestamps;
 - at least 20 symbol-session parity cases per 4H construction;
+- completed Monthly context passes month-end and partial-month fixtures;
 - zero unexplained lookahead in the fixture set;
 - split and correction receipts;
 - current and historical universe coverage tables;
 - rights matrix with primary documents or explicit unknown;
-- exact current verdict;
+- one canonical capability state and W3 gate per plane;
 - no data/runtime path changed.
 
-Required commands include:
+Required proof:
 
 ```bash
 python3 scripts/agentos.py validate
-python3 <w2_store_contract_validator>
-python3 <w2_bar_clock_fixture_runner>
-python3 <w2_terminal_parity_runner>
-python3 <w2_coverage_runner>
+python3 scripts/research/validate_toi_w2_store_contracts.py
+python3 scripts/research/run_toi_w2_clock_fixtures.py
+python3 scripts/research/run_toi_w2_terminal_parity.py
+python3 scripts/research/run_toi_w2_coverage.py
+python3 -m pytest tests/test_toi_w2_data_clock.py -q
 git diff --check
 ```
+
+Hostile tests must prove that unknown rights cannot become allowed, missing intervals cannot be silently forward-filled, a mixed or unrecognized capability state fails validation, a load-bearing `HOLD` plane cannot yield combined `ADMIT`, and unequal clock constructions cannot be pooled.
 
 ---
 
@@ -374,14 +435,16 @@ git diff --check
 
 W2-0 is complete when Sol can either:
 
-1. declare the existing panel `PROVEN_READY` for W3 under exact contracts; or
-2. commission one bounded W2 implementation that extends existing owners and names the production proof required.
+1. assign the combined panel a canonical capability state and `w3_admission=ADMIT` under exact contracts; or
+2. keep W3 held and commission one bounded W2 implementation that extends existing owners and names the production proof required; or
+3. reject the planned panel construction by design and recut the first vertical without pretending the missing horizon exists.
 
 The continuation handoff must include:
 
-- exact store verdicts;
+- exact store capability states and W3 gates;
 - exact canonical clock recommendation and rejected alternatives;
 - Terminal parity result;
+- Monthly-context and Radar-owned tactical residue;
 - coverage and rights gaps;
 - proposed owner and paths for any W2 build;
 - compute/storage/backfill estimate;
