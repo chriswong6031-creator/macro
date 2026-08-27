@@ -1,0 +1,107 @@
+name: TFG-0 development boundary adjudication probe
+
+on:
+  push:
+    branches:
+      - sol/tfg0-transcript-format-census-20260827
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Emit source-only Operator handoffs with next source speaker
+        shell: bash
+        run: |
+          python - <<'PY'
+          from __future__ import annotations
+          import gzip, hashlib, json, time
+          from urllib.error import HTTPError, URLError
+          from urllib.parse import quote
+          from urllib.request import Request, urlopen
+
+          TX_BASE = 'https://app.mastermind-x.com/data/tx'
+          UA = 'Mastermind TFG-0 boundary adjudication admin@macro-dashboard.example.com'
+          OPERATION = 'tfg0-transcript-format-census-20260827-v1'
+          HOUSEKEEPING = {'operator','ir'}
+          SELECTED = [
+            ('OCSL','2026Q3','529d26f9b96f4ada5ee99cf8fced8c33d0781f0ec5b3d7fd0df4ec0e7fc184bc'),
+            ('MBLY','2026Q2','87a6aa53c4be71a147df199db349f54c647ddf5ff20f026a464e6d068deabd76'),
+            ('GEF','2026Q3','740fbb992a10c249ddb0b693d096650e02732596474cf6f4e5855b37e16446f3'),
+            ('ARQQ','2026Q2','11dcf2506693d4756e38e14546aeb5c4c5cc4851326393fea05e54b68c300a8a'),
+            ('TRVI','2026Q2','5fc48d8fc151c155195b233bb3bbcffd822dcc7e140944df95ca811cbbac6514'),
+            ('CTRE','2026Q2','00e6f5f4a97b53333f060f765a98342f252c76b422a938e30087765bbaf05e64'),
+            ('LTH','2026Q2','c33f5f7b884c53b1b6b40964ce82d1ce505a4ef127a43a91e128eba578014782'),
+            ('UPBD','2026Q2','011e3c7aab0657ff1b0a6fad2dd41716757c40911ebb177ce38a13a4cad2681e'),
+            ('SCCO','2026Q2','9c657f21a2de4bbeb731378377d0a27e61aeeded62e51dfab86e636412ad56a5'),
+            ('AGM','2026Q2','87aa0131d7e9f86203927cfc45c2024fefbadd917f72aabf2e8a1adf07ae0e54'),
+            ('BANR','2026Q2','5a7d732e563acebcb8dd47edb396521e2d54c760c1cff0da327992f80863dc4a'),
+            ('FANG','2026Q2','4ff1ccdd568aabb6000d6eeabbb7c951ecbbfd03f51744ec847a438fb0cb0d89'),
+            ('HTGC','2026Q2','d829b5f029fe62dbc377edcfc4b9fa1b8aac8d085dbd765caadaf7d1982877f8'),
+            ('COF','2026Q2','e9402d4ea54f02e352806f02a1d5757004a274b2d8d023c528b91108e4af1bcc'),
+            ('ARRY','2026Q2','fc5410027ef716ca50f4a5549d7c58309e061f611c3bfe3a78a1875125b5666d'),
+            ('KREF','2026Q2','ba53bb440ceb2d20a5b9307e6440c804af587b190ae6623cecc25c0a42672999'),
+          ]
+
+          def fetch(url: str, retries: int = 3) -> bytes:
+              last = None
+              for attempt in range(retries):
+                  req = Request(url, headers={'User-Agent': UA, 'Accept': 'application/gzip', 'Cache-Control':'no-cache'})
+                  try:
+                      with urlopen(req, timeout=35) as r:
+                          if int(r.status) != 200:
+                              raise RuntimeError(f'{url} HTTP {r.status}')
+                          return r.read()
+                  except (HTTPError, URLError, TimeoutError, OSError) as exc:
+                      last = exc
+                      if attempt < retries - 1:
+                          time.sleep(1.5 * (attempt + 1)); continue
+                      raise RuntimeError(f'network failure {url}: {exc}') from exc
+              raise RuntimeError(str(last))
+
+          def canon(payload: dict) -> str:
+              raw=json.dumps(payload,ensure_ascii=False,sort_keys=True,separators=(',',':')).encode('utf-8')
+              return hashlib.sha256(raw).hexdigest()
+
+          def norm(v): return ' '.join(str(v or '').split())
+          def clip(v, n=650):
+              s=norm(v)
+              return s if len(s)<=n else s[:n-1]+'…'
+
+          out={'schema':'tfg0.boundary_adjudication_source_packet.v1','operation_key':OPERATION,'rows':[],'holdout_bodies_inspected':0,'model_calls':0}
+          for ticker,txid,expected in SELECTED:
+              pair=f'{ticker}/{txid}'
+              url=f"{TX_BASE}/{quote(ticker,safe='.-^')}/{quote(txid,safe='')}.json.gz"
+              gz=fetch(url); payload=json.loads(gzip.decompress(gz).decode('utf-8'))
+              actual=canon(payload)
+              if actual!=expected or payload.get('schema')!='mastermind.tx/v1' or str(payload.get('ticker') or '').upper()!=ticker or str(payload.get('id') or '').upper()!=txid:
+                  raise RuntimeError(f'{pair} revision mismatch')
+              segs=payload.get('segments') if isinstance(payload.get('segments'),list) else []
+              op=[]
+              for i,s in enumerate(segs):
+                  role=norm(s.get('role')).casefold(); speaker=norm(s.get('speaker')).casefold()
+                  if role!='operator' and speaker!='operator' and not speaker.endswith(' operator'):
+                      continue
+                  nxt=None
+                  for j in range(i+1,len(segs)):
+                      r=norm(segs[j].get('role')).casefold()
+                      if r in HOUSEKEEPING:
+                          continue
+                      if not norm(segs[j].get('speaker')):
+                          continue
+                      nxt={'segment_index':j,'speaker':norm(segs[j].get('speaker')),'role':norm(segs[j].get('role')),'text':clip(segs[j].get('text'),260)}
+                      break
+                  op.append({'segment_index':i,'text':clip(s.get('text')),'next_non_housekeeping':nxt})
+              out['rows'].append({'pair':pair,'body_sha256':actual,'segment_count':len(segs),'operator_segments':op})
+          open('tfg0_boundary_source_packet.json','w',encoding='utf-8').write(json.dumps(out,indent=2,sort_keys=True)+'\n')
+          print(json.dumps({'schema':out['schema'],'pairs':[r['pair'] for r in out['rows']],'operator_segments':sum(len(r['operator_segments']) for r in out['rows'])},indent=2))
+          PY
+      - name: Upload source packet
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfg0-boundary-source-packet-${{ github.run_id }}
+          path: tfg0_boundary_source_packet.json
+          retention-days: 14
