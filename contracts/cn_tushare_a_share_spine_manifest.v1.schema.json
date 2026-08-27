@@ -82,6 +82,7 @@
         "positive_volume",
         "st",
         "point_in_time_universe",
+        "name_history",
         "source_row_accounting",
         "compliance",
         "cap_fallback",
@@ -94,6 +95,7 @@
         "positive_volume": {"type": "object", "minProperties": 1},
         "st": {"type": "object", "minProperties": 1},
         "point_in_time_universe": {"type": "object", "minProperties": 1},
+        "name_history": {"type": "object", "minProperties": 1},
         "source_row_accounting": {"type": "object", "minProperties": 1},
         "compliance": {"$ref": "#/$defs/settledComplianceStatus"},
         "cap_fallback": {"$ref": "#/$defs/capFallbackContract"},
@@ -339,7 +341,9 @@
         "source_artifacts",
         "name_history_partitions",
         "name_history_row_count",
-        "name_history_semantic_sha256"
+        "name_history_semantic_sha256",
+        "name_history_namechange_only_row_count",
+        "name_history_external_witness_missing_rate"
       ],
       "properties": {
         "ready": {"type": "boolean"},
@@ -370,7 +374,13 @@
         "source_artifacts": {"type": "array", "items": {"$ref": "#/$defs/fileReceipt"}},
         "name_history_partitions": {"type": "array", "items": {"$ref": "#/$defs/fileReceipt"}},
         "name_history_row_count": {"$ref": "#/$defs/counter"},
-        "name_history_semantic_sha256": {"$ref": "#/$defs/sha256"}
+        "name_history_semantic_sha256": {"$ref": "#/$defs/sha256"},
+        "name_history_namechange_only_row_count": {"$ref": "#/$defs/counter"},
+        "name_history_external_witness_missing_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
       }
     },
     "dailyKeyCoverage": {

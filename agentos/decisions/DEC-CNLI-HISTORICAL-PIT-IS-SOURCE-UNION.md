@@ -55,8 +55,18 @@ rationale: >
   into `known_a`; `event_eligible` is already
   `positive_volume & source_limits_present`, which IS the graded trading
   authority this ruling requires, so a PIT-only row without trading evidence is
-  non-event-eligible by construction. Only the classifier at the entry point, and
-  the reconciliation flag one layer above it, encoded the intersection.
+  non-event-eligible by construction.
+
+  The intersection was encoded at THREE layers, not one: the classifier at the
+  entry point (`normalise_bak_basic`), the PIT lifecycle reconciliation
+  (`_pit_lifecycle_reconciliation`), and the daily security coverage builder
+  (`build_daily_security_coverage`), where a landed PIT row that never traded
+  becomes `eligible` with no daily row and falls into `unexplained_missing_n`.
+  The latter two are both TERMS IN THE COMPLETENESS MANIFEST'S OWN `complete`
+  CONJUNCTION, so repairing only the classifier would have moved the identical
+  failure two stages later and presented it as a new defect. This is why the
+  ruling's instruction not to recreate the same survivorship filter one stage
+  later had to be read as an inventory requirement rather than a caution.
 
   Fail-closed is preserved exactly where it carries information: an unparseable
   key and a non-A identity stay quarantined, because those are unknown
