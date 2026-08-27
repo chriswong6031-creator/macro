@@ -14,7 +14,9 @@ state_before: >
   signed webhook verification/retry/dedupe, generic/portfolio/scenario endpoints and
   repeatable shared-team workflows. External API remains later than accepted internal
   contracts, tenancy/auth/rights and production proof; internal architecture can proceed.
-changed: []
+changed:
+  - path: agentos/handoffs/MARKET-ONTOLOGY-F12-TEAM-TENANT-API-PLATFORM-FABLE-COO-2026-08-26.md
+    what: "Created the sustained F12 Fable COO lane commission and its tenancy/idempotency/security envelope."
 verified:
   - claim: "API/workspace/webhook/export surfaces are projections/transport over canonical owners, not new truth stores."
     command: "Read parity/no-rebuild architecture."
