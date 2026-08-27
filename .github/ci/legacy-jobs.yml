@@ -704,6 +704,14 @@ jobs:
       # suite adjacent to K1 makes the pointer-only boundary visible in CI.
       - name: K2-B manager-complex and research-intent hostile contracts
         run: python -m pytest tests/test_institutional_manager_intent_contract.py -q
+      # K2-C is the bounded owner-read adapter over the institutional 13F catalog:
+      # it composes existing engine/institutional_census read APIs into the K1 +
+      # K2-B contracts and emits a deterministic owner-read receipt. Its suite
+      # rides this same contract job because the fixture store is an in-test
+      # LocalStore published through the owner's own APIs — no credentials, no
+      # network, and the K1/K2-B suites above already supply the import closure.
+      - name: K2-C institutional owner-read adapter contracts
+        run: python -m pytest tests/test_institutional_13f_adapter_contract.py -q
       # K3-E is the Opportunity Evidence Vector: a typed, deterministic view/join
       # over canonical owner outputs (contracts/opportunity_evidence/vector.v1.
       # schema.json + slot_registry.v1.json) — never a store, never a score. Rides
@@ -2347,6 +2355,7 @@ jobs:
           tests/test_intl_act_now_board_icons.py
           tests/test_act_now_board_icons.py
           tests/test_china_delayed_board_disclosure.py
+          tests/test_cn_board_freshness_truth.py
           tests/test_china_zt_pool_dates.py
           tests/test_drip_append_only.py
           tests/test_cn_calendar.py
@@ -3507,7 +3516,7 @@ jobs:
         #    exercises that degraded branch instead of the shipped one.
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 requests
       - name: neural-web core suite (mastermind context + confluence + spine query + ask brain + world state + R5 macro context + ADB-W1 brief context + ADB-W2 forward calendar + Analyst OS P0 + W2)
-        run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_company_intelligence_neural_reader.py tests/test_company_intelligence_workspace_chain.py tests/test_company_intelligence_event_workspace.py tests/test_company_intelligence_event_compiler_e3a.py tests/test_company_intelligence_qa_reconstruction.py tests/test_company_intelligence_qa_exchange.py tests/test_refresh_event_workspaces.py tests/test_issuer_profiles_a5a.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py tests/test_neuralweb_health.py tests/test_neuralweb_daily_brief.py tests/test_brief_context.py tests/test_forward_calendar.py tests/test_orchestrator_log.py tests/test_mastermind_feedback.py tests/test_admin_orchestrator.py tests/test_admin_prophet.py tests/test_admin_trade_memory.py tests/test_macro_thesis.py tests/test_brain_doctrine.py tests/test_mastermind_response_log.py tests/test_admin_mastermind_logs.py tests/test_brain_analyst_doctrine.py tests/test_brain_analyst_wiring.py tests/test_market_packet.py tests/test_brain_market_intel.py tests/test_brain_seed_router.py tests/test_brain_analogues.py tests/test_brain_curve.py tests/test_response_eval.py tests/test_brain_user_memory.py tests/test_user_prefs.py -q
+        run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_company_intelligence_neural_reader.py tests/test_company_intelligence_workspace_chain.py tests/test_company_intelligence_event_workspace.py tests/test_company_intelligence_event_compiler_e3a.py tests/test_company_intelligence_qa_reconstruction.py tests/test_company_intelligence_qa_exchange.py tests/test_company_intelligence_qa_generalization_e3c.py tests/test_refresh_event_workspaces.py tests/test_issuer_profiles_a5a.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py tests/test_neuralweb_health.py tests/test_neuralweb_daily_brief.py tests/test_brief_context.py tests/test_forward_calendar.py tests/test_orchestrator_log.py tests/test_mastermind_feedback.py tests/test_admin_orchestrator.py tests/test_admin_prophet.py tests/test_admin_trade_memory.py tests/test_macro_thesis.py tests/test_brain_doctrine.py tests/test_mastermind_response_log.py tests/test_admin_mastermind_logs.py tests/test_brain_analyst_doctrine.py tests/test_brain_analyst_wiring.py tests/test_market_packet.py tests/test_brain_market_intel.py tests/test_brain_seed_router.py tests/test_brain_analogues.py tests/test_brain_curve.py tests/test_response_eval.py tests/test_brain_user_memory.py tests/test_user_prefs.py -q
 
   cn-standout-audit:
     if: ${{ false }}
@@ -3675,7 +3684,7 @@ jobs:
       - name: merge-gate reliability report contract
         run: python -m pytest tests/test_ci_gate_reliability_report.py -q
       - name: transitional self-hosted runner policy and canary contracts
-        run: python scripts/check_runner_policy.py && python -m pytest tests/test_runner_policy.py tests/test_ci_canary_tools.py tests/test_ci_canary_workflows.py tests/test_trusted_ci_executor_workflow.py -q
+        run: python scripts/check_runner_policy.py && python -m pytest tests/test_runner_policy.py tests/test_ci_canary_tools.py tests/test_ci_canary_workflows.py tests/test_trusted_ci_executor_workflow.py tests/test_trusted_ci_production_route.py -q
       # The US nightly's cron redundancy (2026-08-13), wired here for the same reason
       # the two steps above are: its subject IS .github/workflows/ — specifically the
       # asymmetry that asia-close.yml carries five cron slots and daily.yml carries one
@@ -5098,7 +5107,11 @@ jobs:
         run: python -m pytest tests/test_ship_loop_guard.py tests/test_ship_loop_semantic.py tests/test_agent_worktree_roots.py tests/test_sparse_worktree_profile.py tests/test_warp_session_start_sparse.py tests/test_worktree_gc.py tests/test_worktree_placement.py -q
       - name: self-mod-fence live check (loop PR + immutable → BLOCKED)
         run: |
-          BRANCH="${{ github.head_ref }}"
+          # CI_HEAD_REF is the validated API identity published by the upgraded
+          # main-owned executor. GITHUB_HEAD_REF is the GitHub PR-event identity
+          # retained solely for the one-head bootstrap where the PR must still be
+          # proven by the pre-upgrade executor loaded from main.
+          BRANCH="${CI_HEAD_REF:-${GITHUB_HEAD_REF:-}}"
           TRAILERS=""
           FILES=""
           PARSE_RC=0
@@ -10863,6 +10876,29 @@ jobs:
       # above, so it shares their venv.
       - name: stage-analysis ledger session stamps + heal (forward-ledger audit 2026-08-05)
         run: python -m pytest tests/test_stage_analysis.py tests/test_stage_industry_live_partition.py tests/test_weinstein_stage.py tests/test_heal_stage_forward_ledger.py -q
+      # Unrun backfill 2026-08-27: tests/test_dashboard_template_render.py — the
+      # dashboard.html.j2 rendered-HTML contract — was named by NO `run:` step in any
+      # workflow while this job ALREADY claimed the file in its `paths:` block above.
+      # That is the worst of both shapes: an edit to the suite re-selected this job,
+      # and the job then ran everything EXCEPT the suite.  Because nothing executed it,
+      # a genuine red survived on main indefinitely — test_candidate_stage_rail_absent_
+      # from_setups_grid has been failing since fd0c0b0ece50 (#6243, shipping #6185)
+      # re-added `{% include "_us_board_cards.html.j2" %}`, which renders a DELIBERATE
+      # lane rail in the Candidates section BELOW the migrated Setups grid.  The suite's
+      # whole-page substring assertion could not tell that restored rail from the grid
+      # rail it exists to prove gone — and tests/test_p0_prophet_candidate_board.py:282
+      # pins the restored one as REQUIRED, so the two contracts contradicted outright.
+      # The assertions are scoped to the grid in the same PR; the enrolment and the
+      # repair ship together, per the house rule that a guard nothing runs is already open.
+      # It belongs to THIS lane rather than unrun-site-surfaces because the failing
+      # case imports `priority_overlay`/`ran_overlay` from tests/test_us_board_priority_ui.py,
+      # which the lane's first step already runs — same US board-surface family, same venv.
+      # Its own step, not appended to that step's line, so a render-contract red is
+      # attributable on sight rather than reading as a picks/boards regression.
+      # No dependency widened: it renders Jinja templates only — jinja2 is already on
+      # the install line above.  Measured 54s against this job's 245s body and 12m cap.
+      - name: dashboard.html.j2 rendered-HTML contract (unrun backfill 2026-08-27)
+        run: python -m pytest tests/test_dashboard_template_render.py -q
   prophet-us-context-and-grades:
     # PROPHET US §W7 — the full-population candidate record: the PIT context store that
     # REMEMBERS each night's score, the forward grader that says what those names then did,

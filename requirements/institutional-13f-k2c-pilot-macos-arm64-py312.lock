@@ -1,0 +1,31 @@
+# Institutional 13F K2-C pilot proof lane (read-only owner read + K1/K2-B
+# contract compilation).  Target: CPython 3.12, macOS 11+ arm64.
+# Superset of requirements/institutional-13f-macos-arm64-py312.lock (owner read
+# path, kept byte-identical pins) plus the jsonschema chain that
+# lib/institutional_intelligence.py requires for K2-B validation.  Isolated so
+# the census lane's environment is never mutated by this proof lane.
+
+boto3==1.43.62
+botocore==1.43.62
+certifi==2026.7.22
+charset-normalizer==3.4.9
+idna==3.18
+Jinja2==3.1.6
+jmespath==1.1.0
+MarkupSafe==3.0.3
+numpy==2.5.1
+pandas==3.0.5
+pyarrow==25.0.0
+python-dateutil==2.9.0.post0
+PyYAML==6.0.3
+requests==2.34.2
+s3transfer==0.19.2
+six==1.17.0
+urllib3==2.7.0
+
+# K2-B contract validation chain (lib/institutional_intelligence.py).
+jsonschema==4.26.0
+jsonschema-specifications==2025.9.1
+referencing==0.37.0
+rpds-py==2026.5.1
+attrs==26.1.0
