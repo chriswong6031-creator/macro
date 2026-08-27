@@ -1,5 +1,30 @@
 """scripts/build_flow_leaders.py — Flow Leaders Desk nightly builder (FL W2).
 
+╔══════════════════════════════════════════════════════════════════════════╗
+║ THIS BOARD IS PERMANENTLY stale:true — AND THAT IS NOT A BUG.            ║
+║                                                                          ║
+║ Its options spine (data/options_flow/summary_*.parquet, via              ║
+║ data/polygon_gex/chains/) comes from the LEGACY Massive/Polygon estate,  ║
+║ whose options entitlement 403'd on 2026-08-13/14 and was RETIRED by the  ║
+║ Chairman source ruling of 2026-08-22                                     ║
+║ (DEC:AD-OPTIONS-CANONICAL-SOURCE-THETADATA). THETADATA is the canonical  ║
+║ options source; Massive/Polygon is a STOCK-data source. There is no      ║
+║ options key to rotate.                                                   ║
+║                                                                          ║
+║ So the spine is frozen at session 2026-08-12, `_check_stale` correctly   ║
+║ returns True, the stale branch in build() correctly skips the recurrence ║
+║ block, every A1_flow_recur/recurrence_count is null, K_a collapses to 0, ║
+║ and fire_a/fire_b are False on EVERY row. That whole chain is one        ║
+║ fail-closed refusal working as designed — NOT a Board A/B scoring bug.   ║
+║ Do not "fix" the gates. Downstream, plab_flow_leader and                 ║
+║ plab_flow_washout can never fire while this holds.                       ║
+║                                                                          ║
+║ The OPEN question — repoint this lane at the ThetaData EOD/T1 spine      ║
+║ (engine/thetadata_store.py), or retire the boards — belongs to Sol /     ║
+║ WS:ADVANCED-DATA-OPTIONS. Nothing in this file may silently swap the     ║
+║ source; the superseded DNR row existed to reserve exactly that call.     ║
+╚══════════════════════════════════════════════════════════════════════════╝
+
 Inputs (all absent-safe — honest nulls on miss):
   data/options_flow/summary_*.parquet      soft-spine: gross premium, net_premium_mn,
                                             zerodte_share, fresh_contracts

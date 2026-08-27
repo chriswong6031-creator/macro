@@ -1,0 +1,126 @@
+{
+  "schema": "e3c.source_completeness_receipt.v1",
+  "operation_key": "e3c-source-census-20260826-v1",
+  "authority": "E3_EVENT_INTELLIGENCE_COMPILER_FREEZE_2026-08-20.md#11",
+  "frozen_at": "2026-08-27T00:48:48.108717+00:00",
+  "selection": {
+    "order": ["GOOGL", "CAT", "BAC", "SNOW"],
+    "decision": "SELECTED_FIRST_QUALIFYING",
+    "selected_ticker": "GOOGL",
+    "stopped_after": "GOOGL",
+    "later_candidates_inspected": false,
+    "extraction_started": false,
+    "model_calls_started": false
+  },
+  "issuer": {
+    "display_name": "Alphabet Inc.",
+    "company_id": "cik:0001652044",
+    "cik": "0001652044",
+    "canonical_event_id": "evt_cik0001652044_2026q2_results",
+    "fiscal_period": "Q2 FY2026",
+    "canonical_listing": "GOOGL",
+    "sibling_listing": "GOOG",
+    "dual_class_law": "GOOGL and GOOG are distinct securities of one CIK-backed issuer and must mint one canonical event",
+    "current_production_registry_state": "NOT_YET_REGISTERED",
+    "production_registry_requirement": "Extend the existing event_workspace production_registry with Alphabet using the existing IssuerIdentity/IssuerRegistry plane; do not create a second identity registry or a second canonical event for GOOG."
+  },
+  "completeness": {
+    "release": {
+      "state": "byte_replayed",
+      "kind": "issuer_release",
+      "url": "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000066/googexhibit991q22026.htm",
+      "sha256": "a01f6bd87c7fa0dcb562493dda7348a1a37d017b4a4b5edb39b915b45688237e",
+      "bytes": 371494,
+      "rights_profile": "rp_public_primary_v1",
+      "source_available_at": "2026-07-22T20:01:36.000Z",
+      "clock_state": "known"
+    },
+    "filing": {
+      "state": "byte_replayed",
+      "kind": "sec_8k",
+      "url": "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000066/goog-20260722.htm",
+      "sha256": "9e881beb88f9496e316a412fdb881a22b9244fdec75131b4fb00ae11d0f9f7e4",
+      "bytes": 65815,
+      "cik": "0001652044",
+      "accession": "0001652044-26-000066",
+      "form": "8-K",
+      "filing_date": "2026-07-22",
+      "report_date": "2026-07-22",
+      "acceptance_datetime": "2026-07-22T20:01:36.000Z",
+      "rights_profile": "rp_public_primary_v1"
+    },
+    "transcript": {
+      "state": "byte_replayed",
+      "kind": "transcript",
+      "document_id": "tx:GOOGL/2026Q2",
+      "pair": "GOOGL/2026Q2",
+      "url": "https://app.mastermind-x.com/data/tx/GOOGL/2026Q2.json.gz",
+      "sha256": "a44db883463181ba73a536cb3643b81ea59a3e10c0f191859f7717538452d2a9",
+      "gzip_bytes": 19182,
+      "segment_count": 90,
+      "call_date": "2026-07-22",
+      "rights_profile": "rp_public_primary_v1",
+      "source_available_at": null,
+      "clock_state": "unknown"
+    },
+    "slides": {
+      "state": "typed_absence",
+      "reason": "not_held_for_selected_package"
+    },
+    "consensus": {
+      "state": "typed_absence",
+      "reason": "unlicensed"
+    },
+    "reaction": {
+      "state": "typed_absence",
+      "reason": "not_joined"
+    }
+  },
+  "qna_admission": {
+    "method": "source-only Operator-intro census; no extraction/model output inspected",
+    "operator_intro_count": 10,
+    "operator_intro_segment_indices": [0, 33, 40, 48, 54, 58, 66, 70, 75, 80],
+    "minimum_required": 1,
+    "admission_pass": true,
+    "canonical_qa_exchanges_minted": false,
+    "note": "These boundaries prove the selected held source contains real operator-delimited Q&A for admission. They are not E3-C extraction results and grant no qa_exchange.v1 publication authority."
+  },
+  "rights_and_clocks": {
+    "adequate_under_existing_e3_profile": true,
+    "rights_profile": "rp_public_primary_v1",
+    "rights_note": "The receipt reuses the existing accepted E3 public-primary rights profile for the SEC primary-source release and the already-published Terminal transcript archive; it does not create a new rights authority.",
+    "transcript_source_clock_owner_gap": true,
+    "transcript_source_available_at": null,
+    "transcript_clock_state": "unknown",
+    "generated_at_substitution_forbidden": true
+  },
+  "pre_registered_pass_rule": {
+    "frozen_before_first_e3c_model_call": true,
+    "same_compiler_as_aapl": true,
+    "issuer_special_extraction_forbidden": true,
+    "completion_requires_non_empty_accepted_qa_exchange_v1": true,
+    "completion_requires_canonical_event_workspace_publication": true,
+    "completion_requires_real_product_consumption": true,
+    "accepted_unsupported": 0,
+    "cross_event_contamination": 0,
+    "span_replay_of_accepted": "100%",
+    "honest_empty_does_not_complete_wave": true
+  },
+  "census_evidence": {
+    "github_run_id": 33028067033,
+    "github_job_id": 98373967969,
+    "probe_head_sha": "3ef56733503b025fcd057ed2b574a5282c05d850",
+    "artifact_id": 9629162282,
+    "artifact_zip_sha256": "8852da1320e36ce9644a87f39e88f2738709fd0129824ad6feea5a43dbc6b560",
+    "census_json_sha256": "06c02d7eb726a08a67f4b08dce4d725669e7783494dffa11151eb021fd6df930",
+    "tx_index_schema": "mastermind.tx-index/v1",
+    "tx_index_generated_at": "2026-08-27T00:17:17.252644+00:00",
+    "tx_index_body_count": 28741,
+    "tx_index_symbol_count": 3572
+  },
+  "current_state_after_receipt": {
+    "e3c": "SOURCE_SELECTED_EXTRACTION_NOT_STARTED",
+    "e3p": "LOCKED",
+    "next_action": "After this receipt lands, commission the bounded GOOGL E3-C implementation/generalization wave. Before any model call, preserve this exact receipt and pass rule."
+  }
+}

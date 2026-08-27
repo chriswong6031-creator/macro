@@ -42,7 +42,7 @@ All links are primary TuShare or exchange documentation checked 2026-08-08/09.
 | `bse_mapping` | <https://tushare.pro/document/2?doc_id=375> | Old BJ aliases must map to a canonical `920xxx.BJ` code; 1,000 cap. |
 | `trade_cal` | <https://tushare.pro/document/2?doc_id=26> | Exact exchange/range/day response; SSE and SZSE must have identical open-session sets. |
 | `bak_basic` | <https://tushare.pro/document/2?doc_id=262> | Exact-date historical stock-list witness from 2016; 7,000 cap. Pre-2016 stays an explicit gap. |
-| `namechange` | <https://tushare.pro/document/2?doc_id=100> | Active year is refreshed to the actual end-date anchor; announcement dates must stay inside the request; orphans block. |
+| `namechange` | <https://tushare.pro/document/2?doc_id=100> | Active year is refreshed to the actual end-date anchor; announcement dates must stay inside the request. A valid row is its own source evidence and lands with or without an external witness; only malformed keys, non-A identities, contradictory lifecycle intervals and unresolved same-day name conflicts block. |
 | `daily` | <https://tushare.pro/document/2?doc_id=27> | Direct unadjusted nominal OHLCV, exact date, 6,000 cap; on cap the endpoint's requested interval switches to the bounded ticker×date-range campaign (amended 2026-08-13), correctness-tested synthetically and still gated. |
 | `daily_basic` | <https://tushare.pro/document/2?doc_id=32> | Exact date/ticker; 6,000 cap; `limit_status` domain 0–6 and close/limit semantics are audited. |
 | `stk_limit` | <https://tushare.pro/document/2?doc_id=183> | Exact source pre-close/up/down limits; 5,800 cap; non-A rows require independent exclusion or quarantine. |
@@ -111,8 +111,59 @@ reach). That is access observation, not compliance adjudication.
   2016, stock lifecycle is the best available construction and the manifest
   explicitly refuses to call that an independent daily-universe witness.
 - `bak_basic` corroborates rather than replaces lifecycle eligibility. The shard
-  and coverage universe is the frozen `lifecycle ∪ PIT` set. Any post-2016
-  lifecycle/PIT difference is receipted with samples and blocks completeness.
+  and coverage universe is the frozen `lifecycle ∪ PIT` set. Post-2016
+  lifecycle/PIT differences are receipted with samples; which of them block
+  completeness is governed by the source-union law below.
+- **Historical PIT construction is source-UNION, never current-snapshot
+  intersection** (`DEC:CNLI-HISTORICAL-PIT-IS-SOURCE-UNION`, Sol 2026-08-26).
+  The current `stock_basic` snapshot is a lifecycle/reference *witness*, not
+  exhaustive historical membership authority: it is a CURRENT snapshot used to
+  classify HISTORICAL sessions, so intersecting against it is a survivorship
+  filter. A well-formed A-share `bak_basic` PIT observation therefore LANDS even
+  when the current snapshot omits it, carrying
+  `current_stock_basic_witness_missing = true`.
+- That observation alone grants **no trading/event authority and no
+  canonical-identity authority**. Authority is graded: a complete same-session
+  positive-volume daily observation *plus* the required exact legal-limit/session
+  evidence proves historical trading even when current `stock_basic` omits the
+  security, and such a security must never be silently removed from the
+  historical exact universe. A PIT-observed row without that evidence stays
+  source-accounted but **non-event-eligible**; `never listed` may not be inferred
+  unless an explicit lifecycle source establishes that stronger state. Data
+  OS/GMI remains the canonical identity owner — no historical CN-Limit identity
+  master exists.
+- PIT-only listing keys **propagate into downstream historical source
+  acquisition, including `name_history`**, so the same survivorship filter is not
+  recreated one stage later.
+- **A valid `namechange` row is its own sufficient source evidence**
+  (`DEC:CNLI-NAMECHANGE-IS-ITS-OWN-SOURCE-AUTHORITY`, Sol 2026-08-27). It needs no
+  contemporary `stock_basic`, `bak_basic`, PIT or other external witness merely to
+  EXIST in the name-history plane — the PIT witness only reaches back to
+  2016-01-01, so requiring corroboration would restore the current snapshot as
+  sole authority for every earlier row. Every source row instead carries exactly
+  one deterministic disposition: **externally corroborated**, **`NAMECHANGE_ONLY`**,
+  or **explicit conflict/quarantine**.
+- `NAMECHANGE_ONLY` counts as **terminal source completeness** and grants **zero
+  PIT membership, positive-volume trading, exact-event, canonical-identity, rank
+  or score authority**. Name history is a leaf: nothing reads it but its own
+  receipt builder, and a namechange-only ticker must never enter
+  `_all_known_a_tickers` — otherwise a name assertion would bootstrap itself into
+  the universe membership this law denies it.
+- The rule applies **row by row across the frozen epoch**. Pre-2016 is not
+  special-cased and the witness-missing percentage is **not an admission
+  threshold**; the rate is telemetry. Malformed keys, contradictory lifecycle
+  intervals, incomplete responses and unresolved source conflicts stay
+  fail-closed.
+- Completeness of the name-history plane therefore requires **all source rows
+  deterministically reconciled with zero unresolved conflicts — not 100% external
+  corroboration**.
+- Completeness remains fail-closed for malformed or conflicting keys, incomplete
+  source responses, unresolved source contradictions (including a PIT row whose
+  master lifecycle window contradicts the observed trade date), positive-volume
+  rows without required exact legal-band evidence, and any unknown disposition.
+  The current-snapshot omission rate is recorded as **telemetry, never as an
+  exclusion threshold** — a threshold on it would reintroduce the survivorship
+  filter as a tunable.
 
 Reference refresh is generation-atomic. Raw `stock_basic`, `fund_basic`, and BSE
 mapping units land under an immutable staging generation; derived master/alias/
@@ -340,8 +391,12 @@ bytes are scanned before hashing.
    zero, and any range campaign is terminal with every leaf verified, every day
    receipt bound, and no standing alias conflict (amended 2026-08-13);
 5. every requested post-2016 session has a `bak_basic` witness, lifecycle and PIT
-   sets reconcile exactly, and every requested daily endpoint unit is complete
-   (pre-start endpoints are explicitly N/A);
+   sets reconcile under the source-union law — every lifecycle-eligible security
+   is witnessed in PIT, and no PIT row contradicts its own master lifecycle
+   window; a PIT row absent from the current `stock_basic` witness is a legal
+   union member and is counted as telemetry, not as a mismatch (amended
+   2026-08-26, `DEC:CNLI-HISTORICAL-PIT-IS-SOURCE-UNION`) — and every requested
+   daily endpoint unit is complete (pre-start endpoints are explicitly N/A);
 6. duplicate-key, dense-key, lifecycle, exact-session, suspension, and daily
    security coverage checks close;
 7. the canonical exact-price event join closes; and

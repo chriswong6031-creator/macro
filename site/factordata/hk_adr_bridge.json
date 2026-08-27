@@ -15,17 +15,17 @@
       "lag_days": 1,
       "state": "fresh"
     },
-    "JD": {
-      "asof": "2026-08-25",
-      "lag_days": 1,
-      "state": "fresh"
-    },
     "TCOM": {
       "asof": "2026-08-25",
       "lag_days": 1,
       "state": "fresh"
     },
     "KWEB": {
+      "asof": "2026-08-25",
+      "lag_days": 1,
+      "state": "fresh"
+    },
+    "JD": {
       "asof": "2026-08-25",
       "lag_days": 1,
       "state": "fresh"

@@ -107,7 +107,7 @@ function getJSON(url){
 var flDesk = null, flTide = null;
 /* Generated from the canonical NYSE calendar at bake time.  It is null on a
    weekend/holiday, so the literal Today panel cannot invent a session. */
-var LIVE_SESSION_DATE = "2026-08-26";
+var LIVE_SESSION_DATE = "2026-08-27";
 
 function r2Url(path){
   var base = String((window && window.DATA_BASE) || '').replace(/\/+$/, '');

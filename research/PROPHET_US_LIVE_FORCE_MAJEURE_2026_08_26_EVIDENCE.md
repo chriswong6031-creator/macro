@@ -289,13 +289,19 @@ Any session failing 2 or 4 is **refused**, not widened.
 
 # 11. Recommended disposition (for Sol)
 
+> **Superseded in part by §15.** The table below was written before the Chairman
+> exercised authority to backfill. Waves C/D resolved differently than recommended
+> here, and for a reason worth keeping: the blocker was pack RECONSTRUCTION, and the
+> executed path reconstructs nothing. Left in place because a disposition that was
+> revised is more useful than one quietly rewritten.
+
 | Wave | State |
 |---|---|
-| A — forensics + restore | **done**; production proof pending today's 13:25Z window |
-| B — silent-freeze elimination | **built**, PR #6464, mutation-proven; merge + deploy + live proof outstanding |
-| C — PIT replay | **feasible but gated**: control substrate solved (§10.2), pack fidelity unproven (§10.4) |
-| D — backfill | **blocked on C**; lawful scope is the 7 Class-R sessions / 598 keys ONLY |
-| E — acceptance + records | in progress |
+| A — forensics + restore | **PROVEN_LIVE** (§14) |
+| B — silent-freeze elimination | **PROVEN_LIVE** — #6464 + #6482 merged, deployed, red-and-green both demonstrated (§14.1, §14.2) |
+| C — PIT replay | **not built, and not needed**: recovery from the producer's own journal reconstructs no pack, so §24.2 never binds (§15.1) |
+| D — backfill | **EXECUTED** on Chairman authority — 598 rows, 7 sessions (§15.3) |
+| E — acceptance + records | done |
 
 Class-D's 11 sessions are **refused** on the force-majeure DEC's own terms: their
 `dark` verdicts were correct for the pack handed to them, so "recovering" them
@@ -312,3 +318,201 @@ infrastructure reconstruction.
 2. **D12 ownership.** The pack `as_of` mis-stamp is an upstream close-store /
    tip-selection defect. It darkened 11 sessions and will recur. PR #6464 makes it
    VISIBLE (`pack_ok`, graded by the dead-man) but deliberately does not repair it.
+
+---
+
+# 13. D12 refined — mechanism confirmed, trigger not reproducible today
+
+`engine/prophet_live/armed_pack.py:855 as_of_date()` takes the **MAX last-bar date
+across the whole universe**, deliberately ("the pack must say what it is actually
+armed on"). The consequence is a single-point fragility: **one** contaminated
+series sets the stamp for all ~3,000 names, and the evaluator then darkens the
+entire next session because that stamp is not the last completed session.
+
+Journal evidence of contamination is unambiguous — tips landed on **Saturdays**
+(2026-08-01, 08-09, 08-22) and on the build's own calendar day (08-04/05/06/13/
+17/18/19). A Saturday bar in a US close store is not a defensible reading.
+
+**But it is episodic, and today's pack is clean.** Probe of the live
+`prophet_live_armed.json` (`as_of=2026-08-25`, `built_at=2026-08-26T04:49:31Z`):
+
+| `bar_date` | names |
+|---|---|
+| 2026-08-25 | 3,034 |
+| 2026-08-24 | 4 |
+| older (08-10, 06-26, 05-07, 05-13) | 1 each |
+| **ahead of `as_of`** | **0** |
+
+So the mechanism is proven and the *source* of the ahead-dated bars is not
+identifiable from a clean pack. Naming a culprit today would be a guess.
+
+**Proposed repair (NOT built — needs an owner and a ruling).** `as_of_date`
+should refuse a tip that is not a completed NYSE session rather than propagate one
+series' MAX, using the calendar already imported by
+`live_states.last_completed_session`. This preserves the docstring's intent (a
+stale store still reports honestly stale) while making an impossible date
+unrepresentable. It is pinnable without a live reproduction:
+
+> feed `as_of_date` a series set in which one series' last bar is a Saturday and
+> assert the returned tip is the last **session**, not the Saturday.
+
+Deliberately not done in this program: it edits the nightly pack path, this
+session could not reproduce the trigger, and PR #6464 has already told Sol the
+defect needs an owner. PR #6464 makes it *visible* (`pack_ok` on `/api/status`,
+graded by the dead-man) so the next occurrence pages instead of silently darkening
+a session.
+
+---
+
+# 14. Production proof — 2026-08-26 NYSE session (commission §9)
+
+The lane published for the **first time since 2026-07-30T17:20:56Z**. Captured
+13:37Z from first-hand host state, not from CI.
+
+| § | Requirement | Observed |
+|---|---|---|
+| 1 | timer enabled + active | `enabled` / `active` |
+| 2 | two consecutive natural invocations | `13:28:05Z`, `13:33:05Z` (no manual dispatch) |
+| 3 | `pass_ts` advances on cadence | 13:28:05 → 13:33:05 |
+| 4 | `session_et` = current session | `2026-08-26` |
+| 5 | `pack_as_of` = last completed session | `2026-08-25` = `expected_session` |
+| 6 | quote clock within budget | `quote_asof` 13:32:22Z, age 5.3m |
+| 7 | payload semantically non-vacuous | `evaluated_n=180`, states `{at_risk:19, forming:13, unknown:27, dormant:21, near:12, dark:88}` |
+| 8 | R2 live object advances | `LastModified=2026-08-26T13:33:11Z`, `status=live` |
+| 9 | served object advances | `/var/lib/macro-live/public/live/prophet_live.json` 21,247 B @13:33 — **had not existed at all** |
+| — | `no R2 credentials` warnings in-window | **0** (was every pass for 27 days) |
+| — | `/api/status` projection | `expected_now=True status=live pack_ok=True pass_age_min=4.6 quote_age_min=5.3` |
+
+Events resumed accruing immediately: `events=25` on the 13:28Z pass and `events=15`
+on 13:33Z — prospective intraday evidence is flowing into the spool again.
+
+## 14.1 What the proof caught that CI could not
+
+The external dead-man went **red** on the same capture:
+
+```
+VPS LIVE UNHEALTHY:
+- prophet_live: missing producer (unowned lane)
+```
+
+PR #6464 graded ownership identity — which the commission requires (§B2) and the
+breadth lane already carries — but nothing on the producing side ever wrote the
+field, so the check could never go green. That is the same always-red-therefore-
+unread failure #6464 had to heal in the public-live inventory guard, reintroduced
+one layer over. Repaired in PR #6482 by stamping `meta.producer` after the single
+`LS.evaluate` call, so globally dark artifacts are owned too.
+
+**This is the entire argument for §24.10.** Every check in #6464 was green, the
+mutation matrix passed against pristine code, and the defect was still there. Only
+a real session against real production surfaced it.
+
+## 14.2 Closure — heartbeat green in a live session
+
+`meta.producer` shipped in PR #6482 (`e01895f5fcc4`) and deployed mid-session.
+Re-verified at 15:23:00Z, inside RTH, with the lane actively publishing:
+
+| Surface | Observed |
+|---|---|
+| served artifact | `status=live`, `pass_ts=2026-08-26T15:23:00Z`, `producer=scripts/prophet_live_evaluator.py` |
+| `/api/status` | `expected_now=True status=live pack_ok=True pass_age_min=2.5 quote_age_min=3.2 n_names=180` |
+| external dead-man | **`VPS live plane healthy`** (exit 0) |
+
+Both halves of the contract are now demonstrated on the same lane, in production:
+the dead-man **red**s a non-publishing lane (13:37Z capture) and **green**s a
+publishing one (15:23Z) — which is what makes it an instrument rather than a
+decoration.
+
+Note on verification method: `git merge-base --is-ancestor` against `/opt/macro`
+answers "not deployed" for a merge SHA it has not fetched — the box is a partial
+clone and main moves faster than the 3-minute pull, so the box holds a
+*descendant*, never the exact SHA. Deployment must be confirmed from the deployed
+FILE and the artifact it produces, never from ancestry alone.
+# 15. Backfill EXECUTED — Chairman authority, 2026-08-26
+
+§10.3 concluded the journal was a control and not a ledger source, because `entered`
+and `via` are absent from the logged line. On Chairman authority to backfill, that
+conclusion was re-examined and is **partly superseded**. The corrected finding:
+
+- `via` is genuinely unavailable and stays null (it is optional on genuine rows too);
+- `entered` is **not** a price-derived quantity. It is
+  `bool(pack[ticker]["center_buyable"])` (`live_states.py:576`), fixed for a whole
+  name-session and carried forward — so it is recoverable wherever production's OWN
+  output settles it, with no replay and no reconstructed pack.
+
+## 15.1 Why this is RECOVERY, not replay
+
+Every row absorbed was emitted by the production evaluator at the time and read back
+verbatim. No state machine was re-run, no quote tape was rebuilt, and **no armed pack
+was reconstructed** — which is exactly why §24.2 (no surviving pack bytes) does not
+bind this path. There was nothing to mint.
+
+The journal is sound as a source because it self-checks: each pass independently
+declares `events=N` and then prints its event lines. Across the whole outage —
+**672 passes, 672 exact matches, 0 mismatched, 0 orphaned event lines**. A truncated
+log cannot produce that. `scripts/prophet_live_journal_recovery.py` refuses (exit 3)
+on any mismatch, orphan, or branch contradiction rather than accruing a partial pass.
+
+## 15.2 How `entered` was recovered without guessing
+
+`at_risk` / `at_risk_unconfirmed` are emitted **only** inside the `if on_board:`
+branch (`live_states.py:616-654`); `crossing_unconfirmed` **only** in the cross branch
+(`:698`). One such event therefore fixes that name's whole session.
+
+| | names | rows |
+|---|---|---|
+| determined `board` | 118 | 269 |
+| determined `cross` | 23 | 23 |
+| genuinely undetermined → **null** | 153 | 306 |
+| **contradictions** | **0** | — |
+
+Zero contradictions across 141 determinations is the check on the branch mapping.
+Names that only ever emitted `forming` / `confirming_into_close` occur on both
+branches and are left null — inventing them would silently decide the ledger's
+headline cross-vs-board population (§16: absence means no claim).
+
+## 15.3 Absorption
+
+Staged as a bounded pending input outside canonical `data/prophet_live/`, then
+absorbed by the existing reconciler, which remains the sole writer (LEDGER LAW D10).
+`scripts/reconcile_prophet_live.py` gained exactly one new entry point, `--pending`,
+fail-closed on schema, filename/session disagreement, row/session disagreement,
+missing identity, and the `LEDGER_FLOOR_SESSION` floor. Pending and R2 spool are
+mutually exclusive in a run, so "which source wrote this row" stays answerable.
+
+**`data/prophet_live/forward.parquet` did not previously exist** — never committed, no
+history. The ledger's floor is `2026-07-30`, the very day the lane broke, so the
+evidence base had been empty since inception. These are its first rows.
+
+| Result | |
+|---|---|
+| rows | **598** (90 / 15 / 162 / 143 / 71 / 31 / 86) |
+| duplicate `(date,ticker,kind)` | 0 |
+| `close_same_day`, `confirmed` | 598 / 598 |
+| `next_close_fill` | 512 / 598 — the 86 open are exactly Aug 25, maturing on the next close |
+| confirmation basis | 6 sessions `replay` (vintage-truncated gate), Aug 25 `pack` (as_of matches) |
+| `cross_px` null / ≤0 | 0 / 0 |
+| `first_ts > last_ts` | 0 |
+| rerun | idempotent on every field except `reconciled_at` |
+| blast radius | ledger + recovery dir only — no board, rank, plan or site mutation |
+
+Count agreed independently three ways before any effect: journal census (598),
+recovery tool per-session distinct keys (598), reconciler dedupe (598).
+
+## 15.4 What the rows honestly do NOT claim
+
+All 598 carry `pct_basis = unaligned_no_anchor` and a null `cross_basis_close`. That
+is the reconciler's own designed answer for a row first written from an older session
+(`reconcile_prophet_live.py:128`): the basis anchor is only valid if read
+contemporaneously on the cross's own session, and taking a later close would assume
+no distribution in between. Disclosed, never repaired by guess.
+
+Class D's 11 sessions remain **refused** and unchanged (§5). Their `dark` verdict was
+correct for the pack they were handed; recovering them would require minting a pack
+production never armed, which is the one thing the force-majeure DEC does not cover.
+
+## 15.5 Reproducibility
+
+The committed journal (`journal_2026-07-30_2026-08-25.txt.gz`, 197 KB,
+sha256 `d3812a0cec8f50dff57523ffa7163c65d3a3f058da56286fa368185b74156a52`) plus the
+recovery tool regenerate the pending input byte-for-byte. The 10 MB expanded pending
+is deliberately NOT committed — stage-and-absorb, not a persistent queue (§14).

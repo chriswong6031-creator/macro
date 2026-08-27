@@ -2133,6 +2133,11 @@ on:
       - "tests/test_prophet_live_silent_freeze.py"
       - "scripts/check_vps_live_health.py"
       - "app/main.py"
+      # PIT RECOVERY of the spool the 2026-08 outage never published. These rows
+      # enter forward.parquet, so the guard must retrigger on the producer, the
+      # pending reader and the ledger writer alike.
+      - "scripts/prophet_live_journal_recovery.py"
+      - "tests/test_prophet_live_journal_recovery.py"
       - "tests/fixtures/prophet_live/import_probe.py"
       # PROPHET LIVE VPS lane (§4.2a/§4.4a). The unit files, the reconciler that
       # installs them and the provisioner that arms them are the subjects of

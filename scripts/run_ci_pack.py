@@ -132,6 +132,10 @@ RUNNER_CONTRACT = "ci-pack/linux-x86_64/python-3.12.13/node-20/v2"
 # scripts/ci_semantic_proof.py's own narrower pair set and its own
 # `workflow == "ci"` assertion, which this constant does not touch.
 DIAGNOSTIC_CANARY_WORKFLOW = "infrastructure-selfhosted-ci-canary"
+TRUSTED_EXECUTOR_WORKFLOW = "trusted-ci-executor"
+DIAGNOSTIC_PR_WORKFLOWS = frozenset(
+    {DIAGNOSTIC_CANARY_WORKFLOW, TRUSTED_EXECUTOR_WORKFLOW}
+)
 
 # Failure output is streamed live.  These caps cover only the small structured
 # atom collector retained alongside the stream; raw logs never enter evidence.
@@ -782,6 +786,11 @@ def _is_peer_python_or_unpatterned_glob(pattern: str) -> bool:
     return True
 
 
+def _has_glob(segment: str) -> bool:
+    """Does this path fragment contain a glob metacharacter?"""
+    return any(char in segment for char in "*?")
+
+
 def scope_pattern_is_startable(pattern: str, triggers: Iterable[str]) -> bool:
     """Can an edit to something ``pattern`` covers start the gating workflow?
 
@@ -809,10 +818,27 @@ def scope_pattern_is_startable(pattern: str, triggers: Iterable[str]) -> bool:
         # `app/*` is a single-level subset of `app/**`. Any edit it covers
         # also matches that ancestor trigger, so the run starts. Exclusive
         # declarations use this form on purpose (`*` does not cross `/`).
-        if pattern.endswith("/*"):
-            parent = pattern[: -len("/*")]
-            if f"{parent}/**" in triggers:
-                return True
+        #
+        # This covers `app/*.py` too, not just a bare `app/*`. SUFFIX_NARROWED_RE
+        # requires a `**/` before the suffix, so a SINGLE-LEVEL suffix glob
+        # matched neither it nor the bare-`/*` test below and fell through to
+        # False — even though `engine/*.py` is as strictly contained in
+        # `engine/**` as `app/*` is. Measured 2026-08-26: `defense-rail-laws`
+        # derived an `engine/*.py` scope and reported an unstartable gap against
+        # a trigger list that carries `engine/**`, `*` AND `**`. Because
+        # ci-pack is path-scoped, only a PR touching .github/ci/ ever ran the
+        # test that says so, so the gap sat green on every unrelated PR.
+        #
+        # Ancestors are walked for the same containment reason as the subtree
+        # branch below: `a/b/*.py` ⊂ `a/b/**` ⊂ `a/**`. A glob anywhere in the
+        # PARENT is not proven and still fails.
+        head, sep, last = pattern.rpartition("/")
+        if sep and _has_glob(last) and not _has_glob(head):
+            segments = head.split("/")
+            while segments:
+                if "/".join(segments) + "/**" in triggers:
+                    return True
+                segments.pop()
         return False
     # A subtree scope is startable when an ANCESTOR subtree is a trigger, for the
     # same reason: `data/smart_money/**` matches a subset of `data/**`.
@@ -1831,15 +1857,14 @@ def build_plan(
         "pr_head" if event == "pull_request" else "main"
     )
     # `workflow` is resolved HERE, before the role/event validation below, so
-    # the one narrow diagnostic-canary admission (workflow ==
-    # DIAGNOSTIC_CANARY_WORKFLOW) can be evaluated in the same gate instead of
+    # the narrow main-owned diagnostic admission can be evaluated in the same gate instead of
     # a second, later, easy-to-miss check. Moving this resolution earlier does
     # not change what any OTHER caller gets: it was unconditional before too.
     workflow = workflow or os.environ.get("GITHUB_WORKFLOW") or "ci"
     if (role, event) not in SUPPORTED_PLAN_ROLE_EVENTS and not (
         role == "pr_head"
         and event == "workflow_dispatch"
-        and workflow == DIAGNOSTIC_CANARY_WORKFLOW
+        and workflow in DIAGNOSTIC_PR_WORKFLOWS
     ):
         raise ManifestError(
             f"semantic plan role/event combination {role}/{event} is unsupported"
@@ -2160,14 +2185,14 @@ def load_authoritative_plan(
         raise ManifestError("authoritative plan role must be pr_head or main")
     event = required_text("event")
     # `workflow` is read HERE, before the role/event validation below, so the
-    # same one narrow diagnostic-canary admission build_plan() grants can be
+    # same narrow main-owned diagnostic admission build_plan() grants can be
     # evaluated in this reader too, rather than only when the published
     # `workflow` field is reached later (still needed for the hash payload).
     workflow = required_text("workflow")
     if (role, event) not in SUPPORTED_PLAN_ROLE_EVENTS and not (
         role == "pr_head"
         and event == "workflow_dispatch"
-        and workflow == DIAGNOSTIC_CANARY_WORKFLOW
+        and workflow in DIAGNOSTIC_PR_WORKFLOWS
     ):
         raise ManifestError(
             f"authoritative plan role/event combination {role}/{event} is unsupported"
