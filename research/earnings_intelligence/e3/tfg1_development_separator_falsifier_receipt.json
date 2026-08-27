@@ -28,7 +28,23 @@
   "false_negatives": 0,
   "separators_omitted_by_frozen_receipt": 3,
   "direct_name_extraction_failures_on_frozen_direct_set": 0,
-  "missed_handoff_sweep": "every housekeeping segment the detector rejects is followed by IR/management at call open or close; no analyst handoff is unaccounted for"
+  "missed_handoff_sweep": "every housekeeping segment the detector rejects is followed by IR/management at call open or close; no analyst handoff is unaccounted for",
+  "comparison_class": {
+   "note": "every call's first question handoff is the same kind of object; the frozen receipt counts 13 and omits 3",
+   "first_handoff_combined_queue_instruction_plus_named_handoff": {
+    "counted": 11,
+    "omitted": 3
+   },
+   "first_handoff_bare_named_handoff": {
+    "counted": 2,
+    "omitted": 0,
+    "pairs": [
+     "BANR/2026Q2 #20",
+     "HTGC/2026Q2 #33"
+    ]
+   },
+   "conclusion": "the identical combined construction is admitted 11 times and refused 3 times within the same frozen receipt"
+  }
  },
  "corrected_partition_under_frozen_law": {
   "structural_separators": 113,

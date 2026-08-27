@@ -58,11 +58,23 @@ questioner:
 - `ARRY/2026Q2` #31 — names Joe Osha; next source turn is Joe Osha
 - `KREF/2026Q2` #15 — names Tom Catherwood; next source turn is Tom Catherwood
 
-**These are not a detector artifact.** Thirteen of the sixteen calls contain a structurally
-identical combined Q&A-opener-plus-first-question segment, and the frozen receipt counts all
-thirteen as separators (OCSL #29, GEF #25, ARQQ #22, TRVI #12, CTRE #17, LTH #10, UPBD #32,
-SCCO #53, AGM #30, BANR #20, FANG #4, HTGC #33, COF #20). The same construction is counted in
-thirteen calls and omitted in three.
+**These are not a detector artifact.** Every call's first question handoff is the same kind of
+object, and the frozen receipt counts thirteen of them while omitting three (counted: OCSL #29,
+GEF #25, ARQQ #22, TRVI #12, CTRE #17, LTH #10, UPBD #32, SCCO #53, AGM #30, BANR #20, FANG #4,
+HTGC #33, COF #20).
+
+Matching the comparison class exactly makes it sharper. Eleven of the counted thirteen are the
+*same combined construction* as the three omitted — one Operator segment carrying both the
+queue-instruction preamble and the named first-question handoff:
+
+| | counted | omitted |
+|---|---|---|
+| first handoff, combined queue-instruction + named handoff | 11 | 3 |
+| first handoff, bare named handoff (BANR #20, HTGC #33) | 2 | 0 |
+
+So the identical construction is admitted eleven times and refused three times within the same
+frozen receipt. The two bare handoffs are counted as well, so no reading of the gold makes the
+omissions consistent.
 
 Two alternative explanations were tested and falsified:
 
