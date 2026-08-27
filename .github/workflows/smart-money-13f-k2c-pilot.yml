@@ -1,0 +1,112 @@
+name: institutional 13F K2-C pilot proof
+
+# Read-only, dispatch-only K2-C owner-read proof lane
+# (operation alpha-k2c-institutional-adapter-20260826-sol-001).
+#
+# It performs one bounded, digest-verified read of the canonical institutional
+# 13F catalog through engine/institutional_census owner APIs, compiles the
+# result through the accepted K1 + K2-B contracts, and uploads the deterministic
+# K2-C pilot receipt as an artifact. It has no schedule, no repository write,
+# no catalog publication, no cleanup/delete step, and no SEC/EDGAR traffic.
+on:
+  workflow_dispatch:
+    inputs:
+      filer_cik:
+        description: "Manager filer CIK (10 digits)"
+        required: true
+        type: string
+      cusip:
+        description: "Requested security CUSIP (9 chars, owner-native identity)"
+        required: true
+        type: string
+      report_period_now:
+        description: "Current report period (YYYY-MM-DD, e.g. 2026-06-30)"
+        required: true
+        type: string
+      report_period_prev:
+        description: "Predecessor report period (YYYY-MM-DD, e.g. 2026-03-31)"
+        required: true
+        type: string
+      cutoff:
+        description: "Optional compile cutoff (ISO-8601 UTC); empty = now. Re-dispatching with the same cutoff must reproduce the receipt byte-identically."
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: institutional-13f-k2c-pilot
+  cancel-in-progress: false
+
+jobs:
+  owner_read_proof:
+    if: github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, macstudio-light]
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Python 3.12 (isolated locked runtime)
+        run: |
+          VENV="$RUNNER_TEMP/institutional-13f-k2c-pilot-venv"
+          /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/pip" install --quiet \
+            -r requirements/institutional-13f-k2c-pilot-macos-arm64-py312.lock
+          "$VENV/bin/python" -c "import boto3, jsonschema, pyarrow"
+
+      - name: Bounded K2-C owner-read pilot (read-only)
+        env:
+          # Same explicit binding the census lane uses; runtime code accepts
+          # ONLY the dedicated institutional namespace.
+          INSTITUTIONAL_13F_R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          INSTITUTIONAL_13F_R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          INSTITUTIONAL_13F_R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          INSTITUTIONAL_13F_R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          FILER_CIK: ${{ inputs.filer_cik }}
+          CUSIP: ${{ inputs.cusip }}
+          PERIOD_NOW: ${{ inputs.report_period_now }}
+          PERIOD_PREV: ${{ inputs.report_period_prev }}
+          CUTOFF: ${{ inputs.cutoff }}
+          RECEIPT_PATH: ${{ runner.temp }}/institutional-13f-k2c-pilot-receipt.json
+        run: |
+          set -euo pipefail
+          args=(
+            --filer-cik "$FILER_CIK"
+            --cusip "$CUSIP"
+            --report-period-now "$PERIOD_NOW"
+            --report-period-prev "$PERIOD_PREV"
+            --receipt "$RECEIPT_PATH"
+          )
+          if [ -n "$CUTOFF" ]; then
+            args+=(--cutoff "$CUTOFF")
+          fi
+          python -m lib.institutional_13f_adapter "${args[@]}"
+
+      - name: Assert bounded deterministic receipt
+        env:
+          RECEIPT_PATH: ${{ runner.temp }}/institutional-13f-k2c-pilot-receipt.json
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ["RECEIPT_PATH"])
+          raw = path.read_bytes()
+          assert len(raw) <= 256 * 1024, "pilot receipt exceeded its operator bound"
+          receipt = json.loads(raw)
+          assert receipt["schema"] == "institutional_intelligence.owner_read_receipt/v1"
+          assert receipt["persistence"] == "none"
+          print("state:", receipt["state"])
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: institutional-13f-k2c-pilot-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/institutional-13f-k2c-pilot-receipt.json
+          if-no-files-found: warn
+          retention-days: 90
