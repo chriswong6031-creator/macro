@@ -106,7 +106,11 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 # otherwise resolve against whatever else is on the path.
 sys.path.insert(0, str(REPO_ROOT))
 
-from lib.nyse_calendar import expected_last_session, sessions_behind  # noqa: E402
+from lib.nyse_calendar import (  # noqa: E402
+    expected_last_session,
+    session_n_back,
+    sessions_behind,
+)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # constants
@@ -236,9 +240,10 @@ VERDICT_TOKEN = "RESCUE-VERDICTS"
 #: multi-day outage: expected_fire_after() is purely calendar-driven, so a
 #: 5-day outage mints a NEW issue per stranded session date and a thread-local
 #: counter never sees its own history.  An anchor DATE, re-derived every wake
-#: from whichever receipt (this thread's own, or a sibling open
-#: prophet-outage issue's) first recorded the class, is IDEMPOTENT across any
-#: number of re-reads and survives the one-issue-per-session split; a counter
+#: from whichever receipt (this thread's own, or the IMMEDIATELY PRECEDING
+#: NYSE session's thread — see ``fetch_issue_thread``) first recorded the
+#: class, is IDEMPOTENT across any number of re-reads and survives the
+#: one-issue-per-session split; a counter
 #: is not idempotent and would drift on every wake that re-reads it.
 OUTAGE_DAY_TOKEN = "OUTAGE-DAY"
 
@@ -326,9 +331,10 @@ class WatchdogState:
     #: the [DAY N] escalation ladder PATCH the title only on a real change
     #: instead of rewriting it every wake.
     issue_title: str | None = None
-    #: Earliest anchor date per breach class (see ``outage_anchors`` /
-    #: ``issue_row_anchors``), merged from this session's own thread AND every
-    #: other OPEN ``prophet-outage`` issue — set on the ALARM path only.
+    #: Earliest anchor date per breach class (see ``outage_anchors``), merged
+    #: from this session's own thread AND the immediately PRECEDING NYSE
+    #: session's thread only (``lib.nyse_calendar.session_n_back``) — set on
+    #: the ALARM path only.
     outage_anchors: dict[tuple[str, ...], date] | None = None
     lane: str = "actions"
     disk_free_gb: float | None = None
@@ -645,45 +651,6 @@ def outage_anchors(texts) -> dict[tuple[str, ...], date]:
         prior = earliest.get(klass)
         if prior is None or anchor < prior:
             earliest[klass] = anchor
-    return earliest
-
-
-def issue_row_anchors(rows) -> dict[tuple[str, ...], date]:
-    """Bootstrap-aware ``outage_anchors`` for GitHub issue list ROWS.
-
-    A row whose body already carries an ``OUTAGE-DAY`` token is handled the
-    same way ``outage_anchors`` handles any other receipt.  A row that
-    PREDATES this feature — every ``prophet-outage`` issue open before this PR
-    shipped — names a breach class in its ``RESCUE-VERDICTS`` line but carries
-    no ``OUTAGE-DAY`` token at all; for exactly those rows this falls back to
-    the issue's own ``created_at`` date as the anchor.  Without this bootstrap
-    path, day one of this ladder would read every pre-existing outage as
-    brand new and print ``[DAY 1]`` for an issue that has sat open for days.
-    """
-    verdict_re = re.compile(rf"{VERDICT_TOKEN}\s+([A-Z0-9_,]+)")
-    day_re = re.compile(rf"{OUTAGE_DAY_TOKEN}\s+(\d{{4}}-\d{{2}}-\d{{2}})")
-    earliest: dict[tuple[str, ...], date] = {}
-
-    def _merge(klass: tuple[str, ...], anchor: date | None) -> None:
-        if not klass or klass == ("NONE",) or anchor is None:
-            return
-        prior = earliest.get(klass)
-        if prior is None or anchor < prior:
-            earliest[klass] = anchor
-
-    for row in rows:
-        if not isinstance(row, dict):
-            continue
-        body = row.get("body")
-        for klass, anchor in outage_anchors([body]).items():
-            _merge(klass, anchor)
-        if not isinstance(body, str):
-            continue
-        matches = verdict_re.findall(body)
-        if not matches or day_re.search(body):
-            continue
-        klass = tuple(sorted(v for v in matches[-1].split(",") if v))
-        _merge(klass, _parse_date(row.get("created_at")))
     return earliest
 
 
@@ -1255,46 +1222,97 @@ class IssueThread:
 def fetch_issue_thread(repo: str, token: str | None, session: date,
                        now: datetime) -> IssueThread:
     """The session's issue plus its attempt ledger, newest verdict set, and the
-    [DAY N] anchor for every breach class currently open anywhere in the
-    ``prophet-outage`` backlog.
+    [DAY N] anchor carried forward from the IMMEDIATELY PRECEDING NYSE
+    SESSION's own issue thread — never from any other open issue.
 
-    TWO reads, spent ONLY on the alarm path — the enrichment pass in ``main`` runs
-    this after a provisional ``decide`` has already said something is wrong, so a
-    healthy wake never pays for it.  Both reads are shared across every question
-    asked here: the open-issue list answers BOTH the session-issue match and the
-    sibling-anchor mining (one payload, ``fetch_open_outage_issues``, called
-    exactly once), and the comments read is this session's own attempt ledger.
-    Only OPEN issues are mined for sibling anchors — an operator closing an
-    issue resets that breach class's ladder to day 1 on its next occurrence,
-    which is correct: a closed issue is a declared-resolved outage, not a
-    still-running clock.
+    WHY THE PRECEDING SESSION, NOT EVERY OPEN SIBLING (2026-08-27 rewrite). The
+    prior shape mined every OPEN ``prophet-outage`` issue and took the earliest
+    anchor per breach class across all of them — that measures "the oldest open
+    issue that ever mentioned this class", not "successive days", which is not
+    what this ladder means. Two concrete shapes broke because of it. THE ORPHAN:
+    a `prophet-outage` issue left open from an unrelated, already-resolved
+    outage (or one that predates this feature and was never given an
+    ``OUTAGE-DAY`` token) shares no relationship with tonight's breach at all,
+    yet the old bootstrap adopted its ``created_at`` as an anchor and inflated a
+    brand-new breach's day count — production has four such issues open right
+    now (#5920, #6145, #6366, #6495), and a fresh STALE breach would have mined
+    #5920's 2026-08-19 ``created_at`` and opened tonight's issue already reading
+    "[DAY 10]"/"unbroken since 2026-08-19", both false. THE MON+FRI GAP: a bad
+    Monday, a healthy Tue/Wed/Thu, and a bad Friday is two SEPARATE one-day
+    outages that happen to share a verdict name; sibling mining chained them
+    into a fictitious 5-day streak with no actual unbroken run of bad nights.
+    Chaining through the session immediately before this one fixes both at
+    once: a genuine N-day outage mints one issue per stranded session and each
+    day's issue links only to the day directly before it, so an arbitrarily
+    long real chain stays alive without ever walking it, while an orphan or a
+    Mon+Fri pair has nothing open at the ADJACENT session and correctly
+    restarts at day 1.
+
+    Up to THREE reads, spent ONLY on the alarm path — the enrichment pass in
+    ``main`` runs this after a provisional ``decide`` has already said
+    something is wrong, so a healthy wake never pays for any of them, and
+    nothing here is ever paginated. Read 1, ``fetch_open_outage_issues``,
+    answers both the session-issue match and the preceding-session match from
+    one payload. If a preceding-session row exists, read 2 fetches ITS
+    comments — not just its body — because a night's issue BODY is only its
+    FIRST receipt: when the dispatch creates a run, a LATER wake's verdict
+    class (e.g. STALE, discovered only at the 09:40Z wake after the 01:40Z
+    STRAND-class body) shows up ONLY in a comment, and body-only mining can
+    never carry that class across days. A failure of read 2 degrades to the
+    preceding row's body alone rather than raising. THIS session's own row, if
+    it exists, still gets its own comments read (read 3) exactly as before,
+    and that read is still what produces ``receipts``/``last_verdicts`` — a
+    failure of the PRECEDING session's read never touches those two fields,
+    it can only degrade ``anchors``.
     """
     payload, err = fetch_open_outage_issues(repo, token)
     if err is not None:
         return IssueThread(None, None, None, None, {}, err)
+
     wanted = issue_title(session)
+    prev_session = session_n_back(session, 1)
+    prev_wanted = issue_title(prev_session) if prev_session is not None else None
+
     row: dict | None = None
-    siblings: list[dict] = []
+    prev_row: dict | None = None
     for candidate in payload:
         if not isinstance(candidate, dict):
             continue
-        if row is None and strip_day_prefix(candidate.get("title") or "") == wanted:
+        title = strip_day_prefix(candidate.get("title") or "")
+        if row is None and title == wanted:
             row = candidate
+        elif prev_row is None and prev_wanted is not None and title == prev_wanted:
+            prev_row = candidate
+
+    prev_anchors: dict[tuple[str, ...], date] = {}
+    if prev_row is not None:
+        number = prev_row.get("number")
+        prev_url = (f"https://api.github.com/repos/{repo}/issues/{number}"
+                   f"/comments?per_page=100")
+        prev_comments, prev_err = _get_json(prev_url, _api_headers(token))
+        if prev_err is None and isinstance(prev_comments, list):
+            prev_texts = [prev_row.get("body")] + [
+                c.get("body") for c in prev_comments if isinstance(c, dict)
+            ]
         else:
-            siblings.append(candidate)
-    sibling_anchors = issue_row_anchors(siblings)
+            # Degraded, never raised: the preceding thread's own body is still
+            # an anchor worth having, and a failure here must never touch
+            # THIS session's receipts/last_verdicts/error below.
+            prev_texts = [prev_row.get("body")]
+        prev_anchors = outage_anchors(prev_texts)
+
     if row is None:
-        return IssueThread(None, None, 0, None, sibling_anchors, None)
+        return IssueThread(None, None, 0, None, prev_anchors, None)
     number = row.get("number")
     url = (f"https://api.github.com/repos/{repo}/issues/{number}/comments"
            f"?per_page=100")
     comments, err = _get_json(url, _api_headers(token))
     if err is not None or not isinstance(comments, list):
-        return IssueThread(number, row.get("title"), None, None, sibling_anchors,
+        return IssueThread(number, row.get("title"), None, None, prev_anchors,
                            err or "comment list is not an array")
     texts = [row.get("body")] + [c.get("body") for c in comments
                                  if isinstance(c, dict)]
-    merged = dict(sibling_anchors)
+    merged = dict(prev_anchors)
     for klass, anchor in outage_anchors(texts).items():
         prior = merged.get(klass)
         if prior is None or anchor < prior:
@@ -1397,9 +1415,9 @@ def fetch_open_outage_issues(repo: str, token: str | None
                              ) -> tuple[list[dict] | None, str | None]:
     """ONE page of open ``prophet-outage`` issues — the exact GET
     ``find_open_issue`` used to make on its own.  Split out so
-    ``fetch_issue_thread`` can mine the sibling rows for [DAY N] anchors at
-    ZERO extra REST cost: both the session-issue match and the sibling-anchor
-    mining read this same payload rather than each paying for their own GET.
+    ``fetch_issue_thread`` can resolve both this session's row and the
+    immediately preceding session's row at ZERO extra REST cost: both matches
+    read this same payload rather than each paying for their own GET.
     """
     url = (f"https://api.github.com/repos/{repo}/issues"
            f"?labels={urllib.parse.quote(ISSUE_LABEL)}&state=open&per_page=50")
@@ -1444,9 +1462,10 @@ def upsert_issue(repo: str, token: str | None, session: date, body: str,
     ``number`` is passed in when the enrichment pass already resolved it, so the
     alarm path does not spend a second lookup on the same question.  ``day`` is
     keyword-only and used ONLY on the create path — a NEW issue is opened with
-    the escalated title directly whenever a sibling anchor carries the same
-    breach class forward (see ``escalated_title``), so the ladder is correct
-    from the very first receipt rather than needing a later PATCH to catch up.
+    the escalated title directly whenever the preceding session's thread
+    carries the same breach class forward (see ``escalated_title``), so the
+    ladder is correct from the very first receipt rather than needing a later
+    PATCH to catch up.
     """
     if number is None:
         row, err = find_open_issue(repo, token, session)
@@ -1551,7 +1570,8 @@ def receipt(actions: list[Action], state: WatchdogState, session: date,
     wake compares against to avoid posting the same alarm fourteen times in
     one night, and ``OUTAGE-DAY <date>`` is the [DAY N] ladder's anchor — the
     first UTC date the current breach class was seen, read back by
-    ``outage_anchors``/``issue_row_anchors`` on every later wake.
+    ``outage_anchors`` on every later wake (via ``fetch_issue_thread``'s
+    preceding-session chain).
     """
     src = state.main_index.get("source_asof") if state.main_index else None
     _, boundary = expected_fire_after(state.now)

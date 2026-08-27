@@ -1485,12 +1485,17 @@ def test_a_dry_run_mutates_nothing(_no_network):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# the [DAY N] escalation ladder (2026-08-27). During Aug 2026 these issues sat
-# unread for 5 days. expected_fire_after() is purely calendar-driven, so a
-# multi-day outage mints a NEW issue per stranded session date — a day-count
-# that lived only inside one issue thread would never exceed 1 on weekdays and
-# would ship dead. The anchor must therefore carry across SIBLING open issues,
-# never just this thread.
+# the [DAY N] escalation ladder (2026-08-27, rewritten same day to chain
+# through the immediately preceding NYSE session only). During Aug 2026 these
+# issues sat unread for 5 days. expected_fire_after() is purely
+# calendar-driven, so a multi-day outage mints a NEW issue per stranded
+# session date — a day-count that lived only inside one issue thread would
+# never exceed 1 on weekdays and would ship dead. The anchor must therefore
+# carry forward from the immediately PRECEDING session's thread, never from
+# an arbitrary open sibling and never from a bootstrap over EVERY open issue
+# (that shape adopted orphaned issues' anchors and chained unrelated
+# Mon+Fri-style gaps into fictitious streaks — see the fetch_issue_thread
+# docstring).
 # ─────────────────────────────────────────────────────────────────────────────
 def test_an_outage_day_anchor_round_trips_through_the_receipt():
     """The OUTAGE-DAY token receipt() writes is exactly the token
@@ -1568,27 +1573,223 @@ def test_an_escalated_title_must_not_mint_a_duplicate_issue(monkeypatch):
     assert row is not None and row["number"] == 42
 
 
-def test_issue_row_anchors_bootstraps_from_created_at_without_a_day_token():
-    """The BOOTSTRAP path: every prophet-outage issue open before this PR
-    shipped names a class in RESCUE-VERDICTS but carries no OUTAGE-DAY token
-    at all. Without this fallback, day one of this ladder reads every
-    pre-existing outage as brand new."""
-    rows = [{
-        "title": RESCUE.issue_title(WED),
+# ─────────────────────────────────────────────────────────────────────────────
+# fetch_issue_thread's adjacent-session chain (2026-08-27 rewrite). Replaces
+# the earlier "mine every open sibling issue" shape, which measured "the
+# oldest open issue that ever mentioned this class", not "successive days".
+# ─────────────────────────────────────────────────────────────────────────────
+def test_a_forgotten_orphan_issue_does_not_poison_a_fresh_breachs_day_count(monkeypatch):
+    """Mirrors the real production shape (#5920: created 2026-08-19,
+    RESCUE-VERDICTS STALE, no OUTAGE-DAY token, still open). The OLD
+    sibling-mining bootstrap adopted such a row's created_at as an anchor for
+    ANY later STALE breach anywhere, which would have opened a brand-new
+    breach's issue already reading "[DAY 10]" months later. The orphan is not
+    the immediately preceding session's issue, so the adjacent-session chain
+    must not see it at all."""
+    session = date(2026, 9, 8)  # Tue after Labor Day; a real NYSE session
+    orphan = {
+        "number": 1,
+        "title": RESCUE.issue_title(WED),           # a long-stale, unrelated session
         "created_at": WED.strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "body": f"```\n{RESCUE.VERDICT_TOKEN} STALE\n```",
-    }]
-    assert RESCUE.issue_row_anchors(rows) == {(RESCUE.STALE,): WED}
+        "body": f"```\n{RESCUE.VERDICT_TOKEN} STALE\n```",   # no OUTAGE-DAY token
+    }
+    monkeypatch.setattr(RESCUE, "_get_json", lambda url, headers=None: ([orphan], None))
+    thread = RESCUE.fetch_issue_thread("o/r", "tok", session, at(session, 9, 40))
+    assert thread.anchors == {}, "the orphan must not anchor an unrelated breach"
+    day = RESCUE.outage_day(thread.anchors.get((RESCUE.STALE,)), session)
+    assert day == 1
+    title = RESCUE.escalated_title(session, day)
+    assert not title.startswith("[DAY"), title
 
 
-def test_issue_row_anchors_prefers_a_real_token_over_the_bootstrap():
-    rows = [{
-        "created_at": FRI.strftime("%Y-%m-%dT%H:%M:%SZ"),
+def test_a_monday_friday_gap_does_not_chain_across_the_healthy_middle_of_the_week(
+        monkeypatch):
+    """A bad Monday, a healthy Tue/Wed/Thu, and a bad Friday are TWO SEPARATE
+    one-day outages that happen to share a verdict name — not a five-day
+    streak. An open issue for a session TWO OR MORE sessions back, even one
+    carrying a real OUTAGE-DAY token, must not carry into a non-adjacent
+    session's thread."""
+    monday = date(2026, 8, 10)
+    assert RESCUE.session_n_back(FRI, 1) == THU, "sanity: THU, not MON, is adjacent to FRI"
+    mon_issue = {
+        "number": 5,
+        "title": RESCUE.issue_title(monday),
+        "created_at": monday.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "body": (f"```\n{RESCUE.VERDICT_TOKEN} STRAND\n"
+                 f"{RESCUE.OUTAGE_DAY_TOKEN} {monday.isoformat()}\n```"),
+    }
+    monkeypatch.setattr(RESCUE, "_get_json", lambda url, headers=None: ([mon_issue], None))
+    thread = RESCUE.fetch_issue_thread("o/r", "tok", FRI, at(FRI, 9, 40))
+    assert thread.anchors == {}, "a non-adjacent session's issue must not carry forward"
+
+
+def test_the_immediately_preceding_sessions_anchor_does_chain(monkeypatch):
+    """The one case the whole rewrite exists to preserve: a genuine two-day
+    (or longer) outage, where the issue for the session directly before this
+    one carries a real anchor, DOES carry forward."""
+    assert RESCUE.session_n_back(FRI, 1) == THU
+    prev_issue = {
+        "number": 9,
+        "title": RESCUE.issue_title(THU),
+        "created_at": THU.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "body": (f"```\n{RESCUE.VERDICT_TOKEN} STALE\n"
-                 f"{RESCUE.OUTAGE_DAY_TOKEN} {WED.isoformat()}\n```"),
-    }]
-    assert RESCUE.issue_row_anchors(rows) == {(RESCUE.STALE,): WED}, (
-        "a real OUTAGE-DAY token must win over the created_at bootstrap"
+                 f"{RESCUE.OUTAGE_DAY_TOKEN} {THU.isoformat()}\n```"),
+    }
+
+    def fake_get_json(url, headers=None):
+        if "/issues?" in url:
+            return ([prev_issue], None)
+        if "/issues/9/comments" in url:
+            return ([], None)
+        raise AssertionError(f"unexpected URL: {url}")
+
+    monkeypatch.setattr(RESCUE, "_get_json", fake_get_json)
+    thread = RESCUE.fetch_issue_thread("o/r", "tok", FRI, at(FRI, 9, 40))
+    assert thread.anchors == {(RESCUE.STALE,): THU}
+    day = RESCUE.outage_day(thread.anchors[(RESCUE.STALE,)], FRI)
+    assert day >= 2
+
+
+def test_an_anchor_only_in_a_comment_on_the_preceding_issue_still_carries(monkeypatch):
+    """F3 regression. A night's issue BODY is only its FIRST receipt (e.g. the
+    01:40Z wake's STRAND class); a LATER wake's different verdict class (e.g.
+    the 09:40Z wake discovering STALE, once the dispatch has created a run)
+    can therefore appear ONLY in a comment, never in the body. Body-only
+    mining can never carry that class across days; reading the preceding
+    thread's comments as well as its body is what fixes that."""
+    prev_issue = {
+        "number": 11,
+        "title": RESCUE.issue_title(THU),
+        "created_at": THU.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "body": f"```\n{RESCUE.VERDICT_TOKEN} STRAND\n{RESCUE.OUTAGE_DAY_TOKEN} "
+                f"{THU.isoformat()}\n```",
+    }
+    comment = {"body": f"```\n{RESCUE.VERDICT_TOKEN} STALE\n{RESCUE.OUTAGE_DAY_TOKEN} "
+                        f"{THU.isoformat()}\n```"}
+
+    def fake_get_json(url, headers=None):
+        if "/issues?" in url:
+            return ([prev_issue], None)
+        if "/issues/11/comments" in url:
+            return ([comment], None)
+        raise AssertionError(f"unexpected URL: {url}")
+
+    monkeypatch.setattr(RESCUE, "_get_json", fake_get_json)
+    thread = RESCUE.fetch_issue_thread("o/r", "tok", FRI, at(FRI, 9, 40))
+    assert thread.anchors.get((RESCUE.STALE,)) == THU, (
+        "a comment-only class on the preceding thread must still carry"
+    )
+
+
+def test_a_failed_read_of_the_preceding_threads_comments_degrades_without_raising(
+        monkeypatch):
+    """A GET failure reading the PRECEDING session's comments must degrade to
+    that thread's body-only anchor — never raise, and never touch THIS
+    session's own receipts/last_verdicts/error, which are read from a
+    SEPARATE, successful GET."""
+    this_row = {
+        "number": 20,
+        "title": RESCUE.issue_title(FRI),
+        "created_at": FRI.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "body": f"```\n{RESCUE.VERDICT_TOKEN} STALE\n```",
+    }
+    prev_row = {
+        "number": 11,
+        "title": RESCUE.issue_title(THU),
+        "created_at": THU.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "body": f"```\n{RESCUE.VERDICT_TOKEN} STALE\n{RESCUE.OUTAGE_DAY_TOKEN} "
+                f"{THU.isoformat()}\n```",
+    }
+
+    def fake_get_json(url, headers=None):
+        if "/issues?" in url:
+            return ([this_row, prev_row], None)
+        if "/issues/11/comments" in url:
+            return None, "HTTP 500"
+        if "/issues/20/comments" in url:
+            return ([{"body": f"{RESCUE.DISPATCH_RECEIPT_TOKEN} "
+                              f"{at(FRI, 9, 40).isoformat()}"}], None)
+        raise AssertionError(f"unexpected URL: {url}")
+
+    monkeypatch.setattr(RESCUE, "_get_json", fake_get_json)
+    thread = RESCUE.fetch_issue_thread("o/r", "tok", FRI, at(FRI, 9, 40))
+    assert thread.anchors.get((RESCUE.STALE,)) == THU, "degrades to the body-only anchor"
+    assert thread.error is None, (
+        "a failure reading the PRECEDING thread must never surface as this "
+        "session's own error"
+    )
+    assert thread.receipts == 1
+    assert thread.last_verdicts == (RESCUE.STALE,)
+
+
+def test_fetch_issue_thread_rest_budget_and_never_paginates(monkeypatch):
+    """§REST BUDGET pin. The alarm path spends exactly THREE _get_json calls
+    when both this session's and the preceding session's issues are open,
+    exactly TWO when there is no preceding row, and none of those URLs ever
+    carries a page number beyond the single per_page parameter."""
+    this_row = {"number": 20, "title": RESCUE.issue_title(FRI),
+                "created_at": FRI.strftime("%Y-%m-%dT%H:%M:%SZ"), "body": "x"}
+    prev_row = {"number": 11, "title": RESCUE.issue_title(THU),
+                "created_at": THU.strftime("%Y-%m-%dT%H:%M:%SZ"), "body": "x"}
+
+    calls_both: list[str] = []
+
+    def fake_both(url, headers=None):
+        calls_both.append(url)
+        if "/issues?" in url:
+            return ([this_row, prev_row], None)
+        return ([], None)
+
+    monkeypatch.setattr(RESCUE, "_get_json", fake_both)
+    RESCUE.fetch_issue_thread("o/r", "tok", FRI, at(FRI, 9, 40))
+    assert len(calls_both) == 3, calls_both
+
+    calls_none: list[str] = []
+
+    def fake_none(url, headers=None):
+        calls_none.append(url)
+        if "/issues?" in url:
+            return ([this_row], None)
+        return ([], None)
+
+    monkeypatch.setattr(RESCUE, "_get_json", fake_none)
+    RESCUE.fetch_issue_thread("o/r", "tok", FRI, at(FRI, 9, 40))
+    assert len(calls_none) == 2, calls_none
+
+    for url in calls_both + calls_none:
+        assert not re.search(r"[?&]page=\d", url), url
+        assert "per_page=" in url
+
+
+def test_fetch_issue_thread_actually_mines_anchors_not_a_vacuous_stub(monkeypatch):
+    """SEAM PIN. test_main_wires_the_mined_anchors_into_the_state_it_hands_to_execute
+    monkeypatches fetch_issue_thread WHOLESALE, so it cannot catch a
+    regression that guts fetch_issue_thread's own anchor computation (e.g.
+    replacing the merge with a bare ``{}``) — every other test in this file
+    drives execute()/decide() with a hand-built state and never calls the
+    real function. This drives the REAL fetch_issue_thread against a stubbed
+    _get_json instead, so that mutation is caught here. (Verified against a
+    scratch copy: replacing the anchor computation with ``{}`` turns this
+    assertion false while leaving every other test in this file green.)
+    """
+    prev_row = {
+        "number": 11,
+        "title": RESCUE.issue_title(THU),
+        "created_at": THU.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "body": f"```\n{RESCUE.VERDICT_TOKEN} STALE\n{RESCUE.OUTAGE_DAY_TOKEN} "
+                f"{THU.isoformat()}\n```",
+    }
+
+    def fake_get_json(url, headers=None):
+        if "/issues?" in url:
+            return ([prev_row], None)
+        return ([], None)
+
+    monkeypatch.setattr(RESCUE, "_get_json", fake_get_json)
+    thread = RESCUE.fetch_issue_thread("o/r", "tok", FRI, at(FRI, 9, 40))
+    assert thread.anchors == {(RESCUE.STALE,): THU}, (
+        "the real fetch_issue_thread must actually mine the preceding "
+        "session's anchor, not return an empty/stubbed map"
     )
 
 
@@ -1652,13 +1853,14 @@ def test_execute_does_not_repatch_an_already_escalated_title(monkeypatch, _no_ne
     assert patched == [], "an already-correct title must not be rewritten"
 
 
-def test_a_new_issue_is_created_with_an_escalated_title_when_a_sibling_anchor_carries_forward(
+def test_a_new_issue_is_created_with_an_escalated_title_when_a_carried_anchor_reaches_upsert(
         monkeypatch):
-    """A sibling anchor can carry a breach class forward into a BRAND NEW
-    session's issue (a fresh session, same still-open breach class) — the
-    very first receipt on that new thread must already carry the escalated
-    title, verified through upsert_issue's own day= reaching escalated_title,
-    not waiting for a later PATCH to catch up."""
+    """An anchor carried forward from the preceding session's thread (see
+    ``fetch_issue_thread``) can reach a BRAND NEW session's issue (a fresh
+    session, same still-open breach class) — the very first receipt on that
+    new thread must already carry the escalated title, verified through
+    upsert_issue's own day= reaching escalated_title, not waiting for a later
+    PATCH to catch up."""
     monkeypatch.setattr(RESCUE, "find_open_issue", lambda *a, **k: (None, None))
     monkeypatch.setattr(RESCUE, "ensure_label", lambda *a, **k: None)
     captured = {}
