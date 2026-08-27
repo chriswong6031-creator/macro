@@ -1,16 +1,30 @@
 ---
 key: AGENT-DISPATCH-CURRENTLY-HAS-NO-WORKER-RECEIVER
-title: Current #agent-dispatch fan-out is delivery-shaped but has no worker receiver runtime
-observed_at: 2026-08-26
-owner: ceo-sol
-workstreams:
+claim: >
+  Current #agent-dispatch fan-out is delivery-shaped but has no production worker/Fable receiver:
+  the live channel contains Chairman plus ChatGPT1/2/3, while no production Agent Relay/Fable/worker
+  principal is present to turn DELIVERY_ONLY posts into runtime pickup.
+falsifier: >
+  Re-read Slack channel C0BSBM78V1N membership including bots/apps and produce canonical runtime
+  evidence showing an eligible worker/Agent Relay receiver both present and actually consuming a
+  bound commission; mere channel membership or message delivery does not falsify the claim.
+so_what: >
+  Future Sol sessions must not treat #agent-dispatch delivery as Executive admission or worker
+  execution, must not bulk-replay historical posts, and must finish canonical Executive routing plus
+  ASD Agent Relay before using Slack as anything beyond bounded active-session dialogue/attention.
+kind: runtime
+verified_at: 2026-08-27
+verified_by: >
+  Slack channel membership read for C0BSBM78V1N plus current Linear MAS-127 / Mastermind C1 state
+  reconciliation under protected Mastermind be68ec881460aa60d7d77cdb69f7c1cae81f6310.
+scope:
   - WS:CHAIRMAN-CONTROL-ROOM
   - WS:EXECUTIVE-CAPACITY-FABRIC
-classification: runtime_transport_gap
-capability_state: DARK_OR_DISCONNECTED
+  - slack:#agent-dispatch
+confidence: verified
 ---
 
-## Discovery
+## Evidence
 
 A live Slack census of `#agent-dispatch` (`C0BSBM78V1N`) shows only Chairman Chris and the three
 Personal-Pro ChatGPT Sol principals as members. No production Mastermind Agent Relay/Fable/worker
