@@ -1,30 +1,30 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "SBAC-BULL-20260731",
-  "asof": "2026-08-25",
+  "asof": "2026-08-27",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 51.6,
-  "raw_confidence": 53.5,
-  "delta_vs_base": -8.4,
+  "management_confidence": 50.1,
+  "raw_confidence": 48.2,
+  "delta_vs_base": -9.9,
   "recommended_action": "hold",
   "human_state": "Stalling",
   "components": {
     "validity": 100.0,
-    "progress": 11.9,
-    "pace": 38.7,
+    "progress": 7.5,
+    "pace": 25.1,
     "retention": 50.0,
-    "overlay": 67.0
+    "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.146,
-    "dist_to_t1_r": 1.354,
-    "dist_to_t2_r": 2.854,
-    "horizon_pct_used": 40.0,
-    "p1": 0.0974,
-    "p2": 0.0487,
+    "dist_to_stop_r": 1.08,
+    "dist_to_t1_r": 1.42,
+    "dist_to_t2_r": 2.92,
+    "horizon_pct_used": 44.4,
+    "p1": 0.0533,
+    "p2": 0.0266,
     "p3": null,
-    "move_r": 0.146,
+    "move_r": 0.08,
     "mfe_r": 0.146,
     "mae_r": -0.14
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-13",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 18,
-  "tau": 0.4
+  "days_elapsed": 20,
+  "tau": 0.4444
 }

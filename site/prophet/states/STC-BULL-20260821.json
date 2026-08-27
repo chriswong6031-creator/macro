@@ -1,30 +1,30 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "STC-BULL-20260821",
-  "asof": "2026-08-25",
+  "asof": "2026-08-27",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 64.1,
-  "raw_confidence": 62.5,
-  "delta_vs_base": 4.1,
+  "management_confidence": 64.3,
+  "raw_confidence": 64.6,
+  "delta_vs_base": 4.3,
   "recommended_action": "hold",
   "human_state": "Needs Follow-Through",
   "components": {
     "validity": 100.0,
-    "progress": 1.7,
-    "pace": 99.2,
+    "progress": 7.4,
+    "pace": 98.2,
     "retention": 50.0,
-    "overlay": 61.0
+    "overlay": 67.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.011,
-    "dist_to_t1_r": 1.489,
-    "dist_to_t2_r": 2.989,
-    "horizon_pct_used": 8.9,
-    "p1": 0.0074,
-    "p2": 0.0037,
+    "dist_to_stop_r": 1.078,
+    "dist_to_t1_r": 1.422,
+    "dist_to_t2_r": 2.922,
+    "horizon_pct_used": 13.3,
+    "p1": 0.0521,
+    "p2": 0.0261,
     "p3": null,
-    "move_r": 0.011,
+    "move_r": 0.078,
     "mfe_r": 0.082,
     "mae_r": -0.0
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-24",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 4,
-  "tau": 0.0889
+  "days_elapsed": 6,
+  "tau": 0.1333
 }
