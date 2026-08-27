@@ -14,7 +14,9 @@ state_before: >
   Portfolio state authority is PROVEN_LIVE. A1B import remains BUILT_NOT_PROVEN but does
   not block independent F08 read/context work. Authenticated competitor testing exposed
   mixed denominator/basis and duplicate-edit defects that are binding Mastermind redlines.
-changed: []
+changed:
+  - path: agentos/handoffs/MARKET-ONTOLOGY-F08-PORTFOLIO-ALERTS-FABLE-COO-2026-08-26.md
+    what: "Created the sustained F08 Fable COO lane commission and its denominator/degradation/monitoring envelope."
 verified:
   - claim: "Canonical holdings/population truth is already A1A-owned and aggregate denominator receipts are binding."
     command: "Read WS:MARKET-OS + authenticated MO adjudication."
