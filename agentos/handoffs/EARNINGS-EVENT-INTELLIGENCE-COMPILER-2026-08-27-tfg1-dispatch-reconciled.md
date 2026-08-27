@@ -2,7 +2,7 @@
 workstream: "WS:EARNINGS-EVENT-INTELLIGENCE-COMPILER"
 session: sol/e3-tfg1-dispatch-reconcile-20260827
 model: sol
-ended_because: dispatch_reconciled
+ended_because: ci_handoff
 mission: >
   Reconcile the post-TFG-0 transition so future sessions do not mistake a Slack delivery packet for
   worker execution: preserve TFG-0 as landed SPEC_ONLY architecture, preserve the unopened TFG-1
