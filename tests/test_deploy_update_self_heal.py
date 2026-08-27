@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import ast
+import re
 import subprocess
 from collections import deque
 from pathlib import Path
@@ -96,10 +97,11 @@ def test_caddy_source_is_validated_before_install():
     assert SCRIPT.index(validate) < SCRIPT.index(install)
 
 
-def _livingston_site_block() -> str:
+def _caddy_site_block(marker: str) -> str:
     text = CADDYFILE_PATH.read_text(encoding="utf-8")
-    marker = "livingstonpan.com {"
-    start = text.index(marker)
+    match = re.search(rf"(?m)^{re.escape(marker)}$", text)
+    assert match is not None, f"{marker} site block is missing"
+    start = match.start()
     depth = 0
 
     for index in range(start, len(text)):
@@ -111,14 +113,28 @@ def _livingston_site_block() -> str:
             if depth == 0:
                 return text[start : index + 1]
 
-    raise AssertionError("livingstonpan.com site block is not closed")
+    raise AssertionError(f"{marker} site block is not closed")
+
+
+def _livingston_site_block() -> str:
+    return _caddy_site_block("livingstonpan.com {")
+
+
+def test_livingston_http_redirect_is_explicit():
+    block = _caddy_site_block("http://livingstonpan.com {")
+
+    assert "redir https://livingstonpan.com{uri} permanent" in block
 
 
 def test_livingston_portfolio_uses_an_isolated_loopback_origin():
     block = _livingston_site_block()
+    proxy_directives = [
+        line.strip()
+        for line in block.splitlines()
+        if line.strip().startswith("reverse_proxy ")
+    ]
 
-    assert "reverse_proxy 127.0.0.1:3210" in block
-    assert "reverse_proxy 0.0.0.0" not in block
+    assert proxy_directives == ["reverse_proxy 127.0.0.1:3210"]
     assert "tls internal" in block
 
 

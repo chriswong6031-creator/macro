@@ -1269,6 +1269,10 @@ scan.mastermind-x.com {
 # Cloudflare-managed; `tls internal` secures the edge-to-origin hop and prevents
 # the missing-SNI origin handshake from returning HTTP 525. The app itself is an
 # isolated systemd service bound to loopback only.
+http://livingstonpan.com {
+	redir https://livingstonpan.com{uri} permanent
+}
+
 livingstonpan.com {
 	encode zstd gzip
 	reverse_proxy 127.0.0.1:3210
