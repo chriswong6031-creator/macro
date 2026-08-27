@@ -62,7 +62,7 @@ def run_trusted_gate(
         ),
         "CALLED_WORKFLOW_REF": (
             f"{repository}/.github/workflows/"
-            "trusted-ci-executor.yml@refs/heads/main"
+            "trusted-ci-executor.yml@main"
         ),
         "CALLED_WORKFLOW_SHA": "a" * 40,
         "REPOSITORY": repository,
@@ -88,7 +88,7 @@ def run_trusted_gate(
     return result, values
 
 
-def test_p3ba_executor_is_call_capable_but_production_route_stays_inert() -> None:
+def test_p3bb_executor_stays_call_capable_after_production_route_activation() -> None:
     document = workflow("trusted-ci-executor.yml")
     assert triggers(document) == {"workflow_call", "workflow_dispatch"}
     trigger_config = document.get("on", document.get(True))
@@ -128,7 +128,10 @@ def test_p3ba_executor_is_call_capable_but_production_route_stays_inert() -> Non
     }
 
     production = workflow("ci.yml")
-    assert "trusted-ci-executor.yml" not in str(production)
+    assert production["jobs"]["trusted-ci"]["uses"] == (
+        "mastermindx-market-intelligence/macro/.github/workflows/"
+        "trusted-ci-executor.yml@main"
+    )
     assert {
         production["jobs"][name]["runs-on"]
         for name in ("ci-plan", "ci-pack", "ci-gate")
@@ -155,6 +158,10 @@ def test_p3ba_keeps_the_direct_main_dispatch_canary(tmp_path: Path) -> None:
         EVENT_NAME="workflow_dispatch",
         TRUSTED_REF="refs/heads/main",
         CALLER_WORKFLOW_REF=(
+            f"{repository}/.github/workflows/"
+            "trusted-ci-executor.yml@refs/heads/main"
+        ),
+        CALLED_WORKFLOW_REF=(
             f"{repository}/.github/workflows/"
             "trusted-ci-executor.yml@refs/heads/main"
         ),
@@ -314,6 +321,8 @@ def test_p3ar_freezes_and_transports_the_complete_main_owned_control_bundle() ->
         if step.get("name") == "execute the frozen logical pack and retain its actual result"
     )
     assert execute_step["env"][CONTROL_REPO_ROOT_ENV] == "${{ github.workspace }}"
+    assert execute_step["env"]["CI_BASE_REF"] == "${{ github.base_ref || 'main' }}"
+    assert execute_step["env"]["CI_HEAD_REF"] == "${{ needs.plan.outputs.head_ref }}"
     execute = execute_step["run"]
     assert (
         '"$RUNNER_TEMP/trusted-ci-pack-runner/bin/python" '
