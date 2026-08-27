@@ -1,0 +1,23 @@
+name: prophet-d12-red
+
+on:
+  push:
+    branches:
+      - sol/prophet-us-d12-pack-tip-20260827
+
+permissions:
+  contents: read
+
+jobs:
+  d12-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install focused dependencies
+        run: pip install --quiet pytest pandas numpy pyyaml
+      - name: Run D12 regression
+        run: python -m pytest tests/test_prophet_live_pack_d12.py -q
