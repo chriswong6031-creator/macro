@@ -903,6 +903,53 @@ def test_accrue_zero_capture_reports_empty_status_with_health_and_census(tmp_pat
         "auth_or_entitlement_failure": ["A", "B", "C"]}
 
 
+def test_zero_capture_emits_a_line_start_error_annotation(tmp_path, monkeypatch, capsys):
+    """A total zero-capture must ALARM, not just file a receipt.
+
+    Regression pin for the 2026-08-13→08-26 outage: the vendor key went
+    401/403, every night filed a correct `nothing_captured`/`failed` receipt,
+    and the lane stayed dark thirteen days because this branch only called
+    log.warning(). capsys (not caplog) is deliberate — a logger cannot produce
+    a GitHub annotation, so asserting on log records would re-green the exact
+    defect. The `startswith("::")` check pins the DEFECT (Actions drops an
+    annotation that does not start its line), never the wording."""
+    import scripts.build_polygon_gex as bpg
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    _mock_baskets(monkeypatch)
+    census = {
+        "attempted_underlyings": 5, "successful_underlyings": 0,
+        "failure_reasons": {"auth_or_entitlement_failure": 5},
+        "failure_examples": {"auth_or_entitlement_failure": ["SPY", "QQQ", "IWM"]},
+        "aborted_early": True,
+    }
+    monkeypatch.setattr(bpg, "PolygonOptions",
+                        lambda: _FakeClient(pd.DataFrame(), census=census))
+    bpg.accrue(ASOF.date(), _now=SAME_DAY_NOW)
+
+    ann = [ln for ln in capsys.readouterr().out.splitlines()
+           if ln.startswith("::error title=polygon-accrual-dark::")]
+    assert len(ann) == 1, "zero-capture must emit exactly one line-start ::error"
+    # The dominant reason is the operator's whole diagnosis — without it the
+    # alarm says "dark" but not "your vendor key is rejected".
+    assert "auth_or_entitlement_failure" in ann[0]
+
+
+def test_dominant_failure_reason_is_deterministic_on_ties():
+    """Ties break on the code NAME so one outage renders one stable message."""
+    import scripts.build_polygon_gex as bpg
+    assert bpg._dominant_failure_reason({}) is None
+    assert bpg._dominant_failure_reason({"failure_reasons": {}}) is None
+    # A zero count is not a failure — it must never win the max().
+    assert bpg._dominant_failure_reason(
+        {"failure_reasons": {"no_spot": 0}}) is None
+    assert bpg._dominant_failure_reason(
+        {"failure_reasons": {"no_spot": 1, "auth_or_entitlement_failure": 7}}
+    ) == "auth_or_entitlement_failure"
+    tie = {"failure_reasons": {"vendor_or_network_error": 3, "no_spot": 3}}
+    assert bpg._dominant_failure_reason(tie) == "vendor_or_network_error"
+    assert bpg._dominant_failure_reason(tie) == "vendor_or_network_error"
+
+
 # ═══════════════ health verdict boundary (SOURCE_HEALTH_FLOOR = 0.90) ════════════
 
 class TestHealthVerdict:
