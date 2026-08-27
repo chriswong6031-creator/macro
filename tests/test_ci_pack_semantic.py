@@ -702,6 +702,252 @@ def test_dependency_failure_is_infrastructure_and_blocks_every_semantic_step(
     ) == ["demo"]
 
 
+def test_dependency_environment_retries_exact_tls_record_once_in_a_fresh_venv(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setenv("RUNNER_TEMP", str(tmp_path))
+    observations = iter(
+        [
+            PACK.CommandObservation(
+                outcome="failed",
+                returncode=1,
+                detail="exited 1",
+                retryable_dependency_transport=True,
+            ),
+            PACK.CommandObservation(outcome="passed", returncode=0),
+        ]
+    )
+    streamed: list[str] = []
+    venv_creations: list[Path] = []
+
+    def stream(command: str, **kwargs: object) -> object:
+        streamed.append(command)
+        assert kwargs["detect_retryable_dependency_transport"] is True
+        return next(observations)
+
+    def run(command: list[str], **_kwargs: object) -> object:
+        assert command[:3] == [sys.executable, "-m", "venv"]
+        target = Path(command[3])
+        sentinel = target / "partial-install"
+        if venv_creations:
+            assert not sentinel.exists(), "retry inherited the partial first venv"
+        target.mkdir(parents=True)
+        sentinel.write_text("partial\n", encoding="utf-8")
+        venv_creations.append(target)
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(PACK, "_stream_command", stream)
+    monkeypatch.setattr(PACK.subprocess, "run", run)
+
+    environment = PACK._dependency_environment("python -m pip install plotly")
+
+    assert streamed == [
+        "python -m pip install plotly",
+        "python -m pip install plotly",
+    ]
+    assert len(venv_creations) == 2
+    assert venv_creations[0] == venv_creations[1]
+    assert environment["PATH"].split(os.pathsep, 1)[0] == str(
+        tmp_path / "ci-pack-job-env" / "bin"
+    )
+    output = capsys.readouterr().out
+    assert "ci dependency transport retry" in output
+    assert "recreating the isolated environment once" in output
+
+
+def test_dependency_environment_does_not_retry_an_unclassified_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("RUNNER_TEMP", str(tmp_path))
+    streamed: list[str] = []
+
+    def stream(command: str, **kwargs: object) -> object:
+        streamed.append(command)
+        assert kwargs["detect_retryable_dependency_transport"] is True
+        return PACK.CommandObservation(
+            outcome="failed",
+            returncode=23,
+            detail="exited 23",
+        )
+
+    monkeypatch.setattr(PACK, "_stream_command", stream)
+    monkeypatch.setattr(
+        PACK.subprocess,
+        "run",
+        lambda *_args, **_kwargs: SimpleNamespace(returncode=0),
+    )
+
+    with pytest.raises(RuntimeError, match="dependency install exited 23"):
+        PACK._dependency_environment("python -m pip install plotly")
+    assert streamed == ["python -m pip install plotly"]
+
+
+def test_dependency_environment_fails_after_one_classified_tls_retry(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("RUNNER_TEMP", str(tmp_path))
+    calls = 0
+
+    def stream(_command: str, **kwargs: object) -> object:
+        nonlocal calls
+        calls += 1
+        assert kwargs["detect_retryable_dependency_transport"] is True
+        return PACK.CommandObservation(
+            outcome="failed",
+            returncode=1,
+            detail="exited 1",
+            retryable_dependency_transport=True,
+        )
+
+    monkeypatch.setattr(PACK, "_stream_command", stream)
+    monkeypatch.setattr(
+        PACK.subprocess,
+        "run",
+        lambda *_args, **_kwargs: SimpleNamespace(returncode=0),
+    )
+
+    with pytest.raises(RuntimeError, match="after one classified TLS retry"):
+        PACK._dependency_environment("python -m pip install plotly")
+    assert calls == 2
+
+
+def test_dependency_environment_records_tls_retry_before_different_second_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("RUNNER_TEMP", str(tmp_path))
+    observations = iter(
+        [
+            PACK.CommandObservation(
+                outcome="failed",
+                returncode=1,
+                detail="exited 1",
+                retryable_dependency_transport=True,
+            ),
+            PACK.CommandObservation(
+                outcome="failed",
+                returncode=23,
+                detail="exited 23",
+            ),
+        ]
+    )
+    monkeypatch.setattr(
+        PACK,
+        "_stream_command",
+        lambda *_args, **_kwargs: next(observations),
+    )
+    monkeypatch.setattr(
+        PACK.subprocess,
+        "run",
+        lambda *_args, **_kwargs: SimpleNamespace(returncode=0),
+    )
+
+    with pytest.raises(
+        RuntimeError,
+        match="dependency install exited 23 after one classified TLS retry",
+    ):
+        PACK._dependency_environment("python -m pip install plotly")
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "echo prepare; python -m pip install plotly",
+        "python -m pip install plotly && echo replayed",
+        "python -m pip install plotly; ./non_idempotent_step",
+        "python -m pip install plotly | tee /tmp/output",
+        "python -m pip install $(cat requirements.txt)",
+        "python -m pip install `cat requirements.txt`",
+    ],
+)
+def test_dependency_command_refuses_a_mixed_shell_body(command: str) -> None:
+    job = _job(
+        "mixed-install",
+        [
+            {
+                "name": "not standalone",
+                "run": command,
+            },
+            {"name": "proof", "run": "true"},
+        ],
+    )
+    with pytest.raises(PACK.ManifestError, match="not a standalone pip command"):
+        PACK.dependency_command(job)
+
+
+def test_dependency_transport_marker_detection_crosses_stream_chunks(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    chunks = iter(
+        [
+            b"ssl.SSLError: [SSL: DECRYPTION_FAILED_OR_BAD_",
+            b"RECORD_MAC] decryption failed or bad record mac\n",
+            b"",
+        ]
+    )
+
+    class Process:
+        returncode = 1
+        pid = 77
+        stdout = SimpleNamespace(
+            read=lambda _size: next(chunks),
+            close=lambda: None,
+        )
+
+        def wait(self, timeout: object = None) -> int:
+            return self.returncode
+
+    monkeypatch.setattr(PACK.subprocess, "Popen", lambda *_args, **_kwargs: Process())
+    observation = PACK._stream_command(
+        "python -m pip install plotly",
+        env={},
+        timeout_seconds=None,
+        detect_retryable_dependency_transport=True,
+    )
+    assert observation.outcome == "failed"
+    assert observation.retryable_dependency_transport is True
+
+
+@pytest.mark.parametrize(
+    "near_miss",
+    [
+        b"ssl.SSLError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed\n",
+        b"ssl.SSLError: [SSL: DECRYPTION_FAILED] decryption failed\n",
+        b"ssl.SSLError: [SSL: DECRYPTION_FAILED_OR_BAD_RECORD] incomplete marker\n",
+    ],
+)
+def test_dependency_transport_near_misses_are_not_retryable(
+    monkeypatch: pytest.MonkeyPatch,
+    near_miss: bytes,
+) -> None:
+    chunks = iter([near_miss, b""])
+
+    class Process:
+        returncode = 1
+        pid = 77
+        stdout = SimpleNamespace(
+            read=lambda _size: next(chunks),
+            close=lambda: None,
+        )
+
+        def wait(self, timeout: object = None) -> int:
+            return self.returncode
+
+    monkeypatch.setattr(PACK.subprocess, "Popen", lambda *_args, **_kwargs: Process())
+    observation = PACK._stream_command(
+        "python -m pip install plotly",
+        env={},
+        timeout_seconds=None,
+        detect_retryable_dependency_transport=True,
+    )
+    assert observation.outcome == "failed"
+    assert observation.retryable_dependency_transport is False
+
+
 def test_explicit_changed_file_handle_overrides_stale_child_transports(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

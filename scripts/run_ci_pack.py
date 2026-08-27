@@ -38,6 +38,7 @@ import json
 import os
 import platform
 import re
+import shlex
 import signal
 import shutil
 import subprocess
@@ -143,6 +144,16 @@ DIAGNOSTIC_PR_WORKFLOWS = frozenset(
 FAILURE_CAPTURE_MAX_BYTES = 131_072
 FAILURE_CAPTURE_MAX_ATOMS = 64
 FAILURE_CAPTURE_MAX_LINE_BYTES = 4_096
+
+# Retry exactly the transport corruption observed on the sealed PC runner in
+# #6505.  This is deliberately not a generic "network error" bucket: package
+# resolution, certificate validation, authentication, hash, and build failures
+# must remain terminal on their first attempt.  Matching is performed over the
+# live byte stream with only a marker-sized tail retained; raw dependency logs
+# never enter semantic evidence or memory.
+DEPENDENCY_TRANSPORT_RETRY_MARKERS = (
+    b"[SSL: DECRYPTION_FAILED_OR_BAD_RECORD_MAC]",
+)
 
 DEFAULT_BASE_REPLAY_BUDGET_SECONDS = 15 * 60
 SEMANTIC_DETAIL_MAX_BYTES = 1_024
@@ -307,6 +318,28 @@ EXPRESSION_RE = re.compile(r"\$\{\{[^}]+\}\}")
 PIP_INSTALL_RE = re.compile(
     r"^\s*(?:(?:python|python3) -m )?pip install [^\n]+\s*$"
 )
+SHELL_CONTROL_CHARS = frozenset(";&|<>()`")
+
+
+def _is_standalone_pip_install(command: str) -> bool:
+    """Accept one pip invocation, never a compound or substituted shell body."""
+    if not PIP_INSTALL_RE.fullmatch(command):
+        return False
+    try:
+        lexer = shlex.shlex(
+            command,
+            posix=True,
+            punctuation_chars=";&|<>()`",
+        )
+        lexer.whitespace_split = True
+        lexer.commenters = ""
+        tokens = list(lexer)
+    except ValueError:
+        return False
+    return not any(
+        token and all(char in SHELL_CONTROL_CHARS for char in token)
+        for token in tokens
+    )
 # Command-only timings from successful ci run 30173070380.  These few outliers
 # dominate wall time; checkout/setup/install were deliberately excluded because
 # packs share or group that work.  The fallback heuristic handles every other
@@ -477,6 +510,7 @@ class CommandObservation:
     returncode: int | None
     failure_signature: Mapping[str, Any] | None = None
     detail: str | None = None
+    retryable_dependency_transport: bool = False
 
 
 @dataclass(frozen=True)
@@ -1408,7 +1442,7 @@ def load_legacy_jobs(path: Path, *, gate: str | None = None) -> list[LegacyJob]:
         ]
         if len(installs) > 1:
             findings.append(f"{prefix} has more than one dependency-install step")
-        elif installs and not PIP_INSTALL_RE.fullmatch(installs[0]):
+        elif installs and not _is_standalone_pip_install(installs[0]):
             findings.append(
                 f"{prefix} dependency install is not a standalone pip command"
             )
@@ -2555,6 +2589,15 @@ def dependency_command(job: LegacyJob) -> str | None:
     for step in job.definition["steps"]:
         command = str(step.get("run", ""))
         if "pip install" in command:
+            # Manifest validation normally closes this invariant before
+            # execution.  Keep it local as well: retrying an entire mixed shell
+            # body merely because it contains these words would replay unrelated
+            # and potentially non-idempotent work.
+            if not _is_standalone_pip_install(command):
+                raise ManifestError(
+                    f"job {job.job_id!r} dependency install is not a standalone "
+                    "pip command"
+                )
             return command
     return None
 
@@ -3089,11 +3132,29 @@ def _run_job(
     )
 
 
+class _DependencyTransportMarkerDetector:
+    """Recognize an exact retry marker without retaining the dependency log."""
+
+    def __init__(self, markers: Sequence[bytes]):
+        self._markers = tuple(marker for marker in markers if marker)
+        self._tail = b""
+        self.matched = False
+        self._tail_size = max((len(marker) for marker in self._markers), default=1) - 1
+
+    def feed(self, chunk: bytes) -> None:
+        if self.matched or not self._markers:
+            return
+        window = self._tail + bytes(chunk)
+        self.matched = any(marker in window for marker in self._markers)
+        self._tail = window[-self._tail_size :] if self._tail_size else b""
+
+
 def _stream_command(
     command: str,
     *,
     env: Mapping[str, str],
     timeout_seconds: int | float | None,
+    detect_retryable_dependency_transport: bool = False,
 ) -> CommandObservation:
     """Stream a child live while retaining only bounded structured atoms."""
     deadline = (
@@ -3105,6 +3166,11 @@ def _stream_command(
         max_bytes=FAILURE_CAPTURE_MAX_BYTES,
         max_atoms=FAILURE_CAPTURE_MAX_ATOMS,
         max_line_bytes=FAILURE_CAPTURE_MAX_LINE_BYTES,
+    )
+    dependency_transport = _DependencyTransportMarkerDetector(
+        DEPENDENCY_TRANSPORT_RETRY_MARKERS
+        if detect_retryable_dependency_transport
+        else ()
     )
     process = subprocess.Popen(
         ["bash", "-eo", "pipefail", "-c", command],
@@ -3125,6 +3191,7 @@ def _stream_command(
                 chunk = process.stdout.read(4_096)
                 if not chunk:
                     break
+                dependency_transport.feed(chunk)
                 # Normal Actions output remains live.  Decode only for display;
                 # the collector receives the original bounded byte line.
                 print(chunk.decode("utf-8", "replace"), end="", flush=True)
@@ -3210,6 +3277,7 @@ def _stream_command(
             returncode=process.returncode,
             failure_signature=signature,
             detail=f"exited {process.returncode}",
+            retryable_dependency_transport=dependency_transport.matched,
         )
     return CommandObservation(outcome="passed", returncode=0)
 
@@ -3262,23 +3330,52 @@ def _dependency_environment(
     if not runner_temp:
         raise RuntimeError("RUNNER_TEMP is required to isolate legacy dependencies")
     environment = Path(runner_temp).resolve() / "ci-pack-job-env"
-    if environment.exists():
-        shutil.rmtree(environment)
-    subprocess.run([sys.executable, "-m", "venv", str(environment)], check=True)
-    command_env["PATH"] = (
-        str(environment / "bin") + os.pathsep + command_env.get("PATH", "")
-    )
-    print(f"::group::dependency environment — {install_command}", flush=True)
-    result = subprocess.run(
-        ["bash", "-eo", "pipefail", "-c", install_command],
-        env=command_env,
-    )
-    print("::endgroup::", flush=True)
-    if result.returncode:
-        raise RuntimeError(
-            f"dependency install exited {result.returncode}: {install_command}"
+    inherited_path = command_env.get("PATH", "")
+    retry_used = False
+    for attempt in (1, 2):
+        # A retry never inherits a partly-installed environment.  Recreate the
+        # same bounded path so adjacent jobs still share only a fully successful
+        # dependency set, exactly as the single-attempt contract did.
+        if environment.exists():
+            shutil.rmtree(environment)
+        subprocess.run([sys.executable, "-m", "venv", str(environment)], check=True)
+        command_env["PATH"] = (
+            str(environment / "bin") + os.pathsep + inherited_path
         )
-    return command_env
+        print(
+            f"::group::dependency environment attempt {attempt} — {install_command}",
+            flush=True,
+        )
+        try:
+            result = _stream_command(
+                install_command,
+                env=command_env,
+                timeout_seconds=None,
+                detect_retryable_dependency_transport=True,
+            )
+        finally:
+            print("::endgroup::", flush=True)
+        if result.outcome == "passed":
+            return command_env
+        if attempt == 1 and result.retryable_dependency_transport:
+            retry_used = True
+            print(
+                "::warning title=ci dependency transport retry::"
+                "classified transient TLS record on attempt 1; recreating the "
+                "isolated environment once",
+                flush=True,
+            )
+            continue
+        returncode = result.returncode if result.returncode is not None else result.outcome
+        retry_detail = (
+            " after one classified TLS retry"
+            if attempt == 2 and retry_used
+            else ""
+        )
+        raise RuntimeError(
+            f"dependency install exited {returncode}{retry_detail}: {install_command}"
+        )
+    raise AssertionError("dependency retry loop exhausted without a verdict")
 
 
 def _blocked_job_execution(
