@@ -15,7 +15,9 @@ state_before: >
   canonical-library discoverability failure and displayed High confidence/85% probability
   without sufficient visible derivation. Mastermind FIF is canonical financial owner and
   full write/deployment depends on its current source/truth proof.
-changed: []
+changed:
+  - path: agentos/handoffs/MARKET-ONTOLOGY-F07-VALUATION-SCENARIO-FABLE-COO-2026-08-26.md
+    what: "Created the sustained F07 Fable COO lane commission and its financial-truth/reconciliation envelope."
 verified:
   - claim: "Valuation must route through FIF/company financial owners and durable writes need read-model reconciliation."
     command: "Read authenticated adjudication + parity laws."
