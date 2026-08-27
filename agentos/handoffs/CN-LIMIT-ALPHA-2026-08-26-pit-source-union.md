@@ -134,8 +134,10 @@ next_actions: >
      existing reference generation; never re-collect identity.
   3. Drive bounded canary windows (mode=canary, max_requests=12, one-day window)
      to stage=complete through pit_universe, name_history and all five daily
-     endpoints. Expected shape: pit 1 + name <=5 + daily 5 = <=11 against the cap
-     of 12.
+     endpoints. Budget ~7 WINDOWS, not one -- see the name_history correction in
+     danger_areas. Roughly: pit_universe 1 request, name_history 35 year-units at
+     NAMECHANGE_MAX_PER_RUN=5 per run, five daily endpoints at 1 request each for
+     a single session, so about 41 requests across ~7 runs of 12.
   4. Only then: a SEPARATE technical-readiness PR for the bulk gate, gated on a
      clean terminal canary AND independent review. Then the resumable range
      campaign, then close DEP-EXACT on the sanitized completeness manifest.
@@ -181,6 +183,23 @@ danger_areas:
     Backups of the private store hold superseded eras and must never be promoted:
     ~/.local/share/macro-dashboard/china_tushare_spine.prerebuild-20260826 is the
     OLD 1991-anchored trade_cal plane.
+  - >
+    CORRECTION to the previous handoff, which said the acceptance canary was ONE
+    window of "pit 1 + name <=5 + daily 5 = <=11 against the cap of 12". The
+    "<=5" was misread: NAMECHANGE_MAX_PER_RUN = 5 is a PER-RUN cap, not the
+    total. collect_name_history iterates
+    range(NAME_HISTORY_START_YEAR=1990, end.year + 1), which is 35 year-units for
+    a 2024 window, and build_completeness_manifest requires every one of them
+    (:4809 mirrors the same range). So stage=complete needs roughly 41 requests
+    across about SEVEN windows, not one. This is not a blocker -- the units are
+    resumable and the canary driver already loops windows -- but a session that
+    budgets one window will conclude the canary is wedged when it is merely
+    partway through name_history, which is exactly how a healthy resumable
+    campaign gets misdiagnosed. Note also that NAME_HISTORY_START_YEAR (1990) is
+    deliberately INDEPENDENT of the frozen 1992 calendar epoch: namechange units
+    are announcement-year segments with no session-axis dependency, and
+    normalise_name_history never touches _session_map, so 1990 and 1991 units are
+    legitimate and must not be "corrected" to the epoch.
   - >
     SOURCE_ROW_CAPS['stk_limit'] is 5800 and the cap test is `>=`, while the
     A-share universe measured 5,344 on 2024-01-02 and grows a few hundred names a
