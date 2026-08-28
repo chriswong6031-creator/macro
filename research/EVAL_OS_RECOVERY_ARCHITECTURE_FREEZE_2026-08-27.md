@@ -12,32 +12,40 @@ This record supersedes stale *next actions* in the 2026-08-14 Eval OS workstream
 
 Evaluation OS exists to make one answer defensible: **which Mastermind intelligence outputs are working, what exactly was measured, on what clock/ruler, and what authority may that evidence lawfully support?**
 
-Completion is not “the library exists”, a merged PR, a green CI run, or a Slack delivery. Complete means real producers register claims prospectively, real grading runs mature those claims under their declared clocks, illegal readings/promotions fail closed, operators can see output health and evidence status in the existing admin surface, and no second evaluation/control plane was created.
+Completion is not “the library exists”, a merged PR, a green CI run, or a Slack delivery. Complete means real producers register claims prospectively, real grading runs mature those claims under their declared clocks, illegal readings/promotions fail closed, operators can see output health and evidence status in the existing admin surface, the original T0–T12 program has an explicit evidence-backed disposition, and no second evaluation/control plane was created.
 
-## 2. Recovered capability ledger
+## 2. Recovered capability ledger — complete original T0–T12 disposition
 
 | Capability | State | Recovered truth |
 |---|---|---|
-| T0 metric-validity substrate | `PARTIAL` | #5471 landed the auditor and core invariants, but `scripts/check_qledger_metric_validity.py` remains WARN-tier by default; the planned T3 hardening is not complete. |
+| T0 metric-validity substrate | `PARTIAL` | #5471 landed the auditor and core invariants, but `scripts/check_qledger_metric_validity.py` remains WARN-tier by default; T3 hardening is not complete. |
 | T1 canonical engine registry | `PROVEN_LIVE` for its bounded registry/guard law | #5620 / `d13259abc51c` landed the derived `producer::owner_program` registry, fail-closed integrity guard and isolated CI. W3 curated 107/109 output classes with two deliberate nulls. Agent OS and Linear MAS-131 were later reconciled to `done`. |
+| T2 Prophet plan-ledger benchmark / MFE / MAE | `NOT_BUILT` under the original contract | Current `data/prophet/ledger.jsonl` and `research/PROPHET_LEDGER_SCHEMA.md` remain `prophet.ledger/v1` without `bench_ret_pct`, `sector_ret_pct`, signed benchmark/sector excess, MFE or MAE fields. Newer Prophet evaluation/arena programs now exist, so the old T2 shape must be reconciled against current Prophet-owned architecture before any implementation; do not create a parallel Prophet evaluation ledger. |
+| T3 retire invalid emitters + strict metric-validity gate | `PARTIAL` | Direction/control/output-class legality fixes exist (#5519/#5572/#5573 and later clock work), but the top-level metric-validity gate still deliberately exits warn-tier by default. |
+| T4 per-output health resolver | `BUILT_NOT_PROVEN` | Old branch is gone. #5721 merged as `a77d874a1c23c7e4e2db0000db75164fcc56bcc2` after adversarial HOLD/fixes. Health is derived on demand over T1 + Synapse + existing evidence providers; no generated health state. Real deployed admin proof is still missing. |
+| T5 failure taxonomy + clustering | `NOT_BUILT` | The required failure classes (`stale_feature`, `data_issue`, `false_breakout`, `unclassified`, etc.) are present in plans/specification only; no implemented deterministic T5 taxonomy/clusterer was found. It remains dependent on T2 or its lawfully superseding Prophet evidence contract. |
+| T6 Golden Case Library | `PARTIAL` | The pre-existing `engine/neuralweb/eval/` estate still contains one benchmark case (`benchmark_bear_steepener_2026-07-29.json`); the planned 20-case PIT library under `data/golden_cases/` does not exist. Extend the existing eval harness rather than creating a second replay framework. |
+| T7 per-engine evidence scorecard | `NOT_BUILT` | The required Validated/Accruing/Ungraded/Degraded/Disproven semantics remain architecture/plan text, not implementation. |
+| T8 global CEO evidence view | `NOT_BUILT` | Still plan/spec. It must rank by evidence strength and show empty/negative states honestly. |
+| T9 qledger adoption / real evidence accrual | `PARTIAL` | qledger is active at scale, but focal desk adoption is incomplete and the original “every directional engine” adoption law has not been proven. |
+| T10 contradiction classification addition | `NOT_BUILT` as the Eval-OS addition | The pre-existing contradiction detector remains canonical; Eval OS must not rebuild it. The planned healthy-tension / impossible-contradiction classification extension is not proven implemented. |
+| T11 deterministic numeric-source verification | `NOT_BUILT` as the planned addition | Existing response-eval rubric remains canonical and must not be replaced; deterministic number-to-source verification is still a separate missing layer. |
+| T12 Agent OS tier interface | `NOT_BUILT` | `required_tier(diff)` is found only in the V1 plan. Eval OS may state required evidence tier; Agent OS remains the router/owner of work. |
+
+### Cross-cutting measurement / operational substrate recovered outside a single T-number
+
+| Capability | State | Recovered truth |
+|---|---|---|
 | Qledger horizon-unit + market-ruler law | `PROVEN_LIVE` on qledger path | Explicit `trading_days` / `calendar_days`, market resolution, maturity/check-by/grading window and rendered ruler are resolved centrally for qledger claims. Current production track record emits clock-basis metadata. |
 | Cross-clock pooling refusal | `PROVEN_LIVE` on current qledger track-record path | Current `site/qledger/track_record.json` selects a single legal basis and emits `pooling_refused: true` where legacy and explicit bases coexist. |
-| Direction-correct / output-class metric legality as a fleet-wide hard gate | `PARTIAL` | Core fixes exist (#5519/#5572/#5573 and later clock work), but the top-level metric-validity gate still deliberately exits warn-tier by default. |
-| Append-only assertion law | `PROVEN_LIVE` for repository guard law | #5534 merged; stale Agent OS text still says to merge it. |
+| Append-only assertion law | `PROVEN_LIVE` for repository guard law | #5534 merged; stale Agent OS text still said to merge it before this reconciliation. |
 | Forward-only desk adapters | `PARTIAL` | #5577 merged adapters for `stock_desk`, `thematic_desk`, `demand_chain`; actual clock evidence proves only `demand_chain` began prospective accrual. |
 | General forward evidence clock | `PARTIAL` | `demand_chain` started `2026-08-19T08:10:37.995754+00:00`, 126 trading days, trigger git SHA `34899ec5235884e183be86088ab01f81e34a693f`. No current tracked clock exists for `stock_desk` or `thematic_desk`. No backfill is permitted. |
 | Legacy evidence promotion firewall | `BUILT_NOT_PROVEN` as a complete end-to-end authority refusal | #5584 prevents legacy-clock evidence from originating new authority after the clock discontinuity and forbids mixing legacy with explicit evidence. It still needs one unified adversarial/consumer proof on the final path. |
 | CEO control-leg policy | `PARTIAL` in live accrual, **decision resolved** | P0d/#5609 established benchmark universal baseline; matched control only where a defensible counterfactual exists. `stock_desk` and `demand_chain` are matched-control-required; `thematic_desk` is benchmark-only. #5665/#5672 repaired demand-chain wiring and replay clock consistency. |
 | Matched-control evidence clock | `PARTIAL` | Historical production receipt proves `demand_chain` started `2026-08-19T08:10:37.332100+00:00`, control `XLU`, 126 trading days. #5970 then correctly untracked/ignored control-clock files because the canonical file is runner-local/write-once. Current runner-local persistence must be verified on the production host; no second persisted copy may be invented. `stock_desk` has no proven start. |
 | Promotion readiness consumer | `PARTIAL` | Current qledger nightly runs and emits readiness; 2026-08-27 production `run_status.json` reports 1,250 grades that run, zero promotion-ready families, and `radar@21d` approaching. Readiness remains advisory; existing authority/promotion owners remain canonical. |
-| T4 per-output health resolver | `BUILT_NOT_PROVEN` | Old branch is gone. #5721 merged as `a77d874a1c23c7e4e2db0000db75164fcc56bcc2` after adversarial HOLD/fixes. Health is derived on demand over T1 + Synapse + existing evidence providers; no generated health state. Real deployed admin proof is still missing. |
 | Existing admin Intelligence OS health page | `BUILT_NOT_PROVEN` | #5721 added read-only admin routes/page, in-memory cache only. No accepted production-browser/operator receipt was found. |
-| T7 per-engine evidence scorecard | `NOT_BUILT` | Code search finds the required Validated/Accruing/Ungraded/Degraded/Disproven semantics only in architecture/plans, not implementation. |
-| T8 global CEO evidence view | `NOT_BUILT` | Same: still plan/spec. It must rank by evidence strength and show empty/negative states honestly. |
-| T9 qledger adoption / real evidence accrual | `PARTIAL` | qledger is active at scale, but focal desk adoption is incomplete and the original “every directional engine” adoption law has not been proven. |
-| T10 contradiction classification addition | `NOT_BUILT` as the Eval-OS addition | The pre-existing contradiction detector remains the canonical detector; Eval OS must not rebuild it. The planned healthy-tension/impossible-contradiction classification layer is not proven implemented. |
-| T11 deterministic numeric-source verification | `NOT_BUILT` as the planned addition | Existing response-eval rubric remains canonical and must not be replaced; deterministic number-to-source verification is still a separate missing layer. |
-| T12 Agent OS tier interface | `NOT_BUILT` | `required_tier(diff)` is found only in the V1 plan. Eval OS may state required evidence tier; Agent OS remains the router/owner of work. |
 | Executive OS current-state read / CEO admission from Personal-Pro | `DARK_OR_DISCONNECTED` for this session | C1 implementation #155 merged in Mastermind, and the Relay bot has joined `#sol-runtime`, but no `MMX/SOL_STATE_V1` frame exists yet. No current Executive Job/Attempt/Worker state can be canonically read, and no Executive modifying admission may be assumed. |
 
 ### Current qledger production evidence
@@ -46,11 +54,12 @@ At the recovery base, `data/qledger/run_status.json` is a real active-run artifa
 
 ## 3. Stale records and carriers
 
-1. `WS:EVAL-OS-MEASUREMENT-LAW` W4 still says “merge #5534/#5577/P0c-2”; all are already merged. Its W5 still says control-leg CEO ruling is unresolved; P0d/#5609 and the preregistered control contract already resolved it.
-2. `WS:EVAL-OS-OUTPUT-HEALTH` still says T4 is on `claude/eval-os-t4-output-health` awaiting adversarial review/PR. That branch no longer exists; #5721 merged on 2026-08-15 after adversarial review and repair.
+1. `WS:EVAL-OS-MEASUREMENT-LAW` W4 still said “merge #5534/#5577/P0c-2”; all are already merged. Its W5 still said control-leg CEO ruling was unresolved; P0d/#5609 and the preregistered control contract already resolved it.
+2. `WS:EVAL-OS-OUTPUT-HEALTH` still said T4 was on `claude/eval-os-t4-output-health` awaiting adversarial review/PR. That branch no longer exists; #5721 merged on 2026-08-15 after adversarial review and repair.
 3. T1 continuation material from 2026-08-12/14 is historical archaeology only. T1 itself was later reconciled to done by #6392 / MAS-131.
 4. #5512’s recommendation to defer T7/T8 because the validated list would be nearly empty was a then-current planning judgment, not a permanent prohibition. An honest L4 must be useful precisely when Validated is empty and Accruing/Degraded dominate.
-5. No current Eval OS implementation PR or Slack carrier was found at recovery. Never revive an old branch name as a carrier.
+5. The old T2/T5/T6 plan items were never made terminal merely because newer Prophet/Neural-Web work landed elsewhere. Their exact old implementations must not be blindly resumed; each must first reconcile to the current owner and either close the original capability gap or record an explicit evidence-backed replacement/rejection.
+6. No current Eval OS implementation PR or Slack carrier was found at recovery. Never revive an old branch name as a carrier.
 
 ## 4. CEO rulings — frozen
 
@@ -92,6 +101,10 @@ T12 may deterministically derive the evidence/review tier required by a changed 
 
 The general and matched-control evidence clocks measure the first **accepted prospective registration event** on their governed paths. The clock timestamp is generated by that registration event and must be causally linked to the exact accepted claim/trigger row. It is not copied from `state_asof`, claim `asof`, thesis creation time, a historical source timestamp, this architecture document or an operator-supplied backdate. The claim’s own as-of may legitimately precede registration only if the shared forward gate proves that no bar in the graded outcome window has printed yet. This distinction is load-bearing: using a historical thesis timestamp as the evidence-clock start would make a new forward cohort look older than it actually is.
 
+### R10 — original T0–T12 tasks cannot disappear by drift
+
+A newer subsystem may supersede the **implementation shape** of an old Eval OS task, but not silently erase its user/machine capability. For T2/T5/T6/T10/T11, a Fable wave must first reconcile the old objective against the current Prophet/Metabolism/Neural-Web/contradiction/response-eval owners. If a current owner already satisfies the objective, prove it and record the replacement. If not, extend that canonical owner. Never resurrect an old plan into a duplicate evaluation ledger, replay framework, taxonomy store, contradiction detector or rubric.
+
 ## 5. Architecture freeze — canonical flow
 
 ```text
@@ -104,11 +117,11 @@ T1 derived engine registry  -------------------------------+
         |
 real engine producer
         v
-qledger claim (prospective, declared horizon/unit/market/control policy)
+qledger / owner-native prospective record
         v
-write-once evidence clocks + shared resolver
+write-once evidence clocks + shared owner resolver
         v
-qledger grade (shared subject/benchmark/control window)
+owner-native grade/eval (qledger for qledger claims)
         v
 legal metric contract + single-clock partition
         v
@@ -119,7 +132,9 @@ promotion-readiness / existing gauntlet authority checks
         +--> T12 evidence-tier finding (Agent OS routes, not Eval OS)
 ```
 
-**Forbidden forks:** second engine registry; second claims/grades store; second health monitor/store; second promotion authority; hand-maintained score database; retrospective “prospective” rows; new hidden clock store; a public/internal score that pools different clock bases.
+T2/T5 remain Prophet-owner extensions, T6 extends the existing Neural Web eval harness, T10 extends the existing contradiction detector, and T11 extends the existing response-eval system. They feed evidence upward but do not create parallel truth stores.
+
+**Forbidden forks:** second engine registry; second claims/grades store; second health monitor/store; second promotion authority; hand-maintained score database; retrospective “prospective” rows; new hidden clock store; second Prophet evaluation ledger; second replay/golden-case framework; second contradiction detector; second generative rubric; a public/internal score that pools different clock bases.
 
 ## 6. Completion map / bounded waves
 
@@ -153,17 +168,35 @@ Observable mission: the existing admin Intelligence OS answers which engines are
 
 The Validated list is allowed to be empty. Empty is evidence, not a product failure. Ranking is by evidence strength, never headline performance.
 
-### G1 — Metric-validity strict promotion
+### G1 — T3 metric-validity strict promotion
 
 Only after invalid live emitters/readers are repaired or explicitly exempted under source law: flip the existing metric-validity gate from fleet-wide warning to a real hard integrity gate. No performance threshold becomes a hard release gate merely because this wave exists.
+
+### Q1 — T9 fleet adoption completion
+
+After E1/P1 establish the final clock/promotion contract, census every T1 engine whose `output_class` makes forward grading applicable and either wire it through its existing canonical owner/ledger or record `ungraded_by_design` with evidence. Do not force classification/detection/salience outputs into directional-return metrics.
+
+### V1 — T2 current-Prophet evidence reconciliation
+
+Before implementing the old T2 file list, cold-start the current Prophet evaluation authority (including Conditional Fusion/Arena and the forward plan ledger). Prove whether benchmark-relative return, sector-relative return, MFE and MAE already exist under a newer canonical contract. If they do, map T2 to that evidence. If not, extend the existing Prophet owner and its sole forward ledger/read model. Do not create another Prophet ledger or backfill an apparently forward record without an explicit current evidence law.
+
+### F1 — T5 failure taxonomy / clustering — after V1 or its proven replacement
+
+Extend the existing Metabolism/postmortem path with a deterministic closed vocabulary that evaluates `stale_feature` and `data_issue` first, preserves an honest `unclassified` bucket, and clusters only after the underlying evidence contract can support the named failure (including MFE/MAE-dependent `false_breakout`). No free-standing taxonomy truth store.
+
+### C1 — T6 Golden Case Library
+
+Grow the existing Neural Web eval harness from its single benchmark case to the planned PIT-curated library. Each case must carry knowable-at inputs, expected reading, known failure modes and deterministic replay. Reuse existing replay/eval primitives; do not create a second replay framework. Curated expected readings are main-loop/Fable judgement, not mechanical labels.
+
+### R1 — T10/T11 reliability extensions
+
+Extend the existing contradiction detector with the healthy-tension/impossible-contradiction classification and the existing response-eval system with deterministic numeric-to-source verification. Neither may create a replacement detector/rubric.
 
 ### I1 — T12 narrow Agent OS evidence-tier interface
 
 After T1/T4/L4 contracts are stable: implement the planned derived `required_tier` interface and structured finding. It may never route/prioritize work itself.
 
-### Adjacent layers retained but not allowed to block the core clock/health/promotion program
-
-T10 contradiction classification and T11 deterministic numeric-source verification remain valid Intelligence Reliability work from the original architecture, but neither may be used to delay E1/H1/P1/A1. They must extend the existing contradiction detector and response-eval system respectively, never rebuild them.
+E1 and H1 are the first commissions because they resolve real-use truth on the critical measurement/observability path and have disjoint expected write surfaces. V1/F1/C1/R1/I1 remain owned backlog, not forgotten future work; they may fan later only after collision/owner reconciliation.
 
 ## 7. Definition of `PROVEN_LIVE` for Evaluation OS
 
@@ -177,8 +210,10 @@ The **program**, not just a component, may be called `PROVEN_LIVE` only when all
 6. **Human answer layer:** T7/T8 are visible in that same admin surface and truthfully separate Validated / Accruing / Ungraded-by-design / Degraded / Disproven, including empty and null states.
 7. **Adversarial proof:** exact final-head tests kill clock-basis laundering, retrospective clock creation/backdating and illegal promotion mutations; independent adversarial review finds no duplicate authority/control plane.
 8. **Operational proof:** at least one subsequent real scheduled run advances claims/grades while preserving the same laws, and operator observability remains correct after that run.
-9. **No duplicate system:** zero second engine registry, claims ledger, health monitor/store, promotion authority, work queue or hidden evidence-clock database.
-10. **Durable reconciliation:** Agent OS, GitHub evidence and Linear projection all state the same terminal truth; Slack receipts are treated only as transport; Executive OS state is referenced only when its canonical production read is actually available.
+9. **Fleet adoption honesty:** T9 has a current T1-based census; gradeable outputs are enrolled through existing owners and non-gradeable outputs are explicitly `ungraded_by_design`, not silently absent.
+10. **Original-plan closure:** T0–T12 all have terminal, evidence-backed dispositions. T2/T5/T6/T10/T11/T12 may be satisfied by a proven newer canonical owner only when the supersession/replacement is explicit; none may remain `NOT_BUILT`/`PARTIAL` simply because later programs moved elsewhere.
+11. **No duplicate system:** zero second engine registry, claims ledger, health monitor/store, promotion authority, work queue, hidden evidence-clock database, Prophet evaluation ledger, replay framework, contradiction detector or response-eval rubric.
+12. **Durable reconciliation:** Agent OS, GitHub evidence and Linear projection all state the same terminal truth; Slack receipts are treated only as transport; Executive OS state is referenced only when its canonical production read is actually available.
 
 Until then, the overall program remains `PARTIAL` even when individual substrate capabilities are `PROVEN_LIVE`.
 
@@ -186,4 +221,4 @@ Until then, the overall program remains `PARTIAL` even when individual substrate
 
 Freeze this architecture first. Then dispatch **E1** and **H1** to separate Fable COO main-loop carriers because their expected changed paths are disjoint. A Slack delivery is not execution: each carrier must return an explicit same-thread Fable ACK before its wave is considered started. If no main-loop Fable session ACKs, record `DELIVERY_ONLY / MANUAL_PICKUP_REQUIRED` and do not fabricate runtime execution.
 
-P1 is held until E1’s qledger-path movement is returned/reconciled. A1 is held until H1 production truth is known. Sol reviews every returned PR/proof against this freeze and remains final acceptance owner.
+P1 is held until E1’s qledger-path movement is returned/reconciled. A1 is held until H1 production truth is known. G1/Q1/V1/F1/C1/R1/I1 remain owned downstream waves and require fresh owner/collision checks at dispatch. Sol reviews every returned PR/proof against this freeze and remains final acceptance owner.
