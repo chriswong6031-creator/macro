@@ -31,10 +31,13 @@ changed:
       ledger (24 rows, 8-state vocabulary), value model, ownership/no-rebuild
       matrix, clocks/nulls/corrections/rights/authority ladder, naming
       concordance, collision ledger, frozen A-Q dependency graph with
-      parallel-now lanes (A/B/C + C4/C5), #6585 RECOMMENDED-ADOPT adjudication
-      (§10, conditions A1-A5), FS-4 preflight docket (§11), five bounded child
-      packets with routes and WHY (§12), durable program-control rules (§13),
-      nine preserved disagreements (§14).
+      parallel-now lanes (B/C + C4/C5; lane A additionally waits on ruling R3),
+      #6585 RECOMMENDED-ADOPT adjudication (§10, conditions A0-A6 including
+      the unsatisfied Chairman written-spec gate and a mandatory line-level
+      diff review), FS-4 preflight docket (§11), five bounded child packets
+      with routes and WHY (§12), durable program-control rules (§13), ten
+      preserved disagreements (§14), requested rulings R1-R4 (§15), and the
+      Sol dispatch clauses quoted verbatim (§16).
   - path: agentos/decisions/DEC-OPTIONS-INTELLIGENCE-C0-PROGRAM-CONTROL.md
     what: >
       NEW - canonical ownership/sequencing decision binding the four owners to
@@ -43,11 +46,15 @@ changed:
       registry edit, foreign validate-red repair), and review_by 2026-09-11.
   - path: agentos/workstreams/WS-OPTIONS-ALPHA-INTELLIGENCE-RECOVERY.md
     what: >
-      Truth repair: OA-0 -> done with pr 6573 (history of the written-spec gate
-      preserved verbatim); OA-1T-MACRO row now records #6576/#6585 reality,
-      no-lawful-START, SOL STOP, MAS-175, and the §10 recommendation; footer
-      next_action -> Sol ruling then child C3; C0 reconciliation paragraph in
-      the body; DEC + masterplan linked.
+      Truth repair: OA-0 stays in_progress with pr 6573 recorded (carrier
+      merged; the merged DEC's Chairman written-spec gate has no approval
+      receipt, so the wave cannot close — masterplan §10-A0); the three
+      replaced gate texts are paraphrased in-row and reproduced VERBATIM in
+      the body, with their prohibitions restated as still binding; OA-1T-MACRO
+      row records #6576/#6585 reality, no-lawful-START, SOL STOP, MAS-175,
+      diff-content-unreviewed, and the §10 A0-A6 recommendation; footer
+      next_action -> A0 receipt then Sol ruling then child C3; DEC +
+      masterplan + this handoff linked.
   - path: agentos/workstreams/WS-ADVANCED-DATA-OPTIONS.md
     what: >
       Truth repair: AD-1T0 next_action's open "Sol decision on a spine-cadence
@@ -87,7 +94,9 @@ unverified:
   - claim: "Terminal IV plane (ingest/collect_options.py) runtime state and rights posture"
     what_would_verify: "child C5 census: launchd/cron presence, output freshness, yfinance/CBOE terms review"
 unresolved:
-  - "Sol ruling on the C0 RESULT (adopt/reject #6585 per masterplan §10; ratify §5 ownership reading and §7 registry recommendation)"
+  - "Chairman written-spec gate (DEC:OPTIONS-ALPHA-CAMPAIGN-CALIBRATION-ARCHITECTURE): no approval receipt for docs/superpowers/specs/2026-08-27-options-alpha-intelligence-recovery-design.md exists in the repo — approval may exist outside it; needs a receipt, waiver, or recorded override (§10-A0, ruling R1)"
+  - "Sol acceptance of AD-1T1 (owner record requires it before AD-1T2 opens) — unreceipted; ruling R3 (lane A / child C1 wait on it)"
+  - "Sol ruling on the C0 RESULT (adopt/reject #6585 per masterplan §10 A0-A6; ratify §5 ownership reading and §7 registry recommendation)"
   - "Pre-existing validate red in agentos/handoffs/BREATHING-PLATFORM-2026-08-28-completion-commission.md (7 errors) - fifth-owner repair returned to Sol, blocks literal validate-green for every carrier until fixed"
   - "config/mastermind_programs.yml canonical-home pointer conflict (masterplan §7) - registry edit returned to Sol"
   - "Children C1 (AD-1T2), C2 (PR-4 dossier), C4 (context-audit v2 charter), C5 (IV plane) await Sol dispatch with fresh keys/threads/watchers"
@@ -119,6 +128,15 @@ discoveries:
   - "DSC:THETADATA-T1-SPINE-DAILY-REFRESH-IS-48-ROOTS"
   - "DSC:OPTIONS-CONTEXT-AUDIT-V1-TIMEOUT-PRECEDES-4096-REFUSAL"
 ---
+
+## Reading `ended_because: complete`
+
+The enum offers no closer value: `complete` here means the C0 records work is
+complete and review-ready — NOT that the carrier is accepted. The carrier is
+PARKED / HOLD-FOR-SOL awaiting Sol CONTINUE / REQUEST_REPAIR / STOP. The
+independent adversarial review (Opus reviewer, 2026-08-28) returned FAIL with
+2 blockers / 6 majors / 7 minors, all repaired in the same session before the
+carrier went to Sol; findings and dispositions are recorded on the PR.
 
 ## Continuation shape
 

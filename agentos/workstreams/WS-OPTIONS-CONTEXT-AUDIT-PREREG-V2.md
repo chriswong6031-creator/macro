@@ -53,6 +53,7 @@ artifacts:
   - research/options_estate/OPTIONS_CONTEXT_AUDIT_LEDGER_BOUND_ADJUDICATION_2026-08-13.md
   - research/options_estate/sparse_selector_preregistration_receipt_v1.json
   - research/OPTIONS_INTELLIGENCE_CONSOLIDATED_MASTERPLAN_2026-08-28.md
+  - agentos/handoffs/ADVANCED-DATA-OPTIONS-2026-08-28-options-intelligence-c0-program-control.md
 ---
 
 Lawful repair is a new preregistration v2, not a timeout or ceiling patch on v1.

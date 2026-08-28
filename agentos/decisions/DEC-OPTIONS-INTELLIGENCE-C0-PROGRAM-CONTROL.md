@@ -14,15 +14,25 @@ answer: >
   owner per plane per its §5 matrix; no new options truth/flow/lifecycle/score
   plane may be created, and a child believing one is required returns a
   DECISION_REQUEST before building. Sequencing follows the §9 frozen graph:
-  lanes A (AD-1T2), B (Intraday PR-4 dossier), C (OA-1T reconciliation), plus
-  side lanes C4 (context-audit v2 charter) and C5 (Terminal IV-plane
-  adjudication) are parallelizable now; everything else is dependency-held.
-  PR #6585 is RECOMMENDED-ADOPT under the five §10 conditions (plan #6576
-  merges first; the §11 FS-4 preflight docket is adjudicated with receipts;
-  exact-head CI green; authority-path semantics acknowledged; post-merge state
-  recorded BUILT_NOT_PROVEN with the natural-RTH proof still owed) — the
-  adoption act itself is Sol's ruling on the C0 operation thread, and no
-  retroactive START is minted under any outcome. Every independent child gets a
+  lanes B (Intraday PR-4 dossier) and C (OA-1T reconciliation), plus side
+  lanes C4 (context-audit v2 charter) and C5 (Terminal IV-plane adjudication),
+  are parallelizable now; lane A (AD-1T2) joins them the moment Sol's
+  acceptance of AD-1T1 is receipted (§15 ruling R3, per the owner record's
+  own gate); everything else is dependency-held.
+  PR #6585 is RECOMMENDED-ADOPT under the seven §10 conditions A0–A6: the
+  Chairman written-spec gate of DEC:OPTIONS-ALPHA-CAMPAIGN-CALIBRATION-
+  ARCHITECTURE discharged with a receipt, waiver, or recorded CEO override
+  (A0 — the gate is UNSATISFIED on the record today and a Sol ruling alone
+  cannot discharge a Chairman condition); plan #6576 merges first (A1); the
+  §11 FS-4 preflight docket adjudicated with receipts (A2); exact-head CI
+  green and mergeability re-confirmed (A3); authority-path semantics
+  acknowledged (A4); post-merge state recorded BUILT_NOT_PROVEN with the
+  natural-RTH proof still owed (A5); and an independent line-level review of
+  the full #6585 diff against the frozen plan, whose FAIL voids the
+  recommendation (A6 — at C0 the artifact is verified file-scope-conformant
+  only; its diff content is unreviewed). The adoption act itself is Sol's
+  ruling on the C0 operation thread, and no retroactive START is minted under
+  any outcome. Every independent child gets a
   fresh operation key, fresh Slack thread, and fresh reciprocal watcher setup;
   Slack delivery alone is never ACK/START.
 rationale: >
@@ -73,7 +83,8 @@ alternatives:
 evidence:
   - "Census A (workstream owners): all four owner records read end-to-end 2026-08-28; OA record carries zero mentions of #6573/#6576/#6585 (grep -rn '6573\\|6576\\|6585' agentos/ → no OA hits) and zero handoffs ever"
   - "Census B (specs): AD-0…AD-15 defined at research/ADVANCED_DATA_OPTIONS_EOD_DARK_POOL_INTELLIGENCE_OS_MASTERPLAN_2026-08-17.md:762-971; FS-4 = shipped wave (FLOW_SIGNAL_ML_MASTERPLAN_BY_FABLE.md:384) held dark by config/flow_score.yml:22-26 scoring.enabled: false"
-  - "Census C (PR/code reality): #6573 MERGED head 1c5e395e1c00 / merge d84468e41f40; #6576 OPEN 2becc23a87c8 plan-only; #6585 OPEN DRAFT 77f400630d8a, 8 files all plan-covered or tests, MERGEABLE, base = OA-0 merge; #6593 OPEN DRAFT 66a214d2dcdf quoting 'MAS-175 = Unmapped Execution / HOLD-FOR-SOL'"
+  - "Census C (PR/code reality): #6573 MERGED head 1c5e395e1c00 / merge d84468e41f40; #6576 OPEN 2becc23a87c8 plan-only; #6585 OPEN DRAFT 77f400630d8a — 8 files (3 implementation + 1 runbook doc + 4 tests) all inside the plan's freeze list = file-scope-conformant, diff content UNREVIEWED at C0 (hence condition A6), MERGEABLE per 2026-08-28 census, base = OA-0 merge; #6593 OPEN DRAFT 66a214d2dcdf quoting 'MAS-175 = Unmapped Execution / HOLD-FOR-SOL'"
+  - "Chairman gate: DEC:OPTIONS-ALPHA-CAMPAIGN-CALIBRATION-ARCHITECTURE (merged in #6573) — 'No implementation wave begins until the Chairman separately approves the written spec'; no approval receipt exists in the repo (hence condition A0 and ruling R1)"
   - "Second-plane sweep: sole brief writer scripts/build_options_intel_brief.py:70; sole liveflow producer ops/launchd/com.mastermind.liveflow.plist; Terminal repo has no producer/classifier/liveflow/api-status (git grep at b1b21a17f843); one adjacent IV plane ingest/collect_options.py named for C5 adjudication"
   - "gh pr view 6593 --json files: edits WS-RATES-INFLATION-COMMAND + WS-STOCK-DOSSIER-LIVE-QUOTE only — no collision with the four C0 owners"
   - "python3 scripts/agentos.py validate on base afe173f6f46c: 7 pre-existing errors, all in agentos/handoffs/BREATHING-PLATFORM-2026-08-28-completion-commission.md"
