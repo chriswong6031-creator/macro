@@ -1,120 +1,118 @@
 ---
 workstream: "WS:GMI-THEME-GRAPH"
-session: sol/gmi-theme-graph-e2e-freeze-20260827
+session: sol/gmi-theme-graph-finish-fold-20260828
 model: sol
-ended_because: complete
+ended_because: continuation_ready
 mission: >
-  Reconcile the stale GMI Theme Graph program to current production truth and freeze
-  the complete remaining end-to-end execution sequence without duplicating K3-D,
-  MarketOntology F04, Neural Web, identity, grading or runtime control planes.
+  Convert the legacy GMI Theme Graph remainder into one current finish-and-fold program:
+  finish the unique GMI PIT/ontology/ThemeState/cohort substrate, fold legacy transmission
+  product work into canonical F04/K3/TXI owners, and hand sustained execution to one Fable
+  COO principal without making Sol or the Chairman the routine relay.
 state_before: >
-  The graph/local-theme substrate was live and accruing, but the canonical GMI
-  workstream still instructed the next session to wait for a 2026-08-15 scrape and
-  then start an undifferentiated transmission layer. D2C/D2D/D2E had never shipped;
-  W3B was correctly held; the existing Neural Web theme_state remained disconnected
-  from data/theme_graph; newer K3-D and MarketOntology F04 lanes occupied adjacent
-  propagation/product surfaces; Autonomy V1 did not provide a production-proven
-  worker/Fable dispatch path.
+  The live graph substrate was healthy and accruing, but main still carried a stale
+  pre-2026-08-15 scrape wait. The 2026-08-27 records carrier correctly identified
+  D2C/D2D/D2E/W3B/W3C gaps but still modeled standalone GMI W4/W5/W6 waves while
+  MarketOntology F04 was only pending. Since then PR #6504 merged and made F04 the
+  canonical downstream ontology/transmission/opportunity product-composition lane.
+  K3-D #6514 remains a separate held propagation-hypothesis carrier. Current Skillpack
+  1.0.1 adds reciprocal watcher and scarcity-routing law.
 changed:
   - path: research/theme_graph/THEME_GRAPH_END_TO_END_COMPLETION_FREEZE_2026-08-27.md
     what: >
-      Frozen current capability ledger, no-rebuild ownership map, core completion law,
-      D2C→D2D/D2E→W3B→W3C→W4→W5→F04 adoption sequence and final proof requirements.
+      Amended to current 2026-08-28 finish-and-fold architecture: GMI development ends
+      after D2C/D2D/D2E/W3B/W3C; standalone GMI W4/W5/W6 are superseded as separate builds.
   - path: agentos/decisions/DEC-GMI-THEME-GRAPH-END-TO-END-COMPLETION-OWNERSHIP-SEQUENCING.md
     what: >
-      Chairman ruling with stable organizational operation keys and exact
-      supersession/runtime boundaries.
+      Reconciled merged F04 ownership, surviving GMI child identities, Fable principal
+      route, superseded GMI waves and watcher/dialogue law.
   - path: agentos/workstreams/WS-GMI-THEME-GRAPH.md
     what: >
-      Reconciled stale pre-scrape next action to the actual dependency graph and
-      recorded current natural graph census plus adjacent-owner collision laws.
-  - path: agentos/handoffs/GMI-THEME-GRAPH-2026-08-27-completion-fanout-manifest.md
+      Replaced stale scrape/transmission next action with exact D2C/D2D→D2E→W3B→W3C
+      close boundary and explicit TRANSMISSION-FOLD adoption into current owners.
+  - path: docs/superpowers/plans/2026-08-28-gmi-theme-f04-end-to-end-completion.md
     what: >
-      Allocation/claim manifest for the bounded child commissions and dependency holds.
+      Master implementation plan for the sustained F04 principal and bounded child waves.
+  - path: agentos/handoffs/GMI-THEME-GRAPH-2026-08-28-f04-autonomous-coo-commission.md
+    what: >
+      Cold-stranger-complete sustained F04 COO handoff with pickup, child-routing,
+      milestone/return and reciprocal watcher requirements.
 verified:
-  - claim: "Current GMI semantic substrate is real and naturally accruing."
-    command: "Read data/theme_graph/_meta.json at current reconciliation base."
+  - claim: "Current protected Sol procedure includes reciprocal watcher and scarce-worker routing law."
+    command: "Read Mastermind@038d1271b98e88b24e039c1ce4127d6503945845 INDEX + companion source laws."
+    result: "PASS — Skillpack v1.0.1 compatible; explicit watcher CONTINUE/STOP and economical routing laws are current."
+  - claim: "Current GMI production substrate continues naturally."
+    command: "Read data/theme_graph/_meta.json at Macro main ba270c60c1fe825f2e9fce1fcf507b7272a67b63."
     result: >
-      computed_at 2026-08-26T05:09:59Z; 3,881 nodes; 12,172 edge rows / 8,292
-      latest-belief edges; 2,806 identity rows; 268 Finviz subthemes; 375 THS
-      concepts; 499 measurement candidates; 144 semantic-only.
-  - claim: "Canonical breadth is incomplete."
-    command: "Read theme graph meta + config/theme_crosswalk.yml."
-    result: "18 strategic themes; 61 THS mappings; 314 THS concepts remain unmapped."
-  - claim: "D2C/D2D/D2E are not hidden completed waves."
-    command: "GitHub PR searches + PR #6232 scope."
+      belief_time 2026-08-27; computed_at 2026-08-27T09:15:04Z; 3,881 nodes;
+      12,172 edge rows / 8,292 latest-belief; 2,806 identity rows; 268 Finviz
+      subthemes; 375 THS concepts; 499 measurement candidates; 144 semantic-only.
+  - claim: "F04 is now canonical rather than pending."
+    command: "Read merged MarketOntology PR #6504 and MAS-145."
     result: >
-      No dedicated D2C/D2D/D2E implementation carrier found; #6232 explicitly stopped
-      before D2C/D2D/D2E/D3/D5/Canada.
-  - claim: "W3B must follow D2 and own the only new ThemeState producer."
-    command: "Read D1_D3_W3B_MERGE_ORDER_RECOMMENDATION.md."
+      PR #6504 merged as 275ee28e0f1d87463f0f5f84a8a0878e39b78510; F04 operation
+      marketontology-f04-ontology-transmission-20260826-fable-001 exists; MAS-145 is
+      the high-priority projection and remains Todo until actual pickup/start evidence.
+  - claim: "K3-D remains a separate Sol-held adjacent carrier."
+    command: "Read current PR #6514."
     result: >
-      GMI is sole theme_state/v1 owner; W3B follows D2; existing Neural Web thematic
-      lineage must be reconciled rather than duplicated.
-  - claim: "K3-D and MarketOntology F04 are adjacent owners, not work to rebuild."
-    command: "Read K3-D current PR #6514 + MarketOntology PR #6504 F04 packet."
-    result: >
-      K3-D owns a Graph-1/2/3 propagation-hypothesis compiler; F04 owns downstream
-      ontology/transmission/opportunity product composition if #6504 becomes canonical.
-  - claim: "No lawful autonomous Fable dispatch can be claimed from this session."
-    command: "Current protected Mastermind PR #168 law + Slack SOL_STATE/Fable searches."
-    result: >
-      No fresh MMX/SOL_STATE_V1 or Fable principal found; C1/B2/C2 remain incomplete/
-      held under the protected autonomy ruling; dead-letter worker posts are frozen.
+      PR #6514 remains open/draft HOLD-FOR-SOL at head aaaff0a9415337797c6fc917a06a3a2bd9a3010c;
+      it owns propagation-hypothesis composition and is not a GMI store/product wave.
+  - claim: "No prior GMI/F04 Slack pickup exists that this handoff would duplicate."
+    command: "Search #agent-dispatch for gmi-theme and the exact F04 operation key."
+    result: "PASS — no matching current handoff/pickup message found before this commission."
 unverified:
-  - claim: "D2B3 meets every natural acceptance clause, including current GOLD edge/strict guard proof."
+  - claim: "D2C and D2D can modify in parallel."
     what_would_verify: >
-      D2E must extract the current natural receipt and strict guard evidence against the
-      exact D2B3 completion law; current Aug-26 behavior is encouraging but is not being
-      promoted here to an unrecorded acceptance.
-  - claim: "D2C and D2D can safely execute in parallel."
+      F04 principal performs fresh current-main/open-PR/changed-path census immediately
+      before first writes and proves disjoint carriers; otherwise sequence them.
+  - claim: "A real Fable COO has picked up the F04 parent lane."
     what_would_verify: >
-      Claim-time changed-path/authority census showing genuinely disjoint carriers;
-      otherwise one sustained principal sequences them.
-  - claim: "MarketOntology #6504 F04 remains the final downstream owner."
+      Exact Slack-thread PICKUP_ACK from the Chairman-assigned Fable receiver plus
+      truthful watcher receipt; Slack delivery alone is not pickup/start.
+  - claim: "All final F04/GMI product journeys are production-proven."
     what_would_verify: >
-      #6504 becomes canonical without materially changing F04 ownership/mission; otherwise
-      Sol re-adjudicates before W6 product composition.
+      Accepted child returns plus real U.S., China and transmission/explanation machine/browser proof.
 unresolved:
-  - "Autonomy V1 runtime claim/dispatch path is not production-proven, so all new GMI child operations remain UNCLAIMED / NOT_DISPATCHED or dependency-held."
-  - "D2E must reconcile D2B3 natural proof instead of silently inheriting BUILT_NOT_PROVEN or falsely marking it done."
-  - "Rights/display tier decisions needed for eventual public/user-facing local-theme detail remain a D2E/W6 gate."
-  - "W4 cannot manufacture Graph-1 economic relationships; the current K3-D census says role-specific firm Graph-1 data may be sparse/absent and honest abstention must survive."
+  - "F04 is not executing until an exact receiver ACKs the existing operation key."
+  - "K3-D #6514 still requires separate Sol exact-head review/acceptance before F04 may rely on it as accepted current semantics."
+  - "D2 rights/display tier and D2B3 natural-proof reconciliation remain D2E responsibilities."
+  - "The canonical Worker Presence turn-watcher is not production-live; watcher continuity uses temporary host-native condition watches until current law changes."
 next_actions:
   - >
-    Primary: when one lawful sustained GMI/Fable principal can claim work, use the exact
-    D2C operation gmi-theme-pit-d2c-20260827-sol-001 and D2D operation
-    gmi-theme-ontology-d2d-20260827-sol-001 after a fresh collision census. Execute
-    concurrently only if write surfaces are disjoint; otherwise sequence.
+    Send one OPEN_PICKUP Slack parent handoff for existing operation
+    marketontology-f04-ontology-transmission-20260826-fable-001, recommending Fable +
+    Claude Code. Chairman assigns the exact Fable receiver; receiver ACKs in-thread,
+    reads current canonical records, arms its watcher and starts the first lawful child.
   - >
-    Hold D2E until D2C+D2D return. Hold W3B/W3C/W4/W5 behind their recorded dependencies.
+    Sol arms a temporary exact-thread condition watcher immediately after parent handoff
+    delivery. Every worker return receives explicit CONTINUE/STOP in the same thread.
   - >
-    Continue independent review/landing of K3-D #6514 and MarketOntology #6504 under
-    their own workstreams; GMI adopts accepted outputs by reference and never absorbs them.
+    First modifying frontier: D2C + D2D, concurrent only if disjoint. Then D2E, W3B,
+    W3C. After W3C, GMI development closes and F04 continues the integrated product path.
 do_not_redo:
-  - "No second theme graph, sector master, identity plane, ThemeState producer, consequence grader, cross-family ranker or publication truth."
-  - "Do not auto-map local themes to the 18 canonical themes by fuzzy labels/embeddings; probation/adjudication controls semantic equivalence."
-  - "Do not infer customer/supplier/economic causality from theme co-membership, narrative similarity or residual co-movement."
-  - "Do not make GMI an upstream stock selector. W3C is post-selection read-only context."
-  - "Do not create a rival W6 UI/transmission program while #6504/F04 is the pending downstream owner."
-  - "Do not mint replacement operation keys because Executive dispatch is unavailable; reconcile the frozen keys first."
+  - "No second theme graph, sector master, ThemeState, identity plane, relationship graph, Sensorium store, grader, ranker, queue or product-control plane."
+  - "Do not build standalone GMI W4/W5/W6; their useful jobs are folded into current owners."
+  - "Do not infer Graph-1 economic causality from theme membership, narrative similarity or residual movement."
+  - "Do not make GMI an upstream selector; W3C is post-selection read-only context."
+  - "Do not duplicate the existing F04 operation key or K3-D #6514 carrier."
+  - "Do not let Slack/watchers become execution lifecycle or next-wave authority."
 danger_areas:
-  - "PIT laundering: later-discovered THS/crosswalk/member knowledge appearing historically known."
-  - "Ontology flattening: forcing every narrow local concept into one of 18 canonical themes."
-  - "ThemeState proliferation: leaving Neural Web producer live while adding another un-reconciled authority."
-  - "Graph laundering: Graph-2/3 similarity or market sympathy presented as Graph-1 economic transfer."
-  - "False completion: docs/CI/merge called end-to-end without natural producer→reader→browser/machine proof."
+  - "Principal scope creep: Fable codes every child instead of routing frozen work to cheaper workers."
+  - "PIT laundering or fuzzy ontology mapping."
+  - "Neural Web and GMI ThemeState coexisting as rival authorities."
+  - "F04 displaying polished transmission language where Graph-1 evidence is actually absent."
+  - "Watcher silence being mistaken for terminal receipt or permission to start the next child."
 ---
 
-# Continuation order
+# Return point
 
-A fresh Sol/Fable session should read, in order:
+Read, in order:
 
-1. `research/theme_graph/THEME_GRAPH_END_TO_END_COMPLETION_FREEZE_2026-08-27.md`;
-2. `DEC:GMI-THEME-GRAPH-END-TO-END-COMPLETION-OWNERSHIP-SEQUENCING`;
-3. current `WS:GMI-THEME-GRAPH`;
-4. the exact child packet for the dependency being claimed;
-5. current Macro main/open PR collisions and current protected Sol Skillpack.
+1. current protected Skillpack at `038d1271b98e88b24e039c1ce4127d6503945845`;
+2. `research/theme_graph/THEME_GRAPH_END_TO_END_COMPLETION_FREEZE_2026-08-27.md`;
+3. `DEC:GMI-THEME-GRAPH-END-TO-END-COMPLETION-OWNERSHIP-SEQUENCING`;
+4. current `WS:GMI-THEME-GRAPH`;
+5. `agentos/handoffs/GMI-THEME-GRAPH-2026-08-28-f04-autonomous-coo-commission.md`;
+6. current F04/MAS-145, K3-D #6514 and current Macro main/open collisions.
 
-Do not infer execution from this packet. Its mission is to make the entire program recoverable and
-spawn-ready without requiring this chat or the Chairman to restate the architecture.
+The parent organizational operation is the already-canonical F04 key. Do not mint a second parent because this continuation exists.
