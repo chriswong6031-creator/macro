@@ -4123,6 +4123,18 @@ on:
       # for the precedent this follows).
       - "scripts/prophet_board_acceptance.py"
       - "tests/test_prophet_surface_net.py"
+      # CCR-R0 Control Room. These four suites run together in prelaunch-hardening:
+      # operator-only identity, fixed-origin admin embed, real adapted Caddy order,
+      # and the bounded atomic GitHub-source publisher. List every owned subject
+      # explicitly so a source-only or test-only change reaches its own guard.
+      # The six existing app/admin/Caddy subjects are already named elsewhere
+      # in this trigger list; only the new publisher and suite paths belong here.
+      - "scripts/build_project_active_build_map.py"
+      - "scripts/publish_control_room_active_builds.py"
+      - "tests/test_admin_control_room.py"
+      - "tests/test_control_room_auth.py"
+      - "tests/test_control_room_caddy.py"
+      - "tests/test_publish_control_room_active_builds.py"
       # ── Public-render fastlane (2026-07-28) ─────────────────────────────────
       # test_public_render_fastlane pins the heavy/public render split and the
       # rendered pricing copy; it was named by no lane and rotted red when #3856

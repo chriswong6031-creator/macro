@@ -14,6 +14,7 @@ unknown-tier and broken-catalog paths denying rather than guessing.
 """
 from __future__ import annotations
 
+import base64
 import json
 import re
 from pathlib import Path
@@ -336,13 +337,17 @@ def _fake_supabase(monkeypatch, payload, calls):
 
 def test_identity_reads_uid_and_email_from_a_single_supabase_call(monkeypatch):
     calls: list = []
+    payload = base64.urlsafe_b64encode(
+        json.dumps({"exp": 9_999_999_999}).encode("utf-8")
+    ).decode("ascii").rstrip("=")
+    token = f"header.{payload}.signature"
     _fake_supabase(monkeypatch, {"id": UID, "email": "  Ops@Mastermind-X.com "}, calls)
-    assert paywall._fresh_identity("tok-abc") == (UID, "ops@mastermind-x.com")
+    assert paywall._fresh_identity(token) == (UID, "ops@mastermind-x.com")
     assert len(calls) == 1
     # Cached together: neither accessor issues a second request, and they cannot
     # disagree about which verification the pair came from.
-    assert paywall._fresh_uid("tok-abc") == UID
-    assert paywall._fresh_identity("tok-abc") == (UID, "ops@mastermind-x.com")
+    assert paywall._fresh_uid(token) == UID
+    assert paywall._fresh_identity(token) == (UID, "ops@mastermind-x.com")
     assert len(calls) == 1
 
 

@@ -10,7 +10,7 @@ objective: >
   bilingual/mobile Terminal candidate workflow with exact clocks, healthy abstention and
   degraded states, prospective outcomes, separately earned statistical authority, and an
   exact-option operator-review path where evidence warrants it.
-status: awaiting_review
+status: active
 program: options-intelligence
 repos: [macro, terminal]
 owner: ceo-sol
@@ -20,19 +20,25 @@ ambiguity: specified
 waves:
   - id: OA-0
     title: Recovery archaeology + ownership/data/experience architecture freeze
-    status: in_progress
+    status: done
+    pr: 6573
     next_action: >
-      Chairman reviews the written architecture spec on the single OA-0 records carrier.
-      Until written-spec approval, do not create an implementation plan, commission Fable/
-      Codex, mutate Terminal/Macro runtime, run a new scoring family, or arm any options lane.
+      ACCEPTED/MERGED 2026-08-27 as d84468e41f40f8dfb2404b2f51be557aade8f0ec
+      after Chairman written-spec approval plus exact-head fences #14056 and CI #13809
+      SUCCESS. Records/source law only; OA-0 armed no runtime, UI, model, signal or
+      execution authority. Do not reopen OA-0 without a direct architecture/source-law
+      contradiction or new Chairman ruling.
   - id: OA-1T-MACRO
     title: Measured trade+NBBO microstructure on the canonical live event and Flow ML path
     status: todo
     depends_on: [OA-0]
     next_action: >
-      CLOSED until the written spec is approved and a bounded implementation plan is
-      accepted. Entrance gate must census live_flow.event_stage/v1 consumers before an
-      additive event-shape change and must preserve the existing collector/event identity.
+      Implementation plan frozen at
+      docs/superpowers/plans/2026-08-27-oa1t-macro-measured-options-microstructure.md.
+      NOT STARTED. Before any code, re-pin current main and protected Skillpack, census
+      live_flow.event_stage/v1 consumers, collision-check the exact engine/collector paths,
+      and use one bounded implementation carrier. If additive nested event fields are
+      rejected by a current consumer, stop for Sol v2 adjudication instead of weakening v1.
   - id: OA-1T-TERMINAL
     title: Render measured microstructure and separate Attention from probability
     status: todo
@@ -45,9 +51,9 @@ waves:
     status: todo
     depends_on: [OA-1T-MACRO]
     next_action: >
-      CLOSED. Requires written-spec approval, the OA-1T measured evidence path, a
-      preregistered candidate-formation policy, and production-accepted AD-1T2 EOD consumer/
-      availability evidence before settled EOD context can participate in candidate formation.
+      CLOSED. Requires the OA-1T measured evidence path, a preregistered candidate-formation
+      policy, and production-accepted AD-1T2 EOD consumer/availability evidence before settled
+      EOD context can participate in candidate formation.
   - id: OA-1C-TERMINAL
     title: Live Options Alpha candidate stream, detail, abstention and degraded workflow
     status: todo
@@ -114,8 +120,7 @@ landmines:
   - >
     Current DNR law remains binding: KILL-LLM-ORIGINATION, KILL-FUSED-COMPOSITE,
     KILL-POSITIONING-FUSION, HOLD-THETA-TAPE, KILL-DOI-FAMILY, KILL-SKEW-DECELERATION,
-    KILL-CHARM-NARRATIVES and KILL-OFFHORIZON-VERDICTS. This OA-0 decision creates no
-    implicit exception to any of them.
+    KILL-CHARM-NARRATIVES and KILL-OFFHORIZON-VERDICTS. OA-0 created no implicit exception.
 do_not_redo:
   - "Another options collector, ThetaData Terminal instance, live-flow store, event identity, campaign ledger, outcome ledger, Issue Desk, rank/gate/sizing control plane, or generic Options super-score."
   - "Re-running stale MomoEdge research as activity; use the frozen benchmark and current product/source evidence."
@@ -124,27 +129,27 @@ do_not_redo:
   - "Backfilling later-settled OI/NBBO into an earlier live decision as though it was knowable then."
 artifacts:
   - docs/superpowers/specs/2026-08-27-options-alpha-intelligence-recovery-design.md
+  - docs/superpowers/plans/2026-08-27-oa1t-macro-measured-options-microstructure.md
   - research/momoedge/MOMOEDGE_COMPLETION_BENCHMARK_PREREG_2026-08-11.md
   - research/FLOW_SIGNAL_ML_MASTERPLAN_BY_FABLE.md
   - research/OPTIONS_ALPHA_FLOW_SCORE_AMENDMENT.md
   - data/flow_signals/gate.json
   - data/options_signal_campaign/checkpoint.json
 next_action: >
-  Chairman reviews docs/superpowers/specs/2026-08-27-options-alpha-intelligence-recovery-design.md
-  on the single OA-0 records carrier and either requests corrections or explicitly approves
-  the written spec. Do not transition to implementation planning until that approval exists.
+  Review/land the OA-1T-Macro implementation-plan carrier, then choose one execution mode for
+  that bounded wave. Recommended: subagent-driven/operator execution with one worker carrier,
+  explicit pickup ACK before work, and a separate START receipt if a gate delays execution.
+  OA-1T-Macro remains NOT STARTED until that commission is actually acknowledged; later OA waves
+  remain closed.
 ---
 
 ## Context
 
-OA-0 was opened because the Terminal Options Alpha surface remained practically dead despite
-substantial work across intraday flow, MomoEdge parity, Flow ML, options episodes/campaigns,
-EOD options intelligence and Issue Desk infrastructure.
+OA-0 is accepted source law on Macro main as d84468e41f40f8dfb2404b2f51be557aade8f0ec.
+The Chairman approved both the in-chat architecture and the written specification. OA-0's final
+exact head passed fences #14056 and CI #13809 before merge.
 
-The recovered architecture found a convergence problem rather than a blank-slate problem:
-substantial prospective evidence exists, but the primary UI still consumes a deliberately
-weak shadow projection. The Chairman approved the campaign+calibration architecture and exact
-experience/contract freeze in chat; the architectural workflow now requires review of the
-written spec before implementation planning.
-
-Operation key for this records carrier: `oa0-architecture-freeze-20260827-sol-001`.
+The first bounded implementation plan now targets only measured ThetaData trade+NBBO truth on the
+existing Macro live-flow/event-stage/Flow-ML path. It deliberately does not include Terminal UI,
+research-candidate composition, model promotion, exact-option outcome lifecycle, or Issue Desk
+integration. Those remain separately gated waves.
