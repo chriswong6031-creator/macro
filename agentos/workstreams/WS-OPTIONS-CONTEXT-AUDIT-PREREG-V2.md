@@ -35,6 +35,7 @@ next_action: >
   place, and do not recouple this owner into trusted-context publication.
 decisions:
   - "DEC:W2C-V1-CONTEXT-OWNER-DECOUPLED-FROM-OPTIONS-AUDIT"
+  - "DEC:OPTIONS-INTELLIGENCE-C0-PROGRAM-CONTROL"
 discoveries:
   - "DSC:OPTIONS-CONTEXT-AUDIT-V1-TIMEOUT-PRECEDES-4096-REFUSAL"
 do_not_redo:
@@ -51,6 +52,13 @@ landmines:
 artifacts:
   - research/options_estate/OPTIONS_CONTEXT_AUDIT_LEDGER_BOUND_ADJUDICATION_2026-08-13.md
   - research/options_estate/sparse_selector_preregistration_receipt_v1.json
+  - research/OPTIONS_INTELLIGENCE_CONSOLIDATED_MASTERPLAN_2026-08-28.md
 ---
 
 Lawful repair is a new preregistration v2, not a timeout or ceiling patch on v1.
+
+C0 program-control note (2026-08-28, `DEC:OPTIONS-INTELLIGENCE-C0-PROGRAM-CONTROL`):
+this owner is independent of the AD chain — it is NOT an AD-1 blocker — and its
+charter (child packet C4 in
+`research/OPTIONS_INTELLIGENCE_CONSOLIDATED_MASTERPLAN_2026-08-28.md` §12) is
+parallelizable now under a fresh operation key/thread/watcher.

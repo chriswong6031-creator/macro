@@ -20,19 +20,37 @@ ambiguity: specified
 waves:
   - id: OA-0
     title: Recovery archaeology + ownership/data/experience architecture freeze
-    status: in_progress
+    status: done
+    pr: 6573
     next_action: >
-      Chairman reviews the written architecture spec on the single OA-0 records carrier.
-      Until written-spec approval, do not create an implementation plan, commission Fable/
-      Codex, mutate Terminal/Macro runtime, run a new scoring family, or arm any options lane.
+      ACCEPTED/MERGED per the Sol C0 collision ledger (operation
+      options-intelligence-c0-consolidated-program-control-20260828-sol-001):
+      records carrier #6573 merged (head 1c5e395e1c00, merge d84468e41f40),
+      carrying the 861-line design spec, DEC:OPTIONS-ALPHA-CAMPAIGN-CALIBRATION-
+      ARCHITECTURE, and this workstream record. History preserved, not
+      rewritten: this row previously required Chairman written-spec approval
+      before any implementation planning, and carriers #6576/#6585 proceeded
+      against that gate out of order — see the OA-1T-MACRO row and
+      research/OPTIONS_INTELLIGENCE_CONSOLIDATED_MASTERPLAN_2026-08-28.md §8/§10.
   - id: OA-1T-MACRO
     title: Measured trade+NBBO microstructure on the canonical live event and Flow ML path
     status: todo
     depends_on: [OA-0]
     next_action: >
-      CLOSED until the written spec is approved and a bounded implementation plan is
-      accepted. Entrance gate must census live_flow.event_stage/v1 consumers before an
-      additive event-shape change and must preserve the existing collector/event identity.
+      Awaiting the Sol ruling on the C0 reconciliation docket. Current truth
+      (2026-08-28): plan PR #6576 is OPEN at 2becc23a87c8 (plan frozen,
+      exact-head fences+CI green, no implementation in that PR); implementation
+      PR #6585 exists OPEN/DRAFT/HOLD-FOR-SOL at 77f400630d8a — built BEFORE
+      the #6576-merge START gate, so it has NO lawful historical START (the
+      prior worker received terminal SOL STOP; #6593 flags it as MAS-175
+      Unmapped Execution). It is unaccepted BUILT_NOT_PROVEN.
+      RECOMMENDED-ADOPT under masterplan §10 conditions A1–A5 (plan merges
+      first; FS-4 preflight docket §11 adjudicated; exact-head CI green;
+      authority-path semantics acknowledged; natural-RTH proof stays owed by a
+      lawfully commissioned child). No retroactive START is minted under any
+      outcome. Entrance law unchanged: census live_flow.event_stage/v1
+      consumers before any additive event-shape change; preserve the existing
+      collector/event identity.
   - id: OA-1T-TERMINAL
     title: Render measured microstructure and separate Attention from probability
     status: todo
@@ -91,6 +109,7 @@ waves:
 decisions:
   - "DEC:OPTIONS-ALPHA-CAMPAIGN-CALIBRATION-ARCHITECTURE"
   - "DEC:AD-OPTIONS-CANONICAL-SOURCE-THETADATA"
+  - "DEC:OPTIONS-INTELLIGENCE-C0-PROGRAM-CONTROL"
 discoveries:
   - "DSC:OPTIONS-ALPHA-DEAD-UI-MASKS-LIVE-EVIDENCE-ESTATE"
 landmines:
@@ -127,12 +146,18 @@ artifacts:
   - research/momoedge/MOMOEDGE_COMPLETION_BENCHMARK_PREREG_2026-08-11.md
   - research/FLOW_SIGNAL_ML_MASTERPLAN_BY_FABLE.md
   - research/OPTIONS_ALPHA_FLOW_SCORE_AMENDMENT.md
+  - research/OPTIONS_INTELLIGENCE_CONSOLIDATED_MASTERPLAN_2026-08-28.md
   - data/flow_signals/gate.json
   - data/options_signal_campaign/checkpoint.json
 next_action: >
-  Chairman reviews docs/superpowers/specs/2026-08-27-options-alpha-intelligence-recovery-design.md
-  on the single OA-0 records carrier and either requests corrections or explicitly approves
-  the written spec. Do not transition to implementation planning until that approval exists.
+  Sol rules on the C0 reconciliation docket
+  (research/OPTIONS_INTELLIGENCE_CONSOLIDATED_MASTERPLAN_2026-08-28.md §10:
+  RECOMMENDED-ADOPT #6585 under conditions A1–A5, or REJECT with its stated
+  cost) on the C0 operation thread. On CONTINUE, child C3 executes the carrier
+  sequencing (merge #6576 → FS-4 docket receipts → hold release → merge #6585 →
+  records closeout at BUILT_NOT_PROVEN with the natural-RTH proof still owed).
+  No implementation of any further wave until then; every independent child
+  needs a fresh operation key, Slack thread, and reciprocal watcher.
 ---
 
 ## Context
@@ -147,4 +172,15 @@ weak shadow projection. The Chairman approved the campaign+calibration architect
 experience/contract freeze in chat; the architectural workflow now requires review of the
 written spec before implementation planning.
 
-Operation key for this records carrier: `oa0-architecture-freeze-20260827-sol-001`.
+Operation key for the OA-0 records carrier: `oa0-architecture-freeze-20260827-sol-001`.
+
+**C0 reconciliation (2026-08-28).** This record previously did not know its own
+carriers: OA-0/#6573 had merged, plan #6576 was open, and implementation #6585
+existed out of order — none were recorded here, and this workstream had never
+produced a handoff. The consolidated program-control freeze
+(`research/OPTIONS_INTELLIGENCE_CONSOLIDATED_MASTERPLAN_2026-08-28.md`,
+`DEC:OPTIONS-INTELLIGENCE-C0-PROGRAM-CONTROL`, operation key
+`options-intelligence-c0-consolidated-program-control-20260828-sol-001`)
+repaired the wave rows truthfully, preserved the out-of-order history verbatim
+(no retroactive START), and carries the §10 adoption recommendation now awaiting
+the Sol ruling.

@@ -70,9 +70,12 @@ waves:
       DSC:THETADATA-T1-SPINE-DAILY-REFRESH-IS-48-ROOTS (39/375 = 0.104 daily-
       current). Diagnostic on the covered 39: 39/39 eligible, real boards —
       the scoring pipeline is production-capable; the spine is the blocker.
-      Next: Sol decision on a spine-cadence wave (incremental refresh) +
-      store-host runner topology (RE-PIN RULE) / r2sync heal. Do not start
-      AD-2; do not shrink the universe.
+      RESOLVED (C0 truth repair 2026-08-28): the spine-cadence decision this
+      row awaited landed as wave AD-1T1 — the full-universe incremental T1
+      cadence, PROVEN_LIVE 2026-08-25, coverage 0.9467 — so the 0.104 source
+      blocker recorded here is solved and no Sol decision remains open on this
+      row. Historical text above preserved. AD-2 remains closed; do not shrink
+      the universe.
   - id: AD-1T1
     title: Full-universe incremental ThetaData T1 cadence (Sol handoff 2026-08-22)
     status: done
@@ -150,6 +153,7 @@ landmines:
   - >-
     Cboe delayed quote pages expressly prohibit automated extraction. Not an AD-1 fallback.
 decisions:
+  - "DEC:OPTIONS-INTELLIGENCE-C0-PROGRAM-CONTROL"
   - "DEC:AD-SIGNAL-VOCAB-RESTORES-SHORT"
   - "DEC:AD1-DIRECTION-AUTHORITY-SEPARATES-SALIENCE-MECHANICS-AND-DIRECTION"
   - "DEC:AD1C0-FIRST-WRITER-QUALITY-RULE"
@@ -195,6 +199,7 @@ artifacts:
   - research/ADVANCED_DATA_OPTIONS_EOD_DARK_POOL_INTELLIGENCE_OS_MASTERPLAN_2026-08-17.md
   - research/ADVANCED_DATA_OPTIONS_EOD_AD0_CURRENT_STATE_AND_CAPABILITY_LEDGER_2026-08-17.md
   - research/ADVANCED_DATA_OPTIONS_EOD_AD1_DAILY_INTELLIGENCE_BRIEF_HANDOFF_2026-08-17.md
+  - research/OPTIONS_INTELLIGENCE_CONSOLIDATED_MASTERPLAN_2026-08-28.md
 ---
 
 ## Context
