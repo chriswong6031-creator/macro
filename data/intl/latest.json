@@ -1,16 +1,16 @@
 {
-  "date": "2026-08-27",
+  "date": "2026-08-28",
   "summary": {
     "n": 7,
     "quad_counts": {
-      "Stagflation": 4,
-      "Reflation": 2,
+      "Stagflation": 5,
+      "Reflation": 1,
       "Goldilocks": 1
     },
     "dominant_quad": "Stagflation",
     "recession_watch": 0,
     "drawdown_watch": 2,
-    "avg_recession": 17.0
+    "avg_recession": 18.0
   },
   "records": [
     {
@@ -19,14 +19,14 @@
       "name_zh": "\u65e5\u672c",
       "flag": "\ud83c\uddef\ud83c\uddf5",
       "region": "Asia",
-      "date": "2026-08-27",
+      "date": "2026-08-28",
       "quad": "Q3",
       "quad_name": "Stagflation",
-      "growth_score": 0.143,
+      "growth_score": -0.143,
       "inflation_score": 0.0,
-      "confidence": 0.036,
+      "confidence": 0.071,
       "liquidity": "neutral",
-      "recession_score": 13.0,
+      "recession_score": 12.0,
       "recession_band": "low",
       "macro": {
         "yield_10y": 2.67,
@@ -41,10 +41,10 @@
         "unemployment": 2.5,
         "unemployment_chg6m": -0.2,
         "m2_yoy": 4.22,
-        "fx": 159.323,
-        "fx_strength_3m": 1.21,
-        "realvol": 27.3,
-        "drawdown": -8.6
+        "fx": 159.454,
+        "fx_strength_3m": 1.13,
+        "realvol": 26.6,
+        "drawdown": -7.9
       },
       "macro_asof": {
         "cpi_yoy": "2021-06",
@@ -53,26 +53,26 @@
         "yield_10y": "2026-06"
       },
       "equity": {
-        "price": 66164.19,
-        "off_52w_high": -8.6,
+        "price": 66682.88,
+        "off_52w_high": -7.9,
         "above_50d": false,
         "above_200d": true,
-        "realvol": 27.3,
-        "rsi": 49.0,
-        "ext_z": -1.22,
+        "realvol": 26.6,
+        "rsi": 52.0,
+        "ext_z": -1.09,
         "ext_grade": "intrend",
-        "drawdown_risk": 27.0,
+        "drawdown_risk": 25.0,
         "drawdown_band": "low",
         "bubble_flag": false
       },
       "data_limited": false,
       "risk_radar": {
         "schema": "risk_radar_intl.v1",
-        "asof": "2026-08-27",
+        "asof": "2026-08-28",
         "market": "jp",
         "state": "calm",
         "state_ungated": "calm",
-        "top_score": 31,
+        "top_score": 34,
         "dominant_scare": "extension",
         "dominant_label_en": "Calm \u2014 no driver elevated",
         "dominant_label_zh": "\u5e73\u9759 \u2014 \u65e0\u9a71\u52a8\u5347\u9ad8",
@@ -82,17 +82,17 @@
             "tier": "A",
             "label_en": "Parabolic extension / exhaustion",
             "label_zh": "\u629b\u7269\u7ebf\u4f38\u5c55\uff0f\u900f\u652f",
-            "score": 79.7,
+            "score": 81.3,
             "band": "elevated",
             "firing_legs": [
               {
                 "leg": "ext_idx",
-                "pctile": 0.813,
+                "pctile": 0.83,
                 "confirmed": false
               },
               {
                 "leg": "ext_etf",
-                "pctile": 0.781,
+                "pctile": 0.796,
                 "confirmed": false
               }
             ]
@@ -102,7 +102,7 @@
             "tier": "A",
             "label_en": "US rate shock",
             "label_zh": "\u7f8e\u503a\u5229\u7387\u51b2\u51fb",
-            "score": 38.0,
+            "score": 41.7,
             "band": "calm",
             "firing_legs": []
           },
@@ -111,7 +111,7 @@
             "tier": "A",
             "label_en": "Yen depreciation / outflows",
             "label_zh": "\u65e5\u5143\u8d2c\u503c\uff0f\u8d44\u91d1\u5916\u6d41",
-            "score": 14.5,
+            "score": 14.7,
             "band": "calm",
             "firing_legs": []
           }
@@ -127,10 +127,10 @@
           "measure": ">=5% index pullback within h business days (measured on this market's own history)"
         },
         "trajectory": {
-          "intensity": 30.8,
-          "peak": 89.1,
-          "peak_days_ago": 29,
-          "off_peak": 58.3,
+          "intensity": 34.1,
+          "peak": 88.1,
+          "peak_days_ago": 24,
+          "off_peak": 54.0,
           "velocity": -5.6,
           "phase": "receding",
           "reached_risk": true,
@@ -139,7 +139,6 @@
           "odds_peak": 0.307,
           "odds_delta": 0.0,
           "spark": [
-            88.1,
             87.5,
             72.4,
             67.6,
@@ -161,17 +160,18 @@
             39.7,
             29.4,
             26.4,
-            28.0,
-            30.8
+            29.2,
+            33.9,
+            34.1
           ],
-          "spark_pts": "3.0,3.0 6.9,3.2 10.8,8.1 14.7,9.6 18.7,7.1 22.6,11.5 26.5,13.7 30.4,13.9 34.3,12.7 38.2,13.7 42.1,14.8 46.0,12.7 50.0,13.5 53.9,15.5 57.8,13.7 61.7,10.5 65.6,14.3 69.5,15.7 73.4,19.8 77.3,18.7 81.3,22.0 85.2,23.0 89.1,22.5 93.0,21.6",
+          "spark_pts": "3.0,3.0 6.9,7.9 10.8,9.5 14.7,7.0 18.7,11.4 22.6,13.6 26.5,13.8 30.4,12.6 34.3,13.6 38.2,14.8 42.1,12.6 46.0,13.4 50.0,15.5 53.9,13.6 57.8,10.4 61.7,14.2 65.6,15.7 69.5,19.8 73.4,18.6 77.3,22.0 81.3,23.0 85.2,22.1 89.1,20.5 93.0,20.5",
           "spark_peak": {
             "x": 3.0,
             "y": 3.0
           },
           "spark_last": {
             "x": 93.0,
-            "y": 21.6
+            "y": 20.5
           },
           "spark_w": 96,
           "spark_h": 26,
@@ -263,14 +263,14 @@
       "name_zh": "\u97e9\u56fd",
       "flag": "\ud83c\uddf0\ud83c\uddf7",
       "region": "Asia",
-      "date": "2026-08-27",
+      "date": "2026-08-28",
       "quad": "Q3",
       "quad_name": "Stagflation",
-      "growth_score": -0.143,
+      "growth_score": -0.429,
       "inflation_score": 0.0,
-      "confidence": 0.048,
+      "confidence": 0.214,
       "liquidity": "neutral",
-      "recession_score": 38.0,
+      "recession_score": 40.0,
       "recession_band": "low",
       "macro": {
         "yield_10y": 4.18,
@@ -285,10 +285,10 @@
         "unemployment": 2.8,
         "unemployment_chg6m": 0.1,
         "m2_yoy": 5.73,
-        "fx": 1381.85,
-        "fx_strength_3m": 10.15,
-        "realvol": 81.6,
-        "drawdown": -23.9
+        "fx": 1377.48,
+        "fx_strength_3m": 9.96,
+        "realvol": 78.2,
+        "drawdown": -25.1
       },
       "macro_asof": {
         "cpi_yoy": "2025-04",
@@ -297,26 +297,26 @@
         "yield_10y": "2026-06"
       },
       "equity": {
-        "price": 6933.73,
-        "off_52w_high": -23.9,
+        "price": 6830.81,
+        "off_52w_high": -25.1,
         "above_50d": false,
         "above_200d": true,
-        "realvol": 81.6,
-        "rsi": 53.0,
-        "ext_z": -1.26,
+        "realvol": 78.2,
+        "rsi": 51.0,
+        "ext_z": -1.37,
         "ext_grade": "steady",
-        "drawdown_risk": 68.0,
+        "drawdown_risk": 70.0,
         "drawdown_band": "elevated",
         "bubble_flag": false
       },
       "data_limited": true,
       "risk_radar": {
         "schema": "risk_radar_intl.v1",
-        "asof": "2026-08-27",
+        "asof": "2026-08-28",
         "market": "kr",
         "state": "calm",
         "state_ungated": "calm",
-        "top_score": 29,
+        "top_score": 31,
         "dominant_scare": "extension",
         "dominant_label_en": "Calm \u2014 no driver elevated",
         "dominant_label_zh": "\u5e73\u9759 \u2014 \u65e0\u9a71\u52a8\u5347\u9ad8",
@@ -326,17 +326,17 @@
             "tier": "A",
             "label_en": "Parabolic extension / exhaustion",
             "label_zh": "\u629b\u7269\u7ebf\u4f38\u5c55\uff0f\u900f\u652f",
-            "score": 86.3,
+            "score": 85.6,
             "band": "elevated",
             "firing_legs": [
               {
                 "leg": "ext_etf",
-                "pctile": 0.884,
+                "pctile": 0.891,
                 "confirmed": true
               },
               {
                 "leg": "ext_idx",
-                "pctile": 0.842,
+                "pctile": 0.822,
                 "confirmed": false
               }
             ]
@@ -346,7 +346,7 @@
             "tier": "A",
             "label_en": "US rate shock",
             "label_zh": "\u7f8e\u503a\u5229\u7387\u51b2\u51fb",
-            "score": 37.5,
+            "score": 40.7,
             "band": "calm",
             "firing_legs": []
           },
@@ -355,7 +355,7 @@
             "tier": "A",
             "label_en": "Won depreciation / outflows",
             "label_zh": "\u97e9\u5143\u8d2c\u503c\uff0f\u8d44\u91d1\u5916\u6d41",
-            "score": 3.2,
+            "score": 4.4,
             "band": "calm",
             "firing_legs": []
           }
@@ -371,11 +371,11 @@
           "measure": ">=5% index pullback within h business days (measured on this market's own history)"
         },
         "trajectory": {
-          "intensity": 29.4,
-          "peak": 66.7,
-          "peak_days_ago": 29,
-          "off_peak": 37.3,
-          "velocity": -6.0,
+          "intensity": 30.8,
+          "peak": 64.9,
+          "peak_days_ago": 25,
+          "off_peak": 34.1,
+          "velocity": -6.9,
           "phase": "calm",
           "reached_risk": false,
           "state_now": "calm",
@@ -383,7 +383,6 @@
           "odds_peak": 0.289,
           "odds_delta": 0.0,
           "spark": [
-            64.9,
             64.3,
             52.0,
             36.3,
@@ -405,17 +404,18 @@
             37.7,
             26.2,
             24.4,
-            25.6,
-            29.4
+            27.0,
+            31.0,
+            30.8
           ],
-          "spark_pts": "3.0,3.0 6.9,3.3 10.8,9.4 14.7,17.1 18.7,14.9 22.6,6.2 26.5,8.4 30.4,10.0 34.3,8.6 38.2,11.5 42.1,14.4 46.0,10.8 50.0,12.6 53.9,15.1 57.8,14.1 61.7,9.4 65.6,11.7 69.5,16.8 73.4,17.6 77.3,16.4 81.3,22.1 85.2,23.0 89.1,22.4 93.0,20.5",
+          "spark_pts": "3.0,3.0 6.9,9.2 10.8,17.0 14.7,14.7 18.7,5.9 22.6,8.2 26.5,9.8 30.4,8.4 34.3,11.4 38.2,14.2 42.1,10.6 46.0,12.5 50.0,15.0 53.9,13.9 57.8,9.2 61.7,11.6 65.6,16.7 69.5,17.5 73.4,16.3 77.3,22.1 81.3,23.0 85.2,21.7 89.1,19.7 93.0,19.8",
           "spark_peak": {
             "x": 3.0,
             "y": 3.0
           },
           "spark_last": {
             "x": 93.0,
-            "y": 20.5
+            "y": 19.8
           },
           "spark_w": 96,
           "spark_h": 26,
@@ -433,24 +433,24 @@
         "disclaimer": "Leading-risk radar under accrual \u2014 external-driver legs (US rate shocks, FX depreciation, USD strength) ported from the China/HK/Canada radar research, plus a long-history extension percentile for melt-up regimes (2026 KOSPI class). The edge is unproven on this market until its own forward log matures; odds are measured from the market's own history; de-risk = sizing, not selection.",
         "forward_log": {
           "market": "kr",
-          "n_graded": 5,
-          "base_rate_dd5_h21": 1.0,
+          "n_graded": 6,
+          "base_rate_dd5_h21": 0.833,
           "alert_precision": null,
           "n_alerts": 0,
           "alert_hit_rate": null,
           "force_lift": null,
           "can_force": false,
           "wilson_lift_lb": null,
-          "grant_reason": "n-floors-not-met: n_graded=5 (need 30), n_alerts=0 (need 8)",
-          "evidence_asof": "2026-07-28",
+          "grant_reason": "n-floors-not-met: n_graded=6 (need 30), n_alerts=0 (need 8)",
+          "evidence_asof": "2026-07-29",
           "by_state": {
             "watch": {
               "n": 3,
               "hit_rate": 1.0
             },
             "calm": {
-              "n": 2,
-              "hit_rate": 1.0
+              "n": 3,
+              "hit_rate": 0.667
             }
           },
           "realized_odds": {
@@ -461,10 +461,10 @@
               "h21": 1.0
             },
             "calm": {
-              "n": 2,
-              "h5": 0.5,
-              "h10": 1.0,
-              "h21": 1.0
+              "n": 3,
+              "h5": 0.333,
+              "h10": 0.667,
+              "h21": 0.667
             }
           },
           "recent_mistakes": [
@@ -506,7 +506,7 @@
           ],
           "asof_range": [
             "2026-07-16",
-            "2026-07-28"
+            "2026-07-29"
           ]
         },
         "can_force": false
@@ -518,14 +518,14 @@
       "name_zh": "\u53f0\u6e7e",
       "flag": "\ud83c\uddf9\ud83c\uddfc",
       "region": "Asia",
-      "date": "2026-08-27",
+      "date": "2026-08-28",
       "quad": "Q3",
       "quad_name": "Stagflation",
       "growth_score": 0.333,
       "inflation_score": 0.0,
       "confidence": 0.083,
       "liquidity": "unknown",
-      "recession_score": 12.0,
+      "recession_score": 11.0,
       "recession_band": "low",
       "macro": {
         "yield_10y": null,
@@ -540,10 +540,10 @@
         "unemployment": null,
         "unemployment_chg6m": null,
         "m2_yoy": null,
-        "fx": 31.743,
-        "fx_strength_3m": -0.65,
-        "realvol": 30.9,
-        "drawdown": -3.1
+        "fx": 31.581,
+        "fx_strength_3m": 0.28,
+        "realvol": 30.8,
+        "drawdown": -2.8
       },
       "macro_asof": {
         "cpi_yoy": null,
@@ -552,26 +552,26 @@
         "yield_10y": null
       },
       "equity": {
-        "price": 46275.86,
-        "off_52w_high": -3.1,
+        "price": 46391.71,
+        "off_52w_high": -2.8,
         "above_50d": true,
         "above_200d": true,
-        "realvol": 30.9,
-        "rsi": 60.0,
-        "ext_z": 0.06,
+        "realvol": 30.8,
+        "rsi": 61.0,
+        "ext_z": 0.05,
         "ext_grade": "intrend",
-        "drawdown_risk": 19.0,
+        "drawdown_risk": 18.0,
         "drawdown_band": "low",
         "bubble_flag": false
       },
       "data_limited": true,
       "risk_radar": {
         "schema": "risk_radar_intl.v1",
-        "asof": "2026-08-27",
+        "asof": "2026-08-28",
         "market": "tw",
         "state": "calm",
         "state_ungated": "calm",
-        "top_score": 35,
+        "top_score": 36,
         "dominant_scare": "extension",
         "dominant_label_en": "Calm \u2014 no driver elevated",
         "dominant_label_zh": "\u5e73\u9759 \u2014 \u65e0\u9a71\u52a8\u5347\u9ad8",
@@ -581,12 +581,12 @@
             "tier": "A",
             "label_en": "Parabolic extension / exhaustion",
             "label_zh": "\u629b\u7269\u7ebf\u4f38\u5c55\uff0f\u900f\u652f",
-            "score": 95.8,
+            "score": 96.3,
             "band": "risk-off",
             "firing_legs": [
               {
                 "leg": "ext_etf",
-                "pctile": 0.963,
+                "pctile": 0.973,
                 "confirmed": true
               },
               {
@@ -601,7 +601,7 @@
             "tier": "A",
             "label_en": "US rate shock",
             "label_zh": "\u7f8e\u503a\u5229\u7387\u51b2\u51fb",
-            "score": 35.4,
+            "score": 38.2,
             "band": "calm",
             "firing_legs": []
           },
@@ -610,7 +610,7 @@
             "tier": "A",
             "label_en": "TWD depreciation / outflows",
             "label_zh": "\u65b0\u53f0\u5e01\u8d2c\u503c\uff0f\u8d44\u91d1\u5916\u6d41",
-            "score": 10.7,
+            "score": 8.3,
             "band": "calm",
             "firing_legs": []
           }
@@ -626,19 +626,18 @@
           "measure": ">=5% index pullback within h business days (measured on this market's own history)"
         },
         "trajectory": {
-          "intensity": 35.3,
+          "intensity": 35.9,
           "peak": 100.0,
-          "peak_days_ago": 25,
-          "off_peak": 64.7,
-          "velocity": -2.4,
-          "phase": "receding",
+          "peak_days_ago": 26,
+          "off_peak": 64.1,
+          "velocity": -1.4,
+          "phase": "flat",
           "reached_risk": true,
           "state_now": "calm",
           "odds_now": 0.272,
           "odds_peak": 0.272,
           "odds_delta": 0.0,
           "spark": [
-            99.6,
             96.6,
             94.6,
             93.8,
@@ -660,17 +659,18 @@
             37.3,
             37.3,
             33.5,
-            38.1,
-            35.3
+            39.6,
+            37.9,
+            35.9
           ],
-          "spark_pts": "3.0,3.0 6.9,3.9 10.8,4.5 14.7,4.8 18.7,3.6 22.6,4.5 26.5,4.9 30.4,4.6 34.3,7.9 38.2,12.3 42.1,8.4 46.0,12.8 50.0,12.0 53.9,12.1 57.8,15.0 61.7,14.0 65.6,18.3 69.5,20.6 73.4,21.7 77.3,21.9 81.3,21.9 85.2,23.0 89.1,21.6 93.0,22.5",
+          "spark_pts": "3.0,3.3 6.9,3.9 10.8,4.2 14.7,3.0 18.7,3.9 22.6,4.3 26.5,4.1 30.4,7.4 34.3,12.0 38.2,7.9 42.1,12.5 46.0,11.6 50.0,11.8 53.9,14.7 57.8,13.8 61.7,18.2 65.6,20.6 69.5,21.7 73.4,21.8 77.3,21.8 81.3,23.0 85.2,21.1 89.1,21.6 93.0,22.3",
           "spark_peak": {
-            "x": 3.0,
+            "x": 14.7,
             "y": 3.0
           },
           "spark_last": {
             "x": 93.0,
-            "y": 22.5
+            "y": 22.3
           },
           "spark_w": 96,
           "spark_h": 26,
@@ -688,31 +688,38 @@
         "disclaimer": "Leading-risk radar under accrual \u2014 external-driver legs (US rate shocks, FX depreciation, USD strength) ported from the China/HK/Canada radar research, plus a long-history extension percentile for melt-up regimes (2026 KOSPI class). The edge is unproven on this market until its own forward log matures; odds are measured from the market's own history; de-risk = sizing, not selection.",
         "forward_log": {
           "market": "tw",
-          "n_graded": 7,
-          "base_rate_dd5_h21": 0.714,
-          "alert_precision": 0.714,
-          "n_alerts": 7,
-          "alert_hit_rate": 0.714,
+          "n_graded": 8,
+          "base_rate_dd5_h21": 0.625,
+          "alert_precision": 0.625,
+          "n_alerts": 8,
+          "alert_hit_rate": 0.625,
           "force_lift": 1.0,
           "can_force": false,
           "wilson_lift_lb": null,
-          "grant_reason": "n-floors-not-met: n_graded=7 (need 30), n_alerts=7 (need 8)",
-          "evidence_asof": "2026-07-29",
+          "grant_reason": "n-floors-not-met: n_graded=8 (need 30), n_alerts=8 (need 8)",
+          "evidence_asof": "2026-07-30",
           "by_state": {
             "risk-off": {
-              "n": 7,
-              "hit_rate": 0.714
+              "n": 8,
+              "hit_rate": 0.625
             }
           },
           "realized_odds": {
             "risk-off": {
-              "n": 7,
-              "h5": 0.429,
-              "h10": 0.714,
-              "h21": 0.714
+              "n": 8,
+              "h5": 0.375,
+              "h10": 0.625,
+              "h21": 0.625
             }
           },
           "recent_mistakes": [
+            {
+              "asof": "2026-07-30",
+              "state": "risk-off",
+              "dominant_scare": "extension",
+              "fwd_dd_h21": 0.0798,
+              "kind": "false_positive"
+            },
             {
               "asof": "2026-07-29",
               "state": "risk-off",
@@ -730,7 +737,7 @@
           ],
           "asof_range": [
             "2026-07-16",
-            "2026-07-29"
+            "2026-07-30"
           ]
         },
         "can_force": false
@@ -742,18 +749,18 @@
       "name_zh": "\u5370\u5ea6",
       "flag": "\ud83c\uddee\ud83c\uddf3",
       "region": "Asia",
-      "date": "2026-08-26",
+      "date": "2026-08-27",
       "quad": "Q2",
       "quad_name": "Reflation",
       "growth_score": -0.333,
       "inflation_score": 0.0,
       "confidence": 0.167,
       "liquidity": "unknown",
-      "recession_score": 32.0,
+      "recession_score": 34.0,
       "recession_band": "low",
       "macro": {
         "yield_10y": 6.89,
-        "yield_10y_chg3m": -0.13,
+        "yield_10y_chg3m": 0.0,
         "short_3m": null,
         "policy_rate": null,
         "curve": null,
@@ -764,10 +771,10 @@
         "unemployment": null,
         "unemployment_chg6m": null,
         "m2_yoy": null,
-        "fx": 93.5461,
+        "fx": 95.4303,
         "fx_strength_3m": 0.84,
-        "realvol": 8.8,
-        "drawdown": -8.1
+        "realvol": 8.0,
+        "drawdown": -8.5
       },
       "macro_asof": {
         "cpi_yoy": "2025-03",
@@ -776,26 +783,26 @@
         "yield_10y": "2026-06"
       },
       "equity": {
-        "price": 24207.75,
-        "off_52w_high": -8.1,
+        "price": 24090.85,
+        "off_52w_high": -8.5,
         "above_50d": false,
         "above_200d": false,
-        "realvol": 8.8,
-        "rsi": 48.0,
-        "ext_z": -0.4,
+        "realvol": 8.0,
+        "rsi": 43.0,
+        "ext_z": -0.49,
         "ext_grade": "intrend",
-        "drawdown_risk": 46.0,
+        "drawdown_risk": 47.0,
         "drawdown_band": "watch",
         "bubble_flag": false
       },
       "data_limited": true,
       "risk_radar": {
         "schema": "risk_radar_intl.v1",
-        "asof": "2026-08-26",
+        "asof": "2026-08-27",
         "market": "in",
         "state": "calm",
         "state_ungated": "calm",
-        "top_score": 6,
+        "top_score": 10,
         "dominant_scare": "rate_shock",
         "dominant_label_en": "Calm \u2014 no driver elevated",
         "dominant_label_zh": "\u5e73\u9759 \u2014 \u65e0\u9a71\u52a8\u5347\u9ad8",
@@ -805,16 +812,7 @@
             "tier": "A",
             "label_en": "US rate shock",
             "label_zh": "\u7f8e\u503a\u5229\u7387\u51b2\u51fb",
-            "score": 36.8,
-            "band": "calm",
-            "firing_legs": []
-          },
-          {
-            "scare": "extension",
-            "tier": "A",
-            "label_en": "Parabolic extension / exhaustion",
-            "label_zh": "\u629b\u7269\u7ebf\u4f38\u5c55\uff0f\u900f\u652f",
-            "score": 20.4,
+            "score": 40.0,
             "band": "calm",
             "firing_legs": []
           },
@@ -823,7 +821,16 @@
             "tier": "A",
             "label_en": "Rupee depreciation / outflows",
             "label_zh": "\u5362\u6bd4\u8d2c\u503c\uff0f\u8d44\u91d1\u5916\u6d41",
-            "score": 0.4,
+            "score": 21.4,
+            "band": "calm",
+            "firing_legs": []
+          },
+          {
+            "scare": "extension",
+            "tier": "A",
+            "label_en": "Parabolic extension / exhaustion",
+            "label_zh": "\u629b\u7269\u7ebf\u4f38\u5c55\uff0f\u900f\u652f",
+            "score": 18.9,
             "band": "calm",
             "firing_legs": []
           }
@@ -839,19 +846,18 @@
           "measure": ">=5% index pullback within h business days (measured on this market's own history)"
         },
         "trajectory": {
-          "intensity": 5.8,
+          "intensity": 10.1,
           "peak": 87.1,
-          "peak_days_ago": 22,
-          "off_peak": 81.3,
-          "velocity": -2.0,
-          "phase": "receding",
+          "peak_days_ago": 23,
+          "off_peak": 77.0,
+          "velocity": 3.6,
+          "phase": "rising",
           "reached_risk": true,
           "state_now": "calm",
           "odds_now": 0.185,
           "odds_peak": 0.185,
           "odds_delta": 0.0,
           "spark": [
-            76.4,
             87.1,
             76.2,
             61.7,
@@ -874,16 +880,17 @@
             7.1,
             5.8,
             5.6,
-            5.8
+            6.9,
+            10.1
           ],
-          "spark_pts": "3.0,5.6 6.9,3.0 10.8,5.7 14.7,9.2 18.7,9.8 22.6,12.3 26.5,16.0 30.4,15.5 34.3,20.0 38.2,18.9 42.1,19.7 46.0,18.1 50.0,19.6 53.9,20.5 57.8,21.0 61.7,21.1 65.6,19.9 69.5,21.3 73.4,22.5 77.3,22.8 81.3,22.6 85.2,23.0 89.1,23.0 93.0,23.0",
+          "spark_pts": "3.0,3.0 6.9,5.7 10.8,9.2 14.7,9.8 18.7,12.3 22.6,16.0 26.5,15.5 30.4,20.0 34.3,18.9 38.2,19.7 42.1,18.1 46.0,19.6 50.0,20.5 53.9,21.0 57.8,21.1 61.7,19.9 65.6,21.3 69.5,22.5 73.4,22.8 77.3,22.6 81.3,23.0 85.2,23.0 89.1,22.7 93.0,21.9",
           "spark_peak": {
-            "x": 6.9,
+            "x": 3.0,
             "y": 3.0
           },
           "spark_last": {
             "x": 93.0,
-            "y": 23.0
+            "y": 21.9
           },
           "spark_w": 96,
           "spark_h": 26,
@@ -901,7 +908,7 @@
         "disclaimer": "Leading-risk radar under accrual \u2014 external-driver legs (US rate shocks, FX depreciation, USD strength) ported from the China/HK/Canada radar research, plus a long-history extension percentile for melt-up regimes (2026 KOSPI class). The edge is unproven on this market until its own forward log matures; odds are measured from the market's own history; de-risk = sizing, not selection.",
         "forward_log": {
           "market": "in",
-          "n_graded": 6,
+          "n_graded": 7,
           "base_rate_dd5_h21": 0.0,
           "alert_precision": 0.0,
           "n_alerts": 1,
@@ -909,8 +916,8 @@
           "force_lift": null,
           "can_force": false,
           "wilson_lift_lb": null,
-          "grant_reason": "n-floors-not-met: n_graded=6 (need 30), n_alerts=1 (need 8)",
-          "evidence_asof": "2026-07-28",
+          "grant_reason": "n-floors-not-met: n_graded=7 (need 30), n_alerts=1 (need 8)",
+          "evidence_asof": "2026-07-29",
           "by_state": {
             "caution": {
               "n": 3,
@@ -921,7 +928,7 @@
               "hit_rate": 0.0
             },
             "watch": {
-              "n": 1,
+              "n": 2,
               "hit_rate": 0.0
             },
             "elevated": {
@@ -943,7 +950,7 @@
               "h21": 0.0
             },
             "watch": {
-              "n": 1,
+              "n": 2,
               "h5": 0.0,
               "h10": 0.0,
               "h21": 0.0
@@ -966,7 +973,7 @@
           ],
           "asof_range": [
             "2026-07-16",
-            "2026-07-28"
+            "2026-07-29"
           ]
         },
         "can_force": false
@@ -978,7 +985,7 @@
       "name_zh": "\u6fb3\u5927\u5229\u4e9a",
       "flag": "\ud83c\udde6\ud83c\uddfa",
       "region": "Asia-Pacific",
-      "date": "2026-08-27",
+      "date": "2026-08-28",
       "quad": "Q3",
       "quad_name": "Stagflation",
       "growth_score": -0.2,
@@ -1000,9 +1007,9 @@
         "unemployment": 4.43,
         "unemployment_chg6m": 0.15,
         "m2_yoy": null,
-        "fx": 0.7184,
-        "fx_strength_3m": 2.41,
-        "realvol": 9.2,
+        "fx": 0.7206,
+        "fx_strength_3m": 2.72,
+        "realvol": 9.1,
         "drawdown": -2.3
       },
       "macro_asof": {
@@ -1012,13 +1019,13 @@
         "yield_10y": "2026-06"
       },
       "equity": {
-        "price": 9059.1,
+        "price": 9061.8,
         "off_52w_high": -2.3,
         "above_50d": true,
         "above_200d": true,
-        "realvol": 9.2,
+        "realvol": 9.1,
         "rsi": 50.0,
-        "ext_z": 0.41,
+        "ext_z": 0.43,
         "ext_grade": "intrend",
         "drawdown_risk": 5.0,
         "drawdown_band": "low",
@@ -1027,11 +1034,11 @@
       "data_limited": true,
       "risk_radar": {
         "schema": "risk_radar_intl.v1",
-        "asof": "2026-08-27",
+        "asof": "2026-08-28",
         "market": "au",
         "state": "calm",
         "state_ungated": "calm",
-        "top_score": 16,
+        "top_score": 18,
         "dominant_scare": "extension",
         "dominant_label_en": "Calm \u2014 no driver elevated",
         "dominant_label_zh": "\u5e73\u9759 \u2014 \u65e0\u9a71\u52a8\u5347\u9ad8",
@@ -1041,12 +1048,12 @@
             "tier": "A",
             "label_en": "Parabolic extension / exhaustion",
             "label_zh": "\u629b\u7269\u7ebf\u4f38\u5c55\uff0f\u900f\u652f",
-            "score": 64.7,
+            "score": 63.6,
             "band": "watch",
             "firing_legs": [
               {
                 "leg": "ext_etf",
-                "pctile": 0.791,
+                "pctile": 0.767,
                 "confirmed": false
               }
             ]
@@ -1056,7 +1063,7 @@
             "tier": "A",
             "label_en": "US rate shock",
             "label_zh": "\u7f8e\u503a\u5229\u7387\u51b2\u51fb",
-            "score": 33.6,
+            "score": 36.7,
             "band": "calm",
             "firing_legs": []
           },
@@ -1065,7 +1072,7 @@
             "tier": "A",
             "label_en": "AUD depreciation / outflows",
             "label_zh": "\u6fb3\u5143\u8d2c\u503c\uff0f\u8d44\u91d1\u5916\u6d41",
-            "score": 9.1,
+            "score": 6.7,
             "band": "calm",
             "firing_legs": []
           }
@@ -1081,11 +1088,11 @@
           "measure": ">=5% index pullback within h business days (measured on this market's own history)"
         },
         "trajectory": {
-          "intensity": 16.5,
+          "intensity": 17.7,
           "peak": 86.1,
-          "peak_days_ago": 17,
-          "off_peak": 69.6,
-          "velocity": -8.5,
+          "peak_days_ago": 18,
+          "off_peak": 68.5,
+          "velocity": -10.3,
           "phase": "receding",
           "reached_risk": true,
           "state_now": "calm",
@@ -1093,7 +1100,6 @@
           "odds_peak": 0.154,
           "odds_delta": 0.0,
           "spark": [
-            66.7,
             73.4,
             69.0,
             78.6,
@@ -1115,12 +1121,13 @@
             28.0,
             21.6,
             22.2,
-            22.2,
-            16.5
+            27.3,
+            18.8,
+            17.7
           ],
-          "spark_pts": "3.0,8.6 6.9,6.6 10.8,7.9 14.7,5.2 18.7,8.9 22.6,9.1 26.5,3.0 30.4,6.4 34.3,5.6 38.2,5.0 42.1,5.7 46.0,9.8 50.0,10.7 53.9,9.4 57.8,9.8 61.7,10.0 65.6,15.6 69.5,16.7 73.4,20.6 77.3,19.7 81.3,21.5 85.2,21.4 89.1,21.4 93.0,23.0",
+          "spark_pts": "3.0,6.7 6.9,8.0 10.8,5.2 14.7,9.0 18.7,9.2 22.6,3.0 26.5,6.5 30.4,5.7 34.3,5.1 38.2,5.7 42.1,10.0 46.0,10.8 50.0,9.5 53.9,10.0 57.8,10.1 61.7,15.8 65.6,16.9 69.5,20.9 73.4,20.0 77.3,21.9 81.3,21.7 85.2,20.2 89.1,22.7 93.0,23.0",
           "spark_peak": {
-            "x": 26.5,
+            "x": 22.6,
             "y": 3.0
           },
           "spark_last": {
@@ -1143,7 +1150,7 @@
         "disclaimer": "Leading-risk radar under accrual \u2014 external-driver legs (US rate shocks, FX depreciation, USD strength) ported from the China/HK/Canada radar research, plus a long-history extension percentile for melt-up regimes (2026 KOSPI class). The edge is unproven on this market until its own forward log matures; odds are measured from the market's own history; de-risk = sizing, not selection.",
         "forward_log": {
           "market": "au",
-          "n_graded": 7,
+          "n_graded": 8,
           "base_rate_dd5_h21": 0.0,
           "alert_precision": null,
           "n_alerts": 0,
@@ -1151,15 +1158,15 @@
           "force_lift": null,
           "can_force": false,
           "wilson_lift_lb": null,
-          "grant_reason": "n-floors-not-met: n_graded=7 (need 30), n_alerts=0 (need 8)",
-          "evidence_asof": "2026-07-29",
+          "grant_reason": "n-floors-not-met: n_graded=8 (need 30), n_alerts=0 (need 8)",
+          "evidence_asof": "2026-07-30",
           "by_state": {
             "watch": {
               "n": 6,
               "hit_rate": 0.0
             },
             "caution": {
-              "n": 1,
+              "n": 2,
               "hit_rate": 0.0
             }
           },
@@ -1171,7 +1178,7 @@
               "h21": 0.0
             },
             "caution": {
-              "n": 1,
+              "n": 2,
               "h5": 0.0,
               "h10": 0.0,
               "h21": 0.0
@@ -1180,7 +1187,7 @@
           "recent_mistakes": [],
           "asof_range": [
             "2026-07-16",
-            "2026-07-29"
+            "2026-07-30"
           ]
         },
         "can_force": false
@@ -1192,18 +1199,18 @@
       "name_zh": "\u82f1\u56fd",
       "flag": "\ud83c\uddec\ud83c\udde7",
       "region": "Europe",
-      "date": "2026-08-26",
-      "quad": "Q2",
-      "quad_name": "Reflation",
+      "date": "2026-08-27",
+      "quad": "Q3",
+      "quad_name": "Stagflation",
       "growth_score": -0.333,
       "inflation_score": 0.0,
       "confidence": 0.167,
       "liquidity": "unknown",
-      "recession_score": 1.0,
+      "recession_score": 4.0,
       "recession_band": "low",
       "macro": {
         "yield_10y": 4.8,
-        "yield_10y_chg3m": -0.15,
+        "yield_10y_chg3m": 0.0,
         "short_3m": 3.71,
         "policy_rate": 3.71,
         "curve": 1.23,
@@ -1214,10 +1221,10 @@
         "unemployment": 4.9,
         "unemployment_chg6m": 0.0,
         "m2_yoy": -3.66,
-        "fx": 1.3647,
-        "fx_strength_3m": 3.37,
-        "realvol": 4.5,
-        "drawdown": -0.3
+        "fx": 1.3597,
+        "fx_strength_3m": 2.72,
+        "realvol": 5.1,
+        "drawdown": -1.1
       },
       "macro_asof": {
         "cpi_yoy": "2025-03",
@@ -1226,26 +1233,26 @@
         "yield_10y": "2026-06"
       },
       "equity": {
-        "price": 10878.1,
-        "off_52w_high": -0.3,
+        "price": 10792.5,
+        "off_52w_high": -1.1,
         "above_50d": true,
         "above_200d": true,
-        "realvol": 4.5,
-        "rsi": 62.0,
-        "ext_z": -0.71,
+        "realvol": 5.1,
+        "rsi": 52.0,
+        "ext_z": -1.04,
         "ext_grade": "intrend",
-        "drawdown_risk": 1.0,
+        "drawdown_risk": 2.0,
         "drawdown_band": "low",
         "bubble_flag": false
       },
       "data_limited": true,
       "risk_radar": {
         "schema": "risk_radar_intl.v1",
-        "asof": "2026-08-26",
+        "asof": "2026-08-27",
         "market": "gb",
         "state": "calm",
         "state_ungated": "calm",
-        "top_score": 9,
+        "top_score": 10,
         "dominant_scare": "extension",
         "dominant_label_en": "Calm \u2014 no driver elevated",
         "dominant_label_zh": "\u5e73\u9759 \u2014 \u65e0\u9a71\u52a8\u5347\u9ad8",
@@ -1255,17 +1262,17 @@
             "tier": "A",
             "label_en": "Parabolic extension / exhaustion",
             "label_zh": "\u629b\u7269\u7ebf\u4f38\u5c55\uff0f\u900f\u652f",
-            "score": 72.1,
-            "band": "caution",
+            "score": 66.5,
+            "band": "watch",
             "firing_legs": [
               {
-                "leg": "ext_idx",
-                "pctile": 0.729,
+                "leg": "ext_etf",
+                "pctile": 0.675,
                 "confirmed": false
               },
               {
-                "leg": "ext_etf",
-                "pctile": 0.713,
+                "leg": "ext_idx",
+                "pctile": 0.655,
                 "confirmed": false
               }
             ]
@@ -1275,7 +1282,7 @@
             "tier": "A",
             "label_en": "US rate shock",
             "label_zh": "\u7f8e\u503a\u5229\u7387\u51b2\u51fb",
-            "score": 35.7,
+            "score": 38.8,
             "band": "calm",
             "firing_legs": []
           },
@@ -1284,7 +1291,7 @@
             "tier": "A",
             "label_en": "Sterling depreciation / outflows",
             "label_zh": "\u82f1\u9551\u8d2c\u503c\uff0f\u8d44\u91d1\u5916\u6d41",
-            "score": 7.7,
+            "score": 12.9,
             "band": "calm",
             "firing_legs": []
           }
@@ -1300,11 +1307,11 @@
           "measure": ">=5% index pullback within h business days (measured on this market's own history)"
         },
         "trajectory": {
-          "intensity": 8.8,
+          "intensity": 9.7,
           "peak": 80.7,
-          "peak_days_ago": 20,
-          "off_peak": 71.8,
-          "velocity": -16.0,
+          "peak_days_ago": 21,
+          "off_peak": 70.9,
+          "velocity": -4.8,
           "phase": "receding",
           "reached_risk": true,
           "state_now": "calm",
@@ -1312,7 +1319,6 @@
           "odds_peak": 0.186,
           "odds_delta": 0.0,
           "spark": [
-            72.4,
             73.2,
             80.4,
             80.7,
@@ -1335,16 +1341,17 @@
             14.7,
             12.5,
             8.3,
-            8.8
+            12.5,
+            9.7
           ],
-          "spark_pts": "3.0,5.3 6.9,5.1 10.8,3.1 14.7,3.0 18.7,5.0 22.6,5.0 26.5,6.1 30.4,5.6 34.3,10.2 38.2,10.0 42.1,8.7 46.0,7.9 50.0,14.3 53.9,13.7 57.8,14.1 61.7,11.1 65.6,11.8 69.5,15.5 73.4,18.4 77.3,21.3 81.3,21.2 85.2,21.8 89.1,23.0 93.0,22.9",
+          "spark_pts": "3.0,5.1 6.9,3.1 10.8,3.0 14.7,5.0 18.7,5.0 22.6,6.1 26.5,5.6 30.4,10.2 34.3,10.0 38.2,8.7 42.1,7.9 46.0,14.3 50.0,13.7 53.9,14.1 57.8,11.1 61.7,11.8 65.6,15.5 69.5,18.4 73.4,21.3 77.3,21.2 81.3,21.8 85.2,23.0 89.1,21.8 93.0,22.6",
           "spark_peak": {
-            "x": 14.7,
+            "x": 10.8,
             "y": 3.0
           },
           "spark_last": {
             "x": 93.0,
-            "y": 22.9
+            "y": 22.6
           },
           "spark_w": 96,
           "spark_h": 26,
@@ -1362,7 +1369,7 @@
         "disclaimer": "Leading-risk radar under accrual \u2014 external-driver legs (US rate shocks, FX depreciation, USD strength) ported from the China/HK/Canada radar research, plus a long-history extension percentile for melt-up regimes (2026 KOSPI class). The edge is unproven on this market until its own forward log matures; odds are measured from the market's own history; de-risk = sizing, not selection.",
         "forward_log": {
           "market": "gb",
-          "n_graded": 7,
+          "n_graded": 8,
           "base_rate_dd5_h21": 0.0,
           "alert_precision": null,
           "n_alerts": 0,
@@ -1370,8 +1377,8 @@
           "force_lift": null,
           "can_force": false,
           "wilson_lift_lb": null,
-          "grant_reason": "n-floors-not-met: n_graded=7 (need 30), n_alerts=0 (need 8)",
-          "evidence_asof": "2026-07-28",
+          "grant_reason": "n-floors-not-met: n_graded=8 (need 30), n_alerts=0 (need 8)",
+          "evidence_asof": "2026-07-29",
           "by_state": {
             "watch": {
               "n": 1,
@@ -1382,7 +1389,7 @@
               "hit_rate": 0.0
             },
             "caution": {
-              "n": 3,
+              "n": 4,
               "hit_rate": 0.0
             }
           },
@@ -1400,7 +1407,7 @@
               "h21": 0.0
             },
             "caution": {
-              "n": 3,
+              "n": 4,
               "h5": 0.0,
               "h10": 0.0,
               "h21": 0.0
@@ -1409,7 +1416,7 @@
           "recent_mistakes": [],
           "asof_range": [
             "2026-07-15",
-            "2026-07-28"
+            "2026-07-29"
           ]
         },
         "can_force": false
@@ -1421,14 +1428,14 @@
       "name_zh": "\u6b27\u5143\u533a",
       "flag": "\ud83c\uddea\ud83c\uddfa",
       "region": "Europe",
-      "date": "2026-08-26",
+      "date": "2026-08-27",
       "quad": "Q1",
       "quad_name": "Goldilocks",
-      "growth_score": 0.143,
-      "inflation_score": -0.667,
-      "confidence": 0.369,
+      "growth_score": -0.143,
+      "inflation_score": 0.667,
+      "confidence": 0.405,
       "liquidity": "contracting",
-      "recession_score": 1.0,
+      "recession_score": 3.0,
       "recession_band": "low",
       "macro": {
         "yield_10y": 3.22,
@@ -1438,15 +1445,15 @@
         "curve": 1.19,
         "real_yield": 0.08,
         "cpi_yoy": 2.93,
-        "cpi_chg3m": -0.21,
+        "cpi_chg3m": 0.2,
         "gdp_yoy": 0.94,
         "unemployment": 6.3,
         "unemployment_chg6m": 0.0,
         "m2_yoy": 5.1,
-        "fx": 1.1675,
+        "fx": 1.1655,
         "fx_strength_3m": 1.89,
-        "realvol": 5.6,
-        "drawdown": -0.6
+        "realvol": 6.1,
+        "drawdown": -1.3
       },
       "macro_asof": {
         "cpi_yoy": "2026-07",
@@ -1455,26 +1462,26 @@
         "yield_10y": "2026-01"
       },
       "equity": {
-        "price": 656.41,
-        "off_52w_high": -0.6,
+        "price": 651.85,
+        "off_52w_high": -1.3,
         "above_50d": true,
         "above_200d": true,
-        "realvol": 5.6,
-        "rsi": 59.0,
-        "ext_z": 0.36,
+        "realvol": 6.1,
+        "rsi": 49.0,
+        "ext_z": 0.02,
         "ext_grade": "intrend",
-        "drawdown_risk": 1.0,
+        "drawdown_risk": 3.0,
         "drawdown_band": "low",
         "bubble_flag": false
       },
       "data_limited": false,
       "risk_radar": {
         "schema": "risk_radar_intl.v1",
-        "asof": "2026-08-26",
+        "asof": "2026-08-27",
         "market": "ez",
         "state": "calm",
         "state_ungated": "calm",
-        "top_score": 15,
+        "top_score": 18,
         "dominant_scare": "extension",
         "dominant_label_en": "Calm \u2014 no driver elevated",
         "dominant_label_zh": "\u5e73\u9759 \u2014 \u65e0\u9a71\u52a8\u5347\u9ad8",
@@ -1484,17 +1491,17 @@
             "tier": "A",
             "label_en": "Parabolic extension / exhaustion",
             "label_zh": "\u629b\u7269\u7ebf\u4f38\u5c55\uff0f\u900f\u652f",
-            "score": 71.4,
-            "band": "caution",
+            "score": 66.6,
+            "band": "watch",
             "firing_legs": [
               {
                 "leg": "ext_idx",
-                "pctile": 0.776,
+                "pctile": 0.715,
                 "confirmed": false
               },
               {
                 "leg": "ext_etf",
-                "pctile": 0.653,
+                "pctile": 0.617,
                 "confirmed": false
               }
             ]
@@ -1504,7 +1511,7 @@
             "tier": "A",
             "label_en": "US rate shock",
             "label_zh": "\u7f8e\u503a\u5229\u7387\u51b2\u51fb",
-            "score": 36.6,
+            "score": 39.8,
             "band": "calm",
             "firing_legs": []
           },
@@ -1513,7 +1520,7 @@
             "tier": "A",
             "label_en": "Euro depreciation / outflows",
             "label_zh": "\u6b27\u5143\u8d2c\u503c\uff0f\u8d44\u91d1\u5916\u6d41",
-            "score": 10.9,
+            "score": 15.7,
             "band": "calm",
             "firing_legs": []
           }
@@ -1529,19 +1536,18 @@
           "measure": ">=5% index pullback within h business days (measured on this market's own history)"
         },
         "trajectory": {
-          "intensity": 15.5,
+          "intensity": 18.1,
           "peak": 89.7,
-          "peak_days_ago": 21,
-          "off_peak": 74.2,
-          "velocity": -12.5,
-          "phase": "receding",
+          "peak_days_ago": 22,
+          "off_peak": 71.6,
+          "velocity": 0.4,
+          "phase": "flat",
           "reached_risk": true,
           "state_now": "calm",
           "odds_now": 0.2,
           "odds_peak": 0.2,
           "odds_delta": 0.0,
           "spark": [
-            85.3,
             85.9,
             89.7,
             79.6,
@@ -1564,16 +1570,17 @@
             21.2,
             17.7,
             12.1,
-            15.5
+            21.2,
+            18.1
           ],
-          "spark_pts": "3.0,4.1 6.9,4.0 10.8,3.0 14.7,5.6 18.7,6.8 22.6,8.0 26.5,7.9 30.4,6.5 34.3,10.6 38.2,10.5 42.1,9.7 46.0,9.3 50.0,12.9 53.9,12.3 57.8,11.6 61.7,10.4 65.6,10.9 69.5,15.4 73.4,18.9 77.3,21.6 81.3,20.7 85.2,21.6 89.1,23.0 93.0,22.1",
+          "spark_pts": "3.0,4.0 6.9,3.0 10.8,5.6 14.7,6.8 18.7,8.0 22.6,7.9 26.5,6.5 30.4,10.6 34.3,10.5 38.2,9.7 42.1,9.3 46.0,12.9 50.0,12.3 53.9,11.6 57.8,10.4 61.7,10.9 65.6,15.4 69.5,18.9 73.4,21.6 77.3,20.7 81.3,21.6 85.2,23.0 89.1,20.7 93.0,21.5",
           "spark_peak": {
-            "x": 10.8,
+            "x": 6.9,
             "y": 3.0
           },
           "spark_last": {
             "x": 93.0,
-            "y": 22.1
+            "y": 21.5
           },
           "spark_w": 96,
           "spark_h": 26,
@@ -1591,7 +1598,7 @@
         "disclaimer": "Leading-risk radar under accrual \u2014 external-driver legs (US rate shocks, FX depreciation, USD strength) ported from the China/HK/Canada radar research, plus a long-history extension percentile for melt-up regimes (2026 KOSPI class). The edge is unproven on this market until its own forward log matures; odds are measured from the market's own history; de-risk = sizing, not selection.",
         "forward_log": {
           "market": "ez",
-          "n_graded": 7,
+          "n_graded": 8,
           "base_rate_dd5_h21": 0.0,
           "alert_precision": null,
           "n_alerts": 0,
@@ -1599,11 +1606,11 @@
           "force_lift": null,
           "can_force": false,
           "wilson_lift_lb": null,
-          "grant_reason": "n-floors-not-met: n_graded=7 (need 30), n_alerts=0 (need 8)",
-          "evidence_asof": "2026-07-28",
+          "grant_reason": "n-floors-not-met: n_graded=8 (need 30), n_alerts=0 (need 8)",
+          "evidence_asof": "2026-07-29",
           "by_state": {
             "caution": {
-              "n": 5,
+              "n": 6,
               "hit_rate": 0.0
             },
             "watch": {
@@ -1613,7 +1620,7 @@
           },
           "realized_odds": {
             "caution": {
-              "n": 5,
+              "n": 6,
               "h5": 0.0,
               "h10": 0.0,
               "h21": 0.0
@@ -1628,7 +1635,7 @@
           "recent_mistakes": [],
           "asof_range": [
             "2026-07-15",
-            "2026-07-28"
+            "2026-07-29"
           ]
         },
         "can_force": false
@@ -1645,13 +1652,13 @@
           "cc": "KR",
           "flag": "\ud83c\uddf0\ud83c\uddf7",
           "name": "South Korea",
-          "value": 38.0
+          "value": 40.0
         },
         {
           "cc": "IN",
           "flag": "\ud83c\uddee\ud83c\uddf3",
           "name": "India",
-          "value": 32.0
+          "value": 34.0
         },
         {
           "cc": "AU",
@@ -1663,25 +1670,25 @@
           "cc": "JP",
           "flag": "\ud83c\uddef\ud83c\uddf5",
           "name": "Japan",
-          "value": 13.0
+          "value": 12.0
         },
         {
           "cc": "TW",
           "flag": "\ud83c\uddf9\ud83c\uddfc",
           "name": "Taiwan",
-          "value": 12.0
+          "value": 11.0
         },
         {
           "cc": "GB",
           "flag": "\ud83c\uddec\ud83c\udde7",
           "name": "United Kingdom",
-          "value": 1.0
+          "value": 4.0
         },
         {
           "cc": "EZ",
           "flag": "\ud83c\uddea\ud83c\uddfa",
           "name": "Eurozone",
-          "value": 1.0
+          "value": 3.0
         }
       ]
     },
@@ -1694,25 +1701,25 @@
           "cc": "KR",
           "flag": "\ud83c\uddf0\ud83c\uddf7",
           "name": "South Korea",
-          "value": 68.0
+          "value": 70.0
         },
         {
           "cc": "IN",
           "flag": "\ud83c\uddee\ud83c\uddf3",
           "name": "India",
-          "value": 46.0
+          "value": 47.0
         },
         {
           "cc": "JP",
           "flag": "\ud83c\uddef\ud83c\uddf5",
           "name": "Japan",
-          "value": 27.0
+          "value": 25.0
         },
         {
           "cc": "TW",
           "flag": "\ud83c\uddf9\ud83c\uddfc",
           "name": "Taiwan",
-          "value": 19.0
+          "value": 18.0
         },
         {
           "cc": "AU",
@@ -1721,16 +1728,16 @@
           "value": 5.0
         },
         {
-          "cc": "GB",
-          "flag": "\ud83c\uddec\ud83c\udde7",
-          "name": "United Kingdom",
-          "value": 1.0
-        },
-        {
           "cc": "EZ",
           "flag": "\ud83c\uddea\ud83c\uddfa",
           "name": "Eurozone",
-          "value": 1.0
+          "value": 3.0
+        },
+        {
+          "cc": "GB",
+          "flag": "\ud83c\uddec\ud83c\udde7",
+          "name": "United Kingdom",
+          "value": 2.0
         }
       ]
     },
@@ -1817,7 +1824,7 @@
           "cc": "TW",
           "flag": "\ud83c\uddf9\ud83c\uddfc",
           "name": "Taiwan",
-          "value": -0.65
+          "value": 0.28
         },
         {
           "cc": "IN",
@@ -1829,7 +1836,7 @@
           "cc": "JP",
           "flag": "\ud83c\uddef\ud83c\uddf5",
           "name": "Japan",
-          "value": 1.21
+          "value": 1.13
         },
         {
           "cc": "EZ",
@@ -1841,19 +1848,19 @@
           "cc": "AU",
           "flag": "\ud83c\udde6\ud83c\uddfa",
           "name": "Australia",
-          "value": 2.41
+          "value": 2.72
         },
         {
           "cc": "GB",
           "flag": "\ud83c\uddec\ud83c\udde7",
           "name": "United Kingdom",
-          "value": 3.37
+          "value": 2.72
         },
         {
           "cc": "KR",
           "flag": "\ud83c\uddf0\ud83c\uddf7",
           "name": "South Korea",
-          "value": 10.15
+          "value": 9.96
         }
       ]
     },
@@ -1909,9 +1916,9 @@
       "region": "Asia",
       "quad": "Q3",
       "quad_name": "Stagflation",
-      "growth": 0.143,
+      "growth": -0.143,
       "inflation": 0.0,
-      "confidence": 0.036,
+      "confidence": 0.071,
       "data_limited": false
     },
     {
@@ -1921,9 +1928,9 @@
       "region": "Asia",
       "quad": "Q3",
       "quad_name": "Stagflation",
-      "growth": -0.143,
+      "growth": -0.429,
       "inflation": 0.0,
-      "confidence": 0.048,
+      "confidence": 0.214,
       "data_limited": true
     },
     {
@@ -1967,8 +1974,8 @@
       "flag": "\ud83c\uddec\ud83c\udde7",
       "name": "United Kingdom",
       "region": "Europe",
-      "quad": "Q2",
-      "quad_name": "Reflation",
+      "quad": "Q3",
+      "quad_name": "Stagflation",
       "growth": -0.333,
       "inflation": 0.0,
       "confidence": 0.167,
@@ -1981,9 +1988,9 @@
       "region": "Europe",
       "quad": "Q1",
       "quad_name": "Goldilocks",
-      "growth": 0.143,
-      "inflation": -0.667,
-      "confidence": 0.369,
+      "growth": -0.143,
+      "inflation": 0.667,
+      "confidence": 0.405,
       "data_limited": false
     }
   ],

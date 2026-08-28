@@ -1,8 +1,8 @@
 {
   "schema": "macro_snapshot.v1.2",
-  "asof": "2026-08-27",
+  "asof": "2026-08-28",
   "oldest_component_asof": "2026-08-26",
-  "macro_context_id": "a14675905fc1ce16",
+  "macro_context_id": "da4711c743c62514",
   "labels": {
     "us": {
       "us_quad": "Q2",
@@ -26,13 +26,13 @@
       "market_state_verdict": "RISK_ON"
     },
     "transmission": {
-      "yield_curve_regime": "bear_steepener",
+      "yield_curve_regime": "bull_steepener",
       "recession_risk": "low"
     },
     "fx": {
       "usd_trend": "down",
       "usd_regime": "US growth premium",
-      "fx_risk": "risk-off",
+      "fx_risk": "risk-on",
       "real_rate_regime": "Restrictive real yields",
       "fx_liquidity_dir": "supportive",
       "fx_regime_radar": null,
@@ -42,7 +42,7 @@
       "fx_eurusd_action": "FLAT",
       "fx_gbpusd_action": "FLAT",
       "fx_usdjpy_action": "SHORT",
-      "fx_usdchf_action": "FLAT",
+      "fx_usdchf_action": "LONG",
       "fx_audusd_action": "SHORT",
       "fx_usdcad_action": "FLAT",
       "fx_usdmxn_action": "SHORT",
@@ -59,13 +59,13 @@
     "commodity": {
       "commodity_regime": "Stagflation",
       "commodity_favored": "Gold, Silver",
-      "commodity_mtf_grade": "TREND-FOLLOW",
-      "commodity_ladder": "RALLY ON",
+      "commodity_mtf_grade": "BUY-THE-DIP",
+      "commodity_ladder": "TOP WATCH",
       "commodity_shock_state": "normal",
-      "commodity_confluence_state": "Extended \u2014 late cycle",
+      "commodity_confluence_state": "Neutral",
       "commodity_breadth_bucket": "broad",
       "gold_action": "BUY",
-      "silver_action": "SELL",
+      "silver_action": "HOLD",
       "copper_action": "BUY",
       "oil_action": "HOLD"
     },
@@ -90,7 +90,7 @@
     "intl": {
       "intl_au_quad": "Q3",
       "intl_ez_quad": "Q1",
-      "intl_gb_quad": "Q2",
+      "intl_gb_quad": "Q3",
       "intl_in_quad": "Q2",
       "intl_jp_quad": "Q3",
       "intl_kr_quad": "Q3",
@@ -98,23 +98,23 @@
     }
   },
   "sources": {
-    "data/regime/latest.json": "2026-08-26",
-    "data/market_state/latest.json": "2026-08-26",
-    "data/transmission/latest.json": "2026-08-26",
-    "data/forex/latest.json": "2026-08-27",
-    "data/bonds/bond_health.json": "2026-08-26",
-    "data/commodity/latest.json": "2026-08-26",
+    "data/regime/latest.json": "2026-08-27",
+    "data/market_state/latest.json": "2026-08-27",
+    "data/transmission/latest.json": "2026-08-27",
+    "data/forex/latest.json": "2026-08-28",
+    "data/bonds/bond_health.json": "2026-08-27",
+    "data/commodity/latest.json": "2026-08-27",
     "data/china_regime/latest.json": "2026-08-26",
     "data/hk_regime/latest.json": "2026-08-26",
-    "data/canada_regime/latest.json": "2026-08-26",
+    "data/canada_regime/latest.json": "2026-08-27",
     "data/dispersion/regime.json": "2026-08-27",
-    "data/intl_regime/AU_history.parquet": "2026-08-27",
-    "data/intl_regime/EZ_history.parquet": "2026-08-26",
-    "data/intl_regime/GB_history.parquet": "2026-08-26",
-    "data/intl_regime/IN_history.parquet": "2026-08-26",
-    "data/intl_regime/JP_history.parquet": "2026-08-27",
-    "data/intl_regime/KR_history.parquet": "2026-08-27",
-    "data/intl_regime/TW_history.parquet": "2026-08-27"
+    "data/intl_regime/AU_history.parquet": "2026-08-28",
+    "data/intl_regime/EZ_history.parquet": "2026-08-27",
+    "data/intl_regime/GB_history.parquet": "2026-08-27",
+    "data/intl_regime/IN_history.parquet": "2026-08-27",
+    "data/intl_regime/JP_history.parquet": "2026-08-28",
+    "data/intl_regime/KR_history.parquet": "2026-08-28",
+    "data/intl_regime/TW_history.parquet": "2026-08-28"
   },
   "gaps": [],
   "display_only": true
