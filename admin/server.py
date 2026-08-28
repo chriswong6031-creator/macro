@@ -208,6 +208,7 @@ _CSP = ("default-src 'none'; "
         "base-uri 'none'; "
         "form-action 'self'; "
         "object-src 'none'; "
+        "frame-src https://control.mastermind-x.com; "
         "frame-ancestors 'none'")
 
 

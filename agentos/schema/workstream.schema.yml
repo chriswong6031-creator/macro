@@ -41,6 +41,22 @@ optional:
                         until it merges, so it prevents DAY-scale collisions, not
                         same-hour ones; expires defaults to +12h (session scale)"}
   needs_ceo:    {type: object, fields: [question, options, recommendation, by_when]}
+  wait:         {type: object, fields: [kind, review_after, condition],
+                 kind: {enum: [natural_evidence, external_dependency, calendar_window,
+                               external_action]},
+                 review_after: {type: date, note: "date-only YYYY-MM-DD; the date a HUMAN
+                                looks again, NOT a predicted resolution and NOT a timer"},
+                 condition: {type: string, note: "non-empty opaque human context; never
+                             parsed for authority, action or completion"},
+                 note: "DECLARED INTENTIONAL INACTIVITY. Closed contract - unknown fields
+                        are a hard error, so no author can mint a private reason. Reading
+                        only (I1): schedules nothing, wakes nothing, gates nothing,
+                        completes nothing. A past review_after stays schema-valid - it is
+                        an overdue review, not an expiry. Absence is never inferred to
+                        mean a workstream is unattended, and its presence is never
+                        evidence that anyone is live. Also valid at wave scope."}
 wave:
   required: {id: string, title: string, status: {enum: [todo, in_progress, awaiting_ci, done, dropped]}}
-  optional: {pr: "int|list[int]", depends_on: list[wave-id], next_action: string}
+  optional: {pr: "int|list[int]", depends_on: list[wave-id], next_action: string,
+             wait: "same closed {kind, review_after, condition} contract as the
+                    workstream-scope field above, validated by the same rule"}
