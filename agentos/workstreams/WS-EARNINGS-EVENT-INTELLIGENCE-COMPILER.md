@@ -23,6 +23,9 @@ decisions:
   - DEC:E3C-GOOGL-OOS-REFUSAL-SPENDS-EVENT
   - DEC:E3FMT-STRUCTURAL-SEPARATORS-PROXY-IDENTITY-AND-SOURCE-CONDITIONED-HOLDOUT
   - DEC:E3FMT-DEVELOPMENT-GOLD-R2-FIRST-HANDOFF-OMISSIONS
+  - DEC:E3FMT-DEVELOPMENT-GOLD-R3-RESPONDENT-ROLE-SOURCE-CLEAN
+discoveries:
+  - DSC:E3FMT-ABSENCE-OF-ROLE-CONFLICT-IS-NOT-SOURCE-CLEAN
 next_action: >
   E3-B is PROVEN_LIVE / DONE. E3-C is GENERALIZATION_REFUSED_ON_SOURCE_FORMAT — in progress,
   NOT complete; Sol has ruled (DEC:E3C-GOOGL-OOS-REFUSAL-SPENDS-EVENT) and nothing is awaiting
@@ -45,13 +48,28 @@ next_action: >
   unresolved under the already-frozen placeholder + first-name-only law. Machine grading truth is
   research/earnings_intelligence/e3/tfg1_development_boundary_identity_adjudication_r2.json; the
   historical 110-boundary TFG-0 receipt is preserved unchanged as falsified evidence.
-  TFG-1 R2 is NOT_BUILT. The successor is a distinct logical operation,
-  tfg1-r2-deterministic-transcript-format-hardening-20260827-v1, whose sole packet is
-  research/earnings_intelligence/e3/TFG1_R2_DETERMINISTIC_TRANSCRIPT_FORMAT_HARDENING_HANDOFF_2026-08-27.md.
-  It may not begin until the v1 closeout PR #6555 is Sol-accepted and landed. The v1 operation key is
-  spent and must not be reused. The eight holdout revisions remain SEALED
-  (holdout_bodies_inspected: 0) until R2's corrected development gates are green and an exact
-  implementation head is frozen.
+  TFG-1 R2 (operation tfg1-r2-deterministic-transcript-format-hardening-20260827-v1) is now also
+  TERMINAL at STOPPED_AT_DEVELOPMENT_GATE — SECOND GOLD FALSIFIER. It implemented the ratified R2
+  gold faithfully and reached a fully green structural half, then found the gold and the source
+  disagreeing twice more: 5 explicit management-role-conflict calls where the gold declared 2, and
+  two calls inside the source-clean nine (ARQQ/2026Q2, FANG/2026Q2) whose revisions never give a
+  respondent an office at all. Sol ruled YES on both and ratified
+  DEC:E3FMT-DEVELOPMENT-GOLD-R3-RESPONDENT-ROLE-SOURCE-CLEAN. PR #6591 is CLOSED UNMERGED with its
+  branch preserved as evidence; no compiler code was accepted and the holdout was never opened.
+  Ratified R3 development truth keeps 113 / 97 direct / 6 proxy / 103 supported / 10 unresolved, sets
+  management-role-conflict calls to exactly 5 (ARRY, CTRE, BANR, LTH, HTGC), and reduces the
+  source-clean full-call set to exactly 7 with 9 refusing. Source blockers are recorded as SETS, never
+  an order-dependent first-failure reason. QNA_SOURCE_CLEAN now requires POSITIVE replayable
+  same-revision respondent role/title support — absence of conflict is not clean. Machine grading
+  truth is research/earnings_intelligence/e3/tfg1_development_boundary_identity_adjudication_r3.json;
+  the R2 JSON is preserved byte-unchanged as falsified evidence.
+  TFG-1 R3 implementation is NOT_BUILT. The successor is a distinct logical operation,
+  tfg1-r3-deterministic-transcript-format-hardening-20260828-v1, whose sole packet is
+  research/earnings_intelligence/e3/TFG1_R3_DETERMINISTIC_TRANSCRIPT_FORMAT_HARDENING_HANDOFF_2026-08-28.md.
+  It may not begin until this R3 records correction is Sol-accepted and landed. The v1 and R2
+  operation keys are spent and must not be reused. The eight holdout revisions remain SEALED
+  (holdout_bodies_inspected: 0) across all three waves, until R3's corrected development gates are
+  green and an exact implementation head is frozen.
   AAPL stays exactly 7 exchanges / 26 management answer turns / 68 replay spans and production
   revision admission stays AAPL-only. E3-C remains in progress: TFG completion is not E3-C
   completion, a fresh untouched-OOS acceptance wave (E3-OOS2) on a newly pre-registered event is
@@ -105,6 +123,11 @@ artifacts:
   - research/earnings_intelligence/e3/TFG1_R2_DETERMINISTIC_TRANSCRIPT_FORMAT_HARDENING_HANDOFF_2026-08-27.md
   - agentos/decisions/DEC-E3FMT-STRUCTURAL-SEPARATORS-PROXY-IDENTITY-AND-SOURCE-CONDITIONED-HOLDOUT.md
   - agentos/decisions/DEC-E3FMT-DEVELOPMENT-GOLD-R2-FIRST-HANDOFF-OMISSIONS.md
+  - agentos/decisions/DEC-E3FMT-DEVELOPMENT-GOLD-R3-RESPONDENT-ROLE-SOURCE-CLEAN.md
+  - agentos/discoveries/DSC-E3FMT-ABSENCE-OF-ROLE-CONFLICT-IS-NOT-SOURCE-CLEAN.md
+  - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-28-tfg1-r2-terminal.md
+  - research/earnings_intelligence/e3/TFG1_R3_DETERMINISTIC_TRANSCRIPT_FORMAT_HARDENING_HANDOFF_2026-08-28.md
+  - research/earnings_intelligence/e3/tfg1_development_boundary_identity_adjudication_r3.json
   - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-27-tfg1-falsifier.md
   - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-27-tfg1-r2-ready.md
 landmines:
@@ -158,7 +181,10 @@ do_not_redo:
   - Do not add Alphabet to event_workspace.production_registry() until a wave can publish non-empty accepted Q&A for it; registering it now ships a live workspace with empty qa_exchanges (capability false) and breaks tests/test_issuer_profiles_a5a.py:110.
   - Do not re-run the GOOGL reconstruction expecting a different answer; it is deterministic, pinned by tests/test_company_intelligence_qa_generalization_e3c.py, and the fixture is byte-frozen at the receipt SHA.
   - Do not reuse operation key tfg1-deterministic-transcript-format-hardening-20260827-v1. Sol ruled it terminates at the accepted development-gold falsifier; the successor is the distinct key tfg1-r2-deterministic-transcript-format-hardening-20260827-v1.
-  - Do not grade TFG against the historical 110/101/9/10 TFG-0 gold. Sol ratified the R2 truth (113/97/6/103/10, 9 source-clean, 7 expected refusal) in DEC:E3FMT-DEVELOPMENT-GOLD-R2-FIRST-HANDOFF-OMISSIONS; the old receipt is preserved only as falsified evidence.
+  - Do not grade TFG against the historical 110/101/9/10 TFG-0 gold, nor against the R2 gold's 2-conflict / 9-source-clean partition. Current grading truth is the R3 adjudication (113/97/6/103/10, 5 role-conflict calls, 7 source-clean, 9 refusal, per-call blocker SETS) ratified in DEC:E3FMT-DEVELOPMENT-GOLD-R3-RESPONDENT-ROLE-SOURCE-CLEAN. Both older receipts are preserved only as falsified evidence.
+  - Do not write a source-cleanliness rule as "no contradictory role evidence". That phrasing cannot see a speaker with no role evidence at all, which is exactly how ARQQ and FANG entered a set they could never satisfy. Require POSITIVE same-revision role/title support. See DSC:E3FMT-ABSENCE-OF-ROLE-CONFLICT-IS-NOT-SOURCE-CLEAN.
+  - Do not record a single order-dependent first-failure reason for a refusing call. Blockers are sets; CTRE, LTH, BANR and HTGC each genuinely carry both unresolved-questioner and management-role-conflict.
+  - Do not reuse the spent operation keys tfg1-deterministic-transcript-format-hardening-20260827-v1 or tfg1-r2-deterministic-transcript-format-hardening-20260827-v1, and do not reopen, merge, force-push or cherry-pick PR #6591 or PR #6602 wholesale — both are closed evidence with preserved branches.
   - Do not re-derive the three omitted first-handoff separators or re-test the two refuted explanations for them (TFG-0 probe 650-char truncation; a deliberate first-handoff convention). Both are measured and dead, and research/earnings_intelligence/e3/tfg1_separator_falsifier_measurement.py re-derives the whole finding from a clean fetch in ~11s.
   - Do not open the eight TFG holdout revisions (ranks 17-24) until R2's corrected development gates are green and an exact implementation head is frozen. The holdout is single-use and explicitly non-replaceable; spending it against an unratified gold destroys the only unseen format evidence TFG owns.
   - Do not rescue MBLY/2026Q2 #21 with a first-handoff exemption, edit distance, nickname map, initials expansion or external identity. Sol ruled it a mandatory separator with an unresolved questioner, so MBLY must refuse full-call publication.
@@ -294,18 +320,41 @@ waves:
       implementation head was frozen, and holdout_bodies_inspected remained 0 throughout.
   - id: E3-FMT-TFG-1-R2
     title: Deterministic transcript-format hardening — R2 successor
-    status: todo
+    status: dropped
     depends_on: [E3-FMT-TFG-1-V1]
     artifacts:
       - research/earnings_intelligence/e3/TFG1_R2_DETERMINISTIC_TRANSCRIPT_FORMAT_HARDENING_HANDOFF_2026-08-27.md
+      - research/earnings_intelligence/e3/tfg1_development_boundary_identity_adjudication_r2.json
     next_action: >
-      NOT_BUILT. Distinct logical operation tfg1-r2-deterministic-transcript-format-hardening-20260827-v1;
-      sole packet is TFG1_R2_DETERMINISTIC_TRANSCRIPT_FORMAT_HARDENING_HANDOFF_2026-08-27.md. May not
-      begin until the v1 closeout PR #6555 is Sol-accepted and landed. Grades against the ratified R2
-      gold: 113 separators / 97 direct / 6 proxy / 103 supported / 10 unresolved / 9 source-clean /
-      7 expected-refusal, AAPL exact 7/26/68, accepted unsupported 0, cross-event 0, replay 100%.
-      The eight holdout revisions stay SEALED until every corrected development gate is green and an
-      exact implementation head is frozen; no code change is permitted after holdout unseal.
+      TERMINAL at STOPPED_AT_DEVELOPMENT_GATE — SECOND GOLD FALSIFIER. Operation key
+      tfg1-r2-deterministic-transcript-format-hardening-20260827-v1 is spent. The structural half was
+      fully green (113/113 separators, 103 supported, 7/7 refusing, AAPL 7/26/68 undisturbed) and
+      GOOGL recovered all nine real analyst handoffs while still refusing to publish. It stopped
+      because the gold declared 2 role-conflict calls where source shows 5, and because ARQQ/2026Q2
+      and FANG/2026Q2 cannot produce a source-supported respondent, so the frozen "9/9 source-clean"
+      gate was not satisfiable. Sol ruled YES on both (DEC:E3FMT-DEVELOPMENT-GOLD-R3-RESPONDENT-ROLE-SOURCE-CLEAN).
+      PR #6591 head 77fd9411c9cfb799b245c8138d2f1a40052d3b8d is CLOSED UNMERGED; preserve the branch
+      as candidate evidence and do not reopen, merge or cherry-pick it wholesale. Nothing is awaiting
+      Sol on this wave.
+  - id: E3-FMT-TFG-1-R3
+    title: Deterministic transcript-format hardening — R3 successor
+    status: todo
+    depends_on: [E3-FMT-TFG-1-R2]
+    artifacts:
+      - research/earnings_intelligence/e3/TFG1_R3_DETERMINISTIC_TRANSCRIPT_FORMAT_HARDENING_HANDOFF_2026-08-28.md
+      - research/earnings_intelligence/e3/tfg1_development_boundary_identity_adjudication_r3.json
+      - agentos/decisions/DEC-E3FMT-DEVELOPMENT-GOLD-R3-RESPONDENT-ROLE-SOURCE-CLEAN.md
+      - agentos/discoveries/DSC-E3FMT-ABSENCE-OF-ROLE-CONFLICT-IS-NOT-SOURCE-CLEAN.md
+    next_action: >
+      NOT_BUILT. Distinct logical operation tfg1-r3-deterministic-transcript-format-hardening-20260828-v1;
+      sole packet is TFG1_R3_DETERMINISTIC_TRANSCRIPT_FORMAT_HARDENING_HANDOFF_2026-08-28.md. May not
+      begin until the R3 records correction is Sol-accepted and landed. Grades against the ratified R3
+      gold: 113 separators / 97 direct / 6 proxy / 103 supported / 10 unresolved / 5 role-conflict
+      calls / 7 source-clean / 9 refusal, with per-call blocker SETS, AAPL exact 7/26/68, accepted
+      unsupported 0, cross-event 0, replay 100%. The eight holdout revisions stay SEALED until every
+      corrected development gate is green and an exact implementation head is frozen; source-only slot
+      adjudication is frozen before any compiler output using the positive-role-support definition;
+      no code change is permitted after holdout unseal.
   - id: E3-P
     title: Natural-cycle commissioning
     status: todo

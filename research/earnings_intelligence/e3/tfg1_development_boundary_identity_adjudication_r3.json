@@ -1,0 +1,561 @@
+{
+  "schema": "tfg1.development_boundary_identity_adjudication.r3",
+  "status": "sol_ratified_amendment",
+  "ratified_at": "2026-08-28",
+  "ratified_by": "sol",
+  "source_operation_key": "tfg1-r2-deterministic-transcript-format-hardening-20260827-v1",
+  "correction_operation_key": "tfg1-r3-gold-source-clean-correction-20260828-v1",
+  "successor_operation_key": "tfg1-r3-deterministic-transcript-format-hardening-20260828-v1",
+  "supersedes": {
+    "path": "research/earnings_intelligence/e3/tfg1_development_boundary_identity_adjudication_r2.json",
+    "git_blob_sha": "9017d327fd942a33f7716c8e0a86f72311a43131",
+    "disposition": "preserved byte-unchanged as historical falsified experimental evidence",
+    "scope": "only the management-role-conflict set, the source-clean/refusal partition, and the introduction of per-call source blocker SETS; all separator and questioner truth is carried forward unchanged"
+  },
+  "falsifier_evidence": {
+    "pr": 6591,
+    "review_id": 5048161769,
+    "reviewed_head_sha": "77fd9411c9cfb799b245c8138d2f1a40052d3b8d",
+    "pr_state": "closed_unmerged",
+    "terminal_classification": "STOPPED_AT_DEVELOPMENT_GATE — SECOND GOLD FALSIFIER"
+  },
+  "method_law_unchanged": true,
+  "holdout_law_unchanged": true,
+  "holdout_bodies_inspected": 0,
+  "model_calls": 0,
+  "source_clean_definition": "A call is QNA_SOURCE_CLEAN only when every management answer that would be accepted into qa_exchange.v1 has positive replayable same-revision respondent role/title support AND carries no incompatible same-revision role evidence. Absence of role conflict alone is NOT source-clean.",
+  "blocker_law": "Source blockers are recorded as SETS. A call carries every blocker its exact revision supports, never a single order-dependent first-failure reason.",
+  "summary": {
+    "calls": 16,
+    "true_question_handoffs": 113,
+    "direct_operator_next_speaker_matches": 97,
+    "explicit_full_name_proxy_handoffs": 6,
+    "source_supported_questioner_handoffs": 103,
+    "unresolved_questioner_handoffs": 10,
+    "calls_with_explicit_management_role_conflict": 5,
+    "calls_with_missing_same_revision_respondent_role_support": 2,
+    "source_clean_calls_for_full_call_reconstruction": 7,
+    "source_clean_call_pairs": [
+      "OCSL/2026Q3",
+      "GEF/2026Q3",
+      "UPBD/2026Q2",
+      "SCCO/2026Q2",
+      "AGM/2026Q2",
+      "COF/2026Q2",
+      "KREF/2026Q2"
+    ],
+    "source_conflicted_or_identity_refusal_pairs": [
+      "MBLY/2026Q2",
+      "ARQQ/2026Q2",
+      "TRVI/2026Q2",
+      "CTRE/2026Q2",
+      "LTH/2026Q2",
+      "BANR/2026Q2",
+      "FANG/2026Q2",
+      "HTGC/2026Q2",
+      "ARRY/2026Q2"
+    ]
+  },
+  "management_role_conflict_pairs": [
+    "ARRY/2026Q2",
+    "CTRE/2026Q2",
+    "BANR/2026Q2",
+    "LTH/2026Q2",
+    "HTGC/2026Q2"
+  ],
+  "missing_same_revision_respondent_role_support_pairs": [
+    "ARQQ/2026Q2",
+    "FANG/2026Q2"
+  ],
+  "source_blockers_by_call": {
+    "MBLY/2026Q2": [
+      "unresolved_questioner"
+    ],
+    "ARQQ/2026Q2": [
+      "missing_same_revision_respondent_role_support"
+    ],
+    "TRVI/2026Q2": [
+      "unresolved_questioner"
+    ],
+    "CTRE/2026Q2": [
+      "management_role_conflict",
+      "unresolved_questioner"
+    ],
+    "LTH/2026Q2": [
+      "management_role_conflict",
+      "unresolved_questioner"
+    ],
+    "BANR/2026Q2": [
+      "management_role_conflict",
+      "unresolved_questioner"
+    ],
+    "FANG/2026Q2": [
+      "missing_same_revision_respondent_role_support"
+    ],
+    "HTGC/2026Q2": [
+      "management_role_conflict",
+      "unresolved_questioner"
+    ],
+    "ARRY/2026Q2": [
+      "management_role_conflict"
+    ]
+  },
+  "structural_separator_law": "All 113 ratified development question handoffs are structural separators. The 10 unresolved questioner handoffs still split neighboring Q&A windows but cannot mint canonical qa_exchange.v1 objects.",
+  "proxy_law": "unchanged from DEC:E3FMT-STRUCTURAL-SEPARATORS-PROXY-IDENTITY-AND-SOURCE-CONDITIONED-HOLDOUT",
+  "development_gate": "The successor implementation must recover 113/113 structural separators with zero opening/queue/closing false positives; resolve 103/103 source-supported direct/proxy questioners; preserve 10/10 unresolved handoffs as separator-only refusals; reconstruct all 7 source-clean calls non-empty; make the remaining 9 calls fail only for their frozen source blocker SET; preserve AAPL exactly 7 exchanges / 26 management answer turns / 68 replay spans; accepted unsupported=0, cross-event contamination=0, accepted replay=100%.",
+  "holdout_gate": "unchanged in structure: ranks 17-24 stay unopened until every corrected development gate is green and an exact implementation head is frozen; source-only holdout adjudication must be frozen before compiler output; <6/8 source-clean means INSUFFICIENT_HOLDOUT_POWER; if powered, every source-clean slot must pass; no replacement/skip/rerank and no code change after holdout unseal. Holdout source-only adjudication now applies the corrected positive-role-support source-clean definition above.",
+  "per_call": [
+    {
+      "pair": "OCSL/2026Q3",
+      "true_question_handoff_indices": [
+        29,
+        35,
+        47
+      ],
+      "direct_next_speaker_match_indices": [
+        29,
+        35,
+        47
+      ],
+      "explicit_full_name_proxy_indices": [],
+      "unresolved_questioner_indices": [],
+      "management_role_conflict": false,
+      "source_clean_for_full_call_reconstruction": true,
+      "source_blockers": []
+    },
+    {
+      "pair": "MBLY/2026Q2",
+      "true_question_handoff_indices": [
+        21,
+        31,
+        44,
+        54,
+        65,
+        72,
+        79,
+        89,
+        98
+      ],
+      "direct_next_speaker_match_indices": [
+        31,
+        44,
+        54,
+        65,
+        72,
+        79,
+        89,
+        98
+      ],
+      "explicit_full_name_proxy_indices": [],
+      "unresolved_questioner_indices": [
+        21
+      ],
+      "management_role_conflict": false,
+      "source_clean_for_full_call_reconstruction": false,
+      "expected_refusal": "unresolved_questioner at structural separator 21",
+      "source_blockers": [
+        "unresolved_questioner"
+      ]
+    },
+    {
+      "pair": "GEF/2026Q3",
+      "true_question_handoff_indices": [
+        25,
+        30
+      ],
+      "direct_next_speaker_match_indices": [
+        25
+      ],
+      "explicit_full_name_proxy_indices": [
+        30
+      ],
+      "unresolved_questioner_indices": [],
+      "management_role_conflict": false,
+      "source_clean_for_full_call_reconstruction": true,
+      "source_blockers": []
+    },
+    {
+      "pair": "ARQQ/2026Q2",
+      "true_question_handoff_indices": [
+        22
+      ],
+      "direct_next_speaker_match_indices": [
+        22
+      ],
+      "explicit_full_name_proxy_indices": [],
+      "unresolved_questioner_indices": [],
+      "management_role_conflict": false,
+      "source_clean_for_full_call_reconstruction": false,
+      "source_blockers": [
+        "missing_same_revision_respondent_role_support"
+      ]
+    },
+    {
+      "pair": "TRVI/2026Q2",
+      "true_question_handoff_indices": [
+        12,
+        25,
+        41,
+        46,
+        51,
+        58,
+        65,
+        74,
+        85
+      ],
+      "direct_next_speaker_match_indices": [
+        12,
+        25,
+        41,
+        51,
+        74,
+        85
+      ],
+      "explicit_full_name_proxy_indices": [],
+      "unresolved_questioner_indices": [
+        46,
+        58,
+        65
+      ],
+      "management_role_conflict": false,
+      "source_clean_for_full_call_reconstruction": false,
+      "source_blockers": [
+        "unresolved_questioner"
+      ]
+    },
+    {
+      "pair": "CTRE/2026Q2",
+      "true_question_handoff_indices": [
+        17,
+        24,
+        31,
+        37,
+        45,
+        53,
+        59,
+        72,
+        79,
+        87,
+        94
+      ],
+      "direct_next_speaker_match_indices": [
+        17,
+        24,
+        37,
+        45,
+        53,
+        59,
+        72,
+        87,
+        94
+      ],
+      "explicit_full_name_proxy_indices": [
+        31
+      ],
+      "unresolved_questioner_indices": [
+        79
+      ],
+      "management_role_conflict": true,
+      "source_clean_for_full_call_reconstruction": false,
+      "source_blockers": [
+        "management_role_conflict",
+        "unresolved_questioner"
+      ]
+    },
+    {
+      "pair": "LTH/2026Q2",
+      "true_question_handoff_indices": [
+        10,
+        18,
+        31,
+        39,
+        49,
+        59,
+        70,
+        81,
+        92,
+        104,
+        113
+      ],
+      "direct_next_speaker_match_indices": [
+        10,
+        18,
+        31,
+        39,
+        49,
+        70,
+        92
+      ],
+      "explicit_full_name_proxy_indices": [
+        59
+      ],
+      "unresolved_questioner_indices": [
+        81,
+        104,
+        113
+      ],
+      "management_role_conflict": true,
+      "source_clean_for_full_call_reconstruction": false,
+      "source_blockers": [
+        "management_role_conflict",
+        "unresolved_questioner"
+      ]
+    },
+    {
+      "pair": "UPBD/2026Q2",
+      "true_question_handoff_indices": [
+        32,
+        44,
+        53,
+        64,
+        74,
+        79,
+        84
+      ],
+      "direct_next_speaker_match_indices": [
+        32,
+        44,
+        53,
+        64,
+        74,
+        79,
+        84
+      ],
+      "explicit_full_name_proxy_indices": [],
+      "unresolved_questioner_indices": [],
+      "management_role_conflict": false,
+      "source_clean_for_full_call_reconstruction": true,
+      "source_blockers": []
+    },
+    {
+      "pair": "SCCO/2026Q2",
+      "true_question_handoff_indices": [
+        53,
+        66,
+        91,
+        109,
+        117
+      ],
+      "direct_next_speaker_match_indices": [
+        53,
+        66,
+        91,
+        109,
+        117
+      ],
+      "explicit_full_name_proxy_indices": [],
+      "unresolved_questioner_indices": [],
+      "management_role_conflict": false,
+      "source_clean_for_full_call_reconstruction": true,
+      "source_blockers": []
+    },
+    {
+      "pair": "AGM/2026Q2",
+      "true_question_handoff_indices": [
+        30,
+        36,
+        49,
+        64
+      ],
+      "direct_next_speaker_match_indices": [
+        30,
+        36,
+        49,
+        64
+      ],
+      "explicit_full_name_proxy_indices": [],
+      "unresolved_questioner_indices": [],
+      "management_role_conflict": false,
+      "source_clean_for_full_call_reconstruction": true,
+      "source_blockers": []
+    },
+    {
+      "pair": "BANR/2026Q2",
+      "true_question_handoff_indices": [
+        20,
+        34,
+        45,
+        55,
+        71,
+        83
+      ],
+      "direct_next_speaker_match_indices": [
+        20,
+        55,
+        83
+      ],
+      "explicit_full_name_proxy_indices": [
+        34,
+        45
+      ],
+      "unresolved_questioner_indices": [
+        71
+      ],
+      "management_role_conflict": true,
+      "source_clean_for_full_call_reconstruction": false,
+      "source_blockers": [
+        "management_role_conflict",
+        "unresolved_questioner"
+      ]
+    },
+    {
+      "pair": "FANG/2026Q2",
+      "true_question_handoff_indices": [
+        4,
+        15,
+        31,
+        40,
+        51,
+        62,
+        73,
+        81,
+        89,
+        96,
+        104,
+        112,
+        124,
+        133
+      ],
+      "direct_next_speaker_match_indices": [
+        4,
+        15,
+        31,
+        40,
+        51,
+        62,
+        73,
+        81,
+        89,
+        96,
+        104,
+        112,
+        124,
+        133
+      ],
+      "explicit_full_name_proxy_indices": [],
+      "unresolved_questioner_indices": [],
+      "management_role_conflict": false,
+      "source_clean_for_full_call_reconstruction": false,
+      "source_blockers": [
+        "missing_same_revision_respondent_role_support"
+      ]
+    },
+    {
+      "pair": "HTGC/2026Q2",
+      "true_question_handoff_indices": [
+        33,
+        40,
+        52,
+        61,
+        69,
+        76,
+        83,
+        92
+      ],
+      "direct_next_speaker_match_indices": [
+        33,
+        40,
+        52,
+        69,
+        76,
+        83,
+        92
+      ],
+      "explicit_full_name_proxy_indices": [],
+      "unresolved_questioner_indices": [
+        61
+      ],
+      "management_role_conflict": true,
+      "source_clean_for_full_call_reconstruction": false,
+      "source_blockers": [
+        "management_role_conflict",
+        "unresolved_questioner"
+      ]
+    },
+    {
+      "pair": "COF/2026Q2",
+      "true_question_handoff_indices": [
+        20,
+        33,
+        43,
+        53,
+        62,
+        71,
+        80,
+        93,
+        103,
+        114,
+        120
+      ],
+      "direct_next_speaker_match_indices": [
+        20,
+        33,
+        43,
+        53,
+        62,
+        71,
+        80,
+        93,
+        103,
+        114,
+        120
+      ],
+      "explicit_full_name_proxy_indices": [],
+      "unresolved_questioner_indices": [],
+      "management_role_conflict": false,
+      "source_clean_for_full_call_reconstruction": true,
+      "source_blockers": []
+    },
+    {
+      "pair": "ARRY/2026Q2",
+      "true_question_handoff_indices": [
+        31,
+        36,
+        46,
+        63,
+        76,
+        84,
+        89
+      ],
+      "direct_next_speaker_match_indices": [
+        31,
+        36,
+        46,
+        76,
+        84,
+        89
+      ],
+      "explicit_full_name_proxy_indices": [
+        63
+      ],
+      "unresolved_questioner_indices": [],
+      "management_role_conflict": true,
+      "source_clean_for_full_call_reconstruction": false,
+      "source_blockers": [
+        "management_role_conflict"
+      ]
+    },
+    {
+      "pair": "KREF/2026Q2",
+      "true_question_handoff_indices": [
+        15,
+        25,
+        40,
+        51,
+        60
+      ],
+      "direct_next_speaker_match_indices": [
+        15,
+        25,
+        40,
+        51,
+        60
+      ],
+      "explicit_full_name_proxy_indices": [],
+      "unresolved_questioner_indices": [],
+      "management_role_conflict": false,
+      "source_clean_for_full_call_reconstruction": true,
+      "source_blockers": []
+    }
+  ]
+}
