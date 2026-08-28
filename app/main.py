@@ -2171,6 +2171,13 @@ app.include_router(earnings_router)
 from app.company_intelligence import router as company_intelligence_router  # noqa: E402
 app.include_router(company_intelligence_router)
 
+# Bounded localhost projection of ONE regular-session quote for the static
+# stock dossiers.  Market-data authority stays with the Terminal Quote Plane —
+# this owns no store, socket, scheduler, or vendor credential, and it may only
+# report "live" when the upstream row itself proves measured current freshness.
+from app.dossier_quote import router as dossier_quote_router  # noqa: E402
+app.include_router(dossier_quote_router)
+
 # Market Memory is a read-only product projection over two existing context
 # engines (Brain macro analogues + Signal Episode Atlas).  The router enforces
 # site-full entitlement and carries an all-false authority block on every read.
