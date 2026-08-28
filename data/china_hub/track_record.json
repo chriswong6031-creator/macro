@@ -1,9 +1,9 @@
 {
   "schema": "intel_hub.track_record.v1",
-  "as_of": "2026-08-27",
-  "generated_at": "2026-08-27T18:47:54.054135+00:00",
+  "as_of": "2026-08-28",
+  "generated_at": "2026-08-28T19:38:10.394319+00:00",
   "is_context_only": true,
-  "n_snapshots": 4293,
+  "n_snapshots": 4391,
   "horizons": {
     "5": {
       "n_matured": 608,
@@ -57,9 +57,9 @@
       "by_source": {},
       "by_regime": {},
       "coverage": {
-        "n_eligible": 3817,
+        "n_eligible": 3913,
         "n_matured": 608,
-        "coverage_pct": 15.93,
+        "coverage_pct": 15.54,
         "below_floor": true
       }
     },
@@ -115,9 +115,9 @@
       "by_source": {},
       "by_regime": {},
       "coverage": {
-        "n_eligible": 3334,
+        "n_eligible": 3432,
         "n_matured": 548,
-        "coverage_pct": 16.44,
+        "coverage_pct": 15.97,
         "below_floor": true
       }
     },
@@ -173,9 +173,9 @@
       "by_source": {},
       "by_regime": {},
       "coverage": {
-        "n_eligible": 2666,
+        "n_eligible": 2762,
         "n_matured": 387,
-        "coverage_pct": 14.52,
+        "coverage_pct": 14.01,
         "below_floor": true
       }
     },
@@ -220,25 +220,25 @@
     "n_missing": 1,
     "note": "Expected dates are pandas business days \u2014 NYSE market holidays inside the window are counted as gaps, so this over-reports rather than under-reports.",
     "first_snapshot": "2026-07-07",
-    "last_snapshot": "2026-08-27"
+    "last_snapshot": "2026-08-28"
   },
   "coverage_pct": {
     "5": {
-      "n_eligible": 3817,
+      "n_eligible": 3913,
       "n_matured": 608,
-      "coverage_pct": 15.93,
+      "coverage_pct": 15.54,
       "below_floor": true
     },
     "10": {
-      "n_eligible": 3334,
+      "n_eligible": 3432,
       "n_matured": 548,
-      "coverage_pct": 16.44,
+      "coverage_pct": 15.97,
       "below_floor": true
     },
     "21": {
-      "n_eligible": 2666,
+      "n_eligible": 2762,
       "n_matured": 387,
-      "coverage_pct": 14.52,
+      "coverage_pct": 14.01,
       "below_floor": true
     },
     "63": {

@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.covariance_spine.v1",
-  "as_of": "2026-08-27",
+  "as_of": "2026-08-28",
   "display_only": true,
   "authority": "context",
   "descriptive_not_gauntleted": true,
@@ -19,8 +19,8 @@
       "source": "data/regime/latest.json#yield_curve"
     },
     "factors": {
-      "dominant_factor_pc_share": 0.5935,
-      "effective_factor_bets_pr": 2.5223,
+      "dominant_factor_pc_share": 0.5945,
+      "effective_factor_bets_pr": 2.5169,
       "n_factors_used": 7,
       "n_obs_used": 252,
       "caveat": "~3y history, annual fundamentals; descriptive only",
@@ -28,16 +28,16 @@
     },
     "dispersion": {
       "state": "lean_in",
-      "dispersion_pctile": 0.94,
+      "dispersion_pctile": 0.91,
       "avg_corr": 0.06,
-      "dominant_equity_pc_share": 0.1718,
-      "effective_universe_bets_pr": 23.59,
-      "idio_dispersion_share": 0.7671
+      "dominant_equity_pc_share": 0.172,
+      "effective_universe_bets_pr": 23.55,
+      "idio_dispersion_share": 0.7818
     },
     "lobes": {
       "effective_independent_lobes": 1.0,
       "n_lobes_measurable": 1,
-      "n_lobes_total": 32,
+      "n_lobes_total": 31,
       "null_reference": {
         "null_median": 1.0,
         "null_p90": 1.0,
@@ -55,7 +55,6 @@
         ],
         "unmeasurable": {
           "altdata": 11,
-          "altdata_conv": 1,
           "basket_turn.v1": 3,
           "ca_board": 9,
           "china_news": 3,
@@ -78,7 +77,7 @@
           "reflex.commodity_shock": 2,
           "reflex.cortex_attention": 6,
           "reflex.options_flow_attention": 7,
-          "reflex.regime_stale_selfheal": 6,
+          "reflex.regime_stale_selfheal": 7,
           "stock_personality": 1,
           "tech_signals": 1,
           "us_board": 10,
@@ -98,7 +97,6 @@
     ],
     "unmeasurable": {
       "altdata": 11,
-      "altdata_conv": 1,
       "basket_turn.v1": 3,
       "ca_board": 9,
       "china_news": 3,
@@ -121,7 +119,7 @@
       "reflex.commodity_shock": 2,
       "reflex.cortex_attention": 6,
       "reflex.options_flow_attention": 7,
-      "reflex.regime_stale_selfheal": 6,
+      "reflex.regime_stale_selfheal": 7,
       "stock_personality": 1,
       "tech_signals": 1,
       "us_board": 10,

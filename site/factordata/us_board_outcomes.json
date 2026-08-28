@@ -1,5 +1,5 @@
 {
- "as_of": "2026-08-26",
+ "as_of": "2026-08-27",
  "rows": [
   {
    "ticker": "U",
@@ -25,19 +25,6 @@
    "exit_date": "2026-08-07",
    "mark_date": "2026-08-07",
    "status": "running",
-   "lane": "buy"
-  },
-  {
-   "ticker": "TTD",
-   "sector": "Communication Services",
-   "first_surfaced": "2026-07-28",
-   "surfaced_price": 19.09,
-   "last_price": 13.8,
-   "pct_since": -27.7,
-   "days_on_board": 4,
-   "exit_date": "2026-08-07",
-   "mark_date": "2026-08-07",
-   "status": "stopped",
    "lane": "buy"
   },
   {
@@ -103,6 +90,19 @@
    "exit_date": "2026-08-07",
    "mark_date": "2026-08-07",
    "status": "running",
+   "lane": "buy"
+  },
+  {
+   "ticker": "ELAN",
+   "sector": "Health Care",
+   "first_surfaced": "2026-07-31",
+   "surfaced_price": 25.72,
+   "last_price": 22.12,
+   "pct_since": -14.0,
+   "days_on_board": 2,
+   "exit_date": "2026-08-07",
+   "mark_date": "2026-08-07",
+   "status": "stopped",
    "lane": "buy"
   },
   {
@@ -184,19 +184,6 @@
    "lane": "buy"
   },
   {
-   "ticker": "T",
-   "sector": "Communication Services",
-   "first_surfaced": "2026-07-17",
-   "surfaced_price": 21.95,
-   "last_price": 24.13,
-   "pct_since": 9.9,
-   "days_on_board": 3,
-   "exit_date": "2026-07-24",
-   "mark_date": "2026-07-24",
-   "status": "running",
-   "lane": "buy"
-  },
-  {
    "ticker": "ANET",
    "sector": "Information Technology",
    "first_surfaced": "2026-08-07",
@@ -249,19 +236,6 @@
    "lane": "buy"
   },
   {
-   "ticker": "HAS",
-   "sector": "Consumer Discretionary",
-   "first_surfaced": "2026-07-17",
-   "surfaced_price": 80.98,
-   "last_price": 88.13,
-   "pct_since": 8.8,
-   "days_on_board": 3,
-   "exit_date": "2026-07-24",
-   "mark_date": "2026-07-24",
-   "status": "running",
-   "lane": "buy"
-  },
-  {
    "ticker": "JOE",
    "sector": "Real Estate",
    "first_surfaced": "2026-07-28",
@@ -271,6 +245,19 @@
    "days_on_board": 4,
    "exit_date": "2026-08-07",
    "mark_date": "2026-08-07",
+   "status": "running",
+   "lane": "buy"
+  },
+  {
+   "ticker": "T",
+   "sector": "Communication Services",
+   "first_surfaced": "2026-07-20",
+   "surfaced_price": 22.26,
+   "last_price": 24.13,
+   "pct_since": 8.4,
+   "days_on_board": 2,
+   "exit_date": "2026-07-24",
+   "mark_date": "2026-07-24",
    "status": "running",
    "lane": "buy"
   },
@@ -402,6 +389,19 @@
    "exit_date": "2026-08-12",
    "mark_date": "2026-08-12",
    "status": "stopped",
+   "lane": "buy"
+  },
+  {
+   "ticker": "AEIS",
+   "sector": "Information Technology",
+   "first_surfaced": "2026-08-07",
+   "surfaced_price": 314.38,
+   "last_price": 337.2,
+   "pct_since": 7.3,
+   "days_on_board": 1,
+   "exit_date": "2026-08-12",
+   "mark_date": "2026-08-12",
+   "status": "running",
    "lane": "buy"
   },
   {
@@ -784,12 +784,12 @@
  ],
  "summary": {
   "n_running": 79,
-  "n_stopped": 84,
-  "n_flat": 306,
-  "n_total": 469,
+  "n_stopped": 85,
+  "n_flat": 308,
+  "n_total": 472,
   "n_shown": 60,
   "median_pct": 0.0,
-  "n_skipped_no_price": 13,
+  "n_skipped_no_price": 12,
   "skipped_no_price": [
    "BRX",
    "CAR",
@@ -802,10 +802,9 @@
    "NYT",
    "OHI",
    "REXR",
-   "RHI",
    "SLGN"
   ],
-  "win_rate": 0.168,
+  "win_rate": 0.167,
   "avg_pct": 0.1,
   "conventions": {
    "entry": "next session's close after first_surfaced (the surfaced bar is the bar the board is computed from \u2014 unbuyable)",
