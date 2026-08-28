@@ -1,6 +1,6 @@
 {
   "schema": "grading_closure.v1",
-  "generated_at": "2026-08-28T04:26:50.225269+00:00",
+  "generated_at": "2026-08-28T09:58:14.694284+00:00",
   "n_ledgers": 34,
   "n_closed": 26,
   "n_grader_starved": 8,
@@ -408,8 +408,8 @@
         "scripts/grade_policy_calendar.py"
       ],
       "n_logged": 607,
-      "n_graded": 508,
-      "last_graded_at": "2026-08-27",
+      "n_graded": 525,
+      "last_graded_at": "2026-08-28",
       "tune_step": "N",
       "verdict": "CLOSED"
     },
