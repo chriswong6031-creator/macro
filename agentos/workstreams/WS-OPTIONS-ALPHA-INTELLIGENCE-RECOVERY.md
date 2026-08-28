@@ -49,14 +49,17 @@ waves:
       START (the prior worker received terminal SOL STOP; #6593 flags it as
       MAS-175 Unmapped Execution). It is unaccepted BUILT_NOT_PROVEN and its
       diff content is UNREVIEWED (file-scope-conformant only).
-      RECOMMENDED-ADOPT under masterplan §10 conditions A0–A6 (Chairman gate
-      receipt; plan merges first; FS-4 preflight docket §11; exact-head
-      CI+mergeability; authority-path semantics acknowledged; BUILT_NOT_PROVEN
-      recorded with natural-RTH proof owed; independent line-level diff review
-      whose FAIL voids the recommendation). No retroactive START is minted
-      under any outcome. Entrance law unchanged: census
-      live_flow.event_stage/v1 consumers before any additive event-shape
-      change; preserve the existing collector/event identity.
+      SOL RULING R1 (2026-08-28, ts 1787917578.265239): PARK /
+      CONDITIONAL-ADOPT ONLY — adoption NOT recorded. A0 UNSATISFIED (Sol
+      holds no receipted Chairman approval/waiver of the design spec and
+      will not infer one from unrelated Chairman messages); A6 independent
+      line-level diff review still required before any future adoption.
+      Preserved per the ruling: #6576 open, #6585 DRAFT/HOLD, no retroactive
+      START, no replacement carrier, no FS-4 enablement. The masterplan §10
+      A0–A6 frame stands as the conditions any future adoption must satisfy.
+      Entrance law unchanged: census live_flow.event_stage/v1 consumers
+      before any additive event-shape change; preserve the existing
+      collector/event identity.
   - id: OA-1T-TERMINAL
     title: Render measured microstructure and separate Attention from probability
     status: todo
@@ -157,14 +160,13 @@ artifacts:
   - data/flow_signals/gate.json
   - data/options_signal_campaign/checkpoint.json
 next_action: >
-  Two open conditions, in order. (1) The merged DEC's Chairman written-spec
-  gate is discharged with a receipt: Chairman approval of
+  Sol ruled on the C0 docket 2026-08-28 (R1, ts 1787917578.265239): PARK /
+  CONDITIONAL-ADOPT ONLY — adoption not recorded. The single open condition
+  before any OA-1T movement is A0: the merged DEC's Chairman written-spec
+  gate discharged with a real receipt — Chairman approval of
   docs/superpowers/specs/2026-08-27-options-alpha-intelligence-recovery-design.md,
-  a waiver, or a recorded CEO override (masterplan §10-A0, ruling R1). (2) Sol
-  rules on the C0 reconciliation docket
-  (research/OPTIONS_INTELLIGENCE_CONSOLIDATED_MASTERPLAN_2026-08-28.md §10:
-  RECOMMENDED-ADOPT #6585 under conditions A0–A6, or REJECT at its honestly
-  stated cost) on the C0 operation thread. On CONTINUE, child C3 executes the
+  a waiver, or a recorded CEO override; Sol will not infer one. Only after a
+  future Sol adoption ruling on the C0 thread may child C3 execute the
   carrier sequencing (A0 receipt → merge #6576 → A6 line-level diff review →
   FS-4 docket receipts → hold release → merge #6585 → records closeout at
   BUILT_NOT_PROVEN with the natural-RTH proof still owed). No implementation

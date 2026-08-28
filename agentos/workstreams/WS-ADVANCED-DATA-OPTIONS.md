@@ -105,15 +105,24 @@ waves:
       (pre-existing); F4 timestamp-less daily_refresh.log + single-slot
       receipt makes first-run receipts unrecoverable per day. AD-1
       remains BUILT_NOT_PROVEN (consumer path is AD-1T2's to prove).
-      Next: Sol commissioning of AD-1T2. AD-2 stays CLOSED.
+      SOL-ACCEPTED as PROVEN_LIVE 2026-08-28 (C0 ruling R3, Slack
+      C0BSBM78V1N thread 1787900289.577559 reply ts 1787917578.265239,
+      operation options-intelligence-c0-consolidated-program-control-
+      20260828-sol-001) on exactly this evidence, F1 repaired and
+      F2/F3/F4 explicitly separate. AD-2 stays CLOSED.
   - id: AD-1T2
     title: Restore store-bearing M1 to the theta-m1 product workflow; commission AD-1 end to end
     status: todo
     depends_on: [AD-1T1]
     next_action: >
-      NOT STARTED. Opens only after AD-1T1 is Sol-accepted and the T1 cadence
-      is production-proven (two consecutive normal scheduled sessions). Broken
-      R2 sync is not a prerequisite unless new evidence proves it necessary.
+      NOT STARTED — but both entrance conditions are now satisfied: the T1
+      cadence is production-proven (AD-1T1 row) AND Sol-accepted (C0 ruling
+      R3, ts 1787917578.265239). Sol: AD-1T2 is "the exact next AD product
+      child after C0 lands" — dispatch after the C0 carrier (PR 6604) merges,
+      under a fresh operation key/thread/watcher per the C0 program-control
+      rules, with fresh WS:RUNNER-FLEET-RESILIENCE/M1 collision/admission
+      checks as an unwaived action-time gate. Broken R2 sync is not a
+      prerequisite unless new evidence proves it necessary.
   - id: AD-2
     title: Evidence Receipts, Nulls, Lifecycle, Corrections
     status: todo
@@ -189,12 +198,16 @@ do_not_redo:
   - >-
     Sparse selector / W1A is RESEARCH-ONLY. Do not resurrect before the AD-9 ruling.
 next_action: >
-  AD-1T1 is PROVEN_LIVE and must not be reopened or rerun merely to show activity.
-  The exact next product dependency is AD-1T2: restore the store-bearing M1 to the
-  theta-m1 product workflow and production-prove AD-1 end to end, including the
-  consumer/availability path needed by downstream Options Alpha PIT composition.
-  AD-2 remains CLOSED until AD-1 production acceptance. Broken R2 sync is not an
-  AD-1T2 prerequisite unless new evidence proves it necessary.
+  AD-1T1 is PROVEN_LIVE and now SOL-ACCEPTED (C0 ruling R3, ts
+  1787917578.265239); it must not be reopened or rerun merely to show
+  activity. The exact next product dependency is AD-1T2 — per Sol "the exact
+  next AD product child after C0 lands" (C0 carrier = Macro PR 6604): restore
+  the store-bearing M1 to the theta-m1 product workflow and production-prove
+  AD-1 end to end, including the consumer/availability path needed by
+  downstream Options Alpha PIT composition; fresh Runner-Fleet/M1
+  collision/admission checks are an unwaived action-time gate. AD-2 remains
+  CLOSED until AD-1 production acceptance. Broken R2 sync is not an AD-1T2
+  prerequisite unless new evidence proves it necessary.
 artifacts:
   - research/ADVANCED_DATA_OPTIONS_EOD_DARK_POOL_INTELLIGENCE_OS_MASTERPLAN_2026-08-17.md
   - research/ADVANCED_DATA_OPTIONS_EOD_AD0_CURRENT_STATE_AND_CAPABILITY_LEDGER_2026-08-17.md

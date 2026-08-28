@@ -32,9 +32,20 @@ answer: >
   recommendation (A6 — at C0 the artifact is verified file-scope-conformant
   only; its diff content is unreviewed). The adoption act itself is Sol's
   ruling on the C0 operation thread, and no retroactive START is minted under
-  any outcome. Every independent child gets a
-  fresh operation key, fresh Slack thread, and fresh reciprocal watcher setup;
-  Slack delivery alone is never ACK/START.
+  any outcome. SOL RULED 2026-08-28 (REQUEST_REPAIR/CONTINUE, thread reply
+  ts 1787917578.265239): R1 = PARK / CONDITIONAL-ADOPT ONLY, adoption NOT
+  recorded, A0 confirmed unsatisfied and not inferable, A6 still required;
+  R2 = Terminal-authority reading RATIFIED WITH CLARIFICATION (logical
+  ownership boundary, not repo placement) and the registry pointer widening
+  AUTHORIZED — executed in this carrier as an additive
+  options-intelligence.canonical_docs entry in config/mastermind_programs.yml
+  with historical docs preserved; R3 = AD-1T1 ACCEPTED as PROVEN_LIVE and
+  recorded durably in WS:ADVANCED-DATA-OPTIONS, with AD-1T2 the exact next
+  AD product child after C0 lands (Runner-Fleet/M1 checks an unwaived
+  action-time gate); R4 = BREATHING-PLATFORM validate red RESOLVED BY OWNER
+  (#6605 merged bca7221a2d00), historical, no new child. Every independent
+  child gets a fresh operation key, fresh Slack thread, and fresh reciprocal
+  watcher setup; Slack delivery alone is never ACK/START.
 rationale: >
   Four active workstreams, three research masterplans with divergent wave
   vocabularies, and three live carriers were advancing without a shared
@@ -89,12 +100,14 @@ evidence:
   - "gh pr view 6593 --json files: edits WS-RATES-INFLATION-COMMAND + WS-STOCK-DOSSIER-LIVE-QUOTE only — no collision with the four C0 owners"
   - "python3 scripts/agentos.py validate on base afe173f6f46c: 7 pre-existing errors, all in agentos/handoffs/BREATHING-PLATFORM-2026-08-28-completion-commission.md"
   - "Sol C0 dispatch thread C0BSBM78V1N/1787900289.577559 messages 1-4 (collision ledger, dependency freeze, scope/stop contract, Sol WATCH_ARMED)"
+  - "Sol REQUEST_REPAIR/CONTINUE ruling: same thread, reply ts 1787917578.265239 (R1 park/conditional-adopt; R2 ratified + registry widening authorized; R3 AD-1T1 accepted; R4 resolved by owner via #6605 merge bca7221a2d0020d15d220ffa814b753d1a7a6561)"
 affects:
   - WS:ADVANCED-DATA-OPTIONS
   - WS:INTRADAY-FLOW-P0-RECOVERY
   - WS:OPTIONS-CONTEXT-AUDIT-PREREG-V2
   - WS:OPTIONS-ALPHA-INTELLIGENCE-RECOVERY
   - research/OPTIONS_INTELLIGENCE_CONSOLIDATED_MASTERPLAN_2026-08-28.md
+  - config/mastermind_programs.yml
 confidence: high
 reversibility: easy
 decided_by: coo-fable

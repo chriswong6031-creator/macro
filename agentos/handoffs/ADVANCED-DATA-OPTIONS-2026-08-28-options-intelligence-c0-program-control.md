@@ -67,6 +67,12 @@ changed:
     what: >
       Links + one body note: independent of the AD chain (not an AD-1 blocker),
       charter parallelizable now as child C4. Wave rows untouched.
+  - path: config/mastermind_programs.yml
+    what: >
+      The ONE Sol-authorized scope widening (ruling R2, ts 1787917578.265239):
+      added research/OPTIONS_INTELLIGENCE_CONSOLIDATED_MASTERPLAN_2026-08-28.md
+      as an additional options-intelligence.canonical_docs pointer; the two
+      existing historical canonical docs preserved unchanged.
 verified:
   - claim: "Base tree carries exactly 7 pre-existing agentos validate errors, all in agentos/handoffs/BREATHING-PLATFORM-2026-08-28-completion-commission.md (none in the four owners)"
     command: "python3 scripts/agentos.py validate (on afe173f6f46c before any C0 edit)"
@@ -94,23 +100,19 @@ unverified:
   - claim: "Terminal IV plane (ingest/collect_options.py) runtime state and rights posture"
     what_would_verify: "child C5 census: launchd/cron presence, output freshness, yfinance/CBOE terms review"
 unresolved:
-  - "Chairman written-spec gate (DEC:OPTIONS-ALPHA-CAMPAIGN-CALIBRATION-ARCHITECTURE): no approval receipt for docs/superpowers/specs/2026-08-27-options-alpha-intelligence-recovery-design.md exists in the repo — approval may exist outside it; needs a receipt, waiver, or recorded override (§10-A0, ruling R1)"
-  - "Sol acceptance of AD-1T1 (owner record requires it before AD-1T2 opens) — unreceipted; ruling R3 (lane A / child C1 wait on it)"
-  - "Sol ruling on the C0 RESULT (adopt/reject #6585 per masterplan §10 A0-A6; ratify §5 ownership reading and §7 registry recommendation)"
-  - "Pre-existing validate red in agentos/handoffs/BREATHING-PLATFORM-2026-08-28-completion-commission.md (7 errors) - fifth-owner repair returned to Sol, blocks literal validate-green for every carrier until fixed"
-  - "config/mastermind_programs.yml canonical-home pointer conflict (masterplan §7) - registry edit returned to Sol"
-  - "Children C1 (AD-1T2), C2 (PR-4 dossier), C4 (context-audit v2 charter), C5 (IV plane) await Sol dispatch with fresh keys/threads/watchers"
+  - "Chairman written-spec gate (DEC:OPTIONS-ALPHA-CAMPAIGN-CALIBRATION-ARCHITECTURE): still no approval receipt; Sol ruling R1 (ts 1787917578.265239) confirmed A0 UNSATISFIED and non-inferable — #6585 stays PARK / CONDITIONAL-ADOPT ONLY until a real receipt/waiver/override plus A6 line-level review and a future Sol adoption ruling"
+  - "Sol FINAL acceptance/STOP of the repaired C0 carrier (this repair pass encodes rulings R1-R4 from ts 1787917578.265239; RESULT re-posted after exact-head CI green)"
+  - "Children C1 (AD-1T2 — dispatch after C0 lands, entrance gate satisfied per R3), C2 (PR-4 dossier), C4 (context-audit v2 charter), C5 (IV plane) await Sol dispatch with fresh keys/threads/watchers"
 next_actions:
-  - "Sol: rule CONTINUE / REQUEST_REPAIR / STOP on the C0 carrier and the §10 recommendation (thread C0BSBM78V1N/1787900289.577559)"
-  - "On CONTINUE: dispatch C3 (OA-1T carrier sequencing: merge #6576 -> §11 docket receipts on #6585 -> hold release -> merge -> records closeout)"
-  - "Dispatch C1/C2/C4/C5 per masterplan §12 (parallel-now lanes), each with fresh operation key + thread + reciprocal watcher"
-  - "After the C0 merge: #6576 rebases its WS-OPTIONS-ALPHA edit onto the repaired record (masterplan §8-2)"
+  - "Await Sol final acceptance/STOP on the repaired carrier (thread C0BSBM78V1N/1787900289.577559); watcher stays armed"
+  - "After the C0 merge: dispatch C1 (AD-1T2, per R3 the exact next AD product child), C2, C4, C5 per masterplan §12, each with fresh operation key + thread + reciprocal watcher; #6576 rebases its WS-OPTIONS-ALPHA edit (masterplan §8-2)"
+  - "C3 (OA-1T carrier sequencing) executes ONLY after A0 gains a real receipt and Sol issues a future adoption ruling — R1 parked it explicitly"
 do_not_redo:
   - "Do not re-run the three C0 censuses (owners / specs / PR+code reality) - their receipts are in masterplan §3/§8 and this handoff; re-census only on new evidence"
   - "Do not mint a replacement implementation carrier for OA-1T-MACRO - forbidden by the Sol C0 ledger; #6585 adjudication is §10"
   - "Do not mint a retroactive START for #6585 under any ruling"
-  - "Do not create a consolidated OPTIONS-INTELLIGENCE workstream or edit config/mastermind_programs.yml without an explicit Sol ruling (rejected alternatives in the DEC)"
-  - "Do not repair BREATHING-PLATFORM-2026-08-28-completion-commission.md from an Options carrier without Sol authorization (fifth-owner widening)"
+  - "Do not create a consolidated OPTIONS-INTELLIGENCE workstream; do not edit config/mastermind_programs.yml BEYOND the one Sol-authorized additive canonical_docs pointer already in this carrier (ruling R2)"
+  - "Do not touch BREATHING-PLATFORM-2026-08-28-completion-commission.md — resolved by its owner via #6605 (ruling R4, historical)"
   - "Do not touch config/flow_score.yml scoring.enabled or any FS-4 enablement path - §11 docket can only conclude safe-or-blocked, never amend the freeze"
 danger_areas:
   - "WS-OPTIONS-ALPHA-INTELLIGENCE-RECOVERY.md is edited by BOTH this carrier and open #6576 - a guaranteed rebase; merge C0 first (masterplan §8-2)"
@@ -133,10 +135,13 @@ discoveries:
 
 The enum offers no closer value: `complete` here means the C0 records work is
 complete and review-ready — NOT that the carrier is accepted. The carrier is
-PARKED / HOLD-FOR-SOL awaiting Sol CONTINUE / REQUEST_REPAIR / STOP. The
-independent adversarial review (Opus reviewer, 2026-08-28) returned FAIL with
-2 blockers / 6 majors / 7 minors, all repaired in the same session before the
-carrier went to Sol; findings and dispositions are recorded on the PR.
+PARKED / HOLD-FOR-SOL. The independent adversarial review (Opus reviewer,
+2026-08-28) returned FAIL with 2 blockers / 6 majors / 7 minors, all repaired
+in the same session before the carrier went to Sol; findings and dispositions
+are recorded on the PR. Sol's first ruling (REQUEST_REPAIR/CONTINUE, ts
+1787917578.265239) judged the content PASS in substance and its four rulings
+R1-R4 are encoded throughout this carrier; the carrier now awaits Sol FINAL
+acceptance/STOP.
 
 ## Continuation shape
 
