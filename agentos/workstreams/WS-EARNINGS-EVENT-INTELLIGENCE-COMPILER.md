@@ -21,37 +21,41 @@ depends_on:
 decisions:
   - DEC:E3-EVENT-INTELLIGENCE-COMPILER-NOT-SCORER
   - DEC:E3C-GOOGL-OOS-REFUSAL-SPENDS-EVENT
+  - DEC:E3FMT-STRUCTURAL-SEPARATORS-PROXY-IDENTITY-AND-SOURCE-CONDITIONED-HOLDOUT
+  - DEC:E3FMT-DEVELOPMENT-GOLD-R2-FIRST-HANDOFF-OMISSIONS
 next_action: >
-  E3-B is PROVEN_LIVE / DONE. E3-C is GENERALIZATION_REFUSED_ON_SOURCE_FORMAT — in
-  progress, NOT complete. SOL HAS RULED (2026-08-27, PR #6497 review 5037388696,
-  DEC:E3C-GOOGL-OOS-REFUSAL-SPENDS-EVENT): the refusal is ACCEPTED as a valid negative
-  E3-C receipt and no ruling is outstanding. The frozen GOOGL Q2 FY2026 package
-  (evt_cik0001652044_2026q2_results / tx:GOOGL/2026Q2, transcript SHA a44db883...) was
-  run through the UNCHANGED E3-A2 reconstructor and E3-B qa_exchange.v1 adapter and the
-  compiler REFUSED: reconstruct_qa returned status=failed / operator_intro_identity_unparsed
-  at boundary segment 0 with 0 exchanges, and accepted_qa_exchanges_for_transcript returned
-  []. Three independent blockers, each sufficient alone: (B1) the 'go ahead' boundary cue is
-  absent from all nine real analyst intros, which close 'Your line is now open' — the only
-  cue hit is segment 0's pre-presentation IR handoff, a false boundary; (B2) this vendor
-  publishes NO management role at all (role vocabulary {Operator, IR, ''} = 12/3/75; Pichai,
-  Schindler and Ashkenazi are all roleless), so _is_management cannot classify management
-  speech; (B3) qa_exchange._assert_respondent_identity requires a non-empty source role, so
-  no respondent could be minted source-supported even downstream. Per the commission's
-  scientific stop the compiler was NOT tuned on GOOGL, no GOOGL-specific extraction or
-  boundary constant was added, Alphabet was NOT registered in production, and the issuer was
-  NOT switched to CAT/BAC/SNOW. Canonical receipt is
-  research/earnings_intelligence/e3/e3c_googl_2026q2_reconstruction_refusal_receipt.json.
-  Sol's ruling on that receipt: GOOGL Q2 FY2026 is a PERMANENT source-format falsifier and is
-  now SPENT as out-of-sample acceptance evidence — the exact failure cues are development-visible,
-  so no compiler change motivated by them may ever grade GOOGL as an E3-C OOS pass; no
-  role-annotated GOOGL revision is evidenced in the canonical held estate, so the carrier may not
-  be source-swapped; and there is NO CAT/BAC/SNOW rescue in this wave. Next dependency is a
-  SEPARATE pre-registered Transcript Format Generalization method-hardening wave (E3-FMT) that
-  generalizes only against independently chosen development transcripts declared before its first
-  behavior change, preserves the AAPL 7/26/68 oracle, and adjudicates the respondent-identity
-  contract explicitly rather than inferring roles. After E3-FMT is independently reviewed,
-  accepted and frozen, a FRESH untouched-OOS acceptance wave (E3-OOS2) on a newly pre-registered
-  event is required; only an E3-OOS2 pass may close parent E3-C. E3-P remains locked behind E3-C.
+  E3-B is PROVEN_LIVE / DONE. E3-C is GENERALIZATION_REFUSED_ON_SOURCE_FORMAT — in progress,
+  NOT complete; Sol has ruled (DEC:E3C-GOOGL-OOS-REFUSAL-SPENDS-EVENT) and nothing is awaiting
+  Sol on that receipt. The separate method-hardening arc Sol required is now partly landed and is
+  the live front of this workstream.
+  TFG-0 (transcript format generalization architecture) is LANDED and SPEC_ONLY: merge
+  a2dd436722dd0e6c6cb1e17bfa1c888c706c15d0 (#6521) froze the source-native separator/proxy/role
+  law, a 16-revision development corpus chosen before body inspection, and an eight-revision
+  metadata-only holdout (ranks 17-24). It added no runtime capability.
+  TFG-1 v1 (operation tfg1-deterministic-transcript-format-hardening-20260827-v1) is TERMINAL at
+  STOPPED_AT_DEVELOPMENT_GATE with an ACCEPTED falsifier. Implementing the frozen separator law
+  faithfully recovered all 110 frozen handoffs with zero false negatives and exact direct-name
+  extraction, and found three further genuine combined Q&A-opener-plus-first-question separators the
+  frozen TFG-0 gold omitted (MBLY/2026Q2 #21, ARRY/2026Q2 #31, KREF/2026Q2 #15). Sol ruled YES/YES/YES
+  and ratified DEC:E3FMT-DEVELOPMENT-GOLD-R2-FIRST-HANDOFF-OMISSIONS. No compiler code was written,
+  no implementation head was frozen, and the holdout was never opened.
+  Ratified R2 development truth is 113 structural separators / 97 direct / 6 explicit proxies /
+  103 source-supported / 10 unresolved / 9 source-clean calls / 7 expected-refusal calls.
+  MBLY/2026Q2 leaves the source-clean set because #21 is a mandatory separator whose questioner is
+  unresolved under the already-frozen placeholder + first-name-only law. Machine grading truth is
+  research/earnings_intelligence/e3/tfg1_development_boundary_identity_adjudication_r2.json; the
+  historical 110-boundary TFG-0 receipt is preserved unchanged as falsified evidence.
+  TFG-1 R2 is NOT_BUILT. The successor is a distinct logical operation,
+  tfg1-r2-deterministic-transcript-format-hardening-20260827-v1, whose sole packet is
+  research/earnings_intelligence/e3/TFG1_R2_DETERMINISTIC_TRANSCRIPT_FORMAT_HARDENING_HANDOFF_2026-08-27.md.
+  It may not begin until the v1 closeout PR #6555 is Sol-accepted and landed. The v1 operation key is
+  spent and must not be reused. The eight holdout revisions remain SEALED
+  (holdout_bodies_inspected: 0) until R2's corrected development gates are green and an exact
+  implementation head is frozen.
+  AAPL stays exactly 7 exchanges / 26 management answer turns / 68 replay spans and production
+  revision admission stays AAPL-only. E3-C remains in progress: TFG completion is not E3-C
+  completion, a fresh untouched-OOS acceptance wave (E3-OOS2) on a newly pre-registered event is
+  still required to close it, and E3-P remains locked behind E3-C.
 owns_paths:
   - research/earnings_intelligence/e3/**
   - engine/company_intelligence/qa_reconstruction.py
@@ -90,6 +94,19 @@ artifacts:
   - research/earnings_intelligence/e3/gold/aapl_fy2026_q3_eval_receipt.json
   - research/earnings_intelligence/e3/gold/aapl_fy2026_q3_adjudication_receipt.json
   - research/earnings_intelligence/e3/gold/aapl_fy2026_q3_blind_pass_b.json
+  - research/earnings_intelligence/e3/TFG0_TRANSCRIPT_FORMAT_GENERALIZATION_ARCHITECTURE_FREEZE_2026-08-27.md
+  - research/earnings_intelligence/e3/TFG0_R1_BOUNDARY_IDENTITY_AND_HOLDOUT_SCORING_AMENDMENT_2026-08-27.md
+  - research/earnings_intelligence/e3/tfg0_development_boundary_identity_adjudication.json
+  - research/earnings_intelligence/e3/tfg1_transcript_format_holdout_selection.json
+  - research/earnings_intelligence/e3/TFG1_DEVELOPMENT_ADJUDICATION_FALSIFIER_2026-08-27.md
+  - research/earnings_intelligence/e3/tfg1_development_separator_falsifier_receipt.json
+  - research/earnings_intelligence/e3/tfg1_separator_falsifier_measurement.py
+  - research/earnings_intelligence/e3/tfg1_development_boundary_identity_adjudication_r2.json
+  - research/earnings_intelligence/e3/TFG1_R2_DETERMINISTIC_TRANSCRIPT_FORMAT_HARDENING_HANDOFF_2026-08-27.md
+  - agentos/decisions/DEC-E3FMT-STRUCTURAL-SEPARATORS-PROXY-IDENTITY-AND-SOURCE-CONDITIONED-HOLDOUT.md
+  - agentos/decisions/DEC-E3FMT-DEVELOPMENT-GOLD-R2-FIRST-HANDOFF-OMISSIONS.md
+  - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-27-tfg1-falsifier.md
+  - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-27-tfg1-r2-ready.md
 landmines:
   - WS:EARNINGS-INTELLIGENCE-OS is done; do not reopen E2-T1 or E2-D to make E3 look active.
   - Parent event_workspace.v1 WORKSPACE_KEYS are closed; a new top-level key is a schema bump Terminal exactKeys will fail.
@@ -140,6 +157,12 @@ do_not_redo:
   - Do not treat E3-FMT completion as E3-C completion. Only a pass on a fresh untouched-OOS acceptance wave (E3-OOS2) may close parent E3-C, and E3-P stays locked until it does.
   - Do not add Alphabet to event_workspace.production_registry() until a wave can publish non-empty accepted Q&A for it; registering it now ships a live workspace with empty qa_exchanges (capability false) and breaks tests/test_issuer_profiles_a5a.py:110.
   - Do not re-run the GOOGL reconstruction expecting a different answer; it is deterministic, pinned by tests/test_company_intelligence_qa_generalization_e3c.py, and the fixture is byte-frozen at the receipt SHA.
+  - Do not reuse operation key tfg1-deterministic-transcript-format-hardening-20260827-v1. Sol ruled it terminates at the accepted development-gold falsifier; the successor is the distinct key tfg1-r2-deterministic-transcript-format-hardening-20260827-v1.
+  - Do not grade TFG against the historical 110/101/9/10 TFG-0 gold. Sol ratified the R2 truth (113/97/6/103/10, 9 source-clean, 7 expected refusal) in DEC:E3FMT-DEVELOPMENT-GOLD-R2-FIRST-HANDOFF-OMISSIONS; the old receipt is preserved only as falsified evidence.
+  - Do not re-derive the three omitted first-handoff separators or re-test the two refuted explanations for them (TFG-0 probe 650-char truncation; a deliberate first-handoff convention). Both are measured and dead, and research/earnings_intelligence/e3/tfg1_separator_falsifier_measurement.py re-derives the whole finding from a clean fetch in ~11s.
+  - Do not open the eight TFG holdout revisions (ranks 17-24) until R2's corrected development gates are green and an exact implementation head is frozen. The holdout is single-use and explicitly non-replaceable; spending it against an unratified gold destroys the only unseen format evidence TFG owns.
+  - Do not rescue MBLY/2026Q2 #21 with a first-handoff exemption, edit distance, nickname map, initials expansion or external identity. Sol ruled it a mandatory separator with an unresolved questioner, so MBLY must refuse full-call publication.
+  - Do not byte-replay transcript revisions with sha256 of the raw decompressed body; mastermind.tx-index/v1 body_sha256 is a canonical-JSON re-serialization hash and the raw convention reports a false SOURCE_REVISION_MISMATCH on COF/2026Q2 (DSC:TX-BODY-SHA-IS-CANONICAL-JSON-NOT-RAW-BYTES).
 waves:
   - id: E3-0
     title: Compiler architecture freeze
@@ -232,6 +255,57 @@ waves:
       rescue in this wave — a later fresh untouched-OOS acceptance wave (E3-OOS2) must be a
       NEW pre-registered selection operation, not re-entry of the GOOGL walk. Only an
       E3-OOS2 pass closes E3-C; E3-P stays locked.
+  - id: E3-FMT-TFG-0
+    title: Transcript format generalization architecture freeze
+    status: done
+    depends_on: [E3-C]
+    pr: 6521
+    artifacts:
+      - research/earnings_intelligence/e3/TFG0_TRANSCRIPT_FORMAT_GENERALIZATION_ARCHITECTURE_FREEZE_2026-08-27.md
+      - research/earnings_intelligence/e3/TFG0_R1_BOUNDARY_IDENTITY_AND_HOLDOUT_SCORING_AMENDMENT_2026-08-27.md
+      - research/earnings_intelligence/e3/tfg0_development_boundary_identity_adjudication.json
+      - research/earnings_intelligence/e3/tfg1_transcript_format_holdout_selection.json
+    next_action: >
+      LANDED / SPEC_ONLY. Merge a2dd436722dd0e6c6cb1e17bfa1c888c706c15d0 (#6521) from accepted head
+      5f5f3373bca621d41db87b8764ed38bce3ccb783. Froze the source-native structural-separator, direct/
+      explicit-proxy questioner and same-revision role law, a 16-revision development corpus selected
+      before body inspection, and an eight-revision metadata-only holdout (ranks 17-24). Measured the
+      unchanged compiler at 0/16. No runtime capability added; do not reopen the architecture.
+  - id: E3-FMT-TFG-1-V1
+    title: Deterministic transcript-format hardening — v1
+    status: done
+    depends_on: [E3-FMT-TFG-0]
+    pr: 6555
+    artifacts:
+      - research/earnings_intelligence/e3/TFG1_DEVELOPMENT_ADJUDICATION_FALSIFIER_2026-08-27.md
+      - research/earnings_intelligence/e3/tfg1_development_separator_falsifier_receipt.json
+      - research/earnings_intelligence/e3/tfg1_separator_falsifier_measurement.py
+      - research/earnings_intelligence/e3/tfg1_development_boundary_identity_adjudication_r2.json
+      - agentos/decisions/DEC-E3FMT-DEVELOPMENT-GOLD-R2-FIRST-HANDOFF-OMISSIONS.md
+    next_action: >
+      TERMINAL at STOPPED_AT_DEVELOPMENT_GATE with an ACCEPTED falsifier — done as a completed
+      negative/gold-correction result, not as an implementation. Operation
+      tfg1-deterministic-transcript-format-hardening-20260827-v1 is SPENT and must not be reused.
+      Applying the frozen separator law recovered 110/110 frozen handoffs with zero false negatives
+      and 95/95 exact direct-name extraction, and found three further genuine combined
+      Q&A-opener-plus-first-question separators the frozen gold omitted: MBLY/2026Q2 #21,
+      ARRY/2026Q2 #31, KREF/2026Q2 #15. Sol ruled YES/YES/YES and ratified
+      DEC:E3FMT-DEVELOPMENT-GOLD-R2-FIRST-HANDOFF-OMISSIONS. No compiler code was written, no
+      implementation head was frozen, and holdout_bodies_inspected remained 0 throughout.
+  - id: E3-FMT-TFG-1-R2
+    title: Deterministic transcript-format hardening — R2 successor
+    status: todo
+    depends_on: [E3-FMT-TFG-1-V1]
+    artifacts:
+      - research/earnings_intelligence/e3/TFG1_R2_DETERMINISTIC_TRANSCRIPT_FORMAT_HARDENING_HANDOFF_2026-08-27.md
+    next_action: >
+      NOT_BUILT. Distinct logical operation tfg1-r2-deterministic-transcript-format-hardening-20260827-v1;
+      sole packet is TFG1_R2_DETERMINISTIC_TRANSCRIPT_FORMAT_HARDENING_HANDOFF_2026-08-27.md. May not
+      begin until the v1 closeout PR #6555 is Sol-accepted and landed. Grades against the ratified R2
+      gold: 113 separators / 97 direct / 6 proxy / 103 supported / 10 unresolved / 9 source-clean /
+      7 expected-refusal, AAPL exact 7/26/68, accepted unsupported 0, cross-event 0, replay 100%.
+      The eight holdout revisions stay SEALED until every corrected development gate is green and an
+      exact implementation head is frozen; no code change is permitted after holdout unseal.
   - id: E3-P
     title: Natural-cycle commissioning
     status: todo
