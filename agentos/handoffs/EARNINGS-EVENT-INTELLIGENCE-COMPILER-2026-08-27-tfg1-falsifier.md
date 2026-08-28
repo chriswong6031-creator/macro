@@ -15,6 +15,8 @@ state_before: >
   (ranks 17-24) that had never been opened. E3-C was open; E3-P locked.
 prs:
   - 6555
+decisions:
+  - DEC:E3FMT-DEVELOPMENT-GOLD-R2-FIRST-HANDOFF-OMISSIONS
 discoveries:
   - DSC:TX-BODY-SHA-IS-CANONICAL-JSON-NOT-RAW-BYTES
 changed:
@@ -66,20 +68,16 @@ verified:
     result: "Operator names Joshua Buchalter; next structured speaker is placeholder 'Speaker 4' whose first utterance is 'This is Lanny on for Josh' - placeholder plus first-name-only, the frozen unresolved class"
   - claim: "agentos records validate."
     command: "python3 scripts/agentos.py validate"
-    result: "863 records, 0 errors, 43 pre-existing warnings"
+    result: "863 records, 0 errors, 43 pre-existing warnings (HISTORICAL - measured at the v1 falsifier head 31e6890d; superseded as current-head validation by the closeout result reported in the R2-ready handoff and PR #6555)"
 unverified:
-  - claim: "The corrected partition figures (113/97/6/103/10, nine source-clean calls) are the values Sol will ratify."
-    what_would_verify: "a Sol amendment to the frozen development adjudication accepting or revising them"
   - claim: "The prototype separator predicate is production-quality for the compiler path."
-    what_would_verify: "it was never landed in engine/ - it exists only as measurement evidence for the falsifier; a future wave must implement it under RED-first TDD against the amended gold"
+    what_would_verify: "it was never landed in engine/ - it exists only as measurement evidence for the falsifier; the R2 wave must implement it under RED-first TDD against the ratified R2 gold"
 unresolved:
-  - "Whether the frozen development adjudication is amended to 113 separators and a nine-call source-clean set."
-  - "Whether MBLY/2026Q2 is reclassified source-conflicted with an expected unresolved-questioner failure at #21."
-  - "Whether TFG-1 re-runs as a fresh implementation wave against the amended gold."
+  - "Organizational only, not scientific: the three scientific questions are RESOLVED BY SOL (YES/YES/YES, DEC:E3FMT-DEVELOPMENT-GOLD-R2-FIRST-HANDOFF-OMISSIONS). What remains open is whether the v1 closeout PR #6555 lands, which is the precondition for commissioning the R2 successor operation."
 next_actions:
-  - "Sol rules on the three questions in TFG1_DEVELOPMENT_ADJUDICATION_FALSIFIER_2026-08-27.md section 7."
-  - "If amended, re-commission TFG-1 implementation against the corrected gold with the holdout still sealed."
-  - "Do not open the eight holdout revisions until an implementation head is frozen against a ratified gold."
+  - "Land the v1 closeout PR #6555 (records/research only) once Sol accepts it."
+  - "Then, and only then, commission the successor operation tfg1-r2-deterministic-transcript-format-hardening-20260827-v1 against research/earnings_intelligence/e3/TFG1_R2_DETERMINISTIC_TRANSCRIPT_FORMAT_HARDENING_HANDOFF_2026-08-27.md."
+  - "Do not open the eight holdout revisions until R2's corrected development gates are green and an exact implementation head is frozen."
 do_not_redo:
   - "Do not re-derive the separator grammar from scratch: the predicate that achieves 110/110 recall with zero false negatives and exact direct-name extraction is implemented verbatim in research/earnings_intelligence/e3/tfg1_separator_falsifier_measurement.py."
   - "Do not byte-replay transcript revisions with sha256 of the raw decompressed body - it reports a false SOURCE_REVISION_MISMATCH on COF/2026Q2. Use the canonical-JSON convention (DSC:TX-BODY-SHA-IS-CANONICAL-JSON-NOT-RAW-BYTES)."
@@ -113,5 +111,30 @@ dispatch explicitly forbids. Under the dispatch stop conditions the wave returns
 rather than rescuing it.
 
 No compiler source was changed, production admission remains AAPL-only, and the eight-slot holdout
-remains sealed and unopened. Sol's ruling is requested on the three questions in section 7 of
-`research/earnings_intelligence/e3/TFG1_DEVELOPMENT_ADJUDICATION_FALSIFIER_2026-08-27.md`.
+remains sealed and unopened.
+
+## RESOLVED BY SOL — 2026-08-27
+
+Sol ruled **YES / YES / YES** on the three questions in section 7 of
+`research/earnings_intelligence/e3/TFG1_DEVELOPMENT_ADJUDICATION_FALSIFIER_2026-08-27.md`, and
+independently verified the three omitted first-Q&A handoffs against the original frozen gold before
+doing so. The worker STOP was confirmed correct. Nothing in this record is awaiting Sol.
+
+The ratified development truth is **113 structural separators / 97 direct / 6 explicit proxies /
+103 source-supported / 10 unresolved / 9 source-clean calls / 7 expected-refusal calls**, recorded as
+`DEC:E3FMT-DEVELOPMENT-GOLD-R2-FIRST-HANDOFF-OMISSIONS` with machine gold
+`research/earnings_intelligence/e3/tfg1_development_boundary_identity_adjudication_r2.json`.
+`MBLY/2026Q2` #21 is a mandatory separator whose questioner stays unresolved, so MBLY leaves the
+source-clean set — not a rescued identity. The historical 110-boundary TFG-0 receipt is preserved
+unchanged as falsified evidence and must not be used as current grading truth.
+
+This v1 operation is therefore **terminal and spent** at `STOPPED_AT_DEVELOPMENT_GATE`. The
+measurement receipts above, including the `863 records` AgentOS result, are preserved as the
+historical evidence of that stop and are not current-head validation.
+
+The successor is a **distinct logical operation**,
+`tfg1-r2-deterministic-transcript-format-hardening-20260827-v1`, whose sole packet is
+`research/earnings_intelligence/e3/TFG1_R2_DETERMINISTIC_TRANSCRIPT_FORMAT_HARDENING_HANDOFF_2026-08-27.md`.
+It is **NOT_BUILT and not commissioned**, and may not begin until this v1 closeout PR #6555 is
+Sol-accepted and landed. The v1 operation key must not be reused. The eight holdout revisions remain
+sealed (`holdout_bodies_inspected: 0`).
