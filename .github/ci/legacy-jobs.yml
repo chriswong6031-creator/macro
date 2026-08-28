@@ -11851,7 +11851,7 @@ jobs:
         # the lane-latch acceptance exemption, and the heartbeat write/grade round
         # trip — unrun, the whole permanence net is decoration same as the invariants
         # above.
-        run: python -m pytest tests/test_prophet_rescue.py tests/test_prophet_r2_boundary.py tests/test_live_snapshot_host_guard.py tests/test_no_pages_publish.py tests/test_deploy_bootstrap_private.py tests/test_macro_anon_dependency_guard.py tests/test_caddy_hub_boundary.py tests/test_prophet_surface_net.py -q
+        run: python -m pytest tests/test_prophet_rescue.py tests/test_prophet_r2_boundary.py tests/test_live_snapshot_host_guard.py tests/test_no_pages_publish.py tests/test_deploy_bootstrap_private.py tests/test_macro_anon_dependency_guard.py tests/test_m1_macro_consumer_inspector.py tests/test_caddy_hub_boundary.py tests/test_prophet_surface_net.py -q
 
   # ── THE HK BOARD PAIR — BORN DARK EIGHT DAYS AFTER THE CENSUS (2026-08-05) ──
   # tests/test_hk_board_rank.py (163 tests) + tests/test_hk_board_ui.py landed
