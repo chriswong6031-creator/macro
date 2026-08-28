@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-28T04:24:47.218055+00:00",
+  "generated_at": "2026-08-28T18:54:41.902209+00:00",
   "grade_horizons": [
     5,
     21,
@@ -2534,16 +2534,16 @@
       }
     },
     "_meta": {
-      "n_placebo_claims": 1098,
+      "n_placebo_claims": 1100,
       "n_covered_events": 39,
       "n_fallback_events": 39,
       "fallback_rate": 0.5
     }
   },
   "counts": {
-    "n_claims": 68426,
+    "n_claims": 72370,
     "n_grades": 92063,
-    "n_placebo": 1098,
+    "n_placebo": 1100,
     "n_rejected": 15,
     "grades_by_fill_convention": {
       "asof_legacy": 2780,
@@ -2555,7 +2555,7 @@
       "explicit_unit_v1:calendar_days:US": 38,
       "explicit_unit_v1:trading_days:CN": 328
     },
-    "n_claims_horizon_unit_declared": 21796,
+    "n_claims_horizon_unit_declared": 25740,
     "n_claims_unstamped_regime": 6509
   },
   "ladder_states": {
@@ -4072,7 +4072,7 @@
       }
     }
   },
-  "ladder_states_at": "2026-08-28T04:25:39.013536+00:00",
+  "ladder_states_at": "2026-08-28T18:55:41.598345+00:00",
   "promotion_readiness": {
     "altdata": {
       "5": {
@@ -4159,7 +4159,7 @@
         "benchmark_baseline_excess_mean_by_direction": null,
         "ready": false,
         "approaching": false,
-        "projected_ready_date": "2026-11-09",
+        "projected_ready_date": "2026-11-10",
         "reason": "n_dates=4 < 25 required. State: ACCRUING. Need 21 more independent date clusters.",
         "clock_basis": "legacy_calendar_unstamped",
         "clock_migration": false,
@@ -4507,7 +4507,7 @@
         "benchmark_baseline_excess_mean_by_direction": null,
         "ready": false,
         "approaching": false,
-        "projected_ready_date": "2027-02-04",
+        "projected_ready_date": "2027-02-05",
         "reason": "not_applicable family (salience/descriptive) — no directional promotion basis exists; magnitude grades vs the placebo tape; n_dates=2 < 25 required. State: ACCRUING. Need 23 more independent date clusters. Evaluated on clock basis 'explicit_unit_v1:trading_days:CN'; 1 other basis/bases (legacy_calendar_unstamped) excluded, NOT pooled — this family's authority accrues on the clock it is now measured on.",
         "clock_basis": "explicit_unit_v1:trading_days:CN",
         "clock_migration": true,
@@ -4613,7 +4613,7 @@
         "benchmark_baseline_excess_mean_by_direction": null,
         "ready": false,
         "approaching": false,
-        "projected_ready_date": "2027-02-04",
+        "projected_ready_date": "2027-02-05",
         "reason": "not_applicable family (salience/descriptive) — no directional promotion basis exists; magnitude grades vs the placebo tape; n_dates=2 < 25 required. State: ACCRUING. Need 23 more independent date clusters. Evaluated on clock basis 'explicit_unit_v1:trading_days:CN'; 1 other basis/bases (legacy_calendar_unstamped) excluded, NOT pooled — this family's authority accrues on the clock it is now measured on.",
         "clock_basis": "explicit_unit_v1:trading_days:CN",
         "clock_migration": true,
@@ -4823,7 +4823,7 @@
         "benchmark_baseline_excess_mean_by_direction": null,
         "ready": false,
         "approaching": false,
-        "projected_ready_date": "2027-08-12",
+        "projected_ready_date": "2027-08-13",
         "reason": "claim_family='demand_chain' horizon=5d: matched-control evidence has not begun accruing for this family — the control evidence clock has not started; no bench substitute is evaluated (contract C5.1). The clock starts at the first prospective, control-carrying registration (C3.1).",
         "clock_basis": null,
         "clock_migration": false,
@@ -5447,7 +5447,7 @@
         "benchmark_baseline_excess_mean_by_direction": null,
         "ready": false,
         "approaching": false,
-        "projected_ready_date": "2027-07-29",
+        "projected_ready_date": "2027-07-30",
         "reason": "not_applicable family (salience/descriptive) — no directional promotion basis exists; magnitude grades vs the placebo tape; n_dates=1 < 25 required. State: ACCRUING. Need 24 more independent date clusters. Evaluated on clock basis 'explicit_unit_v1:calendar_days:US'; 1 other basis/bases (legacy_calendar_unstamped) excluded, NOT pooled — this family's authority accrues on the clock it is now measured on.",
         "clock_basis": "explicit_unit_v1:calendar_days:US",
         "clock_migration": true,
@@ -5483,7 +5483,7 @@
         "benchmark_baseline_excess_mean_by_direction": null,
         "ready": false,
         "approaching": false,
-        "projected_ready_date": "2026-10-01",
+        "projected_ready_date": "2026-10-09",
         "reason": "not_applicable family (salience/descriptive) — no directional promotion basis exists; magnitude grades vs the placebo tape; n_dates=10 < 25 required. State: ACCRUING. Need 15 more independent date clusters.",
         "clock_basis": "legacy_calendar_unstamped",
         "clock_migration": false,
@@ -5869,7 +5869,7 @@
         "benchmark_baseline_excess_mean_by_direction": null,
         "ready": false,
         "approaching": false,
-        "projected_ready_date": "2026-10-22",
+        "projected_ready_date": "2026-10-23",
         "reason": "n_dates=5 < 25 required. State: ACCRUING. Need 20 more independent date clusters. Evaluated on clock basis 'explicit_unit_v1:trading_days:US'; 1 other basis/bases (legacy_calendar_unstamped) excluded, NOT pooled — this family's authority accrues on the clock it is now measured on.",
         "clock_basis": "explicit_unit_v1:trading_days:US",
         "clock_migration": true,
@@ -5946,7 +5946,7 @@
         "benchmark_baseline_excess_mean_by_direction": null,
         "ready": false,
         "approaching": false,
-        "projected_ready_date": "2026-10-22",
+        "projected_ready_date": "2026-10-23",
         "reason": "n_dates=5 < 25 required. State: ACCRUING. Need 20 more independent date clusters.",
         "clock_basis": "legacy_calendar_unstamped",
         "clock_migration": false,
@@ -6513,7 +6513,7 @@
         "benchmark_baseline_excess_mean_by_direction": null,
         "ready": false,
         "approaching": false,
-        "projected_ready_date": "2026-12-08",
+        "projected_ready_date": "2026-12-09",
         "reason": "n_dates=3 < 25 required. State: ACCRUING. Need 22 more independent date clusters. Evaluated on clock basis 'explicit_unit_v1:calendar_days:US'; 1 other basis/bases (legacy_calendar_unstamped) excluded, NOT pooled — this family's authority accrues on the clock it is now measured on.",
         "clock_basis": "explicit_unit_v1:calendar_days:US",
         "clock_migration": true,
@@ -6888,5 +6888,5 @@
       }
     }
   },
-  "promotion_readiness_at": "2026-08-28T04:26:46.688247+00:00"
+  "promotion_readiness_at": "2026-08-28T18:57:03.252061+00:00"
 }

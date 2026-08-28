@@ -52,6 +52,28 @@ qledger claim. It is deliberately narrow:
     is never registered under a flag that asks a future reader to remember to
     check it.
 
+  * ANCHOR-AT-REGISTRATION (stock_desk, thematic_desk only; Eval OS E1).
+    Production receipts show these two families' desk rows always carry a
+    `state_asof` that is a completed prior session — the desk logs its lean
+    describing a session that already closed, and registration always runs on
+    a later UTC date. Under the forward-only gate above, that state date is
+    the claim's `asof`, `qledger.claim_window` resolves the fill session from
+    it, and the fill is never strictly after the registration date: every row
+    was refused `retrospective_at_registration`, forever, by construction —
+    these two families have never registered a single qledger claim. The lean
+    itself is still a genuinely FORWARD call: it is made AT registration time,
+    about what happens next, from a state snapshot that is necessarily a
+    little stale (the desk reasons from the last completed session's data).
+    So `FamilyConfig.anchor_at_registration` anchors the claim's `asof` at the
+    REGISTRATION date itself rather than the row's own state date — the
+    graded window becomes fill = the next session strictly after today, which
+    is provably forward under the SAME unchanged gate. The row's own state
+    date is never discarded: it is preserved on the claim as
+    `state_asof_source`, so the staleness of the snapshot that informed the
+    call stays fully auditable. `demand_chain` keeps its unmodified crawl-date
+    anchor — its family basis is already established and its evidence clock
+    is already live; an accruing family is never re-anchored.
+
   * CALLERS PASS ONLY ROWS THEY JUST WROTE. Every call site
     (engine/stock_desk.py, engine/thematic_desk.py, engine/demand_ledger.py)
     hands this module the rows THIS run appended to its own ledger — never a
@@ -104,15 +126,23 @@ class FamilyConfig:
     #: optional row-level gate beyond the lean table (thematic_desk's region
     #: scoping). None means every row is in scope.
     region_filter: Callable[[dict], bool] | None = None
+    #: ANCHOR-AT-REGISTRATION (see module docstring). True means the claim's
+    #: `asof` is the registration date, not the row's own (always-stale)
+    #: state date — the only way these two families' rows can ever clear the
+    #: forward-only gate. `demand_chain` stays False: its clock is already
+    #: live and re-anchoring an accruing family is never lawful.
+    anchor_at_registration: bool = False
 
 
 _FAMILIES: dict[str, FamilyConfig] = {
     "stock_desk": FamilyConfig(
         lean_direction={"constructive": 1, "cautious": -1, "avoid": -1},
+        anchor_at_registration=True,
     ),
     "thematic_desk": FamilyConfig(
         lean_direction={"overweight": 1, "underweight": -1, "avoid": -1},
         region_filter=lambda row: str(row.get("market") or "").strip().lower() == "us",
+        anchor_at_registration=True,
     ),
     "demand_chain": FamilyConfig(
         lean_direction={"outperform": 1, "underperform": -1},
@@ -129,7 +159,8 @@ def known_families() -> tuple[str, ...]:
 # --------------------------------------------------------------------------- #
 def translate_row(row: dict, *, family: str, direction: int,
                   timestamp_quality: str,
-                  sector_of: Callable[[str], str | None] | None = None) -> dict | None:
+                  sector_of: Callable[[str], str | None] | None = None,
+                  asof_override: str | None = None) -> dict | None:
     """ONE thesis row -> ONE well-formed (unvalidated, unregistered) claim dict,
     or None when the row cannot be translated. `direction` is already resolved
     by the caller (the lean-table lookup) — this function only prices the
@@ -142,6 +173,13 @@ def translate_row(row: dict, *, family: str, direction: int,
     `horizon_d`, a missing `state_asof`, or a missing thesis `id` (no stable
     salt is available, and an unsalted claim_id can collide with a same-day
     sibling on the same ticker — see engine/qledger.py `_claim_id`).
+
+    `asof_override` (Eval OS E1, ANCHOR-AT-REGISTRATION — see module
+    docstring): when provided and non-empty, the claim's `asof` is this value
+    instead of the row's own state date, and the row's state date is kept on
+    the claim as provenance under `state_asof_source`. The row's own state
+    date is still REQUIRED either way — the override changes WHERE the claim
+    is anchored, it never rescues a row that carries no state date at all.
     """
     if not isinstance(row, dict):
         return None
@@ -190,9 +228,18 @@ def translate_row(row: dict, *, family: str, direction: int,
                         family, subject, type(exc).__name__, exc)
             sector = None
 
+    claim_asof = asof
+    extra: dict[str, Any] = {"source_id": source_id}
+    if asof_override:
+        # ANCHOR-AT-REGISTRATION: the claim is priced/dated at the registration
+        # instant, never the row's own (always-stale) state date; the state
+        # date is preserved as provenance, not discarded.
+        claim_asof = asof_override
+        extra["state_asof_source"] = asof
+
     claim = qledger.make_claim(
         desk=family,
-        asof=asof,
+        asof=claim_asof,
         scope_type="entity",
         scope_key=subject,
         direction=direction,
@@ -206,7 +253,7 @@ def translate_row(row: dict, *, family: str, direction: int,
         falsifier=row.get("falsifier"),
         check_by=row.get("check_by"),
         claim_family=family,
-        extra={"source_id": source_id},
+        extra=extra,
     )
     # Explicit salt: idempotence across re-runs AND collision safety between two
     # same-day rows on the same ticker (mirrors engine/qledger.py's own note on
@@ -405,6 +452,17 @@ def register_prospective(rows: Iterable[dict], *, family: str,
     re-implementation of its rules. The temporary store is discarded when this
     call returns; nothing under `root` is touched.
 
+    ANCHOR-AT-REGISTRATION (`fam_cfg.anchor_at_registration` — see module
+    docstring). For stock_desk/thematic_desk, `translate_row` is called with
+    `asof_override=today.isoformat()`: the desk's lean is a forward call made
+    AT registration time, so anchoring the claim's `asof` at the registration
+    date (rather than the row's always-completed `state_asof`) makes the
+    graded window provably forward — fill = the next session strictly after
+    today — under the SAME unchanged forward-only gate. Nothing about the gate
+    itself, or about `demand_chain` (which keeps its live crawl-date anchor;
+    its family basis is already established and an accruing family is never
+    re-anchored), changes.
+
     Never raises. A `register_batch` failure is caught, printed as a GitHub
     `::error` annotation, and returned in `stats["error"]` — the caller's
     build must not die over an accrual step (matches every sibling desk's
@@ -452,8 +510,13 @@ def register_prospective(rows: Iterable[dict], *, family: str,
         if direction is None:
             stats["n_skipped_no_call"] += 1
             continue
-        claim = translate_row(row, family=family, direction=direction,
-                              timestamp_quality=timestamp_quality, sector_of=sector_of)
+        claim = translate_row(
+            row, family=family, direction=direction, timestamp_quality=timestamp_quality,
+            sector_of=sector_of,
+            # ANCHOR-AT-REGISTRATION (module docstring): only stock_desk/
+            # thematic_desk anchor at `today`; demand_chain's asof_override
+            # stays None and keeps its live crawl-date anchor untouched.
+            asof_override=today.isoformat() if fam_cfg.anchor_at_registration else None)
         if claim is None:
             stats["n_skipped_no_call"] += 1
             continue

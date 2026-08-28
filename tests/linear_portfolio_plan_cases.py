@@ -9,6 +9,17 @@ import pytest
 from scripts import linear_portfolio_plan as lpp
 
 
+def test_p0_collection_keeps_canonical_agentos_compile_module_in_place():
+    """P0 may extend the owned suite, but it must not relocate that suite."""
+
+    canonical = Path(__file__).with_name("test_agentos_compile.py")
+    source = canonical.read_text(encoding="utf-8")
+
+    assert "tests.agentos_compile_legacy_cases" not in source
+    assert "def test_the_store_this_suite_compiles_is_the_committed_one" in source
+    assert not canonical.with_name("agentos_compile_legacy_cases.py").exists()
+
+
 def _record(
     key: str,
     status: str,

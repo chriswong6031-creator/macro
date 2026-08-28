@@ -183,6 +183,31 @@ danger_areas:
     oversight — retune it deliberately or not at all.
 ---
 
+## A regression this session shipped and then caught (#6572 -> #6592)
+
+Live verification after the merge found that the route `503`'d overnight, so
+every US dossier fell back to its baked price. Cause: an adversarial reviewer
+observed that `regularSession` was never read and called it "the hub's positive
+evidence that `last` is a regular-session print". I added a guard on that
+premise without checking it. `regularSession` actually reports whether the
+regular session is OPEN ("rth") or not ("closed"); after the bell the hub flips
+it to "closed" while still carrying the correct settled close, and the guard
+refused every such row. Measured 2026-08-28 04:09Z: NVDA `last=227.98
+prevClose=209.66`, the right 2026-08-27 close, logged "quote hub row for NVDA
+was unusable".
+
+The premise was already false: upstream keeps extended prints out of `last`
+entirely, which is why the extended print lives in `extPrice`/`extChg`. The
+guard bought no safety and cost the feature outside RTH. Only an explicitly
+extended tag is refused now.
+
+Why the tests missed it: every fixture was a live capture taken during RTH, so
+the whole suite agreed the market was open. The page is closed most of the day.
+The regression test uses a verbatim OVERNIGHT row.
+
+Degradation was honest, not a lie: a 503 lapses the claim, the client keeps the
+baked values, and the stamp reads "As of <build date>" — never a false LIVE.
+
 ## Exact remaining gate
 
 **One ruling, one re-verification.**

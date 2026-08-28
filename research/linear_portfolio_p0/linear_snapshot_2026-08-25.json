@@ -2,12 +2,15 @@
   "schema": "linear_portfolio_snapshot.v1",
   "source": {
     "kind": "first_party_linear_connector_observation",
-    "query": "list_projects(limit=50, orderBy=createdAt, includeArchived=true)",
+    "query": "list_projects(limit=50, orderBy=createdAt, includeArchived=true, fields=id,name,status)",
     "has_next_page": false,
-    "observation_session_started_at": "2026-08-25T19:57:05-04:00",
+    "observation_session_started_at": "2026-08-28T22:10:57.118Z",
     "authority": "witness_only_not_canonical"
   },
   "projects": [
+    {"workstream_key":"WS:RATES-INFLATION-COMMAND","project_id":"ef62f66d-d4c2-4b46-9b48-13722dd57a65","name":"WS:RATES-INFLATION-COMMAND — Rates & Inflation Command","status_name":"In Progress","status_class":"started"},
+    {"workstream_key":"WS:STOCK-DOSSIER-LIVE-QUOTE","project_id":"e603e810-a620-430b-a660-4873e8e1b9ec","name":"WS:STOCK-DOSSIER-LIVE-QUOTE — Stock Dossier Live Quote","status_name":"In Progress","status_class":"started"},
+    {"workstream_key":"WS:OPTIONS-ALPHA-INTELLIGENCE-RECOVERY","project_id":"8524ca70-6f09-4d92-8bfd-5e56fef47fea","name":"WS:OPTIONS-ALPHA-INTELLIGENCE-RECOVERY — Options Alpha Intelligence Recovery","status_name":"In Progress","status_class":"started"},
     {"workstream_key":"WS:CYCLE-PATTERN-ISSUER-MECHANISM","project_id":"fbd28d51-3d1b-4e54-a2f6-3df7c53aee7c","name":"WS:CYCLE-PATTERN-ISSUER-MECHANISM — Issuer Mechanism Cycle Extension","status_name":"In Progress","status_class":"started"},
     {"workstream_key":"WS:BIOCATALYST-CORE-PRODUCT","project_id":"4c6706cb-edff-48f2-abcd-0c7045f1723b","name":"WS:BIOCATALYST-CORE-PRODUCT — BioCatalyst Core Product","status_name":"In Progress","status_class":"started"},
     {"workstream_key":"WS:EARNINGS-EVENT-INTELLIGENCE-COMPILER","project_id":"16951d05-0468-4c3e-b4bd-00212b54d21c","name":"WS:EARNINGS-EVENT-INTELLIGENCE-COMPILER — Earnings Event Intelligence Compiler","status_name":"In Progress","status_class":"started"},
@@ -17,7 +20,7 @@
     {"workstream_key":"WS:CHAIRMAN-CONTROL-ROOM","project_id":"0cd5fc91-db1d-4f18-a3d1-3a3a4433f226","name":"WS:CHAIRMAN-CONTROL-ROOM — Chairman Control Room","status_name":"In Progress","status_class":"started"},
     {"workstream_key":"WS:EXECUTIVE-CAPACITY-FABRIC","project_id":"ec370898-f812-4291-bad1-cf8da312ad30","name":"WS:EXECUTIVE-CAPACITY-FABRIC — Executive Capacity Fabric","status_name":"In Progress","status_class":"started"},
     {"workstream_key":"WS:ACCOUNT-IDENTITY-HARDENING","project_id":"61fce18e-793b-4447-b618-4b0062d88862","name":"WS:ACCOUNT-IDENTITY-HARDENING — Account Identity Hardening","status_name":"In Progress","status_class":"started"},
-    {"workstream_key":"WS:INSTITUTIONAL-PRODUCT-EXPERIENCE-V2","project_id":"c9e8ea6b-0a12-4ef5-a8c6-8897c6564198","name":"WS:INSTITUTIONAL-PRODUCT-EXPERIENCE-V2 — Institutional Product Experience V2","status_name":"In Progress","status_class":"started"},
+    {"workstream_key":"WS:INSTITUTIONAL-PRODUCT-EXPERIENCE-V2","project_id":"c9e8ea6b-0a12-4ef5-a8c6-8897c6564198","name":"WS:INSTITUTIONAL-PRODUCT-EXPERIENCE-V2 — Institutional Product Experience V2","status_name":"Completed","status_class":"completed"},
     {"workstream_key":"WS:RUNNER-FLEET-RESILIENCE","project_id":"faa21e4b-b1db-4c6e-a2fb-8fb7027a0e5e","name":"WS:RUNNER-FLEET-RESILIENCE — Runner Fleet Resilience","status_name":"In Progress","status_class":"started"},
     {"workstream_key":"WS:BIOCATALYST-RECOVERY-V2","project_id":"71f68fd3-f862-4e40-a1ee-51e7949cfa1e","name":"WS:BIOCATALYST-RECOVERY-V2 — BioCatalyst Recovery V2","status_name":"Completed","status_class":"completed"},
     {"workstream_key":"WS:MARKET-OS","project_id":"b2be8a55-897b-4f4f-aace-bd62994f20b4","name":"WS:MARKET-OS — Market OS","status_name":"In Progress","status_class":"started"},

@@ -1,32 +1,27 @@
 {
-  "14bc697a69ec": {
-    "name_en": "Cross-sector cluster \u00b7 Consumer Discretionary + Financials",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Consumer Discretionary + Financials",
-    "score": 59.1
+  "428fe3734a6b": {
+    "name_en": "Cross-sector cluster \u00b7 Health Care + Consumer Discretionary",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Health Care + Consumer Discretionary",
+    "score": 56.0
   },
-  "3d0fbf7d1b2e": {
-    "name_en": "Cross-sector cluster \u00b7 Consumer Discretionary + Health Care",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Consumer Discretionary + Health Care",
-    "score": 48.6
+  "6e513dc7d9cf": {
+    "name_en": "Cross-sector cluster \u00b7 Industrials + Consumer Staples",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Consumer Staples",
+    "score": 52.7
   },
-  "561b18285140": {
-    "name_en": "Cross-sector cluster \u00b7 Financials + Consumer Discretionary",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Financials + Consumer Discretionary",
-    "score": 59.5
+  "91e8b164a991": {
+    "name_en": "Cross-sector cluster \u00b7 Financials + Industrials",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Financials + Industrials",
+    "score": 57.9
   },
-  "58e508dfe824": {
-    "name_en": "Cross-sector cluster \u00b7 Communication + Consumer Staples",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Communication + Consumer Staples",
-    "score": 55.9
+  "c22064e27349": {
+    "name_en": "Emerging Industrials cluster",
+    "name_zh": "\u65b0\u5174 Industrials \u96c6\u7fa4",
+    "score": 44.4
   },
-  "a97676277101": {
-    "name_en": "Cross-sector cluster \u00b7 Industrials + Health Care",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Health Care",
-    "score": 59.4
-  },
-  "ccd2d4b47e3e": {
-    "name_en": "Emerging Consumer Staples cluster",
-    "name_zh": "\u65b0\u5174 Consumer Staples \u96c6\u7fa4",
-    "score": 42.7
+  "d7085c868000": {
+    "name_en": "Emerging Health Care cluster",
+    "name_zh": "\u65b0\u5174 Health Care \u96c6\u7fa4",
+    "score": 43.5
   }
 }
