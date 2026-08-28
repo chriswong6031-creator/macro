@@ -164,15 +164,18 @@ Per-lane state matrix:
 | #6543 Rates/Inflation Command F0 | OPEN awaiting_ci | F01 rates axis |
 | LER program (#6599) | MERGED/FROZEN | The existing Radar MO-PAID-042 projects over — never a duplicate lifecycle |
 
-## Preservation pre-map — P-001..P-006 (status: PENDING_SOURCE_ACCEPTANCE)
+## Preservation findings — P-001..P-006 (consumed at ACCEPTED preservation-evidence tier)
 
-Source: the final preservation audit on OPEN, UNACCEPTED PR #6610 (head
-`a7ff402a`). Until Sol accepts that carrier, these are pre-mapped here inside
-the existing coarse scope — they are NOT new parity rows, and #6610 is not
-treated as canonical. Evidence ceiling per the Sol amendment: the competitor's
-public surface presents contracts/state machines whose persistence was NOT
-tested (no thesis/issuer/monitor was created); nothing here inherits
-direction/confidence/priced% authority semantics absent calibrated promotion.
+Source: the final preservation audit, now MERGED/ACCEPTED via PR #6610 (merge
+`471597e00baf` from source head `a7ff402a`). It is consumed here at its
+accepted **preservation-evidence** tier: the classifications below map
+P-001..P-006 onto EXISTING 88+delta rows/families/owners — they mint no new
+parity rows. Preserved invariants from the accepted source:
+`SAFE_TO_LOSE_MARKETONTOLOGY_ACCESS: NO`; the exact-byte P1 corpus remains an
+`OPEN_IMPORT_GATE`; P-003/P-005 persistence is UNPROVEN (no thesis/issuer/
+monitor was created); P-006 is route/schema evidence only; and nothing inherits
+competitor direction/confidence/priced% authority semantics absent calibrated
+promotion.
 
 - **P-001 Ticker Impact Ledger** (event → typed AssumptionChange → durable
   per-ticker log): lane F06/F07; owner WS:MARKET-OS (F06) + FIF (F07); proposed
@@ -205,7 +208,10 @@ direction/confidence/priced% authority semantics absent calibrated promotion.
   not a capability row; disposition RESEARCH_CONTEXT_ONLY; no bulk copying of
   event prose/data is licensed.
 
-If #6610 lands before the next RESULT, reconcile these at their accepted tier.
+#6610 landed (merge `471597e00baf`); the mapping above is its accepted-tier
+consumption. F00's required next action from the accepted audit stands: recover
+and hash-verify the original public-P1 V5 CSV/JSON before any future
+`SAFE_TO_LOSE_MARKETONTOLOGY_ACCESS: YES` conclusion.
 
 ## UNVERIFIED register (bounded, explicit)
 

@@ -43,7 +43,7 @@ verified:
     result: "PASS — final recount from the repaired CSV: NOT_BUILT 59, PARTIAL 49, SPEC_ONLY 11, BUILT_NOT_PROVEN 6, PROVEN_LIVE 5; dispositions BUILD_NEW 50, UPGRADE_EXISTING 42, PROJECTION_OVER_EXISTING 20, RESEARCH_CONTEXT_ONLY 15, PROVEN_EXISTING 3. CSV, summary, handoff and RESULT recomputed together per Sol REQUEST_REPAIR item 3 (post second-audit corrections)."
   - claim: "Carrier protocol satisfied on the exact Slack thread before work began."
     command: "Slack thread C0BSBM78V1N/1787906810.553069: ACK 1787907937.258169, WATCH_ARMED 1787908079.822839, START 1787908093.153319; Skillpack SHA verified via git rev-parse in Mastermind checkout"
-    result: "PASS — Skillpack e023f9b4df388814286d42462af0e86a64eea563 v1.0.1 loaded (INDEX + vocabulary + dialogue/routing law); amendment 1787907339.753029 read pre-START and applied."
+    result: "PASS — HISTORICAL pickup-time receipt: Skillpack pin e023f9b4df388814286d42462af0e86a64eea563 v1.0.1 was the protected master at pickup (INDEX + vocabulary + dialogue/routing law loaded); amendment 1787907339.753029 read pre-START and applied. Later Sol adjudications re-pinned newer protected masters; current pin at each adjudication is whatever Sol's thread reply states, not this historical value."
   - claim: "Census evidence was gathered read-only per lane by routed workers and spot-audited independently — twice (pre-RESULT and post-REQUEST_REPAIR)."
     command: "9 ROUTE:census scout workers (F01..F13 clusters) + 2 ROUTE:review opus audits, each over 13 rows (one per family; different rows where sensible), the second also sweeping all 130 owner cells, recomputing counts, and checking #6611/#6610 fidelity"
     result: >
@@ -68,11 +68,11 @@ unverified:
     what_would_verify: "Chairman/commercial contract inventory; census can only prove no reference exists in code/docs."
 unresolved:
   - "Completion label is COARSE_CROSSWALK_COMPLETE only (per #6611 merge 532fe442 / DEC:MARKET-ONTOLOGY-GRANULAR-FULL-PARITY-BEYOND-PARITY-RATCHET): this artifact is the coarse F00C owner-map input; COVERAGE_COMPLETE/PARITY_COMPLETE are separate later milestones; no disposition here is an exclusion."
-  - "P-001..P-006 (preservation audit, OPEN PR #6610, unaccepted) are pre-mapped in the summary as PENDING_SOURCE_ACCEPTANCE; reconcile at accepted tier when/if #6610 lands."
+  - "P-001..P-006 are consumed at their ACCEPTED preservation-evidence tier (#6610 merged as 471597e00baf from a7ff402a): mapped onto existing rows/families/owners, no new parity rows; SAFE_TO_LOSE_MARKETONTOLOGY_ACCESS: NO, P1 OPEN_IMPORT_GATE, P-003/P-005 persistence unproven, and P-006 route/schema-evidence-only are preserved."
   - "MAS-170 Linear projection unread (connector unauthenticated); carrier text treated as the governing intent."
   - "REJECTED_BY_DESIGN candidates await explicit Sol rulings (MO-PAID-048/050 absent license, MO-DELTA-040, authority semantics of MO-PAID-024/MO-DELTA-006)."
   - "27 rows carry inline UNVERIFIED flags (options producer wiring, display freshness receipts, off-repo data contracts, Supabase-side deletion, non-US legal sources, commodity-family coverage)."
-  - "Pre-existing agentos validate errors in agentos/handoffs/BREATHING-PLATFORM-2026-08-28-completion-commission.md are owned by open heal PR #6605, not this carrier."
+  - "HISTORICAL, resolved: the breathing-platform validate errors that existed at first commit were healed by #6605 (merged); agentos validate on the final reconciled head is 0 errors."
 next_actions:
   - "Sol adjudicates the proposed next fanout set (summary §Proposed next fanout): F11 Thesis-object vertical, F12 tenancy foundation, F07 consensus-source ruling, F09/F02 consolidated rights docket, F01/F13 cheap projections, existing-carrier accelerations."
   - "F00 folds this overlay into its coverage accounting; delta ledger stays living — recheck public surfaces at next milestone."
